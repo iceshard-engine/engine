@@ -14,7 +14,7 @@ class GenerateProjectsCommand extends Command
         }
         flag {
             name:'-r --rebuild',
-            description:'Regenerates all files when generating projects.'
+            description:'Regenerates all project files.'
             default:false,
         }
     }
