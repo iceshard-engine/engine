@@ -1,6 +1,6 @@
 @ECHO off
 SETLOCAL
-:: SETLOCAL EnableDelayedExpansion
+PUSHD %~dp0
 
 :: Cretae the build directory
 IF NOT EXIST build\ (
@@ -45,6 +45,8 @@ EXIT /B 0
 CALL build\tools\activate.bat
 CALL moon tools\iceshard.moon %*
 CALL build\tools\deactivate.bat
+
+POPD
 
 :_exit
 exit /B 0
