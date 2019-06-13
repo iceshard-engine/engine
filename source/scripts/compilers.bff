@@ -86,11 +86,9 @@ Compiler( 'msvc-compiler' )
         '$ToolsPath$\mspdbcore.dll',
         '$ToolsPath$\mspdbsrv.exe',
         '$ToolsPath$\mspft140.dll',
+        '$ToolsPath$\msvcp140.dll',
+        '$ToolsPath$\vcruntime140.dll',
         '$ToolsPath$\$LangResId$\clui.dll',
-        '$vsInstallationDir$\VC\Redist\MSVC\$vcRedistVersion$\x64\Microsoft.VC141.CRT\msvcp140.dll',
-        '$vsInstallationDir$\VC\Redist\MSVC\$vcRedistVersion$\x64\Microsoft.VC141.CRT\concrt140.dll',
-        '$vsInstallationDir$\VC\Redist\MSVC\$vcRedistVersion$\x64\Microsoft.VC141.CRT\vccorlib140.dll',
-        '$vsInstallationDir$\VC\Redist\MSVC\$vcRedistVersion$\x64\Microsoft.VC141.CRT\vcruntime140.dll',
     }
 }
 
