@@ -3,4 +3,5 @@
 /build/
 
 # Temporary files to ignore
+*.sln
 *.fdb
