@@ -1,4 +1,5 @@
 # Temporary paths to ignore
+/.vs/
 /.vscode/
 /build/
 
