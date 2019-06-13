@@ -1,8 +1,14 @@
 #pragma once
 #include <core/datetime/types.hxx>
 
+
+//! \brief Constant values for datetime calculations.
+//! \details The datetime system base resolution is 10 nanoseconds which is 10 ticks for a single microsecond.
+//!
+//! \note Constant values were taken from: https://referencesource.microsoft.com/#mscorlib/system/datetime.cs
 namespace core::datetime::constant
 {
+
 
 static constexpr tick_type ticks_per_microsecond{ 10 };
 
@@ -45,5 +51,6 @@ static constexpr tick_type ticks_to_1970{ days_to_1970 * ticks_per_day.value };
 static constexpr tick_type min_ticks{ 0 };
 
 static constexpr tick_type max_ticks{ days_to_10000 * ticks_per_day.value - 1 };
+
 
 } // namespace core::datetime::constant

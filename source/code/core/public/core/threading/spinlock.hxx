@@ -4,6 +4,7 @@
 namespace core::threading
 {
 
+
 //! \brief A very simple spinlock implementation.
 class spinlock final
 {
@@ -15,7 +16,7 @@ public:
     //! \pre The spinlock object is not locked.
     ~spinlock() noexcept;
 
-    //! \brief Waits for the spinlock to be unlocked, and locks it.
+    //! \brief Waits for the spinlock to be unlocked and locks it.
     void lock() noexcept;
 
     //! \brief Unlocks the spinlock object.
@@ -24,5 +25,6 @@ public:
 private:
     std::atomic_flag _flag = ATOMIC_FLAG_INIT;
 };
+
 
 } // namespace core::threading

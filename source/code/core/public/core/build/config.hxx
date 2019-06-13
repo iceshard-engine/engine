@@ -3,24 +3,27 @@
 namespace core::build::configuration
 {
 
-//! \brief Defines all supported configuration names.
+
+/// Types and Functions ///
+
+
+//! \brief Supported configurations.
 enum class ConfigurationType { Debug, ReleaseDebug, Release };
 
-//! \brief Returns the name of the ConfigurationType
+//! \brief Returns the ConfigurationType name.
 auto to_string(ConfigurationType type) noexcept -> const char*;
 
-
-//! \brief Defines a single configuration.
+//! \brief A structure holding information about a specific configuration.
 struct Configuration
 {
-    //! \brief The configuration name.
+    //! \brief Configuration name.
     const char* name;
 
-    //! \brief The configuration type.
+    //! \brief Configuration type.
     ConfigurationType type;
 };
 
-//! \brief Returns the name of the Configuration
+//! \brief Returns the Configuration name.
 auto to_string(Configuration type) noexcept -> const char*;
 
 
@@ -34,7 +37,7 @@ constexpr bool operator==(const Configuration& left, ConfigurationType right) no
 constexpr bool operator!=(const Configuration& left, ConfigurationType right) noexcept;
 
 
-/// Current ///
+/// Configuration Detection ///
 
 
 #if defined(_DEBUG)
@@ -52,5 +55,6 @@ static_assert(false, "Unknow configuration!")
 
 
 #include "config.inl"
+
 
 } // namespace core::build::configuration

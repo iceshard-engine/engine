@@ -3,42 +3,45 @@
 namespace core::build::platform
 {
 
-//! \brief Defines all supported systems.
+
+/// Types and Functions ///
+
+
+//! \brief Supported systems.
 enum class System { Windows };
 
-//! \brief Defines all supported architectures.
+//! \brief Supported architectures.
 enum class Architecture { x64 };
 
-//! \brief Defines all supported compilers.
+//! \brief Supported compilers.
 enum class Compiler { MSVC };
 
-//! \brief Returns the name of the given system.
+//! \brief Returns the System name.
 auto to_string(System type) noexcept -> const char*;
 
-//! \brief Returns the name of the given architectrure.
+//! \brief Returns the Architecture name.
 auto to_string(Architecture type) noexcept -> const char*;
 
-//! \brief Returns the name of the given Compiler.
+//! \brief Returns the Compiler name.
 auto to_string(Compiler type) noexcept -> const char*;
 
-
-//! \brief Defines a single platform.
+//! \brief A structure holding information about a specific platform.
 struct Platform
 {
-    //! \brief The platform name.
+    //! \brief Platform name.
     const char* name;
 
-    //! \brief The platform system.
+    //! \brief Platform system.
     System system;
 
-    //! \brief The platform system.
+    //! \brief Platform architecture.
     Architecture architecture;
 
-    //! \brief The platform system.
+    //! \brief Platform compiler.
     Compiler compiler;
 };
 
-//! \brief Returns the name of the given platform.
+//! \brief Returns the Platform name.
 auto to_string(Platform type) noexcept -> const char*;
 
 
@@ -64,13 +67,13 @@ constexpr bool operator!=(const Platform& left, Compiler right) noexcept;
 static constexpr Platform platform_windows{ "windows-x64-msvc", System::Windows, Architecture::x64, Compiler::MSVC };
 
 
-/// All common platforms ///
+/// All platforms ///
 
 
 static constexpr Platform all_platforms[] = { platform_windows };
 
 
-/// Current ///
+/// Platform detection ///
 
 
 #if defined(_WIN64)
@@ -85,4 +88,5 @@ static_assert(false, "Unknow platform!")
 
 #include "platform.inl"
 
-} // namespace core::build::configuration
+
+} // namespace core::build::platform

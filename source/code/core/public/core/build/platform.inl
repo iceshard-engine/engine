@@ -1,5 +1,3 @@
-#include "platform.hxx"
-
 constexpr bool core::build::platform::operator==(const Platform& left, const Platform& right) noexcept
 {
     return left.system == right.system

@@ -1,4 +1,3 @@
-
 constexpr bool core::build::configuration::operator==(const Configuration& left, const Configuration& right) noexcept
 {
     return left.type == right.type;

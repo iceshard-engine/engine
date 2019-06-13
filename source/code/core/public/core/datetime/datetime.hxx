@@ -4,23 +4,25 @@
 namespace core::datetime
 {
 
-//! \brief Returns the current point in time.
+
+//! \brief Current time (UTC).
 auto now() noexcept -> datetime_type;
 
-//! \brief Returns the current point in time.
+//! \brief Current time (Local Timezone).
 auto now_local() noexcept -> local_datetime_type;
 
 
-//! \brief Returns a calendar for the given date time.
+//! \brief Creates a calendar object from the given time point (UTC).
 auto make_calendar(datetime_type time) noexcept -> calendar_type;
 
-//! \brief Returns a calendar for the given local date time.
+//! \brief Creates a calendar object from the given time point (Local Timezone).
 auto make_calendar(local_datetime_type time) noexcept -> calendar_type;
 
 
-//! \brief Converts a datetime object from one type to another.
-//! \remarks Supports casts between types: \c datetime_type, \c local_datetime_type, \c unix_timestamp
+//! \brief Converts a datetime object between representations.
+//! \remarks Supports: \c datetime_type, \c local_datetime_type, \c unix_timestamp
 template<class TTo, class TFrom>
 auto datetime_cast(TFrom from) noexcept -> TTo;
+
 
 } // namespace core::datetime

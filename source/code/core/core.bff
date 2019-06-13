@@ -70,7 +70,7 @@
         [
             .Platform = .Platform
             .Config = .Config
-            .Target = '$ProjectName$-$Platform$-$Config$'
+            .Target = '$ProjectName$-$Platform$-$Config$-objects'
 
             .IntermediateDirectory = .ConfigurationIntermediateDirectory
             .OutputDirectory = .ConfigurationTargetDirectory

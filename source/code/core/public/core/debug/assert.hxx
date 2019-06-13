@@ -1,21 +1,28 @@
 #pragma once
 #include <core/build/build.hxx>
+#include <core/debug/utils.hxx>
 #include <fmt/format.h>
 
 namespace core::debug::detail
 {
 
-//! \brief Checks if the given value is true and sends the given condition and message on failure.
-void assert_internal(bool value, std::string_view condition, std::string_view filename, int fileline, std::string_view message, fmt::format_args arguments) noexcept;
+
+//! \brief Outputs the assert message and checks if controlls the application. #todo Get a better description.
+//! \returns ture If the application should break.
+bool assert_internal(std::string_view condition, std::string_view filename, int fileline, std::string_view message, fmt::format_args arguments) noexcept;
+
 
 } // namespace core
 
-// Undefine other assert macros
-#undef assert
 
-// Defines a helper macro for assert checks.
-#define mx_assert(condition, message, ...) \
-    if constexpr(!core::build::is_release) \
-    { \
-        ::core::debug::detail::assert_internal(true == (condition), #condition, __FILE__, __LINE__, message, fmt::make_format_args(__VA_ARGS__)); \
-    }
+#define IS_ASSERT(condition, message, ...) \
+    do { \
+        if constexpr(!core::build::is_release) { \
+            if (false == (condition)) { \
+                if (::core::debug::detail::assert_internal(#condition, __FILE__, __LINE__, message, fmt::make_format_args(__VA_ARGS__))) { \
+                    core::debug::debug_break(); \
+                } \
+            } \
+        } \
+    } while(false)
+

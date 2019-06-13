@@ -4,30 +4,27 @@
 namespace core::datetime
 {
 
+
 //! \brief A single tick.
-//! \remarks The resolution is 10ns.
-//! \remarks A stored value is context specific.
+//! \details The resolution is 10ns.
+//! \details Stored value should be considered magic.
 struct tick_type { int64_t value; };
 
-//! \brief Represents a relative time duration.
+//! \brief Time duration.
 struct timespan_type { tick_type tick; };
 
-//! \brief A specific point in time.
-//! \remarks The time point is absolute. (UTC)
+//! \brief Time point (UTC).
 struct datetime_type { tick_type tick; };
 
-//! \brief A specific point in time.
-//! \remarks The time point is relative to the current time zone.
+//! \brief Time point (Local Timezone).
 struct local_datetime_type { tick_type tick; };
 
-//! \brief A specific point in time.
-//! \remarks The resolution is 1s.
+//! \brief Time point (Unix Timestamp).
 struct unix_timestamp { int64_t value; };
 
 
-//! \brief A specific point in time.
-//! \remarks Representation is splited into specific components.
-//! \remarks A calendar is context specific and should be only used for simple formating purposes.
+//! \brief Calendar representing a time point.
+//! \details The representation is not specific to UTC or Local, thus a conversion to a time point is not possible.
 struct calendar_type
 {
     int32_t microsecond;
@@ -42,5 +39,6 @@ struct calendar_type
 
     int32_t day_of_week;
 };
+
 
 } // namespace core::datetime

@@ -6,7 +6,7 @@ namespace core::threading
 
 spinlock::~spinlock() noexcept
 {
-    mx_assert(!_flag.test_and_set(std::memory_order_relaxed), "This spinlock was not unlocked before destruction!");
+    IS_ASSERT(!_flag.test_and_set(std::memory_order_relaxed), "This spinlock was not unlocked before destruction!");
 }
 
 void spinlock::lock() noexcept
