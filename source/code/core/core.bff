@@ -4,8 +4,12 @@
     .ProjectName        = 'core'
     .ProjectBaseDir = '$_CURRENT_BFF_DIR_$'
 
-    // Conan modules
+
+    // Additional helper variables
+    //------------------------------------------------------------------------------
     .ConanModuleList = { 'fmt' }
+    .VSProjectConfigurations = { }
+
 
     // Library
     //--------------------------------------------------------------------------
@@ -33,7 +37,8 @@
 
         // Configuration properties
         //--------------------------------------------------------------------------
-        .ConfigurationOutputPath = '$WorkspaceBuildDir$/obj/$ProjectName$/$Platform$-$Config$'
+        .ConfigurationIntermediateDirectory = '$WorkspaceBuildDir$/obj/$Platform$-$Config$/$ProjectName$'
+        .ConfigurationTargetDirectory = '$WorkspaceBuildDir$/lib/$Platform$-$Config$/$ProjectName$'
 
 
         // Object lists
@@ -42,7 +47,7 @@
         {
             .CompilerOptions + ' /I"$ProjectBaseDir$/public"'
 
-            .CompilerOutputPath = .ConfigurationOutputPath
+            .CompilerOutputPath = .ConfigurationIntermediateDirectory
             .CompilerInputPath = '$ProjectBaseDir$/private'
             .CompilerInputPattern = '*.cxx'
         }
@@ -50,13 +55,39 @@
 
         // Library target
         //--------------------------------------------------------------------------
-        Library('$ProjectName$-$Platform$-$Config$' )
+        Library( '$ProjectName$-$Platform$-$Config$' )
         {
-            .CompilerOutputPath = .ConfigurationOutputPath
+            .CompilerOutputPath = .ConfigurationIntermediateDirectory
 
             .LibrarianAdditionalInputs = '$ProjectName$-$Platform$-$Config$-objects'
-            .LibrarianOutput = '$WorkspaceBuildDir$/lib/$ProjectName$/$Platform$-$Config$/$ProjectName$.lib'
+            .LibrarianOutput = '$ConfigurationTargetDirectory$/$ProjectName$.lib'
         }
+
+
+        // Visual Studio project configuration
+        //--------------------------------------------------------------------------
+        .VSProjectConfiguration =
+        [
+            .Platform = .Platform
+            .Config = .Config
+            .Target = '$ProjectName$-$Platform$-$Config$'
+
+            .IntermediateDirectory = .ConfigurationIntermediateDirectory
+            .OutputDirectory = .ConfigurationTargetDirectory
+            .Output = '$ConfigurationTargetDirectory$/$ProjectName$.lib'
+
+            .ProjectBuildCommand = '$VSBuildCommand$ $Target$'
+            .ProjectRebuildCommand = '$VSRebuildCommand$ $Target$'
+        ]
+        ^VSProjectConfigurations + .VSProjectConfiguration
+    }
+
+    // Create a Visual Studio project description
+    //--------------------------------------------------------------------------
+    VCXProject( '$ProjectName$-vcxproj' )
+    {
+        .ProjectOutput = '$ProjectName$.vcxproj'
+        .ProjectConfigs = .VSProjectConfigurations
     }
 
     // Register this project

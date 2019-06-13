@@ -1,3 +1,14 @@
+#import SystemRoot
+
+Settings
+{
+    .Environment =
+    {
+        "SystemRoot=$SystemRoot$"
+        "TMP=$SystemRoot$\temp"
+    }
+}
+
 ; Include the generated compiler definitions
 #include "scripts/compilers.bff"
 #include "../build/conan.bff"
@@ -10,6 +21,10 @@
 .ConfigNameDebug = 'Debug'
 .ConfigNameReleaseDebug = 'ReleaseDebug'
 .ConfigNameRelease = 'Release'
+
+; VS properties
+.VSBuildCommand = '$WorkspaceRoot$\iceshard build -t'
+.VSRebuildCommand = '$WorkspaceRoot$\iceshard build --clean -t'
 
 ; Windows platform
 .platform_x64_windows =
@@ -88,5 +103,20 @@ ForEach( .Configuration in .Configurations )
     Alias( 'all-$Platform$-$Config$' )
     {
         .Targets = .AliasTargets
+    }
+}
+
+
+// Create solution targets
+//--------------------------------------------------------------------------
+VSSolution( 'solution' )
+{
+    .SolutionOutput = '../IceShard.sln'
+    .SolutionConfigs = .Configurations
+
+    .SolutionProjects = { }
+    ForEach( .Project in .Projects )
+    {
+        ^SolutionProjects + '$Project$-vcxproj'
     }
 }
