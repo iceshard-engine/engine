@@ -88,6 +88,8 @@
     {
         .ProjectOutput = '$ProjectName$.vcxproj'
         .ProjectConfigs = .VSProjectConfigurations
+        .ProjectInputPaths = .ProjectBaseDir
+        .ProjectBasePath = .ProjectBaseDir
     }
 
     // Register this project
