@@ -1,0 +1,6 @@
+# Temporary paths to ignore
+/.vscode/
+/build/
+
+# Temporary files to ignore
+*.fdb

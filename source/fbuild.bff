@@ -1,0 +1,92 @@
+; Include the generated compiler definitions
+#include "scripts/compilers.bff"
+#include "../build/conan.bff"
+
+; Workspace properties
+.WorkspaceRoot = '$_CURRENT_BFF_DIR_$\..'
+.WorkspaceBuildDir = '$WorkspaceRoot$\build'
+
+; Configuration names
+.ConfigNameDebug = 'Debug'
+.ConfigNameReleaseDebug = 'ReleaseDebug'
+.ConfigNameRelease = 'Release'
+
+; Windows platform
+.platform_x64_windows =
+[
+    Using( .msvcCompilerOptions )
+    Using( .msvcLinkerOptions )
+    Using( .msvcLibrarianOptions )
+
+    .Platform = 'x64'
+]
+
+; Windows configurations
+.config_Debug =
+[
+    .Config = 'Debug'
+    .CompilerOptions = ' /D_DEBUG'
+
+    .ConanConfig = 'Debug'
+]
+
+.config_ReleaseDebug =
+[
+    .Config = 'ReleaseDebug'
+    .CompilerOptions = ' /D_RDEBUG'
+
+    .ConanConfig = 'Release'
+]
+
+.config_Release =
+[
+    .Config = 'Release'
+    .CompilerOptions = ' /D_NDEBUG'
+
+    .ConanConfig = 'Release'
+]
+
+; Configuration list
+.x64_Debug = .platform_x64_windows
+    + .config_Debug
+.x64_ReleaseDebug = .platform_x64_windows
+    + .config_ReleaseDebug
+.x64_Release = .platform_x64_windows
+    + .config_Release
+
+; Define supported configurations
+.Configurations = {
+    .x64_Debug,
+    .x64_ReleaseDebug,
+    .x64_Release,
+}
+
+
+
+// Predefine specific values used later when generating 'All' aliases
+//--------------------------------------------------------------------------
+.Projects = { }
+
+
+// Include project target scripts
+//--------------------------------------------------------------------------
+#include "code/core/core.bff"
+
+
+// Generate 'All' targets
+//--------------------------------------------------------------------------
+ForEach( .Configuration in .Configurations )
+{
+    Using( .Configuration )
+
+    .AliasTargets = { }
+    ForEach( .Project in .Projects )
+    {
+        ^AliasTargets + '$Project$-$Platform$-$Config$'
+    }
+
+    Alias( 'all-$Platform$-$Config$' )
+    {
+        .Targets = .AliasTargets
+    }
+}

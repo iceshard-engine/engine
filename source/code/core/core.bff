@@ -1,0 +1,65 @@
+// Core
+//------------------------------------------------------------------------------
+{
+    .ProjectName        = 'core'
+    .ProjectBaseDir = '$_CURRENT_BFF_DIR_$'
+
+    // Conan modules
+    .ConanModuleList = { 'fmt' }
+
+    // Library
+    //--------------------------------------------------------------------------
+    ForEach( .Configuration in .Configurations )
+    {
+        Using( .Configuration )
+
+
+        // Conan Dependencies
+        //--------------------------------------------------------------------------
+        ForEach( .ConanModule in .ConanModuleList )
+        {
+            Using( .'ConanModule_$ConanModule$_$ConanConfig$' )
+
+            ForEach( .IncludeDir in .IncludeDirs )
+            {
+                ^CompilerOptions + ' /I"$IncludeDir$"'
+            }
+            ForEach( .Define in .Defines )
+            {
+                ^CompilerOptions + ' /D$Define$'
+            }
+        }
+
+
+        // Configuration properties
+        //--------------------------------------------------------------------------
+        .ConfigurationOutputPath = '$WorkspaceBuildDir$/obj/$ProjectName$/$Platform$-$Config$'
+
+
+        // Object lists
+        //--------------------------------------------------------------------------
+        ObjectList( '$ProjectName$-$Platform$-$Config$-objects' )
+        {
+            .CompilerOptions + ' /I"$ProjectBaseDir$/public"'
+
+            .CompilerOutputPath = .ConfigurationOutputPath
+            .CompilerInputPath = '$ProjectBaseDir$/private'
+            .CompilerInputPattern = '*.cxx'
+        }
+
+
+        // Library target
+        //--------------------------------------------------------------------------
+        Library('$ProjectName$-$Platform$-$Config$' )
+        {
+            .CompilerOutputPath = .ConfigurationOutputPath
+
+            .LibrarianAdditionalInputs = '$ProjectName$-$Platform$-$Config$-objects'
+            .LibrarianOutput = '$WorkspaceBuildDir$/lib/$ProjectName$/$Platform$-$Config$/$ProjectName$.lib'
+        }
+    }
+
+    // Register this project
+    //--------------------------------------------------------------------------
+    ^Projects + .ProjectName
+}
