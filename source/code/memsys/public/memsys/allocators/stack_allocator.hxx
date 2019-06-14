@@ -1,57 +1,58 @@
 #pragma once
 #include <memsys/memsys.hxx>
-#include <cassert>
+#include <core/debug/assert.hxx>
 
 namespace memsys
 {
-    template<uint32_t BUFFER_SIZE>
-    class stack_allocator : public allocator
-    {
-    public:
-        stack_allocator() noexcept : _buffer{ }, _next{ _buffer } { }
-        virtual ~stack_allocator() noexcept override
-        {
-            auto size = total_allocated();
-            assert(size <= BUFFER_SIZE);
-        }
 
-        virtual void* allocate(uint32_t size, uint32_t align = DEFAULT_ALIGN) noexcept override
-        {
-            assert(size <= sizeof(_buffer));
-            void* ptr = utils::align_forward(_next, align);
-            void* next = utils::pointer_add(ptr, size);
-            assert(next <= (_buffer + size));
-            _next = reinterpret_cast<char*>(next);
-            return ptr;
-        }
 
-        virtual void deallocate(void* /*ptr*/) noexcept override
-        {
-            /* Unused */
-        }
+//! \brief This allocator consumes the given amount of memory on the stack and advances on allocation requests.
+//! \remarks Allocation is not tracked.
+template<uint32_t BUFFER_SIZE>
+class stack_allocator : public allocator
+{
+public:
+    stack_allocator() noexcept;
+    ~stack_allocator() noexcept override = default;
 
-        virtual uint32_t allocated_size(void* /*ptr*/) noexcept override
-        {
-            return SIZE_NOT_TRACKED;
-        }
+    //! \copydoc allocator::allocate(uint32_t size, uint32_t align)
+    auto allocate(uint32_t size, uint32_t align = DEFAULT_ALIGN) noexcept -> void* override;
 
-        virtual uint32_t total_allocated() noexcept override
-        {
-            return static_cast<uint32_t>(_next - _buffer);
-        }
+    //! \copydoc allocator::deallocate(void* ptr)
+    void deallocate(void* ptr) noexcept override;
 
-        void clear() noexcept
-        {
-            _next = _buffer;
-        }
+    //! \copydoc allocator::allocated_size(void* ptr)
+    auto allocated_size(void* ptr) noexcept -> uint32_t override;
 
-    private:
-        char _buffer[BUFFER_SIZE];
-        char* _next;
-    };
+    //! \copydoc allocator::total_allocated
+    auto total_allocated() noexcept -> uint32_t override;
 
-    using stack_allocator_512 = stack_allocator<512>;
-    using stack_allocator_1024 = stack_allocator<1024>;
-    using stack_allocator_2048 = stack_allocator<2048>;
-    using stack_allocator_4096 = stack_allocator<4096>;
-}
+    //! \brief Resets the allocator internal state.
+    void clear() noexcept;
+
+private:
+    //! \brief The allocator available memory.
+    char _static_memory[BUFFER_SIZE];
+
+    //! \brief Next free memory location.
+    void* _next_free;
+};
+
+
+//! \brief Predefined stack allocator for 512 bytes.
+using stack_allocator_512 = stack_allocator<512>;
+
+//! \brief Predefined stack allocator for 1 kilobytes.
+using stack_allocator_1024 = stack_allocator<1024>;
+
+//! \brief Predefined stack allocator for 2 kilobytes.
+using stack_allocator_2048 = stack_allocator<2048>;
+
+//! \brief Predefined stack allocator for 4 kilobytes.
+using stack_allocator_4096 = stack_allocator<4096>;
+
+
+#include "stack_allocator.inl"
+
+
+} // namespace memsys
