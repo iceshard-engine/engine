@@ -1,6 +1,4 @@
 #include <memsys/memsys.h>
-#include "dlmalloc/dlmalloc.h"
-
 #include <algorithm>
 #include <assert.h>
 #include <atomic>
@@ -70,7 +68,7 @@ public:
     virtual void *allocate(uint32_t size, uint32_t align) noexcept override
     {
         const uint32_t ts = size_with_padding(size, align);
-        auto* header = reinterpret_cast<mem_header*>(dlmalloc(ts));
+        auto* header = reinterpret_cast<mem_header*>(malloc(ts));
         void* ptr = data_pointer(header, align);
         fill(header, ptr, ts);
         m_TotalAllocated += ts;
@@ -84,7 +82,7 @@ public:
 
         mem_header* h = header(ptr);
         m_TotalAllocated -= h->size;
-        dlfree(h);
+        free(h);
     }
 
     virtual uint32_t allocated_size(void* ptr) noexcept override
@@ -122,7 +120,7 @@ private:
 ///
 /// If the ring buffer is exhausted, the scratch allocator will use its backing
 /// allocator to allocate memory instead.
-class scratch_allocator : public allocator
+class scratch_allocator_internal : public allocator
 {
 public:
     /// Creates a ScratchAllocator. The allocator will use the backing
@@ -130,7 +128,7 @@ public:
     /// that don't fit in the ring buffer.
     ///
     /// size specifies the size of the ring buffer.
-    scratch_allocator(allocator &backing, uint32_t size) noexcept
+    scratch_allocator_internal(allocator &backing, uint32_t size) noexcept
         : m_Backing(backing)
     {
         m_Begin = reinterpret_cast<char*>(m_Backing.allocate(size));
@@ -139,7 +137,7 @@ public:
         m_Free = m_Begin;
     }
 
-    virtual ~scratch_allocator() noexcept override
+    virtual ~scratch_allocator_internal() noexcept override
     {
         assert(m_Free == m_Allocate);
         m_Backing.deallocate(m_Begin);
@@ -237,11 +235,11 @@ private:
 
 struct memory_globals
 {
-    static constexpr uint32_t ALLOCATOR_MEMORY = sizeof(dlmalloc_allocator) + sizeof(scratch_allocator);
+    static constexpr uint32_t ALLOCATOR_MEMORY = sizeof(dlmalloc_allocator) + sizeof(scratch_allocator_internal);
     char buffer[ALLOCATOR_MEMORY];
 
     dlmalloc_allocator* default_allocator;
-    scratch_allocator* default_scratch_allocator;
+    scratch_allocator_internal* default_scratch_allocator;
 
     memory_globals() : default_allocator(nullptr), default_scratch_allocator(nullptr) {}
 };
@@ -257,7 +255,7 @@ void init(uint32_t temporary_memory) noexcept
     char* ptr = g_MemoryGlobals.buffer;
     g_MemoryGlobals.default_allocator = new (ptr) dlmalloc_allocator();
     ptr += sizeof(dlmalloc_allocator);
-    g_MemoryGlobals.default_scratch_allocator = new (ptr) scratch_allocator(*g_MemoryGlobals.default_allocator, temporary_memory);
+    g_MemoryGlobals.default_scratch_allocator = new (ptr) scratch_allocator_internal(*g_MemoryGlobals.default_allocator, temporary_memory);
 }
 
 auto default_allocator() noexcept -> allocator&
@@ -272,7 +270,7 @@ auto default_scratch_allocator() noexcept -> allocator&
 
 void shutdown() noexcept
 {
-    g_MemoryGlobals.default_scratch_allocator->~scratch_allocator();
+    g_MemoryGlobals.default_scratch_allocator->~scratch_allocator_internal();
     g_MemoryGlobals.default_allocator->~dlmalloc_allocator();
     g_MemoryGlobals = memory_globals();
 }

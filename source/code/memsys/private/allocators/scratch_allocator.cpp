@@ -43,7 +43,8 @@ inline void fill(mem_header* header, void* data, uint32_t size) noexcept
 }
 }
 
-scratch_allocator::scratch_allocator(allocator &backing, uint32_t size) noexcept : _backing(backing)
+scratch_allocator::scratch_allocator(allocator &backing, uint32_t size) noexcept
+    : _backing(backing)
 {
     _begin = reinterpret_cast<char*>(_backing.allocate(size));
     _end = _begin + size;
