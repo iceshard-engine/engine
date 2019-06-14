@@ -1,152 +1,164 @@
 #include <memsys/allocators/scratch_allocator.hxx>
 #include <memsys/memsys.hxx>
+#include "allocator_utils.hxx"
 
+#include <core/debug/assert.hxx>
 
 namespace memsys
 {
-
-
-namespace
+namespace detail
 {
-struct mem_header { uint32_t size; };
 
-// If we need to align the memory allocation we pad the header with this
-// value after storing the size. That way we can find the pointer header
-const uint32_t HEADER_PAD_VALUE = 0xffffffffu;
+static constexpr auto FREE_MEMORY_BIT = 0x80000000u;
 
-// Given a pointer to the header, returns a pointer to the data that follows it.
-inline void* data_pointer(mem_header* header, uint32_t align) noexcept
+static constexpr auto FREE_MEMORY_MASK = ~FREE_MEMORY_BIT;
+
+//! \brief Returns the header object from the given raw pointer.
+auto get_header(void* pointer) noexcept -> memory_tracking::allocation_header*
 {
-    void* ptr = header + 1;
-    return utils::align_forward(ptr, align);
+    return reinterpret_cast<memory_tracking::allocation_header*>(
+        utils::align_forward(pointer, alignof(memory_tracking::allocation_header))
+    );
 }
 
-// Given a pointer to the data, returns a pointer to the header before it.
-inline mem_header *header(void *data) noexcept
-{
-    static_assert(sizeof(mem_header) == sizeof(uint32_t), "Allocation header size is not valid! Cannot get a valid pointer!");
-    auto* ptr = reinterpret_cast<uint32_t*>(data);
-    while (ptr[-1] == HEADER_PAD_VALUE)
-        --ptr;
-    return reinterpret_cast<mem_header*>(ptr) - 1;
-}
+} // namespace detail
 
-// Stores the size in the header and pads with HEADER_PAD_VALUE up to the
-// data pointer.
-inline void fill(mem_header* header, void* data, uint32_t size) noexcept
+scratch_allocator::scratch_allocator(allocator& backing, uint32_t size) noexcept
+    : _backing{ backing }
 {
-    static_assert(sizeof(mem_header) == sizeof(uint32_t), "Allocation header size is not valid! Cannot fill the memory properly!");
-    header->size = size;
-    auto* ptr = reinterpret_cast<uint32_t*>(header + 1);
-    while (ptr < data)
-        *ptr++ = HEADER_PAD_VALUE;
-}
-}
+    _begin = _backing.allocate(size, alignof(memory_tracking::allocation_header));
+    _end = utils::pointer_add(_begin, size);
 
-scratch_allocator::scratch_allocator(allocator &backing, uint32_t size) noexcept
-    : _backing(backing)
-{
-    _begin = reinterpret_cast<char*>(_backing.allocate(size));
-    _end = _begin + size;
     _allocate = _begin;
     _free = _begin;
 
-    memset(_begin, 0, _end - _begin);
+    memset(_begin, 0, utils::pointer_distance(_begin, _end));
 }
 
 scratch_allocator::~scratch_allocator() noexcept
 {
-    assert(_free == _allocate);
+    IS_ASSERT(_free == _allocate, "Unreleased memory in scratch allocator!");
     _backing.deallocate(_begin);
-}
-
-bool scratch_allocator::in_use(void* ptr) noexcept
-{
-    if (_free == _allocate)
-        return false;
-    if (_allocate > _free)
-        return ptr >= _free && ptr < _allocate;
-    return ptr >= _free || ptr < _allocate;
 }
 
 void* scratch_allocator::allocate(uint32_t size, uint32_t align) noexcept
 {
-    assert(align % 4 == 0);
-    size = ((size + 3) / align) * align;
+    IS_ASSERT(align % 4, "Invalid alignment value '{}' passed to allocation function!", align);
 
-    char* ptr = _allocate;
-    auto* header = reinterpret_cast<mem_header*>(ptr);
-    auto* data = reinterpret_cast<char*>(data_pointer(header, align));
-    ptr = data + size;
+    void* candidate_pointer = _allocate;
 
-    // Reached the end of the buffer, wrap around to the beginning.
-    if (ptr > _end) {
-        header->size = static_cast<uint32_t>(_end - reinterpret_cast<char*>(header)) | 0x80000000u;
+    auto* alloc_header = detail::get_header(candidate_pointer);
+    auto* alloc_data = memory_tracking::data_pointer(alloc_header, align);
+    void* alloc_data_end = utils::pointer_add(alloc_data, size);
 
-        ptr = _begin;
-        header = reinterpret_cast<mem_header*>(ptr);
-        data = reinterpret_cast<char*>(data_pointer(header, align));
-        ptr = data + size;
+    [[unlikely]]
+    if (alloc_data_end > _end)
+    {
+        // Save the amount of bytes we are ignoring.
+        alloc_header->size = utils::pointer_distance(alloc_header, _end) | detail::FREE_MEMORY_BIT;
+
+        // The new candidate for the allocation
+        candidate_pointer = _begin;
+
+        alloc_header = detail::get_header(candidate_pointer);
+        alloc_data = memory_tracking::data_pointer(alloc_header, align);
+        alloc_data_end = utils::pointer_add(alloc_data, size);
     }
 
-    // If the buffer is exhausted use the backing allocator instead.
-    if (in_use(ptr))
+    [[unlikely]]
+    if (is_locked(alloc_data_end))
+    {
         return _backing.allocate(size, align);
+    }
 
-    fill(header, data, utils::pointer_distance(header, ptr));
-    _allocate = ptr;
-    return data;
+    _allocate = alloc_data_end;
+    memory_tracking::fill(alloc_header, alloc_data, utils::pointer_distance(alloc_header, alloc_data_end));
+    return alloc_data;
 }
 
-void scratch_allocator::deallocate(void *p) noexcept
+void scratch_allocator::deallocate(void* pointer) noexcept
 {
-    if (!p)
-        return;
-
-    if (p < _begin || p >= _end) {
-        _backing.deallocate(p);
+    if (nullptr == pointer)
+    {
         return;
     }
 
-    // Mark this slot as free
-    mem_header* h = header(p);
-    assert((h->size & 0x80000000u) == 0);
-    h->size = h->size | 0x80000000u;
+    if (is_backing_pointer(pointer))
+    {
+        _backing.deallocate(pointer);
+        return;
+    }
+
+    // Get the associated allocation header
+    auto* alloc_header = memory_tracking::header(pointer);
+
+    IS_ASSERT((alloc_header->size & detail::FREE_MEMORY_BIT) == 0, "The allocation header is already freed!");
+    alloc_header->size = alloc_header->size | detail::FREE_MEMORY_BIT;
 
     // We don't need 'h' anymore.
-    h = nullptr;
+    alloc_header = nullptr;
 
     // Advance the free pointer past all free slots.
-    while (_free != _allocate) {
-        h = reinterpret_cast<mem_header*>(_free);
-        if ((h->size & 0x80000000u) == 0)
-            break;
+    while (_free != _allocate)
+    {
+        alloc_header = detail::get_header(_free);
 
-        _free += (h->size & 0x7fffffffu);
+        // Until we find an locked memory segment.
+        if ((alloc_header->size & detail::FREE_MEMORY_BIT) == 0)
+        {
+            break;
+        }
+
+        // Move the free pointer by the given amount of bytes.
+        _free = utils::pointer_add(_free, alloc_header->size & detail::FREE_MEMORY_MASK);
         if (_free == _end)
+        {
             _free = _begin;
+        }
     }
 }
 
-uint32_t scratch_allocator::allocated_size(void *p) noexcept
+auto scratch_allocator::allocated_size(void* pointer) noexcept -> uint32_t
 {
-    mem_header* h = header(p);
-    return h->size - static_cast<uint32_t>(reinterpret_cast<char*>(p) - reinterpret_cast<char*>(h));
+    if (is_backing_pointer(pointer))
+    {
+        return _backing.allocated_size(pointer);
+    }
+    else
+    {
+        auto alloc_header = memory_tracking::header(pointer);
+        return alloc_header->size - utils::pointer_distance(alloc_header, pointer);
+    }
 }
 
-uint32_t scratch_allocator::total_allocated() noexcept
+auto scratch_allocator::total_allocated() noexcept -> uint32_t
 {
-    int32_t distance = utils::pointer_distance(_free, _allocate);
+    auto distance = utils::pointer_distance(_free, _allocate);
     if (distance < 0)
     {
-        distance = utils::pointer_distance(_begin, _end) + distance;
+        distance += utils::pointer_distance(_begin, _end);
     }
     return distance;
 }
 
-allocator& scratch_allocator::backing_allocator() noexcept
+bool scratch_allocator::is_locked(void* pointer) noexcept
 {
-    return _backing;
+    [[unlikely]]
+    if (_free == _allocate)
+    {
+        return false;
+    }
+
+    if (_allocate > _free)
+    {
+        return pointer >= _free && pointer < _allocate;
+    }
+    return pointer >= _free || pointer < _allocate;
+}
+
+bool scratch_allocator::is_backing_pointer(void* pointer) noexcept
+{
+    return pointer < _begin || pointer >= _end;
 }
 
 
