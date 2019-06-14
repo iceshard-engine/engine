@@ -1,7 +1,7 @@
 #pragma once
 #include <memsys/memsys.h>
 
-namespace mem
+namespace memsys
 {
 
 class MEMSYS_API malloc_allocator : public allocator

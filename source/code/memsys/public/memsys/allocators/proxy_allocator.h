@@ -2,12 +2,12 @@
 #include <memsys/allocator.h>
 #include <string_view>
 
-namespace mem
+namespace memsys
 {
     class MEMSYS_API proxy_allocator : public allocator
     {
     public:
-        proxy_allocator(const char* name, mem::allocator& alloc);
+        proxy_allocator(const char* name, memsys::allocator& alloc);
         virtual ~proxy_allocator() override;
 
         virtual void* allocate(uint32_t size, uint32_t align = DEFAULT_ALIGN) override;

@@ -4,60 +4,60 @@
 #include <utility>
 #include <memory>
 
-namespace mem
+namespace memsys
 {
+
+
+/// Custom unique_pointer deleter ///
+
+
 namespace detail
 {
 
-//! A default deleter for our classes.
+//! \brief A unqiue_pointer deleter for objects allocated with memsys::allocator.
 template<class T>
 class mooned_deleter
 {
 public:
-    //! A default deleter has a nullptr as an allocator.
-    mooned_deleter() noexcept
-        : _allocator{ nullptr }
-    { }
+    //! \brief Empty deleter objects are not allowed.
+    mooned_deleter() noexcept = delete;
 
-    //! A deleter needs the allocator used while creating the object.
-    mooned_deleter(mem::allocator& alloc) noexcept
-        : _allocator{ &alloc }
-    { }
+    //! \brief Creating a deleter from an allocator.
+    mooned_deleter(memsys::allocator& alloc) noexcept;
 
-    //! Allow moving while the allocator object is the same.
-    mooned_deleter(mooned_deleter&& other) noexcept
-        : _allocator{ other._allocator }
-    { }
+    //! \brief Creating a deleter from another deleter.
+    mooned_deleter(mooned_deleter&& other) noexcept;
 
-    mooned_deleter& operator=(mooned_deleter&& other) noexcept
-    {
-        if (this == &other) return *this;
-        _allocator = other._allocator;
-        other._allocator = nullptr;
-        return *this;
-    }
+    //! \brief Updating this deleter from another deleter. //#todo is this required?
+    auto operator=(mooned_deleter&& other) noexcept -> mooned_deleter&;
 
-    //! operator() to make it possible to use with std::unique_ptr
-    void operator()(T* object) noexcept
-    {
-        MAKE_DELETE((*_allocator), T, object);
-    }
+    //! \brief Method required by the unique_ptr deleter concept.
+    void operator()(T* object) noexcept;
 
 private:
-    mem::allocator* _allocator;
+    // A nullptr shouldn't be possible, so it will be seen as invalid.
+    mem::allocator* _allocator{ nullptr };
 };
 
 } // namespace detail
 
-//! We use the unique_ptr implementation.
+
+/// Custom unique_pointer types ///
+
+
+//! \brief The memsys aware uniue_pointer type.
 template<class T>
 using unique_pointer = std::unique_ptr<T, detail::mooned_deleter<T>>;
 
-//! Our own make_unique implementation.
+//! \brief The make_unique function with an mandatory allocator object.
 template<class T, class... Args>
-unique_pointer<T> make_unique(mem::allocator& alloc, Args&&... args)
-{
-    return { MAKE_NEW(alloc, T, std::forward<Args>(args)...), detail::mooned_deleter<T>{ alloc } };
-}
+auto make_unique(memsys::allocator& alloc, Args&&... args) noexcept -> unique_pointer<T>;
+
+
+/// Inline implementation ///
+
+
+#include "pointer.inl"
+
 
 } // namespace mem

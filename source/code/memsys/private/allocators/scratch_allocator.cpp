@@ -1,43 +1,48 @@
 #include <memsys/allocators/scratch_allocator.h>
 #include <memsys/memsys.h>
 
+
+namespace memsys
+{
+
+
 namespace
 {
-    struct mem_header { uint32_t size; };
+struct mem_header { uint32_t size; };
 
-    // If we need to align the memory allocation we pad the header with this
-    // value after storing the size. That way we can find the pointer header
-    const uint32_t HEADER_PAD_VALUE = 0xffffffffu;
+// If we need to align the memory allocation we pad the header with this
+// value after storing the size. That way we can find the pointer header
+const uint32_t HEADER_PAD_VALUE = 0xffffffffu;
 
-    // Given a pointer to the header, returns a pointer to the data that follows it.
-    inline void* data_pointer(mem_header* header, uint32_t align) {
-        void* ptr = header + 1;
-        return mem::utils::align_forward(ptr, align);
-    }
-
-    // Given a pointer to the data, returns a pointer to the header before it.
-    inline mem_header *header(void *data)
-    {
-        static_assert(sizeof(mem_header) == sizeof(uint32_t), "Allocation header size is not valid! Cannot get a valid pointer!");
-        auto* ptr = reinterpret_cast<uint32_t*>(data);
-        while (ptr[-1] == HEADER_PAD_VALUE)
-            --ptr;
-        return reinterpret_cast<mem_header*>(ptr) - 1;
-    }
-
-    // Stores the size in the header and pads with HEADER_PAD_VALUE up to the
-    // data pointer.
-    inline void fill(mem_header* header, void* data, uint32_t size)
-    {
-        static_assert(sizeof(mem_header) == sizeof(uint32_t), "Allocation header size is not valid! Cannot fill the memory properly!");
-        header->size = size;
-        auto* ptr = reinterpret_cast<uint32_t*>(header + 1);
-        while (ptr < data)
-            *ptr++ = HEADER_PAD_VALUE;
-    }
+// Given a pointer to the header, returns a pointer to the data that follows it.
+inline void* data_pointer(mem_header* header, uint32_t align) {
+    void* ptr = header + 1;
+    return utils::align_forward(ptr, align);
 }
 
-mem::scratch_allocator::scratch_allocator(allocator &backing, uint32_t size) : _backing(backing)
+// Given a pointer to the data, returns a pointer to the header before it.
+inline mem_header *header(void *data)
+{
+    static_assert(sizeof(mem_header) == sizeof(uint32_t), "Allocation header size is not valid! Cannot get a valid pointer!");
+    auto* ptr = reinterpret_cast<uint32_t*>(data);
+    while (ptr[-1] == HEADER_PAD_VALUE)
+        --ptr;
+    return reinterpret_cast<mem_header*>(ptr) - 1;
+}
+
+// Stores the size in the header and pads with HEADER_PAD_VALUE up to the
+// data pointer.
+inline void fill(mem_header* header, void* data, uint32_t size)
+{
+    static_assert(sizeof(mem_header) == sizeof(uint32_t), "Allocation header size is not valid! Cannot fill the memory properly!");
+    header->size = size;
+    auto* ptr = reinterpret_cast<uint32_t*>(header + 1);
+    while (ptr < data)
+        *ptr++ = HEADER_PAD_VALUE;
+}
+}
+
+scratch_allocator::scratch_allocator(allocator &backing, uint32_t size) : _backing(backing)
 {
     _begin = reinterpret_cast<char*>(_backing.allocate(size));
     _end = _begin + size;
@@ -47,13 +52,13 @@ mem::scratch_allocator::scratch_allocator(allocator &backing, uint32_t size) : _
     memset(_begin, 0, _end - _begin);
 }
 
-mem::scratch_allocator::~scratch_allocator()
+scratch_allocator::~scratch_allocator()
 {
     assert(_free == _allocate);
     _backing.deallocate(_begin);
 }
 
-bool mem::scratch_allocator::in_use(void* ptr)
+bool scratch_allocator::in_use(void* ptr)
 {
     if (_free == _allocate)
         return false;
@@ -62,7 +67,7 @@ bool mem::scratch_allocator::in_use(void* ptr)
     return ptr >= _free || ptr < _allocate;
 }
 
-void* mem::scratch_allocator::allocate(uint32_t size, uint32_t align)
+void* scratch_allocator::allocate(uint32_t size, uint32_t align)
 {
     assert(align % 4 == 0);
     size = ((size + 3) / align) * align;
@@ -86,12 +91,12 @@ void* mem::scratch_allocator::allocate(uint32_t size, uint32_t align)
     if (in_use(ptr))
         return _backing.allocate(size, align);
 
-    fill(header, data, mem::utils::pointer_distance(header, ptr));
+    fill(header, data, utils::pointer_distance(header, ptr));
     _allocate = ptr;
     return data;
 }
 
-void mem::scratch_allocator::deallocate(void *p)
+void scratch_allocator::deallocate(void *p)
 {
     if (!p)
         return;
@@ -121,23 +126,26 @@ void mem::scratch_allocator::deallocate(void *p)
     }
 }
 
-uint32_t mem::scratch_allocator::allocated_size(void *p)
+uint32_t scratch_allocator::allocated_size(void *p)
 {
     mem_header* h = header(p);
     return h->size - static_cast<uint32_t>(reinterpret_cast<char*>(p) - reinterpret_cast<char*>(h));
 }
 
-uint32_t mem::scratch_allocator::total_allocated()
+uint32_t scratch_allocator::total_allocated()
 {
-    int32_t distance = mem::utils::pointer_distance(_free, _allocate);
+    int32_t distance = utils::pointer_distance(_free, _allocate);
     if (distance < 0)
     {
-        distance = mem::utils::pointer_distance(_begin, _end) + distance;
+        distance = utils::pointer_distance(_begin, _end) + distance;
     }
     return distance;
 }
 
-mem::allocator& mem::scratch_allocator::backing_allocator()
+allocator& scratch_allocator::backing_allocator()
 {
     return _backing;
 }
+
+
+} // namespace memsys

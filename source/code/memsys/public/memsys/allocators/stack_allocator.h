@@ -2,7 +2,7 @@
 #include <memsys/memsys.h>
 #include <cassert>
 
-namespace mem
+namespace memsys
 {
     template<uint32_t BUFFER_SIZE>
     class stack_allocator : public allocator

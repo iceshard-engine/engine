@@ -2,7 +2,8 @@
 #include <memsys/allocators/malloc_allocator.h>
 #include <cassert>
 
-namespace mem
+
+namespace memsys
 {
 
 malloc_allocator::malloc_allocator()
@@ -31,4 +32,5 @@ uint32_t malloc_allocator::total_allocated()
     return SIZE_NOT_TRACKED; // #todo track at least the total allocated size so we know if somethig leaked...
 }
 
-}
+
+} // namespace memsys
