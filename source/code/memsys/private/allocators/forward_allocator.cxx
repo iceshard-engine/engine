@@ -1,5 +1,5 @@
-#include <memsys/memsys.h>
-#include <memsys/allocators/forward_allocator.h>
+#include <memsys/memsys.hxx>
+#include <memsys/allocators/forward_allocator.hxx>
 #include <cassert>
 
 

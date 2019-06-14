@@ -1,5 +1,5 @@
 #pragma once
-#include <memsys/memsys.h>
+#include <memsys/memsys.hxx>
 #include <cassert>
 
 namespace memsys

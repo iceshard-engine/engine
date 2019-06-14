@@ -1,5 +1,5 @@
 #pragma once
-#include <memsys/allocator.h>
+#include <memsys/allocator.hxx>
 #include <type_traits>
 #include <memory>
 

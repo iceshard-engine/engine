@@ -1,5 +1,5 @@
-#include <memsys/allocators/scratch_allocator.h>
-#include <memsys/memsys.h>
+#include <memsys/allocators/scratch_allocator.hxx>
+#include <memsys/memsys.hxx>
 
 
 namespace memsys

@@ -6,7 +6,7 @@
 //!
 
 #pragma once
-#include <memsys/memsys_api.h>
+#include <memsys/memsys_api.hxx>
 #include <cinttypes>
 #include <utility>
 

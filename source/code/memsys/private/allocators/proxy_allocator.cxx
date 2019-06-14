@@ -1,4 +1,4 @@
-#include <memsys/allocators/proxy_allocator.h>
+#include <memsys/allocators/proxy_allocator.hxx>
 #include <cassert>
 #include <string>
 

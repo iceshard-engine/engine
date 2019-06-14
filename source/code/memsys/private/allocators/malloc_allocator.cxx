@@ -1,5 +1,5 @@
 #pragma once
-#include <memsys/allocators/malloc_allocator.h>
+#include <memsys/allocators/malloc_allocator.hxx>
 #include <cassert>
 
 

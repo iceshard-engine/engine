@@ -1,5 +1,5 @@
 #pragma once
-#include <memsys/allocator.h>
+#include <memsys/allocator.hxx>
 
 namespace memsys
 {
