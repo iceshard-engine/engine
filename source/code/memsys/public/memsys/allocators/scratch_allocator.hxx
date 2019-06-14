@@ -54,7 +54,7 @@ protected:
     bool is_locked(void* pointer) noexcept;
 
     //! \brief Checks if this allocator owns this pointer
-    bool is_owner(void* pointer) noexcept;
+    bool is_backing_pointer(void* pointer) noexcept;
 
 private:
     allocator& _backing;
