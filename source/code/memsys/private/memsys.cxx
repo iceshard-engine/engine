@@ -201,7 +201,8 @@ public:
         h = nullptr;
 
         // Advance the free pointer past all free slots.
-        while (m_Free != m_Allocate) {
+        while (m_Free != m_Allocate)
+        {
             h = reinterpret_cast<mem_header*>(m_Free);
             if ((h->size & 0x80000000u) == 0)
                 break;
