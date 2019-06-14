@@ -8,14 +8,14 @@ namespace memsys
     class stack_allocator : public allocator
     {
     public:
-        stack_allocator() : _buffer{ }, _next{ _buffer } { }
-        virtual ~stack_allocator() override
+        stack_allocator() noexcept : _buffer{ }, _next{ _buffer } { }
+        virtual ~stack_allocator() noexcept override
         {
             auto size = total_allocated();
             assert(size <= BUFFER_SIZE);
         }
 
-        virtual void* allocate(uint32_t size, uint32_t align = DEFAULT_ALIGN) override
+        virtual void* allocate(uint32_t size, uint32_t align = DEFAULT_ALIGN) noexcept override
         {
             assert(size <= sizeof(_buffer));
             void* ptr = utils::align_forward(_next, align);
@@ -25,22 +25,22 @@ namespace memsys
             return ptr;
         }
 
-        virtual void deallocate(void* /*ptr*/) override
+        virtual void deallocate(void* /*ptr*/) noexcept override
         {
             /* Unused */
         }
 
-        virtual uint32_t allocated_size(void* /*ptr*/) override
+        virtual uint32_t allocated_size(void* /*ptr*/) noexcept override
         {
             return SIZE_NOT_TRACKED;
         }
 
-        virtual uint32_t total_allocated() override
+        virtual uint32_t total_allocated() noexcept override
         {
             return static_cast<uint32_t>(_next - _buffer);
         }
 
-        void clear()
+        void clear() noexcept
         {
             _next = _buffer;
         }

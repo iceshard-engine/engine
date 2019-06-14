@@ -19,13 +19,14 @@ struct mem_header {
 const uint32_t HEADER_PAD_VALUE = 0xffffffffu;
 
 // Given a pointer to the header, returns a pointer to the data that follows it.
-inline void* data_pointer(mem_header* header, uint32_t align) {
+inline void* data_pointer(mem_header* header, uint32_t align) noexcept
+{
     void* ptr = header + 1;
     return utils::align_forward(ptr, align);
 }
 
 // Given a pointer to the data, returns a pointer to the header before it.
-inline mem_header *header(void *data)
+inline mem_header *header(void *data) noexcept
 {
     static_assert(sizeof(mem_header) == sizeof(uint32_t), "Allocation header size is not valid! Cannot get a valid pointer!");
     auto* ptr = reinterpret_cast<uint32_t*>(data);
@@ -36,7 +37,7 @@ inline mem_header *header(void *data)
 
 // Stores the size in the header and pads with HEADER_PAD_VALUE up to the
 // data pointer.
-inline void fill(mem_header* header, void* data, uint32_t size)
+inline void fill(mem_header* header, void* data, uint32_t size) noexcept
 {
     static_assert(sizeof(mem_header) == sizeof(uint32_t), "Allocation header size is not valid! Cannot fill the memory properly!");
     header->size = size;
@@ -55,13 +56,19 @@ inline void fill(mem_header* header, void* data, uint32_t size)
 class dlmalloc_allocator : public allocator
 {
 public:
-    dlmalloc_allocator() : m_TotalAllocated(0) { }
-    virtual ~dlmalloc_allocator() override {
+    dlmalloc_allocator() noexcept
+        : m_TotalAllocated(0)
+    {
+    }
+
+    virtual ~dlmalloc_allocator() noexcept override
+    {
         // Check that we don't have any memory leaks when allocator is destroyed.
         assert(m_TotalAllocated == 0);
     }
 
-    virtual void *allocate(uint32_t size, uint32_t align) override {
+    virtual void *allocate(uint32_t size, uint32_t align) noexcept override
+    {
         const uint32_t ts = size_with_padding(size, align);
         auto* header = reinterpret_cast<mem_header*>(dlmalloc(ts));
         void* ptr = data_pointer(header, align);
@@ -70,7 +77,8 @@ public:
         return ptr;
     }
 
-    virtual void deallocate(void* ptr) override {
+    virtual void deallocate(void* ptr) noexcept override
+    {
         if (!ptr)
             return;
 
@@ -79,11 +87,13 @@ public:
         dlfree(h);
     }
 
-    virtual uint32_t allocated_size(void* ptr) override {
+    virtual uint32_t allocated_size(void* ptr) noexcept override
+    {
         return header(ptr)->size;
     }
 
-    virtual uint32_t total_allocated() override {
+    virtual uint32_t total_allocated() noexcept override
+    {
         return m_TotalAllocated;
     }
 
@@ -91,7 +101,8 @@ private:
     std::atomic<uint32_t> m_TotalAllocated;
 
     // Returns the size to allocate from malloc() for a given size and align.
-    static inline uint32_t size_with_padding(uint32_t size, uint32_t align) {
+    static inline uint32_t size_with_padding(uint32_t size, uint32_t align) noexcept
+    {
         return size + align + sizeof(mem_header);
     }
 };
@@ -119,19 +130,22 @@ public:
     /// that don't fit in the ring buffer.
     ///
     /// size specifies the size of the ring buffer.
-    scratch_allocator(allocator &backing, uint32_t size) : m_Backing(backing) {
+    scratch_allocator(allocator &backing, uint32_t size) noexcept
+        : m_Backing(backing)
+    {
         m_Begin = reinterpret_cast<char*>(m_Backing.allocate(size));
         m_End = m_Begin + size;
         m_Allocate = m_Begin;
         m_Free = m_Begin;
     }
 
-    virtual ~scratch_allocator() override {
+    virtual ~scratch_allocator() noexcept override
+    {
         assert(m_Free == m_Allocate);
         m_Backing.deallocate(m_Begin);
     }
 
-    bool in_use(void* ptr)
+    bool in_use(void* ptr) noexcept
     {
         if (m_Free == m_Allocate)
             return false;
@@ -140,7 +154,8 @@ public:
         return ptr >= m_Free || ptr < m_Allocate;
     }
 
-    virtual void* allocate(uint32_t size, uint32_t align) override {
+    virtual void* allocate(uint32_t size, uint32_t align) noexcept override
+    {
         assert(align % 4 == 0);
         size = ((size + 3) / 4) * 4;
 
@@ -168,7 +183,8 @@ public:
         return data;
     }
 
-    virtual void deallocate(void *p) override {
+    virtual void deallocate(void *p) noexcept override
+    {
         if (!p)
             return;
 
@@ -197,12 +213,14 @@ public:
         }
     }
 
-    virtual uint32_t allocated_size(void *p) override {
+    virtual uint32_t allocated_size(void *p) noexcept override
+    {
         mem_header* h = header(p);
         return h->size - static_cast<uint32_t>(reinterpret_cast<char*>(p) - reinterpret_cast<char*>(h));
     }
 
-    virtual uint32_t total_allocated() override {
+    virtual uint32_t total_allocated() noexcept override
+    {
         return static_cast<uint32_t>(m_End - m_Begin);
     }
 
@@ -217,7 +235,8 @@ private:
     allocator &m_Backing;
 };
 
-struct memory_globals {
+struct memory_globals
+{
     static constexpr uint32_t ALLOCATOR_MEMORY = sizeof(dlmalloc_allocator) + sizeof(scratch_allocator);
     char buffer[ALLOCATOR_MEMORY];
 

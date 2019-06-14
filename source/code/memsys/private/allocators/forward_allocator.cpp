@@ -6,7 +6,7 @@
 namespace memsys
 {
 
-forward_allocator::forward_allocator(allocator& backing, unsigned bucket_size)
+forward_allocator::forward_allocator(allocator& backing, unsigned bucket_size) noexcept
     : _backing{ backing }
     , _buckets{ nullptr }
     , _bucket_size{ bucket_size }
@@ -14,13 +14,13 @@ forward_allocator::forward_allocator(allocator& backing, unsigned bucket_size)
     release_all();
 }
 
-forward_allocator::~forward_allocator()
+forward_allocator::~forward_allocator() noexcept
 {
     release_all();
     _backing.deallocate(_buckets); // Release the root bucket too
 }
 
-void* forward_allocator::allocate(uint32_t size, uint32_t align /*= DEFAULT_ALIGN*/)
+void* forward_allocator::allocate(uint32_t size, uint32_t align /*= DEFAULT_ALIGN*/) noexcept
 {
     memory_bucket* bucket = _buckets;
     void* free_ptr = utils::align_forward(bucket->free, align);
@@ -69,22 +69,22 @@ void* forward_allocator::allocate(uint32_t size, uint32_t align /*= DEFAULT_ALIG
     return free_ptr;
 }
 
-void forward_allocator::deallocate(void* /*ptr*/)
+void forward_allocator::deallocate(void* /*ptr*/) noexcept
 {
     /* We don't deallocate anything here */
 }
 
-uint32_t forward_allocator::allocated_size(void* /*ptr*/)
+uint32_t forward_allocator::allocated_size(void* /*ptr*/) noexcept
 {
     return SIZE_NOT_TRACKED;
 }
 
-uint32_t forward_allocator::total_allocated()
+uint32_t forward_allocator::total_allocated() noexcept
 {
     return SIZE_NOT_TRACKED;
 }
 
-void forward_allocator::release_all()
+void forward_allocator::release_all() noexcept
 {
     // Try to release everything
     memory_bucket* next = nullptr;

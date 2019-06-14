@@ -29,21 +29,21 @@ public:
     /// that don't fit in the ring buffer.
     ///
     /// size specifies the size of the ring buffer.
-    scratch_allocator(allocator &backing, uint32_t size);
+    scratch_allocator(allocator &backing, uint32_t size) noexcept;
 
-    virtual ~scratch_allocator() override;
+    virtual ~scratch_allocator() noexcept override;
 
-    bool in_use(void* ptr);
+    bool in_use(void* ptr) noexcept;
 
-    virtual void* allocate(uint32_t size, uint32_t align = DEFAULT_ALIGN) override;
+    virtual void* allocate(uint32_t size, uint32_t align = DEFAULT_ALIGN) noexcept override;
 
-    virtual void deallocate(void *p) override;
+    virtual void deallocate(void *p) noexcept override;
 
-    virtual uint32_t allocated_size(void *p) override;
+    virtual uint32_t allocated_size(void *p) noexcept override;
 
-    virtual uint32_t total_allocated() override;
+    virtual uint32_t total_allocated() noexcept override;
 
-    virtual memsys::allocator& backing_allocator();
+    virtual memsys::allocator& backing_allocator() noexcept;
 
 private:
     // Start and end of the ring buffer.
