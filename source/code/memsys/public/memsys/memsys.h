@@ -8,9 +8,6 @@ namespace memsys
 {
 
 
-/// Global state ///
-
-
 //! \brief Functions for accessing global memory data.
 namespace globals
 {
@@ -37,9 +34,6 @@ MEMSYS_API void shutdown() noexcept;
 } // namespace globals
 
 
-/// Utility functions ///
-
-
 namespace utils
 {
 
@@ -49,23 +43,23 @@ inline auto align_forward(void* ptr, uint32_t align) noexcept -> void*;
 
 //! \brief Advances the pointer by the given number of bytes.
 inline auto pointer_add(void* ptr, uint32_t bytes) noexcept -> void*;
+
 //! \brief Advances the pointer forward by the given number of bytes.
 inline auto pointer_add(const void* ptr, uint32_t bytes) noexcept -> const void*;
 
 //! \brief Decreases the pointer by the given number of bytes.
 inline auto pointer_sub(void* ptr, uint32_t bytes) noexcept -> void*;
+
 //! \brief Decreases the pointer by the given number of bytes.
 inline auto pointer_sub(const void* ptr, uint32_t bytes) noexcept -> const void*;
 
 //! \brief Returns the distance in bytes between pointers.
 inline auto pointer_distance(void* from, void* to) noexcept -> int32_t;
+
 //! \brief Returns the distance between pointers in bytes.
 inline auto pointer_distance(const void* from, const void* to) noexcept -> int32_t;
 
 } // namespace utils
-
-
-/// Inline function implementations ///
 
 
 #include "memsys.inl"

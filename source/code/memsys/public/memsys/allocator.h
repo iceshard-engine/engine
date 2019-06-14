@@ -78,9 +78,6 @@ public:
 };
 
 
-/// Helper macros ///
-
-
 //! \brief Creates a new object of type T using the allocator `a` to allocate the memory.
 #   define MAKE_NEW(a, T, ...)        (new ((a).allocate(sizeof(T), alignof(T))) T(__VA_ARGS__))
 
@@ -92,9 +89,6 @@ public:
 
 //! \brief Frees an array allocated with MAKE_NEW_ARRAY (no destructor is called for any element!)
 #   define MAKE_DELETE_ARRAY(a, p) do {if (p) { a.deallocate(p); }} while (0)
-
-
-/// Inline implementations ///
 
 
 #include "allocator.inl"
