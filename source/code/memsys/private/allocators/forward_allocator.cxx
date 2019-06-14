@@ -1,5 +1,5 @@
-#include <memsys/memsys.hxx>
 #include <memsys/allocators/forward_allocator.hxx>
+#include <memsys/memsys.hxx>
 #include <core/debug/assert.hxx>
 
 namespace memsys
@@ -19,7 +19,7 @@ struct forward_allocator::memory_bucket
 };
 
 forward_allocator::forward_allocator(allocator& backing, unsigned bucket_size) noexcept
-    : _backing{ backing }
+    : _backing_allocator{ backing }
     , _bucket_list{ nullptr }
     , _bucket_size{ bucket_size }
 {
@@ -31,7 +31,7 @@ forward_allocator::~forward_allocator() noexcept
     release_all();
 
     // Release the head bucket.
-    _backing.deallocate(_bucket_list);
+    _backing_allocator.deallocate(_bucket_list);
 }
 
 auto forward_allocator::allocate(uint32_t size, uint32_t align /*= DEFAULT_ALIGN*/) noexcept -> void*
@@ -115,7 +115,7 @@ void forward_allocator::release_all() noexcept
     while (it != nullptr)
     {
         auto* next = it->next;
-        _backing.deallocate(it);
+        _backing_allocator.deallocate(it);
         it = next;
     }
 
@@ -135,7 +135,7 @@ auto forward_allocator::allocate_bucket(uint32_t size) noexcept -> memory_bucket
     const auto required_bucket_size = static_cast<uint32_t>(size + sizeof(memory_bucket));
 
     // Allocate enough memory
-    void* memory = _backing.allocate(required_bucket_size, alignof(memory_bucket));
+    void* memory = _backing_allocator.allocate(required_bucket_size, alignof(memory_bucket));
     void* memory_end = utils::pointer_add(memory, required_bucket_size);
 
     // Create the new bucket in-place
@@ -155,6 +155,5 @@ auto forward_allocator::allocate_bucket(uint32_t size) noexcept -> memory_bucket
 
     return new_bucket;
 }
-
 
 } // namespace memsys

@@ -42,7 +42,7 @@ protected:
 
 private:
     //! \brief The backing allocator.
-    memsys::allocator& _backing;
+    memsys::allocator& _backing_allocator;
 
     //! \brief Memory bucket list.
     memory_bucket* _bucket_list;

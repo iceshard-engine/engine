@@ -1,28 +1,33 @@
 #include <memsys/allocators/proxy_allocator.hxx>
-#include <cassert>
-#include <string>
-
+#include <core/debug/assert.hxx>
 
 namespace memsys
 {
 
-
-proxy_allocator::proxy_allocator(const char* name, allocator& alloc) noexcept
-    : _name{ name }
-    , _allocator{ alloc }
-    , _total_allocated{ 0 }
+proxy_allocator::proxy_allocator(std::string_view name, allocator& alloc) noexcept
+    : _name{ std::move(name) }
+    , _backing_allocator{ alloc }
+    , _allocation_tracking{ _backing_allocator.total_allocated() != SIZE_NOT_TRACKED }
 {
 }
 
 proxy_allocator::~proxy_allocator() noexcept
 {
-    assert(_total_allocated == 0);
+    if (_allocation_tracking)
+    {
+        IS_ASSERT(_allocation_total == 0, "Allocated memory was not released in allocator {}! [ not released: {}b ]"
+            , _name, _allocation_total
+        );
+    }
 }
 
-void* proxy_allocator::allocate(uint32_t size, uint32_t align /*= DEFAULT_ALIGN*/) noexcept
+auto proxy_allocator::allocate(uint32_t size, uint32_t align /*= DEFAULT_ALIGN*/) noexcept -> void*
 {
-    void* ptr = _allocator.allocate(size, align);
-    _total_allocated += allocated_size(ptr);
+    void* ptr = _backing_allocator.allocate(size, align);
+    if (_allocation_tracking)
+    {
+        _allocation_total += allocated_size(ptr);
+    }
     return ptr;
 }
 
@@ -30,24 +35,22 @@ void proxy_allocator::deallocate(void* ptr) noexcept
 {
     if (ptr)
     {
-        _total_allocated -= allocated_size(ptr);
-        _allocator.deallocate(ptr);
+        if (_allocation_tracking)
+        {
+            _allocation_total -= allocated_size(ptr);
+        }
+        _backing_allocator.deallocate(ptr);
     }
 }
 
-uint32_t proxy_allocator::allocated_size(void* ptr) noexcept
+auto proxy_allocator::allocated_size(void* ptr) noexcept -> uint32_t
 {
-    return _allocator.allocated_size(ptr);
+    return _backing_allocator.allocated_size(ptr);
 }
 
-uint32_t proxy_allocator::total_allocated() noexcept
+auto proxy_allocator::total_allocated() noexcept -> uint32_t
 {
-    return _total_allocated;
-}
-
-allocator& proxy_allocator::backing_allocator() noexcept
-{
-    return _allocator;
+    return _allocation_tracking ? _allocation_total : SIZE_NOT_TRACKED;
 }
 
 } // namespace memsys
