@@ -64,6 +64,7 @@ detect_visual_studio_compiler = ->
 
     -- Get the visual studio installation
     vs_installation_path = read_line io.popen "\"#{visual_studio_installer}\\vswhere.exe\" -format value -property installationPath -version [15.9,17.0)"
+    vs_product_version = read_line io.popen "\"#{visual_studio_installer}\\vswhere.exe\" -format value -property catalog_productLineVersion -version [15.9,17.0)"
 
     return false unless os.isfile "#{vs_installation_path}\\VC\\Auxiliary\\Build\\Microsoft.VCToolsVersion.default.txt"
     return false unless os.isfile "#{vs_installation_path}\\VC\\Auxiliary\\Build\\Microsoft.VCRedistVersion.default.txt"
@@ -82,6 +83,7 @@ detect_visual_studio_compiler = ->
     -- Results
     {
         name: 'msvc'
+        vsProductVersion: vs_product_version
         vsInstallationDir: vs_installation_path
         vcToolsVersion: vc_tools_version
         vcRedistVersion: vc_redist_version

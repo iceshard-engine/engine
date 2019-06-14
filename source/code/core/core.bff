@@ -68,6 +68,8 @@
         //--------------------------------------------------------------------------
         .VSProjectConfiguration =
         [
+            .PlatformToolset = .PlatformToolset
+
             .Platform = .Platform
             .Config = .Config
             .Target = '$ProjectName$-$Platform$-$Config$-objects'

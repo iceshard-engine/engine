@@ -3,6 +3,16 @@
 
 // Helper variables
 //------------------------------------------------------------------------------
+.vs2017_Variables =
+[
+    .PlatformToolset = 'v141'
+]
+
+.vs2019_Variables =
+[
+    .PlatformToolset = 'v142'
+]
+
 .msvcVariables =
 [
     .LangResId = '1033'
@@ -67,7 +77,8 @@
     }
 ]
 
-.compilerVariables = .msvcVariables
+.compilerVariables = .'vs$vsProductVersion$_Variables'
+    + .msvcVariables
     + .sdkVariables
 
 // Microsoft Compiler
