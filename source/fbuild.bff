@@ -86,6 +86,7 @@ Settings
 // Include project target scripts
 //--------------------------------------------------------------------------
 #include "code/core/core.bff"
+#include "code/memsys/memsys.bff"
 
 
 // Generate 'All' targets
