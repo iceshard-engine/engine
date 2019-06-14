@@ -22,7 +22,7 @@ void malloc_allocator::deallocate(void* ptr) noexcept
     _aligned_free(ptr);
 }
 
-uint32_t malloc_allocator::allocated_size(void* ptr) noexcept
+uint32_t malloc_allocator::allocated_size(void*) noexcept
 {
     return SIZE_NOT_TRACKED;
 }
