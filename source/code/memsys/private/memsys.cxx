@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <assert.h>
 #include <atomic>
+#include <memory.h>
 
 
 namespace memsys
@@ -69,7 +70,7 @@ public:
     virtual void *allocate(uint32_t size, uint32_t align) noexcept override
     {
         const uint32_t ts = size_with_padding(size, align);
-        auto* header = reinterpret_cast<mem_header*>(malloc(ts));
+        auto* header = reinterpret_cast<mem_header*>(_aligned_malloc(ts, alignof(mem_header)));
         void* ptr = data_pointer(header, align);
         fill(header, ptr, ts);
         m_TotalAllocated += ts;
@@ -83,7 +84,7 @@ public:
 
         mem_header* h = header(ptr);
         m_TotalAllocated -= h->size;
-        free(h);
+        _aligned_free(h);
     }
 
     virtual uint32_t allocated_size(void* ptr) noexcept override
