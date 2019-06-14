@@ -117,8 +117,11 @@ Compiler( 'msvc-compiler' )
         + ' /Zc:wchar_t'
         + ' /Zc:forScope'
         + ' /Zc:inline'
-        + ' /std:c++17'
+        + ' /std:c++latest'
+        + ' /permissive-'
         + ' /EHsc'
+        + ' /W4'
+        + ' /WX'
 
     // Append include directories
     ForEach( .IncludeDirectory in .IncludeDirectories )
