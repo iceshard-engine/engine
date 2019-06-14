@@ -7,7 +7,7 @@
 
     // Additional helper variables
     //------------------------------------------------------------------------------
-    .ConanModuleList = { }
+    .ProjectConanModules = .WorkspaceConanModules
     .VSProjectConfigurations = { }
 
 
@@ -20,7 +20,7 @@
 
         // Conan Dependencies
         //--------------------------------------------------------------------------
-        ForEach( .ConanModule in .ConanModuleList )
+        ForEach( .ConanModule in .ProjectConanModules )
         {
             Using( .'ConanModule_$ConanModule$_$ConanConfig$' )
 
@@ -46,6 +46,7 @@
         ObjectList( '$ProjectName$-$Platform$-$Config$-objects' )
         {
             .CompilerOptions + ' /I"$ProjectBaseDir$/public"'
+                + ' /I"$WorkspaceCodeDir$/core/public"'
 
             .CompilerOutputPath = .ConfigurationIntermediateDirectory
             .CompilerInputPath = '$ProjectBaseDir$/private'

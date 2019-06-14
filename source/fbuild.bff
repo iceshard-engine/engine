@@ -14,8 +14,12 @@ Settings
 #include "../build/conan.bff"
 
 ; Workspace properties
-.WorkspaceRoot = '$_CURRENT_BFF_DIR_$\..'
-.WorkspaceBuildDir = '$WorkspaceRoot$\build'
+.WorkspaceRoot = '$_CURRENT_BFF_DIR_$/..'
+
+.WorkspaceBuildDir = '$WorkspaceRoot$/build'
+.WorkspaceCodeDir = '$_CURRENT_BFF_DIR_$/code'
+
+.WorkspaceConanModules = { 'fmt' }
 
 ; Configuration names
 .ConfigNameDebug = 'Debug'
@@ -23,8 +27,8 @@ Settings
 .ConfigNameRelease = 'Release'
 
 ; VS properties
-.VSBuildCommand = '$WorkspaceRoot$\iceshard build -t'
-.VSRebuildCommand = '$WorkspaceRoot$\iceshard build --clean -t'
+.VSBuildCommand = '$WorkspaceRoot$/iceshard build -t'
+.VSRebuildCommand = '$WorkspaceRoot$/iceshard build --clean -t'
 
 ; Windows platform
 .platform_x64_windows =

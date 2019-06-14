@@ -7,7 +7,7 @@
 
     // Additional helper variables
     //------------------------------------------------------------------------------
-    .ConanModuleList = { 'fmt' }
+    .ProjectConanModules = .WorkspaceConanModules
     .VSProjectConfigurations = { }
 
 
@@ -20,7 +20,7 @@
 
         // Conan Dependencies
         //--------------------------------------------------------------------------
-        ForEach( .ConanModule in .ConanModuleList )
+        ForEach( .ConanModule in .ProjectConanModules )
         {
             Using( .'ConanModule_$ConanModule$_$ConanConfig$' )
 
