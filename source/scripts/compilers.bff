@@ -40,7 +40,7 @@
     }
 
     // TODO: Check if some of them shouldn't be in the sdkVariables structure
-    .Libraries =
+    .SystemLibraries =
     {
         'kernel32',
         'user32',
@@ -151,6 +151,10 @@ Compiler( 'msvc-compiler' )
     ForEach( .LibraryDirectory in .LibraryDirectories )
     {
         ^LinkerOptions + ' /LIBPATH:"$LibraryDirectory$"'
+    }
+    ForEach( .Library in .SystemLibraries )
+    {
+        ^LinkerOptions + ' "$Library$.lib"'
     }
 ]
 

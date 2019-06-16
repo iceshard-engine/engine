@@ -1,4 +1,5 @@
 #pragma once
+#include <memsys/memsys.hxx>
 
 namespace memsys::memory_tracking
 {
