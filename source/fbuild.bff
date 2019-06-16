@@ -45,6 +45,11 @@ Settings
 [
     .Config = 'Debug'
     .CompilerOptions = ' /D_DEBUG'
+        + ' /Od'
+        + ' /Z7'
+        + ' /MDd'
+
+    .LinkerOptions = ' /DEBUG:FULL'
 
     .ConanConfig = 'Debug'
 ]
@@ -53,6 +58,7 @@ Settings
 [
     .Config = 'ReleaseDebug'
     .CompilerOptions = ' /D_RDEBUG'
+        + ' /MD'
 
     .ConanConfig = 'Release'
 ]
@@ -61,6 +67,7 @@ Settings
 [
     .Config = 'Release'
     .CompilerOptions = ' /D_NDEBUG'
+        + ' /MD'
 
     .ConanConfig = 'Release'
 ]
@@ -91,6 +98,8 @@ Settings
 //--------------------------------------------------------------------------
 #include "code/core/core.bff"
 #include "code/memsys/memsys.bff"
+
+#include "code/test/test.bff"
 
 
 // Generate 'All' targets
