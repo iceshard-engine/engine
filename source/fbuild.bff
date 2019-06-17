@@ -61,7 +61,11 @@ Settings
 [
     .Config = 'ReleaseDebug'
     .CompilerOptions = ' /D_RDEBUG'
+        + ' /O2'
+        + ' /Z7'
         + ' /MD'
+
+    .LinkerOptions = ' /DEBUG:FULL'
 
     .ConanConfig = 'Release'
 ]
@@ -70,6 +74,7 @@ Settings
 [
     .Config = 'Release'
     .CompilerOptions = ' /D_NDEBUG'
+        + ' /O2'
         + ' /MD'
 
     .ConanConfig = 'Release'
