@@ -75,7 +75,10 @@ Settings
     .ConanConfig = 'Release'
 ]
 
-; Configuration list
+
+
+// Defined Configurations
+//--------------------------------------------------------------------------
 .x64_Debug = .platform_x64_windows
     + .config_Debug
 .x64_ReleaseDebug = .platform_x64_windows
@@ -83,7 +86,7 @@ Settings
 .x64_Release = .platform_x64_windows
     + .config_Release
 
-; Define supported configurations
+// Configuration list
 .Configurations = {
     .x64_Debug,
     .x64_ReleaseDebug,
@@ -95,6 +98,7 @@ Settings
 // Predefine specific values used later when generating 'All' aliases
 //--------------------------------------------------------------------------
 .Projects = { }
+.VisualStudioProjects = { }
 
 
 // Include project target scripts
@@ -132,7 +136,7 @@ VSSolution( 'solution' )
     .SolutionConfigs = .Configurations
 
     .SolutionProjects = { }
-    ForEach( .Project in .Projects )
+    ForEach( .Project in .VisualStudioProjects )
     {
         ^SolutionProjects + '$Project$-vcxproj'
     }

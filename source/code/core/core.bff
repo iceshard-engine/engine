@@ -97,4 +97,5 @@
     // Register this project
     //--------------------------------------------------------------------------
     ^Projects + .ProjectName
+    ^VisualStudioProjects + .ProjectName
 }
