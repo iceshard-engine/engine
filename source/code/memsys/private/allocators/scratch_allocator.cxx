@@ -41,7 +41,7 @@ scratch_allocator::~scratch_allocator() noexcept
     _backing.deallocate(_begin);
 }
 
-void* scratch_allocator::allocate(uint32_t size, uint32_t align) noexcept
+auto scratch_allocator::allocate(uint32_t size, uint32_t align) noexcept -> void*
 {
     IS_ASSERT((align % 4) == 0, "Invalid alignment value '{}' passed to allocation function!", align);
 
