@@ -1,7 +1,7 @@
 // Core
 //------------------------------------------------------------------------------
 {
-    .ProjectName        = 'memsys'
+    .ProjectName        = 'collections'
     .ProjectBaseDir = '$_CURRENT_BFF_DIR_$'
 
 
@@ -13,6 +13,7 @@
     .ProjectCompilerOptions = ''
         + ' /I"$ProjectBaseDir$/public"'
         + ' /I"$WorkspaceCodeDir$/core/public"'
+        + ' /I"$WorkspaceCodeDir$/memsys/public"'
 
 
     // Library
@@ -110,7 +111,7 @@
     ^VisualStudioProjects + .ProjectName
 
 
-    // Add tests project
-    //--------------------------------------------------------------------------
-    #include "../../scripts/tests.bff"
+    // // Add tests project
+    // //--------------------------------------------------------------------------
+    // #include "../../scripts/tests.bff"
 }
