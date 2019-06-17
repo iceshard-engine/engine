@@ -26,7 +26,7 @@ auto default_allocator::allocate(uint32_t size, uint32_t align) noexcept -> void
     auto* alloc_header = reinterpret_cast<memory_tracking::allocation_header*>(alloc_ptr);
     auto* alloc_data = memory_tracking::data_pointer(alloc_header, align);
 
-    memory_tracking::fill(alloc_header, alloc_data, alloc_size);
+    memory_tracking::fill(alloc_header, alloc_data, alloc_size, size);
     _total_allocated += alloc_size;
     return alloc_data;
 }
@@ -40,13 +40,13 @@ void default_allocator::deallocate(void* pointer) noexcept
 
     // Release the pointer
     auto* alloc_header = memory_tracking::header(pointer);
-    _total_allocated -= alloc_header->size;
+    _total_allocated -= alloc_header->allocated_size;
     _aligned_free(alloc_header);
 }
 
 auto default_allocator::allocated_size(void* pointer) noexcept -> uint32_t
 {
-    return memory_tracking::header(pointer)->size;
+    return memory_tracking::header(pointer)->requested_size;
 }
 
 auto default_allocator::total_allocated() noexcept -> uint32_t

@@ -55,7 +55,7 @@ auto scratch_allocator::allocate(uint32_t size, uint32_t align) noexcept -> void
     if (alloc_data_end > _end)
     {
         // Save the amount of bytes we are ignoring.
-        alloc_header->size = utils::pointer_distance(alloc_header, _end) | detail::FREE_MEMORY_BIT;
+        alloc_header->allocated_size = utils::pointer_distance(alloc_header, _end) | detail::FREE_MEMORY_BIT;
 
         // The new candidate for the allocation
         candidate_pointer = _begin;
@@ -72,7 +72,7 @@ auto scratch_allocator::allocate(uint32_t size, uint32_t align) noexcept -> void
     }
 
     _allocate = alloc_data_end;
-    memory_tracking::fill(alloc_header, alloc_data, utils::pointer_distance(alloc_header, alloc_data_end));
+    memory_tracking::fill(alloc_header, alloc_data, utils::pointer_distance(alloc_header, alloc_data_end), size);
     return alloc_data;
 }
 
@@ -92,8 +92,8 @@ void scratch_allocator::deallocate(void* pointer) noexcept
     // Get the associated allocation header
     auto* alloc_header = memory_tracking::header(pointer);
 
-    IS_ASSERT((alloc_header->size & detail::FREE_MEMORY_BIT) == 0, "The allocation header is already freed!");
-    alloc_header->size = alloc_header->size | detail::FREE_MEMORY_BIT;
+    IS_ASSERT((alloc_header->allocated_size & detail::FREE_MEMORY_BIT) == 0, "The allocation header is already freed!");
+    alloc_header->allocated_size = alloc_header->allocated_size | detail::FREE_MEMORY_BIT;
 
     // We don't need 'h' anymore.
     alloc_header = nullptr;
@@ -104,13 +104,13 @@ void scratch_allocator::deallocate(void* pointer) noexcept
         alloc_header = detail::get_header(_free);
 
         // Until we find an locked memory segment.
-        if ((alloc_header->size & detail::FREE_MEMORY_BIT) == 0)
+        if ((alloc_header->allocated_size & detail::FREE_MEMORY_BIT) == 0)
         {
             break;
         }
 
         // Move the free pointer by the given amount of bytes.
-        _free = utils::pointer_add(_free, alloc_header->size & detail::FREE_MEMORY_MASK);
+        _free = utils::pointer_add(_free, alloc_header->allocated_size & detail::FREE_MEMORY_MASK);
         if (_free == _end)
         {
             _free = _begin;
@@ -127,7 +127,7 @@ auto scratch_allocator::allocated_size(void* pointer) noexcept -> uint32_t
     else
     {
         auto alloc_header = memory_tracking::header(pointer);
-        return alloc_header->size - utils::pointer_distance(alloc_header, pointer);
+        return alloc_header->requested_size;
     }
 }
 

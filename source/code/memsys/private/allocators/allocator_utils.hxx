@@ -8,7 +8,9 @@ namespace memsys::memory_tracking
 struct allocation_header
 {
     //! \brief The requested allocation size.
-    uint32_t size;
+    uint32_t requested_size;
+    //! \brief The total allocation size.
+    uint32_t allocated_size;
 };
 
 //! \brief If we need to align the memory allocation we pad the header with this
@@ -42,9 +44,10 @@ inline auto header(void* const data) noexcept -> allocation_header*
 }
 
 // \brief Stores the size in the header and pads with HEADER_PAD_VALUE up to the data pointer.
-inline void fill(allocation_header* header, void* data_pointer, uint32_t size) noexcept
+inline void fill(allocation_header* header, void* data_pointer, uint32_t allocated_size, uint32_t requested_size) noexcept
 {
-    header->size = size;
+    header->allocated_size = allocated_size;
+    header->requested_size = requested_size;
 
     auto* header_pointer = reinterpret_cast<uint32_t*>(header + 1);
     while (header_pointer < data_pointer)
