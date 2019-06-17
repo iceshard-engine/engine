@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RunSettings>
+  <!-- Configurations that affect the Test Framework -->
+  <RunConfiguration>
+    <MaxCpuCount>8</MaxCpuCount>
+    <ResultsDirectory>.\build\tests</ResultsDirectory><!-- Path relative to solution directory -->
+    <TestSessionTimeout>60000</TestSessionTimeout><!-- Milliseconds -->
+  </RunConfiguration>
+
+  <Catch2Adapter>
+    <DebugBreak>on</DebugBreak>
+    <DiscoverCommandLine>--verbosity high --list-tests *</DiscoverCommandLine>
+    <FilenameFilter>_test$</FilenameFilter>
+    <IncludeHidden>true</IncludeHidden>
+    <WorkingDirectoryRoot>Executable</WorkingDirectoryRoot>
+    <!-- <Logging>Debug</Logging> -->
+    <MessageFormat>StatsOnly</MessageFormat>
+    <StackTraceFormat>ShortInfo</StackTraceFormat>
+    <StackTracePointReplacement>,</StackTracePointReplacement>
+    <TestCaseTimeout>20000</TestCaseTimeout><!-- Milliseconds -->
+  </Catch2Adapter>
+
+</RunSettings>

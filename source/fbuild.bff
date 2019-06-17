@@ -14,8 +14,12 @@ Settings
 #include "../build/conan.bff"
 
 ; Workspace properties
-.WorkspaceRoot = '$_CURRENT_BFF_DIR_$\..'
-.WorkspaceBuildDir = '$WorkspaceRoot$\build'
+.WorkspaceRoot = '$_CURRENT_BFF_DIR_$/..'
+
+.WorkspaceBuildDir = '$WorkspaceRoot$/build'
+.WorkspaceCodeDir = '$_CURRENT_BFF_DIR_$/code'
+
+.WorkspaceConanModules = { 'fmt' }
 
 ; Configuration names
 .ConfigNameDebug = 'Debug'
@@ -23,8 +27,8 @@ Settings
 .ConfigNameRelease = 'Release'
 
 ; VS properties
-.VSBuildCommand = '$WorkspaceRoot$\iceshard build -t'
-.VSRebuildCommand = '$WorkspaceRoot$\iceshard build --clean -t'
+.VSBuildCommand = '$WorkspaceRoot$/iceshard build -t'
+.VSRebuildCommand = '$WorkspaceRoot$/iceshard build --clean -t'
 
 ; Windows platform
 .platform_x64_windows =
@@ -36,11 +40,19 @@ Settings
     .Platform = 'x64'
 ]
 
+; Add VisualStudio properties
+.platform_x64_windows + .'vs$vsProductVersion$_Variables'
+
 ; Windows configurations
 .config_Debug =
 [
     .Config = 'Debug'
     .CompilerOptions = ' /D_DEBUG'
+        + ' /Od'
+        + ' /Z7'
+        + ' /MDd'
+
+    .LinkerOptions = ' /DEBUG:FULL'
 
     .ConanConfig = 'Debug'
 ]
@@ -49,6 +61,11 @@ Settings
 [
     .Config = 'ReleaseDebug'
     .CompilerOptions = ' /D_RDEBUG'
+        + ' /O2'
+        + ' /Z7'
+        + ' /MD'
+
+    .LinkerOptions = ' /DEBUG:FULL'
 
     .ConanConfig = 'Release'
 ]
@@ -57,11 +74,16 @@ Settings
 [
     .Config = 'Release'
     .CompilerOptions = ' /D_NDEBUG'
+        + ' /O2'
+        + ' /MD'
 
     .ConanConfig = 'Release'
 ]
 
-; Configuration list
+
+
+// Defined Configurations
+//--------------------------------------------------------------------------
 .x64_Debug = .platform_x64_windows
     + .config_Debug
 .x64_ReleaseDebug = .platform_x64_windows
@@ -69,7 +91,7 @@ Settings
 .x64_Release = .platform_x64_windows
     + .config_Release
 
-; Define supported configurations
+// Configuration list
 .Configurations = {
     .x64_Debug,
     .x64_ReleaseDebug,
@@ -81,11 +103,15 @@ Settings
 // Predefine specific values used later when generating 'All' aliases
 //--------------------------------------------------------------------------
 .Projects = { }
+.VisualStudioProjects = { }
 
 
 // Include project target scripts
 //--------------------------------------------------------------------------
 #include "code/core/core.bff"
+#include "code/memsys/memsys.bff"
+
+#include "code/test/test.bff"
 
 
 // Generate 'All' targets
@@ -115,7 +141,7 @@ VSSolution( 'solution' )
     .SolutionConfigs = .Configurations
 
     .SolutionProjects = { }
-    ForEach( .Project in .Projects )
+    ForEach( .Project in .VisualStudioProjects )
     {
         ^SolutionProjects + '$Project$-vcxproj'
     }

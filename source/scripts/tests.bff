@@ -1,0 +1,120 @@
+{
+    .ConanTestModules = .ProjectConanModules
+        + 'Catch2'
+
+    // Additional test helper variables
+    //------------------------------------------------------------------------------
+    .VSProjectConfigurations = { }
+
+
+    // Library
+    //--------------------------------------------------------------------------
+    ForEach( .Configuration in .Configurations )
+    {
+        Using( .Configuration )
+
+
+        // Configuration properties
+        //--------------------------------------------------------------------------
+        .ConfigurationIntermediateDirectory = '$WorkspaceBuildDir$/obj/$Platform$-$Config$/$ProjectName$'
+        .ConfigurationTargetDirectory = '$WorkspaceBuildDir$/bin/$Platform$-$Config$'
+
+
+        // Conan Dependencies
+        //--------------------------------------------------------------------------
+        ForEach( .ConanModule in .ConanTestModules )
+        {
+            Using( .'ConanModule_$ConanModule$_$ConanConfig$' )
+
+            ForEach( .IncludeDir in .IncludeDirs )
+            {
+                ^CompilerOptions + ' /I"$IncludeDir$"'
+            }
+            ForEach( .Define in .Defines )
+            {
+                ^CompilerOptions + ' /D$Define$'
+            }
+            ForEach( .LibraryDir in .LibDirs )
+            {
+                ^LinkerOptions + ' /LIBPATH:"$LibraryDir$"'
+            }
+            ForEach( .Library in .Libs )
+            {
+                ^LinkerOptions + ' "$Library$.lib"'
+            }
+        }
+
+
+        // Tests objects
+        //--------------------------------------------------------------------------
+        ObjectList( '$ProjectName$-$Platform$-$Config$-test-objects' )
+        {
+            .CompilerOptions + .ProjectCompilerOptions
+
+            .CompilerOutputPath = .ConfigurationIntermediateDirectory
+            .CompilerInputPath = '$ProjectBaseDir$/tests'
+            .CompilerInputPattern = 'spec_*.c*'
+        }
+
+
+        // Tests executable
+        //--------------------------------------------------------------------------
+        Executable( '$ProjectName$-$Platform$-$Config$-test-exe' )
+        {
+            .CompilerOutputPath = .ConfigurationIntermediateDirectory
+
+            .Libraries = {
+                '$ProjectName$-$Platform$-$Config$-test-objects'
+                'core-$Platform$-$Config$'
+                'memsys-$Platform$-$Config$'
+            }
+
+            .LinkerOutput = '$ConfigurationTargetDirectory$/$ProjectName$_test.exe'
+        }
+
+
+        // Tests target
+        //--------------------------------------------------------------------------
+        Test( '$ProjectName$-$Platform$-$Config$-test' )
+        {
+            .TestExecutable = '$ProjectName$-$Platform$-$Config$-test-exe'
+            .TestOutput = '$ConfigurationTargetDirectory$/$ProjectName$_test.txt'
+        }
+
+
+        // Visual Studio project configuration
+        //--------------------------------------------------------------------------
+        .VSProjectConfiguration =
+        [
+            .PlatformToolset = .PlatformToolset
+
+            .Platform = .Platform
+            .Config = .Config
+            .Target = '$ProjectName$-$Platform$-$Config$-test-objects'
+
+            .IntermediateDirectory = .ConfigurationIntermediateDirectory
+            .OutputDirectory = .ConfigurationTargetDirectory
+            .Output = '$ConfigurationTargetDirectory$/$ProjectName$_test.exe'
+
+            .ProjectBuildCommand = '$VSBuildCommand$ $ProjectName$-$Platform$-$Config$-test'
+            .ProjectRebuildCommand = '$VSRebuildCommand$ $ProjectName$-$Platform$-$Config$-test'
+        ]
+        ^VSProjectConfigurations + .VSProjectConfiguration
+    }
+
+
+    // Create a Visual Studio project description
+    //--------------------------------------------------------------------------
+    VCXProject( '$ProjectName$-test-vcxproj' )
+    {
+        .ProjectOutput = '$ProjectName$_test.vcxproj'
+        .ProjectConfigs = .VSProjectConfigurations
+        .ProjectInputPaths = '$ProjectBaseDir$/tests'
+        .ProjectBasePath = .ProjectBaseDir
+    }
+
+
+    // Register this project
+    //--------------------------------------------------------------------------
+    ^VisualStudioProjects + '$ProjectName$-test'
+}

@@ -15,6 +15,11 @@ class BuildCommand extends GenerateProjectsCommand
             description:'Runs a clean build.'
             default:false,
         }
+        flag {
+            name:'-v --verbose'
+            description:'Runs the build commands in verbose mode'
+            default:false
+        }
     }
 
     -- Build command call
@@ -24,8 +29,13 @@ class BuildCommand extends GenerateProjectsCommand
 
         current_dir = lfs.currentdir!
         if lfs.chdir "build"
+            additonal_arguments = ""
+            additonal_arguments ..= " -verbose" if args.verbose
+            additonal_arguments ..= " -clean" if args.rebuild or args.clean
+
+
             -- Run fastbuild with the right target
-            os.execute "fbuild -config ../source/fbuild.bff #{args.target} #{(args.rebuild or args.clean) and '-clean' or ''}"
+            os.execute "fbuild -config ../source/fbuild.bff #{args.target} #{additonal_arguments}"
 
             lfs.chdir current_dir
 

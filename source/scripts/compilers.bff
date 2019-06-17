@@ -6,6 +6,7 @@
 .vs2017_Variables =
 [
     .PlatformToolset = 'v141'
+    .CompilerOptions = ' /wd5030'
 ]
 
 .vs2019_Variables =
@@ -40,7 +41,7 @@
     }
 
     // TODO: Check if some of them shouldn't be in the sdkVariables structure
-    .Libraries =
+    .SystemLibraries =
     {
         'kernel32',
         'user32',
@@ -77,8 +78,7 @@
     }
 ]
 
-.compilerVariables = .'vs$vsProductVersion$_Variables'
-    + .msvcVariables
+.compilerVariables = .msvcVariables
     + .sdkVariables
 
 // Microsoft Compiler
@@ -117,8 +117,11 @@ Compiler( 'msvc-compiler' )
         + ' /Zc:wchar_t'
         + ' /Zc:forScope'
         + ' /Zc:inline'
-        + ' /std:c++17'
+        + ' /std:c++latest'
+        + ' /permissive-'
         + ' /EHsc'
+        + ' /W4'
+        + ' /WX'
 
     // Append include directories
     ForEach( .IncludeDirectory in .IncludeDirectories )
@@ -148,6 +151,10 @@ Compiler( 'msvc-compiler' )
     ForEach( .LibraryDirectory in .LibraryDirectories )
     {
         ^LinkerOptions + ' /LIBPATH:"$LibraryDirectory$"'
+    }
+    ForEach( .Library in .SystemLibraries )
+    {
+        ^LinkerOptions + ' "$Library$.lib"'
     }
 ]
 

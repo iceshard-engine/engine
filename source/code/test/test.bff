@@ -1,7 +1,7 @@
 // Core
 //------------------------------------------------------------------------------
 {
-    .ProjectName        = 'core'
+    .ProjectName        = 'test'
     .ProjectBaseDir = '$_CURRENT_BFF_DIR_$'
 
 
@@ -32,13 +32,21 @@
             {
                 ^CompilerOptions + ' /D$Define$'
             }
+            ForEach( .LibraryDir in .LibDirs )
+            {
+                ^LinkerOptions + ' /LIBPATH:"$LibraryDir$"'
+            }
+            ForEach( .Library in .Libs )
+            {
+                ^LinkerOptions + ' "$Library$.lib"'
+            }
         }
 
 
         // Configuration properties
         //--------------------------------------------------------------------------
         .ConfigurationIntermediateDirectory = '$WorkspaceBuildDir$/obj/$Platform$-$Config$/$ProjectName$'
-        .ConfigurationTargetDirectory = '$WorkspaceBuildDir$/lib/$Platform$-$Config$/$ProjectName$'
+        .ConfigurationTargetDirectory = '$WorkspaceBuildDir$/bin/$Platform$-$Config$/$ProjectName$'
 
 
         // Object lists
@@ -46,21 +54,28 @@
         ObjectList( '$ProjectName$-$Platform$-$Config$-objects' )
         {
             .CompilerOptions + ' /I"$ProjectBaseDir$/public"'
+                + ' /I"$WorkspaceCodeDir$/core/public"'
+                + ' /I"$WorkspaceCodeDir$/memsys/public"'
 
             .CompilerOutputPath = .ConfigurationIntermediateDirectory
             .CompilerInputPath = '$ProjectBaseDir$/private'
-            .CompilerInputPattern = '*.cxx'
+            .CompilerInputPattern = '*.c*'
         }
 
 
         // Library target
         //--------------------------------------------------------------------------
-        Library( '$ProjectName$-$Platform$-$Config$' )
+        Executable( '$ProjectName$-$Platform$-$Config$' )
         {
             .CompilerOutputPath = .ConfigurationIntermediateDirectory
 
-            .LibrarianAdditionalInputs = '$ProjectName$-$Platform$-$Config$-objects'
-            .LibrarianOutput = '$ConfigurationTargetDirectory$/$ProjectName$.lib'
+            .Libraries = {
+                '$ProjectName$-$Platform$-$Config$-objects'
+                'core-$Platform$-$Config$'
+                'memsys-$Platform$-$Config$'
+            }
+
+            .LinkerOutput = '$ConfigurationTargetDirectory$/$ProjectName$.exe'
         }
 
 
@@ -76,10 +91,10 @@
 
             .IntermediateDirectory = .ConfigurationIntermediateDirectory
             .OutputDirectory = .ConfigurationTargetDirectory
-            .Output = '$ConfigurationTargetDirectory$/$ProjectName$.lib'
+            .Output = '$ConfigurationTargetDirectory$/$ProjectName$.exe'
 
-            .ProjectBuildCommand = '$VSBuildCommand$ $Target$'
-            .ProjectRebuildCommand = '$VSRebuildCommand$ $Target$'
+            .ProjectBuildCommand = '$VSBuildCommand$ $ProjectName$-$Platform$-$Config$'
+            .ProjectRebuildCommand = '$VSRebuildCommand$ $ProjectName$-$Platform$-$Config$'
         ]
         ^VSProjectConfigurations + .VSProjectConfiguration
     }
