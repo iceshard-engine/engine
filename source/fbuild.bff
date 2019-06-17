@@ -40,6 +40,9 @@ Settings
     .Platform = 'x64'
 ]
 
+; Add VisualStudio properties
+.platform_x64_windows + .'vs$vsProductVersion$_Variables'
+
 ; Windows configurations
 .config_Debug =
 [

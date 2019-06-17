@@ -6,6 +6,7 @@
 .vs2017_Variables =
 [
     .PlatformToolset = 'v141'
+    .CompilerOptions = ' /wd5030'
 ]
 
 .vs2019_Variables =
@@ -77,8 +78,7 @@
     }
 ]
 
-.compilerVariables = .'vs$vsProductVersion$_Variables'
-    + .msvcVariables
+.compilerVariables = .msvcVariables
     + .sdkVariables
 
 // Microsoft Compiler
