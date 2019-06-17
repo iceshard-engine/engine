@@ -1,5 +1,5 @@
 #include <core/build/config.hxx>
-#include <cassert>
+#include <core/debug/assert.hxx>
 
 namespace core::build::configuration
 {
@@ -17,7 +17,7 @@ auto to_string(ConfigurationType type) noexcept -> const char*
     default:
         break;
     }
-    assert(false);
+    IS_ASSERT(false, "ConfigurationType value was not recognized! [ value:{} ]", static_cast<std::underlying_type_t<ConfigurationType>>(type));
     return nullptr;
 }
 

@@ -1,7 +1,10 @@
 #include <core/build/platform.hxx>
-#include <cassert>
+#include <core/debug/assert.hxx>
 
-auto core::build::platform::to_string(System type) noexcept -> const char*
+namespace core::build::platform
+{
+
+auto to_string(System type) noexcept -> const char*
 {
     switch (type)
     {
@@ -10,11 +13,11 @@ auto core::build::platform::to_string(System type) noexcept -> const char*
     default:
         break;
     }
-    assert(false);
+    IS_ASSERT(false, "System value was not recognized! [ value:{} ]", static_cast<std::underlying_type_t<System>>(type));
     return nullptr;
 }
 
-auto core::build::platform::to_string(Architecture type) noexcept -> const char*
+auto to_string(Architecture type) noexcept -> const char*
 {
     switch (type)
     {
@@ -23,11 +26,11 @@ auto core::build::platform::to_string(Architecture type) noexcept -> const char*
     default:
         break;
     }
-    assert(false);
+    IS_ASSERT(false, "Architecture value was not recognized! [ value:{} ]", static_cast<std::underlying_type_t<Architecture>>(type));
     return nullptr;
 }
 
-auto core::build::platform::to_string(Compiler type) noexcept -> const char*
+auto to_string(Compiler type) noexcept -> const char*
 {
     switch (type)
     {
@@ -40,7 +43,9 @@ auto core::build::platform::to_string(Compiler type) noexcept -> const char*
     return nullptr;
 }
 
-auto core::build::platform::to_string(Platform type) noexcept -> const char*
+auto to_string(Platform type) noexcept -> const char*
 {
     return type.name;
 }
+
+} // namespace core::build::platform
