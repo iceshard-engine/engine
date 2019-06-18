@@ -6,7 +6,7 @@
 //!
 
 #pragma once
-#include <core/memsys_api.hxx>
+#include <core/memory_api.hxx>
 #include <cinttypes>
 #include <utility>
 

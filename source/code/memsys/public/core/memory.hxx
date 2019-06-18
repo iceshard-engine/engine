@@ -62,7 +62,7 @@ inline auto pointer_distance(const void* from, const void* to) noexcept -> int32
 } // namespace utils
 
 
-#include "memsys.inl"
+#include "memory.inl"
 
 
 } // namespace core::memory

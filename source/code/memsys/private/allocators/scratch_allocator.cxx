@@ -1,5 +1,5 @@
 #include <core/allocators/scratch_allocator.hxx>
-#include <core/memsys.hxx>
+#include <core/memory.hxx>
 #include "allocator_utils.hxx"
 
 #include <core/debug/assert.hxx>

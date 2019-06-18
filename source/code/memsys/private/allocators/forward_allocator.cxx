@@ -1,5 +1,5 @@
 #include <core/allocators/forward_allocator.hxx>
-#include <core/memsys.hxx>
+#include <core/memory.hxx>
 #include <core/debug/assert.hxx>
 
 namespace core::memory

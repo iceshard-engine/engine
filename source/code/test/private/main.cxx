@@ -1,4 +1,4 @@
-#include <core/memsys.hxx>
+#include <core/memory.hxx>
 #include <fmt/format.h>
 
 int main()

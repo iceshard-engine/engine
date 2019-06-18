@@ -1,5 +1,5 @@
 #include <core/data/buffer.h>
-#include <core/memsys.hxx>
+#include <core/memory.hxx>
 
 #include <cassert>
 
