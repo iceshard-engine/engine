@@ -1,6 +1,6 @@
 #pragma once
-#include "array.h"
-#include "collection_types.h"
+#include <core/pod/array.h>
+#include <core/pod/collection_types.h>
 
 namespace pod
 {
@@ -53,7 +53,7 @@ namespace pod
         /// Use a TempAllocator for the array to avoid allocating memory.
         template<typename T> void get(const Hash<T> &h, uint64_t key, Array<T> &items);
 
-        /// Inserts the value as an aditional value for the key.
+        /// Inserts the value as an additional value for the key.
         template<typename T> void insert(Hash<T> &h, uint64_t key, const T &value);
 
         /// Removes the specified entry.
@@ -336,7 +336,7 @@ namespace pod
     }
 
 
-    template <typename T> Hash<T>::Hash(mem::allocator &a) :
+    template <typename T> Hash<T>::Hash(core::allocator &a) :
         _hash(a), _data(a)
     {}
 

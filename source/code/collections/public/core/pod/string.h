@@ -1,6 +1,6 @@
 #pragma once
-#include <collections/pod/collection_types.h>
-#include <collections/pod/array.h>
+#include <core/pod/collection_types.h>
+#include <core/pod/array.h>
 
 namespace pod
 {

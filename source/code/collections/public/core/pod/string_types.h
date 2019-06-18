@@ -14,7 +14,7 @@ struct StackString;
 template<typename CharType>
 struct String
 {
-    String(mem::allocator& a);
+    String(core::allocator& a);
     String(const String& other);
     String& operator=(const String& other);
     ~String();

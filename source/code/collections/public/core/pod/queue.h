@@ -1,6 +1,6 @@
-#pragma once 
-#include "collection_types.h"
-#include "array.h"
+#pragma once
+#include <core/pod/collection_types.h>
+#include <core/pod/array.h>
 
 namespace pod
 {
@@ -152,7 +152,7 @@ namespace pod
         }
     }
 
-    template <typename T> inline Queue<T>::Queue(mem::allocator &allocator) : _data(allocator), _size(0), _offset(0) {}
+    template <typename T> inline Queue<T>::Queue(core::allocator &allocator) : _data(allocator), _size(0), _offset(0) {}
 
     template <typename T> inline T & Queue<T>::operator[](uint32_t i)
     {

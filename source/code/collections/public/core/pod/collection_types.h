@@ -22,10 +22,10 @@ struct Array final
     auto operator=(const Array &other) noexcept -> Array&;
 
     //! \brief Returns the object at the given index.
-    auto operator[](uint32_t i) noexcept(false) -> T&;
+    auto operator[](uint32_t i) -> T&;
 
     //! \brief Returns the object at the given index.
-    auto operator[](uint32_t i) noexcept(false) const -> const T&;
+    auto operator[](uint32_t i) const -> const T&;
 
     //! \brief The allocator used to manage memory.
     core::allocator* _allocator;
@@ -47,10 +47,10 @@ template <typename T> struct Queue
     Queue(core::allocator& allocator) noexcept;
 
     //! \brief Returns the object at the given index.
-    auto operator[](uint32_t i) noexcept(false) -> T&;
+    auto operator[](uint32_t i) -> T&;
 
     //! \brief Returns the object at the given index.
-    auto operator[](uint32_t i) noexcept(false) const -> const T&;
+    auto operator[](uint32_t i) const -> const T&;
 
     //! \brief The Array object used for the ring buffer.
     Array<T> _data;

@@ -1,5 +1,5 @@
 #pragma once
-#include "array.h"
+#include <core/pod/array.h>
 #include <algorithm>
 #include <utility>
 
