@@ -26,3 +26,13 @@ bool assert_internal(std::string_view condition, std::string_view filename, int 
         } \
     } while(false)
 
+
+#define IS_FAIL(message, ...) \
+    do { \
+        if constexpr(!core::build::is_release) { \
+            if (::core::debug::detail::assert_internal("## force fail ##", __FILE__, __LINE__, message, fmt::make_format_args(__VA_ARGS__))) { \
+                core::debug::debug_break(); \
+            } \
+        } \
+    } while(false)
+
