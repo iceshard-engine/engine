@@ -56,6 +56,7 @@ template <typename CharType> void pop_back(String<CharType>& a, uint32_t num);
 namespace string
 {
 template<typename CharType> inline uint32_t size(const String<CharType>& a) { return a._size == 0 ? a._size : a._size + 1; }
+template<typename CharType> inline uint32_t capacity(const String<CharType>& a) { return a._capacity; }
 template<typename CharType> inline uint32_t length(const String<CharType>& a) { return a._size; }
 template<typename CharType> inline bool any(const String<CharType>& a) { return a._size != 0; }
 template<typename CharType> inline bool empty(const String<CharType>& a) { return a._size == 0; }
