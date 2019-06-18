@@ -93,12 +93,17 @@ template<typename CharType> void set_capacity(String<CharType>& a, uint32_t new_
         return;
 
     if (new_capacity < a._size)
-        a._size = new_capacity;
+        a._size = new_capacity - 1;
 
     CharType * new_data = 0;
-    if (new_capacity > 0) {
+    if (new_capacity > 0)
+    {
         new_data = (CharType*)a._allocator->allocate(sizeof(CharType) * new_capacity, alignof(CharType));
         memcpy(new_data, a._data, sizeof(CharType) * a._size);
+    }
+    else if (new_capacity == 0)
+    {
+        a._size = 0;
     }
     a._allocator->deallocate(a._data);
     a._data = new_data;
@@ -118,7 +123,7 @@ template<typename CharType> inline void push_back(String<CharType>& a, const Cha
     if (a._size + 1 > a._capacity)
         grow(a);
     a._data[a._size] = item;
-    a._data[a._size++] = 0;
+    a._data[++a._size] = 0;
 }
 
 template<typename CharType> inline void push_back(String<CharType>& a, const CharType* character_array)
@@ -128,9 +133,9 @@ template<typename CharType> inline void push_back(String<CharType>& a, const Cha
     {
         auto new_size = a._size + str_len;
         if (new_size + 1 > a._capacity)
-            grow(a, new_size + 1);
+            grow(a, static_cast<uint32_t>(new_size) + 1);
         memcpy(string::end(a), character_array, str_len);
-        a._size = new_size;
+        a._size = static_cast<uint32_t>(new_size);
         a._data[a._size] = 0;
     }
 }
