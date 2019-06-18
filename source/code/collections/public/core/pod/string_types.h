@@ -1,5 +1,5 @@
 #pragma once
-#include <memsys/allocator.h>
+#include <core/allocator.hxx>
 
 namespace pod
 {
@@ -26,7 +26,7 @@ struct String
     String& operator=(const StackString<OtherCapacity, CharType>& other);
     String& operator=(const CharType* other);
 
-    mem::allocator* _allocator;
+    core::allocator* _allocator;
     uint32_t _size;
     uint32_t _capacity;
     CharType* _data;

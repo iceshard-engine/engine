@@ -1,7 +1,7 @@
 #pragma once
-#include <memsys/allocator.hxx>
+#include <core/allocator.hxx>
 
-namespace pod
+namespace core::pod
 {
 
 class data_ptr final
@@ -10,7 +10,7 @@ public:
     using data_t = void*;
     using size_t = std::size_t;
 
-    explicit data_ptr(memsys::allocator& alloc, data_t ptr, size_t sz);
+    explicit data_ptr(core::allocator& alloc, data_t ptr, size_t sz);
     ~data_ptr();
 
     constexpr data_ptr(const data_ptr&) noexcept = delete;
@@ -24,20 +24,20 @@ public:
     data_t data() const noexcept { return _data; }
 
 private:
-    memsys::allocator& _allocator;
+    core::allocator& _allocator;
     const data_t _data;
     const size_t _size;
 };
 
 struct Buffer
 {
-    Buffer(memsys::allocator& alloc);
-    Buffer(memsys::allocator& alloc, void* data, uint32_t size);
+    Buffer(core::allocator& alloc);
+    Buffer(core::allocator& alloc, void* data, uint32_t size);
     Buffer(const Buffer& other);
     Buffer& operator=(const Buffer& other);
     ~Buffer();
 
-    memsys::allocator* _allocator;
+    core::allocator* _allocator;
     uint32_t _size;
     uint32_t _capacity;
     void* _data;

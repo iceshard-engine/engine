@@ -1,9 +1,12 @@
-#include <collections/data/buffer.h>
-#include <memsys/memsys.hxx>
+#include <core/data/buffer.h>
+#include <core/memsys.hxx>
 
 #include <cassert>
 
-pod::data_ptr::data_ptr(memsys::allocator& alloc, data_t ptr, size_t sz)
+namespace core
+{
+
+pod::data_ptr::data_ptr(core::allocator& alloc, data_t ptr, size_t sz)
     : _allocator{ alloc }
     , _data{ ptr }
     , _size{ sz }
@@ -17,11 +20,11 @@ pod::data_ptr::~data_ptr()
 
 //////////////////////////////////////////////////////////////////////////
 
-pod::Buffer::Buffer(memsys::allocator& alloc) : _allocator{ &alloc }, _size{ 0u }, _capacity{ 0u }, _data{ nullptr }
+pod::Buffer::Buffer(core::allocator& alloc) : _allocator{ &alloc }, _size{ 0u }, _capacity{ 0u }, _data{ nullptr }
 {
 }
 
-pod::Buffer::Buffer(memsys::allocator& alloc, void* data, uint32_t size) : _allocator{ &alloc }, _size{ 0u }, _capacity{ 0u }, _data{ nullptr }
+pod::Buffer::Buffer(core::allocator& alloc, void* data, uint32_t size) : _allocator{ &alloc }, _size{ 0u }, _capacity{ 0u }, _data{ nullptr }
 {
     buffer::append(*this, data, size);
 }
@@ -87,7 +90,7 @@ void pod::buffer::append(Buffer& b, const void* data, uint32_t size)
     reserve(b, new_size);
     assert(new_size <= b._capacity);
 
-    void* buffer_end = memsys::utils::pointer_add(b._data, n);
+    void* buffer_end = core::memory::utils::pointer_add(b._data, n);
     memcpy(buffer_end, data, size);
 
     b._size = new_size;
@@ -134,3 +137,5 @@ void pod::buffer::grow(Buffer& b, uint32_t min_capacity /*= 0*/)
     set_capacity(b, new_capacity);
 }
 
+
+} // namespace core

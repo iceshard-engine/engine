@@ -1,5 +1,5 @@
 #pragma once
-#include <memsys/allocator.hxx>
+#include <core/allocator.hxx>
 
 //! \brief Collections used to store Plain Old Data values.
 //! \details These collections do not call constructors or destructors on those values.
@@ -12,7 +12,7 @@ template<typename T>
 struct Array final
 {
     //! \brief Creates a new Array with the given allocator.
-    Array(memsys::allocator& allocator) noexcept;
+    Array(core::allocator& allocator) noexcept;
     ~Array();
 
     //! \brief Copies data from the given array.
@@ -28,7 +28,7 @@ struct Array final
     auto operator[](uint32_t i) noexcept(false) const -> const T&;
 
     //! \brief The allocator used to manage memory.
-    memsys::allocator* _allocator;
+    core::allocator* _allocator;
 
     //! \brief The current array size.
     uint32_t _size;
@@ -44,7 +44,7 @@ struct Array final
 template <typename T> struct Queue
 {
     //! \brief Creates a new Queue with the given allocator.
-    Queue(memsys::allocator& allocator) noexcept;
+    Queue(core::allocator& allocator) noexcept;
 
     //! \brief Returns the object at the given index.
     auto operator[](uint32_t i) noexcept(false) -> T&;
@@ -68,7 +68,7 @@ template<typename T> struct Hash
 {
 public:
     //! \brief Creates a new Hash with the given allocator.
-    Hash(memsys::allocator& allocator) noexcept;
+    Hash(core::allocator& allocator) noexcept;
 
     //! \brief The entry used to hold and manage hashed objects.
     struct Entry
