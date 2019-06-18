@@ -1,12 +1,12 @@
-#include <memsys/memsys.hxx>
+#include <core/memsys.hxx>
 #include <fmt/format.h>
 
 int main()
 {
     {
-        memsys::globals::init();
+        core::memory::globals::init();
 
-        auto& a = memsys::globals::default_allocator();
+        auto& a = core::memory::globals::default_allocator();
 
         auto initial_alloc = a.total_allocated();
 
@@ -16,7 +16,7 @@ int main()
         fmt::print("{}", a.total_allocated() - initial_alloc);
 
         a.deallocate(p);
-        memsys::globals::shutdown();
+        core::memory::globals::shutdown();
     }
     return 0;
 }
