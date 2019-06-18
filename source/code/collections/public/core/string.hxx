@@ -1,8 +1,8 @@
 #pragma once
-#include <core/pod/collection_types.h>
-#include <core/pod/array.h>
+#include <core/base.hxx>
+#include <core/string_types.hxx>
 
-namespace pod
+namespace core
 {
 namespace string
 {
@@ -55,7 +55,7 @@ template <typename CharType> void pop_back(String<CharType>& a, uint32_t num);
 
 namespace string
 {
-template<typename CharType> inline uint32_t size(const String<CharType>& a) { return a._size + 1; }
+template<typename CharType> inline uint32_t size(const String<CharType>& a) { return a._size == 0 ? a._size : a._size + 1; }
 template<typename CharType> inline uint32_t length(const String<CharType>& a) { return a._size; }
 template<typename CharType> inline bool any(const String<CharType>& a) { return a._size != 0; }
 template<typename CharType> inline bool empty(const String<CharType>& a) { return a._size == 0; }
@@ -152,7 +152,7 @@ void pop_back(String<CharType>& a, uint32_t num)
 }
 
 template <typename CharType>
-inline String<CharType>::String(mem::allocator& allocator) : _allocator(&allocator), _size(0), _capacity(0), _data(0) {}
+inline String<CharType>::String(core::allocator& allocator) : _allocator(&allocator), _size(0), _capacity(0), _data(0) {}
 
 template <typename CharType>
 inline String<CharType>::~String()
@@ -189,8 +189,8 @@ inline String<CharType>& String<CharType>::operator=(const StackString<OtherCapa
 template <typename CharType>
 inline String<CharType>& String<CharType>::operator=(const CharType* other)
 {
-    const uint32_t n = strlen(other);
-    string::resize(*this, n);
+    const auto n = strlen(other);
+    string::resize(*this, static_cast<uint32_t>(n));
     memcpy(_data, other, sizeof(CharType) * (n + 1));
     return *this;
 }
@@ -236,4 +236,4 @@ template<typename CharType> void swap(String<CharType>& lhs, String<CharType>& r
     std::swap(lhs._data, rhs._data);
 }
 
-} // namespace pod
+} // namespace core::string

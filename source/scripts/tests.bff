@@ -53,7 +53,7 @@
 
             .CompilerOutputPath = .ConfigurationIntermediateDirectory
             .CompilerInputPath = '$ProjectBaseDir$/tests'
-            .CompilerInputPattern = 'spec_*.c*'
+            .CompilerInputPattern = '*.c*'
         }
 
 

@@ -1,4 +1,4 @@
-#include <core/data/buffer.h>
+#include <core/data/buffer.hxx>
 #include <core/memory.hxx>
 
 #include <cassert>

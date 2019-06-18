@@ -1,16 +1,21 @@
 #pragma once
 #include <core/allocator.hxx>
 
-namespace pod
+namespace core
 {
 
+
+//! \brief A heap allocated string object.
 template<typename CharType = char>
 struct String;
 
+//! \brief A stack allocated string object.
+//! \details The string capacity is constant value.
 template<uint32_t Size = 16, typename CharType = char>
 struct StackString;
 
-/// A simple string value.
+
+//! \brief A heap allocated string object.
 template<typename CharType>
 struct String
 {
