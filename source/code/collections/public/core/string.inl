@@ -1,29 +1,34 @@
 
 template<typename CharType>
-inline auto core::string::size(const String<CharType>& str) noexcept -> uint32_t
+inline auto core::string::size(const core::String<CharType>& str) noexcept -> uint32_t
 {
     return str._size == 0 ? str._size : str._size + 1;
 }
 
-template<typename CharType> inline uint32_t core::string::capacity(const String<CharType>& a) noexcept { return a._capacity; }
+template<typename CharType>
+inline auto core::string::capacity(const core::String<CharType>& str) noexcept -> uint32_t
+{
+    return str._capacity;
+}
+
 template<typename CharType> inline uint32_t core::string::length(const String<CharType>& a) noexcept { return a._size; }
 //template<typename CharType> inline bool core::string::any(const String<CharType>& a) { return a._size != 0; }
-template<typename CharType> inline bool core::string::empty(const String<CharType>& a) { return a._size == 0; }
+template<typename CharType> inline bool core::string::empty(const String<CharType>& a) noexcept { return a._size == 0; }
 
-template<typename CharType> inline CharType* core::string::begin(String<CharType>& a) { return a._data; }
-template<typename CharType> inline const CharType* core::string::begin(const String<CharType>& a) { return a._data; }
-template<typename CharType> inline CharType* core::string::end(String<CharType>& a) { return a._data + a._size; }
-template<typename CharType> inline const CharType* core::string::end(const String<CharType>& a) { return a._data + a._size; }
+template<typename CharType> inline CharType* core::string::begin(String<CharType>& a) noexcept { return a._data; }
+template<typename CharType> inline const CharType* core::string::begin(const String<CharType>& a) noexcept { return a._data; }
+template<typename CharType> inline CharType* core::string::end(String<CharType>& a) noexcept { return a._data + a._size; }
+template<typename CharType> inline const CharType* core::string::end(const String<CharType>& a) noexcept { return a._data + a._size; }
 
-template<typename CharType> inline CharType& core::string::front(String<CharType>& a) { return a._data[0]; }
-template<typename CharType> inline const CharType& core::string::front(const String<CharType>& a) { return a._data[0]; }
-template<typename CharType> inline CharType& core::string::back(String<CharType>& a) { return a._data[a._size - 1]; }
-template<typename CharType> inline const CharType& core::string::back(const String<CharType>& a) { return a._data[a._size - 1]; }
+template<typename CharType> inline CharType& core::string::front(String<CharType>& a) noexcept { return a._data[0]; }
+template<typename CharType> inline const CharType& core::string::front(const String<CharType>& a) noexcept { return a._data[0]; }
+template<typename CharType> inline CharType& core::string::back(String<CharType>& a) noexcept { return a._data[a._size - 1]; }
+template<typename CharType> inline const CharType& core::string::back(const String<CharType>& a) noexcept { return a._data[a._size - 1]; }
 
-template <typename CharType> inline void core::string::clear(String<CharType>& a) { resize(a, 0); }
-template <typename CharType> inline void core::string::trim(String<CharType>& a) { set_capacity(a, a._size + 1); }
+template <typename CharType> inline void core::string::clear(String<CharType>& a) noexcept { resize(a, 0); }
+template <typename CharType> inline void core::string::trim(String<CharType>& a) noexcept { set_capacity(a, a._size + 1); }
 
-template <typename CharType> void core::string::resize(String<CharType>& a, uint32_t new_size)
+template <typename CharType> void core::string::resize(String<CharType>& a, uint32_t new_size) noexcept
 {
     if (new_size + 1 > a._capacity)
         grow(a, new_size + 1);
@@ -31,13 +36,13 @@ template <typename CharType> void core::string::resize(String<CharType>& a, uint
     a._data[a._size] = 0;
 }
 
-template <typename CharType> inline void core::string::reserve(String<CharType>& a, uint32_t new_capacity)
+template <typename CharType> inline void core::string::reserve(String<CharType>& a, uint32_t new_capacity) noexcept
 {
     if (new_capacity > a._capacity)
         set_capacity(a, new_capacity);
 }
 
-template<typename CharType> void core::string::set_capacity(String<CharType>& a, uint32_t new_capacity)
+template<typename CharType> void core::string::set_capacity(String<CharType>& a, uint32_t new_capacity) noexcept
 {
     if (new_capacity == a._capacity)
         return;
@@ -60,7 +65,7 @@ template<typename CharType> void core::string::set_capacity(String<CharType>& a,
     a._capacity = new_capacity;
 }
 
-template<typename CharType> void core::string::grow(String<CharType>& a, uint32_t min_capacity)
+template<typename CharType> void core::string::grow(String<CharType>& a, uint32_t min_capacity) noexcept
 {
     uint32_t new_capacity = a._capacity * 2 + 8;
     if (new_capacity < min_capacity)
@@ -68,7 +73,7 @@ template<typename CharType> void core::string::grow(String<CharType>& a, uint32_
     set_capacity(a, new_capacity);
 }
 
-template<typename CharType> inline void core::string::push_back(String<CharType>& a, const CharType& item)
+template<typename CharType> inline void core::string::push_back(String<CharType>& a, const CharType& item) noexcept
 {
     if (a._size + 1 > a._capacity)
         grow(a);
@@ -76,7 +81,7 @@ template<typename CharType> inline void core::string::push_back(String<CharType>
     a._data[++a._size] = 0;
 }
 
-template<typename CharType> inline void core::string::push_back(String<CharType>& a, const CharType* character_array)
+template<typename CharType> inline void core::string::push_back(String<CharType>& a, const CharType* character_array) noexcept
 {
     auto str_len = strlen(character_array);
     if (str_len > 0)
@@ -90,13 +95,13 @@ template<typename CharType> inline void core::string::push_back(String<CharType>
     }
 }
 
-template<typename CharType> inline void core::string::pop_back(String<CharType> & a)
+template<typename CharType> inline void core::string::pop_back(String<CharType> & a) noexcept
 {
     a._data[--a._size] = 0;
 }
 
 template<typename CharType>
-void core::string::pop_back(String<CharType>& a, uint32_t num)
+void core::string::pop_back(String<CharType>& a, uint32_t num) noexcept
 {
     if (a._size < num)
         a._size = num;
