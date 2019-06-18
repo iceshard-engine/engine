@@ -6,11 +6,11 @@
 //!
 
 #pragma once
-#include <memsys/memsys_api.hxx>
+#include <core/memsys_api.hxx>
 #include <cinttypes>
 #include <utility>
 
-namespace memsys
+namespace core
 {
 
 
@@ -94,4 +94,4 @@ public:
 #include "allocator.inl"
 
 
-} // namespace memsys
+} // namespace core

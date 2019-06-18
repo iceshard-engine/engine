@@ -1,7 +1,7 @@
 #pragma once
-#include <memsys/allocator.hxx>
+#include <core/allocator.hxx>
 
-namespace memsys
+namespace core::memory
 {
 
 
@@ -19,7 +19,7 @@ namespace memsys
 //!
 //! \remarks If the ring buffer is exhausted, the scratch allocator will use its backing
 //!     allocator to allocate memory instead.
-class MEMSYS_API scratch_allocator : public memsys::allocator
+class MEMSYS_API scratch_allocator : public core::allocator
 {
 public:
     //! \brief Creates a ScratchAllocator.
@@ -29,7 +29,7 @@ public:
     //!
     //! \param [in] backing Specifies the backing allocator.
     //! \param [in] size Specifies the size of the ring buffer.
-    scratch_allocator(allocator& backing, uint32_t size) noexcept;
+    scratch_allocator(core::allocator& backing, uint32_t size) noexcept;
 
     //! \brief Checks the allocation status and releases the ring buffer.
     ~scratch_allocator() noexcept override;
@@ -47,7 +47,7 @@ public:
     auto total_allocated() noexcept -> uint32_t override;
 
     //! \brief The backing allocator.
-    auto backing_allocator() noexcept -> memsys::allocator& { return _backing; }
+    auto backing_allocator() noexcept -> core::allocator& { return _backing; }
 
 protected:
     //! \brief Checks if the given pointer is locked in the ring buffer.
@@ -57,7 +57,7 @@ protected:
     bool is_backing_pointer(void* pointer) noexcept;
 
 private:
-    allocator& _backing;
+    core::allocator& _backing;
 
     // Start and end of the ring buffer.
     void* _begin{ nullptr };
@@ -69,4 +69,4 @@ private:
 };
 
 
-} // namespace memsys
+} // namespace core::memory

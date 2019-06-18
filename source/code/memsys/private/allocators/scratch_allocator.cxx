@@ -1,10 +1,10 @@
-#include <memsys/allocators/scratch_allocator.hxx>
-#include <memsys/memsys.hxx>
+#include <core/allocators/scratch_allocator.hxx>
+#include <core/memsys.hxx>
 #include "allocator_utils.hxx"
 
 #include <core/debug/assert.hxx>
 
-namespace memsys
+namespace core::memory
 {
 namespace detail
 {
@@ -14,10 +14,10 @@ static constexpr auto FREE_MEMORY_BIT = 0x80000000u;
 static constexpr auto FREE_MEMORY_MASK = ~FREE_MEMORY_BIT;
 
 //! \brief Returns the header object from the given raw pointer.
-auto get_header(void* pointer) noexcept -> memory_tracking::allocation_header*
+auto get_header(void* pointer) noexcept -> tracking::allocation_header*
 {
-    return reinterpret_cast<memory_tracking::allocation_header*>(
-        utils::align_forward(pointer, alignof(memory_tracking::allocation_header))
+    return reinterpret_cast<tracking::allocation_header*>(
+        utils::align_forward(pointer, alignof(tracking::allocation_header))
     );
 }
 
@@ -26,7 +26,7 @@ auto get_header(void* pointer) noexcept -> memory_tracking::allocation_header*
 scratch_allocator::scratch_allocator(allocator& backing, uint32_t size) noexcept
     : _backing{ backing }
 {
-    _begin = _backing.allocate(size, alignof(memory_tracking::allocation_header));
+    _begin = _backing.allocate(size, alignof(tracking::allocation_header));
     _end = utils::pointer_add(_begin, size);
 
     _allocate = _begin;
@@ -48,7 +48,7 @@ auto scratch_allocator::allocate(uint32_t size, uint32_t align) noexcept -> void
     void* candidate_pointer = _allocate;
 
     auto* alloc_header = detail::get_header(candidate_pointer);
-    auto* alloc_data = memory_tracking::data_pointer(alloc_header, align);
+    auto* alloc_data = tracking::data_pointer(alloc_header, align);
     void* alloc_data_end = utils::pointer_add(alloc_data, size);
 
     [[unlikely]]
@@ -61,7 +61,7 @@ auto scratch_allocator::allocate(uint32_t size, uint32_t align) noexcept -> void
         candidate_pointer = _begin;
 
         alloc_header = detail::get_header(candidate_pointer);
-        alloc_data = memory_tracking::data_pointer(alloc_header, align);
+        alloc_data = tracking::data_pointer(alloc_header, align);
         alloc_data_end = utils::pointer_add(alloc_data, size);
     }
 
@@ -72,7 +72,7 @@ auto scratch_allocator::allocate(uint32_t size, uint32_t align) noexcept -> void
     }
 
     _allocate = alloc_data_end;
-    memory_tracking::fill(alloc_header, alloc_data, utils::pointer_distance(alloc_header, alloc_data_end), size);
+    tracking::fill(alloc_header, alloc_data, utils::pointer_distance(alloc_header, alloc_data_end), size);
     return alloc_data;
 }
 
@@ -90,7 +90,7 @@ void scratch_allocator::deallocate(void* pointer) noexcept
     }
 
     // Get the associated allocation header
-    auto* alloc_header = memory_tracking::header(pointer);
+    auto* alloc_header = tracking::header(pointer);
 
     IS_ASSERT((alloc_header->allocated_size & detail::FREE_MEMORY_BIT) == 0, "The allocation header is already freed!");
     alloc_header->allocated_size = alloc_header->allocated_size | detail::FREE_MEMORY_BIT;
@@ -126,7 +126,7 @@ auto scratch_allocator::allocated_size(void* pointer) noexcept -> uint32_t
     }
     else
     {
-        auto alloc_header = memory_tracking::header(pointer);
+        auto alloc_header = tracking::header(pointer);
         return alloc_header->requested_size;
     }
 }
@@ -162,4 +162,4 @@ bool scratch_allocator::is_backing_pointer(void* pointer) noexcept
 }
 
 
-} // namespace memsys
+} // namespace core::memory

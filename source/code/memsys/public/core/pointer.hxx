@@ -1,10 +1,10 @@
 #pragma once
-#include <memsys/allocator.hxx>
+#include <core/allocator.hxx>
 
 #include <utility>
 #include <memory>
 
-namespace memsys
+namespace core::memory
 {
 
 
@@ -20,7 +20,7 @@ public:
     memsys_deleter() noexcept = delete;
 
     //! \brief Creating a deleter from an allocator.
-    memsys_deleter(memsys::allocator& alloc) noexcept;
+    memsys_deleter(core::allocator& alloc) noexcept;
 
     //! \brief Creating a deleter from another deleter.
     memsys_deleter(memsys_deleter&& other) noexcept;
@@ -33,22 +33,22 @@ public:
 
 private:
     // A nullptr shouldn't be possible, so it will be seen as invalid.
-    mem::allocator* _allocator{ nullptr };
+    core::allocator* _allocator{ nullptr };
 };
 
 } // namespace detail
 
 
-//! \brief The memsys aware uniue_pointer type.
+//! \brief An allocator aware uniue_pointer type.
 template<class T>
 using unique_pointer = std::unique_ptr<T, detail::memsys_deleter<T>>;
 
 //! \brief The make_unique function with an mandatory allocator object.
 template<class T, class... Args>
-auto make_unique(memsys::allocator& alloc, Args&&... args) noexcept -> unique_pointer<T>;
+auto make_unique(core::allocator& alloc, Args&&... args) noexcept -> unique_pointer<T>;
 
 
 #include "pointer.inl"
 
 
-} // namespace mem
+} // namespace core::memory

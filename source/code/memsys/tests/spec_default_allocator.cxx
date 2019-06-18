@@ -1,15 +1,15 @@
 #define CATCH_CONFIG_MAIN  // This tells Catch to provide a main() - only do this in one cpp file
 #include <catch2/catch.hpp>
-#include <memsys/memsys.hxx>
+#include <core/memsys.hxx>
 
 SCENARIO("memsys :: default_allocator", "[allocators]")
 {
     GIVEN("The global memory system is initialized with a 64 byte scratch allocator")
     {
-        memsys::globals::init(64);
+        core::memory::globals::init(64);
 
-        auto& default_alloc = memsys::globals::default_allocator();
-        auto& default_scratch_alloc = memsys::globals::default_scratch_allocator();
+        auto& default_alloc = core::memory::globals::default_allocator();
+        auto& default_scratch_alloc = core::memory::globals::default_scratch_allocator();
 
         THEN("The scratch allocator allocated memory on the default allocator")
         {
@@ -50,6 +50,6 @@ SCENARIO("memsys :: default_allocator", "[allocators]")
             }
         }
 
-        memsys::globals::shutdown();
+        core::memory::globals::shutdown();
     }
 }

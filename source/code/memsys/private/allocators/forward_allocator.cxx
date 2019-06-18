@@ -1,8 +1,8 @@
-#include <memsys/allocators/forward_allocator.hxx>
-#include <memsys/memsys.hxx>
+#include <core/allocators/forward_allocator.hxx>
+#include <core/memsys.hxx>
 #include <core/debug/assert.hxx>
 
-namespace memsys
+namespace core::memory
 {
 
 //! \brief The representation of a single memory bucket.
@@ -18,7 +18,7 @@ struct forward_allocator::memory_bucket
     void* const last = nullptr;
 };
 
-forward_allocator::forward_allocator(allocator& backing, unsigned bucket_size) noexcept
+forward_allocator::forward_allocator(core::allocator& backing, unsigned bucket_size) noexcept
     : _backing_allocator{ backing }
     , _bucket_list{ nullptr }
     , _bucket_size{ bucket_size }
@@ -50,7 +50,7 @@ auto forward_allocator::allocate(uint32_t size, uint32_t align /*= DEFAULT_ALIGN
         {
             auto* new_bucket = allocate_bucket(size + align);
 
-            // We dont update the list head here, so the fist bucket is always a bucket with the default size.
+            // We don't update the list head here, so the fist bucket is always a bucket with the default size.
             new_bucket->next = current_head->next;
             current_head->next = new_bucket;
 
@@ -92,7 +92,7 @@ auto forward_allocator::allocate(uint32_t size, uint32_t align /*= DEFAULT_ALIGN
 
 void forward_allocator::deallocate(void*) noexcept
 {
-    /* we dont release memory here */
+    /* we don't release memory here */
 }
 
 auto forward_allocator::allocated_size(void*) noexcept -> uint32_t
@@ -144,7 +144,7 @@ auto forward_allocator::allocate_bucket(uint32_t size) noexcept -> memory_bucket
         nullptr
         /* set to end */
         , memory_end
-        /* set the free location already accomodating for the requested objects alignment */
+        /* set the free location already accommodating for the requested objects alignment */
         , utils::pointer_add(memory, sizeof(memory_bucket))
     };
 
@@ -156,4 +156,4 @@ auto forward_allocator::allocate_bucket(uint32_t size) noexcept -> memory_bucket
     return new_bucket;
 }
 
-} // namespace memsys
+} // namespace core::memory
