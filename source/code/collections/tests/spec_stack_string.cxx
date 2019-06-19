@@ -6,14 +6,16 @@ SCENARIO("core :: stack_string")
 {
     GIVEN("A an empty String value")
     {
-        core::StackString<64> test_string;
+        static constexpr auto stack_string_capacity = 64u;
+
+        core::StackString<stack_string_capacity> test_string;
 
         // Reserve some capacity for tests
         core::string::reserve(test_string, 10);
 
         CHECK(core::string::size(test_string) == 0);
         CHECK(core::string::length(test_string) == 0);
-        CHECK(core::string::capacity(test_string) == 10);
+        CHECK(core::string::capacity(test_string) == stack_string_capacity);
         CHECK(core::string::empty(test_string) == true);
 
         THEN("Assigning a value")
@@ -69,11 +71,11 @@ SCENARIO("core :: stack_string")
 
                 GIVEN("A larger value")
                 {
-                    core::string::resize(test_string, 100);
+                    core::string::resize(test_string, 20);
 
-                    CHECK(core::string::size(test_string) == 101);
-                    CHECK(core::string::length(test_string) == 100);
-                    CHECK(core::string::capacity(test_string) > saved_capacity);
+                    CHECK(core::string::size(test_string) == 21);
+                    CHECK(core::string::length(test_string) == 20);
+                    CHECK(core::string::capacity(test_string) == saved_capacity);
                     CHECK(core::string::empty(test_string) == false);
 
                     //REQUIRE(test_string == "");
@@ -90,7 +92,7 @@ SCENARIO("core :: stack_string")
 
                     CHECK(core::string::size(test_string) == 12);
                     CHECK(core::string::length(test_string) == 11);
-                    CHECK(core::string::capacity(test_string) > saved_capacity);
+                    CHECK(core::string::capacity(test_string) == saved_capacity);
                     CHECK(core::string::empty(test_string) == false);
 
                     //REQUIRE(test_string == "");
@@ -98,11 +100,11 @@ SCENARIO("core :: stack_string")
 
                 GIVEN("A minimal capacity")
                 {
-                    core::string::grow(test_string, 100);
+                    core::string::grow(test_string, 20);
 
                     CHECK(core::string::size(test_string) == 12);
                     CHECK(core::string::length(test_string) == 11);
-                    CHECK(core::string::capacity(test_string) >= 100);
+                    CHECK(core::string::capacity(test_string) == stack_string_capacity);
                     CHECK(core::string::empty(test_string) == false);
 
                     //REQUIRE(test_string == "");
@@ -117,7 +119,7 @@ SCENARIO("core :: stack_string")
 
                     CHECK(core::string::size(test_string) == 0);
                     CHECK(core::string::length(test_string) == 0);
-                    CHECK(core::string::capacity(test_string) == 0);
+                    CHECK(core::string::capacity(test_string) == stack_string_capacity);
                     CHECK(core::string::empty(test_string) == true);
 
                     //REQUIRE(test_string == "");
@@ -129,7 +131,7 @@ SCENARIO("core :: stack_string")
 
                     CHECK(core::string::size(test_string) == 2);
                     CHECK(core::string::length(test_string) == 1);
-                    CHECK(core::string::capacity(test_string) == 2);
+                    CHECK(core::string::capacity(test_string) == stack_string_capacity);
                     CHECK(core::string::empty(test_string) == false);
 
                     //REQUIRE(test_string == "");
@@ -137,11 +139,11 @@ SCENARIO("core :: stack_string")
 
                 GIVEN("A larger value")
                 {
-                    core::string::set_capacity(test_string, 100);
+                    core::string::set_capacity(test_string, 20);
 
                     CHECK(core::string::size(test_string) == 12);
                     CHECK(core::string::length(test_string) == 11);
-                    CHECK(core::string::capacity(test_string) == 100);
+                    CHECK(core::string::capacity(test_string) == stack_string_capacity);
                     CHECK(core::string::empty(test_string) == false);
 
                     //REQUIRE(test_string == "");
@@ -178,11 +180,11 @@ SCENARIO("core :: stack_string")
 
                 GIVEN("A larger value")
                 {
-                    core::string::reserve(test_string, 100);
+                    core::string::reserve(test_string, 20);
 
                     CHECK(core::string::size(test_string) == 12);
                     CHECK(core::string::length(test_string) == 11);
-                    CHECK(core::string::capacity(test_string) >= 100);
+                    CHECK(core::string::capacity(test_string) >= stack_string_capacity);
                     CHECK(core::string::empty(test_string) == false);
 
                     //REQUIRE(test_string == "");
@@ -191,14 +193,11 @@ SCENARIO("core :: stack_string")
 
             WHEN("Triming string memory")
             {
-                auto saved_capacity = core::string::capacity(test_string);
-
                 core::string::trim(test_string);
 
                 CHECK(core::string::size(test_string) == 12);
                 CHECK(core::string::length(test_string) == 11);
-                CHECK(core::string::capacity(test_string) != saved_capacity);
-                CHECK(core::string::capacity(test_string) == 12);
+                CHECK(core::string::capacity(test_string) == stack_string_capacity);
                 CHECK(core::string::empty(test_string) == false);
 
                 //REQUIRE(test_string == "");
@@ -229,7 +228,7 @@ SCENARIO("core :: stack_string")
                 CHECK(core::string::empty(test_string) == false);
             }
 
-            core::string::resize(test_string, 100);
+            core::string::resize(test_string, 20);
 
             // Fill the new string with space characters.
             memset(core::string::begin(test_string), ' ', core::string::size(test_string));
@@ -238,9 +237,9 @@ SCENARIO("core :: stack_string")
 
             THEN("Resizing the string and appending itself")
             {
-                CHECK(core::string::size(test_string) == 201);
-                CHECK(core::string::length(test_string) == 200);
-                CHECK(core::string::capacity(test_string) >= 201);
+                CHECK(core::string::size(test_string) == 42);
+                CHECK(core::string::length(test_string) == 41);
+                CHECK(core::string::capacity(test_string) == stack_string_capacity);
                 CHECK(core::string::empty(test_string) == false);
             }
 
@@ -248,19 +247,19 @@ SCENARIO("core :: stack_string")
 
             THEN("Poping a single character")
             {
-                CHECK(core::string::size(test_string) == 200);
-                CHECK(core::string::length(test_string) == 199);
-                CHECK(core::string::capacity(test_string) >= 201);
+                CHECK(core::string::size(test_string) == 41);
+                CHECK(core::string::length(test_string) == 40);
+                CHECK(core::string::capacity(test_string) == stack_string_capacity);
                 CHECK(core::string::empty(test_string) == false);
             }
 
-            core::string::pop_back(test_string, 195);
+            core::string::pop_back(test_string, 36);
 
             THEN("Poping 190 characters")
             {
                 CHECK(core::string::size(test_string) == 5);
                 CHECK(core::string::length(test_string) == 4);
-                CHECK(core::string::capacity(test_string) >= 201);
+                CHECK(core::string::capacity(test_string) >= stack_string_capacity);
                 CHECK(core::string::empty(test_string) == false);
             }
         }

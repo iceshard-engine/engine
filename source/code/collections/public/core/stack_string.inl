@@ -3,7 +3,7 @@
 template <uint32_t Capacity, typename CharType>
 inline auto core::string::size(const core::StackString<Capacity, CharType>& a) noexcept -> uint32_t
 {
-    return a._size + 1;
+    return a._size == 0 ? a._size : a._size + 1;
 }
 
 template <uint32_t Capacity, typename CharType>
@@ -99,9 +99,13 @@ inline void core::string::reserve(core::StackString<Capacity, CharType>&, uint32
 }
 
 template <uint32_t Capacity, typename CharType>
-inline void core::string::set_capacity(core::StackString<Capacity, CharType>&, uint32_t new_capacity) noexcept
+inline void core::string::set_capacity(core::StackString<Capacity, CharType>& a, uint32_t new_capacity) noexcept
 {
     IS_ASSERT(new_capacity <= Capacity, "Requested capacity is larger than the available capacity! [ available={}, requested={} ]", Capacity, new_capacity);
+    if (a._size >= new_capacity)
+    {
+        a._size = new_capacity - (new_capacity > 0 ? 1 : 0);
+    }
 }
 
 template <uint32_t Capacity, typename CharType>
@@ -189,36 +193,36 @@ template <uint32_t Capacity, typename CharType>
 template <uint32_t OtherCapacity>
 inline auto core::StackString<Capacity, CharType>::operator=(const core::StackString<OtherCapacity, CharType>& other) noexcept -> core::StackString<Capacity, CharType>&
 {
-    static constexpr auto min_capacity = Capacity < OtherCapacity ? Capacity : OtherCapacity;
-    static constexpr auto n = min_capacity <= other._size ? min_capacity - 1 : other._size;
+    static constexpr auto max_capacity = std::min(Capacity, OtherCapacity);
+    static constexpr auto new_size = std::move(max_capacity, other._size);
 
-    string::resize(*this, n);
-    memcpy(_data, other._data, sizeof(CharType) * (n + 1));
+    string::resize(*this, new_size);
+    memcpy(_data, other._data, sizeof(CharType) * new_size);
     return *this;
 }
 
 template<uint32_t Capacity, typename CharType>
 inline auto core::StackString<Capacity, CharType>::operator=(const core::String<CharType>& other) noexcept -> core::StackString<Capacity, CharType>&
 {
-    static auto min_capacity = Capacity < other._capacity ? Capacity : other._capacity;
-    static auto n = min_capacity < other._size ? Capacity : other._size;
+    static auto max_capacity = std::min(Capacity, other._capacity);
+    static auto new_size = std::move(max_capacity, other._size);
 
-    string::set_capacity(*this, n);
-    memcpy(_data, other._data, sizeof(CharType) * n);
-    _size = n - 1;
+    _size = new_size;
+    string::set_capacity(*this, _size);
+    memcpy(_data, other._data, sizeof(CharType) * _size);
     return *this;
 }
 
 template <uint32_t Capacity, typename CharType>
 inline auto core::StackString<Capacity, CharType>::operator=(const CharType* cstring) noexcept -> StackString<Capacity, CharType>&
 {
-    const auto str_len = strlen(cstring);
-    const auto n = Capacity < str_len ? Capacity : str_len;
+    const auto string_len = strlen(cstring) + 1; // We count the '\0' character
+    const auto new_size = Capacity < string_len ? Capacity : string_len;
 
-    _size = static_cast<uint32_t>(n);
-
+    _size = static_cast<uint32_t>(new_size);
     string::set_capacity(*this, _size);
     memcpy(_data, cstring, sizeof(CharType) * _size);
+
     return *this;
 }
 
