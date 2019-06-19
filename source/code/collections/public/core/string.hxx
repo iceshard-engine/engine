@@ -102,7 +102,11 @@ void push_back(String<CharType>& str, CharType character) noexcept;
 
 //! \brief Pushes the character array to the end of the string.
 template <typename CharType>
-void push_back(String<CharType>& str, const CharType* character_array) noexcept;
+void push_back(String<CharType>& str, const CharType* cstr) noexcept;
+
+//! \brief Pushes the character array to the end of the string.
+template <typename CharType>
+void push_back(String<CharType>& str, const String<CharType>& other) noexcept;
 
 //! \brief Pops the last character from the string. The string cannot be empty.
 template <typename CharType>
@@ -144,32 +148,13 @@ void swap(String<CharType>& lhs, String<CharType>& rhs) noexcept;
 
 
 template<typename CharType>
-auto operator+=(String<CharType>& self, CharType other) noexcept -> String<CharType>&
-{
-    string::push_back(self, other);
-    return self;
-}
+auto operator+=(String<CharType>& self, CharType other) noexcept -> String<CharType>&;
 
 template<typename CharType>
-auto operator+=(String<CharType>& self, const CharType* other) noexcept -> String<CharType>&
-{
-    string::push_back(self, other);
-    return self;
-}
+auto operator+=(String<CharType>& self, const CharType* other) noexcept -> String<CharType>&;
 
 template<typename CharType>
-auto operator+=(String<CharType>& self, const String<CharType>& other) noexcept -> String<CharType>&
-{
-    // We need to reserve enough data for the concatenation, this will
-    // allow us to handle the scenario when self appending. Because first
-    // we reallocate the buffer if required and then we access it.
-    if (!string::empty(other))
-    {
-        string::reserve(self, string::size(self) + string::size(other) + 1);
-        string::push_back(self, string::begin(other));
-    }
-    return self;
-}
+auto operator+=(String<CharType>& self, const String<CharType>& other) noexcept -> String<CharType>&;
 
 
 // core::String implementation

@@ -41,8 +41,8 @@ inline auto core::String<CharType>::operator=(const String<CharType>& other) noe
 }
 
 template <typename CharType>
-template<uint32_t OtherCapacity>
-inline auto core::String<CharType>::operator=(const StackString<OtherCapacity, CharType>& other) noexcept -> String<CharType>&
+template<uint32_t Capacity>
+inline auto core::String<CharType>::operator=(const StackString<Capacity, CharType>& other) noexcept -> String<CharType>&
 {
     *this = other._data;
     return *this;
@@ -70,27 +70,27 @@ inline auto core::String<CharType>::operator[](uint32_t i) const noexcept -> con
 }
 
 template<typename CharType>
-inline auto core::begin(String<CharType>& a) noexcept -> CharType*
+inline auto core::begin(String<CharType>& str) noexcept -> CharType*
 {
-    return string::begin(a);
+    return string::begin(str);
 }
 
 template<typename CharType>
-inline auto core::begin(const String<CharType>& a) noexcept -> const CharType*
+inline auto core::begin(const String<CharType>& str) noexcept -> const CharType*
 {
-    return string::begin(a);
+    return string::begin(str);
 }
 
 template<typename CharType>
-inline auto core::end(String<CharType>& a) noexcept -> CharType*
+inline auto core::end(String<CharType>& str) noexcept -> CharType*
 {
-    return string::end(a);
+    return string::end(str);
 }
 
 template<typename CharType>
-inline auto core::end(const String<CharType>& a) noexcept -> const CharType*
+inline auto core::end(const String<CharType>& str) noexcept -> const CharType*
 {
-    return string::end(a);
+    return string::end(str);
 }
 
 template<typename CharType>
@@ -119,187 +119,222 @@ inline auto core::string::capacity(const core::String<CharType>& str) noexcept -
 }
 
 template<typename CharType>
-inline auto core::string::length(const String<CharType>& a) noexcept -> uint32_t
+inline auto core::string::length(const String<CharType>& str) noexcept -> uint32_t
 {
-    return a._size;
+    return str._size;
 }
 
 template<typename CharType>
-inline bool core::string::empty(const String<CharType>& a) noexcept
+inline bool core::string::empty(const String<CharType>& str) noexcept
 {
-    return a._size == 0;
+    return str._size == 0;
 }
 
 template<typename CharType>
-inline auto core::string::begin(String<CharType>& a) noexcept -> CharType*
+inline auto core::string::begin(String<CharType>& str) noexcept -> CharType*
 {
-    return a._data;
+    return str._data;
 }
 
 template<typename CharType>
-inline auto core::string::begin(const String<CharType>& a) noexcept -> const CharType*
+inline auto core::string::begin(const String<CharType>& str) noexcept -> const CharType*
 {
-    return a._data;
+    return str._data;
 }
 
 template<typename CharType>
-inline auto core::string::end(String<CharType>& a) noexcept -> CharType*
+inline auto core::string::end(String<CharType>& str) noexcept -> CharType*
 {
-    return a._data + a._size;
+    return str._data + str._size;
 }
 
 template<typename CharType>
-inline auto core::string::end(const String<CharType>& a) noexcept -> const CharType*
+inline auto core::string::end(const String<CharType>& str) noexcept -> const CharType*
 {
-    return a._data + a._size;
+    return str._data + str._size;
 }
 
 template<typename CharType>
-inline auto core::string::front(String<CharType>& a) noexcept -> CharType&
+inline auto core::string::front(String<CharType>& str) noexcept -> CharType&
 {
-    return a._data[0];
+    return str._data[0];
 }
 
 template<typename CharType>
-inline auto core::string::front(const String<CharType>& a) noexcept -> const CharType&
+inline auto core::string::front(const String<CharType>& str) noexcept -> const CharType&
 {
-    return a._data[0];
+    return str._data[0];
 }
 
 template<typename CharType>
-inline auto core::string::back(String<CharType>& a) noexcept -> CharType&
+inline auto core::string::back(String<CharType>& str) noexcept -> CharType&
 {
-    return a._data[a._size - 1];
+    return str._data[str._size - 1];
 }
 
 template<typename CharType>
-inline auto core::string::back(const String<CharType>& a) noexcept -> const CharType&
+inline auto core::string::back(const String<CharType>& str) noexcept -> const CharType&
 {
-    return a._data[a._size - 1];
+    return str._data[str._size - 1];
 }
 
 
 template <typename CharType>
-inline void core::string::clear(String<CharType>& a) noexcept
+inline void core::string::clear(String<CharType>& str) noexcept
 {
-    resize(a, 0);
+    resize(str, 0);
 }
 
 template <typename CharType>
-inline void core::string::trim(String<CharType>& a) noexcept
+inline void core::string::trim(String<CharType>& str) noexcept
 {
-    set_capacity(a, a._size + 1);
+    set_capacity(str, str._size + 1);
 }
 
 template <typename CharType>
-inline void core::string::resize(String<CharType>& a, uint32_t new_size) noexcept
+inline void core::string::resize(String<CharType>& str, uint32_t new_size) noexcept
 {
-    if (new_size + 1 > a._capacity)
+    if (new_size + 1 > str._capacity)
     {
-        grow(a, new_size + 1);
+        grow(str, new_size + 1);
     }
-    a._size = new_size;
-    a._data[a._size] = 0;
+    str._size = new_size;
+    str._data[str._size] = 0;
 }
 
 template <typename CharType>
-inline void core::string::reserve(String<CharType>& a, uint32_t new_capacity) noexcept
+inline void core::string::reserve(String<CharType>& str, uint32_t new_capacity) noexcept
 {
-    if (new_capacity > a._capacity)
+    if (new_capacity > str._capacity)
     {
-        set_capacity(a, new_capacity);
+        set_capacity(str, new_capacity);
     }
 }
 
 template<typename CharType>
-inline void core::string::set_capacity(String<CharType>& a, uint32_t new_capacity) noexcept
+inline void core::string::set_capacity(String<CharType>& str, uint32_t new_capacity) noexcept
 {
-    if (new_capacity == a._capacity)
+    if (new_capacity == str._capacity)
     {
         return;
     }
 
-    if (new_capacity < a._size)
+    if (new_capacity < str._size)
     {
-        a._size = new_capacity - 1;
+        str._size = new_capacity - 1;
     }
 
     CharType* new_data = 0;
     if (new_capacity > 0)
     {
-        new_data = reinterpret_cast<CharType*>(a._allocator->allocate(sizeof(CharType) * new_capacity, alignof(CharType)));
-        memcpy(new_data, a._data, sizeof(CharType) * a._size);
-        new_data[a._size] = 0;
+        new_data = reinterpret_cast<CharType*>(str._allocator->allocate(sizeof(CharType) * new_capacity, alignof(CharType)));
+        memcpy(new_data, str._data, sizeof(CharType) * str._size);
+        new_data[str._size] = 0;
     }
     else if (new_capacity == 0)
     {
-        a._size = 0;
+        str._size = 0;
     }
 
-    a._allocator->deallocate(a._data);
-    a._data = new_data;
-    a._capacity = new_capacity;
+    str._allocator->deallocate(str._data);
+    str._data = new_data;
+    str._capacity = new_capacity;
 }
 
 template<typename CharType>
-inline void core::string::grow(String<CharType>& a, uint32_t min_capacity) noexcept
+inline void core::string::grow(String<CharType>& str, uint32_t min_capacity) noexcept
 {
-    uint32_t new_capacity = a._capacity * 2 + 8;
+    uint32_t new_capacity = str._capacity * 2 + 8;
     if (new_capacity < min_capacity)
     {
         new_capacity = min_capacity;
     }
 
-    set_capacity(a, new_capacity);
+    set_capacity(str, new_capacity);
 }
 
 template<typename CharType>
-inline void core::string::push_back(String<CharType>& a, CharType item) noexcept
+inline void core::string::push_back(String<CharType>& str, CharType item) noexcept
 {
-    if (a._size + 1 > a._capacity)
+    if (str._size + 1 > str._capacity)
     {
-        grow(a);
+        grow(str);
     }
 
-    a._data[a._size] = item;
-    a._data[++a._size] = 0;
+    str._data[str._size] = item;
+    str._data[++str._size] = 0;
 }
 
 template<typename CharType>
-inline void core::string::push_back(String<CharType>& a, const CharType* character_array) noexcept
+inline void core::string::push_back(String<CharType>& str, const CharType* cstr) noexcept
 {
-    auto str_len = strlen(character_array);
+    auto str_len = strlen(cstr);
     if (str_len > 0)
     {
-        auto new_size = a._size + str_len;
-        if (new_size + 1 > a._capacity)
+        auto new_size = str._size + str_len;
+        if (new_size + 1 > str._capacity)
         {
-            grow(a, static_cast<uint32_t>(new_size) + 1);
+            grow(str, static_cast<uint32_t>(new_size) + 1);
         }
 
-        memcpy(string::end(a), character_array, str_len);
-        a._size = static_cast<uint32_t>(new_size);
-        a._data[a._size] = 0;
+        memcpy(string::end(str), cstr, str_len);
+        str._size = static_cast<uint32_t>(new_size);
+        str._data[str._size] = 0;
     }
 }
 
 template<typename CharType>
-inline void core::string::pop_back(String<CharType> & a) noexcept
+inline void core::string::push_back(String<CharType>& str, const String<CharType>& other) noexcept
 {
-    a._data[--a._size] = 0;
-}
-
-template<typename CharType>
-inline void core::string::pop_back(String<CharType>& a, uint32_t num) noexcept
-{
-    if (a._size < num)
+    if (!string::empty(other))
     {
-        a._size = num;
+        // We need to reserve enough data for the concatenation, this will
+        // allow us to handle the scenario when self appending. Because first
+        // we reallocate the buffer if required and then we access it.
+        string::reserve(str, string::size(str) + string::size(other) + 1);
+        string::push_back(str, string::begin(other));
+    }
+}
+
+template<typename CharType>
+inline void core::string::pop_back(String<CharType> & str) noexcept
+{
+    str._data[--str._size] = 0;
+}
+
+template<typename CharType>
+inline void core::string::pop_back(String<CharType>& str, uint32_t num) noexcept
+{
+    if (str._size < num)
+    {
+        str._size = num;
     }
 
-    a._size -= num;
-    a._data[a._size] = 0;
+    str._size -= num;
+    str._data[str._size] = 0;
 }
 
 // core::String operators
 //////////////////////////////////////////////////////////////////////////
+
+
+template<typename CharType>
+auto core::operator+=(String<CharType>& self, CharType other) noexcept -> String<CharType>&
+{
+    string::push_back(self, other);
+    return self;
+}
+
+template<typename CharType>
+auto core::operator+=(String<CharType>& self, const CharType* other) noexcept -> String<CharType>&
+{
+    string::push_back(self, other);
+    return self;
+}
+
+template<typename CharType>
+auto core::operator+=(String<CharType>& self, const String<CharType>& other) noexcept -> String<CharType>&
+{
+    string::push_back(self, other);
+    return self;
+}

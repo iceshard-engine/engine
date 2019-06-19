@@ -232,7 +232,11 @@ SCENARIO("core :: string")
             }
 
             core::string::resize(test_string, 100);
-            core::string::push_back(test_string, test_string._data);
+
+            // Fill the new string with space characters.
+            memset(core::string::begin(test_string), ' ', core::string::size(test_string));
+
+            core::string::push_back(test_string, test_string);
 
             THEN("Resizing the string and appending itself")
             {
