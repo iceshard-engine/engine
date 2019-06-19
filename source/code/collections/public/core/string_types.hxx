@@ -22,6 +22,9 @@ struct String
     //! \brief Creates a new String object with the given allocator.
     String(core::allocator& a) noexcept;
 
+    //! \brief Creates a new String object with the given allocator and value to copy.
+    String(core::allocator& a, const CharType* other) noexcept;
+
     //! \brief Copies a given String object using the same allocator.
     String(const String& other) noexcept;
 

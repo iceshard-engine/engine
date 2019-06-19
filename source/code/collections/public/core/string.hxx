@@ -1,6 +1,7 @@
 #pragma once
 #include <core/base.hxx>
 #include <core/string_types.hxx>
+#include <fmt/format.h>
 
 namespace core
 {
@@ -137,6 +138,25 @@ template<typename CharType>
 void swap(String<CharType>& lhs, String<CharType>& rhs) noexcept;
 
 
+// core::String operators
+//////////////////////////////////////////////////////////////////////////
+
+
+template<typename CharType>
+auto operator+=(String<CharType>& self, const String<CharType>& other) noexcept -> String<CharType>&
+{
+    // We need to reserve enough data for the concatenation, this will
+    // allow us to handle the scenario when self appending. Because first
+    // we reallocate the buffer if required and then we access it.
+    if (!string::empty(other))
+    {
+        string::reserve(self, static_cast<uint32_t>((string::size(self) + string::size(other)) * 1.2f));
+        string::push_back(self, string::begin(other));
+    }
+    return self;
+}
+
+
 // core::String implementation
 //////////////////////////////////////////////////////////////////////////
 
@@ -145,3 +165,29 @@ void swap(String<CharType>& lhs, String<CharType>& rhs) noexcept;
 
 
 } // namespace core::string
+
+
+// core::String FTM formatting support
+//////////////////////////////////////////////////////////////////////////
+
+
+namespace fmt
+{
+
+template<typename CharType>
+struct formatter<core::String<CharType>>
+{
+    template <typename ParseContext>
+    constexpr auto parse(ParseContext &ctx)
+    {
+        return ctx.begin();
+    }
+
+    template <typename FormatContext>
+    auto format(const core::String<CharType>& str, FormatContext& ctx)
+    {
+        return fmt::format_to(ctx.begin(), std::string_view{ str._data, str._size });
+    }
+};
+
+} // namespace fmt

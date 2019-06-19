@@ -9,6 +9,13 @@ inline core::String<CharType>::String(core::allocator& allocator) noexcept
 }
 
 template <typename CharType>
+inline core::String<CharType>::String(core::allocator& allocator, const CharType* value) noexcept
+    : _allocator{ &allocator }
+{
+    *this = value;
+}
+
+template <typename CharType>
 inline core::String<CharType>::String(const String<CharType>& other) noexcept
     : _allocator{ other._allocator }
 {
@@ -188,7 +195,9 @@ template <typename CharType>
 inline void core::string::resize(String<CharType>& a, uint32_t new_size) noexcept
 {
     if (new_size + 1 > a._capacity)
+    {
         grow(a, new_size + 1);
+    }
     a._size = new_size;
     a._data[a._size] = 0;
 }
@@ -197,28 +206,36 @@ template <typename CharType>
 inline void core::string::reserve(String<CharType>& a, uint32_t new_capacity) noexcept
 {
     if (new_capacity > a._capacity)
+    {
         set_capacity(a, new_capacity);
+    }
 }
 
 template<typename CharType>
 inline void core::string::set_capacity(String<CharType>& a, uint32_t new_capacity) noexcept
 {
     if (new_capacity == a._capacity)
+    {
         return;
+    }
 
     if (new_capacity < a._size)
+    {
         a._size = new_capacity - 1;
+    }
 
     CharType* new_data = 0;
     if (new_capacity > 0)
     {
         new_data = reinterpret_cast<CharType*>(a._allocator->allocate(sizeof(CharType) * new_capacity, alignof(CharType)));
         memcpy(new_data, a._data, sizeof(CharType) * a._size);
+        new_data[a._size] = 0;
     }
     else if (new_capacity == 0)
     {
         a._size = 0;
     }
+
     a._allocator->deallocate(a._data);
     a._data = new_data;
     a._capacity = new_capacity;
@@ -229,7 +246,10 @@ inline void core::string::grow(String<CharType>& a, uint32_t min_capacity) noexc
 {
     uint32_t new_capacity = a._capacity * 2 + 8;
     if (new_capacity < min_capacity)
+    {
         new_capacity = min_capacity;
+    }
+
     set_capacity(a, new_capacity);
 }
 
@@ -237,7 +257,10 @@ template<typename CharType>
 inline void core::string::push_back(String<CharType>& a, const CharType& item) noexcept
 {
     if (a._size + 1 > a._capacity)
+    {
         grow(a);
+    }
+
     a._data[a._size] = item;
     a._data[++a._size] = 0;
 }
@@ -250,7 +273,10 @@ inline void core::string::push_back(String<CharType>& a, const CharType* charact
     {
         auto new_size = a._size + str_len;
         if (new_size + 1 > a._capacity)
+        {
             grow(a, static_cast<uint32_t>(new_size) + 1);
+        }
+
         memcpy(string::end(a), character_array, str_len);
         a._size = static_cast<uint32_t>(new_size);
         a._data[a._size] = 0;
@@ -267,7 +293,10 @@ template<typename CharType>
 inline void core::string::pop_back(String<CharType>& a, uint32_t num) noexcept
 {
     if (a._size < num)
+    {
         a._size = num;
+    }
+
     a._size -= num;
     a._data[a._size] = 0;
 }
