@@ -119,7 +119,7 @@ void pop_back(String<CharType>& str, uint32_t num) noexcept;
 } // namespace string
 
 
-// core::String 'C++ feature extensions'
+// core::String miscelaneous functions
 //////////////////////////////////////////////////////////////////////////
 
 

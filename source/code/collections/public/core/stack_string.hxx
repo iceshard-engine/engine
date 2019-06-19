@@ -129,7 +129,7 @@ void pop_back(StackString<Capacity, CharType>& str, uint32_t num) noexcept;
 } // namespace string
 
 
-// core::String 'C++ feature extensions'
+// core::StackString miscelaneous
 //////////////////////////////////////////////////////////////////////////
 
 
@@ -153,7 +153,7 @@ template<uint32_t Capacity, typename CharType>
 void swap(StackString<Capacity, CharType>& lhs, StackString<Capacity, CharType>& rhs) noexcept;
 
 
-// core::String operators
+// core::StackString operators
 //////////////////////////////////////////////////////////////////////////
 
 
@@ -170,7 +170,7 @@ template<uint32_t Capacity, typename CharType>
 auto operator+=(StackString<Capacity, CharType>& self, const StackString<Capacity, CharType>& other) noexcept -> StackString<Capacity, CharType>&;
 
 
-// core::String implementation
+// core::StackString implementation
 //////////////////////////////////////////////////////////////////////////
 
 
@@ -180,7 +180,7 @@ auto operator+=(StackString<Capacity, CharType>& self, const StackString<Capacit
 } // namespace core
 
 
-// core::String FTM formatter
+// core::StackString FTM formatter
 //////////////////////////////////////////////////////////////////////////
 
 
