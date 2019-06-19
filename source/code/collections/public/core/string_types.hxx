@@ -31,6 +31,7 @@ struct String
     //! \brief Destroys the string object.
     ~String() noexcept;
 
+
     //! \brief Replaces the string value with the new one.
     auto operator=(const String& other) noexcept -> String&;
 
@@ -68,7 +69,7 @@ template<uint32_t Capacity, typename CharType>
 struct StackString
 {
     //! \brief Creates a new StackString object.
-    StackString() noexcept;
+    StackString() noexcept = default;
 
     //! \brief Creates a new StackString object with the given value.
     StackString(const char* cstring) noexcept;
@@ -81,6 +82,7 @@ struct StackString
 
     //! \brief Destroys the stack string
     ~StackString() noexcept = default;
+
 
     //! \brief Replaces the string value with the new one.
     template<uint32_t Capacity>
@@ -102,10 +104,10 @@ struct StackString
 
 
     //! \brief The actual size.
-    uint32_t _size;
+    uint32_t _size{ 0 };
 
     //! \brief The string data buffer.
-    CharType _data[Capacity];
+    CharType _data[Capacity]{ '\0' };
 };
 
 

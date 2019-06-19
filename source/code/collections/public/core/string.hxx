@@ -164,7 +164,7 @@ auto operator+=(String<CharType>& self, const String<CharType>& other) noexcept 
 #include "string.inl"
 
 
-} // namespace core::string
+} // namespace core
 
 
 // core::String FTM formatter
