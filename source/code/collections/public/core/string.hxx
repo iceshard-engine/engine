@@ -98,7 +98,7 @@ void trim(String<CharType>& str) noexcept;
 
 //! \brief Pushes the character to the end of the string.
 template <typename CharType>
-void push_back(String<CharType>& str, CharType character) noexcept;
+void push_back(String<CharType>& str, CharType ch) noexcept;
 
 //! \brief Pushes the character array to the end of the string.
 template <typename CharType>
@@ -107,10 +107,6 @@ void push_back(String<CharType>& str, const CharType* cstr) noexcept;
 //! \brief Pushes the String at the end of the string.
 template <typename CharType>
 void push_back(String<CharType>& str, const String<CharType>& other) noexcept;
-
-//! \brief Pushes the StackString at the end of the string.
-template <uint32_t Capacity, typename CharType>
-void push_back(String<CharType>& str, const StackString<Capacity, CharType>& other) noexcept;
 
 //! \brief Pops the last character from the string. The string cannot be empty.
 template <typename CharType>

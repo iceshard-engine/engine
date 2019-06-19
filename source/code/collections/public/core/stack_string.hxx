@@ -114,10 +114,6 @@ void push_back(StackString<Capacity, CharType>& str, CharType character) noexcep
 template<uint32_t Capacity, typename CharType>
 void push_back(StackString<Capacity, CharType>& str, const CharType* cstr) noexcept;
 
-//! \brief Pushes the String value at the end.
-template<uint32_t Capacity, typename CharType>
-void push_back(StackString<Capacity, CharType>& str, const String<CharType>& other) noexcept;
-
 //! \brief Pushes the StackString value at the end.
 template<uint32_t Capacity, typename CharType>
 void push_back(StackString<Capacity, CharType>& str, const StackString<Capacity, CharType>& other) noexcept;
@@ -182,3 +178,29 @@ auto operator+=(StackString<Capacity, CharType>& self, const StackString<Capacit
 
 
 } // namespace core
+
+
+// core::String FTM formatter
+//////////////////////////////////////////////////////////////////////////
+
+
+namespace fmt
+{
+
+template<uint32_t Capacity, typename CharType>
+struct formatter<core::StackString<Capacity, CharType>>
+{
+    template <typename ParseContext>
+    constexpr auto parse(ParseContext &ctx)
+    {
+        return ctx.begin();
+    }
+
+    template <typename FormatContext>
+    auto format(const core::StackString<Capacity, CharType>& str, FormatContext& ctx)
+    {
+        return fmt::format_to(ctx.begin(), std::string_view{ str._data, str._size });
+    }
+};
+
+} // namespace fmt

@@ -10,12 +10,14 @@ int main()
         auto& a = core::memory::globals::default_allocator();
 
         {
-            core::StackString sstr = "asd";
-            core::String str{ a, "Test12345" };
+            core::StackString<64> sstr = "Hello";
+            core::String str{ a, " World" };
 
-            str += str;
+            str += sstr;
+            sstr += str;
 
-            fmt::print("{}", str);
+            fmt::print("{}\n", str);
+            fmt::print("{}\n", sstr);
         }
 
         core::memory::globals::shutdown();
