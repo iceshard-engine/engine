@@ -167,7 +167,7 @@ auto operator+=(String<CharType>& self, const String<CharType>& other) noexcept 
 } // namespace core::string
 
 
-// core::String FTM formatting support
+// core::String FTM formatter
 //////////////////////////////////////////////////////////////////////////
 
 

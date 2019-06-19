@@ -1,9 +1,10 @@
 #pragma once
-#include <core/pod/collection_types.h>
-#include <core/pod/array.h>
+#include <core/base.hxx>
+#include <core/string_types.hxx>
 #include <core/debug/assert.hxx>
+#include <fmt/format.h>
 
-namespace pod
+namespace core
 {
 
 //! \brief A deduction guide.

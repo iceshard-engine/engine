@@ -10,7 +10,7 @@ template<typename CharType = char>
 struct String;
 
 //! \brief A stack allocated string object.
-//! \details The string capacity is constant value.
+//! \details The string capacity is a constant value.
 template<uint32_t Size = 16, typename CharType = char>
 struct StackString;
 
@@ -47,6 +47,7 @@ struct String
     //! \brief Returns the character at the given position.
     auto operator[](uint32_t i) const noexcept -> const CharType&;
 
+
     //! \brief The allocator used to manage memory.
     core::allocator* const _allocator;
 
@@ -61,25 +62,49 @@ struct String
 };
 
 
-//! \brief A stack allocated string value.
+//! \brief A stack allocated string object.
+//! \details The string capacity is a constant value.
 template<uint32_t Capacity, typename CharType>
 struct StackString
 {
-    StackString();
-    StackString(const char* cstring);
+    //! \brief Creates a new StackString object.
+    StackString() noexcept;
+
+    //! \brief Creates a new StackString object with the given value.
+    StackString(const char* cstring) noexcept;
+
+    //! \brief Creates a new StackString object from another StackString.
+    //! \details If the input StackString is larger, it will only copy the maximum
+    //!     amount of characters the rest will be discarded.
     template<uint32_t OtherCapacity>
-    StackString(const StackString<OtherCapacity, CharType>& other);
-    template<uint32_t OtherCapacity>
-    StackString& operator=(const StackString<OtherCapacity, CharType>&);
-    ~StackString();
+    StackString(const StackString<OtherCapacity, CharType>& other) noexcept;
 
-    CharType& operator[](uint32_t i);
-    const CharType& operator[](uint32_t i) const;
+    //! \brief Destroys the stack string
+    ~StackString() noexcept = default;
 
-    StackString& operator=(const String<CharType>& other);
-    StackString& operator=(const CharType* cstring);
+    //! \brief Replaces the string value with the new one.
+    template<uint32_t Capacity>
+    auto operator=(const StackString<Capacity, CharType>& other) noexcept -> StackString&;
 
+    //! \brief Replaces the string value with the new one.
+    //! \details If the input String is larger, it will only copy the maximum
+    //!     amount of characters the rest will be discarded.
+    auto operator=(const String<CharType>& other) noexcept -> StackString&;
+
+    //! \brief Replaces the string value with the new one.
+    auto operator=(const CharType* other) noexcept -> StackString&;
+
+    //! \brief Returns the character at the given position.
+    auto operator[](uint32_t i) noexcept -> CharType&;
+
+    //! \brief Returns the character at the given position.
+    auto operator[](uint32_t i) const noexcept -> const CharType&;
+
+
+    //! \brief The actual size.
     uint32_t _size;
+
+    //! \brief The string data buffer.
     CharType _data[Capacity];
 };
 
