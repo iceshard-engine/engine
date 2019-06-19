@@ -20,7 +20,9 @@ class IceShard extends Application
 
     -- Plain call to the application
     execute: (args) =>
-
+        print 'IceShard - v0.1-alpha'
+        print ''
+        print '> For more options see the -h,--help output.'
 
 --[[ Run the application ]]--
 with IceShard!
