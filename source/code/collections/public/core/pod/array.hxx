@@ -1,8 +1,6 @@
 #pragma once
-#include <core/pod/collection_types.h>
-
-#include <cinttypes>
-#include <memory.h>
+#include <core/base.hxx>
+#include <core/pod/collections.hxx>
 
 namespace pod
 {
@@ -122,7 +120,7 @@ namespace pod
     }
 
     template <typename T>
-    inline Array<T>::Array(mem::allocator &allocator) : _allocator(&allocator), _size(0), _capacity(0), _data(0) {}
+    inline Array<T>::Array(core::allocator &allocator) noexcept : _allocator(&allocator), _size(0), _capacity(0), _data(0) {}
 
     template <typename T>
     inline Array<T>::~Array()
@@ -131,7 +129,7 @@ namespace pod
     }
 
     template <typename T>
-    Array<T>::Array(const Array<T> &other) : _allocator(other._allocator), _size(0), _capacity(0), _data(0)
+    Array<T>::Array(const Array<T> &other) noexcept : _allocator(other._allocator), _size(0), _capacity(0), _data(0)
     {
         const uint32_t n = other._size;
         array::set_capacity(*this, n);
@@ -140,7 +138,7 @@ namespace pod
     }
 
     template <typename T>
-    Array<T> &Array<T>::operator=(const Array<T> &other)
+    Array<T> &Array<T>::operator=(const Array<T> &other) noexcept
     {
         const uint32_t n = other._size;
         array::resize(*this, n);
