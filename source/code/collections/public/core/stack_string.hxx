@@ -114,7 +114,11 @@ void push_back(StackString<Capacity, CharType>& str, CharType character) noexcep
 template<uint32_t Capacity, typename CharType>
 void push_back(StackString<Capacity, CharType>& str, const CharType* cstr) noexcept;
 
-//! \brief Pushes the character array to the end of the string.
+//! \brief Pushes the String value at the end.
+template<uint32_t Capacity, typename CharType>
+void push_back(StackString<Capacity, CharType>& str, const String<CharType>& other) noexcept;
+
+//! \brief Pushes the StackString value at the end.
 template<uint32_t Capacity, typename CharType>
 void push_back(StackString<Capacity, CharType>& str, const StackString<Capacity, CharType>& other) noexcept;
 
@@ -151,6 +155,23 @@ auto end(const StackString<Capacity, CharType>& a) noexcept -> const CharType*;
 
 template<uint32_t Capacity, typename CharType>
 void swap(StackString<Capacity, CharType>& lhs, StackString<Capacity, CharType>& rhs) noexcept;
+
+
+// core::String operators
+//////////////////////////////////////////////////////////////////////////
+
+
+template<uint32_t Capacity, typename CharType>
+auto operator+=(StackString<Capacity, CharType>& self, CharType other) noexcept -> StackString<Capacity, CharType>&;
+
+template<uint32_t Capacity, typename CharType>
+auto operator+=(StackString<Capacity, CharType>& self, const CharType* other) noexcept -> StackString<Capacity, CharType>&;
+
+template<uint32_t Capacity, typename CharType>
+auto operator+=(StackString<Capacity, CharType>& self, const String<CharType>& other) noexcept -> StackString<Capacity, CharType>&;
+
+template<uint32_t Capacity, typename CharType>
+auto operator+=(StackString<Capacity, CharType>& self, const StackString<Capacity, CharType>& other) noexcept -> StackString<Capacity, CharType>&;
 
 
 // core::String implementation

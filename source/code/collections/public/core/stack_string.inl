@@ -1,4 +1,112 @@
 
+template <uint32_t Capacity, typename CharType>
+inline core::StackString<Capacity, CharType>::StackString(const char* cstring) noexcept
+    : StackString{ }
+{
+    *this = cstring;
+}
+
+template <uint32_t Capacity, typename CharType>
+template <uint32_t OtherCapacity>
+inline core::StackString<Capacity, CharType>::StackString(const core::StackString<OtherCapacity, CharType>& other) noexcept
+    : StackString{ }
+{
+    static constexpr auto min_capacity = Capacity < OtherCapacity ? Capacity : OtherCapacity;
+
+    const uint32_t n = min_capacity < other._size ? min_capacity : other._size;
+    string::set_capacity(*this, n);
+    memcpy(_data, other._data, sizeof(CharType) * n);
+    _size = n - 1;
+}
+
+template <uint32_t Capacity, typename CharType>
+template <uint32_t OtherCapacity>
+inline auto core::StackString<Capacity, CharType>::operator=(const core::StackString<OtherCapacity, CharType>& other) noexcept -> core::StackString<Capacity, CharType>&
+{
+    static constexpr auto max_capacity = std::min(Capacity, OtherCapacity);
+    static constexpr auto new_size = std::move(max_capacity, other._size);
+
+    string::resize(*this, new_size);
+    memcpy(_data, other._data, sizeof(CharType) * new_size);
+    return *this;
+}
+
+template<uint32_t Capacity, typename CharType>
+inline auto core::StackString<Capacity, CharType>::operator=(const core::String<CharType>& other) noexcept -> core::StackString<Capacity, CharType>&
+{
+    static auto max_capacity = std::min(Capacity, other._capacity);
+    static auto new_size = std::move(max_capacity, other._size);
+
+    _size = new_size;
+    string::set_capacity(*this, _size);
+    memcpy(_data, other._data, sizeof(CharType) * _size);
+    return *this;
+}
+
+template <uint32_t Capacity, typename CharType>
+inline auto core::StackString<Capacity, CharType>::operator=(const CharType* cstring) noexcept -> StackString<Capacity, CharType>&
+{
+    const auto string_len = strlen(cstring) + 1; // We count the '\0' character
+    const auto new_size = Capacity < string_len ? Capacity : string_len;
+
+    _size = static_cast<uint32_t>(new_size);
+    string::set_capacity(*this, _size);
+    memcpy(_data, cstring, sizeof(CharType) * _size);
+
+    return *this;
+}
+
+template <uint32_t Capacity, typename CharType>
+inline auto core::StackString<Capacity, CharType>::operator[](uint32_t i) noexcept -> CharType&
+{
+    return _data[i];
+}
+
+template <uint32_t Capacity, typename CharType>
+inline auto core::StackString<Capacity, CharType>::operator[](uint32_t i) const noexcept -> const CharType&
+{
+    return _data[i];
+}
+
+// range based ADL lookup
+
+template <uint32_t Capacity, typename CharType>
+inline auto core::begin(core::StackString<Capacity, CharType>& a) noexcept -> CharType*
+{
+    return string::begin(a);
+}
+
+template <uint32_t Capacity, typename CharType>
+inline auto core::begin(const core::StackString<Capacity, CharType>& a) noexcept -> const CharType*
+{
+    return string::begin(a);
+}
+
+template <uint32_t Capacity, typename CharType>
+inline auto core::end(core::StackString<Capacity, CharType>& a) noexcept -> CharType*
+{
+    return string::end(a);
+}
+
+template <uint32_t Capacity, typename CharType>
+inline auto core::end(const core::StackString<Capacity, CharType>& a) noexcept -> const CharType*
+{
+    return string::end(a);
+}
+
+template <uint32_t Capacity, typename CharType>
+void core::swap(core::StackString<Capacity, CharType>& lhs, core::StackString<Capacity, CharType>& rhs) noexcept
+{
+    std::swap(lhs._allocator, rhs._allocator);
+    std::swap(lhs._size, rhs._size);
+    std::swap(lhs._capacity, rhs._capacity);
+    std::swap(lhs._data, rhs._data);
+}
+
+
+// core::String functions
+//////////////////////////////////////////////////////////////////////////
+
 
 template <uint32_t Capacity, typename CharType>
 inline auto core::string::size(const core::StackString<Capacity, CharType>& a) noexcept -> uint32_t
@@ -138,6 +246,19 @@ inline void core::string::push_back(StackString<Capacity, CharType>& a, const Ch
 }
 
 template <uint32_t Capacity, typename CharType>
+inline void core::string::push_back(StackString<Capacity, CharType>& str, const String<CharType>& other) noexcept
+{
+    if (!string::empty(other))
+    {
+        // We need to reserve enough data for the concatenation, this will
+        // allow us to handle the scenario when self appending. Because first
+        // we reallocate the buffer if required and then we access it.
+        string::reserve(str, string::size(str) + string::size(other) + 1);
+        string::push_back(str, string::begin(other));
+    }
+}
+
+template <uint32_t Capacity, typename CharType>
 inline void core::string::push_back(StackString<Capacity, CharType>& str, const StackString<Capacity, CharType>& other) noexcept
 {
     if (!string::empty(other))
@@ -166,109 +287,34 @@ inline void core::string::pop_back(core::StackString<Capacity, CharType>& a, uin
 }
 
 
+// core::StackString operators
 //////////////////////////////////////////////////////////////////////////
 
 
-template <uint32_t Capacity, typename CharType>
-inline core::StackString<Capacity, CharType>::StackString(const char* cstring) noexcept
-    : StackString{ }
+template<uint32_t Capacity, typename CharType>
+inline auto core::operator+=(StackString<Capacity, CharType>& self, CharType other) noexcept -> StackString<Capacity, CharType>&
 {
-    *this = cstring;
-}
-
-template <uint32_t Capacity, typename CharType>
-template <uint32_t OtherCapacity>
-inline core::StackString<Capacity, CharType>::StackString(const core::StackString<OtherCapacity, CharType>& other) noexcept
-    : StackString{ }
-{
-    static constexpr auto min_capacity = Capacity < OtherCapacity ? Capacity : OtherCapacity;
-
-    const uint32_t n = min_capacity < other._size ? min_capacity : other._size;
-    string::set_capacity(*this, n);
-    memcpy(_data, other._data, sizeof(CharType) * n);
-    _size = n - 1;
-}
-
-template <uint32_t Capacity, typename CharType>
-template <uint32_t OtherCapacity>
-inline auto core::StackString<Capacity, CharType>::operator=(const core::StackString<OtherCapacity, CharType>& other) noexcept -> core::StackString<Capacity, CharType>&
-{
-    static constexpr auto max_capacity = std::min(Capacity, OtherCapacity);
-    static constexpr auto new_size = std::move(max_capacity, other._size);
-
-    string::resize(*this, new_size);
-    memcpy(_data, other._data, sizeof(CharType) * new_size);
-    return *this;
+    string::push_back(self, other);
+    return self;
 }
 
 template<uint32_t Capacity, typename CharType>
-inline auto core::StackString<Capacity, CharType>::operator=(const core::String<CharType>& other) noexcept -> core::StackString<Capacity, CharType>&
+inline auto core::operator+=(StackString<Capacity, CharType>& self, const CharType* other) noexcept -> StackString<Capacity, CharType>&
 {
-    static auto max_capacity = std::min(Capacity, other._capacity);
-    static auto new_size = std::move(max_capacity, other._size);
-
-    _size = new_size;
-    string::set_capacity(*this, _size);
-    memcpy(_data, other._data, sizeof(CharType) * _size);
-    return *this;
+    string::push_back(self, other);
+    return self;
 }
 
-template <uint32_t Capacity, typename CharType>
-inline auto core::StackString<Capacity, CharType>::operator=(const CharType* cstring) noexcept -> StackString<Capacity, CharType>&
+template<uint32_t Capacity, typename CharType>
+inline auto core::operator+=(StackString<Capacity, CharType>& self, const String<CharType>& other) noexcept -> StackString<Capacity, CharType>&
 {
-    const auto string_len = strlen(cstring) + 1; // We count the '\0' character
-    const auto new_size = Capacity < string_len ? Capacity : string_len;
-
-    _size = static_cast<uint32_t>(new_size);
-    string::set_capacity(*this, _size);
-    memcpy(_data, cstring, sizeof(CharType) * _size);
-
-    return *this;
+    string::push_back(self, other);
+    return self;
 }
 
-template <uint32_t Capacity, typename CharType>
-inline auto core::StackString<Capacity, CharType>::operator[](uint32_t i) noexcept -> CharType&
+template<uint32_t Capacity, typename CharType>
+inline auto core::operator+=(StackString<Capacity, CharType>& self, const StackString<Capacity, CharType>& other) noexcept -> StackString<Capacity, CharType>&
 {
-    return _data[i];
-}
-
-template <uint32_t Capacity, typename CharType>
-inline auto core::StackString<Capacity, CharType>::operator[](uint32_t i) const noexcept -> const CharType&
-{
-    return _data[i];
-}
-
-// range based ADL lookup
-
-template <uint32_t Capacity, typename CharType>
-inline auto core::begin(core::StackString<Capacity, CharType>& a) noexcept -> CharType*
-{
-    return string::begin(a);
-}
-
-template <uint32_t Capacity, typename CharType>
-inline auto core::begin(const core::StackString<Capacity, CharType>& a) noexcept -> const CharType*
-{
-    return string::begin(a);
-}
-
-template <uint32_t Capacity, typename CharType>
-inline auto core::end(core::StackString<Capacity, CharType>& a) noexcept -> CharType*
-{
-    return string::end(a);
-}
-
-template <uint32_t Capacity, typename CharType>
-inline auto core::end(const core::StackString<Capacity, CharType>& a) noexcept -> const CharType*
-{
-    return string::end(a);
-}
-
-template <uint32_t Capacity, typename CharType>
-void core::swap(core::StackString<Capacity, CharType>& lhs, core::StackString<Capacity, CharType>& rhs) noexcept
-{
-    std::swap(lhs._allocator, rhs._allocator);
-    std::swap(lhs._size, rhs._size);
-    std::swap(lhs._capacity, rhs._capacity);
-    std::swap(lhs._data, rhs._data);
+    string::push_back(self, other);
+    return self;
 }

@@ -296,6 +296,19 @@ inline void core::string::push_back(String<CharType>& str, const String<CharType
     }
 }
 
+template<uint32_t Capacity, typename CharType>
+inline void core::string::push_back(String<CharType>& str, const StackString<Capacity, CharType>& other) noexcept
+{
+    if (!string::empty(other))
+    {
+        // We need to reserve enough data for the concatenation, this will
+        // allow us to handle the scenario when self appending. Because first
+        // we reallocate the buffer if required and then we access it.
+        string::reserve(str, string::size(str) + string::size(other) + 1);
+        string::push_back(str, string::begin(other));
+    }
+}
+
 template<typename CharType>
 inline void core::string::pop_back(String<CharType> & str) noexcept
 {
@@ -334,6 +347,13 @@ auto core::operator+=(String<CharType>& self, const CharType* other) noexcept ->
 
 template<typename CharType>
 auto core::operator+=(String<CharType>& self, const String<CharType>& other) noexcept -> String<CharType>&
+{
+    string::push_back(self, other);
+    return self;
+}
+
+template<uint32_t Capacity, typename CharType>
+auto core::operator+=(String<CharType>& self, const StackString<Capacity, CharType>& other) noexcept -> String<CharType>&
 {
     string::push_back(self, other);
     return self;
