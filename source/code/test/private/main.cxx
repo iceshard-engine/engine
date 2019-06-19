@@ -11,7 +11,6 @@ int main()
 
         {
             core::StackString sstr = "asd";
-
             core::String str{ a, "Test12345" };
 
             str += str;
