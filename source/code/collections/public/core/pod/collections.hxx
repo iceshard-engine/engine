@@ -9,14 +9,17 @@ namespace pod
 
 //! \brief This type defines an dynamic array holding POD values in contiguous memory.
 template<typename T>
-struct Array final
+struct Array
 {
     //! \brief Creates a new Array with the given allocator.
     Array(core::allocator& allocator) noexcept;
-    ~Array();
 
     //! \brief Copies data from the given array.
     Array(const Array &other) noexcept;
+
+    //! \brief Releases the allocated memory.
+    ~Array() noexcept;
+
 
     //! \brief Copies data from the given array and releases the current data.
     auto operator=(const Array &other) noexcept -> Array&;
@@ -27,17 +30,18 @@ struct Array final
     //! \brief Returns the object at the given index.
     auto operator[](uint32_t i) const -> const T&;
 
+
     //! \brief The allocator used to manage memory.
-    core::allocator* _allocator;
+    core::allocator* const _allocator{ nullptr };
 
     //! \brief The current array size.
-    uint32_t _size;
+    uint32_t _size{ 0 };
 
     //! \brief The current available array capacity.
-    uint32_t _capacity;
+    uint32_t _capacity{ 0 };
 
     //! \brief The array data.
-    T* _data;
+    T* _data{ nullptr };
 };
 
 //! \brief A double-ended queue/ring buffer.
