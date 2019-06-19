@@ -254,7 +254,7 @@ inline void core::string::grow(String<CharType>& a, uint32_t min_capacity) noexc
 }
 
 template<typename CharType>
-inline void core::string::push_back(String<CharType>& a, const CharType& item) noexcept
+inline void core::string::push_back(String<CharType>& a, CharType item) noexcept
 {
     if (a._size + 1 > a._capacity)
     {

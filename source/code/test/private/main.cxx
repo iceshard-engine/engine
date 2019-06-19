@@ -9,7 +9,7 @@ int main()
         auto& a = core::memory::globals::default_allocator();
 
         {
-            core::String str{ a, "Test" };
+            core::String str{ a, "Test12345" };
 
             str += str;
 
