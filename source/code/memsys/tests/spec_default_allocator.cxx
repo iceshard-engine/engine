@@ -2,7 +2,7 @@
 #include <catch2/catch.hpp>
 #include <core/memory.hxx>
 
-SCENARIO("memsys :: default_allocator", "[allocators]")
+SCENARIO("core :: memory :: default_allocator", "[allocators]")
 {
     GIVEN("The global memory system is initialized with a 64 byte scratch allocator")
     {

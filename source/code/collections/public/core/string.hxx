@@ -4,6 +4,12 @@
 
 namespace core
 {
+
+
+// core::String functions
+//////////////////////////////////////////////////////////////////////////
+
+
 namespace string
 {
 
@@ -27,7 +33,7 @@ bool empty(const String<CharType>& str) noexcept;
 template <typename CharType>
 auto begin(String<CharType>& a) noexcept -> CharType*;
 
-//! \copydoc begin(String<CharType>&)
+//! \copydoc core::string::begin(String<CharType>&)
 template <typename CharType>
 auto begin(const String<CharType>& a) noexcept -> const CharType*;
 
@@ -35,7 +41,7 @@ auto begin(const String<CharType>& a) noexcept -> const CharType*;
 template <typename CharType>
 auto end(String<CharType>& str) noexcept -> CharType*;
 
-//! \copydoc end(String<CharType>&)
+//! \copydoc core::string::end(String<CharType>&)
 template <typename CharType>
 auto end(const String<CharType>& str) noexcept -> const CharType*;
 
@@ -44,7 +50,7 @@ auto end(const String<CharType>& str) noexcept -> const CharType*;
 template <typename CharType>
 auto front(String<CharType>& str) noexcept -> CharType&;
 
-//! \copydoc front(String<CharType>&)
+//! \copydoc core::string::front(String<CharType>&)
 template <typename CharType>
 auto front(const String<CharType>& str) noexcept -> const CharType&;
 
@@ -53,7 +59,7 @@ auto front(const String<CharType>& str) noexcept -> const CharType&;
 template <typename CharType>
 auto back(String<CharType>& str) noexcept -> CharType&;
 
-//! \copydoc back(String<CharType>&)
+//! \copydoc core::string::back(String<CharType>&)
 template <typename CharType>
 auto back(const String<CharType>& str) noexcept -> const CharType&;
 
@@ -108,90 +114,31 @@ void pop_back(String<CharType>& str, uint32_t num) noexcept;
 } // namespace string
 
 
-template <typename CharType>
-inline String<CharType>::String(core::allocator& allocator) : _allocator(&allocator), _size(0), _capacity(0), _data(0) {}
+// core::String 'C++ feature extensions'
+//////////////////////////////////////////////////////////////////////////
 
-template <typename CharType>
-inline String<CharType>::~String()
-{
-    _allocator->deallocate(_data);
-}
 
-template <typename CharType>
-inline String<CharType>::String(const String<CharType>& other) : _allocator(other._allocator), _size(0), _capacity(0), _data(0)
-{
-    const uint32_t n = other._size + 1;
-    string::set_capacity(*this, n);
-    memcpy(_data, other._data, sizeof(CharType) * n);
-    _size = n - 1;
-}
+//! \copydoc core::string::begin(String<CharType>&)
+template<typename CharType>
+auto begin(String<CharType>& a) noexcept -> CharType*;
+//! \copydoc core::string::begin(String<CharType>&)
+template<typename CharType>
+auto begin(const String<CharType>& a) noexcept -> const CharType*;
 
-template <typename CharType>
-inline String<CharType>& String<CharType>::operator=(const String<CharType>& other)
-{
-    const uint32_t n = other._size;
-    string::resize(*this, n);
-    memcpy(_data, other._data, sizeof(CharType) * (n + 1));
-    return *this;
-}
+//! \copydoc core::string::end(String<CharType>&)
+template<typename CharType>
+auto end(String<CharType>& a) noexcept -> CharType*;
 
-template <typename CharType>
-template<uint32_t OtherCapacity>
-inline String<CharType>& String<CharType>::operator=(const StackString<OtherCapacity, CharType>& other)
-{
-    *this = other._data;
-    return *this;
-}
+//! \copydoc core::string::end(String<CharType>&)
+template<typename CharType>
+auto end(const String<CharType>& a) noexcept -> const CharType*;
 
-template <typename CharType>
-inline String<CharType>& String<CharType>::operator=(const CharType* other)
-{
-    const auto n = strlen(other);
-    string::resize(*this, static_cast<uint32_t>(n));
-    memcpy(_data, other, sizeof(CharType) * (n + 1));
-    return *this;
-}
+template<typename CharType>
+void swap(String<CharType>& lhs, String<CharType>& rhs) noexcept;
 
-template <typename CharType>
-inline CharType& String<CharType>::operator[](uint32_t i)
-{
-    return _data[i];
-}
 
-template <typename CharType>
-inline const CharType& String<CharType>::operator[](uint32_t i) const
-{
-    return _data[i];
-}
-
-// range based ADL lookup
-template<typename CharType> inline CharType* begin(String<CharType>& a)
-{
-    return string::begin(a);
-}
-
-template<typename CharType> inline const CharType* begin(const String<CharType>& a)
-{
-    return string::begin(a);
-}
-
-template<typename CharType> inline CharType* end(String<CharType>& a)
-{
-    return string::end(a);
-}
-
-template<typename CharType> inline const CharType* end(const String<CharType>& a)
-{
-    return string::end(a);
-}
-
-template<typename CharType> void swap(String<CharType>& lhs, String<CharType>& rhs)
-{
-    std::swap(lhs._allocator, rhs._allocator);
-    std::swap(lhs._size, rhs._size);
-    std::swap(lhs._capacity, rhs._capacity);
-    std::swap(lhs._data, rhs._data);
-}
+// core::String implementation
+//////////////////////////////////////////////////////////////////////////
 
 
 #include "string.inl"

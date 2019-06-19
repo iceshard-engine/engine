@@ -19,25 +19,46 @@ struct StackString;
 template<typename CharType>
 struct String
 {
-    String(core::allocator& a);
-    String(const String& other);
-    String& operator=(const String& other);
-    ~String();
+    //! \brief Creates a new String object with the given allocator.
+    String(core::allocator& a) noexcept;
 
-    CharType& operator[](uint32_t i);
-    const CharType& operator[](uint32_t i) const;
+    //! \brief Copies a given String object using the same allocator.
+    String(const String& other) noexcept;
 
+    //! \brief Copies a given String object value.
+    String& operator=(const String& other) noexcept;
+
+    //! \brief Destroys the string object.
+    ~String() noexcept;
+
+    //! \brief Replaces the string value with the new one.
     template<uint32_t OtherCapacity>
-    String& operator=(const StackString<OtherCapacity, CharType>& other);
-    String& operator=(const CharType* other);
+    auto operator=(const StackString<OtherCapacity, CharType>& other) noexcept -> String&;
 
-    core::allocator* _allocator;
-    uint32_t _size;
-    uint32_t _capacity;
-    CharType* _data;
+    //! \brief Replaces the string value with the new one.
+    auto operator=(const CharType* other) noexcept -> String&;
+
+    //! \brief Returns the character at the given position.
+    auto operator[](uint32_t i) noexcept -> CharType&;
+
+    //! \brief Returns the character at the given position.
+    auto operator[](uint32_t i) const noexcept -> const CharType&;
+
+    //! \brief The allocator used to manage memory.
+    core::allocator* const _allocator;
+
+    //! \brief The actual size.
+    uint32_t _size{ 0 };
+
+    //! \brief The actual capacity.
+    uint32_t _capacity{ 0 };
+
+    //! \brief The string data.
+    CharType* _data{ nullptr };
 };
 
-/// A stack allocated string value.
+
+//! \brief A stack allocated string value.
 template<uint32_t Capacity, typename CharType>
 struct StackString
 {
@@ -58,5 +79,6 @@ struct StackString
     uint32_t _size;
     CharType _data[Capacity];
 };
+
 
 } // namespace pod
