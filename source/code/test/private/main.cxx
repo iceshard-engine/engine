@@ -1,21 +1,21 @@
 #include <core/memory.hxx>
+#include <core/string.hxx>
 #include <fmt/format.h>
 
 int main()
 {
     {
         core::memory::globals::init();
-
         auto& a = core::memory::globals::default_allocator();
 
-        auto initial_alloc = a.total_allocated();
+        {
+            core::String str{ a, "Test" };
 
-        [[maybe_unused]]
-        auto* p = a.allocate(1);
+            str += str;
 
-        fmt::print("{}", a.total_allocated() - initial_alloc);
+            fmt::print("{}", str);
+        }
 
-        a.deallocate(p);
         core::memory::globals::shutdown();
     }
     return 0;
