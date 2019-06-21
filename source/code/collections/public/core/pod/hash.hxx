@@ -41,11 +41,13 @@ void reserve(Hash<T> &h, uint32_t size) noexcept;
 template<typename T>
 void clear(Hash<T> &h) noexcept;
 
-/// Returns a pointer to the first entry in the hash table, can be used to
-/// efficiently iterate over the elements (in random order).
+//! \brief Returns a pointer to the first entry in the hash table, can be used to
+//!     efficiently iterate over the elements (in random order).
 template<typename T>
 auto begin(const Hash<T> &h) noexcept -> const typename Hash<T>::Entry*;
 
+//! \brief Returns a pointer to the last entry in the hash table, can be used to
+//!     efficiently iterate over the elements (in random order).
 template<typename T>
 auto end(const Hash<T> &h) noexcept -> const typename Hash<T>::Entry*;
 
