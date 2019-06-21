@@ -9,7 +9,7 @@ namespace core::pod
 
 //! \brief This type defines an dynamic array holding POD values in contiguous memory.
 template<typename T>
-struct Array
+struct Array final
 {
     //! \brief Creates a new Array with the given allocator.
     Array(core::allocator& allocator) noexcept;
@@ -45,7 +45,8 @@ struct Array
 };
 
 //! \brief A double-ended queue/ring buffer.
-template <typename T> struct Queue
+template <typename T>
+struct Queue final
 {
     //! \brief Creates a new Queue with the given allocator.
     Queue(core::allocator& allocator) noexcept;
@@ -68,7 +69,8 @@ template <typename T> struct Queue
 
 //! \brief Hash from an uint64_t to POD objects.
 //! \details If you want to use a generic key object, use a hash function to map that object to an uint64_t.
-template<typename T> struct Hash
+template<typename T>
+struct Hash final
 {
 public:
     //! \brief Creates a new Hash with the given allocator.
