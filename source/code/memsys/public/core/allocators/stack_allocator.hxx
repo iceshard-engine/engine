@@ -1,15 +1,15 @@
 #pragma once
-#include <memsys/memsys.hxx>
+#include <core/memory.hxx>
 #include <core/debug/assert.hxx>
 
-namespace memsys
+namespace core::memory
 {
 
 
 //! \brief This allocator consumes the given amount of memory on the stack and advances on allocation requests.
 //! \remarks Allocation is not tracked.
 template<uint32_t BUFFER_SIZE>
-class stack_allocator : public allocator
+class stack_allocator : public core::allocator
 {
 public:
     stack_allocator() noexcept;
@@ -55,4 +55,4 @@ using stack_allocator_4096 = stack_allocator<4096>;
 #include "stack_allocator.inl"
 
 
-} // namespace memsys
+} // namespace core::memory

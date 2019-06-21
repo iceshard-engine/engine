@@ -1,10 +1,10 @@
-#include <memsys/allocators/proxy_allocator.hxx>
+#include <core/allocators/proxy_allocator.hxx>
 #include <core/debug/assert.hxx>
 
-namespace memsys
+namespace core::memory
 {
 
-proxy_allocator::proxy_allocator(std::string_view name, allocator& alloc) noexcept
+proxy_allocator::proxy_allocator(std::string_view name, core::allocator& alloc) noexcept
     : _name{ std::move(name) }
     , _backing_allocator{ alloc }
     , _allocation_tracking{ _backing_allocator.total_allocated() != SIZE_NOT_TRACKED }
@@ -23,6 +23,8 @@ proxy_allocator::~proxy_allocator() noexcept
 
 auto proxy_allocator::allocate(uint32_t size, uint32_t align /*= DEFAULT_ALIGN*/) noexcept -> void*
 {
+    _allocation_requests += 1;
+
     void* ptr = _backing_allocator.allocate(size, align);
     if (_allocation_tracking)
     {
@@ -53,4 +55,4 @@ auto proxy_allocator::total_allocated() noexcept -> uint32_t
     return _allocation_tracking ? _allocation_total : SIZE_NOT_TRACKED;
 }
 
-} // namespace memsys
+} // namespace core::memory

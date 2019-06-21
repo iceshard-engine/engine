@@ -1,9 +1,9 @@
 #pragma once
-#include <memsys/allocator.hxx>
+#include <core/allocator.hxx>
 #include "allocator_utils.hxx"
 #include <atomic>
 
-namespace memsys
+namespace core::memory
 {
 
 //! \brief An allocator that uses the default system malloc().
@@ -12,7 +12,7 @@ namespace memsys
 //!
 //! \remarks An OS-specific allocator that can do alignment and tracks size
 //!     does need this padding and can thus be more efficient than the MallocAllocator.
-class default_allocator : public memsys::allocator
+class default_allocator : public core::allocator
 {
 public:
     default_allocator() noexcept = default;
@@ -35,4 +35,4 @@ private:
 };
 
 
-} // namespace memsys
+} // namespace core::memory

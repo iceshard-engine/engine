@@ -1,22 +1,35 @@
-#include <memsys/memsys.hxx>
+#include <core/memory.hxx>
+#include <core/string.hxx>
+#include <core/stack_string.hxx>
+#include <core/pod/array.hxx>
+
 #include <fmt/format.h>
 
 int main()
 {
     {
-        memsys::globals::init();
+        using namespace core::pod::array;
 
-        auto& a = memsys::globals::default_allocator();
+        core::memory::globals::init();
+        auto& a = core::memory::globals::default_allocator();
 
-        auto initial_alloc = a.total_allocated();
+        {
+            core::pod::Array<int> arr{ a };
+            push_back(arr, 33);
 
-        [[maybe_unused]]
-        auto* p = a.allocate(1);
+            core::StackString<64> sstr = "Hello";
+            core::String str{ a, " World" };
 
-        fmt::print("{}", a.total_allocated() - initial_alloc);
+            str += sstr;
+            sstr += str;
 
-        a.deallocate(p);
-        memsys::globals::shutdown();
+            fmt::print("{}\n", str);
+            fmt::print("{}\n", sstr);
+
+            set_capacity(arr, 0);
+        }
+
+        core::memory::globals::shutdown();
     }
     return 0;
 }

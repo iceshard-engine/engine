@@ -96,6 +96,9 @@
         .ProjectOutput = '$ProjectName$.vcxproj'
         .ProjectConfigs = .VSProjectConfigurations
         .ProjectBasePath = .ProjectBaseDir
+        .ProjectFiles = {
+            '$ProjectBaseDir$/$ProjectName$.bff'
+        }
         .ProjectInputPaths = {
             '$ProjectBaseDir$/public'
             '$ProjectBaseDir$/private'

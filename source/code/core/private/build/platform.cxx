@@ -13,7 +13,7 @@ auto to_string(System type) noexcept -> const char*
     default:
         break;
     }
-    IS_ASSERT(false, "System value was not recognized! [ value:{} ]", static_cast<std::underlying_type_t<System>>(type));
+    IS_FAIL("System value was not recognized! [ value:{} ]", static_cast<std::underlying_type_t<System>>(type));
     return nullptr;
 }
 
@@ -26,7 +26,7 @@ auto to_string(Architecture type) noexcept -> const char*
     default:
         break;
     }
-    IS_ASSERT(false, "Architecture value was not recognized! [ value:{} ]", static_cast<std::underlying_type_t<Architecture>>(type));
+    IS_FAIL("Architecture value was not recognized! [ value:{} ]", static_cast<std::underlying_type_t<Architecture>>(type));
     return nullptr;
 }
 

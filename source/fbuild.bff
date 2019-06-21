@@ -103,16 +103,48 @@ Settings
 // Predefine specific values used later when generating 'All' aliases
 //--------------------------------------------------------------------------
 .Projects = { }
-.VisualStudioProjects = { }
+.SolutionFolders = { }
+.SolutionProjects = { }
 
 
 // Include project target scripts
 //--------------------------------------------------------------------------
-#include "code/core/core.bff"
-#include "code/memsys/memsys.bff"
+{
+    .VisualStudioProjects = { }
 
-#include "code/test/test.bff"
+    // Core projects
+    //--------------------------------------------------------------------------
+    #include "code/core/core.bff"
+    #include "code/memsys/memsys.bff"
+    #include "code/collections/collections.bff"
 
+    .SolutionFolder =
+    [
+        .Path      = 'core'
+        .Projects = { }
+        ForEach( .Project in .VisualStudioProjects )
+        {
+            ^Projects + '$Project$-vcxproj'
+        }
+
+        ^SolutionProjects + .Projects
+    ]
+    ^SolutionFolders + .SolutionFolder
+
+
+    // Applications
+    //--------------------------------------------------------------------------
+    #include "code/test/test.bff"
+
+    ForEach( .Project in .VisualStudioProjects )
+    {
+        ^SolutionProjects + '$Project$-vcxproj'
+    }
+}
+
+
+// Generate 'All' targets
+//--------------------------------------------------------------------------
 
 // Generate 'All' targets
 //--------------------------------------------------------------------------
@@ -133,6 +165,7 @@ ForEach( .Configuration in .Configurations )
 }
 
 
+
 // Create solution targets
 //--------------------------------------------------------------------------
 VSSolution( 'solution' )
@@ -140,9 +173,6 @@ VSSolution( 'solution' )
     .SolutionOutput = '../IceShard.sln'
     .SolutionConfigs = .Configurations
 
-    .SolutionProjects = { }
-    ForEach( .Project in .VisualStudioProjects )
-    {
-        ^SolutionProjects + '$Project$-vcxproj'
-    }
+    .SolutionFolders = .SolutionFolders
+    .SolutionProjects = .SolutionProjects
 }

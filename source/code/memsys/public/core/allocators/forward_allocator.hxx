@@ -1,7 +1,7 @@
 #pragma once
-#include <memsys/allocator.hxx>
+#include <core/allocator.hxx>
 
-namespace memsys
+namespace core::memory
 {
 
 
@@ -9,12 +9,12 @@ namespace memsys
 //!
 //! \details This allocator should be use used when allocating simple objects in a single task,
 //!     so the memory can be disposed after the work is done.
-//! \details This allocator uses buckets to allocate more memory once and don't ask the backing allocator everytime a object is allocated.
-class MEMSYS_API forward_allocator : public allocator
+//! \details This allocator uses buckets to allocate more memory once and don't ask the backing allocator every time a object is allocated.
+class MEMSYS_API forward_allocator : public core::allocator
 {
 public:
     //! \brief Creates a forward allocator with the given bucket size.
-    forward_allocator(memsys::allocator& backing, unsigned bucket_size) noexcept;
+    forward_allocator(core::allocator& backing, unsigned bucket_size) noexcept;
 
     //! \brief Releases all allocated memory.
     ~forward_allocator() noexcept override;
@@ -31,7 +31,7 @@ public:
     //! \copydoc allocator::total_allocated
     auto total_allocated() noexcept -> uint32_t override;
 
-    //! \brief Releaes all allocated memory.
+    //! \brief Release all allocated memory.
     void release_all() noexcept;
 
 protected:
@@ -42,7 +42,7 @@ protected:
 
 private:
     //! \brief The backing allocator.
-    memsys::allocator& _backing_allocator;
+    core::allocator& _backing_allocator;
 
     //! \brief Memory bucket list.
     memory_bucket* _bucket_list;
@@ -52,4 +52,4 @@ private:
 };
 
 
-} // namespace memsys
+} // namespace core::memory

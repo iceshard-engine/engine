@@ -17,7 +17,7 @@ auto to_string(ConfigurationType type) noexcept -> const char*
     default:
         break;
     }
-    IS_ASSERT(false, "ConfigurationType value was not recognized! [ value:{} ]", static_cast<std::underlying_type_t<ConfigurationType>>(type));
+    IS_FAIL("ConfigurationType value was not recognized! [ value:{} ]", static_cast<std::underlying_type_t<ConfigurationType>>(type));
     return nullptr;
 }
 
