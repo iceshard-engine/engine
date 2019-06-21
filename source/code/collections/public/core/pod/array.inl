@@ -35,13 +35,13 @@ auto core::pod::Array<T>::operator=(const Array<T>& other) noexcept -> Array<T>&
 }
 
 template <typename T>
-inline auto core::pod::Array<T>::operator[](uint32_t i) noexcept -> T&
+inline auto core::pod::Array<T>::operator[](uint32_t i) -> T&
 {
     return _data[i];
 }
 
 template <typename T>
-inline auto core::pod::Array<T>::operator[](uint32_t i) const noexcept -> const T&
+inline auto core::pod::Array<T>::operator[](uint32_t i) const -> const T&
 {
     return _data[i];
 }
@@ -84,74 +84,150 @@ inline void core::pod::swap(Array<T>& lhs, Array<T>& rhs) noexcept
 //////////////////////////////////////////////////////////////////////////
 
 
-namespace array
+template<typename T>
+inline auto core::pod::array::size(const Array<T> &a) noexcept -> uint32_t
 {
-template<typename T> inline uint32_t size(const Array<T> &a) { return a._size; }
-template<typename T> inline bool any(const Array<T> &a) { return a._size != 0; }
-template<typename T> inline bool empty(const Array<T> &a) { return a._size == 0; }
+    return a._size;
+}
 
-template<typename T> inline T* begin(Array<T> &a) { return a._data; }
-template<typename T> inline const T* begin(const Array<T> &a) { return a._data; }
-template<typename T> inline T* end(Array<T> &a) { return a._data + a._size; }
-template<typename T> inline const T* end(const Array<T> &a) { return a._data + a._size; }
+template<typename T>
+inline bool core::pod::array::any(const Array<T> &a) noexcept
+{
+    return a._size != 0;
+}
 
-template<typename T> inline T& front(Array<T> &a) { return a._data[0]; }
-template<typename T> inline const T& front(const Array<T> &a) { return a._data[0]; }
-template<typename T> inline T& back(Array<T> &a) { return a._data[a._size - 1]; }
-template<typename T> inline const T& back(const Array<T> &a) { return a._data[a._size - 1]; }
+template<typename T>
+inline bool core::pod::array::empty(const Array<T> &a) noexcept
+{
+    return a._size == 0;
+}
 
-template <typename T> inline void clear(Array<T> &a) { resize(a, 0); }
-template <typename T> inline void trim(Array<T> &a) { set_capacity(a, a._size); }
+template<typename T>
+inline auto core::pod::array::begin(Array<T> &a) noexcept -> T*
+{
+    return a._data;
+}
 
-template <typename T> void resize(Array<T> &a, uint32_t new_size)
+template<typename T>
+inline auto core::pod::array::begin(const Array<T> &a) noexcept -> const T*
+{
+    return a._data;
+}
+
+template<typename T>
+inline auto core::pod::array::end(Array<T> &a) noexcept -> T*
+{
+    return a._data + a._size;
+}
+
+template<typename T>
+inline auto core::pod::array::end(const Array<T> &a) noexcept -> const T*
+{
+    return a._data + a._size;
+}
+
+template<typename T>
+inline auto core::pod::array::front(Array<T> &a) noexcept -> T&
+{
+    return a._data[0];
+}
+
+template<typename T>
+inline auto core::pod::array::front(const Array<T> &a) noexcept -> const T&
+{
+    return a._data[0];
+}
+
+template<typename T>
+inline auto core::pod::array::back(Array<T> &a) noexcept -> T&
+{
+    return a._data[a._size - 1];
+}
+
+template<typename T>
+inline auto core::pod::array::back(const Array<T> &a) noexcept -> const T&
+{
+    return a._data[a._size - 1];
+}
+
+template <typename T>
+inline void core::pod::array::clear(Array<T> &a) noexcept
+{
+    resize(a, 0);
+}
+
+template <typename T>
+inline void core::pod::array::trim(Array<T> &a) noexcept
+{
+    set_capacity(a, a._size);
+}
+
+template <typename T>
+inline void core::pod::array::resize(Array<T> &a, uint32_t new_size) noexcept
 {
     if (new_size > a._capacity)
+    {
         grow(a, new_size);
+    }
     a._size = new_size;
 }
 
-template <typename T> inline void reserve(Array<T> &a, uint32_t new_capacity)
+template <typename T>
+inline void core::pod::array::reserve(Array<T> &a, uint32_t new_capacity) noexcept
 {
     if (new_capacity > a._capacity)
         set_capacity(a, new_capacity);
 }
 
-template<typename T> void set_capacity(Array<T> &a, uint32_t new_capacity)
+template<typename T>
+inline void core::pod::array::set_capacity(Array<T> &a, uint32_t new_capacity) noexcept
 {
     if (new_capacity == a._capacity)
+    {
         return;
+    }
 
     if (new_capacity < a._size)
+    {
         resize(a, new_capacity);
+    }
 
     T *new_data = 0;
-    if (new_capacity > 0) {
+    if (new_capacity > 0)
+    {
         new_data = (T *)a._allocator->allocate(sizeof(T)*new_capacity, alignof(T));
         memcpy(new_data, a._data, sizeof(T)*a._size);
     }
+
     a._allocator->deallocate(a._data);
     a._data = new_data;
     a._capacity = new_capacity;
 }
 
-template<typename T> void grow(Array<T> &a, uint32_t min_capacity)
+template<typename T>
+inline void core::pod::array::grow(Array<T> &a, uint32_t min_capacity) noexcept
 {
     uint32_t new_capacity = a._capacity * 2 + 8;
     if (new_capacity < min_capacity)
+    {
         new_capacity = min_capacity;
+    }
     set_capacity(a, new_capacity);
 }
 
-template<typename T> inline void push_back(Array<T> &a, const T &item)
+template<typename T>
+inline void core::pod::array::push_back(Array<T> &a, const T &item) noexcept
 {
     if (a._size + 1 > a._capacity)
+    {
         grow(a);
+    }
     a._data[a._size++] = item;
 }
 
-template<typename T> inline void pop_back(Array<T> &a)
+template<typename T>
+inline void core::pod::array::pop_back(Array<T> &a) noexcept
 {
     a._size--;
-}
 }
 

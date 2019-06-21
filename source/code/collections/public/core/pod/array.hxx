@@ -2,7 +2,7 @@
 #include <core/base.hxx>
 #include <core/pod/collections.hxx>
 
-namespace pod
+namespace core::pod
 {
 
 
@@ -40,7 +40,7 @@ auto end(const Array<T>& a) noexcept -> const T*;
 //! \brief First element of the array.
 //! \remarks Cannot be used on a empty array.
 template<typename T>
-auto front(Array<T>& a) noexcept -> const T&;
+auto front(Array<T>& a) noexcept -> T&;
 
 //! \brief First element of the array.
 //! \remarks Cannot be used on a empty array.
@@ -50,7 +50,7 @@ auto front(const Array<T>& a) noexcept -> const T&;
 //! \brief Last element of the array.
 //! \remarks Cannot be used on a empty array.
 template<typename T>
-auto back(Array<T>& a) noexcept -> const T&;
+auto back(Array<T>& a) noexcept -> T&;
 
 //! \brief Last element of the array.
 //! \remarks Cannot be used on a empty array.

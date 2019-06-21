@@ -3,7 +3,7 @@
 
 //! \brief Collections used to store Plain Old Data values.
 //! \details These collections do not call constructors or destructors on those values.
-namespace pod
+namespace core::pod
 {
 
 
