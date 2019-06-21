@@ -37,6 +37,10 @@ public:
     //! \brief The backing allocator.
     auto backing_allocator() noexcept -> core::allocator& { return _backing_allocator; }
 
+public:
+    //! \brief Returns the total number of allocations.
+    auto allocation_count() const noexcept -> uint32_t { return _allocation_requests; }
+
 private:
     //! \brief Name of the proxy allocator.
     const std::string _name;
@@ -49,6 +53,9 @@ private:
 
     //! \brief Total allocated size.
     uint32_t _allocation_total{ 0 };
+
+    //! \brief Number of allocations.
+    uint32_t _allocation_requests{ 0 };
 };
 
 

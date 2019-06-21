@@ -23,6 +23,8 @@ proxy_allocator::~proxy_allocator() noexcept
 
 auto proxy_allocator::allocate(uint32_t size, uint32_t align /*= DEFAULT_ALIGN*/) noexcept -> void*
 {
+    _allocation_requests += 1;
+
     void* ptr = _backing_allocator.allocate(size, align);
     if (_allocation_tracking)
     {
