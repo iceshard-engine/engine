@@ -17,6 +17,13 @@ namespace globals
 //! \param [in] scratch_buffer_size The size of the memory buffer used by the scratch allocators.
 MEMSYS_API void init(uint32_t scratch_buffer_size = 4 * 1024 * 1024) noexcept;
 
+//! \brief Initializes the global memory allocators with statistics.
+//! \details A proxy allocator is inserted between the default allocator and used
+//!     to track additional allocation information.
+//!
+//! \param [in] scratch_buffer_size The size of the memory buffer used by the scratch allocators.
+MEMSYS_API void init_with_stats(uint32_t scratch_buffer_size = 4 * 1024 * 1024) noexcept;
+
 //! \brief Returns a default memory allocator that can be used for most allocations.
 //! \pre You need to call init() for this allocator to be available.
 MEMSYS_API auto default_allocator() noexcept -> core::allocator&;
