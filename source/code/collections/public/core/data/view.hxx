@@ -13,10 +13,10 @@ struct data_view final
 
 
     //! \brief The chunk data.
-    auto data() noexcept { return _data; }
+    auto data() const noexcept { return _data; }
 
     //! \brief The chunk size.
-    auto size() noexcept { return _size; }
+    auto size() const noexcept { return _size; }
 
 
     //! \brief The data location.

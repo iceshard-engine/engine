@@ -38,10 +38,13 @@ public:
     operator data_view() noexcept { return { _data, _size }; }
 
     //! \brief The chunk data.
-    auto data() noexcept { return _data; }
+    auto data() noexcept -> void* { return _data; }
+
+    //! \brief The chunk data.
+    auto data() const noexcept -> const void* { return _data; }
 
     //! \brief The chunk size.
-    auto size() noexcept { return _size; }
+    auto size() const noexcept { return _size; }
 
 
 private:
