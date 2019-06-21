@@ -60,10 +60,10 @@ template <typename T> struct Queue
     Array<T> _data;
 
     //! \brief The current queue size.
-    uint32_t _size;
+    uint32_t _size{ 0 };
 
     //! \brief The offset for the queue head.
-    uint32_t _offset;
+    uint32_t _offset{ 0 };
 };
 
 //! \brief Hash from an uint64_t to POD objects.
