@@ -5,7 +5,7 @@
 namespace core::pod
 {
 
-
+//! \brief Contains functions used to modify Array<T> objects.
 namespace array
 {
 
