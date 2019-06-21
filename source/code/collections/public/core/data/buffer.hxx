@@ -1,33 +1,9 @@
 #pragma once
 #include <core/allocator.hxx>
 
-namespace core::pod
+namespace core
 {
 
-class data_ptr final
-{
-public:
-    using data_t = void*;
-    using size_t = std::size_t;
-
-    explicit data_ptr(core::allocator& alloc, data_t ptr, size_t sz);
-    ~data_ptr();
-
-    constexpr data_ptr(const data_ptr&) noexcept = delete;
-    constexpr data_ptr& operator=(const data_ptr&) noexcept = delete;
-
-    constexpr data_ptr(data_ptr&&) noexcept = delete;
-    constexpr data_ptr& operator=(data_ptr&&) noexcept = delete;
-
-    size_t size() const noexcept { return _size; }
-
-    data_t data() const noexcept { return _data; }
-
-private:
-    core::allocator& _allocator;
-    const data_t _data;
-    const size_t _size;
-};
 
 struct Buffer
 {
@@ -84,4 +60,5 @@ void trim(Buffer& b);
 
 }
 
-}
+
+} // core
