@@ -1,64 +1,93 @@
 #pragma once
 #include <core/allocator.hxx>
+#include <core/data/view.hxx>
 
 namespace core
 {
 
 
+//! \brief This class defines a raw data object, which will grow if needed.
 struct Buffer
 {
-    Buffer(core::allocator& alloc);
-    Buffer(core::allocator& alloc, void* data, uint32_t size);
-    Buffer(const Buffer& other);
-    Buffer& operator=(const Buffer& other);
+    //! \brief Creates a new empty Buffer object.
+    Buffer(core::allocator& alloc) noexcept;
+
+    //! \brief Creates a new Buffer object with the initial data copied from the given data view.
+    Buffer(core::allocator& alloc, data_view data) noexcept;
+
+    //! \brief Creates a new Buffer object from the other.
+    //! \details The allocator used will be the same, and the contents will be copied.
+    Buffer(const Buffer& other) noexcept;
+
+    //! \brief Releases the allocated data.
     ~Buffer();
 
+
+    //! \brief Replaces the Buffer contents from the other object.
+    auto operator=(const Buffer& other) noexcept -> Buffer&;
+
+    //! \brief Returns a view into this data buffer.
+    operator data_view() noexcept { return { _data, _size }; }
+
+
+    //! \brief The associated allocator.
     core::allocator* _allocator;
-    uint32_t _size;
-    uint32_t _capacity;
-    void* _data;
+
+    //! \brief The current size.
+    uint32_t _size{ 0 };
+
+    //! \brief The current capacity.
+    uint32_t _capacity{ 0 };
+
+    //! \brief The data.
+    void* _data{ nullptr };
 };
 
+
+//! \brief Functions to manipulate a Buffer object.
 namespace buffer
 {
 
-//! Returns the sized used by this given buffer
-uint32_t size(const Buffer& b);
+//! \brief The current size of the data.
+auto size(const Buffer& b) noexcept -> uint32_t;
 
-//! Returns the capacity of the given buffer
-uint32_t capacity(const Buffer& b);
+//! \brief The current capacity of the buffer.
+auto capacity(const Buffer& b) noexcept -> uint32_t;
 
-//! Returns true if the buffer is empty
-bool empty(const Buffer& b);
+//! \brief Checks if the Buffer is empty.
+bool empty(const Buffer& b) noexcept;
 
-//! Returns the underlying data buffer
-const char* data(const Buffer& b);
+//! \brief The buffer data pointer.
+auto data(const Buffer& b) noexcept -> void*;
 
-//! Appends data to the buffer
-void append(Buffer& b, const void* data, uint32_t size);
+//! \brief Appends data to the buffer
+void append(Buffer& b, const void* data, uint32_t size) noexcept;
 
-//! Changes the size of the buffer (does not reallocate memory unless necessary).
-void resize(Buffer& a, uint32_t new_size);
+//! \brief Changes the size of the buffer
+//! \remarks Does not reallocate memory unless necessary.
+void resize(Buffer& a, uint32_t new_size) noexcept;
 
-//! Removes all items in the buffer (does not free memory).
-void clear(Buffer& b);
+//! \brief Removes all items in the buffer
+//! \remarks Does not free memory.
+void clear(Buffer& b) noexcept;
 
-//! Reallocates the buffer to the specified capacity.
-void set_capacity(Buffer& b, uint32_t new_capacity);
+//! \brief Reallocates the buffer to the specified capacity.
+void set_capacity(Buffer& b, uint32_t new_capacity) noexcept;
 
-//! Grows the buffer using a geometric progression formula
-//! If a min_capacity is specified, the buffer will grow
-//! to at least that capacity.
-void grow(Buffer& b, uint32_t min_capacity = 0);
+//! \brief  Grows the buffer using a geometric progression formula.
+//!
+//! \details If a min_capacity is specified, the buffer will grow
+//!     to at least that capacity.
+void grow(Buffer& b, uint32_t min_capacity = 0) noexcept;
 
-//! Makes sure that the buffer has at least the specified capacity.
-//! (If not, the buffer is grown.)
-void reserve(Buffer& b, uint32_t new_capacity);
+//! \brief Ensures the specified capacity is available.
+void reserve(Buffer& b, uint32_t new_capacity) noexcept;
 
-//! Trims the buffer so that its capacity matches its size.
-void trim(Buffer& b);
+//! \brief Trims the buffer so that its capacity matches its size.
+//! \remarks If the buffer size is 0, it will just release the data.
+void trim(Buffer& b) noexcept;
 
-}
+} // namespace buffer
 
 
-} // core
+} // namespace core

@@ -1,4 +1,5 @@
 #include <core/data/buffer.hxx>
+#include <core/debug/assert.hxx>
 #include <core/memory.hxx>
 
 #include <cassert>
@@ -6,13 +7,15 @@
 namespace core
 {
 
-Buffer::Buffer(core::allocator& alloc) : _allocator{ &alloc }, _size{ 0u }, _capacity{ 0u }, _data{ nullptr }
+Buffer::Buffer(core::allocator& alloc) noexcept
+    : _allocator{ &alloc }
 {
 }
 
-Buffer::Buffer(core::allocator& alloc, void* data, uint32_t size) : _allocator{ &alloc }, _size{ 0u }, _capacity{ 0u }, _data{ nullptr }
+Buffer::Buffer(core::allocator& alloc, data_view data) noexcept
+    : _allocator{ &alloc }
 {
-    buffer::append(*this, data, size);
+    buffer::append(*this, data.data(), data.size());
 }
 
 Buffer::~Buffer()
@@ -20,15 +23,16 @@ Buffer::~Buffer()
     _allocator->deallocate(_data);
 }
 
-Buffer::Buffer(const Buffer& other) : _allocator{ other._allocator }, _size{ 0u }, _capacity{ 0u }, _data{ nullptr }
+Buffer::Buffer(const Buffer& other) noexcept
+    : _allocator{ other._allocator }
 {
-    const uint32_t n = other._size;
-    buffer::set_capacity(*this, n);
-    memcpy(_data, other._data, n);
-    _size = n;
+    const auto other_size = other._size;
+    buffer::set_capacity(*this, other_size);
+    memcpy(_data, other._data, other_size);
+    _size = other_size;
 }
 
-Buffer& Buffer::operator=(const Buffer& other)
+auto Buffer::operator=(const Buffer& other) noexcept -> Buffer&
 {
     if (this == &other) return *this;
 
@@ -38,70 +42,77 @@ Buffer& Buffer::operator=(const Buffer& other)
     return *this;
 }
 
-uint32_t buffer::size(const Buffer& b)
+auto buffer::size(const Buffer& b) noexcept -> uint32_t
 {
     return b._size;
 }
 
-uint32_t buffer::capacity(const Buffer& b)
+auto buffer::capacity(const Buffer& b) noexcept -> uint32_t
 {
     return b._capacity;
 }
 
-bool buffer::empty(const Buffer& b)
+bool buffer::empty(const Buffer& b) noexcept
 {
     return b._size == 0;
 }
 
-const char* buffer::data(const Buffer& b)
+auto buffer::data(const Buffer& b) noexcept -> void*
 {
-    return reinterpret_cast<const char*>(b._data);
+    return b._data;
 }
 
-void buffer::clear(Buffer& b)
+void buffer::clear(Buffer& b) noexcept
 {
     resize(b, 0);
 }
 
-void buffer::trim(Buffer& b)
+void buffer::trim(Buffer& b) noexcept
 {
     set_capacity(b, b._size);
 }
 
-void buffer::append(Buffer& b, const void* data, uint32_t size)
+void buffer::append(Buffer& b, const void* data, uint32_t size) noexcept
 {
-    const uint32_t n = b._size;
-    const uint32_t new_size = n + size;
+    const uint32_t new_size = b._size + size;
 
-    reserve(b, new_size);
-    assert(new_size <= b._capacity);
+    grow(b, new_size);
+    IS_ASSERT(new_size <= b._capacity, "Couldn't reserve enough memory for the new buffer size! [ size:{}, capacity:{} ]", new_size, b._capacity);
 
-    void* buffer_end = core::memory::utils::pointer_add(b._data, n);
+    void* const buffer_end = core::memory::utils::pointer_add(b._data, b._size);
     memcpy(buffer_end, data, size);
 
     b._size = new_size;
 }
 
-void buffer::resize(Buffer& b, uint32_t new_size)
+void buffer::resize(Buffer& b, uint32_t new_size) noexcept
 {
     if (new_size > b._capacity)
+    {
         grow(b, new_size);
+    }
     b._size = new_size;
 }
 
-void buffer::reserve(Buffer& b, uint32_t new_capacity)
+void buffer::reserve(Buffer& b, uint32_t new_capacity) noexcept
 {
     if (new_capacity > b._capacity)
+    {
         set_capacity(b, new_capacity);
+    }
 }
 
-void buffer::set_capacity(Buffer& b, uint32_t new_capacity)
+void buffer::set_capacity(Buffer& b, uint32_t new_capacity) noexcept
 {
     if (new_capacity == b._capacity)
+    {
         return;
+    }
 
     if (new_capacity < b._size)
+    {
         resize(b, new_capacity);
+    }
 
     void* new_data = nullptr;
     if (new_capacity > 0)
@@ -115,11 +126,13 @@ void buffer::set_capacity(Buffer& b, uint32_t new_capacity)
     b._capacity = new_capacity;
 }
 
-void buffer::grow(Buffer& b, uint32_t min_capacity /*= 0*/)
+void buffer::grow(Buffer& b, uint32_t min_capacity /*= 0*/) noexcept
 {
     uint32_t new_capacity = b._capacity * 2 + 8;
     if (new_capacity < min_capacity)
+    {
         new_capacity = min_capacity;
+    }
     set_capacity(b, new_capacity);
 }
 

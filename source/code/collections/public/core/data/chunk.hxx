@@ -37,6 +37,7 @@ public:
     //! \brief Returns a view into this data chunk.
     operator data_view() noexcept { return { _data, _size }; }
 
+
     //! \brief The chunk data.
     auto data() noexcept -> void* { return _data; }
 
