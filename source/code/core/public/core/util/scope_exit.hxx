@@ -2,8 +2,25 @@
 
 namespace core::util::detail
 {
-    template<int Size>
-    struct MemoryBlock { char memory[Size]; };
+    template<class T>
+    class scope_exit_new
+    {
+    public:
+        scope_exit(T&& func) noexcept
+            : _func{ std::move(func) }
+        { }
+
+        ~scope_exit() noexcept
+        {
+            _func();
+        }
+
+    private:
+        T _func;
+    };
+
+    template<class Func>
+    scope_exit(Func) -> scope_exit<Func>;
 
     template<class Lambda>
     class scope_exit {
