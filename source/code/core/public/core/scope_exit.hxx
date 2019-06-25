@@ -1,5 +1,4 @@
 #pragma once
-#include <core/macro.hxx>
 
 namespace core
 {

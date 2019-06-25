@@ -1,6 +1,6 @@
 #pragma once
 #include <core/base.hxx>
-#include <core/util.hxx>
+#include <core/cexpr.hxx>
 #include <core/string_types.hxx>
 #include <core/debug/assert.hxx>
 #include <fmt/format.h>
