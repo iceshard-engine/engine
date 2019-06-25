@@ -3,6 +3,8 @@
 #include <core/stack_string.hxx>
 #include <core/pod/array.hxx>
 
+#include <core/scope_exit.hxx>
+
 #include <fmt/format.h>
 
 int main()
@@ -14,20 +16,19 @@ int main()
         auto& a = core::memory::globals::default_allocator();
 
         {
-            core::pod::Array<int> arr{ a };
-            push_back(arr, 33);
+            auto p = a.allocate(10);
 
-            core::StackString<64> sstr = "Hello";
-            core::String str{ a, " World" };
+            core::scope_guard on_exit_1 = [&]
+            {
+                a.deallocate(p);
+            };
 
-            str += sstr;
-            sstr += str;
-
-            fmt::print("{}\n", str);
-            fmt::print("{}\n", sstr);
-
-            set_capacity(arr, 0);
+            core::scope_guard on_exit_2 = [&]
+            {
+                a.deallocate(nullptr);
+            };
         }
+
 
         core::memory::globals::shutdown();
     }
