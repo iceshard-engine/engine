@@ -23,6 +23,7 @@ private:
     T _func;
 };
 
+//! \brief A deduction guide for the scope guard to accept any lambda object.
 template<class Func>
 scope_guard(Func) -> scope_guard<Func>;
 
