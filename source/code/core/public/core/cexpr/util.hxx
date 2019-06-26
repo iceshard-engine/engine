@@ -1,6 +1,5 @@
 #pragma once
-#include <cinttypes>
-#include <type_traits>
+#include <core/base.hxx>
 
 //! \brief Utility namespace containing constexpr functions,
 namespace core::cexpr

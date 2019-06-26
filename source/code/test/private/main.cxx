@@ -3,6 +3,7 @@
 #include <core/stack_string.hxx>
 #include <core/pod/array.hxx>
 
+#include <core/cexpr/stringid.hxx>
 #include <core/scope_exit.hxx>
 
 #include <fmt/format.h>
@@ -14,6 +15,9 @@ int main()
 
         core::memory::globals::init();
         auto& a = core::memory::globals::default_allocator();
+
+        constexpr auto sid2 = core::cexpr::stringid_cexpr("test2");
+        auto sid = core::cexpr::stringid("test1");
 
         {
             auto p = a.allocate(10);
@@ -29,6 +33,8 @@ int main()
             };
         }
 
+        fmt::print("{}\n", sid2);
+        fmt::print("{}\n", sid);
 
         core::memory::globals::shutdown();
     }

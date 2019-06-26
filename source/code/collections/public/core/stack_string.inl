@@ -201,13 +201,13 @@ inline void core::string::resize(core::StackString<Capacity, CharType>& a, uint3
 }
 
 template <uint32_t Capacity, typename CharType>
-inline void core::string::reserve(core::StackString<Capacity, CharType>&, uint32_t new_capacity) noexcept
+inline void core::string::reserve(core::StackString<Capacity, CharType>&, [[maybe_unused]] uint32_t new_capacity) noexcept
 {
     IS_ASSERT(new_capacity <= Capacity, "Requested capacity is larger than the available capacity! [ available={}, requested={} ]", Capacity, new_capacity);
 }
 
 template <uint32_t Capacity, typename CharType>
-inline void core::string::set_capacity(core::StackString<Capacity, CharType>& a, uint32_t new_capacity) noexcept
+inline void core::string::set_capacity(core::StackString<Capacity, CharType>& a, [[maybe_unused]] uint32_t new_capacity) noexcept
 {
     IS_ASSERT(new_capacity <= Capacity, "Requested capacity is larger than the available capacity! [ available={}, requested={} ]", Capacity, new_capacity);
     if (a._size >= new_capacity)
@@ -217,7 +217,7 @@ inline void core::string::set_capacity(core::StackString<Capacity, CharType>& a,
 }
 
 template <uint32_t Capacity, typename CharType>
-inline void core::string::grow(core::StackString<Capacity, CharType>&, uint32_t min_capacity) noexcept
+inline void core::string::grow(core::StackString<Capacity, CharType>&, [[maybe_unused]] uint32_t min_capacity) noexcept
 {
     IS_ASSERT(min_capacity <= Capacity, "Trying to grow over the available capacity! [ available={}, requested={} ]", Capacity, min_capacity);
 }

@@ -6,7 +6,9 @@
 .vs2017_Variables =
 [
     .PlatformToolset = 'v141'
-    .CompilerOptions = ' /wd5030'
+    .CompilerOptions = ''
+        + ' /wd5030'
+        + ' /wd4307'
 ]
 
 .vs2019_Variables =
