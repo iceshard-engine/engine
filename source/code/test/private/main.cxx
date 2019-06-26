@@ -8,7 +8,12 @@
 #include <core/scope_exit.hxx>
 #include <core/debug/profiler.hxx>
 
+#include <filesystem/uri.hxx>
+
 #include <fmt/format.h>
+
+using core::cexpr::stringid;
+using core::cexpr::stringid_invalid;
 
 int main()
 {
@@ -34,6 +39,11 @@ int main()
         auto& sa = core::memory::globals::default_scratch_allocator();
         [[maybe_unused]]
         auto psa = core::memory::proxy_allocator{ "psa", sa };
+
+        {
+            filesystem::URI uri{ stringid("file"), stringid("test.txt"), { psa, "some/location" } };
+            fmt::print("{}\n", uri);
+        }
 
         auto& alloc = psa;
 

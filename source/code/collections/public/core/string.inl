@@ -227,7 +227,7 @@ inline void core::string::set_capacity(String<CharType>& str, uint32_t new_capac
     CharType* new_data = 0;
     if (new_capacity > 0)
     {
-        new_data = reinterpret_cast<CharType*>(str._allocator->allocate(sizeof(CharType) * new_capacity, alignof(CharType)));
+        new_data = reinterpret_cast<CharType*>(str._allocator->allocate(sizeof(CharType) * new_capacity));
         memcpy(new_data, str._data, sizeof(CharType) * str._size);
         new_data[str._size] = 0;
     }

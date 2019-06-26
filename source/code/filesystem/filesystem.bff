@@ -1,7 +1,7 @@
 // Core
 //------------------------------------------------------------------------------
 {
-    .ProjectName        = 'test'
+    .ProjectName        = 'filesystem'
     .ProjectBaseDir = '$_CURRENT_BFF_DIR_$'
 
 
@@ -9,6 +9,12 @@
     //------------------------------------------------------------------------------
     .ProjectConanModules = .WorkspaceConanModules
     .VSProjectConfigurations = { }
+
+    .ProjectCompilerOptions = ''
+        + ' /I"$ProjectBaseDir$/public"'
+        + ' /I"$WorkspaceCodeDir$/core/public"'
+        + ' /I"$WorkspaceCodeDir$/memsys/public"'
+        + ' /I"$WorkspaceCodeDir$/collections/public"'
 
 
     // Library
@@ -32,32 +38,20 @@
             {
                 ^CompilerOptions + ' /D$Define$'
             }
-            ForEach( .LibraryDir in .LibDirs )
-            {
-                ^LinkerOptions + ' /LIBPATH:"$LibraryDir$"'
-            }
-            ForEach( .Library in .Libs )
-            {
-                ^LinkerOptions + ' "$Library$.lib"'
-            }
         }
 
 
         // Configuration properties
         //--------------------------------------------------------------------------
         .ConfigurationIntermediateDirectory = '$WorkspaceBuildDir$/obj/$Platform$-$Config$/$ProjectName$'
-        .ConfigurationTargetDirectory = '$WorkspaceBuildDir$/bin/$Platform$-$Config$/$ProjectName$'
+        .ConfigurationTargetDirectory = '$WorkspaceBuildDir$/lib/$Platform$-$Config$/$ProjectName$'
 
 
         // Object lists
         //--------------------------------------------------------------------------
         ObjectList( '$ProjectName$-$Platform$-$Config$-objects' )
         {
-            .CompilerOptions + ' /I"$ProjectBaseDir$/public"'
-                + ' /I"$WorkspaceCodeDir$/core/public"'
-                + ' /I"$WorkspaceCodeDir$/memsys/public"'
-                + ' /I"$WorkspaceCodeDir$/collections/public"'
-                + ' /I"$WorkspaceCodeDir$/filesystem/public"'
+            .CompilerOptions + .ProjectCompilerOptions
 
             .CompilerOutputPath = .ConfigurationIntermediateDirectory
             .CompilerInputPath = '$ProjectBaseDir$/private'
@@ -67,19 +61,12 @@
 
         // Library target
         //--------------------------------------------------------------------------
-        Executable( '$ProjectName$-$Platform$-$Config$' )
+        Library( '$ProjectName$-$Platform$-$Config$' )
         {
             .CompilerOutputPath = .ConfigurationIntermediateDirectory
 
-            .Libraries = {
-                '$ProjectName$-$Platform$-$Config$-objects'
-                'core-$Platform$-$Config$'
-                'memsys-$Platform$-$Config$'
-                'collections-$Platform$-$Config$'
-                'filesystem-$Platform$-$Config$'
-            }
-
-            .LinkerOutput = '$ConfigurationTargetDirectory$/$ProjectName$.exe'
+            .LibrarianAdditionalInputs = '$ProjectName$-$Platform$-$Config$-objects'
+            .LibrarianOutput = '$ConfigurationTargetDirectory$/$ProjectName$.lib'
         }
 
 
@@ -95,13 +82,14 @@
 
             .IntermediateDirectory = .ConfigurationIntermediateDirectory
             .OutputDirectory = .ConfigurationTargetDirectory
-            .Output = '$ConfigurationTargetDirectory$/$ProjectName$.exe'
+            .Output = '$ConfigurationTargetDirectory$/$ProjectName$.lib'
 
-            .ProjectBuildCommand = '$VSBuildCommand$ $ProjectName$-$Platform$-$Config$'
-            .ProjectRebuildCommand = '$VSRebuildCommand$ $ProjectName$-$Platform$-$Config$'
+            .ProjectBuildCommand = '$VSBuildCommand$ $Target$'
+            .ProjectRebuildCommand = '$VSRebuildCommand$ $Target$'
         ]
         ^VSProjectConfigurations + .VSProjectConfiguration
     }
+
 
     // Create a Visual Studio project description
     //--------------------------------------------------------------------------
@@ -109,12 +97,24 @@
     {
         .ProjectOutput = '$ProjectName$.vcxproj'
         .ProjectConfigs = .VSProjectConfigurations
-        .ProjectInputPaths = .ProjectBaseDir
         .ProjectBasePath = .ProjectBaseDir
+        .ProjectFiles = {
+            '$ProjectBaseDir$/$ProjectName$.bff'
+        }
+        .ProjectInputPaths = {
+            '$ProjectBaseDir$/public'
+            '$ProjectBaseDir$/private'
+        }
     }
+
 
     // Register this project
     //--------------------------------------------------------------------------
     ^Projects + .ProjectName
     ^VisualStudioProjects + .ProjectName
+
+
+    // Add tests project
+    //--------------------------------------------------------------------------
+    #include "../../scripts/tests.bff"
 }

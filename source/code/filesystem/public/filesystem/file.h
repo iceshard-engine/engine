@@ -1,5 +1,4 @@
 #pragma once
-#include <filesystem/filesystem_api.h>
 #include <filesystem/details.h>
 
 namespace fs
