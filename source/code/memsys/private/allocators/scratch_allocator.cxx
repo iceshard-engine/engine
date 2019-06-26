@@ -110,7 +110,7 @@ void scratch_allocator::deallocate(void* pointer) noexcept
         }
 
         // Move the free pointer by the given amount of bytes.
-        _free = utils::pointer_add(_free, alloc_header->allocated_size & detail::FREE_MEMORY_MASK);
+        _free = utils::pointer_add(alloc_header, alloc_header->allocated_size & detail::FREE_MEMORY_MASK);
         if (_free == _end)
         {
             _free = _begin;
