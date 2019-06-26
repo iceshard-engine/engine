@@ -52,6 +52,7 @@ bool assert_internal(std::string_view condition, std::string_view filename, int 
     if constexpr (core::build::is_release)
     {
         core::debug::abort();
+        return false;
     }
     else
     {
