@@ -1,5 +1,5 @@
 #pragma once
-#include <filesystem/uri.hxx>
+#include <resource/uri.hxx>
 #include <core/string.hxx>
 
 //! \brief Functions used to operate on files.
@@ -11,7 +11,7 @@ namespace filesystem::file
 bool exists(const core::String<>& path) noexcept;
 
 //! \brief Checks the URI for existence.
-bool exists(const URI& uri) noexcept;
+bool exists(const resource::URI& uri) noexcept;
 
 
 } // namespace filesystem

@@ -9,7 +9,7 @@
 #include <core/debug/profiler.hxx>
 
 #include <filesystem/filesystem.hxx>
-#include <filesystem/uri.hxx>
+#include <resource/uri.hxx>
 
 #include <fmt/format.h>
 
@@ -33,6 +33,14 @@ int main()
         }
 
         fmt::print("{}\n", test);
+
+        resource::URI uri1{ core::cexpr::stringid("file"), { a, "mesh/box.msh" } };
+        resource::URI uri2{ core::cexpr::stringid("pack"), { a, "rpack/common.pack" }, core::cexpr::stringid("box.msh") };
+
+        fmt::print("{}\n", uri1);
+        fmt::print("{}\n", uri2);
+        fmt::print("{}\n", resource::get_name(uri1));
+        fmt::print("{}\n", resource::get_name(uri2));
     }
 
     filesystem::shutdown();

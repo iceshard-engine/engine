@@ -50,6 +50,20 @@ auto default_scratch_allocator() noexcept -> core::allocator&
     return *g_memory_globals._default_scratch_allocator;
 }
 
+auto null_allocator() noexcept -> core::allocator&
+{
+    struct null_allocator_type : core::allocator
+    {
+        auto allocate(uint32_t, uint32_t) noexcept -> void* override { return nullptr; }
+        void deallocate(void*) noexcept override { }
+        auto allocated_size(void*) noexcept -> uint32_t override { return allocator::SIZE_NOT_TRACKED; }
+        auto total_allocated() noexcept -> uint32_t override { return allocator::SIZE_NOT_TRACKED; }
+    };
+
+    static null_allocator_type null_allocator;
+    return null_allocator;
+}
+
 void shutdown() noexcept
 {
     g_memory_globals._global_allocator = nullptr;

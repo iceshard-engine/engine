@@ -1,5 +1,5 @@
 #pragma once
-#include <filesystem/uri.hxx>
+#include <resource/uri.hxx>
 #include <core/cexpr/stringid.hxx>
 
 namespace filesystem::file
@@ -15,7 +15,7 @@ extern file_identifier file_invalid_identifier;
 
 //! \brief Search for the given file.
 //! \returns A file identifier.
-auto find(const URI& uri) noexcept -> file_identifier;
+//auto find(const resouce::URI& uri) noexcept -> file_identifier;
 
 
 } // namespace filesystem
