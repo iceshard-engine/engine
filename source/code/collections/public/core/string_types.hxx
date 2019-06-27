@@ -25,12 +25,18 @@ struct String
     //! \brief Creates a new String object with the given allocator and value to copy.
     String(core::allocator& a, const CharType* other) noexcept;
 
+    //! \brief Moves a given String object.
+    String(String&& other) noexcept;
+
     //! \brief Copies a given String object using the same allocator.
     String(const String& other) noexcept;
 
     //! \brief Destroys the string object.
     ~String() noexcept;
 
+
+    //! \brief Swaps the string value with the new one.
+    auto operator=(String&& other) noexcept -> String&;
 
     //! \brief Replaces the string value with the new one.
     auto operator=(const String& other) noexcept -> String&;
@@ -50,7 +56,7 @@ struct String
 
 
     //! \brief The allocator used to manage memory.
-    core::allocator* const _allocator;
+    core::allocator* _allocator;
 
     //! \brief The actual size.
     uint32_t _size{ 0 };

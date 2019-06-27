@@ -26,6 +26,18 @@ inline core::String<CharType>::String(const String<CharType>& other) noexcept
 }
 
 template <typename CharType>
+inline core::String<CharType>::String(String<CharType>&& other) noexcept
+    : _allocator{ other._allocator }
+    , _size{ other._size }
+    , _capacity{ other._capacity }
+    , _data{ other._data }
+{
+    other._data = nullptr;
+    other._capacity = 0;
+    other._size = 0;
+}
+
+template <typename CharType>
 inline core::String<CharType>::~String() noexcept
 {
     _allocator->deallocate(_data);
@@ -37,6 +49,20 @@ inline auto core::String<CharType>::operator=(const String<CharType>& other) noe
     const uint32_t n = other._size;
     string::resize(*this, n);
     memcpy(_data, other._data, sizeof(CharType) * (n + 1));
+    return *this;
+}
+
+template <typename CharType>
+inline auto core::String<CharType>::operator=(String<CharType>&& other) noexcept -> String<CharType>&
+{
+    if (this == &other)
+    {
+        return *this;
+    }
+    std::swap(_allocator, other._allocator);
+    std::swap(_size, other._size);
+    std::swap(_capacity, other._capacity);
+    std::swap(_data, other._data);
     return *this;
 }
 
