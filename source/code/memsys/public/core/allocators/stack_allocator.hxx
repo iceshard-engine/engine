@@ -27,7 +27,7 @@ public:
     //! \copydoc allocator::total_allocated
     auto total_allocated() noexcept -> uint32_t override;
 
-    //! \brief Resets the allocator internal state.
+    //! \brief Resets the allocator internal State.
     void clear() noexcept;
 
 private:

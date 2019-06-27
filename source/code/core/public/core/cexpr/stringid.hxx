@@ -30,7 +30,7 @@ constexpr stringid_type stringid_invalid{ stringid_hash_type{ 0 } };
 #if CFG_RELEASE == 0
 
 //! \brief Create a new stringid_type value from the given string.
-auto stringid(std::string_view cstr) noexcept -> stringid_type
+inline auto stringid(std::string_view cstr) noexcept -> stringid_type
 {
     stringid_type result{ static_cast<core::cexpr::stringid_hash_type>(core::cexpr::hash_cstring(cstr.data(), cstr.length())), "" };
     std::memcpy(result.hash_origin, cstr.data(), std::min(size_t{ 24 }, cstr.length()));
@@ -38,7 +38,7 @@ auto stringid(std::string_view cstr) noexcept -> stringid_type
 }
 
 //! \brief Creates a new constexpr stringid_type value from the given string.
-constexpr auto stringid_cexpr(std::string_view cstr) noexcept -> stringid_type
+inline constexpr auto stringid_cexpr(std::string_view cstr) noexcept -> stringid_type
 {
     stringid_type result{ static_cast<core::cexpr::stringid_hash_type>(core::cexpr::hash_cstring(cstr.data(), cstr.length())), "" };
     return result;
@@ -68,13 +68,13 @@ using stringid_argument_type = stringid_type;
 
 
 //! \brief Equality operator for stringid_type values.
-bool operator==(stringid_argument_type left, stringid_argument_type right) noexcept
+inline bool operator==(stringid_argument_type left, stringid_argument_type right) noexcept
 {
     return left.hash_value == right.hash_value;
 }
 
 //! \brief Inequality operator for stringid_type values.
-bool operator!=(stringid_argument_type left, stringid_argument_type right) noexcept
+inline bool operator!=(stringid_argument_type left, stringid_argument_type right) noexcept
 {
     return !(left == right);
 }

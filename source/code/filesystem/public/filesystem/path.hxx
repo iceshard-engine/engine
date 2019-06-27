@@ -7,10 +7,6 @@ namespace filesystem::file
 {
 
 
-//! \brief The URI Schema for a native file resource.
-constexpr auto schema = core::cexpr::stringid_cexpr("file");
-
-
 //! \brief Checks the path for existence.
 bool exists(const core::String<>& path) noexcept;
 

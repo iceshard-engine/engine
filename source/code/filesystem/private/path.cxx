@@ -4,9 +4,14 @@
 namespace filesystem::file
 {
 
+bool exists(const core::String<>& path) noexcept
+{
+    return exists({ filesystem::file_scheme, core::cexpr::stringid_invalid, path });
+}
+
 bool exists(const URI& uri) noexcept
 {
-    IS_ASSERT(uri.schema == filesystem::file::schema, "Invalid URI object passed to file existance check! [ got:{} ]", uri);
+    IS_ASSERT(uri.scheme == filesystem::file_scheme, "Invalid URI object passed to file existance check! [ got:{} ]", uri);
     return false;
 }
 
