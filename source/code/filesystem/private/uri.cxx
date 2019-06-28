@@ -42,7 +42,16 @@ auto get_name(const URI& uri) noexcept -> URN
         resource_name = core::cexpr::stringid(filename);
     }
 
-    return { core::cexpr::stringid("res"), resource_name };
+    return { resource_name };
+}
+
+URN::URN(std::string_view name) noexcept
+    : name{ core::cexpr::stringid(name.data()) }
+{ }
+
+URN::URN(core::cexpr::stringid_argument_type name) noexcept
+    : name{ name }
+{
 }
 
 } // namespace resource

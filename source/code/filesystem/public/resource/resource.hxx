@@ -12,8 +12,10 @@ public:
     Resource(const URI& uri) noexcept;
     ~Resource() noexcept;
 
+    auto location() const noexcept -> const URI&;
+
 private:
-    URI _resource_identifier;
+    URI _location;
 };
 
 

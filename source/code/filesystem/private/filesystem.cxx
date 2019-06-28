@@ -10,8 +10,121 @@
 #include <unordered_map>
 #include <filesystem>
 
-namespace filesystem
+namespace resource
 {
+namespace detail
+{
+
+namespace hash = core::pod::hash;
+namespace array = core::pod::array;
+
+void mount_directory(core::allocator& alloc, std::filesystem::path path, core::pod::Array<Resource*>& entry_list, core::pod::Hash<Resource*>& entry_map) noexcept
+{
+    // Build the path
+    path = std::filesystem::canonical(path);
+
+    // Traverse the directory
+    std::filesystem::recursive_directory_iterator directory_iterator{ path };
+    for (auto&& native_entry : directory_iterator)
+    {
+        if (std::filesystem::is_regular_file(native_entry))
+        {
+            auto filepath = native_entry.path();
+            auto filename = filepath.filename().generic_string();
+
+            auto fullpath = std::filesystem::canonical(filepath).generic_string();
+            auto fileid = core::cexpr::stringid(filename.c_str());
+
+            auto* entry_object = alloc.make<Resource>(URI{ scheme_file, { alloc, fullpath.c_str() } });
+            array::push_back(entry_list, entry_object);
+
+            auto fileid_hash = static_cast<uint64_t>(fileid.hash_value);
+            if (hash::has(entry_map, fileid_hash))
+            {
+                auto* entry = hash::get<Resource*>(entry_map, fileid_hash, nullptr);
+                fmt::print("INFO: Replacing default file '{}' with '{}'. [{}]\n", entry->location(), entry_object->location(), fileid);
+            }
+
+            hash::set(entry_map, fileid_hash, entry_object);
+        }
+    }
+}
+
+} // namespace detail
+
+FileSystem::FileSystem(core::allocator& alloc, std::string_view basedir) noexcept
+    : _basedir{ basedir }
+    , _allocator{ "resource-system", alloc }
+    , _resources{ _allocator }
+    , _default_resources{ _allocator }
+{
+    core::pod::array::reserve(_resources, 100);
+    core::pod::hash::reserve(_default_resources, 100);
+}
+
+FileSystem::~FileSystem() noexcept
+{
+    core::pod::hash::clear(_default_resources);
+    for (auto* entry : _resources)
+    {
+        _allocator.destroy(entry);
+    }
+    core::pod::array::clear(_resources);
+}
+
+
+auto FileSystem::find(const URI& uri) noexcept -> Resource*
+{
+    Resource* result{ nullptr };
+    for (auto* res : _resources)
+    {
+        auto& res_uri = res->location();
+        if (res_uri.scheme != uri.scheme)
+        {
+            continue;
+        }
+
+        if (!core::string::equals(res_uri.path, uri.path))
+        {
+            continue;
+        }
+
+        if (res_uri.fragment != uri.fragment)
+        {
+            continue;
+        }
+
+        result = res;
+    }
+    return result;
+}
+
+auto FileSystem::find(const URN& urn) noexcept -> Resource*
+{
+    return core::pod::hash::get<Resource*>(_default_resources, static_cast<uint64_t>(urn.name.hash_value), nullptr);
+}
+
+auto FileSystem::mount(const URI& uri) noexcept -> uint32_t
+{
+    if (uri.scheme == resource::scheme_resource)
+    {
+        // nothing
+    }
+    else if (uri.scheme == resource::scheme_file)
+    {
+        // single file mount
+    }
+    else if (uri.scheme == resource::scheme_directory)
+    {
+        detail::mount_directory(_allocator, std::filesystem::path{ _basedir } / core::string::begin(uri.path), _resources, _default_resources);
+        // directory recursive mount
+    }
+    else if (uri.scheme == resource::scheme_pack)
+    {
+        // pack file mount /* not implemented */
+    }
+    return 0;
+}
 
 namespace detail
 {

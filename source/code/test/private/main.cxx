@@ -19,11 +19,20 @@ using core::cexpr::stringid_invalid;
 int main()
 {
     core::memory::globals::init();
-    filesystem::init(core::memory::globals::default_allocator(), "./");
-    filesystem::mount("../source/data");
+
+    auto& alloc = core::memory::globals::default_allocator();
 
     {
         auto& a = core::memory::globals::default_scratch_allocator();
+
+        resource::FileSystem fs{ alloc, "../source/data" };
+        fs.mount({ resource::scheme_directory, { alloc, "." } });
+
+        auto* r1 = fs.find(resource::URN{ "filesystem.txt" });
+        auto* r2 = fs.find(resource::URI{ resource::scheme_file, { alloc, "G:/personal/iceshard/source/data/filesystem.txt" } });
+
+        if (r1) fmt::print("R1: {}\n", r1->location());
+        if (r2) fmt::print("R2: {}\n", r2->location());
 
         core::String test{ a, "test" };
 
@@ -43,7 +52,6 @@ int main()
         fmt::print("{}\n", resource::get_name(uri2));
     }
 
-    filesystem::shutdown();
     core::memory::globals::shutdown();
 
     system("pause");

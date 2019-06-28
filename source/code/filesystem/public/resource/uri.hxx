@@ -1,16 +1,37 @@
 #pragma once
 #include <core/cexpr/stringid.hxx>
 #include <core/string.hxx>
+#include <string_view>
 
 namespace resource
 {
+
+//! \brief File scheme.
+static core::cexpr::stringid_type scheme_file{ core::cexpr::stringid("file") };
+
+//! \brief Directory scheme.
+static core::cexpr::stringid_type scheme_directory{ core::cexpr::stringid("dir") };
+
+//! \brief ResourcePack scheme.
+static core::cexpr::stringid_type scheme_pack{ core::cexpr::stringid("pack") };
+
+//! \brief Resource Name scheme.
+static core::cexpr::stringid_type scheme_resource{ core::cexpr::stringid("res") };
 
 
 //! \brief Uniform Resource Name.
 struct URN
 {
+    //! \brief Creates a new resource name from the given string value.
+    URN(std::string_view name) noexcept;
+
+    //! \brief Creates a new resource name from the given stringid value.
+    URN(core::cexpr::stringid_argument_type name) noexcept;
+
+    ~URN() noexcept = default;
+
     //! \brief The resource scheme.
-    core::cexpr::stringid_type scheme{ core::cexpr::stringid_invalid };
+    const core::cexpr::stringid_type scheme{ resource::scheme_resource };
 
     //! \brief The resource name.
     core::cexpr::stringid_type name{ core::cexpr::stringid_invalid };

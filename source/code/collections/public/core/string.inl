@@ -340,6 +340,30 @@ inline void core::string::pop_back(String<CharType>& str, uint32_t num) noexcept
     str._data[str._size] = 0;
 }
 
+
+// core::String functions
+//////////////////////////////////////////////////////////////////////////
+
+
+template <typename CharType>
+bool core::string::equals(const String<CharType>& left, const String<CharType>& right) noexcept
+{
+    return equals(left, right._data);
+}
+
+template <typename CharType>
+bool core::string::equals(const String<CharType>& left, const std::string_view right) noexcept
+{
+    return equals(left, right.data());
+}
+
+template <typename CharType>
+bool core::string::equals(const String<CharType>& left, const CharType* right) noexcept
+{
+    return strcmp(left._data, right) == 0;
+}
+
+
 // core::String operators
 //////////////////////////////////////////////////////////////////////////
 

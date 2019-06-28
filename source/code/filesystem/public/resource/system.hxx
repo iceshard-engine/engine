@@ -1,6 +1,8 @@
 #pragma once
 #include <resource/uri.hxx>
 #include <resource/resource.hxx>
+#include <core/allocators/proxy_allocator.hxx>
+#include <core/pod/collections.hxx>
 
 namespace resource
 {
@@ -10,10 +12,16 @@ namespace resource
 class ResourceSystem
 {
 public:
-    auto find(const URI& uri) noexcept -> Resource*;
-    auto find(const URN& urn) noexcept -> Resource*;
+    virtual ~ResourceSystem() noexcept = default;
 
-private:
+    //! \brief Searches for the specific resource.
+    virtual auto find(const URI& uri) noexcept -> Resource* = 0;
+
+    //! \brief Searches for the default resource with the given name.
+    virtual auto find(const URN& urn) noexcept -> Resource* = 0;
+
+    //! \brief Mounts all resources found under the given URI.
+    virtual auto mount(const URI& uri) noexcept -> uint32_t = 0;
 };
 
 
