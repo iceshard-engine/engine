@@ -18,6 +18,25 @@ namespace detail
 namespace hash = core::pod::hash;
 namespace array = core::pod::array;
 
+void add_resource(core::pod::Array<Resource*>& entry_list, core::pod::Hash<Resource*>& entry_map, Resource* res, bool set_as_default) noexcept
+{
+    array::push_back(entry_list, res);
+
+    auto res_name = resource::get_name(res->location());
+    auto res_name_hash = static_cast<uint64_t>(res_name.name.hash_value);
+
+    if (set_as_default)
+    {
+        if (hash::has(entry_map, res_name_hash))
+        {
+            auto* entry = hash::get<Resource*>(entry_map, res_name_hash, nullptr);
+            fmt::print("INFO: Replacing default file '{}' with '{}'. [{}]\n", entry->location(), res->location(), res_name.name);
+        }
+
+        hash::set(entry_map, res_name_hash, res);
+    }
+}
+
 void mount_directory(core::allocator& alloc, std::filesystem::path path, core::pod::Array<Resource*>& entry_list, core::pod::Hash<Resource*>& entry_map) noexcept
 {
     // Build the path
@@ -33,19 +52,15 @@ void mount_directory(core::allocator& alloc, std::filesystem::path path, core::p
             auto filename = filepath.filename().generic_string();
 
             auto fullpath = std::filesystem::canonical(filepath).generic_string();
-            auto fileid = core::cexpr::stringid(filename.c_str());
 
-            auto* entry_object = alloc.make<Resource>(URI{ scheme_file, { alloc, fullpath.c_str() } });
-            array::push_back(entry_list, entry_object);
+            auto relative_path = std::filesystem::relative(fullpath, path);
+            auto relative_path_string = relative_path.generic_string();
 
-            auto fileid_hash = static_cast<uint64_t>(fileid.hash_value);
-            if (hash::has(entry_map, fileid_hash))
-            {
-                auto* entry = hash::get<Resource*>(entry_map, fileid_hash, nullptr);
-                fmt::print("INFO: Replacing default file '{}' with '{}'. [{}]\n", entry->location(), entry_object->location(), fileid);
-            }
+            auto* file_entry_object = alloc.make<Resource>(URI{ scheme_file, { alloc, fullpath.c_str() } });
+            auto* dir_entry_object = alloc.make<Resource>(URI{ scheme_directory, { alloc, path.generic_string().c_str() }, core::cexpr::stringid(relative_path_string.c_str()) });
 
-            hash::set(entry_map, fileid_hash, entry_object);
+            add_resource(entry_list, entry_map, file_entry_object, true);
+            add_resource(entry_list, entry_map, dir_entry_object, relative_path.has_parent_path());
         }
     }
 }
@@ -84,7 +99,8 @@ auto FileSystem::find(const URI& uri) noexcept -> Resource*
             continue;
         }
 
-        if (!core::string::equals(res_uri.path, uri.path))
+        auto uri_path = std::filesystem::canonical(_basedir / std::filesystem::path{ core::string::begin(uri.path) }).generic_string();
+        if (!core::string::equals(res_uri.path, uri_path))
         {
             continue;
         }

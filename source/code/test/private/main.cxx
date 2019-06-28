@@ -26,10 +26,11 @@ int main()
         auto& a = core::memory::globals::default_scratch_allocator();
 
         resource::FileSystem fs{ alloc, "../source/data" };
-        fs.mount({ resource::scheme_directory, { alloc, "." } });
+        fs.mount({ resource::scheme_directory, { alloc, "first" } });
+        fs.mount({ resource::scheme_directory, { alloc, "second" } });
 
         auto* r1 = fs.find(resource::URN{ "filesystem.txt" });
-        auto* r2 = fs.find(resource::URI{ resource::scheme_file, { alloc, "G:/personal/iceshard/source/data/filesystem.txt" } });
+        auto* r2 = fs.find(resource::URN{ "test/filesystem.txt" });
 
         if (r1) fmt::print("R1: {}\n", r1->location());
         if (r2) fmt::print("R2: {}\n", r2->location());
