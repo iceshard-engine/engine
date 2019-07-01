@@ -2,6 +2,7 @@
 #include <core/allocators/proxy_allocator.hxx>
 #include <core/string.hxx>
 #include <core/stack_string.hxx>
+#include <core/string_view.hxx>
 #include <core/pod/array.hxx>
 
 #include <core/cexpr/stringid.hxx>
@@ -26,8 +27,8 @@ int main()
         auto& a = core::memory::globals::default_scratch_allocator();
 
         resource::FileSystem fs{ alloc, "../source/data" };
-        fs.mount({ resource::scheme_directory, { alloc, "first" } });
-        fs.mount({ resource::scheme_directory, { alloc, "second" } });
+        fs.mount({ resource::scheme_directory, "first" });
+        fs.mount({ resource::scheme_directory, "second" });
 
         auto* r1 = fs.find(resource::URN{ "filesystem.txt" });
         auto* r2 = fs.find(resource::URN{ "test/filesystem.txt" });
@@ -44,8 +45,8 @@ int main()
 
         fmt::print("{}\n", test);
 
-        resource::URI uri1{ core::cexpr::stringid("file"), { a, "mesh/box.msh" } };
-        resource::URI uri2{ core::cexpr::stringid("pack"), { a, "rpack/common.pack" }, core::cexpr::stringid("box.msh") };
+        resource::URI uri1{ core::cexpr::stringid("file"), "mesh/box.msh" };
+        resource::URI uri2{ core::cexpr::stringid("pack"), "rpack/common.pack", core::cexpr::stringid("box.msh") };
 
         fmt::print("{}\n", uri1);
         fmt::print("{}\n", uri2);
