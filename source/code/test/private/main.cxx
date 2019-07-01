@@ -24,34 +24,18 @@ int main()
     auto& alloc = core::memory::globals::default_allocator();
 
     {
-        auto& a = core::memory::globals::default_scratch_allocator();
+        using resource::URI;
+        using resource::URN;
 
         resource::FileSystem fs{ alloc, "../source/data" };
         fs.mount({ resource::scheme_directory, "first" });
         fs.mount({ resource::scheme_directory, "second" });
 
-        auto* r1 = fs.find(resource::URN{ "filesystem.txt" });
-        auto* r2 = fs.find(resource::URN{ "test/filesystem.txt" });
+        auto* r1 = fs.find(URN{ "filesystem.txt" });
+        auto* r2 = fs.find(URI{ resource::scheme_directory, "first", URN{ "test/filesystem.txt" } });
 
         if (r1) fmt::print("R1: {}\n", r1->location());
         if (r2) fmt::print("R2: {}\n", r2->location());
-
-        core::String test{ a, "test" };
-
-        {
-            core::String test2{ a, "test2" };
-            test = std::move(test2);
-        }
-
-        fmt::print("{}\n", test);
-
-        resource::URI uri1{ core::cexpr::stringid("file"), "mesh/box.msh" };
-        resource::URI uri2{ core::cexpr::stringid("pack"), "rpack/common.pack", core::cexpr::stringid("box.msh") };
-
-        fmt::print("{}\n", uri1);
-        fmt::print("{}\n", uri2);
-        fmt::print("{}\n", resource::get_name(uri1));
-        fmt::print("{}\n", resource::get_name(uri2));
     }
 
     core::memory::globals::shutdown();

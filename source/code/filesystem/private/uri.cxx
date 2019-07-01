@@ -15,6 +15,13 @@ URI::URI(core::cexpr::stringid_argument_type scheme, core::StringView<> path, co
     , path{ std::move(path) }
 { }
 
+URI::URI(core::cexpr::stringid_argument_type scheme, core::StringView<> path, URN name) noexcept
+    : scheme{ scheme }
+    , fragment{ name.name }
+    , path{ std::move(path) }
+{
+}
+
 
 auto get_name(const URI& uri) noexcept -> URN
 {

@@ -44,6 +44,9 @@ struct URI
     //! \brief Creates a new URI for the given scheme, path and fragment.
     URI(core::cexpr::stringid_argument_type scheme, core::StringView<> path, core::cexpr::stringid_argument_type fragment) noexcept;
 
+    //! \brief Creates a new URI for the given scheme, path and fragment.
+    URI(core::cexpr::stringid_argument_type scheme, core::StringView<> path, URN name) noexcept;
+
     //! \brief The resource scheme.
     core::cexpr::stringid_type scheme;
 
