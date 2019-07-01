@@ -12,6 +12,9 @@ namespace core
 class data_chunk final
 {
 public:
+    //! \brief A new data chunk object with the given size.
+    data_chunk(core::allocator& alloc, uint32_t size) noexcept;
+
     //! \brief A new data chunk object from the given data and it's size.
     data_chunk(core::allocator& alloc, void* data, uint32_t size) noexcept;
 

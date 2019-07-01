@@ -3,6 +3,14 @@
 namespace core
 {
 
+data_chunk::data_chunk(core::allocator & alloc, uint32_t size) noexcept
+    : _allocator{ &alloc }
+    , _data{ nullptr }
+    , _size{ size }
+{
+    _data = _allocator->allocate(size);
+}
+
 data_chunk::data_chunk(core::allocator& alloc, void* data, uint32_t size) noexcept
     : _allocator{ &alloc }
     , _data{ data }
