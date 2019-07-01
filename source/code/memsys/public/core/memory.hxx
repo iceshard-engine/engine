@@ -35,6 +35,9 @@ MEMSYS_API auto default_allocator() noexcept -> core::allocator&;
 //!     memory from the default_allocator will be returned instead.
 MEMSYS_API auto default_scratch_allocator() noexcept -> core::allocator&;
 
+//! \brief A special allocator reference which always fails to allocate.
+MEMSYS_API auto null_allocator() noexcept -> core::allocator&;
+
 //! Shuts down the global memory allocators created by init().
 MEMSYS_API void shutdown() noexcept;
 

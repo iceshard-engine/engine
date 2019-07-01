@@ -116,6 +116,20 @@ void pop_back(String<CharType>& str) noexcept;
 template <typename CharType>
 void pop_back(String<CharType>& str, uint32_t num) noexcept;
 
+
+//////////////////////////////////////////////////////////////////////////
+
+
+template <typename CharType>
+bool equals(const String<CharType>& left, const String<CharType>& right) noexcept;
+
+template <typename CharType>
+bool equals(const String<CharType>& left, const std::string_view right) noexcept;
+
+template <typename CharType>
+bool equals(const String<CharType>& left, const CharType* right) noexcept;
+
+
 } // namespace string
 
 

@@ -26,6 +26,18 @@ inline core::String<CharType>::String(const String<CharType>& other) noexcept
 }
 
 template <typename CharType>
+inline core::String<CharType>::String(String<CharType>&& other) noexcept
+    : _allocator{ other._allocator }
+    , _size{ other._size }
+    , _capacity{ other._capacity }
+    , _data{ other._data }
+{
+    other._data = nullptr;
+    other._capacity = 0;
+    other._size = 0;
+}
+
+template <typename CharType>
 inline core::String<CharType>::~String() noexcept
 {
     _allocator->deallocate(_data);
@@ -37,6 +49,20 @@ inline auto core::String<CharType>::operator=(const String<CharType>& other) noe
     const uint32_t n = other._size;
     string::resize(*this, n);
     memcpy(_data, other._data, sizeof(CharType) * (n + 1));
+    return *this;
+}
+
+template <typename CharType>
+inline auto core::String<CharType>::operator=(String<CharType>&& other) noexcept -> String<CharType>&
+{
+    if (this == &other)
+    {
+        return *this;
+    }
+    std::swap(_allocator, other._allocator);
+    std::swap(_size, other._size);
+    std::swap(_capacity, other._capacity);
+    std::swap(_data, other._data);
     return *this;
 }
 
@@ -227,7 +253,7 @@ inline void core::string::set_capacity(String<CharType>& str, uint32_t new_capac
     CharType* new_data = 0;
     if (new_capacity > 0)
     {
-        new_data = reinterpret_cast<CharType*>(str._allocator->allocate(sizeof(CharType) * new_capacity, alignof(CharType)));
+        new_data = reinterpret_cast<CharType*>(str._allocator->allocate(sizeof(CharType) * new_capacity));
         memcpy(new_data, str._data, sizeof(CharType) * str._size);
         new_data[str._size] = 0;
     }
@@ -313,6 +339,30 @@ inline void core::string::pop_back(String<CharType>& str, uint32_t num) noexcept
     str._size -= num;
     str._data[str._size] = 0;
 }
+
+
+// core::String functions
+//////////////////////////////////////////////////////////////////////////
+
+
+template <typename CharType>
+bool core::string::equals(const String<CharType>& left, const String<CharType>& right) noexcept
+{
+    return equals(left, right._data);
+}
+
+template <typename CharType>
+bool core::string::equals(const String<CharType>& left, const std::string_view right) noexcept
+{
+    return equals(left, right.data());
+}
+
+template <typename CharType>
+bool core::string::equals(const String<CharType>& left, const CharType* right) noexcept
+{
+    return strcmp(left._data, right) == 0;
+}
+
 
 // core::String operators
 //////////////////////////////////////////////////////////////////////////

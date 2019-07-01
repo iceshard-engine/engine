@@ -1,6 +1,6 @@
 
 template <uint32_t Capacity, typename CharType>
-inline core::StackString<Capacity, CharType>::StackString(const char* cstring) noexcept
+inline core::StackString<Capacity, CharType>::StackString(const CharType* cstring) noexcept
     : StackString{ }
 {
     *this = cstring;

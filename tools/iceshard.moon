@@ -15,7 +15,7 @@ class IceShard extends Application
     @arguments: { }
     @commands: {
         'build': BuildCommand
-        'generate-projects': GenerateProjectsCommand
+        'generate': GenerateProjectsCommand
     }
 
     -- Plain call to the application
