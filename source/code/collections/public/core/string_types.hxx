@@ -78,7 +78,7 @@ struct StackString
     StackString() noexcept = default;
 
     //! \brief Creates a new StackString object with the given value.
-    StackString(const char* cstring) noexcept;
+    StackString(const CharType* cstring) noexcept;
 
     //! \brief Creates a new StackString object from another StackString.
     //! \details If the input StackString is larger, it will only copy the maximum
@@ -114,6 +114,60 @@ struct StackString
 
     //! \brief The string data buffer.
     CharType _data[Capacity]{ '\0' };
+};
+
+
+//! \brief A view into a string.
+template<typename CharType>
+struct StringView
+{
+    //! \brief Creates a new StackString object.
+    StringView() noexcept = default;
+
+    //! \brief Creates a new StackString object with the given value.
+    StringView(const CharType* cstring) noexcept;
+
+    //! \brief Creates a new StackString object with the given value.
+    StringView(std::string_view str_view) noexcept;
+
+    //! \brief Creates a new StringView from a String.
+    StringView(const String<CharType>& other) noexcept;
+
+    //! \brief Creates a new StringView from a StackString.
+    template<uint32_t Capacity>
+    StringView(const StackString<Capacity, CharType>& other) noexcept;
+
+    //! \brief Destroys the stack string
+    ~StringView() noexcept = default;
+
+
+    //! \brief Replaces the string value with the new one.
+    auto operator=(const CharType* other) noexcept -> StringView&;
+
+    //! \brief Replaces the string value with the new one.
+    auto operator=(std::string_view other) noexcept -> StringView&;
+
+    //! \brief Replaces the string value with the new one.
+    auto operator=(const StringView& other) noexcept -> StringView&;
+
+    //! \brief Replaces the string value with the new one.
+    template<uint32_t Capacity>
+    auto operator=(const StackString<Capacity, CharType>& other) noexcept -> StringView&;
+
+    //! \brief Replaces the string value with the new one.
+    //! \details If the input String is larger, it will only copy the maximum
+    //!     amount of characters the rest will be discarded.
+    auto operator=(const String<CharType>& other) noexcept -> StringView&;
+
+    //! \brief Returns the character at the given position.
+    auto operator[](uint32_t i) const noexcept -> const CharType&;
+
+
+    //! \brief The actual size.
+    uint32_t _size{ 0 };
+
+    //! \brief The string data buffer.
+    const CharType* _data;
 };
 
 
