@@ -54,7 +54,7 @@ auto ResourceSystem::mount(const URI& location) noexcept -> uint32_t
                 if (hash::has(_named_resources, name_hash))
                 {
                     auto* old_res = hash::get<Resource*>(_named_resources, name_hash, nullptr);
-                    fmt::print("Replacing default file '{}' with '{}'! {}\n", old_res->location(), res->location(), name);
+                    fmt::print("Updating resource with name {}!\n> old: {}\n> new: {}\n", name, old_res->location(), res->location());
                 }
 
                 // Save the resource under it's name.

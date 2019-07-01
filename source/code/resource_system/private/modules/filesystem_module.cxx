@@ -2,18 +2,81 @@
 #include <resource/filesystem_module.hxx>
 
 #include <core/allocators/proxy_allocator.hxx>
-#include <core/allocators/scratch_allocator.hxx>
+#include <core/allocators/stack_allocator.hxx>
 #include <core/cexpr/stringid.hxx>
 #include <core/string.hxx>
 
 #include <core/pod/array.hxx>
+#include <core/data/chunk.hxx>
+#include <core/data/buffer.hxx>
 
 #include <filesystem>
+#include <cstdio>
 
 namespace resource
 {
 namespace detail
 {
+
+class FileResource : public Resource
+{
+public:
+    FileResource(core::allocator& alloc, const URI& uri, core::StringView<> native_path) noexcept
+        : _native_path{ alloc, native_path._data }
+        , _path{ alloc, uri.path._data }
+        , _uri{ uri.scheme, _path, uri.fragment }
+        , _data{ alloc }
+    { }
+
+    ~FileResource() override = default;
+
+    //! \brief The resource identifier.
+    //! \remark This value can be seen as the absolute location to a specific resource.
+    auto location() const noexcept -> const URI& override
+    {
+        return _uri;
+    }
+
+    //! \brief Returns the associated resource data.
+    auto data() noexcept -> core::data_view override
+    {
+        if (core::buffer::empty(_data))
+        {
+            FILE* file_native = nullptr;
+            fopen_s(&file_native, core::string::begin(_native_path), "rb");
+
+            if (file_native)
+            {
+                core::memory::stack_allocator_4096 kib4_alloc;
+                core::data_chunk file_chunk{ kib4_alloc, 1024u * 4u };
+
+                auto characters_read = fread_s(file_chunk.data(), file_chunk.size(), sizeof(char), file_chunk.size(), file_native);
+                while(characters_read > 0)
+                {
+                    core::buffer::append(_data, file_chunk.data(), static_cast<uint32_t>(characters_read));
+                    characters_read = fread_s(file_chunk.data(), file_chunk.size(), sizeof(char), file_chunk.size(), file_native);
+                }
+
+                fclose(file_native);
+            }
+        }
+        return _data;
+    }
+
+private:
+    //! \brief The native filesystem path.
+    core::String<> _native_path;
+
+    //! \brief The resource path.
+    core::String<> _path;
+
+    //! \brief The resource identifier.
+    URI _uri;
+
+    //! \brief The loaded file buffer.
+    core::Buffer _data;
+};
+
 
 namespace array = core::pod::array;
 
@@ -36,8 +99,8 @@ void mount_directory(core::allocator& alloc, std::filesystem::path path, core::p
             auto relative_path = std::filesystem::relative(fullpath, path);
             auto relative_path_string = relative_path.generic_string();
 
-            auto* file_entry_object = alloc.make<Resource>(alloc, URI{ scheme_file, fullpath.c_str() });
-            auto* dir_entry_object = alloc.make<Resource>(alloc, URI{ scheme_directory, path.generic_string().c_str(), core::cexpr::stringid(relative_path_string.c_str()) });
+            auto* file_entry_object = alloc.make<FileResource>(alloc, URI{ scheme_file, fullpath.c_str() }, fullpath.c_str());
+            auto* dir_entry_object = alloc.make<FileResource>(alloc, URI{ scheme_directory, path.generic_string().c_str(), core::cexpr::stringid(relative_path_string.c_str()) }, fullpath.c_str());
 
 
             auto add_resource = [&](Resource* res, bool call_callback) noexcept

@@ -1,23 +1,24 @@
 #pragma once
 #include <resource/uri.hxx>
 #include <core/string.hxx>
+#include <core/data/view.hxx>
 
 namespace resource
 {
 
 
 //! \brief Describes a single resource which can be fetched for data.
-class Resource final
+class Resource
 {
 public:
-    Resource(core::allocator& alloc, const URI& path) noexcept;
-    ~Resource() noexcept;
+    virtual ~Resource() noexcept = default;
 
-    auto location() const noexcept -> const URI&;
+    //! \brief The resource identifier.
+    //! \remark This value can be seen as the absolute location to a specific resource.
+    virtual auto location() const noexcept -> const URI& = 0;
 
-private:
-    core::String<> _path;
-    URI _uri;
+    //! \brief Returns the associated resource data.
+    virtual auto data() noexcept -> core::data_view = 0;
 };
 
 
