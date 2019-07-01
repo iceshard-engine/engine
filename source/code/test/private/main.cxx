@@ -40,8 +40,18 @@ int main()
         auto* r1 = rs.find(URN{ "filesystem.txt" });
         auto* r2 = rs.find(URI{ resource::scheme_directory, "first", URN{ "test/filesystem.txt" } });
 
-        if (r1) fmt::print("R1: {}\n", r1->location());
-        if (r2) fmt::print("R2: {}\n", r2->location());
+        fmt::print("\n");
+
+        if (r1)
+        {
+            auto file_data = r1->data();
+            fmt::print("Resource: {}\n> size: {}\n", r1->location(), file_data.size());
+        }
+        if (r2)
+        {
+            auto file_data = r2->data();
+            fmt::print("Resource: {}\n> size: {}\n", r2->location(), file_data.size());
+        }
     }
 
     core::memory::globals::shutdown();
