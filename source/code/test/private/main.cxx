@@ -9,8 +9,9 @@
 #include <core/scope_exit.hxx>
 #include <core/debug/profiler.hxx>
 
-#include <filesystem/filesystem.hxx>
 #include <resource/uri.hxx>
+#include <resource/system.hxx>
+#include <resource/filesystem_module.hxx>
 
 #include <fmt/format.h>
 
@@ -24,15 +25,20 @@ int main()
     auto& alloc = core::memory::globals::default_allocator();
 
     {
-        using resource::URI;
         using resource::URN;
+        using resource::URI;
 
-        resource::FileSystem fs{ alloc, "../source/data" };
-        fs.mount({ resource::scheme_directory, "first" });
-        fs.mount({ resource::scheme_directory, "second" });
+        resource::ResourceSystem rs{ alloc };
 
-        auto* r1 = fs.find(URN{ "filesystem.txt" });
-        auto* r2 = fs.find(URI{ resource::scheme_directory, "first", URN{ "test/filesystem.txt" } });
+        core::pod::Array<core::cexpr::stringid_type> schemes{ alloc };
+        core::pod::array::push_back(schemes, resource::scheme_directory);
+        rs.add_module(core::memory::make_unique<resource::ResourceModule, resource::FileSystem>(alloc, alloc, "../source/data"), schemes);
+
+        rs.mount({ resource::scheme_directory, "first" });
+        rs.mount({ resource::scheme_directory, "second" });
+
+        auto* r1 = rs.find(URN{ "filesystem.txt" });
+        auto* r2 = rs.find(URI{ resource::scheme_directory, "first", URN{ "test/filesystem.txt" } });
 
         if (r1) fmt::print("R1: {}\n", r1->location());
         if (r2) fmt::print("R2: {}\n", r2->location());

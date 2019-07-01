@@ -1,7 +1,7 @@
 // Core
 //------------------------------------------------------------------------------
 {
-    .ProjectName        = 'filesystem'
+    .ProjectName        = 'resource_system'
     .ProjectBaseDir = '$_CURRENT_BFF_DIR_$'
 
 
@@ -116,5 +116,5 @@
 
     // Add tests project
     //--------------------------------------------------------------------------
-    #include "../../scripts/tests.bff"
+    // #include "../../scripts/tests.bff"
 }

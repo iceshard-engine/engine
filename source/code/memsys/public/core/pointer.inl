@@ -24,8 +24,8 @@ inline void core::memory::detail::memsys_deleter<T>::operator()(T* object) noexc
     MAKE_DELETE((*_allocator), T, object);
 }
 
-template<class T, class... Args>
-inline auto core::memory::make_unique(core::allocator& alloc, Args&&... args) noexcept -> core::memory::unique_pointer<T>
+template<class Result, class Type, class... Args>
+inline auto core::memory::make_unique(core::allocator& alloc, Args&&... args) noexcept -> core::memory::unique_pointer<Result>
 {
-    return { MAKE_NEW(alloc, T, std::forward<Args>(args)...), core::memory::detail::memsys_deleter<T>{ alloc } };
+    return { MAKE_NEW(alloc, Type, std::forward<Args>(args)...), core::memory::detail::memsys_deleter<Result>{ alloc } };
 }

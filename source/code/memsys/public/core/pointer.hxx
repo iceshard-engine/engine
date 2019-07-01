@@ -44,8 +44,8 @@ template<class T>
 using unique_pointer = std::unique_ptr<T, detail::memsys_deleter<T>>;
 
 //! \brief The make_unique function with an mandatory allocator object.
-template<class T, class... Args>
-auto make_unique(core::allocator& alloc, Args&&... args) noexcept -> unique_pointer<T>;
+template<class Result, class Type = Result, class... Args>
+auto make_unique(core::allocator& alloc, Args&&... args) noexcept -> unique_pointer<Result>;
 
 
 #include "pointer.inl"

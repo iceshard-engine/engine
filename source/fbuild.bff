@@ -135,7 +135,7 @@ Settings
 
     // Systems projects
     //--------------------------------------------------------------------------
-    #include "code/filesystem/filesystem.bff"
+    #include "code/resource_system/resource_system.bff"
 
     .SolutionFolder =
     [
