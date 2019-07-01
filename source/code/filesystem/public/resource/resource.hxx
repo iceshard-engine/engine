@@ -1,5 +1,6 @@
 #pragma once
 #include <resource/uri.hxx>
+#include <core/string.hxx>
 
 namespace resource
 {
@@ -9,13 +10,14 @@ namespace resource
 class Resource final
 {
 public:
-    Resource(const URI& uri) noexcept;
+    Resource(core::allocator& alloc, const URI& path) noexcept;
     ~Resource() noexcept;
 
     auto location() const noexcept -> const URI&;
 
 private:
-    URI _location;
+    core::String<> _path;
+    URI _uri;
 };
 
 

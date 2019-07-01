@@ -2,7 +2,7 @@
 //! \brief Creates a new StackString object with the given value.
 template <typename CharType>
 core::StringView<CharType>::StringView(const CharType* cstring) noexcept
-    : _size{ strlen(cstring) }
+    : _size{ static_cast<uint32_t>(strlen(cstring)) }
     , _data{ cstring }
 { }
 

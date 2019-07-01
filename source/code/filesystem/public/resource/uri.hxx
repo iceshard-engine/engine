@@ -1,7 +1,6 @@
 #pragma once
 #include <core/cexpr/stringid.hxx>
-#include <core/string.hxx>
-#include <string_view>
+#include <core/string_view.hxx>
 
 namespace resource
 {
@@ -23,12 +22,10 @@ static core::cexpr::stringid_type scheme_resource{ core::cexpr::stringid("res") 
 struct URN
 {
     //! \brief Creates a new resource name from the given string value.
-    URN(std::string_view name) noexcept;
+    URN(core::StringView<> name) noexcept;
 
     //! \brief Creates a new resource name from the given stringid value.
     URN(core::cexpr::stringid_argument_type name) noexcept;
-
-    ~URN() noexcept = default;
 
     //! \brief The resource scheme.
     const core::cexpr::stringid_type scheme{ resource::scheme_resource };
@@ -42,13 +39,10 @@ struct URN
 struct URI
 {
     //! \brief Creates a new URI for the given scheme and path.
-    URI(core::cexpr::stringid_argument_type scheme, core::String<> path) noexcept;
+    URI(core::cexpr::stringid_argument_type scheme, core::StringView<> path) noexcept;
 
     //! \brief Creates a new URI for the given scheme, path and fragment.
-    URI(core::cexpr::stringid_argument_type scheme, core::String<> path, core::cexpr::stringid_argument_type fragment) noexcept;
-
-    //! \brief Releases the path memory if allocated.
-    ~URI() noexcept;
+    URI(core::cexpr::stringid_argument_type scheme, core::StringView<> path, core::cexpr::stringid_argument_type fragment) noexcept;
 
     //! \brief The resource scheme.
     core::cexpr::stringid_type scheme;
@@ -57,7 +51,7 @@ struct URI
     core::cexpr::stringid_type fragment;
 
     //! \brief The resource location.
-    core::String<> path;
+    core::StringView<> path;
 };
 
 

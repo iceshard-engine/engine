@@ -56,8 +56,8 @@ void mount_directory(core::allocator& alloc, std::filesystem::path path, core::p
             auto relative_path = std::filesystem::relative(fullpath, path);
             auto relative_path_string = relative_path.generic_string();
 
-            auto* file_entry_object = alloc.make<Resource>(URI{ scheme_file, { alloc, fullpath.c_str() } });
-            auto* dir_entry_object = alloc.make<Resource>(URI{ scheme_directory, { alloc, path.generic_string().c_str() }, core::cexpr::stringid(relative_path_string.c_str()) });
+            auto* file_entry_object = alloc.make<Resource>(alloc, URI{ scheme_file, fullpath.c_str() });
+            auto* dir_entry_object = alloc.make<Resource>(alloc, URI{ scheme_directory, path.generic_string().c_str(), core::cexpr::stringid(relative_path_string.c_str()) });
 
             add_resource(entry_list, entry_map, file_entry_object, true);
             add_resource(entry_list, entry_map, dir_entry_object, relative_path.has_parent_path());

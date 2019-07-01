@@ -14,6 +14,10 @@ struct String;
 template<uint32_t Size = 16, typename CharType = char>
 struct StackString;
 
+//! \brief A view into a string.
+template<typename CharType = char>
+struct StringView;
+
 
 //! \brief A heap allocated string object.
 template<typename CharType>

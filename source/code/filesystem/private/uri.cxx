@@ -1,23 +1,19 @@
 #include <resource/uri.hxx>
 #include <core/memory.hxx>
+#include <core/string.hxx>
 
 namespace resource
 {
 
-URI::URI(core::cexpr::stringid_argument_type scheme, core::String<> path) noexcept
+URI::URI(core::cexpr::stringid_argument_type scheme, core::StringView<> path) noexcept
     : URI{ scheme, std::move(path), core::cexpr::stringid_invalid }
 { }
 
-URI::URI(core::cexpr::stringid_argument_type scheme, core::String<> path, core::cexpr::stringid_argument_type fragment) noexcept
+URI::URI(core::cexpr::stringid_argument_type scheme, core::StringView<> path, core::cexpr::stringid_argument_type fragment) noexcept
     : scheme{ scheme }
     , fragment{ fragment }
     , path{ std::move(path) }
 { }
-
-URI::~URI() noexcept
-{
-    core::string::set_capacity(path, 0);
-}
 
 
 auto get_name(const URI& uri) noexcept -> URN
@@ -45,8 +41,8 @@ auto get_name(const URI& uri) noexcept -> URN
     return { resource_name };
 }
 
-URN::URN(std::string_view name) noexcept
-    : name{ core::cexpr::stringid(name.data()) }
+URN::URN(core::StringView<> name) noexcept
+    : name{ core::cexpr::stringid(name._data) }
 { }
 
 URN::URN(core::cexpr::stringid_argument_type name) noexcept
