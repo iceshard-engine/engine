@@ -76,7 +76,7 @@ void buffer::append(Buffer& b, const void* data, uint32_t size) noexcept
 {
     const uint32_t new_size = b._size + size;
 
-    grow(b, new_size);
+    reserve(b, new_size);
     IS_ASSERT(new_size <= b._capacity, "Couldn't reserve enough memory for the new buffer size! [ size:{}, capacity:{} ]", new_size, b._capacity);
 
     void* const buffer_end = core::memory::utils::pointer_add(b._data, b._size);
