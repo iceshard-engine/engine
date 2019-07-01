@@ -22,6 +22,15 @@ URI::URI(core::cexpr::stringid_argument_type scheme, core::StringView<> path, UR
 {
 }
 
+URN::URN(core::StringView<> name) noexcept
+    : name{ core::cexpr::stringid(name._data) }
+{ }
+
+URN::URN(core::cexpr::stringid_argument_type name) noexcept
+    : name{ name }
+{
+}
+
 
 auto get_name(const URI& uri) noexcept -> URN
 {
@@ -46,15 +55,6 @@ auto get_name(const URI& uri) noexcept -> URN
     }
 
     return { resource_name };
-}
-
-URN::URN(core::StringView<> name) noexcept
-    : name{ core::cexpr::stringid(name._data) }
-{ }
-
-URN::URN(core::cexpr::stringid_argument_type name) noexcept
-    : name{ name }
-{
 }
 
 } // namespace resource
