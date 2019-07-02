@@ -11,7 +11,7 @@ namespace core::pod
 
         //! \brief Number of elements in the array.
         template<typename T>
-        auto size(const Array<T>& a) noexcept->uint32_t;
+        auto size(const Array<T>& a) noexcept -> uint32_t;
 
         //! \brief Checks if there are elements in the array.
         template<typename T>
@@ -23,7 +23,7 @@ namespace core::pod
 
         //! \brief Start iterator position.
         template<typename T>
-        auto begin(Array<T>& a) noexcept->T*;
+        auto begin(Array<T>& a) noexcept -> T*;
 
         //! \brief Start iterator position.
         template<typename T>
@@ -31,7 +31,7 @@ namespace core::pod
 
         //! \brief End iterator position.
         template<typename T>
-        auto end(Array<T>& a) noexcept->T*;
+        auto end(Array<T>& a) noexcept -> T*;
 
         //! \brief End iterator position.
         template<typename T>
@@ -40,7 +40,7 @@ namespace core::pod
         //! \brief First element of the array.
         //! \remarks Cannot be used on a empty array.
         template<typename T>
-        auto front(Array<T>& a) noexcept->T&;
+        auto front(Array<T>& a) noexcept -> T&;
 
         //! \brief First element of the array.
         //! \remarks Cannot be used on a empty array.
@@ -50,7 +50,7 @@ namespace core::pod
         //! \brief Last element of the array.
         //! \remarks Cannot be used on a empty array.
         template<typename T>
-        auto back(Array<T>& a) noexcept->T&;
+        auto back(Array<T>& a) noexcept -> T&;
 
         //! \brief Last element of the array.
         //! \remarks Cannot be used on a empty array.
@@ -102,13 +102,13 @@ namespace core::pod
 
 
     template<typename T>
-    auto begin(Array<T> &a) noexcept->T*;
+    auto begin(Array<T> &a) noexcept -> T*;
 
     template<typename T>
     auto begin(const Array<T> &a) noexcept -> const T*;
 
     template<typename T>
-    auto end(Array<T> &a) noexcept->T*;
+    auto end(Array<T> &a) noexcept -> T*;
 
     template<typename T>
     auto end(const Array<T> &a) noexcept -> const T*;

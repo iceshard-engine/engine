@@ -24,7 +24,7 @@ namespace core
 
 
         //! \brief Replaces the Buffer contents from the other object.
-        auto operator=(const Buffer& other) noexcept->Buffer&;
+        auto operator=(const Buffer& other) noexcept -> Buffer&;
 
         //! \brief Returns a view into this data buffer.
         operator data_view() noexcept { return { _data, _size }; }
@@ -49,10 +49,10 @@ namespace core
     {
 
         //! \brief The current size of the data.
-        auto size(const Buffer& b) noexcept->uint32_t;
+        auto size(const Buffer& b) noexcept -> uint32_t;
 
         //! \brief The current capacity of the buffer.
-        auto capacity(const Buffer& b) noexcept->uint32_t;
+        auto capacity(const Buffer& b) noexcept -> uint32_t;
 
         //! \brief Checks if the Buffer is empty.
         bool empty(const Buffer& b) noexcept;

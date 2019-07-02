@@ -12,15 +12,15 @@ namespace core
 
         //! \brief Size of the string.
         template <typename CharType>
-        auto size(const StringView<CharType>& str) noexcept->uint32_t;
+        auto size(const StringView<CharType>& str) noexcept -> uint32_t;
 
         //! \brief Length of the string.
         template <typename CharType>
-        auto length(const StringView<CharType>& str) noexcept->uint32_t;
+        auto length(const StringView<CharType>& str) noexcept -> uint32_t;
 
         //! \brief The current string capacity.
         template<typename CharType>
-        auto capacity(const StringView<CharType>& str) noexcept->uint32_t;
+        auto capacity(const StringView<CharType>& str) noexcept -> uint32_t;
 
         //! \brief Checks if the given string is empty.
         template <typename CharType>
@@ -28,7 +28,7 @@ namespace core
 
         //! \brief Returns the string iterator beginning.
         template <typename CharType>
-        auto begin(StringView<CharType>& a) noexcept->CharType*;
+        auto begin(StringView<CharType>& a) noexcept -> CharType*;
 
         //! \copydoc core::string::begin(String<CharType>&)
         template <typename CharType>
@@ -36,7 +36,7 @@ namespace core
 
         //! \brief Returns the string iterator end.
         template <typename CharType>
-        auto end(StringView<CharType>& str) noexcept->CharType*;
+        auto end(StringView<CharType>& str) noexcept -> CharType*;
 
         //! \copydoc core::string::end(String<CharType>&)
         template <typename CharType>
@@ -45,7 +45,7 @@ namespace core
         //! \brief Returns the first element of the string.
         //! \note Cannot be used on an empty string.
         template <typename CharType>
-        auto front(StringView<CharType>& str) noexcept->CharType&;
+        auto front(StringView<CharType>& str) noexcept -> CharType&;
 
         //! \copydoc core::string::front(String<CharType>&)
         template <typename CharType>
@@ -54,7 +54,7 @@ namespace core
         //! \brief Returns the last element of the string.
         //! \note Cannot be used on an empty string.
         template <typename CharType>
-        auto back(StringView<CharType>& str) noexcept->CharType&;
+        auto back(StringView<CharType>& str) noexcept -> CharType&;
 
         //! \copydoc core::string::back(String<CharType>&)
         template <typename CharType>

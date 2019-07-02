@@ -32,10 +32,10 @@ namespace core
 
 
         //! \brief Moves the data chunk to this object.
-        auto operator=(data_chunk&& other) noexcept->data_chunk&;
+        auto operator=(data_chunk&& other) noexcept -> data_chunk&;
 
         //! \brief Copies the given data chunk.
-        auto operator=(const data_chunk& other) noexcept->data_chunk&;
+        auto operator=(const data_chunk& other) noexcept -> data_chunk&;
 
         //! \brief Returns a view into this data chunk.
         operator data_view() noexcept { return { _data, _size }; }

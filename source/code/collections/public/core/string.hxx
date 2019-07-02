@@ -16,15 +16,15 @@ namespace core
 
         //! \brief Size of the string.
         template <typename CharType>
-        auto size(const String<CharType>& str) noexcept->uint32_t;
+        auto size(const String<CharType>& str) noexcept -> uint32_t;
 
         //! \brief Length of the string.
         template <typename CharType>
-        auto length(const String<CharType>& str) noexcept->uint32_t;
+        auto length(const String<CharType>& str) noexcept -> uint32_t;
 
         //! \brief The current string capacity.
         template<typename CharType>
-        auto capacity(const String<CharType>& str) noexcept->uint32_t;
+        auto capacity(const String<CharType>& str) noexcept -> uint32_t;
 
         //! \brief Checks if the given string is empty.
         template <typename CharType>
@@ -32,7 +32,7 @@ namespace core
 
         //! \brief Returns the string iterator beginning.
         template <typename CharType>
-        auto begin(String<CharType>& a) noexcept->CharType*;
+        auto begin(String<CharType>& a) noexcept -> CharType*;
 
         //! \copydoc core::string::begin(String<CharType>&)
         template <typename CharType>
@@ -40,7 +40,7 @@ namespace core
 
         //! \brief Returns the string iterator end.
         template <typename CharType>
-        auto end(String<CharType>& str) noexcept->CharType*;
+        auto end(String<CharType>& str) noexcept -> CharType*;
 
         //! \copydoc core::string::end(String<CharType>&)
         template <typename CharType>
@@ -49,7 +49,7 @@ namespace core
         //! \brief Returns the first element of the string.
         //! \note Cannot be used on an empty string.
         template <typename CharType>
-        auto front(String<CharType>& str) noexcept->CharType&;
+        auto front(String<CharType>& str) noexcept -> CharType&;
 
         //! \copydoc core::string::front(String<CharType>&)
         template <typename CharType>
@@ -58,7 +58,7 @@ namespace core
         //! \brief Returns the last element of the string.
         //! \note Cannot be used on an empty string.
         template <typename CharType>
-        auto back(String<CharType>& str) noexcept->CharType&;
+        auto back(String<CharType>& str) noexcept -> CharType&;
 
         //! \copydoc core::string::back(String<CharType>&)
         template <typename CharType>
@@ -139,7 +139,7 @@ namespace core
 
     //! \copydoc core::string::begin(String<CharType>&)
     template<typename CharType>
-    auto begin(String<CharType>& a) noexcept->CharType*;
+    auto begin(String<CharType>& a) noexcept -> CharType*;
 
     //! \copydoc core::string::begin(String<CharType>&)
     template<typename CharType>
@@ -147,7 +147,7 @@ namespace core
 
     //! \copydoc core::string::end(String<CharType>&)
     template<typename CharType>
-    auto end(String<CharType>& a) noexcept->CharType*;
+    auto end(String<CharType>& a) noexcept -> CharType*;
 
     //! \copydoc core::string::end(String<CharType>&)
     template<typename CharType>
@@ -162,16 +162,16 @@ namespace core
 
 
     template<typename CharType>
-    auto operator+=(String<CharType>& self, CharType other) noexcept->String<CharType>&;
+    auto operator+=(String<CharType>& self, CharType other) noexcept -> String<CharType>&;
 
     template<typename CharType>
-    auto operator+=(String<CharType>& self, const CharType* other) noexcept->String<CharType>&;
+    auto operator+=(String<CharType>& self, const CharType* other) noexcept -> String<CharType>&;
 
     template<typename CharType>
-    auto operator+=(String<CharType>& self, const String<CharType>& other) noexcept->String<CharType>&;
+    auto operator+=(String<CharType>& self, const String<CharType>& other) noexcept -> String<CharType>&;
 
     template<uint32_t Capacity, typename CharType>
-    auto operator+=(String<CharType>& self, const StackString<Capacity, CharType>& other) noexcept->String<CharType>&;
+    auto operator+=(String<CharType>& self, const StackString<Capacity, CharType>& other) noexcept -> String<CharType>&;
 
 
     // core::String implementation

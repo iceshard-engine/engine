@@ -40,20 +40,20 @@ namespace core
 
 
         //! \brief Swaps the string value with the new one.
-        auto operator=(String&& other) noexcept->String&;
+        auto operator=(String&& other) noexcept -> String&;
 
         //! \brief Replaces the string value with the new one.
-        auto operator=(const String& other) noexcept->String&;
+        auto operator=(const String& other) noexcept -> String&;
 
         //! \brief Replaces the string value with the new one.
         template<uint32_t Capacity>
-        auto operator=(const StackString<Capacity, CharType>& other) noexcept->String&;
+        auto operator=(const StackString<Capacity, CharType>& other) noexcept -> String&;
 
         //! \brief Replaces the string value with the new one.
-        auto operator=(const CharType* other) noexcept->String&;
+        auto operator=(const CharType* other) noexcept -> String&;
 
         //! \brief Returns the character at the given position.
-        auto operator[](uint32_t i) noexcept->CharType&;
+        auto operator[](uint32_t i) noexcept -> CharType&;
 
         //! \brief Returns the character at the given position.
         auto operator[](uint32_t i) const noexcept -> const CharType&;
@@ -96,18 +96,18 @@ namespace core
 
         //! \brief Replaces the string value with the new one.
         template<uint32_t Capacity>
-        auto operator=(const StackString<Capacity, CharType>& other) noexcept->StackString&;
+        auto operator=(const StackString<Capacity, CharType>& other) noexcept -> StackString&;
 
         //! \brief Replaces the string value with the new one.
         //! \details If the input String is larger, it will only copy the maximum
         //!     amount of characters the rest will be discarded.
-        auto operator=(const String<CharType>& other) noexcept->StackString&;
+        auto operator=(const String<CharType>& other) noexcept -> StackString&;
 
         //! \brief Replaces the string value with the new one.
-        auto operator=(const CharType* other) noexcept->StackString&;
+        auto operator=(const CharType* other) noexcept -> StackString&;
 
         //! \brief Returns the character at the given position.
-        auto operator[](uint32_t i) noexcept->CharType&;
+        auto operator[](uint32_t i) noexcept -> CharType&;
 
         //! \brief Returns the character at the given position.
         auto operator[](uint32_t i) const noexcept -> const CharType&;
@@ -146,22 +146,22 @@ namespace core
 
 
         //! \brief Replaces the string value with the new one.
-        auto operator=(const CharType* other) noexcept->StringView&;
+        auto operator=(const CharType* other) noexcept -> StringView&;
 
         //! \brief Replaces the string value with the new one.
-        auto operator=(std::string_view other) noexcept->StringView&;
+        auto operator=(std::string_view other) noexcept -> StringView&;
 
         //! \brief Replaces the string value with the new one.
-        auto operator=(const StringView& other) noexcept->StringView&;
+        auto operator=(const StringView& other) noexcept -> StringView&;
 
         //! \brief Replaces the string value with the new one.
         template<uint32_t Capacity>
-        auto operator=(const StackString<Capacity, CharType>& other) noexcept->StringView&;
+        auto operator=(const StackString<Capacity, CharType>& other) noexcept -> StringView&;
 
         //! \brief Replaces the string value with the new one.
         //! \details If the input String is larger, it will only copy the maximum
         //!     amount of characters the rest will be discarded.
-        auto operator=(const String<CharType>& other) noexcept->StringView&;
+        auto operator=(const String<CharType>& other) noexcept -> StringView&;
 
         //! \brief Returns the character at the given position.
         auto operator[](uint32_t i) const noexcept -> const CharType&;

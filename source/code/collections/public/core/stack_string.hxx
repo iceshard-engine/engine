@@ -14,7 +14,7 @@ namespace core
 
 
     template<uint32_t Size, typename CharType>
-    StackString(const CharType(&)[Size])->StackString<core::cexpr::power_of_two_roundup(Size, 16u), CharType>;
+    StackString(const CharType(&)[Size]) -> StackString<core::cexpr::power_of_two_roundup(Size, 16u), CharType>;
 
 
     // core::StackString functions
@@ -26,15 +26,15 @@ namespace core
 
         //! \brief Size of the string.
         template<uint32_t Capacity, typename CharType>
-        auto size(const StackString<Capacity, CharType>& str) noexcept->uint32_t;
+        auto size(const StackString<Capacity, CharType>& str) noexcept -> uint32_t;
 
         //! \brief Length of the string.
         template<uint32_t Capacity, typename CharType>
-        auto length(const StackString<Capacity, CharType>& str) noexcept->uint32_t;
+        auto length(const StackString<Capacity, CharType>& str) noexcept -> uint32_t;
 
         //! \brief The current string capacity.
         template<uint32_t Capacity, typename CharType>
-        auto capacity(const StackString<Capacity, CharType>& str) noexcept->uint32_t;
+        auto capacity(const StackString<Capacity, CharType>& str) noexcept -> uint32_t;
 
         //! \brief Checks if the given string is empty.
         template<uint32_t Capacity, typename CharType>
@@ -42,7 +42,7 @@ namespace core
 
         //! \brief Returns the string iterator beginning.
         template<uint32_t Capacity, typename CharType>
-        auto begin(StackString<Capacity, CharType>& a) noexcept->CharType*;
+        auto begin(StackString<Capacity, CharType>& a) noexcept -> CharType*;
 
         //! \copydoc core::string::begin(StackString<Capacity, CharType>&)
         template<uint32_t Capacity, typename CharType>
@@ -50,7 +50,7 @@ namespace core
 
         //! \brief Returns the string iterator end.
         template<uint32_t Capacity, typename CharType>
-        auto end(StackString<Capacity, CharType>& str) noexcept->CharType*;
+        auto end(StackString<Capacity, CharType>& str) noexcept -> CharType*;
 
         //! \copydoc core::string::end(StackString<Capacity, CharType>&)
         template<uint32_t Capacity, typename CharType>
@@ -59,7 +59,7 @@ namespace core
         //! \brief Returns the first element of the string.
         //! \note Cannot be used on an empty string.
         template<uint32_t Capacity, typename CharType>
-        auto front(StackString<Capacity, CharType>& str) noexcept->CharType&;
+        auto front(StackString<Capacity, CharType>& str) noexcept -> CharType&;
 
         //! \copydoc core::string::front(StackString<Capacity, CharType>&)
         template<uint32_t Capacity, typename CharType>
@@ -68,7 +68,7 @@ namespace core
         //! \brief Returns the last element of the string.
         //! \note Cannot be used on an empty string.
         template<uint32_t Capacity, typename CharType>
-        auto back(StackString<Capacity, CharType>& str) noexcept->CharType&;
+        auto back(StackString<Capacity, CharType>& str) noexcept -> CharType&;
 
         //! \copydoc core::string::back(StackString<Capacity, CharType>&)
         template<uint32_t Capacity, typename CharType>
@@ -135,7 +135,7 @@ namespace core
 
     //! \copydoc core::string::begin(StackString<Capacity, CharType>&)
     template<uint32_t Capacity, typename CharType>
-    auto begin(StackString<Capacity, CharType>& a) noexcept->CharType*;
+    auto begin(StackString<Capacity, CharType>& a) noexcept -> CharType*;
 
     //! \copydoc core::string::begin(StackString<Capacity, CharType>&)
     template<uint32_t Capacity, typename CharType>
@@ -143,7 +143,7 @@ namespace core
 
     //! \copydoc core::string::end(StackString<Capacity, CharType>&)
     template<uint32_t Capacity, typename CharType>
-    auto end(StackString<Capacity, CharType>& a) noexcept->CharType*;
+    auto end(StackString<Capacity, CharType>& a) noexcept -> CharType*;
 
     //! \copydoc core::string::end(StackString<Capacity, CharType>&)
     template<uint32_t Capacity, typename CharType>
@@ -158,16 +158,16 @@ namespace core
 
 
     template<uint32_t Capacity, typename CharType>
-    auto operator+=(StackString<Capacity, CharType>& self, CharType other) noexcept->StackString<Capacity, CharType>&;
+    auto operator+=(StackString<Capacity, CharType>& self, CharType other) noexcept -> StackString<Capacity, CharType>&;
 
     template<uint32_t Capacity, typename CharType>
-    auto operator+=(StackString<Capacity, CharType>& self, const CharType* other) noexcept->StackString<Capacity, CharType>&;
+    auto operator+=(StackString<Capacity, CharType>& self, const CharType* other) noexcept -> StackString<Capacity, CharType>&;
 
     template<uint32_t Capacity, typename CharType>
-    auto operator+=(StackString<Capacity, CharType>& self, const String<CharType>& other) noexcept->StackString<Capacity, CharType>&;
+    auto operator+=(StackString<Capacity, CharType>& self, const String<CharType>& other) noexcept -> StackString<Capacity, CharType>&;
 
     template<uint32_t Capacity, typename CharType>
-    auto operator+=(StackString<Capacity, CharType>& self, const StackString<Capacity, CharType>& other) noexcept->StackString<Capacity, CharType>&;
+    auto operator+=(StackString<Capacity, CharType>& self, const StackString<Capacity, CharType>& other) noexcept -> StackString<Capacity, CharType>&;
 
 
     // core::StackString implementation

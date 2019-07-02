@@ -25,7 +25,7 @@ namespace core::pod
         auto operator=(const Array &other) noexcept->Array&;
 
         //! \brief Returns the object at the given index.
-        auto operator[](uint32_t i)->T&;
+        auto operator[](uint32_t i) -> T&;
 
         //! \brief Returns the object at the given index.
         auto operator[](uint32_t i) const -> const T&;
@@ -52,7 +52,7 @@ namespace core::pod
         Queue(core::allocator& allocator) noexcept;
 
         //! \brief Returns the object at the given index.
-        auto operator[](uint32_t i)->T&;
+        auto operator[](uint32_t i) -> T&;
 
         //! \brief Returns the object at the given index.
         auto operator[](uint32_t i) const -> const T&;

@@ -12,12 +12,12 @@ namespace core::pod
 
         //! \brief Returns the number of items in the queue.
         template <typename T>
-        auto size(const Queue<T> &q) noexcept->uint32_t;
+        auto size(const Queue<T> &q) noexcept -> uint32_t;
 
         //! \brief Returns the amount of free space in the queue/ring buffer.
         //! \details This is the number of items we can push before the queue needs to grow.
         template<typename T>
-        auto space(const Queue<T> &q) noexcept->uint32_t;
+        auto space(const Queue<T> &q) noexcept -> uint32_t;
 
         //! \brief Ensures the queue has room for at least the specified number of items.
         template<typename T>
@@ -60,13 +60,13 @@ namespace core::pod
         //! \remarks This chunk does not necessarily contain all the elements
         //!     in the queue (if the queue wraps around the array).
         template<typename T>
-        auto begin_front(Queue<T> &q) noexcept->T*;
+        auto begin_front(Queue<T> &q) noexcept -> T*;
 
         template<typename T>
         auto begin_front(const Queue<T> &q) noexcept -> const T*;
 
         template<typename T>
-        auto end_front(Queue<T> &q) noexcept->T*;
+        auto end_front(Queue<T> &q) noexcept -> T*;
 
         template<typename T>
         auto end_front(const Queue<T> &q) noexcept -> const T*;

@@ -72,7 +72,7 @@ namespace core::pod
 
         //! \brief Returns the number of entries for the key.
         template<typename T>
-        auto count(const Hash<T> &h, uint64_t key) noexcept->uint32_t;
+        auto count(const Hash<T> &h, uint64_t key) noexcept -> uint32_t;
 
         //! \brief Returns all the entries for the specified key.
         //! \remarks Use a StackAllocator for the array to avoid allocating memory.
