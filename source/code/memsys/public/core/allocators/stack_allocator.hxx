@@ -22,10 +22,10 @@ namespace core::memory
         void deallocate(void* ptr) noexcept override;
 
         //! \copydoc allocator::allocated_size(void* ptr)
-        auto allocated_size(void* ptr) noexcept->uint32_t override;
+        auto allocated_size(void* ptr) noexcept -> uint32_t override;
 
         //! \copydoc allocator::total_allocated
-        auto total_allocated() noexcept->uint32_t override;
+        auto total_allocated() noexcept -> uint32_t override;
 
         //! \brief Resets the allocator internal State.
         void clear() noexcept;

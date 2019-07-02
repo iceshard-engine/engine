@@ -41,10 +41,10 @@ namespace core::memory
         void deallocate(void* pointer) noexcept override;
 
         //! \copydoc allocator::allocated_size(void* ptr)
-        auto allocated_size(void* pointer) noexcept->uint32_t override;
+        auto allocated_size(void* pointer) noexcept -> uint32_t override;
 
         //! \copydoc allocator::total_allocated
-        auto total_allocated() noexcept->uint32_t override;
+        auto total_allocated() noexcept -> uint32_t override;
 
         //! \brief The backing allocator.
         auto backing_allocator() noexcept -> core::allocator& { return _backing; }

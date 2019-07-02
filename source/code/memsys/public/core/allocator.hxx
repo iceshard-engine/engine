@@ -47,25 +47,25 @@ namespace core
         //!
         //! \remarks Not all allocators support tracking the size of individual allocations.
         //!     An allocator that doesn't support it will return SIZE_NOT_TRACKED.
-        virtual auto allocated_size(void* ptr) noexcept->uint32_t = 0;
+        virtual auto allocated_size(void* ptr) noexcept -> uint32_t = 0;
 
         //! \brief Returns the total amount of memory allocated by this allocator.
         //!
         //! \remarks The size returned can be bigger than the size of all individual allocations made,
         //!     because the allocator may keep additional structures.
         //! \remarks If the allocator doesn't track memory, this function returns SIZE_NOT_TRACKED.
-        virtual auto total_allocated() noexcept->uint32_t = 0;
+        virtual auto total_allocated() noexcept -> uint32_t = 0;
 
         //! \brief Allocators cannot be copied.
         allocator(const allocator& other) noexcept = delete;
 
         //! \brief Allocators cannot be copied.
-        auto operator=(const allocator& other) noexcept->allocator& = delete;
+        auto operator=(const allocator& other) noexcept -> allocator& = delete;
 
     public:
         //! \brief Allocates and constructs the given object using the provided arguments.
         template<class T, class... Args>
-        auto make(Args&&... args) noexcept->T*;
+        auto make(Args&&... args) noexcept -> T*;
 
         //! \brief Destroys the given object and deallocates the memory used.
         template<class T>
@@ -78,7 +78,7 @@ namespace core
     };
 
 
-    //! \brief Creates a new object of type T using the allocator `a` to allocate the memory.
+//! \brief Creates a new object of type T using the allocator `a` to allocate the memory.
 #   define MAKE_NEW(a, T, ...)        (new ((a).allocate(sizeof(T), alignof(T))) T(__VA_ARGS__))
 
 //! \brief Frees an object allocated with MAKE_NEW.

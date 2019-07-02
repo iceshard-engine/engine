@@ -26,10 +26,10 @@ namespace core::memory
         void deallocate(void* ptr) noexcept override;
 
         //! \copydoc allocator::allocated_size(void* ptr)
-        auto allocated_size(void* ptr) noexcept->uint32_t override;
+        auto allocated_size(void* ptr) noexcept -> uint32_t override;
 
         //! \copydoc allocator::total_allocated
-        auto total_allocated() noexcept->uint32_t override;
+        auto total_allocated() noexcept -> uint32_t override;
 
         //! \brief Release all allocated memory.
         void release_all() noexcept;
@@ -38,7 +38,7 @@ namespace core::memory
         struct memory_bucket;
 
         //! \brief Allocates a new bucket with the requested size and alignment on the backing allocator.
-        auto allocate_bucket(uint32_t size) noexcept->memory_bucket*;
+        auto allocate_bucket(uint32_t size) noexcept -> memory_bucket*;
 
     private:
         //! \brief The backing allocator.

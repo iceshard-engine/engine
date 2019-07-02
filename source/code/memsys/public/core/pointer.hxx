@@ -26,7 +26,7 @@ namespace core::memory
             memsys_deleter(memsys_deleter&& other) noexcept;
 
             //! \brief Updating this deleter from another deleter. //#todo is this required?
-            auto operator=(memsys_deleter&& other) noexcept->memsys_deleter&;
+            auto operator=(memsys_deleter&& other) noexcept -> memsys_deleter&;
 
             //! \brief Method required by the unique_ptr deleter concept.
             void operator()(T* object) noexcept;
@@ -45,7 +45,7 @@ namespace core::memory
 
     //! \brief The make_unique function with an mandatory allocator object.
     template<class Result, class Type = Result, class... Args>
-    auto make_unique(core::allocator& alloc, Args&&... args) noexcept->unique_pointer<Result>;
+    auto make_unique(core::allocator& alloc, Args&&... args) noexcept -> unique_pointer<Result>;
 
 
 #include "pointer.inl"
