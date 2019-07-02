@@ -24,16 +24,16 @@ namespace resource
         void add_module(core::memory::unique_pointer<ResourceModule> module_obj, const core::pod::Array<core::cexpr::stringid_type>& schemes) noexcept;
 
         //! \todo documentation.
-        auto find(const URI& location) noexcept->Resource*;
+        auto find(const URI& location) noexcept -> Resource*;
 
         //! \todo documentation.
-        auto find(const URN& name) noexcept->Resource*;
+        auto find(const URN& name) noexcept -> Resource*;
 
         //! \todo documentation.
-        auto mount(const URI& location) noexcept->uint32_t;
+        auto mount(const URI& location) noexcept -> uint32_t;
 
         //! \todo documentation.
-        auto mount(const URN& name) noexcept->uint32_t;
+        auto mount(const URN& name) noexcept -> uint32_t;
 
     private:
         core::memory::proxy_allocator _allocator;

@@ -18,7 +18,7 @@ namespace resource
         virtual auto location() const noexcept -> const URI& = 0;
 
         //! \brief Returns the associated resource data.
-        virtual auto data() noexcept->core::data_view = 0;
+        virtual auto data() noexcept -> core::data_view = 0;
     };
 
 

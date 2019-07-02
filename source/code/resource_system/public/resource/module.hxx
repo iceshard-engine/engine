@@ -22,10 +22,10 @@ namespace resource
         virtual ~ResourceModule() noexcept = default;
 
         //! \todo documentation.
-        virtual auto find(const URI& location) noexcept->Resource* = 0;
+        virtual auto find(const URI& location) noexcept -> Resource* = 0;
 
         //! \todo documentation.
-        virtual auto mount(const URI& location, std::function<void(Resource*)> callback) noexcept->uint32_t = 0;
+        virtual auto mount(const URI& location, std::function<void(Resource*)> callback) noexcept -> uint32_t = 0;
     };
 
 

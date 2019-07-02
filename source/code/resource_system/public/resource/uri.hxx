@@ -59,7 +59,7 @@ namespace resource
 
 
     //! \brief Returns the URN from the given URI.
-    auto get_name(const URI& uri) noexcept->URN;
+    auto get_name(const URI& uri) noexcept -> URN;
 
 
 } // namespace resource
