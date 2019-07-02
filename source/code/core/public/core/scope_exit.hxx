@@ -25,7 +25,7 @@ namespace core
 
     //! \brief A deduction guide for the scope guard to accept any lambda object.
     template<class Func>
-    scope_guard(Func)->scope_guard<Func>;
+    scope_guard(Func) -> scope_guard<Func>;
 
 
 } // namespace core::detail

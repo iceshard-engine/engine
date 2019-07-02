@@ -4,6 +4,11 @@
 namespace core::build::configuration
 {
 
+    auto to_string(Configuration type) noexcept -> const char*
+    {
+        return type.name;
+    }
+
     auto to_string(ConfigurationType type) noexcept -> const char*
     {
         switch (type)
@@ -19,11 +24,6 @@ namespace core::build::configuration
         }
         IS_FAIL("ConfigurationType value was not recognized! [ value:{} ]", static_cast<std::underlying_type_t<ConfigurationType>>(type));
         return nullptr;
-    }
-
-    auto to_string(Configuration type) noexcept -> const char*
-    {
-        return type.name;
     }
 
 } // namespace core::build::configuration

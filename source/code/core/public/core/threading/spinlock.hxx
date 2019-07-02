@@ -9,7 +9,7 @@ namespace core::threading
     class spinlock final
     {
     public:
-        //! \brief Creates a un-set spinlock.
+        //! \brief Creates a unlocked spinlock.
         spinlock() noexcept = default;
 
         //! \brief Destroys the spinlock object.

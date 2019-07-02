@@ -79,7 +79,7 @@ namespace core::debug
         //! \brief New profiler with a name and user data.
         Profiler(std::string_view name, const void* user_data) noexcept;
 
-        //! \brief Publishes the profiling resutls as an event.
+        //! \brief Publishes the profiling results as an event.
         ~Profiler() noexcept;
 
     private:

@@ -7,8 +7,8 @@ namespace core::debug::detail
 {
 
 
-    //! \brief Outputs the assert message and checks if controlls the application. #todo Get a better description.
-    //! \returns ture If the application should break.
+    //! \brief Outputs the assert message and checks if controls the application. #todo Get a better description.
+    //! \returns true If the application should break.
     bool assert_internal(std::string_view condition, std::string_view filename, int fileline, std::string_view message, fmt::format_args arguments) noexcept;
 
 

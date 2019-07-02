@@ -4,6 +4,11 @@
 namespace core::build::platform
 {
 
+    auto to_string(Platform type) noexcept -> const char*
+    {
+        return type.name;
+    }
+
     auto to_string(System type) noexcept -> const char*
     {
         switch (type)
@@ -41,11 +46,6 @@ namespace core::build::platform
         }
         assert(false);
         return nullptr;
-    }
-
-    auto to_string(Platform type) noexcept -> const char*
-    {
-        return type.name;
     }
 
 } // namespace core::build::platform

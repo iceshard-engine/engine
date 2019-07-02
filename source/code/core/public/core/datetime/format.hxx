@@ -18,10 +18,10 @@ namespace core::datetime
     };
 
     //! \brief Formats the given datetime object (UTC).
-    auto format_datetime(datetime_type time, Format format) noexcept->std::string;
+    auto format_datetime(datetime_type time, Format format) noexcept -> std::string;
 
     //! \brief Formats the given datetime object (Local Timezone).
-    auto format_datetime(local_datetime_type time, Format format) noexcept->std::string;
+    auto format_datetime(local_datetime_type time, Format format) noexcept -> std::string;
 
     //! \brief Formats the given datetime object (UTC).
     //! \details Output is written into the given buffer.

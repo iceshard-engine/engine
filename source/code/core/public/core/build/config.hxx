@@ -4,14 +4,8 @@ namespace core::build::configuration
 {
 
 
-    /// Types and Functions ///
-
-
     //! \brief Supported configurations.
     enum class ConfigurationType { Debug, ReleaseDebug, Release };
-
-    //! \brief Returns the ConfigurationType name.
-    auto to_string(ConfigurationType type) noexcept -> const char*;
 
     //! \brief A structure holding information about a specific configuration.
     struct Configuration
@@ -23,21 +17,19 @@ namespace core::build::configuration
         ConfigurationType type;
     };
 
+
     //! \brief Returns the Configuration name.
     auto to_string(Configuration type) noexcept -> const char*;
 
-
-    /// Operators ///
-
-
-    constexpr bool operator==(const Configuration& left, const Configuration& right) noexcept;
-    constexpr bool operator!=(const Configuration& left, const Configuration& right) noexcept;
-
-    constexpr bool operator==(const Configuration& left, ConfigurationType right) noexcept;
-    constexpr bool operator!=(const Configuration& left, ConfigurationType right) noexcept;
+    //! \brief Returns the ConfigurationType name.
+    auto to_string(ConfigurationType type) noexcept -> const char*;
 
 
-    /// Configuration Detection ///
+    constexpr bool operator==(Configuration left, Configuration right) noexcept;
+    constexpr bool operator!=(Configuration left, Configuration right) noexcept;
+
+    constexpr bool operator==(Configuration left, ConfigurationType right) noexcept;
+    constexpr bool operator!=(Configuration left, ConfigurationType right) noexcept;
 
 
 #if defined(_DEBUG)
@@ -65,11 +57,10 @@ namespace core::build::configuration
 #define CFG_RELEASE 1
 
 #else
+
     static_assert(false, "Unknown configuration!");
+
 #endif
-
-
-    /// Inline definitions ///
 
 
 #include "config.inl"
