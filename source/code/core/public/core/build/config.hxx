@@ -4,45 +4,45 @@ namespace core::build::configuration
 {
 
 
-/// Types and Functions ///
+    /// Types and Functions ///
 
 
-//! \brief Supported configurations.
-enum class ConfigurationType { Debug, ReleaseDebug, Release };
+    //! \brief Supported configurations.
+    enum class ConfigurationType { Debug, ReleaseDebug, Release };
 
-//! \brief Returns the ConfigurationType name.
-auto to_string(ConfigurationType type) noexcept -> const char*;
+    //! \brief Returns the ConfigurationType name.
+    auto to_string(ConfigurationType type) noexcept -> const char*;
 
-//! \brief A structure holding information about a specific configuration.
-struct Configuration
-{
-    //! \brief Configuration name.
-    const char* name;
+    //! \brief A structure holding information about a specific configuration.
+    struct Configuration
+    {
+        //! \brief Configuration name.
+        const char* name;
 
-    //! \brief Configuration type.
-    ConfigurationType type;
-};
+        //! \brief Configuration type.
+        ConfigurationType type;
+    };
 
-//! \brief Returns the Configuration name.
-auto to_string(Configuration type) noexcept -> const char*;
-
-
-/// Operators ///
+    //! \brief Returns the Configuration name.
+    auto to_string(Configuration type) noexcept -> const char*;
 
 
-constexpr bool operator==(const Configuration& left, const Configuration& right) noexcept;
-constexpr bool operator!=(const Configuration& left, const Configuration& right) noexcept;
-
-constexpr bool operator==(const Configuration& left, ConfigurationType right) noexcept;
-constexpr bool operator!=(const Configuration& left, ConfigurationType right) noexcept;
+    /// Operators ///
 
 
-/// Configuration Detection ///
+    constexpr bool operator==(const Configuration& left, const Configuration& right) noexcept;
+    constexpr bool operator!=(const Configuration& left, const Configuration& right) noexcept;
+
+    constexpr bool operator==(const Configuration& left, ConfigurationType right) noexcept;
+    constexpr bool operator!=(const Configuration& left, ConfigurationType right) noexcept;
+
+
+    /// Configuration Detection ///
 
 
 #if defined(_DEBUG)
 
-static constexpr Configuration current_config{ "Debug",         ConfigurationType::Debug };
+    static constexpr Configuration current_config{ "Debug",         ConfigurationType::Debug };
 
 #define CFG_DEBUG 1
 #define CFG_RELEASE_DEBUG 0
@@ -50,7 +50,7 @@ static constexpr Configuration current_config{ "Debug",         ConfigurationTyp
 
 #elif defined(_RDEBUG)
 
-static constexpr Configuration current_config{ "ReleaseDebug",  ConfigurationType::ReleaseDebug };
+    static constexpr Configuration current_config{ "ReleaseDebug",  ConfigurationType::ReleaseDebug };
 
 #define CFG_DEBUG 0
 #define CFG_RELEASE_DEBUG 1
@@ -58,18 +58,18 @@ static constexpr Configuration current_config{ "ReleaseDebug",  ConfigurationTyp
 
 #elif defined(_NDEBUG)
 
-static constexpr Configuration current_config{ "Release",       ConfigurationType::Release };
+    static constexpr Configuration current_config{ "Release",       ConfigurationType::Release };
 
 #define CFG_DEBUG 0
 #define CFG_RELEASE_DEBUG 0
 #define CFG_RELEASE 1
 
 #else
-static_assert(false, "Unknown configuration!");
+    static_assert(false, "Unknown configuration!");
 #endif
 
 
-/// Inline definitions ///
+    /// Inline definitions ///
 
 
 #include "config.inl"

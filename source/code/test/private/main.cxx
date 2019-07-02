@@ -37,7 +37,7 @@ int main()
         rs.mount({ resource::scheme_directory, "first" });
         rs.mount({ resource::scheme_directory, "second" });
 
-        auto* r1 = rs.find(URN{ "filesystem.txt" });
+        auto* r1 = rs.find(URN{ "test/filesystem.txt" });
         auto* r2 = rs.find(URI{ resource::scheme_directory, "first", URN{ "test/filesystem.txt" } });
 
         fmt::print("\n");

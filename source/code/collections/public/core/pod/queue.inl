@@ -29,31 +29,31 @@ inline auto Queue<T>::operator[](uint32_t i) const -> const T&
 namespace queue_internal
 {
 
-// Can only be used to increase the capacity.
-template<typename T>
-void increase_capacity(Queue<T> &q, uint32_t new_capacity) noexcept
-{
-    uint32_t array_size = array::size(q._data);
-    array::resize(q._data, new_capacity);
-
-    if (q._offset + q._size > array_size)
+    // Can only be used to increase the capacity.
+    template<typename T>
+    void increase_capacity(Queue<T> &q, uint32_t new_capacity) noexcept
     {
-        uint32_t end_items = array_size - q._offset;
-        memmove(array::begin(q._data) + new_capacity - end_items, array::begin(q._data) + q._offset, end_items * sizeof(T));
-        q._offset += new_capacity - array_size;
-    }
-}
+        uint32_t array_size = array::size(q._data);
+        array::resize(q._data, new_capacity);
 
-template<typename T>
-void grow(Queue<T> &q, uint32_t min_capacity = 0) noexcept
-{
-    uint32_t new_capacity = array::size(q._data) * 2 + 8;
-    if (new_capacity < min_capacity)
-    {
-        new_capacity = min_capacity;
+        if (q._offset + q._size > array_size)
+        {
+            uint32_t end_items = array_size - q._offset;
+            memmove(array::begin(q._data) + new_capacity - end_items, array::begin(q._data) + q._offset, end_items * sizeof(T));
+            q._offset += new_capacity - array_size;
+        }
     }
-    increase_capacity(q, new_capacity);
-}
+
+    template<typename T>
+    void grow(Queue<T> &q, uint32_t min_capacity = 0) noexcept
+    {
+        uint32_t new_capacity = array::size(q._data) * 2 + 8;
+        if (new_capacity < min_capacity)
+        {
+            new_capacity = min_capacity;
+        }
+        increase_capacity(q, new_capacity);
+    }
 
 } // namespace queue_internal
 

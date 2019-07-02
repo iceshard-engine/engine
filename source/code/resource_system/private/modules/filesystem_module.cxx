@@ -15,168 +15,155 @@
 
 namespace resource
 {
-namespace detail
-{
-
-class FileResource : public Resource
-{
-public:
-    FileResource(core::allocator& alloc, const URI& uri, core::StringView<> native_path) noexcept
-        : _native_path{ alloc, native_path._data }
-        , _path{ alloc, uri.path._data }
-        , _uri{ uri.scheme, _path, uri.fragment }
-        , _data{ alloc }
-    { }
-
-    ~FileResource() override = default;
-
-    //! \brief The resource identifier.
-    //! \remark This value can be seen as the absolute location to a specific resource.
-    auto location() const noexcept -> const URI& override
+    namespace detail
     {
-        return _uri;
-    }
 
-    //! \brief Returns the associated resource data.
-    auto data() noexcept -> core::data_view override
-    {
-        if (core::buffer::empty(_data))
+        class FileResource : public Resource
         {
-            FILE* file_native = nullptr;
-            fopen_s(&file_native, core::string::begin(_native_path), "rb");
+        public:
+            FileResource(core::allocator& alloc, const URI& uri, core::StringView<> native_path) noexcept
+                : _native_path{ alloc, native_path._data }
+                , _path{ alloc, uri.path._data }
+                , _uri{ uri.scheme, _path, uri.fragment }
+                , _data{ alloc }
+            { }
 
-            if (file_native)
+            ~FileResource() override = default;
+
+            //! \brief The resource identifier.
+            //! \remark This value can be seen as the absolute location to a specific resource.
+            auto location() const noexcept -> const URI& override
             {
-                core::memory::stack_allocator_4096 kib4_alloc;
-                core::data_chunk file_chunk{ kib4_alloc, 1024u * 4u };
+                return _uri;
+            }
 
-                auto characters_read = fread_s(file_chunk.data(), file_chunk.size(), sizeof(char), file_chunk.size(), file_native);
-                while(characters_read > 0)
+            //! \brief Returns the associated resource data.
+            auto data() noexcept -> core::data_view override
+            {
+                if (core::buffer::empty(_data))
                 {
-                    core::buffer::append(_data, file_chunk.data(), static_cast<uint32_t>(characters_read));
-                    characters_read = fread_s(file_chunk.data(), file_chunk.size(), sizeof(char), file_chunk.size(), file_native);
-                }
+                    FILE* file_native = nullptr;
+                    fopen_s(&file_native, core::string::begin(_native_path), "rb");
 
-                fclose(file_native);
+                    if (file_native)
+                    {
+                        core::memory::stack_allocator_4096 kib4_alloc;
+                        core::data_chunk file_chunk{ kib4_alloc, 1024u * 4u };
+
+                        auto characters_read = fread_s(file_chunk.data(), file_chunk.size(), sizeof(char), file_chunk.size(), file_native);
+                        while (characters_read > 0)
+                        {
+                            core::buffer::append(_data, file_chunk.data(), static_cast<uint32_t>(characters_read));
+                            characters_read = fread_s(file_chunk.data(), file_chunk.size(), sizeof(char), file_chunk.size(), file_native);
+                        }
+
+                        fclose(file_native);
+                    }
+                }
+                return _data;
+            }
+
+        private:
+            //! \brief The native filesystem path.
+            core::String<> _native_path;
+
+            //! \brief The resource path.
+            core::String<> _path;
+
+            //! \brief The resource identifier.
+            URI _uri;
+
+            //! \brief The loaded file buffer.
+            core::Buffer _data;
+        };
+
+
+        namespace array = core::pod::array;
+
+        void mount_directory(core::allocator& alloc, std::filesystem::path path, core::pod::Array<Resource*>& entry_list, std::function<void(Resource*)> callback) noexcept
+        {
+            // Build the path
+            path = std::filesystem::canonical(path);
+
+            // Traverse the directory
+            std::filesystem::recursive_directory_iterator directory_iterator{ path };
+            for (auto&& native_entry : directory_iterator)
+            {
+                if (std::filesystem::is_regular_file(native_entry))
+                {
+                    auto filepath = native_entry.path();
+                    auto filename = filepath.filename().generic_string();
+
+                    auto fullpath = std::filesystem::canonical(filepath).generic_string();
+
+                    auto relative_path = std::filesystem::relative(fullpath, path);
+                    auto relative_path_string = relative_path.generic_string();
+
+                    auto* dir_entry_object = alloc.make<FileResource>(alloc, URI{ scheme_directory, path.generic_string().c_str(), core::cexpr::stringid(relative_path_string.c_str()) }, fullpath.c_str());
+                    array::push_back(entry_list, static_cast<Resource*>(dir_entry_object));
+                    callback(dir_entry_object);
+                }
             }
         }
-        return _data;
+
+    } // namespace detail
+
+    FileSystem::FileSystem(core::allocator& alloc, std::string_view basedir) noexcept
+        : _basedir{ basedir }
+        , _allocator{ "resource-system", alloc }
+        , _resources{ _allocator }
+    {
+        core::pod::array::reserve(_resources, 200);
     }
 
-private:
-    //! \brief The native filesystem path.
-    core::String<> _native_path;
-
-    //! \brief The resource path.
-    core::String<> _path;
-
-    //! \brief The resource identifier.
-    URI _uri;
-
-    //! \brief The loaded file buffer.
-    core::Buffer _data;
-};
-
-
-namespace array = core::pod::array;
-
-void mount_directory(core::allocator& alloc, std::filesystem::path path, core::pod::Array<Resource*>& entry_list, std::function<void(Resource*)> callback) noexcept
-{
-    // Build the path
-    path = std::filesystem::canonical(path);
-
-    // Traverse the directory
-    std::filesystem::recursive_directory_iterator directory_iterator{ path };
-    for (auto&& native_entry : directory_iterator)
+    FileSystem::~FileSystem() noexcept
     {
-        if (std::filesystem::is_regular_file(native_entry))
+        for (auto* entry : _resources)
         {
-            auto filepath = native_entry.path();
-            auto filename = filepath.filename().generic_string();
-
-            auto fullpath = std::filesystem::canonical(filepath).generic_string();
-
-            auto relative_path = std::filesystem::relative(fullpath, path);
-            auto relative_path_string = relative_path.generic_string();
-
-            auto* file_entry_object = alloc.make<FileResource>(alloc, URI{ scheme_file, fullpath.c_str() }, fullpath.c_str());
-            auto* dir_entry_object = alloc.make<FileResource>(alloc, URI{ scheme_directory, path.generic_string().c_str(), core::cexpr::stringid(relative_path_string.c_str()) }, fullpath.c_str());
+            _allocator.destroy(entry);
+        }
+        core::pod::array::clear(_resources);
+    }
 
 
-            auto add_resource = [&](Resource* res, bool call_callback) noexcept
+    auto FileSystem::find(const URI& uri) noexcept -> Resource*
+    {
+        Resource* result{ nullptr };
+        for (auto* res : _resources)
+        {
+            auto& res_uri = res->location();
+            if (res_uri.scheme != uri.scheme)
             {
-                array::push_back(entry_list, res);
+                continue;
+            }
 
-                if (call_callback)
-                {
-                    callback(res);
-                }
-            };
+            auto uri_path = std::filesystem::canonical(_basedir / std::filesystem::path{ core::string::begin(uri.path) }).generic_string();
+            if (!core::string::equals(res_uri.path, uri_path))
+            {
+                continue;
+            }
 
-            add_resource(file_entry_object, true);
-            add_resource(dir_entry_object, relative_path.has_parent_path());
+            if (res_uri.fragment != uri.fragment)
+            {
+                continue;
+            }
+
+            result = res;
         }
+        return result;
     }
-}
 
-} // namespace detail
-
-FileSystem::FileSystem(core::allocator& alloc, std::string_view basedir) noexcept
-    : _basedir{ basedir }
-    , _allocator{ "resource-system", alloc }
-    , _resources{ _allocator }
-{
-    core::pod::array::reserve(_resources, 200);
-}
-
-FileSystem::~FileSystem() noexcept
-{
-    for (auto* entry : _resources)
+    auto FileSystem::mount(const URI& uri, std::function<void(Resource*)> callback) noexcept -> uint32_t
     {
-        _allocator.destroy(entry);
-    }
-    core::pod::array::clear(_resources);
-}
-
-
-auto FileSystem::find(const URI& uri) noexcept -> Resource*
-{
-    Resource* result{ nullptr };
-    for (auto* res : _resources)
-    {
-        auto& res_uri = res->location();
-        if (res_uri.scheme != uri.scheme)
+        if (uri.scheme == resource::scheme_file)
         {
-            continue;
+            // single file mount
         }
-
-        auto uri_path = std::filesystem::canonical(_basedir / std::filesystem::path{ core::string::begin(uri.path) }).generic_string();
-        if (!core::string::equals(res_uri.path, uri_path))
+        else if (uri.scheme == resource::scheme_directory)
         {
-            continue;
+            detail::mount_directory(_allocator, std::filesystem::path{ _basedir } / core::string::begin(uri.path), _resources, callback);
         }
-
-        if (res_uri.fragment != uri.fragment)
-        {
-            continue;
-        }
-
-        result = res;
+        return 0;
     }
-    return result;
-}
-
-auto FileSystem::mount(const URI& uri, std::function<void(Resource*)> callback) noexcept -> uint32_t
-{
-    if (uri.scheme == resource::scheme_file)
-    {
-        // single file mount
-    }
-    else if (uri.scheme == resource::scheme_directory)
-    {
-        detail::mount_directory(_allocator, std::filesystem::path{ _basedir } / core::string::begin(uri.path), _resources, callback);
-    }
-    return 0;
-}
 
 } // namespace resource

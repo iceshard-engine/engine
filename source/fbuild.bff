@@ -75,6 +75,7 @@ Settings
     .Config = 'Release'
     .CompilerOptions = ' /D_NDEBUG'
         + ' /O2'
+        // + ' /Z7'
         + ' /MD'
 
     .ConanConfig = 'Release'

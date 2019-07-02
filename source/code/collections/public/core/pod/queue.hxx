@@ -6,76 +6,76 @@ namespace core::pod
 {
 
 
-//! \brief Contains functions used to modify Queue<T> objects.
-namespace queue
-{
+    //! \brief Contains functions used to modify Queue<T> objects.
+    namespace queue
+    {
 
-//! \brief Returns the number of items in the queue.
-template <typename T>
-auto size(const Queue<T> &q) noexcept -> uint32_t;
+        //! \brief Returns the number of items in the queue.
+        template <typename T>
+        auto size(const Queue<T> &q) noexcept->uint32_t;
 
-//! \brief Returns the amount of free space in the queue/ring buffer.
-//! \details This is the number of items we can push before the queue needs to grow.
-template<typename T>
-auto space(const Queue<T> &q) noexcept -> uint32_t;
+        //! \brief Returns the amount of free space in the queue/ring buffer.
+        //! \details This is the number of items we can push before the queue needs to grow.
+        template<typename T>
+        auto space(const Queue<T> &q) noexcept->uint32_t;
 
-//! \brief Ensures the queue has room for at least the specified number of items.
-template<typename T>
-void reserve(Queue<T> &q, uint32_t size) noexcept;
+        //! \brief Ensures the queue has room for at least the specified number of items.
+        template<typename T>
+        void reserve(Queue<T> &q, uint32_t size) noexcept;
 
-//! \brief Pushes the item to the end of the queue.
-template<typename T>
-void push_back(Queue<T> &q, const T &item) noexcept;
+        //! \brief Pushes the item to the end of the queue.
+        template<typename T>
+        void push_back(Queue<T> &q, const T &item) noexcept;
 
-//! \brief Pops the last item from the queue. The queue cannot be empty.
-template<typename T>
-void pop_back(Queue<T> &q) noexcept;
+        //! \brief Pops the last item from the queue. The queue cannot be empty.
+        template<typename T>
+        void pop_back(Queue<T> &q) noexcept;
 
-//! \brief Pushes the item to the front of the queue.
-template<typename T>
-void push_front(Queue<T> &q, const T &item) noexcept;
+        //! \brief Pushes the item to the front of the queue.
+        template<typename T>
+        void push_front(Queue<T> &q, const T &item) noexcept;
 
-//! \brief Pops the first item from the queue. The queue cannot be empty.
-template<typename T>
-void pop_front(Queue<T> &q) noexcept;
+        //! \brief Pops the first item from the queue. The queue cannot be empty.
+        template<typename T>
+        void pop_front(Queue<T> &q) noexcept;
 
-//! \brief Consumes n items from the front of the queue.
-template <typename T>
-void consume(Queue<T> &q, uint32_t n) noexcept;
+        //! \brief Consumes n items from the front of the queue.
+        template <typename T>
+        void consume(Queue<T> &q, uint32_t n) noexcept;
 
-//! \brief Pushes n items to the back of the queue.
-template <typename T>
-void push(Queue<T> &q, const T *items, uint32_t n) noexcept;
+        //! \brief Pushes n items to the back of the queue.
+        template <typename T>
+        void push(Queue<T> &q, const T *items, uint32_t n) noexcept;
 
-//! \brief Pushes the array at the back of the queue.
-template <typename T, uint32_t Size>
-void push(Queue<T> &q, const T(&arr)[Size]) noexcept;
+        //! \brief Pushes the array at the back of the queue.
+        template <typename T, uint32_t Size>
+        void push(Queue<T> &q, const T(&arr)[Size]) noexcept;
 
-//! \brief Returns the begin and end of the continuous chunk of elements at
-//!     the start of the queue.
-//!
-//! \details This can be useful for when you want to process many queue elements at
-//!     once.
-//!
-//! \remarks This chunk does not necessarily contain all the elements
-//!     in the queue (if the queue wraps around the array).
-template<typename T>
-auto begin_front(Queue<T> &q) noexcept -> T*;
+        //! \brief Returns the begin and end of the continuous chunk of elements at
+        //!     the start of the queue.
+        //!
+        //! \details This can be useful for when you want to process many queue elements at
+        //!     once.
+        //!
+        //! \remarks This chunk does not necessarily contain all the elements
+        //!     in the queue (if the queue wraps around the array).
+        template<typename T>
+        auto begin_front(Queue<T> &q) noexcept->T*;
 
-template<typename T>
-auto begin_front(const Queue<T> &q) noexcept -> const T*;
+        template<typename T>
+        auto begin_front(const Queue<T> &q) noexcept -> const T*;
 
-template<typename T>
-auto end_front(Queue<T> &q) noexcept -> T*;
+        template<typename T>
+        auto end_front(Queue<T> &q) noexcept->T*;
 
-template<typename T>
-auto end_front(const Queue<T> &q) noexcept -> const T*;
+        template<typename T>
+        auto end_front(const Queue<T> &q) noexcept -> const T*;
 
-} // namespace queue
+    } // namespace queue
 
 
-// core::pod::Queue implementation
-//////////////////////////////////////////////////////////////////////////
+    // core::pod::Queue implementation
+    //////////////////////////////////////////////////////////////////////////
 
 
 #include "queue.inl"
