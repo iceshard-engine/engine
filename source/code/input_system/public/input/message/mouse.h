@@ -1,8 +1,8 @@
 #pragma once
-#include <kernel/types.h>
+#include <core/base.hxx>
 
-#include <iolib/mouse.h>
-#include <iolib/utils/message_info.h>
+#include <input/mouse.h>
+#include <input/utils/message_info.h>
 
 namespace mooned::io::message
 {
@@ -32,7 +32,7 @@ struct MouseWheel
     int y;
 };
 
-// Declare the above types as messages 
+// Declare the above types as messages
 DECLARE_MESSAGE(MouseMotion);
 DECLARE_MESSAGE(MouseMotionRelative);
 DECLARE_MESSAGE(MouseButtonDown);

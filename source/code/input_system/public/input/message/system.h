@@ -1,6 +1,6 @@
 #pragma once
-#include <kernel/types.h>
-#include <iolib/utils/message_info.h>
+#include <core/base.hxx>
+#include <input/utils/message_info.h>
 
 namespace mooned::io::message
 {
@@ -11,7 +11,7 @@ struct Tick { };
 //! Defines a engine wide debug message, which can be anything
 struct DebugMessage
 {
-    stringid_hash_t name;
+    core::cexpr::stringid_type name;
     int64_t value;
 };
 

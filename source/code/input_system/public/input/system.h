@@ -1,6 +1,6 @@
 #pragma once
-#include <memsys/allocator.h>
-#include <kernel/compiletime/stringid.h>
+#include <core/allocator.hxx>
+#include <core/cexpr/stringid.hxx>
 
 namespace mooned::io
 {
@@ -14,7 +14,7 @@ enum class Backend
 // IO system related functions
 class IOSystem;
 
-IOSystem* initialize(mem::allocator& alloc, Backend backend);
+IOSystem* initialize(core::allocator& alloc, Backend backend);
 
 bool initialized(IOSystem* system);
 
@@ -30,7 +30,7 @@ const char* get_clipboard_text(IOSystem* system);
 void set_clipboard_text(IOSystem* system, const char* text);
 
 // Debug API
-void send_debug_message(stringid_t name, int64_t value);
+void send_debug_message(core::cexpr::stringid_argument_type name, int64_t value);
 
 void send_tick_message();
 

@@ -1,6 +1,6 @@
 #pragma once
-#include <kernel/types.h>
-#include <iolib/utils/message_info.h>
+#include <core/base.hxx>
+#include <input/utils/message_info.h>
 
 namespace mooned::io::message
 {
@@ -65,7 +65,7 @@ struct WindowTakeFocus
     uint32_t handle;
 };
 
-struct WindowHitTest 
+struct WindowHitTest
 {
     uint32_t handle;
 };

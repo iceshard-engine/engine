@@ -1,8 +1,8 @@
 #pragma once
-#include <iolib/system.h>
-#include <iolib/window.h>
-#include <iolib/keyboard.h>
-#include <iolib/mouse.h>
+#include <input/system.h>
+#include <input/window.h>
+#include <input/keyboard.h>
+#include <input/mouse.h>
 
 namespace mooned::io
 {

@@ -19,7 +19,7 @@ namespace core::cexpr
 
 #if CFG_RELEASE == 0
         //! \brief The origin string (or part of it).
-        char hash_origin[24]{ "" };
+        char hash_origin[24];
 #endif
     };
 

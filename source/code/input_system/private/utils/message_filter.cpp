@@ -1,6 +1,6 @@
-#include <iolib/utils/message_filter.h>
+#include <input/utils/message_filter.h>
 
-mooned::io::MessageFilter::MessageFilter(mem::allocator& alloc)
+mooned::io::MessageFilter::MessageFilter(core::allocator& alloc)
     : _allocator{ alloc },
     _handle{ nullptr }
 {
@@ -32,7 +32,7 @@ mooned::io::MessageFilter::~MessageFilter()
 
 bool mooned::io::MessageFilter::process(const message::Metadata& mdata, const void* data, uint32_t size) const
 {
-    if (nullptr == _handle || _handle->message_id() != mdata.identifier)
+    if (nullptr == _handle || _handle->message_id() != static_cast<uint64_t>(mdata.identifier.hash_value))
     {
         return false;
     }

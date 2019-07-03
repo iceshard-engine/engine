@@ -1,8 +1,8 @@
 #pragma once
-#include <kernel/types.h>
+#include <core/base.hxx>
 
-#include <iolib/keyboard.h>
-#include <iolib/utils/message_info.h>
+#include <input/keyboard.h>
+#include <input/utils/message_info.h>
 
 namespace mooned::io::message
 {

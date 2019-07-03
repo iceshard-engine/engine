@@ -1,6 +1,6 @@
 #pragma once
-#include <memsys/allocator.h>
-#include <kernel/compiletime/stringid.h>
+#include <core/allocator.hxx>
+#include <core/cexpr/stringid.hxx>
 #include <functional>
 
 namespace mooned::io::message
@@ -8,7 +8,7 @@ namespace mooned::io::message
 
 struct Metadata
 {
-    using identifier_t = stringid_hash_t;
+    using identifier_t = core::cexpr::stringid_type;
     using timestamp_t = uint32_t;
 
     identifier_t identifier;
@@ -18,7 +18,7 @@ struct Metadata
 class Data
 {
 public:
-    Data(mem::allocator& alloc);
+    Data(core::allocator& alloc);
     ~Data();
 
     void clear();
@@ -34,7 +34,7 @@ protected:
     void resize(int size);
 
 private:
-    mem::allocator& _allocator;
+    core::allocator& _allocator;
     int _allocated;
     int _size;
 

@@ -77,7 +77,7 @@ struct MessageFilter::IMethod : MessageFilter::ICallable<T>
 // Template methods
 
 template<class T>
-MessageFilter::MessageFilter(mem::allocator& alloc, void(*func)(const T&))
+MessageFilter::MessageFilter(core::allocator& alloc, void(*func)(const T&))
     : _allocator{ alloc }
     , _handle{ nullptr }
 {
@@ -86,7 +86,7 @@ MessageFilter::MessageFilter(mem::allocator& alloc, void(*func)(const T&))
 }
 
 template<class T>
-MessageFilter::MessageFilter(mem::allocator& alloc, void* udata, void(*func)(const T&))
+MessageFilter::MessageFilter(core::allocator& alloc, void* udata, void(*func)(const T&))
     : _allocator{ alloc }
     , _handle{ nullptr }
 {
@@ -95,7 +95,7 @@ MessageFilter::MessageFilter(mem::allocator& alloc, void* udata, void(*func)(con
 }
 
 template<class C, class T>
-MessageFilter::MessageFilter(mem::allocator& alloc, C* object, void(C::*func)(const T&))
+MessageFilter::MessageFilter(core::allocator& alloc, C* object, void(C::*func)(const T&))
     : _allocator{ alloc }
     , _handle{ nullptr }
 {

@@ -1,14 +1,13 @@
 #pragma once
-#include <memsys/allocator.h>
 
 namespace mooned::io
 {
 
 enum class RenderBackend
 {
-    // The window does't have any render backend associated with it
+    // The window doesn't have any render back-end associated with it
     NONE,
-    // The new Vulkan API (available on Windows and Linux, not available yet)
+    // The new Vulcan API (available on Windows and Linux, not available yet)
     VULKAN,
     // OpenGL, version 4.5 (available on Windows and Linux, not available yet on Linux)
     OPENGL,

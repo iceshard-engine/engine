@@ -1,7 +1,7 @@
 #pragma once
-#include <iolib/system.h>
-#include <iolib/utils/message_pipe.h>
-#include <iolib/utils/message_filter.h>
+#include <input/system.h>
+#include <input/utils/message_pipe.h>
+#include <input/utils/message_filter.h>
 
 namespace mooned::io
 {

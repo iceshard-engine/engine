@@ -1,5 +1,5 @@
-#include <iolib/utils/message_data.h>
-#include <memsys/memsys.h>
+#include <input/utils/message_data.h>
+#include <core/memory.hxx>
 
 #include <cassert>
 
@@ -16,32 +16,32 @@ struct DataEntry
 
 static DataEntry* first_entry(void* ptr)
 {
-    return reinterpret_cast<DataEntry*>(mem::utils::align_forward(ptr, DATA_ENTRY_ALIGNMENT));
+    return reinterpret_cast<DataEntry*>(core::memory::utils::align_forward(ptr, DATA_ENTRY_ALIGNMENT));
 }
 
 static DataEntry* next_entry(DataEntry* entry)
 {
-    auto* new_ptr = mem::utils::pointer_add(entry, sizeof(DataEntry) + entry->size);
-    new_ptr = mem::utils::align_forward(new_ptr, DATA_ENTRY_ALIGNMENT);
+    auto* new_ptr = core::memory::utils::pointer_add(entry, sizeof(DataEntry) + entry->size);
+    new_ptr = core::memory::utils::align_forward(new_ptr, DATA_ENTRY_ALIGNMENT);
     return reinterpret_cast<DataEntry*>(new_ptr);
 }
 
 static void* data_from_entry(DataEntry* entry)
 {
     assert(entry && entry->size > 0);
-    return mem::utils::pointer_add(entry, sizeof(DataEntry));
+    return core::memory::utils::pointer_add(entry, sizeof(DataEntry));
 }
 
 }
 
-mooned::io::message::Data::Data(mem::allocator& alloc)
+mooned::io::message::Data::Data(core::allocator& alloc)
     : _allocator{ alloc }
     , _allocated{ 0 }
     , _size{ 0 }
     , _data{ nullptr }
     , _next{ nullptr }
 {
-    resize(1 KB);
+    resize(1 * 1024 /* 1 KB */);
 }
 
 mooned::io::message::Data::~Data()
@@ -57,7 +57,7 @@ void mooned::io::message::Data::clear()
     _data = nullptr;
     _next = nullptr;
 
-    resize(1 KB);
+    resize(1 * 1024 /* 1 KB */);
 }
 
 void mooned::io::message::Data::push(Metadata meta, const void* ptr, int size)
@@ -89,7 +89,7 @@ void mooned::io::message::Data::for_each(std::function<void(Metadata, const void
     }
 
     auto* entry = detail::first_entry(_data);
-    while (0llu != entry->metadata.identifier)
+    while (0llu != static_cast<uint64_t>(entry->metadata.identifier.hash_value))
     {
         func(entry->metadata, detail::data_from_entry(entry), entry->size);
 
@@ -104,14 +104,14 @@ int mooned::io::message::Data::size() const
 
 int mooned::io::message::Data::available_space() const
 {
-    return mem::utils::pointer_distance(_next, mem::utils::pointer_add(_data, _allocated));
+    return core::memory::utils::pointer_distance(_next, core::memory::utils::pointer_add(_data, _allocated));
 }
 
 void mooned::io::message::Data::resize(int bytes)
 {
     assert(_allocated < bytes);
 
-    auto used = mem::utils::pointer_distance(_data, _next);
+    auto used = core::memory::utils::pointer_distance(_data, _next);
     void* new_data = _allocator.allocate(bytes, detail::DATA_ENTRY_ALIGNMENT);
     memset(new_data, 0, bytes);
 
@@ -122,7 +122,7 @@ void mooned::io::message::Data::resize(int bytes)
     }
 
     _data = new_data;
-    _next = mem::utils::pointer_add(_data, used);
+    _next = core::memory::utils::pointer_add(_data, used);
     _allocated = bytes;
 
     assert(detail::first_entry(_next) == _next);

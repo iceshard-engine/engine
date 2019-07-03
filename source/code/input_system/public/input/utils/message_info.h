@@ -1,6 +1,6 @@
 #pragma once
-#include <kernel/types.h>
-#include <kernel/compiletime/stringid.h>
+#include <core/base.hxx>
+#include <core/cexpr/stringid.hxx>
 #include <type_traits>
 
 namespace mooned::io::message
@@ -15,8 +15,8 @@ struct MessageInfo;
 #define DECLARE_MESSAGE(name) \
     static_assert(std::is_pod<##name>::value, "Message " #name " is not a POD type!"); \
     template<> struct MessageInfo<##name> { \
-        static constexpr const char* Name = #name;\
-        static constexpr auto ID = _stringid(#name);\
+        static constexpr std::string_view Name = #name;\
+        static constexpr auto ID = core::cexpr::stringid_cexpr(#name);\
     };
 #endif
 

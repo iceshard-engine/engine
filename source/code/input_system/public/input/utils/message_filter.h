@@ -1,8 +1,8 @@
 #pragma once
-#include <memsys/allocator.h>
+#include <core/allocator.hxx>
 
-#include <iolib/utils/message_info.h>
-#include <iolib/utils/message_data.h>
+#include <input/utils/message_info.h>
+#include <input/utils/message_data.h>
 
 namespace mooned::io
 {
@@ -10,7 +10,7 @@ namespace mooned::io
 class MessageFilter
 {
 public:
-    MessageFilter(mem::allocator& alloc);
+    MessageFilter(core::allocator& alloc);
     MessageFilter(MessageFilter&& other);
     MessageFilter& operator=(MessageFilter&& other);
 
@@ -20,22 +20,22 @@ public:
     ~MessageFilter();
 
     template<class T>
-    MessageFilter(mem::allocator& alloc, void(*func)(const T&));
+    MessageFilter(core::allocator& alloc, void(*func)(const T&));
 
     template<class T>
-    MessageFilter(mem::allocator& alloc, void(*func)(const T&, message::Metadata::timestamp_t));
+    MessageFilter(core::allocator& alloc, void(*func)(const T&, message::Metadata::timestamp_t));
 
     template<class T>
-    MessageFilter(mem::allocator& alloc, void* udata, void(*func)(const T&));
+    MessageFilter(core::allocator& alloc, void* udata, void(*func)(const T&));
 
     template<class T>
-    MessageFilter(mem::allocator& alloc, void* udata, void(*func)(const T&, message::Metadata::timestamp_t));
+    MessageFilter(core::allocator& alloc, void* udata, void(*func)(const T&, message::Metadata::timestamp_t));
 
     template<class C, class T>
-    MessageFilter(mem::allocator& alloc, C* object, void(C::*func)(const T&));
+    MessageFilter(core::allocator& alloc, C* object, void(C::*func)(const T&));
 
     template<class C, class T>
-    MessageFilter(mem::allocator& alloc, C* object, void(C::*func)(const T&, message::Metadata::timestamp_t));
+    MessageFilter(core::allocator& alloc, C* object, void(C::*func)(const T&, message::Metadata::timestamp_t));
 
     bool process(const message::Metadata& mdata, const void* data, uint32_t size) const;
 
@@ -55,7 +55,7 @@ private:
     struct IMethod;
 
 private:
-    mem::allocator& _allocator;
+    core::allocator& _allocator;
     IBase* _handle;
 };
 

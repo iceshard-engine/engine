@@ -1,11 +1,11 @@
-#include <iolib/utils/message_pipe.h>
-#include <iolib/utils/message_filter.h>
-#include <iolib/iolib.h>
+#include <input/utils/message_pipe.h>
+#include <input/utils/message_filter.h>
+#include <input/iolib.h>
 
-#include <cassert>
+#include <core/debug/assert.hxx>
 
 // Message pipe
-mooned::io::MessagePipe::MessagePipe(mem::allocator& alloc)
+mooned::io::MessagePipe::MessagePipe(core::allocator& alloc)
     : _allocator{ alloc }
     , _data{ alloc }
 {
@@ -33,7 +33,16 @@ void mooned::io::MessagePipe::for_each(std::function<void(const message::Metadat
 
 void mooned::io::MessagePipe::push(uint64_t identifier, const void* data, int size)
 {
-    _data.push({ identifier, mooned::io::ticks() }, data, size);
+    _data.push(
+        message::Metadata{
+            core::cexpr::stringid_type{
+                core::cexpr::stringid_hash_type{ identifier }
+            }
+            , mooned::io::ticks()
+        }
+        , data
+        , size
+    );
 }
 
 void mooned::io::filter(const MessagePipe& pipe, const std::vector<MessageFilter>& filters)

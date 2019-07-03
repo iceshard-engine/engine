@@ -1,9 +1,9 @@
 #pragma once
-#include <memsys/allocator.h>
-#include <collections/pod/hash.h>
+#include <core/allocator.hxx>
+#include <core/pod/hash.hxx>
 
-#include <iolib/utils/message_data.h>
-#include <iolib/utils/message_info.h>
+#include <input/utils/message_data.h>
+#include <input/utils/message_info.h>
 
 #include <functional>
 #include <vector>
@@ -20,7 +20,7 @@ struct MessageInfo;
 class MessagePipe final
 {
 public:
-    MessagePipe(mem::allocator& alloc);
+    MessagePipe(core::allocator& alloc);
     ~MessagePipe();
 
     MessagePipe(MessagePipe&&) = delete;
@@ -38,7 +38,7 @@ public:
     void clear();
 
 private:
-    mem::allocator& _allocator;
+    core::allocator& _allocator;
     mooned::io::message::Data _data;
 };
 
