@@ -78,11 +78,11 @@ int main()
         */
         auto pre_alloc_count = alloc.allocation_count();
 
-        input::MessageQueue message_pipe{ alloc };
-        input::push(message_pipe, TestFileRequest{ URN{ "filesystem.txt" } });
-        input::push(message_pipe, TestFileRequest2{ URI{ resource::scheme_directory, "first", URN{ "filesystem.txt" } } });
-        input::push(message_pipe, TestFileRequest{ URN{ "test/filesystem.txt" }, true });
-        input::push(message_pipe, TestFileRequest2{ URI{ resource::scheme_directory, "second", URN{ "test/filesystem.txt" } }, true });
+        input::MessageQueue message_queue{ alloc };
+        input::push(message_queue, TestFileRequest{ URN{ "filesystem.txt" } });
+        input::push(message_queue, TestFileRequest2{ URI{ resource::scheme_directory, "first", URN{ "filesystem.txt" } } });
+        input::push(message_queue, TestFileRequest{ URN{ "test/filesystem.txt" }, true });
+        input::push(message_queue, TestFileRequest2{ URI{ resource::scheme_directory, "second", URN{ "test/filesystem.txt" } }, true });
 
         fmt::print("Allocations made: {}\n", alloc.allocation_count() - pre_alloc_count);
 
@@ -119,8 +119,8 @@ int main()
             fmt::print("Resource request: {}\n> found: {}\n> loaded: {}\n", msg.location, res != nullptr, loaded);
         };
 
-        input::for_each(message_pipe, &rs, fn);
-        input::for_each(message_pipe, &rs, fn2);
+        input::for_each(message_queue, &rs, fn);
+        input::for_each(message_queue, &rs, fn2);
 
     }
 
