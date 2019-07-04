@@ -4,7 +4,7 @@
 #include <input/utils/message_info.h>
 #include <input/utils/message_data.h>
 
-namespace mooned::io
+namespace input
 {
 
 class MessageFilter

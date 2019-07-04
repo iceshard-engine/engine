@@ -3,7 +3,7 @@
 #include <core/cexpr/stringid.hxx>
 #include <type_traits>
 
-namespace mooned::io::message
+namespace input::message
 {
 
 template<class T>

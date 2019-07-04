@@ -2,7 +2,7 @@
 //////////////////////////////////////////////////////////////////////////
 // Private structures
 
-struct mooned::io::MessageFilter::IBase
+struct input::MessageFilter::IBase
 {
     virtual ~IBase() = default;
 
@@ -15,7 +15,7 @@ struct MessageFilter::ICallable : MessageFilter::IBase
 {
     uint64_t message_id() const final
     {
-        return mooned::io::message::MessageInfo<T>::ID;
+        return input::message::MessageInfo<T>::ID;
     }
 
     bool process(const void* data, uint32_t size) const final

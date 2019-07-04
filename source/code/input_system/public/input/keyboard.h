@@ -1,6 +1,6 @@
 #pragma once
 
-namespace mooned::io
+namespace input
 {
 
 enum class Key : int

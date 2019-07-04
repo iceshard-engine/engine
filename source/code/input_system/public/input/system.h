@@ -2,7 +2,7 @@
 #include <core/allocator.hxx>
 #include <core/cexpr/stringid.hxx>
 
-namespace mooned::io
+namespace input
 {
 
 enum class Backend

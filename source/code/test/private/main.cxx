@@ -34,7 +34,7 @@ struct TestFileRequest2
     bool load;
 };
 
-namespace mooned::io::message
+namespace input::message
 {
     template<> struct MessageInfo<TestFileRequest>
     {
@@ -48,7 +48,7 @@ namespace mooned::io::message
     };
 }
 
-uint32_t mooned::io::ticks()
+uint32_t input::ticks()
 {
     return 0;
 }
@@ -76,15 +76,15 @@ int main()
                 auto* r2 = rs.find(URI{ resource::scheme_directory, "first", URN{ "test/filesystem.txt" } });
 
         */
-        mooned::io::MessagePipe message_pipe{ alloc };
-        mooned::io::push(message_pipe, TestFileRequest{ URN{ "filesystem.txt" } });
-        mooned::io::push(message_pipe, TestFileRequest2{ URI{ resource::scheme_directory, "first", URN{ "filesystem.txt" } } });
-        mooned::io::push(message_pipe, TestFileRequest{ URN{ "test/filesystem.txt" }, true });
-        mooned::io::push(message_pipe, TestFileRequest2{ URI{ resource::scheme_directory, "second", URN{ "test/filesystem.txt" } }, true });
+        input::MessagePipe message_pipe{ alloc };
+        input::push(message_pipe, TestFileRequest{ URN{ "filesystem.txt" } });
+        input::push(message_pipe, TestFileRequest2{ URI{ resource::scheme_directory, "first", URN{ "filesystem.txt" } } });
+        input::push(message_pipe, TestFileRequest{ URN{ "test/filesystem.txt" }, true });
+        input::push(message_pipe, TestFileRequest2{ URI{ resource::scheme_directory, "second", URN{ "test/filesystem.txt" } }, true });
 
 
-        using FnSign = void(void*, const TestFileRequest&, const mooned::io::message::Metadata&);
-        using FnSign2 = void(void*, const TestFileRequest2&, const mooned::io::message::Metadata&);
+        using FnSign = void(void*, const TestFileRequest&, const input::message::Metadata&);
+        using FnSign2 = void(void*, const TestFileRequest2&, const input::message::Metadata&);
 
         FnSign* fn = [](void* ud, const TestFileRequest& msg, const auto&)
         {
@@ -116,8 +116,8 @@ int main()
             fmt::print("Resource request: {}\n> found: {}\n> loaded: {}\n", msg.location, res != nullptr, loaded);
         };
 
-        mooned::io::for_each(message_pipe, &rs, fn);
-        mooned::io::for_each(message_pipe, &rs, fn2);
+        input::for_each(message_pipe, &rs, fn);
+        input::for_each(message_pipe, &rs, fn2);
 
     }
 

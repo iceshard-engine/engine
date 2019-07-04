@@ -3,7 +3,7 @@
 #include <input/utils/message_pipe.h>
 #include <input/utils/message_filter.h>
 
-namespace mooned::io
+namespace input
 {
 
 class MessagePipe;

@@ -4,17 +4,17 @@
 #include <input/keyboard.h>
 #include <input/utils/message_info.h>
 
-namespace mooned::io::message
+namespace input::message
 {
 
 struct KeyDown
 {
-    mooned::io::Key key;
+    input::Key key;
 };
 
 struct KeyUp
 {
-    mooned::io::Key key;
+    input::Key key;
 };
 
 struct TextInput

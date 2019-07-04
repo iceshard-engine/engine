@@ -3,7 +3,7 @@
 #include <core/cexpr/stringid.hxx>
 #include <functional>
 
-namespace mooned::io::message
+namespace input::message
 {
 
 struct Metadata

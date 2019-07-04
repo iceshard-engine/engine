@@ -4,7 +4,7 @@
 #include <input/keyboard.h>
 #include <input/mouse.h>
 
-namespace mooned::io
+namespace input
 {
 
 // Stateless API

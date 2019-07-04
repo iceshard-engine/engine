@@ -4,7 +4,7 @@
 #include <input/mouse.h>
 #include <input/utils/message_info.h>
 
-namespace mooned::io::message
+namespace input::message
 {
 
 struct MouseMotion

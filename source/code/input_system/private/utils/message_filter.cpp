@@ -1,20 +1,20 @@
 #include <input/utils/message_filter.h>
 
-mooned::io::MessageFilter::MessageFilter(core::allocator& alloc)
+input::MessageFilter::MessageFilter(core::allocator& alloc)
     : _allocator{ alloc },
     _handle{ nullptr }
 {
 
 }
 
-mooned::io::MessageFilter::MessageFilter(MessageFilter&& other)
+input::MessageFilter::MessageFilter(MessageFilter&& other)
     : _allocator{ other._allocator },
     _handle{ other._handle }
 {
     other._handle = nullptr;
 }
 
-mooned::io::MessageFilter& mooned::io::MessageFilter::operator=(MessageFilter&& other)
+input::MessageFilter& input::MessageFilter::operator=(MessageFilter&& other)
 {
     if (this == &other) return *this;
 
@@ -25,12 +25,12 @@ mooned::io::MessageFilter& mooned::io::MessageFilter::operator=(MessageFilter&& 
     return *this;
 }
 
-mooned::io::MessageFilter::~MessageFilter()
+input::MessageFilter::~MessageFilter()
 {
     MAKE_DELETE(_allocator, IBase, _handle);
 }
 
-bool mooned::io::MessageFilter::process(const message::Metadata& mdata, const void* data, uint32_t size) const
+bool input::MessageFilter::process(const message::Metadata& mdata, const void* data, uint32_t size) const
 {
     if (nullptr == _handle || _handle->message_id() != static_cast<uint64_t>(mdata.identifier.hash_value))
     {

@@ -3,7 +3,7 @@
 
 #include <cassert>
 
-namespace mooned::io::message::detail
+namespace input::message::detail
 {
 
 static constexpr uint32_t DATA_ENTRY_ALIGNMENT = 8u;
@@ -34,7 +34,7 @@ static void* data_from_entry(DataEntry* entry)
 
 }
 
-mooned::io::message::Data::Data(core::allocator& alloc)
+input::message::Data::Data(core::allocator& alloc)
     : _allocator{ alloc }
     , _allocated{ 0 }
     , _size{ 0 }
@@ -44,12 +44,12 @@ mooned::io::message::Data::Data(core::allocator& alloc)
     resize(1 * 1024 /* 1 KB */);
 }
 
-mooned::io::message::Data::~Data()
+input::message::Data::~Data()
 {
     _allocator.deallocate(_data);
 }
 
-void mooned::io::message::Data::clear()
+void input::message::Data::clear()
 {
     _allocator.deallocate(_data);
     _allocated = 0;
@@ -60,7 +60,7 @@ void mooned::io::message::Data::clear()
     resize(1 * 1024 /* 1 KB */);
 }
 
-void mooned::io::message::Data::push(Metadata meta, const void* ptr, int size)
+void input::message::Data::push(Metadata meta, const void* ptr, int size)
 {
     while (available_space() < size)
     {
@@ -81,7 +81,7 @@ void mooned::io::message::Data::push(Metadata meta, const void* ptr, int size)
     _size += 1;
 }
 
-void mooned::io::message::Data::for_each(std::function<void(Metadata, const void* data, int size)> func) const
+void input::message::Data::for_each(std::function<void(Metadata, const void* data, int size)> func) const
 {
     if (nullptr == _data || 0 == _size)
     {
@@ -97,17 +97,17 @@ void mooned::io::message::Data::for_each(std::function<void(Metadata, const void
     }
 }
 
-int mooned::io::message::Data::size() const
+int input::message::Data::size() const
 {
     return _size;
 }
 
-int mooned::io::message::Data::available_space() const
+int input::message::Data::available_space() const
 {
     return core::memory::utils::pointer_distance(_next, core::memory::utils::pointer_add(_data, _allocated));
 }
 
-void mooned::io::message::Data::resize(int bytes)
+void input::message::Data::resize(int bytes)
 {
     assert(_allocated < bytes);
 

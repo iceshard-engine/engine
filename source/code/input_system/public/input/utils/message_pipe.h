@@ -9,7 +9,7 @@
 #include <vector>
 #include <cassert>
 
-namespace mooned::io
+namespace input
 {
 
 class MessageFilter;
@@ -39,7 +39,7 @@ public:
 
 private:
     core::allocator& _allocator;
-    mooned::io::message::Data _data;
+    input::message::Data _data;
 };
 
 template<class T>
