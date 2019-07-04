@@ -3,127 +3,115 @@
 
 #include <cassert>
 
-namespace input::message::detail
+namespace input::message
 {
-
-static constexpr uint32_t DATA_ENTRY_ALIGNMENT = 8u;
-
-struct DataEntry
-{
-    Metadata metadata;
-    int32_t size;
-};
-
-static DataEntry* first_entry(void* ptr)
-{
-    return reinterpret_cast<DataEntry*>(core::memory::utils::align_forward(ptr, DATA_ENTRY_ALIGNMENT));
-}
-
-static DataEntry* next_entry(DataEntry* entry)
-{
-    auto* new_ptr = core::memory::utils::pointer_add(entry, sizeof(DataEntry) + entry->size);
-    new_ptr = core::memory::utils::align_forward(new_ptr, DATA_ENTRY_ALIGNMENT);
-    return reinterpret_cast<DataEntry*>(new_ptr);
-}
-
-static void* data_from_entry(DataEntry* entry)
-{
-    assert(entry && entry->size > 0);
-    return core::memory::utils::pointer_add(entry, sizeof(DataEntry));
-}
-
-}
-
-input::message::Data::Data(core::allocator& alloc)
-    : _allocator{ alloc }
-    , _allocated{ 0 }
-    , _size{ 0 }
-    , _data{ nullptr }
-    , _next{ nullptr }
-{
-    resize(1 * 1024 /* 1 KB */);
-}
-
-input::message::Data::~Data()
-{
-    _allocator.deallocate(_data);
-}
-
-void input::message::Data::clear()
-{
-    _allocator.deallocate(_data);
-    _allocated = 0;
-    _size = 0;
-    _data = nullptr;
-    _next = nullptr;
-
-    resize(1 * 1024 /* 1 KB */);
-}
-
-void input::message::Data::push(Metadata meta, const void* ptr, int size)
-{
-    while (available_space() < size)
+    namespace detail
     {
-        resize(static_cast<int>(_allocated * 1.5 + 0.5));
+        //! \brief An entry in the message queue.
+        struct MessageHeader
+        {
+            //! \brief Message metadata
+            Metadata metadata;
+
+            //! \brief Message data size.
+            uint32_t data_size;
+        };
+
+        //! \brief Gets the header entry from the given pointer value.
+        auto get_header(void* buffer) noexcept -> MessageHeader*
+        {
+            return reinterpret_cast<MessageHeader*>(core::memory::utils::align_forward(buffer, alignof(MessageHeader)));
+        }
+
+        //! \brief Gets the header entry from the given pointer value.
+        auto get_header(const void* buffer) noexcept -> const MessageHeader*
+        {
+            return reinterpret_cast<const MessageHeader*>(core::memory::utils::align_forward(buffer, alignof(MessageHeader)));
+        }
+
+        //! \brief Searches for the next header using the previous one.
+        auto next_header(const MessageHeader* previous) noexcept -> const MessageHeader*
+        {
+            return reinterpret_cast<const MessageHeader*>(core::memory::utils::align_forward(
+                core::memory::utils::pointer_add(previous, sizeof(MessageHeader) + previous->data_size)
+                , alignof(MessageHeader)
+            ));
+        }
+
+        //! \brief Sets the data for the given message.
+        auto set_data(MessageHeader* header, core::data_view data) noexcept
+        {
+            void* data_location = core::memory::utils::pointer_add(header, sizeof(MessageHeader));
+            std::memcpy(data_location, data._data, data._size);
+
+            // Save the size of the data buffer in the header so we can later traverse it.
+            header->data_size = data._size;
+        }
+
+        //! \brief Returns a view into the data of a given message.
+        auto get_data(const MessageHeader* header) noexcept -> core::data_view
+        {
+            auto* data_location = core::memory::utils::pointer_add(header, sizeof(MessageHeader));
+            return { data_location, header->data_size };
+        }
     }
 
-    auto* entry = detail::first_entry(_next);
-    entry->metadata = meta;
-    entry->size = size;
 
-    if (size > 0)
+    Queue::Queue(core::allocator& alloc) noexcept
+        : _allocator{ alloc }
+        , _data{ _allocator }
+    { }
+
+    Queue::~Queue() noexcept
     {
-        auto* entry_data = detail::data_from_entry(entry);
-        memcpy(entry_data, ptr, size);
+        core::buffer::set_capacity(_data, 0);
     }
 
-    _next = detail::next_entry(entry);
-    _size += 1;
-}
-
-void input::message::Data::for_each(std::function<void(Metadata, const void* data, int size)> func) const
-{
-    if (nullptr == _data || 0 == _size)
+    void Queue::clear() noexcept
     {
-        return;
+        core::buffer::clear(_data);
+        _count = 0;
     }
 
-    auto* entry = detail::first_entry(_data);
-    while (0llu != static_cast<uint64_t>(entry->metadata.identifier.hash_value))
+    void Queue::push(Metadata metadata, core::data_view data) noexcept
     {
-        func(entry->metadata, detail::data_from_entry(entry), entry->size);
+        const auto required_size = static_cast<uint32_t>(core::buffer::size(_data) + sizeof(detail::MessageHeader) + data._size);
 
-        entry = detail::next_entry(entry);
-    }
-}
+        // Reserve enough memory
+        core::buffer::reserve(_data, required_size);
 
-int input::message::Data::size() const
-{
-    return _size;
-}
+        auto* header = detail::get_header(core::buffer::end(_data));
+        header->metadata = metadata;
 
-int input::message::Data::available_space() const
-{
-    return core::memory::utils::pointer_distance(_next, core::memory::utils::pointer_add(_data, _allocated));
-}
+        // Set the data buffer
+        detail::set_data(header, data);
 
-void input::message::Data::resize(int bytes)
-{
-    assert(_allocated < bytes);
+        // Resize the buffer
+        core::buffer::resize(_data, required_size);
 
-    auto used = core::memory::utils::pointer_distance(_data, _next);
-    void* new_data = _allocator.allocate(bytes, detail::DATA_ENTRY_ALIGNMENT);
-    memset(new_data, 0, bytes);
-
-    if (_data)
-    {
-        memcpy(new_data, _data, used);
-        _allocator.deallocate(_data);
+        // Increment the message counter
+        _count += 1;
     }
 
-    _data = new_data;
-    _next = core::memory::utils::pointer_add(_data, used);
-    _allocated = bytes;
+    void Queue::visit(std::function<void(const Metadata&, core::data_view data)> callback) const noexcept
+    {
+        auto* current_header = detail::get_header(core::buffer::begin(_data));
 
-    assert(detail::first_entry(_next) == _next);
-}
+        uint32_t visited_messages = 0;
+        while (visited_messages < _count)
+        {
+            IS_ASSERT(
+                core::memory::utils::pointer_distance(current_header, core::buffer::end(_data)) >= sizeof(detail::MessageHeader)
+                , "Invalid message header location!"
+            );
+
+            callback(current_header->metadata, detail::get_data(current_header));
+
+            // Get the next header
+            current_header = detail::next_header(current_header);
+            visited_messages += 1;
+        }
+    }
+
+
+} // namespace input::message

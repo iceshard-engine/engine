@@ -32,7 +32,7 @@ input::MessageFilter::~MessageFilter()
 
 bool input::MessageFilter::process(const message::Metadata& mdata, const void* data, uint32_t size) const
 {
-    if (nullptr == _handle || _handle->message_id() != static_cast<uint64_t>(mdata.identifier.hash_value))
+    if (nullptr == _handle || _handle->message_id() != static_cast<uint64_t>(mdata.message_type.hash_value))
     {
         return false;
     }

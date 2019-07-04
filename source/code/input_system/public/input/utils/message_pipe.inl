@@ -6,7 +6,7 @@ void input::push(MessagePipe& pipe, T&& message)
     //static_assert(std::is_pod_v<T>, "A message must be a POD object!");
     static constexpr auto msg_id = core::cexpr::stringid_cexpr(message::MessageInfo<T>::Name);
 
-    pipe.push(static_cast<uint64_t>(msg_id.hash_value), &message, sizeof(T));
+    pipe.push(msg_id, { &message, sizeof(T) });
 }
 
 template<class T>
@@ -73,12 +73,12 @@ void input::for_each(const MessagePipe& pipe, void* udata, void(*func)(void*, co
     //static_assert(std::is_pod<T>::value, "A message must be a POD object!");
     static constexpr auto msg_id = core::cexpr::stringid_cexpr(message::MessageInfo<T>::Name);
 
-    pipe.for_each([&](const message::Metadata& mdata, const void* data, int size)
+    pipe.for_each([&](const message::Metadata& mdata, core::data_view data)
         {
-            if (mdata.identifier == msg_id)
+            if (mdata.message_type == msg_id)
             {
-                assert(sizeof(T) == size);
-                func(udata, *reinterpret_cast<const T*>(data), mdata);
+                assert(sizeof(T) == data._size);
+                func(udata, *reinterpret_cast<const T*>(data._data), mdata);
             }
         });
 }

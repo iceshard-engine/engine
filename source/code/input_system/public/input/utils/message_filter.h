@@ -23,19 +23,19 @@ public:
     MessageFilter(core::allocator& alloc, void(*func)(const T&));
 
     template<class T>
-    MessageFilter(core::allocator& alloc, void(*func)(const T&, message::Metadata::timestamp_t));
+    MessageFilter(core::allocator& alloc, void(*func)(const T&, core::datetime::tick_type));
 
     template<class T>
     MessageFilter(core::allocator& alloc, void* udata, void(*func)(const T&));
 
     template<class T>
-    MessageFilter(core::allocator& alloc, void* udata, void(*func)(const T&, message::Metadata::timestamp_t));
+    MessageFilter(core::allocator& alloc, void* udata, void(*func)(const T&, core::datetime::tick_type));
 
     template<class C, class T>
     MessageFilter(core::allocator& alloc, C* object, void(C::*func)(const T&));
 
     template<class C, class T>
-    MessageFilter(core::allocator& alloc, C* object, void(C::*func)(const T&, message::Metadata::timestamp_t));
+    MessageFilter(core::allocator& alloc, C* object, void(C::*func)(const T&, core::datetime::tick_type));
 
     bool process(const message::Metadata& mdata, const void* data, uint32_t size) const;
 

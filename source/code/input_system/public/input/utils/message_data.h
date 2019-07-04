@@ -1,46 +1,54 @@
 #pragma once
 #include <core/allocator.hxx>
+#include <core/data/buffer.hxx>
 #include <core/cexpr/stringid.hxx>
+#include <core/datetime/types.hxx>
+
 #include <functional>
 
 namespace input::message
 {
 
-struct Metadata
-{
-    using identifier_t = core::cexpr::stringid_type;
-    using timestamp_t = uint32_t;
 
-    identifier_t identifier;
-    timestamp_t timestamp;
-};
+    //! \brief A message metadata object.
+    struct Metadata
+    {
+        //! \brief The message type identifier.
+        core::cexpr::stringid_type message_type;
 
-class Data
-{
-public:
-    Data(core::allocator& alloc);
-    ~Data();
+        //! \brief The message timestamp.
+        core::datetime::tick_type message_timestamp;
+    };
 
-    void clear();
 
-    void push(Metadata meta, const void* ptr, int size);
+    //! \brief A queue object for messages.
+    class Queue final
+    {
+    public:
+        Queue(core::allocator& alloc) noexcept;
+        ~Queue() noexcept;
 
-    void for_each(std::function<void(Metadata, const void* data, int size)> func) const;
+        //! \brief Clears the queue.
+        void clear() noexcept;
 
-    int size() const;
+        //! \brief Pushes a new message with the given metadata and data.
+        void push(Metadata metadata, core::data_view data) noexcept;
 
-protected:
-    int available_space() const;
-    void resize(int size);
+        //! \brief The current message count.
+        auto count() const noexcept -> uint32_t { return _count; }
 
-private:
-    core::allocator& _allocator;
-    int _allocated;
-    int _size;
+        //! \brief Visit each entry.
+        void visit(std::function<void(const Metadata&, core::data_view data)> callback) const noexcept;
 
-    void* _data;
-    void* _next;
-};
+    private:
+        core::allocator& _allocator;
+
+        //! \brief Data buffer.
+        core::Buffer _data;
+
+        //! \brief Message count.
+        uint32_t _count{ 0 };
+    };
+
 
 }
-

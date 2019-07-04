@@ -55,9 +55,9 @@ uint32_t input::ticks()
 
 int main()
 {
-    core::memory::globals::init();
+    core::memory::globals::init_with_stats();
 
-    auto& alloc = core::memory::globals::default_allocator();
+    auto& alloc = static_cast<core::memory::proxy_allocator&>(core::memory::globals::default_allocator());
 
     {
         using resource::URN;
@@ -76,12 +76,15 @@ int main()
                 auto* r2 = rs.find(URI{ resource::scheme_directory, "first", URN{ "test/filesystem.txt" } });
 
         */
+        auto pre_alloc_count = alloc.allocation_count();
+
         input::MessagePipe message_pipe{ alloc };
         input::push(message_pipe, TestFileRequest{ URN{ "filesystem.txt" } });
         input::push(message_pipe, TestFileRequest2{ URI{ resource::scheme_directory, "first", URN{ "filesystem.txt" } } });
         input::push(message_pipe, TestFileRequest{ URN{ "test/filesystem.txt" }, true });
         input::push(message_pipe, TestFileRequest2{ URI{ resource::scheme_directory, "second", URN{ "test/filesystem.txt" } }, true });
 
+        fmt::print("Allocations made: {}\n", alloc.allocation_count() - pre_alloc_count);
 
         using FnSign = void(void*, const TestFileRequest&, const input::message::Metadata&);
         using FnSign2 = void(void*, const TestFileRequest2&, const input::message::Metadata&);

@@ -2,6 +2,7 @@
 #include <input/utils/message_filter.h>
 #include <input/iolib.h>
 
+#include <core/datetime/datetime.hxx>
 #include <core/debug/assert.hxx>
 
 // Message pipe
@@ -18,7 +19,7 @@ input::MessagePipe::~MessagePipe()
 
 int input::MessagePipe::count() const
 {
-    return _data.size();
+    return _data.count();
 }
 
 void input::MessagePipe::clear()
@@ -26,32 +27,23 @@ void input::MessagePipe::clear()
     _data.clear();
 }
 
-void input::MessagePipe::for_each(std::function<void(const message::Metadata& metadata, const void* data, int size)> func) const
+void input::MessagePipe::for_each(std::function<void(const message::Metadata& metadata, core::data_view)> func) const
 {
-    _data.for_each(func);
+    _data.visit(func);
 }
 
-void input::MessagePipe::push(uint64_t identifier, const void* data, int size)
+void input::MessagePipe::push(core::cexpr::stringid_argument_type message_type, core::data_view data)
 {
-    _data.push(
-        message::Metadata{
-            core::cexpr::stringid_type{
-                core::cexpr::stringid_hash_type{ identifier }
-            }
-            , input::ticks()
-        }
-        , data
-        , size
-    );
+    _data.push(message::Metadata{ message_type, core::datetime::now().tick }, data);
 }
 
 void input::filter(const MessagePipe& pipe, const std::vector<MessageFilter>& filters)
 {
-    pipe.for_each([&filters](const message::Metadata& mdata, const void* data, int size)
+    pipe.for_each([&filters](const message::Metadata& mdata, core::data_view data)
     {
         for (auto& message_filter : filters)
         {
-            if (message_filter.process(mdata, data, size))
+            if (message_filter.process(mdata, data._data, data._size))
             {
                 break; // Don't shame me for this bad code
             }

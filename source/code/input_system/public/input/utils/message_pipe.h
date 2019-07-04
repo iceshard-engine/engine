@@ -31,15 +31,15 @@ public:
 
     int count() const;
 
-    void push(uint64_t id, const void* data, int size);
+    void push(core::cexpr::stringid_argument_type message_type, core::data_view);
 
-    void for_each(std::function<void(const message::Metadata&, const void* data, int size)> func) const;
+    void for_each(std::function<void(const message::Metadata&, core::data_view)> func) const;
 
     void clear();
 
 private:
     core::allocator& _allocator;
-    input::message::Data _data;
+    input::message::Queue _data;
 };
 
 template<class T>
