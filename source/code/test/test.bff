@@ -58,6 +58,7 @@
                 + ' /I"$WorkspaceCodeDir$/memsys/public"'
                 + ' /I"$WorkspaceCodeDir$/collections/public"'
                 + ' /I"$WorkspaceCodeDir$/resource_system/public"'
+                + ' /I"$WorkspaceCodeDir$/input_system/public"'
 
             .CompilerOutputPath = .ConfigurationIntermediateDirectory
             .CompilerInputPath = '$ProjectBaseDir$/private'
@@ -77,6 +78,7 @@
                 'memsys-$Platform$-$Config$'
                 'collections-$Platform$-$Config$'
                 'resource_system-$Platform$-$Config$'
+                'input_system-$Platform$-$Config$'
             }
 
             .LinkerOutput = '$ConfigurationTargetDirectory$/$ProjectName$.exe'
