@@ -1,4 +1,4 @@
-#include <input/utils/message_data.h>
+#include <input/utils/message_queue.hxx>
 #include <core/memory.hxx>
 
 #include <cassert>

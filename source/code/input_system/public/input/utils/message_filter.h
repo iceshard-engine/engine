@@ -2,7 +2,7 @@
 #include <core/allocator.hxx>
 
 #include <input/utils/message_info.h>
-#include <input/utils/message_data.h>
+#include <input/utils/message_queue.hxx>
 
 namespace input
 {
