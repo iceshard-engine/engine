@@ -78,7 +78,7 @@ int main()
         */
         auto pre_alloc_count = alloc.allocation_count();
 
-        input::MessagePipe message_pipe{ alloc };
+        input::MessageQueue message_pipe{ alloc };
         input::push(message_pipe, TestFileRequest{ URN{ "filesystem.txt" } });
         input::push(message_pipe, TestFileRequest2{ URI{ resource::scheme_directory, "first", URN{ "filesystem.txt" } } });
         input::push(message_pipe, TestFileRequest{ URN{ "test/filesystem.txt" }, true });

@@ -17,17 +17,17 @@ class MessageFilter;
 template<class T>
 struct MessageInfo;
 
-class MessagePipe final
+class MessageQueue final
 {
 public:
-    MessagePipe(core::allocator& alloc);
-    ~MessagePipe();
+    MessageQueue(core::allocator& alloc);
+    ~MessageQueue();
 
-    MessagePipe(MessagePipe&&) = delete;
-    MessagePipe& operator=(MessagePipe&&) = delete;
+    MessageQueue(MessageQueue&&) = delete;
+    MessageQueue& operator=(MessageQueue&&) = delete;
 
-    MessagePipe(const MessagePipe&) = delete;
-    MessagePipe& operator=(const MessagePipe&) = delete;
+    MessageQueue(const MessageQueue&) = delete;
+    MessageQueue& operator=(const MessageQueue&) = delete;
 
     int count() const;
 
@@ -43,30 +43,30 @@ private:
 };
 
 template<class T>
-void push(MessagePipe& pipe, T&& message);
+void push(MessageQueue& pipe, T&& message);
 
 template<class T>
-void push(MessagePipe& pipe, const T& message);
+void push(MessageQueue& pipe, const T& message);
 
 template<class T>
-void for_each(const MessagePipe& pipe, void(*func)(const T&));
+void for_each(const MessageQueue& pipe, void(*func)(const T&));
 
 template<class T>
-void for_each(const MessagePipe& pipe, void(*func)(const T&, const message::Metadata&));
+void for_each(const MessageQueue& pipe, void(*func)(const T&, const message::Metadata&));
 
 template<class T>
-void for_each(const MessagePipe& pipe, void* userdata, void(*func)(void*, const T&));
+void for_each(const MessageQueue& pipe, void* userdata, void(*func)(void*, const T&));
 
 template<class T>
-void for_each(const MessagePipe& pipe, void* userdata, void(*func)(void*, const T&, const message::Metadata&));
+void for_each(const MessageQueue& pipe, void* userdata, void(*func)(void*, const T&, const message::Metadata&));
 
 template<class C, class T>
-void for_each(const MessagePipe& pipe, C* obj, void(C::*method)(const T&));
+void for_each(const MessageQueue& pipe, C* obj, void(C::*method)(const T&));
 
 template<class C, class T>
-void for_each(const MessagePipe& pipe, C* obj, void(C::*method)(const T&, const message::Metadata&));
+void for_each(const MessageQueue& pipe, C* obj, void(C::*method)(const T&, const message::Metadata&));
 
-void filter(const MessagePipe& pipe, const std::vector<MessageFilter>& filters);
+void filter(const MessageQueue& pipe, const std::vector<MessageFilter>& filters);
 
 #include "message_pipe.inl"
 

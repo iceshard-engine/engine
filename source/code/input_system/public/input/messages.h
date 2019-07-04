@@ -6,9 +6,9 @@
 namespace input
 {
 
-class MessagePipe;
+class MessageQueue;
 
-const MessagePipe& messages(IOSystem* system);
+const MessageQueue& messages(IOSystem* system);
 
 void clear_messages(IOSystem* system);
 

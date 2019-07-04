@@ -1,7 +1,7 @@
 #pragma once
 
 template<class T>
-void input::push(MessagePipe& pipe, T&& message)
+void input::push(MessageQueue& pipe, T&& message)
 {
     //static_assert(std::is_pod_v<T>, "A message must be a POD object!");
     static constexpr auto msg_id = core::cexpr::stringid_cexpr(message::MessageInfo<T>::Name);
@@ -10,7 +10,7 @@ void input::push(MessagePipe& pipe, T&& message)
 }
 
 template<class T>
-void input::push(MessagePipe& pipe, const T& message)
+void input::push(MessageQueue& pipe, const T& message)
 {
     static_assert(std::is_pod_v<T>, "A message must be a POD object!");
     static constexpr auto msg_id = core::cexpr::stringid_cexpr(message::MessageInfo<T>::Name);
@@ -19,7 +19,7 @@ void input::push(MessagePipe& pipe, const T& message)
 }
 
 template<class T>
-void input::for_each(const MessagePipe& pipe, void(*func)(const T&))
+void input::for_each(const MessageQueue& pipe, void(*func)(const T&))
 {
     static_assert(std::is_pod<T>::value, "A message must be a POD object!");
     static constexpr auto msg_id = core::cexpr::stringid_cexpr(message::MessageInfo<T>::Name);
@@ -35,7 +35,7 @@ void input::for_each(const MessagePipe& pipe, void(*func)(const T&))
 }
 
 template<class T>
-void input::for_each(const MessagePipe& pipe, void(*func)(const T&, const message::Metadata&))
+void input::for_each(const MessageQueue& pipe, void(*func)(const T&, const message::Metadata&))
 {
     static_assert(std::is_pod<T>::value, "A message must be a POD object!");
     static constexpr auto msg_id = core::cexpr::stringid_cexpr(message::MessageInfo<T>::Name);
@@ -52,7 +52,7 @@ void input::for_each(const MessagePipe& pipe, void(*func)(const T&, const messag
 
 
 template<class T>
-void input::for_each(const MessagePipe& pipe, void* udata, void(*func)(void*, const T&))
+void input::for_each(const MessageQueue& pipe, void* udata, void(*func)(void*, const T&))
 {
     static_assert(std::is_pod<T>::value, "A message must be a POD object!");
     static constexpr auto msg_id = core::cexpr::stringid_cexpr(message::MessageInfo<T>::Name);
@@ -68,7 +68,7 @@ void input::for_each(const MessagePipe& pipe, void* udata, void(*func)(void*, co
 }
 
 template<class T>
-void input::for_each(const MessagePipe& pipe, void* udata, void(*func)(void*, const T&, const message::Metadata&))
+void input::for_each(const MessageQueue& pipe, void* udata, void(*func)(void*, const T&, const message::Metadata&))
 {
     //static_assert(std::is_pod<T>::value, "A message must be a POD object!");
     static constexpr auto msg_id = core::cexpr::stringid_cexpr(message::MessageInfo<T>::Name);
@@ -84,7 +84,7 @@ void input::for_each(const MessagePipe& pipe, void* udata, void(*func)(void*, co
 }
 
 template<class C, class T>
-void input::for_each(const MessagePipe& pipe, C* obj, void(C::*method)(const T&))
+void input::for_each(const MessageQueue& pipe, C* obj, void(C::*method)(const T&))
 {
     static_assert(std::is_pod<T>::value, "A message must be a POD object!");
     static constexpr auto msg_id = core::cexpr::stringid(message::MessageInfo<T>::Name);
@@ -100,7 +100,7 @@ void input::for_each(const MessagePipe& pipe, C* obj, void(C::*method)(const T&)
 }
 
 template<class C, class T>
-void input::for_each(const MessagePipe& pipe, C* obj, void(C::*method)(const T&, const message::Metadata&))
+void input::for_each(const MessageQueue& pipe, C* obj, void(C::*method)(const T&, const message::Metadata&))
 {
     static_assert(std::is_pod<T>::value, "A message must be a POD object!");
     static constexpr auto msg_id = core::cexpr::stringid(message::MessageInfo<T>::Name);
