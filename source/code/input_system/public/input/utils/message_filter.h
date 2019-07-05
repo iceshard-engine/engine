@@ -1,8 +1,9 @@
 #pragma once
 #include <core/allocator.hxx>
+#include <core/data/queue.hxx>
+#include <core/datetime/types.hxx>
 
 #include <input/utils/message_info.h>
-#include <input/utils/message_queue.hxx>
 
 namespace input
 {

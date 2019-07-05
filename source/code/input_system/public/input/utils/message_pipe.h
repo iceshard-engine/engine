@@ -1,8 +1,9 @@
 #pragma once
 #include <core/allocator.hxx>
 #include <core/pod/hash.hxx>
+#include <core/data/queue.hxx>
+#include <core/datetime/types.hxx>
 
-#include <input/utils/message_queue.hxx>
 #include <input/utils/message_info.h>
 
 #include <functional>
@@ -12,61 +13,100 @@
 namespace input
 {
 
-class MessageFilter;
 
-template<class T>
-struct MessageInfo;
+    //! \brief Defines a single message entry.
+    struct MessageHeader
+    {
+        //! \brief The message type.
+        core::cexpr::stringid_type type;
 
-class MessageQueue final
-{
-public:
-    MessageQueue(core::allocator& alloc);
-    ~MessageQueue();
+        //! \brief The message timestamp.
+        core::datetime::tick_type timestamp;
+    };
 
-    MessageQueue(MessageQueue&&) = delete;
-    MessageQueue& operator=(MessageQueue&&) = delete;
 
-    MessageQueue(const MessageQueue&) = delete;
-    MessageQueue& operator=(const MessageQueue&) = delete;
+    //! \brief This class defines a queue for plain data messages.
+    class MessageQueueNew final
+    {
+    public:
+        MessageQueueNew(core::allocator& alloc) noexcept;
+        ~MessageQueueNew() noexcept;
 
-    int count() const;
+        //! \brief Clears the queue from all messages.
+        void clear() noexcept;
 
-    void push(core::cexpr::stringid_argument_type message_type, core::data_view);
+        //! \brief Number of messages in the queue.
+        auto count() noexcept -> uint32_t;
 
-    void for_each(std::function<void(const message::Metadata&, core::data_view)> func) const;
+        //! \brief Pushes a new message onto the queue.
+        void push(core::cexpr::stringid_argument_type type, core::data_view data) noexcept;
 
-    void clear();
 
-private:
-    core::allocator& _allocator;
-    input::message::Queue _data;
-};
+    private:
+        //! \brief The associated allocator.
+        core::allocator& _allocator;
 
-template<class T>
-void push(MessageQueue& pipe, T&& message);
+        //! \brief A raw data queue.
+        core::data::Queue _data_queue;
+    };
 
-template<class T>
-void push(MessageQueue& pipe, const T& message);
 
-template<class T>
-void for_each(const MessageQueue& pipe, void(*func)(const T&));
 
-template<class T>
-void for_each(const MessageQueue& pipe, void(*func)(const T&, const message::Metadata&));
+    class MessageFilter;
 
-template<class T>
-void for_each(const MessageQueue& pipe, void* userdata, void(*func)(void*, const T&));
+    template<class T>
+    struct MessageInfo;
 
-template<class T>
-void for_each(const MessageQueue& pipe, void* userdata, void(*func)(void*, const T&, const message::Metadata&));
+    class MessageQueue final
+    {
+    public:
+        MessageQueue(core::allocator& alloc);
+        ~MessageQueue();
 
-template<class C, class T>
-void for_each(const MessageQueue& pipe, C* obj, void(C::*method)(const T&));
+        MessageQueue(MessageQueue&&) = delete;
+        MessageQueue& operator=(MessageQueue&&) = delete;
 
-template<class C, class T>
-void for_each(const MessageQueue& pipe, C* obj, void(C::*method)(const T&, const message::Metadata&));
+        MessageQueue(const MessageQueue&) = delete;
+        MessageQueue& operator=(const MessageQueue&) = delete;
 
-void filter(const MessageQueue& pipe, const std::vector<MessageFilter>& filters);
+        int count() const;
+
+        void push(core::cexpr::stringid_argument_type message_type, core::data_view);
+
+        void for_each(std::function<void(const message::Metadata&, core::data_view)> func) const;
+
+        void clear();
+
+    private:
+        core::allocator& _allocator;
+        core::data::Queue _data;
+    };
+
+    template<class T>
+    void push(MessageQueue& pipe, T&& message);
+
+    template<class T>
+    void push(MessageQueue& pipe, const T& message);
+
+    template<class T>
+    void for_each(const MessageQueue& pipe, void(*func)(const T&));
+
+    template<class T>
+    void for_each(const MessageQueue& pipe, void(*func)(const T&, const message::Metadata&));
+
+    template<class T>
+    void for_each(const MessageQueue& pipe, void* userdata, void(*func)(void*, const T&));
+
+    template<class T>
+    void for_each(const MessageQueue& pipe, void* userdata, void(*func)(void*, const T&, const message::Metadata&));
+
+    template<class C, class T>
+    void for_each(const MessageQueue& pipe, C* obj, void(C::*method)(const T&));
+
+    template<class C, class T>
+    void for_each(const MessageQueue& pipe, C* obj, void(C::*method)(const T&, const message::Metadata&));
+
+    void filter(const MessageQueue& pipe, const std::vector<MessageFilter>& filters);
 
 #include "message_pipe.inl"
 

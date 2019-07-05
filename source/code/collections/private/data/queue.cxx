@@ -1,18 +1,15 @@
-#include <input/utils/message_queue.hxx>
+#include <core/data/queue.hxx>
 #include <core/memory.hxx>
 
 #include <cassert>
 
-namespace input::message
+namespace core::data
 {
     namespace detail
     {
         //! \brief An entry in the message queue.
         struct MessageHeader
         {
-            //! \brief Message metadata
-            Metadata metadata;
-
             //! \brief Message data size.
             uint32_t data_size;
         };
@@ -73,15 +70,22 @@ namespace input::message
         _count = 0;
     }
 
-    void Queue::push(Metadata metadata, core::data_view data) noexcept
+    void Queue::push(core::data_view data) noexcept
     {
-        const auto required_size = static_cast<uint32_t>(core::buffer::size(_data) + sizeof(detail::MessageHeader) + data._size);
+        // We need to know the last header to properly calculate the required size.
+        const auto* end_header = detail::get_header(
+            core::memory::utils::pointer_add(
+                core::buffer::begin(_data)
+                , core::buffer::size(_data) + sizeof(detail::MessageHeader) + data._size
+            )
+        );
+
+        const auto required_size = core::memory::utils::pointer_distance(core::buffer::begin(_data), end_header);
 
         // Reserve enough memory
         core::buffer::reserve(_data, required_size);
 
         auto* header = detail::get_header(core::buffer::end(_data));
-        header->metadata = metadata;
 
         // Set the data buffer
         detail::set_data(header, data);
@@ -93,25 +97,45 @@ namespace input::message
         _count += 1;
     }
 
-    void Queue::visit(std::function<void(const Metadata&, core::data_view data)> callback) const noexcept
+    auto Queue::begin() const noexcept -> Iterator
     {
-        auto* current_header = detail::get_header(core::buffer::begin(_data));
+        return Iterator{ *this };
+    }
 
-        uint32_t visited_messages = 0;
-        while (visited_messages < _count)
-        {
-            IS_ASSERT(
-                core::memory::utils::pointer_distance(current_header, core::buffer::end(_data)) >= sizeof(detail::MessageHeader)
-                , "Invalid message header location!"
-            );
-
-            callback(current_header->metadata, detail::get_data(current_header));
-
-            // Get the next header
-            current_header = detail::next_header(current_header);
-            visited_messages += 1;
-        }
+    auto Queue::end() const noexcept -> Iterator
+    {
+        return Iterator{ *this, true };
     }
 
 
-} // namespace input::message
+    Queue::Iterator::Iterator(const Queue& queue) noexcept
+        : _data{ core::buffer::begin(queue._data) }
+        , _element{ 0 }
+    { }
+
+    Queue::Iterator::Iterator(const Queue& queue, bool) noexcept
+        : _data{ nullptr }
+        , _element{ queue.count() }
+    { }
+
+    Queue::Iterator::~Iterator() noexcept
+    { }
+
+    bool Queue::Iterator::operator==(const Iterator& other) noexcept
+    {
+        return _element == other._element;
+    }
+
+    void Queue::Iterator::operator++() noexcept
+    {
+        _data = detail::next_header(detail::get_header(_data));
+        _element += 1;
+    }
+
+    auto Queue::Iterator::operator*() const noexcept -> core::data_view
+    {
+        auto* header = detail::get_header(_data);
+        return { reinterpret_cast<const void*>(header + 1), header->data_size };
+    }
+
+} // namespace core::data

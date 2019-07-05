@@ -6,8 +6,18 @@
 namespace input::message
 {
 
-template<class T>
-struct MessageInfo;
+    //! \brief A message metadata object.
+    struct Metadata
+    {
+        //! \brief The message type identifier.
+        core::cexpr::stringid_type message_type;
+
+        //! \brief The message timestamp.
+        core::datetime::tick_type message_timestamp;
+    };
+
+    template<class T>
+    struct MessageInfo;
 
 #ifdef DECLARE_MESSAGE
 #error "'DEFINE_MESSAGE' macro already defined!""
