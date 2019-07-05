@@ -4,16 +4,16 @@
 
 #include <functional>
 
-namespace core::data
+namespace core
 {
 
 
     //! \brief A queue object for messages.
-    class Queue final
+    class data_queue final
     {
     public:
-        Queue(core::allocator& alloc) noexcept;
-        ~Queue() noexcept;
+        data_queue(core::allocator& alloc) noexcept;
+        ~data_queue() noexcept;
 
         //! \brief Clears the queue.
         void clear() noexcept;
@@ -30,8 +30,8 @@ namespace core::data
         class Iterator final
         {
         public:
-            Iterator(const Queue& queue) noexcept;
-            Iterator(const Queue& queue, bool is_end) noexcept;
+            Iterator(const data_queue& queue) noexcept;
+            Iterator(const data_queue& queue, bool is_end) noexcept;
             ~Iterator() noexcept;
 
             //! \brief Defines equality operators.

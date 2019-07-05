@@ -47,7 +47,7 @@ namespace input
         core::allocator& _allocator;
 
         //! \brief A raw data queue.
-        core::data::Queue _data_queue;
+        core::data_queue _data_queue;
     };
 
 
@@ -79,7 +79,7 @@ namespace input
 
     private:
         core::allocator& _allocator;
-        core::data::Queue _data;
+        core::data_queue _data;
     };
 
     template<class T>

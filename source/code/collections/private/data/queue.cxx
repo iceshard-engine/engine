@@ -3,7 +3,7 @@
 
 #include <cassert>
 
-namespace core::data
+namespace core
 {
     namespace detail
     {
@@ -54,23 +54,23 @@ namespace core::data
     }
 
 
-    Queue::Queue(core::allocator& alloc) noexcept
+    data_queue::data_queue(core::allocator& alloc) noexcept
         : _allocator{ alloc }
         , _data{ _allocator }
     { }
 
-    Queue::~Queue() noexcept
+    data_queue::~data_queue() noexcept
     {
         core::buffer::set_capacity(_data, 0);
     }
 
-    void Queue::clear() noexcept
+    void data_queue::clear() noexcept
     {
         core::buffer::clear(_data);
         _count = 0;
     }
 
-    void Queue::push(core::data_view data) noexcept
+    void data_queue::push(core::data_view data) noexcept
     {
         // We need to know the last header to properly calculate the required size.
         const auto* end_header = detail::get_header(
@@ -97,42 +97,42 @@ namespace core::data
         _count += 1;
     }
 
-    auto Queue::begin() const noexcept -> Iterator
+    auto data_queue::begin() const noexcept -> Iterator
     {
         return Iterator{ *this };
     }
 
-    auto Queue::end() const noexcept -> Iterator
+    auto data_queue::end() const noexcept -> Iterator
     {
         return Iterator{ *this, true };
     }
 
 
-    Queue::Iterator::Iterator(const Queue& queue) noexcept
+    data_queue::Iterator::Iterator(const data_queue& queue) noexcept
         : _data{ core::buffer::begin(queue._data) }
         , _element{ 0 }
     { }
 
-    Queue::Iterator::Iterator(const Queue& queue, bool) noexcept
+    data_queue::Iterator::Iterator(const data_queue& queue, bool) noexcept
         : _data{ nullptr }
         , _element{ queue.count() }
     { }
 
-    Queue::Iterator::~Iterator() noexcept
+    data_queue::Iterator::~Iterator() noexcept
     { }
 
-    bool Queue::Iterator::operator==(const Iterator& other) noexcept
+    bool data_queue::Iterator::operator==(const Iterator& other) noexcept
     {
         return _element == other._element;
     }
 
-    void Queue::Iterator::operator++() noexcept
+    void data_queue::Iterator::operator++() noexcept
     {
         _data = detail::next_header(detail::get_header(_data));
         _element += 1;
     }
 
-    auto Queue::Iterator::operator*() const noexcept -> core::data_view
+    auto data_queue::Iterator::operator*() const noexcept -> core::data_view
     {
         auto* header = detail::get_header(_data);
         return { reinterpret_cast<const void*>(header + 1), header->data_size };
