@@ -1,7 +1,7 @@
 #pragma once
 #include <core/allocator.hxx>
 #include <core/data/queue.hxx>
-#include <core/message/definition.hxx>
+#include <core/message/types.hxx>
 
 namespace core
 {
