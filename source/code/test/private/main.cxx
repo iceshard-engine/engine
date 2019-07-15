@@ -14,6 +14,7 @@
 #include <resource/filesystem_module.hxx>
 
 #include <core/message/buffer.hxx>
+#include <core/message/operations.hxx>
 
 #include <fmt/format.h>
 
@@ -72,10 +73,29 @@ int main()
         [[maybe_unused]]
         core::MessageBuffer messages{ alloc };
 
-        for (const auto& msg : messages)
-        {
-            fmt::print("Message type: {}", msg.header.type);
-        }
+        core::message::push(messages, core::cexpr::stringid("msg1"));
+        core::message::push(messages, core::cexpr::stringid("msg2"));
+        core::message::push(messages, core::cexpr::stringid("msg1"));
+        core::message::push(messages, core::cexpr::stringid("msg2"));
+        core::message::push(messages, core::cexpr::stringid("msg3"));
+        core::message::push(messages, core::cexpr::stringid("msg1"));
+        core::message::push(messages, core::cexpr::stringid("msg2"));
+
+        fmt::print("All messages\n");
+        core::message::for_each(messages, [](const auto& msg) noexcept
+            {
+                fmt::print("* message type: {}\n", msg.header.type);
+            });
+        fmt::print("Type 'msg1' and 'msg3' messages\n");
+        core::message::filter(messages, std::vector<core::cexpr::stringid_type>{ core::cexpr::stringid("msg1"), core::cexpr::stringid("msg3") }, [](const auto& msg) noexcept
+            {
+                fmt::print("* message type: {}\n", msg.header.type);
+            });
+        fmt::print("Type 'msg2' messages\n");
+        core::message::filter(messages, core::cexpr::stringid("msg2"), [](const auto& msg) noexcept
+            {
+                fmt::print("* message type: {}\n", msg.header.type);
+            });
     }
 
     core::memory::globals::shutdown();

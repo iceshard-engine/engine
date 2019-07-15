@@ -7,7 +7,7 @@ namespace core
 {
 
 
-    class Message;
+    struct Message;
 
     class MessageBuffer;
 
@@ -44,7 +44,7 @@ namespace core
         //! \todo document.
         void filter(
             const MessageBuffer& buffer
-            , std::vector<core::cexpr::stringid_argument_type> types
+            , const std::vector<core::cexpr::stringid_type>& types
             , std::function<void(const core::Message&)> callback
         ) noexcept;
 
