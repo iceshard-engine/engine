@@ -13,9 +13,7 @@
 #include <resource/system.hxx>
 #include <resource/filesystem_module.hxx>
 
-#include <input/utils/message_pipe.h>
-#include <input/utils/message_filter.h>
-#include <input/iolib.h>
+#include <core/message/buffer.hxx>
 
 #include <fmt/format.h>
 
@@ -33,25 +31,21 @@ struct TestFileRequest2
     resource::URI location;
     bool load;
 };
+//
+//namespace input::message
+//{
+//    template<> struct MessageInfo<TestFileRequest>
+//    {
+//        static constexpr std::string_view Name = "TestFileRequest";
+//        static constexpr auto ID = core::cexpr::stringid_cexpr("TestFileRequest");
+//    };
+//    template<> struct MessageInfo<TestFileRequest2>
+//    {
+//        static constexpr std::string_view Name = "TestFileRequest2";
+//        static constexpr auto ID = core::cexpr::stringid_cexpr("TestFileRequest2");
+//    };
+//}
 
-namespace input::message
-{
-    template<> struct MessageInfo<TestFileRequest>
-    {
-        static constexpr std::string_view Name = "TestFileRequest";
-        static constexpr auto ID = core::cexpr::stringid_cexpr("TestFileRequest");
-    };
-    template<> struct MessageInfo<TestFileRequest2>
-    {
-        static constexpr std::string_view Name = "TestFileRequest2";
-        static constexpr auto ID = core::cexpr::stringid_cexpr("TestFileRequest2");
-    };
-}
-
-uint32_t input::ticks()
-{
-    return 0;
-}
 
 int main()
 {
@@ -71,57 +65,17 @@ int main()
 
         rs.mount({ resource::scheme_directory, "first" });
         rs.mount({ resource::scheme_directory, "second" });
-        /*
-                auto* r1 = rs.find(URN{ "test/filesystem.txt" });
-                auto* r2 = rs.find(URI{ resource::scheme_directory, "first", URN{ "test/filesystem.txt" } });
 
-        */
+        [[maybe_unused]]
         auto pre_alloc_count = alloc.allocation_count();
 
-        input::MessageQueue message_queue{ alloc };
-        input::push(message_queue, TestFileRequest{ URN{ "filesystem.txt" } });
-        input::push(message_queue, TestFileRequest2{ URI{ resource::scheme_directory, "first", URN{ "filesystem.txt" } } });
-        input::push(message_queue, TestFileRequest{ URN{ "test/filesystem.txt" }, true });
-        input::push(message_queue, TestFileRequest2{ URI{ resource::scheme_directory, "second", URN{ "test/filesystem.txt" } }, true });
+        [[maybe_unused]]
+        core::MessageBuffer messages{ alloc };
 
-        fmt::print("Allocations made: {}\n", alloc.allocation_count() - pre_alloc_count);
-
-        using FnSign = void(void*, const TestFileRequest&, const input::message::Metadata&);
-        using FnSign2 = void(void*, const TestFileRequest2&, const input::message::Metadata&);
-
-        FnSign* fn = [](void* ud, const TestFileRequest& msg, const auto&)
+        for (const auto& msg : messages)
         {
-            const auto rs = reinterpret_cast<resource::ResourceSystem*>(ud);
-
-            auto* res = rs->find(msg.name);
-
-            bool loaded = false;
-            if (res && msg.load == true)
-            {
-                loaded = res->data().data() != nullptr;
-            }
-
-            fmt::print("Resource request: {}\n> found: {}\n> loaded: {}\n", msg.name, res != nullptr, loaded);
-        };
-
-        FnSign2* fn2 = [](void* ud, const TestFileRequest2& msg, const auto&)
-        {
-            const auto rs = reinterpret_cast<resource::ResourceSystem*>(ud);
-
-            auto* res = rs->find(msg.location);
-
-            bool loaded = false;
-            if (res && msg.load == true)
-            {
-                loaded = res->data().data() != nullptr;
-            }
-
-            fmt::print("Resource request: {}\n> found: {}\n> loaded: {}\n", msg.location, res != nullptr, loaded);
-        };
-
-        input::for_each(message_queue, &rs, fn);
-        input::for_each(message_queue, &rs, fn2);
-
+            fmt::print("Message type: {}", msg.header.type);
+        }
     }
 
     core::memory::globals::shutdown();

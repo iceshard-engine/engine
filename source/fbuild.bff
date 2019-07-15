@@ -118,6 +118,7 @@ Settings
     #include "code/core/core.bff"
     #include "code/memsys/memsys.bff"
     #include "code/collections/collections.bff"
+    #include "code/messages/messages.bff"
 
     .SolutionFolder =
     [
