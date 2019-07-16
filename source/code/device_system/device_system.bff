@@ -1,7 +1,7 @@
 // Core
 //------------------------------------------------------------------------------
 {
-    .ProjectName        = 'input_system'
+    .ProjectName        = 'device_system'
     .ProjectBaseDir = '$_CURRENT_BFF_DIR_$'
 
 
@@ -15,6 +15,7 @@
         + ' /I"$WorkspaceCodeDir$/core/public"'
         + ' /I"$WorkspaceCodeDir$/memsys/public"'
         + ' /I"$WorkspaceCodeDir$/collections/public"'
+        + ' /I"$WorkspaceCodeDir$/messages/public"'
 
 
     // Library

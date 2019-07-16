@@ -138,7 +138,7 @@ Settings
     // Systems projects
     //--------------------------------------------------------------------------
     #include "code/resource_system/resource_system.bff"
-    #include "code/input_system/input_system.bff"
+    #include "code/device_system/device_system.bff"
 
     .SolutionFolder =
     [

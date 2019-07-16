@@ -56,10 +56,10 @@
             .CompilerOptions + ' /I"$ProjectBaseDir$/public"'
                 + ' /I"$WorkspaceCodeDir$/core/public"'
                 + ' /I"$WorkspaceCodeDir$/memsys/public"'
+                + ' /I"$WorkspaceCodeDir$/messages/public"'
                 + ' /I"$WorkspaceCodeDir$/collections/public"'
                 + ' /I"$WorkspaceCodeDir$/resource_system/public"'
-                + ' /I"$WorkspaceCodeDir$/input_system/public"'
-                + ' /I"$WorkspaceCodeDir$/messages/public"'
+                + ' /I"$WorkspaceCodeDir$/device_system/public"'
 
             .CompilerOutputPath = .ConfigurationIntermediateDirectory
             .CompilerInputPath = '$ProjectBaseDir$/private'
@@ -77,10 +77,10 @@
                 '$ProjectName$-$Platform$-$Config$-objects'
                 'core-$Platform$-$Config$'
                 'memsys-$Platform$-$Config$'
+                'messages-$Platform$-$Config$'
                 'collections-$Platform$-$Config$'
                 'resource_system-$Platform$-$Config$'
-                'input_system-$Platform$-$Config$'
-                'messages-$Platform$-$Config$'
+                'device_system-$Platform$-$Config$'
             }
 
             .LinkerOutput = '$ConfigurationTargetDirectory$/$ProjectName$.exe'
