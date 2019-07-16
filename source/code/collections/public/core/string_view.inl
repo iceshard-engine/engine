@@ -50,15 +50,6 @@ auto core::StringView<CharType>::operator=(std::string_view other) noexcept -> S
 
 //! \brief Replaces the string value with the new one.
 template <typename CharType>
-auto core::StringView<CharType>::operator=(const StringView& other) noexcept -> StringView&
-{
-    _size = other._size;
-    _data = other._data;
-    return *this;
-}
-
-//! \brief Replaces the string value with the new one.
-template <typename CharType>
 template<uint32_t Capacity>
 auto core::StringView<CharType>::operator=(const StackString<Capacity, CharType>& other) noexcept -> StringView&
 {

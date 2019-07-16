@@ -152,7 +152,7 @@ namespace core
         auto operator=(std::string_view other) noexcept -> StringView&;
 
         //! \brief Replaces the string value with the new one.
-        auto operator=(const StringView& other) noexcept -> StringView&;
+        auto operator=(const StringView& other) noexcept -> StringView& = default;
 
         //! \brief Replaces the string value with the new one.
         template<uint32_t Capacity>
