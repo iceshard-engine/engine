@@ -30,7 +30,7 @@ namespace core
 
         //! \todo document.
         template<typename T>
-        void push(MessageBuffer& buffer, T msg) noexcept;
+        void push(MessageBuffer& buffer, const T& msg) noexcept;
 
         //! \todo document.
         void clean(MessageBuffer& buffer) noexcept;
@@ -63,6 +63,60 @@ namespace core
         ) noexcept;
 
     } // namespace message
+
+
+    namespace detail
+    {
+
+        template <typename T, typename = int>
+        struct has_type_member : std::false_type { };
+
+        template <typename T>
+        struct has_type_member <T, decltype((void)T::message_type, 0)> : std::true_type { };
+
+    }
+
+
+    template<typename T>
+    void message::push(MessageBuffer& buffer, const T& msg) noexcept
+    {
+        static_assert(
+            std::is_trivially_copyable_v<T>
+            , "Message object not trivially copyable!"
+        );
+        static_assert(
+            detail::has_type_member<T>::value
+            , "Message missing static member 'message_type'!"
+        );
+        static_assert(
+            std::is_same_v<std::remove_cv_t<decltype(T::message_type)>, core::cexpr::stringid_type>
+            , "Invalid type of message member 'message_type', expected 'core::cexpr::stringid_type'!"
+        );
+
+        message::push(buffer, T::message_type, { &msg, sizeof(T) });
+    }
+
+    template<typename T>
+    void message::filter(const MessageBuffer& buffer, std::function<void(const T&)> callback) noexcept
+    {
+        static_assert(
+            std::is_trivially_copyable_v<T>
+            , "Message object not trivially copyable!"
+        );
+        static_assert(
+            detail::has_type_member<T>::value
+            , "Message missing static member 'message_type'!"
+        );
+        static_assert(
+            std::is_same_v<std::remove_cv_t<decltype(T::message_type)>, core::cexpr::stringid_type>
+            , "Invalid type of message member 'message_type', expected 'core::cexpr::stringid_type'!"
+        );
+
+        message::filter(buffer, T::message_type, [&](const core::Message& msg) noexcept
+            {
+                callback(*reinterpret_cast<const T*>(msg.data.data()));
+            });
+    }
 
 
 } // namespace core::message
