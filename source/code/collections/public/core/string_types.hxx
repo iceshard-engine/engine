@@ -1,5 +1,6 @@
 #pragma once
 #include <core/allocator.hxx>
+#include <string_view>
 
 namespace core
 {
