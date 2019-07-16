@@ -23,30 +23,23 @@ using core::cexpr::stringid_invalid;
 
 struct TestFileRequest
 {
+    static const core::cexpr::stringid_type message_type;
+
     resource::URN name;
     bool load;
 };
 
+const core::cexpr::stringid_type TestFileRequest::message_type{ core::cexpr::stringid("TestFileRequest") };
+
 struct TestFileRequest2
 {
+    static const core::cexpr::stringid_type message_type;
+
     resource::URI location;
     bool load;
 };
-//
-//namespace input::message
-//{
-//    template<> struct MessageInfo<TestFileRequest>
-//    {
-//        static constexpr std::string_view Name = "TestFileRequest";
-//        static constexpr auto ID = core::cexpr::stringid_cexpr("TestFileRequest");
-//    };
-//    template<> struct MessageInfo<TestFileRequest2>
-//    {
-//        static constexpr std::string_view Name = "TestFileRequest2";
-//        static constexpr auto ID = core::cexpr::stringid_cexpr("TestFileRequest2");
-//    };
-//}
 
+const core::cexpr::stringid_type TestFileRequest2::message_type{ core::cexpr::stringid("TestFileRequest2") };
 
 int main()
 {
@@ -70,32 +63,18 @@ int main()
         [[maybe_unused]]
         auto pre_alloc_count = alloc.allocation_count();
 
-        [[maybe_unused]]
         core::MessageBuffer messages{ alloc };
 
-        core::message::push(messages, core::cexpr::stringid("msg1"));
-        core::message::push(messages, core::cexpr::stringid("msg2"));
-        core::message::push(messages, core::cexpr::stringid("msg1"));
-        core::message::push(messages, core::cexpr::stringid("msg2"));
-        core::message::push(messages, core::cexpr::stringid("msg3"));
-        core::message::push(messages, core::cexpr::stringid("msg1"));
-        core::message::push(messages, core::cexpr::stringid("msg2"));
+        core::message::push(messages, TestFileRequest{ URN{ "test.txt" }, false });
+        core::message::push(messages, TestFileRequest2{ URI{ resource::scheme_directory, "location", URN{ "test.txt" } }, false });
 
-        fmt::print("All messages\n");
-        core::message::for_each(messages, [](const auto& msg) noexcept
+        fmt::print("Allocations made: {}\n", alloc.allocation_count() - pre_alloc_count);
+
+        core::message::filter<TestFileRequest2>(messages, [](const auto& msg) noexcept -> void
             {
-                fmt::print("* message type: {}\n", msg.header.type);
+                fmt::print("* URI request: {}\n", msg.location);
             });
-        fmt::print("Type 'msg1' and 'msg3' messages\n");
-        core::message::filter(messages, std::vector<core::cexpr::stringid_type>{ core::cexpr::stringid("msg1"), core::cexpr::stringid("msg3") }, [](const auto& msg) noexcept
-            {
-                fmt::print("* message type: {}\n", msg.header.type);
-            });
-        fmt::print("Type 'msg2' messages\n");
-        core::message::filter(messages, core::cexpr::stringid("msg2"), [](const auto& msg) noexcept
-            {
-                fmt::print("* message type: {}\n", msg.header.type);
-            });
+
     }
 
     core::memory::globals::shutdown();
