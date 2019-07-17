@@ -1,5 +1,6 @@
 #pragma once
 #include <core/allocator.hxx>
+#include <core/allocators/scratch_allocator.hxx>
 #include <core/data/view.hxx>
 
 namespace core

@@ -1,6 +1,7 @@
 [requires]
 fmt/5.3.0@iceshard/stable
 Catch2/2.9.0@iceshard/stable
+SDL2/2.0.9@iceshard/stable
 
 [build_requires]
 fastbuild-generator/0.1@iceshard/stable

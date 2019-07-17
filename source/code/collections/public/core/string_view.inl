@@ -106,14 +106,14 @@ bool core::string::empty(const core::StringView<CharType>& str) noexcept
     return str._size == 0 || *str._data == '\0';
 }
 
-//! \copydoc core::string::begin(String<CharType>&)
+//! \copydoc core::string::begin(const String<CharType>&)
 template <typename CharType>
 auto core::string::begin(const core::StringView<CharType>& str) noexcept -> const CharType*
 {
     return str._data;
 }
 
-//! \copydoc core::string::end(String<CharType>&)
+//! \copydoc core::string::end(const String<CharType>&)
 template <typename CharType>
 auto core::string::end(const core::StringView<CharType>& str) noexcept -> const CharType*
 {

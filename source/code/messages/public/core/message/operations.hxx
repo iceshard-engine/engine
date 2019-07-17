@@ -33,7 +33,7 @@ namespace core
         void push(MessageBuffer& buffer, const T& msg) noexcept;
 
         //! \todo document.
-        void clean(MessageBuffer& buffer) noexcept;
+        void clear(MessageBuffer& buffer) noexcept;
 
         //! \todo document.
         void for_each(

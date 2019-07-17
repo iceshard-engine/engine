@@ -1,7 +1,7 @@
 #include <core/message/buffer.hxx>
 #include <core/datetime/datetime.hxx>
 #include <core/data/chunk.hxx>
-#include <core/memory.hxx>
+#include <core/allocators/stack_allocator.hxx>
 
 namespace core
 {
@@ -33,7 +33,8 @@ namespace core
 
     void MessageBuffer::push(core::cexpr::stringid_argument_type type, core::data_view data) noexcept
     {
-        core::data_chunk message_data{ core::memory::globals::default_scratch_allocator(), sizeof(MessageHeader) + data.size() };
+        core::memory::stack_allocator<128> stack_allocator;
+        core::data_chunk message_data{ stack_allocator, sizeof(MessageHeader) + data.size() };
 
         auto* header = reinterpret_cast<MessageHeader*>(message_data.data());
         header->type = type;

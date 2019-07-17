@@ -1,10 +1,21 @@
 #pragma once
-#include <core/base.hxx>
+#include <core/cexpr/stringid.hxx>
 
 
-namespace input::message
+namespace driver::message
 {
 
+
+    struct MouseMove
+    {
+        static inline const core::cexpr::stringid_type message_type{ core::cexpr::stringid("Mouse.Move") };
+
+        int32_t x;
+        int32_t y;
+    };
+
+
+} // namespace driver::message
 
     /// OLD CODE ///
 
@@ -43,4 +54,3 @@ namespace input::message
     /// OLD CODE ///
 
 
-}

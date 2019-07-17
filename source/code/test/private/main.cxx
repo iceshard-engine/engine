@@ -4,6 +4,7 @@
 #include <core/stack_string.hxx>
 #include <core/string_view.hxx>
 #include <core/pod/array.hxx>
+#include <core/datetime/datetime.hxx>
 
 #include <core/cexpr/stringid.hxx>
 #include <core/scope_exit.hxx>
@@ -15,6 +16,11 @@
 
 #include <core/message/buffer.hxx>
 #include <core/message/operations.hxx>
+
+#include <device/system.hxx>
+#include <device/driver.hxx>
+#include <device/message/system.h>
+#include <device/message/mouse.h>
 
 #include <fmt/format.h>
 
@@ -51,29 +57,32 @@ int main()
         using resource::URN;
         using resource::URI;
 
-        resource::ResourceSystem rs{ alloc };
+        core::StackString<64> config_directory{ "bin/" };
+        config_directory += "x64-";
+        config_directory += to_string(core::build::configuration::current_config);
+        config_directory += "/sdl2_driver/sdl2_driver.dll";
 
-        core::pod::Array<core::cexpr::stringid_type> schemes{ alloc };
-        core::pod::array::push_back(schemes, resource::scheme_directory);
-        rs.add_module(core::memory::make_unique<resource::ResourceModule, resource::FileSystem>(alloc, alloc, "../source/data"), schemes);
+        if (auto driver_module = media::load_driver_module(alloc, config_directory))
+        {
+            core::MessageBuffer messages{ alloc };
 
-        rs.mount({ resource::scheme_directory, "first" });
-        rs.mount({ resource::scheme_directory, "second" });
+            auto* media_driver = driver_module->media_driver();
 
-        [[maybe_unused]]
-        auto pre_alloc_count = alloc.allocation_count();
-
-        core::MessageBuffer messages{ alloc };
-
-        core::message::push(messages, TestFileRequest{ URN{ "test.txt" }, false });
-        core::message::push(messages, TestFileRequest2{ URI{ resource::scheme_directory, "location", URN{ "test.txt" } }, false });
-
-        fmt::print("Allocations made: {}\n", alloc.allocation_count() - pre_alloc_count);
-
-        core::message::filter<TestFileRequest2>(messages, [](const auto& msg) noexcept -> void
+            bool quit = false;
+            while (quit == false)
             {
-                fmt::print("* URI request: {}\n", msg.location);
-            });
+                core::message::clear(messages);
+
+                // Get all messages
+                media_driver->query_messages(messages);
+
+                // Check for the quit message
+                core::message::filter<driver::message::AppExit>(messages, [&quit](const auto&) noexcept
+                    {
+                        quit = true;
+                    });
+            }
+        }
 
     }
 

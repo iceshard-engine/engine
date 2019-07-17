@@ -26,35 +26,17 @@ namespace core
         template <typename CharType>
         bool empty(const StringView<CharType>& str) noexcept;
 
-        //! \brief Returns the string iterator beginning.
-        template <typename CharType>
-        auto begin(StringView<CharType>& a) noexcept -> CharType*;
-
         //! \copydoc core::string::begin(String<CharType>&)
         template <typename CharType>
         auto begin(const StringView<CharType>& a) noexcept -> const CharType*;
-
-        //! \brief Returns the string iterator end.
-        template <typename CharType>
-        auto end(StringView<CharType>& str) noexcept -> CharType*;
 
         //! \copydoc core::string::end(String<CharType>&)
         template <typename CharType>
         auto end(const StringView<CharType>& str) noexcept -> const CharType*;
 
-        //! \brief Returns the first element of the string.
-        //! \note Cannot be used on an empty string.
-        template <typename CharType>
-        auto front(StringView<CharType>& str) noexcept -> CharType&;
-
         //! \copydoc core::string::front(String<CharType>&)
         template <typename CharType>
         auto front(const StringView<CharType>& str) noexcept -> const CharType&;
-
-        //! \brief Returns the last element of the string.
-        //! \note Cannot be used on an empty string.
-        template <typename CharType>
-        auto back(StringView<CharType>& str) noexcept -> CharType&;
 
         //! \copydoc core::string::back(String<CharType>&)
         template <typename CharType>

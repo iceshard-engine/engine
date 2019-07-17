@@ -8,6 +8,12 @@
 namespace device
 {
 
+    struct ProviderAPI
+    {
+        void(*query_devices_func)(core::pod::Array<device::Device*>& device_list);
+        void(*reserved[16])() { nullptr };
+    };
+
 
     //! \brief This class represents a driver object which is used to manage devices.
     class DeviceProvider
@@ -18,10 +24,6 @@ namespace device
         //! \brief Queries the current device driver for supported devices.
         virtual void query_devices(core::pod::Array<device::Device*>& device_list) noexcept = 0;
     };
-
-
-    //! \brief Tries to load a device deiver from the given module path.
-    auto load_provider(core::allocator& alloc, core::StringView<> driver_module_path) noexcept -> core::memory::unique_pointer<DeviceProvider>;
 
 
     /// OLD CODE ///

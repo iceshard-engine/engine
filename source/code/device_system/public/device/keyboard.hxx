@@ -77,9 +77,9 @@ namespace device
         , KeyS
         , KeyT
         , KeyU
-        , KeyA
-        , KeyA
-        , KeyA
+        , KeyW
+        , KeyX
+        , KeyY
         , KeyZ
 
         , Delete
@@ -176,10 +176,10 @@ namespace device
         ~KeyboardDevice() noexcept override = default;
 
         //! \brief Checks the given key state.
-        bool check_pressed(KeyboardKey key) noexcept;
+        virtual bool check_pressed(KeyboardKey key) noexcept = 0;
 
         //! \brief Checks the given modifier state.
-        bool check_modifier(KeyboardMod mod) noexcept;
+        virtual bool check_modifier(KeyboardMod mod) noexcept = 0;
     };
 
 

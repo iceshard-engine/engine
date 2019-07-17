@@ -152,6 +152,25 @@ Settings
         ^SolutionProjects + .Projects
     ]
     ^SolutionFolders + .SolutionFolder
+    .VisualStudioProjects = { }
+
+
+    // Driver projects
+    //--------------------------------------------------------------------------
+    #include "code/sdl2_driver/sdl2_driver.bff"
+
+    .SolutionFolder =
+    [
+        .Path      = '3. drivers'
+        .Projects = { }
+        ForEach( .Project in .VisualStudioProjects )
+        {
+            ^Projects + '$Project$-vcxproj'
+        }
+
+        ^SolutionProjects + .Projects
+    ]
+    ^SolutionFolders + .SolutionFolder
 
 
     // Applications

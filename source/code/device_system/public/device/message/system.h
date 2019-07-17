@@ -1,26 +1,18 @@
 #pragma once
 #include <core/base.hxx>
+#include <core/cexpr/stringid.hxx>
 
-namespace input::message
+namespace driver::message
 {
 
 
-    /// OLD CODE ///
+    //! \brief A message send when the application requested to exit.
+    struct AppExit
+    {
+        static inline const core::cexpr::stringid_type message_type{ core::cexpr::stringid("App.Exit") };
 
-    ////! Defines a empty tick message.
-    //struct Tick { };
+        int exit_code{ 0 };
+    };
 
-    ////! Defines a engine wide debug message, which can be anything
-    //struct DebugMessage
-    //{
-    //    core::cexpr::stringid_type name;
-    //    int64_t value;
-    //};
 
-    ////! Declares the given messages
-    //DECLARE_MESSAGE(Tick);
-    //DECLARE_MESSAGE(DebugMessage);
-
-    /// OLD CODE ///
-
-}
+} // namespace input::message

@@ -25,7 +25,7 @@ namespace core::message
         buffer.push(message_type, message_data);
     }
 
-    void clean(MessageBuffer& buffer) noexcept
+    void clear(MessageBuffer& buffer) noexcept
     {
         buffer.clear();
     }
