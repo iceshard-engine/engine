@@ -3,15 +3,15 @@
 #include <core/string_types.hxx>
 #include <core/pointer.hxx>
 
-namespace media
+namespace input
 {
 
 
     //! \brief Describes a media driver, which is responsible to handle low-level media events and return proper messages.
-    class MediaDriver
+    class InputQuery
     {
     public:
-        virtual ~MediaDriver() noexcept = default;
+        virtual ~InputQuery() noexcept = default;
 
         //! \brief Updates the internal media driver state.
         virtual void update() noexcept = 0;
@@ -22,24 +22,24 @@ namespace media
 
 
     //! \brief Describes a driver module object.
-    class DriverModule
+    class InputModule
     {
     public:
-        virtual ~DriverModule() noexcept = default;
+        virtual ~InputModule() noexcept = default;
 
         //! \brief Returns the associated media driver.
         [[nodiscard]]
-        virtual auto media_driver() noexcept -> MediaDriver* = 0;
+        virtual auto media_driver() noexcept -> InputQuery* = 0;
 
         //! \brief Returns the associated media driver.
         [[nodiscard]]
-        virtual auto media_driver() const noexcept -> const MediaDriver* = 0;
+        virtual auto media_driver() const noexcept -> const InputQuery* = 0;
     };
 
 
     //! \brief Tries to load a device deiver from the given module path.
     [[nodiscard]]
-    auto load_driver_module(core::allocator& alloc, core::StringView<> driver_module_path) noexcept -> core::memory::unique_pointer<DriverModule>;
+    auto load_driver_module(core::allocator& alloc, core::StringView<> driver_module_path) noexcept -> core::memory::unique_pointer<InputModule>;
 
 
-} // namespace driver
+} // namespace input

@@ -17,10 +17,8 @@
 #include <core/message/buffer.hxx>
 #include <core/message/operations.hxx>
 
-#include <device/system.hxx>
-#include <device/driver.hxx>
-#include <device/message/system.h>
-#include <device/message/mouse.h>
+#include <input_system/module.hxx>
+#include <input_system/message/app.hxx>
 
 #include <fmt/format.h>
 
@@ -62,7 +60,7 @@ int main()
         config_directory += to_string(core::build::configuration::current_config);
         config_directory += "/sdl2_driver/sdl2_driver.dll";
 
-        if (auto driver_module = media::load_driver_module(alloc, config_directory))
+        if (auto driver_module = input::load_driver_module(alloc, config_directory))
         {
             core::MessageBuffer messages{ alloc };
 
@@ -77,7 +75,7 @@ int main()
                 media_driver->query_messages(messages);
 
                 // Check for the quit message
-                core::message::filter<driver::message::AppExit>(messages, [&quit](const auto&) noexcept
+                core::message::filter<input::message::AppExit>(messages, [&quit](const auto&) noexcept
                     {
                         quit = true;
                     });
@@ -87,7 +85,5 @@ int main()
     }
 
     core::memory::globals::shutdown();
-
-    system("pause");
     return 0;
 }

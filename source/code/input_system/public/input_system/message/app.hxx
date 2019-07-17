@@ -2,7 +2,7 @@
 #include <core/base.hxx>
 #include <core/cexpr/stringid.hxx>
 
-namespace driver::message
+namespace input::message
 {
 
 

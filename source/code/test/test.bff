@@ -59,7 +59,7 @@
                 + ' /I"$WorkspaceCodeDir$/messages/public"'
                 + ' /I"$WorkspaceCodeDir$/collections/public"'
                 + ' /I"$WorkspaceCodeDir$/resource_system/public"'
-                + ' /I"$WorkspaceCodeDir$/device_system/public"'
+                + ' /I"$WorkspaceCodeDir$/input_system/public"'
 
             .CompilerOutputPath = .ConfigurationIntermediateDirectory
             .CompilerInputPath = '$ProjectBaseDir$/private'
@@ -80,7 +80,7 @@
                 'messages-$Platform$-$Config$'
                 'collections-$Platform$-$Config$'
                 'resource_system-$Platform$-$Config$'
-                'device_system-$Platform$-$Config$'
+                'input_system-$Platform$-$Config$'
             }
 
             .LinkerOutput = '$ConfigurationTargetDirectory$/$ProjectName$.exe'

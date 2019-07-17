@@ -1,7 +1,7 @@
 #pragma once
-#include <device/device.hxx>
+#include <input_system/device.hxx>
 
-namespace device
+namespace input
 {
 
 
@@ -169,18 +169,4 @@ namespace device
     };
 
 
-    //! \brief This class represents a single keyboard device.
-    class KeyboardDevice : public Device
-    {
-    public:
-        ~KeyboardDevice() noexcept override = default;
-
-        //! \brief Checks the given key state.
-        virtual bool check_pressed(KeyboardKey key) noexcept = 0;
-
-        //! \brief Checks the given modifier state.
-        virtual bool check_modifier(KeyboardMod mod) noexcept = 0;
-    };
-
-
-} // namespace device
+} // namespace input

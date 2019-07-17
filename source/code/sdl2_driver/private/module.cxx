@@ -4,25 +4,23 @@
 #include <core/message/buffer.hxx>
 #include <core/message/operations.hxx>
 
-#include <device/message/system.h>
-#include <device/message/mouse.h>
-#include <device/system.hxx>
-#include <device/keyboard.hxx>
-#include <device/driver.hxx>
+#include <input_system/message/mouse.hxx>
+#include <input_system/message/app.hxx>
+#include <input_system/module.hxx>
 
 #include <SDL.h>
 
 void quit_event_transform(const SDL_Event& /*sdl_event*/, core::MessageBuffer& message_buffer) noexcept
 {
-    core::message::push(message_buffer, driver::message::AppExit{ });
+    core::message::push(message_buffer, input::message::AppExit{ });
 }
 
 void mouse_event_transform(const SDL_Event& sdl_event, core::MessageBuffer& message_buffer) noexcept
 {
-    core::message::push(message_buffer, driver::message::MouseMove{ sdl_event.motion.x, sdl_event.motion.y });
+    core::message::push(message_buffer, input::message::MouseMove{ sdl_event.motion.x, sdl_event.motion.y });
 }
 
-class SDLMediaDriver : public media::MediaDriver
+class SDLMediaDriver : public input::InputQuery
 {
     using EventTransformFunc = void(const SDL_Event&, core::MessageBuffer&) noexcept;
 
@@ -73,68 +71,14 @@ private:
 };
 
 
-namespace device
-{
-
-    class SDL2Keyboard : public KeyboardDevice
-    {
-    public:
-        SDL2Keyboard() noexcept
-        {
-        }
-
-        //! \brief Checks the given key state.
-        bool check_pressed(KeyboardKey /*key*/) noexcept override
-        {
-            return false;
-        }
-
-        //! \brief Checks the given modifier state.
-        bool check_modifier(KeyboardMod mod) noexcept override
-        {
-            switch (mod)
-            {
-            case device::KeyboardMod::ShiftAny:
-                return (SDL_GetModState() & KMOD_SHIFT) != 0;
-            case device::KeyboardMod::CtrlAny:
-                return (SDL_GetModState() & KMOD_CTRL) != 0;
-            case device::KeyboardMod::AltAny:
-                return (SDL_GetModState() & KMOD_ALT) != 0;
-            case device::KeyboardMod::GuiAny:
-                return (SDL_GetModState() & KMOD_GUI) != 0;
-            }
-            return false;
-        }
-    };
-
-} // namespace sdl2_driver
-
-
-void query_devices(core::pod::Array<device::Device*>& device_list)
-{
-    core::pod::array::push_back<device::Device*>(device_list, nullptr);
-
-
-}
-
-auto get_api_internal() noexcept -> device::ProviderAPI*
-{
-    static device::ProviderAPI api_table {
-        &query_devices
-    };
-
-    return &api_table;
-}
-
-
 extern "C"
 {
-    __declspec(dllexport) auto create_driver(core::allocator& alloc) -> media::MediaDriver*
+    __declspec(dllexport) auto create_driver(core::allocator& alloc) -> input::InputQuery*
     {
         return alloc.make<SDLMediaDriver>(alloc);
     }
 
-    __declspec(dllexport) void release_driver(core::allocator& alloc, media::MediaDriver* driver)
+    __declspec(dllexport) void release_driver(core::allocator& alloc, input::InputQuery* driver)
     {
         alloc.destroy(driver);
     }

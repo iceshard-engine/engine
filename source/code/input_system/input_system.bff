@@ -1,7 +1,7 @@
 // Core
 //------------------------------------------------------------------------------
 {
-    .ProjectName        = 'device_system'
+    .ProjectName        = 'input_system'
     .ProjectBaseDir = '$_CURRENT_BFF_DIR_$'
 
 
