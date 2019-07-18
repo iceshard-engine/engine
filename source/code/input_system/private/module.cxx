@@ -10,13 +10,13 @@ namespace input
 {
     namespace detail
     {
-        using MediaDriverCreateFunc = InputQuery*(core::allocator&);
-        using MediaDriverReleaseFunc = void(core::allocator&, InputQuery*);
+        using InputSystemCreateFunc = InputSystem*(core::allocator&);
+        using InputSystemReleaseFunc = void(core::allocator&, InputSystem*);
 
         class InputModuleDLL final : public InputModule
         {
         public:
-            InputModuleDLL(core::allocator& alloc, HMODULE module_handle, InputQuery* driver_object, MediaDriverReleaseFunc* release_func) noexcept
+            InputModuleDLL(core::allocator& alloc, HMODULE module_handle, InputSystem* driver_object, InputSystemReleaseFunc* release_func) noexcept
                 : _allocator{ alloc }
                 , _module_handle{ module_handle }
                 , _media_driver_object{ std::move(driver_object) }
@@ -29,12 +29,12 @@ namespace input
                 FreeLibrary(_module_handle);
             }
 
-            auto media_driver() noexcept -> InputQuery* override
+            auto media_driver() noexcept -> InputSystem* override
             {
                 return _media_driver_object;
             }
 
-            auto media_driver() const noexcept -> InputQuery* override
+            auto media_driver() const noexcept -> InputSystem* override
             {
                 return _media_driver_object;
             }
@@ -44,12 +44,13 @@ namespace input
 
             HMODULE _module_handle;
 
-            InputQuery* _media_driver_object;
+            InputSystem* _media_driver_object;
 
-            MediaDriverReleaseFunc* _media_driver_release_func;
+            InputSystemReleaseFunc* _media_driver_release_func;
         };
 
     } // namespace detail
+
 
     auto load_driver_module(core::allocator& alloc, core::StringView<> driver_module_path) noexcept -> core::memory::unique_pointer<InputModule>
     {
@@ -62,14 +63,14 @@ namespace input
         HMODULE module_handle = LoadLibraryEx(module_path.generic_string().c_str(), NULL, NULL);
         if (module_handle != nullptr)
         {
-            void* create_driver_addr = GetProcAddress(module_handle, "create_driver");
-            void* release_driver_addr = GetProcAddress(module_handle, "release_driver");
+            void* create_driver_addr = GetProcAddress(module_handle, "create_input_system");
+            void* release_driver_addr = GetProcAddress(module_handle, "release_input_system");
 
             // Check both functions.
             if (create_driver_addr && release_driver_addr)
             {
-                auto create_driver_func = reinterpret_cast<detail::MediaDriverCreateFunc*>(create_driver_addr);
-                auto release_driver_func = reinterpret_cast<detail::MediaDriverReleaseFunc*>(release_driver_addr);
+                auto create_driver_func = reinterpret_cast<detail::InputSystemCreateFunc*>(create_driver_addr);
+                auto release_driver_func = reinterpret_cast<detail::InputSystemReleaseFunc*>(release_driver_addr);
 
                 result = { alloc.make<detail::InputModuleDLL>(alloc, module_handle, create_driver_func(alloc), release_driver_func), alloc };
             }

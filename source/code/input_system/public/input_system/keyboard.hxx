@@ -1,5 +1,5 @@
 #pragma once
-#include <input_system/device.hxx>
+#include <core/base.hxx>
 
 namespace input
 {

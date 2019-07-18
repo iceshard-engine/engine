@@ -19,6 +19,7 @@
 
 #include <input_system/module.hxx>
 #include <input_system/message/app.hxx>
+#include <input_system/message/mouse.hxx>
 
 #include <fmt/format.h>
 
@@ -78,6 +79,12 @@ int main()
                 core::message::filter<input::message::AppExit>(messages, [&quit](const auto&) noexcept
                     {
                         quit = true;
+                    });
+
+                // Check for the quit message
+                core::message::filter<input::message::MouseMotion>(messages, [](const auto& msg) noexcept
+                    {
+                        fmt::print("Mouse{{ {}:{} }}\n", msg.x, msg.y);
                     });
             }
         }
