@@ -57,7 +57,8 @@ int main()
         using resource::URI;
 
         core::StackString<64> config_directory{ "bin/" };
-        config_directory += "x64-";
+        config_directory += to_string(core::build::platform::current_platform.architecture);
+        config_directory += "-";
         config_directory += to_string(core::build::configuration::current_config);
         config_directory += "/sdl2_driver/sdl2_driver.dll";
 
@@ -65,7 +66,7 @@ int main()
         {
             core::MessageBuffer messages{ alloc };
 
-            auto* media_driver = driver_module->media_driver();
+            auto* input_sys = driver_module->input_system();
 
             bool quit = false;
             while (quit == false)
@@ -73,7 +74,7 @@ int main()
                 core::message::clear(messages);
 
                 // Get all messages
-                media_driver->query_messages(messages);
+                input_sys->query_messages(messages);
 
                 // Check for the quit message
                 core::message::filter<input::message::AppExit>(messages, [&quit](const auto&) noexcept
