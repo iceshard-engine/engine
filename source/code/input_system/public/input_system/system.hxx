@@ -11,9 +11,6 @@ namespace input
     public:
         virtual ~InputSystem() noexcept = default;
 
-        //! \brief Updates the internal media driver state.
-        virtual void update() noexcept = 0;
-
         //! \brief Queries the media driver for messages.
         virtual void query_messages(core::MessageBuffer& message_buffer) const noexcept = 0;
     };

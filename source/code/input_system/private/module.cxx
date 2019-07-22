@@ -29,12 +29,12 @@ namespace input
                 FreeLibrary(_module_handle);
             }
 
-            auto media_driver() noexcept -> InputSystem* override
+            auto input_system() noexcept -> InputSystem* override
             {
                 return _media_driver_object;
             }
 
-            auto media_driver() const noexcept -> InputSystem* override
+            auto input_system() const noexcept -> InputSystem* override
             {
                 return _media_driver_object;
             }

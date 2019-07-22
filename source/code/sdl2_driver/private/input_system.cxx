@@ -38,11 +38,6 @@ namespace input::sdl2
             SDL_Quit();
         }
 
-        //! \brief Updates the internal media driver state.
-        void update() noexcept override
-        {
-        }
-
         //! \brief Queries the media driver for messages.
         void query_messages(core::MessageBuffer& message_buffer) const noexcept override
         {

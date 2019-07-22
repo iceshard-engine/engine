@@ -15,11 +15,11 @@ namespace input
 
         //! \brief Returns the associated media driver.
         [[nodiscard]]
-        virtual auto media_driver() noexcept -> InputSystem* = 0;
+        virtual auto input_system() noexcept -> InputSystem* = 0;
 
         //! \brief Returns the associated media driver.
         [[nodiscard]]
-        virtual auto media_driver() const noexcept -> const InputSystem* = 0;
+        virtual auto input_system() const noexcept -> const InputSystem* = 0;
     };
 
 
