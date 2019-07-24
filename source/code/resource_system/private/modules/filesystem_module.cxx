@@ -102,6 +102,14 @@ namespace resource
                     auto* dir_entry_object = alloc.make<FileResource>(alloc, URI{ scheme_directory, path.generic_string().c_str(), core::cexpr::stringid(relative_path_string.c_str()) }, fullpath.c_str());
                     array::push_back(entry_list, static_cast<Resource*>(dir_entry_object));
                     callback(dir_entry_object);
+
+                    auto* file_entry_object = alloc.make<FileResource>(alloc, URI{ scheme_file, fullpath.c_str() }, fullpath.c_str());
+                    array::push_back(entry_list, static_cast<Resource*>(file_entry_object));
+
+                    if (resource::get_name(dir_entry_object->location()).name != resource::get_name(file_entry_object->location()).name)
+                    {
+                        callback(file_entry_object);
+                    }
                 }
             }
         }
@@ -118,7 +126,7 @@ namespace resource
 
                 auto fullpath = std::filesystem::canonical(filepath).generic_string();
 
-                auto* file_entry_object = alloc.make<FileResource>(alloc, URI{ scheme_file, path.generic_string().c_str() }, fullpath.c_str());
+                auto* file_entry_object = alloc.make<FileResource>(alloc, URI{ scheme_file, fullpath.c_str() }, fullpath.c_str());
                 array::push_back(entry_list, static_cast<Resource*>(file_entry_object));
                 callback(file_entry_object);
             }
