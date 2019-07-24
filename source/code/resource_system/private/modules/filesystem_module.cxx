@@ -106,6 +106,24 @@ namespace resource
             }
         }
 
+        void mount_file(core::allocator& alloc, std::filesystem::path path, core::pod::Array<Resource*>& entry_list, std::function<void(Resource*)> callback) noexcept
+        {
+            // Build the path
+            auto canonical_path = std::filesystem::canonical(path);
+
+            if (std::filesystem::is_regular_file(canonical_path))
+            {
+                auto filepath = std::move(canonical_path);
+                auto filename = filepath.filename().generic_string();
+
+                auto fullpath = std::filesystem::canonical(filepath).generic_string();
+
+                auto* file_entry_object = alloc.make<FileResource>(alloc, URI{ scheme_file, path.generic_string().c_str() }, fullpath.c_str());
+                array::push_back(entry_list, static_cast<Resource*>(file_entry_object));
+                callback(file_entry_object);
+            }
+        }
+
     } // namespace detail
 
     FileSystem::FileSystem(core::allocator& alloc, std::string_view basedir) noexcept
@@ -158,6 +176,7 @@ namespace resource
         if (uri.scheme == resource::scheme_file)
         {
             // single file mount
+            detail::mount_file(_allocator, std::filesystem::path{ _basedir } / core::string::begin(uri.path), _resources, callback);
         }
         else if (uri.scheme == resource::scheme_directory)
         {
