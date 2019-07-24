@@ -56,28 +56,27 @@ int main()
         using resource::URN;
         using resource::URI;
 
-        core::StackString<64> config_directory{ "bin/" };
-        config_directory += to_string(core::build::platform::current_platform.architecture);
-        config_directory += "-";
-        config_directory += to_string(core::build::configuration::current_config);
-        config_directory += "/sdl2_driver/sdl2_driver.dll";
-
-
         resource::ResourceSystem res_sys{ alloc };
-
         {
             core::pod::Array<core::cexpr::stringid_type> schemes{ core::memory::globals::default_scratch_allocator() };
             core::pod::array::push_back(schemes, resource::scheme_directory);
             core::pod::array::push_back(schemes, resource::scheme_file);
 
-            res_sys.add_module(core::memory::make_unique<resource::ResourceModule, resource::FileSystem>(alloc, alloc, "../source/data"), schemes);
+            res_sys.add_module(core::memory::make_unique<resource::ResourceModule, resource::FileSystem>(alloc, alloc, ".."), schemes);
         }
 
-        res_sys.mount(URI{ resource::scheme_directory, "second" });
-        res_sys.mount(URI{ resource::scheme_file, "first/test/filesystem.txt" });
+        core::StackString<64> config_directory{ "build/bin/" };
+        config_directory += to_string(core::build::platform::current_platform.architecture);
+        config_directory += "-";
+        config_directory += to_string(core::build::configuration::current_config);
 
+        res_sys.mount(URI{ resource::scheme_directory, "source/data/second" });
+        res_sys.mount(URI{ resource::scheme_directory, config_directory });
 
-        if (auto driver_module = input::load_driver_module(alloc, config_directory))
+        auto* res = res_sys.find(URN{ "sdl2_driver.dll" });
+        IS_ASSERT(res != nullptr, "Missing SDL2 driver module!");
+
+        if (auto driver_module = input::load_driver_module(alloc, res->location().path))
         {
             core::MessageBuffer messages{ alloc };
 
