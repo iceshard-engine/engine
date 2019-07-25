@@ -14,6 +14,9 @@ namespace resource
     //! \brief ResourcePack scheme.
     static core::cexpr::stringid_type scheme_pack{ core::cexpr::stringid("pack") };
 
+    //! \brief Dynamic library scheme.
+    static core::cexpr::stringid_type scheme_dynlib{ core::cexpr::stringid("dynlib") };
+
     //! \brief Resource Name scheme.
     static core::cexpr::stringid_type scheme_resource{ core::cexpr::stringid("res") };
 

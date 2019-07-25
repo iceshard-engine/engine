@@ -1,5 +1,5 @@
 #include <resource/resource.hxx>
-#include <resource/filesystem_module.hxx>
+#include <resource/modules/filesystem_module.hxx>
 
 #include <core/allocators/proxy_allocator.hxx>
 #include <core/allocators/stack_allocator.hxx>
@@ -18,7 +18,7 @@ namespace resource
     namespace detail
     {
 
-        class FileResource : public Resource
+        class FileResource final : public Resource
         {
         public:
             FileResource(core::allocator& alloc, const URI& uri, core::StringView<> native_path) noexcept
@@ -102,14 +102,6 @@ namespace resource
                     auto* dir_entry_object = alloc.make<FileResource>(alloc, URI{ scheme_directory, path.generic_string().c_str(), core::cexpr::stringid(relative_path_string.c_str()) }, fullpath.c_str());
                     array::push_back(entry_list, static_cast<Resource*>(dir_entry_object));
                     callback(dir_entry_object);
-
-                    auto* file_entry_object = alloc.make<FileResource>(alloc, URI{ scheme_file, fullpath.c_str() }, fullpath.c_str());
-                    array::push_back(entry_list, static_cast<Resource*>(file_entry_object));
-
-                    if (resource::get_name(dir_entry_object->location()).name != resource::get_name(file_entry_object->location()).name)
-                    {
-                        callback(file_entry_object);
-                    }
                 }
             }
         }
@@ -183,7 +175,6 @@ namespace resource
     {
         if (uri.scheme == resource::scheme_file)
         {
-            // single file mount
             detail::mount_file(_allocator, std::filesystem::path{ _basedir } / core::string::begin(uri.path), _resources, callback);
         }
         else if (uri.scheme == resource::scheme_directory)

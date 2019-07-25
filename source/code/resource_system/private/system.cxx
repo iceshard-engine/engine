@@ -21,6 +21,11 @@ namespace resource
         auto* module_object = module_ptr.get();
         for (auto& scheme : schemes)
         {
+            IS_ASSERT(
+                hash::has(_scheme_handlers, static_cast<uint64_t>(scheme.hash_value)) == false
+                , "A handler for the given scheme {} already exists!"
+                , scheme
+            );
             hash::set(_scheme_handlers, static_cast<uint64_t>(scheme.hash_value), module_object);
         }
         _modules.push_back(std::move(module_ptr));
