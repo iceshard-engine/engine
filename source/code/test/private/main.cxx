@@ -12,7 +12,8 @@
 
 #include <resource/uri.hxx>
 #include <resource/system.hxx>
-#include <resource/filesystem_module.hxx>
+#include <resource/modules/dynlib_module.hxx>
+#include <resource/modules/filesystem_module.hxx>
 
 #include <core/message/buffer.hxx>
 #include <core/message/operations.hxx>
@@ -63,15 +64,14 @@ int main()
             core::pod::array::push_back(schemes, resource::scheme_file);
 
             res_sys.add_module(core::memory::make_unique<resource::ResourceModule, resource::FileSystem>(alloc, alloc, ".."), schemes);
+
+            core::pod::array::clear(schemes);
+            core::pod::array::push_back(schemes, resource::scheme_dynlib);
+            res_sys.add_module(core::memory::make_unique<resource::ResourceModule, resource::DynLibSystem>(alloc, alloc), schemes);
         }
 
-        core::StackString<64> config_directory{ "build/bin/" };
-        config_directory += to_string(core::build::platform::current_platform.architecture);
-        config_directory += "-";
-        config_directory += to_string(core::build::configuration::current_config);
-
+        res_sys.mount(URI{ resource::scheme_dynlib, "bin" });
         res_sys.mount(URI{ resource::scheme_directory, "source/data/second" });
-        res_sys.mount(URI{ resource::scheme_directory, config_directory });
 
         auto* res = res_sys.find(URN{ "sdl2_driver.dll" });
         IS_ASSERT(res != nullptr, "Missing SDL2 driver module!");
