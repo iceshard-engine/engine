@@ -76,9 +76,18 @@ namespace resource
 
                     auto fullpath = std::filesystem::canonical(filepath).generic_string();
 
-                    auto* module_entry_object = alloc.make<DynamicLibraryResource>(alloc, URI{ scheme_dynlib, fullpath.c_str() });
-                    array::push_back(entry_list, static_cast<Resource*>(module_entry_object));
-                    callback(module_entry_object);
+                    bool found_entry = false;
+                    for (const auto& entry : entry_list)
+                    {
+                        found_entry |= core::string::equals(entry->location().path, fullpath.c_str());
+                    }
+
+                    if (found_entry == false)
+                    {
+                        auto* module_entry_object = alloc.make<DynamicLibraryResource>(alloc, URI{ scheme_dynlib, fullpath.c_str() });
+                        array::push_back(entry_list, static_cast<Resource*>(module_entry_object));
+                        callback(module_entry_object);
+                    }
                 }
             }
         }
