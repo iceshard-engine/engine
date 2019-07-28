@@ -37,7 +37,7 @@ class GenerateProjectsCommand extends Command
             if lfs.chdir "build"
 
                 if args.rebuild or not os.isfile 'conan.bff'
-                    os.execute "conan install ../source"
+                    os.execute "conan install ../source --build=missing"
 
                 -- Run fastbuilds 'solution' target
                 unless skip_fastbuild_target
