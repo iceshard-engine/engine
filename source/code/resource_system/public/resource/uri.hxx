@@ -14,6 +14,9 @@ namespace resource
     //! \brief ResourcePack scheme.
     static core::cexpr::stringid_type scheme_pack{ core::cexpr::stringid("pack") };
 
+    //! \brief Dynamic library scheme.
+    static core::cexpr::stringid_type scheme_dynlib{ core::cexpr::stringid("dynlib") };
+
     //! \brief Resource Name scheme.
     static core::cexpr::stringid_type scheme_resource{ core::cexpr::stringid("res") };
 
@@ -27,12 +30,11 @@ namespace resource
         //! \brief Creates a new resource name from the given stringid value.
         URN(core::cexpr::stringid_argument_type name) noexcept;
 
-        //! \brief The resource scheme.
-        const core::cexpr::stringid_type scheme{ resource::scheme_resource };
-
         //! \brief The resource name.
         core::cexpr::stringid_type name{ core::cexpr::stringid_invalid };
     };
+
+    static_assert(std::is_trivially_copyable_v<URN>, "The 'URN' type requires to be trivially copyable!");
 
 
     //! \brief Uniform Resource Identifier.
@@ -56,6 +58,8 @@ namespace resource
         //! \brief The resource location.
         core::StringView<> path;
     };
+
+    static_assert(std::is_trivially_copyable_v<URI>, "The 'URI' type requires to be trivially copyable!");
 
 
     //! \brief Returns the URN from the given URI.
@@ -83,16 +87,16 @@ namespace fmt
         template <typename FormatContext>
         auto format(const resource::URN& urn, FormatContext& ctx)
         {
-            if (urn.scheme == core::cexpr::stringid_invalid || urn.name == core::cexpr::stringid_invalid)
+            if (urn.name == core::cexpr::stringid_invalid)
             {
-                return fmt::format_to(ctx.begin(), "urn:{}:{}", urn.scheme, urn.name);
+                return fmt::format_to(ctx.begin(), "urn:{}:{}", resource::scheme_resource, urn.name);
             }
             else
             {
 #if CFG_RELEASE == 0
-                return fmt::format_to(ctx.begin(), "urn:{}:{}", urn.scheme.hash_origin, urn.name.hash_origin);
+                return fmt::format_to(ctx.begin(), "{}:{}", resource::scheme_resource.hash_origin, urn.name.hash_origin);
 #else
-                return fmt::format_to(ctx.begin(), "urn:{}:{}", urn.scheme, urn.name);
+                return fmt::format_to(ctx.begin(), "{}:{}", resource::scheme_resource, urn.name);
 #endif
             }
         }

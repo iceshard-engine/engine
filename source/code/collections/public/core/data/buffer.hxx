@@ -1,5 +1,6 @@
 #pragma once
 #include <core/allocator.hxx>
+#include <core/allocators/scratch_allocator.hxx>
 #include <core/data/view.hxx>
 
 namespace core
@@ -63,6 +64,9 @@ namespace core
         //! \brief Appends data to the buffer
         void append(Buffer& b, const void* data, uint32_t size) noexcept;
 
+        //! \brief Appends data to the buffer
+        void append(Buffer& b, data_view data) noexcept;
+
         //! \brief Changes the size of the buffer
         //! \remarks Does not reallocate memory unless necessary.
         void resize(Buffer& a, uint32_t new_size) noexcept;
@@ -86,6 +90,18 @@ namespace core
         //! \brief Trims the buffer so that its capacity matches its size.
         //! \remarks If the buffer size is 0, it will just release the data.
         void trim(Buffer& b) noexcept;
+
+        //! \brief Beginning of the buffer.
+        auto begin(const Buffer& b) noexcept -> const void*;
+
+        //! \brief Beginning of the buffer.
+        auto begin(Buffer& b) noexcept -> void*;
+
+        //! \brief End of the buffer.
+        auto end(const Buffer& b) noexcept -> const void*;
+
+        //! \brief End of the buffer.
+        auto end(Buffer& b) noexcept -> void*;
 
     } // namespace buffer
 

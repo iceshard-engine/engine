@@ -20,10 +20,10 @@ namespace core
 
 
         //! \brief The data location.
-        const void* const _data;
+        const void* _data;
 
         //! \brief The data size.
-        const uint32_t _size;
+        uint32_t _size;
     };
 
 

@@ -8,6 +8,15 @@ inline auto core::memory::utils::align_forward(void* p, uint32_t align) noexcept
     return reinterpret_cast<void*>(pi);
 }
 
+inline auto core::memory::utils::align_forward(const void* p, uint32_t align) noexcept -> const void*
+{
+    uintptr_t pi = uintptr_t(p);
+    const uint32_t mod = pi % align;
+    if (mod)
+        pi += (align - mod);
+    return reinterpret_cast<void*>(pi);
+}
+
 inline auto core::memory::utils::pointer_add(void* ptr, uint32_t bytes) noexcept -> void*
 {
     return reinterpret_cast<void*>(reinterpret_cast<char*>(ptr) + bytes);

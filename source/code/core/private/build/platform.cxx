@@ -27,7 +27,7 @@ namespace core::build::platform
         switch (type)
         {
         case core::build::platform::Architecture::x64:
-            return "x86_64";
+            return "x64";
         default:
             break;
         }

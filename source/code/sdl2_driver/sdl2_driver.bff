@@ -1,14 +1,23 @@
 // Core
 //------------------------------------------------------------------------------
 {
-    .ProjectName        = 'test'
+    .ProjectName        = 'sdl2_driver'
     .ProjectBaseDir = '$_CURRENT_BFF_DIR_$'
 
 
     // Additional helper variables
     //------------------------------------------------------------------------------
     .ProjectConanModules = .WorkspaceConanModules
+        + 'SDL2'
     .VSProjectConfigurations = { }
+
+    .ProjectCompilerOptions = ''
+        + ' /I"$ProjectBaseDir$/public"'
+        + ' /I"$WorkspaceCodeDir$/core/public"'
+        + ' /I"$WorkspaceCodeDir$/memsys/public"'
+        + ' /I"$WorkspaceCodeDir$/collections/public"'
+        + ' /I"$WorkspaceCodeDir$/messages/public"'
+        + ' /I"$WorkspaceCodeDir$/input_system/public"'
 
 
     // Library
@@ -53,13 +62,7 @@
         //--------------------------------------------------------------------------
         ObjectList( '$ProjectName$-$Platform$-$Config$-objects' )
         {
-            .CompilerOptions + ' /I"$ProjectBaseDir$/public"'
-                + ' /I"$WorkspaceCodeDir$/core/public"'
-                + ' /I"$WorkspaceCodeDir$/memsys/public"'
-                + ' /I"$WorkspaceCodeDir$/messages/public"'
-                + ' /I"$WorkspaceCodeDir$/collections/public"'
-                + ' /I"$WorkspaceCodeDir$/resource_system/public"'
-                + ' /I"$WorkspaceCodeDir$/input_system/public"'
+            .CompilerOptions + .ProjectCompilerOptions
 
             .CompilerOutputPath = .ConfigurationIntermediateDirectory
             .CompilerInputPath = '$ProjectBaseDir$/private'
@@ -69,7 +72,7 @@
 
         // Library target
         //--------------------------------------------------------------------------
-        Executable( '$ProjectName$-$Platform$-$Config$' )
+        DLL( '$ProjectName$-$Platform$-$Config$' )
         {
             .CompilerOutputPath = .ConfigurationIntermediateDirectory
 
@@ -83,7 +86,8 @@
                 'input_system-$Platform$-$Config$'
             }
 
-            .LinkerOutput = '$ConfigurationTargetDirectory$/$ProjectName$.exe'
+            .LinkerOptions + ' /DLL'
+            .LinkerOutput = '$ConfigurationTargetDirectory$/$ProjectName$.dll'
         }
 
 
@@ -99,7 +103,7 @@
 
             .IntermediateDirectory = .ConfigurationIntermediateDirectory
             .OutputDirectory = .ConfigurationTargetDirectory
-            .Output = '$ConfigurationTargetDirectory$/$ProjectName$.exe'
+            .Output = '$ConfigurationTargetDirectory$/$ProjectName$.dll'
 
             .ProjectBuildCommand = '$VSBuildCommand$ $ProjectName$-$Platform$-$Config$'
             .ProjectRebuildCommand = '$VSRebuildCommand$ $ProjectName$-$Platform$-$Config$'
@@ -107,18 +111,31 @@
         ^VSProjectConfigurations + .VSProjectConfiguration
     }
 
+
     // Create a Visual Studio project description
     //--------------------------------------------------------------------------
     VCXProject( '$ProjectName$-vcxproj' )
     {
         .ProjectOutput = '$ProjectName$.vcxproj'
         .ProjectConfigs = .VSProjectConfigurations
-        .ProjectInputPaths = .ProjectBaseDir
         .ProjectBasePath = .ProjectBaseDir
+        .ProjectFiles = {
+            '$ProjectBaseDir$/$ProjectName$.bff'
+        }
+        .ProjectInputPaths = {
+            '$ProjectBaseDir$/public'
+            '$ProjectBaseDir$/private'
+        }
     }
+
 
     // Register this project
     //--------------------------------------------------------------------------
     ^Projects + .ProjectName
     ^VisualStudioProjects + .ProjectName
+
+
+    // Add tests project
+    //--------------------------------------------------------------------------
+    // #include "../../scripts/tests.bff"
 }

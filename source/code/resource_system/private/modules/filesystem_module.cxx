@@ -1,5 +1,5 @@
 #include <resource/resource.hxx>
-#include <resource/filesystem_module.hxx>
+#include <resource/modules/filesystem_module.hxx>
 
 #include <core/allocators/proxy_allocator.hxx>
 #include <core/allocators/stack_allocator.hxx>
@@ -18,7 +18,7 @@ namespace resource
     namespace detail
     {
 
-        class FileResource : public Resource
+        class FileResource final : public Resource
         {
         public:
             FileResource(core::allocator& alloc, const URI& uri, core::StringView<> native_path) noexcept
@@ -106,6 +106,24 @@ namespace resource
             }
         }
 
+        void mount_file(core::allocator& alloc, std::filesystem::path path, core::pod::Array<Resource*>& entry_list, std::function<void(Resource*)> callback) noexcept
+        {
+            // Build the path
+            auto canonical_path = std::filesystem::canonical(path);
+
+            if (std::filesystem::is_regular_file(canonical_path))
+            {
+                auto filepath = std::move(canonical_path);
+                auto filename = filepath.filename().generic_string();
+
+                auto fullpath = std::filesystem::canonical(filepath).generic_string();
+
+                auto* file_entry_object = alloc.make<FileResource>(alloc, URI{ scheme_file, fullpath.c_str() }, fullpath.c_str());
+                array::push_back(entry_list, static_cast<Resource*>(file_entry_object));
+                callback(file_entry_object);
+            }
+        }
+
     } // namespace detail
 
     FileSystem::FileSystem(core::allocator& alloc, std::string_view basedir) noexcept
@@ -157,7 +175,7 @@ namespace resource
     {
         if (uri.scheme == resource::scheme_file)
         {
-            // single file mount
+            detail::mount_file(_allocator, std::filesystem::path{ _basedir } / core::string::begin(uri.path), _resources, callback);
         }
         else if (uri.scheme == resource::scheme_directory)
         {

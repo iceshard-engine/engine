@@ -118,6 +118,7 @@ Settings
     #include "code/core/core.bff"
     #include "code/memsys/memsys.bff"
     #include "code/collections/collections.bff"
+    #include "code/messages/messages.bff"
 
     .SolutionFolder =
     [
@@ -137,10 +138,30 @@ Settings
     // Systems projects
     //--------------------------------------------------------------------------
     #include "code/resource_system/resource_system.bff"
+    #include "code/input_system/input_system.bff"
 
     .SolutionFolder =
     [
         .Path      = '2. systems'
+        .Projects = { }
+        ForEach( .Project in .VisualStudioProjects )
+        {
+            ^Projects + '$Project$-vcxproj'
+        }
+
+        ^SolutionProjects + .Projects
+    ]
+    ^SolutionFolders + .SolutionFolder
+    .VisualStudioProjects = { }
+
+
+    // Driver projects
+    //--------------------------------------------------------------------------
+    #include "code/sdl2_driver/sdl2_driver.bff"
+
+    .SolutionFolder =
+    [
+        .Path      = '3. drivers'
         .Projects = { }
         ForEach( .Project in .VisualStudioProjects )
         {

@@ -51,6 +51,10 @@ namespace core::memory
         //! \details If necessary the alignment is done by advancing the pointer.
         inline auto align_forward(void* ptr, uint32_t align) noexcept -> void*;
 
+        //! \brief Aligns the pointer to the specified alignment.
+        //! \details If necessary the alignment is done by advancing the pointer.
+        inline auto align_forward(const void* ptr, uint32_t align) noexcept -> const void*;
+
         //! \brief Advances the pointer by the given number of bytes.
         inline auto pointer_add(void* ptr, uint32_t bytes) noexcept -> void*;
 

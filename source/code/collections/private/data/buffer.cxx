@@ -75,14 +75,22 @@ namespace core
     void buffer::append(Buffer& b, const void* data, uint32_t size) noexcept
     {
         const uint32_t new_size = b._size + size;
+        if (new_size >= b._capacity)
+        {
+            grow(b, new_size);
+        }
 
-        reserve(b, new_size);
         IS_ASSERT(new_size <= b._capacity, "Couldn't reserve enough memory for the new buffer size! [ size:{}, capacity:{} ]", new_size, b._capacity);
 
         void* const buffer_end = core::memory::utils::pointer_add(b._data, b._size);
         memcpy(buffer_end, data, size);
 
         b._size = new_size;
+    }
+
+    void buffer::append(Buffer& b, data_view data) noexcept
+    {
+        append(b, data._data, data._size);
     }
 
     void buffer::resize(Buffer& b, uint32_t new_size) noexcept
@@ -98,7 +106,7 @@ namespace core
     {
         if (new_capacity > b._capacity)
         {
-            set_capacity(b, new_capacity);
+            grow(b, new_capacity);
         }
     }
 
@@ -134,6 +142,26 @@ namespace core
             new_capacity = min_capacity;
         }
         set_capacity(b, new_capacity);
+    }
+
+    auto buffer::begin(const Buffer& b) noexcept -> const void*
+    {
+        return b._data;
+    }
+
+    auto buffer::begin(Buffer& b) noexcept -> void*
+    {
+        return b._data;
+    }
+
+    auto buffer::end(const Buffer& b) noexcept -> const void*
+    {
+        return core::memory::utils::pointer_add(b._data, b._size);
+    }
+
+    auto buffer::end(Buffer& b) noexcept -> void*
+    {
+        return core::memory::utils::pointer_add(b._data, b._size);
     }
 
 
