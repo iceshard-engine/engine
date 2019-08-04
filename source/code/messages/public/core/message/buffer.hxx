@@ -21,7 +21,7 @@ namespace core
         void push(core::cexpr::stringid_argument_type msg) noexcept;
 
         //! \brief Inserts a message into the buffer.
-        void push(core::cexpr::stringid_argument_type msg, core::data_view data) noexcept;
+        void push(core::cexpr::stringid_argument_type msg, core::data_view_aligned data) noexcept;
 
         //! \brief Clears the buffer.
         void clear() noexcept;

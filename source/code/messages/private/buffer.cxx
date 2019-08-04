@@ -31,7 +31,7 @@ namespace core
         _data_queue.push(message_data);
     }
 
-    void MessageBuffer::push(core::cexpr::stringid_argument_type type, core::data_view data) noexcept
+    void MessageBuffer::push(core::cexpr::stringid_argument_type type, core::data_view_aligned data) noexcept
     {
         core::memory::stack_allocator<128> stack_allocator;
         core::data_chunk message_data{ stack_allocator, sizeof(MessageHeader) + data.size() };
