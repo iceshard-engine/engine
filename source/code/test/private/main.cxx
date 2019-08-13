@@ -1,3 +1,4 @@
+#define _CRT_SECURE_NO_WARNINGS
 #include <core/memory.hxx>
 #include <core/allocators/proxy_allocator.hxx>
 #include <core/string.hxx>
@@ -23,6 +24,9 @@
 #include <input_system/message/mouse.hxx>
 
 #include <fmt/format.h>
+#include <application/application.hxx>
+
+#include <dia2.h>
 
 using core::cexpr::stringid;
 using core::cexpr::stringid_invalid;
@@ -47,65 +51,49 @@ struct TestFileRequest2
 
 const core::cexpr::stringid_type TestFileRequest2::message_type{ core::cexpr::stringid("TestFileRequest2") };
 
-int main()
+int game_main(core::allocator& alloc, resource::ResourceSystem& resources)
 {
-    core::memory::globals::init_with_stats();
+    using resource::URN;
+    using resource::URI;
 
-    auto& alloc = static_cast<core::memory::proxy_allocator&>(core::memory::globals::default_allocator());
+    techland.mount(URI{ resource::scheme_features, "*" });
+    auto* res = techland.find(URN{ "latest" });
 
+    fmt::print("{}\n", res->data());
+
+    resources.mount(URI{ resource::scheme_dynlib, "bin" });
+    resources.mount(URI{ resource::scheme_directory, "../source/data/second" });
+
+    auto* res = resources.find(URN{ "sdl2_driver.dll" });
+    IS_ASSERT(res != nullptr, "Missing SDL2 driver module!");
+
+    if (auto driver_module = input::load_driver_module(alloc, res->location().path))
     {
-        using resource::URN;
-        using resource::URI;
+        core::MessageBuffer messages{ alloc };
 
-        resource::ResourceSystem res_sys{ alloc };
+        auto* input_sys = driver_module->input_system();
+
+        bool quit = false;
+        while (quit == false)
         {
-            core::pod::Array<core::cexpr::stringid_type> schemes{ core::memory::globals::default_scratch_allocator() };
-            core::pod::array::push_back(schemes, resource::scheme_directory);
-            core::pod::array::push_back(schemes, resource::scheme_file);
+            core::message::clear(messages);
 
-            res_sys.add_module(core::memory::make_unique<resource::ResourceModule, resource::FileSystem>(alloc, alloc, ".."), schemes);
+            // Get all messages
+            input_sys->query_messages(messages);
 
-            core::pod::array::clear(schemes);
-            core::pod::array::push_back(schemes, resource::scheme_dynlib);
-            res_sys.add_module(core::memory::make_unique<resource::ResourceModule, resource::DynLibSystem>(alloc, alloc), schemes);
+            // Check for the quit message
+            core::message::filter<input::message::AppExit>(messages, [&quit](const auto&) noexcept
+                {
+                    quit = true;
+                });
+
+            // Check for the quit message
+            core::message::filter<input::message::MouseMotion>(messages, [](const auto& msg) noexcept
+                {
+                    fmt::print("Mouse{{ {}:{} }}\n", msg.x, msg.y);
+                });
         }
-
-        res_sys.mount(URI{ resource::scheme_dynlib, "bin" });
-        res_sys.mount(URI{ resource::scheme_directory, "source/data/second" });
-
-        auto* res = res_sys.find(URN{ "sdl2_driver.dll" });
-        IS_ASSERT(res != nullptr, "Missing SDL2 driver module!");
-
-        if (auto driver_module = input::load_driver_module(alloc, res->location().path))
-        {
-            core::MessageBuffer messages{ alloc };
-
-            auto* input_sys = driver_module->input_system();
-
-            bool quit = false;
-            while (quit == false)
-            {
-                core::message::clear(messages);
-
-                // Get all messages
-                input_sys->query_messages(messages);
-
-                // Check for the quit message
-                core::message::filter<input::message::AppExit>(messages, [&quit](const auto&) noexcept
-                    {
-                        quit = true;
-                    });
-
-                // Check for the quit message
-                core::message::filter<input::message::MouseMotion>(messages, [](const auto& msg) noexcept
-                    {
-                        fmt::print("Mouse{{ {}:{} }}\n", msg.x, msg.y);
-                    });
-            }
-        }
-
     }
 
-    core::memory::globals::shutdown();
     return 0;
 }

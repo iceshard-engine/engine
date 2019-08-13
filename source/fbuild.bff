@@ -171,6 +171,26 @@ Settings
         ^SolutionProjects + .Projects
     ]
     ^SolutionFolders + .SolutionFolder
+    .VisualStudioProjects = { }
+
+
+    // Game layer projects
+    //--------------------------------------------------------------------------
+    #include "code/application/application.bff"
+
+    .SolutionFolder =
+    [
+        .Path      = '4. game'
+        .Projects = { }
+        ForEach( .Project in .VisualStudioProjects )
+        {
+            ^Projects + '$Project$-vcxproj'
+        }
+
+        ^SolutionProjects + .Projects
+    ]
+    ^SolutionFolders + .SolutionFolder
+    .VisualStudioProjects = { }
 
 
     // Applications
