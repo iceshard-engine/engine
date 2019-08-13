@@ -2,6 +2,7 @@
 #include <core/allocator.hxx>
 #include <core/pointer.hxx>
 #include <core/string_types.hxx>
+#include <resource/system.hxx>
 
 namespace iceshard
 {
@@ -27,7 +28,11 @@ namespace iceshard
 
     //! \brief Tries to load the engine module from the given library path.
     [[nodiscard]]
-    auto load_engine_module(core::allocator& alloc, core::StringView<> path) noexcept -> core::memory::unique_pointer<EngineModule>;
+    auto load_engine_module(
+        core::allocator& alloc,
+        core::StringView<> path,
+        resource::ResourceSystem& resources
+    ) noexcept -> core::memory::unique_pointer<EngineModule>;
 
 
 } // namespace iceshard
