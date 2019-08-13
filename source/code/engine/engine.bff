@@ -1,7 +1,7 @@
 // Core
 //------------------------------------------------------------------------------
 {
-    .ProjectName        = 'test'
+    .ProjectName        = 'engine'
     .ProjectBaseDir = '$_CURRENT_BFF_DIR_$'
 
 
@@ -32,14 +32,6 @@
             {
                 ^CompilerOptions + ' /D$Define$'
             }
-            ForEach( .LibraryDir in .LibDirs )
-            {
-                ^LinkerOptions + ' /LIBPATH:"$LibraryDir$"'
-            }
-            ForEach( .Library in .Libs )
-            {
-                ^LinkerOptions + ' "$Library$.lib"'
-            }
         }
 
 
@@ -60,8 +52,6 @@
                 + ' /I"$WorkspaceCodeDir$/collections/public"'
                 + ' /I"$WorkspaceCodeDir$/resource_system/public"'
                 + ' /I"$WorkspaceCodeDir$/input_system/public"'
-                + ' /I"$WorkspaceCodeDir$/application/public"'
-                + ' /I"$WorkspaceCodeDir$/engine/public"'
 
             .CompilerOutputPath = .ConfigurationIntermediateDirectory
             .CompilerInputPath = '$ProjectBaseDir$/private'
@@ -71,23 +61,12 @@
 
         // Library target
         //--------------------------------------------------------------------------
-        Executable( '$ProjectName$-$Platform$-$Config$' )
+        Library( '$ProjectName$-$Platform$-$Config$' )
         {
             .CompilerOutputPath = .ConfigurationIntermediateDirectory
 
-            .Libraries = {
-                '$ProjectName$-$Platform$-$Config$-objects'
-                'core-$Platform$-$Config$'
-                'memsys-$Platform$-$Config$'
-                'messages-$Platform$-$Config$'
-                'collections-$Platform$-$Config$'
-                'resource_system-$Platform$-$Config$'
-                'input_system-$Platform$-$Config$'
-                'engine-$Platform$-$Config$'
-                'application-$Platform$-$Config$-objects'
-            }
-
-            .LinkerOutput = '$ConfigurationTargetDirectory$/$ProjectName$.exe'
+            .LibrarianAdditionalInputs = '$ProjectName$-$Platform$-$Config$-objects'
+            .LibrarianOutput = '$ConfigurationTargetDirectory$/$ProjectName$.lib'
         }
 
 
@@ -103,7 +82,7 @@
 
             .IntermediateDirectory = .ConfigurationIntermediateDirectory
             .OutputDirectory = .ConfigurationTargetDirectory
-            .Output = '$ConfigurationTargetDirectory$/$ProjectName$.exe'
+            .Output = '$ConfigurationTargetDirectory$/$ProjectName$.lib'
 
             .ProjectBuildCommand = '$VSBuildCommand$ $ProjectName$-$Platform$-$Config$'
             .ProjectRebuildCommand = '$VSRebuildCommand$ $ProjectName$-$Platform$-$Config$'

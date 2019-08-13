@@ -25,6 +25,9 @@
 #include <fmt/format.h>
 #include <application/application.hxx>
 
+#include <iceshard/module.hxx>
+#include <iceshard/engine.hxx>
+
 
 int game_main(core::allocator& alloc, resource::ResourceSystem& resources)
 {
@@ -34,10 +37,21 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resources)
     resources.mount(URI{ resource::scheme_dynlib, "bin" });
     resources.mount(URI{ resource::scheme_directory, "../source/data/second" });
 
-    auto* res = resources.find(URN{ "sdl2_driver.dll" });
-    IS_ASSERT(res != nullptr, "Missing SDL2 driver module!");
+    auto* sdl_driver_module_location = resources.find(URN{ "sdl2_driver.dll" });
+    IS_ASSERT(sdl_driver_module_location != nullptr, "Missing SDL2 driver module!");
 
-    if (auto driver_module = input::load_driver_module(alloc, res->location().path))
+    auto* engine_module_location = resources.find(URN{ "iceshard.dll" });
+    IS_ASSERT(engine_module_location != nullptr, "Missing engine module!");
+
+    if (auto engine_module = iceshard::load_engine_module(alloc, engine_module_location->location().path))
+    {
+        auto* engine_instance = engine_module->engine();
+
+        fmt::print("IceShard engine revision: {}\n", engine_instance->revision());
+    }
+
+
+    if (auto driver_module = input::load_driver_module(alloc, sdl_driver_module_location->location().path))
     {
         core::MessageBuffer messages{ alloc };
 

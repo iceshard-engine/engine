@@ -176,6 +176,8 @@ Settings
 
     // Game layer projects
     //--------------------------------------------------------------------------
+    #include "code/engine/engine.bff"
+    #include "code/iceshard/iceshard.bff"
     #include "code/application/application.bff"
 
     .SolutionFolder =
