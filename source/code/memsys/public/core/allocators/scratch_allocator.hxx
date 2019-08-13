@@ -49,6 +49,9 @@ namespace core::memory
         //! \brief The backing allocator.
         auto backing_allocator() noexcept -> core::allocator& { return _backing; }
 
+        //! \brief Resets the allocator forgetting about all allocations.
+        bool reset() noexcept;
+
     protected:
         //! \brief Checks if the given pointer is locked in the ring buffer.
         bool is_locked(void* pointer) noexcept;
