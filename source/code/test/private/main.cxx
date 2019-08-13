@@ -47,8 +47,6 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resources)
 
         fmt::print("IceShard engine revision: {}\n", engine_instance->revision());
 
-        iceshard::FrameMessage last_frame_msg{ 0, 0 };
-
         bool quit = false;
         while (quit == false)
         {
