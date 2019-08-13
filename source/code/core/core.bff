@@ -92,6 +92,14 @@
         .ProjectConfigs = .VSProjectConfigurations
         .ProjectInputPaths = .ProjectBaseDir
         .ProjectBasePath = .ProjectBaseDir
+        .ProjectAllowedFileExtensions = {
+            // Source files
+            '*.cxx', '*.hxx', '*.inl',
+            // Resource files
+            '*.rc', '*.resx',
+            // Meta files
+            '*.bff', '*.natvis',
+        }
     }
 
     // Register this project
