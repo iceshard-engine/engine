@@ -32,7 +32,7 @@ namespace core::memory
         _allocate = _begin;
         _free = _begin;
 
-        memset(_begin, 0, utils::pointer_distance(_begin, _end));
+        std::memset(_begin, 0, utils::pointer_distance(_begin, _end));
     }
 
     scratch_allocator::~scratch_allocator() noexcept
@@ -139,6 +139,19 @@ namespace core::memory
             distance += utils::pointer_distance(_begin, _end);
         }
         return distance;
+    }
+
+    bool scratch_allocator::reset() noexcept
+    {
+        const bool empty = total_allocated() == 0;
+        if (!empty)
+        {
+            _allocate = _begin;
+            _free = _begin;
+
+            std::memset(_begin, 0, utils::pointer_distance(_begin, _end));
+        }
+        return empty;
     }
 
     bool scratch_allocator::is_locked(void* pointer) noexcept
