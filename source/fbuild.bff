@@ -145,6 +145,7 @@ Settings
     // Systems projects
     //--------------------------------------------------------------------------
     #include "code/resource_system/resource_system.bff"
+    #include "code/render_system/render_system.bff"
     #include "code/input_system/input_system.bff"
 
     .SolutionFolder =
@@ -165,6 +166,7 @@ Settings
     // Driver projects
     //--------------------------------------------------------------------------
     #include "code/sdl2_driver/sdl2_driver.bff"
+    #include "code/opengl_driver/opengl_driver.bff"
 
     .SolutionFolder =
     [

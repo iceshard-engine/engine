@@ -1,0 +1,141 @@
+// Core
+//------------------------------------------------------------------------------
+{
+    .ProjectName        = 'opengl_driver'
+    .ProjectBaseDir = '$_CURRENT_BFF_DIR_$'
+
+
+    // Additional helper variables
+    //------------------------------------------------------------------------------
+    .ProjectConanModules = .WorkspaceConanModules
+        + 'SDL2'
+    .VSProjectConfigurations = { }
+
+    .ProjectCompilerOptions = ''
+        + ' /I"$ProjectBaseDir$/public"'
+        + ' /I"$WorkspaceCodeDir$/core/public"'
+        + ' /I"$WorkspaceCodeDir$/memsys/public"'
+        + ' /I"$WorkspaceCodeDir$/collections/public"'
+        + ' /I"$WorkspaceCodeDir$/messages/public"'
+        + ' /I"$WorkspaceCodeDir$/input_system/public"'
+
+
+    // Library
+    //--------------------------------------------------------------------------
+    ForEach( .Configuration in .Configurations )
+    {
+        Using( .Configuration )
+
+
+        // Conan Dependencies
+        //--------------------------------------------------------------------------
+        ForEach( .ConanModule in .ProjectConanModules )
+        {
+            Using( .'ConanModule_$ConanModule$_$ConanConfig$' )
+
+            ForEach( .IncludeDir in .IncludeDirs )
+            {
+                ^CompilerOptions + ' /I"$IncludeDir$"'
+            }
+            ForEach( .Define in .Defines )
+            {
+                ^CompilerOptions + ' /D$Define$'
+            }
+            ForEach( .LibraryDir in .LibDirs )
+            {
+                ^LinkerOptions + ' /LIBPATH:"$LibraryDir$"'
+            }
+            ForEach( .Library in .Libs )
+            {
+                ^LinkerOptions + ' "$Library$.lib"'
+            }
+        }
+
+
+        // Configuration properties
+        //--------------------------------------------------------------------------
+        .ConfigurationIntermediateDirectory = '$WorkspaceBuildDir$/obj/$Platform$-$Config$/$ProjectName$'
+        .ConfigurationTargetDirectory = '$WorkspaceBuildDir$/bin/$Platform$-$Config$/$ProjectName$'
+
+
+        // Object lists
+        //--------------------------------------------------------------------------
+        ObjectList( '$ProjectName$-$Platform$-$Config$-objects' )
+        {
+            .CompilerOptions + .ProjectCompilerOptions
+
+            .CompilerOutputPath = .ConfigurationIntermediateDirectory
+            .CompilerInputPath = '$ProjectBaseDir$/private'
+            .CompilerInputPattern = '*.c*'
+        }
+
+
+        // Library target
+        //--------------------------------------------------------------------------
+        DLL( '$ProjectName$-$Platform$-$Config$' )
+        {
+            .CompilerOutputPath = .ConfigurationIntermediateDirectory
+
+            .Libraries = {
+                '$ProjectName$-$Platform$-$Config$-objects'
+                'core-$Platform$-$Config$'
+                'memsys-$Platform$-$Config$'
+                'messages-$Platform$-$Config$'
+                'collections-$Platform$-$Config$'
+                'resource_system-$Platform$-$Config$'
+                'input_system-$Platform$-$Config$'
+            }
+
+            .LinkerOptions + ' /DLL'
+            .LinkerOutput = '$ConfigurationTargetDirectory$/$ProjectName$.dll'
+        }
+
+
+        // Visual Studio project configuration
+        //--------------------------------------------------------------------------
+        .VSProjectConfiguration =
+        [
+            .PlatformToolset = .PlatformToolset
+
+            .Platform = .Platform
+            .Config = .Config
+            .Target = '$ProjectName$-$Platform$-$Config$-objects'
+
+            .IntermediateDirectory = .ConfigurationIntermediateDirectory
+            .OutputDirectory = .ConfigurationTargetDirectory
+            .Output = '$ConfigurationTargetDirectory$/$ProjectName$.dll'
+
+            .ProjectBuildCommand = '$VSBuildCommand$ $ProjectName$-$Platform$-$Config$'
+            .ProjectRebuildCommand = '$VSRebuildCommand$ $ProjectName$-$Platform$-$Config$'
+        ]
+        ^VSProjectConfigurations + .VSProjectConfiguration
+    }
+
+
+    // Create a Visual Studio project description
+    //--------------------------------------------------------------------------
+    VCXProject( '$ProjectName$-vcxproj' )
+    {
+        .ProjectOutput = '$ProjectName$.vcxproj'
+        .ProjectConfigs = .VSProjectConfigurations
+        .ProjectBasePath = .ProjectBaseDir
+        .ProjectFiles = {
+            '$ProjectBaseDir$/$ProjectName$.bff'
+        }
+        .ProjectInputPaths = {
+            '$ProjectBaseDir$/public'
+            '$ProjectBaseDir$/private'
+        }
+    }
+
+
+    // Register this project
+    //--------------------------------------------------------------------------
+    ^Projects + .ProjectName
+    ^VisualStudioProjects + .ProjectName
+
+
+    // Add tests project
+    //--------------------------------------------------------------------------
+    // #include "../../scripts/tests.bff"
+}
