@@ -31,8 +31,6 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resources)
     using resource::URN;
     using resource::URI;
 
-    fmt::print("{}\n", res->data());
-
     resources.mount(URI{ resource::scheme_dynlib, "bin" });
     resources.mount(URI{ resource::scheme_directory, "../source/data/second" });
 
