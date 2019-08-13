@@ -18,8 +18,11 @@ namespace core
         //! \brief Clears the queue.
         void clear() noexcept;
 
-        //! \brief Pushes a new message with the given metadata and data.
+        //! \brief Pushes a new data block onto the queue.
         void push(core::data_view data) noexcept;
+
+        //! \brief Pushes a new data block onto the queue with the given alignment.
+        void push(core::data_view_aligned data) noexcept;
 
         //! \brief The current message count.
         auto count() const noexcept -> uint32_t { return _count; }

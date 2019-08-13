@@ -8,37 +8,53 @@ namespace core
     namespace detail
     {
         //! \brief An entry in the message queue.
-        struct MessageHeader
+        struct DataHeader
         {
             //! \brief Message data size.
             uint32_t data_size;
         };
 
         //! \brief Gets the header entry from the given pointer value.
-        auto get_header(void* buffer) noexcept -> MessageHeader*
+        auto get_header(void* buffer) noexcept -> DataHeader*
         {
-            return reinterpret_cast<MessageHeader*>(core::memory::utils::align_forward(buffer, alignof(MessageHeader)));
+            return reinterpret_cast<DataHeader*>(core::memory::utils::align_forward(buffer, alignof(DataHeader)));
         }
 
         //! \brief Gets the header entry from the given pointer value.
-        auto get_header(const void* buffer) noexcept -> const MessageHeader*
+        auto get_header(const void* buffer) noexcept -> const DataHeader*
         {
-            return reinterpret_cast<const MessageHeader*>(core::memory::utils::align_forward(buffer, alignof(MessageHeader)));
+            return reinterpret_cast<const DataHeader*>(core::memory::utils::align_forward(buffer, alignof(DataHeader)));
         }
 
         //! \brief Searches for the next header using the previous one.
-        auto next_header(const MessageHeader* previous) noexcept -> const MessageHeader*
+        auto next_header(const DataHeader* previous) noexcept -> const DataHeader*
         {
-            return reinterpret_cast<const MessageHeader*>(core::memory::utils::align_forward(
-                core::memory::utils::pointer_add(previous, sizeof(MessageHeader) + previous->data_size)
-                , alignof(MessageHeader)
+            return reinterpret_cast<const DataHeader*>(core::memory::utils::align_forward(
+                core::memory::utils::pointer_add(previous, sizeof(DataHeader) + previous->data_size)
+                , alignof(DataHeader)
             ));
         }
 
-        //! \brief Sets the data for the given message.
-        auto set_data(MessageHeader* header, core::data_view data) noexcept
+        //! \brief Sets the data block.
+        auto set_data(DataHeader* header, core::data_view data) noexcept
         {
-            void* data_location = core::memory::utils::pointer_add(header, sizeof(MessageHeader));
+            void* data_location = core::memory::utils::pointer_add(header, sizeof(DataHeader));
+            std::memcpy(data_location, data._data, data._size);
+
+            // Save the size of the data buffer in the header so we can later traverse it.
+            header->data_size = data._size;
+        }
+
+        //! \brief Sets the data block with the given alignment.
+        auto set_data(DataHeader* header, core::data_view_aligned data) noexcept
+        {
+            void* data_location = core::memory::utils::align_forward(
+                core::memory::utils::pointer_add(
+                    header
+                    , sizeof(DataHeader))
+                , data._align
+            );
+
             std::memcpy(data_location, data._data, data._size);
 
             // Save the size of the data buffer in the header so we can later traverse it.
@@ -46,9 +62,9 @@ namespace core
         }
 
         //! \brief Returns a view into the data of a given message.
-        auto get_data(const MessageHeader* header) noexcept -> core::data_view
+        auto get_data(const DataHeader* header) noexcept -> core::data_view
         {
-            auto* data_location = core::memory::utils::pointer_add(header, sizeof(MessageHeader));
+            auto* data_location = core::memory::utils::pointer_add(header, sizeof(DataHeader));
             return { data_location, header->data_size };
         }
     }
@@ -76,7 +92,34 @@ namespace core
         const auto* end_header = detail::get_header(
             core::memory::utils::pointer_add(
                 core::buffer::begin(_data)
-                , core::buffer::size(_data) + sizeof(detail::MessageHeader) + data._size
+                , core::buffer::size(_data) + sizeof(detail::DataHeader) + data._size
+            )
+        );
+
+        const auto required_size = core::memory::utils::pointer_distance(core::buffer::begin(_data), end_header);
+
+        // Reserve enough memory
+        core::buffer::reserve(_data, required_size);
+
+        auto* header = detail::get_header(core::buffer::end(_data));
+
+        // Set the data buffer
+        detail::set_data(header, data);
+
+        // Resize the buffer
+        core::buffer::resize(_data, required_size);
+
+        // Increment the message counter
+        _count += 1;
+    }
+
+    void data_queue::push(core::data_view_aligned data) noexcept
+    {
+        // We need to know the last header to properly calculate the required size.
+        const auto* end_header = detail::get_header(
+            core::memory::utils::pointer_add(
+                core::buffer::begin(_data)
+                , core::buffer::size(_data) + sizeof(detail::DataHeader) + data._size + data._align
             )
         );
 

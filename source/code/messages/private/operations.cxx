@@ -20,7 +20,7 @@ namespace core::message
         buffer.push(message_type);
     }
 
-    void push(MessageBuffer& buffer, core::cexpr::stringid_argument_type message_type, core::data_view message_data) noexcept
+    void push(MessageBuffer& buffer, core::cexpr::stringid_argument_type message_type, core::data_view_aligned message_data) noexcept
     {
         buffer.push(message_type, message_data);
     }

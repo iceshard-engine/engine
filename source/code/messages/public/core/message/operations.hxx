@@ -26,7 +26,7 @@ namespace core
         void push(MessageBuffer& buffer, core::cexpr::stringid_argument_type message_type) noexcept;
 
         //! \todo document.
-        void push(MessageBuffer& buffer, core::cexpr::stringid_argument_type message_type, core::data_view message_data) noexcept;
+        void push(MessageBuffer& buffer, core::cexpr::stringid_argument_type message_type, core::data_view_aligned data) noexcept;
 
         //! \todo document.
         template<typename T>
@@ -93,7 +93,7 @@ namespace core
             , "Invalid type of message member 'message_type', expected 'core::cexpr::stringid_type'!"
         );
 
-        message::push(buffer, T::message_type, { &msg, sizeof(T) });
+        message::push(buffer, T::message_type, { &msg, sizeof(T), alignof(T) });
     }
 
     template<typename T>

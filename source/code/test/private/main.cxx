@@ -25,28 +25,6 @@
 #include <fmt/format.h>
 #include <application/application.hxx>
 
-using core::cexpr::stringid;
-using core::cexpr::stringid_invalid;
-
-struct TestFileRequest
-{
-    static const core::cexpr::stringid_type message_type;
-
-    resource::URN name;
-    bool load;
-};
-
-const core::cexpr::stringid_type TestFileRequest::message_type{ core::cexpr::stringid("TestFileRequest") };
-
-struct TestFileRequest2
-{
-    static const core::cexpr::stringid_type message_type;
-
-    resource::URI location;
-    bool load;
-};
-
-const core::cexpr::stringid_type TestFileRequest2::message_type{ core::cexpr::stringid("TestFileRequest2") };
 
 int game_main(core::allocator& alloc, resource::ResourceSystem& resources)
 {
