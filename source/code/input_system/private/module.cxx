@@ -44,9 +44,9 @@ namespace input
 
             HMODULE _module_handle;
 
-            InputSystem* _media_driver_object;
+            InputSystem* const _media_driver_object;
 
-            InputSystemReleaseFunc* _media_driver_release_func;
+            InputSystemReleaseFunc* const _media_driver_release_func;
         };
 
     } // namespace detail

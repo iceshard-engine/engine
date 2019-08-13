@@ -1,7 +1,7 @@
 // Core
 //------------------------------------------------------------------------------
 {
-    .ProjectName        = 'test'
+    .ProjectName        = 'iceshard'
     .ProjectBaseDir = '$_CURRENT_BFF_DIR_$'
 
 
@@ -60,7 +60,6 @@
                 + ' /I"$WorkspaceCodeDir$/collections/public"'
                 + ' /I"$WorkspaceCodeDir$/resource_system/public"'
                 + ' /I"$WorkspaceCodeDir$/input_system/public"'
-                + ' /I"$WorkspaceCodeDir$/application/public"'
                 + ' /I"$WorkspaceCodeDir$/engine/public"'
 
             .CompilerOutputPath = .ConfigurationIntermediateDirectory
@@ -71,7 +70,7 @@
 
         // Library target
         //--------------------------------------------------------------------------
-        Executable( '$ProjectName$-$Platform$-$Config$' )
+        DLL( '$ProjectName$-$Platform$-$Config$' )
         {
             .CompilerOutputPath = .ConfigurationIntermediateDirectory
 
@@ -84,10 +83,10 @@
                 'resource_system-$Platform$-$Config$'
                 'input_system-$Platform$-$Config$'
                 'engine-$Platform$-$Config$'
-                'application-$Platform$-$Config$-objects'
             }
 
-            .LinkerOutput = '$ConfigurationTargetDirectory$/$ProjectName$.exe'
+            .LinkerOptions + ' /DLL'
+            .LinkerOutput = '$ConfigurationTargetDirectory$/$ProjectName$.dll'
         }
 
 
@@ -103,7 +102,7 @@
 
             .IntermediateDirectory = .ConfigurationIntermediateDirectory
             .OutputDirectory = .ConfigurationTargetDirectory
-            .Output = '$ConfigurationTargetDirectory$/$ProjectName$.exe'
+            .Output = '$ConfigurationTargetDirectory$/$ProjectName$.dll'
 
             .ProjectBuildCommand = '$VSBuildCommand$ $ProjectName$-$Platform$-$Config$'
             .ProjectRebuildCommand = '$VSRebuildCommand$ $ProjectName$-$Platform$-$Config$'
