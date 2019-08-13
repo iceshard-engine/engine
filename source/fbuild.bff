@@ -37,6 +37,9 @@ Settings
     Using( .msvcLinkerOptions )
     Using( .msvcLibrarianOptions )
 
+    .CompilerOptions + ' /await'
+        + ' /wd4307'
+
     .Platform = 'x64'
 ]
 
@@ -48,6 +51,7 @@ Settings
 [
     .Config = 'Debug'
     .CompilerOptions = ' /D_DEBUG'
+        + ' /INCREMENTAL'
         + ' /Od'
         + ' /Z7'
         + ' /MDd'
@@ -61,6 +65,7 @@ Settings
 [
     .Config = 'ReleaseDebug'
     .CompilerOptions = ' /D_RDEBUG'
+        + ' /INCREMENTAL'
         + ' /O2'
         + ' /Z7'
         + ' /MD'
@@ -75,8 +80,10 @@ Settings
     .Config = 'Release'
     .CompilerOptions = ' /D_NDEBUG'
         + ' /O2'
-        // + ' /Z7'
+        + ' /Z7'
         + ' /MD'
+
+    .LinkerOptions = ' /DEBUG:FASTLINK'
 
     .ConanConfig = 'Release'
 ]
