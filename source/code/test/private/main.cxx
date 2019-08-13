@@ -1,4 +1,3 @@
-#define _CRT_SECURE_NO_WARNINGS
 #include <core/memory.hxx>
 #include <core/allocators/proxy_allocator.hxx>
 #include <core/string.hxx>
@@ -25,8 +24,6 @@
 
 #include <fmt/format.h>
 #include <application/application.hxx>
-
-#include <dia2.h>
 
 using core::cexpr::stringid;
 using core::cexpr::stringid_invalid;
