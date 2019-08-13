@@ -15,7 +15,7 @@ namespace resource
     class FileSystem : public ResourceModule
     {
     public:
-        FileSystem(core::allocator& alloc, std::string_view basedir) noexcept;
+        FileSystem(core::allocator& alloc, core::StringView<> basedir) noexcept;
         ~FileSystem() noexcept;
 
         //! \brief Searches for the default resource with the given name.
@@ -25,7 +25,7 @@ namespace resource
         auto mount(const URI& uri, std::function<void(Resource*)> callback) noexcept -> uint32_t override;
 
     private:
-        const std::string _basedir;
+        const core::String<> _basedir;
 
         //! \brief The resource allocator.
         core::memory::proxy_allocator _allocator;

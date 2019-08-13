@@ -82,6 +82,12 @@ namespace resource
 
         void mount_directory(core::allocator& alloc, std::filesystem::path path, core::pod::Array<Resource*>& entry_list, std::function<void(Resource*)> callback) noexcept
         {
+            if (std::filesystem::is_directory(path) == false)
+            {
+                // #todo Warning
+                return;
+            }
+
             // Build the path
             path = std::filesystem::canonical(path);
 
@@ -108,6 +114,12 @@ namespace resource
 
         void mount_file(core::allocator& alloc, std::filesystem::path path, core::pod::Array<Resource*>& entry_list, std::function<void(Resource*)> callback) noexcept
         {
+            if (std::filesystem::is_regular_file(path) == false)
+            {
+                // #todo Warning
+                return;
+            }
+
             // Build the path
             auto canonical_path = std::filesystem::canonical(path);
 
@@ -126,8 +138,8 @@ namespace resource
 
     } // namespace detail
 
-    FileSystem::FileSystem(core::allocator& alloc, std::string_view basedir) noexcept
-        : _basedir{ basedir }
+    FileSystem::FileSystem(core::allocator& alloc, core::StringView<> basedir) noexcept
+        : _basedir{ alloc, core::string::begin(basedir) }
         , _allocator{ "resource-system", alloc }
         , _resources{ _allocator }
     {
@@ -155,7 +167,7 @@ namespace resource
                 continue;
             }
 
-            auto uri_path = std::filesystem::canonical(_basedir / std::filesystem::path{ core::string::begin(uri.path) }).generic_string();
+            auto uri_path = std::filesystem::canonical(_basedir._data / std::filesystem::path{ core::string::begin(uri.path) }).generic_string();
             if (!core::string::equals(res_uri.path, uri_path))
             {
                 continue;
@@ -175,11 +187,11 @@ namespace resource
     {
         if (uri.scheme == resource::scheme_file)
         {
-            detail::mount_file(_allocator, std::filesystem::path{ _basedir } / core::string::begin(uri.path), _resources, callback);
+            detail::mount_file(_allocator, std::filesystem::path{ _basedir._data } / core::string::begin(uri.path), _resources, callback);
         }
         else if (uri.scheme == resource::scheme_directory)
         {
-            detail::mount_directory(_allocator, std::filesystem::path{ _basedir } / core::string::begin(uri.path), _resources, callback);
+            detail::mount_directory(_allocator, std::filesystem::path{ _basedir._data } / core::string::begin(uri.path), _resources, callback);
         }
         return 0;
     }
