@@ -93,7 +93,7 @@ namespace fmt
             }
             else
             {
-#if CFG_RELEASE == 0
+#if STRINGID_DEBUG == 1
                 return fmt::format_to(ctx.begin(), "{}:{}", resource::scheme_resource.hash_origin, urn.name.hash_origin);
 #else
                 return fmt::format_to(ctx.begin(), "{}:{}", resource::scheme_resource, urn.name);
@@ -122,7 +122,7 @@ namespace fmt
             else
             {
                 auto format_string = std::string_view{ uri.fragment == core::cexpr::stringid_invalid ? "{0}:{2}" : "{0}:{2}#{1}" };
-#if CFG_RELEASE == 0
+#if STRINGID_DEBUG == 1
                 auto format_args = fmt::make_format_args(
                     uri.scheme.hash_origin
                     , uri.fragment.hash_origin
