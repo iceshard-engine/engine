@@ -62,6 +62,12 @@ namespace resource
 
         void mount_modules(core::allocator& alloc, std::filesystem::path path, core::pod::Array<Resource*>& entry_list, std::function<void(Resource*)> callback) noexcept
         {
+            if (std::filesystem::is_directory(path) == false)
+            {
+                // #todo Warning
+                return;
+            }
+
             // Build the path
             path = std::filesystem::canonical(path);
 
@@ -147,7 +153,7 @@ namespace resource
         // Mount DLL's in the application dir.
         if (initial_mount_finished == false)
         {
-            detail::mount_modules(_allocator, _app_dir, _resources, callback);
+            detail::mount_modules(_allocator, _app_dir / std::filesystem::path{ ".." }, _resources, callback);
             initial_mount_finished = true;
         }
 
