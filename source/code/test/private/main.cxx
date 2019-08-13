@@ -31,9 +31,6 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resources)
     using resource::URN;
     using resource::URI;
 
-    techland.mount(URI{ resource::scheme_features, "*" });
-    auto* res = techland.find(URN{ "latest" });
-
     fmt::print("{}\n", res->data());
 
     resources.mount(URI{ resource::scheme_dynlib, "bin" });
