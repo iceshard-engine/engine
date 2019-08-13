@@ -27,6 +27,7 @@
 
 #include <iceshard/module.hxx>
 #include <iceshard/engine.hxx>
+#include <iceshard/frame.hxx>
 
 
 int game_main(core::allocator& alloc, resource::ResourceSystem& resources)
@@ -45,29 +46,22 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resources)
         auto* engine_instance = engine_module->engine();
 
         fmt::print("IceShard engine revision: {}\n", engine_instance->revision());
-        core::MessageBuffer messages{ alloc };
 
-        auto* input_sys = engine_instance->input_system();
+        iceshard::FrameMessage last_frame_msg{ 0, 0 };
 
         bool quit = false;
         while (quit == false)
         {
-            core::message::clear(messages);
-
-            // Get all messages
-            input_sys->query_messages(messages);
+            auto& current_frame = engine_instance->current_frame();
 
             // Check for the quit message
-            core::message::filter<input::message::AppExit>(messages, [&quit](const auto&) noexcept
+            core::message::filter<input::message::AppExit>(current_frame.messages(), [&quit](const auto&) noexcept
                 {
                     quit = true;
                 });
 
-            // Check for the quit message
-            core::message::filter<input::message::MouseMotion>(messages, [](const auto& msg) noexcept
-                {
-                    fmt::print("Mouse{{ {}:{} }}\n", msg.x, msg.y);
-                });
+            // Update the engine state.
+            engine_instance->next_frame();
         }
     }
 
