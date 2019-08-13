@@ -11,7 +11,7 @@ namespace iceshard
 {
     namespace detail
     {
-        using EngineCreateFunc = Engine*(core::allocator&);
+        using EngineCreateFunc = Engine*(core::allocator&, resource::ResourceSystem&);
         using EngineReleaseFunc = void(core::allocator&, Engine*);
 
         //! \brief A dynamic loaded engine DLL module.
@@ -56,7 +56,7 @@ namespace iceshard
 
     } // namespace detail
 
-    auto load_engine_module(core::allocator& alloc, core::StringView<> path) noexcept -> core::memory::unique_pointer<EngineModule>
+    auto load_engine_module(core::allocator& alloc, core::StringView<> path, resource::ResourceSystem& resources) noexcept -> core::memory::unique_pointer<EngineModule>
     {
         auto module_path = std::filesystem::canonical(core::string::begin(path));
 
@@ -76,7 +76,7 @@ namespace iceshard
                 auto create_func = reinterpret_cast<detail::EngineCreateFunc*>(create_engine_addr);
                 auto release_func = reinterpret_cast<detail::EngineReleaseFunc*>(release_engine_addr);
 
-                result = { alloc.make<detail::EngineDynamicModule>(alloc, module_handle, create_func(alloc), release_func), alloc };
+                result = { alloc.make<detail::EngineDynamicModule>(alloc, module_handle, create_func(alloc, resources), release_func), alloc };
             }
         }
 
