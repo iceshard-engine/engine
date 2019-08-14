@@ -19,7 +19,7 @@ Settings
 .WorkspaceBuildDir = '$WorkspaceRoot$/build'
 .WorkspaceCodeDir = '$_CURRENT_BFF_DIR_$/code'
 
-.WorkspaceConanModules = { 'fmt' }
+.WorkspaceConanModules = { 'fmt', 'cppcoro' }
 
 ; Configuration names
 .ConfigNameDebug = 'Debug'
