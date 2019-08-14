@@ -15,7 +15,7 @@ namespace iceshard
         static uint32_t next_frame_index = 0;
     }
 
-    CoroutineFrame::CoroutineFrame(core::memory::scratch_allocator& alloc) noexcept
+    MemoryFrame::MemoryFrame(core::memory::scratch_allocator& alloc) noexcept
         : iceshard::Frame{ }
         , _frame_allocator{ alloc }
         , _message_allocator{ _frame_allocator, detail::message_allocator_pool }
@@ -25,17 +25,17 @@ namespace iceshard
         core::message::push(_frame_messages, FrameMessage{ detail::next_frame_index++, core::datetime::now().tick });
     }
 
-    CoroutineFrame::~CoroutineFrame() noexcept
+    MemoryFrame::~MemoryFrame() noexcept
     {
         core::message::clear(_frame_messages);
     }
 
-    auto CoroutineFrame::messages() const noexcept -> const core::MessageBuffer&
+    auto MemoryFrame::messages() const noexcept -> const core::MessageBuffer&
     {
         return _frame_messages;
     }
 
-    auto CoroutineFrame::frame_allocator() noexcept -> core::allocator&
+    auto MemoryFrame::frame_allocator() noexcept -> core::allocator&
     {
         return _data_allocator;
     }

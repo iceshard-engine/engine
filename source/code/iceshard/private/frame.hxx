@@ -8,11 +8,11 @@ namespace iceshard
 {
 
 
-    class CoroutineFrame : public iceshard::Frame
+    class MemoryFrame : public iceshard::Frame
     {
     public:
-        CoroutineFrame(core::memory::scratch_allocator& alloc) noexcept;
-        ~CoroutineFrame() noexcept;
+        MemoryFrame(core::memory::scratch_allocator& alloc) noexcept;
+        ~MemoryFrame() noexcept;
 
         auto messages() noexcept -> core::MessageBuffer& { return _frame_messages; }
 
