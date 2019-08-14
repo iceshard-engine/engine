@@ -3,6 +3,9 @@
 #include <core/pointer.hxx>
 #include <input_system/system.hxx>
 
+#include <cppcoro/task.hpp>
+#include <functional>
+
 namespace iceshard
 {
 
@@ -32,6 +35,13 @@ namespace iceshard
 
         //! \brief Updates the engine internal state for the next frame.
         virtual void next_frame() noexcept = 0;
+
+        //! \brief Creates a task in the current frame.
+        void create_task(std::function<cppcoro::task<>(core::allocator&)> task) noexcept;
+
+    protected:
+        //! \brief Adds a task to the current frame.
+        virtual void add_task(cppcoro::task<> task) noexcept = 0;
     };
 
 

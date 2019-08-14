@@ -7,7 +7,7 @@ namespace iceshard
 {
 
 
-    //! \brief A simple message pushed at the beggining on each new frame.
+    //! \brief A simple message pushed at the beginning on each new frame.
     struct FrameMessage
     {
         static constexpr core::cexpr::stringid_type message_type = core::cexpr::stringid_cexpr("FrameMessage");
