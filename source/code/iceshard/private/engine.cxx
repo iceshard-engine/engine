@@ -84,17 +84,25 @@ namespace iceshard
                 cppcoro::when_all_ready(std::move(_frame_tasks))
             );
 
+
+            // Move the current frame to the 'previous' slot.
             _previous_frame = std::move(_current_frame);
+
+            // Reset the frame allocator inner pointers.
+            [[maybe_unused]]
+            const bool successful_reset = _frame_data_allocator[_next_free_allocator].reset();
+            IS_ASSERT(successful_reset == true, "Memory was discarded during frame allocator reset!");
+
             _current_frame = core::memory::make_unique<CoroutineFrame>(_frame_allocator, _frame_data_allocator[_next_free_allocator]);
+
 
             // We need to update the allocator index
             _next_free_allocator += 1;
             _next_free_allocator %= detail::array_element_count(_frame_data_allocator);
 
+
             // Now we want to get all messages for the current frame.
             auto* inputs = input_system();
-
-            // Query the input system messages
             inputs->query_messages(_current_frame->messages());
         }
 
