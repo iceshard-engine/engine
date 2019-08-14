@@ -144,12 +144,12 @@ namespace core::memory
     bool scratch_allocator::reset() noexcept
     {
         const bool empty = total_allocated() == 0;
-        if (!empty)
-        {
-            _allocate = _begin;
-            _free = _begin;
 
-        }
+        // Always reset pointers on the allocator!
+        _allocate = _begin;
+        _free = _begin;
+
+        // Set the memory to zeros
         std::memset(_begin, 0, utils::pointer_distance(_begin, _end));
         return empty;
     }
