@@ -56,7 +56,7 @@ namespace core
         };
 
         //! \brief Begin iterator for this data queue.
-        auto begin() const noexcept->Iterator;
+        auto begin() const noexcept -> Iterator;
 
         //! \brief End iterator for this data queue.
         auto end() const noexcept -> Iterator;
