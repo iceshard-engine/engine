@@ -39,11 +39,11 @@ namespace iceshard
             , _resources{ resources }
             , _input_module{ nullptr, { _allocator } }
             // Frames allocators
-            , _frame_allocator{ _allocator, sizeof(CoroutineFrame) * 5 }
+            , _frame_allocator{ _allocator, sizeof(MemoryFrame) * 5 }
             , _frame_data_allocator{ { _allocator, detail::FrameAllocatorCapacity }, { _allocator, detail::FrameAllocatorCapacity } }
             // Frames
-            , _previous_frame{ core::memory::make_unique<CoroutineFrame>(_frame_allocator, _frame_data_allocator[0]) }
-            , _current_frame{ core::memory::make_unique<CoroutineFrame>(_frame_allocator, _frame_data_allocator[1]) }
+            , _previous_frame{ core::memory::make_unique<MemoryFrame>(_frame_allocator, _frame_data_allocator[0]) }
+            , _current_frame{ core::memory::make_unique<MemoryFrame>(_frame_allocator, _frame_data_allocator[1]) }
         {
             auto* sdl_driver_module_location = resources.find({ "sdl2_driver.dll" });
             IS_ASSERT(sdl_driver_module_location != nullptr, "Missing SDL2 driver module!");
@@ -93,7 +93,7 @@ namespace iceshard
             const bool successful_reset = _frame_data_allocator[_next_free_allocator].reset();
             IS_ASSERT(successful_reset == true, "Memory was discarded during frame allocator reset!");
 
-            _current_frame = core::memory::make_unique<CoroutineFrame>(_frame_allocator, _frame_data_allocator[_next_free_allocator]);
+            _current_frame = core::memory::make_unique<MemoryFrame>(_frame_allocator, _frame_data_allocator[_next_free_allocator]);
 
 
             // We need to update the allocator index
@@ -130,8 +130,8 @@ namespace iceshard
         core::memory::scratch_allocator _frame_data_allocator[2];
 
         // Frames.
-        core::memory::unique_pointer<CoroutineFrame> _previous_frame;
-        core::memory::unique_pointer<CoroutineFrame> _current_frame;
+        core::memory::unique_pointer<MemoryFrame> _previous_frame;
+        core::memory::unique_pointer<MemoryFrame> _current_frame;
     };
 
 }
