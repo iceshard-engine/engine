@@ -149,8 +149,8 @@ namespace core::memory
             _allocate = _begin;
             _free = _begin;
 
-            std::memset(_begin, 0, utils::pointer_distance(_begin, _end));
         }
+        std::memset(_begin, 0, utils::pointer_distance(_begin, _end));
         return empty;
     }
 
