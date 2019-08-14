@@ -58,6 +58,22 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resources)
                     quit = true;
                 });
 
+
+            engine_instance->create_task([](core::allocator& frame_alloc) noexcept -> cppcoro::task<>
+                {
+                    void* ptr = frame_alloc.allocate(sizeof(int) * 10);
+
+                    core::String<> test_string{ frame_alloc, "test string" };
+                    test_string += test_string;
+                    test_string += test_string;
+                    test_string += test_string;
+                    test_string += test_string;
+                    test_string += test_string;
+
+                    frame_alloc.deallocate(ptr);
+                    co_return;
+                });
+
             // Update the engine state.
             engine_instance->next_frame();
         }

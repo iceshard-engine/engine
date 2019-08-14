@@ -23,6 +23,9 @@ namespace iceshard
     private:
         core::memory::scratch_allocator& _frame_allocator;
 
+        core::memory::scratch_allocator _message_allocator;
+        core::memory::scratch_allocator _data_allocator;
+
         core::MessageBuffer _frame_messages;
     };
 

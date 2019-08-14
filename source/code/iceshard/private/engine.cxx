@@ -7,6 +7,10 @@
 #include <core/allocators/proxy_allocator.hxx>
 #include <core/allocators/scratch_allocator.hxx>
 
+#include <cppcoro/task.hpp>
+#include <cppcoro/sync_wait.hpp>
+#include <cppcoro/when_all_ready.hpp>
+
 #include "frame.hxx"
 
 namespace iceshard
@@ -14,9 +18,9 @@ namespace iceshard
     namespace detail
     {
 
-        static constexpr auto MiB = 1024 * 1024;
+        static constexpr auto MiB = 1024u * 1024u;
 
-        static constexpr auto FrameAllocatorCapacity = 256 * detail::MiB;
+        static constexpr auto FrameAllocatorCapacity = 256u * detail::MiB;
 
         template<typename T, uint32_t Size>
         constexpr auto array_element_count(T(&)[Size]) noexcept
@@ -76,6 +80,10 @@ namespace iceshard
 
         void next_frame() noexcept override
         {
+            cppcoro::sync_wait(
+                cppcoro::when_all_ready(std::move(_frame_tasks))
+            );
+
             _previous_frame = std::move(_current_frame);
             _current_frame = core::memory::make_unique<CoroutineFrame>(_frame_allocator, _frame_data_allocator[_next_free_allocator]);
 
@@ -90,22 +98,30 @@ namespace iceshard
             inputs->query_messages(_current_frame->messages());
         }
 
+        void add_task(cppcoro::task<> task) noexcept override
+        {
+            _frame_tasks.push_back(std::move(task));
+        }
+
     private:
         core::memory::proxy_allocator _allocator;
 
-        //! \brief The provided resource system.
+        // Resource systems.
         resource::ResourceSystem& _resources;
 
-        //! \brief The loaded input system.
+        // Input system.
         core::memory::unique_pointer<input::InputModule> _input_module;
 
-        // Frame allocators
+        // Tasks to be run this frame.
+        std::vector<cppcoro::task<>> _frame_tasks;
+
+        // Frame allocators.
         uint32_t _next_free_allocator = 0;
 
         core::memory::scratch_allocator _frame_allocator;
         core::memory::scratch_allocator _frame_data_allocator[2];
 
-        // Frames
+        // Frames.
         core::memory::unique_pointer<CoroutineFrame> _previous_frame;
         core::memory::unique_pointer<CoroutineFrame> _current_frame;
     };
