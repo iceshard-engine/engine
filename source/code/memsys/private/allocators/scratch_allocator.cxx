@@ -31,8 +31,6 @@ namespace core::memory
 
         _allocate = _begin;
         _free = _begin;
-
-        std::memset(_begin, 0, utils::pointer_distance(_begin, _end));
     }
 
     scratch_allocator::~scratch_allocator() noexcept
@@ -150,7 +148,6 @@ namespace core::memory
         _free = _begin;
 
         // Set the memory to zeros
-        std::memset(_begin, 0, utils::pointer_distance(_begin, _end));
         return empty;
     }
 
