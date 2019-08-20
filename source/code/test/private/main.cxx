@@ -50,19 +50,18 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resources)
         bool quit = false;
         while (quit == false)
         {
-            auto& current_frame = engine_instance->current_frame();
-
-            // Check for the quit message
-            core::message::filter<input::message::AppExit>(current_frame.messages(), [&quit](const auto&) noexcept
+            engine_instance->create_task([&quit](iceshard::Frame& frame) noexcept -> cppcoro::task<>
                 {
-                    quit = true;
-                });
-
-            engine_instance->create_task([](core::allocator& frame_alloc) noexcept -> cppcoro::task<>
-                {
-                    core::String<> hello_world_string{ frame_alloc, "Hello" };
+                    core::String<> hello_world_string{ frame.frame_allocator(), "Hello" };
                     hello_world_string += " World!";
                     fmt::print("{}\n", hello_world_string);
+
+                    // Check for the quit message
+                    core::message::filter<input::message::AppExit>(frame.messages(), [&quit](const auto&) noexcept
+                        {
+                            quit = true;
+                        });
+
                     co_return;
                 });
 
