@@ -60,6 +60,7 @@
                 + ' /I"$WorkspaceCodeDir$/collections/public"'
                 + ' /I"$WorkspaceCodeDir$/resource_system/public"'
                 + ' /I"$WorkspaceCodeDir$/input_system/public"'
+                + ' /I"$WorkspaceCodeDir$/render_system/public"'
                 + ' /I"$WorkspaceCodeDir$/engine/public"'
 
             .CompilerOutputPath = .ConfigurationIntermediateDirectory
@@ -82,6 +83,7 @@
                 'collections-$Platform$-$Config$'
                 'resource_system-$Platform$-$Config$'
                 'input_system-$Platform$-$Config$'
+                'render_system-$Platform$-$Config$'
                 'engine-$Platform$-$Config$'
             }
 

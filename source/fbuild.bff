@@ -89,6 +89,19 @@ Settings
 ]
 
 
+// Defined rendering system flags
+//--------------------------------------------------------------------------
+#import VULKAN_SDK
+.vulkan_x64_windows =
+[
+    .CompilerOptions = ''
+        + ' /I"$VULKAN_SDK$/Include"'
+
+    .LinkerOptions = ''
+        + ' /LIBPATH:"$VULKAN_SDK$/Lib"'
+        + ' "vulkan-1.lib"'
+]
+
 
 // Defined Configurations
 //--------------------------------------------------------------------------
@@ -166,7 +179,7 @@ Settings
     // Driver projects
     //--------------------------------------------------------------------------
     #include "code/sdl2_driver/sdl2_driver.bff"
-    #include "code/opengl_driver/opengl_driver.bff"
+    #include "code/vulkan_driver/vulkan_driver.bff"
 
     .SolutionFolder =
     [
