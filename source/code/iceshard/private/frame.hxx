@@ -8,16 +8,20 @@ namespace iceshard
 {
 
 
+    //! \brief A single engien frame with a preallocated ring buffer allocator.
     class MemoryFrame : public iceshard::Frame
     {
     public:
         MemoryFrame(core::memory::scratch_allocator& alloc) noexcept;
         ~MemoryFrame() noexcept;
 
+        //! \copydoc Frame::messages() noexcept
         auto messages() noexcept -> core::MessageBuffer& { return _frame_messages; }
 
+        //! \copydoc Frame::messages() const noexcept
         auto messages() const noexcept -> const core::MessageBuffer& override;
 
+        //! \copydoc Frame::frame_allocator() noexcept
         auto frame_allocator() noexcept -> core::allocator& override;
 
     private:
