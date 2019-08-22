@@ -14,4 +14,9 @@ namespace iceshard
         add_task(task(current_frame()));
     }
 
+    void Engine::create_task(std::function<cppcoro::task<>(iceshard::Engine&)> task) noexcept
+    {
+        add_task(task(*this));
+    }
+
 } // namespace iceshard

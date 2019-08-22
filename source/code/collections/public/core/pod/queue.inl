@@ -86,7 +86,7 @@ inline void core::pod::queue::reserve(Queue<T> &q, uint32_t size) noexcept
 template<typename T>
 inline void core::pod::queue::push_back(Queue<T> &q, const T &item) noexcept
 {
-    if (!space(q))
+    if (space(q) == 0)
     {
         queue_internal::grow(q);
     }

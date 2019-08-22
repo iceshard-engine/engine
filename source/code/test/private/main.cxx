@@ -9,6 +9,7 @@
 #include <core/cexpr/stringid.hxx>
 #include <core/scope_exit.hxx>
 #include <core/debug/profiler.hxx>
+#include <core/pod/hash.hxx>
 
 #include <resource/uri.hxx>
 #include <resource/system.hxx>
@@ -50,11 +51,9 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resources)
         bool quit = false;
         while (quit == false)
         {
-            engine_instance->create_task([&quit](iceshard::Frame& frame) noexcept -> cppcoro::task<>
+            engine_instance->create_task([&quit](iceshard::Engine& engine) noexcept -> cppcoro::task<>
                 {
-                    core::String<> hello_world_string{ frame.frame_allocator(), "Hello" };
-                    hello_world_string += " World!";
-                    fmt::print("{}\n", hello_world_string);
+                    auto& frame = engine.current_frame();
 
                     // Check for the quit message
                     core::message::filter<input::message::AppExit>(frame.messages(), [&quit](const auto&) noexcept
@@ -62,6 +61,14 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resources)
                             quit = true;
                         });
 
+
+                    int* new_counter = frame.new_frame_object<int>(core::cexpr::stringid("counter"), 0);
+                    if (const int* old_counter = engine.previous_frame().get_frame_object<int>(core::cexpr::stringid("counter")))
+                    {
+                        *new_counter = *old_counter + 1;
+                    }
+
+                    fmt::print("Accumulated value: {}\n", *new_counter);
                     co_return;
                 });
 

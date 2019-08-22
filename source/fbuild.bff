@@ -39,6 +39,7 @@ Settings
 
     .CompilerOptions + ' /await'
         + ' /wd4307'
+        + ' /permissive-'
 
     .Platform = 'x64'
 ]
