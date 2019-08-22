@@ -6,21 +6,21 @@ namespace iceshard::entity
 
 
     //! \brief A handle for a single entity.
-    enum class entity_handle : uint64_t { };
+    enum class entity_handle_type : uint64_t { };
 
     //! \brief An invalid entity handle object.
-    static constexpr entity_handle invalid_entity_handle{ 0 };
+    static constexpr entity_handle_type invalid_entity_handle{ 0 };
 
 
     //! \brief Checks if the entity handle is valid.
-    bool valid(entity_handle handle) noexcept;
+    bool valid(entity_handle_type handle) noexcept;
 
 
     //! \brief Entity handle equality operator.
-    bool operator==(entity_handle left, entity_handle right) noexcept;
+    bool operator==(entity_handle_type left, entity_handle_type right) noexcept;
 
     //! \brief Entity handle in-equality operator.
-    bool operator!=(entity_handle left, entity_handle right) noexcept;
+    bool operator!=(entity_handle_type left, entity_handle_type right) noexcept;
 
 
 } // namespace iceshard::entity
