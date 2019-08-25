@@ -34,3 +34,12 @@ iceshard build
 ```
 
 This will build the engine in the ReleaseDebug configuration for the host platform.
+
+## Aknowledgements 
+
+This project was heavily influenced by several articles, but mostly by the BitSquid development blog.
+Because of this some parts of the engine may resemble solutins which can be found in the blogs posts. 
+
+Additionally, some parts of the engine where based on the **BitSquid Foundation Library** which was discussed here: 
+https://bitsquid.blogspot.com/2012/11/bitsquid-foundation-library.html
+
