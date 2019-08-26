@@ -2,6 +2,7 @@
 #include <core/pod/array.hxx>
 #include <core/message/buffer.hxx>
 #include <core/message/operations.hxx>
+#include <core/allocators/proxy_allocator.hxx>
 
 #include <render_system/render_system.hxx>
 #include <render_system/render_commands.hxx>
@@ -59,6 +60,7 @@ namespace render
     public:
         VulkanRenderSystem(core::allocator& alloc) noexcept
             : render::RenderSystem{ }
+            , _driver_allocator{ "vulkan-driver", alloc }
             , _vulkan_allocator{ alloc }
             , _render_window{ nullptr }
             , _command_buffer{ alloc }
@@ -115,6 +117,23 @@ namespace render
 
             auto vk_create_result = vkCreateInstance(&instance_create_info, &alloc_callbacks, &_vulkan_instance);
             IS_ASSERT(vk_create_result == VK_SUCCESS, "Creation of Vulkan instance failed!");
+
+            enumerate_devices();
+        }
+
+        void enumerate_devices()
+        {
+            uint32_t device_count;
+            VkResult res = vkEnumeratePhysicalDevices(_vulkan_instance, &device_count, nullptr);
+            IS_ASSERT(res == VK_SUCCESS, "Couldn't properly query the number of available vulkan devices!");
+
+            core::pod::Array<VkPhysicalDevice> devices{ _driver_allocator };
+            core::pod::array::resize(devices, device_count);
+
+            vkEnumeratePhysicalDevices(_vulkan_instance, &device_count, &devices[0]);
+            IS_ASSERT(res == VK_SUCCESS, "Couldn't properly query available vulkan devices!");
+
+            fmt::print("Available Vulkan devices: {}\n", core::pod::array::size(devices));
         }
 
         void shutdown() noexcept
@@ -159,6 +178,9 @@ namespace render
         }
 
     private:
+        // Allocator for driver allocations.
+        core::memory::proxy_allocator _driver_allocator;
+
         // Special allocator for vulkan render system.
         render::vulkan::VulkanAllocator _vulkan_allocator;
 
