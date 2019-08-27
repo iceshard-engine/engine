@@ -8,6 +8,7 @@
 #include <render_system/render_commands.hxx>
 
 #include "vulkan_allocator.hxx"
+#include "device/vulkan_device.hxx"
 
 #include <SDL.h>
 
@@ -15,7 +16,6 @@
 #define NOMINMAX
 #include <SDL_syswm.h>
 
-#define VK_USE_PLATFORM_WIN32_KHR
 #include <vulkan/vulkan.h>
 
 #include <numeric>
@@ -64,6 +64,7 @@ namespace render
             , _vulkan_allocator{ alloc }
             , _render_window{ nullptr }
             , _command_buffer{ alloc }
+            , _vulkan_devices{ _driver_allocator }
         {
             const bool sdl2_init_video = SDL_InitSubSystem(SDL_INIT_VIDEO) == 0;
             if (sdl2_init_video == false)
@@ -121,23 +122,39 @@ namespace render
             enumerate_devices();
         }
 
-        void enumerate_devices()
+        void enumerate_devices() noexcept
         {
             uint32_t device_count;
             VkResult res = vkEnumeratePhysicalDevices(_vulkan_instance, &device_count, nullptr);
             IS_ASSERT(res == VK_SUCCESS, "Couldn't properly query the number of available vulkan devices!");
 
-            core::pod::Array<VkPhysicalDevice> devices{ _driver_allocator };
-            core::pod::array::resize(devices, device_count);
+            core::pod::Array<VkPhysicalDevice> devices_handles{ _driver_allocator };
+            core::pod::array::resize(devices_handles, device_count);
 
-            vkEnumeratePhysicalDevices(_vulkan_instance, &device_count, &devices[0]);
+            vkEnumeratePhysicalDevices(_vulkan_instance, &device_count, &devices_handles[0]);
             IS_ASSERT(res == VK_SUCCESS, "Couldn't properly query available vulkan devices!");
 
-            fmt::print("Available Vulkan devices: {}\n", core::pod::array::size(devices));
+            // Create VulkanDevice objects from the handles.
+            for (const auto& handle : devices_handles)
+            {
+                core::pod::array::push_back(_vulkan_devices, _driver_allocator.make<vulkan::VulkanDevice>(_driver_allocator, handle));
+            }
+            fmt::print("Available Vulkan devices: {}\n", core::pod::array::size(_vulkan_devices));
+        }
+
+        void release_devices() noexcept
+        {
+            for (auto* vulkan_device : _vulkan_devices)
+            {
+                _driver_allocator.destroy(vulkan_device);
+            }
+            core::pod::array::clear(_vulkan_devices);
         }
 
         void shutdown() noexcept
         {
+            release_devices();
+
             VkAllocationCallbacks alloc_callbacks = {};
             alloc_callbacks.pUserData = &_vulkan_allocator;
             alloc_callbacks.pfnAllocation = detail::vk_iceshard_allocate;
@@ -190,6 +207,9 @@ namespace render
 
         // The Vulkan instance handle.
         VkInstance _vulkan_instance{ };
+
+        // Array vulkan devices.
+        core::pod::Array<render::vulkan::VulkanDevice*> _vulkan_devices;
     };
 
 } // render
