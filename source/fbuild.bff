@@ -97,6 +97,7 @@ Settings
 [
     .CompilerOptions = ''
         + ' /I"$VULKAN_SDK$/Include"'
+        + ' /DVK_USE_PLATFORM_WIN32_KHR'
 
     .LinkerOptions = ''
         + ' /LIBPATH:"$VULKAN_SDK$/Lib"'
