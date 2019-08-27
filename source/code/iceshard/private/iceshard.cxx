@@ -53,7 +53,7 @@ namespace iceshard
 
             _input_module = input::load_driver_module(_allocator, sdl_driver_module_location->location().path);
             _entity_manager = core::memory::make_unique<entity::EntityManager>(_allocator, _allocator);
-            _world_manager = core::memory::make_unique<world::IceshardWorldManager>(_allocator, _allocator);
+            _world_manager = core::memory::make_unique<world::IceshardWorldManager>(_allocator, _allocator, _entity_manager.get());
         }
 
         ~IceShardEngine() noexcept
