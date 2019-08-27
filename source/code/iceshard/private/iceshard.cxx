@@ -70,7 +70,6 @@ namespace iceshard
                 IS_ASSERT(_render_module != nullptr, "Invalid Vulkan driver module! Unable to load!");
             }
 
-            _input_module = input::load_driver_module(_allocator, sdl_driver_module_location->location().path);
             _entity_manager = core::memory::make_unique<iceshard::EntityManager>(_allocator, _allocator);
             _serivce_provider = core::memory::make_unique<iceshard::IceshardServiceProvider>(_allocator, _allocator, _entity_manager.get());
 
@@ -163,6 +162,7 @@ namespace iceshard
 
         // Input system.
         core::memory::unique_pointer<input::InputModule> _input_module;
+        core::memory::unique_pointer<render::RenderSystemModule> _render_module;
 
         // Managers and service provider
         core::memory::unique_pointer<iceshard::EntityManager> _entity_manager;

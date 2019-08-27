@@ -8,7 +8,7 @@
 #include <render_system/render_commands.hxx>
 
 #include "vulkan_allocator.hxx"
-#include "device/vulkan_device.hxx"
+#include "device/vulkan_physical_device.hxx"
 
 #include <SDL.h>
 
@@ -134,10 +134,10 @@ namespace render
             vkEnumeratePhysicalDevices(_vulkan_instance, &device_count, &devices_handles[0]);
             IS_ASSERT(res == VK_SUCCESS, "Couldn't properly query available vulkan devices!");
 
-            // Create VulkanDevice objects from the handles.
+            // Create VulkanPhysicalDevice objects from the handles.
             for (const auto& handle : devices_handles)
             {
-                core::pod::array::push_back(_vulkan_devices, _driver_allocator.make<vulkan::VulkanDevice>(_driver_allocator, handle));
+                core::pod::array::push_back(_vulkan_devices, _driver_allocator.make<vulkan::VulkanPhysicalDevice>(_driver_allocator, handle));
             }
             fmt::print("Available Vulkan devices: {}\n", core::pod::array::size(_vulkan_devices));
         }
@@ -209,7 +209,7 @@ namespace render
         VkInstance _vulkan_instance{ };
 
         // Array vulkan devices.
-        core::pod::Array<render::vulkan::VulkanDevice*> _vulkan_devices;
+        core::pod::Array<render::vulkan::VulkanPhysicalDevice*> _vulkan_devices;
     };
 
 } // render

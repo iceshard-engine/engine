@@ -7,11 +7,11 @@ namespace render::vulkan
 
 
     //! \brief A single vulkan device.
-    class VulkanDevice final
+    class VulkanPhysicalDevice final
     {
     public:
-        VulkanDevice(core::allocator& alloc, VkPhysicalDevice device_handle) noexcept;
-        ~VulkanDevice() noexcept;
+        VulkanPhysicalDevice(core::allocator& alloc, VkPhysicalDevice device_handle) noexcept;
+        ~VulkanPhysicalDevice() noexcept;
 
         void initialize() noexcept;
 

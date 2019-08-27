@@ -1,22 +1,22 @@
-#include "vulkan_device.hxx"
+#include "vulkan_physical_device.hxx"
 #include <core/pod/array.hxx>
 
 namespace render::vulkan
 {
 
-    VulkanDevice::VulkanDevice(core::allocator& alloc, VkPhysicalDevice device_handle) noexcept
+    VulkanPhysicalDevice::VulkanPhysicalDevice(core::allocator& alloc, VkPhysicalDevice device_handle) noexcept
         : _allocator{ alloc }
         , _vulkan_physical_device{ device_handle }
     {
         initialize();
     }
 
-    VulkanDevice::~VulkanDevice() noexcept
+    VulkanPhysicalDevice::~VulkanPhysicalDevice() noexcept
     {
         shutdown();
     }
 
-    void VulkanDevice::initialize() noexcept
+    void VulkanPhysicalDevice::initialize() noexcept
     {
         uint32_t queue_family_count;
         vkGetPhysicalDeviceQueueFamilyProperties(_vulkan_physical_device, &queue_family_count, nullptr);
@@ -28,7 +28,7 @@ namespace render::vulkan
         fmt::print("Queue families found: {}\n", queue_family_count);
     }
 
-    void VulkanDevice::shutdown() noexcept
+    void VulkanPhysicalDevice::shutdown() noexcept
     {
     }
 
