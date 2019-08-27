@@ -61,14 +61,6 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resources)
                             quit = true;
                         });
 
-
-                    int* new_counter = frame.new_frame_object<int>(core::cexpr::stringid("counter"), 0);
-                    if (const int* old_counter = engine.previous_frame().get_frame_object<int>(core::cexpr::stringid("counter")))
-                    {
-                        *new_counter = *old_counter + 1;
-                    }
-
-                    fmt::print("Accumulated value: {}\n", *new_counter);
                     co_return;
                 });
 
