@@ -3,9 +3,9 @@
 #include <core/cexpr/stringid.hxx>
 
 #include <iceshard/entity/entity.hxx>
-#include <iceshard/component/service_provider.hxx>
+#include <iceshard/service_provider.hxx>
 
-namespace iceshard::world
+namespace iceshard
 {
 
 
@@ -15,7 +15,7 @@ namespace iceshard::world
     public:
         World(
             core::cexpr::stringid_argument_type world_name,
-            iceshard::entity::entity_handle_type world_entity
+            iceshard::entity_handle_type world_entity
         ) noexcept;
 
         virtual ~World() noexcept = default;
@@ -24,14 +24,14 @@ namespace iceshard::world
         auto name() const noexcept -> core::cexpr::stringid_type;
 
         //! \brief The world entity.
-        auto entity() const noexcept -> iceshard::entity::entity_handle_type;
+        auto entity() const noexcept -> iceshard::entity_handle_type;
 
         //! \brief The worlds service provider.
-        virtual auto service_provider() noexcept -> component::ServiceProvider* = 0;
+        virtual auto service_provider() noexcept -> iceshard::ServiceProvider* = 0;
 
     protected:
         const core::cexpr::stringid_type _name;
-        const iceshard::entity::entity_handle_type _entity;
+        const iceshard::entity_handle_type _entity;
     };
 
 

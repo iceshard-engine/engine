@@ -1,6 +1,6 @@
 #include <iceshard/entity/entity.hxx>
 
-namespace iceshard::entity
+namespace iceshard
 {
 
     bool valid(entity_handle_type handle) noexcept

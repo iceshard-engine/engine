@@ -1,6 +1,6 @@
 #include <iceshard/entity/entity_manager.hxx>
 
-namespace iceshard::entity
+namespace iceshard
 {
     namespace detail
     {

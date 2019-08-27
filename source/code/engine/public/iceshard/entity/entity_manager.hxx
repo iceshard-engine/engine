@@ -4,7 +4,7 @@
 #include <core/pod/queue.hxx>
 #include <iceshard/entity/entity.hxx>
 
-namespace iceshard::entity
+namespace iceshard
 {
 
 

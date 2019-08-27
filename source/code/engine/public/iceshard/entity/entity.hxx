@@ -1,7 +1,7 @@
 #pragma once
 #include <core/base.hxx>
 
-namespace iceshard::entity
+namespace iceshard
 {
 
 

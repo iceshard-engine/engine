@@ -7,7 +7,7 @@
 
 #include "iceshard_world.hxx"
 
-namespace iceshard::world
+namespace iceshard
 {
 
     class IceshardWorldManager : public WorldManager
@@ -15,7 +15,7 @@ namespace iceshard::world
     public:
         IceshardWorldManager(
             core::allocator& alloc,
-            iceshard::entity::EntityManager* entity_manager
+            iceshard::ServiceProvider* engine_service_provider
         ) noexcept;
 
         ~IceshardWorldManager() noexcept override = default;
@@ -29,7 +29,7 @@ namespace iceshard::world
     private:
         core::allocator& _allocator;
 
-        iceshard::entity::EntityManager* const _entity_manager;
+        iceshard::ServiceProvider* const _engine_service_provider;
 
         core::pod::Hash<IceshardWorld*> _worlds;
     };

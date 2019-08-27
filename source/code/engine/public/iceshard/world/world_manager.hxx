@@ -1,7 +1,7 @@
 #pragma once
 #include <core/cexpr/stringid.hxx>
 
-namespace iceshard::world
+namespace iceshard
 {
 
 
