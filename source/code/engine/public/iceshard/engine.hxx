@@ -1,7 +1,7 @@
 #pragma once
 #include <iceshard/world/world_manager.hxx>
 #include <iceshard/entity/entity_manager.hxx>
-#include <iceshard/component/service_provider.hxx>
+#include <iceshard/service_provider.hxx>
 
 #include <input_system/system.hxx>
 #include <core/allocator.hxx>
@@ -33,9 +33,9 @@ namespace iceshard
         virtual auto input_system() noexcept -> input::InputSystem* = 0;
 
     public:
-        virtual auto entity_manager() noexcept -> entity::EntityManager* = 0;
+        virtual auto entity_manager() noexcept -> iceshard::EntityManager* = 0;
 
-        virtual auto world_manager() noexcept -> world::WorldManager* = 0;
+        virtual auto world_manager() noexcept -> iceshard::WorldManager* = 0;
 
     public:
         //! \brief Returns the previous frame object.

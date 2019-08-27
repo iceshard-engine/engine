@@ -29,6 +29,7 @@
 #include <iceshard/module.hxx>
 #include <iceshard/engine.hxx>
 #include <iceshard/frame.hxx>
+#include <iceshard/world/world.hxx>
 
 
 int game_main(core::allocator& alloc, resource::ResourceSystem& resources)
@@ -66,14 +67,11 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resources)
 
                     [[maybe_unused]]
                     auto* test_world = engine.world_manager()->get_world(core::cexpr::stringid("test-world"));
+                    auto* services = test_world->service_provider();
+                    auto* entities = services->entity_manager();
 
-                    int* new_counter = frame.new_frame_object<int>(core::cexpr::stringid("counter"), 0);
-                    if (const int* old_counter = engine.previous_frame().get_frame_object<int>(core::cexpr::stringid("counter")))
-                    {
-                        *new_counter = *old_counter + 1;
-                    }
-
-                    fmt::print("Accumulated value: {}\n", *new_counter);
+                    auto e = entities->create();
+                    entities->destroy(e);
                     co_return;
                 });
 

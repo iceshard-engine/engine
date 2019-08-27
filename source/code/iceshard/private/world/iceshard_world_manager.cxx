@@ -1,16 +1,16 @@
 #include "iceshard_world_manager.hxx"
 #include <core/pod/hash.hxx>
 
-namespace iceshard::world
+namespace iceshard
 {
 
     IceshardWorldManager::IceshardWorldManager(
         core::allocator& alloc,
-        iceshard::entity::EntityManager* entity_manager
+        iceshard::ServiceProvider* engine_service_provider
     ) noexcept
         : WorldManager{ }
         , _allocator{ alloc }
-        , _entity_manager{ entity_manager }
+        , _engine_service_provider{ engine_service_provider }
         , _worlds{ _allocator }
     {
         core::pod::hash::reserve(_worlds, 5);
@@ -27,7 +27,7 @@ namespace iceshard::world
         IS_ASSERT(core::pod::hash::has(_worlds, world_hash_value) == false, "World with the given name already exist! [ name: {} ]", world_name);
 
         // Creates a new world object and saves it in the map
-        auto* world_instance = _allocator.make<IceshardWorld>(_allocator, world_name, _entity_manager->create(this));
+        auto* world_instance = _allocator.make<IceshardWorld>(_allocator, world_name, _engine_service_provider->entity_manager()->create(this), _engine_service_provider);
         core::pod::hash::set(_worlds, world_hash_value, world_instance);
 
         return world_instance;
@@ -43,7 +43,7 @@ namespace iceshard::world
         core::pod::hash::remove(_worlds, world_hash_value);
 
         // Destroy the entity object
-        _entity_manager->destroy(world_instance->entity());
+        _engine_service_provider->entity_manager()->destroy(world_instance->entity());
 
         // Destroys the world object
         _allocator.destroy(world_instance);
