@@ -48,6 +48,9 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resources)
 
         fmt::print("IceShard engine revision: {}\n", engine_instance->revision());
 
+        // Create a test world
+        engine_instance->world_manager()->create_world(core::cexpr::stringid("test-world"));
+
         bool quit = false;
         while (quit == false)
         {
@@ -61,6 +64,8 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resources)
                             quit = true;
                         });
 
+                    [[maybe_unused]]
+                    auto* test_world = engine.world_manager()->get_world(core::cexpr::stringid("test-world"));
 
                     int* new_counter = frame.new_frame_object<int>(core::cexpr::stringid("counter"), 0);
                     if (const int* old_counter = engine.previous_frame().get_frame_object<int>(core::cexpr::stringid("counter")))
@@ -75,6 +80,9 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resources)
             // Update the engine state.
             engine_instance->next_frame();
         }
+
+        // Destroy the test world
+        engine_instance->world_manager()->destroy_world(core::cexpr::stringid("test-world"));
     }
 
     return 0;
