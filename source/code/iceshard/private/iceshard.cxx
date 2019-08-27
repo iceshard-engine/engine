@@ -15,6 +15,7 @@
 
 #include "frame.hxx"
 #include "world/iceshard_world_manager.hxx"
+#include "iceshard_service_provider.hxx"
 
 namespace iceshard
 {
@@ -43,8 +44,9 @@ namespace iceshard
             , _input_module{ nullptr, { _allocator } }
             , _render_module{ nullptr, { _allocator } }
             // Managers
-            , _world_manager{ nullptr, { _allocator } }
             , _entity_manager{ nullptr, { _allocator } }
+            , _serivce_provider{ nullptr, { _allocator } }
+            , _world_manager{ nullptr, { _allocator } }
             // Frames allocators
             , _frame_allocator{ _allocator, sizeof(MemoryFrame) * 5 }
             , _frame_data_allocator{ { _allocator, detail::FrameAllocatorCapacity }, { _allocator, detail::FrameAllocatorCapacity } }
@@ -68,13 +70,18 @@ namespace iceshard
                 IS_ASSERT(_render_module != nullptr, "Invalid Vulkan driver module! Unable to load!");
             }
 
-            _entity_manager = core::memory::make_unique<entity::EntityManager>(_allocator, _allocator);
-            _world_manager = core::memory::make_unique<world::IceshardWorldManager>(_allocator, _allocator);
+            _input_module = input::load_driver_module(_allocator, sdl_driver_module_location->location().path);
+            _entity_manager = core::memory::make_unique<iceshard::EntityManager>(_allocator, _allocator);
+            _serivce_provider = core::memory::make_unique<iceshard::IceshardServiceProvider>(_allocator, _allocator, _entity_manager.get());
+
+            _world_manager = core::memory::make_unique<iceshard::IceshardWorldManager>(_allocator, _allocator, _serivce_provider.get());
         }
 
         ~IceShardEngine() noexcept
         {
             _world_manager = nullptr;
+
+            _serivce_provider = nullptr;
             _entity_manager = nullptr;
             _input_module = nullptr;
 
@@ -93,12 +100,12 @@ namespace iceshard
             return _input_module->input_system();
         }
 
-        auto entity_manager() noexcept -> entity::EntityManager* override
+        auto entity_manager() noexcept -> iceshard::EntityManager* override
         {
             return _entity_manager.get();
         }
 
-        auto world_manager() noexcept -> world::WorldManager* override
+        auto world_manager() noexcept -> iceshard::WorldManager* override
         {
             return _world_manager.get();
         }
@@ -157,12 +164,11 @@ namespace iceshard
         // Input system.
         core::memory::unique_pointer<input::InputModule> _input_module;
 
-        // Render system.
-        core::memory::unique_pointer<render::RenderSystemModule> _render_module;
+        // Managers and service provider
+        core::memory::unique_pointer<iceshard::EntityManager> _entity_manager;
+        core::memory::unique_pointer<iceshard::IceshardServiceProvider> _serivce_provider;
 
-        // Managers
-        core::memory::unique_pointer<entity::EntityManager> _entity_manager;
-        core::memory::unique_pointer<world::IceshardWorldManager> _world_manager;
+        core::memory::unique_pointer<iceshard::IceshardWorldManager> _world_manager;
 
         // Tasks to be run this frame.
         std::vector<cppcoro::task<>> _frame_tasks;

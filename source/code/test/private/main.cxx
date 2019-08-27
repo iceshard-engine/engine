@@ -29,6 +29,7 @@
 #include <iceshard/module.hxx>
 #include <iceshard/engine.hxx>
 #include <iceshard/frame.hxx>
+#include <iceshard/world/world.hxx>
 
 
 int game_main(core::allocator& alloc, resource::ResourceSystem& resources)
@@ -48,6 +49,9 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resources)
 
         fmt::print("IceShard engine revision: {}\n", engine_instance->revision());
 
+        // Create a test world
+        engine_instance->world_manager()->create_world(core::cexpr::stringid("test-world"));
+
         bool quit = false;
         while (quit == false)
         {
@@ -61,12 +65,22 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resources)
                             quit = true;
                         });
 
+                    [[maybe_unused]]
+                    auto* test_world = engine.world_manager()->get_world(core::cexpr::stringid("test-world"));
+                    auto* services = test_world->service_provider();
+                    auto* entities = services->entity_manager();
+
+                    auto e = entities->create();
+                    entities->destroy(e);
                     co_return;
                 });
 
             // Update the engine state.
             engine_instance->next_frame();
         }
+
+        // Destroy the test world
+        engine_instance->world_manager()->destroy_world(core::cexpr::stringid("test-world"));
     }
 
     return 0;
