@@ -118,14 +118,14 @@ namespace fmt
         {
             if (strid.hash_value == core::cexpr::stringid_hash_type{ 0 })
             {
-                return fmt::format_to(ctx.begin(), "{{sid:<invalid>}}");
+                return fmt::format_to(ctx.begin(), "[sid:<invalid>]");
             }
             else
             {
 #if STRINGID_DEBUG == 1
-                return fmt::format_to(ctx.begin(), "{{sid:{:16x}}}'{}'", static_cast<std::underlying_type_t<decltype(strid.hash_value)>>(strid.hash_value), strid.hash_origin);
+                return fmt::format_to(ctx.begin(), "[sid:{:16x}]'{}'", static_cast<std::underlying_type_t<decltype(strid.hash_value)>>(strid.hash_value), strid.hash_origin);
 #else
-                return fmt::format_to(ctx.begin(), "{{sid:{:16x}}}", static_cast<std::underlying_type_t<decltype(strid.hash_value)>>(strid.hash_value));
+                return fmt::format_to(ctx.begin(), "[sid:{:16x}]", static_cast<std::underlying_type_t<decltype(strid.hash_value)>>(strid.hash_value));
 #endif
             }
         }
