@@ -45,6 +45,9 @@ namespace iceshard
             component_operation_signature* operation_func
         ) noexcept;
 
+        //! \brief Destroys the given entity and all associated components.
+        void destroy_entity(entity_handle_type entity) noexcept;
+
         //! \brief Executes all stored commands.
         void execute(EntityManager* entity_manager, EntityIndex* entity_index) noexcept;
 

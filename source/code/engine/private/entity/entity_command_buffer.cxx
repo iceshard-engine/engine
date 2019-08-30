@@ -14,6 +14,8 @@ namespace iceshard
 
         static constexpr auto update_component_command_id = core::cexpr::stringid_cexpr("component.update").hash_value;
 
+        static constexpr auto destroy_entity_command_id = core::cexpr::stringid_cexpr("entity.destroy").hash_value;
+
     } // namespace detail
 
     EntityCommandBuffer::EntityCommandBuffer(core::allocator& alloc) noexcept
@@ -42,6 +44,11 @@ namespace iceshard
         core::pod::array::push_back(_commands, { { detail::update_component_command_id }, component_name, entity, operation_func });
     }
 
+    void EntityCommandBuffer::destroy_entity(entity_handle_type entity) noexcept
+    {
+        core::pod::array::push_back(_commands, { { detail::destroy_entity_command_id }, core::cexpr::stringid_invalid, entity, nullptr });
+    }
+
     void EntityCommandBuffer::execute(EntityManager* entity_manager, EntityIndex* entity_index) noexcept
     {
         for (const auto& command : _commands)
@@ -54,14 +61,15 @@ namespace iceshard
 
             switch (static_cast<uint64_t>(command.command_name.hash_value))
             {
-            case static_cast<uint64_t>(detail::add_component_command_id):
+#define  CASE(a) static_cast<uint64_t>(a)
+            case CASE(detail::add_component_command_id):
             {
                 auto* system = reinterpret_cast<ComponentSystem*>(command.command_data);
                 system->create(command.target_entity, command.component_name);
                 entity_index->register_component(command.target_entity, command.component_name, system);
                 break;
             }
-            case static_cast<uint64_t>(detail::remove_component_command_id) :
+            case CASE(detail::remove_component_command_id):
             {
                 if (auto* system = entity_index->find_component_system(command.target_entity, command.component_name); system != nullptr)
                 {
@@ -70,12 +78,18 @@ namespace iceshard
                 }
                 break;
             }
-            case static_cast<uint64_t>(detail::update_component_command_id) :
+            case CASE(detail::update_component_command_id):
             {
                 if (auto* system = entity_index->find_component_system(command.target_entity, command.component_name); system != nullptr)
                 {
                     reinterpret_cast<component_operation_signature*>(command.command_data)(system, command.target_entity);
                 }
+                break;
+            }
+            case CASE(detail::destroy_entity_command_id):
+            {
+                entity_index->remove_entity(command.target_entity);
+                entity_manager->destroy(command.target_entity);
                 break;
             }
             }
