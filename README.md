@@ -37,6 +37,8 @@ This will build the engine in the ReleaseDebug configuration for the host platfo
 
 ## CI (GitHub Actions)
 
+Currently using GitHubs Actions service for CI, it's till in beta so it might fail sometimes. 
+
 ## Aknowledgements 
 
 This project was heavily influenced by several articles, but mostly by the BitSquid development blog.
