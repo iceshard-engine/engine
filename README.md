@@ -1,5 +1,8 @@
 # IceShard engine
 
+![](https://github.com/iceshard-engine/engine/workflows/.github/workflows/Nightly/badge.svg)
+![](https://github.com/iceshard-engine/engine/workflows/.github/workflows/Validation/badge.svg)
+
 ## Prerequesites 
 To use this engine you will need the following tools: 
 * [Conan Package Manager](https://conan.io/) - for dependency management.
