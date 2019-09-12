@@ -35,12 +35,11 @@ iceshard build
 
 This will build the engine in the ReleaseDebug configuration for the host platform.
 
-## CI (GitHub Actions)
+## GitHub Actions CI
 
-Currently using GitHubs Actions service for CI, it's till in beta so it might fail sometimes. 
+Currently this project using the **GitHub Actions** service for CI. 
 
-- Build try with all conan packages prebuild.
-- Another try with SDL2 having a version bump on the repository
+Builds are there mostly for validation and will be expanded with new targets as time goes.
 
 ## Aknowledgements 
 
