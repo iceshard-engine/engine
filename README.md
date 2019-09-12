@@ -39,7 +39,7 @@ This will build the engine in the ReleaseDebug configuration for the host platfo
 
 Currently using GitHubs Actions service for CI, it's till in beta so it might fail sometimes. 
 
-Build try: 1
+Build try with all conan packages prebuild.
 
 ## Aknowledgements 
 
