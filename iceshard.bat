@@ -34,7 +34,7 @@ GOTO :_run
 :: Initialize the project environment
 :_initialize
 PUSHD build\tools
-conan install ..\..\tools
+conan install ..\..\tools --build=missing
 POPD
 ECHO Workspace initialized...
 EXIT /B 0

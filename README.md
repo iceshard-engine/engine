@@ -35,6 +35,12 @@ iceshard build
 
 This will build the engine in the ReleaseDebug configuration for the host platform.
 
+## GitHub Actions CI
+
+Currently this project using the **GitHub Actions** service for CI. 
+
+Builds are there mostly for validation and will be expanded with new targets as time goes.
+
 ## Aknowledgements 
 
 This project was heavily influenced by several articles, but mostly by the BitSquid development blog.
