@@ -1,4 +1,4 @@
-name: Validate (All Configurations)
+name: Validation
 
 on: 
   push:
