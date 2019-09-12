@@ -39,7 +39,8 @@ This will build the engine in the ReleaseDebug configuration for the host platfo
 
 Currently using GitHubs Actions service for CI, it's till in beta so it might fail sometimes. 
 
-Build try with all conan packages prebuild.
+- Build try with all conan packages prebuild.
+- Another try with SDL2 having a version bump on the repository
 
 ## Aknowledgements 
 
