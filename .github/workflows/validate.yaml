@@ -19,7 +19,7 @@ jobs:
         pip install conan
         conan remote add conan-iceshard https://conan.iceshard.net/
         conan remote add conan-bincrafters https://api.bintray.com/conan/bincrafters/public-conan
-    - name: Build (x64-${{ matrix.configuration }})
+    - name: Build
       run: |
         iceshard build -t all-x64-${{ matrix.configuration }}
     - name: Verify
