@@ -1,4 +1,4 @@
-name: Nightly (ReleaseDebug)
+name: Nightly
 
 on:
   schedule:
