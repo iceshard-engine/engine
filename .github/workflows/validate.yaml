@@ -1,0 +1,27 @@
+name: Validate (All Configurations)
+
+on: 
+  push:
+    branches: 
+    - master
+
+jobs:
+  validation-build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [windows-latest]
+        configuration: [Debug, ReleaseDebug, Release]
+    steps:
+    - uses: actions/checkout@v1
+    - name: Setup repository
+      run: |
+        pip install conan
+        conan remote add conan-iceshard https://conan.iceshard.net/
+        conan remote add conan-bincrafters https://api.bintray.com/conan/bincrafters/public-conan
+    - name: Build (x64-${{ matrix.configuration }})
+      run: |
+        iceshard build -t all-x64-${{ matrix.configuration }}
+    - name: Verify
+      run: |
+        echo Nothing to verify yet
