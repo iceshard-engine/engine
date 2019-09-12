@@ -4,6 +4,7 @@ on:
   push:
     branches: 
     - master
+    - github-actions-setup
 
 jobs:
   build:
@@ -11,8 +12,14 @@ jobs:
     
     steps:
     - uses: actions/checkout@v1
-    - name: Run a one-line script
-      run: echo Hello, IceShard!
-    - name: Run a multi-line script
+    - name: Install the Conan package manager
       run: |
-        echo Soon we gonna add conan here!
+        pip install conan
+    - name: Add remotes to conan 
+      run: |
+        conan remote add conan-iceshard https://conan.iceshard.net/
+        conan remote add conan-bincrafters https://api.bintray.com/conan/bincrafters/public-conan
+    - name: Build IceShard (ReleaseDebug)
+      run: |
+        iceshard build
+        
