@@ -1,6 +1,6 @@
 [requires]
 fastbuild-installer/0.98@iceshard/stable
-moonscript-installer/0.5.0@iceshard/stable
+ice-build-tools/0.0.1@iceshard/stable
 
 [generators]
 virtualenv
