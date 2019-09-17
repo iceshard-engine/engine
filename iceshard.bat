@@ -44,14 +44,14 @@ GOTO :_exit
 :_run
 CALL build\tools\activate.bat
 CALL moon tools\iceshard.moon %*
-set APPERROR=%ERRORLEVEL%
 CALL build\tools\deactivate.bat
 
-POPD
-
-IF "%APPERROR%" == "1" (
-    GOTO :_error
+IF "%ERRORLEVEL%" == 0 (
+    GOTO :_exit
 )
+GOTO :_error
+
+POPD
 
 :_exit
 exit /B 0
