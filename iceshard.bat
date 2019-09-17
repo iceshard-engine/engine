@@ -37,16 +37,24 @@ PUSHD build\tools
 conan install ..\..\tools --build=missing
 POPD
 ECHO Workspace initialized...
-EXIT /B 0
+GOTO :_exit
 
 
 :: Application runtime
 :_run
 CALL build\tools\activate.bat
 CALL moon tools\iceshard.moon %*
+set APPERROR=%ERRORLEVEL%
 CALL build\tools\deactivate.bat
 
 POPD
 
+IF "%APPERROR%" == "1" (
+    GOTO :_error
+)
+
 :_exit
 exit /B 0
+
+:_error
+exit /B 1
