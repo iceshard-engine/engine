@@ -21,9 +21,9 @@ jobs:
         conan remote add conan-iceshard https://conan.iceshard.net/
         conan remote add conan-bincrafters https://api.bintray.com/conan/bincrafters/public-conan
     - name: Build
-      run: |
-        iceshard build -t all-x64-${{ matrix.configuration }}
-        echo %errorlevel%
+      run: iceshard build -t all-x64-${{ matrix.configuration }}
+    - name: Error level check
+      run: echo "%errorlevel% %ERRORLEVEL%"
     - name: Verify
       run: |
         echo Nothing to verify yet
