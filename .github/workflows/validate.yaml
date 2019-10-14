@@ -1,5 +1,11 @@
 name: Validation
 
+on:
+  push:
+    branches:
+    - master
+    - build-tests
+      
 jobs:
   validation-build:
     runs-on: ${{ matrix.os }}
