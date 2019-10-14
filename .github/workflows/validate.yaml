@@ -22,6 +22,7 @@ jobs:
     - name: Build
       run: |
         iceshard build -t all-x64-${{ matrix.configuration }}
+        echo %errorlevel%
     - name: Verify
       run: |
         echo Nothing to verify yet
