@@ -44,8 +44,9 @@ GOTO :_exit
 :_run
 CALL build\tools\activate.bat
 CALL moon tools\iceshard.moon %*
+echo "%errorlevel% %ERRORLEVEL%"
 CALL build\tools\deactivate.bat
-
+echo "%errorlevel% %ERRORLEVEL%"
 IF "%ERRORLEVEL%" == "0" (
     GOTO :_exit
 )
