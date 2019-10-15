@@ -46,10 +46,11 @@ CALL build\tools\activate.bat
 CALL moon tools\iceshard.moon %*
 
 :: Save this value as it so the call to 'deactivate' wont erase it in some caes
-set ERROR_CODE="%ERRORLEVEL%"
+set ERROR_CODE=%ERRORLEVEL%
 
 CALL build\tools\deactivate.bat
 
+:: Check the command return code
 IF "%ERROR_CODE%" == "0" (
     GOTO :_exit
 )
