@@ -1,7 +1,7 @@
 # IceShard engine
 
-![https://github.com/iceshard-engine/engine/actions?workflow=Nightly](https://github.com/iceshard-engine/engine/workflows/Nightly/badge.svg)
-![https://github.com/iceshard-engine/engine/actions?workflow=Validation](https://github.com/iceshard-engine/engine/workflows/Validation/badge.svg)
+[![](https://github.com/iceshard-engine/engine/workflows/Nightly/badge.svg)](https://github.com/iceshard-engine/engine/actions?workflow=Nightly)
+[![](https://github.com/iceshard-engine/engine/workflows/Validation/badge.svg)](https://github.com/iceshard-engine/engine/actions?workflow=Validation)
 
 ## Prerequesites 
 To use this engine you will need the following tools: 
