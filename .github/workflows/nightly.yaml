@@ -17,6 +17,7 @@ jobs:
         conan remote add conan-iceshard https://conan.iceshard.net/
         conan remote add conan-bincrafters https://api.bintray.com/conan/bincrafters/public-conan
     - name: Build (ReleaseDebug)
+      shell: cmd
       run: |
         iceshard build
     - name: Verify
