@@ -3,15 +3,15 @@
 [![](https://github.com/iceshard-engine/engine/workflows/Nightly/badge.svg)](https://github.com/iceshard-engine/engine/actions?workflow=Nightly)
 [![](https://github.com/iceshard-engine/engine/workflows/Validation/badge.svg)](https://github.com/iceshard-engine/engine/actions?workflow=Validation)
 
-## Prerequesites 
-To use this engine you will need the following tools: 
+## Prerequesites
+To use this engine you will need the following tools:
 * [Conan Package Manager](https://conan.io/) - for dependency management.
 * \[windows\] Visual Studio 2017 15.7 or later
 * \[macosx\] Not supported yet.
 * \[unix\] Not supported yet.
 
 ## Installation
-The installation process is really simple. 
+The installation process is really simple.
 Just add the below conan repositories and start working ;)
 
 ```bash
@@ -29,7 +29,7 @@ iceshard generate-projects
 
 This will generate the Visual Studio solution **IceShard.sln**.
 
-## Building 
+## Building
 To just build the engine run the following command in the root directory:
 
 ```bash
@@ -40,15 +40,18 @@ This will build the engine in the ReleaseDebug configuration for the host platfo
 
 ## GitHub Actions CI
 
-Currently this project using the **GitHub Actions** service for CI. 
+Currently this project using the **GitHub Actions** service for CI.
 
 Builds are there mostly for validation and will be expanded with new targets as time goes.
 
-## Aknowledgements 
+## Coding style
+
+[Coding Style](https://github.com/iceshard-engine/coding-style)
+
+## Aknowledgements
 
 This project was heavily influenced by several articles, but mostly by the BitSquid development blog.
-Because of this some parts of the engine may resemble solutins which can be found in the blogs posts. 
+Because of this some parts of the engine may resemble solutins which can be found in the blogs posts.
 
-Additionally, some parts of the engine where based on the **BitSquid Foundation Library** which was discussed here: 
+Additionally, some parts of the engine where based on the **BitSquid Foundation Library** which was discussed here:
 https://bitsquid.blogspot.com/2012/11/bitsquid-foundation-library.html
-
