@@ -84,8 +84,8 @@
             .OutputDirectory = .ConfigurationTargetDirectory
             .Output = '$ConfigurationTargetDirectory$/$ProjectName$.lib'
 
-            .ProjectBuildCommand = '$VSBuildCommand$ $Target$'
-            .ProjectRebuildCommand = '$VSRebuildCommand$ $Target$'
+            .ProjectBuildCommand = '$VSBuildCommand$ $ProjectName$-$Platform$-$Config$'
+            .ProjectRebuildCommand = '$VSRebuildCommand$ $ProjectName$-$Platform$-$Config$'
         ]
         ^VSProjectConfigurations + .VSProjectConfiguration
     }
