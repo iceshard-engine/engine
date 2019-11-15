@@ -1,7 +1,9 @@
 import Application from require "ice.application"
 
 --[[ Built-In Commands ]]
+import UpdateCommand from require "ice.command.update"
 import BuildCommand from require "ice.command.build"
+import CleanCommand from require "ice.command.clean"
 import GenerateProjectsCommand from require "ice.command.generate_projects"
 
 --[[ Application definition ]]
@@ -11,6 +13,8 @@ class IceShard extends Application
     @arguments: { }
     @commands: {
         'build': BuildCommand
+        'update': UpdateCommand
+        'clean': CleanCommand
         'generate': GenerateProjectsCommand
     }
 
