@@ -35,10 +35,12 @@ int main(int, char**)
 
     // The application lifetime scope
     {
-
         resource::ResourceSystem resource_system{ main_allocator };
 
         {
+            auto working_dir = app::working_directory(main_allocator);
+            fmt::print("Initializing filesystem module at: {}\n", working_dir);
+
             core::pod::Array<core::cexpr::stringid_type> schemes{ core::memory::globals::default_scratch_allocator() };
             core::pod::array::push_back(schemes, resource::scheme_file);
             core::pod::array::push_back(schemes, resource::scheme_directory);
@@ -46,7 +48,7 @@ int main(int, char**)
                 core::memory::make_unique<resource::ResourceModule, resource::FileSystem>(
                     main_allocator
                     , filesystem_allocator
-                    , app::working_directory(main_allocator))
+                    , working_dir)
                 , schemes
             );
 
