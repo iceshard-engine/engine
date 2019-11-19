@@ -11,13 +11,12 @@
 #include <memory>
 
 #include <cppcoro/task.hpp>
+#include <cppcoro/static_thread_pool.hpp>
 
 namespace iceshard
 {
 
-
     class Frame;
-
 
     //! \brief The main class from the engine library.
     class Engine
@@ -48,6 +47,9 @@ namespace iceshard
         virtual void next_frame() noexcept = 0;
 
     public:
+        virtual auto worker_threads() noexcept -> cppcoro::static_thread_pool& = 0;
+
+    public:
         //! \brief Creates a task in the current frame.
         void create_task(std::function<cppcoro::task<>(core::allocator&)> task) noexcept;
 
@@ -61,6 +63,5 @@ namespace iceshard
         //! \brief Adds a task to the current frame.
         virtual void add_task(cppcoro::task<> task) noexcept = 0;
     };
-
 
 } // namespace iceshard

@@ -10,10 +10,15 @@
 #include <cppcoro/task.hpp>
 #include <cppcoro/sync_wait.hpp>
 #include <cppcoro/when_all_ready.hpp>
+#include <cppcoro/static_thread_pool.hpp>
 
 #include "frame.hxx"
 #include "world/iceshard_world_manager.hxx"
 #include "iceshard_service_provider.hxx"
+
+#define WIN32_LEAN_AND_MEAN
+#define NOMINMAX
+#include <Windows.h>
 
 namespace iceshard
 {
@@ -25,13 +30,12 @@ namespace iceshard
         static constexpr auto FrameAllocatorCapacity = 256u * detail::MiB;
 
         template<typename T, uint32_t Size>
-        constexpr auto array_element_count(T(&)[Size]) noexcept
+        constexpr auto array_element_count(T (&)[Size]) noexcept
         {
             return Size;
         }
 
     } // namespace detail
-
 
     class IceShardEngine final : public iceshard::Engine
     {
@@ -72,7 +76,6 @@ namespace iceshard
             _previous_frame = nullptr;
         }
 
-
         auto revision() const noexcept -> uint32_t override
         {
             return 1;
@@ -105,10 +108,12 @@ namespace iceshard
 
         void next_frame() noexcept override
         {
-            cppcoro::sync_wait(
-                cppcoro::when_all_ready(std::move(_frame_tasks))
-            );
-
+            {
+                auto sync_task_beg = std::chrono::high_resolution_clock::now();
+                cppcoro::sync_wait(cppcoro::when_all_ready(std::move(_frame_tasks)));
+                auto sunc_task_end = std::chrono::high_resolution_clock::now();
+                fmt::print("Tasks took: {}ms\n", std::chrono::duration_cast<std::chrono::milliseconds>(sunc_task_end - sync_task_beg).count());
+            }
 
             // Move the current frame to the 'previous' slot.
             _previous_frame = std::move(_current_frame);
@@ -120,15 +125,18 @@ namespace iceshard
 
             _current_frame = core::memory::make_unique<MemoryFrame>(_frame_allocator, _frame_data_allocator[_next_free_allocator]);
 
-
             // We need to update the allocator index
             _next_free_allocator += 1;
             _next_free_allocator %= detail::array_element_count(_frame_data_allocator);
 
-
             // Now we want to get all messages for the current frame.
             auto* inputs = input_system();
             inputs->query_messages(_current_frame->messages());
+        }
+
+        auto worker_threads() noexcept -> cppcoro::static_thread_pool& override
+        {
+            return _worker_pool;
         }
 
         void add_task(cppcoro::task<> task) noexcept override
@@ -151,8 +159,11 @@ namespace iceshard
 
         core::memory::unique_pointer<iceshard::IceshardWorldManager> _world_manager;
 
+        // Thread pool of the engine.
+        cppcoro::static_thread_pool _worker_pool{};
+
         // Tasks to be run this frame.
-        std::vector<cppcoro::task<>> _frame_tasks;
+        std::vector<cppcoro::task<>> _frame_tasks{};
 
         // Frame allocators.
         uint32_t _next_free_allocator = 0;
@@ -165,11 +176,10 @@ namespace iceshard
         core::memory::unique_pointer<MemoryFrame> _current_frame;
     };
 
-}
+} // namespace iceshard
 
 extern "C"
 {
-
     __declspec(dllexport) auto create_engine(core::allocator& alloc, resource::ResourceSystem& resources) -> iceshard::Engine*
     {
         return alloc.make<iceshard::IceShardEngine>(alloc, resources);
@@ -179,5 +189,4 @@ extern "C"
     {
         alloc.destroy(engine);
     }
-
 }
