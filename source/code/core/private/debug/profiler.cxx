@@ -1,6 +1,7 @@
 #include <core/debug/profiler.hxx>
 #include <core/threading/spinlock.hxx>
 
+#include <functional>
 #include <unordered_map>
 #include <mutex>
 #include <vector>
@@ -153,7 +154,7 @@ namespace core::debug
                 auto timepoint_now = profiler_clock::now();
 
                 // Get the context name hash
-                auto hashed_name = std::hash_value(name.data());
+                auto hashed_name = std::hash<std::string_view>{}(name);
                 //assert(!pod::hash::has(_events[_current_mutable_table], hashed_name));
 
                 // Store the debug context
@@ -169,7 +170,7 @@ namespace core::debug
                 auto timepoint_now = profiler_clock::now();
 
                 // Get the context name hash
-                auto hashed_name = std::hash_value(name.data());
+                auto hashed_name = std::hash<std::string_view>{}(name);
                 //assert(pod::hash::has(_events[_current_mutable_table], hashed_name));
 
                 auto& context = _events[_current_mutable_table][hashed_name];
