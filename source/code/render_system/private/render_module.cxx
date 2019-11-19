@@ -6,7 +6,6 @@
 #define NOMINMAX
 #include <Windows.h>
 
-
 namespace render
 {
 
@@ -24,7 +23,8 @@ namespace render
                 , _handle{ handle }
                 , _instance{ instance }
                 , _release_func{ release_func }
-            { }
+            {
+            }
 
             ~RenderSystemDynamicModule() override
             {
@@ -85,4 +85,3 @@ namespace render
     }
 
 } // namespace render
-

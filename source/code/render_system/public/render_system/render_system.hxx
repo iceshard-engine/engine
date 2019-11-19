@@ -23,5 +23,4 @@ namespace render
         virtual void swap() noexcept = 0;
     };
 
-
 } // namespace render

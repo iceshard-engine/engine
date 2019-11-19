@@ -59,7 +59,7 @@ namespace render
     {
     public:
         VulkanRenderSystem(core::allocator& alloc) noexcept
-            : render::RenderSystem{ }
+            : render::RenderSystem{}
             , _driver_allocator{ "vulkan-driver", alloc }
             , _vulkan_allocator{ alloc }
             , _render_window{ nullptr }
@@ -76,8 +76,7 @@ namespace render
                 "IceShard - Test window",
                 SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
                 1280, 720,
-                SDL_WINDOW_VULKAN | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI | SDL_WINDOW_SHOWN
-            );
+                SDL_WINDOW_VULKAN | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI | SDL_WINDOW_SHOWN);
 
             initialize();
         }
@@ -120,6 +119,17 @@ namespace render
             IS_ASSERT(vk_create_result == VkResult::VK_SUCCESS, "Creation of Vulkan instance failed!");
 
             enumerate_devices();
+
+            if (core::pod::array::any(_vulkan_devices))
+            {
+                auto* first_device = core::pod::array::front(_vulkan_devices);
+
+                [[maybe_unused]]
+                auto* graphics_device = first_device->create_device(render::vulkan::VulkanDeviceQueueType::GraphicsQueue);
+
+                core::pod::Array<render::vulkan::VulkanCommandBuffer*> cmd_buffers{ _driver_allocator };
+                graphics_device->create_command_buffers(cmd_buffers, 1);
+            }
         }
 
         void enumerate_devices() noexcept
@@ -135,11 +145,11 @@ namespace render
             IS_ASSERT(res == VK_SUCCESS, "Couldn't properly query available vulkan devices!");
 
             // Create VulkanPhysicalDevice objects from the handles.
+            fmt::print("Available Vulkan devices: {}\n", device_count);
             for (const auto& handle : devices_handles)
             {
                 core::pod::array::push_back(_vulkan_devices, _driver_allocator.make<vulkan::VulkanPhysicalDevice>(_driver_allocator, handle));
             }
-            fmt::print("Available Vulkan devices: {}\n", core::pod::array::size(_vulkan_devices));
         }
 
         void release_devices() noexcept
@@ -174,17 +184,14 @@ namespace render
 
         void swap() noexcept
         {
-            _command_buffer.visit([](const render::CommandName& name, core::data_view data)
+            _command_buffer.visit([](const render::CommandName& name, core::data_view data) {
+                if (name.identifier == render::data::Clear::command_name.identifier)
                 {
-                    if (name.identifier == render::data::Clear::command_name.identifier)
-                    {
-                        IS_ASSERT(data.size() == sizeof(render::data::Clear), "Data size does not match expected type size.");
+                    IS_ASSERT(data.size() == sizeof(render::data::Clear), "Data size does not match expected type size.");
 
-                        [[maybe_unused]]
-                        auto* clear_data = reinterpret_cast<const render::data::Clear*>(data.data());
-
-                    }
-                });
+                    [[maybe_unused]] auto* clear_data = reinterpret_cast<const render::data::Clear*>(data.data());
+                }
+            });
         }
 
         ~VulkanRenderSystem() noexcept override
@@ -206,14 +213,13 @@ namespace render
         render::RenderCommandBuffer _command_buffer;
 
         // The Vulkan instance handle.
-        VkInstance _vulkan_instance{ };
+        VkInstance _vulkan_instance{};
 
         // Array vulkan devices.
         core::pod::Array<render::vulkan::VulkanPhysicalDevice*> _vulkan_devices;
     };
 
-} // render
-
+} // namespace render
 
 extern "C"
 {
