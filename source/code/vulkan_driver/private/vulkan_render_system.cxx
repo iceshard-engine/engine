@@ -117,7 +117,7 @@ namespace render
             alloc_callbacks.pfnInternalFree = nullptr;
 
             auto vk_create_result = vkCreateInstance(&instance_create_info, &alloc_callbacks, &_vulkan_instance);
-            IS_ASSERT(vk_create_result == VK_SUCCESS, "Creation of Vulkan instance failed!");
+            IS_ASSERT(vk_create_result == VkResult::VK_SUCCESS, "Creation of Vulkan instance failed!");
 
             enumerate_devices();
         }
