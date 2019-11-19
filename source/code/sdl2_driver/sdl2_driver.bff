@@ -27,6 +27,12 @@
         Using( .Configuration )
 
 
+        // Configuration properties
+        //--------------------------------------------------------------------------
+        .ConfigurationIntermediateDirectory = '$WorkspaceBuildDir$/obj/$Platform$-$Config$/$ProjectName$'
+        .ConfigurationTargetDirectory = '$WorkspaceBuildDir$/bin/$Platform$-$Config$/$ProjectName$'
+
+
         // Conan Dependencies
         //--------------------------------------------------------------------------
         ForEach( .ConanModule in .ProjectConanModules )
@@ -52,12 +58,6 @@
         }
 
 
-        // Configuration properties
-        //--------------------------------------------------------------------------
-        .ConfigurationIntermediateDirectory = '$WorkspaceBuildDir$/obj/$Platform$-$Config$/$ProjectName$'
-        .ConfigurationTargetDirectory = '$WorkspaceBuildDir$/bin/$Platform$-$Config$/$ProjectName$'
-
-
         // Object lists
         //--------------------------------------------------------------------------
         ObjectList( '$ProjectName$-$Platform$-$Config$-objects' )
@@ -74,8 +74,6 @@
         //--------------------------------------------------------------------------
         DLL( '$ProjectName$-$Platform$-$Config$' )
         {
-            .CompilerOutputPath = .ConfigurationIntermediateDirectory
-
             .Libraries = {
                 '$ProjectName$-$Platform$-$Config$-objects'
                 'core-$Platform$-$Config$'

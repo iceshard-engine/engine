@@ -30,7 +30,59 @@
 #include <iceshard/engine.hxx>
 #include <iceshard/frame.hxx>
 #include <iceshard/world/world.hxx>
+#include <iceshard/entity/entity_index.hxx>
+#include <iceshard/entity/entity_command_buffer.hxx>
+#include <iceshard/component/component_system.hxx>
 
+class TestComponent1 : public iceshard::ComponentSystem
+{
+public:
+    auto name() const noexcept -> core::cexpr::stringid_type override
+    {
+        static constexpr auto component_id = core::cexpr::stringid_cexpr("TestComponent1");
+        return component_id;
+    }
+
+    void create(iceshard::entity_handle_type, core::cexpr::stringid_argument_type component_name) noexcept
+    {
+        fmt::print("Test1 : create {}!\n", component_name);
+    }
+
+    void remove(iceshard::entity_handle_type, core::cexpr::stringid_argument_type component_name) noexcept
+    {
+        fmt::print("Test1 : remove {}!\n", component_name);
+    }
+
+    void test1()
+    {
+        fmt::print("Test 1 system!\n");
+    }
+};
+
+class TestComponent2 : public iceshard::ComponentSystem
+{
+public:
+    auto name() const noexcept -> core::cexpr::stringid_type override
+    {
+        static constexpr auto component_id = core::cexpr::stringid_cexpr("TestComponent2");
+        return component_id;
+    }
+
+    void create(iceshard::entity_handle_type, core::cexpr::stringid_argument_type component_name) noexcept
+    {
+        fmt::print("Test2 : create {}!\n", component_name);
+    }
+
+    void remove(iceshard::entity_handle_type, core::cexpr::stringid_argument_type component_name) noexcept
+    {
+        fmt::print("Test2 : remove {}!\n", component_name);
+    }
+
+    void test2()
+    {
+        fmt::print("Test 2 system!\n");
+    }
+};
 
 int game_main(core::allocator& alloc, resource::ResourceSystem& resources)
 {
@@ -52,10 +104,16 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resources)
         // Create a test world
         engine_instance->world_manager()->create_world(core::cexpr::stringid("test-world"));
 
+        TestComponent1 t1c;
+        TestComponent2 t2c;
+
+        iceshard::EntityIndex entity_index{ alloc };
+        iceshard::EntityCommandBuffer command_buffer{ alloc };
+
         bool quit = false;
         while (quit == false)
         {
-            engine_instance->create_task([&quit](iceshard::Engine& engine) noexcept -> cppcoro::task<>
+            engine_instance->create_task([&](iceshard::Engine& engine) noexcept -> cppcoro::task<>
                 {
                     auto& frame = engine.current_frame();
 
@@ -71,12 +129,39 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resources)
                     auto* entities = services->entity_manager();
 
                     auto e = entities->create();
-                    entities->destroy(e);
+
+                    command_buffer.add_component(e, &t1c, core::cexpr::stringid("test1"));
+                    command_buffer.add_component(e, &t2c, core::cexpr::stringid("test2"));
+                    command_buffer.add_component(e, &t1c, core::cexpr::stringid("test3"));
+
+                    command_buffer.update_component(e, core::cexpr::stringid("test1"), [](iceshard::ComponentSystem* cs, iceshard::entity_handle_type) noexcept
+                        {
+                            static_cast<TestComponent1*>(cs)->test1();
+                            return false;
+                        });
+                    command_buffer.update_component(e, core::cexpr::stringid("test2"), [](iceshard::ComponentSystem* cs, iceshard::entity_handle_type) noexcept
+                        {
+                            static_cast<TestComponent2*>(cs)->test2();
+                            return false;
+                        });
+                    command_buffer.update_component(e, core::cexpr::stringid("test3"), [](iceshard::ComponentSystem* cs, iceshard::entity_handle_type) noexcept
+                        {
+                            static_cast<TestComponent1*>(cs)->test1();
+                            return false;
+                        });
+
+                    command_buffer.remove_component(e, core::cexpr::stringid("test3"));
+                    command_buffer.remove_component(e, core::cexpr::stringid("test2"));
+                    command_buffer.remove_component(e, core::cexpr::stringid("test1"));
+
+                    //entities->destroy(e);
                     co_return;
                 });
 
             // Update the engine state.
             engine_instance->next_frame();
+
+            command_buffer.execute(engine_instance->entity_manager(), &entity_index);
         }
 
         // Destroy the test world
