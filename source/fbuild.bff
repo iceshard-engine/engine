@@ -262,4 +262,5 @@ VSSolution( 'solution' )
 
     .SolutionFolders = .SolutionFolders
     .SolutionProjects = .SolutionProjects
+    .SolutionBuildProject = { 'test-vcxproj' }
 }
