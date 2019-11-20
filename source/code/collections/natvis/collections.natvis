@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
+  <!-- Native Visualization for the pod::Array struct -->
+  <Type Name="core::pod::Array&lt;*&gt;">
+    <DisplayString>pod::Array {{ size={ _size }, capacity={ _capacity } }}</DisplayString>
+    <Expand>
+      <Item Name="[size]">_size</Item>
+      <Item Name="[capacity]">_capacity</Item>
+      <Synthetic Name="[items]">
+        <DisplayString>Array items</DisplayString>
+        <Expand>
+          <ArrayItems>
+            <Size>_size</Size>
+            <ValuePointer>_data</ValuePointer>
+          </ArrayItems>
+        </Expand>
+      </Synthetic>
+    </Expand>
+  </Type>
+</AutoVisualizer>
