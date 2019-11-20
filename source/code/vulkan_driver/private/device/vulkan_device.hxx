@@ -32,8 +32,13 @@ namespace render::vulkan
 
         ~VulkanDevice() noexcept;
 
+        auto native_handle() const noexcept -> VkDevice { return _device_handle; }
+
         //! \brief Creates the specified number of command buffers.
         void create_command_buffers(core::pod::Array<VulkanCommandBuffer*>& output_array, uint32_t num) noexcept;
+
+        //! \brief Supports presenting.
+        bool can_present() const noexcept { return _supports_presenting; }
 
     protected:
         void initialize() noexcept;
@@ -48,6 +53,8 @@ namespace render::vulkan
         VkCommandPool _command_pool;
 
         core::pod::Array<VulkanCommandBuffer*> _command_buffers;
+
+        bool _supports_presenting;
     };
 
 } // namespace render::vulkan

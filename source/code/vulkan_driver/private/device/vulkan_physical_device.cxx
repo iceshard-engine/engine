@@ -17,6 +17,10 @@ namespace render::vulkan
             VkPhysicalDevice physical_device,
             VulkanQueueFamilyIndex family_index) noexcept -> VkDevice
         {
+            const char* instanceExtensionNames[] = {
+                VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+            };
+
             VkDeviceQueueCreateInfo queue_info{};
 
             float queue_priorities[1] = { 0.0 };
@@ -31,8 +35,8 @@ namespace render::vulkan
             device_info.pNext = nullptr;
             device_info.queueCreateInfoCount = 1;
             device_info.pQueueCreateInfos = &queue_info;
-            device_info.enabledExtensionCount = 0;
-            device_info.ppEnabledExtensionNames = nullptr;
+            device_info.enabledExtensionCount = static_cast<uint32_t>(std::size(instanceExtensionNames));
+            device_info.ppEnabledExtensionNames = &instanceExtensionNames[0];
             device_info.enabledLayerCount = 0;
             device_info.ppEnabledLayerNames = nullptr;
             device_info.pEnabledFeatures = nullptr;
@@ -115,12 +119,15 @@ namespace render::vulkan
 
     } // namespace detail
 
-    VulkanPhysicalDevice::VulkanPhysicalDevice(core::allocator& alloc, VkPhysicalDevice device_handle) noexcept
+    VulkanPhysicalDevice::VulkanPhysicalDevice(core::allocator& alloc, VkPhysicalDevice device_handle, VkSurfaceKHR surface_handle) noexcept
         : _allocator{ alloc }
-        , _vulkan_physical_device{ device_handle }
+        , _physical_device_handle{ device_handle }
+        , _surface_handle{ surface_handle }
+        , _present_modes{ _allocator }
+        , _surface_formats{ _allocator }
         , _device_factories{ _allocator }
         , _command_pools{ _allocator }
-        , _logical_devices{ _allocator }
+        , _graphics_device{ nullptr, { _allocator } }
     {
         initialize();
     }
@@ -130,50 +137,68 @@ namespace render::vulkan
         shutdown();
     }
 
-    auto VulkanPhysicalDevice::create_device(VulkanDeviceQueueType queue_type) noexcept -> VulkanDevice*
+    void VulkanPhysicalDevice::create_device(VulkanDeviceQueueType queue_type) noexcept
     {
-        VulkanDevice* result = nullptr;
-
         auto queue_typeid = static_cast<uint64_t>(queue_type);
         auto* it = core::pod::multi_hash::find_first(_device_factories, queue_typeid);
         if (it != nullptr)
         {
             auto& factory_data = it->value;
-            VkDevice device_handle = factory_data.factory_function(_allocator, _vulkan_physical_device, factory_data.family_index);
 
-            result = _allocator.make<VulkanDevice>(_allocator, queue_type, factory_data.family_index, device_handle);
-            core::pod::array::push_back(_logical_devices, result);
+            if (queue_type == VulkanDeviceQueueType::GraphicsQueue)
+            {
+                VkDevice device_handle = factory_data.factory_function(_allocator, _physical_device_handle, factory_data.family_index);
+                _graphics_device = core::memory::make_unique<VulkanDevice>(_allocator, _allocator, queue_type, factory_data.family_index, device_handle);
+            }
+            else
+            {
+                IS_ASSERT(false, "Device creation for given queue type not supported!");
+            }
         }
-
-        return result;
     }
 
     void VulkanPhysicalDevice::initialize() noexcept
     {
+        enumerate_family_queues();
+        enumerate_surface_capabilities();
+        enumerate_surface_present_modes();
+        enumerate_surface_formats();
+
+        create_device(VulkanDeviceQueueType::GraphicsQueue);
+    }
+
+    void VulkanPhysicalDevice::enumerate_family_queues() noexcept
+    {
         uint32_t queue_family_count;
-        vkGetPhysicalDeviceQueueFamilyProperties(_vulkan_physical_device, &queue_family_count, nullptr);
+        vkGetPhysicalDeviceQueueFamilyProperties(_physical_device_handle, &queue_family_count, nullptr);
 
         core::pod::Array<VkQueueFamilyProperties> queue_family_properties{ _allocator };
         core::pod::array::resize(queue_family_properties, queue_family_count);
 
-        vkGetPhysicalDeviceQueueFamilyProperties(_vulkan_physical_device, &queue_family_count, &queue_family_properties[0]);
+        vkGetPhysicalDeviceQueueFamilyProperties(_physical_device_handle, &queue_family_count, &queue_family_properties[0]);
 
         // Going through all queue family properties.
         for (uint32_t index = 0; index < queue_family_count; ++index)
         {
             const auto& queue_family_property = queue_family_properties[index];
 
+            // Check If family supports presenting
+            VkBool32 supports_present = VK_FALSE;
+            auto api_result = vkGetPhysicalDeviceSurfaceSupportKHR(_physical_device_handle, index, _surface_handle, &supports_present);
+            IS_ASSERT(api_result == VkResult::VK_SUCCESS, "Couldn't query information if family {} (index) supports presenting!", index);
+
             // Check each familiy flags
             for (auto flag_bit : detail::queue_flags_array)
             {
                 if (static_cast<VkQueueFlagBits>(queue_family_property.queueFlags & flag_bit) == flag_bit)
                 {
-                    if (auto* queue_factory = detail::factory_for_flag_bit(flag_bit))
+                    if (auto* queue_factory = detail::factory_for_flag_bit(flag_bit); queue_factory != nullptr)
                     {
                         VulkanDeviceFactory factory{
                             .factory_function = queue_factory,
                             .family_properties = queue_family_property,
-                            .family_index = VulkanQueueFamilyIndex{ index }
+                            .family_index = VulkanQueueFamilyIndex{ index },
+                            .supports_present = supports_present == VK_TRUE
                         };
 
                         auto queue_type = static_cast<uint64_t>(detail::queue_type_for_flag_bit(flag_bit));
@@ -184,12 +209,37 @@ namespace render::vulkan
         }
     }
 
+    void VulkanPhysicalDevice::enumerate_surface_capabilities() noexcept
+    {
+        auto api_result = vkGetPhysicalDeviceSurfaceCapabilitiesKHR(_physical_device_handle, _surface_handle, &_surface_capabilities);
+        IS_ASSERT(api_result == VkResult::VK_SUCCESS, "Couldn't get device surface capabilities!");
+    }
+
+    void VulkanPhysicalDevice::enumerate_surface_present_modes() noexcept
+    {
+        uint32_t present_mode_number;
+        VkResult api_result = vkGetPhysicalDeviceSurfacePresentModesKHR(_physical_device_handle, _surface_handle, &present_mode_number, nullptr);
+        IS_ASSERT(api_result == VkResult::VK_SUCCESS, "Couldn't get number of device present modes!");
+
+        core::pod::array::resize(_present_modes, present_mode_number);
+        api_result = vkGetPhysicalDeviceSurfacePresentModesKHR(_physical_device_handle, _surface_handle, &present_mode_number, &_present_modes[0]);
+        IS_ASSERT(api_result == VkResult::VK_SUCCESS, "Couldn't query device present modes!");
+    }
+
+    void VulkanPhysicalDevice::enumerate_surface_formats() noexcept
+    {
+        uint32_t surface_format_number;
+        VkResult api_result = vkGetPhysicalDeviceSurfaceFormatsKHR(_physical_device_handle, _surface_handle, &surface_format_number, nullptr);
+        IS_ASSERT(api_result == VkResult::VK_SUCCESS, "Couldn't get number of device surface formats!");
+
+        core::pod::array::resize(_surface_formats, surface_format_number);
+        api_result = vkGetPhysicalDeviceSurfaceFormatsKHR(_physical_device_handle, _surface_handle, &surface_format_number, &_surface_formats[0]);
+        IS_ASSERT(api_result == VkResult::VK_SUCCESS, "Couldn't query device surface formats!");
+    }
+
     void VulkanPhysicalDevice::shutdown() noexcept
     {
-        for (auto* device : _logical_devices)
-        {
-            _allocator.destroy(device);
-        }
+        _graphics_device = nullptr;
     }
 
 } // namespace render::vulkan

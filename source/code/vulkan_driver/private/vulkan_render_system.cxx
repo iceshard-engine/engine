@@ -1,4 +1,5 @@
 #include <core/memory.hxx>
+#include <core/pointer.hxx>
 #include <core/pod/array.hxx>
 #include <core/message/buffer.hxx>
 #include <core/message/operations.hxx>
@@ -8,17 +9,11 @@
 #include <render_system/render_commands.hxx>
 
 #include "vulkan_allocator.hxx"
+#include "vulkan_surface.hxx"
 #include "device/vulkan_physical_device.hxx"
-
-#include <SDL.h>
-
-#define WIN32_LEAN_AND_MEAN
-#define NOMINMAX
-#include <SDL_syswm.h>
+#include "vulkan_swapchain.hxx"
 
 #include <vulkan/vulkan.h>
-
-#include <numeric>
 
 namespace render
 {
@@ -62,22 +57,9 @@ namespace render
             : render::RenderSystem{}
             , _driver_allocator{ "vulkan-driver", alloc }
             , _vulkan_allocator{ alloc }
-            , _render_window{ nullptr }
             , _command_buffer{ alloc }
             , _vulkan_devices{ _driver_allocator }
         {
-            const bool sdl2_init_video = SDL_InitSubSystem(SDL_INIT_VIDEO) == 0;
-            if (sdl2_init_video == false)
-            {
-                IS_ASSERT(sdl2_init_video == true, "Initialization od SDL2 Video subsystem failed! Error: '{}'", SDL_GetError());
-            }
-
-            _render_window = SDL_CreateWindow(
-                "IceShard - Test window",
-                SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
-                1280, 720,
-                SDL_WINDOW_VULKAN | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI | SDL_WINDOW_SHOWN);
-
             initialize();
         }
 
@@ -104,8 +86,8 @@ namespace render
             instance_create_info.pApplicationInfo = &app_info;
             instance_create_info.enabledLayerCount = 0;
             instance_create_info.ppEnabledLayerNames = nullptr;
-            instance_create_info.enabledExtensionCount = 0;
-            instance_create_info.ppEnabledExtensionNames = nullptr;
+            instance_create_info.enabledExtensionCount = static_cast<uint32_t>(std::size(instanceExtensionNames));
+            instance_create_info.ppEnabledExtensionNames = &instanceExtensionNames[0];
 
             VkAllocationCallbacks alloc_callbacks = {};
             alloc_callbacks.pUserData = &_vulkan_allocator;
@@ -118,18 +100,23 @@ namespace render
             auto vk_create_result = vkCreateInstance(&instance_create_info, &alloc_callbacks, &_vulkan_instance);
             IS_ASSERT(vk_create_result == VkResult::VK_SUCCESS, "Creation of Vulkan instance failed!");
 
+            // Create the surface object
+            _vulkan_surface = render::vulkan::create_surface(_vulkan_allocator, _vulkan_instance);
+
             enumerate_devices();
 
-            if (core::pod::array::any(_vulkan_devices))
-            {
-                auto* first_device = core::pod::array::front(_vulkan_devices);
+            // Create swap chain
+            _vulkan_swapchain = render::vulkan::create_swapchain(_vulkan_allocator, core::pod::array::front(_vulkan_devices));
 
-                [[maybe_unused]]
-                auto* graphics_device = first_device->create_device(render::vulkan::VulkanDeviceQueueType::GraphicsQueue);
+            //if (core::pod::array::any(_vulkan_devices))
+            //{
+            //    auto* first_device = core::pod::array::front(_vulkan_devices);
 
-                core::pod::Array<render::vulkan::VulkanCommandBuffer*> cmd_buffers{ _driver_allocator };
-                graphics_device->create_command_buffers(cmd_buffers, 1);
-            }
+            //    [[maybe_unused]] auto* graphics_device = first_device->create_device(render::vulkan::VulkanDeviceQueueType::GraphicsQueue);
+
+            //    core::pod::Array<render::vulkan::VulkanCommandBuffer*> cmd_buffers{ _driver_allocator };
+            //    graphics_device->create_command_buffers(cmd_buffers, 1);
+            //}
         }
 
         void enumerate_devices() noexcept
@@ -146,9 +133,14 @@ namespace render
 
             // Create VulkanPhysicalDevice objects from the handles.
             fmt::print("Available Vulkan devices: {}\n", device_count);
-            for (const auto& handle : devices_handles)
+            for (const auto& physical_device_handle : devices_handles)
             {
-                core::pod::array::push_back(_vulkan_devices, _driver_allocator.make<vulkan::VulkanPhysicalDevice>(_driver_allocator, handle));
+                core::pod::array::push_back(
+                    _vulkan_devices,
+                    _driver_allocator.make<vulkan::VulkanPhysicalDevice>(
+                        _driver_allocator,
+                        physical_device_handle,
+                        _vulkan_surface->native_handle()));
             }
         }
 
@@ -163,6 +155,8 @@ namespace render
 
         void shutdown() noexcept
         {
+            _vulkan_swapchain = nullptr;
+
             release_devices();
 
             VkAllocationCallbacks alloc_callbacks = {};
@@ -172,6 +166,8 @@ namespace render
             alloc_callbacks.pfnFree = detail::vk_iceshard_free;
             alloc_callbacks.pfnInternalAllocation = nullptr;
             alloc_callbacks.pfnInternalFree = nullptr;
+
+            _vulkan_surface = nullptr;
 
             // We need to provide the callbacks when destrying the instance.
             vkDestroyInstance(_vulkan_instance, &alloc_callbacks);
@@ -197,8 +193,6 @@ namespace render
         ~VulkanRenderSystem() noexcept override
         {
             shutdown();
-
-            SDL_DestroyWindow(_render_window);
         }
 
     private:
@@ -208,15 +202,20 @@ namespace render
         // Special allocator for vulkan render system.
         render::vulkan::VulkanAllocator _vulkan_allocator;
 
-        SDL_Window* _render_window;
-
-        render::RenderCommandBuffer _command_buffer;
-
         // The Vulkan instance handle.
         VkInstance _vulkan_instance{};
 
+        // The Vulkan surface instance.
+        core::memory::unique_pointer<render::vulkan::VulkanSurface> _vulkan_surface{ nullptr, { core::memory::globals::null_allocator() } };
+
+        // The Vulkan surface instance.
+        core::memory::unique_pointer<render::vulkan::VulkanSwapchain> _vulkan_swapchain{ nullptr, { core::memory::globals::null_allocator() } };
+
         // Array vulkan devices.
         core::pod::Array<render::vulkan::VulkanPhysicalDevice*> _vulkan_devices;
+
+    private:
+        render::RenderCommandBuffer _command_buffer;
     };
 
 } // namespace render
