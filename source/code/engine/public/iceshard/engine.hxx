@@ -51,13 +51,16 @@ namespace iceshard
 
     public:
         //! \brief Creates a task in the current frame.
-        void create_task(std::function<cppcoro::task<>(core::allocator&)> task) noexcept;
+        void create_task(std::function<cppcoro::task<>(core::allocator&)>&& task) noexcept;
 
         //! \brief Creates a task in the current frame.
-        void create_task(std::function<cppcoro::task<>(iceshard::Frame&)> task) noexcept;
+        void create_task(std::function<cppcoro::task<>(iceshard::Frame&)>&& task) noexcept;
 
         //! \brief Creates a task in the current frame.
-        void create_task(std::function<cppcoro::task<>(iceshard::Engine&)> task) noexcept;
+        void create_task(std::function<cppcoro::task<>(iceshard::Engine&)>&& task) noexcept;
+
+        //! \brief Creates a task in the current frame.
+        void create_long_task(std::function<cppcoro::task<>(iceshard::Engine&)>&& task) noexcept;
 
     protected:
         //! \brief Adds a task to the current frame.

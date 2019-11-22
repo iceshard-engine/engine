@@ -34,6 +34,10 @@
 #include <iceshard/entity/entity_command_buffer.hxx>
 #include <iceshard/component/component_system.hxx>
 
+#define WIN32_LEAN_AND_MEAN
+#define NOMINMAX
+#include <Windows.h>
+
 class TestComponent1 : public iceshard::ComponentSystem
 {
 public:
@@ -110,9 +114,35 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resources)
         iceshard::EntityIndex entity_index{ alloc };
         iceshard::EntityCommandBuffer command_buffer{ alloc };
 
+        int count = 10;
+
         bool quit = false;
         while (quit == false)
         {
+
+            if (count-- > 0)
+            {
+                engine_instance->create_long_task([](iceshard::Engine& engine)->cppcoro::task<> {
+                    fmt::print("Sleeping for 3s on thread {}!\n", GetCurrentThreadId());
+                    SleepEx(3000, 0);
+
+                    engine.create_task([](iceshard::Engine&) -> cppcoro::task<> {
+                        fmt::print("Waked up on thread {}!\n", GetCurrentThreadId());
+                        co_return;
+                    });
+                    co_return;
+                });
+            }
+
+            for (int i = 0; i < 100; ++i)
+            {
+                engine_instance->create_task([&](iceshard::Engine& engine) noexcept->cppcoro::task<>
+                    {
+                        //SleepEx(1, 0);
+                        co_return;
+                    });
+            }
+
             engine_instance->create_task([&](iceshard::Engine& engine) noexcept -> cppcoro::task<>
                 {
                     auto& frame = engine.current_frame();
@@ -122,6 +152,8 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resources)
                         {
                             quit = true;
                         });
+
+
 
                     //[[maybe_unused]]
                     //auto* test_world = engine.world_manager()->get_world(core::cexpr::stringid("test-world"));

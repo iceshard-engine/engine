@@ -16,6 +16,8 @@
 #include "world/iceshard_world_manager.hxx"
 #include "iceshard_service_provider.hxx"
 
+#include <atomic>
+
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
 #include <Windows.h>
@@ -35,6 +37,12 @@ namespace iceshard
             return Size;
         }
 
+        struct FrameTask
+        {
+            cppcoro::task<> object;
+            FrameTask* next_task = nullptr;
+        };
+
     } // namespace detail
 
     class IceShardEngine final : public iceshard::Engine
@@ -47,6 +55,8 @@ namespace iceshard
             , _entity_manager{ nullptr, { _allocator } }
             , _serivce_provider{ nullptr, { _allocator } }
             , _world_manager{ nullptr, { _allocator } }
+            // Task allocator
+            , _mutable_task_list{ &_frame_tasks[_task_list_index] }
             // Frames allocators
             , _frame_allocator{ _allocator, sizeof(MemoryFrame) * 5 }
             , _frame_data_allocator{ { _allocator, detail::FrameAllocatorCapacity }, { _allocator, detail::FrameAllocatorCapacity } }
@@ -109,8 +119,17 @@ namespace iceshard
         void next_frame() noexcept override
         {
             {
+                _task_list_index += 1;
+                std::vector<cppcoro::task<>>* expected_list = &_frame_tasks[(_task_list_index - 1) % 2];
+                std::vector<cppcoro::task<>>* exchange_list = &_frame_tasks[_task_list_index % 2];
+
+                while (_mutable_task_list.compare_exchange_weak(expected_list, exchange_list) == false)
+                {
+                    expected_list = &_frame_tasks[(_task_list_index - 1) % 2];
+                }
+
                 auto sync_task_beg = std::chrono::high_resolution_clock::now();
-                cppcoro::sync_wait(cppcoro::when_all_ready(std::move(_frame_tasks)));
+                cppcoro::sync_wait(cppcoro::when_all_ready(std::move(*expected_list)));
                 auto sunc_task_end = std::chrono::high_resolution_clock::now();
                 fmt::print("Tasks took: {}ms\n", std::chrono::duration_cast<std::chrono::milliseconds>(sunc_task_end - sync_task_beg).count());
             }
@@ -141,7 +160,17 @@ namespace iceshard
 
         void add_task(cppcoro::task<> task) noexcept override
         {
-            _frame_tasks.push_back(std::move(task));
+            std::vector<cppcoro::task<>>* expected_list = &_frame_tasks[_task_list_index % 2];
+            {
+                while (_mutable_task_list.compare_exchange_weak(expected_list, nullptr) == false)
+                {
+                    expected_list = &_frame_tasks[_task_list_index % 2];
+                }
+            }
+
+            expected_list->push_back(std::move(task));
+
+            _mutable_task_list.store(expected_list);
         }
 
     private:
@@ -163,7 +192,10 @@ namespace iceshard
         cppcoro::static_thread_pool _worker_pool{};
 
         // Tasks to be run this frame.
-        std::vector<cppcoro::task<>> _frame_tasks{};
+        size_t _task_list_index = 0;
+        std::vector<cppcoro::task<>> _frame_tasks[2]{ {}, {} };
+
+        std::atomic<std::vector<cppcoro::task<>>*> _mutable_task_list = nullptr;
 
         // Frame allocators.
         uint32_t _next_free_allocator = 0;
