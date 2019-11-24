@@ -11,12 +11,25 @@ namespace render::vulkan
     class VulkanSwapchain
     {
     public:
-        VulkanSwapchain(VulkanDevice* vulkan_device, VkSwapchainKHR swapchain) noexcept;
+        VulkanSwapchain(core::allocator& alloc, VulkanPhysicalDevice* vulkan_device, VkSwapchainKHR swapchain) noexcept;
         ~VulkanSwapchain() noexcept;
 
+    protected:
+        void initialize() noexcept;
+        void shutdown() noexcept;
+
     private:
-        VulkanDevice* _vulkan_device;
+        core::allocator& _allocator;
+        VulkanPhysicalDevice* _vulkan_physical_device;
         VkSwapchainKHR _swapchain_handle;
+
+        struct SwapchainBuffer
+        {
+            VkImage image;
+            VkImageView view;
+        };
+
+        core::pod::Array<SwapchainBuffer> _swapchain_buffers;
     };
 
     auto create_swapchain(

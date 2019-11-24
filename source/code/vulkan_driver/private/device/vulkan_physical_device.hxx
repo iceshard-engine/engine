@@ -17,13 +17,22 @@ namespace render::vulkan
 
         auto native_handle() const noexcept -> VkPhysicalDevice { return _physical_device_handle; }
 
+        auto device_properties() const noexcept -> VkPhysicalDeviceProperties const& { return _device_properties; }
+
+        auto memory_properties() const noexcept -> VkPhysicalDeviceMemoryProperties const& { return _device_memory_properties; }
+
+        bool find_memory_type_index(
+            VkMemoryRequirements memory_requirements,
+            VkMemoryPropertyFlags property_bits,
+            uint32_t& type_index_out) const noexcept;
+
         auto surface_handle() const noexcept -> VkSurfaceKHR { return _surface_handle; }
 
         auto surface_capabilities() const noexcept -> VkSurfaceCapabilitiesKHR const& { return _surface_capabilities; }
 
         auto surface_present_modes() const noexcept -> core::pod::Array<VkPresentModeKHR> const& { return _present_modes; }
 
-        auto surface_surface_formats() const noexcept -> core::pod::Array<VkSurfaceFormatKHR> const& { return _surface_formats; }
+        auto surface_formats() const noexcept -> core::pod::Array<VkSurfaceFormatKHR> const& { return _surface_formats; }
 
         auto graphics_device() noexcept -> VulkanDevice* { return _graphics_device.get(); }
 
@@ -62,6 +71,10 @@ namespace render::vulkan
 
             bool supports_present;
         };
+
+        // Physical device properties.
+        VkPhysicalDeviceProperties _device_properties;
+        VkPhysicalDeviceMemoryProperties _device_memory_properties;
 
         // Physical device surface data.
         VkSurfaceCapabilitiesKHR _surface_capabilities{};

@@ -137,6 +137,27 @@ namespace render::vulkan
         shutdown();
     }
 
+    bool VulkanPhysicalDevice::find_memory_type_index(
+        VkMemoryRequirements memory_requirements,
+        VkMemoryPropertyFlags property_bits,
+        uint32_t& type_index_out) const noexcept
+    {
+        for (uint32_t i = 0; i < _device_memory_properties.memoryTypeCount; i++)
+        {
+            if ((memory_requirements.memoryTypeBits & 1) == 1)
+            {
+                // Type is available, does it match user properties?
+                if ((_device_memory_properties.memoryTypes[i].propertyFlags & property_bits) == property_bits)
+                {
+                    type_index_out = i;
+                    return true;
+                }
+            }
+            memory_requirements.memoryTypeBits >>= 1;
+        }
+        return false;
+    }
+
     void VulkanPhysicalDevice::create_device(VulkanDeviceQueueType queue_type) noexcept
     {
         auto queue_typeid = static_cast<uint64_t>(queue_type);
@@ -163,6 +184,9 @@ namespace render::vulkan
         enumerate_surface_capabilities();
         enumerate_surface_present_modes();
         enumerate_surface_formats();
+
+        vkGetPhysicalDeviceProperties(_physical_device_handle, &_device_properties);
+        vkGetPhysicalDeviceMemoryProperties(_physical_device_handle, &_device_memory_properties);
 
         create_device(VulkanDeviceQueueType::GraphicsQueue);
     }

@@ -12,6 +12,7 @@
 #include "vulkan_surface.hxx"
 #include "device/vulkan_physical_device.hxx"
 #include "vulkan_swapchain.hxx"
+#include "vulkan_image.hxx"
 
 #include <vulkan/vulkan.h>
 
@@ -108,6 +109,8 @@ namespace render
             // Create swap chain
             _vulkan_swapchain = render::vulkan::create_swapchain(_vulkan_allocator, core::pod::array::front(_vulkan_devices));
 
+            // Create depth buffer
+            _vulkan_depth_image = render::vulkan::create_depth_buffer_image(_vulkan_allocator, core::pod::array::front(_vulkan_devices));
             //if (core::pod::array::any(_vulkan_devices))
             //{
             //    auto* first_device = core::pod::array::front(_vulkan_devices);
@@ -121,6 +124,8 @@ namespace render
 
         void enumerate_devices() noexcept
         {
+            IS_ASSERT(_vulkan_surface != nullptr, "Surface object does not exist!");
+
             uint32_t device_count;
             VkResult res = vkEnumeratePhysicalDevices(_vulkan_instance, &device_count, nullptr);
             IS_ASSERT(res == VK_SUCCESS, "Couldn't properly query the number of available vulkan devices!");
@@ -155,6 +160,8 @@ namespace render
 
         void shutdown() noexcept
         {
+            _vulkan_depth_image = nullptr;
+
             _vulkan_swapchain = nullptr;
 
             release_devices();
@@ -210,6 +217,9 @@ namespace render
 
         // The Vulkan surface instance.
         core::memory::unique_pointer<render::vulkan::VulkanSwapchain> _vulkan_swapchain{ nullptr, { core::memory::globals::null_allocator() } };
+
+        // The Vulkan depth buffer image.
+        core::memory::unique_pointer<render::vulkan::VulkanImage> _vulkan_depth_image{ nullptr, { core::memory::globals::null_allocator() } };
 
         // Array vulkan devices.
         core::pod::Array<render::vulkan::VulkanPhysicalDevice*> _vulkan_devices;

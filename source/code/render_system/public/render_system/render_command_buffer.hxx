@@ -7,6 +7,12 @@
 namespace render
 {
 
+    struct BufferDataView
+    {
+        void* data_pointer;
+        uint32_t data_size;
+    };
+
     //! \brief A command identifier.
     struct CommandName
     {
