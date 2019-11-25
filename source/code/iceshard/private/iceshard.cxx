@@ -128,10 +128,7 @@ namespace iceshard
                     expected_list = &_frame_tasks[(_task_list_index - 1) % 2];
                 }
 
-                auto sync_task_beg = std::chrono::high_resolution_clock::now();
                 cppcoro::sync_wait(cppcoro::when_all_ready(std::move(*expected_list)));
-                auto sunc_task_end = std::chrono::high_resolution_clock::now();
-                fmt::print("Tasks took: {}ms\n", std::chrono::duration_cast<std::chrono::milliseconds>(sunc_task_end - sync_task_beg).count());
             }
 
             // Move the current frame to the 'previous' slot.

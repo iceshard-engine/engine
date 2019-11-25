@@ -94,42 +94,5 @@ int main(int, char**)
     }
 
     core::memory::globals::shutdown();
-    //mem::globals::init();
-    //fs::filesystem::initialize(mem::globals::default_allocator());
-
-    //MLogInfo("cwd: {}", fs::current_working_directory().c_str());
-
-    //fs::filesystem::instance().mount("../../data"); // Static data
-    //fs::filesystem::instance().mount("data_debug"); // Debug data
-
-    //auto game = CreateGame(mem::globals::default_allocator());
-    //game->OnCreate();
-
-    //// Moving the Engine object from the static function to the stack-value
-    //// Provides an automatic life cycle for the engine
-    //auto* engine = EngineCore::create(mem::globals::default_allocator());
-
-    //game->set_engine(engine);
-    //game->OnInitialized();
-
-    //// Handle events
-    //while (game->HandleEvents())
-    //{
-    //    // Swap the 'frame' of the game (and synchronize)
-    //    game->Prepare();
-
-    //    // Start the next game update before rendering starts
-    //    game->Update();
-
-    //    // Render the game
-    //    game->Render();
-    //}
-
-    //game->destroy();
-
-    //EngineCore::destroy(engine);
-
-    //fs::filesystem::shutdown();
-    //mem::globals::shutdown();
     return result;
 }
