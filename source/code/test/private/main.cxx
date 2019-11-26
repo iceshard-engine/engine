@@ -64,9 +64,6 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resources)
         bool quit = false;
         while (quit == false)
         {
-
-            auto current_frame_ts = std::chrono::high_resolution_clock::now();
-
             core::message::filter<input::message::AppExit>(engine_instance->current_frame().messages(), [&quit](const auto&) noexcept
                 {
                     quit = true;
