@@ -5,20 +5,23 @@
 namespace resource
 {
 
+    //! \brief Invalid scheme.
+    static constexpr core::cexpr::stringid_type scheme_invalid{ core::cexpr::stringid_cexpr("invalid").hash_value, "invalid" };
+
     //! \brief File scheme.
-    static core::cexpr::stringid_type scheme_file{ core::cexpr::stringid("file") };
+    static constexpr core::cexpr::stringid_type scheme_file{ core::cexpr::stringid_cexpr("file").hash_value, "file" };
 
     //! \brief Directory scheme.
-    static core::cexpr::stringid_type scheme_directory{ core::cexpr::stringid("dir") };
+    static constexpr core::cexpr::stringid_type scheme_directory{ core::cexpr::stringid_cexpr("dir").hash_value, "dir" };
 
     //! \brief ResourcePack scheme.
-    static core::cexpr::stringid_type scheme_pack{ core::cexpr::stringid("pack") };
+    static constexpr core::cexpr::stringid_type scheme_pack{ core::cexpr::stringid_cexpr("pack").hash_value, "pack" };
 
     //! \brief Dynamic library scheme.
-    static core::cexpr::stringid_type scheme_dynlib{ core::cexpr::stringid("dynlib") };
+    static constexpr core::cexpr::stringid_type scheme_dynlib{ core::cexpr::stringid_cexpr("dynlib").hash_value, "dynlib" };
 
     //! \brief Resource Name scheme.
-    static core::cexpr::stringid_type scheme_resource{ core::cexpr::stringid("res") };
+    static constexpr core::cexpr::stringid_type scheme_resource{ core::cexpr::stringid_cexpr("res").hash_value, "res" };
 
 
     //! \brief Uniform Resource Name.
@@ -50,7 +53,7 @@ namespace resource
         URI(core::cexpr::stringid_argument_type scheme, core::StringView<> path, URN name) noexcept;
 
         //! \brief The resource scheme.
-        core::cexpr::stringid_type scheme;
+        core::cexpr::stringid_type scheme{ resource::scheme_invalid };
 
         //! \brief The resource fragment.
         core::cexpr::stringid_type fragment;
