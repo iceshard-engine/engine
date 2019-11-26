@@ -13,6 +13,8 @@ namespace render::vulkan
         VulkanPipelineLayout(VkDevice device, VkPipelineLayout pipeline_layout) noexcept;
         ~VulkanPipelineLayout() noexcept;
 
+        auto native_handle() const noexcept -> VkPipelineLayout { return _native_handle; }
+
     private:
         VkDevice _device_handle;
         VkPipelineLayout _native_handle;

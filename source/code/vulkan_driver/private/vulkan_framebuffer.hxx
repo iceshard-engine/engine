@@ -1,0 +1,31 @@
+#pragma once
+#include <core/allocator.hxx>
+#include <vulkan/vulkan.h>
+
+#include "vulkan_swapchain.hxx"
+#include "vulkan_image.hxx"
+
+namespace render::vulkan
+{
+
+    class VulkanFramebuffer
+    {
+    public:
+        VulkanFramebuffer(VkDevice device, VkFramebuffer framebuffer_handle) noexcept;
+        ~VulkanFramebuffer() noexcept;
+
+    private:
+        VkDevice _device_handle;
+        VkFramebuffer _native_handle;
+    };
+
+    void create_framebuffers(
+        core::allocator& alloc,
+        core::pod::Array<VulkanFramebuffer*>& results,
+        VkDevice device,
+        VkRenderPass render_pass,
+        VulkanImage const* depth_buffer,
+        VulkanSwapchain const* swapchain,
+        VulkanPhysicalDevice const* vulkan_physical_device) noexcept;
+
+} // namespace render::vulkan

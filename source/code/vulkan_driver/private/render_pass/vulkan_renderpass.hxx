@@ -12,6 +12,8 @@ namespace render::vulkan
         VulkanRenderPass(VkDevice device, VkRenderPass render_pass) noexcept;
         ~VulkanRenderPass() noexcept;
 
+        auto native_handle() const noexcept -> VkRenderPass { return _native_handle; }
+
     private:
         VkDevice _device_handle;
         VkRenderPass _native_handle;

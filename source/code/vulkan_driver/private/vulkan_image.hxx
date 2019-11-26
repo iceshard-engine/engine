@@ -16,6 +16,8 @@ namespace render::vulkan
 
         auto native_handle() const noexcept -> VkImage { return _image_handle; }
 
+        auto native_view() const noexcept -> VkImageView { return _view_handle; }
+
     private:
         VkDevice _device_handle;
         VkImage _image_handle;

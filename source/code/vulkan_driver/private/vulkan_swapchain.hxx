@@ -14,6 +14,15 @@ namespace render::vulkan
         VulkanSwapchain(core::allocator& alloc, VulkanPhysicalDevice* vulkan_device, VkSwapchainKHR swapchain) noexcept;
         ~VulkanSwapchain() noexcept;
 
+    public:
+        struct SwapchainBuffer
+        {
+            VkImage image;
+            VkImageView view;
+        };
+
+        auto swapchain_buffers() const noexcept -> core::pod::Array<SwapchainBuffer> const& { return _swapchain_buffers; }
+
     protected:
         void initialize() noexcept;
         void shutdown() noexcept;
@@ -22,12 +31,6 @@ namespace render::vulkan
         core::allocator& _allocator;
         VulkanPhysicalDevice* _vulkan_physical_device;
         VkSwapchainKHR _swapchain_handle;
-
-        struct SwapchainBuffer
-        {
-            VkImage image;
-            VkImageView view;
-        };
 
         core::pod::Array<SwapchainBuffer> _swapchain_buffers;
     };

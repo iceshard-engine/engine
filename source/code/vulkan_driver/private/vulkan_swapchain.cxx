@@ -124,7 +124,7 @@ namespace render::vulkan
         //swapchain_ci.imageUsage = VkImageUsageFlags:: usageFlags; // todo
         swapchain_ci.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
         swapchain_ci.queueFamilyIndexCount = 0;
-        swapchain_ci.pQueueFamilyIndices = NULL;
+        swapchain_ci.pQueueFamilyIndices = nullptr;
 
         //uint32_t queueFamilyIndices[2] = { (uint32_t)info.graphics_queue_family_index, (uint32_t)info.present_queue_family_index };
         //if (info.graphics_queue_family_index != info.present_queue_family_index)

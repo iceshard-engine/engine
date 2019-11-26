@@ -13,13 +13,15 @@ namespace render::vulkan
         VulkanShader(VkDevice device, VkShaderStageFlagBits shader_stage, VkShaderModule shader_module) noexcept;
         ~VulkanShader() noexcept;
 
+        auto stage() const noexcept -> VkShaderStageFlagBits { return _shader_stage; }
+
     private:
         VkDevice _device_handle;
         VkShaderStageFlagBits _shader_stage;
         VkShaderModule _native_handle;
     };
 
-    auto create_shared(
+    auto create_shader(
         core::allocator& alloc,
         VkDevice device,
         VkShaderStageFlagBits shader_stage,

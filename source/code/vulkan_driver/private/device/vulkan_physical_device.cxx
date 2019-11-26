@@ -91,7 +91,6 @@ namespace render::vulkan
 
             IS_ASSERT(false, "Failed to get queue type from flag! THIS SHOULD NOT HAPPEN!");
             std::abort();
-            return static_cast<VulkanDeviceQueueType>(0);
         }
 
         auto factory_for_flag_bit(VkQueueFlagBits flag) noexcept

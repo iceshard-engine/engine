@@ -15,7 +15,7 @@ namespace render::vulkan
         vkDestroyShaderModule(_device_handle, _native_handle, nullptr);
     }
 
-    auto create_shared(
+    auto create_shader(
         core::allocator& alloc,
         VkDevice device,
         VkShaderStageFlagBits shader_stage,
@@ -30,6 +30,7 @@ namespace render::vulkan
 
         VkShaderModule shader_module;
         auto api_result = vkCreateShaderModule(device, &shader_module_info, nullptr, &shader_module);
+        IS_ASSERT(api_result == VkResult::VK_SUCCESS, "Couldn't create shader module!");
 
         return core::memory::make_unique<VulkanShader>(alloc, device, shader_stage, shader_module);
     }

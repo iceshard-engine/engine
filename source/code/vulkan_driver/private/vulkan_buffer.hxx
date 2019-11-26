@@ -34,4 +34,9 @@ namespace render::vulkan
         VulkanPhysicalDevice* physical_device,
         VkDeviceSize buffer_size) noexcept -> core::memory::unique_pointer<VulkanBuffer>;
 
+    auto create_vertex_buffer(
+        core::allocator& alloc,
+        VulkanPhysicalDevice* physical_device,
+        VkDeviceSize buffer_size) noexcept -> core::memory::unique_pointer<VulkanBuffer>;
+
 } // namespace render::vulkan
