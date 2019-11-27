@@ -5,6 +5,28 @@
 namespace resource
 {
 
+#if CFG_RELEASE
+
+    //! \brief Invalid scheme.
+    static constexpr core::cexpr::stringid_type scheme_invalid{ core::cexpr::stringid_cexpr("invalid") };
+
+    //! \brief File scheme.
+    static constexpr core::cexpr::stringid_type scheme_file{ core::cexpr::stringid_cexpr("file") };
+
+    //! \brief Directory scheme.
+    static constexpr core::cexpr::stringid_type scheme_directory{ core::cexpr::stringid_cexpr("dir") };
+
+    //! \brief ResourcePack scheme.
+    static constexpr core::cexpr::stringid_type scheme_pack{ core::cexpr::stringid_cexpr("pack") };
+
+    //! \brief Dynamic library scheme.
+    static constexpr core::cexpr::stringid_type scheme_dynlib{ core::cexpr::stringid_cexpr("dynlib") };
+
+    //! \brief Resource Name scheme.
+    static constexpr core::cexpr::stringid_type scheme_resource{ core::cexpr::stringid_cexpr("res") };
+
+#else
+
     //! \brief Invalid scheme.
     static constexpr core::cexpr::stringid_type scheme_invalid{ core::cexpr::stringid_cexpr("invalid").hash_value, "invalid" };
 
@@ -22,6 +44,8 @@ namespace resource
 
     //! \brief Resource Name scheme.
     static constexpr core::cexpr::stringid_type scheme_resource{ core::cexpr::stringid_cexpr("res").hash_value, "res" };
+
+#endif
 
 
     //! \brief Uniform Resource Name.
