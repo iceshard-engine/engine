@@ -25,6 +25,11 @@ namespace resource
         virtual auto find(const URI& location) noexcept -> Resource* = 0;
 
         //! \todo documentation.
+        virtual auto open(
+            [[maybe_unused]] URI const& location,
+            [[maybe_unused]] std::function<void(Resource*)> callback) noexcept -> OutputResource* { return nullptr; }
+
+        //! \todo documentation.
         virtual auto mount(const URI& location, std::function<void(Resource*)> callback) noexcept -> uint32_t = 0;
     };
 

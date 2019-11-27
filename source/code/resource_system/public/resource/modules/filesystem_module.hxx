@@ -19,10 +19,12 @@ namespace resource
         ~FileSystem() noexcept;
 
         //! \brief Searches for the default resource with the given name.
-        auto find(const URI& uri) noexcept -> Resource* override;
+        auto find(URI const& uri) noexcept -> Resource* override;
+
+        auto open(URI const& uri, std::function<void(Resource*)> callback) noexcept -> OutputResource* override;
 
         //! \brief Mounts all resources found under the given URI.
-        auto mount(const URI& uri, std::function<void(Resource*)> callback) noexcept -> uint32_t override;
+        auto mount(URI const& uri, std::function<void(Resource*)> callback) noexcept -> uint32_t override;
 
     private:
         const core::String<> _basedir;
