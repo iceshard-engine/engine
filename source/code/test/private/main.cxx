@@ -64,7 +64,7 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resources)
         bool quit = false;
         while (quit == false)
         {
-            core::message::filter<input::message::AppExit>(engine_instance->current_frame().messages(), [&quit](const auto&) noexcept
+            core::message::filter<input::message::AppExit>(engine_instance->current_frame().messages(), [&quit](auto const&) noexcept
                 {
                     quit = true;
                 });

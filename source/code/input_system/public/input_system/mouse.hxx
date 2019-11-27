@@ -1,13 +1,11 @@
 #pragma once
-#include <input_system/device.hxx>
-#include <tuple>
+#include <core/base.hxx>
 
 namespace input
 {
 
-
     //! \brief Supported mouse buttons.
-    enum class MouseButton
+    enum class MouseButton : uint32_t
     {
         Unknown
 
@@ -17,6 +15,5 @@ namespace input
 
         , Custom0
     };
-
 
 } // namespace input
