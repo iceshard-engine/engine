@@ -19,7 +19,7 @@ jobs:
     - name: Build (ReleaseDebug)
       shell: cmd
       run: |
-        iceshard build
+        ice build
     - name: Verify
       run: |
         echo Nothing to verify yet

@@ -1,8 +1,8 @@
 name: Validation
 
-on: 
+on:
   push:
-    branches: 
+    branches:
     - master
 
 jobs:
@@ -22,7 +22,7 @@ jobs:
     - name: Build
       shell: cmd
       run: |
-        iceshard build -t all-x64-${{ matrix.configuration }}
+        ice build -t all-x64-${{ matrix.configuration }}
     - name: Verify
       run: |
         echo Nothing to verify yet
