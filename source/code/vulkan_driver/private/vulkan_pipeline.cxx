@@ -32,6 +32,7 @@ namespace render::vulkan
             shader_stages_info[stage_index].pSpecializationInfo = nullptr;
             shader_stages_info[stage_index].flags = 0;
             shader_stages_info[stage_index].stage = shader->stage();
+            shader_stages_info[stage_index].module = shader->native_handle();
             shader_stages_info[stage_index].pName = "main";
             stage_index += 1;
         }

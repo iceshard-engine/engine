@@ -16,6 +16,8 @@ namespace render::vulkan
         VulkanPipeline(VkDevice device, VkPipeline pipeline) noexcept;
         ~VulkanPipeline() noexcept;
 
+        auto native_handle() const noexcept -> VkPipeline { return _native_handle; }
+
     private:
         VkDevice _device_handle;
         VkPipeline _native_handle;

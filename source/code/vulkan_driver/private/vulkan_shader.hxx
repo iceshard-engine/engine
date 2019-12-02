@@ -13,6 +13,8 @@ namespace render::vulkan
         VulkanShader(VkDevice device, VkShaderStageFlagBits shader_stage, VkShaderModule shader_module) noexcept;
         ~VulkanShader() noexcept;
 
+        auto native_handle() const noexcept -> VkShaderModule { return _native_handle; }
+
         auto stage() const noexcept -> VkShaderStageFlagBits { return _shader_stage; }
 
     private:

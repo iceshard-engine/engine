@@ -9,12 +9,14 @@ namespace render::vulkan
         core::allocator& alloc,
         VulkanDeviceQueueType queue_type,
         VulkanQueueFamilyIndex queue_family,
-        VkDevice device_handle) noexcept
+        VkDevice device_handle,
+        bool supports_presenting) noexcept
         : _allocator{ alloc }
         , _queue_type{ queue_type }
         , _queue_family{ queue_family }
         , _device_handle{ device_handle }
         , _command_buffers{ _allocator }
+        , _supports_presenting{ supports_presenting }
     {
         initialize();
     }
@@ -44,6 +46,8 @@ namespace render::vulkan
 
     void VulkanDevice::initialize() noexcept
     {
+        vkGetDeviceQueue(_device_handle, static_cast<uint32_t>(_queue_family), 0, &_device_queue);
+
         VkCommandPoolCreateInfo cmd_pool_info = {};
         cmd_pool_info.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
         cmd_pool_info.pNext = NULL;

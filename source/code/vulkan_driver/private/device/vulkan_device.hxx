@@ -28,17 +28,20 @@ namespace render::vulkan
             core::allocator& alloc,
             VulkanDeviceQueueType queue_type,
             VulkanQueueFamilyIndex queue_family,
-            VkDevice device_handle) noexcept;
+            VkDevice device_handle,
+            bool supports_presenting) noexcept;
 
         ~VulkanDevice() noexcept;
 
         auto native_handle() const noexcept -> VkDevice { return _device_handle; }
 
-        //! \brief Creates the specified number of command buffers.
-        void create_command_buffers(core::pod::Array<VulkanCommandBuffer*>& output_array, uint32_t num) noexcept;
+        auto device_queue() const noexcept -> VkQueue { return _device_queue; }
 
         //! \brief Supports presenting.
         bool can_present() const noexcept { return _supports_presenting; }
+
+        //! \brief Creates the specified number of command buffers.
+        void create_command_buffers(core::pod::Array<VulkanCommandBuffer*>& output_array, uint32_t num) noexcept;
 
     protected:
         void initialize() noexcept;
@@ -50,6 +53,7 @@ namespace render::vulkan
         VulkanQueueFamilyIndex const _queue_family;
 
         VkDevice _device_handle;
+        VkQueue _device_queue;
         VkCommandPool _command_pool;
 
         core::pod::Array<VulkanCommandBuffer*> _command_buffers;

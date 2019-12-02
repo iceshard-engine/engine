@@ -14,6 +14,8 @@ namespace render::vulkan
         VulkanFramebuffer(VkDevice device, VkFramebuffer framebuffer_handle) noexcept;
         ~VulkanFramebuffer() noexcept;
 
+        auto native_handle() const noexcept -> VkFramebuffer { return _native_handle; }
+
     private:
         VkDevice _device_handle;
         VkFramebuffer _native_handle;
@@ -24,8 +26,8 @@ namespace render::vulkan
         core::pod::Array<VulkanFramebuffer*>& results,
         VkDevice device,
         VkRenderPass render_pass,
-        VulkanImage const* depth_buffer,
-        VulkanSwapchain const* swapchain,
+        VulkanImage const& depth_buffer,
+        VulkanSwapchain const& swapchain,
         VulkanPhysicalDevice const* vulkan_physical_device) noexcept;
 
 } // namespace render::vulkan

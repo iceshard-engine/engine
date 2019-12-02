@@ -14,6 +14,8 @@ namespace render::vulkan
         VulkanSwapchain(core::allocator& alloc, VulkanPhysicalDevice* vulkan_device, VkSwapchainKHR swapchain) noexcept;
         ~VulkanSwapchain() noexcept;
 
+        auto native_handle() const noexcept -> VkSwapchainKHR { return _swapchain_handle; }
+
     public:
         struct SwapchainBuffer
         {

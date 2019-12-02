@@ -9,6 +9,7 @@
     //------------------------------------------------------------------------------
     .ProjectConanModules = .WorkspaceConanModules
         + 'SDL2'
+        + 'glm'
     .VSProjectConfigurations = { }
 
     .ProjectCompilerOptions = ''

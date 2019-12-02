@@ -11,6 +11,8 @@ namespace render::vulkan
         VulkanCommandBuffer(core::allocator& alloc, VkCommandBuffer handle) noexcept;
         ~VulkanCommandBuffer() noexcept;
 
+        auto native_handle() const noexcept -> VkCommandBuffer { return _command_buffer_handle; }
+
     private:
         core::allocator& _allocator;
         VkCommandBuffer _command_buffer_handle;

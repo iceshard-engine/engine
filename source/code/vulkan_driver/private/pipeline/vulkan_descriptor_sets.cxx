@@ -59,8 +59,11 @@ namespace render::vulkan
                 // clang-format on
 
                 descriptor_pool_size.descriptorCount += 1;
+                core::pod::hash::set(pool_sizes, layut_binding.descriptorType, std::move(descriptor_pool_size));
             }
         }
+
+        IS_ASSERT(core::pod::array::any(pool_sizes._data), "No layout bindings where provided!");
 
         core::pod::Array<VkDescriptorPoolSize> pool_sizes_array{ alloc };
         for (auto const& pool_size : pool_sizes)
@@ -81,7 +84,7 @@ namespace render::vulkan
 
         VkDescriptorSetAllocateInfo alloc_info;
         alloc_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-        alloc_info.pNext = NULL;
+        alloc_info.pNext = nullptr;
         alloc_info.descriptorPool = descriptor_pool;
         alloc_info.descriptorSetCount = core::pod::array::size(descriptor_set_layouts);
         alloc_info.pSetLayouts = core::pod::array::begin(descriptor_set_layouts);

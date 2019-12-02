@@ -8,7 +8,10 @@ namespace render::vulkan
 
         // Array of all supported queue flags.
         VkQueueFlagBits queue_flags_array[] = {
-            VkQueueFlagBits::VK_QUEUE_GRAPHICS_BIT, VkQueueFlagBits::VK_QUEUE_COMPUTE_BIT, VkQueueFlagBits::VK_QUEUE_TRANSFER_BIT, VkQueueFlagBits::VK_QUEUE_SPARSE_BINDING_BIT
+            VkQueueFlagBits::VK_QUEUE_GRAPHICS_BIT,
+            VkQueueFlagBits::VK_QUEUE_COMPUTE_BIT,
+            VkQueueFlagBits::VK_QUEUE_TRANSFER_BIT,
+            VkQueueFlagBits::VK_QUEUE_SPARSE_BINDING_BIT,
         };
 
         // Graphics queue vulkan device factory
@@ -168,7 +171,14 @@ namespace render::vulkan
             if (queue_type == VulkanDeviceQueueType::GraphicsQueue)
             {
                 VkDevice device_handle = factory_data.factory_function(_allocator, _physical_device_handle, factory_data.family_index);
-                _graphics_device = core::memory::make_unique<VulkanDevice>(_allocator, _allocator, queue_type, factory_data.family_index, device_handle);
+                _graphics_device = core::memory::make_unique<VulkanDevice>(
+                    _allocator,
+                    _allocator,
+                    queue_type,
+                    factory_data.family_index,
+                    device_handle,
+                    factory_data.supports_present
+                    );
             }
             else
             {
@@ -207,6 +217,7 @@ namespace render::vulkan
 
             // Check If family supports presenting
             VkBool32 supports_present = VK_FALSE;
+
             auto api_result = vkGetPhysicalDeviceSurfaceSupportKHR(_physical_device_handle, index, _surface_handle, &supports_present);
             IS_ASSERT(api_result == VkResult::VK_SUCCESS, "Couldn't query information if family {} (index) supports presenting!", index);
 
