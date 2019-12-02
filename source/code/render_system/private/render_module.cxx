@@ -1,4 +1,5 @@
 #include <render_system/render_module.hxx>
+#include "render_api_instance.hxx"
 
 #include <filesystem>
 
@@ -11,7 +12,7 @@ namespace render
 
     namespace detail
     {
-        using RenderSystemCreateFunc = RenderSystem*(core::allocator&);
+        using RenderSystemCreateFunc = RenderSystem*(core::allocator&, core::cexpr::stringid_hash_type, void*);
         using RenderSystemReleaseFunc = void(core::allocator&, RenderSystem*);
 
         //! \brief A dynamic loaded engine DLL module.
@@ -77,7 +78,15 @@ namespace render
                 auto create_func = reinterpret_cast<detail::RenderSystemCreateFunc*>(create_engine_addr);
                 auto release_func = reinterpret_cast<detail::RenderSystemReleaseFunc*>(release_engine_addr);
 
-                result = { alloc.make<detail::RenderSystemDynamicModule>(alloc, module_handle, create_func(alloc), release_func), alloc };
+                auto* const module_instace = create_func(alloc, render::api::version_name.hash_value, &api_interface_instance);
+                if (module_instace != nullptr)
+                {
+                    result = { alloc.make<detail::RenderSystemDynamicModule>(alloc, module_handle, module_instace, release_func), alloc };
+                }
+                else
+                {
+                    FreeLibrary(module_handle);
+                }
             }
         }
 
