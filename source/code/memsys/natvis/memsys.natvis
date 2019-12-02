@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
+
+  <!-- Native Visualization for the allocator type -->
+  <Type Name="core::allocator" >
+    <DisplayString>core::allocator</DisplayString>
+  </Type>
+
+  <!-- Native Visualization for the allocator type -->
+  <Type Name="core::memory::proxy_allocator" >
+    <DisplayString>core::allocator {{ {_name,s} }}</DisplayString>
+    <Expand>
+      <Synthetic Name="[allocated_bytes]" Condition="!_allocation_tracking" ExcludeView="simple">
+        <DisplayString>not tracked</DisplayString>
+      </Synthetic>
+      <Item Name="[allocated_bytes]" Condition="_allocation_tracking">_allocation_total</Item>
+      <Item Name="[total_allocation_count]">_allocation_requests</Item>
+    </Expand>
+  </Type>
+
+</AutoVisualizer>

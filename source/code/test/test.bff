@@ -4,6 +4,11 @@
     .ProjectName        = 'test'
     .ProjectBaseDir = '$_CURRENT_BFF_DIR_$'
 
+    .ProjectDependencies = {
+        'iceshard',
+        'sdl2_driver',
+        'vulkan_driver',
+    }
 
     // Additional helper variables
     //------------------------------------------------------------------------------
@@ -65,7 +70,6 @@
 
             If ( .CopyDirs )
             {
-                Print( .CopyDirsList )
                 CopyDir( '$ProjectName$-$Platform$-$Config$-$ConanModule$-copydir' )
                 {
                     .SourcePaths = .CopyDirsList
@@ -116,6 +120,11 @@
             .LinkerOutput = '$ConfigurationTargetDirectory$/$ProjectName$.exe'
 
             .PreBuildDependencies = .ConfigurationDependencies
+
+            ForEach( .Dependency in .ProjectDependencies )
+            {
+                ^PreBuildDependencies + "$Dependency$-$Platform$-$Config$"
+            }
         }
 
 

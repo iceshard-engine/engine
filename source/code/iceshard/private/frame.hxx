@@ -31,6 +31,7 @@ namespace iceshard
 
         void add_frame_object(core::cexpr::stringid_argument_type name, void* frame_object, void(*deleter)(core::allocator&, void*)) noexcept override;
 
+        //! \copydoc Frame::frame_allocator() noexcept
         auto frame_allocator() noexcept -> core::allocator& override;
 
     private:

@@ -34,13 +34,6 @@
 #include <iceshard/entity/entity_command_buffer.hxx>
 #include <iceshard/component/component_system.hxx>
 
-#include <cppcoro/resume_on.hpp>
-#include <cppcoro/schedule_on.hpp>
-
-#define WIN32_LEAN_AND_MEAN
-#define NOMINMAX
-#include <Windows.h>
-
 int game_main(core::allocator& alloc, resource::ResourceSystem& resources)
 {
     using resource::URN;

@@ -27,8 +27,8 @@ Settings
 .ConfigNameRelease = 'Release'
 
 ; VS properties
-.VSBuildCommand = '$WorkspaceRoot$/iceshard build -t'
-.VSRebuildCommand = '$WorkspaceRoot$/iceshard build --clean -t'
+.VSBuildCommand = '$WorkspaceRoot$/ice build -t'
+.VSRebuildCommand = '$WorkspaceRoot$/ice build --clean -t'
 
 ; Windows platform
 .platform_x64_windows =
@@ -38,7 +38,7 @@ Settings
     Using( .msvcLibrarianOptions )
 
     .CompilerOptions + ' /await'
-        + ' /wd4307'
+        + ' /wd4127' // conditional expression is constant'
         + ' /permissive-'
 
     .Platform = 'x64'
@@ -89,6 +89,20 @@ Settings
     .ConanConfig = 'Release'
 ]
 
+
+// Defined rendering system flags
+//--------------------------------------------------------------------------
+#import VULKAN_SDK
+.vulkan_x64_windows =
+[
+    .CompilerOptions = ''
+        + ' /I"$VULKAN_SDK$/Include"'
+        + ' /DVK_USE_PLATFORM_WIN32_KHR'
+
+    .LinkerOptions = ''
+        + ' /LIBPATH:"$VULKAN_SDK$/Lib"'
+        + ' "vulkan-1.lib"'
+]
 
 
 // Defined Configurations
@@ -146,6 +160,7 @@ Settings
     // Systems projects
     //--------------------------------------------------------------------------
     #include "code/resource_system/resource_system.bff"
+    #include "code/render_system/render_system.bff"
     #include "code/input_system/input_system.bff"
 
     .SolutionFolder =
@@ -166,6 +181,7 @@ Settings
     // Driver projects
     //--------------------------------------------------------------------------
     #include "code/sdl2_driver/sdl2_driver.bff"
+    #include "code/vulkan_driver/vulkan_driver.bff"
 
     .SolutionFolder =
     [
@@ -213,10 +229,6 @@ Settings
     }
 }
 
-
-// Generate 'All' targets
-//--------------------------------------------------------------------------
-
 // Generate 'All' targets
 //--------------------------------------------------------------------------
 ForEach( .Configuration in .Configurations )
@@ -246,4 +258,5 @@ VSSolution( 'solution' )
 
     .SolutionFolders = .SolutionFolders
     .SolutionProjects = .SolutionProjects
+    .SolutionBuildProject = { 'test-vcxproj' }
 }

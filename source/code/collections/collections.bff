@@ -103,6 +103,15 @@
         .ProjectInputPaths = {
             '$ProjectBaseDir$/public'
             '$ProjectBaseDir$/private'
+            '$ProjectBaseDir$/natvis'
+        }
+        .ProjectAllowedFileExtensions = {
+            // Source files
+            '*.cxx', '*.hxx', '*.inl',
+            // Resource files
+            '*.rc', '*.resx',
+            // Meta files
+            '*.bff', '*.natvis',
         }
     }
 

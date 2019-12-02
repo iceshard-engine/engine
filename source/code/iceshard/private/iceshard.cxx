@@ -3,6 +3,8 @@
 #include <resource/system.hxx>
 #include <input_system/system.hxx>
 #include <input_system/module.hxx>
+#include <render_system/render_module.hxx>
+#include <render_system/render_system.hxx>
 
 #include <core/allocators/proxy_allocator.hxx>
 #include <core/allocators/scratch_allocator.hxx>
@@ -52,6 +54,8 @@ namespace iceshard
             : _allocator{ "iceshard-engine", alloc }
             , _resources{ resources }
             , _input_module{ nullptr, { _allocator } }
+            , _render_module{ nullptr, { _allocator } }
+            // Managers
             , _entity_manager{ nullptr, { _allocator } }
             , _serivce_provider{ nullptr, { _allocator } }
             , _world_manager{ nullptr, { _allocator } }
@@ -64,10 +68,22 @@ namespace iceshard
             , _previous_frame{ core::memory::make_unique<MemoryFrame>(_frame_allocator, _frame_data_allocator[0]) }
             , _current_frame{ core::memory::make_unique<MemoryFrame>(_frame_allocator, _frame_data_allocator[1]) }
         {
-            auto* sdl_driver_module_location = resources.find({ "sdl2_driver.dll" });
-            IS_ASSERT(sdl_driver_module_location != nullptr, "Missing SDL2 driver module!");
+            {
+                auto* sdl_driver_module_location = resources.find({ "sdl2_driver.dll" });
+                IS_ASSERT(sdl_driver_module_location != nullptr, "Missing SDL2 driver module!");
 
-            _input_module = input::load_driver_module(_allocator, sdl_driver_module_location->location().path);
+                _input_module = input::load_driver_module(_allocator, sdl_driver_module_location->location().path);
+                IS_ASSERT(_input_module != nullptr, "Invalid SDL2 driver module! Unable to load!");
+            }
+
+            {
+                auto* vulkan_driver_module_location = resources.find({ "vulkan_driver.dll" });
+                IS_ASSERT(vulkan_driver_module_location != nullptr, "Missing Vulkan driver module!");
+
+                _render_module = render::load_render_system_module(_allocator, vulkan_driver_module_location->location().path);
+                IS_ASSERT(_render_module != nullptr, "Invalid Vulkan driver module! Unable to load!");
+            }
+
             _entity_manager = core::memory::make_unique<iceshard::EntityManager>(_allocator, _allocator);
             _serivce_provider = core::memory::make_unique<iceshard::IceshardServiceProvider>(_allocator, _allocator, _entity_manager.get());
 
@@ -131,6 +147,8 @@ namespace iceshard
                 cppcoro::sync_wait(cppcoro::when_all_ready(std::move(*expected_list)));
             }
 
+            _render_module->render_system()->swap();
+
             // Move the current frame to the 'previous' slot.
             _previous_frame = std::move(_current_frame);
 
@@ -178,6 +196,7 @@ namespace iceshard
 
         // Input system.
         core::memory::unique_pointer<input::InputModule> _input_module;
+        core::memory::unique_pointer<render::RenderSystemModule> _render_module;
 
         // Managers and service provider
         core::memory::unique_pointer<iceshard::EntityManager> _entity_manager;

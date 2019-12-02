@@ -17,19 +17,18 @@ namespace input::sdl2
         SDLInputSystem(core::allocator& alloc) noexcept
             : _transforms{ alloc }
         {
-            if (SDL_Init(SDL_INIT_VIDEO) >= 0)
+            const bool sdl2_init_successfull = SDL_Init(0) == 0;
+            if (sdl2_init_successfull == false)
+            {
+                IS_ASSERT(sdl2_init_successfull == true, "Initialization od SDL2 failed! Error: '{}'", SDL_GetError());
+            }
+
+            if (SDL_InitSubSystem(SDL_INIT_EVENTS) >= 0)
             {
                 input::sdl2::register_app_event_handlers(_transforms);
                 input::sdl2::register_mouse_event_handlers(_transforms);
                 input::sdl2::register_keyboard_event_handlers(_transforms);
             }
-
-            SDL_CreateWindow(
-                "IceShard - Test window",
-                SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
-                1025, 756,
-                SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN
-            );
         }
 
         ~SDLInputSystem() noexcept override
