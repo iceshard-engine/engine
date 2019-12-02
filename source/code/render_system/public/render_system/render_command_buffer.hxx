@@ -4,8 +4,12 @@
 #include <core/pod/collections.hxx>
 #include <core/cexpr/stringid.hxx>
 
+#include <render_system/render_api.hxx>
+
 namespace render
 {
+
+    using CommandBufferHandle = api::command_buffer_handle;
 
     struct BufferDataView
     {
