@@ -1,22 +1,21 @@
 #include <iceshard/engine.hxx>
 #include <iceshard/frame.hxx>
 
+#include <cppcoro/sync_wait.hpp>
+#include <thread>
+
 namespace iceshard
 {
 
-    void Engine::create_task(std::function<cppcoro::task<>(core::allocator&)> task) noexcept
+    void Engine::add_long_task(cppcoro::task<> task) noexcept
     {
-        add_task(task(current_frame().frame_allocator()));
-    }
+        add_task([](cppcoro::task<> task_object) noexcept -> cppcoro::task<> {
 
-    void Engine::create_task(std::function<cppcoro::task<>(iceshard::Frame&)> task) noexcept
-    {
-        add_task(task(current_frame()));
-    }
+            std::thread th{ cppcoro::sync_wait<cppcoro::task<>>, std::move(task_object) };
+            th.detach();
+            co_return;
 
-    void Engine::create_task(std::function<cppcoro::task<>(iceshard::Engine&)> task) noexcept
-    {
-        add_task(task(*this));
+        }(std::move(task)));
     }
 
 } // namespace iceshard

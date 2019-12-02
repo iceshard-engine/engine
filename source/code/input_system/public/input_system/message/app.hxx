@@ -14,5 +14,41 @@ namespace input::message
         int exit_code{ 0 };
     };
 
+    enum class AppStatus
+    {
+        Unknown,
+        InForeground,
+        InBackground,
+    };
+
+    struct AppStatusChanged
+    {
+        static inline const core::cexpr::stringid_type message_type{ core::cexpr::stringid("App.Status.Changed") };
+
+        AppStatus status;
+    };
+
+    struct AppStatusChangeing
+    {
+        static inline const core::cexpr::stringid_type message_type{ core::cexpr::stringid("App.Status.Changeing") };
+
+        AppStatus new_status;
+    };
+
+    inline constexpr auto to_string(AppStatus status) noexcept -> std::string_view
+    {
+        if (status == AppStatus::InBackground)
+        {
+            return "InBackground";
+        }
+        else if (status == AppStatus::InForeground)
+        {
+            return "InForeground";
+        }
+        else
+        {
+            return "Unknown";
+        }
+    }
 
 } // namespace input::message

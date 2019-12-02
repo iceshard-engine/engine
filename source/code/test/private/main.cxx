@@ -57,24 +57,14 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resources)
         bool quit = false;
         while (quit == false)
         {
-            engine_instance->create_task([&](iceshard::Engine& engine) noexcept -> cppcoro::task<>
+            core::message::filter<input::message::AppExit>(engine_instance->current_frame().messages(), [&quit](auto const&) noexcept
                 {
-                    auto& frame = engine.current_frame();
-
-                    // Check for the quit message
-                    core::message::filter<input::message::AppExit>(frame.messages(), [&quit](const auto&) noexcept
-                        {
-                            quit = true;
-                        });
-
-                    co_return;
+                    quit = true;
                 });
 
-            // Update the engine state.
             engine_instance->next_frame();
         }
 
-        // Destroy the test world
         engine_instance->world_manager()->destroy_world(core::cexpr::stringid("test-world"));
     }
 
