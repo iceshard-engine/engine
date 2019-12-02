@@ -23,19 +23,19 @@ namespace input::sdl2
             return MouseButton::Unknown;
         }
 
-        void mouse_motion_event_handler(core::MessageBuffer& message_buffer, const SDL_Event& sdl_event) noexcept
+        void mouse_motion_event_handler(core::MessageBuffer& message_buffer, SDL_Event const& sdl_event) noexcept
         {
             core::message::push(message_buffer, input::message::MouseMotion{ input::message::MousePos{ sdl_event.motion.x, sdl_event.motion.y } });
         }
 
-        void mouse_button_event_handler(core::MessageBuffer& message_buffer, const SDL_Event& sdl_event) noexcept
+        void mouse_button_event_handler(core::MessageBuffer& message_buffer, SDL_Event const& sdl_event) noexcept
         {
             if (sdl_event.button.type == SDL_MOUSEBUTTONDOWN)
             {
                 core::message::push(message_buffer,
                     input::message::MouseButtonDown{
                         .button = map_sdl_button(sdl_event.button.button),
-                        .pos = input::message::MousePos{ sdl_event.motion.x, sdl_event.motion.y }
+                        .pos = input::message::MousePos{ sdl_event.button.x, sdl_event.button.y }
                     }
                 );
             }
@@ -44,14 +44,23 @@ namespace input::sdl2
                 core::message::push(message_buffer,
                     input::message::MouseButtonUp{
                         .button = map_sdl_button(sdl_event.button.button),
-                        .pos = input::message::MousePos{ sdl_event.motion.x, sdl_event.motion.y }
+                        .pos = input::message::MousePos{ sdl_event.button.x, sdl_event.button.y }
                     }
                 );
             }
         }
 
-    } // namespace detail
+        void mouse_wheel_event_handler(core::MessageBuffer& message_buffer, SDL_Event const& sdl_event) noexcept
+        {
+            core::message::push(message_buffer,
+                input::message::MouseWheel{
+                    .dx = sdl_event.wheel.x,
+                    .dy = sdl_event.wheel.y,
+                }
+            );
+        }
 
+    } // namespace detail
 
     //! \brief Handler functions for mouse events.
     void register_mouse_event_handlers(core::pod::Hash<EventHandlerSignature*>& handler_map) noexcept
@@ -59,6 +68,7 @@ namespace input::sdl2
         core::pod::hash::set(handler_map, SDL_EventType::SDL_MOUSEMOTION, &detail::mouse_motion_event_handler);
         core::pod::hash::set(handler_map, SDL_EventType::SDL_MOUSEBUTTONDOWN, &detail::mouse_button_event_handler);
         core::pod::hash::set(handler_map, SDL_EventType::SDL_MOUSEBUTTONUP, &detail::mouse_button_event_handler);
+        core::pod::hash::set(handler_map, SDL_EventType::SDL_MOUSEWHEEL, &detail::mouse_wheel_event_handler);
     }
 
 } // namespace input::sdl2

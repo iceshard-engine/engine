@@ -5,12 +5,6 @@
 namespace input::message
 {
 
-    struct MousePos
-    {
-        int32_t x;
-        int32_t y;
-    };
-
     struct MouseMotion
     {
         static inline const core::cexpr::stringid_type message_type{ core::cexpr::stringid("Mouse.Motion") };
@@ -32,6 +26,14 @@ namespace input::message
 
         MouseButton button;
         MousePos pos;
+    };
+
+    struct MouseWheel
+    {
+        static inline const core::cexpr::stringid_type message_type{ core::cexpr::stringid("Mouse.Wheel") };
+
+        int32_t dx;
+        int32_t dy;
     };
 
 } // namespace input::message
