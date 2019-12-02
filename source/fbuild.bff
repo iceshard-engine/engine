@@ -27,8 +27,8 @@ Settings
 .ConfigNameRelease = 'Release'
 
 ; VS properties
-.VSBuildCommand = '$WorkspaceRoot$/iceshard build -t'
-.VSRebuildCommand = '$WorkspaceRoot$/iceshard build --clean -t'
+.VSBuildCommand = '$WorkspaceRoot$/ice build -t'
+.VSRebuildCommand = '$WorkspaceRoot$/ice build --clean -t'
 
 ; Windows platform
 .platform_x64_windows =
@@ -38,7 +38,7 @@ Settings
     Using( .msvcLibrarianOptions )
 
     .CompilerOptions + ' /await'
-        + ' /wd4307'
+        + ' /wd4127' // conditional expression is constant'
         + ' /permissive-'
 
     .Platform = 'x64'
@@ -228,10 +228,6 @@ Settings
         ^SolutionProjects + '$Project$-vcxproj'
     }
 }
-
-
-// Generate 'All' targets
-//--------------------------------------------------------------------------
 
 // Generate 'All' targets
 //--------------------------------------------------------------------------
