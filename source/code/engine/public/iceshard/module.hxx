@@ -7,7 +7,6 @@
 namespace iceshard
 {
 
-
     class Engine;
 
 
