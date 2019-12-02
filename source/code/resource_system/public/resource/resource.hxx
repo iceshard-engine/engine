@@ -6,7 +6,6 @@
 namespace resource
 {
 
-
     //! \brief Describes a single resource which can be fetched for data.
     class Resource
     {
@@ -21,5 +20,12 @@ namespace resource
         virtual auto data() noexcept -> core::data_view = 0;
     };
 
+    class OutputResource
+    {
+    public:
+        virtual void write(core::data_view wdata) noexcept = 0;
+
+        virtual void flush() noexcept = 0;
+    };
 
 } // namespace resource

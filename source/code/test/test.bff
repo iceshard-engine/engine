@@ -8,6 +8,8 @@
     // Additional helper variables
     //------------------------------------------------------------------------------
     .ProjectConanModules = .WorkspaceConanModules
+    .ProjectConanModuleDependencies = { 'SDL2' }
+
     .VSProjectConfigurations = { }
 
 
@@ -16,6 +18,13 @@
     ForEach( .Configuration in .Configurations )
     {
         Using( .Configuration )
+
+
+        // Configuration properties
+        //--------------------------------------------------------------------------
+        .ConfigurationDependencies = { }
+        .ConfigurationIntermediateDirectory = '$WorkspaceBuildDir$/obj/$Platform$-$Config$/$ProjectName$'
+        .ConfigurationTargetDirectory = '$WorkspaceBuildDir$/bin/$Platform$-$Config$/$ProjectName$'
 
 
         // Conan Dependencies
@@ -42,11 +51,30 @@
             }
         }
 
+        ForEach( .ConanModule in .ProjectConanModuleDependencies )
+        {
+            Using( .'ConanModule_$ConanModule$_$ConanConfig$' )
 
-        // Configuration properties
-        //--------------------------------------------------------------------------
-        .ConfigurationIntermediateDirectory = '$WorkspaceBuildDir$/obj/$Platform$-$Config$/$ProjectName$'
-        .ConfigurationTargetDirectory = '$WorkspaceBuildDir$/bin/$Platform$-$Config$/$ProjectName$'
+            .CopyDirs = false
+            .CopyDirsList = { }
+            ForEach( .BinDir in .BinDirs )
+            {
+                ^CopyDirs = true
+                ^CopyDirsList + "$BinDir$/"
+            }
+
+            If ( .CopyDirs )
+            {
+                Print( .CopyDirsList )
+                CopyDir( '$ProjectName$-$Platform$-$Config$-$ConanModule$-copydir' )
+                {
+                    .SourcePaths = .CopyDirsList
+                    .SourcePathsPattern = '*.dll'
+                    .Dest = .ConfigurationTargetDirectory
+                }
+                ^ConfigurationDependencies + '$ProjectName$-$Platform$-$Config$-$ConanModule$-copydir'
+            }
+        }
 
 
         // Object lists
@@ -73,8 +101,6 @@
         //--------------------------------------------------------------------------
         Executable( '$ProjectName$-$Platform$-$Config$' )
         {
-            .CompilerOutputPath = .ConfigurationIntermediateDirectory
-
             .Libraries = {
                 '$ProjectName$-$Platform$-$Config$-objects'
                 'core-$Platform$-$Config$'
@@ -88,6 +114,8 @@
             }
 
             .LinkerOutput = '$ConfigurationTargetDirectory$/$ProjectName$.exe'
+
+            .PreBuildDependencies = .ConfigurationDependencies
         }
 
 

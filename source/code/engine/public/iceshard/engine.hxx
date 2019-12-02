@@ -1,17 +1,22 @@
 #pragma once
+#include <iceshard/world/world_manager.hxx>
+#include <iceshard/entity/entity_manager.hxx>
+#include <iceshard/service_provider.hxx>
+
+#include <input_system/system.hxx>
 #include <core/allocator.hxx>
 #include <core/pointer.hxx>
-#include <input_system/system.hxx>
+
+#include <functional>
+#include <memory>
 
 #include <cppcoro/task.hpp>
-#include <functional>
+#include <cppcoro/static_thread_pool.hpp>
 
 namespace iceshard
 {
 
-
     class Frame;
-
 
     //! \brief The main class from the engine library.
     class Engine
@@ -24,7 +29,12 @@ namespace iceshard
 
     public:
         //! \brief Returns the used input system object.
-        virtual auto input_system() const noexcept -> input::InputSystem* = 0;
+        virtual auto input_system() noexcept -> input::InputSystem* = 0;
+
+    public:
+        virtual auto entity_manager() noexcept -> iceshard::EntityManager* = 0;
+
+        virtual auto world_manager() noexcept -> iceshard::WorldManager* = 0;
 
     public:
         //! \brief Returns the previous frame object.
@@ -36,16 +46,15 @@ namespace iceshard
         //! \brief Updates the engine internal state for the next frame.
         virtual void next_frame() noexcept = 0;
 
-        //! \brief Creates a task in the current frame.
-        void create_task(std::function<cppcoro::task<>(core::allocator&)> task) noexcept;
+    public:
+        virtual auto worker_threads() noexcept -> cppcoro::static_thread_pool& = 0;
 
-        //! \brief Creates a task in the current frame.
-        void create_task(std::function<cppcoro::task<>(iceshard::Frame&)> task) noexcept;
-
-    protected:
-        //! \brief Adds a task to the current frame.
+    public:
+        //! \brief Adds a task for the next frame.
         virtual void add_task(cppcoro::task<> task) noexcept = 0;
-    };
 
+        //! \brief Adds a task for the next frame.
+        void add_long_task(cppcoro::task<> task) noexcept;
+    };
 
 } // namespace iceshard

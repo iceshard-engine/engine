@@ -10,8 +10,17 @@
 #include <cppcoro/task.hpp>
 #include <cppcoro/sync_wait.hpp>
 #include <cppcoro/when_all_ready.hpp>
+#include <cppcoro/static_thread_pool.hpp>
 
 #include "frame.hxx"
+#include "world/iceshard_world_manager.hxx"
+#include "iceshard_service_provider.hxx"
+
+#include <atomic>
+
+#define WIN32_LEAN_AND_MEAN
+#define NOMINMAX
+#include <Windows.h>
 
 namespace iceshard
 {
@@ -23,13 +32,18 @@ namespace iceshard
         static constexpr auto FrameAllocatorCapacity = 256u * detail::MiB;
 
         template<typename T, uint32_t Size>
-        constexpr auto array_element_count(T(&)[Size]) noexcept
+        constexpr auto array_element_count(T (&)[Size]) noexcept
         {
             return Size;
         }
 
-    } // namespace detail
+        struct FrameTask
+        {
+            cppcoro::task<> object;
+            FrameTask* next_task = nullptr;
+        };
 
+    } // namespace detail
 
     class IceShardEngine final : public iceshard::Engine
     {
@@ -38,6 +52,11 @@ namespace iceshard
             : _allocator{ "iceshard-engine", alloc }
             , _resources{ resources }
             , _input_module{ nullptr, { _allocator } }
+            , _entity_manager{ nullptr, { _allocator } }
+            , _serivce_provider{ nullptr, { _allocator } }
+            , _world_manager{ nullptr, { _allocator } }
+            // Task allocator
+            , _mutable_task_list{ &_frame_tasks[_task_list_index] }
             // Frames allocators
             , _frame_allocator{ _allocator, sizeof(MemoryFrame) * 5 }
             , _frame_data_allocator{ { _allocator, detail::FrameAllocatorCapacity }, { _allocator, detail::FrameAllocatorCapacity } }
@@ -49,23 +68,42 @@ namespace iceshard
             IS_ASSERT(sdl_driver_module_location != nullptr, "Missing SDL2 driver module!");
 
             _input_module = input::load_driver_module(_allocator, sdl_driver_module_location->location().path);
+            _entity_manager = core::memory::make_unique<iceshard::EntityManager>(_allocator, _allocator);
+            _serivce_provider = core::memory::make_unique<iceshard::IceshardServiceProvider>(_allocator, _allocator, _entity_manager.get());
+
+            _world_manager = core::memory::make_unique<iceshard::IceshardWorldManager>(_allocator, _allocator, _serivce_provider.get());
         }
 
         ~IceShardEngine() noexcept
         {
+            _world_manager = nullptr;
+
+            _serivce_provider = nullptr;
+            _entity_manager = nullptr;
+            _input_module = nullptr;
+
             _current_frame = nullptr;
             _previous_frame = nullptr;
         }
-
 
         auto revision() const noexcept -> uint32_t override
         {
             return 1;
         }
 
-        auto input_system() const noexcept -> input::InputSystem*
+        auto input_system() noexcept -> input::InputSystem*
         {
             return _input_module->input_system();
+        }
+
+        auto entity_manager() noexcept -> iceshard::EntityManager* override
+        {
+            return _entity_manager.get();
+        }
+
+        auto world_manager() noexcept -> iceshard::WorldManager* override
+        {
+            return _world_manager.get();
         }
 
         auto previous_frame() const noexcept -> const Frame& override
@@ -80,10 +118,18 @@ namespace iceshard
 
         void next_frame() noexcept override
         {
-            cppcoro::sync_wait(
-                cppcoro::when_all_ready(std::move(_frame_tasks))
-            );
+            {
+                _task_list_index += 1;
+                std::vector<cppcoro::task<>>* expected_list = &_frame_tasks[(_task_list_index - 1) % 2];
+                std::vector<cppcoro::task<>>* exchange_list = &_frame_tasks[_task_list_index % 2];
 
+                while (_mutable_task_list.compare_exchange_weak(expected_list, exchange_list) == false)
+                {
+                    expected_list = &_frame_tasks[(_task_list_index - 1) % 2];
+                }
+
+                cppcoro::sync_wait(cppcoro::when_all_ready(std::move(*expected_list)));
+            }
 
             // Move the current frame to the 'previous' slot.
             _previous_frame = std::move(_current_frame);
@@ -95,20 +141,33 @@ namespace iceshard
 
             _current_frame = core::memory::make_unique<MemoryFrame>(_frame_allocator, _frame_data_allocator[_next_free_allocator]);
 
-
             // We need to update the allocator index
             _next_free_allocator += 1;
             _next_free_allocator %= detail::array_element_count(_frame_data_allocator);
-
 
             // Now we want to get all messages for the current frame.
             auto* inputs = input_system();
             inputs->query_messages(_current_frame->messages());
         }
 
+        auto worker_threads() noexcept -> cppcoro::static_thread_pool& override
+        {
+            return _worker_pool;
+        }
+
         void add_task(cppcoro::task<> task) noexcept override
         {
-            _frame_tasks.push_back(std::move(task));
+            std::vector<cppcoro::task<>>* expected_list = &_frame_tasks[_task_list_index % 2];
+            {
+                while (_mutable_task_list.compare_exchange_weak(expected_list, nullptr) == false)
+                {
+                    expected_list = &_frame_tasks[_task_list_index % 2];
+                }
+            }
+
+            expected_list->push_back(std::move(task));
+
+            _mutable_task_list.store(expected_list);
         }
 
     private:
@@ -120,8 +179,20 @@ namespace iceshard
         // Input system.
         core::memory::unique_pointer<input::InputModule> _input_module;
 
+        // Managers and service provider
+        core::memory::unique_pointer<iceshard::EntityManager> _entity_manager;
+        core::memory::unique_pointer<iceshard::IceshardServiceProvider> _serivce_provider;
+
+        core::memory::unique_pointer<iceshard::IceshardWorldManager> _world_manager;
+
+        // Thread pool of the engine.
+        cppcoro::static_thread_pool _worker_pool{};
+
         // Tasks to be run this frame.
-        std::vector<cppcoro::task<>> _frame_tasks;
+        size_t _task_list_index = 0;
+        std::vector<cppcoro::task<>> _frame_tasks[2]{ {}, {} };
+
+        std::atomic<std::vector<cppcoro::task<>>*> _mutable_task_list = nullptr;
 
         // Frame allocators.
         uint32_t _next_free_allocator = 0;
@@ -134,11 +205,10 @@ namespace iceshard
         core::memory::unique_pointer<MemoryFrame> _current_frame;
     };
 
-}
+} // namespace iceshard
 
 extern "C"
 {
-
     __declspec(dllexport) auto create_engine(core::allocator& alloc, resource::ResourceSystem& resources) -> iceshard::Engine*
     {
         return alloc.make<iceshard::IceShardEngine>(alloc, resources);
@@ -148,5 +218,4 @@ extern "C"
     {
         alloc.destroy(engine);
     }
-
 }

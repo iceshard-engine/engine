@@ -1,12 +1,10 @@
---[[ Hooks ]]
-package.moonpath ..= ";tools\\?.moon;tools\\?\\init.moon"
+import Application from require "ice.application"
 
---[[ Application ]]
-import Application from require "iceshard.application"
-
---[[ Commands ]]
-import BuildCommand from require "iceshard.command.build"
-import GenerateProjectsCommand from require "iceshard.command.generate_projects"
+--[[ Built-In Commands ]]
+import UpdateCommand from require "ice.command.update"
+import BuildCommand from require "ice.command.build"
+import CleanCommand from require "ice.command.clean"
+import GenerateProjectsCommand from require "ice.command.generate_projects"
 
 --[[ Application definition ]]
 class IceShard extends Application
@@ -15,6 +13,8 @@ class IceShard extends Application
     @arguments: { }
     @commands: {
         'build': BuildCommand
+        'update': UpdateCommand
+        'clean': CleanCommand
         'generate': GenerateProjectsCommand
     }
 
@@ -25,5 +25,4 @@ class IceShard extends Application
         print '> For more options see the -h,--help output.'
 
 --[[ Run the application ]]--
-with IceShard!
-    \run!
+IceShard!\run!

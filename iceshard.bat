@@ -34,19 +34,32 @@ GOTO :_run
 :: Initialize the project environment
 :_initialize
 PUSHD build\tools
-conan install ..\..\tools
+conan install ..\..\tools --build=missing
 POPD
 ECHO Workspace initialized...
-EXIT /B 0
+GOTO :_exit
 
 
 :: Application runtime
 :_run
 CALL build\tools\activate.bat
 CALL moon tools\iceshard.moon %*
+
+:: Save this value as it so the call to 'deactivate' wont erase it in some caes
+set ERROR_CODE=%ERRORLEVEL%
+
 CALL build\tools\deactivate.bat
+
+:: Check the command return code
+IF "%ERROR_CODE%" == "0" (
+    GOTO :_exit
+)
+GOTO :_error
 
 POPD
 
 :_exit
 exit /B 0
+
+:_error
+exit /B 1
