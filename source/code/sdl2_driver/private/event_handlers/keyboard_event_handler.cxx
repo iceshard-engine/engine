@@ -70,7 +70,7 @@ namespace input::sdl2
             return KeyboardKey::Unknown;
         }
 
-        void key_event_handler(core::MessageBuffer& message_buffer, SDL_Event const& sdl_event) noexcept
+        void key_event_handler(core::MessageBuffer&, SDL_Event const&) noexcept
         {
         }
 

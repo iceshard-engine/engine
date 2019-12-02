@@ -25,7 +25,7 @@ namespace input::sdl2
 
         void mouse_motion_event_handler(core::MessageBuffer& message_buffer, SDL_Event const& sdl_event) noexcept
         {
-            core::message::push(message_buffer, input::message::MouseMotion{ input::message::MousePos{ sdl_event.motion.x, sdl_event.motion.y } });
+            core::message::push(message_buffer, input::message::MouseMotion{ input::MousePos{ sdl_event.motion.x, sdl_event.motion.y } });
         }
 
         void mouse_button_event_handler(core::MessageBuffer& message_buffer, SDL_Event const& sdl_event) noexcept
@@ -35,7 +35,7 @@ namespace input::sdl2
                 core::message::push(message_buffer,
                     input::message::MouseButtonDown{
                         .button = map_sdl_button(sdl_event.button.button),
-                        .pos = input::message::MousePos{ sdl_event.button.x, sdl_event.button.y }
+                        .pos = input::MousePos{ sdl_event.button.x, sdl_event.button.y }
                     }
                 );
             }
@@ -44,7 +44,7 @@ namespace input::sdl2
                 core::message::push(message_buffer,
                     input::message::MouseButtonUp{
                         .button = map_sdl_button(sdl_event.button.button),
-                        .pos = input::message::MousePos{ sdl_event.button.x, sdl_event.button.y }
+                        .pos = input::MousePos{ sdl_event.button.x, sdl_event.button.y }
                     }
                 );
             }
