@@ -8,6 +8,8 @@
     // Additional helper variables
     //------------------------------------------------------------------------------
     .ProjectConanModules = .WorkspaceConanModules
+    .ProjectConanModuleDependencies = { 'SDL2' }
+
     .VSProjectConfigurations = { }
 
 
@@ -16,6 +18,13 @@
     ForEach( .Configuration in .Configurations )
     {
         Using( .Configuration )
+
+
+        // Configuration properties
+        //--------------------------------------------------------------------------
+        .ConfigurationDependencies = { }
+        .ConfigurationIntermediateDirectory = '$WorkspaceBuildDir$/obj/$Platform$-$Config$/$ProjectName$'
+        .ConfigurationTargetDirectory = '$WorkspaceBuildDir$/bin/$Platform$-$Config$/$ProjectName$'
 
 
         // Conan Dependencies
@@ -42,11 +51,30 @@
             }
         }
 
+        ForEach( .ConanModule in .ProjectConanModuleDependencies )
+        {
+            Using( .'ConanModule_$ConanModule$_$ConanConfig$' )
 
-        // Configuration properties
-        //--------------------------------------------------------------------------
-        .ConfigurationIntermediateDirectory = '$WorkspaceBuildDir$/obj/$Platform$-$Config$/$ProjectName$'
-        .ConfigurationTargetDirectory = '$WorkspaceBuildDir$/bin/$Platform$-$Config$/$ProjectName$'
+            .CopyDirs = false
+            .CopyDirsList = { }
+            ForEach( .BinDir in .BinDirs )
+            {
+                ^CopyDirs = true
+                ^CopyDirsList + "$BinDir$/"
+            }
+
+            If ( .CopyDirs )
+            {
+                Print( .CopyDirsList )
+                CopyDir( '$ProjectName$-$Platform$-$Config$-$ConanModule$-copydir' )
+                {
+                    .SourcePaths = .CopyDirsList
+                    .SourcePathsPattern = '*.dll'
+                    .Dest = .ConfigurationTargetDirectory
+                }
+                ^ConfigurationDependencies + '$ProjectName$-$Platform$-$Config$-$ConanModule$-copydir'
+            }
+        }
 
 
         // Object lists
@@ -59,8 +87,9 @@
                 + ' /I"$WorkspaceCodeDir$/messages/public"'
                 + ' /I"$WorkspaceCodeDir$/collections/public"'
                 + ' /I"$WorkspaceCodeDir$/resource_system/public"'
-                + ' /I"$WorkspaceCodeDir$/application/public"'
                 + ' /I"$WorkspaceCodeDir$/input_system/public"'
+                + ' /I"$WorkspaceCodeDir$/application/public"'
+                + ' /I"$WorkspaceCodeDir$/engine/public"'
 
             .CompilerOutputPath = .ConfigurationIntermediateDirectory
             .CompilerInputPath = '$ProjectBaseDir$/private'
@@ -72,8 +101,6 @@
         //--------------------------------------------------------------------------
         Executable( '$ProjectName$-$Platform$-$Config$' )
         {
-            .CompilerOutputPath = .ConfigurationIntermediateDirectory
-
             .Libraries = {
                 '$ProjectName$-$Platform$-$Config$-objects'
                 'core-$Platform$-$Config$'
@@ -82,10 +109,13 @@
                 'collections-$Platform$-$Config$'
                 'resource_system-$Platform$-$Config$'
                 'input_system-$Platform$-$Config$'
+                'engine-$Platform$-$Config$'
                 'application-$Platform$-$Config$-objects'
             }
 
             .LinkerOutput = '$ConfigurationTargetDirectory$/$ProjectName$.exe'
+
+            .PreBuildDependencies = .ConfigurationDependencies
         }
 
 

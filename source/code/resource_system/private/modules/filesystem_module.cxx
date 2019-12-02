@@ -17,8 +17,13 @@ namespace resource
 {
     namespace detail
     {
+        enum class FileAccessType
+        {
+            ReadOnly,
+            ReadWrite,
+        };
 
-        class FileResource final : public Resource
+        class FileResource : public Resource
         {
         public:
             FileResource(core::allocator& alloc, const URI& uri, core::StringView<> native_path) noexcept
@@ -32,7 +37,7 @@ namespace resource
 
             //! \brief The resource identifier.
             //! \remark This value can be seen as the absolute location to a specific resource.
-            auto location() const noexcept -> const URI& override
+            auto location() const noexcept -> const URI& override final
             {
                 return _uri;
             }
@@ -63,7 +68,9 @@ namespace resource
                 return _data;
             }
 
-        private:
+            virtual auto access_type() noexcept -> FileAccessType { return FileAccessType::ReadOnly; }
+
+        protected:
             //! \brief The native filesystem path.
             core::String<> _native_path;
 
@@ -75,6 +82,82 @@ namespace resource
 
             //! \brief The loaded file buffer.
             core::Buffer _data;
+        };
+
+        class FileResourceWritable : public FileResource, public OutputResource
+        {
+        public:
+            FileResourceWritable(core::allocator& alloc, const URI& uri, core::StringView<> native_path) noexcept
+                : FileResource{ alloc, uri, native_path }
+            { }
+
+            ~FileResourceWritable() noexcept
+            {
+                if (_file_native != nullptr)
+                {
+                    fclose(_file_native);
+                }
+            }
+
+            //! \brief Returns the associated resource data.
+            auto data() noexcept -> core::data_view override final
+            {
+                if (_file_native != nullptr)
+                {
+                    core::buffer::clear(_data);
+
+                    fpos_t current_pos;
+                    fgetpos(_file_native, &current_pos);
+                    rewind(_file_native);
+
+                    {
+                        core::memory::stack_allocator_4096 kib4_alloc;
+                        core::data_chunk file_chunk{ kib4_alloc, 1024u * 4u };
+
+                        auto characters_read = fread_s(file_chunk.data(), file_chunk.size(), sizeof(char), file_chunk.size(), _file_native);
+                        while (characters_read > 0)
+                        {
+                            core::buffer::append(_data, file_chunk.data(), static_cast<uint32_t>(characters_read));
+                            characters_read = fread_s(file_chunk.data(), file_chunk.size(), sizeof(char), file_chunk.size(), _file_native);
+                        }
+                    }
+
+                    fsetpos(_file_native, &current_pos);
+                }
+
+                return FileResource::data();
+            }
+
+            void write(core::data_view wdata) noexcept override
+            {
+                if (wdata.size() == 0)
+                {
+                    return;
+                }
+
+                if (_file_native == nullptr)
+                {
+                    fopen_s(&_file_native, core::string::begin(_native_path), "w+b");
+                }
+
+                if (_file_native != nullptr)
+                {
+                    fwrite(wdata.data(), sizeof(char), wdata.size(), _file_native);
+                }
+            }
+
+            void flush() noexcept override
+            {
+                if (_file_native != nullptr)
+                {
+                    fflush(_file_native);
+                }
+            }
+
+            virtual auto access_type() noexcept -> FileAccessType override { return FileAccessType::ReadWrite; }
+
+        private:
+            FILE* _file_native = nullptr;
         };
 
 
@@ -136,6 +219,46 @@ namespace resource
             }
         }
 
+        auto mount_writable_file(core::allocator& alloc, std::filesystem::path path, core::pod::Array<Resource*>& entry_list, std::function<void(Resource*)> callback) noexcept -> FileResourceWritable*
+        {
+            auto directory_path = path.parent_path();
+            if (std::filesystem::is_directory(directory_path) == false)
+            {
+                std::filesystem::create_directories(directory_path);
+                IS_ASSERT(
+                    std::filesystem::is_directory(directory_path),
+                    "Failed to create directories for writable file! Path missing: {}",
+                    directory_path.generic_string()
+                );
+            }
+
+            FILE* native_handle;
+            fopen_s(&native_handle, path.generic_string().c_str(), "wb");
+
+            IS_ASSERT(native_handle != nullptr, "Failed to open writable file '{}'!", path.generic_string());
+            if (native_handle != nullptr)
+            {
+                fclose(native_handle);
+            }
+
+            // Build the path
+            if (std::filesystem::is_regular_file(path))
+            {
+                auto filepath = std::filesystem::canonical(path);
+                auto filename = filepath.filename().generic_string();
+
+                auto fullpath = std::filesystem::canonical(filepath).generic_string();
+
+                auto* file_entry_object = alloc.make<FileResourceWritable>(alloc, URI{ scheme_file, fullpath.c_str() }, fullpath.c_str());
+                array::push_back(entry_list, static_cast<Resource*>(file_entry_object));
+                callback(file_entry_object);
+
+                return file_entry_object;
+            }
+
+            return nullptr;
+        }
+
     } // namespace detail
 
     FileSystem::FileSystem(core::allocator& alloc, core::StringView<> basedir) noexcept
@@ -167,8 +290,13 @@ namespace resource
                 continue;
             }
 
-            auto uri_path = std::filesystem::canonical(_basedir._data / std::filesystem::path{ core::string::begin(uri.path) }).generic_string();
-            if (!core::string::equals(res_uri.path, uri_path))
+            auto uri_path = _basedir._data / std::filesystem::path{ core::string::begin(uri.path) };
+            if (std::filesystem::is_regular_file(uri_path))
+            {
+                uri_path = std::filesystem::canonical(uri_path);
+            }
+
+            if (!core::string::equals(res_uri.path, uri_path.generic_string()))
             {
                 continue;
             }
@@ -180,6 +308,54 @@ namespace resource
 
             result = res;
         }
+        return result;
+    }
+
+    auto FileSystem::open(
+        URI const& uri,
+        std::function<void(Resource*)> callback) noexcept -> OutputResource*
+    {
+        OutputResource* result{ nullptr };
+        for (auto* res_obj : _resources)
+        {
+            auto* res = static_cast<detail::FileResource*>(res_obj);
+
+            auto& res_uri = res->location();
+            if (res_uri.scheme != uri.scheme)
+            {
+                continue;
+            }
+
+            auto uri_path = _basedir._data / std::filesystem::path{ core::string::begin(uri.path) };
+            if (std::filesystem::is_regular_file(uri_path))
+            {
+                uri_path = std::filesystem::canonical(uri_path);
+            }
+
+            if (!core::string::equals(res_uri.path, uri_path.generic_string()))
+            {
+                continue;
+            }
+
+            if (res_uri.fragment != uri.fragment)
+            {
+                continue;
+            }
+
+            if (res->access_type() != detail::FileAccessType::ReadWrite)
+            {
+                continue;
+            }
+
+            result = static_cast<detail::FileResourceWritable*>(res);
+        }
+
+        if (result == nullptr)
+        {
+            IS_ASSERT(uri.scheme == resource::scheme_file, "Cannot open resource types for writing other than {}! got: {}", resource::scheme_file, uri.scheme);
+            result = detail::mount_writable_file(_allocator, _basedir._data / std::filesystem::path{ core::string::begin(uri.path) }, _resources, callback);
+        }
+
         return result;
     }
 

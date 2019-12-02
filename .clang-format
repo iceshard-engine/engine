@@ -1,0 +1,29 @@
+BasedOnStyle: LLVM
+
+AlignAfterOpenBracket: DontAlign
+
+AccessModifierOffset: -4
+AllowShortIfStatementsOnASingleLine: false
+BreakBeforeBraces: Allman
+ColumnLimit: 0
+
+Cpp11BracedListStyle: false
+BreakConstructorInitializers: BeforeComma
+
+PointerAlignment: Left
+DerivePointerAlignment: true
+
+SortIncludes: false
+SortUsingDeclarations: true
+
+SpaceAfterTemplateKeyword: false
+
+NamespaceIndentation: All
+FixNamespaceComments: true
+
+IndentPPDirectives: AfterHash
+IndentCaseLabels: false
+IndentWidth: 4
+TabWidth: 4
+
+ContinuationIndentWidth: 4

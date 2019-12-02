@@ -18,7 +18,7 @@ namespace resource
     {
     public:
         ResourceSystem(core::allocator& alloc) noexcept;
-        virtual ~ResourceSystem() noexcept = default;
+        virtual ~ResourceSystem() noexcept;
 
         //! \todo documentation.
         void add_module(core::memory::unique_pointer<ResourceModule> module_obj, const core::pod::Array<core::cexpr::stringid_type>& schemes) noexcept;
@@ -29,6 +29,12 @@ namespace resource
         //! \todo documentation.
         auto find(const URN& name) noexcept -> Resource*;
 
+        //! \todo documentation
+        auto open(const URI& location) noexcept -> OutputResource*;
+
+        //! \todo documentation
+        auto open(const URN& name) noexcept -> OutputResource*;
+
         //! \todo documentation.
         auto mount(const URI& location) noexcept -> uint32_t;
 
@@ -38,8 +44,12 @@ namespace resource
     private:
         core::memory::proxy_allocator _allocator;
 
+        //! \brief Internal resources.
+        core::pod::Array<Resource*> _internal_resources;
+
         //! \brief Hash map of named default resources.
         core::pod::Hash<Resource*> _named_resources;
+        core::pod::Hash<OutputResource*> _named_output_resources;
 
         //! \brief Hash map of scheme to module associations.
         core::pod::Hash<ResourceModule*> _scheme_handlers;

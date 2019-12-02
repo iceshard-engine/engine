@@ -5,20 +5,47 @@
 namespace resource
 {
 
+#if CFG_RELEASE
+
+    //! \brief Invalid scheme.
+    static constexpr core::cexpr::stringid_type scheme_invalid{ core::cexpr::stringid_cexpr("invalid") };
+
     //! \brief File scheme.
-    static core::cexpr::stringid_type scheme_file{ core::cexpr::stringid("file") };
+    static constexpr core::cexpr::stringid_type scheme_file{ core::cexpr::stringid_cexpr("file") };
 
     //! \brief Directory scheme.
-    static core::cexpr::stringid_type scheme_directory{ core::cexpr::stringid("dir") };
+    static constexpr core::cexpr::stringid_type scheme_directory{ core::cexpr::stringid_cexpr("dir") };
 
     //! \brief ResourcePack scheme.
-    static core::cexpr::stringid_type scheme_pack{ core::cexpr::stringid("pack") };
+    static constexpr core::cexpr::stringid_type scheme_pack{ core::cexpr::stringid_cexpr("pack") };
 
     //! \brief Dynamic library scheme.
-    static core::cexpr::stringid_type scheme_dynlib{ core::cexpr::stringid("dynlib") };
+    static constexpr core::cexpr::stringid_type scheme_dynlib{ core::cexpr::stringid_cexpr("dynlib") };
 
     //! \brief Resource Name scheme.
-    static core::cexpr::stringid_type scheme_resource{ core::cexpr::stringid("res") };
+    static constexpr core::cexpr::stringid_type scheme_resource{ core::cexpr::stringid_cexpr("res") };
+
+#else
+
+    //! \brief Invalid scheme.
+    static constexpr core::cexpr::stringid_type scheme_invalid{ core::cexpr::stringid_cexpr("invalid").hash_value, "invalid" };
+
+    //! \brief File scheme.
+    static constexpr core::cexpr::stringid_type scheme_file{ core::cexpr::stringid_cexpr("file").hash_value, "file" };
+
+    //! \brief Directory scheme.
+    static constexpr core::cexpr::stringid_type scheme_directory{ core::cexpr::stringid_cexpr("dir").hash_value, "dir" };
+
+    //! \brief ResourcePack scheme.
+    static constexpr core::cexpr::stringid_type scheme_pack{ core::cexpr::stringid_cexpr("pack").hash_value, "pack" };
+
+    //! \brief Dynamic library scheme.
+    static constexpr core::cexpr::stringid_type scheme_dynlib{ core::cexpr::stringid_cexpr("dynlib").hash_value, "dynlib" };
+
+    //! \brief Resource Name scheme.
+    static constexpr core::cexpr::stringid_type scheme_resource{ core::cexpr::stringid_cexpr("res").hash_value, "res" };
+
+#endif
 
 
     //! \brief Uniform Resource Name.
@@ -50,7 +77,7 @@ namespace resource
         URI(core::cexpr::stringid_argument_type scheme, core::StringView<> path, URN name) noexcept;
 
         //! \brief The resource scheme.
-        core::cexpr::stringid_type scheme;
+        core::cexpr::stringid_type scheme{ resource::scheme_invalid };
 
         //! \brief The resource fragment.
         core::cexpr::stringid_type fragment;
@@ -93,7 +120,7 @@ namespace fmt
             }
             else
             {
-#if CFG_RELEASE == 0
+#if STRINGID_DEBUG == 1
                 return fmt::format_to(ctx.begin(), "{}:{}", resource::scheme_resource.hash_origin, urn.name.hash_origin);
 #else
                 return fmt::format_to(ctx.begin(), "{}:{}", resource::scheme_resource, urn.name);
@@ -122,7 +149,7 @@ namespace fmt
             else
             {
                 auto format_string = std::string_view{ uri.fragment == core::cexpr::stringid_invalid ? "{0}:{2}" : "{0}:{2}#{1}" };
-#if CFG_RELEASE == 0
+#if STRINGID_DEBUG == 1
                 auto format_args = fmt::make_format_args(
                     uri.scheme.hash_origin
                     , uri.fragment.hash_origin

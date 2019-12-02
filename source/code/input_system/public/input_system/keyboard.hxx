@@ -30,6 +30,7 @@ namespace input
         , Period
         , Slash
 
+        , Key0
         , Key1
         , Key2
         , Key3
@@ -39,7 +40,6 @@ namespace input
         , Key7
         , Key8
         , Key9
-        , Key0
 
         , Colon
         , SemiColon
@@ -83,8 +83,8 @@ namespace input
         , KeyZ
 
         , Delete
-
         , CapsLock
+
         , KeyF1
         , KeyF2
         , KeyF3

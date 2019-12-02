@@ -9,6 +9,7 @@
 #include <core/cexpr/stringid.hxx>
 #include <core/scope_exit.hxx>
 #include <core/debug/profiler.hxx>
+#include <core/pod/hash.hxx>
 
 #include <resource/uri.hxx>
 #include <resource/system.hxx>
@@ -25,6 +26,20 @@
 #include <fmt/format.h>
 #include <application/application.hxx>
 
+#include <iceshard/module.hxx>
+#include <iceshard/engine.hxx>
+#include <iceshard/frame.hxx>
+#include <iceshard/world/world.hxx>
+#include <iceshard/entity/entity_index.hxx>
+#include <iceshard/entity/entity_command_buffer.hxx>
+#include <iceshard/component/component_system.hxx>
+
+#include <cppcoro/resume_on.hpp>
+#include <cppcoro/schedule_on.hpp>
+
+#define WIN32_LEAN_AND_MEAN
+#define NOMINMAX
+#include <Windows.h>
 
 int game_main(core::allocator& alloc, resource::ResourceSystem& resources)
 {
@@ -34,35 +49,30 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resources)
     resources.mount(URI{ resource::scheme_dynlib, "bin" });
     resources.mount(URI{ resource::scheme_directory, "../source/data/second" });
 
-    auto* res = resources.find(URN{ "sdl2_driver.dll" });
-    IS_ASSERT(res != nullptr, "Missing SDL2 driver module!");
+    auto* engine_module_location = resources.find(URN{ "iceshard.dll" });
+    IS_ASSERT(engine_module_location != nullptr, "Missing engine module!");
 
-    if (auto driver_module = input::load_driver_module(alloc, res->location().path))
+    if (auto engine_module = iceshard::load_engine_module(alloc, engine_module_location->location().path, resources))
     {
-        core::MessageBuffer messages{ alloc };
+        auto* engine_instance = engine_module->engine();
 
-        auto* input_sys = driver_module->input_system();
+        fmt::print("IceShard engine revision: {}\n", engine_instance->revision());
+
+        // Create a test world
+        engine_instance->world_manager()->create_world(core::cexpr::stringid("test-world"));
 
         bool quit = false;
         while (quit == false)
         {
-            core::message::clear(messages);
-
-            // Get all messages
-            input_sys->query_messages(messages);
-
-            // Check for the quit message
-            core::message::filter<input::message::AppExit>(messages, [&quit](const auto&) noexcept
+            core::message::filter<input::message::AppExit>(engine_instance->current_frame().messages(), [&quit](auto const&) noexcept
                 {
                     quit = true;
                 });
 
-            // Check for the quit message
-            core::message::filter<input::message::MouseMotion>(messages, [](const auto& msg) noexcept
-                {
-                    fmt::print("Mouse{{ {}:{} }}\n", msg.x, msg.y);
-                });
+            engine_instance->next_frame();
         }
+
+        engine_instance->world_manager()->destroy_world(core::cexpr::stringid("test-world"));
     }
 
     return 0;
