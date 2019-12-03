@@ -40,7 +40,7 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resources)
     using resource::URI;
 
     resources.mount(URI{ resource::scheme_dynlib, "bin" });
-    resources.mount(URI{ resource::scheme_directory, "../source/data/second" });
+    resources.mount(URI{ resource::scheme_directory, "../source/data" });
 
     auto* engine_module_location = resources.find(URN{ "iceshard.dll" });
     IS_ASSERT(engine_module_location != nullptr, "Missing engine module!");
