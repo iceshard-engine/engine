@@ -92,6 +92,7 @@ Settings
 
 // Defined rendering system flags
 //--------------------------------------------------------------------------
+#if exists(VULKAN_SDK)
 #import VULKAN_SDK
 .vulkan_x64_windows =
 [
@@ -103,6 +104,13 @@ Settings
         + ' /LIBPATH:"$VULKAN_SDK$/Lib"'
         + ' "vulkan-1.lib"'
 ]
+#else
+.vulkan_x64_windows =
+[
+    .CompilerOptions = ''
+    .LinkerOptions = ''
+]
+#endif
 
 
 // Defined Configurations
