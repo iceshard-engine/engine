@@ -4,6 +4,7 @@
 #include <iceshard/service_provider.hxx>
 
 #include <input_system/system.hxx>
+#include <render_system/render_system.hxx>
 #include <core/allocator.hxx>
 #include <core/pointer.hxx>
 
@@ -31,6 +32,8 @@ namespace iceshard
         //! \brief Returns the used input system object.
         virtual auto input_system() noexcept -> input::InputSystem* = 0;
 
+        auto render_system() noexcept -> render::RenderSystem*;
+
     public:
         virtual auto entity_manager() noexcept -> iceshard::EntityManager* = 0;
 
@@ -55,6 +58,9 @@ namespace iceshard
 
         //! \brief Adds a task for the next frame.
         void add_long_task(cppcoro::task<> task) noexcept;
+
+    private:
+        virtual auto render_system(render::api::api_interface*& render_api) noexcept -> render::RenderSystem* = 0;
     };
 
 } // namespace iceshard

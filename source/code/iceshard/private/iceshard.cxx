@@ -5,6 +5,7 @@
 #include <input_system/module.hxx>
 #include <render_system/render_module.hxx>
 #include <render_system/render_system.hxx>
+#include <render_system/render_commands.hxx>
 
 #include <core/allocators/proxy_allocator.hxx>
 #include <core/allocators/scratch_allocator.hxx>
@@ -82,6 +83,8 @@ namespace iceshard
 
                 _render_module = render::load_render_system_module(_allocator, vulkan_driver_module_location->location().path);
                 IS_ASSERT(_render_module != nullptr, "Invalid Vulkan driver module! Unable to load!");
+
+                render::api::v1::render_api_instance = _render_module->render_api();
             }
 
             _entity_manager = core::memory::make_unique<iceshard::EntityManager>(_allocator, _allocator);
@@ -186,6 +189,13 @@ namespace iceshard
             expected_list->push_back(std::move(task));
 
             _mutable_task_list.store(expected_list);
+        }
+
+    private:
+        auto render_system(render::api::api_interface*& api_interface) noexcept -> render::RenderSystem* override
+        {
+            api_interface = render::api::v1::render_api_instance;
+            return _render_module->render_system();
         }
 
     private:

@@ -3,6 +3,11 @@
 
 render::CommandName render::data::Clear::command_name{ core::cexpr::stringid("RenderCommand.Clear") };
 
+void render::assert_render_api() noexcept
+{
+    render::api::v1::render_api_instance->check_func();
+}
+
 namespace render::command
 {
 

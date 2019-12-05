@@ -52,6 +52,7 @@
                 + ' /I"$WorkspaceCodeDir$/collections/public"'
                 + ' /I"$WorkspaceCodeDir$/resource_system/public"'
                 + ' /I"$WorkspaceCodeDir$/input_system/public"'
+                + ' /I"$WorkspaceCodeDir$/render_system/public"'
 
             .CompilerOutputPath = .ConfigurationIntermediateDirectory
             .CompilerInputPath = '$ProjectBaseDir$/private'

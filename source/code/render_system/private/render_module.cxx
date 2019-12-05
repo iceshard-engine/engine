@@ -1,5 +1,5 @@
 #include <render_system/render_module.hxx>
-#include "render_api_instance.hxx"
+#include <render_system/render_api.hxx>
 
 #include <filesystem>
 
@@ -19,10 +19,16 @@ namespace render
         class RenderSystemDynamicModule : public RenderSystemModule
         {
         public:
-            RenderSystemDynamicModule(core::allocator& alloc, HMODULE handle, RenderSystem* instance, RenderSystemReleaseFunc* release_func) noexcept
+            RenderSystemDynamicModule(
+                core::allocator& alloc,
+                HMODULE handle,
+                RenderSystem* instance,
+                render::api::api_interface render_api,
+                RenderSystemReleaseFunc* release_func) noexcept
                 : _allocator{ alloc }
                 , _handle{ handle }
                 , _instance{ instance }
+                , _render_api{ std::move(render_api) }
                 , _release_func{ release_func }
             {
             }
@@ -43,14 +49,22 @@ namespace render
                 return _instance;
             }
 
+            auto render_api() noexcept -> render::api::api_interface* override
+            {
+                return &_render_api;
+            }
+
         private:
             core::allocator& _allocator;
 
             //! \brief Loaded module handle.
             const HMODULE _handle;
 
-            //! \brief Loaded engine instance.
+            //! \brief Loaded render system instance.
             RenderSystem* const _instance;
+
+            //! \brief Loaded render api.
+            render::api::api_interface _render_api;
 
             //! \brief Engine release procedure.
             RenderSystemReleaseFunc* const _release_func;
@@ -78,10 +92,11 @@ namespace render
                 auto create_func = reinterpret_cast<detail::RenderSystemCreateFunc*>(create_engine_addr);
                 auto release_func = reinterpret_cast<detail::RenderSystemReleaseFunc*>(release_engine_addr);
 
-                auto* const module_instace = create_func(alloc, render::api::version_name.hash_value, &api_interface_instance);
+                render::api::api_interface render_api{};
+                auto* const module_instace = create_func(alloc, render::api::version_name.hash_value, &render_api);
                 if (module_instace != nullptr)
                 {
-                    result = { alloc.make<detail::RenderSystemDynamicModule>(alloc, module_handle, module_instace, release_func), alloc };
+                    result = { alloc.make<detail::RenderSystemDynamicModule>(alloc, module_handle, module_instace, render_api, release_func), alloc };
                 }
                 else
                 {

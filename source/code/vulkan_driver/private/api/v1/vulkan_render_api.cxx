@@ -7,6 +7,11 @@ namespace render::api::v1::vulkan
 
     static_assert(sizeof(VkCommandBuffer) == sizeof(command_buffer_handle), "Command buffer handle differs in size!");
 
+    void vulkan_api_v1_initialized() noexcept
+    {
+        fmt::print("Using Vulkan Render API v1.\n");
+    }
+
     void vulkan_command_begin(command_buffer_handle cb, render_pass_handle rp, [[maybe_unused]] frame_buffer_handle fb, iRect rect) noexcept
     {
         VkRenderPassBeginInfo rp_begin{};
@@ -41,6 +46,7 @@ namespace render::api::v1::vulkan
     void init_api(void* ptr) noexcept
     {
         auto instace = reinterpret_cast<render::api::v1::api_interface*>(ptr);
+        instace->check_func = vulkan_api_v1_initialized;
         instace->cmd_begin_func = vulkan_command_begin;
         instace->cmd_end_func = vulkan_command_end;
     }

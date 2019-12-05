@@ -4,6 +4,8 @@
 namespace render
 {
 
+    void assert_render_api() noexcept;
+
     //! \brief Data structures for render commands.
     namespace data
     {
