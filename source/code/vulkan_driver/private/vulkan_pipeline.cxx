@@ -18,6 +18,7 @@ namespace render::vulkan
         core::allocator& alloc,
         VkDevice device,
         core::pod::Array<VulkanShader const*> shaders,
+        core::pod::Array<VulkanVertexDescriptor const*> vertex_descriptors,
         VulkanPipelineLayout const* pipeline_layout,
         VulkanRenderPass const* render_pass) noexcept -> core::memory::unique_pointer<VulkanPipeline>
     {
@@ -46,29 +47,26 @@ namespace render::vulkan
         dynamicState.pDynamicStates = dynamicStateEnables;
         dynamicState.dynamicStateCount = 0;
 
-        VkVertexInputBindingDescription vi_binding;
-        VkVertexInputAttributeDescription vi_attribs[2];
+        uint32_t binding_count = 0;
+        core::pod::Array<VkVertexInputBindingDescription> vertex_input_bindings{ alloc };
+        core::pod::Array<VkVertexInputAttributeDescription> vertex_input_attributes{ alloc };
 
-        vi_binding.binding = 0;
-        vi_binding.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-        vi_binding.stride = 32; // 32bytes for now 16 (pos) + 16 (color)
-        vi_attribs[0].binding = 0;
-        vi_attribs[0].location = 0;
-        vi_attribs[0].format = VK_FORMAT_R32G32B32A32_SFLOAT;
-        vi_attribs[0].offset = 0;
-        vi_attribs[1].binding = 0;
-        vi_attribs[1].location = 1;
-        vi_attribs[1].format = VK_FORMAT_R32G32B32A32_SFLOAT;
-        vi_attribs[1].offset = 16;
+        for (auto const& vertex_descriptor : vertex_descriptors)
+        {
+            core::pod::array::push_back(vertex_input_bindings, vertex_descriptor->binding_description());
+            vertex_descriptor->binding_attributes(binding_count, vertex_input_attributes);
+
+            binding_count += 1;
+        }
 
         VkPipelineVertexInputStateCreateInfo vi;
         vi.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
         vi.pNext = nullptr;
         vi.flags = 0;
-        vi.vertexBindingDescriptionCount = 1;
-        vi.pVertexBindingDescriptions = &vi_binding;
-        vi.vertexAttributeDescriptionCount = 2;
-        vi.pVertexAttributeDescriptions = vi_attribs;
+        vi.vertexBindingDescriptionCount = core::pod::array::size(vertex_input_bindings);
+        vi.pVertexBindingDescriptions = core::pod::array::begin(vertex_input_bindings);
+        vi.vertexAttributeDescriptionCount = core::pod::array::size(vertex_input_attributes);
+        vi.pVertexAttributeDescriptions = core::pod::array::begin(vertex_input_attributes);
 
         VkPipelineInputAssemblyStateCreateInfo ia;
         ia.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;

@@ -318,19 +318,6 @@ namespace render
                 *_vulkan_swapchain.get(),
                 core::pod::array::front(_vulkan_devices));
 
-            {
-                core::pod::Array<VkDescriptorSetLayout> layouts{ _driver_allocator };
-                core::pod::array::push_back(layouts, _vulkan_descriptor_sets_layout->native_handle());
-                _vulkan_pipeline_layout = vulkan::create_pipeline_layout(_driver_allocator, graphics_device, layouts);
-
-                core::pod::Array<vulkan::VulkanShader const*> shader_stages{ _driver_allocator };
-                std::for_each(
-                    _shaders.begin(), _shaders.end(),
-                    [&](auto const& shader_ptr) noexcept {
-                        core::pod::array::push_back(shader_stages, const_cast<vulkan::VulkanShader const*>(shader_ptr.get()));
-                    });
-                _vulkan_pipeline = vulkan::create_pipeline(_driver_allocator, graphics_device, shader_stages, _vulkan_pipeline_layout.get(), _vulkan_render_pass.get());
-            }
 
             VkSemaphoreCreateInfo imageAcquiredSemaphoreCreateInfo;
             imageAcquiredSemaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
@@ -379,6 +366,11 @@ namespace render
 
         void shutdown() noexcept
         {
+            for (auto const& entry : _vulkan_vertex_descriptors)
+            {
+                _driver_allocator.destroy(entry.value);
+            }
+
             auto* physical_device = core::pod::array::front(_vulkan_devices);
             vkDestroySemaphore(physical_device->graphics_device()->native_handle(), _quick_semaphore, nullptr);
 
@@ -433,7 +425,7 @@ namespace render
             return FrameBufferHandle{ reinterpret_cast<uintptr_t>(_vulkan_framebuffers[_vulkan_current_framebuffer]->native_handle()) };
         }
 
-        void create_named_descriptor_set(
+        void add_named_descriptor_set(
             [[maybe_unused]] core::cexpr::stringid_argument_type name,
             [[maybe_unused]] VertexBinding const& binding,
             [[maybe_unused]] VertexDescriptor const* descriptors,
@@ -443,13 +435,57 @@ namespace render
             IS_ASSERT(core::pod::hash::has(_vulkan_vertex_descriptors, hash_value) == false, "A descriptor set with this name {} was already defined!", name);
 
             // clang-format off
-            core::pod::hash::set(_vulkan_vertex_descriptors, hash_value, render::vulkan::VulkanVertexDescriptor{
+            core::pod::hash::set(_vulkan_vertex_descriptors, hash_value, _driver_allocator.make<render::vulkan::VulkanVertexDescriptor>(
                     _driver_allocator,
                     binding,
                     descriptors,
                     descriptor_count
-                });
+                ));
             // clang-format on
+        }
+
+        void create_pipeline(
+            core::cexpr::stringid_type* descriptor_names,
+            uint32_t descriptor_name_count) noexcept override
+        {
+            auto* physical_device = core::pod::array::front(_vulkan_devices);
+            auto graphics_device = physical_device->graphics_device()->native_handle();
+
+            {
+                core::pod::Array<VkDescriptorSetLayout> layouts{ _driver_allocator };
+                core::pod::array::push_back(layouts, _vulkan_descriptor_sets_layout->native_handle());
+                _vulkan_pipeline_layout = vulkan::create_pipeline_layout(_driver_allocator, graphics_device, layouts);
+
+                core::pod::Array<vulkan::VulkanShader const*> shader_stages{ _driver_allocator };
+                std::for_each(
+                    _shaders.begin(), _shaders.end(),
+                    [&](auto const& shader_ptr) noexcept {
+                        core::pod::array::push_back(shader_stages, const_cast<vulkan::VulkanShader const*>(shader_ptr.get()));
+                    });
+
+                core::pod::Array<vulkan::VulkanVertexDescriptor const*> vertex_descriptors{ _driver_allocator };
+                while (descriptor_name_count > 0)
+                {
+                    descriptor_name_count -= 1;
+                    auto descriptor_name_hash = static_cast<uint64_t>(descriptor_names[descriptor_name_count].hash_value);
+
+                    auto const* descriptor = core::pod::hash::get<vulkan::VulkanVertexDescriptor*>(
+                        _vulkan_vertex_descriptors,
+                        descriptor_name_hash,
+                        nullptr);
+                    IS_ASSERT(descriptor != nullptr, "Unknown descriptor name {}!", descriptor_names[descriptor_name_count]);
+
+                    core::pod::array::push_back(vertex_descriptors, descriptor);
+                }
+
+                _vulkan_pipeline = vulkan::create_pipeline(
+                    _driver_allocator,
+                    graphics_device,
+                    shader_stages,
+                    vertex_descriptors,
+                    _vulkan_pipeline_layout.get(),
+                    _vulkan_render_pass.get());
+            }
         }
 
         void swap() noexcept override
@@ -663,7 +699,7 @@ namespace render
         // The Vulkan descriptor sets
         core::memory::unique_pointer<render::vulkan::VulkanDescriptorSetLayout> _vulkan_descriptor_sets_layout{ nullptr, { core::memory::globals::null_allocator() } };
         core::memory::unique_pointer<render::vulkan::VulkanDescriptorSets> _vulkan_descriptor_sets{ nullptr, { core::memory::globals::null_allocator() } };
-        core::pod::Hash<render::vulkan::VulkanVertexDescriptor> _vulkan_vertex_descriptors;
+        core::pod::Hash<render::vulkan::VulkanVertexDescriptor*> _vulkan_vertex_descriptors;
 
         // Databuffers
         core::memory::unique_pointer<render::vulkan::VulkanBuffer> _vulkan_uniform_buffer{ nullptr, { core::memory::globals::null_allocator() } };

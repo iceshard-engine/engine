@@ -5,6 +5,7 @@
 
 #include "vulkan_shader.hxx"
 #include "pipeline/vulkan_pipeline_layout.hxx"
+#include "pipeline/vulkan_vertex_descriptor.hxx"
 #include "render_pass/vulkan_renderpass.hxx"
 
 namespace render::vulkan
@@ -27,6 +28,7 @@ namespace render::vulkan
         core::allocator& alloc,
         VkDevice device,
         core::pod::Array<VulkanShader const*> shader_stages,
+        core::pod::Array<VulkanVertexDescriptor const*> vertex_descriptors,
         VulkanPipelineLayout const* pipeline_layout,
         VulkanRenderPass const* render_pass) noexcept -> core::memory::unique_pointer<VulkanPipeline>;
 

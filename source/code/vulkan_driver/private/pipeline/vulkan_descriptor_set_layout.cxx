@@ -18,12 +18,6 @@ namespace render::vulkan
 
     auto create_descriptor_set_layout(core::allocator& alloc, VkDevice device, core::pod::Array<VkDescriptorSetLayoutBinding> const& layout_bindings) noexcept -> core::memory::unique_pointer<VulkanDescriptorSetLayout>
     {
-        //VkDescriptorSetLayoutBinding layout_binding = {};
-        //layout_binding.binding = 0;
-        //layout_binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        //layout_binding.descriptorCount = 1;
-        //layout_binding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-        //layout_binding.pImmutableSamplers = NULL;
         core::pod::Array<VkDescriptorSetLayoutBinding> bindings{ alloc };
         bindings = layout_bindings;
 

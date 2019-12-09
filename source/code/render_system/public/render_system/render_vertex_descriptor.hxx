@@ -1,5 +1,5 @@
 #pragma once
-#include <cinttypes>
+#include <core/cexpr/stringid.hxx>
 
 namespace render
 {
@@ -47,6 +47,7 @@ namespace render
     {
         static_assert(Size >= 1, "At least one descriptor needs to be defined.");
 
+        core::cexpr::stringid_type name;
         VertexBinding binding;
         VertexDescriptor descriptors[Size];
     };
@@ -56,6 +57,7 @@ namespace render
 
         // clang-format off
         static constexpr auto Color = VertexDescriptorSet<2>{
+            .name = { core::cexpr::stringid_cexpr("Color").hash_value, "Color" },
             .binding = VertexBinding{
                 .binding_location = 0,
                 .binding_rate = VertexBindingRate::PerVertex,

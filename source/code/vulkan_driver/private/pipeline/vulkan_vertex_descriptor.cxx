@@ -59,38 +59,6 @@ namespace render::vulkan
 
     } // namespace detail
 
-    VulkanVertexDescriptor::VulkanVertexDescriptor(VulkanVertexDescriptor&& other) noexcept
-        : _binding_description{ std::move(other._binding_description) }
-        , _binding_attributes{ std::move(other._binding_attributes) }
-    {
-    }
-
-    auto VulkanVertexDescriptor::operator=(VulkanVertexDescriptor&& other) noexcept -> VulkanVertexDescriptor&
-    {
-        if (this != &other)
-        {
-            _binding_description = other._binding_description;
-            std::swap(_binding_attributes, other._binding_attributes);
-        }
-        return *this;
-    }
-
-    VulkanVertexDescriptor::VulkanVertexDescriptor(VulkanVertexDescriptor const& other) noexcept
-        : _binding_description{ other._binding_description }
-        , _binding_attributes{ std}
-    {
-    }
-
-    auto VulkanVertexDescriptor::operator=(VulkanVertexDescriptor const& other) noexcept -> VulkanVertexDescriptor&
-    {
-        if (this != &other)
-        {
-            _binding_description = other._binding_description;
-            std::swap(_binding_attributes, other._binding_attributes);
-        }
-        return *this;
-    }
-
     VulkanVertexDescriptor::VulkanVertexDescriptor(
         core::allocator& alloc,
         render::VertexBinding const& binding,
@@ -102,26 +70,27 @@ namespace render::vulkan
 
         // Fill attribute descriptor info
         uint32_t attrib_auto_offset = 0;
-        while (descriptor_count > 0)
+
+        uint32_t attrib_index = 0;
+        while (attrib_index < descriptor_count)
         {
-            descriptor_count -= 1;
-
-            auto& attrib_descriptor = _binding_attributes[descriptor_count];
+            auto& attrib_descriptor = _binding_attributes[attrib_index];
             attrib_descriptor.binding = 0; // #todo?
-            attrib_descriptor.location = descriptors[descriptor_count].descriptor_location;
-            attrib_descriptor.format = detail::to_vk_enum(descriptors[descriptor_count].descriptor_type);
+            attrib_descriptor.location = descriptors[attrib_index].descriptor_location;
+            attrib_descriptor.format = detail::to_vk_enum(descriptors[attrib_index].descriptor_type);
 
-            if (descriptors[descriptor_count].descriptor_offset == VertexDescriptorOffset::Automatic)
+            if (descriptors[attrib_index].descriptor_offset == VertexDescriptorOffset::Automatic)
             {
                 attrib_descriptor.offset = attrib_auto_offset;
             }
             else
             {
-                attrib_descriptor.offset = static_cast<uint32_t>(descriptors[descriptor_count].descriptor_offset);
+                attrib_descriptor.offset = static_cast<uint32_t>(descriptors[attrib_index].descriptor_offset);
                 attrib_auto_offset = attrib_descriptor.offset;
             }
 
-            attrib_auto_offset += detail::descriptor_type_size(descriptors[descriptor_count].descriptor_type);
+            attrib_auto_offset += detail::descriptor_type_size(descriptors[attrib_index].descriptor_type);
+            attrib_index += 1;
         }
 
         // Fill attribute binding info
@@ -138,7 +107,7 @@ namespace render::vulkan
         }
     }
 
-    void VulkanVertexDescriptor::binding_attributes(uint32_t binding, core::pod::Array<VkVertexInputAttributeDescription>& attributes) noexcept
+    void VulkanVertexDescriptor::binding_attributes(uint32_t binding, core::pod::Array<VkVertexInputAttributeDescription>& attributes) const noexcept
     {
         // We copy here the value to easily update the binding value and push back the result.
         for (auto attrib_description : _binding_attributes)

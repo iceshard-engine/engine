@@ -1,4 +1,4 @@
-#pragma
+#pragma once
 #include <core/allocator.hxx>
 #include <core/memory.hxx>
 #include <core/pod/array.hxx>
@@ -19,11 +19,11 @@ namespace render::vulkan
 
         auto binding_description() const noexcept -> VkVertexInputBindingDescription { return _binding_description; }
 
-        void binding_attributes(uint32_t binding, core::pod::Array<VkVertexInputAttributeDescription>& attributes) noexcept;
+        void binding_attributes(uint32_t binding, core::pod::Array<VkVertexInputAttributeDescription>& attributes) const noexcept;
 
     private:
         VkVertexInputBindingDescription _binding_description;
-        core::pod::Array<VkVertexInputAttributeDescription> _binding_attributes{ core::memory::globals::null_allocator() };
+        core::pod::Array<VkVertexInputAttributeDescription> _binding_attributes;
     };
 
 } // namespace render::vulkan
