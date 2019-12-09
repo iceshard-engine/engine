@@ -25,12 +25,12 @@ namespace render::api
 
         enum class render_pass_handle : uintptr_t;
 
-        enum class frame_buffer_handle : uint32_t;
+        enum class frame_buffer_handle : uintptr_t;
 
         struct api_interface
         {
             void (*check_func)();
-            void (*cmd_begin_func)(command_buffer_handle, render_pass_handle, frame_buffer_handle, iRect);
+            void (*cmd_begin_func)(command_buffer_handle);
             void (*cmd_end_func)(command_buffer_handle);
 
             void* reserved[32];

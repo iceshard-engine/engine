@@ -11,6 +11,8 @@ namespace render
 
     using CommandBufferHandle = api::command_buffer_handle;
 
+    using FrameBufferHandle = api::frame_buffer_handle;
+
     struct BufferDataView
     {
         void* data_pointer;
