@@ -24,6 +24,8 @@
 #include <input_system/message/mouse.hxx>
 
 #include <render_system/render_commands.hxx>
+#include <render_system/render_vertex_descriptor.hxx>
+#include <render_system/render_pipeline.hxx>
 
 #include <fmt/format.h>
 #include <application/application.hxx>
@@ -52,7 +54,8 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resources)
         auto* engine_instance = engine_module->engine();
         [[maybe_unused]]
         auto* render_system = engine_instance->render_system();
-        render_system->create_named_descriptor_set(core::cexpr::stringid("color"), render::descriptor_set::Color);
+        render_system->add_named_descriptor_set(render::descriptor_set::Color);
+        render_system->create_pipeline(render::pipeline::DefaultPieline);
 
         fmt::print("IceShard engine revision: {}\n", engine_instance->revision());
 
