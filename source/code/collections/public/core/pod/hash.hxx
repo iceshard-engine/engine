@@ -28,10 +28,6 @@ namespace core::pod
         template<typename T>
         void set(Hash<T> &h, uint64_t key, const T &value) noexcept;
 
-        //! \brief Sets the value for the key.
-        template<typename T>
-        void set(Hash<T> &h, uint64_t key, T &&value) noexcept;
-
         //! \brief Removes the key and associated value from the hash if it exists.
         template<typename T>
         void remove(Hash<T> &h, uint64_t key) noexcept;
@@ -86,10 +82,6 @@ namespace core::pod
         //! \brief Inserts the value as an additional value for the key.
         template<typename T>
         void insert(Hash<T> &h, uint64_t key, const T &value) noexcept;
-
-        //! \brief Inserts the value as an additional value for the key.
-        template<typename T>
-        void insert(Hash<T> &h, uint64_t key, T &&value) noexcept;
 
         //! \brief Removes the specified entry.
         template<typename T>
