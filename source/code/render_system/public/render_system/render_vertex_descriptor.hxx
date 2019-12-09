@@ -57,7 +57,7 @@ namespace render
 
         // clang-format off
         static constexpr auto Color = VertexDescriptorSet<2>{
-            .name = { core::cexpr::stringid_cexpr("Color").hash_value, "Color" },
+            .name = core::cexpr::stringid_cexpr("Color"),
             .binding = VertexBinding{
                 .binding_location = 0,
                 .binding_rate = VertexBindingRate::PerVertex,
