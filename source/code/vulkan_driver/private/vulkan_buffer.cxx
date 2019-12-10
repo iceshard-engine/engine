@@ -17,7 +17,7 @@ namespace render::vulkan
         vkFreeMemory(_device_handle, _memory_handle, nullptr);
     }
 
-    void VulkanBuffer::map_memory(BufferDataView& data_view) noexcept
+    void VulkanBuffer::map_memory(render::api::BufferDataView& data_view) noexcept
     {
         VkMemoryRequirements mem_requirements;
         vkGetBufferMemoryRequirements(_device_handle, _buffer_handle, &mem_requirements);

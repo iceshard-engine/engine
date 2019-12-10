@@ -1,5 +1,6 @@
 #pragma once
 #include <core/cexpr/stringid.hxx>
+#include <render_system/render_api.hxx>
 #include <render_system/render_vertex_descriptor.hxx>
 
 namespace render

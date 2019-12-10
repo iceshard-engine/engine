@@ -7,8 +7,8 @@ namespace render::api::v1::vulkan
 
     void init_api(void* ptr) noexcept;
 
-    static_assert(sizeof(VkCommandBuffer) == sizeof(command_buffer_handle), "Command buffer handle differs in size!");
+    static_assert(sizeof(VkCommandBuffer) == sizeof(CommandBuffer), "Command buffer handle differs in size!");
 
-    auto native(command_buffer_handle command_buffer) noexcept -> VkCommandBuffer;
+    auto native(CommandBuffer command_buffer) noexcept -> VkCommandBuffer;
 
 } // namespace render::api::v1::vulkan

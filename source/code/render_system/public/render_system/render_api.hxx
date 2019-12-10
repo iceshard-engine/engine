@@ -8,38 +8,33 @@ namespace render::api
     namespace v1
     {
 
+        void assert_render_api() noexcept;
+
         constexpr auto version_name = core::cexpr::stringid_cexpr("v1");
 
-        struct iVec2
-        {
-            uint32_t x, y;
-        };
+        enum class CommandBuffer : uintptr_t;
 
-        struct iRect
-        {
-            iVec2 offset;
-            iVec2 size;
-        };
+        enum class RenderPipeline : uintptr_t;
 
-        enum class command_buffer_handle : uintptr_t;
-
-        enum class render_pass_handle : uintptr_t;
-
-        enum class frame_buffer_handle : uintptr_t;
-
-        struct api_interface
+        struct RenderInterface
         {
             void (*check_func)();
-            void (*cmd_begin_func)(command_buffer_handle);
-            void (*cmd_end_func)(command_buffer_handle);
+            void (*cmd_begin_func)(CommandBuffer);
+            void (*cmd_end_func)(CommandBuffer);
 
             void* reserved[32];
         };
 
-        extern api_interface* render_api_instance;
+        extern RenderInterface* render_api_instance;
 
     } // namespace v1
 
     using namespace render::api::v1;
+
+    struct BufferDataView
+    {
+        void* data_pointer;
+        uint32_t data_size;
+    };
 
 } // namespace render::api

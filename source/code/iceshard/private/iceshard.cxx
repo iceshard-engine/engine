@@ -192,7 +192,7 @@ namespace iceshard
         }
 
     private:
-        auto render_system(render::api::api_interface*& api_interface) noexcept -> render::RenderSystem* override
+        auto render_system(render::api::RenderInterface*& api_interface) noexcept -> render::RenderSystem* override
         {
             api_interface = render::api::v1::render_api_instance;
             return _render_module->render_system();

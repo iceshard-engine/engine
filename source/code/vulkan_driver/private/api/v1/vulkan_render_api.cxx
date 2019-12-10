@@ -5,7 +5,7 @@
 namespace render::api::v1::vulkan
 {
 
-    auto native(command_buffer_handle command_buffer) noexcept -> VkCommandBuffer
+    auto native(CommandBuffer command_buffer) noexcept -> VkCommandBuffer
     {
         return reinterpret_cast<VkCommandBuffer>(command_buffer);
     }
@@ -15,7 +15,7 @@ namespace render::api::v1::vulkan
         fmt::print("Using Vulkan Render API v1.\n");
     }
 
-    void vulkan_command_begin(command_buffer_handle cb) noexcept
+    void vulkan_command_begin(CommandBuffer cb) noexcept
     {
         VkCommandBufferBeginInfo cmd_buf_info = {};
         cmd_buf_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -53,19 +53,19 @@ namespace render::api::v1::vulkan
         //vkCmdBeginRenderPass(reinterpret_cast<VkCommandBuffer>(cb), &rp_begin, VK_SUBPASS_CONTENTS_INLINE);
     }
 
-    void vulkan_renderpass_end(command_buffer_handle cb) noexcept
+    void vulkan_renderpass_end(CommandBuffer cb) noexcept
     {
         vkCmdEndRenderPass(native(cb));
     }
 
-    void vulkan_command_end(command_buffer_handle cb) noexcept
+    void vulkan_command_end(CommandBuffer cb) noexcept
     {
         vkEndCommandBuffer(native(cb));
     }
 
     void init_api(void* ptr) noexcept
     {
-        auto instace = reinterpret_cast<render::api::v1::api_interface*>(ptr);
+        auto instace = reinterpret_cast<render::api::v1::RenderInterface*>(ptr);
         instace->check_func = vulkan_api_v1_initialized;
         instace->cmd_begin_func = vulkan_command_begin;
         instace->cmd_end_func = vulkan_command_end;

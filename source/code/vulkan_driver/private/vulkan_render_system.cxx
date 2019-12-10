@@ -159,7 +159,7 @@ namespace render
                         0.0f, 0.0f, 0.5f, 0.0f,
                         0.0f, 0.0f, 0.5f, 1.0f);
             // clang-format on
-            static auto MVP = clip * projection * view;// * model;
+            static auto MVP = clip * projection * view; // * model;
 
         } // namespace sample
 
@@ -182,7 +182,6 @@ namespace render
             : render::RenderSystem{}
             , _driver_allocator{ "vulkan-driver", alloc }
             , _vulkan_allocator{ alloc }
-            , _command_buffer{ alloc }
             , _vulkan_devices{ _driver_allocator }
             , _vulkan_framebuffers{ _driver_allocator }
             , _vulkan_command_buffers{ _driver_allocator }
@@ -243,7 +242,7 @@ namespace render
             auto graphics_device = physical_device->graphics_device()->native_handle();
 
             {
-                BufferDataView data_view;
+                api::BufferDataView data_view;
 
                 _vulkan_uniform_buffer = vulkan::create_uniform_buffer(
                     _driver_allocator,
@@ -432,14 +431,14 @@ namespace render
             vkDestroyInstance(_vulkan_instance, &alloc_callbacks);
         }
 
-        auto command_buffer() noexcept -> render::CommandBufferHandle override
+        auto command_buffer() noexcept -> render::CommandBuffer override
         {
-            return CommandBufferHandle{ 0 };
+            return CommandBuffer{ 0 };
         }
 
-        auto current_frame_buffer() noexcept -> FrameBufferHandle
+        auto current_frame_buffer() noexcept -> uintptr_t
         {
-            return FrameBufferHandle{ reinterpret_cast<uintptr_t>(_vulkan_framebuffers[_vulkan_current_framebuffer]->native_handle()) };
+            return reinterpret_cast<uintptr_t>(_vulkan_framebuffers[_vulkan_current_framebuffer]->native_handle());
         }
 
         void add_named_descriptor_set(
@@ -461,9 +460,9 @@ namespace render
             // clang-format on
         }
 
-        void create_pipeline(
+        auto create_pipeline(
             core::cexpr::stringid_type* descriptor_names,
-            uint32_t descriptor_name_count) noexcept override
+            uint32_t descriptor_name_count) noexcept -> api::RenderPipeline override
         {
             auto* physical_device = core::pod::array::front(_vulkan_devices);
             auto graphics_device = physical_device->graphics_device()->native_handle();
@@ -505,6 +504,8 @@ namespace render
                     _vulkan_pipeline_layout.get(),
                     _vulkan_render_pass.get());
             }
+
+            return api::RenderPipeline{ reinterpret_cast<uintptr_t>(_vulkan_pipeline->native_handle()) };
         }
 
         void swap() noexcept override
@@ -582,7 +583,7 @@ namespace render
 
                 auto MVP = detail::sample::clip * detail::sample::projection * new_view;
 
-                render::BufferDataView data_view;
+                render::api::BufferDataView data_view;
                 _vulkan_uniform_buffer->map_memory(data_view);
                 IS_ASSERT(data_view.data_size >= sizeof(MVP), "Insufficient buffer size!");
                 memcpy(data_view.data_pointer, &MVP, sizeof(MVP));
@@ -743,9 +744,6 @@ namespace render
 
         // Quick job
         VkSemaphore _quick_semaphore;
-
-    private:
-        render::RenderCommandBuffer _command_buffer;
     };
 
 } // namespace render

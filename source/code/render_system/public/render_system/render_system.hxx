@@ -15,9 +15,9 @@ namespace render
     public:
         virtual ~RenderSystem() noexcept = default;
 
-        virtual auto command_buffer() noexcept -> CommandBufferHandle = 0;
+        virtual auto command_buffer() noexcept -> CommandBuffer = 0;
 
-        virtual auto current_frame_buffer() noexcept -> FrameBufferHandle = 0;
+        //virtual auto current_frame_buffer() noexcept -> FrameBufferHandle = 0;
 
 
         virtual void add_named_descriptor_set(
@@ -31,12 +31,15 @@ namespace render
             VertexDescriptorSet<Size> const& binding_set) noexcept;
 
 
-        virtual void create_pipeline(
+        // clang-format off
+        virtual auto create_pipeline(
             core::cexpr::stringid_type* descriptor_names,
-            uint32_t descriptor_name_count) noexcept = 0;
+            uint32_t descriptor_name_count
+        ) noexcept -> api::RenderPipeline = 0;
 
         template<uint32_t DescriptorCount>
-        void create_pipeline(Pipeline<DescriptorCount> pipeline) noexcept;
+        auto create_pipeline(Pipeline<DescriptorCount> pipeline) noexcept -> api::RenderPipeline;
+        // clang-format on
 
         virtual void swap() noexcept = 0;
     };
@@ -49,9 +52,9 @@ namespace render
     }
 
     template<uint32_t DescriptorCount>
-    inline void RenderSystem::create_pipeline(Pipeline<DescriptorCount> pipeline) noexcept
+    inline auto RenderSystem::create_pipeline(Pipeline<DescriptorCount> pipeline) noexcept -> api::RenderPipeline
     {
-        create_pipeline(pipeline.descriptors.descriptors, DescriptorCount);
+        return create_pipeline(pipeline.descriptors.descriptors, DescriptorCount);
     }
 
 } // namespace render
