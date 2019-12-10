@@ -61,14 +61,15 @@ namespace render
                 "#extension GL_ARB_separate_shader_objects : enable\n"
                 "#extension GL_ARB_shading_language_420pack : enable\n"
                 "layout (std140, binding = 0) uniform bufferVals {\n"
-                "    mat4 mvp;\n"
+                "    mat4 vp;\n"
                 "} myBufferVals;\n"
                 "layout (location = 0) in vec4 pos;\n"
                 "layout (location = 1) in vec4 inColor;\n"
+                "layout (location = 2) in mat4 inModel;\n"
                 "layout (location = 0) out vec4 outColor;\n"
                 "void main() {\n"
                 "   outColor = inColor;\n"
-                "   gl_Position = myBufferVals.mvp * pos;\n"
+                "   gl_Position = myBufferVals.vp * inModel * pos;\n"
                 "}\n";
 
             static const char fragShaderText[] =
@@ -134,6 +135,12 @@ namespace render
                 { XYZ1(1, -1, -1), XYZ1(0.f, 1.f, 1.f) },
                 { XYZ1(-1, -1, -1), XYZ1(0.f, 1.f, 1.f) },
             };
+
+            static const glm::mat4 instances[] = {
+                glm::mat4{ 1.0f },
+                glm::translate(glm::mat4{ 1.0f }, glm::vec3{ 1.0f, 3.0f, 1.0f })
+            };
+
 #undef XYZ1
 #undef UV
 
@@ -152,7 +159,7 @@ namespace render
                         0.0f, 0.0f, 0.5f, 0.0f,
                         0.0f, 0.0f, 0.5f, 1.0f);
             // clang-format on
-            static auto MVP = clip * projection * view * model;
+            static auto MVP = clip * projection * view;// * model;
 
         } // namespace sample
 
@@ -256,6 +263,16 @@ namespace render
                 IS_ASSERT(data_view.data_size >= sizeof(detail::sample::g_vb_solid_face_colors_Data), "Insufficient buffer size!");
                 memcpy(data_view.data_pointer, detail::sample::g_vb_solid_face_colors_Data, sizeof(detail::sample::g_vb_solid_face_colors_Data));
                 _vulkan_vertex_buffer->unmap_memory();
+
+                _vulkan_instance_buffer = vulkan::create_uniform_buffer(
+                    _driver_allocator,
+                    physical_device,
+                    VkDeviceSize{ sizeof(detail::sample::instances) });
+
+                _vulkan_instance_buffer->map_memory(data_view);
+                IS_ASSERT(data_view.data_size >= sizeof(detail::sample::instances), "Insufficient buffer size!");
+                memcpy(data_view.data_pointer, detail::sample::instances, sizeof(detail::sample::instances));
+                _vulkan_instance_buffer->unmap_memory();
             }
 
             core::pod::array::front(_vulkan_devices)->graphics_device()->create_command_buffers(_vulkan_command_buffers, 1);
@@ -317,7 +334,6 @@ namespace render
                 *_vulkan_depth_image.get(),
                 *_vulkan_swapchain.get(),
                 core::pod::array::front(_vulkan_devices));
-
 
             VkSemaphoreCreateInfo imageAcquiredSemaphoreCreateInfo;
             imageAcquiredSemaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
@@ -394,6 +410,7 @@ namespace render
 
             _vulkan_uniform_buffer = nullptr;
             _vulkan_vertex_buffer = nullptr;
+            _vulkan_instance_buffer = nullptr;
 
             _vulkan_depth_image = nullptr;
 
@@ -463,19 +480,21 @@ namespace render
                         core::pod::array::push_back(shader_stages, const_cast<vulkan::VulkanShader const*>(shader_ptr.get()));
                     });
 
+                uint32_t descriptor_index = 0;
+
                 core::pod::Array<vulkan::VulkanVertexDescriptor const*> vertex_descriptors{ _driver_allocator };
-                while (descriptor_name_count > 0)
+                while (descriptor_index < descriptor_name_count)
                 {
-                    descriptor_name_count -= 1;
-                    auto descriptor_name_hash = static_cast<uint64_t>(descriptor_names[descriptor_name_count].hash_value);
+                    auto descriptor_name_hash = static_cast<uint64_t>(descriptor_names[descriptor_index].hash_value);
 
                     auto const* descriptor = core::pod::hash::get<vulkan::VulkanVertexDescriptor*>(
                         _vulkan_vertex_descriptors,
                         descriptor_name_hash,
                         nullptr);
-                    IS_ASSERT(descriptor != nullptr, "Unknown descriptor name {}!", descriptor_names[descriptor_name_count]);
+                    IS_ASSERT(descriptor != nullptr, "Unknown descriptor name {}!", descriptor_names[descriptor_index]);
 
                     core::pod::array::push_back(vertex_descriptors, descriptor);
+                    descriptor_index += 1;
                 }
 
                 _vulkan_pipeline = vulkan::create_pipeline(
@@ -561,7 +580,7 @@ namespace render
                 if (deg >= 360.0f)
                     deg = 0.0f;
 
-                auto MVP = detail::sample::clip * detail::sample::projection * new_view * detail::sample::model;
+                auto MVP = detail::sample::clip * detail::sample::projection * new_view;
 
                 render::BufferDataView data_view;
                 _vulkan_uniform_buffer->map_memory(data_view);
@@ -583,9 +602,9 @@ namespace render
                 NULL);
 
             {
-                VkDeviceSize const offsets[1] = { 0 };
-                VkBuffer const buffers[1] = { _vulkan_vertex_buffer->native_handle() };
-                vkCmdBindVertexBuffers(cmd, 0, 1, buffers, offsets);
+                VkDeviceSize const offsets[2] = { 0, 0 };
+                VkBuffer const buffers[2] = { _vulkan_vertex_buffer->native_handle(), _vulkan_instance_buffer->native_handle() };
+                vkCmdBindVertexBuffers(cmd, 0, 2, buffers, offsets);
             }
 
             {
@@ -607,7 +626,7 @@ namespace render
                 vkCmdSetScissor(cmd, 0, 1, &scissor);
             }
 
-            vkCmdDraw(cmd, 12 * 3, 1, 0, 0);
+            vkCmdDraw(cmd, 12 * 3, 2, 0, 0);
             vkCmdEndRenderPass(cmd);
             res = vkEndCommandBuffer(cmd);
             assert(res == VK_SUCCESS);
@@ -704,6 +723,7 @@ namespace render
         // Databuffers
         core::memory::unique_pointer<render::vulkan::VulkanBuffer> _vulkan_uniform_buffer{ nullptr, { core::memory::globals::null_allocator() } };
         core::memory::unique_pointer<render::vulkan::VulkanBuffer> _vulkan_vertex_buffer{ nullptr, { core::memory::globals::null_allocator() } };
+        core::memory::unique_pointer<render::vulkan::VulkanBuffer> _vulkan_instance_buffer{ nullptr, { core::memory::globals::null_allocator() } };
 
         // The framebuffers
         uint32_t _vulkan_current_framebuffer = 0;

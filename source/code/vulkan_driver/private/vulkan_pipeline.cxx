@@ -47,16 +47,27 @@ namespace render::vulkan
         dynamicState.pDynamicStates = dynamicStateEnables;
         dynamicState.dynamicStateCount = 0;
 
-        uint32_t binding_count = 0;
+        uint32_t next_auto_binding_index = 0;
         core::pod::Array<VkVertexInputBindingDescription> vertex_input_bindings{ alloc };
         core::pod::Array<VkVertexInputAttributeDescription> vertex_input_attributes{ alloc };
 
         for (auto const& vertex_descriptor : vertex_descriptors)
         {
-            core::pod::array::push_back(vertex_input_bindings, vertex_descriptor->binding_description());
-            vertex_descriptor->binding_attributes(binding_count, vertex_input_attributes);
+            auto binding_description = vertex_descriptor->binding_description();
 
-            binding_count += 1;
+            if (binding_description.binding == static_cast<uint32_t>(VertexBindingLocation::Automatic))
+            {
+                binding_description.binding = next_auto_binding_index;
+                next_auto_binding_index += 1;
+            }
+            else
+            {
+                IS_ASSERT(next_auto_binding_index <= binding_description.binding, "Binding locations cannot be defined in reverse order!");
+                next_auto_binding_index = binding_description.binding + 1;
+            }
+
+            vertex_descriptor->binding_attributes(binding_description.binding, vertex_input_attributes);
+            core::pod::array::push_back(vertex_input_bindings, std::move(binding_description));
         }
 
         VkPipelineVertexInputStateCreateInfo vi;

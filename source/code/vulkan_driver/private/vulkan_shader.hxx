@@ -2,6 +2,9 @@
 #include <core/allocator.hxx>
 #include <core/pointer.hxx>
 #include <core/data/view.hxx>
+
+#define NOMINMAX
+#define WIN32_LEAN_AND_MEAN
 #include <vulkan/vulkan.h>
 
 namespace render::vulkan

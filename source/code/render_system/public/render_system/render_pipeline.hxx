@@ -10,6 +10,13 @@ namespace render
     {
         static_assert(Size >= 1, "At least one descriptor name needs to be used.");
 
+        template<typename... Args>
+        constexpr PipelineVertexDescriptors(Args&&... args) noexcept
+            : descriptors{ std::forward<Args>(args).name... }
+        {
+            static_assert(sizeof...(args) == Size, "Number of provided argument count does not match!");
+        }
+
         core::cexpr::stringid_type descriptors[Size];
     };
 
@@ -23,9 +30,12 @@ namespace render
     {
 
         // clang-format off
-        static constexpr auto DefaultPieline = Pipeline<1>
+        static constexpr auto DefaultPieline = Pipeline<2>
         {
-            .descriptors = { render::descriptor_set::Color.name }
+            .descriptors = {
+                render::descriptor_set::Color,
+                render::descriptor_set::Model,
+            }
         };
         // clang-format on
 

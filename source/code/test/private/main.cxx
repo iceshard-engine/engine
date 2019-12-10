@@ -55,6 +55,7 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resources)
         [[maybe_unused]]
         auto* render_system = engine_instance->render_system();
         render_system->add_named_descriptor_set(render::descriptor_set::Color);
+        render_system->add_named_descriptor_set(render::descriptor_set::Model);
         render_system->create_pipeline(render::pipeline::DefaultPieline);
 
         fmt::print("IceShard engine revision: {}\n", engine_instance->revision());

@@ -76,7 +76,9 @@ namespace render::vulkan
         {
             auto& attrib_descriptor = _binding_attributes[attrib_index];
             attrib_descriptor.binding = 0; // #todo?
-            attrib_descriptor.location = descriptors[attrib_index].descriptor_location;
+
+            static_assert(sizeof(attrib_descriptor.location) == sizeof(descriptors[attrib_index].descriptor_location), "Types does not match in size!");
+            attrib_descriptor.location = static_cast<uint32_t>(descriptors[attrib_index].descriptor_location);
             attrib_descriptor.format = detail::to_vk_enum(descriptors[attrib_index].descriptor_type);
 
             if (descriptors[attrib_index].descriptor_offset == VertexDescriptorOffset::Automatic)
@@ -94,7 +96,8 @@ namespace render::vulkan
         }
 
         // Fill attribute binding info
-        _binding_description.binding = binding.binding_location;
+        static_assert(sizeof(_binding_description.binding) == sizeof(binding.binding_location), "Types does not match in size!");
+        _binding_description.binding = static_cast<uint32_t>(binding.binding_location);
         _binding_description.inputRate = detail::to_vk_enum(binding.binding_rate);
 
         if (binding.binding_stride == VertexBindingStride::Automatic)
@@ -109,10 +112,22 @@ namespace render::vulkan
 
     void VulkanVertexDescriptor::binding_attributes(uint32_t binding, core::pod::Array<VkVertexInputAttributeDescription>& attributes) const noexcept
     {
+        uint32_t next_auto_location = core::pod::array::size(attributes);
+
         // We copy here the value to easily update the binding value and push back the result.
         for (auto attrib_description : _binding_attributes)
         {
             attrib_description.binding = binding;
+            if (attrib_description.location == static_cast<uint32_t>(VertexDescriptorLocation::Automatic))
+            {
+                attrib_description.location = next_auto_location;
+                next_auto_location += 1;
+            }
+            else
+            {
+                IS_ASSERT(next_auto_location <= attrib_description.location, "Attribute location cannot decrease!");
+                next_auto_location = attrib_description.location + 1;
+            }
             core::pod::array::push_back(attributes, std::move(attrib_description));
         }
     }

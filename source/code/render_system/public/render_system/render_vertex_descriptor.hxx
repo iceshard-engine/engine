@@ -15,11 +15,16 @@ namespace render
         Automatic = 0x0,
     };
 
+    enum class VertexBindingLocation : uint32_t
+    {
+        Automatic = std::numeric_limits<std::underlying_type_t<VertexBindingLocation>>::max(),
+    };
+
     struct VertexBinding
     {
-        uint32_t binding_location;
         VertexBindingRate binding_rate;
         VertexBindingStride binding_stride = VertexBindingStride::Automatic;
+        VertexBindingLocation binding_location = VertexBindingLocation::Automatic;
     };
 
     enum class VertexDescriptorType : uint32_t
@@ -35,11 +40,16 @@ namespace render
         Automatic = 0x0,
     };
 
+    enum class VertexDescriptorLocation : uint32_t
+    {
+        Automatic = std::numeric_limits<std::underlying_type_t<VertexDescriptorLocation>>::max(),
+    };
+
     struct VertexDescriptor
     {
-        uint32_t descriptor_location;
         VertexDescriptorType descriptor_type;
         VertexDescriptorOffset descriptor_offset = VertexDescriptorOffset::Automatic;
+        VertexDescriptorLocation descriptor_location = VertexDescriptorLocation::Automatic;
     };
 
     template<uint32_t Size>
@@ -59,16 +69,34 @@ namespace render
         static constexpr auto Color = VertexDescriptorSet<2>{
             .name = core::cexpr::stringid_cexpr("Color"),
             .binding = VertexBinding{
-                .binding_location = 0,
                 .binding_rate = VertexBindingRate::PerVertex,
             },
             .descriptors = {
                 VertexDescriptor{ // position xyzw
-                    .descriptor_location = 0,
                     .descriptor_type = VertexDescriptorType::FloatVec4,
                 },
                 VertexDescriptor{ // color rgba
-                    .descriptor_location = 1,
+                    .descriptor_type = VertexDescriptorType::FloatVec4,
+                },
+            }
+        };
+
+        static constexpr auto Model = VertexDescriptorSet<4>{
+            .name = core::cexpr::stringid_cexpr("Model"),
+            .binding = VertexBinding{
+                .binding_rate = VertexBindingRate::PerInstance,
+            },
+            .descriptors = {
+                VertexDescriptor{
+                    .descriptor_type = VertexDescriptorType::FloatVec4,
+                },
+                VertexDescriptor{
+                    .descriptor_type = VertexDescriptorType::FloatVec4,
+                },
+                VertexDescriptor{
+                    .descriptor_type = VertexDescriptorType::FloatVec4,
+                },
+                VertexDescriptor{
                     .descriptor_type = VertexDescriptorType::FloatVec4,
                 },
             }

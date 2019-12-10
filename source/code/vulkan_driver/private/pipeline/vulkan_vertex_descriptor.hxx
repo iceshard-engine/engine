@@ -3,6 +3,9 @@
 #include <core/memory.hxx>
 #include <core/pod/array.hxx>
 #include <render_system/render_vertex_descriptor.hxx>
+
+#define NOMINMAX
+#define WIN32_LEAN_AND_MEAN
 #include <vulkan/vulkan.h>
 
 namespace render::vulkan
