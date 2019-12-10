@@ -1,5 +1,6 @@
 #pragma once
 #include <core/string_view.hxx>
+#include <core/pod/hash.hxx>
 #include <asset_system/asset.hxx>
 
 namespace asset
