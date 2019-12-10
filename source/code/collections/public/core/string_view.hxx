@@ -9,10 +9,28 @@ namespace core
     namespace cstring
     {
 
+        namespace detail
+        {
+
+            template<typename CharType>
+            constexpr uint32_t length_internal(CharType const* str, uint32_t len_acc) noexcept
+            {
+                if (*str == 0)
+                {
+                    return len_acc;
+                }
+                else
+                {
+                    return length_internal(str + 1, len_acc + 1);
+                }
+            }
+
+        } // namespace detail
+
         template<typename CharType>
         constexpr uint32_t length(CharType const* str) noexcept
         {
-            return *str ? 1 + length(str + 1) : 0;
+            return detail::length_internal(str, 0);
         }
 
     } // namespace cstring
