@@ -6,16 +6,26 @@
 namespace core
 {
 
+    namespace cstring
+    {
+
+        template<typename CharType>
+        constexpr uint32_t length(CharType const* str) noexcept
+        {
+            return *str ? 1 + length(str + 1) : 0;
+        }
+
+    } // namespace cstring
 
     namespace string
     {
 
         //! \brief Size of the string.
-        template <typename CharType>
+        template<typename CharType>
         auto size(const StringView<CharType>& str) noexcept -> uint32_t;
 
         //! \brief Length of the string.
-        template <typename CharType>
+        template<typename CharType>
         auto length(const StringView<CharType>& str) noexcept -> uint32_t;
 
         //! \brief The current string capacity.
@@ -23,60 +33,54 @@ namespace core
         auto capacity(const StringView<CharType>& str) noexcept -> uint32_t;
 
         //! \brief Checks if the given string is empty.
-        template <typename CharType>
+        template<typename CharType>
         bool empty(const StringView<CharType>& str) noexcept;
 
         //! \copydoc core::string::begin(String<CharType>&)
-        template <typename CharType>
+        template<typename CharType>
         auto begin(const StringView<CharType>& a) noexcept -> const CharType*;
 
         //! \copydoc core::string::end(String<CharType>&)
-        template <typename CharType>
+        template<typename CharType>
         auto end(const StringView<CharType>& str) noexcept -> const CharType*;
 
         //! \copydoc core::string::front(String<CharType>&)
-        template <typename CharType>
+        template<typename CharType>
         auto front(const StringView<CharType>& str) noexcept -> const CharType&;
 
         //! \copydoc core::string::back(String<CharType>&)
-        template <typename CharType>
+        template<typename CharType>
         auto back(const StringView<CharType>& str) noexcept -> const CharType&;
 
         //! \brief Clears the string view object.
-        template <typename CharType>
+        template<typename CharType>
         void clear(StringView<CharType>& str) noexcept;
-
 
         //////////////////////////////////////////////////////////////////////////
 
-
-        template <typename CharType>
+        template<typename CharType>
         bool equals(const StringView<CharType>& left, const StringView<CharType>& right) noexcept;
 
-        template <typename CharType>
+        template<typename CharType>
         bool equals(const StringView<CharType>& left, const String<CharType>& right) noexcept;
 
-        template <uint32_t Capacity, typename CharType>
+        template<uint32_t Capacity, typename CharType>
         bool equals(const StringView<CharType>& left, const StackString<Capacity, CharType>& right) noexcept;
 
-        template <typename CharType>
+        template<typename CharType>
         bool equals(const StringView<CharType>& left, const std::string_view right) noexcept;
 
-        template <typename CharType>
+        template<typename CharType>
         bool equals(const StringView<CharType>& left, const CharType* right) noexcept;
 
     } // namespace string
 
-
 #include "string_view.inl"
-
 
 } // namespace core
 
-
 // core::String FTM formatter
 //////////////////////////////////////////////////////////////////////////
-
 
 namespace fmt
 {
@@ -84,13 +88,13 @@ namespace fmt
     template<typename CharType>
     struct formatter<core::StringView<CharType>>
     {
-        template <typename ParseContext>
-        constexpr auto parse(ParseContext &ctx)
+        template<typename ParseContext>
+        constexpr auto parse(ParseContext& ctx)
         {
             return ctx.begin();
         }
 
-        template <typename FormatContext>
+        template<typename FormatContext>
         auto format(const core::StringView<CharType>& str, FormatContext& ctx)
         {
             return fmt::format_to(ctx.begin(), std::string_view{ str._data, str._size });
