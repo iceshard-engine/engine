@@ -23,6 +23,8 @@
 #include <input_system/message/app.hxx>
 #include <input_system/message/mouse.hxx>
 
+#include <asset_system/asset_system.hxx>
+
 #include <fmt/format.h>
 #include <application/application.hxx>
 
@@ -39,8 +41,18 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resources)
     using resource::URN;
     using resource::URI;
 
-    resources.mount(URI{ resource::scheme_dynlib, "bin" });
     resources.mount(URI{ resource::scheme_directory, "../source/data" });
+    resources.update_resources();
+
+    asset::AssetSystem assets{ alloc, resources };
+    assets.update();
+
+    assets.update(asset::Asset{ "config", asset::AssetType::Json }, resources.find(URN{ "first/filesystem.txt" })->location());
+
+    asset::AssetData asset_data{ };
+    assets.load(asset::Asset{ "config", asset::AssetType::Json }, asset_data);
+
+    resources.flush_messages();
 
     auto* engine_module_location = resources.find(URN{ "iceshard.dll" });
     IS_ASSERT(engine_module_location != nullptr, "Missing engine module!");
