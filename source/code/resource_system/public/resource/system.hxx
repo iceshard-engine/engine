@@ -1,11 +1,13 @@
 #pragma once
-#include <resource/uri.hxx>
-#include <resource/resource.hxx>
-#include <resource/module.hxx>
-
 #include <core/pointer.hxx>
 #include <core/pod/collections.hxx>
 #include <core/allocators/proxy_allocator.hxx>
+#include <core/message/buffer.hxx>
+
+#include <resource/uri.hxx>
+#include <resource/resource.hxx>
+#include <resource/module.hxx>
+#include <resource/resource_messages.hxx>
 
 #include <vector>
 
@@ -41,6 +43,13 @@ namespace resource
         //! \todo documentation.
         auto mount(const URN& name) noexcept -> uint32_t;
 
+        //! \todo documentation.
+        auto messages() noexcept -> core::MessageBuffer const& { return _messages; }
+
+        void flush_messages() noexcept;
+
+        void update_resources() noexcept;
+
     private:
         core::memory::proxy_allocator _allocator;
 
@@ -56,6 +65,9 @@ namespace resource
 
         //! \brief Vector of all registered modules.
         std::vector<core::memory::unique_pointer<ResourceModule>> _modules{ };
+
+        //! \brief A buffer of messages.
+        core::MessageBuffer _messages;
     };
 
 

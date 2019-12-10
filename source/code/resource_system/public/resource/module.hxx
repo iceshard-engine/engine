@@ -1,5 +1,6 @@
 #pragma once
 #include <resource/uri.hxx>
+#include <core/message/buffer.hxx>
 #include <functional>
 
 namespace resource
@@ -30,7 +31,15 @@ namespace resource
             [[maybe_unused]] std::function<void(Resource*)> callback) noexcept -> OutputResource* { return nullptr; }
 
         //! \todo documentation.
-        virtual auto mount(const URI& location, std::function<void(Resource*)> callback) noexcept -> uint32_t = 0;
+        virtual auto open(
+            [[maybe_unused]] URI const& location,
+            [[maybe_unused]] core::MessageBuffer& messages) noexcept -> OutputResource*
+        {
+            return nullptr;
+        }
+
+        //! \todo documentation.
+        virtual auto mount(URI const& location, core::MessageBuffer& messages) noexcept -> uint32_t = 0;
     };
 
 

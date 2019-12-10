@@ -15,6 +15,7 @@
         + ' /I"$WorkspaceCodeDir$/core/public"'
         + ' /I"$WorkspaceCodeDir$/memsys/public"'
         + ' /I"$WorkspaceCodeDir$/collections/public"'
+        + ' /I"$WorkspaceCodeDir$/messages/public"'
 
 
     // Library

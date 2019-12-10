@@ -10,7 +10,6 @@
 namespace resource
 {
 
-
     //! \brief A resource system build upon a native file system.
     class FileSystem : public ResourceModule
     {
@@ -24,7 +23,7 @@ namespace resource
         auto open(URI const& uri, std::function<void(Resource*)> callback) noexcept -> OutputResource* override;
 
         //! \brief Mounts all resources found under the given URI.
-        auto mount(URI const& uri, std::function<void(Resource*)> callback) noexcept -> uint32_t override;
+        auto mount(URI const& uri, core::MessageBuffer& messages) noexcept -> uint32_t override;
 
     private:
         const core::String<> _basedir;
@@ -36,5 +35,4 @@ namespace resource
         core::pod::Array<Resource*> _resources;
     };
 
-
-} // namespace filesystem
+} // namespace resource

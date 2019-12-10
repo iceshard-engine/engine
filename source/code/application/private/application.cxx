@@ -68,6 +68,8 @@ int main(int, char**)
             // Default file system mount points
             resource_system.mount(URI{ resource::scheme_file, "mount.isr" });
             resource_system.mount(URI{ resource::scheme_directory, "data" });
+            resource_system.update_resources();
+            resource_system.flush_messages();
 
             // Check for an user defined mounting file
             if (auto* mount_resource = resource_system.find(URI{ resource::scheme_file, "mount.isr" }))
