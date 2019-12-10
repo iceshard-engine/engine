@@ -1,14 +1,23 @@
 // Core
 //------------------------------------------------------------------------------
 {
-    .ProjectName        = 'engine'
+    .ProjectName        = 'asset_system'
     .ProjectBaseDir = '$_CURRENT_BFF_DIR_$'
 
 
     // Additional helper variables
     //------------------------------------------------------------------------------
     .ProjectConanModules = .WorkspaceConanModules
+        + 'rapidjson'
     .VSProjectConfigurations = { }
+
+    .ProjectCompilerOptions = ''
+        + ' /I"$ProjectBaseDir$/public"'
+        + ' /I"$WorkspaceCodeDir$/core/public"'
+        + ' /I"$WorkspaceCodeDir$/memsys/public"'
+        + ' /I"$WorkspaceCodeDir$/collections/public"'
+        + ' /I"$WorkspaceCodeDir$/messages/public"'
+        + ' /I"$WorkspaceCodeDir$/resource_system/public"'
 
 
     // Library
@@ -38,21 +47,14 @@
         // Configuration properties
         //--------------------------------------------------------------------------
         .ConfigurationIntermediateDirectory = '$WorkspaceBuildDir$/obj/$Platform$-$Config$/$ProjectName$'
-        .ConfigurationTargetDirectory = '$WorkspaceBuildDir$/bin/$Platform$-$Config$/$ProjectName$'
+        .ConfigurationTargetDirectory = '$WorkspaceBuildDir$/lib/$Platform$-$Config$/$ProjectName$'
 
 
         // Object lists
         //--------------------------------------------------------------------------
         ObjectList( '$ProjectName$-$Platform$-$Config$-objects' )
         {
-            .CompilerOptions + ' /I"$ProjectBaseDir$/public"'
-                + ' /I"$WorkspaceCodeDir$/core/public"'
-                + ' /I"$WorkspaceCodeDir$/memsys/public"'
-                + ' /I"$WorkspaceCodeDir$/messages/public"'
-                + ' /I"$WorkspaceCodeDir$/collections/public"'
-                + ' /I"$WorkspaceCodeDir$/resource_system/public"'
-                + ' /I"$WorkspaceCodeDir$/asset_system/public"'
-                + ' /I"$WorkspaceCodeDir$/input_system/public"'
+            .CompilerOptions + .ProjectCompilerOptions
 
             .CompilerOutputPath = .ConfigurationIntermediateDirectory
             .CompilerInputPath = '$ProjectBaseDir$/private'
@@ -91,18 +93,31 @@
         ^VSProjectConfigurations + .VSProjectConfiguration
     }
 
+
     // Create a Visual Studio project description
     //--------------------------------------------------------------------------
     VCXProject( '$ProjectName$-vcxproj' )
     {
         .ProjectOutput = '$ProjectName$.vcxproj'
         .ProjectConfigs = .VSProjectConfigurations
-        .ProjectInputPaths = .ProjectBaseDir
         .ProjectBasePath = .ProjectBaseDir
+        .ProjectFiles = {
+            '$ProjectBaseDir$/$ProjectName$.bff'
+        }
+        .ProjectInputPaths = {
+            '$ProjectBaseDir$/public'
+            '$ProjectBaseDir$/private'
+        }
     }
+
 
     // Register this project
     //--------------------------------------------------------------------------
     ^Projects + .ProjectName
     ^VisualStudioProjects + .ProjectName
+
+
+    // Add tests project
+    //--------------------------------------------------------------------------
+    // #include "../../scripts/tests.bff"
 }
