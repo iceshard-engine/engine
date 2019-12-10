@@ -42,7 +42,7 @@ namespace asset
                 Asset reference{ basename, AssetType::Resource };
                 if (core::string::equals(extension, ".json"))
                 {
-                    reference.type = AssetType::Json;
+                    reference.type = AssetType::Config;
                 }
 
                 // clang-format off

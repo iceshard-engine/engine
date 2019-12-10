@@ -12,7 +12,7 @@ namespace asset
     {
         Invalid = 0x0,
         Binary,
-        Json,
+        Config,
         Resource,
     };
 
@@ -39,7 +39,7 @@ namespace asset
         { }
 
         //! \brief The asset type.
-        AssetType type = AssetType::Resource;
+        AssetType type = AssetType::Invalid;
 
         //! \brief The asset name.
         core::cexpr::stringid_type name{ core::cexpr::stringid_invalid };

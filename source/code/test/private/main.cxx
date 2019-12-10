@@ -24,6 +24,7 @@
 #include <input_system/message/mouse.hxx>
 
 #include <asset_system/asset_system.hxx>
+#include <asset_system/assets/asset_config.hxx>
 
 #include <fmt/format.h>
 #include <application/application.hxx>
@@ -47,10 +48,8 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resources)
     asset::AssetSystem assets{ alloc, resources };
     assets.update();
 
-    assets.update(asset::Asset{ "config", asset::AssetType::Json }, resources.find(URN{ "first/filesystem.txt" })->location());
-
     asset::AssetData asset_data{ };
-    assets.load(asset::Asset{ "config", asset::AssetType::Json }, asset_data);
+    assets.load(asset::AssetConfig{ "config" }, asset_data);
 
     resources.flush_messages();
 
