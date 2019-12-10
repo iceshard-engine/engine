@@ -1,9 +1,11 @@
 [requires]
-glm/0.9.9.4@g-truc/stable
 fmt/5.3.0@iceshard/stable
 Catch2/2.9.0@iceshard/stable
 SDL2/2.0.9@iceshard/stable
 cppcoro/0.2@iceshard/stable
+
+glm/0.9.9.4@g-truc/stable
+rapidjson/1.1.0@bincrafters/stable
 
 [build_requires]
 fastbuild-generator/0.2@iceshard/stable
