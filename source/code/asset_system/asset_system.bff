@@ -18,6 +18,8 @@
         + ' /I"$WorkspaceCodeDir$/collections/public"'
         + ' /I"$WorkspaceCodeDir$/messages/public"'
         + ' /I"$WorkspaceCodeDir$/resource_system/public"'
+        + ' /wd4996' // RapidJson warnings
+        + ' /wd5054' // RapidJson warnings
 
 
     // Library

@@ -22,11 +22,20 @@ namespace asset
         AssetConfigObject(core::allocator& alloc, AssetData data) noexcept;
         ~AssetConfigObject() noexcept;
 
+        bool Has(core::StringView<> key) const noexcept;
+
         auto StringValue(core::StringView<> key) const noexcept -> core::StringView<>;
 
+        auto ObjectValue(core::StringView<> key) const noexcept -> AssetConfigObject;
+
     private:
-        struct ConfigValue;
-        core::pod::Hash<ConfigValue*> _values;
+        struct ConfigImpl;
+
+        AssetConfigObject(core::allocator& alloc, ConfigImpl* data) noexcept;
+
+    private:
+        core::allocator& _allocator;
+        ConfigImpl* _implementation = nullptr;
     };
 
 } // namespace asset
