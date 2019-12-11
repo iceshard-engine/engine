@@ -41,6 +41,7 @@ namespace core
         header->timestamp = core::datetime::now().tick;
 
         auto* data_location = reinterpret_cast<void*>(header + 1);
+        IS_ASSERT(reinterpret_cast<uintptr_t>(data_location) % data.alignment() == 0, "Invalid aligned pointer for data!");
         std::memcpy(data_location, data.data(), data.size());
 
         _data_queue.push(message_data);

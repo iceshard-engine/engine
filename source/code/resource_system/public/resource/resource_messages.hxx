@@ -12,9 +12,6 @@ namespace resource::message
     {
         static constexpr auto message_type = core::cexpr::stringid_cexpr("Resource.Added");
 
-        //! \brief The resource name.
-        URN name;
-
         //! \brief The resource object.
         URI location;
 
@@ -25,9 +22,6 @@ namespace resource::message
     struct ResourceUpdated
     {
         static constexpr auto message_type = core::cexpr::stringid_cexpr("Resource.Updated");
-
-        //! \brief The resource name.
-        URN name;
 
         //! \brief The resource object.
         URI location;
