@@ -53,7 +53,7 @@ namespace asset
                 );
                 core::pod::array::push_back(
                     _resource_database,
-                    AssetReference{ msg.resource_object->location() }
+                    AssetReference{ msg.location }
                 );
             // clang-format on
         });

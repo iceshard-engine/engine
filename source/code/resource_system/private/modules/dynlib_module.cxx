@@ -1,6 +1,6 @@
 #include <resource/resource.hxx>
-#include <resource/resource_messages.hxx>
 #include <resource/modules/dynlib_module.hxx>
+#include "module_messages.hxx"
 
 #include <core/allocators/proxy_allocator.hxx>
 #include <core/allocators/stack_allocator.hxx>
@@ -102,10 +102,7 @@ namespace resource
                             filename.c_str());
                         array::push_back(entry_list, static_cast<Resource*>(module_entry_object));
 
-                        core::message::push(messages, resource::message::ResourceAdded{
-                                                          URN{ module_entry_object->name() },
-                                                          module_entry_object,
-                                                          module_entry_object->name() });
+                        core::message::push(messages, resource::message::ModuleResourceMounted{ module_entry_object });
                     }
                 }
             }

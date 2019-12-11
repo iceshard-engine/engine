@@ -1,6 +1,6 @@
 #include <resource/resource.hxx>
 #include <resource/modules/filesystem_module.hxx>
-#include <resource/resource_messages.hxx>
+#include "module_messages.hxx"
 
 #include <core/allocators/proxy_allocator.hxx>
 #include <core/allocators/stack_allocator.hxx>
@@ -212,10 +212,7 @@ namespace resource
                         relative_path_string.c_str());
                     array::push_back(entry_list, static_cast<Resource*>(dir_entry_object));
 
-                    core::message::push(messages, resource::message::ResourceAdded{
-                                                      URN{ dir_entry_object->name() },
-                                                      dir_entry_object,
-                                                      dir_entry_object->name() });
+                    core::message::push(messages, resource::message::ModuleResourceMounted{ dir_entry_object });
                 }
             }
         }
@@ -245,10 +242,7 @@ namespace resource
                     filename.c_str());
                 array::push_back(entry_list, static_cast<Resource*>(file_entry_object));
 
-                core::message::push(messages, resource::message::ResourceAdded{
-                                                  URN{ file_entry_object->name() },
-                                                  file_entry_object,
-                                                  file_entry_object->name() });
+                core::message::push(messages, resource::message::ModuleResourceMounted{ file_entry_object });
             }
         }
 

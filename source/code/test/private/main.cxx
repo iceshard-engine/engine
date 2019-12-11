@@ -43,15 +43,6 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resources)
     using resource::URI;
 
     resources.mount(URI{ resource::scheme_directory, "../source/data" });
-    resources.update_resources();
-
-    asset::AssetSystem assets{ alloc, resources };
-    assets.update();
-
-    asset::AssetData asset_data{ };
-    assets.load(asset::AssetConfig{ "config" }, asset_data);
-
-    resources.flush_messages();
 
     auto* engine_module_location = resources.find(URN{ "iceshard.dll" });
     IS_ASSERT(engine_module_location != nullptr, "Missing engine module!");
@@ -74,6 +65,9 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resources)
                 });
 
             engine_instance->next_frame();
+
+            engine_instance->asset_system()->update();
+            resources.flush_messages();
         }
 
         engine_instance->world_manager()->destroy_world(core::cexpr::stringid("test-world"));

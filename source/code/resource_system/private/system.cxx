@@ -1,4 +1,7 @@
 #include <resource/system.hxx>
+#include <resource/resource_messages.hxx>
+#include "modules/module_messages.hxx"
+
 #include <core/cexpr/stringid.hxx>
 
 #include <core/memory.hxx>
@@ -49,6 +52,7 @@ namespace resource
 
             URI _location;
         };
+
     } // namespace detail
 
     ResourceSystem::ResourceSystem(core::allocator& alloc) noexcept
@@ -154,7 +158,10 @@ namespace resource
         auto* module_object = hash::get<ResourceModule*>(_scheme_handlers, static_cast<uint64_t>(location.scheme.hash_value), nullptr);
         if (module_object != nullptr)
         {
-            resource_count = module_object->mount(location, _messages);
+            core::MessageBuffer module_messages{ core::memory::globals::default_allocator() };
+            resource_count = module_object->mount(location, module_messages);
+
+            core::message::for_each(module_messages, std::bind(&ResourceSystem::handle_module_message, this, std::placeholders::_1));
         }
         return resource_count;
     }
@@ -171,24 +178,36 @@ namespace resource
         return resource_count;
     }
 
-    void ResourceSystem::update_resources() noexcept
+    void ResourceSystem::handle_module_message(core::Message const& message) noexcept
     {
-        // clang-format off
-        core::message::filter<resource::message::ResourceAdded>(_messages, [&](resource::message::ResourceAdded const& msg) noexcept
+        if (message.header.type == resource::message::ModuleResourceMounted::message_type)
+        {
+            auto const& msg_mounted = *reinterpret_cast<resource::message::ModuleResourceMounted const*>(message.data._data);
+            auto* const resource_object = msg_mounted.resource_object;
+
+            URN provided_name = resource_object->name();
+            URN calculated_name = resource::get_name(resource_object->location());
+            IS_ASSERT(calculated_name.name == provided_name.name, "Resource names are not consitent! {} != {}", calculated_name, provided_name);
+
+            const auto& name_hash = static_cast<uint64_t>(provided_name.name.hash_value);
+            if (hash::has(_named_resources, name_hash))
             {
-                URN name = resource::get_name(msg.resource_object->location());
-                IS_ASSERT(name.name == msg.name.name, "Resource names are not consitent! {} != {}", name, msg.name);
+                auto* old_res = hash::get<Resource*>(_named_resources, name_hash, nullptr);
+                fmt::print("Updating resource with name {}!\n> old: {}\n> new: {}\n", calculated_name, old_res->location(), resource_object->location());
+            }
 
-                const auto& name_hash = static_cast<uint64_t>(msg.name.name.hash_value);
-                if (hash::has(_named_resources, name_hash))
-                {
-                    auto* old_res = hash::get<Resource*>(_named_resources, name_hash, nullptr);
-                    fmt::print("Updating resource with name {}!\n> old: {}\n> new: {}\n", name, old_res->location(), msg.resource_object->location());
-                }
+            hash::set(_named_resources, name_hash, resource_object);
 
-                hash::set(_named_resources, name_hash, msg.resource_object);
-            });
-        // clang-format on
+            core::message::push(_messages, resource::message::ResourceAdded{
+                    provided_name,
+                    resource_object->location(),
+                    resource_object->name()
+                });
+        }
+        else
+        {
+            IS_ASSERT(false, "Unhandled module message type: {}!", message.header.type);
+        }
     }
 
     void ResourceSystem::flush_messages() noexcept

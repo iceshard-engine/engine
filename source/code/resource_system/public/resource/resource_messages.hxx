@@ -16,7 +16,7 @@ namespace resource::message
         URN name;
 
         //! \brief The resource object.
-        Resource* resource_object;
+        URI location;
 
         //! \brief The resource native name.
         core::StringView<> native_name;
@@ -29,8 +29,8 @@ namespace resource::message
         //! \brief The resource name.
         URN name;
 
-        //! \brief The resource location.
-        Resource* resource_object;
+        //! \brief The resource object.
+        URI location;
 
         //! \brief The resource origin.
         core::StringView<> origin;
