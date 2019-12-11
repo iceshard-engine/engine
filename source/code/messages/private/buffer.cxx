@@ -33,7 +33,7 @@ namespace core
 
     void MessageBuffer::push(core::cexpr::stringid_argument_type type, core::data_view_aligned data) noexcept
     {
-        core::memory::stack_allocator<256> stack_allocator;
+        core::memory::stack_allocator<core::build::is_release ? 64 : 256> stack_allocator;
         core::data_chunk message_data{ stack_allocator, sizeof(MessageHeader) + data.size() };
 
         auto* header = reinterpret_cast<MessageHeader*>(message_data.data());
