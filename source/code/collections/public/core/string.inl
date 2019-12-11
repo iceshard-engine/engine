@@ -8,8 +8,15 @@ inline core::String<CharType>::String(core::allocator& allocator) noexcept
 {
 }
 
-template <typename CharType>
+template<typename CharType>
 inline core::String<CharType>::String(core::allocator& allocator, const CharType* value) noexcept
+    : _allocator{ &allocator }
+{
+    *this = value;
+}
+
+template<typename CharType>
+inline core::String<CharType>::String(core::allocator& allocator, StringView<CharType> value) noexcept
     : _allocator{ &allocator }
 {
     *this = value;
@@ -66,11 +73,19 @@ inline auto core::String<CharType>::operator=(String<CharType>&& other) noexcept
     return *this;
 }
 
-template <typename CharType>
+template<typename CharType>
 template<uint32_t Capacity>
 inline auto core::String<CharType>::operator=(const StackString<Capacity, CharType>& other) noexcept -> String<CharType>&
 {
     *this = other._data;
+    return *this;
+}
+
+template<typename CharType>
+inline auto core::String<CharType>::operator=(StringView<CharType> other) noexcept -> String<CharType>&
+{
+    string::resize(*this, other._size);
+    memcpy(_data, other._data, sizeof(CharType) * other._size);
     return *this;
 }
 

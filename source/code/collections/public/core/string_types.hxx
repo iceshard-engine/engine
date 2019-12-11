@@ -28,6 +28,9 @@ namespace core
         //! \brief Creates a new String object with the given allocator and value to copy.
         String(core::allocator& a, const CharType* other) noexcept;
 
+        //! \brief Creates a new String object with the given allocator and value to copy.
+        String(core::allocator& a, core::StringView<CharType> other) noexcept;
+
         //! \brief Moves a given String object.
         String(String&& other) noexcept;
 
@@ -46,6 +49,9 @@ namespace core
         //! \brief Replaces the string value with the new one.
         template<uint32_t Capacity>
         auto operator=(const StackString<Capacity, CharType>& other) noexcept -> String&;
+
+        //! \brief Replaces the string value with the new one.
+        auto operator=(StringView<CharType> other) noexcept -> String&;
 
         //! \brief Replaces the string value with the new one.
         auto operator=(const CharType* other) noexcept -> String&;
