@@ -1,11 +1,8 @@
 #include <render_system/render_module.hxx>
 #include <render_system/render_api.hxx>
+#include <core/platform/windows.hxx>
 
 #include <filesystem>
-
-#define WIN32_LEAN_AND_MEAN
-#define NOMINMAX
-#include <Windows.h>
 
 namespace render
 {

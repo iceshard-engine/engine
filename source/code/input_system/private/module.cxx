@@ -1,10 +1,8 @@
 #include <input_system/module.hxx>
 #include <core/string_view.hxx>
+#include <core/platform/windows.hxx>
 
 #include <filesystem>
-
-#define WIN32_LEAN_AND_MEAN
-#include <Windows.h>
 
 namespace input
 {

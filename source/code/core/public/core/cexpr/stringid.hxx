@@ -2,7 +2,7 @@
 #include <core/cexpr/hash.hxx>
 #include <fmt/format.h>
 
-#if CFG_RELEASE == 0
+#if ISC_DEBUG || ISC_RELEASE_DEBUG
 #define STRINGID_DEBUG 1
 #else
 #define STRINGID_DEBUG 0
@@ -23,7 +23,7 @@ namespace core::cexpr
         //! \brief The hash value.
         stringid_hash_type hash_value;
 
-#if STRINGID_DEBUG == 1
+#if STRINGID_DEBUG
         //! \brief The origin string (or part of it).
         char hash_origin[24];
 #endif
@@ -33,7 +33,7 @@ namespace core::cexpr
     constexpr stringid_type stringid_invalid{ stringid_hash_type{ 0 } };
 
 
-#if STRINGID_DEBUG == 1
+#if STRINGID_DEBUG
 
     //! \brief Create a new stringid_type value from the given string.
     inline auto stringid(std::string_view cstr) noexcept -> stringid_type
@@ -122,7 +122,7 @@ namespace fmt
             }
             else
             {
-#if STRINGID_DEBUG == 1
+#if STRINGID_DEBUG
                 return fmt::format_to(ctx.begin(), "[sid:{:16x}]'{}'", static_cast<std::underlying_type_t<decltype(strid.hash_value)>>(strid.hash_value), strid.hash_origin);
 #else
                 return fmt::format_to(ctx.begin(), "[sid:{:16x}]", static_cast<std::underlying_type_t<decltype(strid.hash_value)>>(strid.hash_value));

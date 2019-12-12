@@ -1,11 +1,8 @@
 #include <iceshard/module.hxx>
 #include <core/string_view.hxx>
+#include <core/platform/windows.hxx>
 
 #include <filesystem>
-
-#define WIN32_LEAN_AND_MEAN
-#define NOMINMAX
-#include <Windows.h>
 
 namespace iceshard
 {

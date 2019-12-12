@@ -9,6 +9,7 @@
 
 #include <core/allocators/proxy_allocator.hxx>
 #include <core/allocators/scratch_allocator.hxx>
+#include <core/platform/windows.hxx>
 
 #include <cppcoro/task.hpp>
 #include <cppcoro/sync_wait.hpp>
@@ -21,9 +22,6 @@
 
 #include <atomic>
 
-#define WIN32_LEAN_AND_MEAN
-#define NOMINMAX
-#include <Windows.h>
 
 namespace iceshard
 {
