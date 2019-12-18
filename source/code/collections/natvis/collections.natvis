@@ -1,20 +1,57 @@
 <?xml version="1.0" encoding="utf-8"?>
 <AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
-  <!-- Native Visualization for the pod::Array struct -->
+
+  <!-- Native Visualization for the core::pod::Array type -->
   <Type Name="core::pod::Array&lt;*&gt;">
-    <DisplayString>pod::Array {{ size={ _size }, capacity={ _capacity } }}</DisplayString>
+    <DisplayString>Array {{ size={ _size }, capacity={ _capacity } }}</DisplayString>
     <Expand>
       <Item Name="[size]">_size</Item>
       <Item Name="[capacity]">_capacity</Item>
+      <ArrayItems>
+        <Size>_size</Size>
+        <ValuePointer>_data</ValuePointer>
+      </ArrayItems>
+    </Expand>
+  </Type>
+
+  <!-- Native Visualization for the core::pod::Queue type -->
+  <Type Name="core::pod::Queue&lt;*&gt;">
+    <DisplayString>Queue {{ size={ _size } }}</DisplayString>
+    <Expand>
+      <Item Name="[size]">_size</Item>
+      <IndexListItems>
+        <Size>_size</Size>
+        <ValueNode>(_data._data[(_offset + $i) % _data._size])</ValueNode>
+      </IndexListItems>
+    </Expand>
+  </Type>
+
+  <!-- Native Visualization for the core::pod::Hash::Entry type -->
+  <Type Name="core::pod::Hash&lt;*&gt;::Entry">
+    <DisplayString>Hash::Entry {{ key={key,X}, value={value} }} : {"$T1",sb}</DisplayString>
+    <Expand>
+      <Item Name="[key]">key,X</Item>
+      <Item Name="[value]">value</Item>
+      <Item Name="[next]" Condition="next != 0xffffffff">next</Item>
+    </Expand>
+  </Type>
+
+  <!-- Native Visualization for the core::pod::Hash type -->
+  <Type Name="core::pod::Hash&lt;*&gt;">
+    <DisplayString>Hash {{ size={_data._size}, capacity={_hash._size}, load_factor={(float)_data._size/(float)_hash._size,g} }}</DisplayString>
+    <Expand>
+      <Item Name="[size]">_data._size</Item>
+      <Item Name="[capacity]">_hash._size</Item>
       <Synthetic Name="[items]">
-        <DisplayString>Array items</DisplayString>
+        <DisplayString>load_factor {{ {(float)_data._size/(float)_hash._size,g} }}</DisplayString>
         <Expand>
           <ArrayItems>
-            <Size>_size</Size>
-            <ValuePointer>_data</ValuePointer>
+            <Size>_data._size</Size>
+            <ValuePointer>_data._data</ValuePointer>
           </ArrayItems>
         </Expand>
       </Synthetic>
     </Expand>
   </Type>
+
 </AutoVisualizer>

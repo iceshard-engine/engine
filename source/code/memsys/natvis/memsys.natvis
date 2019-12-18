@@ -3,12 +3,12 @@
 
   <!-- Native Visualization for the allocator type -->
   <Type Name="core::allocator" >
-    <DisplayString>core::allocator</DisplayString>
+    <DisplayString>Allocator</DisplayString>
   </Type>
 
   <!-- Native Visualization for the allocator type -->
   <Type Name="core::memory::proxy_allocator" >
-    <DisplayString>core::allocator {{ {_name,s} }}</DisplayString>
+    <DisplayString>Allocator {{ {_name,s} }}</DisplayString>
     <Expand>
       <Synthetic Name="[allocated_bytes]" Condition="!_allocation_tracking" ExcludeView="simple">
         <DisplayString>not tracked</DisplayString>
