@@ -5,7 +5,7 @@
 namespace resource
 {
 
-#if CFG_RELEASE
+#if ISC_RELEASE
 
     //! \brief Invalid scheme.
     static constexpr core::cexpr::stringid_type scheme_invalid{ core::cexpr::stringid_cexpr("invalid") };
