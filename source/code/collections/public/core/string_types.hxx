@@ -133,6 +133,9 @@ namespace core
         StringView(const CharType* cstring) noexcept;
 
         //! \brief Creates a new StackString object with the given value.
+        StringView(const CharType* cstring, uint32_t size) noexcept;
+
+        //! \brief Creates a new StackString object with the given value.
         StringView(std::string_view str_view) noexcept;
 
         //! \brief Creates a new StringView from a String.

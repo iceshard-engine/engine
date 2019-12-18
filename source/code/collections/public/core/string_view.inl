@@ -1,15 +1,23 @@
 
 //! \brief Creates a new StackString object with the given value.
-template <typename CharType>
+template<typename CharType>
 core::StringView<CharType>::StringView(const CharType* cstring) noexcept
     : _size{ static_cast<uint32_t>(strlen(cstring)) }
     , _data{ cstring }
-{ }
+{
+}
+//! \brief Creates a new StackString object with the given value.
+template<typename CharType>
+core::StringView<CharType>::StringView(const CharType* cstring, uint32_t size) noexcept
+    : _size{ size }
+    , _data{ cstring }
+{
+}
 
 //! \brief Creates a new StackString object with the given value.
 template <typename CharType>
 core::StringView<CharType>::StringView(std::string_view str_view) noexcept
-    : _size{ str_view.size() }
+    : _size{ static_cast<uint32_t>(str_view.size()) }
     , _data{ str_view.data() }
 { }
 
