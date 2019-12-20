@@ -36,25 +36,25 @@ namespace core::build::configuration
 
     static constexpr Configuration current_config{ "Debug",         ConfigurationType::Debug };
 
-#define CFG_DEBUG 1
-#define CFG_RELEASE_DEBUG 0
-#define CFG_RELEASE 0
+#define ISC_DEBUG 1
+#define ISC_RELEASE_DEBUG 0
+#define ISC_RELEASE 0
 
 #elif defined(_RDEBUG)
 
     static constexpr Configuration current_config{ "ReleaseDebug",  ConfigurationType::ReleaseDebug };
 
-#define CFG_DEBUG 0
-#define CFG_RELEASE_DEBUG 1
-#define CFG_RELEASE 0
+#define ISC_DEBUG 0
+#define ISC_RELEASE_DEBUG 1
+#define ISC_RELEASE 0
 
 #elif defined(_NDEBUG)
 
     static constexpr Configuration current_config{ "Release",       ConfigurationType::Release };
 
-#define CFG_DEBUG 0
-#define CFG_RELEASE_DEBUG 0
-#define CFG_RELEASE 1
+#define ISC_DEBUG 0
+#define ISC_RELEASE_DEBUG 0
+#define ISC_RELEASE 1
 
 #else
 

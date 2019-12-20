@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
+
+  <Type Name="resource::URI">
+    <DisplayString Condition="scheme.hash_value == 0xcd8e46dc3c773a80">URI {{ invalid, path={path._data,sb} }}</DisplayString>
+    <DisplayString Condition="scheme.hash_value == 0x98a7589055be8ccb">URI {{ directory, path={path._data,sb} }}</DisplayString>
+    <DisplayString Condition="scheme.hash_value == 0x37c2471f8d3c7327">URI {{ file, path={path._data,sb} }}</DisplayString>
+    <DisplayString Condition="scheme.hash_value == 0x1f5dc59cc9229977">URI {{ pack, path={path._data,sb} }}</DisplayString>
+    <DisplayString Condition="scheme.hash_value == 0xc5d955b699c623c5">URI {{ module, path={path._data,sb} }}</DisplayString>
+    <DisplayString Condition="scheme.hash_value == 0xf46f91340698127b">URI {{ resource, path={path._data,sb} }}</DisplayString>
+    <Expand>
+      <Synthetic Name="[scheme]">
+        <DisplayString Condition="scheme.hash_value == 0xcd8e46dc3c773a80">invalid</DisplayString>
+        <DisplayString Condition="scheme.hash_value == 0x98a7589055be8ccb">directory</DisplayString>
+        <DisplayString Condition="scheme.hash_value == 0x37c2471f8d3c7327">file</DisplayString>
+        <DisplayString Condition="scheme.hash_value == 0x1f5dc59cc9229977">pack</DisplayString>
+        <DisplayString Condition="scheme.hash_value == 0xc5d955b699c623c5">module</DisplayString>
+        <DisplayString Condition="scheme.hash_value == 0xf46f91340698127b">resource</DisplayString>
+      </Synthetic>
+      <Item Name="[path]">path._data,sb</Item>
+      <Item Condition="fragment.hash_value != 0" Name="[fragment]">fragment.hash_value,h</Item>
+      <Item Condition="fragment.hash_value == 0" Name="[fragment]">"unused",sb</Item>
+    </Expand>
+  </Type>
+
+  <Type Name="resource::URN">
+    <DisplayString>URN</DisplayString>
+    <Expand>
+      <Item Condition="name.hash_value != 0" Name="[name]">name.hash_value,h</Item>
+      <Item Condition="name.hash_value == 0" Name="[name]">"invalid",sb</Item>
+    </Expand>
+  </Type>
+
+  <Type Name="resource::ResourceSystem">
+    <DisplayString>ResourceSystem {{ modules={_modules.size()}, resources={_named_resources._data._size} }}</DisplayString>
+    <Expand>
+      <Item Name="[allocator]">_allocator</Item>
+      <Item Name="[modules]">_modules</Item>
+      <Item Name="[scheme_handlers]">_scheme_handlers</Item>
+      <Item Name="[resources_internal]">_internal_resources</Item>
+      <Item Name="[resources_named]">_named_resources</Item>
+      <Item Name="[resources_named_output]">_named_output_resources</Item>
+    </Expand>
+  </Type>
+
+  <Type Name="resource::detail::FileResource">
+    <DisplayString Condition="_data._data == nullptr">FileResource{{ {_native_path._data,sb} }}</DisplayString>
+    <DisplayString Condition="_data._data != nullptr">FileResource{{ {_native_path._data,sb}, loaded }}</DisplayString>
+    <Expand>
+      <Item Name="[path]">_path</Item>
+      <Item Name="[identifier]">_uri</Item>
+      <Item Name="[native_path]">_native_path</Item>
+      <Item Name="[data]" Condition="_data._data != nullptr">_data</Item>
+      <Item Name="[data]" Condition="_data._data == nullptr">"not loaded",sb</Item>
+    </Expand>
+  </Type>
+
+  <Type Name="resource::detail::DynamicLibraryResource">
+    <DisplayString>DynamicLibraryResource</DisplayString>
+    <Expand>
+    </Expand>
+  </Type>
+
+  <Type Name="resource::Resource">
+    <DisplayString>Resource</DisplayString>
+    <Expand>
+    </Expand>
+  </Type>
+
+  <Type Name="resource::OutputResource">
+    <DisplayString>OutputResource</DisplayString>
+    <Expand>
+    </Expand>
+  </Type>
+
+</AutoVisualizer>

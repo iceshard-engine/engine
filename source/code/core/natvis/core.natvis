@@ -1,63 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
 <AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
-  <Type Name="core::datetime::tick_type">
-    <DisplayString>tick {{ {value} }}</DisplayString>
-    <Expand>
-      <Item Name="[value]" ExcludeView="simple">value</Item>
-    </Expand>
-  </Type>
-  <Type Name="core::datetime::timespan_type">
-    <DisplayString>timespan {{ tick={tick.value} }}</DisplayString>
-    <Expand>
-      <Item Name="[tick]" ExcludeView="simple">tick</Item>
-    </Expand>
-  </Type>
-  <Type Name="core::datetime::datetime_type">
-    <DisplayString>datetime {{ tick={tick.value} }}</DisplayString>
-    <Expand>
-      <Item Name="[tick]" ExcludeView="simple">tick</Item>
-    </Expand>
-  </Type>
-  <Type Name="core::datetime::local_datetime_type">
-    <DisplayString>local_datetime {{ tick={tick.value} }}</DisplayString>
-    <Expand>
-      <Item Name="[tick]" ExcludeView="simple">tick</Item>
-    </Expand>
-  </Type>
-  <Type Name="core::datetime::unix_timestamp">
-    <DisplayString>unix_timestamp {{ tick={tick.value} }}</DisplayString>
-    <Expand>
-      <Item Name="[tick]" ExcludeView="simple">tick</Item>
-    </Expand>
-  </Type>
-  <Type Name="core::datetime::calendar_type">
-    <DisplayString>calendar {{ {year}/{month}/{day} {hour}:{minute}:{second} }}</DisplayString>
-    <Expand>
-      <Item Name="[year]" ExcludeView="simple">year</Item>
-      <Item Name="[month]" ExcludeView="simple">month</Item>
-      <Item Name="[day]" ExcludeView="simple">day</Item>
-      <Item Name="[hour]" ExcludeView="simple">hour</Item>
-      <Item Name="[minute]" ExcludeView="simple">minute</Item>
-      <Item Name="[second]" ExcludeView="simple">second</Item>
-      <Item Name="[microsecond]" ExcludeView="simple">microsecond</Item>
-    </Expand>
-  </Type>
 
   <Type Name="core::cexpr::stringid_hash_type">
     <DisplayString>core::cexpr::stringid_hash_type</DisplayString>
     <Expand>
     </Expand>
   </Type>
+
   <Type Name="core::cexpr::stringid_type">
-    <DisplayString Condition="hash_value == 0">stringid {{ invalid }}</DisplayString>
-    <DisplayString Optional="true">stringid {{ {hash_origin,s} = {hash_value,x} }}</DisplayString>
-    <DisplayString>stringid {{ {hash_value,x} }}</DisplayString>
+    <DisplayString Condition="hash_value == 0">StrID {{ invalid }}</DisplayString>
+    <DisplayString Optional="true">StringID {{ {hash_value,x} : {hash_origin,s} }}</DisplayString>
+    <DisplayString>StrID {{ {hash_value,x} }}</DisplayString>
     <Expand>
-      <Item Optional="true" Name="[origin]" ExcludeView="simple">hash_origin,s</Item>
       <Item Name="[hash]" Condition="hash_value != 0" ExcludeView="simple">hash_value,x</Item>
       <Synthetic Name="[hash]" Condition="hash_value == 0" ExcludeView="simple">
         <DisplayString>invalid</DisplayString>
       </Synthetic>
+      <Item Optional="true" Name="[origin]" ExcludeView="simple">hash_origin,s</Item>
     </Expand>
   </Type>
+
 </AutoVisualizer>

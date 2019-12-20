@@ -10,12 +10,10 @@
 #include <core/pod/array.hxx>
 #include <core/data/chunk.hxx>
 #include <core/data/buffer.hxx>
+#include <core/platform/windows.hxx>
 
 #include <filesystem>
 #include <cstdio>
-
-#define WIN32_LEAN_AND_MEAN
-#include <Windows.h>
 
 namespace resource
 {

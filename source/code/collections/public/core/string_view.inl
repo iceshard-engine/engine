@@ -24,15 +24,23 @@ constexpr core::StringView<CharType>::StringView(CharType const (&cstring)[Size]
 
 //! \brief Creates a new StackString object with the given value.
 template<typename CharType>
-core::StringView<CharType>::StringView(std::string const& str) noexcept
-    : _size{ static_cast<uint32_t>(str.size()) }
-    , _data{ str.data() }
+constexpr core::StringView<CharType>::StringView(const CharType* cstring, uint32_t size) noexcept
+    : _size{ size }
+    , _data{ cstring }
 {
 }
 
 //! \brief Creates a new StackString object with the given value.
 template<typename CharType>
 constexpr core::StringView<CharType>::StringView(std::string_view str_view) noexcept
+    : _size{ static_cast<uint32_t>(str_view.size()) }
+    , _data{ str_view.data() }
+{
+}
+
+//! \brief Creates a new StackString object with the given value.
+template<typename CharType>
+core::StringView<CharType>::StringView(std::string const& str_view) noexcept
     : _size{ static_cast<uint32_t>(str_view.size()) }
     , _data{ str_view.data() }
 {

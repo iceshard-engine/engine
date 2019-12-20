@@ -1,10 +1,9 @@
 #include <application/utility.hxx>
+
 #include <core/stack_string.hxx>
+#include <core/platform/windows.hxx>
 
 #include <filesystem>
-
-#define WIN32_LEAN_AND_MEAN
-#include <Windows.h>
 
 namespace app
 {

@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
+
+  <Type Name="core::datetime::tick_type">
+    <DisplayString>tick {{ {value} }}</DisplayString>
+    <Expand>
+      <Item Name="[value]" ExcludeView="simple">value</Item>
+    </Expand>
+  </Type>
+
+  <Type Name="core::datetime::timespan_type">
+    <DisplayString>timespan {{ tick={tick.value} }}</DisplayString>
+    <Expand>
+      <Item Name="[tick]" ExcludeView="simple">tick</Item>
+    </Expand>
+  </Type>
+
+  <Type Name="core::datetime::datetime_type">
+    <DisplayString>datetime {{ tick={tick.value} }}</DisplayString>
+    <Expand>
+      <Item Name="[tick]" ExcludeView="simple">tick</Item>
+    </Expand>
+  </Type>
+
+  <Type Name="core::datetime::local_datetime_type">
+    <DisplayString>local_datetime {{ tick={tick.value} }}</DisplayString>
+    <Expand>
+      <Item Name="[tick]" ExcludeView="simple">tick</Item>
+    </Expand>
+  </Type>
+
+  <Type Name="core::datetime::unix_timestamp">
+    <DisplayString>unix_timestamp {{ tick={tick.value} }}</DisplayString>
+    <Expand>
+      <Item Name="[tick]" ExcludeView="simple">tick</Item>
+    </Expand>
+  </Type>
+
+  <Type Name="core::datetime::calendar_type">
+    <DisplayString>calendar {{ {year}/{month}/{day} {hour}:{minute}:{second} }}</DisplayString>
+    <Expand>
+      <Item Name="[year]" ExcludeView="simple">year</Item>
+      <Item Name="[month]" ExcludeView="simple">month</Item>
+      <Item Name="[day]" ExcludeView="simple">day</Item>
+      <Item Name="[hour]" ExcludeView="simple">hour</Item>
+      <Item Name="[minute]" ExcludeView="simple">minute</Item>
+      <Item Name="[second]" ExcludeView="simple">second</Item>
+      <Item Name="[microsecond]" ExcludeView="simple">microsecond</Item>
+    </Expand>
+  </Type>
+
+</AutoVisualizer>

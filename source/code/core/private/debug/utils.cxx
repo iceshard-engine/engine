@@ -1,7 +1,5 @@
 #include <core/debug/utils.hxx>
-
-#define WIN32_LEAN_AND_MEAN
-#include <Windows.h>
+#include <core/platform/windows.hxx>
 
 namespace core::debug
 {

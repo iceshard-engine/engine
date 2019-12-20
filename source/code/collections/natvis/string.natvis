@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
+
+  <!-- Native Visualization for the core::String<> type -->
+  <Type Name="core::String&lt;*&gt;">
+    <DisplayString>String {{ { _data,s } }}</DisplayString>
+    <StringView>_data,s</StringView>
+    <Expand>
+      <Item Name="[value]">_data,s</Item>
+      <Item Name="[size]">_size</Item>
+      <Item Name="[capacity]">_capacity</Item>
+      <Item Name="[allocator]">_allocator</Item>
+    </Expand>
+  </Type>
+
+  <!-- Native Visualization for the core::StackString<> type -->
+  <Type Name="core::StackString&lt;*,*&gt;">
+    <DisplayString>StackString&lt;{"$T1",sb}&gt; {{ { _data,s } }}</DisplayString>
+    <StringView>_data,s</StringView>
+    <Expand>
+      <Item Name="[size]">_size</Item>
+      <Item Name="[value]">_data,s</Item>
+      <Item Name="[capacity]">$T1</Item>
+    </Expand>
+  </Type>
+
+  <!-- Native Visualization for the core::StringView<> type -->
+  <Type Name="core::StringView&lt;*&gt;">
+    <DisplayString>StringView {{ { _data,[_size] } }}</DisplayString>
+    <StringView>_data,[_size]</StringView>
+    <Expand>
+      <Item Name="[size]">_size</Item>
+      <ExpandedItem>_data,[_size]</ExpandedItem>
+    </Expand>
+  </Type>
+
+</AutoVisualizer>
