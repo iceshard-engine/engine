@@ -11,7 +11,7 @@ namespace iceshard
 
     void Engine::add_long_task(cppcoro::task<> task) noexcept
     {
-        add_task([](cppcoro::task<> task_object) noexcept->cppcoro::task<> {
+        add_task([](cppcoro::task<> task_object) noexcept -> cppcoro::task<> {
             std::thread th{ cppcoro::sync_wait<cppcoro::task<>>, std::move(task_object) };
             th.detach();
             co_return;

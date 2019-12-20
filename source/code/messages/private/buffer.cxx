@@ -33,7 +33,7 @@ namespace core
 
     void MessageBuffer::push(core::cexpr::stringid_argument_type type, core::data_view_aligned data) noexcept
     {
-        core::memory::stack_allocator<128> stack_allocator;
+        core::memory::stack_allocator<core::build::is_release ? 64 : 256> stack_allocator;
         core::data_chunk message_data{ stack_allocator, sizeof(MessageHeader) + data.size() };
 
         auto* header = reinterpret_cast<MessageHeader*>(message_data.data());
@@ -41,6 +41,7 @@ namespace core
         header->timestamp = core::datetime::now().tick;
 
         auto* data_location = reinterpret_cast<void*>(header + 1);
+        IS_ASSERT(reinterpret_cast<uintptr_t>(data_location) % data.alignment() == 0, "Invalid aligned pointer for data!");
         std::memcpy(data_location, data.data(), data.size());
 
         _data_queue.push(message_data);
@@ -61,9 +62,7 @@ namespace core
         return { *this, true };
     }
 
-
     //////////////////////////////////////////////////////////////////////////
-
 
     MessageBuffer::Iterator::Iterator(const MessageBuffer& queue) noexcept
         : _iterator{ queue._data_queue.begin() }
@@ -94,9 +93,8 @@ namespace core
         const uint32_t message_data_size = raw_message._size - sizeof(MessageHeader);
 
         return Message{
-            *message_header
-            , core::data_view{ message_data_size == 0 ? nullptr : message_header + 1, message_data_size }
+            *message_header, core::data_view{ message_data_size == 0 ? nullptr : message_header + 1, message_data_size }
         };
     }
 
-} // namespace core::message
+} // namespace core
