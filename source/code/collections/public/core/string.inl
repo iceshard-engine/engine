@@ -1,21 +1,25 @@
 
-// core::String methods
-//////////////////////////////////////////////////////////////////////////
-
-template <typename CharType>
+template<typename CharType>
 inline core::String<CharType>::String(core::allocator& allocator) noexcept
     : _allocator{ &allocator }
 {
 }
 
-template <typename CharType>
+template<typename CharType>
 inline core::String<CharType>::String(core::allocator& allocator, const CharType* value) noexcept
     : _allocator{ &allocator }
 {
     *this = value;
 }
 
-template <typename CharType>
+template<typename CharType>
+inline core::String<CharType>::String(core::allocator& allocator, StringView<CharType> value) noexcept
+    : _allocator{ &allocator }
+{
+    *this = value;
+}
+
+template<typename CharType>
 inline core::String<CharType>::String(const String<CharType>& other) noexcept
     : _allocator{ other._allocator }
 {
@@ -25,7 +29,7 @@ inline core::String<CharType>::String(const String<CharType>& other) noexcept
     _size = n - 1;
 }
 
-template <typename CharType>
+template<typename CharType>
 inline core::String<CharType>::String(String<CharType>&& other) noexcept
     : _allocator{ other._allocator }
     , _size{ other._size }
@@ -37,13 +41,13 @@ inline core::String<CharType>::String(String<CharType>&& other) noexcept
     other._size = 0;
 }
 
-template <typename CharType>
+template<typename CharType>
 inline core::String<CharType>::~String() noexcept
 {
     _allocator->deallocate(_data);
 }
 
-template <typename CharType>
+template<typename CharType>
 inline auto core::String<CharType>::operator=(const String<CharType>& other) noexcept -> String<CharType>&
 {
     const uint32_t n = other._size;
@@ -52,7 +56,7 @@ inline auto core::String<CharType>::operator=(const String<CharType>& other) noe
     return *this;
 }
 
-template <typename CharType>
+template<typename CharType>
 inline auto core::String<CharType>::operator=(String<CharType>&& other) noexcept -> String<CharType>&
 {
     if (this == &other)
@@ -66,7 +70,7 @@ inline auto core::String<CharType>::operator=(String<CharType>&& other) noexcept
     return *this;
 }
 
-template <typename CharType>
+template<typename CharType>
 template<uint32_t Capacity>
 inline auto core::String<CharType>::operator=(const StackString<Capacity, CharType>& other) noexcept -> String<CharType>&
 {
@@ -74,7 +78,15 @@ inline auto core::String<CharType>::operator=(const StackString<Capacity, CharTy
     return *this;
 }
 
-template <typename CharType>
+template<typename CharType>
+inline auto core::String<CharType>::operator=(StringView<CharType> other) noexcept -> String<CharType>&
+{
+    string::resize(*this, other._size);
+    memcpy(_data, other._data, sizeof(CharType) * other._size);
+    return *this;
+}
+
+template<typename CharType>
 inline auto core::String<CharType>::operator=(const CharType* other) noexcept -> String<CharType>&
 {
     const auto n = strlen(other);
@@ -83,13 +95,13 @@ inline auto core::String<CharType>::operator=(const CharType* other) noexcept ->
     return *this;
 }
 
-template <typename CharType>
+template<typename CharType>
 inline auto core::String<CharType>::operator[](uint32_t i) noexcept -> CharType&
 {
     return _data[i];
 }
 
-template <typename CharType>
+template<typename CharType>
 inline auto core::String<CharType>::operator[](uint32_t i) const noexcept -> const CharType&
 {
     return _data[i];
@@ -127,10 +139,6 @@ inline void core::swap(String<CharType>& lhs, String<CharType>& rhs) noexcept
     std::swap(lhs._capacity, rhs._capacity);
     std::swap(lhs._data, rhs._data);
 }
-
-// core::String functions
-//////////////////////////////////////////////////////////////////////////
-
 
 template<typename CharType>
 inline auto core::string::size(const core::String<CharType>& str) noexcept -> uint32_t
@@ -204,20 +212,19 @@ inline auto core::string::back(const String<CharType>& str) noexcept -> const Ch
     return str._data[str._size - 1];
 }
 
-
-template <typename CharType>
+template<typename CharType>
 inline void core::string::clear(String<CharType>& str) noexcept
 {
     resize(str, 0);
 }
 
-template <typename CharType>
+template<typename CharType>
 inline void core::string::trim(String<CharType>& str) noexcept
 {
     set_capacity(str, str._size + 1);
 }
 
-template <typename CharType>
+template<typename CharType>
 inline void core::string::resize(String<CharType>& str, uint32_t new_size) noexcept
 {
     if (new_size + 1 > str._capacity)
@@ -228,7 +235,7 @@ inline void core::string::resize(String<CharType>& str, uint32_t new_size) noexc
     str._data[str._size] = 0;
 }
 
-template <typename CharType>
+template<typename CharType>
 inline void core::string::reserve(String<CharType>& str, uint32_t new_capacity) noexcept
 {
     if (new_capacity > str._capacity)
@@ -323,7 +330,7 @@ inline void core::string::push_back(String<CharType>& str, const String<CharType
 }
 
 template<typename CharType>
-inline void core::string::pop_back(String<CharType> & str) noexcept
+inline void core::string::pop_back(String<CharType>& str) noexcept
 {
     str._data[--str._size] = 0;
 }
@@ -340,33 +347,26 @@ inline void core::string::pop_back(String<CharType>& str, uint32_t num) noexcept
     str._data[str._size] = 0;
 }
 
-
-// core::String functions
-//////////////////////////////////////////////////////////////////////////
-
-
-template <typename CharType>
+template<typename CharType>
 bool core::string::equals(const String<CharType>& left, const String<CharType>& right) noexcept
 {
     return equals(left, right._data);
 }
 
-template <typename CharType>
+template<typename CharType>
 bool core::string::equals(const String<CharType>& left, const std::string_view right) noexcept
 {
     return equals(left, right.data());
 }
 
-template <typename CharType>
+template<typename CharType>
 bool core::string::equals(const String<CharType>& left, const CharType* right) noexcept
 {
     return strcmp(left._data, right) == 0;
 }
 
-
 // core::String operators
 //////////////////////////////////////////////////////////////////////////
-
 
 template<typename CharType>
 auto core::operator+=(String<CharType>& self, CharType other) noexcept -> String<CharType>&

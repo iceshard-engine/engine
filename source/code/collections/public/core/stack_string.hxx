@@ -8,18 +8,14 @@
 namespace core
 {
 
-
     // core::StackString deduction guides
     //////////////////////////////////////////////////////////////////////////
 
-
     template<uint32_t Size, typename CharType>
-    StackString(const CharType(&)[Size]) -> StackString<core::cexpr::power_of_two_roundup(Size, 16u), CharType>;
-
+    StackString(const CharType (&)[Size])->StackString<core::cexpr::power_of_two_roundup(Size, 16u), CharType>;
 
     // core::StackString functions
     //////////////////////////////////////////////////////////////////////////
-
 
     namespace string
     {
@@ -128,10 +124,8 @@ namespace core
 
     } // namespace string
 
-
     // core::StackString miscelaneous
     //////////////////////////////////////////////////////////////////////////
-
 
     //! \copydoc core::string::begin(StackString<Capacity, CharType>&)
     template<uint32_t Capacity, typename CharType>
@@ -152,10 +146,8 @@ namespace core
     template<uint32_t Capacity, typename CharType>
     void swap(StackString<Capacity, CharType>& lhs, StackString<Capacity, CharType>& rhs) noexcept;
 
-
     // core::StackString operators
     //////////////////////////////////////////////////////////////////////////
-
 
     template<uint32_t Capacity, typename CharType>
     auto operator+=(StackString<Capacity, CharType>& self, CharType other) noexcept -> StackString<Capacity, CharType>&;
@@ -169,20 +161,9 @@ namespace core
     template<uint32_t Capacity, typename CharType>
     auto operator+=(StackString<Capacity, CharType>& self, const StackString<Capacity, CharType>& other) noexcept -> StackString<Capacity, CharType>&;
 
-
-    // core::StackString implementation
-    //////////////////////////////////////////////////////////////////////////
-
-
-#include "stack_string.inl"
-
-
 } // namespace core
 
-
-// core::StackString FTM formatter
-//////////////////////////////////////////////////////////////////////////
-
+#include "stack_string.inl"
 
 namespace fmt
 {
@@ -190,13 +171,13 @@ namespace fmt
     template<uint32_t Capacity, typename CharType>
     struct formatter<core::StackString<Capacity, CharType>>
     {
-        template <typename ParseContext>
-        constexpr auto parse(ParseContext &ctx)
+        template<typename ParseContext>
+        constexpr auto parse(ParseContext& ctx)
         {
             return ctx.begin();
         }
 
-        template <typename FormatContext>
+        template<typename FormatContext>
         auto format(const core::StackString<Capacity, CharType>& str, FormatContext& ctx)
         {
             return fmt::format_to(ctx.begin(), std::string_view{ str._data, str._size });
