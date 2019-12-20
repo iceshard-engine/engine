@@ -216,7 +216,9 @@ namespace asset
                 IS_ASSERT(core::memory::utils::pointer_distance(data._data, hash_end) < static_cast<int32_t>(data._size), "Moved past the data buffer!");
             }
 
-            const_cast<uint32_t const*&>(result_meta._meta_entries._hash._data) = reinterpret_cast<uint32_t const*>(hash_it);
+            result_meta._meta_entries._hash._data = const_cast<uint32_t*>(
+                reinterpret_cast<uint32_t const*>(hash_it)
+            );
             result_meta._meta_entries._hash._capacity = hash_count;
             result_meta._meta_entries._hash._size = hash_count;
         }
@@ -230,7 +232,9 @@ namespace asset
                 IS_ASSERT(core::memory::utils::pointer_distance(data._data, value_end) < static_cast<int32_t>(data._size), "Moved past the data buffer!");
             }
 
-            const_cast<core::pod::Hash<detail::MetaEntry>::Entry const*&>(result_meta._meta_entries._data._data) = reinterpret_cast<core::pod::Hash<detail::MetaEntry>::Entry const*>(value_it);
+            result_meta._meta_entries._data._data = const_cast<core::pod::Hash<detail::MetaEntry>::Entry*>(
+                reinterpret_cast<core::pod::Hash<detail::MetaEntry>::Entry const*>(value_it)
+            );
             result_meta._meta_entries._data._capacity = hash_count;
             result_meta._meta_entries._data._size = hash_count;
         }
