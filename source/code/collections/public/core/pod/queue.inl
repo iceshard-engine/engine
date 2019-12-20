@@ -1,32 +1,26 @@
 
-
-// core::pod::Queue members
-//////////////////////////////////////////////////////////////////////////
-
-
-template <typename T>
-inline Queue<T>::Queue(core::allocator &allocator) noexcept
+template<typename T>
+inline core::pod::Queue<T>::Queue(core::allocator &allocator) noexcept
     : _data{ allocator }
-{ }
+{
+}
 
-template <typename T>
-inline auto Queue<T>::operator[](uint32_t i) -> T&
+template<typename T>
+inline auto core::pod::Queue<T>::operator[](uint32_t i) -> T &
 {
     return _data[(i + _offset) % array::size(_data)];
 }
 
-template <typename T>
-inline auto Queue<T>::operator[](uint32_t i) const -> const T&
+template<typename T>
+inline auto core::pod::Queue<T>::operator[](uint32_t i) const -> const T &
 {
     return _data[(i + _offset) % array::size(_data)];
 }
-
 
 // core::pod::Queue internal functions
 //////////////////////////////////////////////////////////////////////////
 
-
-namespace queue_internal
+namespace core::pod::queue_internal
 {
 
     // Can only be used to increase the capacity.
@@ -55,12 +49,10 @@ namespace queue_internal
         increase_capacity(q, new_capacity);
     }
 
-} // namespace queue_internal
-
+} // namespace core::pod::queue_internal
 
 // core::pod::Queue free functions
 //////////////////////////////////////////////////////////////////////////
-
 
 template<typename T>
 inline auto core::pod::queue::size(const Queue<T> &q) noexcept -> uint32_t
@@ -120,14 +112,14 @@ inline void core::pod::queue::pop_front(Queue<T> &q) noexcept
     --q._size;
 }
 
-template <typename T>
+template<typename T>
 inline void core::pod::queue::consume(Queue<T> &q, uint32_t n) noexcept
 {
     q._offset = (q._offset + n) % array::size(q._data);
     q._size -= n;
 }
 
-template <typename T>
+template<typename T>
 inline void core::pod::queue::push(Queue<T> &q, const T *items, uint32_t n) noexcept
 {
     if (space(q) < n)
@@ -151,33 +143,33 @@ inline void core::pod::queue::push(Queue<T> &q, const T *items, uint32_t n) noex
     q._size += n;
 }
 
-template <typename T, uint32_t Size>
-inline void core::pod::queue::push(Queue<T> &q, const T(&arr)[Size]) noexcept
+template<typename T, uint32_t Size>
+inline void core::pod::queue::push(Queue<T> &q, const T (&arr)[Size]) noexcept
 {
     push(q, &arr[0], Size);
 }
 
 template<typename T>
-inline auto core::pod::queue::begin_front(Queue<T> &q) noexcept -> T*
+inline auto core::pod::queue::begin_front(Queue<T> &q) noexcept -> T *
 {
     return array::begin(q._data) + q._offset;
 }
 
 template<typename T>
-inline auto core::pod::queue::begin_front(const Queue<T> &q) noexcept -> const T*
+inline auto core::pod::queue::begin_front(const Queue<T> &q) noexcept -> const T *
 {
     return array::begin(q._data) + q._offset;
 }
 
 template<typename T>
-inline auto core::pod::queue::end_front(Queue<T> &q) noexcept -> T*
+inline auto core::pod::queue::end_front(Queue<T> &q) noexcept -> T *
 {
     uint32_t end = q._offset + q._size;
     return end > array::size(q._data) ? array::end(q._data) : array::begin(q._data) + end;
 }
 
 template<typename T>
-inline auto core::pod::queue::end_front(const Queue<T> &q) noexcept -> const T*
+inline auto core::pod::queue::end_front(const Queue<T> &q) noexcept -> const T *
 {
     uint32_t end = q._offset + q._size;
     return end > array::size(q._data) ? array::end(q._data) : array::begin(q._data) + end;

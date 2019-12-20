@@ -22,7 +22,7 @@ namespace core::pod
         //! \details Returns the default value if the key does not
         //!     exist in the hash.
         template<typename T>
-        auto get(const Hash<T> &h, uint64_t key, const T& fallback_value) noexcept -> const T&;
+        auto get(const Hash<T> &h, uint64_t key, const T &fallback_value) noexcept -> const T &;
 
         //! \brief Sets the value for the key.
         template<typename T>
@@ -44,15 +44,14 @@ namespace core::pod
         //! \brief Returns a pointer to the first entry in the hash table, can be used to
         //!     efficiently iterate over the elements (in random order).
         template<typename T>
-        auto begin(const Hash<T> &h) noexcept -> const typename Hash<T>::Entry*;
+        auto begin(const Hash<T> &h) noexcept -> const typename Hash<T>::Entry *;
 
         //! \brief Returns a pointer to the last entry in the hash table, can be used to
         //!     efficiently iterate over the elements (in random order).
         template<typename T>
-        auto end(const Hash<T> &h) noexcept -> const typename Hash<T>::Entry*;
+        auto end(const Hash<T> &h) noexcept -> const typename Hash<T>::Entry *;
 
     } // namespace hash
-
 
     //! \brief The hash functions store its data in a "list-in-an-array" where
     //!     indices are used instead of pointers.
@@ -64,11 +63,11 @@ namespace core::pod
 
         //! \brief Finds the first entry with the specified key.
         template<typename T>
-        auto find_first(const Hash<T> &h, uint64_t key) noexcept -> const typename Hash<T>::Entry*;
+        auto find_first(const Hash<T> &h, uint64_t key) noexcept -> const typename Hash<T>::Entry *;
 
         //! \brief Finds the next entry with the same key as e.
         template<typename T>
-        auto find_next(const Hash<T> &h, const typename Hash<T>::Entry *e) noexcept -> const typename Hash<T>::Entry*;
+        auto find_next(const Hash<T> &h, const typename Hash<T>::Entry *e) noexcept -> const typename Hash<T>::Entry *;
 
         //! \brief Returns the number of entries for the key.
         template<typename T>
@@ -93,12 +92,28 @@ namespace core::pod
 
     } // namespace multi_hash
 
+    //! \brief Returns a pointer to the first entry in the hash table, can be used to
+    //!     efficiently iterate over the elements (in random order).
+    template<typename T>
+    auto begin(const Hash<T> &h) noexcept -> const typename Hash<T>::Entry *;
 
-    // core::pod::Hash implementation
-    //////////////////////////////////////////////////////////////////////////
+    //! \brief Returns a pointer to the last entry in the hash table, can be used to
+    //!     efficiently iterate over the elements (in random order).
+    template<typename T>
+    auto end(const Hash<T> &h) noexcept -> const typename Hash<T>::Entry *;
 
+    template<typename T>
+    auto begin(const Hash<T> &h) noexcept -> const typename Hash<T>::Entry *
+    {
+        return hash::begin(h);
+    }
 
-#include "hash.inl"
-
+    template<typename T>
+    auto end(const Hash<T> &h) noexcept -> const typename Hash<T>::Entry *
+    {
+        return hash::end(h);
+    }
 
 } // namespace core::pod
+
+#include "hash.inl"

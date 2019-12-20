@@ -6,7 +6,6 @@
 namespace core::pod
 {
 
-
     //! \brief This type defines an dynamic array holding POD values in contiguous memory.
     template<typename T>
     struct Array final
@@ -15,21 +14,19 @@ namespace core::pod
         Array(core::allocator& allocator) noexcept;
 
         //! \brief Copies data from the given array.
-        Array(const Array &other) noexcept;
+        Array(const Array& other) noexcept;
 
         //! \brief Releases the allocated memory.
         ~Array() noexcept;
 
-
         //! \brief Copies data from the given array and releases the current data.
-        auto operator=(const Array &other) noexcept->Array&;
+        auto operator=(const Array& other) noexcept -> Array&;
 
         //! \brief Returns the object at the given index.
         auto operator[](uint32_t i) -> T&;
 
         //! \brief Returns the object at the given index.
         auto operator[](uint32_t i) const -> const T&;
-
 
         //! \brief The allocator used to manage memory.
         core::allocator* const _allocator{ nullptr };
@@ -45,7 +42,7 @@ namespace core::pod
     };
 
     //! \brief A double-ended queue/ring buffer.
-    template <typename T>
+    template<typename T>
     struct Queue final
     {
         //! \brief Creates a new Queue with the given allocator.
@@ -91,5 +88,4 @@ namespace core::pod
         Array<Entry> _data;
     };
 
-
-} // namespace pod
+} // namespace core::pod

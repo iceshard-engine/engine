@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <utility>
 
-namespace pod
+namespace core::pod
 {
     namespace detail
     {
@@ -54,10 +54,10 @@ namespace pod
             return;
         }
 
-    }
+    } // namespace detail
 
     template<typename T>
-    inline void sort(Array<T> &a)
+    inline void sort(Array<T>& a)
     {
         std::sort(begin(a), end(a));
     }
@@ -72,11 +72,10 @@ namespace pod
     template<typename K, typename V, typename Pred>
     inline void sort(Array<K>& keys, Array<V>& values, Pred&& pred)
     {
-        assert(pod::array::size(keys) == pod::array::size(values));
         int first_index = 0;
         int last_index = pod::array::size(keys) - 1;
 
         detail::qsort(keys, values, std::forward<Pred>(pred), first_index, last_index);
     }
 
-}
+} // namespace core::pod
