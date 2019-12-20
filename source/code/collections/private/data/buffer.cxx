@@ -75,7 +75,7 @@ namespace core
     void buffer::append(Buffer& b, const void* data, uint32_t size) noexcept
     {
         const uint32_t new_size = b._size + size;
-        if (new_size >= b._capacity)
+        if (new_size > b._capacity)
         {
             grow(b, new_size);
         }
