@@ -194,5 +194,16 @@ bool core::string::equals(const core::StringView<CharType>& left, const std::str
 template<typename CharType>
 bool core::string::equals(const core::StringView<CharType>& left, const CharType* right) noexcept
 {
-    return strcmp(left._data, right) == 0;
+    auto const rlen = core::cstring::length(right);
+    if (left._size != rlen)
+    {
+        return false;
+    }
+
+    bool equal = true;
+    for (size_t i = 0; equal && i < left._size; ++i)
+    {
+        equal = left._data[i] == right[i];
+    }
+    return equal;
 }
