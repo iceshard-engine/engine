@@ -103,6 +103,7 @@
             '$ProjectBaseDir$/$ProjectName$.bff'
         }
         .ProjectInputPaths = {
+            '$ProjectBaseDir$/natvis'
             '$ProjectBaseDir$/public'
             '$ProjectBaseDir$/private'
         }
