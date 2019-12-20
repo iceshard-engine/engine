@@ -54,7 +54,7 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resources)
     if (auto engine_module = iceshard::load_engine_module(alloc, engine_module_location->location().path, resources))
     {
         auto* engine_instance = engine_module->engine();
-        [[maybe_unused]]
+
         auto* render_system = engine_instance->render_system();
         render_system->add_named_descriptor_set(render::descriptor_set::Color);
         render_system->add_named_descriptor_set(render::descriptor_set::Model);
