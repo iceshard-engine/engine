@@ -1,5 +1,6 @@
 #include <resource/resource.hxx>
 #include <resource/modules/filesystem_module.hxx>
+#include "module_messages.hxx"
 
 #include <core/allocators/proxy_allocator.hxx>
 #include <core/allocators/stack_allocator.hxx>
@@ -26,12 +27,18 @@ namespace resource
         class FileResource : public Resource
         {
         public:
-            FileResource(core::allocator& alloc, const URI& uri, core::StringView<> native_path) noexcept
+            FileResource(
+                core::allocator& alloc,
+                URI const& uri,
+                core::StringView<> native_path,
+                core::StringView<> native_name) noexcept
                 : _native_path{ alloc, native_path._data }
+                , _native_name{ alloc, native_name._data }
                 , _path{ alloc, uri.path._data }
                 , _uri{ uri.scheme, _path, uri.fragment }
                 , _data{ alloc }
-            { }
+            {
+            }
 
             ~FileResource() override = default;
 
@@ -68,11 +75,17 @@ namespace resource
                 return _data;
             }
 
+            auto name() const noexcept -> core::StringView<> override
+            {
+                return _native_name;
+            }
+
             virtual auto access_type() noexcept -> FileAccessType { return FileAccessType::ReadOnly; }
 
         protected:
             //! \brief The native filesystem path.
             core::String<> _native_path;
+            core::String<> _native_name;
 
             //! \brief The resource path.
             core::String<> _path;
@@ -87,9 +100,14 @@ namespace resource
         class FileResourceWritable : public FileResource, public OutputResource
         {
         public:
-            FileResourceWritable(core::allocator& alloc, const URI& uri, core::StringView<> native_path) noexcept
-                : FileResource{ alloc, uri, native_path }
-            { }
+            FileResourceWritable(
+                core::allocator& alloc,
+                URI const& uri,
+                core::StringView<> native_path,
+                core::StringView<> native_name) noexcept
+                : FileResource{ alloc, uri, native_path, native_name }
+            {
+            }
 
             ~FileResourceWritable() noexcept
             {
@@ -160,10 +178,9 @@ namespace resource
             FILE* _file_native = nullptr;
         };
 
-
         namespace array = core::pod::array;
 
-        void mount_directory(core::allocator& alloc, std::filesystem::path path, core::pod::Array<Resource*>& entry_list, std::function<void(Resource*)> callback) noexcept
+        void mount_directory(core::allocator& alloc, std::filesystem::path path, core::pod::Array<Resource*>& entry_list, core::MessageBuffer& messages) noexcept
         {
             if (std::filesystem::is_directory(path) == false)
             {
@@ -188,14 +205,19 @@ namespace resource
                     auto relative_path = std::filesystem::relative(fullpath, path);
                     auto relative_path_string = relative_path.generic_string();
 
-                    auto* dir_entry_object = alloc.make<FileResource>(alloc, URI{ scheme_directory, path.generic_string().c_str(), core::cexpr::stringid(relative_path_string.c_str()) }, fullpath.c_str());
+                    auto* dir_entry_object = alloc.make<FileResource>(
+                        alloc,
+                        URI{ scheme_directory, path.generic_string(), core::cexpr::stringid(relative_path_string.c_str()) },
+                        fullpath.c_str(),
+                        relative_path_string.c_str());
                     array::push_back(entry_list, static_cast<Resource*>(dir_entry_object));
-                    callback(dir_entry_object);
+
+                    core::message::push(messages, resource::message::ModuleResourceMounted{ dir_entry_object });
                 }
             }
         }
 
-        void mount_file(core::allocator& alloc, std::filesystem::path path, core::pod::Array<Resource*>& entry_list, std::function<void(Resource*)> callback) noexcept
+        void mount_file(core::allocator& alloc, std::filesystem::path path, core::pod::Array<Resource*>& entry_list, core::MessageBuffer& messages) noexcept
         {
             if (std::filesystem::is_regular_file(path) == false)
             {
@@ -213,9 +235,14 @@ namespace resource
 
                 auto fullpath = std::filesystem::canonical(filepath).generic_string();
 
-                auto* file_entry_object = alloc.make<FileResource>(alloc, URI{ scheme_file, fullpath.c_str() }, fullpath.c_str());
+                auto* file_entry_object = alloc.make<FileResource>(
+                    alloc,
+                    URI{ scheme_file, fullpath },
+                    fullpath.c_str(),
+                    filename.c_str());
                 array::push_back(entry_list, static_cast<Resource*>(file_entry_object));
-                callback(file_entry_object);
+
+                core::message::push(messages, resource::message::ModuleResourceMounted{ file_entry_object });
             }
         }
 
@@ -228,8 +255,7 @@ namespace resource
                 IS_ASSERT(
                     std::filesystem::is_directory(directory_path),
                     "Failed to create directories for writable file! Path missing: {}",
-                    directory_path.generic_string()
-                );
+                    directory_path.generic_string());
             }
 
             FILE* native_handle;
@@ -249,7 +275,11 @@ namespace resource
 
                 auto fullpath = std::filesystem::canonical(filepath).generic_string();
 
-                auto* file_entry_object = alloc.make<FileResourceWritable>(alloc, URI{ scheme_file, fullpath.c_str() }, fullpath.c_str());
+                auto* file_entry_object = alloc.make<FileResourceWritable>(
+                    alloc,
+                    URI{ scheme_file, fullpath },
+                    fullpath.c_str(),
+                    filename.c_str());
                 array::push_back(entry_list, static_cast<Resource*>(file_entry_object));
                 callback(file_entry_object);
 
@@ -277,7 +307,6 @@ namespace resource
         }
         core::pod::array::clear(_resources);
     }
-
 
     auto FileSystem::find(const URI& uri) noexcept -> Resource*
     {
@@ -359,17 +388,20 @@ namespace resource
         return result;
     }
 
-    auto FileSystem::mount(const URI& uri, std::function<void(Resource*)> callback) noexcept -> uint32_t
+    auto FileSystem::mount(URI const& uri, core::MessageBuffer& messages) noexcept -> uint32_t
     {
+        auto message_count = core::message::count(messages);
+
         if (uri.scheme == resource::scheme_file)
         {
-            detail::mount_file(_allocator, std::filesystem::path{ _basedir._data } / core::string::begin(uri.path), _resources, callback);
+            detail::mount_file(_allocator, std::filesystem::path{ _basedir._data } / core::string::begin(uri.path), _resources, messages);
         }
         else if (uri.scheme == resource::scheme_directory)
         {
-            detail::mount_directory(_allocator, std::filesystem::path{ _basedir._data } / core::string::begin(uri.path), _resources, callback);
+            detail::mount_directory(_allocator, std::filesystem::path{ _basedir._data } / core::string::begin(uri.path), _resources, messages);
         }
-        return 0;
+
+        return core::message::count(messages) - message_count;
     }
 
 } // namespace resource

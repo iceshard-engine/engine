@@ -10,7 +10,6 @@
 namespace resource
 {
 
-
     //! \brief A resource system build upon a native file system.
     class DynLibSystem : public ResourceModule
     {
@@ -19,10 +18,10 @@ namespace resource
         ~DynLibSystem() noexcept;
 
         //! \brief Searches for the default resource with the given name.
-        auto find(const URI& uri) noexcept -> Resource* override;
+        auto find(URI const& uri) noexcept -> Resource* override;
 
         //! \brief Mounts all resources found under the given URI.
-        auto mount(const URI& uri, std::function<void(Resource*)> callback) noexcept -> uint32_t override;
+        auto mount(URI const& uri, core::MessageBuffer& messages) noexcept -> uint32_t override;
 
     private:
         const std::string _app_dir;
@@ -38,5 +37,4 @@ namespace resource
         bool initial_mount_finished{ false };
     };
 
-
-} // namespace filesystem
+} // namespace resource

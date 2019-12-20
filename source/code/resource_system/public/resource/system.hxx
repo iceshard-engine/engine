@@ -1,17 +1,18 @@
 #pragma once
-#include <resource/uri.hxx>
-#include <resource/resource.hxx>
-#include <resource/module.hxx>
-
 #include <core/pointer.hxx>
 #include <core/pod/collections.hxx>
 #include <core/allocators/proxy_allocator.hxx>
+#include <core/message/buffer.hxx>
+
+#include <resource/uri.hxx>
+#include <resource/resource.hxx>
+#include <resource/module.hxx>
+#include <resource/resource_messages.hxx>
 
 #include <vector>
 
 namespace resource
 {
-
 
     //! \brief Describes a resource system which is responsible for holding the state of all loaded resources.
     class ResourceSystem final
@@ -21,25 +22,34 @@ namespace resource
         virtual ~ResourceSystem() noexcept;
 
         //! \todo documentation.
-        void add_module(core::memory::unique_pointer<ResourceModule> module_obj, const core::pod::Array<core::cexpr::stringid_type>& schemes) noexcept;
+        void add_module(core::memory::unique_pointer<ResourceModule> module_obj, core::pod::Array<core::cexpr::stringid_type> const& schemes) noexcept;
 
         //! \todo documentation.
-        auto find(const URI& location) noexcept -> Resource*;
+        auto find(URI const& location) noexcept -> Resource*;
 
         //! \todo documentation.
-        auto find(const URN& name) noexcept -> Resource*;
+        auto find(URN const& name) noexcept -> Resource*;
 
         //! \todo documentation
-        auto open(const URI& location) noexcept -> OutputResource*;
+        auto open(URI const& location) noexcept -> OutputResource*;
 
         //! \todo documentation
-        auto open(const URN& name) noexcept -> OutputResource*;
+        auto open(URN const& name) noexcept -> OutputResource*;
 
         //! \todo documentation.
-        auto mount(const URI& location) noexcept -> uint32_t;
+        auto mount(URI const& location) noexcept -> uint32_t;
 
         //! \todo documentation.
-        auto mount(const URN& name) noexcept -> uint32_t;
+        auto mount(URN const& name) noexcept -> uint32_t;
+
+        //! \todo documentation.
+        auto messages() noexcept -> core::MessageBuffer const& { return _messages; }
+
+        //! \todo documentation.
+        void flush_messages() noexcept;
+
+    private:
+        void handle_module_message(core::Message const& message) noexcept;
 
     private:
         core::memory::proxy_allocator _allocator;
@@ -55,8 +65,10 @@ namespace resource
         core::pod::Hash<ResourceModule*> _scheme_handlers;
 
         //! \brief Vector of all registered modules.
-        std::vector<core::memory::unique_pointer<ResourceModule>> _modules{ };
-    };
+        std::vector<core::memory::unique_pointer<ResourceModule>> _modules{};
 
+        //! \brief A buffer of messages.
+        core::MessageBuffer _messages;
+    };
 
 } // namespace resource
