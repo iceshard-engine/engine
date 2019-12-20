@@ -4,16 +4,6 @@
 namespace asset
 {
 
-    namespace detail
-    {
-
-        //auto find_json_asset(resource::ResourceSystem& resource_system) noexcept -> Asset
-        //{
-
-        //}
-
-    } // namespace detail
-
     AssetSystem::AssetSystem(core::allocator& alloc, resource::ResourceSystem& resource_system) noexcept
         : _allocator{ alloc }
         , _resource_system{ resource_system }
@@ -26,6 +16,7 @@ namespace asset
     {
         // clang-format off
         core::message::filter<resource::message::ResourceAdded>(_resource_system.messages(), [&](resource::message::ResourceAdded const& msg) noexcept
+            // clang-format on
             {
                 auto name_end = core::string::begin(msg.native_name);
                 auto name_begin = name_end;
@@ -55,7 +46,6 @@ namespace asset
                     _resource_database,
                     AssetReference{ msg.location }
                 );
-            // clang-format on
         });
         // clang-format on
     }

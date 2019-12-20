@@ -33,9 +33,9 @@ namespace asset
     {
         Asset() noexcept = default;
 
-        constexpr Asset(core::StringView<> view, AssetType type) noexcept
+        constexpr Asset(core::StringView<> asset_name, AssetType type) noexcept
             : type{ type }
-            , name{ core::cexpr::stringid_cexpr({ view._data, view._size }) }
+            , name{ core::cexpr::stringid_cexpr({ asset_name._data, asset_name._size }) }
         { }
 
         //! \brief The asset type.
@@ -52,8 +52,8 @@ namespace asset
     //!     The provided metadata can be anything, and the specific asset implementation uses it to validate the content data.
     struct AssetData
     {
-        core::data_view content;
         core::data_view metadata;
+        core::data_view content;
     };
 
 } // namespace asset
