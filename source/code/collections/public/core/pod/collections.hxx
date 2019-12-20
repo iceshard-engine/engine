@@ -16,11 +16,19 @@ namespace core::pod
         //! \brief Copies data from the given array.
         Array(const Array& other) noexcept;
 
+        //! \brief Moves data from the given array into this one.
+        Array(Array&& other) noexcept;
+
         //! \brief Releases the allocated memory.
         ~Array() noexcept;
 
         //! \brief Copies data from the given array and releases the current data.
         auto operator=(const Array& other) noexcept -> Array&;
+
+        //! \brief Moves data into this array
+        //!
+        //! \pre Both arrays use the same allocator object.
+        auto operator=(Array&& other) noexcept -> Array&;
 
         //! \brief Returns the object at the given index.
         auto operator[](uint32_t i) -> T&;

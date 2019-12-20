@@ -72,10 +72,11 @@ namespace core
         set_capacity(b, b._size);
     }
 
-    void buffer::append(Buffer& b, const void* data, uint32_t size) noexcept
+    auto buffer::append(Buffer& b, const void* data, uint32_t size) noexcept -> void*
     {
         const uint32_t new_size = b._size + size;
-        if (new_size >= b._capacity)
+
+        if (new_size > b._capacity)
         {
             grow(b, new_size);
         }
@@ -86,11 +87,36 @@ namespace core
         memcpy(buffer_end, data, size);
 
         b._size = new_size;
+        return buffer_end;
     }
 
-    void buffer::append(Buffer& b, data_view data) noexcept
+    auto buffer::append(Buffer& b, data_view data) noexcept -> void*
     {
-        append(b, data._data, data._size);
+        return append(b, data._data, data._size);
+    }
+
+    auto buffer::append_aligned(Buffer& b, const void* data, uint32_t size, uint32_t align) noexcept -> void*
+    {
+        const uint32_t old_size_aligned = (b._size % align) == 0 ? (b._size) : (b._size + (align - (b._size % align)));
+        const uint32_t new_size = old_size_aligned + size;
+
+        if (new_size > b._capacity)
+        {
+            grow(b, new_size);
+        }
+
+        IS_ASSERT(new_size <= b._capacity, "Couldn't reserve enough memory for the new buffer size! [ size:{}, capacity:{} ]", new_size, b._capacity);
+
+        void* const buffer_end = core::memory::utils::pointer_add(b._data, old_size_aligned);
+        memcpy(buffer_end, data, size);
+
+        b._size = new_size;
+        return buffer_end;
+    }
+
+    auto buffer::append_aligned(Buffer& b, data_view_aligned data) noexcept -> void*
+    {
+        return append_aligned(b, data._data, data._size, data._align);
     }
 
     void buffer::resize(Buffer& b, uint32_t new_size) noexcept
