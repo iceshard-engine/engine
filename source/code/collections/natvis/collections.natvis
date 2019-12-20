@@ -2,6 +2,7 @@
 <AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
   <!-- Native Visualization for the pod::Array struct -->
   <Type Name="core::pod::Array&lt;*&gt;">
+    <DisplayString Condition="_size == 0">pod::Array {{ empty }}</DisplayString>
     <DisplayString>pod::Array {{ size={ _size }, capacity={ _capacity } }}</DisplayString>
     <Expand>
       <Item Name="[size]">_size</Item>
