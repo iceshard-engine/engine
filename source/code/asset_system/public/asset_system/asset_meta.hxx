@@ -39,29 +39,47 @@ namespace asset
 
     } // namespace detail
 
-    struct AsssetMeta
+    struct AssetMeta
     {
-        core::pod::Hash<detail::MetaEntry> meta_entries;
-        core::data_view additional_data;
+        AssetMeta(core::allocator& alloc) noexcept;
+        ~AssetMeta() noexcept = default;
+
+        core::pod::Hash<detail::MetaEntry> _meta_entries;
+        core::Buffer _additional_data;
     };
 
-    auto get_meta_bool(AsssetMeta const& meta, core::cexpr::stringid_argument_type key) noexcept -> bool;
-
-    auto get_meta_int32(AsssetMeta const& meta, core::cexpr::stringid_argument_type key) noexcept -> int32_t;
-
-    auto get_meta_float(AsssetMeta const& meta, core::cexpr::stringid_argument_type key) noexcept -> float;
-
-    auto get_meta_string(AsssetMeta const& meta, core::cexpr::stringid_argument_type key) noexcept -> core::StringView<>;
-
-    void serialize_meta(AsssetMeta const& meta, core::Buffer& buffer) noexcept;
-
-    void set_meta_int32(AsssetMeta& meta, core::cexpr::stringid_argument_type key, int32_t value) noexcept;
-
-    void set_meta_float(AsssetMeta& meta, core::cexpr::stringid_argument_type key, float value) noexcept;
+    struct AssetMetaView
+    {
+        core::pod::Hash<detail::MetaEntry> _meta_entries;
+        core::data_view _additional_data;
+    };
 
 
-    void deserialize_meta(core::data_view data, AsssetMeta& meta) noexcept;
+    void serialize_meta(AssetMeta const& meta, core::Buffer& buffer) noexcept;
 
-    auto reinterpret_meta(core::data_view data) noexcept -> AsssetMeta const;
+    void deserialize_meta(core::data_view data, AssetMeta& meta) noexcept;
+
+    void set_meta_bool(AssetMeta& meta, core::cexpr::stringid_argument_type key, bool value) noexcept;
+
+    void set_meta_int32(AssetMeta& meta, core::cexpr::stringid_argument_type key, int32_t value) noexcept;
+
+    void set_meta_float(AssetMeta& meta, core::cexpr::stringid_argument_type key, float value) noexcept;
+
+    void set_meta_string(AssetMeta& meta, core::cexpr::stringid_argument_type key, core::StringView<> value) noexcept;
+
+    auto create_meta_view(AssetMeta const& meta) noexcept -> AssetMetaView const;
+
+
+    void store_meta_view(AssetMetaView const& meta, core::Buffer& buffer) noexcept;
+
+    auto load_meta_view(core::data_view data) noexcept -> AssetMetaView const;
+
+    auto get_meta_bool(AssetMetaView const& meta, core::cexpr::stringid_argument_type key) noexcept -> bool;
+
+    auto get_meta_int32(AssetMetaView const& meta, core::cexpr::stringid_argument_type key) noexcept -> int32_t;
+
+    auto get_meta_float(AssetMetaView const& meta, core::cexpr::stringid_argument_type key) noexcept -> float;
+
+    auto get_meta_string(AssetMetaView const& meta, core::cexpr::stringid_argument_type key) noexcept -> core::StringView<>;
 
 } // namespace asset
