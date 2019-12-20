@@ -1,18 +1,20 @@
 #pragma once
-#include <iceshard/world/world_manager.hxx>
-#include <iceshard/entity/entity_manager.hxx>
-#include <iceshard/service_provider.hxx>
-
-#include <input_system/system.hxx>
-#include <render_system/render_system.hxx>
 #include <core/allocator.hxx>
 #include <core/pointer.hxx>
 
+#include <asset_system/asset_system.hxx>
+#include <input_system/system.hxx>
+
+#include <iceshard/world/world_manager.hxx>
+#include <iceshard/entity/entity_manager.hxx>
+#include <iceshard/service_provider.hxx>
+#include <render_system/render_system.hxx>
+
+#include <cppcoro/static_thread_pool.hpp>
+#include <cppcoro/task.hpp>
+
 #include <functional>
 #include <memory>
-
-#include <cppcoro/task.hpp>
-#include <cppcoro/static_thread_pool.hpp>
 
 namespace iceshard
 {
@@ -29,6 +31,8 @@ namespace iceshard
         virtual auto revision() const noexcept -> uint32_t = 0;
 
     public:
+        virtual auto asset_system() noexcept -> asset::AssetSystem* = 0;
+
         //! \brief Returns the used input system object.
         virtual auto input_system() noexcept -> input::InputSystem* = 0;
 

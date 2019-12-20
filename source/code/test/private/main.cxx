@@ -27,6 +27,9 @@
 #include <render_system/render_vertex_descriptor.hxx>
 #include <render_system/render_pipeline.hxx>
 
+#include <asset_system/asset_system.hxx>
+#include <asset_system/assets/asset_config.hxx>
+
 #include <fmt/format.h>
 #include <application/application.hxx>
 
@@ -43,7 +46,6 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resources)
     using resource::URN;
     using resource::URI;
 
-    resources.mount(URI{ resource::scheme_dynlib, "bin" });
     resources.mount(URI{ resource::scheme_directory, "../source/data" });
 
     auto* engine_module_location = resources.find(URN{ "iceshard.dll" });
@@ -72,6 +74,9 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resources)
                 });
 
             engine_instance->next_frame();
+
+            engine_instance->asset_system()->update();
+            resources.flush_messages();
         }
 
         engine_instance->world_manager()->destroy_world(core::cexpr::stringid("test-world"));
