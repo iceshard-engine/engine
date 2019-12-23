@@ -222,7 +222,7 @@ namespace resource
 
                 auto filepath = native_entry.path();
                 auto fileextension = filepath.extension();
-                if (fileextension == "isrm")
+                if (fileextension == ".isrm")
                 {
                     // #todo skip meta files by default, maybe add a most mount check for meta files without associated resources.
                     continue;
@@ -265,7 +265,7 @@ namespace resource
             {
                 auto filepath = std::move(canonical_path);
                 auto fileextension = filepath.extension();
-                if (fileextension == "isrm")
+                if (fileextension == ".isrm")
                 {
                     // #todo skip meta files by default, maybe add a most mount check for meta files without associated resources.
                     return;
