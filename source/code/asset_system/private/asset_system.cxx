@@ -81,9 +81,11 @@ namespace asset
         if (asset_object != nullptr)
         {
             auto const& asset_resources = _resource_database[asset_object->value.resource];
-            data.content = _resource_system.find(asset_resources.content_location)->data();
-            data.metadata = core::data_view{ nullptr, 0 };
+            auto* const resource_object = _resource_system.find(asset_resources.content_location);
+            data.content = resource_object->data();
+            data.metadata = resource_object->metadata();
 
+            // #todo Remove this const cast.
             const_cast<AssetObject&>(asset_object->value).status = AssetStatus::Loaded;
         }
 

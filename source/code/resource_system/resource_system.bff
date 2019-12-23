@@ -8,6 +8,7 @@
     // Additional helper variables
     //------------------------------------------------------------------------------
     .ProjectConanModules = .WorkspaceConanModules
+        + 'rapidjson'
     .VSProjectConfigurations = { }
 
     .ProjectCompilerOptions = ''
@@ -16,6 +17,8 @@
         + ' /I"$WorkspaceCodeDir$/memsys/public"'
         + ' /I"$WorkspaceCodeDir$/collections/public"'
         + ' /I"$WorkspaceCodeDir$/messages/public"'
+        + ' /wd4996' // RapidJson warnings
+        + ' /wd5054' // RapidJson warnings
 
 
     // Library

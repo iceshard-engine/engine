@@ -28,11 +28,6 @@ namespace resource
         //! \todo documentation.
         virtual auto open(
             [[maybe_unused]] URI const& location,
-            [[maybe_unused]] std::function<void(Resource*)> callback) noexcept -> OutputResource* { return nullptr; }
-
-        //! \todo documentation.
-        virtual auto open(
-            [[maybe_unused]] URI const& location,
             [[maybe_unused]] core::MessageBuffer& messages) noexcept -> OutputResource*
         {
             return nullptr;

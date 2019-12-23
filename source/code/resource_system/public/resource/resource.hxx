@@ -19,6 +19,9 @@ namespace resource
         //! \brief Resource data.
         virtual auto data() noexcept -> core::data_view = 0;
 
+        //! \brief Resource metadata.
+        virtual auto metadata() noexcept -> core::data_view = 0;
+
         //! \brief String value used to create the resource name.
         //! \remarks The value should return a valid file name with or without extension.
         virtual auto name() const noexcept -> core::StringView<> = 0;

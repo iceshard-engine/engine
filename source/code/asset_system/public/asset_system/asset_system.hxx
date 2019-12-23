@@ -1,13 +1,16 @@
 #pragma once
 #include <core/allocator.hxx>
+#include <core/pointer.hxx>
 #include <core/cexpr/stringid.hxx>
 #include <core/pod/hash.hxx>
 
 #include <asset_system/asset.hxx>
-#include <resource/system.hxx>
+#include <resource/resource_system.hxx>
 
 namespace asset
 {
+
+    class AssetLoader;
 
     //! \brief This class manages data and metadata associations across resources.
     class AssetSystem

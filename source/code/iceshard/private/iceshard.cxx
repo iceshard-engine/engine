@@ -1,6 +1,6 @@
 #include <iceshard/engine.hxx>
 
-#include <resource/system.hxx>
+#include <resource/resource_system.hxx>
 #include <asset_system/assets/asset_config.hxx>
 #include <input_system/system.hxx>
 #include <input_system/module.hxx>

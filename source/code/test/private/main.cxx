@@ -12,7 +12,7 @@
 #include <core/pod/hash.hxx>
 
 #include <resource/uri.hxx>
-#include <resource/system.hxx>
+#include <resource/resource_system.hxx>
 #include <resource/modules/dynlib_module.hxx>
 #include <resource/modules/filesystem_module.hxx>
 

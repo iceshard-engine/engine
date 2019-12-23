@@ -1,6 +1,6 @@
 #pragma once
 #include <core/allocator.hxx>
-#include <resource/system.hxx>
+#include <resource/resource_system.hxx>
 
 //! \brief The main entry point for a game.
 //!

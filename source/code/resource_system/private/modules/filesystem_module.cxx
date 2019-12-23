@@ -24,6 +24,27 @@ namespace resource
             ReadWrite,
         };
 
+        void load_file_to_buffer(core::StringView<> path, core::Buffer& file_data) noexcept
+        {
+            FILE* file_native = nullptr;
+            fopen_s(&file_native, core::string::begin(path), "rb");
+
+            if (file_native)
+            {
+                core::memory::stack_allocator_4096 kib4_alloc;
+                core::data_chunk file_chunk{ kib4_alloc, 1024u * 4u };
+
+                auto characters_read = fread_s(file_chunk.data(), file_chunk.size(), sizeof(char), file_chunk.size(), file_native);
+                while (characters_read > 0)
+                {
+                    core::buffer::append(file_data, file_chunk.data(), static_cast<uint32_t>(characters_read));
+                    characters_read = fread_s(file_chunk.data(), file_chunk.size(), sizeof(char), file_chunk.size(), file_native);
+                }
+
+                fclose(file_native);
+            }
+        }
+
         class FileResource : public Resource
         {
         public:
@@ -31,11 +52,14 @@ namespace resource
                 core::allocator& alloc,
                 URI const& uri,
                 core::StringView<> native_path,
+                core::StringView<> native_meta_path,
                 core::StringView<> native_name) noexcept
-                : _native_path{ alloc, native_path._data }
-                , _native_name{ alloc, native_name._data }
+                : _native_path{ alloc, native_path }
+                , _native_path_metadata{ alloc, native_meta_path }
+                , _native_name{ alloc, native_name }
                 , _path{ alloc, uri.path._data }
                 , _uri{ uri.scheme, _path, uri.fragment }
+                , _metadata{ alloc }
                 , _data{ alloc }
             {
             }
@@ -54,25 +78,18 @@ namespace resource
             {
                 if (core::buffer::empty(_data))
                 {
-                    FILE* file_native = nullptr;
-                    fopen_s(&file_native, core::string::begin(_native_path), "rb");
-
-                    if (file_native)
-                    {
-                        core::memory::stack_allocator_4096 kib4_alloc;
-                        core::data_chunk file_chunk{ kib4_alloc, 1024u * 4u };
-
-                        auto characters_read = fread_s(file_chunk.data(), file_chunk.size(), sizeof(char), file_chunk.size(), file_native);
-                        while (characters_read > 0)
-                        {
-                            core::buffer::append(_data, file_chunk.data(), static_cast<uint32_t>(characters_read));
-                            characters_read = fread_s(file_chunk.data(), file_chunk.size(), sizeof(char), file_chunk.size(), file_native);
-                        }
-
-                        fclose(file_native);
-                    }
+                    load_file_to_buffer(_native_path, _data);
                 }
                 return _data;
+            }
+
+            auto metadata() noexcept -> core::data_view
+            {
+                if (core::buffer::empty(_metadata) && core::string::empty(_native_path_metadata) == false)
+                {
+                    load_file_to_buffer(_native_path_metadata, _metadata);
+                }
+                return _metadata;
             }
 
             auto name() const noexcept -> core::StringView<> override
@@ -85,6 +102,7 @@ namespace resource
         protected:
             //! \brief The native filesystem path.
             core::String<> _native_path;
+            core::String<> _native_path_metadata;
             core::String<> _native_name;
 
             //! \brief The resource path.
@@ -95,6 +113,7 @@ namespace resource
 
             //! \brief The loaded file buffer.
             core::Buffer _data;
+            core::Buffer _metadata;
         };
 
         class FileResourceWritable : public FileResource, public OutputResource
@@ -105,7 +124,7 @@ namespace resource
                 URI const& uri,
                 core::StringView<> native_path,
                 core::StringView<> native_name) noexcept
-                : FileResource{ alloc, uri, native_path, native_name }
+                : FileResource{ alloc, uri, native_path, "", native_name }
             {
             }
 
@@ -195,25 +214,39 @@ namespace resource
             std::filesystem::recursive_directory_iterator directory_iterator{ path };
             for (auto&& native_entry : directory_iterator)
             {
-                if (std::filesystem::is_regular_file(native_entry))
+                if (std::filesystem::is_regular_file(native_entry) == false)
                 {
-                    auto filepath = native_entry.path();
-                    auto filename = filepath.filename().generic_string();
-
-                    auto fullpath = std::filesystem::canonical(filepath).generic_string();
-
-                    auto relative_path = std::filesystem::relative(fullpath, path);
-                    auto relative_path_string = relative_path.generic_string();
-
-                    auto* dir_entry_object = alloc.make<FileResource>(
-                        alloc,
-                        URI{ scheme_directory, path.generic_string(), core::cexpr::stringid(relative_path_string.c_str()) },
-                        fullpath.c_str(),
-                        relative_path_string.c_str());
-                    array::push_back(entry_list, static_cast<Resource*>(dir_entry_object));
-
-                    core::message::push(messages, resource::message::ModuleResourceMounted{ dir_entry_object });
+                    // #todo warning
+                    return;
                 }
+
+                auto filepath = native_entry.path();
+                auto fileextension = filepath.extension();
+                if (fileextension == "isrm")
+                {
+                    // #todo skip meta files by default, maybe add a most mount check for meta files without associated resources.
+                    continue;
+                }
+
+                auto fullpath = std::filesystem::canonical(filepath).generic_string();
+                auto fullpath_meta = std::filesystem::path{ fullpath }.replace_extension(".isrm");
+                if (std::filesystem::is_regular_file(fullpath_meta) == false)
+                {
+                    fullpath_meta = std::filesystem::path{};
+                }
+
+                auto relative_path = std::filesystem::relative(fullpath, path);
+                auto relative_path_string = relative_path.generic_string();
+
+                auto* dir_entry_object = alloc.make<FileResource>(
+                    alloc,
+                    URI{ scheme_directory, path.generic_string(), core::cexpr::stringid(relative_path_string.c_str()) },
+                    fullpath,
+                    fullpath_meta.generic_string(),
+                    relative_path_string.c_str());
+                array::push_back(entry_list, static_cast<Resource*>(dir_entry_object));
+
+                core::message::push(messages, resource::message::ModuleResourceMounted{ dir_entry_object });
             }
         }
 
@@ -231,22 +264,33 @@ namespace resource
             if (std::filesystem::is_regular_file(canonical_path))
             {
                 auto filepath = std::move(canonical_path);
-                auto filename = filepath.filename().generic_string();
+                auto fileextension = filepath.extension();
+                if (fileextension == "isrm")
+                {
+                    // #todo skip meta files by default, maybe add a most mount check for meta files without associated resources.
+                    return;
+                }
 
                 auto fullpath = std::filesystem::canonical(filepath).generic_string();
+                auto fullpath_meta = std::filesystem::path{ fullpath }.replace_extension(".isrm");
+                if (std::filesystem::is_regular_file(fullpath_meta) == false)
+                {
+                    fullpath_meta = std::filesystem::path{};
+                }
 
                 auto* file_entry_object = alloc.make<FileResource>(
                     alloc,
                     URI{ scheme_file, fullpath },
-                    fullpath.c_str(),
-                    filename.c_str());
+                    fullpath,
+                    fullpath_meta.generic_string(),
+                    filepath.filename().generic_string());
                 array::push_back(entry_list, static_cast<Resource*>(file_entry_object));
 
                 core::message::push(messages, resource::message::ModuleResourceMounted{ file_entry_object });
             }
         }
 
-        auto mount_writable_file(core::allocator& alloc, std::filesystem::path path, core::pod::Array<Resource*>& entry_list, std::function<void(Resource*)> callback) noexcept -> FileResourceWritable*
+        auto mount_writable_file(core::allocator& alloc, std::filesystem::path path, core::pod::Array<Resource*>& entry_list, core::MessageBuffer& messages) noexcept -> FileResourceWritable*
         {
             auto directory_path = path.parent_path();
             if (std::filesystem::is_directory(directory_path) == false)
@@ -281,8 +325,8 @@ namespace resource
                     fullpath.c_str(),
                     filename.c_str());
                 array::push_back(entry_list, static_cast<Resource*>(file_entry_object));
-                callback(file_entry_object);
 
+                core::message::push(messages, resource::message::ModuleResourceMounted{ file_entry_object });
                 return file_entry_object;
             }
 
@@ -340,9 +384,7 @@ namespace resource
         return result;
     }
 
-    auto FileSystem::open(
-        URI const& uri,
-        std::function<void(Resource*)> callback) noexcept -> OutputResource*
+    auto FileSystem::open(URI const& uri, core::MessageBuffer& messages) noexcept -> OutputResource*
     {
         OutputResource* result{ nullptr };
         for (auto* res_obj : _resources)
@@ -382,7 +424,7 @@ namespace resource
         if (result == nullptr)
         {
             IS_ASSERT(uri.scheme == resource::scheme_file, "Cannot open resource types for writing other than {}! got: {}", resource::scheme_file, uri.scheme);
-            result = detail::mount_writable_file(_allocator, _basedir._data / std::filesystem::path{ core::string::begin(uri.path) }, _resources, callback);
+            result = detail::mount_writable_file(_allocator, _basedir._data / std::filesystem::path{ core::string::begin(uri.path) }, _resources, messages);
         }
 
         return result;
