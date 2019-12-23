@@ -1,6 +1,5 @@
 #pragma once
 #include <asset_system/asset.hxx>
-#include <resource/resource_system.hxx>
 
 namespace asset
 {
@@ -9,8 +8,6 @@ namespace asset
     {
     public:
         virtual ~AssetLoader() noexcept = default;
-
-        //virtual auto create_asset_reference(core::StringView<> basename, resource::URI location) noexcept = 0;
 
         virtual auto request_asset(asset::Asset asset_reference) noexcept -> asset::AssetStatus = 0;
 

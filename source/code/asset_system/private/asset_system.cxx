@@ -1,8 +1,29 @@
 #include <asset_system/asset_system.hxx>
+#include <asset_system/asset_resolver.hxx>
 #include <resource/resource_messages.hxx>
+#include <resource/resource_meta.hxx>
 
 namespace asset
 {
+
+    namespace detail
+    {
+
+        class ConfigAssetResolver : public AssetResolver
+        {
+        public:
+            auto resolve_asset_type(core::StringView<> extension, resource::ResourceMetaView const&) noexcept -> asset::AssetType override
+            {
+                AssetType result = AssetType::Unresolved;
+                if (core::string::equals(extension, ".json"))
+                {
+                    result = AssetType::Config;
+                }
+                return result;
+            }
+        };
+
+    } // namespace detail
 
     AssetSystem::AssetSystem(core::allocator& alloc, resource::ResourceSystem& resource_system) noexcept
         : _allocator{ alloc }
@@ -10,6 +31,12 @@ namespace asset
         , _resource_database{ _allocator }
         , _asset_objects{ _allocator }
     {
+        add_resolver(core::memory::make_unique<asset::AssetResolver, asset::detail::ConfigAssetResolver>(_allocator));
+    }
+
+    void AssetSystem::add_resolver(core::memory::unique_pointer<asset::AssetResolver> resolver) noexcept
+    {
+        _asset_resolver.push_back(std::move(resolver));
     }
 
     void AssetSystem::update() noexcept
@@ -20,21 +47,34 @@ namespace asset
             {
                 auto name_end = core::string::begin(msg.native_name);
                 auto name_begin = name_end;
-                auto const end = core::string::end(msg.native_name);
+                auto const string_end = core::string::end(msg.native_name);
 
-                while (name_end != end && *name_end != '.')
+                while (name_end != string_end && *name_end != '.')
                 {
                     name_end++;
                 }
 
                 auto basename = core::StringView<>{ name_begin, name_end };
-                auto extension = core::StringView<>{ name_end, end };
+                auto extension = core::StringView<>{ name_end, string_end };
 
-                Asset reference{ basename, AssetType::Resource };
-                if (core::string::equals(extension, ".json"))
+                auto it = _asset_resolver.begin();
+                auto const end = _asset_resolver.end();
+
+                AssetType resolved_asset_type = AssetType::Unresolved;
+                while (resolved_asset_type == AssetType::Unresolved && it != end)
                 {
-                    reference.type = AssetType::Config;
+                    resolved_asset_type = (*it)->resolve_asset_type(extension, create_meta_view(resource::ResourceMeta{ _allocator }));
+                    it = std::next(it);
                 }
+
+                // Resource is not a known asset!
+                if (resolved_asset_type == AssetType::Unresolved)
+                {
+                    // #todo verbose message?
+                    return;
+                }
+
+                Asset reference{ basename, resolved_asset_type };
 
                 // clang-format off
                 core::pod::multi_hash::insert(
@@ -52,7 +92,7 @@ namespace asset
 
     auto AssetSystem::update(Asset reference, resource::URI content_location) noexcept -> AssetStatus
     {
-        auto const* const resource = _resource_system.find(content_location);
+        auto* const resource = _resource_system.find(content_location);
         if (resource != nullptr)
         {
             // clang-format off
