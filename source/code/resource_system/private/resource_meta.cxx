@@ -47,6 +47,10 @@ namespace resource
                     {
                         resource::set_meta_string(meta, core::cexpr::stringid(field_key), entry.value.GetString());
                     }
+                    else
+                    {
+                        IS_ASSERT(false, "Unknown value type in resource meta!");
+                    }
                 }
             }
         }
