@@ -20,7 +20,8 @@ namespace resource
         //! \brief Searches for the default resource with the given name.
         auto find(URI const& uri) noexcept -> Resource* override;
 
-        auto open(URI const& uri, std::function<void(Resource*)> callback) noexcept -> OutputResource* override;
+        //! \brief Opens a file for writing and pushes filesystem messages.
+        auto open(URI const& uri, core::MessageBuffer& messages) noexcept -> OutputResource* override;
 
         //! \brief Mounts all resources found under the given URI.
         auto mount(URI const& uri, core::MessageBuffer& messages) noexcept -> uint32_t override;

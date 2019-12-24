@@ -1,10 +1,16 @@
 #pragma once
 #include <core/allocator.hxx>
+#include <core/pointer.hxx>
 #include <core/cexpr/stringid.hxx>
 #include <core/pod/hash.hxx>
 
 #include <asset_system/asset.hxx>
-#include <resource/system.hxx>
+#include <asset_system/asset_loader.hxx>
+#include <asset_system/asset_resolver.hxx>
+#include <resource/resource_system.hxx>
+
+#include <unordered_map>
+#include <vector>
 
 namespace asset
 {
@@ -15,6 +21,10 @@ namespace asset
     public:
         AssetSystem(core::allocator& alloc, resource::ResourceSystem& resource_system) noexcept;
         ~AssetSystem() noexcept = default;
+
+        void add_resolver(core::memory::unique_pointer<asset::AssetResolver> resolver) noexcept;
+
+        auto add_loader(asset::AssetType asset_type, core::memory::unique_pointer<asset::AssetLoader> loader) noexcept;
 
         auto request(Asset reference) noexcept -> AssetStatus;
 
@@ -28,6 +38,9 @@ namespace asset
 
     private:
         core::allocator& _allocator;
+
+        std::vector<core::memory::unique_pointer<AssetResolver>> _asset_resolver;
+        std::unordered_map<AssetType, core::memory::unique_pointer<AssetLoader>> _asset_loader;
 
         struct AssetReference
         {

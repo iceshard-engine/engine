@@ -10,10 +10,13 @@ namespace asset
     //! \brief This enumeration defines all supported assert types.
     enum class AssetType : uint32_t
     {
-        Invalid = 0x0,
+        Invalid = 0x00,
         Binary,
         Config,
         Resource,
+
+        //! \brief Used during asset resolving.
+        Unresolved = 0xffff'ffff,
     };
 
     //! \brief This enumeration defines all stages an asset can have.

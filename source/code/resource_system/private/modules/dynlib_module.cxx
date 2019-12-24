@@ -44,7 +44,12 @@ namespace resource
             //! \brief Returns the associated resource data.
             auto data() noexcept -> core::data_view override
             {
-                return { nullptr, 0 };
+                return { };
+            }
+
+            auto metadata() noexcept -> core::data_view override
+            {
+                return { };
             }
 
             auto name() const noexcept -> core::StringView<> override

@@ -1,0 +1,6 @@
+{
+    "asset":{
+        "type": "Config",
+        "name": "config"
+    }
+}

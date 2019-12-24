@@ -1,4 +1,4 @@
-#include <resource/system.hxx>
+#include <resource/resource_system.hxx>
 #include <resource/resource_messages.hxx>
 #include "modules/module_messages.hxx"
 
@@ -28,6 +28,11 @@ namespace resource
             }
 
             auto data() noexcept -> core::data_view override
+            {
+                return core::data_view{ nullptr, 0 };
+            }
+
+            auto metadata() noexcept -> core::data_view override
             {
                 return core::data_view{ nullptr, 0 };
             }
@@ -126,22 +131,10 @@ namespace resource
         auto* module_object = hash::get<ResourceModule*>(_scheme_handlers, static_cast<uint64_t>(location.scheme.hash_value), nullptr);
         if (module_object != nullptr)
         {
-            result = module_object->open(location, [&](Resource * res) noexcept {
-                const auto& name = resource::get_name(res->location());
-                const auto& name_hash = static_cast<uint64_t>(name.name.hash_value);
+            core::MessageBuffer module_messages{ core::memory::globals::default_allocator() };
+            result = module_object->open(location, module_messages);
 
-                if (hash::has(_named_resources, name_hash))
-                {
-                    auto* old_res = hash::get<Resource*>(_named_resources, name_hash, nullptr);
-                    fmt::print("Updating resource with name {}!\n> old: {}\n> new: {} (writable)\n", name, old_res->location(), res->location());
-                }
-                else
-                {
-                }
-
-                // Save the resource under it's name.
-                hash::set(_named_resources, name_hash, res);
-            });
+            core::message::for_each(module_messages, std::bind(&ResourceSystem::handle_module_message, this, std::placeholders::_1));
         }
         return result;
     }
