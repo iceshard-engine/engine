@@ -3,9 +3,9 @@
 #include <fmt/format.h>
 
 #if ISC_DEBUG || ISC_RELEASE_DEBUG
-#   define STRINGID_DEBUG 1
+#    define STRINGID_DEBUG 1
 #else
-#   define STRINGID_DEBUG 0
+#    define STRINGID_DEBUG 0
 #endif
 
 namespace core::cexpr
@@ -29,7 +29,6 @@ namespace core::cexpr
     };
 
     constexpr stringid_type stringid_invalid{ stringid_hash_type{ 0 } };
-
 
 #if STRINGID_DEBUG
 
@@ -76,6 +75,8 @@ namespace core::cexpr
     {
         return stringid(cstr);
     }
+
+#    define stringid_cexpr_ stringid_cexpr
 
     //! \brief The argument type used to pass stringid_type values.
     using stringid_argument_type = stringid_type;
