@@ -168,31 +168,45 @@ void core::string::clear(core::StringView<CharType>& str) noexcept
 //////////////////////////////////////////////////////////////////////////
 
 template<typename CharType>
-bool core::string::equals(const core::StringView<CharType>& left, const core::StringView<CharType>& right) noexcept
+auto core::string::find_first_of(StringView<> const str, CharType character_value) noexcept -> CharType const*
+{
+    auto it = begin(str);
+    auto const it_end = end(str);
+    while (it != it_end && *it != character_value)
+    {
+        it += 1;
+    }
+    return it;
+}
+
+//////////////////////////////////////////////////////////////////////////
+
+template<typename CharType>
+bool core::string::equals(core::StringView<CharType> const left, core::StringView<CharType> right) noexcept
 {
     return equals(left, right._data);
 }
 
 template<typename CharType>
-bool core::string::equals(const core::StringView<CharType>& left, const core::String<CharType>& right) noexcept
+bool core::string::equals(core::StringView<CharType> const left, core::String<CharType> const& right) noexcept
 {
     return equals(left, right._data);
 }
 
 template<uint32_t Capacity, typename CharType>
-bool core::string::equals(const core::StringView<CharType>& left, const core::StackString<Capacity, CharType>& right) noexcept
+bool core::string::equals(core::StringView<CharType> const left, core::StackString<Capacity, CharType> const& right) noexcept
 {
     return equals(left, right._data);
 }
 
 template<typename CharType>
-bool core::string::equals(const core::StringView<CharType>& left, const std::string_view right) noexcept
+bool core::string::equals(core::StringView<CharType> const left, std::string_view right) noexcept
 {
     return equals(left, right.data());
 }
 
 template<typename CharType>
-bool core::string::equals(const core::StringView<CharType>& left, const CharType* right) noexcept
+bool core::string::equals(core::StringView<CharType> const left, CharType const* right) noexcept
 {
     auto const rlen = core::cstring::length(right);
     if (left._size != rlen)
