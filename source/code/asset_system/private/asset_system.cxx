@@ -45,17 +45,10 @@ namespace asset
         core::message::filter<resource::message::ResourceAdded>(_resource_system.messages(), [&](resource::message::ResourceAdded const& msg) noexcept
             // clang-format on
             {
-                auto name_end = core::string::begin(msg.native_name);
-                auto name_begin = name_end;
-                auto const string_end = core::string::end(msg.native_name);
+                auto extension_it = core::string::find_first_of(msg.native_name, '.');
 
-                while (name_end != string_end && *name_end != '.')
-                {
-                    name_end++;
-                }
-
-                auto basename = core::StringView<>{ name_begin, name_end };
-                auto extension = core::StringView<>{ name_end, string_end };
+                auto basename = core::StringView<>{ core::string::begin(msg.native_name), extension_it };
+                auto extension = core::StringView<>{ extension_it, core::string::end(msg.native_name) };
 
                 auto it = _asset_resolver.begin();
                 auto const end = _asset_resolver.end();
@@ -86,8 +79,8 @@ namespace asset
                     _resource_database,
                     AssetReference{ msg.location }
                 );
-        });
-        // clang-format on
+                // clang-format on
+            });
     }
 
     auto AssetSystem::update(Asset reference, resource::URI content_location) noexcept -> AssetStatus
