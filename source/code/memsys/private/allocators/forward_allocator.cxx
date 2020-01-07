@@ -142,10 +142,10 @@ namespace core::memory
         auto* new_bucket = new (memory) memory_bucket{
             /* set the current head bucket as the tail */
             nullptr
-            /* set to end */
-            , memory_end
             /* set the free location already accommodating for the requested objects alignment */
             , utils::pointer_add(memory, sizeof(memory_bucket))
+            /* set to end */
+            , memory_end
         };
 
         IS_ASSERT(utils::pointer_distance(new_bucket->free, new_bucket->last) >= static_cast<int32_t>(size)
