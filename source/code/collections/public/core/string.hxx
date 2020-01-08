@@ -102,7 +102,7 @@ namespace core
 
         //! \brief Pushes the character array to the end of the string.
         template <typename CharType>
-        void push_back(String<CharType>& str, const CharType* cstr) noexcept;
+        void push_back(String<CharType>& str, core::StringView<CharType> const cstr) noexcept;
 
         //! \brief Pushes the String at the end of the string.
         template <typename CharType>
