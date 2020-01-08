@@ -44,7 +44,7 @@ namespace core
 
         //! \brief Length of the string.
         template<typename CharType>
-        auto length(const StringView<CharType>& str) noexcept -> uint32_t;
+        auto length(StringView<CharType> const str) noexcept -> uint32_t;
 
         //! \brief The current string capacity.
         template<typename CharType>
@@ -76,8 +76,13 @@ namespace core
 
         //////////////////////////////////////////////////////////////////////////
 
-        template<typename CharType>
-        auto find_first_of(StringView<> const str, CharType character_value) noexcept -> CharType const*;
+        auto find_first_of(StringView<> const str, char character_value) noexcept -> char const*;
+
+        auto find_first_of(StringView<> const str, StringView<> const character_values) noexcept -> char const*;
+
+        auto find_last_of(StringView<> const str, char character_value) noexcept -> char const*;
+
+        auto find_last_of(StringView<> const str, StringView<> const character_value) noexcept -> char const*;
 
         //////////////////////////////////////////////////////////////////////////
 
