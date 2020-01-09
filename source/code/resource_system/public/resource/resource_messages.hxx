@@ -16,7 +16,7 @@ namespace resource::message
         URI location;
 
         //! \brief The resource native name.
-        core::StringView<> native_name;
+        core::StringView native_name;
     };
 
     struct ResourceUpdated
@@ -27,7 +27,7 @@ namespace resource::message
         URI location;
 
         //! \brief The resource origin.
-        core::StringView<> origin;
+        core::StringView origin;
     };
 
 } // namespace resource::message

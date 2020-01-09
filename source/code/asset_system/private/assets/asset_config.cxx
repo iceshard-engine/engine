@@ -34,23 +34,25 @@ namespace asset
         _allocator.destroy(_implementation);
     }
 
-    bool AssetConfigObject::Has(core::StringView<> key) const noexcept
+    bool AssetConfigObject::Has(core::StringView key) const noexcept
     {
-        return _implementation->value.HasMember(key._data);
+        return _implementation->value.HasMember(core::string::data(key));
     }
 
-    auto AssetConfigObject::StringValue(core::StringView<> key) const noexcept -> core::StringView<>
+    auto AssetConfigObject::StringValue(core::StringView key) const noexcept -> core::StringView
     {
-        IS_ASSERT(_implementation->value.HasMember(key._data), "Key does not exist in config file.");
-        IS_ASSERT(_implementation->value[key._data].IsString(), "Not a string value!");
-        return _implementation->value[key._data].GetString();
+        auto const* cstr = core::string::data(key);
+        IS_ASSERT(_implementation->value.HasMember(cstr), "Key does not exist in config file.");
+        IS_ASSERT(_implementation->value[cstr].IsString(), "Not a string value!");
+        return _implementation->value[cstr].GetString();
     }
 
-    auto AssetConfigObject::ObjectValue(core::StringView<> key) const noexcept -> AssetConfigObject
+    auto AssetConfigObject::ObjectValue(core::StringView key) const noexcept -> AssetConfigObject
     {
-        IS_ASSERT(_implementation->value.HasMember(key._data), "Key does not exist in config file.");
-        IS_ASSERT(_implementation->value[key._data].IsObject(), "Not a object value!");
-        return { _allocator, _allocator.make<ConfigImpl>(_implementation->document, _implementation->value[key._data]) };
+        auto const* cstr = core::string::data(key);
+        IS_ASSERT(_implementation->value.HasMember(cstr), "Key does not exist in config file.");
+        IS_ASSERT(_implementation->value[cstr].IsObject(), "Not a object value!");
+        return { _allocator, _allocator.make<ConfigImpl>(_implementation->document, _implementation->value[cstr]) };
     }
 
     AssetConfigObject::AssetConfigObject(core::allocator& alloc, ConfigImpl* data) noexcept

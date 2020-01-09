@@ -14,7 +14,7 @@ namespace app
         core::StackString<256> buffer = "";
         GetModuleFileName(NULL, core::string::begin(buffer), core::string::capacity(buffer));
 
-        return core::String<>{ alloc, std::filesystem::canonical(core::string::begin(buffer)).parent_path().generic_string().c_str() };
+        return core::String<>{ alloc, std::filesystem::canonical(core::string::begin(buffer)).parent_path().generic_string() };
     }
 
     auto working_directory(core::allocator& alloc) noexcept -> core::String<>
@@ -22,7 +22,7 @@ namespace app
         core::StackString<256> buffer = "";
         GetCurrentDirectory(core::string::capacity(buffer), core::string::begin(buffer));
 
-        return core::String<>{ alloc, std::filesystem::canonical(core::string::begin(buffer)).generic_string().c_str() };
+        return core::String<>{ alloc, std::filesystem::canonical(core::string::begin(buffer)).generic_string() };
     }
 
 } // namespace app

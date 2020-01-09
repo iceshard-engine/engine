@@ -16,7 +16,7 @@ inline core::String<CharType>::String(core::allocator& allocator, const CharType
 }
 
 template<typename CharType>
-inline core::String<CharType>::String(core::allocator& allocator, StringView<CharType> value) noexcept
+inline core::String<CharType>::String(core::allocator& allocator, StringView value) noexcept
     : _allocator{ &allocator }
 {
     *this = value;
@@ -82,10 +82,13 @@ inline auto core::String<CharType>::operator=(const StackString<Capacity, CharTy
 }
 
 template<typename CharType>
-inline auto core::String<CharType>::operator=(StringView<CharType> other) noexcept -> String<CharType>&
+inline auto core::String<CharType>::operator=(StringView other) noexcept -> String<CharType>&
 {
-    string::resize(*this, other._size);
-    memcpy(_data, other._data, sizeof(CharType) * other._size);
+    if (static_cast<uint32_t>(other.size()) > 0)
+    {
+        string::resize(*this, core::string::size(other));
+        memcpy(_data, other.data(), sizeof(CharType) * core::string::size(other));
+    }
     return *this;
 }
 
@@ -307,17 +310,17 @@ inline void core::string::push_back(String<CharType>& str, CharType item) noexce
 }
 
 template<typename CharType>
-inline void core::string::push_back(String<CharType>& str, core::StringView<CharType> const cstr) noexcept
+inline void core::string::push_back(String<CharType>& str, core::StringView cstr) noexcept
 {
-    if (cstr._size > 0)
+    if (static_cast<uint32_t>(cstr.size()) > 0)
     {
-        auto new_size = str._size + cstr._size;
+        auto new_size = str._size + static_cast<uint32_t>(cstr.size());
         if (new_size + 1 > str._capacity)
         {
             grow(str, static_cast<uint32_t>(new_size) + 1);
         }
 
-        memcpy(string::end(str), cstr._data, cstr._size);
+        memcpy(string::end(str), cstr.data(), static_cast<uint32_t>(cstr.size()));
         str._size = static_cast<uint32_t>(new_size);
         str._data[str._size] = 0;
     }

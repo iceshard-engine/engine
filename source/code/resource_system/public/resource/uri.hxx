@@ -52,7 +52,7 @@ namespace resource
     struct URN
     {
         //! \brief Creates a new resource name from the given string value.
-        URN(core::StringView<> name) noexcept;
+        URN(core::StringView name) noexcept;
 
         //! \brief Creates a new resource name from the given stringid value.
         URN(core::cexpr::stringid_argument_type name) noexcept;
@@ -68,13 +68,13 @@ namespace resource
     struct URI
     {
         //! \brief Creates a new URI for the given scheme and path.
-        URI(core::cexpr::stringid_argument_type scheme, core::StringView<> path) noexcept;
+        URI(core::cexpr::stringid_argument_type scheme, core::StringView path) noexcept;
 
         //! \brief Creates a new URI for the given scheme, path and fragment.
-        URI(core::cexpr::stringid_argument_type scheme, core::StringView<> path, core::cexpr::stringid_argument_type fragment) noexcept;
+        URI(core::cexpr::stringid_argument_type scheme, core::StringView path, core::cexpr::stringid_argument_type fragment) noexcept;
 
         //! \brief Creates a new URI for the given scheme, path and fragment.
-        URI(core::cexpr::stringid_argument_type scheme, core::StringView<> path, URN name) noexcept;
+        URI(core::cexpr::stringid_argument_type scheme, core::StringView path, URN name) noexcept;
 
         //! \brief The resource scheme.
         core::cexpr::stringid_type scheme{ resource::scheme_invalid };
@@ -83,7 +83,7 @@ namespace resource
         core::cexpr::stringid_type fragment;
 
         //! \brief The resource location.
-        core::StringView<> path;
+        core::StringView path;
     };
 
     static_assert(std::is_trivially_copyable_v<URI>, "The 'URI' type requires to be trivially copyable!");

@@ -56,9 +56,9 @@ namespace iceshard
 
     } // namespace detail
 
-    auto load_engine_module(core::allocator& alloc, core::StringView<> path, resource::ResourceSystem& resources) noexcept -> core::memory::unique_pointer<EngineModule>
+    auto load_engine_module(core::allocator& alloc, core::StringView path, resource::ResourceSystem& resources) noexcept -> core::memory::unique_pointer<EngineModule>
     {
-        auto module_path = std::filesystem::canonical(core::string::begin(path));
+        auto module_path = std::filesystem::canonical(path);
 
         // The result object
         core::memory::unique_pointer<EngineModule> result{ nullptr, { alloc } };

@@ -132,7 +132,7 @@ namespace iceshard
 
             if (core::string::empty(config.render_driver_location) == false)
             {
-                auto* render_driver_location = resources.find({ config.render_driver_location });
+                auto* render_driver_location = resources.find(resource::URN{ config.render_driver_location });
                 IS_ASSERT(render_driver_location != nullptr, "Missing driver for rendering module!");
 
                 _render_module = render::load_render_system_module(_allocator, render_driver_location->location().path);

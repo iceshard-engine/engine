@@ -26,9 +26,9 @@ namespace resource
         class DynamicLibraryResource final : public Resource
         {
         public:
-            DynamicLibraryResource(core::allocator& alloc, const URI& uri, core::StringView<> native_filename) noexcept
-                : _native_path{ alloc, core::string::begin(uri.path) }
-                , _native_filename{ alloc, native_filename._data }
+            DynamicLibraryResource(core::allocator& alloc, const URI& uri, core::StringView native_filename) noexcept
+                : _native_path{ alloc, uri.path }
+                , _native_filename{ alloc, native_filename }
                 , _uri{ uri.scheme, _native_path, uri.fragment }
                 , _data{ alloc }
             {
@@ -54,7 +54,7 @@ namespace resource
                 return { };
             }
 
-            auto name() const noexcept -> core::StringView<> override
+            auto name() const noexcept -> core::StringView override
             {
                 return _native_filename;
             }
@@ -158,7 +158,7 @@ namespace resource
     {
         IS_ASSERT(uri.scheme == resource::scheme_dynlib, "Invalid URI scheme used mounting in the dynlib system.");
 
-        core::StackString<64> config_directory{ core::string::begin(uri.path) };
+        core::StackString<64> config_directory{ core::string::data(uri.path) };
         config_directory += "/";
         config_directory += to_string(core::build::platform::current_platform.architecture);
         config_directory += "-";

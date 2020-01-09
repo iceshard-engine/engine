@@ -52,9 +52,9 @@ namespace input
     } // namespace detail
 
 
-    auto load_driver_module(core::allocator& alloc, core::StringView<> driver_module_path) noexcept -> core::memory::unique_pointer<InputModule>
+    auto load_driver_module(core::allocator& alloc, core::StringView driver_module_path) noexcept -> core::memory::unique_pointer<InputModule>
     {
-        auto module_path = std::filesystem::canonical(core::string::begin(driver_module_path));
+        auto module_path = std::filesystem::canonical(driver_module_path);
 
         // The result object
         core::memory::unique_pointer<InputModule> result{ nullptr, { alloc } };

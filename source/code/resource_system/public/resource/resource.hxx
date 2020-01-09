@@ -24,7 +24,7 @@ namespace resource
 
         //! \brief String value used to create the resource name.
         //! \remarks The value should return a valid file name with or without extension.
-        virtual auto name() const noexcept -> core::StringView<> = 0;
+        virtual auto name() const noexcept -> core::StringView = 0;
     };
 
     class OutputResource

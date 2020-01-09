@@ -12,7 +12,7 @@ namespace asset
         class ConfigAssetResolver : public AssetResolver
         {
         public:
-            auto resolve_asset_type(core::StringView<> extension, resource::ResourceMetaView const&) noexcept -> asset::AssetType override
+            auto resolve_asset_type(core::StringView extension, resource::ResourceMetaView const&) noexcept -> asset::AssetType override
             {
                 AssetType result = AssetType::Unresolved;
                 if (core::string::equals(extension, ".json"))
@@ -45,10 +45,10 @@ namespace asset
         core::message::filter<resource::message::ResourceAdded>(_resource_system.messages(), [&](resource::message::ResourceAdded const& msg) noexcept
             // clang-format on
             {
-                auto extension_it = core::string::find_first_of(msg.native_name, '.');
+                auto extension_pos = core::string::find_first_of(msg.native_name, '.');
 
-                auto basename = core::StringView<>{ core::string::begin(msg.native_name), extension_it };
-                auto extension = core::StringView<>{ extension_it, core::string::end(msg.native_name) };
+                auto basename = core::string::substr(msg.native_name, 0, extension_pos);
+                auto extension = core::string::substr(msg.native_name, extension_pos);
 
                 auto it = _asset_resolver.begin();
                 auto const end = _asset_resolver.end();
