@@ -29,6 +29,8 @@
 
 #include <asset_system/asset_system.hxx>
 #include <asset_system/assets/asset_config.hxx>
+#include <asset_system/assets/asset_shader.hxx>
+#include <asset_system/assets/asset_mesh.hxx>
 
 #include <fmt/format.h>
 #include <application/application.hxx>
@@ -55,6 +57,11 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resources)
     {
         auto* engine_instance = engine_module->engine();
 
+        // Prepare the asset system
+        auto* asset_system = engine_instance->asset_system();
+        asset_system->add_resolver(asset::default_resolver_shader(alloc));
+
+        // Prepare the render system
         auto* render_system = engine_instance->render_system();
         render_system->add_named_descriptor_set(render::descriptor_set::Color);
         render_system->add_named_descriptor_set(render::descriptor_set::Model);
