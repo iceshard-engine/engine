@@ -44,7 +44,7 @@ namespace core
 
         //! \brief Length of the string.
         template<typename CharType>
-        auto length(const StringView<CharType>& str) noexcept -> uint32_t;
+        auto length(StringView<CharType> const str) noexcept -> uint32_t;
 
         //! \brief The current string capacity.
         template<typename CharType>
@@ -76,20 +76,30 @@ namespace core
 
         //////////////////////////////////////////////////////////////////////////
 
-        template<typename CharType>
-        bool equals(const StringView<CharType>& left, const StringView<CharType>& right) noexcept;
+        auto find_first_of(StringView<> const str, char character_value) noexcept -> char const*;
+
+        auto find_first_of(StringView<> const str, StringView<> const character_values) noexcept -> char const*;
+
+        auto find_last_of(StringView<> const str, char character_value) noexcept -> char const*;
+
+        auto find_last_of(StringView<> const str, StringView<> const character_value) noexcept -> char const*;
+
+        //////////////////////////////////////////////////////////////////////////
 
         template<typename CharType>
-        bool equals(const StringView<CharType>& left, const String<CharType>& right) noexcept;
+        bool equals(StringView<CharType> const left, StringView<CharType> right) noexcept;
+
+        template<typename CharType>
+        bool equals(StringView<CharType> const left, String<CharType> const& right) noexcept;
 
         template<uint32_t Capacity, typename CharType>
-        bool equals(const StringView<CharType>& left, const StackString<Capacity, CharType>& right) noexcept;
+        bool equals(StringView<CharType> const left, StackString<Capacity, CharType> const& right) noexcept;
 
         template<typename CharType>
-        bool equals(const StringView<CharType>& left, const std::string_view right) noexcept;
+        bool equals(StringView<CharType> const left, std::string_view right) noexcept;
 
         template<typename CharType>
-        bool equals(const StringView<CharType>& left, const CharType* right) noexcept;
+        bool equals(StringView<CharType> const left, CharType const* right) noexcept;
 
     } // namespace string
 

@@ -299,18 +299,17 @@ inline void core::string::push_back(String<CharType>& str, CharType item) noexce
 }
 
 template<typename CharType>
-inline void core::string::push_back(String<CharType>& str, const CharType* cstr) noexcept
+inline void core::string::push_back(String<CharType>& str, core::StringView<CharType> const cstr) noexcept
 {
-    auto str_len = strlen(cstr);
-    if (str_len > 0)
+    if (cstr._size > 0)
     {
-        auto new_size = str._size + str_len;
+        auto new_size = str._size + cstr._size;
         if (new_size + 1 > str._capacity)
         {
             grow(str, static_cast<uint32_t>(new_size) + 1);
         }
 
-        memcpy(string::end(str), cstr, str_len);
+        memcpy(string::end(str), cstr._data, cstr._size);
         str._size = static_cast<uint32_t>(new_size);
         str._data[str._size] = 0;
     }
