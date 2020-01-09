@@ -8,7 +8,7 @@ namespace asset
 
     struct AssetConfig : Asset
     {
-        AssetConfig() noexcept = default;
+        constexpr AssetConfig() noexcept = default;
 
         constexpr AssetConfig(core::StringView<> view) noexcept
             : Asset{ view, AssetType::Config }

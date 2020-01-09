@@ -11,9 +11,13 @@ namespace asset
     enum class AssetType : uint32_t
     {
         Invalid = 0x00,
+        Resource,
         Binary,
         Config,
-        Resource,
+
+        Mesh,
+        Shader,
+        Texture,
 
         //! \brief Used during asset resolving.
         Unresolved = 0xffff'ffff,
@@ -38,7 +42,7 @@ namespace asset
 
         constexpr Asset(core::StringView<> asset_name, AssetType type) noexcept
             : type{ type }
-            , name{ core::cexpr::stringid_cexpr({ asset_name._data, asset_name._size }) }
+            , name{ core::cexpr::stringid_cexpr_({ asset_name._data, asset_name._size }) }
         { }
 
         //! \brief The asset type.

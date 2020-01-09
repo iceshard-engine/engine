@@ -45,10 +45,11 @@ namespace asset
         core::message::filter<resource::message::ResourceAdded>(_resource_system.messages(), [&](resource::message::ResourceAdded const& msg) noexcept
             // clang-format on
             {
-                auto extension_it = core::string::find_first_of(msg.native_name, '.');
+                auto native_name = msg.resource->name();
+                auto extension_it = core::string::find_first_of(native_name, '.');
 
-                auto basename = core::StringView<>{ core::string::begin(msg.native_name), extension_it };
-                auto extension = core::StringView<>{ extension_it, core::string::end(msg.native_name) };
+                auto basename = core::StringView<>{ core::string::begin(native_name), extension_it };
+                auto extension = core::StringView<>{ extension_it, core::string::end(native_name) };
 
                 auto it = _asset_resolver.begin();
                 auto const end = _asset_resolver.end();
@@ -56,7 +57,9 @@ namespace asset
                 AssetType resolved_asset_type = AssetType::Unresolved;
                 while (resolved_asset_type == AssetType::Unresolved && it != end)
                 {
-                    resolved_asset_type = (*it)->resolve_asset_type(extension, create_meta_view(resource::ResourceMeta{ _allocator }));
+                    resource::ResourceMeta resource_meta{ _allocator };
+                    resource::deserialize_meta(msg.resource->metadata(), resource_meta);
+                    resolved_asset_type = (*it)->resolve_asset_type(extension, resource::create_meta_view(resource_meta));
                     it = std::next(it);
                 }
 
@@ -77,7 +80,7 @@ namespace asset
                 );
                 core::pod::array::push_back(
                     _resource_database,
-                    AssetReference{ msg.location }
+                    AssetReference{ msg.resource->location() }
                 );
                 // clang-format on
             });
