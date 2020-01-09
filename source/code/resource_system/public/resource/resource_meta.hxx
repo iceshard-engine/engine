@@ -82,4 +82,12 @@ namespace resource
 
     auto get_meta_string(ResourceMetaView const& meta, core::cexpr::stringid_argument_type key) noexcept -> core::StringView<>;
 
+    auto get_meta_bool(ResourceMetaView const& meta, core::cexpr::stringid_argument_type key, bool& result) noexcept -> bool;
+
+    auto get_meta_int32(ResourceMetaView const& meta, core::cexpr::stringid_argument_type key, int32_t& result) noexcept -> bool;
+
+    auto get_meta_float(ResourceMetaView const& meta, core::cexpr::stringid_argument_type key, float& result) noexcept -> bool;
+
+    auto get_meta_string(ResourceMetaView const& meta, core::cexpr::stringid_argument_type key, core::StringView<>& result) noexcept -> bool;
+
 } // namespace asset

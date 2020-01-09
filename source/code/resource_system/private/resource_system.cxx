@@ -192,8 +192,7 @@ namespace resource
             hash::set(_named_resources, name_hash, resource_object);
 
             core::message::push(_messages, resource::message::ResourceAdded{
-                    resource_object->location(),
-                    resource_object->name()
+                    resource_object
                 });
         }
         else

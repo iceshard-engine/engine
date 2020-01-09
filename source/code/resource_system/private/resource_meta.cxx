@@ -18,6 +18,12 @@ namespace resource
             return entry;
         }
 
+        auto try_get_entry(ResourceMetaView const& meta, core::cexpr::stringid_argument_type key, MetaEntryType expected_type, MetaEntry& entry) noexcept -> bool
+        {
+            entry = core::pod::hash::get(meta._meta_entries, static_cast<uint64_t>(key.hash_value), resource::detail::MetaEntry{});
+            return entry.data_type == expected_type;
+        }
+
         void deserialize_json_meta_helper(rapidjson::Value const& object, std::string key, ResourceMeta& meta)
         {
 
@@ -157,16 +163,17 @@ namespace resource
     void deserialize_meta(core::data_view data, ResourceMeta& meta) noexcept
     {
         char const* it = reinterpret_cast<char const*>(data._data);
-
-        core::StringView<> head{ it, it + 4 };
-
-        if (core::string::equals(head, "ISAD"))
+        if (it != nullptr)
         {
-            detail::deserialize_binary_meta({ it + 4, data._size - 4 }, meta);
-        }
-        else
-        {
-            detail::deserialize_json_meta(data, meta);
+            core::StringView<> head{ it, it + 4 };
+            if (core::string::equals(head, "ISAD"))
+            {
+                detail::deserialize_binary_meta({ it + 4, data._size - 4 }, meta);
+            }
+            else
+            {
+                detail::deserialize_json_meta(data, meta);
+            }
         }
     }
 
@@ -251,6 +258,11 @@ namespace resource
     {
         ResourceMetaView result_meta{ { core::memory::globals::null_allocator() } };
 
+        if (data._data == nullptr)
+        {
+            return result_meta;
+        }
+
         char const* it = reinterpret_cast<char const*>(data._data);
 
         core::StringView<> head{ it, it + 4 };
@@ -331,6 +343,47 @@ namespace resource
         auto const entry = get_entry(meta, key, detail::MetaEntryType::String);
         auto const string_beg = reinterpret_cast<char const*>(meta._additional_data._data) + entry.value_buffer.offset;
         return { string_beg, string_beg + entry.value_buffer.size };
+    }
+
+    auto get_meta_bool(ResourceMetaView const& meta, core::cexpr::stringid_argument_type key, bool& result) noexcept -> bool
+    {
+        detail::MetaEntry entry;
+        if (try_get_entry(meta, key, detail::MetaEntryType::Boolean, entry))
+        {
+            result = entry.value_int != 0;
+        }
+        return entry.data_type == detail::MetaEntryType::Boolean;
+    }
+
+    auto get_meta_int32(ResourceMetaView const& meta, core::cexpr::stringid_argument_type key, int32_t& result) noexcept -> bool
+    {
+        detail::MetaEntry entry;
+        if (try_get_entry(meta, key, detail::MetaEntryType::Integer, entry))
+        {
+            result = entry.value_int;
+        }
+        return entry.data_type == detail::MetaEntryType::Integer;
+    }
+
+    auto get_meta_float(ResourceMetaView const& meta, core::cexpr::stringid_argument_type key, float& result) noexcept -> bool
+    {
+        detail::MetaEntry entry;
+        if (try_get_entry(meta, key, detail::MetaEntryType::Float, entry))
+        {
+            result = entry.value_float;
+        }
+        return entry.data_type == detail::MetaEntryType::Float;
+    }
+
+    auto get_meta_string(ResourceMetaView const& meta, core::cexpr::stringid_argument_type key, core::StringView<>& result) noexcept -> bool
+    {
+        detail::MetaEntry entry;
+        if (try_get_entry(meta, key, detail::MetaEntryType::String, entry))
+        {
+            char const* string_beg = reinterpret_cast<char const*>(meta._additional_data._data) + entry.value_buffer.offset;
+            result = core::StringView<>{ string_beg, string_beg + entry.value_buffer.size };
+        }
+        return entry.data_type == detail::MetaEntryType::String;
     }
 
 } // namespace asset

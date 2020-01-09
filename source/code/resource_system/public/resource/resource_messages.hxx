@@ -12,22 +12,14 @@ namespace resource::message
     {
         static constexpr auto message_type = core::cexpr::stringid_cexpr("Resource.Added");
 
-        //! \brief The resource object.
-        URI location;
-
-        //! \brief The resource native name.
-        core::StringView<> native_name;
+        Resource* resource;
     };
 
     struct ResourceUpdated
     {
         static constexpr auto message_type = core::cexpr::stringid_cexpr("Resource.Updated");
 
-        //! \brief The resource object.
-        URI location;
-
-        //! \brief The resource origin.
-        core::StringView<> origin;
+        Resource* resource;
     };
 
 } // namespace resource::message
