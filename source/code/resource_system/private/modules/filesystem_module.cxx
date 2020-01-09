@@ -216,8 +216,7 @@ namespace resource
             {
                 if (std::filesystem::is_regular_file(native_entry) == false)
                 {
-                    // #todo warning
-                    return;
+                    continue;
                 }
 
                 auto filepath = native_entry.path();
@@ -229,7 +228,7 @@ namespace resource
                 }
 
                 auto fullpath = std::filesystem::canonical(filepath).generic_string();
-                auto fullpath_meta = std::filesystem::path{ fullpath }.replace_extension(".isrm");
+                auto fullpath_meta = std::filesystem::path{ fullpath }.concat(".isrm");
                 if (std::filesystem::is_regular_file(fullpath_meta) == false)
                 {
                     fullpath_meta = std::filesystem::path{};
