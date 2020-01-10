@@ -69,9 +69,9 @@ namespace render
 
     } // namespace detail
 
-    auto load_render_system_module(core::allocator& alloc, core::StringView<> path) noexcept -> core::memory::unique_pointer<RenderSystemModule>
+    auto load_render_system_module(core::allocator& alloc, core::StringView path) noexcept -> core::memory::unique_pointer<RenderSystemModule>
     {
-        auto module_path = std::filesystem::canonical(core::string::begin(path));
+        auto module_path = std::filesystem::canonical(path);
 
         // The result object
         core::memory::unique_pointer<RenderSystemModule> result{ nullptr, { alloc } };

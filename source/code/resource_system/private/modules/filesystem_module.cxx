@@ -24,10 +24,10 @@ namespace resource
             ReadWrite,
         };
 
-        void load_file_to_buffer(core::StringView<> path, core::Buffer& file_data) noexcept
+        void load_file_to_buffer(core::StringView path, core::Buffer& file_data) noexcept
         {
             FILE* file_native = nullptr;
-            fopen_s(&file_native, core::string::begin(path), "rb");
+            fopen_s(&file_native, core::string::data(path), "rb");
 
             if (file_native)
             {
@@ -51,13 +51,13 @@ namespace resource
             FileResource(
                 core::allocator& alloc,
                 URI const& uri,
-                core::StringView<> native_path,
-                core::StringView<> native_meta_path,
-                core::StringView<> native_name) noexcept
+                core::StringView native_path,
+                core::StringView native_meta_path,
+                core::StringView native_name) noexcept
                 : _native_path{ alloc, native_path }
                 , _native_path_metadata{ alloc, native_meta_path }
                 , _native_name{ alloc, native_name }
-                , _path{ alloc, uri.path._data }
+                , _path{ alloc, uri.path }
                 , _uri{ uri.scheme, _path, uri.fragment }
                 , _metadata{ alloc }
                 , _data{ alloc }
@@ -92,7 +92,7 @@ namespace resource
                 return _metadata;
             }
 
-            auto name() const noexcept -> core::StringView<> override
+            auto name() const noexcept -> core::StringView override
             {
                 return _native_name;
             }
@@ -122,8 +122,8 @@ namespace resource
             FileResourceWritable(
                 core::allocator& alloc,
                 URI const& uri,
-                core::StringView<> native_path,
-                core::StringView<> native_name) noexcept
+                core::StringView native_path,
+                core::StringView native_name) noexcept
                 : FileResource{ alloc, uri, native_path, "", native_name }
             {
             }
@@ -227,15 +227,15 @@ namespace resource
                     continue;
                 }
 
-                auto fullpath = std::filesystem::canonical(filepath).generic_string();
+                auto fullpath = std::filesystem::absolute(filepath).generic_string();
                 auto fullpath_meta = std::filesystem::path{ fullpath }.concat(".isrm");
                 if (std::filesystem::is_regular_file(fullpath_meta) == false)
                 {
                     fullpath_meta = std::filesystem::path{};
                 }
 
-                auto relative_path = std::filesystem::relative(fullpath, path);
-                auto relative_path_string = relative_path.generic_string();
+                auto relative_path_string = fullpath.substr(path.generic_string().length() + 1);// std::filesystem::relative(fullpath, path);
+                //auto relative_path_string = relative_path;// .generic_string();
 
                 auto* dir_entry_object = alloc.make<FileResource>(
                     alloc,
@@ -334,8 +334,8 @@ namespace resource
 
     } // namespace detail
 
-    FileSystem::FileSystem(core::allocator& alloc, core::StringView<> basedir) noexcept
-        : _basedir{ alloc, core::string::begin(basedir) }
+    FileSystem::FileSystem(core::allocator& alloc, core::StringView basedir) noexcept
+        : _basedir{ alloc, basedir }
         , _allocator{ "resource-system", alloc }
         , _resources{ _allocator }
     {
@@ -362,7 +362,7 @@ namespace resource
                 continue;
             }
 
-            auto uri_path = _basedir._data / std::filesystem::path{ core::string::begin(uri.path) };
+            auto uri_path = _basedir._data / std::filesystem::path{ uri.path };
             if (std::filesystem::is_regular_file(uri_path))
             {
                 uri_path = std::filesystem::canonical(uri_path);
@@ -435,11 +435,11 @@ namespace resource
 
         if (uri.scheme == resource::scheme_file)
         {
-            detail::mount_file(_allocator, std::filesystem::path{ _basedir._data } / core::string::begin(uri.path), _resources, messages);
+            detail::mount_file(_allocator, std::filesystem::path{ _basedir._data } / uri.path, _resources, messages);
         }
         else if (uri.scheme == resource::scheme_directory)
         {
-            detail::mount_directory(_allocator, std::filesystem::path{ _basedir._data } / core::string::begin(uri.path), _resources, messages);
+            detail::mount_directory(_allocator, std::filesystem::path{ _basedir._data } / uri.path, _resources, messages);
         }
 
         return core::message::count(messages) - message_count;

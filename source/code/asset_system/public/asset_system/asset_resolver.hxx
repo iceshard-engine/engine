@@ -11,7 +11,7 @@ namespace asset
     public:
         virtual ~AssetResolver() noexcept = default;
 
-        virtual auto resolve_asset_type(core::StringView<> extension, resource::ResourceMetaView const& meta) noexcept -> AssetType = 0;
+        virtual auto resolve_asset_type(core::StringView extension, resource::ResourceMetaView const& meta) noexcept -> AssetType = 0;
     };
 
 } // namespace asset

@@ -11,7 +11,7 @@ namespace asset
     {
         constexpr AssetShader() noexcept = default;
 
-        constexpr AssetShader(core::StringView<> view) noexcept
+        constexpr AssetShader(core::StringView view) noexcept
             : Asset{ view, AssetType::Shader }
         {
         }

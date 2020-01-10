@@ -65,7 +65,7 @@ namespace resource
 
     void set_meta_float(ResourceMeta& meta, core::cexpr::stringid_argument_type key, float value) noexcept;
 
-    void set_meta_string(ResourceMeta& meta, core::cexpr::stringid_argument_type key, core::StringView<> value) noexcept;
+    void set_meta_string(ResourceMeta& meta, core::cexpr::stringid_argument_type key, core::StringView value) noexcept;
 
     auto create_meta_view(ResourceMeta const& meta) noexcept -> ResourceMetaView const;
 
@@ -80,7 +80,7 @@ namespace resource
 
     auto get_meta_float(ResourceMetaView const& meta, core::cexpr::stringid_argument_type key) noexcept -> float;
 
-    auto get_meta_string(ResourceMetaView const& meta, core::cexpr::stringid_argument_type key) noexcept -> core::StringView<>;
+    auto get_meta_string(ResourceMetaView const& meta, core::cexpr::stringid_argument_type key) noexcept -> core::StringView;
 
     auto get_meta_bool(ResourceMetaView const& meta, core::cexpr::stringid_argument_type key, bool& result) noexcept -> bool;
 
@@ -88,6 +88,6 @@ namespace resource
 
     auto get_meta_float(ResourceMetaView const& meta, core::cexpr::stringid_argument_type key, float& result) noexcept -> bool;
 
-    auto get_meta_string(ResourceMetaView const& meta, core::cexpr::stringid_argument_type key, core::StringView<>& result) noexcept -> bool;
+    auto get_meta_string(ResourceMetaView const& meta, core::cexpr::stringid_argument_type key, core::StringView& result) noexcept -> bool;
 
 } // namespace asset

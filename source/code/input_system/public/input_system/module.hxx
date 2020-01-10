@@ -20,6 +20,7 @@ namespace input
     };
 
     //! \brief Tries to load a device driver from the given module path.
-    [[nodiscard]] auto load_driver_module(core::allocator& alloc, core::StringView<> driver_module_path) noexcept -> core::memory::unique_pointer<InputModule>;
+    [[nodiscard]]
+    auto load_driver_module(core::allocator& alloc, core::StringView driver_module_path) noexcept -> core::memory::unique_pointer<InputModule>;
 
 } // namespace input

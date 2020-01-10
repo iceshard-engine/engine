@@ -14,7 +14,7 @@ namespace resource
     class FileSystem : public ResourceModule
     {
     public:
-        FileSystem(core::allocator& alloc, core::StringView<> basedir) noexcept;
+        FileSystem(core::allocator& alloc, core::StringView basedir) noexcept;
         ~FileSystem() noexcept;
 
         //! \brief Searches for the default resource with the given name.

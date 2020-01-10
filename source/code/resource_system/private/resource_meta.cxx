@@ -165,7 +165,7 @@ namespace resource
         char const* it = reinterpret_cast<char const*>(data._data);
         if (it != nullptr)
         {
-            core::StringView<> head{ it, it + 4 };
+            core::StringView head{ it, 4 };
             if (core::string::equals(head, "ISAD"))
             {
                 detail::deserialize_binary_meta({ it + 4, data._size - 4 }, meta);
@@ -211,13 +211,13 @@ namespace resource
         core::pod::hash::set(meta._meta_entries, static_cast<uint64_t>(key.hash_value), entry);
     }
 
-    void set_meta_string(ResourceMeta& meta, core::cexpr::stringid_argument_type key, core::StringView<> value) noexcept
+    void set_meta_string(ResourceMeta& meta, core::cexpr::stringid_argument_type key, core::StringView value) noexcept
     {
         detail::MetaEntry entry{ detail::MetaEntryType::String };
-        void const* str_dest = core::buffer::append(meta._additional_data, value._data, value._size);
+        void const* str_dest = core::buffer::append(meta._additional_data, core::string::data(value), core::string::size(value));
         uint32_t const str_offset = core::memory::utils::pointer_distance(core::buffer::begin(meta._additional_data), str_dest);
 
-        entry.value_buffer = { str_offset, value._size };
+        entry.value_buffer = { str_offset, core::string::size(value) };
         core::pod::hash::set(meta._meta_entries, static_cast<uint64_t>(key.hash_value), entry);
     }
 
@@ -265,7 +265,7 @@ namespace resource
 
         char const* it = reinterpret_cast<char const*>(data._data);
 
-        core::StringView<> head{ it, it + 4 };
+        core::StringView head{ it, 4 };
         IS_ASSERT(core::string::equals(head, "ISAD"), "Invalid IceShard meta header!");
         it += 4;
 
@@ -338,11 +338,11 @@ namespace resource
         return entry.value_float;
     }
 
-    auto get_meta_string(ResourceMetaView const& meta, core::cexpr::stringid_argument_type key) noexcept -> core::StringView<>
+    auto get_meta_string(ResourceMetaView const& meta, core::cexpr::stringid_argument_type key) noexcept -> core::StringView
     {
         auto const entry = get_entry(meta, key, detail::MetaEntryType::String);
         auto const string_beg = reinterpret_cast<char const*>(meta._additional_data._data) + entry.value_buffer.offset;
-        return { string_beg, string_beg + entry.value_buffer.size };
+        return { string_beg, entry.value_buffer.size };
     }
 
     auto get_meta_bool(ResourceMetaView const& meta, core::cexpr::stringid_argument_type key, bool& result) noexcept -> bool
@@ -375,13 +375,13 @@ namespace resource
         return entry.data_type == detail::MetaEntryType::Float;
     }
 
-    auto get_meta_string(ResourceMetaView const& meta, core::cexpr::stringid_argument_type key, core::StringView<>& result) noexcept -> bool
+    auto get_meta_string(ResourceMetaView const& meta, core::cexpr::stringid_argument_type key, core::StringView& result) noexcept -> bool
     {
         detail::MetaEntry entry;
         if (try_get_entry(meta, key, detail::MetaEntryType::String, entry))
         {
             char const* string_beg = reinterpret_cast<char const*>(meta._additional_data._data) + entry.value_buffer.offset;
-            result = core::StringView<>{ string_beg, string_beg + entry.value_buffer.size };
+            result = core::StringView{ string_beg, entry.value_buffer.size };
         }
         return entry.data_type == detail::MetaEntryType::String;
     }

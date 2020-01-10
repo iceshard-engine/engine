@@ -6,7 +6,7 @@ namespace asset::detail
     class AssetShaderResolver : public asset::AssetResolver
     {
     public:
-        auto resolve_asset_type(core::StringView<> extension, resource::ResourceMetaView const& meta) noexcept -> AssetType override
+        auto resolve_asset_type(core::StringView extension, resource::ResourceMetaView const& meta) noexcept -> AssetType override
         {
             AssetType result = AssetType::Unresolved;
             if (core::string::equals(extension, ".glsl"))

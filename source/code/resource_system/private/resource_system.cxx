@@ -37,7 +37,7 @@ namespace resource
                 return core::data_view{ nullptr, 0 };
             }
 
-            auto name() const noexcept -> core::StringView<> override
+            auto name() const noexcept -> core::StringView override
             {
                 return { _location.path };
             }

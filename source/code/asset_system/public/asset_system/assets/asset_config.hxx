@@ -10,7 +10,7 @@ namespace asset
     {
         constexpr AssetConfig() noexcept = default;
 
-        constexpr AssetConfig(core::StringView<> view) noexcept
+        constexpr AssetConfig(core::StringView view) noexcept
             : Asset{ view, AssetType::Config }
         {
         }
@@ -22,11 +22,11 @@ namespace asset
         AssetConfigObject(core::allocator& alloc, AssetData data) noexcept;
         ~AssetConfigObject() noexcept;
 
-        bool Has(core::StringView<> key) const noexcept;
+        bool Has(core::StringView key) const noexcept;
 
-        auto StringValue(core::StringView<> key) const noexcept -> core::StringView<>;
+        auto StringValue(core::StringView key) const noexcept -> core::StringView;
 
-        auto ObjectValue(core::StringView<> key) const noexcept -> AssetConfigObject;
+        auto ObjectValue(core::StringView key) const noexcept -> AssetConfigObject;
 
     private:
         struct ConfigImpl;
