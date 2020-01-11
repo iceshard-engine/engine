@@ -63,18 +63,6 @@ int main(int, char**)
 
             // Dynamic Library Resources
             resource_system.mount(URI{ resource::scheme_dynlib, "bin" });
-
-            // Default file system mount points
-            resource_system.mount(URI{ resource::scheme_file, "mount.isr" });
-            resource_system.mount(URI{ resource::scheme_directory, "data" });
-
-            // Check for an user defined mounting file
-            if (auto* mount_resource = resource_system.find(URI{ resource::scheme_file, "mount.isr" }))
-            {
-                fmt::print("Custom mount resource found: {}\n", mount_resource->location());
-
-                // #todo Read the mount file and mount the directories there.
-            }
         }
 
         // The game entry point
