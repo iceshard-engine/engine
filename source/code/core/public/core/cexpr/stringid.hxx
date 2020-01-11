@@ -97,6 +97,11 @@ namespace core::cexpr
 
 } // namespace core::cexpr
 
+constexpr auto operator""_sid(const char* cstr, size_t length) noexcept -> core::cexpr::stringid_type
+{
+    return core::cexpr::stringid_cexpr_({ cstr, length });
+}
+
 //////////////////////////////////////////////////////////////////////////
 
 namespace fmt
