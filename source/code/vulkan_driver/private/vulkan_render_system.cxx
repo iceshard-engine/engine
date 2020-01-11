@@ -56,31 +56,6 @@ namespace render
 
         namespace sample
         {
-            static const char vertShaderText[] =
-                "#version 400\n"
-                "#extension GL_ARB_separate_shader_objects : enable\n"
-                "#extension GL_ARB_shading_language_420pack : enable\n"
-                "layout (std140, binding = 0) uniform bufferVals {\n"
-                "    mat4 vp;\n"
-                "} myBufferVals;\n"
-                "layout (location = 0) in vec4 pos;\n"
-                "layout (location = 1) in vec4 inColor;\n"
-                "layout (location = 2) in mat4 inModel;\n"
-                "layout (location = 0) out vec4 outColor;\n"
-                "void main() {\n"
-                "   outColor = inColor;\n"
-                "   gl_Position = myBufferVals.vp * inModel * pos;\n"
-                "}\n";
-
-            static const char fragShaderText[] =
-                "#version 400\n"
-                "#extension GL_ARB_separate_shader_objects : enable\n"
-                "#extension GL_ARB_shading_language_420pack : enable\n"
-                "layout (location = 0) in vec4 color;\n"
-                "layout (location = 0) out vec4 outColor;\n"
-                "void main() {\n"
-                "   outColor = color;\n"
-                "}\n";
 
 #define XYZ1(_x_, _y_, _z_) (_x_), (_y_), (_z_), 1.f
 #define UV(_u_, _v_) (_u_), (_v_)
@@ -155,9 +130,9 @@ namespace render
             // Vulkan clip space has inverted Y and half Z.
             // clang-format off
             static auto clip = glm::mat4(1.0f, 0.0f, 0.0f, 0.0f,
-                        0.0f,-1.0f, 0.0f, 0.0f,
-                        0.0f, 0.0f, 0.5f, 0.0f,
-                        0.0f, 0.0f, 0.5f, 1.0f);
+                0.0f, -1.0f, 0.0f, 0.0f,
+                0.0f, 0.0f, 0.5f, 0.0f,
+                0.0f, 0.0f, 0.5f, 1.0f);
             // clang-format on
             static auto MVP = clip * projection * view; // * model;
 
@@ -276,25 +251,6 @@ namespace render
 
             core::pod::array::front(_vulkan_devices)->graphics_device()->create_command_buffers(_vulkan_command_buffers, 1);
 
-            // clang-format off
-            _shaders.emplace_back(
-                vulkan::create_shader(
-                    _driver_allocator,
-                    graphics_device ,
-                    VkShaderStageFlagBits::VK_SHADER_STAGE_VERTEX_BIT,
-                    { detail::sample::vertShaderText, sizeof(detail::sample::vertShaderText) }
-                )
-            );
-            _shaders.emplace_back(
-                vulkan::create_shader(
-                    _driver_allocator,
-                    graphics_device,
-                    VkShaderStageFlagBits::VK_SHADER_STAGE_FRAGMENT_BIT,
-                    { detail::sample::fragShaderText, sizeof(detail::sample::fragShaderText) }
-                )
-            );
-            // clang-format on
-
             {
                 VkDescriptorSetLayoutBinding layout_binding = {};
                 layout_binding.binding = 0;
@@ -332,7 +288,8 @@ namespace render
                 _vulkan_render_pass->native_handle(),
                 *_vulkan_depth_image.get(),
                 *_vulkan_swapchain.get(),
-                core::pod::array::front(_vulkan_devices));
+                core::pod::array::front(_vulkan_devices)
+            );
 
             VkSemaphoreCreateInfo imageAcquiredSemaphoreCreateInfo;
             imageAcquiredSemaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
@@ -441,6 +398,28 @@ namespace render
             return reinterpret_cast<uintptr_t>(_vulkan_framebuffers[_vulkan_current_framebuffer]->native_handle());
         }
 
+        void load_shader(asset::AssetData shader_data) noexcept override
+        {
+            resource::ResourceMeta meta{ _driver_allocator };
+            resource::deserialize_meta(shader_data.metadata, meta);
+            auto meta_view = resource::create_meta_view(meta);
+
+            int32_t target = resource::get_meta_int32(meta_view, "shader.target"_sid);
+            IS_ASSERT(target == 1, "Only explicit vulkan shaders are supported!");
+
+            int32_t stage = resource::get_meta_int32(meta_view, "shader.stage"_sid);
+            IS_ASSERT(stage == 1 || stage == 2, "Only vertex and fragment shaders are supported!");
+
+            _shaders.emplace_back(
+                vulkan::create_shader(
+                    _driver_allocator,
+                    core::pod::array::front(_vulkan_devices)->graphics_device()->native_handle(),
+                    stage == 1 ? VkShaderStageFlagBits::VK_SHADER_STAGE_VERTEX_BIT : VkShaderStageFlagBits::VK_SHADER_STAGE_FRAGMENT_BIT,
+                    shader_data.content
+                )
+            );
+        }
+
         void add_named_descriptor_set(
             [[maybe_unused]] core::cexpr::stringid_argument_type name,
             [[maybe_unused]] VertexBinding const& binding,
@@ -452,17 +431,19 @@ namespace render
 
             // clang-format off
             core::pod::hash::set(_vulkan_vertex_descriptors, hash_value, _driver_allocator.make<render::vulkan::VulkanVertexDescriptor>(
-                    _driver_allocator,
-                    binding,
-                    descriptors,
-                    descriptor_count
-                ));
+                _driver_allocator,
+                binding,
+                descriptors,
+                descriptor_count
+                )
+            );
             // clang-format on
         }
 
         auto create_pipeline(
-            core::cexpr::stringid_type* descriptor_names,
-            uint32_t descriptor_name_count) noexcept -> api::RenderPipeline override
+            core::cexpr::stringid_type const* descriptor_names,
+            uint32_t descriptor_name_count
+        ) noexcept -> api::RenderPipeline override
         {
             auto* physical_device = core::pod::array::front(_vulkan_devices);
             auto graphics_device = physical_device->graphics_device()->native_handle();

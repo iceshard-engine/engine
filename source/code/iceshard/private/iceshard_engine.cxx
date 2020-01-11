@@ -39,9 +39,12 @@ namespace iceshard
             auto command_buffer() noexcept -> render::CommandBuffer override { return render::CommandBuffer{ 0 }; }
             void swap() noexcept override {}
 
+            void load_shader(asset::AssetData) noexcept override { };
+
             auto create_pipeline(
-                [[maybe_unused]] core::cexpr::stringid_type* descriptor_names,
-                [[maybe_unused]] uint32_t descriptor_name_count) noexcept -> render::api::RenderPipeline
+                [[maybe_unused]] core::cexpr::stringid_type const* descriptor_names,
+                [[maybe_unused]] uint32_t descriptor_name_count
+            ) noexcept -> render::api::RenderPipeline override
             {
                 return render::api::RenderPipeline{ 0 };
             }
@@ -50,20 +53,24 @@ namespace iceshard
                 [[maybe_unused]] core::cexpr::stringid_argument_type name,
                 [[maybe_unused]] render::VertexBinding const& binding,
                 [[maybe_unused]] render::VertexDescriptor const* descriptors,
-                [[maybe_unused]] uint32_t descriptor_count) noexcept {}
+                [[maybe_unused]] uint32_t descriptor_count
+            ) noexcept override {}
         };
 
         class NoneRenderSystemModule : public render::RenderSystemModule
         {
         public:
             //! \brief Returns the engine object from the loaded module.
-            [[nodiscard]] auto render_system() noexcept -> render::RenderSystem* override { return &_render_system; }
+            [[nodiscard]]
+            auto render_system() noexcept -> render::RenderSystem* override { return &_render_system; }
 
             //! \brief Returns the engine object from the loaded module.
-            [[nodiscard]] auto render_system() const noexcept -> render::RenderSystem const* override { return &_render_system; }
+            [[nodiscard]]
+            auto render_system() const noexcept -> render::RenderSystem const* override { return &_render_system; }
 
             //! \brief Returns the render api interface from the loaded module.
-            [[nodiscard]] virtual auto render_api() noexcept -> render::api::RenderInterface* { return render::api::render_api_instance; }
+            [[nodiscard]]
+            auto render_api() noexcept -> render::api::RenderInterface* override { return render::api::render_api_instance; }
 
         private:
             NoneRenderSystem _render_system;
