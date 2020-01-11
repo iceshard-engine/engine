@@ -52,8 +52,14 @@ namespace resource
     {
         core::pod::Hash<detail::MetaEntry> _meta_entries;
         core::data_view _additional_data;
-    };
 
+        ResourceMetaView() noexcept;
+        ~ResourceMetaView() noexcept = default;
+        ResourceMetaView(ResourceMetaView&& other) noexcept;
+        ResourceMetaView(ResourceMetaView const& other) noexcept;
+        auto operator=(ResourceMetaView&& other) noexcept -> ResourceMetaView&;
+        auto operator=(ResourceMetaView const& other) noexcept -> ResourceMetaView&;
+    };
 
     void serialize_meta(ResourceMeta const& meta, core::Buffer& buffer) noexcept;
 
@@ -67,20 +73,20 @@ namespace resource
 
     void set_meta_string(ResourceMeta& meta, core::cexpr::stringid_argument_type key, core::StringView value) noexcept;
 
-    auto create_meta_view(ResourceMeta const& meta) noexcept -> ResourceMetaView const;
+    auto create_meta_view(ResourceMeta const& meta) noexcept->ResourceMetaView const;
 
 
     void store_meta_view(ResourceMetaView const& meta, core::Buffer& buffer) noexcept;
 
-    auto load_meta_view(core::data_view data) noexcept -> ResourceMetaView const;
+    auto load_meta_view(core::data_view data) noexcept->ResourceMetaView const;
 
     auto get_meta_bool(ResourceMetaView const& meta, core::cexpr::stringid_argument_type key) noexcept -> bool;
 
-    auto get_meta_int32(ResourceMetaView const& meta, core::cexpr::stringid_argument_type key) noexcept -> int32_t;
+    auto get_meta_int32(ResourceMetaView const& meta, core::cexpr::stringid_argument_type key) noexcept->int32_t;
 
     auto get_meta_float(ResourceMetaView const& meta, core::cexpr::stringid_argument_type key) noexcept -> float;
 
-    auto get_meta_string(ResourceMetaView const& meta, core::cexpr::stringid_argument_type key) noexcept -> core::StringView;
+    auto get_meta_string(ResourceMetaView const& meta, core::cexpr::stringid_argument_type key) noexcept->core::StringView;
 
     auto get_meta_bool(ResourceMetaView const& meta, core::cexpr::stringid_argument_type key, bool& result) noexcept -> bool;
 

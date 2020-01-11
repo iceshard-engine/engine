@@ -70,7 +70,10 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
 
         // Prepare the asset system
         auto* asset_system = engine_instance->asset_system();
+        asset_system->add_resolver(asset::default_resolver_mesh(alloc));
         asset_system->add_resolver(asset::default_resolver_shader(alloc));
+        asset_system->add_loader(asset::AssetType::Mesh, asset::default_loader_mesh(alloc));
+        asset_system->add_loader(asset::AssetType::Shader, asset::default_loader_shader(alloc));
         asset_system->update();
         resource_system.flush_messages();
 
@@ -80,13 +83,20 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
         render_system->add_named_descriptor_set(render::descriptor_set::Model);
 
         asset::AssetData shader_data;
-        if (asset_system->load(asset::AssetShader{ "materials/shaders/test-vert" }, shader_data) == asset::AssetStatus::Loaded)
+        if (asset_system->load(asset::AssetShader{ "shaders/debug/test-vert" }, shader_data) == asset::AssetStatus::Loaded)
         {
             render_system->load_shader(shader_data);
         }
-        if (asset_system->load(asset::AssetShader{ "materials/shaders/test-frag" }, shader_data) == asset::AssetStatus::Loaded)
+        if (asset_system->load(asset::AssetShader{ "shaders/debug/test-frag" }, shader_data) == asset::AssetStatus::Loaded)
         {
             render_system->load_shader(shader_data);
+        }
+
+        asset::AssetData mesh_data;
+        if (asset_system->load(asset::Asset{ "mesh/test/box", asset::AssetType::Mesh }, mesh_data) == asset::AssetStatus::Loaded)
+        {
+            mesh_data = { };
+            //render_system->load_shader(shader_data);
         }
 
         render_system->create_pipeline(render::pipeline::DefaultPieline);

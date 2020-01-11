@@ -400,9 +400,7 @@ namespace render
 
         void load_shader(asset::AssetData shader_data) noexcept override
         {
-            resource::ResourceMeta meta{ _driver_allocator };
-            resource::deserialize_meta(shader_data.metadata, meta);
-            auto meta_view = resource::create_meta_view(meta);
+            auto const& meta_view = shader_data.metadata;
 
             int32_t target = resource::get_meta_int32(meta_view, "shader.target"_sid);
             IS_ASSERT(target == 1, "Only explicit vulkan shaders are supported!");

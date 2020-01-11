@@ -33,9 +33,16 @@ namespace asset::detail
             return asset::AssetStatus::Invalid;
         }
 
-        auto load_asset([[maybe_unused]] asset::Asset asset_reference, [[maybe_unused]] asset::AssetData& asset_data) noexcept -> asset::AssetStatus override
+        auto load_asset(
+            asset::Asset /* asset */,
+            resource::ResourceMetaView meta,
+            core::data_view resource_data,
+            asset::AssetData& result_data
+        ) noexcept -> asset::AssetStatus override
         {
-            return asset::AssetStatus::Invalid;
+            result_data.content = resource_data;
+            memcpy(&result_data.metadata, &meta, sizeof(resource::ResourceMetaView));
+            return asset::AssetStatus::Loaded;
         }
 
         void release_asset([[maybe_unused]] asset::Asset asset_reference) noexcept override

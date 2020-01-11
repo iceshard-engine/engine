@@ -3,6 +3,7 @@
 #include <core/data/view.hxx>
 #include <core/cexpr/stringid.hxx>
 #include <core/string_view.hxx>
+#include <resource/resource_meta.hxx>
 
 namespace asset
 {
@@ -59,7 +60,7 @@ namespace asset
     //!     The provided metadata can be anything, and the specific asset implementation uses it to validate the content data.
     struct AssetData
     {
-        core::data_view metadata;
+        resource::ResourceMetaView metadata = resource::load_meta_view({});
         core::data_view content;
     };
 

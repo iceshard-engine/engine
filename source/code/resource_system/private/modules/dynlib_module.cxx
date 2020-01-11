@@ -1,4 +1,5 @@
 #include <resource/resource.hxx>
+#include <resource/resource_meta.hxx>
 #include <resource/modules/dynlib_module.hxx>
 #include "module_messages.hxx"
 
@@ -47,9 +48,9 @@ namespace resource
                 return { };
             }
 
-            auto metadata() noexcept -> core::data_view override
+            auto metadata() noexcept -> resource::ResourceMetaView override
             {
-                return { };
+                return resource::load_meta_view({}); // Creates an empty meta view
             }
 
             auto name() const noexcept -> core::StringView override

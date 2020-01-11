@@ -24,7 +24,7 @@ namespace asset
 
         void add_resolver(core::memory::unique_pointer<asset::AssetResolver> resolver) noexcept;
 
-        auto add_loader(asset::AssetType asset_type, core::memory::unique_pointer<asset::AssetLoader> loader) noexcept;
+        void add_loader(asset::AssetType asset_type, core::memory::unique_pointer<asset::AssetLoader> loader) noexcept;
 
         auto request(Asset reference) noexcept -> AssetStatus;
 
@@ -40,7 +40,7 @@ namespace asset
         core::allocator& _allocator;
 
         std::vector<core::memory::unique_pointer<AssetResolver>> _asset_resolver;
-        std::unordered_map<AssetType, core::memory::unique_pointer<AssetLoader>> _asset_loader;
+        std::unordered_map<AssetType, std::vector<core::memory::unique_pointer<AssetLoader>>> _asset_loader;
 
         struct AssetReference
         {

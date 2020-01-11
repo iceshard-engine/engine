@@ -39,6 +39,11 @@ namespace asset
         _asset_resolver.push_back(std::move(resolver));
     }
 
+    void AssetSystem::add_loader(asset::AssetType asset_type, core::memory::unique_pointer<asset::AssetLoader> loader) noexcept
+    {
+        _asset_loader[asset_type].emplace_back(std::move(loader));
+    }
+
     void AssetSystem::update() noexcept
     {
         // clang-format off
@@ -57,9 +62,7 @@ namespace asset
                 AssetType resolved_asset_type = AssetType::Unresolved;
                 while (resolved_asset_type == AssetType::Unresolved && it != end)
                 {
-                    resource::ResourceMeta resource_meta{ _allocator };
-                    resource::deserialize_meta(msg.resource->metadata(), resource_meta);
-                    resolved_asset_type = (*it)->resolve_asset_type(extension, resource::create_meta_view(resource_meta));
+                    resolved_asset_type = (*it)->resolve_asset_type(extension, msg.resource->metadata());
                     it = std::next(it);
                 }
 
@@ -106,26 +109,44 @@ namespace asset
         return resource == nullptr ? AssetStatus::Invalid : AssetStatus::Available;
     }
 
-    auto AssetSystem::load(Asset reference, AssetData& data) noexcept -> AssetStatus
+    auto AssetSystem::load(Asset ref, AssetData& result_data) noexcept -> AssetStatus
     {
-        auto asset_object = core::pod::multi_hash::find_first(_asset_objects, static_cast<uint64_t>(reference.name.hash_value));
-        while (asset_object != nullptr && asset_object->value.reference.type != reference.type)
+        if (_asset_loader.contains(ref.type) == false || _asset_loader[ref.type].empty())
+        {
+            // No loader available
+            return AssetStatus::Invalid;
+        }
+
+        // Get the requested asset object
+        auto asset_object = core::pod::multi_hash::find_first(_asset_objects, static_cast<uint64_t>(ref.name.hash_value));
+        while (asset_object != nullptr && asset_object->value.reference.type != ref.type)
         {
             asset_object = core::pod::multi_hash::find_next(_asset_objects, asset_object);
         }
 
-        if (asset_object != nullptr)
+        if (asset_object == nullptr)
+        {
+            // Asset does not exist
+            return AssetStatus::Invalid;
+        }
+
+        // Try load the asset
+        auto it = _asset_loader[ref.type].rbegin();
+        auto const it_end = _asset_loader[ref.type].rend();
+
+        AssetStatus load_status = AssetStatus::Invalid;
+        while (it != it_end && load_status == AssetStatus::Invalid) // We can assume its either Invalid or Loaded
         {
             auto const& asset_resources = _resource_database[asset_object->value.resource];
             auto* const resource_object = _resource_system.find(asset_resources.content_location);
-            data.content = resource_object->data();
-            data.metadata = resource_object->metadata();
+
+            load_status = (*it)->load_asset(asset_object->value.reference, resource_object->metadata(), resource_object->data(), result_data);
 
             // #todo Remove this const cast.
-            const_cast<AssetObject&>(asset_object->value).status = AssetStatus::Loaded;
+            const_cast<AssetObject&>(asset_object->value).status = load_status;
         }
 
-        return asset_object == nullptr ? AssetStatus::Invalid : asset_object->value.status;
+        return load_status;
     }
 
 } // namespace asset

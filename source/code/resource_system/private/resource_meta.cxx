@@ -179,7 +179,7 @@ namespace resource
 
     auto create_meta_view(ResourceMeta const& meta) noexcept -> ResourceMetaView const
     {
-        ResourceMetaView result_meta{ { core::memory::globals::null_allocator() } };
+        ResourceMetaView result_meta{ };
         result_meta._meta_entries._data._data = meta._meta_entries._data._data;
         result_meta._meta_entries._data._size = meta._meta_entries._data._size;
         result_meta._meta_entries._data._capacity = meta._meta_entries._data._capacity;
@@ -256,7 +256,7 @@ namespace resource
 
     auto load_meta_view(core::data_view data) noexcept -> ResourceMetaView const
     {
-        ResourceMetaView result_meta{ { core::memory::globals::null_allocator() } };
+        ResourceMetaView result_meta{ };
 
         if (data._data == nullptr)
         {
@@ -384,6 +384,47 @@ namespace resource
             result = core::StringView{ string_beg, entry.value_buffer.size };
         }
         return entry.data_type == detail::MetaEntryType::String;
+    }
+
+    ResourceMetaView::ResourceMetaView() noexcept
+        : _meta_entries{ core::memory::globals::null_allocator() }
+        , _additional_data{ }
+    {
+    }
+
+    ResourceMetaView::ResourceMetaView(ResourceMetaView&& other) noexcept
+        : _meta_entries{ std::move(other._meta_entries) }
+        , _additional_data{ std::move(other._additional_data) }
+    {
+    }
+
+    ResourceMetaView::ResourceMetaView(ResourceMetaView const& other) noexcept
+        : _meta_entries{ core::memory::globals::null_allocator() }
+        , _additional_data{ other._additional_data }
+    {
+        memcpy(&_meta_entries, &other._meta_entries, sizeof(_meta_entries));
+    }
+
+    auto ResourceMetaView::operator=(ResourceMetaView&& other) noexcept -> ResourceMetaView&
+    {
+        if (std::addressof(other) == this)
+        {
+            return *this;
+        }
+        _additional_data = std::move(other._additional_data);
+        _meta_entries = std::move(other._meta_entries);
+        return *this;
+    }
+
+    auto ResourceMetaView::operator=(ResourceMetaView const& other) noexcept -> ResourceMetaView&
+    {
+        if (std::addressof(other) == this)
+        {
+            return *this;
+        }
+        memcpy(&_meta_entries, &other._meta_entries, sizeof(_meta_entries));
+        _additional_data = other._additional_data;
+        return *this;
     }
 
 } // namespace asset
