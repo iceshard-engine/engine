@@ -1,0 +1,11 @@
+{
+    "resource": {
+        "meta": {
+            "type": 0,
+            "version": 0
+        }
+    },
+    "mesh": {
+        "format": "json"
+    }
+}
