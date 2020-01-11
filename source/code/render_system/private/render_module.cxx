@@ -20,7 +20,7 @@ namespace render
                 core::allocator& alloc,
                 HMODULE handle,
                 RenderSystem* instance,
-                render::api::api_interface render_api,
+                render::api::RenderInterface render_api,
                 RenderSystemReleaseFunc* release_func) noexcept
                 : _allocator{ alloc }
                 , _handle{ handle }
@@ -46,7 +46,7 @@ namespace render
                 return _instance;
             }
 
-            auto render_api() noexcept -> render::api::api_interface* override
+            auto render_api() noexcept -> render::api::RenderInterface* override
             {
                 return &_render_api;
             }
@@ -61,7 +61,7 @@ namespace render
             RenderSystem* const _instance;
 
             //! \brief Loaded render api.
-            render::api::api_interface _render_api;
+            render::api::RenderInterface _render_api;
 
             //! \brief Engine release procedure.
             RenderSystemReleaseFunc* const _release_func;
@@ -69,9 +69,9 @@ namespace render
 
     } // namespace detail
 
-    auto load_render_system_module(core::allocator& alloc, core::StringView<> path) noexcept -> core::memory::unique_pointer<RenderSystemModule>
+    auto load_render_system_module(core::allocator& alloc, core::StringView path) noexcept -> core::memory::unique_pointer<RenderSystemModule>
     {
-        auto module_path = std::filesystem::canonical(core::string::begin(path));
+        auto module_path = std::filesystem::canonical(path);
 
         // The result object
         core::memory::unique_pointer<RenderSystemModule> result{ nullptr, { alloc } };
@@ -89,7 +89,7 @@ namespace render
                 auto create_func = reinterpret_cast<detail::RenderSystemCreateFunc*>(create_engine_addr);
                 auto release_func = reinterpret_cast<detail::RenderSystemReleaseFunc*>(release_engine_addr);
 
-                render::api::api_interface render_api{};
+                render::api::RenderInterface render_api{};
                 auto* const module_instace = create_func(alloc, render::api::version_name.hash_value, &render_api);
                 if (module_instace != nullptr)
                 {

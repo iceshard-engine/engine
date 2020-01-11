@@ -5,13 +5,12 @@
 namespace core::pod
 {
 
-
     //! \brief Contains functions used to modify Queue<T> objects.
     namespace queue
     {
 
         //! \brief Returns the number of items in the queue.
-        template <typename T>
+        template<typename T>
         auto size(const Queue<T> &q) noexcept -> uint32_t;
 
         //! \brief Returns the amount of free space in the queue/ring buffer.
@@ -40,16 +39,16 @@ namespace core::pod
         void pop_front(Queue<T> &q) noexcept;
 
         //! \brief Consumes n items from the front of the queue.
-        template <typename T>
+        template<typename T>
         void consume(Queue<T> &q, uint32_t n) noexcept;
 
         //! \brief Pushes n items to the back of the queue.
-        template <typename T>
+        template<typename T>
         void push(Queue<T> &q, const T *items, uint32_t n) noexcept;
 
         //! \brief Pushes the array at the back of the queue.
-        template <typename T, uint32_t Size>
-        void push(Queue<T> &q, const T(&arr)[Size]) noexcept;
+        template<typename T, uint32_t Size>
+        void push(Queue<T> &q, const T (&arr)[Size]) noexcept;
 
         //! \brief Returns the begin and end of the continuous chunk of elements at
         //!     the start of the queue.
@@ -60,25 +59,19 @@ namespace core::pod
         //! \remarks This chunk does not necessarily contain all the elements
         //!     in the queue (if the queue wraps around the array).
         template<typename T>
-        auto begin_front(Queue<T> &q) noexcept -> T*;
+        auto begin_front(Queue<T> &q) noexcept -> T *;
 
         template<typename T>
-        auto begin_front(const Queue<T> &q) noexcept -> const T*;
+        auto begin_front(const Queue<T> &q) noexcept -> const T *;
 
         template<typename T>
-        auto end_front(Queue<T> &q) noexcept -> T*;
+        auto end_front(Queue<T> &q) noexcept -> T *;
 
         template<typename T>
-        auto end_front(const Queue<T> &q) noexcept -> const T*;
+        auto end_front(const Queue<T> &q) noexcept -> const T *;
 
     } // namespace queue
 
-
-    // core::pod::Queue implementation
-    //////////////////////////////////////////////////////////////////////////
-
+} // namespace core::pod
 
 #include "queue.inl"
-
-
-} // namespace core::pod

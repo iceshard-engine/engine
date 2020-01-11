@@ -168,6 +168,7 @@ Settings
     // Systems projects
     //--------------------------------------------------------------------------
     #include "code/resource_system/resource_system.bff"
+    #include "code/asset_system/asset_system.bff"
     #include "code/render_system/render_system.bff"
     #include "code/input_system/input_system.bff"
 

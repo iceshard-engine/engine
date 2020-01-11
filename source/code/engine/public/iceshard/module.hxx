@@ -2,7 +2,7 @@
 #include <core/allocator.hxx>
 #include <core/pointer.hxx>
 #include <core/string_types.hxx>
-#include <resource/system.hxx>
+#include <resource/resource_system.hxx>
 
 namespace iceshard
 {
@@ -30,7 +30,7 @@ namespace iceshard
     [[nodiscard]]
     auto load_engine_module(
         core::allocator& alloc,
-        core::StringView<> path,
+        core::StringView path,
         resource::ResourceSystem& resources
     ) noexcept -> core::memory::unique_pointer<EngineModule>;
 

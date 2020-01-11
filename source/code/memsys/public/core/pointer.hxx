@@ -7,7 +7,6 @@
 namespace core::memory
 {
 
-
     namespace detail
     {
 
@@ -38,7 +37,6 @@ namespace core::memory
 
     } // namespace detail
 
-
     //! \brief An allocator aware uniue_pointer type.
     template<class T>
     using unique_pointer = std::unique_ptr<T, detail::memsys_deleter<T>>;
@@ -47,8 +45,6 @@ namespace core::memory
     template<class Result, class Type = Result, class... Args>
     auto make_unique(core::allocator& alloc, Args&&... args) noexcept -> unique_pointer<Result>;
 
+} // namespace core::memory
 
 #include "pointer.inl"
-
-
-} // namespace core::memory

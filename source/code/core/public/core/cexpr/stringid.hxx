@@ -3,19 +3,18 @@
 #include <fmt/format.h>
 
 #if ISC_DEBUG || ISC_RELEASE_DEBUG
-#define STRINGID_DEBUG 1
+#    define STRINGID_DEBUG 1
 #else
-#define STRINGID_DEBUG 0
+#    define STRINGID_DEBUG 0
 #endif
-
 
 namespace core::cexpr
 {
 
-
     //! \brief The hash type of the stringid type.
-    enum class stringid_hash_type : uint64_t { };
-
+    enum class stringid_hash_type : uint64_t
+    {
+    };
 
     //! \brief The stringid type which generally is a hash value from a string.
     struct stringid_type
@@ -29,9 +28,7 @@ namespace core::cexpr
 #endif
     };
 
-
     constexpr stringid_type stringid_invalid{ stringid_hash_type{ 0 } };
-
 
 #if STRINGID_DEBUG
 
@@ -53,7 +50,7 @@ namespace core::cexpr
     }
 
     //! \brief Creates a new constexpr stringid_type value from the given string.
-    inline constexpr auto stringid_cexpr(std::string_view cstr) noexcept -> stringid_type
+    inline constexpr auto stringid_cexpr_(std::string_view cstr) noexcept -> stringid_type
     {
         stringid_type result{ static_cast<core::cexpr::stringid_hash_type>(core::cexpr::hash_cstring(cstr.data(), cstr.length())), "" };
         return result;
@@ -61,6 +58,9 @@ namespace core::cexpr
 
     //! \brief The argument type used to pass stringid_type values.
     using stringid_argument_type = const stringid_type&;
+
+#    define stringid_cexpr(name) \
+        stringid_type { core::cexpr::stringid_cexpr_(name).hash_value, name }
 
 #else
 
@@ -76,11 +76,12 @@ namespace core::cexpr
         return stringid(cstr);
     }
 
+#    define stringid_cexpr_ stringid_cexpr
+
     //! \brief The argument type used to pass stringid_type values.
     using stringid_argument_type = stringid_type;
 
 #endif
-
 
     //! \brief Equality operator for stringid_type values.
     inline bool operator==(stringid_argument_type left, stringid_argument_type right) noexcept
@@ -94,12 +95,14 @@ namespace core::cexpr
         return !(left == right);
     }
 
-
 } // namespace core::cexpr
 
+constexpr auto operator""_sid(const char* cstr, size_t length) noexcept -> core::cexpr::stringid_type
+{
+    return core::cexpr::stringid_cexpr_({ cstr, length });
+}
 
 //////////////////////////////////////////////////////////////////////////
-
 
 namespace fmt
 {
@@ -107,13 +110,13 @@ namespace fmt
     template<>
     struct formatter<core::cexpr::stringid_type>
     {
-        template <typename ParseContext>
-        constexpr auto parse(ParseContext &ctx)
+        template<typename ParseContext>
+        constexpr auto parse(ParseContext& ctx)
         {
             return ctx.begin();
         }
 
-        template <typename FormatContext>
+        template<typename FormatContext>
         auto format(const core::cexpr::stringid_type& strid, FormatContext& ctx)
         {
             if (strid.hash_value == core::cexpr::stringid_hash_type{ 0 })

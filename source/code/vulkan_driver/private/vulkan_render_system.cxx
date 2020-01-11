@@ -20,6 +20,7 @@
 #include "vulkan_buffer.hxx"
 #include "pipeline/vulkan_descriptor_set_layout.hxx"
 #include "pipeline/vulkan_descriptor_sets.hxx"
+#include "pipeline/vulkan_vertex_descriptor.hxx"
 #include "pipeline/vulkan_pipeline_layout.hxx"
 #include "vulkan_framebuffer.hxx"
 #include "vulkan_pipeline.hxx"
@@ -55,30 +56,6 @@ namespace render
 
         namespace sample
         {
-            static const char vertShaderText[] =
-                "#version 400\n"
-                "#extension GL_ARB_separate_shader_objects : enable\n"
-                "#extension GL_ARB_shading_language_420pack : enable\n"
-                "layout (std140, binding = 0) uniform bufferVals {\n"
-                "    mat4 mvp;\n"
-                "} myBufferVals;\n"
-                "layout (location = 0) in vec4 pos;\n"
-                "layout (location = 1) in vec4 inColor;\n"
-                "layout (location = 0) out vec4 outColor;\n"
-                "void main() {\n"
-                "   outColor = inColor;\n"
-                "   gl_Position = myBufferVals.mvp * pos;\n"
-                "}\n";
-
-            static const char fragShaderText[] =
-                "#version 400\n"
-                "#extension GL_ARB_separate_shader_objects : enable\n"
-                "#extension GL_ARB_shading_language_420pack : enable\n"
-                "layout (location = 0) in vec4 color;\n"
-                "layout (location = 0) out vec4 outColor;\n"
-                "void main() {\n"
-                "   outColor = color;\n"
-                "}\n";
 
 #define XYZ1(_x_, _y_, _z_) (_x_), (_y_), (_z_), 1.f
 #define UV(_u_, _v_) (_u_), (_v_)
@@ -133,24 +110,31 @@ namespace render
                 { XYZ1(1, -1, -1), XYZ1(0.f, 1.f, 1.f) },
                 { XYZ1(-1, -1, -1), XYZ1(0.f, 1.f, 1.f) },
             };
+
+            static const glm::mat4 instances[] = {
+                glm::mat4{ 1.0f },
+                glm::translate(glm::mat4{ 1.0f }, glm::vec3{ 1.0f, 3.0f, 1.0f })
+            };
+
 #undef XYZ1
 #undef UV
 
             static auto projection = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 100.0f);
-            static auto view = glm::lookAt(glm::vec3(-5, 3, -10), // Camera is at (-5,3,-10), in World Space
-                glm::vec3(0, 0, 0),                        // and looks at the origin
-                glm::vec3(0, -1, 0)                        // Head is up (set to 0,-1,0 to look upside-down)
+            static auto cam_pos = glm::vec3(-5, 3, -10);
+            static auto view = glm::lookAt(cam_pos, // Camera is at (-5,3,-10), in World Space
+                glm::vec3(0, 0, 0),                 // and looks at the origin
+                glm::vec3(0, -1, 0)                 // Head is up (set to 0,-1,0 to look upside-down)
             );
             static auto model = glm::mat4(1.0f);
 
             // Vulkan clip space has inverted Y and half Z.
             // clang-format off
             static auto clip = glm::mat4(1.0f, 0.0f, 0.0f, 0.0f,
-                        0.0f,-1.0f, 0.0f, 0.0f,
-                        0.0f, 0.0f, 0.5f, 0.0f,
-                        0.0f, 0.0f, 0.5f, 1.0f);
+                0.0f, -1.0f, 0.0f, 0.0f,
+                0.0f, 0.0f, 0.5f, 0.0f,
+                0.0f, 0.0f, 0.5f, 1.0f);
             // clang-format on
-            static auto MVP = clip * projection * view * model;
+            static auto MVP = clip * projection * view; // * model;
 
         } // namespace sample
 
@@ -173,10 +157,10 @@ namespace render
             : render::RenderSystem{}
             , _driver_allocator{ "vulkan-driver", alloc }
             , _vulkan_allocator{ alloc }
-            , _command_buffer{ alloc }
             , _vulkan_devices{ _driver_allocator }
             , _vulkan_framebuffers{ _driver_allocator }
             , _vulkan_command_buffers{ _driver_allocator }
+            , _vulkan_vertex_descriptors{ _driver_allocator }
         {
             initialize();
         }
@@ -233,7 +217,7 @@ namespace render
             auto graphics_device = physical_device->graphics_device()->native_handle();
 
             {
-                BufferDataView data_view;
+                api::BufferDataView data_view;
 
                 _vulkan_uniform_buffer = vulkan::create_uniform_buffer(
                     _driver_allocator,
@@ -253,28 +237,19 @@ namespace render
                 IS_ASSERT(data_view.data_size >= sizeof(detail::sample::g_vb_solid_face_colors_Data), "Insufficient buffer size!");
                 memcpy(data_view.data_pointer, detail::sample::g_vb_solid_face_colors_Data, sizeof(detail::sample::g_vb_solid_face_colors_Data));
                 _vulkan_vertex_buffer->unmap_memory();
+
+                _vulkan_instance_buffer = vulkan::create_uniform_buffer(
+                    _driver_allocator,
+                    physical_device,
+                    VkDeviceSize{ sizeof(detail::sample::instances) });
+
+                _vulkan_instance_buffer->map_memory(data_view);
+                IS_ASSERT(data_view.data_size >= sizeof(detail::sample::instances), "Insufficient buffer size!");
+                memcpy(data_view.data_pointer, detail::sample::instances, sizeof(detail::sample::instances));
+                _vulkan_instance_buffer->unmap_memory();
             }
 
             core::pod::array::front(_vulkan_devices)->graphics_device()->create_command_buffers(_vulkan_command_buffers, 1);
-
-            // clang-format off
-            _shaders.emplace_back(
-                vulkan::create_shader(
-                    _driver_allocator,
-                    graphics_device ,
-                    VkShaderStageFlagBits::VK_SHADER_STAGE_VERTEX_BIT,
-                    { detail::sample::vertShaderText, sizeof(detail::sample::vertShaderText) }
-                )
-            );
-            _shaders.emplace_back(
-                vulkan::create_shader(
-                    _driver_allocator,
-                    graphics_device,
-                    VkShaderStageFlagBits::VK_SHADER_STAGE_FRAGMENT_BIT,
-                    { detail::sample::fragShaderText, sizeof(detail::sample::fragShaderText) }
-                )
-            );
-            // clang-format on
 
             {
                 VkDescriptorSetLayoutBinding layout_binding = {};
@@ -313,21 +288,8 @@ namespace render
                 _vulkan_render_pass->native_handle(),
                 *_vulkan_depth_image.get(),
                 *_vulkan_swapchain.get(),
-                core::pod::array::front(_vulkan_devices));
-
-            {
-                core::pod::Array<VkDescriptorSetLayout> layouts{ _driver_allocator };
-                core::pod::array::push_back(layouts, _vulkan_descriptor_sets_layout->native_handle());
-                _vulkan_pipeline_layout = vulkan::create_pipeline_layout(_driver_allocator, graphics_device, layouts);
-
-                core::pod::Array<vulkan::VulkanShader const*> shader_stages{ _driver_allocator };
-                std::for_each(
-                    _shaders.begin(), _shaders.end(),
-                    [&](auto const& shader_ptr) noexcept {
-                        core::pod::array::push_back(shader_stages, const_cast<vulkan::VulkanShader const*>(shader_ptr.get()));
-                    });
-                _vulkan_pipeline = vulkan::create_pipeline(_driver_allocator, graphics_device, shader_stages, _vulkan_pipeline_layout.get(), _vulkan_render_pass.get());
-            }
+                core::pod::array::front(_vulkan_devices)
+            );
 
             VkSemaphoreCreateInfo imageAcquiredSemaphoreCreateInfo;
             imageAcquiredSemaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
@@ -376,6 +338,11 @@ namespace render
 
         void shutdown() noexcept
         {
+            for (auto const& entry : _vulkan_vertex_descriptors)
+            {
+                _driver_allocator.destroy(entry.value);
+            }
+
             auto* physical_device = core::pod::array::front(_vulkan_devices);
             vkDestroySemaphore(physical_device->graphics_device()->native_handle(), _quick_semaphore, nullptr);
 
@@ -399,6 +366,7 @@ namespace render
 
             _vulkan_uniform_buffer = nullptr;
             _vulkan_vertex_buffer = nullptr;
+            _vulkan_instance_buffer = nullptr;
 
             _vulkan_depth_image = nullptr;
 
@@ -420,18 +388,131 @@ namespace render
             vkDestroyInstance(_vulkan_instance, &alloc_callbacks);
         }
 
-        auto command_buffer() noexcept -> render::CommandBufferHandle override
+        auto command_buffer() noexcept -> render::CommandBuffer override
         {
-            return CommandBufferHandle{ 0 };
+            return CommandBuffer{ 0 };
+        }
+
+        auto current_frame_buffer() noexcept -> uintptr_t
+        {
+            return reinterpret_cast<uintptr_t>(_vulkan_framebuffers[_vulkan_current_framebuffer]->native_handle());
+        }
+
+        void load_shader(asset::AssetData shader_data) noexcept override
+        {
+            resource::ResourceMeta meta{ _driver_allocator };
+            resource::deserialize_meta(shader_data.metadata, meta);
+            auto meta_view = resource::create_meta_view(meta);
+
+            int32_t target = resource::get_meta_int32(meta_view, "shader.target"_sid);
+            IS_ASSERT(target == 1, "Only explicit vulkan shaders are supported!");
+
+            int32_t stage = resource::get_meta_int32(meta_view, "shader.stage"_sid);
+            IS_ASSERT(stage == 1 || stage == 2, "Only vertex and fragment shaders are supported!");
+
+            _shaders.emplace_back(
+                vulkan::create_shader(
+                    _driver_allocator,
+                    core::pod::array::front(_vulkan_devices)->graphics_device()->native_handle(),
+                    stage == 1 ? VkShaderStageFlagBits::VK_SHADER_STAGE_VERTEX_BIT : VkShaderStageFlagBits::VK_SHADER_STAGE_FRAGMENT_BIT,
+                    shader_data.content
+                )
+            );
+        }
+
+        void add_named_descriptor_set(
+            [[maybe_unused]] core::cexpr::stringid_argument_type name,
+            [[maybe_unused]] VertexBinding const& binding,
+            [[maybe_unused]] VertexDescriptor const* descriptors,
+            [[maybe_unused]] uint32_t descriptor_count) noexcept override
+        {
+            auto hash_value = static_cast<uint64_t>(name.hash_value);
+            IS_ASSERT(core::pod::hash::has(_vulkan_vertex_descriptors, hash_value) == false, "A descriptor set with this name {} was already defined!", name);
+
+            // clang-format off
+            core::pod::hash::set(_vulkan_vertex_descriptors, hash_value, _driver_allocator.make<render::vulkan::VulkanVertexDescriptor>(
+                _driver_allocator,
+                binding,
+                descriptors,
+                descriptor_count
+                )
+            );
+            // clang-format on
+        }
+
+        auto create_pipeline(
+            core::cexpr::stringid_type const* descriptor_names,
+            uint32_t descriptor_name_count
+        ) noexcept -> api::RenderPipeline override
+        {
+            auto* physical_device = core::pod::array::front(_vulkan_devices);
+            auto graphics_device = physical_device->graphics_device()->native_handle();
+
+            {
+                core::pod::Array<VkDescriptorSetLayout> layouts{ _driver_allocator };
+                core::pod::array::push_back(layouts, _vulkan_descriptor_sets_layout->native_handle());
+                _vulkan_pipeline_layout = vulkan::create_pipeline_layout(_driver_allocator, graphics_device, layouts);
+
+                core::pod::Array<vulkan::VulkanShader const*> shader_stages{ _driver_allocator };
+                std::for_each(
+                    _shaders.begin(), _shaders.end(),
+                    [&](auto const& shader_ptr) noexcept {
+                        core::pod::array::push_back(shader_stages, const_cast<vulkan::VulkanShader const*>(shader_ptr.get()));
+                    });
+
+                uint32_t descriptor_index = 0;
+
+                core::pod::Array<vulkan::VulkanVertexDescriptor const*> vertex_descriptors{ _driver_allocator };
+                while (descriptor_index < descriptor_name_count)
+                {
+                    auto descriptor_name_hash = static_cast<uint64_t>(descriptor_names[descriptor_index].hash_value);
+
+                    auto const* descriptor = core::pod::hash::get<vulkan::VulkanVertexDescriptor*>(
+                        _vulkan_vertex_descriptors,
+                        descriptor_name_hash,
+                        nullptr);
+                    IS_ASSERT(descriptor != nullptr, "Unknown descriptor name {}!", descriptor_names[descriptor_index]);
+
+                    core::pod::array::push_back(vertex_descriptors, descriptor);
+                    descriptor_index += 1;
+                }
+
+                _vulkan_pipeline = vulkan::create_pipeline(
+                    _driver_allocator,
+                    graphics_device,
+                    shader_stages,
+                    vertex_descriptors,
+                    _vulkan_pipeline_layout.get(),
+                    _vulkan_render_pass.get());
+            }
+
+            return api::RenderPipeline{ reinterpret_cast<uintptr_t>(_vulkan_pipeline->native_handle()) };
         }
 
         void swap() noexcept override
         {
             auto* physical_device = core::pod::array::front(_vulkan_devices);
-            [[maybe_unused]] auto const& surface_capabilities = physical_device->surface_capabilities();
             auto graphics_device = physical_device->graphics_device();
             auto graphics_device_native = graphics_device->native_handle();
             auto swap_chain = _vulkan_swapchain->native_handle();
+
+            {
+
+                // Get the index of the next available swapchain image:
+                auto api_result = vkAcquireNextImageKHR(
+                    graphics_device_native,
+                    swap_chain,
+                    UINT64_MAX,
+                    _quick_semaphore,
+                    VK_NULL_HANDLE,
+                    &_vulkan_current_framebuffer);
+
+                // TODO: Deal with the VK_SUBOPTIMAL_KHR and VK_ERROR_OUT_OF_DATE_KHR
+                // return codes
+                IS_ASSERT(api_result == VK_SUCCESS, "Couldn't get next framebuffer image!");
+            }
+
+            [[maybe_unused]] auto const& surface_capabilities = physical_device->surface_capabilities();
             [[maybe_unused]] auto render_pass = _vulkan_render_pass->native_handle();
 
             auto cmd = _vulkan_command_buffers[0]->native_handle();
@@ -443,13 +524,6 @@ namespace render
             cmd_buf_info.pInheritanceInfo = NULL;
 
             auto res = vkBeginCommandBuffer(cmd, &cmd_buf_info);
-            assert(res == VK_SUCCESS);
-
-            // Get the index of the next available swapchain image:
-            uint32_t current_buffer = 0;
-            res = vkAcquireNextImageKHR(graphics_device_native, swap_chain, UINT64_MAX, _quick_semaphore, VK_NULL_HANDLE, &current_buffer);
-            // TODO: Deal with the VK_SUBOPTIMAL_KHR and VK_ERROR_OUT_OF_DATE_KHR
-            // return codes
             assert(res == VK_SUCCESS);
 
             VkClearValue clear_values[2];
@@ -464,7 +538,7 @@ namespace render
             rp_begin.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
             rp_begin.pNext = NULL;
             rp_begin.renderPass = render_pass;
-            rp_begin.framebuffer = _vulkan_framebuffers[current_buffer]->native_handle();
+            rp_begin.framebuffer = reinterpret_cast<VkFramebuffer>(current_frame_buffer());
             rp_begin.renderArea.offset.x = 0;
             rp_begin.renderArea.offset.y = 0;
             rp_begin.renderArea.extent = surface_capabilities.maxImageExtent;
@@ -474,6 +548,28 @@ namespace render
             vkCmdBeginRenderPass(cmd, &rp_begin, VK_SUBPASS_CONTENTS_INLINE);
 
             vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, _vulkan_pipeline->native_handle());
+
+            {
+                auto new_view = glm::lookAt(detail::sample::cam_pos, // Camera is at (-5,3,-10), in World Space
+                    glm::vec3(0, 0, 0),                              // and looks at the origin
+                    glm::vec3(0, -1, 0)                              // Head is up (set to 0,-1,0 to look upside-down)
+                );
+
+                static float deg = 0.0f;
+                deg += 3.0f;
+                new_view = glm::rotate(new_view, glm::radians(deg), glm::vec3{ 0.f, 1.f, 0.f });
+
+                if (deg >= 360.0f)
+                    deg = 0.0f;
+
+                auto MVP = detail::sample::clip * detail::sample::projection * new_view;
+
+                render::api::BufferDataView data_view;
+                _vulkan_uniform_buffer->map_memory(data_view);
+                IS_ASSERT(data_view.data_size >= sizeof(MVP), "Insufficient buffer size!");
+                memcpy(data_view.data_pointer, &MVP, sizeof(MVP));
+                _vulkan_uniform_buffer->unmap_memory();
+            }
 
             core::pod::Array<VkDescriptorSet> sets{ _driver_allocator };
             _vulkan_descriptor_sets->native_handles(sets);
@@ -488,9 +584,9 @@ namespace render
                 NULL);
 
             {
-                VkDeviceSize const offsets[1] = { 0 };
-                VkBuffer const buffers[1] = { _vulkan_vertex_buffer->native_handle() };
-                vkCmdBindVertexBuffers(cmd, 0, 1, buffers, offsets);
+                VkDeviceSize const offsets[2] = { 0, 0 };
+                VkBuffer const buffers[2] = { _vulkan_vertex_buffer->native_handle(), _vulkan_instance_buffer->native_handle() };
+                vkCmdBindVertexBuffers(cmd, 0, 2, buffers, offsets);
             }
 
             {
@@ -512,7 +608,7 @@ namespace render
                 vkCmdSetScissor(cmd, 0, 1, &scissor);
             }
 
-            vkCmdDraw(cmd, 12 * 3, 1, 0, 0);
+            vkCmdDraw(cmd, 12 * 3, 2, 0, 0);
             vkCmdEndRenderPass(cmd);
             res = vkEndCommandBuffer(cmd);
             assert(res == VK_SUCCESS);
@@ -556,7 +652,7 @@ namespace render
             present.pNext = NULL;
             present.swapchainCount = 1;
             present.pSwapchains = swapchains;
-            present.pImageIndices = &current_buffer;
+            present.pImageIndices = &_vulkan_current_framebuffer;
             present.pWaitSemaphores = NULL;
             present.waitSemaphoreCount = 0;
             present.pResults = NULL;
@@ -604,12 +700,15 @@ namespace render
         // The Vulkan descriptor sets
         core::memory::unique_pointer<render::vulkan::VulkanDescriptorSetLayout> _vulkan_descriptor_sets_layout{ nullptr, { core::memory::globals::null_allocator() } };
         core::memory::unique_pointer<render::vulkan::VulkanDescriptorSets> _vulkan_descriptor_sets{ nullptr, { core::memory::globals::null_allocator() } };
+        core::pod::Hash<render::vulkan::VulkanVertexDescriptor*> _vulkan_vertex_descriptors;
 
         // Databuffers
         core::memory::unique_pointer<render::vulkan::VulkanBuffer> _vulkan_uniform_buffer{ nullptr, { core::memory::globals::null_allocator() } };
         core::memory::unique_pointer<render::vulkan::VulkanBuffer> _vulkan_vertex_buffer{ nullptr, { core::memory::globals::null_allocator() } };
+        core::memory::unique_pointer<render::vulkan::VulkanBuffer> _vulkan_instance_buffer{ nullptr, { core::memory::globals::null_allocator() } };
 
         // The framebuffers
+        uint32_t _vulkan_current_framebuffer = 0;
         core::pod::Array<vulkan::VulkanFramebuffer*> _vulkan_framebuffers;
 
         // The Vulkan pipeline.
@@ -626,9 +725,6 @@ namespace render
 
         // Quick job
         VkSemaphore _quick_semaphore;
-
-    private:
-        render::RenderCommandBuffer _command_buffer;
     };
 
 } // namespace render

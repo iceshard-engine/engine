@@ -12,7 +12,7 @@
 #include <core/pod/hash.hxx>
 
 #include <resource/uri.hxx>
-#include <resource/system.hxx>
+#include <resource/resource_system.hxx>
 #include <resource/modules/dynlib_module.hxx>
 #include <resource/modules/filesystem_module.hxx>
 
@@ -24,6 +24,13 @@
 #include <input_system/message/mouse.hxx>
 
 #include <render_system/render_commands.hxx>
+#include <render_system/render_vertex_descriptor.hxx>
+#include <render_system/render_pipeline.hxx>
+
+#include <asset_system/asset_system.hxx>
+#include <asset_system/assets/asset_config.hxx>
+#include <asset_system/assets/asset_shader.hxx>
+#include <asset_system/assets/asset_mesh.hxx>
 
 #include <fmt/format.h>
 #include <application/application.hxx>
@@ -36,22 +43,53 @@
 #include <iceshard/entity/entity_command_buffer.hxx>
 #include <iceshard/component/component_system.hxx>
 
-int game_main(core::allocator& alloc, resource::ResourceSystem& resources)
+int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
 {
     using resource::URN;
     using resource::URI;
 
-    resources.mount(URI{ resource::scheme_dynlib, "bin" });
-    resources.mount(URI{ resource::scheme_directory, "../source/data" });
+    resource_system.mount(URI{ resource::scheme_file, "../source/data/config.json" });
 
-    auto* engine_module_location = resources.find(URN{ "iceshard.dll" });
+    auto* engine_module_location = resource_system.find(URN{ "iceshard.dll" });
     IS_ASSERT(engine_module_location != nullptr, "Missing engine module!");
 
-    if (auto engine_module = iceshard::load_engine_module(alloc, engine_module_location->location().path, resources))
+    if (auto engine_module = iceshard::load_engine_module(alloc, engine_module_location->location().path, resource_system))
     {
         auto* engine_instance = engine_module->engine();
-        [[maybe_unused]]
+
+        // Default file system mount points
+        resource_system.flush_messages();
+        resource_system.mount(URI{ resource::scheme_file, "mount.isr" });
+        resource_system.mount(URI{ resource::scheme_directory, "../source/data" });
+
+        // Check for an user defined mounting file
+        if (auto* mount_resource = resource_system.find(URI{ resource::scheme_file, "mount.isr" }))
+        {
+            fmt::print("Custom mount resource found: {}\n", mount_resource->location());
+        }
+
+        // Prepare the asset system
+        auto* asset_system = engine_instance->asset_system();
+        asset_system->add_resolver(asset::default_resolver_shader(alloc));
+        asset_system->update();
+        resource_system.flush_messages();
+
+        // Prepare the render system
         auto* render_system = engine_instance->render_system();
+        render_system->add_named_descriptor_set(render::descriptor_set::Color);
+        render_system->add_named_descriptor_set(render::descriptor_set::Model);
+
+        asset::AssetData shader_data;
+        if (asset_system->load(asset::AssetShader{ "materials/shaders/test-vert" }, shader_data) == asset::AssetStatus::Loaded)
+        {
+            render_system->load_shader(shader_data);
+        }
+        if (asset_system->load(asset::AssetShader{ "materials/shaders/test-frag" }, shader_data) == asset::AssetStatus::Loaded)
+        {
+            render_system->load_shader(shader_data);
+        }
+
+        render_system->create_pipeline(render::pipeline::DefaultPieline);
 
         fmt::print("IceShard engine revision: {}\n", engine_instance->revision());
 
@@ -67,6 +105,9 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resources)
                 });
 
             engine_instance->next_frame();
+
+            engine_instance->asset_system()->update();
+            resource_system.flush_messages();
         }
 
         engine_instance->world_manager()->destroy_world(core::cexpr::stringid("test-world"));

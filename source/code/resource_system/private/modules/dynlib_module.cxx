@@ -1,5 +1,6 @@
 #include <resource/resource.hxx>
 #include <resource/modules/dynlib_module.hxx>
+#include "module_messages.hxx"
 
 #include <core/allocators/proxy_allocator.hxx>
 #include <core/allocators/stack_allocator.hxx>
@@ -20,15 +21,16 @@ namespace resource
     {
         namespace array = core::pod::array;
 
-
         class DynamicLibraryResource final : public Resource
         {
         public:
-            DynamicLibraryResource(core::allocator& alloc, const URI& uri) noexcept
-                : _native_path{ alloc, core::string::begin(uri.path) }
+            DynamicLibraryResource(core::allocator& alloc, const URI& uri, core::StringView native_filename) noexcept
+                : _native_path{ alloc, uri.path }
+                , _native_filename{ alloc, native_filename }
                 , _uri{ uri.scheme, _native_path, uri.fragment }
                 , _data{ alloc }
-            { }
+            {
+            }
 
             ~DynamicLibraryResource() override = default;
 
@@ -42,12 +44,23 @@ namespace resource
             //! \brief Returns the associated resource data.
             auto data() noexcept -> core::data_view override
             {
-                return { nullptr, 0 };
+                return { };
+            }
+
+            auto metadata() noexcept -> core::data_view override
+            {
+                return { };
+            }
+
+            auto name() const noexcept -> core::StringView override
+            {
+                return _native_filename;
             }
 
         private:
             //! \brief The native filesystem path.
             core::String<> _native_path;
+            core::String<> _native_filename;
 
             //! \brief The resource identifier.
             URI _uri;
@@ -56,9 +69,7 @@ namespace resource
             core::Buffer _data;
         };
 
-
-
-        void mount_modules(core::allocator& alloc, std::filesystem::path path, core::pod::Array<Resource*>& entry_list, std::function<void(Resource*)> callback) noexcept
+        void mount_modules(core::allocator& alloc, std::filesystem::path path, core::pod::Array<Resource*>& entry_list, core::MessageBuffer& messages) noexcept
         {
             if (std::filesystem::is_directory(path) == false)
             {
@@ -88,9 +99,13 @@ namespace resource
 
                     if (found_entry == false)
                     {
-                        auto* module_entry_object = alloc.make<DynamicLibraryResource>(alloc, URI{ scheme_dynlib, fullpath.c_str() });
+                        auto* module_entry_object = alloc.make<DynamicLibraryResource>(
+                            alloc,
+                            URI{ scheme_dynlib, fullpath },
+                            filename.c_str());
                         array::push_back(entry_list, static_cast<Resource*>(module_entry_object));
-                        callback(module_entry_object);
+
+                        core::message::push(messages, resource::message::ModuleResourceMounted{ module_entry_object });
                     }
                 }
             }
@@ -132,17 +147,16 @@ namespace resource
         core::pod::array::clear(_resources);
     }
 
-
-    auto DynLibSystem::find([[maybe_unused]] const URI& uri) noexcept -> Resource*
+    auto DynLibSystem::find(URI const&) noexcept -> Resource*
     {
         return nullptr;
     }
 
-    auto DynLibSystem::mount([[maybe_unused]] const URI& uri, [[maybe_unused]] std::function<void(Resource*)> callback) noexcept -> uint32_t
+    auto DynLibSystem::mount(URI const& uri, core::MessageBuffer& messages) noexcept -> uint32_t
     {
         IS_ASSERT(uri.scheme == resource::scheme_dynlib, "Invalid URI scheme used mounting in the dynlib system.");
 
-        core::StackString<64> config_directory{ core::string::begin(uri.path) };
+        core::StackString<64> config_directory{ core::string::data(uri.path) };
         config_directory += "/";
         config_directory += to_string(core::build::platform::current_platform.architecture);
         config_directory += "-";
@@ -151,11 +165,11 @@ namespace resource
         // Mount DLL's in the application dir.
         if (initial_mount_finished == false)
         {
-            detail::mount_modules(_allocator, _app_dir / std::filesystem::path{ ".." }, _resources, callback);
+            detail::mount_modules(_allocator, _app_dir / std::filesystem::path{ ".." }, _resources, messages);
             initial_mount_finished = true;
         }
 
-        detail::mount_modules(_allocator, std::filesystem::path{ _working_dir } / core::string::begin(config_directory), _resources, callback);
+        detail::mount_modules(_allocator, std::filesystem::path{ _working_dir } / core::string::begin(config_directory), _resources, messages);
         return 0;
     }
 

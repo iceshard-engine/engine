@@ -28,7 +28,7 @@ namespace core
         auto operator=(const Buffer& other) noexcept -> Buffer&;
 
         //! \brief Returns a view into this data buffer.
-        operator data_view() noexcept { return { _data, _size }; }
+        operator data_view() const noexcept { return { _data, _size }; }
 
 
         //! \brief The associated allocator.
@@ -62,10 +62,14 @@ namespace core
         auto data(const Buffer& b) noexcept -> void*;
 
         //! \brief Appends data to the buffer
-        void append(Buffer& b, const void* data, uint32_t size) noexcept;
+        auto append(Buffer& b, const void* data, uint32_t size) noexcept -> void*;
 
         //! \brief Appends data to the buffer
-        void append(Buffer& b, data_view data) noexcept;
+        auto append(Buffer& b, data_view data) noexcept -> void*;
+
+        auto append_aligned(Buffer& b, const void* data, uint32_t size, uint32_t align) noexcept -> void*;
+
+        auto append_aligned(Buffer& b, data_view_aligned data) noexcept -> void*;
 
         //! \brief Changes the size of the buffer
         //! \remarks Does not reallocate memory unless necessary.

@@ -59,69 +59,58 @@ namespace core::pod
 
         //! \brief Changes the size of the array.
         //! \remarks Does not reallocate memory unless necessary.
-        template <typename T>
-        void resize(Array<T> &a, uint32_t new_size) noexcept;
+        template<typename T>
+        void resize(Array<T>& a, uint32_t new_size) noexcept;
 
         //! \brief Removes all items in the array.
         //! \remarks Does not free memory.
-        template <typename T>
-        void clear(Array<T> &a) noexcept;
+        template<typename T>
+        void clear(Array<T>& a) noexcept;
 
         //! \brief Reallocates the array to the specified capacity.
         template<typename T>
-        void set_capacity(Array<T> &a, uint32_t new_capacity) noexcept;
+        void set_capacity(Array<T>& a, uint32_t new_capacity) noexcept;
 
         //! \brief Ensures the array has at least the specified capacity.
-        template <typename T>
-        void reserve(Array<T> &a, uint32_t new_capacity) noexcept;
+        template<typename T>
+        void reserve(Array<T>& a, uint32_t new_capacity) noexcept;
 
         //! \brief Grows the array using a geometric progression formula.
         //!
         //! \details The amortized cost of push_back() is O(1). If a min_capacity is specified, the array will
         //!     grow to at least that capacity.
         template<typename T>
-        void grow(Array<T> &a, uint32_t min_capacity = 0) noexcept;
+        void grow(Array<T>& a, uint32_t min_capacity = 0) noexcept;
 
         //! \brief Trims the array so that its capacity matches its size.
-        template <typename T>
-        void trim(Array<T> &a) noexcept;
+        template<typename T>
+        void trim(Array<T>& a) noexcept;
 
         //! \brief Pushes the item to the end of the array.
         template<typename T>
-        void push_back(Array<T> &a, const T &item) noexcept;
+        void push_back(Array<T>& a, const T& item) noexcept;
 
         //! \brief Pops the last item from the array. The array cannot be empty.
         template<typename T>
-        void pop_back(Array<T> &a) noexcept;
+        void pop_back(Array<T>& a) noexcept;
 
     } // namespace array
 
-
-    // core::pod::Array miscelaneous functions
-    //////////////////////////////////////////////////////////////////////////
-
+    template<typename T>
+    auto begin(Array<T>& a) noexcept -> T*;
 
     template<typename T>
-    auto begin(Array<T> &a) noexcept -> T*;
+    auto begin(const Array<T>& a) noexcept -> const T*;
 
     template<typename T>
-    auto begin(const Array<T> &a) noexcept -> const T*;
+    auto end(Array<T>& a) noexcept -> T*;
 
     template<typename T>
-    auto end(Array<T> &a) noexcept -> T*;
-
-    template<typename T>
-    auto end(const Array<T> &a) noexcept -> const T*;
+    auto end(const Array<T>& a) noexcept -> const T*;
 
     template<typename T>
     void swap(Array<T>& lhs, Array<T>& rhs) noexcept;
 
-
-    // core::pod::Array implementation
-    //////////////////////////////////////////////////////////////////////////
-
+} // namespace core::pod
 
 #include "array.inl"
-
-
-} // namespace pod

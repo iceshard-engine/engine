@@ -1,185 +1,110 @@
-
-//! \brief Creates a new StackString object with the given value.
-template<typename CharType>
-core::StringView<CharType>::StringView(const CharType* cstring) noexcept
-    : _size{ static_cast<uint32_t>(strlen(cstring)) }
-    , _data{ cstring }
-{
-}
-//! \brief Creates a new StackString object with the given value.
-template<typename CharType>
-core::StringView<CharType>::StringView(const CharType* cstring, uint32_t size) noexcept
-    : _size{ size }
-    , _data{ cstring }
-{
-}
-
-//! \brief Creates a new StackString object with the given value.
-template <typename CharType>
-core::StringView<CharType>::StringView(std::string_view str_view) noexcept
-    : _size{ static_cast<uint32_t>(str_view.size()) }
-    , _data{ str_view.data() }
-{ }
-
-//! \brief Creates a new StringView from a String.
-template <typename CharType>
-core::StringView<CharType>::StringView(const core::String<CharType>& other) noexcept
-    : _size{ other._size }
-    , _data{ other._data }
-{ }
-
-//! \brief Creates a new StringView from a StackString.
-template <typename CharType>
-template<uint32_t Capacity>
-core::StringView<CharType>::StringView(const core::StackString<Capacity, CharType>& other) noexcept
-    : _size{ other._size }
-    , _data{ other._data }
-{ }
-
-
-
-//! \brief Replaces the string value with the new one.
-template <typename CharType>
-auto core::StringView<CharType>::operator=(const CharType* other) noexcept -> StringView&
-{
-    _size = strlen(other);
-    _data = other;
-    return *this;
-}
-
-//! \brief Replaces the string value with the new one.
-template <typename CharType>
-auto core::StringView<CharType>::operator=(std::string_view other) noexcept -> StringView&
-{
-    _size = other.size();
-    _data = other.data();
-    return *this;
-}
-
-//! \brief Replaces the string value with the new one.
-template <typename CharType>
-template<uint32_t Capacity>
-auto core::StringView<CharType>::operator=(const StackString<Capacity, CharType>& other) noexcept -> StringView&
-{
-    _size = other._size;
-    _data = other._data;
-    return *this;
-}
-
-//! \brief Replaces the string value with the new one.
-//! \details If the input String is larger, it will only copy the maximum
-//!     amount of characters the rest will be discarded.
-template <typename CharType>
-auto core::StringView<CharType>::operator=(const String<CharType>& other) noexcept -> StringView&
-{
-    _size = other._size;
-    _data = other._data;
-    return *this;
-}
-
-//! \brief Returns the character at the given position.
-template <typename CharType>
-auto core::StringView<CharType>::operator[](uint32_t i) const noexcept -> const CharType&
-{
-    return _data[i];
-}
-
-
+#include "string_view.hxx"
 
 //! \brief Size of the string.
-template <typename CharType>
-inline auto core::string::size(const core::StringView<CharType>& str) noexcept -> uint32_t
+inline auto core::string::size(core::StringView str) noexcept -> uint32_t
 {
-    return str._size;
+    return static_cast<uint32_t>(str.size());
 }
 
 //! \brief Length of the string.
-template <typename CharType>
-auto core::string::length(const core::StringView<CharType>& str) noexcept -> uint32_t
+inline auto core::string::length(core::StringView str) noexcept -> uint32_t
 {
-    return str._size - 1;
+    return static_cast<uint32_t>(str.length());
+}
+
+inline auto core::string::data(core::StringView str) noexcept -> core::StringView::value_type const*
+{
+    return str.data();
 }
 
 //! \brief The current string capacity.
-template<typename CharType>
-auto core::string::capacity(const core::StringView<CharType>& str) noexcept -> uint32_t
+inline auto core::string::capacity(core::StringView str) noexcept -> uint32_t
 {
     return core::string::size(str);
 }
 
 //! \brief Checks if the given string is empty.
-template <typename CharType>
-bool core::string::empty(const core::StringView<CharType>& str) noexcept
+inline bool core::string::empty(core::StringView str) noexcept
 {
-    return str._size == 0 || *str._data == '\0';
+    return str.empty();
 }
 
 //! \copydoc core::string::begin(const String<CharType>&)
-template <typename CharType>
-auto core::string::begin(const core::StringView<CharType>& str) noexcept -> const CharType*
+inline auto core::string::begin(core::StringView str) noexcept -> core::StringView::const_iterator
 {
-    return str._data;
+    return str.cbegin();
 }
 
 //! \copydoc core::string::end(const String<CharType>&)
-template <typename CharType>
-auto core::string::end(const core::StringView<CharType>& str) noexcept -> const CharType*
+inline auto core::string::end(core::StringView str) noexcept -> core::StringView::const_iterator
 {
-    return str._data + str._size;
+    return str.cend();
+}
+
+//! \copydoc core::string::begin(const String<CharType>&)
+inline auto core::string::rbegin(core::StringView str) noexcept -> core::StringView::const_reverse_iterator
+{
+    return str.crbegin();
+}
+
+//! \copydoc core::string::end(const String<CharType>&)
+inline auto core::string::rend(core::StringView str) noexcept -> core::StringView::const_reverse_iterator
+{
+    return str.crend();
 }
 
 //! \copydoc core::string::front(String<CharType>&)
-template <typename CharType>
-auto core::string::front(const core::StringView<CharType>& str) noexcept -> const CharType&
+inline auto core::string::front(core::StringView str) noexcept -> core::StringView::value_type
 {
-    return str._data[0];
+    return str.front();
 }
 
 //! \copydoc core::string::back(String<CharType>&)
-template <typename CharType>
-auto core::string::back(const core::StringView<CharType>& str) noexcept -> const CharType&
+inline auto core::string::back(core::StringView str) noexcept -> core::StringView::value_type
 {
-    return str._data[str._size - 1];
+    return str.back();
 }
 
 //! \brief Clears the string view object.
-template <typename CharType>
-void core::string::clear(core::StringView<CharType>& str) noexcept
+inline void core::string::clear(core::StringView& str) noexcept
 {
-    str._size = 0;
-    str._data = nullptr;
+    str = core::StringView{};
 }
 
+inline auto core::string::substr(StringView str, uint32_t pos, uint32_t len) noexcept -> core::StringView
+{
+    return str.substr(pos, len == core::string::npos ? std::string_view::npos : len);
+}
 
 //////////////////////////////////////////////////////////////////////////
 
-
-template <typename CharType>
-bool core::string::equals(const core::StringView<CharType>& left, const core::StringView<CharType>& right) noexcept
+inline auto core::string::find_first_of(StringView str, char character_value) noexcept -> uint32_t
 {
-    return equals(left, right._data);
+    auto const result = str.find_first_of(character_value);
+    return result == std::string::npos ? core::string::npos : static_cast<uint32_t>(result);
 }
 
-template <typename CharType>
-bool core::string::equals(const core::StringView<CharType>& left, const core::String<CharType>& right) noexcept
+inline auto core::string::find_first_of(StringView str, StringView character_values) noexcept -> uint32_t
 {
-    return equals(left, right._data);
+    auto const result = str.find_first_of(character_values);
+    return result == std::string::npos ? core::string::npos : static_cast<uint32_t>(result);
 }
 
-template <uint32_t Capacity, typename CharType>
-bool core::string::equals(const core::StringView<CharType>& left, const core::StackString<Capacity, CharType>& right) noexcept
+inline auto core::string::find_last_of(StringView str, char character_value) noexcept -> uint32_t
 {
-    return equals(left, right._data);
+    auto const result = str.find_last_of(character_value);
+    return result == std::string::npos ? core::string::npos : static_cast<uint32_t>(result);
 }
 
-template <typename CharType>
-bool core::string::equals(const core::StringView<CharType>& left, const std::string_view right) noexcept
+inline auto core::string::find_last_of(StringView str, StringView character_values) noexcept -> uint32_t
 {
-    return equals(left, right.data());
+    auto const result = str.find_last_of(character_values);
+    return result == std::string::npos ? core::string::npos : static_cast<uint32_t>(result);
 }
 
-template <typename CharType>
-bool core::string::equals(const core::StringView<CharType>& left, const CharType* right) noexcept
+//////////////////////////////////////////////////////////////////////////
+
+inline bool core::string::equals(core::StringView left, core::StringView right) noexcept
 {
-    return strcmp(left._data, right) == 0;
+    return left == right;
 }

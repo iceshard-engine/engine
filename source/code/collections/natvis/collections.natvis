@@ -3,6 +3,7 @@
 
   <!-- Native Visualization for the core::pod::Array type -->
   <Type Name="core::pod::Array&lt;*&gt;">
+    <DisplayString Condition="_size == 0">Array {{ empty }}</DisplayString>
     <DisplayString>Array {{ size={ _size }, capacity={ _capacity } }}</DisplayString>
     <Expand>
       <Item Name="[size]">_size</Item>

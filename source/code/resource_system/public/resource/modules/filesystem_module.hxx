@@ -10,21 +10,21 @@
 namespace resource
 {
 
-
     //! \brief A resource system build upon a native file system.
     class FileSystem : public ResourceModule
     {
     public:
-        FileSystem(core::allocator& alloc, core::StringView<> basedir) noexcept;
+        FileSystem(core::allocator& alloc, core::StringView basedir) noexcept;
         ~FileSystem() noexcept;
 
         //! \brief Searches for the default resource with the given name.
         auto find(URI const& uri) noexcept -> Resource* override;
 
-        auto open(URI const& uri, std::function<void(Resource*)> callback) noexcept -> OutputResource* override;
+        //! \brief Opens a file for writing and pushes filesystem messages.
+        auto open(URI const& uri, core::MessageBuffer& messages) noexcept -> OutputResource* override;
 
         //! \brief Mounts all resources found under the given URI.
-        auto mount(URI const& uri, std::function<void(Resource*)> callback) noexcept -> uint32_t override;
+        auto mount(URI const& uri, core::MessageBuffer& messages) noexcept -> uint32_t override;
 
     private:
         const core::String<> _basedir;
@@ -36,5 +36,4 @@ namespace resource
         core::pod::Array<Resource*> _resources;
     };
 
-
-} // namespace filesystem
+} // namespace resource

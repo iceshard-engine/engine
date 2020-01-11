@@ -21,6 +21,8 @@
         + ' /I"$WorkspaceCodeDir$/collections/public"'
         + ' /I"$WorkspaceCodeDir$/messages/public"'
         + ' /I"$WorkspaceCodeDir$/render_system/public"'
+        + ' /I"$WorkspaceCodeDir$/resource_system/public"'
+        + ' /I"$WorkspaceCodeDir$/asset_system/public"'
 
 
     // Library
@@ -88,6 +90,8 @@
                 'messages-$Platform$-$Config$'
                 'collections-$Platform$-$Config$'
                 'render_system-$Platform$-$Config$'
+                'resource_system-$Platform$-$Config$'
+                'asset_system-$Platform$-$Config$'
             }
 
             .LinkerOptions + ' /DLL'

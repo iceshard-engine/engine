@@ -47,15 +47,14 @@ namespace resource
 
 #endif
 
-
     //! \brief Uniform Resource Name.
     struct URN
     {
         //! \brief Creates a new resource name from the given string value.
-        URN(core::StringView<> name) noexcept;
+        constexpr URN(core::StringView name) noexcept;
 
         //! \brief Creates a new resource name from the given stringid value.
-        URN(core::cexpr::stringid_argument_type name) noexcept;
+        constexpr URN(core::cexpr::stringid_argument_type name) noexcept;
 
         //! \brief The resource name.
         core::cexpr::stringid_type name{ core::cexpr::stringid_invalid };
@@ -63,18 +62,17 @@ namespace resource
 
     static_assert(std::is_trivially_copyable_v<URN>, "The 'URN' type requires to be trivially copyable!");
 
-
     //! \brief Uniform Resource Identifier.
     struct URI
     {
         //! \brief Creates a new URI for the given scheme and path.
-        URI(core::cexpr::stringid_argument_type scheme, core::StringView<> path) noexcept;
+        URI(core::cexpr::stringid_argument_type scheme, core::StringView path) noexcept;
 
         //! \brief Creates a new URI for the given scheme, path and fragment.
-        URI(core::cexpr::stringid_argument_type scheme, core::StringView<> path, core::cexpr::stringid_argument_type fragment) noexcept;
+        URI(core::cexpr::stringid_argument_type scheme, core::StringView path, core::cexpr::stringid_argument_type fragment) noexcept;
 
         //! \brief Creates a new URI for the given scheme, path and fragment.
-        URI(core::cexpr::stringid_argument_type scheme, core::StringView<> path, URN name) noexcept;
+        URI(core::cexpr::stringid_argument_type scheme, core::StringView path, URN name) noexcept;
 
         //! \brief The resource scheme.
         core::cexpr::stringid_type scheme{ resource::scheme_invalid };
@@ -83,21 +81,27 @@ namespace resource
         core::cexpr::stringid_type fragment;
 
         //! \brief The resource location.
-        core::StringView<> path;
+        core::StringView path;
     };
 
     static_assert(std::is_trivially_copyable_v<URI>, "The 'URI' type requires to be trivially copyable!");
 
-
     //! \brief Returns the URN from the given URI.
     auto get_name(const URI& uri) noexcept -> URN;
 
-
 } // namespace resource
 
+constexpr resource::URN::URN(core::StringView name) noexcept
+    : name{ core::cexpr::stringid_cexpr_(name) }
+{
+}
+
+constexpr resource::URN::URN(core::cexpr::stringid_argument_type name) noexcept
+    : name{ name }
+{
+}
 
 //////////////////////////////////////////////////////////////////////////
-
 
 namespace fmt
 {
@@ -105,13 +109,13 @@ namespace fmt
     template<>
     struct formatter<resource::URN>
     {
-        template <typename ParseContext>
-        constexpr auto parse(ParseContext &ctx)
+        template<typename ParseContext>
+        constexpr auto parse(ParseContext& ctx)
         {
             return ctx.begin();
         }
 
-        template <typename FormatContext>
+        template<typename FormatContext>
         auto format(const resource::URN& urn, FormatContext& ctx)
         {
             if (urn.name == core::cexpr::stringid_invalid)
@@ -129,17 +133,16 @@ namespace fmt
         }
     };
 
-
     template<>
     struct formatter<resource::URI>
     {
-        template <typename ParseContext>
-        constexpr auto parse(ParseContext &ctx)
+        template<typename ParseContext>
+        constexpr auto parse(ParseContext& ctx)
         {
             return ctx.begin();
         }
 
-        template <typename FormatContext>
+        template<typename FormatContext>
         auto format(const resource::URI& uri, FormatContext& ctx)
         {
             if (uri.scheme == core::cexpr::stringid_invalid)
@@ -151,16 +154,10 @@ namespace fmt
                 auto format_string = std::string_view{ uri.fragment == core::cexpr::stringid_invalid ? "{0}:{2}" : "{0}:{2}#{1}" };
 #if STRINGID_DEBUG == 1
                 auto format_args = fmt::make_format_args(
-                    uri.scheme.hash_origin
-                    , uri.fragment.hash_origin
-                    , uri.path
-                );
+                    uri.scheme.hash_origin, uri.fragment.hash_origin, uri.path);
 #else
                 auto format_args = fmt::make_format_args(
-                    uri.scheme
-                    , uri.fragment
-                    , uri.path
-                );
+                    uri.scheme, uri.fragment, uri.path);
 #endif
                 return fmt::vformat_to(ctx.begin(), format_string, format_args);
             }

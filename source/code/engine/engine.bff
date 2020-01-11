@@ -51,6 +51,7 @@
                 + ' /I"$WorkspaceCodeDir$/messages/public"'
                 + ' /I"$WorkspaceCodeDir$/collections/public"'
                 + ' /I"$WorkspaceCodeDir$/resource_system/public"'
+                + ' /I"$WorkspaceCodeDir$/asset_system/public"'
                 + ' /I"$WorkspaceCodeDir$/input_system/public"'
                 + ' /I"$WorkspaceCodeDir$/render_system/public"'
 

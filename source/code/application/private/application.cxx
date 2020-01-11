@@ -7,7 +7,7 @@
 #include <core/string.hxx>
 #include <core/string_view.hxx>
 
-#include <resource/system.hxx>
+#include <resource/resource_system.hxx>
 #include <resource/modules/dynlib_module.hxx>
 #include <resource/modules/filesystem_module.hxx>
 
@@ -21,7 +21,6 @@ int main(int, char**)
     {
         core::memory::globals::init();
     }
-
 
     // The main allocator object
     auto& main_allocator = core::memory::globals::default_allocator();
@@ -59,23 +58,11 @@ int main(int, char**)
 
         // Initial mount points
         {
-            using resource::URN;
             using resource::URI;
+            using resource::URN;
 
             // Dynamic Library Resources
             resource_system.mount(URI{ resource::scheme_dynlib, "bin" });
-
-            // Default file system mount points
-            resource_system.mount(URI{ resource::scheme_file, "mount.isr" });
-            resource_system.mount(URI{ resource::scheme_directory, "data" });
-
-            // Check for an user defined mounting file
-            if (auto* mount_resource = resource_system.find(URI{ resource::scheme_file, "mount.isr" }))
-            {
-                fmt::print("Custom mount resource found: {}\n", mount_resource->location());
-
-                // #todo Read the mount file and mount the directories there.
-            }
         }
 
         // The game entry point
@@ -84,7 +71,6 @@ int main(int, char**)
             result = game_main(game_allocator, resource_system);
         }
     }
-
 
     if constexpr (core::build::is_release == false)
     {

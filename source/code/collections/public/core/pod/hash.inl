@@ -1,44 +1,30 @@
 
-// core::pod::Hash members
-//////////////////////////////////////////////////////////////////////////
-
-
-template <typename T>
-Hash<T>::Hash(core::allocator &alloc) noexcept
+template<typename T>
+core::pod::Hash<T>::Hash(core::allocator &alloc) noexcept
     : _hash{ alloc }
     , _data{ alloc }
-{}
-
+{
+}
 
 // core::pod::Hash miscelanous functions
 //////////////////////////////////////////////////////////////////////////
 
-
 template<typename T>
-auto begin(const Hash<T> &h) noexcept -> const typename Hash<T>::Entry*
+auto core::pod::hash::begin(const Hash<T> &h) noexcept -> const typename Hash<T>::Entry *
 {
     return array::begin(h._data);
 }
 
 template<typename T>
-auto end(const Hash<T> &h) noexcept -> const typename Hash<T>::Entry*
+auto core::pod::hash::end(const Hash<T> &h) noexcept -> const typename Hash<T>::Entry *
 {
     return array::end(h._data);
 }
 
-template<typename T>
-void swap(Hash<T>& lhs, Hash<T>& rhs) noexcept
-{
-    std::swap(lhs._data, rhs._data);
-    std::swap(lhs._hash, rhs._hash);
-}
-
-
 // core::pod::Hash internal functions
 //////////////////////////////////////////////////////////////////////////
 
-
-namespace hash_internal
+namespace core::pod::hash_internal
 {
 
     static constexpr uint32_t END_OF_LIST = 0xffffffffu;
@@ -243,28 +229,23 @@ namespace hash_internal
         rehash(h, new_size);
     }
 
-} // namespace hash_internal
-
-
-// core::pod::hash free functions
-//////////////////////////////////////////////////////////////////////////
-
+} // namespace core::pod::hash_internal
 
 template<typename T>
-bool hash::has(const Hash<T> &h, uint64_t key) noexcept
+bool core::pod::hash::has(const Hash<T> &h, uint64_t key) noexcept
 {
     return hash_internal::find_or_fail(h, key) != hash_internal::END_OF_LIST;
 }
 
 template<typename T>
-auto hash::get(const Hash<T> &h, uint64_t key, const T &deffault) noexcept -> const T&
+auto core::pod::hash::get(const Hash<T> &h, uint64_t key, const T &deffault) noexcept -> const T &
 {
     const uint32_t i = hash_internal::find_or_fail(h, key);
     return i == hash_internal::END_OF_LIST ? deffault : h._data[i].value;
 }
 
 template<typename T>
-void hash::set(Hash<T> &h, uint64_t key, const T &value) noexcept
+void core::pod::hash::set(Hash<T> &h, uint64_t key, const T &value) noexcept
 {
     if (array::size(h._hash) == 0)
     {
@@ -280,53 +261,37 @@ void hash::set(Hash<T> &h, uint64_t key, const T &value) noexcept
 }
 
 template<typename T>
-void hash::remove(Hash<T> &h, uint64_t key) noexcept
+void core::pod::hash::remove(Hash<T> &h, uint64_t key) noexcept
 {
     hash_internal::find_and_erase(h, key);
 }
 
 template<typename T>
-void hash::reserve(Hash<T> &h, uint32_t size) noexcept
+void core::pod::hash::reserve(Hash<T> &h, uint32_t size) noexcept
 {
     hash_internal::rehash(h, size);
 }
 
 template<typename T>
-void hash::clear(Hash<T> &h) noexcept
+void core::pod::hash::clear(Hash<T> &h) noexcept
 {
     array::clear(h._data);
     array::clear(h._hash);
 }
 
 template<typename T>
-auto hash::begin(const Hash<T> &h) noexcept -> const typename Hash<T>::Entry*
-{
-    return array::begin(h._data);
-}
-
-template<typename T>
-auto hash::end(const Hash<T> &h) noexcept -> const typename Hash<T>::Entry*
-{
-    return array::end(h._data);
-}
-
-
-// core::pod::multi_hash free functions
-//////////////////////////////////////////////////////////////////////////
-
-
-template<typename T>
-auto multi_hash::find_first(const Hash<T> &h, uint64_t key) noexcept -> const typename Hash<T>::Entry*
+auto core::pod::multi_hash::find_first(const Hash<T> &h, uint64_t key) noexcept -> const typename Hash<T>::Entry *
 {
     const uint32_t i = hash_internal::find_or_fail(h, key);
     return i == hash_internal::END_OF_LIST ? 0 : &h._data[i];
 }
 
 template<typename T>
-auto multi_hash::find_next(const Hash<T> &h, const typename Hash<T>::Entry *e) noexcept -> const typename Hash<T>::Entry*
+auto core::pod::multi_hash::find_next(const Hash<T> &h, const typename Hash<T>::Entry *e) noexcept -> const typename Hash<T>::Entry *
 {
     uint32_t i = e->next;
-    while (i != hash_internal::END_OF_LIST) {
+    while (i != hash_internal::END_OF_LIST)
+    {
         if (h._data[i].key == e->key)
             return &h._data[i];
         i = h._data[i].next;
@@ -335,11 +300,12 @@ auto multi_hash::find_next(const Hash<T> &h, const typename Hash<T>::Entry *e) n
 }
 
 template<typename T>
-auto multi_hash::count(const Hash<T> &h, uint64_t key) noexcept -> uint32_t
+auto core::pod::multi_hash::count(const Hash<T> &h, uint64_t key) noexcept -> uint32_t
 {
     uint32_t i = 0;
     const typename Hash<T>::Entry *e = find_first(h, key);
-    while (e) {
+    while (e)
+    {
         ++i;
         e = find_next(h, e);
     }
@@ -347,17 +313,18 @@ auto multi_hash::count(const Hash<T> &h, uint64_t key) noexcept -> uint32_t
 }
 
 template<typename T>
-void multi_hash::get(const Hash<T> &h, uint64_t key, Array<T> &items) noexcept
+void core::pod::multi_hash::get(const Hash<T> &h, uint64_t key, Array<T> &items) noexcept
 {
     const typename Hash<T>::Entry *e = find_first(h, key);
-    while (e) {
+    while (e)
+    {
         array::push_back(items, e->value);
         e = find_next(h, e);
     }
 }
 
 template<typename T>
-void multi_hash::insert(Hash<T> &h, uint64_t key, const T &value) noexcept
+void core::pod::multi_hash::insert(Hash<T> &h, uint64_t key, const T &value) noexcept
 {
     if (array::size(h._hash) == 0)
     {
@@ -373,7 +340,7 @@ void multi_hash::insert(Hash<T> &h, uint64_t key, const T &value) noexcept
 }
 
 template<typename T>
-void multi_hash::remove(Hash<T> &h, const typename Hash<T>::Entry *e) noexcept
+void core::pod::multi_hash::remove(Hash<T> &h, const typename Hash<T>::Entry *e) noexcept
 {
     const hash_internal::FindResult fr = hash_internal::find(h, e);
     if (fr.data_i != hash_internal::END_OF_LIST)
@@ -383,7 +350,7 @@ void multi_hash::remove(Hash<T> &h, const typename Hash<T>::Entry *e) noexcept
 }
 
 template<typename T>
-void multi_hash::remove_all(Hash<T> &h, uint64_t key) noexcept
+void core::pod::multi_hash::remove_all(Hash<T> &h, uint64_t key) noexcept
 {
     while (hash::has(h, key))
     {

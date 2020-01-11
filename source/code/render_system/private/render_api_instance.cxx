@@ -9,8 +9,13 @@ namespace render::api::v1
         std::abort();
     }
 
-    static api_interface render_api_instance_uninitialized{ &api_v1_not_initialized };
+    void assert_render_api() noexcept
+    {
+        render::api::v1::render_api_instance->check_func();
+    }
 
-    api_interface* render_api_instance{ &render_api_instance_uninitialized };
+    static RenderInterface render_api_instance_uninitialized{ &api_v1_not_initialized };
+
+    RenderInterface* render_api_instance{ &render_api_instance_uninitialized };
 
 } // namespace api::v1

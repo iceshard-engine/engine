@@ -16,6 +16,8 @@
         + ' /I"$WorkspaceCodeDir$/memsys/public"'
         + ' /I"$WorkspaceCodeDir$/collections/public"'
         + ' /I"$WorkspaceCodeDir$/messages/public"'
+        + ' /I"$WorkspaceCodeDir$/resource_system/public"'
+        + ' /I"$WorkspaceCodeDir$/asset_system/public"'
 
 
     // Library

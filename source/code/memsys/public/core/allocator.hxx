@@ -10,6 +10,8 @@
 #include <cinttypes>
 #include <utility>
 
+#include <memory_resource>
+
 namespace core
 {
 
@@ -19,7 +21,7 @@ namespace core
     //! \details Regardless of which allocator is used, prefer to allocate memory in larger chunks
     //!     instead of in many small allocations. This helps with data locality, fragmentation,
     //!     memory usage tracking, etc.
-    class MEMSYS_API allocator
+    class MEMSYS_API allocator : public std::pmr::memory_resource
     {
     public:
         //! \brief Special constant value.
@@ -62,6 +64,23 @@ namespace core
         //! \brief Allocators cannot be copied.
         auto operator=(const allocator& other) noexcept -> allocator& = delete;
 
+        // std.prm implementation
+    private:
+        virtual void* do_allocate(size_t _Bytes, size_t _Align) final
+        {
+            return allocate(static_cast<uint32_t>(_Bytes), static_cast<uint32_t>(_Align));
+        }
+
+        virtual void do_deallocate(void* _Ptr, [[maybe_unused]] size_t _Bytes, [[maybe_unused]] size_t _Align) final
+        {
+            return deallocate(_Ptr);
+        }
+
+        virtual bool do_is_equal(const memory_resource& _That) const noexcept
+        {
+            return &_That == this;
+        }
+
     public:
         //! \brief Allocates and constructs the given object using the provided arguments.
         template<class T, class... Args>
@@ -76,7 +95,6 @@ namespace core
         template<class T>
         void destroy(void* ptr) noexcept;
     };
-
 
 //! \brief Creates a new object of type T using the allocator `a` to allocate the memory.
 #   define MAKE_NEW(a, T, ...)        (new ((a).allocate(sizeof(T), alignof(T))) T(__VA_ARGS__))
