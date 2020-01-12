@@ -65,7 +65,6 @@ namespace render
     namespace descriptor_set
     {
 
-        // clang-format off
         static constexpr auto Color = VertexDescriptorSet<2>{
             .name = core::cexpr::stringid_cexpr("Color"),
             .binding = VertexBinding{
@@ -101,7 +100,6 @@ namespace render
                 },
             }
         };
-        // clang-format on
 
     } // namespace descriptor_set
 

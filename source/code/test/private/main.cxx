@@ -43,6 +43,9 @@
 #include <iceshard/entity/entity_command_buffer.hxx>
 #include <iceshard/component/component_system.hxx>
 
+#include <glm/glm.hpp>
+#include <glm/gtx/transform.hpp>
+
 int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
 {
     using resource::URN;
@@ -70,26 +73,101 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
 
         // Prepare the asset system
         auto* asset_system = engine_instance->asset_system();
+        asset_system->add_resolver(asset::default_resolver_mesh(alloc));
         asset_system->add_resolver(asset::default_resolver_shader(alloc));
+        asset_system->add_loader(asset::AssetType::Mesh, asset::default_loader_mesh(alloc));
+        asset_system->add_loader(asset::AssetType::Shader, asset::default_loader_shader(alloc));
         asset_system->update();
         resource_system.flush_messages();
 
         // Prepare the render system
         auto* render_system = engine_instance->render_system();
-        render_system->add_named_descriptor_set(render::descriptor_set::Color);
-        render_system->add_named_descriptor_set(render::descriptor_set::Model);
+        render_system->add_named_vertex_descriptor_set(render::descriptor_set::Color);
+        render_system->add_named_vertex_descriptor_set(render::descriptor_set::Model);
 
         asset::AssetData shader_data;
-        if (asset_system->load(asset::AssetShader{ "materials/shaders/test-vert" }, shader_data) == asset::AssetStatus::Loaded)
+        if (asset_system->load(asset::AssetShader{ "shaders/debug/test-vert" }, shader_data) == asset::AssetStatus::Loaded)
         {
             render_system->load_shader(shader_data);
         }
-        if (asset_system->load(asset::AssetShader{ "materials/shaders/test-frag" }, shader_data) == asset::AssetStatus::Loaded)
+        if (asset_system->load(asset::AssetShader{ "shaders/debug/test-frag" }, shader_data) == asset::AssetStatus::Loaded)
         {
             render_system->load_shader(shader_data);
         }
 
-        render_system->create_pipeline(render::pipeline::DefaultPieline);
+        render::api::VertexBuffer vtx_buffer[2]{};
+
+        asset::AssetData mesh_data;
+        if (asset_system->load(asset::Asset{ "mesh/test/box", asset::AssetType::Mesh }, mesh_data) == asset::AssetStatus::Loaded)
+        {
+            vtx_buffer[0] = render_system->create_vertex_buffer(mesh_data.content._size);
+
+            render::api::BufferDataView buffer_data_view;
+            render::api::render_api_instance->vertex_buffer_map_data(vtx_buffer[0], buffer_data_view);
+            IS_ASSERT(buffer_data_view.data_size >= mesh_data.content._size, "Render buffer not big enoguht! Ugh!");
+
+            std::memcpy(buffer_data_view.data_pointer, mesh_data.content._data, mesh_data.content._size);
+            render::api::render_api_instance->vertex_buffer_unmap_data(vtx_buffer[0]);
+        }
+
+        {
+            static const glm::mat4 instances[] = {
+                glm::mat4{ 1.0f },
+                glm::translate(glm::mat4{ 1.0f }, glm::vec3{ 1.0f, 3.0f, 1.0f }),
+                glm::translate(glm::mat4{ 1.0f }, glm::vec3{ 3.0f, 1.0f, 1.0f }),
+                glm::translate(glm::mat4{ 1.0f }, glm::vec3{ 1.0f, 1.0f, 3.0f }),
+            };
+
+            vtx_buffer[1] = render_system->create_vertex_buffer(sizeof(instances));
+
+            render::api::BufferDataView buffer_data_view;
+            render::api::render_api_instance->vertex_buffer_map_data(vtx_buffer[1], buffer_data_view);
+            IS_ASSERT(buffer_data_view.data_size >= sizeof(instances), "Render buffer not big enoguht! Ugh!");
+
+            std::memcpy(buffer_data_view.data_pointer, &instances, sizeof(instances));
+            render::api::render_api_instance->vertex_buffer_unmap_data(vtx_buffer[1]);
+        }
+
+        static auto projection = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 100.0f);
+        static auto cam_pos = glm::vec3(-5, 3, -10);
+        static auto clip = glm::mat4(
+            1.0f, 0.0f, 0.0f, 0.0f,
+            0.0f, -1.0f, 0.0f, 0.0f,
+            0.0f, 0.0f, 0.5f, 0.0f,
+            0.0f, 0.0f, 0.5f, 1.0f
+        );
+
+        glm::mat4 MVP{ 1 };
+        auto uniform_buffer = render_system->create_uniform_buffer(sizeof(MVP));
+
+        {
+            auto new_view = glm::lookAt(
+                cam_pos, // Camera is at (-5,3,-10), in World Space
+                glm::vec3(0, 0, 0),      // and looks at the origin
+                glm::vec3(0, -1, 0)      // Head is up (set to 0,-1,0 to look upside-down)
+            );
+
+            static float deg = 0.0f;
+            deg += 3.0f;
+            new_view = glm::rotate(new_view, glm::radians(deg), glm::vec3{ 0.f, 1.f, 0.f });
+
+            if (deg >= 360.0f)
+                deg = 0.0f;
+
+            MVP = clip * projection * new_view;
+
+            render::api::BufferDataView data_view;
+            render::api::render_api_instance->uniform_buffer_map_data(uniform_buffer, data_view);
+            IS_ASSERT(data_view.data_size >= sizeof(MVP), "Insufficient buffer size!");
+
+            memcpy(data_view.data_pointer, &MVP, sizeof(MVP));
+            render::api::render_api_instance->uniform_buffer_unmap_data(uniform_buffer);
+        }
+
+        render_system->create_uniform_descriptor_sets(sizeof(MVP));
+        auto descriptor_sets = render_system->descriptor_sets();
+        auto render_pipeline = render_system->create_pipeline(render::pipeline::DefaultPieline);
+        auto command_buffer = render_system->command_buffer();
 
         fmt::print("IceShard engine revision: {}\n", engine_instance->revision());
 
@@ -104,10 +182,46 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
                     quit = true;
                 });
 
-            engine_instance->next_frame();
+            core::message::filter<input::message::MouseMotion>(engine_instance->current_frame().messages(), [&](input::message::MouseMotion const& msg) noexcept
+                {
+                    static auto last_pos = msg.pos.x;
 
-            engine_instance->asset_system()->update();
-            resource_system.flush_messages();
+                    auto new_view = glm::lookAt(
+                        cam_pos, // Camera is at (-5,3,-10), in World Space
+                        glm::vec3(0, 0, 0),      // and looks at the origin
+                        glm::vec3(0, -1, 0)      // Head is up (set to 0,-1,0 to look upside-down)
+                    );
+
+                    static float deg = 0.0f;
+                    deg += static_cast<float>(last_pos - msg.pos.x);
+                    new_view = glm::rotate(new_view, glm::radians(deg), glm::vec3{ 0.f, 1.f, 0.f });
+                    last_pos = msg.pos.x;
+
+                    if (deg >= 360.0f)
+                        deg = 0.0f;
+
+                    MVP = clip * projection * new_view;
+
+                    render::api::BufferDataView data_view;
+                    render::api::render_api_instance->uniform_buffer_map_data(uniform_buffer, data_view);
+                    IS_ASSERT(data_view.data_size >= sizeof(MVP), "Insufficient buffer size!");
+
+                    memcpy(data_view.data_pointer, &MVP, sizeof(MVP));
+                    render::api::render_api_instance->uniform_buffer_unmap_data(uniform_buffer);
+                });
+
+            render::cmd::begin(command_buffer);
+            render::cmd::begin_renderpass(command_buffer);
+            render::cmd::bind_render_pipeline(command_buffer, render_pipeline);
+            render::cmd::bind_descriptor_sets(command_buffer, descriptor_sets);
+            render::cmd::bind_vertex_buffers(command_buffer, vtx_buffer[0], vtx_buffer[1]);
+            render::cmd::set_viewport(command_buffer, 1280, 720);
+            render::cmd::set_scissor(command_buffer, 1280, 720);
+            render::cmd::draw(command_buffer, 12 * 3, 4);
+            render::cmd::end_renderpass(command_buffer);
+            render::cmd::end(command_buffer);
+
+            engine_instance->next_frame();
         }
 
         engine_instance->world_manager()->destroy_world(core::cexpr::stringid("test-world"));

@@ -1,4 +1,5 @@
 #include <resource/resource.hxx>
+#include <resource/resource_meta.hxx>
 #include <resource/modules/filesystem_module.hxx>
 #include "module_messages.hxx"
 
@@ -83,13 +84,16 @@ namespace resource
                 return _data;
             }
 
-            auto metadata() noexcept -> core::data_view
+            auto metadata() noexcept -> resource::ResourceMetaView override
             {
-                if (core::buffer::empty(_metadata) && core::string::empty(_native_path_metadata) == false)
+                if (_metadata_loaded == false && core::string::empty(_native_path_metadata) == false)
                 {
-                    load_file_to_buffer(_native_path_metadata, _metadata);
+                    core::Buffer temp_bufer{ core::memory::globals::default_scratch_allocator() };
+                    load_file_to_buffer(_native_path_metadata, temp_bufer);
+                    resource::deserialize_meta(temp_bufer, _metadata);
+                    _metadata_loaded = true;
                 }
-                return _metadata;
+                return resource::create_meta_view(_metadata);
             }
 
             auto name() const noexcept -> core::StringView override
@@ -111,9 +115,12 @@ namespace resource
             //! \brief The resource identifier.
             URI _uri;
 
+            //! \brief The loaded metadata.
+            bool _metadata_loaded = false;
+            resource::ResourceMeta _metadata;
+
             //! \brief The loaded file buffer.
             core::Buffer _data;
-            core::Buffer _metadata;
         };
 
         class FileResourceWritable : public FileResource, public OutputResource

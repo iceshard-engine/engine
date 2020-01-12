@@ -15,6 +15,8 @@ namespace render::vulkan
         VulkanDescriptorSets(VkDevice device, VkDescriptorPool descriptor_pool, core::pod::Array<VkDescriptorSet> descriptor_sets) noexcept;
         ~VulkanDescriptorSets() noexcept;
 
+        auto native_handles() const noexcept -> core::pod::Array<VkDescriptorSet> const& { return _native_handles; }
+
         void native_handles(core::pod::Array<VkDescriptorSet>& sets) const noexcept { sets = _native_handles; }
 
         void write_descriptor_set(

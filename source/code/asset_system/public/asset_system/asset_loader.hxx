@@ -1,5 +1,6 @@
 #pragma once
 #include <asset_system/asset.hxx>
+#include <resource/resource_meta.hxx>
 
 namespace asset
 {
@@ -9,11 +10,16 @@ namespace asset
     public:
         virtual ~AssetLoader() noexcept = default;
 
-        virtual auto request_asset(asset::Asset asset_reference) noexcept -> asset::AssetStatus = 0;
+        virtual auto request_asset(asset::Asset asset) noexcept -> asset::AssetStatus = 0;
 
-        virtual auto load_asset(asset::Asset asset_reference, asset::AssetData& asset_data) noexcept -> asset::AssetStatus = 0;
+        virtual auto load_asset(
+            asset::Asset asset,
+            resource::ResourceMetaView meta,
+            core::data_view resource_data,
+            asset::AssetData& result_data
+        ) noexcept -> asset::AssetStatus = 0;
 
-        virtual void release_asset(asset::Asset asset_reference) noexcept = 0;
+        virtual void release_asset(asset::Asset asset) noexcept = 0;
     };
 
 } // namespace asset

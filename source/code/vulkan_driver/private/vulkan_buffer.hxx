@@ -5,7 +5,7 @@
 
 #include <render_system/render_command_buffer.hxx>
 
-#include "device/vulkan_physical_device.hxx"
+#include "vulkan_device_memory_manager.hxx"
 #include <vulkan/vulkan.h>
 
 namespace render::vulkan
@@ -14,7 +14,7 @@ namespace render::vulkan
     class VulkanBuffer final
     {
     public:
-        VulkanBuffer(VkDevice _device_handle, VkBuffer buffer_handle, VkDeviceMemory memory_handle) noexcept;
+        VulkanBuffer(VkBuffer buffer_handle, VulkanDeviceMemoryManager& memory_manager, VulkanMemoryInfo memory_info) noexcept;
         ~VulkanBuffer() noexcept;
 
         auto native_handle() const noexcept -> VkBuffer { return _buffer_handle; }
@@ -24,19 +24,21 @@ namespace render::vulkan
         void unmap_memory() noexcept;
 
     private:
-        VkDevice _device_handle;
         VkBuffer _buffer_handle;
-        VkDeviceMemory _memory_handle;
+        VulkanDeviceMemoryManager* _device_memory;
+        VulkanMemoryInfo _memory_info;
     };
 
     auto create_uniform_buffer(
         core::allocator& alloc,
-        VulkanPhysicalDevice* physical_device,
-        VkDeviceSize buffer_size) noexcept -> core::memory::unique_pointer<VulkanBuffer>;
+        VulkanDeviceMemoryManager& device_memory,
+        uint32_t buffer_size
+    ) noexcept -> core::memory::unique_pointer<VulkanBuffer>;
 
     auto create_vertex_buffer(
         core::allocator& alloc,
-        VulkanPhysicalDevice* physical_device,
-        VkDeviceSize buffer_size) noexcept -> core::memory::unique_pointer<VulkanBuffer>;
+        VulkanDeviceMemoryManager& device_memory,
+        uint32_t buffer_size
+    ) noexcept -> core::memory::unique_pointer<VulkanBuffer>;
 
 } // namespace render::vulkan

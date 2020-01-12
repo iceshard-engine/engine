@@ -6,6 +6,8 @@
 namespace resource
 {
 
+    struct ResourceMetaView;
+
     //! \brief Describes a single resource which can be fetched for data.
     class Resource
     {
@@ -20,7 +22,7 @@ namespace resource
         virtual auto data() noexcept -> core::data_view = 0;
 
         //! \brief Resource metadata.
-        virtual auto metadata() noexcept -> core::data_view = 0;
+        virtual auto metadata() noexcept -> resource::ResourceMetaView = 0;
 
         //! \brief String value used to create the resource name.
         //! \remarks The value should return a valid file name with or without extension.

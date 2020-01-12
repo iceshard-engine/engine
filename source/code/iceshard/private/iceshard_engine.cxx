@@ -36,7 +36,11 @@ namespace iceshard
         class NoneRenderSystem : public render::RenderSystem
         {
         public:
+            auto current_framebuffer() noexcept -> render::api::Framebuffer override { return render::api::Framebuffer{ 0 }; }
+            auto descriptor_sets() noexcept -> render::api::v1::DescriptorSets override { return render::api::v1::DescriptorSets{ 0 }; }
             auto command_buffer() noexcept -> render::CommandBuffer override { return render::CommandBuffer{ 0 }; }
+            auto create_vertex_buffer(uint32_t) noexcept -> render::api::VertexBuffer override { return render::api::VertexBuffer{ 0 }; }
+            auto create_uniform_buffer(uint32_t) noexcept -> render::api::UniformBuffer { return render::api::UniformBuffer{ 0 }; }
             void swap() noexcept override {}
 
             void load_shader(asset::AssetData) noexcept override { };
@@ -49,7 +53,7 @@ namespace iceshard
                 return render::api::RenderPipeline{ 0 };
             }
 
-            void add_named_descriptor_set(
+            void add_named_vertex_descriptor_set(
                 [[maybe_unused]] core::cexpr::stringid_argument_type name,
                 [[maybe_unused]] render::VertexBinding const& binding,
                 [[maybe_unused]] render::VertexDescriptor const* descriptors,

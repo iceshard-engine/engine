@@ -7,8 +7,20 @@ namespace render::api::v1::vulkan
 
     void init_api(void* ptr) noexcept;
 
-    static_assert(sizeof(VkCommandBuffer) == sizeof(CommandBuffer), "Command buffer handle differs in size!");
+    struct RenderPassContext
+    {
+        VkRenderPass renderpass;
+        VkPipelineLayout pipeline_layout;
+        VkFramebuffer framebuffer;
+        VkExtent2D extent;
+    };
 
-    auto native(CommandBuffer command_buffer) noexcept -> VkCommandBuffer;
+    struct CommandBufferContext
+    {
+        VkCommandBuffer command_buffer;
+        RenderPassContext* render_pass_context;
+    };
+
+    auto native(CommandBuffer command_buffer) noexcept -> CommandBufferContext const*;
 
 } // namespace render::api::v1::vulkan

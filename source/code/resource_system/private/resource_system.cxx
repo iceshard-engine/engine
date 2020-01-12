@@ -1,5 +1,6 @@
 #include <resource/resource_system.hxx>
 #include <resource/resource_messages.hxx>
+#include <resource/resource_meta.hxx>
 #include "modules/module_messages.hxx"
 
 #include <core/cexpr/stringid.hxx>
@@ -29,12 +30,12 @@ namespace resource
 
             auto data() noexcept -> core::data_view override
             {
-                return core::data_view{ nullptr, 0 };
+                return core::data_view{ };
             }
 
-            auto metadata() noexcept -> core::data_view override
+            auto metadata() noexcept -> resource::ResourceMetaView override
             {
-                return core::data_view{ nullptr, 0 };
+                return resource::load_meta_view({});
             }
 
             auto name() const noexcept -> core::StringView override

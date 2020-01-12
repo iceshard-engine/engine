@@ -14,6 +14,7 @@
 #include "vulkan_surface.hxx"
 #include "device/vulkan_physical_device.hxx"
 #include "device/vulkan_command_buffer.hxx"
+#include "vulkan_device_memory_manager.hxx"
 #include "vulkan_swapchain.hxx"
 #include "vulkan_image.hxx"
 #include "vulkan_shader.hxx"
@@ -54,90 +55,6 @@ namespace render
             allocator->deallocate(memory);
         }
 
-        namespace sample
-        {
-
-#define XYZ1(_x_, _y_, _z_) (_x_), (_y_), (_z_), 1.f
-#define UV(_u_, _v_) (_u_), (_v_)
-
-            struct Vertex
-            {
-                float posX, posY, posZ, posW; // Position data
-                float r, g, b, a;             // Color
-            };
-
-            static const Vertex g_vb_solid_face_colors_Data[] = {
-                // red face
-                { XYZ1(-1, -1, 1), XYZ1(1.f, 0.f, 0.f) },
-                { XYZ1(-1, 1, 1), XYZ1(1.f, 0.f, 0.f) },
-                { XYZ1(1, -1, 1), XYZ1(1.f, 0.f, 0.f) },
-                { XYZ1(1, -1, 1), XYZ1(1.f, 0.f, 0.f) },
-                { XYZ1(-1, 1, 1), XYZ1(1.f, 0.f, 0.f) },
-                { XYZ1(1, 1, 1), XYZ1(1.f, 0.f, 0.f) },
-                // green face
-                { XYZ1(-1, -1, -1), XYZ1(0.f, 1.f, 0.f) },
-                { XYZ1(1, -1, -1), XYZ1(0.f, 1.f, 0.f) },
-                { XYZ1(-1, 1, -1), XYZ1(0.f, 1.f, 0.f) },
-                { XYZ1(-1, 1, -1), XYZ1(0.f, 1.f, 0.f) },
-                { XYZ1(1, -1, -1), XYZ1(0.f, 1.f, 0.f) },
-                { XYZ1(1, 1, -1), XYZ1(0.f, 1.f, 0.f) },
-                // blue face
-                { XYZ1(-1, 1, 1), XYZ1(0.f, 0.f, 1.f) },
-                { XYZ1(-1, -1, 1), XYZ1(0.f, 0.f, 1.f) },
-                { XYZ1(-1, 1, -1), XYZ1(0.f, 0.f, 1.f) },
-                { XYZ1(-1, 1, -1), XYZ1(0.f, 0.f, 1.f) },
-                { XYZ1(-1, -1, 1), XYZ1(0.f, 0.f, 1.f) },
-                { XYZ1(-1, -1, -1), XYZ1(0.f, 0.f, 1.f) },
-                // yellow face
-                { XYZ1(1, 1, 1), XYZ1(1.f, 1.f, 0.f) },
-                { XYZ1(1, 1, -1), XYZ1(1.f, 1.f, 0.f) },
-                { XYZ1(1, -1, 1), XYZ1(1.f, 1.f, 0.f) },
-                { XYZ1(1, -1, 1), XYZ1(1.f, 1.f, 0.f) },
-                { XYZ1(1, 1, -1), XYZ1(1.f, 1.f, 0.f) },
-                { XYZ1(1, -1, -1), XYZ1(1.f, 1.f, 0.f) },
-                // magenta face
-                { XYZ1(1, 1, 1), XYZ1(1.f, 0.f, 1.f) },
-                { XYZ1(-1, 1, 1), XYZ1(1.f, 0.f, 1.f) },
-                { XYZ1(1, 1, -1), XYZ1(1.f, 0.f, 1.f) },
-                { XYZ1(1, 1, -1), XYZ1(1.f, 0.f, 1.f) },
-                { XYZ1(-1, 1, 1), XYZ1(1.f, 0.f, 1.f) },
-                { XYZ1(-1, 1, -1), XYZ1(1.f, 0.f, 1.f) },
-                // cyan face
-                { XYZ1(1, -1, 1), XYZ1(0.f, 1.f, 1.f) },
-                { XYZ1(1, -1, -1), XYZ1(0.f, 1.f, 1.f) },
-                { XYZ1(-1, -1, 1), XYZ1(0.f, 1.f, 1.f) },
-                { XYZ1(-1, -1, 1), XYZ1(0.f, 1.f, 1.f) },
-                { XYZ1(1, -1, -1), XYZ1(0.f, 1.f, 1.f) },
-                { XYZ1(-1, -1, -1), XYZ1(0.f, 1.f, 1.f) },
-            };
-
-            static const glm::mat4 instances[] = {
-                glm::mat4{ 1.0f },
-                glm::translate(glm::mat4{ 1.0f }, glm::vec3{ 1.0f, 3.0f, 1.0f })
-            };
-
-#undef XYZ1
-#undef UV
-
-            static auto projection = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 100.0f);
-            static auto cam_pos = glm::vec3(-5, 3, -10);
-            static auto view = glm::lookAt(cam_pos, // Camera is at (-5,3,-10), in World Space
-                glm::vec3(0, 0, 0),                 // and looks at the origin
-                glm::vec3(0, -1, 0)                 // Head is up (set to 0,-1,0 to look upside-down)
-            );
-            static auto model = glm::mat4(1.0f);
-
-            // Vulkan clip space has inverted Y and half Z.
-            // clang-format off
-            static auto clip = glm::mat4(1.0f, 0.0f, 0.0f, 0.0f,
-                0.0f, -1.0f, 0.0f, 0.0f,
-                0.0f, 0.0f, 0.5f, 0.0f,
-                0.0f, 0.0f, 0.5f, 1.0f);
-            // clang-format on
-            static auto MVP = clip * projection * view; // * model;
-
-        } // namespace sample
-
         //void vk_iceshard_internal_allocate_event(void* userdata, size_t size, VkInternalAllocationType type, VkSystemAllocationScope scope) noexcept
         //{
         //    PFN_vkInternalAllocationNotification f;
@@ -157,10 +74,10 @@ namespace render
             : render::RenderSystem{}
             , _driver_allocator{ "vulkan-driver", alloc }
             , _vulkan_allocator{ alloc }
-            , _vulkan_devices{ _driver_allocator }
             , _vulkan_framebuffers{ _driver_allocator }
             , _vulkan_command_buffers{ _driver_allocator }
             , _vulkan_vertex_descriptors{ _driver_allocator }
+            , _vulkan_buffers{ _driver_allocator }
         {
             initialize();
         }
@@ -208,75 +125,21 @@ namespace render
             enumerate_devices();
 
             // Create swap chain
-            _vulkan_swapchain = render::vulkan::create_swapchain(_driver_allocator, core::pod::array::front(_vulkan_devices));
+            _vulkan_swapchain = render::vulkan::create_swapchain(_driver_allocator, _vulkan_physical_device.get());
 
             // Create depth buffer
-            _vulkan_depth_image = render::vulkan::create_depth_buffer_image(_driver_allocator, core::pod::array::front(_vulkan_devices));
+            _vulkan_depth_image = render::vulkan::create_depth_buffer_image(_driver_allocator, _vulkan_physical_device.get());
 
-            auto* physical_device = core::pod::array::front(_vulkan_devices);
+            auto* physical_device = _vulkan_physical_device.get();
             auto graphics_device = physical_device->graphics_device()->native_handle();
 
-            {
-                api::BufferDataView data_view;
+            _vulkan_physical_device->graphics_device()->create_command_buffers(_vulkan_command_buffers, 1);
 
-                _vulkan_uniform_buffer = vulkan::create_uniform_buffer(
-                    _driver_allocator,
-                    physical_device,
-                    VkDeviceSize{ sizeof(detail::sample::MVP) });
-                _vulkan_uniform_buffer->map_memory(data_view);
-                IS_ASSERT(data_view.data_size >= sizeof(detail::sample::MVP), "Insufficient buffer size!");
-                memcpy(data_view.data_pointer, &detail::sample::MVP, sizeof(detail::sample::MVP));
-                _vulkan_uniform_buffer->unmap_memory();
-
-                _vulkan_vertex_buffer = vulkan::create_uniform_buffer(
-                    _driver_allocator,
-                    physical_device,
-                    VkDeviceSize{ sizeof(detail::sample::g_vb_solid_face_colors_Data) });
-
-                _vulkan_vertex_buffer->map_memory(data_view);
-                IS_ASSERT(data_view.data_size >= sizeof(detail::sample::g_vb_solid_face_colors_Data), "Insufficient buffer size!");
-                memcpy(data_view.data_pointer, detail::sample::g_vb_solid_face_colors_Data, sizeof(detail::sample::g_vb_solid_face_colors_Data));
-                _vulkan_vertex_buffer->unmap_memory();
-
-                _vulkan_instance_buffer = vulkan::create_uniform_buffer(
-                    _driver_allocator,
-                    physical_device,
-                    VkDeviceSize{ sizeof(detail::sample::instances) });
-
-                _vulkan_instance_buffer->map_memory(data_view);
-                IS_ASSERT(data_view.data_size >= sizeof(detail::sample::instances), "Insufficient buffer size!");
-                memcpy(data_view.data_pointer, detail::sample::instances, sizeof(detail::sample::instances));
-                _vulkan_instance_buffer->unmap_memory();
-            }
-
-            core::pod::array::front(_vulkan_devices)->graphics_device()->create_command_buffers(_vulkan_command_buffers, 1);
+            _command_buffer_context.command_buffer = _vulkan_command_buffers[0]->native_handle();
+            _command_buffer_context.render_pass_context = &_render_pass_context;
 
             {
-                VkDescriptorSetLayoutBinding layout_binding = {};
-                layout_binding.binding = 0;
-                layout_binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-                layout_binding.descriptorCount = 1;
-                layout_binding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-                layout_binding.pImmutableSamplers = nullptr;
-
-                core::pod::Array<VkDescriptorSetLayoutBinding> bindings{ _driver_allocator };
-                core::pod::array::push_back(bindings, std::move(layout_binding));
-
-                _vulkan_descriptor_sets_layout = vulkan::create_descriptor_set_layout(_driver_allocator, graphics_device, bindings);
-
-                core::pod::Array<vulkan::VulkanDescriptorSetLayout*> layouts{ _driver_allocator };
-                core::pod::array::push_back(layouts, _vulkan_descriptor_sets_layout.get());
-                _vulkan_descriptor_sets = vulkan::create_vulkan_descriptor_sets(_driver_allocator, graphics_device, layouts);
-
-                VkDescriptorBufferInfo buffer_info{};
-                buffer_info.buffer = _vulkan_uniform_buffer->native_handle();
-                buffer_info.offset = 0;
-                buffer_info.range = sizeof(detail::sample::MVP);
-                _vulkan_descriptor_sets->write_descriptor_set(0, VkDescriptorType::VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, buffer_info);
-            }
-
-            {
-                auto const& formats = core::pod::array::front(_vulkan_devices)->surface_formats();
+                auto const& formats = _vulkan_physical_device->surface_formats();
 
                 _vulkan_render_pass = vulkan::create_render_pass(_driver_allocator, graphics_device, core::pod::array::front(formats).format, VK_FORMAT_D16_UNORM);
             }
@@ -288,7 +151,7 @@ namespace render
                 _vulkan_render_pass->native_handle(),
                 *_vulkan_depth_image.get(),
                 *_vulkan_swapchain.get(),
-                core::pod::array::front(_vulkan_devices)
+                _vulkan_physical_device.get()
             );
 
             VkSemaphoreCreateInfo imageAcquiredSemaphoreCreateInfo;
@@ -298,6 +161,10 @@ namespace render
 
             auto res = vkCreateSemaphore(graphics_device, &imageAcquiredSemaphoreCreateInfo, NULL, &_quick_semaphore);
             assert(res == VK_SUCCESS);
+
+            _render_pass_context.extent = physical_device->surface_capabilities().maxImageExtent;
+            _render_pass_context.renderpass = _vulkan_render_pass->native_handle();
+            _render_pass_context.framebuffer = _vulkan_framebuffers[_vulkan_current_framebuffer]->native_handle();
         }
 
         void enumerate_devices() noexcept
@@ -316,24 +183,26 @@ namespace render
 
             // Create VulkanPhysicalDevice objects from the handles.
             fmt::print("Available Vulkan devices: {}\n", device_count);
-            for (const auto& physical_device_handle : devices_handles)
-            {
-                core::pod::array::push_back(
-                    _vulkan_devices,
-                    _driver_allocator.make<vulkan::VulkanPhysicalDevice>(
-                        _driver_allocator,
-                        physical_device_handle,
-                        _vulkan_surface->native_handle()));
-            }
+            fmt::print("Selecting device at index: {}\n", 0);
+
+            _vulkan_physical_device = core::memory::make_unique<vulkan::VulkanPhysicalDevice>(
+                _driver_allocator,
+                _driver_allocator,
+                core::pod::array::front(devices_handles),
+                _vulkan_surface->native_handle()
+            );
+            _vulkan_physical_memory = core::memory::make_unique<vulkan::VulkanDeviceMemoryManager>(
+                _driver_allocator,
+                _driver_allocator,
+                _vulkan_physical_device.get(),
+                _vulkan_physical_device->graphics_device()->native_handle()
+            );
         }
 
         void release_devices() noexcept
         {
-            for (auto* vulkan_device : _vulkan_devices)
-            {
-                _driver_allocator.destroy(vulkan_device);
-            }
-            core::pod::array::clear(_vulkan_devices);
+            _vulkan_physical_memory = nullptr;
+            _vulkan_physical_device = nullptr;
         }
 
         void shutdown() noexcept
@@ -343,7 +212,7 @@ namespace render
                 _driver_allocator.destroy(entry.value);
             }
 
-            auto* physical_device = core::pod::array::front(_vulkan_devices);
+            auto* physical_device = _vulkan_physical_device.get();
             vkDestroySemaphore(physical_device->graphics_device()->native_handle(), _quick_semaphore, nullptr);
 
             _vulkan_pipeline = nullptr;
@@ -364,9 +233,7 @@ namespace render
 
             core::pod::array::clear(_vulkan_command_buffers);
 
-            _vulkan_uniform_buffer = nullptr;
-            _vulkan_vertex_buffer = nullptr;
-            _vulkan_instance_buffer = nullptr;
+            _vulkan_buffers.clear();
 
             _vulkan_depth_image = nullptr;
 
@@ -388,21 +255,79 @@ namespace render
             vkDestroyInstance(_vulkan_instance, &alloc_callbacks);
         }
 
-        auto command_buffer() noexcept -> render::CommandBuffer override
+        auto command_buffer() noexcept -> render::api::CommandBuffer override
         {
-            return CommandBuffer{ 0 };
+            return render::api::CommandBuffer{ reinterpret_cast<uintptr_t>(&_command_buffer_context) };
         }
 
-        auto current_frame_buffer() noexcept -> uintptr_t
+        auto descriptor_sets() noexcept -> render::api::DescriptorSets override
         {
-            return reinterpret_cast<uintptr_t>(_vulkan_framebuffers[_vulkan_current_framebuffer]->native_handle());
+            return render::api::DescriptorSets{ reinterpret_cast<uintptr_t>(_vulkan_descriptor_sets.get()) };
+        }
+
+        auto create_vertex_buffer(uint32_t size) noexcept -> render::api::VertexBuffer override
+        {
+            auto vulkan_buffer = render::vulkan::create_vertex_buffer(
+                _driver_allocator,
+                *_vulkan_physical_memory,
+                size
+            );
+
+            auto result = render::api::VertexBuffer{ reinterpret_cast<uintptr_t>(vulkan_buffer.get()) };
+            _vulkan_buffers.emplace_back(std::move(vulkan_buffer));
+
+            return result;
+        }
+
+        auto create_uniform_buffer(uint32_t size) noexcept -> render::api::UniformBuffer override
+        {
+            auto vulkan_buffer = render::vulkan::create_uniform_buffer(
+                _driver_allocator,
+                *_vulkan_physical_memory,
+                size
+            );
+
+            auto result = render::api::UniformBuffer{ reinterpret_cast<uintptr_t>(vulkan_buffer.get()) };
+            _vulkan_buffers.emplace_back(std::move(vulkan_buffer));
+
+            return result;
+        }
+
+        void create_uniform_descriptor_sets(uint32_t size) noexcept
+        {
+            auto const graphics_device_handle = _vulkan_physical_device->graphics_device()->native_handle();
+
+            VkDescriptorSetLayoutBinding layout_binding = {};
+            layout_binding.binding = 0;
+            layout_binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+            layout_binding.descriptorCount = 1;
+            layout_binding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+            layout_binding.pImmutableSamplers = nullptr;
+
+            core::pod::Array<VkDescriptorSetLayoutBinding> bindings{ _driver_allocator };
+            core::pod::array::push_back(bindings, std::move(layout_binding));
+
+            _vulkan_descriptor_sets_layout = vulkan::create_descriptor_set_layout(_driver_allocator, graphics_device_handle, bindings);
+
+            core::pod::Array<vulkan::VulkanDescriptorSetLayout*> layouts{ _driver_allocator };
+            core::pod::array::push_back(layouts, _vulkan_descriptor_sets_layout.get());
+            _vulkan_descriptor_sets = vulkan::create_vulkan_descriptor_sets(_driver_allocator, graphics_device_handle, layouts);
+
+            VkDescriptorBufferInfo buffer_info{};
+            buffer_info.buffer = _vulkan_buffers[2]->native_handle();
+            buffer_info.offset = 0;
+            buffer_info.range = size;
+            _vulkan_descriptor_sets->write_descriptor_set(0, VkDescriptorType::VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, buffer_info);
+        }
+
+        auto current_framebuffer() noexcept -> render::api::Framebuffer override
+        {
+            return render::api::Framebuffer{ reinterpret_cast<uintptr_t>(_vulkan_framebuffers[_vulkan_current_framebuffer]->native_handle()) };
         }
 
         void load_shader(asset::AssetData shader_data) noexcept override
         {
-            resource::ResourceMeta meta{ _driver_allocator };
-            resource::deserialize_meta(shader_data.metadata, meta);
-            auto meta_view = resource::create_meta_view(meta);
+            auto const& meta_view = shader_data.metadata;
 
             int32_t target = resource::get_meta_int32(meta_view, "shader.target"_sid);
             IS_ASSERT(target == 1, "Only explicit vulkan shaders are supported!");
@@ -413,28 +338,29 @@ namespace render
             _shaders.emplace_back(
                 vulkan::create_shader(
                     _driver_allocator,
-                    core::pod::array::front(_vulkan_devices)->graphics_device()->native_handle(),
+                    _vulkan_physical_device->graphics_device()->native_handle(),
                     stage == 1 ? VkShaderStageFlagBits::VK_SHADER_STAGE_VERTEX_BIT : VkShaderStageFlagBits::VK_SHADER_STAGE_FRAGMENT_BIT,
                     shader_data.content
                 )
             );
         }
 
-        void add_named_descriptor_set(
+        void add_named_vertex_descriptor_set(
             [[maybe_unused]] core::cexpr::stringid_argument_type name,
             [[maybe_unused]] VertexBinding const& binding,
             [[maybe_unused]] VertexDescriptor const* descriptors,
-            [[maybe_unused]] uint32_t descriptor_count) noexcept override
+            [[maybe_unused]] uint32_t descriptor_count
+        ) noexcept override
         {
             auto hash_value = static_cast<uint64_t>(name.hash_value);
             IS_ASSERT(core::pod::hash::has(_vulkan_vertex_descriptors, hash_value) == false, "A descriptor set with this name {} was already defined!", name);
 
             // clang-format off
             core::pod::hash::set(_vulkan_vertex_descriptors, hash_value, _driver_allocator.make<render::vulkan::VulkanVertexDescriptor>(
-                _driver_allocator,
-                binding,
-                descriptors,
-                descriptor_count
+                    _driver_allocator,
+                    binding,
+                    descriptors,
+                    descriptor_count
                 )
             );
             // clang-format on
@@ -445,18 +371,18 @@ namespace render
             uint32_t descriptor_name_count
         ) noexcept -> api::RenderPipeline override
         {
-            auto* physical_device = core::pod::array::front(_vulkan_devices);
+            auto* physical_device = _vulkan_physical_device.get();
             auto graphics_device = physical_device->graphics_device()->native_handle();
 
             {
                 core::pod::Array<VkDescriptorSetLayout> layouts{ _driver_allocator };
                 core::pod::array::push_back(layouts, _vulkan_descriptor_sets_layout->native_handle());
                 _vulkan_pipeline_layout = vulkan::create_pipeline_layout(_driver_allocator, graphics_device, layouts);
+                _render_pass_context.pipeline_layout = _vulkan_pipeline_layout->native_handle();
 
                 core::pod::Array<vulkan::VulkanShader const*> shader_stages{ _driver_allocator };
-                std::for_each(
-                    _shaders.begin(), _shaders.end(),
-                    [&](auto const& shader_ptr) noexcept {
+                std::for_each(_shaders.begin(), _shaders.end(), [&](auto const& shader_ptr) noexcept
+                    {
                         core::pod::array::push_back(shader_stages, const_cast<vulkan::VulkanShader const*>(shader_ptr.get()));
                     });
 
@@ -470,7 +396,8 @@ namespace render
                     auto const* descriptor = core::pod::hash::get<vulkan::VulkanVertexDescriptor*>(
                         _vulkan_vertex_descriptors,
                         descriptor_name_hash,
-                        nullptr);
+                        nullptr
+                    );
                     IS_ASSERT(descriptor != nullptr, "Unknown descriptor name {}!", descriptor_names[descriptor_index]);
 
                     core::pod::array::push_back(vertex_descriptors, descriptor);
@@ -483,7 +410,8 @@ namespace render
                     shader_stages,
                     vertex_descriptors,
                     _vulkan_pipeline_layout.get(),
-                    _vulkan_render_pass.get());
+                    _vulkan_render_pass.get()
+                );
             }
 
             return api::RenderPipeline{ reinterpret_cast<uintptr_t>(_vulkan_pipeline->native_handle()) };
@@ -491,7 +419,7 @@ namespace render
 
         void swap() noexcept override
         {
-            auto* physical_device = core::pod::array::front(_vulkan_devices);
+            auto* physical_device = _vulkan_physical_device.get();
             auto graphics_device = physical_device->graphics_device();
             auto graphics_device_native = graphics_device->native_handle();
             auto swap_chain = _vulkan_swapchain->native_handle();
@@ -512,106 +440,11 @@ namespace render
                 IS_ASSERT(api_result == VK_SUCCESS, "Couldn't get next framebuffer image!");
             }
 
-            [[maybe_unused]] auto const& surface_capabilities = physical_device->surface_capabilities();
-            [[maybe_unused]] auto render_pass = _vulkan_render_pass->native_handle();
+            _render_pass_context.extent = physical_device->surface_capabilities().maxImageExtent;
+            _render_pass_context.renderpass = _vulkan_render_pass->native_handle();
+            _render_pass_context.pipeline_layout = _vulkan_pipeline_layout->native_handle();
+            _render_pass_context.framebuffer = _vulkan_framebuffers[_vulkan_current_framebuffer]->native_handle();
 
-            auto cmd = _vulkan_command_buffers[0]->native_handle();
-
-            VkCommandBufferBeginInfo cmd_buf_info = {};
-            cmd_buf_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-            cmd_buf_info.pNext = NULL;
-            cmd_buf_info.flags = 0;
-            cmd_buf_info.pInheritanceInfo = NULL;
-
-            auto res = vkBeginCommandBuffer(cmd, &cmd_buf_info);
-            assert(res == VK_SUCCESS);
-
-            VkClearValue clear_values[2];
-            clear_values[0].color.float32[0] = 0.2f;
-            clear_values[0].color.float32[1] = 0.2f;
-            clear_values[0].color.float32[2] = 0.2f;
-            clear_values[0].color.float32[3] = 0.2f;
-            clear_values[1].depthStencil.depth = 1.0f;
-            clear_values[1].depthStencil.stencil = 0;
-
-            VkRenderPassBeginInfo rp_begin;
-            rp_begin.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-            rp_begin.pNext = NULL;
-            rp_begin.renderPass = render_pass;
-            rp_begin.framebuffer = reinterpret_cast<VkFramebuffer>(current_frame_buffer());
-            rp_begin.renderArea.offset.x = 0;
-            rp_begin.renderArea.offset.y = 0;
-            rp_begin.renderArea.extent = surface_capabilities.maxImageExtent;
-            rp_begin.clearValueCount = 2;
-            rp_begin.pClearValues = clear_values;
-
-            vkCmdBeginRenderPass(cmd, &rp_begin, VK_SUBPASS_CONTENTS_INLINE);
-
-            vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, _vulkan_pipeline->native_handle());
-
-            {
-                auto new_view = glm::lookAt(detail::sample::cam_pos, // Camera is at (-5,3,-10), in World Space
-                    glm::vec3(0, 0, 0),                              // and looks at the origin
-                    glm::vec3(0, -1, 0)                              // Head is up (set to 0,-1,0 to look upside-down)
-                );
-
-                static float deg = 0.0f;
-                deg += 3.0f;
-                new_view = glm::rotate(new_view, glm::radians(deg), glm::vec3{ 0.f, 1.f, 0.f });
-
-                if (deg >= 360.0f)
-                    deg = 0.0f;
-
-                auto MVP = detail::sample::clip * detail::sample::projection * new_view;
-
-                render::api::BufferDataView data_view;
-                _vulkan_uniform_buffer->map_memory(data_view);
-                IS_ASSERT(data_view.data_size >= sizeof(MVP), "Insufficient buffer size!");
-                memcpy(data_view.data_pointer, &MVP, sizeof(MVP));
-                _vulkan_uniform_buffer->unmap_memory();
-            }
-
-            core::pod::Array<VkDescriptorSet> sets{ _driver_allocator };
-            _vulkan_descriptor_sets->native_handles(sets);
-            vkCmdBindDescriptorSets(
-                cmd,
-                VK_PIPELINE_BIND_POINT_GRAPHICS,
-                _vulkan_pipeline_layout->native_handle(),
-                0,
-                core::pod::array::size(sets),
-                core::pod::array::begin(sets),
-                0,
-                NULL);
-
-            {
-                VkDeviceSize const offsets[2] = { 0, 0 };
-                VkBuffer const buffers[2] = { _vulkan_vertex_buffer->native_handle(), _vulkan_instance_buffer->native_handle() };
-                vkCmdBindVertexBuffers(cmd, 0, 2, buffers, offsets);
-            }
-
-            {
-                VkViewport viewport{};
-                viewport.height = (float)surface_capabilities.maxImageExtent.height;
-                viewport.width = (float)surface_capabilities.maxImageExtent.width;
-                viewport.minDepth = (float)0.0f;
-                viewport.maxDepth = (float)1.0f;
-                viewport.x = 0;
-                viewport.y = 0;
-                vkCmdSetViewport(cmd, 0, 1, &viewport);
-            }
-
-            {
-                VkRect2D scissor{};
-                scissor.extent = surface_capabilities.maxImageExtent;
-                scissor.offset.x = 0;
-                scissor.offset.y = 0;
-                vkCmdSetScissor(cmd, 0, 1, &scissor);
-            }
-
-            vkCmdDraw(cmd, 12 * 3, 2, 0, 0);
-            vkCmdEndRenderPass(cmd);
-            res = vkEndCommandBuffer(cmd);
-            assert(res == VK_SUCCESS);
 
             VkFenceCreateInfo fenceInfo;
             fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
@@ -619,10 +452,10 @@ namespace render
             fenceInfo.flags = 0;
 
             VkFence drawFence;
-            res = vkCreateFence(graphics_device_native, &fenceInfo, NULL, &drawFence);
+            auto res = vkCreateFence(graphics_device_native, &fenceInfo, NULL, &drawFence);
             assert(res == VK_SUCCESS);
 
-            const VkCommandBuffer cmd_bufs[] = { cmd };
+            const VkCommandBuffer cmd_bufs[] = { _vulkan_command_buffers[0]->native_handle() };
             VkPipelineStageFlags pipe_stage_flags = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
             VkSubmitInfo submit_info[1] = {};
             submit_info[0].pNext = NULL;
@@ -703,9 +536,7 @@ namespace render
         core::pod::Hash<render::vulkan::VulkanVertexDescriptor*> _vulkan_vertex_descriptors;
 
         // Databuffers
-        core::memory::unique_pointer<render::vulkan::VulkanBuffer> _vulkan_uniform_buffer{ nullptr, { core::memory::globals::null_allocator() } };
-        core::memory::unique_pointer<render::vulkan::VulkanBuffer> _vulkan_vertex_buffer{ nullptr, { core::memory::globals::null_allocator() } };
-        core::memory::unique_pointer<render::vulkan::VulkanBuffer> _vulkan_instance_buffer{ nullptr, { core::memory::globals::null_allocator() } };
+        core::Vector<core::memory::unique_pointer<render::vulkan::VulkanBuffer>> _vulkan_buffers;
 
         // The framebuffers
         uint32_t _vulkan_current_framebuffer = 0;
@@ -716,9 +547,13 @@ namespace render
         core::memory::unique_pointer<render::vulkan::VulkanPipeline> _vulkan_pipeline{ nullptr, { core::memory::globals::null_allocator() } };
 
         // Array vulkan devices.
-        core::pod::Array<render::vulkan::VulkanPhysicalDevice*> _vulkan_devices;
+        core::memory::unique_pointer<render::vulkan::VulkanPhysicalDevice> _vulkan_physical_device{ nullptr, { core::memory::globals::null_allocator() } };
+        core::memory::unique_pointer<render::vulkan::VulkanDeviceMemoryManager> _vulkan_physical_memory{ nullptr, { core::memory::globals::null_allocator() } };
 
         core::pod::Array<render::vulkan::VulkanCommandBuffer*> _vulkan_command_buffers;
+
+        render::api::v1::vulkan::RenderPassContext _render_pass_context{};
+        render::api::v1::vulkan::CommandBufferContext _command_buffer_context{};
 
         // Shader stages
         std::vector<core::memory::unique_pointer<vulkan::VulkanShader>> _shaders;
@@ -739,6 +574,7 @@ extern "C"
         render::RenderSystem* result = nullptr;
         if (api_version == render::api::v1::version_name.hash_value)
         {
+            render::api::v1::vulkan::init_api(render::api::render_api_instance);
             render::api::v1::vulkan::init_api(api_instance);
             result = alloc.make<render::VulkanRenderSystem>(alloc);
         }
