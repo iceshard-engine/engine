@@ -91,7 +91,7 @@ namespace asset::detail
             }
 
             _loaded_meshes.emplace(asset.name.hash_value, std::move(loaded_vertices));
-            result_data.content = { _loaded_meshes[asset.name.hash_value].data(), (uint32_t) _loaded_meshes[asset.name.hash_value].size() };
+            result_data.content = { _loaded_meshes[asset.name.hash_value].data(), (uint32_t) _loaded_meshes[asset.name.hash_value].size() * sizeof(MeshVertice) };
             result_data.metadata = meta;
 
             return asset::AssetStatus::Loaded;
