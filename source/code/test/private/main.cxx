@@ -95,17 +95,19 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
             render_system->load_shader(shader_data);
         }
 
+        render::api::VertexBuffer vtx_buffer[2]{};
+
         asset::AssetData mesh_data;
         if (asset_system->load(asset::Asset{ "mesh/test/box", asset::AssetType::Mesh }, mesh_data) == asset::AssetStatus::Loaded)
         {
-            auto vtx_buffer = render_system->create_vertex_buffer(mesh_data.content._size);
+            vtx_buffer[0] = render_system->create_vertex_buffer(mesh_data.content._size);
 
             render::api::BufferDataView buffer_data_view;
-            render::api::render_api_instance->vertex_buffer_map_data(vtx_buffer, buffer_data_view);
+            render::api::render_api_instance->vertex_buffer_map_data(vtx_buffer[0], buffer_data_view);
             IS_ASSERT(buffer_data_view.data_size >= mesh_data.content._size, "Render buffer not big enoguht! Ugh!");
 
             std::memcpy(buffer_data_view.data_pointer, mesh_data.content._data, mesh_data.content._size);
-            render::api::render_api_instance->vertex_buffer_unmap_data(vtx_buffer);
+            render::api::render_api_instance->vertex_buffer_unmap_data(vtx_buffer[0]);
         }
 
         {
@@ -116,14 +118,14 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
                 glm::translate(glm::mat4{ 1.0f }, glm::vec3{ 1.0f, 1.0f, 3.0f }),
             };
 
-            auto instance_buffer = render_system->create_vertex_buffer(sizeof(instances));
+            vtx_buffer[1] = render_system->create_vertex_buffer(sizeof(instances));
 
             render::api::BufferDataView buffer_data_view;
-            render::api::render_api_instance->vertex_buffer_map_data(instance_buffer, buffer_data_view);
+            render::api::render_api_instance->vertex_buffer_map_data(vtx_buffer[1], buffer_data_view);
             IS_ASSERT(buffer_data_view.data_size >= sizeof(instances), "Render buffer not big enoguht! Ugh!");
 
             std::memcpy(buffer_data_view.data_pointer, &instances, sizeof(instances));
-            render::api::render_api_instance->vertex_buffer_unmap_data(instance_buffer);
+            render::api::render_api_instance->vertex_buffer_unmap_data(vtx_buffer[1]);
         }
 
         static auto projection = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 100.0f);
@@ -163,7 +165,9 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
         }
 
         render_system->create_uniform_descriptor_sets(sizeof(MVP));
-        render_system->create_pipeline(render::pipeline::DefaultPieline);
+        auto descriptor_sets = render_system->descriptor_sets();
+        auto render_pipeline = render_system->create_pipeline(render::pipeline::DefaultPieline);
+        auto command_buffer = render_system->command_buffer();
 
         fmt::print("IceShard engine revision: {}\n", engine_instance->revision());
 
@@ -207,6 +211,17 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
                 });
 
             engine_instance->next_frame();
+
+            render::cmd::begin(command_buffer);
+            render::cmd::begin_renderpass(command_buffer);
+            render::cmd::bind_render_pipeline(command_buffer, render_pipeline);
+            render::cmd::bind_descriptor_sets(command_buffer, descriptor_sets);
+            render::cmd::bind_vertex_buffers(command_buffer, vtx_buffer[0], vtx_buffer[1]);
+            render::cmd::set_viewport(command_buffer, 1280, 720);
+            render::cmd::set_scissor(command_buffer, 1280, 720);
+            render::cmd::draw(command_buffer, 12 * 3, 4);
+            render::cmd::end_renderpass(command_buffer);
+            render::cmd::end(command_buffer);
 
             engine_instance->asset_system()->update();
             resource_system.flush_messages();

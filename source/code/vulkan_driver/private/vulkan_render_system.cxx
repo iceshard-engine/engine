@@ -435,38 +435,11 @@ namespace render
                 IS_ASSERT(api_result == VK_SUCCESS, "Couldn't get next framebuffer image!");
             }
 
-            [[maybe_unused]] auto const& surface_capabilities = physical_device->surface_capabilities();
-            [[maybe_unused]] auto render_pass = _vulkan_render_pass->native_handle();
-
-            _render_pass_context.extent = surface_capabilities.maxImageExtent;
+            _render_pass_context.extent = physical_device->surface_capabilities().maxImageExtent;
             _render_pass_context.renderpass = _vulkan_render_pass->native_handle();
             _render_pass_context.pipeline_layout = _vulkan_pipeline_layout->native_handle();
             _render_pass_context.framebuffer = _vulkan_framebuffers[_vulkan_current_framebuffer]->native_handle();
 
-            render::api::v1::render_api_instance->cmd_begin_func(command_buffer());
-            render::api::v1::render_api_instance->cmd_begin_renderpass_func(command_buffer());
-            render::api::v1::render_api_instance->cmd_bind_render_pipeline_func(command_buffer(),
-                render::api::RenderPipeline{ reinterpret_cast<uintptr_t>(_vulkan_pipeline->native_handle()) }
-            );
-            render::api::v1::render_api_instance->cmd_bind_descriptor_sets_func(command_buffer(), descriptor_sets());
-            render::api::v1::render_api_instance->cmd_bind_vertex_buffers_func(command_buffer(),
-                render::api::VertexBuffer{ reinterpret_cast<uintptr_t>(_vulkan_buffers[0].get()) },
-                render::api::VertexBuffer{ reinterpret_cast<uintptr_t>(_vulkan_buffers[1].get()) }
-            );
-
-            render::api::v1::render_api_instance->cmd_set_viewport_func(command_buffer(),
-                surface_capabilities.maxImageExtent.width,
-                surface_capabilities.maxImageExtent.height
-            );
-            render::api::v1::render_api_instance->cmd_set_scissor_func(command_buffer(),
-                surface_capabilities.maxImageExtent.width,
-                surface_capabilities.maxImageExtent.height
-            );
-
-            render::api::v1::render_api_instance->cmd_draw_func(command_buffer(), 12 * 3, 4);
-
-            render::api::v1::render_api_instance->cmd_end_renderpass_func(command_buffer());
-            render::api::v1::render_api_instance->cmd_end_func(command_buffer());
 
             VkFenceCreateInfo fenceInfo;
             fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
