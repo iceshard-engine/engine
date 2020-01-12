@@ -14,6 +14,7 @@
 #include "vulkan_surface.hxx"
 #include "device/vulkan_physical_device.hxx"
 #include "device/vulkan_command_buffer.hxx"
+#include "vulkan_device_memory_manager.hxx"
 #include "vulkan_swapchain.hxx"
 #include "vulkan_image.hxx"
 #include "vulkan_shader.hxx"
@@ -157,7 +158,6 @@ namespace render
             : render::RenderSystem{}
             , _driver_allocator{ "vulkan-driver", alloc }
             , _vulkan_allocator{ alloc }
-            , _vulkan_devices{ _driver_allocator }
             , _vulkan_framebuffers{ _driver_allocator }
             , _vulkan_command_buffers{ _driver_allocator }
             , _vulkan_vertex_descriptors{ _driver_allocator }
@@ -208,12 +208,12 @@ namespace render
             enumerate_devices();
 
             // Create swap chain
-            _vulkan_swapchain = render::vulkan::create_swapchain(_driver_allocator, core::pod::array::front(_vulkan_devices));
+            _vulkan_swapchain = render::vulkan::create_swapchain(_driver_allocator, _vulkan_physical_device.get());
 
             // Create depth buffer
-            _vulkan_depth_image = render::vulkan::create_depth_buffer_image(_driver_allocator, core::pod::array::front(_vulkan_devices));
+            _vulkan_depth_image = render::vulkan::create_depth_buffer_image(_driver_allocator, _vulkan_physical_device.get());
 
-            auto* physical_device = core::pod::array::front(_vulkan_devices);
+            auto* physical_device = _vulkan_physical_device.get();
             auto graphics_device = physical_device->graphics_device()->native_handle();
 
             {
@@ -221,8 +221,9 @@ namespace render
 
                 _vulkan_uniform_buffer = vulkan::create_uniform_buffer(
                     _driver_allocator,
-                    physical_device,
-                    VkDeviceSize{ sizeof(detail::sample::MVP) });
+                    *_vulkan_physical_memory,
+                    static_cast<uint32_t>(sizeof(detail::sample::MVP))
+                );
                 _vulkan_uniform_buffer->map_memory(data_view);
                 IS_ASSERT(data_view.data_size >= sizeof(detail::sample::MVP), "Insufficient buffer size!");
                 memcpy(data_view.data_pointer, &detail::sample::MVP, sizeof(detail::sample::MVP));
@@ -230,8 +231,9 @@ namespace render
 
                 _vulkan_vertex_buffer = vulkan::create_uniform_buffer(
                     _driver_allocator,
-                    physical_device,
-                    VkDeviceSize{ sizeof(detail::sample::g_vb_solid_face_colors_Data) });
+                    *_vulkan_physical_memory,
+                    static_cast<uint32_t>(sizeof(detail::sample::g_vb_solid_face_colors_Data))
+                );
 
                 _vulkan_vertex_buffer->map_memory(data_view);
                 IS_ASSERT(data_view.data_size >= sizeof(detail::sample::g_vb_solid_face_colors_Data), "Insufficient buffer size!");
@@ -240,8 +242,9 @@ namespace render
 
                 _vulkan_instance_buffer = vulkan::create_uniform_buffer(
                     _driver_allocator,
-                    physical_device,
-                    VkDeviceSize{ sizeof(detail::sample::instances) });
+                    *_vulkan_physical_memory,
+                    static_cast<uint32_t>(sizeof(detail::sample::instances))
+                );
 
                 _vulkan_instance_buffer->map_memory(data_view);
                 IS_ASSERT(data_view.data_size >= sizeof(detail::sample::instances), "Insufficient buffer size!");
@@ -249,7 +252,7 @@ namespace render
                 _vulkan_instance_buffer->unmap_memory();
             }
 
-            core::pod::array::front(_vulkan_devices)->graphics_device()->create_command_buffers(_vulkan_command_buffers, 1);
+            _vulkan_physical_device->graphics_device()->create_command_buffers(_vulkan_command_buffers, 1);
 
             {
                 VkDescriptorSetLayoutBinding layout_binding = {};
@@ -276,7 +279,7 @@ namespace render
             }
 
             {
-                auto const& formats = core::pod::array::front(_vulkan_devices)->surface_formats();
+                auto const& formats = _vulkan_physical_device->surface_formats();
 
                 _vulkan_render_pass = vulkan::create_render_pass(_driver_allocator, graphics_device, core::pod::array::front(formats).format, VK_FORMAT_D16_UNORM);
             }
@@ -288,7 +291,7 @@ namespace render
                 _vulkan_render_pass->native_handle(),
                 *_vulkan_depth_image.get(),
                 *_vulkan_swapchain.get(),
-                core::pod::array::front(_vulkan_devices)
+                _vulkan_physical_device.get()
             );
 
             VkSemaphoreCreateInfo imageAcquiredSemaphoreCreateInfo;
@@ -316,24 +319,26 @@ namespace render
 
             // Create VulkanPhysicalDevice objects from the handles.
             fmt::print("Available Vulkan devices: {}\n", device_count);
-            for (const auto& physical_device_handle : devices_handles)
-            {
-                core::pod::array::push_back(
-                    _vulkan_devices,
-                    _driver_allocator.make<vulkan::VulkanPhysicalDevice>(
-                        _driver_allocator,
-                        physical_device_handle,
-                        _vulkan_surface->native_handle()));
-            }
+            fmt::print("Selecting device at index: {}\n", 0);
+
+            _vulkan_physical_device = core::memory::make_unique<vulkan::VulkanPhysicalDevice>(
+                _driver_allocator,
+                _driver_allocator,
+                core::pod::array::front(devices_handles),
+                _vulkan_surface->native_handle()
+            );
+            _vulkan_physical_memory = core::memory::make_unique<vulkan::VulkanDeviceMemoryManager>(
+                _driver_allocator,
+                _driver_allocator,
+                _vulkan_physical_device.get(),
+                _vulkan_physical_device->graphics_device()->native_handle()
+            );
         }
 
         void release_devices() noexcept
         {
-            for (auto* vulkan_device : _vulkan_devices)
-            {
-                _driver_allocator.destroy(vulkan_device);
-            }
-            core::pod::array::clear(_vulkan_devices);
+            _vulkan_physical_memory = nullptr;
+            _vulkan_physical_device = nullptr;
         }
 
         void shutdown() noexcept
@@ -343,7 +348,7 @@ namespace render
                 _driver_allocator.destroy(entry.value);
             }
 
-            auto* physical_device = core::pod::array::front(_vulkan_devices);
+            auto* physical_device = _vulkan_physical_device.get();
             vkDestroySemaphore(physical_device->graphics_device()->native_handle(), _quick_semaphore, nullptr);
 
             _vulkan_pipeline = nullptr;
@@ -393,6 +398,11 @@ namespace render
             return CommandBuffer{ 0 };
         }
 
+        auto create_vertex_buffer() noexcept -> render::api::VertexBuffer override
+        {
+            return render::api::VertexBuffer{ 0 };
+        }
+
         auto current_frame_buffer() noexcept -> uintptr_t
         {
             return reinterpret_cast<uintptr_t>(_vulkan_framebuffers[_vulkan_current_framebuffer]->native_handle());
@@ -411,7 +421,7 @@ namespace render
             _shaders.emplace_back(
                 vulkan::create_shader(
                     _driver_allocator,
-                    core::pod::array::front(_vulkan_devices)->graphics_device()->native_handle(),
+                    _vulkan_physical_device->graphics_device()->native_handle(),
                     stage == 1 ? VkShaderStageFlagBits::VK_SHADER_STAGE_VERTEX_BIT : VkShaderStageFlagBits::VK_SHADER_STAGE_FRAGMENT_BIT,
                     shader_data.content
                 )
@@ -429,10 +439,10 @@ namespace render
 
             // clang-format off
             core::pod::hash::set(_vulkan_vertex_descriptors, hash_value, _driver_allocator.make<render::vulkan::VulkanVertexDescriptor>(
-                _driver_allocator,
-                binding,
-                descriptors,
-                descriptor_count
+                    _driver_allocator,
+                    binding,
+                    descriptors,
+                    descriptor_count
                 )
             );
             // clang-format on
@@ -443,7 +453,7 @@ namespace render
             uint32_t descriptor_name_count
         ) noexcept -> api::RenderPipeline override
         {
-            auto* physical_device = core::pod::array::front(_vulkan_devices);
+            auto* physical_device = _vulkan_physical_device.get();
             auto graphics_device = physical_device->graphics_device()->native_handle();
 
             {
@@ -452,9 +462,8 @@ namespace render
                 _vulkan_pipeline_layout = vulkan::create_pipeline_layout(_driver_allocator, graphics_device, layouts);
 
                 core::pod::Array<vulkan::VulkanShader const*> shader_stages{ _driver_allocator };
-                std::for_each(
-                    _shaders.begin(), _shaders.end(),
-                    [&](auto const& shader_ptr) noexcept {
+                std::for_each(_shaders.begin(), _shaders.end(), [&](auto const& shader_ptr) noexcept
+                    {
                         core::pod::array::push_back(shader_stages, const_cast<vulkan::VulkanShader const*>(shader_ptr.get()));
                     });
 
@@ -468,7 +477,8 @@ namespace render
                     auto const* descriptor = core::pod::hash::get<vulkan::VulkanVertexDescriptor*>(
                         _vulkan_vertex_descriptors,
                         descriptor_name_hash,
-                        nullptr);
+                        nullptr
+                    );
                     IS_ASSERT(descriptor != nullptr, "Unknown descriptor name {}!", descriptor_names[descriptor_index]);
 
                     core::pod::array::push_back(vertex_descriptors, descriptor);
@@ -489,7 +499,7 @@ namespace render
 
         void swap() noexcept override
         {
-            auto* physical_device = core::pod::array::front(_vulkan_devices);
+            auto* physical_device = _vulkan_physical_device.get();
             auto graphics_device = physical_device->graphics_device();
             auto graphics_device_native = graphics_device->native_handle();
             auto swap_chain = _vulkan_swapchain->native_handle();
@@ -714,7 +724,8 @@ namespace render
         core::memory::unique_pointer<render::vulkan::VulkanPipeline> _vulkan_pipeline{ nullptr, { core::memory::globals::null_allocator() } };
 
         // Array vulkan devices.
-        core::pod::Array<render::vulkan::VulkanPhysicalDevice*> _vulkan_devices;
+        core::memory::unique_pointer<render::vulkan::VulkanPhysicalDevice> _vulkan_physical_device{ nullptr, { core::memory::globals::null_allocator() } };
+        core::memory::unique_pointer<render::vulkan::VulkanDeviceMemoryManager> _vulkan_physical_memory{ nullptr, { core::memory::globals::null_allocator() } };
 
         core::pod::Array<render::vulkan::VulkanCommandBuffer*> _vulkan_command_buffers;
 

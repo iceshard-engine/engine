@@ -16,9 +16,15 @@ namespace render::api
 
         enum class RenderPipeline : uintptr_t;
 
+        enum class VertexBuffer : uintptr_t;
+
         struct RenderInterface
         {
             void (*check_func)();
+            void (*vertex_buffer_map_data)(VertexBuffer);
+            void (*vertex_buffer_unmap_data)(VertexBuffer);
+
+            // Commands
             void (*cmd_begin_func)(CommandBuffer);
             void (*cmd_end_func)(CommandBuffer);
 

@@ -16,9 +16,11 @@ namespace render
     public:
         virtual ~RenderSystem() noexcept = default;
 
-        virtual auto command_buffer() noexcept -> CommandBuffer = 0;
+        virtual auto command_buffer() noexcept -> render::api::CommandBuffer = 0;
 
         //virtual auto current_frame_buffer() noexcept -> FrameBufferHandle = 0;
+
+        virtual auto create_vertex_buffer() noexcept -> render::api::VertexBuffer = 0;
 
         virtual void load_shader(asset::AssetData shader_data) noexcept = 0;
 
@@ -26,7 +28,7 @@ namespace render
         void add_named_descriptor_set(VertexDescriptorSet<Size> const& binding_set) noexcept;
 
         template<uint32_t DescriptorCount>
-        auto create_pipeline(Pipeline<DescriptorCount> const& pipeline) noexcept -> api::RenderPipeline;
+        auto create_pipeline(Pipeline<DescriptorCount> const& pipeline) noexcept -> render::api::RenderPipeline;
 
 
         virtual void swap() noexcept = 0;

@@ -37,6 +37,7 @@ namespace iceshard
         {
         public:
             auto command_buffer() noexcept -> render::CommandBuffer override { return render::CommandBuffer{ 0 }; }
+            auto create_vertex_buffer() noexcept -> render::api::VertexBuffer override { return render::api::VertexBuffer{ 0 }; }
             void swap() noexcept override {}
 
             void load_shader(asset::AssetData) noexcept override { };
