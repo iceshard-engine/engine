@@ -46,6 +46,8 @@
 #include <glm/glm.hpp>
 #include <glm/gtx/transform.hpp>
 
+#include <imgui/imgui.h>
+
 int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
 {
     using resource::URN;
@@ -139,6 +141,7 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
 
         glm::mat4 MVP{ 1 };
         auto uniform_buffer = render_system->create_uniform_buffer(sizeof(MVP));
+
 
         {
             auto new_view = glm::lookAt(
