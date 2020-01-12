@@ -43,6 +43,9 @@
 #include <iceshard/entity/entity_command_buffer.hxx>
 #include <iceshard/component/component_system.hxx>
 
+#include <glm/glm.hpp>
+#include <glm/gtx/transform.hpp>
+
 int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
 {
     using resource::URN;
@@ -103,6 +106,25 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
 
             std::memcpy(buffer_data_view.data_pointer, mesh_data.content._data, mesh_data.content._size);
             render::api::render_api_instance->vertex_buffer_unmap_data(vtx_buffer);
+        }
+
+
+        {
+            static const glm::mat4 instances[] = {
+                glm::mat4{ 1.0f },
+                glm::translate(glm::mat4{ 1.0f }, glm::vec3{ 1.0f, 3.0f, 1.0f }),
+                glm::translate(glm::mat4{ 1.0f }, glm::vec3{ 3.0f, 1.0f, 1.0f }),
+                glm::translate(glm::mat4{ 1.0f }, glm::vec3{ 1.0f, 1.0f, 3.0f }),
+            };
+
+            auto instance_buffer = render_system->create_vertex_buffer(sizeof(instances));
+
+            render::api::BufferDataView buffer_data_view;
+            render::api::render_api_instance->vertex_buffer_map_data(instance_buffer, buffer_data_view);
+            IS_ASSERT(buffer_data_view.data_size >= sizeof(instances), "Render buffer not big enoguht! Ugh!");
+
+            std::memcpy(buffer_data_view.data_pointer, &instances, sizeof(instances));
+            render::api::render_api_instance->vertex_buffer_unmap_data(instance_buffer);
         }
 
         render_system->create_pipeline(render::pipeline::DefaultPieline);

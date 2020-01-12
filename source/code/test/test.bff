@@ -13,6 +13,7 @@
     // Additional helper variables
     //------------------------------------------------------------------------------
     .ProjectConanModules = .WorkspaceConanModules
+        + 'glm'
     .ProjectConanModuleDependencies = { 'SDL2' }
 
     .VSProjectConfigurations = { }

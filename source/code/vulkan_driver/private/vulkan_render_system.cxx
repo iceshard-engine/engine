@@ -58,11 +58,6 @@ namespace render
         namespace sample
         {
 
-            static const glm::mat4 instances[] = {
-                glm::mat4{ 1.0f },
-                glm::translate(glm::mat4{ 1.0f }, glm::vec3{ 1.0f, 3.0f, 1.0f })
-            };
-
             static auto projection = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 100.0f);
             static auto cam_pos = glm::vec3(-5, 3, -10);
             static auto view = glm::lookAt(cam_pos, // Camera is at (-5,3,-10), in World Space
@@ -172,17 +167,6 @@ namespace render
                 IS_ASSERT(data_view.data_size >= sizeof(detail::sample::MVP), "Insufficient buffer size!");
                 memcpy(data_view.data_pointer, &detail::sample::MVP, sizeof(detail::sample::MVP));
                 _vulkan_uniform_buffer->unmap_memory();
-
-                _vulkan_instance_buffer = vulkan::create_uniform_buffer(
-                    _driver_allocator,
-                    *_vulkan_physical_memory,
-                    static_cast<uint32_t>(sizeof(detail::sample::instances))
-                );
-
-                _vulkan_instance_buffer->map_memory(data_view);
-                IS_ASSERT(data_view.data_size >= sizeof(detail::sample::instances), "Insufficient buffer size!");
-                memcpy(data_view.data_pointer, detail::sample::instances, sizeof(detail::sample::instances));
-                _vulkan_instance_buffer->unmap_memory();
             }
 
             _vulkan_physical_device->graphics_device()->create_command_buffers(_vulkan_command_buffers, 1);
@@ -303,7 +287,6 @@ namespace render
             core::pod::array::clear(_vulkan_command_buffers);
 
             _vulkan_uniform_buffer = nullptr;
-            _vulkan_instance_buffer = nullptr;
             _vulkan_buffers.clear();
 
             _vulkan_depth_image = nullptr;
@@ -535,7 +518,7 @@ namespace render
 
             {
                 VkDeviceSize const offsets[2] = { 0, 0 };
-                VkBuffer const buffers[2] = { _vulkan_buffers[0]->native_handle(), _vulkan_instance_buffer->native_handle() };
+                VkBuffer const buffers[2] = { _vulkan_buffers[0]->native_handle(), _vulkan_buffers[1]->native_handle() };
                 vkCmdBindVertexBuffers(cmd, 0, 2, buffers, offsets);
             }
 
@@ -558,7 +541,7 @@ namespace render
                 vkCmdSetScissor(cmd, 0, 1, &scissor);
             }
 
-            vkCmdDraw(cmd, 12 * 3, 2, 0, 0);
+            vkCmdDraw(cmd, 12 * 3, 4, 0, 0);
             vkCmdEndRenderPass(cmd);
             res = vkEndCommandBuffer(cmd);
             assert(res == VK_SUCCESS);
@@ -654,7 +637,6 @@ namespace render
 
         // Databuffers
         core::memory::unique_pointer<render::vulkan::VulkanBuffer> _vulkan_uniform_buffer{ nullptr, { core::memory::globals::null_allocator() } };
-        core::memory::unique_pointer<render::vulkan::VulkanBuffer> _vulkan_instance_buffer{ nullptr, { core::memory::globals::null_allocator() } };
 
         core::Vector<core::memory::unique_pointer<render::vulkan::VulkanBuffer>> _vulkan_buffers;
 
