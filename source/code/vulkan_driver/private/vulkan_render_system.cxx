@@ -55,28 +55,6 @@ namespace render
             allocator->deallocate(memory);
         }
 
-        namespace sample
-        {
-
-            static auto projection = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 100.0f);
-            static auto cam_pos = glm::vec3(-5, 3, -10);
-            static auto view = glm::lookAt(cam_pos, // Camera is at (-5,3,-10), in World Space
-                glm::vec3(0, 0, 0),                 // and looks at the origin
-                glm::vec3(0, -1, 0)                 // Head is up (set to 0,-1,0 to look upside-down)
-            );
-            static auto model = glm::mat4(1.0f);
-
-            // Vulkan clip space has inverted Y and half Z.
-            // clang-format off
-            static auto clip = glm::mat4(1.0f, 0.0f, 0.0f, 0.0f,
-                0.0f, -1.0f, 0.0f, 0.0f,
-                0.0f, 0.0f, 0.5f, 0.0f,
-                0.0f, 0.0f, 0.5f, 1.0f);
-            // clang-format on
-            static auto MVP = clip * projection * view; // * model;
-
-        } // namespace sample
-
         //void vk_iceshard_internal_allocate_event(void* userdata, size_t size, VkInternalAllocationType type, VkSystemAllocationScope scope) noexcept
         //{
         //    PFN_vkInternalAllocationNotification f;
@@ -155,45 +133,7 @@ namespace render
             auto* physical_device = _vulkan_physical_device.get();
             auto graphics_device = physical_device->graphics_device()->native_handle();
 
-            {
-                api::BufferDataView data_view;
-
-                _vulkan_uniform_buffer = vulkan::create_uniform_buffer(
-                    _driver_allocator,
-                    *_vulkan_physical_memory,
-                    static_cast<uint32_t>(sizeof(detail::sample::MVP))
-                );
-                _vulkan_uniform_buffer->map_memory(data_view);
-                IS_ASSERT(data_view.data_size >= sizeof(detail::sample::MVP), "Insufficient buffer size!");
-                memcpy(data_view.data_pointer, &detail::sample::MVP, sizeof(detail::sample::MVP));
-                _vulkan_uniform_buffer->unmap_memory();
-            }
-
             _vulkan_physical_device->graphics_device()->create_command_buffers(_vulkan_command_buffers, 1);
-
-            {
-                VkDescriptorSetLayoutBinding layout_binding = {};
-                layout_binding.binding = 0;
-                layout_binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-                layout_binding.descriptorCount = 1;
-                layout_binding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-                layout_binding.pImmutableSamplers = nullptr;
-
-                core::pod::Array<VkDescriptorSetLayoutBinding> bindings{ _driver_allocator };
-                core::pod::array::push_back(bindings, std::move(layout_binding));
-
-                _vulkan_descriptor_sets_layout = vulkan::create_descriptor_set_layout(_driver_allocator, graphics_device, bindings);
-
-                core::pod::Array<vulkan::VulkanDescriptorSetLayout*> layouts{ _driver_allocator };
-                core::pod::array::push_back(layouts, _vulkan_descriptor_sets_layout.get());
-                _vulkan_descriptor_sets = vulkan::create_vulkan_descriptor_sets(_driver_allocator, graphics_device, layouts);
-
-                VkDescriptorBufferInfo buffer_info{};
-                buffer_info.buffer = _vulkan_uniform_buffer->native_handle();
-                buffer_info.offset = 0;
-                buffer_info.range = sizeof(detail::sample::MVP);
-                _vulkan_descriptor_sets->write_descriptor_set(0, VkDescriptorType::VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, buffer_info);
-            }
 
             {
                 auto const& formats = _vulkan_physical_device->surface_formats();
@@ -286,7 +226,6 @@ namespace render
 
             core::pod::array::clear(_vulkan_command_buffers);
 
-            _vulkan_uniform_buffer = nullptr;
             _vulkan_buffers.clear();
 
             _vulkan_depth_image = nullptr;
@@ -328,6 +267,47 @@ namespace render
             return result;
         }
 
+        auto create_uniform_buffer(uint32_t size) noexcept -> render::api::UniformBuffer override
+        {
+            auto vulkan_buffer = render::vulkan::create_uniform_buffer(
+                _driver_allocator,
+                *_vulkan_physical_memory,
+                size
+            );
+
+            auto result = render::api::UniformBuffer{ reinterpret_cast<uintptr_t>(vulkan_buffer.get()) };
+            _vulkan_buffers.emplace_back(std::move(vulkan_buffer));
+
+            return result;
+        }
+
+        void create_uniform_descriptor_sets(uint32_t size) noexcept
+        {
+            auto const graphics_device_handle = _vulkan_physical_device->graphics_device()->native_handle();
+
+            VkDescriptorSetLayoutBinding layout_binding = {};
+            layout_binding.binding = 0;
+            layout_binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+            layout_binding.descriptorCount = 1;
+            layout_binding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+            layout_binding.pImmutableSamplers = nullptr;
+
+            core::pod::Array<VkDescriptorSetLayoutBinding> bindings{ _driver_allocator };
+            core::pod::array::push_back(bindings, std::move(layout_binding));
+
+            _vulkan_descriptor_sets_layout = vulkan::create_descriptor_set_layout(_driver_allocator, graphics_device_handle, bindings);
+
+            core::pod::Array<vulkan::VulkanDescriptorSetLayout*> layouts{ _driver_allocator };
+            core::pod::array::push_back(layouts, _vulkan_descriptor_sets_layout.get());
+            _vulkan_descriptor_sets = vulkan::create_vulkan_descriptor_sets(_driver_allocator, graphics_device_handle, layouts);
+
+            VkDescriptorBufferInfo buffer_info{};
+            buffer_info.buffer = _vulkan_buffers[2]->native_handle();
+            buffer_info.offset = 0;
+            buffer_info.range = size;
+            _vulkan_descriptor_sets->write_descriptor_set(0, VkDescriptorType::VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, buffer_info);
+        }
+
         auto current_frame_buffer() noexcept -> uintptr_t
         {
             return reinterpret_cast<uintptr_t>(_vulkan_framebuffers[_vulkan_current_framebuffer]->native_handle());
@@ -353,11 +333,12 @@ namespace render
             );
         }
 
-        void add_named_descriptor_set(
+        void add_named_vertex_descriptor_set(
             [[maybe_unused]] core::cexpr::stringid_argument_type name,
             [[maybe_unused]] VertexBinding const& binding,
             [[maybe_unused]] VertexDescriptor const* descriptors,
-            [[maybe_unused]] uint32_t descriptor_count) noexcept override
+            [[maybe_unused]] uint32_t descriptor_count
+        ) noexcept override
         {
             auto hash_value = static_cast<uint64_t>(name.hash_value);
             IS_ASSERT(core::pod::hash::has(_vulkan_vertex_descriptors, hash_value) == false, "A descriptor set with this name {} was already defined!", name);
@@ -416,7 +397,8 @@ namespace render
                     shader_stages,
                     vertex_descriptors,
                     _vulkan_pipeline_layout.get(),
-                    _vulkan_render_pass.get());
+                    _vulkan_render_pass.get()
+                );
             }
 
             return api::RenderPipeline{ reinterpret_cast<uintptr_t>(_vulkan_pipeline->native_handle()) };
@@ -482,28 +464,6 @@ namespace render
 
             vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, _vulkan_pipeline->native_handle());
 
-            {
-                auto new_view = glm::lookAt(detail::sample::cam_pos, // Camera is at (-5,3,-10), in World Space
-                    glm::vec3(0, 0, 0),                              // and looks at the origin
-                    glm::vec3(0, -1, 0)                              // Head is up (set to 0,-1,0 to look upside-down)
-                );
-
-                static float deg = 0.0f;
-                deg += 3.0f;
-                new_view = glm::rotate(new_view, glm::radians(deg), glm::vec3{ 0.f, 1.f, 0.f });
-
-                if (deg >= 360.0f)
-                    deg = 0.0f;
-
-                auto MVP = detail::sample::clip * detail::sample::projection * new_view;
-
-                render::api::BufferDataView data_view;
-                _vulkan_uniform_buffer->map_memory(data_view);
-                IS_ASSERT(data_view.data_size >= sizeof(MVP), "Insufficient buffer size!");
-                memcpy(data_view.data_pointer, &MVP, sizeof(MVP));
-                _vulkan_uniform_buffer->unmap_memory();
-            }
-
             core::pod::Array<VkDescriptorSet> sets{ _driver_allocator };
             _vulkan_descriptor_sets->native_handles(sets);
             vkCmdBindDescriptorSets(
@@ -514,7 +474,8 @@ namespace render
                 core::pod::array::size(sets),
                 core::pod::array::begin(sets),
                 0,
-                NULL);
+                NULL
+            );
 
             {
                 VkDeviceSize const offsets[2] = { 0, 0 };
@@ -636,8 +597,6 @@ namespace render
         core::pod::Hash<render::vulkan::VulkanVertexDescriptor*> _vulkan_vertex_descriptors;
 
         // Databuffers
-        core::memory::unique_pointer<render::vulkan::VulkanBuffer> _vulkan_uniform_buffer{ nullptr, { core::memory::globals::null_allocator() } };
-
         core::Vector<core::memory::unique_pointer<render::vulkan::VulkanBuffer>> _vulkan_buffers;
 
         // The framebuffers

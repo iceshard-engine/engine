@@ -82,8 +82,8 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
 
         // Prepare the render system
         auto* render_system = engine_instance->render_system();
-        render_system->add_named_descriptor_set(render::descriptor_set::Color);
-        render_system->add_named_descriptor_set(render::descriptor_set::Model);
+        render_system->add_named_vertex_descriptor_set(render::descriptor_set::Color);
+        render_system->add_named_vertex_descriptor_set(render::descriptor_set::Model);
 
         asset::AssetData shader_data;
         if (asset_system->load(asset::AssetShader{ "shaders/debug/test-vert" }, shader_data) == asset::AssetStatus::Loaded)
@@ -108,7 +108,6 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
             render::api::render_api_instance->vertex_buffer_unmap_data(vtx_buffer);
         }
 
-
         {
             static const glm::mat4 instances[] = {
                 glm::mat4{ 1.0f },
@@ -127,6 +126,43 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
             render::api::render_api_instance->vertex_buffer_unmap_data(instance_buffer);
         }
 
+        static auto projection = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 100.0f);
+        static auto cam_pos = glm::vec3(-5, 3, -10);
+        static auto clip = glm::mat4(
+            1.0f, 0.0f, 0.0f, 0.0f,
+            0.0f, -1.0f, 0.0f, 0.0f,
+            0.0f, 0.0f, 0.5f, 0.0f,
+            0.0f, 0.0f, 0.5f, 1.0f
+        );
+
+        glm::mat4 MVP{ 1 };
+        auto uniform_buffer = render_system->create_uniform_buffer(sizeof(MVP));
+
+        {
+            auto new_view = glm::lookAt(
+                cam_pos, // Camera is at (-5,3,-10), in World Space
+                glm::vec3(0, 0, 0),      // and looks at the origin
+                glm::vec3(0, -1, 0)      // Head is up (set to 0,-1,0 to look upside-down)
+            );
+
+            static float deg = 0.0f;
+            deg += 3.0f;
+            new_view = glm::rotate(new_view, glm::radians(deg), glm::vec3{ 0.f, 1.f, 0.f });
+
+            if (deg >= 360.0f)
+                deg = 0.0f;
+
+            MVP = clip * projection * new_view;
+
+            render::api::BufferDataView data_view;
+            render::api::render_api_instance->uniform_buffer_map_data(uniform_buffer, data_view);
+            IS_ASSERT(data_view.data_size >= sizeof(MVP), "Insufficient buffer size!");
+
+            memcpy(data_view.data_pointer, &MVP, sizeof(MVP));
+            render::api::render_api_instance->uniform_buffer_unmap_data(uniform_buffer);
+        }
+
+        render_system->create_uniform_descriptor_sets(sizeof(MVP));
         render_system->create_pipeline(render::pipeline::DefaultPieline);
 
         fmt::print("IceShard engine revision: {}\n", engine_instance->revision());
@@ -140,6 +176,34 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
             core::message::filter<input::message::AppExit>(engine_instance->current_frame().messages(), [&quit](auto const&) noexcept
                 {
                     quit = true;
+                });
+
+            core::message::filter<input::message::MouseMotion>(engine_instance->current_frame().messages(), [&](input::message::MouseMotion const& msg) noexcept
+                {
+                    static auto last_pos = msg.pos.x;
+
+                    auto new_view = glm::lookAt(
+                        cam_pos, // Camera is at (-5,3,-10), in World Space
+                        glm::vec3(0, 0, 0),      // and looks at the origin
+                        glm::vec3(0, -1, 0)      // Head is up (set to 0,-1,0 to look upside-down)
+                    );
+
+                    static float deg = 0.0f;
+                    deg += static_cast<float>(last_pos - msg.pos.x);
+                    new_view = glm::rotate(new_view, glm::radians(deg), glm::vec3{ 0.f, 1.f, 0.f });
+                    last_pos = msg.pos.x;
+
+                    if (deg >= 360.0f)
+                        deg = 0.0f;
+
+                    MVP = clip * projection * new_view;
+
+                    render::api::BufferDataView data_view;
+                    render::api::render_api_instance->uniform_buffer_map_data(uniform_buffer, data_view);
+                    IS_ASSERT(data_view.data_size >= sizeof(MVP), "Insufficient buffer size!");
+
+                    memcpy(data_view.data_pointer, &MVP, sizeof(MVP));
+                    render::api::render_api_instance->uniform_buffer_unmap_data(uniform_buffer);
                 });
 
             engine_instance->next_frame();

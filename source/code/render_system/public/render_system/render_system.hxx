@@ -22,10 +22,14 @@ namespace render
 
         virtual auto create_vertex_buffer(uint32_t size) noexcept -> render::api::VertexBuffer = 0;
 
+        virtual auto create_uniform_buffer(uint32_t size) noexcept -> render::api::UniformBuffer = 0;
+
+        virtual void create_uniform_descriptor_sets([[maybe_unused]] uint32_t size) noexcept { }
+
         virtual void load_shader(asset::AssetData shader_data) noexcept = 0;
 
         template<uint32_t Size>
-        void add_named_descriptor_set(VertexDescriptorSet<Size> const& binding_set) noexcept;
+        void add_named_vertex_descriptor_set(VertexDescriptorSet<Size> const& binding_set) noexcept;
 
         template<uint32_t DescriptorCount>
         auto create_pipeline(Pipeline<DescriptorCount> const& pipeline) noexcept -> render::api::RenderPipeline;
@@ -39,7 +43,7 @@ namespace render
             uint32_t descriptor_name_count
         ) noexcept->api::RenderPipeline = 0;
 
-        virtual void add_named_descriptor_set(
+        virtual void add_named_vertex_descriptor_set(
             core::cexpr::stringid_argument_type name,
             VertexBinding const& binding,
             VertexDescriptor const* descriptors,
@@ -48,10 +52,10 @@ namespace render
     };
 
     template<uint32_t Size>
-    inline void RenderSystem::add_named_descriptor_set(
+    inline void RenderSystem::add_named_vertex_descriptor_set(
         VertexDescriptorSet<Size> const& binding_set) noexcept
     {
-        add_named_descriptor_set(binding_set.name, binding_set.binding, binding_set.descriptors, Size);
+        add_named_vertex_descriptor_set(binding_set.name, binding_set.binding, binding_set.descriptors, Size);
     }
 
     template<uint32_t DescriptorCount>

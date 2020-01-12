@@ -12,11 +12,13 @@ namespace render::api
 
         constexpr auto version_name = core::cexpr::stringid_cexpr("v1");
 
-        enum class CommandBuffer : uintptr_t;
+        enum class CommandBuffer : uintptr_t { };
 
-        enum class RenderPipeline : uintptr_t;
+        enum class RenderPipeline : uintptr_t { };
 
         enum class VertexBuffer : uintptr_t { };
+
+        enum class UniformBuffer : uintptr_t { };
 
         struct BufferDataView
         {
@@ -29,6 +31,8 @@ namespace render::api
             void (*check_func)();
             void (*vertex_buffer_map_data)(VertexBuffer, BufferDataView&);
             void (*vertex_buffer_unmap_data)(VertexBuffer);
+            void (*uniform_buffer_map_data)(UniformBuffer, BufferDataView&);
+            void (*uniform_buffer_unmap_data)(UniformBuffer);
 
             // Commands
             void (*cmd_begin_func)(CommandBuffer);

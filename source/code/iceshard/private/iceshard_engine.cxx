@@ -38,6 +38,7 @@ namespace iceshard
         public:
             auto command_buffer() noexcept -> render::CommandBuffer override { return render::CommandBuffer{ 0 }; }
             auto create_vertex_buffer(uint32_t) noexcept -> render::api::VertexBuffer override { return render::api::VertexBuffer{ 0 }; }
+            auto create_uniform_buffer(uint32_t) noexcept -> render::api::UniformBuffer { return render::api::UniformBuffer{ 0 }; }
             void swap() noexcept override {}
 
             void load_shader(asset::AssetData) noexcept override { };
@@ -50,7 +51,7 @@ namespace iceshard
                 return render::api::RenderPipeline{ 0 };
             }
 
-            void add_named_descriptor_set(
+            void add_named_vertex_descriptor_set(
                 [[maybe_unused]] core::cexpr::stringid_argument_type name,
                 [[maybe_unused]] render::VertexBinding const& binding,
                 [[maybe_unused]] render::VertexDescriptor const* descriptors,
