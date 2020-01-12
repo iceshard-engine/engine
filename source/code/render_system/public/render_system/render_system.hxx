@@ -16,6 +16,10 @@ namespace render
     public:
         virtual ~RenderSystem() noexcept = default;
 
+        virtual auto current_framebuffer() noexcept -> render::api::Framebuffer = 0;
+
+        virtual auto descriptor_sets() noexcept -> render::api::DescriptorSets = 0;
+
         virtual auto command_buffer() noexcept -> render::api::CommandBuffer = 0;
 
         //virtual auto current_frame_buffer() noexcept -> FrameBufferHandle = 0;

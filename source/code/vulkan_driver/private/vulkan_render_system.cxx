@@ -135,6 +135,9 @@ namespace render
 
             _vulkan_physical_device->graphics_device()->create_command_buffers(_vulkan_command_buffers, 1);
 
+            _command_buffer_context.command_buffer = _vulkan_command_buffers[0]->native_handle();
+            _command_buffer_context.render_pass_context = &_render_pass_context;
+
             {
                 auto const& formats = _vulkan_physical_device->surface_formats();
 
@@ -248,9 +251,14 @@ namespace render
             vkDestroyInstance(_vulkan_instance, &alloc_callbacks);
         }
 
-        auto command_buffer() noexcept -> render::CommandBuffer override
+        auto command_buffer() noexcept -> render::api::CommandBuffer override
         {
-            return CommandBuffer{ 0 };
+            return render::api::CommandBuffer{ reinterpret_cast<uintptr_t>(&_command_buffer_context) };
+        }
+
+        auto descriptor_sets() noexcept -> render::api::DescriptorSets override
+        {
+            return render::api::DescriptorSets{ reinterpret_cast<uintptr_t>(_vulkan_descriptor_sets.get()) };
         }
 
         auto create_vertex_buffer(uint32_t size) noexcept -> render::api::VertexBuffer override
@@ -308,9 +316,9 @@ namespace render
             _vulkan_descriptor_sets->write_descriptor_set(0, VkDescriptorType::VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, buffer_info);
         }
 
-        auto current_frame_buffer() noexcept -> uintptr_t
+        auto current_framebuffer() noexcept -> render::api::Framebuffer override
         {
-            return reinterpret_cast<uintptr_t>(_vulkan_framebuffers[_vulkan_current_framebuffer]->native_handle());
+            return render::api::Framebuffer{ reinterpret_cast<uintptr_t>(_vulkan_framebuffers[_vulkan_current_framebuffer]->native_handle()) };
         }
 
         void load_shader(asset::AssetData shader_data) noexcept override
@@ -430,82 +438,35 @@ namespace render
             [[maybe_unused]] auto const& surface_capabilities = physical_device->surface_capabilities();
             [[maybe_unused]] auto render_pass = _vulkan_render_pass->native_handle();
 
-            auto cmd = _vulkan_command_buffers[0]->native_handle();
+            _render_pass_context.extent = surface_capabilities.maxImageExtent;
+            _render_pass_context.renderpass = _vulkan_render_pass->native_handle();
+            _render_pass_context.pipeline_layout = _vulkan_pipeline_layout->native_handle();
+            _render_pass_context.framebuffer = _vulkan_framebuffers[_vulkan_current_framebuffer]->native_handle();
 
-            VkCommandBufferBeginInfo cmd_buf_info = {};
-            cmd_buf_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-            cmd_buf_info.pNext = NULL;
-            cmd_buf_info.flags = 0;
-            cmd_buf_info.pInheritanceInfo = NULL;
-
-            auto res = vkBeginCommandBuffer(cmd, &cmd_buf_info);
-            assert(res == VK_SUCCESS);
-
-            VkClearValue clear_values[2];
-            clear_values[0].color.float32[0] = 0.2f;
-            clear_values[0].color.float32[1] = 0.2f;
-            clear_values[0].color.float32[2] = 0.2f;
-            clear_values[0].color.float32[3] = 0.2f;
-            clear_values[1].depthStencil.depth = 1.0f;
-            clear_values[1].depthStencil.stencil = 0;
-
-            VkRenderPassBeginInfo rp_begin;
-            rp_begin.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-            rp_begin.pNext = NULL;
-            rp_begin.renderPass = render_pass;
-            rp_begin.framebuffer = reinterpret_cast<VkFramebuffer>(current_frame_buffer());
-            rp_begin.renderArea.offset.x = 0;
-            rp_begin.renderArea.offset.y = 0;
-            rp_begin.renderArea.extent = surface_capabilities.maxImageExtent;
-            rp_begin.clearValueCount = 2;
-            rp_begin.pClearValues = clear_values;
-
-            vkCmdBeginRenderPass(cmd, &rp_begin, VK_SUBPASS_CONTENTS_INLINE);
-
-            vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, _vulkan_pipeline->native_handle());
-
-            core::pod::Array<VkDescriptorSet> sets{ _driver_allocator };
-            _vulkan_descriptor_sets->native_handles(sets);
-            vkCmdBindDescriptorSets(
-                cmd,
-                VK_PIPELINE_BIND_POINT_GRAPHICS,
-                _vulkan_pipeline_layout->native_handle(),
-                0,
-                core::pod::array::size(sets),
-                core::pod::array::begin(sets),
-                0,
-                NULL
+            render::api::v1::render_api_instance->cmd_begin_func(command_buffer());
+            render::api::v1::render_api_instance->cmd_begin_renderpass_func(command_buffer());
+            render::api::v1::render_api_instance->cmd_bind_render_pipeline_func(command_buffer(),
+                render::api::RenderPipeline{ reinterpret_cast<uintptr_t>(_vulkan_pipeline->native_handle()) }
+            );
+            render::api::v1::render_api_instance->cmd_bind_descriptor_sets_func(command_buffer(), descriptor_sets());
+            render::api::v1::render_api_instance->cmd_bind_vertex_buffers_func(command_buffer(),
+                render::api::VertexBuffer{ reinterpret_cast<uintptr_t>(_vulkan_buffers[0].get()) },
+                render::api::VertexBuffer{ reinterpret_cast<uintptr_t>(_vulkan_buffers[1].get()) }
             );
 
-            {
-                VkDeviceSize const offsets[2] = { 0, 0 };
-                VkBuffer const buffers[2] = { _vulkan_buffers[0]->native_handle(), _vulkan_buffers[1]->native_handle() };
-                vkCmdBindVertexBuffers(cmd, 0, 2, buffers, offsets);
-            }
+            render::api::v1::render_api_instance->cmd_set_viewport_func(command_buffer(),
+                surface_capabilities.maxImageExtent.width,
+                surface_capabilities.maxImageExtent.height
+            );
+            render::api::v1::render_api_instance->cmd_set_scissor_func(command_buffer(),
+                surface_capabilities.maxImageExtent.width,
+                surface_capabilities.maxImageExtent.height
+            );
 
-            {
-                VkViewport viewport{};
-                viewport.height = (float)surface_capabilities.maxImageExtent.height;
-                viewport.width = (float)surface_capabilities.maxImageExtent.width;
-                viewport.minDepth = (float)0.0f;
-                viewport.maxDepth = (float)1.0f;
-                viewport.x = 0;
-                viewport.y = 0;
-                vkCmdSetViewport(cmd, 0, 1, &viewport);
-            }
+            render::api::v1::render_api_instance->cmd_draw_func(command_buffer(), 12 * 3, 4);
 
-            {
-                VkRect2D scissor{};
-                scissor.extent = surface_capabilities.maxImageExtent;
-                scissor.offset.x = 0;
-                scissor.offset.y = 0;
-                vkCmdSetScissor(cmd, 0, 1, &scissor);
-            }
-
-            vkCmdDraw(cmd, 12 * 3, 4, 0, 0);
-            vkCmdEndRenderPass(cmd);
-            res = vkEndCommandBuffer(cmd);
-            assert(res == VK_SUCCESS);
+            render::api::v1::render_api_instance->cmd_end_renderpass_func(command_buffer());
+            render::api::v1::render_api_instance->cmd_end_func(command_buffer());
 
             VkFenceCreateInfo fenceInfo;
             fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
@@ -513,10 +474,10 @@ namespace render
             fenceInfo.flags = 0;
 
             VkFence drawFence;
-            res = vkCreateFence(graphics_device_native, &fenceInfo, NULL, &drawFence);
+            auto res = vkCreateFence(graphics_device_native, &fenceInfo, NULL, &drawFence);
             assert(res == VK_SUCCESS);
 
-            const VkCommandBuffer cmd_bufs[] = { cmd };
+            const VkCommandBuffer cmd_bufs[] = { _vulkan_command_buffers[0]->native_handle() };
             VkPipelineStageFlags pipe_stage_flags = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
             VkSubmitInfo submit_info[1] = {};
             submit_info[0].pNext = NULL;
@@ -613,6 +574,9 @@ namespace render
 
         core::pod::Array<render::vulkan::VulkanCommandBuffer*> _vulkan_command_buffers;
 
+        render::api::v1::vulkan::RenderPassContext _render_pass_context{};
+        render::api::v1::vulkan::CommandBufferContext _command_buffer_context{};
+
         // Shader stages
         std::vector<core::memory::unique_pointer<vulkan::VulkanShader>> _shaders;
 
@@ -632,6 +596,7 @@ extern "C"
         render::RenderSystem* result = nullptr;
         if (api_version == render::api::v1::version_name.hash_value)
         {
+            render::api::v1::vulkan::init_api(render::api::render_api_instance);
             render::api::v1::vulkan::init_api(api_instance);
             result = alloc.make<render::VulkanRenderSystem>(alloc);
         }

@@ -12,13 +12,19 @@ namespace render::api
 
         constexpr auto version_name = core::cexpr::stringid_cexpr("v1");
 
-        enum class CommandBuffer : uintptr_t { };
+        enum class Framebuffer : uintptr_t { };
+
+        enum class RenderPass : uintptr_t { };
 
         enum class RenderPipeline : uintptr_t { };
+
+        enum class DescriptorSets : uintptr_t { };
 
         enum class VertexBuffer : uintptr_t { };
 
         enum class UniformBuffer : uintptr_t { };
+
+        enum class CommandBuffer : uintptr_t { };
 
         struct BufferDataView
         {
@@ -36,6 +42,14 @@ namespace render::api
 
             // Commands
             void (*cmd_begin_func)(CommandBuffer);
+            void (*cmd_begin_renderpass_func)(CommandBuffer);
+            void (*cmd_bind_render_pipeline_func)(CommandBuffer, RenderPipeline);
+            void (*cmd_bind_descriptor_sets_func)(CommandBuffer, DescriptorSets);
+            void (*cmd_bind_vertex_buffers_func)(CommandBuffer, VertexBuffer, VertexBuffer);
+            void (*cmd_set_viewport_func)(CommandBuffer, uint32_t, uint32_t);
+            void (*cmd_set_scissor_func)(CommandBuffer, uint32_t, uint32_t);
+            void (*cmd_draw_func)(CommandBuffer, uint32_t, uint32_t);
+            void (*cmd_end_renderpass_func)(CommandBuffer);
             void (*cmd_end_func)(CommandBuffer);
 
             void* reserved[32];
