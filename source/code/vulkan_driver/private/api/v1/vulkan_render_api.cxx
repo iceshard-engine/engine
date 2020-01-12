@@ -1,4 +1,5 @@
 #include "vulkan_render_api.hxx"
+#include "../../vulkan_buffer.hxx"
 
 #include <vulkan/vulkan.h>
 
@@ -15,7 +16,17 @@ namespace render::api::v1::vulkan
         fmt::print("Using Vulkan Render API v1.\n");
     }
 
-    void vulkan_command_begin(CommandBuffer cb) noexcept
+    void vulkan_api_v1_buffer_map(render::api::v1::VertexBuffer vertex_buffer, BufferDataView& buffer_data)
+    {
+        reinterpret_cast<render::vulkan::VulkanBuffer*>(vertex_buffer)->map_memory(buffer_data);
+    }
+
+    void vulkan_api_v1_buffer_unmap(render::api::v1::VertexBuffer vertex_buffer)
+    {
+        reinterpret_cast<render::vulkan::VulkanBuffer*>(vertex_buffer)->unmap_memory();
+    }
+
+    void vulkan_command_begin(render::api::v1::CommandBuffer cb) noexcept
     {
         VkCommandBufferBeginInfo cmd_buf_info = {};
         cmd_buf_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -67,6 +78,9 @@ namespace render::api::v1::vulkan
     {
         auto instace = reinterpret_cast<render::api::v1::RenderInterface*>(ptr);
         instace->check_func = vulkan_api_v1_initialized;
+        instace->vertex_buffer_map_data = vulkan_api_v1_buffer_map;
+        instace->vertex_buffer_unmap_data = vulkan_api_v1_buffer_unmap;
+
         instace->cmd_begin_func = vulkan_command_begin;
         instace->cmd_end_func = vulkan_command_end;
     }

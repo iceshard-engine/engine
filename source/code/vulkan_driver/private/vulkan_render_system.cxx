@@ -58,67 +58,10 @@ namespace render
         namespace sample
         {
 
-#define XYZ1(_x_, _y_, _z_) (_x_), (_y_), (_z_), 1.f
-#define UV(_u_, _v_) (_u_), (_v_)
-
-            struct Vertex
-            {
-                float posX, posY, posZ, posW; // Position data
-                float r, g, b, a;             // Color
-            };
-
-            static const Vertex g_vb_solid_face_colors_Data[] = {
-                // red face
-                { XYZ1(-1, -1, 1), XYZ1(1.f, 0.f, 0.f) },
-                { XYZ1(-1, 1, 1), XYZ1(1.f, 0.f, 0.f) },
-                { XYZ1(1, -1, 1), XYZ1(1.f, 0.f, 0.f) },
-                { XYZ1(1, -1, 1), XYZ1(1.f, 0.f, 0.f) },
-                { XYZ1(-1, 1, 1), XYZ1(1.f, 0.f, 0.f) },
-                { XYZ1(1, 1, 1), XYZ1(1.f, 0.f, 0.f) },
-                // green face
-                { XYZ1(-1, -1, -1), XYZ1(0.f, 1.f, 0.f) },
-                { XYZ1(1, -1, -1), XYZ1(0.f, 1.f, 0.f) },
-                { XYZ1(-1, 1, -1), XYZ1(0.f, 1.f, 0.f) },
-                { XYZ1(-1, 1, -1), XYZ1(0.f, 1.f, 0.f) },
-                { XYZ1(1, -1, -1), XYZ1(0.f, 1.f, 0.f) },
-                { XYZ1(1, 1, -1), XYZ1(0.f, 1.f, 0.f) },
-                // blue face
-                { XYZ1(-1, 1, 1), XYZ1(0.f, 0.f, 1.f) },
-                { XYZ1(-1, -1, 1), XYZ1(0.f, 0.f, 1.f) },
-                { XYZ1(-1, 1, -1), XYZ1(0.f, 0.f, 1.f) },
-                { XYZ1(-1, 1, -1), XYZ1(0.f, 0.f, 1.f) },
-                { XYZ1(-1, -1, 1), XYZ1(0.f, 0.f, 1.f) },
-                { XYZ1(-1, -1, -1), XYZ1(0.f, 0.f, 1.f) },
-                // yellow face
-                { XYZ1(1, 1, 1), XYZ1(1.f, 1.f, 0.f) },
-                { XYZ1(1, 1, -1), XYZ1(1.f, 1.f, 0.f) },
-                { XYZ1(1, -1, 1), XYZ1(1.f, 1.f, 0.f) },
-                { XYZ1(1, -1, 1), XYZ1(1.f, 1.f, 0.f) },
-                { XYZ1(1, 1, -1), XYZ1(1.f, 1.f, 0.f) },
-                { XYZ1(1, -1, -1), XYZ1(1.f, 1.f, 0.f) },
-                // magenta face
-                { XYZ1(1, 1, 1), XYZ1(1.f, 0.f, 1.f) },
-                { XYZ1(-1, 1, 1), XYZ1(1.f, 0.f, 1.f) },
-                { XYZ1(1, 1, -1), XYZ1(1.f, 0.f, 1.f) },
-                { XYZ1(1, 1, -1), XYZ1(1.f, 0.f, 1.f) },
-                { XYZ1(-1, 1, 1), XYZ1(1.f, 0.f, 1.f) },
-                { XYZ1(-1, 1, -1), XYZ1(1.f, 0.f, 1.f) },
-                // cyan face
-                { XYZ1(1, -1, 1), XYZ1(0.f, 1.f, 1.f) },
-                { XYZ1(1, -1, -1), XYZ1(0.f, 1.f, 1.f) },
-                { XYZ1(-1, -1, 1), XYZ1(0.f, 1.f, 1.f) },
-                { XYZ1(-1, -1, 1), XYZ1(0.f, 1.f, 1.f) },
-                { XYZ1(1, -1, -1), XYZ1(0.f, 1.f, 1.f) },
-                { XYZ1(-1, -1, -1), XYZ1(0.f, 1.f, 1.f) },
-            };
-
             static const glm::mat4 instances[] = {
                 glm::mat4{ 1.0f },
                 glm::translate(glm::mat4{ 1.0f }, glm::vec3{ 1.0f, 3.0f, 1.0f })
             };
-
-#undef XYZ1
-#undef UV
 
             static auto projection = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 100.0f);
             static auto cam_pos = glm::vec3(-5, 3, -10);
@@ -161,6 +104,7 @@ namespace render
             , _vulkan_framebuffers{ _driver_allocator }
             , _vulkan_command_buffers{ _driver_allocator }
             , _vulkan_vertex_descriptors{ _driver_allocator }
+            , _vulkan_buffers{ _driver_allocator }
         {
             initialize();
         }
@@ -228,17 +172,6 @@ namespace render
                 IS_ASSERT(data_view.data_size >= sizeof(detail::sample::MVP), "Insufficient buffer size!");
                 memcpy(data_view.data_pointer, &detail::sample::MVP, sizeof(detail::sample::MVP));
                 _vulkan_uniform_buffer->unmap_memory();
-
-                _vulkan_vertex_buffer = vulkan::create_uniform_buffer(
-                    _driver_allocator,
-                    *_vulkan_physical_memory,
-                    static_cast<uint32_t>(sizeof(detail::sample::g_vb_solid_face_colors_Data))
-                );
-
-                _vulkan_vertex_buffer->map_memory(data_view);
-                IS_ASSERT(data_view.data_size >= sizeof(detail::sample::g_vb_solid_face_colors_Data), "Insufficient buffer size!");
-                memcpy(data_view.data_pointer, detail::sample::g_vb_solid_face_colors_Data, sizeof(detail::sample::g_vb_solid_face_colors_Data));
-                _vulkan_vertex_buffer->unmap_memory();
 
                 _vulkan_instance_buffer = vulkan::create_uniform_buffer(
                     _driver_allocator,
@@ -370,8 +303,8 @@ namespace render
             core::pod::array::clear(_vulkan_command_buffers);
 
             _vulkan_uniform_buffer = nullptr;
-            _vulkan_vertex_buffer = nullptr;
             _vulkan_instance_buffer = nullptr;
+            _vulkan_buffers.clear();
 
             _vulkan_depth_image = nullptr;
 
@@ -398,9 +331,18 @@ namespace render
             return CommandBuffer{ 0 };
         }
 
-        auto create_vertex_buffer() noexcept -> render::api::VertexBuffer override
+        auto create_vertex_buffer(uint32_t size) noexcept -> render::api::VertexBuffer override
         {
-            return render::api::VertexBuffer{ 0 };
+            auto vulkan_buffer = render::vulkan::create_vertex_buffer(
+                _driver_allocator,
+                *_vulkan_physical_memory,
+                size
+            );
+
+            auto result = render::api::VertexBuffer{ reinterpret_cast<uintptr_t>(vulkan_buffer.get()) };
+            _vulkan_buffers.emplace_back(std::move(vulkan_buffer));
+
+            return result;
         }
 
         auto current_frame_buffer() noexcept -> uintptr_t
@@ -593,7 +535,7 @@ namespace render
 
             {
                 VkDeviceSize const offsets[2] = { 0, 0 };
-                VkBuffer const buffers[2] = { _vulkan_vertex_buffer->native_handle(), _vulkan_instance_buffer->native_handle() };
+                VkBuffer const buffers[2] = { _vulkan_buffers[0]->native_handle(), _vulkan_instance_buffer->native_handle() };
                 vkCmdBindVertexBuffers(cmd, 0, 2, buffers, offsets);
             }
 
@@ -712,8 +654,9 @@ namespace render
 
         // Databuffers
         core::memory::unique_pointer<render::vulkan::VulkanBuffer> _vulkan_uniform_buffer{ nullptr, { core::memory::globals::null_allocator() } };
-        core::memory::unique_pointer<render::vulkan::VulkanBuffer> _vulkan_vertex_buffer{ nullptr, { core::memory::globals::null_allocator() } };
         core::memory::unique_pointer<render::vulkan::VulkanBuffer> _vulkan_instance_buffer{ nullptr, { core::memory::globals::null_allocator() } };
+
+        core::Vector<core::memory::unique_pointer<render::vulkan::VulkanBuffer>> _vulkan_buffers;
 
         // The framebuffers
         uint32_t _vulkan_current_framebuffer = 0;

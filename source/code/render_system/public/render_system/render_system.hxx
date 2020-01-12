@@ -20,7 +20,7 @@ namespace render
 
         //virtual auto current_frame_buffer() noexcept -> FrameBufferHandle = 0;
 
-        virtual auto create_vertex_buffer() noexcept -> render::api::VertexBuffer = 0;
+        virtual auto create_vertex_buffer(uint32_t size) noexcept -> render::api::VertexBuffer = 0;
 
         virtual void load_shader(asset::AssetData shader_data) noexcept = 0;
 

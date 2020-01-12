@@ -95,8 +95,14 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
         asset::AssetData mesh_data;
         if (asset_system->load(asset::Asset{ "mesh/test/box", asset::AssetType::Mesh }, mesh_data) == asset::AssetStatus::Loaded)
         {
-            mesh_data = { };
-            //render_system->load_shader(shader_data);
+            auto vtx_buffer = render_system->create_vertex_buffer(mesh_data.content._size);
+
+            render::api::BufferDataView buffer_data_view;
+            render::api::render_api_instance->vertex_buffer_map_data(vtx_buffer, buffer_data_view);
+            IS_ASSERT(buffer_data_view.data_size >= mesh_data.content._size, "Render buffer not big enoguht! Ugh!");
+
+            std::memcpy(buffer_data_view.data_pointer, mesh_data.content._data, mesh_data.content._size);
+            render::api::render_api_instance->vertex_buffer_unmap_data(vtx_buffer);
         }
 
         render_system->create_pipeline(render::pipeline::DefaultPieline);
