@@ -210,8 +210,6 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
                     render::api::render_api_instance->uniform_buffer_unmap_data(uniform_buffer);
                 });
 
-            engine_instance->next_frame();
-
             render::cmd::begin(command_buffer);
             render::cmd::begin_renderpass(command_buffer);
             render::cmd::bind_render_pipeline(command_buffer, render_pipeline);
@@ -223,8 +221,7 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
             render::cmd::end_renderpass(command_buffer);
             render::cmd::end(command_buffer);
 
-            engine_instance->asset_system()->update();
-            resource_system.flush_messages();
+            engine_instance->next_frame();
         }
 
         engine_instance->world_manager()->destroy_world(core::cexpr::stringid("test-world"));

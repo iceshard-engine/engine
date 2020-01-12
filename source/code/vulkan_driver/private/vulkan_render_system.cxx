@@ -161,6 +161,10 @@ namespace render
 
             auto res = vkCreateSemaphore(graphics_device, &imageAcquiredSemaphoreCreateInfo, NULL, &_quick_semaphore);
             assert(res == VK_SUCCESS);
+
+            _render_pass_context.extent = physical_device->surface_capabilities().maxImageExtent;
+            _render_pass_context.renderpass = _vulkan_render_pass->native_handle();
+            _render_pass_context.framebuffer = _vulkan_framebuffers[_vulkan_current_framebuffer]->native_handle();
         }
 
         void enumerate_devices() noexcept
@@ -374,6 +378,7 @@ namespace render
                 core::pod::Array<VkDescriptorSetLayout> layouts{ _driver_allocator };
                 core::pod::array::push_back(layouts, _vulkan_descriptor_sets_layout->native_handle());
                 _vulkan_pipeline_layout = vulkan::create_pipeline_layout(_driver_allocator, graphics_device, layouts);
+                _render_pass_context.pipeline_layout = _vulkan_pipeline_layout->native_handle();
 
                 core::pod::Array<vulkan::VulkanShader const*> shader_stages{ _driver_allocator };
                 std::for_each(_shaders.begin(), _shaders.end(), [&](auto const& shader_ptr) noexcept
