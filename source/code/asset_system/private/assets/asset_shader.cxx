@@ -1,4 +1,5 @@
 #include <asset_system/assets/asset_shader.hxx>
+#include <core/pod/array.hxx>
 
 namespace asset::detail
 {
