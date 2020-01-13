@@ -167,6 +167,25 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
             render::api::render_api_instance->uniform_buffer_unmap_data(uniform_buffer);
         }
 
+        ImGui::CreateContext();
+        ImGuiIO& io = ImGui::GetIO();
+
+        unsigned char* pixels;
+        int width, height;
+        io.Fonts->GetTexDataAsRGBA32(&pixels, &width, &height);
+
+        [[maybe_unused]]
+        uint32_t upload_size = width * height * 4 * sizeof(char);
+
+        resource::ResourceMeta meta{ alloc };
+        resource::set_meta_int32(meta, "texture.extents.width"_sid, width);
+        resource::set_meta_int32(meta, "texture.extents.height"_sid, height);
+
+        asset::AssetData tex_data;
+        tex_data.metadata = resource::create_meta_view(meta);
+        tex_data.content = { pixels, upload_size };
+        render_system->load_texture(std::move(tex_data));
+
         render_system->create_uniform_descriptor_sets(sizeof(MVP));
         auto descriptor_sets = render_system->descriptor_sets();
         auto render_pipeline = render_system->create_pipeline(render::pipeline::DefaultPieline);
@@ -228,6 +247,8 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
         }
 
         engine_instance->world_manager()->destroy_world(core::cexpr::stringid("test-world"));
+
+        ImGui::DestroyContext();
     }
 
     return 0;

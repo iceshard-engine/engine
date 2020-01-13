@@ -4,6 +4,7 @@
 #include <core/pod/array.hxx>
 #include <vulkan/vulkan.h>
 
+#include "vulkan_descriptor_pool.hxx"
 #include "vulkan_descriptor_set_layout.hxx"
 
 namespace render::vulkan
@@ -32,7 +33,8 @@ namespace render::vulkan
 
     auto create_vulkan_descriptor_sets(
         core::allocator& alloc,
-        VkDevice device,
-        core::pod::Array<VulkanDescriptorSetLayout*> const& layouts) noexcept -> core::memory::unique_pointer<VulkanDescriptorSets>;
+        vulkan::VulkanDescriptorPool& descriptor_pool,
+        core::pod::Array<VulkanDescriptorSetLayout*> const& layouts
+    ) noexcept -> core::memory::unique_pointer<VulkanDescriptorSets>;
 
 } // namespace render::vulkan

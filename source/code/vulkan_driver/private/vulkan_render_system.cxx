@@ -19,6 +19,7 @@
 #include "vulkan_image.hxx"
 #include "vulkan_shader.hxx"
 #include "vulkan_buffer.hxx"
+#include "pipeline/vulkan_descriptor_pool.hxx"
 #include "pipeline/vulkan_descriptor_set_layout.hxx"
 #include "pipeline/vulkan_descriptor_sets.hxx"
 #include "pipeline/vulkan_vertex_descriptor.hxx"
@@ -124,16 +125,21 @@ namespace render
 
             enumerate_devices();
 
+            auto surface_extent = _vulkan_physical_device->surface_capabilities().maxImageExtent;
+
+            _vulkan_staging_buffer = render::vulkan::create_staging_buffer(_driver_allocator, *_vulkan_device_memory);
+
             // Create swap chain
             _vulkan_swapchain = render::vulkan::create_swapchain(_driver_allocator, _vulkan_physical_device.get());
 
             // Create depth buffer
-            _vulkan_depth_image = render::vulkan::create_depth_buffer_image(_driver_allocator, _vulkan_physical_device.get());
+            _vulkan_depth_image = render::vulkan::create_depth_buffer_image(_driver_allocator, *_vulkan_device_memory, surface_extent);
 
             auto* physical_device = _vulkan_physical_device.get();
             auto graphics_device = physical_device->graphics_device()->native_handle();
 
-            _vulkan_physical_device->graphics_device()->create_command_buffers(_vulkan_command_buffers, 1);
+            _vulkan_descriptor_pool = core::memory::make_unique<render::vulkan::VulkanDescriptorPool>(_driver_allocator, graphics_device);
+            _vulkan_physical_device->graphics_device()->create_command_buffers(_vulkan_command_buffers, 2);
 
             _command_buffer_context.command_buffer = _vulkan_command_buffers[0]->native_handle();
             _command_buffer_context.render_pass_context = &_render_pass_context;
@@ -190,18 +196,19 @@ namespace render
                 _driver_allocator,
                 core::pod::array::front(devices_handles),
                 _vulkan_surface->native_handle()
-            );
-            _vulkan_physical_memory = core::memory::make_unique<vulkan::VulkanDeviceMemoryManager>(
+                );
+
+            _vulkan_device_memory = core::memory::make_unique<vulkan::VulkanDeviceMemoryManager>(
                 _driver_allocator,
                 _driver_allocator,
                 _vulkan_physical_device.get(),
                 _vulkan_physical_device->graphics_device()->native_handle()
-            );
+                );
         }
 
         void release_devices() noexcept
         {
-            _vulkan_physical_memory = nullptr;
+            _vulkan_device_memory = nullptr;
             _vulkan_physical_device = nullptr;
         }
 
@@ -233,7 +240,10 @@ namespace render
 
             core::pod::array::clear(_vulkan_command_buffers);
 
+            _vulkan_staging_buffer = nullptr;
             _vulkan_buffers.clear();
+
+            _vulkan_descriptor_pool = nullptr;
 
             _vulkan_depth_image = nullptr;
 
@@ -269,7 +279,7 @@ namespace render
         {
             auto vulkan_buffer = render::vulkan::create_vertex_buffer(
                 _driver_allocator,
-                *_vulkan_physical_memory,
+                *_vulkan_device_memory,
                 size
             );
 
@@ -283,7 +293,7 @@ namespace render
         {
             auto vulkan_buffer = render::vulkan::create_uniform_buffer(
                 _driver_allocator,
-                *_vulkan_physical_memory,
+                *_vulkan_device_memory,
                 size
             );
 
@@ -311,7 +321,7 @@ namespace render
 
             core::pod::Array<vulkan::VulkanDescriptorSetLayout*> layouts{ _driver_allocator };
             core::pod::array::push_back(layouts, _vulkan_descriptor_sets_layout.get());
-            _vulkan_descriptor_sets = vulkan::create_vulkan_descriptor_sets(_driver_allocator, graphics_device_handle, layouts);
+            _vulkan_descriptor_sets = vulkan::create_vulkan_descriptor_sets(_driver_allocator, *_vulkan_descriptor_pool, layouts);
 
             VkDescriptorBufferInfo buffer_info{};
             buffer_info.buffer = _vulkan_buffers[2]->native_handle();
@@ -323,6 +333,97 @@ namespace render
         auto current_framebuffer() noexcept -> render::api::Framebuffer override
         {
             return render::api::Framebuffer{ reinterpret_cast<uintptr_t>(_vulkan_framebuffers[_vulkan_current_framebuffer]->native_handle()) };
+        }
+
+        void load_texture(asset::AssetData texture_data) noexcept
+        {
+            int32_t width = resource::get_meta_int32(texture_data.metadata, "texture.extents.width"_sid);
+            int32_t height = resource::get_meta_int32(texture_data.metadata, "texture.extents.height"_sid);
+
+            render::api::BufferDataView data_view;
+            _vulkan_staging_buffer->map_memory(data_view);
+            std::memcpy(data_view.data_pointer, texture_data.content._data, texture_data.content._size);
+            _vulkan_staging_buffer->unmap_memory();
+
+            VkExtent2D image_extent{ static_cast<uint32_t>(width), static_cast<uint32_t>(height) };
+
+            auto texture = render::vulkan::create_texture_2d(
+                _driver_allocator,
+                *_vulkan_device_memory,
+                image_extent
+            );
+
+            VkCommandBuffer staging_cmds = _vulkan_command_buffers[1]->native_handle();
+
+            VkCommandBufferBeginInfo beginInfo = {};
+            beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+            beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+            vkBeginCommandBuffer(staging_cmds, &beginInfo);
+
+            VkImageMemoryBarrier barrier = {};
+            barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+            barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+            barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+            barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+            barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+            barrier.image = texture->native_handle();
+            barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+            barrier.subresourceRange.baseMipLevel = 0;
+            barrier.subresourceRange.levelCount = 1;
+            barrier.subresourceRange.baseArrayLayer = 0;
+            barrier.subresourceRange.layerCount = 1;
+            barrier.srcAccessMask = 0; // TODO
+            barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT; // TODO
+
+            vkCmdPipelineBarrier(
+                staging_cmds,
+                VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
+                0,
+                0, nullptr,
+                0, nullptr,
+                1, &barrier
+            );
+
+            VkBufferImageCopy region = {};
+            region.bufferOffset = 0;
+            region.bufferRowLength = 0;
+            region.bufferImageHeight = 0;
+
+            region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+            region.imageSubresource.mipLevel = 0;
+            region.imageSubresource.baseArrayLayer = 0;
+            region.imageSubresource.layerCount = 1;
+
+            region.imageOffset = { 0, 0, 0 };
+            region.imageExtent.width = image_extent.width;
+            region.imageExtent.height = image_extent.height;
+            region.imageExtent.depth = 1;
+            vkCmdCopyBufferToImage(
+                staging_cmds,
+                _vulkan_staging_buffer->native_handle(),
+                texture->native_handle(),
+                VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                1,
+                &region
+            );
+
+
+            barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+            barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+            barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+            barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+            vkCmdPipelineBarrier(
+                staging_cmds,
+                VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                0,
+                0, nullptr,
+                0, nullptr,
+                1, &barrier
+            );
+
+            vkEndCommandBuffer(staging_cmds);
+            _staging_cmds = true;
         }
 
         void load_shader(asset::AssetData shader_data) noexcept override
@@ -357,10 +458,10 @@ namespace render
 
             // clang-format off
             core::pod::hash::set(_vulkan_vertex_descriptors, hash_value, _driver_allocator.make<render::vulkan::VulkanVertexDescriptor>(
-                    _driver_allocator,
-                    binding,
-                    descriptors,
-                    descriptor_count
+                _driver_allocator,
+                binding,
+                descriptors,
+                descriptor_count
                 )
             );
             // clang-format on
@@ -397,7 +498,7 @@ namespace render
                         _vulkan_vertex_descriptors,
                         descriptor_name_hash,
                         nullptr
-                    );
+                        );
                     IS_ASSERT(descriptor != nullptr, "Unknown descriptor name {}!", descriptor_names[descriptor_index]);
 
                     core::pod::array::push_back(vertex_descriptors, descriptor);
@@ -451,6 +552,20 @@ namespace render
             fenceInfo.pNext = NULL;
             fenceInfo.flags = 0;
 
+            if (_staging_cmds)
+            {
+                _staging_cmds = false;
+                const VkCommandBuffer cmd_bufs[] = { _vulkan_command_buffers[1]->native_handle() };
+
+                VkSubmitInfo submit_info[1] = {};
+                submit_info[0].sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+                submit_info[0].commandBufferCount = 1;
+                submit_info[0].pCommandBuffers = cmd_bufs;
+
+                vkQueueSubmit(graphics_device->device_queue(), 1, submit_info, VK_NULL_HANDLE);
+                vkQueueWaitIdle(graphics_device->device_queue());
+            }
+
             VkFence drawFence;
             auto res = vkCreateFence(graphics_device_native, &fenceInfo, NULL, &drawFence);
             assert(res == VK_SUCCESS);
@@ -467,6 +582,7 @@ namespace render
             submit_info[0].pCommandBuffers = cmd_bufs;
             submit_info[0].signalSemaphoreCount = 0;
             submit_info[0].pSignalSemaphores = NULL;
+
 
             auto queue = graphics_device->device_queue();
             IS_ASSERT(graphics_device->can_present(), "Cannot present images on this queue!");
@@ -531,11 +647,13 @@ namespace render
         core::memory::unique_pointer<render::vulkan::VulkanRenderPass> _vulkan_render_pass{ nullptr, { core::memory::globals::null_allocator() } };
 
         // The Vulkan descriptor sets
+        core::memory::unique_pointer<render::vulkan::VulkanDescriptorPool> _vulkan_descriptor_pool{ nullptr, { core::memory::globals::null_allocator() } };
         core::memory::unique_pointer<render::vulkan::VulkanDescriptorSetLayout> _vulkan_descriptor_sets_layout{ nullptr, { core::memory::globals::null_allocator() } };
         core::memory::unique_pointer<render::vulkan::VulkanDescriptorSets> _vulkan_descriptor_sets{ nullptr, { core::memory::globals::null_allocator() } };
         core::pod::Hash<render::vulkan::VulkanVertexDescriptor*> _vulkan_vertex_descriptors;
 
         // Databuffers
+        core::memory::unique_pointer<render::vulkan::VulkanBuffer> _vulkan_staging_buffer{ nullptr, { core::memory::globals::null_allocator() } };
         core::Vector<core::memory::unique_pointer<render::vulkan::VulkanBuffer>> _vulkan_buffers;
 
         // The framebuffers
@@ -548,9 +666,10 @@ namespace render
 
         // Array vulkan devices.
         core::memory::unique_pointer<render::vulkan::VulkanPhysicalDevice> _vulkan_physical_device{ nullptr, { core::memory::globals::null_allocator() } };
-        core::memory::unique_pointer<render::vulkan::VulkanDeviceMemoryManager> _vulkan_physical_memory{ nullptr, { core::memory::globals::null_allocator() } };
+        core::memory::unique_pointer<render::vulkan::VulkanDeviceMemoryManager> _vulkan_device_memory{ nullptr, { core::memory::globals::null_allocator() } };
 
         core::pod::Array<render::vulkan::VulkanCommandBuffer*> _vulkan_command_buffers;
+        bool _staging_cmds = false;
 
         render::api::v1::vulkan::RenderPassContext _render_pass_context{};
         render::api::v1::vulkan::CommandBufferContext _command_buffer_context{};

@@ -29,6 +29,11 @@ namespace render::vulkan
         VulkanMemoryInfo _memory_info;
     };
 
+    auto create_staging_buffer(
+        core::allocator& alloc,
+        VulkanDeviceMemoryManager& device_memory
+    ) noexcept -> core::memory::unique_pointer<VulkanBuffer>;
+
     auto create_uniform_buffer(
         core::allocator& alloc,
         VulkanDeviceMemoryManager& device_memory,

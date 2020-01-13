@@ -60,8 +60,8 @@ namespace asset
     //!     The provided metadata can be anything, and the specific asset implementation uses it to validate the content data.
     struct AssetData
     {
-        resource::ResourceMetaView metadata = resource::load_meta_view({});
         core::data_view content;
+        resource::ResourceMetaView metadata = resource::load_meta_view({});
     };
 
 } // namespace asset
