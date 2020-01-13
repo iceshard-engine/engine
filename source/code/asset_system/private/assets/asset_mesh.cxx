@@ -1,4 +1,5 @@
 #include <asset_system/assets/asset_mesh.hxx>
+#include <core/pod/array.hxx>
 #include <rapidjson/document.h>
 #include <unordered_map>
 

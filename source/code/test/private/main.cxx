@@ -187,9 +187,7 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
         render_system->load_texture(std::move(tex_data));
 
         render_system->create_uniform_descriptor_sets(sizeof(MVP));
-        auto descriptor_sets = render_system->descriptor_sets();
         auto render_pipeline = render_system->create_pipeline(render::pipeline::DefaultPieline);
-        auto command_buffer = render_system->command_buffer();
 
         fmt::print("IceShard engine revision: {}\n", engine_instance->revision());
 
@@ -232,16 +230,24 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
                     render::api::render_api_instance->uniform_buffer_unmap_data(uniform_buffer);
                 });
 
-            render::cmd::begin(command_buffer);
-            render::cmd::begin_renderpass(command_buffer);
-            render::cmd::bind_render_pipeline(command_buffer, render_pipeline);
-            render::cmd::bind_descriptor_sets(command_buffer, descriptor_sets);
-            render::cmd::bind_vertex_buffers(command_buffer, vtx_buffer[0], vtx_buffer[1]);
-            render::cmd::set_viewport(command_buffer, 1280, 720);
-            render::cmd::set_scissor(command_buffer, 1280, 720);
-            render::cmd::draw(command_buffer, 12 * 3, 4);
-            render::cmd::end_renderpass(command_buffer);
-            render::cmd::end(command_buffer);
+            engine_instance->add_task([](iceshard::Engine& e, render::api::RenderPipeline pipeline, render::api::VertexBuffer vtx_buffer[2]) noexcept -> cppcoro::task<>
+                {
+                    auto command_buffer = e.render_system()->command_buffer();
+                    auto descriptor_sets = e.render_system()->descriptor_sets();
+
+                    render::cmd::begin(command_buffer);
+                    render::cmd::begin_renderpass(command_buffer);
+                    render::cmd::bind_render_pipeline(command_buffer, pipeline);
+                    render::cmd::bind_descriptor_sets(command_buffer, descriptor_sets);
+                    render::cmd::bind_vertex_buffers(command_buffer, vtx_buffer[0], vtx_buffer[1]);
+                    render::cmd::set_viewport(command_buffer, 1280, 720);
+                    render::cmd::set_scissor(command_buffer, 1280, 720);
+                    render::cmd::draw(command_buffer, 12 * 3, 4);
+                    render::cmd::end_renderpass(command_buffer);
+                    render::cmd::end(command_buffer);
+
+                    co_return;
+                }(*engine_instance, render_pipeline, vtx_buffer));
 
             engine_instance->next_frame();
         }
