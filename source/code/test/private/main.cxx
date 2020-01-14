@@ -104,7 +104,6 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
         asset::AssetData mesh_data;
         if (asset_system->load(asset::Asset{ "mesh/test/box", asset::AssetType::Mesh }, mesh_data) == asset::AssetStatus::Loaded)
         {
-            idx_buffer = render_system->create_vertex_buffer(1024 * 128 * sizeof(uint16_t));
             vtx_buffer[0] = render_system->create_vertex_buffer(1024 * 128 * sizeof(float));
 
             render::api::BufferDataView buffer_data_view;
@@ -141,6 +140,7 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
 
         glm::mat4 MVP{ 1 };
         auto uniform_buffer = render_system->create_uniform_buffer(sizeof(MVP));
+        idx_buffer = render_system->create_vertex_buffer(1024 * 128 * sizeof(uint16_t));
 
 
         {
