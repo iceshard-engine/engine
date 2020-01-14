@@ -31,6 +31,13 @@ namespace render
     {
 
         // clang-format off
+        static constexpr auto ImGuiPipeline = Pipeline<1>
+        {
+            .descriptors = {
+                render::descriptor_set::ImGui
+            }
+        };
+
         static constexpr auto DefaultPieline = Pipeline<2>
         {
             .descriptors = {

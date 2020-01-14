@@ -2,6 +2,7 @@
 #include <core/allocator.hxx>
 #include <core/pointer.hxx>
 #include <core/pod/array.hxx>
+#include <core/collections.hxx>
 #include <vulkan/vulkan.h>
 
 namespace render::vulkan
@@ -20,9 +21,12 @@ namespace render::vulkan
         VkPipelineLayout _native_handle;
     };
 
+    class VulkanDescriptorSetLayout;
+
     auto create_pipeline_layout(
         core::allocator& alloc,
         VkDevice device,
-        core::pod::Array<VkDescriptorSetLayout> const& descriptor_sets) noexcept -> core::memory::unique_pointer<VulkanPipelineLayout>;
+        core::Vector<core::memory::unique_pointer<VulkanDescriptorSetLayout>> const& layouts
+    ) noexcept -> core::memory::unique_pointer<VulkanPipelineLayout>;
 
 } // namespace render::vulkan

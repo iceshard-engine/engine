@@ -17,6 +17,7 @@
 #include "vulkan_device_memory_manager.hxx"
 #include "vulkan_swapchain.hxx"
 #include "vulkan_image.hxx"
+#include "vulkan_sampler.hxx"
 #include "vulkan_shader.hxx"
 #include "vulkan_buffer.hxx"
 #include "pipeline/vulkan_descriptor_pool.hxx"
@@ -79,6 +80,10 @@ namespace render
             , _vulkan_command_buffers{ _driver_allocator }
             , _vulkan_vertex_descriptors{ _driver_allocator }
             , _vulkan_buffers{ _driver_allocator }
+            , _vulkan_descriptor_set_layouts{ _driver_allocator }
+            , _vulkan_images{ _driver_allocator }
+            , _vulkan_samplers{ _driver_allocator }
+            , _vulkan_shaders{ _driver_allocator }
         {
             initialize();
         }
@@ -234,9 +239,11 @@ namespace render
             _vulkan_render_pass = nullptr;
 
             _vulkan_descriptor_sets = nullptr;
-            _vulkan_descriptor_sets_layout = nullptr;
+            _vulkan_descriptor_set_layouts.clear();
 
-            _shaders.clear();
+            _vulkan_shaders.clear();
+            _vulkan_samplers.clear();
+            _vulkan_images.clear();
 
             core::pod::array::clear(_vulkan_command_buffers);
 
@@ -307,27 +314,59 @@ namespace render
         {
             auto const graphics_device_handle = _vulkan_physical_device->graphics_device()->native_handle();
 
-            VkDescriptorSetLayoutBinding layout_binding = {};
-            layout_binding.binding = 0;
-            layout_binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-            layout_binding.descriptorCount = 1;
-            layout_binding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-            layout_binding.pImmutableSamplers = nullptr;
+            _vulkan_samplers.emplace_back(render::vulkan::create_sampler(_driver_allocator, graphics_device_handle));
 
-            core::pod::Array<VkDescriptorSetLayoutBinding> bindings{ _driver_allocator };
-            core::pod::array::push_back(bindings, std::move(layout_binding));
+            {
+                core::pod::Array<VkDescriptorSetLayoutBinding> bindings{ _driver_allocator };
 
-            _vulkan_descriptor_sets_layout = vulkan::create_descriptor_set_layout(_driver_allocator, graphics_device_handle, bindings);
+                VkDescriptorSetLayoutBinding layout_binding = {};
+                layout_binding.binding = 0;
+                layout_binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+                layout_binding.descriptorCount = 1;
+                layout_binding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+                layout_binding.pImmutableSamplers = nullptr;
+                core::pod::array::push_back(bindings, std::move(layout_binding));
 
-            core::pod::Array<vulkan::VulkanDescriptorSetLayout*> layouts{ _driver_allocator };
-            core::pod::array::push_back(layouts, _vulkan_descriptor_sets_layout.get());
-            _vulkan_descriptor_sets = vulkan::create_vulkan_descriptor_sets(_driver_allocator, *_vulkan_descriptor_pool, layouts);
+                static VkSampler const _vulkan_immutable_samplers[]{
+                    _vulkan_samplers[0]->native_handle()
+                };
+
+                layout_binding.binding = 1;
+                layout_binding.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
+                layout_binding.descriptorCount = 1;
+                layout_binding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+                layout_binding.pImmutableSamplers = _vulkan_immutable_samplers;
+                core::pod::array::push_back(bindings, std::move(layout_binding));
+
+                layout_binding.binding = 2;
+                layout_binding.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+                layout_binding.descriptorCount = 1;
+                layout_binding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+                layout_binding.pImmutableSamplers = nullptr;
+                core::pod::array::push_back(bindings, std::move(layout_binding));
+
+                _vulkan_descriptor_set_layouts.emplace_back(
+                    vulkan::create_descriptor_set_layout(_driver_allocator, graphics_device_handle, bindings)
+                );
+            }
+
+            _vulkan_descriptor_sets = vulkan::create_vulkan_descriptor_sets(
+                _driver_allocator,
+                *_vulkan_descriptor_pool,
+                _vulkan_descriptor_set_layouts
+            );
 
             VkDescriptorBufferInfo buffer_info{};
             buffer_info.buffer = _vulkan_buffers[2]->native_handle();
             buffer_info.offset = 0;
             buffer_info.range = size;
-            _vulkan_descriptor_sets->write_descriptor_set(0, VkDescriptorType::VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, buffer_info);
+            _vulkan_descriptor_sets->write_descriptor_set(0, 0, VkDescriptorType::VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, buffer_info);
+
+            VkDescriptorImageInfo image_info{};
+            image_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+            image_info.imageView = _vulkan_images[0]->native_view();
+            image_info.sampler = nullptr;
+            _vulkan_descriptor_sets->write_descriptor_set(0, 2, VkDescriptorType::VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, image_info);
         }
 
         auto current_framebuffer() noexcept -> render::api::Framebuffer override
@@ -335,7 +374,7 @@ namespace render
             return render::api::Framebuffer{ reinterpret_cast<uintptr_t>(_vulkan_framebuffers[_vulkan_current_framebuffer]->native_handle()) };
         }
 
-        void load_texture(asset::AssetData texture_data) noexcept
+        auto load_texture(asset::AssetData texture_data) noexcept -> render::api::Texture override
         {
             int32_t width = resource::get_meta_int32(texture_data.metadata, "texture.extents.width"_sid);
             int32_t height = resource::get_meta_int32(texture_data.metadata, "texture.extents.height"_sid);
@@ -424,6 +463,11 @@ namespace render
 
             vkEndCommandBuffer(staging_cmds);
             _staging_cmds = true;
+
+            auto result_handle = render::api::Texture{ reinterpret_cast<uintptr_t>(texture.get()) };
+            _vulkan_images.emplace_back(std::move(texture));
+
+            return result_handle;
         }
 
         void load_shader(asset::AssetData shader_data) noexcept override
@@ -436,7 +480,7 @@ namespace render
             int32_t stage = resource::get_meta_int32(meta_view, "shader.stage"_sid);
             IS_ASSERT(stage == 1 || stage == 2, "Only vertex and fragment shaders are supported!");
 
-            _shaders.emplace_back(
+            _vulkan_shaders.emplace_back(
                 vulkan::create_shader(
                     _driver_allocator,
                     _vulkan_physical_device->graphics_device()->native_handle(),
@@ -476,13 +520,15 @@ namespace render
             auto graphics_device = physical_device->graphics_device()->native_handle();
 
             {
-                core::pod::Array<VkDescriptorSetLayout> layouts{ _driver_allocator };
-                core::pod::array::push_back(layouts, _vulkan_descriptor_sets_layout->native_handle());
-                _vulkan_pipeline_layout = vulkan::create_pipeline_layout(_driver_allocator, graphics_device, layouts);
+                _vulkan_pipeline_layout = vulkan::create_pipeline_layout(
+                    _driver_allocator,
+                    graphics_device,
+                    _vulkan_descriptor_set_layouts
+                );
                 _render_pass_context.pipeline_layout = _vulkan_pipeline_layout->native_handle();
 
                 core::pod::Array<vulkan::VulkanShader const*> shader_stages{ _driver_allocator };
-                std::for_each(_shaders.begin(), _shaders.end(), [&](auto const& shader_ptr) noexcept
+                std::for_each(_vulkan_shaders.begin(), _vulkan_shaders.end(), [&](auto const& shader_ptr) noexcept
                     {
                         core::pod::array::push_back(shader_stages, const_cast<vulkan::VulkanShader const*>(shader_ptr.get()));
                     });
@@ -648,7 +694,7 @@ namespace render
 
         // The Vulkan descriptor sets
         core::memory::unique_pointer<render::vulkan::VulkanDescriptorPool> _vulkan_descriptor_pool{ nullptr, { core::memory::globals::null_allocator() } };
-        core::memory::unique_pointer<render::vulkan::VulkanDescriptorSetLayout> _vulkan_descriptor_sets_layout{ nullptr, { core::memory::globals::null_allocator() } };
+        core::Vector<core::memory::unique_pointer<render::vulkan::VulkanDescriptorSetLayout>> _vulkan_descriptor_set_layouts;
         core::memory::unique_pointer<render::vulkan::VulkanDescriptorSets> _vulkan_descriptor_sets{ nullptr, { core::memory::globals::null_allocator() } };
         core::pod::Hash<render::vulkan::VulkanVertexDescriptor*> _vulkan_vertex_descriptors;
 
@@ -675,7 +721,10 @@ namespace render
         render::api::v1::vulkan::CommandBufferContext _command_buffer_context{};
 
         // Shader stages
-        std::vector<core::memory::unique_pointer<vulkan::VulkanShader>> _shaders;
+        core::Vector<core::memory::unique_pointer<vulkan::VulkanImage>> _vulkan_images;
+        core::Vector<core::memory::unique_pointer<vulkan::VulkanSampler>> _vulkan_samplers;
+        core::Vector<core::memory::unique_pointer<vulkan::VulkanShader>> _vulkan_shaders;
+
 
         // Quick job
         VkSemaphore _quick_semaphore;

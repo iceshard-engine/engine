@@ -86,23 +86,26 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
         auto* render_system = engine_instance->render_system();
         render_system->add_named_vertex_descriptor_set(render::descriptor_set::Color);
         render_system->add_named_vertex_descriptor_set(render::descriptor_set::Model);
+        render_system->add_named_vertex_descriptor_set(render::descriptor_set::ImGui);
 
         asset::AssetData shader_data;
-        if (asset_system->load(asset::AssetShader{ "shaders/debug/test-vert" }, shader_data) == asset::AssetStatus::Loaded)
+        if (asset_system->load(asset::AssetShader{ "shaders/debug/imgui-vert" }, shader_data) == asset::AssetStatus::Loaded)
         {
             render_system->load_shader(shader_data);
         }
-        if (asset_system->load(asset::AssetShader{ "shaders/debug/test-frag" }, shader_data) == asset::AssetStatus::Loaded)
+        if (asset_system->load(asset::AssetShader{ "shaders/debug/imgui-frag" }, shader_data) == asset::AssetStatus::Loaded)
         {
             render_system->load_shader(shader_data);
         }
 
         render::api::VertexBuffer vtx_buffer[2]{};
+        render::api::VertexBuffer idx_buffer{};
 
         asset::AssetData mesh_data;
         if (asset_system->load(asset::Asset{ "mesh/test/box", asset::AssetType::Mesh }, mesh_data) == asset::AssetStatus::Loaded)
         {
-            vtx_buffer[0] = render_system->create_vertex_buffer(mesh_data.content._size);
+            idx_buffer = render_system->create_vertex_buffer(1024 * 128 * sizeof(uint16_t));
+            vtx_buffer[0] = render_system->create_vertex_buffer(1024 * 128 * sizeof(float));
 
             render::api::BufferDataView buffer_data_view;
             render::api::render_api_instance->vertex_buffer_map_data(vtx_buffer[0], buffer_data_view);
@@ -115,9 +118,6 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
         {
             static const glm::mat4 instances[] = {
                 glm::mat4{ 1.0f },
-                glm::translate(glm::mat4{ 1.0f }, glm::vec3{ 1.0f, 3.0f, 1.0f }),
-                glm::translate(glm::mat4{ 1.0f }, glm::vec3{ 3.0f, 1.0f, 1.0f }),
-                glm::translate(glm::mat4{ 1.0f }, glm::vec3{ 1.0f, 1.0f, 3.0f }),
             };
 
             vtx_buffer[1] = render_system->create_vertex_buffer(sizeof(instances));
@@ -169,6 +169,8 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
 
         ImGui::CreateContext();
         ImGuiIO& io = ImGui::GetIO();
+        io.DisplaySize.x = 1280;
+        io.DisplaySize.y = 720;
 
         unsigned char* pixels;
         int width, height;
@@ -184,12 +186,15 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
         asset::AssetData tex_data;
         tex_data.metadata = resource::create_meta_view(meta);
         tex_data.content = { pixels, upload_size };
-        render_system->load_texture(std::move(tex_data));
+        render::api::Texture tex = render_system->load_texture(std::move(tex_data));
+
+        io.Fonts->TexID = reinterpret_cast<ImTextureID>(tex);
 
         render_system->create_uniform_descriptor_sets(sizeof(MVP));
-        auto render_pipeline = render_system->create_pipeline(render::pipeline::DefaultPieline);
+        auto render_pipeline = render_system->create_pipeline(render::pipeline::ImGuiPipeline);
 
         fmt::print("IceShard engine revision: {}\n", engine_instance->revision());
+        ImGui::NewFrame();
 
         // Create a test world
         engine_instance->world_manager()->create_world(core::cexpr::stringid("test-world"));
@@ -220,7 +225,9 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
                     if (deg >= 360.0f)
                         deg = 0.0f;
 
-                    MVP = clip * projection * new_view;
+                    auto ortho_projection = glm::ortho(0.f, io.DisplaySize.x, io.DisplaySize.y, 0.f);
+
+                    MVP = ortho_projection;// clip * projection * new_view;
 
                     render::api::BufferDataView data_view;
                     render::api::render_api_instance->uniform_buffer_map_data(uniform_buffer, data_view);
@@ -230,8 +237,28 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
                     render::api::render_api_instance->uniform_buffer_unmap_data(uniform_buffer);
                 });
 
-            engine_instance->add_task([](iceshard::Engine& e, render::api::RenderPipeline pipeline, render::api::VertexBuffer vtx_buffer[2]) noexcept -> cppcoro::task<>
+            static bool demo = true;
+            ImGui::ShowDemoWindow(&demo);
+
+            ImGui::EndFrame();
+            ImGui::Render();
+
+
+            engine_instance->add_task(
+                [](iceshard::Engine& e, render::api::RenderPipeline pipeline, render::api::VertexBuffer idx_buffer, render::api::VertexBuffer vtx_buffer[2]) noexcept -> cppcoro::task<>
                 {
+                    ImGuiIO& io = ImGui::GetIO();
+
+                    sizeof(ImDrawVert);
+
+                    // Avoid rendering when minimized, scale coordinates for retina displays (screen coordinates != framebuffer coordinates)
+                    int fb_width = static_cast<int>(io.DisplaySize.x * io.DisplayFramebufferScale.x);
+                    int fb_height = static_cast<int>(io.DisplaySize.y * io.DisplayFramebufferScale.y);
+                    if (fb_width == 0 || fb_height == 0)
+                    {
+                        return;
+                    }
+
                     auto command_buffer = e.render_system()->command_buffer();
                     auto descriptor_sets = e.render_system()->descriptor_sets();
 
@@ -240,17 +267,119 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
                     render::cmd::bind_render_pipeline(command_buffer, pipeline);
                     render::cmd::bind_descriptor_sets(command_buffer, descriptor_sets);
                     render::cmd::bind_vertex_buffers(command_buffer, vtx_buffer[0], vtx_buffer[1]);
+                    render::cmd::bind_index_buffers(command_buffer, idx_buffer);
                     render::cmd::set_viewport(command_buffer, 1280, 720);
                     render::cmd::set_scissor(command_buffer, 1280, 720);
-                    render::cmd::draw(command_buffer, 12 * 3, 4);
+
+                    auto* draw_data = ImGui::GetDrawData();
+                    //draw_data->ScaleClipRects(io.DisplayFramebufferScale);
+
+                    // Upload vertex/index data into a single contiguous GPU buffer
+                    {
+                        render::api::BufferDataView vtx_buff, idx_buff;
+                        render::api::render_api_instance->vertex_buffer_map_data(vtx_buffer[0], vtx_buff);
+                        render::api::render_api_instance->vertex_buffer_map_data(idx_buffer, idx_buff);
+
+ /*                       uint16_t indices[] = {
+                            0, 1, 2,
+                            1, 2, 3,
+                        };
+
+                        ImDrawVert vertexes[] = {
+                            ImDrawVert{ { 0.0f, 0.0f }, { 0.0f, 0.0f }, 0xff0000ff },
+                            ImDrawVert{ { 0.0f, 0.5f }, { 0.0f, 0.1f }, 0x00ff00ff },
+                            ImDrawVert{ { 0.5f, 0.5f }, { 0.1f, 0.1f }, 0x0000ffff },
+                            ImDrawVert{ { 0.5f, 0.0f }, { 0.1f, 0.0f }, 0x0f0f0fff },
+                        };
+
+                        memcpy(idx_buff.data_pointer, indices, sizeof(indices));
+                        memcpy(vtx_buff.data_pointer, vertexes, sizeof(vertexes));
+*/
+                        for (int n = 0; n < draw_data->CmdListsCount; n++)
+                        {
+                            const ImDrawList* cmd_list = draw_data->CmdLists[n];
+                            memcpy(vtx_buff.data_pointer, cmd_list->VtxBuffer.Data, cmd_list->VtxBuffer.Size * sizeof(ImDrawVert));
+                            memcpy(idx_buff.data_pointer, cmd_list->IdxBuffer.Data, cmd_list->IdxBuffer.Size * sizeof(ImDrawIdx));
+                            vtx_buff.data_pointer = core::memory::utils::pointer_add(vtx_buff.data_pointer, cmd_list->VtxBuffer.Size * sizeof(ImDrawVert));
+                            idx_buff.data_pointer = core::memory::utils::pointer_add(idx_buff.data_pointer, cmd_list->IdxBuffer.Size * sizeof(ImDrawIdx));
+
+                        }
+
+                        render::api::render_api_instance->vertex_buffer_unmap_data(idx_buffer);
+                        render::api::render_api_instance->vertex_buffer_unmap_data(vtx_buffer[0]);
+                    }
+                    /*
+                    render::cmd::draw_indexed(command_buffer, 6, 1, 0, 0, 0);
+*/
+                    ImVec2 clip_off = draw_data->DisplayPos;         // (0,0) unless using multi-viewports
+                    ImVec2 clip_scale = draw_data->FramebufferScale; // (1,1) unless using retina display which are often (2,2)
+
+                    uint32_t vtx_buffer_offset = 0;
+                    uint32_t idx_buffer_offset = 0;
+                    for (int32_t i = 0; i < draw_data->CmdListsCount; i++)
+                    {
+                        ImDrawList const* cmd_list = draw_data->CmdLists[i];
+                        for (int cmd_i = 0; cmd_i < cmd_list->CmdBuffer.Size; cmd_i++)
+                        {
+                            ImDrawCmd const* pcmd = &cmd_list->CmdBuffer[cmd_i];
+                            if (pcmd->UserCallback)
+                            {
+                                pcmd->UserCallback(cmd_list, pcmd);
+                            }
+                            else
+                            {
+                                ImVec4 clip_rect;
+                                clip_rect.x = (pcmd->ClipRect.x - clip_off.x) * clip_scale.x;
+                                clip_rect.y = (pcmd->ClipRect.y - clip_off.y) * clip_scale.y;
+                                clip_rect.z = (pcmd->ClipRect.z - clip_off.x) * clip_scale.x;
+                                clip_rect.w = (pcmd->ClipRect.w - clip_off.y) * clip_scale.y;
+
+
+
+                                if (clip_rect.x < fb_width && clip_rect.y < fb_height && clip_rect.z >= 0.0f && clip_rect.w >= 0.0f)
+                                {
+                                    // Negative offsets are illegal for vkCmdSetScissor
+                                    if (clip_rect.x < 0.0f)
+                                        clip_rect.x = 0.0f;
+                                    if (clip_rect.y < 0.0f)
+                                        clip_rect.y = 0.0f;
+
+                                    // Apply scissor/clipping rectangle
+                                    glm::ivec4 scissor;
+                                    scissor.x = (int32_t)(clip_rect.x);
+                                    scissor.y = (int32_t)(clip_rect.y);
+                                    scissor.z = (uint32_t)(clip_rect.z - clip_rect.x);
+                                    scissor.w = (uint32_t)(clip_rect.w - clip_rect.y);
+
+                                    //render::cmd::set_scissor(command_buffer,
+                                    //    scissor.x,
+                                    //    scissor.y,
+                                    //    scissor.z,
+                                    //    scissor.w
+                                    //);
+
+                                    // Draw
+                                    render::cmd::draw_indexed(command_buffer, pcmd->ElemCount, 1, pcmd->IdxOffset + idx_buffer_offset, pcmd->VtxOffset + vtx_buffer_offset, 0);
+                                }
+                            }
+                        }
+
+                        vtx_buffer_offset += cmd_list->VtxBuffer.Size;
+                        idx_buffer_offset += cmd_list->IdxBuffer.Size;
+                    }
+
+                    //render::cmd::draw(command_buffer, 12 * 3, 4);
                     render::cmd::end_renderpass(command_buffer);
                     render::cmd::end(command_buffer);
 
                     co_return;
-                }(*engine_instance, render_pipeline, vtx_buffer));
+                }(*engine_instance, render_pipeline, idx_buffer, vtx_buffer));
 
             engine_instance->next_frame();
+            ImGui::NewFrame();
         }
+
+        ImGui::EndFrame();
 
         engine_instance->world_manager()->destroy_world(core::cexpr::stringid("test-world"));
 

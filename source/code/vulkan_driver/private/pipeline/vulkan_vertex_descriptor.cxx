@@ -32,6 +32,8 @@ namespace render::vulkan
                 return VkFormat::VK_FORMAT_R32G32B32_SFLOAT;
             case render::VertexDescriptorType::FloatVec4:
                 return VkFormat::VK_FORMAT_R32G32B32A32_SFLOAT;
+            case render::VertexDescriptorType::UNormVec4:
+                return VkFormat::VK_FORMAT_R8G8B8A8_UNORM;
 
             default:
                 break;
@@ -51,6 +53,8 @@ namespace render::vulkan
                 return sizeof(float) * 3;
             case render::VertexDescriptorType::FloatVec4:
                 return sizeof(float) * 4;
+            case render::VertexDescriptorType::UNormVec4:
+                return sizeof(uint32_t);
             default:
                 break;
             }

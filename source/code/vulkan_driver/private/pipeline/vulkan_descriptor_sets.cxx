@@ -1,5 +1,6 @@
 #include "vulkan_descriptor_sets.hxx"
 #include <core/pod/hash.hxx>
+#include <core/collections.hxx>
 
 namespace render::vulkan
 {
@@ -27,18 +28,40 @@ namespace render::vulkan
 
     void VulkanDescriptorSets::write_descriptor_set(
         uint32_t descriptor_set_index,
+        uint32_t binding,
         VkDescriptorType type,
-        VkDescriptorBufferInfo const& buffer_info) noexcept
+        VkDescriptorBufferInfo const& buffer_info
+    ) noexcept
     {
         VkWriteDescriptorSet write_info = {};
         write_info.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
         write_info.pNext = nullptr;
         write_info.dstSet = _native_handles[descriptor_set_index];
+        write_info.dstArrayElement = 0;
+        write_info.dstBinding = binding;
         write_info.descriptorCount = 1;
         write_info.descriptorType = type;
         write_info.pBufferInfo = &buffer_info;
+
+        vkUpdateDescriptorSets(_device_handle, 1, &write_info, 0, nullptr);
+    }
+
+    void VulkanDescriptorSets::write_descriptor_set(
+        uint32_t descriptor_set_index,
+        uint32_t binding,
+        VkDescriptorType type,
+        VkDescriptorImageInfo const& image_info
+    ) noexcept
+    {
+        VkWriteDescriptorSet write_info = {};
+        write_info.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        write_info.pNext = nullptr;
+        write_info.dstSet = _native_handles[descriptor_set_index];
         write_info.dstArrayElement = 0;
-        write_info.dstBinding = 0;
+        write_info.dstBinding = binding;
+        write_info.descriptorCount = 1;
+        write_info.descriptorType = type;
+        write_info.pImageInfo = &image_info;
 
         vkUpdateDescriptorSets(_device_handle, 1, &write_info, 0, nullptr);
     }
@@ -46,7 +69,7 @@ namespace render::vulkan
     auto create_vulkan_descriptor_sets(
         core::allocator& alloc,
         render::vulkan::VulkanDescriptorPool& descriptor_pool,
-        core::pod::Array<VulkanDescriptorSetLayout*> const& layouts
+        core::Vector<core::memory::unique_pointer<VulkanDescriptorSetLayout>> const& layouts
     ) noexcept -> core::memory::unique_pointer<VulkanDescriptorSets>
     {
         core::pod::Array<VkDescriptorSetLayout> descriptor_set_layouts{ alloc };

@@ -30,7 +30,7 @@ namespace render
 
         virtual void create_uniform_descriptor_sets([[maybe_unused]] uint32_t size) noexcept { }
 
-        virtual void load_texture(asset::AssetData texture_data) noexcept = 0;
+        virtual auto load_texture(asset::AssetData texture_data) noexcept -> render::api::Texture = 0;
 
         virtual void load_shader(asset::AssetData shader_data) noexcept = 0;
 

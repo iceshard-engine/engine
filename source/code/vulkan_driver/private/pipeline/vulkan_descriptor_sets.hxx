@@ -2,6 +2,7 @@
 #include <core/allocator.hxx>
 #include <core/pointer.hxx>
 #include <core/pod/array.hxx>
+#include <core/collections.hxx>
 #include <vulkan/vulkan.h>
 
 #include "vulkan_descriptor_pool.hxx"
@@ -22,8 +23,17 @@ namespace render::vulkan
 
         void write_descriptor_set(
             uint32_t descriptor_set_index,
+            uint32_t binding,
             VkDescriptorType type,
-            VkDescriptorBufferInfo const& buffer_info) noexcept;
+            VkDescriptorBufferInfo const& buffer_info
+        ) noexcept;
+
+        void write_descriptor_set(
+            uint32_t descriptor_set_index,
+            uint32_t binding,
+            VkDescriptorType type,
+            VkDescriptorImageInfo const& image_info
+        ) noexcept;
 
     private:
         VkDevice _device_handle;
@@ -34,7 +44,7 @@ namespace render::vulkan
     auto create_vulkan_descriptor_sets(
         core::allocator& alloc,
         vulkan::VulkanDescriptorPool& descriptor_pool,
-        core::pod::Array<VulkanDescriptorSetLayout*> const& layouts
+        core::Vector<core::memory::unique_pointer<VulkanDescriptorSetLayout>> const& layouts
     ) noexcept -> core::memory::unique_pointer<VulkanDescriptorSets>;
 
 } // namespace render::vulkan

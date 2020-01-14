@@ -19,6 +19,8 @@ namespace render::vulkan
 
         auto native_handle() const noexcept -> VkBuffer { return _buffer_handle; }
 
+        auto memory_info() const noexcept -> VulkanMemoryInfo const& { return _memory_info; }
+
         void map_memory(render::api::BufferDataView& data_view) noexcept;
 
         void unmap_memory() noexcept;

@@ -122,10 +122,30 @@ namespace render::vulkan
         device_memory.allocate_memory(
             image,
             VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-            memory_info
-        );
+            memory_info);
 
-        return core::memory::make_unique<VulkanImage>(alloc, graphics_device, image, nullptr, std::move(memory_info));
+        VkImageViewCreateInfo view_info = {};
+        view_info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+        view_info.pNext = nullptr;
+        view_info.image = image;
+        view_info.format = image_info.format;
+        view_info.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+        view_info.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+        view_info.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+        view_info.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+        view_info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        view_info.subresourceRange.baseMipLevel = 0;
+        view_info.subresourceRange.levelCount = 1;
+        view_info.subresourceRange.baseArrayLayer = 0;
+        view_info.subresourceRange.layerCount = 1;
+        view_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
+        view_info.flags = 0;
+
+        VkImageView image_view;
+        api_result = vkCreateImageView(graphics_device, &view_info, nullptr, &image_view);
+        IS_ASSERT(api_result == VkResult::VK_SUCCESS, "Coudln't create view for image!");
+
+        return core::memory::make_unique<VulkanImage>(alloc, graphics_device, image, image_view, std::move(memory_info));
     }
 
 } // namespace render::vulkan

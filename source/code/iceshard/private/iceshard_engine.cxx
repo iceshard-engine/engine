@@ -43,8 +43,8 @@ namespace iceshard
             auto create_uniform_buffer(uint32_t) noexcept -> render::api::UniformBuffer { return render::api::UniformBuffer{ 0 }; }
             void swap() noexcept override {}
 
-            void load_texture(asset::AssetData) noexcept override { };
-            void load_shader(asset::AssetData) noexcept override { };
+            auto load_texture(asset::AssetData) noexcept -> render::api::Texture override { return render::api::Texture{ 0 }; }
+            void load_shader(asset::AssetData) noexcept override { }
 
             auto create_pipeline(
                 [[maybe_unused]] core::cexpr::stringid_type const* descriptor_names,

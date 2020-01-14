@@ -1,4 +1,6 @@
 #include "vulkan_pipeline_layout.hxx"
+#include "vulkan_descriptor_set_layout.hxx"
+#include <core/collections.hxx>
 
 namespace render::vulkan
 {
@@ -14,15 +16,26 @@ namespace render::vulkan
         vkDestroyPipelineLayout(_device_handle, _native_handle, nullptr);
     }
 
-    auto create_pipeline_layout(core::allocator& alloc, VkDevice device, core::pod::Array<VkDescriptorSetLayout> const& descriptor_sets) noexcept -> core::memory::unique_pointer<VulkanPipelineLayout>
+    auto create_pipeline_layout(
+        core::allocator& alloc,
+        VkDevice device,
+        core::Vector<core::memory::unique_pointer<VulkanDescriptorSetLayout>> const& layouts
+    ) noexcept -> core::memory::unique_pointer<VulkanPipelineLayout>
     {
+        core::pod::Array<VkDescriptorSetLayout> layouts_native{ alloc };
+        core::pod::array::reserve(layouts_native, static_cast<uint32_t>(layouts.size()));
+        for (auto const& layout : layouts)
+        {
+            core::pod::array::push_back(layouts_native, layout->native_handle());
+        }
+
         VkPipelineLayoutCreateInfo pipeline_create_info = {};
         pipeline_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
         pipeline_create_info.pNext = NULL;
         pipeline_create_info.pushConstantRangeCount = 0;
         pipeline_create_info.pPushConstantRanges = NULL;
-        pipeline_create_info.setLayoutCount = core::pod::array::size(descriptor_sets);
-        pipeline_create_info.pSetLayouts = core::pod::array::begin(descriptor_sets);
+        pipeline_create_info.setLayoutCount = core::pod::array::size(layouts_native);
+        pipeline_create_info.pSetLayouts = core::pod::array::begin(layouts_native);
 
         VkPipelineLayout pipeline_layout;
         auto api_result = vkCreatePipelineLayout(device, &pipeline_create_info, nullptr, &pipeline_layout);
