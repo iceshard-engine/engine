@@ -207,23 +207,23 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
                     quit = true;
                 });
 
-            core::message::filter<input::message::MouseMotion>(engine_instance->current_frame().messages(), [&](input::message::MouseMotion const& msg) noexcept
+            core::message::filter<input::message::MouseMotion>(engine_instance->current_frame().messages(), [&]([[maybe_unused]] input::message::MouseMotion const& msg) noexcept
                 {
-                    static auto last_pos = msg.pos.x;
+                    //static auto last_pos = msg.pos.x;
 
-                    auto new_view = glm::lookAt(
-                        cam_pos, // Camera is at (-5,3,-10), in World Space
-                        glm::vec3(0, 0, 0),      // and looks at the origin
-                        glm::vec3(0, -1, 0)      // Head is up (set to 0,-1,0 to look upside-down)
-                    );
+                    //auto new_view = glm::lookAt(
+                    //    cam_pos, // Camera is at (-5,3,-10), in World Space
+                    //    glm::vec3(0, 0, 0),      // and looks at the origin
+                    //    glm::vec3(0, -1, 0)      // Head is up (set to 0,-1,0 to look upside-down)
+                    //);
 
-                    static float deg = 0.0f;
-                    deg += static_cast<float>(last_pos - msg.pos.x);
-                    new_view = glm::rotate(new_view, glm::radians(deg), glm::vec3{ 0.f, 1.f, 0.f });
-                    last_pos = msg.pos.x;
+                    //static float deg = 0.0f;
+                    //deg += static_cast<float>(last_pos - msg.pos.x);
+                    //new_view = glm::rotate(new_view, glm::radians(deg), glm::vec3{ 0.f, 1.f, 0.f });
+                    //last_pos = msg.pos.x;
 
-                    if (deg >= 360.0f)
-                        deg = 0.0f;
+                    //if (deg >= 360.0f)
+                    //    deg = 0.0f;
 
                     auto ortho_projection = glm::ortho(0.f, io.DisplaySize.x, io.DisplaySize.y, 0.f);
 
@@ -239,6 +239,8 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
 
             static bool demo = true;
             ImGui::ShowDemoWindow(&demo);
+
+            ImGui::ShowMetricsWindow();
 
             ImGui::EndFrame();
             ImGui::Render();
@@ -271,8 +273,10 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
                     render::cmd::set_viewport(command_buffer, 1280, 720);
                     render::cmd::set_scissor(command_buffer, 1280, 720);
 
+                    constexpr bool test_draw = false;
+
+                    [[maybe_unused]]
                     auto* draw_data = ImGui::GetDrawData();
-                    //draw_data->ScaleClipRects(io.DisplayFramebufferScale);
 
                     // Upload vertex/index data into a single contiguous GPU buffer
                     {
@@ -280,92 +284,105 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
                         render::api::render_api_instance->vertex_buffer_map_data(vtx_buffer[0], vtx_buff);
                         render::api::render_api_instance->vertex_buffer_map_data(idx_buffer, idx_buff);
 
- /*                       uint16_t indices[] = {
-                            0, 1, 2,
-                            1, 2, 3,
-                        };
-
-                        ImDrawVert vertexes[] = {
-                            ImDrawVert{ { 0.0f, 0.0f }, { 0.0f, 0.0f }, 0xff0000ff },
-                            ImDrawVert{ { 0.0f, 0.5f }, { 0.0f, 0.1f }, 0x00ff00ff },
-                            ImDrawVert{ { 0.5f, 0.5f }, { 0.1f, 0.1f }, 0x0000ffff },
-                            ImDrawVert{ { 0.5f, 0.0f }, { 0.1f, 0.0f }, 0x0f0f0fff },
-                        };
-
-                        memcpy(idx_buff.data_pointer, indices, sizeof(indices));
-                        memcpy(vtx_buff.data_pointer, vertexes, sizeof(vertexes));
-*/
-                        for (int n = 0; n < draw_data->CmdListsCount; n++)
+                        if constexpr (test_draw)
                         {
-                            const ImDrawList* cmd_list = draw_data->CmdLists[n];
-                            memcpy(vtx_buff.data_pointer, cmd_list->VtxBuffer.Data, cmd_list->VtxBuffer.Size * sizeof(ImDrawVert));
-                            memcpy(idx_buff.data_pointer, cmd_list->IdxBuffer.Data, cmd_list->IdxBuffer.Size * sizeof(ImDrawIdx));
-                            vtx_buff.data_pointer = core::memory::utils::pointer_add(vtx_buff.data_pointer, cmd_list->VtxBuffer.Size * sizeof(ImDrawVert));
-                            idx_buff.data_pointer = core::memory::utils::pointer_add(idx_buff.data_pointer, cmd_list->IdxBuffer.Size * sizeof(ImDrawIdx));
+                            uint16_t indices[] = {
+                                0, 1, 2,
+                                0, 2, 3,
+                            };
 
+                            ImDrawVert vertexes[] = {
+                                ImDrawVert{ { 0.0f, 0.0f }, { 0.0f, 0.0f }, 0xff0000ff },
+                                ImDrawVert{ { 0.0f, 500.f }, { 0.0f, 0.1f }, 0x00ff00ff },
+                                ImDrawVert{ { 500.f, 500.f }, { 0.1f, 0.1f }, 0x0000ffff },
+                                ImDrawVert{ { 500.f, 0.0f }, { 0.1f, 0.0f }, 0x0f0f0fff },
+                            };
+
+                            memcpy(idx_buff.data_pointer, indices, sizeof(indices));
+                            memcpy(vtx_buff.data_pointer, vertexes, sizeof(vertexes));
+                        }
+                        else
+                        {
+                            for (int n = 0; n < draw_data->CmdListsCount; n++)
+                            {
+                                const ImDrawList* cmd_list = draw_data->CmdLists[n];
+
+                                IS_ASSERT(vtx_buff.data_size > cmd_list->VtxBuffer.Size * sizeof(ImDrawVert), "how?");
+                                IS_ASSERT(idx_buff.data_size > cmd_list->IdxBuffer.Size * sizeof(ImDrawIdx), "how?");
+
+                                memcpy(vtx_buff.data_pointer, cmd_list->VtxBuffer.Data, cmd_list->VtxBuffer.Size * sizeof(ImDrawVert));
+                                memcpy(idx_buff.data_pointer, cmd_list->IdxBuffer.Data, cmd_list->IdxBuffer.Size * sizeof(ImDrawIdx));
+                                vtx_buff.data_pointer = core::memory::utils::pointer_add(vtx_buff.data_pointer, cmd_list->VtxBuffer.Size * sizeof(ImDrawVert));
+                                idx_buff.data_pointer = core::memory::utils::pointer_add(idx_buff.data_pointer, cmd_list->IdxBuffer.Size * sizeof(ImDrawIdx));
+                            }
                         }
 
                         render::api::render_api_instance->vertex_buffer_unmap_data(idx_buffer);
                         render::api::render_api_instance->vertex_buffer_unmap_data(vtx_buffer[0]);
                     }
-                    /*
-                    render::cmd::draw_indexed(command_buffer, 6, 1, 0, 0, 0);
-*/
-                    ImVec2 clip_off = draw_data->DisplayPos;         // (0,0) unless using multi-viewports
-                    ImVec2 clip_scale = draw_data->FramebufferScale; // (1,1) unless using retina display which are often (2,2)
 
-                    uint32_t vtx_buffer_offset = 0;
-                    uint32_t idx_buffer_offset = 0;
-                    for (int32_t i = 0; i < draw_data->CmdListsCount; i++)
+                    if constexpr (test_draw)
                     {
-                        ImDrawList const* cmd_list = draw_data->CmdLists[i];
-                        for (int cmd_i = 0; cmd_i < cmd_list->CmdBuffer.Size; cmd_i++)
+                        render::cmd::draw_indexed(command_buffer, 6, 1, 0, 0, 0);
+                    }
+                    else
+                    {
+                        ImVec2 clip_off = draw_data->DisplayPos;         // (0,0) unless using multi-viewports
+                        ImVec2 clip_scale = draw_data->FramebufferScale; // (1,1) unless using retina display which are often (2,2)
+
+                        uint32_t vtx_buffer_offset = 0;
+                        uint32_t idx_buffer_offset = 0;
+                        for (int32_t i = 0; i < draw_data->CmdListsCount; i++)
                         {
-                            ImDrawCmd const* pcmd = &cmd_list->CmdBuffer[cmd_i];
-                            if (pcmd->UserCallback)
+                            ImDrawList const* cmd_list = draw_data->CmdLists[i];
+                            for (int cmd_i = 0; cmd_i < cmd_list->CmdBuffer.Size; cmd_i++)
                             {
-                                pcmd->UserCallback(cmd_list, pcmd);
-                            }
-                            else
-                            {
-                                ImVec4 clip_rect;
-                                clip_rect.x = (pcmd->ClipRect.x - clip_off.x) * clip_scale.x;
-                                clip_rect.y = (pcmd->ClipRect.y - clip_off.y) * clip_scale.y;
-                                clip_rect.z = (pcmd->ClipRect.z - clip_off.x) * clip_scale.x;
-                                clip_rect.w = (pcmd->ClipRect.w - clip_off.y) * clip_scale.y;
-
-
-
-                                if (clip_rect.x < fb_width && clip_rect.y < fb_height && clip_rect.z >= 0.0f && clip_rect.w >= 0.0f)
+                                ImDrawCmd const* pcmd = &cmd_list->CmdBuffer[cmd_i];
+                                if (pcmd->UserCallback)
                                 {
-                                    // Negative offsets are illegal for vkCmdSetScissor
-                                    if (clip_rect.x < 0.0f)
-                                        clip_rect.x = 0.0f;
-                                    if (clip_rect.y < 0.0f)
-                                        clip_rect.y = 0.0f;
+                                    pcmd->UserCallback(cmd_list, pcmd);
+                                }
+                                else
+                                {
+                                    ImVec4 clip_rect;
+                                    clip_rect.x = (pcmd->ClipRect.x - clip_off.x) * clip_scale.x;
+                                    clip_rect.y = (pcmd->ClipRect.y - clip_off.y) * clip_scale.y;
+                                    clip_rect.z = (pcmd->ClipRect.z - clip_off.x) * clip_scale.x;
+                                    clip_rect.w = (pcmd->ClipRect.w - clip_off.y) * clip_scale.y;
 
-                                    // Apply scissor/clipping rectangle
-                                    glm::ivec4 scissor;
-                                    scissor.x = (int32_t)(clip_rect.x);
-                                    scissor.y = (int32_t)(clip_rect.y);
-                                    scissor.z = (uint32_t)(clip_rect.z - clip_rect.x);
-                                    scissor.w = (uint32_t)(clip_rect.w - clip_rect.y);
 
-                                    //render::cmd::set_scissor(command_buffer,
-                                    //    scissor.x,
-                                    //    scissor.y,
-                                    //    scissor.z,
-                                    //    scissor.w
-                                    //);
 
-                                    // Draw
-                                    render::cmd::draw_indexed(command_buffer, pcmd->ElemCount, 1, pcmd->IdxOffset + idx_buffer_offset, pcmd->VtxOffset + vtx_buffer_offset, 0);
+                                    if (clip_rect.x < fb_width && clip_rect.y < fb_height && clip_rect.z >= 0.0f && clip_rect.w >= 0.0f)
+                                    {
+                                        // Negative offsets are illegal for vkCmdSetScissor
+                                        if (clip_rect.x < 0.0f)
+                                            clip_rect.x = 0.0f;
+                                        if (clip_rect.y < 0.0f)
+                                            clip_rect.y = 0.0f;
+
+                                        // Apply scissor/clipping rectangle
+                                        glm::ivec4 scissor;
+                                        scissor.x = (int32_t)(clip_rect.x);
+                                        scissor.y = (int32_t)(clip_rect.y);
+                                        scissor.z = (uint32_t)(clip_rect.z - clip_rect.x);
+                                        scissor.w = (uint32_t)(clip_rect.w - clip_rect.y);
+
+                                        render::cmd::set_scissor(command_buffer,
+                                            scissor.x,
+                                            scissor.y,
+                                            scissor.z,
+                                            scissor.w
+                                        );
+
+                                        // Draw
+                                        render::cmd::draw_indexed(command_buffer, pcmd->ElemCount, 1, pcmd->IdxOffset + idx_buffer_offset, pcmd->VtxOffset + vtx_buffer_offset, 0);
+                                    }
                                 }
                             }
-                        }
 
-                        vtx_buffer_offset += cmd_list->VtxBuffer.Size;
-                        idx_buffer_offset += cmd_list->IdxBuffer.Size;
+                            vtx_buffer_offset += cmd_list->VtxBuffer.Size;
+                            idx_buffer_offset += cmd_list->IdxBuffer.Size;
+                        }
                     }
 
                     //render::cmd::draw(command_buffer, 12 * 3, 4);

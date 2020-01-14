@@ -128,6 +128,21 @@ namespace render::api::v1::vulkan
 
     void vulkan_api_v1_set_viewport(render::api::v1::CommandBuffer cb, uint32_t width, uint32_t height) noexcept
     {
+        auto* ctx = native(cb);
+
+        // Setup scale and translation:
+        // Our visible imgui space lies from draw_data->DisplayPps (top left) to draw_data->DisplayPos+data_data->DisplaySize (bottom right). DisplayPos is (0,0) for single viewport apps.
+        {
+            float scale[2];
+            scale[0] = 2.0f / width;
+            scale[1] = 2.0f / height;
+            float translate[2];
+            translate[0] = -1.0f; // -1.0f - width * scale[0];
+            translate[1] = -1.0f; //-1.0f - height * scale[1];
+            vkCmdPushConstants(ctx->command_buffer, ctx->render_pass_context->pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, sizeof(float) * 0, sizeof(float) * 2, scale);
+            vkCmdPushConstants(ctx->command_buffer, ctx->render_pass_context->pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, sizeof(float) * 2, sizeof(float) * 2, translate);
+        }
+
         VkViewport viewport{};
         viewport.width = (float)width;
         viewport.height = (float)height;
@@ -135,7 +150,8 @@ namespace render::api::v1::vulkan
         viewport.maxDepth = (float)1.0f;
         viewport.x = 0;
         viewport.y = 0;
-        vkCmdSetViewport(command_buffer(cb), 0, 1, &viewport);
+        vkCmdSetViewport(ctx->command_buffer, 0, 1, &viewport);
+
     }
 
     void vulkan_api_v1_set_scissor(render::api::v1::CommandBuffer cb, uint32_t width, uint32_t height) noexcept

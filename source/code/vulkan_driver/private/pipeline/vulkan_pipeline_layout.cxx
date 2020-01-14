@@ -29,11 +29,16 @@ namespace render::vulkan
             core::pod::array::push_back(layouts_native, layout->native_handle());
         }
 
+        VkPushConstantRange push_constants[1] = {};
+        push_constants[0].stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+        push_constants[0].offset = sizeof(float) * 0;
+        push_constants[0].size = sizeof(float) * 4;
+
         VkPipelineLayoutCreateInfo pipeline_create_info = {};
         pipeline_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
         pipeline_create_info.pNext = NULL;
-        pipeline_create_info.pushConstantRangeCount = 0;
-        pipeline_create_info.pPushConstantRanges = NULL;
+        pipeline_create_info.pushConstantRangeCount = 1;
+        pipeline_create_info.pPushConstantRanges = push_constants;
         pipeline_create_info.setLayoutCount = core::pod::array::size(layouts_native);
         pipeline_create_info.pSetLayouts = core::pod::array::begin(layouts_native);
 

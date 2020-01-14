@@ -121,7 +121,7 @@ namespace render::vulkan
         swapchain_ci.clipped = false; // Clipped for android only?
 
         swapchain_ci.imageColorSpace = surface_format.colorSpace;
-        //swapchain_ci.imageUsage = VkImageUsageFlags:: usageFlags; // todo
+        swapchain_ci.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT; // todo
         swapchain_ci.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
         swapchain_ci.queueFamilyIndexCount = 0;
         swapchain_ci.pQueueFamilyIndices = nullptr;

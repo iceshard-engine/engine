@@ -10,5 +10,5 @@ layout(set = 0, binding = 2) uniform texture2D default_image;
 
 void main()
 {
-   out_color = vec4(1, 0,0,1); // in_color * texture(sampler2D(default_image, default_sampler), in_uv);
+    out_color = in_color * texture(sampler2D(default_image, default_sampler), in_uv.st);
 }
