@@ -207,34 +207,44 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
                     quit = true;
                 });
 
-            core::message::filter<input::message::MouseMotion>(engine_instance->current_frame().messages(), [&]([[maybe_unused]] input::message::MouseMotion const& msg) noexcept
+            core::message::for_each(engine_instance->current_frame().messages(), [&](core::Message const& msg) noexcept
                 {
-                    //static auto last_pos = msg.pos.x;
+                    if (msg.header.type == input::message::MouseMotion::message_type)
+                    {
+                        auto const& data = *reinterpret_cast<input::message::MouseMotion const*>(msg.data._data);
+                        io.MousePos = { (float)data.pos.x, (float)data.pos.y };
+                    }
+                    else if (msg.header.type == input::message::MouseButtonDown::message_type)
+                    {
+                        auto const& data = *reinterpret_cast<input::message::MouseButtonDown const*>(msg.data._data);
+                        io.MousePos = { (float)data.pos.x, (float)data.pos.y };
 
-                    //auto new_view = glm::lookAt(
-                    //    cam_pos, // Camera is at (-5,3,-10), in World Space
-                    //    glm::vec3(0, 0, 0),      // and looks at the origin
-                    //    glm::vec3(0, -1, 0)      // Head is up (set to 0,-1,0 to look upside-down)
-                    //);
+                        io.MouseDown[0] = data.button == input::MouseButton::Left; // If a mouse press event came, always pass it as "mouse held this frame", so we don't miss click-release events that are shorter than 1 frame.
+                        io.MouseDown[1] = data.button == input::MouseButton::Right;
+                        io.MouseDown[2] = data.button == input::MouseButton::Middle;
+                    }
+                    else if (msg.header.type == input::message::MouseButtonUp::message_type)
+                    {
+                        auto const& data = *reinterpret_cast<input::message::MouseButtonUp const*>(msg.data._data);
+                        io.MousePos = { (float)data.pos.x, (float)data.pos.y };
 
-                    //static float deg = 0.0f;
-                    //deg += static_cast<float>(last_pos - msg.pos.x);
-                    //new_view = glm::rotate(new_view, glm::radians(deg), glm::vec3{ 0.f, 1.f, 0.f });
-                    //last_pos = msg.pos.x;
-
-                    //if (deg >= 360.0f)
-                    //    deg = 0.0f;
-
-                    auto ortho_projection = glm::ortho(0.f, io.DisplaySize.x, io.DisplaySize.y, 0.f);
-
-                    MVP = ortho_projection;// clip * projection * new_view;
-
-                    render::api::BufferDataView data_view;
-                    render::api::render_api_instance->uniform_buffer_map_data(uniform_buffer, data_view);
-                    IS_ASSERT(data_view.data_size >= sizeof(MVP), "Insufficient buffer size!");
-
-                    memcpy(data_view.data_pointer, &MVP, sizeof(MVP));
-                    render::api::render_api_instance->uniform_buffer_unmap_data(uniform_buffer);
+                        if (io.MouseDown[0])
+                        {
+                            io.MouseDown[0] = data.button != input::MouseButton::Left; // If a mouse press event came, always pass it as "mouse held this frame", so we don't miss click-release events that are shorter than 1 frame.
+                        }
+                        if (io.MouseDown[1])
+                        {
+                            io.MouseDown[1] = data.button != input::MouseButton::Right; // If a mouse press event came, always pass it as "mouse held this frame", so we don't miss click-release events that are shorter than 1 frame.
+                        }
+                        if (io.MouseDown[2])
+                        {
+                            io.MouseDown[2] = data.button != input::MouseButton::Middle; // If a mouse press event came, always pass it as "mouse held this frame", so we don't miss click-release events that are shorter than 1 frame.
+                        }
+                    }
+                    else if (msg.header.type == input::message::MouseWheel::message_type)
+                    {
+                        //auto const& data = *reinterpret_cast<input::message::MouseWheel const*>(msg.data._data);
+                    }
                 });
 
             static bool demo = true;
@@ -244,7 +254,6 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
 
             ImGui::EndFrame();
             ImGui::Render();
-
 
             engine_instance->add_task(
                 [](iceshard::Engine& e, render::api::RenderPipeline pipeline, render::api::VertexBuffer idx_buffer, render::api::VertexBuffer vtx_buffer[2]) noexcept -> cppcoro::task<>

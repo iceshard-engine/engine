@@ -176,6 +176,14 @@ namespace render
             _render_pass_context.extent = physical_device->surface_capabilities().maxImageExtent;
             _render_pass_context.renderpass = _vulkan_render_pass->native_handle();
             _render_pass_context.framebuffer = _vulkan_framebuffers[_vulkan_current_framebuffer]->native_handle();
+
+            VkFenceCreateInfo fenceInfo;
+            fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+            fenceInfo.pNext = NULL;
+            fenceInfo.flags = 0;
+
+            res = vkCreateFence(graphics_device, &fenceInfo, NULL, &_vulkan_draw_fence);
+            assert(res == VK_SUCCESS);
         }
 
         void enumerate_devices() noexcept
@@ -208,7 +216,7 @@ namespace render
                 _driver_allocator,
                 _vulkan_physical_device.get(),
                 _vulkan_physical_device->graphics_device()->native_handle()
-                );
+            );
         }
 
         void release_devices() noexcept
@@ -219,12 +227,14 @@ namespace render
 
         void shutdown() noexcept
         {
+
             for (auto const& entry : _vulkan_vertex_descriptors)
             {
                 _driver_allocator.destroy(entry.value);
             }
 
             auto* physical_device = _vulkan_physical_device.get();
+            vkDestroyFence(physical_device->graphics_device()->native_handle(), _vulkan_draw_fence, nullptr);
             vkDestroySemaphore(physical_device->graphics_device()->native_handle(), _quick_semaphore, nullptr);
 
             _vulkan_pipeline = nullptr;
@@ -593,11 +603,6 @@ namespace render
             _render_pass_context.framebuffer = _vulkan_framebuffers[_vulkan_current_framebuffer]->native_handle();
 
 
-            VkFenceCreateInfo fenceInfo;
-            fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-            fenceInfo.pNext = NULL;
-            fenceInfo.flags = 0;
-
             if (_staging_cmds)
             {
                 _staging_cmds = false;
@@ -611,10 +616,6 @@ namespace render
                 vkQueueSubmit(graphics_device->device_queue(), 1, submit_info, VK_NULL_HANDLE);
                 vkQueueWaitIdle(graphics_device->device_queue());
             }
-
-            VkFence drawFence;
-            auto res = vkCreateFence(graphics_device_native, &fenceInfo, NULL, &drawFence);
-            assert(res == VK_SUCCESS);
 
             const VkCommandBuffer cmd_bufs[] = { _vulkan_command_buffers[0]->native_handle() };
             VkPipelineStageFlags pipe_stage_flags = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
@@ -635,7 +636,7 @@ namespace render
             // Check if we can also present else find another 'Device' which can do it.
 
             /* Queue the command buffer for execution */
-            res = vkQueueSubmit(queue, 1, submit_info, drawFence);
+            auto res = vkQueueSubmit(queue, 1, submit_info, _vulkan_draw_fence);
             assert(res == VK_SUCCESS);
 
             /* Now present the image in the window */
@@ -656,10 +657,8 @@ namespace render
             do
             {
                 constexpr auto FENCE_TIMEOUT = 100'000'000; // in ns
-                res = vkWaitForFences(graphics_device_native, 1, &drawFence, VK_TRUE, FENCE_TIMEOUT);
+                res = vkWaitForFences(graphics_device_native, 1, &_vulkan_draw_fence, VK_TRUE, FENCE_TIMEOUT);
             } while (res == VK_TIMEOUT);
-
-            vkDestroyFence(graphics_device_native, drawFence, nullptr);
 
             assert(res == VK_SUCCESS);
             res = vkQueuePresentKHR(queue, &present);
@@ -680,6 +679,8 @@ namespace render
 
         // The Vulkan instance handle.
         VkInstance _vulkan_instance{};
+
+        VkFence _vulkan_draw_fence = nullptr;
 
         // The Vulkan surface instance.
         core::memory::unique_pointer<render::vulkan::VulkanSurface> _vulkan_surface{ nullptr, { core::memory::globals::null_allocator() } };
