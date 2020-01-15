@@ -84,6 +84,18 @@ namespace core
         };
 
         template<typename T = stringid_base_type<false>>
+        inline constexpr auto origin_value(T const&) noexcept -> std::string_view
+        {
+            return {};
+        }
+
+        template<>
+        inline constexpr auto origin_value<stringid_base_type<true>>(stringid_base_type<true> const& value) noexcept -> std::string_view
+        {
+            return value.hash_origin;
+        }
+
+        template<typename T = stringid_base_type<false>>
         inline constexpr auto has_debug_fields() noexcept
         {
             return false;
@@ -145,6 +157,11 @@ namespace core
     inline constexpr auto stringid(std::string_view value) noexcept -> core::stringid_type
     {
         return core::cexpr::stringid<core::build::is_release == false>(value);
+    }
+
+    inline constexpr auto origin(stringid_arg_type value) noexcept -> std::string_view
+    {
+        return core::cexpr::origin_value<stringid_type>(value);
     }
 
     inline constexpr auto hash(stringid_arg_type value) noexcept -> std::underlying_type_t<stringid_hash_type>

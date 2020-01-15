@@ -103,7 +103,7 @@ namespace fmt
             {
                 if constexpr (core::cexpr::has_debug_fields<decltype(urn.name)>())
                 {
-                    return fmt::format_to(ctx.out(), "{}:{}", resource::scheme_resource.hash_origin, urn.name.hash_origin);
+                    return fmt::format_to(ctx.out(), "{}:{}", core::origin(resource::scheme_resource), core::origin(urn.name));
                 }
                 else
                 {
@@ -135,7 +135,7 @@ namespace fmt
 
                 if constexpr (core::cexpr::has_debug_fields<decltype(uri.scheme)>())
                 {
-                    auto format_args = fmt::make_format_args(uri.scheme.hash_origin, uri.fragment.hash_origin, uri.path);
+                    auto format_args = fmt::make_format_args(core::origin(uri.scheme), core::origin(uri.fragment), uri.path);
                     return fmt::vformat_to(ctx.begin(), format_string, format_args);
                 }
                 else
