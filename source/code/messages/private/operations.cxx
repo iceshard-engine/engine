@@ -15,12 +15,12 @@ namespace core::message
         return buffer.count();
     }
 
-    void push(MessageBuffer& buffer, core::cexpr::stringid_argument_type message_type) noexcept
+    void push(MessageBuffer& buffer, core::stringid_arg_type message_type) noexcept
     {
         buffer.push(message_type);
     }
 
-    void push(MessageBuffer& buffer, core::cexpr::stringid_argument_type message_type, core::data_view_aligned message_data) noexcept
+    void push(MessageBuffer& buffer, core::stringid_arg_type message_type, core::data_view_aligned message_data) noexcept
     {
         buffer.push(message_type, message_data);
     }
@@ -35,11 +35,11 @@ namespace core::message
         std::for_each(buffer.begin(), buffer.end(), callback);
     }
 
-    void filter(const MessageBuffer& buffer, const std::vector<core::cexpr::stringid_type>& valid_types, std::function<void(const core::Message&)> callback) noexcept
+    void filter(const MessageBuffer& buffer, const std::vector<core::stringid_type>& valid_types, std::function<void(const core::Message&)> callback) noexcept
     {
-        const auto is_valid_type = [&](core::cexpr::stringid_argument_type message_type) noexcept -> bool
+        const auto is_valid_type = [&](core::stringid_arg_type message_type) noexcept -> bool
         {
-            return std::find_if(valid_types.begin(), valid_types.end(), [&](core::cexpr::stringid_argument_type valid_type) noexcept
+            return std::find_if(valid_types.begin(), valid_types.end(), [&](core::stringid_arg_type valid_type) noexcept
                 {
                     return valid_type == message_type;
                 }) != valid_types.end();
@@ -54,7 +54,7 @@ namespace core::message
             });
     }
 
-    void filter(const MessageBuffer& buffer, core::cexpr::stringid_argument_type type, std::function<void(const core::Message&)> callback) noexcept
+    void filter(const MessageBuffer& buffer, core::stringid_arg_type type, std::function<void(const core::Message&)> callback) noexcept
     {
         core::message::for_each(buffer, [&](const core::Message& msg) noexcept
             {

@@ -20,11 +20,11 @@ namespace iceshard
 
         ~IceshardWorldManager() noexcept override = default;
 
-        auto get_world(core::cexpr::stringid_argument_type world_name) noexcept -> World* override;
+        auto get_world(core::stringid_arg_type world_name) noexcept -> World* override;
 
-        auto create_world(core::cexpr::stringid_argument_type world_name) noexcept -> World* override;
+        auto create_world(core::stringid_arg_type world_name) noexcept -> World* override;
 
-        void destroy_world(core::cexpr::stringid_argument_type world_name) noexcept override;
+        void destroy_world(core::stringid_arg_type world_name) noexcept override;
 
     private:
         core::allocator& _allocator;

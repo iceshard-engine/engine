@@ -10,7 +10,7 @@ namespace iceshard
     public:
         IceshardWorld(
             core::allocator& alloc,
-            core::cexpr::stringid_argument_type world_name,
+            core::stringid_arg_type world_name,
             iceshard::entity_handle_type world_entity,
             iceshard::ServiceProvider* engine_service_provider
         ) noexcept;

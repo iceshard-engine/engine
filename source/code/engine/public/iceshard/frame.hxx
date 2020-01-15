@@ -11,7 +11,7 @@ namespace iceshard
     //! \brief A simple message pushed at the beginning on each new frame.
     struct FrameMessage
     {
-        static constexpr core::cexpr::stringid_type message_type = core::cexpr::stringid_cexpr("FrameMessage");
+        static constexpr auto message_type = "FrameMessage"_sid;
 
         //! \brief The current frame index.
         uint32_t index;
@@ -45,20 +45,20 @@ namespace iceshard
         ////! \brief Returns a flat map for storing data pointers.
         //virtual auto storage() const noexcept -> const core::pod::Hash<void*>& = 0;
 
-        virtual auto find_frame_object(core::cexpr::stringid_argument_type name) noexcept -> void* = 0;
+        virtual auto find_frame_object(core::stringid_arg_type name) noexcept -> void* = 0;
 
-        virtual auto find_frame_object(core::cexpr::stringid_argument_type name) const noexcept -> const void* = 0;
+        virtual auto find_frame_object(core::stringid_arg_type name) const noexcept -> const void* = 0;
 
-        virtual void add_frame_object(core::cexpr::stringid_argument_type name, void* frame_object, void(*deleter)(core::allocator&, void*)) noexcept = 0;
-
-        template<typename T>
-        auto get_frame_object(core::cexpr::stringid_argument_type name) noexcept -> T*;
+        virtual void add_frame_object(core::stringid_arg_type name, void* frame_object, void(*deleter)(core::allocator&, void*)) noexcept = 0;
 
         template<typename T>
-        auto get_frame_object(core::cexpr::stringid_argument_type name) const noexcept -> const T*;
+        auto get_frame_object(core::stringid_arg_type name) noexcept -> T*;
+
+        template<typename T>
+        auto get_frame_object(core::stringid_arg_type name) const noexcept -> const T*;
 
         template<typename T, typename... Args>
-        auto new_frame_object(core::cexpr::stringid_argument_type name, Args&&... args) noexcept -> T*;
+        auto new_frame_object(core::stringid_arg_type name, Args&&... args) noexcept -> T*;
 
         //! \brief Returns this frame allocator object.
         //!
@@ -70,19 +70,19 @@ namespace iceshard
 
 
     template<typename T>
-    auto Frame::get_frame_object(core::cexpr::stringid_argument_type name) noexcept -> T*
+    auto Frame::get_frame_object(core::stringid_arg_type name) noexcept -> T*
     {
         return reinterpret_cast<T*>(find_frame_object(name));
     }
 
     template<typename T>
-    auto Frame::get_frame_object(core::cexpr::stringid_argument_type name) const noexcept -> const T*
+    auto Frame::get_frame_object(core::stringid_arg_type name) const noexcept -> const T*
     {
         return reinterpret_cast<const T*>(find_frame_object(name));
     }
 
     template<typename T, typename... Args>
-    auto Frame::new_frame_object(core::cexpr::stringid_argument_type name, Args&&... args) noexcept -> T*
+    auto Frame::new_frame_object(core::stringid_arg_type name, Args&&... args) noexcept -> T*
     {
         void(*object_instance_deleter)(core::allocator&, void*) = [](core::allocator& alloc, void* object) noexcept
         {

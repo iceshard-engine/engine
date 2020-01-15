@@ -10,7 +10,7 @@ namespace resource::message
 
     struct ModuleResourceMounted
     {
-        static constexpr auto message_type = core::cexpr::stringid_cexpr("Module.Resource.Added");
+        static constexpr auto message_type = "Module.Resource.Added"_sid;
 
         //! \brief The resource object.
         Resource* resource_object;
@@ -18,7 +18,7 @@ namespace resource::message
 
     struct ModuleResourceUpdated
     {
-        static constexpr auto message_type = core::cexpr::stringid_cexpr("Module.Resource.Updated");
+        static constexpr auto message_type = "Module.Resource.Updated"_sid;
 
         //! \brief The resource location.
         Resource* resource_object;

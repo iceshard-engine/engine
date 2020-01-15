@@ -10,7 +10,7 @@ namespace render::api
 
         void assert_render_api() noexcept;
 
-        constexpr auto version_name = core::cexpr::stringid_cexpr("v1");
+        static constexpr auto version_name = "v1"_sid;
 
         enum class Framebuffer : uintptr_t { };
 

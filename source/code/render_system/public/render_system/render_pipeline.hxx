@@ -18,7 +18,7 @@ namespace render
             static_assert(sizeof...(args) == Size, "Number of provided argument count does not match!");
         }
 
-        core::cexpr::stringid_type descriptors[Size];
+        core::stringid_type descriptors[Size];
     };
 
     template<uint32_t DescriptorCount>

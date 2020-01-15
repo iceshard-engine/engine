@@ -17,49 +17,49 @@ namespace core
     {
 
         //! \todo document.
-        bool empty(const MessageBuffer& buffer) noexcept;
+        bool empty(MessageBuffer const& buffer) noexcept;
 
         //! \todo document.
-        auto count(const MessageBuffer& buffer) noexcept -> uint32_t;
+        auto count(MessageBuffer const& buffer) noexcept -> uint32_t;
 
         //! \todo document.
-        void push(MessageBuffer& buffer, core::cexpr::stringid_argument_type message_type) noexcept;
+        void push(MessageBuffer& buffer, core::stringid_arg_type message_type) noexcept;
 
         //! \todo document.
-        void push(MessageBuffer& buffer, core::cexpr::stringid_argument_type message_type, core::data_view_aligned data) noexcept;
+        void push(MessageBuffer& buffer, core::stringid_arg_type message_type, core::data_view_aligned data) noexcept;
 
         //! \todo document.
         template<typename T>
-        void push(MessageBuffer& buffer, const T& msg) noexcept;
+        void push(MessageBuffer& buffer, T const& msg) noexcept;
 
         //! \todo document.
         void clear(MessageBuffer& buffer) noexcept;
 
         //! \todo document.
         void for_each(
-            const MessageBuffer& buffer
-            , std::function<void(const core::Message&)> callback
+            MessageBuffer const& buffer
+            , std::function<void(core::Message const&)> callback
         ) noexcept;
 
         //! \todo document.
         void filter(
-            const MessageBuffer& buffer
-            , const std::vector<core::cexpr::stringid_type>& types
-            , std::function<void(const core::Message&)> callback
+            MessageBuffer const& buffer
+            , std::vector<core::stringid_type> const& types
+            , std::function<void(core::Message const&)> callback
         ) noexcept;
 
         //! \todo document.
         void filter(
-            const MessageBuffer& buffer
-            , core::cexpr::stringid_argument_type type
-            , std::function<void(const core::Message&)> callback
+            MessageBuffer const& buffer
+            , core::stringid_arg_type type
+            , std::function<void(core::Message const&)> callback
         ) noexcept;
 
         //! \todo document.
         template<typename T>
         void filter(
-            const MessageBuffer& buffer
-            , std::function<void(const T&)> callback
+            MessageBuffer const& buffer
+            , std::function<void(T const&)> callback
         ) noexcept;
 
     } // namespace message
@@ -74,7 +74,7 @@ namespace core
         template <typename T>
         struct has_type_member <T, decltype((void)T::message_type, 0)> : std::true_type { };
 
-    }
+    } // namespace detail
 
 
     template<typename T>
@@ -89,7 +89,7 @@ namespace core
             , "Message missing static member 'message_type'!"
         );
         static_assert(
-            std::is_same_v<std::remove_cv_t<decltype(T::message_type)>, core::cexpr::stringid_type>
+            std::is_same_v<std::remove_cv_t<decltype(T::message_type)>, core::stringid_type>
             , "Invalid type of message member 'message_type', expected 'core::cexpr::stringid_type'!"
         );
 
@@ -108,7 +108,7 @@ namespace core
             , "Message missing static member 'message_type'!"
         );
         static_assert(
-            std::is_same_v<std::remove_cv_t<decltype(T::message_type)>, core::cexpr::stringid_type>
+            std::is_same_v<std::remove_cv_t<decltype(T::message_type)>, core::stringid_type>
             , "Invalid type of message member 'message_type', expected 'core::cexpr::stringid_type'!"
         );
 

@@ -15,13 +15,13 @@ namespace iceshard
         virtual ~WorldManager() noexcept = default;
 
         //! \brief Returns a pointer to a world object with the given name.
-        virtual auto get_world(core::cexpr::stringid_argument_type world_name) noexcept -> World* = 0;
+        virtual auto get_world(core::stringid_arg_type world_name) noexcept -> World* = 0;
 
         //! \brief Creates a new world object and returns a reference to it.
-        virtual auto create_world(core::cexpr::stringid_argument_type world_name) noexcept -> World* = 0;
+        virtual auto create_world(core::stringid_arg_type world_name) noexcept -> World* = 0;
 
         //! \brief Destroys the world with the given name and all associated data.
-        virtual void destroy_world(core::cexpr::stringid_argument_type world_name) noexcept = 0;
+        virtual void destroy_world(core::stringid_arg_type world_name) noexcept = 0;
     };
 
 

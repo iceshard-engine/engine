@@ -47,7 +47,7 @@ namespace iceshard
             void load_shader(asset::AssetData) noexcept override { }
 
             auto create_pipeline(
-                [[maybe_unused]] core::cexpr::stringid_type const* descriptor_names,
+                [[maybe_unused]] core::stringid_type const* descriptor_names,
                 [[maybe_unused]] uint32_t descriptor_name_count
             ) noexcept -> render::api::RenderPipeline override
             {
@@ -55,7 +55,7 @@ namespace iceshard
             }
 
             void add_named_vertex_descriptor_set(
-                [[maybe_unused]] core::cexpr::stringid_argument_type name,
+                [[maybe_unused]] core::stringid_arg_type name,
                 [[maybe_unused]] render::VertexBinding const& binding,
                 [[maybe_unused]] render::VertexDescriptor const* descriptors,
                 [[maybe_unused]] uint32_t descriptor_count

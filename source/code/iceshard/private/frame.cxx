@@ -43,19 +43,19 @@ namespace iceshard
         return _frame_messages;
     }
 
-    auto MemoryFrame::find_frame_object(core::cexpr::stringid_argument_type name) noexcept -> void*
+    auto MemoryFrame::find_frame_object(core::stringid_arg_type name) noexcept -> void*
     {
         uint64_t hash_value = static_cast<uint64_t>(name.hash_value);
         return core::pod::hash::get<frame_object_entry>(_frame_storage, hash_value, { nullptr, nullptr }).object_instance;
     }
 
-    auto MemoryFrame::find_frame_object(core::cexpr::stringid_argument_type name) const noexcept -> const void*
+    auto MemoryFrame::find_frame_object(core::stringid_arg_type name) const noexcept -> const void*
     {
         uint64_t hash_value = static_cast<uint64_t>(name.hash_value);
         return core::pod::hash::get<frame_object_entry>(_frame_storage, hash_value, { nullptr, nullptr }).object_instance;
     }
 
-    void MemoryFrame::add_frame_object(core::cexpr::stringid_argument_type name, void* frame_object, void(*deleter)(core::allocator&, void*)) noexcept
+    void MemoryFrame::add_frame_object(core::stringid_arg_type name, void* frame_object, void(*deleter)(core::allocator&, void*)) noexcept
     {
         uint64_t hash_value = static_cast<uint64_t>(name.hash_value);
 

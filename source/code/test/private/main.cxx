@@ -197,7 +197,7 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
         ImGui::NewFrame();
 
         // Create a test world
-        engine_instance->world_manager()->create_world(core::cexpr::stringid("test-world"));
+        engine_instance->world_manager()->create_world("test-world"_sid);
 
         bool quit = false;
         while (quit == false)
@@ -407,7 +407,7 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
 
         ImGui::EndFrame();
 
-        engine_instance->world_manager()->destroy_world(core::cexpr::stringid("test-world"));
+        engine_instance->world_manager()->destroy_world("test-world"_sid);
 
         ImGui::DestroyContext();
     }

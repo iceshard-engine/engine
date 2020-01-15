@@ -12,7 +12,7 @@ namespace iceshard
             return static_cast<uint64_t>(handle);
         }
 
-        auto hash(core::cexpr::stringid_argument_type sid) noexcept
+        auto hash(core::stringid_arg_type sid) noexcept
         {
             return static_cast<uint64_t>(sid.hash_value);
         }
@@ -34,7 +34,7 @@ namespace iceshard
             return left;
         }
 
-        auto make_prototype(uint64_t prototype_hash) noexcept -> core::cexpr::stringid_type
+        auto make_prototype(uint64_t prototype_hash) noexcept -> core::stringid_type
         {
             return { core::cexpr::stringid_hash_type{ prototype_hash } };
         }
@@ -49,9 +49,9 @@ namespace iceshard
         core::pod::hash::reserve(_prototype_map, 100);
     }
 
-    void EntityIndex::register_component(entity_handle_type entity, core::cexpr::stringid_argument_type component_name, ComponentSystem* component_system) noexcept
+    void EntityIndex::register_component(entity_handle_type entity, core::stringid_arg_type component_name, ComponentSystem* component_system) noexcept
     {
-        const auto entity_prototype = core::pod::hash::get(_entity_index, detail::hash(entity), core::cexpr::stringid_invalid);
+        const auto entity_prototype = core::pod::hash::get(_entity_index, detail::hash(entity), core::stringid_invalid);
         const auto new_prototype_hash = detail::hash_mix(
             detail::hash(entity_prototype),
             detail::hash_mix(detail::hash(component_name), detail::hash(component_system))
@@ -65,17 +65,17 @@ namespace iceshard
         core::pod::hash::set(_entity_index, detail::hash(entity), detail::make_prototype(new_prototype_hash));
     }
 
-    auto EntityIndex::find_component_system(entity_handle_type entity, core::cexpr::stringid_argument_type component_name) noexcept -> ComponentSystem *
+    auto EntityIndex::find_component_system(entity_handle_type entity, core::stringid_arg_type component_name) noexcept -> ComponentSystem *
     {
-        auto entity_prototype = core::pod::hash::get(_entity_index, detail::hash(entity), core::cexpr::stringid_invalid);
-        while (entity_prototype != core::cexpr::stringid_invalid)
+        auto entity_prototype = core::pod::hash::get(_entity_index, detail::hash(entity), core::stringid_invalid);
+        while (entity_prototype != core::stringid_invalid)
         {
             const auto prototype_hash = detail::hash(entity_prototype);
 
             auto prototype_info = core::pod::hash::get(
                 _prototype_map,
                 prototype_hash,
-                { core::cexpr::stringid_invalid, core::cexpr::stringid_invalid, nullptr }
+                { core::stringid_invalid, core::stringid_invalid, nullptr }
             );
 
             if (prototype_info.component_name == component_name)
@@ -87,7 +87,7 @@ namespace iceshard
         return nullptr;
     }
 
-    void EntityIndex::remove_component(entity_handle_type entity, core::cexpr::stringid_argument_type component_name) noexcept
+    void EntityIndex::remove_component(entity_handle_type entity, core::stringid_arg_type component_name) noexcept
     {
         //const auto entity_hash = detail::hash(entity);
         //const auto entity_prototype = core::pod::hash::get(_entity_index, entity_hash, core::cexpr::stringid_invalid);
@@ -106,15 +106,15 @@ namespace iceshard
 
         core::pod::Array<PrototypeInfo> _prototypes{ _temp_allocator };
 
-        auto old_entity_prototype = core::pod::hash::get(_entity_index, detail::hash(entity), core::cexpr::stringid_invalid);
-        while (old_entity_prototype != core::cexpr::stringid_invalid)
+        auto old_entity_prototype = core::pod::hash::get(_entity_index, detail::hash(entity), core::stringid_invalid);
+        while (old_entity_prototype != core::stringid_invalid)
         {
             const auto prototype_hash = detail::hash(old_entity_prototype);
 
             auto prototype_info = core::pod::hash::get(
                 _prototype_map,
                 prototype_hash,
-                { core::cexpr::stringid_invalid, core::cexpr::stringid_invalid, nullptr }
+                { core::stringid_invalid, core::stringid_invalid, nullptr }
             );
 
             if (prototype_info.component_name == component_name)

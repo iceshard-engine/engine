@@ -13,13 +13,13 @@ namespace iceshard
         virtual ~ComponentSystem() noexcept = default;
 
         //! \brief The name of the component system.
-        virtual auto name() const noexcept -> core::cexpr::stringid_type = 0;
+        virtual auto name() const noexcept -> core::stringid_type = 0;
 
         //! \brief Creates a new component instance for the given entity and name.
-        virtual void create(entity_handle_type entity, core::cexpr::stringid_argument_type name) noexcept = 0;
+        virtual void create(entity_handle_type entity, core::stringid_arg_type name) noexcept = 0;
 
         //! \brief Creates a new component instance for the given entity and name.
-        virtual void remove(entity_handle_type entity, core::cexpr::stringid_argument_type name) noexcept = 0;
+        virtual void remove(entity_handle_type entity, core::stringid_arg_type name) noexcept = 0;
     };
 
 

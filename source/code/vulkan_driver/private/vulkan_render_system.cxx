@@ -501,7 +501,7 @@ namespace render
         }
 
         void add_named_vertex_descriptor_set(
-            [[maybe_unused]] core::cexpr::stringid_argument_type name,
+            [[maybe_unused]] core::stringid_arg_type name,
             [[maybe_unused]] VertexBinding const& binding,
             [[maybe_unused]] VertexDescriptor const* descriptors,
             [[maybe_unused]] uint32_t descriptor_count
@@ -522,7 +522,7 @@ namespace render
         }
 
         auto create_pipeline(
-            core::cexpr::stringid_type const* descriptor_names,
+            core::stringid_type const* descriptor_names,
             uint32_t descriptor_name_count
         ) noexcept -> api::RenderPipeline override
         {

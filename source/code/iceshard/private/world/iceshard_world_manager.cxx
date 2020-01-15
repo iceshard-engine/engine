@@ -16,12 +16,12 @@ namespace iceshard
         core::pod::hash::reserve(_worlds, 5);
     }
 
-    auto IceshardWorldManager::get_world(core::cexpr::stringid_argument_type world_name) noexcept -> World*
+    auto IceshardWorldManager::get_world(core::stringid_arg_type world_name) noexcept -> World*
     {
         return core::pod::hash::get<IceshardWorld*>(_worlds, static_cast<uint64_t>(world_name.hash_value), nullptr);
     }
 
-    auto IceshardWorldManager::create_world(core::cexpr::stringid_argument_type world_name) noexcept -> World*
+    auto IceshardWorldManager::create_world(core::stringid_arg_type world_name) noexcept -> World*
     {
         const auto world_hash_value = static_cast<uint64_t>(world_name.hash_value);
         IS_ASSERT(core::pod::hash::has(_worlds, world_hash_value) == false, "World with the given name already exist! [ name: {} ]", world_name);
@@ -33,7 +33,7 @@ namespace iceshard
         return world_instance;
     }
 
-    void IceshardWorldManager::destroy_world(core::cexpr::stringid_argument_type world_name) noexcept
+    void IceshardWorldManager::destroy_world(core::stringid_arg_type world_name) noexcept
     {
         const auto world_hash_value = static_cast<uint64_t>(world_name.hash_value);
         IS_ASSERT(core::pod::hash::has(_worlds, world_hash_value) == true, "World with the given name does not exist! [ name: {} ]", world_name);

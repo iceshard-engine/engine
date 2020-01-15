@@ -40,7 +40,7 @@ int main(int, char**)
             auto working_dir = app::working_directory(main_allocator);
             fmt::print("Initializing filesystem module at: {}\n", working_dir);
 
-            core::pod::Array<core::cexpr::stringid_type> schemes{ core::memory::globals::default_scratch_allocator() };
+            core::pod::Array<core::stringid_type> schemes{ core::memory::globals::default_scratch_allocator() };
             core::pod::array::push_back(schemes, resource::scheme_file);
             core::pod::array::push_back(schemes, resource::scheme_directory);
             resource_system.add_module(

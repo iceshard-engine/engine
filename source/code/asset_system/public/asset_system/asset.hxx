@@ -43,14 +43,14 @@ namespace asset
 
         constexpr Asset(core::StringView asset_name, AssetType type) noexcept
             : type{ type }
-            , name{ core::cexpr::stringid_cexpr_(asset_name) }
+            , name{ core::stringid(asset_name) }
         { }
 
         //! \brief The asset type.
         AssetType type = AssetType::Invalid;
 
         //! \brief The asset name.
-        core::cexpr::stringid_type name{ core::cexpr::stringid_invalid };
+        core::stringid_type name = core::stringid_invalid;
     };
 
     //! \brief This struct describes a single asset data.

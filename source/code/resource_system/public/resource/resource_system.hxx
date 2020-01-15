@@ -22,7 +22,7 @@ namespace resource
         virtual ~ResourceSystem() noexcept;
 
         //! \todo documentation.
-        void add_module(core::memory::unique_pointer<ResourceModule> module_obj, core::pod::Array<core::cexpr::stringid_type> const& schemes) noexcept;
+        void add_module(core::memory::unique_pointer<ResourceModule> module_obj, core::pod::Array<core::stringid_type> const& schemes) noexcept;
 
         //! \todo documentation.
         auto find(URI const& location) noexcept -> Resource*;

@@ -10,7 +10,7 @@ namespace resource
     namespace detail
     {
 
-        auto get_entry(ResourceMetaView const& meta, core::cexpr::stringid_argument_type key, MetaEntryType expected_type) noexcept -> MetaEntry
+        auto get_entry(ResourceMetaView const& meta, core::stringid_arg_type key, MetaEntryType expected_type) noexcept -> MetaEntry
         {
             auto entry = core::pod::hash::get(meta._meta_entries, static_cast<uint64_t>(key.hash_value), resource::detail::MetaEntry{});
             IS_ASSERT(entry.data_type != resource::detail::MetaEntryType::Invalid, "Data for key {} does not exist!", key);
@@ -18,7 +18,7 @@ namespace resource
             return entry;
         }
 
-        auto try_get_entry(ResourceMetaView const& meta, core::cexpr::stringid_argument_type key, MetaEntryType expected_type, MetaEntry& entry) noexcept -> bool
+        auto try_get_entry(ResourceMetaView const& meta, core::stringid_arg_type key, MetaEntryType expected_type, MetaEntry& entry) noexcept -> bool
         {
             entry = core::pod::hash::get(meta._meta_entries, static_cast<uint64_t>(key.hash_value), resource::detail::MetaEntry{});
             return entry.data_type == expected_type;
@@ -39,19 +39,19 @@ namespace resource
 
                     if (entry.value.IsBool())
                     {
-                        resource::set_meta_bool(meta, core::cexpr::stringid(field_key), entry.value.GetBool());
+                        resource::set_meta_bool(meta, core::stringid(field_key), entry.value.GetBool());
                     }
                     else if (entry.value.IsInt())
                     {
-                        resource::set_meta_int32(meta, core::cexpr::stringid(field_key), entry.value.GetInt());
+                        resource::set_meta_int32(meta, core::stringid(field_key), entry.value.GetInt());
                     }
                     else if (entry.value.IsFloat())
                     {
-                        resource::set_meta_float(meta, core::cexpr::stringid(field_key), entry.value.GetFloat());
+                        resource::set_meta_float(meta, core::stringid(field_key), entry.value.GetFloat());
                     }
                     else if (entry.value.IsString())
                     {
-                        resource::set_meta_string(meta, core::cexpr::stringid(field_key), entry.value.GetString());
+                        resource::set_meta_string(meta, core::stringid(field_key), entry.value.GetString());
                     }
                     else
                     {
@@ -190,28 +190,28 @@ namespace resource
         return result_meta;
     }
 
-    void set_meta_bool(ResourceMeta& meta, core::cexpr::stringid_argument_type key, bool value) noexcept
+    void set_meta_bool(ResourceMeta& meta, core::stringid_arg_type key, bool value) noexcept
     {
         detail::MetaEntry entry{ detail::MetaEntryType::Boolean };
         entry.value_int = static_cast<int32_t>(value);
         core::pod::hash::set(meta._meta_entries, static_cast<uint64_t>(key.hash_value), entry);
     }
 
-    void set_meta_int32(ResourceMeta& meta, core::cexpr::stringid_argument_type key, int32_t value) noexcept
+    void set_meta_int32(ResourceMeta& meta, core::stringid_arg_type key, int32_t value) noexcept
     {
         detail::MetaEntry entry{ detail::MetaEntryType::Integer };
         entry.value_int = value;
         core::pod::hash::set(meta._meta_entries, static_cast<uint64_t>(key.hash_value), entry);
     }
 
-    void set_meta_float(ResourceMeta& meta, core::cexpr::stringid_argument_type key, float value) noexcept
+    void set_meta_float(ResourceMeta& meta, core::stringid_arg_type key, float value) noexcept
     {
         detail::MetaEntry entry{ detail::MetaEntryType::Float };
         entry.value_float = value;
         core::pod::hash::set(meta._meta_entries, static_cast<uint64_t>(key.hash_value), entry);
     }
 
-    void set_meta_string(ResourceMeta& meta, core::cexpr::stringid_argument_type key, core::StringView value) noexcept
+    void set_meta_string(ResourceMeta& meta, core::stringid_arg_type key, core::StringView value) noexcept
     {
         detail::MetaEntry entry{ detail::MetaEntryType::String };
         void const* str_dest = core::buffer::append(meta._additional_data, core::string::data(value), core::string::size(value));
@@ -320,32 +320,32 @@ namespace resource
         return result_meta;
     }
 
-    auto get_meta_bool(ResourceMetaView const& meta, core::cexpr::stringid_argument_type key) noexcept -> bool
+    auto get_meta_bool(ResourceMetaView const& meta, core::stringid_arg_type key) noexcept -> bool
     {
         auto entry = get_entry(meta, key, detail::MetaEntryType::Boolean);
         return entry.value_int != 0;
     }
 
-    auto get_meta_int32(ResourceMetaView const& meta, core::cexpr::stringid_argument_type key) noexcept -> int32_t
+    auto get_meta_int32(ResourceMetaView const& meta, core::stringid_arg_type key) noexcept -> int32_t
     {
         auto entry = get_entry(meta, key, detail::MetaEntryType::Integer);
         return entry.value_int;
     }
 
-    auto get_meta_float(ResourceMetaView const& meta, core::cexpr::stringid_argument_type key) noexcept -> float
+    auto get_meta_float(ResourceMetaView const& meta, core::stringid_arg_type key) noexcept -> float
     {
         auto entry = get_entry(meta, key, detail::MetaEntryType::Float);
         return entry.value_float;
     }
 
-    auto get_meta_string(ResourceMetaView const& meta, core::cexpr::stringid_argument_type key) noexcept -> core::StringView
+    auto get_meta_string(ResourceMetaView const& meta, core::stringid_arg_type key) noexcept -> core::StringView
     {
         auto const entry = get_entry(meta, key, detail::MetaEntryType::String);
         auto const string_beg = reinterpret_cast<char const*>(meta._additional_data._data) + entry.value_buffer.offset;
         return { string_beg, entry.value_buffer.size };
     }
 
-    auto get_meta_bool(ResourceMetaView const& meta, core::cexpr::stringid_argument_type key, bool& result) noexcept -> bool
+    auto get_meta_bool(ResourceMetaView const& meta, core::stringid_arg_type key, bool& result) noexcept -> bool
     {
         detail::MetaEntry entry;
         if (try_get_entry(meta, key, detail::MetaEntryType::Boolean, entry))
@@ -355,7 +355,7 @@ namespace resource
         return entry.data_type == detail::MetaEntryType::Boolean;
     }
 
-    auto get_meta_int32(ResourceMetaView const& meta, core::cexpr::stringid_argument_type key, int32_t& result) noexcept -> bool
+    auto get_meta_int32(ResourceMetaView const& meta, core::stringid_arg_type key, int32_t& result) noexcept -> bool
     {
         detail::MetaEntry entry;
         if (try_get_entry(meta, key, detail::MetaEntryType::Integer, entry))
@@ -365,7 +365,7 @@ namespace resource
         return entry.data_type == detail::MetaEntryType::Integer;
     }
 
-    auto get_meta_float(ResourceMetaView const& meta, core::cexpr::stringid_argument_type key, float& result) noexcept -> bool
+    auto get_meta_float(ResourceMetaView const& meta, core::stringid_arg_type key, float& result) noexcept -> bool
     {
         detail::MetaEntry entry;
         if (try_get_entry(meta, key, detail::MetaEntryType::Float, entry))
@@ -375,7 +375,7 @@ namespace resource
         return entry.data_type == detail::MetaEntryType::Float;
     }
 
-    auto get_meta_string(ResourceMetaView const& meta, core::cexpr::stringid_argument_type key, core::StringView& result) noexcept -> bool
+    auto get_meta_string(ResourceMetaView const& meta, core::stringid_arg_type key, core::StringView& result) noexcept -> bool
     {
         detail::MetaEntry entry;
         if (try_get_entry(meta, key, detail::MetaEntryType::String, entry))

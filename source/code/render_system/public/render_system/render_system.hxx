@@ -45,12 +45,12 @@ namespace render
 
     private:
         virtual auto create_pipeline(
-            core::cexpr::stringid_type const* descriptor_names,
+            core::stringid_type const* descriptor_names,
             uint32_t descriptor_name_count
         ) noexcept->api::RenderPipeline = 0;
 
         virtual void add_named_vertex_descriptor_set(
-            core::cexpr::stringid_argument_type name,
+            core::stringid_arg_type name,
             VertexBinding const& binding,
             VertexDescriptor const* descriptors,
             uint32_t descriptor_count

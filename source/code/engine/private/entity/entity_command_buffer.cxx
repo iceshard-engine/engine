@@ -8,13 +8,13 @@ namespace iceshard
     namespace detail
     {
 
-        static constexpr auto add_component_command_id = core::cexpr::stringid_cexpr("component.add").hash_value;
+        static constexpr auto add_component_command_id = "component.add"_sid;
 
-        static constexpr auto remove_component_command_id = core::cexpr::stringid_cexpr("component.remove").hash_value;
+        static constexpr auto remove_component_command_id = "component.remove"_sid;
 
-        static constexpr auto update_component_command_id = core::cexpr::stringid_cexpr("component.update").hash_value;
+        static constexpr auto update_component_command_id = "component.update"_sid;
 
-        static constexpr auto destroy_entity_command_id = core::cexpr::stringid_cexpr("entity.destroy").hash_value;
+        static constexpr auto destroy_entity_command_id = "entity.destroy"_sid;
 
     } // namespace detail
 
@@ -25,19 +25,19 @@ namespace iceshard
         core::pod::array::reserve(_commands, 20);
     }
 
-    void EntityCommandBuffer::add_component(entity_handle_type entity, ComponentSystem* comonent_system, core::cexpr::stringid_argument_type component_name) noexcept
+    void EntityCommandBuffer::add_component(entity_handle_type entity, ComponentSystem* comonent_system, core::stringid_arg_type component_name) noexcept
     {
         core::pod::array::push_back(_commands, { { detail::add_component_command_id }, component_name, entity, comonent_system });
     }
 
-    void EntityCommandBuffer::remove_component(entity_handle_type entity, core::cexpr::stringid_argument_type component_name) noexcept
+    void EntityCommandBuffer::remove_component(entity_handle_type entity, core::stringid_arg_type component_name) noexcept
     {
         core::pod::array::push_back(_commands, { { detail::remove_component_command_id }, component_name, entity, nullptr });
     }
 
     void EntityCommandBuffer::update_component(
         entity_handle_type entity,
-        core::cexpr::stringid_argument_type component_name,
+        core::stringid_arg_type component_name,
         component_operation_signature* operation_func
     ) noexcept
     {
@@ -46,7 +46,7 @@ namespace iceshard
 
     void EntityCommandBuffer::destroy_entity(entity_handle_type entity) noexcept
     {
-        core::pod::array::push_back(_commands, { { detail::destroy_entity_command_id }, core::cexpr::stringid_invalid, entity, nullptr });
+        core::pod::array::push_back(_commands, { { detail::destroy_entity_command_id }, core::stringid_invalid, entity, nullptr });
     }
 
     void EntityCommandBuffer::execute(EntityManager* entity_manager, EntityIndex* entity_index) noexcept
@@ -61,7 +61,7 @@ namespace iceshard
 
             switch (static_cast<uint64_t>(command.command_name.hash_value))
             {
-#define  CASE(a) static_cast<uint64_t>(a)
+#define  CASE(a) static_cast<uint64_t>(a.hash_value)
             case CASE(detail::add_component_command_id):
             {
                 auto* system = reinterpret_cast<ComponentSystem*>(command.command_data);
