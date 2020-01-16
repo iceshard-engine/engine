@@ -7,14 +7,14 @@ namespace input::message
 
     struct MouseMotion
     {
-        static inline const core::cexpr::stringid_type message_type{ core::cexpr::stringid("Mouse.Motion") };
+        static constexpr auto message_type = "Mouse.Motion"_sid;
 
         MousePos pos;
     };
 
     struct MouseButtonDown
     {
-        static inline const core::cexpr::stringid_type message_type{ core::cexpr::stringid("Mouse.Button.Down") };
+        static constexpr auto message_type = "Mouse.Button.Down"_sid;
 
         MouseButton button;
         MousePos pos;
@@ -22,7 +22,7 @@ namespace input::message
 
     struct MouseButtonUp
     {
-        static inline const core::cexpr::stringid_type message_type{ core::cexpr::stringid("Mouse.Button.Up") };
+        static constexpr auto message_type = "Mouse.Button.Up"_sid;
 
         MouseButton button;
         MousePos pos;
@@ -30,7 +30,7 @@ namespace input::message
 
     struct MouseWheel
     {
-        static inline const core::cexpr::stringid_type message_type{ core::cexpr::stringid("Mouse.Wheel") };
+        static constexpr auto message_type = "Mouse.Wheel"_sid;
 
         int32_t dx;
         int32_t dy;

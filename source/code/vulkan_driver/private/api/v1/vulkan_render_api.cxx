@@ -107,16 +107,42 @@ namespace render::api::v1::vulkan
 
     void vulkan_api_v1_bind_vertex_buffers(render::api::v1::CommandBuffer cb, render::api::v1::VertexBuffer vertice, render::api::v1::VertexBuffer instance) noexcept
     {
-        VkDeviceSize const offsets[2] = { 0, 0 };
-        VkBuffer const buffers[2] = {
-            reinterpret_cast<render::vulkan::VulkanBuffer*>(vertice)->native_handle(),
-            reinterpret_cast<render::vulkan::VulkanBuffer*>(instance)->native_handle()
+        auto const* vtx_buff = reinterpret_cast<render::vulkan::VulkanBuffer*>(vertice);
+        auto const* ins_buff = reinterpret_cast<render::vulkan::VulkanBuffer*>(instance);
+
+        VkDeviceSize const offsets[2] = {
+            0,
+            0
         };
-        vkCmdBindVertexBuffers(command_buffer(cb), 0, 2, buffers, offsets);
+        VkBuffer const buffers[2] = {
+            vtx_buff->native_handle(),
+            ins_buff->native_handle()
+        };
+        vkCmdBindVertexBuffers(command_buffer(cb), 0, 1, buffers, offsets);
+    }
+
+    void vulkan_api_v1_bind_index_buffers(render::api::v1::CommandBuffer cb, render::api::v1::VertexBuffer indices) noexcept
+    {
+        vkCmdBindIndexBuffer(command_buffer(cb), reinterpret_cast<render::vulkan::VulkanBuffer*>(indices)->native_handle(), 0, VK_INDEX_TYPE_UINT16);
     }
 
     void vulkan_api_v1_set_viewport(render::api::v1::CommandBuffer cb, uint32_t width, uint32_t height) noexcept
     {
+        auto* ctx = native(cb);
+
+        // Setup scale and translation:
+        // Our visible imgui space lies from draw_data->DisplayPps (top left) to draw_data->DisplayPos+data_data->DisplaySize (bottom right). DisplayPos is (0,0) for single viewport apps.
+        {
+            float scale[2];
+            scale[0] = 2.0f / width;
+            scale[1] = 2.0f / height;
+            float translate[2];
+            translate[0] = -1.0f; // -1.0f - width * scale[0];
+            translate[1] = -1.0f; //-1.0f - height * scale[1];
+            vkCmdPushConstants(ctx->command_buffer, ctx->render_pass_context->pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, sizeof(float) * 0, sizeof(float) * 2, scale);
+            vkCmdPushConstants(ctx->command_buffer, ctx->render_pass_context->pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, sizeof(float) * 2, sizeof(float) * 2, translate);
+        }
+
         VkViewport viewport{};
         viewport.width = (float)width;
         viewport.height = (float)height;
@@ -124,7 +150,8 @@ namespace render::api::v1::vulkan
         viewport.maxDepth = (float)1.0f;
         viewport.x = 0;
         viewport.y = 0;
-        vkCmdSetViewport(command_buffer(cb), 0, 1, &viewport);
+        vkCmdSetViewport(ctx->command_buffer, 0, 1, &viewport);
+
     }
 
     void vulkan_api_v1_set_scissor(render::api::v1::CommandBuffer cb, uint32_t width, uint32_t height) noexcept
@@ -136,9 +163,31 @@ namespace render::api::v1::vulkan
         vkCmdSetScissor(command_buffer(cb), 0, 1, &scissor);
     }
 
+    void vulkan_api_v1_set_scissor2(render::api::v1::CommandBuffer cb, uint32_t x, uint32_t y, uint32_t width, uint32_t height) noexcept
+    {
+        VkRect2D scissor{};
+        scissor.extent.width = width;
+        scissor.extent.height = height;
+        scissor.offset.x = x;
+        scissor.offset.y = y;
+        vkCmdSetScissor(command_buffer(cb), 0, 1, &scissor);
+    }
+
     void vulkan_api_v1_draw(render::api::v1::CommandBuffer cb, uint32_t vertices, uint32_t instances) noexcept
     {
         vkCmdDraw(command_buffer(cb), vertices, instances, 0, 0);
+    }
+
+    void vulkan_api_v1_draw_indexed(
+        render::api::v1::CommandBuffer cb,
+        uint32_t indices,
+        uint32_t instances,
+        uint32_t base_index,
+        uint32_t base_vertex,
+        uint32_t base_instance
+    ) noexcept
+    {
+        vkCmdDrawIndexed(command_buffer(cb), indices, instances, base_index, base_vertex, base_instance);
     }
 
     void vulkan_api_v1_renderpass_end(CommandBuffer cb) noexcept
@@ -165,9 +214,12 @@ namespace render::api::v1::vulkan
         instance->cmd_bind_render_pipeline_func = vulkan_api_v1_bind_render_pipeline;
         instance->cmd_bind_descriptor_sets_func = vulkan_api_v1_bind_descriptor_sets;
         instance->cmd_bind_vertex_buffers_func = vulkan_api_v1_bind_vertex_buffers;
+        instance->cmd_bind_index_buffers_func = vulkan_api_v1_bind_index_buffers;
         instance->cmd_set_viewport_func = vulkan_api_v1_set_viewport;
         instance->cmd_set_scissor_func = vulkan_api_v1_set_scissor;
+        instance->cmd_set_scissor2_func = vulkan_api_v1_set_scissor2;
         instance->cmd_draw_func = vulkan_api_v1_draw;
+        instance->cmd_draw_indexed_func = vulkan_api_v1_draw_indexed;
         instance->cmd_end_renderpass_func = vulkan_api_v1_renderpass_end;
         instance->cmd_end_func = vulkan_api_v1_command_end;
     }

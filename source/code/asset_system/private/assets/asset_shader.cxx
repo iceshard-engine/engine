@@ -17,7 +17,7 @@ namespace asset::detail
             else
             {
                 int32_t shader_type = 0;
-                if (resource::get_meta_int32(meta, core::cexpr::stringid("shader.type"), shader_type))
+                if (resource::get_meta_int32(meta, "shader.type"_sid, shader_type))
                 {
                     result = (shader_type == 'v') || (shader_type == 'f') ? AssetType::Shader : AssetType::Unresolved;
                 }

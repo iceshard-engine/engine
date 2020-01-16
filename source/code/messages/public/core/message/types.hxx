@@ -11,7 +11,7 @@ namespace core
     struct MessageHeader
     {
         //! \brief The message type.
-        core::cexpr::stringid_type type;
+        core::stringid_type type;
 
         //! \brief The message timestamp.
         core::datetime::tick_type timestamp;

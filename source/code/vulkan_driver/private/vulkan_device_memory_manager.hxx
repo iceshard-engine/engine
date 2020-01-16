@@ -21,7 +21,12 @@ namespace render::vulkan
 
         auto graphics_device() noexcept -> VkDevice { return _graphics_device; }
 
-        bool allocate_memory(VkBuffer buffer, VulkanMemoryInfo& memory_info) noexcept;
+        bool allocate_memory(VkBuffer buffer, VkMemoryPropertyFlags flags, VulkanMemoryInfo& memory_info) noexcept;
+
+        bool allocate_memory(VkImage image, VkMemoryPropertyFlags flags, VulkanMemoryInfo& memory_info) noexcept;
+
+    protected:
+        void allocate_memory(uint32_t memory_type, VkDeviceSize size, VkDeviceSize alignment, VulkanMemoryInfo& memory_info) noexcept;
 
     private:
         VulkanPhysicalDevice const* _physical_device;
@@ -30,11 +35,12 @@ namespace render::vulkan
         struct DeviceMemoryBlock
         {
             VkDeviceMemory const device_memory_handle;
-            uint32_t const device_memory_total;
-            uint32_t device_memory_usage = 0;
+            VkDeviceSize const device_memory_total;
+            VkDeviceSize device_memory_usage = 0;
         };
 
-        core::Map<uint32_t, DeviceMemoryBlock> _buffer_allocators;
+        core::Vector<DeviceMemoryBlock> _memory_blocks;
+        core::Map<uint32_t, DeviceMemoryBlock*> _current_memory_blocks;
     };
 
 } // namespace render::vulkan

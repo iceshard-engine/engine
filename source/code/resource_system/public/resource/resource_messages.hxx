@@ -10,14 +10,14 @@ namespace resource::message
 
     struct ResourceAdded
     {
-        static constexpr auto message_type = core::cexpr::stringid_cexpr("Resource.Added");
+        static constexpr auto message_type = "Resource.Added"_sid;
 
         Resource* resource;
     };
 
     struct ResourceUpdated
     {
-        static constexpr auto message_type = core::cexpr::stringid_cexpr("Resource.Updated");
+        static constexpr auto message_type = "Resource.Updated"_sid;
 
         Resource* resource;
     };

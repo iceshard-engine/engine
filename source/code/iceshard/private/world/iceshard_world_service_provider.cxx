@@ -23,7 +23,7 @@ namespace iceshard
     }
 
     bool IceshardWorldServiceProvider::has_component_system(
-        core::cexpr::stringid_argument_type component_system_name
+        core::stringid_arg_type component_system_name
     ) const noexcept
     {
         return core::pod::hash::has(_world_component_systems, static_cast<uint64_t>(component_system_name.hash_value))
@@ -31,7 +31,7 @@ namespace iceshard
     }
 
     auto IceshardWorldServiceProvider::component_system(
-        core::cexpr::stringid_argument_type component_system_name
+        core::stringid_arg_type component_system_name
     ) noexcept -> ComponentSystem*
     {
         const auto component_system_hash = static_cast<uint64_t>(component_system_name.hash_value);
@@ -53,7 +53,7 @@ namespace iceshard
     }
 
     auto IceshardWorldServiceProvider::component_system(
-        core::cexpr::stringid_argument_type component_system_name
+        core::stringid_arg_type component_system_name
     ) const noexcept -> const ComponentSystem*
     {
         const auto component_system_hash = static_cast<uint64_t>(component_system_name.hash_value);

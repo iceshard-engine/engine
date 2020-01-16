@@ -9,7 +9,7 @@ namespace input::message
     //! \brief A message send when the application requested to exit.
     struct AppExit
     {
-        static inline const core::cexpr::stringid_type message_type{ core::cexpr::stringid("App.Exit") };
+        static constexpr auto message_type = "App.Exit"_sid;
 
         int exit_code{ 0 };
     };
@@ -23,14 +23,14 @@ namespace input::message
 
     struct AppStatusChanged
     {
-        static inline const core::cexpr::stringid_type message_type{ core::cexpr::stringid("App.Status.Changed") };
+        static constexpr auto message_type = "App.Status.Changed"_sid;
 
         AppStatus status;
     };
 
     struct AppStatusChangeing
     {
-        static inline const core::cexpr::stringid_type message_type{ core::cexpr::stringid("App.Status.Changeing") };
+        static constexpr auto message_type = "App.Status.Changeing"_sid;
 
         AppStatus new_status;
     };

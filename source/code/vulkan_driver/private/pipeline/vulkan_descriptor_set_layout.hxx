@@ -26,6 +26,7 @@ namespace render::vulkan
     auto create_descriptor_set_layout(
         core::allocator& alloc,
         VkDevice device,
-        core::pod::Array<VkDescriptorSetLayoutBinding> const& layout_bindings) noexcept -> core::memory::unique_pointer<VulkanDescriptorSetLayout>;
+        core::pod::Array<VkDescriptorSetLayoutBinding> const& layout_bindings
+    ) noexcept -> core::memory::unique_pointer<VulkanDescriptorSetLayout>;
 
 } // namespace render::vulkan

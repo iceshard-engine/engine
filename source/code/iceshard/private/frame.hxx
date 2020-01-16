@@ -25,11 +25,11 @@ namespace iceshard
 
         //auto storage() const noexcept -> const core::pod::Hash<void*>& override { return _frame_storage; }
 
-        auto find_frame_object(core::cexpr::stringid_argument_type name) noexcept -> void* override;
+        auto find_frame_object(core::stringid_arg_type name) noexcept -> void* override;
 
-        auto find_frame_object(core::cexpr::stringid_argument_type name) const noexcept -> const void* override;
+        auto find_frame_object(core::stringid_arg_type name) const noexcept -> const void* override;
 
-        void add_frame_object(core::cexpr::stringid_argument_type name, void* frame_object, void(*deleter)(core::allocator&, void*)) noexcept override;
+        void add_frame_object(core::stringid_arg_type name, void* frame_object, void(*deleter)(core::allocator&, void*)) noexcept override;
 
         //! \copydoc Frame::frame_allocator() noexcept
         auto frame_allocator() noexcept -> core::allocator& override;

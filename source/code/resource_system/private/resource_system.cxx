@@ -74,10 +74,10 @@ namespace resource
 
         core::pod::array::push_back(
             _internal_resources,
-            static_cast<resource::Resource*>(_allocator.make<detail::StdFileResource>(URI{ core::cexpr::stringid("internal"), "<stderr>" }, stderr)));
+            static_cast<resource::Resource*>(_allocator.make<detail::StdFileResource>(URI{ "internal"_sid, "<stderr>" }, stderr)));
         core::pod::array::push_back(
             _internal_resources,
-            static_cast<resource::Resource*>(_allocator.make<detail::StdFileResource>(URI{ core::cexpr::stringid("internal"), "<stdout>" }, stdout)));
+            static_cast<resource::Resource*>(_allocator.make<detail::StdFileResource>(URI{ "internal"_sid, "<stdout>" }, stdout)));
 
         for (auto* res : _internal_resources)
         {
@@ -103,7 +103,7 @@ namespace resource
         core::pod::array::clear(_internal_resources);
     }
 
-    void ResourceSystem::add_module(core::memory::unique_pointer<ResourceModule> module_ptr, const core::pod::Array<core::cexpr::stringid_type>& schemes) noexcept
+    void ResourceSystem::add_module(core::memory::unique_pointer<ResourceModule> module_ptr, core::pod::Array<core::stringid_type> const& schemes) noexcept
     {
         auto* module_object = module_ptr.get();
         for (auto& scheme : schemes)

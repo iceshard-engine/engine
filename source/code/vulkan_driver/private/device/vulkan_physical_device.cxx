@@ -33,6 +33,9 @@ namespace render::vulkan
             queue_info.pQueuePriorities = queue_priorities;
             queue_info.queueFamilyIndex = static_cast<uint32_t>(family_index);
 
+            //VkPhysicalDeviceFeatures device_features{};
+            //device_features.samplerAnisotropy = VK_TRUE;
+
             VkDeviceCreateInfo device_info = {};
             device_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
             device_info.pNext = nullptr;

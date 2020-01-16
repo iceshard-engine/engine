@@ -246,7 +246,7 @@ namespace resource
 
                 auto* dir_entry_object = alloc.make<FileResource>(
                     alloc,
-                    URI{ scheme_directory, path.generic_string(), core::cexpr::stringid(relative_path_string.c_str()) },
+                    URI{ scheme_directory, path.generic_string(), core::stringid(relative_path_string.c_str()) },
                     fullpath,
                     fullpath_meta.generic_string(),
                     relative_path_string.c_str());

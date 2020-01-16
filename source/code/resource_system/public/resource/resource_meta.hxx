@@ -65,13 +65,13 @@ namespace resource
 
     void deserialize_meta(core::data_view data, ResourceMeta& meta) noexcept;
 
-    void set_meta_bool(ResourceMeta& meta, core::cexpr::stringid_argument_type key, bool value) noexcept;
+    void set_meta_bool(ResourceMeta& meta, core::stringid_arg_type key, bool value) noexcept;
 
-    void set_meta_int32(ResourceMeta& meta, core::cexpr::stringid_argument_type key, int32_t value) noexcept;
+    void set_meta_int32(ResourceMeta& meta, core::stringid_arg_type key, int32_t value) noexcept;
 
-    void set_meta_float(ResourceMeta& meta, core::cexpr::stringid_argument_type key, float value) noexcept;
+    void set_meta_float(ResourceMeta& meta, core::stringid_arg_type key, float value) noexcept;
 
-    void set_meta_string(ResourceMeta& meta, core::cexpr::stringid_argument_type key, core::StringView value) noexcept;
+    void set_meta_string(ResourceMeta& meta, core::stringid_arg_type key, core::StringView value) noexcept;
 
     auto create_meta_view(ResourceMeta const& meta) noexcept->ResourceMetaView const;
 
@@ -80,20 +80,20 @@ namespace resource
 
     auto load_meta_view(core::data_view data) noexcept->ResourceMetaView const;
 
-    auto get_meta_bool(ResourceMetaView const& meta, core::cexpr::stringid_argument_type key) noexcept -> bool;
+    auto get_meta_bool(ResourceMetaView const& meta, core::stringid_arg_type key) noexcept -> bool;
 
-    auto get_meta_int32(ResourceMetaView const& meta, core::cexpr::stringid_argument_type key) noexcept->int32_t;
+    auto get_meta_int32(ResourceMetaView const& meta, core::stringid_arg_type key) noexcept->int32_t;
 
-    auto get_meta_float(ResourceMetaView const& meta, core::cexpr::stringid_argument_type key) noexcept -> float;
+    auto get_meta_float(ResourceMetaView const& meta, core::stringid_arg_type key) noexcept -> float;
 
-    auto get_meta_string(ResourceMetaView const& meta, core::cexpr::stringid_argument_type key) noexcept->core::StringView;
+    auto get_meta_string(ResourceMetaView const& meta, core::stringid_arg_type key) noexcept->core::StringView;
 
-    auto get_meta_bool(ResourceMetaView const& meta, core::cexpr::stringid_argument_type key, bool& result) noexcept -> bool;
+    auto get_meta_bool(ResourceMetaView const& meta, core::stringid_arg_type key, bool& result) noexcept -> bool;
 
-    auto get_meta_int32(ResourceMetaView const& meta, core::cexpr::stringid_argument_type key, int32_t& result) noexcept -> bool;
+    auto get_meta_int32(ResourceMetaView const& meta, core::stringid_arg_type key, int32_t& result) noexcept -> bool;
 
-    auto get_meta_float(ResourceMetaView const& meta, core::cexpr::stringid_argument_type key, float& result) noexcept -> bool;
+    auto get_meta_float(ResourceMetaView const& meta, core::stringid_arg_type key, float& result) noexcept -> bool;
 
-    auto get_meta_string(ResourceMetaView const& meta, core::cexpr::stringid_argument_type key, core::StringView& result) noexcept -> bool;
+    auto get_meta_string(ResourceMetaView const& meta, core::stringid_arg_type key, core::StringView& result) noexcept -> bool;
 
 } // namespace asset

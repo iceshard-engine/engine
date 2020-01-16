@@ -23,13 +23,13 @@ namespace iceshard
         auto entity_manager() const noexcept -> const EntityManager* override;
 
         //! \brief Checks if the given component system exists.
-        bool has_component_system(core::cexpr::stringid_argument_type component_system_name) const noexcept override;
+        bool has_component_system(core::stringid_arg_type component_system_name) const noexcept override;
 
         //! \brief A component system with the given name.
         //!
         //! \remarks If the given component system does not exist the engine will abort the process.
-        auto component_system(core::cexpr::stringid_argument_type component_system_name) noexcept -> ComponentSystem* override;
-        auto component_system(core::cexpr::stringid_argument_type component_system_name) const noexcept -> const ComponentSystem* override;
+        auto component_system(core::stringid_arg_type component_system_name) noexcept -> ComponentSystem* override;
+        auto component_system(core::stringid_arg_type component_system_name) const noexcept -> const ComponentSystem* override;
 
     private:
         iceshard::ServiceProvider* const _engine_service_provider;

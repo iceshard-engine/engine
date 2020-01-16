@@ -35,13 +35,16 @@ namespace render::vulkan
         cmd.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
         cmd.commandBufferCount = num;
 
-        VkCommandBuffer command_buffer;
-        auto api_result = vkAllocateCommandBuffers(_device_handle, &cmd, &command_buffer);
+        VkCommandBuffer command_buffer[2];
+        auto api_result = vkAllocateCommandBuffers(_device_handle, &cmd, command_buffer);
         IS_ASSERT(api_result == VkResult::VK_SUCCESS, "Failed to create command buffers! Requested count: {}", num);
 
-        VulkanCommandBuffer* result = _allocator.make<VulkanCommandBuffer>(_allocator, command_buffer);
-        core::pod::array::push_back(_command_buffers, result);
-        core::pod::array::push_back(output_array, result);
+        for (uint32_t i = 0; i < num; ++i)
+        {
+            VulkanCommandBuffer* result = _allocator.make<VulkanCommandBuffer>(_allocator, command_buffer[i]);
+            core::pod::array::push_back(_command_buffers, result);
+            core::pod::array::push_back(output_array, result);
+        }
     }
 
     void VulkanDevice::initialize() noexcept

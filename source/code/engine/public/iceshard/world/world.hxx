@@ -14,14 +14,14 @@ namespace iceshard
     {
     public:
         World(
-            core::cexpr::stringid_argument_type world_name,
+            core::stringid_arg_type world_name,
             iceshard::entity_handle_type world_entity
         ) noexcept;
 
         virtual ~World() noexcept = default;
 
         //! \brief The world name.
-        auto name() const noexcept -> core::cexpr::stringid_type;
+        auto name() const noexcept -> core::stringid_type;
 
         //! \brief The world entity.
         auto entity() const noexcept -> iceshard::entity_handle_type;
@@ -30,8 +30,8 @@ namespace iceshard
         virtual auto service_provider() noexcept -> iceshard::ServiceProvider* = 0;
 
     protected:
-        const core::cexpr::stringid_type _name;
-        const iceshard::entity_handle_type _entity;
+        core::stringid_type const _name;
+        iceshard::entity_handle_type const _entity;
     };
 
 

@@ -33,6 +33,7 @@ namespace render
         FloatVec2,
         FloatVec3,
         FloatVec4,
+        UNormVec4,
     };
 
     enum class VertexDescriptorOffset : uint32_t
@@ -57,7 +58,7 @@ namespace render
     {
         static_assert(Size >= 1, "At least one descriptor needs to be defined.");
 
-        core::cexpr::stringid_type name;
+        core::stringid_type name;
         VertexBinding binding;
         VertexDescriptor descriptors[Size];
     };
@@ -65,8 +66,29 @@ namespace render
     namespace descriptor_set
     {
 
+        static constexpr auto ImGui = VertexDescriptorSet<3>{
+            .name = "ImGui"_sid,
+            .binding = VertexBinding{
+                .binding_rate = VertexBindingRate::PerVertex,
+            },
+            .descriptors = {
+                VertexDescriptor{
+                    // position
+                    .descriptor_type = VertexDescriptorType::FloatVec2,
+                },
+                VertexDescriptor{
+                    // uv
+                    .descriptor_type = VertexDescriptorType::FloatVec2,
+                },
+                VertexDescriptor{
+                    // color
+                    .descriptor_type = VertexDescriptorType::UNormVec4,
+                },
+            }
+        };
+
         static constexpr auto Color = VertexDescriptorSet<2>{
-            .name = core::cexpr::stringid_cexpr("Color"),
+            .name = "Color"_sid,
             .binding = VertexBinding{
                 .binding_rate = VertexBindingRate::PerVertex,
             },
@@ -81,7 +103,7 @@ namespace render
         };
 
         static constexpr auto Model = VertexDescriptorSet<4>{
-            .name = core::cexpr::stringid_cexpr("Model"),
+            .name = "Model"_sid,
             .binding = VertexBinding{
                 .binding_rate = VertexBindingRate::PerInstance,
             },
