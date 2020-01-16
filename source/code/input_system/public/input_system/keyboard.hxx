@@ -4,7 +4,6 @@
 namespace input
 {
 
-
     //! \brief Recognized keyboard keys
     enum class KeyboardKey : uint32_t
     {
@@ -77,6 +76,7 @@ namespace input
         , KeyS
         , KeyT
         , KeyU
+        , KeyV
         , KeyW
         , KeyX
         , KeyY
@@ -139,7 +139,6 @@ namespace input
         , NumPad0
     };
 
-
     //! \brief Keyboard Modifiers
     enum class KeyboardMod : uint32_t
     {
@@ -168,5 +167,9 @@ namespace input
         , Reserved = 0x8000
     };
 
+    inline constexpr auto has_flag(KeyboardMod mod, KeyboardMod flag) noexcept
+    {
+        return (static_cast<std::underlying_type_t<KeyboardMod>>(mod) & static_cast<std::underlying_type_t<KeyboardMod>>(flag)) != 0;
+    }
 
 } // namespace input

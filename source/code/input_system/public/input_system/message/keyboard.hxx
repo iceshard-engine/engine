@@ -19,4 +19,19 @@ namespace input::message
         KeyboardKey key;
     };
 
+    struct KeyboardModChanged
+    {
+        static constexpr auto message_type = "Mod.Changed"_sid;
+
+        KeyboardMod mod;
+        bool pressed;
+    };
+
+    struct KeyboardTextInput
+    {
+        static constexpr auto message_type = "Text.Input"_sid;
+
+        char text[32];
+    };
+
 } // namespace input::message

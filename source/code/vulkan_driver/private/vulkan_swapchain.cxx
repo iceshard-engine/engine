@@ -116,7 +116,7 @@ namespace render::vulkan
         swapchain_ci.preTransform = preTransform;
         swapchain_ci.compositeAlpha = compositeAlpha;
         swapchain_ci.imageArrayLayers = 1;
-        swapchain_ci.presentMode = VK_PRESENT_MODE_MAILBOX_KHR; // Guaranteed to be suppoted
+        swapchain_ci.presentMode = VK_PRESENT_MODE_FIFO_KHR; // Guaranteed to be suppoted
         swapchain_ci.oldSwapchain = VK_NULL_HANDLE;
         swapchain_ci.clipped = false; // Clipped for android only?
 

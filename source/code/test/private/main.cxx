@@ -173,6 +173,29 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
         io.DisplaySize.x = 1280;
         io.DisplaySize.y = 720;
 
+        io.KeyMap[ImGuiKey_Tab] = (uint32_t)input::KeyboardKey::Tab;
+        io.KeyMap[ImGuiKey_LeftArrow] = (uint32_t)input::KeyboardKey::Left;
+        io.KeyMap[ImGuiKey_RightArrow] = (uint32_t)input::KeyboardKey::Right;
+        io.KeyMap[ImGuiKey_UpArrow] = (uint32_t)input::KeyboardKey::Up;
+        io.KeyMap[ImGuiKey_DownArrow] = (uint32_t)input::KeyboardKey::Down;
+        io.KeyMap[ImGuiKey_PageUp] = (uint32_t)input::KeyboardKey::PageUp;
+        io.KeyMap[ImGuiKey_PageDown] = (uint32_t)input::KeyboardKey::PageDown;
+        io.KeyMap[ImGuiKey_Home] = (uint32_t)input::KeyboardKey::Home;
+        io.KeyMap[ImGuiKey_End] = (uint32_t)input::KeyboardKey::End;
+        io.KeyMap[ImGuiKey_Insert] = (uint32_t)input::KeyboardKey::Insert;
+        io.KeyMap[ImGuiKey_Delete] = (uint32_t)input::KeyboardKey::Delete;
+        io.KeyMap[ImGuiKey_Backspace] = (uint32_t)input::KeyboardKey::Backspace;
+        io.KeyMap[ImGuiKey_Space] = (uint32_t)input::KeyboardKey::Space;
+        io.KeyMap[ImGuiKey_Enter] = (uint32_t)input::KeyboardKey::Return;
+        io.KeyMap[ImGuiKey_Escape] = (uint32_t)input::KeyboardKey::Escape;
+        io.KeyMap[ImGuiKey_KeyPadEnter] = 0;
+        io.KeyMap[ImGuiKey_A] = (uint32_t)input::KeyboardKey::KeyA;
+        io.KeyMap[ImGuiKey_C] = (uint32_t)input::KeyboardKey::KeyC;
+        io.KeyMap[ImGuiKey_V] = (uint32_t)input::KeyboardKey::KeyV;
+        io.KeyMap[ImGuiKey_X] = (uint32_t)input::KeyboardKey::KeyX;
+        io.KeyMap[ImGuiKey_Y] = (uint32_t)input::KeyboardKey::KeyY;
+        io.KeyMap[ImGuiKey_Z] = (uint32_t)input::KeyboardKey::KeyZ;
+
         unsigned char* pixels;
         int width, height;
         io.Fonts->GetTexDataAsRGBA32(&pixels, &width, &height);
@@ -195,7 +218,6 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
         auto render_pipeline = render_system->create_pipeline(render::pipeline::ImGuiPipeline);
 
         fmt::print("IceShard engine revision: {}\n", engine_instance->revision());
-        ImGui::NewFrame();
 
         // Create a test world
         engine_instance->world_manager()->create_world("test-world"_sid);
@@ -210,15 +232,43 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
 
             core::message::for_each(engine_instance->current_frame().messages(), [&](core::Message const& msg) noexcept
                 {
-                    if (msg.header.type == "Key.Down"_sid)
+                    using input::KeyboardMod;
+                    using namespace input::message;
+
+                    if (msg.header.type == KeyboardKeyDown::message_type)
                     {
-                        auto const& data = *reinterpret_cast<input::message::KeyboardKeyUp const*>(msg.data._data);
-                        fmt::print("Key.U: {}\n", (int)data.key);
+                        auto const& data = *reinterpret_cast<KeyboardKeyDown const*>(msg.data._data);
+                        io.KeysDown[static_cast<uint32_t>(data.key)] = true;
                     }
-                    else if (msg.header.type == "Key.Up"_sid)
+                    else if (msg.header.type == KeyboardKeyUp::message_type)
                     {
-                        auto const& data = *reinterpret_cast<input::message::KeyboardKeyUp const*>(msg.data._data);
-                        fmt::print("Key.D: {}\n", (int)data.key);
+                        auto const& data = *reinterpret_cast<KeyboardKeyUp const*>(msg.data._data);
+                        io.KeysDown[static_cast<uint32_t>(data.key)] = false;
+                    }
+                    else if (msg.header.type == KeyboardModChanged::message_type)
+                    {
+                        auto const& data = *reinterpret_cast<KeyboardModChanged const*>(msg.data._data);
+                        if (has_flag(data.mod, KeyboardMod::ShiftAny))
+                        {
+                            io.KeyShift = data.pressed;
+                        }
+                        if (has_flag(data.mod, KeyboardMod::CtrlAny))
+                        {
+                            io.KeyCtrl = data.pressed;
+                        }
+                        if (has_flag(data.mod, KeyboardMod::AltAny))
+                        {
+                            io.KeyAlt = data.pressed;
+                        }
+                        if (has_flag(data.mod, KeyboardMod::GuiAny))
+                        {
+                            io.KeySuper = data.pressed;
+                        }
+                    }
+                    else if (msg.header.type == KeyboardTextInput::message_type)
+                    {
+                        auto const& data = *reinterpret_cast<KeyboardTextInput const*>(msg.data._data);
+                        io.AddInputCharactersUTF8(data.text);
                     }
                 });
 
@@ -258,17 +308,39 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
                     }
                     else if (msg.header.type == input::message::MouseWheel::message_type)
                     {
-                        //auto const& data = *reinterpret_cast<input::message::MouseWheel const*>(msg.data._data);
+                        auto const& data = *reinterpret_cast<input::message::MouseWheel const*>(msg.data._data);
+                        if (data.dy > 0)
+                        {
+                            io.MouseWheel += 1.0f;
+                        }
+                        else if (data.dy < 0)
+                        {
+                            io.MouseWheel -= 1.0f;
+                        }
+                        else if (data.dx > 0)
+                        {
+                            io.MouseWheelH += 1.0f;
+                        }
+                        else if (data.dx < 0)
+                        {
+                            io.MouseWheelH -= 1.0f;
+                        }
                     }
                 });
+
+            ImGui::NewFrame();
 
             static bool demo = true;
             ImGui::ShowDemoWindow(&demo);
 
             ImGui::ShowMetricsWindow();
 
-            ImGui::EndFrame();
-            ImGui::Render();
+            engine_instance->add_task([]() noexcept -> cppcoro::task<>
+                {
+                    ImGui::EndFrame();
+                    ImGui::Render();
+                    co_return;
+                }());
 
             engine_instance->add_task(
                 [](iceshard::Engine& e, render::api::RenderPipeline pipeline, render::api::VertexBuffer idx_buffer, render::api::VertexBuffer vtx_buffer[2]) noexcept -> cppcoro::task<>
@@ -416,8 +488,8 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
                     co_return;
                 }(*engine_instance, render_pipeline, idx_buffer, vtx_buffer));
 
+
             engine_instance->next_frame();
-            ImGui::NewFrame();
         }
 
         ImGui::EndFrame();
