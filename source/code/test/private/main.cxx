@@ -230,6 +230,7 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
                     quit = true;
                 });
 
+            static bool debug_menu_visible = false;
             core::message::for_each(engine_instance->current_frame().messages(), [&](core::Message const& msg) noexcept
                 {
                     using input::KeyboardMod;
@@ -239,6 +240,9 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
                     {
                         auto const& data = *reinterpret_cast<KeyboardKeyDown const*>(msg.data._data);
                         io.KeysDown[static_cast<uint32_t>(data.key)] = true;
+
+                        debug_menu_visible = debug_menu_visible ^ (data.key == input::KeyboardKey::BackQuote);
+                        quit = io.KeyCtrl && data.key == input::KeyboardKey::KeyW;
                     }
                     else if (msg.header.type == KeyboardKeyUp::message_type)
                     {
@@ -330,10 +334,29 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
 
             ImGui::NewFrame();
 
-            static bool demo = true;
-            ImGui::ShowDemoWindow(&demo);
+            if (debug_menu_visible)
+            {
+                static bool demo_window_visible = false;
+                if (demo_window_visible)
+                {
+                    ImGui::ShowDemoWindow(&demo_window_visible);
+                }
 
-            ImGui::ShowMetricsWindow();
+                ImGui::BeginMainMenuBar();
+                if (ImGui::BeginMenu("File"))
+                {
+                    if (ImGui::MenuItem("Demo window", nullptr, &demo_window_visible))
+                    {
+                        demo_window_visible = demo_window_visible ? true : false;
+                    }
+                    if (ImGui::MenuItem("Close", "Ctrl+W"))
+                    {
+                        quit = true;
+                    }
+                    ImGui::EndMenu();
+                }
+                ImGui::EndMainMenuBar();
+            }
 
             engine_instance->add_task([]() noexcept -> cppcoro::task<>
                 {
