@@ -44,7 +44,7 @@ namespace asset
 
         struct AssetReference
         {
-            resource::URI content_location{ resource::scheme_invalid, "" };
+            resource::URI content_location = resource::uri_invalid;
         };
         core::pod::Array<AssetReference> _resource_database;
 

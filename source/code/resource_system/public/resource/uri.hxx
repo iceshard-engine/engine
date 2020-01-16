@@ -61,6 +61,8 @@ namespace resource
         core::StringView path;
     };
 
+    static const resource::URI uri_invalid{ resource::scheme_invalid, "" };
+
     static_assert(std::is_trivially_copyable_v<URI>, "The 'URI' type requires to be trivially copyable!");
 
     //! \brief Returns the URN from the given URI.
