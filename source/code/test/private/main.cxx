@@ -22,6 +22,7 @@
 #include <input_system/module.hxx>
 #include <input_system/message/app.hxx>
 #include <input_system/message/mouse.hxx>
+#include <input_system/message/keyboard.hxx>
 
 #include <render_system/render_commands.hxx>
 #include <render_system/render_vertex_descriptor.hxx>
@@ -205,6 +206,20 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
             core::message::filter<input::message::AppExit>(engine_instance->current_frame().messages(), [&quit](auto const&) noexcept
                 {
                     quit = true;
+                });
+
+            core::message::for_each(engine_instance->current_frame().messages(), [&](core::Message const& msg) noexcept
+                {
+                    if (msg.header.type == "Key.Down"_sid)
+                    {
+                        auto const& data = *reinterpret_cast<input::message::KeyboardKeyUp const*>(msg.data._data);
+                        fmt::print("Key.U: {}\n", (int)data.key);
+                    }
+                    else if (msg.header.type == "Key.Up"_sid)
+                    {
+                        auto const& data = *reinterpret_cast<input::message::KeyboardKeyUp const*>(msg.data._data);
+                        fmt::print("Key.D: {}\n", (int)data.key);
+                    }
                 });
 
             core::message::for_each(engine_instance->current_frame().messages(), [&](core::Message const& msg) noexcept

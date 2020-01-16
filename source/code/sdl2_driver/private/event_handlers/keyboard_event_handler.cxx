@@ -1,5 +1,6 @@
 #include "../event_handlers.hxx"
-#include <input_system/keyboard.hxx>
+#include <core/message/operations.hxx>
+#include <input_system/message/keyboard.hxx>
 
 namespace input::sdl2
 {
@@ -70,8 +71,24 @@ namespace input::sdl2
             return KeyboardKey::Unknown;
         }
 
-        void key_event_handler(core::MessageBuffer&, SDL_Event const&) noexcept
+        void key_event_handler(core::MessageBuffer& buffer, SDL_Event const& sdl_event) noexcept
         {
+            if (sdl_event.key.type == SDL_KEYDOWN)
+            {
+                core::message::push(buffer,
+                    input::message::KeyboardKeyDown{
+                        .key = detail::key_from_keycode(sdl_event.key.keysym.scancode)
+                    }
+                );
+            }
+            else if (sdl_event.key.type == SDL_KEYUP)
+            {
+                core::message::push(buffer,
+                    input::message::KeyboardKeyUp{
+                        .key = detail::key_from_keycode(sdl_event.key.keysym.sym)
+                    }
+                );
+            }
         }
 
     } // namespace detail
@@ -80,6 +97,7 @@ namespace input::sdl2
     void register_keyboard_event_handlers(core::pod::Hash<EventHandlerSignature*>& handler_map) noexcept
     {
         core::pod::hash::set(handler_map, SDL_EventType::SDL_KEYDOWN, &detail::key_event_handler);
+        core::pod::hash::set(handler_map, SDL_EventType::SDL_KEYUP, &detail::key_event_handler);
     }
 
 } // namespace input::sdl2
