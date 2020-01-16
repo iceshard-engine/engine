@@ -68,7 +68,7 @@ namespace core
         {
             using stringid_type = stringid_base_type<debug_fields>;
 
-            using stringid_arg_type = stringid_type const&;
+            using stringid_arg_type = stringid_type;
 
             using stringid_hash_type = stringid_hash_type;
         };
@@ -173,39 +173,34 @@ namespace core
 
 using core::operator""_sid;
 
-namespace fmt
+template<bool debug_fields>
+struct fmt::formatter<core::cexpr::stringid_base_type<debug_fields>>
 {
+    using stringid_arg_type = typename core::cexpr::stringid_defined_types<debug_fields>::stringid_arg_type;
 
-    template<bool debug_fields>
-    struct formatter<core::cexpr::stringid_base_type<debug_fields>>
+    template<typename ParseContext>
+    constexpr auto parse(ParseContext& ctx)
     {
-        using stringid_arg_type = typename core::cexpr::stringid_defined_types<debug_fields>::stringid_arg_type;
+        return ctx.begin();
+    }
 
-        template<typename ParseContext>
-        constexpr auto parse(ParseContext& ctx)
+    template<typename FormatContext>
+    constexpr auto format(stringid_arg_type value, FormatContext& ctx)
+    {
+        if (value == core::stringid_invalid)
         {
-            return ctx.begin();
+            return fmt::format_to(ctx.out(), "[sid:<invalid>]");
         }
-
-        template<typename FormatContext>
-        constexpr auto format(stringid_arg_type value, FormatContext& ctx)
+        else
         {
-            if (value == core::stringid_invalid)
+            if constexpr (debug_fields == false)
             {
-                return fmt::format_to(ctx.out(), "[sid:<invalid>]");
+                return fmt::format_to(ctx.out(), "[sid:{:16x}]", core::hash(value));
             }
             else
             {
-                if constexpr (debug_fields == false)
-                {
-                    return fmt::format_to(ctx.out(), "[sid:{:16x}]", core::hash(value));
-                }
-                else
-                {
-                    return fmt::format_to(ctx.out(), "[sid:{:16x}]'{}'", core::hash(value), value.hash_origin);
-                }
+                return fmt::format_to(ctx.out(), "[sid:{:16x}]'{}'", core::hash(value), value.hash_origin);
             }
         }
-    };
-
-} // namespace fmt
+    }
+};
