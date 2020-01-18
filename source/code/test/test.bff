@@ -3,12 +3,17 @@
 
 .CopyModules = true
 
+.GraphicsDrivers = { }
+#if exists(VULKAN_SDK)
+    + 'vulkan_driver'
+#endif
+
 .DependsOn =
 [
-    .Runtime = {
+    .Runtime = .GraphicsDrivers
+    .Runtime + {
         'iceshard'
         'sdl2_driver'
-        'vulkan_driver'
     }
 ]
 
