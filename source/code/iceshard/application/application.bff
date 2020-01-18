@@ -1,0 +1,9 @@
+.Name = 'application'
+.Kind = .Kind_StaticLib
+
+.Public =
+[
+    .Imports = {
+        'resource_system'
+    }
+]

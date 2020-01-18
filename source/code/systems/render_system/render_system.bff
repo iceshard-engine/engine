@@ -1,0 +1,7 @@
+.Name = 'render_system'
+.Kind = .Kind_StaticLib
+
+.Public =
+[
+    .Imports = { 'asset_system' }
+]

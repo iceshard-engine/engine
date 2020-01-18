@@ -1,0 +1,11 @@
+.Name = 'messages'
+.Kind = .Kind_StaticLib
+
+.Public =
+[
+    .Imports = {
+        'core'
+        'memsys'
+        'collections'
+    }
+]

@@ -1,0 +1,18 @@
+.Name = 'asset_system'
+.Kind = .Kind_StaticLib
+
+.Public =
+[
+    .Imports = { 'resource_system' }
+]
+
+.Private =
+[
+    .Modules = {
+        'rapidjson'
+    }
+    .CompilerFlags = {
+        '/wd4996' // RapidJson warnings
+        '/wd5054' // RapidJson warnings
+    }
+]

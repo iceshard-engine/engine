@@ -1,0 +1,20 @@
+.Name = 'resource_system'
+.Kind = .Kind_StaticLib
+
+.Public =
+[
+    .Imports = {
+        'messages'
+    }
+]
+
+.Private =
+[
+    .Modules = {
+        'rapidjson'
+    }
+    .CompilerFlags = {
+        '/wd4996' // RapidJson warnings
+        '/wd5054' // RapidJson warnings
+    }
+]

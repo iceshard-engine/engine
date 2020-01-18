@@ -19,7 +19,7 @@ Settings
 .WorkspaceBuildDir = '$WorkspaceRoot$/build'
 .WorkspaceCodeDir = '$_CURRENT_BFF_DIR_$/code'
 
-.WorkspaceConanModules = { 'fmt', 'cppcoro' }
+.Workspace_ConanModules = { 'fmt', 'cppcoro' }
 
 ; Configuration names
 .ConfigNameDebug = 'Debug'
@@ -52,12 +52,12 @@ Settings
 [
     .Config = 'Debug'
     .CompilerOptions = ' /D_DEBUG'
-        + ' /INCREMENTAL'
         + ' /Od'
         + ' /Z7'
         + ' /MDd'
 
     .LinkerOptions = ' /DEBUG:FULL'
+        + ' /INCREMENTAL'
 
     .ConanConfig = 'Debug'
 ]
@@ -66,12 +66,12 @@ Settings
 [
     .Config = 'ReleaseDebug'
     .CompilerOptions = ' /D_RDEBUG'
-        + ' /INCREMENTAL'
         + ' /O2'
         + ' /Z7'
         + ' /MD'
 
     .LinkerOptions = ' /DEBUG:FULL'
+        + ' /INCREMENTAL'
 
     .ConanConfig = 'Release'
 ]
@@ -129,143 +129,187 @@ Settings
     .x64_Release,
 }
 
+.ProjectDirectories = { }
+{
+    #include "code/projects.bff"
+}
+
+#include "scripts/project_properties.bff"
+
+.SolutionFolders = { }
+
+.ProjectDefinitionList = { }
+ForEach( .ProjectDirectory in .ProjectDirectories )
+{
+    Using( .ProjectDirectory )
+
+    .SolutionFolderProjects = { }
+    ForEach( .ProjectLocation in .Projects )
+    {
+        .ProjectDefinition =
+        [
+            Using( .ProjectEmptyProperties )
+            .ProjectBaseDir = '$_CURRENT_BFF_DIR_$/code/$Directory$/$ProjectLocation$'
+            #include "code/$Directory$/$ProjectLocation$/$ProjectLocation$.bff"
+            #include "scripts/project_definition.bff"
+            ^SolutionFolderProjects + '$ProjectName$-vcxproj'
+        ]
+        ^ProjectDefinitionList + .ProjectDefinition
+    }
+
+    .SolutionFolder =
+    [
+        .Path = .Filter
+        .Projects = .SolutionFolderProjects
+    ]
+    ^SolutionFolders + .SolutionFolder
+}
+
+// Print( .ProjectDefinitionList )
+// Print( .ProjectUsings )
+
+#include "scripts/project_targets.bff"
+
+
 
 
 // Predefine specific values used later when generating 'All' aliases
 //--------------------------------------------------------------------------
-.Projects = { }
-.SolutionFolders = { }
-.SolutionProjects = { }
-
-
-// Include project target scripts
-//--------------------------------------------------------------------------
-{
-    .VisualStudioProjects = { }
-
-    // Core projects
-    //--------------------------------------------------------------------------
-    #include "code/core/core.bff"
-    #include "code/memsys/memsys.bff"
-    #include "code/collections/collections.bff"
-    #include "code/messages/messages.bff"
-
-    .SolutionFolder =
-    [
-        .Path      = '1. core'
-        .Projects = { }
-        ForEach( .Project in .VisualStudioProjects )
-        {
-            ^Projects + '$Project$-vcxproj'
-        }
-
-        ^SolutionProjects + .Projects
-    ]
-    ^SolutionFolders + .SolutionFolder
-    .VisualStudioProjects = { }
-
-
-    // Systems projects
-    //--------------------------------------------------------------------------
-    #include "code/resource_system/resource_system.bff"
-    #include "code/asset_system/asset_system.bff"
-    #include "code/render_system/render_system.bff"
-    #include "code/input_system/input_system.bff"
-
-    .SolutionFolder =
-    [
-        .Path      = '2. systems'
-        .Projects = { }
-        ForEach( .Project in .VisualStudioProjects )
-        {
-            ^Projects + '$Project$-vcxproj'
-        }
-
-        ^SolutionProjects + .Projects
-    ]
-    ^SolutionFolders + .SolutionFolder
-    .VisualStudioProjects = { }
-
-
-    // Driver projects
-    //--------------------------------------------------------------------------
-    #include "code/sdl2_driver/sdl2_driver.bff"
-    #include "code/vulkan_driver/vulkan_driver.bff"
-
-    .SolutionFolder =
-    [
-        .Path      = '3. drivers'
-        .Projects = { }
-        ForEach( .Project in .VisualStudioProjects )
-        {
-            ^Projects + '$Project$-vcxproj'
-        }
-
-        ^SolutionProjects + .Projects
-    ]
-    ^SolutionFolders + .SolutionFolder
-    .VisualStudioProjects = { }
-
-
-    // Game layer projects
-    //--------------------------------------------------------------------------
-    #include "code/engine/engine.bff"
-    #include "code/iceshard/iceshard.bff"
-    #include "code/application/application.bff"
-
-    .SolutionFolder =
-    [
-        .Path      = '4. game'
-        .Projects = { }
-        ForEach( .Project in .VisualStudioProjects )
-        {
-            ^Projects + '$Project$-vcxproj'
-        }
-
-        ^SolutionProjects + .Projects
-    ]
-    ^SolutionFolders + .SolutionFolder
-    .VisualStudioProjects = { }
-
-
-    // Applications
-    //--------------------------------------------------------------------------
-    #include "code/test/test.bff"
-
-    ForEach( .Project in .VisualStudioProjects )
-    {
-        ^SolutionProjects + '$Project$-vcxproj'
-    }
-}
-
-// Generate 'All' targets
-//--------------------------------------------------------------------------
-ForEach( .Configuration in .Configurations )
-{
-    Using( .Configuration )
-
-    .AliasTargets = { }
-    ForEach( .Project in .Projects )
-    {
-        ^AliasTargets + '$Project$-$Platform$-$Config$'
-    }
-
-    Alias( 'all-$Platform$-$Config$' )
-    {
-        .Targets = .AliasTargets
-    }
-}
+// .Projects = { }
+// .SolutionFolders = { }
+// .SolutionProjects = { }
 
 
 
-// Create solution targets
-//--------------------------------------------------------------------------
-VSSolution( 'solution' )
-{
-    .SolutionOutput = '../IceShard.sln'
-    .SolutionConfigs = .Configurations
 
-    .SolutionFolders = .SolutionFolders
-    .SolutionProjects = .SolutionProjects
-    .SolutionBuildProject = { 'test-vcxproj' }
-}
+// // Include project target scripts
+// //--------------------------------------------------------------------------
+// {
+//     .VisualStudioProjects = { }
+
+//     // Core projects
+//     //--------------------------------------------------------------------------
+//     #include "code/core/core.bff"
+//     #include "code/memsys/memsys.bff"
+//     #include "code/collections/collections.bff"
+//     #include "code/messages/messages.bff"
+
+//     .SolutionFolder =
+//     [
+//         .Path      = '1. core'
+//         .Projects = { }
+//         ForEach( .Project in .VisualStudioProjects )
+//         {
+//             ^Projects + '$Project$-vcxproj'
+//         }
+
+//         ^SolutionProjects + .Projects
+//     ]
+//     ^SolutionFolders + .SolutionFolder
+//     .VisualStudioProjects = { }
+
+
+//     // Systems projects
+//     //--------------------------------------------------------------------------
+//     #include "code/resource_system/resource_system.bff"
+//     #include "code/asset_system/asset_system.bff"
+//     #include "code/render_system/render_system.bff"
+//     #include "code/input_system/input_system.bff"
+
+//     .SolutionFolder =
+//     [
+//         .Path      = '2. systems'
+//         .Projects = { }
+//         ForEach( .Project in .VisualStudioProjects )
+//         {
+//             ^Projects + '$Project$-vcxproj'
+//         }
+
+//         ^SolutionProjects + .Projects
+//     ]
+//     ^SolutionFolders + .SolutionFolder
+//     .VisualStudioProjects = { }
+
+
+//     // Driver projects
+//     //--------------------------------------------------------------------------
+//     #include "code/sdl2_driver/sdl2_driver.bff"
+//     #include "code/vulkan_driver/vulkan_driver.bff"
+
+//     .SolutionFolder =
+//     [
+//         .Path      = '3. drivers'
+//         .Projects = { }
+//         ForEach( .Project in .VisualStudioProjects )
+//         {
+//             ^Projects + '$Project$-vcxproj'
+//         }
+
+//         ^SolutionProjects + .Projects
+//     ]
+//     ^SolutionFolders + .SolutionFolder
+//     .VisualStudioProjects = { }
+
+
+//     // Game layer projects
+//     //--------------------------------------------------------------------------
+//     #include "code/engine/engine.bff"
+//     #include "code/iceshard/iceshard.bff"
+//     #include "code/application/application.bff"
+
+//     .SolutionFolder =
+//     [
+//         .Path      = '4. game'
+//         .Projects = { }
+//         ForEach( .Project in .VisualStudioProjects )
+//         {
+//             ^Projects + '$Project$-vcxproj'
+//         }
+
+//         ^SolutionProjects + .Projects
+//     ]
+//     ^SolutionFolders + .SolutionFolder
+//     .VisualStudioProjects = { }
+
+
+//     // Applications
+//     //--------------------------------------------------------------------------
+//     #include "code/test/test.bff"
+
+//     ForEach( .Project in .VisualStudioProjects )
+//     {
+//         ^SolutionProjects + '$Project$-vcxproj'
+//     }
+// }
+
+// // Generate 'All' targets
+// //--------------------------------------------------------------------------
+// ForEach( .Configuration in .Configurations )
+// {
+//     Using( .Configuration )
+
+//     .AliasTargets = { }
+//     ForEach( .Project in .Projects )
+//     {
+//         ^AliasTargets + '$Project$-$Platform$-$Config$'
+//     }
+
+//     Alias( 'all-$Platform$-$Config$' )
+//     {
+//         .Targets = .AliasTargets
+//     }
+// }
+
+
+
+// // Create solution targets
+// //--------------------------------------------------------------------------
+// VSSolution( 'solution' )
+// {
+//     .SolutionOutput = '../IceShard.sln'
+//     .SolutionConfigs = .Configurations
+
+//     .SolutionFolders = .SolutionFolders
+//     .SolutionProjects = .SolutionProjects
+//     .SolutionBuildProject = { 'test-vcxproj' }
+// }
