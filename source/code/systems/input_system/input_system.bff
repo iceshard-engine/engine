@@ -1,0 +1,9 @@
+.Name = 'input_system'
+.Kind = .Kind_StaticLib
+
+.Public =
+[
+    .Imports = {
+        'messages'
+    }
+]

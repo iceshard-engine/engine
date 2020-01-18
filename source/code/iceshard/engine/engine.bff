@@ -1,0 +1,13 @@
+.Name = 'engine'
+.Kind = .Kind_StaticLib
+
+.Public =
+[
+    .Modules = {
+        'cppcoro'
+    }
+    .Imports = {
+        'input_system'
+        'render_system'
+    }
+]

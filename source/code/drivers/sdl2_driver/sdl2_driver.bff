@@ -1,0 +1,12 @@
+.Name = 'sdl2_driver'
+.Kind = .Kind_SharedLib
+
+.Private =
+[
+    .Modules = {
+        'SDL2'
+    }
+    .Imports = {
+        'input_system'
+    }
+]

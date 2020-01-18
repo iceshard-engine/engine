@@ -1,0 +1,9 @@
+.Name = 'memsys'
+.Kind = .Kind_StaticLib
+
+.Public =
+[
+    .Imports = {
+        'core'
+    }
+]

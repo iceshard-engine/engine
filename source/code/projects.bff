@@ -1,0 +1,71 @@
+.CoreDirectory =
+[
+    .Filter = '1. Core'
+    .Directory = 'core'
+    .Projects = {
+        'core'
+        'memsys'
+        'collections'
+        'messages'
+    }
+]
+^ProjectDirectories + .CoreDirectory
+
+.SystemsDirectory =
+[
+    .Filter = '2. Systems'
+    .Directory = 'systems'
+    .Projects = {
+        'input_system'
+        'resource_system'
+        'asset_system'
+        'render_system'
+    }
+]
+^ProjectDirectories + .SystemsDirectory
+
+#if exists(VULKAN_SDK)
+#import VULKAN_SDK
+.DriversDirectory =
+[
+    .Filter = '3. Drivers'
+    .Directory = 'drivers'
+    .Projects = {
+        'sdl2_driver'
+        'vulkan_driver'
+    }
+]
+^ProjectDirectories + .DriversDirectory
+#else
+.DriversDirectory =
+[
+    .Filter = '3. Drivers'
+    .Directory = 'drivers'
+    .Projects = {
+        'sdl2_driver'
+    }
+]
+^ProjectDirectories + .DriversDirectory
+#endif
+
+.IceshardDirectory =
+[
+    .Filter = '4. IceShard'
+    .Directory = 'iceshard'
+    .Projects = {
+        'application'
+        'engine'
+        'iceshard'
+    }
+]
+^ProjectDirectories + .IceshardDirectory
+
+.TestDirectory =
+[
+    .Filter = '5. Tests'
+    .Directory = '.'
+    .Projects = {
+        'test'
+    }
+]
+^ProjectDirectories + .TestDirectory

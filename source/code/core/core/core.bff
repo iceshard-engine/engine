@@ -1,0 +1,9 @@
+.Name = 'core'
+.Kind = .Kind_StaticLib
+
+.Public =
+[
+    .Modules = {
+        'fmt'
+    }
+]

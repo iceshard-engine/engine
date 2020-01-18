@@ -1,0 +1,9 @@
+.Name = 'iceshard'
+.Kind = .Kind_SharedLib
+
+.Private =
+[
+    .Imports = {
+        'engine'
+    }
+]
