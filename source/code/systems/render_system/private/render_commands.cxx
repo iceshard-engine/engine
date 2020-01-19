@@ -30,6 +30,11 @@ void render::cmd::bind_descriptor_sets(render::api::CommandBuffer command_buffer
     render::api::render_api_instance->cmd_bind_descriptor_sets_func(command_buffer, descriptor_sets);
 }
 
+void render::cmd::bind_vertex_buffers(render::api::CommandBuffer command_buffer, core::pod::Array<render::api::VertexBuffer> const& buffer_handles) noexcept
+{
+    render::api::render_api_instance->cmd_bind_vertex_buffers_array_func(command_buffer, core::pod::array::begin(buffer_handles), core::pod::array::size(buffer_handles));
+}
+
 void render::cmd::bind_vertex_buffers(render::api::CommandBuffer command_buffer, render::api::VertexBuffer vertice_buffer, render::api::VertexBuffer instance_buffer) noexcept
 {
     render::api::render_api_instance->cmd_bind_vertex_buffers_func(command_buffer, vertice_buffer, instance_buffer);

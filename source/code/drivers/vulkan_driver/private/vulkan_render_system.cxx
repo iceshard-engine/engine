@@ -320,7 +320,7 @@ namespace render
             return result;
         }
 
-        void create_uniform_descriptor_sets(uint32_t size) noexcept
+        void create_imgui_descriptor_sets() noexcept
         {
             auto const graphics_device_handle = _vulkan_physical_device->graphics_device()->native_handle();
 
@@ -365,12 +365,6 @@ namespace render
                 *_vulkan_descriptor_pool,
                 _vulkan_descriptor_set_layouts
             );
-
-            VkDescriptorBufferInfo buffer_info{};
-            buffer_info.buffer = _vulkan_buffers[2]->native_handle();
-            buffer_info.offset = 0;
-            buffer_info.range = size;
-            _vulkan_descriptor_sets->write_descriptor_set(0, 0, VkDescriptorType::VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, buffer_info);
 
             VkDescriptorImageInfo image_info{};
             image_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
@@ -663,6 +657,11 @@ namespace render
             assert(res == VK_SUCCESS);
             res = vkQueuePresentKHR(queue, &present);
             assert(res == VK_SUCCESS);
+        }
+
+        void initialize_render_interface(render::api::RenderInterface** render_interface) noexcept
+        {
+            *render_interface = render::api::render_api_instance;
         }
 
         ~VulkanRenderSystem() noexcept override

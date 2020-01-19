@@ -28,7 +28,7 @@ namespace render
 
         virtual auto create_uniform_buffer(uint32_t size) noexcept -> render::api::UniformBuffer = 0;
 
-        virtual void create_uniform_descriptor_sets([[maybe_unused]] uint32_t size) noexcept { }
+        virtual void create_imgui_descriptor_sets() noexcept { }
 
         virtual auto load_texture(asset::AssetData texture_data) noexcept -> render::api::Texture = 0;
 
@@ -40,6 +40,7 @@ namespace render
         template<uint32_t DescriptorCount>
         auto create_pipeline(Pipeline<DescriptorCount> const& pipeline) noexcept -> render::api::RenderPipeline;
 
+        virtual void initialize_render_interface(render::api::RenderInterface** render_interface) noexcept = 0;
 
         virtual void swap() noexcept = 0;
 

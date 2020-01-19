@@ -12,7 +12,7 @@ namespace debugui
     namespace detail
     {
 
-        using DebugUICreateFunc = DebugUIContext* (core::allocator&, input::InputSystem&);
+        using DebugUICreateFunc = DebugUIContext* (core::allocator&, input::InputSystem&, asset::AssetSystem&, render::RenderSystem&);
         using DebugUIReleaseFunc = void(core::allocator&, DebugUIContext*);
 
         class DebugImGuiModule : public DebugUIModule
@@ -52,7 +52,9 @@ namespace debugui
     auto load_module(
         core::allocator& alloc,
         core::StringView path,
-        input::InputSystem& input_system
+        input::InputSystem& input_system,
+        asset::AssetSystem& asset_system,
+        render::RenderSystem& render_system
     ) noexcept -> core::memory::unique_pointer<DebugUIModule>
     {
         auto module_path = std::filesystem::canonical(path);
@@ -73,7 +75,7 @@ namespace debugui
                 auto create_func = reinterpret_cast<detail::DebugUICreateFunc*>(create_debugui_addr);
                 auto release_func = reinterpret_cast<detail::DebugUIReleaseFunc*>(release_debugui_addr);
 
-                result = { alloc.make<detail::DebugImGuiModule>(alloc, module_handle, create_func(alloc, input_system), release_func), alloc };
+                result = { alloc.make<detail::DebugImGuiModule>(alloc, module_handle, create_func(alloc, input_system, asset_system, render_system), release_func), alloc };
             }
         }
 

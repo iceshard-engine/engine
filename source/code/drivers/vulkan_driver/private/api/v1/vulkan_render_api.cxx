@@ -2,6 +2,7 @@
 #include "../../vulkan_buffer.hxx"
 #include "../../pipeline/vulkan_descriptor_sets.hxx"
 #include <core/memory.hxx>
+#include <core/allocators/stack_allocator.hxx>
 
 #include <vulkan/vulkan.h>
 
@@ -121,6 +122,25 @@ namespace render::api::v1::vulkan
         vkCmdBindVertexBuffers(command_buffer(cb), 0, 1, buffers, offsets);
     }
 
+    void vulkan_api_v1_bind_vertex_buffers_array(render::api::v1::CommandBuffer cb, render::api::v1::VertexBuffer const* handles, uint32_t size) noexcept
+    {
+        core::memory::stack_allocator<(sizeof(VkBuffer) + sizeof(VkDeviceSize)) * 8> stack_alloc;
+
+        core::pod::Array<VkBuffer> native_handles{ stack_alloc };
+        core::pod::Array<VkDeviceSize> buffer_offsets{ stack_alloc };
+        core::pod::array::reserve(native_handles, 8);
+        core::pod::array::reserve(buffer_offsets, 8);
+
+        for (uint32_t idx = 0; idx < size; ++idx)
+        {
+            auto const& buffer_ptr = reinterpret_cast<render::vulkan::VulkanBuffer const&>(handles[idx]);
+            core::pod::array::push_back(native_handles, buffer_ptr.native_handle());
+            core::pod::array::push_back(buffer_offsets, 0llu);
+        }
+
+        vkCmdBindVertexBuffers(command_buffer(cb), 0, size, core::pod::array::begin(native_handles), core::pod::array::begin(buffer_offsets));
+    }
+
     void vulkan_api_v1_bind_index_buffers(render::api::v1::CommandBuffer cb, render::api::v1::VertexBuffer indices) noexcept
     {
         vkCmdBindIndexBuffer(command_buffer(cb), reinterpret_cast<render::vulkan::VulkanBuffer*>(indices)->native_handle(), 0, VK_INDEX_TYPE_UINT16);
@@ -214,6 +234,7 @@ namespace render::api::v1::vulkan
         instance->cmd_bind_render_pipeline_func = vulkan_api_v1_bind_render_pipeline;
         instance->cmd_bind_descriptor_sets_func = vulkan_api_v1_bind_descriptor_sets;
         instance->cmd_bind_vertex_buffers_func = vulkan_api_v1_bind_vertex_buffers;
+        instance->cmd_bind_vertex_buffers_array_func = vulkan_api_v1_bind_vertex_buffers_array;
         instance->cmd_bind_index_buffers_func = vulkan_api_v1_bind_index_buffers;
         instance->cmd_set_viewport_func = vulkan_api_v1_set_viewport;
         instance->cmd_set_scissor_func = vulkan_api_v1_set_scissor;

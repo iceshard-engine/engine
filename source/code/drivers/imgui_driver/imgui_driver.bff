@@ -1,10 +1,11 @@
 .Name = 'imgui_driver'
 .Kind = .Kind_SharedLib
 
-.Public =
+.Private =
 [
     .Modules = {
         'imgui'
+        'glm'
     }
     .Imports = {
         'debugui_system'

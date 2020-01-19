@@ -8,6 +8,16 @@ namespace input
     class InputSystem;
 } // namespace input
 
+namespace asset
+{
+    class AssetSystem;
+} // namespace asset
+
+namespace render
+{
+    class RenderSystem;
+} // namespace render
+
 namespace debugui
 {
 
@@ -38,7 +48,9 @@ namespace debugui
     auto load_module(
         core::allocator& alloc,
         core::StringView path,
-        input::InputSystem& input_system
+        input::InputSystem& input_system,
+        asset::AssetSystem& asset_system,
+        render::RenderSystem& render_system
     ) noexcept -> core::memory::unique_pointer<DebugUIModule>;
 
 } // namespace debugui

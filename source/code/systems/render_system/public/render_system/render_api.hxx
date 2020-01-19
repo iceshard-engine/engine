@@ -12,21 +12,21 @@ namespace render::api
 
         static constexpr auto version_name = "v1"_sid;
 
-        enum class Framebuffer : uintptr_t { };
+        enum class Framebuffer : uintptr_t { Invalid = 0x0 };
 
-        enum class RenderPass : uintptr_t { };
+        enum class RenderPass : uintptr_t { Invalid = 0x0 };
 
-        enum class RenderPipeline : uintptr_t { };
+        enum class RenderPipeline : uintptr_t { Invalid = 0x0 };
 
-        enum class DescriptorSets : uintptr_t { };
+        enum class DescriptorSets : uintptr_t { Invalid = 0x0 };
 
-        enum class VertexBuffer : uintptr_t { };
+        enum class VertexBuffer : uintptr_t { Invalid = 0x0 };
 
-        enum class UniformBuffer : uintptr_t { };
+        enum class UniformBuffer : uintptr_t { Invalid = 0x0 };
 
-        enum class CommandBuffer : uintptr_t { };
+        enum class CommandBuffer : uintptr_t { Invalid = 0x0 };
 
-        enum class Texture : uintptr_t { };
+        enum class Texture : uintptr_t { Invalid = 0x0 };
 
         struct BufferDataView
         {
@@ -48,6 +48,7 @@ namespace render::api
             void (*cmd_bind_render_pipeline_func)(CommandBuffer, RenderPipeline);
             void (*cmd_bind_descriptor_sets_func)(CommandBuffer, DescriptorSets);
             void (*cmd_bind_vertex_buffers_func)(CommandBuffer, VertexBuffer, VertexBuffer);
+            void (*cmd_bind_vertex_buffers_array_func)(CommandBuffer, VertexBuffer const*, uint32_t);
             void (*cmd_bind_index_buffers_func)(CommandBuffer, VertexBuffer);
             void (*cmd_set_viewport_func)(CommandBuffer, uint32_t, uint32_t);
             void (*cmd_set_scissor_func)(CommandBuffer, uint32_t, uint32_t);

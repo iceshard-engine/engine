@@ -12,7 +12,7 @@ namespace debugui::imgui
     class DebugUIContext_ImGui : public DebugUIContext
     {
     public:
-        DebugUIContext_ImGui(core::allocator& alloc, input::InputSystem& input_system) noexcept;
+        DebugUIContext_ImGui(core::allocator& alloc, input::InputSystem& input_system, asset::AssetSystem& asset_system, render::RenderSystem& render_system) noexcept;
         ~DebugUIContext_ImGui() noexcept;
 
         void begin_frame() noexcept override;
@@ -27,6 +27,7 @@ namespace debugui::imgui
     private:
         core::allocator& _allocator;
         core::memory::unique_pointer<ImGuiInputs> _imgui_inputs;
+        core::memory::unique_pointer<ImGuiRenderer> _imgui_renderer;
 
         union
         {
