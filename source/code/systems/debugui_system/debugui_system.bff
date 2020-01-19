@@ -1,0 +1,17 @@
+.Name = 'debugui_system'
+.Kind = .Kind_StaticLib
+
+.Public =
+[
+    .Imports = {
+        'input_system'
+        'render_system'
+    }
+]
+
+.Private =
+[
+    .Modules = {
+        'imgui'
+    }
+]

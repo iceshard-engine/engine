@@ -44,10 +44,62 @@
 #include <iceshard/entity/entity_command_buffer.hxx>
 #include <iceshard/component/component_system.hxx>
 
+#include <debugui/debugui_module.hxx>
+#include <debugui/debugui.hxx>
+
 #include <glm/glm.hpp>
 #include <glm/gtx/transform.hpp>
 
 #include <imgui/imgui.h>
+
+class MainDebugUI : public debugui::DebugUI
+{
+public:
+    MainDebugUI(debugui::debugui_context_handle context) noexcept
+        : debugui::DebugUI{ context }
+    { }
+
+    void toggle_show(bool value) noexcept
+    {
+        _menu_visible = _menu_visible ^ value;
+    }
+
+    bool quit_message() noexcept
+    {
+        return _quit;
+    }
+
+    void on_draw() noexcept override
+    {
+        if (_menu_visible)
+        {
+            static bool demo_window_visible = false;
+            if (demo_window_visible)
+            {
+                ImGui::ShowDemoWindow(&demo_window_visible);
+            }
+
+            ImGui::BeginMainMenuBar();
+            if (ImGui::BeginMenu("File"))
+            {
+                if (ImGui::MenuItem("Demo window", nullptr, &demo_window_visible))
+                {
+                    demo_window_visible = demo_window_visible ? true : false;
+                }
+                if (ImGui::MenuItem("Close", "Ctrl+W"))
+                {
+                    _quit = true;
+                }
+                ImGui::EndMenu();
+            }
+            ImGui::EndMainMenuBar();
+        }
+    }
+
+private:
+    bool _quit = false;
+    bool _menu_visible = false;
+};
 
 int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
 {
@@ -62,6 +114,14 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
     if (auto engine_module = iceshard::load_engine_module(alloc, engine_module_location->location().path, resource_system))
     {
         auto* engine_instance = engine_module->engine();
+
+        // Debug UI module
+        core::memory::unique_pointer<debugui::DebugUIModule> debugui_module{ nullptr, { alloc } };
+        auto* debugui_module_location = resource_system.find(URN{ "imgui_driver.dll" });
+        if (debugui_module_location != nullptr)
+        {
+            debugui_module = debugui::load_module(alloc, debugui_module_location->location().path, *engine_instance->input_system());
+        }
 
         // Default file system mount points
         resource_system.flush_messages();
@@ -168,33 +228,12 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
             render::api::render_api_instance->uniform_buffer_unmap_data(uniform_buffer);
         }
 
-        ImGui::CreateContext();
+        debugui::DebugUIContext& debugui_context = debugui_module->context();
+        MainDebugUI main_debug_menu{ debugui_context.context_handle() };
+
         ImGuiIO& io = ImGui::GetIO();
         io.DisplaySize.x = 1280;
         io.DisplaySize.y = 720;
-
-        io.KeyMap[ImGuiKey_Tab] = (uint32_t)input::KeyboardKey::Tab;
-        io.KeyMap[ImGuiKey_LeftArrow] = (uint32_t)input::KeyboardKey::Left;
-        io.KeyMap[ImGuiKey_RightArrow] = (uint32_t)input::KeyboardKey::Right;
-        io.KeyMap[ImGuiKey_UpArrow] = (uint32_t)input::KeyboardKey::Up;
-        io.KeyMap[ImGuiKey_DownArrow] = (uint32_t)input::KeyboardKey::Down;
-        io.KeyMap[ImGuiKey_PageUp] = (uint32_t)input::KeyboardKey::PageUp;
-        io.KeyMap[ImGuiKey_PageDown] = (uint32_t)input::KeyboardKey::PageDown;
-        io.KeyMap[ImGuiKey_Home] = (uint32_t)input::KeyboardKey::Home;
-        io.KeyMap[ImGuiKey_End] = (uint32_t)input::KeyboardKey::End;
-        io.KeyMap[ImGuiKey_Insert] = (uint32_t)input::KeyboardKey::Insert;
-        io.KeyMap[ImGuiKey_Delete] = (uint32_t)input::KeyboardKey::Delete;
-        io.KeyMap[ImGuiKey_Backspace] = (uint32_t)input::KeyboardKey::Backspace;
-        io.KeyMap[ImGuiKey_Space] = (uint32_t)input::KeyboardKey::Space;
-        io.KeyMap[ImGuiKey_Enter] = (uint32_t)input::KeyboardKey::Return;
-        io.KeyMap[ImGuiKey_Escape] = (uint32_t)input::KeyboardKey::Escape;
-        io.KeyMap[ImGuiKey_KeyPadEnter] = 0;
-        io.KeyMap[ImGuiKey_A] = (uint32_t)input::KeyboardKey::KeyA;
-        io.KeyMap[ImGuiKey_C] = (uint32_t)input::KeyboardKey::KeyC;
-        io.KeyMap[ImGuiKey_V] = (uint32_t)input::KeyboardKey::KeyV;
-        io.KeyMap[ImGuiKey_X] = (uint32_t)input::KeyboardKey::KeyX;
-        io.KeyMap[ImGuiKey_Y] = (uint32_t)input::KeyboardKey::KeyY;
-        io.KeyMap[ImGuiKey_Z] = (uint32_t)input::KeyboardKey::KeyZ;
 
         unsigned char* pixels;
         int width, height;
@@ -230,7 +269,6 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
                     quit = true;
                 });
 
-            static bool debug_menu_visible = false;
             core::message::for_each(engine_instance->current_frame().messages(), [&](core::Message const& msg) noexcept
                 {
                     using input::KeyboardMod;
@@ -241,7 +279,7 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
                         auto const& data = *reinterpret_cast<KeyboardKeyDown const*>(msg.data._data);
                         io.KeysDown[static_cast<uint32_t>(data.key)] = true;
 
-                        debug_menu_visible = debug_menu_visible ^ (data.key == input::KeyboardKey::BackQuote);
+                        main_debug_menu.toggle_show(data.key == input::KeyboardKey::BackQuote);
                         quit = io.KeyCtrl && data.key == input::KeyboardKey::KeyW;
                     }
                     else if (msg.header.type == KeyboardKeyUp::message_type)
@@ -332,38 +370,16 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
                     }
                 });
 
-            ImGui::NewFrame();
+            debugui_context.begin_frame();
 
-            if (debug_menu_visible)
-            {
-                static bool demo_window_visible = false;
-                if (demo_window_visible)
-                {
-                    ImGui::ShowDemoWindow(&demo_window_visible);
-                }
+            main_debug_menu.on_draw();
+            quit |= main_debug_menu.quit_message();
 
-                ImGui::BeginMainMenuBar();
-                if (ImGui::BeginMenu("File"))
+            engine_instance->add_task([](debugui::DebugUIContext& ctx) noexcept -> cppcoro::task<>
                 {
-                    if (ImGui::MenuItem("Demo window", nullptr, &demo_window_visible))
-                    {
-                        demo_window_visible = demo_window_visible ? true : false;
-                    }
-                    if (ImGui::MenuItem("Close", "Ctrl+W"))
-                    {
-                        quit = true;
-                    }
-                    ImGui::EndMenu();
-                }
-                ImGui::EndMainMenuBar();
-            }
-
-            engine_instance->add_task([]() noexcept -> cppcoro::task<>
-                {
-                    ImGui::EndFrame();
-                    ImGui::Render();
+                    ctx.end_frame();
                     co_return;
-                }());
+                }(debugui_context));
 
             engine_instance->add_task(
                 [](iceshard::Engine& e, render::api::RenderPipeline pipeline, render::api::VertexBuffer idx_buffer, render::api::VertexBuffer vtx_buffer[2]) noexcept -> cppcoro::task<>
@@ -519,7 +535,7 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
 
         engine_instance->world_manager()->destroy_world("test-world"_sid);
 
-        ImGui::DestroyContext();
+        debugui_module = nullptr;
     }
 
     return 0;

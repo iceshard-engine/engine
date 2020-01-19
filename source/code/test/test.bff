@@ -14,6 +14,7 @@
     .Runtime + {
         'iceshard'
         'sdl2_driver'
+        'imgui_driver'
     }
 ]
 
@@ -25,6 +26,7 @@
         'SDL2'
     }
     .Imports = {
+        'debugui_system'
         'application'
         'engine'
     }
