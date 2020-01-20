@@ -24,10 +24,14 @@ namespace debugui
 
     enum class debugui_context_handle : uintptr_t;
 
+    class DebugUI;
+
     class DebugUIContext
     {
     public:
         virtual ~DebugUIContext() noexcept = default;
+
+        virtual void register_ui(DebugUI* ui_object) noexcept = 0;
 
         virtual void update(core::MessageBuffer const& messages) noexcept = 0;
 

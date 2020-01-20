@@ -64,7 +64,7 @@ public:
         return _quit;
     }
 
-    void on_draw() noexcept override
+    void end_frame() noexcept override
     {
         static bool demo_window_visible = false;
         if (demo_window_visible)
@@ -172,14 +172,16 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
 
         // Debug UI module
         core::memory::unique_pointer<debugui::DebugUIModule> debugui_module{ nullptr, { alloc } };
-        auto* debugui_module_location = resource_system.find(URN{ "imgui_driver.dll" });
-        if (debugui_module_location != nullptr)
-        {
-            debugui_module = debugui::load_module(alloc, debugui_module_location->location().path, *engine_instance->input_system(), *asset_system, *render_system);
-        }
 
-        debugui::DebugUIContext& debugui_context = debugui_module->context();
-        MainDebugUI main_debug_menu{ debugui_context.context_handle() };
+        if constexpr (core::build::is_release == false)
+        {
+            auto* debugui_module_location = resource_system.find(URN{ "imgui_driver.dll" });
+            if (debugui_module_location != nullptr)
+            {
+                debugui_module = debugui::load_module(alloc, debugui_module_location->location().path, *engine_instance->input_system(), *asset_system, *render_system);
+                engine_module->load_debugui(debugui_module->context());
+            }
+        }
 
         fmt::print("IceShard engine revision: {}\n", engine_instance->revision());
 
@@ -194,16 +196,19 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
                     quit = true;
                 });
 
-            debugui_context.update(engine_instance->current_frame().messages());
-            debugui_context.begin_frame();
-            main_debug_menu.on_draw();
-            quit |= main_debug_menu.quit_message();
-            debugui_context.end_frame();
+            if constexpr (core::build::is_release == false)
+            {
+                if (debugui_module)
+                {
+                    auto& debugui_context = debugui_module->context();
+                    debugui_context.update(engine_instance->current_frame().messages());
+                    debugui_context.begin_frame();
+                    debugui_context.end_frame();
+                }
+            }
 
             engine_instance->next_frame();
         }
-
-        ImGui::EndFrame();
 
         engine_instance->world_manager()->destroy_world("test-world"_sid);
 

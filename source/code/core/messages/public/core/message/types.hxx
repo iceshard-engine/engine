@@ -6,6 +6,7 @@
 namespace core
 {
 
+    class MessageBuffer;
 
     //! \brief Defines a simple header for each message.
     struct MessageHeader

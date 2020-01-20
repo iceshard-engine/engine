@@ -1,5 +1,6 @@
 #pragma once
 #include <core/allocator.hxx>
+#include <core/message/types.hxx>
 
 namespace debugui
 {
@@ -15,7 +16,11 @@ namespace debugui
         DebugUI(debugui_context_handle context_handle) noexcept;
         ~DebugUI() noexcept;
 
-        virtual void on_draw() noexcept = 0;
+        virtual void update([[maybe_unused]] core::MessageBuffer const& messages) noexcept { }
+
+        virtual void begin_frame() noexcept { };
+
+        virtual void end_frame() noexcept = 0;
     };
 
 } // namespace debugui

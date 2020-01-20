@@ -3,6 +3,9 @@
 
 .Private =
 [
+    .Modules = {
+        'imgui'
+    }
     .Imports = {
         'engine'
     }

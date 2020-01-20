@@ -1,5 +1,6 @@
 #pragma once
 #include <core/pointer.hxx>
+#include <debugui/debugui.hxx>
 #include <debugui/debugui_module.hxx>
 #include "imgui_inputs.hxx"
 #include "imgui_renderer.hxx"
@@ -14,6 +15,8 @@ namespace debugui::imgui
     public:
         DebugUIContext_ImGui(core::allocator& alloc, input::InputSystem& input_system, asset::AssetSystem& asset_system, render::RenderSystem& render_system) noexcept;
         ~DebugUIContext_ImGui() noexcept;
+
+        void register_ui(DebugUI* ui_object) noexcept override;
 
         void update(core::MessageBuffer const& messages) noexcept override;
 
@@ -30,6 +33,8 @@ namespace debugui::imgui
         core::allocator& _allocator;
         core::memory::unique_pointer<ImGuiInputs> _imgui_inputs;
         core::memory::unique_pointer<ImGuiRenderer> _imgui_renderer;
+
+        core::pod::Array<DebugUI*> _debugui_objects;
 
         union
         {
