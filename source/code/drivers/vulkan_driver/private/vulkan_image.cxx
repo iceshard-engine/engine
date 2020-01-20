@@ -122,7 +122,8 @@ namespace render::vulkan
         device_memory.allocate_memory(
             image,
             VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-            memory_info);
+            memory_info
+        );
 
         VkImageViewCreateInfo view_info = {};
         view_info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;

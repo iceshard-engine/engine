@@ -292,6 +292,21 @@ namespace render
             return render::api::DescriptorSets{ reinterpret_cast<uintptr_t>(_vulkan_descriptor_sets.get()) };
         }
 
+        auto create_buffer(render::api::BufferType type, uint32_t size) noexcept -> render::api::Buffer override
+        {
+            auto vulkan_buffer = render::vulkan::create_buffer(
+                _driver_allocator,
+                type,
+                size,
+                *_vulkan_device_memory
+            );
+
+            auto result = render::api::Buffer{ reinterpret_cast<uintptr_t>(vulkan_buffer.get()) };
+            _vulkan_buffers.emplace_back(std::move(vulkan_buffer));
+
+            return result;
+        }
+
         auto create_vertex_buffer(uint32_t size) noexcept -> render::api::VertexBuffer override
         {
             auto vulkan_buffer = render::vulkan::create_vertex_buffer(
@@ -329,18 +344,19 @@ namespace render
             {
                 core::pod::Array<VkDescriptorSetLayoutBinding> bindings{ _driver_allocator };
 
-                VkDescriptorSetLayoutBinding layout_binding = {};
-                layout_binding.binding = 0;
-                layout_binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-                layout_binding.descriptorCount = 1;
-                layout_binding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-                layout_binding.pImmutableSamplers = nullptr;
-                core::pod::array::push_back(bindings, std::move(layout_binding));
+                //VkDescriptorSetLayoutBinding layout_binding = {};
+                //layout_binding.binding = 0;
+                //layout_binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+                //layout_binding.descriptorCount = 1;
+                //layout_binding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+                //layout_binding.pImmutableSamplers = nullptr;
+                //core::pod::array::push_back(bindings, std::move(layout_binding));
 
                 static VkSampler const _vulkan_immutable_samplers[]{
                     _vulkan_samplers[0]->native_handle()
                 };
 
+                VkDescriptorSetLayoutBinding layout_binding = {};
                 layout_binding.binding = 1;
                 layout_binding.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
                 layout_binding.descriptorCount = 1;
@@ -653,6 +669,8 @@ namespace render
                 constexpr auto FENCE_TIMEOUT = 100'000'000; // in ns
                 res = vkWaitForFences(graphics_device_native, 1, &_vulkan_draw_fence, VK_TRUE, FENCE_TIMEOUT);
             } while (res == VK_TIMEOUT);
+
+            vkResetFences(graphics_device_native, 1, &_vulkan_draw_fence);
 
             assert(res == VK_SUCCESS);
             res = vkQueuePresentKHR(queue, &present);

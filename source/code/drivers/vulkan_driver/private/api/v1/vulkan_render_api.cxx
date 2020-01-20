@@ -3,6 +3,7 @@
 #include "../../pipeline/vulkan_descriptor_sets.hxx"
 #include <core/memory.hxx>
 #include <core/allocators/stack_allocator.hxx>
+#include "../../vulkan_device_memory_manager.hxx"
 
 #include <vulkan/vulkan.h>
 
@@ -22,6 +23,48 @@ namespace render::api::v1::vulkan
     void vulkan_api_v1_initialized() noexcept
     {
         fmt::print("Using Vulkan Render API v1.\n");
+    }
+
+    void vulkan_api_v1a_buffer_map(render::api::v1::Buffer buffer, BufferDataView& buffer_data)
+    {
+        reinterpret_cast<render::vulkan::VulkanBuffer*>(buffer)->map_memory(buffer_data);
+    }
+
+    void vulkan_api_v1a_buffer_array_map(render::api::v1::Buffer* buffers, BufferDataView* views, uint32_t size)
+    {
+        auto& mem_manager = reinterpret_cast<render::vulkan::VulkanBuffer*>(buffers[0])->memory_manager();
+
+        core::memory::stack_allocator<sizeof(render::vulkan::VulkanMemoryInfo) * 8> temp_alloc;
+        core::pod::Array<render::vulkan::VulkanMemoryInfo> memory_ranges{ temp_alloc };
+        core::pod::array::reserve(memory_ranges, 8);
+
+        for (uint32_t idx = 0; idx < size; ++idx)
+        {
+            core::pod::array::push_back(memory_ranges, reinterpret_cast<render::vulkan::VulkanBuffer*>(buffers[idx])->memory_info());
+        }
+
+        mem_manager.map_memory(core::pod::array::begin(memory_ranges), views, size);
+    }
+
+    void vulkan_api_v1a_buffer_unmap(render::api::v1::Buffer buffer)
+    {
+        reinterpret_cast<render::vulkan::VulkanBuffer*>(buffer)->unmap_memory();
+    }
+
+    void vulkan_api_v1a_buffer_array_unmap(render::api::v1::Buffer* buffers, uint32_t size)
+    {
+        auto& mem_manager = reinterpret_cast<render::vulkan::VulkanBuffer*>(buffers[0])->memory_manager();
+
+        core::memory::stack_allocator<sizeof(render::vulkan::VulkanMemoryInfo) * 8> temp_alloc;
+        core::pod::Array<render::vulkan::VulkanMemoryInfo> memory_ranges{ temp_alloc };
+        core::pod::array::reserve(memory_ranges, 8);
+
+        for (uint32_t idx = 0; idx < size; ++idx)
+        {
+            core::pod::array::push_back(memory_ranges, reinterpret_cast<render::vulkan::VulkanBuffer*>(buffers[idx])->memory_info());
+        }
+
+        mem_manager.unmap_memory(core::pod::array::begin(memory_ranges), size);
     }
 
     void vulkan_api_v1_buffer_map(render::api::v1::VertexBuffer vertex_buffer, BufferDataView& buffer_data)
@@ -122,7 +165,7 @@ namespace render::api::v1::vulkan
         vkCmdBindVertexBuffers(command_buffer(cb), 0, 1, buffers, offsets);
     }
 
-    void vulkan_api_v1_bind_vertex_buffers_array(render::api::v1::CommandBuffer cb, render::api::v1::VertexBuffer const* handles, uint32_t size) noexcept
+    void vulkan_api_v1_bind_vertex_buffers_array(render::api::v1::CommandBuffer cb, render::api::v1::Buffer const* handles, uint32_t size) noexcept
     {
         core::memory::stack_allocator<(sizeof(VkBuffer) + sizeof(VkDeviceSize)) * 8> stack_alloc;
 
@@ -133,7 +176,7 @@ namespace render::api::v1::vulkan
 
         for (uint32_t idx = 0; idx < size; ++idx)
         {
-            auto const& buffer_ptr = reinterpret_cast<render::vulkan::VulkanBuffer const&>(handles[idx]);
+            auto const& buffer_ptr = *reinterpret_cast<render::vulkan::VulkanBuffer const*>(handles[idx]);
             core::pod::array::push_back(native_handles, buffer_ptr.native_handle());
             core::pod::array::push_back(buffer_offsets, 0llu);
         }
@@ -144,6 +187,11 @@ namespace render::api::v1::vulkan
     void vulkan_api_v1_bind_index_buffers(render::api::v1::CommandBuffer cb, render::api::v1::VertexBuffer indices) noexcept
     {
         vkCmdBindIndexBuffer(command_buffer(cb), reinterpret_cast<render::vulkan::VulkanBuffer*>(indices)->native_handle(), 0, VK_INDEX_TYPE_UINT16);
+    }
+
+    void vulkan_api_v1_bind_index_buffer(render::api::v1::CommandBuffer cb, render::api::v1::Buffer buffer) noexcept
+    {
+        vkCmdBindIndexBuffer(command_buffer(cb), reinterpret_cast<render::vulkan::VulkanBuffer*>(buffer)->native_handle(), 0, VK_INDEX_TYPE_UINT16);
     }
 
     void vulkan_api_v1_set_viewport(render::api::v1::CommandBuffer cb, uint32_t width, uint32_t height) noexcept
@@ -224,6 +272,10 @@ namespace render::api::v1::vulkan
     {
         auto instance = reinterpret_cast<render::api::v1::RenderInterface*>(ptr);
         instance->check_func = vulkan_api_v1_initialized;
+        instance->buffer_map_data = vulkan_api_v1a_buffer_map;
+        instance->buffer_unmap_data = vulkan_api_v1a_buffer_unmap;
+        instance->buffer_array_map_data = vulkan_api_v1a_buffer_array_map;
+        instance->buffer_array_unmap_data = vulkan_api_v1a_buffer_array_unmap;
         instance->vertex_buffer_map_data = vulkan_api_v1_buffer_map;
         instance->vertex_buffer_unmap_data = vulkan_api_v1_buffer_unmap;
         instance->uniform_buffer_map_data = vulkan_api_v1_uniform_buffer_map;
@@ -236,6 +288,7 @@ namespace render::api::v1::vulkan
         instance->cmd_bind_vertex_buffers_func = vulkan_api_v1_bind_vertex_buffers;
         instance->cmd_bind_vertex_buffers_array_func = vulkan_api_v1_bind_vertex_buffers_array;
         instance->cmd_bind_index_buffers_func = vulkan_api_v1_bind_index_buffers;
+        instance->cmd_bind_index_buffer_func = vulkan_api_v1_bind_index_buffer;
         instance->cmd_set_viewport_func = vulkan_api_v1_set_viewport;
         instance->cmd_set_scissor_func = vulkan_api_v1_set_scissor;
         instance->cmd_set_scissor2_func = vulkan_api_v1_set_scissor2;

@@ -1,5 +1,6 @@
 #pragma once
 #include <core/collections.hxx>
+#include <render_system/render_api.hxx>
 #include "device/vulkan_physical_device.hxx"
 
 #define NOMINMAX
@@ -28,6 +29,10 @@ namespace render::vulkan
 
         bool allocate_memory(VkImage image, VkMemoryPropertyFlags flags, VulkanMemoryInfo& memory_info) noexcept;
 
+        void map_memory(VulkanMemoryInfo* ranges, render::api::BufferDataView* views, uint32_t size) noexcept;
+
+        void unmap_memory(VulkanMemoryInfo* ranges, uint32_t size);
+
     protected:
         void allocate_memory(uint32_t memory_type, VkDeviceSize size, VkDeviceSize alignment, VulkanMemoryInfo& memory_info) noexcept;
 
@@ -43,7 +48,8 @@ namespace render::vulkan
         };
 
         core::Vector<DeviceMemoryBlock> _memory_blocks;
-        core::Map<uint32_t, DeviceMemoryBlock*> _current_memory_blocks;
+        core::Map<VkDeviceMemory, uint32_t> _block_info;
+        core::Map<uint32_t, uint32_t> _current_memory_blocks;
     };
 
 } // namespace render::vulkan

@@ -55,7 +55,7 @@ namespace render::vulkan
         cmd_pool_info.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
         cmd_pool_info.pNext = NULL;
         cmd_pool_info.queueFamilyIndex = static_cast<uint32_t>(_queue_family);
-        cmd_pool_info.flags = 0;
+        cmd_pool_info.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
 
         auto api_result = vkCreateCommandPool(_device_handle, &cmd_pool_info, NULL, &_command_pool);
         IS_ASSERT(api_result == VkResult::VK_SUCCESS, "Failed to create command pool for device!");

@@ -1,5 +1,6 @@
 #include "vulkan_device_memory_manager.hxx"
 #include <core/memory.hxx>
+#include <core/allocators/stack_allocator.hxx>
 
 namespace render::vulkan
 {
@@ -39,6 +40,7 @@ namespace render::vulkan
         : _physical_device{ physical_device }
         , _graphics_device{ graphics_device }
         , _memory_blocks{ alloc }
+        , _block_info{ alloc }
         , _current_memory_blocks{ alloc }
     {
     }
@@ -97,6 +99,58 @@ namespace render::vulkan
         return api_result == VkResult::VK_SUCCESS;
     }
 
+    void VulkanDeviceMemoryManager::map_memory(VulkanMemoryInfo* ranges, render::api::BufferDataView* views, uint32_t size) noexcept
+    {
+        core::memory::stack_allocator_512 temp_alloc;
+        core::pod::Hash<void*> mapped_ptrs{ temp_alloc };
+        core::pod::hash::reserve(mapped_ptrs, 16);
+
+        for (uint32_t idx = 0; idx < size; ++idx)
+        {
+            auto const& range = ranges[idx];
+            auto const& block_idx = _block_info[range.memory_handle];
+
+            void* mapped_ptr = core::pod::hash::get<void*>(mapped_ptrs, block_idx, nullptr);
+            if (nullptr == mapped_ptr)
+            {
+                auto const& block = _memory_blocks[block_idx];
+                auto vk_result = vkMapMemory(
+                    _graphics_device,
+                    block.device_memory_handle,
+                    0, /* offset always from the beginning */
+                    block.device_memory_usage,
+                    0, /* empty flags required */
+                    &mapped_ptr
+                );
+                IS_ASSERT(vk_result == VkResult::VK_SUCCESS, "Memory mapping failed!");
+
+                core::pod::hash::set(mapped_ptrs, block_idx, mapped_ptr);
+            }
+
+            views[idx].data_pointer = core::memory::utils::pointer_add(mapped_ptr, range.memory_offset);
+            views[idx].data_size = range.memory_size;
+        }
+    }
+
+    void VulkanDeviceMemoryManager::unmap_memory(VulkanMemoryInfo* ranges, uint32_t size)
+    {
+        core::memory::stack_allocator<256> temp_alloc;
+        core::pod::Hash<bool> unmapped_ptrs{ temp_alloc };
+        core::pod::hash::reserve(unmapped_ptrs, 16);
+
+        for (uint32_t idx = 0; idx < size; ++idx)
+        {
+            auto const& range = ranges[idx];
+            auto const block_hash = reinterpret_cast<uintptr_t>(range.memory_handle);
+
+            if (core::pod::hash::has(unmapped_ptrs, block_hash) == false)
+            {
+                vkUnmapMemory(_graphics_device, range.memory_handle);
+                core::pod::hash::set(unmapped_ptrs, block_hash, true);
+            }
+        }
+    }
+
     void VulkanDeviceMemoryManager::allocate_memory(uint32_t memory_type, VkDeviceSize size, VkDeviceSize alignment, VulkanMemoryInfo& memory_info) noexcept
     {
         static constexpr VkDeviceSize block_size = 1024 * 1024 * 4;
@@ -113,39 +167,48 @@ namespace render::vulkan
             memory_info.memory_offset = 0;
             memory_info.memory_size = static_cast<uint32_t>(size);
 
+            _block_info.emplace(memory_info.memory_handle, static_cast<uint32_t>(_memory_blocks.size()));
             _memory_blocks.emplace_back(std::move(memory_block));
         }
         else
         {
             if (_current_memory_blocks.count(memory_type) == 0)
             {
+                uint32_t block_index = static_cast<uint32_t>(_memory_blocks.size());
+                auto block_handle = detail::allocate_device_memory(_graphics_device, block_size, memory_type);
+
                 _memory_blocks.emplace_back(DeviceMemoryBlock{
-                    .device_memory_handle = detail::allocate_device_memory(_graphics_device, block_size, memory_type),
+                    .device_memory_handle = block_handle,
                     .device_memory_total = block_size,
                     .device_memory_usage = 0,
                 });
 
                 _current_memory_blocks.emplace(
                     memory_type,
-                    &_memory_blocks.back()
+                    block_index
                 );
+                _block_info.emplace(block_handle, block_index);
             }
 
-            DeviceMemoryBlock* memory_block = _current_memory_blocks.at(memory_type);
+            DeviceMemoryBlock* memory_block = &_memory_blocks[_current_memory_blocks.at(memory_type)];
 
             auto memory_block_offset = detail::align_block_offset(memory_block->device_memory_usage, static_cast<uint32_t>(alignment));
             if (memory_block_offset + size >= memory_block->device_memory_total)
             {
+                uint32_t block_index = static_cast<uint32_t>(_memory_blocks.size());
+                auto block_handle = detail::allocate_device_memory(_graphics_device, block_size, memory_type);
+
                 _memory_blocks.emplace_back(DeviceMemoryBlock{
                     .device_memory_handle = detail::allocate_device_memory(_graphics_device, block_size, memory_type),
                     .device_memory_total = block_size,
                     .device_memory_usage = 0,
                 });
 
-                _current_memory_blocks[memory_type] = &_memory_blocks.back();
+                _current_memory_blocks[memory_type] = block_index;
+                _block_info.emplace(block_handle, block_index);
             }
 
-            memory_block = _current_memory_blocks.at(memory_type);
+            memory_block = &_memory_blocks[_current_memory_blocks.at(memory_type)];
             memory_block_offset = detail::align_block_offset(memory_block->device_memory_usage, static_cast<uint32_t>(alignment));
             IS_ASSERT(memory_block_offset + size <= memory_block->device_memory_total, "Memory block for type {} is insufficient!", memory_type);
 

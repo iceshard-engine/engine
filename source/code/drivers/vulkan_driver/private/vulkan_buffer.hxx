@@ -17,12 +17,14 @@ namespace render::vulkan
     class VulkanBuffer final
     {
     public:
-        VulkanBuffer(VkBuffer buffer_handle, VulkanDeviceMemoryManager& memory_manager, VulkanMemoryInfo memory_info) noexcept;
+        VulkanBuffer(VkBuffer buffer_handle, VulkanDeviceMemoryManager& mem_manager, VulkanMemoryInfo mem_info) noexcept;
         ~VulkanBuffer() noexcept;
 
         auto native_handle() const noexcept -> VkBuffer { return _buffer_handle; }
 
         auto memory_info() const noexcept -> VulkanMemoryInfo const& { return _memory_info; }
+
+        auto memory_manager() const noexcept -> VulkanDeviceMemoryManager& { return *_device_memory; }
 
         void map_memory(render::api::BufferDataView& data_view) noexcept;
 
@@ -38,6 +40,13 @@ namespace render::vulkan
         core::allocator& alloc,
         VulkanDeviceMemoryManager& device_memory
     ) noexcept -> core::memory::unique_pointer<VulkanBuffer>;
+
+    auto create_buffer(
+        core::allocator& alloc,
+        render::api::BufferType type,
+        uint32_t buffer_size,
+        VulkanDeviceMemoryManager& device_memory
+    ) noexcept->core::memory::unique_pointer<VulkanBuffer>;
 
     auto create_uniform_buffer(
         core::allocator& alloc,
