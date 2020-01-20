@@ -1,14 +1,17 @@
-.Name = 'engine'
+.Name = 'debugui_system'
 .Kind = .Kind_StaticLib
 
 .Public =
 [
-    .Modules = {
-        'cppcoro'
-    }
     .Imports = {
         'input_system'
         'render_system'
-        'debugui_system'
+    }
+]
+
+.Private =
+[
+    .Modules = {
+        'imgui'
     }
 ]

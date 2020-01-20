@@ -1,12 +1,13 @@
-.Name = 'iceshard'
+.Name = 'imgui_driver'
 .Kind = .Kind_SharedLib
 
 .Private =
 [
     .Modules = {
         'imgui'
+        'glm'
     }
     .Imports = {
-        'engine'
+        'debugui_system'
     }
 ]

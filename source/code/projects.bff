@@ -20,6 +20,7 @@
         'resource_system'
         'asset_system'
         'render_system'
+        'debugui_system'
     }
 ]
 ^ProjectDirectories + .SystemsDirectory
@@ -33,6 +34,7 @@
     .Projects = {
         'sdl2_driver'
         'vulkan_driver'
+        'imgui_driver'
     }
 ]
 ^ProjectDirectories + .DriversDirectory
@@ -43,6 +45,7 @@
     .Directory = 'drivers'
     .Projects = {
         'sdl2_driver'
+        'imgui_driver'
     }
 ]
 ^ProjectDirectories + .DriversDirectory

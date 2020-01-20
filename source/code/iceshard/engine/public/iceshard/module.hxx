@@ -3,6 +3,7 @@
 #include <core/pointer.hxx>
 #include <core/string_types.hxx>
 #include <resource/resource_system.hxx>
+#include <debugui/debugui_module.hxx>
 
 namespace iceshard
 {
@@ -22,7 +23,10 @@ namespace iceshard
 
         //! \brief Returns the engine object from the loaded module.
         [[nodiscard]]
-        virtual auto engine() const noexcept -> const Engine* = 0;
+        virtual auto engine() const noexcept -> Engine const* = 0;
+
+        //! \brief Returns a DebugUI object if the engine publishes one.
+        virtual auto load_debugui(debugui::DebugUIContext& debugui) noexcept -> debugui::DebugUI* = 0;
     };
 
 
@@ -33,6 +37,5 @@ namespace iceshard
         core::StringView path,
         resource::ResourceSystem& resources
     ) noexcept -> core::memory::unique_pointer<EngineModule>;
-
 
 } // namespace iceshard

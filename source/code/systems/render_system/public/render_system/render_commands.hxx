@@ -1,4 +1,5 @@
 #pragma once
+#include <core/pod/array.hxx>
 #include <render_system/render_api.hxx>
 
 namespace render::cmd
@@ -12,8 +13,10 @@ namespace render::cmd
 
     void bind_render_pipeline(render::api::CommandBuffer command_buffer, render::api::RenderPipeline pipeline) noexcept;
     void bind_descriptor_sets(render::api::CommandBuffer command_buffer, render::api::DescriptorSets descriptor_sets) noexcept;
+    void bind_vertex_buffers(render::api::CommandBuffer command_buffer, core::pod::Array<render::api::Buffer> const& buffer_handles) noexcept;
     void bind_vertex_buffers(render::api::CommandBuffer command_buffer, render::api::VertexBuffer vertice_buffer, render::api::VertexBuffer instance_buffer) noexcept;
     void bind_index_buffers(render::api::CommandBuffer command_buffer, render::api::VertexBuffer index_buffer) noexcept;
+    void bind_index_buffer(render::api::CommandBuffer command_buffer, render::api::Buffer index_buffer) noexcept;
 
     void set_viewport(render::api::CommandBuffer command_buffer, uint32_t width, uint32_t height) noexcept;
     void set_scissor(render::api::CommandBuffer command_buffer, uint32_t width, uint32_t height) noexcept;

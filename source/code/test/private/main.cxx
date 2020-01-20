@@ -44,10 +44,54 @@
 #include <iceshard/entity/entity_command_buffer.hxx>
 #include <iceshard/component/component_system.hxx>
 
+#include <debugui/debugui_module.hxx>
+#include <debugui/debugui.hxx>
+
 #include <glm/glm.hpp>
 #include <glm/gtx/transform.hpp>
 
 #include <imgui/imgui.h>
+
+class MainDebugUI : public debugui::DebugUI
+{
+public:
+    MainDebugUI(debugui::debugui_context_handle context) noexcept
+        : debugui::DebugUI{ context }
+    { }
+
+    bool quit_message() noexcept
+    {
+        return _quit;
+    }
+
+    void end_frame() noexcept override
+    {
+        static bool demo_window_visible = false;
+        if (demo_window_visible)
+        {
+            ImGui::ShowDemoWindow(&demo_window_visible);
+        }
+
+        ImGui::BeginMainMenuBar();
+        if (ImGui::BeginMenu("File"))
+        {
+            if (ImGui::MenuItem("Demo window", nullptr, &demo_window_visible))
+            {
+                demo_window_visible = demo_window_visible ? true : false;
+            }
+            if (ImGui::MenuItem("Close", "Ctrl+W"))
+            {
+                _quit = true;
+            }
+            ImGui::EndMenu();
+        }
+        ImGui::EndMainMenuBar();
+    }
+
+private:
+    bool _quit = false;
+    bool _menu_visible = false;
+};
 
 int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
 {
@@ -87,48 +131,6 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
         auto* render_system = engine_instance->render_system();
         render_system->add_named_vertex_descriptor_set(render::descriptor_set::Color);
         render_system->add_named_vertex_descriptor_set(render::descriptor_set::Model);
-        render_system->add_named_vertex_descriptor_set(render::descriptor_set::ImGui);
-
-        asset::AssetData shader_data;
-        if (asset_system->load(asset::AssetShader{ "shaders/debug/imgui-vert" }, shader_data) == asset::AssetStatus::Loaded)
-        {
-            render_system->load_shader(shader_data);
-        }
-        if (asset_system->load(asset::AssetShader{ "shaders/debug/imgui-frag" }, shader_data) == asset::AssetStatus::Loaded)
-        {
-            render_system->load_shader(shader_data);
-        }
-
-        render::api::VertexBuffer vtx_buffer[2]{};
-        render::api::VertexBuffer idx_buffer{};
-
-        asset::AssetData mesh_data;
-        if (asset_system->load(asset::Asset{ "mesh/test/box", asset::AssetType::Mesh }, mesh_data) == asset::AssetStatus::Loaded)
-        {
-            vtx_buffer[0] = render_system->create_vertex_buffer(1024 * 128 * sizeof(float));
-
-            render::api::BufferDataView buffer_data_view;
-            render::api::render_api_instance->vertex_buffer_map_data(vtx_buffer[0], buffer_data_view);
-            IS_ASSERT(buffer_data_view.data_size >= mesh_data.content._size, "Render buffer not big enoguht! Ugh!");
-
-            std::memcpy(buffer_data_view.data_pointer, mesh_data.content._data, mesh_data.content._size);
-            render::api::render_api_instance->vertex_buffer_unmap_data(vtx_buffer[0]);
-        }
-
-        {
-            static const glm::mat4 instances[] = {
-                glm::mat4{ 1.0f },
-            };
-
-            vtx_buffer[1] = render_system->create_vertex_buffer(sizeof(instances));
-
-            render::api::BufferDataView buffer_data_view;
-            render::api::render_api_instance->vertex_buffer_map_data(vtx_buffer[1], buffer_data_view);
-            IS_ASSERT(buffer_data_view.data_size >= sizeof(instances), "Render buffer not big enoguht! Ugh!");
-
-            std::memcpy(buffer_data_view.data_pointer, &instances, sizeof(instances));
-            render::api::render_api_instance->vertex_buffer_unmap_data(vtx_buffer[1]);
-        }
 
         static auto projection = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 100.0f);
         static auto cam_pos = glm::vec3(-5, 3, -10);
@@ -140,8 +142,8 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
         );
 
         glm::mat4 MVP{ 1 };
+        render_system->create_uniform_buffer(sizeof(MVP));
         auto uniform_buffer = render_system->create_uniform_buffer(sizeof(MVP));
-        idx_buffer = render_system->create_vertex_buffer(1024 * 128 * sizeof(uint16_t));
 
 
         {
@@ -168,54 +170,18 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
             render::api::render_api_instance->uniform_buffer_unmap_data(uniform_buffer);
         }
 
-        ImGui::CreateContext();
-        ImGuiIO& io = ImGui::GetIO();
-        io.DisplaySize.x = 1280;
-        io.DisplaySize.y = 720;
+        // Debug UI module
+        core::memory::unique_pointer<debugui::DebugUIModule> debugui_module{ nullptr, { alloc } };
 
-        io.KeyMap[ImGuiKey_Tab] = (uint32_t)input::KeyboardKey::Tab;
-        io.KeyMap[ImGuiKey_LeftArrow] = (uint32_t)input::KeyboardKey::Left;
-        io.KeyMap[ImGuiKey_RightArrow] = (uint32_t)input::KeyboardKey::Right;
-        io.KeyMap[ImGuiKey_UpArrow] = (uint32_t)input::KeyboardKey::Up;
-        io.KeyMap[ImGuiKey_DownArrow] = (uint32_t)input::KeyboardKey::Down;
-        io.KeyMap[ImGuiKey_PageUp] = (uint32_t)input::KeyboardKey::PageUp;
-        io.KeyMap[ImGuiKey_PageDown] = (uint32_t)input::KeyboardKey::PageDown;
-        io.KeyMap[ImGuiKey_Home] = (uint32_t)input::KeyboardKey::Home;
-        io.KeyMap[ImGuiKey_End] = (uint32_t)input::KeyboardKey::End;
-        io.KeyMap[ImGuiKey_Insert] = (uint32_t)input::KeyboardKey::Insert;
-        io.KeyMap[ImGuiKey_Delete] = (uint32_t)input::KeyboardKey::Delete;
-        io.KeyMap[ImGuiKey_Backspace] = (uint32_t)input::KeyboardKey::Backspace;
-        io.KeyMap[ImGuiKey_Space] = (uint32_t)input::KeyboardKey::Space;
-        io.KeyMap[ImGuiKey_Enter] = (uint32_t)input::KeyboardKey::Return;
-        io.KeyMap[ImGuiKey_Escape] = (uint32_t)input::KeyboardKey::Escape;
-        io.KeyMap[ImGuiKey_KeyPadEnter] = 0;
-        io.KeyMap[ImGuiKey_A] = (uint32_t)input::KeyboardKey::KeyA;
-        io.KeyMap[ImGuiKey_C] = (uint32_t)input::KeyboardKey::KeyC;
-        io.KeyMap[ImGuiKey_V] = (uint32_t)input::KeyboardKey::KeyV;
-        io.KeyMap[ImGuiKey_X] = (uint32_t)input::KeyboardKey::KeyX;
-        io.KeyMap[ImGuiKey_Y] = (uint32_t)input::KeyboardKey::KeyY;
-        io.KeyMap[ImGuiKey_Z] = (uint32_t)input::KeyboardKey::KeyZ;
-
-        unsigned char* pixels;
-        int width, height;
-        io.Fonts->GetTexDataAsRGBA32(&pixels, &width, &height);
-
-        [[maybe_unused]]
-        uint32_t upload_size = width * height * 4 * sizeof(char);
-
-        resource::ResourceMeta meta{ alloc };
-        resource::set_meta_int32(meta, "texture.extents.width"_sid, width);
-        resource::set_meta_int32(meta, "texture.extents.height"_sid, height);
-
-        asset::AssetData tex_data;
-        tex_data.metadata = resource::create_meta_view(meta);
-        tex_data.content = { pixels, upload_size };
-        render::api::Texture tex = render_system->load_texture(std::move(tex_data));
-
-        io.Fonts->TexID = reinterpret_cast<ImTextureID>(tex);
-
-        render_system->create_uniform_descriptor_sets(sizeof(MVP));
-        auto render_pipeline = render_system->create_pipeline(render::pipeline::ImGuiPipeline);
+        if constexpr (core::build::is_release == false)
+        {
+            auto* debugui_module_location = resource_system.find(URN{ "imgui_driver.dll" });
+            if (debugui_module_location != nullptr)
+            {
+                debugui_module = debugui::load_module(alloc, debugui_module_location->location().path, *engine_instance->input_system(), *asset_system, *render_system);
+                engine_module->load_debugui(debugui_module->context());
+            }
+        }
 
         fmt::print("IceShard engine revision: {}\n", engine_instance->revision());
 
@@ -230,296 +196,23 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
                     quit = true;
                 });
 
-            static bool debug_menu_visible = false;
-            core::message::for_each(engine_instance->current_frame().messages(), [&](core::Message const& msg) noexcept
-                {
-                    using input::KeyboardMod;
-                    using namespace input::message;
-
-                    if (msg.header.type == KeyboardKeyDown::message_type)
-                    {
-                        auto const& data = *reinterpret_cast<KeyboardKeyDown const*>(msg.data._data);
-                        io.KeysDown[static_cast<uint32_t>(data.key)] = true;
-
-                        debug_menu_visible = debug_menu_visible ^ (data.key == input::KeyboardKey::BackQuote);
-                        quit = io.KeyCtrl && data.key == input::KeyboardKey::KeyW;
-                    }
-                    else if (msg.header.type == KeyboardKeyUp::message_type)
-                    {
-                        auto const& data = *reinterpret_cast<KeyboardKeyUp const*>(msg.data._data);
-                        io.KeysDown[static_cast<uint32_t>(data.key)] = false;
-                    }
-                    else if (msg.header.type == KeyboardModChanged::message_type)
-                    {
-                        auto const& data = *reinterpret_cast<KeyboardModChanged const*>(msg.data._data);
-                        if (has_flag(data.mod, KeyboardMod::ShiftAny))
-                        {
-                            io.KeyShift = data.pressed;
-                        }
-                        if (has_flag(data.mod, KeyboardMod::CtrlAny))
-                        {
-                            io.KeyCtrl = data.pressed;
-                        }
-                        if (has_flag(data.mod, KeyboardMod::AltAny))
-                        {
-                            io.KeyAlt = data.pressed;
-                        }
-                        if (has_flag(data.mod, KeyboardMod::GuiAny))
-                        {
-                            io.KeySuper = data.pressed;
-                        }
-                    }
-                    else if (msg.header.type == KeyboardTextInput::message_type)
-                    {
-                        auto const& data = *reinterpret_cast<KeyboardTextInput const*>(msg.data._data);
-                        io.AddInputCharactersUTF8(data.text);
-                    }
-                });
-
-            core::message::for_each(engine_instance->current_frame().messages(), [&](core::Message const& msg) noexcept
-                {
-                    if (msg.header.type == input::message::MouseMotion::message_type)
-                    {
-                        auto const& data = *reinterpret_cast<input::message::MouseMotion const*>(msg.data._data);
-                        io.MousePos = { (float)data.pos.x, (float)data.pos.y };
-                    }
-                    else if (msg.header.type == input::message::MouseButtonDown::message_type)
-                    {
-                        auto const& data = *reinterpret_cast<input::message::MouseButtonDown const*>(msg.data._data);
-                        io.MousePos = { (float)data.pos.x, (float)data.pos.y };
-
-                        io.MouseDown[0] = data.button == input::MouseButton::Left; // If a mouse press event came, always pass it as "mouse held this frame", so we don't miss click-release events that are shorter than 1 frame.
-                        io.MouseDown[1] = data.button == input::MouseButton::Right;
-                        io.MouseDown[2] = data.button == input::MouseButton::Middle;
-                    }
-                    else if (msg.header.type == input::message::MouseButtonUp::message_type)
-                    {
-                        auto const& data = *reinterpret_cast<input::message::MouseButtonUp const*>(msg.data._data);
-                        io.MousePos = { (float)data.pos.x, (float)data.pos.y };
-
-                        if (io.MouseDown[0])
-                        {
-                            io.MouseDown[0] = data.button != input::MouseButton::Left; // If a mouse press event came, always pass it as "mouse held this frame", so we don't miss click-release events that are shorter than 1 frame.
-                        }
-                        if (io.MouseDown[1])
-                        {
-                            io.MouseDown[1] = data.button != input::MouseButton::Right; // If a mouse press event came, always pass it as "mouse held this frame", so we don't miss click-release events that are shorter than 1 frame.
-                        }
-                        if (io.MouseDown[2])
-                        {
-                            io.MouseDown[2] = data.button != input::MouseButton::Middle; // If a mouse press event came, always pass it as "mouse held this frame", so we don't miss click-release events that are shorter than 1 frame.
-                        }
-                    }
-                    else if (msg.header.type == input::message::MouseWheel::message_type)
-                    {
-                        auto const& data = *reinterpret_cast<input::message::MouseWheel const*>(msg.data._data);
-                        if (data.dy > 0)
-                        {
-                            io.MouseWheel += 1.0f;
-                        }
-                        else if (data.dy < 0)
-                        {
-                            io.MouseWheel -= 1.0f;
-                        }
-                        else if (data.dx > 0)
-                        {
-                            io.MouseWheelH += 1.0f;
-                        }
-                        else if (data.dx < 0)
-                        {
-                            io.MouseWheelH -= 1.0f;
-                        }
-                    }
-                });
-
-            ImGui::NewFrame();
-
-            if (debug_menu_visible)
+            if constexpr (core::build::is_release == false)
             {
-                static bool demo_window_visible = false;
-                if (demo_window_visible)
+                if (debugui_module)
                 {
-                    ImGui::ShowDemoWindow(&demo_window_visible);
+                    auto& debugui_context = debugui_module->context();
+                    debugui_context.update(engine_instance->current_frame().messages());
+                    debugui_context.begin_frame();
+                    debugui_context.end_frame();
                 }
-
-                ImGui::BeginMainMenuBar();
-                if (ImGui::BeginMenu("File"))
-                {
-                    if (ImGui::MenuItem("Demo window", nullptr, &demo_window_visible))
-                    {
-                        demo_window_visible = demo_window_visible ? true : false;
-                    }
-                    if (ImGui::MenuItem("Close", "Ctrl+W"))
-                    {
-                        quit = true;
-                    }
-                    ImGui::EndMenu();
-                }
-                ImGui::EndMainMenuBar();
             }
-
-            engine_instance->add_task([]() noexcept -> cppcoro::task<>
-                {
-                    ImGui::EndFrame();
-                    ImGui::Render();
-                    co_return;
-                }());
-
-            engine_instance->add_task(
-                [](iceshard::Engine& e, render::api::RenderPipeline pipeline, render::api::VertexBuffer idx_buffer, render::api::VertexBuffer vtx_buffer[2]) noexcept -> cppcoro::task<>
-                {
-                    ImGuiIO& io = ImGui::GetIO();
-
-                    sizeof(ImDrawVert);
-
-                    // Avoid rendering when minimized, scale coordinates for retina displays (screen coordinates != framebuffer coordinates)
-                    int fb_width = static_cast<int>(io.DisplaySize.x * io.DisplayFramebufferScale.x);
-                    int fb_height = static_cast<int>(io.DisplaySize.y * io.DisplayFramebufferScale.y);
-                    if (fb_width == 0 || fb_height == 0)
-                    {
-                        return;
-                    }
-
-                    auto command_buffer = e.render_system()->command_buffer();
-                    auto descriptor_sets = e.render_system()->descriptor_sets();
-
-                    render::cmd::begin(command_buffer);
-                    render::cmd::begin_renderpass(command_buffer);
-                    render::cmd::bind_render_pipeline(command_buffer, pipeline);
-                    render::cmd::bind_descriptor_sets(command_buffer, descriptor_sets);
-                    render::cmd::bind_vertex_buffers(command_buffer, vtx_buffer[0], vtx_buffer[1]);
-                    render::cmd::bind_index_buffers(command_buffer, idx_buffer);
-                    render::cmd::set_viewport(command_buffer, 1280, 720);
-                    render::cmd::set_scissor(command_buffer, 1280, 720);
-
-                    constexpr bool test_draw = false;
-
-                    [[maybe_unused]]
-                    auto* draw_data = ImGui::GetDrawData();
-
-                    // Upload vertex/index data into a single contiguous GPU buffer
-                    {
-                        render::api::BufferDataView vtx_buff, idx_buff;
-                        render::api::render_api_instance->vertex_buffer_map_data(vtx_buffer[0], vtx_buff);
-                        render::api::render_api_instance->vertex_buffer_map_data(idx_buffer, idx_buff);
-
-                        if constexpr (test_draw)
-                        {
-                            uint16_t indices[] = {
-                                0, 1, 2,
-                                0, 2, 3,
-                            };
-
-                            ImDrawVert vertexes[] = {
-                                ImDrawVert{ { 0.0f, 0.0f }, { 0.0f, 0.0f }, 0xff0000ff },
-                                ImDrawVert{ { 0.0f, 500.f }, { 0.0f, 0.1f }, 0x00ff00ff },
-                                ImDrawVert{ { 500.f, 500.f }, { 0.1f, 0.1f }, 0x0000ffff },
-                                ImDrawVert{ { 500.f, 0.0f }, { 0.1f, 0.0f }, 0x0f0f0fff },
-                            };
-
-                            memcpy(idx_buff.data_pointer, indices, sizeof(indices));
-                            memcpy(vtx_buff.data_pointer, vertexes, sizeof(vertexes));
-                        }
-                        else
-                        {
-                            for (int n = 0; n < draw_data->CmdListsCount; n++)
-                            {
-                                const ImDrawList* cmd_list = draw_data->CmdLists[n];
-
-                                IS_ASSERT(vtx_buff.data_size > cmd_list->VtxBuffer.Size * sizeof(ImDrawVert), "how?");
-                                IS_ASSERT(idx_buff.data_size > cmd_list->IdxBuffer.Size * sizeof(ImDrawIdx), "how?");
-
-                                memcpy(vtx_buff.data_pointer, cmd_list->VtxBuffer.Data, cmd_list->VtxBuffer.Size * sizeof(ImDrawVert));
-                                memcpy(idx_buff.data_pointer, cmd_list->IdxBuffer.Data, cmd_list->IdxBuffer.Size * sizeof(ImDrawIdx));
-                                vtx_buff.data_pointer = core::memory::utils::pointer_add(vtx_buff.data_pointer, cmd_list->VtxBuffer.Size * sizeof(ImDrawVert));
-                                idx_buff.data_pointer = core::memory::utils::pointer_add(idx_buff.data_pointer, cmd_list->IdxBuffer.Size * sizeof(ImDrawIdx));
-                            }
-                        }
-
-                        render::api::render_api_instance->vertex_buffer_unmap_data(idx_buffer);
-                        render::api::render_api_instance->vertex_buffer_unmap_data(vtx_buffer[0]);
-                    }
-
-                    if constexpr (test_draw)
-                    {
-                        render::cmd::draw_indexed(command_buffer, 6, 1, 0, 0, 0);
-                    }
-                    else
-                    {
-                        ImVec2 clip_off = draw_data->DisplayPos;         // (0,0) unless using multi-viewports
-                        ImVec2 clip_scale = draw_data->FramebufferScale; // (1,1) unless using retina display which are often (2,2)
-
-                        uint32_t vtx_buffer_offset = 0;
-                        uint32_t idx_buffer_offset = 0;
-                        for (int32_t i = 0; i < draw_data->CmdListsCount; i++)
-                        {
-                            ImDrawList const* cmd_list = draw_data->CmdLists[i];
-                            for (int cmd_i = 0; cmd_i < cmd_list->CmdBuffer.Size; cmd_i++)
-                            {
-                                ImDrawCmd const* pcmd = &cmd_list->CmdBuffer[cmd_i];
-                                if (pcmd->UserCallback)
-                                {
-                                    pcmd->UserCallback(cmd_list, pcmd);
-                                }
-                                else
-                                {
-                                    ImVec4 clip_rect;
-                                    clip_rect.x = (pcmd->ClipRect.x - clip_off.x) * clip_scale.x;
-                                    clip_rect.y = (pcmd->ClipRect.y - clip_off.y) * clip_scale.y;
-                                    clip_rect.z = (pcmd->ClipRect.z - clip_off.x) * clip_scale.x;
-                                    clip_rect.w = (pcmd->ClipRect.w - clip_off.y) * clip_scale.y;
-
-
-
-                                    if (clip_rect.x < fb_width && clip_rect.y < fb_height && clip_rect.z >= 0.0f && clip_rect.w >= 0.0f)
-                                    {
-                                        // Negative offsets are illegal for vkCmdSetScissor
-                                        if (clip_rect.x < 0.0f)
-                                            clip_rect.x = 0.0f;
-                                        if (clip_rect.y < 0.0f)
-                                            clip_rect.y = 0.0f;
-
-                                        // Apply scissor/clipping rectangle
-                                        glm::ivec4 scissor;
-                                        scissor.x = (int32_t)(clip_rect.x);
-                                        scissor.y = (int32_t)(clip_rect.y);
-                                        scissor.z = (uint32_t)(clip_rect.z - clip_rect.x);
-                                        scissor.w = (uint32_t)(clip_rect.w - clip_rect.y);
-
-                                        render::cmd::set_scissor(command_buffer,
-                                            scissor.x,
-                                            scissor.y,
-                                            scissor.z,
-                                            scissor.w
-                                        );
-
-                                        // Draw
-                                        render::cmd::draw_indexed(command_buffer, pcmd->ElemCount, 1, pcmd->IdxOffset + idx_buffer_offset, pcmd->VtxOffset + vtx_buffer_offset, 0);
-                                    }
-                                }
-                            }
-
-                            vtx_buffer_offset += cmd_list->VtxBuffer.Size;
-                            idx_buffer_offset += cmd_list->IdxBuffer.Size;
-                        }
-                    }
-
-                    //render::cmd::draw(command_buffer, 12 * 3, 4);
-                    render::cmd::end_renderpass(command_buffer);
-                    render::cmd::end(command_buffer);
-
-                    co_return;
-                }(*engine_instance, render_pipeline, idx_buffer, vtx_buffer));
-
 
             engine_instance->next_frame();
         }
 
-        ImGui::EndFrame();
-
         engine_instance->world_manager()->destroy_world("test-world"_sid);
 
-        ImGui::DestroyContext();
+        debugui_module = nullptr;
     }
 
     return 0;
