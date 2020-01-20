@@ -14,6 +14,10 @@ namespace asset::detail
             {
                 result = AssetType::Shader;
             }
+            else if (core::string::equals(extension, ".spv"))
+            {
+                result = AssetType::Shader;
+            }
             else
             {
                 int32_t shader_type = 0;
