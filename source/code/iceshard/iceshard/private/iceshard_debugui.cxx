@@ -1,4 +1,6 @@
 #include "iceshard_debugui.hxx"
+#include <core/message/operations.hxx>
+#include <input_system/message/keyboard.hxx>
 
 namespace iceshard::debug
 {
@@ -8,10 +10,35 @@ namespace iceshard::debug
     {
     }
 
+    void IceshardDebugUI::update(core::MessageBuffer const& messages) noexcept
+    {
+        using input::KeyboardKey;
+        using input::message::KeyboardKeyDown;
+
+        core::message::filter<KeyboardKeyDown>(messages, [&](KeyboardKeyDown const& msg) noexcept
+            {
+                _visible = _visible ^ (msg.key == KeyboardKey::BackQuote);
+            });
+    }
+
     void IceshardDebugUI::end_frame() noexcept
     {
-        ImGui::BeginMainMenuBar();
-        ImGui::EndMainMenuBar();
+        if (_demo_window)
+        {
+            ImGui::ShowDemoWindow(&_demo_window);
+        }
+
+        if (_visible)
+        {
+            ImGui::BeginMainMenuBar();
+            if (ImGui::BeginMenu("Engine"))
+            {
+                ImGui::Separator();
+                ImGui::MenuItem("Demo window", nullptr, &_demo_window);
+                ImGui::EndMenu();
+            }
+            ImGui::EndMainMenuBar();
+        }
     }
 
 } // namespace iceshard::debug
