@@ -40,8 +40,8 @@ namespace debugui::imgui
     {
         _render_system.initialize_render_interface(&render::api::render_api_instance);
 
-        core::pod::array::push_back(_vertice_buffers, _render_system.create_vertex_buffer(sizeof(ImDrawVert) * 1024));
-        _indice_buffer = _render_system.create_vertex_buffer(sizeof(ImDrawIdx) * 1024 * 256);
+        core::pod::array::push_back(_vertice_buffers, _render_system.create_buffer(render::api::BufferType::VertexBuffer, sizeof(ImDrawVert) * 1024));
+        _indice_buffer = _render_system.create_buffer(render::api::BufferType::IndexBuffer, sizeof(ImDrawIdx) * 1024 * 256);
 
         _render_system.add_named_vertex_descriptor_set(render::descriptor_set::ImGui);
 
@@ -86,7 +86,7 @@ namespace debugui::imgui
         render::cmd::bind_render_pipeline(command_buffer, _pipeline);
         render::cmd::bind_descriptor_sets(command_buffer, descriptor_sets);
         render::cmd::bind_vertex_buffers(command_buffer, _vertice_buffers);
-        render::cmd::bind_index_buffers(command_buffer, _indice_buffer);
+        render::cmd::bind_index_buffer(command_buffer, _indice_buffer);
         render::cmd::set_viewport(command_buffer, 1280, 720);
         render::cmd::set_scissor(command_buffer, 1280, 720);
 
@@ -94,9 +94,10 @@ namespace debugui::imgui
 
         // Upload vertex/index data into a single contiguous GPU buffer
         {
-            render::api::BufferDataView vtx_buff, idx_buff;
-            render::api::render_api_instance->vertex_buffer_map_data(_vertice_buffers[0], vtx_buff);
-            render::api::render_api_instance->vertex_buffer_map_data(_indice_buffer, idx_buff);
+            render::api::Buffer buff[] = { _indice_buffer, _vertice_buffers[0] };
+            render::api::BufferDataView buff_view[2];
+
+            render::api::render_api_instance->buffer_array_map_data(buff, buff_view, 2);
 
             if constexpr (test_draw)
             {
@@ -112,8 +113,8 @@ namespace debugui::imgui
                     ImDrawVert{ { 500.f, 0.0f }, { 0.1f, 0.0f }, 0x0f0f0fff },
                 };
 
-                memcpy(idx_buff.data_pointer, indices, sizeof(indices));
-                memcpy(vtx_buff.data_pointer, vertexes, sizeof(vertexes));
+                memcpy(buff_view[0].data_pointer, indices, sizeof(indices));
+                memcpy(buff_view[1].data_pointer, vertexes, sizeof(vertexes));
             }
             else
             {
@@ -121,18 +122,17 @@ namespace debugui::imgui
                 {
                     const ImDrawList* cmd_list = draw_data->CmdLists[n];
 
-                    IS_ASSERT(vtx_buff.data_size > cmd_list->VtxBuffer.Size * sizeof(ImDrawVert), "how?");
-                    IS_ASSERT(idx_buff.data_size > cmd_list->IdxBuffer.Size * sizeof(ImDrawIdx), "how?");
+                    IS_ASSERT(buff_view[0].data_size > cmd_list->IdxBuffer.Size * sizeof(ImDrawIdx), "how?");
+                    IS_ASSERT(buff_view[1].data_size > cmd_list->VtxBuffer.Size * sizeof(ImDrawVert), "how?");
 
-                    memcpy(vtx_buff.data_pointer, cmd_list->VtxBuffer.Data, cmd_list->VtxBuffer.Size * sizeof(ImDrawVert));
-                    memcpy(idx_buff.data_pointer, cmd_list->IdxBuffer.Data, cmd_list->IdxBuffer.Size * sizeof(ImDrawIdx));
-                    vtx_buff.data_pointer = core::memory::utils::pointer_add(vtx_buff.data_pointer, cmd_list->VtxBuffer.Size * sizeof(ImDrawVert));
-                    idx_buff.data_pointer = core::memory::utils::pointer_add(idx_buff.data_pointer, cmd_list->IdxBuffer.Size * sizeof(ImDrawIdx));
+                    memcpy(buff_view[0].data_pointer, cmd_list->IdxBuffer.Data, cmd_list->IdxBuffer.Size * sizeof(ImDrawIdx));
+                    memcpy(buff_view[1].data_pointer, cmd_list->VtxBuffer.Data, cmd_list->VtxBuffer.Size * sizeof(ImDrawVert));
+                    buff_view[0].data_pointer = core::memory::utils::pointer_add(buff_view[0].data_pointer, cmd_list->IdxBuffer.Size * sizeof(ImDrawIdx));
+                    buff_view[1].data_pointer = core::memory::utils::pointer_add(buff_view[1].data_pointer, cmd_list->VtxBuffer.Size * sizeof(ImDrawVert));
                 }
             }
 
-            render::api::render_api_instance->vertex_buffer_unmap_data(_indice_buffer);
-            render::api::render_api_instance->vertex_buffer_unmap_data(_vertice_buffers[0]);
+            render::api::render_api_instance->buffer_array_unmap_data(buff, 2);
         }
 
         if constexpr (test_draw)

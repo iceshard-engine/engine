@@ -23,8 +23,8 @@ namespace debugui::imgui
         // Render resources used by ImGUI.
         render::api::Texture _font_texture = render::api::Texture::Invalid;
         render::api::RenderPipeline _pipeline = render::api::RenderPipeline::Invalid;
-        render::api::VertexBuffer _indice_buffer = render::api::VertexBuffer::Invalid;
-        core::pod::Array<render::api::VertexBuffer> _vertice_buffers;
+        render::api::Buffer _indice_buffer = render::api::Buffer::Invalid;
+        core::pod::Array<render::api::Buffer> _vertice_buffers;
     };
 
 } // namespace debugui::imgui

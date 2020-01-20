@@ -140,14 +140,6 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
         render_system->add_named_vertex_descriptor_set(render::descriptor_set::Color);
         render_system->add_named_vertex_descriptor_set(render::descriptor_set::Model);
 
-        // Debug UI module
-        core::memory::unique_pointer<debugui::DebugUIModule> debugui_module{ nullptr, { alloc } };
-        auto* debugui_module_location = resource_system.find(URN{ "imgui_driver.dll" });
-        if (debugui_module_location != nullptr)
-        {
-            debugui_module = debugui::load_module(alloc, debugui_module_location->location().path, *engine_instance->input_system(), *asset_system, *render_system);
-        }
-
         static auto projection = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 100.0f);
         static auto cam_pos = glm::vec3(-5, 3, -10);
         static auto clip = glm::mat4(
@@ -158,6 +150,7 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
         );
 
         glm::mat4 MVP{ 1 };
+        render_system->create_uniform_buffer(sizeof(MVP));
         auto uniform_buffer = render_system->create_uniform_buffer(sizeof(MVP));
 
 
@@ -183,6 +176,14 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
 
             memcpy(data_view.data_pointer, &MVP, sizeof(MVP));
             render::api::render_api_instance->uniform_buffer_unmap_data(uniform_buffer);
+        }
+
+        // Debug UI module
+        core::memory::unique_pointer<debugui::DebugUIModule> debugui_module{ nullptr, { alloc } };
+        auto* debugui_module_location = resource_system.find(URN{ "imgui_driver.dll" });
+        if (debugui_module_location != nullptr)
+        {
+            debugui_module = debugui::load_module(alloc, debugui_module_location->location().path, *engine_instance->input_system(), *asset_system, *render_system);
         }
 
         debugui::DebugUIContext& debugui_context = debugui_module->context();
