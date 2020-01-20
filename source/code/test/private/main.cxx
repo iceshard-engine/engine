@@ -23,6 +23,7 @@
 #include <input_system/message/app.hxx>
 #include <input_system/message/mouse.hxx>
 #include <input_system/message/keyboard.hxx>
+#include <input_system/message/window.hxx>
 
 #include <render_system/render_commands.hxx>
 #include <render_system/render_vertex_descriptor.hxx>
@@ -208,6 +209,12 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
             }
 
             engine_instance->next_frame();
+
+            core::message::filter<input::message::WindowSizeChanged>(engine_instance->current_frame().messages(), [&quit](auto const& msg) noexcept
+                {
+                    fmt::print("Window size changed to: {}x{}\n", msg.width, msg.height);
+                    quit = true;
+                });
         }
 
         engine_instance->world_manager()->destroy_world("test-world"_sid);

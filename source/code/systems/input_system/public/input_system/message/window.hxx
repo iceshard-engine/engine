@@ -6,11 +6,12 @@ namespace input::message
 {
 
     //! \brief A message send when the application requested to exit.
-    struct AppExit
+    struct WindowSizeChanged
     {
-        static constexpr auto message_type = "App.Exit"_sid;
+        static constexpr auto message_type = "Window.SizeChanged"_sid;
 
-        int exit_code{ 0 };
+        uint32_t width;
+        uint32_t height;
     };
 
 } // namespace input::message
