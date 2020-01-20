@@ -59,11 +59,6 @@ public:
         : debugui::DebugUI{ context }
     { }
 
-    void toggle_show(bool value) noexcept
-    {
-        _menu_visible = _menu_visible ^ value;
-    }
-
     bool quit_message() noexcept
     {
         return _quit;
@@ -71,29 +66,26 @@ public:
 
     void on_draw() noexcept override
     {
-        if (_menu_visible)
+        static bool demo_window_visible = false;
+        if (demo_window_visible)
         {
-            static bool demo_window_visible = false;
-            if (demo_window_visible)
-            {
-                ImGui::ShowDemoWindow(&demo_window_visible);
-            }
-
-            ImGui::BeginMainMenuBar();
-            if (ImGui::BeginMenu("File"))
-            {
-                if (ImGui::MenuItem("Demo window", nullptr, &demo_window_visible))
-                {
-                    demo_window_visible = demo_window_visible ? true : false;
-                }
-                if (ImGui::MenuItem("Close", "Ctrl+W"))
-                {
-                    _quit = true;
-                }
-                ImGui::EndMenu();
-            }
-            ImGui::EndMainMenuBar();
+            ImGui::ShowDemoWindow(&demo_window_visible);
         }
+
+        ImGui::BeginMainMenuBar();
+        if (ImGui::BeginMenu("File"))
+        {
+            if (ImGui::MenuItem("Demo window", nullptr, &demo_window_visible))
+            {
+                demo_window_visible = demo_window_visible ? true : false;
+            }
+            if (ImGui::MenuItem("Close", "Ctrl+W"))
+            {
+                _quit = true;
+            }
+            ImGui::EndMenu();
+        }
+        ImGui::EndMainMenuBar();
     }
 
 private:
@@ -189,8 +181,6 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
         debugui::DebugUIContext& debugui_context = debugui_module->context();
         MainDebugUI main_debug_menu{ debugui_context.context_handle() };
 
-        auto& io = ImGui::GetIO();
-
         fmt::print("IceShard engine revision: {}\n", engine_instance->revision());
 
         // Create a test world
@@ -204,107 +194,7 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
                     quit = true;
                 });
 
-            core::message::for_each(engine_instance->current_frame().messages(), [&](core::Message const& msg) noexcept
-                {
-                    using input::KeyboardMod;
-                    using namespace input::message;
-
-                    if (msg.header.type == KeyboardKeyDown::message_type)
-                    {
-                        auto const& data = *reinterpret_cast<KeyboardKeyDown const*>(msg.data._data);
-                        io.KeysDown[static_cast<uint32_t>(data.key)] = true;
-
-                        main_debug_menu.toggle_show(data.key == input::KeyboardKey::BackQuote);
-                        quit = io.KeyCtrl && data.key == input::KeyboardKey::KeyW;
-                    }
-                    else if (msg.header.type == KeyboardKeyUp::message_type)
-                    {
-                        auto const& data = *reinterpret_cast<KeyboardKeyUp const*>(msg.data._data);
-                        io.KeysDown[static_cast<uint32_t>(data.key)] = false;
-                    }
-                    else if (msg.header.type == KeyboardModChanged::message_type)
-                    {
-                        auto const& data = *reinterpret_cast<KeyboardModChanged const*>(msg.data._data);
-                        if (has_flag(data.mod, KeyboardMod::ShiftAny))
-                        {
-                            io.KeyShift = data.pressed;
-                        }
-                        if (has_flag(data.mod, KeyboardMod::CtrlAny))
-                        {
-                            io.KeyCtrl = data.pressed;
-                        }
-                        if (has_flag(data.mod, KeyboardMod::AltAny))
-                        {
-                            io.KeyAlt = data.pressed;
-                        }
-                        if (has_flag(data.mod, KeyboardMod::GuiAny))
-                        {
-                            io.KeySuper = data.pressed;
-                        }
-                    }
-                    else if (msg.header.type == KeyboardTextInput::message_type)
-                    {
-                        auto const& data = *reinterpret_cast<KeyboardTextInput const*>(msg.data._data);
-                        io.AddInputCharactersUTF8(data.text);
-                    }
-                });
-
-            core::message::for_each(engine_instance->current_frame().messages(), [&](core::Message const& msg) noexcept
-                {
-                    if (msg.header.type == input::message::MouseMotion::message_type)
-                    {
-                        auto const& data = *reinterpret_cast<input::message::MouseMotion const*>(msg.data._data);
-                        io.MousePos = { (float)data.pos.x, (float)data.pos.y };
-                    }
-                    else if (msg.header.type == input::message::MouseButtonDown::message_type)
-                    {
-                        auto const& data = *reinterpret_cast<input::message::MouseButtonDown const*>(msg.data._data);
-                        io.MousePos = { (float)data.pos.x, (float)data.pos.y };
-
-                        io.MouseDown[0] = data.button == input::MouseButton::Left; // If a mouse press event came, always pass it as "mouse held this frame", so we don't miss click-release events that are shorter than 1 frame.
-                        io.MouseDown[1] = data.button == input::MouseButton::Right;
-                        io.MouseDown[2] = data.button == input::MouseButton::Middle;
-                    }
-                    else if (msg.header.type == input::message::MouseButtonUp::message_type)
-                    {
-                        auto const& data = *reinterpret_cast<input::message::MouseButtonUp const*>(msg.data._data);
-                        io.MousePos = { (float)data.pos.x, (float)data.pos.y };
-
-                        if (io.MouseDown[0])
-                        {
-                            io.MouseDown[0] = data.button != input::MouseButton::Left; // If a mouse press event came, always pass it as "mouse held this frame", so we don't miss click-release events that are shorter than 1 frame.
-                        }
-                        if (io.MouseDown[1])
-                        {
-                            io.MouseDown[1] = data.button != input::MouseButton::Right; // If a mouse press event came, always pass it as "mouse held this frame", so we don't miss click-release events that are shorter than 1 frame.
-                        }
-                        if (io.MouseDown[2])
-                        {
-                            io.MouseDown[2] = data.button != input::MouseButton::Middle; // If a mouse press event came, always pass it as "mouse held this frame", so we don't miss click-release events that are shorter than 1 frame.
-                        }
-                    }
-                    else if (msg.header.type == input::message::MouseWheel::message_type)
-                    {
-                        auto const& data = *reinterpret_cast<input::message::MouseWheel const*>(msg.data._data);
-                        if (data.dy > 0)
-                        {
-                            io.MouseWheel += 1.0f;
-                        }
-                        else if (data.dy < 0)
-                        {
-                            io.MouseWheel -= 1.0f;
-                        }
-                        else if (data.dx > 0)
-                        {
-                            io.MouseWheelH += 1.0f;
-                        }
-                        else if (data.dx < 0)
-                        {
-                            io.MouseWheelH -= 1.0f;
-                        }
-                    }
-                });
-
+            debugui_context.update(engine_instance->current_frame().messages());
             debugui_context.begin_frame();
             main_debug_menu.on_draw();
             quit |= main_debug_menu.quit_message();

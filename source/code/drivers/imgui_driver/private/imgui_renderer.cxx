@@ -40,8 +40,8 @@ namespace debugui::imgui
     {
         _render_system.initialize_render_interface(&render::api::render_api_instance);
 
-        core::pod::array::push_back(_vertice_buffers, _render_system.create_buffer(render::api::BufferType::VertexBuffer, sizeof(ImDrawVert) * 1024));
-        _indice_buffer = _render_system.create_buffer(render::api::BufferType::IndexBuffer, sizeof(ImDrawIdx) * 1024 * 256);
+        core::pod::array::push_back(_vertice_buffers, _render_system.create_buffer(render::api::BufferType::VertexBuffer, sizeof(ImDrawVert) * 1024 * 256));
+        _indice_buffer = _render_system.create_buffer(render::api::BufferType::IndexBuffer, sizeof(ImDrawIdx) * 1024 * 1024);
 
         _render_system.add_named_vertex_descriptor_set(render::descriptor_set::ImGui);
 
@@ -90,8 +90,6 @@ namespace debugui::imgui
         render::cmd::set_viewport(command_buffer, 1280, 720);
         render::cmd::set_scissor(command_buffer, 1280, 720);
 
-        constexpr bool test_draw = false;
-
         // Upload vertex/index data into a single contiguous GPU buffer
         {
             render::api::Buffer buff[] = { _indice_buffer, _vertice_buffers[0] };
@@ -99,104 +97,79 @@ namespace debugui::imgui
 
             render::api::render_api_instance->buffer_array_map_data(buff, buff_view, 2);
 
-            if constexpr (test_draw)
+            for (int n = 0; n < draw_data->CmdListsCount; n++)
             {
-                uint16_t indices[] = {
-                    0, 1, 2,
-                    0, 2, 3,
-                };
+                const ImDrawList* cmd_list = draw_data->CmdLists[n];
 
-                ImDrawVert vertexes[] = {
-                    ImDrawVert{ { 0.0f, 0.0f }, { 0.0f, 0.0f }, 0xff0000ff },
-                    ImDrawVert{ { 0.0f, 500.f }, { 0.0f, 0.1f }, 0x00ff00ff },
-                    ImDrawVert{ { 500.f, 500.f }, { 0.1f, 0.1f }, 0x0000ffff },
-                    ImDrawVert{ { 500.f, 0.0f }, { 0.1f, 0.0f }, 0x0f0f0fff },
-                };
+                IS_ASSERT(buff_view[0].data_size > cmd_list->IdxBuffer.Size * sizeof(ImDrawIdx), "how?");
+                IS_ASSERT(buff_view[1].data_size > cmd_list->VtxBuffer.Size * sizeof(ImDrawVert), "how?");
+                buff_view[0].data_size -= cmd_list->IdxBuffer.Size * sizeof(ImDrawIdx);
+                buff_view[1].data_size -= cmd_list->VtxBuffer.Size * sizeof(ImDrawVert);
 
-                memcpy(buff_view[0].data_pointer, indices, sizeof(indices));
-                memcpy(buff_view[1].data_pointer, vertexes, sizeof(vertexes));
-            }
-            else
-            {
-                for (int n = 0; n < draw_data->CmdListsCount; n++)
-                {
-                    const ImDrawList* cmd_list = draw_data->CmdLists[n];
-
-                    IS_ASSERT(buff_view[0].data_size > cmd_list->IdxBuffer.Size * sizeof(ImDrawIdx), "how?");
-                    IS_ASSERT(buff_view[1].data_size > cmd_list->VtxBuffer.Size * sizeof(ImDrawVert), "how?");
-
-                    memcpy(buff_view[0].data_pointer, cmd_list->IdxBuffer.Data, cmd_list->IdxBuffer.Size * sizeof(ImDrawIdx));
-                    memcpy(buff_view[1].data_pointer, cmd_list->VtxBuffer.Data, cmd_list->VtxBuffer.Size * sizeof(ImDrawVert));
-                    buff_view[0].data_pointer = core::memory::utils::pointer_add(buff_view[0].data_pointer, cmd_list->IdxBuffer.Size * sizeof(ImDrawIdx));
-                    buff_view[1].data_pointer = core::memory::utils::pointer_add(buff_view[1].data_pointer, cmd_list->VtxBuffer.Size * sizeof(ImDrawVert));
-                }
+                memcpy(buff_view[0].data_pointer, cmd_list->IdxBuffer.Data, cmd_list->IdxBuffer.Size * sizeof(ImDrawIdx));
+                memcpy(buff_view[1].data_pointer, cmd_list->VtxBuffer.Data, cmd_list->VtxBuffer.Size * sizeof(ImDrawVert));
+                buff_view[0].data_pointer = core::memory::utils::pointer_add(buff_view[0].data_pointer, cmd_list->IdxBuffer.Size * sizeof(ImDrawIdx));
+                buff_view[1].data_pointer = core::memory::utils::pointer_add(buff_view[1].data_pointer, cmd_list->VtxBuffer.Size * sizeof(ImDrawVert));
             }
 
             render::api::render_api_instance->buffer_array_unmap_data(buff, 2);
         }
 
-        if constexpr (test_draw)
-        {
-            //render::cmd::draw_indexed(command_buffer, 6, 1, 0, 0, 0);
-        }
-        else
-        {
-            ImVec2 clip_off = draw_data->DisplayPos;         // (0,0) unless using multi-viewports
-            ImVec2 clip_scale = draw_data->FramebufferScale; // (1,1) unless using retina display which are often (2,2)
+        ImVec2 clip_off = draw_data->DisplayPos;         // (0,0) unless using multi-viewports
+        ImVec2 clip_scale = draw_data->FramebufferScale; // (1,1) unless using retina display which are often (2,2)
 
-            uint32_t vtx_buffer_offset = 0;
-            uint32_t idx_buffer_offset = 0;
-            for (int32_t i = 0; i < draw_data->CmdListsCount; i++)
+        uint32_t vtx_buffer_offset = 0;
+        uint32_t idx_buffer_offset = 0;
+        for (int32_t i = 0; i < draw_data->CmdListsCount; i++)
+        {
+            ImDrawList const* cmd_list = draw_data->CmdLists[i];
+            for (int cmd_i = 0; cmd_i < cmd_list->CmdBuffer.Size; cmd_i++)
             {
-                ImDrawList const* cmd_list = draw_data->CmdLists[i];
-                for (int cmd_i = 0; cmd_i < cmd_list->CmdBuffer.Size; cmd_i++)
+                ImDrawCmd const* pcmd = &cmd_list->CmdBuffer[cmd_i];
+                if (pcmd->UserCallback)
                 {
-                    ImDrawCmd const* pcmd = &cmd_list->CmdBuffer[cmd_i];
-                    if (pcmd->UserCallback)
+                    pcmd->UserCallback(cmd_list, pcmd);
+                }
+                else
+                {
+                    ImVec4 clip_rect;
+                    clip_rect.x = (pcmd->ClipRect.x - clip_off.x) * clip_scale.x;
+                    clip_rect.y = (pcmd->ClipRect.y - clip_off.y) * clip_scale.y;
+                    clip_rect.z = (pcmd->ClipRect.z - clip_off.x) * clip_scale.x;
+                    clip_rect.w = (pcmd->ClipRect.w - clip_off.y) * clip_scale.y;
+
+
+
+                    if (clip_rect.x < fb_width && clip_rect.y < fb_height && clip_rect.z >= 0.0f && clip_rect.w >= 0.0f)
                     {
-                        pcmd->UserCallback(cmd_list, pcmd);
-                    }
-                    else
-                    {
-                        ImVec4 clip_rect;
-                        clip_rect.x = (pcmd->ClipRect.x - clip_off.x) * clip_scale.x;
-                        clip_rect.y = (pcmd->ClipRect.y - clip_off.y) * clip_scale.y;
-                        clip_rect.z = (pcmd->ClipRect.z - clip_off.x) * clip_scale.x;
-                        clip_rect.w = (pcmd->ClipRect.w - clip_off.y) * clip_scale.y;
+                        // Negative offsets are illegal for vkCmdSetScissor
+                        if (clip_rect.x < 0.0f)
+                            clip_rect.x = 0.0f;
+                        if (clip_rect.y < 0.0f)
+                            clip_rect.y = 0.0f;
 
+                        // Apply scissor/clipping rectangle
+                        glm::ivec4 scissor;
+                        scissor.x = (int32_t)(clip_rect.x);
+                        scissor.y = (int32_t)(clip_rect.y);
+                        scissor.z = (uint32_t)(clip_rect.z - clip_rect.x);
+                        scissor.w = (uint32_t)(clip_rect.w - clip_rect.y);
 
+                        render::cmd::set_scissor(command_buffer,
+                            scissor.x,
+                            scissor.y,
+                            scissor.z,
+                            scissor.w
+                        );
 
-                        if (clip_rect.x < fb_width && clip_rect.y < fb_height && clip_rect.z >= 0.0f && clip_rect.w >= 0.0f)
-                        {
-                            // Negative offsets are illegal for vkCmdSetScissor
-                            if (clip_rect.x < 0.0f)
-                                clip_rect.x = 0.0f;
-                            if (clip_rect.y < 0.0f)
-                                clip_rect.y = 0.0f;
-
-                            // Apply scissor/clipping rectangle
-                            glm::ivec4 scissor;
-                            scissor.x = (int32_t)(clip_rect.x);
-                            scissor.y = (int32_t)(clip_rect.y);
-                            scissor.z = (uint32_t)(clip_rect.z - clip_rect.x);
-                            scissor.w = (uint32_t)(clip_rect.w - clip_rect.y);
-
-                            render::cmd::set_scissor(command_buffer,
-                                scissor.x,
-                                scissor.y,
-                                scissor.z,
-                                scissor.w
-                            );
-
-                            // Draw
-                            render::cmd::draw_indexed(command_buffer, pcmd->ElemCount, 1, pcmd->IdxOffset + idx_buffer_offset, pcmd->VtxOffset + vtx_buffer_offset, 0);
-                        }
+                        // Draw
+                        render::cmd::draw_indexed(command_buffer, pcmd->ElemCount, 1, pcmd->IdxOffset + idx_buffer_offset, pcmd->VtxOffset + vtx_buffer_offset, 0);
                     }
                 }
-
-                vtx_buffer_offset += cmd_list->VtxBuffer.Size;
-                idx_buffer_offset += cmd_list->IdxBuffer.Size;
             }
+
+            vtx_buffer_offset += cmd_list->VtxBuffer.Size;
+            idx_buffer_offset += cmd_list->IdxBuffer.Size;
         }
 
         //render::cmd::draw(command_buffer, 12 * 3, 4);

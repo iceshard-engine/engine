@@ -2,6 +2,7 @@
 #include <core/allocator.hxx>
 #include <core/pointer.hxx>
 #include <core/string_types.hxx>
+#include <core/message/operations.hxx>
 
 namespace input
 {
@@ -27,6 +28,8 @@ namespace debugui
     {
     public:
         virtual ~DebugUIContext() noexcept = default;
+
+        virtual void update(core::MessageBuffer const& messages) noexcept = 0;
 
         virtual void begin_frame() noexcept = 0;
 

@@ -15,6 +15,8 @@ namespace debugui::imgui
         DebugUIContext_ImGui(core::allocator& alloc, input::InputSystem& input_system, asset::AssetSystem& asset_system, render::RenderSystem& render_system) noexcept;
         ~DebugUIContext_ImGui() noexcept;
 
+        void update(core::MessageBuffer const& messages) noexcept override;
+
         void begin_frame() noexcept override;
 
         void end_frame() noexcept override;

@@ -42,6 +42,11 @@ namespace debugui::imgui
         detail::release_debugui_context(_imgui_context);
     }
 
+    void DebugUIContext_ImGui::update(core::MessageBuffer const& messages) noexcept
+    {
+        _imgui_inputs->update(messages);
+    }
+
     void DebugUIContext_ImGui::begin_frame() noexcept
     {
         ImGui::NewFrame();

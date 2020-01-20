@@ -11,6 +11,11 @@ namespace debugui::imgui
         ImGuiInputs(ImGuiIO& io, input::InputSystem& input_system) noexcept;
         ~ImGuiInputs() noexcept;
 
+        void update(core::MessageBuffer const& messages) noexcept;
+
+    protected:
+        void on_message(core::Message const& msg) noexcept;
+
     private:
         ImGuiIO& _io;
         input::InputSystem& _input_system;
