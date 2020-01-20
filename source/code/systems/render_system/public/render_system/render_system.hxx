@@ -24,6 +24,8 @@ namespace render
 
         //virtual auto current_frame_buffer() noexcept -> FrameBufferHandle = 0;
 
+        virtual auto create_buffer(render::api::BufferType type, uint32_t size) noexcept -> render::api::Buffer = 0;
+
         virtual auto create_vertex_buffer(uint32_t size) noexcept -> render::api::VertexBuffer = 0;
 
         virtual auto create_uniform_buffer(uint32_t size) noexcept -> render::api::UniformBuffer = 0;

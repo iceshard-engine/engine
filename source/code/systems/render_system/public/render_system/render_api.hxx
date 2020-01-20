@@ -24,6 +24,15 @@ namespace render::api
 
         enum class UniformBuffer : uintptr_t { Invalid = 0x0 };
 
+        enum class Buffer : uintptr_t { Invalid = 0x0 };
+
+        enum class BufferType : uint32_t
+        {
+            IndexBuffer,
+            VertexBuffer,
+            UniformBuffer,
+        };
+
         enum class CommandBuffer : uintptr_t { Invalid = 0x0 };
 
         enum class Texture : uintptr_t { Invalid = 0x0 };
@@ -36,27 +45,32 @@ namespace render::api
 
         struct RenderInterface
         {
-            void (*check_func)();
-            void (*vertex_buffer_map_data)(VertexBuffer, BufferDataView&);
-            void (*vertex_buffer_unmap_data)(VertexBuffer);
-            void (*uniform_buffer_map_data)(UniformBuffer, BufferDataView&);
-            void (*uniform_buffer_unmap_data)(UniformBuffer);
+            void(*check_func)();
+            void(*buffer_map_data)(Buffer, BufferDataView&);
+            void(*buffer_unmap_data)(Buffer);
+            void(*buffer_array_map_data)(Buffer* buffers, BufferDataView* views, uint32_t);
+            void(*buffer_array_unmap_data)(Buffer* buffers, uint32_t);
+            void(*vertex_buffer_map_data)(VertexBuffer, BufferDataView&);
+            void(*vertex_buffer_unmap_data)(VertexBuffer);
+            void(*uniform_buffer_map_data)(UniformBuffer, BufferDataView&);
+            void(*uniform_buffer_unmap_data)(UniformBuffer);
 
             // Commands
-            void (*cmd_begin_func)(CommandBuffer);
-            void (*cmd_begin_renderpass_func)(CommandBuffer);
-            void (*cmd_bind_render_pipeline_func)(CommandBuffer, RenderPipeline);
-            void (*cmd_bind_descriptor_sets_func)(CommandBuffer, DescriptorSets);
-            void (*cmd_bind_vertex_buffers_func)(CommandBuffer, VertexBuffer, VertexBuffer);
-            void (*cmd_bind_vertex_buffers_array_func)(CommandBuffer, VertexBuffer const*, uint32_t);
-            void (*cmd_bind_index_buffers_func)(CommandBuffer, VertexBuffer);
-            void (*cmd_set_viewport_func)(CommandBuffer, uint32_t, uint32_t);
-            void (*cmd_set_scissor_func)(CommandBuffer, uint32_t, uint32_t);
-            void (*cmd_set_scissor2_func)(CommandBuffer, uint32_t, uint32_t, uint32_t, uint32_t);
-            void (*cmd_draw_func)(CommandBuffer, uint32_t, uint32_t);
-            void (*cmd_draw_indexed_func)(CommandBuffer, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t);
-            void (*cmd_end_renderpass_func)(CommandBuffer);
-            void (*cmd_end_func)(CommandBuffer);
+            void(*cmd_begin_func)(CommandBuffer);
+            void(*cmd_begin_renderpass_func)(CommandBuffer);
+            void(*cmd_bind_render_pipeline_func)(CommandBuffer, RenderPipeline);
+            void(*cmd_bind_descriptor_sets_func)(CommandBuffer, DescriptorSets);
+            void(*cmd_bind_vertex_buffers_func)(CommandBuffer, VertexBuffer, VertexBuffer);
+            void(*cmd_bind_vertex_buffers_array_func)(CommandBuffer, Buffer const*, uint32_t);
+            void(*cmd_bind_index_buffers_func)(CommandBuffer, VertexBuffer);
+            void(*cmd_bind_index_buffer_func)(CommandBuffer, Buffer);
+            void(*cmd_set_viewport_func)(CommandBuffer, uint32_t, uint32_t);
+            void(*cmd_set_scissor_func)(CommandBuffer, uint32_t, uint32_t);
+            void(*cmd_set_scissor2_func)(CommandBuffer, uint32_t, uint32_t, uint32_t, uint32_t);
+            void(*cmd_draw_func)(CommandBuffer, uint32_t, uint32_t);
+            void(*cmd_draw_indexed_func)(CommandBuffer, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t);
+            void(*cmd_end_renderpass_func)(CommandBuffer);
+            void(*cmd_end_func)(CommandBuffer);
 
             void* reserved[32];
         };
