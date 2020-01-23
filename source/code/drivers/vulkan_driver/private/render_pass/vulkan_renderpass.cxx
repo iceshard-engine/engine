@@ -1,5 +1,6 @@
 #include "vulkan_renderpass.hxx"
 #include <core/debug/assert.hxx>
+#include "..\v2\renderpass\vulkan_renderpass.hxx"
 
 namespace render::vulkan
 {
@@ -76,3 +77,4 @@ namespace render::vulkan
     }
 
 } // namespace render::vulkan
+

@@ -17,7 +17,7 @@ namespace iceshard::renderer
 
         virtual auto extents() const noexcept -> ViewportExtents = 0;
 
-        virtual bool update_viewport(ViewportExtents extents) const noexcept = 0;
+        virtual bool update_viewport(ViewportExtents) const noexcept = 0;
     };
 
 } // namespace iceshard::renderer

@@ -6,4 +6,6 @@ namespace iceshard::renderer
 
     class RenderViewport;
 
+    enum class RenderPassHandle : uintptr_t;
+
 } // namespace iceshard::renderer

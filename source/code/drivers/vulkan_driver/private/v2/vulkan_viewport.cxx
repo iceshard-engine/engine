@@ -1,17 +1,16 @@
 #include <iceshard/renderer/vulkan/vulkan_viewport.hxx>
-#include "vulkan_surface.hxx"
+#include <iceshard/renderer/vulkan/vulkan_surface.hxx>
 
 namespace iceshard::renderer::vulkan
 {
 
     VulkanViewport::VulkanViewport(ViewportExtents) noexcept
-        : _surface{ create_surface() }
+        : _surface{ VulkanSurface::Invalid }
     {
     }
 
     VulkanViewport::~VulkanViewport() noexcept
     {
-        destroy_surface(_surface);
     }
 
     auto VulkanViewport::extents() const noexcept -> ViewportExtents

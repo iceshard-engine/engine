@@ -6,7 +6,7 @@
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
 #include <SDL_syswm.h>
-#include "v2\vulkan_surface.hxx"
+#include <iceshard\renderer\vulkan\vulkan_surface.hxx>
 
 namespace render::vulkan
 {
