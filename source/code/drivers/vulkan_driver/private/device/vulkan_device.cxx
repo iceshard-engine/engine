@@ -28,6 +28,8 @@ namespace render::vulkan
 
     void VulkanDevice::create_command_buffers(core::pod::Array<VulkanCommandBuffer*>& output_array, uint32_t num) noexcept
     {
+        vkResetCommandPool(_device_handle, _command_pool, VkCommandPoolResetFlagBits::VK_COMMAND_POOL_RESET_RELEASE_RESOURCES_BIT);
+
         VkCommandBufferAllocateInfo cmd = {};
         cmd.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
         cmd.pNext = NULL;

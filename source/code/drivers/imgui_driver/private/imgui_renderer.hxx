@@ -25,6 +25,9 @@ namespace debugui::imgui
         render::api::RenderPipeline _pipeline = render::api::RenderPipeline::Invalid;
         render::api::Buffer _indice_buffer = render::api::Buffer::Invalid;
         core::pod::Array<render::api::Buffer> _vertice_buffers;
+
+        // RenderApi v2
+        iceshard::renderer::RenderPass _render_pass;
     };
 
 } // namespace debugui::imgui

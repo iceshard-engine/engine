@@ -28,6 +28,8 @@
 #include "vulkan_framebuffer.hxx"
 #include "vulkan_pipeline.hxx"
 
+#include <iceshard/renderer/vulkan/vulkan_renderpass.hxx>
+
 #include <vulkan/vulkan.h>
 
 #define GLM_FORCE_RADIANS
@@ -84,6 +86,7 @@ namespace render
             , _vulkan_images{ _driver_allocator }
             , _vulkan_samplers{ _driver_allocator }
             , _vulkan_shaders{ _driver_allocator }
+            , _render_passes{ _driver_allocator }
         {
             initialize();
         }
@@ -130,15 +133,14 @@ namespace render
 
             enumerate_devices();
 
-            auto surface_extent = _vulkan_physical_device->surface_capabilities().maxImageExtent;
-
             _vulkan_staging_buffer = render::vulkan::create_staging_buffer(_driver_allocator, *_vulkan_device_memory);
 
             // Create swap chain
             _vulkan_swapchain = render::vulkan::create_swapchain(_driver_allocator, _vulkan_physical_device.get());
 
             // Create depth buffer
-            _vulkan_depth_image = render::vulkan::create_depth_buffer_image(_driver_allocator, *_vulkan_device_memory, surface_extent);
+            _vulkan_depth_image = render::vulkan::create_depth_buffer_image(_driver_allocator, *_vulkan_device_memory, _surface_extents);
+            _vulkan_pp_image = nullptr; // render::vulkan::create_attachment_texture(_driver_allocator, *_vulkan_device_memory, surface_extent);
 
             auto* physical_device = _vulkan_physical_device.get();
             auto graphics_device = physical_device->graphics_device()->native_handle();
@@ -150,18 +152,28 @@ namespace render
             _command_buffer_context.render_pass_context = &_render_pass_context;
 
             {
+                using iceshard::renderer::RenderPassType;
+                using iceshard::renderer::vulkan::create_renderpass;
+
                 auto const& formats = _vulkan_physical_device->surface_formats();
 
-                _vulkan_render_pass = vulkan::create_render_pass(_driver_allocator, graphics_device, core::pod::array::front(formats).format, VK_FORMAT_D16_UNORM);
+
+                auto format = core::pod::array::front(formats).format;
+                auto fwd_rpass = create_renderpass<RenderPassType::Forward>(graphics_device, format);
+                auto fwd_pp_rpass = create_renderpass<RenderPassType::ForwardPostProcess>(graphics_device, format);
+
+                core::pod::hash::set(_render_passes, (uint64_t)RenderPassType::Forward, fwd_rpass);
+                core::pod::hash::set(_render_passes, (uint64_t)RenderPassType::ForwardPostProcess, fwd_pp_rpass);
             }
 
             vulkan::create_framebuffers(
                 _driver_allocator,
                 _vulkan_framebuffers,
                 graphics_device,
-                _vulkan_render_pass->native_handle(),
+                core::pod::hash::get(_render_passes, 0llu, {}),
                 *_vulkan_depth_image.get(),
                 *_vulkan_swapchain.get(),
+                nullptr,
                 _vulkan_physical_device.get()
             );
 
@@ -173,8 +185,8 @@ namespace render
             auto res = vkCreateSemaphore(graphics_device, &imageAcquiredSemaphoreCreateInfo, NULL, &_quick_semaphore);
             assert(res == VK_SUCCESS);
 
-            _render_pass_context.extent = physical_device->surface_capabilities().maxImageExtent;
-            _render_pass_context.renderpass = _vulkan_render_pass->native_handle();
+            _render_pass_context.extent = _surface_extents;
+            _render_pass_context.renderpass = core::pod::hash::get(_render_passes, 0llu, {});
             _render_pass_context.framebuffer = _vulkan_framebuffers[_vulkan_current_framebuffer]->native_handle();
 
             VkFenceCreateInfo fenceInfo;
@@ -184,6 +196,79 @@ namespace render
 
             res = vkCreateFence(graphics_device, &fenceInfo, NULL, &_vulkan_draw_fence);
             assert(res == VK_SUCCESS);
+        }
+
+        void prepare() noexcept override
+        {
+            vkDeviceWaitIdle(_vulkan_physical_device->graphics_device()->native_handle());
+
+            auto new_extents = _vulkan_physical_device->update_surface_capabilities().currentExtent;
+            if (_surface_extents.width != new_extents.width || _surface_extents.height != new_extents.height)
+            {
+                [[maybe_unused]]
+                auto graphics_device = _vulkan_physical_device->graphics_device()->native_handle();
+
+                fmt::print("ReConstructing graphics pipelines!\n");
+                _surface_extents = new_extents;
+                _render_pass_context.extent = _surface_extents;
+
+                _vulkan_pipeline = nullptr;
+                _vulkan_pipeline_layout = nullptr;
+
+                for (auto* vulkan_framebuffer : _vulkan_framebuffers)
+                {
+                    _driver_allocator.destroy(vulkan_framebuffer);
+                }
+                core::pod::array::clear(_vulkan_framebuffers);
+
+                //for (auto& entry : _render_passes)
+                //{
+                //    vkDestroyRenderPass(graphics_device, entry.value, nullptr);
+                //}
+                //core::pod::hash::clear(_render_passes);
+
+
+                _vulkan_depth_image = nullptr;
+                _vulkan_swapchain = nullptr;
+
+                // Create swap chain
+                _vulkan_swapchain = render::vulkan::create_swapchain(_driver_allocator, _vulkan_physical_device.get());
+                _vulkan_depth_image = render::vulkan::create_depth_buffer_image(_driver_allocator, *_vulkan_device_memory, _surface_extents);
+
+                vulkan::create_framebuffers(
+                    _driver_allocator,
+                    _vulkan_framebuffers,
+                    _vulkan_physical_device->graphics_device()->native_handle(),
+                    core::pod::hash::get(_render_passes, 0llu, {}),
+                    *_vulkan_depth_image.get(),
+                    *_vulkan_swapchain.get(),
+                    nullptr,
+                    _vulkan_physical_device.get()
+                );
+
+                _render_pass_context.framebuffer = _vulkan_framebuffers[_vulkan_current_framebuffer]->native_handle();
+
+                //{
+                //    using iceshard::renderer::RenderPassType;
+                //    using iceshard::renderer::vulkan::create_renderpass;
+
+                //    auto const& formats = _vulkan_physical_device->surface_formats();
+
+
+                //    auto format = core::pod::array::front(formats).format;
+                //    auto fwd_rpass = create_renderpass<RenderPassType::Forward>(graphics_device, format);
+                //    auto fwd_pp_rpass = create_renderpass<RenderPassType::ForwardPostProcess>(graphics_device, format);
+
+                //    core::pod::hash::set(_render_passes, (uint64_t)RenderPassType::Forward, fwd_rpass);
+                //    core::pod::hash::set(_render_passes, (uint64_t)RenderPassType::ForwardPostProcess, fwd_pp_rpass);
+                //}
+
+                //_render_pass_context.renderpass = core::pod::hash::get(_render_passes, 0llu, {});
+                _vulkan_physical_device->graphics_device()->create_command_buffers(_vulkan_command_buffers, 2);
+                _command_buffer_context.command_buffer = _vulkan_command_buffers[0]->native_handle();
+
+                RenderSystem::create_pipeline(render::pipeline::ImGuiPipeline);
+            }
         }
 
         void enumerate_devices() noexcept
@@ -211,6 +296,8 @@ namespace render
                 _vulkan_surface->native_handle()
                 );
 
+            _surface_extents = _vulkan_physical_device->surface_capabilities().currentExtent;
+
             _vulkan_device_memory = core::memory::make_unique<vulkan::VulkanDeviceMemoryManager>(
                 _driver_allocator,
                 _driver_allocator,
@@ -227,6 +314,7 @@ namespace render
 
         void shutdown() noexcept
         {
+            auto device = _vulkan_physical_device->graphics_device()->native_handle();
 
             for (auto const& entry : _vulkan_vertex_descriptors)
             {
@@ -246,7 +334,11 @@ namespace render
             }
             core::pod::array::clear(_vulkan_framebuffers);
 
-            _vulkan_render_pass = nullptr;
+            for (auto& entry : _render_passes)
+            {
+                vkDestroyRenderPass(device, entry.value, nullptr);
+            }
+            core::pod::hash::clear(_render_passes);
 
             _vulkan_descriptor_sets = nullptr;
             _vulkan_descriptor_set_layouts.clear();
@@ -262,6 +354,7 @@ namespace render
 
             _vulkan_descriptor_pool = nullptr;
 
+            _vulkan_pp_image = nullptr;
             _vulkan_depth_image = nullptr;
 
             _vulkan_swapchain = nullptr;
@@ -577,7 +670,7 @@ namespace render
                     shader_stages,
                     vertex_descriptors,
                     _vulkan_pipeline_layout.get(),
-                    _vulkan_render_pass.get()
+                    core::pod::hash::get(_render_passes, 0llu, {})
                 );
             }
 
@@ -607,8 +700,8 @@ namespace render
                 IS_ASSERT(api_result == VK_SUCCESS, "Couldn't get next framebuffer image!");
             }
 
-            _render_pass_context.extent = physical_device->surface_capabilities().maxImageExtent;
-            _render_pass_context.renderpass = _vulkan_render_pass->native_handle();
+            _render_pass_context.extent = _surface_extents;
+            _render_pass_context.renderpass = core::pod::hash::get(_render_passes, 0llu, {});
             _render_pass_context.pipeline_layout = _vulkan_pipeline_layout->native_handle();
             _render_pass_context.framebuffer = _vulkan_framebuffers[_vulkan_current_framebuffer]->native_handle();
 
@@ -687,6 +780,17 @@ namespace render
             shutdown();
         }
 
+    public: // RenderSystem.v2
+        auto get_pipeline() noexcept -> render::api::RenderPipeline
+        {
+            return api::RenderPipeline{ reinterpret_cast<uintptr_t>(_vulkan_pipeline->native_handle()) };
+        }
+
+        auto renderpass(iceshard::renderer::RenderPassType type) noexcept -> iceshard::renderer::RenderPass
+        {
+            return iceshard::renderer::RenderPass{ (uintptr_t) core::pod::hash::get(_render_passes, (uint64_t)type, {}) };
+        }
+
     private:
         // Allocator for driver allocations.
         core::memory::proxy_allocator _driver_allocator;
@@ -706,9 +810,10 @@ namespace render
         core::memory::unique_pointer<render::vulkan::VulkanSwapchain> _vulkan_swapchain{ nullptr, { core::memory::globals::null_allocator() } };
 
         // The Vulkan depth buffer image.
+        core::memory::unique_pointer<render::vulkan::VulkanImage> _vulkan_pp_image{ nullptr, { core::memory::globals::null_allocator() } };
         core::memory::unique_pointer<render::vulkan::VulkanImage> _vulkan_depth_image{ nullptr, { core::memory::globals::null_allocator() } };
 
-        core::memory::unique_pointer<render::vulkan::VulkanRenderPass> _vulkan_render_pass{ nullptr, { core::memory::globals::null_allocator() } };
+        core::pod::Hash<VkRenderPass> _render_passes;
 
         // The Vulkan descriptor sets
         core::memory::unique_pointer<render::vulkan::VulkanDescriptorPool> _vulkan_descriptor_pool{ nullptr, { core::memory::globals::null_allocator() } };
@@ -743,6 +848,7 @@ namespace render
         core::Vector<core::memory::unique_pointer<vulkan::VulkanSampler>> _vulkan_samplers;
         core::Vector<core::memory::unique_pointer<vulkan::VulkanShader>> _vulkan_shaders;
 
+        VkExtent2D _surface_extents{ };
 
         // Quick job
         VkSemaphore _quick_semaphore;

@@ -99,6 +99,32 @@ namespace render::api::v1::vulkan
         IS_ASSERT(api_result == VkResult::VK_SUCCESS, "Couldn't begin command buffer.");
     }
 
+    void vulkan_api_v1_1_renderpass_begin(CommandBuffer cb, iceshard::renderer::api::RenderPass renderpass) noexcept
+    {
+        auto* command_buffer_context = native(cb);
+
+        VkClearValue clear_values[2];
+        clear_values[0].color.float32[0] = 0.2f;
+        clear_values[0].color.float32[1] = 0.2f;
+        clear_values[0].color.float32[2] = 0.2f;
+        clear_values[0].color.float32[3] = 0.2f;
+        clear_values[1].depthStencil.depth = 1.0f;
+        clear_values[1].depthStencil.stencil = 0;
+
+        VkRenderPassBeginInfo rp_begin;
+        rp_begin.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+        rp_begin.pNext = NULL;
+        rp_begin.renderPass = reinterpret_cast<VkRenderPass>(renderpass);
+        rp_begin.framebuffer = command_buffer_context->render_pass_context->framebuffer;
+        rp_begin.renderArea.offset.x = 0;
+        rp_begin.renderArea.offset.y = 0;
+        rp_begin.renderArea.extent = command_buffer_context->render_pass_context->extent;
+        rp_begin.clearValueCount = 2;
+        rp_begin.pClearValues = clear_values;
+
+        vkCmdBeginRenderPass(command_buffer_context->command_buffer, &rp_begin, VK_SUBPASS_CONTENTS_INLINE);
+    }
+
     void vulkan_api_v1_renderpass_begin(render::api::v1::CommandBuffer cb) noexcept
     {
         auto* command_buffer_context = native(cb);
@@ -258,6 +284,11 @@ namespace render::api::v1::vulkan
         vkCmdDrawIndexed(command_buffer(cb), indices, instances, base_index, base_vertex, base_instance);
     }
 
+    void vulkan_api_v1_renderpass_next(CommandBuffer cb) noexcept
+    {
+        vkCmdNextSubpass(command_buffer(cb), VkSubpassContents::VK_SUBPASS_CONTENTS_INLINE);
+    }
+
     void vulkan_api_v1_renderpass_end(CommandBuffer cb) noexcept
     {
         vkCmdEndRenderPass(command_buffer(cb));
@@ -283,6 +314,7 @@ namespace render::api::v1::vulkan
 
         instance->cmd_begin_func = vulkan_api_v1_command_begin;
         instance->cmd_begin_renderpass_func = vulkan_api_v1_renderpass_begin;
+        instance->cmd_begin_renderpass_func2 = vulkan_api_v1_1_renderpass_begin;
         instance->cmd_bind_render_pipeline_func = vulkan_api_v1_bind_render_pipeline;
         instance->cmd_bind_descriptor_sets_func = vulkan_api_v1_bind_descriptor_sets;
         instance->cmd_bind_vertex_buffers_func = vulkan_api_v1_bind_vertex_buffers;
@@ -294,6 +326,7 @@ namespace render::api::v1::vulkan
         instance->cmd_set_scissor2_func = vulkan_api_v1_set_scissor2;
         instance->cmd_draw_func = vulkan_api_v1_draw;
         instance->cmd_draw_indexed_func = vulkan_api_v1_draw_indexed;
+        instance->cmd_next_subpass_func = vulkan_api_v1_renderpass_next;
         instance->cmd_end_renderpass_func = vulkan_api_v1_renderpass_end;
         instance->cmd_end_func = vulkan_api_v1_command_end;
     }

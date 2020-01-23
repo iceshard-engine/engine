@@ -1,6 +1,7 @@
 #include "imgui_renderer.hxx"
 #include <core/memory.hxx>
 #include <render_system/render_commands.hxx>
+#include <iceshard/renderer/render_pass.hxx>
 
 #include <glm/glm.hpp>
 
@@ -62,6 +63,8 @@ namespace debugui::imgui
 
         _render_system.create_imgui_descriptor_sets();
         _pipeline = _render_system.create_pipeline(render::pipeline::ImGuiPipeline);
+
+        _render_pass = _render_system.renderpass(iceshard::renderer::RenderPassType::Forward);
     }
 
     ImGuiRenderer::~ImGuiRenderer() noexcept
@@ -82,13 +85,13 @@ namespace debugui::imgui
         auto descriptor_sets = _render_system.descriptor_sets();
 
         render::cmd::begin(command_buffer);
-        render::cmd::begin_renderpass(command_buffer);
-        render::cmd::bind_render_pipeline(command_buffer, _pipeline);
+        render::cmd::begin_renderpass(command_buffer, _render_pass);
+        render::cmd::bind_render_pipeline(command_buffer, _render_system.get_pipeline());
         render::cmd::bind_descriptor_sets(command_buffer, descriptor_sets);
         render::cmd::bind_vertex_buffers(command_buffer, _vertice_buffers);
         render::cmd::bind_index_buffer(command_buffer, _indice_buffer);
-        render::cmd::set_viewport(command_buffer, 1280, 720);
-        render::cmd::set_scissor(command_buffer, 1280, 720);
+        render::cmd::set_viewport(command_buffer, (uint32_t)_io.DisplaySize.x, (uint32_t)_io.DisplaySize.y);
+        render::cmd::set_scissor(command_buffer, (uint32_t)_io.DisplaySize.x, (uint32_t)_io.DisplaySize.y);
 
         // Upload vertex/index data into a single contiguous GPU buffer
         {

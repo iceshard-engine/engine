@@ -4,20 +4,10 @@
 namespace iceshard::renderer
 {
 
-    enum class RenderPassType
+    enum class RenderPassType : uint32_t
     {
-        ForwardDebug,
+        Forward,
         ForwardPostProcess,
-    };
-
-    struct RenderPass
-    {
-        RenderPassType type;
-    };
-
-    enum class RenderPassHandle : uintptr_t
-    {
-        Invalid = 0x0
     };
 
 } // namespace iceshard::renderer

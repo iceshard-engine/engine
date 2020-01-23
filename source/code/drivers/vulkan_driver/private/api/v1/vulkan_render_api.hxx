@@ -1,9 +1,6 @@
 #pragma once
 #include <render_system/render_api.hxx>
-
-#define NOMINMAX
-#define WIN32_LEAN_AND_MEAN
-#include <vulkan/vulkan.h>
+#include <iceshard/renderer/vulkan/vulkan_sdk.hxx>
 
 namespace render::api::v1::vulkan
 {
@@ -14,6 +11,7 @@ namespace render::api::v1::vulkan
     {
         VkRenderPass renderpass;
         VkPipelineLayout pipeline_layout;
+        VkPipelineLayout pipeline_layout_pp;
         VkFramebuffer framebuffer;
         VkExtent2D extent;
     };

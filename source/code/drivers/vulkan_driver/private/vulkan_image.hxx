@@ -41,4 +41,10 @@ namespace render::vulkan
         VkExtent2D extent
     ) noexcept -> core::memory::unique_pointer<VulkanImage>;
 
+    auto create_attachment_texture(
+        core::allocator& alloc,
+        VulkanDeviceMemoryManager& device_memory,
+        VkExtent2D extent
+    ) noexcept->core::memory::unique_pointer<VulkanImage>;
+
 } // namespace render::vulkan

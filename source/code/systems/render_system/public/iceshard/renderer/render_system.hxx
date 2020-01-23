@@ -9,9 +9,9 @@ namespace iceshard::renderer
     public:
         virtual ~RenderSystem() noexcept = default;
 
-        virtual auto viewport() noexcept -> RenderViewport& = 0;
+        virtual void prepare() noexcept { }
 
-        virtual auto renderpass() noexcept -> RenderPassHandle = 0;
+        virtual auto renderpass(RenderPassType type) noexcept -> RenderPass = 0;
     };
 
 } // namespace iceshard::renderer

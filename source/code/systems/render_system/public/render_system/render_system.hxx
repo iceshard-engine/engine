@@ -3,6 +3,7 @@
 #include <render_system/render_vertex_descriptor.hxx>
 #include <render_system/render_pipeline.hxx>
 #include <asset_system/assets/asset_shader.hxx>
+#include <iceshard/renderer/render_system.hxx>
 
 namespace render
 {
@@ -11,7 +12,7 @@ namespace render
     class RenderContext;
 
     //! \brief A render system interface.
-    class RenderSystem
+    class RenderSystem : public iceshard::renderer::RenderSystem
     {
     public:
         virtual ~RenderSystem() noexcept = default;
@@ -35,6 +36,8 @@ namespace render
         virtual auto load_texture(asset::AssetData texture_data) noexcept -> render::api::Texture = 0;
 
         virtual void load_shader(asset::AssetData shader_data) noexcept = 0;
+
+        virtual auto get_pipeline() noexcept -> render::api::RenderPipeline { return render::api::RenderPipeline::Invalid; }
 
         template<uint32_t Size>
         void add_named_vertex_descriptor_set(VertexDescriptorSet<Size> const& binding_set) noexcept;

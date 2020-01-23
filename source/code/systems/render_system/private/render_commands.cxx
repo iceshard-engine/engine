@@ -15,6 +15,16 @@ void render::cmd::begin_renderpass(render::api::CommandBuffer command_buffer) no
     render::api::render_api_instance->cmd_begin_renderpass_func(command_buffer);
 }
 
+void render::cmd::begin_renderpass(render::api::CommandBuffer command_buffer, iceshard::renderer::api::RenderPass renderpass) noexcept
+{
+    render::api::render_api_instance->cmd_begin_renderpass_func2(command_buffer, renderpass);
+}
+
+void render::cmd::next_subpass(render::api::CommandBuffer command_buffer) noexcept
+{
+    render::api::render_api_instance->cmd_next_subpass_func(command_buffer);
+}
+
 void render::cmd::end_renderpass(render::api::CommandBuffer command_buffer) noexcept
 {
     render::api::render_api_instance->cmd_end_renderpass_func(command_buffer);

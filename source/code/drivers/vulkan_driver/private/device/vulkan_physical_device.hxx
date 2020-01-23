@@ -30,6 +30,8 @@ namespace render::vulkan
 
         auto surface_capabilities() const noexcept -> VkSurfaceCapabilitiesKHR const& { return _surface_capabilities; }
 
+        auto update_surface_capabilities() noexcept -> VkSurfaceCapabilitiesKHR const&;
+
         auto surface_present_modes() const noexcept -> core::pod::Array<VkPresentModeKHR> const& { return _present_modes; }
 
         auto surface_formats() const noexcept -> core::pod::Array<VkSurfaceFormatKHR> const& { return _surface_formats; }

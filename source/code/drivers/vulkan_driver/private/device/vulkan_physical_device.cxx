@@ -163,6 +163,12 @@ namespace render::vulkan
         return false;
     }
 
+    auto VulkanPhysicalDevice::update_surface_capabilities() noexcept -> VkSurfaceCapabilitiesKHR const&
+    {
+        enumerate_surface_capabilities();
+        return surface_capabilities();
+    }
+
     void VulkanPhysicalDevice::create_device(VulkanDeviceQueueType queue_type) noexcept
     {
         auto queue_typeid = static_cast<uint64_t>(queue_type);

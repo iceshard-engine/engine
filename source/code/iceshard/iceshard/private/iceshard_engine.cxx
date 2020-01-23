@@ -33,9 +33,14 @@ namespace iceshard
             FrameTask* next_task = nullptr;
         };
 
+        using iceshard::renderer::RenderPass;
+        using iceshard::renderer::RenderPassType;
+
         class NoneRenderSystem : public render::RenderSystem
         {
         public:
+            auto renderpass(RenderPassType) noexcept -> RenderPass { return RenderPass{ 0 }; }
+
             auto current_framebuffer() noexcept -> render::api::Framebuffer override { return render::api::Framebuffer{ 0 }; }
             auto descriptor_sets() noexcept -> render::api::v1::DescriptorSets override { return render::api::v1::DescriptorSets{ 0 }; }
             auto command_buffer() noexcept -> render::CommandBuffer override { return render::CommandBuffer{ 0 }; }
@@ -233,6 +238,8 @@ namespace iceshard
         // Now we want to get all messages for the current frame.
         auto* inputs = input_system();
         inputs->query_messages(_current_frame->messages());
+
+        _render_module->render_system()->prepare();
     }
 
     auto IceShardEngine::worker_threads() noexcept -> cppcoro::static_thread_pool&

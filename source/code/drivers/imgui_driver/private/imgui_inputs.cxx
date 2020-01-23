@@ -3,6 +3,7 @@
 #include <input_system/keyboard.hxx>
 #include <input_system/message/keyboard.hxx>
 #include <input_system/message/mouse.hxx>
+#include <input_system/message/window.hxx>
 
 namespace debugui::imgui
 {
@@ -144,6 +145,11 @@ namespace debugui::imgui
         {
             auto const& data = *reinterpret_cast<KeyboardTextInput const*>(msg.data._data);
             _io.AddInputCharactersUTF8(data.text);
+        }
+        else if (msg.header.type == input::message::WindowSizeChanged::message_type)
+        {
+            auto const& data = *reinterpret_cast<input::message::WindowSizeChanged const*>(msg.data._data);
+            _io.DisplaySize = { (float)data.width, (float)data.height };
         }
     }
 

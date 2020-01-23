@@ -33,6 +33,7 @@ namespace render::vulkan
         core::pod::Array<VulkanShader const*> shader_stages,
         core::pod::Array<VulkanVertexDescriptor const*> vertex_descriptors,
         VulkanPipelineLayout const* pipeline_layout,
-        VulkanRenderPass const* render_pass) noexcept -> core::memory::unique_pointer<VulkanPipeline>;
+        VkRenderPass render_pass
+    ) noexcept -> core::memory::unique_pointer<VulkanPipeline>;
 
 } // namespace render::vulkan

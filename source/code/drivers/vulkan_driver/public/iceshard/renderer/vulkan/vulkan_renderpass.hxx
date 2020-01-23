@@ -9,6 +9,6 @@ namespace iceshard::renderer::vulkan
     class VulkanRenderPass;
 
     template<RenderPassType>
-    auto create_renderpass(VkDevice device, VkFormat attachment_format) noexcept -> VkRenderPass = delete;
+    auto create_renderpass(VkDevice device, VkFormat attachment_format) noexcept -> VkRenderPass;
 
 } // namespace iceshard::renderer::vulkan

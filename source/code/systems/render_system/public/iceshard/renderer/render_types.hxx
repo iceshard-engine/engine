@@ -1,11 +1,13 @@
 #pragma once
-#include <core/base.hxx>
+#include <iceshard/renderer/render_api.hxx>
 
 namespace iceshard::renderer
 {
 
-    class RenderViewport;
+    using RenderPass = iceshard::renderer::api::RenderPass;
 
-    enum class RenderPassHandle : uintptr_t;
+    enum class RenderPassType : uint32_t;
+
+    class RenderViewport;
 
 } // namespace iceshard::renderer

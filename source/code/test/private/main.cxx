@@ -213,7 +213,7 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
             core::message::filter<input::message::WindowSizeChanged>(engine_instance->current_frame().messages(), [&quit](auto const& msg) noexcept
                 {
                     fmt::print("Window size changed to: {}x{}\n", msg.width, msg.height);
-                    quit = true;
+                    //quit = true;
                 });
         }
 

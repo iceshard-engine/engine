@@ -1,6 +1,7 @@
 #pragma once
 #include <core/base.hxx>
 #include <core/cexpr/stringid.hxx>
+#include <iceshard/renderer/render_api.hxx>
 
 namespace render::api
 {
@@ -57,7 +58,10 @@ namespace render::api
 
             // Commands
             void(*cmd_begin_func)(CommandBuffer);
+
+            // [[deprecated("This API function is deprecated!")]]
             void(*cmd_begin_renderpass_func)(CommandBuffer);
+            void(*cmd_begin_renderpass_func2)(CommandBuffer, iceshard::renderer::api::RenderPass);
             void(*cmd_bind_render_pipeline_func)(CommandBuffer, RenderPipeline);
             void(*cmd_bind_descriptor_sets_func)(CommandBuffer, DescriptorSets);
             void(*cmd_bind_vertex_buffers_func)(CommandBuffer, VertexBuffer, VertexBuffer);
@@ -69,6 +73,7 @@ namespace render::api
             void(*cmd_set_scissor2_func)(CommandBuffer, uint32_t, uint32_t, uint32_t, uint32_t);
             void(*cmd_draw_func)(CommandBuffer, uint32_t, uint32_t);
             void(*cmd_draw_indexed_func)(CommandBuffer, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t);
+            void(*cmd_next_subpass_func)(CommandBuffer);
             void(*cmd_end_renderpass_func)(CommandBuffer);
             void(*cmd_end_func)(CommandBuffer);
 

@@ -31,6 +31,7 @@ namespace render::vulkan
         VkRenderPass render_pass,
         VulkanImage const& depth_buffer,
         VulkanSwapchain const& swapchain,
+        VulkanImage const* postprocess_image,
         VulkanPhysicalDevice const* vulkan_physical_device) noexcept;
 
 } // namespace render::vulkan

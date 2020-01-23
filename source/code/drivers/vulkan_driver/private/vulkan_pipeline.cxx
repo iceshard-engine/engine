@@ -20,7 +20,7 @@ namespace render::vulkan
         core::pod::Array<VulkanShader const*> shaders,
         core::pod::Array<VulkanVertexDescriptor const*> vertex_descriptors,
         VulkanPipelineLayout const* pipeline_layout,
-        VulkanRenderPass const* render_pass
+        VkRenderPass render_pass
     ) noexcept -> core::memory::unique_pointer<VulkanPipeline>
     {
         core::pod::Array<VkPipelineShaderStageCreateInfo> shader_stages_info{ alloc };
@@ -186,7 +186,7 @@ namespace render::vulkan
         pipeline.pDepthStencilState = &ds;
         pipeline.pStages = &shader_stages_info[0];
         pipeline.stageCount = core::pod::array::size(shader_stages_info);
-        pipeline.renderPass = render_pass->native_handle();
+        pipeline.renderPass = render_pass;
         pipeline.subpass = 0;
 
         VkPipeline pipeline_handle;
