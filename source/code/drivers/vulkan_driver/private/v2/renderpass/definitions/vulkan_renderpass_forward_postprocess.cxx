@@ -77,7 +77,7 @@ namespace iceshard::renderer::vulkan
         dependencies[0].srcStageMask = VkPipelineStageFlagBits::VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
         dependencies[0].dstStageMask = VkPipelineStageFlagBits::VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
         dependencies[0].srcAccessMask = VkAccessFlagBits::VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-        dependencies[0].dstAccessMask = VkAccessFlagBits::VK_ACCESS_COLOR_ATTACHMENT_READ_BIT;
+        dependencies[0].dstAccessMask = VkAccessFlagBits::VK_ACCESS_INPUT_ATTACHMENT_READ_BIT;
         dependencies[0].dependencyFlags = VkDependencyFlagBits::VK_DEPENDENCY_BY_REGION_BIT;
 
         VkRenderPassCreateInfo rp_info = {};
