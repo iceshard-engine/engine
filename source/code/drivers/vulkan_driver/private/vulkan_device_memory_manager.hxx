@@ -2,6 +2,7 @@
 #include <core/collections.hxx>
 #include <render_system/render_api.hxx>
 #include "device/vulkan_physical_device.hxx"
+#include "vulkan_allocator.hxx"
 
 #define NOMINMAX
 #define WIN32_LEAN_AND_MEAN
@@ -26,8 +27,10 @@ namespace render::vulkan
         auto graphics_device() noexcept -> VkDevice { return _graphics_device; }
 
         bool allocate_memory(VkBuffer buffer, VkMemoryPropertyFlags flags, VulkanMemoryInfo& memory_info) noexcept;
-
         bool allocate_memory(VkImage image, VkMemoryPropertyFlags flags, VulkanMemoryInfo& memory_info) noexcept;
+
+        void deallocate_memory(VkBuffer buffer, VulkanMemoryInfo const& memory_info) noexcept;
+        void deallocate_memory(VkImage image, VulkanMemoryInfo const& memory_info) noexcept;
 
         void map_memory(VulkanMemoryInfo* ranges, render::api::BufferDataView* views, uint32_t size) noexcept;
 
@@ -37,6 +40,8 @@ namespace render::vulkan
         void allocate_memory(uint32_t memory_type, VkDeviceSize size, VkDeviceSize alignment, VulkanMemoryInfo& memory_info) noexcept;
 
     private:
+        render::vulkan::VulkanAllocator _vulkan_allocator;
+
         VulkanPhysicalDevice const* _physical_device;
         VkDevice const _graphics_device;
 

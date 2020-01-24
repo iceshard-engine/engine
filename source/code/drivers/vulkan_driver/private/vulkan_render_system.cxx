@@ -38,38 +38,6 @@
 
 namespace render
 {
-    namespace detail
-    {
-
-        auto vk_iceshard_allocate(void* userdata, size_t size, size_t alignment, [[maybe_unused]] VkSystemAllocationScope scope) noexcept -> void*
-        {
-            auto* const allocator = reinterpret_cast<render::vulkan::VulkanAllocator*>(userdata);
-            return allocator->allocate(static_cast<uint32_t>(size), static_cast<uint32_t>(alignment));
-        }
-
-        auto vk_iceshard_reallocate(void* userdata, void* original, size_t size, size_t alignment, [[maybe_unused]] VkSystemAllocationScope scope) noexcept -> void*
-        {
-            auto* const allocator = reinterpret_cast<render::vulkan::VulkanAllocator*>(userdata);
-            return allocator->reallocate(original, static_cast<uint32_t>(size), static_cast<uint32_t>(alignment));
-        }
-
-        void vk_iceshard_free(void* userdata, void* memory) noexcept
-        {
-            auto* const allocator = reinterpret_cast<render::vulkan::VulkanAllocator*>(userdata);
-            allocator->deallocate(memory);
-        }
-
-        //void vk_iceshard_internal_allocate_event(void* userdata, size_t size, VkInternalAllocationType type, VkSystemAllocationScope scope) noexcept
-        //{
-        //    PFN_vkInternalAllocationNotification f;
-        //}
-
-        //void vk_iceshard_internal_free_event(void* userdata, size_t size, VkInternalAllocationType type, VkSystemAllocationScope scope) noexcept
-        //{
-        //    PFN_vkInternalFreeNotification f;
-        //}
-
-    } // namespace detail
 
     class VulkanRenderSystem : public render::RenderSystem
     {
@@ -117,15 +85,7 @@ namespace render
             instance_create_info.enabledExtensionCount = static_cast<uint32_t>(std::size(instanceExtensionNames));
             instance_create_info.ppEnabledExtensionNames = &instanceExtensionNames[0];
 
-            VkAllocationCallbacks alloc_callbacks = {};
-            alloc_callbacks.pUserData = &_vulkan_allocator;
-            alloc_callbacks.pfnAllocation = detail::vk_iceshard_allocate;
-            alloc_callbacks.pfnReallocation = detail::vk_iceshard_reallocate;
-            alloc_callbacks.pfnFree = detail::vk_iceshard_free;
-            alloc_callbacks.pfnInternalAllocation = nullptr;
-            alloc_callbacks.pfnInternalFree = nullptr;
-
-            auto vk_create_result = vkCreateInstance(&instance_create_info, &alloc_callbacks, &_vulkan_instance);
+            auto vk_create_result = vkCreateInstance(&instance_create_info, _vulkan_allocator.vulkan_callbacks(), &_vulkan_instance);
             IS_ASSERT(vk_create_result == VkResult::VK_SUCCESS, "Creation of Vulkan instance failed!");
 
             // Create the surface object
@@ -361,18 +321,10 @@ namespace render
 
             release_devices();
 
-            VkAllocationCallbacks alloc_callbacks = {};
-            alloc_callbacks.pUserData = &_vulkan_allocator;
-            alloc_callbacks.pfnAllocation = detail::vk_iceshard_allocate;
-            alloc_callbacks.pfnReallocation = detail::vk_iceshard_reallocate;
-            alloc_callbacks.pfnFree = detail::vk_iceshard_free;
-            alloc_callbacks.pfnInternalAllocation = nullptr;
-            alloc_callbacks.pfnInternalFree = nullptr;
-
             _vulkan_surface = nullptr;
 
-            // We need to provide the callbacks when destrying the instance.
-            vkDestroyInstance(_vulkan_instance, &alloc_callbacks);
+            // We need to provide the callbacks when destroying the instance.
+            vkDestroyInstance(_vulkan_instance, _vulkan_allocator.vulkan_callbacks());
         }
 
         auto command_buffer() noexcept -> render::api::CommandBuffer override

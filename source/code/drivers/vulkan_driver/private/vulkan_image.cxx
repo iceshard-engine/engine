@@ -7,12 +7,14 @@ namespace render::vulkan
 {
 
     VulkanImage::VulkanImage(
-        VkDevice const device_handle,
+        VulkanDeviceMemoryManager& device_memory,
+        VkDevice const _device,
         VkImage const image,
         VkImageView const image_view,
         VulkanMemoryInfo const memory_info
     ) noexcept
-        : _device_handle{ device_handle }
+        : _device_memory{ device_memory }
+        , _device{ _device }
         , _image{ image }
         , _image_view{ image_view }
         , _image_memory{ std::move(memory_info) }
@@ -21,8 +23,9 @@ namespace render::vulkan
 
     VulkanImage::~VulkanImage() noexcept
     {
-        vkDestroyImageView(_device_handle, _image_view, nullptr);
-        vkDestroyImage(_device_handle, _image, nullptr);
+        _device_memory.deallocate_memory(_image, _image_memory);
+        vkDestroyImageView(_device, _image_view, nullptr);
+        vkDestroyImage(_device, _image, nullptr);
     }
 
     auto create_depth_buffer_image(
@@ -85,7 +88,7 @@ namespace render::vulkan
         api_result = vkCreateImageView(graphics_device, &view_info, nullptr, &image_view);
         IS_ASSERT(api_result == VkResult::VK_SUCCESS, "Coudln't create view for image!");
 
-        return core::memory::make_unique<VulkanImage>(alloc, graphics_device, image, image_view, std::move(memory_info));
+        return core::memory::make_unique<VulkanImage>(alloc, device_memory, graphics_device, image, image_view, std::move(memory_info));
     }
 
     auto create_texture_2d(
@@ -147,7 +150,7 @@ namespace render::vulkan
         api_result = vkCreateImageView(graphics_device, &view_info, nullptr, &image_view);
         IS_ASSERT(api_result == VkResult::VK_SUCCESS, "Coudln't create view for image!");
 
-        return core::memory::make_unique<VulkanImage>(alloc, graphics_device, image, image_view, std::move(memory_info));
+        return core::memory::make_unique<VulkanImage>(alloc, device_memory, graphics_device, image, image_view, std::move(memory_info));
     }
 
     auto create_attachment_texture(
@@ -209,7 +212,7 @@ namespace render::vulkan
         api_result = vkCreateImageView(graphics_device, &view_info, nullptr, &image_view);
         IS_ASSERT(api_result == VkResult::VK_SUCCESS, "Coudln't create view for image!");
 
-        return core::memory::make_unique<VulkanImage>(alloc, graphics_device, image, image_view, std::move(memory_info));
+        return core::memory::make_unique<VulkanImage>(alloc, device_memory, graphics_device, image, image_view, std::move(memory_info));
     }
 
 } // namespace render::vulkan

@@ -57,11 +57,46 @@ namespace render::vulkan
             }
         }
 
+        auto vk_iceshard_allocate(void * userdata, size_t size, size_t alignment, VkSystemAllocationScope /*scope*/) noexcept -> void *
+        {
+            auto* const allocator = reinterpret_cast<render::vulkan::VulkanAllocator*>(userdata);
+            return allocator->allocate(static_cast<uint32_t>(size), static_cast<uint32_t>(alignment));
+        }
+
+        auto vk_iceshard_reallocate(void * userdata, void * original, size_t size, size_t alignment, VkSystemAllocationScope /*scope*/) noexcept -> void *
+        {
+            auto* const allocator = reinterpret_cast<render::vulkan::VulkanAllocator*>(userdata);
+            return allocator->reallocate(original, static_cast<uint32_t>(size), static_cast<uint32_t>(alignment));
+        }
+
+        void vk_iceshard_free(void * userdata, void * memory) noexcept
+        {
+            auto* const allocator = reinterpret_cast<render::vulkan::VulkanAllocator*>(userdata);
+            allocator->deallocate(memory);
+        }
+
+        //void vk_iceshard_internal_allocate_event(void* userdata, size_t size, VkInternalAllocationType type, VkSystemAllocationScope scope) noexcept
+        //{
+        //    PFN_vkInternalAllocationNotification f;
+        //}
+
+        //void vk_iceshard_internal_free_event(void* userdata, size_t size, VkInternalAllocationType type, VkSystemAllocationScope scope) noexcept
+        //{
+        //    PFN_vkInternalFreeNotification f;
+        //}
+
     } // namespace detail
 
     VulkanAllocator::VulkanAllocator(core::allocator& backing_allocator) noexcept
         : _backing_allocator{ backing_allocator }
-    { }
+    {
+        _vulkan_callbacks.pUserData = this;
+        _vulkan_callbacks.pfnAllocation = detail::vk_iceshard_allocate;
+        _vulkan_callbacks.pfnReallocation = detail::vk_iceshard_reallocate;
+        _vulkan_callbacks.pfnFree = detail::vk_iceshard_free;
+        _vulkan_callbacks.pfnInternalAllocation = nullptr;
+        _vulkan_callbacks.pfnInternalFree = nullptr;
+    }
 
     VulkanAllocator::~VulkanAllocator() noexcept
     {
@@ -75,6 +110,8 @@ namespace render::vulkan
 
         // We use the alignment of the allocation_header so we don't waste data on the backing allocator, we already accounted for the alignment.
         void* result = _backing_allocator.allocate(total_size, static_cast<uint32_t>(alignof(detail::allocation_header)));
+
+        _allocation_tracker[result] += 1;
 
         auto* header = reinterpret_cast<detail::allocation_header*>(result);
         auto* data_pointer = detail::data_pointer(header, align);
@@ -134,6 +171,8 @@ namespace render::vulkan
             auto* header = detail::header(ptr);
             _total_allocated -= header->requested_size;
 
+            _allocation_tracker[header] -= 1;
+
             // We need to pass the header pointer because this pointer was returned by the backing allocator.
             _backing_allocator.deallocate(header);
         }
@@ -148,6 +187,11 @@ namespace render::vulkan
             result = detail::header(ptr)->requested_size;
         }
         return result;
+    }
+
+    auto VulkanAllocator::vulkan_callbacks() const noexcept -> VkAllocationCallbacks const*
+    {
+        return &_vulkan_callbacks;
     }
 
     //! \copydoc allocator::total_allocated() noexcept

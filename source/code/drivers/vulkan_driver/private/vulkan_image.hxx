@@ -15,7 +15,7 @@ namespace render::vulkan
     class VulkanImage final
     {
     public:
-        VulkanImage(VkDevice _device_handle, VkImage image, VkImageView image_view, VulkanMemoryInfo memory_info) noexcept;
+        VulkanImage(VulkanDeviceMemoryManager& device_memory, VkDevice _device_handle, VkImage image, VkImageView image_view, VulkanMemoryInfo memory_info) noexcept;
         ~VulkanImage() noexcept;
 
         auto native_handle() const noexcept -> VkImage { return _image; }
@@ -23,7 +23,8 @@ namespace render::vulkan
         auto native_view() const noexcept -> VkImageView { return _image_view; }
 
     private:
-        VkDevice const _device_handle;
+        VulkanDeviceMemoryManager& _device_memory;
+        VkDevice const _device;
         VkImage const _image;
         VkImageView const _image_view;
         VulkanMemoryInfo const _image_memory;

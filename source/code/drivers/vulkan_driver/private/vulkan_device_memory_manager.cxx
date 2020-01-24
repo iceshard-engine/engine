@@ -2,13 +2,17 @@
 #include <core/memory.hxx>
 #include <core/allocators/stack_allocator.hxx>
 
+namespace win32
+{
+}
+
 namespace render::vulkan
 {
 
     namespace detail
     {
 
-        auto allocate_device_memory(VkDevice graphics_device, VkDeviceSize size, uint32_t type_index) noexcept -> VkDeviceMemory
+        auto allocate_device_memory(VkDevice graphics_device, VkDeviceSize size, uint32_t type_index, VkAllocationCallbacks const* callbacks) noexcept -> VkDeviceMemory
         {
             VkMemoryAllocateInfo alloc_info = {};
             alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
@@ -17,7 +21,7 @@ namespace render::vulkan
             alloc_info.memoryTypeIndex = type_index;
 
             VkDeviceMemory buffer_memory_handle;
-            auto api_result = vkAllocateMemory(graphics_device, &alloc_info, nullptr, &buffer_memory_handle);
+            auto api_result = vkAllocateMemory(graphics_device, &alloc_info, callbacks, &buffer_memory_handle);
             IS_ASSERT(api_result == VkResult::VK_SUCCESS, "Couldn't allocate memory for depth image!");
 
             return buffer_memory_handle;
@@ -42,6 +46,7 @@ namespace render::vulkan
         , _memory_blocks{ alloc }
         , _block_info{ alloc }
         , _current_memory_blocks{ alloc }
+        , _vulkan_allocator{ alloc }
     {
     }
 
@@ -49,7 +54,7 @@ namespace render::vulkan
     {
         for (auto const& block : _memory_blocks)
         {
-            vkFreeMemory(_graphics_device, block.device_memory_handle, nullptr);
+            vkFreeMemory(_graphics_device, block.device_memory_handle, _vulkan_allocator.vulkan_callbacks());
         }
     }
 
@@ -90,13 +95,31 @@ namespace render::vulkan
         IS_ASSERT(memory_type_found, "No memory type found for requested buffer!");
 
         VulkanMemoryInfo temp_memory_info;
-        allocate_memory(memory_type_index, memory_requirements.size, memory_requirements.alignment, temp_memory_info);
+        auto block_handle = detail::allocate_device_memory(
+            _graphics_device,
+            memory_requirements.size,
+            memory_type_index,
+            _vulkan_allocator.vulkan_callbacks()
+        );
+        temp_memory_info.memory_handle = block_handle;
+        temp_memory_info.memory_offset = 0;
+        temp_memory_info.memory_size = (uint32_t) memory_requirements.size;
 
         auto api_result = vkBindImageMemory(_graphics_device, image, temp_memory_info.memory_handle, temp_memory_info.memory_offset);
         IS_ASSERT(api_result == VkResult::VK_SUCCESS, "Couldn't bind memory to buffer!");
 
         memory_info = temp_memory_info;
         return api_result == VkResult::VK_SUCCESS;
+    }
+
+    void VulkanDeviceMemoryManager::deallocate_memory(VkBuffer, VulkanMemoryInfo const&) noexcept
+    {
+        // not implemented
+    }
+
+    void VulkanDeviceMemoryManager::deallocate_memory(VkImage, VulkanMemoryInfo const& memory_info) noexcept
+    {
+        vkFreeMemory(_graphics_device, memory_info.memory_handle, _vulkan_allocator.vulkan_callbacks());
     }
 
     void VulkanDeviceMemoryManager::map_memory(VulkanMemoryInfo* ranges, render::api::BufferDataView* views, uint32_t size) noexcept
@@ -158,7 +181,7 @@ namespace render::vulkan
         if (block_size <= size)
         {
             DeviceMemoryBlock memory_block {
-                .device_memory_handle = detail::allocate_device_memory(_graphics_device, size, memory_type),
+                .device_memory_handle = detail::allocate_device_memory(_graphics_device, size, memory_type, _vulkan_allocator.vulkan_callbacks()),
                 .device_memory_total = size,
                 .device_memory_usage = size,
             };
@@ -175,7 +198,7 @@ namespace render::vulkan
             if (_current_memory_blocks.count(memory_type) == 0)
             {
                 uint32_t block_index = static_cast<uint32_t>(_memory_blocks.size());
-                auto block_handle = detail::allocate_device_memory(_graphics_device, block_size, memory_type);
+                auto block_handle = detail::allocate_device_memory(_graphics_device, block_size, memory_type, _vulkan_allocator.vulkan_callbacks());
 
                 _memory_blocks.emplace_back(DeviceMemoryBlock{
                     .device_memory_handle = block_handle,
@@ -196,10 +219,10 @@ namespace render::vulkan
             if (memory_block_offset + size >= memory_block->device_memory_total)
             {
                 uint32_t block_index = static_cast<uint32_t>(_memory_blocks.size());
-                auto block_handle = detail::allocate_device_memory(_graphics_device, block_size, memory_type);
+                auto block_handle = detail::allocate_device_memory(_graphics_device, block_size, memory_type, _vulkan_allocator.vulkan_callbacks());
 
                 _memory_blocks.emplace_back(DeviceMemoryBlock{
-                    .device_memory_handle = detail::allocate_device_memory(_graphics_device, block_size, memory_type),
+                    .device_memory_handle = detail::allocate_device_memory(_graphics_device, block_size, memory_type, _vulkan_allocator.vulkan_callbacks()),
                     .device_memory_total = block_size,
                     .device_memory_usage = 0,
                 });

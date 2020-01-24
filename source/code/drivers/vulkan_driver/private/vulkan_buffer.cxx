@@ -48,6 +48,7 @@ namespace render::vulkan
 
     VulkanBuffer::~VulkanBuffer() noexcept
     {
+        _device_memory->deallocate_memory(_buffer_handle, _memory_info);
         vkDestroyBuffer(_device_memory->graphics_device(), _buffer_handle, nullptr);
     }
 
