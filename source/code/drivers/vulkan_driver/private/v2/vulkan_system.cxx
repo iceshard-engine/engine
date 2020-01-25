@@ -8,12 +8,14 @@ namespace iceshard::renderer::vulkan
         : _allocator{ alloc }
         , _vk_instance{ instance }
     {
+        _surface = create_surface(_allocator, _vk_instance, { 1280, 720 });
         create_devices(_vk_instance, _devices);
     }
 
     VulkanRenderSystem::~VulkanRenderSystem() noexcept
     {
         destroy_devices(_vk_instance, _devices);
+        destroy_surface(_allocator, _surface);
     }
 
     void VulkanRenderSystem::prepare(VkExtent2D, VkFormat renderpass_format, RenderPassFeatures renderpass_features) noexcept
@@ -29,6 +31,11 @@ namespace iceshard::renderer::vulkan
     auto VulkanRenderSystem::renderpass_native([[maybe_unused]] RenderPassStage stage) noexcept -> VkRenderPass
     {
         return _renderpass.renderpass;
+    }
+
+    auto VulkanRenderSystem::v1_surface() noexcept -> VkSurfaceKHR
+    {
+        return native_handle(_surface);
     }
 
     auto VulkanRenderSystem::v1_physical_device() noexcept -> VkPhysicalDevice

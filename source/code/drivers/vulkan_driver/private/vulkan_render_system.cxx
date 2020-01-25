@@ -90,9 +90,6 @@ namespace render
 
             _vk_render_system = iceshard::renderer::vulkan::create_render_system(_driver_allocator, _vulkan_instance);
 
-            // Create the surface object
-            _vulkan_surface = render::vulkan::create_surface(_driver_allocator, _vulkan_instance);
-
             enumerate_devices();
 
             auto* physical_device = _vulkan_physical_device.get();
@@ -105,7 +102,7 @@ namespace render
                 _driver_allocator,
                 _vk_render_system->v1_physical_device(),
                 graphics_device,
-                _vulkan_surface->native_handle()
+                _vk_render_system->v1_surface()
             );
 
 
@@ -199,7 +196,7 @@ namespace render
                     _driver_allocator,
                     _vk_render_system->v1_physical_device(),
                     graphics_device,
-                    _vulkan_surface->native_handle()
+                    _vk_render_system->v1_surface()
                 );
 
                 _vulkan_depth_image = render::vulkan::create_depth_buffer_image(_driver_allocator, *_vulkan_device_memory, _surface_extents);
@@ -246,7 +243,7 @@ namespace render
                 _driver_allocator,
                 _driver_allocator,
                 _vk_render_system->v1_physical_device(),
-                _vulkan_surface->native_handle()
+                _vk_render_system->v1_surface()
                 );
 
             _vk_render_system->v1_set_graphics_device(_vulkan_physical_device->graphics_device()->native_handle());
@@ -309,8 +306,6 @@ namespace render
             _vulkan_swapchain = nullptr;
 
             release_devices();
-
-            _vulkan_surface = nullptr;
 
             iceshard::renderer::vulkan::destroy_render_system(_driver_allocator, _vk_render_system);
 
@@ -745,9 +740,6 @@ namespace render
         VkInstance _vulkan_instance{};
 
         VkFence _vulkan_draw_fence = nullptr;
-
-        // The Vulkan surface instance.
-        core::memory::unique_pointer<render::vulkan::VulkanSurface> _vulkan_surface{ nullptr, { core::memory::globals::null_allocator() } };
 
         // The Vulkan surface instance.
         core::memory::unique_pointer<render::vulkan::VulkanSwapchain> _vulkan_swapchain{ nullptr, { core::memory::globals::null_allocator() } };

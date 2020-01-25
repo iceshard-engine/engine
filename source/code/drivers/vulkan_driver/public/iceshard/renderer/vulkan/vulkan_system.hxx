@@ -3,6 +3,7 @@
 #include <iceshard/renderer/render_system.hxx>
 #include <iceshard/renderer/render_pass.hxx>
 #include <iceshard/renderer/vulkan/vulkan_sdk.hxx>
+#include <iceshard/renderer/vulkan/vulkan_surface.hxx>
 #include <iceshard/renderer/vulkan/vulkan_devices.hxx>
 #include <iceshard/renderer/vulkan/vulkan_renderpass.hxx>
 
@@ -26,6 +27,7 @@ namespace iceshard::renderer::vulkan
         auto renderpass_native(RenderPassStage stage = RenderPassStage::Geometry) noexcept -> VkRenderPass;
 
     public:
+        auto v1_surface() noexcept -> VkSurfaceKHR;
         auto v1_physical_device() noexcept -> VkPhysicalDevice;
 
     public:
@@ -36,6 +38,7 @@ namespace iceshard::renderer::vulkan
         core::allocator& _allocator;
         VkInstance const _vk_instance;
 
+        VulkanSurface _surface;
         VulkanDevices _devices;
         VulkanRenderPass _renderpass;
     };
