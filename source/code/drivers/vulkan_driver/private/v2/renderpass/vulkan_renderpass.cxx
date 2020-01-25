@@ -19,6 +19,7 @@ namespace iceshard::renderer::vulkan
 
         renderpass.device = device;
         renderpass.format = format;
+        renderpass.features = features;
         renderpass.renderpass = renderpass_forward(device, format);
         return true;
     }
