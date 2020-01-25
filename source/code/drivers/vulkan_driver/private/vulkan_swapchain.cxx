@@ -3,9 +3,10 @@
 namespace render::vulkan
 {
 
-    VulkanSwapchain::VulkanSwapchain(core::allocator& alloc, VulkanPhysicalDevice* vulkan_device, VkSwapchainKHR swapchain) noexcept
+    VulkanSwapchain::VulkanSwapchain(core::allocator& alloc, VkDevice device, VkFormat format, VkSwapchainKHR swapchain) noexcept
         : _allocator{ alloc }
-        , _vulkan_physical_device{ vulkan_device }
+        , _graphics_device{ device }
+        , _surface_format{ format }
         , _swapchain_handle{ swapchain }
         , _swapchain_buffers{ _allocator }
     {
@@ -19,16 +20,14 @@ namespace render::vulkan
 
     void VulkanSwapchain::initialize() noexcept
     {
-        auto graphics_device = _vulkan_physical_device->graphics_device()->native_handle();
-
         uint32_t swapchain_image_count;
-        auto api_result = vkGetSwapchainImagesKHR(graphics_device, _swapchain_handle, &swapchain_image_count, NULL);
+        auto api_result = vkGetSwapchainImagesKHR(_graphics_device, _swapchain_handle, &swapchain_image_count, NULL);
         IS_ASSERT(api_result == VkResult::VK_SUCCESS, "Couldn't get number of swapchain images!");
 
         core::pod::Array<VkImage> swapchain_images{ _allocator };
         core::pod::array::resize(swapchain_images, swapchain_image_count);
 
-        api_result = vkGetSwapchainImagesKHR(graphics_device, _swapchain_handle, &swapchain_image_count, &swapchain_images[0]);
+        api_result = vkGetSwapchainImagesKHR(_graphics_device, _swapchain_handle, &swapchain_image_count, &swapchain_images[0]);
         IS_ASSERT(api_result == VkResult::VK_SUCCESS, "Couldn't query swapchain images!");
 
         for (auto image_handle : swapchain_images)
@@ -39,7 +38,7 @@ namespace render::vulkan
             color_image_view.flags = 0;
             color_image_view.image = image_handle;
             color_image_view.viewType = VK_IMAGE_VIEW_TYPE_2D;
-            color_image_view.format = core::pod::array::front(_vulkan_physical_device->surface_formats()).format;
+            color_image_view.format = _surface_format;
             color_image_view.components.r = VK_COMPONENT_SWIZZLE_R;
             color_image_view.components.g = VK_COMPONENT_SWIZZLE_G;
             color_image_view.components.b = VK_COMPONENT_SWIZZLE_B;
@@ -51,7 +50,7 @@ namespace render::vulkan
             color_image_view.subresourceRange.layerCount = 1;
 
             VkImageView image_view_handle;
-            api_result = vkCreateImageView(graphics_device, &color_image_view, NULL, &image_view_handle);
+            api_result = vkCreateImageView(_graphics_device, &color_image_view, NULL, &image_view_handle);
             IS_ASSERT(api_result == VkResult::VK_SUCCESS, "Couldn't create view for swapchain image!");
 
             core::pod::array::push_back(_swapchain_buffers, SwapchainBuffer{ image_handle, image_view_handle });
@@ -60,27 +59,59 @@ namespace render::vulkan
 
     void VulkanSwapchain::shutdown() noexcept
     {
-        auto graphics_device = _vulkan_physical_device->graphics_device()->native_handle();
-
         for (auto swapchain_buffer : _swapchain_buffers)
         {
-            vkDestroyImageView(graphics_device, swapchain_buffer.view, NULL);
+            vkDestroyImageView(_graphics_device, swapchain_buffer.view, NULL);
         }
-        vkDestroySwapchainKHR(graphics_device, _swapchain_handle, nullptr);
+        vkDestroySwapchainKHR(_graphics_device, _swapchain_handle, nullptr);
     }
 
-    auto create_swapchain(core::allocator& alloc, VulkanPhysicalDevice* vulkan_physical_device) noexcept -> core::memory::unique_pointer<VulkanSwapchain>
+    auto create_swapchain(
+        core::allocator& alloc,
+        VkPhysicalDevice physical_device,
+        VkDevice graphics_device,
+        VkSurfaceKHR surface
+    ) noexcept -> core::memory::unique_pointer<VulkanSwapchain>
     {
+        VkSurfaceFormatKHR surface_format;
+        VkSurfaceCapabilitiesKHR surface_capabilities;
+
+        // Swapchain surface image format
+        {
+            uint32_t surface_format_number;
+            VkResult api_result = vkGetPhysicalDeviceSurfaceFormatsKHR(
+                physical_device, surface,
+                &surface_format_number, nullptr
+            );
+            IS_ASSERT(api_result == VkResult::VK_SUCCESS, "Couldn't get number of device surface formats!");
+
+            core::pod::Array<VkSurfaceFormatKHR> surface_formats{ alloc };
+            core::pod::array::resize(surface_formats, surface_format_number);
+
+            api_result = vkGetPhysicalDeviceSurfaceFormatsKHR(
+                physical_device,
+                surface,
+                &surface_format_number, core::pod::array::begin(surface_formats)
+            );
+            IS_ASSERT(api_result == VkResult::VK_SUCCESS, "Couldn't query device surface formats!");
+            surface_format = core::pod::array::front(surface_formats);
+        }
+
+        {
+            auto api_result = vkGetPhysicalDeviceSurfaceCapabilitiesKHR(
+                physical_device,
+                surface,
+                &surface_capabilities
+            );
+            IS_ASSERT(api_result == VkResult::VK_SUCCESS, "Couldn't get device surface capabilities!");
+        }
+
         VkSwapchainCreateInfoKHR swapchain_ci = {};
 
         swapchain_ci.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
         swapchain_ci.pNext = NULL;
-        swapchain_ci.surface = vulkan_physical_device->surface_handle();
-
-        auto const& surface_format = core::pod::array::front(vulkan_physical_device->surface_formats());
+        swapchain_ci.surface = surface;
         swapchain_ci.imageFormat = surface_format.format;
-
-        auto const& surface_capabilities = vulkan_physical_device->surface_capabilities();
 
         uint32_t desiredNumberOfSwapChainImages = surface_capabilities.minImageCount;
 
@@ -138,13 +169,11 @@ namespace render::vulkan
         //    swapchain_ci.pQueueFamilyIndices = queueFamilyIndices;
         //}
 
-        auto* vulkan_device = vulkan_physical_device->graphics_device();
-
         VkSwapchainKHR swapchain_handle;
-        auto api_result = vkCreateSwapchainKHR(vulkan_device->native_handle(), &swapchain_ci, NULL, &swapchain_handle);
+        auto api_result = vkCreateSwapchainKHR(graphics_device, &swapchain_ci, NULL, &swapchain_handle);
         IS_ASSERT(api_result == VkResult::VK_SUCCESS, "Couldn't create swapchain!");
 
-        return core::memory::make_unique<VulkanSwapchain>(alloc, alloc, vulkan_physical_device, swapchain_handle);
+        return core::memory::make_unique<VulkanSwapchain>(alloc, alloc, graphics_device, surface_format.format, swapchain_handle);
     }
 
 } // namespace render::vulkan

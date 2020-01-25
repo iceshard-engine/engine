@@ -1,22 +1,27 @@
 #pragma once
-#include <core/allocator.hxx>
-#include <iceshard/renderer/render_pass.hxx>
+#include <iceshard/renderer/render_types.hxx>
 #include <iceshard/renderer/vulkan/vulkan_sdk.hxx>
 
 namespace iceshard::renderer::vulkan
 {
 
-    auto native_handle(RenderPass renderpass) noexcept -> VkRenderPass;
+    struct VulkanRenderPass
+    {
+        VkDevice device;
+        VkFormat format;
+        RenderPassFeatures features;
+        VkRenderPass renderpass;
+    };
 
-    auto create_renderpass(
+    bool create_renderpass(
         VkDevice device,
         VkFormat attachment_format,
-        RenderPassFeatures features
-    ) noexcept -> RenderPass;
+        RenderPassFeatures features,
+        VulkanRenderPass& renderpass
+    ) noexcept;
 
     void destroy_renderpass(
-        VkDevice device,
-        RenderPass render_pass
+        VulkanRenderPass render_pass
     ) noexcept;
 
 } // namespace iceshard::renderer::vulkan

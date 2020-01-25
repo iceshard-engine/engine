@@ -9,7 +9,7 @@ namespace iceshard::renderer::api
 
         constexpr auto version_name = "v1.1"_sid;
 
-        enum class RenderPass : uintptr_t;
+        enum class RenderPass : uintptr_t { Invalid = 0x0 };
 
     } // namespace v1
 

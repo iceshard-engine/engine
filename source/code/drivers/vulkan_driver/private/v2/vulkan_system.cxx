@@ -4,30 +4,51 @@
 namespace iceshard::renderer::vulkan
 {
 
-    VulkanRenderSystem::VulkanRenderSystem(core::allocator& alloc, VkDevice device) noexcept
+    VulkanRenderSystem::VulkanRenderSystem(core::allocator& alloc, VkInstance instance) noexcept
         : _allocator{ alloc }
-        , _vk_device{ device }
+        , _vk_instance{ instance }
     {
+        create_devices(_vk_instance, _devices);
     }
 
     VulkanRenderSystem::~VulkanRenderSystem() noexcept
     {
-        destroy_renderpass(_vk_device, _render_pass);
+        destroy_devices(_vk_instance, _devices);
     }
 
-    void VulkanRenderSystem::prepare(VkFormat format, RenderPassFeatures renderpass_features) noexcept
+    void VulkanRenderSystem::prepare(VkExtent2D, VkFormat renderpass_format, RenderPassFeatures renderpass_features) noexcept
     {
-        _render_pass = create_renderpass(_vk_device, format, renderpass_features);
+        create_renderpass(_devices.graphics_device, renderpass_format, renderpass_features, _renderpass);
     }
 
     auto VulkanRenderSystem::renderpass([[maybe_unused]] RenderPassStage stage) noexcept -> RenderPass
     {
-        return _render_pass;
+        return RenderPass{ reinterpret_cast<uintptr_t>(_renderpass.renderpass) };
     }
 
-    auto create_render_system(core::allocator& alloc, VkDevice device) noexcept -> VulkanRenderSystem*
+    auto VulkanRenderSystem::renderpass_native([[maybe_unused]] RenderPassStage stage) noexcept -> VkRenderPass
     {
-        return alloc.make<VulkanRenderSystem>(alloc, device);
+        return _renderpass.renderpass;
+    }
+
+    auto VulkanRenderSystem::v1_physical_device() noexcept -> VkPhysicalDevice
+    {
+        return _devices.physical_device;
+    }
+
+    void VulkanRenderSystem::v1_destroy_renderpass() noexcept
+    {
+        destroy_renderpass(_renderpass);
+    }
+
+    void VulkanRenderSystem::v1_set_graphics_device(VkDevice device) noexcept
+    {
+        _devices.graphics_device = device;
+    }
+
+    auto create_render_system(core::allocator& alloc, VkInstance instance) noexcept -> VulkanRenderSystem*
+    {
+        return alloc.make<VulkanRenderSystem>(alloc, instance);
     }
 
     void destroy_render_system(core::allocator& alloc, VulkanRenderSystem* system) noexcept

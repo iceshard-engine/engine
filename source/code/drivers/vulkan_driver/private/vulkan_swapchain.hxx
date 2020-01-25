@@ -14,7 +14,7 @@ namespace render::vulkan
     class VulkanSwapchain
     {
     public:
-        VulkanSwapchain(core::allocator& alloc, VulkanPhysicalDevice* vulkan_device, VkSwapchainKHR swapchain) noexcept;
+        VulkanSwapchain(core::allocator& alloc, VkDevice, VkFormat, VkSwapchainKHR swapchain) noexcept;
         ~VulkanSwapchain() noexcept;
 
         auto native_handle() const noexcept -> VkSwapchainKHR { return _swapchain_handle; }
@@ -34,7 +34,8 @@ namespace render::vulkan
 
     private:
         core::allocator& _allocator;
-        VulkanPhysicalDevice* _vulkan_physical_device;
+        VkDevice _graphics_device;
+        VkFormat _surface_format;
         VkSwapchainKHR _swapchain_handle;
 
         core::pod::Array<SwapchainBuffer> _swapchain_buffers;
@@ -42,6 +43,9 @@ namespace render::vulkan
 
     auto create_swapchain(
         core::allocator& alloc,
-        VulkanPhysicalDevice* vulkan_physical_device) noexcept -> core::memory::unique_pointer<VulkanSwapchain>;
+        VkPhysicalDevice physical_device,
+        VkDevice graphics_device,
+        VkSurfaceKHR surface
+    ) noexcept -> core::memory::unique_pointer<VulkanSwapchain>;
 
 } // namespace render::vulkan

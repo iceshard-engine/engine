@@ -88,22 +88,31 @@ namespace render
             auto vk_create_result = vkCreateInstance(&instance_create_info, _vulkan_allocator.vulkan_callbacks(), &_vulkan_instance);
             IS_ASSERT(vk_create_result == VkResult::VK_SUCCESS, "Creation of Vulkan instance failed!");
 
+            _vk_render_system = iceshard::renderer::vulkan::create_render_system(_driver_allocator, _vulkan_instance);
+
             // Create the surface object
             _vulkan_surface = render::vulkan::create_surface(_driver_allocator, _vulkan_instance);
 
             enumerate_devices();
 
+            auto* physical_device = _vulkan_physical_device.get();
+            auto graphics_device = physical_device->graphics_device()->native_handle();
+
             _vulkan_staging_buffer = render::vulkan::create_staging_buffer(_driver_allocator, *_vulkan_device_memory);
 
             // Create swap chain
-            _vulkan_swapchain = render::vulkan::create_swapchain(_driver_allocator, _vulkan_physical_device.get());
+            _vulkan_swapchain = render::vulkan::create_swapchain(
+                _driver_allocator,
+                _vk_render_system->v1_physical_device(),
+                graphics_device,
+                _vulkan_surface->native_handle()
+            );
+
 
             // Create depth buffer
             _vulkan_depth_image = render::vulkan::create_depth_buffer_image(_driver_allocator, *_vulkan_device_memory, _surface_extents);
             _vulkan_pp_image = render::vulkan::create_attachment_texture(_driver_allocator, *_vulkan_device_memory, _surface_extents);
 
-            auto* physical_device = _vulkan_physical_device.get();
-            auto graphics_device = physical_device->graphics_device()->native_handle();
 
             _vulkan_descriptor_pool = core::memory::make_unique<render::vulkan::VulkanDescriptorPool>(_driver_allocator, graphics_device);
             _vulkan_physical_device->graphics_device()->create_command_buffers(_vulkan_command_buffers, 2);
@@ -117,8 +126,7 @@ namespace render
                 auto const& formats = _vulkan_physical_device->surface_formats();
                 auto format = core::pod::array::front(formats).format;
 
-                _vk_render_system = iceshard::renderer::vulkan::create_render_system(_driver_allocator, graphics_device);
-                _vk_render_system->prepare(format, iceshard::renderer::RenderPassFeatures::None);
+                _vk_render_system->prepare(_surface_extents, format, iceshard::renderer::RenderPassFeatures::None);
             }
 
             vulkan::create_framebuffers(
@@ -128,8 +136,7 @@ namespace render
                 _vk_render_system->renderpass_native(),
                 *_vulkan_depth_image.get(),
                 *_vulkan_swapchain.get(),
-                nullptr,
-                _vulkan_physical_device.get()
+                _surface_extents
             );
 
             VkSemaphoreCreateInfo imageAcquiredSemaphoreCreateInfo;
@@ -161,6 +168,7 @@ namespace render
             if (_surface_extents.width != new_extents.width || _surface_extents.height != new_extents.height)
             {
                 [[maybe_unused]]
+                auto physical_device = _vulkan_physical_device->native_handle();
                 auto graphics_device = _vulkan_physical_device->graphics_device()->native_handle();
 
                 fmt::print("ReConstructing graphics pipelines!\n");
@@ -187,7 +195,13 @@ namespace render
                 _vulkan_swapchain = nullptr;
 
                 // Create swap chain
-                _vulkan_swapchain = render::vulkan::create_swapchain(_driver_allocator, _vulkan_physical_device.get());
+                _vulkan_swapchain = render::vulkan::create_swapchain(
+                    _driver_allocator,
+                    _vk_render_system->v1_physical_device(),
+                    graphics_device,
+                    _vulkan_surface->native_handle()
+                );
+
                 _vulkan_depth_image = render::vulkan::create_depth_buffer_image(_driver_allocator, *_vulkan_device_memory, _surface_extents);
                 _vulkan_pp_image = render::vulkan::create_attachment_texture(_driver_allocator, *_vulkan_device_memory, _surface_extents);
 
@@ -198,8 +212,7 @@ namespace render
                     _vk_render_system->renderpass_native(),
                     *_vulkan_depth_image.get(),
                     *_vulkan_swapchain.get(),
-                    nullptr,
-                    _vulkan_physical_device.get()
+                    _surface_extents
                 );
 
                 _render_pass_context.framebuffer = _vulkan_framebuffers[_vulkan_current_framebuffer]->native_handle();
@@ -229,29 +242,14 @@ namespace render
 
         void enumerate_devices() noexcept
         {
-            IS_ASSERT(_vulkan_surface != nullptr, "Surface object does not exist!");
-
-            uint32_t device_count;
-            VkResult res = vkEnumeratePhysicalDevices(_vulkan_instance, &device_count, nullptr);
-            IS_ASSERT(res == VK_SUCCESS, "Couldn't properly query the number of available vulkan devices!");
-
-            core::pod::Array<VkPhysicalDevice> devices_handles{ _driver_allocator };
-            core::pod::array::resize(devices_handles, device_count);
-
-            vkEnumeratePhysicalDevices(_vulkan_instance, &device_count, &devices_handles[0]);
-            IS_ASSERT(res == VK_SUCCESS, "Couldn't properly query available vulkan devices!");
-
-            // Create VulkanPhysicalDevice objects from the handles.
-            fmt::print("Available Vulkan devices: {}\n", device_count);
-            fmt::print("Selecting device at index: {}\n", 0);
-
             _vulkan_physical_device = core::memory::make_unique<vulkan::VulkanPhysicalDevice>(
                 _driver_allocator,
                 _driver_allocator,
-                core::pod::array::front(devices_handles),
+                _vk_render_system->v1_physical_device(),
                 _vulkan_surface->native_handle()
                 );
 
+            _vk_render_system->v1_set_graphics_device(_vulkan_physical_device->graphics_device()->native_handle());
             _surface_extents = _vulkan_physical_device->surface_capabilities().currentExtent;
 
             _vulkan_device_memory = core::memory::make_unique<vulkan::VulkanDeviceMemoryManager>(
@@ -289,12 +287,7 @@ namespace render
             }
             core::pod::array::clear(_vulkan_framebuffers);
 
-            iceshard::renderer::vulkan::destroy_render_system(_driver_allocator, _vk_render_system);
-            //for (auto& entry : _render_passes)
-            //{
-            //    vkDestroyRenderPass(device, entry.value, nullptr);
-            //}
-            //core::pod::hash::clear(_render_passes);
+            _vk_render_system->v1_destroy_renderpass();
 
             _vulkan_descriptor_sets = nullptr;
             _vulkan_descriptor_set_layouts.clear();
@@ -318,6 +311,8 @@ namespace render
             release_devices();
 
             _vulkan_surface = nullptr;
+
+            iceshard::renderer::vulkan::destroy_render_system(_driver_allocator, _vk_render_system);
 
             // We need to provide the callbacks when destroying the instance.
             vkDestroyInstance(_vulkan_instance, _vulkan_allocator.vulkan_callbacks());

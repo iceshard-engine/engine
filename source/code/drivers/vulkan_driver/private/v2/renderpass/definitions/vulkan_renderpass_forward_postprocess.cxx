@@ -1,14 +1,9 @@
-#include <iceshard/renderer/vulkan/vulkan_renderpass.hxx>
-#include <iceshard/renderer/vulkan/vulkan_sdk.hxx>
+#include "vulkan_renderpass_definitions.hxx"
 
 namespace iceshard::renderer::vulkan
 {
 
-    auto create_renderpass_pp(
-        VkDevice device,
-        VkFormat attachment_format,
-        [[maybe_unused]] RenderPassFeatures features
-    ) noexcept -> VkRenderPass
+    auto renderpass_forward_postprocess(VkDevice device, VkFormat attachment_format) noexcept -> VkRenderPass
     {
         VkAttachmentDescription attachments[3]{ };
         attachments[0].flags = 0;
