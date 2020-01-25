@@ -6,9 +6,17 @@
 namespace iceshard::renderer::vulkan
 {
 
-    class VulkanRenderPass;
+    auto native_handle(RenderPass renderpass) noexcept -> VkRenderPass;
 
-    template<RenderPassType>
-    auto create_renderpass(VkDevice device, VkFormat attachment_format) noexcept -> VkRenderPass;
+    auto create_renderpass(
+        VkDevice device,
+        VkFormat attachment_format,
+        RenderPassFeatures features
+    ) noexcept -> RenderPass;
+
+    void destroy_renderpass(
+        VkDevice device,
+        RenderPass render_pass
+    ) noexcept;
 
 } // namespace iceshard::renderer::vulkan

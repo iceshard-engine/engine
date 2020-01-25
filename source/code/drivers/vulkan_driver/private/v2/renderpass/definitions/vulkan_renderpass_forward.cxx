@@ -4,8 +4,16 @@
 namespace iceshard::renderer::vulkan
 {
 
-    template<>
-    auto create_renderpass<RenderPassType::Forward>(VkDevice device, VkFormat attachment_format) noexcept -> VkRenderPass
+    auto native_handle(RenderPass renderpass) noexcept -> VkRenderPass
+    {
+        return reinterpret_cast<VkRenderPass>(renderpass);
+    }
+
+    auto create_renderpass(
+        VkDevice device,
+        VkFormat attachment_format,
+        [[maybe_unused]] RenderPassFeatures features
+    ) noexcept -> RenderPass
     {
         VkAttachmentDescription attachments[2]{ };
         attachments[0].flags = 0;
@@ -56,12 +64,16 @@ namespace iceshard::renderer::vulkan
         renderpass_info.dependencyCount = 0;
         renderpass_info.pDependencies = nullptr;
 
-        VkRenderPass render_pass;
-        auto api_result = vkCreateRenderPass(device, &renderpass_info, nullptr, &render_pass);
+        VkRenderPass renderpass;
+        auto api_result = vkCreateRenderPass(device, &renderpass_info, nullptr, &renderpass);
         IS_ASSERT(api_result == VkResult::VK_SUCCESS, "Couldn't create render pass!");
 
-        return render_pass;
+        return RenderPass{ reinterpret_cast<uintptr_t>(renderpass) };
     }
 
+    void destroy_renderpass(VkDevice device, RenderPass renderpass) noexcept
+    {
+        vkDestroyRenderPass(device, native_handle(renderpass), nullptr);
+    }
 
 } // namespace iceshard::renderer::vulkan

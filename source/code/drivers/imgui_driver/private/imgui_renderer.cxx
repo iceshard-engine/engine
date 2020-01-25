@@ -64,7 +64,7 @@ namespace debugui::imgui
         _render_system.create_imgui_descriptor_sets();
         _pipeline = _render_system.create_pipeline(render::pipeline::ImGuiPipeline);
 
-        _render_pass = _render_system.renderpass(iceshard::renderer::RenderPassType::Forward);
+        _render_pass = _render_system.renderpass(iceshard::renderer::RenderPassStage::Geometry);
     }
 
     ImGuiRenderer::~ImGuiRenderer() noexcept

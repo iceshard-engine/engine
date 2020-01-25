@@ -17,6 +17,8 @@ namespace render
     public:
         virtual ~RenderSystem() noexcept = default;
 
+        virtual void prepare() noexcept { }
+
         virtual auto current_framebuffer() noexcept -> render::api::Framebuffer = 0;
 
         virtual auto descriptor_sets() noexcept -> render::api::DescriptorSets = 0;

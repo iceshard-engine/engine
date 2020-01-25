@@ -18,6 +18,12 @@ namespace iceshard::renderer::vulkan
         vkDestroySurfaceKHR(_vulkan_instance, _vulkan_surface, nullptr);
     }
 
+    auto native_handle(VulkanSurface surface) noexcept -> VkSurfaceKHR
+    {
+        sdl2::VulkanSurface_SDL2 sdl2_surface{ surface };
+        return sdl2_surface.sdl2_surface->native_handle();
+    }
+
     auto create_surface(core::allocator& alloc, VkInstance vulkan_instance, VkExtent2D initial_extent) noexcept -> VulkanSurface
     {
         sdl2::VulkanSurface_SDL2 sdl2_surface{ };

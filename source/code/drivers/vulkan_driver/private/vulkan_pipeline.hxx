@@ -5,11 +5,8 @@
 #include "vulkan_shader.hxx"
 #include "pipeline/vulkan_pipeline_layout.hxx"
 #include "pipeline/vulkan_vertex_descriptor.hxx"
-#include "render_pass/vulkan_renderpass.hxx"
 
-#define NOMINMAX
-#define WIN32_LEAN_AND_MEAN
-#include <vulkan/vulkan.h>
+#include <iceshard/renderer/vulkan/vulkan_sdk.hxx>
 
 namespace render::vulkan
 {

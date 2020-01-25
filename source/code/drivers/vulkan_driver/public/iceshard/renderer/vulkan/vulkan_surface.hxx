@@ -11,6 +11,8 @@ namespace iceshard::renderer::vulkan
         Invalid = 0x0
     };
 
+    auto native_handle(VulkanSurface surface) noexcept -> VkSurfaceKHR;
+
     auto create_surface(core::allocator& alloc, VkInstance vulkan_instance, VkExtent2D initial_extents) noexcept -> VulkanSurface;
 
     void destroy_surface(core::allocator& alloc, VulkanSurface surface) noexcept;

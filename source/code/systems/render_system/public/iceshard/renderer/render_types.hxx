@@ -6,7 +6,10 @@ namespace iceshard::renderer
 
     using RenderPass = iceshard::renderer::api::RenderPass;
 
-    enum class RenderPassType : uint32_t;
+    enum class RenderPassFeatures : uint32_t;
+
+    enum class RenderPassStage : uint32_t;
+
 
     class RenderViewport;
 

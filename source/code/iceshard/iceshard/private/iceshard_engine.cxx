@@ -34,12 +34,12 @@ namespace iceshard
         };
 
         using iceshard::renderer::RenderPass;
-        using iceshard::renderer::RenderPassType;
+        using iceshard::renderer::RenderPassStage;
 
         class NoneRenderSystem : public render::RenderSystem
         {
         public:
-            auto renderpass(RenderPassType) noexcept -> RenderPass { return RenderPass{ 0 }; }
+            auto renderpass(RenderPassStage) noexcept -> RenderPass { return RenderPass{ 0 }; }
 
             auto current_framebuffer() noexcept -> render::api::Framebuffer override { return render::api::Framebuffer{ 0 }; }
             auto descriptor_sets() noexcept -> render::api::v1::DescriptorSets override { return render::api::v1::DescriptorSets{ 0 }; }

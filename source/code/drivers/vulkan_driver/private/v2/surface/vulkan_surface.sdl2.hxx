@@ -13,6 +13,11 @@ namespace iceshard::renderer::vulkan::sdl2
         SDL2_VulkanSurface(SDL_Window* window, VkInstance vk_instance, VkSurfaceKHR vk_surface) noexcept;
         ~SDL2_VulkanSurface() noexcept;
 
+        auto native_handle() noexcept
+        {
+            return _vulkan_surface;
+        }
+
     private:
         SDL_Window* _window;
         VkInstance _vulkan_instance;

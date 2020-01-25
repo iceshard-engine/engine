@@ -4,8 +4,11 @@
 namespace iceshard::renderer::vulkan
 {
 
-    template<>
-    auto create_renderpass<RenderPassType::ForwardPostProcess>(VkDevice device, VkFormat attachment_format) noexcept -> VkRenderPass
+    auto create_renderpass_pp(
+        VkDevice device,
+        VkFormat attachment_format,
+        [[maybe_unused]] RenderPassFeatures features
+    ) noexcept -> VkRenderPass
     {
         VkAttachmentDescription attachments[3]{ };
         attachments[0].flags = 0;
