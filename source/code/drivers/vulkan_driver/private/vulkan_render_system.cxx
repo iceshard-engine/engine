@@ -11,7 +11,6 @@
 #include "api/v1/vulkan_render_api.hxx"
 
 #include "vulkan_allocator.hxx"
-#include "vulkan_surface.hxx"
 #include "device/vulkan_physical_device.hxx"
 #include "device/vulkan_command_buffer.hxx"
 #include "vulkan_device_memory_manager.hxx"
