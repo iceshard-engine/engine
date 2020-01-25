@@ -26,6 +26,8 @@ namespace iceshard::renderer::vulkan
 
         auto swapchain() noexcept -> VulkanSwapchain;
 
+        auto render_area() noexcept -> VkExtent2D;
+
     public:
         auto v1_surface() noexcept -> VkSurfaceKHR;
         auto v1_physical_device() noexcept -> VkPhysicalDevice;

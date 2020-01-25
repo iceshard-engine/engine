@@ -37,6 +37,13 @@ namespace iceshard::renderer::vulkan
         return _swapchain;
     }
 
+    auto VulkanRenderSystem::render_area() noexcept -> VkExtent2D
+    {
+        VkSurfaceCapabilitiesKHR capabilities;
+        get_surface_capabilities(_devices.physical_device, _surface, capabilities);
+        return capabilities.currentExtent;
+    }
+
     auto VulkanRenderSystem::v1_surface() noexcept -> VkSurfaceKHR
     {
         return native_handle(_surface);

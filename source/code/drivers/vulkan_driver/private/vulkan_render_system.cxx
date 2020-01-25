@@ -90,12 +90,12 @@ namespace render
 
             enumerate_devices();
 
-            auto* physical_device = _vulkan_physical_device.get();
-            auto graphics_device = physical_device->graphics_device()->native_handle();
+            _vk_render_system->v1_create_swapchain();
 
             _vulkan_staging_buffer = render::vulkan::create_staging_buffer(_driver_allocator, *_vulkan_device_memory);
 
-            _vk_render_system->v1_create_swapchain();
+            auto* physical_device = _vulkan_physical_device.get();
+            auto graphics_device = physical_device->graphics_device()->native_handle();
 
             // Create depth buffer
             _vulkan_depth_image = render::vulkan::create_depth_buffer_image(_driver_allocator, *_vulkan_device_memory, _surface_extents);
@@ -147,7 +147,7 @@ namespace render
         {
             vkDeviceWaitIdle(_vulkan_physical_device->graphics_device()->native_handle());
 
-            auto new_extents = _vulkan_physical_device->update_surface_capabilities().currentExtent;
+            auto new_extents = _vk_render_system->render_area();
             if (_surface_extents.width != new_extents.width || _surface_extents.height != new_extents.height)
             {
                 [[maybe_unused]]
@@ -225,7 +225,7 @@ namespace render
                 );
 
             _vk_render_system->v1_set_graphics_device(_vulkan_physical_device->graphics_device()->native_handle());
-            _surface_extents = _vulkan_physical_device->update_surface_capabilities().currentExtent;
+            _surface_extents = _vk_render_system->render_area();
 
             _vulkan_device_memory = core::memory::make_unique<vulkan::VulkanDeviceMemoryManager>(
                 _driver_allocator,

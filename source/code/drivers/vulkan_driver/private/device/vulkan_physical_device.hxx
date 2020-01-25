@@ -26,8 +26,6 @@ namespace render::vulkan
 
         auto surface_handle() const noexcept -> VkSurfaceKHR { return _surface_handle; }
 
-        auto update_surface_capabilities() noexcept -> VkSurfaceCapabilitiesKHR const&;
-
         auto graphics_device() noexcept -> VulkanDevice* { return _graphics_device.get(); }
 
         auto graphics_device() const noexcept -> VulkanDevice const* { return _graphics_device.get(); }
@@ -36,7 +34,6 @@ namespace render::vulkan
         void initialize() noexcept;
 
         void enumerate_family_queues() noexcept;
-        void enumerate_surface_capabilities() noexcept;
 
         void create_device(VulkanDeviceQueueType queue_type) noexcept;
 

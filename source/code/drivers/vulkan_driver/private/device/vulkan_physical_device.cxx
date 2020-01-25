@@ -162,12 +162,6 @@ namespace render::vulkan
         return false;
     }
 
-    auto VulkanPhysicalDevice::update_surface_capabilities() noexcept -> VkSurfaceCapabilitiesKHR const&
-    {
-        enumerate_surface_capabilities();
-        return _surface_capabilities;
-    }
-
     void VulkanPhysicalDevice::create_device(VulkanDeviceQueueType queue_type) noexcept
     {
         auto queue_typeid = static_cast<uint64_t>(queue_type);
@@ -198,7 +192,6 @@ namespace render::vulkan
     void VulkanPhysicalDevice::initialize() noexcept
     {
         enumerate_family_queues();
-        enumerate_surface_capabilities();
 
         vkGetPhysicalDeviceMemoryProperties(_physical_device_handle, &_device_memory_properties);
 
@@ -246,12 +239,6 @@ namespace render::vulkan
                 }
             }
         }
-    }
-
-    void VulkanPhysicalDevice::enumerate_surface_capabilities() noexcept
-    {
-        auto api_result = vkGetPhysicalDeviceSurfaceCapabilitiesKHR(_physical_device_handle, _surface_handle, &_surface_capabilities);
-        IS_ASSERT(api_result == VkResult::VK_SUCCESS, "Couldn't get device surface capabilities!");
     }
 
     void VulkanPhysicalDevice::shutdown() noexcept
