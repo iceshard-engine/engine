@@ -119,10 +119,7 @@ namespace render
             {
                 using iceshard::renderer::RenderPassStage;
 
-                auto const& formats = _vulkan_physical_device->surface_formats();
-                auto format = core::pod::array::front(formats).format;
-
-                _vk_render_system->prepare(_surface_extents, format, iceshard::renderer::RenderPassFeatures::None);
+                _vk_render_system->prepare(_surface_extents, iceshard::renderer::RenderPassFeatures::None);
             }
 
             vulkan::create_framebuffers(
@@ -246,7 +243,7 @@ namespace render
                 );
 
             _vk_render_system->v1_set_graphics_device(_vulkan_physical_device->graphics_device()->native_handle());
-            _surface_extents = _vulkan_physical_device->surface_capabilities().currentExtent;
+            _surface_extents = _vulkan_physical_device->update_surface_capabilities().currentExtent;
 
             _vulkan_device_memory = core::memory::make_unique<vulkan::VulkanDeviceMemoryManager>(
                 _driver_allocator,

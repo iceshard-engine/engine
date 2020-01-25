@@ -18,7 +18,6 @@ namespace iceshard::renderer::vulkan
 
         void prepare(
             VkExtent2D surface_extent,
-            VkFormat renderpass_format,
             RenderPassFeatures renderpass_features
         ) noexcept;
 

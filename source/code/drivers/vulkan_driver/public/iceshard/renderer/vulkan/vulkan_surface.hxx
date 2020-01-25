@@ -15,6 +15,9 @@ namespace iceshard::renderer::vulkan
     auto native_handle(VulkanSurface surface) noexcept -> VkSurfaceKHR;
 
     [[nodiscard]]
+    auto surface_format(VkPhysicalDevice physical_device, VulkanSurface surface) noexcept -> VkSurfaceFormatKHR;
+
+    [[nodiscard]]
     auto create_surface(core::allocator& alloc, VkInstance vulkan_instance, VkExtent2D initial_extents) noexcept -> VulkanSurface;
 
     void destroy_surface(core::allocator& alloc, VulkanSurface surface) noexcept;

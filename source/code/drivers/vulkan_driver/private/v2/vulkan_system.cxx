@@ -1,5 +1,6 @@
 #include <iceshard/renderer/vulkan/vulkan_system.hxx>
 #include <iceshard/renderer/vulkan/vulkan_renderpass.hxx>
+#include <core/pod/array.hxx>
 
 namespace iceshard::renderer::vulkan
 {
@@ -18,9 +19,11 @@ namespace iceshard::renderer::vulkan
         destroy_surface(_allocator, _surface);
     }
 
-    void VulkanRenderSystem::prepare(VkExtent2D, VkFormat renderpass_format, RenderPassFeatures renderpass_features) noexcept
+    void VulkanRenderSystem::prepare(VkExtent2D, RenderPassFeatures renderpass_features) noexcept
     {
-        create_renderpass(_devices.graphics_device, renderpass_format, renderpass_features, _renderpass);
+        auto format = surface_format(_devices.physical_device, _surface);
+
+        create_renderpass(_devices.graphics_device, format.format, renderpass_features, _renderpass);
     }
 
     auto VulkanRenderSystem::renderpass([[maybe_unused]] RenderPassStage stage) noexcept -> RenderPass

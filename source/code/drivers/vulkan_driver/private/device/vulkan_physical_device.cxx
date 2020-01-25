@@ -1,5 +1,6 @@
 #include "vulkan_physical_device.hxx"
 #include <core/pod/array.hxx>
+#include <core/allocators/stack_allocator.hxx>
 
 namespace render::vulkan
 {
@@ -128,8 +129,6 @@ namespace render::vulkan
         : _allocator{ alloc }
         , _physical_device_handle{ device_handle }
         , _surface_handle{ surface_handle }
-        , _present_modes{ _allocator }
-        , _surface_formats{ _allocator }
         , _device_factories{ _allocator }
         , _command_pools{ _allocator }
         , _graphics_device{ nullptr, { _allocator } }
@@ -166,7 +165,7 @@ namespace render::vulkan
     auto VulkanPhysicalDevice::update_surface_capabilities() noexcept -> VkSurfaceCapabilitiesKHR const&
     {
         enumerate_surface_capabilities();
-        return surface_capabilities();
+        return _surface_capabilities;
     }
 
     void VulkanPhysicalDevice::create_device(VulkanDeviceQueueType queue_type) noexcept
@@ -200,10 +199,7 @@ namespace render::vulkan
     {
         enumerate_family_queues();
         enumerate_surface_capabilities();
-        enumerate_surface_present_modes();
-        enumerate_surface_formats();
 
-        vkGetPhysicalDeviceProperties(_physical_device_handle, &_device_properties);
         vkGetPhysicalDeviceMemoryProperties(_physical_device_handle, &_device_memory_properties);
 
         create_device(VulkanDeviceQueueType::GraphicsQueue);
@@ -256,28 +252,6 @@ namespace render::vulkan
     {
         auto api_result = vkGetPhysicalDeviceSurfaceCapabilitiesKHR(_physical_device_handle, _surface_handle, &_surface_capabilities);
         IS_ASSERT(api_result == VkResult::VK_SUCCESS, "Couldn't get device surface capabilities!");
-    }
-
-    void VulkanPhysicalDevice::enumerate_surface_present_modes() noexcept
-    {
-        uint32_t present_mode_number;
-        VkResult api_result = vkGetPhysicalDeviceSurfacePresentModesKHR(_physical_device_handle, _surface_handle, &present_mode_number, nullptr);
-        IS_ASSERT(api_result == VkResult::VK_SUCCESS, "Couldn't get number of device present modes!");
-
-        core::pod::array::resize(_present_modes, present_mode_number);
-        api_result = vkGetPhysicalDeviceSurfacePresentModesKHR(_physical_device_handle, _surface_handle, &present_mode_number, &_present_modes[0]);
-        IS_ASSERT(api_result == VkResult::VK_SUCCESS, "Couldn't query device present modes!");
-    }
-
-    void VulkanPhysicalDevice::enumerate_surface_formats() noexcept
-    {
-        uint32_t surface_format_number;
-        VkResult api_result = vkGetPhysicalDeviceSurfaceFormatsKHR(_physical_device_handle, _surface_handle, &surface_format_number, nullptr);
-        IS_ASSERT(api_result == VkResult::VK_SUCCESS, "Couldn't get number of device surface formats!");
-
-        core::pod::array::resize(_surface_formats, surface_format_number);
-        api_result = vkGetPhysicalDeviceSurfaceFormatsKHR(_physical_device_handle, _surface_handle, &surface_format_number, &_surface_formats[0]);
-        IS_ASSERT(api_result == VkResult::VK_SUCCESS, "Couldn't query device surface formats!");
     }
 
     void VulkanPhysicalDevice::shutdown() noexcept

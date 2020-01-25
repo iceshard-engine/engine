@@ -1,5 +1,7 @@
 #include "vulkan_surface.sdl2.hxx"
 #include <core/debug/assert.hxx>
+#include <core/allocators/stack_allocator.hxx>
+#include <core/pod/array.hxx>
 
 #include <SDL_syswm.h>
 
@@ -22,6 +24,40 @@ namespace iceshard::renderer::vulkan
     {
         sdl2::VulkanSurface_SDL2 sdl2_surface{ surface };
         return sdl2_surface.sdl2_surface->native_handle();
+    }
+
+    auto surface_format(VkPhysicalDevice physical_device, VulkanSurface surface) noexcept -> VkSurfaceFormatKHR
+    {
+        sdl2::VulkanSurface_SDL2 sdl2_surface{ surface };
+        auto surface_handle = sdl2_surface.sdl2_surface->native_handle();
+
+        uint32_t surface_format_num = 0;
+        auto api_result = vkGetPhysicalDeviceSurfaceFormatsKHR(
+            physical_device,
+            surface_handle,
+            &surface_format_num,
+            nullptr
+        );
+        IS_ASSERT(api_result == VkResult::VK_SUCCESS, "Couldn't get number of device surface formats!");
+
+        if (surface_format_num > 1)
+        {
+            fmt::print("Warning : More than one surface format is available! Picking the first one!\n");
+        }
+
+        core::memory::stack_allocator_512 temp_alloc;
+        core::pod::Array<VkSurfaceFormatKHR> surface_formats{ temp_alloc };
+        core::pod::array::resize(surface_formats, surface_format_num);
+
+        api_result = vkGetPhysicalDeviceSurfaceFormatsKHR(
+            physical_device,
+            surface_handle,
+            &surface_format_num,
+            core::pod::begin(surface_formats)
+        );
+        IS_ASSERT(api_result == VkResult::VK_SUCCESS, "Couldn't query device surface format!");
+
+        return core::pod::array::front(surface_formats);
     }
 
     auto create_surface(core::allocator& alloc, VkInstance vulkan_instance, VkExtent2D initial_extent) noexcept -> VulkanSurface
