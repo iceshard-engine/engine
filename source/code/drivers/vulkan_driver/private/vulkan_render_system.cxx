@@ -14,7 +14,6 @@
 #include "device/vulkan_physical_device.hxx"
 #include "device/vulkan_command_buffer.hxx"
 #include "vulkan_device_memory_manager.hxx"
-#include "vulkan_swapchain.hxx"
 #include "vulkan_image.hxx"
 #include "vulkan_sampler.hxx"
 #include "vulkan_shader.hxx"
@@ -96,14 +95,7 @@ namespace render
 
             _vulkan_staging_buffer = render::vulkan::create_staging_buffer(_driver_allocator, *_vulkan_device_memory);
 
-            // Create swap chain
-            _vulkan_swapchain = render::vulkan::create_swapchain(
-                _driver_allocator,
-                _vk_render_system->v1_physical_device(),
-                graphics_device,
-                _vk_render_system->v1_surface()
-            );
-
+            _vk_render_system->v1_create_swapchain();
 
             // Create depth buffer
             _vulkan_depth_image = render::vulkan::create_depth_buffer_image(_driver_allocator, *_vulkan_device_memory, _surface_extents);
@@ -125,10 +117,8 @@ namespace render
             vulkan::create_framebuffers(
                 _driver_allocator,
                 _vulkan_framebuffers,
-                graphics_device,
-                _vk_render_system->renderpass_native(),
+                _vk_render_system,
                 *_vulkan_depth_image.get(),
-                *_vulkan_swapchain.get(),
                 _surface_extents
             );
 
@@ -141,7 +131,7 @@ namespace render
             assert(res == VK_SUCCESS);
 
             _render_pass_context.extent = _surface_extents;
-            _render_pass_context.renderpass = _vk_render_system->renderpass_native();
+            _render_pass_context.renderpass = _vk_render_system->v1_renderpass();
             _render_pass_context.framebuffer = _vulkan_framebuffers[_vulkan_current_framebuffer]->native_handle();
 
             VkFenceCreateInfo fenceInfo;
@@ -162,7 +152,6 @@ namespace render
             {
                 [[maybe_unused]]
                 auto physical_device = _vulkan_physical_device->native_handle();
-                auto graphics_device = _vulkan_physical_device->graphics_device()->native_handle();
 
                 fmt::print("ReConstructing graphics pipelines!\n");
                 _surface_extents = new_extents;
@@ -185,15 +174,10 @@ namespace render
 
                 _vulkan_pp_image = nullptr;
                 _vulkan_depth_image = nullptr;
-                _vulkan_swapchain = nullptr;
+                _vk_render_system->v1_destroy_swapchain();
 
                 // Create swap chain
-                _vulkan_swapchain = render::vulkan::create_swapchain(
-                    _driver_allocator,
-                    _vk_render_system->v1_physical_device(),
-                    graphics_device,
-                    _vk_render_system->v1_surface()
-                );
+                _vk_render_system->v1_create_swapchain();
 
                 _vulkan_depth_image = render::vulkan::create_depth_buffer_image(_driver_allocator, *_vulkan_device_memory, _surface_extents);
                 _vulkan_pp_image = render::vulkan::create_attachment_texture(_driver_allocator, *_vulkan_device_memory, _surface_extents);
@@ -201,10 +185,8 @@ namespace render
                 vulkan::create_framebuffers(
                     _driver_allocator,
                     _vulkan_framebuffers,
-                    _vulkan_physical_device->graphics_device()->native_handle(),
-                    _vk_render_system->renderpass_native(),
+                    _vk_render_system,
                     *_vulkan_depth_image.get(),
-                    *_vulkan_swapchain.get(),
                     _surface_extents
                 );
 
@@ -299,7 +281,7 @@ namespace render
             _vulkan_pp_image = nullptr;
             _vulkan_depth_image = nullptr;
 
-            _vulkan_swapchain = nullptr;
+            _vk_render_system->v1_destroy_swapchain();
 
             release_devices();
 
@@ -604,7 +586,7 @@ namespace render
                     shader_stages,
                     vertex_descriptors,
                     _vulkan_pipeline_layout.get(),
-                    _vk_render_system->renderpass_native()
+                    _vk_render_system->v1_renderpass()
                 );
             }
 
@@ -616,7 +598,7 @@ namespace render
             auto* physical_device = _vulkan_physical_device.get();
             auto graphics_device = physical_device->graphics_device();
             auto graphics_device_native = graphics_device->native_handle();
-            auto swap_chain = _vulkan_swapchain->native_handle();
+            auto swap_chain = _vk_render_system->v1_swapchain();
 
             {
 
@@ -635,7 +617,7 @@ namespace render
             }
 
             _render_pass_context.extent = _surface_extents;
-            _render_pass_context.renderpass = _vk_render_system->renderpass_native();
+            _render_pass_context.renderpass = _vk_render_system->v1_renderpass();
             _render_pass_context.pipeline_layout = _vulkan_pipeline_layout->native_handle();
             _render_pass_context.framebuffer = _vulkan_framebuffers[_vulkan_current_framebuffer]->native_handle();
 
@@ -678,7 +660,7 @@ namespace render
 
             /* Now present the image in the window */
 
-            VkSwapchainKHR swapchains[1]{ _vulkan_swapchain->native_handle() };
+            VkSwapchainKHR swapchains[1]{ swap_chain };
 
             VkPresentInfoKHR present;
             present.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
@@ -736,9 +718,6 @@ namespace render
         VkInstance _vulkan_instance{};
 
         VkFence _vulkan_draw_fence = nullptr;
-
-        // The Vulkan surface instance.
-        core::memory::unique_pointer<render::vulkan::VulkanSwapchain> _vulkan_swapchain{ nullptr, { core::memory::globals::null_allocator() } };
 
         // The Vulkan depth buffer image.
         core::memory::unique_pointer<render::vulkan::VulkanImage> _vulkan_pp_image{ nullptr, { core::memory::globals::null_allocator() } };

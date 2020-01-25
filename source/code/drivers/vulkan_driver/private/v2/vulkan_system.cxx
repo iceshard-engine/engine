@@ -21,7 +21,8 @@ namespace iceshard::renderer::vulkan
 
     void VulkanRenderSystem::prepare(VkExtent2D, RenderPassFeatures renderpass_features) noexcept
     {
-        auto format = surface_format(_devices.physical_device, _surface);
+        VkSurfaceFormatKHR format;
+        get_surface_format(_devices.physical_device, _surface, format);
 
         create_renderpass(_devices.graphics_device, format.format, renderpass_features, _renderpass);
     }
@@ -31,9 +32,9 @@ namespace iceshard::renderer::vulkan
         return RenderPass{ reinterpret_cast<uintptr_t>(_renderpass.renderpass) };
     }
 
-    auto VulkanRenderSystem::renderpass_native([[maybe_unused]] RenderPassStage stage) noexcept -> VkRenderPass
+    auto VulkanRenderSystem::swapchain() noexcept -> VulkanSwapchain
     {
-        return _renderpass.renderpass;
+        return _swapchain;
     }
 
     auto VulkanRenderSystem::v1_surface() noexcept -> VkSurfaceKHR
@@ -44,6 +45,31 @@ namespace iceshard::renderer::vulkan
     auto VulkanRenderSystem::v1_physical_device() noexcept -> VkPhysicalDevice
     {
         return _devices.physical_device;
+    }
+
+    auto VulkanRenderSystem::v1_renderpass() noexcept -> VkRenderPass
+    {
+        return _renderpass.renderpass;
+    }
+
+    auto VulkanRenderSystem::v1_swapchain() noexcept -> VkSwapchainKHR
+    {
+        return native_handle(_swapchain);
+    }
+
+    auto VulkanRenderSystem::v1_device() noexcept -> VkDevice
+    {
+        return _devices.graphics_device;
+    }
+
+    void VulkanRenderSystem::v1_create_swapchain() noexcept
+    {
+        _swapchain = create_swapchain(_allocator, _devices, _surface);
+    }
+
+    void VulkanRenderSystem::v1_destroy_swapchain() noexcept
+    {
+        destroy_swapchain(_allocator, _swapchain);
     }
 
     void VulkanRenderSystem::v1_destroy_renderpass() noexcept

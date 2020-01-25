@@ -5,6 +5,7 @@
 #include <iceshard/renderer/vulkan/vulkan_sdk.hxx>
 #include <iceshard/renderer/vulkan/vulkan_surface.hxx>
 #include <iceshard/renderer/vulkan/vulkan_devices.hxx>
+#include <iceshard/renderer/vulkan/vulkan_swapchain.hxx>
 #include <iceshard/renderer/vulkan/vulkan_renderpass.hxx>
 
 namespace iceshard::renderer::vulkan
@@ -23,13 +24,19 @@ namespace iceshard::renderer::vulkan
 
         auto renderpass(RenderPassStage stage = RenderPassStage::Geometry) noexcept -> RenderPass;
 
-        auto renderpass_native(RenderPassStage stage = RenderPassStage::Geometry) noexcept -> VkRenderPass;
+        auto swapchain() noexcept -> VulkanSwapchain;
 
     public:
         auto v1_surface() noexcept -> VkSurfaceKHR;
         auto v1_physical_device() noexcept -> VkPhysicalDevice;
+        auto v1_renderpass() noexcept -> VkRenderPass;
+        auto v1_swapchain() noexcept -> VkSwapchainKHR;
+        auto v1_device() noexcept -> VkDevice;
 
     public:
+        void v1_create_swapchain() noexcept;
+        void v1_destroy_swapchain() noexcept;
+
         void v1_destroy_renderpass() noexcept;
         void v1_set_graphics_device(VkDevice device) noexcept;
 
@@ -39,6 +46,7 @@ namespace iceshard::renderer::vulkan
 
         VulkanSurface _surface;
         VulkanDevices _devices;
+        VulkanSwapchain _swapchain;
         VulkanRenderPass _renderpass;
     };
 

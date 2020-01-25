@@ -26,7 +26,7 @@ namespace iceshard::renderer::vulkan
         return sdl2_surface.sdl2_surface->native_handle();
     }
 
-    auto surface_format(VkPhysicalDevice physical_device, VulkanSurface surface) noexcept -> VkSurfaceFormatKHR
+    void get_surface_format(VkPhysicalDevice physical_device, VulkanSurface surface, VkSurfaceFormatKHR& format) noexcept
     {
         sdl2::VulkanSurface_SDL2 sdl2_surface{ surface };
         auto surface_handle = sdl2_surface.sdl2_surface->native_handle();
@@ -55,9 +55,22 @@ namespace iceshard::renderer::vulkan
             &surface_format_num,
             core::pod::begin(surface_formats)
         );
-        IS_ASSERT(api_result == VkResult::VK_SUCCESS, "Couldn't query device surface format!");
+        IS_ASSERT(api_result == VkResult::VK_SUCCESS, "Couldn't get device surface format!");
 
-        return core::pod::array::front(surface_formats);
+        format = core::pod::array::front(surface_formats);
+    }
+
+    void get_surface_capabilities(VkPhysicalDevice physical_device, VulkanSurface surface, VkSurfaceCapabilitiesKHR& capabilities) noexcept
+    {
+        sdl2::VulkanSurface_SDL2 sdl2_surface{ surface };
+        auto surface_handle = sdl2_surface.sdl2_surface->native_handle();
+
+        auto api_result = vkGetPhysicalDeviceSurfaceCapabilitiesKHR(
+            physical_device,
+            surface_handle,
+            &capabilities
+        );
+        IS_ASSERT(api_result == VkResult::VK_SUCCESS, "Couldn't get device surface capabilities!");
     }
 
     auto create_surface(core::allocator& alloc, VkInstance vulkan_instance, VkExtent2D initial_extent) noexcept -> VulkanSurface

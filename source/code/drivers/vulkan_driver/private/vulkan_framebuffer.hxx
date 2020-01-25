@@ -1,11 +1,8 @@
 #pragma once
 #include <core/allocator.hxx>
 
-#define NOMINMAX
-#define WIN32_LEAN_AND_MEAN
-#include <vulkan/vulkan.h>
+#include <iceshard/renderer/vulkan/vulkan_system.hxx>
 
-#include "vulkan_swapchain.hxx"
 #include "vulkan_image.hxx"
 
 namespace render::vulkan
@@ -27,10 +24,8 @@ namespace render::vulkan
     void create_framebuffers(
         core::allocator& alloc,
         core::pod::Array<VulkanFramebuffer*>& results,
-        VkDevice device,
-        VkRenderPass render_pass,
+        iceshard::renderer::vulkan::VulkanRenderSystem* new_render_system,
         VulkanImage const& depth_buffer,
-        VulkanSwapchain const& swapchain,
         VkExtent2D extent
     ) noexcept;
 

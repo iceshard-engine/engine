@@ -17,10 +17,8 @@ namespace render::vulkan
     void create_framebuffers(
         core::allocator& alloc,
         core::pod::Array<VulkanFramebuffer*>& results,
-        VkDevice device,
-        VkRenderPass render_pass,
+        iceshard::renderer::vulkan::VulkanRenderSystem* new_render_system,
         VulkanImage const& depth_buffer,
-        VulkanSwapchain const& swapchain,
         VkExtent2D extent
     ) noexcept
     {
@@ -30,22 +28,22 @@ namespace render::vulkan
         VkFramebufferCreateInfo fb_info = {};
         fb_info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
         fb_info.pNext = nullptr;
-        fb_info.renderPass = render_pass;
+        fb_info.renderPass = new_render_system->v1_renderpass();
         fb_info.attachmentCount = 2;
         fb_info.pAttachments = attachments;
         fb_info.width = extent.width;
         fb_info.height = extent.height;
         fb_info.layers = 1;
 
-        for (auto const& swapchain_buffer : swapchain.swapchain_buffers())
+        for (auto const& swapchain_image : iceshard::renderer::vulkan::swapchain_images(new_render_system->swapchain()))
         {
-            attachments[0] = swapchain_buffer.view;
+            attachments[0] = swapchain_image.view;
 
             VkFramebuffer framebuffer;
-            auto api_result = vkCreateFramebuffer(device, &fb_info, nullptr, &framebuffer);
+            auto api_result = vkCreateFramebuffer(new_render_system->v1_device(), &fb_info, nullptr, &framebuffer);
             IS_ASSERT(api_result == VkResult::VK_SUCCESS, "Couldn't create framebuffer object!");
 
-            core::pod::array::push_back(results, alloc.make<VulkanFramebuffer>(device, framebuffer));
+            core::pod::array::push_back(results, alloc.make<VulkanFramebuffer>(new_render_system->v1_device(), framebuffer));
         }
     }
 

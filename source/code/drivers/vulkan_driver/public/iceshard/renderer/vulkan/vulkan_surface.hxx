@@ -1,6 +1,5 @@
 #pragma once
 #include <core/allocator.hxx>
-#include <iceshard/renderer/render_system.hxx>
 #include <iceshard/renderer/vulkan/vulkan_sdk.hxx>
 
 namespace iceshard::renderer::vulkan
@@ -12,10 +11,21 @@ namespace iceshard::renderer::vulkan
     };
 
     [[nodiscard]]
-    auto native_handle(VulkanSurface surface) noexcept -> VkSurfaceKHR;
+    auto native_handle(
+        VulkanSurface surface
+    ) noexcept -> VkSurfaceKHR;
 
-    [[nodiscard]]
-    auto surface_format(VkPhysicalDevice physical_device, VulkanSurface surface) noexcept -> VkSurfaceFormatKHR;
+    void get_surface_format(
+        VkPhysicalDevice physical_device,
+        VulkanSurface surface,
+        VkSurfaceFormatKHR& format
+    ) noexcept;
+
+    void get_surface_capabilities(
+        VkPhysicalDevice physical_device,
+        VulkanSurface surface,
+        VkSurfaceCapabilitiesKHR& capabilities
+    ) noexcept;
 
     [[nodiscard]]
     auto create_surface(core::allocator& alloc, VkInstance vulkan_instance, VkExtent2D initial_extents) noexcept -> VulkanSurface;
