@@ -45,7 +45,6 @@ namespace render
             : render::RenderSystem{}
             , _driver_allocator{ "vulkan-driver", alloc }
             , _vulkan_allocator{ alloc }
-            , _vulkan_framebuffers{ _driver_allocator }
             , _vulkan_command_buffers{ _driver_allocator }
             , _vulkan_vertex_descriptors{ _driver_allocator }
             , _vulkan_buffers{ _driver_allocator }
@@ -97,11 +96,6 @@ namespace render
             auto* physical_device = _vulkan_physical_device.get();
             auto graphics_device = physical_device->graphics_device()->native_handle();
 
-            // Create depth buffer
-            _vulkan_depth_image = render::vulkan::create_depth_buffer_image(_driver_allocator, *_vulkan_device_memory, _surface_extents);
-            _vulkan_pp_image = render::vulkan::create_attachment_texture(_driver_allocator, *_vulkan_device_memory, _surface_extents);
-
-
             _vulkan_descriptor_pool = core::memory::make_unique<render::vulkan::VulkanDescriptorPool>(_driver_allocator, graphics_device);
             _vulkan_physical_device->graphics_device()->create_command_buffers(_vulkan_command_buffers, 2);
 
@@ -114,13 +108,7 @@ namespace render
                 _vk_render_system->prepare(_surface_extents, iceshard::renderer::RenderPassFeatures::None);
             }
 
-            vulkan::create_framebuffers(
-                _driver_allocator,
-                _vulkan_framebuffers,
-                _vk_render_system,
-                *_vulkan_depth_image.get(),
-                _surface_extents
-            );
+            _vk_render_system->v1_create_framebuffers();
 
             VkSemaphoreCreateInfo imageAcquiredSemaphoreCreateInfo;
             imageAcquiredSemaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
@@ -132,7 +120,7 @@ namespace render
 
             _render_pass_context.extent = _surface_extents;
             _render_pass_context.renderpass = _vk_render_system->v1_renderpass();
-            _render_pass_context.framebuffer = _vulkan_framebuffers[_vulkan_current_framebuffer]->native_handle();
+            _render_pass_context.framebuffer = _vk_render_system->v1_current_framebuffer();
 
             VkFenceCreateInfo fenceInfo;
             fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
@@ -160,11 +148,7 @@ namespace render
                 //_vulkan_pipeline = nullptr;
                 //_vulkan_pipeline_layout = nullptr;
 
-                for (auto* vulkan_framebuffer : _vulkan_framebuffers)
-                {
-                    _driver_allocator.destroy(vulkan_framebuffer);
-                }
-                core::pod::array::clear(_vulkan_framebuffers);
+                _vk_render_system->v1_destroy_framebuffers();
 
                 //for (auto& entry : _render_passes)
                 //{
@@ -172,25 +156,14 @@ namespace render
                 //}
                 //core::pod::hash::clear(_render_passes);
 
-                _vulkan_pp_image = nullptr;
-                _vulkan_depth_image = nullptr;
                 _vk_render_system->v1_destroy_swapchain();
 
                 // Create swap chain
                 _vk_render_system->v1_create_swapchain();
 
-                _vulkan_depth_image = render::vulkan::create_depth_buffer_image(_driver_allocator, *_vulkan_device_memory, _surface_extents);
-                _vulkan_pp_image = render::vulkan::create_attachment_texture(_driver_allocator, *_vulkan_device_memory, _surface_extents);
+                _vk_render_system->v1_create_framebuffers();
 
-                vulkan::create_framebuffers(
-                    _driver_allocator,
-                    _vulkan_framebuffers,
-                    _vk_render_system,
-                    *_vulkan_depth_image.get(),
-                    _surface_extents
-                );
-
-                _render_pass_context.framebuffer = _vulkan_framebuffers[_vulkan_current_framebuffer]->native_handle();
+                _render_pass_context.framebuffer = _vk_render_system->v1_current_framebuffer();
 
                 //{
                 //    using iceshard::renderer::RenderPassType;
@@ -256,12 +229,7 @@ namespace render
             _vulkan_pipeline = nullptr;
             _vulkan_pipeline_layout = nullptr;
 
-            for (auto* vulkan_framebuffer : _vulkan_framebuffers)
-            {
-                _driver_allocator.destroy(vulkan_framebuffer);
-            }
-            core::pod::array::clear(_vulkan_framebuffers);
-
+            _vk_render_system->v1_destroy_framebuffers();
             _vk_render_system->v1_destroy_renderpass();
 
             _vulkan_descriptor_sets = nullptr;
@@ -277,9 +245,6 @@ namespace render
             _vulkan_buffers.clear();
 
             _vulkan_descriptor_pool = nullptr;
-
-            _vulkan_pp_image = nullptr;
-            _vulkan_depth_image = nullptr;
 
             _vk_render_system->v1_destroy_swapchain();
 
@@ -400,7 +365,8 @@ namespace render
 
         auto current_framebuffer() noexcept -> render::api::Framebuffer override
         {
-            return render::api::Framebuffer{ reinterpret_cast<uintptr_t>(_vulkan_framebuffers[_vulkan_current_framebuffer]->native_handle()) };
+            IS_ASSERT(false, "This API function is deprecated! DO NOT USE!");
+            return render::api::Framebuffer::Invalid; // No longer supported
         }
 
         auto load_texture(asset::AssetData texture_data) noexcept -> render::api::Texture override
@@ -600,26 +566,30 @@ namespace render
             auto graphics_device_native = graphics_device->native_handle();
             auto swap_chain = _vk_render_system->v1_swapchain();
 
-            {
 
-                // Get the index of the next available swapchain image:
-                auto api_result = vkAcquireNextImageKHR(
-                    graphics_device_native,
-                    swap_chain,
-                    UINT64_MAX,
-                    _quick_semaphore,
-                    VK_NULL_HANDLE,
-                    &_vulkan_current_framebuffer);
+            _vk_render_system->acquire_next_image();
 
-                // TODO: Deal with the VK_SUBOPTIMAL_KHR and VK_ERROR_OUT_OF_DATE_KHR
-                // return codes
-                IS_ASSERT(api_result == VK_SUCCESS, "Couldn't get next framebuffer image!");
-            }
+            //{
+
+            //    // Get the index of the next available swapchain image:
+            //    auto api_result = vkAcquireNextImageKHR(
+            //        graphics_device_native,
+            //        swap_chain,
+            //        UINT64_MAX,
+            //        _quick_semaphore,
+            //        VK_NULL_HANDLE,
+            //        &_vulkan_current_framebuffer
+            //    );
+
+            //    // TODO: Deal with the VK_SUBOPTIMAL_KHR and VK_ERROR_OUT_OF_DATE_KHR
+            //    // return codes
+            //    IS_ASSERT(api_result == VK_SUCCESS, "Couldn't get next framebuffer image!");
+            //}
 
             _render_pass_context.extent = _surface_extents;
             _render_pass_context.renderpass = _vk_render_system->v1_renderpass();
             _render_pass_context.pipeline_layout = _vulkan_pipeline_layout->native_handle();
-            _render_pass_context.framebuffer = _vulkan_framebuffers[_vulkan_current_framebuffer]->native_handle();
+            _render_pass_context.framebuffer = _vk_render_system->v1_current_framebuffer();
 
 
             if (_staging_cmds)
@@ -660,30 +630,32 @@ namespace render
 
             /* Now present the image in the window */
 
-            VkSwapchainKHR swapchains[1]{ swap_chain };
+            _vk_render_system->v1_present();
 
-            VkPresentInfoKHR present;
-            present.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-            present.pNext = NULL;
-            present.swapchainCount = 1;
-            present.pSwapchains = swapchains;
-            present.pImageIndices = &_vulkan_current_framebuffer;
-            present.pWaitSemaphores = NULL;
-            present.waitSemaphoreCount = 0;
-            present.pResults = NULL;
+            //VkSwapchainKHR swapchains[1]{ swap_chain };
 
-            /* Make sure command buffer is finished before presenting */
-            do
-            {
-                constexpr auto FENCE_TIMEOUT = 100'000'000; // in ns
-                res = vkWaitForFences(graphics_device_native, 1, &_vulkan_draw_fence, VK_TRUE, FENCE_TIMEOUT);
-            } while (res == VK_TIMEOUT);
+            //VkPresentInfoKHR present;
+            //present.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+            //present.pNext = NULL;
+            //present.swapchainCount = 1;
+            //present.pSwapchains = swapchains;
+            //present.pImageIndices = &_vulkan_current_framebuffer;
+            //present.pWaitSemaphores = NULL;
+            //present.waitSemaphoreCount = 0;
+            //present.pResults = NULL;
 
-            vkResetFences(graphics_device_native, 1, &_vulkan_draw_fence);
+            ///* Make sure command buffer is finished before presenting */
+            //do
+            //{
+            //    constexpr auto FENCE_TIMEOUT = 100'000'000; // in ns
+            //    res = vkWaitForFences(graphics_device_native, 1, &_vulkan_draw_fence, VK_TRUE, FENCE_TIMEOUT);
+            //} while (res == VK_TIMEOUT);
 
-            assert(res == VK_SUCCESS);
-            res = vkQueuePresentKHR(queue, &present);
-            assert(res == VK_SUCCESS);
+            //vkResetFences(graphics_device_native, 1, &_vulkan_draw_fence);
+
+            //assert(res == VK_SUCCESS);
+            //res = vkQueuePresentKHR(queue, &present);
+            //assert(res == VK_SUCCESS);
         }
 
         void initialize_render_interface(render::api::RenderInterface** render_interface) noexcept
@@ -719,10 +691,6 @@ namespace render
 
         VkFence _vulkan_draw_fence = nullptr;
 
-        // The Vulkan depth buffer image.
-        core::memory::unique_pointer<render::vulkan::VulkanImage> _vulkan_pp_image{ nullptr, { core::memory::globals::null_allocator() } };
-        core::memory::unique_pointer<render::vulkan::VulkanImage> _vulkan_depth_image{ nullptr, { core::memory::globals::null_allocator() } };
-
         // The Vulkan descriptor sets
         core::memory::unique_pointer<render::vulkan::VulkanDescriptorPool> _vulkan_descriptor_pool{ nullptr, { core::memory::globals::null_allocator() } };
         core::Vector<core::memory::unique_pointer<render::vulkan::VulkanDescriptorSetLayout>> _vulkan_descriptor_set_layouts;
@@ -732,10 +700,6 @@ namespace render
         // Databuffers
         core::memory::unique_pointer<render::vulkan::VulkanBuffer> _vulkan_staging_buffer{ nullptr, { core::memory::globals::null_allocator() } };
         core::Vector<core::memory::unique_pointer<render::vulkan::VulkanBuffer>> _vulkan_buffers;
-
-        // The framebuffers
-        uint32_t _vulkan_current_framebuffer = 0;
-        core::pod::Array<vulkan::VulkanFramebuffer*> _vulkan_framebuffers;
 
         // The Vulkan pipeline.
         core::memory::unique_pointer<render::vulkan::VulkanPipelineLayout> _vulkan_pipeline_layout{ nullptr, { core::memory::globals::null_allocator() } };

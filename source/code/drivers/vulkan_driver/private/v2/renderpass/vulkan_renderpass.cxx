@@ -5,6 +5,33 @@
 namespace iceshard::renderer::vulkan
 {
 
+    void get_renderpass_image_info(
+        VulkanRenderPass renderpass,
+        core::pod::Array<RenderPassImage>& image_infos
+    ) noexcept
+    {
+        if (RenderPassFeatures::None != renderpass.features)
+        {
+            return;
+        }
+
+        core::pod::array::push_back(
+            image_infos,
+            RenderPassImage{
+                .type = RenderPassImageType::SwapchainImage,
+                .index = 0
+            }
+        );
+        core::pod::array::push_back(
+            image_infos,
+            RenderPassImage{
+                .type = RenderPassImageType::DepthStencilImage,
+                .index = 1,
+                .format = VK_FORMAT_D16_UNORM
+            }
+        );
+    }
+
     bool create_renderpass(
         VkDevice device,
         VkFormat format,

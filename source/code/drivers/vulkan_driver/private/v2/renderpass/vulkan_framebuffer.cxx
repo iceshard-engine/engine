@@ -1,0 +1,176 @@
+#include <iceshard/renderer/vulkan/vulkan_framebuffer.hxx>
+#include <core/allocators/stack_allocator.hxx>
+
+#include "vulkan_framebuffer_image.hxx"
+
+namespace iceshard::renderer::vulkan
+{
+
+    namespace detail
+    {
+
+        class VulkanFramebufferObject final
+        {
+        public:
+            VulkanFramebufferObject(
+                VkDevice device,
+                VkFramebuffer framebuffer,
+                core::pod::Array<VulkanFramebufferImage>&& images
+            ) noexcept
+                : _vk_device{ device }
+                , _vk_framebuffer{ framebuffer }
+                , _images{ images }
+            {
+            }
+
+            ~VulkanFramebufferObject() noexcept
+            {
+                for (auto const& image : _images)
+                {
+                    vkDestroyImageView(
+                        _vk_device,
+                        image.image_view,
+                        nullptr
+                    );
+                    vkDestroyImage(
+                        _vk_device,
+                        image.allocated_image,
+                        nullptr
+                    );
+                    vkFreeMemory(
+                        _vk_device,
+                        image.allocated_image_memory,
+                        nullptr
+                    );
+                }
+                vkDestroyFramebuffer(
+                    _vk_device,
+                    _vk_framebuffer,
+                    nullptr
+                );
+            }
+
+        private:
+            VkDevice const _vk_device;
+            VkFramebuffer const _vk_framebuffer;
+            core::pod::Array<VulkanFramebufferImage> _images;
+        };
+
+        union VulkanFramebufferHandle
+        {
+            VulkanFramebuffer framebuffer;
+            VulkanFramebufferObject* object;
+        };
+
+    } // namespace detail
+
+    auto create_framebuffers(
+        core::allocator& alloc,
+        VkExtent2D framebuffer_extent,
+        VulkanDevices devices,
+        VulkanRenderPass renderpass,
+        VulkanSwapchain swapchain,
+        core::pod::Array<VulkanFramebuffer>& framebuffer_results
+    ) noexcept
+    {
+        core::memory::stack_allocator_512 temp_alloc;
+
+        int32_t swapchain_image_index = -1;
+        core::pod::Array<VulkanFramebufferImage> framebuffer_images{ alloc };
+
+        uint32_t renderpass_image_count = 0;
+        {
+            core::pod::Array<RenderPassImage> renderpass_images{ temp_alloc };
+            get_renderpass_image_info(renderpass, renderpass_images);
+
+            renderpass_image_count = core::pod::array::size(renderpass_images);
+
+            // Define the framebuffer image array.
+            int32_t current_image_index = 0;
+            for (auto const& rp_image : renderpass_images)
+            {
+                if (rp_image.type == RenderPassImageType::DepthStencilImage)
+                {
+                    // Create dept-stencil image.
+                    core::pod::array::push_back(
+                        framebuffer_images,
+                        create_framebuffer_image(
+                            devices,
+                            framebuffer_extent,
+                            rp_image.format,
+                            VkImageUsageFlagBits::VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT
+                        )
+                    );
+                }
+                else if (rp_image.type == RenderPassImageType::SwapchainImage)
+                {
+                    IS_ASSERT(swapchain_image_index == -1, "A swapchain image can be used only once in a framebuffer!");
+                    swapchain_image_index = current_image_index;
+                }
+
+                current_image_index += 1;
+            }
+
+            temp_alloc.clear();
+        }
+
+        // Create and fill the attachments array.
+        core::pod::Array<VkImageView> attachments{ temp_alloc };
+        core::pod::array::resize(attachments, renderpass_image_count);
+
+        int32_t attachment_index = 0;
+        for (auto const& fbimage : framebuffer_images)
+        {
+            if (attachment_index != swapchain_image_index)
+            {
+                attachments[attachment_index] = fbimage.image_view;
+            }
+            attachment_index += 1;
+        }
+
+        VkFramebufferCreateInfo fb_info = {};
+        fb_info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+        fb_info.pNext = nullptr;
+        fb_info.renderPass = renderpass.renderpass;
+        fb_info.attachmentCount = core::pod::array::size(attachments);
+        fb_info.pAttachments = core::pod::array::begin(attachments);
+        fb_info.width = framebuffer_extent.width;
+        fb_info.height = framebuffer_extent.height;
+        fb_info.layers = 1;
+
+        IS_ASSERT(swapchain_image_index < 0, "Framebuffers without swapchain images are not supported yet!");
+        for (auto const& swapchain_image : iceshard::renderer::vulkan::swapchain_images(swapchain))
+        {
+            attachments[swapchain_image_index] = swapchain_image.view;
+
+            VkFramebuffer framebuffer;
+            auto api_result = vkCreateFramebuffer(devices.graphics_device, &fb_info, nullptr, &framebuffer);
+            IS_ASSERT(api_result == VkResult::VK_SUCCESS, "Couldn't create framebuffer object!");
+
+            detail::VulkanFramebufferHandle handle;
+            handle.object = alloc.make<detail::VulkanFramebufferObject>(
+                devices.graphics_device,
+                framebuffer,
+                std::move(framebuffer_images)
+            );
+
+            core::pod::array::push_back(
+                framebuffer_results,
+                handle.framebuffer
+            );
+        }
+    }
+
+    void destroy_framebuffers(
+        core::allocator& alloc,
+        core::pod::Array<VulkanFramebuffer> const& framebuffers
+    ) noexcept
+    {
+        for (auto const& framebuffer : framebuffers)
+        {
+            detail::VulkanFramebufferHandle handle{ framebuffer };
+            alloc.destroy(handle.object);
+        }
+    }
+
+} // namespace iceshard::renderer::vulkan

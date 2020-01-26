@@ -55,6 +55,32 @@ namespace iceshard::renderer::vulkan
         return true;
     }
 
+    bool find_memory_type_index(
+        VulkanDevices devices,
+        VkMemoryRequirements memory_requirements,
+        VkMemoryPropertyFlags property_bits,
+        uint32_t& type_index_out
+    ) noexcept
+    {
+        VkPhysicalDeviceMemoryProperties device_memory_properties;
+        vkGetPhysicalDeviceMemoryProperties(devices.physical_device, &device_memory_properties);
+
+        for (uint32_t i = 0; i < device_memory_properties.memoryTypeCount; i++)
+        {
+            if ((memory_requirements.memoryTypeBits & 1) == 1)
+            {
+                // Type is available, does it match user properties?
+                if ((device_memory_properties.memoryTypes[i].propertyFlags & property_bits) == property_bits)
+                {
+                    type_index_out = i;
+                    return true;
+                }
+            }
+            memory_requirements.memoryTypeBits >>= 1;
+        }
+        return false;
+    }
+
     void destroy_devices(VkInstance, VulkanDevices const&) noexcept
     {
         // nothing to do yet
