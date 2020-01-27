@@ -40,7 +40,8 @@ namespace iceshard::renderer::vulkan
         auto v1_current_framebuffer() noexcept -> VkFramebuffer;
         auto v1_framebuffer_semaphore() noexcept -> VkSemaphore const*;
 
-        auto v1_graphics_cmd_buffer() noexcept -> VkCommandBuffer;
+        auto v1_primary_cmd_buffer() noexcept -> VkCommandBuffer;
+        auto v1_secondary_cmd_buffer() noexcept -> VkCommandBuffer;
         auto v1_transfer_cmd_buffer() noexcept -> VkCommandBuffer;
 
     public:
@@ -55,7 +56,9 @@ namespace iceshard::renderer::vulkan
         VulkanDevices _devices;
         VulkanSwapchain _swapchain;
         VulkanRenderPass _renderpass;
+
         VulkanCommandBuffers _command_buffers;
+        core::pod::Array<VkCommandBuffer> _command_buffers_secondary;
 
         uint32_t _current_framebuffer_index = 0;
         core::pod::Array<VulkanFramebuffer> _framebuffers;

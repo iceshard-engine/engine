@@ -85,7 +85,7 @@ namespace debugui::imgui
         auto descriptor_sets = _render_system.descriptor_sets();
 
         render::cmd::begin(command_buffer);
-        render::cmd::begin_renderpass(command_buffer, _render_pass);
+        //render::cmd::begin_renderpass(command_buffer, _render_pass);
         render::cmd::bind_render_pipeline(command_buffer, _render_system.get_pipeline());
         render::cmd::bind_descriptor_sets(command_buffer, descriptor_sets);
         render::cmd::bind_vertex_buffers(command_buffer, _vertice_buffers);
@@ -176,7 +176,7 @@ namespace debugui::imgui
         }
 
         //render::cmd::draw(command_buffer, 12 * 3, 4);
-        render::cmd::end_renderpass(command_buffer);
+        //render::cmd::end_renderpass(command_buffer);
         render::cmd::end(command_buffer);
     }
 

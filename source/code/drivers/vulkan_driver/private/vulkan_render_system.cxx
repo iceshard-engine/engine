@@ -91,16 +91,16 @@ namespace render
                 _driver_allocator,
                 _driver_allocator,
                 _vk_render_system->devices()
-            );
+                );
 
             _vulkan_staging_buffer = render::vulkan::create_staging_buffer(_driver_allocator, *_vulkan_device_memory);
 
             _vulkan_descriptor_pool = core::memory::make_unique<render::vulkan::VulkanDescriptorPool>(
                 _driver_allocator,
                 _vk_render_system->v1_graphics_device()
-            );
+                );
 
-            _command_buffer_context.command_buffer = _vk_render_system->v1_graphics_cmd_buffer();
+            _command_buffer_context.command_buffer = _vk_render_system->v1_secondary_cmd_buffer();
             _command_buffer_context.render_pass_context = &_render_pass_context;
             _command_buffer_context.render_pass_context->framebuffer = _vk_render_system->v1_current_framebuffer();
 
@@ -504,7 +504,49 @@ namespace render
                 vkQueueWaitIdle(graphics_queue);
             }
 
-            const VkCommandBuffer cmd_bufs[] = { _vk_render_system->v1_graphics_cmd_buffer() };
+            {
+                auto cmds = _vk_render_system->v1_primary_cmd_buffer();
+
+                VkCommandBufferBeginInfo cmd_buf_info = {};
+                cmd_buf_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+                cmd_buf_info.pNext = nullptr;
+                cmd_buf_info.flags = 0;
+                cmd_buf_info.pInheritanceInfo = nullptr;
+
+                auto api_result = vkBeginCommandBuffer(cmds, &cmd_buf_info);
+                IS_ASSERT(api_result == VkResult::VK_SUCCESS, "Couldn't begin command buffer.");
+
+                VkClearValue clear_values[2];
+                clear_values[0].color.float32[0] = 0.2f;
+                clear_values[0].color.float32[1] = 0.2f;
+                clear_values[0].color.float32[2] = 0.2f;
+                clear_values[0].color.float32[3] = 0.2f;
+                clear_values[1].depthStencil.depth = 1.0f;
+                clear_values[1].depthStencil.stencil = 0;
+
+                VkRenderPassBeginInfo rp_begin;
+                rp_begin.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+                rp_begin.pNext = NULL;
+                rp_begin.renderPass = _vk_render_system->v1_renderpass();
+                rp_begin.framebuffer = _vk_render_system->v1_current_framebuffer();
+                rp_begin.renderArea.offset.x = 0;
+                rp_begin.renderArea.offset.y = 0;
+                rp_begin.renderArea.extent = _surface_extents;
+                rp_begin.clearValueCount = 2;
+                rp_begin.pClearValues = clear_values;
+
+                vkCmdBeginRenderPass(cmds, &rp_begin, VK_SUBPASS_CONTENTS_INLINE);
+                vkCmdNextSubpass(cmds, VkSubpassContents::VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
+
+                VkCommandBuffer secondary = _vk_render_system->v1_secondary_cmd_buffer();
+                vkCmdExecuteCommands(cmds, 1, &secondary);
+                vkCmdEndRenderPass(cmds);
+                vkEndCommandBuffer(cmds);
+            }
+
+
+
+            const VkCommandBuffer cmd_bufs[] = { _vk_render_system->v1_primary_cmd_buffer() };
             VkPipelineStageFlags pipe_stage_flags = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
             VkSubmitInfo submit_info[1] = {};
             submit_info[0].pNext = NULL;

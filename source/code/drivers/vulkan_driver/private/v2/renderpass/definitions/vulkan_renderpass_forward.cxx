@@ -32,7 +32,7 @@ namespace iceshard::renderer::vulkan
         references[1].attachment = 1;
         references[1].layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
-        VkSubpassDescription subpasses[1];
+        VkSubpassDescription subpasses[2];
         subpasses[0].flags = 0;
         subpasses[0].pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
         subpasses[0].inputAttachmentCount = 0;
@@ -40,19 +40,38 @@ namespace iceshard::renderer::vulkan
         subpasses[0].colorAttachmentCount = 1;
         subpasses[0].pColorAttachments = references;
         subpasses[0].pResolveAttachments = nullptr;
-        subpasses[0].pDepthStencilAttachment = references + 1;
+        subpasses[0].pDepthStencilAttachment = nullptr;
         subpasses[0].preserveAttachmentCount = 0;
         subpasses[0].pPreserveAttachments = nullptr;
+        subpasses[1].flags = 0;
+        subpasses[1].pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+        subpasses[1].inputAttachmentCount = 0;
+        subpasses[1].pInputAttachments = nullptr;
+        subpasses[1].colorAttachmentCount = 1;
+        subpasses[1].pColorAttachments = references;
+        subpasses[1].pResolveAttachments = nullptr;
+        subpasses[1].pDepthStencilAttachment = references + 1;
+        subpasses[1].preserveAttachmentCount = 0;
+        subpasses[1].pPreserveAttachments = nullptr;
+
+        VkSubpassDependency dependencies[1];
+        dependencies[0].srcSubpass = 0;
+        dependencies[0].dstSubpass = 1;
+        dependencies[0].srcStageMask = VkPipelineStageFlagBits::VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+        dependencies[0].dstStageMask = VkPipelineStageFlagBits::VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+        dependencies[0].srcAccessMask = VkAccessFlagBits::VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+        dependencies[0].dstAccessMask = VkAccessFlagBits::VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+        dependencies[0].dependencyFlags = VkDependencyFlagBits::VK_DEPENDENCY_BY_REGION_BIT;
 
         VkRenderPassCreateInfo renderpass_info = {};
         renderpass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
         renderpass_info.pNext = nullptr;
         renderpass_info.attachmentCount = 2;
         renderpass_info.pAttachments = attachments;
-        renderpass_info.subpassCount = 1;
+        renderpass_info.subpassCount = 2;
         renderpass_info.pSubpasses = subpasses;
-        renderpass_info.dependencyCount = 0;
-        renderpass_info.pDependencies = nullptr;
+        renderpass_info.dependencyCount = 1;
+        renderpass_info.pDependencies = dependencies;
 
         VkRenderPass renderpass;
         auto api_result = vkCreateRenderPass(device, &renderpass_info, nullptr, &renderpass);

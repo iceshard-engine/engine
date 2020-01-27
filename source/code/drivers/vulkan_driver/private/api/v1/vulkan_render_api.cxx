@@ -89,11 +89,23 @@ namespace render::api::v1::vulkan
 
     void vulkan_api_v1_command_begin(render::api::v1::CommandBuffer cb) noexcept
     {
+        auto* command_buffer_context = native(cb);
+
+        VkCommandBufferInheritanceInfo inheritance_info;
+        inheritance_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO;
+        inheritance_info.pNext = nullptr;
+        inheritance_info.framebuffer = nullptr;
+        inheritance_info.renderPass = command_buffer_context->render_pass_context->renderpass;
+        inheritance_info.queryFlags = 0;
+        inheritance_info.occlusionQueryEnable = VK_FALSE;
+        inheritance_info.pipelineStatistics = 0;
+        inheritance_info.subpass = 0;
+
         VkCommandBufferBeginInfo cmd_buf_info = {};
         cmd_buf_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
         cmd_buf_info.pNext = nullptr;
-        cmd_buf_info.flags = 0;
-        cmd_buf_info.pInheritanceInfo = nullptr;
+        cmd_buf_info.flags = VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
+        cmd_buf_info.pInheritanceInfo = &inheritance_info;
 
         auto api_result = vkBeginCommandBuffer(command_buffer(cb), &cmd_buf_info);
         IS_ASSERT(api_result == VkResult::VK_SUCCESS, "Couldn't begin command buffer.");

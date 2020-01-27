@@ -9,12 +9,12 @@ namespace iceshard::renderer::vulkan
         : _allocator{ alloc }
         , _vk_instance{ instance }
         , _framebuffers{ _allocator }
+        , _command_buffers_secondary{ _allocator }
     {
         _surface = create_surface(_allocator, _vk_instance, { 1280, 720 });
         create_devices(_vk_instance, native_handle(_surface), _devices);
 
-        core::pod::Array<VkCommandBuffer> secondary_buffers{ _allocator };
-        allocate_command_buffers(_devices, _command_buffers, 0, secondary_buffers);
+        allocate_command_buffers(_devices, _command_buffers, 6, _command_buffers_secondary);
 
         VkSemaphoreCreateInfo semaphore_info;
         semaphore_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
@@ -39,8 +39,7 @@ namespace iceshard::renderer::vulkan
 
         vkDestroySemaphore(_devices.graphics.handle, _framebuffer_semaphore, nullptr);
 
-        core::pod::Array<VkCommandBuffer> secondary_buffers{ _allocator };
-        release_command_buffers(_devices, _command_buffers, secondary_buffers);
+        release_command_buffers(_devices, _command_buffers, _command_buffers_secondary);
         destroy_devices(_vk_instance, _devices);
         destroy_surface(_allocator, _surface);
     }
@@ -104,7 +103,12 @@ namespace iceshard::renderer::vulkan
         return &_framebuffer_semaphore;
     }
 
-    auto VulkanRenderSystem::v1_graphics_cmd_buffer() noexcept -> VkCommandBuffer
+    auto VulkanRenderSystem::v1_secondary_cmd_buffer() noexcept -> VkCommandBuffer
+    {
+        return core::pod::array::front(_command_buffers_secondary);
+    }
+
+    auto VulkanRenderSystem::v1_primary_cmd_buffer() noexcept -> VkCommandBuffer
     {
         return _command_buffers.primary_buffers[0];
     }
