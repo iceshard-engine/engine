@@ -1,13 +1,9 @@
 #pragma once
 #include <core/allocator.hxx>
 #include <core/pointer.hxx>
+#include <iceshard/renderer/vulkan/vulkan_sdk.hxx>
 
-#include "device/vulkan_physical_device.hxx"
 #include "vulkan_device_memory_manager.hxx"
-
-#define NOMINMAX
-#define WIN32_LEAN_AND_MEAN
-#include <vulkan/vulkan.h>
 
 namespace render::vulkan
 {
