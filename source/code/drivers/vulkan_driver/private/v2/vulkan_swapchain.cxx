@@ -148,6 +148,16 @@ namespace iceshard::renderer::vulkan
         core::pod::Array<VulkanSwapchainImage> swapchain_images{ alloc };
 
         {
+            swapchain_image_count = 0;
+
+            api_result = vkGetSwapchainImagesKHR(
+                devices.graphics_device,
+                swapchain_handle,
+                &swapchain_image_count,
+                nullptr
+            );
+            IS_ASSERT(api_result == VkResult::VK_SUCCESS, "Couldn't query swapchain image count!");
+
             core::pod::Array<VkImage> swapchain_image_handles{ alloc };
             core::pod::array::resize(swapchain_image_handles, swapchain_image_count);
 
