@@ -34,12 +34,9 @@ namespace iceshard::renderer::vulkan
 
     public:
         auto v1_surface() noexcept -> VkSurfaceKHR;
-        auto v1_physical_device() noexcept -> VkPhysicalDevice;
         auto v1_graphics_device() noexcept -> VkDevice;
         auto v1_graphics_queue() noexcept -> VkQueue;
         auto v1_renderpass() noexcept -> VkRenderPass;
-        auto v1_swapchain() noexcept -> VkSwapchainKHR;
-        auto v1_device() noexcept -> VkDevice;
         auto v1_current_framebuffer() noexcept -> VkFramebuffer;
         auto v1_framebuffer_semaphore() noexcept -> VkSemaphore const*;
 
@@ -48,7 +45,7 @@ namespace iceshard::renderer::vulkan
 
     public:
         void v1_acquire_next_image() noexcept;
-        void v1_present(VkQueue queue) noexcept;
+        void v1_present() noexcept;
 
     private:
         core::allocator& _allocator;

@@ -61,6 +61,9 @@ namespace iceshard::renderer::vulkan
 
         // Create graphics device
         create_graphics_device(queue_families, devices.physical.handle, devices.graphics);
+
+        // We use the graphics queue as the presentig queue too as a simplification for now.
+        devices.presenting_queue = devices.graphics.queue;
         return true;
     }
 

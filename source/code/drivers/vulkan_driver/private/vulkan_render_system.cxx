@@ -534,7 +534,7 @@ namespace render
 
             vkResetFences(graphics_device, 1, &_vulkan_draw_fence);
 
-            _vk_render_system->v1_present(graphics_queue);
+            _vk_render_system->v1_present();
         }
 
         void initialize_render_interface(render::api::RenderInterface** render_interface) noexcept

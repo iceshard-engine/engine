@@ -79,11 +79,6 @@ namespace iceshard::renderer::vulkan
         return native_handle(_surface);
     }
 
-    auto VulkanRenderSystem::v1_physical_device() noexcept -> VkPhysicalDevice
-    {
-        return _devices.physical.handle;
-    }
-
     auto VulkanRenderSystem::v1_graphics_device() noexcept -> VkDevice
     {
         return _devices.graphics.handle;
@@ -97,16 +92,6 @@ namespace iceshard::renderer::vulkan
     auto VulkanRenderSystem::v1_renderpass() noexcept -> VkRenderPass
     {
         return _renderpass.renderpass;
-    }
-
-    auto VulkanRenderSystem::v1_swapchain() noexcept -> VkSwapchainKHR
-    {
-        return native_handle(_swapchain);
-    }
-
-    auto VulkanRenderSystem::v1_device() noexcept -> VkDevice
-    {
-        return _devices.graphics.handle;
     }
 
     auto VulkanRenderSystem::v1_current_framebuffer() noexcept -> VkFramebuffer
@@ -146,7 +131,7 @@ namespace iceshard::renderer::vulkan
         IS_ASSERT(api_result == VK_SUCCESS, "Couldn't get next framebuffer image!");
     }
 
-    void VulkanRenderSystem::v1_present(VkQueue queue) noexcept
+    void VulkanRenderSystem::v1_present() noexcept
     {
         VkSwapchainKHR swapchains[1]{ native_handle(_swapchain) };
 
@@ -160,7 +145,7 @@ namespace iceshard::renderer::vulkan
         present.waitSemaphoreCount = 0;
         present.pResults = NULL;
 
-        auto api_result = vkQueuePresentKHR(queue, &present);
+        auto api_result = vkQueuePresentKHR(_devices.presenting_queue, &present);
         IS_ASSERT(api_result == VK_SUCCESS, "Failed to present framebuffer image!");
     }
 
