@@ -115,9 +115,6 @@ namespace render
             imageAcquiredSemaphoreCreateInfo.pNext = NULL;
             imageAcquiredSemaphoreCreateInfo.flags = 0;
 
-            auto res = vkCreateSemaphore(graphics_device, &imageAcquiredSemaphoreCreateInfo, NULL, &_quick_semaphore);
-            assert(res == VK_SUCCESS);
-
             _render_pass_context.extent = _surface_extents;
             _render_pass_context.renderpass = _vk_render_system->v1_renderpass();
             _render_pass_context.framebuffer = _vk_render_system->v1_current_framebuffer();
@@ -127,7 +124,7 @@ namespace render
             fenceInfo.pNext = NULL;
             fenceInfo.flags = 0;
 
-            res = vkCreateFence(graphics_device, &fenceInfo, NULL, &_vulkan_draw_fence);
+            auto res = vkCreateFence(graphics_device, &fenceInfo, NULL, &_vulkan_draw_fence);
             assert(res == VK_SUCCESS);
         }
 
@@ -224,7 +221,6 @@ namespace render
             }
 
             vkDestroyFence(device, _vulkan_draw_fence, nullptr);
-            vkDestroySemaphore(device, _quick_semaphore, nullptr);
 
             _vulkan_pipeline = nullptr;
             _vulkan_pipeline_layout = nullptr;
@@ -247,6 +243,7 @@ namespace render
             _vulkan_descriptor_pool = nullptr;
 
             _vk_render_system->v1_destroy_swapchain();
+            _vk_render_system->v1_destroy_semaphore();
 
             release_devices();
 
@@ -564,27 +561,10 @@ namespace render
             auto* physical_device = _vulkan_physical_device.get();
             auto graphics_device = physical_device->graphics_device();
             auto graphics_device_native = graphics_device->native_handle();
-            auto swap_chain = _vk_render_system->v1_swapchain();
 
 
-            _vk_render_system->acquire_next_image();
+            _vk_render_system->v1_acquire_next_image();
 
-            //{
-
-            //    // Get the index of the next available swapchain image:
-            //    auto api_result = vkAcquireNextImageKHR(
-            //        graphics_device_native,
-            //        swap_chain,
-            //        UINT64_MAX,
-            //        _quick_semaphore,
-            //        VK_NULL_HANDLE,
-            //        &_vulkan_current_framebuffer
-            //    );
-
-            //    // TODO: Deal with the VK_SUBOPTIMAL_KHR and VK_ERROR_OUT_OF_DATE_KHR
-            //    // return codes
-            //    IS_ASSERT(api_result == VK_SUCCESS, "Couldn't get next framebuffer image!");
-            //}
 
             _render_pass_context.extent = _surface_extents;
             _render_pass_context.renderpass = _vk_render_system->v1_renderpass();
@@ -612,7 +592,7 @@ namespace render
             submit_info[0].pNext = NULL;
             submit_info[0].sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
             submit_info[0].waitSemaphoreCount = 1;
-            submit_info[0].pWaitSemaphores = &_quick_semaphore;
+            submit_info[0].pWaitSemaphores = _vk_render_system->v1_framebuffer_semaphore();
             submit_info[0].pWaitDstStageMask = &pipe_stage_flags;
             submit_info[0].commandBufferCount = 1;
             submit_info[0].pCommandBuffers = cmd_bufs;
@@ -630,32 +610,17 @@ namespace render
 
             /* Now present the image in the window */
 
-            _vk_render_system->v1_present();
 
-            //VkSwapchainKHR swapchains[1]{ swap_chain };
+            /* Make sure command buffer is finished before presenting */
+            do
+            {
+                constexpr auto FENCE_TIMEOUT = 100'000'000; // in ns
+                res = vkWaitForFences(graphics_device_native, 1, &_vulkan_draw_fence, VK_TRUE, FENCE_TIMEOUT);
+            } while (res == VK_TIMEOUT);
 
-            //VkPresentInfoKHR present;
-            //present.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-            //present.pNext = NULL;
-            //present.swapchainCount = 1;
-            //present.pSwapchains = swapchains;
-            //present.pImageIndices = &_vulkan_current_framebuffer;
-            //present.pWaitSemaphores = NULL;
-            //present.waitSemaphoreCount = 0;
-            //present.pResults = NULL;
+            vkResetFences(graphics_device_native, 1, &_vulkan_draw_fence);
 
-            ///* Make sure command buffer is finished before presenting */
-            //do
-            //{
-            //    constexpr auto FENCE_TIMEOUT = 100'000'000; // in ns
-            //    res = vkWaitForFences(graphics_device_native, 1, &_vulkan_draw_fence, VK_TRUE, FENCE_TIMEOUT);
-            //} while (res == VK_TIMEOUT);
-
-            //vkResetFences(graphics_device_native, 1, &_vulkan_draw_fence);
-
-            //assert(res == VK_SUCCESS);
-            //res = vkQueuePresentKHR(queue, &present);
-            //assert(res == VK_SUCCESS);
+            _vk_render_system->v1_present(queue);
         }
 
         void initialize_render_interface(render::api::RenderInterface** render_interface) noexcept
@@ -721,10 +686,6 @@ namespace render
         core::Vector<core::memory::unique_pointer<vulkan::VulkanShader>> _vulkan_shaders;
 
         VkExtent2D _surface_extents{ };
-
-        // Quick job
-        VkSemaphore _quick_semaphore;
-
 
         ////////////////////////////////////////////////////////////////
         // New RenderSystem object

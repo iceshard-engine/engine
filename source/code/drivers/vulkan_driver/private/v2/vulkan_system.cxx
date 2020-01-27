@@ -8,6 +8,7 @@ namespace iceshard::renderer::vulkan
     VulkanRenderSystem::VulkanRenderSystem(core::allocator& alloc, VkInstance instance) noexcept
         : _allocator{ alloc }
         , _vk_instance{ instance }
+        , _framebuffers{ _allocator }
     {
         _surface = create_surface(_allocator, _vk_instance, { 1280, 720 });
         create_devices(_vk_instance, _devices);
@@ -69,6 +70,61 @@ namespace iceshard::renderer::vulkan
         return _devices.graphics_device;
     }
 
+    auto VulkanRenderSystem::v1_current_framebuffer() noexcept -> VkFramebuffer
+    {
+        return native_handle(_framebuffers[_current_framebuffer_index]);
+    }
+
+    auto VulkanRenderSystem::v1_framebuffer_semaphore() noexcept -> VkSemaphore const *
+    {
+        return &_framebuffer_semaphore;
+    }
+
+    void VulkanRenderSystem::v1_create_framebuffers() noexcept
+    {
+        VkSurfaceCapabilitiesKHR capabilities;
+        get_surface_capabilities(
+            _devices.physical_device,
+            _surface,
+            capabilities
+        );
+
+        core::pod::array::clear(_framebuffers);
+        create_framebuffers(
+            _allocator,
+            capabilities.currentExtent,
+            _devices,
+            _renderpass,
+            _swapchain,
+            _framebuffers
+        );
+    }
+
+    void VulkanRenderSystem::v1_destroy_framebuffers() noexcept
+    {
+        destroy_framebuffers(
+            _allocator,
+            _framebuffers
+        );
+    }
+
+    void VulkanRenderSystem::v1_acquire_next_image() noexcept
+    {
+        // Get the index of the next available swapchain image:
+        auto api_result = vkAcquireNextImageKHR(
+            _devices.graphics_device,
+            native_handle(_swapchain),
+            UINT64_MAX,
+            _framebuffer_semaphore,
+            VK_NULL_HANDLE,
+            &_current_framebuffer_index
+        );
+
+        // TODO: Deal with the VK_SUBOPTIMAL_KHR and VK_ERROR_OUT_OF_DATE_KHR
+        // return codes
+        IS_ASSERT(api_result == VK_SUCCESS, "Couldn't get next framebuffer image!");
+    }
+
     void VulkanRenderSystem::v1_create_swapchain() noexcept
     {
         _swapchain = create_swapchain(_allocator, _devices, _surface);
@@ -79,6 +135,29 @@ namespace iceshard::renderer::vulkan
         destroy_swapchain(_allocator, _swapchain);
     }
 
+    void VulkanRenderSystem::v1_destroy_semaphore() noexcept
+    {
+        vkDestroySemaphore(_devices.graphics_device, _framebuffer_semaphore, nullptr);
+    }
+
+    void VulkanRenderSystem::v1_present(VkQueue queue) noexcept
+    {
+        VkSwapchainKHR swapchains[1]{ native_handle(_swapchain) };
+
+        VkPresentInfoKHR present;
+        present.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+        present.pNext = NULL;
+        present.swapchainCount = 1;
+        present.pSwapchains = swapchains;
+        present.pImageIndices = &_current_framebuffer_index;
+        present.pWaitSemaphores = NULL;
+        present.waitSemaphoreCount = 0;
+        present.pResults = NULL;
+
+        auto api_result = vkQueuePresentKHR(queue, &present);
+        IS_ASSERT(api_result == VK_SUCCESS, "Failed to present framebuffer image!");
+    }
+
     void VulkanRenderSystem::v1_destroy_renderpass() noexcept
     {
         destroy_renderpass(_renderpass);
@@ -86,7 +165,15 @@ namespace iceshard::renderer::vulkan
 
     void VulkanRenderSystem::v1_set_graphics_device(VkDevice device) noexcept
     {
+        IS_ASSERT(_framebuffer_semaphore == vk_nullptr, "Semaphore object is not a nullptr!");
+
         _devices.graphics_device = device;
+
+        VkSemaphoreCreateInfo semaphore_info;
+        semaphore_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+        semaphore_info.pNext = nullptr;
+        semaphore_info.flags = 0;
+        vkCreateSemaphore(_devices.graphics_device, &semaphore_info, nullptr, &_framebuffer_semaphore);
     }
 
     auto create_render_system(core::allocator& alloc, VkInstance instance) noexcept -> VulkanRenderSystem*

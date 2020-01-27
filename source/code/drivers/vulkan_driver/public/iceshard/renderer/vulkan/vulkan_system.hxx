@@ -7,6 +7,7 @@
 #include <iceshard/renderer/vulkan/vulkan_devices.hxx>
 #include <iceshard/renderer/vulkan/vulkan_swapchain.hxx>
 #include <iceshard/renderer/vulkan/vulkan_renderpass.hxx>
+#include <iceshard/renderer/vulkan/vulkan_framebuffer.hxx>
 
 namespace iceshard::renderer::vulkan
 {
@@ -34,10 +35,17 @@ namespace iceshard::renderer::vulkan
         auto v1_renderpass() noexcept -> VkRenderPass;
         auto v1_swapchain() noexcept -> VkSwapchainKHR;
         auto v1_device() noexcept -> VkDevice;
+        auto v1_current_framebuffer() noexcept -> VkFramebuffer;
+        auto v1_framebuffer_semaphore() noexcept -> VkSemaphore const*;
 
     public:
+        void v1_create_framebuffers() noexcept;
+        void v1_destroy_framebuffers() noexcept;
+        void v1_acquire_next_image() noexcept;
         void v1_create_swapchain() noexcept;
         void v1_destroy_swapchain() noexcept;
+        void v1_destroy_semaphore() noexcept;
+        void v1_present(VkQueue queue) noexcept;
 
         void v1_destroy_renderpass() noexcept;
         void v1_set_graphics_device(VkDevice device) noexcept;
@@ -50,6 +58,10 @@ namespace iceshard::renderer::vulkan
         VulkanDevices _devices;
         VulkanSwapchain _swapchain;
         VulkanRenderPass _renderpass;
+
+        uint32_t _current_framebuffer_index = 0;
+        core::pod::Array<VulkanFramebuffer> _framebuffers;
+        VkSemaphore _framebuffer_semaphore = vk_nullptr;
     };
 
     auto create_render_system(core::allocator& alloc, VkInstance device) noexcept -> VulkanRenderSystem*;
