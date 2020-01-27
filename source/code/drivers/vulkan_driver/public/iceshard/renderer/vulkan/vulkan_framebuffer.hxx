@@ -12,10 +12,12 @@ namespace iceshard::renderer::vulkan
         Invalid = 0x0
     };
 
-    auto create_framebuffers(
+    auto native_handle(VulkanFramebuffer framebuffer) noexcept -> VkFramebuffer;
+
+    void create_framebuffers(
         core::allocator& alloc,
+        VkExtent2D framebuffer_extent,
         VulkanDevices devices,
-        VulkanSurface surface,
         VulkanRenderPass renderpass,
         VulkanSwapchain swapchain,
         core::pod::Array<VulkanFramebuffer>& framebuffers

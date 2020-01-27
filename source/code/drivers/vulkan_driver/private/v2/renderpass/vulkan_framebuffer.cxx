@@ -19,8 +19,13 @@ namespace iceshard::renderer::vulkan
             ) noexcept
                 : _vk_device{ device }
                 , _vk_framebuffer{ framebuffer }
-                , _images{ images }
+                , _images{ std::move(images) }
             {
+            }
+
+            auto native_handle() noexcept
+            {
+                return _vk_framebuffer;
             }
 
             ~VulkanFramebufferObject() noexcept
@@ -32,14 +37,14 @@ namespace iceshard::renderer::vulkan
                         image.image_view,
                         nullptr
                     );
-                    vkDestroyImage(
-                        _vk_device,
-                        image.allocated_image,
-                        nullptr
-                    );
                     vkFreeMemory(
                         _vk_device,
                         image.allocated_image_memory,
+                        nullptr
+                    );
+                    vkDestroyImage(
+                        _vk_device,
+                        image.allocated_image,
                         nullptr
                     );
                 }
@@ -64,7 +69,12 @@ namespace iceshard::renderer::vulkan
 
     } // namespace detail
 
-    auto create_framebuffers(
+    auto native_handle(VulkanFramebuffer framebuffer) noexcept -> VkFramebuffer
+    {
+        return detail::VulkanFramebufferHandle{ framebuffer }.object->native_handle();
+    }
+
+    void create_framebuffers(
         core::allocator& alloc,
         VkExtent2D framebuffer_extent,
         VulkanDevices devices,
@@ -118,14 +128,14 @@ namespace iceshard::renderer::vulkan
         core::pod::Array<VkImageView> attachments{ temp_alloc };
         core::pod::array::resize(attachments, renderpass_image_count);
 
-        int32_t attachment_index = 0;
-        for (auto const& fbimage : framebuffer_images)
+        uint32_t framebuffer_image_idx = 0;
+        for (int32_t attachment_idx = 0; attachment_idx < static_cast<int32_t>(renderpass_image_count); ++attachment_idx)
         {
-            if (attachment_index != swapchain_image_index)
+            if (attachment_idx != swapchain_image_index)
             {
-                attachments[attachment_index] = fbimage.image_view;
+                attachments[attachment_idx] = framebuffer_images[framebuffer_image_idx].image_view;
+                framebuffer_image_idx += 1;
             }
-            attachment_index += 1;
         }
 
         VkFramebufferCreateInfo fb_info = {};
@@ -138,7 +148,7 @@ namespace iceshard::renderer::vulkan
         fb_info.height = framebuffer_extent.height;
         fb_info.layers = 1;
 
-        IS_ASSERT(swapchain_image_index < 0, "Framebuffers without swapchain images are not supported yet!");
+        IS_ASSERT(swapchain_image_index >= 0, "Framebuffers without swapchain images are not supported yet!");
         for (auto const& swapchain_image : iceshard::renderer::vulkan::swapchain_images(swapchain))
         {
             attachments[swapchain_image_index] = swapchain_image.view;
