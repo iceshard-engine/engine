@@ -59,6 +59,8 @@ namespace iceshard::renderer::vulkan
         core::pod::Array<VulkanDeviceQueueFamily> queue_families{ temp_alloc };
         query_physical_device_queue_families(devices.physical.handle, surface, queue_families);
 
+        // Create graphics device
+        create_graphics_device(queue_families, devices.physical.handle, devices.graphics);
         return true;
     }
 
@@ -88,9 +90,9 @@ namespace iceshard::renderer::vulkan
         return false;
     }
 
-    void destroy_devices(VkInstance, VulkanDevices const&) noexcept
+    void destroy_devices(VkInstance, VulkanDevices devices) noexcept
     {
-        // nothing to do yet
+        release_graphics_device(devices.graphics);
     }
 
 } // namespace iceshard::renderer::vulkan

@@ -13,6 +13,7 @@ namespace iceshard::renderer::vulkan
     {
         VkDevice handle;
         VkQueue queue;
+        uint32_t family_index;
     };
 
     struct VulkanDevices
@@ -31,6 +32,6 @@ namespace iceshard::renderer::vulkan
 
     bool create_devices(VkInstance instance, VkSurfaceKHR surface, VulkanDevices& devices) noexcept;
 
-    void destroy_devices(VkInstance instance, VulkanDevices const& devices) noexcept;
+    void destroy_devices(VkInstance instance, VulkanDevices devices) noexcept;
 
 } // namespace iceshard::renderer::vulkan

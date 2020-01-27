@@ -1,5 +1,6 @@
 #include "vulkan_device_memory_manager.hxx"
 #include <core/memory.hxx>
+#include <core/pod/hash.hxx>
 #include <core/allocators/stack_allocator.hxx>
 
 namespace win32
@@ -40,9 +41,8 @@ namespace render::vulkan
     } // namespace detail
 
 
-    VulkanDeviceMemoryManager::VulkanDeviceMemoryManager(core::allocator& alloc, VulkanPhysicalDevice const* physical_device, VkDevice graphics_device) noexcept
-        : _physical_device{ physical_device }
-        , _graphics_device{ graphics_device }
+    VulkanDeviceMemoryManager::VulkanDeviceMemoryManager(core::allocator& alloc, iceshard::renderer::vulkan::VulkanDevices devices) noexcept
+        : _devices{ devices }
         , _memory_blocks{ alloc }
         , _block_info{ alloc }
         , _current_memory_blocks{ alloc }
@@ -54,19 +54,20 @@ namespace render::vulkan
     {
         for (auto const& block : _memory_blocks)
         {
-            vkFreeMemory(_graphics_device, block.device_memory_handle, _vulkan_allocator.vulkan_callbacks());
+            vkFreeMemory(_devices.graphics.handle, block.device_memory_handle, _vulkan_allocator.vulkan_callbacks());
         }
     }
 
-    bool VulkanDeviceMemoryManager::allocate_memory(VkBuffer buffer, VkMemoryPropertyFlags flags, VulkanMemoryInfo& memory_info) noexcept
+    bool VulkanDeviceMemoryManager::allocate_memory(VkBuffer buffer, VkMemoryPropertyFlags memory_property_flags, VulkanMemoryInfo& memory_info) noexcept
     {
         VkMemoryRequirements memory_requirements;
-        vkGetBufferMemoryRequirements(_graphics_device, buffer, &memory_requirements);
+        vkGetBufferMemoryRequirements(_devices.graphics.handle, buffer, &memory_requirements);
 
         uint32_t memory_type_index = 0;
-        bool memory_type_found = _physical_device->find_memory_type_index(
+        bool memory_type_found = iceshard::renderer::vulkan::find_memory_type_index(
+            _devices,
             memory_requirements,
-            flags,
+            memory_property_flags,
             memory_type_index
         );
         IS_ASSERT(memory_type_found, "No memory type found for requested buffer!");
@@ -74,29 +75,30 @@ namespace render::vulkan
         VulkanMemoryInfo temp_memory_info;
         allocate_memory(memory_type_index, memory_requirements.size, memory_requirements.alignment, temp_memory_info);
 
-        auto api_result = vkBindBufferMemory(_graphics_device, buffer, temp_memory_info.memory_handle, temp_memory_info.memory_offset);
+        auto api_result = vkBindBufferMemory(_devices.graphics.handle, buffer, temp_memory_info.memory_handle, temp_memory_info.memory_offset);
         IS_ASSERT(api_result == VkResult::VK_SUCCESS, "Couldn't bind memory to buffer!");
 
         memory_info = temp_memory_info;
         return api_result == VkResult::VK_SUCCESS;
     }
 
-    bool VulkanDeviceMemoryManager::allocate_memory(VkImage image, VkMemoryPropertyFlags flags, VulkanMemoryInfo& memory_info) noexcept
+    bool VulkanDeviceMemoryManager::allocate_memory(VkImage image, VkMemoryPropertyFlags memory_property_flags, VulkanMemoryInfo& memory_info) noexcept
     {
         VkMemoryRequirements memory_requirements;
-        vkGetImageMemoryRequirements(_graphics_device, image, &memory_requirements);
+        vkGetImageMemoryRequirements(_devices.graphics.handle, image, &memory_requirements);
 
         uint32_t memory_type_index = 0;
-        bool memory_type_found = _physical_device->find_memory_type_index(
+        bool memory_type_found = iceshard::renderer::vulkan::find_memory_type_index(
+            _devices,
             memory_requirements,
-            flags,
+            memory_property_flags,
             memory_type_index
         );
-        IS_ASSERT(memory_type_found, "No memory type found for requested buffer!");
+        IS_ASSERT(memory_type_found, "No memory type found for requested image!");
 
         VulkanMemoryInfo temp_memory_info;
         auto block_handle = detail::allocate_device_memory(
-            _graphics_device,
+            _devices.graphics.handle,
             memory_requirements.size,
             memory_type_index,
             _vulkan_allocator.vulkan_callbacks()
@@ -105,7 +107,7 @@ namespace render::vulkan
         temp_memory_info.memory_offset = 0;
         temp_memory_info.memory_size = (uint32_t) memory_requirements.size;
 
-        auto api_result = vkBindImageMemory(_graphics_device, image, temp_memory_info.memory_handle, temp_memory_info.memory_offset);
+        auto api_result = vkBindImageMemory(_devices.graphics.handle, image, temp_memory_info.memory_handle, temp_memory_info.memory_offset);
         IS_ASSERT(api_result == VkResult::VK_SUCCESS, "Couldn't bind memory to buffer!");
 
         memory_info = temp_memory_info;
@@ -119,7 +121,7 @@ namespace render::vulkan
 
     void VulkanDeviceMemoryManager::deallocate_memory(VkImage, VulkanMemoryInfo const& memory_info) noexcept
     {
-        vkFreeMemory(_graphics_device, memory_info.memory_handle, _vulkan_allocator.vulkan_callbacks());
+        vkFreeMemory(_devices.graphics.handle, memory_info.memory_handle, _vulkan_allocator.vulkan_callbacks());
     }
 
     void VulkanDeviceMemoryManager::map_memory(VulkanMemoryInfo* ranges, render::api::BufferDataView* views, uint32_t size) noexcept
@@ -138,7 +140,7 @@ namespace render::vulkan
             {
                 auto const& block = _memory_blocks[block_idx];
                 auto vk_result = vkMapMemory(
-                    _graphics_device,
+                    _devices.graphics.handle,
                     block.device_memory_handle,
                     0, /* offset always from the beginning */
                     block.device_memory_usage,
@@ -168,7 +170,7 @@ namespace render::vulkan
 
             if (core::pod::hash::has(unmapped_ptrs, block_hash) == false)
             {
-                vkUnmapMemory(_graphics_device, range.memory_handle);
+                vkUnmapMemory(_devices.graphics.handle, range.memory_handle);
                 core::pod::hash::set(unmapped_ptrs, block_hash, true);
             }
         }
@@ -181,7 +183,7 @@ namespace render::vulkan
         if (block_size <= size)
         {
             DeviceMemoryBlock memory_block {
-                .device_memory_handle = detail::allocate_device_memory(_graphics_device, size, memory_type, _vulkan_allocator.vulkan_callbacks()),
+                .device_memory_handle = detail::allocate_device_memory(_devices.graphics.handle, size, memory_type, _vulkan_allocator.vulkan_callbacks()),
                 .device_memory_total = size,
                 .device_memory_usage = size,
             };
@@ -198,7 +200,7 @@ namespace render::vulkan
             if (_current_memory_blocks.count(memory_type) == 0)
             {
                 uint32_t block_index = static_cast<uint32_t>(_memory_blocks.size());
-                auto block_handle = detail::allocate_device_memory(_graphics_device, block_size, memory_type, _vulkan_allocator.vulkan_callbacks());
+                auto block_handle = detail::allocate_device_memory(_devices.graphics.handle, block_size, memory_type, _vulkan_allocator.vulkan_callbacks());
 
                 _memory_blocks.emplace_back(DeviceMemoryBlock{
                     .device_memory_handle = block_handle,
@@ -219,10 +221,10 @@ namespace render::vulkan
             if (memory_block_offset + size >= memory_block->device_memory_total)
             {
                 uint32_t block_index = static_cast<uint32_t>(_memory_blocks.size());
-                auto block_handle = detail::allocate_device_memory(_graphics_device, block_size, memory_type, _vulkan_allocator.vulkan_callbacks());
+                auto block_handle = detail::allocate_device_memory(_devices.graphics.handle, block_size, memory_type, _vulkan_allocator.vulkan_callbacks());
 
                 _memory_blocks.emplace_back(DeviceMemoryBlock{
-                    .device_memory_handle = detail::allocate_device_memory(_graphics_device, block_size, memory_type, _vulkan_allocator.vulkan_callbacks()),
+                    .device_memory_handle = detail::allocate_device_memory(_devices.graphics.handle, block_size, memory_type, _vulkan_allocator.vulkan_callbacks()),
                     .device_memory_total = block_size,
                     .device_memory_usage = 0,
                 });

@@ -8,6 +8,7 @@
 #include <iceshard/renderer/vulkan/vulkan_swapchain.hxx>
 #include <iceshard/renderer/vulkan/vulkan_renderpass.hxx>
 #include <iceshard/renderer/vulkan/vulkan_framebuffer.hxx>
+#include <iceshard/renderer/vulkan/vulkan_command_buffer.hxx>
 
 namespace iceshard::renderer::vulkan
 {
@@ -23,6 +24,8 @@ namespace iceshard::renderer::vulkan
             RenderPassFeatures renderpass_features
         ) noexcept;
 
+        auto devices() noexcept -> VulkanDevices const& { return _devices; }
+
         auto renderpass(RenderPassStage stage = RenderPassStage::Geometry) noexcept -> RenderPass;
 
         auto swapchain() noexcept -> VulkanSwapchain;
@@ -32,23 +35,20 @@ namespace iceshard::renderer::vulkan
     public:
         auto v1_surface() noexcept -> VkSurfaceKHR;
         auto v1_physical_device() noexcept -> VkPhysicalDevice;
+        auto v1_graphics_device() noexcept -> VkDevice;
+        auto v1_graphics_queue() noexcept -> VkQueue;
         auto v1_renderpass() noexcept -> VkRenderPass;
         auto v1_swapchain() noexcept -> VkSwapchainKHR;
         auto v1_device() noexcept -> VkDevice;
         auto v1_current_framebuffer() noexcept -> VkFramebuffer;
         auto v1_framebuffer_semaphore() noexcept -> VkSemaphore const*;
 
-    public:
-        void v1_create_framebuffers() noexcept;
-        void v1_destroy_framebuffers() noexcept;
-        void v1_acquire_next_image() noexcept;
-        void v1_create_swapchain() noexcept;
-        void v1_destroy_swapchain() noexcept;
-        void v1_destroy_semaphore() noexcept;
-        void v1_present(VkQueue queue) noexcept;
+        auto v1_graphics_cmd_buffer() noexcept -> VkCommandBuffer;
+        auto v1_transfer_cmd_buffer() noexcept -> VkCommandBuffer;
 
-        void v1_destroy_renderpass() noexcept;
-        void v1_set_graphics_device(VkDevice device) noexcept;
+    public:
+        void v1_acquire_next_image() noexcept;
+        void v1_present(VkQueue queue) noexcept;
 
     private:
         core::allocator& _allocator;
@@ -58,10 +58,13 @@ namespace iceshard::renderer::vulkan
         VulkanDevices _devices;
         VulkanSwapchain _swapchain;
         VulkanRenderPass _renderpass;
+        VulkanCommandBuffers _command_buffers;
 
         uint32_t _current_framebuffer_index = 0;
         core::pod::Array<VulkanFramebuffer> _framebuffers;
         VkSemaphore _framebuffer_semaphore = vk_nullptr;
+
+        bool _initialized = false;
     };
 
     auto create_render_system(core::allocator& alloc, VkInstance device) noexcept -> VulkanRenderSystem*;

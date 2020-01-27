@@ -25,7 +25,7 @@ namespace iceshard::renderer::vulkan
 
     void destroy_framebuffers(
         core::allocator& alloc,
-        core::pod::Array<VulkanFramebuffer> const& framebuffers
+        core::pod::Array<VulkanFramebuffer>& framebuffers
     ) noexcept;
 
 } // namespace iceshard::renderer::vulkan

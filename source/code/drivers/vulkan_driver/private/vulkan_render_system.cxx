@@ -45,7 +45,6 @@ namespace render
             : render::RenderSystem{}
             , _driver_allocator{ "vulkan-driver", alloc }
             , _vulkan_allocator{ alloc }
-            , _vulkan_command_buffers{ _driver_allocator }
             , _vulkan_vertex_descriptors{ _driver_allocator }
             , _vulkan_buffers{ _driver_allocator }
             , _vulkan_descriptor_set_layouts{ _driver_allocator }
@@ -87,28 +86,25 @@ namespace render
 
             _vk_render_system = iceshard::renderer::vulkan::create_render_system(_driver_allocator, _vulkan_instance);
 
-            enumerate_devices();
+            _surface_extents = _vk_render_system->render_area();
 
-            _vk_render_system->v1_create_swapchain();
+            _vulkan_device_memory = core::memory::make_unique<vulkan::VulkanDeviceMemoryManager>(
+                _driver_allocator,
+                _driver_allocator,
+                _vk_render_system->devices()
+            );
 
             _vulkan_staging_buffer = render::vulkan::create_staging_buffer(_driver_allocator, *_vulkan_device_memory);
 
-            auto* physical_device = _vulkan_physical_device.get();
-            auto graphics_device = physical_device->graphics_device()->native_handle();
+            _vulkan_descriptor_pool = core::memory::make_unique<render::vulkan::VulkanDescriptorPool>(
+                _driver_allocator,
+                _vk_render_system->v1_graphics_device()
+            );
 
-            _vulkan_descriptor_pool = core::memory::make_unique<render::vulkan::VulkanDescriptorPool>(_driver_allocator, graphics_device);
-            _vulkan_physical_device->graphics_device()->create_command_buffers(_vulkan_command_buffers, 2);
-
-            _command_buffer_context.command_buffer = _vulkan_command_buffers[0]->native_handle();
+            _command_buffer_context.command_buffer = _vk_render_system->v1_graphics_cmd_buffer();
             _command_buffer_context.render_pass_context = &_render_pass_context;
+            _command_buffer_context.render_pass_context->framebuffer = _vk_render_system->v1_current_framebuffer();
 
-            {
-                using iceshard::renderer::RenderPassStage;
-
-                _vk_render_system->prepare(_surface_extents, iceshard::renderer::RenderPassFeatures::None);
-            }
-
-            _vk_render_system->v1_create_framebuffers();
 
             VkSemaphoreCreateInfo imageAcquiredSemaphoreCreateInfo;
             imageAcquiredSemaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
@@ -117,70 +113,36 @@ namespace render
 
             _render_pass_context.extent = _surface_extents;
             _render_pass_context.renderpass = _vk_render_system->v1_renderpass();
-            _render_pass_context.framebuffer = _vk_render_system->v1_current_framebuffer();
 
             VkFenceCreateInfo fenceInfo;
             fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
             fenceInfo.pNext = NULL;
             fenceInfo.flags = 0;
 
-            auto res = vkCreateFence(graphics_device, &fenceInfo, NULL, &_vulkan_draw_fence);
+            auto res = vkCreateFence(_vk_render_system->v1_graphics_device(), &fenceInfo, NULL, &_vulkan_draw_fence);
             assert(res == VK_SUCCESS);
         }
 
         void prepare() noexcept override
         {
-            vkDeviceWaitIdle(_vulkan_physical_device->graphics_device()->native_handle());
+            vkDeviceWaitIdle(_vk_render_system->v1_graphics_device());
 
             auto new_extents = _vk_render_system->render_area();
             if (_surface_extents.width != new_extents.width || _surface_extents.height != new_extents.height)
             {
-                [[maybe_unused]]
-                auto physical_device = _vulkan_physical_device->native_handle();
-
                 fmt::print("ReConstructing graphics pipelines!\n");
                 _surface_extents = new_extents;
                 _render_pass_context.extent = _surface_extents;
 
-                _vk_render_system->v1_destroy_framebuffers();
-                _vk_render_system->v1_destroy_swapchain();
-                _vk_render_system->v1_create_swapchain();
-                _vk_render_system->v1_create_framebuffers();
+                _vk_render_system->prepare(new_extents, iceshard::renderer::RenderPassFeatures::None);
 
                 _render_pass_context.framebuffer = _vk_render_system->v1_current_framebuffer();
-
             }
-        }
-
-        void enumerate_devices() noexcept
-        {
-            _vulkan_physical_device = core::memory::make_unique<vulkan::VulkanPhysicalDevice>(
-                _driver_allocator,
-                _driver_allocator,
-                _vk_render_system->v1_physical_device(),
-                _vk_render_system->v1_surface()
-                );
-
-            _vk_render_system->v1_set_graphics_device(_vulkan_physical_device->graphics_device()->native_handle());
-            _surface_extents = _vk_render_system->render_area();
-
-            _vulkan_device_memory = core::memory::make_unique<vulkan::VulkanDeviceMemoryManager>(
-                _driver_allocator,
-                _driver_allocator,
-                _vulkan_physical_device.get(),
-                _vulkan_physical_device->graphics_device()->native_handle()
-            );
-        }
-
-        void release_devices() noexcept
-        {
-            _vulkan_device_memory = nullptr;
-            _vulkan_physical_device = nullptr;
         }
 
         void shutdown() noexcept
         {
-            auto device = _vulkan_physical_device->graphics_device()->native_handle();
+            auto device = _vk_render_system->v1_graphics_device();
 
             for (auto const& entry : _vulkan_vertex_descriptors)
             {
@@ -192,9 +154,6 @@ namespace render
             _vulkan_pipeline = nullptr;
             _vulkan_pipeline_layout = nullptr;
 
-            _vk_render_system->v1_destroy_framebuffers();
-            _vk_render_system->v1_destroy_renderpass();
-
             _vulkan_descriptor_sets = nullptr;
             _vulkan_descriptor_set_layouts.clear();
 
@@ -202,17 +161,12 @@ namespace render
             _vulkan_samplers.clear();
             _vulkan_images.clear();
 
-            core::pod::array::clear(_vulkan_command_buffers);
-
             _vulkan_staging_buffer = nullptr;
             _vulkan_buffers.clear();
 
             _vulkan_descriptor_pool = nullptr;
 
-            _vk_render_system->v1_destroy_swapchain();
-            _vk_render_system->v1_destroy_semaphore();
-
-            release_devices();
+            _vulkan_device_memory = nullptr;
 
             iceshard::renderer::vulkan::destroy_render_system(_driver_allocator, _vk_render_system);
 
@@ -275,7 +229,7 @@ namespace render
 
         void create_imgui_descriptor_sets() noexcept
         {
-            auto const graphics_device_handle = _vulkan_physical_device->graphics_device()->native_handle();
+            auto const graphics_device_handle = _vk_render_system->v1_graphics_device();
 
             _vulkan_samplers.emplace_back(render::vulkan::create_sampler(_driver_allocator, graphics_device_handle));
 
@@ -351,7 +305,7 @@ namespace render
                 image_extent
             );
 
-            VkCommandBuffer staging_cmds = _vulkan_command_buffers[1]->native_handle();
+            VkCommandBuffer staging_cmds = _vk_render_system->v1_transfer_cmd_buffer();
 
             VkCommandBufferBeginInfo beginInfo = {};
             beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -442,7 +396,7 @@ namespace render
             _vulkan_shaders.emplace_back(
                 vulkan::create_shader(
                     _driver_allocator,
-                    _vulkan_physical_device->graphics_device()->native_handle(),
+                    _vk_render_system->v1_graphics_device(),
                     stage == 1 ? VkShaderStageFlagBits::VK_SHADER_STAGE_VERTEX_BIT : VkShaderStageFlagBits::VK_SHADER_STAGE_FRAGMENT_BIT,
                     shader_data.content
                 )
@@ -475,8 +429,7 @@ namespace render
             uint32_t descriptor_name_count
         ) noexcept -> api::RenderPipeline override
         {
-            auto* physical_device = _vulkan_physical_device.get();
-            auto graphics_device = physical_device->graphics_device()->native_handle();
+            auto graphics_device = _vk_render_system->v1_graphics_device();
 
             {
                 _vulkan_pipeline_layout = vulkan::create_pipeline_layout(
@@ -525,9 +478,8 @@ namespace render
 
         void swap() noexcept override
         {
-            auto* physical_device = _vulkan_physical_device.get();
-            auto graphics_device = physical_device->graphics_device();
-            auto graphics_device_native = graphics_device->native_handle();
+            auto graphics_device = _vk_render_system->v1_graphics_device();
+            auto graphics_queue = _vk_render_system->v1_graphics_queue();
 
 
             _vk_render_system->v1_acquire_next_image();
@@ -542,18 +494,18 @@ namespace render
             if (_staging_cmds)
             {
                 _staging_cmds = false;
-                const VkCommandBuffer cmd_bufs[] = { _vulkan_command_buffers[1]->native_handle() };
+                const VkCommandBuffer cmd_bufs[] = { _vk_render_system->v1_transfer_cmd_buffer() };
 
                 VkSubmitInfo submit_info[1] = {};
                 submit_info[0].sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
                 submit_info[0].commandBufferCount = 1;
                 submit_info[0].pCommandBuffers = cmd_bufs;
 
-                vkQueueSubmit(graphics_device->device_queue(), 1, submit_info, VK_NULL_HANDLE);
-                vkQueueWaitIdle(graphics_device->device_queue());
+                vkQueueSubmit(graphics_queue, 1, submit_info, VK_NULL_HANDLE);
+                vkQueueWaitIdle(graphics_queue);
             }
 
-            const VkCommandBuffer cmd_bufs[] = { _vulkan_command_buffers[0]->native_handle() };
+            const VkCommandBuffer cmd_bufs[] = { _vk_render_system->v1_graphics_cmd_buffer() };
             VkPipelineStageFlags pipe_stage_flags = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
             VkSubmitInfo submit_info[1] = {};
             submit_info[0].pNext = NULL;
@@ -567,12 +519,8 @@ namespace render
             submit_info[0].pSignalSemaphores = NULL;
 
 
-            auto queue = graphics_device->device_queue();
-            IS_ASSERT(graphics_device->can_present(), "Cannot present images on this queue!");
-            // Check if we can also present else find another 'Device' which can do it.
-
             /* Queue the command buffer for execution */
-            auto res = vkQueueSubmit(queue, 1, submit_info, _vulkan_draw_fence);
+            auto res = vkQueueSubmit(graphics_queue, 1, submit_info, _vulkan_draw_fence);
             assert(res == VK_SUCCESS);
 
             /* Now present the image in the window */
@@ -582,12 +530,12 @@ namespace render
             do
             {
                 constexpr auto FENCE_TIMEOUT = 100'000'000; // in ns
-                res = vkWaitForFences(graphics_device_native, 1, &_vulkan_draw_fence, VK_TRUE, FENCE_TIMEOUT);
+                res = vkWaitForFences(graphics_device, 1, &_vulkan_draw_fence, VK_TRUE, FENCE_TIMEOUT);
             } while (res == VK_TIMEOUT);
 
-            vkResetFences(graphics_device_native, 1, &_vulkan_draw_fence);
+            vkResetFences(graphics_device, 1, &_vulkan_draw_fence);
 
-            _vk_render_system->v1_present(queue);
+            _vk_render_system->v1_present(graphics_queue);
         }
 
         void initialize_render_interface(render::api::RenderInterface** render_interface) noexcept
@@ -638,11 +586,7 @@ namespace render
         core::memory::unique_pointer<render::vulkan::VulkanPipeline> _vulkan_pipeline{ nullptr, { core::memory::globals::null_allocator() } };
 
         // Array vulkan devices.
-        core::memory::unique_pointer<render::vulkan::VulkanPhysicalDevice> _vulkan_physical_device{ nullptr, { core::memory::globals::null_allocator() } };
         core::memory::unique_pointer<render::vulkan::VulkanDeviceMemoryManager> _vulkan_device_memory{ nullptr, { core::memory::globals::null_allocator() } };
-
-        core::pod::Array<render::vulkan::VulkanCommandBuffer*> _vulkan_command_buffers;
-        bool _staging_cmds = false;
 
         render::api::v1::vulkan::RenderPassContext _render_pass_context{};
         render::api::v1::vulkan::CommandBufferContext _command_buffer_context{};
@@ -651,6 +595,8 @@ namespace render
         core::Vector<core::memory::unique_pointer<vulkan::VulkanImage>> _vulkan_images;
         core::Vector<core::memory::unique_pointer<vulkan::VulkanSampler>> _vulkan_samplers;
         core::Vector<core::memory::unique_pointer<vulkan::VulkanShader>> _vulkan_shaders;
+
+        bool _staging_cmds;
 
         VkExtent2D _surface_extents{ };
 

@@ -173,7 +173,7 @@ namespace iceshard::renderer::vulkan
 
     void destroy_framebuffers(
         core::allocator& alloc,
-        core::pod::Array<VulkanFramebuffer> const& framebuffers
+        core::pod::Array<VulkanFramebuffer>& framebuffers
     ) noexcept
     {
         for (auto const& framebuffer : framebuffers)
@@ -181,6 +181,7 @@ namespace iceshard::renderer::vulkan
             detail::VulkanFramebufferHandle handle{ framebuffer };
             alloc.destroy(handle.object);
         }
+        core::pod::array::clear(framebuffers);
     }
 
 } // namespace iceshard::renderer::vulkan

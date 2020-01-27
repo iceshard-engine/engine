@@ -24,7 +24,12 @@ namespace iceshard::renderer::vulkan
 
     void create_graphics_device(
         core::pod::Array<VulkanDeviceQueueFamily> const& queue_families,
+        VkPhysicalDevice physical_device,
         VulkanGraphicsDevice& device
+    ) noexcept;
+
+    void release_graphics_device(
+        VulkanGraphicsDevice device
     ) noexcept;
 
 } // namespace iceshard::renderer::vulkan
