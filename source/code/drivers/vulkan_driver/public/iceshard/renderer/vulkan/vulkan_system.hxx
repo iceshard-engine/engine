@@ -10,6 +10,8 @@
 #include <iceshard/renderer/vulkan/vulkan_framebuffer.hxx>
 #include <iceshard/renderer/vulkan/vulkan_command_buffer.hxx>
 
+#include <atomic>
+
 namespace iceshard::renderer::vulkan
 {
 
@@ -28,6 +30,11 @@ namespace iceshard::renderer::vulkan
 
         auto renderpass(RenderPassStage stage = RenderPassStage::Geometry) noexcept -> RenderPass;
 
+        auto acquire_command_buffer(RenderPassStage stage) noexcept->CommandBuffer override;
+        auto acquire_command_buffer(RenderPassStage stage, VkPipelineLayout pipeline_layout) noexcept -> CommandBuffer;
+
+        void submit_command_buffer(CommandBuffer cmd_buffer) noexcept override;
+
         auto swapchain() noexcept -> VulkanSwapchain;
 
         auto render_area() noexcept -> VkExtent2D;
@@ -45,6 +52,8 @@ namespace iceshard::renderer::vulkan
         auto v1_transfer_cmd_buffer() noexcept -> VkCommandBuffer;
 
     public:
+        void v1_execute_subpass_commands(VkCommandBuffer cmds) noexcept;
+
         void v1_acquire_next_image() noexcept;
         void v1_present() noexcept;
 
@@ -59,6 +68,10 @@ namespace iceshard::renderer::vulkan
 
         VulkanCommandBuffers _command_buffers;
         core::pod::Array<VkCommandBuffer> _command_buffers_secondary;
+        std::atomic_uint32_t _next_command_buffer = 0;
+
+        core::pod::Array<VkCommandBuffer> _command_buffers_submitted;
+        std::atomic_uint32_t _submitted_command_buffer_count = 0;
 
         uint32_t _current_framebuffer_index = 0;
         core::pod::Array<VulkanFramebuffer> _framebuffers;

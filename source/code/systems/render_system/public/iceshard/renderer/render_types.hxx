@@ -10,7 +10,6 @@ namespace iceshard::renderer
 
     enum class RenderPassStage : uint32_t;
 
-
-    class RenderViewport;
+    using CommandBuffer = iceshard::renderer::api::CommandBuffer;
 
 } // namespace iceshard::renderer

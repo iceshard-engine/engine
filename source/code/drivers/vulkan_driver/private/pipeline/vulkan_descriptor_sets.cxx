@@ -7,10 +7,12 @@ namespace render::vulkan
 
     VulkanDescriptorSets::VulkanDescriptorSets(
         VkDevice device,
+        VkPipelineLayout pipeline_layout,
         VkDescriptorPool descriptor_pool,
         core::pod::Array<VkDescriptorSet> descriptor_sets
     ) noexcept
         : _device_handle{ device }
+        , _pipeline_layout{ pipeline_layout }
         , _pool_handle{ descriptor_pool }
         , _native_handles{ descriptor_sets }
     {
@@ -68,6 +70,7 @@ namespace render::vulkan
 
     auto create_vulkan_descriptor_sets(
         core::allocator& alloc,
+        VkPipelineLayout pipeline_layout,
         render::vulkan::VulkanDescriptorPool& descriptor_pool,
         core::Vector<core::memory::unique_pointer<VulkanDescriptorSetLayout>> const& layouts
     ) noexcept -> core::memory::unique_pointer<VulkanDescriptorSets>
@@ -94,6 +97,7 @@ namespace render::vulkan
 
         return core::memory::make_unique<VulkanDescriptorSets>(alloc,
             descriptor_pool.graphics_device(),
+            pipeline_layout,
             descriptor_pool.native_handle(),
             std::move(descriptor_sets)
         );

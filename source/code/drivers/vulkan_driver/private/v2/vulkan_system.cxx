@@ -10,11 +10,13 @@ namespace iceshard::renderer::vulkan
         , _vk_instance{ instance }
         , _framebuffers{ _allocator }
         , _command_buffers_secondary{ _allocator }
+        , _command_buffers_submitted{ _allocator }
     {
         _surface = create_surface(_allocator, _vk_instance, { 1280, 720 });
         create_devices(_vk_instance, native_handle(_surface), _devices);
 
         allocate_command_buffers(_devices, _command_buffers, 6, _command_buffers_secondary);
+        core::pod::array::resize(_command_buffers_submitted, core::pod::array::size(_command_buffers_secondary));
 
         VkSemaphoreCreateInfo semaphore_info;
         semaphore_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
@@ -59,6 +61,68 @@ namespace iceshard::renderer::vulkan
     auto VulkanRenderSystem::renderpass([[maybe_unused]] RenderPassStage stage) noexcept -> RenderPass
     {
         return RenderPass{ reinterpret_cast<uintptr_t>(_renderpass.renderpass) };
+    }
+
+    auto VulkanRenderSystem::acquire_command_buffer(RenderPassStage) noexcept -> CommandBuffer
+    {
+        // DO NOT USE!
+        return CommandBuffer::Invalid;
+    }
+
+    auto VulkanRenderSystem::acquire_command_buffer(RenderPassStage, VkPipelineLayout pipeline_layout) noexcept -> CommandBuffer
+    {
+        auto cmd_buffer_index = _next_command_buffer.fetch_add(1);
+        IS_ASSERT(cmd_buffer_index < core::pod::array::size(_command_buffers_secondary), "No more available command buffers!");
+
+        ApiCommandBuffer cmd_buff{ };
+        cmd_buff.native = _command_buffers_secondary[cmd_buffer_index];
+
+        VkCommandBufferInheritanceInfo inheritance_info;
+        inheritance_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO;
+        inheritance_info.pNext = nullptr;
+        inheritance_info.framebuffer = nullptr;
+        inheritance_info.renderPass = _renderpass.renderpass;
+        inheritance_info.queryFlags = 0;
+        inheritance_info.occlusionQueryEnable = VK_FALSE;
+        inheritance_info.pipelineStatistics = 0;
+        inheritance_info.subpass = 1;
+
+        VkCommandBufferBeginInfo cmd_buf_info = {};
+        cmd_buf_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+        cmd_buf_info.pNext = nullptr;
+        cmd_buf_info.flags = VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
+        cmd_buf_info.pInheritanceInfo = &inheritance_info;
+
+        auto api_result = vkBeginCommandBuffer(cmd_buff.native, &cmd_buf_info);
+        IS_ASSERT(api_result == VkResult::VK_SUCCESS, "Couldn't begin command buffer.");
+
+        // Setup scale and translation:
+        // Our visible imgui space lies from draw_data->DisplayPps (top left) to draw_data->DisplayPos+data_data->DisplaySize (bottom right). DisplayPos is (0,0) for single viewport apps.
+        {
+            auto draw_area_ext = render_area();
+
+            float scale[2];
+            scale[0] = 2.0f / draw_area_ext.width;
+            scale[1] = 2.0f / draw_area_ext.height;
+            float translate[2];
+            translate[0] = -1.0f; // -1.0f - width * scale[0];
+            translate[1] = -1.0f; //-1.0f - height * scale[1];
+            vkCmdPushConstants(cmd_buff.native, pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, sizeof(float) * 0, sizeof(float) * 2, scale);
+            vkCmdPushConstants(cmd_buff.native, pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, sizeof(float) * 2, sizeof(float) * 2, translate);
+        }
+
+        return cmd_buff.handle;
+    }
+
+    void VulkanRenderSystem::submit_command_buffer(CommandBuffer cmd_buffer) noexcept
+    {
+        ApiCommandBuffer cmd_buff{ cmd_buffer };
+        vkEndCommandBuffer(cmd_buff.native);
+
+        auto cmd_buffer_index = _submitted_command_buffer_count.fetch_add(1);
+        IS_ASSERT(cmd_buffer_index < core::pod::array::size(_command_buffers_secondary), "No more available command buffers!");
+
+        _command_buffers_submitted[cmd_buffer_index] = cmd_buff.native;
     }
 
     auto VulkanRenderSystem::swapchain() noexcept -> VulkanSwapchain
@@ -118,6 +182,14 @@ namespace iceshard::renderer::vulkan
         return _command_buffers.primary_buffers[1];
     }
 
+    void VulkanRenderSystem::v1_execute_subpass_commands(VkCommandBuffer cmds) noexcept
+    {
+        vkCmdExecuteCommands(cmds, _submitted_command_buffer_count, core::pod::array::begin(_command_buffers_submitted));
+
+        _submitted_command_buffer_count = 0;
+        core::pod::array::clear(_command_buffers_submitted);
+    }
+
     void VulkanRenderSystem::v1_acquire_next_image() noexcept
     {
         // Get the index of the next available swapchain image:
@@ -151,6 +223,8 @@ namespace iceshard::renderer::vulkan
 
         auto api_result = vkQueuePresentKHR(_devices.presenting_queue, &present);
         IS_ASSERT(api_result == VK_SUCCESS, "Failed to present framebuffer image!");
+
+        _next_command_buffer = 0;
     }
 
     auto create_render_system(core::allocator& alloc, VkInstance instance) noexcept -> VulkanRenderSystem*

@@ -120,6 +120,7 @@ namespace render
 
             auto res = vkCreateFence(_vk_render_system->v1_graphics_device(), &fenceInfo, NULL, &_vulkan_draw_fence);
             assert(res == VK_SUCCESS);
+
         }
 
         void prepare() noexcept override
@@ -265,10 +266,18 @@ namespace render
                 _vulkan_descriptor_set_layouts.emplace_back(
                     vulkan::create_descriptor_set_layout(_driver_allocator, graphics_device_handle, bindings)
                 );
+
+                _vulkan_pipeline_layout = vulkan::create_pipeline_layout(
+                    _driver_allocator,
+                    _vk_render_system->v1_graphics_device(),
+                    _vulkan_descriptor_set_layouts
+                );
+                _render_pass_context.pipeline_layout = _vulkan_pipeline_layout->native_handle();
             }
 
             _vulkan_descriptor_sets = vulkan::create_vulkan_descriptor_sets(
                 _driver_allocator,
+                _vulkan_pipeline_layout->native_handle(),
                 *_vulkan_descriptor_pool,
                 _vulkan_descriptor_set_layouts
             );
@@ -431,13 +440,6 @@ namespace render
             auto graphics_device = _vk_render_system->v1_graphics_device();
 
             {
-                _vulkan_pipeline_layout = vulkan::create_pipeline_layout(
-                    _driver_allocator,
-                    graphics_device,
-                    _vulkan_descriptor_set_layouts
-                );
-                _render_pass_context.pipeline_layout = _vulkan_pipeline_layout->native_handle();
-
                 core::pod::Array<vulkan::VulkanShader const*> shader_stages{ _driver_allocator };
                 std::for_each(_vulkan_shaders.begin(), _vulkan_shaders.end(), [&](auto const& shader_ptr) noexcept
                     {
@@ -473,6 +475,16 @@ namespace render
             }
 
             return api::RenderPipeline{ reinterpret_cast<uintptr_t>(_vulkan_pipeline->native_handle()) };
+        }
+
+        auto acquire_command_buffer(iceshard::renderer::RenderPassStage stage) noexcept -> iceshard::renderer::CommandBuffer override
+        {
+            return _vk_render_system->acquire_command_buffer(stage, _vulkan_pipeline_layout->native_handle());
+        }
+
+        void submit_command_buffer(iceshard::renderer::CommandBuffer cb) noexcept override
+        {
+            _vk_render_system->submit_command_buffer(cb);
         }
 
         void swap() noexcept override
@@ -538,8 +550,8 @@ namespace render
                 vkCmdBeginRenderPass(cmds, &rp_begin, VK_SUBPASS_CONTENTS_INLINE);
                 vkCmdNextSubpass(cmds, VkSubpassContents::VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
 
-                VkCommandBuffer secondary = _vk_render_system->v1_secondary_cmd_buffer();
-                vkCmdExecuteCommands(cmds, 1, &secondary);
+                _vk_render_system->v1_execute_subpass_commands(cmds);
+
                 vkCmdEndRenderPass(cmds);
                 vkEndCommandBuffer(cmds);
             }

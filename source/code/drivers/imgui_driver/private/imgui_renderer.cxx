@@ -64,7 +64,7 @@ namespace debugui::imgui
         _render_system.create_imgui_descriptor_sets();
         _pipeline = _render_system.create_pipeline(render::pipeline::ImGuiPipeline);
 
-        _render_pass = _render_system.renderpass(iceshard::renderer::RenderPassStage::Geometry);
+        //_render_pass = _render_system.renderpass(iceshard::renderer::RenderPassStage::Geometry);
     }
 
     ImGuiRenderer::~ImGuiRenderer() noexcept
@@ -81,11 +81,11 @@ namespace debugui::imgui
             return;
         }
 
-        auto command_buffer = _render_system.command_buffer();
+        using iceshard::renderer::RenderPassStage;
+
+        auto command_buffer = _render_system.acquire_command_buffer(RenderPassStage::DebugUI);
         auto descriptor_sets = _render_system.descriptor_sets();
 
-        render::cmd::begin(command_buffer);
-        //render::cmd::begin_renderpass(command_buffer, _render_pass);
         render::cmd::bind_render_pipeline(command_buffer, _render_system.get_pipeline());
         render::cmd::bind_descriptor_sets(command_buffer, descriptor_sets);
         render::cmd::bind_vertex_buffers(command_buffer, _vertice_buffers);
@@ -176,8 +176,7 @@ namespace debugui::imgui
         }
 
         //render::cmd::draw(command_buffer, 12 * 3, 4);
-        //render::cmd::end_renderpass(command_buffer);
-        render::cmd::end(command_buffer);
+        _render_system.submit_command_buffer(command_buffer);
     }
 
 } // namespace debugui::imgui

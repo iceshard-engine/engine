@@ -17,8 +17,10 @@ namespace render::vulkan
     class VulkanDescriptorSets
     {
     public:
-        VulkanDescriptorSets(VkDevice device, VkDescriptorPool descriptor_pool, core::pod::Array<VkDescriptorSet> descriptor_sets) noexcept;
+        VulkanDescriptorSets(VkDevice device, VkPipelineLayout pipeline_layout, VkDescriptorPool descriptor_pool, core::pod::Array<VkDescriptorSet> descriptor_sets) noexcept;
         ~VulkanDescriptorSets() noexcept;
+
+        auto pipeline_layout() const noexcept -> VkPipelineLayout { return _pipeline_layout; }
 
         auto native_handles() const noexcept -> core::pod::Array<VkDescriptorSet> const& { return _native_handles; }
 
@@ -41,11 +43,13 @@ namespace render::vulkan
     private:
         VkDevice _device_handle;
         VkDescriptorPool _pool_handle;
+        VkPipelineLayout _pipeline_layout;
         core::pod::Array<VkDescriptorSet> _native_handles;
     };
 
     auto create_vulkan_descriptor_sets(
         core::allocator& alloc,
+        VkPipelineLayout pipeline_layout,
         vulkan::VulkanDescriptorPool& descriptor_pool,
         core::Vector<core::memory::unique_pointer<VulkanDescriptorSetLayout>> const& layouts
     ) noexcept -> core::memory::unique_pointer<VulkanDescriptorSets>;

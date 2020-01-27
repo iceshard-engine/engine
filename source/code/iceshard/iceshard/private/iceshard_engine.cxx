@@ -54,6 +54,13 @@ namespace iceshard
             auto load_texture(asset::AssetData) noexcept -> render::api::Texture override { return render::api::Texture{ 0 }; }
             void load_shader(asset::AssetData) noexcept override { }
 
+            auto acquire_command_buffer(RenderPassStage) noexcept -> iceshard::renderer::CommandBuffer
+            {
+                return iceshard::renderer::CommandBuffer::Invalid;
+            }
+
+            void submit_command_buffer(iceshard::renderer::CommandBuffer) noexcept { }
+
             auto create_pipeline(
                 [[maybe_unused]] core::stringid_type const* descriptor_names,
                 [[maybe_unused]] uint32_t descriptor_name_count

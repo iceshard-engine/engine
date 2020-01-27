@@ -11,6 +11,8 @@ namespace iceshard::renderer::api
 
         enum class RenderPass : uintptr_t { Invalid = 0x0 };
 
+        enum class CommandBuffer : uintptr_t { Invalid = 0x0 };
+
     } // namespace v1
 
     using namespace v1;

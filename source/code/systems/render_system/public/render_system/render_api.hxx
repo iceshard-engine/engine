@@ -34,7 +34,7 @@ namespace render::api
             UniformBuffer,
         };
 
-        enum class CommandBuffer : uintptr_t { Invalid = 0x0 };
+        using iceshard::renderer::api::CommandBuffer;
 
         enum class Texture : uintptr_t { Invalid = 0x0 };
 

@@ -187,7 +187,7 @@ namespace render::vulkan
         pipeline.pStages = &shader_stages_info[0];
         pipeline.stageCount = core::pod::array::size(shader_stages_info);
         pipeline.renderPass = render_pass;
-        pipeline.subpass = 0;
+        pipeline.subpass = 1;
 
         VkPipeline pipeline_handle;
         auto api_result = vkCreateGraphicsPipelines(device, nullptr, 1, &pipeline, nullptr, &pipeline_handle);

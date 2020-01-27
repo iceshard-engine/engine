@@ -1,9 +1,16 @@
 #pragma once
+#include <iceshard/renderer/render_types.hxx>
 #include <iceshard/renderer/vulkan/vulkan_devices.hxx>
 #include <core/pod/array.hxx>
 
 namespace iceshard::renderer::vulkan
 {
+
+    union ApiCommandBuffer
+    {
+        iceshard::renderer::CommandBuffer handle;
+        VkCommandBuffer native;
+    };
 
     struct VulkanCommandBuffers
     {
