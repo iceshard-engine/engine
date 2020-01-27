@@ -142,46 +142,13 @@ namespace render
                 _surface_extents = new_extents;
                 _render_pass_context.extent = _surface_extents;
 
-                //_vulkan_pipeline = nullptr;
-                //_vulkan_pipeline_layout = nullptr;
-
                 _vk_render_system->v1_destroy_framebuffers();
-
-                //for (auto& entry : _render_passes)
-                //{
-                //    vkDestroyRenderPass(graphics_device, entry.value, nullptr);
-                //}
-                //core::pod::hash::clear(_render_passes);
-
                 _vk_render_system->v1_destroy_swapchain();
-
-                // Create swap chain
                 _vk_render_system->v1_create_swapchain();
-
                 _vk_render_system->v1_create_framebuffers();
 
                 _render_pass_context.framebuffer = _vk_render_system->v1_current_framebuffer();
 
-                //{
-                //    using iceshard::renderer::RenderPassType;
-                //    using iceshard::renderer::vulkan::create_renderpass;
-
-                //    auto const& formats = _vulkan_physical_device->surface_formats();
-
-
-                //    auto format = core::pod::array::front(formats).format;
-                //    auto fwd_rpass = create_renderpass<RenderPassType::Forward>(graphics_device, format);
-                //    auto fwd_pp_rpass = create_renderpass<RenderPassType::ForwardPostProcess>(graphics_device, format);
-
-                //    core::pod::hash::set(_render_passes, (uint64_t)RenderPassType::Forward, fwd_rpass);
-                //    core::pod::hash::set(_render_passes, (uint64_t)RenderPassType::ForwardPostProcess, fwd_pp_rpass);
-                //}
-
-                //_render_pass_context.renderpass = core::pod::hash::get(_render_passes, 0llu, {});
-                //_vulkan_physical_device->graphics_device()->create_command_buffers(_vulkan_command_buffers, 2);
-                //_command_buffer_context.command_buffer = _vulkan_command_buffers[0]->native_handle();
-
-                //RenderSystem::create_pipeline(render::pipeline::ImGuiPipeline);
             }
         }
 

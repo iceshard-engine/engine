@@ -16,7 +16,7 @@ namespace iceshard::renderer::vulkan
                 core::pod::Array<VulkanSwapchainImage>&& images
             ) noexcept
                 : _allocator{ alloc }
-                , _vk_device{ devices.graphics_device }
+                , _vk_device{ devices.graphics.handle }
                 , _vk_swapchain{ swapchain }
                 , _swapchain_images{ std::move(images) }
             {
@@ -75,8 +75,8 @@ namespace iceshard::renderer::vulkan
         VkSurfaceFormatKHR format;
         VkSurfaceCapabilitiesKHR capabilities;
 
-        get_surface_format(devices.physical_device, surface, format);
-        get_surface_capabilities(devices.physical_device, surface, capabilities);
+        get_surface_format(devices.physical.handle, surface, format);
+        get_surface_capabilities(devices.physical.handle, surface, capabilities);
 
         VkSwapchainCreateInfoKHR swapchain_ci = {};
 
@@ -142,7 +142,7 @@ namespace iceshard::renderer::vulkan
         //}
 
         VkSwapchainKHR swapchain_handle;
-        auto api_result = vkCreateSwapchainKHR(devices.graphics_device, &swapchain_ci, nullptr, &swapchain_handle);
+        auto api_result = vkCreateSwapchainKHR(devices.graphics.handle, &swapchain_ci, nullptr, &swapchain_handle);
         IS_ASSERT(api_result == VkResult::VK_SUCCESS, "Couldn't create swapchain!");
 
         core::pod::Array<VulkanSwapchainImage> swapchain_images{ alloc };
@@ -151,7 +151,7 @@ namespace iceshard::renderer::vulkan
             swapchain_image_count = 0;
 
             api_result = vkGetSwapchainImagesKHR(
-                devices.graphics_device,
+                devices.graphics.handle,
                 swapchain_handle,
                 &swapchain_image_count,
                 nullptr
@@ -162,7 +162,7 @@ namespace iceshard::renderer::vulkan
             core::pod::array::resize(swapchain_image_handles, swapchain_image_count);
 
             api_result = vkGetSwapchainImagesKHR(
-                devices.graphics_device,
+                devices.graphics.handle,
                 swapchain_handle,
                 &swapchain_image_count,
                 core::pod::array::begin(swapchain_image_handles)
@@ -189,7 +189,7 @@ namespace iceshard::renderer::vulkan
                 color_image_view.subresourceRange.layerCount = 1;
 
                 VkImageView image_view_handle;
-                api_result = vkCreateImageView(devices.graphics_device, &color_image_view, nullptr, &image_view_handle);
+                api_result = vkCreateImageView(devices.graphics.handle, &color_image_view, nullptr, &image_view_handle);
                 IS_ASSERT(api_result == VkResult::VK_SUCCESS, "Couldn't create view for swapchain image!");
 
                 // Save both handles.

@@ -1,5 +1,6 @@
 #include <iceshard/renderer/vulkan/vulkan_devices.hxx>
-#include "..\..\public\iceshard\renderer\vulkan\vulkan_devices.hxx"
+#include <core/allocators/stack_allocator.hxx>
+#include "devices/vulkan_device_factories.hxx"
 
 namespace iceshard::renderer::vulkan
 {
@@ -26,7 +27,7 @@ namespace iceshard::renderer::vulkan
 
     } // namespace detail
 
-    bool create_devices(VkInstance instance, VulkanDevices& devices) noexcept
+    bool create_devices(VkInstance instance, VkSurfaceKHR surface, VulkanDevices& devices) noexcept
     {
         uint32_t physical_device_count;
 
@@ -39,11 +40,11 @@ namespace iceshard::renderer::vulkan
             physical_device_count = 1;
         }
 
-        vkEnumeratePhysicalDevices(instance, &physical_device_count, &devices.physical_device);
+        vkEnumeratePhysicalDevices(instance, &physical_device_count, &devices.physical.handle);
         IS_ASSERT(res == VK_SUCCESS, "Couldn't properly query available vulkan devices!");
 
         VkPhysicalDeviceProperties physical_device_properties;
-        vkGetPhysicalDeviceProperties(devices.physical_device, &physical_device_properties);
+        vkGetPhysicalDeviceProperties(devices.physical.handle, &physical_device_properties);
 
         fmt::print("Physical device properties:\n");
         fmt::print("- vendor.id: {}\n", physical_device_properties.vendorID);
@@ -52,6 +53,12 @@ namespace iceshard::renderer::vulkan
         fmt::print("- device.name: {}\n", physical_device_properties.deviceName);
         fmt::print("- version.driver: {}\n", physical_device_properties.driverVersion);
         fmt::print("- version.api: {}\n", physical_device_properties.apiVersion);
+
+        // Query device families.
+        core::memory::stack_allocator<256> temp_alloc;
+        core::pod::Array<VulkanDeviceQueueFamily> queue_families{ temp_alloc };
+        query_physical_device_queue_families(devices.physical.handle, surface, queue_families);
+
         return true;
     }
 
@@ -63,7 +70,7 @@ namespace iceshard::renderer::vulkan
     ) noexcept
     {
         VkPhysicalDeviceMemoryProperties device_memory_properties;
-        vkGetPhysicalDeviceMemoryProperties(devices.physical_device, &device_memory_properties);
+        vkGetPhysicalDeviceMemoryProperties(devices.physical.handle, &device_memory_properties);
 
         for (uint32_t i = 0; i < device_memory_properties.memoryTypeCount; i++)
         {

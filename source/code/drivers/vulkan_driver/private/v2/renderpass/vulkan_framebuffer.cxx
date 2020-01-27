@@ -154,12 +154,12 @@ namespace iceshard::renderer::vulkan
             attachments[swapchain_image_index] = swapchain_image.view;
 
             VkFramebuffer framebuffer;
-            auto api_result = vkCreateFramebuffer(devices.graphics_device, &fb_info, nullptr, &framebuffer);
+            auto api_result = vkCreateFramebuffer(devices.graphics.handle, &fb_info, nullptr, &framebuffer);
             IS_ASSERT(api_result == VkResult::VK_SUCCESS, "Couldn't create framebuffer object!");
 
             detail::VulkanFramebufferHandle handle;
             handle.object = alloc.make<detail::VulkanFramebufferObject>(
-                devices.graphics_device,
+                devices.graphics.handle,
                 framebuffer,
                 std::move(framebuffer_images)
             );

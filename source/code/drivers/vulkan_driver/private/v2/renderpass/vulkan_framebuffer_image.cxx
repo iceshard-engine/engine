@@ -10,7 +10,7 @@ namespace iceshard::renderer::vulkan
         VkImageUsageFlags usage
     ) noexcept -> VulkanFramebufferImage
     {
-        auto device = devices.graphics_device;
+        auto device = devices.graphics.handle;
 
         VulkanFramebufferImage result;
 

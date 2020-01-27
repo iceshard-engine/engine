@@ -11,7 +11,7 @@ namespace iceshard::renderer::vulkan
         , _framebuffers{ _allocator }
     {
         _surface = create_surface(_allocator, _vk_instance, { 1280, 720 });
-        create_devices(_vk_instance, _devices);
+        create_devices(_vk_instance, native_handle(_surface), _devices);
     }
 
     VulkanRenderSystem::~VulkanRenderSystem() noexcept
@@ -23,9 +23,9 @@ namespace iceshard::renderer::vulkan
     void VulkanRenderSystem::prepare(VkExtent2D, RenderPassFeatures renderpass_features) noexcept
     {
         VkSurfaceFormatKHR format;
-        get_surface_format(_devices.physical_device, _surface, format);
+        get_surface_format(_devices.physical.handle, _surface, format);
 
-        create_renderpass(_devices.graphics_device, format.format, renderpass_features, _renderpass);
+        create_renderpass(_devices.graphics.handle, format.format, renderpass_features, _renderpass);
     }
 
     auto VulkanRenderSystem::renderpass([[maybe_unused]] RenderPassStage stage) noexcept -> RenderPass
@@ -41,7 +41,7 @@ namespace iceshard::renderer::vulkan
     auto VulkanRenderSystem::render_area() noexcept -> VkExtent2D
     {
         VkSurfaceCapabilitiesKHR capabilities;
-        get_surface_capabilities(_devices.physical_device, _surface, capabilities);
+        get_surface_capabilities(_devices.physical.handle, _surface, capabilities);
         return capabilities.currentExtent;
     }
 
@@ -52,7 +52,7 @@ namespace iceshard::renderer::vulkan
 
     auto VulkanRenderSystem::v1_physical_device() noexcept -> VkPhysicalDevice
     {
-        return _devices.physical_device;
+        return _devices.physical.handle;
     }
 
     auto VulkanRenderSystem::v1_renderpass() noexcept -> VkRenderPass
@@ -67,7 +67,7 @@ namespace iceshard::renderer::vulkan
 
     auto VulkanRenderSystem::v1_device() noexcept -> VkDevice
     {
-        return _devices.graphics_device;
+        return _devices.graphics.handle;
     }
 
     auto VulkanRenderSystem::v1_current_framebuffer() noexcept -> VkFramebuffer
@@ -82,17 +82,10 @@ namespace iceshard::renderer::vulkan
 
     void VulkanRenderSystem::v1_create_framebuffers() noexcept
     {
-        VkSurfaceCapabilitiesKHR capabilities;
-        get_surface_capabilities(
-            _devices.physical_device,
-            _surface,
-            capabilities
-        );
-
         core::pod::array::clear(_framebuffers);
         create_framebuffers(
             _allocator,
-            capabilities.currentExtent,
+            render_area(),
             _devices,
             _renderpass,
             _swapchain,
@@ -112,7 +105,7 @@ namespace iceshard::renderer::vulkan
     {
         // Get the index of the next available swapchain image:
         auto api_result = vkAcquireNextImageKHR(
-            _devices.graphics_device,
+            _devices.graphics.handle,
             native_handle(_swapchain),
             UINT64_MAX,
             _framebuffer_semaphore,
@@ -137,7 +130,7 @@ namespace iceshard::renderer::vulkan
 
     void VulkanRenderSystem::v1_destroy_semaphore() noexcept
     {
-        vkDestroySemaphore(_devices.graphics_device, _framebuffer_semaphore, nullptr);
+        vkDestroySemaphore(_devices.graphics.handle, _framebuffer_semaphore, nullptr);
     }
 
     void VulkanRenderSystem::v1_present(VkQueue queue) noexcept
@@ -167,13 +160,13 @@ namespace iceshard::renderer::vulkan
     {
         IS_ASSERT(_framebuffer_semaphore == vk_nullptr, "Semaphore object is not a nullptr!");
 
-        _devices.graphics_device = device;
+        _devices.graphics.handle = device;
 
         VkSemaphoreCreateInfo semaphore_info;
         semaphore_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
         semaphore_info.pNext = nullptr;
         semaphore_info.flags = 0;
-        vkCreateSemaphore(_devices.graphics_device, &semaphore_info, nullptr, &_framebuffer_semaphore);
+        vkCreateSemaphore(_devices.graphics.handle, &semaphore_info, nullptr, &_framebuffer_semaphore);
     }
 
     auto create_render_system(core::allocator& alloc, VkInstance instance) noexcept -> VulkanRenderSystem*

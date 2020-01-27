@@ -4,10 +4,22 @@
 namespace iceshard::renderer::vulkan
 {
 
+    struct VulkanPhysicalDevice
+    {
+        VkPhysicalDevice handle;
+    };
+
+    struct VulkanGraphicsDevice
+    {
+        VkDevice handle;
+        VkQueue queue;
+    };
+
     struct VulkanDevices
     {
-        VkPhysicalDevice physical_device;
-        VkDevice graphics_device;
+        VulkanPhysicalDevice physical;
+        VulkanGraphicsDevice graphics;
+        VkQueue presenting_queue;
     };
 
     bool find_memory_type_index(
@@ -17,7 +29,7 @@ namespace iceshard::renderer::vulkan
         uint32_t& type_index_out
     ) noexcept;
 
-    bool create_devices(VkInstance instance, VulkanDevices& devices) noexcept;
+    bool create_devices(VkInstance instance, VkSurfaceKHR surface, VulkanDevices& devices) noexcept;
 
     void destroy_devices(VkInstance instance, VulkanDevices const& devices) noexcept;
 
