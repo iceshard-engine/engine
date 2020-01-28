@@ -243,6 +243,30 @@ namespace render
             return render::api::Framebuffer::Invalid; // No longer supported
         }
 
+        auto create_resource_set(
+            core::stringid_arg_type name,
+            core::pod::Array<iceshard::renderer::RenderResource> const& resources
+        ) noexcept -> iceshard::renderer::ResourceSet override
+        {
+            return _vk_render_system->create_resource_set(name, resources);
+        }
+
+        void update_resource_set(
+            core::stringid_arg_type name,
+            core::pod::Array<iceshard::renderer::RenderResource> const& resources
+        ) noexcept override
+        {
+            return _vk_render_system->update_resource_set(name, resources);
+        }
+
+        void destroy_resource_set(
+            core::stringid_arg_type name
+        ) noexcept override
+        {
+            return _vk_render_system->destroy_resource_set(name);
+        }
+
+
         auto load_texture(asset::AssetData texture_data) noexcept -> render::api::Texture override
         {
             int32_t width = resource::get_meta_int32(texture_data.metadata, "texture.extents.width"_sid);

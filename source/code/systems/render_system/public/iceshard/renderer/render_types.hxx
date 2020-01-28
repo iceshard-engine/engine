@@ -12,4 +12,12 @@ namespace iceshard::renderer
 
     using CommandBuffer = iceshard::renderer::api::CommandBuffer;
 
+    using ResourceSet = iceshard::renderer::api::ResourceSet;
+
+    struct RenderResource;
+
+    using Texture = iceshard::renderer::api::Texture;
+
+    using Sampler = iceshard::renderer::api::Sampler;
+
 } // namespace iceshard::renderer

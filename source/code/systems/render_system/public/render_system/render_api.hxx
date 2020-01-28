@@ -36,7 +36,7 @@ namespace render::api
 
         using iceshard::renderer::api::CommandBuffer;
 
-        enum class Texture : uintptr_t { Invalid = 0x0 };
+        using iceshard::renderer::api::Texture;
 
         struct BufferDataView
         {

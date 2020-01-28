@@ -13,6 +13,16 @@ namespace iceshard::renderer::api
 
         enum class CommandBuffer : uintptr_t { Invalid = 0x0 };
 
+        enum class ResourceSet : uintptr_t { Invalid = 0x0 };
+
+        enum class Texture : uintptr_t { Invalid = 0x0 };
+
+        enum class Sampler : uint32_t
+        {
+            Default,
+            Invalid = std::numeric_limits<std::underlying_type_t<Sampler>>::max()
+        };
+
     } // namespace v1
 
     using namespace v1_1;

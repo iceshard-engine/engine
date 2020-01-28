@@ -51,6 +51,27 @@ namespace iceshard
 
             void initialize_render_interface(render::api::RenderInterface**) noexcept override { }
 
+            auto create_resource_set(
+                core::stringid_arg_type /*name*/,
+                core::pod::Array<iceshard::renderer::RenderResource> const& /*resources*/
+            ) noexcept -> iceshard::renderer::ResourceSet override
+            {
+                return iceshard::renderer::ResourceSet::Invalid;
+            }
+
+            void update_resource_set(
+                core::stringid_arg_type /*name*/,
+                core::pod::Array<iceshard::renderer::RenderResource> const& /*resources*/
+            ) noexcept override
+            {
+            }
+
+            void destroy_resource_set(
+                core::stringid_arg_type /*name*/
+            ) noexcept override
+            {
+            }
+
             auto load_texture(asset::AssetData) noexcept -> render::api::Texture override { return render::api::Texture{ 0 }; }
             void load_shader(asset::AssetData) noexcept override { }
 

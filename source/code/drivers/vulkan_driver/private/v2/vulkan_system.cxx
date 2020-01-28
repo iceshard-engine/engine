@@ -11,6 +11,7 @@ namespace iceshard::renderer::vulkan
         , _framebuffers{ _allocator }
         , _command_buffers_secondary{ _allocator }
         , _command_buffers_submitted{ _allocator }
+        , _resource_sets { _allocator }
     {
         _surface = create_surface(_allocator, _vk_instance, { 1280, 720 });
         create_devices(_vk_instance, native_handle(_surface), _devices);
@@ -138,6 +139,44 @@ namespace iceshard::renderer::vulkan
     auto VulkanRenderSystem::resource_layouts() noexcept -> VulkanResourceLayouts
     {
         return _resource_layouts;
+    }
+
+    auto VulkanRenderSystem::create_resource_set(
+        core::stringid_arg_type name,
+        core::pod::Array<RenderResource> const& resources
+    ) noexcept -> ResourceSet
+    {
+        VulkanResourceSet* resource_set = _allocator.make<VulkanResourceSet>();
+        vulkan::create_resource_set(
+            name,
+            resources,
+            _resource_layouts,
+            *resource_set
+        );
+        core::pod::hash::set(
+            _resource_sets,
+            core::hash(name),
+            resource_set
+        );
+        return ResourceSet{ (uintptr_t) resource_set };
+    }
+
+    void VulkanRenderSystem::update_resource_set(
+        [[maybe_unused]] core::stringid_arg_type name,
+        [[maybe_unused]] core::pod::Array<RenderResource> const& resources
+    ) noexcept
+    {
+    }
+
+    void VulkanRenderSystem::destroy_resource_set(
+        core::stringid_arg_type name
+    ) noexcept
+    {
+        auto* const resource_set = core::pod::hash::get<VulkanResourceSet*>(_resource_sets, core::hash(name), nullptr);
+        if (resource_set != nullptr)
+        {
+            _allocator.destroy(resource_set);
+        }
     }
 
     auto VulkanRenderSystem::v1_surface() noexcept -> VkSurfaceKHR
