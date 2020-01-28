@@ -3,7 +3,6 @@
 #include <core/pointer.hxx>
 
 #include "vulkan_shader.hxx"
-#include "pipeline/vulkan_pipeline_layout.hxx"
 #include "pipeline/vulkan_vertex_descriptor.hxx"
 
 #include <iceshard/renderer/vulkan/vulkan_sdk.hxx>
