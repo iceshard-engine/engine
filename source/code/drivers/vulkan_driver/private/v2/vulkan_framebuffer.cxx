@@ -1,7 +1,7 @@
 #include <iceshard/renderer/vulkan/vulkan_framebuffer.hxx>
 #include <core/allocators/stack_allocator.hxx>
 
-#include "vulkan_framebuffer_image.hxx"
+#include "framebuffer/vulkan_framebuffer_image.hxx"
 
 namespace iceshard::renderer::vulkan
 {

@@ -1,6 +1,6 @@
 #include <iceshard/renderer/vulkan/vulkan_renderpass.hxx>
 #include <iceshard/renderer/render_pass.hxx>
-#include "definitions/vulkan_renderpass_definitions.hxx"
+#include "renderpass/vulkan_renderpass_definitions.hxx"
 
 namespace iceshard::renderer::vulkan
 {
