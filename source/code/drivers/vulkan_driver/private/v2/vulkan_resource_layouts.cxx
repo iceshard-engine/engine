@@ -1,5 +1,6 @@
 #include <iceshard/renderer/vulkan/vulkan_resource_layouts.hxx>
 #include "layouts/descriptor_set_layout.hxx"
+#include "layouts/pipeline_layout.hxx"
 
 namespace iceshard::renderer::vulkan
 {
@@ -65,10 +66,14 @@ namespace iceshard::renderer::vulkan
             device,
             resource_layouts
         );
+
+        create_pipeline_layout(device, resource_layouts);
     }
 
     void destroy_resource_layouts(VkDevice device, VulkanResourceLayouts resource_layouts) noexcept
     {
+        destroy_pipeline_layout(device, resource_layouts);
+
         destroy_descriptor_set_layout(device, resource_layouts.descriptor_set_uniforms);
         destroy_descriptor_set_layout(device, resource_layouts.descriptor_set_samplers);
         destroy_descriptor_set_layout(device, resource_layouts.descriptor_set_textures);

@@ -20,7 +20,6 @@
 #include "pipeline/vulkan_descriptor_pool.hxx"
 #include "pipeline/vulkan_descriptor_sets.hxx"
 #include "pipeline/vulkan_vertex_descriptor.hxx"
-#include "pipeline/vulkan_pipeline_layout.hxx"
 #include "vulkan_pipeline.hxx"
 
 #include <iceshard/renderer/render_pass.hxx>
@@ -148,7 +147,6 @@ namespace render
             vkDestroyFence(device, _vulkan_draw_fence, nullptr);
 
             _vulkan_pipeline = nullptr;
-            _vulkan_pipeline_layout = nullptr;
 
             _vulkan_descriptor_sets = nullptr;
 
@@ -223,16 +221,11 @@ namespace render
 
         void create_imgui_descriptor_sets() noexcept
         {
-            _vulkan_pipeline_layout = vulkan::create_pipeline_layout(
-                _driver_allocator,
-                _vk_render_system->v1_graphics_device(),
-                _vk_render_system->resource_layouts()
-            );
-            _render_pass_context.pipeline_layout = _vulkan_pipeline_layout->native_handle();
+            _render_pass_context.pipeline_layout = _vk_render_system->resource_layouts().pipeline_layout;
 
             _vulkan_descriptor_sets = vulkan::create_vulkan_descriptor_sets(
                 _driver_allocator,
-                _vulkan_pipeline_layout->native_handle(),
+                _render_pass_context.pipeline_layout,
                 *_vulkan_descriptor_pool,
                 _vk_render_system->resource_layouts()
             );
@@ -424,7 +417,7 @@ namespace render
                     graphics_device,
                     shader_stages,
                     vertex_descriptors,
-                    _vulkan_pipeline_layout.get(),
+                    _vk_render_system->resource_layouts().pipeline_layout,
                     _vk_render_system->v1_renderpass()
                 );
             }
@@ -434,7 +427,7 @@ namespace render
 
         auto acquire_command_buffer(iceshard::renderer::RenderPassStage stage) noexcept -> iceshard::renderer::CommandBuffer override
         {
-            return _vk_render_system->acquire_command_buffer(stage, _vulkan_pipeline_layout->native_handle());
+            return _vk_render_system->acquire_command_buffer(stage);
         }
 
         void submit_command_buffer(iceshard::renderer::CommandBuffer cb) noexcept override
@@ -453,7 +446,7 @@ namespace render
 
             _render_pass_context.extent = _surface_extents;
             _render_pass_context.renderpass = _vk_render_system->v1_renderpass();
-            _render_pass_context.pipeline_layout = _vulkan_pipeline_layout->native_handle();
+            _render_pass_context.pipeline_layout = _vk_render_system->resource_layouts().pipeline_layout;
             _render_pass_context.framebuffer = _vk_render_system->v1_current_framebuffer();
 
 
@@ -589,7 +582,6 @@ namespace render
         core::Vector<core::memory::unique_pointer<render::vulkan::VulkanBuffer>> _vulkan_buffers;
 
         // The Vulkan pipeline.
-        core::memory::unique_pointer<render::vulkan::VulkanPipelineLayout> _vulkan_pipeline_layout{ nullptr, { core::memory::globals::null_allocator() } };
         core::memory::unique_pointer<render::vulkan::VulkanPipeline> _vulkan_pipeline{ nullptr, { core::memory::globals::null_allocator() } };
 
         // Array vulkan devices.

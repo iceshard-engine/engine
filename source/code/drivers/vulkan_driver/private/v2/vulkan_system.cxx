@@ -69,12 +69,6 @@ namespace iceshard::renderer::vulkan
 
     auto VulkanRenderSystem::acquire_command_buffer(RenderPassStage) noexcept -> CommandBuffer
     {
-        // DO NOT USE!
-        return CommandBuffer::Invalid;
-    }
-
-    auto VulkanRenderSystem::acquire_command_buffer(RenderPassStage, VkPipelineLayout pipeline_layout) noexcept -> CommandBuffer
-    {
         auto cmd_buffer_index = _next_command_buffer.fetch_add(1);
         IS_ASSERT(cmd_buffer_index < core::pod::array::size(_command_buffers_secondary), "No more available command buffers!");
 
@@ -111,8 +105,8 @@ namespace iceshard::renderer::vulkan
             float translate[2];
             translate[0] = -1.0f; // -1.0f - width * scale[0];
             translate[1] = -1.0f; //-1.0f - height * scale[1];
-            vkCmdPushConstants(cmd_buff.native, pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, sizeof(float) * 0, sizeof(float) * 2, scale);
-            vkCmdPushConstants(cmd_buff.native, pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, sizeof(float) * 2, sizeof(float) * 2, translate);
+            vkCmdPushConstants(cmd_buff.native, _resource_layouts.pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, sizeof(float) * 0, sizeof(float) * 2, scale);
+            vkCmdPushConstants(cmd_buff.native, _resource_layouts.pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, sizeof(float) * 2, sizeof(float) * 2, translate);
         }
 
         return cmd_buff.handle;

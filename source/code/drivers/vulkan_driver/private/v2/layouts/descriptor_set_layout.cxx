@@ -134,7 +134,7 @@ namespace iceshard::renderer::vulkan
 
     void destroy_descriptor_set_layout(
         VkDevice device,
-        VkDescriptorSetLayout descriptor_set_layout
+        VkDescriptorSetLayout const& descriptor_set_layout
     ) noexcept
     {
         vkDestroyDescriptorSetLayout(device, descriptor_set_layout, nullptr);

@@ -29,7 +29,7 @@ namespace render::vulkan
         VkDevice device,
         core::pod::Array<VulkanShader const*> shader_stages,
         core::pod::Array<VulkanVertexDescriptor const*> vertex_descriptors,
-        VulkanPipelineLayout const* pipeline_layout,
+        VkPipelineLayout pipeline_layout,
         VkRenderPass render_pass
     ) noexcept -> core::memory::unique_pointer<VulkanPipeline>;
 

@@ -19,7 +19,7 @@ namespace render::vulkan
         VkDevice device,
         core::pod::Array<VulkanShader const*> shaders,
         core::pod::Array<VulkanVertexDescriptor const*> vertex_descriptors,
-        VulkanPipelineLayout const* pipeline_layout,
+        VkPipelineLayout pipeline_layout,
         VkRenderPass render_pass
     ) noexcept -> core::memory::unique_pointer<VulkanPipeline>
     {
@@ -171,7 +171,7 @@ namespace render::vulkan
         VkGraphicsPipelineCreateInfo pipeline;
         pipeline.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
         pipeline.pNext = nullptr;
-        pipeline.layout = pipeline_layout->native_handle();
+        pipeline.layout = pipeline_layout;
         pipeline.basePipelineHandle = VK_NULL_HANDLE;
         pipeline.basePipelineIndex = 0;
         pipeline.flags = 0;

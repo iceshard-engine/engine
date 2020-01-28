@@ -32,7 +32,6 @@ namespace iceshard::renderer::vulkan
         auto renderpass(RenderPassStage stage = RenderPassStage::Geometry) noexcept -> RenderPass;
 
         auto acquire_command_buffer(RenderPassStage stage) noexcept->CommandBuffer override;
-        auto acquire_command_buffer(RenderPassStage stage, VkPipelineLayout pipeline_layout) noexcept -> CommandBuffer;
 
         void submit_command_buffer(CommandBuffer cmd_buffer) noexcept override;
 
