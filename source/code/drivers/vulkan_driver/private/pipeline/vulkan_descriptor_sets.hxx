@@ -7,7 +7,6 @@
 #include <iceshard/renderer/vulkan/vulkan_resource_layouts.hxx>
 
 #include "vulkan_descriptor_pool.hxx"
-#include "vulkan_descriptor_set_layout.hxx"
 
 namespace render::vulkan
 {

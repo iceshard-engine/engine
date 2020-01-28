@@ -1,5 +1,4 @@
 #include "vulkan_pipeline_layout.hxx"
-#include "vulkan_descriptor_set_layout.hxx"
 #include <core/collections.hxx>
 
 namespace render::vulkan
