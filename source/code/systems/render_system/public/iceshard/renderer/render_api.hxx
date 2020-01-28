@@ -4,7 +4,7 @@
 namespace iceshard::renderer::api
 {
 
-    namespace v1
+    namespace v1_1
     {
 
         constexpr auto version_name = "v1.1"_sid;
@@ -15,6 +15,6 @@ namespace iceshard::renderer::api
 
     } // namespace v1
 
-    using namespace v1;
+    using namespace v1_1;
 
 } // namespace iceshard::renderer::api::v1

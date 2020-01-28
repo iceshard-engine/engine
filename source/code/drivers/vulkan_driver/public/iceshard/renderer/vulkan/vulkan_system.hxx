@@ -9,6 +9,7 @@
 #include <iceshard/renderer/vulkan/vulkan_renderpass.hxx>
 #include <iceshard/renderer/vulkan/vulkan_framebuffer.hxx>
 #include <iceshard/renderer/vulkan/vulkan_command_buffer.hxx>
+#include <iceshard/renderer/vulkan/vulkan_resource_layouts.hxx>
 
 #include <atomic>
 
@@ -39,6 +40,8 @@ namespace iceshard::renderer::vulkan
 
         auto render_area() noexcept -> VkExtent2D;
 
+        auto resource_layouts() noexcept -> VulkanResourceLayouts;
+
     public:
         auto v1_surface() noexcept -> VkSurfaceKHR;
         auto v1_graphics_device() noexcept -> VkDevice;
@@ -59,6 +62,8 @@ namespace iceshard::renderer::vulkan
 
     private:
         core::allocator& _allocator;
+        bool _initialized = false;
+
         VkInstance const _vk_instance;
 
         VulkanSurface _surface;
@@ -77,7 +82,7 @@ namespace iceshard::renderer::vulkan
         core::pod::Array<VulkanFramebuffer> _framebuffers;
         VkSemaphore _framebuffer_semaphore = vk_nullptr;
 
-        bool _initialized = false;
+        VulkanResourceLayouts _resource_layouts;
     };
 
     auto create_render_system(core::allocator& alloc, VkInstance device) noexcept -> VulkanRenderSystem*;

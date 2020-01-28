@@ -46,9 +46,7 @@ namespace render
             , _vulkan_allocator{ alloc }
             , _vulkan_vertex_descriptors{ _driver_allocator }
             , _vulkan_buffers{ _driver_allocator }
-            , _vulkan_descriptor_set_layouts{ _driver_allocator }
             , _vulkan_images{ _driver_allocator }
-            , _vulkan_samplers{ _driver_allocator }
             , _vulkan_shaders{ _driver_allocator }
         {
             initialize();
@@ -155,10 +153,8 @@ namespace render
             _vulkan_pipeline_layout = nullptr;
 
             _vulkan_descriptor_sets = nullptr;
-            _vulkan_descriptor_set_layouts.clear();
 
             _vulkan_shaders.clear();
-            _vulkan_samplers.clear();
             _vulkan_images.clear();
 
             _vulkan_staging_buffer = nullptr;
@@ -229,64 +225,25 @@ namespace render
 
         void create_imgui_descriptor_sets() noexcept
         {
-            auto const graphics_device_handle = _vk_render_system->v1_graphics_device();
-
-            _vulkan_samplers.emplace_back(render::vulkan::create_sampler(_driver_allocator, graphics_device_handle));
-
-            {
-                core::pod::Array<VkDescriptorSetLayoutBinding> bindings{ _driver_allocator };
-
-                //VkDescriptorSetLayoutBinding layout_binding = {};
-                //layout_binding.binding = 0;
-                //layout_binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-                //layout_binding.descriptorCount = 1;
-                //layout_binding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-                //layout_binding.pImmutableSamplers = nullptr;
-                //core::pod::array::push_back(bindings, std::move(layout_binding));
-
-                static VkSampler const _vulkan_immutable_samplers[]{
-                    _vulkan_samplers[0]->native_handle()
-                };
-
-                VkDescriptorSetLayoutBinding layout_binding = {};
-                layout_binding.binding = 1;
-                layout_binding.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
-                layout_binding.descriptorCount = 1;
-                layout_binding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-                layout_binding.pImmutableSamplers = _vulkan_immutable_samplers;
-                core::pod::array::push_back(bindings, std::move(layout_binding));
-
-                layout_binding.binding = 2;
-                layout_binding.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-                layout_binding.descriptorCount = 1;
-                layout_binding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-                layout_binding.pImmutableSamplers = nullptr;
-                core::pod::array::push_back(bindings, std::move(layout_binding));
-
-                _vulkan_descriptor_set_layouts.emplace_back(
-                    vulkan::create_descriptor_set_layout(_driver_allocator, graphics_device_handle, bindings)
-                );
-
-                _vulkan_pipeline_layout = vulkan::create_pipeline_layout(
-                    _driver_allocator,
-                    _vk_render_system->v1_graphics_device(),
-                    _vulkan_descriptor_set_layouts
-                );
-                _render_pass_context.pipeline_layout = _vulkan_pipeline_layout->native_handle();
-            }
+            _vulkan_pipeline_layout = vulkan::create_pipeline_layout(
+                _driver_allocator,
+                _vk_render_system->v1_graphics_device(),
+                _vk_render_system->resource_layouts()
+            );
+            _render_pass_context.pipeline_layout = _vulkan_pipeline_layout->native_handle();
 
             _vulkan_descriptor_sets = vulkan::create_vulkan_descriptor_sets(
                 _driver_allocator,
                 _vulkan_pipeline_layout->native_handle(),
                 *_vulkan_descriptor_pool,
-                _vulkan_descriptor_set_layouts
+                _vk_render_system->resource_layouts()
             );
 
             VkDescriptorImageInfo image_info{};
             image_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
             image_info.imageView = _vulkan_images[0]->native_view();
             image_info.sampler = nullptr;
-            _vulkan_descriptor_sets->write_descriptor_set(0, 2, VkDescriptorType::VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, image_info);
+            _vulkan_descriptor_sets->write_descriptor_set(2, 2, VkDescriptorType::VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, image_info);
         }
 
         auto current_framebuffer() noexcept -> render::api::Framebuffer override
@@ -626,7 +583,6 @@ namespace render
 
         // The Vulkan descriptor sets
         core::memory::unique_pointer<render::vulkan::VulkanDescriptorPool> _vulkan_descriptor_pool{ nullptr, { core::memory::globals::null_allocator() } };
-        core::Vector<core::memory::unique_pointer<render::vulkan::VulkanDescriptorSetLayout>> _vulkan_descriptor_set_layouts;
         core::memory::unique_pointer<render::vulkan::VulkanDescriptorSets> _vulkan_descriptor_sets{ nullptr, { core::memory::globals::null_allocator() } };
         core::pod::Hash<render::vulkan::VulkanVertexDescriptor*> _vulkan_vertex_descriptors;
 
@@ -646,7 +602,6 @@ namespace render
 
         // Shader stages
         core::Vector<core::memory::unique_pointer<vulkan::VulkanImage>> _vulkan_images;
-        core::Vector<core::memory::unique_pointer<vulkan::VulkanSampler>> _vulkan_samplers;
         core::Vector<core::memory::unique_pointer<vulkan::VulkanShader>> _vulkan_shaders;
 
         bool _staging_cmds;

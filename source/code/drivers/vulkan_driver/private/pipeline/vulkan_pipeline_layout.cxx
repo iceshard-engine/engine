@@ -19,15 +19,13 @@ namespace render::vulkan
     auto create_pipeline_layout(
         core::allocator& alloc,
         VkDevice device,
-        core::Vector<core::memory::unique_pointer<VulkanDescriptorSetLayout>> const& layouts
+        iceshard::renderer::vulkan::VulkanResourceLayouts const& resource_layouts
     ) noexcept -> core::memory::unique_pointer<VulkanPipelineLayout>
     {
         core::pod::Array<VkDescriptorSetLayout> layouts_native{ alloc };
-        core::pod::array::reserve(layouts_native, static_cast<uint32_t>(layouts.size()));
-        for (auto const& layout : layouts)
-        {
-            core::pod::array::push_back(layouts_native, layout->native_handle());
-        }
+        core::pod::array::push_back(layouts_native, resource_layouts.descriptor_set_uniforms);
+        core::pod::array::push_back(layouts_native, resource_layouts.descriptor_set_samplers);
+        core::pod::array::push_back(layouts_native, resource_layouts.descriptor_set_textures);
 
         VkPushConstantRange push_constants[1] = {};
         push_constants[0].stageFlags = VK_SHADER_STAGE_VERTEX_BIT;

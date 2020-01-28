@@ -72,15 +72,13 @@ namespace render::vulkan
         core::allocator& alloc,
         VkPipelineLayout pipeline_layout,
         render::vulkan::VulkanDescriptorPool& descriptor_pool,
-        core::Vector<core::memory::unique_pointer<VulkanDescriptorSetLayout>> const& layouts
+        iceshard::renderer::vulkan::VulkanResourceLayouts const& resource_layouts
     ) noexcept -> core::memory::unique_pointer<VulkanDescriptorSets>
     {
         core::pod::Array<VkDescriptorSetLayout> descriptor_set_layouts{ alloc };
-
-        for (auto const& layout : layouts)
-        {
-            core::pod::array::push_back(descriptor_set_layouts, layout->native_handle());
-        }
+        core::pod::array::push_back(descriptor_set_layouts, resource_layouts.descriptor_set_uniforms);
+        core::pod::array::push_back(descriptor_set_layouts, resource_layouts.descriptor_set_samplers);
+        core::pod::array::push_back(descriptor_set_layouts, resource_layouts.descriptor_set_textures);
 
         VkDescriptorSetAllocateInfo alloc_info;
         alloc_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;

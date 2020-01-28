@@ -4,9 +4,7 @@
 #include <core/pod/array.hxx>
 #include <core/collections.hxx>
 
-#define NOMINMAX
-#define WIN32_LEAN_AND_MEAN
-#include <vulkan/vulkan.h>
+#include <iceshard/renderer/vulkan/vulkan_resource_layouts.hxx>
 
 #include "vulkan_descriptor_pool.hxx"
 #include "vulkan_descriptor_set_layout.hxx"
@@ -51,7 +49,7 @@ namespace render::vulkan
         core::allocator& alloc,
         VkPipelineLayout pipeline_layout,
         vulkan::VulkanDescriptorPool& descriptor_pool,
-        core::Vector<core::memory::unique_pointer<VulkanDescriptorSetLayout>> const& layouts
+        iceshard::renderer::vulkan::VulkanResourceLayouts const& layouts
     ) noexcept -> core::memory::unique_pointer<VulkanDescriptorSets>;
 
 } // namespace render::vulkan

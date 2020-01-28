@@ -28,6 +28,8 @@ namespace iceshard::renderer::vulkan
         get_surface_format(_devices.physical.handle, _surface, format);
         create_renderpass(_devices.graphics.handle, format.format, RenderPassFeatures::None, _renderpass);
 
+        create_resource_layouts(_devices.graphics.handle, _resource_layouts);
+
         prepare(render_area(), RenderPassFeatures::None);
         _initialized = true;
     }
@@ -36,6 +38,8 @@ namespace iceshard::renderer::vulkan
     {
         destroy_framebuffers(_allocator, _framebuffers);
         destroy_swapchain(_allocator, _swapchain);
+
+        destroy_resource_layouts(_devices.graphics.handle, _resource_layouts);
 
         destroy_renderpass(_renderpass);
 
@@ -135,6 +139,11 @@ namespace iceshard::renderer::vulkan
         VkSurfaceCapabilitiesKHR capabilities;
         get_surface_capabilities(_devices.physical.handle, _surface, capabilities);
         return capabilities.currentExtent;
+    }
+
+    auto VulkanRenderSystem::resource_layouts() noexcept -> VulkanResourceLayouts
+    {
+        return _resource_layouts;
     }
 
     auto VulkanRenderSystem::v1_surface() noexcept -> VkSurfaceKHR

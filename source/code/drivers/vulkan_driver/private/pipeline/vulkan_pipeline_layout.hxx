@@ -4,9 +4,7 @@
 #include <core/pod/array.hxx>
 #include <core/collections.hxx>
 
-#define NOMINMAX
-#define WIN32_LEAN_AND_MEAN
-#include <vulkan/vulkan.h>
+#include <iceshard/renderer/vulkan/vulkan_resource_layouts.hxx>
 
 namespace render::vulkan
 {
@@ -29,7 +27,7 @@ namespace render::vulkan
     auto create_pipeline_layout(
         core::allocator& alloc,
         VkDevice device,
-        core::Vector<core::memory::unique_pointer<VulkanDescriptorSetLayout>> const& layouts
+        iceshard::renderer::vulkan::VulkanResourceLayouts const& reosurce_layouts
     ) noexcept -> core::memory::unique_pointer<VulkanPipelineLayout>;
 
 } // namespace render::vulkan
