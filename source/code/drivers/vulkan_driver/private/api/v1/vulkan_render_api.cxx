@@ -1,6 +1,5 @@
 #include "vulkan_render_api.hxx"
 #include "../../vulkan_buffer.hxx"
-#include "../../pipeline/vulkan_descriptor_sets.hxx"
 #include <core/memory.hxx>
 #include <core/allocators/stack_allocator.hxx>
 #include "../../vulkan_device_memory_manager.hxx"

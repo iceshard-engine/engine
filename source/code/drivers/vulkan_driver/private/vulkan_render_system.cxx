@@ -17,8 +17,6 @@
 #include "vulkan_image.hxx"
 #include "vulkan_shader.hxx"
 #include "vulkan_buffer.hxx"
-#include "pipeline/vulkan_descriptor_pool.hxx"
-#include "pipeline/vulkan_descriptor_sets.hxx"
 #include "pipeline/vulkan_vertex_descriptor.hxx"
 #include "vulkan_pipeline.hxx"
 
@@ -90,11 +88,6 @@ namespace render
 
             _vulkan_staging_buffer = render::vulkan::create_staging_buffer(_driver_allocator, *_vulkan_device_memory);
 
-            _vulkan_descriptor_pool = core::memory::make_unique<render::vulkan::VulkanDescriptorPool>(
-                _driver_allocator,
-                _vk_render_system->v1_graphics_device()
-                );
-
             _command_buffer_context.command_buffer = _vk_render_system->v1_secondary_cmd_buffer();
             _command_buffer_context.render_pass_context = &_render_pass_context;
             _command_buffer_context.render_pass_context->framebuffer = _vk_render_system->v1_current_framebuffer();
@@ -148,15 +141,11 @@ namespace render
 
             _vulkan_pipeline = nullptr;
 
-            _vulkan_descriptor_sets = nullptr;
-
             _vulkan_shaders.clear();
             _vulkan_images.clear();
 
             _vulkan_staging_buffer = nullptr;
             _vulkan_buffers.clear();
-
-            _vulkan_descriptor_pool = nullptr;
 
             _vulkan_device_memory = nullptr;
 
@@ -569,8 +558,6 @@ namespace render
         VkFence _vulkan_draw_fence = nullptr;
 
         // The Vulkan descriptor sets
-        core::memory::unique_pointer<render::vulkan::VulkanDescriptorPool> _vulkan_descriptor_pool{ nullptr, { core::memory::globals::null_allocator() } };
-        core::memory::unique_pointer<render::vulkan::VulkanDescriptorSets> _vulkan_descriptor_sets{ nullptr, { core::memory::globals::null_allocator() } };
         core::pod::Hash<render::vulkan::VulkanVertexDescriptor*> _vulkan_vertex_descriptors;
 
         // Databuffers
