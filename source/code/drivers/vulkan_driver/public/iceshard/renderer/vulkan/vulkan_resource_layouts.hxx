@@ -4,6 +4,11 @@
 namespace iceshard::renderer::vulkan
 {
 
+    struct VulkanResourcePool
+    {
+        VkDescriptorPool descriptor_pool;
+    };
+
     struct VulkanImmutableSamplers
     {
         VkSampler samplers[1];
@@ -21,5 +26,9 @@ namespace iceshard::renderer::vulkan
     void create_resource_layouts(VkDevice device, VulkanResourceLayouts& resource_layouts) noexcept;
 
     void destroy_resource_layouts(VkDevice device, VulkanResourceLayouts resource_layouts) noexcept;
+
+    void create_resource_pool(VkDevice, VulkanResourcePool& resource_pool) noexcept;
+
+    void destroy_resource_pool(VkDevice, VulkanResourcePool resource_pool) noexcept;
 
 } // namespace iceshard::renderer::vulkan

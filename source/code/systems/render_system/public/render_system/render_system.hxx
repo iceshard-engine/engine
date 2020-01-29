@@ -21,19 +21,11 @@ namespace render
 
         virtual auto current_framebuffer() noexcept -> render::api::Framebuffer = 0;
 
-        virtual auto descriptor_sets() noexcept -> render::api::DescriptorSets = 0;
-
-        virtual auto command_buffer() noexcept -> render::api::CommandBuffer = 0;
-
-        //virtual auto current_frame_buffer() noexcept -> FrameBufferHandle = 0;
-
         virtual auto create_buffer(render::api::BufferType type, uint32_t size) noexcept -> render::api::Buffer = 0;
 
         virtual auto create_vertex_buffer(uint32_t size) noexcept -> render::api::VertexBuffer = 0;
 
         virtual auto create_uniform_buffer(uint32_t size) noexcept -> render::api::UniformBuffer = 0;
-
-        virtual void create_imgui_descriptor_sets() noexcept { }
 
         virtual auto load_texture(asset::AssetData texture_data) noexcept -> render::api::Texture = 0;
 

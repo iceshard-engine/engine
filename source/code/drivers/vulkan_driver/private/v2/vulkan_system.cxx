@@ -29,6 +29,7 @@ namespace iceshard::renderer::vulkan
         get_surface_format(_devices.physical.handle, _surface, format);
         create_renderpass(_devices.graphics.handle, format.format, RenderPassFeatures::None, _renderpass);
 
+        create_resource_pool(_devices.graphics.handle, _resource_pool);
         create_resource_layouts(_devices.graphics.handle, _resource_layouts);
 
         prepare(render_area(), RenderPassFeatures::None);
@@ -41,6 +42,7 @@ namespace iceshard::renderer::vulkan
         destroy_swapchain(_allocator, _swapchain);
 
         destroy_resource_layouts(_devices.graphics.handle, _resource_layouts);
+        destroy_resource_pool(_devices.graphics.handle, _resource_pool);
 
         destroy_renderpass(_renderpass);
 
@@ -148,9 +150,11 @@ namespace iceshard::renderer::vulkan
     {
         VulkanResourceSet* resource_set = _allocator.make<VulkanResourceSet>();
         vulkan::create_resource_set(
+            _devices.graphics.handle,
+            _resource_pool,
+            _resource_layouts,
             name,
             resources,
-            _resource_layouts,
             *resource_set
         );
         core::pod::hash::set(
@@ -166,6 +170,7 @@ namespace iceshard::renderer::vulkan
         [[maybe_unused]] core::pod::Array<RenderResource> const& resources
     ) noexcept
     {
+        IS_ASSERT(false, "Currently not implemented!");
     }
 
     void VulkanRenderSystem::destroy_resource_set(

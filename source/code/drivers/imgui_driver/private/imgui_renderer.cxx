@@ -2,6 +2,7 @@
 #include <core/memory.hxx>
 #include <render_system/render_commands.hxx>
 #include <iceshard/renderer/render_pass.hxx>
+#include <iceshard/renderer/render_resources.hxx>
 
 #include <glm/glm.hpp>
 
@@ -61,7 +62,27 @@ namespace debugui::imgui
         _font_texture = detail::create_fonts_texture(alloc, _io, _render_system);
         io.Fonts->TexID = reinterpret_cast<ImTextureID>(_font_texture);
 
-        _render_system.create_imgui_descriptor_sets();
+        {
+            using iceshard::renderer::Sampler;
+            using iceshard::renderer::RenderResource;
+            using iceshard::renderer::RenderResourceType;
+            using iceshard::renderer::RenderResourceHandle;
+
+            RenderResource handles[2];
+            handles[0].type = RenderResourceType::ResSampler;
+            handles[0].handle.sampler = Sampler::Default;
+            handles[0].binding = 0;
+            handles[1].type = RenderResourceType::ResTexture2D;
+            handles[1].handle.texture = _font_texture;
+            handles[1].binding = 2;
+
+            core::pod::Array<RenderResource> resources{ _allocator };
+            core::pod::array::push_back(resources, handles[0]);
+            core::pod::array::push_back(resources, handles[1]);
+
+            _resource_set = _render_system.create_resource_set("imgui_resources"_sid, resources);
+        }
+
         _pipeline = _render_system.create_pipeline(render::pipeline::ImGuiPipeline);
 
         //_render_pass = _render_system.renderpass(iceshard::renderer::RenderPassStage::Geometry);
@@ -69,6 +90,7 @@ namespace debugui::imgui
 
     ImGuiRenderer::~ImGuiRenderer() noexcept
     {
+        _render_system.destroy_resource_set("imgui_resources"_sid);
     }
 
     void ImGuiRenderer::Draw(ImDrawData* draw_data) noexcept
@@ -84,10 +106,9 @@ namespace debugui::imgui
         using iceshard::renderer::RenderPassStage;
 
         auto command_buffer = _render_system.acquire_command_buffer(RenderPassStage::DebugUI);
-        auto descriptor_sets = _render_system.descriptor_sets();
 
         render::cmd::bind_render_pipeline(command_buffer, _render_system.get_pipeline());
-        render::cmd::bind_descriptor_sets(command_buffer, descriptor_sets);
+        render::cmd::bind_descriptor_sets(command_buffer, _resource_set);
         render::cmd::bind_vertex_buffers(command_buffer, _vertice_buffers);
         render::cmd::bind_index_buffer(command_buffer, _indice_buffer);
         render::cmd::set_viewport(command_buffer, (uint32_t)_io.DisplaySize.x, (uint32_t)_io.DisplaySize.y);

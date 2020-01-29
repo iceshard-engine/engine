@@ -19,7 +19,7 @@ namespace render::api
 
         enum class RenderPipeline : uintptr_t { Invalid = 0x0 };
 
-        enum class DescriptorSets : uintptr_t { Invalid = 0x0 };
+        using DescriptorSets = iceshard::renderer::api::ResourceSet;
 
         enum class VertexBuffer : uintptr_t { Invalid = 0x0 };
 

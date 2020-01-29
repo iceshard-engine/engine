@@ -166,16 +166,6 @@ namespace render
             vkDestroyInstance(_vulkan_instance, _vulkan_allocator.vulkan_callbacks());
         }
 
-        auto command_buffer() noexcept -> render::api::CommandBuffer override
-        {
-            return render::api::CommandBuffer{ reinterpret_cast<uintptr_t>(&_command_buffer_context) };
-        }
-
-        auto descriptor_sets() noexcept -> render::api::DescriptorSets override
-        {
-            return render::api::DescriptorSets{ reinterpret_cast<uintptr_t>(_vulkan_descriptor_sets.get()) };
-        }
-
         auto create_buffer(render::api::BufferType type, uint32_t size) noexcept -> render::api::Buffer override
         {
             auto vulkan_buffer = render::vulkan::create_buffer(
@@ -217,24 +207,6 @@ namespace render
             _vulkan_buffers.emplace_back(std::move(vulkan_buffer));
 
             return result;
-        }
-
-        void create_imgui_descriptor_sets() noexcept
-        {
-            _render_pass_context.pipeline_layout = _vk_render_system->resource_layouts().pipeline_layout;
-
-            _vulkan_descriptor_sets = vulkan::create_vulkan_descriptor_sets(
-                _driver_allocator,
-                _render_pass_context.pipeline_layout,
-                *_vulkan_descriptor_pool,
-                _vk_render_system->resource_layouts()
-            );
-
-            VkDescriptorImageInfo image_info{};
-            image_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-            image_info.imageView = _vulkan_images[0]->native_view();
-            image_info.sampler = nullptr;
-            _vulkan_descriptor_sets->write_descriptor_set(2, 2, VkDescriptorType::VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, image_info);
         }
 
         auto current_framebuffer() noexcept -> render::api::Framebuffer override
@@ -357,7 +329,7 @@ namespace render
             vkEndCommandBuffer(staging_cmds);
             _staging_cmds = true;
 
-            auto result_handle = render::api::Texture{ reinterpret_cast<uintptr_t>(texture.get()) };
+            auto result_handle = render::api::Texture{ reinterpret_cast<uintptr_t>(texture->native_view()) };
             _vulkan_images.emplace_back(std::move(texture));
 
             return result_handle;

@@ -97,6 +97,7 @@ namespace iceshard::renderer::vulkan
         core::pod::Array<VulkanFramebuffer> _framebuffers;
         VkSemaphore _framebuffer_semaphore = vk_nullptr;
 
+        VulkanResourcePool _resource_pool;
         VulkanResourceLayouts _resource_layouts;
         core::pod::Hash<VulkanResourceSet*> _resource_sets;
     };

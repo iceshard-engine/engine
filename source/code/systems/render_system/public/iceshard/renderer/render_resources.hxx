@@ -20,6 +20,7 @@ namespace iceshard::renderer
 
     struct RenderResource
     {
+        uint32_t binding;
         RenderResourceType type;
         RenderResourceHandle handle;
     };

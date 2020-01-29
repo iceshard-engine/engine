@@ -11,15 +11,21 @@ namespace iceshard::renderer::vulkan
     {
         core::stringid_type name;
 
-        VkDescriptorSet uniform_set;
-        VkDescriptorSet texture_set;
+        VkPipelineLayout pipeline_layout;
+        VkDescriptorSet descriptor_sets[3];
     };
 
     void create_resource_set(
+        VkDevice device,
+        VulkanResourcePool resource_pool,
+        VulkanResourceLayouts const& resource_layouts,
         core::stringid_arg_type name,
         core::pod::Array<RenderResource> const& resources,
-        VulkanResourceLayouts const& resource_layouts,
         VulkanResourceSet& set
+    ) noexcept;
+
+    void destroy_resource_set(
+        VulkanResourceSet const& set
     ) noexcept;
 
 } // namespace iceshard::renderer::vulkan

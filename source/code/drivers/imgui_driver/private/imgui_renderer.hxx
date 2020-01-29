@@ -24,6 +24,7 @@ namespace debugui::imgui
         render::api::Texture _font_texture = render::api::Texture::Invalid;
         render::api::RenderPipeline _pipeline = render::api::RenderPipeline::Invalid;
         render::api::Buffer _indice_buffer = render::api::Buffer::Invalid;
+        iceshard::renderer::ResourceSet _resource_set = iceshard::renderer::ResourceSet::Invalid;
         core::pod::Array<render::api::Buffer> _vertice_buffers;
     };
 

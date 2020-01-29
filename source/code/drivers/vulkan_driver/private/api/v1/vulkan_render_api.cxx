@@ -5,6 +5,7 @@
 #include <core/allocators/stack_allocator.hxx>
 #include "../../vulkan_device_memory_manager.hxx"
 #include <iceshard/renderer/vulkan/vulkan_command_buffer.hxx>
+#include <iceshard/renderer/vulkan/vulkan_resources.hxx>
 
 #include <vulkan/vulkan.h>
 
@@ -172,16 +173,15 @@ namespace render::api::v1::vulkan
 
     void vulkan_api_v1_bind_descriptor_sets(render::api::v1::CommandBuffer cb, render::api::v1::DescriptorSets descriptor_sets) noexcept
     {
-        const auto* desc_sets = reinterpret_cast<render::vulkan::VulkanDescriptorSets const*>(descriptor_sets);
-        const auto& sets = desc_sets->native_handles();
+        const auto* vulkan_resource_set = reinterpret_cast<iceshard::renderer::vulkan::VulkanResourceSet const*>(descriptor_sets);
 
         vkCmdBindDescriptorSets(
             command_buffer(cb),
             VK_PIPELINE_BIND_POINT_GRAPHICS,
-            desc_sets->pipeline_layout(),
+            vulkan_resource_set->pipeline_layout,
             0,
-            core::pod::array::size(sets),
-            core::pod::array::begin(sets),
+            core::size(vulkan_resource_set->descriptor_sets),
+            vulkan_resource_set->descriptor_sets,
             0,
             NULL
         );
