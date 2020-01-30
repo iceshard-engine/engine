@@ -4,15 +4,7 @@
 
 namespace render::cmd
 {
-
-    void begin(render::api::CommandBuffer command_buffer) noexcept;
-    void end(render::api::CommandBuffer command_buffer) noexcept;
-
-    [[deprecated("This command is deprecated!")]]
-    void begin_renderpass(render::api::CommandBuffer command_buffer) noexcept;
-    void begin_renderpass(render::api::CommandBuffer command_buffer, iceshard::renderer::api::RenderPass renderpass) noexcept;
     void next_subpass(render::api::CommandBuffer command_buffer) noexcept;
-    void end_renderpass(render::api::CommandBuffer command_buffer) noexcept;
 
     void bind_render_pipeline(render::api::CommandBuffer command_buffer, render::api::RenderPipeline pipeline) noexcept;
     void bind_descriptor_sets(render::api::CommandBuffer command_buffer, render::api::DescriptorSets descriptor_sets) noexcept;

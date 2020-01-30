@@ -45,8 +45,6 @@ namespace debugui::imgui
         core::pod::array::push_back(_vertice_buffers, _render_system.create_buffer(render::api::BufferType::VertexBuffer, sizeof(ImDrawVert) * 1024 * 256));
         _indice_buffer = _render_system.create_buffer(render::api::BufferType::IndexBuffer, sizeof(ImDrawIdx) * 1024 * 1024);
 
-        _render_system.add_named_vertex_descriptor_set(render::descriptor_set::ImGui);
-
         _io.DisplaySize.x = 1280;
         _io.DisplaySize.y = 720;
         _font_texture = detail::create_fonts_texture(alloc, _io, _render_system);

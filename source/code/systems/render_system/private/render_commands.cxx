@@ -1,33 +1,8 @@
 #include <render_system/render_commands.hxx>
 
-void render::cmd::begin(render::api::CommandBuffer command_buffer) noexcept
-{
-    render::api::render_api_instance->cmd_begin_func(command_buffer);
-}
-
-void render::cmd::end(render::api::CommandBuffer command_buffer) noexcept
-{
-    render::api::render_api_instance->cmd_end_func(command_buffer);
-}
-
-void render::cmd::begin_renderpass(render::api::CommandBuffer command_buffer) noexcept
-{
-    render::api::render_api_instance->cmd_begin_renderpass_func(command_buffer);
-}
-
-void render::cmd::begin_renderpass(render::api::CommandBuffer command_buffer, iceshard::renderer::api::RenderPass renderpass) noexcept
-{
-    render::api::render_api_instance->cmd_begin_renderpass_func2(command_buffer, renderpass);
-}
-
 void render::cmd::next_subpass(render::api::CommandBuffer command_buffer) noexcept
 {
     render::api::render_api_instance->cmd_next_subpass_func(command_buffer);
-}
-
-void render::cmd::end_renderpass(render::api::CommandBuffer command_buffer) noexcept
-{
-    render::api::render_api_instance->cmd_end_renderpass_func(command_buffer);
 }
 
 void render::cmd::bind_render_pipeline(render::api::CommandBuffer command_buffer, render::api::RenderPipeline pipeline) noexcept
@@ -45,19 +20,9 @@ void render::cmd::bind_vertex_buffers(render::api::CommandBuffer command_buffer,
     render::api::render_api_instance->cmd_bind_vertex_buffers_array_func(command_buffer, core::pod::array::begin(buffer_handles), core::pod::array::size(buffer_handles));
 }
 
-void render::cmd::bind_vertex_buffers(render::api::CommandBuffer command_buffer, render::api::VertexBuffer vertice_buffer, render::api::VertexBuffer instance_buffer) noexcept
-{
-    render::api::render_api_instance->cmd_bind_vertex_buffers_func(command_buffer, vertice_buffer, instance_buffer);
-}
-
 void render::cmd::bind_index_buffer(render::api::CommandBuffer command_buffer, render::api::Buffer index_buffer) noexcept
 {
     render::api::render_api_instance->cmd_bind_index_buffer_func(command_buffer, index_buffer);
-}
-
-void render::cmd::bind_index_buffers(render::api::CommandBuffer command_buffer, render::api::VertexBuffer index_buffer) noexcept
-{
-    render::api::render_api_instance->cmd_bind_index_buffers_func(command_buffer, index_buffer);
 }
 
 void render::cmd::set_viewport(render::api::CommandBuffer command_buffer, uint32_t width, uint32_t height) noexcept

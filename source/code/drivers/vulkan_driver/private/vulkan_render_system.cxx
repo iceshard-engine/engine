@@ -15,10 +15,7 @@
 #include "vulkan_allocator.hxx"
 #include "vulkan_device_memory_manager.hxx"
 #include "vulkan_image.hxx"
-#include "vulkan_shader.hxx"
 #include "vulkan_buffer.hxx"
-#include "pipeline/vulkan_vertex_descriptor.hxx"
-#include "vulkan_pipeline.hxx"
 
 #include <iceshard/renderer/render_pass.hxx>
 #include <iceshard/renderer/vulkan/vulkan_system.hxx>
@@ -39,10 +36,8 @@ namespace render
             : render::RenderSystem{}
             , _driver_allocator{ "vulkan-driver", alloc }
             , _vulkan_allocator{ alloc }
-            , _vulkan_vertex_descriptors{ _driver_allocator }
             , _vulkan_buffers{ _driver_allocator }
             , _vulkan_images{ _driver_allocator }
-            , _vulkan_shaders{ _driver_allocator }
         {
             initialize();
         }
@@ -88,18 +83,10 @@ namespace render
 
             _vulkan_staging_buffer = render::vulkan::create_staging_buffer(_driver_allocator, *_vulkan_device_memory);
 
-            _command_buffer_context.command_buffer = _vk_render_system->v1_secondary_cmd_buffer();
-            _command_buffer_context.render_pass_context = &_render_pass_context;
-            _command_buffer_context.render_pass_context->framebuffer = _vk_render_system->v1_current_framebuffer();
-
-
             VkSemaphoreCreateInfo imageAcquiredSemaphoreCreateInfo;
             imageAcquiredSemaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
             imageAcquiredSemaphoreCreateInfo.pNext = NULL;
             imageAcquiredSemaphoreCreateInfo.flags = 0;
-
-            _render_pass_context.extent = _surface_extents;
-            _render_pass_context.renderpass = _vk_render_system->v1_renderpass();
 
             VkFenceCreateInfo fenceInfo;
             fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
@@ -120,11 +107,8 @@ namespace render
             {
                 fmt::print("ReConstructing graphics pipelines!\n");
                 _surface_extents = new_extents;
-                _render_pass_context.extent = _surface_extents;
 
                 _vk_render_system->prepare(new_extents, iceshard::renderer::RenderPassFeatures::None);
-
-                _render_pass_context.framebuffer = _vk_render_system->v1_current_framebuffer();
             }
         }
 
@@ -132,16 +116,8 @@ namespace render
         {
             auto device = _vk_render_system->v1_graphics_device();
 
-            for (auto const& entry : _vulkan_vertex_descriptors)
-            {
-                _driver_allocator.destroy(entry.value);
-            }
-
             vkDestroyFence(device, _vulkan_draw_fence, nullptr);
 
-            _vulkan_pipeline = nullptr;
-
-            _vulkan_shaders.clear();
             _vulkan_images.clear();
 
             _vulkan_staging_buffer = nullptr;
@@ -196,12 +172,6 @@ namespace render
             _vulkan_buffers.emplace_back(std::move(vulkan_buffer));
 
             return result;
-        }
-
-        auto current_framebuffer() noexcept -> render::api::Framebuffer override
-        {
-            IS_ASSERT(false, "This API function is deprecated! DO NOT USE!");
-            return render::api::Framebuffer::Invalid; // No longer supported
         }
 
         auto create_resource_set(
@@ -340,47 +310,6 @@ namespace render
             return result_handle;
         }
 
-        void load_shader(asset::AssetData shader_data) noexcept override
-        {
-            auto const& meta_view = shader_data.metadata;
-
-            int32_t target = resource::get_meta_int32(meta_view, "shader.target"_sid);
-            IS_ASSERT(target == 1, "Only explicit vulkan shaders are supported!");
-
-            int32_t stage = resource::get_meta_int32(meta_view, "shader.stage"_sid);
-            IS_ASSERT(stage == 1 || stage == 2, "Only vertex and fragment shaders are supported!");
-
-            _vulkan_shaders.emplace_back(
-                vulkan::create_shader(
-                    _driver_allocator,
-                    _vk_render_system->v1_graphics_device(),
-                    stage == 1 ? VkShaderStageFlagBits::VK_SHADER_STAGE_VERTEX_BIT : VkShaderStageFlagBits::VK_SHADER_STAGE_FRAGMENT_BIT,
-                    shader_data.content
-                )
-            );
-        }
-
-        void add_named_vertex_descriptor_set(
-            [[maybe_unused]] core::stringid_arg_type name,
-            [[maybe_unused]] VertexBinding const& binding,
-            [[maybe_unused]] VertexDescriptor const* descriptors,
-            [[maybe_unused]] uint32_t descriptor_count
-        ) noexcept override
-        {
-            auto hash_value = static_cast<uint64_t>(name.hash_value);
-            IS_ASSERT(core::pod::hash::has(_vulkan_vertex_descriptors, hash_value) == false, "A descriptor set with this name {} was already defined!", name);
-
-            // clang-format off
-            core::pod::hash::set(_vulkan_vertex_descriptors, hash_value, _driver_allocator.make<render::vulkan::VulkanVertexDescriptor>(
-                _driver_allocator,
-                binding,
-                descriptors,
-                descriptor_count
-                )
-            );
-            // clang-format on
-        }
-
         auto acquire_command_buffer(iceshard::renderer::RenderPassStage stage) noexcept -> iceshard::renderer::CommandBuffer override
         {
             return _vk_render_system->acquire_command_buffer(stage);
@@ -396,14 +325,7 @@ namespace render
             auto graphics_device = _vk_render_system->v1_graphics_device();
             auto graphics_queue = _vk_render_system->v1_graphics_queue();
 
-
             _vk_render_system->v1_acquire_next_image();
-
-
-            _render_pass_context.extent = _surface_extents;
-            _render_pass_context.renderpass = _vk_render_system->v1_renderpass();
-            _render_pass_context.framebuffer = _vk_render_system->v1_current_framebuffer();
-
 
             if (_staging_cmds)
             {
@@ -522,25 +444,15 @@ namespace render
 
         VkFence _vulkan_draw_fence = nullptr;
 
-        // The Vulkan descriptor sets
-        core::pod::Hash<render::vulkan::VulkanVertexDescriptor*> _vulkan_vertex_descriptors;
-
         // Databuffers
         core::memory::unique_pointer<render::vulkan::VulkanBuffer> _vulkan_staging_buffer{ nullptr, { core::memory::globals::null_allocator() } };
         core::Vector<core::memory::unique_pointer<render::vulkan::VulkanBuffer>> _vulkan_buffers;
 
-        // The Vulkan pipeline.
-        core::memory::unique_pointer<render::vulkan::VulkanPipeline> _vulkan_pipeline{ nullptr, { core::memory::globals::null_allocator() } };
-
         // Array vulkan devices.
         core::memory::unique_pointer<render::vulkan::VulkanDeviceMemoryManager> _vulkan_device_memory{ nullptr, { core::memory::globals::null_allocator() } };
 
-        render::api::v1::vulkan::RenderPassContext _render_pass_context{};
-        render::api::v1::vulkan::CommandBufferContext _command_buffer_context{};
-
         // Shader stages
         core::Vector<core::memory::unique_pointer<vulkan::VulkanImage>> _vulkan_images;
-        core::Vector<core::memory::unique_pointer<vulkan::VulkanShader>> _vulkan_shaders;
 
         bool _staging_cmds;
 

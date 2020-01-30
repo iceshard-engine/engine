@@ -41,7 +41,6 @@ namespace iceshard
         public:
             auto renderpass(RenderPassStage) noexcept -> RenderPass { return RenderPass{ 0 }; }
 
-            auto current_framebuffer() noexcept -> render::api::Framebuffer override { return render::api::Framebuffer{ 0 }; }
             auto create_buffer(render::api::BufferType, uint32_t) noexcept -> render::api::Buffer override { return render::api::Buffer{ 0 }; }
             auto create_vertex_buffer(uint32_t) noexcept -> render::api::VertexBuffer override { return render::api::VertexBuffer{ 0 }; }
             auto create_uniform_buffer(uint32_t) noexcept -> render::api::UniformBuffer { return render::api::UniformBuffer{ 0 }; }
@@ -72,7 +71,6 @@ namespace iceshard
             }
 
             auto load_texture(asset::AssetData) noexcept -> render::api::Texture override { return render::api::Texture{ 0 }; }
-            void load_shader(asset::AssetData) noexcept override { }
 
             auto acquire_command_buffer(RenderPassStage) noexcept -> iceshard::renderer::CommandBuffer
             {
@@ -95,13 +93,6 @@ namespace iceshard
             ) noexcept override
             {
             }
-
-            void add_named_vertex_descriptor_set(
-                [[maybe_unused]] core::stringid_arg_type name,
-                [[maybe_unused]] render::VertexBinding const& binding,
-                [[maybe_unused]] render::VertexDescriptor const* descriptors,
-                [[maybe_unused]] uint32_t descriptor_count
-            ) noexcept override {}
         };
 
         class NoneRenderSystemModule : public render::RenderSystemModule
