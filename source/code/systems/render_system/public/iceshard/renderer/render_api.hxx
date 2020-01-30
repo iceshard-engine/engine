@@ -11,6 +11,8 @@ namespace iceshard::renderer::api
 
         enum class RenderPass : uintptr_t { Invalid = 0x0 };
 
+        enum class RenderPipeline : uintptr_t { Invalid = 0x0 };
+
         enum class CommandBuffer : uintptr_t { Invalid = 0x0 };
 
         enum class ResourceSet : uintptr_t { Invalid = 0x0 };

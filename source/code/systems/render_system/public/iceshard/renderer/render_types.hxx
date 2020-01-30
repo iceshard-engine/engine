@@ -10,6 +10,10 @@ namespace iceshard::renderer
 
     enum class RenderPassStage : uint32_t;
 
+    using RenderPipeline = iceshard::renderer::api::RenderPipeline;
+
+    enum class RenderPipelineLayout : uint32_t;
+
     using CommandBuffer = iceshard::renderer::api::CommandBuffer;
 
     using ResourceSet = iceshard::renderer::api::ResourceSet;

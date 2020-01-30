@@ -1,5 +1,5 @@
 #pragma once
-#include <iceshard/renderer/render_types.hxx>
+#include <iceshard/renderer/render_pipeline.hxx>
 
 namespace iceshard::renderer
 {

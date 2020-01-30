@@ -206,10 +206,11 @@ namespace render
 
         auto create_resource_set(
             core::stringid_arg_type name,
+            iceshard::renderer::RenderPipelineLayout layout,
             core::pod::Array<iceshard::renderer::RenderResource> const& resources
         ) noexcept -> iceshard::renderer::ResourceSet override
         {
-            return _vk_render_system->create_resource_set(name, resources);
+            return _vk_render_system->create_resource_set(name, layout, resources);
         }
 
         void update_resource_set(
@@ -227,6 +228,21 @@ namespace render
             return _vk_render_system->destroy_resource_set(name);
         }
 
+        auto create_pipeline(
+            core::stringid_arg_type name,
+            iceshard::renderer::RenderPipelineLayout layout,
+            core::pod::Array<asset::AssetData> const& shader_assets
+        ) noexcept -> iceshard::renderer::RenderPipeline override
+        {
+            return _vk_render_system->create_pipeline(name, layout, shader_assets);
+        }
+
+        void destroy_pipeline(
+            core::stringid_arg_type name
+        ) noexcept override
+        {
+            return _vk_render_system->destroy_pipeline(name);
+        }
 
         auto load_texture(asset::AssetData texture_data) noexcept -> render::api::Texture override
         {
@@ -365,51 +381,6 @@ namespace render
             // clang-format on
         }
 
-        auto create_pipeline(
-            core::stringid_type const* descriptor_names,
-            uint32_t descriptor_name_count
-        ) noexcept -> api::RenderPipeline override
-        {
-            auto graphics_device = _vk_render_system->v1_graphics_device();
-
-            {
-                core::pod::Array<vulkan::VulkanShader const*> shader_stages{ _driver_allocator };
-                std::for_each(_vulkan_shaders.begin(), _vulkan_shaders.end(), [&](auto const& shader_ptr) noexcept
-                    {
-                        core::pod::array::push_back(shader_stages, const_cast<vulkan::VulkanShader const*>(shader_ptr.get()));
-                    });
-
-                uint32_t descriptor_index = 0;
-
-                core::pod::Array<vulkan::VulkanVertexDescriptor const*> vertex_descriptors{ _driver_allocator };
-                while (descriptor_index < descriptor_name_count)
-                {
-                    auto descriptor_name_hash = static_cast<uint64_t>(descriptor_names[descriptor_index].hash_value);
-
-                    auto const* descriptor = core::pod::hash::get<vulkan::VulkanVertexDescriptor*>(
-                        _vulkan_vertex_descriptors,
-                        descriptor_name_hash,
-                        nullptr
-                        );
-                    IS_ASSERT(descriptor != nullptr, "Unknown descriptor name {}!", descriptor_names[descriptor_index]);
-
-                    core::pod::array::push_back(vertex_descriptors, descriptor);
-                    descriptor_index += 1;
-                }
-
-                _vulkan_pipeline = vulkan::create_pipeline(
-                    _driver_allocator,
-                    graphics_device,
-                    shader_stages,
-                    vertex_descriptors,
-                    _vk_render_system->resource_layouts().pipeline_layout,
-                    _vk_render_system->v1_renderpass()
-                );
-            }
-
-            return api::RenderPipeline{ reinterpret_cast<uintptr_t>(_vulkan_pipeline->native_handle()) };
-        }
-
         auto acquire_command_buffer(iceshard::renderer::RenderPassStage stage) noexcept -> iceshard::renderer::CommandBuffer override
         {
             return _vk_render_system->acquire_command_buffer(stage);
@@ -431,7 +402,6 @@ namespace render
 
             _render_pass_context.extent = _surface_extents;
             _render_pass_context.renderpass = _vk_render_system->v1_renderpass();
-            _render_pass_context.pipeline_layout = _vk_render_system->resource_layouts().pipeline_layout;
             _render_pass_context.framebuffer = _vk_render_system->v1_current_framebuffer();
 
 

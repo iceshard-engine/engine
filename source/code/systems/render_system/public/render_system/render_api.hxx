@@ -17,7 +17,7 @@ namespace render::api
 
         enum class RenderPass : uintptr_t { Invalid = 0x0 };
 
-        enum class RenderPipeline : uintptr_t { Invalid = 0x0 };
+        using RenderPipeline = iceshard::renderer::api::RenderPipeline;
 
         using DescriptorSets = iceshard::renderer::api::ResourceSet;
 

@@ -11,7 +11,8 @@ namespace iceshard::renderer::vulkan
         , _framebuffers{ _allocator }
         , _command_buffers_secondary{ _allocator }
         , _command_buffers_submitted{ _allocator }
-        , _resource_sets { _allocator }
+        , _resource_sets{ _allocator }
+        , _pipelines{ _allocator }
     {
         _surface = create_surface(_allocator, _vk_instance, { 1280, 720 });
         create_devices(_vk_instance, native_handle(_surface), _devices);
@@ -31,6 +32,7 @@ namespace iceshard::renderer::vulkan
 
         create_resource_pool(_devices.graphics.handle, _resource_pool);
         create_resource_layouts(_devices.graphics.handle, _resource_layouts);
+        create_pipeline_layouts(_devices, _resource_layouts, _pipeline_layouts);
 
         prepare(render_area(), RenderPassFeatures::None);
         _initialized = true;
@@ -41,6 +43,7 @@ namespace iceshard::renderer::vulkan
         destroy_framebuffers(_allocator, _framebuffers);
         destroy_swapchain(_allocator, _swapchain);
 
+        destroy_pipeline_layouts(_devices, _pipeline_layouts);
         destroy_resource_layouts(_devices.graphics.handle, _resource_layouts);
         destroy_resource_pool(_devices.graphics.handle, _resource_pool);
 
@@ -70,7 +73,7 @@ namespace iceshard::renderer::vulkan
         return RenderPass{ reinterpret_cast<uintptr_t>(_renderpass.renderpass) };
     }
 
-    auto VulkanRenderSystem::acquire_command_buffer(RenderPassStage) noexcept -> CommandBuffer
+    auto VulkanRenderSystem::acquire_command_buffer(RenderPassStage stage) noexcept -> CommandBuffer
     {
         auto cmd_buffer_index = _next_command_buffer.fetch_add(1);
         IS_ASSERT(cmd_buffer_index < core::pod::array::size(_command_buffers_secondary), "No more available command buffers!");
@@ -99,6 +102,7 @@ namespace iceshard::renderer::vulkan
 
         // Setup scale and translation:
         // Our visible imgui space lies from draw_data->DisplayPps (top left) to draw_data->DisplayPos+data_data->DisplaySize (bottom right). DisplayPos is (0,0) for single viewport apps.
+        if (stage == RenderPassStage::DebugUI)
         {
             auto draw_area_ext = render_area();
 
@@ -108,8 +112,8 @@ namespace iceshard::renderer::vulkan
             float translate[2];
             translate[0] = -1.0f; // -1.0f - width * scale[0];
             translate[1] = -1.0f; //-1.0f - height * scale[1];
-            vkCmdPushConstants(cmd_buff.native, _resource_layouts.pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, sizeof(float) * 0, sizeof(float) * 2, scale);
-            vkCmdPushConstants(cmd_buff.native, _resource_layouts.pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, sizeof(float) * 2, sizeof(float) * 2, translate);
+            vkCmdPushConstants(cmd_buff.native, _pipeline_layouts.debugui_layout.layout, VK_SHADER_STAGE_VERTEX_BIT, sizeof(float) * 0, sizeof(float) * 2, scale);
+            vkCmdPushConstants(cmd_buff.native, _pipeline_layouts.debugui_layout.layout, VK_SHADER_STAGE_VERTEX_BIT, sizeof(float) * 2, sizeof(float) * 2, translate);
         }
 
         return cmd_buff.handle;
@@ -145,13 +149,20 @@ namespace iceshard::renderer::vulkan
 
     auto VulkanRenderSystem::create_resource_set(
         core::stringid_arg_type name,
+        iceshard::renderer::RenderPipelineLayout layout,
         core::pod::Array<RenderResource> const& resources
     ) noexcept -> ResourceSet
     {
+        VulkanPipelineLayout pipeline_layout =
+            layout == RenderPipelineLayout::DebugUI
+            ? _pipeline_layouts.debugui_layout
+            : _pipeline_layouts.default_layout;
+
         VulkanResourceSet* resource_set = _allocator.make<VulkanResourceSet>();
         vulkan::create_resource_set(
             _devices.graphics.handle,
             _resource_pool,
+            pipeline_layout,
             _resource_layouts,
             name,
             resources,
@@ -181,6 +192,50 @@ namespace iceshard::renderer::vulkan
         if (resource_set != nullptr)
         {
             _allocator.destroy(resource_set);
+            core::pod::hash::remove(_resource_sets, core::hash(name));
+        }
+    }
+
+    auto VulkanRenderSystem::create_pipeline(
+        core::stringid_arg_type name,
+        RenderPipelineLayout layout,
+        core::pod::Array<asset::AssetData> const& shader_assets
+    ) noexcept -> RenderPipeline
+    {
+        VulkanPipelineLayout selected_layout =
+            layout == RenderPipelineLayout::DebugUI
+            ? _pipeline_layouts.debugui_layout
+            : _pipeline_layouts.default_layout;
+
+        RenderPipeline result = RenderPipeline::Invalid;
+
+        VulkanPipelineModules pipeline_modules;
+        build_pipeline_shaders(_devices, shader_assets, pipeline_modules);
+        {
+            auto* vulkan_pipeline = _allocator.make<VulkanPipeline>();
+            create_graphics_pipeline(_devices, _renderpass, selected_layout, pipeline_modules, *vulkan_pipeline);
+
+            core::pod::hash::set(
+                _pipelines,
+                core::hash(name),
+                vulkan_pipeline
+            );
+
+            result = RenderPipeline{ (uintptr_t)vulkan_pipeline };
+        }
+        release_pipeline_shaders(_devices, pipeline_modules);
+
+        return result;
+    }
+
+    void VulkanRenderSystem::destroy_pipeline(core::stringid_arg_type name) noexcept
+    {
+        auto* const pipeline = core::pod::hash::get<VulkanPipeline*>(_pipelines, core::hash(name), nullptr);
+        if (pipeline != nullptr)
+        {
+            destroy_graphics_pipeline(_devices, *pipeline);
+            _allocator.destroy(pipeline);
+            core::pod::hash::remove(_pipelines, core::hash(name));
         }
     }
 

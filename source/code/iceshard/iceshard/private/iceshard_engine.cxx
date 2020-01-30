@@ -51,6 +51,7 @@ namespace iceshard
 
             auto create_resource_set(
                 core::stringid_arg_type /*name*/,
+                iceshard::renderer::RenderPipelineLayout /*layout*/,
                 core::pod::Array<iceshard::renderer::RenderResource> const& /*resources*/
             ) noexcept -> iceshard::renderer::ResourceSet override
             {
@@ -81,11 +82,18 @@ namespace iceshard
             void submit_command_buffer(iceshard::renderer::CommandBuffer) noexcept { }
 
             auto create_pipeline(
-                [[maybe_unused]] core::stringid_type const* descriptor_names,
-                [[maybe_unused]] uint32_t descriptor_name_count
-            ) noexcept -> render::api::RenderPipeline override
+                [[maybe_unused]] core::stringid_arg_type name,
+                [[maybe_unused]] iceshard::renderer::RenderPipelineLayout layout,
+                [[maybe_unused]] core::pod::Array<asset::AssetData> const& shader_assets
+            ) noexcept -> iceshard::renderer::RenderPipeline override
             {
-                return render::api::RenderPipeline{ 0 };
+                return iceshard::renderer::RenderPipeline{ 0 };
+            }
+
+            void destroy_pipeline(
+                [[maybe_unused]] core::stringid_arg_type name
+            ) noexcept override
+            {
             }
 
             void add_named_vertex_descriptor_set(

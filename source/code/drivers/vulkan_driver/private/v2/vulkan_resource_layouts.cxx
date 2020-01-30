@@ -34,6 +34,7 @@ namespace iceshard::renderer::vulkan
                 sampler_info.minLod = 0.0f;
                 sampler_info.maxLod = 0.0f;
 
+                [[maybe_unused]]
                 auto api_result = vkCreateSampler(device, &sampler_info, nullptr, samplers + idx);
                 IS_ASSERT(api_result == VkResult::VK_SUCCESS, "Couldn't create sampler object!");
             }
@@ -66,14 +67,10 @@ namespace iceshard::renderer::vulkan
             device,
             resource_layouts
         );
-
-        create_pipeline_layout(device, resource_layouts);
     }
 
     void destroy_resource_layouts(VkDevice device, VulkanResourceLayouts resource_layouts) noexcept
     {
-        destroy_pipeline_layout(device, resource_layouts);
-
         destroy_descriptor_set_layout(device, resource_layouts.descriptor_set_uniforms);
         destroy_descriptor_set_layout(device, resource_layouts.descriptor_set_samplers);
         destroy_descriptor_set_layout(device, resource_layouts.descriptor_set_textures);

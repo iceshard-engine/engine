@@ -48,6 +48,7 @@ namespace iceshard::renderer::vulkan
     void create_resource_set(
         VkDevice device,
         VulkanResourcePool resource_pool,
+        VulkanPipelineLayout pipeline_layout,
         VulkanResourceLayouts const& resource_layouts,
         core::stringid_arg_type name,
         core::pod::Array<RenderResource> const& resources,
@@ -55,7 +56,7 @@ namespace iceshard::renderer::vulkan
     ) noexcept
     {
         resource_set.name = name;
-        resource_set.pipeline_layout = resource_layouts.pipeline_layout;
+        resource_set.pipeline_layout = pipeline_layout.layout;
 
         VkDescriptorSetLayout const descriptor_set_layouts[] = {
             resource_layouts.descriptor_set_uniforms,

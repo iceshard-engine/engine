@@ -167,7 +167,9 @@ namespace render::api::v1::vulkan
 
     void vulkan_api_v1_bind_render_pipeline(render::api::v1::CommandBuffer cb, render::api::v1::RenderPipeline pipeline) noexcept
     {
-        vkCmdBindPipeline(command_buffer(cb), VK_PIPELINE_BIND_POINT_GRAPHICS, reinterpret_cast<VkPipeline>(pipeline));
+        const auto* vulkan_pipeline = reinterpret_cast<iceshard::renderer::vulkan::VulkanPipeline const*>(pipeline);
+
+        vkCmdBindPipeline(command_buffer(cb), VK_PIPELINE_BIND_POINT_GRAPHICS, vulkan_pipeline->pipeline);
     }
 
     void vulkan_api_v1_bind_descriptor_sets(render::api::v1::CommandBuffer cb, render::api::v1::DescriptorSets descriptor_sets) noexcept

@@ -12,6 +12,7 @@
 #include <iceshard/renderer/vulkan/vulkan_command_buffer.hxx>
 #include <iceshard/renderer/vulkan/vulkan_resource_layouts.hxx>
 #include <iceshard/renderer/vulkan/vulkan_resources.hxx>
+#include <iceshard/renderer/vulkan/vulkan_pipeline.hxx>
 
 #include <atomic>
 
@@ -45,6 +46,7 @@ namespace iceshard::renderer::vulkan
 
         auto create_resource_set(
             core::stringid_arg_type name,
+            iceshard::renderer::RenderPipelineLayout layout,
             core::pod::Array<RenderResource> const& resources
         ) noexcept -> ResourceSet override;
 
@@ -54,6 +56,16 @@ namespace iceshard::renderer::vulkan
         ) noexcept override;
 
         void destroy_resource_set(
+            core::stringid_arg_type name
+        ) noexcept override;
+
+        auto create_pipeline(
+            core::stringid_arg_type name,
+            RenderPipelineLayout layout,
+            core::pod::Array<asset::AssetData> const& shader_assets
+        ) noexcept -> RenderPipeline override;
+
+        void destroy_pipeline(
             core::stringid_arg_type name
         ) noexcept override;
 
@@ -100,6 +112,9 @@ namespace iceshard::renderer::vulkan
         VulkanResourcePool _resource_pool;
         VulkanResourceLayouts _resource_layouts;
         core::pod::Hash<VulkanResourceSet*> _resource_sets;
+
+        VulkanPipelineLayouts _pipeline_layouts;
+        core::pod::Hash<VulkanPipeline*> _pipelines;
     };
 
     auto create_render_system(core::allocator& alloc, VkInstance device) noexcept -> VulkanRenderSystem*;

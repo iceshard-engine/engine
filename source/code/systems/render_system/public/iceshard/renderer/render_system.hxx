@@ -1,4 +1,5 @@
 #pragma once
+#include <asset_system/asset.hxx>
 #include <iceshard/renderer/render_types.hxx>
 
 namespace iceshard::renderer
@@ -13,6 +14,7 @@ namespace iceshard::renderer
 
         virtual auto create_resource_set(
             core::stringid_arg_type name,
+            iceshard::renderer::RenderPipelineLayout layout,
             core::pod::Array<RenderResource> const& resources
         ) noexcept -> ResourceSet = 0;
 
@@ -22,6 +24,16 @@ namespace iceshard::renderer
         ) noexcept = 0;
 
         virtual void destroy_resource_set(
+            core::stringid_arg_type name
+        ) noexcept = 0;
+
+        virtual auto create_pipeline(
+            core::stringid_arg_type name,
+            RenderPipelineLayout layout,
+            core::pod::Array<asset::AssetData> const& shader_assets
+        ) noexcept -> RenderPipeline = 0;
+
+        virtual void destroy_pipeline(
             core::stringid_arg_type name
         ) noexcept = 0;
 

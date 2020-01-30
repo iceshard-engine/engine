@@ -47,16 +47,6 @@ namespace debugui::imgui
 
         _render_system.add_named_vertex_descriptor_set(render::descriptor_set::ImGui);
 
-        asset::AssetData shader_data;
-        if (_asset_system.load(asset::AssetShader{ "shaders/debug/imgui-vert" }, shader_data) == asset::AssetStatus::Loaded)
-        {
-            _render_system.load_shader(shader_data);
-        }
-        if (_asset_system.load(asset::AssetShader{ "shaders/debug/imgui-frag" }, shader_data) == asset::AssetStatus::Loaded)
-        {
-            _render_system.load_shader(shader_data);
-        }
-
         _io.DisplaySize.x = 1280;
         _io.DisplaySize.y = 720;
         _font_texture = detail::create_fonts_texture(alloc, _io, _render_system);
@@ -73,14 +63,27 @@ namespace debugui::imgui
             core::pod::Array<RenderResource> resources{ _allocator };
             core::pod::array::push_back(resources, handles[0]);
 
-            _resource_set = _render_system.create_resource_set("imgui_resources"_sid, resources);
+            _resource_set = _render_system.create_resource_set("imgui_resources"_sid, RenderPipelineLayout::DebugUI, resources);
+
+            core::pod::Array<asset::AssetData> shader_assets{ _allocator };
+            core::pod::array::resize(shader_assets, 2);
+
+            _asset_system.load(asset::AssetShader{ "shaders/debug/imgui-vert" }, shader_assets[0]);
+            _asset_system.load(asset::AssetShader{ "shaders/debug/imgui-frag" }, shader_assets[1]);
+
+            _pipeline = _render_system.create_pipeline(
+                "imgui_pipeline"_sid,
+                RenderPipelineLayout::DebugUI,
+                shader_assets
+            );
         }
 
-        _pipeline = _render_system.create_pipeline(render::pipeline::ImGuiPipeline);
+        //_pipeline = _render_system.create_pipeline(render::pipeline::ImGuiPipeline);
     }
 
     ImGuiRenderer::~ImGuiRenderer() noexcept
     {
+        _render_system.destroy_pipeline("imgui_pipeline"_sid);
         _render_system.destroy_resource_set("imgui_resources"_sid);
     }
 

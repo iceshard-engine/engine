@@ -10,8 +10,6 @@ namespace render::api::v1::vulkan
     struct RenderPassContext
     {
         VkRenderPass renderpass;
-        VkPipelineLayout pipeline_layout;
-        VkPipelineLayout pipeline_layout_pp;
         VkFramebuffer framebuffer;
         VkExtent2D extent;
     };

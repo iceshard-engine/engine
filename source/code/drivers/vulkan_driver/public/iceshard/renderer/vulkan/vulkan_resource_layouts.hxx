@@ -16,7 +16,6 @@ namespace iceshard::renderer::vulkan
 
     struct VulkanResourceLayouts
     {
-        VkPipelineLayout pipeline_layout;
         VkDescriptorSetLayout descriptor_set_uniforms;
         VkDescriptorSetLayout descriptor_set_textures;
         VkDescriptorSetLayout descriptor_set_samplers;

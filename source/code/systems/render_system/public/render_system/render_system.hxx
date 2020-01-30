@@ -34,18 +34,11 @@ namespace render
         template<uint32_t Size>
         void add_named_vertex_descriptor_set(VertexDescriptorSet<Size> const& binding_set) noexcept;
 
-        template<uint32_t DescriptorCount>
-        auto create_pipeline(Pipeline<DescriptorCount> const& pipeline) noexcept -> render::api::RenderPipeline;
-
         virtual void initialize_render_interface(render::api::RenderInterface** render_interface) noexcept = 0;
 
         virtual void swap() noexcept = 0;
 
     private:
-        virtual auto create_pipeline(
-            core::stringid_type const* descriptor_names,
-            uint32_t descriptor_name_count
-        ) noexcept->api::RenderPipeline = 0;
 
         virtual void add_named_vertex_descriptor_set(
             core::stringid_arg_type name,
@@ -60,12 +53,6 @@ namespace render
         VertexDescriptorSet<Size> const& binding_set) noexcept
     {
         add_named_vertex_descriptor_set(binding_set.name, binding_set.binding, binding_set.descriptors, Size);
-    }
-
-    template<uint32_t DescriptorCount>
-    inline auto RenderSystem::create_pipeline(Pipeline<DescriptorCount> const& pipeline) noexcept -> api::RenderPipeline
-    {
-        return create_pipeline(pipeline.descriptors.descriptors, DescriptorCount);
     }
 
 } // namespace render
