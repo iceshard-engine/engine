@@ -73,13 +73,11 @@ namespace render
 
             _vk_render_system = iceshard::renderer::vulkan::create_render_system(_driver_allocator, _vulkan_instance);
 
-            _surface_extents = _vk_render_system->render_area();
-
             _vulkan_device_memory = core::memory::make_unique<vulkan::VulkanDeviceMemoryManager>(
                 _driver_allocator,
                 _driver_allocator,
                 _vk_render_system->devices()
-                );
+            );
 
             _vulkan_staging_buffer = render::vulkan::create_staging_buffer(_driver_allocator, *_vulkan_device_memory);
 
@@ -98,18 +96,9 @@ namespace render
 
         }
 
-        void prepare() noexcept override
+        void begin_frame() noexcept override
         {
-            vkDeviceWaitIdle(_vk_render_system->v1_graphics_device());
-
-            auto new_extents = _vk_render_system->render_area();
-            if (_surface_extents.width != new_extents.width || _surface_extents.height != new_extents.height)
-            {
-                fmt::print("ReConstructing graphics pipelines!\n");
-                _surface_extents = new_extents;
-
-                _vk_render_system->prepare(new_extents, iceshard::renderer::RenderPassFeatures::None);
-            }
+            _vk_render_system->begin_frame();
         }
 
         void shutdown() noexcept
@@ -141,34 +130,6 @@ namespace render
             );
 
             auto result = render::api::Buffer{ reinterpret_cast<uintptr_t>(vulkan_buffer.get()) };
-            _vulkan_buffers.emplace_back(std::move(vulkan_buffer));
-
-            return result;
-        }
-
-        auto create_vertex_buffer(uint32_t size) noexcept -> render::api::VertexBuffer override
-        {
-            auto vulkan_buffer = render::vulkan::create_vertex_buffer(
-                _driver_allocator,
-                *_vulkan_device_memory,
-                size
-            );
-
-            auto result = render::api::VertexBuffer{ reinterpret_cast<uintptr_t>(vulkan_buffer.get()) };
-            _vulkan_buffers.emplace_back(std::move(vulkan_buffer));
-
-            return result;
-        }
-
-        auto create_uniform_buffer(uint32_t size) noexcept -> render::api::UniformBuffer override
-        {
-            auto vulkan_buffer = render::vulkan::create_uniform_buffer(
-                _driver_allocator,
-                *_vulkan_device_memory,
-                size
-            );
-
-            auto result = render::api::UniformBuffer{ reinterpret_cast<uintptr_t>(vulkan_buffer.get()) };
             _vulkan_buffers.emplace_back(std::move(vulkan_buffer));
 
             return result;
@@ -320,12 +281,12 @@ namespace render
             _vk_render_system->submit_command_buffer(cb);
         }
 
-        void swap() noexcept override
+        void end_frame() noexcept override
         {
+            _vk_render_system->end_frame();
+
             auto graphics_device = _vk_render_system->v1_graphics_device();
             auto graphics_queue = _vk_render_system->v1_graphics_queue();
-
-            _vk_render_system->v1_acquire_next_image();
 
             if (_staging_cmds)
             {
@@ -368,7 +329,7 @@ namespace render
                 rp_begin.framebuffer = _vk_render_system->v1_current_framebuffer();
                 rp_begin.renderArea.offset.x = 0;
                 rp_begin.renderArea.offset.y = 0;
-                rp_begin.renderArea.extent = _surface_extents;
+                rp_begin.renderArea.extent = _vk_render_system->render_area();
                 rp_begin.clearValueCount = 2;
                 rp_begin.pClearValues = clear_values;
 
@@ -426,12 +387,6 @@ namespace render
             shutdown();
         }
 
-    public: // RenderSystem.v2
-        auto renderpass(iceshard::renderer::RenderPassStage stage) noexcept -> iceshard::renderer::RenderPass
-        {
-            return _vk_render_system->renderpass(stage);
-        }
-
     private:
         // Allocator for driver allocations.
         core::memory::proxy_allocator _driver_allocator;
@@ -444,7 +399,7 @@ namespace render
 
         VkFence _vulkan_draw_fence = nullptr;
 
-        // Databuffers
+        // Data buffers
         core::memory::unique_pointer<render::vulkan::VulkanBuffer> _vulkan_staging_buffer{ nullptr, { core::memory::globals::null_allocator() } };
         core::Vector<core::memory::unique_pointer<render::vulkan::VulkanBuffer>> _vulkan_buffers;
 
@@ -455,8 +410,6 @@ namespace render
         core::Vector<core::memory::unique_pointer<vulkan::VulkanImage>> _vulkan_images;
 
         bool _staging_cmds;
-
-        VkExtent2D _surface_extents{ };
 
         ////////////////////////////////////////////////////////////////
         // New RenderSystem object

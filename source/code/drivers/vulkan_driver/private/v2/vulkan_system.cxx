@@ -34,7 +34,7 @@ namespace iceshard::renderer::vulkan
         create_resource_layouts(_devices.graphics.handle, _resource_layouts);
         create_pipeline_layouts(_devices, _resource_layouts, _pipeline_layouts);
 
-        prepare(render_area(), RenderPassFeatures::None);
+        begin_frame();
         _initialized = true;
     }
 
@@ -56,21 +56,31 @@ namespace iceshard::renderer::vulkan
         destroy_surface(_allocator, _surface);
     }
 
-    void VulkanRenderSystem::prepare(VkExtent2D area, RenderPassFeatures) noexcept
+    void VulkanRenderSystem::begin_frame() noexcept
     {
-        if (_initialized)
-        {
-            destroy_framebuffers(_allocator, _framebuffers);
-            destroy_swapchain(_allocator, _swapchain);
-        }
+        VkSurfaceCapabilitiesKHR capabilities;
+        get_surface_capabilities(_devices.physical.handle, _surface, capabilities);
 
-        _swapchain = create_swapchain(_allocator, _devices, _surface);
-        create_framebuffers(_allocator, area, _devices, _renderpass, _swapchain, _framebuffers);
+        auto new_area = capabilities.currentExtent;
+        if (_render_area.width != new_area.width || _render_area.height != new_area.height)
+        {
+            vkDeviceWaitIdle(_devices.graphics.handle);
+
+            _render_area = new_area;
+            if (_initialized)
+            {
+                destroy_framebuffers(_allocator, _framebuffers);
+                destroy_swapchain(_allocator, _swapchain);
+            }
+
+            _swapchain = create_swapchain(_allocator, _devices, _surface);
+            create_framebuffers(_allocator, _render_area, _devices, _renderpass, _swapchain, _framebuffers);
+        }
     }
 
-    auto VulkanRenderSystem::renderpass([[maybe_unused]] RenderPassStage stage) noexcept -> RenderPass
+    void VulkanRenderSystem::end_frame() noexcept
     {
-        return RenderPass{ reinterpret_cast<uintptr_t>(_renderpass.renderpass) };
+        acquire_next_image();
     }
 
     auto VulkanRenderSystem::acquire_command_buffer(RenderPassStage stage) noexcept -> CommandBuffer
@@ -137,9 +147,7 @@ namespace iceshard::renderer::vulkan
 
     auto VulkanRenderSystem::render_area() noexcept -> VkExtent2D
     {
-        VkSurfaceCapabilitiesKHR capabilities;
-        get_surface_capabilities(_devices.physical.handle, _surface, capabilities);
-        return capabilities.currentExtent;
+        return _render_area;
     }
 
     auto VulkanRenderSystem::resource_layouts() noexcept -> VulkanResourceLayouts
@@ -292,7 +300,7 @@ namespace iceshard::renderer::vulkan
         core::pod::array::clear(_command_buffers_submitted);
     }
 
-    void VulkanRenderSystem::v1_acquire_next_image() noexcept
+    void VulkanRenderSystem::acquire_next_image() noexcept
     {
         // Get the index of the next available swapchain image:
         auto api_result = vkAcquireNextImageKHR(
@@ -309,7 +317,7 @@ namespace iceshard::renderer::vulkan
         IS_ASSERT(api_result == VK_SUCCESS, "Couldn't get next framebuffer image!");
     }
 
-    void VulkanRenderSystem::v1_present() noexcept
+    void VulkanRenderSystem::present_image() noexcept
     {
         VkSwapchainKHR swapchains[1]{ native_handle(_swapchain) };
 
@@ -327,6 +335,11 @@ namespace iceshard::renderer::vulkan
         IS_ASSERT(api_result == VK_SUCCESS, "Failed to present framebuffer image!");
 
         _next_command_buffer = 0;
+    }
+
+    void VulkanRenderSystem::v1_present() noexcept
+    {
+        present_image();
     }
 
     auto create_render_system(core::allocator& alloc, VkInstance instance) noexcept -> VulkanRenderSystem*

@@ -25,24 +25,13 @@ namespace iceshard::renderer::vulkan
         VulkanRenderSystem(core::allocator& alloc, VkInstance instance) noexcept;
         ~VulkanRenderSystem() noexcept override;
 
-        void prepare(
-            VkExtent2D surface_extent,
-            RenderPassFeatures renderpass_features
-        ) noexcept;
+        void begin_frame() noexcept override;
 
-        auto devices() noexcept -> VulkanDevices const& { return _devices; }
-
-        auto renderpass(RenderPassStage stage = RenderPassStage::Geometry) noexcept -> RenderPass;
+        void end_frame() noexcept override;
 
         auto acquire_command_buffer(RenderPassStage stage) noexcept->CommandBuffer override;
 
         void submit_command_buffer(CommandBuffer cmd_buffer) noexcept override;
-
-        auto swapchain() noexcept -> VulkanSwapchain;
-
-        auto render_area() noexcept -> VkExtent2D;
-
-        auto resource_layouts() noexcept -> VulkanResourceLayouts;
 
         auto create_resource_set(
             core::stringid_arg_type name,
@@ -70,6 +59,16 @@ namespace iceshard::renderer::vulkan
         ) noexcept override;
 
     public:
+        // API v1.0 proxies
+        auto devices() noexcept -> VulkanDevices const& { return _devices; }
+
+        auto swapchain() noexcept->VulkanSwapchain;
+
+        auto render_area() noexcept->VkExtent2D;
+
+        auto resource_layouts() noexcept->VulkanResourceLayouts;
+
+    public:
         auto v1_surface() noexcept -> VkSurfaceKHR;
         auto v1_graphics_device() noexcept -> VkDevice;
         auto v1_graphics_queue() noexcept -> VkQueue;
@@ -83,15 +82,19 @@ namespace iceshard::renderer::vulkan
 
     public:
         void v1_execute_subpass_commands(VkCommandBuffer cmds) noexcept;
-
-        void v1_acquire_next_image() noexcept;
         void v1_present() noexcept;
+
+    protected:
+        void acquire_next_image() noexcept;
+        void present_image() noexcept;
 
     private:
         core::allocator& _allocator;
         bool _initialized = false;
 
         VkInstance const _vk_instance;
+
+        VkExtent2D _render_area;
 
         VulkanSurface _surface;
         VulkanDevices _devices;

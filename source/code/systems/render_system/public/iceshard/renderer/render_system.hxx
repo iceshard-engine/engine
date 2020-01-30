@@ -10,7 +10,9 @@ namespace iceshard::renderer
     public:
         virtual ~RenderSystem() noexcept = default;
 
-        virtual auto renderpass(RenderPassStage type) noexcept -> RenderPass = 0;
+        virtual void begin_frame() noexcept { }
+
+        virtual void end_frame() noexcept { }
 
         virtual auto create_resource_set(
             core::stringid_arg_type name,
@@ -37,8 +39,13 @@ namespace iceshard::renderer
             core::stringid_arg_type name
         ) noexcept = 0;
 
-        virtual auto acquire_command_buffer(RenderPassStage stage) noexcept -> CommandBuffer = 0;
-        virtual void submit_command_buffer(CommandBuffer) noexcept = 0;
+        virtual auto acquire_command_buffer(
+            RenderPassStage stage
+        ) noexcept -> CommandBuffer = 0;
+
+        virtual void submit_command_buffer(
+            CommandBuffer
+        ) noexcept = 0;
     };
 
 } // namespace iceshard::renderer

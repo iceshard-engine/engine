@@ -139,10 +139,9 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
         );
 
         glm::mat4 MVP{ 1 };
-        render_system->create_uniform_buffer(sizeof(MVP));
 
         [[maybe_unused]]
-        auto uniform_buffer = render_system->create_uniform_buffer(sizeof(MVP));
+        auto uniform_buffer = render_system->create_buffer(render::api::BufferType::UniformBuffer, sizeof(MVP));
 
         {
             auto new_view = glm::lookAt(

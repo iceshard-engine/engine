@@ -39,12 +39,8 @@ namespace iceshard
         class NoneRenderSystem : public render::RenderSystem
         {
         public:
-            auto renderpass(RenderPassStage) noexcept -> RenderPass { return RenderPass{ 0 }; }
 
             auto create_buffer(render::api::BufferType, uint32_t) noexcept -> render::api::Buffer override { return render::api::Buffer{ 0 }; }
-            auto create_vertex_buffer(uint32_t) noexcept -> render::api::VertexBuffer override { return render::api::VertexBuffer{ 0 }; }
-            auto create_uniform_buffer(uint32_t) noexcept -> render::api::UniformBuffer { return render::api::UniformBuffer{ 0 }; }
-            void swap() noexcept override {}
 
             void initialize_render_interface(render::api::RenderInterface**) noexcept override { }
 
@@ -245,7 +241,7 @@ namespace iceshard
             vs_hacks::cppcoro_sync_all_workaround(std::move(*expected_list));
         }
 
-        _render_module->render_system()->swap();
+        _render_module->render_system()->end_frame();
 
         // Move the current frame to the 'previous' slot.
         _previous_frame = std::move(_current_frame);
@@ -264,7 +260,7 @@ namespace iceshard
         auto* inputs = input_system();
         inputs->query_messages(_current_frame->messages());
 
-        _render_module->render_system()->prepare();
+        _render_module->render_system()->begin_frame();
     }
 
     auto IceShardEngine::worker_threads() noexcept -> cppcoro::static_thread_pool&
