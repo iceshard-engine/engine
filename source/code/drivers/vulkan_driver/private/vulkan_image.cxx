@@ -1,9 +1,7 @@
 #include "vulkan_image.hxx"
 #include <core/debug/assert.hxx>
 
-#undef max
-
-namespace render::vulkan
+namespace iceshard::renderer::vulkan
 {
 
     VulkanImage::VulkanImage(
@@ -215,4 +213,4 @@ namespace render::vulkan
         return core::memory::make_unique<VulkanImage>(alloc, device_memory, graphics_device, image, image_view, std::move(memory_info));
     }
 
-} // namespace render::vulkan
+} // namespace iceshard::renderer::vulkan

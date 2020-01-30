@@ -2,7 +2,7 @@
 #include <render_system/render_api.hxx>
 #include <iceshard/renderer/vulkan/vulkan_sdk.hxx>
 
-namespace render::api::v1::vulkan
+namespace iceshard::renderer::api::v1_1::vulkan
 {
 
     void init_api(void* ptr) noexcept;

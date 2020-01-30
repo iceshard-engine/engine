@@ -20,7 +20,7 @@ namespace iceshard
 
     auto Engine::render_system() noexcept -> render::RenderSystem*
     {
-        return render_system(render::api::render_api_instance);
+        return render_system(iceshard::renderer::api::render_api_instance);
     }
 
 } // namespace iceshard

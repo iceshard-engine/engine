@@ -52,7 +52,7 @@ namespace iceshard::renderer::vulkan
             core::stringid_arg_type name,
             RenderPipelineLayout layout,
             core::pod::Array<asset::AssetData> const& shader_assets
-        ) noexcept -> RenderPipeline override;
+        ) noexcept -> Pipeline override;
 
         void destroy_pipeline(
             core::stringid_arg_type name

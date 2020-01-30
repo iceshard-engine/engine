@@ -5,7 +5,7 @@
 
 #include <iceshard/renderer/vulkan/vulkan_devices.hxx>
 
-namespace render::vulkan
+namespace iceshard::renderer::vulkan
 {
 
     struct VulkanMemoryInfo
@@ -29,7 +29,7 @@ namespace render::vulkan
         void deallocate_memory(VkBuffer buffer, VulkanMemoryInfo const& memory_info) noexcept;
         void deallocate_memory(VkImage image, VulkanMemoryInfo const& memory_info) noexcept;
 
-        void map_memory(VulkanMemoryInfo* ranges, render::api::BufferDataView* views, uint32_t size) noexcept;
+        void map_memory(VulkanMemoryInfo* ranges, api::DataView* views, uint32_t size) noexcept;
 
         void unmap_memory(VulkanMemoryInfo* ranges, uint32_t size);
 

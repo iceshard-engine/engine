@@ -7,7 +7,7 @@ namespace win32
 {
 }
 
-namespace render::vulkan
+namespace iceshard::renderer::vulkan
 {
 
     namespace detail
@@ -124,7 +124,7 @@ namespace render::vulkan
         vkFreeMemory(_devices.graphics.handle, memory_info.memory_handle, _vulkan_allocator.vulkan_callbacks());
     }
 
-    void VulkanDeviceMemoryManager::map_memory(VulkanMemoryInfo* ranges, render::api::BufferDataView* views, uint32_t size) noexcept
+    void VulkanDeviceMemoryManager::map_memory(VulkanMemoryInfo* ranges, api::DataView* views, uint32_t size) noexcept
     {
         core::memory::stack_allocator_512 temp_alloc;
         core::pod::Hash<void*> mapped_ptrs{ temp_alloc };
@@ -152,8 +152,8 @@ namespace render::vulkan
                 core::pod::hash::set(mapped_ptrs, block_idx, mapped_ptr);
             }
 
-            views[idx].data_pointer = core::memory::utils::pointer_add(mapped_ptr, range.memory_offset);
-            views[idx].data_size = range.memory_size;
+            views[idx].data = core::memory::utils::pointer_add(mapped_ptr, range.memory_offset);
+            views[idx].size = range.memory_size;
         }
     }
 

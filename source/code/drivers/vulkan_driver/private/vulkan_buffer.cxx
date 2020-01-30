@@ -1,35 +1,35 @@
 #include "vulkan_buffer.hxx"
 #include <core/debug/assert.hxx>
 
-namespace render::vulkan
+namespace iceshard::renderer::vulkan
 {
 
     namespace detail
     {
 
-        auto type_to_string(render::api::BufferType type) noexcept -> std::string_view
+        auto type_to_string(api::BufferType type) noexcept -> std::string_view
         {
             switch (type)
             {
-            case render::api::v1::BufferType::IndexBuffer:
+            case api::BufferType::IndexBuffer:
                 return "Index Buffer";
-            case render::api::v1::BufferType::VertexBuffer:
+            case api::BufferType::VertexBuffer:
                 return "Vertex Buffer";
-            case render::api::v1::BufferType::UniformBuffer:
+            case api::BufferType::UniformBuffer:
                 return "Uniform Buffer";
             }
             return "<invalid_buffer_type>";
         }
 
-        auto type_to_usage(render::api::BufferType type) noexcept -> VkBufferUsageFlags
+        auto type_to_usage(api::BufferType type) noexcept -> VkBufferUsageFlags
         {
             switch (type)
             {
-            case render::api::v1::BufferType::IndexBuffer:
+            case api::BufferType::IndexBuffer:
                 return VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
-            case render::api::v1::BufferType::VertexBuffer:
+            case api::BufferType::VertexBuffer:
                 return VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
-            case render::api::v1::BufferType::UniformBuffer:
+            case api::BufferType::UniformBuffer:
                 return VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
             }
 
@@ -52,9 +52,9 @@ namespace render::vulkan
         vkDestroyBuffer(_device_memory->graphics_device(), _buffer_handle, nullptr);
     }
 
-    void VulkanBuffer::map_memory(render::api::BufferDataView& data_view) noexcept
+    void VulkanBuffer::map_memory(api::DataView& data_view) noexcept
     {
-        data_view.data_size = _memory_info.memory_size;
+        data_view.size = _memory_info.memory_size;
 
         auto api_result = vkMapMemory(
             _device_memory->graphics_device(),
@@ -62,7 +62,7 @@ namespace render::vulkan
             _memory_info.memory_offset,
             _memory_info.memory_size,
             0 /* empty flags */,
-            &data_view.data_pointer
+            &data_view.data
         );
         IS_ASSERT(api_result == VkResult::VK_SUCCESS, "Couldn't map memory!");
     }
@@ -103,7 +103,7 @@ namespace render::vulkan
 
     auto create_buffer(
         core::allocator& alloc,
-        render::api::BufferType type,
+        api::BufferType type,
         uint32_t buffer_size,
         VulkanDeviceMemoryManager& device_memory
     ) noexcept -> core::memory::unique_pointer<VulkanBuffer>
@@ -141,7 +141,7 @@ namespace render::vulkan
         uint32_t buffer_size
     ) noexcept -> core::memory::unique_pointer<VulkanBuffer>
     {
-        return create_buffer(alloc, render::api::BufferType::UniformBuffer, buffer_size, device_memory);
+        return create_buffer(alloc, api::BufferType::UniformBuffer, buffer_size, device_memory);
     }
 
     auto create_vertex_buffer(
@@ -150,7 +150,7 @@ namespace render::vulkan
         uint32_t buffer_size
     ) noexcept -> core::memory::unique_pointer<VulkanBuffer>
     {
-        return create_buffer(alloc, render::api::BufferType::VertexBuffer, buffer_size, device_memory);
+        return create_buffer(alloc, api::BufferType::VertexBuffer, buffer_size, device_memory);
     }
 
-} // namespace render::vulkan
+} // namespace iceshard::renderer::vulkan

@@ -33,7 +33,7 @@ namespace iceshard::renderer
             core::stringid_arg_type name,
             RenderPipelineLayout layout,
             core::pod::Array<asset::AssetData> const& shader_assets
-        ) noexcept -> RenderPipeline = 0;
+        ) noexcept -> Pipeline = 0;
 
         virtual void destroy_pipeline(
             core::stringid_arg_type name

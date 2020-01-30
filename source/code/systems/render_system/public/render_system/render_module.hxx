@@ -6,8 +6,11 @@
 
 namespace render
 {
-
     class RenderSystem;
+}
+
+namespace iceshard::renderer
+{
 
     //! \brief Describes the engine module.
     class RenderSystemModule
@@ -17,15 +20,15 @@ namespace render
 
         //! \brief Returns the render system object from the loaded module.
         [[nodiscard]]
-        virtual auto render_system() noexcept -> RenderSystem* = 0;
+        virtual auto render_system() noexcept -> render::RenderSystem* = 0;
 
         //! \brief Returns the render system object from the loaded module.
         [[nodiscard]]
-        virtual auto render_system() const noexcept -> const RenderSystem* = 0;
+        virtual auto render_system() const noexcept -> const render::RenderSystem* = 0;
 
         //! \brief Returns the render api interface from the loaded module.
         [[nodiscard]]
-        virtual auto render_api() noexcept -> render::api::RenderInterface* = 0;
+        virtual auto render_api() noexcept -> api::RenderInterface* = 0;
     };
 
     //! \brief Tries to load the engine module from the given library path.

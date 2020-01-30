@@ -1,6 +1,6 @@
 #include <render_system/render_api.hxx>
 
-namespace render::api::v1
+namespace iceshard::renderer::api::v1_1
 {
 
     void api_v1_not_initialized() noexcept
@@ -11,7 +11,7 @@ namespace render::api::v1
 
     void assert_render_api() noexcept
     {
-        render::api::v1::render_api_instance->check_func();
+        render_api_instance->check_func();
     }
 
     static RenderInterface render_api_instance_uninitialized{ &api_v1_not_initialized };

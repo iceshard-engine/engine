@@ -21,11 +21,11 @@ namespace debugui::imgui
         ImGuiIO& _io;
 
         // Render resources used by ImGUI.
-        render::api::Texture _font_texture = render::api::Texture::Invalid;
-        render::api::Buffer _indice_buffer = render::api::Buffer::Invalid;
-        iceshard::renderer::RenderPipeline _pipeline = iceshard::renderer::RenderPipeline::Invalid;
+        iceshard::renderer::api::Texture _font_texture = iceshard::renderer::api::Texture::Invalid;
+        iceshard::renderer::api::Buffer _indice_buffer = iceshard::renderer::api::Buffer::Invalid;
+        iceshard::renderer::Pipeline _pipeline = iceshard::renderer::Pipeline::Invalid;
         iceshard::renderer::ResourceSet _resource_set = iceshard::renderer::ResourceSet::Invalid;
-        core::pod::Array<render::api::Buffer> _vertice_buffers;
+        core::pod::Array<iceshard::renderer::api::Buffer> _vertice_buffers;
     };
 
 } // namespace debugui::imgui

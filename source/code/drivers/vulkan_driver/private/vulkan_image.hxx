@@ -5,7 +5,7 @@
 
 #include "vulkan_device_memory_manager.hxx"
 
-namespace render::vulkan
+namespace iceshard::renderer::vulkan
 {
 
     class VulkanImage final
@@ -44,4 +44,4 @@ namespace render::vulkan
         VkExtent2D extent
     ) noexcept->core::memory::unique_pointer<VulkanImage>;
 
-} // namespace render::vulkan
+} // namespace iceshard::renderer::vulkan

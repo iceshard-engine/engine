@@ -208,14 +208,14 @@ namespace iceshard::renderer::vulkan
         core::stringid_arg_type name,
         RenderPipelineLayout layout,
         core::pod::Array<asset::AssetData> const& shader_assets
-    ) noexcept -> RenderPipeline
+    ) noexcept -> Pipeline
     {
         VulkanPipelineLayout selected_layout =
             layout == RenderPipelineLayout::DebugUI
             ? _pipeline_layouts.debugui_layout
             : _pipeline_layouts.default_layout;
 
-        RenderPipeline result = RenderPipeline::Invalid;
+        Pipeline result = Pipeline::Invalid;
 
         VulkanPipelineModules pipeline_modules;
         build_pipeline_shaders(_devices, shader_assets, pipeline_modules);
@@ -229,7 +229,7 @@ namespace iceshard::renderer::vulkan
                 vulkan_pipeline
             );
 
-            result = RenderPipeline{ (uintptr_t)vulkan_pipeline };
+            result = Pipeline{ (uintptr_t)vulkan_pipeline };
         }
         release_pipeline_shaders(_devices, pipeline_modules);
 

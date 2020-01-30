@@ -73,13 +73,13 @@ namespace render
 
             _vk_render_system = iceshard::renderer::vulkan::create_render_system(_driver_allocator, _vulkan_instance);
 
-            _vulkan_device_memory = core::memory::make_unique<vulkan::VulkanDeviceMemoryManager>(
+            _vulkan_device_memory = core::memory::make_unique<iceshard::renderer::vulkan::VulkanDeviceMemoryManager>(
                 _driver_allocator,
                 _driver_allocator,
                 _vk_render_system->devices()
             );
 
-            _vulkan_staging_buffer = render::vulkan::create_staging_buffer(_driver_allocator, *_vulkan_device_memory);
+            _vulkan_staging_buffer = iceshard::renderer::vulkan::create_staging_buffer(_driver_allocator, *_vulkan_device_memory);
 
             VkSemaphoreCreateInfo imageAcquiredSemaphoreCreateInfo;
             imageAcquiredSemaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
@@ -120,16 +120,16 @@ namespace render
             vkDestroyInstance(_vulkan_instance, _vulkan_allocator.vulkan_callbacks());
         }
 
-        auto create_buffer(render::api::BufferType type, uint32_t size) noexcept -> render::api::Buffer override
+        auto create_buffer(iceshard::renderer::api::v1_1::BufferType type, uint32_t size) noexcept -> iceshard::renderer::api::v1_1::Buffer override
         {
-            auto vulkan_buffer = render::vulkan::create_buffer(
+            auto vulkan_buffer = iceshard::renderer::vulkan::create_buffer(
                 _driver_allocator,
                 type,
                 size,
                 *_vulkan_device_memory
             );
 
-            auto result = render::api::Buffer{ reinterpret_cast<uintptr_t>(vulkan_buffer.get()) };
+            auto result = iceshard::renderer::api::v1_1::Buffer{ reinterpret_cast<uintptr_t>(vulkan_buffer.get()) };
             _vulkan_buffers.emplace_back(std::move(vulkan_buffer));
 
             return result;
@@ -163,7 +163,7 @@ namespace render
             core::stringid_arg_type name,
             iceshard::renderer::RenderPipelineLayout layout,
             core::pod::Array<asset::AssetData> const& shader_assets
-        ) noexcept -> iceshard::renderer::RenderPipeline override
+        ) noexcept -> iceshard::renderer::Pipeline override
         {
             return _vk_render_system->create_pipeline(name, layout, shader_assets);
         }
@@ -175,19 +175,19 @@ namespace render
             return _vk_render_system->destroy_pipeline(name);
         }
 
-        auto load_texture(asset::AssetData texture_data) noexcept -> render::api::Texture override
+        auto load_texture(asset::AssetData texture_data) noexcept -> iceshard::renderer::api::v1_1::Texture override
         {
             int32_t width = resource::get_meta_int32(texture_data.metadata, "texture.extents.width"_sid);
             int32_t height = resource::get_meta_int32(texture_data.metadata, "texture.extents.height"_sid);
 
-            render::api::BufferDataView data_view;
+            iceshard::renderer::api::v1_1::DataView data_view;
             _vulkan_staging_buffer->map_memory(data_view);
-            std::memcpy(data_view.data_pointer, texture_data.content._data, texture_data.content._size);
+            std::memcpy(data_view.data, texture_data.content._data, texture_data.content._size);
             _vulkan_staging_buffer->unmap_memory();
 
             VkExtent2D image_extent{ static_cast<uint32_t>(width), static_cast<uint32_t>(height) };
 
-            auto texture = render::vulkan::create_texture_2d(
+            auto texture = iceshard::renderer::vulkan::create_texture_2d(
                 _driver_allocator,
                 *_vulkan_device_memory,
                 image_extent
@@ -265,7 +265,7 @@ namespace render
             vkEndCommandBuffer(staging_cmds);
             _staging_cmds = true;
 
-            auto result_handle = render::api::Texture{ reinterpret_cast<uintptr_t>(texture->native_view()) };
+            auto result_handle = iceshard::renderer::api::v1_1::Texture{ reinterpret_cast<uintptr_t>(texture->native_view()) };
             _vulkan_images.emplace_back(std::move(texture));
 
             return result_handle;
@@ -377,9 +377,9 @@ namespace render
             _vk_render_system->v1_present();
         }
 
-        void initialize_render_interface(render::api::RenderInterface** render_interface) noexcept
+        void initialize_render_interface(iceshard::renderer::api::v1_1::RenderInterface** render_interface) noexcept
         {
-            *render_interface = render::api::render_api_instance;
+            *render_interface = iceshard::renderer::api::v1_1::render_api_instance;
         }
 
         ~VulkanRenderSystem() noexcept override
@@ -392,7 +392,7 @@ namespace render
         core::memory::proxy_allocator _driver_allocator;
 
         // Special allocator for vulkan render system.
-        render::vulkan::VulkanAllocator _vulkan_allocator;
+        vulkan::VulkanAllocator _vulkan_allocator;
 
         // The Vulkan instance handle.
         VkInstance _vulkan_instance{};
@@ -400,14 +400,14 @@ namespace render
         VkFence _vulkan_draw_fence = nullptr;
 
         // Data buffers
-        core::memory::unique_pointer<render::vulkan::VulkanBuffer> _vulkan_staging_buffer{ nullptr, { core::memory::globals::null_allocator() } };
-        core::Vector<core::memory::unique_pointer<render::vulkan::VulkanBuffer>> _vulkan_buffers;
+        core::memory::unique_pointer<iceshard::renderer::vulkan::VulkanBuffer> _vulkan_staging_buffer{ nullptr, { core::memory::globals::null_allocator() } };
+        core::Vector<core::memory::unique_pointer<iceshard::renderer::vulkan::VulkanBuffer>> _vulkan_buffers;
 
         // Array vulkan devices.
-        core::memory::unique_pointer<render::vulkan::VulkanDeviceMemoryManager> _vulkan_device_memory{ nullptr, { core::memory::globals::null_allocator() } };
+        core::memory::unique_pointer<iceshard::renderer::vulkan::VulkanDeviceMemoryManager> _vulkan_device_memory{ nullptr, { core::memory::globals::null_allocator() } };
 
         // Shader stages
-        core::Vector<core::memory::unique_pointer<vulkan::VulkanImage>> _vulkan_images;
+        core::Vector<core::memory::unique_pointer<iceshard::renderer::vulkan::VulkanImage>> _vulkan_images;
 
         bool _staging_cmds;
 
@@ -426,10 +426,10 @@ extern "C"
         void* api_instance) -> render::RenderSystem*
     {
         render::RenderSystem* result = nullptr;
-        if (api_version == render::api::v1::version_name.hash_value)
+        if (api_version == iceshard::renderer::api::v1_1::version_name.hash_value)
         {
-            render::api::v1::vulkan::init_api(render::api::render_api_instance);
-            render::api::v1::vulkan::init_api(api_instance);
+            iceshard::renderer::api::v1_1::vulkan::init_api(iceshard::renderer::api::v1_1::render_api_instance);
+            iceshard::renderer::api::v1_1::vulkan::init_api(api_instance);
             result = alloc.make<render::VulkanRenderSystem>(alloc);
         }
         return result;
