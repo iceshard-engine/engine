@@ -1,8 +1,6 @@
 #pragma once
-#include <render_system/render_command_buffer.hxx>
-#include <render_system/render_vertex_descriptor.hxx>
-#include <render_system/render_pipeline.hxx>
 #include <asset_system/assets/asset_shader.hxx>
+#include <iceshard/renderer/render_system.hxx>
 
 namespace render
 {
@@ -11,66 +9,16 @@ namespace render
     class RenderContext;
 
     //! \brief A render system interface.
-    class RenderSystem
+    class RenderSystem : public iceshard::renderer::RenderSystem
     {
     public:
         virtual ~RenderSystem() noexcept = default;
 
-        virtual auto current_framebuffer() noexcept -> render::api::Framebuffer = 0;
+        virtual auto create_buffer(iceshard::renderer::api::BufferType type, uint32_t size) noexcept -> iceshard::renderer::api::Buffer = 0;
 
-        virtual auto descriptor_sets() noexcept -> render::api::DescriptorSets = 0;
+        virtual auto load_texture(asset::AssetData texture_data) noexcept -> iceshard::renderer::api::Texture = 0;
 
-        virtual auto command_buffer() noexcept -> render::api::CommandBuffer = 0;
-
-        //virtual auto current_frame_buffer() noexcept -> FrameBufferHandle = 0;
-
-        virtual auto create_buffer(render::api::BufferType type, uint32_t size) noexcept -> render::api::Buffer = 0;
-
-        virtual auto create_vertex_buffer(uint32_t size) noexcept -> render::api::VertexBuffer = 0;
-
-        virtual auto create_uniform_buffer(uint32_t size) noexcept -> render::api::UniformBuffer = 0;
-
-        virtual void create_imgui_descriptor_sets() noexcept { }
-
-        virtual auto load_texture(asset::AssetData texture_data) noexcept -> render::api::Texture = 0;
-
-        virtual void load_shader(asset::AssetData shader_data) noexcept = 0;
-
-        template<uint32_t Size>
-        void add_named_vertex_descriptor_set(VertexDescriptorSet<Size> const& binding_set) noexcept;
-
-        template<uint32_t DescriptorCount>
-        auto create_pipeline(Pipeline<DescriptorCount> const& pipeline) noexcept -> render::api::RenderPipeline;
-
-        virtual void initialize_render_interface(render::api::RenderInterface** render_interface) noexcept = 0;
-
-        virtual void swap() noexcept = 0;
-
-    private:
-        virtual auto create_pipeline(
-            core::stringid_type const* descriptor_names,
-            uint32_t descriptor_name_count
-        ) noexcept->api::RenderPipeline = 0;
-
-        virtual void add_named_vertex_descriptor_set(
-            core::stringid_arg_type name,
-            VertexBinding const& binding,
-            VertexDescriptor const* descriptors,
-            uint32_t descriptor_count
-        ) noexcept = 0;
+        virtual void initialize_render_interface(iceshard::renderer::api::RenderInterface** render_interface) noexcept = 0;
     };
-
-    template<uint32_t Size>
-    inline void RenderSystem::add_named_vertex_descriptor_set(
-        VertexDescriptorSet<Size> const& binding_set) noexcept
-    {
-        add_named_vertex_descriptor_set(binding_set.name, binding_set.binding, binding_set.descriptors, Size);
-    }
-
-    template<uint32_t DescriptorCount>
-    inline auto RenderSystem::create_pipeline(Pipeline<DescriptorCount> const& pipeline) noexcept -> api::RenderPipeline
-    {
-        return create_pipeline(pipeline.descriptors.descriptors, DescriptorCount);
-    }
 
 } // namespace render

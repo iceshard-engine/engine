@@ -64,7 +64,7 @@ namespace iceshard
         void add_long_task(cppcoro::task<> task) noexcept;
 
     private:
-        virtual auto render_system(render::api::RenderInterface*& render_api) noexcept -> render::RenderSystem* = 0;
+        virtual auto render_system(iceshard::renderer::api::RenderInterface*& render_api) noexcept -> render::RenderSystem* = 0;
     };
 
 } // namespace iceshard

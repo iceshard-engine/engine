@@ -26,6 +26,7 @@ namespace input::sdl2
             if (SDL_InitSubSystem(SDL_INIT_EVENTS) >= 0)
             {
                 input::sdl2::register_app_event_handlers(_transforms);
+                input::sdl2::register_window_event_handlers(_transforms);
                 input::sdl2::register_mouse_event_handlers(_transforms);
                 input::sdl2::register_keyboard_event_handlers(_transforms);
             }

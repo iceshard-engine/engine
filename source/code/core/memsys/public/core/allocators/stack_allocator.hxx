@@ -12,6 +12,8 @@ namespace core::memory
     class stack_allocator : public core::allocator
     {
     public:
+        static constexpr uint32_t InternalBufferSize = BUFFER_SIZE;
+
         stack_allocator() noexcept;
         ~stack_allocator() noexcept override = default;
 
@@ -32,7 +34,7 @@ namespace core::memory
 
     private:
         //! \brief The allocator available memory.
-        char _static_memory[BUFFER_SIZE];
+        char _static_memory[InternalBufferSize];
 
         //! \brief Next free memory location.
         void* _next_free;

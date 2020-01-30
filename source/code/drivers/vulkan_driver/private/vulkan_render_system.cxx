@@ -1,32 +1,24 @@
 #include <core/memory.hxx>
 #include <core/pointer.hxx>
 #include <core/pod/array.hxx>
+#include <core/pod/hash.hxx>
 #include <core/message/buffer.hxx>
 #include <core/message/operations.hxx>
 #include <core/allocators/proxy_allocator.hxx>
 
 #include <render_system/render_system.hxx>
 #include <render_system/render_commands.hxx>
+#include <iceshard/renderer/vulkan/vulkan_sdk.hxx>
 
 #include "api/v1/vulkan_render_api.hxx"
 
 #include "vulkan_allocator.hxx"
-#include "vulkan_surface.hxx"
-#include "device/vulkan_physical_device.hxx"
-#include "device/vulkan_command_buffer.hxx"
 #include "vulkan_device_memory_manager.hxx"
-#include "vulkan_swapchain.hxx"
 #include "vulkan_image.hxx"
-#include "vulkan_sampler.hxx"
-#include "vulkan_shader.hxx"
 #include "vulkan_buffer.hxx"
-#include "pipeline/vulkan_descriptor_pool.hxx"
-#include "pipeline/vulkan_descriptor_set_layout.hxx"
-#include "pipeline/vulkan_descriptor_sets.hxx"
-#include "pipeline/vulkan_vertex_descriptor.hxx"
-#include "pipeline/vulkan_pipeline_layout.hxx"
-#include "vulkan_framebuffer.hxx"
-#include "vulkan_pipeline.hxx"
+
+#include <iceshard/renderer/render_pass.hxx>
+#include <iceshard/renderer/vulkan/vulkan_system.hxx>
 
 #include <vulkan/vulkan.h>
 
@@ -36,38 +28,6 @@
 
 namespace render
 {
-    namespace detail
-    {
-
-        auto vk_iceshard_allocate(void* userdata, size_t size, size_t alignment, [[maybe_unused]] VkSystemAllocationScope scope) noexcept -> void*
-        {
-            auto* const allocator = reinterpret_cast<render::vulkan::VulkanAllocator*>(userdata);
-            return allocator->allocate(static_cast<uint32_t>(size), static_cast<uint32_t>(alignment));
-        }
-
-        auto vk_iceshard_reallocate(void* userdata, void* original, size_t size, size_t alignment, [[maybe_unused]] VkSystemAllocationScope scope) noexcept -> void*
-        {
-            auto* const allocator = reinterpret_cast<render::vulkan::VulkanAllocator*>(userdata);
-            return allocator->reallocate(original, static_cast<uint32_t>(size), static_cast<uint32_t>(alignment));
-        }
-
-        void vk_iceshard_free(void* userdata, void* memory) noexcept
-        {
-            auto* const allocator = reinterpret_cast<render::vulkan::VulkanAllocator*>(userdata);
-            allocator->deallocate(memory);
-        }
-
-        //void vk_iceshard_internal_allocate_event(void* userdata, size_t size, VkInternalAllocationType type, VkSystemAllocationScope scope) noexcept
-        //{
-        //    PFN_vkInternalAllocationNotification f;
-        //}
-
-        //void vk_iceshard_internal_free_event(void* userdata, size_t size, VkInternalAllocationType type, VkSystemAllocationScope scope) noexcept
-        //{
-        //    PFN_vkInternalFreeNotification f;
-        //}
-
-    } // namespace detail
 
     class VulkanRenderSystem : public render::RenderSystem
     {
@@ -76,14 +36,8 @@ namespace render
             : render::RenderSystem{}
             , _driver_allocator{ "vulkan-driver", alloc }
             , _vulkan_allocator{ alloc }
-            , _vulkan_framebuffers{ _driver_allocator }
-            , _vulkan_command_buffers{ _driver_allocator }
-            , _vulkan_vertex_descriptors{ _driver_allocator }
             , _vulkan_buffers{ _driver_allocator }
-            , _vulkan_descriptor_set_layouts{ _driver_allocator }
             , _vulkan_images{ _driver_allocator }
-            , _vulkan_samplers{ _driver_allocator }
-            , _vulkan_shaders{ _driver_allocator }
         {
             initialize();
         }
@@ -114,305 +68,132 @@ namespace render
             instance_create_info.enabledExtensionCount = static_cast<uint32_t>(std::size(instanceExtensionNames));
             instance_create_info.ppEnabledExtensionNames = &instanceExtensionNames[0];
 
-            VkAllocationCallbacks alloc_callbacks = {};
-            alloc_callbacks.pUserData = &_vulkan_allocator;
-            alloc_callbacks.pfnAllocation = detail::vk_iceshard_allocate;
-            alloc_callbacks.pfnReallocation = detail::vk_iceshard_reallocate;
-            alloc_callbacks.pfnFree = detail::vk_iceshard_free;
-            alloc_callbacks.pfnInternalAllocation = nullptr;
-            alloc_callbacks.pfnInternalFree = nullptr;
-
-            auto vk_create_result = vkCreateInstance(&instance_create_info, &alloc_callbacks, &_vulkan_instance);
+            auto vk_create_result = vkCreateInstance(&instance_create_info, _vulkan_allocator.vulkan_callbacks(), &_vulkan_instance);
             IS_ASSERT(vk_create_result == VkResult::VK_SUCCESS, "Creation of Vulkan instance failed!");
 
-            // Create the surface object
-            _vulkan_surface = render::vulkan::create_surface(_driver_allocator, _vulkan_instance);
+            _vk_render_system = iceshard::renderer::vulkan::create_render_system(_driver_allocator, _vulkan_instance);
 
-            enumerate_devices();
-
-            auto surface_extent = _vulkan_physical_device->surface_capabilities().maxImageExtent;
-
-            _vulkan_staging_buffer = render::vulkan::create_staging_buffer(_driver_allocator, *_vulkan_device_memory);
-
-            // Create swap chain
-            _vulkan_swapchain = render::vulkan::create_swapchain(_driver_allocator, _vulkan_physical_device.get());
-
-            // Create depth buffer
-            _vulkan_depth_image = render::vulkan::create_depth_buffer_image(_driver_allocator, *_vulkan_device_memory, surface_extent);
-
-            auto* physical_device = _vulkan_physical_device.get();
-            auto graphics_device = physical_device->graphics_device()->native_handle();
-
-            _vulkan_descriptor_pool = core::memory::make_unique<render::vulkan::VulkanDescriptorPool>(_driver_allocator, graphics_device);
-            _vulkan_physical_device->graphics_device()->create_command_buffers(_vulkan_command_buffers, 2);
-
-            _command_buffer_context.command_buffer = _vulkan_command_buffers[0]->native_handle();
-            _command_buffer_context.render_pass_context = &_render_pass_context;
-
-            {
-                auto const& formats = _vulkan_physical_device->surface_formats();
-
-                _vulkan_render_pass = vulkan::create_render_pass(_driver_allocator, graphics_device, core::pod::array::front(formats).format, VK_FORMAT_D16_UNORM);
-            }
-
-            vulkan::create_framebuffers(
+            _vulkan_device_memory = core::memory::make_unique<iceshard::renderer::vulkan::VulkanDeviceMemoryManager>(
                 _driver_allocator,
-                _vulkan_framebuffers,
-                graphics_device,
-                _vulkan_render_pass->native_handle(),
-                *_vulkan_depth_image.get(),
-                *_vulkan_swapchain.get(),
-                _vulkan_physical_device.get()
+                _driver_allocator,
+                _vk_render_system->devices()
             );
+
+            _vulkan_staging_buffer = iceshard::renderer::vulkan::create_staging_buffer(_driver_allocator, *_vulkan_device_memory);
 
             VkSemaphoreCreateInfo imageAcquiredSemaphoreCreateInfo;
             imageAcquiredSemaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
             imageAcquiredSemaphoreCreateInfo.pNext = NULL;
             imageAcquiredSemaphoreCreateInfo.flags = 0;
 
-            auto res = vkCreateSemaphore(graphics_device, &imageAcquiredSemaphoreCreateInfo, NULL, &_quick_semaphore);
-            assert(res == VK_SUCCESS);
-
-            _render_pass_context.extent = physical_device->surface_capabilities().maxImageExtent;
-            _render_pass_context.renderpass = _vulkan_render_pass->native_handle();
-            _render_pass_context.framebuffer = _vulkan_framebuffers[_vulkan_current_framebuffer]->native_handle();
-
             VkFenceCreateInfo fenceInfo;
             fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
             fenceInfo.pNext = NULL;
             fenceInfo.flags = 0;
 
-            res = vkCreateFence(graphics_device, &fenceInfo, NULL, &_vulkan_draw_fence);
+            auto res = vkCreateFence(_vk_render_system->v1_graphics_device(), &fenceInfo, NULL, &_vulkan_draw_fence);
             assert(res == VK_SUCCESS);
+
         }
 
-        void enumerate_devices() noexcept
+        void begin_frame() noexcept override
         {
-            IS_ASSERT(_vulkan_surface != nullptr, "Surface object does not exist!");
-
-            uint32_t device_count;
-            VkResult res = vkEnumeratePhysicalDevices(_vulkan_instance, &device_count, nullptr);
-            IS_ASSERT(res == VK_SUCCESS, "Couldn't properly query the number of available vulkan devices!");
-
-            core::pod::Array<VkPhysicalDevice> devices_handles{ _driver_allocator };
-            core::pod::array::resize(devices_handles, device_count);
-
-            vkEnumeratePhysicalDevices(_vulkan_instance, &device_count, &devices_handles[0]);
-            IS_ASSERT(res == VK_SUCCESS, "Couldn't properly query available vulkan devices!");
-
-            // Create VulkanPhysicalDevice objects from the handles.
-            fmt::print("Available Vulkan devices: {}\n", device_count);
-            fmt::print("Selecting device at index: {}\n", 0);
-
-            _vulkan_physical_device = core::memory::make_unique<vulkan::VulkanPhysicalDevice>(
-                _driver_allocator,
-                _driver_allocator,
-                core::pod::array::front(devices_handles),
-                _vulkan_surface->native_handle()
-                );
-
-            _vulkan_device_memory = core::memory::make_unique<vulkan::VulkanDeviceMemoryManager>(
-                _driver_allocator,
-                _driver_allocator,
-                _vulkan_physical_device.get(),
-                _vulkan_physical_device->graphics_device()->native_handle()
-            );
-        }
-
-        void release_devices() noexcept
-        {
-            _vulkan_device_memory = nullptr;
-            _vulkan_physical_device = nullptr;
+            _vk_render_system->begin_frame();
         }
 
         void shutdown() noexcept
         {
+            auto device = _vk_render_system->v1_graphics_device();
 
-            for (auto const& entry : _vulkan_vertex_descriptors)
-            {
-                _driver_allocator.destroy(entry.value);
-            }
+            vkDestroyFence(device, _vulkan_draw_fence, nullptr);
 
-            auto* physical_device = _vulkan_physical_device.get();
-            vkDestroyFence(physical_device->graphics_device()->native_handle(), _vulkan_draw_fence, nullptr);
-            vkDestroySemaphore(physical_device->graphics_device()->native_handle(), _quick_semaphore, nullptr);
-
-            _vulkan_pipeline = nullptr;
-            _vulkan_pipeline_layout = nullptr;
-
-            for (auto* vulkan_framebuffer : _vulkan_framebuffers)
-            {
-                _driver_allocator.destroy(vulkan_framebuffer);
-            }
-            core::pod::array::clear(_vulkan_framebuffers);
-
-            _vulkan_render_pass = nullptr;
-
-            _vulkan_descriptor_sets = nullptr;
-            _vulkan_descriptor_set_layouts.clear();
-
-            _vulkan_shaders.clear();
-            _vulkan_samplers.clear();
             _vulkan_images.clear();
-
-            core::pod::array::clear(_vulkan_command_buffers);
 
             _vulkan_staging_buffer = nullptr;
             _vulkan_buffers.clear();
 
-            _vulkan_descriptor_pool = nullptr;
+            _vulkan_device_memory = nullptr;
 
-            _vulkan_depth_image = nullptr;
+            iceshard::renderer::vulkan::destroy_render_system(_driver_allocator, _vk_render_system);
 
-            _vulkan_swapchain = nullptr;
-
-            release_devices();
-
-            VkAllocationCallbacks alloc_callbacks = {};
-            alloc_callbacks.pUserData = &_vulkan_allocator;
-            alloc_callbacks.pfnAllocation = detail::vk_iceshard_allocate;
-            alloc_callbacks.pfnReallocation = detail::vk_iceshard_reallocate;
-            alloc_callbacks.pfnFree = detail::vk_iceshard_free;
-            alloc_callbacks.pfnInternalAllocation = nullptr;
-            alloc_callbacks.pfnInternalFree = nullptr;
-
-            _vulkan_surface = nullptr;
-
-            // We need to provide the callbacks when destrying the instance.
-            vkDestroyInstance(_vulkan_instance, &alloc_callbacks);
+            // We need to provide the callbacks when destroying the instance.
+            vkDestroyInstance(_vulkan_instance, _vulkan_allocator.vulkan_callbacks());
         }
 
-        auto command_buffer() noexcept -> render::api::CommandBuffer override
+        auto create_buffer(iceshard::renderer::api::v1_1::BufferType type, uint32_t size) noexcept -> iceshard::renderer::api::v1_1::Buffer override
         {
-            return render::api::CommandBuffer{ reinterpret_cast<uintptr_t>(&_command_buffer_context) };
-        }
-
-        auto descriptor_sets() noexcept -> render::api::DescriptorSets override
-        {
-            return render::api::DescriptorSets{ reinterpret_cast<uintptr_t>(_vulkan_descriptor_sets.get()) };
-        }
-
-        auto create_buffer(render::api::BufferType type, uint32_t size) noexcept -> render::api::Buffer override
-        {
-            auto vulkan_buffer = render::vulkan::create_buffer(
+            auto vulkan_buffer = iceshard::renderer::vulkan::create_buffer(
                 _driver_allocator,
                 type,
                 size,
                 *_vulkan_device_memory
             );
 
-            auto result = render::api::Buffer{ reinterpret_cast<uintptr_t>(vulkan_buffer.get()) };
+            auto result = iceshard::renderer::api::v1_1::Buffer{ reinterpret_cast<uintptr_t>(vulkan_buffer.get()) };
             _vulkan_buffers.emplace_back(std::move(vulkan_buffer));
 
             return result;
         }
 
-        auto create_vertex_buffer(uint32_t size) noexcept -> render::api::VertexBuffer override
+        auto create_resource_set(
+            core::stringid_arg_type name,
+            iceshard::renderer::RenderPipelineLayout layout,
+            core::pod::Array<iceshard::renderer::RenderResource> const& resources
+        ) noexcept -> iceshard::renderer::ResourceSet override
         {
-            auto vulkan_buffer = render::vulkan::create_vertex_buffer(
-                _driver_allocator,
-                *_vulkan_device_memory,
-                size
-            );
-
-            auto result = render::api::VertexBuffer{ reinterpret_cast<uintptr_t>(vulkan_buffer.get()) };
-            _vulkan_buffers.emplace_back(std::move(vulkan_buffer));
-
-            return result;
+            return _vk_render_system->create_resource_set(name, layout, resources);
         }
 
-        auto create_uniform_buffer(uint32_t size) noexcept -> render::api::UniformBuffer override
+        void update_resource_set(
+            core::stringid_arg_type name,
+            core::pod::Array<iceshard::renderer::RenderResource> const& resources
+        ) noexcept override
         {
-            auto vulkan_buffer = render::vulkan::create_uniform_buffer(
-                _driver_allocator,
-                *_vulkan_device_memory,
-                size
-            );
-
-            auto result = render::api::UniformBuffer{ reinterpret_cast<uintptr_t>(vulkan_buffer.get()) };
-            _vulkan_buffers.emplace_back(std::move(vulkan_buffer));
-
-            return result;
+            return _vk_render_system->update_resource_set(name, resources);
         }
 
-        void create_imgui_descriptor_sets() noexcept
+        void destroy_resource_set(
+            core::stringid_arg_type name
+        ) noexcept override
         {
-            auto const graphics_device_handle = _vulkan_physical_device->graphics_device()->native_handle();
-
-            _vulkan_samplers.emplace_back(render::vulkan::create_sampler(_driver_allocator, graphics_device_handle));
-
-            {
-                core::pod::Array<VkDescriptorSetLayoutBinding> bindings{ _driver_allocator };
-
-                //VkDescriptorSetLayoutBinding layout_binding = {};
-                //layout_binding.binding = 0;
-                //layout_binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-                //layout_binding.descriptorCount = 1;
-                //layout_binding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-                //layout_binding.pImmutableSamplers = nullptr;
-                //core::pod::array::push_back(bindings, std::move(layout_binding));
-
-                static VkSampler const _vulkan_immutable_samplers[]{
-                    _vulkan_samplers[0]->native_handle()
-                };
-
-                VkDescriptorSetLayoutBinding layout_binding = {};
-                layout_binding.binding = 1;
-                layout_binding.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
-                layout_binding.descriptorCount = 1;
-                layout_binding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-                layout_binding.pImmutableSamplers = _vulkan_immutable_samplers;
-                core::pod::array::push_back(bindings, std::move(layout_binding));
-
-                layout_binding.binding = 2;
-                layout_binding.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-                layout_binding.descriptorCount = 1;
-                layout_binding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-                layout_binding.pImmutableSamplers = nullptr;
-                core::pod::array::push_back(bindings, std::move(layout_binding));
-
-                _vulkan_descriptor_set_layouts.emplace_back(
-                    vulkan::create_descriptor_set_layout(_driver_allocator, graphics_device_handle, bindings)
-                );
-            }
-
-            _vulkan_descriptor_sets = vulkan::create_vulkan_descriptor_sets(
-                _driver_allocator,
-                *_vulkan_descriptor_pool,
-                _vulkan_descriptor_set_layouts
-            );
-
-            VkDescriptorImageInfo image_info{};
-            image_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-            image_info.imageView = _vulkan_images[0]->native_view();
-            image_info.sampler = nullptr;
-            _vulkan_descriptor_sets->write_descriptor_set(0, 2, VkDescriptorType::VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, image_info);
+            return _vk_render_system->destroy_resource_set(name);
         }
 
-        auto current_framebuffer() noexcept -> render::api::Framebuffer override
+        auto create_pipeline(
+            core::stringid_arg_type name,
+            iceshard::renderer::RenderPipelineLayout layout,
+            core::pod::Array<asset::AssetData> const& shader_assets
+        ) noexcept -> iceshard::renderer::Pipeline override
         {
-            return render::api::Framebuffer{ reinterpret_cast<uintptr_t>(_vulkan_framebuffers[_vulkan_current_framebuffer]->native_handle()) };
+            return _vk_render_system->create_pipeline(name, layout, shader_assets);
         }
 
-        auto load_texture(asset::AssetData texture_data) noexcept -> render::api::Texture override
+        void destroy_pipeline(
+            core::stringid_arg_type name
+        ) noexcept override
+        {
+            return _vk_render_system->destroy_pipeline(name);
+        }
+
+        auto load_texture(asset::AssetData texture_data) noexcept -> iceshard::renderer::api::v1_1::Texture override
         {
             int32_t width = resource::get_meta_int32(texture_data.metadata, "texture.extents.width"_sid);
             int32_t height = resource::get_meta_int32(texture_data.metadata, "texture.extents.height"_sid);
 
-            render::api::BufferDataView data_view;
+            iceshard::renderer::api::v1_1::DataView data_view;
             _vulkan_staging_buffer->map_memory(data_view);
-            std::memcpy(data_view.data_pointer, texture_data.content._data, texture_data.content._size);
+            std::memcpy(data_view.data, texture_data.content._data, texture_data.content._size);
             _vulkan_staging_buffer->unmap_memory();
 
             VkExtent2D image_extent{ static_cast<uint32_t>(width), static_cast<uint32_t>(height) };
 
-            auto texture = render::vulkan::create_texture_2d(
+            auto texture = iceshard::renderer::vulkan::create_texture_2d(
                 _driver_allocator,
                 *_vulkan_device_memory,
                 image_extent
             );
 
-            VkCommandBuffer staging_cmds = _vulkan_command_buffers[1]->native_handle();
+            VkCommandBuffer staging_cmds = _vk_render_system->v1_transfer_cmd_buffer();
 
             VkCommandBufferBeginInfo beginInfo = {};
             beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -484,156 +265,92 @@ namespace render
             vkEndCommandBuffer(staging_cmds);
             _staging_cmds = true;
 
-            auto result_handle = render::api::Texture{ reinterpret_cast<uintptr_t>(texture.get()) };
+            auto result_handle = iceshard::renderer::api::v1_1::Texture{ reinterpret_cast<uintptr_t>(texture->native_view()) };
             _vulkan_images.emplace_back(std::move(texture));
 
             return result_handle;
         }
 
-        void load_shader(asset::AssetData shader_data) noexcept override
+        auto acquire_command_buffer(iceshard::renderer::RenderPassStage stage) noexcept -> iceshard::renderer::CommandBuffer override
         {
-            auto const& meta_view = shader_data.metadata;
-
-            int32_t target = resource::get_meta_int32(meta_view, "shader.target"_sid);
-            IS_ASSERT(target == 1, "Only explicit vulkan shaders are supported!");
-
-            int32_t stage = resource::get_meta_int32(meta_view, "shader.stage"_sid);
-            IS_ASSERT(stage == 1 || stage == 2, "Only vertex and fragment shaders are supported!");
-
-            _vulkan_shaders.emplace_back(
-                vulkan::create_shader(
-                    _driver_allocator,
-                    _vulkan_physical_device->graphics_device()->native_handle(),
-                    stage == 1 ? VkShaderStageFlagBits::VK_SHADER_STAGE_VERTEX_BIT : VkShaderStageFlagBits::VK_SHADER_STAGE_FRAGMENT_BIT,
-                    shader_data.content
-                )
-            );
+            return _vk_render_system->acquire_command_buffer(stage);
         }
 
-        void add_named_vertex_descriptor_set(
-            [[maybe_unused]] core::stringid_arg_type name,
-            [[maybe_unused]] VertexBinding const& binding,
-            [[maybe_unused]] VertexDescriptor const* descriptors,
-            [[maybe_unused]] uint32_t descriptor_count
-        ) noexcept override
+        void submit_command_buffer(iceshard::renderer::CommandBuffer cb) noexcept override
         {
-            auto hash_value = static_cast<uint64_t>(name.hash_value);
-            IS_ASSERT(core::pod::hash::has(_vulkan_vertex_descriptors, hash_value) == false, "A descriptor set with this name {} was already defined!", name);
-
-            // clang-format off
-            core::pod::hash::set(_vulkan_vertex_descriptors, hash_value, _driver_allocator.make<render::vulkan::VulkanVertexDescriptor>(
-                _driver_allocator,
-                binding,
-                descriptors,
-                descriptor_count
-                )
-            );
-            // clang-format on
+            _vk_render_system->submit_command_buffer(cb);
         }
 
-        auto create_pipeline(
-            core::stringid_type const* descriptor_names,
-            uint32_t descriptor_name_count
-        ) noexcept -> api::RenderPipeline override
+        void end_frame() noexcept override
         {
-            auto* physical_device = _vulkan_physical_device.get();
-            auto graphics_device = physical_device->graphics_device()->native_handle();
+            _vk_render_system->end_frame();
 
-            {
-                _vulkan_pipeline_layout = vulkan::create_pipeline_layout(
-                    _driver_allocator,
-                    graphics_device,
-                    _vulkan_descriptor_set_layouts
-                );
-                _render_pass_context.pipeline_layout = _vulkan_pipeline_layout->native_handle();
-
-                core::pod::Array<vulkan::VulkanShader const*> shader_stages{ _driver_allocator };
-                std::for_each(_vulkan_shaders.begin(), _vulkan_shaders.end(), [&](auto const& shader_ptr) noexcept
-                    {
-                        core::pod::array::push_back(shader_stages, const_cast<vulkan::VulkanShader const*>(shader_ptr.get()));
-                    });
-
-                uint32_t descriptor_index = 0;
-
-                core::pod::Array<vulkan::VulkanVertexDescriptor const*> vertex_descriptors{ _driver_allocator };
-                while (descriptor_index < descriptor_name_count)
-                {
-                    auto descriptor_name_hash = static_cast<uint64_t>(descriptor_names[descriptor_index].hash_value);
-
-                    auto const* descriptor = core::pod::hash::get<vulkan::VulkanVertexDescriptor*>(
-                        _vulkan_vertex_descriptors,
-                        descriptor_name_hash,
-                        nullptr
-                        );
-                    IS_ASSERT(descriptor != nullptr, "Unknown descriptor name {}!", descriptor_names[descriptor_index]);
-
-                    core::pod::array::push_back(vertex_descriptors, descriptor);
-                    descriptor_index += 1;
-                }
-
-                _vulkan_pipeline = vulkan::create_pipeline(
-                    _driver_allocator,
-                    graphics_device,
-                    shader_stages,
-                    vertex_descriptors,
-                    _vulkan_pipeline_layout.get(),
-                    _vulkan_render_pass.get()
-                );
-            }
-
-            return api::RenderPipeline{ reinterpret_cast<uintptr_t>(_vulkan_pipeline->native_handle()) };
-        }
-
-        void swap() noexcept override
-        {
-            auto* physical_device = _vulkan_physical_device.get();
-            auto graphics_device = physical_device->graphics_device();
-            auto graphics_device_native = graphics_device->native_handle();
-            auto swap_chain = _vulkan_swapchain->native_handle();
-
-            {
-
-                // Get the index of the next available swapchain image:
-                auto api_result = vkAcquireNextImageKHR(
-                    graphics_device_native,
-                    swap_chain,
-                    UINT64_MAX,
-                    _quick_semaphore,
-                    VK_NULL_HANDLE,
-                    &_vulkan_current_framebuffer);
-
-                // TODO: Deal with the VK_SUBOPTIMAL_KHR and VK_ERROR_OUT_OF_DATE_KHR
-                // return codes
-                IS_ASSERT(api_result == VK_SUCCESS, "Couldn't get next framebuffer image!");
-            }
-
-            _render_pass_context.extent = physical_device->surface_capabilities().maxImageExtent;
-            _render_pass_context.renderpass = _vulkan_render_pass->native_handle();
-            _render_pass_context.pipeline_layout = _vulkan_pipeline_layout->native_handle();
-            _render_pass_context.framebuffer = _vulkan_framebuffers[_vulkan_current_framebuffer]->native_handle();
-
+            auto graphics_device = _vk_render_system->v1_graphics_device();
+            auto graphics_queue = _vk_render_system->v1_graphics_queue();
 
             if (_staging_cmds)
             {
                 _staging_cmds = false;
-                const VkCommandBuffer cmd_bufs[] = { _vulkan_command_buffers[1]->native_handle() };
+                const VkCommandBuffer cmd_bufs[] = { _vk_render_system->v1_transfer_cmd_buffer() };
 
                 VkSubmitInfo submit_info[1] = {};
                 submit_info[0].sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
                 submit_info[0].commandBufferCount = 1;
                 submit_info[0].pCommandBuffers = cmd_bufs;
 
-                vkQueueSubmit(graphics_device->device_queue(), 1, submit_info, VK_NULL_HANDLE);
-                vkQueueWaitIdle(graphics_device->device_queue());
+                vkQueueSubmit(graphics_queue, 1, submit_info, VK_NULL_HANDLE);
+                vkQueueWaitIdle(graphics_queue);
             }
 
-            const VkCommandBuffer cmd_bufs[] = { _vulkan_command_buffers[0]->native_handle() };
+            {
+                auto cmds = _vk_render_system->v1_primary_cmd_buffer();
+
+                VkCommandBufferBeginInfo cmd_buf_info = {};
+                cmd_buf_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+                cmd_buf_info.pNext = nullptr;
+                cmd_buf_info.flags = 0;
+                cmd_buf_info.pInheritanceInfo = nullptr;
+
+                auto api_result = vkBeginCommandBuffer(cmds, &cmd_buf_info);
+                IS_ASSERT(api_result == VkResult::VK_SUCCESS, "Couldn't begin command buffer.");
+
+                VkClearValue clear_values[2];
+                clear_values[0].color.float32[0] = 0.2f;
+                clear_values[0].color.float32[1] = 0.2f;
+                clear_values[0].color.float32[2] = 0.2f;
+                clear_values[0].color.float32[3] = 0.2f;
+                clear_values[1].depthStencil.depth = 1.0f;
+                clear_values[1].depthStencil.stencil = 0;
+
+                VkRenderPassBeginInfo rp_begin;
+                rp_begin.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+                rp_begin.pNext = NULL;
+                rp_begin.renderPass = _vk_render_system->v1_renderpass();
+                rp_begin.framebuffer = _vk_render_system->v1_current_framebuffer();
+                rp_begin.renderArea.offset.x = 0;
+                rp_begin.renderArea.offset.y = 0;
+                rp_begin.renderArea.extent = _vk_render_system->render_area();
+                rp_begin.clearValueCount = 2;
+                rp_begin.pClearValues = clear_values;
+
+                vkCmdBeginRenderPass(cmds, &rp_begin, VK_SUBPASS_CONTENTS_INLINE);
+                vkCmdNextSubpass(cmds, VkSubpassContents::VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
+
+                _vk_render_system->v1_execute_subpass_commands(cmds);
+
+                vkCmdEndRenderPass(cmds);
+                vkEndCommandBuffer(cmds);
+            }
+
+
+
+            const VkCommandBuffer cmd_bufs[] = { _vk_render_system->v1_primary_cmd_buffer() };
             VkPipelineStageFlags pipe_stage_flags = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
             VkSubmitInfo submit_info[1] = {};
             submit_info[0].pNext = NULL;
             submit_info[0].sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
             submit_info[0].waitSemaphoreCount = 1;
-            submit_info[0].pWaitSemaphores = &_quick_semaphore;
+            submit_info[0].pWaitSemaphores = _vk_render_system->v1_framebuffer_semaphore();
             submit_info[0].pWaitDstStageMask = &pipe_stage_flags;
             submit_info[0].commandBufferCount = 1;
             submit_info[0].pCommandBuffers = cmd_bufs;
@@ -641,45 +358,28 @@ namespace render
             submit_info[0].pSignalSemaphores = NULL;
 
 
-            auto queue = graphics_device->device_queue();
-            IS_ASSERT(graphics_device->can_present(), "Cannot present images on this queue!");
-            // Check if we can also present else find another 'Device' which can do it.
-
             /* Queue the command buffer for execution */
-            auto res = vkQueueSubmit(queue, 1, submit_info, _vulkan_draw_fence);
+            auto res = vkQueueSubmit(graphics_queue, 1, submit_info, _vulkan_draw_fence);
             assert(res == VK_SUCCESS);
 
             /* Now present the image in the window */
 
-            VkSwapchainKHR swapchains[1]{ _vulkan_swapchain->native_handle() };
-
-            VkPresentInfoKHR present;
-            present.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-            present.pNext = NULL;
-            present.swapchainCount = 1;
-            present.pSwapchains = swapchains;
-            present.pImageIndices = &_vulkan_current_framebuffer;
-            present.pWaitSemaphores = NULL;
-            present.waitSemaphoreCount = 0;
-            present.pResults = NULL;
 
             /* Make sure command buffer is finished before presenting */
             do
             {
                 constexpr auto FENCE_TIMEOUT = 100'000'000; // in ns
-                res = vkWaitForFences(graphics_device_native, 1, &_vulkan_draw_fence, VK_TRUE, FENCE_TIMEOUT);
+                res = vkWaitForFences(graphics_device, 1, &_vulkan_draw_fence, VK_TRUE, FENCE_TIMEOUT);
             } while (res == VK_TIMEOUT);
 
-            vkResetFences(graphics_device_native, 1, &_vulkan_draw_fence);
+            vkResetFences(graphics_device, 1, &_vulkan_draw_fence);
 
-            assert(res == VK_SUCCESS);
-            res = vkQueuePresentKHR(queue, &present);
-            assert(res == VK_SUCCESS);
+            _vk_render_system->v1_present();
         }
 
-        void initialize_render_interface(render::api::RenderInterface** render_interface) noexcept
+        void initialize_render_interface(iceshard::renderer::api::v1_1::RenderInterface** render_interface) noexcept
         {
-            *render_interface = render::api::render_api_instance;
+            *render_interface = iceshard::renderer::api::v1_1::render_api_instance;
         }
 
         ~VulkanRenderSystem() noexcept override
@@ -692,60 +392,28 @@ namespace render
         core::memory::proxy_allocator _driver_allocator;
 
         // Special allocator for vulkan render system.
-        render::vulkan::VulkanAllocator _vulkan_allocator;
+        vulkan::VulkanAllocator _vulkan_allocator;
 
         // The Vulkan instance handle.
         VkInstance _vulkan_instance{};
 
         VkFence _vulkan_draw_fence = nullptr;
 
-        // The Vulkan surface instance.
-        core::memory::unique_pointer<render::vulkan::VulkanSurface> _vulkan_surface{ nullptr, { core::memory::globals::null_allocator() } };
-
-        // The Vulkan surface instance.
-        core::memory::unique_pointer<render::vulkan::VulkanSwapchain> _vulkan_swapchain{ nullptr, { core::memory::globals::null_allocator() } };
-
-        // The Vulkan depth buffer image.
-        core::memory::unique_pointer<render::vulkan::VulkanImage> _vulkan_depth_image{ nullptr, { core::memory::globals::null_allocator() } };
-
-        core::memory::unique_pointer<render::vulkan::VulkanRenderPass> _vulkan_render_pass{ nullptr, { core::memory::globals::null_allocator() } };
-
-        // The Vulkan descriptor sets
-        core::memory::unique_pointer<render::vulkan::VulkanDescriptorPool> _vulkan_descriptor_pool{ nullptr, { core::memory::globals::null_allocator() } };
-        core::Vector<core::memory::unique_pointer<render::vulkan::VulkanDescriptorSetLayout>> _vulkan_descriptor_set_layouts;
-        core::memory::unique_pointer<render::vulkan::VulkanDescriptorSets> _vulkan_descriptor_sets{ nullptr, { core::memory::globals::null_allocator() } };
-        core::pod::Hash<render::vulkan::VulkanVertexDescriptor*> _vulkan_vertex_descriptors;
-
-        // Databuffers
-        core::memory::unique_pointer<render::vulkan::VulkanBuffer> _vulkan_staging_buffer{ nullptr, { core::memory::globals::null_allocator() } };
-        core::Vector<core::memory::unique_pointer<render::vulkan::VulkanBuffer>> _vulkan_buffers;
-
-        // The framebuffers
-        uint32_t _vulkan_current_framebuffer = 0;
-        core::pod::Array<vulkan::VulkanFramebuffer*> _vulkan_framebuffers;
-
-        // The Vulkan pipeline.
-        core::memory::unique_pointer<render::vulkan::VulkanPipelineLayout> _vulkan_pipeline_layout{ nullptr, { core::memory::globals::null_allocator() } };
-        core::memory::unique_pointer<render::vulkan::VulkanPipeline> _vulkan_pipeline{ nullptr, { core::memory::globals::null_allocator() } };
+        // Data buffers
+        core::memory::unique_pointer<iceshard::renderer::vulkan::VulkanBuffer> _vulkan_staging_buffer{ nullptr, { core::memory::globals::null_allocator() } };
+        core::Vector<core::memory::unique_pointer<iceshard::renderer::vulkan::VulkanBuffer>> _vulkan_buffers;
 
         // Array vulkan devices.
-        core::memory::unique_pointer<render::vulkan::VulkanPhysicalDevice> _vulkan_physical_device{ nullptr, { core::memory::globals::null_allocator() } };
-        core::memory::unique_pointer<render::vulkan::VulkanDeviceMemoryManager> _vulkan_device_memory{ nullptr, { core::memory::globals::null_allocator() } };
-
-        core::pod::Array<render::vulkan::VulkanCommandBuffer*> _vulkan_command_buffers;
-        bool _staging_cmds = false;
-
-        render::api::v1::vulkan::RenderPassContext _render_pass_context{};
-        render::api::v1::vulkan::CommandBufferContext _command_buffer_context{};
+        core::memory::unique_pointer<iceshard::renderer::vulkan::VulkanDeviceMemoryManager> _vulkan_device_memory{ nullptr, { core::memory::globals::null_allocator() } };
 
         // Shader stages
-        core::Vector<core::memory::unique_pointer<vulkan::VulkanImage>> _vulkan_images;
-        core::Vector<core::memory::unique_pointer<vulkan::VulkanSampler>> _vulkan_samplers;
-        core::Vector<core::memory::unique_pointer<vulkan::VulkanShader>> _vulkan_shaders;
+        core::Vector<core::memory::unique_pointer<iceshard::renderer::vulkan::VulkanImage>> _vulkan_images;
 
+        bool _staging_cmds;
 
-        // Quick job
-        VkSemaphore _quick_semaphore;
+        ////////////////////////////////////////////////////////////////
+        // New RenderSystem object
+        iceshard::renderer::vulkan::VulkanRenderSystem* _vk_render_system = nullptr;
     };
 
 } // namespace render
@@ -758,10 +426,10 @@ extern "C"
         void* api_instance) -> render::RenderSystem*
     {
         render::RenderSystem* result = nullptr;
-        if (api_version == render::api::v1::version_name.hash_value)
+        if (api_version == iceshard::renderer::api::v1_1::version_name.hash_value)
         {
-            render::api::v1::vulkan::init_api(render::api::render_api_instance);
-            render::api::v1::vulkan::init_api(api_instance);
+            iceshard::renderer::api::v1_1::vulkan::init_api(iceshard::renderer::api::v1_1::render_api_instance);
+            iceshard::renderer::api::v1_1::vulkan::init_api(api_instance);
             result = alloc.make<render::VulkanRenderSystem>(alloc);
         }
         return result;

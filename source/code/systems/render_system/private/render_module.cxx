@@ -4,23 +4,23 @@
 
 #include <filesystem>
 
-namespace render
+namespace iceshard::renderer
 {
 
     namespace detail
     {
-        using RenderSystemCreateFunc = RenderSystem*(core::allocator&, core::cexpr::stringid_hash_type, void*);
-        using RenderSystemReleaseFunc = void(core::allocator&, RenderSystem*);
+        using RenderSystemCreateFunc = render::RenderSystem*(core::allocator&, core::cexpr::stringid_hash_type, void*);
+        using RenderSystemReleaseFunc = void(core::allocator&, render::RenderSystem*);
 
         //! \brief A dynamic loaded engine DLL module.
-        class RenderSystemDynamicModule : public RenderSystemModule
+        class RenderSystemDynamicModule : public iceshard::renderer::RenderSystemModule
         {
         public:
             RenderSystemDynamicModule(
                 core::allocator& alloc,
                 HMODULE handle,
-                RenderSystem* instance,
-                render::api::RenderInterface render_api,
+                render::RenderSystem* instance,
+                api::RenderInterface render_api,
                 RenderSystemReleaseFunc* release_func) noexcept
                 : _allocator{ alloc }
                 , _handle{ handle }
@@ -36,17 +36,17 @@ namespace render
                 FreeLibrary(_handle);
             }
 
-            auto render_system() noexcept -> RenderSystem* override
+            auto render_system() noexcept -> render::RenderSystem* override
             {
                 return _instance;
             }
 
-            auto render_system() const noexcept -> const RenderSystem* override
+            auto render_system() const noexcept -> const render::RenderSystem* override
             {
                 return _instance;
             }
 
-            auto render_api() noexcept -> render::api::RenderInterface* override
+            auto render_api() noexcept -> api::RenderInterface* override
             {
                 return &_render_api;
             }
@@ -58,10 +58,10 @@ namespace render
             const HMODULE _handle;
 
             //! \brief Loaded render system instance.
-            RenderSystem* const _instance;
+            render::RenderSystem* const _instance;
 
             //! \brief Loaded render api.
-            render::api::RenderInterface _render_api;
+            iceshard::renderer::api::RenderInterface _render_api;
 
             //! \brief Engine release procedure.
             RenderSystemReleaseFunc* const _release_func;
@@ -69,12 +69,12 @@ namespace render
 
     } // namespace detail
 
-    auto load_render_system_module(core::allocator& alloc, core::StringView path) noexcept -> core::memory::unique_pointer<RenderSystemModule>
+    auto load_render_system_module(core::allocator& alloc, core::StringView path) noexcept -> core::memory::unique_pointer<iceshard::renderer::RenderSystemModule>
     {
         auto module_path = std::filesystem::canonical(path);
 
         // The result object
-        core::memory::unique_pointer<RenderSystemModule> result{ nullptr, { alloc } };
+        core::memory::unique_pointer<iceshard::renderer::RenderSystemModule> result{ nullptr, { alloc } };
 
         // Try to load the module.
         HMODULE module_handle = LoadLibraryEx(module_path.generic_string().c_str(), NULL, NULL);
@@ -89,8 +89,8 @@ namespace render
                 auto create_func = reinterpret_cast<detail::RenderSystemCreateFunc*>(create_engine_addr);
                 auto release_func = reinterpret_cast<detail::RenderSystemReleaseFunc*>(release_engine_addr);
 
-                render::api::RenderInterface render_api{};
-                auto* const module_instace = create_func(alloc, render::api::version_name.hash_value, &render_api);
+                iceshard::renderer::api::RenderInterface render_api{};
+                auto* const module_instace = create_func(alloc, iceshard::renderer::api::version_name.hash_value, &render_api);
                 if (module_instace != nullptr)
                 {
                     result = { alloc.make<detail::RenderSystemDynamicModule>(alloc, module_handle, module_instace, render_api, release_func), alloc };

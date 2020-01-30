@@ -1,13 +1,11 @@
 #pragma once
 #include <core/collections.hxx>
 #include <render_system/render_api.hxx>
-#include "device/vulkan_physical_device.hxx"
+#include "vulkan_allocator.hxx"
 
-#define NOMINMAX
-#define WIN32_LEAN_AND_MEAN
-#include <vulkan/vulkan.h>
+#include <iceshard/renderer/vulkan/vulkan_devices.hxx>
 
-namespace render::vulkan
+namespace iceshard::renderer::vulkan
 {
 
     struct VulkanMemoryInfo
@@ -20,16 +18,18 @@ namespace render::vulkan
     class VulkanDeviceMemoryManager
     {
     public:
-        VulkanDeviceMemoryManager(core::allocator& alloc, VulkanPhysicalDevice const* physical_device, VkDevice graphics_device) noexcept;
+        VulkanDeviceMemoryManager(core::allocator& alloc, iceshard::renderer::vulkan::VulkanDevices devices) noexcept;
         ~VulkanDeviceMemoryManager() noexcept;
 
-        auto graphics_device() noexcept -> VkDevice { return _graphics_device; }
+        auto graphics_device() noexcept -> VkDevice { return _devices.graphics.handle; }
 
         bool allocate_memory(VkBuffer buffer, VkMemoryPropertyFlags flags, VulkanMemoryInfo& memory_info) noexcept;
-
         bool allocate_memory(VkImage image, VkMemoryPropertyFlags flags, VulkanMemoryInfo& memory_info) noexcept;
 
-        void map_memory(VulkanMemoryInfo* ranges, render::api::BufferDataView* views, uint32_t size) noexcept;
+        void deallocate_memory(VkBuffer buffer, VulkanMemoryInfo const& memory_info) noexcept;
+        void deallocate_memory(VkImage image, VulkanMemoryInfo const& memory_info) noexcept;
+
+        void map_memory(VulkanMemoryInfo* ranges, api::DataView* views, uint32_t size) noexcept;
 
         void unmap_memory(VulkanMemoryInfo* ranges, uint32_t size);
 
@@ -37,8 +37,9 @@ namespace render::vulkan
         void allocate_memory(uint32_t memory_type, VkDeviceSize size, VkDeviceSize alignment, VulkanMemoryInfo& memory_info) noexcept;
 
     private:
-        VulkanPhysicalDevice const* _physical_device;
-        VkDevice const _graphics_device;
+        render::vulkan::VulkanAllocator _vulkan_allocator;
+
+        iceshard::renderer::vulkan::VulkanDevices _devices;
 
         struct DeviceMemoryBlock
         {

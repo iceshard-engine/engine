@@ -14,6 +14,9 @@ namespace input::sdl2
     //! \brief Handler functions for application events.
     void register_app_event_handlers(core::pod::Hash<EventHandlerSignature*>& handler_map) noexcept;
 
+    //! \brief Handler functions for window events.
+    void register_window_event_handlers(core::pod::Hash<EventHandlerSignature*>& handler_map) noexcept;
+
     //! \brief Handler functions for mouse events.
     void register_mouse_event_handlers(core::pod::Hash<EventHandlerSignature*>& handler_map) noexcept;
 

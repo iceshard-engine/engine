@@ -33,39 +33,65 @@ namespace iceshard
             FrameTask* next_task = nullptr;
         };
 
+        using iceshard::renderer::RenderPass;
+        using iceshard::renderer::RenderPassStage;
+
         class NoneRenderSystem : public render::RenderSystem
         {
         public:
-            auto current_framebuffer() noexcept -> render::api::Framebuffer override { return render::api::Framebuffer{ 0 }; }
-            auto descriptor_sets() noexcept -> render::api::v1::DescriptorSets override { return render::api::v1::DescriptorSets{ 0 }; }
-            auto command_buffer() noexcept -> render::CommandBuffer override { return render::CommandBuffer{ 0 }; }
-            auto create_buffer(render::api::BufferType, uint32_t) noexcept -> render::api::Buffer override { return render::api::Buffer{ 0 }; }
-            auto create_vertex_buffer(uint32_t) noexcept -> render::api::VertexBuffer override { return render::api::VertexBuffer{ 0 }; }
-            auto create_uniform_buffer(uint32_t) noexcept -> render::api::UniformBuffer { return render::api::UniformBuffer{ 0 }; }
-            void swap() noexcept override {}
 
-            void initialize_render_interface(render::api::RenderInterface**) noexcept override { }
+            auto create_buffer(iceshard::renderer::api::BufferType, uint32_t) noexcept -> iceshard::renderer::api::Buffer override { return iceshard::renderer::api::Buffer{ 0 }; }
 
-            auto load_texture(asset::AssetData) noexcept -> render::api::Texture override { return render::api::Texture{ 0 }; }
-            void load_shader(asset::AssetData) noexcept override { }
+            void initialize_render_interface(iceshard::renderer::api::RenderInterface**) noexcept override { }
 
-            auto create_pipeline(
-                [[maybe_unused]] core::stringid_type const* descriptor_names,
-                [[maybe_unused]] uint32_t descriptor_name_count
-            ) noexcept -> render::api::RenderPipeline override
+            auto create_resource_set(
+                core::stringid_arg_type /*name*/,
+                iceshard::renderer::RenderPipelineLayout /*layout*/,
+                core::pod::Array<iceshard::renderer::RenderResource> const& /*resources*/
+            ) noexcept -> iceshard::renderer::ResourceSet override
             {
-                return render::api::RenderPipeline{ 0 };
+                return iceshard::renderer::ResourceSet::Invalid;
             }
 
-            void add_named_vertex_descriptor_set(
+            void update_resource_set(
+                core::stringid_arg_type /*name*/,
+                core::pod::Array<iceshard::renderer::RenderResource> const& /*resources*/
+            ) noexcept override
+            {
+            }
+
+            void destroy_resource_set(
+                core::stringid_arg_type /*name*/
+            ) noexcept override
+            {
+            }
+
+            auto load_texture(asset::AssetData) noexcept -> iceshard::renderer::api::Texture override { return iceshard::renderer::api::Texture{ 0 }; }
+
+            auto acquire_command_buffer(RenderPassStage) noexcept -> iceshard::renderer::CommandBuffer
+            {
+                return iceshard::renderer::CommandBuffer::Invalid;
+            }
+
+            void submit_command_buffer(iceshard::renderer::CommandBuffer) noexcept { }
+
+            auto create_pipeline(
                 [[maybe_unused]] core::stringid_arg_type name,
-                [[maybe_unused]] render::VertexBinding const& binding,
-                [[maybe_unused]] render::VertexDescriptor const* descriptors,
-                [[maybe_unused]] uint32_t descriptor_count
-            ) noexcept override {}
+                [[maybe_unused]] iceshard::renderer::RenderPipelineLayout layout,
+                [[maybe_unused]] core::pod::Array<asset::AssetData> const& shader_assets
+            ) noexcept -> iceshard::renderer::Pipeline override
+            {
+                return iceshard::renderer::Pipeline{ 0 };
+            }
+
+            void destroy_pipeline(
+                [[maybe_unused]] core::stringid_arg_type name
+            ) noexcept override
+            {
+            }
         };
 
-        class NoneRenderSystemModule : public render::RenderSystemModule
+        class NoneRenderSystemModule : public iceshard::renderer::RenderSystemModule
         {
         public:
             //! \brief Returns the engine object from the loaded module.
@@ -78,7 +104,7 @@ namespace iceshard
 
             //! \brief Returns the render api interface from the loaded module.
             [[nodiscard]]
-            auto render_api() noexcept -> render::api::RenderInterface* override { return render::api::render_api_instance; }
+            auto render_api() noexcept -> iceshard::renderer::api::RenderInterface* override { return iceshard::renderer::api::render_api_instance; }
 
         private:
             NoneRenderSystem _render_system;
@@ -115,7 +141,7 @@ namespace iceshard
         : _allocator{ "iceshard-engine", alloc }
         , _resources{ resources }
         , _asset_system{ _allocator, resources }
-        , _render_module{ core::memory::make_unique<render::RenderSystemModule, detail::NoneRenderSystemModule>(_allocator) }
+        , _render_module{ core::memory::make_unique<iceshard::renderer::RenderSystemModule, detail::NoneRenderSystemModule>(_allocator) }
         // Task list
         , _mutable_task_list{ &_frame_tasks[_task_list_index] }
         // Frame related fields
@@ -146,10 +172,10 @@ namespace iceshard
             auto* render_driver_location = resources.find(resource::URN{ config.render_driver_location });
             IS_ASSERT(render_driver_location != nullptr, "Missing driver for rendering module!");
 
-            _render_module = render::load_render_system_module(_allocator, render_driver_location->location().path);
+            _render_module = iceshard::renderer::load_render_system_module(_allocator, render_driver_location->location().path);
             IS_ASSERT(_render_module != nullptr, "Invalid Vulkan driver module! Unable to load!");
 
-            render::api::v1::render_api_instance = _render_module->render_api();
+            iceshard::renderer::api::render_api_instance = _render_module->render_api();
         }
 
         _entity_manager = core::memory::make_unique<iceshard::EntityManager>(_allocator, _allocator);
@@ -215,7 +241,7 @@ namespace iceshard
             vs_hacks::cppcoro_sync_all_workaround(std::move(*expected_list));
         }
 
-        _render_module->render_system()->swap();
+        _render_module->render_system()->end_frame();
 
         // Move the current frame to the 'previous' slot.
         _previous_frame = std::move(_current_frame);
@@ -233,6 +259,8 @@ namespace iceshard
         // Now we want to get all messages for the current frame.
         auto* inputs = input_system();
         inputs->query_messages(_current_frame->messages());
+
+        _render_module->render_system()->begin_frame();
     }
 
     auto IceShardEngine::worker_threads() noexcept -> cppcoro::static_thread_pool&
@@ -255,9 +283,9 @@ namespace iceshard
         _mutable_task_list.store(expected_list);
     }
 
-    auto IceShardEngine::render_system(render::api::RenderInterface*& render_api) noexcept -> render::RenderSystem*
+    auto IceShardEngine::render_system(iceshard::renderer::api::RenderInterface*& render_api) noexcept -> render::RenderSystem*
     {
-        render_api = render::api::render_api_instance;
+        render_api = iceshard::renderer::api::render_api_instance;
         return _render_module->render_system();
     }
 

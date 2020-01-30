@@ -1,21 +1,17 @@
 #pragma once
 #include <core/allocator.hxx>
 #include <core/pointer.hxx>
+#include <iceshard/renderer/vulkan/vulkan_sdk.hxx>
 
-#include "device/vulkan_physical_device.hxx"
 #include "vulkan_device_memory_manager.hxx"
 
-#define NOMINMAX
-#define WIN32_LEAN_AND_MEAN
-#include <vulkan/vulkan.h>
-
-namespace render::vulkan
+namespace iceshard::renderer::vulkan
 {
 
     class VulkanImage final
     {
     public:
-        VulkanImage(VkDevice _device_handle, VkImage image, VkImageView image_view, VulkanMemoryInfo memory_info) noexcept;
+        VulkanImage(VulkanDeviceMemoryManager& device_memory, VkDevice _device_handle, VkImage image, VkImageView image_view, VulkanMemoryInfo memory_info) noexcept;
         ~VulkanImage() noexcept;
 
         auto native_handle() const noexcept -> VkImage { return _image; }
@@ -23,7 +19,8 @@ namespace render::vulkan
         auto native_view() const noexcept -> VkImageView { return _image_view; }
 
     private:
-        VkDevice const _device_handle;
+        VulkanDeviceMemoryManager& _device_memory;
+        VkDevice const _device;
         VkImage const _image;
         VkImageView const _image_view;
         VulkanMemoryInfo const _image_memory;
@@ -41,4 +38,10 @@ namespace render::vulkan
         VkExtent2D extent
     ) noexcept -> core::memory::unique_pointer<VulkanImage>;
 
-} // namespace render::vulkan
+    auto create_attachment_texture(
+        core::allocator& alloc,
+        VulkanDeviceMemoryManager& device_memory,
+        VkExtent2D extent
+    ) noexcept->core::memory::unique_pointer<VulkanImage>;
+
+} // namespace iceshard::renderer::vulkan

@@ -23,10 +23,9 @@
 #include <input_system/message/app.hxx>
 #include <input_system/message/mouse.hxx>
 #include <input_system/message/keyboard.hxx>
+#include <input_system/message/window.hxx>
 
 #include <render_system/render_commands.hxx>
-#include <render_system/render_vertex_descriptor.hxx>
-#include <render_system/render_pipeline.hxx>
 
 #include <asset_system/asset_system.hxx>
 #include <asset_system/assets/asset_config.hxx>
@@ -129,8 +128,6 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
 
         // Prepare the render system
         auto* render_system = engine_instance->render_system();
-        render_system->add_named_vertex_descriptor_set(render::descriptor_set::Color);
-        render_system->add_named_vertex_descriptor_set(render::descriptor_set::Model);
 
         static auto projection = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 100.0f);
         static auto cam_pos = glm::vec3(-5, 3, -10);
@@ -142,9 +139,9 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
         );
 
         glm::mat4 MVP{ 1 };
-        render_system->create_uniform_buffer(sizeof(MVP));
-        auto uniform_buffer = render_system->create_uniform_buffer(sizeof(MVP));
 
+        [[maybe_unused]]
+        auto uniform_buffer = render_system->create_buffer(iceshard::renderer::api::BufferType::UniformBuffer, sizeof(MVP));
 
         {
             auto new_view = glm::lookAt(
@@ -162,12 +159,12 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
 
             MVP = clip * projection * new_view;
 
-            render::api::BufferDataView data_view;
-            render::api::render_api_instance->uniform_buffer_map_data(uniform_buffer, data_view);
-            IS_ASSERT(data_view.data_size >= sizeof(MVP), "Insufficient buffer size!");
+            //render::api::BufferDataView data_view;
+            //render::api::render_api_instance->uniform_buffer_map_data(uniform_buffer, data_view);
+            //IS_ASSERT(data_view.data_size >= sizeof(MVP), "Insufficient buffer size!");
 
-            memcpy(data_view.data_pointer, &MVP, sizeof(MVP));
-            render::api::render_api_instance->uniform_buffer_unmap_data(uniform_buffer);
+            //memcpy(data_view.data_pointer, &MVP, sizeof(MVP));
+            //render::api::render_api_instance->uniform_buffer_unmap_data(uniform_buffer);
         }
 
         // Debug UI module
@@ -208,6 +205,12 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
             }
 
             engine_instance->next_frame();
+
+            core::message::filter<input::message::WindowSizeChanged>(engine_instance->current_frame().messages(), [&quit](auto const& msg) noexcept
+                {
+                    fmt::print("Window size changed to: {}x{}\n", msg.width, msg.height);
+                    //quit = true;
+                });
         }
 
         engine_instance->world_manager()->destroy_world("test-world"_sid);

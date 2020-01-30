@@ -38,7 +38,7 @@ namespace iceshard
         void add_task(cppcoro::task<> task) noexcept override;
 
     private:
-        auto render_system(render::api::RenderInterface*& render_api) noexcept -> render::RenderSystem* override;
+        auto render_system(iceshard::renderer::api::RenderInterface*& render_api) noexcept -> render::RenderSystem* override;
 
     private:
         core::memory::proxy_allocator _allocator;
@@ -48,7 +48,7 @@ namespace iceshard
         asset::AssetSystem _asset_system;
 
         core::memory::unique_pointer<input::InputModule> _input_module{ nullptr, { core::memory::globals::null_allocator() } };
-        core::memory::unique_pointer<render::RenderSystemModule> _render_module{ nullptr, { core::memory::globals::null_allocator() } };
+        core::memory::unique_pointer<iceshard::renderer::RenderSystemModule> _render_module{ nullptr, { core::memory::globals::null_allocator() } };
 
         // Managers and service provider
         core::memory::unique_pointer<iceshard::EntityManager> _entity_manager{ nullptr, { core::memory::globals::null_allocator() } };
