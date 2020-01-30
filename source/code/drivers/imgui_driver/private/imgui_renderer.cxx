@@ -63,29 +63,20 @@ namespace debugui::imgui
         io.Fonts->TexID = reinterpret_cast<ImTextureID>(_font_texture);
 
         {
-            using iceshard::renderer::Sampler;
-            using iceshard::renderer::RenderResource;
-            using iceshard::renderer::RenderResourceType;
-            using iceshard::renderer::RenderResourceHandle;
+            using namespace iceshard::renderer;
 
-            RenderResource handles[2];
-            handles[0].type = RenderResourceType::ResSampler;
-            handles[0].handle.sampler = Sampler::Default;
-            handles[0].binding = 0;
-            handles[1].type = RenderResourceType::ResTexture2D;
-            handles[1].handle.texture = _font_texture;
-            handles[1].binding = 2;
+            RenderResource handles[1];
+            handles[0].type = RenderResourceType::ResTexture2D;
+            handles[0].handle.texture = _font_texture;
+            handles[0].binding = 2;
 
             core::pod::Array<RenderResource> resources{ _allocator };
             core::pod::array::push_back(resources, handles[0]);
-            core::pod::array::push_back(resources, handles[1]);
 
             _resource_set = _render_system.create_resource_set("imgui_resources"_sid, resources);
         }
 
         _pipeline = _render_system.create_pipeline(render::pipeline::ImGuiPipeline);
-
-        //_render_pass = _render_system.renderpass(iceshard::renderer::RenderPassStage::Geometry);
     }
 
     ImGuiRenderer::~ImGuiRenderer() noexcept
@@ -107,7 +98,7 @@ namespace debugui::imgui
 
         auto command_buffer = _render_system.acquire_command_buffer(RenderPassStage::DebugUI);
 
-        render::cmd::bind_render_pipeline(command_buffer, _render_system.get_pipeline());
+        render::cmd::bind_render_pipeline(command_buffer, _pipeline);
         render::cmd::bind_descriptor_sets(command_buffer, _resource_set);
         render::cmd::bind_vertex_buffers(command_buffer, _vertice_buffers);
         render::cmd::bind_index_buffer(command_buffer, _indice_buffer);

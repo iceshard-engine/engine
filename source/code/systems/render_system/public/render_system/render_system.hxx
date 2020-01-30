@@ -31,8 +31,6 @@ namespace render
 
         virtual void load_shader(asset::AssetData shader_data) noexcept = 0;
 
-        virtual auto get_pipeline() noexcept -> render::api::RenderPipeline { return render::api::RenderPipeline::Invalid; }
-
         template<uint32_t Size>
         void add_named_vertex_descriptor_set(VertexDescriptorSet<Size> const& binding_set) noexcept;
 

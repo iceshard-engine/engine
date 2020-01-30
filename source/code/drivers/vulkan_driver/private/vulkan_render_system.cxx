@@ -535,11 +535,6 @@ namespace render
         }
 
     public: // RenderSystem.v2
-        auto get_pipeline() noexcept -> render::api::RenderPipeline
-        {
-            return api::RenderPipeline{ reinterpret_cast<uintptr_t>(_vulkan_pipeline->native_handle()) };
-        }
-
         auto renderpass(iceshard::renderer::RenderPassStage stage) noexcept -> iceshard::renderer::RenderPass
         {
             return _vk_render_system->renderpass(stage);
