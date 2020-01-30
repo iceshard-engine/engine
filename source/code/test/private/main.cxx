@@ -42,6 +42,9 @@
 #include <iceshard/entity/entity_index.hxx>
 #include <iceshard/entity/entity_command_buffer.hxx>
 #include <iceshard/component/component_system.hxx>
+#include <iceshard/renderer/render_pipeline.hxx>
+#include <iceshard/renderer/render_resources.hxx>
+#include <iceshard/renderer/render_pass.hxx>
 
 #include <debugui/debugui_module.hxx>
 #include <debugui/debugui.hxx>
@@ -130,7 +133,7 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
         auto* render_system = engine_instance->render_system();
 
         static auto projection = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 100.0f);
-        static auto cam_pos = glm::vec3(-5, 3, -10);
+        static auto cam_pos = glm::vec3(0.0f, 0.0f, -10.0f);
         static auto clip = glm::mat4(
             1.0f, 0.0f, 0.0f, 0.0f,
             0.0f, -1.0f, 0.0f, 0.0f,
@@ -159,13 +162,42 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
 
             MVP = clip * projection * new_view;
 
-            //render::api::BufferDataView data_view;
-            //render::api::render_api_instance->uniform_buffer_map_data(uniform_buffer, data_view);
-            //IS_ASSERT(data_view.data_size >= sizeof(MVP), "Insufficient buffer size!");
-
-            //memcpy(data_view.data_pointer, &MVP, sizeof(MVP));
-            //render::api::render_api_instance->uniform_buffer_unmap_data(uniform_buffer);
+            iceshard::renderer::api::DataView data_view;
+            iceshard::renderer::api::render_api_instance->buffer_array_map_data(&uniform_buffer, &data_view, 1);
+            memcpy(data_view.data, &MVP, sizeof(MVP));
+            iceshard::renderer::api::render_api_instance->buffer_array_unmap_data(&uniform_buffer, 1);
         }
+
+        using iceshard::renderer::RenderResource;
+        using iceshard::renderer::RenderResourceType;
+
+        core::pod::Array<RenderResource> resources{ alloc };
+        core::pod::array::resize(resources, 1);
+        resources[0].type = RenderResourceType::ResUniform;
+        resources[0].handle.uniform.buffer = uniform_buffer;
+        resources[0].handle.uniform.offset = 0;
+        resources[0].handle.uniform.range = sizeof(MVP);
+        resources[0].binding = 0;
+
+        [[maybe_unused]]
+        auto resource_set = render_system->create_resource_set(
+            "test.3d"_sid,
+            iceshard::renderer::RenderPipelineLayout::Default,
+            resources
+        );
+
+        core::pod::Array<asset::AssetData> shader_assets{ alloc };
+        core::pod::array::resize(shader_assets, 2);
+
+        asset_system->load(asset::AssetShader{ "shaders/debug/test-vert" }, shader_assets[0]);
+        asset_system->load(asset::AssetShader{ "shaders/debug/test-frag" }, shader_assets[1]);
+
+        [[maybe_unused]]
+        auto pipeline = render_system->create_pipeline(
+            "test.3d"_sid,
+            iceshard::renderer::RenderPipelineLayout::Default,
+            shader_assets
+        );
 
         // Debug UI module
         core::memory::unique_pointer<debugui::DebugUIModule> debugui_module{ nullptr, { alloc } };
@@ -180,10 +212,48 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
             }
         }
 
+        using iceshard::renderer::api::Buffer;
+        using iceshard::renderer::api::BufferType;
+        using iceshard::renderer::api::DataView;
+
+        core::pod::Array<Buffer> buffs{ alloc };
+        core::pod::array::push_back(buffs, render_system->create_buffer(BufferType::VertexBuffer, 1024));
+        core::pod::array::push_back(buffs, render_system->create_buffer(BufferType::VertexBuffer, 1024));
+        auto idx = render_system->create_buffer(BufferType::IndexBuffer, 1024);
+
+        {
+            struct IsVertice {
+                glm::vec3 pos;
+                glm::vec3 color;
+            } vertices[] = {
+                { { 0.0f, 0.0f, 0.0f }, { 1.0f, 0.0f, 0.0f } },
+                { { 1.0f, 0.0f, 0.0f }, { 0.0f, 1.0f, 0.0f } },
+                { { 0.0f, 1.0f, 0.0f }, { 0.0f, 0.0f, 1.0f } }
+            };
+            uint16_t indices[] = {
+                0, 1, 2
+            };
+            glm::mat4 model = glm::translate(glm::mat4{ 1 }, glm::vec3{ 0.0f, 0.0f, -8.0f });
+
+            Buffer bfs[] = {
+                buffs[0], buffs[1], idx
+            };
+            DataView views[core::size(bfs)];
+
+            iceshard::renderer::api::render_api_instance->buffer_array_map_data(bfs, views, core::size(bfs));
+            memcpy(views[0].data, vertices, sizeof(vertices));
+            memcpy(views[1].data, &model, sizeof(model));
+            memcpy(views[2].data, indices, sizeof(indices));
+            iceshard::renderer::api::render_api_instance->buffer_array_unmap_data(bfs, core::size(bfs));
+        }
+
+
         fmt::print("IceShard engine revision: {}\n", engine_instance->revision());
 
         // Create a test world
         engine_instance->world_manager()->create_world("test-world"_sid);
+
+        glm::uvec2 viewport{ 1280, 720 };
 
         bool quit = false;
         while (quit == false)
@@ -192,6 +262,21 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
                 {
                     quit = true;
                 });
+
+            {
+                using iceshard::renderer::RenderPassStage;
+                using namespace iceshard::renderer::commands;
+
+                auto cb = render_system->acquire_command_buffer(RenderPassStage::Geometry);
+                bind_pipeline(cb, pipeline);
+                bind_resource_set(cb, resource_set);
+                bind_index_buffer(cb, idx);
+                bind_vertex_buffers(cb, buffs);
+                set_viewport(cb, viewport.x, viewport.y);
+                set_scissor(cb, viewport.x, viewport.y);
+                draw_indexed(cb, 3, 1, 0, 0, 0);
+                render_system->submit_command_buffer(cb);
+            }
 
             if constexpr (core::build::is_release == false)
             {
@@ -206,14 +291,17 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
 
             engine_instance->next_frame();
 
-            core::message::filter<input::message::WindowSizeChanged>(engine_instance->current_frame().messages(), [&quit](auto const& msg) noexcept
+            core::message::filter<input::message::WindowSizeChanged>(engine_instance->current_frame().messages(), [&viewport](auto const& msg) noexcept
                 {
                     fmt::print("Window size changed to: {}x{}\n", msg.width, msg.height);
-                    //quit = true;
+                    viewport = { msg.width, msg.height };
                 });
         }
 
         engine_instance->world_manager()->destroy_world("test-world"_sid);
+
+        render_system->destroy_pipeline("test.3d"_sid);
+        render_system->destroy_resource_set("test.3d"_sid);
 
         debugui_module = nullptr;
     }
