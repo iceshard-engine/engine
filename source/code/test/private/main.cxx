@@ -146,6 +146,7 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
         [[maybe_unused]]
         auto uniform_buffer = render_system->create_buffer(iceshard::renderer::api::BufferType::UniformBuffer, sizeof(MVP));
 
+        static float deg = 0.0f;
         {
             auto new_view = glm::lookAt(
                 cam_pos, // Camera is at (-5,3,-10), in World Space
@@ -153,7 +154,6 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
                 glm::vec3(0, -1, 0)      // Head is up (set to 0,-1,0 to look upside-down)
             );
 
-            static float deg = 0.0f;
             deg += 3.0f;
             new_view = glm::rotate(new_view, glm::radians(deg), glm::vec3{ 0.f, 1.f, 0.f });
 
@@ -221,6 +221,7 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
         core::pod::array::push_back(buffs, render_system->create_buffer(BufferType::VertexBuffer, 1024));
         auto idx = render_system->create_buffer(BufferType::IndexBuffer, 1024);
 
+        uint32_t indice_count = 0;
         {
             struct IsVertice {
                 glm::vec3 pos;
@@ -228,12 +229,17 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
             } vertices[] = {
                 { { 0.0f, 0.0f, 0.0f }, { 1.0f, 0.0f, 0.0f } },
                 { { 1.0f, 0.0f, 0.0f }, { 0.0f, 1.0f, 0.0f } },
-                { { 0.0f, 1.0f, 0.0f }, { 0.0f, 0.0f, 1.0f } }
+                { { 0.0f, 1.0f, 0.0f }, { 0.0f, 0.0f, 1.0f } },
+                { { 1.0f, 1.0f, 0.0f }, { 0.0f, 1.0f, 1.0f } },
             };
             uint16_t indices[] = {
-                0, 1, 2
+                0, 1, 2,
+                1, 3, 2,
+                2, 1, 0,
+                2, 3, 1,
             };
-            glm::mat4 model = glm::translate(glm::mat4{ 1 }, glm::vec3{ 0.0f, 0.0f, -8.0f });
+            indice_count = core::size(indices);
+            glm::mat4 model = glm::translate(glm::mat4{ 1 }, glm::vec3{ -0.5f, 0.0f, 0.0f });
 
             Buffer bfs[] = {
                 buffs[0], buffs[1], idx
@@ -274,7 +280,7 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
                 bind_vertex_buffers(cb, buffs);
                 set_viewport(cb, viewport.x, viewport.y);
                 set_scissor(cb, viewport.x, viewport.y);
-                draw_indexed(cb, 3, 1, 0, 0, 0);
+                draw_indexed(cb, indice_count, 1, 0, 0, 0);
                 render_system->submit_command_buffer(cb);
             }
 
@@ -287,6 +293,27 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
                     debugui_context.begin_frame();
                     debugui_context.end_frame();
                 }
+            }
+
+            {
+                auto new_view = glm::lookAt(
+                    cam_pos, // Camera is at (-5,3,-10), in World Space
+                    glm::vec3(0, 0, 0),      // and looks at the origin
+                    glm::vec3(0, -1, 0)      // Head is up (set to 0,-1,0 to look upside-down)
+                );
+
+                deg += 3.0f;
+                new_view = glm::rotate(new_view, glm::radians(deg), glm::vec3{ 0.f, 1.f, 0.f });
+
+                if (deg >= 360.0f)
+                    deg = 0.0f;
+
+                MVP = clip * projection * new_view;
+
+                iceshard::renderer::api::DataView data_view;
+                iceshard::renderer::api::render_api_instance->buffer_array_map_data(&uniform_buffer, &data_view, 1);
+                memcpy(data_view.data, &MVP, sizeof(MVP));
+                iceshard::renderer::api::render_api_instance->buffer_array_unmap_data(&uniform_buffer, 1);
             }
 
             engine_instance->next_frame();
