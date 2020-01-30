@@ -27,6 +27,8 @@ namespace iceshard::renderer::vulkan
     ) noexcept;
 
     void destroy_resource_set(
+        VkDevice device,
+        VulkanResourcePool resource_pool,
         VulkanResourceSet const& set
     ) noexcept;
 

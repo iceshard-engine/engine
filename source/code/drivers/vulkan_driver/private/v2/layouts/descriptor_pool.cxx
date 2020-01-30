@@ -23,7 +23,7 @@ namespace iceshard::renderer::vulkan
         VkDescriptorPoolCreateInfo pool_info;
         pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
         pool_info.pNext = nullptr;
-        pool_info.flags = 0;
+        pool_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
         pool_info.maxSets = 1000;
         pool_info.poolSizeCount = core::size(pool_sizes);
         pool_info.pPoolSizes = pool_sizes;

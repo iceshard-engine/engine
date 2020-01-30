@@ -1,4 +1,5 @@
 #include <iceshard/renderer/vulkan/vulkan_resources.hxx>
+#include "../vulkan_buffer.hxx"
 #include <core/allocators/stack_allocator.hxx>
 #include <core/pod/array.hxx>
 
@@ -78,6 +79,7 @@ namespace iceshard::renderer::vulkan
         core::pod::Array<VkWriteDescriptorSet> write_descriptor_list{ temp_alloc };
         core::pod::array::reserve(write_descriptor_list, core::pod::array::size(resources));
         core::pod::Array<VkDescriptorImageInfo> write_image_info{ temp_alloc };
+        core::pod::Array<VkDescriptorBufferInfo> write_buffer_info{ temp_alloc };
 
         // Write descriptor set values
         for (RenderResource resource : resources)
@@ -107,6 +109,21 @@ namespace iceshard::renderer::vulkan
 
                 core::pod::array::push_back(write_image_info, image_info);
                 write_info.pImageInfo = &write_image_info[core::pod::array::size(write_image_info) - 1];
+            }
+
+            if (resource.type == RenderResourceType::ResUniform)
+            {
+                auto const& uniform = resource.handle.uniform;
+                // #todo: Fix this one!
+                auto const* vulkan_buffer = reinterpret_cast<VulkanBuffer*>(uniform.buffer);
+
+                VkDescriptorBufferInfo buffer_info;
+                buffer_info.buffer = vulkan_buffer->native_handle();
+                buffer_info.offset = uniform.offset;
+                buffer_info.range = uniform.range;
+
+                core::pod::array::push_back(write_buffer_info, buffer_info);
+                write_info.pBufferInfo = &write_buffer_info[core::pod::array::size(write_buffer_info) - 1];
             }
 
             core::pod::array::push_back(write_descriptor_list, write_info);

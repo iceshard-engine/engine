@@ -75,8 +75,6 @@ namespace debugui::imgui
                 shader_assets
             );
         }
-
-        //_pipeline = _render_system.create_pipeline(render::pipeline::ImGuiPipeline);
     }
 
     ImGuiRenderer::~ImGuiRenderer() noexcept

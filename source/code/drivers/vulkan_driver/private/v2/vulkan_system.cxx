@@ -199,6 +199,11 @@ namespace iceshard::renderer::vulkan
         auto* const resource_set = core::pod::hash::get<VulkanResourceSet*>(_resource_sets, core::hash(name), nullptr);
         if (resource_set != nullptr)
         {
+            vulkan::destroy_resource_set(
+                _devices.graphics.handle,
+                _resource_pool,
+                *resource_set
+            );
             _allocator.destroy(resource_set);
             core::pod::hash::remove(_resource_sets, core::hash(name));
         }

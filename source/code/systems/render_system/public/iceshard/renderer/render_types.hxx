@@ -24,4 +24,6 @@ namespace iceshard::renderer
 
     using Sampler = iceshard::renderer::api::Sampler;
 
+    using Buffer = iceshard::renderer::api::Buffer;
+
 } // namespace iceshard::renderer
