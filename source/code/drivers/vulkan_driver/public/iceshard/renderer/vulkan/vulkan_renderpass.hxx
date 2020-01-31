@@ -8,6 +8,7 @@ namespace iceshard::renderer::vulkan
 
     enum class RenderPassImageType : uint32_t
     {
+        ColorImage,
         SwapchainImage,
         DepthStencilImage,
     };
