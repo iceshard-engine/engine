@@ -81,6 +81,7 @@ namespace iceshard::renderer::vulkan
         auto v1_transfer_cmd_buffer() noexcept -> VkCommandBuffer;
 
     public:
+        void v1_submit_command_buffers() noexcept;
         void v1_execute_subpass_commands(VkCommandBuffer cmds) noexcept;
         void v1_present() noexcept;
 
@@ -99,6 +100,8 @@ namespace iceshard::renderer::vulkan
         VulkanSurface _surface;
         VulkanDevices _devices;
         VulkanSwapchain _swapchain;
+
+        uint32_t _subpass_stage;
         VulkanRenderPass _renderpass;
 
         VulkanCommandBuffers _command_buffers;
@@ -107,6 +110,7 @@ namespace iceshard::renderer::vulkan
 
         core::pod::Array<VkCommandBuffer> _command_buffers_submitted;
         std::atomic_uint32_t _submitted_command_buffer_count = 0;
+        core::pod::Array<uint32_t> _command_buffers_subpass;
 
         uint32_t _current_framebuffer_index = 0;
         core::pod::Array<VulkanFramebuffer> _framebuffers;
@@ -118,6 +122,9 @@ namespace iceshard::renderer::vulkan
 
         VulkanPipelineLayouts _pipeline_layouts;
         core::pod::Hash<VulkanPipeline*> _pipelines;
+
+        // Synchronization
+        VkFence _draw_fence;
     };
 
     auto create_render_system(core::allocator& alloc, VkInstance device) noexcept -> VulkanRenderSystem*;
