@@ -2,6 +2,7 @@
 #include <iceshard/renderer/render_resources.hxx>
 #include <iceshard/renderer/vulkan/vulkan_pipeline.hxx>
 #include <iceshard/renderer/vulkan/vulkan_resource_layouts.hxx>
+#include <iceshard/renderer/vulkan/vulkan_framebuffer.hxx>
 #include <core/cexpr/stringid.hxx>
 #include <core/pod/array.hxx>
 
@@ -18,6 +19,7 @@ namespace iceshard::renderer::vulkan
 
     void create_resource_set(
         VkDevice device,
+        VulkanFramebuffer framebuffer,
         VulkanResourcePool resource_pool,
         VulkanPipelineLayout pipeline_layout,
         VulkanResourceLayouts const& resource_layouts,

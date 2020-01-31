@@ -48,6 +48,7 @@ namespace iceshard::renderer::vulkan
 
     void create_resource_set(
         VkDevice device,
+        VulkanFramebuffer framebuffer,
         VulkanResourcePool resource_pool,
         VulkanPipelineLayout pipeline_layout,
         VulkanResourceLayouts const& resource_layouts,
@@ -105,7 +106,15 @@ namespace iceshard::renderer::vulkan
                 VkDescriptorImageInfo image_info;
                 image_info.sampler = nullptr;
                 image_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-                image_info.imageView = reinterpret_cast<VkImageView>(resource.handle.texture);
+
+                if (resource.handle.texture >= api::v1_1::types::Texture::Attachment3)
+                {
+                    image_info.imageView = framebuffer_image(framebuffer, framebuffer_texture_from_handle(resource.handle.texture));
+                }
+                else
+                {
+                    image_info.imageView = reinterpret_cast<VkImageView>(resource.handle.texture);
+                }
 
                 core::pod::array::push_back(write_image_info, image_info);
                 write_info.pImageInfo = &write_image_info[core::pod::array::size(write_image_info) - 1];
