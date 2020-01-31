@@ -15,6 +15,7 @@ namespace iceshard::renderer::vulkan
     struct VulkanPipelineLayouts
     {
         VulkanPipelineLayout default_layout;
+        VulkanPipelineLayout postprocess_layout;
         VulkanPipelineLayout debugui_layout;
     };
 

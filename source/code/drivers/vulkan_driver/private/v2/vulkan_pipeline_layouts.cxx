@@ -52,6 +52,8 @@ namespace iceshard::renderer::vulkan
                 nullptr,
                 &layouts.default_layout.layout
             );
+            layouts.postprocess_layout.layout_type = RenderPipelineLayout::PostProcess;
+            layouts.postprocess_layout.layout = layouts.default_layout.layout;
             IS_ASSERT(api_result == VkResult::VK_SUCCESS, "Couldn't create pipeline layout!");
         }
     }
