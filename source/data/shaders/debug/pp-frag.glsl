@@ -18,8 +18,16 @@ vec3 sepia(vec3 color)
 
 void main()
 {
+    vec2 resolution = vec2(-1.0, 1.0);
+
+    vec2 uuv = in_uv.st / resolution.xy;
+    uuv *= 1.0 - uuv.yx;
+    float vig = uuv.x * uuv.y * 15;
+    vig = pow(vig, 0.25);
+
+
     vec4 col = texture(sampler2D(rendered_image, default_sampler), in_uv.st);
     // float stl = clamp(length(in_uv.st - vec2(0.5, 0.5)), 0.0,1.0);
     // float lum = col.r * 0.7 + col.g * 0.2 + col.b * 0.1;
-    out_color = sepia(col.rgb);
+    out_color = sepia(col.rgb); // vig * pow(1-length((in_uv.st - vec2(0.5)) / 2) * 5, 1.25); // * vec3(vig);
 }
