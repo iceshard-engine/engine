@@ -186,16 +186,37 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
             resources
         );
 
+        resources[0].type = RenderResourceType::ResTexture2D;
+        resources[0].handle.texture = iceshard::renderer::api::Texture::Attachment0;
+        resources[0].binding = 2;
+
+        [[maybe_unused]]
+        auto pp_resource_set = render_system->create_resource_set(
+            "pp.3d"_sid,
+            iceshard::renderer::RenderPipelineLayout::PostProcess,
+            resources
+        );
+
         core::pod::Array<asset::AssetData> shader_assets{ alloc };
         core::pod::array::resize(shader_assets, 2);
 
         asset_system->load(asset::AssetShader{ "shaders/debug/test-vert" }, shader_assets[0]);
         asset_system->load(asset::AssetShader{ "shaders/debug/test-frag" }, shader_assets[1]);
 
-        [[maybe_unused]]
         auto pipeline = render_system->create_pipeline(
             "test.3d"_sid,
             iceshard::renderer::RenderPipelineLayout::Default,
+            shader_assets
+        );
+
+        bool b1 = asset_system->load(asset::AssetShader{ "shaders/debug/pp-vert2" }, shader_assets[0]) == asset::AssetStatus::Loaded;
+        bool b2 = asset_system->load(asset::AssetShader{ "shaders/debug/pp-frag" }, shader_assets[1]) == asset::AssetStatus::Loaded;
+        IS_ASSERT(b1 && b2, "");
+
+        [[maybe_unused]]
+        auto pp_pipeline = render_system->create_pipeline(
+            "pp.3d"_sid,
+            iceshard::renderer::RenderPipelineLayout::PostProcess,
             shader_assets
         );
 
@@ -253,6 +274,34 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
             iceshard::renderer::api::render_api_instance->buffer_array_unmap_data(bfs, core::size(bfs));
         }
 
+        auto pp_buff = render_system->create_buffer(BufferType::VertexBuffer, 1024);
+        core::pod::Array<Buffer> pp_buffs{ alloc };
+        core::pod::array::push_back(pp_buffs, pp_buff);
+
+        auto pp_idx = render_system->create_buffer(BufferType::IndexBuffer, 1024);
+        {
+            struct PpVertice {
+                glm::vec2 pos;
+                glm::vec2 uv;
+            } vertices[] = {
+                { { -1.0f, -1.0f }, { 0.0f, 0.0f, } },
+                { { 3.0f, -1.0f }, { 2.0f, 0.0f, } },
+                { { -1.0f, 3.0f }, { 0.0f, 2.0f, } },
+            };
+            uint16_t indices[] = {
+                0, 1, 2,
+            };
+
+            Buffer bfs[] = {
+                pp_buff, pp_idx
+            };
+            DataView views[core::size(bfs)];
+
+            iceshard::renderer::api::render_api_instance->buffer_array_map_data(bfs, views, core::size(bfs));
+            memcpy(views[0].data, vertices, sizeof(vertices));
+            memcpy(views[1].data, indices, sizeof(indices));
+            iceshard::renderer::api::render_api_instance->buffer_array_unmap_data(bfs, core::size(bfs));
+        }
 
         fmt::print("IceShard engine revision: {}\n", engine_instance->revision());
 
@@ -281,6 +330,21 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
                 set_viewport(cb, viewport.x, viewport.y);
                 set_scissor(cb, viewport.x, viewport.y);
                 draw_indexed(cb, indice_count, 1, 0, 0, 0);
+                render_system->submit_command_buffer(cb);
+            }
+
+            {
+                using iceshard::renderer::RenderPassStage;
+                using namespace iceshard::renderer::commands;
+
+                auto cb = render_system->acquire_command_buffer(RenderPassStage::PostProcess);
+                bind_pipeline(cb, pp_pipeline);
+                bind_resource_set(cb, pp_resource_set);
+                bind_index_buffer(cb, pp_idx);
+                bind_vertex_buffers(cb, pp_buffs);
+                set_viewport(cb, viewport.x, viewport.y);
+                set_scissor(cb, viewport.x, viewport.y);
+                draw_indexed(cb, 3, 1, 0, 0, 0);
                 render_system->submit_command_buffer(cb);
             }
 
@@ -329,6 +393,8 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
 
         render_system->destroy_pipeline("test.3d"_sid);
         render_system->destroy_resource_set("test.3d"_sid);
+        render_system->destroy_pipeline("pp.3d"_sid);
+        render_system->destroy_resource_set("pp.3d"_sid);
 
         debugui_module = nullptr;
     }
