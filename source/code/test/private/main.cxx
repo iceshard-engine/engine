@@ -209,9 +209,8 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
             shader_assets
         );
 
-        bool b1 = asset_system->load(asset::AssetShader{ "shaders/debug/pp-vert2" }, shader_assets[0]) == asset::AssetStatus::Loaded;
-        bool b2 = asset_system->load(asset::AssetShader{ "shaders/debug/pp-frag" }, shader_assets[1]) == asset::AssetStatus::Loaded;
-        IS_ASSERT(b1 && b2, "");
+        asset_system->load(asset::AssetShader{ "shaders/debug/pp-vert" }, shader_assets[0]);
+        asset_system->load(asset::AssetShader{ "shaders/debug/pp-frag" }, shader_assets[1]);
 
         [[maybe_unused]]
         auto pp_pipeline = render_system->create_pipeline(

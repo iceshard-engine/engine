@@ -233,6 +233,8 @@ namespace iceshard::renderer::vulkan
             translate[1] = -1.0f; //-1.0f - height * scale[1];
             vkCmdPushConstants(cmd_buff.native, _pipeline_layouts.debugui_layout.layout, VK_SHADER_STAGE_VERTEX_BIT, sizeof(float) * 0, sizeof(float) * 2, scale);
             vkCmdPushConstants(cmd_buff.native, _pipeline_layouts.debugui_layout.layout, VK_SHADER_STAGE_VERTEX_BIT, sizeof(float) * 2, sizeof(float) * 2, translate);
+
+            inheritance_info.subpass = 2;
         }
 
         if (stage == RenderPassStage::PostProcess)
