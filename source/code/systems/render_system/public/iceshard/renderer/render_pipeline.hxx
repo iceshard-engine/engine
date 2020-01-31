@@ -9,6 +9,7 @@ namespace iceshard::renderer
     enum class RenderPipelineLayout : uint32_t
     {
         Default,
+        PostProcess,
         DebugUI,
     };
 
