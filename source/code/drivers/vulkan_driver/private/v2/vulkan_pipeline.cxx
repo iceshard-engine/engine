@@ -2,6 +2,7 @@
 
 #include "pipelines/vulkan_debugui_pipeline.hxx"
 #include "pipelines/vulkan_default_pipeline.hxx"
+#include "pipelines/vulkan_postprocess_pipeline.hxx"
 
 namespace iceshard::renderer::vulkan
 {
@@ -28,6 +29,16 @@ namespace iceshard::renderer::vulkan
         else if (layout.layout_type == RenderPipelineLayout::Default)
         {
             create_default_pipeline(
+                devices.graphics.handle,
+                renderpass.renderpass,
+                layout.layout,
+                modules,
+                pipeline.pipeline
+            );
+        }
+        else if (layout.layout_type == RenderPipelineLayout::PostProcess)
+        {
+            create_postprocess_pipeline(
                 devices.graphics.handle,
                 renderpass.renderpass,
                 layout.layout,
