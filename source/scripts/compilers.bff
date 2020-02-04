@@ -100,7 +100,10 @@ Compiler( 'msvc-compiler' )
         '$ToolsPath$\mspdbsrv.exe',
         '$ToolsPath$\mspft140.dll',
         '$ToolsPath$\msvcp140.dll',
+        '$ToolsPath$\atlprov.dll',
+        '$ToolsPath$\tbbmalloc.dll'
         '$ToolsPath$\vcruntime140.dll',
+        '$ToolsPath$\$LangResId$\mspft140ui.dll',
         '$ToolsPath$\$LangResId$\clui.dll',
     }
 }
