@@ -1,21 +1,17 @@
 import Application from require "ice.application"
 
---[[ Built-In Commands ]]
-import UpdateCommand from require "ice.command.update"
-import BuildCommand from require "ice.command.build"
-import CleanCommand from require "ice.command.clean"
-import GenerateProjectsCommand from require "ice.command.generate_projects"
+import InstallCommand from require "tools.commands.install"
+import BuildCommand from require "tools.commands.build"
+import GenerateCommand from require "tools.commands.generate"
 
---[[ Application definition ]]
 class IceShard extends Application
     @name: 'iceshard'
     @description: 'IceShard engine project tool.'
-    @arguments: { }
     @commands: {
         'build': BuildCommand
-        'update': UpdateCommand
-        'clean': CleanCommand
-        'generate': GenerateProjectsCommand
+        'install': InstallCommand
+        -- 'clean': CleanCommand
+        'generate': GenerateCommand
     }
 
     -- Plain call to the application
@@ -24,5 +20,4 @@ class IceShard extends Application
         print ''
         print '> For more options see the -h,--help output.'
 
---[[ Run the application ]]--
 IceShard!\run!

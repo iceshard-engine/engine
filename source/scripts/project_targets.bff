@@ -130,7 +130,6 @@ ForEach( .ProjectDefinition in .ProjectDefinitionList )
         }
 
         {
-            .CompilerOptions + ' /I"$ProjectBaseDir$/public"'
             .CompilerOutputPath = .ConfigurationIntermediateDirectory
             .CompilerInputUnity = { }
             .CompilerInputPath = { '$ProjectBaseDir$/private' }
@@ -241,6 +240,8 @@ ForEach( .ProjectDefinition in .ProjectDefinitionList )
 
                 .ProjectBuildCommand = '$VSBuildCommand$ $ProjectName$-$Platform$-$Config$'
                 .ProjectRebuildCommand = '$VSRebuildCommand$ $ProjectName$-$Platform$-$Config$'
+
+                .LocalDebuggerWorkingDirectory = '$WorkspaceBuildDir$'
             ]
             ^ProjectVCXConfigs + .ProjectVCXConfig
         }
@@ -266,7 +267,7 @@ ForEach( .ProjectDefinition in .ProjectDefinitionList )
     //--------------------------------------------------------------------------
     VCXProject( '$ProjectName$-vcxproj' )
     {
-        .ProjectOutput = '$ProjectName$.vcxproj'
+        .ProjectOutput = '$WorkspaceBuildDir$/projects/$ProjectName$.vcxproj'
         .ProjectConfigs = .ProjectVCXConfigs
         .ProjectInputPaths = .ProjectBaseDir
         .ProjectBasePath = .ProjectBaseDir

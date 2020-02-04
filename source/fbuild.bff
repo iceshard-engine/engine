@@ -11,13 +11,10 @@ Settings
 
 ; Include the generated compiler definitions
 #include "scripts/compilers.bff"
-#include "../build/conan.bff"
 
 ; Workspace properties
-.WorkspaceRoot = '$_CURRENT_BFF_DIR_$/..'
-
 .WorkspaceBuildDir = '$WorkspaceRoot$/build'
-.WorkspaceCodeDir = '$_CURRENT_BFF_DIR_$/code'
+.WorkspaceCodeDir = '$WorkspaceRoot$/source/code'
 
 .Workspace_ConanModules = { 'fmt', 'cppcoro' }
 
@@ -27,8 +24,8 @@ Settings
 .ConfigNameRelease = 'Release'
 
 ; VS properties
-.VSBuildCommand = '$WorkspaceRoot$/ice build -t'
-.VSRebuildCommand = '$WorkspaceRoot$/ice build --clean -t'
+.VSBuildCommand = '$WorkspaceRoot$/ice.bat build -t'
+.VSRebuildCommand = '$WorkspaceRoot$/ice.bat build --clean -t'
 
 ; Windows platform
 .platform_x64_windows =
@@ -149,8 +146,8 @@ ForEach( .ProjectDirectory in .ProjectDirectories )
         .ProjectDefinition =
         [
             Using( .ProjectEmptyProperties )
-            .ProjectBaseDir = '$_CURRENT_BFF_DIR_$/code/$Directory$/$ProjectLocation$'
-            #include "code/$Directory$/$ProjectLocation$/$ProjectLocation$.bff"
+            .ProjectBaseDir = '$WorkspaceCodeDir$/$Directory$/$ProjectLocation$'
+            #include "$WorkspaceCodeDir$/$Directory$/$ProjectLocation$/$ProjectLocation$.bff"
             #include "scripts/project_definition.bff"
             ^SolutionFolderProjects + '$ProjectName$-vcxproj'
         ]
