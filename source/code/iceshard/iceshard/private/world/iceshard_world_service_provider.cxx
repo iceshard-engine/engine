@@ -1,4 +1,5 @@
 #include "iceshard_world_service_provider.hxx"
+#include <iceshard/component/component_system.hxx>
 
 namespace iceshard
 {
@@ -8,9 +9,18 @@ namespace iceshard
         iceshard::ServiceProvider* engine_service_provider
     ) noexcept
         : ServiceProvider{ }
+        , _allocator{ allocator }
         , _engine_service_provider{ engine_service_provider }
         , _world_component_systems{ allocator }
     { }
+
+    IceshardWorldServiceProvider::~IceshardWorldServiceProvider() noexcept
+    {
+        for (auto const& entry : _world_component_systems)
+        {
+            _allocator.destroy(entry.value);
+        }
+    }
 
     auto IceshardWorldServiceProvider::entity_manager() noexcept -> EntityManager*
     {
@@ -72,6 +82,14 @@ namespace iceshard
 
         IS_ASSERT(component_system_ptr != nullptr, "Invalid component system pointer for name {}!", component_system_name);
         return component_system_ptr;
+    }
+
+    void IceshardWorldServiceProvider::add_component_system(core::stringid_arg_type component_system_name, ComponentSystem* component_sys) noexcept
+    {
+        auto const component_system_hash = core::hash(component_system_name);
+        IS_ASSERT(!core::pod::hash::has(_world_component_systems, component_system_hash), "Component with given name already exists!");
+
+        core::pod::hash::set(_world_component_systems, component_system_hash, component_sys);
     }
 
 } // namespace iceshard

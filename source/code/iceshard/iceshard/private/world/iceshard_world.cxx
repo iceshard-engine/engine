@@ -14,11 +14,16 @@ namespace iceshard
         , _allocator{ alloc }
         , _service_provider{ nullptr, { _allocator } }
     {
-        _service_provider = core::memory::make_unique<iceshard::ServiceProvider, iceshard::IceshardWorldServiceProvider>(
+        _service_provider = core::memory::make_unique<iceshard::IceshardWorldServiceProvider>(
             _allocator
             , _allocator
             , engine_service_provider
         );
+    }
+
+    void IceshardWorld::add_component_system(core::stringid_arg_type component_name, ComponentSystemFactory factory, void* userdata) noexcept
+    {
+        _service_provider->add_component_system(component_name, factory(_allocator, userdata));
     }
 
     auto IceshardWorld::service_provider() noexcept -> iceshard::ServiceProvider*

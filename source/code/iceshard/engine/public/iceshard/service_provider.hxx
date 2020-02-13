@@ -19,7 +19,7 @@ namespace iceshard
 
         //! \brief Engine entity manager.
         virtual auto entity_manager() noexcept -> EntityManager* = 0;
-        virtual auto entity_manager() const noexcept -> const EntityManager* = 0;
+        virtual auto entity_manager() const noexcept -> EntityManager const* = 0;
 
         //! \brief Checks if the given component system exists.
         virtual bool has_component_system(core::stringid_arg_type component_system_name) const noexcept = 0;
@@ -28,7 +28,7 @@ namespace iceshard
         //!
         //! \remarks If the given component system does not exist the engine will abort the process.
         virtual auto component_system(core::stringid_arg_type component_system_name) noexcept -> ComponentSystem* = 0;
-        virtual auto component_system(core::stringid_arg_type component_system_name) const noexcept -> const ComponentSystem* = 0;
+        virtual auto component_system(core::stringid_arg_type component_system_name) const noexcept -> ComponentSystem const* = 0;
     };
 
 
