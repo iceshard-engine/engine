@@ -4,6 +4,7 @@
 
 #include <iceshard/entity/entity.hxx>
 #include <iceshard/service_provider.hxx>
+#include <iceshard/component/component_system_factory.hxx>
 
 namespace iceshard
 {
@@ -25,6 +26,9 @@ namespace iceshard
 
         //! \brief The world entity.
         auto entity() const noexcept -> iceshard::entity_handle_type;
+
+        //! \brief Adds a component system to this world object.
+        virtual void add_component_system(core::stringid_arg_type component_name, ComponentSystemFactory factory, void* userdata) noexcept = 0;
 
         //! \brief The worlds service provider.
         virtual auto service_provider() noexcept -> iceshard::ServiceProvider* = 0;
