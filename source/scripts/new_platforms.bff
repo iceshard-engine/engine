@@ -1,0 +1,38 @@
+#once
+#include "new_toolchains.bff"
+
+.Platform_Windows_x64 =
+[
+    .PlatformSystem = 'Windows'
+    .PlatformArchitecture = 'x64'
+
+    .PlatformRequiredSdks = {
+        'Sdk-Windows-10'
+    }
+    .PlatformSupportedToolchains = {
+        'msvc-x64-v142',
+        'clang-9.0.0',
+        'clang-10.0.0'
+    }
+]
+
+.PlatformList = {
+    .Platform_Windows_x64
+}
+
+
+// Platform options depending on the given toolchain
+.ToolchainProperties_MSVC_x64_v142_Windows_x64 =
+[
+    .LinkerOptions
+        + ' /MACHINE:x64'
+        + ' /DYNAMICBASE'
+        + ' /NXCOMPAT'
+    .LibrarianOptions
+        + ' /MACHINE:x64'
+]
+.ToolchainProperties_clang_x64_900_Windows_x64 = [ ]
+.ToolchainProperties_clang_x64_1000_Windows_x64 =
+[
+    Using( .ToolchainProperties_clang_x64_900_Windows_x64 )
+]

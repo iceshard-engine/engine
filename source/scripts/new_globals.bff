@@ -1,0 +1,24 @@
+#once
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// The following structures provide basic definitions of empty variables which may be updated by
+// different toolchains, platforms, configurations
+.ToolchainProperties_Base =
+[
+]
+
+.PlatformProperties_Base =
+[
+    .ToolchainProperties = { }
+]
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// The following variables are defined to provide proper building behaviour of final command line options
+// More on this later
+
+.CompilerOptions = ''
+.CompilerPCHOptions = ''
+
+.LibrarianOptions = ''
+
+.LinkerOptions = ''

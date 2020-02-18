@@ -13,6 +13,6 @@ class InstallCommand extends Command
 
     execute: (args) =>
         @@conan\install conanfile:'tools', update:args.update, install_folder:'build/tools'
-        @@conan\install conanfile:'source', update:args.update, install_folder:'build/tools'
+        @@conan\install conanfile:'source', update:args.update, install_folder:'build'
 
 { :InstallCommand }

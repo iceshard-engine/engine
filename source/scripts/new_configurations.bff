@@ -1,0 +1,42 @@
+#once
+#include "new_platforms.bff"
+
+.Configuration_Debug =
+[
+    .ConfigurationName = 'Debug'
+]
+.Configuration_Develop =
+[
+    .ConfigurationName = 'Develop'
+]
+.Configuration_Profile =
+[
+    .ConfigurationName = 'Profile'
+]
+.Configuration_Release =
+[
+    .ConfigurationName = 'Release'
+]
+
+.ConfigurationList = {
+    .Configuration_Debug
+    .Configuration_Develop
+    .Configuration_Profile
+    .Configuration_Release
+}
+
+.ToolchainProperties_MSVC_x64_v142_Debug =
+[
+    .CompilerOptions
+        + ' /permissive-'
+        + ' /await'
+        + ' /wd4127' // conditional expression is constant'
+
+        + ' /D_DEBUG'
+        + ' /Od'
+        + ' /Z7'
+        + ' /MDd'
+]
+.ToolchainProperties_MSVC_x64_v142_Develop = .ToolchainProperties_MSVC_x64_v142_Debug
+.ToolchainProperties_MSVC_x64_v142_Profile = .ToolchainProperties_MSVC_x64_v142_Debug
+.ToolchainProperties_MSVC_x64_v142_Release = .ToolchainProperties_MSVC_x64_v142_Debug

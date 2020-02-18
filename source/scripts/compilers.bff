@@ -1,112 +1,5 @@
 #once
-#include "../../build/compiler_info.bff"
-
-// Helper variables
-//------------------------------------------------------------------------------
-.vs2017_Variables =
-[
-    .PlatformToolset = 'v141'
-    .CompilerOptions = ''
-        + ' /wd5030'
-        + ' /wd4307'
-]
-
-.vs2019_Variables =
-[
-    .PlatformToolset = 'v142'
-]
-
-.msvcVariables =
-[
-    .LangResId = '1033'
-
-    .ToolsPath = '$vsInstallationDir$\VC\Tools\MSVC\$vcToolsVersion$\bin\HostX64\x64'
-    .ToolCompiler = '$ToolsPath$/cl.exe'
-    .ToolLinker = '$ToolsPath$/link.exe'
-    .ToolLibrarian = '$ToolsPath$/lib.exe'
-    .ToolAssembly = '$ToolsPath$/ml64.exe'
-
-    .IncludeDirectories =
-    {
-        '$vsInstallationDir$\VC\Tools\MSVC\$vcToolsVersion$\include',
-        '$vsInstallationDir$\VC\Tools\MSVC\$vcToolsVersion$\atlmfc\include',
-        '$vsInstallationDir$\VC\Auxiliary\VS\include',
-        '$vsInstallationDir$\VC\Auxiliary\VS\UnitTest\include'
-    }
-
-    .LibraryDirectories =
-    {
-        '$vsInstallationDir$\VC\Tools\MSVC\$vcToolsVersion$\lib\x64',
-        '$vsInstallationDir$\VC\Tools\MSVC\$vcToolsVersion$\atlmfc\lib\x64',
-        '$vsInstallationDir$\VC\Auxiliary\VS\lib\x64',
-        '$vsInstallationDir$\VC\Auxiliary\VS\UnitTest\lib'
-    }
-
-    // TODO: Check if some of them shouldn't be in the sdkVariables structure
-    .SystemLibraries =
-    {
-        'kernel32',
-        'user32',
-        'gdi32',
-        'winspool',
-        'comdlg32',
-        'advapi32',
-        'shell32',
-        'ole32',
-        'oleaut32',
-        'uuid',
-        'odbc32',
-        'odbccp32',
-        'delayimp',
-    }
-]
-
-.sdkVariables =
-[
-    .ToolResourceCompiler = '$win10SDKDirectory$\Bin\$win10SDKVersion$\x64\RC.exe'
-
-    .IncludeDirectories =
-    {
-        '$win10SDKDirectory$Include\$win10SDKVersion$\ucrt',
-        '$win10SDKDirectory$Include\$win10SDKVersion$\um',
-        '$win10SDKDirectory$Include\$win10SDKVersion$\shared',
-        '$win10SDKDirectory$Include\$win10SDKVersion$\winrt'
-    }
-
-    .LibraryDirectories =
-    {
-        '$win10SDKDirectory$lib\$win10SDKVersion$\ucrt\x64',
-        '$win10SDKDirectory$Lib\$win10SDKVersion$\um\x64'
-    }
-]
-
-.compilerVariables = .msvcVariables
-    + .sdkVariables
-
-// Microsoft Compiler
-//------------------------------------------------------------------------------
-Compiler( 'msvc-compiler' )
-{
-    Using( .compilerVariables )
-
-    .Executable = .ToolCompiler
-    .ExtraFiles = {
-        '$ToolsPath$\c1.dll',
-        '$ToolsPath$\c1xx.dll',
-        '$ToolsPath$\c2.dll',
-        '$ToolsPath$\msobj140.dll',
-        '$ToolsPath$\mspdb140.dll',
-        '$ToolsPath$\mspdbcore.dll',
-        '$ToolsPath$\mspdbsrv.exe',
-        '$ToolsPath$\mspft140.dll',
-        '$ToolsPath$\msvcp140.dll',
-        '$ToolsPath$\atlprov.dll',
-        '$ToolsPath$\tbbmalloc.dll'
-        '$ToolsPath$\vcruntime140.dll',
-        '$ToolsPath$\$LangResId$\mspft140ui.dll',
-        '$ToolsPath$\$LangResId$\clui.dll',
-    }
-}
+#include "new_target_configurations.bff"
 
 // Default Compiler Options
 //------------------------------------------------------------------------------
@@ -150,8 +43,6 @@ Compiler( 'msvc-compiler' )
     .Linker = .ToolLinker
     .LinkerOptions = ' /NOLOGO /OUT:"%2" "%1"'
         + ' /MACHINE:x64'
-        + ' /DYNAMICBASE'
-        + ' /NXCOMPAT'
 
     ForEach( .LibraryDirectory in .LibraryDirectories )
     {
@@ -199,3 +90,8 @@ Compiler( 'msvc-resource-compiler' )
         ^CompilerOptions + ' /I"$IncludeDirectory$"'
     }
 ]
+
+ForEach( .ToolsetInfo in .AvailableToolsets )
+{
+    Print( .ToolsetInfo )
+}

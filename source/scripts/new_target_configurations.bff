@@ -1,0 +1,110 @@
+#once
+#include "new_configurations.bff"
+
+.TargetConfigList = { }
+
+// Iterate over each defined platform
+ForEach( .Platform in .PlatformList )
+{
+    Using( .Platform )
+
+    .PlatformSupportedComponents = .PlatformSupportedToolchains + .SdkNames
+
+    ForEach( .ToolchainName in .ToolchainNames, .Toolchain in .ToolchainList )
+    {
+        Using( .Toolchain )
+
+        .TargetPlatformRequiredComponents = { .ToolchainName } + .PlatformRequiredSdks
+
+        If( .TargetPlatformRequiredComponents in .PlatformSupportedComponents )
+        {
+            // Iterate over all configurations and create final target configurations
+            ForEach( .Configuration in .ConfigurationList )
+            {
+                Using( .Configuration )
+
+                .TargetConfig =
+                [
+                    .ConfigName = .ConfigurationName
+                    .ConfigToolchain = .ToolchainName
+                    .ConfigPlatform = "$PlatformSystem$-$PlatformArchitecture$"
+                    .ConfigTags = {
+                        .PlatformSystem
+                        .PlatformArchitecture
+                        .ToolchainCompilerFamily
+                        .ConfigName
+                    } + .PlatformRequiredSdks
+
+                    .Platform = .Platform
+                    .Toolchain = .Toolchain
+                    .Configuration = .Configuration
+                    .SdkProperties = [ ]
+                    ForEach( .SdkName in .SdkNames, .Sdk in .SdkList )
+                    {
+                        If ( .SdkName in .PlatformRequiredSdks )
+                        {
+                            ^SdkProperties + .Sdk
+                        }
+                    }
+                    .Properties = []
+                        + .'ToolchainProperties_$ToolchainCompilerFamily$_$ToolchainArchitecture$_$ToolchainToolset$'
+                        + .'ToolchainProperties_$ToolchainCompilerFamily$_$ToolchainArchitecture$_$ToolchainToolset$_$PlatformSystem$_$PlatformArchitecture$'
+                        + .'ToolchainProperties_$ToolchainCompilerFamily$_$ToolchainArchitecture$_$ToolchainToolset$_$ConfigurationName$'
+                ]
+
+                Print( .TargetConfig )
+            }
+
+        }
+    }
+
+}
+
+//     ForEach( .ToolchainName in .ToolchainNames, .Toolchain in .ToolchainList )
+//     {
+//         .RequiredSdksAndToolchains = { .ToolchainName } + .RequiredSdks
+//         .AvailableSdksAndToolchains = .SupportedToolchains + .SdkNames
+
+//         If( .RequiredSdksAndToolchains in .AvailableSdksAndToolchains )
+//         {
+//             Using( .Toolchain )
+
+//             ForEach( .ConfigurationName in .ConfigurationNames )
+//             {
+//                 .TargetConfig =
+//                 [
+//                     .ConfigName = .ConfigurationName
+//                     .ConfigToolchain = .ToolchainName
+//                     .ConfigPlatform = "$TargetSystem$-$TargetArchitecture$"
+//                     .ConfigTags = {
+//                         .TargetSystem
+//                         .TargetArchitecture
+//                         .ToolchainCompilerFamily
+//                         .ConfigName
+//                     } + .RequiredSdks
+//                 ]
+
+//                 .TargetConfig
+//                     + .Toolchain
+//                     + .'CompilerFamilyProps_$ToolchainCompilerFamily$'
+//                     + .'ToolchainProps_$ToolchainCompilerFamily$_$ToolchainArchitecture$_$ToolchainToolset$'
+//                     + .PlatformProps
+
+//                 ForEach( .SdkName in .SdkNames, .Sdk in .SdkList )
+//                 {
+//                     If ( .SdkName in .RequiredSdks )
+//                     {
+//                         ^TargetConfig + .Sdk
+//                     }
+//                 }
+
+//                 ^TargetConfigList + .TargetConfig
+//             }
+//         }
+//     }
+// }
+
+// ForEach( .TargetConfig in .TargetConfigList )
+// {
+//     Print( .TargetConfig )
+// }
