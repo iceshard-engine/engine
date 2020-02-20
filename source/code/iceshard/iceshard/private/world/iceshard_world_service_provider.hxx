@@ -20,6 +20,11 @@ namespace iceshard
         auto entity_manager() noexcept -> EntityManager* override;
         auto entity_manager() const noexcept -> const EntityManager* override;
 
+        auto entity_index() noexcept -> EntityIndex* override;
+        auto entity_index() const noexcept -> EntityIndex const* override;
+
+        auto component_block_allocator() noexcept -> ComponentBlockAllocator* override;
+
         //! \brief Checks if the given component system exists.
         bool has_component_system(core::stringid_arg_type component_system_name) const noexcept override;
 

@@ -7,7 +7,7 @@ namespace iceshard
     IceshardWorld::IceshardWorld(
         core::allocator& alloc,
         core::stringid_arg_type world_name,
-        iceshard::entity_handle_type world_entity,
+        iceshard::Entity world_entity,
         iceshard::ServiceProvider* engine_service_provider
     ) noexcept
         : World{ world_name, world_entity }

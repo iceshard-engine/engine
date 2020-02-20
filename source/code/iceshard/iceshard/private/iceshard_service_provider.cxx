@@ -19,6 +19,21 @@ namespace iceshard
         return _entity_manager;
     }
 
+    auto IceshardServiceProvider::entity_index() noexcept -> EntityIndex*
+    {
+        return nullptr;
+    }
+
+    auto IceshardServiceProvider::entity_index() const noexcept -> EntityIndex const*
+    {
+        return nullptr;
+    }
+
+    auto IceshardServiceProvider::component_block_allocator() noexcept -> ComponentBlockAllocator*
+    {
+        return nullptr;
+    }
+
     bool IceshardServiceProvider::has_component_system(core::stringid_arg_type component_system_name) const noexcept
     {
         return core::pod::hash::has(_world_component_systems, static_cast<uint64_t>(component_system_name.hash_value));

@@ -32,6 +32,21 @@ namespace iceshard
         return _engine_service_provider->entity_manager();
     }
 
+    auto IceshardWorldServiceProvider::entity_index() noexcept -> EntityIndex*
+    {
+        return nullptr;
+    }
+
+    auto IceshardWorldServiceProvider::entity_index() const noexcept -> EntityIndex const*
+    {
+        return nullptr;
+    }
+
+    auto IceshardWorldServiceProvider::component_block_allocator() noexcept -> ComponentBlockAllocator*
+    {
+        return nullptr;
+    }
+
     bool IceshardWorldServiceProvider::has_component_system(
         core::stringid_arg_type component_system_name
     ) const noexcept

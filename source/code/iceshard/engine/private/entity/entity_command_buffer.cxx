@@ -25,18 +25,18 @@ namespace iceshard
         core::pod::array::reserve(_commands, 20);
     }
 
-    void EntityCommandBuffer::add_component(entity_handle_type entity, ComponentSystem* comonent_system, core::stringid_arg_type component_name) noexcept
+    void EntityCommandBuffer::add_component(Entity entity, ComponentSystem* comonent_system, core::stringid_arg_type component_name) noexcept
     {
         core::pod::array::push_back(_commands, { { detail::add_component_command_id }, component_name, entity, comonent_system });
     }
 
-    void EntityCommandBuffer::remove_component(entity_handle_type entity, core::stringid_arg_type component_name) noexcept
+    void EntityCommandBuffer::remove_component(Entity entity, core::stringid_arg_type component_name) noexcept
     {
         core::pod::array::push_back(_commands, { { detail::remove_component_command_id }, component_name, entity, nullptr });
     }
 
     void EntityCommandBuffer::update_component(
-        entity_handle_type entity,
+        Entity entity,
         core::stringid_arg_type component_name,
         component_operation_signature* operation_func
     ) noexcept
@@ -44,7 +44,7 @@ namespace iceshard
         core::pod::array::push_back(_commands, { { detail::update_component_command_id }, component_name, entity, operation_func });
     }
 
-    void EntityCommandBuffer::destroy_entity(entity_handle_type entity) noexcept
+    void EntityCommandBuffer::destroy_entity(Entity entity) noexcept
     {
         core::pod::array::push_back(_commands, { { detail::destroy_entity_command_id }, core::stringid_invalid, entity, nullptr });
     }

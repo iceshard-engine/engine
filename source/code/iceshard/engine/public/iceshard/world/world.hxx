@@ -16,7 +16,7 @@ namespace iceshard
     public:
         World(
             core::stringid_arg_type world_name,
-            iceshard::entity_handle_type world_entity
+            iceshard::Entity world_entity
         ) noexcept;
 
         virtual ~World() noexcept = default;
@@ -25,7 +25,7 @@ namespace iceshard
         auto name() const noexcept -> core::stringid_type;
 
         //! \brief The world entity.
-        auto entity() const noexcept -> iceshard::entity_handle_type;
+        auto entity() const noexcept -> iceshard::Entity;
 
         //! \brief Adds a component system to this world object.
         virtual void add_component_system(core::stringid_arg_type component_name, ComponentSystemFactory factory, void* userdata) noexcept = 0;
@@ -35,7 +35,7 @@ namespace iceshard
 
     protected:
         core::stringid_type const _name;
-        iceshard::entity_handle_type const _entity;
+        iceshard::Entity const _entity;
     };
 
 
