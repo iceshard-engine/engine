@@ -1,6 +1,7 @@
 #pragma once
 #include <iceshard/service_provider.hxx>
 #include <iceshard/engine.hxx>
+#include <iceshard/component/component_block_allocator.hxx>
 
 #include <core/allocator.hxx>
 #include <core/pod/hash.hxx>
@@ -37,6 +38,7 @@ namespace iceshard
     private:
         iceshard::EntityManager* const _entity_manager;
 
+        iceshard::ComponentBlockAllocator _component_block_allocator;
         core::pod::Hash<ComponentSystem*> _world_component_systems;
     };
 

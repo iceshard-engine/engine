@@ -6,6 +6,7 @@ namespace iceshard
     IceshardServiceProvider::IceshardServiceProvider(core::allocator& alloc, iceshard::EntityManager* entity_manager_ptr) noexcept
         : ServiceProvider{ }
         , _entity_manager{ entity_manager_ptr }
+        , _component_block_allocator{ alloc }
         , _world_component_systems{ alloc }
     { }
 
@@ -31,7 +32,7 @@ namespace iceshard
 
     auto IceshardServiceProvider::component_block_allocator() noexcept -> ComponentBlockAllocator*
     {
-        return nullptr;
+        return &_component_block_allocator;
     }
 
     bool IceshardServiceProvider::has_component_system(core::stringid_arg_type component_system_name) const noexcept

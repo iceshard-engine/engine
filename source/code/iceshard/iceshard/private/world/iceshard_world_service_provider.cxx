@@ -44,7 +44,7 @@ namespace iceshard
 
     auto IceshardWorldServiceProvider::component_block_allocator() noexcept -> ComponentBlockAllocator*
     {
-        return nullptr;
+        return _engine_service_provider->component_block_allocator();
     }
 
     bool IceshardWorldServiceProvider::has_component_system(

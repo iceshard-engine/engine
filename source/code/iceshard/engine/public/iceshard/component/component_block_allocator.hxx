@@ -41,7 +41,7 @@ namespace iceshard
     {
         uint32_t const alignments[] = { alignof(std::remove_pointer_t<Args>) ... };
         uint32_t const sizes[] = { sizeof(std::remove_pointer_t<Args>) ... };
-        void** pointers_array[] = { reinterpret_cast<void**>(&pointers)... };
+        void** pointers_array[] = { reinterpret_cast<void**>(&pointers) ... };
 
         return alloc_block(alignments, sizes, sizeof...(Args), *pointers_array);
     }
