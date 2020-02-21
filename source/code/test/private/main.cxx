@@ -42,6 +42,8 @@
 #include <iceshard/entity/entity_index.hxx>
 #include <iceshard/entity/entity_command_buffer.hxx>
 #include <iceshard/component/component_system.hxx>
+#include <iceshard/component/component_block.hxx>
+#include <iceshard/component/component_block_allocator.hxx>
 #include <iceshard/renderer/render_pipeline.hxx>
 #include <iceshard/renderer/render_resources.hxx>
 #include <iceshard/renderer/render_pass.hxx>
@@ -53,6 +55,186 @@
 #include <glm/gtx/transform.hpp>
 
 #include <imgui/imgui.h>
+
+class DebugNameComponent : public iceshard::ComponentSystem
+{
+public:
+    struct Name
+    {
+        char buff[32];
+    };
+
+    struct Data
+    {
+        iceshard::ComponentBlock* _block;
+
+        Name* debug_name;
+    };
+
+    struct Instance
+    {
+        uint64_t instance;
+        uint32_t block;
+        uint32_t index;
+    };
+
+    DebugNameComponent(core::allocator& alloc, iceshard::ComponentBlockAllocator* block_alloc) noexcept
+        : _instances{ alloc }
+        , _data_blocks{ alloc }
+        , _raw_block_allocator{ block_alloc }
+    {
+        Data data;
+        data._block = _raw_block_allocator->alloc_arrays(data.debug_name);
+        core::pod::array::push_back(_data_blocks, data);
+    }
+
+    ~DebugNameComponent() noexcept
+    {
+        for (auto const& block : _data_blocks)
+        {
+            _raw_block_allocator->release_block(block._block);
+        }
+    }
+
+    //! \brief The name of the component system.
+    auto name() const noexcept -> core::stringid_type override
+    {
+        return "debug-name"_sid;
+    }
+
+    auto lookup(iceshard::Entity, core::stringid_arg_type) const noexcept -> iceshard::ComponentInstance override
+    {
+        return iceshard::ComponentInstance{ 0 };
+    }
+
+    void create(iceshard::Entity entity, core::stringid_arg_type name) noexcept override
+    {
+        create_internal(entity, name);
+    }
+
+    //! \brief Creates a new component instance for the given entity and name.
+    auto create_internal(iceshard::Entity entity, core::stringid_arg_type name) noexcept -> Instance
+    {
+        using namespace core::pod;
+
+        auto entity_hash = core::hash(entity);
+        auto name_hash = core::hash(name);
+
+        auto* it = core::pod::multi_hash::find_first(_instances, entity_hash);
+        while (it != nullptr && it->value.instance != name_hash)
+        {
+            it = core::pod::multi_hash::find_next(_instances, it);
+        }
+
+        uint32_t block_idx = core::pod::array::size(_data_blocks) - 1;
+        auto* block = &_data_blocks[block_idx];
+        auto* raw_block = (iceshard::ComponentBlock*) block->_block;
+
+        if (raw_block->_entity_count_max <= raw_block->_entity_count)
+        {
+            Data data;
+            data._block = _raw_block_allocator->alloc_arrays(data.debug_name);
+            core::pod::array::push_back(_data_blocks, data);
+
+            block_idx += 1;
+            block = &_data_blocks[block_idx];
+            raw_block = block->_block;
+        }
+
+        Instance i = { name_hash, block_idx, raw_block->_entity_count };
+        raw_block->_entity_count += 1;
+
+        memset(block->debug_name[i.index].buff, '\0', sizeof(Name));
+
+        core::pod::multi_hash::insert(_instances, entity_hash, i);
+        fmt::print(stdout, "Entity : added debug-name : {}\n", name);
+
+        return i;
+    }
+
+    //! \brief Creates a new component instance for the given entity and name.
+    void remove([[maybe_unused]] iceshard::Entity entity, core::stringid_arg_type name) noexcept override
+    {
+        using namespace core::pod;
+
+        auto entity_hash = core::hash(entity);
+        auto name_hash = core::hash(name);
+
+        auto* it = core::pod::multi_hash::find_first(_instances, entity_hash);
+        while (it != nullptr && it->value.instance != name_hash)
+        {
+            it = core::pod::multi_hash::find_next(_instances, it);
+        }
+
+        if (it != nullptr)
+        {
+            core::pod::multi_hash::remove(_instances, it);
+            fmt::print(stdout, "Entity : removed debug-name : {}\n", name);
+        }
+    }
+
+    void set_debug_name(Instance i, std::string_view str) noexcept
+    {
+        if (core::pod::array::size(_data_blocks) <= i.block)
+        {
+            return;
+        }
+
+        Data const& block = _data_blocks[i.block];
+        IS_ASSERT(
+            block._block->_entity_count > i.index,
+            "Instance index out-of-bounds in component data block! block:{}/{} index:{}/{}",
+            i.block, core::pod::array::size(_data_blocks),
+            i.index, block._block->_entity_count
+        );
+
+        memcpy(block.debug_name[i.index].buff, str.data(), std::min(str.size(), 31llu));
+    }
+
+private:
+    core::pod::Hash<Instance> _instances;
+    core::pod::Array<Data> _data_blocks;
+
+    iceshard::ComponentBlock* _raw_block = nullptr;
+    iceshard::ComponentBlockAllocator* _raw_block_allocator;
+
+public:
+    class DebugComponentDebugUI;
+};
+
+auto debug_component_factory(core::allocator& alloc, void* userdata) noexcept -> iceshard::ComponentSystem*
+{
+    return alloc.make<DebugNameComponent>(alloc, reinterpret_cast<iceshard::ComponentBlockAllocator*>(userdata));
+}
+
+class DebugNameComponent::DebugComponentDebugUI : public debugui::DebugUI
+{
+public:
+    DebugComponentDebugUI(debugui::debugui_context_handle context, DebugNameComponent* debug_component) noexcept
+        : debugui::DebugUI{ context }
+        , _debug_component{ debug_component }
+    { }
+
+    void end_frame() noexcept override
+    {
+        static bool shown = true;
+        if (ImGui::Begin("Debug Names", &shown))
+        {
+            ImGui::Separator();
+            for (auto const& block : _debug_component->_data_blocks)
+            {
+                for (uint32_t idx = 0; idx < block._block->_entity_count; ++idx)
+                {
+                    ImGui::Text("Debug name: %s", block.debug_name[idx].buff);
+                }
+            }
+            ImGui::End();
+        }
+    }
+
+private:
+    DebugNameComponent* _debug_component;
+};
 
 class MainDebugUI : public debugui::DebugUI
 {
@@ -95,10 +277,48 @@ private:
     bool _menu_visible = false;
 };
 
+struct PosAndVisAoS
+{
+    float pos;
+    bool visible;
+};
+
+struct CompPosAndVis
+{
+    PosAndVisAoS* pos_and_vis;
+};
+
+struct PosAndVisibility
+{
+    float* position = nullptr;
+    bool* visible = nullptr;
+};
+
 int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
 {
     using resource::URN;
     using resource::URI;
+
+    PosAndVisibility pandv;
+    CompPosAndVis pos_and_vis;
+
+    {
+        iceshard::ComponentBlockAllocator cb_alloc{ alloc };
+
+        [[maybe_unused]]
+        iceshard::ComponentBlock* block = cb_alloc.alloc_arrays(pandv.position, pandv.visible);
+
+        [[maybe_unused]]
+        iceshard::ComponentBlock* co_block = cb_alloc.alloc_arrays(pandv.position, pandv.visible);
+
+        cb_alloc.release_block(block);
+        cb_alloc.release_block(co_block);
+        block = cb_alloc.alloc_arrays(pos_and_vis.pos_and_vis);
+        co_block = cb_alloc.alloc_arrays(pos_and_vis.pos_and_vis);
+
+        cb_alloc.release_block(block);
+        cb_alloc.release_block(co_block);
+    }
 
     resource_system.mount(URI{ resource::scheme_file, "../source/data/config.json" });
 
@@ -305,7 +525,27 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
         fmt::print("IceShard engine revision: {}\n", engine_instance->revision());
 
         // Create a test world
-        engine_instance->world_manager()->create_world("test-world"_sid);
+        auto* world = engine_instance->world_manager()->create_world("test-world"_sid);
+        world->add_component_system("debug-name-1"_sid, debug_component_factory, world->service_provider()->component_block_allocator());
+
+        auto* world_service = world->service_provider();
+        auto* debug_component = (DebugNameComponent*) world_service->component_system("debug-name-1"_sid);
+
+        auto i0 = debug_component->create_internal(world->entity(), "world-name"_sid);
+        auto i1 = debug_component->create_internal(world->entity(), "world-name-2"_sid);
+        debug_component->set_debug_name(i0, "012345678901234567890123456789ab");
+        debug_component->set_debug_name(i1, "012345678901234567890123456789cd");
+
+        // Debug UI module
+        core::memory::unique_pointer<DebugNameComponent::DebugComponentDebugUI> debug_component_ui{ nullptr, { alloc } };
+        if constexpr (core::build::is_release == false)
+        {
+            debug_component_ui = core::memory::make_unique<DebugNameComponent::DebugComponentDebugUI>(alloc,
+                debugui_module->context().context_handle(),
+                debug_component
+            );
+            debugui_module->context().register_ui(debug_component_ui.get());
+        }
 
         glm::uvec2 viewport{ 1280, 720 };
 
