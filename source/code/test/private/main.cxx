@@ -43,10 +43,12 @@
 #include <iceshard/entity/entity_command_buffer.hxx>
 #include <iceshard/component/component_system.hxx>
 #include <iceshard/component/component_block.hxx>
+#include <iceshard/component/component_block_operation.hxx>
 #include <iceshard/component/component_block_allocator.hxx>
 #include <iceshard/renderer/render_pipeline.hxx>
 #include <iceshard/renderer/render_resources.hxx>
 #include <iceshard/renderer/render_pass.hxx>
+#include <iceshard/component/component_archetype.hxx>
 
 #include <debugui/debugui_module.hxx>
 #include <debugui/debugui.hxx>
@@ -84,7 +86,9 @@ public:
         , _raw_block_allocator{ block_alloc }
     {
         Data data;
-        data._block = _raw_block_allocator->alloc_arrays(data.debug_name);
+        data._block = _raw_block_allocator->alloc_block();
+        iceshard::component_block_prepare(data._block, data.debug_name);
+
         core::pod::array::push_back(_data_blocks, data);
     }
 
@@ -118,33 +122,23 @@ public:
         using namespace core::pod;
 
         auto entity_hash = core::hash(entity);
-        auto name_hash = core::hash(name);
 
-        auto* it = core::pod::multi_hash::find_first(_instances, entity_hash);
-        while (it != nullptr && it->value.instance != name_hash)
-        {
-            it = core::pod::multi_hash::find_next(_instances, it);
-        }
+        Instance i;
+        i.instance = core::hash(name);
+        i.block = core::pod::array::size(_data_blocks) - 1;
 
-        uint32_t block_idx = core::pod::array::size(_data_blocks) - 1;
-        auto* block = &_data_blocks[block_idx];
-        auto* raw_block = (iceshard::ComponentBlock*) block->_block;
-
-        if (raw_block->_entity_count_max <= raw_block->_entity_count)
+        // This will ensure we call this function at least twice (if we dont have enough space for the next entity)
+        while(iceshard::component_block_insert(_data_blocks[i.block]._block, 1, i.index) == 0)
         {
             Data data;
-            data._block = _raw_block_allocator->alloc_arrays(data.debug_name);
+            data._block = _raw_block_allocator->alloc_block();
+            iceshard::component_block_prepare(data._block, data.debug_name);
             core::pod::array::push_back(_data_blocks, data);
 
-            block_idx += 1;
-            block = &_data_blocks[block_idx];
-            raw_block = block->_block;
+            i.block += 1;
         }
 
-        Instance i = { name_hash, block_idx, raw_block->_entity_count };
-        raw_block->_entity_count += 1;
-
-        memset(block->debug_name[i.index].buff, '\0', sizeof(Name));
+        memset(_data_blocks[i.block].debug_name[i.index].buff, '\0', sizeof(Name));
 
         core::pod::multi_hash::insert(_instances, entity_hash, i);
         fmt::print(stdout, "Entity : added debug-name : {}\n", name);
@@ -168,6 +162,15 @@ public:
 
         if (it != nullptr)
         {
+            Instance i = it->value;
+            Data& d = _data_blocks[i.block];
+
+            d._block->_entity_count -= 1;
+            if (i.index != d._block->_entity_count)
+            {
+                d.debug_name[i.index] = d.debug_name[d._block->_entity_count];
+            }
+
             core::pod::multi_hash::remove(_instances, it);
             fmt::print(stdout, "Entity : removed debug-name : {}\n", name);
         }
@@ -277,48 +280,10 @@ private:
     bool _menu_visible = false;
 };
 
-struct PosAndVisAoS
-{
-    float pos;
-    bool visible;
-};
-
-struct CompPosAndVis
-{
-    PosAndVisAoS* pos_and_vis;
-};
-
-struct PosAndVisibility
-{
-    float* position = nullptr;
-    bool* visible = nullptr;
-};
-
 int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
 {
     using resource::URN;
     using resource::URI;
-
-    PosAndVisibility pandv;
-    CompPosAndVis pos_and_vis;
-
-    {
-        iceshard::ComponentBlockAllocator cb_alloc{ alloc };
-
-        [[maybe_unused]]
-        iceshard::ComponentBlock* block = cb_alloc.alloc_arrays(pandv.position, pandv.visible);
-
-        [[maybe_unused]]
-        iceshard::ComponentBlock* co_block = cb_alloc.alloc_arrays(pandv.position, pandv.visible);
-
-        cb_alloc.release_block(block);
-        cb_alloc.release_block(co_block);
-        block = cb_alloc.alloc_arrays(pos_and_vis.pos_and_vis);
-        co_block = cb_alloc.alloc_arrays(pos_and_vis.pos_and_vis);
-
-        cb_alloc.release_block(block);
-        cb_alloc.release_block(co_block);
-    }
 
     resource_system.mount(URI{ resource::scheme_file, "../source/data/config.json" });
 
@@ -327,7 +292,7 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
 
     if (auto engine_module = iceshard::load_engine_module(alloc, engine_module_location->location().path, resource_system))
     {
-        auto* engine_instance = engine_module->engine();
+        iceshard::Engine* engine_instance = engine_module->engine();
 
         // Default file system mount points
         resource_system.flush_messages();
@@ -528,13 +493,103 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
         auto* world = engine_instance->world_manager()->create_world("test-world"_sid);
         world->add_component_system("debug-name-1"_sid, debug_component_factory, world->service_provider()->component_block_allocator());
 
+        [[maybe_unused]]
+        iceshard::ComponentArchetypeIndex arch_index{ alloc, world->service_provider()->component_block_allocator() };
+
+        auto e0 = engine_instance->entity_manager()->create();
+        arch_index.add_component(e0, "b"_sid, 4, 4);
+        auto e1 = engine_instance->entity_manager()->create();
+        arch_index.add_component(e1, "b"_sid, 4, 4);
+
+        auto e = world->entity();
+        arch_index.add_component(e, "a"_sid, 4, 4);
+        arch_index.add_component(e, "b"_sid, 4, 4);
+        arch_index.add_component(e, "c"_sid, 4, 4);
+
+        {
+            core::pod::Array<core::stringid_type> components{ alloc };
+            core::pod::Array<uint32_t> offsets{ alloc };
+            core::pod::Array<uint32_t> counts{ alloc };
+
+            core::pod::Array<iceshard::ComponentBlock*> blocks{ alloc };
+
+            core::pod::array::clear(components);
+            core::pod::array::push_back(components, "isc.entity"_sid);
+            core::pod::array::push_back(components, "b"_sid);
+
+            arch_index.query_components_instances(components, offsets, blocks, counts);
+
+            uint32_t const offset_stride = core::pod::array::size(components);
+            uint32_t offset_base_idx = 0;
+
+            core::pod::Array<void*> pointers{ alloc };
+            core::pod::array::resize(pointers, offset_stride);
+
+            uint32_t block_base_index = 0;
+            for (uint32_t block_count : counts)
+            {
+                for (uint32_t block_idx = 0; block_idx < block_count; ++block_idx)
+                {
+                    iceshard::ComponentBlock* const block = blocks[block_base_index + block_idx];
+
+                    for (uint32_t offset_idx = 0; offset_idx < offset_stride; ++offset_idx)
+                    {
+                        pointers[offset_idx] = core::memory::utils::pointer_add(block, offsets[offset_base_idx + offset_idx]);
+                        fmt::print("{} => {}\n", offset_idx, fmt::ptr(pointers[offset_idx]));
+                    }
+
+                    static uint32_t global = 330;
+                    for (uint32_t cidx = 0; cidx < block->_entity_count; ++cidx)
+                    {
+                        *(reinterpret_cast<uint32_t*>(pointers[1]) + cidx) = global++;
+                    }
+                }
+
+                block_base_index += block_count;
+                offset_base_idx += offset_stride;
+            }
+
+
+            arch_index.add_component(e0, "c"_sid, 4, 4);
+
+            core::pod::array::clear(offsets);
+            core::pod::array::clear(components);
+            core::pod::array::push_back(components, "isc.entity"_sid);
+            core::pod::array::push_back(components, "b"_sid);
+            iceshard::ComponentBlock* block = nullptr;
+
+            {
+                arch_index.query_components_entity(e0, components, offsets, block);
+
+                iceshard::Entity* ep = reinterpret_cast<iceshard::Entity*>(core::memory::utils::pointer_add(block, offsets[0]));
+                uint32_t* eval = reinterpret_cast<uint32_t*>(core::memory::utils::pointer_add(block, offsets[1]));
+                fmt::print("entity: {} (saved: {})\nval: {}\n", e0, *ep, *eval);
+            }
+
+            core::pod::array::clear(offsets);
+            {
+                arch_index.query_components_entity(e1, components, offsets, block);
+
+                iceshard::Entity* ep = reinterpret_cast<iceshard::Entity*>(core::memory::utils::pointer_add(block, offsets[0]));
+                uint32_t* eval = reinterpret_cast<uint32_t*>(core::memory::utils::pointer_add(block, offsets[1]));
+                fmt::print("entity: {} (saved: {})\nval: {}\n", e1, *ep, *eval);
+            }
+        }
+
+
         auto* world_service = world->service_provider();
         auto* debug_component = (DebugNameComponent*) world_service->component_system("debug-name-1"_sid);
 
-        auto i0 = debug_component->create_internal(world->entity(), "world-name"_sid);
-        auto i1 = debug_component->create_internal(world->entity(), "world-name-2"_sid);
-        debug_component->set_debug_name(i0, "012345678901234567890123456789ab");
-        debug_component->set_debug_name(i1, "012345678901234567890123456789cd");
+        auto i0 = debug_component->create_internal(world->entity(), "world-name-0"_sid);
+        auto i1 = debug_component->create_internal(world->entity(), "world-name-1"_sid);
+        auto i2 = debug_component->create_internal(world->entity(), "world-name-2"_sid);
+        auto i3 = debug_component->create_internal(world->entity(), "world-name-3"_sid);
+        debug_component->set_debug_name(i0, "asd-0");
+        debug_component->set_debug_name(i1, "asd-1");
+        debug_component->set_debug_name(i2, "asd-2");
+        debug_component->set_debug_name(i3, "asd-3");
+        debug_component->remove(world->entity(), "world-name-0"_sid);
+        debug_component->remove(world->entity(), "world-name-3"_sid);
 
         // Debug UI module
         core::memory::unique_pointer<DebugNameComponent::DebugComponentDebugUI> debug_component_ui{ nullptr, { alloc } };

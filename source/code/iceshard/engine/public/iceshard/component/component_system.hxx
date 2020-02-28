@@ -1,14 +1,10 @@
 #pragma once
 #include <core/cexpr/stringid.hxx>
 #include <iceshard/entity/entity.hxx>
+#include <iceshard/component/component_block.hxx>
 
 namespace iceshard
 {
-
-    struct ComponentInstance
-    {
-        uint32_t index;
-    };
 
     //! \brief A regular interface for component systems.
     class ComponentSystem

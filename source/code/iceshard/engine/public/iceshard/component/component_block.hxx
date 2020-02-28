@@ -4,6 +4,12 @@
 namespace iceshard
 {
 
+    struct ComponentInstance
+    {
+        uint32_t block;
+        uint32_t index;
+    };
+
     struct ComponentBlock
     {
         uint32_t _block_size = 0;
