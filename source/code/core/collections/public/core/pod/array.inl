@@ -247,6 +247,18 @@ inline void core::pod::array::push_back(Array<T> &a, const T &item) noexcept
     a._data[a._size++] = item;
 }
 
+//! \brief Pushes all items to the end of the array.
+template<typename T>
+inline void core::pod::array::push_back(Array<T>& a, Array<T> const& items) noexcept
+{
+    if ((a._size + items._size) > a._capacity)
+    {
+        grow(a, a._size + items._size);
+    }
+    memcpy(a._data + a._size, items._data, items._size * sizeof(T));
+    a._size += items._size;
+}
+
 template<typename T>
 inline void core::pod::array::pop_back(Array<T> &a) noexcept
 {
