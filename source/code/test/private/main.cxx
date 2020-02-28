@@ -496,10 +496,47 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
         [[maybe_unused]]
         iceshard::ComponentArchetypeIndex arch_index{ alloc, world->service_provider()->component_block_allocator() };
 
+        {
+            core::pod::Array<core::stringid_type> components{ alloc };
+            core::pod::array::push_back(components, "a"_sid);
+            core::pod::array::push_back(components, "b"_sid);
+            core::pod::array::push_back(components, "c"_sid);
+            core::pod::array::push_back(components, "d"_sid);
+
+            core::pod::Array<uint32_t> sizes{ alloc };
+            core::pod::array::push_back(sizes, 4u);
+            core::pod::array::push_back(sizes, 4u);
+            core::pod::array::push_back(sizes, 4u);
+            core::pod::array::push_back(sizes, 1u);
+
+            core::pod::Array<uint32_t> alignments{ alloc };
+            core::pod::array::push_back(alignments, 4u);
+            core::pod::array::push_back(alignments, 4u);
+            core::pod::array::push_back(alignments, 4u);
+            core::pod::array::push_back(alignments, 1u);
+
+            auto a1 = arch_index.get_or_create_archetype(components, sizes, alignments);
+            a1 = arch_index.get_or_create_archetype(components, sizes, alignments);
+        }
+
         auto e0 = engine_instance->entity_manager()->create();
         arch_index.add_component(e0, "b"_sid, 4, 4);
-        auto e1 = engine_instance->entity_manager()->create();
-        arch_index.add_component(e1, "b"_sid, 4, 4);
+        {
+            auto e1 = engine_instance->entity_manager()->create();
+            arch_index.add_component(e1, "b"_sid, 4, 4);
+        }
+        {
+            auto e1 = engine_instance->entity_manager()->create();
+            arch_index.add_component(e1, "b"_sid, 4, 4);
+        }
+        {
+            auto e1 = engine_instance->entity_manager()->create();
+            arch_index.add_component(e1, "b"_sid, 4, 4);
+        }
+            auto e1 = engine_instance->entity_manager()->create();
+        {
+            arch_index.add_component(e1, "b"_sid, 4, 4);
+        }
 
         auto e = world->entity();
         arch_index.add_component(e, "a"_sid, 4, 4);

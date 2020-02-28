@@ -180,6 +180,30 @@ namespace iceshard
             return detail::make_identifier(archetype_hash);
         }
 
+        auto get_or_create_archetype(
+            core::pod::Array<core::stringid_type> const& component_names,
+            core::pod::Array<uint32_t> const& sizes,
+            core::pod::Array<uint32_t> const& alignments
+        ) noexcept
+        {
+            uint32_t name_count = core::pod::array::size(component_names);
+            uint32_t size_count = core::pod::array::size(sizes);
+            uint32_t alignment_count = core::pod::array::size(alignments);
+            IS_ASSERT(
+                name_count == size_count && name_count == alignment_count,
+                "Mismatch of sizes and alignments for the provided component name count!\nName count: {}, size count: {}, alignment count: {}",
+                name_count, size_count, alignment_count
+            );
+
+            core::stringid_type parent_archetype = core::stringid_invalid;
+            for (uint32_t idx = 0; idx < name_count; ++idx)
+            {
+                parent_archetype = get_or_create_archetype(parent_archetype, component_names[idx], sizes[idx], alignments[idx]);
+            }
+
+            return parent_archetype;
+        }
+
         void add_component(
             Entity entity,
             core::stringid_arg_type component_name,
