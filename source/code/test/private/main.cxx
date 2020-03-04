@@ -46,6 +46,7 @@
 #include <iceshard/component/component_block_operation.hxx>
 #include <iceshard/component/component_block_allocator.hxx>
 #include <iceshard/component/component_archetype_index.hxx>
+#include <iceshard/component/component_archetype_iterator.hxx>
 #include <iceshard/renderer/render_pipeline.hxx>
 #include <iceshard/renderer/render_resources.hxx>
 #include <iceshard/renderer/render_pass.hxx>
@@ -97,6 +98,13 @@ public:
 private:
     bool _quit = false;
     bool _menu_visible = false;
+};
+
+struct A
+{
+    static constexpr auto identifier = "a"_sid;
+
+    int foo;
 };
 
 int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
@@ -312,6 +320,32 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
 
         [[maybe_unused]]
         iceshard::World* world = engine_instance->world_manager()->create_world("test-world"_sid);
+
+        [[maybe_unused]]
+        core::memory::unique_pointer<iceshard::ecs::ArchetypeIndex> eidx = iceshard::ecs::create_default_index(
+            alloc,
+            world->service_provider()->component_block_allocator()
+        );
+
+        eidx->add_component(world->entity(), A::identifier, 4, 4);
+
+        core::pod::Array<core::stringid_type> cmps{ alloc };
+        core::pod::array::push_back(cmps, A::identifier);
+        auto a = eidx->get_archetype(cmps);
+
+        core::pod::Array<iceshard::Entity> entities{ alloc };
+        engine_instance->entity_manager()->create_many(10000, entities);
+
+        eidx->add_entities(entities, a);
+
+        iceshard::ecs::for_each_internal<void(*)(uint32_t, A*) noexcept ,A*>(eidx.get(), [](uint32_t ec, A* a) noexcept
+            {
+                a->foo = ec;
+            });
+        iceshard::ecs::for_each_internal<void(*)(uint32_t, A*) noexcept, A*>(eidx.get(), [](uint32_t, A* a) noexcept
+            {
+                a->foo = 1;
+            });
 
         bool quit = false;
         while (quit == false)
