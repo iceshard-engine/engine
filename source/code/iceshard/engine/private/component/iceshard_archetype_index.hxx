@@ -32,6 +32,11 @@ namespace iceshard::ecs
             core::stringid_arg_type archetype
         ) noexcept override;
 
+        void add_entities(
+            core::pod::Array<iceshard::Entity> const& entities,
+            core::stringid_arg_type archetype
+        ) noexcept override;
+
         void remove_entity(
             iceshard::Entity entity
         ) noexcept override;
@@ -46,6 +51,23 @@ namespace iceshard::ecs
         void remove_component(
             iceshard::Entity entity,
             core::stringid_arg_type component
+        ) noexcept override;
+
+        auto create_archetype(
+            core::pod::Array<core::stringid_type> const& components,
+            core::pod::Array<uint32_t> const& sizes,
+            core::pod::Array<uint32_t> const& alignments
+        ) noexcept -> core::stringid_type override;
+
+        auto get_archetype(
+            core::pod::Array<core::stringid_type> const& components
+        ) noexcept -> core::stringid_type override;
+
+        void query_instances(
+            core::pod::Array<core::stringid_type> const& components,
+            core::pod::Array<uint32_t>& block_count,
+            core::pod::Array<uint32_t>& block_offsets,
+            core::pod::Array<iceshard::ComponentBlock*>& blocks
         ) noexcept override;
 
     protected:

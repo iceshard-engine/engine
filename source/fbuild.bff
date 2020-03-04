@@ -54,7 +54,7 @@ Settings
         + ' /MDd'
 
     .LinkerOptions = ' /DEBUG:FULL'
-        + ' /INCREMENTAL'
+        // + ' /INCREMENTAL'
 
     .ConanConfig = 'Debug'
 ]
@@ -63,7 +63,7 @@ Settings
 [
     .Config = 'ReleaseDebug'
     .CompilerOptions = ' /D_RDEBUG'
-        + ' /O2'
+        + ' /O0'
         + ' /Z7'
         + ' /MD'
 
@@ -77,7 +77,7 @@ Settings
 [
     .Config = 'Release'
     .CompilerOptions = ' /D_NDEBUG'
-        + ' /O2'
+        + ' /O0'
         + ' /Z7'
         + ' /MD'
 

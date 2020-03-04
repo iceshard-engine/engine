@@ -313,11 +313,6 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
         [[maybe_unused]]
         iceshard::World* world = engine_instance->world_manager()->create_world("test-world"_sid);
 
-        core::memory::unique_pointer<iceshard::ecs::ArchetypeIndex> eidx = iceshard::ecs::create_default_index(alloc, world->service_provider()->component_block_allocator());
-        eidx->add_component(world->entity(), "a"_sid, 4, 4);
-        eidx->add_component(world->entity(), "b"_sid, 4, 4);
-        eidx->remove_entity(world->entity());
-
         bool quit = false;
         while (quit == false)
         {

@@ -127,6 +127,40 @@ namespace iceshard::ecs
             }
         }
 
+        void create_instances(
+            ArchetypeData* archetype_data,
+            uint32_t count,
+            core::pod::Array<ArchetypeInstance>& base_instances,
+            core::pod::Array<uint32_t>& counts
+        ) noexcept
+        {
+            ComponentBlock* block = archetype_data->block;
+            while (count > 0)
+            {
+                if (block->_entity_count == block->_entity_count_max)
+                {
+                    block->_next = archetype_data->block_allocator->alloc_block();
+                    block->_next->_entity_count_max = block->_entity_count_max;
+                    block = block->_next;
+                    block->_next = nullptr;
+                }
+
+                uint32_t const available_count = block->_entity_count_max - block->_entity_count;
+                uint32_t const allocated_count = std::min(available_count, count);
+
+                ArchetypeInstance instance;
+                instance.archetype = archetype_data;
+                instance.block = block;
+                instance.index = block->_entity_count;
+                block->_entity_count += allocated_count;
+
+                core::pod::array::push_back(base_instances, instance);
+                core::pod::array::push_back(counts, allocated_count);
+
+                count -= allocated_count;
+            }
+        }
+
         auto create_instance(
             ArchetypeData* archetype_data
         ) noexcept -> ArchetypeInstance
@@ -135,16 +169,8 @@ namespace iceshard::ecs
             if (block->_entity_count == block->_entity_count_max)
             {
                 block->_next = archetype_data->block_allocator->alloc_block();
+                block->_next->_entity_count_max = block->_entity_count_max;
                 block = block->_next;
-
-                iceshard::detail::component_block_prepare(
-                    block,
-                    core::pod::array::begin(archetype_data->sizes),
-                    core::pod::array::begin(archetype_data->alignments),
-                    core::pod::array::size(archetype_data->components),
-                    core::pod::array::begin(archetype_data->offsets)
-                );
-
                 block->_next = nullptr;
             }
 
@@ -187,6 +213,41 @@ namespace iceshard::ecs
             return false;
         }
 
+        bool query_component_indices(
+            core::pod::Array<core::stringid_type> const& available_components,
+            core::pod::Array<core::stringid_type> const& required_components,
+            core::pod::Array<uint32_t>& indices
+        ) noexcept
+        {
+            uint32_t const available_component_count = core::pod::array::size(available_components);
+            uint32_t const required_component_count = core::pod::array::size(required_components);
+
+            if (available_component_count < required_component_count)
+            {
+                return false;
+            }
+
+            IS_ASSERT(
+                core::pod::array::empty(indices),
+                "The array used to store indices needs to be empty!"
+            );
+            core::pod::array::reserve(indices, required_component_count);
+
+            for (uint32_t idx = 0; idx < available_component_count; ++idx)
+            {
+                for (core::stringid_arg_type required_component : required_components)
+                {
+                    if (available_components[idx] == required_component)
+                    {
+                        core::pod::array::push_back(indices, idx);
+                        break;
+                    }
+                }
+            }
+
+            return core::pod::array::size(indices) == required_component_count;
+        }
+
         template<typename T, uint32_t Size>
         auto single_value_array(T value, core::memory::stack_allocator<Size>& alloc) noexcept -> core::pod::Array<T>
         {
@@ -211,8 +272,8 @@ namespace iceshard::ecs
     {
         core::memory::stack_allocator<128> temp_alloc;
         auto base_component = detail::single_value_array<core::stringid_type>("isc.entity"_sid, temp_alloc);
-        auto base_size = detail::single_value_array<uint32_t>(4u, temp_alloc);
-        auto base_alignment = detail::single_value_array<uint32_t>(4u, temp_alloc);
+        auto base_size = detail::single_value_array<uint32_t>(sizeof(iceshard::Entity), temp_alloc);
+        auto base_alignment = detail::single_value_array<uint32_t>(alignof(iceshard::Entity), temp_alloc);
 
         _root_archetype = iceshard::ecs::create_archetype(
             _allocator,
@@ -279,6 +340,53 @@ namespace iceshard::ecs
             hash_entity,
             instance
         );
+    }
+
+    void IceShardArchetypeIndex::add_entities(
+        core::pod::Array<iceshard::Entity> const& entities,
+        core::stringid_arg_type archetype
+    ) noexcept
+    {
+        auto const hash_archetype = core::hash(archetype);
+
+        iceshard::ecs::ArchetypeData* const archetype_data = core::pod::hash::get(
+            _archetype_data,
+            hash_archetype,
+            nullptr
+        );
+
+        IS_ASSERT(
+            archetype_data != nullptr,
+            "Archetype {} does not exist in the index",
+            archetype
+        );
+
+        uint32_t const requested_entity_count = core::pod::array::size(entities);
+        uint32_t const block_count = (requested_entity_count / archetype_data->block->_entity_count_max) + 1;
+
+        core::pod::Array<detail::ArchetypeInstance> instances{ _allocator };
+        core::pod::Array<uint32_t> counts{ _allocator };
+        core::pod::array::reserve(instances, block_count);
+        core::pod::array::reserve(counts, block_count);
+
+        detail::create_instances(archetype_data, requested_entity_count, instances, counts);
+
+        uint32_t const final_block_count = core::pod::array::size(instances);
+        iceshard::Entity const* entity_it = core::pod::array::begin(entities);
+
+        for (uint32_t idx = 0; idx < final_block_count; ++idx)
+        {
+            detail::ArchetypeInstance const& base_instance = instances[idx];
+
+            void* const dst_entity_data = core::memory::utils::pointer_add(
+                base_instance.block,
+                archetype_data->offsets[0] + archetype_data->sizes[0] * base_instance.index
+            );
+
+            // Copy all identifiers to the first component which is always the `isc.entity` component
+            memcpy(dst_entity_data, entity_it, archetype_data->sizes[0] * base_instance.block->_entity_count);
+            entity_it += base_instance.block->_entity_count_max;
+        }
     }
 
     void IceShardArchetypeIndex::remove_entity(
@@ -352,6 +460,13 @@ namespace iceshard::ecs
                     src_instance
                 );
             }
+        }
+        else
+        {
+            detail::set_instance_entity(
+                dst_instance,
+                entity
+            );
         }
 
         core::pod::hash::set(
@@ -470,6 +585,103 @@ namespace iceshard::ecs
             );
         }
         return result;
+    }
+
+    auto IceShardArchetypeIndex::create_archetype(
+        core::pod::Array<core::stringid_type> const& components,
+        core::pod::Array<uint32_t> const& sizes,
+        core::pod::Array<uint32_t> const& alignments
+    ) noexcept -> core::stringid_type
+    {
+        uint32_t const component_count = core::pod::array::size(components);
+        uint32_t const sizes_count = core::pod::array::size(sizes);
+        uint32_t const alignments_count = core::pod::array::size(alignments);
+
+        IS_ASSERT(
+            component_count == sizes_count && component_count == alignments_count,
+            "Number of sizes ({}) and alignments ({}) do not match with the component count = {}",
+            sizes_count,
+            alignments_count,
+            component_count
+        );
+
+        auto const archetype = iceshard::ecs::archetype_identifier_extended(_root_archetype, components);
+        auto const hash_archetype = core::hash(archetype);
+
+        ArchetypeData* result = core::pod::hash::get(_archetype_data, hash_archetype, nullptr);
+        if (nullptr == result)
+        {
+            result = iceshard::ecs::create_archetype_extended(
+                _allocator,
+                _block_allocator,
+                _root_archetype,
+                components,
+                sizes,
+                alignments
+            );
+
+            core::pod::hash::set(
+                _archetype_data,
+                hash_archetype,
+                result
+            );
+        }
+        return result->identifier;
+    }
+
+    auto IceShardArchetypeIndex::get_archetype(
+        core::pod::Array<core::stringid_type> const& components
+    ) noexcept -> core::stringid_type
+    {
+        auto const archetype = iceshard::ecs::archetype_identifier_extended(_root_archetype, components);
+        auto const hash_archetype = core::hash(archetype);
+
+        ArchetypeData const* const result = core::pod::hash::get(_archetype_data, hash_archetype, nullptr);
+        return result == nullptr ? core::stringid_invalid : result->identifier;
+    }
+
+    void IceShardArchetypeIndex::query_instances(
+        core::pod::Array<core::stringid_type> const& components,
+        core::pod::Array<uint32_t>& block_count,
+        core::pod::Array<uint32_t>& block_offsets,
+        core::pod::Array<iceshard::ComponentBlock*>& blocks
+    ) noexcept
+    {
+        using Entry = core::pod::Hash<iceshard::ecs::ArchetypeData*>::Entry;
+
+        core::memory::stack_allocator<256> indices_alloc;
+        core::pod::Array<uint32_t> indices{ indices_alloc };
+        core::pod::array::reserve(indices, 256 / sizeof(uint32_t));
+
+        for (Entry const& entry : _archetype_data)
+        {
+            iceshard::ecs::ArchetypeData* archetype = entry.value;
+
+            core::pod::array::clear(indices);
+            if (detail::query_component_indices(archetype->components, components, indices))
+            {
+                uint32_t count = 0;
+                iceshard::ComponentBlock* block = archetype->block;
+                while(block != nullptr)
+                {
+                    if (block->_entity_count > 0)
+                    {
+                        core::pod::array::push_back(blocks, block);
+                        count += 1;
+                    }
+                    block = block->_next;
+                }
+
+                // Push the number of blocks we got for the next stride of offsets
+                core::pod::array::push_back(block_count, count);
+
+                // Push the offsets for the selected components
+                for (uint32_t component_index : indices)
+                {
+                    core::pod::array::push_back(block_offsets, archetype->offsets[component_index]);
+                }
+            }
+        }
     }
 
     auto create_default_index(

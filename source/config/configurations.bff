@@ -1,0 +1,8 @@
+#once
+
+.ConfigurationList = {
+    'Debug',
+    'Develop',
+    'Profile',
+    'Release',
+}
