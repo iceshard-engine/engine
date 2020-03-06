@@ -59,6 +59,60 @@
 
 #include <imgui/imgui.h>
 
+
+struct Entity
+{
+    static constexpr auto identifier = "isc.entity"_sid;
+
+    iceshard::Entity e;
+};
+
+struct DebugName
+{
+    static constexpr auto identifier = "isc.debug_name"_sid;
+
+    char name[32];
+};
+
+class DebugNameUI : public debugui::DebugUI
+{
+public:
+    DebugNameUI(
+        debugui::debugui_context_handle context,
+        core::allocator& alloc,
+        iceshard::ecs::ArchetypeIndex* archetype_index
+    ) noexcept
+        : debugui::DebugUI{ context }
+        , _allocator{ alloc }
+        , _arch_index{ *archetype_index }
+    { }
+
+    void end_frame() noexcept override
+    {
+        iceshard::ecs::ComponentQuery<Entity*, DebugName*> debug_name_query{ _allocator };
+
+        if (ImGui::Begin("Debug names"))
+        {
+            iceshard::ecs::for_each_entity(
+                iceshard::ecs::query_index(
+                    debug_name_query,
+                    _arch_index
+                ),
+                [](Entity* e, DebugName* debug_name) noexcept
+                {
+                    ImGui::Text("%s <%llu>", debug_name->name, core::hash(e->e));
+                }
+            );
+
+            ImGui::End();
+        }
+    }
+
+private:
+    core::allocator& _allocator;
+    iceshard::ecs::ArchetypeIndex& _arch_index;
+};
+
 class MainDebugUI : public debugui::DebugUI
 {
 public:
@@ -98,13 +152,6 @@ public:
 private:
     bool _quit = false;
     bool _menu_visible = false;
-};
-
-struct A
-{
-    static constexpr auto identifier = "a"_sid;
-
-    int foo;
 };
 
 int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
@@ -233,6 +280,7 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
 
         // Debug UI module
         core::memory::unique_pointer<debugui::DebugUIModule> debugui_module{ nullptr, { alloc } };
+        core::memory::unique_pointer<DebugNameUI> debugname_ui{ nullptr, { alloc } };
 
         if constexpr (core::build::is_release == false)
         {
@@ -321,35 +369,56 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
         [[maybe_unused]]
         iceshard::World* world = engine_instance->world_manager()->create_world("test-world"_sid);
 
-        [[maybe_unused]]
-        core::memory::unique_pointer<iceshard::ecs::ArchetypeIndex> eidx = iceshard::ecs::create_default_index(
-            alloc,
-            world->service_provider()->component_block_allocator()
-        );
+        auto arch_idx = world->service_provider()->archetype_index();
+        arch_idx->add_component(world->entity(), DebugName::identifier, sizeof(DebugName), alignof(DebugName));
 
-        eidx->add_component(world->entity(), A::identifier, 4, 4);
+        iceshard::ecs::ComponentQuery<Entity*, DebugName*> debugname_qry{ alloc };
 
-        core::pod::Array<core::stringid_type> cmps{ alloc };
-        core::pod::array::push_back(cmps, A::identifier);
-        auto a = eidx->get_archetype(cmps);
+        iceshard::ecs::for_entity(debugname_qry, *arch_idx, world->entity(), [](Entity*, DebugName* debug_name) noexcept
+            {
+                memcpy(debug_name->name, "Test", 4);
+            });
+
+        if (debugui_module)
+        {
+            debugname_ui = core::memory::make_unique<DebugNameUI>(alloc,
+                debugui_module->context_handle(),
+                alloc,
+                arch_idx
+            );
+            debugui_module->context().register_ui(debugname_ui.get());
+        }
+
 
         core::pod::Array<iceshard::Entity> entities{ alloc };
-        engine_instance->entity_manager()->create_many(10000, entities);
+        engine_instance->entity_manager()->create_many(1000, entities);
 
-        eidx->add_entities(entities, a);
+        {
+            core::pod::Array<core::stringid_type> comps{ alloc };
+            core::pod::array::push_back(comps, DebugName::identifier);
 
-        iceshard::ecs::for_each_internal<void(*)(uint32_t, A*) noexcept ,A*>(eidx.get(), [](uint32_t ec, A* a) noexcept
+            arch_idx->add_entities(entities, arch_idx->get_archetype(comps));
+        }
+
+        iceshard::ecs::for_each_entity(
+            iceshard::ecs::query_index(debugname_qry, *arch_idx),
+            [&world](Entity* e, DebugName* dn) noexcept
             {
-                a->foo = ec;
-            });
-        iceshard::ecs::for_each_internal<void(*)(uint32_t, A*) noexcept, A*>(eidx.get(), [](uint32_t, A* a) noexcept
-            {
-                a->foo = 1;
-            });
+                if (e->e == world->entity())
+                {
+                    return;
+                }
+
+                snprintf(dn->name, 32, "Custom %llu", core::hash(e->e));
+            }
+        );
+
 
         bool quit = false;
         while (quit == false)
         {
+            auto& frame = engine_instance->current_frame();
+
             core::message::filter<input::message::AppExit>(engine_instance->current_frame().messages(), [&quit](auto const&) noexcept
                 {
                     quit = true;
@@ -419,7 +488,7 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
 
             engine_instance->next_frame();
 
-            core::message::filter<input::message::WindowSizeChanged>(engine_instance->current_frame().messages(), [&viewport](auto const& msg) noexcept
+            core::message::filter<input::message::WindowSizeChanged>(frame.messages(), [&viewport](auto const& msg) noexcept
                 {
                     fmt::print("Window size changed to: {}x{}\n", msg.width, msg.height);
                     viewport = { msg.width, msg.height };
