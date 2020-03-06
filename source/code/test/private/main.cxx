@@ -374,10 +374,13 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
 
         iceshard::ecs::ComponentQuery<Entity*, DebugName*> debugname_qry{ alloc };
 
-        iceshard::ecs::for_entity(debugname_qry, *arch_idx, world->entity(), [](Entity*, DebugName* debug_name) noexcept
+        iceshard::ecs::for_each_entity(
+            iceshard::ecs::query_entity(debugname_qry, *arch_idx, world->entity()),
+            [](Entity*, DebugName* debug_name) noexcept
             {
-                memcpy(debug_name->name, "Test", 4);
-            });
+                memcpy(debug_name->name, "Test", 5);
+            }
+        );
 
         if (debugui_module)
         {

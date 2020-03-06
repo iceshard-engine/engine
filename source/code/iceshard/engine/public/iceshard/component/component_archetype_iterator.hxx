@@ -62,13 +62,6 @@ namespace iceshard::ecs
             }
         }
 
-        enum class EOperation
-        {
-            QueryFull,
-            EntityAddSingle,
-            EntityAddMany,
-        };
-
         class Result;
     private:
         core::allocator& _allocator;
@@ -95,6 +88,30 @@ namespace iceshard::ecs
                 _blocks
             );
         }
+
+        Result(ComponentQuery const& qry, iceshard::ecs::ArchetypeIndex& index, iceshard::Entity entity) noexcept
+            : _query{ qry }
+            , _index{ index }
+            , _archetype_block_count{ _query.allocator() }
+            , _archetype_component_offsets{ _query.allocator() }
+            , _blocks{ _query.allocator() }
+        {
+            iceshard::ComponentBlock* block = nullptr;
+
+            bool const query_successful = _index.query_instance(
+                entity,
+                _query.components(),
+                _archetype_component_offsets,
+                block
+            );
+
+            if (query_successful)
+            {
+                core::pod::array::push_back(_archetype_block_count, 1u);
+                core::pod::array::push_back(_blocks, block);
+            }
+        }
+
         ~Result() noexcept = default;
 
         Result(Result&&) noexcept = delete;
@@ -115,7 +132,7 @@ namespace iceshard::ecs
 
         auto archetype_component_offsets() const noexcept -> core::pod::Array<uint32_t> const&
         {
-            return _archetype_block_count;
+            return _archetype_component_offsets;
         }
 
         auto blocks() const noexcept -> core::pod::Array<uint32_t> const&
@@ -159,6 +176,12 @@ namespace iceshard::ecs
     auto query_index(Q const& qry, iceshard::ecs::ArchetypeIndex& index) noexcept -> typename Q::Result
     {
         return typename Q::Result{ qry, index };
+    }
+
+    template<typename Q>
+    auto query_entity(Q const& qry, iceshard::ecs::ArchetypeIndex& index, iceshard::Entity entity) noexcept -> typename Q::Result
+    {
+        return typename Q::Result{ qry, index, entity };
     }
 
     template<typename Qr, typename Fn>
@@ -215,43 +238,6 @@ namespace iceshard::ecs
                     QueryType::apply_for_each(std::forward<Fn>(fn), block->_entity_count, pointers);
                 }
             });
-    }
-
-    template<typename Q, typename Fn>
-    void for_entity(Q const& qry, iceshard::ecs::ArchetypeIndex& index, iceshard::Entity entity, Fn && fn) noexcept
-    {
-        using QueryType = Q;
-
-        constexpr uint32_t component_count = core::size(QueryType::ComponentIdentifiers);
-
-        core::pod::Array<uint32_t> offsets{ qry.allocator() };
-        iceshard::ComponentBlock* block = nullptr;
-        uint32_t block_index = 0;
-
-        bool const query_successful = index.query_instance(
-            entity,
-            qry.components(),
-            offsets,
-            block,
-            block_index
-        );
-
-        if (query_successful)
-        {
-            core::memory::stack_allocator_512 temp_alloc;
-            core::pod::Hash<void*> pointers{ temp_alloc };
-
-            for (uint32_t idx = 0; idx < component_count; ++idx)
-            {
-                core::pod::hash::set(
-                    pointers,
-                    QueryType::ComponentIdentifierHashes[idx],
-                    core::memory::utils::pointer_add(block, offsets[idx])
-                );
-            }
-
-            QueryType::apply_for_each(std::forward<Fn>(fn), 1, pointers);
-        }
     }
 
 } // namespace iceshard::ecs

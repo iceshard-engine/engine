@@ -60,8 +60,7 @@ namespace iceshard::ecs
             iceshard::Entity entity,
             core::pod::Array<core::stringid_type> const& components,
             core::pod::Array<uint32_t>& block_offsets,
-            iceshard::ComponentBlock*& block,
-            uint32_t& block_index
+            iceshard::ComponentBlock*& block
         ) noexcept = 0;
     };
 
