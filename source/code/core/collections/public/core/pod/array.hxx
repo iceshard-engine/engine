@@ -98,6 +98,9 @@ namespace core::pod
         template<typename T>
         void pop_back(Array<T>& a) noexcept;
 
+        template<typename T>
+        void create_view(Array<T>& a, T* data, uint32_t count) noexcept;
+
     } // namespace array
 
     template<typename T>

@@ -264,3 +264,11 @@ inline void core::pod::array::pop_back(Array<T> &a) noexcept
 {
     a._size--;
 }
+
+template<typename T>
+void core::pod::array::create_view(Array<T>& a, T* data, uint32_t count) noexcept
+{
+    a._data = data;
+    a._size = count;
+    a._capacity = count;
+}
