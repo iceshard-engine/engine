@@ -42,6 +42,16 @@ namespace iceshard
         return nullptr;
     }
 
+    auto IceshardWorldServiceProvider::archetype_index() noexcept -> iceshard::ecs::ArchetypeIndex*
+    {
+        return _engine_service_provider->archetype_index();
+    }
+
+    auto IceshardWorldServiceProvider::archetype_index() const noexcept -> iceshard::ecs::ArchetypeIndex const*
+    {
+        return _engine_service_provider->archetype_index();
+    }
+
     auto IceshardWorldServiceProvider::component_block_allocator() noexcept -> ComponentBlockAllocator*
     {
         return _engine_service_provider->component_block_allocator();

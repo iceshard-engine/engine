@@ -298,6 +298,7 @@ namespace iceshard::ecs
             while (block != nullptr)
             {
                 auto* next = block->_next;
+                block->_next = nullptr;
                 _block_allocator->release_block(block);
                 block = next;
             }
@@ -383,9 +384,20 @@ namespace iceshard::ecs
                 archetype_data->offsets[0] + archetype_data->sizes[0] * base_instance.index
             );
 
+            uint32_t const copy_count = (base_instance.block->_entity_count - base_instance.index);
+
             // Copy all identifiers to the first component which is always the `isc.entity` component
-            memcpy(dst_entity_data, entity_it, archetype_data->sizes[0] * base_instance.block->_entity_count);
-            entity_it += base_instance.block->_entity_count_max;
+            memcpy(dst_entity_data, entity_it, archetype_data->sizes[0] * copy_count);
+            entity_it += copy_count;
+
+            for (uint32_t entity_idx = 0; entity_idx < copy_count; ++entity_idx)
+            {
+                core::pod::hash::set(
+                    _entity_archetype,
+                    *(reinterpret_cast<uint64_t*>(dst_entity_data) + entity_idx),
+                    base_instance
+                );
+            }
         }
     }
 
@@ -682,6 +694,47 @@ namespace iceshard::ecs
                 }
             }
         }
+    }
+
+    bool IceShardArchetypeIndex::query_instance(
+        iceshard::Entity entity,
+        core::pod::Array<core::stringid_type> const& components,
+        core::pod::Array<uint32_t>& block_offsets,
+        iceshard::ComponentBlock*& block,
+        uint32_t& block_index
+    ) noexcept
+    {
+        auto const hash_entity = core::hash(entity);
+        bool const has_archetype_set = core::pod::hash::has(_entity_archetype, hash_entity);
+        if (has_archetype_set == false)
+        {
+            return false;
+        }
+
+        detail::ArchetypeInstance instance = core::pod::hash::get(
+            _entity_archetype,
+            hash_entity,
+            detail::ArchetypeInstance{}
+        );
+
+        bool const contains_components = detail::query_component_indices(
+            instance.archetype->components,
+            components,
+            block_offsets
+        );
+
+        if (contains_components)
+        {
+            for (auto& index : block_offsets)
+            {
+                index = instance.archetype->offsets[index] + instance.archetype->sizes[index] * instance.index;
+            }
+
+            block = instance.block;
+            block_index = instance.index;
+        }
+
+        return contains_components;
     }
 
     auto create_default_index(

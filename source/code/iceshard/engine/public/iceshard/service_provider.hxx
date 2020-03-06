@@ -9,6 +9,13 @@ namespace iceshard
 
     class EntityIndex;
 
+    namespace ecs
+    {
+
+        class ArchetypeIndex;
+
+    } // namespace ecs
+
     //! \brief Special interface for providing entity related services.
     class EntityServiceProvider
     {
@@ -20,6 +27,9 @@ namespace iceshard
 
         virtual auto entity_index() noexcept -> EntityIndex* = 0;
         virtual auto entity_index() const noexcept -> EntityIndex const* = 0;
+
+        virtual auto archetype_index() noexcept -> iceshard::ecs::ArchetypeIndex* = 0;
+        virtual auto archetype_index() const noexcept -> iceshard::ecs::ArchetypeIndex const* = 0;
     };
 
     class ComponentSystem;

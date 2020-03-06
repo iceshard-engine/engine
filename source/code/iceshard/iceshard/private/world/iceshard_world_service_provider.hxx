@@ -23,6 +23,9 @@ namespace iceshard
         auto entity_index() noexcept -> EntityIndex* override;
         auto entity_index() const noexcept -> EntityIndex const* override;
 
+        auto archetype_index() noexcept -> iceshard::ecs::ArchetypeIndex* override;
+        auto archetype_index() const noexcept -> iceshard::ecs::ArchetypeIndex const* override;
+
         auto component_block_allocator() noexcept -> ComponentBlockAllocator* override;
 
         //! \brief Checks if the given component system exists.

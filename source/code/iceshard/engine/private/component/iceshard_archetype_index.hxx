@@ -70,6 +70,14 @@ namespace iceshard::ecs
             core::pod::Array<iceshard::ComponentBlock*>& blocks
         ) noexcept override;
 
+        bool query_instance(
+            iceshard::Entity entity,
+            core::pod::Array<core::stringid_type> const& components,
+            core::pod::Array<uint32_t>& block_offsets,
+            iceshard::ComponentBlock*& block,
+            uint32_t& block_index
+        ) noexcept override;
+
     protected:
         auto get_or_create_archetype_extended(
             iceshard::ecs::ArchetypeData const* base_archetype,

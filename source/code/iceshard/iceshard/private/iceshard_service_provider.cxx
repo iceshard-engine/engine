@@ -1,4 +1,5 @@
 #include "iceshard_service_provider.hxx"
+#include <iceshard/component/component_archetype_index.hxx>
 
 namespace iceshard
 {
@@ -8,6 +9,7 @@ namespace iceshard
         , _entity_manager{ entity_manager_ptr }
         , _component_block_allocator{ alloc }
         , _world_component_systems{ alloc }
+        , _archetype_index{ iceshard::ecs::create_default_index(alloc, &_component_block_allocator) }
     { }
 
     auto IceshardServiceProvider::entity_manager() noexcept -> EntityManager*
@@ -28,6 +30,16 @@ namespace iceshard
     auto IceshardServiceProvider::entity_index() const noexcept -> EntityIndex const*
     {
         return nullptr;
+    }
+
+    auto IceshardServiceProvider::archetype_index() noexcept -> iceshard::ecs::ArchetypeIndex*
+    {
+        return _archetype_index.get();
+    }
+
+    auto IceshardServiceProvider::archetype_index() const noexcept -> iceshard::ecs::ArchetypeIndex const*
+    {
+        return _archetype_index.get();
     }
 
     auto IceshardServiceProvider::component_block_allocator() noexcept -> ComponentBlockAllocator*

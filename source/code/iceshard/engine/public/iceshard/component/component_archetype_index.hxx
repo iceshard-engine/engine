@@ -55,6 +55,14 @@ namespace iceshard::ecs
             core::pod::Array<uint32_t>& block_offsets,
             core::pod::Array<iceshard::ComponentBlock*>& blocks
         ) noexcept = 0;
+
+        virtual bool query_instance(
+            iceshard::Entity entity,
+            core::pod::Array<core::stringid_type> const& components,
+            core::pod::Array<uint32_t>& block_offsets,
+            iceshard::ComponentBlock*& block,
+            uint32_t& block_index
+        ) noexcept = 0;
     };
 
     auto create_default_index(
