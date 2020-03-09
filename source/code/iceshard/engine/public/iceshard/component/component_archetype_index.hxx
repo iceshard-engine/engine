@@ -2,6 +2,7 @@
 #include <core/allocator.hxx>
 #include <core/pointer.hxx>
 #include <core/cexpr/stringid.hxx>
+#include <core/data/view.hxx>
 #include <iceshard/entity/entity.hxx>
 #include <iceshard/component/component_block_allocator.hxx>
 
@@ -21,6 +22,12 @@ namespace iceshard::ecs
         virtual void add_entities(
             core::pod::Array<iceshard::Entity> const& entities,
             core::stringid_arg_type archetype
+        ) noexcept = 0;
+
+        virtual void add_entities(
+            core::pod::Array<iceshard::Entity> const& entities,
+            core::stringid_arg_type archetype,
+            core::pod::Array<core::data_view> const& source_blocks
         ) noexcept = 0;
 
         virtual void remove_entity(

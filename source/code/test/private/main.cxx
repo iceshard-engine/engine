@@ -396,24 +396,26 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
         core::pod::Array<iceshard::Entity> entities{ alloc };
         engine_instance->entity_manager()->create_many(1000, entities);
 
+        core::pod::Array<core::StackString<32>> entity_names{ alloc };
+        core::pod::array::resize(entity_names, 1000);
+
+        auto* it = core::pod::array::begin(entity_names);
+        for (uint32_t cidx = 0; cidx < 1000; ++cidx)
+        {
+            memset(it, '\0', sizeof(core::StackString<32>));
+            core::string::push_back(*it, "Custom");
+            it += 1;
+        }
+
         {
             core::pod::Array<core::stringid_type> comps{ alloc };
             core::pod::array::push_back(comps, DebugName::identifier);
 
-            arch_idx->add_entities(entities, arch_idx->get_archetype(comps));
-        }
+            core::pod::Array<core::data_view> datas{ alloc };
+            core::pod::array::push_back(datas, core::data_view{ core::pod::array::begin(entity_names), sizeof(core::StackString<32>) * 1000 });
 
-        iceshard::ecs::for_each_entity(
-            iceshard::ecs::query_index(debugname_qry, *arch_idx),
-            [&world](Entity* e, DebugName* dn) noexcept
-            {
-                if (e->e == world->entity())
-                {
-                    return;
-                }
-                core::string::push_back(dn->name, "Custom");
-            }
-        );
+            arch_idx->add_entities(entities, arch_idx->get_archetype(comps), datas);
+        }
 
 
         bool quit = false;

@@ -448,6 +448,101 @@ namespace iceshard::ecs
         }
     }
 
+    void IceShardArchetypeIndex::add_entities(
+        core::pod::Array<iceshard::Entity> const& entities,
+        core::stringid_arg_type archetype,
+        core::pod::Array<core::data_view> const& source_blocks
+    ) noexcept
+    {
+        auto const hash_archetype = core::hash(archetype);
+
+        iceshard::ecs::ArchetypeData* const archetype_data = core::pod::hash::get(
+            _archetype_data,
+            hash_archetype,
+            nullptr
+        );
+
+        IS_ASSERT(
+            archetype_data != nullptr,
+            "Archetype {} does not exist in the index",
+            archetype
+        );
+
+        uint32_t const requested_entity_count = core::pod::array::size(entities);
+        uint32_t const block_count = (requested_entity_count / archetype_data->block->_entity_count_max) + 1;
+
+        core::pod::Array<detail::ArchetypeInstance> instances{ _allocator };
+        core::pod::Array<uint32_t> counts{ _allocator };
+        core::pod::array::reserve(instances, block_count);
+        core::pod::array::reserve(counts, block_count);
+
+        detail::create_instances(archetype_data, requested_entity_count, instances, counts);
+
+        core::pod::Array<core::data_view> data_blocks{ _allocator };
+        data_blocks = source_blocks;
+
+        uint32_t const final_block_count = core::pod::array::size(instances);
+        iceshard::Entity const* entity_it = core::pod::array::begin(entities);
+
+        for (uint32_t idx = 0; idx < final_block_count; ++idx)
+        {
+            detail::ArchetypeInstance const& base_instance = instances[idx];
+
+            void* const dst_entity_data = core::memory::utils::pointer_add(
+                base_instance.block,
+                archetype_data->offsets[0] + archetype_data->sizes[0] * base_instance.index
+            );
+
+            uint32_t const copy_count = (base_instance.block->_entity_count - base_instance.index);
+
+            // Copy all identifiers to the first component which is always the `isc.entity` component
+            memcpy(dst_entity_data, entity_it, archetype_data->sizes[0] * copy_count);
+            entity_it += copy_count;
+
+            // Copy data from provided data block
+            uint32_t const dataptr_count = core::pod::array::size(data_blocks);
+            uint32_t const component_count = core::pod::array::size(archetype_data->components);
+
+            IS_ASSERT(
+                (component_count - 1) == dataptr_count,
+                "Invalid number od data blocks provided {}, expected {} blocks.",
+                dataptr_count,
+                (component_count - 1)
+            );
+
+            for (uint32_t cmp_idx = 1; cmp_idx < component_count; ++cmp_idx)
+            {
+                core::data_view& src_data = data_blocks[cmp_idx - 1];
+
+                void* const dst_data = core::memory::utils::pointer_add(
+                    base_instance.block,
+                    archetype_data->offsets[cmp_idx] + archetype_data->sizes[cmp_idx] * base_instance.index
+                );
+
+                uint32_t const data_total_size = archetype_data->sizes[cmp_idx] * copy_count;
+                IS_ASSERT(
+                    data_total_size <= src_data._size,
+                    "Missing data while creating {} entities",
+                    requested_entity_count
+                );
+
+                memcpy(dst_data, src_data._data, data_total_size);
+                src_data._data = core::memory::utils::pointer_add(src_data._data, data_total_size);
+                src_data._size -= data_total_size;
+            }
+
+            // Save entity archetype
+            for (uint32_t entity_idx = 0; entity_idx < copy_count; ++entity_idx)
+            {
+                core::pod::hash::set(
+                    _entity_archetype,
+                    *(reinterpret_cast<uint64_t*>(dst_entity_data) + entity_idx),
+                    base_instance
+                );
+            }
+        }
+    }
+
     void IceShardArchetypeIndex::remove_entity(
         iceshard::Entity entity
     ) noexcept

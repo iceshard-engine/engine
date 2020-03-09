@@ -37,6 +37,12 @@ namespace iceshard::ecs
             core::stringid_arg_type archetype
         ) noexcept override;
 
+        void add_entities(
+            core::pod::Array<iceshard::Entity> const& entities,
+            core::stringid_arg_type archetype,
+            core::pod::Array<core::data_view> const& source_blocks
+        ) noexcept override;
+
         void remove_entity(
             iceshard::Entity entity
         ) noexcept override;
