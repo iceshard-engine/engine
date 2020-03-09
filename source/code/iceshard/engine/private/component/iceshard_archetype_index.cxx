@@ -55,6 +55,26 @@ namespace iceshard::ecs
             uint32_t count;
         };
 
+        void clear_data(
+            ArchetypeDataOperation const& operation
+        ) noexcept
+        {
+            ArchetypeData const* const archetype_data = operation.dst_archetype;
+            uint32_t const component_count = core::pod::array::size(archetype_data->components);
+
+            // Iterate over each component in the source archetype
+            for (uint32_t component_idx = 0; component_idx < component_count; ++component_idx)
+            {
+                uint32_t const size = archetype_data->sizes[component_idx];
+                uint32_t const dst_offset = archetype_data->offsets[component_idx] + size * operation.dst_index;
+
+                void* const dst_ptr = core::memory::utils::pointer_add(operation.dst_block, dst_offset);
+
+                // Do a plain copy (we require components to be standard layout and trivially copyable)
+                memset(dst_ptr, '\0', size);
+            }
+        }
+
         void copy_data(
             ArchetypeDataOperation const& operation
         ) noexcept
@@ -99,21 +119,26 @@ namespace iceshard::ecs
                 for (; main_component_index < max_component_count; ++main_component_index)
                 {
                     // If components do not match, skip the copy
-                    if (src_archetype_data->components[main_component_index] != dst_archetype_data->components[sub_component_index])
+                    if (src_archetype_data->components[src_component_index] != dst_archetype_data->components[dst_component_index])
                     {
+                        uint32_t const size = dst_archetype_data->sizes[dst_component_index];
+                        uint32_t const offset = dst_archetype_data->offsets[dst_component_index] + size * operation.dst_index;
+                        void* const ptr = core::memory::utils::pointer_add(operation.dst_block, offset);
+
+                        memset(ptr, '\0', size);
                         continue;
                     }
 
                     IS_ASSERT(
-                        src_archetype_data->sizes[main_component_index] == dst_archetype_data->sizes[sub_component_index],
+                        src_archetype_data->sizes[src_component_index] == dst_archetype_data->sizes[dst_component_index],
                         "Mismatched data size {} != {} for components with the same ID. source: {}, destination: {}",
-                        src_archetype_data->sizes[main_component_index], dst_archetype_data->sizes[sub_component_index],
-                        src_archetype_data->components[main_component_index], dst_archetype_data->components[sub_component_index]
+                        src_archetype_data->sizes[src_component_index], dst_archetype_data->sizes[dst_component_index],
+                        src_archetype_data->components[src_component_index], dst_archetype_data->components[dst_component_index]
                     );
 
-                    uint32_t const size = src_archetype_data->sizes[main_component_index];
-                    uint32_t const src_offset = src_archetype_data->offsets[main_component_index] + size * operation.src_index;
-                    uint32_t const dst_offset = dst_archetype_data->offsets[sub_component_index] + size * operation.dst_index;
+                    uint32_t const size = src_archetype_data->sizes[src_component_index];
+                    uint32_t const src_offset = src_archetype_data->offsets[src_component_index] + size * operation.src_index;
+                    uint32_t const dst_offset = dst_archetype_data->offsets[dst_component_index] + size * operation.dst_index;
 
                     void* const src_ptr = core::memory::utils::pointer_add(operation.src_block, src_offset);
                     void* const dst_ptr = core::memory::utils::pointer_add(operation.dst_block, dst_offset);
@@ -331,6 +356,15 @@ namespace iceshard::ecs
             core::pod::hash::get(_archetype_data, hash_archetype, nullptr)
         );
 
+        {
+            detail::ArchetypeDataOperation clear_op;
+            clear_op.dst_archetype = instance.archetype;
+            clear_op.dst_block = instance.block;
+            clear_op.dst_index = instance.index;
+            clear_op.count = 1;
+            detail::clear_data(clear_op);
+        }
+
         detail::set_instance_entity(
             instance,
             entity
@@ -390,6 +424,19 @@ namespace iceshard::ecs
             memcpy(dst_entity_data, entity_it, archetype_data->sizes[0] * copy_count);
             entity_it += copy_count;
 
+            // Clear data for all other components
+            uint32_t const component_count = core::pod::array::size(archetype_data->components);
+            for (uint32_t cmp_idx = 1; cmp_idx < component_count; ++cmp_idx)
+            {
+                void* const dst_data = core::memory::utils::pointer_add(
+                    base_instance.block,
+                    archetype_data->offsets[cmp_idx] + archetype_data->sizes[cmp_idx] * base_instance.index
+                );
+
+                memset(dst_data, '\0', archetype_data->sizes[cmp_idx] * copy_count);
+            }
+
+            // Save entity archetype
             for (uint32_t entity_idx = 0; entity_idx < copy_count; ++entity_idx)
             {
                 core::pod::hash::set(
@@ -449,18 +496,18 @@ namespace iceshard::ecs
         ArchetypeData* const archetype = get_or_create_archetype_extended(src_instance.archetype, component, size, alignment);
         detail::ArchetypeInstance dst_instance = detail::create_instance(archetype);
 
-        detail::ArchetypeDataOperation copy_op;
-        copy_op.src_archetype = src_instance.archetype;
-        copy_op.src_block = src_instance.block;
-        copy_op.src_index = src_instance.index;
-        copy_op.dst_archetype = dst_instance.archetype;
-        copy_op.dst_block = dst_instance.block;
-        copy_op.dst_index = dst_instance.index;
-        copy_op.count = 1;
+        detail::ArchetypeDataOperation copy_or_clear_op;
+        copy_or_clear_op.src_archetype = src_instance.archetype;
+        copy_or_clear_op.src_block = src_instance.block;
+        copy_or_clear_op.src_index = src_instance.index;
+        copy_or_clear_op.dst_archetype = dst_instance.archetype;
+        copy_or_clear_op.dst_block = dst_instance.block;
+        copy_or_clear_op.dst_index = dst_instance.index;
+        copy_or_clear_op.count = 1;
 
-        if (copy_op.src_block != nullptr)
+        if (copy_or_clear_op.src_block != nullptr)
         {
-            detail::copy_data(copy_op);
+            detail::copy_data(copy_or_clear_op);
 
             auto const data_moved = detail::remove_instance(src_instance);
             if (data_moved)
@@ -475,6 +522,8 @@ namespace iceshard::ecs
         }
         else
         {
+            detail::clear_data(copy_or_clear_op);
+
             detail::set_instance_entity(
                 dst_instance,
                 entity

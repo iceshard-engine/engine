@@ -71,7 +71,7 @@ struct DebugName
 {
     static constexpr auto identifier = "isc.debug_name"_sid;
 
-    char name[32];
+    core::StackString<32> name;
 };
 
 class DebugNameUI : public debugui::DebugUI
@@ -100,7 +100,7 @@ public:
                 ),
                 [](Entity* e, DebugName* debug_name) noexcept
                 {
-                    ImGui::Text("%s <%llu>", debug_name->name, core::hash(e->e));
+                    ImGui::Text("%s <%llu>", core::string::begin(debug_name->name), core::hash(e->e));
                 }
             );
 
@@ -378,7 +378,7 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
             iceshard::ecs::query_entity(debugname_qry, *arch_idx, world->entity()),
             [](Entity*, DebugName* debug_name) noexcept
             {
-                memcpy(debug_name->name, "Test", 5);
+                core::string::push_back(debug_name->name, "Test");
             }
         );
 
@@ -411,8 +411,7 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
                 {
                     return;
                 }
-
-                snprintf(dn->name, 32, "Custom %llu", core::hash(e->e));
+                core::string::push_back(dn->name, "Custom");
             }
         );
 
