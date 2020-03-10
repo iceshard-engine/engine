@@ -4,6 +4,7 @@
 #include <core/stack_string.hxx>
 #include <core/string_view.hxx>
 #include <core/pod/array.hxx>
+#include <core/collections.hxx>
 #include <core/datetime/datetime.hxx>
 
 #include <core/cexpr/stringid.hxx>
@@ -73,6 +74,233 @@ struct DebugName
 
     core::StackString<32> name;
 };
+
+struct Position
+{
+    static constexpr auto identifier = "isc.position"_sid;
+
+    glm::vec3 pos;
+};
+
+struct Camera
+{
+    static constexpr auto identifier = "isc.camera"_sid;
+
+    float rotation;
+};
+
+struct Transform
+{
+    static constexpr auto identifier = "isc.transform"_sid;
+
+    glm::mat4 xform;
+};
+
+class StaticMeshRenderer
+{
+    using Buffer = iceshard::renderer::api::Buffer;
+    using BufferType = iceshard::renderer::api::BufferType;
+    using DataView = iceshard::renderer::api::DataView;
+
+    struct Vertice
+    {
+        glm::vec3 pos;
+        glm::vec3 color;
+    };
+
+public:
+    StaticMeshRenderer(
+        core::allocator& alloc,
+        iceshard::ecs::ArchetypeIndex& index,
+        render::RenderSystem& render_system
+    ) noexcept
+        : _allocator{ alloc }
+        , _index{ index }
+        , _xform_query{ _allocator }
+        , _render_system{ render_system }
+        , _vertices{ _allocator }
+        , _indices{ _allocator }
+    {
+        initialize();
+    }
+
+    void initialize() noexcept
+    {
+        core::pod::array::push_back(_vertices, { { 0.0f, 0.0f, 0.0f }, { 1.0f, 0.0f, 0.0f } });
+        core::pod::array::push_back(_vertices, { { 1.0f, 0.0f, 0.0f }, { 0.0f, 1.0f, 0.0f } });
+        core::pod::array::push_back(_vertices, { { 0.0f, 1.0f, 0.0f }, { 0.0f, 0.0f, 1.0f } });
+        core::pod::array::push_back(_vertices, { { 1.0f, 1.0f, 0.0f }, { 0.0f, 1.0f, 1.0f } });
+
+        static uint16_t indice_array[] = {
+                0, 1, 2,
+                1, 3, 2,
+                2, 1, 0,
+                2, 3, 1,
+        };
+
+        for (auto indice : indice_array)
+        {
+            core::pod::array::push_back(_indices, indice);
+        }
+
+        _buffers[0] = _render_system.create_buffer(BufferType::VertexBuffer, 1024);
+        _buffers[1] = _render_system.create_buffer(BufferType::VertexBuffer, 1024);
+        _buffers[2] = _render_system.create_buffer(BufferType::IndexBuffer, 1024);
+
+        {
+            Buffer mapped_buffers[] = {
+                _buffers[0],
+                _buffers[2],
+            };
+            DataView mapped_buffer_views[core::size(mapped_buffers)];
+
+            iceshard::renderer::api::render_api_instance->buffer_array_map_data(
+                mapped_buffers,
+                mapped_buffer_views,
+                core::size(mapped_buffers)
+            );
+
+            memcpy(mapped_buffer_views[0].data, core::pod::array::begin(_vertices), core::pod::array::size(_vertices) * sizeof(Vertice));
+            memcpy(mapped_buffer_views[1].data, core::pod::array::begin(_indices), core::pod::array::size(_indices) * sizeof(uint16_t));
+
+            iceshard::renderer::api::render_api_instance->buffer_array_unmap_data(
+                mapped_buffers,
+                core::size(mapped_buffers)
+            );
+        }
+    }
+
+    void update(iceshard::renderer::CommandBuffer cb) noexcept
+    {
+        {
+            DataView mapped_buffer_view;
+
+            iceshard::renderer::api::render_api_instance->buffer_array_map_data(
+                &_buffers[1],
+                &mapped_buffer_view,
+                1
+            );
+
+            glm::mat4* it = reinterpret_cast<glm::mat4*>(mapped_buffer_view.data);
+
+            uint32_t model_count = 0;
+            iceshard::ecs::for_each_entity(
+                iceshard::ecs::query_index(_xform_query, _index),
+                [&](Transform* tform) noexcept
+                {
+                    *it = tform->xform;
+                    model_count += 1;
+                    it += 1;
+                }
+            );
+
+            iceshard::renderer::api::render_api_instance->buffer_array_unmap_data(
+                &_buffers[1],
+                1
+            );
+
+            core::pod::Array<Buffer> buffer_view{ core::memory::globals::null_allocator() };
+            core::pod::array::create_view(buffer_view, _buffers, 2);
+
+            using namespace iceshard::renderer::commands;
+
+            bind_index_buffer(cb, _buffers[2]);
+            bind_vertex_buffers(cb, buffer_view);
+            draw_indexed(cb, 12, model_count, 0, 0, 0);
+        }
+    }
+
+private:
+    core::allocator& _allocator;
+    iceshard::ecs::ArchetypeIndex& _index;
+    iceshard::ecs::ComponentQuery<Transform*> _xform_query;
+    render::RenderSystem& _render_system;
+
+    core::pod::Array<Vertice> _vertices;
+    core::pod::Array<uint16_t> _indices;
+
+    Buffer _buffers[3];
+};
+
+class CameraManager
+{
+public:
+    CameraManager(
+        core::allocator& alloc,
+        iceshard::ecs::ArchetypeIndex& index
+    ) noexcept
+        : _allocator{ alloc }
+        , _index{ index }
+        , _camera_query{ _allocator }
+    { }
+
+    void set_default_camera(iceshard::Entity entity) noexcept
+    {
+        _current_camera = entity;
+    }
+
+    void update([[maybe_unused]] core::MessageBuffer const& messages, iceshard::renderer::Buffer uniform_buffer) noexcept
+    {
+        static float rotation_delta = 0.0f;
+        core::message::filter<input::message::MouseMotion>(messages, [&](input::message::MouseMotion const& motion) noexcept
+            {
+                int const ddx = 1280 / 2;
+                int const dx = motion.pos.x / ddx;
+
+                if (dx < 1.0)
+                {
+                    rotation_delta = 3.0f;
+                }
+                else
+                {
+                    rotation_delta = -3.0f;
+                }
+            });
+
+        iceshard::ecs::for_each_entity(
+            iceshard::ecs::query_entity(
+                _camera_query, _index, _current_camera
+            ),
+            [&](Position* pos, Camera* camera) noexcept
+            {
+                glm::mat4 view = glm::lookAt(
+                    pos->pos,
+                    glm::vec3(0, 0, 0),
+                    glm::vec3(0, -1, 0)
+                );
+
+                camera->rotation += rotation_delta;
+                view = glm::rotate(view, glm::radians(camera->rotation), glm::vec3{ 0.f, 1.0f, 0.f });
+
+                glm::mat4 mvp = CameraManager::Clip * CameraManager::Projection * view;
+
+                iceshard::renderer::api::DataView data_view;
+                iceshard::renderer::api::render_api_instance->buffer_array_map_data(&uniform_buffer, &data_view, 1);
+                memcpy(data_view.data, &mvp, sizeof(mvp));
+                iceshard::renderer::api::render_api_instance->buffer_array_unmap_data(&uniform_buffer, 1);
+            }
+        );
+    }
+
+private:
+    core::allocator& _allocator;
+    iceshard::ecs::ArchetypeIndex& _index;
+    iceshard::ecs::ComponentQuery<Position*, Camera*> _camera_query;
+
+    iceshard::Entity _current_camera;
+
+    static glm::mat4 const Projection;
+    static glm::mat4 const Clip;
+};
+
+
+glm::mat4 const CameraManager::Projection = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 100.0f);
+glm::mat4 const CameraManager::Clip = glm::mat4(
+    1.0f, 0.0f, 0.0f, 0.0f,
+    0.0f, -1.0f, 0.0f, 0.0f,
+    0.0f, 0.0f, 0.5f, 0.0f,
+    0.0f, 0.0f, 0.5f, 1.0f
+);
 
 class DebugNameUI : public debugui::DebugUI
 {
@@ -191,41 +419,8 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
         // Prepare the render system
         auto* render_system = engine_instance->render_system();
 
-        static auto projection = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 100.0f);
-        static auto cam_pos = glm::vec3(0.0f, 0.0f, -10.0f);
-        static auto clip = glm::mat4(
-            1.0f, 0.0f, 0.0f, 0.0f,
-            0.0f, -1.0f, 0.0f, 0.0f,
-            0.0f, 0.0f, 0.5f, 0.0f,
-            0.0f, 0.0f, 0.5f, 1.0f
-        );
-
-        glm::mat4 MVP{ 1 };
-
         [[maybe_unused]]
-        auto uniform_buffer = render_system->create_buffer(iceshard::renderer::api::BufferType::UniformBuffer, sizeof(MVP));
-
-        static float deg = 0.0f;
-        {
-            auto new_view = glm::lookAt(
-                cam_pos, // Camera is at (-5,3,-10), in World Space
-                glm::vec3(0, 0, 0),      // and looks at the origin
-                glm::vec3(0, -1, 0)      // Head is up (set to 0,-1,0 to look upside-down)
-            );
-
-            deg += 3.0f;
-            new_view = glm::rotate(new_view, glm::radians(deg), glm::vec3{ 0.f, 1.f, 0.f });
-
-            if (deg >= 360.0f)
-                deg = 0.0f;
-
-            MVP = clip * projection * new_view;
-
-            iceshard::renderer::api::DataView data_view;
-            iceshard::renderer::api::render_api_instance->buffer_array_map_data(&uniform_buffer, &data_view, 1);
-            memcpy(data_view.data, &MVP, sizeof(MVP));
-            iceshard::renderer::api::render_api_instance->buffer_array_unmap_data(&uniform_buffer, 1);
-        }
+        auto uniform_buffer = render_system->create_buffer(iceshard::renderer::api::BufferType::UniformBuffer, sizeof(glm::mat4));
 
         using iceshard::renderer::RenderResource;
         using iceshard::renderer::RenderResourceType;
@@ -235,7 +430,7 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
         resources[0].type = RenderResourceType::ResUniform;
         resources[0].handle.uniform.buffer = uniform_buffer;
         resources[0].handle.uniform.offset = 0;
-        resources[0].handle.uniform.range = sizeof(MVP);
+        resources[0].handle.uniform.range = sizeof(glm::mat4);
         resources[0].binding = 0;
 
         [[maybe_unused]]
@@ -296,43 +491,6 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
         using iceshard::renderer::api::BufferType;
         using iceshard::renderer::api::DataView;
 
-        core::pod::Array<Buffer> buffs{ alloc };
-        core::pod::array::push_back(buffs, render_system->create_buffer(BufferType::VertexBuffer, 1024));
-        core::pod::array::push_back(buffs, render_system->create_buffer(BufferType::VertexBuffer, 1024));
-        auto idx = render_system->create_buffer(BufferType::IndexBuffer, 1024);
-
-        uint32_t indice_count = 0;
-        {
-            struct IsVertice {
-                glm::vec3 pos;
-                glm::vec3 color;
-            } vertices[] = {
-                { { 0.0f, 0.0f, 0.0f }, { 1.0f, 0.0f, 0.0f } },
-                { { 1.0f, 0.0f, 0.0f }, { 0.0f, 1.0f, 0.0f } },
-                { { 0.0f, 1.0f, 0.0f }, { 0.0f, 0.0f, 1.0f } },
-                { { 1.0f, 1.0f, 0.0f }, { 0.0f, 1.0f, 1.0f } },
-            };
-            uint16_t indices[] = {
-                0, 1, 2,
-                1, 3, 2,
-                2, 1, 0,
-                2, 3, 1,
-            };
-            indice_count = core::size(indices);
-            glm::mat4 model = glm::translate(glm::mat4{ 1 }, glm::vec3{ -0.5f, 0.0f, 0.0f });
-
-            Buffer bfs[] = {
-                buffs[0], buffs[1], idx
-            };
-            DataView views[core::size(bfs)];
-
-            iceshard::renderer::api::render_api_instance->buffer_array_map_data(bfs, views, core::size(bfs));
-            memcpy(views[0].data, vertices, sizeof(vertices));
-            memcpy(views[1].data, &model, sizeof(model));
-            memcpy(views[2].data, indices, sizeof(indices));
-            iceshard::renderer::api::render_api_instance->buffer_array_unmap_data(bfs, core::size(bfs));
-        }
-
         auto pp_buff = render_system->create_buffer(BufferType::VertexBuffer, 1024);
         core::pod::Array<Buffer> pp_buffs{ alloc };
         core::pod::array::push_back(pp_buffs, pp_buff);
@@ -370,17 +528,7 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
         iceshard::World* world = engine_instance->world_manager()->create_world("test-world"_sid);
 
         auto arch_idx = world->service_provider()->archetype_index();
-        arch_idx->add_component(world->entity(), DebugName::identifier, sizeof(DebugName), alignof(DebugName));
-
-        iceshard::ecs::ComponentQuery<Entity*, DebugName*> debugname_qry{ alloc };
-
-        iceshard::ecs::for_each_entity(
-            iceshard::ecs::query_entity(debugname_qry, *arch_idx, world->entity()),
-            [](Entity*, DebugName* debug_name) noexcept
-            {
-                core::string::push_back(debug_name->name, "Test");
-            }
-        );
+        arch_idx->add_component(world->entity(), DebugName{ "Test World" });
 
         if (debugui_module)
         {
@@ -392,31 +540,21 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
             debugui_module->context().register_ui(debugname_ui.get());
         }
 
+        CameraManager camera_manager{ alloc, *arch_idx };
+        StaticMeshRenderer static_mesh_render{ alloc, *arch_idx, *render_system };
+
+        iceshard::Entity camera_entity = engine_instance->entity_manager()->create();
+        arch_idx->add_component(camera_entity, Position{ { 0.0f, 0.0f, -10.0f } });
+        arch_idx->add_component(camera_entity, Camera{ 0.0f });
+        camera_manager.set_default_camera(camera_entity);
 
         core::pod::Array<iceshard::Entity> entities{ alloc };
-        engine_instance->entity_manager()->create_many(1000, entities);
+        engine_instance->entity_manager()->create_many(10, entities);
 
-        core::pod::Array<core::StackString<32>> entity_names{ alloc };
-        core::pod::array::resize(entity_names, 1000);
-
-        auto* it = core::pod::array::begin(entity_names);
-        for (uint32_t cidx = 0; cidx < 1000; ++cidx)
-        {
-            memset(it, '\0', sizeof(core::StackString<32>));
-            core::string::push_back(*it, "Custom");
-            it += 1;
-        }
-
-        {
-            core::pod::Array<core::stringid_type> comps{ alloc };
-            core::pod::array::push_back(comps, DebugName::identifier);
-
-            core::pod::Array<core::data_view> datas{ alloc };
-            core::pod::array::push_back(datas, core::data_view{ core::pod::array::begin(entity_names), sizeof(core::StackString<32>) * 1000 });
-
-            arch_idx->add_entities(entities, arch_idx->get_archetype(comps), datas);
-        }
-
+        arch_idx->add_component(entities[0], Transform{ glm::translate(glm::mat4{ 1 }, glm::vec3{ 0.5f, 0.0f, -1.0f }) });
+        arch_idx->add_component(entities[0], DebugName{ "Test entity 1" });
+        arch_idx->add_component(entities[1], Transform{ glm::translate(glm::mat4{ 1 }, glm::vec3{ -0.5f, 1.5f, -1.0f }) });
+        arch_idx->add_component(entities[1], DebugName{ "Test entity 2" });
 
         bool quit = false;
         while (quit == false)
@@ -435,11 +573,9 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
                 auto cb = render_system->acquire_command_buffer(RenderPassStage::Geometry);
                 bind_pipeline(cb, pipeline);
                 bind_resource_set(cb, resource_set);
-                bind_index_buffer(cb, idx);
-                bind_vertex_buffers(cb, buffs);
                 set_viewport(cb, viewport.x, viewport.y);
                 set_scissor(cb, viewport.x, viewport.y);
-                draw_indexed(cb, indice_count, 1, 0, 0, 0);
+                static_mesh_render.update(cb);
                 render_system->submit_command_buffer(cb);
             }
 
@@ -470,24 +606,7 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
             }
 
             {
-                auto new_view = glm::lookAt(
-                    cam_pos, // Camera is at (-5,3,-10), in World Space
-                    glm::vec3(0, 0, 0),      // and looks at the origin
-                    glm::vec3(0, -1, 0)      // Head is up (set to 0,-1,0 to look upside-down)
-                );
-
-                deg += 3.0f;
-                new_view = glm::rotate(new_view, glm::radians(deg), glm::vec3{ 0.f, 1.f, 0.f });
-
-                if (deg >= 360.0f)
-                    deg = 0.0f;
-
-                MVP = clip * projection * new_view;
-
-                iceshard::renderer::api::DataView data_view;
-                iceshard::renderer::api::render_api_instance->buffer_array_map_data(&uniform_buffer, &data_view, 1);
-                memcpy(data_view.data, &MVP, sizeof(MVP));
-                iceshard::renderer::api::render_api_instance->buffer_array_unmap_data(&uniform_buffer, 1);
+                camera_manager.update(frame.messages(), uniform_buffer);
             }
 
             engine_instance->next_frame();
