@@ -54,6 +54,14 @@ namespace iceshard::ecs
             uint32_t alignment
         ) noexcept override;
 
+        void add_component(
+            iceshard::Entity entity,
+            core::stringid_arg_type component,
+            uint32_t size,
+            uint32_t alignment,
+            core::data_view initial_data
+        ) noexcept override;
+
         void remove_component(
             iceshard::Entity entity,
             core::stringid_arg_type component

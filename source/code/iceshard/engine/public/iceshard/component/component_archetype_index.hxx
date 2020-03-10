@@ -41,6 +41,26 @@ namespace iceshard::ecs
             uint32_t alignment
         ) noexcept = 0;
 
+        virtual void add_component(
+            iceshard::Entity entity,
+            core::stringid_arg_type component,
+            uint32_t size,
+            uint32_t alignment,
+            core::data_view initial_data
+        ) noexcept = 0;
+
+        template<typename T>
+        void add_component(iceshard::Entity entity, T const& value) noexcept
+        {
+            add_component(
+                entity,
+                T::identifier,
+                sizeof(T),
+                alignof(T),
+                core::data_view{ &value, sizeof(T) }
+            );
+        }
+
         virtual void remove_component(
             iceshard::Entity entity,
             core::stringid_arg_type component

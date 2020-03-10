@@ -152,6 +152,30 @@ namespace iceshard::ecs
             }
         }
 
+        void initialize_component_data(
+            detail::ArchetypeInstance instance,
+            uint32_t component_index,
+            core::data_view data
+        ) noexcept
+        {
+            ArchetypeData const* const archetype_data = instance.archetype;
+            iceshard::ComponentBlock* block = instance.block;
+
+            IS_ASSERT(
+                core::pod::array::size(archetype_data->components) > component_index,
+                "Component index {} ouf-of-range [0, {})",
+                component_index,
+                core::pod::array::size(archetype_data->components)
+            );
+
+            void* const ptr = core::memory::utils::pointer_add(
+                block,
+                archetype_data->offsets[component_index] + archetype_data->sizes[component_index] * instance.index
+            );
+
+            memcpy(ptr, data.data(), data.size());
+        }
+
         void create_instances(
             ArchetypeData* archetype_data,
             uint32_t count,
@@ -580,6 +604,17 @@ namespace iceshard::ecs
         uint32_t alignment
     ) noexcept
     {
+        add_component(entity, component, size, alignment, core::data_view{ });
+    }
+
+    void IceShardArchetypeIndex::add_component(
+        iceshard::Entity entity,
+        core::stringid_arg_type component,
+        uint32_t size,
+        uint32_t alignment,
+        core::data_view initial_data
+    ) noexcept
+    {
         auto const hash_entity = core::hash(entity);
 
         detail::ArchetypeInstance const src_instance = core::pod::hash::get(
@@ -614,11 +649,21 @@ namespace iceshard::ecs
                     src_instance
                 );
             }
+
+            detail::initialize_component_data(
+                dst_instance,
+                core::pod::array::size(archetype->components) - 1,
+                initial_data
+            );
         }
         else
         {
             detail::clear_data(copy_or_clear_op);
-
+            detail::initialize_component_data(
+                dst_instance,
+                core::pod::array::size(archetype->components) - 1,
+                initial_data
+            );
             detail::set_instance_entity(
                 dst_instance,
                 entity
