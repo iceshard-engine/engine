@@ -293,7 +293,6 @@ private:
     static glm::mat4 const Clip;
 };
 
-
 glm::mat4 const CameraManager::Projection = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 100.0f);
 glm::mat4 const CameraManager::Clip = glm::mat4(
     1.0f, 0.0f, 0.0f, 0.0f,
@@ -301,6 +300,68 @@ glm::mat4 const CameraManager::Clip = glm::mat4(
     0.0f, 0.0f, 0.5f, 0.0f,
     0.0f, 0.0f, 0.5f, 1.0f
 );
+
+class PostProcessSystem
+{
+    using Buffer = iceshard::renderer::Buffer;
+    using BufferType = iceshard::renderer::api::BufferType;
+    using DataView = iceshard::renderer::api::DataView;
+
+    struct Vertice
+    {
+        glm::vec2 pos;
+        glm::vec2 uv;
+    };
+
+public:
+    PostProcessSystem(
+        core::allocator& alloc,
+        render::RenderSystem& render_system
+    ) noexcept
+        : _allocator{ alloc }
+        , _render_system{ render_system  }
+    {
+        _buffers[0] = _render_system.create_buffer(BufferType::IndexBuffer, 1024);
+        _buffers[1] = _render_system.create_buffer(BufferType::VertexBuffer, 1024);
+
+        DataView views[2];
+
+        iceshard::renderer::api::render_api_instance->buffer_array_map_data(_buffers, views, core::size(_buffers));
+        memcpy(views[0].data, PostProcessIndices, sizeof(PostProcessIndices));
+        memcpy(views[1].data, PostProcessVertices, sizeof(PostProcessVertices));
+        iceshard::renderer::api::render_api_instance->buffer_array_unmap_data(_buffers, core::size(_buffers));
+    }
+
+    void update(iceshard::renderer::CommandBuffer cb) noexcept
+    {
+        iceshard::renderer::commands::bind_index_buffer(cb, _buffers[0]);
+
+        core::pod::Array<Buffer> buffer_views{ core::memory::globals::null_allocator() };
+        core::pod::array::create_view(buffer_views, &_buffers[1], 1);
+
+        iceshard::renderer::commands::bind_vertex_buffers(cb, buffer_views);
+        iceshard::renderer::commands::draw_indexed(cb, 3, 1, 0, 0, 0);
+    }
+
+private:
+    core::allocator& _allocator;
+    render::RenderSystem& _render_system;
+
+    iceshard::renderer::Buffer _buffers[2];
+
+    static Vertice PostProcessVertices[3];
+    static uint16_t PostProcessIndices[3];
+};
+
+PostProcessSystem::Vertice PostProcessSystem::PostProcessVertices[3] = {
+    { { -1.0f, -1.0f }, { 0.0f, 0.0f, } },
+    { { 3.0f, -1.0f }, { 2.0f, 0.0f, } },
+    { { -1.0f, 3.0f }, { 0.0f, 2.0f, } },
+};
+
+uint16_t PostProcessSystem::PostProcessIndices[3] = {
+    0, 1, 2,
+};
 
 class DebugNameUI : public debugui::DebugUI
 {
@@ -491,35 +552,6 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
         using iceshard::renderer::api::BufferType;
         using iceshard::renderer::api::DataView;
 
-        auto pp_buff = render_system->create_buffer(BufferType::VertexBuffer, 1024);
-        core::pod::Array<Buffer> pp_buffs{ alloc };
-        core::pod::array::push_back(pp_buffs, pp_buff);
-
-        auto pp_idx = render_system->create_buffer(BufferType::IndexBuffer, 1024);
-        {
-            struct PpVertice {
-                glm::vec2 pos;
-                glm::vec2 uv;
-            } vertices[] = {
-                { { -1.0f, -1.0f }, { 0.0f, 0.0f, } },
-                { { 3.0f, -1.0f }, { 2.0f, 0.0f, } },
-                { { -1.0f, 3.0f }, { 0.0f, 2.0f, } },
-            };
-            uint16_t indices[] = {
-                0, 1, 2,
-            };
-
-            Buffer bfs[] = {
-                pp_buff, pp_idx
-            };
-            DataView views[core::size(bfs)];
-
-            iceshard::renderer::api::render_api_instance->buffer_array_map_data(bfs, views, core::size(bfs));
-            memcpy(views[0].data, vertices, sizeof(vertices));
-            memcpy(views[1].data, indices, sizeof(indices));
-            iceshard::renderer::api::render_api_instance->buffer_array_unmap_data(bfs, core::size(bfs));
-        }
-
         fmt::print("IceShard engine revision: {}\n", engine_instance->revision());
 
         glm::uvec2 viewport{ 1280, 720 };
@@ -542,6 +574,7 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
 
         CameraManager camera_manager{ alloc, *arch_idx };
         StaticMeshRenderer static_mesh_render{ alloc, *arch_idx, *render_system };
+        PostProcessSystem post_process{ alloc, *render_system };
 
         iceshard::Entity camera_entity = engine_instance->entity_manager()->create();
         arch_idx->add_component(camera_entity, Position{ { 0.0f, 0.0f, -10.0f } });
@@ -586,11 +619,9 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
                 auto cb = render_system->acquire_command_buffer(RenderPassStage::PostProcess);
                 bind_pipeline(cb, pp_pipeline);
                 bind_resource_set(cb, pp_resource_set);
-                bind_index_buffer(cb, pp_idx);
-                bind_vertex_buffers(cb, pp_buffs);
                 set_viewport(cb, viewport.x, viewport.y);
                 set_scissor(cb, viewport.x, viewport.y);
-                draw_indexed(cb, 3, 1, 0, 0, 0);
+                post_process.update(cb);
                 render_system->submit_command_buffer(cb);
             }
 
