@@ -11,13 +11,13 @@ class GenerateCommand extends Command
 
         os.mkdir "build" unless os.isdir "build"
         os.chdir "build", ->
-            unless false and os.isfile "detected_toolsets.bff"
+            unless os.isfile "detected_toolsets.bff"
                 gen = FastBuildGenerator "detected_toolsets.bff"
                 detect_compilers gen
                 detect_platforms gen
                 gen\close!
 
-            unless false and os.isfile "fbuild.bff"
+            unless os.isfile "fbuild.bff"
                 gen = FastBuildGenerator "fbuild.bff"
 
                 gen\variables { { 'WorkspaceRoot', workspace_root } }

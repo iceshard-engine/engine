@@ -1,9 +1,12 @@
 import Command, option, flag from require "ice.command"
 import FastBuild from require "ice.tools.fastbuild"
 import FastBuildGenerator from require "ice.generators.fastbuild"
+import Conan from require "ice.tools.conan"
+
 import detect_compilers, detect_platforms from require "tools.utils.compilers"
 
 class BuildCommand extends Command
+    @conan = Conan!
     @fbuild = FastBuild!
 
     @arguments {
@@ -19,14 +22,21 @@ class BuildCommand extends Command
         workspace_root = os.cwd!\gsub '\\', '/'
 
         os.mkdir "build" unless os.isdir "build"
+
+        unless os.isfile "build/tools/conaninfo.txt"
+            @@conan\install conanfile:'tools', update:args.update, install_folder:'build/tools'
+
+        unless os.isfile "build/conaninfo.txt"
+            @@conan\install conanfile:'source', update:args.update, install_folder:'build'
+
         os.chdir "build", ->
-            unless false and os.isfile "detected_toolsets.bff"
+            unless os.isfile "detected_toolsets.bff"
                 gen = FastBuildGenerator "detected_toolsets.bff"
                 detect_compilers gen
                 detect_platforms gen
                 gen\close!
 
-            unless false and os.isfile "fbuild.bff"
+            unless os.isfile "fbuild.bff"
                 gen = FastBuildGenerator "fbuild.bff"
 
                 gen\variables { { 'WorkspaceRoot', workspace_root } }
