@@ -15,14 +15,21 @@ namespace core::pod
 
         //! \brief Checks for a key in the hash.
         template<typename T>
-        bool has(const Hash<T> &h, uint64_t key) noexcept;
+        bool has(Hash<T> const& h, uint64_t key) noexcept;
 
         //! \brief Returns the value stored for the specified key.
         //!
         //! \details Returns the default value if the key does not
         //!     exist in the hash.
         template<typename T>
-        auto get(const Hash<T> &h, uint64_t key, const T &fallback_value) noexcept -> const T &;
+        auto get(Hash<T> const& h, uint64_t key, T const& fallback_value) noexcept -> T const&;
+
+        //! \brief Returns the value stored for the specified key.
+        //!
+        //! \details Returns the default value if the key does not
+        //!     exist in the hash.
+        template<typename T>
+        auto get(Hash<T*> const& h, uint64_t key, nullptr_t) noexcept -> T*;
 
         //! \brief Sets the value for the key.
         template<typename T>

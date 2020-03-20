@@ -1,7 +1,16 @@
-.Name = 'render_system'
-.Kind = .Kind_StaticLib
-
-.Public =
+.Project =
 [
-    .Imports = { 'asset_system' }
+    .Name = 'render_system'
+    .Kind = .Kind_StaticLib
+    .Group = 'Systems'
+
+    .BaseDir = '$WorkspaceCodeDir$/systems/render_system'
+
+    .Public =
+    [
+        .Uses = {
+            'asset_system'
+        }
+    ]
 ]
+.Projects + .Project

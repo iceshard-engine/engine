@@ -1,3 +1,4 @@
+#pragma once
 #include <iceshard/frame.hxx>
 
 #include <core/allocator.hxx>

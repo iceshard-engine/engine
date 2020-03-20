@@ -23,6 +23,11 @@ namespace iceshard::renderer::vulkan
             {
             }
 
+            auto get_image_view(uint32_t index) noexcept -> VkImageView
+            {
+                return _images[index].image_view;
+            }
+
             auto native_handle() noexcept
             {
                 return _vk_framebuffer;
@@ -69,6 +74,30 @@ namespace iceshard::renderer::vulkan
 
     } // namespace detail
 
+    auto framebuffer_texture_from_handle(iceshard::renderer::api::Texture handle) noexcept -> VulkanFramebufferTexture
+    {
+        switch (handle)
+        {
+        case iceshard::renderer::api::v1_1::types::Texture::Invalid:
+            break;
+        case iceshard::renderer::api::v1_1::types::Texture::Attachment0:
+            return VulkanFramebufferTexture::Attachment0;
+        case iceshard::renderer::api::v1_1::types::Texture::Attachment1:
+            return VulkanFramebufferTexture::Attachment1;
+        case iceshard::renderer::api::v1_1::types::Texture::Attachment2:
+            return VulkanFramebufferTexture::Attachment2;
+        case iceshard::renderer::api::v1_1::types::Texture::Attachment3:
+            return VulkanFramebufferTexture::Attachment3;
+        }
+        IS_ASSERT(false, "Invalid enum value!");
+        std::abort();
+    }
+
+    auto framebuffer_image(VulkanFramebuffer framebuffer, VulkanFramebufferTexture texture) noexcept -> VkImageView
+    {
+        return detail::VulkanFramebufferHandle{ framebuffer }.object->get_image_view(static_cast<uint32_t>(texture));
+    }
+
     auto native_handle(VulkanFramebuffer framebuffer) noexcept -> VkFramebuffer
     {
         return detail::VulkanFramebufferHandle{ framebuffer }.object->native_handle();
@@ -109,6 +138,21 @@ namespace iceshard::renderer::vulkan
                             framebuffer_extent,
                             rp_image.format,
                             VkImageUsageFlagBits::VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT
+                        )
+                    );
+                }
+                else if (rp_image.type == RenderPassImageType::ColorImage)
+                {
+                    // Create dept-stencil image.
+                    core::pod::array::push_back(
+                        framebuffer_images,
+                        create_framebuffer_image(
+                            devices,
+                            framebuffer_extent,
+                            rp_image.format,
+                            VkImageUsageFlagBits::VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT
+                            | VkImageUsageFlagBits::VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT
+                            | VkImageUsageFlagBits::VK_IMAGE_USAGE_SAMPLED_BIT
                         )
                     );
                 }

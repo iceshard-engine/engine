@@ -3,8 +3,6 @@
 #include <core/allocator.hxx>
 #include <core/pod/hash.hxx>
 
-#include "iceshard_world.hxx"
-
 namespace iceshard
 {
 
@@ -16,11 +14,19 @@ namespace iceshard
             iceshard::ServiceProvider* engine_service_provider
         ) noexcept;
 
-        ~IceshardWorldServiceProvider() noexcept override = default;
+        ~IceshardWorldServiceProvider() noexcept override;
 
         //! \brief Engine entity manager.
         auto entity_manager() noexcept -> EntityManager* override;
         auto entity_manager() const noexcept -> const EntityManager* override;
+
+        auto entity_index() noexcept -> EntityIndex* override;
+        auto entity_index() const noexcept -> EntityIndex const* override;
+
+        auto archetype_index() noexcept -> iceshard::ecs::ArchetypeIndex* override;
+        auto archetype_index() const noexcept -> iceshard::ecs::ArchetypeIndex const* override;
+
+        auto component_block_allocator() noexcept -> ComponentBlockAllocator* override;
 
         //! \brief Checks if the given component system exists.
         bool has_component_system(core::stringid_arg_type component_system_name) const noexcept override;
@@ -31,7 +37,13 @@ namespace iceshard
         auto component_system(core::stringid_arg_type component_system_name) noexcept -> ComponentSystem* override;
         auto component_system(core::stringid_arg_type component_system_name) const noexcept -> const ComponentSystem* override;
 
+    public:
+        //! \brief Adds a component system to the service provider.
+        void add_component_system(core::stringid_arg_type component_system_name, ComponentSystem* component_sys) noexcept;
+
     private:
+        core::allocator& _allocator;
+
         iceshard::ServiceProvider* const _engine_service_provider;
 
         core::pod::Hash<ComponentSystem*> _world_component_systems;

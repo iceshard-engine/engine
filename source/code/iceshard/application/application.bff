@@ -1,9 +1,16 @@
-.Name = 'application'
-.Kind = .Kind_StaticLib
-
-.Public =
+.Project =
 [
-    .Imports = {
-        'resource_system'
-    }
+    .Name = 'application'
+    .Kind = .Kind_StaticLib
+    .Group = 'Engine'
+
+    .BaseDir = '$WorkspaceCodeDir$/iceshard/application'
+
+    .Public =
+    [
+        .Uses = {
+            'resource_system'
+        }
+    ]
 ]
+.Projects + .Project

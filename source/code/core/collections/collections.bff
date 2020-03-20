@@ -1,10 +1,17 @@
-.Name = 'collections'
-.Kind = .Kind_StaticLib
-
-.Public =
+.Project =
 [
-    .Imports = {
-        'core',
-        'memsys'
-    }
+    .Name = 'collections'
+    .Kind = .Kind_StaticLib
+    .Group = 'Core'
+
+    .BaseDir = '$WorkspaceCodeDir$/core/collections'
+
+    .Public =
+    [
+        .Uses = {
+            'core'
+            'memsys'
+        }
+    ]
 ]
+.Projects + .Project

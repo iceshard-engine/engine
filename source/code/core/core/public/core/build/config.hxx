@@ -5,7 +5,7 @@ namespace core::build::configuration
 
 
     //! \brief Supported configurations.
-    enum class ConfigurationType { Debug, ReleaseDebug, Release };
+    enum class ConfigurationType { Debug, Develop, Profile, Release };
 
     //! \brief A structure holding information about a specific configuration.
     struct Configuration
@@ -32,29 +32,33 @@ namespace core::build::configuration
     constexpr bool operator!=(Configuration left, ConfigurationType right) noexcept;
 
 
-#if defined(_DEBUG)
+#if defined ISC_DEBUG
 
     static constexpr Configuration current_config{ "Debug",         ConfigurationType::Debug };
 
-#define ISC_DEBUG 1
-#define ISC_RELEASE_DEBUG 0
-#define ISC_RELEASE 0
+#undef ISC_DEBUG
+#define ISC_DEBUG  1
 
-#elif defined(_RDEBUG)
+#elif defined ISC_DEVELOP
 
-    static constexpr Configuration current_config{ "ReleaseDebug",  ConfigurationType::ReleaseDebug };
+    static constexpr Configuration current_config{ "Develop",       ConfigurationType::Develop };
 
-#define ISC_DEBUG 0
-#define ISC_RELEASE_DEBUG 1
-#define ISC_RELEASE 0
+#undef ISC_DEVELOP
+#define ISC_DEVELOP  1
 
-#elif defined(_NDEBUG)
+#elif defined ISC_PROFILE
+
+    static constexpr Configuration current_config{ "Profile",       ConfigurationType::Profile };
+
+#undef ISC_PROFILE
+#define ISC_PROFILE  1
+
+#elif defined ISC_RELEASE
 
     static constexpr Configuration current_config{ "Release",       ConfigurationType::Release };
 
-#define ISC_DEBUG 0
-#define ISC_RELEASE_DEBUG 0
-#define ISC_RELEASE 1
+#undef ISC_RELEASE
+#define ISC_RELEASE  1
 
 #else
 

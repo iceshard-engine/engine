@@ -21,33 +21,33 @@ namespace iceshard
 
         //! \brief Creates a entity and returns it's handle.
         [[nodiscard]]
-        auto create() noexcept -> entity_handle_type;
+        auto create() noexcept -> Entity;
 
         //! \brief Creates a entity and returns it's handle.
         //! \param[in] owner The owner of the entity.
         [[nodiscard]]
-        auto create(const void* owner) noexcept -> entity_handle_type;
+        auto create(const void* owner) noexcept -> Entity;
 
         //! \brief Creates the requested number of entities and pushes them into the given array.
         void create_many(
             uint32_t count,
-            core::pod::Array<entity_handle_type>& results
+            core::pod::Array<Entity>& results
         ) noexcept;
 
         //! \brief Creates the requested number of entities and pushes them into the given array.
         //! \param[in] owner The owner of each created entity.
         void create_many(
             uint32_t count,
-            core::pod::Array<entity_handle_type>& results,
+            core::pod::Array<Entity>& results,
             const void* owner
         ) noexcept;
 
         //! \brief Destroys the given entity.
-        void destroy(entity_handle_type entity_handle) noexcept;
+        void destroy(Entity entity_handle) noexcept;
 
         //! \brief Checks if the given entity is alive.
         [[nodiscard]]
-        bool is_alive(entity_handle_type entity_handle) noexcept;
+        bool is_alive(Entity entity_handle) noexcept;
 
         //! \brief Counts all owned entities.
         [[nodiscard]]
@@ -59,7 +59,7 @@ namespace iceshard
         //! \brief Appends all entities of the given owner to the given array.
         void get_owned(
             const void* owner,
-            core::pod::Array<entity_handle_type>& results
+            core::pod::Array<Entity>& results
         ) noexcept;
 
     private:

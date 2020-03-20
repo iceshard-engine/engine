@@ -1,33 +1,37 @@
-.Name = 'test'
-.Kind = .Kind_ConsoleApp
+.Project =
+[
+    .Name = 'test'
+    .Kind = .Kind_ConsoleApp
+    .Group = 'Tests'
 
-.CopyModules = true
+    .BaseDir = '$WorkspaceCodeDir$/test'
 
-.GraphicsDrivers = { }
+    .CopyModules = true
+
+    .Private =
+    [
+        .DependsOn =
+        [
+            .Runtime = {
+                'iceshard'
+                'sdl2_driver'
+                'imgui_driver'
+            }
 #if exists(VULKAN_SDK)
-    + 'vulkan_driver'
+            .Runtime + 'vulkan_driver'
 #endif
+        ]
 
-.DependsOn =
-[
-    .Runtime = .GraphicsDrivers
-    .Runtime + {
-        'iceshard'
-        'sdl2_driver'
-        'imgui_driver'
-    }
+        .Modules = {
+            'glm'
+            'imgui'
+            'SDL2'
+        }
+        .Uses = {
+            'debugui_system'
+            'application'
+            'engine'
+        }
+    ]
 ]
-
-.Public =
-[
-    .Modules = {
-        'glm'
-        'imgui'
-        'SDL2'
-    }
-    .Imports = {
-        'debugui_system'
-        'application'
-        'engine'
-    }
-]
+.Projects + .Project

@@ -12,17 +12,39 @@ namespace iceshard::renderer::api
         inline namespace types
         {
 
-            enum class RenderPass : uintptr_t { Invalid = 0x0 };
+            enum class RenderPass : uintptr_t
+            {
+                Invalid = 0x0
+            };
 
-            enum class Pipeline : uintptr_t { Invalid = 0x0 };
+            enum class Pipeline : uintptr_t
+            {
+                Invalid = 0x0
+            };
 
-            enum class CommandBuffer : uintptr_t { Invalid = 0x0 };
+            enum class CommandBuffer : uintptr_t
+            {
+                Invalid = 0x0
+            };
 
-            enum class ResourceSet : uintptr_t { Invalid = 0x0 };
+            enum class ResourceSet : uintptr_t
+            {
+                Invalid = 0x0
+            };
 
-            enum class Texture : uintptr_t { Invalid = 0x0 };
+            enum class Texture : uintptr_t
+            {
+                Invalid = 0x0,
+                Attachment0 = std::numeric_limits<std::underlying_type_t<Texture>>::max() - 0,
+                Attachment1 = std::numeric_limits<std::underlying_type_t<Texture>>::max() - 1,
+                Attachment2 = std::numeric_limits<std::underlying_type_t<Texture>>::max() - 2,
+                Attachment3 = std::numeric_limits<std::underlying_type_t<Texture>>::max() - 3,
+            };
 
-            enum class Buffer : uintptr_t { Invalid = 0x0 };
+            enum class Buffer : uintptr_t
+            {
+                Invalid = 0x0
+            };
 
             enum class BufferType : uint32_t
             {

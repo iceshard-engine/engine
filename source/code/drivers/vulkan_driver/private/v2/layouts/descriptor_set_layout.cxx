@@ -18,16 +18,19 @@ namespace iceshard::renderer::vulkan
         constexpr auto max_bindings = decltype(temp_alloc)::InternalBufferSize / sizeof(VkDescriptorSetLayoutBinding);
         core::pod::array::reserve(bindings, max_bindings);
 
-        core::pod::array::push_back(bindings,
-            VkDescriptorSetLayoutBinding
-            {
-                .binding = 0,
-                .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-                .descriptorCount = 1,
-                .stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
-                .pImmutableSamplers = nullptr
-            }
-        );
+        for (uint32_t binding = 0; binding < max_bindings; ++binding)
+        {
+            core::pod::array::push_back(bindings,
+                VkDescriptorSetLayoutBinding
+                {
+                    .binding = binding,
+                    .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+                    .descriptorCount = 1,
+                    .stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+                    .pImmutableSamplers = nullptr
+                }
+            );
+        }
 
         VkDescriptorSetLayoutCreateInfo layout_info;
         layout_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;

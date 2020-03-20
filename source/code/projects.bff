@@ -1,74 +1,100 @@
-.CoreDirectory =
-[
-    .Filter = '1. Core'
-    .Directory = 'core'
-    .Projects = {
-        'core'
-        'memsys'
-        'collections'
-        'messages'
-    }
-]
-^ProjectDirectories + .CoreDirectory
+#once
 
-.SystemsDirectory =
-[
-    .Filter = '2. Systems'
-    .Directory = 'systems'
-    .Projects = {
-        'input_system'
-        'resource_system'
-        'asset_system'
-        'render_system'
-        'debugui_system'
-    }
-]
-^ProjectDirectories + .SystemsDirectory
+.Projects = { }
 
-#if exists(VULKAN_SDK)
-#import VULKAN_SDK
-.DriversDirectory =
-[
-    .Filter = '3. Drivers'
-    .Directory = 'drivers'
-    .Projects = {
-        'sdl2_driver'
-        'vulkan_driver'
-        'imgui_driver'
-    }
-]
-^ProjectDirectories + .DriversDirectory
-#else
-.DriversDirectory =
-[
-    .Filter = '3. Drivers'
-    .Directory = 'drivers'
-    .Projects = {
-        'sdl2_driver'
-        'imgui_driver'
-    }
-]
-^ProjectDirectories + .DriversDirectory
-#endif
+// Include all known project description files
+#include "core/core/core.bff"
+#include "core/memsys/memsys.bff"
+#include "core/collections/collections.bff"
+#include "core/messages/messages.bff"
 
-.IceshardDirectory =
-[
-    .Filter = '4. IceShard'
-    .Directory = 'iceshard'
-    .Projects = {
-        'application'
-        'engine'
-        'iceshard'
-    }
-]
-^ProjectDirectories + .IceshardDirectory
+#include "systems/resource_system/resource_system.bff"
+#include "systems/asset_system/asset_system.bff"
+#include "systems/render_system/render_system.bff"
+#include "systems/input_system/input_system.bff"
+#include "systems/debugui_system/debugui_system.bff"
 
-.TestDirectory =
-[
-    .Filter = '5. Tests'
-    .Directory = '.'
-    .Projects = {
-        'test'
-    }
-]
-^ProjectDirectories + .TestDirectory
+#include "drivers/imgui_driver/imgui_driver.bff"
+#include "drivers/sdl2_driver/sdl2_driver.bff"
+#include "drivers/vulkan_driver/vulkan_driver.bff"
+
+#include "iceshard/application/application.bff"
+#include "iceshard/engine/engine.bff"
+#include "iceshard/iceshard/iceshard.bff"
+
+#include "test/test.bff"
+
+// .CoreDirectory =
+// [
+//     .Filter = '1. Core'
+//     .Directory = 'core'
+//     .Projects = {
+//         'core'
+//         'memsys'
+//         'collections'
+//         'messages'
+//     }
+// ]
+// ^ProjectDirectories + .CoreDirectory
+
+// .SystemsDirectory =
+// [
+//     .Filter = '2. Systems'
+//     .Directory = 'systems'
+//     .Projects = {
+//         'input_system'
+//         'resource_system'
+//         'asset_system'
+//         'render_system'
+//         'debugui_system'
+//     }
+// ]
+// ^ProjectDirectories + .SystemsDirectory
+
+// #if exists(VULKAN_SDK)
+// #import VULKAN_SDK
+// .DriversDirectory =
+// [
+//     .Filter = '3. Drivers'
+//     .Directory = 'drivers'
+//     .Projects = {
+//         'sdl2_driver'
+//         'vulkan_driver'
+//         'imgui_driver'
+//     }
+// ]
+// ^ProjectDirectories + .DriversDirectory
+// #else
+// .DriversDirectory =
+// [
+//     .Filter = '3. Drivers'
+//     .Directory = 'drivers'
+//     .Projects = {
+//         'sdl2_driver'
+//         'imgui_driver'
+//     }
+// ]
+// ^ProjectDirectories + .DriversDirectory
+// #endif
+
+// .IceshardDirectory =
+// [
+//     .Filter = '4. IceShard'
+//     .Directory = 'iceshard'
+//     .Projects = {
+//         'application'
+//         'engine'
+//         'iceshard'
+//     }
+// ]
+// ^ProjectDirectories + .IceshardDirectory
+
+// .TestDirectory =
+// [
+//     .Filter = '5. Tests'
+//     .Directory = '.'
+//     .Projects = {
+//         'test'
+//     }
+// ]
+// ^ProjectDirectories + .TestDirectory

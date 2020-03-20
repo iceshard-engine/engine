@@ -1,0 +1,172 @@
+#once
+
+{
+    .PlatformVSEnabled = false
+
+    .SolutionProjects = { }
+    .SolutionBuildProject = { }
+    .SolutionConfigs = { }
+
+    .SolutionFolders = { }
+    .SolutionFolderIndex = 1
+    .SolutionFolderGroupNames = { }
+    .SolutionFolderCurrentName = ''
+    .SolutionFolderCurrentProjects = { }
+    .SolutionBuildProjectDependencies = { }
+
+    ForEach( .TargetConfig in .TargetConfigList )
+    {
+        Using( .TargetConfig )
+        Using( .PlatformInfo )
+
+        If ( .PlatformVSEnabled )
+        {
+            .SolutionConfig =
+            [
+                Using( .PlatformVSProperties )
+
+                .Config = '$ConfigName$$ProjectConfigSuffix$'
+                .Platform = .ProjectPlatform
+
+                .SolutionConfig = '$ConfigName$'
+                .SolutionPlatform = .SolutionPlatform
+
+                .ProjectBuildCommand = '^$(SolutionDir)/ice.bat build -t all-^$(Platform)-^$(Configuration)'
+                .ProjectRebuildCommand = '^$(SolutionDir)/ice.bat build -t all-^$(Platform)-^$(Configuration) -c'
+            ]
+            ^SolutionConfigs + .SolutionConfig
+        }
+    }
+
+    VCXProject( 'all-vcxproj' )               // (optional) Alias
+    {
+        .ProjectOutput = '$WorkspaceBuildDir$/projects/all.vcxproj'
+        .ProjectConfigs = .SolutionConfigs
+        .ProjectBasePath = .WorkspaceBuildDir
+        .ProjectInputPaths = { }
+
+        .IntermediateDirectory = '$WorkspaceBuildDir$/obj/helpers/all'
+        .OutputDirectory = '$WorkspaceBuildDir$/obj/helpers/all'
+    }
+
+    .SolutionFolder =
+    [
+        .Path = '0. Miscelaneous'
+        .Projects = { 'all-vcxproj' }
+    ]
+    .SolutionFolders + .SolutionFolder
+    .SolutionBuildProject = { 'all-vcxproj' }
+
+    ForEach( .Project in .ProjectsResolved )
+    {
+        Using( .Project )
+        Using( .ProjectProperties_Final )
+
+        .ProjectOutput = '$WorkspaceBuildDir$/projects/$ProjectName$.vcxproj'
+        .ProjectConfigs = { }
+        .ProjectBasePath = .ProjectBaseDir
+        .ProjectInputPaths = {
+            '$ProjectBaseDir$/public'
+            '$ProjectBaseDir$/private'
+        }
+
+        ForEach( .TargetConfig in .TargetConfigList )
+        {
+            Using( .TargetConfig )
+            Using( .PlatformInfo )
+            Using( .PlatformExtensions )
+
+            .OutDirName = .'KindOutDir_$ProjectKind$'
+            .TargetExtension = .'OutputExtension_$ProjectKind$'
+
+            .TargetIntermediateDirectory = '$WorkspaceBuildDir$/obj/$ConfigPlatform$-$ConfigName$-$ConfigToolchain$/$ProjectName$'
+            .TargetOutputDirectory = '$WorkspaceBuildDir$/$OutDirName$/$ConfigPlatform$-$ConfigName$-$ConfigToolchain$/$ProjectName$'
+            .TargetOutputName = "$ProjectName$$TargetExtension$"
+            .TargetList = { }
+
+            .ProjectConfig =
+            [
+                Using( .PlatformVSProperties )
+
+                .Config = '$ConfigName$'
+                .Platform = .ProjectPlatform
+
+                .TargetAlias = '$ProjectName$-$ConfigPlatform$-$ConfigName$-$ConfigToolchain$'
+                .Target = '$TargetAlias$-link'
+
+                .Output = .TargetOutputName
+                .OutputDirectory = .TargetOutputDirectory
+                .IntermediateDirectory = .TargetIntermediateDirectory
+                .BuildLogFile = '$TargetIntermediateDirectory$/build_log.txt'
+
+                .ProjectBuildCommand = '^$(SolutionDir)/ice.bat build -t $TargetAlias$'
+                .ProjectRebuildCommand = '^$(SolutionDir)/ice.bat build -t $TargetAlias$ -c'
+                // .ProjectCleanCommand = ''
+
+                .LocalDebuggerCommand = '$TargetOutputDirectory$/$TargetOutputName$'
+                .LocalDebuggerWorkingDirectory = '$WorkspaceBuildDir$'
+            ]
+
+            ^ProjectConfigs + .ProjectConfig
+        }
+
+        VCXProject( '$ProjectName$-vcxproj' )               // (optional) Alias
+        {
+        }
+
+        If ( .ProjectKind in .Kind_Applications )
+        {
+            ^SolutionBuildProjectDependencies + '$ProjectName$-vcxproj'
+        }
+
+        If ( .ProjectGroup not in .SolutionFolderGroupNames )
+        {
+            .HasProjects = false
+            ForEach( .P in .SolutionFolderCurrentProjects )
+            {
+                ^HasProjects = true
+            }
+
+            If ( .HasProjects )
+            {
+                .SolutionFolder =
+                [
+                    .Path = '$SolutionFolderIndex$. $SolutionFolderCurrentName$'
+                    .Projects = .SolutionFolderCurrentProjects
+                ]
+                ^SolutionFolders + .SolutionFolder
+                ^SolutionFolderCurrentProjects = { }
+                ^SolutionFolderIndex + 1
+            }
+
+            ^SolutionFolderGroupNames + .ProjectGroup
+            ^SolutionFolderCurrentName = .ProjectGroup
+        }
+
+        If ( .ProjectGroup == .SolutionFolderCurrentName )
+        {
+            ^SolutionFolderCurrentProjects + '$ProjectName$-vcxproj'
+        }
+
+        ^SolutionProjects + '$ProjectName$-vcxproj'
+    }
+
+    .SolutionFolder =
+    [
+        .Path = '$SolutionFolderIndex$. $SolutionFolderCurrentName$'
+        .Projects = .SolutionFolderCurrentProjects
+    ]
+    .SolutionFolders + .SolutionFolder
+
+    .SolutionDependency =
+    [
+        .Dependencies = { 'all-vcxproj' }
+        .Projects = .SolutionBuildProjectDependencies
+    ]
+    .SolutionDependencies = { .SolutionDependency }
+
+    VSSolution( 'solution' )
+    {
+        .SolutionOutput = '$WorkspaceRoot$/IceShard.sln'
+    }
+}

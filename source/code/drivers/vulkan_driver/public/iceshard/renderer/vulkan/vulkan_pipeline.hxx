@@ -14,12 +14,6 @@ namespace iceshard::renderer::vulkan
         VkPipeline pipeline;
     };
 
-    void query_vertex_input_descriptions(
-        RenderPipelineLayout pipeline_layout,
-        core::pod::Array<VkVertexInputBindingDescription>& bindings,
-        core::pod::Array<VkVertexInputAttributeDescription>& attributes
-    ) noexcept;
-
     void create_graphics_pipeline(
         VulkanDevices devices,
         VulkanRenderPass renderpass,

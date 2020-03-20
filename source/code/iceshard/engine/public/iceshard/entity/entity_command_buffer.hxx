@@ -25,28 +25,28 @@ namespace iceshard
 
         //! \brief Adds a component to the given entity.
         void add_component(
-            entity_handle_type entity,
+            Entity entity,
             ComponentSystem* comonent_system,
             core::stringid_arg_type component_name
         ) noexcept;
 
         //! \brief Removes a component from the given entity.
         void remove_component(
-            entity_handle_type entity,
+            Entity entity,
             core::stringid_arg_type component_name
         ) noexcept;
 
-        using component_operation_signature = auto (ComponentSystem*, entity_handle_type) noexcept -> bool;
+        using component_operation_signature = auto (ComponentSystem*, Entity) noexcept -> bool;
 
         //! \brief Runs an operation on the given component.
         void update_component(
-            entity_handle_type entity,
+            Entity entity,
             core::stringid_arg_type component_name,
             component_operation_signature* operation_func
         ) noexcept;
 
         //! \brief Destroys the given entity and all associated components.
-        void destroy_entity(entity_handle_type entity) noexcept;
+        void destroy_entity(Entity entity) noexcept;
 
         //! \brief Executes all stored commands.
         void execute(EntityManager* entity_manager, EntityIndex* entity_index) noexcept;
@@ -60,7 +60,7 @@ namespace iceshard
 
             core::stringid_type component_name;
 
-            entity_handle_type target_entity;
+            Entity target_entity;
 
             void* command_data;
         };

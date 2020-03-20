@@ -1,9 +1,16 @@
-.Name = 'core'
-.Kind = .Kind_StaticLib
-
-.Public =
+.Project =
 [
-    .Modules = {
-        'fmt'
-    }
+    .Name = 'core'
+    .Kind = .Kind_StaticLib
+    .Group = 'Core'
+
+    .BaseDir = '$WorkspaceCodeDir$/core/core'
+
+    .Public =
+    [
+        .Modules = {
+            'fmt'
+        }
+    ]
 ]
+.Projects + .Project

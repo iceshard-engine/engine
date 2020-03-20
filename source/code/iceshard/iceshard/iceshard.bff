@@ -1,12 +1,21 @@
-.Name = 'iceshard'
-.Kind = .Kind_SharedLib
-
-.Private =
+.Project =
 [
-    .Modules = {
-        'imgui'
-    }
-    .Imports = {
-        'engine'
-    }
+    .Name = 'iceshard'
+    .Kind = .Kind_SharedLib
+    .Group = 'Engine'
+
+    .BaseDir = '$WorkspaceCodeDir$/iceshard/iceshard'
+
+    .UnityBuilds = false
+
+    .Private =
+    [
+        .Modules = {
+            'imgui'
+        }
+        .Uses = {
+            'engine'
+        }
+    ]
 ]
+.Projects + .Project

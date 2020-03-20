@@ -10,26 +10,50 @@ namespace iceshard::renderer::vulkan
         core::pod::Array<RenderPassImage>& image_infos
     ) noexcept
     {
-        if (RenderPassFeatures::None != renderpass.features)
+        if (renderpass.features == RenderPassFeatures::PostProcess)
         {
-            return;
+            core::pod::array::push_back(
+                image_infos,
+                RenderPassImage{
+                    .type = RenderPassImageType::ColorImage,
+                    .index = 0,
+                    .format = VK_FORMAT_B8G8R8A8_UNORM,
+                }
+            );
+            core::pod::array::push_back(
+                image_infos,
+                RenderPassImage{
+                    .type = RenderPassImageType::SwapchainImage,
+                    .index = 1
+                }
+            );
+            core::pod::array::push_back(
+                image_infos,
+                RenderPassImage{
+                    .type = RenderPassImageType::DepthStencilImage,
+                    .index = 2,
+                    .format = VK_FORMAT_D16_UNORM
+                }
+            );
         }
-
-        core::pod::array::push_back(
-            image_infos,
-            RenderPassImage{
-                .type = RenderPassImageType::SwapchainImage,
-                .index = 0
-            }
-        );
-        core::pod::array::push_back(
-            image_infos,
-            RenderPassImage{
-                .type = RenderPassImageType::DepthStencilImage,
-                .index = 1,
-                .format = VK_FORMAT_D16_UNORM
-            }
-        );
+        else
+        {
+            core::pod::array::push_back(
+                image_infos,
+                RenderPassImage{
+                    .type = RenderPassImageType::SwapchainImage,
+                    .index = 0
+                }
+            );
+            core::pod::array::push_back(
+                image_infos,
+                RenderPassImage{
+                    .type = RenderPassImageType::DepthStencilImage,
+                    .index = 1,
+                    .format = VK_FORMAT_D16_UNORM
+                }
+            );
+        }
     }
 
     bool create_renderpass(
@@ -39,15 +63,20 @@ namespace iceshard::renderer::vulkan
         VulkanRenderPass& renderpass
     ) noexcept
     {
-        if (RenderPassFeatures::None != features)
+        if (RenderPassFeatures::PostProcess == features)
         {
-            return false;
+            renderpass.device = device;
+            renderpass.format = format;
+            renderpass.features = features;
+            renderpass.renderpass = renderpass_forward_postprocess(device, format);
         }
-
-        renderpass.device = device;
-        renderpass.format = format;
-        renderpass.features = features;
-        renderpass.renderpass = renderpass_forward(device, format);
+        else
+        {
+            renderpass.device = device;
+            renderpass.format = format;
+            renderpass.features = features;
+            renderpass.renderpass = renderpass_forward(device, format);
+        }
         return true;
     }
 

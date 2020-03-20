@@ -81,18 +81,6 @@ namespace render
 
             _vulkan_staging_buffer = iceshard::renderer::vulkan::create_staging_buffer(_driver_allocator, *_vulkan_device_memory);
 
-            VkSemaphoreCreateInfo imageAcquiredSemaphoreCreateInfo;
-            imageAcquiredSemaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-            imageAcquiredSemaphoreCreateInfo.pNext = NULL;
-            imageAcquiredSemaphoreCreateInfo.flags = 0;
-
-            VkFenceCreateInfo fenceInfo;
-            fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-            fenceInfo.pNext = NULL;
-            fenceInfo.flags = 0;
-
-            auto res = vkCreateFence(_vk_render_system->v1_graphics_device(), &fenceInfo, NULL, &_vulkan_draw_fence);
-            assert(res == VK_SUCCESS);
 
         }
 
@@ -103,10 +91,6 @@ namespace render
 
         void shutdown() noexcept
         {
-            auto device = _vk_render_system->v1_graphics_device();
-
-            vkDestroyFence(device, _vulkan_draw_fence, nullptr);
-
             _vulkan_images.clear();
 
             _vulkan_staging_buffer = nullptr;
@@ -285,7 +269,6 @@ namespace render
         {
             _vk_render_system->end_frame();
 
-            auto graphics_device = _vk_render_system->v1_graphics_device();
             auto graphics_queue = _vk_render_system->v1_graphics_queue();
 
             if (_staging_cmds)
@@ -302,77 +285,8 @@ namespace render
                 vkQueueWaitIdle(graphics_queue);
             }
 
-            {
-                auto cmds = _vk_render_system->v1_primary_cmd_buffer();
 
-                VkCommandBufferBeginInfo cmd_buf_info = {};
-                cmd_buf_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-                cmd_buf_info.pNext = nullptr;
-                cmd_buf_info.flags = 0;
-                cmd_buf_info.pInheritanceInfo = nullptr;
-
-                auto api_result = vkBeginCommandBuffer(cmds, &cmd_buf_info);
-                IS_ASSERT(api_result == VkResult::VK_SUCCESS, "Couldn't begin command buffer.");
-
-                VkClearValue clear_values[2];
-                clear_values[0].color.float32[0] = 0.2f;
-                clear_values[0].color.float32[1] = 0.2f;
-                clear_values[0].color.float32[2] = 0.2f;
-                clear_values[0].color.float32[3] = 0.2f;
-                clear_values[1].depthStencil.depth = 1.0f;
-                clear_values[1].depthStencil.stencil = 0;
-
-                VkRenderPassBeginInfo rp_begin;
-                rp_begin.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-                rp_begin.pNext = NULL;
-                rp_begin.renderPass = _vk_render_system->v1_renderpass();
-                rp_begin.framebuffer = _vk_render_system->v1_current_framebuffer();
-                rp_begin.renderArea.offset.x = 0;
-                rp_begin.renderArea.offset.y = 0;
-                rp_begin.renderArea.extent = _vk_render_system->render_area();
-                rp_begin.clearValueCount = 2;
-                rp_begin.pClearValues = clear_values;
-
-                vkCmdBeginRenderPass(cmds, &rp_begin, VK_SUBPASS_CONTENTS_INLINE);
-                vkCmdNextSubpass(cmds, VkSubpassContents::VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
-
-                _vk_render_system->v1_execute_subpass_commands(cmds);
-
-                vkCmdEndRenderPass(cmds);
-                vkEndCommandBuffer(cmds);
-            }
-
-
-
-            const VkCommandBuffer cmd_bufs[] = { _vk_render_system->v1_primary_cmd_buffer() };
-            VkPipelineStageFlags pipe_stage_flags = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-            VkSubmitInfo submit_info[1] = {};
-            submit_info[0].pNext = NULL;
-            submit_info[0].sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-            submit_info[0].waitSemaphoreCount = 1;
-            submit_info[0].pWaitSemaphores = _vk_render_system->v1_framebuffer_semaphore();
-            submit_info[0].pWaitDstStageMask = &pipe_stage_flags;
-            submit_info[0].commandBufferCount = 1;
-            submit_info[0].pCommandBuffers = cmd_bufs;
-            submit_info[0].signalSemaphoreCount = 0;
-            submit_info[0].pSignalSemaphores = NULL;
-
-
-            /* Queue the command buffer for execution */
-            auto res = vkQueueSubmit(graphics_queue, 1, submit_info, _vulkan_draw_fence);
-            assert(res == VK_SUCCESS);
-
-            /* Now present the image in the window */
-
-
-            /* Make sure command buffer is finished before presenting */
-            do
-            {
-                constexpr auto FENCE_TIMEOUT = 100'000'000; // in ns
-                res = vkWaitForFences(graphics_device, 1, &_vulkan_draw_fence, VK_TRUE, FENCE_TIMEOUT);
-            } while (res == VK_TIMEOUT);
-
-            vkResetFences(graphics_device, 1, &_vulkan_draw_fence);
+            _vk_render_system->v1_submit_command_buffers();
 
             _vk_render_system->v1_present();
         }
@@ -396,8 +310,6 @@ namespace render
 
         // The Vulkan instance handle.
         VkInstance _vulkan_instance{};
-
-        VkFence _vulkan_draw_fence = nullptr;
 
         // Data buffers
         core::memory::unique_pointer<iceshard::renderer::vulkan::VulkanBuffer> _vulkan_staging_buffer{ nullptr, { core::memory::globals::null_allocator() } };

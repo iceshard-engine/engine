@@ -12,10 +12,18 @@ namespace iceshard::renderer
         ResTexture2D,
     };
 
+    struct UniformBuffer
+    {
+        Buffer buffer;
+        uint32_t range;
+        uint32_t offset;
+    };
+
     union RenderResourceHandle
     {
         Sampler sampler;
         Texture texture;
+        UniformBuffer uniform;
     };
 
     struct RenderResource

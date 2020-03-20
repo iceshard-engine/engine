@@ -46,7 +46,7 @@ namespace iceshard::renderer::vulkan
         references[3].attachment = 2;
         references[3].layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
-        VkSubpassDescription subpasses[2];
+        VkSubpassDescription subpasses[3];
         subpasses[0].flags = 0;
         subpasses[0].pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
         subpasses[0].inputAttachmentCount = 0;
@@ -54,38 +54,56 @@ namespace iceshard::renderer::vulkan
         subpasses[0].colorAttachmentCount = 1;
         subpasses[0].pColorAttachments = references;
         subpasses[0].pResolveAttachments = nullptr;
-        subpasses[0].pDepthStencilAttachment = references + 3;
+        subpasses[0].pDepthStencilAttachment = nullptr;
         subpasses[0].preserveAttachmentCount = 0;
         subpasses[0].pPreserveAttachments = nullptr;
 
         subpasses[1].flags = 0;
         subpasses[1].pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-        subpasses[1].inputAttachmentCount = 1;
-        subpasses[1].pInputAttachments = references + 1;
+        subpasses[1].inputAttachmentCount = 0;
+        subpasses[1].pInputAttachments = nullptr;
         subpasses[1].colorAttachmentCount = 1;
-        subpasses[1].pColorAttachments = references + 2;
+        subpasses[1].pColorAttachments = references;
         subpasses[1].pResolveAttachments = nullptr;
-        subpasses[1].pDepthStencilAttachment = nullptr;
+        subpasses[1].pDepthStencilAttachment = references + 3;
         subpasses[1].preserveAttachmentCount = 0;
         subpasses[1].pPreserveAttachments = nullptr;
 
-        VkSubpassDependency dependencies[1];
+        subpasses[2].flags = 0;
+        subpasses[2].pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+        subpasses[2].inputAttachmentCount = 1;
+        subpasses[2].pInputAttachments = references + 1;
+        subpasses[2].colorAttachmentCount = 1;
+        subpasses[2].pColorAttachments = references + 2;
+        subpasses[2].pResolveAttachments = nullptr;
+        subpasses[2].pDepthStencilAttachment = nullptr;
+        subpasses[2].preserveAttachmentCount = 0;
+        subpasses[2].pPreserveAttachments = nullptr;
+
+        VkSubpassDependency dependencies[2];
         dependencies[0].srcSubpass = 0;
         dependencies[0].dstSubpass = 1;
         dependencies[0].srcStageMask = VkPipelineStageFlagBits::VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-        dependencies[0].dstStageMask = VkPipelineStageFlagBits::VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+        dependencies[0].dstStageMask = VkPipelineStageFlagBits::VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
         dependencies[0].srcAccessMask = VkAccessFlagBits::VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-        dependencies[0].dstAccessMask = VkAccessFlagBits::VK_ACCESS_INPUT_ATTACHMENT_READ_BIT;
+        dependencies[0].dstAccessMask = VkAccessFlagBits::VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
         dependencies[0].dependencyFlags = VkDependencyFlagBits::VK_DEPENDENCY_BY_REGION_BIT;
+        dependencies[1].srcSubpass = 1;
+        dependencies[1].dstSubpass = 2;
+        dependencies[1].srcStageMask = VkPipelineStageFlagBits::VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+        dependencies[1].dstStageMask = VkPipelineStageFlagBits::VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+        dependencies[1].srcAccessMask = VkAccessFlagBits::VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+        dependencies[1].dstAccessMask = VkAccessFlagBits::VK_ACCESS_INPUT_ATTACHMENT_READ_BIT;
+        dependencies[1].dependencyFlags = VkDependencyFlagBits::VK_DEPENDENCY_BY_REGION_BIT;
 
         VkRenderPassCreateInfo rp_info = {};
         rp_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
         rp_info.pNext = nullptr;
         rp_info.attachmentCount = 3;
         rp_info.pAttachments = attachments;
-        rp_info.subpassCount = 2;
+        rp_info.subpassCount = 3;
         rp_info.pSubpasses = subpasses;
-        rp_info.dependencyCount = 1;
+        rp_info.dependencyCount = 2;
         rp_info.pDependencies = dependencies;
 
         VkRenderPass render_pass;

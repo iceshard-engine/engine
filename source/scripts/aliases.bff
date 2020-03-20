@@ -1,0 +1,10 @@
+#once
+
+.AliasInfos = { }
+
+.AliasInfo =
+[
+    .AliasTags = { 'Windows', 'x64' }
+    .AliasName = 'all-x64'
+]
+.AliasInfos + .AliasInfo

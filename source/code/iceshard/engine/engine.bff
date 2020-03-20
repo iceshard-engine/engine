@@ -1,14 +1,21 @@
-.Name = 'engine'
-.Kind = .Kind_StaticLib
-
-.Public =
+.Project =
 [
-    .Modules = {
-        'cppcoro'
-    }
-    .Imports = {
-        'input_system'
-        'render_system'
-        'debugui_system'
-    }
+    .Name = 'engine'
+    .Kind = .Kind_StaticLib
+    .Group = 'Engine'
+
+    .BaseDir = '$WorkspaceCodeDir$/iceshard/engine'
+
+    .Public =
+    [
+        .Modules = {
+            'cppcoro'
+        }
+        .Uses = {
+            'input_system'
+            'render_system'
+            'debugui_system'
+        }
+    ]
 ]
+.Projects + .Project

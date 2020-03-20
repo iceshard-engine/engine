@@ -1,13 +1,21 @@
-.Name = 'imgui_driver'
-.Kind = .Kind_SharedLib
-
-.Private =
+.Project =
 [
-    .Modules = {
-        'imgui'
-        'glm'
-    }
-    .Imports = {
-        'debugui_system'
-    }
+    .Name = 'imgui_driver'
+    .Kind = .Kind_SharedLib
+    .Group = 'Drivers'
+
+    .BaseDir = '$WorkspaceCodeDir$/drivers/imgui_driver'
+
+    .Private =
+    [
+        .Modules = {
+            'imgui'
+            'glm'
+        }
+        .Uses = {
+            'debugui_system'
+            'render_system'
+        }
+    ]
 ]
+.Projects + .Project

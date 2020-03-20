@@ -23,9 +23,7 @@ namespace iceshard
     namespace detail
     {
 
-        static constexpr auto MiB = 1024u * 1024u;
-
-        static constexpr auto FrameAllocatorCapacity = 256u * detail::MiB;
+        static constexpr auto FrameAllocatorCapacity = 256u * 1024u * 1024u;
 
         struct FrameTask
         {

@@ -1,0 +1,64 @@
+#once
+#include "configurations.bff"
+
+.TargetConfigList = { }
+
+// Iterate over each defined platform
+ForEach( .Platform in .PlatformList )
+{
+    Using( .Platform )
+
+    .PlatformSupportedComponents = .PlatformSupportedToolchains + .SdkNames
+
+    ForEach( .ToolchainName in .ToolchainNames, .Toolchain in .ToolchainList )
+    {
+        Using( .Toolchain )
+
+        .TargetPlatformRequiredComponents = { .ToolchainName } + .PlatformRequiredSdks
+
+        If( .TargetPlatformRequiredComponents in .PlatformSupportedComponents )
+        {
+            // Iterate over all configurations and create final target configurations
+            ForEach( .Configuration in .ConfigurationList )
+            {
+                Using( .Configuration )
+
+                .TargetConfig =
+                [
+                    .ConfigName = .ConfigurationName
+                    .ConfigToolchain = .ToolchainName
+                    .ConfigPlatform = "$PlatformSystem$-$PlatformArchitecture$"
+                    .ConfigTags = {
+                        .PlatformSystem
+                        .PlatformArchitecture
+                        .ToolchainCompilerFamily
+                        .ToolchainToolset
+                        .ConfigName
+                    } + .PlatformRequiredSdks
+
+                    .ConanConfigName = .ConanConfiguration
+
+                    .PlatformInfo = .Platform
+                    .Toolchain = .Toolchain
+                    .Configuration = .Configuration
+                    .SdkProperties = [ ]
+                    ForEach( .SdkName in .SdkNames, .Sdk in .SdkList )
+                    {
+                        If ( .SdkName in .PlatformRequiredSdks )
+                        {
+                            ^SdkProperties + .Sdk
+                        }
+                    }
+                    .Properties = []
+                        + .'ToolchainProperties_$ToolchainCompilerFamily$_$ToolchainArchitecture$_$ToolchainToolset$'
+                        + .'ToolchainProperties_$ToolchainCompilerFamily$_$ToolchainArchitecture$_$ToolchainToolset$_$PlatformSystem$_$PlatformArchitecture$'
+                        + .'ToolchainProperties_$ToolchainCompilerFamily$_$ToolchainArchitecture$_$ToolchainToolset$_$ConfigurationName$'
+                ]
+
+                ^TargetConfigList + .TargetConfig
+            }
+
+        }
+    }
+
+}

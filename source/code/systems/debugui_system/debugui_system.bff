@@ -1,17 +1,24 @@
-.Name = 'debugui_system'
-.Kind = .Kind_StaticLib
-
-.Public =
+.Project =
 [
-    .Imports = {
-        'input_system'
-        'render_system'
-    }
-]
+    .Name = 'debugui_system'
+    .Kind = .Kind_StaticLib
+    .Group = 'Systems'
 
-.Private =
-[
-    .Modules = {
-        'imgui'
-    }
+    .BaseDir = '$WorkspaceCodeDir$/systems/debugui_system'
+
+    .Public =
+    [
+        .Uses = {
+            'input_system'
+            'render_system'
+        }
+    ]
+
+    .Private =
+    [
+        .Modules = {
+            'imgui'
+        }
+    ]
 ]
+.Projects + .Project

@@ -1,6 +1,7 @@
 #pragma once
 #include <iceshard/service_provider.hxx>
 #include <iceshard/engine.hxx>
+#include <iceshard/component/component_block_allocator.hxx>
 
 #include <core/allocator.hxx>
 #include <core/pod/hash.hxx>
@@ -20,6 +21,14 @@ namespace iceshard
         auto entity_manager() noexcept -> EntityManager* override;
         auto entity_manager() const noexcept -> const EntityManager* override;
 
+        auto entity_index() noexcept -> EntityIndex* override;
+        auto entity_index() const noexcept -> EntityIndex const* override;
+
+        auto archetype_index() noexcept -> iceshard::ecs::ArchetypeIndex* override;
+        auto archetype_index() const noexcept -> iceshard::ecs::ArchetypeIndex const* override;
+
+        auto component_block_allocator() noexcept -> ComponentBlockAllocator* override;
+
         //! \brief Checks if the given component system exists.
         bool has_component_system(core::stringid_arg_type component_system_name) const noexcept override;
 
@@ -32,6 +41,9 @@ namespace iceshard
     private:
         iceshard::EntityManager* const _entity_manager;
 
+        iceshard::ComponentBlockAllocator _component_block_allocator;
+
+        core::memory::unique_pointer<iceshard::ecs::ArchetypeIndex> _archetype_index;
         core::pod::Hash<ComponentSystem*> _world_component_systems;
     };
 

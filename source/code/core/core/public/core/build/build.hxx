@@ -10,10 +10,13 @@ namespace core::build
     static constexpr bool is_debug = configuration::current_config == configuration::ConfigurationType::Debug;
 
     //! \brief True if building for ReleaseDebug.
-    static constexpr bool is_release_debug = configuration::current_config == configuration::ConfigurationType::ReleaseDebug;
+    static constexpr bool is_develop = configuration::current_config == configuration::ConfigurationType::Develop;
 
     //! \brief True if building for Release.
-    static constexpr bool is_release = configuration::current_config == configuration::ConfigurationType::Release;
+    static constexpr bool is_profile = configuration::current_config == configuration::ConfigurationType::Profile;
+
+    //! \brief True if building for Release.
+    static constexpr bool is_release = is_profile || configuration::current_config == configuration::ConfigurationType::Release;
 
 
     //! \brief True if building for Windows.

@@ -31,14 +31,31 @@ namespace iceshard::renderer::vulkan
         pipeline_create_info.setLayoutCount = core::pod::array::size(layouts_native);
         pipeline_create_info.pSetLayouts = core::pod::array::begin(layouts_native);
 
-        layouts.debugui_layout.layout_type = RenderPipelineLayout::DebugUI;
-        auto api_result = vkCreatePipelineLayout(
-            devices.graphics.handle,
-            &pipeline_create_info,
-            nullptr,
-            &layouts.debugui_layout.layout
-        );
-        IS_ASSERT(api_result == VkResult::VK_SUCCESS, "Couldn't create pipeline layout!");
+        {
+            layouts.debugui_layout.layout_type = RenderPipelineLayout::DebugUI;
+            auto api_result = vkCreatePipelineLayout(
+                devices.graphics.handle,
+                &pipeline_create_info,
+                nullptr,
+                &layouts.debugui_layout.layout
+            );
+            IS_ASSERT(api_result == VkResult::VK_SUCCESS, "Couldn't create pipeline layout!");
+        }
+        {
+            pipeline_create_info.pushConstantRangeCount = 0;
+            pipeline_create_info.pPushConstantRanges = nullptr;
+
+            layouts.default_layout.layout_type = RenderPipelineLayout::Default;
+            auto api_result = vkCreatePipelineLayout(
+                devices.graphics.handle,
+                &pipeline_create_info,
+                nullptr,
+                &layouts.default_layout.layout
+            );
+            layouts.postprocess_layout.layout_type = RenderPipelineLayout::PostProcess;
+            layouts.postprocess_layout.layout = layouts.default_layout.layout;
+            IS_ASSERT(api_result == VkResult::VK_SUCCESS, "Couldn't create pipeline layout!");
+        }
     }
 
     void destroy_pipeline_layouts(
@@ -47,6 +64,7 @@ namespace iceshard::renderer::vulkan
     ) noexcept
     {
         vkDestroyPipelineLayout(devices.graphics.handle, layouts.debugui_layout.layout, nullptr);
+        vkDestroyPipelineLayout(devices.graphics.handle, layouts.default_layout.layout, nullptr);
     }
 
 } // namespace iceshard::renderer::vulkan
