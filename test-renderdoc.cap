@@ -5,7 +5,7 @@
         "commandLine": "",
         "environment": [
         ],
-        "executable": "E:\\projects\\cpp\\iceshard\\engine\\build\\bin\\x64-Debug\\test\\test.exe",
+        "executable": "E:\\projects\\cpp\\iceshard\\engine\\build\\bin\\Windows-x64-Develop-msvc-x64-v142\\test\\test.exe",
         "inject": false,
         "numQueuedFrames": 10,
         "options": {

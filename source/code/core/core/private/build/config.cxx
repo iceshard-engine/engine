@@ -15,8 +15,10 @@ namespace core::build::configuration
         {
         case core::build::configuration::ConfigurationType::Debug:
             return "Debug";
-        case core::build::configuration::ConfigurationType::ReleaseDebug:
-            return "ReleaseDebug";
+        case core::build::configuration::ConfigurationType::Develop:
+            return "Develop";
+        case core::build::configuration::ConfigurationType::Profile:
+            return "Profile";
         case core::build::configuration::ConfigurationType::Release:
             return "Release";
         default:

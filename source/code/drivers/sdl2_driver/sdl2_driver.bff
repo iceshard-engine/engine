@@ -1,12 +1,17 @@
-.Name = 'sdl2_driver'
-.Kind = .Kind_SharedLib
-
-.Private =
+.Project =
 [
-    .Modules = {
-        'SDL2'
-    }
-    .Imports = {
-        'input_system'
-    }
+    .Name = 'sdl2_driver'
+    .Kind = .Kind_SharedLib
+    .BaseDir = '$WorkspaceCodeDir$/drivers/sdl2_driver'
+
+    .Private =
+    [
+        .Modules = {
+            'SDL2'
+        }
+        .Uses = {
+            'input_system'
+        }
+    ]
 ]
+.Projects + .Project

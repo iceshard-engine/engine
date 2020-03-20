@@ -1,9 +1,14 @@
-.Name = 'memsys'
-.Kind = .Kind_StaticLib
-
-.Public =
+.Project =
 [
-    .Imports = {
-        'core'
-    }
+    .Name = 'memsys'
+    .Kind = .Kind_StaticLib
+    .BaseDir = '$WorkspaceCodeDir$/core/memsys'
+
+    .Public =
+    [
+        .Uses = {
+            'core'
+        }
+    ]
 ]
+.Projects + .Project

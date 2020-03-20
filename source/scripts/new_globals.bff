@@ -22,3 +22,23 @@
 .LibrarianOptions = ''
 
 .LinkerOptions = ''
+
+
+////
+
+.EmptyString = ''
+.Name_Empty = .EmptyString
+
+.Kind_None = '<none>'
+.Kind_StaticLib = 'StaticLib'
+.Kind_SharedLib = 'SharedLib'
+.Kind_ConsoleApp = 'ConsoleApp'
+.Kind_WindowedApp = 'WindowedApp'
+.Kind_Applications = { .Kind_ConsoleApp, .Kind_WindowedApp }
+
+.Kind_AllowedList = {
+    .Kind_StaticLib
+    .Kind_SharedLib
+    .Kind_ConsoleApp
+    .Kind_WindowedApp
+}

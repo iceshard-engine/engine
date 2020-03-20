@@ -1,11 +1,16 @@
-.Name = 'messages'
-.Kind = .Kind_StaticLib
-
-.Public =
+.Project =
 [
-    .Imports = {
-        'core'
-        'memsys'
-        'collections'
-    }
+    .Name = 'messages'
+    .Kind = .Kind_StaticLib
+    .BaseDir = '$WorkspaceCodeDir$/core/messages'
+
+    .Public =
+    [
+        .Uses = {
+            'core'
+            'memsys'
+            'collections'
+        }
+    ]
 ]
+.Projects + .Project

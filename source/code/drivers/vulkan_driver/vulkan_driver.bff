@@ -1,26 +1,33 @@
-.Name = 'vulkan_driver'
-.Kind = .Kind_SharedLib
+#import VULKAN_SDK
 
-.Private =
+.Project =
 [
-    .Modules = {
-        'SDL2'
-        'glm'
-    }
-    .Imports = {
-        'render_system'
-    }
+    .Name = 'vulkan_driver'
+    .Kind = .Kind_SharedLib
+    .BaseDir = '$WorkspaceCodeDir$/drivers/vulkan_driver'
 
-    .Defines = {
-        'VK_USE_PLATFORM_WIN32_KHR'
-    }
-    .IncludeDirs = {
-        '$VULKAN_SDK$/Include'
-    }
-    .LibDirs = {
-        '$VULKAN_SDK$/Lib'
-    }
-    .Libs = {
-        'vulkan-1'
-    }
+    .Private =
+    [
+        .Modules = {
+            'SDL2'
+            'glm'
+        }
+        .Uses = {
+            'render_system'
+        }
+
+        .Defines = {
+            'VK_USE_PLATFORM_WIN32_KHR'
+        }
+        .IncludeDirs = {
+            '$VULKAN_SDK$/Include'
+        }
+        .LibDirs = {
+            '$VULKAN_SDK$/Lib'
+        }
+        .Libs = {
+            'vulkan-1'
+        }
+    ]
 ]
+.Projects + .Project

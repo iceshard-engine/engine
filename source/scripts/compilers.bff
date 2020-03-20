@@ -1,97 +1,92 @@
-#once
-#include "new_target_configurations.bff"
+// #once
+// #include "new_target_configurations.bff"
 
-// Default Compiler Options
-//------------------------------------------------------------------------------
-.msvcCompilerOptions =
-[
-    Using( .compilerVariables )
-    .Compiler = 'msvc-compiler'
+// // Default Compiler Options
+// //------------------------------------------------------------------------------
+// .msvcCompilerOptions =
+// [
+//     Using( .compilerVariables )
+//     .Compiler = 'msvc-compiler'
 
-    // Prepare compiler options
-    .CompilerOptions = ' /c /nologo "%1"'
-        + ' /FS'
-        + ' /FC'
-        + ' /Zc:wchar_t'
-        + ' /Zc:forScope'
-        + ' /Zc:inline'
-        + ' /std:c++latest'
-        + ' /permissive-'
-        + ' /EHsc'
-        + ' /W4'
-        + ' /WX'
+//     // Prepare compiler options
+//     .CompilerOptions = ' /c /nologo "%1"'
+//         + ' /FS'
+//         + ' /FC'
+//         + ' /Zc:wchar_t'
+//         + ' /Zc:forScope'
+//         + ' /Zc:inline'
+//         + ' /std:c++latest'
+//         + ' /permissive-'
+//         + ' /EHsc'
+//         + ' /W4'
+//         + ' /WX'
 
-    // Append include directories
-    ForEach( .IncludeDirectory in .IncludeDirectories )
-    {
-        ^CompilerOptions + ' /I"$IncludeDirectory$"'
-    }
+//     // Append include directories
+//     ForEach( .IncludeDirectory in .IncludeDirectories )
+//     {
+//         ^CompilerOptions + ' /I"$IncludeDirectory$"'
+//     }
 
-    // Set the proper ObjectList properties
-    .PCHOptions = .CompilerOptions
-        + ' /Fo"%3"'
-    .CompilerOptions
-        + ' /Fo"%2"'
-]
+//     // Set the proper ObjectList properties
+//     .PCHOptions = .CompilerOptions
+//         + ' /Fo"%3"'
+//     .CompilerOptions
+//         + ' /Fo"%2"'
+// ]
 
-// Default Linker Options
-//------------------------------------------------------------------------------
-.msvcLinkerOptions =
-[
-    Using( .compilerVariables )
+// // Default Linker Options
+// //------------------------------------------------------------------------------
+// .msvcLinkerOptions =
+// [
+//     Using( .compilerVariables )
 
-    .Linker = .ToolLinker
-    .LinkerOptions = ' /NOLOGO /OUT:"%2" "%1"'
-        + ' /MACHINE:x64'
+//     .Linker = .ToolLinker
+//     .LinkerOptions = ' /NOLOGO /OUT:"%2" "%1"'
+//         + ' /MACHINE:x64'
 
-    ForEach( .LibraryDirectory in .LibraryDirectories )
-    {
-        ^LinkerOptions + ' /LIBPATH:"$LibraryDirectory$"'
-    }
-    ForEach( .Library in .SystemLibraries )
-    {
-        ^LinkerOptions + ' "$Library$.lib"'
-    }
-]
+//     ForEach( .LibraryDirectory in .LibraryDirectories )
+//     {
+//         ^LinkerOptions + ' /LIBPATH:"$LibraryDirectory$"'
+//     }
+//     ForEach( .Library in .SystemLibraries )
+//     {
+//         ^LinkerOptions + ' "$Library$.lib"'
+//     }
+// ]
 
-// Default Libratian Options
-//------------------------------------------------------------------------------
-.msvcLibrarianOptions =
-[
-    Using( .compilerVariables )
+// // Default Libratian Options
+// //------------------------------------------------------------------------------
+// .msvcLibrarianOptions =
+// [
+//     Using( .compilerVariables )
 
-    .Librarian = .ToolLibrarian
-    .LibrarianOptions = ' /NOLOGO /OUT:"%2" "%1"'
-        + ' /MACHINE:x64'
-]
+//     .Librarian = .ToolLibrarian
+//     .LibrarianOptions = ' /NOLOGO /OUT:"%2" "%1"'
+//         + ' /MACHINE:x64'
+// ]
 
-// Microsoft Resource Compiler
-//------------------------------------------------------------------------------
-Compiler( 'msvc-resource-compiler' )
-{
-    Using( .compilerVariables )
+// // Microsoft Resource Compiler
+// //------------------------------------------------------------------------------
+// Compiler( 'msvc-resource-compiler' )
+// {
+//     Using( .compilerVariables )
 
-    .Executable = .ToolResourceCompiler
-    .CompilerFamily = 'custom'
-}
+//     .Executable = .ToolResourceCompiler
+//     .CompilerFamily = 'custom'
+// }
 
-// Default Resource Compiler Options
-//------------------------------------------------------------------------------
-.msvcResourceCompilerOptions =
-[
-    Using( .compilerVariables )
+// // Default Resource Compiler Options
+// //------------------------------------------------------------------------------
+// .msvcResourceCompilerOptions =
+// [
+//     Using( .compilerVariables )
 
-    .Compiler = 'msvc-resource-compiler'
-    .CompilerOptions = ''
+//     .Compiler = 'msvc-resource-compiler'
+//     .CompilerOptions = ''
 
-    // Append include directories
-    ForEach( .IncludeDirectory in .IncludeDirectories )
-    {
-        ^CompilerOptions + ' /I"$IncludeDirectory$"'
-    }
-]
-
-ForEach( .ToolsetInfo in .AvailableToolsets )
-{
-    Print( .ToolsetInfo )
-}
+//     // Append include directories
+//     ForEach( .IncludeDirectory in .IncludeDirectories )
+//     {
+//         ^CompilerOptions + ' /I"$IncludeDirectory$"'
+//     }
+// ]

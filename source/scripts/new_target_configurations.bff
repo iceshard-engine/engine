@@ -32,8 +32,11 @@ ForEach( .Platform in .PlatformList )
                         .PlatformSystem
                         .PlatformArchitecture
                         .ToolchainCompilerFamily
+                        .ToolchainToolset
                         .ConfigName
                     } + .PlatformRequiredSdks
+
+                    .ConanConfigName = .ConanConfiguration
 
                     .Platform = .Platform
                     .Toolchain = .Toolchain
@@ -52,59 +55,10 @@ ForEach( .Platform in .PlatformList )
                         + .'ToolchainProperties_$ToolchainCompilerFamily$_$ToolchainArchitecture$_$ToolchainToolset$_$ConfigurationName$'
                 ]
 
-                Print( .TargetConfig )
+                ^TargetConfigList + .TargetConfig
             }
 
         }
     }
 
 }
-
-//     ForEach( .ToolchainName in .ToolchainNames, .Toolchain in .ToolchainList )
-//     {
-//         .RequiredSdksAndToolchains = { .ToolchainName } + .RequiredSdks
-//         .AvailableSdksAndToolchains = .SupportedToolchains + .SdkNames
-
-//         If( .RequiredSdksAndToolchains in .AvailableSdksAndToolchains )
-//         {
-//             Using( .Toolchain )
-
-//             ForEach( .ConfigurationName in .ConfigurationNames )
-//             {
-//                 .TargetConfig =
-//                 [
-//                     .ConfigName = .ConfigurationName
-//                     .ConfigToolchain = .ToolchainName
-//                     .ConfigPlatform = "$TargetSystem$-$TargetArchitecture$"
-//                     .ConfigTags = {
-//                         .TargetSystem
-//                         .TargetArchitecture
-//                         .ToolchainCompilerFamily
-//                         .ConfigName
-//                     } + .RequiredSdks
-//                 ]
-
-//                 .TargetConfig
-//                     + .Toolchain
-//                     + .'CompilerFamilyProps_$ToolchainCompilerFamily$'
-//                     + .'ToolchainProps_$ToolchainCompilerFamily$_$ToolchainArchitecture$_$ToolchainToolset$'
-//                     + .PlatformProps
-
-//                 ForEach( .SdkName in .SdkNames, .Sdk in .SdkList )
-//                 {
-//                     If ( .SdkName in .RequiredSdks )
-//                     {
-//                         ^TargetConfig + .Sdk
-//                     }
-//                 }
-
-//                 ^TargetConfigList + .TargetConfig
-//             }
-//         }
-//     }
-// }
-
-// ForEach( .TargetConfig in .TargetConfigList )
-// {
-//     Print( .TargetConfig )
-// }

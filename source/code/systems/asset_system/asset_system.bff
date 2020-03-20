@@ -1,18 +1,25 @@
-.Name = 'asset_system'
-.Kind = .Kind_StaticLib
-
-.Public =
+.Project =
 [
-    .Imports = { 'resource_system' }
-]
+    .Name = 'asset_system'
+    .Kind = .Kind_StaticLib
+    .BaseDir = '$WorkspaceCodeDir$/systems/asset_system'
 
-.Private =
-[
-    .Modules = {
-        'rapidjson'
-    }
-    .CompilerFlags = {
-        '/wd4996' // RapidJson warnings
-        '/wd5054' // RapidJson warnings
-    }
+    .Public =
+    [
+        .Uses = {
+            'resource_system'
+        }
+    ]
+
+    .Private =
+    [
+        .Modules = {
+            'rapidjson'
+        }
+        // .CompilerFlags = {
+        //     '/wd4996' // RapidJson warnings
+        //     '/wd5054' // RapidJson warnings
+        // }
+    ]
 ]
+.Projects + .Project

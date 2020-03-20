@@ -1,20 +1,25 @@
-.Name = 'resource_system'
-.Kind = .Kind_StaticLib
-
-.Public =
+.Project =
 [
-    .Imports = {
-        'messages'
-    }
-]
+    .Name = 'resource_system'
+    .Kind = .Kind_StaticLib
+    .BaseDir = '$WorkspaceCodeDir$/systems/resource_system'
 
-.Private =
-[
-    .Modules = {
-        'rapidjson'
-    }
-    .CompilerFlags = {
-        '/wd4996' // RapidJson warnings
-        '/wd5054' // RapidJson warnings
-    }
+    .Public =
+    [
+        .Uses = {
+            'messages'
+        }
+    ]
+
+    .Private =
+    [
+        .Modules = {
+            'rapidjson'
+        }
+        // .CompilerFlags = {
+        //     '/wd4996' // RapidJson warnings
+        //     '/wd5054' // RapidJson warnings
+        // }
+    ]
 ]
+.Projects + .Project

@@ -5,9 +5,34 @@
 [
     Using( .ToolchainProperties_Base )
 
-    .CompilerOptions + ' /nologo /c "%1"'
+    .CompilerOptions + ' /nologo /c "%1" /Fo"%2"'
     .LinkerOptions + ' /NOLOGO /OUT:"%2" "%1"'
     .LibrarianOptions + ' /NOLOGO /OUT:"%2" "%1"'
+
+    .ToolchainFlag_Defines =
+    [
+        .FlagVariable = 'CompilerOptions'
+        .FlagPrefix = '/D"'
+        .FlagSuffix = '"'
+    ]
+    .ToolchainFlag_IncludeDirs =
+    [
+        .FlagVariable = 'CompilerOptions'
+        .FlagPrefix = '/I"'
+        .FlagSuffix = '"'
+    ]
+    .ToolchainFlag_Libs =
+    [
+        .FlagVariable = 'LinkerOptions'
+        .FlagPrefix = '"'
+        .FlagSuffix = '.lib"'
+    ]
+    .ToolchainFlag_LibDirs =
+    [
+        .FlagVariable = 'LinkerOptions'
+        .FlagPrefix = '/LIBPATH:"'
+        .FlagSuffix = '"'
+    ]
 ]
 
 .ToolchainProperties_clang_x64_900 =

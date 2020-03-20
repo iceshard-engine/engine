@@ -11,12 +11,12 @@ class BuildCommand extends Command
             name:'-c --clean'
         option "target",
             name:'-t --target',
-            default:'all-x64-ReleaseDebug'
+            default:'all-x64-Develop'
     }
 
     execute: (args) =>
 
-        workspace_root = os.cwd!
+        workspace_root = os.cwd!\gsub '\\', '/'
 
         os.mkdir "build" unless os.isdir "build"
         os.chdir "build", ->
@@ -33,7 +33,7 @@ class BuildCommand extends Command
                 gen\line!
                 gen\include "conan.bff"
                 gen\include "detected_toolsets.bff"
-                gen\include "#{workspace_root}\\source\\fbuild.bff"
+                gen\include "#{workspace_root}/source/fbuild.bff"
                 gen\close!
 
             @@fbuild\build config:'fbuild.bff', target:args.target, clean:args.clean, monitor:true, distributed:true, summary:false

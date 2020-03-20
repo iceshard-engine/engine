@@ -30,7 +30,7 @@ compiler_msvc_x64_v142 = (gen, tools_path) ->
             "#{tools_path}\\mspft140.dll",
             "#{tools_path}\\msvcp140.dll",
             "#{tools_path}\\atlprov.dll",
-            "#{tools_path}\\tbbmalloc.dl",
+            "#{tools_path}\\tbbmalloc.dll",
             "#{tools_path}\\vcruntime140.dll",
             "#{tools_path}\\1033\\mspft140ui.dll",
             "#{tools_path}\\1033\\clui.dll",
@@ -96,10 +96,10 @@ detect_compilers = (gen) ->
                             { 'ToolchainLibrarian', "$ToolchainPath$\\lib.exe" }
                             { 'ToolchainLinker', "$ToolchainPath$\\link.exe" }
                             { 'ToolchainIncludeDirs', {
-                                "#{current_dir}\\VC\\Tools\\MSVC\\#{tools_version}\\include",
-                                "#{current_dir}\\VC\\Tools\\MSVC\\#{tools_version}\\atlmfc\\include",
-                                "#{current_dir}\\VC\\Auxiliary\\VS\\include",
-                                "#{current_dir}\\VC\\Auxiliary\\VS\\UnitTest\\include",
+                                "#{current_dir}\\Tools\\MSVC\\#{tools_version}\\include",
+                                "#{current_dir}\\Tools\\MSVC\\#{tools_version}\\atlmfc\\include",
+                                "#{current_dir}\\Auxiliary\\VS\\include",
+                                "#{current_dir}\\Auxiliary\\VS\\UnitTest\\include",
                             } }
                             { 'ToolchainLibDirs', {
                                 "#{current_dir}\\Tools\\MSVC\\#{tools_version}\\lib\\x64",
@@ -196,7 +196,7 @@ detect_windows_platform = (gen) ->
             gen\variables {
                 -- { 'SdkDirectory', win_sdk.directory }
                 -- { 'SdkVersion', win_sdk.version }
-                { 'SdkIncludes', {
+                { 'SdkIncludeDirs', {
                     "#{win_sdk.directory}Include\\#{win_sdk.version}.0\\ucrt"
                     "#{win_sdk.directory}Include\\#{win_sdk.version}.0\\um"
                     "#{win_sdk.directory}Include\\#{win_sdk.version}.0\\shared"
@@ -205,6 +205,8 @@ detect_windows_platform = (gen) ->
                 { 'SdkLibDirs', {
                     "#{win_sdk.directory}Lib\\#{win_sdk.version}.0\\ucrt\\x64"
                     "#{win_sdk.directory}Lib\\#{win_sdk.version}.0\\um\\x64"
+                } }
+                { 'SdkLibs', {
                 } }
             }
         gen\line!

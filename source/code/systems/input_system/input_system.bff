@@ -1,9 +1,14 @@
-.Name = 'input_system'
-.Kind = .Kind_StaticLib
-
-.Public =
+.Project =
 [
-    .Imports = {
-        'messages'
-    }
+    .Name = 'input_system'
+    .Kind = .Kind_StaticLib
+    .BaseDir = '$WorkspaceCodeDir$/systems/input_system'
+
+    .Public =
+    [
+        .Uses = {
+            'messages'
+        }
+    ]
 ]
+.Projects + .Project

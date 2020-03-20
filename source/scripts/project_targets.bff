@@ -1,63 +1,57 @@
 #once
 
-.System_Linux = 'Linux'
-.System_Windows = 'Windows'
+.KindOutDir_StaticLib = 'lib'
+.KindOutDir_SharedLib = 'bin'
+.KindOutDir_ConsoleApp = 'bin'
+.KindOutDir_WindowedApp = 'bin'
 
-.TargetsLists = [ ]
-ForEach( .Configuration in .Configurations )
+.ConanVariables_StaticLib = { 'IncludeDirs', 'Defines' }
+.ConanVariables_SharedLib = { 'IncludeDirs', 'Defines', 'Libs', 'LibDirs' }
+.ConanVariables_ConsoleApp = { 'IncludeDirs', 'Defines', 'Libs', 'LibDirs' }
+.ConanVariables_WindowedApp = { 'IncludeDirs', 'Defines', 'Libs', 'LibDirs' }
+
+ForEach( .TargetConfig in .TargetConfigList )
 {
-    Using( .Configuration )
-    .TargetList =
-    [
-        .'Targets_$Platform$_$Config$' = { }
-    ]
-    ^TargetsLists + .TargetList
-}
+    Using( .TargetConfig )
 
-.SolutionProjects = {}
+    Using( .Platform )
+    Using( .PlatformOptions )
+    Using( .PlatformExtensions )
 
-ForEach( .ProjectDefinition in .ProjectDefinitionList )
-{
-    // Apply all properties
-    Using( .ProjectDefinition )
-    Using( .ProjectProperties_Final )
-    Using( .ProjectProperties_Targets )
+    .ConfigTargets = { }
 
-    .ProjectName = .Name
-    .ProjectKind = .Kind
-    .ProjectConanModules = .Modules
-    .ProjectVCXConfigs = { }
-
-    Using( .'Project_$Kind$' )
-
-    // Go over all configurations
-    //--------------------------------------------------------------------------
-    ForEach( .Configuration in .Configurations )
+    ForEach( .Project in .ProjectsResolved )
     {
-        Using( .Configuration )
-        Using( .CompilerProperties )
-        Using( .MSVC )
+        Using( .Project )
+        Using( .ProjectProperties_Final )
 
-        .OutputExtension = .'TargetExt_$ProjectKind$'
-        .ConfigurationTags = { 'Windows', .Platform, .Config }
+        Print( "Target: $ProjectName$-$ConfigPlatform$-$ConfigName$-$ConfigToolchain$" )
 
-        // Configuration properties
-        //--------------------------------------------------------------------------
-        .ConfigurationIntermediateDirectory = '$WorkspaceBuildDir$/$Kind_ObjDir$/$Platform$-$Config$/$ProjectName$'
-        .ConfigurationTargetDirectory = '$WorkspaceBuildDir$/$Kind_TargetDir$/$Platform$-$Config$/$ProjectName$'
-        .ConfigurationImpLibDirectory = '$WorkspaceBuildDir$/$Kind_ImpLibDir$/$Platform$-$Config$/$ProjectName$'
-        .ProjectConfigurationTargets = { }
+        .OutDirName = .'KindOutDir_$ProjectKind$'
+        .TargetExtension = .'OutputExtension_$ProjectKind$'
 
-        .ConfigurationBuildDependencies = {}
-        .ConfigurationLinkDependencies = {}
-        .ConfigurationRuntimeDependencies = {}
+        .TargetIntermediateDirectory = '$WorkspaceBuildDir$/obj/$ConfigPlatform$-$ConfigName$-$ConfigToolchain$/$ProjectName$'
+        .TargetImpLibDirectory = '$WorkspaceBuildDir$/lib/$ConfigPlatform$-$ConfigName$-$ConfigToolchain$/$ProjectName$'
+        .TargetOutputDirectory = '$WorkspaceBuildDir$/$OutDirName$/$ConfigPlatform$-$ConfigName$-$ConfigToolchain$/$ProjectName$'
+        .TargetOutputName = "$ProjectName$$TargetExtension$"
+        .TargetList = { }
+
+        // Print( "IntDir: $TargetIntermediateDirectory$" )
+        // Print( "LibDir: $TargetImpLibDirectory$" )
+        // Print( "Output: $TargetOutputDirectory$/$TargetName$" )
 
         // Build dependency lists
         //--------------------------------------------------------------------------
+        .TargetBuildDependencies = {}
+        .TargetLinkDependencies = {}
+        .TargetRuntimeDependencies = {}
+
         {
             .Build = {}
             .Link = {}
             .Runtime = {}
+
+            .Dependencies = [ ] + .Dependencies
             Using( .Dependencies )
 
             .Vars = { 'Build', 'Link', 'Runtime' }
@@ -65,49 +59,66 @@ ForEach( .ProjectDefinition in .ProjectDefinitionList )
             {
                 ForEach( .Dependency in .'$Var$' )
                 {
-                    ^'Configuration$Var$Dependencies' + '$Dependency$-$Platform$-$Config$'
+                    ^'Target$Var$Dependencies' + '$Dependency$-$ConfigPlatform$-$ConfigName$-$ConfigToolchain$'
                 }
             }
         }
 
+        Using( .Properties )
+
         // Compiler flags
         //--------------------------------------------------------------------------
         {
+            Using( .Toolchain )
+            Using( .SdkProperties )
+
+            .IncludeDirs
+                + .SdkIncludeDirs
+                + .ToolchainIncludeDirs
+            .LibDirs
+                + .SdkLibDirs
+                + .ToolchainLibDirs
+            .Libs
+                + .SdkLibs
+                + .ToolchainLibs
+
             .Variables = {
                 'IncludeDirs'
                 'Defines'
-                'CompilerFlags'
+                // 'CompilerFlags'
                 'Libs'
                 'LibDirs'
             }
 
             ForEach( .Var in .Variables )
             {
-                Using( .'Flags_$Var$' )
+                Using( .'ToolchainFlag_$Var$' )
                 ForEach( .Value in .'$Var$' )
                 {
-                    ^'$FlagTargetVar$' + ' $FlagPrefix$$Value$$FlagSuffix$'
+                    ^'$FlagVariable$' + ' $FlagPrefix$$Value$$FlagSuffix$'
                 }
             }
         }
 
         // Conan Modules
         //--------------------------------------------------------------------------
-        ForEach( .ConanModule in .ProjectConanModules )
+        ForEach( .ConanModule in .Modules )
         {
-            Using( .'ConanModule_$ConanModule$_$ConanConfig$' )
+            Using( .'ConanModule_$ConanModule$_$ConanConfigName$' )
 
-            ForEach( .OptionName in .Conan_OptionNames )
+            ForEach( .Var in .'ConanVariables_$ProjectKind$' )
             {
-                Using( .'Flags_$OptionName$' )
-                ForEach( .Value in .'$OptionName$' )
+                Using( .'ToolchainFlag_$Var$' )
+                ForEach( .Value in .'$Var$' )
                 {
-                    ^'$FlagTargetVar$' + ' $FlagPrefix$$Value$$FlagSuffix$'
+                    ^'$FlagVariable$' + ' $FlagPrefix$$Value$$FlagSuffix$'
                 }
             }
 
             If ( .CopyModules )
             {
+
+
                 .CopyDirs = false
                 .CopyDirsList = { }
                 ForEach( .BinDir in .BinDirs )
@@ -118,210 +129,443 @@ ForEach( .ProjectDefinition in .ProjectDefinitionList )
 
                 If ( .CopyDirs )
                 {
-                    CopyDir( '$ProjectName$-$Platform$-$Config$-$ConanModule$-copydir' )
+                    CopyDir( '$ProjectName$-$ConfigPlatform$-$ConfigName$-$ConfigToolchain$-$ConanModule$-copydir' )
                     {
                         .SourcePaths = .CopyDirsList
                         .SourcePathsPattern = '*.dll'
-                        .Dest = .ConfigurationTargetDirectory
+                        .Dest = .TargetOutputDirectory
                     }
-                    ^ProjectConfigurationTargets + '$ProjectName$-$Platform$-$Config$-$ConanModule$-copydir'
+                    ^TargetRuntimeDependencies + '$ProjectName$-$ConfigPlatform$-$ConfigName$-$ConfigToolchain$-$ConanModule$-copydir'
                 }
             }
         }
 
         {
-            .CompilerOutputPath = .ConfigurationIntermediateDirectory
-            .CompilerInputUnity = { }
-            .CompilerInputPath = { '$ProjectBaseDir$/private' }
-            .CompilerInputPattern = '*.cxx'
+            Using( .Toolchain )
 
-            // Unity files
+            {
+                .Compiler = .ToolchainCompiler
+                .CompilerOutputPath = .TargetIntermediateDirectory
+                .CompilerInputUnity = { }
+                .CompilerInputPath = { '$ProjectBaseDir$/private' }
+                .CompilerInputPattern = '*.cxx'
+
+                // Unity files
+                //--------------------------------------------------------------------------
+                If ( .UnityBuilds )
+                {
+                    Unity( '$ProjectName$-$ConfigPlatform$-$ConfigName$-$ConfigToolchain$-unity' )
+                    {
+                        .UnityInputPath = '$ProjectBaseDir$/private'
+                        .UnityInputPattern = { '*.cxx' }
+                        .UnityOutputPath = .TargetIntermediateDirectory
+                        .UnityOutputPattern = 'unity_$ProjectName$_*.cxx'
+                    }
+
+                    // Reset compiler input paths
+                    ^CompilerInputUnity = '$ProjectName$-$ConfigPlatform$-$ConfigName$-$ConfigToolchain$-unity'
+                    ^CompilerInputPath = { }
+                }
+
+                // Object list
+                //--------------------------------------------------------------------------
+                ObjectList( '$ProjectName$-$ConfigPlatform$-$ConfigName$-$ConfigToolchain$-objects' )
+                {
+                }
+            }
+
+            // Static Library target
             //--------------------------------------------------------------------------
-            If ( .UnityBuilds )
+            If ( .ProjectKind == .Kind_StaticLib )
             {
-                Unity( '$ProjectName$-$Platform$-$Config$-unity' )
+                .Compiler = .ToolchainCompiler
+                .CompilerOutputPath = .TargetIntermediateDirectory
+
+                .Librarian = .ToolchainLibrarian
+                .LibrarianAdditionalInputs = '$ProjectName$-$ConfigPlatform$-$ConfigName$-$ConfigToolchain$-objects'
+                .LibrarianOutput = '$TargetOutputDirectory$/$TargetOutputName$'
+
+                Library( '$ProjectName$-$ConfigPlatform$-$ConfigName$-$ConfigToolchain$-link' )
                 {
-                    .UnityInputPath = '$ProjectBaseDir$/private'
-                    .UnityInputPattern = { '*.cxx' }
-                    .UnityOutputPath = .ConfigurationIntermediateDirectory
                 }
 
-                // Reset compiler input paths
-                ^CompilerInputUnity = '$ProjectName$-$Platform$-$Config$-unity'
-                ^CompilerInputPath = { }
+                ^TargetList + '$ProjectName$-$ConfigPlatform$-$ConfigName$-$ConfigToolchain$-link'
             }
 
-            // Object list
+            // Shared Library target
             //--------------------------------------------------------------------------
-            ObjectList( '$ProjectName$-$Platform$-$Config$-objects' )
+            If ( .ProjectKind == .Kind_SharedLib )
             {
-            }
-        }
-
-        // Library target
-        //--------------------------------------------------------------------------
-        If ( .ProjectKind == .Kind_StaticLib )
-        {
-            Library( '$ProjectName$-$Platform$-$Config$-link' )
-            {
-                .CompilerOutputPath = .ConfigurationIntermediateDirectory
-
-                .LibrarianAdditionalInputs = '$ProjectName$-$Platform$-$Config$-objects'
-                .LibrarianOutput = '$ConfigurationTargetDirectory$/$ProjectName$$OutputExtension$'
-            }
-            ^ProjectConfigurationTargets + '$ProjectName$-$Platform$-$Config$-link'
-        }
-
-        // DLL target
-        //--------------------------------------------------------------------------
-        If ( .ProjectKind == .Kind_SharedLib )
-        {
-            DLL( '$ProjectName$-$Platform$-$Config$-link' )
-            {
-                .Libraries = { '$ProjectName$-$Platform$-$Config$-objects' }
+                .Libraries = { '$ProjectName$-$ConfigPlatform$-$ConfigName$-$ConfigToolchain$-objects' }
                 ForEach( .Library in .LibraryTargets )
                 {
-                    ^Libraries + '$Library$-$Platform$-$Config$-link'
+                    ^Libraries + '$Library$-$ConfigPlatform$-$ConfigName$-$ConfigToolchain$-link'
                 }
 
-                .LinkerOutput = '$ConfigurationTargetDirectory$/$ProjectName$$OutputExtension$'
-                .LinkerOptions + ' /DLL'
-            }
-            ^ProjectConfigurationTargets + '$ProjectName$-$Platform$-$Config$-link'
-        }
+                .Linker = .ToolchainLinker
+                .LinkerOutput = '$TargetOutputDirectory$/$TargetOutputName$'
+                .LinkerOptions + .'LinkerOptions_$ProjectKind$'
 
-        // Executable targets
-        //--------------------------------------------------------------------------
-        If ( .ProjectKind == .Kind_ConsoleApp )
-        {
-            Executable( '$ProjectName$-$Platform$-$Config$-link' )
+                DLL( '$ProjectName$-$ConfigPlatform$-$ConfigName$-$ConfigToolchain$-link' )
+                {
+                }
+
+                ^TargetList + '$ProjectName$-$ConfigPlatform$-$ConfigName$-$ConfigToolchain$-link'
+            }
+
+            // Executable targets
+            //--------------------------------------------------------------------------
+            If ( .ProjectKind in .Kind_Applications )
             {
-                .Libraries = { '$ProjectName$-$Platform$-$Config$-objects' }
+                .Libraries = { '$ProjectName$-$ConfigPlatform$-$ConfigName$-$ConfigToolchain$-objects' }
                 ForEach( .Library in .LibraryTargets )
                 {
-                    ^Libraries + '$Library$-$Platform$-$Config$-link'
+                    ^Libraries + '$Library$-$ConfigPlatform$-$ConfigName$-$ConfigToolchain$-link'
                 }
 
-                .LinkerOutput = '$ConfigurationTargetDirectory$/$ProjectName$$OutputExtension$'
-                .LinkerOptions + ' /SUBSYSTEM:CONSOLE'
-            }
-            ^ProjectConfigurationTargets + '$ProjectName$-$Platform$-$Config$-link'
-        }
-        If ( .ProjectKind == .Kind_WindowedApp )
-        {
-            Executable( '$ProjectName$-$Platform$-$Config$-link' )
-            {
-                .Libraries = { '$ProjectName$-$Platform$-$Config$-objects' }
-                ForEach( .Library in .LibraryTargets )
+                .Linker = .ToolchainLinker
+                .LinkerOutput = '$TargetOutputDirectory$/$TargetOutputName$'
+                .LinkerOptions + .'LinkerOptions_$ProjectKind$'
+
+                Executable( '$ProjectName$-$ConfigPlatform$-$ConfigName$-$ConfigToolchain$-link' )
                 {
-                    ^Libraries + '$Library$-$Platform$-$Config$-link'
                 }
 
-                .LinkerOutput = '$ConfigurationTargetDirectory$/$ProjectName$$OutputExtension$'
-                .LinkerOptions + ' /SUBSYSTEM:WINDOWS'
+                ^TargetList + '$ProjectName$-$ConfigPlatform$-$ConfigName$-$ConfigToolchain$-link'
             }
-            ^ProjectConfigurationTargets + '$ProjectName$-$Platform$-$Config$-link'
         }
 
-        // VCXProjectConfiguration
-        If ( .System_Windows in .ConfigurationTags )
+        Alias( '$ProjectName$-$ConfigPlatform$-$ConfigName$-$ConfigToolchain$' )
         {
-            .ProjectVCXConfig =
-            [
-                .PlatformToolset = 'v141'
-
-                .Platform = .Platform
-                .Config = .Config
-                .Target = '$ProjectName$-$Platform$-$Config$-objects'
-
-                .IntermediateDirectory = .ConfigurationIntermediateDirectory
-                .OutputDirectory = .ConfigurationTargetDirectory
-                .Output = '$ConfigurationTargetDirectory$/$ProjectName$$OutputExtension$'
-
-                .ProjectBuildCommand = '$VSBuildCommand$ $ProjectName$-$Platform$-$Config$'
-                .ProjectRebuildCommand = '$VSRebuildCommand$ $ProjectName$-$Platform$-$Config$'
-
-                .LocalDebuggerWorkingDirectory = '$WorkspaceBuildDir$'
-            ]
-            ^ProjectVCXConfigs + .ProjectVCXConfig
+            .Targets = .TargetList
+                + .TargetRuntimeDependencies
         }
 
-        // Target alias
-        //--------------------------------------------------------------------------
-        Alias( '$ProjectName$-$Platform$-$Config$' )
+        ^ConfigTargets + '$ProjectName$-$ConfigPlatform$-$ConfigName$-$ConfigToolchain$'
+    }
+
+    ForEach( .AliasInfo in .AliasInfos )
+    {
+        Using( .AliasInfo )
+
+        If ( .AliasTags in .ConfigTags )
         {
-            .Targets = .ProjectConfigurationTargets
-                + .ConfigurationRuntimeDependencies
+            Alias( "$AliasName$-$ConfigName$" )
+            {
+                .Targets = .ConfigTargets
+            }
         }
-
-        // Target alias lists
-        //--------------------------------------------------------------------------
-        .TargetsList =
-        [
-            .'Targets_$Platform$_$Config$' = '$ProjectName$-$Platform$-$Config$'
-        ]
-        ^TargetsLists + .TargetsList
-    }
-
-    // Create vcxproject target
-    //--------------------------------------------------------------------------
-    VCXProject( '$ProjectName$-vcxproj' )
-    {
-        .ProjectOutput = '$WorkspaceBuildDir$/projects/$ProjectName$.vcxproj'
-        .ProjectConfigs = .ProjectVCXConfigs
-        .ProjectInputPaths = .ProjectBaseDir
-        .ProjectBasePath = .ProjectBaseDir
-    }
-    ^SolutionProjects + '$ProjectName$-vcxproj'
-}
-
-
-// Create solution target
-//--------------------------------------------------------------------------
-{
-    .SolutionConfigs = {}
-
-    ForEach( .Configuration in .Configurations )
-    {
-        Using( .Configuration )
-
-        .SolutionConfig =
-        [
-            .Platform = .Platform
-            .Config = .Config
-        ]
-        ^SolutionConfigs + .SolutionConfig
-    }
-
-    // Create solution targets
-    //--------------------------------------------------------------------------
-    VSSolution( 'solution' )
-    {
-        .SolutionOutput = '../IceShard.sln'
-
-        .SolutionFolders = .SolutionFolders
-        .SolutionProjects = .SolutionProjects
-        .SolutionBuildProject = { 'test-vcxproj' }
     }
 }
 
+// .SolutionProjects = {}
 
-// All alliases
-//--------------------------------------------------------------------------
-{
-    .AllTargets = { }
-    Using( .TargetsLists )
-    ForEach( .Configuration in .Configurations )
-    {
-        Using( .Configuration )
-        Alias( 'all-$Platform$-$Config$' )
-        {
-            .Targets = .'Targets_$Platform$_$Config$'
-            ^AllTargets + .Targets
-        }
-    }
-    Alias( 'all' )
-    {
-        .Targets = .AllTargets
-    }
-}
+// ForEach( .ProjectDefinition in .ProjectDefinitionList )
+// {
+//     // Apply all properties
+//     Using( .ProjectDefinition )
+//     Using( .ProjectProperties_Final )
+//     Using( .ProjectProperties_Targets )
+
+//     .ProjectName = .Name
+//     .ProjectKind = .Kind
+//     .ProjectConanModules = .Modules
+//     .ProjectVCXConfigs = { }
+
+//     Using( .'Project_$Kind$' )
+
+//     // Go over all configurations
+//     //--------------------------------------------------------------------------
+//     ForEach( .Configuration in .Configurations )
+//     {
+//         Using( .Configuration )
+//         Using( .CompilerProperties )
+//         Using( .MSVC )
+
+//         .OutputExtension = .'TargetExt_$ProjectKind$'
+//         .ConfigurationTags = { 'Windows', .Platform, .Config }
+
+//         // Configuration properties
+//         //--------------------------------------------------------------------------
+//         .ConfigurationIntermediateDirectory = '$WorkspaceBuildDir$/$Kind_ObjDir$/$Platform$-$Config$/$ProjectName$'
+//         .ConfigurationTargetDirectory = '$WorkspaceBuildDir$/$Kind_TargetDir$/$Platform$-$Config$/$ProjectName$'
+//         .ConfigurationImpLibDirectory = '$WorkspaceBuildDir$/$Kind_ImpLibDir$/$Platform$-$Config$/$ProjectName$'
+//         .ProjectConfigurationTargets = { }
+
+//         .ConfigurationBuildDependencies = {}
+//         .ConfigurationLinkDependencies = {}
+//         .ConfigurationRuntimeDependencies = {}
+
+//         // Build dependency lists
+//         //--------------------------------------------------------------------------
+//         {
+//             .Build = {}
+//             .Link = {}
+//             .Runtime = {}
+//             Using( .Dependencies )
+
+//             .Vars = { 'Build', 'Link', 'Runtime' }
+//             ForEach( .Var in .Vars )
+//             {
+//                 ForEach( .Dependency in .'$Var$' )
+//                 {
+//                     ^'Configuration$Var$Dependencies' + '$Dependency$-$Platform$-$Config$'
+//                 }
+//             }
+//         }
+
+//         // Compiler flags
+//         //--------------------------------------------------------------------------
+//         {
+//             .Variables = {
+//                 'IncludeDirs'
+//                 'Defines'
+//                 'CompilerFlags'
+//                 'Libs'
+//                 'LibDirs'
+//             }
+
+//             ForEach( .Var in .Variables )
+//             {
+//                 Using( .'Flags_$Var$' )
+//                 ForEach( .Value in .'$Var$' )
+//                 {
+//                     ^'$FlagTargetVar$' + ' $FlagPrefix$$Value$$FlagSuffix$'
+//                 }
+//             }
+//         }
+
+//         // Conan Modules
+//         //--------------------------------------------------------------------------
+//         ForEach( .ConanModule in .ProjectConanModules )
+//         {
+//             Using( .'ConanModule_$ConanModule$_$ConanConfig$' )
+
+//             ForEach( .OptionName in .Conan_OptionNames )
+//             {
+//                 Using( .'Flags_$OptionName$' )
+//                 ForEach( .Value in .'$OptionName$' )
+//                 {
+//                     ^'$FlagTargetVar$' + ' $FlagPrefix$$Value$$FlagSuffix$'
+//                 }
+//             }
+
+//             If ( .CopyModules )
+//             {
+//                 .CopyDirs = false
+//                 .CopyDirsList = { }
+//                 ForEach( .BinDir in .BinDirs )
+//                 {
+//                     ^CopyDirs = true
+//                     ^CopyDirsList + "$BinDir$/"
+//                 }
+
+//                 If ( .CopyDirs )
+//                 {
+//                     CopyDir( '$ProjectName$-$Platform$-$Config$-$ConanModule$-copydir' )
+//                     {
+//                         .SourcePaths = .CopyDirsList
+//                         .SourcePathsPattern = '*.dll'
+//                         .Dest = .ConfigurationTargetDirectory
+//                     }
+//                     ^ProjectConfigurationTargets + '$ProjectName$-$Platform$-$Config$-$ConanModule$-copydir'
+//                 }
+//             }
+//         }
+
+//         {
+//             .CompilerOutputPath = .ConfigurationIntermediateDirectory
+//             .CompilerInputUnity = { }
+//             .CompilerInputPath = { '$ProjectBaseDir$/private' }
+//             .CompilerInputPattern = '*.cxx'
+
+//             // Unity files
+//             //--------------------------------------------------------------------------
+//             If ( .UnityBuilds )
+//             {
+//                 Unity( '$ProjectName$-$Platform$-$Config$-unity' )
+//                 {
+//                     .UnityInputPath = '$ProjectBaseDir$/private'
+//                     .UnityInputPattern = { '*.cxx' }
+//                     .UnityOutputPath = .ConfigurationIntermediateDirectory
+//                 }
+
+//                 // Reset compiler input paths
+//                 ^CompilerInputUnity = '$ProjectName$-$Platform$-$Config$-unity'
+//                 ^CompilerInputPath = { }
+//             }
+
+//             // Object list
+//             //--------------------------------------------------------------------------
+//             ObjectList( '$ProjectName$-$Platform$-$Config$-objects' )
+//             {
+//             }
+//         }
+
+//         // Library target
+//         //--------------------------------------------------------------------------
+//         If ( .ProjectKind == .Kind_StaticLib )
+//         {
+//             Library( '$ProjectName$-$Platform$-$Config$-link' )
+//             {
+//                 .CompilerOutputPath = .ConfigurationIntermediateDirectory
+
+//                 .LibrarianAdditionalInputs = '$ProjectName$-$Platform$-$Config$-objects'
+//                 .LibrarianOutput = '$ConfigurationTargetDirectory$/$ProjectName$$OutputExtension$'
+//             }
+//             ^ProjectConfigurationTargets + '$ProjectName$-$Platform$-$Config$-link'
+//         }
+
+//         // DLL target
+//         //--------------------------------------------------------------------------
+//         If ( .ProjectKind == .Kind_SharedLib )
+//         {
+//             DLL( '$ProjectName$-$Platform$-$Config$-link' )
+//             {
+//                 .Libraries = { '$ProjectName$-$Platform$-$Config$-objects' }
+//                 ForEach( .Library in .LibraryTargets )
+//                 {
+//                     ^Libraries + '$Library$-$Platform$-$Config$-link'
+//                 }
+
+//                 .LinkerOutput = '$ConfigurationTargetDirectory$/$ProjectName$$OutputExtension$'
+//                 .LinkerOptions + ' /DLL'
+//             }
+//             ^ProjectConfigurationTargets + '$ProjectName$-$Platform$-$Config$-link'
+//         }
+
+//         // Executable targets
+//         //--------------------------------------------------------------------------
+//         If ( .ProjectKind == .Kind_ConsoleApp )
+//         {
+//             Executable( '$ProjectName$-$Platform$-$Config$-link' )
+//             {
+//                 .Libraries = { '$ProjectName$-$Platform$-$Config$-objects' }
+//                 ForEach( .Library in .LibraryTargets )
+//                 {
+//                     ^Libraries + '$Library$-$Platform$-$Config$-link'
+//                 }
+
+//                 .LinkerOutput = '$ConfigurationTargetDirectory$/$ProjectName$$OutputExtension$'
+//                 .LinkerOptions + ' /SUBSYSTEM:CONSOLE'
+//             }
+//             ^ProjectConfigurationTargets + '$ProjectName$-$Platform$-$Config$-link'
+//         }
+//         If ( .ProjectKind == .Kind_WindowedApp )
+//         {
+//             Executable( '$ProjectName$-$Platform$-$Config$-link' )
+//             {
+//                 .Libraries = { '$ProjectName$-$Platform$-$Config$-objects' }
+//                 ForEach( .Library in .LibraryTargets )
+//                 {
+//                     ^Libraries + '$Library$-$Platform$-$Config$-link'
+//                 }
+
+//                 .LinkerOutput = '$ConfigurationTargetDirectory$/$ProjectName$$OutputExtension$'
+//                 .LinkerOptions + ' /SUBSYSTEM:WINDOWS'
+//             }
+//             ^ProjectConfigurationTargets + '$ProjectName$-$Platform$-$Config$-link'
+//         }
+
+//         // VCXProjectConfiguration
+//         If ( .System_Windows in .ConfigurationTags )
+//         {
+//             .ProjectVCXConfig =
+//             [
+//                 .PlatformToolset = 'v141'
+
+//                 .Platform = .Platform
+//                 .Config = .Config
+//                 .Target = '$ProjectName$-$Platform$-$Config$-objects'
+
+//                 .IntermediateDirectory = .ConfigurationIntermediateDirectory
+//                 .OutputDirectory = .ConfigurationTargetDirectory
+//                 .Output = '$ConfigurationTargetDirectory$/$ProjectName$$OutputExtension$'
+
+//                 .ProjectBuildCommand = '$VSBuildCommand$ $ProjectName$-$Platform$-$Config$'
+//                 .ProjectRebuildCommand = '$VSRebuildCommand$ $ProjectName$-$Platform$-$Config$'
+
+//                 .LocalDebuggerWorkingDirectory = '$WorkspaceBuildDir$'
+//             ]
+//             ^ProjectVCXConfigs + .ProjectVCXConfig
+//         }
+
+//         // Target alias
+//         //--------------------------------------------------------------------------
+//         Alias( '$ProjectName$-$Platform$-$Config$' )
+//         {
+//             .Targets = .ProjectConfigurationTargets
+//                 + .ConfigurationRuntimeDependencies
+//         }
+
+//         // Target alias lists
+//         //--------------------------------------------------------------------------
+//         .TargetsList =
+//         [
+//             .'Targets_$Platform$_$Config$' = '$ProjectName$-$Platform$-$Config$'
+//         ]
+//         ^TargetsLists + .TargetsList
+//     }
+
+//     // Create vcxproject target
+//     //--------------------------------------------------------------------------
+//     VCXProject( '$ProjectName$-vcxproj' )
+//     {
+//         .ProjectOutput = '$WorkspaceBuildDir$/projects/$ProjectName$.vcxproj'
+//         .ProjectConfigs = .ProjectVCXConfigs
+//         .ProjectInputPaths = .ProjectBaseDir
+//         .ProjectBasePath = .ProjectBaseDir
+//     }
+//     ^SolutionProjects + '$ProjectName$-vcxproj'
+// }
+
+
+// // Create solution target
+// //--------------------------------------------------------------------------
+// {
+//     .SolutionConfigs = {}
+
+//     ForEach( .Configuration in .Configurations )
+//     {
+//         Using( .Configuration )
+
+//         .SolutionConfig =
+//         [
+//             .Platform = .Platform
+//             .Config = .Config
+//         ]
+//         ^SolutionConfigs + .SolutionConfig
+//     }
+
+//     // Create solution targets
+//     //--------------------------------------------------------------------------
+//     VSSolution( 'solution' )
+//     {
+//         .SolutionOutput = '../IceShard.sln'
+
+//         .SolutionFolders = .SolutionFolders
+//         .SolutionProjects = .SolutionProjects
+//         .SolutionBuildProject = { 'test-vcxproj' }
+//     }
+// }
+
+
+// // All alliases
+// //--------------------------------------------------------------------------
+// {
+//     .AllTargets = { }
+//     Using( .TargetsLists )
+//     ForEach( .Configuration in .Configurations )
+//     {
+//         Using( .Configuration )
+//         Alias( 'all-$Platform$-$Config$' )
+//         {
+//             .Targets = .'Targets_$Platform$_$Config$'
+//             ^AllTargets + .Targets
+//         }
+//     }
+//     Alias( 'all' )
+//     {
+//         .Targets = .AllTargets
+//     }
+// }

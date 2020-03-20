@@ -10,160 +10,162 @@ Settings
 }
 
 ; Include the generated compiler definitions
-#include "scripts/compilers.bff"
+#include "scripts/new_target_configurations.bff"
+#include "scripts/aliases.bff"
 
 ; Workspace properties
 .WorkspaceBuildDir = '$WorkspaceRoot$/build'
 .WorkspaceCodeDir = '$WorkspaceRoot$/source/code'
 
-.Workspace_ConanModules = { 'fmt', 'cppcoro' }
+// .Workspace_ConanModules = { 'fmt', 'cppcoro' }
 
-; Configuration names
-.ConfigNameDebug = 'Debug'
-.ConfigNameReleaseDebug = 'ReleaseDebug'
-.ConfigNameRelease = 'Release'
+// ; Configuration names
+// .ConfigNameDebug = 'Debug'
+// .ConfigNameReleaseDebug = 'ReleaseDebug'
+// .ConfigNameRelease = 'Release'
 
 ; VS properties
 .VSBuildCommand = '$WorkspaceRoot$/ice.bat build -t'
 .VSRebuildCommand = '$WorkspaceRoot$/ice.bat build --clean -t'
 
-; Windows platform
-.platform_x64_windows =
-[
-    Using( .msvcCompilerOptions )
-    Using( .msvcLinkerOptions )
-    Using( .msvcLibrarianOptions )
+// ; Windows platform
+// .platform_x64_windows =
+// [
+//     Using( .msvcCompilerOptions )
+//     Using( .msvcLinkerOptions )
+//     Using( .msvcLibrarianOptions )
 
-    .CompilerOptions + ' /await'
-        + ' /wd4127' // conditional expression is constant'
-        + ' /permissive-'
+//     .CompilerOptions + ' /await'
+//         + ' /wd4127' // conditional expression is constant'
+//         + ' /permissive-'
 
-    .Platform = 'x64'
-]
+//     .Platform = 'x64'
+// ]
 
-; Add VisualStudio properties
-.platform_x64_windows + .'vs$vsProductVersion$_Variables'
+// ; Add VisualStudio properties
+// .platform_x64_windows + .'vs$vsProductVersion$_Variables'
 
-; Windows configurations
-.config_Debug =
-[
-    .Config = 'Debug'
-    .CompilerOptions = ' /D_DEBUG'
-        + ' /Od'
-        + ' /Z7'
-        + ' /MDd'
+// ; Windows configurations
+// .config_Debug =
+// [
+//     .Config = 'Debug'
+//     .CompilerOptions = ' /D_DEBUG'
+//         + ' /Od'
+//         + ' /Z7'
+//         + ' /MDd'
 
-    .LinkerOptions = ' /DEBUG:FULL'
-        + ' /INCREMENTAL'
+//     .LinkerOptions = ' /DEBUG:FULL'
+//         + ' /INCREMENTAL'
 
-    .ConanConfig = 'Debug'
-]
+//     .ConanConfig = 'Debug'
+// ]
 
-.config_ReleaseDebug =
-[
-    .Config = 'ReleaseDebug'
-    .CompilerOptions = ' /D_RDEBUG'
-        + ' /O2'
-        + ' /Z7'
-        + ' /MD'
+// .config_ReleaseDebug =
+// [
+//     .Config = 'ReleaseDebug'
+//     .CompilerOptions = ' /D_RDEBUG'
+//         + ' /O2'
+//         + ' /Z7'
+//         + ' /MD'
 
-    .LinkerOptions = ' /DEBUG:FULL'
-        + ' /INCREMENTAL'
+//     .LinkerOptions = ' /DEBUG:FULL'
+//         + ' /INCREMENTAL'
 
-    .ConanConfig = 'Release'
-]
+//     .ConanConfig = 'Release'
+// ]
 
-.config_Release =
-[
-    .Config = 'Release'
-    .CompilerOptions = ' /D_NDEBUG'
-        + ' /O2'
-        + ' /Z7'
-        + ' /MD'
+// .config_Release =
+// [
+//     .Config = 'Release'
+//     .CompilerOptions = ' /D_NDEBUG'
+//         + ' /O2'
+//         + ' /Z7'
+//         + ' /MD'
 
-    .LinkerOptions = ' /DEBUG:FASTLINK'
+//     .LinkerOptions = ' /DEBUG:FASTLINK'
 
-    .ConanConfig = 'Release'
-]
+//     .ConanConfig = 'Release'
+// ]
 
 
 // Defined rendering system flags
 //--------------------------------------------------------------------------
-#if exists(VULKAN_SDK)
-#import VULKAN_SDK
-.vulkan_x64_windows =
-[
-    .CompilerOptions = ''
-        + ' /I"$VULKAN_SDK$/Include"'
-        + ' /DVK_USE_PLATFORM_WIN32_KHR'
+// #if exists(VULKAN_SDK)
+// #import VULKAN_SDK
+// .vulkan_x64_windows =
+// [
+//     .CompilerOptions = ''
+//         + ' /I"$VULKAN_SDK$/Include"'
+//         + ' /DVK_USE_PLATFORM_WIN32_KHR'
 
-    .LinkerOptions = ''
-        + ' /LIBPATH:"$VULKAN_SDK$/Lib"'
-        + ' "vulkan-1.lib"'
-]
-#else
-.vulkan_x64_windows =
-[
-    .CompilerOptions = ''
-    .LinkerOptions = ''
-]
-#endif
+//     .LinkerOptions = ''
+//         + ' /LIBPATH:"$VULKAN_SDK$/Lib"'
+//         + ' "vulkan-1.lib"'
+// ]
+// #else
+// .vulkan_x64_windows =
+// [
+//     .CompilerOptions = ''
+//     .LinkerOptions = ''
+// ]
+// #endif
 
 
 // Defined Configurations
 //--------------------------------------------------------------------------
-.x64_Debug = .platform_x64_windows
-    + .config_Debug
-.x64_ReleaseDebug = .platform_x64_windows
-    + .config_ReleaseDebug
-.x64_Release = .platform_x64_windows
-    + .config_Release
+// .x64_Debug = .platform_x64_windows
+//     + .config_Debug
+// .x64_ReleaseDebug = .platform_x64_windows
+//     + .config_ReleaseDebug
+// .x64_Release = .platform_x64_windows
+//     + .config_Release
 
-// Configuration list
-.Configurations = {
-    .x64_Debug,
-    .x64_ReleaseDebug,
-    .x64_Release,
-}
+// // Configuration list
+// .Configurations = {
+//     .x64_Debug,
+//     .x64_ReleaseDebug,
+//     .x64_Release,
+// }
 
-.ProjectDirectories = { }
-{
-    #include "code/projects.bff"
-}
+// .ProjectDirectories = { }
+// {
+//     #include "code/projects.bff"
+// }
 
 #include "scripts/project_properties.bff"
 
-.SolutionFolders = { }
+#include "code/projects.bff"
 
-.ProjectDefinitionList = { }
-ForEach( .ProjectDirectory in .ProjectDirectories )
-{
-    Using( .ProjectDirectory )
+#include "scripts/project_definition.bff"
+#include "scripts/project_targets.bff"
+// .SolutionFolders = { }
 
-    .SolutionFolderProjects = { }
-    ForEach( .ProjectLocation in .Projects )
-    {
-        .ProjectDefinition =
-        [
-            Using( .ProjectEmptyProperties )
-            .ProjectBaseDir = '$WorkspaceCodeDir$/$Directory$/$ProjectLocation$'
-            #include "$WorkspaceCodeDir$/$Directory$/$ProjectLocation$/$ProjectLocation$.bff"
-            #include "scripts/project_definition.bff"
-            ^SolutionFolderProjects + '$ProjectName$-vcxproj'
-        ]
-        ^ProjectDefinitionList + .ProjectDefinition
-    }
+// .ProjectDefinitionList = { }
+// ForEach( .ProjectDirectory in .ProjectDirectories )
+// {
+//     Using( .ProjectDirectory )
 
-    .SolutionFolder =
-    [
-        .Path = .Filter
-        .Projects = .SolutionFolderProjects
-    ]
-    ^SolutionFolders + .SolutionFolder
-}
+//     .SolutionFolderProjects = { }
+//     ForEach( .ProjectLocation in .Projects )
+//     {
+//         .ProjectDefinition =
+//         [
+//             Using( .ProjectEmptyProperties )
+//             .ProjectBaseDir = '$WorkspaceCodeDir$/$Directory$/$ProjectLocation$'
+//             #include "$WorkspaceCodeDir$/$Directory$/$ProjectLocation$/$ProjectLocation$.bff"
+//             #include "scripts/project_definition.bff"
+//             ^SolutionFolderProjects + '$ProjectName$-vcxproj'
+//         ]
+//         ^ProjectDefinitionList + .ProjectDefinition
+//     }
 
-// Print( .ProjectDefinitionList )
-// Print( .ProjectUsings )
+//     .SolutionFolder =
+//     [
+//         .Path = .Filter
+//         .Projects = .SolutionFolderProjects
+//     ]
+//     ^SolutionFolders + .SolutionFolder
+// }
 
 #include "scripts/project_targets.bff"
 
