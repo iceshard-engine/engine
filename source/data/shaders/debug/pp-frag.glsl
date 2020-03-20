@@ -29,5 +29,5 @@ void main()
     vec4 col = texture(sampler2D(rendered_image, default_sampler), in_uv.st);
     // float stl = clamp(length(in_uv.st - vec2(0.5, 0.5)), 0.0,1.0);
     // float lum = col.r * 0.7 + col.g * 0.2 + col.b * 0.1;
-    out_color = sepia(col.rgb); // vig * pow(1-length((in_uv.st - vec2(0.5)) / 2) * 5, 1.25); // * vec3(vig);
+    out_color = col.rgb; // sepia(col.rgb); // vig * pow(1-length((in_uv.st - vec2(0.5)) / 2) * 5, 1.25); // * vec3(vig);
 }
