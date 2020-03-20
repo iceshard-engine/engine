@@ -232,16 +232,23 @@ namespace core::pod::hash_internal
 } // namespace core::pod::hash_internal
 
 template<typename T>
-bool core::pod::hash::has(const Hash<T> &h, uint64_t key) noexcept
+bool core::pod::hash::has(Hash<T> const& h, uint64_t key) noexcept
 {
     return hash_internal::find_or_fail(h, key) != hash_internal::END_OF_LIST;
 }
 
 template<typename T>
-auto core::pod::hash::get(const Hash<T> &h, uint64_t key, const T &deffault) noexcept -> const T &
+auto core::pod::hash::get(Hash<T> const& h, uint64_t key, T const& deffault) noexcept -> T const&
 {
-    const uint32_t i = hash_internal::find_or_fail(h, key);
+    uint32_t const i = hash_internal::find_or_fail(h, key);
     return i == hash_internal::END_OF_LIST ? deffault : h._data[i].value;
+}
+
+template<typename T>
+auto core::pod::hash::get(Hash<T*> const& h, uint64_t key, nullptr_t) noexcept -> T*
+{
+    uint32_t const i = hash_internal::find_or_fail(h, key);
+    return i == hash_internal::END_OF_LIST ? nullptr : h._data[i].value;
 }
 
 template<typename T>

@@ -1,4 +1,4 @@
-#include <iceshard/entity/entity.hxx>
+#pragma once
 
 namespace iceshard
 {

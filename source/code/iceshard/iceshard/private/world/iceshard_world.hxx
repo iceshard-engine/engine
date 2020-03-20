@@ -2,6 +2,8 @@
 #include <iceshard/world/world.hxx>
 #include <core/pointer.hxx>
 
+#include "iceshard_world_service_provider.hxx"
+
 namespace iceshard
 {
 
@@ -11,11 +13,13 @@ namespace iceshard
         IceshardWorld(
             core::allocator& alloc,
             core::stringid_arg_type world_name,
-            iceshard::entity_handle_type world_entity,
+            iceshard::Entity world_entity,
             iceshard::ServiceProvider* engine_service_provider
         ) noexcept;
 
         ~IceshardWorld() noexcept override = default;
+
+        void add_component_system(core::stringid_arg_type component_name, ComponentSystemFactory factory, void* userdata) noexcept override;
 
         //! \brief The worlds service provider.
         auto service_provider() noexcept -> iceshard::ServiceProvider* override;
@@ -23,7 +27,7 @@ namespace iceshard
     private:
         core::allocator& _allocator;
 
-        core::memory::unique_pointer<iceshard::ServiceProvider> _service_provider;
+        core::memory::unique_pointer<iceshard::IceshardWorldServiceProvider> _service_provider;
     };
 
 } // namespace iceshard::world

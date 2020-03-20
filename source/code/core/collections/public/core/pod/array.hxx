@@ -88,11 +88,18 @@ namespace core::pod
 
         //! \brief Pushes the item to the end of the array.
         template<typename T>
-        void push_back(Array<T>& a, const T& item) noexcept;
+        void push_back(Array<T>& a, T const& item) noexcept;
+
+        //! \brief Pushes all items to the end of the array.
+        template<typename T>
+        void push_back(Array<T>& a, Array<T> const& items) noexcept;
 
         //! \brief Pops the last item from the array. The array cannot be empty.
         template<typename T>
         void pop_back(Array<T>& a) noexcept;
+
+        template<typename T>
+        void create_view(Array<T>& a, T* data, uint32_t count) noexcept;
 
     } // namespace array
 

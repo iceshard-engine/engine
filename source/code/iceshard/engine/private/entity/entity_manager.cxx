@@ -9,7 +9,7 @@ namespace iceshard
         union entity_type
         {
             // The public handle.
-            entity_handle_type handle;
+            Entity handle;
 
             // The public handle as integet.
             uint64_t handle_numeric;
@@ -26,7 +26,7 @@ namespace iceshard
 
         //! \brief Returns an entity object from the handle.
         [[nodiscard]]
-        auto entity_from_handle(entity_handle_type handle) noexcept -> entity_type
+        auto entity_from_handle(Entity handle) noexcept -> entity_type
         {
             entity_type entity_object;
             entity_object.handle = handle;
@@ -34,7 +34,7 @@ namespace iceshard
         }
 
         //! \brief Returns the entity index from the handle.
-        auto index_from_handle(entity_handle_type handle) noexcept -> uint32_t
+        auto index_from_handle(Entity handle) noexcept -> uint32_t
         {
             entity_type entity_object = entity_from_handle(handle);
             return entity_object.object.index;
@@ -42,7 +42,7 @@ namespace iceshard
 
         //! \brief Returns a handle from the given index and generation.
         [[nodiscard]]
-        auto handle_from_parts(uint32_t index, uint16_t generation) noexcept -> entity_handle_type
+        auto handle_from_parts(uint32_t index, uint16_t generation) noexcept -> Entity
         {
             entity_type entity_object;
             entity_object.object = { index, generation, uint16_t{ 0 } };
@@ -67,7 +67,7 @@ namespace iceshard
         return core::pod::array::size(_generation) - core::pod::queue::size(_free_indices);
     }
 
-    auto EntityManager::create() noexcept -> entity_handle_type
+    auto EntityManager::create() noexcept -> Entity
     {
         uint32_t entity_index;
 
@@ -86,14 +86,14 @@ namespace iceshard
         return detail::handle_from_parts(entity_index, _generation[entity_index]);
     }
 
-    auto EntityManager::create(const void* owner) noexcept -> entity_handle_type
+    auto EntityManager::create(const void* owner) noexcept -> Entity
     {
         auto result_handle = this->create();
         _owner[detail::index_from_handle(result_handle)] = owner;
         return result_handle;
     }
 
-    void EntityManager::create_many(uint32_t count, core::pod::Array<entity_handle_type>& results) noexcept
+    void EntityManager::create_many(uint32_t count, core::pod::Array<Entity>& results) noexcept
     {
         // For now when creating entities in bulk, we skip the check of _free_indices.
         uint32_t index = core::pod::array::size(_generation);
@@ -117,7 +117,7 @@ namespace iceshard
         }
     }
 
-    void EntityManager::create_many(uint32_t count, core::pod::Array<entity_handle_type>& results, const void * owner) noexcept
+    void EntityManager::create_many(uint32_t count, core::pod::Array<Entity>& results, const void * owner) noexcept
     {
         // For now when creating entities in bulk, we skip the check of _free_indices.
         uint32_t index = core::pod::array::size(_generation);
@@ -141,7 +141,7 @@ namespace iceshard
         }
     }
 
-    void EntityManager::destroy(entity_handle_type entity_handle) noexcept
+    void EntityManager::destroy(Entity entity_handle) noexcept
     {
         const auto index = detail::index_from_handle(entity_handle);
 
@@ -151,7 +151,7 @@ namespace iceshard
         core::pod::queue::push_back(_free_indices, index);
     }
 
-    bool EntityManager::is_alive(entity_handle_type entity_handle) noexcept
+    bool EntityManager::is_alive(Entity entity_handle) noexcept
     {
         const auto entity_object = detail::entity_from_handle(entity_handle);
         return _generation[entity_object.object.index] == entity_object.object.generation;
@@ -190,7 +190,7 @@ namespace iceshard
         }
     }
 
-    void EntityManager::get_owned(const void * owner, core::pod::Array<entity_handle_type>& results) noexcept
+    void EntityManager::get_owned(const void * owner, core::pod::Array<Entity>& results) noexcept
     {
         uint32_t size = core::pod::array::size(_owner);
         for (uint32_t index = 0; index < size; ++index)

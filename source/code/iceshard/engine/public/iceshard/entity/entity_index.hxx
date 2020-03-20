@@ -20,22 +20,28 @@ namespace iceshard
         ~EntityIndex() noexcept = default;
 
         void register_component(
-            entity_handle_type entity,
+            Entity entity,
             core::stringid_arg_type component_name,
             ComponentSystem* component_system
         ) noexcept;
 
         auto find_component_system(
-            entity_handle_type entity,
+            Entity entity,
             core::stringid_arg_type component_name
         ) noexcept -> ComponentSystem*;
 
         void remove_component(
-            entity_handle_type entity,
+            Entity entity,
             core::stringid_arg_type component_name
         ) noexcept;
 
-        void remove_entity(entity_handle_type entity) noexcept;
+        void remove_entity(Entity entity) noexcept;
+
+    public:
+        void query_prototypes_with_components(
+            core::pod::Array<core::stringid_type>& prototypes,
+            core::pod::Array<core::stringid_type> const& components
+        ) noexcept;
 
     private:
         core::memory::scratch_allocator _temp_allocator;
