@@ -2,6 +2,8 @@
 [
     .Name = 'core'
     .Kind = .Kind_StaticLib
+    .Group = 'Core'
+
     .BaseDir = '$WorkspaceCodeDir$/core/core'
 
     .Public =

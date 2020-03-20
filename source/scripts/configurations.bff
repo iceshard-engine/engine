@@ -1,5 +1,5 @@
 #once
-#include "new_platforms.bff"
+#include "platforms.bff"
 
 .Configuration_Debug =
 [

@@ -2,6 +2,8 @@
 [
     .Name = 'debugui_system'
     .Kind = .Kind_StaticLib
+    .Group = 'Systems'
+
     .BaseDir = '$WorkspaceCodeDir$/systems/debugui_system'
 
     .Public =

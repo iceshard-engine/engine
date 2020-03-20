@@ -2,6 +2,8 @@
 [
     .Name = 'iceshard'
     .Kind = .Kind_SharedLib
+    .Group = 'Engine'
+
     .BaseDir = '$WorkspaceCodeDir$/iceshard/iceshard'
 
     .UnityBuilds = false

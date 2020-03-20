@@ -2,6 +2,8 @@
 [
     .Name = 'engine'
     .Kind = .Kind_StaticLib
+    .Group = 'Engine'
+
     .BaseDir = '$WorkspaceCodeDir$/iceshard/engine'
 
     .Public =

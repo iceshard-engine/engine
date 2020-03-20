@@ -14,7 +14,7 @@ ForEach( .TargetConfig in .TargetConfigList )
 {
     Using( .TargetConfig )
 
-    Using( .Platform )
+    Using( .PlatformInfo )
     Using( .PlatformOptions )
     Using( .PlatformExtensions )
 
@@ -51,7 +51,6 @@ ForEach( .TargetConfig in .TargetConfigList )
             .Link = {}
             .Runtime = {}
 
-            .Dependencies = [ ] + .Dependencies
             Using( .Dependencies )
 
             .Vars = { 'Build', 'Link', 'Runtime' }

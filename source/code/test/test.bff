@@ -2,6 +2,8 @@
 [
     .Name = 'test'
     .Kind = .Kind_ConsoleApp
+    .Group = 'Tests'
+
     .BaseDir = '$WorkspaceCodeDir$/test'
 
     .CopyModules = true

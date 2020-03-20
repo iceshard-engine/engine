@@ -2,6 +2,8 @@
 [
     .Name = 'input_system'
     .Kind = .Kind_StaticLib
+    .Group = 'Systems'
+
     .BaseDir = '$WorkspaceCodeDir$/systems/input_system'
 
     .Public =

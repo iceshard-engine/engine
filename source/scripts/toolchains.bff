@@ -1,5 +1,5 @@
 #once
-#include "new_globals.bff"
+#include "globals.bff"
 
 .ToolchainProperties_MSVC_x64_v142 =
 [

@@ -4,6 +4,8 @@
 [
     .Name = 'vulkan_driver'
     .Kind = .Kind_SharedLib
+    .Group = 'Drivers'
+
     .BaseDir = '$WorkspaceCodeDir$/drivers/vulkan_driver'
 
     .Private =

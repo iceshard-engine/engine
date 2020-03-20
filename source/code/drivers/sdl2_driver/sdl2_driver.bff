@@ -2,6 +2,8 @@
 [
     .Name = 'sdl2_driver'
     .Kind = .Kind_SharedLib
+    .Group = 'Drivers'
+
     .BaseDir = '$WorkspaceCodeDir$/drivers/sdl2_driver'
 
     .Private =

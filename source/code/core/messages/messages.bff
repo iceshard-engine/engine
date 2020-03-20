@@ -2,6 +2,8 @@
 [
     .Name = 'messages'
     .Kind = .Kind_StaticLib
+    .Group = 'Core'
+
     .BaseDir = '$WorkspaceCodeDir$/core/messages'
 
     .Public =

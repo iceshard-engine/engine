@@ -2,6 +2,8 @@
 [
     .Name = 'imgui_driver'
     .Kind = .Kind_SharedLib
+    .Group = 'Drivers'
+
     .BaseDir = '$WorkspaceCodeDir$/drivers/imgui_driver'
 
     .Private =

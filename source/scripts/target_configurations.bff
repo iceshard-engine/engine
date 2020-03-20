@@ -1,5 +1,5 @@
 #once
-#include "new_configurations.bff"
+#include "configurations.bff"
 
 .TargetConfigList = { }
 
@@ -38,7 +38,7 @@ ForEach( .Platform in .PlatformList )
 
                     .ConanConfigName = .ConanConfiguration
 
-                    .Platform = .Platform
+                    .PlatformInfo = .Platform
                     .Toolchain = .Toolchain
                     .Configuration = .Configuration
                     .SdkProperties = [ ]

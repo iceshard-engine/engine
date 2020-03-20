@@ -1,5 +1,5 @@
 #once
-#include "new_toolchains.bff"
+#include "toolchains.bff"
 
 .Platform_Windows_x64 =
 [
@@ -29,6 +29,17 @@
         .LinkerOptions_SharedLib = ' /DLL'
         .LinkerOptions_ConsoleApp = ' /SUBSYSTEM:CONSOLE'
         .LinkerOptions_WindowedApp = ' /SUBSYSTEM:WINDOWS'
+    ]
+
+    .PlatformVSEnabled = true
+    .PlatformVSProperties =
+    [
+        .ProjectPlatform = 'x64'
+        .ProjectConfigSuffix = ''
+
+        .PlatformToolset = 'v142'
+
+        .SolutionPlatform = 'Win-x64-v142'
     ]
 ]
 

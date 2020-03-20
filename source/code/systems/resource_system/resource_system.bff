@@ -2,6 +2,8 @@
 [
     .Name = 'resource_system'
     .Kind = .Kind_StaticLib
+    .Group = 'Systems'
+
     .BaseDir = '$WorkspaceCodeDir$/systems/resource_system'
 
     .Public =
