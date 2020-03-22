@@ -16,7 +16,7 @@ jobs:
         pip install conan
         conan remote add conan-iceshard https://conan.iceshard.net/
         conan remote add conan-bincrafters https://api.bintray.com/conan/bincrafters/public-conan
-    - name: Build (ReleaseDebug)
+    - name: Build (Develop)
       shell: cmd
       run: |
         ice build
