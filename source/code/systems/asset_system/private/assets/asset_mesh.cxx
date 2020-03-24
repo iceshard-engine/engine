@@ -1,5 +1,7 @@
 #include <asset_system/assets/asset_mesh.hxx>
 #include <core/pod/array.hxx>
+#include <core/memory.hxx>
+
 #include <rapidjson/document.h>
 #include <unordered_map>
 
@@ -45,6 +47,12 @@ namespace asset::detail
             : _allocator{ alloc }
         {
 
+        }
+
+        auto supported_asset_types() const noexcept -> core::pod::Array<asset::AssetType> const& override
+        {
+            core::pod::Array<asset::AssetType> empty_view{ core::memory::globals::null_allocator() };
+            return empty_view;
         }
 
         auto request_asset(asset::Asset) noexcept -> asset::AssetStatus override

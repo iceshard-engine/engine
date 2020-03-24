@@ -10,6 +10,8 @@ namespace asset
     public:
         virtual ~AssetLoader() noexcept = default;
 
+        virtual auto supported_asset_types() const noexcept -> core::pod::Array<asset::AssetType> const& = 0;
+
         virtual auto request_asset(asset::Asset asset) noexcept -> asset::AssetStatus = 0;
 
         virtual auto load_asset(

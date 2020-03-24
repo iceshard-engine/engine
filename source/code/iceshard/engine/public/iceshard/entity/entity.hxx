@@ -10,7 +10,7 @@ namespace iceshard
 } // namespace iceshard::entity
 
 template<>
-constexpr auto core::hash<iceshard::Entity>(iceshard::Entity value) noexcept
+constexpr auto core::hash<iceshard::Entity>(iceshard::Entity value) noexcept -> uint64_t
 {
     return static_cast<std::underlying_type_t<iceshard::Entity>>(value);
 }
