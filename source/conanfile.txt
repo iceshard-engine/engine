@@ -4,6 +4,7 @@ Catch2/2.9.0@iceshard/stable
 SDL2/2.0.9@iceshard/stable
 cppcoro/0.3@iceshard/stable
 imgui/1.74@iceshard/stable
+Assimp/5.0.1@iceshard/stable
 
 glm/0.9.9.4@g-truc/stable
 rapidjson/1.1.0@bincrafters/stable

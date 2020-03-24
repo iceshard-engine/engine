@@ -16,6 +16,7 @@
     .Private =
     [
         .Modules = {
+            'Assimp'
             'rapidjson'
         }
         // .CompilerFlags = {
