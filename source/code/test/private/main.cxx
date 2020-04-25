@@ -32,6 +32,7 @@
 #include <asset_system/assets/asset_config.hxx>
 #include <asset_system/assets/asset_shader.hxx>
 #include <asset_system/assets/asset_mesh.hxx>
+#include <asset_system/asset_module.hxx>
 
 #include <fmt/format.h>
 #include <application/application.hxx>
@@ -112,37 +113,20 @@ public:
     StaticMeshRenderer(
         core::allocator& alloc,
         iceshard::ecs::ArchetypeIndex& index,
-        render::RenderSystem& render_system
+        render::RenderSystem& render_system,
+        asset::AssetData mesh_asset
     ) noexcept
         : _allocator{ alloc }
         , _index{ index }
         , _xform_query{ _allocator }
         , _render_system{ render_system }
-        , _vertices{ _allocator }
-        , _indices{ _allocator }
+        , _mesh_asset{ mesh_asset }
     {
         initialize();
     }
 
     void initialize() noexcept
     {
-        core::pod::array::push_back(_vertices, { { 0.0f, 0.0f, 0.0f }, { 1.0f, 0.0f, 0.0f } });
-        core::pod::array::push_back(_vertices, { { 1.0f, 0.0f, 0.0f }, { 0.0f, 1.0f, 0.0f } });
-        core::pod::array::push_back(_vertices, { { 0.0f, 1.0f, 0.0f }, { 0.0f, 0.0f, 1.0f } });
-        core::pod::array::push_back(_vertices, { { 1.0f, 1.0f, 0.0f }, { 0.0f, 1.0f, 1.0f } });
-
-        static uint16_t indice_array[] = {
-                0, 1, 2,
-                1, 3, 2,
-                2, 1, 0,
-                2, 3, 1,
-        };
-
-        for (auto indice : indice_array)
-        {
-            core::pod::array::push_back(_indices, indice);
-        }
-
         _buffers[0] = _render_system.create_buffer(BufferType::VertexBuffer, 1024);
         _buffers[1] = _render_system.create_buffer(BufferType::VertexBuffer, 1024);
         _buffers[2] = _render_system.create_buffer(BufferType::IndexBuffer, 1024);
@@ -160,8 +144,21 @@ public:
                 core::size(mapped_buffers)
             );
 
-            memcpy(mapped_buffer_views[0].data, core::pod::array::begin(_vertices), core::pod::array::size(_vertices) * sizeof(Vertice));
-            memcpy(mapped_buffer_views[1].data, core::pod::array::begin(_indices), core::pod::array::size(_indices) * sizeof(uint16_t));
+            asset::v1::Mesh const* mesh = reinterpret_cast<asset::v1::Mesh const*>(_mesh_asset.content.data());
+
+            memcpy(
+                mapped_buffer_views[0].data,
+                mesh->vertice_data,
+                mesh->vertice_count * sizeof(Vertice)
+            );
+            memcpy(
+                mapped_buffer_views[1].data,
+                mesh->indice_data,
+                mesh->indice_count * sizeof(uint16_t)
+            );
+
+            //memcpy(mapped_buffer_views[0].data, core::pod::array::begin(_vertices), core::pod::array::size(_vertices) * sizeof(Vertice));
+            //memcpy(mapped_buffer_views[1].data, core::pod::array::begin(_indices), core::pod::array::size(_indices) * sizeof(uint16_t));
 
             iceshard::renderer::api::render_api_instance->buffer_array_unmap_data(
                 mapped_buffers,
@@ -172,6 +169,8 @@ public:
 
     void update(iceshard::renderer::CommandBuffer cb) noexcept
     {
+        asset::v1::Mesh const* mesh = reinterpret_cast<asset::v1::Mesh const*>(_mesh_asset.content.data());
+
         {
             DataView mapped_buffer_view;
 
@@ -206,7 +205,7 @@ public:
 
             bind_index_buffer(cb, _buffers[2]);
             bind_vertex_buffers(cb, buffer_view);
-            draw_indexed(cb, 12, model_count, 0, 0, 0);
+            draw_indexed(cb, mesh->indice_count, model_count, 0, 0, 0);
         }
     }
 
@@ -215,9 +214,7 @@ private:
     iceshard::ecs::ArchetypeIndex& _index;
     iceshard::ecs::ComponentQuery<Transform*> _xform_query;
     render::RenderSystem& _render_system;
-
-    core::pod::Array<Vertice> _vertices;
-    core::pod::Array<uint16_t> _indices;
+    asset::AssetData _mesh_asset;
 
     Buffer _buffers[3];
 };
@@ -392,9 +389,8 @@ public:
                     ImGui::Text("%s <%llu>", core::string::begin(debug_name->name), core::hash(e->e));
                 }
             );
-
-            ImGui::End();
         }
+        ImGui::End();
     }
 
 private:
@@ -470,6 +466,10 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
 
         // Prepare the asset system
         auto* asset_system = engine_instance->asset_system();
+
+        auto* assimp_module_location = resource_system.find(URN{ "asset_module.dll" });
+        auto assimp_module = iceshard::load_asset_module(alloc, assimp_module_location->location().path, *asset_system);
+
         asset_system->add_resolver(asset::default_resolver_mesh(alloc));
         asset_system->add_resolver(asset::default_resolver_shader(alloc));
         asset_system->add_loader(asset::AssetType::Mesh, asset::default_loader_mesh(alloc));
@@ -511,6 +511,10 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
             iceshard::renderer::RenderPipelineLayout::PostProcess,
             resources
         );
+
+        core::pod::Array<asset::AssetData> mesh_assets{ alloc };
+        core::pod::array::resize(mesh_assets, 2);
+        asset_system->load(asset::AssetMesh{ "mesh/box/box" }, mesh_assets[0]);
 
         core::pod::Array<asset::AssetData> shader_assets{ alloc };
         core::pod::array::resize(shader_assets, 2);
@@ -573,7 +577,7 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
         }
 
         CameraManager camera_manager{ alloc, *arch_idx };
-        StaticMeshRenderer static_mesh_render{ alloc, *arch_idx, *render_system };
+        StaticMeshRenderer static_mesh_render{ alloc, *arch_idx, *render_system, mesh_assets[0] };
         PostProcessSystem post_process{ alloc, *render_system };
 
         iceshard::Entity camera_entity = engine_instance->entity_manager()->create();

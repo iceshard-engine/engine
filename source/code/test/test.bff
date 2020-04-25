@@ -27,6 +27,7 @@
             'glm'
             'imgui'
             'SDL2'
+            'Assimp'
         }
         .Uses = {
             'debugui_system'
