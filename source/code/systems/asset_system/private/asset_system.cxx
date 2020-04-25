@@ -193,7 +193,7 @@ namespace asset
             auto const& asset_resources = _resource_database[asset_object->value.resource];
             auto* const resource_object = _resource_system.find(asset_resources.content_location);
 
-            load_status = (*it)->load_asset(asset_object->value.reference, resource_object->metadata(), resource_object->data(), result_data);
+            load_status = (*it++)->load_asset(asset_object->value.reference, resource_object->metadata(), resource_object->data(), result_data);
 
             // #todo Remove this const cast.
             const_cast<AssetObject&>(asset_object->value).status = load_status;

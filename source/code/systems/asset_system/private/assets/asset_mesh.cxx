@@ -20,7 +20,8 @@ namespace asset::detail
             }
             else
             {
-                if (resource::get_meta_int32(meta, "resource.meta.type"_sid) == 0)
+                int32_t meta_type = 0;
+                if (resource::get_meta_int32(meta, "resource.meta.type"_sid, meta_type) && meta_type == 0)
                 {
                     // The only supported format
                     core::StringView mesh_format;
