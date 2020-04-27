@@ -4,9 +4,12 @@
 #include <core/pod/array.hxx>
 #include <core/data/buffer.hxx>
 
+#include <iceshard/renderer/render_model.hxx>
+
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
+
 
 namespace iceshard
 {
@@ -14,57 +17,87 @@ namespace iceshard
     namespace detail
     {
 
-        void process_mesh(core::allocator& alloc, asset::v1::Mesh& out, aiMesh* mesh, aiScene const* scene) noexcept
+        using iceshard::renderer::v1::Mesh;
+        using iceshard::renderer::v1::Model;
+
+        void process_mesh(
+            core::allocator& alloc,
+            Model& model,
+            Mesh& model_mesh,
+            aiMesh* mesh
+        ) noexcept
         {
-            out.vertice_count = mesh->mNumVertices;
-            out.indice_count = mesh->mNumFaces * 3;
+            using core::math::u16;
+            using core::math::vec3;
 
-            out.vertice_data = (float*) alloc.allocate(out.vertice_count * sizeof(float) * 6);
-            out.indice_data = (uint16_t*) alloc.allocate(out.indice_count * sizeof(uint16_t));
-
-            float* vertice_data_it = out.vertice_data;
-            auto const* const vertice_data_end = vertice_data_it + (out.vertice_count * 6);
-
-            for (uint32_t i = 0; i < out.vertice_count; ++i)
             {
-                *vertice_data_it++ = mesh->mVertices[i].x;
-                *vertice_data_it++ = mesh->mVertices[i].y;
-                *vertice_data_it++ = mesh->mVertices[i].z;
-                *vertice_data_it++ = 0.3;
-                *vertice_data_it++ = 0.6;
-                *vertice_data_it++ = 0.2;
-            }
+                vec3* vertice_data = model.vertice_data + model_mesh.vertice_offset;
+                vec3 const* const vertice_data_end = vertice_data + (model_mesh.vertice_count * 2);
 
-            IS_ASSERT(vertice_data_it == vertice_data_end, "Mesh vertice loading error!");
-
-            uint16_t* indice_data_it = out.indice_data;
-            auto const* const indice_data_end = indice_data_it + out.indice_count;
-
-            for (uint32_t i = 0; i < mesh->mNumFaces; ++i)
-            {
-                aiFace* face = mesh->mFaces + i;
-
-                for (uint32_t fi = 0; fi < face->mNumIndices; ++fi)
+                for (uint32_t i = 0; i < model_mesh.vertice_count; ++i)
                 {
-                    *indice_data_it++ = face->mIndices[fi];
+                    *vertice_data = {
+                        mesh->mVertices[i].x,
+                        mesh->mVertices[i].y,
+                        mesh->mVertices[i].z
+                    };
+                    vertice_data += 1;
+                    *vertice_data = {
+                        0.3,
+                        0.6,
+                        0.2,
+                    };
+                    vertice_data += 1;
                 }
+
+                IS_ASSERT(vertice_data == vertice_data_end, "Mesh vertice loading error!");
             }
 
-            IS_ASSERT(indice_data_it == indice_data_end, "Mesh indice loading error!");
+            {
+                u16* indice_data = model.indice_data + model_mesh.indice_offset;
+                u16 const* const indice_data_end = indice_data + model_mesh.indice_count;
+
+                for (uint32_t i = 0; i < mesh->mNumFaces; ++i)
+                {
+                    aiFace* face = mesh->mFaces + i;
+
+                    for (uint32_t fi = 0; fi < face->mNumIndices; ++fi)
+                    {
+                        *indice_data++ = face->mIndices[fi];
+                    }
+                }
+
+                IS_ASSERT(indice_data == indice_data_end, "Mesh indice loading error!");
+            }
         }
 
-        void process_node(core::allocator& alloc, asset::v1::Mesh& mesh, aiNode* node, aiScene const* scene) noexcept
+        void process_node(
+            core::allocator& alloc,
+            Model& model,
+            aiNode const* node,
+            aiScene const* scene
+        ) noexcept
         {
             if (node->mNumMeshes >= 1)
             {
-                process_mesh(alloc, mesh, scene->mMeshes[node->mMeshes[0]], scene);
+                auto const mesh_idx = node->mMeshes[0];
+                process_mesh(
+                    alloc,
+                    model,
+                    model.mesh_list[mesh_idx],
+                    scene->mMeshes[node->mMeshes[0]]
+                );
             }
 
             for (uint32_t i = 0; i < node->mNumChildren; ++i)
             {
-                process_node(alloc, mesh, node->mChildren[i], scene);
+                process_node(
+                    alloc,
+                    model,
+                    node->mChildren[i],
+                    scene
+                );
             }
-            // Resursive for children
         }
 
     } // namespace detail
@@ -72,17 +105,17 @@ namespace iceshard
     AssimpMeshLoader::AssimpMeshLoader(core::allocator& alloc) noexcept
         : _allocator{ alloc }
         , _mesh_allocator{ _allocator }
-        , _meshes{ _allocator }
+        , _models{ _allocator }
     {
-        core::pod::array::reserve(_meshes, 1);
+        core::pod::array::reserve(_models, 1);
     }
 
     AssimpMeshLoader::~AssimpMeshLoader() noexcept
     {
-        for (auto const& mesh : _meshes)
+        for (auto const& model : _models)
         {
-            _mesh_allocator.deallocate(mesh.indice_data);
-            _mesh_allocator.deallocate(mesh.vertice_data);
+            _mesh_allocator.deallocate(model.mesh_list);
+            _mesh_allocator.deallocate(model.vertice_data);
         }
     }
 
@@ -130,25 +163,68 @@ namespace iceshard
             return asset::AssetStatus::Invalid;
         }
 
-        asset::v1::Mesh mesh{ };
+        using iceshard::renderer::v1::Model;
+        using iceshard::renderer::v1::Mesh;
 
-        detail::process_node(
-            _mesh_allocator,
-            mesh,
-            scene->mRootNode,
-            scene
-        );
-
-        if (mesh.indice_count == 0 || mesh.vertice_count == 0)
+        if (scene->mNumMeshes == 0)
         {
             return asset::AssetStatus::Invalid;
         }
 
-        core::pod::array::push_back(_meshes, mesh);
+        Model model{
+            .mesh_count = scene->mNumMeshes,
+            .mesh_list = (Mesh*)_mesh_allocator.allocate(sizeof(Mesh) * scene->mNumMeshes),
+            .vertice_data = nullptr,
+            .indice_data = nullptr,
+        };
+
+        {
+            uint32_t vertice_offset = 0;
+            uint32_t indice_offset = 0;
+
+            for (uint32_t mesh_idx = 0; mesh_idx < model.mesh_count; ++mesh_idx)
+            {
+                aiMesh const* const scene_mesh = scene->mMeshes[mesh_idx];
+                Mesh& model_mesh = model.mesh_list[mesh_idx];
+
+                model_mesh.vertice_count = scene_mesh->mNumVertices;
+                model_mesh.vertice_offset = vertice_offset;
+                vertice_offset += model_mesh.vertice_count;
+
+                model_mesh.indice_count = scene_mesh->mNumFaces * 3;
+                model_mesh.indice_offset = indice_offset;
+                indice_offset += model_mesh.indice_count;
+            }
+
+            model.vertice_data_size = vertice_offset * sizeof(core::math::vec3) * 2;
+            model.indice_data_size = indice_offset * sizeof(core::math::u16);
+
+            uint32_t mesh_data_size = 0;
+            mesh_data_size += model.vertice_data_size;
+            mesh_data_size += model.indice_data_size;
+            mesh_data_size += alignof(core::math::vec3) * 2 * model.mesh_count;
+
+            void* mesh_data = _mesh_allocator.allocate(mesh_data_size);
+
+            model.vertice_data = reinterpret_cast<core::math::vec3*>(mesh_data);
+            model.indice_data = reinterpret_cast<core::math::u16*>(
+                core::memory::utils::pointer_add(mesh_data, model.vertice_data_size)
+            );
+        }
+
+        uint32_t offset = 0;
+        detail::process_node(
+            _mesh_allocator,
+            model,
+            scene->mRootNode,
+            scene
+        );
+
+        core::pod::array::push_back(_models, model);
         result_data.metadata = meta;
         result_data.content = {
-            std::addressof(core::pod::array::back(_meshes)),
-            sizeof(mesh)
+            std::addressof(core::pod::array::back(_models)),
+            sizeof(model)
         };
         return asset::AssetStatus::Loaded;
     }

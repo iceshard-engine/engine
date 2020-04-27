@@ -52,6 +52,7 @@
 #include <iceshard/renderer/render_pipeline.hxx>
 #include <iceshard/renderer/render_resources.hxx>
 #include <iceshard/renderer/render_pass.hxx>
+#include <iceshard/renderer/render_model.hxx>
 
 #include <debugui/debugui_module.hxx>
 #include <debugui/debugui.hxx>
@@ -103,6 +104,8 @@ class StaticMeshRenderer
     using BufferType = iceshard::renderer::api::BufferType;
     using DataView = iceshard::renderer::api::DataView;
 
+    using Model = iceshard::renderer::v1::Model;
+
     struct Vertice
     {
         glm::vec3 pos;
@@ -144,17 +147,17 @@ public:
                 core::size(mapped_buffers)
             );
 
-            asset::v1::Mesh const* mesh = reinterpret_cast<asset::v1::Mesh const*>(_mesh_asset.content.data());
+            Model const* model = reinterpret_cast<Model const*>(_mesh_asset.content.data());
 
             memcpy(
                 mapped_buffer_views[0].data,
-                mesh->vertice_data,
-                mesh->vertice_count * sizeof(Vertice)
+                model->vertice_data,
+                model->vertice_data_size
             );
             memcpy(
                 mapped_buffer_views[1].data,
-                mesh->indice_data,
-                mesh->indice_count * sizeof(uint16_t)
+                model->indice_data,
+                model->indice_data_size
             );
 
             //memcpy(mapped_buffer_views[0].data, core::pod::array::begin(_vertices), core::pod::array::size(_vertices) * sizeof(Vertice));
@@ -169,7 +172,7 @@ public:
 
     void update(iceshard::renderer::CommandBuffer cb) noexcept
     {
-        asset::v1::Mesh const* mesh = reinterpret_cast<asset::v1::Mesh const*>(_mesh_asset.content.data());
+        Model const* model = reinterpret_cast<Model const*>(_mesh_asset.content.data());
 
         {
             DataView mapped_buffer_view;
@@ -205,7 +208,7 @@ public:
 
             bind_index_buffer(cb, _buffers[2]);
             bind_vertex_buffers(cb, buffer_view);
-            draw_indexed(cb, mesh->indice_count, model_count, 0, 0, 0);
+            draw_indexed(cb, model->mesh_list->indice_count, model_count, 0, 0, 0);
         }
     }
 

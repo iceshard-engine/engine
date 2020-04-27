@@ -7,20 +7,6 @@
 namespace asset
 {
 
-    namespace v1
-    {
-
-        struct Mesh
-        {
-            uint32_t vertice_count = 0;
-            uint32_t indice_count = 0;
-
-            float* vertice_data = nullptr; // each vertice consists of 6 values (3 pos, 3 color)
-            uint16_t* indice_data = nullptr;
-        };
-
-    } // namespace v1
-
     struct AssetMesh : public Asset
     {
         constexpr AssetMesh() noexcept = default;

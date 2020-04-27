@@ -13,6 +13,7 @@
         }
         .Uses = {
             'asset_system'
+            'render_system'
         }
     ]
 ]

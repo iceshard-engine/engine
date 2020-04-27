@@ -2,6 +2,8 @@
 #include <asset_system/asset_loader.hxx>
 #include <asset_system/assets/asset_mesh.hxx>
 
+#include <iceshard/renderer/render_model.hxx>
+
 namespace iceshard
 {
 
@@ -28,7 +30,7 @@ namespace iceshard
         core::allocator& _allocator;
         core::allocator& _mesh_allocator;
 
-        core::pod::Array<asset::v1::Mesh> _meshes;
+        core::pod::Array<iceshard::renderer::v1::Model> _models;
     };
 
 } // namespace iceshard
