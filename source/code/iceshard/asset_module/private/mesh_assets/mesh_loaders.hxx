@@ -30,7 +30,8 @@ namespace iceshard
         core::allocator& _allocator;
         core::allocator& _mesh_allocator;
 
-        core::pod::Array<iceshard::renderer::v1::Model> _models;
+        core::pod::Hash<asset::AssetStatus> _models_status;
+        core::pod::Hash<iceshard::renderer::v1::Model> _models;
     };
 
 } // namespace iceshard

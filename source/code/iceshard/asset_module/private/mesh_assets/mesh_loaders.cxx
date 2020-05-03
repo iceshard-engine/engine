@@ -1,7 +1,7 @@
 #include "mesh_loaders.hxx"
 
 #include <core/memory.hxx>
-#include <core/pod/array.hxx>
+#include <core/pod/hash.hxx>
 #include <core/data/buffer.hxx>
 
 #include <iceshard/renderer/render_model.hxx>
@@ -24,28 +24,33 @@ namespace iceshard
             core::allocator& alloc,
             Model& model,
             Mesh& model_mesh,
-            aiMesh* mesh
+            aiMesh* mesh,
+            aiMatrix4x4 const& mtx
         ) noexcept
         {
             using core::math::u16;
             using core::math::vec3;
 
             {
-                vec3* vertice_data = model.vertice_data + model_mesh.vertice_offset;
-                vec3 const* const vertice_data_end = vertice_data + (model_mesh.vertice_count * 2);
+                vec3* vertice_data = model.vertice_data + model_mesh.vertice_offset * 2llu;
+                vec3 const* const vertice_data_end = vertice_data + model_mesh.vertice_count * 2llu;
 
                 for (uint32_t i = 0; i < model_mesh.vertice_count; ++i)
                 {
+                    auto vec = mesh->mVertices[i];
+                    auto norm = mesh->mNormals[i];
+
                     *vertice_data = {
-                        mesh->mVertices[i].x,
-                        mesh->mVertices[i].y,
-                        mesh->mVertices[i].z
+                        vec.x,
+                        vec.y,
+                        vec.z
                     };
                     vertice_data += 1;
+
                     *vertice_data = {
-                        0.3,
-                        0.6,
-                        0.2,
+                        norm.x,
+                        norm.y,
+                        norm.z
                     };
                     vertice_data += 1;
                 }
@@ -75,17 +80,25 @@ namespace iceshard
             core::allocator& alloc,
             Model& model,
             aiNode const* node,
-            aiScene const* scene
+            aiScene const* scene,
+            aiMatrix4x4 mtx
         ) noexcept
         {
-            if (node->mNumMeshes >= 1)
+            for (uint32_t i = 0; i < node->mNumMeshes; ++i)
             {
-                auto const mesh_idx = node->mMeshes[0];
+                auto const mesh_idx = node->mMeshes[i];
+                model.mesh_list[mesh_idx].local_xform = core::math::transpose(
+                    core::math::matrix_from_data(
+                        node->mTransformation * mtx
+                    )
+                );
+
                 process_mesh(
                     alloc,
                     model,
                     model.mesh_list[mesh_idx],
-                    scene->mMeshes[node->mMeshes[0]]
+                    scene->mMeshes[mesh_idx],
+                    node->mTransformation * mtx
                 );
             }
 
@@ -95,7 +108,8 @@ namespace iceshard
                     alloc,
                     model,
                     node->mChildren[i],
-                    scene
+                    scene,
+                    node->mTransformation * mtx
                 );
             }
         }
@@ -105,17 +119,19 @@ namespace iceshard
     AssimpMeshLoader::AssimpMeshLoader(core::allocator& alloc) noexcept
         : _allocator{ alloc }
         , _mesh_allocator{ _allocator }
+        , _models_status{ _allocator }
         , _models{ _allocator }
     {
-        core::pod::array::reserve(_models, 1);
+        core::pod::hash::reserve(_models_status, 10);
+        core::pod::hash::reserve(_models, 10);
     }
 
     AssimpMeshLoader::~AssimpMeshLoader() noexcept
     {
         for (auto const& model : _models)
         {
-            _mesh_allocator.deallocate(model.mesh_list);
-            _mesh_allocator.deallocate(model.vertice_data);
+            _mesh_allocator.deallocate(model.value.mesh_list);
+            _mesh_allocator.deallocate(model.value.vertice_data);
         }
     }
 
@@ -149,84 +165,122 @@ namespace iceshard
         asset::AssetData& result_data
     ) noexcept -> asset::AssetStatus
     {
-        Assimp::Importer importer;
-
-        aiScene const* scene = importer.ReadFileFromMemory(
-            resource_data.data(),
-            resource_data.size(),
-            aiProcess_Triangulate | aiProcess_FlipUVs
-        );
-
-        // We don't know the this file format
-        if (scene == nullptr || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || scene->mRootNode == nullptr)
-        {
-            return asset::AssetStatus::Invalid;
-        }
-
         using iceshard::renderer::v1::Model;
         using iceshard::renderer::v1::Mesh;
 
-        if (scene->mNumMeshes == 0)
-        {
-            return asset::AssetStatus::Invalid;
-        }
-
-        Model model{
-            .mesh_count = scene->mNumMeshes,
-            .mesh_list = (Mesh*)_mesh_allocator.allocate(sizeof(Mesh) * scene->mNumMeshes),
-            .vertice_data = nullptr,
-            .indice_data = nullptr,
-        };
-
-        {
-            uint32_t vertice_offset = 0;
-            uint32_t indice_offset = 0;
-
-            for (uint32_t mesh_idx = 0; mesh_idx < model.mesh_count; ++mesh_idx)
-            {
-                aiMesh const* const scene_mesh = scene->mMeshes[mesh_idx];
-                Mesh& model_mesh = model.mesh_list[mesh_idx];
-
-                model_mesh.vertice_count = scene_mesh->mNumVertices;
-                model_mesh.vertice_offset = vertice_offset;
-                vertice_offset += model_mesh.vertice_count;
-
-                model_mesh.indice_count = scene_mesh->mNumFaces * 3;
-                model_mesh.indice_offset = indice_offset;
-                indice_offset += model_mesh.indice_count;
-            }
-
-            model.vertice_data_size = vertice_offset * sizeof(core::math::vec3) * 2;
-            model.indice_data_size = indice_offset * sizeof(core::math::u16);
-
-            uint32_t mesh_data_size = 0;
-            mesh_data_size += model.vertice_data_size;
-            mesh_data_size += model.indice_data_size;
-            mesh_data_size += alignof(core::math::vec3) * 2 * model.mesh_count;
-
-            void* mesh_data = _mesh_allocator.allocate(mesh_data_size);
-
-            model.vertice_data = reinterpret_cast<core::math::vec3*>(mesh_data);
-            model.indice_data = reinterpret_cast<core::math::u16*>(
-                core::memory::utils::pointer_add(mesh_data, model.vertice_data_size)
-            );
-        }
-
-        uint32_t offset = 0;
-        detail::process_node(
-            _mesh_allocator,
-            model,
-            scene->mRootNode,
-            scene
+        auto model_status = core::pod::hash::get(
+            _models_status,
+            core::hash(asset.name),
+            asset::AssetStatus::Requested
         );
 
-        core::pod::array::push_back(_models, model);
+        if (model_status == asset::AssetStatus::Invalid)
+        {
+            return model_status;
+        }
+
+        if (model_status == asset::AssetStatus::Requested)
+        {
+            Assimp::Importer importer;
+
+            importer.SetPropertyFloat(AI_CONFIG_PP_GSN_MAX_SMOOTHING_ANGLE, 80);
+            aiScene const* scene = importer.ReadFileFromMemory(
+                resource_data.data(),
+                resource_data.size(),
+                aiProcessPreset_TargetRealtime_Fast
+            );
+
+            // We don't know the this file format
+            if (scene == nullptr || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || scene->mRootNode == nullptr)
+            {
+                return asset::AssetStatus::Invalid;
+            }
+
+            if (scene->mNumMeshes == 0)
+            {
+                return asset::AssetStatus::Invalid;
+            }
+
+            Model model{
+                .mesh_count = scene->mNumMeshes,
+                .mesh_list = (Mesh*)_mesh_allocator.allocate(sizeof(Mesh) * scene->mNumMeshes),
+                .vertice_data = nullptr,
+                .indice_data = nullptr,
+            };
+
+            {
+                uint32_t vertice_offset = 0;
+                uint32_t indice_offset = 0;
+
+                for (uint32_t mesh_idx = 0; mesh_idx < model.mesh_count; ++mesh_idx)
+                {
+                    aiMesh const* const scene_mesh = scene->mMeshes[mesh_idx];
+                    Mesh& model_mesh = model.mesh_list[mesh_idx];
+
+                    model_mesh.vertice_count = scene_mesh->mNumVertices;
+                    model_mesh.vertice_offset = vertice_offset;
+                    vertice_offset += model_mesh.vertice_count;
+
+                    model_mesh.indice_count = scene_mesh->mNumFaces * 3;
+                    model_mesh.indice_offset = indice_offset;
+                    indice_offset += model_mesh.indice_count;
+                }
+
+                model.vertice_data_size = vertice_offset * sizeof(core::math::vec3) * 2;
+                model.indice_data_size = indice_offset * sizeof(core::math::u16);
+
+                uint32_t mesh_data_size = 0;
+                mesh_data_size += model.vertice_data_size;
+                mesh_data_size += model.indice_data_size;
+                mesh_data_size += alignof(core::math::vec3) * 2 * model.mesh_count;
+
+                void* mesh_data = _mesh_allocator.allocate(mesh_data_size);
+
+                model.vertice_data = reinterpret_cast<core::math::vec3*>(mesh_data);
+                model.indice_data = reinterpret_cast<core::math::u16*>(
+                    core::memory::utils::pointer_add(mesh_data, model.vertice_data_size)
+                );
+            }
+
+            uint32_t offset = 0;
+            detail::process_node(
+                _mesh_allocator,
+                model,
+                scene->mRootNode,
+                scene,
+                aiMatrix4x4{ }
+            );
+
+            core::pod::hash::set(
+                _models,
+                core::hash(asset.name),
+                model
+            );
+
+            core::pod::hash::set(
+                _models_status,
+                core::hash(asset.name),
+                asset::AssetStatus::Loaded
+            );
+
+            model_status = asset::AssetStatus::Loaded;
+        }
+
+        static Model const empty_model{ };
+
         result_data.metadata = meta;
         result_data.content = {
-            std::addressof(core::pod::array::back(_models)),
-            sizeof(model)
+            std::addressof(
+                core::pod::hash::get(
+                    _models,
+                    core::hash(asset.name),
+                    empty_model
+                )
+            ),
+            sizeof(Model)
         };
-        return asset::AssetStatus::Loaded;
+
+        return model_status;
     }
 
     void AssimpMeshLoader::release_asset(asset::Asset asset) noexcept

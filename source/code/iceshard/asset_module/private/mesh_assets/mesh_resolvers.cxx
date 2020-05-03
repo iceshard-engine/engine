@@ -9,7 +9,9 @@ namespace iceshard
     ) noexcept -> asset::AssetType
     {
         if (core::string::equals(extension, ".fbx")
-            || core::string::equals(extension, ".x3d"))
+            || core::string::equals(extension, ".x3d")
+            || core::string::equals(extension, ".obj")
+            || core::string::equals(extension, ".dae"))
         {
             return asset::AssetType::Mesh;
         }
