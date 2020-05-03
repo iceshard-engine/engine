@@ -385,7 +385,7 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
 
         arch_idx->add_component(entities[0], iceshard::component::Transform{ pos });
         arch_idx->add_component(entities[0], iceshard::component::ModelMaterial{ ism::vec4 { 0.8f, 0.8f, 0.8f, 1.0f } });
-        arch_idx->add_component(entities[0], iceshard::component::ModelName{ "mesh/box/box2"_sid });
+        arch_idx->add_component(entities[0], iceshard::component::ModelName{ "mesh/box/box"_sid });
 
         pos = ism::translate(
             ism::identity<ism::mat4>(),
@@ -401,7 +401,7 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
             ism::vec3{ 3.0f, 0.0f, 0.0f }
         );
 
-        arch_idx->add_component(entities[5], iceshard::component::ModelName{ "mesh/box/box2"_sid });
+        arch_idx->add_component(entities[5], iceshard::component::ModelName{ "mesh/box/box"_sid });
         arch_idx->add_component(entities[5], iceshard::component::Transform{ pos });
         arch_idx->add_component(entities[5], iceshard::component::ModelMaterial{ ism::vec4 { 0.8f, 0.3f, 0.2f, 1.0f } });
 
@@ -414,7 +414,7 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
         );
 
         arch_idx->add_component(entities[9], iceshard::component::Light{ { 0.5f, 0.5f, 5.0f } });
-        arch_idx->add_component(entities[9], iceshard::component::ModelName{ "mesh/box/box2"_sid });
+        arch_idx->add_component(entities[9], iceshard::component::ModelName{ "mesh/box/box"_sid });
         arch_idx->add_component(entities[9], iceshard::component::Transform{ pos });
         arch_idx->add_component(entities[9], iceshard::component::ModelMaterial{ ism::vec4 { 0.8, 0.8, 0.8, 1.0f } });
         arch_idx->add_component(entities[9], DebugName{ "Light" });
