@@ -41,6 +41,11 @@ namespace asset
     {
         Asset() noexcept = default;
 
+        constexpr Asset(core::stringid_arg_type asset_name, AssetType type) noexcept
+            : type{ type }
+            , name{ asset_name }
+        { }
+
         constexpr Asset(core::StringView asset_name, AssetType type) noexcept
             : type{ type }
             , name{ core::stringid(asset_name) }

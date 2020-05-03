@@ -1,6 +1,7 @@
 #pragma once
 #include <core/allocator.hxx>
 #include <core/pointer.hxx>
+#include <core/pod/hash.hxx>
 #include <core/cexpr/stringid.hxx>
 #include <core/allocators/stack_allocator.hxx>
 #include <iceshard/entity/entity.hxx>

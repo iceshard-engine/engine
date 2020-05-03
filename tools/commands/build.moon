@@ -12,6 +12,8 @@ class BuildCommand extends Command
     @arguments {
         flag "clean",
             name:'-c --clean'
+        flag "verbose"
+            name:'-v --verbose'
         option "target",
             name:'-t --target',
             default:'all-x64-Develop'
@@ -46,6 +48,13 @@ class BuildCommand extends Command
                 gen\include "#{workspace_root}/source/fbuild.bff"
                 gen\close!
 
-            @@fbuild\build config:'fbuild.bff', target:args.target, clean:args.clean, monitor:true, distributed:true, summary:false
+            @@fbuild\build
+                config:'fbuild.bff'
+                target:args.target
+                clean:args.clean
+                monitor:true
+                distributed:true
+                summary:false
+                verbose:args.verbose
 
 { :BuildCommand }

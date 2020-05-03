@@ -1,4 +1,6 @@
 #include "vulkan_debugui_pipeline.hxx"
+
+#include <core/math/vector.hxx>
 #include <core/allocators/stack_allocator.hxx>
 
 namespace iceshard::renderer::vulkan
@@ -12,29 +14,34 @@ namespace iceshard::renderer::vulkan
         core::pod::array::resize(bindings, 2);
         bindings[0].binding = 0;
         bindings[0].inputRate = VkVertexInputRate::VK_VERTEX_INPUT_RATE_VERTEX;
-        bindings[0].stride = sizeof(float) * 3 + sizeof(float) * 3;
+        bindings[0].stride = sizeof(core::math::vec3) * 2;
         bindings[1].binding = 1;
         bindings[1].inputRate = VkVertexInputRate::VK_VERTEX_INPUT_RATE_INSTANCE;
-        bindings[1].stride = sizeof(float) * 16;
+        bindings[1].stride = sizeof(float) * 20;
 
-        core::pod::array::resize(attributes, 2 + 4);
+
+        core::pod::array::resize(attributes, 2 + 5);
         attributes[0].binding = 0;
         attributes[0].format = VkFormat::VK_FORMAT_R32G32B32_SFLOAT;
         attributes[0].location = 0;
         attributes[0].offset = 0;
-
         attributes[1].binding = 0;
         attributes[1].format = VkFormat::VK_FORMAT_R32G32B32_SFLOAT;
         attributes[1].location = 1;
-        attributes[1].offset = sizeof(float) * 3;
+        attributes[1].offset = sizeof(core::math::vec3);
 
         for (uint32_t i = 0; i < 4; ++i)
         {
             attributes[2 + i].binding = 1;
             attributes[2 + i].format = VkFormat::VK_FORMAT_R32G32B32A32_SFLOAT;
-            attributes[2 + i].location = 2 + i;
+            attributes[2 + i].location = 6 + i;
             attributes[2 + i].offset = sizeof(float) * 4 * i;
         }
+
+        attributes[6].binding = 1;
+        attributes[6].format = VkFormat::VK_FORMAT_R32G32B32_SFLOAT;
+        attributes[6].location = 10;
+        attributes[6].offset = sizeof(float) * 4 * 4;
     }
 
     void create_default_pipeline(
@@ -106,7 +113,7 @@ namespace iceshard::renderer::vulkan
         rs.flags = 0;
         rs.polygonMode = VK_POLYGON_MODE_FILL;
         rs.cullMode = VK_CULL_MODE_BACK_BIT; // Specific to Default pipeline
-        rs.frontFace = VK_FRONT_FACE_CLOCKWISE;
+        rs.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
         rs.depthClampEnable = VK_FALSE;
         rs.rasterizerDiscardEnable = VK_FALSE;
         rs.depthBiasEnable = VK_FALSE;
@@ -122,7 +129,7 @@ namespace iceshard::renderer::vulkan
 
         VkPipelineColorBlendAttachmentState att_state[1];
         att_state[0].colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
-        att_state[0].blendEnable = VK_TRUE;
+        att_state[0].blendEnable = VK_FALSE;
         att_state[0].alphaBlendOp = VK_BLEND_OP_ADD;
         att_state[0].colorBlendOp = VK_BLEND_OP_ADD;
         att_state[0].srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
@@ -143,8 +150,8 @@ namespace iceshard::renderer::vulkan
         ds.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
         ds.pNext = nullptr;
         ds.flags = 0;
-        ds.depthTestEnable = VK_FALSE;
-        ds.depthWriteEnable = VK_FALSE;
+        ds.depthTestEnable = VK_TRUE;
+        ds.depthWriteEnable = VK_TRUE;
         ds.depthCompareOp = VK_COMPARE_OP_LESS_OR_EQUAL;
         ds.depthBoundsTestEnable = VK_FALSE;
         ds.minDepthBounds = 0;

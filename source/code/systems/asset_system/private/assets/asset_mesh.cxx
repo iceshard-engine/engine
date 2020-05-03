@@ -1,5 +1,7 @@
 #include <asset_system/assets/asset_mesh.hxx>
 #include <core/pod/array.hxx>
+#include <core/memory.hxx>
+
 #include <rapidjson/document.h>
 #include <unordered_map>
 
@@ -18,7 +20,8 @@ namespace asset::detail
             }
             else
             {
-                if (resource::get_meta_int32(meta, "resource.meta.type"_sid) == 0)
+                int32_t meta_type = 0;
+                if (resource::get_meta_int32(meta, "resource.meta.type"_sid, meta_type) && meta_type == 0)
                 {
                     // The only supported format
                     core::StringView mesh_format;
@@ -45,6 +48,12 @@ namespace asset::detail
             : _allocator{ alloc }
         {
 
+        }
+
+        auto supported_asset_types() const noexcept -> core::pod::Array<asset::AssetType> const& override
+        {
+            static core::pod::Array<asset::AssetType> empty_view{ core::memory::globals::null_allocator() };
+            return empty_view;
         }
 
         auto request_asset(asset::Asset) noexcept -> asset::AssetStatus override

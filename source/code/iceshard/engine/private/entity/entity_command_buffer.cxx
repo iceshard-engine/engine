@@ -65,7 +65,7 @@ namespace iceshard
             case CASE(detail::add_component_command_id):
             {
                 auto* system = reinterpret_cast<ComponentSystem*>(command.command_data);
-                system->create(command.target_entity, command.component_name);
+                //system->create(command.target_entity, command.component_name);
                 entity_index->register_component(command.target_entity, command.component_name, system);
                 break;
             }
@@ -73,7 +73,7 @@ namespace iceshard
             {
                 if (auto* system = entity_index->find_component_system(command.target_entity, command.component_name); system != nullptr)
                 {
-                    system->remove(command.target_entity, command.component_name);
+                    //system->remove(command.target_entity, command.component_name);
                     entity_index->remove_component(command.target_entity, command.component_name);
                 }
                 break;

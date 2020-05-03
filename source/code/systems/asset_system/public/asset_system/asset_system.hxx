@@ -3,6 +3,7 @@
 #include <core/pointer.hxx>
 #include <core/cexpr/stringid.hxx>
 #include <core/pod/hash.hxx>
+#include <core/collections.hxx>
 
 #include <asset_system/asset.hxx>
 #include <asset_system/asset_loader.hxx>
@@ -15,6 +16,10 @@
 namespace asset
 {
 
+    enum class AssetResolverHandle : uint32_t { };
+
+    enum class AssetLoaderHandle : uint32_t { };
+
     //! \brief This class manages data and metadata associations across resources.
     class AssetSystem
     {
@@ -22,9 +27,22 @@ namespace asset
         AssetSystem(core::allocator& alloc, resource::ResourceSystem& resource_system) noexcept;
         ~AssetSystem() noexcept = default;
 
-        void add_resolver(core::memory::unique_pointer<asset::AssetResolver> resolver) noexcept;
+        auto add_resolver(
+            core::memory::unique_pointer<asset::AssetResolver> resolver
+        ) noexcept -> asset::AssetResolverHandle;
 
-        void add_loader(asset::AssetType asset_type, core::memory::unique_pointer<asset::AssetLoader> loader) noexcept;
+        void remove_resolver(
+            asset::AssetResolverHandle resolver_handle
+        ) noexcept;
+
+        auto add_loader(
+            asset::AssetType asset_type,
+            core::memory::unique_pointer<asset::AssetLoader> loader
+        ) noexcept -> asset::AssetLoaderHandle;
+
+        void remove_loader(
+            asset::AssetLoaderHandle loader_handle
+        ) noexcept;
 
         auto request(Asset reference) noexcept -> AssetStatus;
 
@@ -39,8 +57,10 @@ namespace asset
     private:
         core::allocator& _allocator;
 
-        std::vector<core::memory::unique_pointer<AssetResolver>> _asset_resolver;
-        std::unordered_map<AssetType, std::vector<core::memory::unique_pointer<AssetLoader>>> _asset_loader;
+        core::Vector<core::memory::unique_pointer<AssetResolver>> _asset_resolvers;
+        core::Vector<core::memory::unique_pointer<AssetLoader>> _asset_loaders;
+
+        core::Map<AssetType, std::vector<AssetLoader*>> _asset_loader_map;
 
         struct AssetReference
         {

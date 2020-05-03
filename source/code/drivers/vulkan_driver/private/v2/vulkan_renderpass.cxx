@@ -32,7 +32,7 @@ namespace iceshard::renderer::vulkan
                 RenderPassImage{
                     .type = RenderPassImageType::DepthStencilImage,
                     .index = 2,
-                    .format = VK_FORMAT_D16_UNORM
+                    .format = VK_FORMAT_D24_UNORM_S8_UINT
                 }
             );
         }
@@ -50,7 +50,7 @@ namespace iceshard::renderer::vulkan
                 RenderPassImage{
                     .type = RenderPassImageType::DepthStencilImage,
                     .index = 1,
-                    .format = VK_FORMAT_D16_UNORM
+                    .format = VK_FORMAT_D24_UNORM_S8_UINT
                 }
             );
         }

@@ -43,6 +43,9 @@
         + ' /Z7'
         + ' /MDd'
         + ' /EHsc'
+
+    .LinkerOptions
+        + ' /DEBUG'
 ]
 .ToolchainProperties_MSVC_x64_v142_Develop =
 [
@@ -57,6 +60,9 @@
         + ' /Z7'
         + ' /MD'
         + ' /EHsc'
+
+    .LinkerOptions
+        + ' /DEBUG'
 ]
 .ToolchainProperties_MSVC_x64_v142_Profile = .ToolchainProperties_MSVC_x64_v142_Develop
 .ToolchainProperties_MSVC_x64_v142_Release = .ToolchainProperties_MSVC_x64_v142_Develop

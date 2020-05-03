@@ -13,7 +13,7 @@ namespace core
     }
 
     template<typename T>
-    constexpr inline auto hash(T value) noexcept
+    constexpr inline auto hash(T value) noexcept -> uint64_t
     {
         return static_cast<uint64_t>(value);
     }

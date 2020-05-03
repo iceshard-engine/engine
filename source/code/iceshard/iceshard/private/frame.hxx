@@ -9,11 +9,11 @@ namespace iceshard
 {
 
 
-    //! \brief A single engien frame with a preallocated ring buffer allocator.
-    class MemoryFrame : public iceshard::Frame
+    //! \brief A single engine frame with a preallocated ring buffer allocator.
+    class MemoryFrame final : public iceshard::Frame
     {
     public:
-        MemoryFrame(core::memory::scratch_allocator& alloc) noexcept;
+        MemoryFrame(core::memory::scratch_allocator& alloc, float time_delta) noexcept;
         ~MemoryFrame() noexcept;
 
         //! \copydoc Frame::messages() noexcept
@@ -35,8 +35,16 @@ namespace iceshard
         //! \copydoc Frame::frame_allocator() noexcept
         auto frame_allocator() noexcept -> core::allocator& override;
 
+        //! \copydoc Frame::time_delta() noexcept
+        auto time_delta() const noexcept -> float override
+        {
+            return _time_delta;
+        }
+
     private:
         core::memory::scratch_allocator& _frame_allocator;
+
+        float const _time_delta;
 
         core::memory::scratch_allocator _message_allocator;
         core::memory::scratch_allocator _storage_allocator;

@@ -7,6 +7,8 @@
 namespace iceshard
 {
 
+    class Engine;
+
     class IceshardWorld : public World
     {
     public:
@@ -14,10 +16,12 @@ namespace iceshard
             core::allocator& alloc,
             core::stringid_arg_type world_name,
             iceshard::Entity world_entity,
-            iceshard::ServiceProvider* engine_service_provider
+            iceshard::ServiceProvider& engine_service_provider
         ) noexcept;
 
-        ~IceshardWorld() noexcept override = default;
+        ~IceshardWorld() noexcept override;
+
+        void update(Engine& engine) noexcept;
 
         void add_component_system(core::stringid_arg_type component_name, ComponentSystemFactory factory, void* userdata) noexcept override;
 
@@ -26,6 +30,8 @@ namespace iceshard
 
     private:
         core::allocator& _allocator;
+
+        core::pod::Hash<ComponentSystem*> _component_systems;
 
         core::memory::unique_pointer<iceshard::IceshardWorldServiceProvider> _service_provider;
     };

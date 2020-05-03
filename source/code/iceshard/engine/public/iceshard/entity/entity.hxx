@@ -7,10 +7,22 @@ namespace iceshard
     //! \brief A handle for a single entity.
     enum class Entity : uint64_t { };
 
-} // namespace iceshard::entity
+    namespace component
+    {
+
+        struct Entity
+        {
+            static constexpr auto identifier = "isc.entity"_sid;
+
+            iceshard::Entity e;
+        };
+
+    } // namespace component
+
+} // namespace iceshard
 
 template<>
-constexpr auto core::hash<iceshard::Entity>(iceshard::Entity value) noexcept
+constexpr auto core::hash<iceshard::Entity>(iceshard::Entity value) noexcept -> uint64_t
 {
     return static_cast<std::underlying_type_t<iceshard::Entity>>(value);
 }

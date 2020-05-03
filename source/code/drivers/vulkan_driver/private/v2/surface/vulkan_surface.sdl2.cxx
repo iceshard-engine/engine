@@ -87,6 +87,8 @@ namespace iceshard::renderer::vulkan
             SDL_WINDOW_VULKAN | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI | SDL_WINDOW_SHOWN
         );
 
+        SDL_SetRelativeMouseMode(SDL_TRUE);
+
         SDL_SysWMinfo wm_info{};
         SDL_GetWindowWMInfo(sdl_window, &wm_info);
 

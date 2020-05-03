@@ -11,7 +11,8 @@ namespace iceshard
     public:
         IceshardWorldServiceProvider(
             core::allocator& allocator,
-            iceshard::ServiceProvider* engine_service_provider
+            iceshard::ServiceProvider& engine_service_provider,
+            core::pod::Hash<ComponentSystem*>& systems
         ) noexcept;
 
         ~IceshardWorldServiceProvider() noexcept override;
@@ -37,16 +38,12 @@ namespace iceshard
         auto component_system(core::stringid_arg_type component_system_name) noexcept -> ComponentSystem* override;
         auto component_system(core::stringid_arg_type component_system_name) const noexcept -> const ComponentSystem* override;
 
-    public:
-        //! \brief Adds a component system to the service provider.
-        void add_component_system(core::stringid_arg_type component_system_name, ComponentSystem* component_sys) noexcept;
-
     private:
         core::allocator& _allocator;
 
-        iceshard::ServiceProvider* const _engine_service_provider;
+        iceshard::ServiceProvider& _engine_service_provider;
 
-        core::pod::Hash<ComponentSystem*> _world_component_systems;
+        core::pod::Hash<ComponentSystem*>& _world_component_systems;
     };
 
 } // namespace iceshard

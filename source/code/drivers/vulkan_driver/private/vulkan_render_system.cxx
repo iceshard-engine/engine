@@ -119,6 +119,14 @@ namespace render
             return result;
         }
 
+        auto create_data_buffer(
+            iceshard::renderer::api::BufferType type,
+            uint32_t size
+        ) noexcept -> iceshard::renderer::api::Buffer override
+        {
+            return _vk_render_system->create_data_buffer(type, size);
+        }
+
         auto create_resource_set(
             core::stringid_arg_type name,
             iceshard::renderer::RenderPipelineLayout layout,
@@ -126,6 +134,13 @@ namespace render
         ) noexcept -> iceshard::renderer::ResourceSet override
         {
             return _vk_render_system->create_resource_set(name, layout, resources);
+        }
+
+        auto get_resource_set(
+            core::stringid_arg_type name
+        ) noexcept -> iceshard::renderer::ResourceSet override
+        {
+            return _vk_render_system->get_resource_set(name);
         }
 
         void update_resource_set(
