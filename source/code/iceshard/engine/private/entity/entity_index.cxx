@@ -12,10 +12,10 @@ namespace iceshard
             return static_cast<uint64_t>(sid.hash_value);
         }
 
-        auto hash(ComponentSystem* component_system) noexcept
-        {
-            return hash(component_system->name());
-        }
+        //auto hash(ComponentSystem* component_system) noexcept
+        //{
+        //    return hash(component_system->name());
+        //}
 
         auto hash_mix(uint64_t left, uint64_t right) noexcept
         {
@@ -49,7 +49,7 @@ namespace iceshard
         const auto entity_prototype = core::pod::hash::get(_entity_index, core::hash(entity), core::stringid_invalid);
         const auto new_prototype_hash = detail::hash_mix(
             detail::hash(entity_prototype),
-            detail::hash_mix(detail::hash(component_name), detail::hash(component_system))
+            detail::hash_mix(detail::hash(component_name), detail::hash("out-of-date"_sid))
         );
 
         if (!core::pod::hash::has(_prototype_map, new_prototype_hash))
@@ -124,7 +124,7 @@ namespace iceshard
                     // Create a new prototype from those stored back for later
                     const auto new_prototype_hash = detail::hash_mix(
                         detail::hash(new_entity_protype),
-                        detail::hash_mix(detail::hash(prototype.component_name), detail::hash(prototype.component_system))
+                        detail::hash_mix(detail::hash(prototype.component_name), detail::hash("out-of-date"_sid))
                     );
 
                     // Store the created prototype if not existing
