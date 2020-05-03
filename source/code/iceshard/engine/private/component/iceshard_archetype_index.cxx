@@ -282,9 +282,9 @@ namespace iceshard::ecs
             );
             core::pod::array::reserve(indices, required_component_count);
 
-            for (uint32_t idx = 0; idx < available_component_count; ++idx)
+            for (core::stringid_arg_type required_component : required_components)
             {
-                for (core::stringid_arg_type required_component : required_components)
+                for (uint32_t idx = 0; idx < available_component_count; ++idx)
                 {
                     if (available_components[idx] == required_component)
                     {
