@@ -52,7 +52,7 @@ namespace asset::detail
 
         auto supported_asset_types() const noexcept -> core::pod::Array<asset::AssetType> const& override
         {
-            core::pod::Array<asset::AssetType> empty_view{ core::memory::globals::null_allocator() };
+            static core::pod::Array<asset::AssetType> empty_view{ core::memory::globals::null_allocator() };
             return empty_view;
         }
 

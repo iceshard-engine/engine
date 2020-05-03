@@ -66,6 +66,9 @@ namespace iceshard
         //!     so any data which needs to persist between frames needs to be copied each frame!
         //! \remarks The returned allocator is ensured to be optimized performance wise, but has a upper memory limit.
         virtual auto frame_allocator() noexcept -> core::allocator& = 0;
+
+        //! \brief Returns the time difference in seconds from the last frame.
+        virtual auto time_delta() const noexcept -> float = 0;
     };
 
 

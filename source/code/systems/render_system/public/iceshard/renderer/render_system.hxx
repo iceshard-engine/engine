@@ -14,6 +14,11 @@ namespace iceshard::renderer
 
         virtual void end_frame() noexcept { }
 
+
+        virtual auto get_resource_set(
+            core::stringid_arg_type name
+        ) noexcept -> ResourceSet = 0;
+
         virtual auto create_resource_set(
             core::stringid_arg_type name,
             iceshard::renderer::RenderPipelineLayout layout,
@@ -29,6 +34,7 @@ namespace iceshard::renderer
             core::stringid_arg_type name
         ) noexcept = 0;
 
+
         virtual auto create_pipeline(
             core::stringid_arg_type name,
             RenderPipelineLayout layout,
@@ -38,6 +44,11 @@ namespace iceshard::renderer
         virtual void destroy_pipeline(
             core::stringid_arg_type name
         ) noexcept = 0;
+
+        virtual auto create_data_buffer(
+            iceshard::renderer::api::BufferType type,
+            uint32_t size
+        ) noexcept -> iceshard::renderer::api::Buffer = 0;
 
         virtual auto acquire_command_buffer(
             RenderPassStage stage

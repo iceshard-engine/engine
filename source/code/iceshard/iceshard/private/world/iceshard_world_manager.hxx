@@ -15,7 +15,7 @@ namespace iceshard
     public:
         IceshardWorldManager(
             core::allocator& alloc,
-            iceshard::ServiceProvider* engine_service_provider
+            iceshard::ServiceProvider& engine_service_provider
         ) noexcept;
 
         ~IceshardWorldManager() noexcept override = default;
@@ -26,10 +26,19 @@ namespace iceshard
 
         void destroy_world(core::stringid_arg_type world_name) noexcept override;
 
+        template<typename Fn>
+        void foreach_world(Fn&& fn) noexcept
+        {
+            for (auto const& entry : _worlds)
+            {
+                std::forward<Fn>(fn)(*entry.value);
+            }
+        }
+
     private:
         core::allocator& _allocator;
 
-        iceshard::ServiceProvider* const _engine_service_provider;
+        iceshard::ServiceProvider& _engine_service_provider;
 
         core::pod::Hash<IceshardWorld*> _worlds;
     };

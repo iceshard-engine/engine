@@ -9,7 +9,6 @@
 namespace iceshard
 {
 
-
     //! \brief A single world container which is allowed to hold component managers.
     class World
     {

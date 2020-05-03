@@ -55,6 +55,8 @@ namespace iceshard
         core::memory::unique_pointer<iceshard::IceshardServiceProvider> _serivce_provider{ nullptr, { core::memory::globals::null_allocator() } };
         core::memory::unique_pointer<iceshard::IceshardWorldManager> _world_manager{ nullptr, { core::memory::globals::null_allocator() } };
 
+        core::pod::Hash<ComponentSystem*> _component_systems;
+
         // Thread pool of the engine.
         cppcoro::static_thread_pool _worker_pool{};
 
@@ -73,6 +75,9 @@ namespace iceshard
         // Frames.
         core::memory::unique_pointer<MemoryFrame> _previous_frame;
         core::memory::unique_pointer<MemoryFrame> _current_frame;
+
+        using clock_type = std::chrono::high_resolution_clock;
+        clock_type::time_point _last_frame_tp;
     };
 
 } // namespace iceshard

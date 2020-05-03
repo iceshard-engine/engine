@@ -9,6 +9,7 @@ namespace input::message
     {
         static constexpr auto message_type = "Mouse.Motion"_sid;
 
+        bool relative;
         MousePos pos;
     };
 

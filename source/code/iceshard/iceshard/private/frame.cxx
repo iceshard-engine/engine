@@ -17,9 +17,13 @@ namespace iceshard
         static uint32_t next_frame_index = 0;
     }
 
-    MemoryFrame::MemoryFrame(core::memory::scratch_allocator& alloc) noexcept
+    MemoryFrame::MemoryFrame(
+        core::memory::scratch_allocator& alloc,
+        float time_delta
+    ) noexcept
         : iceshard::Frame{ }
         , _frame_allocator{ alloc }
+        , _time_delta{ time_delta }
         , _message_allocator{ _frame_allocator, detail::message_allocator_pool }
         , _storage_allocator{ _frame_allocator, detail::storage_allocator_pool }
         , _data_allocator{ _frame_allocator, detail::data_allocator_pool }
