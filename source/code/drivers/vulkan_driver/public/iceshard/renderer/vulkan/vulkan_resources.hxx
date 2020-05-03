@@ -28,6 +28,13 @@ namespace iceshard::renderer::vulkan
         VulkanResourceSet& set
     ) noexcept;
 
+    void update_resource_set(
+        VkDevice device,
+        VulkanFramebuffer framebuffer,
+        VulkanResourceSet& set,
+        core::pod::Array<RenderResource> const& resources
+    ) noexcept;
+
     void destroy_resource_set(
         VkDevice device,
         VulkanResourcePool resource_pool,

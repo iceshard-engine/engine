@@ -1,6 +1,7 @@
 #pragma once
 #include <core/allocator.hxx>
 #include <core/pod/hash.hxx>
+#include <core/pointer.hxx>
 #include <iceshard/renderer/render_system.hxx>
 #include <iceshard/renderer/render_pass.hxx>
 #include <iceshard/renderer/vulkan/vulkan_sdk.hxx>
@@ -19,6 +20,9 @@
 namespace iceshard::renderer::vulkan
 {
 
+    class VulkanBuffer;
+    class VulkanDeviceMemoryManager;
+
     class VulkanRenderSystem final : iceshard::renderer::RenderSystem
     {
     public:
@@ -32,6 +36,11 @@ namespace iceshard::renderer::vulkan
         auto acquire_command_buffer(RenderPassStage stage) noexcept->CommandBuffer override;
 
         void submit_command_buffer(CommandBuffer cmd_buffer) noexcept override;
+
+
+        auto get_resource_set(
+            core::stringid_arg_type name
+        ) noexcept -> ResourceSet override;
 
         auto create_resource_set(
             core::stringid_arg_type name,
@@ -48,6 +57,7 @@ namespace iceshard::renderer::vulkan
             core::stringid_arg_type name
         ) noexcept override;
 
+
         auto create_pipeline(
             core::stringid_arg_type name,
             RenderPipelineLayout layout,
@@ -58,15 +68,20 @@ namespace iceshard::renderer::vulkan
             core::stringid_arg_type name
         ) noexcept override;
 
+        auto create_data_buffer(
+            iceshard::renderer::api::BufferType type,
+            uint32_t size
+        ) noexcept -> iceshard::renderer::api::Buffer override;
+
     public:
         // API v1.0 proxies
         auto devices() noexcept -> VulkanDevices const& { return _devices; }
 
-        auto swapchain() noexcept->VulkanSwapchain;
+        auto swapchain() noexcept -> VulkanSwapchain;
 
-        auto render_area() noexcept->VkExtent2D;
+        auto render_area() noexcept -> VkExtent2D;
 
-        auto resource_layouts() noexcept->VulkanResourceLayouts;
+        auto resource_layouts() noexcept -> VulkanResourceLayouts;
 
     public:
         auto v1_surface() noexcept -> VkSurfaceKHR;
@@ -100,6 +115,9 @@ namespace iceshard::renderer::vulkan
         VulkanSurface _surface;
         VulkanDevices _devices;
         VulkanSwapchain _swapchain;
+
+        core::memory::unique_pointer<VulkanDeviceMemoryManager> _device_memory_manager;
+        core::Vector<core::memory::unique_pointer<iceshard::renderer::vulkan::VulkanBuffer>> _vulkan_buffers;
 
         uint32_t _subpass_stage;
         VulkanRenderPass _renderpass;

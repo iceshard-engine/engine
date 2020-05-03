@@ -3,12 +3,17 @@
 #include <core/pod/array.hxx>
 #include <core/pod/algorithm.hxx>
 
+#include "../vulkan_device_memory_manager.hxx"
+#include "../vulkan_buffer.hxx"
+
 namespace iceshard::renderer::vulkan
 {
 
     VulkanRenderSystem::VulkanRenderSystem(core::allocator& alloc, VkInstance instance) noexcept
         : _allocator{ alloc }
         , _vk_instance{ instance }
+        , _device_memory_manager{ nullptr, { alloc } }
+        , _vulkan_buffers{ _allocator }
         , _framebuffers{ _allocator }
         , _command_buffers_secondary{ _allocator }
         , _command_buffers_submitted{ _allocator }
@@ -18,6 +23,12 @@ namespace iceshard::renderer::vulkan
     {
         _surface = create_surface(_allocator, _vk_instance, { 1280, 720 });
         create_devices(_vk_instance, native_handle(_surface), _devices);
+
+        _device_memory_manager = core::memory::make_unique<VulkanDeviceMemoryManager>(
+            _allocator,
+            _allocator,
+            _devices
+        );
 
         allocate_command_buffers(_devices, _command_buffers, 6, _command_buffers_secondary);
         core::pod::array::resize(_command_buffers_submitted, core::pod::array::size(_command_buffers_secondary));
@@ -64,6 +75,10 @@ namespace iceshard::renderer::vulkan
         vkDestroySemaphore(_devices.graphics.handle, _framebuffer_semaphore, nullptr);
 
         release_command_buffers(_devices, _command_buffers, _command_buffers_secondary);
+
+        _vulkan_buffers.clear();
+        _device_memory_manager = nullptr;
+
         destroy_devices(_vk_instance, _devices);
         destroy_surface(_allocator, _surface);
     }
@@ -273,6 +288,17 @@ namespace iceshard::renderer::vulkan
         return _resource_layouts;
     }
 
+    auto VulkanRenderSystem::get_resource_set(core::stringid_arg_type name) noexcept -> ResourceSet
+    {
+        VulkanResourceSet* resource_set = core::pod::hash::get(
+            _resource_sets,
+            core::hash(name),
+            nullptr
+        );
+
+        return ResourceSet{ (uintptr_t)resource_set };
+    }
+
     auto VulkanRenderSystem::create_resource_set(
         core::stringid_arg_type name,
         iceshard::renderer::RenderPipelineLayout layout,
@@ -304,11 +330,25 @@ namespace iceshard::renderer::vulkan
     }
 
     void VulkanRenderSystem::update_resource_set(
-        [[maybe_unused]] core::stringid_arg_type name,
-        [[maybe_unused]] core::pod::Array<RenderResource> const& resources
+        core::stringid_arg_type name,
+        core::pod::Array<RenderResource> const& resources
     ) noexcept
     {
-        IS_ASSERT(false, "Currently not implemented!");
+        VulkanResourceSet* resource_set = core::pod::hash::get(
+            _resource_sets,
+            core::hash(name),
+            nullptr
+        );
+
+        if (resource_set != nullptr)
+        {
+            vulkan::update_resource_set(
+                _devices.graphics.handle,
+                _framebuffers[_current_framebuffer_index],
+                *resource_set,
+                resources
+            );
+        }
     }
 
     void VulkanRenderSystem::destroy_resource_set(
@@ -378,6 +418,24 @@ namespace iceshard::renderer::vulkan
             _allocator.destroy(pipeline);
             core::pod::hash::remove(_pipelines, core::hash(name));
         }
+    }
+
+    auto VulkanRenderSystem::create_data_buffer(
+        iceshard::renderer::api::BufferType type,
+        uint32_t size
+    ) noexcept -> iceshard::renderer::api::Buffer
+    {
+        auto vulkan_buffer = iceshard::renderer::vulkan::create_buffer(
+            _allocator,
+            type,
+            size,
+            *_device_memory_manager
+        );
+
+        auto result = iceshard::renderer::api::v1_1::Buffer{ reinterpret_cast<uintptr_t>(vulkan_buffer.get()) };
+        _vulkan_buffers.emplace_back(std::move(vulkan_buffer));
+
+        return result;
     }
 
     auto VulkanRenderSystem::v1_surface() noexcept -> VkSurfaceKHR
