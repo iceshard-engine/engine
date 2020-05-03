@@ -441,28 +441,28 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
         {
             auto& frame = engine_instance->current_frame();
 
-            //iceshard::ecs::for_each_entity(
-            //    iceshard::ecs::query_entity(light_query, *arch_idx, entities[4]),
-            //    [](iceshard::component::Light* l, iceshard::component::Transform* xform) noexcept
-            //    {
-            //        //angle += 0.02f;
-            //        if (angle >= 360.f)
-            //        {
-            //            angle = 0.f;
-            //        }
-            //        auto rotation_mat = glm::rotate(glm::radians(angle), glm::vec3{ 0.0f, 1.0f, 0.0f });
-            //        glm::vec3 pos = { l->position.x, l->position.y, l->position.z };
-            //        pos = glm::vec4(pos, 1.0f) * rotation_mat;
+            iceshard::ecs::for_each_entity(
+                iceshard::ecs::query_entity(light_query, *arch_idx, entities[9]),
+                [](iceshard::component::Light* l, iceshard::component::Transform* xform) noexcept
+                {
+                    //angle += 0.02f;
+                    if (angle >= 360.f)
+                    {
+                        angle = 0.f;
+                    }
+                    auto rotation_mat = glm::rotate(glm::radians(angle), glm::vec3{ 0.0f, 1.0f, 0.0f });
+                    glm::vec3 pos = { l->position.x, l->position.y, l->position.z };
+                    pos = glm::vec4(pos, 1.0f) * rotation_mat;
 
-            //        memcpy(std::addressof(l->position), &pos, sizeof(pos));
+                    memcpy(std::addressof(l->position), &pos, sizeof(pos));
 
-            //        auto mat_xform = glm::scale(
-            //            glm::translate(pos),
-            //            glm::vec3{ 0.04, 0.08, 0.04 }
-            //        );
-            //        memcpy(std::addressof(xform->xform), &mat_xform, sizeof(mat_xform));
-            //    }
-            //);
+                    auto mat_xform = glm::scale(
+                        glm::translate(pos),
+                        glm::vec3{ 0.04, 0.08, 0.04 }
+                    );
+                    memcpy(std::addressof(xform->xform), &mat_xform, sizeof(mat_xform));
+                }
+            );
 
             core::message::filter<input::message::AppExit>(engine_instance->current_frame().messages(), [&quit](auto const&) noexcept
                 {
