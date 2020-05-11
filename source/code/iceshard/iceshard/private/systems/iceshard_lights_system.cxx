@@ -56,7 +56,7 @@ namespace iceshard
             iceshard::ecs::query_index(_component_query, _archetype_index),
             [&light_data](Entity* e, Light* light) noexcept
             {
-                light_data->light_position[light_data->light_count] = light->position;
+                light_data->point_lights[light_data->light_count].light_position = light->position;
                 light_data->light_count += 1;
             }
         );

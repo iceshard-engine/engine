@@ -387,29 +387,58 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
         arch_idx->add_component(entities[0], iceshard::component::ModelMaterial{ ism::vec4 { 0.8f, 0.8f, 0.8f, 1.0f } });
         arch_idx->add_component(entities[0], iceshard::component::ModelName{ "mesh/box/box"_sid });
 
-        pos = ism::translate(
-            ism::identity<ism::mat4>(),
-            ism::vec3{ 0.0f, 0.0f, 0.0f }
-        );
 
-        arch_idx->add_component(entities[4], iceshard::component::ModelName{ "mesh/box/dbox"_sid });
-        arch_idx->add_component(entities[4], iceshard::component::Transform{ pos });
-        arch_idx->add_component(entities[4], iceshard::component::ModelMaterial{ ism::vec4 { 0.3f, 0.6f, 0.2f, 1.0f } });
+        namespace ism = core::math;
+        {
+            ism::vec3 cube_positions[] = {
+                ism::vec3{ 0.0f,  0.0f,  0.0f },
+                ism::vec3{ 2.0f,  5.0f, -15.0f },
+                ism::vec3{ -1.5f, -2.2f, -2.5f },
+                ism::vec3{ -3.8f, -2.0f, -12.3f },
+                ism::vec3{ 2.4f, -0.4f, -3.5f },
+                ism::vec3{ -1.7f,  3.0f, -7.5f },
+                ism::vec3{ 1.3f, -2.0f, -2.5f },
+                ism::vec3{ 1.5f,  2.0f, -2.5f },
+                ism::vec3{ 1.5f,  0.2f, -1.5f },
+                ism::vec3{ -1.3f,  1.0f, -1.5f },
+            };
 
-        pos = ism::translate(
-            ism::identity<ism::mat4>(),
-            ism::vec3{ 3.0f, 0.0f, 0.0f }
-        );
 
-        arch_idx->add_component(entities[5], iceshard::component::ModelName{ "mesh/box/box"_sid });
-        arch_idx->add_component(entities[5], iceshard::component::Transform{ pos });
-        arch_idx->add_component(entities[5], iceshard::component::ModelMaterial{ ism::vec4 { 0.8f, 0.3f, 0.2f, 1.0f } });
+            core::pod::Array<iceshard::Entity> cube_entities{ alloc };
+            engine_instance->entity_manager()->create_many(core::size(cube_positions), cube_entities);
+
+            uint32_t i = 0;
+            for (auto const cube_pos : cube_positions)
+            {
+                static float angle = 0.0f;
+                auto model = ism::translate(cube_pos);
+                model = ism::scale(model, { 0.5, 0.5, 0.5 });
+                model = ism::rotate(model, ism::radians(angle), { 1.f, 0.3f, 0.5f });
+
+                arch_idx->add_component(cube_entities[i], iceshard::component::ModelName{ "mesh/box/box"_sid });
+                arch_idx->add_component(cube_entities[i], iceshard::component::Transform{ model });
+                arch_idx->add_component(cube_entities[i], iceshard::component::ModelMaterial{
+                    ism::vec4 { 0.2, 0.8, 0.4, 1.0 } // model.v[0][1], model.v[1][2], model.v[2][0], 1.0f }
+                });
+
+                angle += 20.f;
+                i += 1;
+            }
+        }
 
         pos = ism::scale(
-            ism::translate(
-                ism::identity<ism::mat4>(),
-                ism::vec3{ 0.5f, 0.5f, 5.0f }
-            ),
+            ism::translate(ism::vec3{ 0.5f, 0.5f, 3.0f }),
+            ism::vec3{ 0.04f, 0.04f, 0.04f }
+        );
+
+        arch_idx->add_component(entities[8], iceshard::component::Light{ { 0.5f, 0.5f, 3.0f } });
+        arch_idx->add_component(entities[8], iceshard::component::ModelName{ "mesh/box/box"_sid });
+        arch_idx->add_component(entities[8], iceshard::component::Transform{ pos });
+        arch_idx->add_component(entities[8], iceshard::component::ModelMaterial{ ism::vec4 { 0.8, 0.8, 0.8, 1.0f } });
+        arch_idx->add_component(entities[8], DebugName{ "Light" });
+
+        pos = ism::scale(
+            ism::translate(ism::vec3{ 0.5f, 0.5f, 5.0f }),
             ism::vec3{ 0.04f, 0.04f, 0.04f }
         );
 
@@ -418,6 +447,7 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
         arch_idx->add_component(entities[9], iceshard::component::Transform{ pos });
         arch_idx->add_component(entities[9], iceshard::component::ModelMaterial{ ism::vec4 { 0.8, 0.8, 0.8, 1.0f } });
         arch_idx->add_component(entities[9], DebugName{ "Light" });
+
 
 
         iceshard::Entity camera_entity = engine_instance->entity_manager()->create();
@@ -434,7 +464,21 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
 
         iceshard::ecs::ComponentQuery<iceshard::component::Light*, iceshard::component::Transform*> light_query{ alloc };
 
-        static float angle = 2.0f;
+        static float angles[]{
+            2.0f,
+            3.0f,
+        };
+
+        uint32_t current_angle = 0;
+        auto next_angle = [&]() -> float
+        {
+            current_angle += 1;
+            if (current_angle == core::size(angles))
+            {
+                current_angle = 0;
+            }
+            return angles[current_angle];
+        };
 
         bool quit = false;
         while (quit == false)
@@ -442,15 +486,11 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
             auto& frame = engine_instance->current_frame();
 
             iceshard::ecs::for_each_entity(
-                iceshard::ecs::query_entity(light_query, *arch_idx, entities[9]),
-                [](iceshard::component::Light* l, iceshard::component::Transform* xform) noexcept
+                iceshard::ecs::query_index(light_query, *arch_idx),
+                [&next_angle](iceshard::component::Light* l, iceshard::component::Transform* xform) noexcept
                 {
                     //angle += 0.02f;
-                    if (angle >= 360.f)
-                    {
-                        angle = 0.f;
-                    }
-                    auto rotation_mat = glm::rotate(glm::radians(angle), glm::vec3{ 0.0f, 1.0f, 0.0f });
+                    auto rotation_mat = glm::rotate(glm::radians(next_angle()), glm::vec3{ 0.0f, 1.0f, 0.0f });
                     glm::vec3 pos = { l->position.x, l->position.y, l->position.z };
                     pos = glm::vec4(pos, 1.0f) * rotation_mat;
 
