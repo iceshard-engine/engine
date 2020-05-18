@@ -64,9 +64,6 @@
 #include <debugui/debugui_module.hxx>
 #include <debugui/debugui.hxx>
 
-#include <glm/glm.hpp>
-#include <glm/gtx/transform.hpp>
-
 #include <imgui/imgui.h>
 
 
@@ -81,14 +78,14 @@ struct Position
 {
     static constexpr auto identifier = "isc.position"_sid;
 
-    glm::vec3 pos;
+    ism::vec3f pos;
 };
 
 struct Transform
 {
     static constexpr auto identifier = "isc.transform"_sid;
 
-    glm::mat4 xform;
+    ism::mat4 xform;
 };
 
 class PostProcessSystem
@@ -99,8 +96,8 @@ class PostProcessSystem
 
     struct Vertice
     {
-        glm::vec2 pos;
-        glm::vec2 uv;
+        ism::vec2f pos;
+        ism::vec2f uv;
     };
 
 public:
@@ -355,7 +352,7 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
 
         fmt::print("IceShard engine revision: {}\n", engine_instance->revision());
 
-        glm::uvec2 viewport{ 1280, 720 };
+        ism::vec2u viewport{ 1280, 720 };
 
         [[maybe_unused]]
         iceshard::World* world = engine_instance->world_manager()->create_world("test-world"_sid);
@@ -511,7 +508,7 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
             engine_instance->add_task([](
                     iceshard::Engine* engine_instance,
                     iceshard::renderer::RenderSystem* render_system,
-                    glm::uvec2 viewport,
+                    ism::vec2u viewport,
                     PostProcessSystem* post_process,
                     debugui::DebugUIModule* debugui_module,
                     iceshard::renderer::Pipeline pp_pipeline,

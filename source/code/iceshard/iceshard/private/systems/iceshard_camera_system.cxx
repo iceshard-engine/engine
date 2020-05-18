@@ -232,12 +232,10 @@ namespace iceshard
                         camera->front = ism::normalize(direction);
                     });
 
-                camera_data->view = math_cast<ism::mat4>(
-                    glm::lookAt(
-                        math_cast<glm::vec3>(camera->position),
-                        math_cast<glm::vec3>(camera->position + camera->front),
-                        math_cast<glm::vec3>(camera_up)
-                    )
+                camera_data->view = ism::lookat(
+                    camera->position,
+                    camera->position + camera->front,
+                    camera_up
                 );
 
                 camera_data->projection = math_cast<core::math::mat4x4>(

@@ -24,7 +24,6 @@
         ]
 
         .Modules = {
-            'glm'
             'imgui'
             'SDL2'
             'Assimp'

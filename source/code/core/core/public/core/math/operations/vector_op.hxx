@@ -1,5 +1,5 @@
 #pragma once
-#include <core/math/vector.hxx>
+#include <core/math/types/vector.hxx>
 
 namespace core::math
 {

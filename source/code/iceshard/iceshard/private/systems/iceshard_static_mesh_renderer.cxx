@@ -18,9 +18,6 @@
 
 #include <asset_system/assets/asset_mesh.hxx>
 
-#include <glm/glm.hpp>
-#include <glm/gtx/transform.hpp>
-
 namespace iceshard
 {
 
@@ -313,46 +310,6 @@ namespace iceshard
         }
 
         _render_system.submit_command_buffer(cb);
-
-        //Model const* model = reinterpret_cast<Model const*>(_mesh_asset.content.data());
-
-        //{
-        //    DataView mapped_buffer_view;
-
-        //    iceshard::renderer::api::render_api_instance->buffer_array_map_data(
-        //        &_buffers[1],
-        //        &mapped_buffer_view,
-        //        1
-        //    );
-
-        //    glm::mat4* it = reinterpret_cast<glm::mat4*>(mapped_buffer_view.data);
-
-        //    uint32_t model_count = 0;
-        //    iceshard::ecs::for_each_entity(
-        //        iceshard::ecs::query_index(_xform_query, _index),
-        //        [&](Transform* tform) noexcept
-        //        {
-        //            *it = tform->xform;
-        //            model_count += 1;
-        //            it += 1;
-        //        }
-        //    );
-
-        //    iceshard::renderer::api::render_api_instance->buffer_array_unmap_data(
-        //        &_buffers[1],
-        //        1
-        //    );
-
-        //    core::pod::Array<Buffer> buffer_view{ core::memory::globals::null_allocator() };
-        //    core::pod::array::create_view(buffer_view, _buffers, 2);
-
-        //    using namespace iceshard::renderer::commands;
-
-        //    bind_index_buffer(cb, _buffers[2]);
-        //    bind_vertex_buffers(cb, buffer_view);
-        //    draw_indexed(cb, model->mesh_list->indice_count, model_count, 0, 0, 0);
-        //}
-
         co_return;
     }
 

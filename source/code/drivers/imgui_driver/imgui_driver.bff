@@ -10,7 +10,6 @@
     [
         .Modules = {
             'imgui'
-            'glm'
         }
         .Uses = {
             'debugui_system'

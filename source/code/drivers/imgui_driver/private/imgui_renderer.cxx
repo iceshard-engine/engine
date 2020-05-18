@@ -1,10 +1,11 @@
 #include "imgui_renderer.hxx"
 #include <core/memory.hxx>
+#include <core/math/vector.hxx>
+
 #include <render_system/render_commands.hxx>
 #include <iceshard/renderer/render_pass.hxx>
 #include <iceshard/renderer/render_resources.hxx>
 
-#include <glm/glm.hpp>
 
 namespace debugui::imgui
 {
@@ -166,7 +167,7 @@ namespace debugui::imgui
                             clip_rect.y = 0.0f;
 
                         // Apply scissor/clipping rectangle
-                        glm::ivec4 scissor;
+                        core::math::vec4i scissor;
                         scissor.x = (int32_t)(clip_rect.x);
                         scissor.y = (int32_t)(clip_rect.y);
                         scissor.z = (uint32_t)(clip_rect.z - clip_rect.x);
