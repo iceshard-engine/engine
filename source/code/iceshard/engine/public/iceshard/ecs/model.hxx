@@ -1,5 +1,5 @@
 #pragma once
-#include <core/math/vector.hxx>
+#include <iceshard/math.hxx>
 #include <iceshard/component/component_system.hxx>
 
 namespace iceshard::component
@@ -17,7 +17,7 @@ namespace iceshard::component
     {
         static constexpr auto identifier = "isc.model-color"_sid;
 
-        core::math::vec4 color;
+        ism::vec4f color;
     };
 
 } // namespace iceshard::ecs

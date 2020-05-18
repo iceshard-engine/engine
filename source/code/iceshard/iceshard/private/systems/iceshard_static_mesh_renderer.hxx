@@ -29,8 +29,8 @@ namespace iceshard
 
         struct InstanceData
         {
-            core::math::mat4x4 xform;
-            core::math::vec4 color;
+            ism::mat4x4 xform;
+            ism::vec4f color;
         };
 
         static_assert(sizeof(InstanceData) == sizeof(float) * 20);
@@ -79,7 +79,7 @@ namespace iceshard
         asset::AssetSystem& _asset_system;
 
         // Render resources
-        core::math::uvec2 _viewport{ 1280, 720 };
+        ism::vec2u _viewport{ 1280, 720 };
 
         iceshard::renderer::api::Buffer _indice_buffers;
         iceshard::renderer::api::Buffer _vertice_buffers;

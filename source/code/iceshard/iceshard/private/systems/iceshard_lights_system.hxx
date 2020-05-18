@@ -12,7 +12,7 @@ namespace iceshard
 
     struct alignas(16) PointLight
     {
-        core::math::vec3 light_position;
+        core::math::vec3f light_position;
     };
 
     struct LightData

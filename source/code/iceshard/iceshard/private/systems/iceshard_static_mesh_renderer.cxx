@@ -167,7 +167,7 @@ namespace iceshard
                         {
                             core::pod::array::push_back(*instance_data,
                                 detail::InstanceData{
-                                    .xform = core::math::mul(it->local_xform, transforms[processed_model_count + i].xform),
+                                    .xform = transforms[processed_model_count + i].xform * it->local_xform,
                                     .color = transforms[processed_model_count + i].color
                                 }
                             );
@@ -241,7 +241,7 @@ namespace iceshard
 
             void* const vertice_buffer_ptr = core::memory::utils::pointer_add(
                 mapped_buffer_views[0].data,
-                instance.vertice_offset * sizeof(core::math::vec3) * 2
+                instance.vertice_offset * sizeof(core::math::vec3f) * 2
             );
             void* const indice_buffer_ptr = core::memory::utils::pointer_add(
                 mapped_buffer_views[2].data,

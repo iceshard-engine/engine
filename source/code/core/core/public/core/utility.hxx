@@ -18,4 +18,10 @@ namespace core
         return static_cast<uint64_t>(value);
     }
 
+    struct VariadicExpansionContext
+    {
+        template<typename...T>
+        constexpr VariadicExpansionContext(T&&...) noexcept { }
+    };
+
 } // namespace core

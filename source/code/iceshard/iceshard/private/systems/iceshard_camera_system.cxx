@@ -7,9 +7,8 @@
 #include <iceshard/renderer/render_system.hxx>
 #include <iceshard/renderer/render_resources.hxx>
 
-#include <core/math/matrix.hxx>
+#include <iceshard/math.hxx>
 
-#include <glm/glm.hpp>
 #include <glm/gtx/transform.hpp>
 
 namespace
@@ -85,7 +84,7 @@ namespace iceshard
         auto* camera_data = frame.new_frame_object<CameraData>(SystemName);
 
         float const camera_speed = 2.5f * frame.time_delta(); // adjust accordingly
-        static glm::vec3 camera_up = { 0.0f, 1.0f, 0.0f };
+        static ism::vec3f camera_up = { 0.0f, 1.0f, 0.0f };
 
         // Operations
         static float speed_mul = 1.0f;
@@ -170,30 +169,24 @@ namespace iceshard
 
                 if (camera_operations[2])
                 {
-                    camera->position = math_cast<core::math::vec3>(
-                        math_cast<glm::vec3>(camera->position) + math_cast<glm::vec3>(camera->front) * camera_speed * speed_mul
-                        );
+                    camera->position += camera->front * camera_speed * speed_mul;
                 }
                 else if (camera_operations[3])
                 {
-                    camera->position = math_cast<core::math::vec3>(
-                        math_cast<glm::vec3>(camera->position) - math_cast<glm::vec3>(camera->front) * camera_speed * speed_mul
-                        );
+                    camera->position -= camera->front * camera_speed * speed_mul;
                 }
 
                 if (camera_operations[4])
                 {
-                    camera->position = math_cast<core::math::vec3>(
-                        math_cast<glm::vec3>(camera->position) -
-                        glm::normalize(glm::cross(math_cast<glm::vec3>(camera->front), camera_up)) * camera_speed * speed_mul
-                    );
+                    camera->position += ism::normalize(
+                        ism::cross(camera_up, camera->front)
+                    ) * camera_speed * speed_mul;
                 }
                 else if (camera_operations[5])
                 {
-                    camera->position = math_cast<core::math::vec3>(
-                        math_cast<glm::vec3>(camera->position) +
-                        glm::normalize(glm::cross(math_cast<glm::vec3>(camera->front), camera_up)) * camera_speed * speed_mul
-                    );
+                    camera->position -= ism::normalize(
+                        ism::cross(camera_up, camera->front)
+                    ) * camera_speed * speed_mul;
                 }
 
                 static bool first_mouse = true;
@@ -232,18 +225,18 @@ namespace iceshard
                         if (camera->pitch < -89.0f)
                             camera->pitch = -89.0f;
 
-                        glm::vec3 direction;
-                        direction.x = cos(glm::radians(camera->yaw)) * cos(glm::radians(camera->pitch));
-                        direction.y = sin(glm::radians(camera->pitch));
-                        direction.z = sin(glm::radians(camera->yaw)) * cos(glm::radians(camera->pitch));
-                        camera->front = math_cast<core::math::vec3>(glm::normalize(direction));
+                        ism::vec3f direction;
+                        direction.x = cos(ism::radians(camera->yaw)) * cos(ism::radians(camera->pitch));
+                        direction.y = sin(ism::radians(camera->pitch));
+                        direction.z = sin(ism::radians(camera->yaw)) * cos(ism::radians(camera->pitch));
+                        camera->front = ism::normalize(direction);
                     });
 
-                camera_data->view = math_cast<core::math::mat4x4>(
+                camera_data->view = math_cast<ism::mat4>(
                     glm::lookAt(
                         math_cast<glm::vec3>(camera->position),
-                        math_cast<glm::vec3>(camera->position) + math_cast<glm::vec3>(camera->front),
-                        camera_up
+                        math_cast<glm::vec3>(camera->position + camera->front),
+                        math_cast<glm::vec3>(camera_up)
                     )
                 );
 

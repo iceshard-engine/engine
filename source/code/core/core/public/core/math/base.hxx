@@ -17,6 +17,4 @@ namespace core::math
     using u32 = uint32_t;
     using u64 = uint64_t;
 
-    static constexpr f32 pi = 3.14159265358979323846f;
-
 } // namespace core::math

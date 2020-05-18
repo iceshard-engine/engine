@@ -1,5 +1,5 @@
 #pragma once
-#include <core/math/vector.hxx>
+#include <iceshard/math.hxx>
 #include <iceshard/component/component_system.hxx>
 
 namespace iceshard::component
@@ -10,7 +10,7 @@ namespace iceshard::component
         static constexpr auto identifier = "isc.light"_sid;
 
         //! \brief The lights position.
-        core::math::vec3 position;
+        ism::vec3f position;
     };
 
 } // namespace iceshard::ecs
