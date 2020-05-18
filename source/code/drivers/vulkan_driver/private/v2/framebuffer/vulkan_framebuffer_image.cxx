@@ -67,7 +67,12 @@ namespace iceshard::renderer::vulkan
         view_info.components.g = VK_COMPONENT_SWIZZLE_G;
         view_info.components.b = VK_COMPONENT_SWIZZLE_B;
         view_info.components.a = VK_COMPONENT_SWIZZLE_A;
-        if (format == VK_FORMAT_D16_UNORM)
+        if (format == VK_FORMAT_D16_UNORM ||
+            format == VK_FORMAT_D32_SFLOAT ||
+            format == VK_FORMAT_D16_UNORM_S8_UINT ||
+            format == VK_FORMAT_D24_UNORM_S8_UINT ||
+            format == VK_FORMAT_D32_SFLOAT_S8_UINT ||
+            false)
         {
             view_info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
         }

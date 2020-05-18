@@ -27,7 +27,7 @@ namespace iceshard::renderer::vulkan
         attachments[1].finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 
         attachments[2].flags = 0;
-        attachments[2].format = VK_FORMAT_D16_UNORM;
+        attachments[2].format = VK_FORMAT_D24_UNORM_S8_UINT;
         attachments[2].samples = VK_SAMPLE_COUNT_1_BIT;
         attachments[2].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
         attachments[2].storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
