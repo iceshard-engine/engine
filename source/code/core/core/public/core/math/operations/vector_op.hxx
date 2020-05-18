@@ -19,135 +19,134 @@ namespace core::math
         };
     }
 
-    template<u32 Size, typename T>
-    constexpr auto dot(vec<Size, T> left, vec<Size, T> right) noexcept -> T
+    template<typename T>
+    constexpr auto dot(vec<3, T> left, vec<3, T> right) noexcept -> T
     {
-        T result{ 0 };
-        for (u32 i = 0; i < Size; ++i)
-        {
-            result += left.v[0][i] * right.v[0][i];
-        }
-        return result;
+        return {
+            left.v[0][0] * right.v[0][0] +
+            left.v[0][1] * right.v[0][1] +
+            left.v[0][2] * right.v[0][2]
+        };
     }
 
-    template<u32 Size, typename T, typename U = T>
-    constexpr auto operator+(vec<Size, T> left, vec<Size, U> right) noexcept -> vec<Size, T>
+    template<typename T, typename U = T>
+    constexpr auto operator+(vec<2, T> left, vec<2, U> right) noexcept -> vec<2, T>
     {
-        for (u32 i = 0; i < Size; ++i)
-        {
-            left.v[0][i] += T{ right.v[0][i] };
-        }
-        return left;
+        return {
+            left.v[0][0] + right.v[0][0],
+            left.v[0][1] + right.v[0][1],
+        };
     }
 
-    template<u32 Size, typename T, typename U = T>
-    inline auto operator+=(vec<Size, T>& left, vec<Size, U> right) noexcept -> vec<Size, T>&
+    template<typename T, typename U = T>
+    constexpr auto operator+(vec<3, T> left, vec<3, U> right) noexcept -> vec<3, T>
     {
-        for (u32 i = 0; i < Size; ++i)
-        {
-            left.v[0][i] += T{ right.v[0][i] };
-        }
-        return left;
+        return {
+            left.v[0][0] + right.v[0][0],
+            left.v[0][1] + right.v[0][1],
+            left.v[0][2] + right.v[0][2],
+        };
     }
 
-    template<u32 Size, typename T, typename U = T>
-    constexpr auto operator-(vec<Size, T> left, vec<Size, U> right) noexcept -> vec<Size, T>
+    template<typename T, typename U = T>
+    constexpr auto operator+(vec<4, T> left, vec<4, U> right) noexcept -> vec<4, T>
     {
-        for (u32 i = 0; i < Size; ++i)
-        {
-            left.v[0][i] -= T{ right.v[0][i] };
-        }
-        return left;
+        return {
+            left.v[0][0] + right.v[0][0],
+            left.v[0][1] + right.v[0][1],
+            left.v[0][2] + right.v[0][2],
+            left.v[0][3] + right.v[0][3],
+        };
     }
 
-    template<u32 Size, typename T, typename U = T>
-    inline auto operator-=(vec<Size, T>& left, vec<Size, U> right) noexcept -> vec<Size, T>&
+    template<typename T, typename U = T>
+    constexpr auto operator-(vec<2, T> left, vec<2, U> right) noexcept -> vec<2, T>
     {
-        for (u32 i = 0; i < Size; ++i)
-        {
-            left.v[0][i] -= T{ right.v[0][i] };
-        }
-        return left;
+        return {
+            left.v[0][0] - right.v[0][0],
+            left.v[0][1] - right.v[0][1],
+        };
     }
 
-    //template<u32 Size, typename T, typename U = T>
-    //constexpr auto operator*(vec<Size, T> left, vec<Size, U> right) noexcept -> vec<Size, T>
-    //{
-    //    for (u32 i = 0; i < Size; ++i)
-    //    {
-    //        left.v[i] *= T{ right.v[i] };
-    //    }
-    //    return left;
-    //}
-
-    template<u32 Size, typename T, typename U = T>
-    constexpr auto operator*(vec<Size, T> left, U scalar) noexcept -> vec<Size, T>
+    template<typename T, typename U = T>
+    constexpr auto operator-(vec<3, T> left, vec<3, U> right) noexcept -> vec<3, T>
     {
-        for (u32 i = 0; i < Size; ++i)
-        {
-            left.v[0][i] *= T{ scalar };
-        }
-        return left;
+        return {
+            left.v[0][0] - right.v[0][0],
+            left.v[0][1] - right.v[0][1],
+            left.v[0][2] - right.v[0][2],
+        };
     }
 
-    //template<u32 Size, typename T, typename U = T>
-    //inline auto operator*=(vec<Size, T>& left, vec<Size, U> right) noexcept -> vec<Size, T>&
-    //{
-    //    for (u32 i = 0; i < Size; ++i)
-    //    {
-    //        left.v[i] *= T{ right.v[i] };
-    //    }
-    //    return left;
-    //}
-
-    template<u32 Size, typename T, typename U = T>
-    inline auto operator*=(vec<Size, T>& left, U scalar) noexcept -> vec<Size, T>&
+    template<typename T, typename U = T>
+    constexpr auto operator-(vec<4, T> left, vec<4, U> right) noexcept -> vec<4, T>
     {
-        for (u32 i = 0; i < Size; ++i)
-        {
-            left.v[0][i] *= T{ scalar };
-        }
-        return left;
+        return {
+            left.v[0][0] - right.v[0][0],
+            left.v[0][1] - right.v[0][1],
+            left.v[0][2] - right.v[0][2],
+            left.v[0][3] - right.v[0][3],
+        };
     }
 
-    //template<u32 Size, typename T, typename U = T>
-    //constexpr auto operator/(vec<Size, T> left, vec<Size, U> right) noexcept -> vec<Size, T>
-    //{
-    //    for (u32 i = 0; i < Size; ++i)
-    //    {
-    //        left.v[i] /= T{ right.v[i] };
-    //    }
-    //    return left;
-    //}
-
-    template<u32 Size, typename T, typename U = T>
-    constexpr auto operator/(vec<Size, T> left, U scalar) noexcept -> vec<Size, T>
+    template<typename T, typename U = T>
+    constexpr auto operator*(vec<2, T> left, U scalar) noexcept -> vec<2, T>
     {
-        for (u32 i = 0; i < Size; ++i)
-        {
-            left.v[0][i] /= T{ scalar };
-        }
-        return left;
+        return {
+            left.v[0][0] * scalar,
+            left.v[0][1] * scalar,
+        };
     }
 
-    //template<u32 Size, typename T, typename U = T>
-    //inline auto operator/=(vec<Size, T>& left, vec<Size, U> right) noexcept -> vec<Size, T>&
-    //{
-    //    for (u32 i = 0; i < Size; ++i)
-    //    {
-    //        left.v[i] /= T{ right.v[i] };
-    //    }
-    //    return left;
-    //}
-
-    template<u32 Size, typename T, typename U = T>
-    inline auto operator/=(vec<Size, T>& left, U scalar) noexcept -> vec<Size, T>&
+    template<typename T, typename U = T>
+    constexpr auto operator*(vec<3, T> left, U scalar) noexcept -> vec<3, T>
     {
-        for (u32 i = 0; i < Size; ++i)
-        {
-            left.v[0][i] /= T{ scalar };
-        }
-        return left;
+        return {
+            left.v[0][0] * scalar,
+            left.v[0][1] * scalar,
+            left.v[0][2] * scalar,
+        };
+    }
+
+    template<typename T, typename U = T>
+    constexpr auto operator*(vec<4, T> left, U scalar) noexcept -> vec<4, T>
+    {
+        return {
+            left.v[0][0] * scalar,
+            left.v[0][1] * scalar,
+            left.v[0][2] * scalar,
+            left.v[0][3],
+        };
+    }
+
+    template<typename T, typename U = T>
+    constexpr auto operator/(vec<2, T> left, U scalar) noexcept -> vec<2, T>
+    {
+        return {
+            left.v[0][0] / scalar,
+            left.v[0][1] / scalar,
+        };
+    }
+
+    template<typename T, typename U = T>
+    constexpr auto operator/(vec<3, T> left, U scalar) noexcept -> vec<3, T>
+    {
+        return {
+            left.v[0][0] / scalar,
+            left.v[0][1] / scalar,
+            left.v[0][2] / scalar,
+        };
+    }
+
+    template<typename T, typename U = T>
+    constexpr auto operator/(vec<4, T> left, U scalar) noexcept -> vec<4, T>
+    {
+        return {
+            left.v[0][0],
+            left.v[0][1],
+            left.v[0][2],
+            left.v[0][3] * scalar,
+        };
     }
 
 } // namespace core::math

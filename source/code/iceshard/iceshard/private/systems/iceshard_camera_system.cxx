@@ -169,22 +169,22 @@ namespace iceshard
 
                 if (camera_operations[2])
                 {
-                    camera->position += camera->front * camera_speed * speed_mul;
+                    camera->position = camera->position + camera->front * camera_speed * speed_mul;
                 }
                 else if (camera_operations[3])
                 {
-                    camera->position -= camera->front * camera_speed * speed_mul;
+                    camera->position = camera->position - camera->front * camera_speed * speed_mul;
                 }
 
                 if (camera_operations[4])
                 {
-                    camera->position += ism::normalize(
+                    camera->position = camera->position + ism::normalize(
                         ism::cross(camera_up, camera->front)
                     ) * camera_speed * speed_mul;
                 }
                 else if (camera_operations[5])
                 {
-                    camera->position -= ism::normalize(
+                    camera->position = camera->position - ism::normalize(
                         ism::cross(camera_up, camera->front)
                     ) * camera_speed * speed_mul;
                 }
