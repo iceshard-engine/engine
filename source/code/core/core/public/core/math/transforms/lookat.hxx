@@ -1,6 +1,5 @@
 #pragma once
-#include <core/math/operations.hxx>
-#include <core/math/transforms.hxx>
+#include "translate.hxx"
 
 namespace core::math
 {

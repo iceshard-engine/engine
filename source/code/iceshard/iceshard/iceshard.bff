@@ -11,7 +11,6 @@
     .Private =
     [
         .Modules = {
-            'glm',
             'imgui'
         }
         .Uses = {

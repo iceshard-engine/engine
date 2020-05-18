@@ -9,21 +9,6 @@
 
 #include <iceshard/math.hxx>
 
-#include <glm/gtx/transform.hpp>
-
-namespace
-{
-    template<typename To, typename From>
-    auto math_cast(From const& src) noexcept -> To
-    {
-        static_assert(sizeof(From) == sizeof(To));
-
-        To result;
-        memcpy(std::addressof(result), std::addressof(src), sizeof(To));
-        return result;
-    }
-}
-
 namespace iceshard
 {
 
@@ -238,12 +223,10 @@ namespace iceshard
                     camera_up
                 );
 
-                camera_data->projection = math_cast<core::math::mat4x4>(
-                    glm::perspective(
-                        camera->fovy,
-                        16.0f / 9.0f,
-                        0.1f, 100.0f
-                    )
+                camera_data->projection = ism::perspective(
+                    camera->fovy,
+                    16.0f / 9.0f,
+                    0.1f, 100.0f
                 );
 
                 camera_data->clip = core::math::mat4x4{

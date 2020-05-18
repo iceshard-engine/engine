@@ -13,7 +13,7 @@ layout (std140, binding = 0) uniform Camera
 {
     mat4 view;
     mat4 projection;
-    mat4 clip; // unused
+    mat4 clip;
 } cam;
 
 void main()

@@ -25,4 +25,9 @@ namespace core::math
         return std::cosf(radians);
     }
 
+    inline auto tan(f32 radians) noexcept -> f32
+    {
+        return std::tanf(radians);
+    }
+
 } // namespace core::math
