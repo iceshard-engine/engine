@@ -106,4 +106,27 @@ namespace iceshard
         return component_system_ptr;
     }
 
+    void IceshardWorldServiceProvider::add_system(core::stringid_arg_type name, ComponentSystem* system) noexcept
+    {
+        auto name_hash = core::hash(name);
+        IS_ASSERT(
+            core::pod::hash::has(_world_component_systems, name_hash) == false,
+            "Component system with this name `{}` already exists",
+            name
+        );
+
+        core::pod::hash::set(_world_component_systems, name_hash, system);
+    }
+
+    auto IceshardWorldServiceProvider::remove_system(core::stringid_arg_type name) noexcept -> ComponentSystem*
+    {
+        ComponentSystem* result = nullptr;
+        if (auto name_hash = core::hash(name); core::pod::hash::has(_world_component_systems, name_hash))
+        {
+            result = core::pod::hash::get(_world_component_systems, name_hash, nullptr);
+            core::pod::hash::remove(_world_component_systems, name_hash);
+        }
+        return result;
+    }
+
 } // namespace iceshard

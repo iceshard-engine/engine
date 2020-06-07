@@ -18,6 +18,8 @@ namespace iceshard::renderer::vulkan
 
         auto native_view() const noexcept -> VkImageView { return _image_view; }
 
+        auto memory_info() const noexcept -> VulkanMemoryInfo const& { return _image_memory; }
+
     private:
         VulkanDeviceMemoryManager& _device_memory;
         VkDevice const _device;

@@ -1,4 +1,5 @@
 #include "collections.hxx"
+#include "array.hxx"
 
 // core::pod::Array members
 //////////////////////////////////////////////////////////////////////////
@@ -237,9 +238,11 @@ inline void core::pod::array::grow(Array<T> &a, uint32_t min_capacity) noexcept
     set_capacity(a, new_capacity);
 }
 
-template<typename T>
-inline void core::pod::array::push_back(Array<T> &a, const T &item) noexcept
+template<typename T, typename U>
+inline void core::pod::array::push_back(Array<T>& a, U const& item) noexcept
 {
+    //static_assert(std::is_convertible_v<U, T>, "Cannot push the given type 'U' to array of types 'T'");
+
     if (a._size + 1 > a._capacity)
     {
         grow(a);
@@ -271,4 +274,18 @@ void core::pod::array::create_view(Array<T>& a, T* data, uint32_t count) noexcep
     a._data = data;
     a._size = count;
     a._capacity = count;
+}
+
+template<typename T>
+auto core::pod::array::create_view(T* data, uint32_t count) noexcept -> core::pod::Array<T>
+{
+    Array<T> result{ core::memory::globals::null_allocator() };
+    create_view<T>(result, data, count);
+    return result;
+}
+
+template<typename T, uint32_t Size>
+auto core::pod::array::create_view(T(&data)[Size]) noexcept -> Array<T>
+{
+    return create_view<std::decay_t<T>>(data, Size);
 }

@@ -2,6 +2,7 @@
 #include <iceshard/renderer/vulkan/vulkan_renderpass.hxx>
 #include <core/pod/array.hxx>
 #include <core/pod/algorithm.hxx>
+#include <core/debug/assert.hxx>
 
 #include "../vulkan_device_memory_manager.hxx"
 #include "../vulkan_buffer.hxx"
@@ -13,13 +14,14 @@ namespace iceshard::renderer::vulkan
         : _allocator{ alloc }
         , _vk_instance{ instance }
         , _device_memory_manager{ nullptr, { alloc } }
+        , _textures{ nullptr, { alloc } }
+        , _command_buffer_pool{ nullptr, { alloc } }
         , _vulkan_buffers{ _allocator }
         , _framebuffers{ _allocator }
-        , _command_buffers_secondary{ _allocator }
-        , _command_buffers_submitted{ _allocator }
-        , _command_buffers_subpass{ _allocator }
+        , _command_buffers_primary{ _allocator }
         , _resource_sets{ _allocator }
         , _pipelines{ _allocator }
+        , _command_semaphores{ _allocator }
     {
         _surface = create_surface(_allocator, _vk_instance, { 1280, 720 });
         create_devices(_vk_instance, native_handle(_surface), _devices);
@@ -30,14 +32,41 @@ namespace iceshard::renderer::vulkan
             _devices
         );
 
-        allocate_command_buffers(_devices, _command_buffers, 6, _command_buffers_secondary);
-        core::pod::array::resize(_command_buffers_submitted, core::pod::array::size(_command_buffers_secondary));
+        _textures = core::memory::make_unique<VulkanTextureStorage>(
+            _allocator,
+            _allocator,
+            *_device_memory_manager
+        );
 
-        VkSemaphoreCreateInfo semaphore_info;
-        semaphore_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-        semaphore_info.pNext = nullptr;
-        semaphore_info.flags = 0;
-        vkCreateSemaphore(_devices.graphics.handle, &semaphore_info, nullptr, &_framebuffer_semaphore);
+        _command_buffer_pool = core::memory::make_unique<VulkanCommandBufferPool>(
+            _allocator,
+            _devices
+        );
+
+        core::pod::array::resize(_command_buffers_primary, 2);
+
+        _command_buffer_pool->allocate_buffers(
+            api::CommandBufferType::Primary,
+            _command_buffers_primary
+        );
+
+        {
+            VkSemaphoreCreateInfo semaphore_info;
+            semaphore_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+            semaphore_info.pNext = nullptr;
+            semaphore_info.flags = 0;
+
+            core::pod::array::resize(_command_semaphores, 4);
+            for (uint32_t i = 0; i < core::pod::array::size(_command_semaphores); ++i)
+            {
+                vkCreateSemaphore(
+                    _devices.graphics.handle,
+                    &semaphore_info,
+                    nullptr,
+                    std::addressof(_command_semaphores[i])
+                );
+            }
+        }
 
         VkSurfaceFormatKHR format;
         get_surface_format(_devices.physical.handle, _surface, format);
@@ -53,7 +82,7 @@ namespace iceshard::renderer::vulkan
         fence_info.flags = 0;
 
         auto res = vkCreateFence(_devices.graphics.handle, &fence_info, nullptr, &_draw_fence);
-        assert(res == VK_SUCCESS);
+        IS_ASSERT(res == VK_SUCCESS, "Couldn't create fence!");
 
         begin_frame();
         _initialized = true;
@@ -72,11 +101,15 @@ namespace iceshard::renderer::vulkan
 
         destroy_renderpass(_renderpass);
 
-        vkDestroySemaphore(_devices.graphics.handle, _framebuffer_semaphore, nullptr);
-
-        release_command_buffers(_devices, _command_buffers, _command_buffers_secondary);
+        for (auto cmd_semaphore : _command_semaphores)
+        {
+            vkDestroySemaphore(_devices.graphics.handle, cmd_semaphore, nullptr);
+        }
 
         _vulkan_buffers.clear();
+
+        _command_buffer_pool = nullptr;
+        _textures = nullptr;
         _device_memory_manager = nullptr;
 
         destroy_devices(_vk_instance, _devices);
@@ -107,7 +140,7 @@ namespace iceshard::renderer::vulkan
         acquire_next_image();
 
         {
-            auto cmds = _command_buffers.primary_buffers[0];
+            auto cmds = _command_buffers_primary[0];
 
             VkCommandBufferBeginInfo cmd_buf_info = {};
             cmd_buf_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -138,139 +171,108 @@ namespace iceshard::renderer::vulkan
             rp_begin.clearValueCount = 3;
             rp_begin.pClearValues = clear_values;
 
-            vkCmdBeginRenderPass(cmds, &rp_begin, VK_SUBPASS_CONTENTS_INLINE);
+            vkCmdBeginRenderPass(cmds, &rp_begin, VkSubpassContents::VK_SUBPASS_CONTENTS_INLINE);
             vkCmdNextSubpass(cmds, VkSubpassContents::VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
-
-            _subpass_stage = 1;
         }
 
-        _submitted_command_buffer_count = 0;
-        core::pod::array::clear(_command_buffers_submitted);
-        core::pod::array::clear(_command_buffers_subpass);
     }
 
     void VulkanRenderSystem::end_frame() noexcept
     {
-        auto cmds = _command_buffers.primary_buffers[0];
-
-        struct SubmittInfo
-        {
-            VkCommandBuffer* begin;
-            uint32_t count;
-            uint32_t subpass;
-        };
-
-        core::pod::Array<SubmittInfo> submit_infos{ _allocator };
-        core::pod::array::reserve(submit_infos, core::pod::array::size(_command_buffers_subpass));
-
-        uint32_t idx = 0;
-        uint32_t count = 0;
-        uint32_t last_subpass = 1;
-        VkCommandBuffer* const beg = core::pod::begin(_command_buffers_submitted);
-        for (auto subpass : _command_buffers_subpass)
-        {
-            if (subpass != last_subpass)
-            {
-                if (count > 0)
-                {
-                    core::pod::array::push_back(submit_infos, SubmittInfo{ beg + (idx - count), count, last_subpass });
-                    count = 0;
-                }
-                last_subpass = subpass;
-            }
-            idx += 1;
-            count += 1;
-        }
-        core::pod::array::push_back(submit_infos, SubmittInfo{ beg + (idx - count), count, last_subpass });
-
-        core::pod::sort(submit_infos, [](auto const& left, auto const& right) noexcept
-            {
-                return left.subpass < right.subpass;
-            });
-
-        last_subpass = 1;
-        for (auto const& submit_info : submit_infos)
-        {
-            if (last_subpass != submit_info.subpass)
-            {
-                vkCmdNextSubpass(cmds, VkSubpassContents::VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
-                last_subpass = submit_info.subpass;
-            }
-            vkCmdExecuteCommands(
-                _command_buffers.primary_buffers[0],
-                submit_info.count,
-                submit_info.begin
-            );
-        }
+        auto cmds = _command_buffers_primary[0];
 
         vkCmdEndRenderPass(cmds);
         vkEndCommandBuffer(cmds);
+
+        v1_submit_command_buffers();
+
+        v1_present();
     }
 
-    auto VulkanRenderSystem::acquire_command_buffer(RenderPassStage stage) noexcept -> CommandBuffer
+    //auto VulkanRenderSystem::acquire_command_buffer(RenderPassStage stage) noexcept -> CommandBuffer
+    //{
+    //    auto cmd_buffer_index = _next_command_buffer.fetch_add(1);
+    //    IS_ASSERT(cmd_buffer_index < core::pod::array::size(_command_buffers_secondary), "No more available command buffers!");
+
+    //    VulkanCommandBuffer cmd_buff{ };
+    //    cmd_buff.native = _command_buffers_secondary[cmd_buffer_index];
+
+    //    VkCommandBufferInheritanceInfo inheritance_info;
+    //    inheritance_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO;
+    //    inheritance_info.pNext = nullptr;
+    //    inheritance_info.framebuffer = nullptr;
+    //    inheritance_info.renderPass = _renderpass.renderpass;
+    //    inheritance_info.queryFlags = 0;
+    //    inheritance_info.occlusionQueryEnable = VK_FALSE;
+    //    inheritance_info.pipelineStatistics = 0;
+    //    inheritance_info.subpass = 1;
+
+    //    VkCommandBufferBeginInfo cmd_buf_info = {};
+    //    cmd_buf_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    //    cmd_buf_info.pNext = nullptr;
+    //    cmd_buf_info.flags = VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
+    //    cmd_buf_info.pInheritanceInfo = &inheritance_info;
+
+    //    auto api_result = vkBeginCommandBuffer(cmd_buff.native, &cmd_buf_info);
+    //    IS_ASSERT(api_result == VkResult::VK_SUCCESS, "Couldn't begin command buffer.");
+
+    //    // Setup scale and translation:
+    //    // Our visible imgui space lies from draw_data->DisplayPps (top left) to draw_data->DisplayPos+data_data->DisplaySize (bottom right). DisplayPos is (0,0) for single viewport apps.
+    //    if (stage == RenderPassStage::DebugUI)
+    //    {
+    //        auto draw_area_ext = render_area();
+
+    //        float scale[2];
+    //        scale[0] = 2.0f / draw_area_ext.width;
+    //        scale[1] = 2.0f / draw_area_ext.height;
+    //        float translate[2];
+    //        translate[0] = -1.0f; // -1.0f - width * scale[0];
+    //        translate[1] = -1.0f; //-1.0f - height * scale[1];
+    //        vkCmdPushConstants(cmd_buff.native, _pipeline_layouts.debugui_layout.layout, VK_SHADER_STAGE_VERTEX_BIT, sizeof(float) * 0, sizeof(float) * 2, scale);
+    //        vkCmdPushConstants(cmd_buff.native, _pipeline_layouts.debugui_layout.layout, VK_SHADER_STAGE_VERTEX_BIT, sizeof(float) * 2, sizeof(float) * 2, translate);
+
+    //        inheritance_info.subpass = 2;
+    //    }
+
+    //    if (stage == RenderPassStage::PostProcess)
+    //    {
+    //        inheritance_info.subpass = 2;
+    //    }
+
+    //    core::pod::array::push_back(_command_buffers_subpass, inheritance_info.subpass);
+
+    //    return cmd_buff.handle;
+    //}
+
+    //void VulkanRenderSystem::submit_command_buffer(CommandBuffer cmd_buffer) noexcept
+    //{
+    //    VulkanCommandBuffer cmd_buff{ cmd_buffer };
+    //    vkEndCommandBuffer(cmd_buff.native);
+
+    //    auto cmd_buffer_index = _submitted_command_buffer_count.fetch_add(1);
+    //    IS_ASSERT(cmd_buffer_index < core::pod::array::size(_command_buffers_secondary), "No more available command buffers!");
+
+    //    _command_buffers_submitted[cmd_buffer_index] = cmd_buff.native;
+    //}
+
+    void VulkanRenderSystem::submit_command_buffer_v2(CommandBuffer buffer) noexcept
     {
-        auto cmd_buffer_index = _next_command_buffer.fetch_add(1);
-        IS_ASSERT(cmd_buffer_index < core::pod::array::size(_command_buffers_secondary), "No more available command buffers!");
-
-        ApiCommandBuffer cmd_buff{ };
-        cmd_buff.native = _command_buffers_secondary[cmd_buffer_index];
-
-        VkCommandBufferInheritanceInfo inheritance_info;
-        inheritance_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO;
-        inheritance_info.pNext = nullptr;
-        inheritance_info.framebuffer = nullptr;
-        inheritance_info.renderPass = _renderpass.renderpass;
-        inheritance_info.queryFlags = 0;
-        inheritance_info.occlusionQueryEnable = VK_FALSE;
-        inheritance_info.pipelineStatistics = 0;
-        inheritance_info.subpass = 1;
-
-        VkCommandBufferBeginInfo cmd_buf_info = {};
-        cmd_buf_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-        cmd_buf_info.pNext = nullptr;
-        cmd_buf_info.flags = VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
-        cmd_buf_info.pInheritanceInfo = &inheritance_info;
-
-        auto api_result = vkBeginCommandBuffer(cmd_buff.native, &cmd_buf_info);
-        IS_ASSERT(api_result == VkResult::VK_SUCCESS, "Couldn't begin command buffer.");
-
-        // Setup scale and translation:
-        // Our visible imgui space lies from draw_data->DisplayPps (top left) to draw_data->DisplayPos+data_data->DisplaySize (bottom right). DisplayPos is (0,0) for single viewport apps.
-        if (stage == RenderPassStage::DebugUI)
+        const VkCommandBuffer cmd_bufs[] =
         {
-            auto draw_area_ext = render_area();
+            VulkanCommandBuffer{ buffer }.native
+        };
 
-            float scale[2];
-            scale[0] = 2.0f / draw_area_ext.width;
-            scale[1] = 2.0f / draw_area_ext.height;
-            float translate[2];
-            translate[0] = -1.0f; // -1.0f - width * scale[0];
-            translate[1] = -1.0f; //-1.0f - height * scale[1];
-            vkCmdPushConstants(cmd_buff.native, _pipeline_layouts.debugui_layout.layout, VK_SHADER_STAGE_VERTEX_BIT, sizeof(float) * 0, sizeof(float) * 2, scale);
-            vkCmdPushConstants(cmd_buff.native, _pipeline_layouts.debugui_layout.layout, VK_SHADER_STAGE_VERTEX_BIT, sizeof(float) * 2, sizeof(float) * 2, translate);
+        VkSubmitInfo submit_info[1] = {};
+        submit_info[0].sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+        submit_info[0].commandBufferCount = 1;
+        submit_info[0].pCommandBuffers = cmd_bufs;
+        submit_info[0].signalSemaphoreCount = 1;
+        submit_info[0].pSignalSemaphores = &_command_semaphores[_next_command_semaphore];
+        submit_info[0].pWaitDstStageMask = nullptr;
+        _next_command_semaphore += 1;
 
-            inheritance_info.subpass = 2;
-        }
-
-        if (stage == RenderPassStage::PostProcess)
-        {
-            inheritance_info.subpass = 2;
-        }
-
-        core::pod::array::push_back(_command_buffers_subpass, inheritance_info.subpass);
-
-        return cmd_buff.handle;
-    }
-
-    void VulkanRenderSystem::submit_command_buffer(CommandBuffer cmd_buffer) noexcept
-    {
-        ApiCommandBuffer cmd_buff{ cmd_buffer };
-        vkEndCommandBuffer(cmd_buff.native);
-
-        auto cmd_buffer_index = _submitted_command_buffer_count.fetch_add(1);
-        IS_ASSERT(cmd_buffer_index < core::pod::array::size(_command_buffers_secondary), "No more available command buffers!");
-
-        _command_buffers_submitted[cmd_buffer_index] = cmd_buff.native;
+        auto res = vkQueueSubmit(_devices.graphics.queue, 1, submit_info, vk_nullptr);
+        IS_ASSERT(res == VK_SUCCESS, "Couldn't submit queue!");
     }
 
     auto VulkanRenderSystem::swapchain() noexcept -> VulkanSwapchain
@@ -344,7 +346,7 @@ namespace iceshard::renderer::vulkan
         {
             vulkan::update_resource_set(
                 _devices.graphics.handle,
-                _framebuffers[_current_framebuffer_index],
+                _framebuffers[0],
                 *resource_set,
                 resources
             );
@@ -438,6 +440,25 @@ namespace iceshard::renderer::vulkan
         return result;
     }
 
+    auto VulkanRenderSystem::renderpass(RenderPassFeatures features) noexcept -> RenderPass
+    {
+        return _renderpass.handle;
+    }
+
+    auto VulkanRenderSystem::renderpass_command_buffer(
+        RenderPassFeatures features
+    ) noexcept -> CommandBuffer
+    {
+        return VulkanCommandBuffer{ .native = _command_buffers_primary[0] }.handle;
+    }
+
+    auto VulkanRenderSystem::current_framebuffer() noexcept -> iceshard::renderer::api::Framebuffer
+    {
+        return iceshard::renderer::api::Framebuffer{
+            _framebuffers[_current_framebuffer_index]
+        };
+    }
+
     auto VulkanRenderSystem::v1_surface() noexcept -> VkSurfaceKHR
     {
         return native_handle(_surface);
@@ -463,31 +484,21 @@ namespace iceshard::renderer::vulkan
         return native_handle(_framebuffers[_current_framebuffer_index]);
     }
 
-    auto VulkanRenderSystem::v1_framebuffer_semaphore() noexcept -> VkSemaphore const *
-    {
-        return &_framebuffer_semaphore;
-    }
-
-    auto VulkanRenderSystem::v1_secondary_cmd_buffer() noexcept -> VkCommandBuffer
-    {
-        return core::pod::array::front(_command_buffers_secondary);
-    }
-
     auto VulkanRenderSystem::v1_primary_cmd_buffer() noexcept -> VkCommandBuffer
     {
-        return _command_buffers.primary_buffers[0];
+        return _command_buffers_primary[0];
     }
 
     auto VulkanRenderSystem::v1_transfer_cmd_buffer() noexcept -> VkCommandBuffer
     {
-        return _command_buffers.primary_buffers[1];
+        return _command_buffers_primary[1];
     }
 
     void VulkanRenderSystem::v1_submit_command_buffers() noexcept
     {
         const VkCommandBuffer cmd_bufs[] =
         {
-            _command_buffers.primary_buffers[0]
+            _command_buffers_primary[0]
         };
 
         VkPipelineStageFlags pipe_stage_flags = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
@@ -495,16 +506,18 @@ namespace iceshard::renderer::vulkan
         VkSubmitInfo submit_info[1] = {};
         submit_info[0].pNext = NULL;
         submit_info[0].sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-        submit_info[0].waitSemaphoreCount = 1;
-        submit_info[0].pWaitSemaphores = &_framebuffer_semaphore;
+        submit_info[0].waitSemaphoreCount = _next_command_semaphore;
+        submit_info[0].pWaitSemaphores = &_command_semaphores[0];
         submit_info[0].pWaitDstStageMask = &pipe_stage_flags;
         submit_info[0].commandBufferCount = 1;
         submit_info[0].pCommandBuffers = cmd_bufs;
         submit_info[0].signalSemaphoreCount = 0;
         submit_info[0].pSignalSemaphores = NULL;
 
+        _next_command_semaphore = 0;
+
         auto res = vkQueueSubmit(_devices.graphics.queue, 1, submit_info, _draw_fence);
-        assert(res == VK_SUCCESS);
+        IS_ASSERT(res == VK_SUCCESS, "Couldn't submit queue!");
 
         do
         {
@@ -515,14 +528,6 @@ namespace iceshard::renderer::vulkan
         vkResetFences(_devices.graphics.handle, 1, &_draw_fence);
     }
 
-    void VulkanRenderSystem::v1_execute_subpass_commands(VkCommandBuffer cmds) noexcept
-    {
-        vkCmdExecuteCommands(cmds, _submitted_command_buffer_count, core::pod::array::begin(_command_buffers_submitted));
-
-        _submitted_command_buffer_count = 0;
-        core::pod::array::clear(_command_buffers_submitted);
-    }
-
     void VulkanRenderSystem::acquire_next_image() noexcept
     {
         // Get the index of the next available swapchain image:
@@ -530,10 +535,12 @@ namespace iceshard::renderer::vulkan
             _devices.graphics.handle,
             native_handle(_swapchain),
             UINT64_MAX,
-            _framebuffer_semaphore,
+            _command_semaphores[_next_command_semaphore],
             VK_NULL_HANDLE,
             &_current_framebuffer_index
         );
+
+        _next_command_semaphore += 1;
 
         // TODO: Deal with the VK_SUBOPTIMAL_KHR and VK_ERROR_OUT_OF_DATE_KHR
         // return codes
@@ -556,8 +563,6 @@ namespace iceshard::renderer::vulkan
 
         auto api_result = vkQueuePresentKHR(_devices.presenting_queue, &present);
         IS_ASSERT(api_result == VK_SUCCESS, "Failed to present framebuffer image!");
-
-        _next_command_buffer = 0;
     }
 
     void VulkanRenderSystem::v1_present() noexcept

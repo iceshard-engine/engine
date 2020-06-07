@@ -26,8 +26,6 @@
 #include <input_system/message/keyboard.hxx>
 #include <input_system/message/window.hxx>
 
-#include <render_system/render_commands.hxx>
-
 #include <asset_system/asset_system.hxx>
 #include <asset_system/assets/asset_config.hxx>
 #include <asset_system/assets/asset_shader.hxx>
@@ -50,10 +48,14 @@
 #include <iceshard/component/component_block_allocator.hxx>
 #include <iceshard/component/component_archetype_index.hxx>
 #include <iceshard/component/component_archetype_iterator.hxx>
+#include <iceshard/execution.hxx>
+
 #include <iceshard/renderer/render_pipeline.hxx>
 #include <iceshard/renderer/render_resources.hxx>
 #include <iceshard/renderer/render_pass.hxx>
 #include <iceshard/renderer/render_model.hxx>
+#include <iceshard/renderer/render_funcs.hxx>
+#include <iceshard/renderer/render_commands.hxx>
 
 #include <iceshard/ecs/model.hxx>
 #include <iceshard/ecs/transform.hxx>
@@ -66,7 +68,6 @@
 
 #include <imgui/imgui.h>
 
-
 struct DebugName
 {
     static constexpr auto identifier = "isc.debug_name"_sid;
@@ -74,91 +75,15 @@ struct DebugName
     core::StackString<32> name;
 };
 
-struct Position
-{
-    static constexpr auto identifier = "isc.position"_sid;
-
-    ism::vec3f pos;
-};
-
-struct Transform
-{
-    static constexpr auto identifier = "isc.transform"_sid;
-
-    ism::mat4 xform;
-};
-
-class PostProcessSystem
-{
-    using Buffer = iceshard::renderer::Buffer;
-    using BufferType = iceshard::renderer::api::BufferType;
-    using DataView = iceshard::renderer::api::DataView;
-
-    struct Vertice
-    {
-        ism::vec2f pos;
-        ism::vec2f uv;
-    };
-
-public:
-    PostProcessSystem(
-        core::allocator& alloc,
-        render::RenderSystem& render_system
-    ) noexcept
-        : _allocator{ alloc }
-        , _render_system{ render_system  }
-    {
-        _buffers[0] = _render_system.create_buffer(BufferType::IndexBuffer, 1024);
-        _buffers[1] = _render_system.create_buffer(BufferType::VertexBuffer, 1024);
-
-        DataView views[2];
-
-        iceshard::renderer::api::render_api_instance->buffer_array_map_data(_buffers, views, core::size(_buffers));
-        memcpy(views[0].data, PostProcessIndices, sizeof(PostProcessIndices));
-        memcpy(views[1].data, PostProcessVertices, sizeof(PostProcessVertices));
-        iceshard::renderer::api::render_api_instance->buffer_array_unmap_data(_buffers, core::size(_buffers));
-    }
-
-    void update(iceshard::renderer::CommandBuffer cb) noexcept
-    {
-        iceshard::renderer::commands::bind_index_buffer(cb, _buffers[0]);
-
-        core::pod::Array<Buffer> buffer_views{ core::memory::globals::null_allocator() };
-        core::pod::array::create_view(buffer_views, &_buffers[1], 1);
-
-        iceshard::renderer::commands::bind_vertex_buffers(cb, buffer_views);
-        iceshard::renderer::commands::draw_indexed(cb, 3, 1, 0, 0, 0);
-    }
-
-private:
-    core::allocator& _allocator;
-    render::RenderSystem& _render_system;
-
-    iceshard::renderer::Buffer _buffers[2];
-
-    static Vertice PostProcessVertices[3];
-    static uint16_t PostProcessIndices[3];
-};
-
-PostProcessSystem::Vertice PostProcessSystem::PostProcessVertices[3] = {
-    { { -1.0f, -1.0f }, { 0.0f, 0.0f, } },
-    { { 3.0f, -1.0f }, { 2.0f, 0.0f, } },
-    { { -1.0f, 3.0f }, { 0.0f, 2.0f, } },
-};
-
-uint16_t PostProcessSystem::PostProcessIndices[3] = {
-    0, 1, 2,
-};
-
-class DebugNameUI : public debugui::DebugUI
+class DebugNameUI : public iceshard::debug::DebugUI
 {
 public:
     DebugNameUI(
-        debugui::debugui_context_handle context,
+        iceshard::debug::debugui_context_handle context,
         core::allocator& alloc,
         iceshard::ecs::ArchetypeIndex* archetype_index
     ) noexcept
-        : debugui::DebugUI{ context }
+        : iceshard::debug::DebugUI{ context }
         , _allocator{ alloc }
         , _arch_index{ *archetype_index }
     { }
@@ -207,47 +132,6 @@ private:
     iceshard::ecs::ArchetypeIndex& _arch_index;
 };
 
-class MainDebugUI : public debugui::DebugUI
-{
-public:
-    MainDebugUI(debugui::debugui_context_handle context) noexcept
-        : debugui::DebugUI{ context }
-    { }
-
-    bool quit_message() noexcept
-    {
-        return _quit;
-    }
-
-    void end_frame() noexcept override
-    {
-        static bool demo_window_visible = false;
-        if (demo_window_visible)
-        {
-            ImGui::ShowDemoWindow(&demo_window_visible);
-        }
-
-        ImGui::BeginMainMenuBar();
-        if (ImGui::BeginMenu("File"))
-        {
-            if (ImGui::MenuItem("Demo window", nullptr, &demo_window_visible))
-            {
-                demo_window_visible = demo_window_visible ? true : false;
-            }
-            if (ImGui::MenuItem("Close", "Ctrl+W"))
-            {
-                _quit = true;
-            }
-            ImGui::EndMenu();
-        }
-        ImGui::EndMainMenuBar();
-    }
-
-private:
-    bool _quit = false;
-    bool _menu_visible = false;
-};
-
 int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
 {
     using resource::URN;
@@ -258,10 +142,8 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
     auto* engine_module_location = resource_system.find(URN{ "iceshard.dll" });
     IS_ASSERT(engine_module_location != nullptr, "Missing engine module!");
 
-    if (auto engine_module = iceshard::load_engine_module(alloc, engine_module_location->location().path, resource_system))
+    if (auto engine_module = iceshard::load_engine_module(alloc, engine_module_location->location().path))
     {
-        iceshard::Engine* engine_instance = engine_module->engine();
-
         // Default file system mount points
         resource_system.flush_messages();
         resource_system.mount(URI{ resource::scheme_file, "mount.isr" });
@@ -273,67 +155,36 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
             fmt::print("Custom mount resource found: {}\n", mount_resource->location());
         }
 
+        auto engine_instance = engine_module->create_instance(alloc, resource_system);
+
         // Prepare the asset system
-        auto* asset_system = engine_instance->asset_system();
+        auto& asset_system = engine_instance->asset_system();
 
         auto* assimp_module_location = resource_system.find(URN{ "asset_module.dll" });
-        auto assimp_module = iceshard::load_asset_module(alloc, assimp_module_location->location().path, *asset_system);
+        auto assimp_module = iceshard::load_asset_module(alloc, assimp_module_location->location().path, asset_system);
         if (assimp_module == nullptr)
         {
             fmt::print("ERROR: Couldn't properly load `asset_module.dll`!\n");
         }
 
-        asset_system->add_resolver(asset::default_resolver_mesh(alloc));
-        asset_system->add_resolver(asset::default_resolver_shader(alloc));
-        asset_system->add_loader(asset::AssetType::Mesh, asset::default_loader_mesh(alloc));
-        asset_system->add_loader(asset::AssetType::Shader, asset::default_loader_shader(alloc));
-        asset_system->update();
+        asset_system.add_resolver(asset::default_resolver_mesh(alloc));
+        asset_system.add_resolver(asset::default_resolver_shader(alloc));
+        asset_system.add_loader(asset::AssetType::Mesh, asset::default_loader_mesh(alloc));
+        asset_system.add_loader(asset::AssetType::Shader, asset::default_loader_shader(alloc));
+        asset_system.update();
         resource_system.flush_messages();
 
+        auto execution_instance = engine_instance->execution_instance();
+
         // Prepare the render system
-        auto* render_system = engine_instance->render_system();
+        auto& render_system = engine_instance->render_system();
 
         using iceshard::renderer::RenderResource;
         using iceshard::renderer::RenderResourceType;
 
-        core::pod::Array<RenderResource> resources{ alloc };
-        core::pod::array::resize(resources, 1);
-
-        resources[0].type = RenderResourceType::ResTexture2D;
-        resources[0].handle.texture = iceshard::renderer::api::Texture::Attachment0;
-        resources[0].binding = 2;
-
-        [[maybe_unused]]
-        auto pp_resource_set = render_system->create_resource_set(
-            "pp.3d"_sid,
-            iceshard::renderer::RenderPipelineLayout::PostProcess,
-            resources
-        );
-
-        core::pod::Array<asset::AssetData> shader_assets{ alloc };
-        core::pod::array::resize(shader_assets, 2);
-
-        asset_system->load(asset::AssetShader{ "shaders/debug/test-vert" }, shader_assets[0]);
-        asset_system->load(asset::AssetShader{ "shaders/debug/test-frag" }, shader_assets[1]);
-
-        auto pipeline = render_system->create_pipeline(
-            "test.3d"_sid,
-            iceshard::renderer::RenderPipelineLayout::Default,
-            shader_assets
-        );
-
-        asset_system->load(asset::AssetShader{ "shaders/debug/pp-vert" }, shader_assets[0]);
-        asset_system->load(asset::AssetShader{ "shaders/debug/pp-frag" }, shader_assets[1]);
-
-        [[maybe_unused]]
-        auto pp_pipeline = render_system->create_pipeline(
-            "pp.3d"_sid,
-            iceshard::renderer::RenderPipelineLayout::PostProcess,
-            shader_assets
-        );
-
         // Debug UI module
-        core::memory::unique_pointer<debugui::DebugUIModule> debugui_module{ nullptr, { alloc } };
+        core::memory::unique_pointer<iceshard::debug::DebugUIModule> debugui_module{ nullptr, { alloc } };
+        core::memory::unique_pointer<iceshard::debug::DebugUI> engine_debugui{ nullptr, { alloc } };
         core::memory::unique_pointer<DebugNameUI> debugname_ui{ nullptr, { alloc } };
 
         if constexpr (core::build::is_release == false)
@@ -341,21 +192,32 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
             auto* debugui_module_location = resource_system.find(URN{ "imgui_driver.dll" });
             if (debugui_module_location != nullptr)
             {
-                debugui_module = debugui::load_module(alloc, debugui_module_location->location().path, *engine_instance->input_system(), *asset_system, *render_system);
-                engine_module->load_debugui(debugui_module->context());
+                debugui_module = iceshard::debug::load_module(
+                    alloc,
+                    debugui_module_location->location().path,
+                    *engine_instance
+                );
+
+                engine_instance->services().add_system(
+                    "isc.system.debug-ui"_sid,
+                    &debugui_module->context()
+                );
+
+                engine_debugui = iceshard::debug::load_debugui_from_module(
+                    alloc, engine_module->native_handle(), debugui_module->context_handle()
+                );
+
+                debugui_module->context().register_ui(engine_debugui.get());
+                //engine_module->load_debugui(debugui_module->context());
             }
         }
-
-        using iceshard::renderer::api::Buffer;
-        using iceshard::renderer::api::BufferType;
-        using iceshard::renderer::api::DataView;
 
         fmt::print("IceShard engine revision: {}\n", engine_instance->revision());
 
         ism::vec2u viewport{ 1280, 720 };
 
         [[maybe_unused]]
-        iceshard::World* world = engine_instance->world_manager()->create_world("test-world"_sid);
+        iceshard::World* world = engine_instance->world_manager().create_world("test-world"_sid);
 
         auto arch_idx = world->service_provider()->archetype_index();
         arch_idx->add_component(world->entity(), DebugName{ "Test World" });
@@ -370,11 +232,8 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
             debugui_module->context().register_ui(debugname_ui.get());
         }
 
-        PostProcessSystem post_process{ alloc, *render_system };
-
-
         core::pod::Array<iceshard::Entity> entities{ alloc };
-        engine_instance->entity_manager()->create_many(10, entities);
+        engine_instance->entity_manager().create_many(10, entities);
 
         namespace ism = core::math;
 
@@ -404,7 +263,7 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
 
 
             core::pod::Array<iceshard::Entity> cube_entities{ alloc };
-            engine_instance->entity_manager()->create_many(core::size(cube_positions), cube_entities);
+            engine_instance->entity_manager().create_many(core::size(cube_positions), cube_entities);
 
             uint32_t i = 0;
             for (auto const cube_pos : cube_positions)
@@ -449,7 +308,7 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
 
 
 
-        iceshard::Entity camera_entity = engine_instance->entity_manager()->create();
+        iceshard::Entity camera_entity = engine_instance->entity_manager().create();
         arch_idx->add_component(camera_entity,
             iceshard::component::Camera{
                 .position = { 0.0f, 0.0f, 7.0f },
@@ -482,7 +341,7 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
         bool quit = false;
         while (quit == false)
         {
-            auto& frame = engine_instance->current_frame();
+            auto& frame = execution_instance->current_frame();
 
             iceshard::ecs::for_each_entity(
                 iceshard::ecs::query_index(light_query, *arch_idx),
@@ -500,57 +359,12 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
                 }
             );
 
-            core::message::filter<input::message::AppExit>(engine_instance->current_frame().messages(), [&quit](auto const&) noexcept
+            core::message::filter<input::message::AppExit>(frame.messages(), [&quit](auto const&) noexcept
                 {
                     quit = true;
                 });
 
-            engine_instance->add_task([](
-                    iceshard::Engine* engine_instance,
-                    iceshard::renderer::RenderSystem* render_system,
-                    ism::vec2u viewport,
-                    PostProcessSystem* post_process,
-                    debugui::DebugUIModule* debugui_module,
-                    iceshard::renderer::Pipeline pp_pipeline,
-                    iceshard::renderer::ResourceSet pp_resource_set
-                ) noexcept -> cppcoro::task<>
-                {
-                    {
-                        using iceshard::renderer::RenderPassStage;
-                        using namespace iceshard::renderer::commands;
-
-                        auto cb = render_system->acquire_command_buffer(RenderPassStage::PostProcess);
-                        bind_pipeline(cb, pp_pipeline);
-                        bind_resource_set(cb, pp_resource_set);
-                        set_viewport(cb, viewport.x, viewport.y);
-                        set_scissor(cb, viewport.x, viewport.y);
-                        post_process->update(cb);
-                        render_system->submit_command_buffer(cb);
-                    }
-
-                    if constexpr (core::build::is_release == false)
-                    {
-                        if (debugui_module)
-                        {
-                            auto& debugui_context = debugui_module->context();
-                            debugui_context.update(engine_instance->current_frame().messages());
-                            debugui_context.begin_frame();
-                            debugui_context.end_frame();
-                        }
-                    }
-
-                    co_return;
-                }(
-                    engine_instance,
-                    render_system,
-                    viewport,
-                    &post_process,
-                    debugui_module.get(),
-                    pp_pipeline,
-                    pp_resource_set
-                    ));
-
-            engine_instance->next_frame();
+            execution_instance->next_frame();
 
             core::message::filter<input::message::WindowSizeChanged>(frame.messages(), [&viewport](auto const& msg) noexcept
                 {
@@ -559,13 +373,9 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
                 });
         }
 
-        engine_instance->world_manager()->destroy_world("test-world"_sid);
+        engine_instance->world_manager().destroy_world("test-world"_sid);
 
-        render_system->destroy_pipeline("test.3d"_sid);
-        render_system->destroy_resource_set("test.3d"_sid);
-        render_system->destroy_pipeline("pp.3d"_sid);
-        render_system->destroy_resource_set("pp.3d"_sid);
-
+        engine_debugui = nullptr;
         debugui_module = nullptr;
     }
 

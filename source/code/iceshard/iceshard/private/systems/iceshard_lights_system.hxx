@@ -33,7 +33,7 @@ namespace iceshard
             iceshard::renderer::RenderSystem& render_system
         ) noexcept;
 
-        void update(iceshard::Engine& engine) noexcept override;
+        void update(iceshard::Frame& engine) noexcept override;
 
         auto update_buffers_task(
             LightData*

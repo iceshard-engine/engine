@@ -1,5 +1,6 @@
 #include <core/datetime/format.hxx>
 #include <core/datetime/datetime.hxx>
+#include <core/debug/assert.hxx>
 #include <fmt/format.h>
 
 namespace core::datetime
@@ -68,7 +69,7 @@ namespace core::datetime
     auto format_datetime(char* buffer, size_t size, datetime_type time, Format format) noexcept -> bool
     {
         const auto definition = detail::format_definitions[static_cast<size_t>(format)];
-        assert(definition.format_string_length <= size);
+        IS_ASSERT(definition.format_string_length <= size, "Buffer is not big enough to contain the formatted result.");
 
         auto result = detail::format_datetime(time, format);
         strcpy_s(buffer, size, result.c_str());
@@ -78,7 +79,7 @@ namespace core::datetime
     auto format_datetime(char* buffer, size_t size, local_datetime_type time, Format format) noexcept -> bool
     {
         const auto definition = detail::format_definitions[static_cast<size_t>(format)];
-        assert(definition.format_string_length <= size);
+        IS_ASSERT(definition.format_string_length <= size, "Buffer is not big enough to contain the formatted result.");
 
         auto result = detail::format_datetime(time, format);
         strcpy_s(buffer, size, result.c_str());

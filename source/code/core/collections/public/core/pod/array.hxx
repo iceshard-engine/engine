@@ -87,8 +87,8 @@ namespace core::pod
         void trim(Array<T>& a) noexcept;
 
         //! \brief Pushes the item to the end of the array.
-        template<typename T>
-        void push_back(Array<T>& a, T const& item) noexcept;
+        template<typename T, typename U = T>
+        void push_back(Array<T>& a, U const& item) noexcept;
 
         //! \brief Pushes all items to the end of the array.
         template<typename T>
@@ -100,6 +100,12 @@ namespace core::pod
 
         template<typename T>
         void create_view(Array<T>& a, T* data, uint32_t count) noexcept;
+
+        template<typename T>
+        auto create_view(T* data, uint32_t count) noexcept -> Array<T>;
+
+        template<typename T, uint32_t Size>
+        auto create_view(T(&data)[Size]) noexcept -> Array<T>;
 
     } // namespace array
 

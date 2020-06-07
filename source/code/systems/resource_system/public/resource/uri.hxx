@@ -129,7 +129,7 @@ namespace fmt
         {
             if (uri.scheme == core::stringid_invalid)
             {
-                return fmt::format_to(ctx.begin(), "{}:{}", uri.scheme, uri.path);
+                return fmt::format_to(ctx.out(), "{}:{}", uri.scheme, uri.path);
             }
             else
             {
@@ -138,12 +138,12 @@ namespace fmt
                 if constexpr (core::cexpr::has_debug_fields<decltype(uri.scheme)>())
                 {
                     auto format_args = fmt::make_format_args(core::origin(uri.scheme), core::origin(uri.fragment), uri.path);
-                    return fmt::vformat_to(ctx.begin(), format_string, format_args);
+                    return fmt::vformat_to(ctx.out(), format_string, format_args);
                 }
                 else
                 {
                     auto format_args = fmt::make_format_args(uri.scheme, uri.fragment, uri.path);
-                    return fmt::vformat_to(ctx.begin(), format_string, format_args);
+                    return fmt::vformat_to(ctx.out(), format_string, format_args);
                 }
             }
         }

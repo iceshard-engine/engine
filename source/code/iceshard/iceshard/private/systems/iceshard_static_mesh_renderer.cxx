@@ -11,10 +11,12 @@
 #include <iceshard/engine.hxx>
 #include <iceshard/frame.hxx>
 
-#include <render_system/render_commands.hxx>
+#include <asset_system/assets/asset_shader.hxx>
 #include <iceshard/renderer/render_pass.hxx>
 #include <iceshard/renderer/render_pipeline.hxx>
 #include <iceshard/renderer/render_resources.hxx>
+#include <iceshard/renderer/render_commands.hxx>
+#include <iceshard/renderer/render_buffers.hxx>
 
 #include <asset_system/assets/asset_mesh.hxx>
 
@@ -38,34 +40,28 @@ namespace iceshard
         , _render_system{ render_system }
         , _asset_system{ asset_system }
     {
-        _indice_buffers = _render_system.create_data_buffer(iceshard::renderer::api::BufferType::IndexBuffer, 1024 * 32);
-        _vertice_buffers = _render_system.create_data_buffer(iceshard::renderer::api::BufferType::VertexBuffer, 1024 * 128);
-        _instance_buffers = _render_system.create_data_buffer(iceshard::renderer::api::BufferType::VertexBuffer, 1024 * 16);
+        _indice_buffers = renderer::create_buffer(renderer::api::BufferType::IndexBuffer, 1024 * 32);
+        _vertice_buffers = renderer::create_buffer(renderer::api::BufferType::VertexBuffer, 1024 * 128);
+        _instance_buffers = renderer::create_buffer(renderer::api::BufferType::VertexBuffer, 1024 * 16);
 
-        // First frame init
-        engine.add_task([](IceshardStaticMeshRenderer* self, core::allocator& alloc) noexcept -> cppcoro::task<>
-            {
 
-                {
-                    core::pod::Array<asset::AssetData> shader_assets{ alloc };
-                    core::pod::array::resize(shader_assets, 2);
+        {
+            core::pod::Array<asset::AssetData> shader_assets{ alloc };
+            core::pod::array::resize(shader_assets, 2);
 
-                    self->_asset_system.load(asset::AssetShader{ "shaders/debug/test-vert" }, shader_assets[0]);
-                    self->_asset_system.load(asset::AssetShader{ "shaders/debug/test-frag" }, shader_assets[1]);
+            _asset_system.load(asset::AssetShader{ "shaders/debug/test-vert" }, shader_assets[0]);
+            _asset_system.load(asset::AssetShader{ "shaders/debug/test-frag" }, shader_assets[1]);
 
-                    self->_render_pipeline = self->_render_system.create_pipeline(
-                        "static-mesh.3d"_sid,
-                        iceshard::renderer::RenderPipelineLayout::Default,
-                        shader_assets
-                    );
-                }
+            _render_pipeline = _render_system.create_pipeline(
+                "static-mesh.3d"_sid,
+                iceshard::renderer::RenderPipelineLayout::Default,
+                shader_assets
+            );
+        }
 
-                self->_render_resource_set = self->_render_system.get_resource_set(
-                    "static-mesh.3d"_sid
-                );
-
-                co_return;
-            }(this, engine.current_frame().frame_allocator()));
+        _render_resource_set = _render_system.get_resource_set(
+            "static-mesh.3d"_sid
+        );
     }
 
     IceshardStaticMeshRenderer::~IceshardStaticMeshRenderer()
@@ -73,7 +69,7 @@ namespace iceshard
         _render_system.destroy_pipeline("static-mesh.3d"_sid);
     }
 
-    void IceshardStaticMeshRenderer::update(iceshard::Engine& engine) noexcept
+    void IceshardStaticMeshRenderer::update(iceshard::Frame& frame) noexcept
     {
         using asset::Asset;
         using asset::AssetData;
@@ -88,7 +84,6 @@ namespace iceshard
         using iceshard::renderer::v1::Mesh;
         using iceshard::renderer::v1::Model;
 
-        auto& frame = engine.current_frame();
         auto& frame_alloc = frame.frame_allocator();
 
         core::message::filter<input::message::WindowSizeChanged>(frame.messages(), [this](auto const& msg) noexcept
@@ -197,19 +192,30 @@ namespace iceshard
 
                 current_model_count += 1;
             });
+    }
 
-        // Load models into render buffers
-        engine.add_task(
-            update_buffers_task(instances, std::move(*instance_data))
-        );
+    void IceshardStaticMeshRenderer::create_render_tasks(
+        iceshard::Frame const& current,
+        iceshard::renderer::api::CommandBuffer cmds,
+        core::Vector<cppcoro::task<>>& task_list
+    ) noexcept
+    {
+        auto* instance_data = current.get_frame_object<core::pod::Array<detail::InstanceData>>("render-instances.data"_sid);
+        auto* instances = current.get_frame_object<core::pod::Array<detail::RenderInstance>>("render-instances"_sid);
 
-        // Draw all instances
-        engine.add_task(
-            draw_task(instances)
-        );
+        if (instance_data && instances)
+        {
+            task_list.push_back(
+                update_buffers_task(cmds, instances, std::move(*instance_data))
+            );
+            task_list.push_back(
+                draw_task(cmds, instances)
+            );
+        }
     }
 
     auto IceshardStaticMeshRenderer::update_buffers_task(
+        iceshard::renderer::api::CommandBuffer cmds,
         core::pod::Array<detail::RenderInstance> const* instances,
         core::pod::Array<detail::InstanceData> instance_data
     ) noexcept -> cppcoro::task<>
@@ -226,11 +232,12 @@ namespace iceshard
         };
         DataView mapped_buffer_views[core::size(mapped_buffers)];
 
-        iceshard::renderer::api::render_api_instance->buffer_array_map_data(
-            mapped_buffers,
-            mapped_buffer_views,
-            core::size(mapped_buffers)
-        );
+        using namespace iceshard::renderer;
+
+        auto buffers_arr = core::pod::array::create_view(mapped_buffers);
+        auto views_arr = core::pod::array::create_view(mapped_buffer_views);
+
+        map_buffers(buffers_arr, views_arr);
 
         for (auto const& instance : *instances)
         {
@@ -263,10 +270,12 @@ namespace iceshard
             core::pod::array::size(instance_data) * sizeof(detail::InstanceData)
         );
 
+        unmap_buffers(buffers_arr);
         co_return;
     }
 
     auto IceshardStaticMeshRenderer::draw_task(
+        iceshard::renderer::api::CommandBuffer cb,
         core::pod::Array<detail::RenderInstance> const* instances
     ) noexcept -> cppcoro::task<>
     {
@@ -277,8 +286,6 @@ namespace iceshard
 
         using iceshard::renderer::RenderPassStage;
         using namespace iceshard::renderer::commands;
-
-        auto cb = _render_system.acquire_command_buffer(RenderPassStage::Geometry);
 
         bind_pipeline(cb, _render_pipeline);
         bind_resource_set(cb, _render_resource_set);
@@ -309,7 +316,6 @@ namespace iceshard
             );
         }
 
-        _render_system.submit_command_buffer(cb);
         co_return;
     }
 

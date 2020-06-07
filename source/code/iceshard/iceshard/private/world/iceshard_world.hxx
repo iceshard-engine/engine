@@ -7,7 +7,7 @@
 namespace iceshard
 {
 
-    class Engine;
+    class ExecutionInstance;
 
     class IceshardWorld : public World
     {
@@ -21,7 +21,7 @@ namespace iceshard
 
         ~IceshardWorld() noexcept override;
 
-        void update(Engine& engine) noexcept;
+        void update(ExecutionInstance& engine) noexcept;
 
         void add_component_system(core::stringid_arg_type component_name, ComponentSystemFactory factory, void* userdata) noexcept override;
 

@@ -1,5 +1,6 @@
 #include <iceshard/renderer/vulkan/vulkan_resources.hxx>
 #include "../vulkan_buffer.hxx"
+#include "../vulkan_image.hxx"
 #include <core/allocators/stack_allocator.hxx>
 #include <core/pod/array.hxx>
 
@@ -113,7 +114,7 @@ namespace iceshard::renderer::vulkan
                 }
                 else
                 {
-                    image_info.imageView = reinterpret_cast<VkImageView>(resource.handle.texture);
+                    image_info.imageView = reinterpret_cast<VulkanImage*>(resource.handle.texture)->native_view();
                 }
 
                 core::pod::array::push_back(write_image_info, image_info);
@@ -190,7 +191,7 @@ namespace iceshard::renderer::vulkan
                 }
                 else
                 {
-                    image_info.imageView = reinterpret_cast<VkImageView>(resource.handle.texture);
+                    image_info.imageView = reinterpret_cast<VulkanImage*>(resource.handle.texture)->native_view();
                 }
 
                 core::pod::array::push_back(write_image_info, image_info);

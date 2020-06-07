@@ -96,6 +96,12 @@ namespace core
         void destroy(void* ptr) noexcept;
     };
 
+    namespace memory::globals
+    {
+        //! \brief Make the null allocator always available.
+        auto null_allocator() noexcept -> core::allocator&;
+    }
+
 //! \brief Creates a new object of type T using the allocator `a` to allocate the memory.
 #   define MAKE_NEW(a, T, ...)        (new ((a).allocate(sizeof(T), alignof(T))) T(__VA_ARGS__))
 

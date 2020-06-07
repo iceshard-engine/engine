@@ -149,11 +149,6 @@ namespace core
 
     static constexpr stringid_type stringid_invalid{ stringid_hash_type{ 0 } };
 
-    inline constexpr auto operator""_sid(const char* cstr, size_t length) noexcept -> core::stringid_type
-    {
-        return core::cexpr::stringid<core::build::is_release == false>({ cstr, length });
-    }
-
     inline constexpr auto stringid(std::string_view value) noexcept -> core::stringid_type
     {
         return core::cexpr::stringid<core::build::is_release == false>(value);
@@ -169,9 +164,20 @@ namespace core
         return static_cast<std::underlying_type_t<stringid_hash_type>>(value.hash_value);
     }
 
+    inline constexpr auto operator""_sid(const char* cstr, size_t length) noexcept -> core::stringid_type
+    {
+        return core::cexpr::stringid<core::build::is_release == false>({ cstr, length });
+    }
+
+    inline constexpr auto operator""_sid_hash(const char* cstr, size_t length) noexcept
+    {
+        return hash(core::cexpr::stringid<core::build::is_release == false>({ cstr, length }));
+    }
+
 } // namespace core
 
 using core::operator""_sid;
+using core::operator""_sid_hash;
 
 template<bool debug_fields>
 struct fmt::formatter<core::cexpr::stringid_base_type<debug_fields>>

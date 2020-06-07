@@ -3,30 +3,32 @@
 #include <core/pointer.hxx>
 #include <core/string_types.hxx>
 #include <resource/resource_system.hxx>
-#include <debugui/debugui_module.hxx>
 
 namespace iceshard
 {
 
     class Engine;
 
-
     //! \brief Describes the engine module.
     class EngineModule
     {
     public:
+        using EnginePtr = core::memory::unique_pointer<
+            Engine, core::memory::detail::memsys_custom_deleter<Engine>
+        >;
+
         virtual ~EngineModule() noexcept = default;
 
-        //! \brief Returns the engine object from the loaded module.
+        //! \brief Creates a new engine instance from the initialized module.
+        //! \detailed This call will required some basic resources to be available and loaded
+        //!     so the engine can properly initialize itself.
         [[nodiscard]]
-        virtual auto engine() noexcept -> Engine* = 0;
+        virtual auto create_instance(
+            core::allocator& alloc,
+            resource::ResourceSystem& resources
+        ) noexcept -> EnginePtr = 0;
 
-        //! \brief Returns the engine object from the loaded module.
-        [[nodiscard]]
-        virtual auto engine() const noexcept -> Engine const* = 0;
-
-        //! \brief Returns a DebugUI object if the engine publishes one.
-        virtual auto load_debugui(debugui::DebugUIContext& debugui) noexcept -> debugui::DebugUI* = 0;
+        virtual auto native_handle() noexcept -> core::ModuleHandle = 0;
     };
 
 
@@ -34,8 +36,7 @@ namespace iceshard
     [[nodiscard]]
     auto load_engine_module(
         core::allocator& alloc,
-        core::StringView path,
-        resource::ResourceSystem& resources
+        core::StringView path
     ) noexcept -> core::memory::unique_pointer<EngineModule>;
 
 } // namespace iceshard

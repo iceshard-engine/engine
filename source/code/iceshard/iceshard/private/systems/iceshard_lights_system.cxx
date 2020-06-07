@@ -3,6 +3,8 @@
 #include <iceshard/frame.hxx>
 #include <iceshard/renderer/render_system.hxx>
 #include <iceshard/renderer/render_resources.hxx>
+#include <iceshard/renderer/render_funcs.hxx>
+#include <iceshard/renderer/render_buffers.hxx>
 
 namespace iceshard
 {
@@ -17,36 +19,30 @@ namespace iceshard
         , _render_system{ render_system }
         , _component_query{ alloc }
     {
-        _uniform_buffer = _render_system.create_data_buffer(iceshard::renderer::api::BufferType::UniformBuffer, sizeof(LightData));
+        _uniform_buffer = renderer::create_buffer(renderer::api::BufferType::UniformBuffer, sizeof(LightData));
 
-        engine.add_task([](core::allocator& alloc, IceshardIlluminationSystem* self) noexcept -> cppcoro::task<>
-            {
-                using iceshard::renderer::RenderResource;
-                using iceshard::renderer::RenderResourceType;
+        using iceshard::renderer::RenderResource;
+        using iceshard::renderer::RenderResourceType;
 
-                core::pod::Array<RenderResource> resources{ alloc };
-                core::pod::array::resize(resources, 1);
-                resources[0].type = RenderResourceType::ResUniform;
-                resources[0].handle.uniform.buffer = self->_uniform_buffer;
-                resources[0].handle.uniform.offset = 0;
-                resources[0].handle.uniform.range = sizeof(LightData);
-                resources[0].binding = 5;
+        core::pod::Array<RenderResource> resources{ alloc };
+        core::pod::array::resize(resources, 1);
+        resources[0].type = RenderResourceType::ResUniform;
+        resources[0].handle.uniform.buffer = _uniform_buffer;
+        resources[0].handle.uniform.offset = 0;
+        resources[0].handle.uniform.range = sizeof(LightData);
+        resources[0].binding = 5;
 
-                self->_render_system.update_resource_set(
-                    "static-mesh.3d"_sid,
-                    resources
-                );
-
-                co_return;
-            }(alloc, this));
+        _render_system.update_resource_set(
+            "static-mesh.3d"_sid,
+            resources
+        );
     }
 
-    void IceshardIlluminationSystem::update(iceshard::Engine& engine) noexcept
+    void IceshardIlluminationSystem::update(iceshard::Frame& frame) noexcept
     {
         using iceshard::component::Entity;
         using iceshard::component::Light;
 
-        auto& frame = engine.current_frame();
         auto& frame_alloc = frame.frame_allocator();
 
         auto* light_data = frame.new_frame_object<LightData>(SystemName);
@@ -61,7 +57,7 @@ namespace iceshard
             }
         );
 
-        engine.add_task(
+        frame.add_task(
             update_buffers_task(light_data)
         );
     }
@@ -69,9 +65,10 @@ namespace iceshard
     auto IceshardIlluminationSystem::update_buffers_task(LightData* light_data) noexcept -> cppcoro::task<>
     {
         iceshard::renderer::api::DataView data_view;
-        iceshard::renderer::api::render_api_instance->buffer_array_map_data(&_uniform_buffer, &data_view, 1);
+        iceshard::renderer::map_buffer(_uniform_buffer, data_view);
+
         memcpy(data_view.data, light_data, sizeof(LightData));
-        iceshard::renderer::api::render_api_instance->buffer_array_unmap_data(&_uniform_buffer, 1);
+        iceshard::renderer::unmap_buffer(_uniform_buffer);
         co_return;
     }
 

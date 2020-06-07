@@ -187,7 +187,7 @@ namespace iceshard::renderer::vulkan
         pipeline_info.pStages = shader_stages;
         pipeline_info.stageCount = core::size(shader_stages);
         pipeline_info.renderPass = renderpass;
-        pipeline_info.subpass = 1;
+        pipeline_info.subpass = 2;
 
         auto api_result = vkCreateGraphicsPipelines(
             device,

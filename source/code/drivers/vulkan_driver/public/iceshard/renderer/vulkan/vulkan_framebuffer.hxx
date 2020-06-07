@@ -8,10 +8,12 @@
 namespace iceshard::renderer::vulkan
 {
 
-    enum class VulkanFramebuffer : uintptr_t
-    {
-        Invalid = 0x0
-    };
+    using VulkanFramebuffer = api::Framebuffer;
+
+    //enum class VulkanFramebuffer : uintptr_t
+    //{
+    //    Invalid = 0x0
+    //};
 
     enum class VulkanFramebufferTexture : uint32_t
     {

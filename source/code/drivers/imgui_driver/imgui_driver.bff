@@ -1,10 +1,10 @@
 .Project =
 [
-    .Name = 'imgui_driver'
+    .Name = 'imgui_debugui'
     .Kind = .Kind_SharedLib
-    .Group = 'Drivers'
+    .Group = 'Engine'
 
-    .BaseDir = '$WorkspaceCodeDir$/drivers/imgui_driver'
+    .BaseDir = '$WorkspaceCodeDir$/iceshard/imgui_driver'
 
     .Private =
     [
@@ -13,7 +13,6 @@
         }
         .Uses = {
             'debugui_system'
-            'render_system'
         }
     ]
 ]

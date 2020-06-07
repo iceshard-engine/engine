@@ -17,6 +17,8 @@ namespace iceshard::renderer::vulkan
                 return "Vertex Buffer";
             case api::BufferType::UniformBuffer:
                 return "Uniform Buffer";
+            case api::BufferType::TransferBuffer:
+                return "Transfer Buffer";
             }
             return "<invalid_buffer_type>";
         }
@@ -31,6 +33,8 @@ namespace iceshard::renderer::vulkan
                 return VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
             case api::BufferType::UniformBuffer:
                 return VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+            case api::BufferType::TransferBuffer:
+                return VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
             }
 
             IS_ASSERT(false, "Unknown buffer type!");

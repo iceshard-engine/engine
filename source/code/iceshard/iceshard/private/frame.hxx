@@ -8,23 +8,25 @@
 namespace iceshard
 {
 
+    class IceshardExecutionInstance;
 
     //! \brief A single engine frame with a preallocated ring buffer allocator.
     class MemoryFrame final : public iceshard::Frame
     {
     public:
-        MemoryFrame(core::memory::scratch_allocator& alloc, float time_delta) noexcept;
+        MemoryFrame(
+            core::memory::scratch_allocator& alloc,
+            iceshard::Engine& engine,
+            iceshard::IceshardExecutionInstance& execution_instance,
+            float time_delta
+        ) noexcept;
         ~MemoryFrame() noexcept;
 
-        //! \copydoc Frame::messages() noexcept
+        auto engine() noexcept -> Engine& override;
+
         auto messages() noexcept -> core::MessageBuffer& { return _frame_messages; }
 
-        //! \copydoc Frame::messages() const noexcept
-        auto messages() const noexcept -> const core::MessageBuffer& override;
-
-        //auto storage() noexcept -> core::pod::Hash<void*>& override { return _frame_storage; }
-
-        //auto storage() const noexcept -> const core::pod::Hash<void*>& override { return _frame_storage; }
+        auto messages() const noexcept -> core::MessageBuffer const& override;
 
         auto find_frame_object(core::stringid_arg_type name) noexcept -> void* override;
 
@@ -32,17 +34,19 @@ namespace iceshard
 
         void add_frame_object(core::stringid_arg_type name, void* frame_object, void(*deleter)(core::allocator&, void*)) noexcept override;
 
-        //! \copydoc Frame::frame_allocator() noexcept
         auto frame_allocator() noexcept -> core::allocator& override;
 
-        //! \copydoc Frame::time_delta() noexcept
         auto time_delta() const noexcept -> float override
         {
             return _time_delta;
         }
 
+        void add_task(cppcoro::task<> task) noexcept override;
+
     private:
         core::memory::scratch_allocator& _frame_allocator;
+        iceshard::Engine& _engine;
+        iceshard::IceshardExecutionInstance& _execution_instance;
 
         float const _time_delta;
 

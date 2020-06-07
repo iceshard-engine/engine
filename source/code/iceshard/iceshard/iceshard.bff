@@ -15,6 +15,7 @@
         }
         .Uses = {
             'engine'
+            'debugui_system'
         }
     ]
 ]

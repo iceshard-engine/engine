@@ -7,14 +7,13 @@ namespace iceshard
 
     IceshardServiceProvider::IceshardServiceProvider(
         core::allocator& alloc,
-        iceshard::EntityManager* entity_manager_ptr,
-        core::pod::Hash<ComponentSystem*>& _engine_component_systems
+        iceshard::EntityManager* entity_manager_ptr
     ) noexcept
         : ServiceProvider{ }
         , _allocator{ alloc }
         , _entity_manager{ entity_manager_ptr }
         , _component_block_allocator{ alloc }
-        , _engine_component_systems{ _engine_component_systems }
+        , _component_systems{ _allocator }
         , _archetype_index{ iceshard::ecs::create_default_index(alloc, &_component_block_allocator) }
     {
     }
@@ -57,7 +56,7 @@ namespace iceshard
     bool IceshardServiceProvider::has_component_system(core::stringid_arg_type component_system_name) const noexcept
     {
         return core::pod::hash::has(
-            _engine_component_systems,
+            _component_systems,
             core::hash(component_system_name)
         );
     }
@@ -73,7 +72,7 @@ namespace iceshard
         );
 
         auto* component_system_ptr = core::pod::hash::get<ComponentSystem*>(
-            _engine_component_systems,
+            _component_systems,
             component_system_hash,
             nullptr
         );
@@ -93,13 +92,36 @@ namespace iceshard
         );
 
         const auto* component_system_ptr = core::pod::hash::get<ComponentSystem*>(
-            _engine_component_systems,
+            _component_systems,
             component_system_hash,
             nullptr
         );
         IS_ASSERT(component_system_ptr != nullptr, "Invalid component system pointer for name {}!", component_system_name);
 
         return component_system_ptr;
+    }
+
+    void IceshardServiceProvider::add_system(core::stringid_arg_type name, ComponentSystem* system) noexcept
+    {
+        auto name_hash = core::hash(name);
+        IS_ASSERT(
+            core::pod::hash::has(_component_systems, name_hash) == false,
+            "Component system with this name `{}` already exists",
+            name
+        );
+
+        core::pod::hash::set(_component_systems, name_hash, system);
+    }
+
+    auto IceshardServiceProvider::remove_system(core::stringid_arg_type name) noexcept -> ComponentSystem*
+    {
+        ComponentSystem* result = nullptr;
+        if (auto name_hash = core::hash(name); core::pod::hash::has(_component_systems, name_hash))
+        {
+            result = core::pod::hash::get(_component_systems, name_hash, nullptr);
+            core::pod::hash::remove(_component_systems, name_hash);
+        }
+        return result;
     }
 
 } // namespace iceshard

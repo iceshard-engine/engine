@@ -6,9 +6,9 @@
 namespace iceshard
 {
 
-    class Engine;
+    class Frame;
 
-    class World;
+    class RenderStageTaskFactory;
 
     //! \brief A regular interface for component systems.
     class ComponentSystem
@@ -16,7 +16,15 @@ namespace iceshard
     public:
         virtual ~ComponentSystem() noexcept = default;
 
-        virtual void update(Engine& engine) noexcept = 0;
+        virtual void update(Frame& frame, Frame const& previous_frame) noexcept;
+
+        virtual void update(Frame& frame) noexcept;
+
+        virtual void end_frame(Frame& frame, Frame const& previous_frame) noexcept;
+
+        virtual void end_frame(Frame& frame) noexcept;
+
+        virtual auto render_task_factory() noexcept -> RenderStageTaskFactory* { return nullptr; }
     };
 
 } // namespace iceshard
