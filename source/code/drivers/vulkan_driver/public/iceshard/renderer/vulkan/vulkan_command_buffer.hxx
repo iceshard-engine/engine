@@ -6,29 +6,26 @@
 namespace iceshard::renderer::vulkan
 {
 
-    union ApiCommandBuffer
+    union VulkanCommandBuffer
     {
-        iceshard::renderer::CommandBuffer handle;
+        CommandBuffer handle;
         VkCommandBuffer native;
     };
 
-    struct VulkanCommandBuffers
+    class VulkanCommandBufferPool
     {
-        VkCommandPool pool;
-        VkCommandBuffer primary_buffers[2];
+    public:
+        VulkanCommandBufferPool(VulkanDevices devices) noexcept;
+        ~VulkanCommandBufferPool() noexcept;
+
+        void allocate_buffers(
+            api::CommandBufferType type,
+            core::pod::Array<VkCommandBuffer>& buffers
+        ) noexcept;
+
+    private:
+        VkDevice _graphics_device;
+        VkCommandPool _command_buffer_pool;
     };
-
-    void allocate_command_buffers(
-        VulkanDevices devices,
-        VulkanCommandBuffers& command_buffers,
-        uint32_t secondary_buffer_count,
-        core::pod::Array<VkCommandBuffer>& secondary_buffers
-    ) noexcept;
-
-    void release_command_buffers(
-        VulkanDevices devices,
-        VulkanCommandBuffers command_buffers,
-        core::pod::Array<VkCommandBuffer>& secondary_buffers
-    ) noexcept;
 
 } // namespace iceshard::renderer::vulkan

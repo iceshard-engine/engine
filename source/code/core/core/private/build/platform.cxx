@@ -44,7 +44,7 @@ namespace core::build::platform
         default:
             break;
         }
-        assert(false);
+        IS_ASSERT(false, "Unknown compiler family");
         return nullptr;
     }
 

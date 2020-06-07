@@ -5,10 +5,10 @@
 namespace iceshard::debug
 {
 
-    class IceshardDebugUI : public debugui::DebugUI
+    class IceshardDebugUI : public iceshard::debug::DebugUI
     {
     public:
-        IceshardDebugUI(debugui::debugui_context_handle ctx) noexcept;
+        IceshardDebugUI(iceshard::debug::debugui_context_handle ctx) noexcept;
 
         void update(core::MessageBuffer const& messages) noexcept;
 

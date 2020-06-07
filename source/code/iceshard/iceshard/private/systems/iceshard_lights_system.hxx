@@ -10,9 +10,14 @@
 namespace iceshard
 {
 
+    struct alignas(16) PointLight
+    {
+        core::math::vec3f light_position;
+    };
+
     struct LightData
     {
-        core::math::vec3 light_position[20];
+        PointLight point_lights[20];
         core::math::u32 light_count;
     };
 
@@ -28,7 +33,7 @@ namespace iceshard
             iceshard::renderer::RenderSystem& render_system
         ) noexcept;
 
-        void update(iceshard::Engine& engine) noexcept override;
+        void update(iceshard::Frame& engine) noexcept override;
 
         auto update_buffers_task(
             LightData*

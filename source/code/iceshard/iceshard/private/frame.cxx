@@ -5,6 +5,8 @@
 #include <core/datetime/datetime.hxx>
 #include <core/pod/hash.hxx>
 
+#include "iceshard_execution_instance.hxx"
+
 namespace iceshard
 {
     namespace detail
@@ -19,10 +21,14 @@ namespace iceshard
 
     MemoryFrame::MemoryFrame(
         core::memory::scratch_allocator& alloc,
+        iceshard::Engine& engine,
+        iceshard::IceshardExecutionInstance& execution_instance,
         float time_delta
     ) noexcept
         : iceshard::Frame{ }
         , _frame_allocator{ alloc }
+        , _engine{ engine }
+        , _execution_instance{ execution_instance }
         , _time_delta{ time_delta }
         , _message_allocator{ _frame_allocator, detail::message_allocator_pool }
         , _storage_allocator{ _frame_allocator, detail::storage_allocator_pool }
@@ -40,6 +46,11 @@ namespace iceshard
         {
             entry.value.object_deleter(frame_allocator(), entry.value.object_instance);
         }
+    }
+
+    auto MemoryFrame::engine() noexcept -> Engine&
+    {
+        return _engine;
     }
 
     auto MemoryFrame::messages() const noexcept -> const core::MessageBuffer&
@@ -70,6 +81,11 @@ namespace iceshard
     auto MemoryFrame::frame_allocator() noexcept -> core::allocator&
     {
         return _data_allocator;
+    }
+
+    void MemoryFrame::add_task(cppcoro::task<> task) noexcept
+    {
+        _execution_instance.add_task(std::move(task));
     }
 
 } // namespace iceshard

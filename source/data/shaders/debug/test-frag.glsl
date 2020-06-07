@@ -27,11 +27,12 @@ layout(std140, binding = 5) uniform Lights
     // int spot_light_num;
 };
 
-// vec3 calc_point_light(PointLight light, vec3 normal, vec3 frag_pos, vec3 view_dir)
-// {
-//     vec3 light_dir = normalize(light.position - frag_pos);
+vec3 calc_point_light(PointLight light, vec3 normal, vec3 frag_pos, vec3 view_dir)
+{
+    vec3 light_dir = normalize(light.position.xyz - frag_pos);
 
-//     float diff = max(dot(normal, light_dir), 0.0);
+    float diff = max(dot(normal, light_dir), 0.0);
+    vec3 diffuse = diff * vec3(0.8);
 
 //     vec3 reflect_dir = reflect(-light_dir, normal);
 //     float spec = pow(max(dot(view_dir, reflect_dir), 0.0), material_shininess);
@@ -48,7 +49,8 @@ layout(std140, binding = 5) uniform Lights
 //     diffuse *= attenuation;
 //     specular *= attenuation;
 //     return (ambient + diffuse + specular);
-// }
+    return diffuse;
+}
 
 void main()
 {
@@ -56,11 +58,13 @@ void main()
     vec3 ambient = ambient_strength * vec3(0.8, 0.8, 0.8);
 
     vec3 norm = normalize(in_norm);
-    vec3 light_dir = normalize(in_point_light[0].position - in_pos);
 
-    float diff = max(dot(norm, light_dir), 0.0);
-    vec3 diffuse = diff * vec3(0.8);
+    vec3 temp_color = vec3(0.0);
+    for(int i = 0; i < in_point_light_num; i++)
+    {
+        temp_color += calc_point_light(in_point_light[i], norm, in_pos, vec3(0.0));
+    }
 
-    vec3 result = (ambient + diffuse);
-    out_color = vec4(result, 1.0f) * in_color;
+    temp_color += ambient;
+    out_color = vec4(temp_color, 1.0f) * in_color;
 }

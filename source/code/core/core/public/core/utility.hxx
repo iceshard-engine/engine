@@ -4,6 +4,11 @@
 namespace core
 {
 
+    enum class ModuleHandle : std::uintptr_t
+    {
+        Invalid = 0x0
+    };
+
     using std::addressof;
 
     template<typename T, uint32_t Size>
@@ -16,6 +21,21 @@ namespace core
     constexpr inline auto hash(T value) noexcept -> uint64_t
     {
         return static_cast<uint64_t>(value);
+    }
+
+    struct VariadicExpansionContext
+    {
+        template<typename...T>
+        constexpr VariadicExpansionContext(T&&...) noexcept { }
+    };
+
+    template<typename T>
+    constexpr auto has_flag(T flags, T mask) noexcept
+    {
+        static_assert(std::is_enum_v<T>, "T is not a valid enum value.");
+        auto const flags_value = static_cast<std::underlying_type_t<T>>(flags);
+        auto const mask_value = static_cast<std::underlying_type_t<T>>(mask);
+        return (flags_value & mask_value) == mask_value;
     }
 
 } // namespace core

@@ -14,7 +14,6 @@
         .Uses = {
             'input_system'
             'render_system'
-            'debugui_system'
         }
     ]
 ]

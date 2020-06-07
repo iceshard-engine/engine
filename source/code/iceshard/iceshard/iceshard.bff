@@ -11,11 +11,11 @@
     .Private =
     [
         .Modules = {
-            'glm',
             'imgui'
         }
         .Uses = {
             'engine'
+            'debugui_system'
         }
     ]
 ]

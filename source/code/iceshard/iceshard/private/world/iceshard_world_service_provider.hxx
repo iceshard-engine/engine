@@ -38,6 +38,15 @@ namespace iceshard
         auto component_system(core::stringid_arg_type component_system_name) noexcept -> ComponentSystem* override;
         auto component_system(core::stringid_arg_type component_system_name) const noexcept -> const ComponentSystem* override;
 
+        void add_system(
+            core::stringid_arg_type name,
+            ComponentSystem* system
+        ) noexcept override;
+
+        auto remove_system(
+            core::stringid_arg_type name
+        ) noexcept -> ComponentSystem* override;
+
     private:
         core::allocator& _allocator;
 

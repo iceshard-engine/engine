@@ -3,6 +3,7 @@
 
 #include <iceshard/engine.hxx>
 #include <iceshard/component/component_system.hxx>
+#include <iceshard/execution.hxx>
 
 namespace iceshard
 {
@@ -34,11 +35,11 @@ namespace iceshard
         }
     }
 
-    void IceshardWorld::update(iceshard::Engine& engine) noexcept
+    void IceshardWorld::update(iceshard::ExecutionInstance& execution_instance) noexcept
     {
         for (auto const& entry : _component_systems)
         {
-            entry.value->update(engine);
+            entry.value->update(execution_instance.current_frame(), execution_instance.previous_frame());
         }
     }
 

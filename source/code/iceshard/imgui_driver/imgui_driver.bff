@@ -1,0 +1,19 @@
+.Project =
+[
+    .Name = 'imgui_driver'
+    .Kind = .Kind_SharedLib
+    .Group = 'Engine'
+
+    .BaseDir = '$WorkspaceCodeDir$/iceshard/imgui_driver'
+
+    .Private =
+    [
+        .Modules = {
+            'imgui'
+        }
+        .Uses = {
+            'debugui_system'
+        }
+    ]
+]
+.Projects + .Project

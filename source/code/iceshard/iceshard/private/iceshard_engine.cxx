@@ -3,10 +3,6 @@
 #include <resource/resource_system.hxx>
 #include <asset_system/assets/asset_config.hxx>
 #include <input_system/system.hxx>
-#include <render_system/render_system.hxx>
-#include <render_system/render_commands.hxx>
-
-#include <iceshard/renderer/render_pipeline.hxx>
 
 #include <core/string.hxx>
 #include <core/memory.hxx>
@@ -19,116 +15,16 @@
 #include <cppcoro/task.hpp>
 #include <cppcoro/static_thread_pool.hpp>
 
-#include "intellisense_vsbug_workaround.hxx"
 #include "systems/iceshard_camera_system.hxx"
 #include "systems/iceshard_lights_system.hxx"
 #include "systems/iceshard_static_mesh_renderer.hxx"
+
+#include "rendering/ice_render_system.hxx"
 
 namespace iceshard
 {
     namespace detail
     {
-
-        static constexpr auto FrameAllocatorCapacity = 256u * 1024u * 1024u;
-
-        struct FrameTask
-        {
-            cppcoro::task<> object;
-            FrameTask* next_task = nullptr;
-        };
-
-        using iceshard::renderer::RenderPass;
-        using iceshard::renderer::RenderPassStage;
-
-        class NoneRenderSystem : public render::RenderSystem
-        {
-        public:
-
-            auto create_buffer(iceshard::renderer::api::BufferType, uint32_t) noexcept -> iceshard::renderer::api::Buffer override { return iceshard::renderer::api::Buffer{ 0 }; }
-
-            void initialize_render_interface(iceshard::renderer::api::RenderInterface**) noexcept override { }
-
-            auto get_resource_set(
-                core::stringid_arg_type /*name*/
-            ) noexcept -> iceshard::renderer::ResourceSet override
-            {
-                return iceshard::renderer::ResourceSet::Invalid;
-            }
-
-            auto create_resource_set(
-                core::stringid_arg_type /*name*/,
-                iceshard::renderer::RenderPipelineLayout /*layout*/,
-                core::pod::Array<iceshard::renderer::RenderResource> const& /*resources*/
-            ) noexcept -> iceshard::renderer::ResourceSet override
-            {
-                return iceshard::renderer::ResourceSet::Invalid;
-            }
-
-            void update_resource_set(
-                core::stringid_arg_type /*name*/,
-                core::pod::Array<iceshard::renderer::RenderResource> const& /*resources*/
-            ) noexcept override
-            {
-            }
-
-            void destroy_resource_set(
-                core::stringid_arg_type /*name*/
-            ) noexcept override
-            {
-            }
-
-            auto load_texture(asset::AssetData) noexcept -> iceshard::renderer::api::Texture override { return iceshard::renderer::api::Texture{ 0 }; }
-
-            auto acquire_command_buffer(RenderPassStage) noexcept -> iceshard::renderer::CommandBuffer
-            {
-                return iceshard::renderer::CommandBuffer::Invalid;
-            }
-
-            void submit_command_buffer(iceshard::renderer::CommandBuffer) noexcept { }
-
-            auto create_pipeline(
-                [[maybe_unused]] core::stringid_arg_type name,
-                [[maybe_unused]] iceshard::renderer::RenderPipelineLayout layout,
-                [[maybe_unused]] core::pod::Array<asset::AssetData> const& shader_assets
-            ) noexcept -> iceshard::renderer::Pipeline override
-            {
-                return iceshard::renderer::Pipeline{ 0 };
-            }
-
-            void destroy_pipeline(
-                [[maybe_unused]] core::stringid_arg_type name
-            ) noexcept override
-            {
-            }
-
-            auto create_data_buffer(
-                [[maybe_unused]] iceshard::renderer::api::BufferType type,
-                [[maybe_unused]] uint32_t size
-            ) noexcept -> iceshard::renderer::api::Buffer override
-            {
-                return iceshard::renderer::api::Buffer::Invalid;
-            }
-
-        };
-
-        class NoneRenderSystemModule : public iceshard::renderer::RenderSystemModule
-        {
-        public:
-            //! \brief Returns the engine object from the loaded module.
-            [[nodiscard]]
-            auto render_system() noexcept -> render::RenderSystem* override { return &_render_system; }
-
-            //! \brief Returns the engine object from the loaded module.
-            [[nodiscard]]
-            auto render_system() const noexcept -> render::RenderSystem const* override { return &_render_system; }
-
-            //! \brief Returns the render api interface from the loaded module.
-            [[nodiscard]]
-            auto render_api() noexcept -> iceshard::renderer::api::RenderInterface* override { return iceshard::renderer::api::render_api_instance; }
-
-        private:
-            NoneRenderSystem _render_system;
-        };
 
         struct Config
         {
@@ -161,15 +57,7 @@ namespace iceshard
         : _allocator{ "iceshard-engine", alloc }
         , _resources{ resources }
         , _asset_system{ _allocator, resources }
-        , _render_module{ core::memory::make_unique<iceshard::renderer::RenderSystemModule, detail::NoneRenderSystemModule>(_allocator) }
-        , _component_systems{ _allocator }
-        // Task list
-        , _mutable_task_list{ &_frame_tasks[_task_list_index] }
-        // Frame related fields
-        , _frame_allocator{ _allocator, sizeof(MemoryFrame) * 5 }
-        , _frame_data_allocator{ { _allocator, detail::FrameAllocatorCapacity }, { _allocator, detail::FrameAllocatorCapacity } }
-        , _previous_frame{ core::memory::make_unique<MemoryFrame>(_frame_allocator, _frame_data_allocator[0], 0.0f) }
-        , _current_frame{ core::memory::make_unique<MemoryFrame>(_frame_allocator, _frame_data_allocator[1], 0.0f) }
+        , _render_module{ nullptr, { core::memory::globals::null_allocator() } }
     {
         _asset_system.update();
 
@@ -196,188 +84,49 @@ namespace iceshard
             _render_module = iceshard::renderer::load_render_system_module(_allocator, render_driver_location->location().path);
             IS_ASSERT(_render_module != nullptr, "Invalid Vulkan driver module! Unable to load!");
 
-            iceshard::renderer::api::render_api_instance = _render_module->render_api();
         }
 
         _entity_manager = core::memory::make_unique<iceshard::EntityManager>(_allocator, _allocator);
         _serivce_provider = core::memory::make_unique<iceshard::IceshardServiceProvider>(
             _allocator,
             _allocator,
-            _entity_manager.get(),
-            _component_systems
+            _entity_manager.get()
         );
-
-        {
-            ComponentSystem* component_system = _allocator.make<iceshard::IceshardCameraSystem>(
-                _allocator,
-                *this,
-                *_serivce_provider->archetype_index(),
-                *_input_module->input_system(),
-                *_render_module->render_system()
-            );
-
-            core::pod::hash::set(
-                _component_systems,
-                core::hash(iceshard::IceshardCameraSystem::SystemName),
-                component_system
-            );
-
-            component_system = _allocator.make<iceshard::IceshardIlluminationSystem>(
-                _allocator,
-                *this,
-                *_serivce_provider->archetype_index(),
-                *_render_module->render_system()
-            );
-
-            core::pod::hash::set(
-                _component_systems,
-                core::hash(iceshard::IceshardIlluminationSystem::SystemName),
-                component_system
-            );
-
-            component_system = _allocator.make<iceshard::IceshardStaticMeshRenderer>(
-                _allocator,
-                *this,
-                *_serivce_provider->archetype_index(),
-                *_render_module->render_system(),
-                _asset_system
-            );
-
-            core::pod::hash::set(
-                _component_systems,
-                core::hash(iceshard::IceshardStaticMeshRenderer::SystemName),
-                component_system
-            );
-        }
 
         _world_manager = core::memory::make_unique<iceshard::IceshardWorldManager>(
             _allocator,
             _allocator,
             *_serivce_provider
         );
-
-        // Render objects
-        _render_module->render_system()->create_resource_set(
-            "static-mesh.3d"_sid,
-            iceshard::renderer::RenderPipelineLayout::Default,
-            { _allocator } // Empty array
-        );
-
-        _last_frame_tp = clock_type::now();
     }
 
     IceShardEngine::~IceShardEngine() noexcept
     {
-        _render_module->render_system()->destroy_resource_set("static-mesh.3d"_sid);
-
-        _frame_tasks[0].clear();
-        _frame_tasks[1].clear();
-
         _world_manager = nullptr;
-
-        for (auto const& entry : _component_systems)
-        {
-            _allocator.destroy(entry.value);
-        }
 
         _serivce_provider = nullptr;
         _entity_manager = nullptr;
         _input_module = nullptr;
-
-        _current_frame = nullptr;
-        _previous_frame = nullptr;
     }
 
-    auto IceShardEngine::asset_system() noexcept -> asset::AssetSystem*
+    auto IceShardEngine::asset_system() noexcept -> asset::AssetSystem&
     {
-        return &_asset_system;
+        return _asset_system;
     }
 
-    auto IceShardEngine::input_system() noexcept -> input::InputSystem*
+    auto IceShardEngine::input_system() noexcept -> input::InputSystem&
     {
-        return _input_module->input_system();
+        return *_input_module->input_system();
     }
 
-    auto IceShardEngine::entity_manager() noexcept -> iceshard::EntityManager*
+    auto IceShardEngine::entity_manager() noexcept -> iceshard::EntityManager&
     {
-        return _entity_manager.get();
+        return *_entity_manager;
     }
 
-    auto IceShardEngine::world_manager() noexcept -> iceshard::WorldManager*
+    auto IceShardEngine::world_manager() noexcept -> iceshard::WorldManager&
     {
-        return _world_manager.get();
-    }
-
-    auto IceShardEngine::previous_frame() const noexcept -> const Frame&
-    {
-        return *_previous_frame;
-    }
-
-    auto IceShardEngine::current_frame() noexcept -> Frame&
-    {
-        return *_current_frame;
-    }
-
-    void IceShardEngine::next_frame() noexcept
-    {
-
-        {
-            _task_list_index += 1;
-            std::vector<cppcoro::task<>>* expected_list = &_frame_tasks[(_task_list_index - 1) % 2];
-            std::vector<cppcoro::task<>>* exchange_list = &_frame_tasks[_task_list_index % 2];
-
-            while (_mutable_task_list.compare_exchange_weak(expected_list, exchange_list) == false)
-            {
-                expected_list = &_frame_tasks[(_task_list_index - 1) % 2];
-            }
-
-            vs_hacks::cppcoro_sync_all_workaround(std::move(*expected_list));
-        }
-
-        _render_module->render_system()->end_frame();
-
-        // Move the current frame to the 'previous' slot.
-        _previous_frame = std::move(_current_frame);
-
-        // Reset the frame allocator inner pointers.
-        [[maybe_unused]] const bool successful_reset = _frame_data_allocator[_next_free_allocator].reset();
-        IS_ASSERT(successful_reset == true, "Memory was discarded during frame allocator reset!");
-
-        auto current_frame_tp = clock_type::now();
-
-        _current_frame = core::memory::make_unique<MemoryFrame>(
-            _frame_allocator,
-            _frame_data_allocator[_next_free_allocator],
-            std::chrono::duration<float>(current_frame_tp - _last_frame_tp).count()
-        );
-
-        _last_frame_tp = current_frame_tp;
-
-        // We need to update the allocator index
-        _next_free_allocator += 1;
-        _next_free_allocator %= std::size(_frame_data_allocator);
-
-        // Now we want to get all messages for the current frame.
-        auto* inputs = input_system();
-        inputs->query_messages(_current_frame->messages());
-
-        // Initial queue commands
-        {
-
-        }
-
-        // Update all worlds
-        _world_manager->foreach_world([this](IceshardWorld& world) noexcept
-            {
-                world.update(*this);
-            });
-
-        // Update all global component systems
-        _serivce_provider->component_system(IceshardCameraSystem::SystemName)->update(*this);
-        _serivce_provider->component_system(IceshardIlluminationSystem::SystemName)->update(*this);
-        _serivce_provider->component_system(IceshardStaticMeshRenderer::SystemName)->update(*this);
-
-        _render_module->render_system()->begin_frame();
+        return *_world_manager;
     }
 
     auto IceShardEngine::worker_threads() noexcept -> cppcoro::static_thread_pool&
@@ -385,25 +134,33 @@ namespace iceshard
         return _worker_pool;
     }
 
-    void IceShardEngine::add_task(cppcoro::task<> task) noexcept
+    auto IceShardEngine::execution_instance() noexcept -> core::memory::unique_pointer<iceshard::ExecutionInstance>
     {
-        std::vector<cppcoro::task<>>* expected_list = &_frame_tasks[_task_list_index % 2];
+        core::memory::unique_pointer<iceshard::ExecutionInstance> result{ nullptr, { _allocator } };
+        if (_execution_instance_lock == nullptr)
         {
-            while (_mutable_task_list.compare_exchange_weak(expected_list, nullptr) == false)
-            {
-                expected_list = &_frame_tasks[_task_list_index % 2];
-            }
+            result = core::memory::make_unique<iceshard::ExecutionInstance, iceshard::IceshardExecutionInstance>(
+                _allocator,
+                _allocator,
+                ExecutionLock(&_execution_instance_lock),
+                *this,
+                *_serivce_provider
+            );
+
+            _execution_instance_lock = result.get();
         }
 
-        expected_list->push_back(std::move(task));
-
-        _mutable_task_list.store(expected_list);
+        return result;
     }
 
-    auto IceShardEngine::render_system(iceshard::renderer::api::RenderInterface*& render_api) noexcept -> render::RenderSystem*
+    auto IceShardEngine::services() noexcept -> iceshard::ServiceProvider&
     {
-        render_api = iceshard::renderer::api::render_api_instance;
-        return _render_module->render_system();
+        return *_serivce_provider;
+    }
+
+    auto IceShardEngine::render_module() noexcept -> iceshard::renderer::RenderModule&
+    {
+        return *_render_module->render_module();
     }
 
 } // namespace iceshard

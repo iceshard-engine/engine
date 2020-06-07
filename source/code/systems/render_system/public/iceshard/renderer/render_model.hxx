@@ -1,5 +1,6 @@
 #pragma once
 #include <core/math/matrix.hxx>
+#include <core/math/vector.hxx>
 
 namespace iceshard::renderer::v1
 {
@@ -19,7 +20,7 @@ namespace iceshard::renderer::v1
         uint32_t vertice_data_size;
         uint32_t indice_data_size;
         Mesh* mesh_list;
-        core::math::vec3* vertice_data;
+        core::math::vec3f* vertice_data;
         core::math::u16* indice_data;
     };
 

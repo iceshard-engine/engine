@@ -4,9 +4,12 @@
 #include <core/message/buffer.hxx>
 #include <core/datetime/types.hxx>
 
+#include <cppcoro/task.hpp>
+
 namespace iceshard
 {
 
+    class Engine;
 
     //! \brief A simple message pushed at the beginning on each new frame.
     struct FrameMessage
@@ -36,14 +39,9 @@ namespace iceshard
         Frame(const Frame&) noexcept = delete;
         auto operator=(const Frame&) noexcept -> Frame& = delete;
 
-        //! \brief Returns this frame message buffer.
+        virtual auto engine() noexcept -> Engine& = 0;
+
         virtual auto messages() const noexcept -> const core::MessageBuffer& = 0;
-
-        ////! \brief Returns a flat map for storing data pointers.
-        //virtual auto storage() noexcept -> core::pod::Hash<void*>& = 0;
-
-        ////! \brief Returns a flat map for storing data pointers.
-        //virtual auto storage() const noexcept -> const core::pod::Hash<void*>& = 0;
 
         virtual auto find_frame_object(core::stringid_arg_type name) noexcept -> void* = 0;
 
@@ -60,15 +58,12 @@ namespace iceshard
         template<typename T, typename... Args>
         auto new_frame_object(core::stringid_arg_type name, Args&&... args) noexcept -> T*;
 
-        //! \brief Returns this frame allocator object.
-        //!
-        //! \remarks This allocator will be forcibly released after two frames.
-        //!     so any data which needs to persist between frames needs to be copied each frame!
-        //! \remarks The returned allocator is ensured to be optimized performance wise, but has a upper memory limit.
         virtual auto frame_allocator() noexcept -> core::allocator& = 0;
 
-        //! \brief Returns the time difference in seconds from the last frame.
         virtual auto time_delta() const noexcept -> float = 0;
+
+    public:
+        virtual void add_task(cppcoro::task<> task) noexcept = 0;
     };
 
 

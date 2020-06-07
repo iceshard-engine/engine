@@ -28,12 +28,12 @@ namespace iceshard
             aiMatrix4x4 const& mtx
         ) noexcept
         {
+            using core::math::vec3f;
             using core::math::u16;
-            using core::math::vec3;
 
             {
-                vec3* vertice_data = model.vertice_data + model_mesh.vertice_offset * 2llu;
-                vec3 const* const vertice_data_end = vertice_data + model_mesh.vertice_count * 2llu;
+                vec3f* vertice_data = model.vertice_data + model_mesh.vertice_offset * 2llu;
+                vec3f const* const vertice_data_end = vertice_data + model_mesh.vertice_count * 2llu;
 
                 for (uint32_t i = 0; i < model_mesh.vertice_count; ++i)
                 {
@@ -226,17 +226,17 @@ namespace iceshard
                     indice_offset += model_mesh.indice_count;
                 }
 
-                model.vertice_data_size = vertice_offset * sizeof(core::math::vec3) * 2;
+                model.vertice_data_size = vertice_offset * sizeof(core::math::vec3f) * 2;
                 model.indice_data_size = indice_offset * sizeof(core::math::u16);
 
                 uint32_t mesh_data_size = 0;
                 mesh_data_size += model.vertice_data_size;
                 mesh_data_size += model.indice_data_size;
-                mesh_data_size += alignof(core::math::vec3) * 2 * model.mesh_count;
+                mesh_data_size += alignof(core::math::vec3f) * 2 * model.mesh_count;
 
                 void* mesh_data = _mesh_allocator.allocate(mesh_data_size);
 
-                model.vertice_data = reinterpret_cast<core::math::vec3*>(mesh_data);
+                model.vertice_data = reinterpret_cast<core::math::vec3f*>(mesh_data);
                 model.indice_data = reinterpret_cast<core::math::u16*>(
                     core::memory::utils::pointer_add(mesh_data, model.vertice_data_size)
                 );

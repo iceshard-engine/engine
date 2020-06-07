@@ -3,6 +3,7 @@
 #include <iceshard/renderer/render_system.hxx>
 #include <iceshard/renderer/render_model.hxx>
 
+#include <iceshard/render/render_stage.hxx>
 #include <iceshard/component/component_archetype_index.hxx>
 #include <iceshard/component/component_archetype_iterator.hxx>
 #include <iceshard/ecs/model.hxx>
@@ -29,8 +30,8 @@ namespace iceshard
 
         struct InstanceData
         {
-            core::math::mat4x4 xform;
-            core::math::vec4 color;
+            ism::mat4x4 xform;
+            ism::vec4f color;
         };
 
         static_assert(sizeof(InstanceData) == sizeof(float) * 20);
@@ -39,7 +40,7 @@ namespace iceshard
 
     using Buffer = iceshard::renderer::api::Buffer;
 
-    class IceshardStaticMeshRenderer final : public ComponentSystem
+    class IceshardStaticMeshRenderer final : public ComponentSystem, public RenderStageTaskFactory
     {
     public:
         static constexpr auto SystemName = "isc.system.static-mesh-renderer"_sid;
@@ -52,16 +53,29 @@ namespace iceshard
             asset::AssetSystem& asset_system
         ) noexcept;
 
-        void update(iceshard::Engine& engine) noexcept override;
+        void update(iceshard::Frame& frame) noexcept override;
 
         auto update_buffers_task(
+            iceshard::renderer::api::CommandBuffer cmds,
             core::pod::Array<detail::RenderInstance> const* instances,
             core::pod::Array<detail::InstanceData> instance_data
         ) noexcept -> cppcoro::task<>;
 
         auto draw_task(
+            iceshard::renderer::api::CommandBuffer cmds,
             core::pod::Array<detail::RenderInstance> const* instances
         ) noexcept -> cppcoro::task<>;
+
+        auto render_task_factory() noexcept -> RenderStageTaskFactory* override
+        {
+            return this;
+        }
+
+        void create_render_tasks(
+            iceshard::Frame const& current,
+            iceshard::renderer::api::CommandBuffer cmds,
+            core::Vector<cppcoro::task<>>& task_list
+        ) noexcept override;
 
         ~IceshardStaticMeshRenderer() override;
 
@@ -79,7 +93,7 @@ namespace iceshard
         asset::AssetSystem& _asset_system;
 
         // Render resources
-        core::math::uvec2 _viewport{ 1280, 720 };
+        ism::vec2u _viewport{ 1280, 720 };
 
         iceshard::renderer::api::Buffer _indice_buffers;
         iceshard::renderer::api::Buffer _vertice_buffers;

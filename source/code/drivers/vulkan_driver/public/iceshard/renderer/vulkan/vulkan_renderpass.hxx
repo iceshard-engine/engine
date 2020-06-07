@@ -25,7 +25,12 @@ namespace iceshard::renderer::vulkan
         VkDevice device;
         VkFormat format;
         RenderPassFeatures features;
-        VkRenderPass renderpass;
+
+        union
+        {
+            VkRenderPass renderpass;
+            RenderPass handle;
+        };
     };
 
     void get_renderpass_image_info(

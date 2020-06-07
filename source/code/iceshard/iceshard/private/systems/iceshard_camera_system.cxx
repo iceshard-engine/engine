@@ -6,24 +6,9 @@
 #include <iceshard/frame.hxx>
 #include <iceshard/renderer/render_system.hxx>
 #include <iceshard/renderer/render_resources.hxx>
+#include <iceshard/renderer/render_buffers.hxx>
 
-#include <core/math/matrix.hxx>
-
-#include <glm/glm.hpp>
-#include <glm/gtx/transform.hpp>
-
-namespace
-{
-    template<typename To, typename From>
-    auto math_cast(From const& src) noexcept -> To
-    {
-        static_assert(sizeof(From) == sizeof(To));
-
-        To result;
-        memcpy(std::addressof(result), std::addressof(src), sizeof(To));
-        return result;
-    }
-}
+#include <iceshard/math.hxx>
 
 namespace iceshard
 {
@@ -47,31 +32,26 @@ namespace iceshard
         , _render_system{ render_system }
         , _component_query{ alloc }
     {
-        _uniform_buffer = _render_system.create_data_buffer(iceshard::renderer::api::BufferType::UniformBuffer, sizeof(CameraData));
+        _uniform_buffer = renderer::create_buffer(renderer::api::BufferType::UniformBuffer, sizeof(CameraData));
 
-        engine.add_task([](core::allocator& alloc, IceshardCameraSystem* self) noexcept -> cppcoro::task<>
-            {
-                using iceshard::renderer::RenderResource;
-                using iceshard::renderer::RenderResourceType;
+        using iceshard::renderer::RenderResource;
+        using iceshard::renderer::RenderResourceType;
 
-                core::pod::Array<RenderResource> resources{ alloc };
-                core::pod::array::resize(resources, 1);
-                resources[0].type = RenderResourceType::ResUniform;
-                resources[0].handle.uniform.buffer = self->_uniform_buffer;
-                resources[0].handle.uniform.offset = 0;
-                resources[0].handle.uniform.range = sizeof(CameraData);
-                resources[0].binding = 0;
+        core::pod::Array<RenderResource> resources{ alloc };
+        core::pod::array::resize(resources, 1);
+        resources[0].type = RenderResourceType::ResUniform;
+        resources[0].handle.uniform.buffer = _uniform_buffer;
+        resources[0].handle.uniform.offset = 0;
+        resources[0].handle.uniform.range = sizeof(CameraData);
+        resources[0].binding = 0;
 
-                self->_render_system.update_resource_set(
-                    "static-mesh.3d"_sid,
-                    resources
-                );
-
-                co_return;
-            }(alloc, this));
+        _render_system.update_resource_set(
+            "static-mesh.3d"_sid,
+            resources
+        );
     }
 
-    void IceshardCameraSystem::update(iceshard::Engine& engine) noexcept
+    void IceshardCameraSystem::update(iceshard::Frame& frame) noexcept
     {
         using iceshard::component::Camera;
         using input::message::MouseMotion;
@@ -79,13 +59,12 @@ namespace iceshard
         using input::message::KeyboardKeyDown;
         using input::message::KeyboardModChanged;
 
-        auto& frame = engine.current_frame();
         auto& frame_alloc = frame.frame_allocator();
 
         auto* camera_data = frame.new_frame_object<CameraData>(SystemName);
 
         float const camera_speed = 2.5f * frame.time_delta(); // adjust accordingly
-        static glm::vec3 camera_up = { 0.0f, 1.0f, 0.0f };
+        static ism::vec3f camera_up = { 0.0f, 1.0f, 0.0f };
 
         // Operations
         static float speed_mul = 1.0f;
@@ -170,30 +149,24 @@ namespace iceshard
 
                 if (camera_operations[2])
                 {
-                    camera->position = math_cast<core::math::vec3>(
-                        math_cast<glm::vec3>(camera->position) + math_cast<glm::vec3>(camera->front) * camera_speed * speed_mul
-                        );
+                    camera->position = camera->position + camera->front * camera_speed * speed_mul;
                 }
                 else if (camera_operations[3])
                 {
-                    camera->position = math_cast<core::math::vec3>(
-                        math_cast<glm::vec3>(camera->position) - math_cast<glm::vec3>(camera->front) * camera_speed * speed_mul
-                        );
+                    camera->position = camera->position - camera->front * camera_speed * speed_mul;
                 }
 
                 if (camera_operations[4])
                 {
-                    camera->position = math_cast<core::math::vec3>(
-                        math_cast<glm::vec3>(camera->position) -
-                        glm::normalize(glm::cross(math_cast<glm::vec3>(camera->front), camera_up)) * camera_speed * speed_mul
-                    );
+                    camera->position = camera->position + ism::normalize(
+                        ism::cross(camera_up, camera->front)
+                    ) * camera_speed * speed_mul;
                 }
                 else if (camera_operations[5])
                 {
-                    camera->position = math_cast<core::math::vec3>(
-                        math_cast<glm::vec3>(camera->position) +
-                        glm::normalize(glm::cross(math_cast<glm::vec3>(camera->front), camera_up)) * camera_speed * speed_mul
-                    );
+                    camera->position = camera->position - ism::normalize(
+                        ism::cross(camera_up, camera->front)
+                    ) * camera_speed * speed_mul;
                 }
 
                 static bool first_mouse = true;
@@ -232,27 +205,23 @@ namespace iceshard
                         if (camera->pitch < -89.0f)
                             camera->pitch = -89.0f;
 
-                        glm::vec3 direction;
-                        direction.x = cos(glm::radians(camera->yaw)) * cos(glm::radians(camera->pitch));
-                        direction.y = sin(glm::radians(camera->pitch));
-                        direction.z = sin(glm::radians(camera->yaw)) * cos(glm::radians(camera->pitch));
-                        camera->front = math_cast<core::math::vec3>(glm::normalize(direction));
+                        ism::vec3f direction;
+                        direction.x = cos(ism::radians(camera->yaw)) * cos(ism::radians(camera->pitch));
+                        direction.y = sin(ism::radians(camera->pitch));
+                        direction.z = sin(ism::radians(camera->yaw)) * cos(ism::radians(camera->pitch));
+                        camera->front = ism::normalize(direction);
                     });
 
-                camera_data->view = math_cast<core::math::mat4x4>(
-                    glm::lookAt(
-                        math_cast<glm::vec3>(camera->position),
-                        math_cast<glm::vec3>(camera->position) + math_cast<glm::vec3>(camera->front),
-                        camera_up
-                    )
+                camera_data->view = ism::lookat(
+                    camera->position,
+                    camera->position + camera->front,
+                    camera_up
                 );
 
-                camera_data->projection = math_cast<core::math::mat4x4>(
-                    glm::perspective(
-                        camera->fovy,
-                        16.0f / 9.0f,
-                        0.1f, 100.0f
-                    )
+                camera_data->projection = ism::perspective(
+                    camera->fovy,
+                    16.0f / 9.0f,
+                    0.1f, 100.0f
                 );
 
                 camera_data->clip = core::math::mat4x4{
@@ -266,7 +235,7 @@ namespace iceshard
             }
         );
 
-        engine.add_task(
+        frame.add_task(
             update_buffers_task(camera_data)
         );
     }
@@ -274,9 +243,9 @@ namespace iceshard
     auto IceshardCameraSystem::update_buffers_task(CameraData* camera_data) noexcept -> cppcoro::task<>
     {
         iceshard::renderer::api::DataView data_view;
-        iceshard::renderer::api::render_api_instance->buffer_array_map_data(&_uniform_buffer, &data_view, 1);
+        iceshard::renderer::api::render_module_api->buffer_array_map_data_func(&_uniform_buffer, &data_view, 1);
         memcpy(data_view.data, camera_data, sizeof(CameraData));
-        iceshard::renderer::api::render_api_instance->buffer_array_unmap_data(&_uniform_buffer, 1);
+        iceshard::renderer::api::render_module_api->buffer_array_unmap_data_func(&_uniform_buffer, 1);
         co_return;
     }
 

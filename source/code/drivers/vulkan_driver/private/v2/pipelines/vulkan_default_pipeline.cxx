@@ -14,7 +14,7 @@ namespace iceshard::renderer::vulkan
         core::pod::array::resize(bindings, 2);
         bindings[0].binding = 0;
         bindings[0].inputRate = VkVertexInputRate::VK_VERTEX_INPUT_RATE_VERTEX;
-        bindings[0].stride = sizeof(core::math::vec3) * 2;
+        bindings[0].stride = sizeof(core::math::vec3f) * 2;
         bindings[1].binding = 1;
         bindings[1].inputRate = VkVertexInputRate::VK_VERTEX_INPUT_RATE_INSTANCE;
         bindings[1].stride = sizeof(float) * 20;
@@ -28,7 +28,7 @@ namespace iceshard::renderer::vulkan
         attributes[1].binding = 0;
         attributes[1].format = VkFormat::VK_FORMAT_R32G32B32_SFLOAT;
         attributes[1].location = 1;
-        attributes[1].offset = sizeof(core::math::vec3);
+        attributes[1].offset = sizeof(core::math::vec3f);
 
         for (uint32_t i = 0; i < 4; ++i)
         {

@@ -45,18 +45,19 @@ namespace iceshard::renderer
             core::stringid_arg_type name
         ) noexcept = 0;
 
-        virtual auto create_data_buffer(
-            iceshard::renderer::api::BufferType type,
-            uint32_t size
-        ) noexcept -> iceshard::renderer::api::Buffer = 0;
+        virtual void submit_command_buffer_v2(
+            CommandBuffer buffer
+        ) noexcept = 0;
 
-        virtual auto acquire_command_buffer(
-            RenderPassStage stage
+        virtual auto renderpass(
+            RenderPassFeatures features
+        ) noexcept -> RenderPass = 0;
+
+        virtual auto renderpass_command_buffer(
+            RenderPassFeatures features
         ) noexcept -> CommandBuffer = 0;
 
-        virtual void submit_command_buffer(
-            CommandBuffer
-        ) noexcept = 0;
+        virtual auto current_framebuffer() noexcept -> iceshard::renderer::api::Framebuffer = 0;
     };
 
 } // namespace iceshard::renderer

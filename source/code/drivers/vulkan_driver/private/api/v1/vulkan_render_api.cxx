@@ -1,10 +1,12 @@
 #include "vulkan_render_api.hxx"
 #include "../../vulkan_buffer.hxx"
+#include "../../vulkan_image.hxx"
 #include <core/memory.hxx>
 #include <core/allocators/stack_allocator.hxx>
 #include "../../vulkan_device_memory_manager.hxx"
 #include <iceshard/renderer/vulkan/vulkan_command_buffer.hxx>
 #include <iceshard/renderer/vulkan/vulkan_resources.hxx>
+#include <iceshard/renderer/vulkan/vulkan_system.hxx>
 
 #include <vulkan/vulkan.h>
 
@@ -14,18 +16,156 @@ namespace iceshard::renderer::api::v1_1::vulkan
 
     auto command_buffer(CommandBuffer command_buffer) noexcept -> VkCommandBuffer
     {
-        iceshard::renderer::vulkan::ApiCommandBuffer cmd_buff{ command_buffer };
-        return cmd_buff.native;
+        return VulkanCommandBuffer{ command_buffer }.native;
     }
 
-    void vulkan_api_v1_initialized() noexcept
+    auto render_system_instance() -> iceshard::renderer::vulkan::VulkanRenderSystem&
+    {
+        auto* system = reinterpret_cast<iceshard::renderer::vulkan::VulkanRenderSystem*>(
+            render_module_api->internal_data
+        );
+        IS_ASSERT(system != nullptr, "Vulkan render system module initialization error!");
+
+        return *system;
+    }
+
+    void vulkan_api_v1_initialized()
     {
         fmt::print("Using Vulkan Render API v1.\n");
     }
 
-    void vulkan_api_v1a_buffer_map(Buffer buffer, DataView& buffer_data)
+    auto vulkan_api_v1_create_texture(core::stringid_arg_type name, core::math::vec2u size) -> api::Texture
     {
-        reinterpret_cast<VulkanBuffer*>(buffer)->map_memory(buffer_data);
+        auto& render_system = render_system_instance();
+
+        return render_system.textures().allocate_texture(name, { size.x, size.y });
+    };
+
+    auto vulkan_api_v1_create_buffer(BufferType type, uint32_t size) -> api::Buffer
+    {
+        return render_system_instance().create_data_buffer(type, size);
+    }
+
+    void vulkan_api_v1_create_command_buffers(CommandBufferType type, CommandBuffer* buffers, uint32_t size)
+    {
+        auto* const buffers_native = reinterpret_cast<VkCommandBuffer*>(buffers);
+
+        core::pod::Array<VkCommandBuffer> array_view{ core::memory::globals::null_allocator() };
+        core::pod::array::create_view(array_view, buffers_native, size);
+
+        render_system_instance().command_buffer_pool().allocate_buffers(
+            type,
+            array_view
+        );
+    }
+
+    void vulkan_api_v1_cmd_begin(CommandBuffer cb, CommandBufferUsage usage)
+    {
+        VkCommandBufferBeginInfo beginInfo = {};
+        beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+        beginInfo.flags = 0;
+
+        if (usage == CommandBufferUsage::RunOnce)
+        {
+            beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+        }
+
+        vkBeginCommandBuffer(command_buffer(cb), &beginInfo);
+    }
+
+    void vulkan_api_v1_cmd_begin_subpass(CommandBuffer cb, RenderPass renderpass, uint32_t subpass)
+    {
+        VkCommandBufferInheritanceInfo inheritance_info;
+        inheritance_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO;
+        inheritance_info.pNext = nullptr;
+        inheritance_info.framebuffer = nullptr;
+        inheritance_info.renderPass = reinterpret_cast<VkRenderPass>(renderpass);
+        inheritance_info.queryFlags = 0;
+        inheritance_info.occlusionQueryEnable = VK_FALSE;
+        inheritance_info.pipelineStatistics = 0;
+        inheritance_info.subpass = subpass;
+
+        VkCommandBufferBeginInfo begin_info = {};
+        begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+        begin_info.flags = VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
+        begin_info.pInheritanceInfo = &inheritance_info;
+        begin_info.pNext = nullptr;
+
+        vkBeginCommandBuffer(command_buffer(cb), &begin_info);
+    }
+
+    void vulkan_api_v1_cmd_end(CommandBuffer cb)
+    {
+        vkEndCommandBuffer(command_buffer(cb));
+    }
+
+    void vulkan_api_v1_update_texture(api::CommandBuffer cb, api::Texture texture, api::Buffer buffer, core::math::vec2u size)
+    {
+        auto native_cb = command_buffer(cb);
+        auto image_handle = reinterpret_cast<VulkanImage*>(texture);
+        auto buffer_handle = reinterpret_cast<VulkanBuffer*>(buffer);
+
+        VkImageMemoryBarrier barrier = {};
+        barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+        barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+        barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        barrier.image = image_handle->native_handle();
+        barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        barrier.subresourceRange.baseMipLevel = 0;
+        barrier.subresourceRange.levelCount = 1;
+        barrier.subresourceRange.baseArrayLayer = 0;
+        barrier.subresourceRange.layerCount = 1;
+        barrier.srcAccessMask = 0; // TODO
+        barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT; // TODO
+
+        vkCmdPipelineBarrier(
+            native_cb,
+            VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
+            0,
+            0, nullptr,
+            0, nullptr,
+            1, &barrier
+        );
+
+        VkBufferImageCopy region = {};
+        region.bufferOffset = 0;
+        region.bufferRowLength = 0;
+        region.bufferImageHeight = 0;
+
+        region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        region.imageSubresource.mipLevel = 0;
+        region.imageSubresource.baseArrayLayer = 0;
+        region.imageSubresource.layerCount = 1;
+
+        region.imageOffset = { 0, 0, 0 };
+        region.imageExtent.width = size.x;
+        region.imageExtent.height = size.y;
+        region.imageExtent.depth = 1;
+        vkCmdCopyBufferToImage(
+            native_cb,
+            buffer_handle->native_handle(),
+            image_handle->native_handle(),
+            VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+            1,
+            &region
+        );
+
+
+        barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+        barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+        barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+        vkCmdPipelineBarrier(
+            native_cb,
+            VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+            0,
+            0, nullptr,
+            0, nullptr,
+            1, &barrier
+        );
     }
 
     void vulkan_api_v1a_buffer_array_map(Buffer* buffers, DataView* views, uint32_t size)
@@ -44,11 +184,6 @@ namespace iceshard::renderer::api::v1_1::vulkan
         mem_manager.map_memory(core::pod::array::begin(memory_ranges), views, size);
     }
 
-    void vulkan_api_v1a_buffer_unmap(Buffer buffer)
-    {
-        reinterpret_cast<VulkanBuffer*>(buffer)->unmap_memory();
-    }
-
     void vulkan_api_v1a_buffer_array_unmap(Buffer* buffers, uint32_t size)
     {
         auto& mem_manager = reinterpret_cast<VulkanBuffer*>(buffers[0])->memory_manager();
@@ -63,6 +198,47 @@ namespace iceshard::renderer::api::v1_1::vulkan
         }
 
         mem_manager.unmap_memory(core::pod::array::begin(memory_ranges), size);
+    }
+
+    void vulkan_api_v1_next_render_subpass(
+        CommandBuffer cb,
+        RenderSubPass render_subpass
+    ) noexcept
+    {
+        VkSubpassContents contents = VkSubpassContents::VK_SUBPASS_CONTENTS_MAX_ENUM;
+        switch (render_subpass)
+        {
+        case iceshard::renderer::api::v1_1::types::RenderSubPass::Commands:
+            contents = VkSubpassContents::VK_SUBPASS_CONTENTS_INLINE;
+            break;
+        case iceshard::renderer::api::v1_1::types::RenderSubPass::CommandBuffers:
+            contents = VkSubpassContents::VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS;
+            break;
+        }
+
+        vkCmdNextSubpass(command_buffer(cb), contents);
+    }
+
+    void vulkan_api_v1_execute_command_buffers(
+        CommandBuffer cb,
+        uint32_t count,
+        CommandBuffer* buffers
+    ) noexcept
+    {
+        auto* const buffers_native = reinterpret_cast<VkCommandBuffer*>(buffers);
+
+        vkCmdExecuteCommands(command_buffer(cb), count, buffers_native);
+    }
+
+    void vulkan_api_v1_push_constants(types::CommandBuffer cb, api::Pipeline pipeline, uint32_t offset, uint32_t size, void const* data) noexcept
+    {
+        const auto* vulkan_pipeline = reinterpret_cast<iceshard::renderer::vulkan::VulkanPipeline const*>(pipeline);
+        vkCmdPushConstants(
+            command_buffer(cb),
+            vulkan_pipeline->layout,
+            VK_SHADER_STAGE_VERTEX_BIT,
+            offset, size, data
+        );
     }
 
     void vulkan_api_v1_bind_render_pipeline(CommandBuffer cb, Pipeline pipeline) noexcept
@@ -178,13 +354,27 @@ namespace iceshard::renderer::api::v1_1::vulkan
 
     void init_api(void* ptr) noexcept
     {
-        auto instance = reinterpret_cast<RenderInterface*>(ptr);
+        auto instance = reinterpret_cast<RenderModuleInterface*>(ptr);
         instance->check_func = vulkan_api_v1_initialized;
-        instance->buffer_map_data = vulkan_api_v1a_buffer_map;
-        instance->buffer_unmap_data = vulkan_api_v1a_buffer_unmap;
-        instance->buffer_array_map_data = vulkan_api_v1a_buffer_array_map;
-        instance->buffer_array_unmap_data = vulkan_api_v1a_buffer_array_unmap;
+        instance->create_texture_func = vulkan_api_v1_create_texture;
+        instance->create_data_buffer_func = vulkan_api_v1_create_buffer;
+        instance->create_command_buffers_func = vulkan_api_v1_create_command_buffers;
+        instance->buffer_array_map_data_func = vulkan_api_v1a_buffer_array_map;
+        instance->buffer_array_unmap_data_func = vulkan_api_v1a_buffer_array_unmap;
 
+
+        instance->cmd_begin_func = vulkan_api_v1_cmd_begin;
+        instance->cmd_begin_subpass_func = vulkan_api_v1_cmd_begin_subpass;
+        instance->cmd_end_func = vulkan_api_v1_cmd_end;
+
+        instance->cmd_update_texture_func = vulkan_api_v1_update_texture;
+
+        //instance->cmd_begin_render_pass_func = vulkan_api_v1_begin_render_pass;
+        instance->cmd_next_subpass_func = vulkan_api_v1_next_render_subpass;
+        instance->cmd_execute_commands_func = vulkan_api_v1_execute_command_buffers;
+        //instance->cmd_end_render_pass_func = vulkan_api_v1_end_render_pass;
+
+        instance->cmd_push_constants_func = vulkan_api_v1_push_constants;
         instance->cmd_bind_render_pipeline_func = vulkan_api_v1_bind_render_pipeline;
         instance->cmd_bind_resource_set_func = vulkan_api_v1_bind_resource_set;
         instance->cmd_bind_vertex_buffers_array_func = vulkan_api_v1_bind_vertex_buffers_array;
@@ -194,7 +384,6 @@ namespace iceshard::renderer::api::v1_1::vulkan
         instance->cmd_set_scissor2_func = vulkan_api_v1_set_scissor2;
         instance->cmd_draw_func = vulkan_api_v1_draw;
         instance->cmd_draw_indexed_func = vulkan_api_v1_draw_indexed;
-        instance->cmd_next_subpass_func = vulkan_api_v1_renderpass_next;
     }
 
 } // namespace

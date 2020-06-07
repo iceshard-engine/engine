@@ -11,11 +11,11 @@ namespace asset::detail
         auto resolve_asset_type(core::StringView extension, resource::ResourceMetaView const& meta) noexcept -> AssetType override
         {
             AssetType result = AssetType::Unresolved;
-            if (core::string::equals(extension, ".glsl"))
+            /*if (core::string::equals(extension, ".glsl"))
             {
                 result = AssetType::Shader;
             }
-            else if (core::string::equals(extension, ".spv"))
+            else */if (core::string::equals(extension, ".spv"))
             {
                 result = AssetType::Shader;
             }

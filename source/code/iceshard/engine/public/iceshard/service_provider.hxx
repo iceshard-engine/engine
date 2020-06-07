@@ -52,6 +52,15 @@ namespace iceshard
         //! \remarks If the given component system does not exist the engine will abort the process.
         virtual auto component_system(core::stringid_arg_type component_system_name) noexcept -> ComponentSystem* = 0;
         virtual auto component_system(core::stringid_arg_type component_system_name) const noexcept -> ComponentSystem const* = 0;
+
+        virtual void add_system(
+            core::stringid_arg_type name,
+            ComponentSystem* system
+        ) noexcept = 0;
+
+        virtual auto remove_system(
+            core::stringid_arg_type name
+        ) noexcept -> ComponentSystem* = 0;
     };
 
     //! \brief Special class that allows provides access to component managers.

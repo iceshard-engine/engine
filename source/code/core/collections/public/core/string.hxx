@@ -172,7 +172,7 @@ namespace fmt
         template<typename FormatContext>
         auto format(const core::String<CharType>& str, FormatContext& ctx)
         {
-            return fmt::format_to(ctx.begin(), std::string_view{ str._data, str._size });
+            return fmt::format_to(ctx.out(), std::string_view{ str._data, str._size });
         }
     };
 

@@ -1,0 +1,23 @@
+.Project =
+[
+    .Name = 'debugui_system'
+    .Kind = .Kind_StaticLib
+    .Group = 'Engine'
+
+    .BaseDir = '$WorkspaceCodeDir$/iceshard/debugui_system'
+
+    .Public =
+    [
+        .Uses = {
+            'engine'
+        }
+    ]
+
+    .Private =
+    [
+        .Modules = {
+            'imgui'
+        }
+    ]
+]
+.Projects + .Project

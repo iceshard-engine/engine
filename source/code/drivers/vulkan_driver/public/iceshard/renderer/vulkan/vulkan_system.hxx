@@ -14,6 +14,7 @@
 #include <iceshard/renderer/vulkan/vulkan_resource_layouts.hxx>
 #include <iceshard/renderer/vulkan/vulkan_resources.hxx>
 #include <iceshard/renderer/vulkan/vulkan_pipeline.hxx>
+#include <iceshard/renderer/vulkan/vulkan_texture.hxx>
 
 #include <atomic>
 
@@ -23,7 +24,7 @@ namespace iceshard::renderer::vulkan
     class VulkanBuffer;
     class VulkanDeviceMemoryManager;
 
-    class VulkanRenderSystem final : iceshard::renderer::RenderSystem
+    class VulkanRenderSystem final : public iceshard::renderer::RenderSystem
     {
     public:
         VulkanRenderSystem(core::allocator& alloc, VkInstance instance) noexcept;
@@ -33,10 +34,7 @@ namespace iceshard::renderer::vulkan
 
         void end_frame() noexcept override;
 
-        auto acquire_command_buffer(RenderPassStage stage) noexcept->CommandBuffer override;
-
-        void submit_command_buffer(CommandBuffer cmd_buffer) noexcept override;
-
+        void submit_command_buffer_v2(CommandBuffer buffer) noexcept override;
 
         auto get_resource_set(
             core::stringid_arg_type name
@@ -71,7 +69,17 @@ namespace iceshard::renderer::vulkan
         auto create_data_buffer(
             iceshard::renderer::api::BufferType type,
             uint32_t size
-        ) noexcept -> iceshard::renderer::api::Buffer override;
+        ) noexcept -> iceshard::renderer::api::Buffer;
+
+        auto renderpass(
+            RenderPassFeatures features
+        ) noexcept -> RenderPass;
+
+        auto renderpass_command_buffer(
+            RenderPassFeatures features
+        ) noexcept -> CommandBuffer override;
+
+        auto current_framebuffer() noexcept -> iceshard::renderer::api::Framebuffer;
 
     public:
         // API v1.0 proxies
@@ -83,21 +91,28 @@ namespace iceshard::renderer::vulkan
 
         auto resource_layouts() noexcept -> VulkanResourceLayouts;
 
+        auto textures() noexcept -> VulkanTextureStorage&
+        {
+            return *_textures;
+        }
+
+        auto command_buffer_pool() -> VulkanCommandBufferPool&
+        {
+            return *_command_buffer_pool;
+        }
+
     public:
         auto v1_surface() noexcept -> VkSurfaceKHR;
         auto v1_graphics_device() noexcept -> VkDevice;
         auto v1_graphics_queue() noexcept -> VkQueue;
         auto v1_renderpass() noexcept -> VkRenderPass;
         auto v1_current_framebuffer() noexcept -> VkFramebuffer;
-        auto v1_framebuffer_semaphore() noexcept -> VkSemaphore const*;
 
         auto v1_primary_cmd_buffer() noexcept -> VkCommandBuffer;
-        auto v1_secondary_cmd_buffer() noexcept -> VkCommandBuffer;
         auto v1_transfer_cmd_buffer() noexcept -> VkCommandBuffer;
 
     public:
         void v1_submit_command_buffers() noexcept;
-        void v1_execute_subpass_commands(VkCommandBuffer cmds) noexcept;
         void v1_present() noexcept;
 
     protected:
@@ -117,22 +132,20 @@ namespace iceshard::renderer::vulkan
         VulkanSwapchain _swapchain;
 
         core::memory::unique_pointer<VulkanDeviceMemoryManager> _device_memory_manager;
+        core::memory::unique_pointer<VulkanTextureStorage> _textures;
+        core::memory::unique_pointer<VulkanCommandBufferPool> _command_buffer_pool;
+
         core::Vector<core::memory::unique_pointer<iceshard::renderer::vulkan::VulkanBuffer>> _vulkan_buffers;
 
-        uint32_t _subpass_stage;
         VulkanRenderPass _renderpass;
 
-        VulkanCommandBuffers _command_buffers;
-        core::pod::Array<VkCommandBuffer> _command_buffers_secondary;
-        std::atomic_uint32_t _next_command_buffer = 0;
-
-        core::pod::Array<VkCommandBuffer> _command_buffers_submitted;
-        std::atomic_uint32_t _submitted_command_buffer_count = 0;
-        core::pod::Array<uint32_t> _command_buffers_subpass;
+        core::pod::Array<VkCommandBuffer> _command_buffers_primary;
 
         uint32_t _current_framebuffer_index = 0;
         core::pod::Array<VulkanFramebuffer> _framebuffers;
-        VkSemaphore _framebuffer_semaphore = vk_nullptr;
+
+        uint32_t _next_command_semaphore = 0;
+        core::pod::Array<VkSemaphore> _command_semaphores;
 
         VulkanResourcePool _resource_pool;
         VulkanResourceLayouts _resource_layouts;
