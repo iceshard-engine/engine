@@ -2,9 +2,9 @@
 [
     .Name = 'asset_module'
     .Kind = .Kind_SharedLib
-    .Group = 'Engine'
+    .Group = 'Modules'
 
-    .BaseDir = '$WorkspaceCodeDir$/iceshard/asset_module'
+    .BaseDir = '$WorkspaceCodeDir$/modules/asset_module'
 
     .Private =
     [

@@ -64,7 +64,7 @@ namespace iceshard::debug::imgui
         detail::release_debugui_context(_imgui_context);
     }
 
-    void DebugUIContext_ImGui::register_ui(DebugUI* ui_object) noexcept
+    void DebugUIContext_ImGui::register_ui(DebugWindow* ui_object) noexcept
     {
         core::pod::array::push_back(_debugui_objects, ui_object);
     }

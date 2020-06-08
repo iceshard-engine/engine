@@ -1,10 +1,9 @@
 #pragma once
 #include <core/allocator.hxx>
-#include <debugui/debugui_module.hxx>
+#include <core/platform/windows.hxx>
+#include <iceshard/debug/debug_module.hxx>
 
 #include <filesystem>
-
-#include <core/platform/windows.hxx>
 
 namespace iceshard::debug
 {

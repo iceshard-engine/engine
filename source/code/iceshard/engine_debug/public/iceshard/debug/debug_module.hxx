@@ -15,14 +15,14 @@ namespace iceshard
 
         enum class debugui_context_handle : uintptr_t;
 
-        class DebugUI;
+        class DebugWindow;
 
         class DebugUIContext : public ComponentSystem
         {
         public:
             virtual ~DebugUIContext() noexcept = default;
 
-            virtual void register_ui(DebugUI* ui_object) noexcept = 0;
+            virtual void register_ui(DebugWindow* ui_object) noexcept = 0;
 
             virtual auto context_handle() const noexcept -> debugui_context_handle = 0;
         };

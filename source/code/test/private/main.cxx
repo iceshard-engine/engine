@@ -63,8 +63,8 @@
 #include <iceshard/ecs/camera.hxx>
 #include <iceshard/math.hxx>
 
-#include <debugui/debugui_module.hxx>
-#include <debugui/debugui.hxx>
+#include <iceshard/debug/debug_window.hxx>
+#include <iceshard/debug/debug_module.hxx>
 
 #include <imgui/imgui.h>
 
@@ -75,7 +75,7 @@ struct DebugName
     core::StackString<32> name;
 };
 
-class DebugNameUI : public iceshard::debug::DebugUI
+class DebugNameUI : public iceshard::debug::DebugWindow
 {
 public:
     DebugNameUI(
@@ -83,7 +83,7 @@ public:
         core::allocator& alloc,
         iceshard::ecs::ArchetypeIndex* archetype_index
     ) noexcept
-        : iceshard::debug::DebugUI{ context }
+        : iceshard::debug::DebugWindow{ context }
         , _allocator{ alloc }
         , _arch_index{ *archetype_index }
     { }
@@ -184,7 +184,7 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
 
         // Debug UI module
         core::memory::unique_pointer<iceshard::debug::DebugUIModule> debugui_module{ nullptr, { alloc } };
-        core::memory::unique_pointer<iceshard::debug::DebugUI> engine_debugui{ nullptr, { alloc } };
+        core::memory::unique_pointer<iceshard::debug::DebugWindow> engine_debugui{ nullptr, { alloc } };
         core::memory::unique_pointer<DebugNameUI> debugname_ui{ nullptr, { alloc } };
 
         if constexpr (core::build::is_release == false)
@@ -213,8 +213,6 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
         }
 
         fmt::print("IceShard engine revision: {}\n", engine_instance->revision());
-
-        ism::vec2u viewport{ 1280, 720 };
 
         [[maybe_unused]]
         iceshard::World* world = engine_instance->world_manager().create_world("test-world"_sid);
@@ -365,12 +363,6 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
                 });
 
             execution_instance->next_frame();
-
-            core::message::filter<input::message::WindowSizeChanged>(frame.messages(), [&viewport](auto const& msg) noexcept
-                {
-                    fmt::print("Window size changed to: {}x{}\n", msg.width, msg.height);
-                    viewport = { msg.width, msg.height };
-                });
         }
 
         engine_instance->world_manager().destroy_world("test-world"_sid);

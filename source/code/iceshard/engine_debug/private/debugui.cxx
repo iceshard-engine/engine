@@ -1,8 +1,7 @@
-#include <debugui/debugui.hxx>
+#include <iceshard/debug/debug_window.hxx>
+#include <core/platform/windows.hxx>
 #include <core/debug/assert.hxx>
 #include <imgui/imgui.h>
-
-#include <core/platform/windows.hxx>
 
 namespace iceshard::debug
 {
@@ -10,24 +9,24 @@ namespace iceshard::debug
     namespace detail
     {
 
-        using CreateDebugUIFunc = auto(core::allocator&, iceshard::debug::debugui_context_handle) -> DebugUI*;
-        using ReleaseDebugUIFunc = void(core::allocator&, DebugUI*);
+        using CreateDebugUIFunc = auto(core::allocator&, iceshard::debug::debugui_context_handle) -> DebugWindow*;
+        using ReleaseDebugUIFunc = void(core::allocator&, DebugWindow*);
 
         auto get_imgui_context(debugui_context_handle handle) noexcept -> ImGuiContext*
         {
             return reinterpret_cast<ImGuiContext*>(handle);
         }
 
-        class ModuleDebugUI : public DebugUI
+        class ModuleDebugUI : public DebugWindow
         {
         public:
             ModuleDebugUI(
                 core::allocator& alloc,
                 debugui_context_handle context,
-                DebugUI* object,
+                DebugWindow* object,
                 ReleaseDebugUIFunc* release_func
             )
-                : DebugUI{ context }
+                : DebugWindow{ context }
                 , _allocator{ alloc }
                 , _wrapped_object{ object }
                 , _release_func{ release_func }
@@ -57,13 +56,13 @@ namespace iceshard::debug
 
         private:
             core::allocator& _allocator;
-            DebugUI* _wrapped_object;
+            DebugWindow* _wrapped_object;
             ReleaseDebugUIFunc* _release_func;
         };
 
     } // namespace detail
 
-    DebugUI::DebugUI(debugui_context_handle context_handle) noexcept
+    DebugWindow::DebugWindow(debugui_context_handle context_handle) noexcept
     {
         ImGuiContext* const context = detail::get_imgui_context(context_handle);
         bool const is_same_context = ImGui::GetCurrentContext() == context;
@@ -77,9 +76,9 @@ namespace iceshard::debug
         core::allocator& alloc,
         core::ModuleHandle module,
         debugui_context_handle context
-    ) noexcept -> core::memory::unique_pointer<DebugUI>
+    ) noexcept -> core::memory::unique_pointer<DebugWindow>
     {
-        core::memory::unique_pointer<DebugUI> result{ nullptr, { alloc } };
+        core::memory::unique_pointer<DebugWindow> result{ nullptr, { alloc } };
 
         HMODULE module_handle = reinterpret_cast<HMODULE>(module);
 
@@ -93,7 +92,7 @@ namespace iceshard::debug
 
             if (auto* obj = create_func(alloc, context); obj != nullptr)
             {
-                result = core::memory::make_unique<DebugUI, detail::ModuleDebugUI>(alloc, alloc, context, obj, release_func);
+                result = core::memory::make_unique<DebugWindow, detail::ModuleDebugUI>(alloc, alloc, context, obj, release_func);
             }
         }
         return result;

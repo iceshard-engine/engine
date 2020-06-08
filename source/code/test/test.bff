@@ -15,8 +15,8 @@
             .Runtime = {
                 'iceshard'
                 'asset_module'
+                'debug_module'
                 'sdl2_driver'
-                'imgui_driver'
             }
 #if exists(VULKAN_SDK)
             .Runtime + 'vulkan_driver'
@@ -29,9 +29,9 @@
             'Assimp'
         }
         .Uses = {
-            'debugui_system'
-            'application'
             'engine'
+            'engine_debug'
+            'application'
         }
     ]
 ]

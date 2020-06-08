@@ -18,9 +18,10 @@
 
 #include "iceshard/application/application.bff"
 #include "iceshard/engine/engine.bff"
-#include "iceshard/debugui_system/debugui_system.bff"
-#include "iceshard/imgui_driver/imgui_driver.bff"
+#include "iceshard/engine_debug/engine_debug.bff"
 #include "iceshard/iceshard/iceshard.bff"
-#include "iceshard/asset_module/asset_module.bff"
+
+#include "modules/debug_module/debug_module.bff"
+#include "modules/asset_module/asset_module.bff"
 
 #include "test/test.bff"

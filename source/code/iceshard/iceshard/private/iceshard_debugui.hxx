@@ -1,11 +1,11 @@
 #pragma once
-#include <debugui/debugui.hxx>
+#include <iceshard/debug/debug_window.hxx>
 #include <imgui/imgui.h>
 
 namespace iceshard::debug
 {
 
-    class IceshardDebugUI : public iceshard::debug::DebugUI
+    class IceshardDebugUI : public iceshard::debug::DebugWindow
     {
     public:
         IceshardDebugUI(iceshard::debug::debugui_context_handle ctx) noexcept;

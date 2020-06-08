@@ -1,10 +1,10 @@
 .Project =
 [
-    .Name = 'debugui_system'
+    .Name = 'engine_debug'
     .Kind = .Kind_StaticLib
     .Group = 'Engine'
 
-    .BaseDir = '$WorkspaceCodeDir$/iceshard/debugui_system'
+    .BaseDir = '$WorkspaceCodeDir$/iceshard/engine_debug'
 
     .Public =
     [

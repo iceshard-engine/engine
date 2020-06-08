@@ -1,7 +1,7 @@
 #pragma once
 #include <core/pointer.hxx>
-#include <debugui/debugui.hxx>
-#include <debugui/debugui_module.hxx>
+#include <iceshard/debug/debug_window.hxx>
+#include <iceshard/debug/debug_module.hxx>
 #include <iceshard/renderer/render_module.hxx>
 
 #include "imgui_inputs.hxx"
@@ -21,7 +21,7 @@ namespace iceshard::debug::imgui
         ) noexcept;
         ~DebugUIContext_ImGui() noexcept;
 
-        void register_ui(DebugUI* ui_object) noexcept override;
+        void register_ui(DebugWindow* ui_object) noexcept override;
 
         void update(core::MessageBuffer const& messages) noexcept;
 
@@ -41,7 +41,7 @@ namespace iceshard::debug::imgui
         core::memory::unique_pointer<ImGuiInputs> _imgui_inputs;
         core::memory::unique_pointer<ImGuiRenderer> _imgui_renderer;
 
-        core::pod::Array<DebugUI*> _debugui_objects;
+        core::pod::Array<DebugWindow*> _debugui_objects;
 
         union
         {

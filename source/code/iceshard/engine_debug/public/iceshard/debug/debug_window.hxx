@@ -11,12 +11,12 @@ namespace iceshard::debug
         Invalid = 0x0
     };
 
-    class DebugUI
+    class DebugWindow
     {
     public:
-        DebugUI(debugui_context_handle context_handle) noexcept;
+        DebugWindow(debugui_context_handle context_handle) noexcept;
 
-        virtual ~DebugUI() noexcept = default;
+        virtual ~DebugWindow() noexcept = default;
 
         virtual void update([[maybe_unused]] core::MessageBuffer const& messages) noexcept { }
 
@@ -29,6 +29,6 @@ namespace iceshard::debug
         core::allocator& alloc,
         core::ModuleHandle module,
         debugui_context_handle context
-    ) noexcept -> core::memory::unique_pointer<DebugUI>;
+    ) noexcept -> core::memory::unique_pointer<DebugWindow>;
 
 } // namespace debugui

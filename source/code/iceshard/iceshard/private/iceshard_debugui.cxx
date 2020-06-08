@@ -6,7 +6,7 @@ namespace iceshard::debug
 {
 
     IceshardDebugUI::IceshardDebugUI(iceshard::debug::debugui_context_handle ctx) noexcept
-        : iceshard::debug::DebugUI{ ctx }
+        : iceshard::debug::DebugWindow{ ctx }
     {
     }
 
@@ -46,12 +46,18 @@ namespace iceshard::debug
 
 extern "C"
 {
-    __declspec(dllexport) auto create_debugui(core::allocator& alloc, iceshard::debug::debugui_context_handle ctx) -> iceshard::debug::DebugUI*
+    __declspec(dllexport) auto create_debugui(
+        core::allocator& alloc,
+        iceshard::debug::debugui_context_handle ctx
+    ) -> iceshard::debug::DebugWindow*
     {
         return alloc.make<iceshard::debug::IceshardDebugUI>(ctx);
     }
 
-    __declspec(dllexport) void release_debugui(core::allocator& alloc, iceshard::debug::DebugUI* debugui)
+    __declspec(dllexport) void release_debugui(
+        core::allocator& alloc,
+        iceshard::debug::DebugWindow* debugui
+    )
     {
         alloc.destroy(debugui);
     }
