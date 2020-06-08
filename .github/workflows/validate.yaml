@@ -23,6 +23,19 @@ jobs:
       shell: cmd
       run: |
         ice build -t all-x64-${{ matrix.configuration }}
-    - name: Verify
+    - name: Notify
       run: |
         echo Nothing to verify yet
+        
+  commits-notify:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Notify commit (Discord)
+      uses: Ilshidur/action-discord@master
+      env:
+        DISCORD_WEBHOOK: ${{ secrents.DISCORD_WEBHOOK_YUKI }}
+        DISCORD_USERNAME: 'Yuki <IceShard Engine>'
+      with:
+        args: |
+          New commits have been pushed to `{{ EVENT_PAYLOAD.repository.full_name }}`!
+          {{ EVENT_PAYLOAD.commits.map(e => '- ' + e.message + ' (' + e.url + ') <' + e.author.name + '>').join('\n') }}
