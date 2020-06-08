@@ -33,7 +33,7 @@ jobs:
     - name: Notify commit (Discord)
       uses: Ilshidur/action-discord@master
       env:
-        DISCORD_WEBHOOK: ${{ secrents.DISCORD_WEBHOOK_YUKI }}
+        DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_YUKI }}
         DISCORD_USERNAME: 'Yuki <IceShard Engine>'
       with:
         args: |
