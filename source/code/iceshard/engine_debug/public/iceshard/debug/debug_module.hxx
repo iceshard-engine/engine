@@ -5,44 +5,29 @@
 #include <core/message/operations.hxx>
 #include <iceshard/component/component_system.hxx>
 
-namespace iceshard
+namespace iceshard::debug
 {
 
-    class Engine;
+    enum class DebugContextHandle : uintptr_t;
 
-    namespace debug
+    class DebugSystem;
+
+    class DebugModule
     {
+    public:
+        virtual ~DebugModule() noexcept = default;
 
-        enum class debugui_context_handle : uintptr_t;
+        virtual void on_register(DebugContextHandle handle) noexcept;
 
-        class DebugWindow;
+        virtual void on_initialize(DebugSystem& system) noexcept = 0;
 
-        class DebugUIContext : public ComponentSystem
-        {
-        public:
-            virtual ~DebugUIContext() noexcept = default;
+        virtual void on_deinitialize(DebugSystem& system) noexcept = 0;
+    };
 
-            virtual void register_ui(DebugWindow* ui_object) noexcept = 0;
+    auto load_debug_module_from_handle(
+        core::allocator& alloc,
+        core::ModuleHandle handle,
+        DebugSystem& debug_system
+    ) noexcept -> core::memory::unique_pointer<DebugModule>;
 
-            virtual auto context_handle() const noexcept -> debugui_context_handle = 0;
-        };
-
-        class DebugUIModule
-        {
-        public:
-            virtual ~DebugUIModule() noexcept = default;
-
-            virtual auto context() noexcept -> DebugUIContext & = 0;
-
-            virtual auto context_handle() noexcept -> debugui_context_handle = 0;
-        };
-
-        auto load_module(
-            core::allocator& alloc,
-            core::StringView path,
-            iceshard::Engine& engine
-        ) noexcept -> core::memory::unique_pointer<DebugUIModule>;
-
-    } // namespace debug
-
-} // namespace iceshard
+} // namespace iceshard::debug

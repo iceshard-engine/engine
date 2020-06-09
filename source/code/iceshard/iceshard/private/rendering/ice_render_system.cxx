@@ -34,7 +34,7 @@ namespace iceshard
         core::pod::array::push_back(render_stages, alloc.make<IceRS_PostProcess>(alloc));
         {
             auto* stage = alloc.make<IceRS_DebugUI>(alloc);
-            stage->add_system("isc.system.debug-ui"_sid);
+            stage->add_system("isc.system.debug-imgui"_sid);
             core::pod::array::push_back(render_stages, stage);
         }
 

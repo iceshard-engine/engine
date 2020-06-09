@@ -63,6 +63,7 @@
 #include <iceshard/ecs/camera.hxx>
 #include <iceshard/math.hxx>
 
+#include <iceshard/debug/debug_system.hxx>
 #include <iceshard/debug/debug_window.hxx>
 #include <iceshard/debug/debug_module.hxx>
 
@@ -75,18 +76,27 @@ struct DebugName
     core::StackString<32> name;
 };
 
-class DebugNameUI : public iceshard::debug::DebugWindow
+class DebugNameUI : public iceshard::debug::DebugWindow, public iceshard::debug::DebugModule
 {
 public:
     DebugNameUI(
-        iceshard::debug::debugui_context_handle context,
         core::allocator& alloc,
         iceshard::ecs::ArchetypeIndex* archetype_index
     ) noexcept
-        : iceshard::debug::DebugWindow{ context }
+        : iceshard::debug::DebugWindow{ }
         , _allocator{ alloc }
         , _arch_index{ *archetype_index }
     { }
+
+    void on_initialize(iceshard::debug::DebugSystem& ds) noexcept
+    {
+        ds.register_window("debug-name-ui"_sid, *this);
+    }
+
+    void on_deinitialize(iceshard::debug::DebugSystem& ds) noexcept
+    {
+        ds.unregister_window("debug-name-ui"_sid);
+    }
 
     void end_frame() noexcept override
     {
@@ -183,32 +193,24 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
         using iceshard::renderer::RenderResourceType;
 
         // Debug UI module
-        core::memory::unique_pointer<iceshard::debug::DebugUIModule> debugui_module{ nullptr, { alloc } };
-        core::memory::unique_pointer<iceshard::debug::DebugWindow> engine_debugui{ nullptr, { alloc } };
+        core::memory::unique_pointer<iceshard::debug::DebugSystemModule> debugui_module{ nullptr, { alloc } };
+        core::memory::unique_pointer<iceshard::debug::DebugModule> engine_debugui{ nullptr, { alloc } };
         core::memory::unique_pointer<DebugNameUI> debugname_ui{ nullptr, { alloc } };
 
         if constexpr (core::build::is_release == false)
         {
-            auto* debugui_module_location = resource_system.find(URN{ "imgui_driver.dll" });
+            auto* debugui_module_location = resource_system.find(URN{ "debug_module.dll" });
             if (debugui_module_location != nullptr)
             {
-                debugui_module = iceshard::debug::load_module(
+                debugui_module = iceshard::debug::load_debug_system_module(
                     alloc,
                     debugui_module_location->location().path,
                     *engine_instance
                 );
 
-                engine_instance->services().add_system(
-                    "isc.system.debug-ui"_sid,
-                    &debugui_module->context()
+                engine_debugui = iceshard::debug::load_debug_module_from_handle(
+                    alloc, engine_module->native_handle(), debugui_module->debug_system()
                 );
-
-                engine_debugui = iceshard::debug::load_debugui_from_module(
-                    alloc, engine_module->native_handle(), debugui_module->context_handle()
-                );
-
-                debugui_module->context().register_ui(engine_debugui.get());
-                //engine_module->load_debugui(debugui_module->context());
             }
         }
 
@@ -223,11 +225,11 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
         if (debugui_module)
         {
             debugname_ui = core::memory::make_unique<DebugNameUI>(alloc,
-                debugui_module->context_handle(),
                 alloc,
                 arch_idx
             );
-            debugui_module->context().register_ui(debugname_ui.get());
+
+            debugui_module->debug_system().register_module(*debugname_ui);
         }
 
         core::pod::Array<iceshard::Entity> entities{ alloc };

@@ -28,16 +28,15 @@ namespace iceshard::debug::imgui
 
     } // namespace detail
 
-    DebugUIContext_ImGui::DebugUIContext_ImGui(
-        core::allocator& alloc,
-        iceshard::Engine& engine
-    ) noexcept
+
+    ImGuiDebugSystem::ImGuiDebugSystem(core::allocator& alloc, iceshard::Engine& engine) noexcept
         : _allocator{ alloc }
-        , _imgui_context{ detail::create_imgui_context() }
         , _imgui_inputs{ nullptr, { _allocator } }
         , _imgui_renderer{ nullptr, { _allocator } }
-        , _debugui_objects{ _allocator }
+        , _debug_windows{ _allocator }
     {
+        core::pod::hash::reserve(_debug_windows, 64);
+
         _imgui_inputs = core::memory::make_unique<ImGuiInputs>(
             _allocator,
             ImGui::GetIO(),
@@ -51,51 +50,38 @@ namespace iceshard::debug::imgui
             engine.asset_system(),
             engine
         );
-
-        core::pod::array::reserve(_debugui_objects, 16);
-
-        ImGui::NewFrame();
     }
 
-    DebugUIContext_ImGui::~DebugUIContext_ImGui() noexcept
+    ImGuiDebugSystem::~ImGuiDebugSystem() noexcept
     {
         _imgui_renderer = nullptr;
         _imgui_inputs = nullptr;
-        detail::release_debugui_context(_imgui_context);
     }
 
-    void DebugUIContext_ImGui::register_ui(DebugWindow* ui_object) noexcept
+    void ImGuiDebugSystem::update(Frame& frame, Frame const&) noexcept
     {
-        core::pod::array::push_back(_debugui_objects, ui_object);
-    }
-
-    void DebugUIContext_ImGui::update(core::MessageBuffer const& messages) noexcept
-    {
+        auto const& messages = frame.messages();
         _imgui_inputs->update(messages);
-        std::for_each(core::pod::begin(_debugui_objects), core::pod::end(_debugui_objects), [&messages](auto* object) noexcept
-            {
-                object->update(messages);
-            });
 
-    }
-
-    void DebugUIContext_ImGui::update(Frame& frame, Frame const&) noexcept
-    {
-        update(frame.messages());
+        for (auto const& entry : _debug_windows)
+        {
+            entry.value->update(messages);
+        }
 
         ImGui::NewFrame();
-        std::for_each(core::pod::begin(_debugui_objects), core::pod::end(_debugui_objects), [](auto* object) noexcept
-            {
-                object->begin_frame();
-            });
+
+        for (auto const& entry : _debug_windows)
+        {
+            entry.value->begin_frame();
+        }
     }
 
-    void DebugUIContext_ImGui::end_frame(Frame& frame, Frame const&) noexcept
+    void ImGuiDebugSystem::end_frame(Frame& frame, Frame const&) noexcept
     {
-        std::for_each(core::pod::begin(_debugui_objects), core::pod::end(_debugui_objects), [](auto* object) noexcept
-            {
-                object->end_frame();
-            });
+        for (auto const& entry : _debug_windows)
+        {
+            entry.value->end_frame();
+        }
 
         frame.add_task([]() noexcept -> cppcoro::task<>
             {
@@ -105,31 +91,95 @@ namespace iceshard::debug::imgui
             }());
     }
 
-    auto DebugUIContext_ImGui::render_task_factory() noexcept -> RenderStageTaskFactory*
+    auto ImGuiDebugSystem::render_task_factory() noexcept -> RenderStageTaskFactory*
     {
         return _imgui_renderer.get();
+    }
+
+    void ImGuiDebugSystem::add_window(core::stringid_arg_type name, DebugWindow* window) noexcept
+    {
+        if (auto name_hash = core::hash(name); core::pod::hash::has(_debug_windows, name_hash) == false)
+        {
+            core::pod::hash::set(_debug_windows, name_hash, window);
+        }
+    }
+
+    void ImGuiDebugSystem::remove_window(core::stringid_arg_type name) noexcept
+    {
+        if (auto name_hash = core::hash(name); core::pod::hash::has(_debug_windows, name_hash))
+        {
+            auto* window = core::pod::hash::get(_debug_windows, name_hash, nullptr);
+            core::pod::hash::remove(_debug_windows, name_hash);
+        }
+    }
+
+    ImGuiModule_DebugSystem::ImGuiModule_DebugSystem(
+        core::allocator& alloc,
+        iceshard::Engine& engine
+    ) noexcept
+        : _allocator{ alloc }
+        , _engine{ engine }
+        , _debug_system{ nullptr, { alloc } }
+        , _imgui_context{ detail::create_imgui_context() }
+    {
+        _debug_system = core::memory::make_unique<ImGuiDebugSystem>(_allocator, _allocator, engine);
+
+        ImGui::NewFrame();
+
+        _engine.services().add_system(
+            "isc.system.debug-imgui"_sid,
+            _debug_system.get()
+        );
+    }
+
+    ImGuiModule_DebugSystem::~ImGuiModule_DebugSystem() noexcept
+    {
+        _engine.services().remove_system(
+            "isc.system.debug-imgui"_sid
+        );
+
+        _debug_system = nullptr;
+        detail::release_debugui_context(_imgui_context);
+    }
+
+    void ImGuiModule_DebugSystem::register_module(DebugModule& module) noexcept
+    {
+        module.on_register(_imgui_handle);
+        module.on_initialize(*this);
+    }
+
+    void ImGuiModule_DebugSystem::unregister_module(DebugModule& module) noexcept
+    {
+        module.on_deinitialize(*this);
+    }
+
+    void ImGuiModule_DebugSystem::register_window(core::stringid_arg_type name, DebugWindow& window) noexcept
+    {
+        _debug_system->add_window(name, &window);
+    }
+
+    void ImGuiModule_DebugSystem::unregister_window(core::stringid_arg_type name) noexcept
+    {
+        _debug_system->remove_window(name);
     }
 
 } // namespace debugui::imgui
 
 extern "C"
 {
-    __declspec(dllexport) auto create_debugui(
+    __declspec(dllexport) auto create_debug_system(
         core::allocator& alloc,
         iceshard::Engine& engine
-    ) -> iceshard::debug::imgui::DebugUIContext_ImGui*
+    ) -> iceshard::debug::DebugSystem*
     {
-        return alloc.make<iceshard::debug::imgui::DebugUIContext_ImGui>(
-            alloc,
-            engine
-        );
+        return alloc.make<iceshard::debug::imgui::ImGuiModule_DebugSystem>(alloc, engine);
     }
 
-    __declspec(dllexport) void release_debugui(
+    __declspec(dllexport) void release_debug_system(
         core::allocator& alloc,
-        iceshard::debug::imgui::DebugUIContext_ImGui* driver
+        iceshard::debug::DebugSystem* debug_system
     )
     {
-         alloc.destroy(driver);
+         alloc.destroy(debug_system);
     }
 }

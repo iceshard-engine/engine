@@ -8,11 +8,9 @@ namespace iceshard::debug
     class IceshardDebugUI : public iceshard::debug::DebugWindow
     {
     public:
-        IceshardDebugUI(iceshard::debug::debugui_context_handle ctx) noexcept;
+        void update(core::MessageBuffer const& messages) noexcept override;
 
-        void update(core::MessageBuffer const& messages) noexcept;
-
-        void end_frame() noexcept;
+        void end_frame() noexcept override;
 
     private:
         bool _visible = false;
