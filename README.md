@@ -8,7 +8,7 @@
 ## Prerequesites
 To use this engine you will need the following tools:
 * [Conan Package Manager](https://conan.io/) - for dependency management.
-* \[windows\] Visual Studio 2017 15.7 or later
+* \[windows\] Visual Studio 2019 16.4 or later
 * \[macosx\] Not supported yet.
 * \[unix\] Not supported yet.
 
@@ -26,7 +26,7 @@ conan remote add conan-bincrafters https://api.bintray.com/conan/bincrafters/pub
 ## Project generation (currently windows only)
 To generate projects for development run the following command in the root directory:
 ```bash
-iceshard generate-projects
+ice generate
 ```
 
 This will generate the Visual Studio solution **IceShard.sln**.
@@ -35,7 +35,7 @@ This will generate the Visual Studio solution **IceShard.sln**.
 To just build the engine run the following command in the root directory:
 
 ```bash
-iceshard build
+ice build
 ```
 
 This will build the engine in the ReleaseDebug configuration for the host platform.
