@@ -78,4 +78,62 @@ namespace core::pod
         detail::qsort(keys, values, std::forward<Pred>(pred), first_index, last_index);
     }
 
+    template<typename T>
+    inline bool contains(Array<T> const& values, T expected) noexcept
+    {
+        for (auto const& value : values)
+        {
+            if (value == expected)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    template<typename T, typename Pred = T>
+    inline auto remove_if(Array<T>& values, Pred&& predicate) noexcept -> uint32_t
+    {
+        if constexpr (std::is_function_v<Pred> || std::is_class_v<Pred>)
+        {
+            uint32_t beg = 0;
+            uint32_t end = core::pod::array::size(values);
+
+            while (beg < end)
+            {
+                if (std::forward<Pred>(predicate)(values[beg]))
+                {
+                    end -= 1;
+                    values[beg] = values[end];
+                }
+                else
+                {
+                    beg += 1;
+                }
+            }
+
+            return end;
+        }
+        else
+        {
+            uint32_t beg = 0;
+            uint32_t end = core::pod::array::size(values);
+
+            while (beg < end)
+            {
+                if (values[beg] == predicate)
+                {
+                    end -= 1;
+                    values[beg] = values[end];
+                }
+                else
+                {
+                    beg += 1;
+                }
+            }
+
+            return end;
+        }
+    }
+
 } // namespace core::pod

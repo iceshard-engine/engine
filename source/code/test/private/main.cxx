@@ -11,6 +11,7 @@
 #include <core/scope_exit.hxx>
 #include <core/debug/profiler.hxx>
 #include <core/pod/hash.hxx>
+#include <core/pod/algorithm.hxx>
 
 #include <resource/uri.hxx>
 #include <resource/resource_system.hxx>
@@ -22,7 +23,6 @@
 
 #include <input_system/module.hxx>
 #include <input_system/message/app.hxx>
-#include <input_system/message/mouse.hxx>
 #include <input_system/message/keyboard.hxx>
 #include <input_system/message/window.hxx>
 
@@ -56,6 +56,10 @@
 #include <iceshard/renderer/render_model.hxx>
 #include <iceshard/renderer/render_funcs.hxx>
 #include <iceshard/renderer/render_commands.hxx>
+
+#include <iceshard/input/input_mouse.hxx>
+#include <iceshard/input/input_keyboard.hxx>
+#include <iceshard/input/input_controller.hxx>
 
 #include <iceshard/ecs/model.hxx>
 #include <iceshard/ecs/transform.hxx>

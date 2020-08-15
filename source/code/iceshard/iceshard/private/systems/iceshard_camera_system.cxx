@@ -1,12 +1,17 @@
 #include "iceshard_camera_system.hxx"
 
-#include <input_system/message/mouse.hxx>
 #include <input_system/message/keyboard.hxx>
+
+#include <iceshard/input/input_mouse.hxx>
+#include <iceshard/input/input_keyboard.hxx>
+#include <iceshard/input/input_controller.hxx>
+#include <iceshard/input/device/input_device_queue.hxx>
 
 #include <iceshard/frame.hxx>
 #include <iceshard/renderer/render_system.hxx>
 #include <iceshard/renderer/render_resources.hxx>
 #include <iceshard/renderer/render_buffers.hxx>
+
 
 #include <iceshard/math.hxx>
 
@@ -24,7 +29,7 @@ namespace iceshard
         core::allocator& alloc,
         iceshard::Engine& engine,
         iceshard::ecs::ArchetypeIndex& index,
-        input::InputSystem& input_system,
+        ::input::InputSystem& input_system,
         iceshard::renderer::RenderSystem& render_system
     ) noexcept
         : _archetype_index{ index }
@@ -53,11 +58,8 @@ namespace iceshard
 
     void IceshardCameraSystem::update(iceshard::Frame& frame) noexcept
     {
+        using namespace iceshard::input;
         using iceshard::component::Camera;
-        using input::message::MouseMotion;
-        using input::message::KeyboardKeyUp;
-        using input::message::KeyboardKeyDown;
-        using input::message::KeyboardModChanged;
 
         auto& frame_alloc = frame.frame_allocator();
 
@@ -75,142 +77,115 @@ namespace iceshard
             iceshard::ecs::query_index(_component_query, _archetype_index),
             [&](Camera* camera) noexcept
             {
-                core::message::filter<KeyboardModChanged>(frame.messages(), [&](KeyboardModChanged const& ev) noexcept
+                using iceshard::input::DeviceInputType;
+
+                const float sensitivity = 0.2f;
+
+                bool speed_up = false;
+                float move_y = 0.0f;
+                float move_x = 0.0f;
+
+                float xoffset = 0.f;
+                float yoffset = 0.f;
+
+                for (auto const& event : frame.input_events())
+                {
+                    switch (event.identifier)
                     {
-                        if (ev.mod == input::KeyboardMod::ShiftLeft)
+                    case create_inputid(DeviceType::Controller, ControllerInput::LeftTrigger):
+                        speed_up = event.value.axis.value_f32 > 0.5f;
+                        break;
+                    case create_inputid(DeviceType::Keyboard, KeyboardMod::ShiftLeft):
+                        speed_up = event.value.button.state.pressed;
+                        break;
+                    case create_inputid(DeviceType::Keyboard, KeyboardKey::Space):
+                        if (event.value.button.state.pressed)
                         {
-                            speed_mul = ev.pressed ? 4.0f : 1.0f;
+                            camera->position.y += camera_speed * speed_mul;
                         }
-                    });
-
-                core::message::filter<KeyboardKeyDown>(frame.messages(), [&](KeyboardKeyDown const& ev) noexcept
-                    {
-                        using input::KeyboardKey;
-
-                        switch (ev.key)
+                        break;
+                    case create_inputid(DeviceType::Keyboard, KeyboardKey::KeyX):
+                        if (event.value.button.state.pressed)
                         {
-                        case KeyboardKey::Space:
-                            camera_operations[0] = true;
-                            break;
-                        case KeyboardKey::KeyX:
-                            camera_operations[1] = true;
-                            break;
-                        case KeyboardKey::KeyW:
-                            camera_operations[2] = true;
-                            break;
-                        case KeyboardKey::KeyS:
-                            camera_operations[3] = true;
-                            break;
-                        case KeyboardKey::KeyA:
-                            camera_operations[4] = true;
-                            break;
-                        case KeyboardKey::KeyD:
-                            camera_operations[5] = true;
-                            break;
+                            camera->position.y -= camera_speed * speed_mul;
                         }
-                    });
-
-                core::message::filter<KeyboardKeyUp>(frame.messages(), [&](KeyboardKeyUp const& ev) noexcept
-                    {
-                        using input::KeyboardKey;
-
-                        switch (ev.key)
+                        break;
+                    case create_inputid(DeviceType::Keyboard, KeyboardKey::KeyW):
+                        move_y = event.value.button.state.pressed ? -1.0f : 0.0f;
+                        break;
+                    case create_inputid(DeviceType::Keyboard, KeyboardKey::KeyS):
+                        move_y = event.value.button.state.pressed ? 1.0f : 0.0f;
+                        break;
+                    case create_inputid(DeviceType::Controller, ControllerInput::LeftAxisY):
+                        if (event.value.axis.value_f32 >= 0.01f)
                         {
-                        case KeyboardKey::Space:
-                            camera_operations[0] = false;
-                            break;
-                        case KeyboardKey::KeyX:
-                            camera_operations[1] = false;
-                            break;
-                        case KeyboardKey::KeyW:
-                            camera_operations[2] = false;
-                            break;
-                        case KeyboardKey::KeyS:
-                            camera_operations[3] = false;
-                            break;
-                        case KeyboardKey::KeyA:
-                            camera_operations[4] = false;
-                            break;
-                        case KeyboardKey::KeyD:
-                            camera_operations[5] = false;
-                            break;
+                            move_y = 1.0;
                         }
-                    });
-
-
-                if (camera_operations[0])
-                {
-                    camera->position.y += camera_speed * speed_mul;
-                }
-                else if (camera_operations[1])
-                {
-                    camera->position.y -= camera_speed * speed_mul;
-                }
-
-                if (camera_operations[2])
-                {
-                    camera->position = camera->position + camera->front * camera_speed * speed_mul;
-                }
-                else if (camera_operations[3])
-                {
-                    camera->position = camera->position - camera->front * camera_speed * speed_mul;
-                }
-
-                if (camera_operations[4])
-                {
-                    camera->position = camera->position + ism::normalize(
-                        ism::cross(camera_up, camera->front)
-                    ) * camera_speed * speed_mul;
-                }
-                else if (camera_operations[5])
-                {
-                    camera->position = camera->position - ism::normalize(
-                        ism::cross(camera_up, camera->front)
-                    ) * camera_speed * speed_mul;
-                }
-
-                static bool first_mouse = true;
-                core::message::filter<MouseMotion>(frame.messages(), [&](MouseMotion const& ev) noexcept
-                    {
-                        float xoffset = ev.pos.x;
-                        float yoffset = -ev.pos.y;
-                        if (ev.relative == false)
+                        else if (event.value.axis.value_f32 <= -0.01f)
                         {
-                            static float last_x = 0;
-                            static float last_y = 0;
-
-                            if (first_mouse) // initially set to true
-                            {
-                                last_x = ev.pos.x;
-                                last_y = ev.pos.y;
-                                first_mouse = false;
-                            }
-
-                            xoffset = ev.pos.x - last_x;
-                            yoffset = last_y - ev.pos.y; // reversed since y-coordinates range from bottom to top
-                            last_x = ev.pos.x;
-                            last_y = ev.pos.y;
+                            move_y = -1.0;
                         }
+                        break;
+                    case create_inputid(DeviceType::Keyboard, KeyboardKey::KeyA):
+                        move_x = event.value.button.state.pressed ? 1.0f : 0.0f;
+                        break;
+                    case create_inputid(DeviceType::Keyboard, KeyboardKey::KeyD):
+                        move_x = event.value.button.state.pressed ? -1.0f : 0.0f;
+                        break;
+                    case create_inputid(DeviceType::Controller, ControllerInput::LeftAxisX):
+                        if (event.value.axis.value_f32 >= 0.01f)
+                        {
+                            move_x = -1.0;
+                        }
+                        else if (event.value.axis.value_f32 <= -0.01f)
+                        {
+                            move_x = 1.0;
+                        }
+                        break;
+                    case create_inputid(DeviceType::Mouse, MouseInput::PositionXRelative):
+                        xoffset = static_cast<float>(event.value.axis.value_i32) * sensitivity;
+                        break;
+                    case create_inputid(DeviceType::Mouse, MouseInput::PositionYRelative):
+                        yoffset = static_cast<float>(-event.value.axis.value_i32) * sensitivity;
+                        break;
+                    case create_inputid(DeviceType::Controller, ControllerInput::RightAxisX):
+                        xoffset = event.value.axis.value_f32;
+                        break;
+                    case create_inputid(DeviceType::Controller, ControllerInput::RightAxisY):
+                        yoffset = -event.value.axis.value_f32;
+                        break;
+                    }
+                }
+
+                if (speed_up)
+                {
+                    speed_mul = 4.0f;
+                }
+                else
+                {
+                    speed_mul = 1.0f;
+                }
+
+                camera->position = camera->position - camera->front * camera_speed * speed_mul * move_y;
+
+                camera->position = camera->position + ism::normalize(
+                    ism::cross(camera_up, camera->front)
+                ) * camera_speed * speed_mul * move_x;
 
 
-                        const float sensitivity = 0.2f;
-                        xoffset *= sensitivity;
-                        yoffset *= sensitivity;
+                camera->yaw += xoffset < 0 ? std::max(xoffset, -10.f) : std::min(xoffset, 10.f);
+                camera->pitch += yoffset < 0 ? std::max(yoffset, -10.f) : std::min(yoffset, 10.f);
 
-                        camera->yaw += xoffset < 0 ? std::max(xoffset, -10.f) : std::min(xoffset, 10.f);
-                        camera->pitch += yoffset < 0 ? std::max(yoffset, -10.f) : std::min(yoffset, 10.f);
+                if (camera->pitch > 89.0f)
+                    camera->pitch = 89.0f;
+                if (camera->pitch < -89.0f)
+                    camera->pitch = -89.0f;
 
-                        if (camera->pitch > 89.0f)
-                            camera->pitch = 89.0f;
-                        if (camera->pitch < -89.0f)
-                            camera->pitch = -89.0f;
-
-                        ism::vec3f direction;
-                        direction.x = cos(ism::radians(camera->yaw)) * cos(ism::radians(camera->pitch));
-                        direction.y = sin(ism::radians(camera->pitch));
-                        direction.z = sin(ism::radians(camera->yaw)) * cos(ism::radians(camera->pitch));
-                        camera->front = ism::normalize(direction);
-                    });
+                ism::vec3f direction;
+                direction.x = cos(ism::radians(camera->yaw)) * cos(ism::radians(camera->pitch));
+                direction.y = sin(ism::radians(camera->pitch));
+                direction.z = sin(ism::radians(camera->yaw)) * cos(ism::radians(camera->pitch));
+                camera->front = ism::normalize(direction);
 
                 camera_data->view = ism::lookat(
                     camera->position,

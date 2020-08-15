@@ -51,12 +51,22 @@ namespace core::pod
         //! \brief Returns a pointer to the first entry in the hash table, can be used to
         //!     efficiently iterate over the elements (in random order).
         template<typename T>
-        auto begin(const Hash<T> &h) noexcept -> const typename Hash<T>::Entry *;
+        auto begin(Hash<T> const& h) noexcept -> typename Hash<T>::Entry const*;
 
         //! \brief Returns a pointer to the last entry in the hash table, can be used to
         //!     efficiently iterate over the elements (in random order).
         template<typename T>
-        auto end(const Hash<T> &h) noexcept -> const typename Hash<T>::Entry *;
+        auto end(Hash<T> const& h) noexcept -> typename Hash<T>::Entry const*;
+
+        //! \brief Returns a pointer to the first entry in the hash table, can be used to
+        //!     efficiently iterate over the elements (in random order).
+        template<typename T>
+        auto begin(Hash<T>& h) noexcept -> typename Hash<T>::Entry*;
+
+        //! \brief Returns a pointer to the last entry in the hash table, can be used to
+        //!     efficiently iterate over the elements (in random order).
+        template<typename T>
+        auto end(Hash<T>& h) noexcept -> typename Hash<T>::Entry*;
 
     } // namespace hash
 
@@ -102,21 +112,27 @@ namespace core::pod
     //! \brief Returns a pointer to the first entry in the hash table, can be used to
     //!     efficiently iterate over the elements (in random order).
     template<typename T>
-    auto begin(const Hash<T> &h) noexcept -> const typename Hash<T>::Entry *;
+    auto begin(const Hash<T>& h) noexcept -> const typename Hash<T>::Entry*
+    {
+        return hash::begin(h);
+    }
 
     //! \brief Returns a pointer to the last entry in the hash table, can be used to
     //!     efficiently iterate over the elements (in random order).
     template<typename T>
-    auto end(const Hash<T> &h) noexcept -> const typename Hash<T>::Entry *;
+    auto end(const Hash<T> &h) noexcept -> const typename Hash<T>::Entry*
+    {
+        return hash::end(h);
+    }
 
     template<typename T>
-    auto begin(const Hash<T> &h) noexcept -> const typename Hash<T>::Entry *
+    auto begin(Hash<T>& h) noexcept -> typename Hash<T>::Entry*
     {
         return hash::begin(h);
     }
 
     template<typename T>
-    auto end(const Hash<T> &h) noexcept -> const typename Hash<T>::Entry *
+    auto end(Hash<T>& h) noexcept -> typename Hash<T>::Entry*
     {
         return hash::end(h);
     }

@@ -33,7 +33,15 @@ inline core::pod::Array<T>::Array(Array<T> &&other) noexcept
 template<typename T>
 inline core::pod::Array<T>::~Array() noexcept
 {
-    _allocator->deallocate(_data);
+    if constexpr (std::is_const_v<T>)
+    {
+        // #todo should we allow allocating const data in the first place? or is it used only by array views?
+        _allocator->deallocate(const_cast<std::remove_const_t<T>*>(_data));
+    }
+    else
+    {
+        _allocator->deallocate(_data);
+    }
 }
 
 template<typename T>
@@ -218,7 +226,7 @@ inline void core::pod::array::set_capacity(Array<T> &a, uint32_t new_capacity) n
     T *new_data = 0;
     if (new_capacity > 0)
     {
-        new_data = (T *)a._allocator->allocate(sizeof(T) * new_capacity, alignof(T));
+        new_data = (T*)a._allocator->allocate(sizeof(T) * new_capacity, std::max(alignof(T), 4llu));
         memcpy(new_data, a._data, sizeof(T) * a._size);
     }
 

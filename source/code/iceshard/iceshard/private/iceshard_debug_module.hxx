@@ -8,7 +8,7 @@ namespace iceshard::debug
     class IceshardDebugUI : public iceshard::debug::DebugWindow
     {
     public:
-        void update(core::MessageBuffer const& messages) noexcept override;
+        void update(iceshard::input::DeviceInputQueue const& inputs) noexcept override;
 
         void end_frame() noexcept override;
 

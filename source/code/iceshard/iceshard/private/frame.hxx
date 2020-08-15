@@ -28,6 +28,14 @@ namespace iceshard
 
         auto messages() const noexcept -> core::MessageBuffer const& override;
 
+        auto input_queue() noexcept -> iceshard::input::DeviceInputQueue& { return _input_queue; }
+
+        auto input_queue() const noexcept -> iceshard::input::DeviceInputQueue const& override;
+
+        auto input_events() noexcept -> core::pod::Array<iceshard::input::InputEvent>& { return _input_events; }
+
+        auto input_events() const noexcept -> core::pod::Array<iceshard::input::InputEvent> const& override;
+
         auto find_frame_object(core::stringid_arg_type name) noexcept -> void* override;
 
         auto find_frame_object(core::stringid_arg_type name) const noexcept -> const void* override;
@@ -41,6 +49,11 @@ namespace iceshard
             return _time_delta;
         }
 
+        auto tick() const noexcept -> core::datetime::tick_type override
+        {
+            return _tick;
+        }
+
         void add_task(cppcoro::task<> task) noexcept override;
 
     private:
@@ -49,11 +62,15 @@ namespace iceshard
         iceshard::IceshardExecutionInstance& _execution_instance;
 
         float const _time_delta;
+        core::datetime::tick_type const _tick;
 
+        core::memory::scratch_allocator _inputs_allocator;
         core::memory::scratch_allocator _message_allocator;
         core::memory::scratch_allocator _storage_allocator;
         core::memory::scratch_allocator _data_allocator;
 
+        iceshard::input::DeviceInputQueue _input_queue;
+        core::pod::Array<iceshard::input::InputEvent> _input_events;
         core::MessageBuffer _frame_messages;
 
         struct frame_object_entry

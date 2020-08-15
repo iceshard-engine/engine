@@ -2,7 +2,7 @@
 #include <core/message/operations.hxx>
 #include <input_system/message/window.hxx>
 
-namespace input::sdl2
+namespace iceshard::input::sdl2
 {
     namespace detail
     {
@@ -13,7 +13,7 @@ namespace input::sdl2
             switch (window_event.event)
             {
             case SDL_WindowEventID::SDL_WINDOWEVENT_SIZE_CHANGED:
-                core::message::push(message_buffer, input::message::WindowSizeChanged
+                core::message::push(message_buffer, ::input::message::WindowSizeChanged
                     {
                         .width = static_cast<uint32_t const>(window_event.data1),
                         .height = static_cast<uint32_t const>(window_event.data2),

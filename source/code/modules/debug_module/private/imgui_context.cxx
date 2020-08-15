@@ -1,6 +1,5 @@
 #include "imgui_context.hxx"
 #include <core/allocator.hxx>
-#include <input_system/keyboard.hxx>
 
 #include <iceshard/engine.hxx>
 #include <iceshard/frame.hxx>
@@ -61,11 +60,12 @@ namespace iceshard::debug::imgui
     void ImGuiDebugSystem::update(Frame& frame, Frame const&) noexcept
     {
         auto const& messages = frame.messages();
+        _imgui_inputs->update(frame.input_queue());
         _imgui_inputs->update(messages);
 
         for (auto const& entry : _debug_windows)
         {
-            entry.value->update(messages);
+            entry.value->update(frame.input_queue());
         }
 
         ImGui::NewFrame();

@@ -3,6 +3,8 @@
 #include <core/pod/collections.hxx>
 #include <core/message/buffer.hxx>
 #include <core/datetime/types.hxx>
+#include <iceshard/input/input_event.hxx>
+#include <iceshard/input/device/input_device_queue.hxx>
 
 #include <cppcoro/task.hpp>
 
@@ -36,12 +38,16 @@ namespace iceshard
         auto operator=(Frame&&) noexcept -> Frame& = delete;
 
         // Copying not allowed
-        Frame(const Frame&) noexcept = delete;
-        auto operator=(const Frame&) noexcept -> Frame& = delete;
+        Frame(Frame const&) noexcept = delete;
+        auto operator=(Frame const&) noexcept -> Frame& = delete;
 
         virtual auto engine() noexcept -> Engine& = 0;
 
-        virtual auto messages() const noexcept -> const core::MessageBuffer& = 0;
+        virtual auto messages() const noexcept -> core::MessageBuffer const& = 0;
+
+        virtual auto input_queue() const noexcept -> iceshard::input::DeviceInputQueue const& = 0;
+
+        virtual auto input_events() const noexcept -> core::pod::Array<iceshard::input::InputEvent> const& = 0;
 
         virtual auto find_frame_object(core::stringid_arg_type name) noexcept -> void* = 0;
 
@@ -61,6 +67,8 @@ namespace iceshard
         virtual auto frame_allocator() noexcept -> core::allocator& = 0;
 
         virtual auto time_delta() const noexcept -> float = 0;
+
+        virtual auto tick() const noexcept -> core::datetime::tick_type = 0;
 
     public:
         virtual void add_task(cppcoro::task<> task) noexcept = 0;

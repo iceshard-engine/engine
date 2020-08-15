@@ -1,8 +1,10 @@
 #include "../event_handlers.hxx"
 #include <core/message/operations.hxx>
+#include <iceshard/input/input_keyboard.hxx>
+
 #include <input_system/message/keyboard.hxx>
 
-namespace input::sdl2
+namespace iceshard::input::sdl2
 {
 
     namespace detail
@@ -128,49 +130,54 @@ namespace input::sdl2
             return KeyboardMod::None;
         }
 
-        auto mod_event_handler(core::MessageBuffer& messages, SDL_Event const& sdl_event) noexcept
+        void keyboard_events(iceshard::input::DeviceInputQueue& input_queue, SDL_Event const& sdl_event) noexcept
         {
-            if (auto const mod = mod_from_scancode(sdl_event.key.keysym.scancode); mod != KeyboardMod::None)
-            {
-                core::message::push(messages,
-                    input::message::KeyboardModChanged{
-                        .mod = mod,
-                        .pressed = sdl_event.key.type == SDL_KEYDOWN
-                    }
-                );
-            }
-        }
+            using namespace iceshard::input;
+            auto const device = create_device_handle(0, DeviceType::Keyboard);
 
-        void key_event_handler(core::MessageBuffer& buffer, SDL_Event const& sdl_event) noexcept
-        {
             if (auto const key = detail::key_from_scancode(sdl_event.key.keysym.scancode); key != KeyboardKey::Unknown)
             {
                 if (sdl_event.key.type == SDL_KEYDOWN)
                 {
-                    core::message::push(buffer,
-                        input::message::KeyboardKeyDown{
-                            .key = key
-                        }
+                    input_queue.push(
+                        device,
+                        DeviceInputType::KeyboardButtonDown,
+                        key
                     );
                 }
                 else if (sdl_event.key.type == SDL_KEYUP)
                 {
-                    core::message::push(buffer,
-                        input::message::KeyboardKeyUp{
-                            .key = key
-                        }
+                    input_queue.push(
+                        device,
+                        DeviceInputType::KeyboardButtonUp,
+                        key
                     );
                 }
             }
-            else
+            else if (auto const mod = mod_from_scancode(sdl_event.key.keysym.scancode); mod != KeyboardMod::None)
             {
-                mod_event_handler(buffer, sdl_event);
+                if (sdl_event.key.type == SDL_KEYDOWN)
+                {
+                    input_queue.push(
+                        device,
+                        DeviceInputType::KeyboardModifierDown,
+                        mod
+                    );
+                }
+                else if (sdl_event.key.type == SDL_KEYUP)
+                {
+                    input_queue.push(
+                        device,
+                        DeviceInputType::KeyboardModifierUp,
+                        mod
+                    );
+                }
             }
         }
 
         void text_input_event_handler(core::MessageBuffer& buffer, SDL_Event const& sdl_event) noexcept
         {
-            input::message::KeyboardTextInput message{ };
+            ::input::message::TextInput message{ };
             std::memcpy(message.text, sdl_event.text.text, 32);
             core::message::push(buffer, std::move(message));
         }
@@ -178,10 +185,13 @@ namespace input::sdl2
     } // namespace detail
 
     //! \brief Handler functions for keyboard events.
-    void register_keyboard_event_handlers(core::pod::Hash<EventHandlerSignature*>& handler_map) noexcept
+    void register_keyboard_event_handlers(
+        core::pod::Hash<InputHandlerSignature*>& inputs_map,
+        core::pod::Hash<EventHandlerSignature*>& handler_map
+    ) noexcept
     {
-        core::pod::hash::set(handler_map, SDL_EventType::SDL_KEYDOWN, &detail::key_event_handler);
-        core::pod::hash::set(handler_map, SDL_EventType::SDL_KEYUP, &detail::key_event_handler);
+        core::pod::hash::set(inputs_map, SDL_EventType::SDL_KEYDOWN, &detail::keyboard_events);
+        core::pod::hash::set(inputs_map, SDL_EventType::SDL_KEYUP, &detail::keyboard_events);
         core::pod::hash::set(handler_map, SDL_EventType::SDL_TEXTINPUT, &detail::text_input_event_handler);
     }
 

@@ -1,11 +1,33 @@
 #pragma once
-#include <core/base.hxx>
+#include <core/allocator.hxx>
+#include <iceshard/input/input_event.hxx>
+#include <iceshard/input/device/input_device.hxx>
 
-namespace input
+namespace iceshard::input
 {
 
+    struct DeviceState;
+
+    enum class KeyboardKey : uint16_t;
+    enum class KeyboardMod : uint16_t;
+
+    auto default_keyboard_state_factory(
+        core::allocator& alloc,
+        DeviceHandle device_type
+    ) noexcept -> DeviceState*;
+
+    inline constexpr auto create_inputid(DeviceType, KeyboardKey value) noexcept -> InputID
+    {
+        return create_inputid(DeviceType::Keyboard, static_cast<uint16_t>(value));
+    }
+
+    inline constexpr auto create_inputid(DeviceType, KeyboardMod value) noexcept -> InputID
+    {
+        return create_inputid(DeviceType::Keyboard, uint16_t{ 256 } + static_cast<uint16_t>(value));
+    }
+
     //! \brief Recognized keyboard keys
-    enum class KeyboardKey : uint32_t
+    enum class KeyboardKey : uint16_t
     {
         Unknown
 
@@ -140,9 +162,9 @@ namespace input
     };
 
     //! \brief Keyboard Modifiers
-    enum class KeyboardMod : uint32_t
+    enum class KeyboardMod : uint16_t
     {
-        None = 0x0000'0000
+        None = 0x0000
 
         , ShiftLeft = 0x0001
         , ShiftRight = 0x0002
@@ -160,11 +182,11 @@ namespace input
         , GuiRight = 0x0080
         , GuiAny = GuiLeft | GuiRight
 
-        , NumLock = 0x1000
-        , CapsLock = 0x2000
-        , Mode = 0x4000
+        , NumLock = 0x0100
+        , CapsLock = 0x0200
+        , Mode = 0x0400
 
-        , Reserved = 0x8000
+        , Reserved = 0x0800
     };
 
     inline constexpr auto has_flag(KeyboardMod mod, KeyboardMod flag) noexcept
@@ -172,4 +194,4 @@ namespace input
         return (static_cast<std::underlying_type_t<KeyboardMod>>(mod) & static_cast<std::underlying_type_t<KeyboardMod>>(flag)) != 0;
     }
 
-} // namespace input
+} // namespace iceshard::input

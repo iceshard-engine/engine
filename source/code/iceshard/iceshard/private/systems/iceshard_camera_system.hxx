@@ -22,7 +22,7 @@ namespace iceshard
             core::allocator& alloc,
             iceshard::Engine& engine,
             iceshard::ecs::ArchetypeIndex& index,
-            input::InputSystem& input_system,
+            ::input::InputSystem& input_system,
             iceshard::renderer::RenderSystem& render_system
         ) noexcept;
 
@@ -32,7 +32,7 @@ namespace iceshard
 
     private:
         iceshard::ecs::ArchetypeIndex& _archetype_index;
-        input::InputSystem& _input_system;
+        ::input::InputSystem& _input_system;
         iceshard::renderer::RenderSystem& _render_system;
 
         iceshard::ecs::ComponentQuery<

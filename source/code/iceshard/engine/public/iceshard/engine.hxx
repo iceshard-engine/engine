@@ -3,6 +3,7 @@
 #include <asset_system/asset_system.hxx>
 #include <input_system/system.hxx>
 
+#include <iceshard/input/device/input_device_queue.hxx>
 #include <iceshard/entity/entity_manager.hxx>
 #include <iceshard/world/world_manager.hxx>
 #include <iceshard/renderer/render_module.hxx>
@@ -35,7 +36,7 @@ namespace iceshard
 
         virtual auto asset_system() noexcept -> asset::AssetSystem& = 0;
 
-        virtual auto input_system() noexcept -> input::InputSystem& = 0;
+        virtual auto input_system() noexcept -> ::input::InputSystem& = 0;
 
         virtual auto entity_manager() noexcept -> iceshard::EntityManager& = 0;
 
