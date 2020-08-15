@@ -10,13 +10,25 @@ core::pod::Hash<T>::Hash(core::allocator &alloc) noexcept
 //////////////////////////////////////////////////////////////////////////
 
 template<typename T>
-auto core::pod::hash::begin(const Hash<T> &h) noexcept -> const typename Hash<T>::Entry *
+auto core::pod::hash::begin(Hash<T> const& h) noexcept -> typename Hash<T>::Entry const*
 {
     return array::begin(h._data);
 }
 
 template<typename T>
-auto core::pod::hash::end(const Hash<T> &h) noexcept -> const typename Hash<T>::Entry *
+auto core::pod::hash::end(Hash<T> const& h) noexcept -> typename Hash<T>::Entry const*
+{
+    return array::end(h._data);
+}
+
+template<typename T>
+auto core::pod::hash::begin(Hash<T>& h) noexcept -> typename Hash<T>::Entry*
+{
+    return array::begin(h._data);
+}
+
+template<typename T>
+auto core::pod::hash::end(Hash<T>& h) noexcept -> typename Hash<T>::Entry*
 {
     return array::end(h._data);
 }
