@@ -1,6 +1,8 @@
 #pragma once
 #include <iceshard/engine.hxx>
 #include <iceshard/execution.hxx>
+#include <iceshard/input/input_event.hxx>
+#include <iceshard/input/input_state_manager.hxx>
 
 #include "iceshard_service_provider.hxx"
 #include "rendering/ice_render_system.hxx"
@@ -50,6 +52,8 @@ namespace iceshard
         iceshard::IceshardServiceProvider& _services;
 
         core::memory::unique_pointer<iceshard::IceRenderSystem> _render_system{ nullptr, { core::memory::globals::null_allocator() } };
+
+        iceshard::input::DeviceStateManager _device_input_states;
 
         // Tasks to be run this frame.
         size_t _task_list_index = 0;

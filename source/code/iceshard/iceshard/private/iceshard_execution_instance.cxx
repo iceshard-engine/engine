@@ -8,8 +8,12 @@
 #include "world/iceshard_world_manager.hxx"
 #include "world/iceshard_world.hxx"
 
+#include <core/pod/algorithm.hxx>
+
 #include <cppcoro/sync_wait.hpp>
 #include <cppcoro/when_all_ready.hpp>
+
+#include <functional>
 
 namespace iceshard
 {
@@ -56,6 +60,7 @@ namespace iceshard
         , _engine{ engine }
         , _services{ services }
         , _render_system{ nullptr, { _allocator } }
+        , _device_input_states{ _allocator }
         , _mutable_task_list{ &_frame_tasks[_task_list_index] }
         // Frame related fields
         , _frame_allocator{ _allocator, sizeof(MemoryFrame) * 5 }
@@ -76,6 +81,15 @@ namespace iceshard
             _engine,
             *this,
             0.0f
+        );
+
+        _current_frame->input_queue().push(
+            iceshard::input::create_device_handle(0, iceshard::input::DeviceType::Mouse),
+            iceshard::input::DeviceInputType::DeviceConnected
+        );
+        _current_frame->input_queue().push(
+            iceshard::input::create_device_handle(0, iceshard::input::DeviceType::Keyboard),
+            iceshard::input::DeviceInputType::DeviceConnected
         );
 
         _render_system = core::memory::make_unique<iceshard::IceRenderSystem>(
@@ -114,6 +128,11 @@ namespace iceshard
                 _engine.render_system(),
                 _engine.asset_system()
             )
+        );
+
+        _device_input_states.handle_device_inputs(
+            _current_frame->input_queue(),
+            _current_frame->input_events()
         );
     }
 
@@ -190,12 +209,15 @@ namespace iceshard
         _next_free_allocator %= std::size(_frame_data_allocator);
 
         // Now we want to get all messages for the current frame.
-        _engine.input_system().query_messages(_current_frame->messages());
+        _engine.input_system().query_events(
+            _current_frame->messages(),
+            _current_frame->input_queue()
+        );
 
-        // Initial queue commands
-        {
-
-        }
+        _device_input_states.handle_device_inputs(
+            _current_frame->input_queue(),
+            _current_frame->input_events()
+        );
 
         // Update all worlds
         static_cast<iceshard::IceshardWorldManager&>(_engine.world_manager())

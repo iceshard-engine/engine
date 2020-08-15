@@ -72,7 +72,7 @@ namespace iceshard
             auto* sdl_driver_module_location = resources.find({ "sdl2_driver.dll" });
             IS_ASSERT(sdl_driver_module_location != nullptr, "Missing SDL2 driver module!");
 
-            _input_module = input::load_driver_module(_allocator, sdl_driver_module_location->location().path);
+            _input_module = ::input::load_driver_module(_allocator, sdl_driver_module_location->location().path);
             IS_ASSERT(_input_module != nullptr, "Invalid SDL2 driver module! Unable to load!");
         }
 
@@ -114,7 +114,7 @@ namespace iceshard
         return _asset_system;
     }
 
-    auto IceShardEngine::input_system() noexcept -> input::InputSystem&
+    auto IceShardEngine::input_system() noexcept -> ::input::InputSystem&
     {
         return *_input_module->input_system();
     }

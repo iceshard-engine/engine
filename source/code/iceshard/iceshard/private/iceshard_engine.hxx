@@ -22,7 +22,7 @@ namespace iceshard
 
         auto asset_system() noexcept -> asset::AssetSystem& override;
 
-        auto input_system() noexcept -> input::InputSystem& override;
+        auto input_system() noexcept -> ::input::InputSystem& override;
 
         auto entity_manager() noexcept -> iceshard::EntityManager& override;
 
@@ -44,7 +44,7 @@ namespace iceshard
 
         asset::AssetSystem _asset_system;
 
-        core::memory::unique_pointer<input::InputModule> _input_module{ nullptr, { core::memory::globals::null_allocator() } };
+        core::memory::unique_pointer<::input::InputModule> _input_module{ nullptr, { core::memory::globals::null_allocator() } };
         core::memory::unique_pointer<iceshard::renderer::RenderModuleInstance> _render_module{ nullptr, { core::memory::globals::null_allocator() } };
 
 

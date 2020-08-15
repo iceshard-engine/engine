@@ -3,6 +3,8 @@
 #include <core/message/types.hxx>
 #include <core/pointer.hxx>
 
+#include <iceshard/input/device/input_device_queue.hxx>
+
 namespace iceshard::debug
 {
 
@@ -11,7 +13,7 @@ namespace iceshard::debug
     public:
         virtual ~DebugWindow() noexcept = default;
 
-        virtual void update(core::MessageBuffer const& messages) noexcept { }
+        virtual void update(iceshard::input::DeviceInputQueue const& inputs) noexcept { }
 
         virtual void begin_frame() noexcept { }
 

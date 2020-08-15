@@ -1,8 +1,10 @@
 #include "iceshard_debug_module.hxx"
 #include <core/message/operations.hxx>
-#include <input_system/message/keyboard.hxx>
+
 #include <iceshard/debug/debug_module.hxx>
 #include <iceshard/debug/debug_system.hxx>
+#include <iceshard/input/input_keyboard.hxx>
+#include <iceshard/input/device/input_device_queue.hxx>
 
 namespace iceshard::debug
 {
@@ -29,14 +31,20 @@ namespace iceshard::debug
 
     }
 
-    void IceshardDebugUI::update(core::MessageBuffer const& messages) noexcept
+    void IceshardDebugUI::update(iceshard::input::DeviceInputQueue const& inputs) noexcept
     {
-        using input::KeyboardKey;
-        using input::message::KeyboardKeyDown;
+        using namespace iceshard::input;
 
-        core::message::filter<KeyboardKeyDown>(messages, [&](KeyboardKeyDown const& msg) noexcept
+        inputs.for_each([this](DeviceInputMessage const msg, void const* data) noexcept
             {
-                _visible = _visible ^ (msg.key == KeyboardKey::BackQuote);
+                if (is_device_type(msg.device, DeviceType::Keyboard))
+                {
+                    if (msg.input_type == DeviceInputType::KeyboardButtonDown)
+                    {
+                        auto const key = read_one<KeyboardKey>(msg, data);
+                        _visible = _visible ^ (key == KeyboardKey::BackQuote);
+                    }
+                }
             });
     }
 

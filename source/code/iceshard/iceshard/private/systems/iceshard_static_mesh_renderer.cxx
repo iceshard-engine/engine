@@ -86,7 +86,7 @@ namespace iceshard
 
         auto& frame_alloc = frame.frame_allocator();
 
-        core::message::filter<input::message::WindowSizeChanged>(frame.messages(), [this](auto const& msg) noexcept
+        core::message::filter<::input::message::WindowSizeChanged>(frame.messages(), [this](auto const& msg) noexcept
             {
                 fmt::print("Window size changed to: {}x{}\n", msg.width, msg.height);
                 _viewport = { msg.width, msg.height };

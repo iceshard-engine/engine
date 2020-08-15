@@ -9,10 +9,12 @@
 
 namespace iceshard
 {
+
     namespace detail
     {
         static constexpr uint32_t MiB = 1024 * 1024;
-        static constexpr uint32_t message_allocator_pool = 24 * MiB;
+        static constexpr uint32_t inputs_allocator_pool = 4 * MiB;
+        static constexpr uint32_t message_allocator_pool = 20 * MiB;
         static constexpr uint32_t storage_allocator_pool = 8 * MiB;
         static constexpr uint32_t data_allocator_pool = 196 * MiB;
 
@@ -30,9 +32,13 @@ namespace iceshard
         , _engine{ engine }
         , _execution_instance{ execution_instance }
         , _time_delta{ time_delta }
+        , _tick{ core::datetime::now().tick }
+        , _inputs_allocator{ _frame_allocator, detail::inputs_allocator_pool }
         , _message_allocator{ _frame_allocator, detail::message_allocator_pool }
         , _storage_allocator{ _frame_allocator, detail::storage_allocator_pool }
         , _data_allocator{ _frame_allocator, detail::data_allocator_pool }
+        , _input_queue{ _inputs_allocator }
+        , _input_events{ _inputs_allocator }
         , _frame_messages{ _message_allocator }
         , _frame_storage{ _storage_allocator }
     {
@@ -41,6 +47,19 @@ namespace iceshard
 
     MemoryFrame::~MemoryFrame() noexcept
     {
+        core::datetime::tick_type frame_end_tick = core::datetime::now().tick;
+        core::datetime::tick_type frame_begin_tick;
+        core::message::filter<FrameMessage>(_frame_messages, [&frame_begin_tick](FrameMessage const& msg) noexcept
+            {
+                frame_begin_tick = msg.tick;
+            });
+
+        auto const tick_count = frame_end_tick.value - frame_begin_tick.value;
+        if (tick_count > 4001310)
+        {
+            fmt::print("Ticks on frame: {}\n", tick_count);
+        }
+
         core::message::clear(_frame_messages);
         for (const auto& entry : _frame_storage)
         {
@@ -56,6 +75,16 @@ namespace iceshard
     auto MemoryFrame::messages() const noexcept -> const core::MessageBuffer&
     {
         return _frame_messages;
+    }
+
+    auto MemoryFrame::input_queue() const noexcept -> iceshard::input::DeviceInputQueue const&
+    {
+        return _input_queue;
+    }
+
+    auto MemoryFrame::input_events() const noexcept -> core::pod::Array<iceshard::input::InputEvent> const&
+    {
+        return _input_events;
     }
 
     auto MemoryFrame::find_frame_object(core::stringid_arg_type name) noexcept -> void*

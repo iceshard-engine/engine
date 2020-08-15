@@ -2,7 +2,7 @@
 #include <core/message/operations.hxx>
 #include <input_system/message/app.hxx>
 
-namespace input::sdl2
+namespace iceshard::input::sdl2
 {
     namespace detail
     {
@@ -10,7 +10,7 @@ namespace input::sdl2
         //! \brief Handles the SDL_QUIT event.
         void quit_event_handler(core::MessageBuffer& message_buffer, SDL_Event const&) noexcept
         {
-            core::message::push(message_buffer, input::message::AppExit{ });
+            core::message::push(message_buffer, ::input::message::AppExit{ });
         }
 
     } // namespace detail
