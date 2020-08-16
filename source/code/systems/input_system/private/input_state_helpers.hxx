@@ -21,6 +21,6 @@ namespace iceshard::input
     void handle_value_button_down_simplified(InputValueState& value) noexcept;
     void handle_value_button_up_simplified(InputValueState& value) noexcept;
 
-    void prepared_input_event(InputID input, InputValueState const& value, InputEvent& event) noexcept;
+    bool prepared_input_event(InputID input, InputValueState const& value, InputEvent& event) noexcept;
 
 } // namespace iceshard::input

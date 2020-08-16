@@ -89,8 +89,10 @@ namespace iceshard::input
 
         for (auto const& input : _inputs)
         {
-            prepared_input_event(InputID{ input.key }, input.value, event);
-            core::pod::array::push_back(events_out, event);
+            if (prepared_input_event(InputID{ input.key }, input.value, event))
+            {
+                core::pod::array::push_back(events_out, event);
+            }
         }
     }
 

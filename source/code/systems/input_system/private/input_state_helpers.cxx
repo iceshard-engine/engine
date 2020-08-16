@@ -110,19 +110,22 @@ namespace iceshard::input
         }
     }
 
-    void prepared_input_event(InputID input, InputValueState const& value, InputEvent& event) noexcept
+    bool prepared_input_event(InputID input, InputValueState const& value, InputEvent& event) noexcept
     {
         if (value.tick == 0)
         {
             event.identifier = input;
             event.value = value.value;
+            return true;
         }
         else if (value.value.button.state.pressed)
         {
             event.identifier = input;
             event.value.button.state_value = 0;
             event.value.button.state.pressed = true;
+            return true;
         }
+        return false;
     }
 
 } // namespace iceshard::input
