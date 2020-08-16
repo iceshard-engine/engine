@@ -190,13 +190,25 @@ namespace asset
         AssetStatus load_status = AssetStatus::Invalid;
         while (it != it_end && load_status == AssetStatus::Invalid) // We can assume its either Invalid or Loaded
         {
-            auto const& asset_resources = _resource_database[asset_object->value.resource];
-            auto* const resource_object = _resource_system.find(asset_resources.content_location);
+            auto& asset_resources = _resource_database[asset_object->value.resource];
 
-            load_status = (*it++)->load_asset(asset_object->value.reference, resource_object->metadata(), resource_object->data(), result_data);
+            if (asset_resources.resource_object == nullptr)
+            {
+                asset_resources.resource_object = _resource_system.find(asset_resources.content_location);
+            }
 
-            // #todo Remove this const cast.
-            const_cast<AssetObject&>(asset_object->value).status = load_status;
+            if (asset_resources.resource_object != nullptr)
+            {
+                load_status = (*it++)->load_asset(
+                    asset_object->value.reference,
+                    asset_resources.resource_object->metadata(),
+                    asset_resources.resource_object->data(),
+                    result_data
+                );
+
+                // #todo Remove this const cast.
+                const_cast<AssetObject&>(asset_object->value).status = load_status;
+            }
         }
 
         return load_status;
