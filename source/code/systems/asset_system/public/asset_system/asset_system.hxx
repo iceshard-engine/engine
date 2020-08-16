@@ -66,13 +66,13 @@ namespace asset
         {
             resource::URI content_location = resource::uri_invalid;
             resource::Resource* resource_object;
+            AssetStatus status;
         };
         core::pod::Array<AssetReference> _resource_database;
 
         struct AssetObject
         {
-            AssetStatus status;
-            uint32_t resource;
+            uint32_t resource_index;
             Asset reference;
         };
         core::pod::Hash<AssetObject> _asset_objects;

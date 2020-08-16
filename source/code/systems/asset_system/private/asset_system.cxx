@@ -132,11 +132,11 @@ namespace asset
                 core::pod::multi_hash::insert(
                     _asset_objects,
                     static_cast<uint64_t>(reference.name.hash_value),
-                    AssetObject{ AssetStatus::Available, core::pod::array::size(_resource_database), std::move(reference) }
+                    AssetObject{ core::pod::array::size(_resource_database), std::move(reference) }
                 );
                 core::pod::array::push_back(
                     _resource_database,
-                    AssetReference{ msg.resource->location() }
+                    AssetReference{ msg.resource->location(), msg.resource, AssetStatus::Available }
                 );
                 // clang-format on
             });
@@ -147,15 +147,29 @@ namespace asset
         auto* const resource = _resource_system.find(content_location);
         if (resource != nullptr)
         {
+            auto const name_hash = core::hash(reference.name);
+
+            // Remove same reference
+            auto* entry = core::pod::multi_hash::find_first(_asset_objects, name_hash);
+            while (entry != nullptr)
+            {
+                if (entry->value.reference.type == reference.type)
+                {
+                    core::pod::multi_hash::remove(_asset_objects, entry);
+                    break;
+                }
+                entry = core::pod::multi_hash::find_next(_asset_objects, entry);
+            }
+
             // clang-format off
             core::pod::multi_hash::insert(
                 _asset_objects,
-                static_cast<uint64_t>(reference.name.hash_value),
-                AssetObject{ AssetStatus::Available, core::pod::array::size(_resource_database), std::move(reference) }
+                name_hash,
+                AssetObject{ core::pod::array::size(_resource_database), std::move(reference) }
             );
             core::pod::array::push_back(
                 _resource_database,
-                AssetReference{ resource->location() }
+                AssetReference{ resource->location(), resource, AssetStatus::Available }
             );
             // clang-format on
         }
@@ -190,7 +204,7 @@ namespace asset
         AssetStatus load_status = AssetStatus::Invalid;
         while (it != it_end && load_status == AssetStatus::Invalid) // We can assume its either Invalid or Loaded
         {
-            auto& asset_resources = _resource_database[asset_object->value.resource];
+            auto& asset_resources = _resource_database[asset_object->value.resource_index];
 
             if (asset_resources.resource_object == nullptr)
             {
@@ -206,8 +220,11 @@ namespace asset
                     result_data
                 );
 
-                // #todo Remove this const cast.
-                const_cast<AssetObject&>(asset_object->value).status = load_status;
+                asset_resources.status = load_status;
+            }
+            else
+            {
+                asset_resources.status = AssetStatus::Invalid;
             }
         }
 
