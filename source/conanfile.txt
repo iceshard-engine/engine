@@ -1,11 +1,11 @@
 [requires]
-fmt/6.2.1@iceshard/stable
-Catch2/2.9.0@iceshard/stable
-SDL2/2.0.9@iceshard/stable
-cppcoro/0.3@iceshard/stable
-imgui/1.74@iceshard/docking
+fmt/7.0.3@iceshard/stable
+imgui/1.77@iceshard/docking
+SDL2/2.0.12@iceshard/stable
 Assimp/5.0.1@iceshard/stable
 
+Catch2/2.9.0@iceshard/stable
+cppcoro/0.3@iceshard/stable
 rapidjson/1.1.0@bincrafters/stable
 
 [build_requires]
