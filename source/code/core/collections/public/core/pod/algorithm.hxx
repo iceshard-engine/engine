@@ -78,14 +78,27 @@ namespace core::pod
         detail::qsort(keys, values, std::forward<Pred>(pred), first_index, last_index);
     }
 
-    template<typename T>
-    inline bool contains(Array<T> const& values, T expected) noexcept
+    template<typename T, typename Pred = T>
+    inline bool contains(Array<T> const& values, Pred&& predicate) noexcept
     {
-        for (auto const& value : values)
+        if constexpr (std::is_function_v<Pred> || std::is_class_v<Pred>)
         {
-            if (value == expected)
+            for (auto const& value : values)
             {
-                return true;
+                if (std::forward<Pred>(predicate)(value))
+                {
+                    return true;
+                }
+            }
+        }
+        else
+        {
+            for (auto const& value : values)
+            {
+                if (value == predicate)
+                {
+                    return true;
+                }
             }
         }
         return false;
