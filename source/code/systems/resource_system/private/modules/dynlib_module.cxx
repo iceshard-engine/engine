@@ -114,7 +114,7 @@ namespace resource
 
         auto get_application_dir() noexcept -> std::string
         {
-            core::StackString<256> buffer = "";
+            core::StackString<256> buffer{ "" };
             GetModuleFileName(NULL, core::string::begin(buffer), core::string::capacity(buffer));
 
             return std::filesystem::canonical(core::string::begin(buffer)).parent_path().generic_string();
@@ -122,7 +122,7 @@ namespace resource
 
         auto get_working_directory() noexcept -> std::string
         {
-            core::StackString<256> buffer = "";
+            core::StackString<256> buffer{ "" };
             GetCurrentDirectory(core::string::capacity(buffer), core::string::begin(buffer));
 
             return std::filesystem::canonical(core::string::begin(buffer)).generic_string();

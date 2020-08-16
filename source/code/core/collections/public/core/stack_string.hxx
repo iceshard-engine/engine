@@ -106,13 +106,13 @@ namespace core
         template<uint32_t Capacity, typename CharType>
         void push_back(StackString<Capacity, CharType>& str, CharType character) noexcept;
 
-        //! \brief Pushes the character array to the end of the string.
-        template<uint32_t Capacity, typename CharType>
-        void push_back(StackString<Capacity, CharType>& str, const CharType* cstr) noexcept;
-
         //! \brief Pushes the StackString value at the end.
         template<uint32_t Capacity, typename CharType>
         void push_back(StackString<Capacity, CharType>& str, const StackString<Capacity, CharType>& other) noexcept;
+
+        //! \brief Pushes the StackString value at the end.
+        template<uint32_t Capacity, typename CharType>
+        void push_back(StackString<Capacity, CharType>& str, StringView other) noexcept;
 
         //! \brief Pops the last character from the string. The string cannot be empty.
         template<uint32_t Capacity, typename CharType>
@@ -180,7 +180,7 @@ namespace fmt
         template<typename FormatContext>
         auto format(const core::StackString<Capacity, CharType>& str, FormatContext& ctx)
         {
-            return fmt::format_to(ctx.begin(), std::string_view{ str._data, str._size });
+            return fmt::format_to(ctx.out(), std::string_view{ str._data, str._size });
         }
     };
 

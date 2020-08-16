@@ -1,9 +1,10 @@
+#include "stack_string.hxx"
 
 template<uint32_t Capacity, typename CharType>
-inline core::StackString<Capacity, CharType>::StackString(const CharType* cstring) noexcept
+inline core::StackString<Capacity, CharType>::StackString(StringView str) noexcept
     : StackString{}
 {
-    *this = cstring;
+    *this = str;
 }
 
 template<uint32_t Capacity, typename CharType>
@@ -35,23 +36,23 @@ template<uint32_t Capacity, typename CharType>
 inline auto core::StackString<Capacity, CharType>::operator=(const core::String<CharType>& other) noexcept -> core::StackString<Capacity, CharType>&
 {
     static auto max_capacity = std::min(Capacity, other._capacity);
-    static auto new_size = std::move(max_capacity, other._size);
+    static auto new_size = std::min(max_capacity, other._size);
 
     _size = new_size;
-    string::set_capacity(*this, _size);
+    string::set_capacity(*this, max_capacity);
     memcpy(_data, other._data, sizeof(CharType) * _size);
     return *this;
 }
 
 template<uint32_t Capacity, typename CharType>
-inline auto core::StackString<Capacity, CharType>::operator=(const CharType* cstring) noexcept -> StackString<Capacity, CharType>&
+inline auto core::StackString<Capacity, CharType>::operator=(StringView str) noexcept -> StackString<Capacity, CharType>&
 {
-    const auto string_len = strlen(cstring) + 1; // We count the '\0' character
+    const auto string_len = str.size() + 1; // We count the '\0' character
     const auto new_size = Capacity < string_len ? Capacity : string_len;
 
     _size = static_cast<uint32_t>(new_size);
     string::set_capacity(*this, _size);
-    memcpy(_data, cstring, sizeof(CharType) * _size);
+    memcpy(_data, str.data(), sizeof(CharType) * _size);
 
     return *this;
 }
@@ -224,23 +225,8 @@ template<uint32_t Capacity, typename CharType>
 inline void core::string::push_back(core::StackString<Capacity, CharType>& a, CharType item) noexcept
 {
     grow(a, a._size + 1);
-    a._data[a._size] = item;
-    a._data[a._size++] = 0;
-}
-
-template<uint32_t Capacity, typename CharType>
-inline void core::string::push_back(StackString<Capacity, CharType>& a, const CharType* character_array) noexcept
-{
-    auto str_len = strlen(character_array);
-    if (str_len > 0)
-    {
-        auto new_size = static_cast<uint32_t>(a._size + str_len);
-        grow(a, new_size + 1);
-
-        memcpy(string::end(a), character_array, str_len);
-        a._size = new_size;
-        a._data[a._size] = 0;
-    }
+    a._data[a._size++] = item;
+    a._data[a._size] = 0;
 }
 
 template<uint32_t Capacity, typename CharType>
@@ -253,6 +239,20 @@ inline void core::string::push_back(StackString<Capacity, CharType>& str, const 
         // we reallocate the buffer if required and then we access it.
         string::reserve(str, string::size(str) + string::size(other) + 1);
         string::push_back(str, string::begin(other));
+    }
+}
+
+template<uint32_t Capacity, typename CharType>
+void core::string::push_back(StackString<Capacity, CharType>& str, StringView cstr) noexcept
+{
+    if (static_cast<uint32_t>(cstr.size()) > 0)
+    {
+        auto new_size = str._size + static_cast<uint32_t>(cstr.size());
+        IS_ASSERT(new_size + 1 <= Capacity, "push_back goes over StackString capacity. {} > {}", new_size + 1 <= Capacity);
+
+        memcpy(string::end(str), cstr.data(), static_cast<uint32_t>(cstr.size()));
+        str._size = static_cast<uint32_t>(new_size);
+        str._data[str._size] = 0;
     }
 }
 

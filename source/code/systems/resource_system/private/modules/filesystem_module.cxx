@@ -11,6 +11,7 @@
 #include <core/pod/array.hxx>
 #include <core/data/chunk.hxx>
 #include <core/data/buffer.hxx>
+#include <core/path_utils.hxx>
 
 #include <filesystem>
 #include <cstdio>
@@ -249,7 +250,8 @@ namespace resource
                     URI{ scheme_directory, path.generic_string(), core::stringid(relative_path_string.c_str()) },
                     fullpath,
                     fullpath_meta.generic_string(),
-                    relative_path_string.c_str());
+                    relative_path_string.c_str()
+                );
                 array::push_back(entry_list, static_cast<Resource*>(dir_entry_object));
 
                 core::message::push(messages, resource::message::ModuleResourceMounted{ dir_entry_object });
@@ -360,6 +362,10 @@ namespace resource
 
     auto FileSystem::find(const URI& uri) noexcept -> Resource*
     {
+        core::memory::stack_allocator_512 stack_alloc;
+        core::String uri_path{ stack_alloc };
+        core::string::reserve(uri_path, 512);
+
         Resource* result{ nullptr };
         for (auto* res : _resources)
         {
@@ -369,13 +375,9 @@ namespace resource
                 continue;
             }
 
-            auto uri_path = _basedir._data / std::filesystem::path{ uri.path };
-            if (std::filesystem::is_regular_file(uri_path))
-            {
-                uri_path = std::filesystem::canonical(uri_path);
-            }
-
-            if (!core::string::equals(res_uri.path, uri_path.generic_string()))
+            uri_path = _basedir._data;
+            core::path::join(uri_path, uri.path);
+            if (!core::string::equals(res_uri.path, uri_path))
             {
                 continue;
             }

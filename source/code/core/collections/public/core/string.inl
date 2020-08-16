@@ -81,10 +81,11 @@ inline auto core::String<CharType>::operator=(const StackString<Capacity, CharTy
 template<typename CharType>
 inline auto core::String<CharType>::operator=(StringView other) noexcept -> String<CharType>&
 {
-    if (static_cast<uint32_t>(other.size()) > 0)
+    auto const new_size = static_cast<uint32_t>(other.size());
+    string::resize(*this, new_size);
+    if (new_size > 0)
     {
-        string::resize(*this, core::string::size(other));
-        memcpy(_data, other.data(), sizeof(CharType) * core::string::size(other));
+        memcpy(_data, other.data(), sizeof(CharType) * new_size);
     }
     return *this;
 }

@@ -87,7 +87,7 @@ namespace core
         StackString() noexcept = default;
 
         //! \brief Creates a new StackString object with the given value.
-        StackString(const CharType* cstring) noexcept;
+        StackString(StringView str) noexcept;
 
         //! \brief Creates a new StackString object from another StackString.
         //! \details If the input StackString is larger, it will only copy the maximum
@@ -108,7 +108,7 @@ namespace core
         auto operator=(const String<CharType>& other) noexcept -> StackString&;
 
         //! \brief Replaces the string value with the new one.
-        auto operator=(const CharType* other) noexcept -> StackString&;
+        auto operator=(StringView str) noexcept -> StackString&;
 
         //! \brief Returns the character at the given position.
         auto operator[](uint32_t i) noexcept -> CharType&;
