@@ -19,13 +19,18 @@ namespace core::path
     }
 
     [[nodiscard]]
-    auto extension(core::StringView str) noexcept -> core::StringView;
+    bool is_absolute(core::StringView path) noexcept;
 
     [[nodiscard]]
-    auto filename(core::StringView str) noexcept -> core::StringView;
+    auto extension(core::StringView path) noexcept -> core::StringView;
 
     [[nodiscard]]
-    auto directory(core::StringView str) noexcept -> core::StringView;
+    auto filename(core::StringView path) noexcept -> core::StringView;
+
+    [[nodiscard]]
+    auto directory(core::StringView path) noexcept -> core::StringView;
+
+    auto join(core::String<>& left, core::StringView right) noexcept -> core::StringView;
 
     auto replace_filename(core::String<>& str, core::StringView filename) noexcept -> core::StringView;
 
