@@ -190,7 +190,7 @@ namespace iceshard
                 aiProcessPreset_TargetRealtime_Fast
             );
 
-            // We don't know the this file format
+            // We don't know this file format
             if (scene == nullptr || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || scene->mRootNode == nullptr)
             {
                 return asset::AssetStatus::Invalid;
@@ -285,6 +285,26 @@ namespace iceshard
 
     void AssimpMeshLoader::release_asset(asset::Asset asset) noexcept
     {
+        using iceshard::renderer::v1::Model;
+
+        auto const asset_name_hash = core::hash(asset.name);
+        auto const model_status = core::pod::hash::get(
+            _models_status,
+            asset_name_hash,
+            asset::AssetStatus::Invalid
+        );
+
+        if (model_status == asset::AssetStatus::Loaded)
+        {
+            static Model const empty_model{ };
+            Model const& model = core::pod::hash::get(_models, asset_name_hash, empty_model);
+
+            _mesh_allocator.deallocate(model.mesh_list);
+            _mesh_allocator.deallocate(model.vertice_data);
+
+            core::pod::hash::remove(_models, asset_name_hash);
+            core::pod::hash::remove(_models_status, asset_name_hash);
+        }
     }
 
 } // namespace iceshard

@@ -149,29 +149,46 @@ namespace asset
         {
             auto const name_hash = core::hash(reference.name);
 
+            int32_t removed_resource_index = -1;
+
             // Remove same reference
             auto* entry = core::pod::multi_hash::find_first(_asset_objects, name_hash);
             while (entry != nullptr)
             {
                 if (entry->value.reference.type == reference.type)
                 {
+                    removed_resource_index = entry->value.resource_index;
                     core::pod::multi_hash::remove(_asset_objects, entry);
                     break;
                 }
                 entry = core::pod::multi_hash::find_next(_asset_objects, entry);
             }
 
-            // clang-format off
-            core::pod::multi_hash::insert(
-                _asset_objects,
-                name_hash,
-                AssetObject{ core::pod::array::size(_resource_database), std::move(reference) }
-            );
-            core::pod::array::push_back(
-                _resource_database,
-                AssetReference{ resource->location(), resource, AssetStatus::Available }
-            );
-            // clang-format on
+            if (removed_resource_index >= 0)
+            {
+                core::pod::multi_hash::insert(
+                    _asset_objects,
+                    name_hash,
+                    AssetObject{ core::pod::array::size(_resource_database), std::move(reference) }
+                );
+                core::pod::array::push_back(
+                    _resource_database,
+                    AssetReference{ resource->location(), resource, AssetStatus::Unloading }
+                );
+            }
+            else
+            {
+                core::pod::multi_hash::insert(
+                    _asset_objects,
+                    name_hash,
+                    AssetObject{ static_cast<uint64_t>(removed_resource_index), std::move(reference) }
+                );
+                _resource_database[removed_resource_index] = AssetReference{
+                    resource->location(),
+                    resource,
+                    AssetStatus::Available
+                };
+            }
         }
         return resource == nullptr ? AssetStatus::Invalid : AssetStatus::Available;
     }
@@ -205,6 +222,14 @@ namespace asset
         while (it != it_end && load_status == AssetStatus::Invalid) // We can assume its either Invalid or Loaded
         {
             auto& asset_resources = _resource_database[asset_object->value.resource_index];
+
+            // If the current asset is already unloading, release it
+            // This should only happen in a single case, when an asset is reloading
+            //  after an update for such an asset was requested.
+            if (asset_resources.status == asset::AssetStatus::Unloading)
+            {
+                (*it)->release_asset(asset_object->value.reference);
+            }
 
             if (asset_resources.resource_object == nullptr)
             {

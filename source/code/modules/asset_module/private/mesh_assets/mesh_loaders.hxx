@@ -21,7 +21,7 @@ namespace iceshard
             asset::Asset asset,
             resource::ResourceMetaView meta,
             core::data_view resource_data,
-            asset::AssetData & result_data
+            asset::AssetData& result_data
         ) noexcept -> asset::AssetStatus override;
 
         void release_asset(asset::Asset asset) noexcept override;
