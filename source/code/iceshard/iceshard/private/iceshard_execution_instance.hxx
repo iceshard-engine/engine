@@ -37,7 +37,9 @@ namespace iceshard
         ) noexcept;
         ~IceshardExecutionInstance() noexcept;
 
-        auto previous_frame() const noexcept -> const Frame& override;
+        auto engine_clock() const noexcept -> core::Clock<> const& override;
+
+        auto previous_frame() const noexcept -> Frame const& override;
 
         auto current_frame() noexcept -> Frame& override;
 
@@ -50,6 +52,8 @@ namespace iceshard
         iceshard::ExecutionLock _lock;
         iceshard::Engine& _engine;
         iceshard::IceshardServiceProvider& _services;
+
+        core::Clock<> _engine_clock;
 
         core::memory::unique_pointer<iceshard::IceRenderSystem> _render_system{ nullptr, { core::memory::globals::null_allocator() } };
 
@@ -70,9 +74,6 @@ namespace iceshard
         // Frames.
         core::memory::unique_pointer<MemoryFrame> _previous_frame;
         core::memory::unique_pointer<MemoryFrame> _current_frame;
-
-        using clock_type = std::chrono::high_resolution_clock;
-        clock_type::time_point _last_frame_tp;
     };
 
 } // namespace iceshard

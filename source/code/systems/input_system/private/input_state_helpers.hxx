@@ -5,7 +5,7 @@
 namespace iceshard::input
 {
 
-    static constexpr int32_t button_hold_tick_threshold = 30;
+    static constexpr int32_t button_hold_tick_threshold = 40;
     static constexpr int32_t button_repeat_tick_threshold = 20;
 
     struct InputValueState
@@ -21,6 +21,6 @@ namespace iceshard::input
     void handle_value_button_down_simplified(InputValueState& value) noexcept;
     void handle_value_button_up_simplified(InputValueState& value) noexcept;
 
-    bool prepared_input_event(InputID input, InputValueState const& value, InputEvent& event) noexcept;
+    bool prepared_input_event(InputID input, InputValueState& value, InputEvent& event) noexcept;
 
 } // namespace iceshard::input

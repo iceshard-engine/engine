@@ -4,6 +4,7 @@
 #include <core/allocator.hxx>
 #include <core/allocators/proxy_allocator.hxx>
 #include <core/allocators/scratch_allocator.hxx>
+#include <core/clock.hxx>
 
 namespace iceshard
 {
@@ -17,8 +18,7 @@ namespace iceshard
         MemoryFrame(
             core::memory::scratch_allocator& alloc,
             iceshard::Engine& engine,
-            iceshard::IceshardExecutionInstance& execution_instance,
-            float time_delta
+            iceshard::IceshardExecutionInstance& execution_instance
         ) noexcept;
         ~MemoryFrame() noexcept;
 
@@ -44,15 +44,9 @@ namespace iceshard
 
         auto frame_allocator() noexcept -> core::allocator& override;
 
-        auto time_delta() const noexcept -> float override
-        {
-            return _time_delta;
-        }
+        auto engine_clock() const noexcept -> core::Clock<> const& override;
 
-        auto tick() const noexcept -> core::datetime::tick_type override
-        {
-            return _tick;
-        }
+        auto elapsed_time() const noexcept -> float override;
 
         void add_task(cppcoro::task<> task) noexcept override;
 
@@ -60,9 +54,6 @@ namespace iceshard
         core::memory::scratch_allocator& _frame_allocator;
         iceshard::Engine& _engine;
         iceshard::IceshardExecutionInstance& _execution_instance;
-
-        float const _time_delta;
-        core::datetime::tick_type const _tick;
 
         core::memory::scratch_allocator _inputs_allocator;
         core::memory::scratch_allocator _message_allocator;

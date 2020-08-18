@@ -1,6 +1,8 @@
 #pragma once
+#include <iceshard/input/input_event.hxx>
 #include <iceshard/input/device/input_device.hxx>
 #include <iceshard/input/device/input_device_queue.hxx>
+#include <core/clock.hxx>
 
 namespace iceshard::input
 {
@@ -20,7 +22,7 @@ namespace iceshard::input
     class DeviceStateManager final
     {
     public:
-        DeviceStateManager(core::allocator& alloc) noexcept;
+        DeviceStateManager(core::allocator& alloc, core::Clock<> const& clock) noexcept;
         ~DeviceStateManager() noexcept;
 
         void register_state_factory(
@@ -37,6 +39,8 @@ namespace iceshard::input
 
     private:
         core::allocator& _allocator;
+        core::Timer<> _timer;
+
         core::pod::Hash<DeviceStateFactory*> _state_factories;
         core::pod::Hash<DeviceState*> _states;
         core::pod::Array<DeviceHandle> _devices;

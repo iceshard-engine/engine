@@ -35,8 +35,9 @@ namespace iceshard::input
 
     } // namespace detail
 
-    DeviceStateManager::DeviceStateManager(core::allocator& alloc) noexcept
+    DeviceStateManager::DeviceStateManager(core::allocator& alloc, core::Clock<> const& clock) noexcept
         : _allocator{ alloc }
+        , _timer{ core::timer::create_timer(clock, 0.01) }
         , _state_factories{ _allocator }
         , _states{ _allocator }
         , _devices{ _allocator }
@@ -70,9 +71,12 @@ namespace iceshard::input
         core::pod::Array<InputEvent>& input_events_out
     ) noexcept
     {
-        for (auto const& state_entry : _states)
+        if (core::timer::update(_timer))
         {
-            state_entry.value->on_tick();
+            for (auto const& state_entry : _states)
+            {
+                state_entry.value->on_tick();
+            }
         }
 
         input_queue.for_each([this](DeviceInputMessage const msg, void const* data) noexcept

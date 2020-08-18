@@ -1,4 +1,5 @@
 #include "input_state_helpers.hxx"
+#include <fmt/format.h>
 
 namespace iceshard::input
 {
@@ -20,6 +21,7 @@ namespace iceshard::input
         }
         else if (button.state.clicked || button.state.repeat > 0)
         {
+            value.tick = 1;
             button.state.pressed = true;
         }
     }
@@ -45,6 +47,13 @@ namespace iceshard::input
                     button.state_value = 0;
                 }
             }
+            else if (value.tick > button_repeat_tick_threshold)
+            {
+                if (!button.state.pressed && (button.state.clicked || button.state.repeat > 0))
+                {
+                    button.state_value = 0;
+                }
+            }
         }
     }
 
@@ -60,7 +69,7 @@ namespace iceshard::input
         }
         else
         {
-            if (button.state.repeat > 0)
+            if (button.state.repeat > 0 && value.tick <= button_repeat_tick_threshold)
             {
                 value.tick = 0;
                 button.state.repeat += 1;
@@ -84,7 +93,7 @@ namespace iceshard::input
                 else
                 {
                     button.state_value = 0;
-                    button.state.released = true;
+                    button.state.clicked = true;
                 }
                 value.tick = 0;
             }
@@ -110,12 +119,13 @@ namespace iceshard::input
         }
     }
 
-    bool prepared_input_event(InputID input, InputValueState const& value, InputEvent& event) noexcept
+    bool prepared_input_event(InputID input, InputValueState& value, InputEvent& event) noexcept
     {
         if (value.tick == 0)
         {
             event.identifier = input;
             event.value = value.value;
+            value.tick = 1;
             return true;
         }
         else if (value.value.button.state.pressed)

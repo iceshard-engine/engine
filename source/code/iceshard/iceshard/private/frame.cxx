@@ -24,15 +24,12 @@ namespace iceshard
     MemoryFrame::MemoryFrame(
         core::memory::scratch_allocator& alloc,
         iceshard::Engine& engine,
-        iceshard::IceshardExecutionInstance& execution_instance,
-        float time_delta
+        iceshard::IceshardExecutionInstance& execution_instance
     ) noexcept
         : iceshard::Frame{ }
         , _frame_allocator{ alloc }
         , _engine{ engine }
         , _execution_instance{ execution_instance }
-        , _time_delta{ time_delta }
-        , _tick{ core::datetime::now().tick }
         , _inputs_allocator{ _frame_allocator, detail::inputs_allocator_pool }
         , _message_allocator{ _frame_allocator, detail::message_allocator_pool }
         , _storage_allocator{ _frame_allocator, detail::storage_allocator_pool }
@@ -110,6 +107,16 @@ namespace iceshard
     auto MemoryFrame::frame_allocator() noexcept -> core::allocator&
     {
         return _data_allocator;
+    }
+
+    auto MemoryFrame::engine_clock() const noexcept -> core::Clock<> const&
+    {
+        return _execution_instance.engine_clock();
+    }
+
+    auto MemoryFrame::elapsed_time() const noexcept -> float
+    {
+        return core::clock::elapsed(engine_clock());
     }
 
     void MemoryFrame::add_task(cppcoro::task<> task) noexcept

@@ -65,7 +65,7 @@ namespace iceshard
 
         auto* camera_data = frame.new_frame_object<CameraData>(SystemName);
 
-        float const camera_speed = 2.5f * frame.time_delta(); // adjust accordingly
+        float const camera_speed = 2.5f * frame.elapsed_time(); // adjust accordingly
         static ism::vec3f camera_up = { 0.0f, 1.0f, 0.0f };
 
         // Operations
@@ -143,16 +143,16 @@ namespace iceshard
                         }
                         break;
                     case create_inputid(DeviceType::Mouse, MouseInput::PositionXRelative):
-                        xoffset = static_cast<float>(event.value.axis.value_i32) * sensitivity;
+                        xoffset = static_cast<float>(event.value.axis.value_i32) * camera_speed * 10.0;
                         break;
                     case create_inputid(DeviceType::Mouse, MouseInput::PositionYRelative):
-                        yoffset = static_cast<float>(-event.value.axis.value_i32) * sensitivity;
+                        yoffset = static_cast<float>(-event.value.axis.value_i32) * camera_speed * 10.0;
                         break;
                     case create_inputid(DeviceType::Controller, ControllerInput::RightAxisX):
-                        xoffset = event.value.axis.value_f32;
+                        xoffset = event.value.axis.value_f32 * camera_speed * 20.0;
                         break;
                     case create_inputid(DeviceType::Controller, ControllerInput::RightAxisY):
-                        yoffset = -event.value.axis.value_f32;
+                        yoffset = -event.value.axis.value_f32 * camera_speed * 20.0;
                         break;
                     }
                 }
@@ -173,8 +173,8 @@ namespace iceshard
                 ) * camera_speed * speed_mul * move_x;
 
 
-                camera->yaw += xoffset < 0 ? std::max(xoffset, -10.f) : std::min(xoffset, 10.f);
-                camera->pitch += yoffset < 0 ? std::max(yoffset, -10.f) : std::min(yoffset, 10.f);
+                camera->yaw += speed_mul * (xoffset < 0 ? std::max(xoffset, -10.f) : std::min(xoffset, 10.f));
+                camera->pitch += speed_mul * (yoffset < 0 ? std::max(yoffset, -10.f) : std::min(yoffset, 10.f));
 
                 if (camera->pitch > 89.0f)
                     camera->pitch = 89.0f;

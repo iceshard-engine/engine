@@ -3,6 +3,8 @@
 #include <core/pod/collections.hxx>
 #include <core/message/buffer.hxx>
 #include <core/datetime/types.hxx>
+#include <core/clock.hxx>
+
 #include <iceshard/input/input_event.hxx>
 #include <iceshard/input/device/input_device_queue.hxx>
 
@@ -66,9 +68,9 @@ namespace iceshard
 
         virtual auto frame_allocator() noexcept -> core::allocator& = 0;
 
-        virtual auto time_delta() const noexcept -> float = 0;
+        virtual auto engine_clock() const noexcept -> core::Clock<> const& = 0;
 
-        virtual auto tick() const noexcept -> core::datetime::tick_type = 0;
+        virtual auto elapsed_time() const noexcept -> float = 0;
 
     public:
         virtual void add_task(cppcoro::task<> task) noexcept = 0;

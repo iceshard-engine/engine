@@ -87,7 +87,7 @@ namespace iceshard::input
         InputEvent event;
         event.device = static_cast<InputDevice>(_device);
 
-        for (auto const& input : _inputs)
+        for (auto& input : _inputs)
         {
             if (prepared_input_event(InputID{ input.key }, input.value, event))
             {

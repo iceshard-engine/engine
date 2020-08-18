@@ -59,8 +59,9 @@ namespace iceshard
         , _lock{ std::move(lock) }
         , _engine{ engine }
         , _services{ services }
+        , _engine_clock{ core::clock::create_clock() }
         , _render_system{ nullptr, { _allocator } }
-        , _device_input_states{ _allocator }
+        , _device_input_states{ _allocator, _engine_clock }
         , _mutable_task_list{ &_frame_tasks[_task_list_index] }
         // Frame related fields
         , _frame_allocator{ _allocator, sizeof(MemoryFrame) * 5 }
@@ -68,19 +69,19 @@ namespace iceshard
         , _current_frame{ nullptr, { _allocator } }
         , _previous_frame{ nullptr, { _allocator } }
     {
+        core::clock::update(_engine_clock);
+
         _previous_frame = core::memory::make_unique<MemoryFrame>(
             _frame_allocator,
             _frame_data_allocator[0],
             _engine,
-            *this,
-            0.0f
+            *this
         );
         _current_frame = core::memory::make_unique<MemoryFrame>(
             _frame_allocator,
             _frame_data_allocator[1],
             _engine,
-            *this,
-            0.0f
+            *this
         );
 
         _current_frame->input_queue().push(
@@ -97,8 +98,6 @@ namespace iceshard
             _allocator,
             _engine
         );
-
-        _last_frame_tp = clock_type::now();
 
         // Component systems
         _services.add_system(
@@ -134,6 +133,8 @@ namespace iceshard
             _current_frame->input_queue(),
             _current_frame->input_events()
         );
+
+        core::clock::update(_engine_clock);
     }
 
     IceshardExecutionInstance::~IceshardExecutionInstance() noexcept
@@ -147,6 +148,11 @@ namespace iceshard
 
         _current_frame = nullptr;
         _previous_frame = nullptr;
+    }
+
+    auto IceshardExecutionInstance::engine_clock() const noexcept -> core::Clock<> const&
+    {
+        return _engine_clock;
     }
 
     auto IceshardExecutionInstance::previous_frame() const noexcept -> const Frame&
@@ -192,17 +198,14 @@ namespace iceshard
         [[maybe_unused]] const bool successful_reset = _frame_data_allocator[_next_free_allocator].reset();
         IS_ASSERT(successful_reset == true, "Memory was discarded during frame allocator reset!");
 
-        auto current_frame_tp = clock_type::now();
+        core::clock::update(_engine_clock);
 
         _current_frame = core::memory::make_unique<MemoryFrame>(
             _frame_allocator,
             _frame_data_allocator[_next_free_allocator],
             _engine,
-            *this,
-            std::chrono::duration<float>(current_frame_tp - _last_frame_tp).count()
+            *this
         );
-
-        _last_frame_tp = current_frame_tp;
 
         // We need to update the allocator index
         _next_free_allocator += 1;

@@ -150,7 +150,7 @@ namespace iceshard::input
         publish_axis_value(ControllerInput::LeftTrigger, _triggers[0], _axis_reset_event[4]);
         publish_axis_value(ControllerInput::RightTrigger, _triggers[1], _axis_reset_event[5]);
 
-        for (auto const& input : _inputs)
+        for (auto& input : _inputs)
         {
             if (prepared_input_event(InputID{ input.key }, input.value, event))
             {
