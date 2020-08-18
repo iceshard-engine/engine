@@ -6,12 +6,14 @@
 #include <core/pod/array.hxx>
 #include <core/collections.hxx>
 #include <core/datetime/datetime.hxx>
+#include <core/platform/windows.hxx>
 
 #include <core/cexpr/stringid.hxx>
 #include <core/scope_exit.hxx>
 #include <core/debug/profiler.hxx>
 #include <core/pod/hash.hxx>
 #include <core/pod/algorithm.hxx>
+#include <core/clock.hxx>
 
 #include <resource/uri.hxx>
 #include <resource/resource_system.hxx>
@@ -78,6 +80,10 @@ struct DebugName
     static constexpr auto identifier = "isc.debug_name"_sid;
 
     core::StackString<32> name;
+
+    DebugName(core::StringView str) noexcept
+        : name{ str }
+    { }
 };
 
 class DebugNameUI : public iceshard::debug::DebugWindow, public iceshard::debug::DebugModule
@@ -187,8 +193,6 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
         asset_system.add_loader(asset::AssetType::Shader, asset::default_loader_shader(alloc));
         asset_system.update();
         resource_system.flush_messages();
-
-        auto execution_instance = engine_instance->execution_instance();
 
         // Prepare the render system
         auto& render_system = engine_instance->render_system();
@@ -342,16 +346,64 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
             return angles[current_angle];
         };
 
+
+        using iceshard::input::InputID;
+        using iceshard::input::InputEvent;
+        using iceshard::input::DeviceType;
+        using iceshard::input::KeyboardKey;
+        using iceshard::input::ControllerInput;
+        using iceshard::input::create_inputid;
+
+        auto execution_instance = engine_instance->execution_instance();
+
+        auto light_clock = core::clock::create_clock(execution_instance->engine_clock(), 10.0f);
+
         bool quit = false;
         while (quit == false)
         {
             auto& frame = execution_instance->current_frame();
+            core::clock::update(light_clock);
+
+            for (auto const& input : frame.input_events())
+            {
+                switch (input.identifier)
+                {
+                case create_inputid(DeviceType::Controller, ControllerInput::ButtonA):
+                case create_inputid(DeviceType::Controller, ControllerInput::ButtonB):
+                case create_inputid(DeviceType::Controller, ControllerInput::ButtonX):
+                case create_inputid(DeviceType::Controller, ControllerInput::ButtonY):
+                    if (input.value.button.state.pressed)
+                    {
+                        //fmt::print("{} pressed\n", input.identifier);
+                    }
+                    if (input.value.button.state.clicked)
+                    {
+                        fmt::print("{} clicked\n", input.identifier);
+                    }
+                    if (input.value.button.state.repeat > 0)
+                    {
+                        fmt::print("{} repeated {}\n", input.identifier, input.value.button.state.repeat);
+                    }
+                    if (input.value.button.state.hold)
+                    {
+                        fmt::print("{} hold\n", input.identifier);
+                    }
+                    if (input.value.button.state.released)
+                    {
+                        fmt::print("{} released\n", input.identifier);
+                    }
+                default:
+                    break;
+                }
+            }
+
+            using ControllerInput = iceshard::input::ControllerInput;
 
             iceshard::ecs::for_each_entity(
                 iceshard::ecs::query_index(light_query, *arch_idx),
-                [&next_angle](iceshard::component::Light* l, iceshard::component::Transform* xform) noexcept
+                [&next_angle, &light_clock](iceshard::component::Light* l, iceshard::component::Transform* xform) noexcept
                 {
-                    ism::mat4 rot_mat = ism::rotate(ism::radians(next_angle()), ism::vec3f{ 0.0f, 1.0f, 0.0f });
+                    ism::mat4 rot_mat = ism::rotate(ism::radians(next_angle() * core::clock::elapsed(light_clock)), ism::vec3f{ 0.0f, 1.0f, 0.0f });
                     ism::vec4f pos = rot_mat * ism::vec4(l->position, 1.0f);
 
                     l->position = vec3(pos);
