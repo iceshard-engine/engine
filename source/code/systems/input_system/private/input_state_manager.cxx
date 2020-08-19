@@ -35,7 +35,7 @@ namespace iceshard::input
 
     } // namespace detail
 
-    DeviceStateManager::DeviceStateManager(core::allocator& alloc, core::Clock<> const& clock) noexcept
+    DeviceStateManager::DeviceStateManager(core::allocator& alloc, core::Clock const& clock) noexcept
         : _allocator{ alloc }
         , _timer{ core::timer::create_timer(clock, 0.01) }
         , _state_factories{ _allocator }

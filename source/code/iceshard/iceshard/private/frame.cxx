@@ -109,7 +109,7 @@ namespace iceshard
         return _data_allocator;
     }
 
-    auto MemoryFrame::engine_clock() const noexcept -> core::Clock<> const&
+    auto MemoryFrame::engine_clock() const noexcept -> core::Clock const&
     {
         return _execution_instance.engine_clock();
     }

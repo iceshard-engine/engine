@@ -4,146 +4,95 @@
 namespace core
 {
 
-    template<typename T = int64_t>
-    struct Clock { };
-
-    template<>
-    struct Clock<int64_t>
+    struct Clock
     {
-        int64_t const frequency;
         int64_t previous_timestamp;
         int64_t latest_timestamp;
     };
 
-    template<typename T>
-    struct Clock<Clock<T>>
+    struct SystemClock : Clock { };
+
+    struct CustomClock : Clock
     {
-        Clock<T> const* base_clock;
-        int64_t previous_timestamp;
-        int64_t latest_timestamp;
+        Clock const* base_clock;
         float modifier;
     };
 
-    template<typename T = Clock<>>
     struct Timer
     {
-        T const* clock;
-        float const frequency = 1.0f;
+        Clock const* clock;
+        int64_t step;
         int64_t last_tick_timestamp;
     };
 
-    template<typename T = Clock<>>
     struct Timeline
     {
-        T const* clock;
+        Clock const* clock;
         int64_t const initial_timestap;
         float const speed = 1.0f;
+    };
+
+    struct Stopwatch
+    {
+        Clock const* clock;
+
+        int64_t initial_timestamp;
+        int64_t final_timestamp;
     };
 
     namespace clock
     {
 
-        auto create_clock() noexcept -> Clock<>;
+        auto clock_frequency() noexcept -> float;
 
-        template<typename T>
-        auto create_clock(T const& clock, float modifier) noexcept
-        {
-            return Clock<T> {
-                .base_clock = &clock,
-                .previous_timestamp = clock.latest_timestamp,
-                .latest_timestamp = clock.latest_timestamp,
-                .modifier = modifier
-            };
-        }
+        auto create_clock() noexcept -> SystemClock;
 
-        template<typename T>
-        void update(T& c) noexcept
-        {
-            c.previous_timestamp = c.latest_timestamp;
-            c.latest_timestamp += (c.base_clock->latest_timestamp - c.base_clock->previous_timestamp) * c.modifier;
-        }
+        auto create_clock(Clock const& clock, float modifier) noexcept -> CustomClock;
 
-        template<>
-        void update(Clock<>& c) noexcept;
+        void update(SystemClock& c) noexcept;
 
-        template<typename T>
-        auto frequency(T const& clock) noexcept -> float
-        {
-            return frequency(*clock.base_clock);
-        }
+        void update(CustomClock& c) noexcept;
 
-        template<>
-        inline auto frequency(Clock<> const& clock) noexcept -> float
-        {
-            return clock.frequency;
-        }
+        void update_max_delta(CustomClock& c, float max_elapsed_seconds);
 
-        template<typename R = float, typename T>
-        auto elapsed(Clock<T> const& c) noexcept -> float
-        {
-            if constexpr (std::is_same_v<float, R>)
-            {
-                return static_cast<float>(c.latest_timestamp - c.previous_timestamp) / frequency(c);
-            }
-            else
-            {
-                return static_cast<R>(static_cast<float>(c.latest_timestamp - c.previous_timestamp) / frequency(c));
-            }
-        }
+        auto elapsed(Clock const& c) noexcept -> float;
 
     } // namespace clock
 
     namespace timer
     {
 
-        template<typename T = Clock<>>
-        auto create_timer(T const& clock, float frequency) noexcept -> Timer<T>
-        {
-            return Timer<T>{
-                .clock = &clock,
-                .frequency = frequency,
-                .last_tick_timestamp = clock.latest_timestamp,
-            };
-        }
+        auto create_timer(Clock const& clock, float step_seconds) noexcept -> Timer;
 
-        template<typename T>
-        bool update(Timer<Clock<T>>& timer) noexcept
-        {
-            auto const time_passed_since_tick = (timer.clock->latest_timestamp - timer.last_tick_timestamp) / core::clock::frequency(*timer.clock);
-            if (time_passed_since_tick > timer.frequency)
-            {
-                timer.last_tick_timestamp = timer.clock->latest_timestamp;
-                return true;
-            }
-            else
-            {
-                return false;
-            }
-        }
+        bool update(Timer& timer) noexcept;
+
+        bool update_by_step(Timer& timer) noexcept;
+
+        auto elapsed(Timer const& timer) noexcept -> float;
+
+        auto alpha(Timer const& timer) noexcept -> float;
 
     } // namespace timer
 
     namespace timeline
     {
 
-        template<typename T = Clock<>>
-        auto create_timeline(T const& clock, float speed = 1.0f) noexcept -> Timeline<T>
-        {
-            return Timeline<T>{
-                .clock = &clock,
-                .initial_timestap = clock.latest_timestamp,
-                .speed = speed
-            };
-        }
+        auto create_timeline(Clock const& clock, float speed = 1.0f) noexcept -> Timeline;
 
-        template<typename T>
-        auto elapsed(Timeline<Clock<T>> const& timeline) noexcept -> float
-        {
-            return timeline.speed * (
-                static_cast<float>(timeline.clock->latest_timestamp - timeline.initial_timestap) / core::clock::frequency(*timeline.clock)
-            );
-        }
+        auto elapsed(Timeline const& timeline) noexcept -> float;
 
     } // namespace timeline
+
+    namespace stopwatch
+    {
+
+        auto create_stopwatch(Clock const& clock) noexcept;
+
+        void start(Stopwatch& stopwatch) noexcept;
+
+        void stop(Stopwatch& stopwatch) noexcept;
+
+    } // namespace stopwatch
+
 
 } // namespace core

@@ -22,7 +22,7 @@ namespace iceshard::input
     class DeviceStateManager final
     {
     public:
-        DeviceStateManager(core::allocator& alloc, core::Clock<> const& clock) noexcept;
+        DeviceStateManager(core::allocator& alloc, core::Clock const& clock) noexcept;
         ~DeviceStateManager() noexcept;
 
         void register_state_factory(
@@ -39,7 +39,7 @@ namespace iceshard::input
 
     private:
         core::allocator& _allocator;
-        core::Timer<> _timer;
+        core::Timer _timer;
 
         core::pod::Hash<DeviceStateFactory*> _state_factories;
         core::pod::Hash<DeviceState*> _states;

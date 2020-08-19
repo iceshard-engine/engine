@@ -150,7 +150,7 @@ namespace iceshard
         _previous_frame = nullptr;
     }
 
-    auto IceshardExecutionInstance::engine_clock() const noexcept -> core::Clock<> const&
+    auto IceshardExecutionInstance::engine_clock() const noexcept -> core::Clock const&
     {
         return _engine_clock;
     }

@@ -68,7 +68,7 @@ namespace iceshard
 
         virtual auto frame_allocator() noexcept -> core::allocator& = 0;
 
-        virtual auto engine_clock() const noexcept -> core::Clock<> const& = 0;
+        virtual auto engine_clock() const noexcept -> core::Clock const& = 0;
 
         virtual auto elapsed_time() const noexcept -> float = 0;
 

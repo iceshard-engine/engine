@@ -44,7 +44,7 @@ namespace iceshard
 
         auto frame_allocator() noexcept -> core::allocator& override;
 
-        auto engine_clock() const noexcept -> core::Clock<> const& override;
+        auto engine_clock() const noexcept -> core::Clock const& override;
 
         auto elapsed_time() const noexcept -> float override;
 
