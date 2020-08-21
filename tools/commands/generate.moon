@@ -3,7 +3,7 @@ import FastBuild from require "ice.tools.fastbuild"
 import FastBuildGenerator from require "ice.generators.fastbuild"
 import Conan from require "ice.tools.conan"
 
-import detect_compilers, detect_platforms from require "tools.utils.compilers"
+import detect_compilers, detect_platforms, detect_sdks from require "tools.utils.compilers"
 
 class GenerateCommand extends Command
     @conan = Conan!
@@ -29,6 +29,7 @@ class GenerateCommand extends Command
                 gen = FastBuildGenerator "detected_toolsets.bff"
                 detect_compilers gen
                 detect_platforms gen
+                detect_sdks gen
                 gen\close!
 
             unless os.isfile "fbuild.bff"

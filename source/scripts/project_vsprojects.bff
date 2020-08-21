@@ -95,16 +95,20 @@
                 .Platform = .ProjectPlatform
 
                 .TargetAlias = '$ProjectName$-$ConfigPlatform$-$ConfigName$-$ConfigToolchain$'
-                .Target = '$TargetAlias$-link'
 
                 .Output = .TargetOutputName
                 .OutputDirectory = .TargetOutputDirectory
                 .IntermediateDirectory = .TargetIntermediateDirectory
                 .BuildLogFile = '$TargetIntermediateDirectory$/build_log.txt'
 
-                .ProjectBuildCommand = '^$(SolutionDir)/ice.bat build -t $TargetAlias$'
-                .ProjectRebuildCommand = '^$(SolutionDir)/ice.bat build -t $TargetAlias$ -c'
-                // .ProjectCleanCommand = ''
+                If ( .TargetAlias in .AllConfigTargets )
+                {
+                    .Target = '$TargetAlias$-link'
+
+                    .ProjectBuildCommand = '^$(SolutionDir)/ice.bat build -t $TargetAlias$'
+                    .ProjectRebuildCommand = '^$(SolutionDir)/ice.bat build -t $TargetAlias$ -c'
+                    // .ProjectCleanCommand = ''
+                }
 
                 .LocalDebuggerCommand = '$TargetOutputDirectory$/$TargetOutputName$'
                 .LocalDebuggerWorkingDirectory = '$WorkspaceBuildDir$'

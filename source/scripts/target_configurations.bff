@@ -8,13 +8,13 @@ ForEach( .Platform in .PlatformList )
 {
     Using( .Platform )
 
-    .PlatformSupportedComponents = .PlatformSupportedToolchains + .SdkNames
+    .PlatformSupportedComponents = .PlatformSupportedToolchains + .SDKNames
 
     ForEach( .ToolchainName in .ToolchainNames, .Toolchain in .ToolchainList )
     {
         Using( .Toolchain )
 
-        .TargetPlatformRequiredComponents = { .ToolchainName } + .PlatformRequiredSdks
+        .TargetPlatformRequiredComponents = { .ToolchainName } + .PlatformRequiredSDKs
 
         If( .TargetPlatformRequiredComponents in .PlatformSupportedComponents )
         {
@@ -34,19 +34,19 @@ ForEach( .Platform in .PlatformList )
                         .ToolchainCompilerFamily
                         .ToolchainToolset
                         .ConfigName
-                    } + .PlatformRequiredSdks
+                    } + .PlatformRequiredSDKs
 
                     .ConanConfigName = .ConanConfiguration
 
                     .PlatformInfo = .Platform
                     .Toolchain = .Toolchain
                     .Configuration = .Configuration
-                    .SdkProperties = [ ]
-                    ForEach( .SdkName in .SdkNames, .Sdk in .SdkList )
+                    .SDKProperties = [ ]
+                    ForEach( .SDKName in .SDKNames, .SDK in .SDKList )
                     {
-                        If ( .SdkName in .PlatformRequiredSdks )
+                        If ( .SDKName in .PlatformRequiredSDKs )
                         {
-                            ^SdkProperties + .Sdk
+                            ^SDKProperties + .SDK
                         }
                     }
                     .Properties = []

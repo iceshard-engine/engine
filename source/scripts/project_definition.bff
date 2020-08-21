@@ -131,7 +131,7 @@ ForEach( .Project in .Projects )
                     If ( .Dependency not in .GatheredDependencies )
                     {
                         ^GatheredDependencies + .Dependency
-                        Print( "$ProjectName$: Gathering $Dependency$..." )
+                        // Print( "$ProjectName$: Gathering $Dependency$..." )
 
                         ForEach( .Property in .GatheredProperties )
                         {
@@ -143,7 +143,7 @@ ForEach( .Project in .Projects )
                     ^LibraryTargets + .Dependency
                 }
 
-                .Uses = {}
+                .Uses = .GatheredDependencies
             ]
         }
 
