@@ -6,8 +6,8 @@
     .PlatformSystem = 'Windows'
     .PlatformArchitecture = 'x64'
 
-    .PlatformRequiredSdks = {
-        'Sdk-Windows-10'
+    .PlatformRequiredSDKs = {
+        'SDK-Windows-10'
     }
     .PlatformSupportedToolchains = {
         'msvc-x64-v142',

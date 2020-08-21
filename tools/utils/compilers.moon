@@ -8,6 +8,16 @@ class Compiler
 class MSVCCompiler extends Compiler
     new: (family, path, @properties) => super family, path
 
+gen_sdk_struct = (gen, name, includes, libdirs, libs) ->
+    gen\structure name, (gen) ->
+        gen\variables {
+            -- { 'SdkDirectory', win_sdk.directory }
+            -- { 'SdkVersion', win_sdk.version }
+            { 'SdkIncludeDirs', includes or {} }
+            { 'SdkLibDirs', libdirs or {} }
+            { 'SdkLibs', libs or {} }
+        }
+
 
 detect_compilers_msvc = (version) ->
     vswhere = VSWhere!
@@ -189,37 +199,35 @@ detect_windows_platform = (gen) ->
     sdk_names = { }
 
     if win_sdk = get_win10_sdk!
-        sdk_name = "Sdk-Windows-10"
-        sdk_struct = "Sdk_Windows_10"
+        sdk_name = "SDK-Windows-10"
+        sdk_struct = "SDK_Windows_10"
 
-        gen\structure sdk_struct, (gen) ->
-            gen\variables {
-                -- { 'SdkDirectory', win_sdk.directory }
-                -- { 'SdkVersion', win_sdk.version }
-                { 'SdkIncludeDirs', {
+        gen_sdk_struct gen, sdk_struct, {
                     "#{win_sdk.directory}Include\\#{win_sdk.version}.0\\ucrt"
                     "#{win_sdk.directory}Include\\#{win_sdk.version}.0\\um"
                     "#{win_sdk.directory}Include\\#{win_sdk.version}.0\\shared"
                     "#{win_sdk.directory}Include\\#{win_sdk.version}.0\\winrt"
-                } }
-                { 'SdkLibDirs', {
+                }, {
                     "#{win_sdk.directory}Lib\\#{win_sdk.version}.0\\ucrt\\x64"
                     "#{win_sdk.directory}Lib\\#{win_sdk.version}.0\\um\\x64"
-                } }
-                { 'SdkLibs', {
-                } }
-            }
+                }, { }
+
+        gen_sdk_struct gen, "SDK_DX1_", { }, { }, { }
         gen\line!
 
         table.insert sdk_names, sdk_name
+        table.insert sdk_names, "SDK-DX11"
+        table.insert sdk_names, "SDK-DX12"
         table.insert sdk_list, sdk_struct
+        table.insert sdk_list, "SDK_DX1_"
+        table.insert sdk_list, "SDK_DX1_"
 
-    gen\line '.SdkList = {'
+    gen\line '.PlatformSDKList = {'
     gen\indented (gen) ->
         gen\line ".#{value}" for value in *sdk_list
     gen\line '}'
 
-    gen\line '.SdkNames = {'
+    gen\line '.PlatformSDKNames = {'
     gen\indented (gen) ->
         gen\line "'#{value}'" for value in *sdk_names
     gen\line '}'
@@ -229,4 +237,41 @@ detect_windows_platform = (gen) ->
 detect_platforms = (gen) ->
     detect_windows_platform gen
 
-{ :detect_compilers, :detect_platforms }
+detect_sdks = (gen) ->
+    sdk_list = { }
+    sdk_names = { }
+
+    vulkan_sdk = os.getenv "VULKAN_SDK"
+    if vulkan_sdk ~= nil and os.isdir vulkan_sdk
+        sdk_name = "SDK-Vulkan"
+        sdk_struct = "SDK_Vulkan"
+
+        gen\line!
+        gen\structure sdk_struct, (gen) ->
+            gen\variables {
+                { 'SdkIncludeDirs', {
+                    "#{vulkan_sdk}\\Include"
+                } }
+                { 'SdkLibDirs', {
+                    "#{vulkan_sdk}\\Lib"
+                } }
+                { 'SdkLibs', {
+                    "vulkan-1"
+                } }
+            }
+
+        table.insert sdk_names, sdk_name
+        table.insert sdk_list, sdk_struct
+
+    gen\line!
+    gen\line '.SDKList = {'
+    gen\indented (gen) ->
+        gen\line ".#{value}" for value in *sdk_list
+    gen\line '} + .PlatformSDKList'
+
+    gen\line '.SDKNames = {'
+    gen\indented (gen) ->
+        gen\line "'#{value}'" for value in *sdk_names
+    gen\line '} + .PlatformSDKNames'
+
+{ :detect_compilers, :detect_platforms, :detect_sdks }
