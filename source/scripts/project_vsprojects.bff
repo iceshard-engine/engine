@@ -66,11 +66,15 @@
         .ProjectConfigs = { }
         .ProjectBasePath = .ProjectBaseDir
         .ProjectInputPaths = {
+            '$ProjectBaseDir$/natvis'
             '$ProjectBaseDir$/public'
             '$ProjectBaseDir$/private'
         }
         .ProjectFiles = {
             '$ProjectBaseDir$/$ProjectName$.bff'
+        }
+        .ProjectAllowedFileExtensions = {
+            '*.cxx', '*.hxx', '*.inl', '*.bff', '*.rc', '*.resx', '*.mm', '*.natvis'
         }
 
         ForEach( .TargetConfig in .TargetConfigList )
@@ -94,6 +98,7 @@
                 .Config = '$ConfigName$'
                 .Platform = .ProjectPlatform
 
+                .Target = ''
                 .TargetAlias = '$ProjectName$-$ConfigPlatform$-$ConfigName$-$ConfigToolchain$'
 
                 .Output = .TargetOutputName
@@ -101,13 +106,15 @@
                 .IntermediateDirectory = .TargetIntermediateDirectory
                 .BuildLogFile = '$TargetIntermediateDirectory$/build_log.txt'
 
+                .ProjectBuildCommand = ''
+                .ProjectRebuildCommand = ''
+
                 If ( .TargetAlias in .AllConfigTargets )
                 {
-                    .Target = '$TargetAlias$-link'
+                    ^Target = '$TargetAlias$-objects'
 
-                    .ProjectBuildCommand = '^$(SolutionDir)/ice.bat build -t $TargetAlias$'
-                    .ProjectRebuildCommand = '^$(SolutionDir)/ice.bat build -t $TargetAlias$ -c'
-                    // .ProjectCleanCommand = ''
+                    ^ProjectBuildCommand = '^$(SolutionDir)/ice.bat build -t $TargetAlias$'
+                    ^ProjectRebuildCommand = '^$(SolutionDir)/ice.bat build -t $TargetAlias$ -c'
                 }
 
                 .LocalDebuggerCommand = '$TargetOutputDirectory$/$TargetOutputName$'

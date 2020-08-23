@@ -359,7 +359,7 @@ void core::pod::multi_hash::insert(Hash<T> &h, uint64_t key, const T &value) noe
 }
 
 template<typename T>
-void core::pod::multi_hash::remove(Hash<T> &h, const typename Hash<T>::Entry *e) noexcept
+void core::pod::multi_hash::remove(Hash<T> &h, typename Hash<T>::Entry const* e) noexcept
 {
     const hash_internal::FindResult fr = hash_internal::find(h, e);
     if (fr.data_i != hash_internal::END_OF_LIST)

@@ -33,11 +33,6 @@ namespace iceshard
         core::pod::Array<ActionTrigger> reset_triggers;
     };
 
-    //enum class ActionHandle : uint32_t
-    //{
-    //    Invalid = 0x0
-    //};
-
     class ActionSystem
     {
     public:
