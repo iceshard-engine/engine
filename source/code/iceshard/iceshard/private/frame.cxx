@@ -36,6 +36,7 @@ namespace iceshard
         , _data_allocator{ _frame_allocator, detail::data_allocator_pool }
         , _input_queue{ _inputs_allocator }
         , _input_events{ _inputs_allocator }
+        , _input_actions{ _inputs_allocator }
         , _frame_messages{ _message_allocator }
         , _frame_storage{ _storage_allocator }
     {
@@ -82,6 +83,11 @@ namespace iceshard
     auto MemoryFrame::input_events() const noexcept -> core::pod::Array<iceshard::input::InputEvent> const&
     {
         return _input_events;
+    }
+
+    auto MemoryFrame::input_actions() const noexcept -> core::pod::Array<core::stringid_type> const&
+    {
+        return _input_actions;
     }
 
     auto MemoryFrame::find_frame_object(core::stringid_arg_type name) noexcept -> void*

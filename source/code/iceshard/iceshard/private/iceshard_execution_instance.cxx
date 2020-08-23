@@ -62,6 +62,7 @@ namespace iceshard
         , _engine_clock{ core::clock::create_clock() }
         , _render_system{ nullptr, { _allocator } }
         , _device_input_states{ _allocator, _engine_clock }
+        , _input_actions_tracker{ _allocator, _engine_clock }
         , _mutable_task_list{ &_frame_tasks[_task_list_index] }
         // Frame related fields
         , _frame_allocator{ _allocator, sizeof(MemoryFrame) * 5 }
@@ -150,6 +151,11 @@ namespace iceshard
         _previous_frame = nullptr;
     }
 
+    auto IceshardExecutionInstance::input_actions() noexcept -> ActionSystem&
+    {
+        return _input_actions_tracker;
+    }
+
     auto IceshardExecutionInstance::engine_clock() const noexcept -> core::Clock const&
     {
         return _engine_clock;
@@ -221,6 +227,8 @@ namespace iceshard
             _current_frame->input_queue(),
             _current_frame->input_events()
         );
+
+        _input_actions_tracker.update_actions(*_current_frame, _current_frame->input_actions());
 
         // Update all worlds
         static_cast<iceshard::IceshardWorldManager&>(_engine.world_manager())

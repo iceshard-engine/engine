@@ -36,6 +36,10 @@ namespace iceshard
 
         auto input_events() const noexcept -> core::pod::Array<iceshard::input::InputEvent> const& override;
 
+        auto input_actions() noexcept -> core::pod::Array<core::stringid_type>& { return _input_actions; }
+
+        auto input_actions() const noexcept -> core::pod::Array<core::stringid_type> const& override;
+
         auto find_frame_object(core::stringid_arg_type name) noexcept -> void* override;
 
         auto find_frame_object(core::stringid_arg_type name) const noexcept -> const void* override;
@@ -62,6 +66,8 @@ namespace iceshard
 
         iceshard::input::DeviceInputQueue _input_queue;
         core::pod::Array<iceshard::input::InputEvent> _input_events;
+        core::pod::Array<core::stringid_type> _input_actions;
+
         core::MessageBuffer _frame_messages;
 
         struct frame_object_entry

@@ -8,6 +8,8 @@ namespace iceshard
 
     class Frame;
 
+    class ActionSystem;
+
     class ExecutionInstance
     {
     public:
@@ -20,6 +22,8 @@ namespace iceshard
 
     public:
         virtual ~ExecutionInstance() noexcept = default;
+
+        virtual auto input_actions() noexcept -> ActionSystem& = 0;
 
         virtual auto engine_clock() const noexcept -> core::Clock const& = 0;
 

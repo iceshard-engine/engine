@@ -51,6 +51,8 @@ namespace iceshard
 
         virtual auto input_events() const noexcept -> core::pod::Array<iceshard::input::InputEvent> const& = 0;
 
+        virtual auto input_actions() const noexcept -> core::pod::Array<core::stringid_type> const& = 0;
+
         virtual auto find_frame_object(core::stringid_arg_type name) noexcept -> void* = 0;
 
         virtual auto find_frame_object(core::stringid_arg_type name) const noexcept -> const void* = 0;

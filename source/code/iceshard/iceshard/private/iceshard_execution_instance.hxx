@@ -6,6 +6,7 @@
 
 #include "iceshard_service_provider.hxx"
 #include "rendering/ice_render_system.hxx"
+#include "systems/iceshard_input_actions.hxx"
 
 namespace iceshard
 {
@@ -37,6 +38,8 @@ namespace iceshard
         ) noexcept;
         ~IceshardExecutionInstance() noexcept;
 
+        auto input_actions() noexcept -> ActionSystem& override;
+
         auto engine_clock() const noexcept -> core::Clock const& override;
 
         auto previous_frame() const noexcept -> Frame const& override;
@@ -58,6 +61,7 @@ namespace iceshard
         core::memory::unique_pointer<iceshard::IceRenderSystem> _render_system{ nullptr, { core::memory::globals::null_allocator() } };
 
         iceshard::input::DeviceStateManager _device_input_states;
+        iceshard::InputActionsTracker _input_actions_tracker;
 
         // Tasks to be run this frame.
         size_t _task_list_index = 0;
