@@ -28,8 +28,7 @@ namespace core
     struct Timeline
     {
         Clock const* clock;
-        int64_t const initial_timestap;
-        float const speed = 1.0f;
+        int64_t initial_timestap;
     };
 
     struct Stopwatch

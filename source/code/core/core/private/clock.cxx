@@ -129,14 +129,13 @@ namespace core
         {
             return Timeline{
                 .clock = &clock,
-                .initial_timestap = clock.latest_timestamp,
-                .speed = speed
+                .initial_timestap = clock.latest_timestamp
             };
         }
 
         auto elapsed(Timeline const& timeline) noexcept -> float
         {
-            return timeline.speed * (
+            return (
                 static_cast<float>(timeline.clock->latest_timestamp - timeline.initial_timestap) / core::clock::clock_frequency()
             );
         }
