@@ -1,7 +1,3 @@
-
-#if exists(VULKAN_SDK)
-#import VULKAN_SDK
-
 .Project =
 [
     .Name = 'vulkan_driver'
@@ -9,6 +5,10 @@
     .Group = 'Drivers'
 
     .BaseDir = '$WorkspaceCodeDir$/drivers/vulkan_driver'
+
+    .Requires = {
+        'SDK-Vulkan'
+    }
 
     .Private =
     [
@@ -22,17 +22,6 @@
         .Defines = {
             'VK_USE_PLATFORM_WIN32_KHR'
         }
-        .IncludeDirs = {
-            '$VULKAN_SDK$/Include'
-        }
-        .LibDirs = {
-            '$VULKAN_SDK$/Lib'
-        }
-        .Libs = {
-            'vulkan-1'
-        }
     ]
 ]
 .Projects + .Project
-
-#endif
