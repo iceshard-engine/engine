@@ -166,7 +166,6 @@ namespace iceshard
                     }
                     else // Move to the next action stage
                     {
-                        fmt::print("Next stage for {}\n", state.action_name);
                         InputActionStage const& next_stage = action.stages[state.current_stage];
                         state.action_timeline = core::timeline::create_timeline(_clock);
                         state.current_success_trigger = next_stage.initial_success_trigger;

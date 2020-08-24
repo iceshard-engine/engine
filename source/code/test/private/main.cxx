@@ -40,17 +40,24 @@
 #include <iceshard/math.hxx>
 #include <iceshard/module.hxx>
 #include <iceshard/engine.hxx>
+#include <iceshard/execution.hxx>
 #include <iceshard/frame.hxx>
+
 #include <iceshard/world/world.hxx>
 #include <iceshard/entity/entity_index.hxx>
 #include <iceshard/entity/entity_command_buffer.hxx>
+
 #include <iceshard/component/component_system.hxx>
 #include <iceshard/component/component_block.hxx>
 #include <iceshard/component/component_block_operation.hxx>
 #include <iceshard/component/component_block_allocator.hxx>
 #include <iceshard/component/component_archetype_index.hxx>
 #include <iceshard/component/component_archetype_iterator.hxx>
-#include <iceshard/execution.hxx>
+
+#include <iceshard/action/action.hxx>
+#include <iceshard/action/action_trigger.hxx>
+#include <iceshard/action/action_trigger_data.hxx>
+#include <iceshard/action/action_system.hxx>
 
 #include <iceshard/renderer/render_pipeline.hxx>
 #include <iceshard/renderer/render_resources.hxx>
@@ -346,7 +353,6 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
             return angles[current_angle];
         };
 
-
         using iceshard::input::InputID;
         using iceshard::input::InputEvent;
         using iceshard::input::DeviceType;
@@ -356,6 +362,94 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
 
         auto execution_instance = engine_instance->execution_instance();
 
+        iceshard::register_common_triggers(execution_instance->input_actions().trigger_database());
+
+        {
+            iceshard::ActionStage stages[] = {
+                iceshard::ActionStage
+                {
+                    .initial_success_trigger = 0,
+                    .initial_failure_trigger = 0,
+                    .num_success_triggers = 1,
+                    .num_failure_triggers = 1,
+                    .reset_trigger = 0,
+                }
+            };
+
+            iceshard::ActionTrigger triggers[] =
+            {
+                iceshard::ActionTrigger{
+                    .trigger_name = "trigger.button-pressed"_sid,
+                    .trigger_userdata = iceshard::trigger::create_trigger_userdata(
+                        create_inputid(DeviceType::Keyboard, KeyboardKey::KeyW)
+                    )
+                },
+                iceshard::ActionTrigger{
+                    .trigger_name = "trigger.never"_sid
+                },
+                iceshard::ActionTrigger{
+                    .trigger_name = "trigger.button-released"_sid,
+                    .trigger_userdata = iceshard::trigger::create_trigger_userdata(
+                        create_inputid(DeviceType::Keyboard, KeyboardKey::KeyW)
+                    )
+                },
+            };
+
+            iceshard::ActionDefinition action
+            {
+                .stages = core::pod::array::create_view(stages),
+                .success_triggers = core::pod::array::create_view(triggers + 0, 1),
+                .failure_triggers = core::pod::array::create_view(triggers + 1, 1),
+                .reset_triggers = core::pod::array::create_view(triggers + 2, 1),
+            };
+
+            execution_instance->input_actions().create_action("player.forward"_sid, std::move(action));
+        }
+
+        {
+            iceshard::ActionStage stages[] = {
+                iceshard::ActionStage
+                {
+                    .initial_success_trigger = 0,
+                    .initial_failure_trigger = 0,
+                    .num_success_triggers = 2,
+                    .num_failure_triggers = 1,
+                    .reset_trigger = 0,
+                },
+            };
+
+            iceshard::ActionTrigger triggers[] =
+            {
+                iceshard::ActionTrigger{
+                    .trigger_name = "trigger.action-success"_sid,
+                    .trigger_userdata = iceshard::trigger::create_trigger_userdata("player.forward"_sid)
+                },
+                iceshard::ActionTrigger{
+                    .trigger_name = "trigger.button-clicked"_sid,
+                    .trigger_userdata = iceshard::trigger::create_trigger_userdata(
+                        create_inputid(DeviceType::Keyboard, KeyboardKey::Space)
+                    )
+                },
+                iceshard::ActionTrigger{
+                    .trigger_name = "trigger.never"_sid
+                },
+                iceshard::ActionTrigger{
+                    .trigger_name = "trigger.elapsed-time"_sid,
+                    .trigger_userdata = iceshard::trigger::create_trigger_userdata(1.f)
+                },
+            };
+
+            iceshard::ActionDefinition action
+            {
+                .stages = core::pod::array::create_view(stages),
+                .success_triggers = core::pod::array::create_view(triggers + 0, 2),
+                .failure_triggers = core::pod::array::create_view(triggers + 2, 1),
+                .reset_triggers = core::pod::array::create_view(triggers + 3, 1),
+            };
+
+            execution_instance->input_actions().create_action("player.running-jump"_sid, std::move(action));
+        }
+
         auto light_clock = core::clock::create_clock(execution_instance->engine_clock(), 10.0f);
 
         bool quit = false;
@@ -364,39 +458,10 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
             auto& frame = execution_instance->current_frame();
             core::clock::update(light_clock);
 
-            for (auto const& input : frame.input_events())
+            for (auto const& action : frame.input_actions())
             {
-                switch (input.identifier)
-                {
-                case create_inputid(DeviceType::Controller, ControllerInput::ButtonA):
-                case create_inputid(DeviceType::Controller, ControllerInput::ButtonB):
-                case create_inputid(DeviceType::Controller, ControllerInput::ButtonX):
-                case create_inputid(DeviceType::Controller, ControllerInput::ButtonY):
-                    if (input.value.button.state.pressed)
-                    {
-                        //fmt::print("{} pressed\n", input.identifier);
-                    }
-                    if (input.value.button.state.clicked)
-                    {
-                        fmt::print("{} clicked\n", input.identifier);
-                    }
-                    if (input.value.button.state.repeat > 0)
-                    {
-                        fmt::print("{} repeated {}\n", input.identifier, input.value.button.state.repeat);
-                    }
-                    if (input.value.button.state.hold)
-                    {
-                        fmt::print("{} hold\n", input.identifier);
-                    }
-                    if (input.value.button.state.released)
-                    {
-                        fmt::print("{} released\n", input.identifier);
-                    }
-                default:
-                    break;
-                }
+                fmt::print("Input action fired: {}\n", action);
             }
-
             using ControllerInput = iceshard::input::ControllerInput;
 
             iceshard::ecs::for_each_entity(

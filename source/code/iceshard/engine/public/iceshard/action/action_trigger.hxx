@@ -16,13 +16,6 @@ namespace iceshard
         FrameEvent,
     };
 
-    enum class ActionTriggerRole
-    {
-        SuccessTrigger,
-        FailureTrigger,
-        ResetTrigger,
-    };
-
     using ActionTriggerFunc = bool(void* userdata, float elapsed_time, void const* event_data) noexcept;
 
     struct ActionTriggerDefinition
@@ -45,5 +38,7 @@ namespace iceshard
             core::stringid_arg_type name
         ) const noexcept -> ActionTriggerDefinition = 0;
     };
+
+    void register_common_triggers(ActionTriggerDatabase& database) noexcept;
 
 } // namespace iceshard

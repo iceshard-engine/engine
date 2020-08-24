@@ -6,7 +6,9 @@
 #include <core/pointer.hxx>
 #include <core/clock.hxx>
 
-#include <iceshard/action/action_input.hxx>
+#include <iceshard/action/action.hxx>
+#include <iceshard/action/action_trigger.hxx>
+#include <iceshard/action/action_system.hxx>
 
 namespace iceshard
 {
@@ -37,8 +39,6 @@ namespace iceshard
 
         core::pod::Array<InputActionStage> stages;
         core::pod::Array<InputActionTrigger> triggers;
-        //core::pod::Array<InputActionTrigger> fail_triggers;
-        //core::pod::Array<InputActionTrigger> reset_triggers;
     };
 
     struct InputActionState
@@ -63,14 +63,14 @@ namespace iceshard
         InputActionsTracker(core::allocator& alloc, core::Clock& clock) noexcept;
         ~InputActionsTracker() noexcept override;
 
-        auto trigger_database() noexcept -> ActionTriggerDatabase* override
+        auto trigger_database() noexcept -> ActionTriggerDatabase& override
         {
-            return this;
+            return *this;
         }
 
-        auto trigger_database() const noexcept -> ActionTriggerDatabase const* override
+        auto trigger_database() const noexcept -> ActionTriggerDatabase const& override
         {
-            return this;
+            return *this;
         }
 
         void create_action(
@@ -79,7 +79,6 @@ namespace iceshard
         ) noexcept override;
 
         void define_action(InputAction action) noexcept;
-        //void define_quick_action(core::stringid_type name, iceshard::input::InputID input) noexcept override;
 
         void remove_action(core::stringid_arg_type name) noexcept;
 

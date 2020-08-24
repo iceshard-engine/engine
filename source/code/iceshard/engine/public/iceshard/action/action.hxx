@@ -1,15 +1,9 @@
 #pragma once
+#include <core/cexpr/stringid.hxx>
 #include <core/pod/collections.hxx>
-#include <iceshard/action/action_trigger.hxx>
 
 namespace iceshard
 {
-
-    struct ActionTrigger
-    {
-        core::stringid_type trigger_name;
-        void* trigger_userdata;
-    };
 
     struct ActionStage
     {
@@ -22,6 +16,12 @@ namespace iceshard
         uint32_t reset_trigger;
     };
 
+    struct ActionTrigger
+    {
+        core::stringid_type trigger_name;
+        void* trigger_userdata;
+    };
+
     //! \brief Allocates an action definition object.
     //!
     //! \detail This object will be capable of storing a predefined number of stages and triggers.
@@ -31,21 +31,6 @@ namespace iceshard
         core::pod::Array<ActionTrigger> success_triggers;
         core::pod::Array<ActionTrigger> failure_triggers;
         core::pod::Array<ActionTrigger> reset_triggers;
-    };
-
-    class ActionSystem
-    {
-    public:
-        virtual ~ActionSystem() noexcept = default;
-
-        virtual auto trigger_database() noexcept -> ActionTriggerDatabase* = 0;
-
-        virtual auto trigger_database() const noexcept -> ActionTriggerDatabase const* = 0;
-
-        virtual void create_action(
-            core::stringid_arg_type name,
-            ActionDefinition action_definition
-        ) noexcept = 0;
     };
 
 } // namespace iceshard
