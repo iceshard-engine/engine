@@ -12,11 +12,12 @@
 #include <iceshard/renderer/render_buffers.hxx>
 #include <iceshard/engine.hxx>
 #include <iceshard/frame.hxx>
+#include <iceshard/math.hxx>
 
 #include <asset_system/asset_system.hxx>
 #include <asset_system/assets/asset_shader.hxx>
 
-#include <iceshard/math.hxx>
+#include <input_system/message/window.hxx>
 
 namespace iceshard
 {
@@ -129,11 +130,17 @@ namespace iceshard
             core::pod::array::create_view(resources)
         );
 
+        static ism::vec2u viewport{ 1280, 720 };
+        core::message::filter<::input::message::WindowSizeChanged>(current.messages(), [](::input::message::WindowSizeChanged const& msg) noexcept
+            {
+                viewport.x = msg.width;
+                viewport.y = msg.height;
+            });
+
         cmd::begin(_command_buffer, render_pass.handle(), 2);
         cmd::bind_pipeline(_command_buffer, _pipeline);
         cmd::bind_resource_set(_command_buffer, _resources);
         {
-            ism::vec2u viewport{ 1280, 720 };
             cmd::set_viewport(_command_buffer, viewport.x, viewport.y);
             cmd::set_scissor(_command_buffer, viewport.x, viewport.y);
         }
