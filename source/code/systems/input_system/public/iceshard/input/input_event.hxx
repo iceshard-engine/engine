@@ -6,7 +6,7 @@ namespace iceshard::input
 
     enum class DeviceType : uint8_t;
 
-    enum class InputDevice : uint16_t
+    enum class InputDevice : uint8_t
     {
         Invalid = 0x0,
     };
@@ -51,6 +51,8 @@ namespace iceshard::input
     {
         InputID identifier;
         InputDevice device;
+        bool button_state : 1 = false;
+        bool initial_event : 1 = true;
         InputValue value;
     };
 
