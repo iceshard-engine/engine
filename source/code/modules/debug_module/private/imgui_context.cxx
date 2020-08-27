@@ -36,6 +36,11 @@ namespace iceshard::debug::imgui
     {
         core::pod::hash::reserve(_debug_windows, 64);
 
+        auto& io = ImGui::GetIO();
+        io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+        io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
+        io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+
         _imgui_inputs = core::memory::make_unique<ImGuiInputs>(
             _allocator,
             ImGui::GetIO(),
