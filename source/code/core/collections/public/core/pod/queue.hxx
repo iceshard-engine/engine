@@ -11,44 +11,44 @@ namespace core::pod
 
         //! \brief Returns the number of items in the queue.
         template<typename T>
-        auto size(const Queue<T> &q) noexcept -> uint32_t;
+        auto size(Queue<T> const& q) noexcept -> uint32_t;
 
         //! \brief Returns the amount of free space in the queue/ring buffer.
         //! \details This is the number of items we can push before the queue needs to grow.
         template<typename T>
-        auto space(const Queue<T> &q) noexcept -> uint32_t;
+        auto space(Queue<T> const& q) noexcept -> uint32_t;
 
         //! \brief Ensures the queue has room for at least the specified number of items.
         template<typename T>
-        void reserve(Queue<T> &q, uint32_t size) noexcept;
+        void reserve(Queue<T>& q, uint32_t size) noexcept;
 
         //! \brief Pushes the item to the end of the queue.
         template<typename T>
-        void push_back(Queue<T> &q, const T &item) noexcept;
+        void push_back(Queue<T>& q, T const& item) noexcept;
 
         //! \brief Pops the last item from the queue. The queue cannot be empty.
         template<typename T>
-        void pop_back(Queue<T> &q) noexcept;
+        void pop_back(Queue<T>& q) noexcept;
 
         //! \brief Pushes the item to the front of the queue.
         template<typename T>
-        void push_front(Queue<T> &q, const T &item) noexcept;
+        void push_front(Queue<T>& q, T const& item) noexcept;
 
         //! \brief Pops the first item from the queue. The queue cannot be empty.
         template<typename T>
-        void pop_front(Queue<T> &q) noexcept;
+        void pop_front(Queue<T>& q) noexcept;
 
         //! \brief Consumes n items from the front of the queue.
         template<typename T>
-        void consume(Queue<T> &q, uint32_t n) noexcept;
+        void consume(Queue<T>& q, uint32_t n) noexcept;
 
         //! \brief Pushes n items to the back of the queue.
         template<typename T>
-        void push(Queue<T> &q, const T *items, uint32_t n) noexcept;
+        void push(Queue<T>& q, T const* items, uint32_t n) noexcept;
 
         //! \brief Pushes the array at the back of the queue.
         template<typename T, uint32_t Size>
-        void push(Queue<T> &q, const T (&arr)[Size]) noexcept;
+        void push(Queue<T>& q, T const(&arr)[Size]) noexcept;
 
         //! \brief Returns the begin and end of the continuous chunk of elements at
         //!     the start of the queue.
@@ -59,16 +59,19 @@ namespace core::pod
         //! \remarks This chunk does not necessarily contain all the elements
         //!     in the queue (if the queue wraps around the array).
         template<typename T>
-        auto begin_front(Queue<T> &q) noexcept -> T *;
+        auto begin_front(Queue<T>& q) noexcept -> T*;
 
         template<typename T>
-        auto begin_front(const Queue<T> &q) noexcept -> const T *;
+        auto begin_front(Queue<T> const& q) noexcept -> T const*;
 
         template<typename T>
-        auto end_front(Queue<T> &q) noexcept -> T *;
+        auto end_front(Queue<T>& q) noexcept -> T*;
 
         template<typename T>
-        auto end_front(const Queue<T> &q) noexcept -> const T *;
+        auto end_front(Queue<T> const& q) noexcept -> T const*;
+
+        template<typename T, typename Fn>
+        void for_each(Queue<T> const& q, Fn&& fn) noexcept;
 
     } // namespace queue
 
