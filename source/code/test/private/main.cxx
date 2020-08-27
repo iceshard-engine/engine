@@ -412,9 +412,25 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
                 {
                     .initial_success_trigger = 0,
                     .initial_failure_trigger = 0,
-                    .num_success_triggers = 2,
+                    .num_success_triggers = 1,
                     .num_failure_triggers = 1,
                     .reset_trigger = 0,
+                },
+                iceshard::ActionStage
+                {
+                    .initial_success_trigger = 1,
+                    .initial_failure_trigger = 1,
+                    .num_success_triggers = 1,
+                    .num_failure_triggers = 1,
+                    .reset_trigger = 0,
+                },
+                iceshard::ActionStage
+                {
+                    .initial_success_trigger = 2,
+                    .initial_failure_trigger = 0,
+                    .num_success_triggers = 1,
+                    .num_failure_triggers = 1,
+                    .reset_trigger = 1,
                 },
             };
 
@@ -431,7 +447,20 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
                     )
                 },
                 iceshard::ActionTrigger{
+                    .trigger_name = "trigger.always"_sid,
+                },
+
+                iceshard::ActionTrigger{
                     .trigger_name = "trigger.never"_sid
+                },
+                iceshard::ActionTrigger{
+                    .trigger_name = "trigger.action-not-success"_sid,
+                    .trigger_userdata = iceshard::trigger::create_trigger_userdata("player.forward"_sid)
+                },
+
+
+                iceshard::ActionTrigger{
+                    .trigger_name = "trigger.always"_sid
                 },
                 iceshard::ActionTrigger{
                     .trigger_name = "trigger.elapsed-time"_sid,
@@ -442,9 +471,9 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
             iceshard::ActionDefinition action
             {
                 .stages = core::pod::array::create_view(stages),
-                .success_triggers = core::pod::array::create_view(triggers + 0, 2),
-                .failure_triggers = core::pod::array::create_view(triggers + 2, 1),
-                .reset_triggers = core::pod::array::create_view(triggers + 3, 1),
+                .success_triggers = core::pod::array::create_view(triggers + 0, 3),
+                .failure_triggers = core::pod::array::create_view(triggers + 3, 2),
+                .reset_triggers = core::pod::array::create_view(triggers + 5, 2),
             };
 
             execution_instance->input_actions().create_action("player.running-jump"_sid, std::move(action));
