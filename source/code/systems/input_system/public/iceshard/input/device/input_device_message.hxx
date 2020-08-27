@@ -31,6 +31,8 @@ namespace iceshard::input
         GamepadAxisRightY,
     };
 
+    static constexpr uint32_t DeviceInputTypeCount = static_cast<uint32_t>(DeviceInputType::GamepadAxisRightY) + 1;
+
     struct DeviceInputMessage
     {
         DeviceHandle device;

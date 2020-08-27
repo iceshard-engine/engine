@@ -38,6 +38,8 @@ namespace iceshard::input
 
         void clear() noexcept;
 
+        bool empty() const noexcept;
+
         template<typename... Args>
         void push(DeviceHandle device, DeviceInputType input_type, Args... values) noexcept
         {
