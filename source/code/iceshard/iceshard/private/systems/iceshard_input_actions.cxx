@@ -2,6 +2,7 @@
 
 #include <iceshard/frame.hxx>
 #include <iceshard/input/input_event.hxx>
+#include <iceshard/action/action_trigger_data.hxx>
 
 #include <core/message/operations.hxx>
 #include <core/pod/array.hxx>
@@ -204,10 +205,12 @@ namespace iceshard
                     {
                         for (auto const& action_state : _action_states)
                         {
-                            if (action_state.is_success)
-                            {
-                                handle_fail_trigger(fail_trigger, stage, state, std::addressof(action_state.action_name));
-                            }
+                            iceshard::trigger::TriggerEvent_ActionState const event_state{
+                                .event_action = action_state.action_name.hash_value,
+                                .state = action_state.is_fail ? 2u : (action_state.is_success ? 1u : 0u)
+                            };
+
+                            handle_fail_trigger(fail_trigger, stage, state, std::addressof(event_state));
                         }
                     }
 
@@ -233,10 +236,12 @@ namespace iceshard
                     {
                         for (auto const& action_state : _action_states)
                         {
-                            if (action_state.is_success)
-                            {
-                                handle_success_trigger(action, success_trigger, stage, state, std::addressof(action_state.action_name));
-                            }
+                            iceshard::trigger::TriggerEvent_ActionState const event_state{
+                                .event_action = action_state.action_name.hash_value,
+                                .state = action_state.is_fail ? 2u : (action_state.is_success ? 1u : 0u)
+                            };
+
+                            handle_success_trigger(action, success_trigger, stage, state, std::addressof(event_state));
                         }
                     }
 
@@ -268,10 +273,12 @@ namespace iceshard
                 {
                     for (auto const& action_state : _action_states)
                     {
-                        if (action_state.is_success)
-                        {
-                            handle_reset_trigger(reset_trigger, state, std::addressof(action_state.action_name));
-                        }
+                        iceshard::trigger::TriggerEvent_ActionState const event_state{
+                            .event_action = action_state.action_name.hash_value,
+                            .state = action_state.is_fail ? 2u : (action_state.is_success ? 1u : 0u)
+                        };
+
+                        handle_reset_trigger(reset_trigger, state, std::addressof(event_state));
                     }
                 }
 

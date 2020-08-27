@@ -84,6 +84,10 @@ namespace iceshard
 
         void update_actions(Frame const& frame, core::pod::Array<core::stringid_type>& out_actions) noexcept;
 
+        auto action_states() const noexcept -> core::pod::Array<InputActionState> const&
+        {
+            return _action_states;
+        }
 
         void add_trigger_definition(
             core::stringid_arg_type name,

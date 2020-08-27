@@ -27,8 +27,17 @@ namespace iceshard
         bool trigger_action_success(void* userdata, float current_elapsed, void const* data) noexcept
         {
             auto const action_data = trigger::get_trigger_userdata<trigger::TriggerData_Action>(userdata);
-            auto const& action_event = *reinterpret_cast<core::stringid_type const*>(data);
-            return action_event.hash_value == action_data.expected_action;
+            auto const& action_event = *reinterpret_cast<trigger::TriggerEvent_ActionState const*>(data);
+            return action_event.event_action == action_data.expected_action
+                && action_event.state == 1; // 1 for success
+        }
+
+        bool trigger_action_not_success(void* userdata, float current_elapsed, void const* data) noexcept
+        {
+            auto const action_data = trigger::get_trigger_userdata<trigger::TriggerData_Action>(userdata);
+            auto const& action_event = *reinterpret_cast<trigger::TriggerEvent_ActionState const*>(data);
+            return action_event.event_action == action_data.expected_action
+                && action_event.state != 1; // 1 for success
         }
 
         bool trigger_button_pressed(void* userdata, float current_elapsed, void const* data) noexcept
@@ -92,6 +101,13 @@ namespace iceshard
             ActionTriggerDefinition{
                 .event = ActionTriggerEvent::ActionEvent,
                 .func = detail::trigger_action_success
+            }
+        );
+
+        database.add_trigger_definition("trigger.action-not-success"_sid,
+            ActionTriggerDefinition{
+                .event = ActionTriggerEvent::ActionEvent,
+                .func = detail::trigger_action_not_success
             }
         );
 
