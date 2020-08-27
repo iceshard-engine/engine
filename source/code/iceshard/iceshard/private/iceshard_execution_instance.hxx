@@ -40,6 +40,11 @@ namespace iceshard
 
         auto input_actions() noexcept -> ActionSystem& override;
 
+        auto input_actions() const noexcept -> InputActionsTracker const&
+        {
+            return _input_actions_tracker;
+        }
+
         auto engine_clock() const noexcept -> core::Clock const& override;
 
         auto previous_frame() const noexcept -> Frame const& override;

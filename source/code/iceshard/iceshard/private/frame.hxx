@@ -24,6 +24,11 @@ namespace iceshard
 
         auto engine() noexcept -> Engine& override;
 
+        auto execution_instance() const noexcept -> IceshardExecutionInstance const&
+        {
+            return _execution_instance;
+        }
+
         auto messages() noexcept -> core::MessageBuffer& { return _frame_messages; }
 
         auto messages() const noexcept -> core::MessageBuffer const& override;
