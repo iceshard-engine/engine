@@ -88,22 +88,14 @@ namespace iceshard::debug::imgui
                     }
                     case DeviceInputType::MouseWheel:
                     {
-                        auto pos = iceshard::input::read<uint32_t>(msg, data);
-                        if (pos[1] > 0)
+                        auto pos = iceshard::input::read_one<int32_t>(msg, data);
+                        if (pos > 0)
                         {
                             _io.MouseWheel += 1.0f;
                         }
-                        else if (pos[1] < 0)
+                        if (pos < 0)
                         {
                             _io.MouseWheel -= 1.0f;
-                        }
-                        else if (pos[0] > 0)
-                        {
-                            _io.MouseWheelH += 1.0f;
-                        }
-                        else if (pos[0] < 0)
-                        {
-                            _io.MouseWheelH -= 1.0f;
                         }
                         break;
                     }
