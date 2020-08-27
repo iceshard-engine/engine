@@ -64,7 +64,7 @@ namespace iceshard::input
             return;
         }
         case DeviceInputType::MouseWheel:
-            _wheel = read_one<uint32_t>(msg, data);
+            _wheel = read_one<int32_t>(msg, data);
             return;
         default:
             return;

@@ -18,4 +18,9 @@ namespace iceshard::input
         core::buffer::clear(_input_data);
     }
 
+    bool DeviceInputQueue::empty() const noexcept
+    {
+        return core::pod::array::empty(_input_messages);
+    }
+
 } // namespace iceshard::input
