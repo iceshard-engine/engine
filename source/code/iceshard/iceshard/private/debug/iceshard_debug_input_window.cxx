@@ -42,7 +42,7 @@ namespace iceshard::debug
         , _messages{ alloc }
         , _events{ alloc }
     {
-        core::pod::queue::reserve(_messages, 20000);
+        core::pod::queue::reserve(_messages, 1000);
     }
 
     RawInputsWindow::~RawInputsWindow() noexcept
