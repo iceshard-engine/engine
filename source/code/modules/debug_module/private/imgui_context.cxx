@@ -65,7 +65,7 @@ namespace iceshard::debug::imgui
 
         for (auto const& entry : _debug_windows)
         {
-            entry.value->update(frame.input_queue());
+            entry.value->update(frame);
         }
 
         ImGui::NewFrame();
