@@ -76,7 +76,7 @@ namespace core
     namespace timeline
     {
 
-        auto create_timeline(Clock const& clock, float speed = 1.0f) noexcept -> Timeline;
+        auto create_timeline(Clock const& clock) noexcept -> Timeline;
 
         auto elapsed(Timeline const& timeline) noexcept -> float;
 

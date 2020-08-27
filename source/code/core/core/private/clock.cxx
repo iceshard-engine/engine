@@ -125,7 +125,7 @@ namespace core
     namespace timeline
     {
 
-        auto create_timeline(Clock const& clock, float speed) noexcept -> Timeline
+        auto create_timeline(Clock const& clock) noexcept -> Timeline
         {
             return Timeline{
                 .clock = &clock,
