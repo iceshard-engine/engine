@@ -23,6 +23,12 @@ namespace iceshard::trigger
         core::stringid_hash_type expected_action;
     };
 
+    struct TriggerEvent_ActionState
+    {
+        core::stringid_hash_type event_action;
+        uint32_t state; // 0 - reset, 1 - success, 2 - failed
+    };
+
     auto create_trigger_userdata(
         iceshard::input::InputID input
     ) noexcept -> void*;
