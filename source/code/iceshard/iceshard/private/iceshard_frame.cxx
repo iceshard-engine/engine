@@ -1,4 +1,4 @@
-#include "frame.hxx"
+#include "iceshard_frame.hxx"
 
 #include <core/debug/assert.hxx>
 #include <core/message/operations.hxx>

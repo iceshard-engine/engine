@@ -1,5 +1,5 @@
 #include "iceshard_execution_instance.hxx"
-#include "frame.hxx"
+#include "iceshard_frame.hxx"
 
 #include "systems/iceshard_camera_system.hxx"
 #include "systems/iceshard_lights_system.hxx"

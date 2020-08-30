@@ -1,7 +1,7 @@
 #include "iceshard_debug_actions.hxx"
 
 #include "../../iceshard_execution_instance.hxx"
-#include "../../frame.hxx"
+#include "../../iceshard_frame.hxx"
 
 #include <imgui/imgui.h>
 
