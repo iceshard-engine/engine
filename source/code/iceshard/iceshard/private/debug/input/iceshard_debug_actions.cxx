@@ -1,20 +1,22 @@
-#include "iceshard_debug_input_action.hxx"
-#include "../iceshard_execution_instance.hxx"
-#include "../frame.hxx"
+#include "iceshard_debug_actions.hxx"
+
+#include "../../iceshard_execution_instance.hxx"
+#include "../../frame.hxx"
 
 #include <imgui/imgui.h>
 
 namespace iceshard::debug
 {
 
-    ActionsDebugWindow::ActionsDebugWindow(core::allocator& alloc) noexcept
+    DebugWindow_Actions::DebugWindow_Actions(core::allocator& alloc, bool& open_ref) noexcept
         : DebugWindow{}
+        , _open{ open_ref }
         , _actions{ alloc }
         , _action_states{ alloc }
     {
     }
 
-    void ActionsDebugWindow::update(iceshard::Frame const& frame) noexcept
+    void DebugWindow_Actions::update(iceshard::Frame const& frame) noexcept
     {
         auto const& execution_instance = static_cast<MemoryFrame const&>(frame).execution_instance();
 
@@ -27,17 +29,40 @@ namespace iceshard::debug
         }
     }
 
-    void ActionsDebugWindow::end_frame() noexcept
+    void DebugWindow_Actions::end_frame() noexcept
     {
-        if (ImGui::Begin("Actions", &_visible))
+        if (_open == false)
+        {
+            return;
+        }
+
+        if (ImGui::Begin("Actions", &_open))
         {
             for (InputAction const* action_info : _actions)
             {
-                if (ImGui::TreeNode(action_info, "ActionID: %llX (%s)", core::hash(action_info->name), core::origin(action_info->name).data()))
+                auto const* const action_state = core::pod::hash::get(_action_states, core::hash(action_info->name), nullptr);
+                IS_ASSERT(action_state != nullptr, "Acction state cannot be nullptr!");
+
+                bool const is_open = ImGui::TreeNode(action_info, "ActionID: %llX (%s)", core::hash(action_info->name), core::origin(action_info->name).data());
+                if (is_open == false)
+                {
+                    ImGui::SameLine();
+                    if (action_state->is_success)
+                    {
+                        ImGui::TextColored(ImVec4{ 0.2f, 0.8f, 0.2f, 1.0f }, "(Successful)");
+                    }
+                    else if (action_state->is_fail)
+                    {
+                        ImGui::TextColored(ImVec4{ 0.8f, 0.2f, 0.2f, 1.0f }, "(Failed)");
+                    }
+                    else
+                    {
+                        ImGui::NewLine();
+                    }
+                }
+                else
                 {
                     ImGui::Columns(3);
-                    auto const* const action_state = core::pod::hash::get(_action_states, core::hash(action_info->name), nullptr);
-                    IS_ASSERT(action_state != nullptr, "Acction state cannot be nullptr!");
 
                     if (action_state->is_success)
                     {
@@ -86,11 +111,6 @@ namespace iceshard::debug
             }
         }
         ImGui::End();
-    }
-
-    void ActionsDebugWindow::show() noexcept
-    {
-        _visible = true;
     }
 
 } // namespace iceshard::debug

@@ -44,8 +44,9 @@ namespace iceshard::debug
 
     IceshardDebugUI::IceshardDebugUI(core::allocator& alloc) noexcept
         : DebugWindow{ }
-        , _raw_inputs_window{ alloc }
-        , _actions_window{ alloc }
+        , _dw_inputs_raw{ alloc, _open_inputs_raw }
+        , _dw_inputs_states{ alloc, _open_inputs_states }
+        , _dw_actions{ alloc, _open_actions }
     {
     }
 
@@ -74,14 +75,10 @@ namespace iceshard::debug
             ImGui::BeginMainMenuBar();
             if (ImGui::BeginMenu("Engine"))
             {
-                if (ImGui::MenuItem("Input (raw)"))
-                {
-                    _raw_inputs_window.show();
-                }
-                if (ImGui::MenuItem("Actions"))
-                {
-                    _actions_window.show();
-                }
+                ImGui::MenuItem("Inputs (raw)", nullptr, &_open_inputs_raw);
+                ImGui::MenuItem("Inputs (states)", nullptr, &_open_inputs_states);
+                ImGui::MenuItem("Actions", nullptr, &_open_actions);
+
                 ImGui::Separator();
                 ImGui::MenuItem("Demo window", nullptr, &_demo_window);
                 ImGui::EndMenu();
@@ -92,14 +89,16 @@ namespace iceshard::debug
 
     void IceshardDebugUI::register_windows(DebugSystem& system) noexcept
     {
-        system.register_window("iceshard.raw-inputs"_sid, _raw_inputs_window);
-        system.register_window("iceshard.debug.actions"_sid, _actions_window);
+        system.register_window(DebugWindow_InputsRaw::Identifier, _dw_inputs_raw);
+        system.register_window(DebugWindow_InputsStates::Identifier, _dw_inputs_states);
+        system.register_window(DebugWindow_Actions::Identifier, _dw_actions);
     }
 
     void IceshardDebugUI::unregister_windows(DebugSystem& system) noexcept
     {
-        system.unregister_window("iceshard.debug.actions"_sid);
-        system.unregister_window("iceshard.raw-inputs"_sid);
+        system.unregister_window(DebugWindow_Actions::Identifier);
+        system.unregister_window(DebugWindow_InputsStates::Identifier);
+        system.unregister_window(DebugWindow_InputsRaw::Identifier);
     }
 
 } // namespace iceshard::debug

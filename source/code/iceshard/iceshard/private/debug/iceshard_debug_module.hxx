@@ -1,7 +1,9 @@
 #pragma once
 #include <iceshard/debug/debug_window.hxx>
-#include "iceshard_debug_input_window.hxx"
-#include "iceshard_debug_input_action.hxx"
+
+#include "input/iceshard_debug_inputs_raw.hxx"
+#include "input/iceshard_debug_input_states.hxx"
+#include "input/iceshard_debug_actions.hxx"
 
 namespace iceshard::debug
 {
@@ -24,8 +26,15 @@ namespace iceshard::debug
         bool _visible = false;
         bool _demo_window = false;
 
-        RawInputsWindow _raw_inputs_window;
-        ActionsDebugWindow _actions_window;
+        // Windows states (in order)
+        bool _open_inputs_raw = false;
+        bool _open_inputs_states = false;
+        bool _open_actions = false;
+
+        // Windows (in order)
+        DebugWindow_InputsRaw _dw_inputs_raw;
+        DebugWindow_InputsStates _dw_inputs_states;
+        DebugWindow_Actions _dw_actions;
     };
 
 } // namespace iceshard::debug
