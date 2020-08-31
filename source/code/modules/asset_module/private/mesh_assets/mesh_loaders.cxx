@@ -6,6 +6,8 @@
 
 #include <iceshard/renderer/render_model.hxx>
 
+#include <resource/resource_meta.hxx>
+
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
@@ -182,13 +184,29 @@ namespace iceshard
         if (model_status == asset::AssetStatus::Requested)
         {
             Assimp::Importer importer;
-
             importer.SetPropertyFloat(AI_CONFIG_PP_GSN_MAX_SMOOTHING_ANGLE, 80);
-            aiScene const* scene = importer.ReadFileFromMemory(
-                resource_data.data(),
-                resource_data.size(),
-                aiProcessPreset_TargetRealtime_Fast
-            );
+
+            aiScene const* scene = nullptr;
+
+            core::StringView hint = "";
+            if (resource::get_meta_string(meta, "model.assimp.hint"_sid, hint))
+            {
+                scene = importer.ReadFileFromMemory(
+                    resource_data.data(),
+                    resource_data.size(),
+                    aiProcessPreset_TargetRealtime_Fast,
+                    hint.data()
+                );
+            }
+            else
+            {
+                scene = importer.ReadFileFromMemory(
+                    resource_data.data(),
+                    resource_data.size(),
+                    aiProcessPreset_TargetRealtime_Fast
+                );
+            }
+
 
             // We don't know this file format
             if (scene == nullptr || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || scene->mRootNode == nullptr)

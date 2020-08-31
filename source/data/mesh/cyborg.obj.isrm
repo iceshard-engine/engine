@@ -1,0 +1,13 @@
+{
+    "resource": {
+        "meta": {
+            "type": 1,
+            "version": 0
+        }
+    },
+    "model": {
+        "assimp": {
+            "hint": "cyborg.obj"
+        }
+    }
+}

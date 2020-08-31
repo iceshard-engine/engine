@@ -40,9 +40,9 @@ namespace iceshard
         , _render_system{ render_system }
         , _asset_system{ asset_system }
     {
-        _indice_buffers = renderer::create_buffer(renderer::api::BufferType::IndexBuffer, 1024 * 32);
-        _vertice_buffers = renderer::create_buffer(renderer::api::BufferType::VertexBuffer, 1024 * 128);
-        _instance_buffers = renderer::create_buffer(renderer::api::BufferType::VertexBuffer, 1024 * 16);
+        _indice_buffers = renderer::create_buffer(renderer::api::BufferType::IndexBuffer, 1024 * 1024 * 32);
+        _vertice_buffers = renderer::create_buffer(renderer::api::BufferType::VertexBuffer, 1024 * 1024 * 128);
+        _instance_buffers = renderer::create_buffer(renderer::api::BufferType::VertexBuffer, 1024 * 32);
 
 
         {
