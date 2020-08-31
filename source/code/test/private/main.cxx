@@ -278,7 +278,7 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
 
 
             core::pod::Array<iceshard::Entity> cube_entities{ alloc };
-            engine_instance->entity_manager().create_many(core::size(cube_positions), cube_entities);
+            engine_instance->entity_manager().create_many(core::size(cube_positions) + 1, cube_entities);
 
             uint32_t i = 0;
             for (auto const cube_pos : cube_positions)
@@ -297,6 +297,17 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
                 angle += 20.f;
                 i += 1;
             }
+
+            auto model = ism::translate(ism::vec3f{ 1.7f,  1.0f, -6.5f });
+            model = ism::scale(model, { 0.4, 0.4, 0.4 });
+            model = ism::rotate(model, ism::radians(0), { 1.f, 0.3f, 0.5f });
+
+            arch_idx->add_component(cube_entities[i], iceshard::component::ModelName{ "mesh/cyborg"_sid });
+            arch_idx->add_component(cube_entities[i], iceshard::component::Transform{ model });
+            arch_idx->add_component(cube_entities[i], iceshard::component::ModelMaterial{
+                ism::vec4f { 0.8, 0.2, 0.2, 1.0 }
+            });
+
         }
 
         pos = ism::scale(
@@ -486,12 +497,6 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
         {
             auto& frame = execution_instance->current_frame();
             core::clock::update(light_clock);
-
-            for (auto const& action : frame.input_actions())
-            {
-                fmt::print("Input action fired: {}\n", action);
-            }
-            using ControllerInput = iceshard::input::ControllerInput;
 
             iceshard::ecs::for_each_entity(
                 iceshard::ecs::query_index(light_query, *arch_idx),
