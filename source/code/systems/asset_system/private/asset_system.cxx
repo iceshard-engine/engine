@@ -47,18 +47,19 @@ namespace asset
         core::memory::unique_pointer<asset::AssetResolver> resolver
     ) noexcept -> AssetResolverHandle
     {
-        AssetResolverHandle resolver_handle{ static_cast<uint32_t>(_asset_resolvers.size()) };
-        _asset_resolvers.push_back(std::move(resolver));
+        _next_resolver_handle += 1;
+        AssetResolverHandle resolver_handle{ _next_resolver_handle };
+
+        _asset_resolvers.emplace(resolver_handle, std::move(resolver));
         return resolver_handle;
     }
 
     void AssetSystem::remove_resolver(asset::AssetResolverHandle resolver_handle) noexcept
     {
-        uint32_t const resolved_index = static_cast<uint32_t>(resolver_handle);
-        if (resolved_index < _asset_resolvers.size())
+        auto const it = _asset_resolvers.find(resolver_handle);
+        if (it != _asset_resolvers.end())
         {
-            auto const element_to_remove = std::next(_asset_resolvers.begin(), resolved_index);
-            _asset_resolvers.erase(element_to_remove);
+            _asset_resolvers.erase(it);
         }
     }
 
@@ -67,33 +68,34 @@ namespace asset
         core::memory::unique_pointer<asset::AssetLoader> loader
     ) noexcept -> AssetLoaderHandle
     {
-        AssetLoaderHandle resolver_handle{ static_cast<uint32_t>(_asset_loaders.size()) };
+        _next_loader_handle += 1;
+        AssetLoaderHandle resolver_handle{ _next_loader_handle };
 
         for (auto asset_type : loader->supported_asset_types())
         {
             _asset_loader_map[asset_type].push_back(loader.get());
         }
 
-        _asset_loaders.push_back(std::move(loader));
+        _asset_loaders.emplace(resolver_handle, std::move(loader));
         return resolver_handle;
     }
 
     void AssetSystem::remove_loader(asset::AssetLoaderHandle loader_handle) noexcept
     {
-        uint32_t const resolved_index = static_cast<uint32_t>(loader_handle);
-        if (resolved_index < _asset_loaders.size())
+        auto const it = _asset_loaders.find(loader_handle);
+        if (it != _asset_loaders.end())
         {
-            auto const element_to_remove = std::next(_asset_loaders.begin(), resolved_index);
+            auto const& element_to_remove = it->second;
 
-            for (auto asset_type : (*element_to_remove)->supported_asset_types())
+            for (auto asset_type : element_to_remove->supported_asset_types())
             {
                 auto& loader_vector = _asset_loader_map[asset_type];
 
-                auto loader_to_remove = std::find(loader_vector.begin(), loader_vector.end(), element_to_remove->get());
+                auto loader_to_remove = std::find(loader_vector.begin(), loader_vector.end(), element_to_remove.get());
                 loader_vector.erase(loader_to_remove);
             }
 
-            _asset_loaders.erase(element_to_remove);
+            _asset_loaders.erase(it);
         }
     }
 
@@ -115,7 +117,7 @@ namespace asset
                 AssetType resolved_asset_type = AssetType::Unresolved;
                 while (resolved_asset_type == AssetType::Unresolved && it != end)
                 {
-                    resolved_asset_type = (*it)->resolve_asset_type(extension, msg.resource->metadata());
+                    resolved_asset_type = it->second->resolve_asset_type(extension, msg.resource->metadata());
                     it = std::next(it);
                 }
 

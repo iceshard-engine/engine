@@ -57,8 +57,11 @@ namespace asset
     private:
         core::allocator& _allocator;
 
-        core::Vector<core::memory::unique_pointer<AssetResolver>> _asset_resolvers;
-        core::Vector<core::memory::unique_pointer<AssetLoader>> _asset_loaders;
+        uint32_t _next_resolver_handle = 0;
+        uint32_t _next_loader_handle = 0;
+
+        core::Map<AssetResolverHandle, core::memory::unique_pointer<AssetResolver>> _asset_resolvers;
+        core::Map<AssetLoaderHandle, core::memory::unique_pointer<AssetLoader>> _asset_loaders;
 
         core::Map<AssetType, std::vector<AssetLoader*>> _asset_loader_map;
 
