@@ -30,6 +30,15 @@ namespace core
     };
 
     template<typename T>
+    constexpr auto combine_flag(T left, T right) noexcept
+    {
+        static_assert(std::is_enum_v<T>, "T is not a valid enum value.");
+        auto const left_value = static_cast<std::underlying_type_t<T>>(left);
+        auto const right_value = static_cast<std::underlying_type_t<T>>(right);
+        return T{ left_value | right_value };
+    }
+
+    template<typename T>
     constexpr auto has_flag(T flags, T mask) noexcept
     {
         static_assert(std::is_enum_v<T>, "T is not a valid enum value.");
