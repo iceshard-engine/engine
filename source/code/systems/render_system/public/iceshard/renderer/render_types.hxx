@@ -18,6 +18,8 @@ namespace iceshard::renderer
 
     using ResourceSet = iceshard::renderer::api::ResourceSet;
 
+    struct RenderResourceSetInfo;
+
     struct RenderResource;
 
     using Texture = iceshard::renderer::api::Texture;

@@ -43,6 +43,7 @@ namespace iceshard::renderer::vulkan
         auto create_resource_set(
             core::stringid_arg_type name,
             iceshard::renderer::RenderPipelineLayout layout,
+            RenderResourceSetInfo resource_set_info,
             core::pod::Array<RenderResource> const& resources
         ) noexcept -> ResourceSet override;
 
@@ -107,9 +108,6 @@ namespace iceshard::renderer::vulkan
         auto v1_graphics_queue() noexcept -> VkQueue;
         auto v1_renderpass() noexcept -> VkRenderPass;
         auto v1_current_framebuffer() noexcept -> VkFramebuffer;
-
-        auto v1_primary_cmd_buffer() noexcept -> VkCommandBuffer;
-        auto v1_transfer_cmd_buffer() noexcept -> VkCommandBuffer;
 
     public:
         void v1_submit_command_buffers() noexcept;

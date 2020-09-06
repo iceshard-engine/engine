@@ -9,15 +9,14 @@ namespace iceshard::component
     {
         static constexpr auto identifier = "isc.model"_sid;
 
-        //! \brief The mesh name
         core::stringid_type name;
     };
 
-    struct ModelMaterial
+    struct Material
     {
-        static constexpr auto identifier = "isc.model-color"_sid;
+        static constexpr auto identifier = "isc.material"_sid;
 
-        ism::vec4f color;
+        core::stringid_type material_name;
     };
 
 } // namespace iceshard::ecs

@@ -8,6 +8,7 @@
 #include <iceshard/engine.hxx>
 
 #include <iceshard/renderer/render_commands.hxx>
+#include <iceshard/renderer/render_resources.hxx>
 #include <iceshard/renderer/render_pipeline.hxx>
 
 namespace iceshard
@@ -53,7 +54,11 @@ namespace iceshard
 
         _native_render_system.create_resource_set(
             "static-mesh.3d"_sid,
-            iceshard::renderer::RenderPipelineLayout::Default,
+            iceshard::renderer::RenderPipelineLayout::Textured,
+            iceshard::renderer::RenderResourceSetInfo{
+                .usage = iceshard::renderer::RenderResourceSetUsage::LightsData
+                    | iceshard::renderer::RenderResourceSetUsage::ViewProjectionData
+            },
             { _allocator } // Empty array
         );
     }

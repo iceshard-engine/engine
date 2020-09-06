@@ -9,8 +9,11 @@
 #include <iceshard/ecs/model.hxx>
 #include <iceshard/ecs/transform.hxx>
 #include <iceshard/engine.hxx>
+#include <iceshard/material/material.hxx>
 
 #include <asset_system/asset_system.hxx>
+
+#include "iceshard_mesh_loader.hxx"
 
 namespace iceshard
 {
@@ -20,21 +23,19 @@ namespace iceshard
 
         struct RenderInstance
         {
-            uint32_t indice_offset;
-            uint32_t vertice_offset;
             uint32_t instance_offset;
             uint32_t instance_count;
-            iceshard::renderer::v1::Model const* model;
+            MaterialResources material;
+            MeshInfo mesh_info;
             iceshard::renderer::v1::Mesh const* mesh;
         };
 
         struct InstanceData
         {
             ism::mat4x4 xform;
-            ism::vec4f color;
         };
 
-        static_assert(sizeof(InstanceData) == sizeof(float) * 20);
+        static_assert(sizeof(InstanceData) == sizeof(float) * 16);
 
     } // namespace tasks
 
@@ -50,6 +51,7 @@ namespace iceshard
             iceshard::Engine& engine,
             iceshard::ecs::ArchetypeIndex& index,
             iceshard::renderer::RenderSystem& render_system,
+            iceshard::MeshLoader& mesh_loader,
             asset::AssetSystem& asset_system
         ) noexcept;
 
@@ -85,22 +87,19 @@ namespace iceshard
         iceshard::ecs::ComponentQuery<
             iceshard::component::Entity*,
             iceshard::component::ModelName*,
-            iceshard::component::ModelMaterial*,
+            iceshard::component::Material*,
             iceshard::component::Transform*
         > _component_query;
 
         iceshard::renderer::RenderSystem& _render_system;
         asset::AssetSystem& _asset_system;
+        iceshard::MeshLoader& _mesh_loader;
+        iceshard::MaterialSystem& _material_system;
 
         // Render resources
         ism::vec2u _viewport{ 1280, 720 };
 
-        iceshard::renderer::api::Buffer _indice_buffers;
-        iceshard::renderer::api::Buffer _vertice_buffers;
         iceshard::renderer::api::Buffer _instance_buffers;
-
-        iceshard::renderer::api::Pipeline _render_pipeline;
-        iceshard::renderer::api::ResourceSet _render_resource_set;
     };
 
 } // namespace iceshard

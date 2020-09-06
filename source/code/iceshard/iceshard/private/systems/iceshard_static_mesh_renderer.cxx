@@ -17,6 +17,7 @@
 #include <iceshard/renderer/render_resources.hxx>
 #include <iceshard/renderer/render_commands.hxx>
 #include <iceshard/renderer/render_buffers.hxx>
+#include <iceshard/material/material_system.hxx>
 
 #include <asset_system/assets/asset_mesh.hxx>
 
@@ -32,6 +33,7 @@ namespace iceshard
         iceshard::Engine& engine,
         iceshard::ecs::ArchetypeIndex& index,
         iceshard::renderer::RenderSystem& render_system,
+        iceshard::MeshLoader& mesh_loader,
         asset::AssetSystem& asset_system
     ) noexcept
         : _allocator{ alloc }
@@ -39,34 +41,14 @@ namespace iceshard
         , _component_query{ _allocator }
         , _render_system{ render_system }
         , _asset_system{ asset_system }
+        , _mesh_loader{ mesh_loader }
+        , _material_system{ engine.material_system() }
     {
-        _indice_buffers = renderer::create_buffer(renderer::api::BufferType::IndexBuffer, 1024 * 1024 * 32);
-        _vertice_buffers = renderer::create_buffer(renderer::api::BufferType::VertexBuffer, 1024 * 1024 * 128);
         _instance_buffers = renderer::create_buffer(renderer::api::BufferType::VertexBuffer, 1024 * 32);
-
-
-        {
-            core::pod::Array<asset::AssetData> shader_assets{ alloc };
-            core::pod::array::resize(shader_assets, 2);
-
-            _asset_system.load(asset::AssetShader{ "shaders/debug/test-vert" }, shader_assets[0]);
-            _asset_system.load(asset::AssetShader{ "shaders/debug/test-frag" }, shader_assets[1]);
-
-            _render_pipeline = _render_system.create_pipeline(
-                "static-mesh.3d"_sid,
-                iceshard::renderer::RenderPipelineLayout::Default,
-                shader_assets
-            );
-        }
-
-        _render_resource_set = _render_system.get_resource_set(
-            "static-mesh.3d"_sid
-        );
     }
 
     IceshardStaticMeshRenderer::~IceshardStaticMeshRenderer()
     {
-        _render_system.destroy_pipeline("static-mesh.3d"_sid);
     }
 
     void IceshardStaticMeshRenderer::update(iceshard::Frame& frame) noexcept
@@ -77,7 +59,7 @@ namespace iceshard
         using asset::AssetStatus;
 
         using iceshard::component::ModelName;
-        using iceshard::component::ModelMaterial;
+        using iceshard::component::Material;
         using iceshard::component::Transform;
         using iceshard::component::Entity;
 
@@ -94,13 +76,20 @@ namespace iceshard
 
         // Render data
         core::pod::Hash<Model const*> models{ _allocator };
-        core::pod::Array<uint64_t> instance_models{ _allocator };
+
+        struct ModelInfo
+        {
+            uint64_t model_name;
+            core::stringid_hash_type material_name;
+        };
+
+        core::pod::Array<ModelInfo> instance_models{ _allocator };
         core::pod::Array<detail::InstanceData> transforms{ _allocator };
 
         // Get all asset models for rendering
         iceshard::ecs::for_each_entity(
             iceshard::ecs::query_index(_component_query, _archetype_index),
-            [&](Entity* e, ModelName* static_model, ModelMaterial* color, Transform* transform) noexcept
+            [&](Entity* e, ModelName* static_model, Material* material, Transform* transform) noexcept
             {
                 AssetData model_data;
                 if (AssetStatus::Loaded == _asset_system.load(Asset{ static_model->name, AssetType::Mesh }, model_data))
@@ -112,43 +101,43 @@ namespace iceshard
                         core::pod::hash::set(models, model_name, model);
                     }
 
-                    core::pod::array::push_back(transforms, detail::InstanceData{ transform->xform, color->color });
-                    core::pod::array::push_back(instance_models, model_name);
+                    core::pod::array::push_back(transforms, detail::InstanceData{ transform->xform });
+                    core::pod::array::push_back(instance_models,
+                        ModelInfo{
+                            .model_name = model_name,
+                            .material_name = material->material_name.hash_value,
+                        }
+                    );
                 }
             }
         );
 
         // Sort transforms and instance models (using instance models as the key)
-        core::pod::sort(instance_models, transforms, [](uint64_t left, uint64_t right) noexcept
+        core::pod::sort(instance_models, transforms, [](ModelInfo left, ModelInfo right) noexcept
             {
-                return left < right;
+                return left.model_name == right.model_name;
             });
 
-        core::pod::array::push_back(instance_models, core::hash(core::stringid_invalid));
+        core::pod::array::push_back(instance_models, ModelInfo{ .model_name = core::hash(core::stringid_invalid) });
 
         // Build render instances
         auto* instance_data = frame.new_frame_object<core::pod::Array<detail::InstanceData>>("render-instances.data"_sid, frame_alloc);
         auto* instances = frame.new_frame_object<core::pod::Array<detail::RenderInstance>>("render-instances"_sid, frame_alloc);
 
-        uint32_t total_indice_count = 0;
-        uint32_t total_vertice_count = 0;
         uint32_t total_instance_count = 0;
         uint32_t current_model_count = 0;
         uint32_t processed_model_count = 0;
-        uint64_t last_instance_model = core::pod::array::front(instance_models);
+        ModelInfo last_instance_model = core::pod::array::front(instance_models);
         detail::RenderInstance* last_instance = nullptr;
 
-        std::for_each(core::pod::begin(instance_models), core::pod::end(instance_models), [&](uint64_t model) noexcept
+        std::for_each(core::pod::begin(instance_models), core::pod::end(instance_models), [&](ModelInfo model_info) noexcept
             {
-                if (last_instance_model != model && current_model_count > 0)
+                if (last_instance_model.model_name != model_info.model_name && current_model_count > 0)
                 {
-                    auto const* model_data = core::pod::hash::get(models, last_instance_model, nullptr);
+                    auto const* model_data = core::pod::hash::get(models, last_instance_model.model_name, nullptr);
 
                     auto const* it = model_data->mesh_list;
                     auto const* const end = model_data->mesh_list + model_data->mesh_count;
-
-                    auto const indice_offset = total_indice_count;
-                    auto const vertice_offset = total_vertice_count;
 
                     while (it != end)
                     {
@@ -160,32 +149,32 @@ namespace iceshard
                             core::pod::array::push_back(*instance_data,
                                 detail::InstanceData{
                                     .xform = transforms[processed_model_count + i].xform * it->local_xform,
-                                    .color = transforms[processed_model_count + i].color
                                 }
                             );
                             total_instance_count += 1;
                         }
 
+                        MaterialResources resources;
+                        _material_system.get_material({ last_instance_model.material_name }, resources);
+
                         core::pod::array::push_back(
                             *instances,
                             detail::RenderInstance
                             {
-                                .indice_offset = indice_offset,
-                                .vertice_offset = vertice_offset,
                                 .instance_offset = instance_offset,
                                 .instance_count = current_model_count,
-                                .model = model_data,
+                                .material = resources,
+                                .mesh_info = _mesh_loader.get_mesh(core::stringid_type{
+                                    static_cast<core::stringid_hash_type>(last_instance_model.model_name)
+                                }),
                                 .mesh = it,
                             }
                         );
 
-                        total_indice_count += it->indice_count;
-                        total_vertice_count += it->vertice_count;
-
                         it += 1;
                     }
 
-                    last_instance_model = model;
+                    last_instance_model = model_info;
                     processed_model_count += current_model_count;
                     current_model_count = 0;
                 }
@@ -226,9 +215,7 @@ namespace iceshard
         }
 
         Buffer mapped_buffers[] = {
-            _vertice_buffers,
             _instance_buffers,
-            _indice_buffers,
         };
         DataView mapped_buffer_views[core::size(mapped_buffers)];
 
@@ -239,33 +226,8 @@ namespace iceshard
 
         map_buffers(buffers_arr, views_arr);
 
-        for (auto const& instance : *instances)
-        {
-            iceshard::renderer::v1::Model const* model = instance.model;
-
-            void* const vertice_buffer_ptr = core::memory::utils::pointer_add(
-                mapped_buffer_views[0].data,
-                instance.vertice_offset * sizeof(core::math::vec3f) * 2
-            );
-            void* const indice_buffer_ptr = core::memory::utils::pointer_add(
-                mapped_buffer_views[2].data,
-                instance.indice_offset * sizeof(core::math::u16)
-            );
-
-            memcpy(
-                vertice_buffer_ptr,
-                model->vertice_data,
-                model->vertice_data_size
-            );
-            memcpy(
-                indice_buffer_ptr,
-                model->indice_data,
-                model->indice_data_size
-            );
-        }
-
         memcpy(
-            mapped_buffer_views[1].data,
+            mapped_buffer_views[0].data,
             core::pod::begin(instance_data),
             core::pod::array::size(instance_data) * sizeof(detail::InstanceData)
         );
@@ -287,31 +249,37 @@ namespace iceshard
         using iceshard::renderer::RenderPassStage;
         using namespace iceshard::renderer::commands;
 
-        bind_pipeline(cb, _render_pipeline);
-        bind_resource_set(cb, _render_resource_set);
         set_viewport(cb, _viewport.x, _viewport.y);
         set_scissor(cb, _viewport.x, _viewport.y);
 
-        {
-            Buffer buffers[] = {
-                _vertice_buffers,
-                _instance_buffers,
-            };
-
-            core::pod::Array<Buffer> buffer_view{ core::memory::globals::null_allocator() };
-            core::pod::array::create_view(buffer_view, buffers, 2);
-
-            bind_index_buffer(cb, _indice_buffers);
-            bind_vertex_buffers(cb, buffer_view);
-        }
-
         for (auto const& instance : *instances)
         {
+            {
+                Buffer buffers[] = {
+                    instance.mesh_info.vertice_buffer,
+                    _instance_buffers,
+                };
+
+                core::pod::Array<Buffer> buffer_view{ core::memory::globals::null_allocator() };
+                core::pod::array::create_view(buffer_view, buffers, 2);
+
+                bind_index_buffer(cb, instance.mesh_info.indice_buffer);
+                bind_vertex_buffers(cb, buffer_view);
+            }
+
+            bind_pipeline(cb, instance.material.pipeline);
+
+            iceshard::renderer::ResourceSet resource_sets[] = {
+                instance.material.resource,
+                _render_system.get_resource_set("static-mesh.3d"_sid)
+            };
+            bind_resource_sets(cb, core::pod::array::create_view(resource_sets));
+
             draw_indexed(cb,
                 instance.mesh->indice_count,
                 instance.instance_count,
-                instance.indice_offset + instance.mesh->indice_offset,
-                instance.vertice_offset + instance.mesh->vertice_offset, // * sizeof(core::math::vec3) * 2,
+                instance.mesh_info.indice_buffer_offset + instance.mesh->indice_offset,
+                instance.mesh_info.vertice_buffer_offset + instance.mesh->vertice_offset, // * sizeof(core::math::vec3) * 2,
                 instance.instance_offset
             );
         }

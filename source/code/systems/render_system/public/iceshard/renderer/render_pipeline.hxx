@@ -12,6 +12,7 @@ namespace iceshard::renderer
         //! * Each vertice consists of a position (vec3) and a color (vec3)
         //! * Each instance requires a model (mat4).
         Default,
+        Textured,
         PostProcess,
         DebugUI,
     };

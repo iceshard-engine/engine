@@ -37,6 +37,7 @@ namespace iceshard::renderer::vulkan
     auto create_texture_2d(
         core::allocator& alloc,
         VulkanDeviceMemoryManager& device_memory,
+        VkFormat format,
         VkExtent2D extent
     ) noexcept -> core::memory::unique_pointer<VulkanImage>;
 

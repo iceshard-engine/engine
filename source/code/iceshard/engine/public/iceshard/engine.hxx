@@ -24,6 +24,8 @@ namespace iceshard
 
     class ServiceProvider;
 
+    class MaterialSystem;
+
     //! \brief The main class from the engine library.
     class Engine
     {
@@ -37,6 +39,8 @@ namespace iceshard
         virtual auto asset_system() noexcept -> asset::AssetSystem& = 0;
 
         virtual auto input_system() noexcept -> ::input::InputSystem& = 0;
+
+        virtual auto material_system() noexcept -> iceshard::MaterialSystem& = 0;
 
         virtual auto entity_manager() noexcept -> iceshard::EntityManager& = 0;
 

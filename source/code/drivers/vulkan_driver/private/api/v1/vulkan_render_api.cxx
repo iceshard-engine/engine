@@ -34,11 +34,11 @@ namespace iceshard::renderer::api::v1_1::vulkan
         fmt::print("Using Vulkan Render API v1.\n");
     }
 
-    auto vulkan_api_v1_create_texture(core::stringid_arg_type name, core::math::vec2u size) -> api::Texture
+    auto vulkan_api_v1_create_texture(core::stringid_arg_type name, TextureFormat format, core::math::vec2u size) -> api::Texture
     {
         auto& render_system = render_system_instance();
 
-        return render_system.textures().allocate_texture(name, { size.x, size.y });
+        return render_system.textures().allocate_texture(name, format, { size.x, size.y });
     };
 
     auto vulkan_api_v1_create_buffer(BufferType type, uint32_t size) -> api::Buffer
@@ -168,6 +168,80 @@ namespace iceshard::renderer::api::v1_1::vulkan
         );
     }
 
+    void vulkan_api_v1a_update_texture_ex(
+        types::CommandBuffer cb,
+        types::Texture tex,
+        types::Buffer buf,
+        UpdateTextureData data
+    )
+    {
+        auto native_cb = command_buffer(cb);
+        auto image_handle = reinterpret_cast<VulkanImage*>(tex);
+        auto buffer_handle = reinterpret_cast<VulkanBuffer*>(buf);
+
+        VkImageMemoryBarrier barrier = {};
+        barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+        barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+        barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        barrier.image = image_handle->native_handle();
+        barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        barrier.subresourceRange.baseMipLevel = 0;
+        barrier.subresourceRange.levelCount = 1;
+        barrier.subresourceRange.baseArrayLayer = 0;
+        barrier.subresourceRange.layerCount = 1;
+        barrier.srcAccessMask = 0; // TODO
+        barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT; // TODO
+
+        vkCmdPipelineBarrier(
+            native_cb,
+            VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
+            0,
+            0, nullptr,
+            0, nullptr,
+            1, &barrier
+        );
+
+        VkBufferImageCopy region = {};
+        region.bufferOffset = data.buffer_offset;
+        region.bufferRowLength = 0;
+        region.bufferImageHeight = 0;
+
+        region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        region.imageSubresource.mipLevel = 0;
+        region.imageSubresource.baseArrayLayer = 0;
+        region.imageSubresource.layerCount = 1;
+
+        region.imageOffset = { 0, 0, 0 };
+        region.imageExtent.width = data.image_extent.x;
+        region.imageExtent.height = data.image_extent.y;
+        region.imageExtent.depth = 1;
+        vkCmdCopyBufferToImage(
+            native_cb,
+            buffer_handle->native_handle(),
+            image_handle->native_handle(),
+            VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+            1,
+            &region
+        );
+
+
+        barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+        barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+        barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+        vkCmdPipelineBarrier(
+            native_cb,
+            VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+            0,
+            0, nullptr,
+            0, nullptr,
+            1, &barrier
+        );
+    }
+
     void vulkan_api_v1a_buffer_array_map(Buffer* buffers, DataView* views, uint32_t size)
     {
         auto& mem_manager = reinterpret_cast<VulkanBuffer*>(buffers[0])->memory_manager();
@@ -250,15 +324,108 @@ namespace iceshard::renderer::api::v1_1::vulkan
 
     void vulkan_api_v1_bind_resource_set(CommandBuffer cb, ResourceSet resourse_set) noexcept
     {
+        using iceshard::renderer::RenderResourceSetUsage;
+
         const auto* vulkan_resource_set = reinterpret_cast<iceshard::renderer::vulkan::VulkanResourceSet const*>(resourse_set);
+
+        uint32_t first_set_index = 0;
+        if (core::has_flag(vulkan_resource_set->resource_set_usage, RenderResourceSetUsage::ViewProjectionData))
+        {
+            first_set_index = 0;
+        }
+        else if (core::has_flag(vulkan_resource_set->resource_set_usage, RenderResourceSetUsage::LightsData))
+        {
+            first_set_index = 1;
+        }
+        else if (core::has_flag(vulkan_resource_set->resource_set_usage, RenderResourceSetUsage::MaterialData))
+        {
+            first_set_index = 2;
+        }
+
+        uint32_t set_count = 0;
+        for (auto* set : vulkan_resource_set->descriptor_sets)
+        {
+            if (set != nullptr)
+            {
+                set_count += 1;
+            }
+        }
 
         vkCmdBindDescriptorSets(
             command_buffer(cb),
             VK_PIPELINE_BIND_POINT_GRAPHICS,
             vulkan_resource_set->pipeline_layout,
-            0,
-            core::size(vulkan_resource_set->descriptor_sets),
+            first_set_index,
+            set_count,
             vulkan_resource_set->descriptor_sets,
+            0,
+            NULL
+        );
+    }
+
+    void vulkan_api_v1_bind_resource_sets(CommandBuffer cb, ResourceSet* resourse_sets, uint32_t count) noexcept
+    {
+        using iceshard::renderer::RenderResourceSetUsage;
+
+
+        VkDescriptorSet descriptor_sets[4]{ };
+        VkPipelineLayout pipeline_layout = vk_nullptr;
+
+        for (auto const resource_set : core::pod::array::create_view(resourse_sets, count))
+        {
+            const auto* vulkan_resource_set = reinterpret_cast<iceshard::renderer::vulkan::VulkanResourceSet const*>(
+                resource_set
+            );
+            if (pipeline_layout == pipeline_layout)
+            {
+                pipeline_layout = vulkan_resource_set->pipeline_layout;
+            }
+            else
+            {
+                IS_ASSERT(pipeline_layout == vulkan_resource_set->pipeline_layout, "Different pipeline layouts!");
+            }
+
+            uint32_t first_set_index = 0;
+            if (core::has_flag(vulkan_resource_set->resource_set_usage, RenderResourceSetUsage::ViewProjectionData))
+            {
+                first_set_index = 0;
+            }
+            else if (core::has_flag(vulkan_resource_set->resource_set_usage, RenderResourceSetUsage::LightsData))
+            {
+                first_set_index = 1;
+            }
+            else if (core::has_flag(vulkan_resource_set->resource_set_usage, RenderResourceSetUsage::MaterialData))
+            {
+                first_set_index = 2;
+            }
+
+            for (auto set : vulkan_resource_set->descriptor_sets)
+            {
+                if (set != vk_nullptr)
+                {
+                    IS_ASSERT(descriptor_sets[first_set_index] == nullptr, "");
+                    descriptor_sets[first_set_index] = set;
+                    first_set_index += 1;
+                }
+            }
+        }
+
+        uint32_t set_count = 0;
+        for (auto set : descriptor_sets)
+        {
+            if (set != vk_nullptr)
+            {
+                set_count += 1;
+            }
+        }
+
+        vkCmdBindDescriptorSets(
+            command_buffer(cb),
+            VK_PIPELINE_BIND_POINT_GRAPHICS,
+            pipeline_layout,
+            0,
+            set_count,
+            descriptor_sets,
             0,
             NULL
         );
@@ -368,6 +535,7 @@ namespace iceshard::renderer::api::v1_1::vulkan
         instance->cmd_end_func = vulkan_api_v1_cmd_end;
 
         instance->cmd_update_texture_func = vulkan_api_v1_update_texture;
+        instance->cmd_update_texture_ex_func = vulkan_api_v1a_update_texture_ex;
 
         //instance->cmd_begin_render_pass_func = vulkan_api_v1_begin_render_pass;
         instance->cmd_next_subpass_func = vulkan_api_v1_next_render_subpass;
@@ -377,6 +545,7 @@ namespace iceshard::renderer::api::v1_1::vulkan
         instance->cmd_push_constants_func = vulkan_api_v1_push_constants;
         instance->cmd_bind_render_pipeline_func = vulkan_api_v1_bind_render_pipeline;
         instance->cmd_bind_resource_set_func = vulkan_api_v1_bind_resource_set;
+        instance->cmd_bind_resource_sets_func = vulkan_api_v1_bind_resource_sets;
         instance->cmd_bind_vertex_buffers_array_func = vulkan_api_v1_bind_vertex_buffers_array;
         instance->cmd_bind_index_buffer_func = vulkan_api_v1_bind_index_buffer;
         instance->cmd_set_viewport_func = vulkan_api_v1_set_viewport;

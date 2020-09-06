@@ -21,6 +21,7 @@ namespace iceshard
 
         using iceshard::renderer::v1::Mesh;
         using iceshard::renderer::v1::Model;
+        using iceshard::renderer::v1::Vertice;
 
         void process_mesh(
             core::allocator& alloc,
@@ -30,29 +31,35 @@ namespace iceshard
             aiMatrix4x4 const& mtx
         ) noexcept
         {
+            using core::math::vec2f;
             using core::math::vec3f;
             using core::math::u16;
 
             {
-                vec3f* vertice_data = model.vertice_data + model_mesh.vertice_offset * 2llu;
-                vec3f const* const vertice_data_end = vertice_data + model_mesh.vertice_count * 2llu;
+                Vertice* vertice_data = model.vertice_data + model_mesh.vertice_offset;
+                Vertice const* const vertice_data_end = vertice_data + model_mesh.vertice_count;
 
+                auto uvs_array = mesh->mTextureCoords[0];
                 for (uint32_t i = 0; i < model_mesh.vertice_count; ++i)
                 {
                     auto vec = mesh->mVertices[i];
+                    auto uvs = uvs_array[i];
                     auto norm = mesh->mNormals[i];
 
-                    *vertice_data = {
+                    Vertice& v = *vertice_data;
+                    v.pos = {
                         vec.x,
                         vec.y,
-                        vec.z
+                        vec.z,
                     };
-                    vertice_data += 1;
-
-                    *vertice_data = {
+                    v.norm = {
                         norm.x,
                         norm.y,
-                        norm.z
+                        norm.z,
+                    };
+                    v.uv = {
+                        uvs.x,
+                        uvs.y,
                     };
                     vertice_data += 1;
                 }
@@ -169,6 +176,7 @@ namespace iceshard
     {
         using iceshard::renderer::v1::Model;
         using iceshard::renderer::v1::Mesh;
+        using iceshard::renderer::v1::Vertice;
 
         auto model_status = core::pod::hash::get(
             _models_status,
@@ -184,7 +192,7 @@ namespace iceshard
         if (model_status == asset::AssetStatus::Requested)
         {
             Assimp::Importer importer;
-            importer.SetPropertyFloat(AI_CONFIG_PP_GSN_MAX_SMOOTHING_ANGLE, 80);
+            //importer.SetPropertyFloat(AI_CONFIG_PP_GSN_MAX_SMOOTHING_ANGLE, 80);
 
             aiScene const* scene = nullptr;
 
@@ -244,7 +252,7 @@ namespace iceshard
                     indice_offset += model_mesh.indice_count;
                 }
 
-                model.vertice_data_size = vertice_offset * sizeof(core::math::vec3f) * 2;
+                model.vertice_data_size = vertice_offset * sizeof(Vertice);
                 model.indice_data_size = indice_offset * sizeof(core::math::u16);
 
                 uint32_t mesh_data_size = 0;
@@ -254,7 +262,7 @@ namespace iceshard
 
                 void* mesh_data = _mesh_allocator.allocate(mesh_data_size);
 
-                model.vertice_data = reinterpret_cast<core::math::vec3f*>(mesh_data);
+                model.vertice_data = reinterpret_cast<Vertice*>(mesh_data);
                 model.indice_data = reinterpret_cast<core::math::u16*>(
                     core::memory::utils::pointer_add(mesh_data, model.vertice_data_size)
                 );

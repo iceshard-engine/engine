@@ -1,4 +1,4 @@
-#include "vulkan_default_pipeline.hxx"
+#include "vulkan_textured_pipeline.hxx"
 
 #include <core/math/vector.hxx>
 #include <core/allocators/stack_allocator.hxx>
@@ -6,7 +6,7 @@
 namespace iceshard::renderer::vulkan
 {
 
-    void query_default_vertex_input_descriptions(
+    void query_textured_vertex_input_descriptions(
         core::pod::Array<VkVertexInputBindingDescription>& bindings,
         core::pod::Array<VkVertexInputAttributeDescription>& attributes
     ) noexcept
@@ -14,13 +14,13 @@ namespace iceshard::renderer::vulkan
         core::pod::array::resize(bindings, 2);
         bindings[0].binding = 0;
         bindings[0].inputRate = VkVertexInputRate::VK_VERTEX_INPUT_RATE_VERTEX;
-        bindings[0].stride = sizeof(core::math::vec3f) * 2;
+        bindings[0].stride = sizeof(core::math::vec3f) * 2 + sizeof(core::math::vec2f);
         bindings[1].binding = 1;
         bindings[1].inputRate = VkVertexInputRate::VK_VERTEX_INPUT_RATE_INSTANCE;
-        bindings[1].stride = sizeof(float) * 20;
+        bindings[1].stride = sizeof(float) * 16;
 
 
-        core::pod::array::resize(attributes, 2 + 5);
+        core::pod::array::resize(attributes, 3 + 4);
         attributes[0].binding = 0;
         attributes[0].format = VkFormat::VK_FORMAT_R32G32B32_SFLOAT;
         attributes[0].location = 0;
@@ -29,22 +29,21 @@ namespace iceshard::renderer::vulkan
         attributes[1].format = VkFormat::VK_FORMAT_R32G32B32_SFLOAT;
         attributes[1].location = 1;
         attributes[1].offset = sizeof(core::math::vec3f);
+        attributes[2].binding = 0;
+        attributes[2].format = VkFormat::VK_FORMAT_R32G32_SFLOAT;
+        attributes[2].location = 2;
+        attributes[2].offset = sizeof(core::math::vec3f) * 2;
 
         for (uint32_t i = 0; i < 4; ++i)
         {
-            attributes[2 + i].binding = 1;
-            attributes[2 + i].format = VkFormat::VK_FORMAT_R32G32B32A32_SFLOAT;
-            attributes[2 + i].location = 6 + i;
-            attributes[2 + i].offset = sizeof(float) * 4 * i;
+            attributes[3 + i].binding = 1;
+            attributes[3 + i].format = VkFormat::VK_FORMAT_R32G32B32A32_SFLOAT;
+            attributes[3 + i].location = 6 + i;
+            attributes[3 + i].offset = sizeof(float) * 4 * i;
         }
-
-        attributes[6].binding = 1;
-        attributes[6].format = VkFormat::VK_FORMAT_R32G32B32_SFLOAT;
-        attributes[6].location = 10;
-        attributes[6].offset = sizeof(float) * 4 * 4;
     }
 
-    void create_default_pipeline(
+    void create_textured_pipeline(
         VkDevice device,
         VkRenderPass renderpass,
         VkPipelineLayout layout,
@@ -86,7 +85,7 @@ namespace iceshard::renderer::vulkan
         core::pod::Array<VkVertexInputBindingDescription> vertex_input_bindings{ temp_alloc };
         core::pod::Array<VkVertexInputAttributeDescription> vertex_input_attributes{ temp_alloc };
 
-        query_default_vertex_input_descriptions(
+        query_textured_vertex_input_descriptions(
             vertex_input_bindings,
             vertex_input_attributes
         );

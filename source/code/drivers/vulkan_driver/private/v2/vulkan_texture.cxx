@@ -6,6 +6,26 @@
 namespace iceshard::renderer::vulkan
 {
 
+    namespace detail
+    {
+
+        auto format_to_vulkan_format(api::TextureFormat format) noexcept
+        {
+            switch (format)
+            {
+            case iceshard::renderer::api::v1_1::types::TextureFormat::UintRGBA:
+                return VkFormat::VK_FORMAT_R8G8B8_UNORM;
+            case iceshard::renderer::api::v1_1::types::TextureFormat::UnormRGBA:
+                return VkFormat::VK_FORMAT_R8G8B8A8_UNORM;
+            case iceshard::renderer::api::v1_1::types::TextureFormat::UnormSRGB:
+                return VkFormat::VK_FORMAT_R8G8B8_SRGB;
+            default:
+                return VkFormat::VK_FORMAT_UNDEFINED;
+            }
+        }
+
+    } // namespace detail
+
     VulkanTextureStorage::VulkanTextureStorage(
         core::allocator& alloc,
         VulkanDeviceMemoryManager& device_memory
@@ -20,9 +40,19 @@ namespace iceshard::renderer::vulkan
     {
     }
 
-    auto VulkanTextureStorage::allocate_texture(core::stringid_arg_type name, VkExtent2D extent) noexcept -> api::Texture
+    auto VulkanTextureStorage::allocate_texture(
+        core::stringid_arg_type name,
+        api::TextureFormat format,
+        VkExtent2D extent
+    ) noexcept -> api::Texture
     {
-        auto texture = create_texture_2d(_allocator, _device_memory, extent);
+        auto texture = create_texture_2d(
+            _allocator,
+            _device_memory,
+            detail::format_to_vulkan_format(format),
+            extent
+        );
+
         auto handle = api::Texture{ reinterpret_cast<uintptr_t>(texture.get()) };
 
         _textures.emplace(

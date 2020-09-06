@@ -22,6 +22,7 @@ namespace iceshard::renderer
         virtual auto create_resource_set(
             core::stringid_arg_type name,
             iceshard::renderer::RenderPipelineLayout layout,
+            RenderResourceSetInfo resource_set_info,
             core::pod::Array<RenderResource> const& resources
         ) noexcept -> ResourceSet = 0;
 

@@ -11,6 +11,7 @@ namespace iceshard::renderer::commands
 
     // Data commands
     void update_texture(api::CommandBuffer, api::Texture, api::Buffer, core::math::vec2u) noexcept;
+    void update_texture(api::CommandBuffer, api::Texture, api::Buffer, api::UpdateTextureData) noexcept;
 
     // Render pass commands
     void next_subpass(api::CommandBuffer, api::RenderSubPass) noexcept;
@@ -20,6 +21,7 @@ namespace iceshard::renderer::commands
     void push_constants(api::CommandBuffer command_buffer, api::Pipeline pipeline, core::data_view data, uint32_t offset) noexcept;
     void bind_pipeline(api::CommandBuffer command_buffer, api::Pipeline pipeline) noexcept;
     void bind_resource_set(api::CommandBuffer command_buffer, api::ResourceSet resource_set) noexcept;
+    void bind_resource_sets(api::CommandBuffer command_buffer, core::pod::Array<api::ResourceSet> resource_sets) noexcept;
     void bind_vertex_buffers(api::CommandBuffer command_buffer, core::pod::Array<api::Buffer> const& buffer_handles) noexcept;
     void bind_vertex_buffers(api::CommandBuffer command_buffer, core::pod::Array<api::Buffer const> const& buffer_handles) noexcept;
     void bind_index_buffer(api::CommandBuffer command_buffer, api::Buffer index_buffer) noexcept;

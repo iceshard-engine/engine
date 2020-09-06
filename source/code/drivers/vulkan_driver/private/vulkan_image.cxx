@@ -92,6 +92,7 @@ namespace iceshard::renderer::vulkan
     auto create_texture_2d(
         core::allocator& alloc,
         VulkanDeviceMemoryManager& device_memory,
+        VkFormat format,
         VkExtent2D extent
     ) noexcept -> core::memory::unique_pointer<VulkanImage>
     {
@@ -101,7 +102,7 @@ namespace iceshard::renderer::vulkan
         image_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
         image_info.pNext = nullptr;
         image_info.imageType = VK_IMAGE_TYPE_2D;
-        image_info.format = VK_FORMAT_R8G8B8A8_UNORM;
+        image_info.format = format;
         image_info.tiling = VK_IMAGE_TILING_OPTIMAL;
         image_info.extent.width = extent.width;
         image_info.extent.height = extent.height;

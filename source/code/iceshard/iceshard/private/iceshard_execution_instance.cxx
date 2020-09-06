@@ -94,6 +94,13 @@ namespace iceshard
             iceshard::input::DeviceInputType::DeviceConnected
         );
 
+        _mesh_loader = core::memory::make_unique<iceshard::MeshLoader>(
+            _allocator,
+            _allocator,
+            _engine.asset_system(),
+            _engine.render_system()
+        );
+
         _render_system = core::memory::make_unique<iceshard::IceRenderSystem>(
             _allocator,
             _allocator,
@@ -126,6 +133,7 @@ namespace iceshard
                 _allocator, _engine,
                 *_services.archetype_index(),
                 _engine.render_system(),
+                *_mesh_loader,
                 _engine.asset_system()
             )
         );

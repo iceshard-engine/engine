@@ -3,6 +3,8 @@
 
 #include "mesh_assets/mesh_resolvers.hxx"
 #include "mesh_assets/mesh_loaders.hxx"
+#include "texture_assets/texture_resolvers.hxx"
+#include "texture_assets/texture_loaders.hxx"
 
 namespace iceshard
 {
@@ -31,21 +33,34 @@ namespace iceshard
         void register_operations() noexcept
         {
             // Asset resolvers
-            core::pod::array::reserve(_resolver_handles, 1);
+            core::pod::array::reserve(_resolver_handles, 2);
             core::pod::array::push_back(
                 _resolver_handles,
                 _asset_system.add_resolver(
                     core::memory::make_unique<asset::AssetResolver, iceshard::AssimpMeshResolver>(_allocator)
                 )
             );
+            core::pod::array::push_back(
+                _resolver_handles,
+                _asset_system.add_resolver(
+                    core::memory::make_unique<asset::AssetResolver, iceshard::StbTextureResolver>(_allocator)
+                )
+            );
 
             // Asset loaders
-            core::pod::array::reserve(_loader_handles, 1);
+            core::pod::array::reserve(_loader_handles, 2);
             core::pod::array::push_back(
                 _loader_handles,
                 _asset_system.add_loader(
                     asset::AssetType::Mesh,
                     core::memory::make_unique<asset::AssetLoader, iceshard::AssimpMeshLoader>(_allocator, _allocator)
+                )
+            );
+            core::pod::array::push_back(
+                _loader_handles,
+                _asset_system.add_loader(
+                    asset::AssetType::Texture,
+                    core::memory::make_unique<asset::AssetLoader, iceshard::StbTextureLoader>(_allocator, _allocator)
                 )
             );
         }

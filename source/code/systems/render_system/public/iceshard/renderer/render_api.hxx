@@ -85,10 +85,23 @@ namespace iceshard::renderer::api
                 Invalid = std::numeric_limits<std::underlying_type_t<Sampler>>::max()
             };
 
+            enum class TextureFormat : uint32_t
+            {
+                UintRGBA = 1,
+                UnormRGBA = 3,
+                UnormSRGB,
+            };
+
             struct DataView
             {
                 void* data;
                 uint32_t size;
+            };
+
+            struct UpdateTextureData
+            {
+                core::math::vec2u image_extent;
+                core::math::u32 buffer_offset;
             };
 
         } // namespace types
@@ -106,7 +119,7 @@ namespace iceshard::renderer::api
 
             // Resource handing
             void(*check_func)();
-            auto(*create_texture_func)(core::stringid_arg_type, core::math::vec2u)->types::Texture;
+            auto(*create_texture_func)(core::stringid_arg_type, TextureFormat, core::math::vec2u) -> types::Texture;
             auto(*create_data_buffer_func)(types::BufferType, core::math::u32) -> types::Buffer;
             void(*create_command_buffers_func)(types::CommandBufferType, types::CommandBuffer*, uint32_t);
             void(*buffer_array_map_data_func)(types::Buffer*, types::DataView*, uint32_t);
@@ -125,11 +138,13 @@ namespace iceshard::renderer::api
 
             // Data commands
             void(*cmd_update_texture_func)(types::CommandBuffer, types::Texture, types::Buffer, core::math::vec2u);
+            void(*cmd_update_texture_ex_func)(types::CommandBuffer, types::Texture, types::Buffer, UpdateTextureData);
 
             // Render commands
             void(*cmd_push_constants_func)(types::CommandBuffer, types::Pipeline pipeline, uint32_t offset, uint32_t size, void const* data);
             void(*cmd_bind_render_pipeline_func)(types::CommandBuffer, types::Pipeline);
             void(*cmd_bind_resource_set_func)(types::CommandBuffer, types::ResourceSet);
+            void(*cmd_bind_resource_sets_func)(types::CommandBuffer, types::ResourceSet*, uint32_t);
             void(*cmd_bind_vertex_buffers_array_func)(types::CommandBuffer, types::Buffer const*, uint32_t);
             void(*cmd_bind_index_buffer_func)(types::CommandBuffer, types::Buffer);
             void(*cmd_set_viewport_func)(types::CommandBuffer, uint32_t, uint32_t);

@@ -16,7 +16,7 @@ namespace iceshard::renderer::vulkan
 
     struct VulkanResourceLayouts
     {
-        VkDescriptorSetLayout descriptor_set_uniforms;
+        VkDescriptorSetLayout descriptor_set_uniforms[2];
         VkDescriptorSetLayout descriptor_set_textures;
         VkDescriptorSetLayout descriptor_set_samplers;
         VkSampler immutable_samplers[1];

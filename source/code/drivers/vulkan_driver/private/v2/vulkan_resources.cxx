@@ -27,20 +27,38 @@ namespace iceshard::renderer::vulkan
             std::abort();
         }
 
-        auto select_resource_set(VulkanResourceSet const& resource_set, RenderResourceType type) noexcept
+        auto select_resource_set(VulkanResourceSet const& resource_set, uint32_t binding, RenderResourceType type) noexcept
         {
-            if (type == RenderResourceType::ResUniform)
+            uint32_t set_base_index = 0;
+            if (core::has_flag(resource_set.resource_set_usage, RenderResourceSetUsage::ViewProjectionData))
             {
-                return resource_set.descriptor_sets[0];
+                if (binding < 5 && type == RenderResourceType::ResUniform)
+                {
+                    return resource_set.descriptor_sets[set_base_index + 0];
+                }
+                set_base_index += 1;
             }
-            else if (type == RenderResourceType::ResSampler)
+            if (core::has_flag(resource_set.resource_set_usage, RenderResourceSetUsage::LightsData))
             {
-                return resource_set.descriptor_sets[1];
+                if (type == RenderResourceType::ResUniform)
+                {
+                    return resource_set.descriptor_sets[set_base_index + 0];
+                }
+                set_base_index += 1;
             }
-            else if (type == RenderResourceType::ResTexture2D)
+            if (core::has_flag(resource_set.resource_set_usage, RenderResourceSetUsage::MaterialData))
             {
-                return resource_set.descriptor_sets[2];
+                if (type == RenderResourceType::ResSampler)
+                {
+                    return resource_set.descriptor_sets[set_base_index + 0];
+                }
+                if (type == RenderResourceType::ResTexture2D)
+                {
+                    return resource_set.descriptor_sets[set_base_index + 1];
+                }
+                set_base_index += 2;
             }
+
             IS_ASSERT(false, "Invalid render resource type!");
             std::abort();
         }
@@ -52,7 +70,7 @@ namespace iceshard::renderer::vulkan
         VulkanFramebuffer framebuffer,
         VulkanResourcePool resource_pool,
         VulkanPipelineLayout pipeline_layout,
-        VulkanResourceLayouts const& resource_layouts,
+        core::pod::Array<VkDescriptorSetLayout> const& descriptor_set_layouts,
         core::stringid_arg_type name,
         core::pod::Array<RenderResource> const& resources,
         VulkanResourceSet& resource_set
@@ -61,18 +79,12 @@ namespace iceshard::renderer::vulkan
         resource_set.name = name;
         resource_set.pipeline_layout = pipeline_layout.layout;
 
-        VkDescriptorSetLayout const descriptor_set_layouts[] = {
-            resource_layouts.descriptor_set_uniforms,
-            resource_layouts.descriptor_set_samplers,
-            resource_layouts.descriptor_set_textures,
-        };
-
         VkDescriptorSetAllocateInfo alloc_info;
         alloc_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
         alloc_info.pNext = nullptr;
         alloc_info.descriptorPool = resource_pool.descriptor_pool;
-        alloc_info.descriptorSetCount = core::size(descriptor_set_layouts);
-        alloc_info.pSetLayouts = descriptor_set_layouts;
+        alloc_info.descriptorSetCount = core::pod::array::size(descriptor_set_layouts);
+        alloc_info.pSetLayouts = core::pod::array::begin(descriptor_set_layouts);
 
         auto api_result = vkAllocateDescriptorSets(device, &alloc_info, resource_set.descriptor_sets);
         IS_ASSERT(api_result == VkResult::VK_SUCCESS, "Couldn't create descriptor sets!");
@@ -94,7 +106,7 @@ namespace iceshard::renderer::vulkan
             VkWriteDescriptorSet write_info;
             write_info.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
             write_info.pNext = nullptr;
-            write_info.dstSet = detail::select_resource_set(resource_set, resource.type);
+            write_info.dstSet = detail::select_resource_set(resource_set, resource.binding, resource.type);
             write_info.dstBinding = resource.binding;
             write_info.dstArrayElement = 0;
             write_info.descriptorCount = 1;
@@ -171,7 +183,7 @@ namespace iceshard::renderer::vulkan
             VkWriteDescriptorSet write_info;
             write_info.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
             write_info.pNext = nullptr;
-            write_info.dstSet = detail::select_resource_set(resource_set, resource.type);
+            write_info.dstSet = detail::select_resource_set(resource_set, resource.binding, resource.type);
             write_info.dstBinding = resource.binding;
             write_info.dstArrayElement = 0;
             write_info.descriptorCount = 1;

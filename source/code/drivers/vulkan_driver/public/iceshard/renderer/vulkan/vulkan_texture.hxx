@@ -21,7 +21,12 @@ namespace iceshard::renderer::vulkan
         ) noexcept;
         ~VulkanTextureStorage() noexcept;
 
-        auto allocate_texture(core::stringid_arg_type name, VkExtent2D size) noexcept -> api::Texture;
+        auto allocate_texture(
+            core::stringid_arg_type name,
+            api::TextureFormat format,
+            VkExtent2D size
+        ) noexcept -> api::Texture;
+
         void release_texture(core::stringid_arg_type name) noexcept;
 
     private:

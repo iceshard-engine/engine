@@ -14,13 +14,20 @@ namespace iceshard::renderer::v1
         core::math::mat4x4 local_xform;
     };
 
+    struct Vertice
+    {
+        core::math::vec3f pos;
+        core::math::vec3f norm;
+        core::math::vec2f uv;
+    };
+
     struct Model
     {
         uint32_t mesh_count;
         uint32_t vertice_data_size;
         uint32_t indice_data_size;
         Mesh* mesh_list;
-        core::math::vec3f* vertice_data;
+        Vertice* vertice_data;
         core::math::u16* indice_data;
     };
 

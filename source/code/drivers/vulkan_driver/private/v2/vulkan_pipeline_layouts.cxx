@@ -14,7 +14,8 @@ namespace iceshard::renderer::vulkan
     {
         core::memory::stack_allocator<256> temp_alloc;
         core::pod::Array<VkDescriptorSetLayout> layouts_native{ temp_alloc };
-        core::pod::array::push_back(layouts_native, resource_layouts.descriptor_set_uniforms);
+        core::pod::array::push_back(layouts_native, resource_layouts.descriptor_set_uniforms[0]);
+        core::pod::array::push_back(layouts_native, resource_layouts.descriptor_set_uniforms[1]);
         core::pod::array::push_back(layouts_native, resource_layouts.descriptor_set_samplers);
         core::pod::array::push_back(layouts_native, resource_layouts.descriptor_set_textures);
 
@@ -41,6 +42,18 @@ namespace iceshard::renderer::vulkan
             );
             IS_ASSERT(api_result == VkResult::VK_SUCCESS, "Couldn't create pipeline layout!");
         }
+
+        {
+            layouts.textured_layout.layout_type = RenderPipelineLayout::Textured;
+            auto api_result = vkCreatePipelineLayout(
+                devices.graphics.handle,
+                &pipeline_create_info,
+                nullptr,
+                &layouts.textured_layout.layout
+            );
+            IS_ASSERT(api_result == VkResult::VK_SUCCESS, "Couldn't create pipeline layout!");
+        }
+
         {
             pipeline_create_info.pushConstantRangeCount = 0;
             pipeline_create_info.pPushConstantRanges = nullptr;
@@ -65,6 +78,7 @@ namespace iceshard::renderer::vulkan
     {
         vkDestroyPipelineLayout(devices.graphics.handle, layouts.debugui_layout.layout, nullptr);
         vkDestroyPipelineLayout(devices.graphics.handle, layouts.default_layout.layout, nullptr);
+        vkDestroyPipelineLayout(devices.graphics.handle, layouts.textured_layout.layout, nullptr);
     }
 
 } // namespace iceshard::renderer::vulkan

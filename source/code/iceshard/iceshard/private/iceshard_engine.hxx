@@ -2,6 +2,7 @@
 #include "iceshard_service_provider.hxx"
 #include "iceshard_execution_instance.hxx"
 #include "world/iceshard_world_manager.hxx"
+#include "systems/iceshard_material_system.hxx"
 
 #include <core/memory.hxx>
 #include <iceshard/engine.hxx>
@@ -23,6 +24,8 @@ namespace iceshard
         auto asset_system() noexcept -> asset::AssetSystem& override;
 
         auto input_system() noexcept -> ::input::InputSystem& override;
+
+        auto material_system() noexcept -> iceshard::MaterialSystem& override;
 
         auto entity_manager() noexcept -> iceshard::EntityManager& override;
 
@@ -47,6 +50,7 @@ namespace iceshard
         core::memory::unique_pointer<::input::InputModule> _input_module{ nullptr, { core::memory::globals::null_allocator() } };
         core::memory::unique_pointer<iceshard::renderer::RenderModuleInstance> _render_module{ nullptr, { core::memory::globals::null_allocator() } };
 
+        core::memory::unique_pointer<iceshard::IceshardMaterialSystem> _material_system{ nullptr, { core::memory::globals::null_allocator() } };
 
         // Managers and service provider
         core::memory::unique_pointer<iceshard::EntityManager> _entity_manager{ nullptr, { core::memory::globals::null_allocator() } };

@@ -14,7 +14,8 @@ namespace iceshard::renderer::vulkan
         core::stringid_type name;
 
         VkPipelineLayout pipeline_layout;
-        VkDescriptorSet descriptor_sets[3];
+        RenderResourceSetUsage resource_set_usage;
+        VkDescriptorSet descriptor_sets[4];
     };
 
     void create_resource_set(
@@ -22,7 +23,7 @@ namespace iceshard::renderer::vulkan
         VulkanFramebuffer framebuffer,
         VulkanResourcePool resource_pool,
         VulkanPipelineLayout pipeline_layout,
-        VulkanResourceLayouts const& resource_layouts,
+        core::pod::Array<VkDescriptorSetLayout> const& descriptor_set_layouts,
         core::stringid_arg_type name,
         core::pod::Array<RenderResource> const& resources,
         VulkanResourceSet& set

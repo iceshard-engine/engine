@@ -12,40 +12,76 @@ namespace iceshard::renderer::vulkan
         VulkanResourceLayouts& resource_layouts
     ) noexcept
     {
-        core::memory::stack_allocator<256> temp_alloc;
+        core::memory::stack_allocator<128> temp_alloc;
         core::pod::Array<VkDescriptorSetLayoutBinding> bindings{ temp_alloc };
 
         constexpr auto max_bindings = decltype(temp_alloc)::InternalBufferSize / sizeof(VkDescriptorSetLayoutBinding);
         core::pod::array::reserve(bindings, max_bindings);
 
-        for (uint32_t binding = 0; binding < max_bindings; ++binding)
         {
-            core::pod::array::push_back(bindings,
-                VkDescriptorSetLayoutBinding
-                {
-                    .binding = binding,
-                    .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-                    .descriptorCount = 1,
-                    .stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
-                    .pImmutableSamplers = nullptr
-                }
+            for (uint32_t binding = 0; binding < max_bindings; ++binding)
+            {
+                core::pod::array::push_back(bindings,
+                    VkDescriptorSetLayoutBinding
+                    {
+                        .binding = binding,
+                        .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+                        .descriptorCount = 1,
+                        .stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+                        .pImmutableSamplers = nullptr
+                    }
+                );
+            }
+
+            VkDescriptorSetLayoutCreateInfo layout_info;
+            layout_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+            layout_info.pNext = nullptr;
+            layout_info.flags = 0;
+            layout_info.bindingCount = core::pod::array::size(bindings);
+            layout_info.pBindings = core::pod::begin(bindings);
+
+            auto api_result = vkCreateDescriptorSetLayout(
+                device,
+                &layout_info,
+                nullptr,
+                &resource_layouts.descriptor_set_uniforms[0]
             );
+            IS_ASSERT(api_result == VkResult::VK_SUCCESS, "Couldn't create descriptor set layout.");
         }
 
-        VkDescriptorSetLayoutCreateInfo layout_info;
-        layout_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-        layout_info.pNext = nullptr;
-        layout_info.flags = 0;
-        layout_info.bindingCount = core::pod::array::size(bindings);
-        layout_info.pBindings = core::pod::begin(bindings);
+        core::pod::array::clear(bindings);
 
-        auto api_result = vkCreateDescriptorSetLayout(
-            device,
-            &layout_info,
-            nullptr,
-            &resource_layouts.descriptor_set_uniforms
-        );
-        IS_ASSERT(api_result == VkResult::VK_SUCCESS, "Couldn't create descriptor set layout.");
+        {
+
+            for (uint32_t binding = 0; binding < max_bindings; ++binding)
+            {
+                core::pod::array::push_back(bindings,
+                    VkDescriptorSetLayoutBinding
+                    {
+                        .binding = binding + 5,
+                        .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+                        .descriptorCount = 1,
+                        .stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+                        .pImmutableSamplers = nullptr
+                    }
+                );
+            }
+
+            VkDescriptorSetLayoutCreateInfo layout_info;
+            layout_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+            layout_info.pNext = nullptr;
+            layout_info.flags = 0;
+            layout_info.bindingCount = core::pod::array::size(bindings);
+            layout_info.pBindings = core::pod::begin(bindings);
+
+            auto api_result = vkCreateDescriptorSetLayout(
+                device,
+                &layout_info,
+                nullptr,
+                &resource_layouts.descriptor_set_uniforms[1]
+            );
+            IS_ASSERT(api_result == VkResult::VK_SUCCESS, "Couldn't create descriptor set layout.");
+        }
     }
 
 

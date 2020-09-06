@@ -1,5 +1,6 @@
 #include <iceshard/renderer/vulkan/vulkan_system.hxx>
 #include <iceshard/renderer/vulkan/vulkan_renderpass.hxx>
+#include <core/allocators/stack_allocator.hxx>
 #include <core/pod/array.hxx>
 #include <core/pod/algorithm.hxx>
 #include <core/debug/assert.hxx>
@@ -304,21 +305,56 @@ namespace iceshard::renderer::vulkan
     auto VulkanRenderSystem::create_resource_set(
         core::stringid_arg_type name,
         iceshard::renderer::RenderPipelineLayout layout,
+        RenderResourceSetInfo resource_set_info,
         core::pod::Array<RenderResource> const& resources
     ) noexcept -> ResourceSet
     {
-        VulkanPipelineLayout pipeline_layout =
-            layout == RenderPipelineLayout::DebugUI
-            ? _pipeline_layouts.debugui_layout
-            : _pipeline_layouts.default_layout;
+        core::memory::stack_allocator<32> resource_layouts_alloc;
+        core::pod::Array<VkDescriptorSetLayout> descriptor_layouts{ resource_layouts_alloc };
+        core::pod::array::reserve(descriptor_layouts, 32 / sizeof(VkDescriptorSetLayout));
+
+        if (core::has_flag(resource_set_info.usage, RenderResourceSetUsage::MaterialData))
+        {
+            core::pod::array::push_back(descriptor_layouts, _resource_layouts.descriptor_set_samplers);
+            core::pod::array::push_back(descriptor_layouts, _resource_layouts.descriptor_set_textures);
+        }
+        if (core::has_flag(resource_set_info.usage, RenderResourceSetUsage::ViewProjectionData))
+        {
+            core::pod::array::push_back(descriptor_layouts, _resource_layouts.descriptor_set_uniforms[0]);
+        }
+        if (core::has_flag(resource_set_info.usage, RenderResourceSetUsage::LightsData))
+        {
+            core::pod::array::push_back(descriptor_layouts, _resource_layouts.descriptor_set_uniforms[1]);
+        }
+
+        IS_ASSERT(core::pod::array::empty(descriptor_layouts) == false, "No resource set usage selected!");
+
+        VulkanPipelineLayout pipeline_layout{ };
+        if (layout == RenderPipelineLayout::DebugUI)
+        {
+            pipeline_layout = _pipeline_layouts.debugui_layout;
+        }
+        else if (layout == RenderPipelineLayout::PostProcess)
+        {
+            pipeline_layout = _pipeline_layouts.postprocess_layout;
+        }
+        else if (layout == RenderPipelineLayout::Textured)
+        {
+            pipeline_layout = _pipeline_layouts.textured_layout;
+        }
+        else // if (layout == RenderPipelineLayout::Default)
+        {
+            pipeline_layout = _pipeline_layouts.default_layout;
+        }
 
         VulkanResourceSet* resource_set = _allocator.make<VulkanResourceSet>();
+        resource_set->resource_set_usage = resource_set_info.usage;
         vulkan::create_resource_set(
             _devices.graphics.handle,
             _framebuffers[0],
             _resource_pool,
             pipeline_layout,
-            _resource_layouts,
+            descriptor_layouts,
             name,
             resources,
             *resource_set
@@ -384,6 +420,10 @@ namespace iceshard::renderer::vulkan
         else if (layout == RenderPipelineLayout::PostProcess)
         {
             selected_layout = _pipeline_layouts.postprocess_layout;
+        }
+        else if (layout == RenderPipelineLayout::Textured)
+        {
+            selected_layout = _pipeline_layouts.textured_layout;
         }
         else // if (layout == RenderPipelineLayout::Default)
         {
@@ -482,16 +522,6 @@ namespace iceshard::renderer::vulkan
     auto VulkanRenderSystem::v1_current_framebuffer() noexcept -> VkFramebuffer
     {
         return native_handle(_framebuffers[_current_framebuffer_index]);
-    }
-
-    auto VulkanRenderSystem::v1_primary_cmd_buffer() noexcept -> VkCommandBuffer
-    {
-        return _command_buffers_primary[0];
-    }
-
-    auto VulkanRenderSystem::v1_transfer_cmd_buffer() noexcept -> VkCommandBuffer
-    {
-        return _command_buffers_primary[1];
     }
 
     void VulkanRenderSystem::v1_submit_command_buffers() noexcept

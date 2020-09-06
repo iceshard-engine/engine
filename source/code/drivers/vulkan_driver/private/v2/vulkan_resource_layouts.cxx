@@ -71,7 +71,8 @@ namespace iceshard::renderer::vulkan
 
     void destroy_resource_layouts(VkDevice device, VulkanResourceLayouts resource_layouts) noexcept
     {
-        destroy_descriptor_set_layout(device, resource_layouts.descriptor_set_uniforms);
+        destroy_descriptor_set_layout(device, resource_layouts.descriptor_set_uniforms[0]);
+        destroy_descriptor_set_layout(device, resource_layouts.descriptor_set_uniforms[1]);
         destroy_descriptor_set_layout(device, resource_layouts.descriptor_set_samplers);
         destroy_descriptor_set_layout(device, resource_layouts.descriptor_set_textures);
 

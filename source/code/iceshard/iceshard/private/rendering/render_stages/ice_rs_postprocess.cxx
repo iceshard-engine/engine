@@ -58,6 +58,7 @@ namespace iceshard
         _resources = render_system.create_resource_set(
             PostProcessResourceSetName,
             RenderPipelineLayout::PostProcess,
+            RenderResourceSetInfo{ .usage = RenderResourceSetUsage::MaterialData },
             core::pod::array::create_view(resources)
         );
 

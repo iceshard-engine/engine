@@ -51,6 +51,7 @@ namespace iceshard::debug::imgui
             uint32_t upload_size = width * height * 4 * sizeof(char);
 
             resource::ResourceMeta meta{ alloc };
+            resource::set_meta_int32(meta, "texture.format"_sid, 3);
             resource::set_meta_int32(meta, "texture.extents.width"_sid, width);
             resource::set_meta_int32(meta, "texture.extents.height"_sid, height);
 
@@ -101,7 +102,12 @@ namespace iceshard::debug::imgui
             core::pod::Array<RenderResource> resources{ _allocator };
             core::pod::array::push_back(resources, handles[0]);
 
-            _resource_set = _render_system.create_resource_set("imgui_resources"_sid, RenderPipelineLayout::DebugUI, resources);
+            _resource_set = _render_system.create_resource_set(
+                "imgui_resources"_sid,
+                RenderPipelineLayout::DebugUI,
+                RenderResourceSetInfo{ .usage = RenderResourceSetUsage::MaterialData },
+                resources
+            );
 
             core::pod::Array<asset::AssetData> shader_assets{ _allocator };
             core::pod::array::resize(shader_assets, 2);

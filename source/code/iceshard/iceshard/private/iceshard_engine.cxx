@@ -83,8 +83,14 @@ namespace iceshard
 
             _render_module = iceshard::renderer::load_render_system_module(_allocator, render_driver_location->location().path);
             IS_ASSERT(_render_module != nullptr, "Invalid Vulkan driver module! Unable to load!");
-
         }
+
+        _material_system = core::memory::make_unique<iceshard::IceshardMaterialSystem>(
+            _allocator,
+            _allocator,
+            _asset_system,
+            *render_module().render_system()
+        );
 
         _entity_manager = core::memory::make_unique<iceshard::EntityManager>(_allocator, _allocator);
         _serivce_provider = core::memory::make_unique<iceshard::IceshardServiceProvider>(
@@ -106,6 +112,7 @@ namespace iceshard
 
         _serivce_provider = nullptr;
         _entity_manager = nullptr;
+        _material_system = nullptr;
         _input_module = nullptr;
     }
 
@@ -117,6 +124,11 @@ namespace iceshard
     auto IceShardEngine::input_system() noexcept -> ::input::InputSystem&
     {
         return *_input_module->input_system();
+    }
+
+    auto IceShardEngine::material_system() noexcept -> iceshard::MaterialSystem&
+    {
+        return *_material_system;
     }
 
     auto IceShardEngine::entity_manager() noexcept -> iceshard::EntityManager&

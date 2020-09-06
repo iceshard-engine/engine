@@ -31,11 +31,13 @@ auto iceshard::renderer::create_texture(
 {
     using namespace core::math;
 
-    int32_t width = resource::get_meta_int32(texture_data.metadata, "texture.extents.width"_sid);
-    int32_t height = resource::get_meta_int32(texture_data.metadata, "texture.extents.height"_sid);
+    int32_t const width = resource::get_meta_int32(texture_data.metadata, "texture.extents.width"_sid);
+    int32_t const height = resource::get_meta_int32(texture_data.metadata, "texture.extents.height"_sid);
+    int32_t const format_index = resource::get_meta_int32(texture_data.metadata, "texture.format"_sid);
 
     return iceshard::renderer::api::render_module_api->create_texture_func(
         name,
+        api::TextureFormat{ format_index },
         vec2<u32>(width, height)
     );
 }
@@ -108,6 +110,16 @@ void iceshard::renderer::commands::update_texture(
     );
 }
 
+void iceshard::renderer::commands::update_texture(api::CommandBuffer cb, api::Texture tex, api::Buffer buf, api::UpdateTextureData data) noexcept
+{
+    iceshard::renderer::api::render_module_api->cmd_update_texture_ex_func(
+        cb,
+        tex,
+        buf,
+        data
+    );
+}
+
 void iceshard::renderer::commands::next_subpass(
     api::CommandBuffer cb,
     api::RenderSubPass subpass
@@ -147,6 +159,18 @@ void iceshard::renderer::commands::bind_pipeline(iceshard::renderer::api::Comman
 void iceshard::renderer::commands::bind_resource_set(iceshard::renderer::api::CommandBuffer command_buffer, iceshard::renderer::api::ResourceSet resource_set) noexcept
 {
     iceshard::renderer::api::render_module_api->cmd_bind_resource_set_func(command_buffer, resource_set);
+}
+
+void iceshard::renderer::commands::bind_resource_sets(
+    iceshard::renderer::api::CommandBuffer command_buffer,
+    core::pod::Array<iceshard::renderer::api::ResourceSet> resource_sets
+) noexcept
+{
+    iceshard::renderer::api::render_module_api->cmd_bind_resource_sets_func(
+        command_buffer,
+        core::pod::array::begin(resource_sets),
+        core::pod::array::size(resource_sets)
+    );
 }
 
 void iceshard::renderer::commands::bind_vertex_buffers(iceshard::renderer::api::CommandBuffer command_buffer, core::pod::Array<iceshard::renderer::api::Buffer> const& buffer_handles) noexcept

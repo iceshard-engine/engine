@@ -6,6 +6,8 @@
 
 #include "iceshard_service_provider.hxx"
 #include "rendering/ice_render_system.hxx"
+
+#include "systems/iceshard_mesh_loader.hxx"
 #include "systems/iceshard_input_actions.hxx"
 
 namespace iceshard
@@ -63,6 +65,7 @@ namespace iceshard
 
         core::SystemClock _engine_clock;
 
+        core::memory::unique_pointer<iceshard::MeshLoader> _mesh_loader{ nullptr, { core::memory::globals::null_allocator() } };
         core::memory::unique_pointer<iceshard::IceRenderSystem> _render_system{ nullptr, { core::memory::globals::null_allocator() } };
 
         iceshard::input::DeviceStateManager _device_input_states;

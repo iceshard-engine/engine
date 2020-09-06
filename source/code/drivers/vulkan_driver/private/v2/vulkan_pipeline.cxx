@@ -2,6 +2,7 @@
 
 #include "pipelines/vulkan_debugui_pipeline.hxx"
 #include "pipelines/vulkan_default_pipeline.hxx"
+#include "pipelines/vulkan_textured_pipeline.hxx"
 #include "pipelines/vulkan_postprocess_pipeline.hxx"
 
 namespace iceshard::renderer::vulkan
@@ -36,6 +37,16 @@ namespace iceshard::renderer::vulkan
                 pipeline.pipeline
             );
         }
+        else if (layout.layout_type == RenderPipelineLayout::Textured)
+        {
+            create_textured_pipeline(
+                devices.graphics.handle,
+                renderpass.renderpass,
+                layout.layout,
+                modules,
+                pipeline.pipeline
+            );
+        }
         else if (layout.layout_type == RenderPipelineLayout::PostProcess)
         {
             create_postprocess_pipeline(
@@ -45,6 +56,10 @@ namespace iceshard::renderer::vulkan
                 modules,
                 pipeline.pipeline
             );
+        }
+        else
+        {
+            IS_ASSERT(false, "Unsupported pipeline type!");
         }
     }
 
