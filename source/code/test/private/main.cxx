@@ -66,6 +66,9 @@
 #include <iceshard/renderer/render_funcs.hxx>
 #include <iceshard/renderer/render_commands.hxx>
 
+#include <iceshard/material/material.hxx>
+#include <iceshard/material/material_system.hxx>
+
 #include <iceshard/input/input_mouse.hxx>
 #include <iceshard/input/input_keyboard.hxx>
 #include <iceshard/input/input_controller.hxx>
@@ -258,7 +261,7 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
         );
 
         arch_idx->add_component(entities[0], iceshard::component::Transform{ pos });
-        arch_idx->add_component(entities[0], iceshard::component::ModelMaterial{ ism::vec4f{ 0.8f, 0.8f, 0.8f, 1.0f } });
+        //arch_idx->add_component(entities[0], iceshard::component::ModelMaterial{ ism::vec4f{ 0.8f, 0.8f, 0.8f, 1.0f } });
         arch_idx->add_component(entities[0], iceshard::component::ModelName{ "mesh/box/box"_sid });
 
         namespace ism = core::math;
@@ -288,11 +291,9 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
                 model = ism::scale(model, { 0.5, 0.5, 0.5 });
                 model = ism::rotate(model, ism::radians(angle), { 1.f, 0.3f, 0.5f });
 
-                arch_idx->add_component(cube_entities[i], iceshard::component::ModelName{ "mesh/box/box"_sid });
+                arch_idx->add_component(cube_entities[i], iceshard::component::ModelName{ "temp/backpack"_sid });
                 arch_idx->add_component(cube_entities[i], iceshard::component::Transform{ model });
-                arch_idx->add_component(cube_entities[i], iceshard::component::ModelMaterial{
-                    ism::vec4f { 0.2, 0.8, 0.4, 1.0 } // model.v[0][1], model.v[1][2], model.v[2][0], 1.0f }
-                });
+                arch_idx->add_component(cube_entities[i], iceshard::component::Material{ .material_name = "material.backpack"_sid });
 
                 angle += 20.f;
                 i += 1;
@@ -302,10 +303,10 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
             model = ism::scale(model, { 0.4, 0.4, 0.4 });
             model = ism::rotate(model, ism::radians(0), { 1.f, 0.3f, 0.5f });
 
-            arch_idx->add_component(cube_entities[i], iceshard::component::ModelName{ "mesh/cyborg"_sid });
+            arch_idx->add_component(cube_entities[i], iceshard::component::ModelName{ "temp/backpack"_sid });
             arch_idx->add_component(cube_entities[i], iceshard::component::Transform{ model });
-            arch_idx->add_component(cube_entities[i], iceshard::component::ModelMaterial{
-                ism::vec4f { 0.8, 0.2, 0.2, 1.0 }
+            arch_idx->add_component(cube_entities[i], iceshard::component::Material{
+                .material_name = "material.backpack"_sid
             });
 
         }
@@ -318,7 +319,7 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
         arch_idx->add_component(entities[8], iceshard::component::Light{ { 0.5f, 0.5f, 3.0f } });
         arch_idx->add_component(entities[8], iceshard::component::ModelName{ "mesh/box/box"_sid });
         arch_idx->add_component(entities[8], iceshard::component::Transform{ pos });
-        arch_idx->add_component(entities[8], iceshard::component::ModelMaterial{ ism::vec4f{ 0.8, 0.8, 0.8, 1.0f } });
+        //arch_idx->add_component(entities[8], iceshard::component::ModelMaterial{ ism::vec4f{ 0.8, 0.8, 0.8, 1.0f } });
         arch_idx->add_component(entities[8], DebugName{ "Light" });
 
         pos = ism::scale(
@@ -329,7 +330,7 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
         arch_idx->add_component(entities[9], iceshard::component::Light{ { 0.5f, 0.5f, 5.0f } });
         arch_idx->add_component(entities[9], iceshard::component::ModelName{ "mesh/box/box"_sid });
         arch_idx->add_component(entities[9], iceshard::component::Transform{ pos });
-        arch_idx->add_component(entities[9], iceshard::component::ModelMaterial{ ism::vec4f{ 0.8, 0.8, 0.8, 1.0f } });
+        //arch_idx->add_component(entities[9], iceshard::component::ModelMaterial{ ism::vec4f{ 0.8, 0.8, 0.8, 1.0f } });
         arch_idx->add_component(entities[9], DebugName{ "Light" });
 
 
@@ -370,6 +371,21 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
         using iceshard::input::KeyboardKey;
         using iceshard::input::ControllerInput;
         using iceshard::input::create_inputid;
+
+        {
+            auto& mat_sys = engine_instance->material_system();
+
+            mat_sys.create_material("material.backpack"_sid,
+                iceshard::Material
+                {
+                    .texture_normal = "temp/backpack_normal"_sid,
+                    .texture_diffuse = "temp/backpack_diffuse"_sid,
+                    .texture_specular = "temp/backpack_specular"_sid,
+                    .shader_vertex = "shaders/debug/texture-vert"_sid,
+                    .shader_fragment = "shaders/debug/texture-frag"_sid,
+                }
+            );
+        }
 
         auto execution_instance = engine_instance->execution_instance();
 
