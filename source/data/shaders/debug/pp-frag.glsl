@@ -4,8 +4,8 @@ layout (location = 0) in vec2 in_uv;
 
 layout (location = 0) out vec3 out_color;
 
-layout(set = 1, binding = 0) uniform sampler default_sampler;
-layout(set = 2, binding = 2) uniform texture2D rendered_image;
+layout(set = 2, binding = 0) uniform sampler default_sampler;
+layout(set = 3, binding = 2) uniform texture2D rendered_image;
 
 vec3 sepia(vec3 color)
 {

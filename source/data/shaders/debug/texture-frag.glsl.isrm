@@ -1,0 +1,12 @@
+{
+    "resource": {
+        "meta": {
+            "type": 0,
+            "version": 0
+        }
+    },
+    "shader": {
+        "target": 1,
+        "stage": 2
+    }
+}
