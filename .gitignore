@@ -3,6 +3,10 @@
 /.vscode/
 /build/
 
+# Local data
+/source/data/kenney
+/source/data/temp
+
 # Temporary files to ignore
 compile_commands.json
 *.sln
