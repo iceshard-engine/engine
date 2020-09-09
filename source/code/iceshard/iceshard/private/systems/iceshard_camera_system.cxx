@@ -36,6 +36,8 @@ namespace iceshard
         , _input_system{ input_system }
         , _render_system{ render_system }
         , _component_query{ alloc }
+        , _perspective_query{ alloc }
+        , _ortographic_query{ alloc }
     {
         _uniform_buffer = renderer::create_buffer(renderer::api::BufferType::UniformBuffer, sizeof(CameraData));
 
@@ -52,6 +54,11 @@ namespace iceshard
 
         _render_system.update_resource_set(
             "static-mesh.3d"_sid,
+            resources
+        );
+
+        _render_system.update_resource_set(
+            "tiled.view-projection-clip"_sid,
             resources
         );
     }
@@ -173,18 +180,18 @@ namespace iceshard
                 ) * camera_speed * speed_mul * move_x;
 
 
-                camera->yaw += speed_mul * (xoffset < 0 ? std::max(xoffset, -10.f) : std::min(xoffset, 10.f));
-                camera->pitch += speed_mul * (yoffset < 0 ? std::max(yoffset, -10.f) : std::min(yoffset, 10.f));
+                camera->yaw.value += speed_mul * (xoffset < 0 ? std::max(xoffset, -10.f) : std::min(xoffset, 10.f));
+                camera->pitch.value += speed_mul * (yoffset < 0 ? std::max(yoffset, -10.f) : std::min(yoffset, 10.f));
 
-                if (camera->pitch > 89.0f)
-                    camera->pitch = 89.0f;
-                if (camera->pitch < -89.0f)
-                    camera->pitch = -89.0f;
+                if (camera->pitch.value > 89.0f)
+                    camera->pitch.value = 89.0f;
+                if (camera->pitch.value < -89.0f)
+                    camera->pitch.value = -89.0f;
 
                 ism::vec3f direction;
-                direction.x = cos(ism::radians(camera->yaw)) * cos(ism::radians(camera->pitch));
-                direction.y = sin(ism::radians(camera->pitch));
-                direction.z = sin(ism::radians(camera->yaw)) * cos(ism::radians(camera->pitch));
+                direction.x = ism::cos(ism::radians(camera->yaw)) * ism::cos(ism::radians(camera->pitch));
+                direction.y = ism::sin(ism::radians(camera->pitch));
+                direction.z = ism::sin(ism::radians(camera->yaw)) * ism::cos(ism::radians(camera->pitch));
                 camera->front = ism::normalize(direction);
 
                 camera_data->view = ism::lookat(
@@ -192,9 +199,15 @@ namespace iceshard
                     camera->position + camera->front,
                     camera_up
                 );
+            }
+        );
 
+        iceshard::ecs::for_each_entity(
+            iceshard::ecs::query_index(_perspective_query, _archetype_index),
+            [&](iceshard::component::ProjectionPerspective* perspective) noexcept
+            {
                 camera_data->projection = ism::perspective(
-                    camera->fovy,
+                    ism::radians(perspective->fovy),
                     16.0f / 9.0f,
                     0.1f, 100.0f
                 );
@@ -205,6 +218,27 @@ namespace iceshard
                         { 0.0f, -1.0f, 0.0f, 0.0f },
                         { 0.0f, 0.0f, 0.5f, 0.5f },
                         { 0.0f, 0.0f, 0.0f, 0.1f },
+                    }
+                };
+            }
+        );
+
+        iceshard::ecs::for_each_entity(
+            iceshard::ecs::query_index(_ortographic_query, _archetype_index),
+            [&](iceshard::component::ProjectionOrtographic* ortho) noexcept
+            {
+                camera_data->projection = ism::orthographic(
+                    ortho->left_right.x, ortho->left_right.y,
+                    ortho->top_bottom.y, ortho->top_bottom.x,
+                    ortho->near_far.x, ortho->near_far.y
+                );
+
+                camera_data->clip = core::math::mat4x4{
+                    .v = {
+                        { 1.0f, 0.0f, 0.0f, 0.0f },
+                        { 0.0f, -1.0f, 0.0f, 0.0f },
+                        { 0.0f, 0.0f, 1.0f, 0.0f },
+                        { 0.0f, 0.0f, 0.0f, 1.0f },
                     }
                 };
             }

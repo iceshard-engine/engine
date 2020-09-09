@@ -5,9 +5,8 @@
 namespace core::math
 {
 
-    inline auto rotate(mat4x4 left, f32 rad, vec3f v) noexcept -> mat4x4
+    inline auto rotate(mat4x4 left, rad rad, vec3f v) noexcept -> mat4x4
     {
-        f32 const angle = rad;
         f32 const cosv = cos(rad);
         f32 const cosv_1 = 1.f - cosv;
         f32 const sinv = sin(rad);
@@ -30,7 +29,7 @@ namespace core::math
         return mul(left, rm);
     }
 
-    inline auto rotate(f32 rad, vec3f v) noexcept -> mat4x4
+    inline auto rotate(rad rad, vec3f v) noexcept -> mat4x4
     {
         return rotate(identity<mat4x4>(), rad, v);
     }

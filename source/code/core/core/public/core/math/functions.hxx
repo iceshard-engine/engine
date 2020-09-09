@@ -5,9 +5,9 @@
 namespace core::math
 {
 
-    constexpr auto radians(f32 degrees) noexcept -> f32
+    constexpr auto radians(deg degrees) noexcept -> rad
     {
-        return degrees * (core::math::pi / 180.f);
+        return rad{ degrees.value * (core::math::pi / 180.f) };
     }
 
     inline auto sqrt(f32 val) noexcept -> f32
@@ -15,19 +15,19 @@ namespace core::math
         return std::sqrtf(val);
     }
 
-    inline auto sin(f32 radians) noexcept -> f32
+    inline auto sin(rad radians) noexcept -> f32
     {
-        return std::sinf(radians);
+        return std::sinf(radians.value);
     }
 
-    inline auto cos(f32 radians) noexcept -> f32
+    inline auto cos(rad radians) noexcept -> f32
     {
-        return std::cosf(radians);
+        return std::cosf(radians.value);
     }
 
-    inline auto tan(f32 radians) noexcept -> f32
+    inline auto tan(rad radians) noexcept -> f32
     {
-        return std::tanf(radians);
+        return std::tanf(radians.value);
     }
 
 } // namespace core::math

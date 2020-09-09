@@ -39,6 +39,14 @@ namespace iceshard
             iceshard::component::Camera*
         > _component_query;
 
+        iceshard::ecs::ComponentQuery<
+            iceshard::component::ProjectionPerspective*
+        > _perspective_query;
+
+        iceshard::ecs::ComponentQuery<
+            iceshard::component::ProjectionOrtographic*
+        > _ortographic_query;
+
         // Render objects
         iceshard::renderer::api::Buffer _uniform_buffer;
     };

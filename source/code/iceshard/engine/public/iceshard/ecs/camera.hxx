@@ -9,18 +9,28 @@ namespace iceshard::component
     {
         static constexpr auto identifier = "isc.camera"_sid;
 
-        //! \brief World position of the camera.
         ism::vec3f position;
 
-        //! \brief Where the camera is looking.
         ism::vec3f front;
 
-        //! \brief Field of View (in degrees)
-        ism::f32 fovy;
+        ism::deg yaw;
+        ism::deg pitch;
+    };
 
-        //! \brief Yaw and Pitch
-        ism::f32 yaw;
-        ism::f32 pitch;
+    struct ProjectionPerspective
+    {
+        static constexpr auto identifier = "isc.projection.perspective"_sid;
+
+        ism::deg fovy;
+    };
+
+    struct ProjectionOrtographic
+    {
+        static constexpr auto identifier = "isc.projection.ortographic"_sid;
+
+        ism::vec2f left_right;
+        ism::vec2f top_bottom;
+        ism::vec2f near_far;
     };
 
 } // namespace iceshard::ecs
