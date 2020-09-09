@@ -65,6 +65,11 @@
 #include <iceshard/renderer/render_model.hxx>
 #include <iceshard/renderer/render_funcs.hxx>
 #include <iceshard/renderer/render_commands.hxx>
+#include <iceshard/renderer/render_buffers.hxx>
+
+#include <iceshard/render/render_stage.hxx>
+#include <iceshard/render/render_system.hxx>
+#include <iceshard/render/render_pass.hxx>
 
 #include <iceshard/material/material.hxx>
 #include <iceshard/material/material_system.hxx>
@@ -79,87 +84,175 @@
 #include <iceshard/ecs/camera.hxx>
 #include <iceshard/math.hxx>
 
-#include <iceshard/debug/debug_system.hxx>
-#include <iceshard/debug/debug_window.hxx>
 #include <iceshard/debug/debug_module.hxx>
+#include <iceshard/debug/debug_system.hxx>
 
-#include <imgui/imgui.h>
-
-struct DebugName
-{
-    static constexpr auto identifier = "isc.debug_name"_sid;
-
-    core::StackString<32> name;
-
-    DebugName(core::StringView str) noexcept
-        : name{ str }
-    { }
-};
-
-class DebugNameUI : public iceshard::debug::DebugWindow, public iceshard::debug::DebugModule
+class TileRenderer : public iceshard::ComponentSystem, public iceshard::RenderStageTaskFactory
 {
 public:
-    DebugNameUI(
-        core::allocator& alloc,
-        iceshard::ecs::ArchetypeIndex* archetype_index
-    ) noexcept
-        : iceshard::debug::DebugWindow{ }
-        , _allocator{ alloc }
-        , _arch_index{ *archetype_index }
-    { }
+    static constexpr core::math::u32 TileWidth = 64.f;
+    static constexpr core::math::u32 TileHeight = 64.f;
 
-    void on_initialize(iceshard::debug::DebugSystem& ds) noexcept
+    static constexpr core::math::f32 TilesetTileWidth = 16.f;
+    static constexpr core::math::f32 TilesetTileHeight = 16.f;
+
+    static constexpr core::math::vec2f TilesetTileUV{ 16.f / 368.f, 16.f / 224.f };
+
+    TileRenderer(iceshard::MaterialSystem& material_system, iceshard::renderer::RenderSystem& render_system) noexcept
+        : _material_system{ material_system }
+        , _render_system{ render_system }
     {
-        ds.register_window("debug-name-ui"_sid, *this);
+        _material_system.create_material("cotm.tileset"_sid,
+            iceshard::Material{
+                .texture_diffuse = "cotm/tileset_a"_sid,
+                .shader_vertex = "shaders/isometric/texture-vert"_sid,
+                .shader_fragment = "shaders/isometric/texture-frag"_sid,
+            }
+        );
+
+        struct Vertice
+        {
+            ism::vec3f pos;
+            ism::vec3f norm;
+            ism::vec2f uv;
+        };
+
+        _tile_data = iceshard::renderer::create_buffer(
+            iceshard::renderer::api::BufferType::VertexBuffer,
+            sizeof(Vertice) * 4
+        );
+        _tile_indices = iceshard::renderer::create_buffer(
+            iceshard::renderer::api::BufferType::IndexBuffer,
+            sizeof(core::math::u16) * 6
+        );
+        _tile_instances = iceshard::renderer::create_buffer(
+            iceshard::renderer::api::BufferType::VertexBuffer,
+            sizeof(core::math::mat4x4) * 100
+        );
+
+        iceshard::renderer::Buffer buffers[] = {
+            _tile_data,
+            _tile_indices,
+            _tile_instances
+        };
+        iceshard::renderer::api::DataView views[core::size(buffers)];
+
+        auto buffers_arr = core::pod::array::create_view(buffers);
+        auto views_arr = core::pod::array::create_view(views);
+
+        iceshard::renderer::map_buffers(
+            buffers_arr,
+            views_arr
+        );
+
+        Vertice vertices[] = {
+            Vertice{
+                .pos = { 0.f, 0.f, 0.f },
+                .norm = { 0.f, 0.f, 0.f },
+                .uv = { 0.f, 1.f }
+            },
+            Vertice{
+                .pos = { 0.f, 1.f, 0.f },
+                .norm = { 0.f, 0.f, 0.f },
+                .uv = { 0.f, 0.f }
+            },
+            Vertice{
+                .pos = { 1.f, 1.f, 0.f },
+                .norm = { 0.f, 1.f, 0.f },
+                .uv = { 1.f, 0.f }
+            },
+            Vertice{
+                .pos = { 1.f, 0.f, 0.f },
+                .norm = { 0.f, 0.f, 0.f },
+                .uv = { 1.f, 1.f }
+            },
+        };
+
+        ism::u16 indices[] = {
+            0, 2, 1,
+            0, 3, 2
+        };
+
+        struct Instance
+        {
+            ism::vec2f pos;
+            ism::vec2u tile;
+        };
+
+        Instance instances[] = {
+            Instance{.pos = {0.f, 0.f}, .tile = {3, 1}},
+            Instance{.pos = {1.f, 0.f}, .tile = {3, 1}},
+            Instance{.pos = {0.f, 1.f}, .tile = {3, 1}},
+            Instance{.pos = {1.f, 1.f}, .tile = {3, 1}},
+            Instance{.pos = {1.f, 2.f}, .tile = {3, 1}},
+        };
+
+        memcpy(views[0].data, vertices, sizeof(vertices));
+        memcpy(views[1].data, indices, sizeof(indices));
+        memcpy(views[2].data, instances, sizeof(instances));
+
+        iceshard::renderer::unmap_buffers(
+            buffers_arr
+        );
     }
 
-    void on_deinitialize(iceshard::debug::DebugSystem& ds) noexcept
+    auto render_task_factory() noexcept -> iceshard::RenderStageTaskFactory*
     {
-        ds.unregister_window("debug-name-ui"_sid);
+        return this;
     }
 
-    void end_frame() noexcept override
+    void create_render_tasks(
+        iceshard::Frame const& current,
+        iceshard::renderer::api::CommandBuffer cmds,
+        core::Vector<cppcoro::task<>>& task_list
+    ) noexcept override
     {
-        iceshard::ecs::ComponentQuery<iceshard::component::Entity*, DebugName*> debug_name_query{ _allocator };
-        iceshard::ecs::ComponentQuery<iceshard::component::Camera*> camera_query{ _allocator };
+        task_list.push_back(draw_tiles(cmds));
+    }
 
-        if (ImGui::Begin("Debug names"))
-        {
-            iceshard::ecs::for_each_entity(
-                iceshard::ecs::query_index(
-                    debug_name_query,
-                    _arch_index
-                ),
-                [](iceshard::component::Entity* e, DebugName* debug_name) noexcept
-                {
-                    ImGui::Text("%s <%llu>", core::string::begin(debug_name->name), core::hash(e->e));
-                }
-            );
-        }
-        ImGui::End();
+    void update(iceshard::Frame& frame) noexcept override
+    {
+        //core::pod::Array<int>& tiles = *frame.new_frame_object<core::pod::Array<int>>("demo.tiles"_sid);
+    }
 
-        if (ImGui::Begin("Camera"))
-        {
-            iceshard::ecs::for_each_entity(
-                iceshard::ecs::query_index(
-                    camera_query,
-                    _arch_index
-                ),
-                [](iceshard::component::Camera* cam) noexcept
-                {
-                    ImGui::Text("pos[ %0.3f, %.3f, %0.3f ] / front[ %0.3f, %.3f, %0.3f ]"
-                        , cam->position.x, cam->position.y, cam->position.z
-                        , cam->front.x, cam->front.y, cam->front.z
-                    );
-                }
-            );
-        }
-        ImGui::End();
+    auto draw_tiles(iceshard::renderer::CommandBuffer cmds) noexcept -> cppcoro::task<>
+    {
+        iceshard::MaterialResources mat;
+        _material_system.get_material("cotm.tileset"_sid, mat);
+
+        namespace cmd = iceshard::renderer::commands;
+        cmd::set_viewport(cmds, _viewport.x, _viewport.y);
+        cmd::set_scissor(cmds, _viewport.x, _viewport.y);
+
+        cmd::bind_pipeline(cmds, mat.pipeline);
+
+        iceshard::renderer::api::ResourceSet resources[] = {
+            mat.resource,
+            _render_system.get_resource_set("tiled.view-projection-clip"_sid)
+        };
+
+        cmd::bind_resource_sets(cmds, core::pod::array::create_view(resources));
+        cmd::bind_index_buffer(cmds, _tile_indices);
+
+        iceshard::renderer::Buffer buffers[] = {
+            _tile_data,
+            _tile_instances,
+        };
+        cmd::bind_vertex_buffers(cmds, core::pod::array::create_view(buffers));
+
+        cmd::draw_indexed(cmds, 6, 5, 0, 0, 0);
+        co_return;
     }
 
 private:
-    core::allocator& _allocator;
-    iceshard::ecs::ArchetypeIndex& _arch_index;
+    iceshard::MaterialSystem& _material_system;
+    iceshard::renderer::RenderSystem& _render_system;
+
+    ism::vec2u _viewport{ 1280, 720 };
+
+    iceshard::renderer::Buffer _tile_data;
+    iceshard::renderer::Buffer _tile_indices;
+    iceshard::renderer::Buffer _tile_instances;
 };
 
 int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
@@ -213,7 +306,6 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
         // Debug UI module
         core::memory::unique_pointer<iceshard::debug::DebugSystemModule> debugui_module{ nullptr, { alloc } };
         core::memory::unique_pointer<iceshard::debug::DebugModule> engine_debugui{ nullptr, { alloc } };
-        core::memory::unique_pointer<DebugNameUI> debugname_ui{ nullptr, { alloc } };
 
         if constexpr (core::build::is_release == false)
         {
@@ -237,298 +329,54 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
         [[maybe_unused]]
         iceshard::World* world = engine_instance->world_manager().create_world("test-world"_sid);
 
+
         auto arch_idx = world->service_provider()->archetype_index();
-        arch_idx->add_component(world->entity(), DebugName{ "Test World" });
-
-        if (debugui_module)
-        {
-            debugname_ui = core::memory::make_unique<DebugNameUI>(alloc,
-                alloc,
-                arch_idx
-            );
-
-            debugui_module->debug_system().register_module(*debugname_ui);
-        }
-
-        core::pod::Array<iceshard::Entity> entities{ alloc };
-        engine_instance->entity_manager().create_many(10, entities);
-
-        namespace ism = core::math;
-
-        auto pos = ism::translate(
-            ism::scale(ism::vec3f{ 10.0f, 0.01f, 10.0f }),
-            ism::vec3f{ 0.0f, -1.0f, 0.0f }
-        );
-
-        arch_idx->add_component(entities[0], iceshard::component::Transform{ pos });
-        //arch_idx->add_component(entities[0], iceshard::component::ModelMaterial{ ism::vec4f{ 0.8f, 0.8f, 0.8f, 1.0f } });
-        arch_idx->add_component(entities[0], iceshard::component::ModelName{ "mesh/box/box"_sid });
-
-        namespace ism = core::math;
-        {
-            ism::vec3f cube_positions[] = {
-                ism::vec3f{ 0.0f,  0.0f,  0.0f },
-                ism::vec3f{ 2.0f,  5.0f, -15.0f },
-                ism::vec3f{ -1.5f, -2.2f, -2.5f },
-                ism::vec3f{ -3.8f, -2.0f, -12.3f },
-                ism::vec3f{ 2.4f, -0.4f, -3.5f },
-                ism::vec3f{ -1.7f,  3.0f, -7.5f },
-                ism::vec3f{ 1.3f, -2.0f, -2.5f },
-                ism::vec3f{ 1.5f,  2.0f, -2.5f },
-                ism::vec3f{ 1.5f,  0.2f, -1.5f },
-                ism::vec3f{ -1.3f,  1.0f, -1.5f },
-            };
-
-
-            core::pod::Array<iceshard::Entity> cube_entities{ alloc };
-            engine_instance->entity_manager().create_many(core::size(cube_positions) + 1, cube_entities);
-
-            uint32_t i = 0;
-            for (auto const cube_pos : cube_positions)
-            {
-                static float angle = 0.0f;
-                auto model = ism::translate(cube_pos);
-                model = ism::scale(model, { 0.5, 0.5, 0.5 });
-                model = ism::rotate(model, ism::radians(angle), { 1.f, 0.3f, 0.5f });
-
-                arch_idx->add_component(cube_entities[i], iceshard::component::ModelName{ "temp/backpack"_sid });
-                arch_idx->add_component(cube_entities[i], iceshard::component::Transform{ model });
-                arch_idx->add_component(cube_entities[i], iceshard::component::Material{ .material_name = "material.backpack"_sid });
-
-                angle += 20.f;
-                i += 1;
-            }
-
-            auto model = ism::translate(ism::vec3f{ 1.7f,  1.0f, -6.5f });
-            model = ism::scale(model, { 0.4, 0.4, 0.4 });
-            model = ism::rotate(model, ism::radians(0), { 1.f, 0.3f, 0.5f });
-
-            arch_idx->add_component(cube_entities[i], iceshard::component::ModelName{ "temp/backpack"_sid });
-            arch_idx->add_component(cube_entities[i], iceshard::component::Transform{ model });
-            arch_idx->add_component(cube_entities[i], iceshard::component::Material{
-                .material_name = "material.backpack"_sid
-            });
-
-        }
-
-        pos = ism::scale(
-            ism::translate(ism::vec3f{ 0.5f, 0.5f, 3.0f }),
-            ism::vec3f{ 0.04f, 0.04f, 0.04f }
-        );
-
-        arch_idx->add_component(entities[8], iceshard::component::Light{ { 0.5f, 0.5f, 3.0f } });
-        arch_idx->add_component(entities[8], iceshard::component::ModelName{ "mesh/box/box"_sid });
-        arch_idx->add_component(entities[8], iceshard::component::Transform{ pos });
-        //arch_idx->add_component(entities[8], iceshard::component::ModelMaterial{ ism::vec4f{ 0.8, 0.8, 0.8, 1.0f } });
-        arch_idx->add_component(entities[8], DebugName{ "Light" });
-
-        pos = ism::scale(
-            ism::translate(ism::vec3f{ 0.5f, 0.5f, 5.0f }),
-            ism::vec3f{ 0.04f, 0.04f, 0.04f }
-        );
-
-        arch_idx->add_component(entities[9], iceshard::component::Light{ { 0.5f, 0.5f, 5.0f } });
-        arch_idx->add_component(entities[9], iceshard::component::ModelName{ "mesh/box/box"_sid });
-        arch_idx->add_component(entities[9], iceshard::component::Transform{ pos });
-        //arch_idx->add_component(entities[9], iceshard::component::ModelMaterial{ ism::vec4f{ 0.8, 0.8, 0.8, 1.0f } });
-        arch_idx->add_component(entities[9], DebugName{ "Light" });
-
-
 
         iceshard::Entity camera_entity = engine_instance->entity_manager().create();
         arch_idx->add_component(camera_entity,
             iceshard::component::Camera{
-                .position = { 0.0f, 0.0f, 7.0f },
-                .front = { 0.0f, 0.0f, -1.0f },
-                .fovy = 45.0f,
+                .position = { 0.0f, 0.0f, 1.0f },
+                .front = { 0.0f, 0.0f, 1.0f },
                 .yaw = -90.f,
                 .pitch = 0.0f,
             }
         );
 
-
-        iceshard::ecs::ComponentQuery<iceshard::component::Light*, iceshard::component::Transform*> light_query{ alloc };
-
-        static float angles[]{
-            2.0f,
-            3.0f,
-        };
-
-        uint32_t current_angle = 0;
-        auto next_angle = [&]() -> float
-        {
-            current_angle += 1;
-            if (current_angle == core::size(angles))
-            {
-                current_angle = 0;
+        arch_idx->add_component(camera_entity,
+            iceshard::component::ProjectionPerspective{
+                .fovy = 45.f
             }
-            return angles[current_angle];
-        };
+        );
 
-        using iceshard::input::InputID;
-        using iceshard::input::InputEvent;
-        using iceshard::input::DeviceType;
-        using iceshard::input::KeyboardKey;
-        using iceshard::input::ControllerInput;
-        using iceshard::input::create_inputid;
-
-        {
-            auto& mat_sys = engine_instance->material_system();
-
-            mat_sys.create_material("material.backpack"_sid,
-                iceshard::Material
-                {
-                    .texture_normal = "temp/backpack_normal"_sid,
-                    .texture_diffuse = "temp/backpack_diffuse"_sid,
-                    .texture_specular = "temp/backpack_specular"_sid,
-                    .shader_vertex = "shaders/debug/texture-vert"_sid,
-                    .shader_fragment = "shaders/debug/texture-frag"_sid,
-                }
-            );
-        }
+        arch_idx->add_component(camera_entity,
+            iceshard::component::ProjectionOrtographic{
+                .left_right = { 0.0f, 1280.f / TileRenderer::TileWidth },
+                .top_bottom = { 0.f, 720.f / TileRenderer::TileHeight },
+                .near_far = { 0.1f, 100.f },
+            }
+        );
 
         auto execution_instance = engine_instance->execution_instance();
-
         iceshard::register_common_triggers(execution_instance->input_actions().trigger_database());
 
+        TileRenderer map_system{ engine_instance->material_system(), engine_instance->render_system() };
+        engine_instance->services().add_system("demo.isometric"_sid, &map_system);
+
+        auto* const render_pass = execution_instance->render_system().render_pass("isc.render-pass.default"_sid);
+        if (render_pass != nullptr)
         {
-            iceshard::ActionStage stages[] = {
-                iceshard::ActionStage
-                {
-                    .initial_success_trigger = 0,
-                    .initial_failure_trigger = 0,
-                    .num_success_triggers = 1,
-                    .num_failure_triggers = 1,
-                    .reset_trigger = 0,
-                }
-            };
+            auto* const render_stage = render_pass->render_stage("isr.render-stage.opaque"_sid);
 
-            iceshard::ActionTrigger triggers[] =
+            if (render_stage != nullptr)
             {
-                iceshard::ActionTrigger{
-                    .trigger_name = "trigger.button-pressed"_sid,
-                    .trigger_userdata = iceshard::trigger::create_trigger_userdata(
-                        create_inputid(DeviceType::Keyboard, KeyboardKey::KeyW)
-                    )
-                },
-                iceshard::ActionTrigger{
-                    .trigger_name = "trigger.never"_sid
-                },
-                iceshard::ActionTrigger{
-                    .trigger_name = "trigger.button-released"_sid,
-                    .trigger_userdata = iceshard::trigger::create_trigger_userdata(
-                        create_inputid(DeviceType::Keyboard, KeyboardKey::KeyW)
-                    )
-                },
-            };
-
-            iceshard::ActionDefinition action
-            {
-                .stages = core::pod::array::create_view(stages),
-                .success_triggers = core::pod::array::create_view(triggers + 0, 1),
-                .failure_triggers = core::pod::array::create_view(triggers + 1, 1),
-                .reset_triggers = core::pod::array::create_view(triggers + 2, 1),
-            };
-
-            execution_instance->input_actions().create_action("player.forward"_sid, std::move(action));
+                render_stage->add_system_before("demo.isometric"_sid, "isc.system.static-mesh-renderer"_sid);
+            }
         }
-
-        {
-            iceshard::ActionStage stages[] = {
-                iceshard::ActionStage
-                {
-                    .initial_success_trigger = 0,
-                    .initial_failure_trigger = 0,
-                    .num_success_triggers = 1,
-                    .num_failure_triggers = 1,
-                    .reset_trigger = 0,
-                },
-                iceshard::ActionStage
-                {
-                    .initial_success_trigger = 1,
-                    .initial_failure_trigger = 1,
-                    .num_success_triggers = 1,
-                    .num_failure_triggers = 1,
-                    .reset_trigger = 0,
-                },
-                iceshard::ActionStage
-                {
-                    .initial_success_trigger = 2,
-                    .initial_failure_trigger = 0,
-                    .num_success_triggers = 1,
-                    .num_failure_triggers = 1,
-                    .reset_trigger = 1,
-                },
-            };
-
-            iceshard::ActionTrigger triggers[] =
-            {
-                iceshard::ActionTrigger{
-                    .trigger_name = "trigger.action-success"_sid,
-                    .trigger_userdata = iceshard::trigger::create_trigger_userdata("player.forward"_sid)
-                },
-                iceshard::ActionTrigger{
-                    .trigger_name = "trigger.button-clicked"_sid,
-                    .trigger_userdata = iceshard::trigger::create_trigger_userdata(
-                        create_inputid(DeviceType::Keyboard, KeyboardKey::Space)
-                    )
-                },
-                iceshard::ActionTrigger{
-                    .trigger_name = "trigger.always"_sid,
-                },
-
-                iceshard::ActionTrigger{
-                    .trigger_name = "trigger.never"_sid
-                },
-                iceshard::ActionTrigger{
-                    .trigger_name = "trigger.action-not-success"_sid,
-                    .trigger_userdata = iceshard::trigger::create_trigger_userdata("player.forward"_sid)
-                },
-
-
-                iceshard::ActionTrigger{
-                    .trigger_name = "trigger.always"_sid
-                },
-                iceshard::ActionTrigger{
-                    .trigger_name = "trigger.elapsed-time"_sid,
-                    .trigger_userdata = iceshard::trigger::create_trigger_userdata(1.f)
-                },
-            };
-
-            iceshard::ActionDefinition action
-            {
-                .stages = core::pod::array::create_view(stages),
-                .success_triggers = core::pod::array::create_view(triggers + 0, 3),
-                .failure_triggers = core::pod::array::create_view(triggers + 3, 2),
-                .reset_triggers = core::pod::array::create_view(triggers + 5, 2),
-            };
-
-            execution_instance->input_actions().create_action("player.running-jump"_sid, std::move(action));
-        }
-
-        auto light_clock = core::clock::create_clock(execution_instance->engine_clock(), 10.0f);
 
         bool quit = false;
         while (quit == false)
         {
             auto& frame = execution_instance->current_frame();
-            core::clock::update(light_clock);
-
-            iceshard::ecs::for_each_entity(
-                iceshard::ecs::query_index(light_query, *arch_idx),
-                [&next_angle, &light_clock](iceshard::component::Light* l, iceshard::component::Transform* xform) noexcept
-                {
-                    ism::mat4 rot_mat = ism::rotate(ism::radians(next_angle() * core::clock::elapsed(light_clock)), ism::vec3f{ 0.0f, 1.0f, 0.0f });
-                    ism::vec4f pos = rot_mat * ism::vec4(l->position, 1.0f);
-
-                    l->position = vec3(pos);
-
-                    xform->xform = ism::scale(
-                        ism::translate(l->position),
-                        ism::vec3f{ 0.04, 0.08, 0.04 }
-                    );
-                }
-            );
 
             core::message::filter<input::message::AppExit>(frame.messages(), [&quit](auto const&) noexcept
                 {
