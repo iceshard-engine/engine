@@ -61,6 +61,16 @@ namespace iceshard
             },
             { _allocator } // Empty array
         );
+
+        _native_render_system.create_resource_set(
+            "tiled.view-projection-clip"_sid,
+            iceshard::renderer::RenderPipelineLayout::Tiled,
+            iceshard::renderer::RenderResourceSetInfo{
+                .usage = iceshard::renderer::RenderResourceSetUsage::LightsData
+                    | iceshard::renderer::RenderResourceSetUsage::ViewProjectionData
+            },
+            { _allocator } // Empty array
+        );
     }
 
     IceRenderSystem::~IceRenderSystem() noexcept
@@ -69,6 +79,7 @@ namespace iceshard
         {
             _allocator.destroy(entry.value);
         }
+        _native_render_system.destroy_resource_set("tiled.view-projection-clip"_sid);
         _native_render_system.destroy_resource_set("static-mesh.3d"_sid);
     }
 

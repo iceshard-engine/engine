@@ -20,6 +20,13 @@ namespace iceshard
 
         virtual auto name() const noexcept -> core::stringid_type = 0;
 
+        void add_system(core::stringid_arg_type name) noexcept
+        {
+            add_system_before(name, core::stringid_invalid);
+        }
+
+        virtual void add_system_before(core::stringid_arg_type name, core::stringid_arg_type before) noexcept = 0;
+
     protected:
         virtual void on_prepare(
             iceshard::Engine& engine,

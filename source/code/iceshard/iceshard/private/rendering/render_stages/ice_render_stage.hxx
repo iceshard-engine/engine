@@ -45,7 +45,7 @@ namespace iceshard
             iceshard::renderer::api::CommandBuffer cmds
         ) const noexcept;
 
-        void add_system(core::stringid_arg_type name) noexcept;
+        void add_system_before(core::stringid_arg_type name, core::stringid_arg_type before) noexcept;
 
     protected:
         core::pod::Array<core::stringid_hash_type> _systems;

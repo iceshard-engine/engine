@@ -39,7 +39,7 @@ namespace iceshard
 
         auto command_buffer() noexcept -> iceshard::renderer::api::CommandBuffer override;
 
-        auto render_stage(core::stringid_arg_type name) noexcept -> RenderStage*;
+        auto render_stage(core::stringid_arg_type name) noexcept -> RenderStage* override;
 
         void execute(
             Frame& current

@@ -47,6 +47,11 @@ namespace iceshard
             return _input_actions_tracker;
         }
 
+        auto render_system() noexcept -> iceshard::RenderSystem& override
+        {
+            return *_render_system;
+        }
+
         auto engine_clock() const noexcept -> core::Clock const& override;
 
         auto previous_frame() const noexcept -> Frame const& override;

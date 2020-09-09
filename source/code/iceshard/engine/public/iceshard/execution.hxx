@@ -10,6 +10,8 @@ namespace iceshard
 
     class ActionSystem;
 
+    class RenderSystem;
+
     class ExecutionInstance
     {
     public:
@@ -30,6 +32,8 @@ namespace iceshard
         virtual auto previous_frame() const noexcept -> Frame const& = 0;
 
         virtual auto current_frame() noexcept -> Frame& = 0;
+
+        virtual auto render_system() noexcept -> RenderSystem& = 0;
 
         virtual void next_frame() noexcept = 0;
     };

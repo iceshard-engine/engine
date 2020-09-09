@@ -5,6 +5,8 @@
 namespace iceshard
 {
 
+    class RenderStage;
+
     class RenderPass
     {
     public:
@@ -15,6 +17,8 @@ namespace iceshard
         virtual auto command_buffer() noexcept -> iceshard::renderer::api::CommandBuffer = 0;
 
         virtual auto render_system() noexcept -> iceshard::renderer::RenderSystem& = 0;
+
+        virtual auto render_stage(core::stringid_arg_type name) noexcept -> RenderStage* = 0;
     };
 
 } // namespace iceshard

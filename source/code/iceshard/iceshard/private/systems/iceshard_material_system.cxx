@@ -78,17 +78,20 @@ namespace iceshard
 
         for (uint32_t i = 0; i < core::size(texture_names); ++i)
         {
-            load_status = _asset_system.load(
-                asset::Asset{ texture_names[i], asset::AssetType::Texture },
-                texture_asset_data[i]
-            );
-            IS_ASSERT(load_status == AssetStatus::Loaded, "Texture {} is not available!", texture_names[i]);
+            if (texture_names[i] != core::stringid_invalid)
+            {
+                load_status = _asset_system.load(
+                    asset::Asset{ texture_names[i], asset::AssetType::Texture },
+                    texture_asset_data[i]
+                );
+                IS_ASSERT(load_status == AssetStatus::Loaded, "Texture {} is not available!", texture_names[i]);
+            }
         }
 
         if (_render_system.get_resource_set(name) == ResourceSet::Invalid)
         {
             auto pipeline_handle = _render_system.create_pipeline(
-                name, RenderPipelineLayout::Textured,
+                name, RenderPipelineLayout::Tiled,
                 core::pod::array::create_view(shader_asset_data)
             );
 
@@ -109,55 +112,60 @@ namespace iceshard
             core::pod::Array<RenderResource> resources{ _allocator };
             core::pod::array::reserve(resources, 3);
 
-            RenderResource render_resources[3];
-
             begin(_command_buffer, CommandBufferUsage::RunOnce);
 
             uint32_t data_offset = 0;
             for (uint32_t i = 0; i < core::size(texture_names); ++i)
             {
-                auto texture_handle = iceshard::renderer::create_texture(texture_names[i], texture_asset_data[i]);
+                if (texture_names[i] != core::stringid_invalid)
+                {
+                    auto const texture_handle = iceshard::renderer::create_texture(texture_names[i], texture_asset_data[i]);
 
-                DataView buffer_view;
-                map_buffer(_transfer_buffer, buffer_view);
-                memcpy(
-                    core::memory::utils::pointer_add(buffer_view.data, data_offset),
-                    texture_asset_data[i].content.data(),
-                    texture_asset_data[i].content.size()
-                );
-                unmap_buffer(_transfer_buffer);
+                    DataView buffer_view;
+                    map_buffer(_transfer_buffer, buffer_view);
+                    memcpy(
+                        core::memory::utils::pointer_add(buffer_view.data, data_offset),
+                        texture_asset_data[i].content.data(),
+                        texture_asset_data[i].content.size()
+                    );
+                    unmap_buffer(_transfer_buffer);
 
-                int32_t width = 0;
-                int32_t height = 0;
-                resource::get_meta_int32(texture_asset_data[i].metadata, "texture.extents.width"_sid, width);
-                resource::get_meta_int32(texture_asset_data[i].metadata, "texture.extents.height"_sid, height);
+                    int32_t width = 0;
+                    int32_t height = 0;
+                    resource::get_meta_int32(texture_asset_data[i].metadata, "texture.extents.width"_sid, width);
+                    resource::get_meta_int32(texture_asset_data[i].metadata, "texture.extents.height"_sid, height);
 
-                update_texture(_command_buffer, texture_handle, _transfer_buffer,
-                    UpdateTextureData
-                    {
-                        .image_extent = core::math::vec2<core::math::u32>(width, height),
-                        .buffer_offset = data_offset
-                    }
-                );
+                    update_texture(_command_buffer, texture_handle, _transfer_buffer,
+                        UpdateTextureData
+                        {
+                            .image_extent = core::math::vec2<core::math::u32>(width, height),
+                            .buffer_offset = data_offset
+                        }
+                    );
 
 
-                // Update offset
-                data_offset += texture_asset_data[i].content.size();
-                data_offset = (data_offset % 4) ? 4 - (data_offset % 4) : data_offset;
+                    // Update offset
+                    data_offset += texture_asset_data[i].content.size();
+                    data_offset = (data_offset % 4) ? 4 - (data_offset % 4) : data_offset;
 
-                // Update resource description
-                render_resources[i].binding = i + 2;
-                render_resources[i].handle.texture = texture_handle;
-                render_resources[i].type = RenderResourceType::ResTexture2D;
+                    // Update resource description
+                    core::pod::array::push_back(resources,
+                        RenderResource{
+                            .binding = i + 2,
+                            .type = RenderResourceType::ResTexture2D,
+                            .handle = {.texture = texture_handle },
+                        }
+                    );
+                }
             }
 
             end(_command_buffer);
             _render_system.submit_command_buffer_v2(_command_buffer);
 
             auto resource_set_handle = _render_system.create_resource_set(
-                name, RenderPipelineLayout::Textured,
+                name, RenderPipelineLayout::Tiled,
                 RenderResourceSetInfo{ .usage = RenderResourceSetUsage::MaterialData },
-                core::pod::array::create_view(render_resources)
+                resources
             );
 
             IS_ASSERT(
