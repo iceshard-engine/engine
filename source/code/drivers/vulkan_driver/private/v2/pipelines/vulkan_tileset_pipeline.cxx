@@ -6,7 +6,7 @@
 namespace iceshard::renderer::vulkan
 {
 
-    void query_textured_vertex_input_descriptions(
+    void query_tiled_vertex_input_descriptions(
         core::pod::Array<VkVertexInputBindingDescription>& bindings,
         core::pod::Array<VkVertexInputAttributeDescription>& attributes
     ) noexcept
@@ -17,10 +17,10 @@ namespace iceshard::renderer::vulkan
         bindings[0].stride = sizeof(core::math::vec3f) * 2 + sizeof(core::math::vec2f);
         bindings[1].binding = 1;
         bindings[1].inputRate = VkVertexInputRate::VK_VERTEX_INPUT_RATE_INSTANCE;
-        bindings[1].stride = sizeof(float) * 16;
+        bindings[1].stride = sizeof(float) * 4;
 
 
-        core::pod::array::resize(attributes, 3 + 4);
+        core::pod::array::resize(attributes, 3 + 2);
         attributes[0].binding = 0;
         attributes[0].format = VkFormat::VK_FORMAT_R32G32B32_SFLOAT;
         attributes[0].location = 0;
@@ -34,16 +34,17 @@ namespace iceshard::renderer::vulkan
         attributes[2].location = 2;
         attributes[2].offset = sizeof(core::math::vec3f) * 2;
 
-        for (uint32_t i = 0; i < 4; ++i)
-        {
-            attributes[3 + i].binding = 1;
-            attributes[3 + i].format = VkFormat::VK_FORMAT_R32G32B32A32_SFLOAT;
-            attributes[3 + i].location = 6 + i;
-            attributes[3 + i].offset = sizeof(float) * 4 * i;
-        }
+        attributes[3].binding = 1;
+        attributes[3].format = VkFormat::VK_FORMAT_R32G32_SFLOAT;
+        attributes[3].location = 6;
+        attributes[3].offset = 0;
+        attributes[4].binding = 1;
+        attributes[4].format = VkFormat::VK_FORMAT_R32G32_UINT;
+        attributes[4].location = 7;
+        attributes[4].offset = sizeof(core::math::vec2f);
     }
 
-    void create_textured_pipeline(
+    void create_tileset_pipeline(
         VkDevice device,
         VkRenderPass renderpass,
         VkPipelineLayout layout,
@@ -85,7 +86,7 @@ namespace iceshard::renderer::vulkan
         core::pod::Array<VkVertexInputBindingDescription> vertex_input_bindings{ temp_alloc };
         core::pod::Array<VkVertexInputAttributeDescription> vertex_input_attributes{ temp_alloc };
 
-        query_textured_vertex_input_descriptions(
+        query_tiled_vertex_input_descriptions(
             vertex_input_bindings,
             vertex_input_attributes
         );

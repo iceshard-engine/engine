@@ -44,6 +44,17 @@ namespace iceshard::renderer::vulkan
         }
 
         {
+            layouts.tiled_layout.layout_type = RenderPipelineLayout::Tiled;
+            auto api_result = vkCreatePipelineLayout(
+                devices.graphics.handle,
+                &pipeline_create_info,
+                nullptr,
+                &layouts.tiled_layout.layout
+            );
+            IS_ASSERT(api_result == VkResult::VK_SUCCESS, "Couldn't create pipeline layout!");
+        }
+
+        {
             layouts.textured_layout.layout_type = RenderPipelineLayout::Textured;
             auto api_result = vkCreatePipelineLayout(
                 devices.graphics.handle,
@@ -78,6 +89,7 @@ namespace iceshard::renderer::vulkan
     {
         vkDestroyPipelineLayout(devices.graphics.handle, layouts.debugui_layout.layout, nullptr);
         vkDestroyPipelineLayout(devices.graphics.handle, layouts.default_layout.layout, nullptr);
+        vkDestroyPipelineLayout(devices.graphics.handle, layouts.tiled_layout.layout, nullptr);
         vkDestroyPipelineLayout(devices.graphics.handle, layouts.textured_layout.layout, nullptr);
     }
 

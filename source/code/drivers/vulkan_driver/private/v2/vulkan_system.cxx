@@ -338,6 +338,10 @@ namespace iceshard::renderer::vulkan
         {
             pipeline_layout = _pipeline_layouts.postprocess_layout;
         }
+        else if (layout == RenderPipelineLayout::Tiled)
+        {
+            pipeline_layout = _pipeline_layouts.tiled_layout;
+        }
         else if (layout == RenderPipelineLayout::Textured)
         {
             pipeline_layout = _pipeline_layouts.textured_layout;
@@ -420,6 +424,10 @@ namespace iceshard::renderer::vulkan
         else if (layout == RenderPipelineLayout::PostProcess)
         {
             selected_layout = _pipeline_layouts.postprocess_layout;
+        }
+        else if (layout == RenderPipelineLayout::Tiled)
+        {
+            selected_layout = _pipeline_layouts.tiled_layout;
         }
         else if (layout == RenderPipelineLayout::Textured)
         {
