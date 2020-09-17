@@ -20,4 +20,4 @@ class IceShard extends Application
         print ''
         print '> For more options see the -h,--help output.'
 
-IceShard!\run!
+{ :IceShard }

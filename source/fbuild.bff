@@ -9,20 +9,4 @@ Settings
     }
 }
 
-; Include the generated compiler definitions
-#include "scripts/target_configurations.bff"
-#include "scripts/aliases.bff"
-
-; Workspace properties
-.WorkspaceBuildDir = '$WorkspaceRoot$/build'
-.WorkspaceCodeDir = '$WorkspaceRoot$/source/code'
-
-.ProjectsResolved = { }
-{
-    .DefaultGroup = 'Unspecified'
-    #include "code/projects.bff"
-    #include "scripts/project_definition.bff"
-}
-
-#include "scripts/project_targets.bff"
-#include "scripts/project_vsprojects.bff"
+#include "code/projects.bff"

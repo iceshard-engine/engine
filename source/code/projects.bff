@@ -1,7 +1,5 @@
 #once
 
-.Projects = { }
-
 // Include all known project description files
 #include "core/core/core.bff"
 #include "core/memsys/memsys.bff"
