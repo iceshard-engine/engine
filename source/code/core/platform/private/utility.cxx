@@ -1,11 +1,10 @@
-#include <application/utility.hxx>
-
-#include <core/stack_string.hxx>
+#include <core/platform/utility.hxx>
 #include <core/platform/windows.hxx>
+#include <core/stack_string.hxx>
 
 #include <filesystem>
 
-namespace app
+namespace core
 {
 
     auto location(core::allocator& alloc) noexcept -> core::String<>
@@ -24,4 +23,4 @@ namespace app
         return core::String<>{ alloc, std::filesystem::canonical(core::string::begin(buffer)).generic_string() };
     }
 
-} // namespace app
+} // namespace core

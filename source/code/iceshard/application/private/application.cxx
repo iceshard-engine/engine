@@ -1,5 +1,5 @@
 #include <application/application.hxx>
-#include <application/utility.hxx>
+#include <core/platform/utility.hxx>
 
 #include <core/memory.hxx>
 #include <core/allocators/proxy_allocator.hxx>
@@ -37,7 +37,7 @@ int main(int, char**)
         resource::ResourceSystem resource_system{ main_allocator };
 
         {
-            auto working_dir = app::working_directory(main_allocator);
+            auto working_dir = core::working_directory(main_allocator);
             fmt::print("Initializing filesystem module at: {}\n", working_dir);
 
             core::pod::Array<core::stringid_type> schemes{ core::memory::globals::default_scratch_allocator() };

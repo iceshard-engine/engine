@@ -9,6 +9,7 @@
     .Public =
     [
         .Uses = {
+            'platform'
             'resource_system'
         }
     ]
