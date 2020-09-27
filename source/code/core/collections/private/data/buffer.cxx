@@ -23,6 +23,14 @@ namespace core
         _allocator->deallocate(_data);
     }
 
+    Buffer::Buffer(Buffer&& other) noexcept
+        : _allocator{ other._allocator }
+        , _size{ std::exchange(other._size, 0) }
+        , _capacity{ std::exchange(other._capacity, 0) }
+        , _data{ std::exchange(other._allocator, nullptr) }
+    {
+    }
+
     Buffer::Buffer(const Buffer& other) noexcept
         : _allocator{ other._allocator }
     {
@@ -32,9 +40,24 @@ namespace core
         _size = other_size;
     }
 
+    auto Buffer::operator=(Buffer&& other) noexcept -> Buffer&
+    {
+        if (this != &other)
+        {
+            std::swap(_allocator, other._allocator);
+            std::swap(_data, other._data);
+            std::swap(_size, other._size);
+            std::swap(_capacity, other._capacity);
+        }
+        return *this;
+    }
+
     auto Buffer::operator=(const Buffer& other) noexcept -> Buffer&
     {
-        if (this == &other) return *this;
+        if (this == &other)
+        {
+            return *this;
+        }
 
         const uint32_t n = other._size;
         buffer::resize(*this, n);

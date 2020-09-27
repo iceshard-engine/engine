@@ -16,6 +16,8 @@ namespace core
         //! \brief Creates a new Buffer object with the initial data copied from the given data view.
         Buffer(core::allocator& alloc, data_view data) noexcept;
 
+        Buffer(Buffer&& other) noexcept;
+
         //! \brief Creates a new Buffer object from the other.
         //! \details The allocator used will be the same, and the contents will be copied.
         Buffer(const Buffer& other) noexcept;
@@ -23,6 +25,8 @@ namespace core
         //! \brief Releases the allocated data.
         ~Buffer();
 
+
+        auto operator=(Buffer&& other) noexcept -> Buffer&;
 
         //! \brief Replaces the Buffer contents from the other object.
         auto operator=(const Buffer& other) noexcept -> Buffer&;
