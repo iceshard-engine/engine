@@ -10,6 +10,8 @@ namespace asset
     public:
         virtual ~AssetLoader() noexcept = default;
 
+        virtual bool supported_raw_assets() const noexcept { return true; }
+
         virtual auto supported_asset_types() const noexcept -> core::pod::Array<asset::AssetType> const& = 0;
 
         virtual auto request_asset(asset::Asset asset) noexcept -> asset::AssetStatus = 0;
@@ -21,7 +23,7 @@ namespace asset
             asset::AssetData& result_data
         ) noexcept -> asset::AssetStatus = 0;
 
-        virtual void release_asset(asset::Asset asset) noexcept = 0;
+        virtual bool release_asset(asset::Asset asset) noexcept = 0;
     };
 
 } // namespace asset

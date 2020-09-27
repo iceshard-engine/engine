@@ -69,8 +69,9 @@ namespace asset::detail
             return asset::AssetStatus::Loaded;
         }
 
-        void release_asset([[maybe_unused]] asset::Asset asset_reference) noexcept override
+        bool release_asset([[maybe_unused]] asset::Asset asset_reference) noexcept override
         {
+            return false;
         }
     };
 

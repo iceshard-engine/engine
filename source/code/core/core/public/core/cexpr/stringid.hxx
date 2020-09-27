@@ -45,7 +45,7 @@ namespace core
             int32_t const copy_count = std::min(origin_size, cstr_size);
             int32_t const copy_offset = std::max(0, cstr_size - copy_count);
 
-            int32_t i = 0;
+            int64_t i = 0;
             for (auto& v : result.hash_origin)
             {
                 if (i < copy_count)

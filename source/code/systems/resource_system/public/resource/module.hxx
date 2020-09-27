@@ -9,6 +9,9 @@ namespace resource
     //! \brief A resource object.
     class Resource;
 
+    //! \brief A writable resource object.
+    class OutputResource;
+
     //! \brief This class is used to handle specific schemes in the resource system.
     //!
     //! \detail A single module can be used for more than one resource scheme.

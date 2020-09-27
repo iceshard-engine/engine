@@ -120,7 +120,7 @@ namespace iceshard
         return asset::AssetStatus::Invalid;
     }
 
-    void StbTextureLoader::release_asset(asset::Asset asset) noexcept
+    bool StbTextureLoader::release_asset(asset::Asset asset) noexcept
     {
         auto const asset_name_hash = core::hash(asset.name);
         auto const model_status = core::pod::hash::get(
@@ -137,7 +137,9 @@ namespace iceshard
 
             core::pod::hash::remove(_texture_pixels, asset_name_hash);
             core::pod::hash::remove(_texture_status, asset_name_hash);
+            return true;
         }
+        return false;
     }
 
 } // namespace iceshard

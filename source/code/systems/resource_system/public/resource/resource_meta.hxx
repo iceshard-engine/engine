@@ -44,6 +44,12 @@ namespace resource
         ResourceMeta(core::allocator& alloc) noexcept;
         ~ResourceMeta() noexcept = default;
 
+        ResourceMeta(ResourceMeta&& other) noexcept;
+        ResourceMeta(ResourceMeta const& other) noexcept = delete;
+
+        auto operator=(ResourceMeta&&) noexcept -> ResourceMeta&;
+        auto operator=(ResourceMeta const&) noexcept -> ResourceMeta& = delete;
+
         core::pod::Hash<detail::MetaEntry> _meta_entries;
         core::Buffer _additional_data;
     };
@@ -82,11 +88,11 @@ namespace resource
 
     auto get_meta_bool(ResourceMetaView const& meta, core::stringid_arg_type key) noexcept -> bool;
 
-    auto get_meta_int32(ResourceMetaView const& meta, core::stringid_arg_type key) noexcept->int32_t;
+    auto get_meta_int32(ResourceMetaView const& meta, core::stringid_arg_type key) noexcept -> int32_t;
 
     auto get_meta_float(ResourceMetaView const& meta, core::stringid_arg_type key) noexcept -> float;
 
-    auto get_meta_string(ResourceMetaView const& meta, core::stringid_arg_type key) noexcept->core::StringView;
+    auto get_meta_string(ResourceMetaView const& meta, core::stringid_arg_type key) noexcept -> core::StringView;
 
     auto get_meta_bool(ResourceMetaView const& meta, core::stringid_arg_type key, bool& result) noexcept -> bool;
 

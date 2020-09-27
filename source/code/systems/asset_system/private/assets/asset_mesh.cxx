@@ -107,8 +107,9 @@ namespace asset::detail
             return asset::AssetStatus::Loaded;
         }
 
-        void release_asset(asset::Asset) noexcept override
+        bool release_asset(asset::Asset) noexcept override
         {
+            return false;
         }
 
     private:

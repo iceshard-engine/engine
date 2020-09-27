@@ -8,6 +8,7 @@
 #include <asset_system/asset.hxx>
 #include <asset_system/asset_loader.hxx>
 #include <asset_system/asset_resolver.hxx>
+#include <asset_system/asset_compiler.hxx>
 #include <resource/resource_system.hxx>
 
 #include <unordered_map>
@@ -19,6 +20,8 @@ namespace asset
     enum class AssetResolverHandle : uint32_t { };
 
     enum class AssetLoaderHandle : uint32_t { };
+
+    enum class AssetCompilerHandle : uint32_t { };
 
     //! \brief This class manages data and metadata associations across resources.
     class AssetSystem
@@ -62,7 +65,9 @@ namespace asset
 
         core::Map<AssetResolverHandle, core::memory::unique_pointer<AssetResolver>> _asset_resolvers;
         core::Map<AssetLoaderHandle, core::memory::unique_pointer<AssetLoader>> _asset_loaders;
+        core::Map<AssetCompilerHandle, core::memory::unique_pointer<AssetCompiler>> _asset_compilers;
 
+        core::Map<AssetType, std::vector<AssetCompiler*>> _asset_compiler_map;
         core::Map<AssetType, std::vector<AssetLoader*>> _asset_loader_map;
 
         struct AssetReference
@@ -70,6 +75,7 @@ namespace asset
             resource::URI content_location = resource::uri_invalid;
             resource::Resource* resource_object;
             AssetStatus status;
+            AssetCompilationResult* compiled_asset;
         };
         core::pod::Array<AssetReference> _resource_database;
 

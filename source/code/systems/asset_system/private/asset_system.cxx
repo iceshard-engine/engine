@@ -1,13 +1,8 @@
 #include <asset_system/asset_system.hxx>
 #include <asset_system/asset_resolver.hxx>
+#include <asset_system/asset_compiler.hxx>
 #include <resource/resource_messages.hxx>
 #include <resource/resource_meta.hxx>
-
-template<>
-constexpr auto core::hash<asset::AssetResolverHandle>(asset::AssetResolverHandle handle) noexcept -> uint64_t
-{
-    return 0;
-}
 
 namespace asset
 {
@@ -15,17 +10,46 @@ namespace asset
     namespace detail
     {
 
-        class ConfigAssetResolver : public AssetResolver
+        class ResourceAssetResolved final : public AssetResolver
         {
         public:
-            auto resolve_asset_type(core::StringView extension, resource::ResourceMetaView const&) noexcept -> asset::AssetType override
+            bool resolve_asset_info(
+                core::StringView extension,
+                resource::ResourceMetaView const& meta,
+                asset::AssetStatus& status_out,
+                asset::AssetType& type_out
+            ) noexcept override
             {
-                AssetType result = AssetType::Unresolved;
+                if (core::string::equals(extension, ".isr"))
+                {
+                    int32_t asset_type_value = 0;
+                    if (resource::get_meta_int32(meta, "asset.type"_sid, asset_type_value))
+                    {
+                        type_out = AssetType{ asset_type_value };
+                        status_out = AssetStatus::Available;
+                    }
+                }
+                return type_out != AssetType::Unresolved;
+            }
+        };
+
+        class ConfigAssetResolver final : public AssetResolver
+        {
+        public:
+            bool resolve_asset_info(
+                core::StringView extension,
+                resource::ResourceMetaView const& /*meta*/,
+                asset::AssetStatus& status_out,
+                asset::AssetType& type_out
+            ) noexcept override
+            {
                 if (core::string::equals(extension, ".json"))
                 {
-                    result = AssetType::Config;
+                    type_out = AssetType::Config;
+                    status_out = AssetStatus::Available;
+                    return true;
                 }
-                return result;
+                return false;
             }
         };
 
@@ -37,9 +61,12 @@ namespace asset
         , _resource_database{ _allocator }
         , _asset_objects{ _allocator }
         , _asset_resolvers{ _allocator }
+        , _asset_compilers{ _allocator }
         , _asset_loaders{ _allocator }
+        , _asset_compiler_map{ _allocator }
         , _asset_loader_map{ _allocator }
     {
+        add_resolver(core::memory::make_unique<asset::AssetResolver, asset::detail::ResourceAssetResolved>(_allocator));
         add_resolver(core::memory::make_unique<asset::AssetResolver, asset::detail::ConfigAssetResolver>(_allocator));
     }
 
@@ -101,9 +128,7 @@ namespace asset
 
     void AssetSystem::update() noexcept
     {
-        // clang-format off
         core::message::filter<resource::message::ResourceAdded>(_resource_system.messages(), [&](resource::message::ResourceAdded const& msg) noexcept
-            // clang-format on
             {
                 auto native_name = msg.resource->name();
                 auto extension_pos = core::string::find_first_of(native_name, '.');
@@ -114,23 +139,34 @@ namespace asset
                 auto it = _asset_resolvers.begin();
                 auto const end = _asset_resolvers.end();
 
-                AssetType resolved_asset_type = AssetType::Unresolved;
-                while (resolved_asset_type == AssetType::Unresolved && it != end)
+                AssetType resolved_type = AssetType::Unresolved;
+                AssetStatus resolved_status = AssetStatus::Invalid;
+
+                bool asset_info_resolved = false;
+                while (asset_info_resolved == false && it != end)
                 {
-                    resolved_asset_type = it->second->resolve_asset_type(extension, msg.resource->metadata());
+                    asset_info_resolved = it->second->resolve_asset_info(
+                        extension,
+                        msg.resource->metadata(),
+                        resolved_status,
+                        resolved_type
+                    );
+
                     it = std::next(it);
                 }
 
                 // Resource is not a known asset!
-                if (resolved_asset_type == AssetType::Unresolved)
+                if (asset_info_resolved == false)
                 {
                     // #todo verbose message?
                     return;
                 }
 
-                Asset reference{ basename, resolved_asset_type };
+                IS_ASSERT(resolved_type != AssetType::Unresolved, "Asset type resolving failed");
+                IS_ASSERT(resolved_status != AssetStatus::Invalid, "Asset type resolving failed");
 
-                // clang-format off
+                Asset reference{ basename, resolved_type };
+
                 core::pod::multi_hash::insert(
                     _asset_objects,
                     static_cast<uint64_t>(reference.name.hash_value),
@@ -138,9 +174,13 @@ namespace asset
                 );
                 core::pod::array::push_back(
                     _resource_database,
-                    AssetReference{ msg.resource->location(), msg.resource, AssetStatus::Available }
+                    AssetReference{
+                        .content_location = msg.resource->location(),
+                        .resource_object = msg.resource,
+                        .status = resolved_status,
+                        .compiled_asset = nullptr
+                    }
                 );
-                // clang-format on
             });
     }
 
@@ -171,25 +211,31 @@ namespace asset
                 core::pod::multi_hash::insert(
                     _asset_objects,
                     name_hash,
-                    AssetObject{ core::pod::array::size(_resource_database), std::move(reference) }
+                    AssetObject{ static_cast<uint64_t>(removed_resource_index), std::move(reference) }
                 );
-                core::pod::array::push_back(
-                    _resource_database,
-                    AssetReference{ resource->location(), resource, AssetStatus::Unloading }
-                );
+                _resource_database[removed_resource_index] = AssetReference{
+                    .content_location = resource->location(),
+                    .resource_object = resource,
+                    .status = AssetStatus::Unloading,
+                    .compiled_asset = nullptr
+                };
             }
             else
             {
                 core::pod::multi_hash::insert(
                     _asset_objects,
                     name_hash,
-                    AssetObject{ static_cast<uint64_t>(removed_resource_index), std::move(reference) }
+                    AssetObject{ core::pod::array::size(_resource_database), std::move(reference) }
                 );
-                _resource_database[removed_resource_index] = AssetReference{
-                    resource->location(),
-                    resource,
-                    AssetStatus::Available
-                };
+                core::pod::array::push_back(
+                    _resource_database,
+                    AssetReference{
+                        .content_location = resource->location(),
+                        .resource_object = resource,
+                        .status = AssetStatus::Available_Raw,
+                        .compiled_asset = nullptr
+                    }
+                );
             }
         }
         return resource == nullptr ? AssetStatus::Invalid : AssetStatus::Available;
@@ -216,42 +262,104 @@ namespace asset
             return AssetStatus::Invalid;
         }
 
-        // Try load the asset
-        auto it = _asset_loader_map[ref.type].rbegin();
-        auto const it_end = _asset_loader_map[ref.type].rend();
+        auto& asset_resources = _resource_database[asset_object->value.resource_index];
 
-        AssetStatus load_status = AssetStatus::Invalid;
-        while (it != it_end && load_status == AssetStatus::Invalid) // We can assume its either Invalid or Loaded
+        if (asset_resources.resource_object == nullptr)
         {
-            auto& asset_resources = _resource_database[asset_object->value.resource_index];
+            asset_resources.resource_object = _resource_system.find(asset_resources.content_location);
 
-            // If the current asset is already unloading, release it
-            // This should only happen in a single case, when an asset is reloading
-            //  after an update for such an asset was requested.
-            if (asset_resources.status == asset::AssetStatus::Unloading)
-            {
-                (*it)->release_asset(asset_object->value.reference);
-            }
+            // #todo at some point we will assume this is not 'raw' but 'baked' data.
+            asset_resources.status = asset::AssetStatus::Available_Raw;
+        }
 
-            if (asset_resources.resource_object == nullptr)
-            {
-                asset_resources.resource_object = _resource_system.find(asset_resources.content_location);
-            }
+        // Try compiling if needed
+        if (asset_resources.status == AssetStatus::Available_Raw)
+        {
+            auto it = _asset_compiler_map[ref.type].rbegin();
+            auto const it_end = _asset_compiler_map[ref.type].rend();
 
-            if (asset_resources.resource_object != nullptr)
+            auto* compilation_result = _allocator.make<AssetCompilationResult>(_allocator);
+
+            AssetCompilationStatus compilation_status = AssetCompilationStatus::Failed;
+            while (it != it_end && compilation_status != AssetCompilationStatus::Success)
             {
-                load_status = (*it++)->load_asset(
-                    asset_object->value.reference,
-                    asset_resources.resource_object->metadata(),
+                compilation_status = (*it)->compile_asset(
+                    _allocator, _resource_system, ref,
                     asset_resources.resource_object->data(),
-                    result_data
+                    asset_resources.resource_object->metadata(),
+                    *compilation_result
                 );
+            }
 
-                asset_resources.status = load_status;
+            if (compilation_status == AssetCompilationStatus::Success)
+            {
+                asset_resources.compiled_asset = compilation_result;
+                asset_resources.status = AssetStatus::Available;
             }
             else
             {
+                _allocator.destroy(compilation_result);
                 asset_resources.status = AssetStatus::Invalid;
+            }
+        }
+
+        auto it_beg = _asset_loader_map[ref.type].rbegin();
+        auto const it_end = _asset_loader_map[ref.type].rend();
+        AssetStatus load_status = AssetStatus::Invalid;
+
+        // If the current asset is already unloading, release it
+        // This should only happen in a single case, when an asset is reloading
+        //  after an update for such an asset was requested.
+        if (asset_resources.status == asset::AssetStatus::Unloading)
+        {
+            auto it = it_beg;
+
+            bool unloaded = false;
+            while (it != it_end && unloaded == false)
+            {
+                unloaded = (*it)->release_asset(asset_object->value.reference);
+                it += 1;
+            }
+
+            IS_ASSERT(
+                unloaded == true,
+                "Pending unload failed for asset {}", ref.name
+            );
+
+            asset_resources.status = asset::AssetStatus::Available;
+        }
+
+        // Try to load the new asset
+        {
+            auto it = it_beg;
+            while (it != it_end && load_status == AssetStatus::Invalid) // We can assume its either Invalid or Loaded
+            {
+                if (asset_resources.resource_object != nullptr)
+                {
+                    resource::ResourceMetaView resource_meta = asset_resources.resource_object->metadata();
+                    core::data_view resource_data = asset_resources.resource_object->data();
+
+                    if (asset_resources.compiled_asset != nullptr)
+                    {
+                        resource_data = asset_resources.compiled_asset->data;
+                        resource_meta = resource::create_meta_view(asset_resources.compiled_asset->metadata);
+                    }
+
+                    load_status = (*it)->load_asset(
+                        asset_object->value.reference,
+                        resource_meta,
+                        resource_data,
+                        result_data
+                    );
+
+                    asset_resources.status = load_status;
+                }
+                else
+                {
+                    asset_resources.status = AssetStatus::Invalid;
+                }
+
+                it += 1;
             }
         }
 

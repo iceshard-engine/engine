@@ -309,7 +309,7 @@ namespace iceshard
         return model_status;
     }
 
-    void AssimpMeshLoader::release_asset(asset::Asset asset) noexcept
+    bool AssimpMeshLoader::release_asset(asset::Asset asset) noexcept
     {
         using iceshard::renderer::v1::Model;
 
@@ -330,7 +330,10 @@ namespace iceshard
 
             core::pod::hash::remove(_models, asset_name_hash);
             core::pod::hash::remove(_models_status, asset_name_hash);
+            return true;
         }
+
+        return false;
     }
 
 } // namespace iceshard

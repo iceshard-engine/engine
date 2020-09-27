@@ -11,7 +11,7 @@ namespace asset
     //! \brief This enumeration defines all supported assert types.
     enum class AssetType : uint32_t
     {
-        Invalid = 0x00,
+        Invalid = 0x0,
         Resource,
         Binary,
         Config,
@@ -29,7 +29,9 @@ namespace asset
     {
         Invalid = 0x0,
         Available,
+        Available_Raw,
         Requested,
+        Compiling,
         Loading,
         Loaded,
         Unused,

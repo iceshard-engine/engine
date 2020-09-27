@@ -24,7 +24,7 @@ namespace iceshard
             asset::AssetData& result_data
         ) noexcept -> asset::AssetStatus override;
 
-        void release_asset(asset::Asset asset) noexcept override;
+        bool release_asset(asset::Asset asset) noexcept override;
 
     private:
         core::allocator& _allocator;
