@@ -52,14 +52,12 @@ namespace iceshard
             core::pod::array::push_back(
                 _loader_handles,
                 _asset_system.add_loader(
-                    asset::AssetType::Mesh,
                     core::memory::make_unique<asset::AssetLoader, iceshard::AssimpMeshLoader>(_allocator, _allocator)
                 )
             );
             core::pod::array::push_back(
                 _loader_handles,
                 _asset_system.add_loader(
-                    asset::AssetType::Texture,
                     core::memory::make_unique<asset::AssetLoader, iceshard::StbTextureLoader>(_allocator, _allocator)
                 )
             );

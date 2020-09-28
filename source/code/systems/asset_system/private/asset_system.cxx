@@ -90,21 +90,55 @@ namespace asset
         }
     }
 
+    auto AssetSystem::add_compiler(
+        core::memory::unique_pointer<asset::AssetCompiler> compiler
+    ) noexcept -> asset::AssetCompilerHandle
+    {
+        _next_compiler_handle += 1;
+        AssetCompilerHandle compiler_handle{ _next_compiler_handle };
+
+        for (auto asset_type : compiler->supported_asset_types())
+        {
+            _asset_compiler_map[asset_type].push_back(compiler.get());
+        }
+
+        _asset_compilers.emplace(compiler_handle, std::move(compiler));
+        return compiler_handle;
+    }
+
+    void AssetSystem::remove_compiler(asset::AssetCompilerHandle compiler_handle) noexcept
+    {
+        auto const it = _asset_compilers.find(compiler_handle);
+        if (it != _asset_compilers.end())
+        {
+            auto const& element_to_remove = it->second;
+
+            for (auto asset_type : element_to_remove->supported_asset_types())
+            {
+                auto& compiler_vector = _asset_compiler_map[asset_type];
+
+                auto compiler_to_remove = std::find(compiler_vector.begin(), compiler_vector.end(), element_to_remove.get());
+                compiler_vector.erase(compiler_to_remove);
+            }
+
+            _asset_compilers.erase(it);
+        }
+    }
+
     auto AssetSystem::add_loader(
-        asset::AssetType asset_type,
         core::memory::unique_pointer<asset::AssetLoader> loader
     ) noexcept -> AssetLoaderHandle
     {
         _next_loader_handle += 1;
-        AssetLoaderHandle resolver_handle{ _next_loader_handle };
+        AssetLoaderHandle loader_handle{ _next_loader_handle };
 
         for (auto asset_type : loader->supported_asset_types())
         {
             _asset_loader_map[asset_type].push_back(loader.get());
         }
 
-        _asset_loaders.emplace(resolver_handle, std::move(loader));
-        return resolver_handle;
+        _asset_loaders.emplace(loader_handle, std::move(loader));
+        return loader_handle;
     }
 
     void AssetSystem::remove_loader(asset::AssetLoaderHandle loader_handle) noexcept

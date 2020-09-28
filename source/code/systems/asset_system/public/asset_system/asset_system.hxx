@@ -38,8 +38,15 @@ namespace asset
             asset::AssetResolverHandle resolver_handle
         ) noexcept;
 
+        auto add_compiler(
+            core::memory::unique_pointer<asset::AssetCompiler> compiler
+        ) noexcept -> asset::AssetCompilerHandle;
+
+        void remove_compiler(
+            asset::AssetCompilerHandle compiler_handle
+        ) noexcept;
+
         auto add_loader(
-            asset::AssetType asset_type,
             core::memory::unique_pointer<asset::AssetLoader> loader
         ) noexcept -> asset::AssetLoaderHandle;
 
@@ -61,6 +68,7 @@ namespace asset
         core::allocator& _allocator;
 
         uint32_t _next_resolver_handle = 0;
+        uint32_t _next_compiler_handle = 0;
         uint32_t _next_loader_handle = 0;
 
         core::Map<AssetResolverHandle, core::memory::unique_pointer<AssetResolver>> _asset_resolvers;

@@ -292,8 +292,8 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
 
         asset_system.add_resolver(asset::default_resolver_mesh(alloc));
         asset_system.add_resolver(asset::default_resolver_shader(alloc));
-        asset_system.add_loader(asset::AssetType::Mesh, asset::default_loader_mesh(alloc));
-        asset_system.add_loader(asset::AssetType::Shader, asset::default_loader_shader(alloc));
+        asset_system.add_loader(asset::default_loader_mesh(alloc));
+        asset_system.add_loader(asset::default_loader_shader(alloc));
         asset_system.update();
         resource_system.flush_messages();
 

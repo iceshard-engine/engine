@@ -31,6 +31,8 @@ namespace asset
     public:
         virtual ~AssetCompiler() noexcept = default;
 
+        virtual auto supported_asset_types() const noexcept -> core::pod::Array<asset::AssetType> const& = 0;
+
         virtual auto compile_asset(
             core::allocator& alloc,
             resource::ResourceSystem& resource_system,
