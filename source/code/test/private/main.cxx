@@ -107,7 +107,8 @@ public:
                 .texture_diffuse = "cotm/tileset_a"_sid,
                 .shader_vertex = "shaders/isometric/texture-vert"_sid,
                 .shader_fragment = "shaders/isometric/texture-frag"_sid,
-            }
+            },
+            iceshard::renderer::RenderPipelineLayout::Tiled
         );
 
         struct Vertice
@@ -270,7 +271,6 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
         // Default file system mount points
         resource_system.flush_messages();
         resource_system.mount(URI{ resource::scheme_file, "mount.isr" });
-        resource_system.mount(URI{ resource::scheme_directory, "../source/data" });
 
         // Check for an user defined mounting file
         if (auto* mount_resource = resource_system.find(URI{ resource::scheme_file, "mount.isr" }))
@@ -279,6 +279,9 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
         }
 
         auto engine_instance = engine_module->create_instance(alloc, resource_system);
+
+        resource_system.flush_messages();
+        resource_system.mount(URI{ resource::scheme_directory, "../source/data" });
 
         // Prepare the asset system
         auto& asset_system = engine_instance->asset_system();
@@ -329,7 +332,6 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
         [[maybe_unused]]
         iceshard::World* world = engine_instance->world_manager().create_world("test-world"_sid);
 
-
         auto arch_idx = world->service_provider()->archetype_index();
 
         iceshard::Entity camera_entity = engine_instance->entity_manager().create();
@@ -348,18 +350,40 @@ int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
             }
         );
 
-        arch_idx->add_component(camera_entity,
-            iceshard::component::ProjectionOrtographic{
-                .left_right = { 0.0f, 1280.f / TileRenderer::TileWidth },
-                .top_bottom = { 0.f, 720.f / TileRenderer::TileHeight },
-                .near_far = { 0.1f, 100.f },
-            }
+        auto& material_system = engine_instance->material_system();
+
+        material_system.create_material("temp.backpack"_sid,
+            iceshard::Material{
+                .texture_diffuse = "temp/backpack_diffuse"_sid,
+                .shader_vertex = "shaders/debug/texture-vert"_sid,
+                .shader_fragment = "shaders/debug/texture-frag"_sid,
+            },
+            iceshard::renderer::RenderPipelineLayout::Textured
         );
+
+        auto e = engine_instance->entity_manager().create();
+        arch_idx->add_component(
+            e, iceshard::component::Transform{ ism::identity<ism::mat4>() }
+        );
+        arch_idx->add_component(
+            e, iceshard::component::ModelName{ "temp/backpack"_sid }
+        );
+        arch_idx->add_component(
+            e, iceshard::component::Material{ "temp.backpack"_sid }
+        );
+
+        //arch_idx->add_component(camera_entity,
+        //    iceshard::component::ProjectionOrtographic{
+        //        .left_right = { 0.0f, 1280.f / TileRenderer::TileWidth },
+        //        .top_bottom = { 0.f, 720.f / TileRenderer::TileHeight },
+        //        .near_far = { 0.1f, 100.f },
+        //    }
+        //);
 
         auto execution_instance = engine_instance->execution_instance();
         iceshard::register_common_triggers(execution_instance->input_actions().trigger_database());
 
-        TileRenderer map_system{ engine_instance->material_system(), engine_instance->render_system() };
+        TileRenderer map_system{ material_system, engine_instance->render_system() };
         engine_instance->services().add_system("demo.isometric"_sid, &map_system);
 
         auto* const render_pass = execution_instance->render_system().render_pass("isc.render-pass.default"_sid);
