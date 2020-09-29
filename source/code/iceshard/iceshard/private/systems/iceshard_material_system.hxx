@@ -4,6 +4,7 @@
 #include <iceshard/material/material_system.hxx>
 
 #include <iceshard/renderer/render_system.hxx>
+#include <iceshard/renderer/render_pipeline.hxx>
 
 #include <asset_system/asset_system.hxx>
 
@@ -26,7 +27,11 @@ namespace iceshard
         ) noexcept;
         ~IceshardMaterialSystem() noexcept override;
 
-        bool create_material(core::stringid_arg_type name, Material const& definition) noexcept override;
+        bool create_material(
+            core::stringid_arg_type name,
+            Material const& definition,
+            iceshard::renderer::RenderPipelineLayout layout
+        ) noexcept override;
 
         bool get_material(core::stringid_arg_type name, MaterialResources& resources) noexcept override;
 
