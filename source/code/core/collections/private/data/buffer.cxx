@@ -107,7 +107,10 @@ namespace core
         IS_ASSERT(new_size <= b._capacity, "Couldn't reserve enough memory for the new buffer size! [ size:{}, capacity:{} ]", new_size, b._capacity);
 
         void* const buffer_end = core::memory::utils::pointer_add(b._data, b._size);
-        memcpy(buffer_end, data, size);
+        if (data != nullptr)
+        {
+            memcpy(buffer_end, data, size);
+        }
 
         b._size = new_size;
         return buffer_end;
@@ -131,7 +134,10 @@ namespace core
         IS_ASSERT(new_size <= b._capacity, "Couldn't reserve enough memory for the new buffer size! [ size:{}, capacity:{} ]", new_size, b._capacity);
 
         void* const buffer_end = core::memory::utils::pointer_add(b._data, old_size_aligned);
-        memcpy(buffer_end, data, size);
+        if (data != nullptr)
+        {
+            memcpy(buffer_end, data, size);
+        }
 
         b._size = new_size;
         return buffer_end;
