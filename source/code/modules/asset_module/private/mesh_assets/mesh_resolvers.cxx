@@ -3,19 +3,23 @@
 namespace iceshard
 {
 
-    auto AssimpMeshResolver::resolve_asset_type(
+    bool AssimpMeshResolver::resolve_asset_info(
         core::StringView extension,
-        resource::ResourceMetaView const& meta
-    ) noexcept -> asset::AssetType
+        resource::ResourceMetaView const& meta,
+        asset::AssetStatus& status_out,
+        asset::AssetType& type_out
+    ) noexcept
     {
         if (core::string::equals(extension, ".fbx")
             || core::string::equals(extension, ".x3d")
             || core::string::equals(extension, ".obj")
             || core::string::equals(extension, ".dae"))
         {
-            return asset::AssetType::Mesh;
+            type_out = asset::AssetType::Mesh;
+            status_out = asset::AssetStatus::Available_Raw;
+            return true;
         }
-        return asset::AssetType::Unresolved;
+        return false;
     }
 
 } // namespace iceshard
