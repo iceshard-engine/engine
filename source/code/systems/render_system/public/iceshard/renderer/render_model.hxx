@@ -31,4 +31,15 @@ namespace iceshard::renderer::v1
         core::math::u16* indice_data;
     };
 
+    struct ModelView
+    {
+        uint32_t mesh_count;
+        uint32_t vertice_data_size;
+        uint32_t indice_data_size;
+        Mesh const* mesh_list;
+        Vertice const* vertice_data;
+        core::math::u16 const* indice_data;
+    };
+
+
 } // namespace iceshard

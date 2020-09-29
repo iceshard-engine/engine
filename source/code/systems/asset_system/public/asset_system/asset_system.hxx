@@ -28,7 +28,7 @@ namespace asset
     {
     public:
         AssetSystem(core::allocator& alloc, resource::ResourceSystem& resource_system) noexcept;
-        ~AssetSystem() noexcept = default;
+        ~AssetSystem() noexcept;
 
         auto add_resolver(
             core::memory::unique_pointer<asset::AssetResolver> resolver
@@ -60,6 +60,9 @@ namespace asset
 
         //! \brief Loads the given asset from the resource system.
         auto load(Asset reference, AssetData& data) noexcept -> AssetStatus;
+
+        //! \brief Reads the given asset data from the resource system.
+        auto read(Asset reference, AssetData& data) noexcept -> AssetStatus;
 
         //! \brief Updates the asset system database.
         void update() noexcept;

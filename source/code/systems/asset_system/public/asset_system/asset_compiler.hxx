@@ -39,8 +39,8 @@ namespace asset
             asset::Asset asset,
             core::data_view resource_data,
             resource::ResourceMetaView const& asset_meta,
-            AssetCompilationResult& result_out
-        ) noexcept -> AssetCompilationStatus = 0;
+            asset::AssetCompilationResult& result_out
+        ) noexcept -> asset::AssetCompilationStatus = 0;
     };
 
 } // namespace asset
