@@ -1,0 +1,30 @@
+.Project =
+[
+    .Name = 'asset_compiler'
+    .Kind = .Kind_ConsoleApp
+    .BaseDir = '$WorkspaceCodeDir$/tools/asset_compiler'
+    .Group = 'Tools'
+
+    .CopyModules = true
+
+    .Private =
+    [
+        .DependsOn =
+        [
+            .Runtime = {
+                'asset_module'
+            }
+        ]
+
+        .Modules = {
+            'CLI11'
+            'Assimp'
+        }
+
+        .Uses = {
+            'platform'
+            'asset_system'
+        }
+    ]
+]
+.Projects + .Project
