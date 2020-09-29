@@ -128,6 +128,14 @@ namespace resource
     {
     }
 
+    void copy_meta(ResourceMeta& meta_out, ResourceMetaView const& meta_view) noexcept
+    {
+        meta_out._meta_entries = meta_view._meta_entries;
+        core::buffer::clear(meta_out._additional_data);
+        core::buffer::reserve(meta_out._additional_data, meta_view._additional_data.size());
+        core::buffer::append(meta_out._additional_data, meta_view._additional_data);
+    }
+
     void serialize_meta(ResourceMeta const& meta, core::Buffer& buffer) noexcept
     {
         uint32_t const hash_count = meta._meta_entries._hash._capacity;
@@ -301,15 +309,15 @@ namespace resource
 
             if constexpr (core::build::is_release == false)
             {
-                auto const value_end = core::memory::utils::pointer_add(value_it, hash_count * hash_type_size);
-                IS_ASSERT(core::memory::utils::pointer_distance(data._data, value_end) < static_cast<int32_t>(data._size), "Moved past the data buffer!");
+                auto const value_end = core::memory::utils::pointer_add(value_it, value_count * value_type_size);
+                IS_ASSERT(core::memory::utils::pointer_distance(data._data, value_end) <= static_cast<int32_t>(data._size), "Moved past the data buffer!");
             }
 
             result_meta._meta_entries._data._data = const_cast<core::pod::Hash<detail::MetaEntry>::Entry*>(
                 reinterpret_cast<core::pod::Hash<detail::MetaEntry>::Entry const*>(value_it)
             );
-            result_meta._meta_entries._data._capacity = hash_count;
-            result_meta._meta_entries._data._size = hash_count;
+            result_meta._meta_entries._data._capacity = value_count;
+            result_meta._meta_entries._data._size = value_count;
         }
 
         {
