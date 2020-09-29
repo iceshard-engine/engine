@@ -67,6 +67,8 @@ namespace resource
         auto operator=(ResourceMetaView const& other) noexcept -> ResourceMetaView&;
     };
 
+    void copy_meta(ResourceMeta& meta_out, ResourceMetaView const& meta_view) noexcept;
+
     void serialize_meta(ResourceMeta const& meta, core::Buffer& buffer) noexcept;
 
     void deserialize_meta(core::data_view data, ResourceMeta& meta) noexcept;

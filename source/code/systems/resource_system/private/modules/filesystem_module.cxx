@@ -26,6 +26,63 @@ namespace resource
             ReadWrite,
         };
 
+        bool load_resource_to_buffer(core::StringView path, core::Buffer& file_data, uint32_t* data_offset) noexcept
+        {
+            FILE* file_native = nullptr;
+            fopen_s(&file_native, core::string::data(path), "rb");
+
+            if (file_native)
+            {
+                core::memory::stack_allocator_4096 kib4_alloc;
+                core::data_chunk file_chunk{ kib4_alloc, 1024u * 4u };
+
+                uint32_t header_size = 0;
+                auto characters_read = fread_s(file_chunk.data(), file_chunk.size(), sizeof(char), 8, file_native);
+                if (characters_read != 8)
+                {
+                    fclose(file_native);
+                    return false;
+                }
+
+                // Read the header size
+                header_size = *(reinterpret_cast<uint32_t*>(file_chunk.data()) + 1);
+
+                if (data_offset == nullptr)
+                {
+                    header_size -= 8; // Remove the first 8 read bytes
+
+                    while (header_size > 0)
+                    {
+                        core::buffer::append(file_data, file_chunk.data(), static_cast<uint32_t>(characters_read));
+                        characters_read = fread_s(file_chunk.data(), file_chunk.size(), sizeof(char), header_size, file_native);
+                        header_size -= characters_read;
+                    }
+
+                    core::buffer::append(file_data, file_chunk.data(), static_cast<uint32_t>(characters_read));
+                }
+                else
+                {
+                    *data_offset = header_size;
+
+                    while (characters_read > 0)
+                    {
+                        core::buffer::append(file_data, file_chunk.data(), static_cast<uint32_t>(characters_read));
+                        characters_read = fread_s(file_chunk.data(), file_chunk.size(), sizeof(char), file_chunk.size(), file_native);
+                    }
+                }
+
+                fclose(file_native);
+
+                if (core::buffer::size(file_data) >= 4)
+                {
+                    auto* res_head = reinterpret_cast<char const*>(core::buffer::begin(file_data));
+                    return core::string::equals("ISRA", { res_head, 4 });
+                }
+            }
+
+            return false;
+        }
+
         void load_file_to_buffer(core::StringView path, core::Buffer& file_data) noexcept
         {
             FILE* file_native = nullptr;
@@ -46,6 +103,97 @@ namespace resource
                 fclose(file_native);
             }
         }
+
+        class BakedFileResource : public Resource
+        {
+        public:
+            BakedFileResource(
+                core::allocator& alloc,
+                URI const& uri,
+                core::StringView native_path,
+                core::StringView native_name
+            ) noexcept
+                : Resource{ }
+                , _native_path{ alloc, native_path }
+                , _native_name{ alloc, native_name }
+                , _path{ alloc, uri.path }
+                , _uri{ uri.scheme, _path, uri.fragment }
+                , _data{ alloc }
+            {
+            }
+
+            ~BakedFileResource() override = default;
+
+            //! \brief The resource identifier.
+            //! \remark This value can be seen as the absolute location to a specific resource.
+            auto location() const noexcept -> URI const& override final
+            {
+                return _uri;
+            }
+
+            //! \brief Returns the associated resource data.
+            auto data() noexcept -> core::data_view override
+            {
+                if (_partial_load == true)
+                {
+                    core::buffer::clear(_data);
+                    load_resource_to_buffer(_native_path, _data, &_data_offset);
+
+                    _partial_load = false;
+                    _metadata = resource::load_meta_view(
+                        core::data_view{
+                            core::memory::utils::pointer_add(core::buffer::data(_data), 8),
+                            core::buffer::size(_data) - 8
+                        }
+                    );
+                    _data_view = {
+                        core::memory::utils::pointer_add(core::buffer::data(_data), _data_offset),
+                        core::buffer::size(_data) - _data_offset
+                    };
+                }
+                return _data_view;
+            }
+
+            auto metadata() noexcept -> resource::ResourceMetaView override
+            {
+                if (_meta_loaded == false && _partial_load == true)
+                {
+                    load_resource_to_buffer(_native_path, _data, nullptr);
+                    _metadata = resource::load_meta_view(
+                        core::data_view{
+                            core::memory::utils::pointer_add(core::buffer::data(_data), 8),
+                            core::buffer::size(_data) - 8
+                        }
+                    );
+                }
+                return _metadata;
+            }
+
+            auto name() const noexcept -> core::StringView override
+            {
+                return _native_name;
+            }
+
+        private:
+            core::String<> _native_path;
+            core::String<> _native_name;
+
+            //! \brief The resource path.
+            core::String<> _path;
+
+            //! \brief The resource identifier.
+            URI _uri;
+
+            //! \brief The loaded file buffer.
+            core::Buffer _data;
+
+            core::data_view _data_view{ nullptr, 0 };
+            resource::ResourceMetaView _metadata;
+
+            bool _meta_loaded = false;
+            bool _partial_load = true;
+            uint32_t _data_offset = 0;
+        };
 
         class FileResource : public Resource
         {
@@ -236,25 +384,39 @@ namespace resource
                 }
 
                 auto fullpath = std::filesystem::absolute(filepath).generic_string();
-                auto fullpath_meta = std::filesystem::path{ fullpath }.concat(".isrm");
-                if (std::filesystem::is_regular_file(fullpath_meta) == false)
+                auto relative_path_string = fullpath.substr(path.generic_string().length() + 1);
+
+                Resource* result_object = nullptr;
+
+                if (fileextension == ".isr")
                 {
-                    fullpath_meta = std::filesystem::path{};
+                    result_object = alloc.make<BakedFileResource>(
+                        alloc,
+                        URI{ scheme_directory, path.generic_string(), core::stringid(relative_path_string.c_str()) },
+                        fullpath,
+                        relative_path_string.c_str()
+                    );
+                }
+                else
+                {
+                    auto fullpath_meta = std::filesystem::path{ fullpath }.concat(".isrm");
+                    if (std::filesystem::is_regular_file(fullpath_meta) == false)
+                    {
+                        fullpath_meta = std::filesystem::path{};
+                    }
+
+                    result_object = alloc.make<FileResource>(
+                        alloc,
+                        URI{ scheme_directory, path.generic_string(), core::stringid(relative_path_string.c_str()) },
+                        fullpath,
+                        fullpath_meta.generic_string(),
+                        relative_path_string.c_str()
+                    );
                 }
 
-                auto relative_path_string = fullpath.substr(path.generic_string().length() + 1);// std::filesystem::relative(fullpath, path);
-                //auto relative_path_string = relative_path;// .generic_string();
+                array::push_back(entry_list, result_object);
 
-                auto* dir_entry_object = alloc.make<FileResource>(
-                    alloc,
-                    URI{ scheme_directory, path.generic_string(), core::stringid(relative_path_string.c_str()) },
-                    fullpath,
-                    fullpath_meta.generic_string(),
-                    relative_path_string.c_str()
-                );
-                array::push_back(entry_list, static_cast<Resource*>(dir_entry_object));
-
-                core::message::push(messages, resource::message::ModuleResourceMounted{ dir_entry_object });
+                core::message::push(messages, resource::message::ModuleResourceMounted{ result_object });
             }
         }
 
@@ -432,7 +594,7 @@ namespace resource
         if (result == nullptr)
         {
             IS_ASSERT(uri.scheme == resource::scheme_file, "Cannot open resource types for writing other than {}! got: {}", resource::scheme_file, uri.scheme);
-            result = detail::mount_writable_file(_allocator, _basedir._data / std::filesystem::path{ core::string::begin(uri.path) }, _resources, messages);
+            result = detail::mount_writable_file(_allocator, _basedir._data / std::filesystem::path{ uri.path }, _resources, messages);
         }
 
         return result;

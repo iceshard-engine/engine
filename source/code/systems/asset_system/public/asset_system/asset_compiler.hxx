@@ -31,14 +31,16 @@ namespace asset
     public:
         virtual ~AssetCompiler() noexcept = default;
 
+        virtual auto supported_asset_types() const noexcept -> core::pod::Array<asset::AssetType> const& = 0;
+
         virtual auto compile_asset(
             core::allocator& alloc,
             resource::ResourceSystem& resource_system,
             asset::Asset asset,
             core::data_view resource_data,
             resource::ResourceMetaView const& asset_meta,
-            AssetCompilationResult& result_out
-        ) noexcept -> AssetCompilationStatus = 0;
+            asset::AssetCompilationResult& result_out
+        ) noexcept -> asset::AssetCompilationStatus = 0;
     };
 
 } // namespace asset

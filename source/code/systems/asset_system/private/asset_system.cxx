@@ -70,6 +70,14 @@ namespace asset
         add_resolver(core::memory::make_unique<asset::AssetResolver, asset::detail::ConfigAssetResolver>(_allocator));
     }
 
+    AssetSystem::~AssetSystem() noexcept
+    {
+        for (AssetReference const& ref : _resource_database)
+        {
+            _allocator.destroy(ref.compiled_asset);
+        }
+    }
+
     auto AssetSystem::add_resolver(
         core::memory::unique_pointer<asset::AssetResolver> resolver
     ) noexcept -> AssetResolverHandle
@@ -90,21 +98,55 @@ namespace asset
         }
     }
 
+    auto AssetSystem::add_compiler(
+        core::memory::unique_pointer<asset::AssetCompiler> compiler
+    ) noexcept -> asset::AssetCompilerHandle
+    {
+        _next_compiler_handle += 1;
+        AssetCompilerHandle compiler_handle{ _next_compiler_handle };
+
+        for (auto asset_type : compiler->supported_asset_types())
+        {
+            _asset_compiler_map[asset_type].push_back(compiler.get());
+        }
+
+        _asset_compilers.emplace(compiler_handle, std::move(compiler));
+        return compiler_handle;
+    }
+
+    void AssetSystem::remove_compiler(asset::AssetCompilerHandle compiler_handle) noexcept
+    {
+        auto const it = _asset_compilers.find(compiler_handle);
+        if (it != _asset_compilers.end())
+        {
+            auto const& element_to_remove = it->second;
+
+            for (auto asset_type : element_to_remove->supported_asset_types())
+            {
+                auto& compiler_vector = _asset_compiler_map[asset_type];
+
+                auto compiler_to_remove = std::find(compiler_vector.begin(), compiler_vector.end(), element_to_remove.get());
+                compiler_vector.erase(compiler_to_remove);
+            }
+
+            _asset_compilers.erase(it);
+        }
+    }
+
     auto AssetSystem::add_loader(
-        asset::AssetType asset_type,
         core::memory::unique_pointer<asset::AssetLoader> loader
     ) noexcept -> AssetLoaderHandle
     {
         _next_loader_handle += 1;
-        AssetLoaderHandle resolver_handle{ _next_loader_handle };
+        AssetLoaderHandle loader_handle{ _next_loader_handle };
 
         for (auto asset_type : loader->supported_asset_types())
         {
             _asset_loader_map[asset_type].push_back(loader.get());
         }
 
-        _asset_loaders.emplace(resolver_handle, std::move(loader));
-        return resolver_handle;
+        _asset_loaders.emplace(loader_handle, std::move(loader));
+        return loader_handle;
     }
 
     void AssetSystem::remove_loader(asset::AssetLoaderHandle loader_handle) noexcept
@@ -167,20 +209,58 @@ namespace asset
 
                 Asset reference{ basename, resolved_type };
 
-                core::pod::multi_hash::insert(
-                    _asset_objects,
-                    static_cast<uint64_t>(reference.name.hash_value),
-                    AssetObject{ core::pod::array::size(_resource_database), std::move(reference) }
-                );
-                core::pod::array::push_back(
-                    _resource_database,
-                    AssetReference{
-                        .content_location = msg.resource->location(),
-                        .resource_object = msg.resource,
-                        .status = resolved_status,
-                        .compiled_asset = nullptr
+                auto asset_it = core::pod::multi_hash::find_first(_asset_objects, core::hash(reference.name));
+                while (asset_it != nullptr)
+                {
+                    // We found an asset with the same basename and type
+                    if (asset_it->value.reference.type == reference.type)
+                    {
+                        break;
                     }
-                );
+                    asset_it = core::pod::multi_hash::find_next(_asset_objects, asset_it);
+                }
+
+                if (asset_it == nullptr)
+                {
+                    core::pod::multi_hash::insert(
+                        _asset_objects,
+                        static_cast<uint64_t>(reference.name.hash_value),
+                        AssetObject{ core::pod::array::size(_resource_database), std::move(reference) }
+                    );
+                    core::pod::array::push_back(
+                        _resource_database,
+                        AssetReference{
+                            .content_location = msg.resource->location(),
+                            .resource_object = msg.resource,
+                            .status = resolved_status,
+                            .compiled_asset = nullptr
+                        }
+                    );
+                }
+                else
+                {
+                    AssetReference& ref = _resource_database[asset_it->value.resource_index];
+                    if (ref.status == AssetStatus::Available_Raw && resolved_status == AssetStatus::Available)
+                    {
+                        ref.content_location = msg.resource->location();
+                        ref.resource_object = msg.resource;
+                        ref.status = resolved_status;
+
+                        fmt::print(
+                            "Replacing asset {} resource [ {} => {} ]\n",
+                            reference.name,
+                            msg.resource->location(),
+                            ref.resource_object->location()
+                        );
+                    }
+                    else
+                    {
+                        fmt::print(
+                            "Ignoring probaby duplicate asset resource: {}\n",
+                            msg.resource->location()
+                        );
+                    }
+                }
             });
     }
 
@@ -364,6 +444,77 @@ namespace asset
         }
 
         return load_status;
+    }
+
+    auto AssetSystem::read(Asset ref, AssetData& data) noexcept -> AssetStatus
+    {
+        asset::AssetStatus result_status = AssetStatus::Invalid;
+
+        // Get the requested asset object
+        auto asset_object = core::pod::multi_hash::find_first(_asset_objects, static_cast<uint64_t>(ref.name.hash_value));
+        while (asset_object != nullptr && asset_object->value.reference.type != ref.type)
+        {
+            asset_object = core::pod::multi_hash::find_next(_asset_objects, asset_object);
+        }
+
+        if (asset_object == nullptr)
+        {
+            return result_status;
+        }
+
+        auto& asset_resources = _resource_database[asset_object->value.resource_index];
+
+        if (asset_resources.resource_object == nullptr)
+        {
+            asset_resources.resource_object = _resource_system.find(asset_resources.content_location);
+
+            // #todo at some point we will assume this is not 'raw' but 'baked' data.
+            asset_resources.status = asset::AssetStatus::Available_Raw;
+        }
+
+        // Try compiling if needed
+        if (asset_resources.status == AssetStatus::Available_Raw)
+        {
+            auto it = _asset_compiler_map[ref.type].rbegin();
+            auto const it_end = _asset_compiler_map[ref.type].rend();
+
+            auto* compilation_result = _allocator.make<AssetCompilationResult>(_allocator);
+
+            AssetCompilationStatus compilation_status = AssetCompilationStatus::Failed;
+            while (it != it_end && compilation_status != AssetCompilationStatus::Success)
+            {
+                compilation_status = (*it)->compile_asset(
+                    _allocator, _resource_system, ref,
+                    asset_resources.resource_object->data(),
+                    asset_resources.resource_object->metadata(),
+                    *compilation_result
+                );
+            }
+
+            if (compilation_status == AssetCompilationStatus::Success)
+            {
+                asset_resources.compiled_asset = compilation_result;
+                asset_resources.status = AssetStatus::Available;
+                result_status = AssetStatus::Compiled;
+
+                data.content = asset_resources.compiled_asset->data;
+                data.metadata = resource::create_meta_view(asset_resources.compiled_asset->metadata);
+            }
+            else
+            {
+                _allocator.destroy(compilation_result);
+                asset_resources.status = AssetStatus::Invalid;
+                result_status = AssetStatus::Invalid;
+            }
+        }
+        else if (asset_resources.status == AssetStatus::Available)
+        {
+            data.content = asset_resources.resource_object->data();
+            data.metadata = asset_resources.resource_object->metadata();
+            result_status = AssetStatus::Available;
+        }
+
+        return result_status;
     }
 
 } // namespace asset

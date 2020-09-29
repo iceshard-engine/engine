@@ -45,7 +45,11 @@ namespace iceshard
         }
     }
 
-    bool IceshardMaterialSystem::create_material(core::stringid_arg_type name, Material const& definition) noexcept
+    bool IceshardMaterialSystem::create_material(
+        core::stringid_arg_type name, 
+        Material const& definition, 
+        iceshard::renderer::RenderPipelineLayout layout
+    ) noexcept
     {
         using iceshard::renderer::ResourceSet;
         using iceshard::renderer::RenderPipelineLayout;
@@ -91,7 +95,7 @@ namespace iceshard
         if (_render_system.get_resource_set(name) == ResourceSet::Invalid)
         {
             auto pipeline_handle = _render_system.create_pipeline(
-                name, RenderPipelineLayout::Tiled,
+                name, layout,
                 core::pod::array::create_view(shader_asset_data)
             );
 
@@ -163,7 +167,7 @@ namespace iceshard
             _render_system.submit_command_buffer_v2(_command_buffer);
 
             auto resource_set_handle = _render_system.create_resource_set(
-                name, RenderPipelineLayout::Tiled,
+                name, layout,
                 RenderResourceSetInfo{ .usage = RenderResourceSetUsage::MaterialData },
                 resources
             );

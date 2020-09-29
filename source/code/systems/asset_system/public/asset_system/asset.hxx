@@ -32,6 +32,7 @@ namespace asset
         Available_Raw,
         Requested,
         Compiling,
+        Compiled,
         Loading,
         Loaded,
         Unused,

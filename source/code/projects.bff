@@ -23,4 +23,6 @@
 #include "modules/debug_module/debug_module.bff"
 #include "modules/asset_module/asset_module.bff"
 
+#include "tools/asset_compiler/asset_compiler.bff"
+
 #include "test/test.bff"
