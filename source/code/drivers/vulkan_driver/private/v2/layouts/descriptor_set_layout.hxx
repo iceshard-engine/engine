@@ -17,6 +17,24 @@ namespace iceshard::renderer::vulkan
         VulkanResourceLayouts& resource_layouts
     ) noexcept;
 
+    template<>
+    void create_descriptor_set_layout<VulkanDescriptorSetGroup::UniformBuffers>(
+        VkDevice device,
+        VulkanResourceLayouts& resource_layouts
+    ) noexcept;
+
+    template<>
+    void create_descriptor_set_layout<VulkanDescriptorSetGroup::Samplers>(
+        VkDevice device,
+        VulkanResourceLayouts& resource_layouts
+    ) noexcept;
+
+    template<>
+    void create_descriptor_set_layout<VulkanDescriptorSetGroup::Textures>(
+        VkDevice device,
+        VulkanResourceLayouts& resource_layouts
+    ) noexcept;
+
     void destroy_descriptor_set_layout(
         VkDevice device,
         VkDescriptorSetLayout const& descriptor_set_layout

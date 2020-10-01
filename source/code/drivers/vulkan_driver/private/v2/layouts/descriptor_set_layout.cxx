@@ -132,7 +132,7 @@ namespace iceshard::renderer::vulkan
     void create_descriptor_set_layout<VulkanDescriptorSetGroup::Textures>(
         VkDevice device,
         VulkanResourceLayouts& resource_layouts
-        ) noexcept
+    ) noexcept
     {
         core::memory::stack_allocator<256> temp_alloc;
         core::pod::Array<VkDescriptorSetLayoutBinding> bindings{ temp_alloc };
