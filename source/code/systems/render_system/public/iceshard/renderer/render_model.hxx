@@ -7,6 +7,7 @@ namespace iceshard::renderer::data
     using iceshard::renderer::api::v1_1::data::Mesh;
     using iceshard::renderer::api::v1_1::data::Model;
     using iceshard::renderer::api::v1_1::data::Texture;
+    using iceshard::renderer::api::v1_1::data::Vertice;
 
     struct ModelView
     {

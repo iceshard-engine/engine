@@ -106,7 +106,7 @@ namespace iceshard
             core::pod::hash::set(_models_status, core::hash(asset.name), model_status);
         }
 
-        static ModelView const empty_model{ };
+        static Model const empty_model{ };
 
         result_data.metadata = meta;
         result_data.content = {
@@ -117,7 +117,7 @@ namespace iceshard
                     empty_model
                 )
             ),
-            sizeof(ModelView)
+            sizeof(Model)
         };
 
         return model_status;
