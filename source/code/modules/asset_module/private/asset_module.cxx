@@ -5,6 +5,7 @@
 #include "mesh_assets/mesh_compilers.hxx"
 #include "mesh_assets/mesh_loaders.hxx"
 #include "texture_assets/texture_resolvers.hxx"
+#include "texture_assets/texture_compiler.hxx"
 #include "texture_assets/texture_loaders.hxx"
 
 namespace iceshard
@@ -50,11 +51,17 @@ namespace iceshard
             );
 
             // Asset compilers
-            core::pod::array::reserve(_compiler_handles, 1);
+            core::pod::array::reserve(_compiler_handles, 2);
             core::pod::array::push_back(
                 _compiler_handles,
                 _asset_system.add_compiler(
                     core::memory::make_unique<asset::AssetCompiler, iceshard::AssimpMeshCompiler>(_allocator)
+                )
+            );
+            core::pod::array::push_back(
+                _compiler_handles,
+                _asset_system.add_compiler(
+                    core::memory::make_unique<asset::AssetCompiler, iceshard::StbTextureCompiler>(_allocator)
                 )
             );
 

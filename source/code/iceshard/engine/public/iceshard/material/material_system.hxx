@@ -19,7 +19,7 @@ namespace iceshard
         virtual ~MaterialSystem() noexcept = default;
 
         virtual bool create_material(
-            core::stringid_arg_type name, 
+            core::stringid_arg_type name,
             Material const& definition,
             iceshard::renderer::RenderPipelineLayout layout
         ) noexcept = 0;

@@ -1,9 +1,7 @@
 #include "texture_loaders.hxx"
 
+#include <core/memory.hxx>
 #include <core/pod/hash.hxx>
-
-#define STB_IMAGE_IMPLEMENTATION
-#include "external/stb_image.hxx"
 
 namespace iceshard
 {
@@ -11,12 +9,10 @@ namespace iceshard
     StbTextureLoader::StbTextureLoader(core::allocator& alloc) noexcept
         : AssetLoader{ }
         , _allocator{ alloc }
-        , _mesh_allocator{ _allocator }
         , _texture_status{ _allocator }
-        , _texture_pixels{ _allocator }
+        , _textures{ _allocator }
     {
         core::pod::hash::reserve(_texture_status, 10);
-        core::pod::hash::reserve(_texture_pixels, 10);
     }
 
     StbTextureLoader::~StbTextureLoader() noexcept
@@ -25,19 +21,10 @@ namespace iceshard
 
     auto StbTextureLoader::supported_asset_types() const noexcept -> core::pod::Array<asset::AssetType> const&
     {
-        using asset::AssetType;
-
-        static AssetType supported_types[]{
-            AssetType::Texture
+        static asset::AssetType supported_types[]{
+            asset::AssetType::Texture
         };
-
-        static core::pod::Array supported_types_view = [&]() noexcept
-        {
-            core::pod::Array<AssetType> array_view{ core::memory::globals::null_allocator() };
-            core::pod::array::create_view(array_view, supported_types, core::size(supported_types));
-            return array_view;
-        }();
-
+        static core::pod::Array supported_types_view = core::pod::array::create_view(supported_types);
         return supported_types_view;
     }
 
@@ -53,71 +40,59 @@ namespace iceshard
         asset::AssetData& result_data
     ) noexcept -> asset::AssetStatus
     {
-        auto const* image_buffer_raw = reinterpret_cast<stbi_uc const*>(resource_data.data());
+        using iceshard::renderer::data::Texture;
 
-        int32_t meta_width;
-        int32_t meta_height;
-        int32_t meta_format;
-        resource::get_meta_int32(meta, "texture.extents.width"_sid, meta_width);
-        resource::get_meta_int32(meta, "texture.extents.height"_sid, meta_height);
-        resource::get_meta_int32(meta, "texture.format"_sid, meta_format);
-
-        switch (meta_format)
-        {
-        case 0:
-        case 2:
-        case 4:
-            meta_format = 3;
-            break;
-        case 1:
-        case 3:
-            meta_format = 4;
-            break;
-        default:
-            meta_format = 0;
-        }
-
-
-        int32_t width = 0;
-        int32_t height = 0;
-        int32_t channels = 0;
-
-        auto* const image_buffer = stbi_load_from_memory(
-            image_buffer_raw,
-            resource_data.size(),
-            &width, &height, &channels,
-            STBI_rgb_alpha
+        auto model_status = core::pod::hash::get(
+            _texture_status,
+            core::hash(asset.name),
+            asset::AssetStatus::Requested
         );
 
-        IS_ASSERT(width == meta_width, "");
-        IS_ASSERT(height == meta_height, "");
-
-        /*if (channels != meta_format && image_buffer != nullptr)
+        if (model_status == asset::AssetStatus::Invalid)
         {
-            stbi_image_free(image_buffer);
+            return model_status;
         }
-        else */if (image_buffer != nullptr)
+
+        if (model_status == asset::AssetStatus::Requested)
         {
             auto const asset_name = core::hash(asset.name);
 
-            result_data.metadata = meta;
-            result_data.content = core::data_view{ image_buffer, static_cast<uint32_t>(width * height * 4) };
+            Texture texture = *reinterpret_cast<Texture const*>(resource_data.data());
+            texture.data = core::memory::utils::pointer_add(
+                resource_data.data(),
+                static_cast<uint32_t>(reinterpret_cast<uintptr_t>(texture.data))
+            );
+
+            model_status = asset::AssetStatus::Loaded;
 
             core::pod::hash::set(
-                _texture_pixels,
+                _textures,
                 asset_name,
-                reinterpret_cast<void*>(image_buffer)
+                texture
             );
 
             core::pod::hash::set(
                 _texture_status,
                 asset_name,
-                asset::AssetStatus::Loaded
+                model_status
             );
-
-            return asset::AssetStatus::Loaded;
         }
-        return asset::AssetStatus::Invalid;
+
+        static Texture const empty_texture{ };
+
+        result_data.metadata = meta;
+        result_data.content = {
+            std::addressof(
+                core::pod::hash::get(
+                    _textures,
+                    core::hash(asset.name),
+                    empty_texture
+                )
+            ),
+            sizeof(Texture)
+        };
+
+        return model_status;
     }
 
     bool StbTextureLoader::release_asset(asset::Asset asset) noexcept
@@ -131,11 +106,7 @@ namespace iceshard
 
         if (model_status == asset::AssetStatus::Loaded)
         {
-            void* const texture_pixels = core::pod::hash::get(_texture_pixels, asset_name_hash, nullptr);
-
-            stbi_image_free(texture_pixels);
-
-            core::pod::hash::remove(_texture_pixels, asset_name_hash);
+            core::pod::hash::remove(_textures, asset_name_hash);
             core::pod::hash::remove(_texture_status, asset_name_hash);
             return true;
         }

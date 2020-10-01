@@ -26,7 +26,7 @@ namespace iceshard
 
     using BufferType = iceshard::renderer::api::BufferType;
     using DataView = iceshard::renderer::api::DataView;
-    using Model = iceshard::renderer::v1::Model;
+    using Model = iceshard::renderer::data::Model;
 
     IceshardStaticMeshRenderer::IceshardStaticMeshRenderer(
         core::allocator& alloc,
@@ -63,8 +63,8 @@ namespace iceshard
         using iceshard::component::Transform;
         using iceshard::component::Entity;
 
-        using iceshard::renderer::v1::Mesh;
-        using iceshard::renderer::v1::Model;
+        using iceshard::renderer::data::Mesh;
+        using iceshard::renderer::data::Model;
 
         auto& frame_alloc = frame.frame_allocator();
 

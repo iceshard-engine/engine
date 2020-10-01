@@ -59,10 +59,9 @@ namespace iceshard
         asset::AssetData& result_data
     ) noexcept -> asset::AssetStatus
     {
-        using iceshard::renderer::v1::Vertice;
-        using iceshard::renderer::v1::Model;
-        using iceshard::renderer::v1::ModelView;
-        using iceshard::renderer::v1::Mesh;
+        using iceshard::renderer::api::v1_1::data::Vertice;
+        using iceshard::renderer::data::Model;
+        using iceshard::renderer::data::Mesh;
 
         auto model_status = core::pod::hash::get(
             _models_status,
@@ -92,7 +91,7 @@ namespace iceshard
                 static_cast<uint32_t>(reinterpret_cast<uintptr_t>(model_data.indice_data))
             );
 
-            ModelView model_view{
+            Model model_view{
                 .mesh_count = model_data.mesh_count,
                 .vertice_data_size = model_data.vertice_data_size,
                 .indice_data_size = model_data.indice_data_size,
@@ -107,7 +106,7 @@ namespace iceshard
             core::pod::hash::set(_models_status, core::hash(asset.name), model_status);
         }
 
-        static ModelView const empty_model{ };
+        static Model const empty_model{ };
 
         result_data.metadata = meta;
         result_data.content = {
@@ -118,7 +117,7 @@ namespace iceshard
                     empty_model
                 )
             ),
-            sizeof(ModelView)
+            sizeof(Model)
         };
 
         return model_status;
@@ -126,7 +125,7 @@ namespace iceshard
 
     bool AssimpMeshLoader::release_asset(asset::Asset asset) noexcept
     {
-        using iceshard::renderer::v1::Model;
+        using iceshard::renderer::data::Model;
 
         auto const asset_name_hash = core::hash(asset.name);
         auto const model_status = core::pod::hash::get(

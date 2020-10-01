@@ -13,7 +13,7 @@ namespace iceshard
         AssimpMeshLoader(core::allocator& alloc) noexcept;
         ~AssimpMeshLoader() noexcept;
 
-        bool supported_raw_assets() const noexcept { return false; }
+        bool supported_raw_assets() const noexcept override { return false; }
 
         auto supported_asset_types() const noexcept -> core::pod::Array<asset::AssetType> const& override;
 
@@ -32,7 +32,7 @@ namespace iceshard
         core::allocator& _allocator;
 
         core::pod::Hash<asset::AssetStatus> _models_status;
-        core::pod::Hash<iceshard::renderer::v1::ModelView> _models;
+        core::pod::Hash<iceshard::renderer::data::Model> _models;
     };
 
 } // namespace iceshard
