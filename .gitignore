@@ -3,6 +3,9 @@
 /.vscode/
 /build/
 
+# Binary compiled assets
+*.isr
+
 # Local data
 /source/data/kenney
 /source/data/cotm
