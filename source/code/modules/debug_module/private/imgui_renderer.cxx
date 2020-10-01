@@ -47,17 +47,16 @@ namespace iceshard::debug::imgui
             int width, height;
             io.Fonts->GetTexDataAsRGBA32(&pixels, &width, &height);
 
-            [[maybe_unused]]
             uint32_t upload_size = width * height * 4 * sizeof(char);
 
-            resource::ResourceMeta meta{ alloc };
-            resource::set_meta_int32(meta, "texture.format"_sid, 3);
-            resource::set_meta_int32(meta, "texture.extents.width"_sid, width);
-            resource::set_meta_int32(meta, "texture.extents.height"_sid, height);
+            iceshard::renderer::api::v1_1::data::Texture font_texture;
+            font_texture.width = width;
+            font_texture.height = height;
+            font_texture.format = iceshard::renderer::api::TextureFormat::UnormRGBA;
+            font_texture.data = pixels;
 
-            asset::AssetData tex_data;
-            tex_data.metadata = resource::create_meta_view(meta);
-            tex_data.content = { pixels, upload_size };
+            asset::AssetData tex_data{ };
+            tex_data.content = { &font_texture, sizeof(font_texture) };
 
             _font_texture = create_texture(
                 "imgui.fonts"_sid,

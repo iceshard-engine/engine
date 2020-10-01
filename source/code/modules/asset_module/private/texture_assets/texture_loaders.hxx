@@ -1,6 +1,7 @@
 #pragma once
 #include <asset_system/asset_loader.hxx>
 #include <asset_system/assets/asset_texture.hxx>
+#include <iceshard/renderer/render_model.hxx>
 
 namespace iceshard
 {
@@ -10,6 +11,8 @@ namespace iceshard
     public:
         StbTextureLoader(core::allocator& alloc) noexcept;
         ~StbTextureLoader() noexcept;
+
+        bool supported_raw_assets() const noexcept override { return false; }
 
         auto supported_asset_types() const noexcept -> core::pod::Array<asset::AssetType> const& override;
 
@@ -26,11 +29,9 @@ namespace iceshard
 
     private:
         core::allocator& _allocator;
-        core::allocator& _mesh_allocator;
 
         core::pod::Hash<asset::AssetStatus> _texture_status;
-        core::pod::Hash<void*> _texture_pixels;
-        //core::pod::Hash<iceshard::renderer::v1::Model> _models;
+        core::pod::Hash<iceshard::renderer::data::Texture> _textures;
     };
 
 } // namespace iceshard

@@ -67,23 +67,18 @@ int main(int argc, char** argv)
         ->transform(CLI::Transformer(types))
         ->required();
 
-    std::string input_file;
-    app.add_option("-i,--input", input_file, "The input file to be preprocessed.")
+    std::string mount_dir;
+    app.add_option("--mount", mount_dir, "The directory to be mounted, where the asset is located.")
+        ->default_val(".")
         ->required();
 
-    std::string output_file;
-    app.add_option("-o,--output", output_file, "The resulting output file.")
-        ->required();
-
-    std::vector<std::string> modules_path_list;
-    app.add_option("--modules", modules_path_list, "Location of Ice modules.")
+    std::vector<std::string> module_dirs;
+    app.add_option("--module-dir", module_dirs, "Location of Ice modules.")
         ->default_val(".");
 
-    //std::vector<std::string> serializers;
-    //code_emitter.add_option("-s,--serializer", serializers, "Serializers to be used, will default to all if none is chosen.");
-
-    //std::string parser;
-    //code_emitter.add_option("-p,--parser", parser, "The parser to be used if multiple are available, fails if none is chosen");
+    std::vector<std::string> modules;
+    app.add_option("-m,--module", modules, "File names of asset modules (ex. asset_module.dll).")
+        ->required();
 
     CLI11_PARSE(app, argc, argv);
 
@@ -92,13 +87,16 @@ int main(int argc, char** argv)
         using resource::URI;
         using resource::URN;
 
-        resource_system.mount(URI{ resource::scheme_dynlib, "bin" });
+        for (auto const& modules_path : module_dirs)
+        {
+            resource_system.mount(URI{ resource::scheme_dynlib, modules_path });
+        }
 
         asset::AssetSystem asset_system{ main_allocator, resource_system };
         core::Vector<core::memory::unique_pointer<iceshard::AssetModule>> loaded_modules{ main_allocator };
-        for (auto const& module_name : modules_path_list)
+        for (auto const& module_name : modules)
         {
-            auto* const assimp_module_location = resource_system.find(URN{ "asset_module.dll" });
+            auto* const assimp_module_location = resource_system.find(URN{ module_name });
             if (assimp_module_location != nullptr)
             {
                 loaded_modules.emplace_back(
@@ -112,7 +110,7 @@ int main(int argc, char** argv)
         }
 
         resource_system.flush_messages();
-        resource_system.mount(URI{ resource::scheme_directory, "../source/data" });
+        resource_system.mount(URI{ resource::scheme_directory, mount_dir });
 
         asset_system.update();
 
@@ -149,7 +147,9 @@ int main(int argc, char** argv)
             header_size_data._data = &header_size;
             header_size_data._size = 4;
 
-            resource::OutputResource* asset_out = resource_system.open(URI{ resource::scheme_file, "out/test.icr" });
+            std::string asset_name_out = asset_name + ".isr";
+
+            resource::OutputResource* asset_out = resource_system.open(URI{ resource::scheme_file, asset_name_out });
             asset_out->write(header_magic);
             asset_out->write(header_size_data);
             asset_out->write(header_meta);

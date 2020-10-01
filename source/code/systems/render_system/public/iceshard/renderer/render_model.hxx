@@ -1,35 +1,12 @@
 #pragma once
-#include <core/math/matrix.hxx>
-#include <core/math/vector.hxx>
+#include <iceshard/renderer/render_api.hxx>
 
-namespace iceshard::renderer::v1
+namespace iceshard::renderer::data
 {
 
-    struct Mesh
-    {
-        core::math::u32 vertice_count;
-        core::math::u32 vertice_offset;
-        core::math::u32 indice_count;
-        core::math::u32 indice_offset;
-        core::math::mat4x4 local_xform;
-    };
-
-    struct Vertice
-    {
-        core::math::vec3f pos;
-        core::math::vec3f norm;
-        core::math::vec2f uv;
-    };
-
-    struct Model
-    {
-        uint32_t mesh_count;
-        uint32_t vertice_data_size;
-        uint32_t indice_data_size;
-        Mesh* mesh_list;
-        Vertice* vertice_data;
-        core::math::u16* indice_data;
-    };
+    using iceshard::renderer::api::v1_1::data::Mesh;
+    using iceshard::renderer::api::v1_1::data::Model;
+    using iceshard::renderer::api::v1_1::data::Texture;
 
     struct ModelView
     {

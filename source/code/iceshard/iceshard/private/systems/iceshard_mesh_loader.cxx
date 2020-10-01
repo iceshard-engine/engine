@@ -135,7 +135,7 @@ namespace iceshard
                 auto mapped_buffers_array = core::pod::array::create_view(mapped_buffers);
                 auto mapped_views_array = core::pod::array::create_view(mapped_views);
 
-                auto const* const model = reinterpret_cast<renderer::v1::ModelView const*>(asset_data.content.data());
+                auto const* const model = reinterpret_cast<renderer::data::Model const*>(asset_data.content.data());
 
                 renderer::map_buffers(mapped_buffers_array, mapped_views_array);
                 memcpy(

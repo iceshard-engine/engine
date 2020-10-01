@@ -31,14 +31,14 @@ auto iceshard::renderer::create_texture(
 {
     using namespace core::math;
 
-    int32_t const width = resource::get_meta_int32(texture_data.metadata, "texture.extents.width"_sid);
-    int32_t const height = resource::get_meta_int32(texture_data.metadata, "texture.extents.height"_sid);
-    int32_t const format_index = resource::get_meta_int32(texture_data.metadata, "texture.format"_sid);
+    auto const* texture = reinterpret_cast<iceshard::renderer::api::v1_1::data::Texture const*>(
+        texture_data.content.data()
+    );
 
     return iceshard::renderer::api::render_module_api->create_texture_func(
         name,
-        api::TextureFormat{ format_index },
-        vec2<u32>(width, height)
+        texture->format,
+        vec2<u32>(texture->width, texture->height)
     );
 }
 

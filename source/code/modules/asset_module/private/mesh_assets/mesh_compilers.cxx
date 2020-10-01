@@ -13,12 +13,22 @@ namespace iceshard
     namespace detail
     {
 
-        using iceshard::renderer::v1::Mesh;
-        using iceshard::renderer::v1::Model;
-        using iceshard::renderer::v1::Vertice;
+        using iceshard::renderer::data::Mesh;
+        using iceshard::renderer::data::Model;
+        using iceshard::renderer::api::v1_1::data::Vertice;
+
+        struct MutableModel
+        {
+            uint32_t mesh_count;
+            uint32_t vertice_data_size;
+            uint32_t indice_data_size;
+            Mesh* mesh_list;
+            Vertice* vertice_data;
+            core::math::u16* indice_data;
+        };
 
         void process_mesh(
-            Model& model,
+            MutableModel& model,
             Mesh& model_mesh,
             aiMesh* mesh,
             aiMatrix4x4 const& mtx
@@ -79,7 +89,7 @@ namespace iceshard
         }
 
         void process_node(
-            Model& model,
+            MutableModel& model,
             aiNode const* node,
             aiScene const* scene,
             aiMatrix4x4 mtx
@@ -139,9 +149,9 @@ namespace iceshard
             return asset::AssetCompilationStatus::Failed;
         }
 
-        using iceshard::renderer::v1::Model;
-        using iceshard::renderer::v1::Mesh;
-        using iceshard::renderer::v1::Vertice;
+        using iceshard::renderer::data::Model;
+        using iceshard::renderer::data::Mesh;
+        using iceshard::renderer::api::v1_1::data::Vertice;
 
         Assimp::Importer importer;
         //importer.SetPropertyFloat(AI_CONFIG_PP_GSN_MAX_SMOOTHING_ANGLE, 80);
@@ -222,13 +232,21 @@ namespace iceshard
             model.indice_data = nullptr;
             model.indice_data_size = indice_data_size;
 
+            detail::MutableModel mutable_model;
+            mutable_model.mesh_count = scene->mNumMeshes;
+            mutable_model.mesh_list = reinterpret_cast<Mesh*>(mesh_ptr);
+            mutable_model.vertice_data = nullptr;
+            mutable_model.vertice_data_size = vertice_data_size;
+            mutable_model.indice_data = nullptr;
+            mutable_model.indice_data_size = indice_data_size;
+
             vertice_offset = 0;
             indice_offset = 0;
 
             for (uint32_t mesh_idx = 0; mesh_idx < model.mesh_count; ++mesh_idx)
             {
                 aiMesh const* const scene_mesh = scene->mMeshes[mesh_idx];
-                Mesh& model_mesh = model.mesh_list[mesh_idx];
+                Mesh& model_mesh = mutable_model.mesh_list[mesh_idx];
 
                 model_mesh.vertice_count = scene_mesh->mNumVertices;
                 model_mesh.vertice_offset = vertice_offset;
@@ -252,7 +270,7 @@ namespace iceshard
             model.indice_data = reinterpret_cast<core::math::u16*>(indice_ptr);
 
             detail::process_node(
-                model,
+                mutable_model,
                 scene->mRootNode,
                 scene,
                 aiMatrix4x4{ }

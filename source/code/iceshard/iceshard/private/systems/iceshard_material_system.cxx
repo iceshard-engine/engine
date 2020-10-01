@@ -5,6 +5,7 @@
 #include <iceshard/renderer/render_commands.hxx>
 #include <iceshard/renderer/render_buffers.hxx>
 #include <iceshard/renderer/render_funcs.hxx>
+#include <iceshard/renderer/render_model.hxx>
 
 #include <core/pod/array.hxx>
 #include <core/memory.hxx>
@@ -46,8 +47,8 @@ namespace iceshard
     }
 
     bool IceshardMaterialSystem::create_material(
-        core::stringid_arg_type name, 
-        Material const& definition, 
+        core::stringid_arg_type name,
+        Material const& definition,
         iceshard::renderer::RenderPipelineLayout layout
     ) noexcept
     {
@@ -123,33 +124,37 @@ namespace iceshard
             {
                 if (texture_names[i] != core::stringid_invalid)
                 {
+                    iceshard::renderer::data::Texture const* texture = reinterpret_cast<iceshard::renderer::data::Texture const*>(
+                        texture_asset_data[i].content.data()
+                    );
+
+                    core::data_view image_data{
+                        texture->data,
+                        texture->width * texture->height * 4
+                    };
+
                     auto const texture_handle = iceshard::renderer::create_texture(texture_names[i], texture_asset_data[i]);
 
                     DataView buffer_view;
                     map_buffer(_transfer_buffer, buffer_view);
                     memcpy(
                         core::memory::utils::pointer_add(buffer_view.data, data_offset),
-                        texture_asset_data[i].content.data(),
-                        texture_asset_data[i].content.size()
+                        image_data.data(),
+                        image_data.size()
                     );
                     unmap_buffer(_transfer_buffer);
-
-                    int32_t width = 0;
-                    int32_t height = 0;
-                    resource::get_meta_int32(texture_asset_data[i].metadata, "texture.extents.width"_sid, width);
-                    resource::get_meta_int32(texture_asset_data[i].metadata, "texture.extents.height"_sid, height);
 
                     update_texture(_command_buffer, texture_handle, _transfer_buffer,
                         UpdateTextureData
                         {
-                            .image_extent = core::math::vec2<core::math::u32>(width, height),
+                            .image_extent = core::math::vec2<core::math::u32>(texture->width, texture->height),
                             .buffer_offset = data_offset
                         }
                     );
 
 
                     // Update offset
-                    data_offset += texture_asset_data[i].content.size();
+                    data_offset += image_data.size();
                     data_offset = (data_offset % 4) ? 4 - (data_offset % 4) : data_offset;
 
                     // Update resource description
@@ -164,6 +169,7 @@ namespace iceshard
             }
 
             end(_command_buffer);
+            _sleep(10);
             _render_system.submit_command_buffer_v2(_command_buffer);
 
             auto resource_set_handle = _render_system.create_resource_set(

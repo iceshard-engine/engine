@@ -27,7 +27,7 @@ namespace iceshard
             uint32_t instance_count;
             MaterialResources material;
             MeshInfo mesh_info;
-            iceshard::renderer::v1::Mesh const* mesh;
+            iceshard::renderer::data::Mesh const* mesh;
         };
 
         struct InstanceData
