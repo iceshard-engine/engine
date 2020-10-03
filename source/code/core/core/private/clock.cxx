@@ -1,5 +1,4 @@
-#include <core/clock.hxx>
-#include <core/platform/windows.hxx>
+#include <ice/platform/windows.hxx>
 
 namespace core
 {
