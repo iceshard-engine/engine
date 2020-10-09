@@ -1,5 +1,6 @@
-#import SystemRoot
+#if __WINDOWS__
 
+#import SystemRoot
 Settings
 {
     .Environment =
@@ -8,5 +9,7 @@ Settings
         "TMP=$SystemRoot$\temp"
     }
 }
+
+#endif
 
 #include "code/projects.bff"

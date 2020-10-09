@@ -24,7 +24,7 @@ namespace ice::math
     inline auto normalize(vec<3, f32> value) noexcept -> vec<3, f32>;
 
 
-    template<u32 Size, typename T, typename U = T>
+    template<u32 Size, typename T, typename U>
     constexpr auto add(vec<Size, T> left, vec<Size, U> right) noexcept -> vec<Size, T>
     {
         vec<Size, T> result;
@@ -35,7 +35,7 @@ namespace ice::math
         return result;
     }
 
-    template<u32 Size, typename T, typename U = T>
+    template<u32 Size, typename T, typename U>
     constexpr auto sub(vec<Size, T> left, vec<Size, U> right) noexcept -> vec<Size, T>
     {
         vec<Size, T> result;
@@ -46,7 +46,7 @@ namespace ice::math
         return result;
     }
 
-    template<u32 Size, typename T, typename U = T>
+    template<u32 Size, typename T, typename U>
     constexpr auto mul(vec<Size, T> left, vec<Size, U> right) noexcept -> vec<Size, T>
     {
         vec<Size, T> result;
@@ -57,7 +57,7 @@ namespace ice::math
         return result;
     }
 
-    template<u32 Size, typename T, typename U = T>
+    template<u32 Size, typename T, typename U>
     constexpr auto div(vec<Size, T> left, vec<Size, U> right) noexcept -> vec<Size, T>
     {
         vec<Size, T> result;

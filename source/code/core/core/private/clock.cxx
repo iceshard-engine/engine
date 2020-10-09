@@ -1,10 +1,14 @@
+#include <ice/clock.hxx>
 #include <ice/platform/windows.hxx>
+#include <ice/platform/unix.hxx>
 
 namespace core
 {
 
     namespace clock
     {
+
+#if ISP_WINDOWS
 
         auto clock_frequency() noexcept -> float
         {
@@ -19,7 +23,7 @@ namespace core
             return static_cast<float>(cpu_frequency);
         }
 
-        auto core::clock::create_clock() noexcept -> SystemClock
+        auto create_clock() noexcept -> SystemClock
         {
             LARGE_INTEGER large_int;
             QueryPerformanceCounter(&large_int);
@@ -45,6 +49,36 @@ namespace core
             clock.previous_timestamp = clock.latest_timestamp;
             clock.latest_timestamp = large_int.QuadPart;
         }
+
+#elif ISP_UNIX
+
+
+        auto clock_frequency() noexcept -> float
+        {
+            return static_cast<float>(1.f);
+        }
+
+        auto create_clock() noexcept -> SystemClock
+        {
+            return SystemClock{ 0, 0 };
+        }
+
+        auto create_clock(Clock const& clock, float modifier) noexcept -> CustomClock
+        {
+            auto result = CustomClock{
+                .base_clock = &clock,
+                .modifier = modifier
+            };
+            result.previous_timestamp = clock.latest_timestamp;
+            result.latest_timestamp = clock.latest_timestamp;
+            return result;
+        }
+
+        void update([[maybe_unused]] SystemClock& clock) noexcept
+        {
+        }
+
+#endif // ISP_WINDOWS
 
         void update(CustomClock& c) noexcept
         {

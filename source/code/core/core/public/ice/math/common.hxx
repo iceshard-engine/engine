@@ -23,22 +23,22 @@ namespace ice::math
 
     inline auto sqrt(f32 val) noexcept -> f32
     {
-        return std::sqrtf(val);
+        return std::sqrt(val);
     }
 
     inline auto sin(rad radians) noexcept -> f32
     {
-        return std::sinf(radians.value);
+        return std::sin(radians.value);
     }
 
     inline auto cos(rad radians) noexcept -> f32
     {
-        return std::cosf(radians.value);
+        return std::cos(radians.value);
     }
 
     inline auto tan(rad radians) noexcept -> f32
     {
-        return std::tanf(radians.value);
+        return std::tan(radians.value);
     }
 
 } // namespace ice::math

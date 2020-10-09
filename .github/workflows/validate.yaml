@@ -6,27 +6,48 @@ on:
     - master
 
 jobs:
-  validation-build:
-    runs-on: ${{ matrix.os }}
+  validation-build-windows:
+    runs-on: windows-latest
     strategy:
       matrix:
-        os: [windows-latest]
         configuration: [Debug, Develop, Profile, Release]
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v2
     - name: Setup repository
       run: |
-        pip install conan
+        pip3 install setuptools
+        pip3 install conan
         conan remote add conan-iceshard https://conan.iceshard.net/
         conan remote add conan-bincrafters https://api.bintray.com/conan/bincrafters/public-conan
-    - name: Build
+    - name: Build (Windows-${{ matrix.configuration }})
       shell: cmd
       run: |
         ice build -t all-x64-${{ matrix.configuration }}
-    - name: Notify
+    - name: Success
       run: |
-        echo Nothing to verify yet
-        
+        echo Validation successful
+
+  validation-build-ubuntu:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        configuration: [Debug, Develop, Profile, Release]
+    steps:
+    - uses: actions/checkout@v2
+    - name: Setup repository
+      run: |
+        pip3 install setuptools
+        pip3 install conan
+        ~/.local/bin/conan remote add conan-iceshard https://conan.iceshard.net/
+        ~/.local/bin/conan remote add conan-bincrafters https://api.bintray.com/conan/bincrafters/public-conan
+    - name: Build (Linux-${{ matrix.configuration }})
+      shell: cmd
+      run: |
+        ./ice.sh build -t all-x64-${{ matrix.configuration }}
+    - name: Success
+      run: |
+        echo Validation successful
+
   commits-notify:
     runs-on: ubuntu-latest
     steps:

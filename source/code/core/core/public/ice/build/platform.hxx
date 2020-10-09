@@ -74,6 +74,10 @@ namespace ice::build
 #   define ISP_UNIX 0
 #   define ISP_WINDOWS 1
     static constexpr Platform current_platform = platform_windows_x64_msvc;
+#elif __unix__ and __clang__
+#   define ISP_UNIX 1
+#   define ISP_WINDOWS 0
+    static constexpr Platform current_platform = platform_unix_x64_clang;
 #else
 #   define ISP_UNIX 0
 #   define ISP_WINDOWS 0
