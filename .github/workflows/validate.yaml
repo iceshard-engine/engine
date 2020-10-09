@@ -1,10 +1,6 @@
 name: Validation
 
-on:
-  push:
-    branches:
-    - master
-    - pre-alpha-cleanup
+on: [push, pull_request]
 
 jobs:
   validation-build:
