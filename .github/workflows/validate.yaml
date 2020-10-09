@@ -4,6 +4,7 @@ on:
   push:
     branches:
     - master
+    - pre-alpha-cleanup
 
 jobs:
   validation-build-windows:
