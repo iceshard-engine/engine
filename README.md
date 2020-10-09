@@ -10,7 +10,7 @@ To use this engine you will need the following tools:
 * [Conan Package Manager](https://conan.io/) - for dependency management.
 * \[windows\] Visual Studio 2019 16.4 or later
 * \[macosx\] Not supported yet.
-* \[unix\] Not supported yet.
+* \[unix\] *(in-development)* Clang-9 and Clang-10.
 
 ## Installation
 The installation process is really simple.
