@@ -4,6 +4,7 @@ on:
   push:
     branches:
     - master
+    - pre-alpha-cleanup
 
 jobs:
   validation-build:
@@ -26,7 +27,7 @@ jobs:
     - name: Notify
       run: |
         echo Nothing to verify yet
-        
+
   commits-notify:
     runs-on: ubuntu-latest
     steps:
