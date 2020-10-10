@@ -11,7 +11,7 @@ jobs:
     runs-on: windows-latest
     strategy:
       matrix:
-        configuration: [Debug, Develop, Profile, Release]
+        configuration: [Debug, Develop]
     steps:
     - uses: actions/checkout@v2
     - name: Setup repository
@@ -32,7 +32,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        configuration: [Debug, Develop, Profile, Release]
+        configuration: [Develop]
     steps:
     - uses: actions/checkout@v2
     - name: Setup repository
