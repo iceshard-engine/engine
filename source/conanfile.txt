@@ -1,13 +1,6 @@
 [requires]
 fmt/7.0.3@iceshard/stable
-imgui/1.77@iceshard/docking
-SDL2/2.0.12@iceshard/stable
-Assimp/5.0.1@iceshard/stable
-
 Catch2/2.9.0@iceshard/stable
-cppcoro/0.3@iceshard/stable
-rapidjson/1.1.0@bincrafters/stable
-CLI11/1.9.1@iceshard/stable
 
 [build_requires]
 fastbuild-generator/0.2@iceshard/stable
