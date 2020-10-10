@@ -21,6 +21,7 @@ jobs:
         conan remote add conan-iceshard https://conan.iceshard.net/
         conan remote add conan-bincrafters https://api.bintray.com/conan/bincrafters/public-conan
     - name: Build (Windows-${{ matrix.configuration }})
+      shell: cmd
       run: |
         ice build -t all-x64-${{ matrix.configuration }}
     - name: Success
@@ -41,6 +42,7 @@ jobs:
         ~/.local/bin/conan remote add conan-iceshard https://conan.iceshard.net/
         ~/.local/bin/conan remote add conan-bincrafters https://api.bintray.com/conan/bincrafters/public-conan
     - name: Build (Linux-${{ matrix.configuration }})
+      shell: bash
       run: |
         ./ice.sh build -t all-x64-${{ matrix.configuration }}
     - name: Success
