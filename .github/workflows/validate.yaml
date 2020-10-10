@@ -39,11 +39,13 @@ jobs:
       run: |
         pip3 install setuptools
         pip3 install conan
-        ~/.local/bin/conan remote add conan-iceshard https://conan.iceshard.net/
-        ~/.local/bin/conan remote add conan-bincrafters https://api.bintray.com/conan/bincrafters/public-conan
+        export PATH=~/.local/bin/:$PATH
+        conan remote add conan-iceshard https://conan.iceshard.net/
+        conan remote add conan-bincrafters https://api.bintray.com/conan/bincrafters/public-conan
     - name: Build (Linux-${{ matrix.configuration }})
       shell: bash
       run: |
+        export PATH=~/.local/bin/:$PATH
         ./ice.sh build -t all-x64-${{ matrix.configuration }}
     - name: Success
       run: |
