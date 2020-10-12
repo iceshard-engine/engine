@@ -24,9 +24,9 @@ jobs:
       shell: cmd
       run: |
         ice build -t all-x64-${{ matrix.configuration }}
-    - name: Success
+    - name: Run tests
       run: |
-        echo Validation successful
+        ./build/bin/Windows-x64-${{ matrix.configuration }}-MSVC-x64-v142/core_tests/core_tests.exe
 
   validation-build-ubuntu:
     runs-on: ubuntu-latest

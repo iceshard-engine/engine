@@ -26,3 +26,5 @@
 ; #include "tools/asset_compiler/asset_compiler.bff"
 ;
 ; #include "test/test.bff"
+
+#include "core/core/core_tests.bff"
