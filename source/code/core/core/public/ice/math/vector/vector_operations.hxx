@@ -79,11 +79,9 @@ namespace ice::math
 
     constexpr auto dot(vec<3, f32> left, vec<3, f32> right) noexcept -> f32
     {
-        return {
-            left.v[0][0] * right.v[0][0] +
+        return left.v[0][0] * right.v[0][0] +
             left.v[0][1] * right.v[0][1] +
-            left.v[0][2] * right.v[0][2]
-        };
+            left.v[0][2] * right.v[0][2];
     }
 
     inline auto normalize(vec<3, f32> value) noexcept -> vec<3, f32>
