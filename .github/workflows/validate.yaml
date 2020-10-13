@@ -50,7 +50,7 @@ jobs:
       shell: bash
       run: |
         export PATH=~/.local/bin/:$PATH
-        ./ice.sh build -t all-x64-${{ matrix.configuration }}}}
+        ./ice.sh build -t all-x64-${{ matrix.configuration }}
     - name: Run tests
       run: |
         ./build/bin/Linux-x64-${{ matrix.configuration }}-clang-x64-900/core_tests/core_tests
