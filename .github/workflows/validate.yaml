@@ -32,7 +32,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        configuration: [Develop]
+        configuration: [Debug, Develop]
     steps:
     - uses: actions/checkout@v2
     - name: Setup repository
@@ -42,6 +42,10 @@ jobs:
         export PATH=~/.local/bin/:$PATH
         conan remote add conan-iceshard https://conan.iceshard.net/
         conan remote add conan-bincrafters https://api.bintray.com/conan/bincrafters/public-conan
+        conan profile new --detect default
+        conan profile update settings.compiler=clang default
+        conan profile update settings.compiler.version=9 default
+        conan profile update settings.compiler.libcxx=libstdc++11 default
     - name: Build (Linux-${{ matrix.configuration }})
       shell: bash
       run: |
