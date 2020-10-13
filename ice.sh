@@ -6,15 +6,6 @@ ice_initialize() {
     cd ../..
 }
 
-ice_run_application() {
-  lua $MOON_SCRIPT workspace.moon $*
-  ret_code=$?
-  if [ $ret_code != 0 ]; then
-    printf "Error : [%d] when executing command: 'ice.sh $*'" $ret_code
-    exit $ret_code
-  fi
-}
-
 # Ensure the build dir exists
 [ ! -d "build" ] && mkdir -p "build"
 
@@ -30,7 +21,14 @@ ice_run_application() {
 chmod +x $FBUILD_EXE
 
 # Run any moonscript 'script'
-ice_run_application
+lua $MOON_SCRIPT workspace.moon $*
+ret_code=$?
 
 # Deactivate the enviroment
 . ./build/tools/deactivate.sh
+
+if [ $ret_code != 0 ]; then
+    exit $ret_code
+fi
+
+exit 0
