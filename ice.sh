@@ -33,7 +33,7 @@ ice_run_application() {
 chmod +x $FBUILD_EXE
 
 # Run any moonscript 'script'
-ice_run_application()
+ice_run_application
 
 # Deactivate the enviroment
 . ./build/tools/deactivate.sh
