@@ -13,12 +13,11 @@
 
     .Private =
     [
-        .Uses = { 
+        .Uses = {
             'core'
         }
 
         .Modules = {
-            'fmt'
             'Catch2'
         }
     ]
