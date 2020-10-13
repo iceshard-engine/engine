@@ -7,13 +7,10 @@ ice_initialize() {
 }
 
 ice_run_application() {
-  typeset cmnd="lua $MOON_SCRIPT workspace.moon $*"
-  typeset ret_code
-
-  eval $cmnd
+  lua $MOON_SCRIPT workspace.moon $*
   ret_code=$?
   if [ $ret_code != 0 ]; then
-    printf "Error : [%d] when executing command: '$cmnd'" $ret_code
+    printf "Error : [%d] when executing command: 'ice.sh $*'" $ret_code
     exit $ret_code
   fi
 }
