@@ -146,10 +146,8 @@ namespace ice::detail::murmur3_hash
             {
             case 3:
                 k1 ^= static_cast<uint8_t const>(tail[2]) << 16;
-                [[fallthrough]]
             case 2:
                 k1 ^= static_cast<uint8_t const>(tail[1]) << 8;
-                [[fallthrough]]
             case 1:
                 k1 ^= static_cast<uint8_t const>(tail[0]);
             };

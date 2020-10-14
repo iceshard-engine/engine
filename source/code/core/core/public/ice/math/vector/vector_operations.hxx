@@ -12,10 +12,10 @@ namespace ice::math
     constexpr auto sub(vec<Size, T> left, vec<Size, U> right) noexcept -> vec<Size, T>;
 
     template<u32 Size, typename T, typename U = T>
-    constexpr auto mul(vec<Size, T> left, vec<Size, U> right) noexcept -> vec<Size, T>;
+    constexpr auto mul(vec<Size, T> left, U right) noexcept -> vec<Size, T>;
 
     template<u32 Size, typename T, typename U = T>
-    constexpr auto div(vec<Size, T> left, vec<Size, U> right) noexcept -> vec<Size, T>;
+    constexpr auto div(vec<Size, T> left, U right) noexcept -> vec<Size, T>;
 
     constexpr auto cross(vec<3, f32> left, vec<3, f32> right) noexcept -> vec<3, f32>;
 
@@ -47,23 +47,23 @@ namespace ice::math
     }
 
     template<u32 Size, typename T, typename U>
-    constexpr auto mul(vec<Size, T> left, vec<Size, U> right) noexcept -> vec<Size, T>
+    constexpr auto mul(vec<Size, T> left, U right) noexcept -> vec<Size, T>
     {
         vec<Size, T> result;
         for (u32 i = 0; i < Size; ++i)
         {
-            result.v[0][i] = T{ left.v[0][i] * right.v[0][i] };
+            result.v[0][i] = T{ left.v[0][i] * right };
         }
         return result;
     }
 
     template<u32 Size, typename T, typename U>
-    constexpr auto div(vec<Size, T> left, vec<Size, U> right) noexcept -> vec<Size, T>
+    constexpr auto div(vec<Size, T> left, U right) noexcept -> vec<Size, T>
     {
         vec<Size, T> result;
         for (u32 i = 0; i < Size; ++i)
         {
-            result.v[0][i] = T{ left.v[0][i] / right.v[0][i] };
+            result.v[0][i] = T{ left.v[0][i] / right };
         }
         return result;
     }
@@ -93,7 +93,7 @@ namespace ice::math
         }
 
         f32 const sqrt_inverted = 1.f / sqrt(square_sum);
-        return mul(value, vec<3, f32>{ sqrt_inverted });
+        return mul(value, sqrt_inverted);
     }
 
 } // namespace ice::math

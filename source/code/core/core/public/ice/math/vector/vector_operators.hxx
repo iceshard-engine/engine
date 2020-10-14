@@ -46,13 +46,13 @@ namespace ice::math
     template<u32 Size, typename T, typename U>
     constexpr auto operator*(vec<Size, T> left, U right) noexcept -> vec<Size, T>
     {
-        return ice::math::mul(left, vec<Size, T>{ right });
+        return ice::math::mul(left, right);
     }
 
     template<u32 Size, typename T, typename U>
     constexpr auto operator/(vec<Size, T> left, U right) noexcept -> vec<Size, T>
     {
-        return ice::math::div(left, vec<Size, T>{ right });
+        return ice::math::div(left, right);
     }
 
 } // namespace ice::math

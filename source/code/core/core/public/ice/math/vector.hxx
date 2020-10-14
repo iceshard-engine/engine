@@ -15,7 +15,7 @@ namespace ice::math
             : v{ }
         { }
 
-        constexpr mat(T value) noexcept
+        explicit constexpr mat(T value) noexcept
             : v{ { value } }
         { }
 
@@ -37,7 +37,7 @@ namespace ice::math
             : v{ }
         { }
 
-        constexpr mat(T value) noexcept
+        explicit constexpr mat(T value) noexcept
             : v{ { value, value } }
         { }
 
@@ -66,7 +66,7 @@ namespace ice::math
             : v{ }
         { }
 
-        constexpr mat(T value) noexcept
+        explicit constexpr mat(T value) noexcept
             : v{ { value, value, value } }
         { }
 
@@ -95,7 +95,7 @@ namespace ice::math
             : v{ }
         { }
 
-        constexpr mat(T value) noexcept
+        explicit constexpr mat(T value) noexcept
             : v{ { value, value, value, value } }
         { }
 
