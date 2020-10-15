@@ -1,27 +1,28 @@
-#include <core/allocators/proxy_allocator.hxx>
-#include <core/debug/assert.hxx>
+#include <ice/memory/proxy_allocator.hxx>
+#include <cassert>
 
-namespace core::memory
+namespace ice::memory
 {
 
-    proxy_allocator::proxy_allocator(std::string_view name, core::allocator& alloc) noexcept
-        : _name{ std::move(name) }
+    ProxyAllocator::ProxyAllocator(ice::Allocator& alloc, std::string_view name) noexcept
+        : ice::Allocator{ }
         , _backing_allocator{ alloc }
-        , _allocation_tracking{ _backing_allocator.total_allocated() != SIZE_NOT_TRACKED }
+        , _name{ std::move(name) }
+        , _allocation_tracking{ _backing_allocator.total_allocated() != Constant_SizeNotTracked }
     {
     }
 
-    proxy_allocator::~proxy_allocator() noexcept
+    ProxyAllocator::~ProxyAllocator() noexcept
     {
         if (_allocation_tracking)
         {
-            IS_ASSERT(_allocation_total == 0, "Allocated memory was not released in allocator {}! [ not released: {}b ]"
+            assert(_allocation_total == 0);/* , "Allocated memory was not released in allocator {}! [ not released: {}b ]"
                 , _name, _allocation_total
-            );
+            );*/
         }
     }
 
-    auto proxy_allocator::allocate(uint32_t size, uint32_t align /*= DEFAULT_ALIGN*/) noexcept -> void*
+    auto ProxyAllocator::allocate(uint32_t size, uint32_t align /*= Constant_DefaultAlignment*/) noexcept -> void*
     {
         _allocation_requests += 1;
 
@@ -33,7 +34,7 @@ namespace core::memory
         return ptr;
     }
 
-    void proxy_allocator::deallocate(void* ptr) noexcept
+    void ProxyAllocator::deallocate(void* ptr) noexcept
     {
         if (ptr)
         {
@@ -45,14 +46,14 @@ namespace core::memory
         }
     }
 
-    auto proxy_allocator::allocated_size(void* ptr) noexcept -> uint32_t
+    auto ProxyAllocator::allocated_size(void* ptr) noexcept -> uint32_t
     {
         return _backing_allocator.allocated_size(ptr);
     }
 
-    auto proxy_allocator::total_allocated() noexcept -> uint32_t
+    auto ProxyAllocator::total_allocated() noexcept -> uint32_t
     {
-        return _allocation_tracking ? _allocation_total : SIZE_NOT_TRACKED;
+        return _allocation_tracking ? _allocation_total : Constant_SizeNotTracked;
     }
 
-} // namespace core::memory
+} // namespace ice::memory

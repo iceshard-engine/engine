@@ -1,29 +1,29 @@
 #include "default_allocator.hxx"
-#include <core/debug/assert.hxx>
+#include <cassert>
 
-namespace core::memory
+namespace ice::memory
 {
     namespace detail
     {
 
         auto allocation_size_with_header(uint32_t size, uint32_t align) noexcept
         {
-            return static_cast<uint32_t>(sizeof(tracking::allocation_header) + align + size);
+            return static_cast<uint32_t>(sizeof(tracking::AllocationHeader) + align + size);
         }
 
     } // namespace detail
 
-    default_allocator::~default_allocator() noexcept
+    DefaultAllocator::~DefaultAllocator() noexcept
     {
-        IS_ASSERT(_total_allocated == 0, "Unreleased memory in default allocator!");
+        assert(_total_allocated == 0); // , "Unreleased memory in default allocator!");
     }
 
-    auto default_allocator::allocate(uint32_t size, uint32_t align) noexcept -> void*
+    auto DefaultAllocator::allocate(uint32_t size, uint32_t align) noexcept -> void*
     {
-        const uint32_t alloc_size = detail::allocation_size_with_header(size, align);
+        uint32_t const alloc_size = detail::allocation_size_with_header(size, align);
 
-        auto* alloc_ptr = _aligned_malloc(alloc_size, alignof(tracking::allocation_header));
-        auto* alloc_header = reinterpret_cast<tracking::allocation_header*>(alloc_ptr);
+        auto* alloc_ptr = _aligned_malloc(alloc_size, alignof(tracking::AllocationHeader));
+        auto* alloc_header = reinterpret_cast<tracking::AllocationHeader*>(alloc_ptr);
         auto* alloc_data = tracking::data_pointer(alloc_header, align);
 
         tracking::fill(alloc_header, alloc_data, alloc_size, size);
@@ -31,7 +31,7 @@ namespace core::memory
         return alloc_data;
     }
 
-    void default_allocator::deallocate(void* pointer) noexcept
+    void DefaultAllocator::deallocate(void* pointer) noexcept
     {
         if (nullptr == pointer)
         {
@@ -44,14 +44,14 @@ namespace core::memory
         _aligned_free(alloc_header);
     }
 
-    auto default_allocator::allocated_size(void* pointer) noexcept -> uint32_t
+    auto DefaultAllocator::allocated_size(void* pointer) noexcept -> uint32_t
     {
         return tracking::header(pointer)->requested_size;
     }
 
-    auto default_allocator::total_allocated() noexcept -> uint32_t
+    auto DefaultAllocator::total_allocated() noexcept -> uint32_t
     {
         return _total_allocated;
     }
 
-} // namespace core::memory
+} // namespace ice::memory

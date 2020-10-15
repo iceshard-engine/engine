@@ -1,11 +1,10 @@
 #pragma once
-#include <core/allocator.hxx>
+#include <ice/allocator.hxx>
 #include <string_view>
 #include <string>
 
-namespace core::memory
+namespace ice::memory
 {
-
 
     //! \brief This class proxies allocation request to the backing allocator.
     //! \details Additionally this allocator tracks the total allocated size.
@@ -13,17 +12,17 @@ namespace core::memory
     //! \pre Allocation tracking is only possible if the backing allocator supports it.
     //!
     //! \remarks Proxy allocators have a name which will be used in various debugging scenarios.
-    class MEMSYS_API proxy_allocator : public core::allocator
+    class ProxyAllocator : public ice::Allocator
     {
     public:
         //! \brief Creates a new proxy allocator with the given name for the given backing allocator.
-        proxy_allocator(std::string_view name, core::allocator& alloc) noexcept;
+        ProxyAllocator(ice::Allocator& alloc, std::string_view name) noexcept;
 
         //! \brief Checks if all allocations were released if supported.
-        virtual ~proxy_allocator() noexcept override;
+        ~ProxyAllocator() noexcept override;
 
         //! \copydoc allocator::allocate(uint32_t size, uint32_t align)
-        auto allocate(uint32_t size, uint32_t align = DEFAULT_ALIGN) noexcept -> void* override;
+        auto allocate(uint32_t size, uint32_t align = Constant_DefaultAlignment) noexcept -> void* override;
 
         //! \copydoc allocator::deallocate(void* ptr)
         void deallocate(void* ptr) noexcept override;
@@ -35,21 +34,21 @@ namespace core::memory
         auto total_allocated() noexcept -> uint32_t override;
 
         //! \brief The backing allocator.
-        auto backing_allocator() noexcept -> core::allocator& { return _backing_allocator; }
+        auto backing_allocator() noexcept -> ice::Allocator& { return _backing_allocator; }
 
     public:
         //! \brief Returns the total number of allocations.
         auto allocation_count() const noexcept -> uint32_t { return _allocation_requests; }
 
     private:
-        //! \brief Name of the proxy allocator.
-        const std::string _name;
-
         //! \brief Backing allocator.
-        core::allocator& _backing_allocator;
+        ice::Allocator& _backing_allocator;
+
+        //! \brief Name of the proxy allocator.
+        std::string const _name;
 
         //! \brief True if the backing allocator supports allocation tracking.
-        const bool _allocation_tracking;
+        bool const _allocation_tracking;
 
         //! \brief Total allocated size.
         uint32_t _allocation_total{ 0 };
@@ -59,4 +58,4 @@ namespace core::memory
     };
 
 
-} // namespace core::memory
+} // namespace ice::memory

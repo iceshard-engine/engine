@@ -1,35 +1,37 @@
-#define CATCH_CONFIG_MAIN  // This tells Catch to provide a main() - only do this in one cpp file
 #include <catch2/catch.hpp>
-#include <core/memory.hxx>
+#include <ice/memory/memory_globals.hxx>
 
-SCENARIO("core :: memory :: default_allocator", "[allocators]")
+SCENARIO("memory :: default allocator", "[allocators]")
 {
-    GIVEN("The global memory system is initialized with a 64 byte scratch allocator")
+    GIVEN("a memory system with a 64 byte scratch allocator")
     {
-        core::memory::globals::init(64);
+        ice::memory::init(64);
 
-        auto& default_alloc = core::memory::globals::default_allocator();
-        auto& default_scratch_alloc = core::memory::globals::default_scratch_allocator();
+        ice::Allocator& default_alloc = ice::memory::default_allocator();
+        ice::Allocator& default_scratch_alloc = ice::memory::default_scratch_allocator();
 
-        THEN("The scratch allocator allocated memory on the default allocator")
+        THEN("we know the initial allocated memory")
         {
             // Internally the allocation header is currently 8 bytes large and has a 4 bytes alignment thus adding a whole 12 bytes to the requested allocation.
             CHECK(default_alloc.total_allocated() == 64 + 12 /* internal overhead */);
         }
 
-        AND_THEN("We can allocate memory on the scratch allocator")
+        AND_THEN("allocate memory on the scratch allocator")
         {
             void* allocated_memory = default_scratch_alloc.allocate(12);
 
             CHECK(default_scratch_alloc.allocated_size(allocated_memory) == 12);
+            CHECK(default_scratch_alloc.total_allocated() >= 12);
 
-            AND_THEN("We need to release it!")
+            AND_THEN("release it!")
             {
                 default_scratch_alloc.deallocate(allocated_memory);
             }
+
+            CHECK(default_scratch_alloc.total_allocated() == 0);
         }
 
-        GIVEN("A list of alignments")
+        GIVEN("a list of alignments")
         {
             auto test_align = GENERATE(
                 std::pair{ 4 /* alignment */, 0x03 /* mask */ }
@@ -38,7 +40,7 @@ SCENARIO("core :: memory :: default_allocator", "[allocators]")
                 , std::pair{ 32 /* alignment */, 0x1f /* mask */ }
             );
 
-            THEN("Allcations will be properly aligned")
+            THEN("allocations will be properly aligned")
             {
                 void* pointer = default_alloc.allocate(32, test_align.first);
 
@@ -50,6 +52,12 @@ SCENARIO("core :: memory :: default_allocator", "[allocators]")
             }
         }
 
-        core::memory::globals::shutdown();
+        THEN("we don't have memory leaks")
+        {
+            // Internally the allocation header is currently 8 bytes large and has a 4 bytes alignment thus adding a whole 12 bytes to the requested allocation.
+            CHECK(default_alloc.total_allocated() == 64 + 12 /* internal overhead */);
+        }
+
+        ice::memory::shutdown();
     }
 }

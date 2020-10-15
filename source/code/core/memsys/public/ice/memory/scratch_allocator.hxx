@@ -1,9 +1,8 @@
 #pragma once
-#include <core/allocator.hxx>
+#include <ice/allocator.hxx>
 
-namespace core::memory
+namespace ice::memory
 {
-
 
     //! \brief An allocator used to allocate temporary "scratch" memory.
     //! \details The allocator uses a fixed size ring buffer to services the requests.
@@ -19,7 +18,7 @@ namespace core::memory
     //!
     //! \remarks If the ring buffer is exhausted, the scratch allocator will use its backing
     //!     allocator to allocate memory instead.
-    class MEMSYS_API scratch_allocator : public core::allocator
+    class ScratchAllocator final : public ice::Allocator
     {
     public:
         //! \brief Creates a ScratchAllocator.
@@ -29,13 +28,13 @@ namespace core::memory
         //!
         //! \param [in] backing Specifies the backing allocator.
         //! \param [in] size Specifies the size of the ring buffer.
-        scratch_allocator(core::allocator& backing, uint32_t size) noexcept;
+        ScratchAllocator(ice::Allocator& backing, uint32_t size) noexcept;
 
         //! \brief Checks the allocation status and releases the ring buffer.
-        ~scratch_allocator() noexcept override;
+        ~ScratchAllocator() noexcept override;
 
         //! \copydoc allocator::allocate(uint32_t size, uint32_t align)
-        auto allocate(uint32_t size, uint32_t align = DEFAULT_ALIGN) noexcept -> void* override;
+        auto allocate(uint32_t size, uint32_t align = Constant_DefaultAlignment) noexcept -> void* override;
 
         //! \copydoc allocator::deallocate(void* ptr)
         void deallocate(void* pointer) noexcept override;
@@ -47,7 +46,7 @@ namespace core::memory
         auto total_allocated() noexcept -> uint32_t override;
 
         //! \brief The backing allocator.
-        auto backing_allocator() noexcept -> core::allocator& { return _backing; }
+        auto backing_allocator() noexcept -> ice::Allocator& { return _backing; }
 
         //! \brief Resets the allocator forgetting about all allocations.
         bool reset() noexcept;
@@ -60,7 +59,7 @@ namespace core::memory
         bool is_backing_pointer(void* pointer) noexcept;
 
     private:
-        core::allocator& _backing;
+        ice::Allocator& _backing;
 
         // Start and end of the ring buffer.
         void* _begin{ nullptr };

@@ -1,0 +1,25 @@
+.Project =
+[
+    .Name = 'memsys_tests'
+    .Kind = .Kind_ConsoleApp
+    .Group = 'Tests'
+
+    .BaseDir = '$WorkspaceCodeDir$/core/memsys'
+
+    .InputPaths = {
+        'tests'
+    }
+    .VStudioPaths = .InputPaths
+
+    .Private =
+    [
+        .Uses = {
+            'memsys'
+        }
+
+        .Modules = {
+            'Catch2'
+        }
+    ]
+]
+.Projects + .Project
