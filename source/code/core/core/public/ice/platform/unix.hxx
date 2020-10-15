@@ -3,4 +3,6 @@
 
 #if ISP_UNIX
 
+#pragma clang diagnostic ignored "-Wunknown-attributes"
+
 #endif
