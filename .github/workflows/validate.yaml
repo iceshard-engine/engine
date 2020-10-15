@@ -27,6 +27,7 @@ jobs:
     - name: Run tests
       run: |
         ./build/bin/Windows-x64-${{ matrix.configuration }}-MSVC-x64-v142/core_tests/core_tests.exe
+        ./build/bin/Windows-x64-${{ matrix.configuration }}-MSVC-x64-v142/memsys_tests/memsys_tests.exe
 
   validation-build-ubuntu:
     runs-on: ubuntu-latest
@@ -54,6 +55,7 @@ jobs:
     - name: Run tests
       run: |
         ./build/bin/Linux-x64-${{ matrix.configuration }}-clang-x64-900/core_tests/core_tests
+        ./build/bin/Linux-x64-${{ matrix.configuration }}-clang-x64-900/memsys_tests/memsys_tests
     - name: Success
       run: |
         echo Validation successful
