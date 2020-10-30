@@ -1,8 +1,8 @@
 #pragma once
-#include <core/allocator.hxx>
+#include <ice/allocator.hxx>
 #include <unordered_map>
 
-namespace core
+namespace ice
 {
 
     namespace detail
@@ -16,7 +16,7 @@ namespace core
 
             MemoryResourceAllocatorType() noexcept = delete;
 
-            MemoryResourceAllocatorType(core::allocator& allocator) noexcept
+            MemoryResourceAllocatorType(ice::Allocator& allocator) noexcept
                 : std::pmr::polymorphic_allocator<T>{ &allocator }
             {
             }

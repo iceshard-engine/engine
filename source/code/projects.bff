@@ -3,7 +3,7 @@
 // Include all known project description files
 #include "core/core/core.bff"
 #include "core/memsys/memsys.bff"
-; #include "core/collections/collections.bff"
+#include "core/collections/collections.bff"
 ; #include "core/platform/platform.bff"
 ; #include "core/messages/messages.bff"
 ;
@@ -29,3 +29,4 @@
 
 #include "core/core/core_tests.bff"
 #include "core/memsys/memsys_tests.bff"
+#include "core/collections/collections_tests.bff"

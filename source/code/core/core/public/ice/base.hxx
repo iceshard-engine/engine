@@ -3,3 +3,17 @@
 #include <ice/math.hxx>
 
 #include <type_traits>
+
+namespace ice
+{
+
+    using std::min;
+    using std::max;
+
+    using std::swap;
+    using std::move;
+    using std::forward;
+    using std::exchange;
+    using std::memcpy;
+
+} // namespace ice

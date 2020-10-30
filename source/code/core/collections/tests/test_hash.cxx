@@ -1,16 +1,14 @@
 #include <catch2/catch.hpp>
-#include <core/memory.hxx>
-#include <core/pod/hash.hxx>
+#include <ice/memory/memory_globals.hxx>
+#include <ice/pod/hash.hxx>
 
-SCENARIO("core :: hash")
+SCENARIO("ice :: pod :: Hash")
 {
-    namespace hash = core::pod::hash;
+    namespace hash = ice::pod::hash;
+    namespace multi_hash = ice::pod::multi_hash;
 
-    auto& alloc = core::memory::globals::default_allocator();
-    auto test_hash = core::pod::Hash<int>{ alloc };
-
-    namespace hash = core::pod::hash;
-    namespace multi_hash = core::pod::multi_hash;
+    ice::Allocator& alloc = ice::memory::default_allocator();
+    ice::pod::Hash<int32_t> test_hash{ alloc };
 
     GIVEN("An empty hash")
     {

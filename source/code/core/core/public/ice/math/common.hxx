@@ -1,4 +1,5 @@
 #pragma once
+#include <ice/types.hxx>
 #include <ice/math/constants.hxx>
 #include <cmath>
 

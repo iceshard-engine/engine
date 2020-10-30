@@ -9,7 +9,6 @@ namespace ice
     {
     public:
         static constexpr uint32_t Constant_SizeNotTracked = 0xffffffffu;
-
         static constexpr uint32_t Constant_DefaultAlignment = 4u;
 
         Allocator() noexcept = default;
