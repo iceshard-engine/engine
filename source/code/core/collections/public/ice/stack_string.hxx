@@ -108,6 +108,13 @@ namespace ice
     } // namespace string
 
     template<uint32_t Size, typename CharType>
+    template<uint32_t ArraySize>
+    inline StackString<Size, CharType>::StackString(CharType(&char_array)[ArraySize]) noexcept
+        : StackString{ ice::BasicString<CharType>{ char_array } }
+    {
+    }
+
+    template<uint32_t Size, typename CharType>
     inline StackString<Size, CharType>::StackString(ice::BasicString<CharType> value) noexcept
     {
         *this = value;

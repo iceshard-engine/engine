@@ -4,7 +4,7 @@
 #include "core/core/core.bff"
 #include "core/memsys/memsys.bff"
 #include "core/collections/collections.bff"
-; #include "core/platform/platform.bff"
+#include "core/platform/platform.bff"
 ; #include "core/messages/messages.bff"
 ;
 ; #include "systems/resource_system/resource_system.bff"

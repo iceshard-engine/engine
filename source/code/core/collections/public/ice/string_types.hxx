@@ -55,6 +55,8 @@ namespace ice
         static constexpr uint32_t Constant_Capacity = Size;
 
         StackString() noexcept = default;
+        template<uint32_t ArraySize>
+        StackString(CharType(&char_array)[ArraySize]) noexcept;
         StackString(ice::BasicString<CharType> str) noexcept;
         ~StackString() noexcept = default;
 
