@@ -28,7 +28,7 @@ namespace ice::pod
         inline auto get(ice::pod::Hash<T> const& hsh, uint64_t key, T const& fallback_value) noexcept -> T const&;
 
         template<typename T>
-        inline auto get(ice::pod::Hash<T*> const& hsh, uint64_t key, nullptr_t) noexcept -> T*;
+        inline auto get(ice::pod::Hash<T*> const& hsh, uint64_t key, std::nullptr_t) noexcept -> T*;
 
         template<typename T>
         inline auto begin(ice::pod::Hash<T> const& hsh) noexcept -> typename ice::pod::Hash<T>::ConstIterator;
@@ -341,7 +341,7 @@ namespace ice::pod
         }
 
         template<typename T>
-        inline auto get(ice::pod::Hash<T*> const& hsh, uint64_t key, nullptr_t) noexcept -> T*
+        inline auto get(ice::pod::Hash<T*> const& hsh, uint64_t key, std::nullptr_t) noexcept -> T*
         {
             uint32_t const index = detail::hash::find_or_fail(hsh, key);
             return index == detail::hash::Constant_EndOfList ? nullptr : hsh._data[index].value;
