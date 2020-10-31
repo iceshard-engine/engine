@@ -232,7 +232,10 @@ SCENARIO("ice :: HeapString")
             // Fill the new string with space characters.
             std::memset(ice::string::begin(test_string), ' ', ice::string::size(test_string));
 
-            ice::string::push_back(test_string, test_string);
+            ice::HeapString test_copy{ test_string };
+
+            // We cannot push back ourselfs, as this will remove the old buffer before it even gets copied
+            ice::string::push_back(test_string, test_copy);
 
             THEN("Resizing the string and appending itself")
             {

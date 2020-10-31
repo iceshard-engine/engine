@@ -3,6 +3,8 @@
 #include <ice/math.hxx>
 
 #include <type_traits>
+#include <cstring>
+#include <utility>
 
 namespace ice
 {
