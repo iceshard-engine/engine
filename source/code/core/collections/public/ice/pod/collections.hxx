@@ -28,7 +28,7 @@ namespace ice::pod
         operator ice::Span<T>() noexcept;
         operator ice::Span<T const>() const noexcept;
 
-        ice::Allocator* const _allocator;
+        ice::Allocator* _allocator;
         uint32_t _size = 0;
         uint32_t _capacity = 0;
         T* _data = nullptr;
@@ -64,7 +64,10 @@ namespace ice::pod
         using ConstIterator = typename ice::pod::Array<Entry>::ConstIterator;
 
         explicit Hash(ice::Allocator& alloc) noexcept;
+        Hash(Hash&& other) noexcept;
         ~Hash() noexcept = default;
+
+        auto operator=(Hash&& other) noexcept -> Hash&;
 
         operator ice::Span<Entry>() noexcept;
         operator ice::Span<Entry const>() const noexcept;

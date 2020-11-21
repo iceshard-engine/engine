@@ -7,4 +7,4 @@
 #define NOMINMAX
 #include <Windows.h>
 
-#endif
+#endif // ISP_WINDOWS

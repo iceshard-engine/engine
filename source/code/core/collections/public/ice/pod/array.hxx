@@ -184,7 +184,7 @@ namespace ice::pod
                 arr._size = new_capacity;
             }
 
-            T* new_data = 0;
+            T* new_data = nullptr;
             if (new_capacity > 0)
             {
                 uint32_t const alignment = ice::max(static_cast<uint32_t>(alignof(T)), ice::Allocator::Constant_DefaultAlignment);

@@ -114,6 +114,10 @@ namespace ice
 
     constexpr auto stringid_hint(StringID_Arg value) noexcept -> std::string_view;
 
+    constexpr auto stringid_hash(StringID_Arg value) noexcept -> ice::StringID_Hash;
+
+    constexpr auto stringid_hash(StringID_Hash value) noexcept -> ice::StringID_Hash;
+
     constexpr auto operator""_sid(const char* cstr, size_t length) noexcept -> ice::StringID;
 
     constexpr auto operator""_sid_hash(const char* cstr, size_t length) noexcept -> ice::StringID_Hash;
@@ -226,7 +230,16 @@ namespace ice
         return ice::detail::stringid_type_v2::origin_value(value);
     }
 
-    template<>
+    constexpr auto stringid_hash(StringID_Hash value) noexcept -> ice::StringID_Hash
+    {
+        return value;
+    }
+
+    constexpr auto stringid_hash(StringID_Arg value) noexcept -> ice::StringID_Hash
+    {
+        return value.hash_value;
+    }
+
     constexpr auto hash(StringID_Arg value) noexcept -> uint64_t
     {
         return static_cast<uint64_t>(value.hash_value);
@@ -242,7 +255,7 @@ namespace ice
         return stringid({ cstr, length }).hash_value;
     }
 
-} // namespace core
+} // namespace ice
 
 //
 //using core::operator""_sid;

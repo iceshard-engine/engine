@@ -39,6 +39,9 @@ namespace ice
         inline void push_back(ice::HeapString<CharType>& str, ice::BasicString<CharType> cstr) noexcept;
 
         template<typename CharType>
+        inline void pop_back(ice::HeapString<CharType>& str, uint32_t count = 1) noexcept;
+
+        template<typename CharType>
         inline auto begin(ice::HeapString<CharType>& str) noexcept -> typename ice::HeapString<CharType>::iterator;
 
         template<typename CharType>
@@ -332,6 +335,16 @@ namespace ice
         }
 
         template<typename CharType>
+        inline void pop_back(ice::HeapString<CharType>& str, uint32_t count) noexcept
+        {
+            if (str._data != nullptr)
+            {
+                str._size -= ice::min(str._size, count);
+                str._data[str._size] = CharType{ 0 };
+            }
+        }
+
+        template<typename CharType>
         inline auto begin(ice::HeapString<CharType>& str) noexcept -> typename ice::HeapString<CharType>::iterator
         {
             return str._data;
@@ -408,13 +421,13 @@ namespace ice
         template<typename CharType>
         inline auto rbegin(ice::HeapString<CharType> const& str) noexcept -> typename ice::HeapString<CharType>::const_reverse_iterator
         {
-            return { str._data + str._size };
+            return typename ice::HeapString<CharType>::const_reverse_iterator{ str._data + str._size };
         }
 
         template<typename CharType>
         inline auto rend(ice::HeapString<CharType> const& str) noexcept -> typename ice::HeapString<CharType>::const_reverse_iterator
         {
-            return { str._data };
+            return typename ice::HeapString<CharType>::const_reverse_iterator{ str._data };
         }
 
         template<typename CharType>
@@ -494,7 +507,7 @@ namespace ice
         {
             uint32_t result = 0;
 
-            auto const it = ice::string::rbegin(str);
+            auto it = ice::string::rbegin(str);
             auto const it_end = ice::string::rend(str);
 
             while (it != it_end && *it != character_value)
@@ -511,7 +524,7 @@ namespace ice
         {
             uint32_t result = 0;
 
-            auto const it = ice::string::rbegin(str);
+            auto it = ice::string::rbegin(str);
             auto const it_end = ice::string::rend(str);
 
             while (it != it_end && ice::string::find_first_of(character_values, *it) == ice::string_npos)

@@ -71,6 +71,23 @@ namespace ice::pod
         , _hash{ alloc }
     { }
 
+    template<typename T>
+    inline Hash<T>::Hash(Hash&& other) noexcept
+        : _data{ ice::move(other._data) }
+        , _hash{ ice::move(other._hash) }
+    { }
+
+    template<typename T>
+    auto Hash<T>::operator=(Hash&& other) noexcept -> Hash&
+    {
+        if (this != &other)
+        {
+            _data = ice::move(other._data);
+            _hash = ice::move(other._hash);
+        }
+        return *this;
+    }
+
     namespace detail::hash
     {
 

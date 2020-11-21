@@ -39,6 +39,9 @@ namespace ice
         inline void push_back(ice::StackString<Size, CharType>& str, ice::BasicString<CharType> cstr) noexcept;
 
         template<uint32_t Size, typename CharType>
+        inline void pop_back(ice::StackString<Size, CharType>& str, uint32_t count) noexcept;
+
+        template<uint32_t Size, typename CharType>
         inline auto begin(ice::StackString<Size, CharType>& str) noexcept -> typename ice::StackString<Size, CharType>::iterator;
 
         template<uint32_t Size, typename CharType>
@@ -232,6 +235,13 @@ namespace ice
                     str._data[str._size] = 0;
                 }
             }
+        }
+
+        template<uint32_t Size, typename CharType>
+        inline void pop_back(ice::StackString<Size, CharType>& str, uint32_t count) noexcept
+        {
+            str._size -= ice::min(str._size, count);
+            str._data[str._size] = CharType{ 0 };
         }
 
         template<uint32_t Size, typename CharType>

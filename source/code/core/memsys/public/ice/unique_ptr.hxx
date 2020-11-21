@@ -4,7 +4,13 @@
 namespace ice
 {
 
-    template<typename T, typename D /*= detail::IceDefaultDeleter<T>*/>
+    namespace detail
+    {
+        template<class T>
+        class IceDefaultDeleter;
+    } // namespace detail
+
+    template<typename T, typename D = detail::IceDefaultDeleter<T>>
     using UniquePtr = std::unique_ptr<T, D>;
 
     template<typename Result, typename Type = Result, typename... Args>

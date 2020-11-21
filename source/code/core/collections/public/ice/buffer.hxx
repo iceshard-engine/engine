@@ -31,32 +31,34 @@ namespace ice
     namespace buffer
     {
 
-        auto size(Buffer const& buffer) noexcept -> u32;
+        auto size(ice::Buffer const& buffer) noexcept -> u32;
 
-        auto capacity(Buffer const& buffer) noexcept -> u32;
+        auto capacity(ice::Buffer const& buffer) noexcept -> u32;
 
-        bool empty(Buffer const& buffer) noexcept;
+        bool empty(ice::Buffer const& buffer) noexcept;
 
-        auto data(Buffer const& buffer) noexcept -> void const*;
+        auto data(ice::Buffer const& buffer) noexcept -> void const*;
 
 
-        void set_capacity(Buffer& buffer, u32 new_capacity) noexcept;
+        void set_capacity(ice::Buffer& buffer, u32 new_capacity) noexcept;
 
-        void reserve(Buffer& buffer, u32 min_capacity) noexcept;
+        void set_capacity_aligned(ice::Buffer& buffer, u32 new_capacity, u32 alignment) noexcept;
 
-        void grow(Buffer& buffer, u32 min_capacity = 0) noexcept;
+        void reserve(ice::Buffer& buffer, u32 min_capacity) noexcept;
 
-        void shrink(Buffer& buffer) noexcept;
+        void grow(ice::Buffer& buffer, u32 min_capacity = 0) noexcept;
 
-        void resize(Buffer& buffer, u32 new_size) noexcept;
+        void shrink(ice::Buffer& buffer) noexcept;
 
-        void clear(Buffer& buffer) noexcept;
+        void resize(ice::Buffer& buffer, u32 new_size) noexcept;
 
-        auto data(Buffer& buffer) noexcept -> void*;
+        void clear(ice::Buffer& buffer) noexcept;
 
-        auto append(Buffer& buffer, Data data) noexcept -> void*;
+        auto data(ice::Buffer& buffer) noexcept -> void*;
 
-        auto append(Buffer& buffer, const void* data, u32 size, u32 alignment) noexcept -> void*;
+        auto append(ice::Buffer& buffer, ice::Data data) noexcept -> void*;
+
+        auto append(ice::Buffer& buffer, const void* data, u32 size, u32 alignment) noexcept -> void*;
 
     } // namespace buffer
 

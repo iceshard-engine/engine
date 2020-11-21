@@ -63,9 +63,9 @@ namespace ice
     template<class T>
     void Allocator::destroy(T* ptr) noexcept
     {
-        if (ptr == nullptr)
+        if (ptr != nullptr)
         {
-            if constexpr (std::is_same_v<std::remove_pointer_t<std::remove_cv_t<std::remove_reference_t<T>>>, void>)
+            if constexpr (std::is_same_v<std::remove_pointer_t<std::remove_cv_t<std::remove_reference_t<T>>>, void> == false)
             {
                 ptr->~T();
             }

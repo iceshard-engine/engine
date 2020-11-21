@@ -115,6 +115,33 @@ namespace ice
             buffer._capacity = new_capacity;
         }
 
+        void set_capacity_aligned(ice::Buffer& buffer, u32 new_capacity, u32 alignment) noexcept
+        {
+            if (new_capacity == buffer._capacity)
+            {
+                return;
+            }
+
+            if (new_capacity < buffer._size)
+            {
+                buffer._size = new_capacity;
+            }
+
+            void* new_data = nullptr;
+            if (new_capacity > 0)
+            {
+                new_data = buffer._allocator->allocate(new_capacity, alignment);
+                if (buffer._size > 0)
+                {
+                    ice::memcpy(new_data, buffer._data, buffer._size);
+                }
+            }
+
+            buffer._allocator->deallocate(buffer._data);
+            buffer._data = new_data;
+            buffer._capacity = new_capacity;
+        }
+
         void reserve(ice::Buffer& buffer, u32 min_capacity) noexcept
         {
             if (buffer._capacity < min_capacity)
@@ -125,11 +152,13 @@ namespace ice
 
         void grow(ice::Buffer& buffer, u32 min_capacity) noexcept
         {
-            uint32_t const new_capacity = buffer._capacity * 2 + 8;
+            uint32_t new_capacity = buffer._capacity * 2 + 8;
             if (new_capacity < min_capacity)
             {
-                ice::buffer::set_capacity(buffer, new_capacity);
+                new_capacity = min_capacity;
             }
+
+            ice::buffer::set_capacity(buffer, new_capacity);
         }
 
         void shrink(ice::Buffer& buffer) noexcept
@@ -165,7 +194,7 @@ namespace ice
             }
 
             void* dest_data = ice::memory::ptr_add(buffer._data, buffer._size);
-            dest_data = ice::memory::ptr_align_forward(buffer._data, data.alignment);
+            dest_data = ice::memory::ptr_align_forward(dest_data, data.alignment);
 
             if (data.location != nullptr)
             {
