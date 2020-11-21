@@ -11,7 +11,7 @@ namespace ice
 
 #if ISP_WINDOWS
 
-    void location(ice::HeapString<>& out) noexcept
+    void app_location(ice::HeapString<>& out) noexcept
     {
         ice::StackString<256> temp{ "" };
         GetModuleFileName(NULL, ice::string::begin(temp), ice::string::capacity(temp));
