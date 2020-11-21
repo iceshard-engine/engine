@@ -2,6 +2,8 @@
 fmt/7.0.3@iceshard/stable
 Catch2/2.13.2@iceshard/stable
 
+rapidjson/1.1.0
+
 [build_requires]
 fastbuild-generator/0.2@iceshard/stable
 

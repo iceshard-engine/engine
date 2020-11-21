@@ -1,37 +1,140 @@
-#include <resource/resource_meta.hxx>
-#include <core/pod/hash.hxx>
-#include <core/debug/assert.hxx>
-#include <core/memory.hxx>
+#include <ice/resource_meta.hxx>
+#include <ice/pod/hash.hxx>
+#include <ice/memory/memory_globals.hxx>
+#include <ice/memory/forward_allocator.hxx>
+#include <ice/memory/pointer_arithmetic.hxx>
+#include <ice/stringid.hxx>
 
 #include <rapidjson/document.h>
 
-namespace resource
+namespace ice
 {
+
     namespace detail
     {
 
-        auto get_entry(ResourceMetaView const& meta, core::stringid_arg_type key, MetaEntryType expected_type) noexcept -> MetaEntry
+        constexpr ice::String internal_metadata_header{ "ISAD" };
+        constexpr ice::Data internal_metadata_header_data{
+            .location = ice::string::data(internal_metadata_header),
+            .size = ice::string::size(internal_metadata_header),
+            .alignment = 1
+        };
+
+        bool get_entry(
+            ice::Metadata const& meta,
+            ice::StringID_Arg key,
+            MetadataEntryType expected_type,
+            MetadataEntry& entry_out
+        ) noexcept
         {
-            auto entry = core::pod::hash::get(meta._meta_entries, static_cast<uint64_t>(key.hash_value), resource::detail::MetaEntry{});
-            IS_ASSERT(entry.data_type != resource::detail::MetaEntryType::Invalid, "Data for key {} does not exist!", key);
-            IS_ASSERT(entry.data_type == expected_type, "Data types does not match! expected: {}, got:{}", (int)expected_type, (int)entry.data_type);
-            return entry;
+            entry_out = ice::pod::hash::get(
+                meta._meta_entries,
+                ice::hash(key),
+                MetadataEntry{ .data_type = MetadataEntryType::Invalid }
+            );
+            return entry_out.data_type == expected_type;
         }
 
-        auto try_get_entry(ResourceMetaView const& meta, core::stringid_arg_type key, MetaEntryType expected_type, MetaEntry& entry) noexcept -> bool
+        void deserialize_json_array_helper(
+            rapidjson::GenericArray<true, rapidjson::Value> const& arr,
+            ice::StringID_Arg key,
+            ice::MutableMetadata& meta
+        ) noexcept
         {
-            entry = core::pod::hash::get(meta._meta_entries, static_cast<uint64_t>(key.hash_value), resource::detail::MetaEntry{});
-            return entry.data_type == expected_type;
+            ice::u32 const count = arr.Size();
+
+            static_assert(sizeof(ice::String) == 16);
+            static_assert(sizeof(ice::String) >= sizeof(MetadataEntry));
+            ice::memory::ForwardAllocator alloc{ ice::memory::default_scratch_allocator(), count * 16 * 64 };
+
+            if (arr[0].IsBool())
+            {
+                ice::pod::Array<bool> final_values{ alloc };
+                ice::pod::array::reserve(final_values, count);
+
+                for (auto const& value : arr)
+                {
+                    if (value.IsBool())
+                    {
+                        ice::pod::array::push_back(final_values, value.GetBool());
+                    }
+                }
+
+                ice::meta_set_bool_array(meta, key, ice::Span<bool>{ final_values });
+            }
+            else if (arr[0].IsInt())
+            {
+                ice::pod::Array<ice::i32> final_values{ alloc };
+                ice::pod::array::reserve(final_values, count);
+
+                for (auto const& value : arr)
+                {
+                    if (value.IsInt())
+                    {
+                        ice::pod::array::push_back(final_values, value.GetInt());
+                    }
+                }
+
+                ice::meta_set_int32_array(meta, key, ice::Span<ice::i32>{ final_values });
+            }
+            else if (arr[0].IsFloat())
+            {
+                ice::pod::Array<ice::f32> final_values{ alloc };
+                ice::pod::array::reserve(final_values, count);
+
+                for (auto const& value : arr)
+                {
+                    if (value.IsInt())
+                    {
+                        ice::pod::array::push_back(final_values, value.GetFloat());
+                    }
+                }
+
+                ice::meta_set_float_array(meta, key, ice::Span<ice::f32>{ final_values });
+            }
+            else if (arr[0].IsString())
+            {
+                ice::pod::Array<ice::String> final_values{ alloc };
+                ice::pod::array::reserve(final_values, count);
+
+                for (auto const& value : arr)
+                {
+                    if (value.IsString())
+                    {
+                        ice::pod::array::push_back(final_values, value.GetString());
+                    }
+                }
+
+                ice::meta_set_string_array(meta, key, ice::Span<ice::String>{ final_values });
+            }
+            else
+            {
+                //IS_ASSERT(false, "Unknown value type in resource meta!");
+            }
         }
 
-        void deserialize_json_meta_helper(rapidjson::Value const& object, std::string key, ResourceMeta& meta)
+        void deserialize_json_meta_helper(
+            rapidjson::Value const& object,
+            std::string key,
+            ice::MutableMetadata& meta
+        ) noexcept
         {
-
             for (auto const& entry : object.GetObject())
             {
                 if (entry.value.IsObject())
                 {
-                    deserialize_json_meta_helper(entry.value, key + entry.name.GetString() + ".", meta);
+                    deserialize_json_meta_helper(entry.value, key + entry.name.GetString() + '.', meta);
+                }
+                else if (entry.value.IsArray())
+                {
+                    auto values = entry.value.GetArray();
+                    ice::u32 const count = values.Size();
+
+                    if (count > 0)
+                    {
+                        std::string field_key = key.substr(1) + entry.name.GetString();
+                        deserialize_json_array_helper(values, ice::stringid(field_key), meta);
+                    }
                 }
                 else
                 {
@@ -39,144 +142,496 @@ namespace resource
 
                     if (entry.value.IsBool())
                     {
-                        resource::set_meta_bool(meta, core::stringid(field_key), entry.value.GetBool());
+                        ice::meta_set_bool(meta, ice::stringid(field_key), entry.value.GetBool());
                     }
                     else if (entry.value.IsInt())
                     {
-                        resource::set_meta_int32(meta, core::stringid(field_key), entry.value.GetInt());
+                        ice::meta_set_int32(meta, ice::stringid(field_key), entry.value.GetInt());
                     }
                     else if (entry.value.IsFloat())
                     {
-                        resource::set_meta_float(meta, core::stringid(field_key), entry.value.GetFloat());
+                        ice::meta_set_float(meta, ice::stringid(field_key), entry.value.GetFloat());
                     }
                     else if (entry.value.IsString())
                     {
-                        resource::set_meta_string(meta, core::stringid(field_key), entry.value.GetString());
+                        ice::meta_set_string(meta, ice::stringid(field_key), entry.value.GetString());
                     }
                     else
                     {
-                        IS_ASSERT(false, "Unknown value type in resource meta!");
+                        //IS_ASSERT(false, "Unknown value type in resource meta!");
                     }
                 }
             }
         }
 
-        void deserialize_json_meta(core::data_view data, ResourceMeta& meta) noexcept
+        void deserialize_json_meta(ice::Data data, ice::MutableMetadata& meta) noexcept
         {
             rapidjson::Document doc;
-            doc.Parse(reinterpret_cast<const char*>(data._data), data._size);
-            IS_ASSERT(doc.IsObject(), "The resource metadata is not a valid Json object!");
+            doc.Parse(reinterpret_cast<char const*>(data.location), data.size);
+            //IS_ASSERT(doc.IsObject(), "The resource metadata is not a valid Json object!");
 
             deserialize_json_meta_helper(doc.GetObject(), ".", meta);
         }
 
-        void deserialize_binary_meta(core::data_view data, ResourceMeta& meta) noexcept
+        void deserialize_binary_meta(ice::Data data, ice::MutableMetadata& meta) noexcept
         {
-            char const* it = reinterpret_cast<char const*>(data._data);
+            char const* it = reinterpret_cast<char const*>(data.location);
 
-            uint32_t const hash_count = *reinterpret_cast<uint32_t const*>(it + 0);
-            uint32_t const value_count = *reinterpret_cast<uint32_t const*>(it + 4);
-            it += 8;
+            ice::u32 const hash_count = *reinterpret_cast<ice::u32 const*>(it + 0);
+            ice::u32 const value_count = *reinterpret_cast<ice::u32 const*>(it + 4);
+            it += sizeof(ice::u32) * 2;
 
-            uint32_t const hash_offset = *reinterpret_cast<uint32_t const*>(it + 0);
-            uint32_t const value_offset = *reinterpret_cast<uint32_t const*>(it + 4);
-            uint32_t const data_offset = *reinterpret_cast<uint32_t const*>(it + 8);
+            ice::u32 const hash_offset = *reinterpret_cast<ice::u32 const*>(it + 0);
+            ice::u32 const value_offset = *reinterpret_cast<ice::u32 const*>(it + 4);
+            ice::u32 const data_offset = *reinterpret_cast<ice::u32 const*>(it + 8);
 
-            uint32_t const hash_type_size = sizeof(*meta._meta_entries._hash._data);
-            uint32_t const value_type_size = sizeof(*meta._meta_entries._data._data);
+            ice::u32 const hash_type_size = sizeof(*meta._meta_entries._hash._data);
+            ice::u32 const value_type_size = sizeof(*meta._meta_entries._data._data);
 
             {
-                auto hash_it = core::memory::utils::pointer_add(data._data, hash_offset);
+                void const* hash_it = ice::memory::ptr_add(data.location, hash_offset);
 
-                if constexpr (core::build::is_release == false)
+                if constexpr (ice::build::is_release == false)
                 {
-                    auto const hash_end = core::memory::utils::pointer_add(hash_it, hash_count * hash_type_size);
-                    IS_ASSERT(core::memory::utils::pointer_distance(data._data, hash_end) < static_cast<int32_t>(data._size), "Moved past the data buffer!");
+                    void const* hash_end = ice::memory::ptr_add(hash_it, hash_count * hash_type_size);
+                    //IS_ASSERT(core::memory::utils::pointer_distance(data._data, hash_end) < static_cast<int32_t>(data._size), "Moved past the data buffer!");
                 }
 
-                core::pod::array::resize(meta._meta_entries._hash, hash_count);
-                memcpy(meta._meta_entries._hash._data, hash_it, hash_count * hash_type_size);
+                ice::pod::array::resize(meta._meta_entries._hash, hash_count);
+                ice::memcpy(meta._meta_entries._hash._data, hash_it, hash_count * hash_type_size);
             }
 
             {
-                auto value_it = core::memory::utils::pointer_add(data._data, value_offset);
+                void const* value_it = ice::memory::ptr_add(data.location, value_offset);
 
-                if constexpr (core::build::is_release == false)
+                if constexpr (ice::build::is_release == false)
                 {
-                    auto const value_end = core::memory::utils::pointer_add(value_it, hash_count * hash_type_size);
-                    IS_ASSERT(core::memory::utils::pointer_distance(data._data, value_end) < static_cast<int32_t>(data._size), "Moved past the data buffer!");
+                    auto const value_end = ice::memory::ptr_add(value_it, hash_count * hash_type_size);
+                    //IS_ASSERT(core::memory::utils::pointer_distance(data._data, value_end) < static_cast<int32_t>(data._size), "Moved past the data buffer!");
                 }
 
-                core::pod::array::resize(meta._meta_entries._data, value_count);
-                memcpy(meta._meta_entries._data._data, value_it, value_count * value_type_size);
+                ice::pod::array::resize(meta._meta_entries._data, value_count);
+                ice::memcpy(meta._meta_entries._data._data, value_it, value_count * value_type_size);
             }
 
             {
-                auto data_it = core::memory::utils::pointer_add(data._data, data_offset);
-                uint32_t const remaining_size = data._size - data_offset;
-                core::buffer::reserve(meta._additional_data, remaining_size);
-                core::buffer::append(meta._additional_data, data_it, remaining_size);
+                void const* data_it = ice::memory::ptr_add(data.location, data_offset);
+                ice::u32 const remaining_size = data.size - data_offset;
+
+                ice::buffer::reserve(meta._additional_data, remaining_size);
+                ice::buffer::append(meta._additional_data, ice::data_view(data_it, remaining_size, alignof(MetadataEntry)));
             }
         }
 
-
     } // namespace detail
 
-    ResourceMeta::ResourceMeta(core::allocator& alloc) noexcept
-        : _meta_entries{ alloc }
-        , _additional_data{ alloc }
+    auto meta_read_bool(
+        ice::Metadata const& meta,
+        ice::StringID_Arg key,
+        bool& result
+    ) noexcept -> bool
     {
+        detail::MetadataEntry entry;
+        bool const valid = detail::get_entry(meta, key, detail::MetadataEntryType::Boolean, entry);
+
+        if (valid && entry.data_count == 0)
+        {
+            result = entry.value_int != 0;
+        }
+
+        return valid;
     }
 
-    void copy_meta(ResourceMeta& meta_out, ResourceMetaView const& meta_view) noexcept
+    auto meta_read_int32(
+        ice::Metadata const& meta,
+        ice::StringID_Arg key,
+        ice::i32& result
+    ) noexcept -> bool
     {
-        meta_out._meta_entries = meta_view._meta_entries;
-        core::buffer::clear(meta_out._additional_data);
-        core::buffer::reserve(meta_out._additional_data, meta_view._additional_data.size());
-        core::buffer::append(meta_out._additional_data, meta_view._additional_data);
+        detail::MetadataEntry entry;
+        bool const valid = detail::get_entry(meta, key, detail::MetadataEntryType::Integer, entry);
+
+        if (valid && entry.data_count == 0)
+        {
+            result = entry.value_int;
+        }
+
+        return valid;
     }
 
-    void serialize_meta(ResourceMeta const& meta, core::Buffer& buffer) noexcept
+    auto meta_read_float(
+        ice::Metadata const& meta,
+        ice::StringID_Arg key,
+        ice::f32& result
+    ) noexcept -> bool
     {
-        uint32_t const hash_count = meta._meta_entries._hash._capacity;
-        uint32_t const value_count = meta._meta_entries._data._size;
+        detail::MetadataEntry entry;
+        bool const valid = detail::get_entry(meta, key, detail::MetadataEntryType::Float, entry);
 
-        uint32_t const hash_size = sizeof(*meta._meta_entries._hash._data);
-        uint32_t const value_size = sizeof(*meta._meta_entries._data._data);
+        if (valid && entry.data_count == 0)
+        {
+            result = entry.value_float;
+        }
 
-        uint32_t const static_metadata_size = 4 + sizeof(uint32_t) * 5 + hash_size * hash_count + value_size * value_count + 16 /* for offset misses */;
-        uint32_t const offset_stub = 0;
-
-        // Minimal buffer size.
-        core::buffer::reserve(buffer, static_metadata_size);
-        core::buffer::append(buffer, "ISAD", 4);
-        core::buffer::append(buffer, &hash_count, sizeof(hash_count));
-        core::buffer::append(buffer, &value_count, sizeof(value_count));
-
-        auto* const hash_offset = reinterpret_cast<uint32_t*>(core::buffer::append(buffer, &offset_stub, sizeof(offset_stub)));
-        auto* const value_offset = reinterpret_cast<uint32_t*>(core::buffer::append(buffer, &offset_stub, sizeof(offset_stub)));
-        auto* const data_offset = reinterpret_cast<uint32_t*>(core::buffer::append(buffer, &offset_stub, sizeof(offset_stub)));
-
-        auto const* const hash_location = core::buffer::append_aligned(buffer, { meta._meta_entries._hash._data, meta._meta_entries._hash._size * hash_size, 8 });
-        auto const* const value_location = core::buffer::append_aligned(buffer, { meta._meta_entries._data._data, meta._meta_entries._data._size * value_size, 8 });
-
-        *hash_offset = core::memory::utils::pointer_distance(core::buffer::begin(buffer), hash_location);
-        *value_offset = core::memory::utils::pointer_distance(core::buffer::begin(buffer), value_location);
-
-        *data_offset = core::buffer::size(buffer);
-        IS_ASSERT(*data_offset <= static_metadata_size, "Size for static metadata was inproperly calculated!");
-        core::buffer::append(buffer, meta._additional_data);
+        return valid;
     }
 
-    void deserialize_meta(core::data_view data, ResourceMeta& meta) noexcept
+    auto meta_read_string(
+        ice::Metadata const& meta,
+        ice::StringID_Arg key,
+        ice::String& result
+    ) noexcept -> bool
     {
-        char const* it = reinterpret_cast<char const*>(data._data);
+        detail::MetadataEntry entry;
+        bool const valid = detail::get_entry(meta, key, detail::MetadataEntryType::String, entry);
+
+        if (valid && entry.data_count == 0)
+        {
+            char const* string_beg = reinterpret_cast<char const*>(meta._additional_data.location) + entry.value_buffer.offset;
+            result = ice::String{ string_beg, entry.value_buffer.size };
+        }
+
+        return valid;
+    }
+
+    auto meta_read_bool_array(
+        ice::Metadata const& meta,
+        ice::StringID_Arg key,
+        ice::pod::Array<bool>& results
+    ) noexcept -> bool
+    {
+        detail::MetadataEntry entry;
+        bool const valid = detail::get_entry(meta, key, detail::MetadataEntryType::Boolean, entry);
+
+        if (valid && entry.data_count != 0)
+        {
+            bool const* array_beg = reinterpret_cast<bool const*>(meta._additional_data.location) + entry.value_buffer.offset;
+            ice::pod::array::push_back(results, ice::Span<bool const>{ array_beg, entry.value_buffer.size });
+        }
+
+        return valid;
+    }
+
+    auto meta_read_int32_array(
+        ice::Metadata const& meta,
+        ice::StringID_Arg key,
+        ice::pod::Array<ice::i32>& results
+    ) noexcept -> bool
+    {
+        detail::MetadataEntry entry;
+        bool const valid = detail::get_entry(meta, key, detail::MetadataEntryType::Integer, entry);
+
+        if (valid && entry.data_count != 0)
+        {
+            ice::i32 const* array_beg = reinterpret_cast<ice::i32 const*>(
+                ice::memory::ptr_add(meta._additional_data.location, entry.value_buffer.offset)
+            );
+            ice::pod::array::push_back(results, ice::Span<ice::i32 const>{ array_beg, entry.value_buffer.size });
+        }
+
+        return valid;
+    }
+
+    auto meta_read_float_array(
+        ice::Metadata const& meta,
+        ice::StringID_Arg key,
+        ice::pod::Array<ice::f32>& results
+    ) noexcept -> bool
+    {
+        detail::MetadataEntry entry;
+        bool const valid = detail::get_entry(meta, key, detail::MetadataEntryType::Float, entry);
+
+        if (valid && entry.data_count != 0)
+        {
+            ice::f32 const* array_beg = reinterpret_cast<ice::f32 const*>(
+                ice::memory::ptr_add(meta._additional_data.location, entry.value_buffer.offset)
+            );
+            ice::pod::array::push_back(results, ice::Span<ice::f32 const>{ array_beg, entry.value_buffer.size });
+        }
+
+        return valid;
+    }
+
+    auto meta_read_string_array(
+        ice::Metadata const& meta,
+        ice::StringID_Arg key,
+        ice::pod::Array<ice::String>& results
+    ) noexcept -> bool
+    {
+        detail::MetadataEntry entry;
+        bool const valid = detail::get_entry(meta, key, detail::MetadataEntryType::String, entry);
+
+        if (valid && entry.data_count != 0)
+        {
+            detail::MetadataEntryBuffer const* array_beg = reinterpret_cast<detail::MetadataEntryBuffer const*>(
+                ice::memory::ptr_add(meta._additional_data.location, entry.value_buffer.offset)
+            );
+            ice::Span<detail::MetadataEntryBuffer const> array_entries{ array_beg, entry.value_buffer.size };
+
+            for (detail::MetadataEntryBuffer const& string_buffer : array_entries)
+            {
+                char const* string_beg = reinterpret_cast<char const*>(meta._additional_data.location) + string_buffer.offset;
+                ice::pod::array::push_back(results, ice::String{ string_beg, string_buffer.size });
+            }
+        }
+
+        return valid;
+    }
+
+
+    void meta_set_bool(
+        ice::MutableMetadata& meta,
+        ice::StringID_Arg key,
+        bool value
+    ) noexcept
+    {
+        ice::pod::hash::set(
+            meta._meta_entries,
+            ice::hash(key.hash_value),
+            detail::MetadataEntry{
+                .data_type = detail::MetadataEntryType::Boolean,
+                .data_count = 0,
+                .value_int = static_cast<ice::i32>(value),
+            }
+        );
+    }
+
+    void meta_set_int32(
+        ice::MutableMetadata& meta,
+        ice::StringID_Arg key,
+        ice::i32 value
+    ) noexcept
+    {
+        ice::pod::hash::set(
+            meta._meta_entries,
+            ice::hash(key.hash_value),
+            detail::MetadataEntry{
+                .data_type = detail::MetadataEntryType::Integer,
+                .data_count = 0,
+                .value_int = value,
+            }
+        );
+    }
+
+    void meta_set_float(
+        ice::MutableMetadata& meta,
+        ice::StringID_Arg key,
+        ice::f32 value
+    ) noexcept
+    {
+        ice::pod::hash::set(
+            meta._meta_entries,
+            ice::hash(key.hash_value),
+            detail::MetadataEntry{
+                .data_type = detail::MetadataEntryType::Float,
+                .data_count = 0,
+                .value_float = value,
+            }
+        );
+    }
+
+    void meta_set_string(
+        ice::MutableMetadata& meta,
+        ice::StringID_Arg key,
+        ice::String value
+    ) noexcept
+    {
+        void const* str_dest = ice::buffer::append(
+            meta._additional_data,
+            ice::data_view(ice::string::data(value), ice::string::size(value))
+        );
+
+        ice::u32 const str_offset = ice::memory::ptr_distance(
+            ice::buffer::data(meta._additional_data),
+            str_dest
+        );
+
+        ice::pod::hash::set(
+            meta._meta_entries,
+            ice::hash(key.hash_value),
+            detail::MetadataEntry{
+                .data_type = detail::MetadataEntryType::String,
+                .data_count = 0,
+                .value_buffer = {
+                    .offset = static_cast<ice::u16>(str_offset),
+                    .size = static_cast<ice::u16>(ice::string::size(value))
+                },
+            }
+        );
+    }
+
+    void meta_set_bool_array(
+        ice::MutableMetadata& meta,
+        ice::StringID_Arg key,
+        ice::Span<bool const> values
+    ) noexcept
+    {
+        if (values.empty() == false)
+        {
+            void const* array_dest = ice::buffer::append(
+                meta._additional_data,
+                ice::data_view(values.data(), values.size_bytes())
+            );
+
+            ice::u32 const array_offset = ice::memory::ptr_distance(
+                ice::buffer::data(meta._additional_data),
+                array_dest
+            );
+
+            ice::pod::hash::set(
+                meta._meta_entries,
+                ice::hash(key.hash_value),
+                detail::MetadataEntry{
+                    .data_type = detail::MetadataEntryType::Boolean,
+                    .data_count = static_cast<ice::u16>(values.size()),
+                    .value_buffer = {
+                        .offset = static_cast<ice::u16>(array_offset),
+                        .size = static_cast<ice::u16>(values.size())
+                    },
+                }
+            );
+        }
+    }
+
+    void meta_set_int32_array(
+        ice::MutableMetadata& meta,
+        ice::StringID_Arg key,
+        ice::Span<ice::i32 const> values
+    ) noexcept
+    {
+        if (values.empty() == false)
+        {
+            void const* array_dest = ice::buffer::append(
+                meta._additional_data,
+                ice::data_view(values.data(), values.size_bytes())
+            );
+
+            ice::u32 const array_offset = ice::memory::ptr_distance(
+                ice::buffer::data(meta._additional_data),
+                array_dest
+            );
+
+            ice::pod::hash::set(
+                meta._meta_entries,
+                ice::hash(key.hash_value),
+                detail::MetadataEntry{
+                    .data_type = detail::MetadataEntryType::Integer,
+                    .data_count = static_cast<ice::u16>(values.size()),
+                    .value_buffer = {
+                        .offset = static_cast<ice::u16>(array_offset),
+                        .size = static_cast<ice::u16>(values.size())
+                    },
+                }
+            );
+        }
+    }
+
+    void meta_set_float_array(
+        ice::MutableMetadata& meta,
+        ice::StringID_Arg key,
+        ice::Span<ice::f32 const> values
+    ) noexcept
+    {
+        if (values.empty() == false)
+        {
+            void const* array_dest = ice::buffer::append(
+                meta._additional_data,
+                ice::data_view(values.data(), values.size_bytes())
+            );
+
+            ice::u32 const array_offset = ice::memory::ptr_distance(
+                ice::buffer::data(meta._additional_data),
+                array_dest
+            );
+
+            ice::pod::hash::set(
+                meta._meta_entries,
+                ice::hash(key.hash_value),
+                detail::MetadataEntry{
+                    .data_type = detail::MetadataEntryType::Float,
+                    .data_count = static_cast<ice::u16>(values.size()),
+                    .value_buffer = {
+                        .offset = static_cast<ice::u16>(array_offset),
+                        .size = static_cast<ice::u16>(values.size())
+                    },
+                }
+            );
+        }
+    }
+
+    void meta_set_string_array(
+        ice::MutableMetadata& meta,
+        ice::StringID_Arg key,
+        ice::Span<ice::String const> values
+    ) noexcept
+    {
+        if (values.empty() == false)
+        {
+
+            ice::u32 required_capacity = 0;
+            required_capacity += ice::buffer::size(meta._additional_data);
+            required_capacity += sizeof(detail::MetadataEntryBuffer) * values.size() + alignof(detail::MetadataEntryBuffer);
+            for (ice::String value : values)
+            {
+                required_capacity += ice::string::size(value) + 1;
+            }
+
+            ice::buffer::reserve(meta._additional_data, required_capacity);
+
+            void* array_dest = ice::buffer::append(
+                meta._additional_data,
+                nullptr,
+                sizeof(detail::MetadataEntryBuffer) * values.size(),
+                alignof(detail::MetadataEntryBuffer)
+            );
+
+            ice::u32 const array_offset = ice::memory::ptr_distance(
+                ice::buffer::data(meta._additional_data),
+                array_dest
+            );
+
+            auto* entries = reinterpret_cast<detail::MetadataEntryBuffer*>(array_dest);
+
+            for (ice::String value : values)
+            {
+                void const* str_dest = ice::buffer::append(
+                    meta._additional_data,
+                    ice::data_view(ice::string::data(value), ice::string::size(value))
+                );
+
+                entries->size = ice::string::size(value);
+                entries->offset = ice::memory::ptr_distance(
+                    ice::buffer::data(meta._additional_data),
+                    str_dest
+                );
+                entries += 1;
+            }
+
+            ice::pod::hash::set(
+                meta._meta_entries,
+                ice::hash(key.hash_value),
+                detail::MetadataEntry{
+                    .data_type = detail::MetadataEntryType::String,
+                    .data_count = static_cast<ice::u16>(values.size()),
+                    .value_buffer = {
+                        .offset = static_cast<ice::u16>(array_offset),
+                        .size = static_cast<ice::u16>(values.size())
+                    },
+                }
+            );
+        }
+    }
+
+    void meta_deserialize(ice::Data data, ice::MutableMetadata& meta) noexcept
+    {
+        char const* it = reinterpret_cast<char const*>(data.location);
         if (it != nullptr)
         {
-            core::StringView head{ it, 4 };
-            if (core::string::equals(head, "ISAD"))
+            ice::String const loaded_header{ it, 4 };
+
+            if (loaded_header == detail::internal_metadata_header)
             {
-                detail::deserialize_binary_meta({ it + 4, data._size - 4 }, meta);
+                detail::deserialize_binary_meta(ice::Data{ it + 4, data.size - 4, data.alignment }, meta);
             }
             else
             {
@@ -185,254 +640,202 @@ namespace resource
         }
     }
 
-    auto create_meta_view(ResourceMeta const& meta) noexcept -> ResourceMetaView const
+    void meta_store(ice::Metadata const& meta, ice::Buffer& buffer) noexcept
     {
-        ResourceMetaView result_meta{ };
-        result_meta._meta_entries._data._data = meta._meta_entries._data._data;
-        result_meta._meta_entries._data._size = meta._meta_entries._data._size;
-        result_meta._meta_entries._data._capacity = meta._meta_entries._data._capacity;
-        result_meta._meta_entries._hash._data = meta._meta_entries._hash._data;
-        result_meta._meta_entries._hash._size = meta._meta_entries._hash._size;
-        result_meta._meta_entries._hash._capacity = meta._meta_entries._hash._capacity;
-        result_meta._additional_data = meta._additional_data;
-        return result_meta;
+        ice::u32 const hash_count = ice::pod::array::capacity(meta._meta_entries._hash);
+        ice::u32 const value_count = ice::pod::array::size(meta._meta_entries._data);
+
+        ice::u32 const hash_size = sizeof(*meta._meta_entries._hash._data);
+        ice::u32 const value_size = sizeof(*meta._meta_entries._data._data);
+
+        ice::u32 const static_metadata_size = 4 // Header
+            + sizeof(ice::u32) * 5 // Sizes
+            + hash_size * hash_count // Hash values
+            + value_size * value_count // Data values
+            + 16; // Offset for alignments
+
+        {
+            ice::buffer::set_capacity_aligned(buffer, static_metadata_size, 8);
+            ice::buffer::append(buffer, detail::internal_metadata_header_data);
+            ice::buffer::append(buffer, &hash_count, sizeof(hash_count), 1);
+            ice::buffer::append(buffer, &value_count, sizeof(value_count), 1);
+
+            ice::u32* const hash_offset = reinterpret_cast<ice::u32*>(
+                ice::buffer::append(buffer, nullptr, sizeof(ice::u32), 1)
+            );
+            ice::u32* const value_offset = reinterpret_cast<ice::u32*>(
+                ice::buffer::append(buffer, nullptr, sizeof(ice::u32), 1)
+            );
+            ice::u32* const data_offset = reinterpret_cast<ice::u32*>(
+                ice::buffer::append(buffer, nullptr, sizeof(ice::u32), 1)
+            );
+
+            void const* const hash_location = ice::buffer::append(
+                buffer,
+                meta._meta_entries._hash._data,
+                meta._meta_entries._hash._size * hash_size,
+                8
+            );
+            void const* const value_location = ice::buffer::append(
+                buffer,
+                meta._meta_entries._data._data,
+                meta._meta_entries._data._size * value_size,
+                8
+            );
+
+            *hash_offset = ice::memory::ptr_distance(ice::buffer::data(buffer), hash_location);
+            *value_offset = ice::memory::ptr_distance(ice::buffer::data(buffer), value_location);
+
+            *data_offset = ice::buffer::size(buffer);
+
+            // #todo assert
+            // IS_ASSERT(*data_offset <= static_metadata_size, "Size for static metadata was inproperly calculated!");
+            ice::buffer::append(buffer, meta._additional_data);
+        }
     }
 
-    void set_meta_bool(ResourceMeta& meta, core::stringid_arg_type key, bool value) noexcept
+    auto meta_load(ice::Data data) noexcept -> ice::Metadata
     {
-        detail::MetaEntry entry{ detail::MetaEntryType::Boolean };
-        entry.value_int = static_cast<int32_t>(value);
-        core::pod::hash::set(meta._meta_entries, static_cast<uint64_t>(key.hash_value), entry);
-    }
+        Metadata result_meta{ };
 
-    void set_meta_int32(ResourceMeta& meta, core::stringid_arg_type key, int32_t value) noexcept
-    {
-        detail::MetaEntry entry{ detail::MetaEntryType::Integer };
-        entry.value_int = value;
-        core::pod::hash::set(meta._meta_entries, static_cast<uint64_t>(key.hash_value), entry);
-    }
-
-    void set_meta_float(ResourceMeta& meta, core::stringid_arg_type key, float value) noexcept
-    {
-        detail::MetaEntry entry{ detail::MetaEntryType::Float };
-        entry.value_float = value;
-        core::pod::hash::set(meta._meta_entries, static_cast<uint64_t>(key.hash_value), entry);
-    }
-
-    void set_meta_string(ResourceMeta& meta, core::stringid_arg_type key, core::StringView value) noexcept
-    {
-        detail::MetaEntry entry{ detail::MetaEntryType::String };
-        void const* str_dest = core::buffer::append(meta._additional_data, core::string::data(value), core::string::size(value));
-        uint32_t const str_offset = core::memory::utils::pointer_distance(core::buffer::begin(meta._additional_data), str_dest);
-
-        entry.value_buffer = { str_offset, core::string::size(value) };
-        core::pod::hash::set(meta._meta_entries, static_cast<uint64_t>(key.hash_value), entry);
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-
-    void store_meta_view(ResourceMetaView const& meta, core::Buffer& buffer) noexcept
-    {
-        uint32_t const hash_count = meta._meta_entries._hash._capacity;
-        uint32_t const value_count = meta._meta_entries._data._size;
-
-        uint32_t const hash_size = sizeof(*meta._meta_entries._hash._data);
-        uint32_t const value_size = sizeof(*meta._meta_entries._data._data);
-
-        uint32_t const static_metadata_size = 4 + sizeof(uint32_t) * 5 + hash_size * hash_count + value_size * value_count + 16 /* for offset misses */;
-        uint32_t const offset_stub = 0;
-
-        core::buffer::reserve(buffer, static_metadata_size);
-        core::buffer::append(buffer, "ISAD", 4);
-        core::buffer::append(buffer, &hash_count, sizeof(hash_count));
-        core::buffer::append(buffer, &value_count, sizeof(value_count));
-
-        auto* const hash_offset = reinterpret_cast<uint32_t*>(core::buffer::append(buffer, &offset_stub, sizeof(offset_stub)));
-        auto* const value_offset = reinterpret_cast<uint32_t*>(core::buffer::append(buffer, &offset_stub, sizeof(offset_stub)));
-        auto* const data_offset = reinterpret_cast<uint32_t*>(core::buffer::append(buffer, &offset_stub, sizeof(offset_stub)));
-
-        auto const* const hash_location = core::buffer::append_aligned(buffer, { meta._meta_entries._hash._data, meta._meta_entries._hash._size * hash_size, 8 });
-        auto const* const value_location = core::buffer::append_aligned(buffer, { meta._meta_entries._data._data, meta._meta_entries._data._size * value_size, 8 });
-
-        *hash_offset = core::memory::utils::pointer_distance(core::buffer::begin(buffer), hash_location);
-        *value_offset = core::memory::utils::pointer_distance(core::buffer::begin(buffer), value_location);
-
-        *data_offset = core::buffer::size(buffer);
-        IS_ASSERT(*data_offset <= static_metadata_size, "Size for static metadata was inproperly calculated!");
-        core::buffer::append(buffer, meta._additional_data);
-    }
-
-    auto load_meta_view(core::data_view data) noexcept -> ResourceMetaView const
-    {
-        ResourceMetaView result_meta{ };
-
-        if (data._data == nullptr)
+        if (data.location == nullptr)
         {
             return result_meta;
         }
 
-        char const* it = reinterpret_cast<char const*>(data._data);
+        char const* it = reinterpret_cast<char const*>(data.location);
 
-        core::StringView head{ it, 4 };
-        IS_ASSERT(core::string::equals(head, "ISAD"), "Invalid IceShard meta header!");
+        // #todo assert
+        //core::StringView head{ it, 4 };
+        //IS_ASSERT(core::string::equals(head, "ISAD"), "Invalid IceShard meta header!");
         it += 4;
 
-        uint32_t const hash_count = *reinterpret_cast<uint32_t const*>(it + 0);
-        uint32_t const value_count = *reinterpret_cast<uint32_t const*>(it + 4);
+        ice::u32 const hash_count = *reinterpret_cast<ice::u32 const*>(it + 0);
+        ice::u32 const value_count = *reinterpret_cast<ice::u32 const*>(it + 4);
         it += 8;
 
-        uint32_t const hash_offset = *reinterpret_cast<uint32_t const*>(it + 0);
-        uint32_t const value_offset = *reinterpret_cast<uint32_t const*>(it + 4);
-        uint32_t const data_offset = *reinterpret_cast<uint32_t const*>(it + 8);
+        ice::u32 const hash_offset = *reinterpret_cast<ice::u32 const*>(it + 0);
+        ice::u32 const value_offset = *reinterpret_cast<ice::u32 const*>(it + 4);
+        ice::u32 const data_offset = *reinterpret_cast<ice::u32 const*>(it + 8);
 
-        uint32_t const hash_type_size = sizeof(*result_meta._meta_entries._hash._data);
-        uint32_t const value_type_size = sizeof(*result_meta._meta_entries._data._data);
+        ice::u32 const hash_type_size = sizeof(*result_meta._meta_entries._hash._data);
+        ice::u32 const value_type_size = sizeof(*result_meta._meta_entries._data._data);
 
         {
-            auto hash_it = core::memory::utils::pointer_add(data._data, hash_offset);
+            auto hash_it = ice::memory::ptr_add(data.location, hash_offset);
 
-            if constexpr (core::build::is_release == false)
+            if constexpr (ice::build::is_release == false)
             {
-                auto const hash_end = core::memory::utils::pointer_add(hash_it, hash_count * hash_type_size);
-                IS_ASSERT(core::memory::utils::pointer_distance(data._data, hash_end) < static_cast<int32_t>(data._size), "Moved past the data buffer!");
+                // #todo assert
+                //auto const hash_end = core::memory::utils::pointer_add(hash_it, hash_count * hash_type_size);
+                //IS_ASSERT(icecore::memory::utils::pointer_distance(data._data, hash_end) < static_cast<int32_t>(data._size), "Moved past the data buffer!");
             }
 
-            result_meta._meta_entries._hash._data = const_cast<uint32_t*>(
-                reinterpret_cast<uint32_t const*>(hash_it)
+            result_meta._meta_entries._hash._data = const_cast<ice::u32*>(
+                reinterpret_cast<ice::u32 const*>(hash_it)
             );
             result_meta._meta_entries._hash._capacity = hash_count;
             result_meta._meta_entries._hash._size = hash_count;
         }
 
         {
-            auto value_it = core::memory::utils::pointer_add(data._data, value_offset);
+            auto value_it = ice::memory::ptr_add(data.location, value_offset);
 
-            if constexpr (core::build::is_release == false)
+            if constexpr (ice::build::is_release == false)
             {
-                auto const value_end = core::memory::utils::pointer_add(value_it, value_count * value_type_size);
-                IS_ASSERT(core::memory::utils::pointer_distance(data._data, value_end) <= static_cast<int32_t>(data._size), "Moved past the data buffer!");
+                // #todo assert
+                //auto const value_end = core::memory::utils::pointer_add(value_it, value_count * value_type_size);
+                //IS_ASSERT(core::memory::utils::pointer_distance(data._data, value_end) <= static_cast<int32_t>(data._size), "Moved past the data buffer!");
             }
 
-            result_meta._meta_entries._data._data = const_cast<core::pod::Hash<detail::MetaEntry>::Entry*>(
-                reinterpret_cast<core::pod::Hash<detail::MetaEntry>::Entry const*>(value_it)
+            // #todo make a special Hash type for metadata objects, we DO NOT WANT ANY const_cast!!!
+            result_meta._meta_entries._data._data = const_cast<ice::pod::Hash<detail::MetadataEntry>::Entry*>(
+                reinterpret_cast<ice::pod::Hash<detail::MetadataEntry>::Entry const*>(value_it)
             );
             result_meta._meta_entries._data._capacity = value_count;
             result_meta._meta_entries._data._size = value_count;
-        }
 
-        {
-            auto data_it = core::memory::utils::pointer_add(data._data, data_offset);
-            result_meta._additional_data = { data_it, data._size - data_offset };
+            auto data_it = ice::memory::ptr_add(data.location, data_offset);
+            result_meta._additional_data = { data_it, data.size - data_offset };
         }
 
         return result_meta;
     }
 
-    auto get_meta_bool(ResourceMetaView const& meta, core::stringid_arg_type key) noexcept -> bool
-    {
-        auto entry = get_entry(meta, key, detail::MetaEntryType::Boolean);
-        return entry.value_int != 0;
-    }
+    MutableMetadata::MutableMetadata(ice::Allocator& alloc) noexcept
+        : _meta_entries{ alloc }
+        , _additional_data{ alloc }
+    { }
 
-    auto get_meta_int32(ResourceMetaView const& meta, core::stringid_arg_type key) noexcept -> int32_t
-    {
-        auto entry = get_entry(meta, key, detail::MetaEntryType::Integer);
-        return entry.value_int;
-    }
+    MutableMetadata::MutableMetadata(MutableMetadata&& other) noexcept
+        : _meta_entries{ ice::move(other._meta_entries) }
+        , _additional_data{ ice::move(other._additional_data) }
+    { }
 
-    auto get_meta_float(ResourceMetaView const& meta, core::stringid_arg_type key) noexcept -> float
+    auto MutableMetadata::operator=(MutableMetadata&& other) noexcept -> MutableMetadata&
     {
-        auto entry = get_entry(meta, key, detail::MetaEntryType::Float);
-        return entry.value_float;
-    }
-
-    auto get_meta_string(ResourceMetaView const& meta, core::stringid_arg_type key) noexcept -> core::StringView
-    {
-        auto const entry = get_entry(meta, key, detail::MetaEntryType::String);
-        auto const string_beg = reinterpret_cast<char const*>(meta._additional_data._data) + entry.value_buffer.offset;
-        return { string_beg, entry.value_buffer.size };
-    }
-
-    auto get_meta_bool(ResourceMetaView const& meta, core::stringid_arg_type key, bool& result) noexcept -> bool
-    {
-        detail::MetaEntry entry;
-        if (try_get_entry(meta, key, detail::MetaEntryType::Boolean, entry))
+        if (this != &other)
         {
-            result = entry.value_int != 0;
+            _meta_entries = ice::move(other._meta_entries);
+            _additional_data = ice::move(other._additional_data);
         }
-        return entry.data_type == detail::MetaEntryType::Boolean;
+        return *this;
     }
 
-    auto get_meta_int32(ResourceMetaView const& meta, core::stringid_arg_type key, int32_t& result) noexcept -> bool
+    MutableMetadata::operator Metadata() const noexcept
     {
-        detail::MetaEntry entry;
-        if (try_get_entry(meta, key, detail::MetaEntryType::Integer, entry))
-        {
-            result = entry.value_int;
-        }
-        return entry.data_type == detail::MetaEntryType::Integer;
+        Metadata result_meta{ };
+        result_meta._meta_entries._data._data = _meta_entries._data._data;
+        result_meta._meta_entries._data._size = _meta_entries._data._size;
+        result_meta._meta_entries._data._capacity = _meta_entries._data._capacity;
+        result_meta._meta_entries._hash._data = _meta_entries._hash._data;
+        result_meta._meta_entries._hash._size = _meta_entries._hash._size;
+        result_meta._meta_entries._hash._capacity = _meta_entries._hash._capacity;
+        result_meta._additional_data = _additional_data;
+        return result_meta;
     }
 
-    auto get_meta_float(ResourceMetaView const& meta, core::stringid_arg_type key, float& result) noexcept -> bool
+    Metadata::Metadata() noexcept
+        : _meta_entries{ ice::memory::null_allocator() }
+        , _additional_data{ }
+    { }
+
+    Metadata::Metadata(Metadata&& other) noexcept
+        : _meta_entries{ ice::move(other._meta_entries) }
+        , _additional_data{ ice::move(other._additional_data) }
     {
-        detail::MetaEntry entry;
-        if (try_get_entry(meta, key, detail::MetaEntryType::Float, entry))
-        {
-            result = entry.value_float;
-        }
-        return entry.data_type == detail::MetaEntryType::Float;
     }
 
-    auto get_meta_string(ResourceMetaView const& meta, core::stringid_arg_type key, core::StringView& result) noexcept -> bool
-    {
-        detail::MetaEntry entry;
-        if (try_get_entry(meta, key, detail::MetaEntryType::String, entry))
-        {
-            char const* string_beg = reinterpret_cast<char const*>(meta._additional_data._data) + entry.value_buffer.offset;
-            result = core::StringView{ string_beg, entry.value_buffer.size };
-        }
-        return entry.data_type == detail::MetaEntryType::String;
-    }
-
-    ResourceMetaView::ResourceMetaView() noexcept
-        : _meta_entries{ core::memory::globals::null_allocator() }
+    Metadata::Metadata(Metadata const& other) noexcept
+        : _meta_entries{ ice::memory::null_allocator() }
         , _additional_data{ }
     {
+        *this = other;
     }
 
-    ResourceMetaView::ResourceMetaView(ResourceMetaView&& other) noexcept
-        : _meta_entries{ std::move(other._meta_entries) }
-        , _additional_data{ std::move(other._additional_data) }
+    auto Metadata::operator=(Metadata&& other) noexcept -> Metadata&
     {
-    }
-
-    ResourceMetaView::ResourceMetaView(ResourceMetaView const& other) noexcept
-        : _meta_entries{ core::memory::globals::null_allocator() }
-        , _additional_data{ other._additional_data }
-    {
-        memcpy(&_meta_entries, &other._meta_entries, sizeof(_meta_entries));
-    }
-
-    auto ResourceMetaView::operator=(ResourceMetaView&& other) noexcept -> ResourceMetaView&
-    {
-        if (std::addressof(other) == this)
+        if (this != &other)
         {
-            return *this;
+            _meta_entries = ice::move(other._meta_entries);
+            _additional_data = ice::move(other._additional_data);
         }
-        _additional_data = std::move(other._additional_data);
-        _meta_entries = std::move(other._meta_entries);
         return *this;
     }
 
-    auto ResourceMetaView::operator=(ResourceMetaView const& other) noexcept -> ResourceMetaView&
+    auto Metadata::operator=(Metadata const& other) noexcept -> Metadata&
     {
-        if (std::addressof(other) == this)
+        if (this != &other)
         {
-            return *this;
+            _meta_entries._data._data = other._meta_entries._data._data;
+            _meta_entries._data._size = other._meta_entries._data._size;
+            _meta_entries._data._capacity = other._meta_entries._data._capacity;
+            _meta_entries._hash._data = other._meta_entries._hash._data;
+            _meta_entries._hash._size = other._meta_entries._hash._size;
+            _meta_entries._hash._capacity = other._meta_entries._hash._capacity;
+            _additional_data = other._additional_data;
         }
-        memcpy(&_meta_entries, &other._meta_entries, sizeof(_meta_entries));
-        _additional_data = other._additional_data;
         return *this;
     }
 
-} // namespace asset
+} // namespace ice
