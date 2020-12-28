@@ -1,4 +1,5 @@
 #include <ice/resource_index.hxx>
+#include <ice/resource_query.hxx>
 #include <ice/platform/windows.hxx>
 #include <ice/memory/proxy_allocator.hxx>
 #include <ice/pod/array.hxx>
@@ -35,14 +36,14 @@ namespace ice
                 return _uri;
             }
 
-            auto data() noexcept -> ice::Data override
+            auto metadata() const noexcept -> ice::Data override
             {
-                return ice::Data{};
+                return {};
             }
 
-            auto metadata() noexcept -> ice::Data override
+            auto data() noexcept -> ice::Data override
             {
-                return ice::Data{};
+                return {};
             }
 
         private:
@@ -77,14 +78,14 @@ namespace ice
                 return _uri;
             }
 
-            auto data() noexcept -> ice::Data override
+            auto metadata() const noexcept -> ice::Data override
             {
-                return ice::Data{};
+                return {};
             }
 
-            auto metadata() noexcept -> ice::Data override
+            auto data() noexcept -> ice::Data override
             {
-                return ice::Data{};
+                return {};
             }
 
         private:
@@ -119,7 +120,7 @@ namespace ice
         ice::pod::Hash<ice::Resource*> _resources;
 
         ice::pod::Array<ice::ResourceEvent> _events;
-        ice::pod::Array<ice::Resource const*> _event_objects;
+        ice::pod::Array<ice::Resource*> _event_objects;
     };
 
     WindowsIndex::WindowsIndex(ice::Allocator& alloc, ice::String base_path) noexcept
@@ -149,8 +150,8 @@ namespace ice
     {
         if (ice::pod::array::any(_events))
         {
-            query.events = _events;
-            query.objects = _event_objects;
+            query.events = ice::move(_events);
+            query.objects = ice::move(_event_objects);
             return true;
         }
         return false;

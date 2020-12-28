@@ -7,20 +7,7 @@
 namespace ice
 {
 
-    enum class ResourceEvent
-    {
-        Added,
-        Updated,
-        Replaced,
-        Removed,
-        MountError,
-    };
-
-    struct ResourceQuery
-    {
-        ice::Span<ResourceEvent> events;
-        ice::Span<Resource const*> objects;
-    };
+    struct ResourceQuery;
 
     class ResourceIndex
     {

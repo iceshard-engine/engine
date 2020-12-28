@@ -12,6 +12,8 @@ namespace ice
 
     class ResourceIndex;
 
+    struct ResourceQuery;
+
     //using ResourceIndexFactory = auto(ice::Allocator&, ice::URI const&) noexcept -> ice::UniquePtr<ice::ResourceIndex>;
 
 
@@ -26,6 +28,8 @@ namespace ice
         ) noexcept = 0;
 
         virtual auto locate(ice::URN urn) const noexcept -> ice::URI = 0;
+
+        virtual bool query_changes(ice::ResourceQuery& query) noexcept = 0;
 
         virtual auto mount(ice::URI const& uri) noexcept -> ice::u32 = 0;
 

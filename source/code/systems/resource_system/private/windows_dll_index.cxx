@@ -1,4 +1,5 @@
 #include <ice/resource_index.hxx>
+#include <ice/resource_query.hxx>
 #include <ice/platform/windows.hxx>
 #include <ice/unique_ptr.hxx>
 #include <ice/resource_index.hxx>
@@ -37,12 +38,12 @@ namespace ice
                 return _uri;
             }
 
-            auto data() noexcept -> ice::Data override
+            auto metadata() const noexcept -> ice::Data override
             {
                 return { };
             }
 
-            auto metadata() noexcept -> ice::Data override
+            auto data() noexcept -> ice::Data override
             {
                 return { };
             }
@@ -74,7 +75,7 @@ namespace ice
         ice::pod::Array<ice::Resource*> _resources;
 
         ice::pod::Array<ice::ResourceEvent> _events;
-        ice::pod::Array<ice::Resource const*> _event_objects;
+        ice::pod::Array<ice::Resource*> _event_objects;
     };
 
     WindowsDllIndex::WindowsDllIndex(ice::Allocator& alloc, ice::String base_path) noexcept
@@ -98,13 +99,12 @@ namespace ice
         }
     }
 
-
     bool WindowsDllIndex::query_changes(ice::ResourceQuery& query) noexcept
     {
         if (ice::pod::array::any(_events))
         {
-            query.events = _events;
-            query.objects = _event_objects;
+            query.events = ice::move(_events);
+            query.objects = ice::move(_event_objects);
             return true;
         }
         return false;

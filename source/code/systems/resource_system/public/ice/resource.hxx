@@ -14,9 +14,9 @@ namespace ice
 
         virtual auto location() const noexcept -> ice::URI const& = 0;
 
-        virtual auto data() noexcept -> ice::Data = 0;
+        virtual auto metadata() const noexcept -> ice::Data = 0;
 
-        virtual auto metadata() noexcept -> ice::Data = 0;
+        virtual auto data() noexcept -> ice::Data = 0;
     };
 
 
