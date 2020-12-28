@@ -10,11 +10,11 @@ namespace ice
         u32 size;
         u32 alignment;
 
-        inline operator ice::Data() noexcept;
+        inline operator ice::Data() const noexcept;
     };
 
 
-    inline Memory::operator ice::Data() noexcept
+    inline Memory::operator ice::Data() const noexcept
     {
         return Data{
             .location = this->location,

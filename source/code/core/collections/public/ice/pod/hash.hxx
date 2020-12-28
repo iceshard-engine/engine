@@ -146,7 +146,7 @@ namespace ice::pod
         }
 
         template<typename T>
-        inline auto find(ice::pod::Hash<T> const& hsh, typename ice::pod::Hash<T>::const_iterator_type it) noexcept -> FindResult
+        inline auto find(ice::pod::Hash<T> const& hsh, typename ice::pod::Hash<T>::ConstIterator it) noexcept -> FindResult
         {
             FindResult fr{
                 .hash_i = Constant_EndOfList,

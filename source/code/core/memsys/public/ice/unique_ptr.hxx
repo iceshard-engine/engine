@@ -14,7 +14,10 @@ namespace ice
     using UniquePtr = std::unique_ptr<T, D>;
 
     template<typename Result, typename Type = Result, typename... Args>
-    auto make_unique(ice::Allocator& alloc, Args&&... args) noexcept -> UniquePtr<Result>;
+    auto make_unique(ice::Allocator& alloc, Args&&... args) noexcept -> ice::UniquePtr<Result>;
+
+    template<typename Result>
+    auto make_unique_null() noexcept -> ice::UniquePtr<Result>;
 
     namespace detail
     {
@@ -150,8 +153,17 @@ namespace ice
     auto make_unique(ice::Allocator& alloc, Args&&... args) noexcept -> ice::UniquePtr<Result>
     {
         return ice::UniquePtr<Result> {
-            alloc.make<Type>(std::forward<Args>(args)...),
+            alloc.make<Type>(ice::forward<Args>(args)...),
             detail::IceDefaultDeleter<Result>{ alloc }
+        };
+    }
+
+    template<typename Result>
+    auto make_unique_null() noexcept -> ice::UniquePtr<Result>
+    {
+        return ice::UniquePtr<Result> {
+            nullptr,
+            detail::IceDefaultDeleter<Result>{ ice::memory::null_allocator() }
         };
     }
 
