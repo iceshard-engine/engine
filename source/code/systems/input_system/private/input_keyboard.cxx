@@ -1,104 +1,174 @@
-#include <iceshard/input/input_keyboard.hxx>
-#include <iceshard/input/input_state_manager.hxx>
-#include <core/pod/hash.hxx>
-
+#include "input_devices.hxx"
 #include "input_state_helpers.hxx"
 
-namespace iceshard::input
+#include <ice/input/input_keyboard.hxx>
+#include <ice/pod/array.hxx>
+
+namespace ice::input
 {
 
-    static constexpr auto KeyboardKeyNum = static_cast<uint32_t>(KeyboardKey::NumPad0) + 1;
+    static constexpr ice::u32 keyboard_key_num = static_cast<ice::u32>(KeyboardKey::Reserved);
+    static constexpr ice::u32 keyboard_mod_num = 11;
 
-    class KeyboardDeviceState : public DeviceState
+    class KeyboardDevice : public InputDevice
     {
     public:
-        KeyboardDeviceState(core::allocator& alloc, DeviceHandle device) noexcept;
+        KeyboardDevice(
+            ice::Allocator& alloc,
+            ice::input::DeviceHandle device
+        ) noexcept;
 
-        void on_tick() noexcept override;
-        void on_message(DeviceInputMessage const msg, void const* data) noexcept override;
-        void on_publish(core::pod::Array<InputEvent>& events_out) noexcept override;
+        void on_tick(
+            ice::Timer const& timer
+        ) noexcept override;
+
+        void on_event(
+            ice::input::DeviceEvent event,
+            ice::Data payload
+        ) noexcept override;
+
+        void on_publish(
+            ice::pod::Array<ice::input::InputEvent>& events_out
+        ) noexcept override;
 
     private:
-        DeviceHandle _device;
-        core::pod::Hash<InputValueState> _inputs;
+        ice::input::DeviceHandle _device;
+        ice::pod::Array<detail::ControlState> _controls;
     };
 
-    KeyboardDeviceState::KeyboardDeviceState(core::allocator& alloc, DeviceHandle device) noexcept
-        : _device{ device }
-        , _inputs{ alloc }
+    namespace detail
     {
+
+        constexpr auto input_control_index(ice::input::InputID input) noexcept -> ice::u32
+        {
+            switch (input)
+            {
+            case input_identifier(DeviceType::Keyboard, KeyboardMod::ShiftLeft, mod_identifier_base_value):
+                return keyboard_key_num + 0;
+            case input_identifier(DeviceType::Keyboard, KeyboardMod::ShiftRight, mod_identifier_base_value):
+                return keyboard_key_num + 1;
+            case input_identifier(DeviceType::Keyboard, KeyboardMod::CtrlLeft, mod_identifier_base_value):
+                return keyboard_key_num + 2;
+            case input_identifier(DeviceType::Keyboard, KeyboardMod::CtrlRight, mod_identifier_base_value):
+                return keyboard_key_num + 3;
+            case input_identifier(DeviceType::Keyboard, KeyboardMod::AltLeft, mod_identifier_base_value):
+                return keyboard_key_num + 4;
+            case input_identifier(DeviceType::Keyboard, KeyboardMod::AltRight, mod_identifier_base_value):
+                return keyboard_key_num + 5;
+            case input_identifier(DeviceType::Keyboard, KeyboardMod::GuiLeft, mod_identifier_base_value):
+                return keyboard_key_num + 6;
+            case input_identifier(DeviceType::Keyboard, KeyboardMod::GuiRight, mod_identifier_base_value):
+                return keyboard_key_num + 7;
+            case input_identifier(DeviceType::Keyboard, KeyboardMod::CapsLock, mod_identifier_base_value):
+                return keyboard_key_num + 8;
+            case input_identifier(DeviceType::Keyboard, KeyboardMod::NumLock, mod_identifier_base_value):
+                return keyboard_key_num + 9;
+            case input_identifier(DeviceType::Keyboard, KeyboardMod::Mode, mod_identifier_base_value):
+                return keyboard_key_num + 10;
+            default:
+                return input_identifier_value(input);
+            }
+        }
+
+    } // namespace detail
+
+    KeyboardDevice::KeyboardDevice(
+        ice::Allocator& alloc,
+        ice::input::DeviceHandle device
+    ) noexcept
+        : InputDevice{ }
+        , _device{ device }
+        , _controls{ alloc }
+    {
+        ice::pod::array::resize(_controls, keyboard_key_num + keyboard_mod_num + 10);
     }
 
-    void KeyboardDeviceState::on_tick() noexcept
+    void KeyboardDevice::on_tick(ice::Timer const& timer) noexcept
     {
-        for (auto& input : _inputs)
+        for (detail::ControlState& control : _controls)
         {
-            handle_value_button_hold(input.value);
+            detail::handle_value_button_hold(control);
         }
     }
 
-    void KeyboardDeviceState::on_message(DeviceInputMessage const msg, void const* data) noexcept
+    void KeyboardDevice::on_event(
+        ice::input::DeviceEvent event,
+        ice::Data payload
+    ) noexcept
     {
         InputID input = InputID::Invalid;
 
-        switch (msg.input_type)
+        switch (event.message)
         {
-        case DeviceInputType::KeyboardButtonDown:
-        case DeviceInputType::KeyboardButtonUp:
-            input = create_inputid(DeviceType::Keyboard, read_one<KeyboardKey>(msg, data));
+        case DeviceMessage::KeyboardButtonDown:
+        case DeviceMessage::KeyboardButtonUp:
+            input = input_identifier(
+                DeviceType::Keyboard,
+                detail::read_one<KeyboardKey>(event, payload),
+                key_identifier_base_value
+            );
             break;
-        case DeviceInputType::KeyboardModifierDown:
-        case DeviceInputType::KeyboardModifierUp:
-            input = create_inputid(DeviceType::Keyboard, read_one<KeyboardMod>(msg, data));
+        case DeviceMessage::KeyboardModifierDown:
+        case DeviceMessage::KeyboardModifierUp:
+            input = input_identifier(
+                DeviceType::Keyboard,
+                detail::read_one<KeyboardMod>(event, payload),
+                mod_identifier_base_value
+            );
             break;
         default:
             break;
         }
 
-        auto const input_hash = core::hash(input);
-        auto input_value = core::pod::hash::get(
-            _inputs,
-            input_hash,
-            InputValueState{ }
-        );
+        ice::u32 const control_index = detail::input_control_index(input);
+        // #todo assert control_index < ice::pod::array::size(_controls)
 
-        if (msg.input_type == DeviceInputType::KeyboardButtonDown)
+        detail::ControlState control = _controls[control_index];
+        control.id = input;
+
+        if (event.message == DeviceMessage::KeyboardButtonDown)
         {
-            handle_value_button_down(input_value);
+            detail::handle_value_button_down(control);
         }
-        else if (msg.input_type == DeviceInputType::KeyboardButtonUp)
+        else if (event.message == DeviceMessage::KeyboardButtonUp)
         {
-            handle_value_button_up(input_value);
+            detail::handle_value_button_up(control);
         }
-        else if (msg.input_type == DeviceInputType::KeyboardModifierDown)
+        else if (event.message == DeviceMessage::KeyboardModifierDown)
         {
-            handle_value_button_down_simplified(input_value);
+            detail::handle_value_button_down_simplified(control);
         }
-        else if (msg.input_type == DeviceInputType::KeyboardModifierUp)
+        else if (event.message == DeviceMessage::KeyboardModifierUp)
         {
-            handle_value_button_up_simplified(input_value);
+            detail::handle_value_button_up_simplified(control);
         }
 
-        core::pod::hash::set(_inputs, input_hash, input_value);
+        _controls[control_index] = control;
     }
 
-    void KeyboardDeviceState::on_publish(core::pod::Array<InputEvent>& events_out) noexcept
+    void KeyboardDevice::on_publish(
+        ice::pod::Array<ice::input::InputEvent>& events_out
+    ) noexcept
     {
-        InputEvent event;
-        event.device = static_cast<InputDevice>(_device);
+        ice::input::InputEvent event{
+            .device = _device,
+        };
 
-        for (auto& input : _inputs)
+        for (detail::ControlState& control : _controls)
         {
-            if (prepared_input_event(InputID{ input.key }, input.value, event))
+            if (detail::prepared_input_event(control, event))
             {
-                core::pod::array::push_back(events_out, event);
+                ice::pod::array::push_back(events_out, event);
             }
         }
     }
 
-    auto default_keyboard_state_factory(core::allocator& alloc, DeviceHandle device) noexcept -> DeviceState*
+    auto create_keyboard_device(
+        ice::Allocator& alloc,
+        ice::input::DeviceHandle device
+    ) noexcept -> ice::input::InputDevice*
     {
-        return alloc.make<KeyboardDeviceState>(alloc, device);
+        return alloc.make<KeyboardDevice>(alloc, device);
     }
 
-} // namespace iceshard::input
+} // namespace ice::input

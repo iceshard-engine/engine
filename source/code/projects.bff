@@ -10,7 +10,7 @@
 #include "systems/resource_system/resource_system.bff"
 #include "systems/asset_system/asset_system.bff"
 ; #include "systems/render_system/render_system.bff"
-; #include "systems/input_system/input_system.bff"
+#include "systems/input_system/input_system.bff"
 ;
 ; #include "drivers/sdl2_driver/sdl2_driver.bff"
 ; #include "drivers/vulkan_driver/vulkan_driver.bff"
