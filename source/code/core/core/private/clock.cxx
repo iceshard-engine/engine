@@ -2,7 +2,7 @@
 #include <ice/platform/windows.hxx>
 #include <ice/platform/unix.hxx>
 
-namespace core
+namespace ice
 {
 
     namespace clock
@@ -108,7 +108,7 @@ namespace core
         {
             return Timer{
                 .clock = &clock,
-                .step = static_cast<int64_t>(core::clock::clock_frequency() * step_seconds),
+                .step = static_cast<int64_t>(ice::clock::clock_frequency() * step_seconds),
                 .last_tick_timestamp = clock.latest_timestamp,
             };
         }
@@ -144,7 +144,7 @@ namespace core
         auto elapsed(Timer const& timer) noexcept -> float
         {
             return static_cast<float>(timer.clock->latest_timestamp - timer.last_tick_timestamp)
-                / core::clock::clock_frequency();
+                / ice::clock::clock_frequency();
         }
 
         auto alpha(Timer const& timer) noexcept -> float
@@ -169,7 +169,7 @@ namespace core
         auto elapsed(Timeline const& timeline) noexcept -> float
         {
             return (
-                static_cast<float>(timeline.clock->latest_timestamp - timeline.initial_timestap) / core::clock::clock_frequency()
+                static_cast<float>(timeline.clock->latest_timestamp - timeline.initial_timestap) / ice::clock::clock_frequency()
             );
         }
 

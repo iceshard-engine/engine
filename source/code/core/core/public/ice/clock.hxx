@@ -1,7 +1,7 @@
 #pragma once
 #include <ice/base.hxx>
 
-namespace core
+namespace ice
 {
 
     struct Clock

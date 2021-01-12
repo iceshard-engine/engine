@@ -57,7 +57,7 @@ namespace ice
     template<class T, class... Args>
     auto Allocator::make(Args&&... args) noexcept -> T*
     {
-        return new (allocate(sizeof(T), alignof(T))) T(std::forward<Args>(args)...);
+        return new (allocate(sizeof(T), alignof(T))) T(ice::forward<Args>(args)...);
     }
 
     template<class T>
