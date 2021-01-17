@@ -5,8 +5,10 @@
 #include "core/memsys/memsys.bff"
 #include "core/collections/collections.bff"
 #include "core/platform/platform.bff"
-; #include "core/messages/messages.bff"
-;
+#include "core/modules/modules.bff"
+#include "core/utils/utils.bff"
+; #include "core/tasks/tasks.bff"
+
 #include "systems/resource_system/resource_system.bff"
 #include "systems/asset_system/asset_system.bff"
 ; #include "systems/render_system/render_system.bff"
