@@ -7,4 +7,11 @@
 #define NOMINMAX
 #include <Windows.h>
 
+namespace ice::win32
+{
+
+    using ModuleHandle = HMODULE;
+
+} // namespace ice::win32
+
 #endif // ISP_WINDOWS

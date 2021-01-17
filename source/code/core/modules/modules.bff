@@ -1,0 +1,17 @@
+.Project =
+[
+    .Name = 'modules'
+    .Kind = .Kind_StaticLib
+    .Group = 'Core'
+
+    .BaseDir = '$WorkspaceCodeDir$/core/modules'
+
+    .Public =
+    [
+        .Uses = {
+            'platform'
+            'collections'
+        }
+    ]
+]
+.Projects + .Project
