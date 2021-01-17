@@ -1,0 +1,43 @@
+#pragma once
+#include <ice/string.hxx>
+#include <ice/log_severity.hxx>
+#include <ice/log_tag.hxx>
+
+#include <fmt/format.h>
+
+namespace ice::detail
+{
+
+    struct LogLocation
+    {
+        ice::String file;
+        ice::u32 line;
+    };
+
+    void log(
+        ice::LogSeverity severity,
+        ice::LogTag tag,
+        ice::String message,
+        fmt::format_args args,
+        ice::detail::LogLocation location
+    ) noexcept;
+
+} // namespace ice::detail
+
+#if defined ICE_LOG
+#error "Previous definition for for 'ICE_LOG'!"
+#endif
+
+#define ICE_LOG(severity, tag, format, ...) \
+    do{ \
+        if constexpr(severity <= ice::lowest_compiled_log_severity) \
+        { \
+            ice::detail::log( \
+                severity, \
+                ice::detail::get_tag(tag), \
+                format, \
+                fmt::make_format_args(__VA_ARGS__), \
+                ice::detail::LogLocation{ .file = __FILE__, .line = __LINE__ } \
+            ); \
+        } \
+    } while(false)
