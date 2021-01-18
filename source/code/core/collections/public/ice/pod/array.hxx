@@ -119,6 +119,8 @@ namespace ice::pod
     {
         if (this != &other)
         {
+            _allocator->destroy(_data);
+
             _allocator = other._allocator;
             _capacity = ice::exchange(other._capacity, 0);
             _data = ice::exchange(other._data, nullptr);

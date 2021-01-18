@@ -155,6 +155,8 @@ SCENARIO("ice :: pod :: Array")
 
                 THEN("we can add new items")
                 {
+                    moved_array = ice::move(test_array);
+
                     ice::pod::array::push_back(test_array, 100);
 
                     CHECK(ice::pod::array::size(test_array) == 1);
