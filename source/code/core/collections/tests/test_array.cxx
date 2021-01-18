@@ -129,6 +129,38 @@ SCENARIO("ice :: pod :: Array")
 
                 CHECK(elements_seen == ice::pod::array::size(test_array));
             }
+
+            THEN("we can move them")
+            {
+                ice::pod::Array<int32_t> moved_array = ice::move(test_array);
+
+                CHECK(ice::pod::array::size(moved_array) == 100);
+
+                THEN("we can add new items")
+                {
+                    ice::pod::array::push_back(test_array, 100);
+
+                    CHECK(ice::pod::array::size(test_array) == 1);
+                    REQUIRE(test_array[0] == 100);
+                }
+            }
+
+            THEN("we can move to an null allocator array")
+            {
+                ice::pod::Array<int32_t> moved_array{ ice::memory::null_allocator() };
+
+                moved_array = ice::move(test_array);
+
+                CHECK(ice::pod::array::size(moved_array) == 100);
+
+                THEN("we can add new items")
+                {
+                    ice::pod::array::push_back(test_array, 100);
+
+                    CHECK(ice::pod::array::size(test_array) == 1);
+                    REQUIRE(test_array[0] == 100);
+                }
+            }
         }
     }
 }
