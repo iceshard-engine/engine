@@ -13,6 +13,7 @@ namespace ice
         System = Core << 1,
         Module = Core << 2,
         Engine = Core << 3,
+        Game = Core << 4,
     };
 
     struct LogTagDefinition

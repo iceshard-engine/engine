@@ -49,7 +49,7 @@ namespace ice::detail
         ice::u64 constexpr base_tag_mask = ~((1llu << 32) - 1);
         ice::LogTag const base_tag = static_cast<LogTag>(
             static_cast<ice::u64>(tag) & base_tag_mask
-            );
+        );
 
         switch (base_tag)
         {
@@ -61,6 +61,8 @@ namespace ice::detail
             return "System";
         case LogTag::Engine:
             return "Engine";
+        case LogTag::Game:
+            return "Game";
         default:
             return "";
         }
