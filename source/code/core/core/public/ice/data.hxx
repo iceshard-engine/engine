@@ -6,9 +6,9 @@ namespace ice
 
     struct Data final
     {
-        void const* location;
-        u32 size;
-        u32 alignment;
+        void const* location = nullptr;
+        ice::u32 size = 0;
+        ice::u32 alignment = 0;
     };
 
     template<typename T>
