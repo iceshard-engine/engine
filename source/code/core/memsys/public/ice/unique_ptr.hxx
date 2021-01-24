@@ -7,10 +7,10 @@ namespace ice
     namespace detail
     {
         template<class T>
-        class IceDefaultDeleter;
+        class IceCustomDeleter;
     } // namespace detail
 
-    template<typename T, typename D = detail::IceDefaultDeleter<T>>
+    template<typename T, typename D = detail::IceCustomDeleter<T>>
     using UniquePtr = std::unique_ptr<T, D>;
 
     template<typename Result, typename Type = Result, typename... Args>
@@ -57,6 +57,9 @@ namespace ice
             IceCustomDeleter() noexcept = delete;
 
             //! \brief Creating a deleter from an allocator.
+            IceCustomDeleter(ice::Allocator& alloc) noexcept;
+
+            //! \brief Creating a deleter from an allocator.
             IceCustomDeleter(ice::Allocator& alloc, CustomDeleterFunction* func) noexcept;
 
             //! \brief Creating a deleter from another deleter.
@@ -68,6 +71,12 @@ namespace ice
             //! \brief Method required by the unique_ptr deleter concept.
             void operator()(T* object) noexcept;
 
+        protected:
+            static void default_deleter_function(
+                ice::Allocator& alloc,
+                T* object
+            ) noexcept;
+
         private:
             ice::Allocator* _allocator{ nullptr };
             CustomDeleterFunction* _deleter{ nullptr };
@@ -76,7 +85,7 @@ namespace ice
     } // namespace detail
 
     //! \brief An allocator aware uniue_pointer type.
-    template<typename T, typename D = detail::IceDefaultDeleter<T>>
+    template<typename T, typename D = detail::IceCustomDeleter<T>>
     using UniquePtr = std::unique_ptr<T, D>;
 
     namespace detail
@@ -107,6 +116,14 @@ namespace ice
         {
             _allocator->destroy<T>(object);
         }
+
+        template<class T>
+        IceCustomDeleter<T>::IceCustomDeleter(
+            ice::Allocator& alloc
+        ) noexcept
+            : _allocator{ &alloc }
+            , _deleter{ &IceCustomDeleter::default_deleter_function }
+        { }
 
         template<class T>
         IceCustomDeleter<T>::IceCustomDeleter(
@@ -147,6 +164,15 @@ namespace ice
             }
         }
 
+        template<class T>
+        void IceCustomDeleter<T>::default_deleter_function(
+            ice::Allocator& alloc,
+            T* object
+        ) noexcept
+        {
+            alloc.destroy(object);
+        }
+
     } // namespace detail
 
     template<class Result, class Type, class... Args>
@@ -154,7 +180,7 @@ namespace ice
     {
         return ice::UniquePtr<Result> {
             alloc.make<Type>(ice::forward<Args>(args)...),
-            detail::IceDefaultDeleter<Result>{ alloc }
+            detail::IceCustomDeleter<Result>{ alloc }
         };
     }
 
@@ -163,7 +189,7 @@ namespace ice
     {
         return ice::UniquePtr<Result> {
             nullptr,
-            detail::IceDefaultDeleter<Result>{ ice::memory::null_allocator() }
+            detail::IceCustomDeleter<Result>{ ice::memory::null_allocator() }
         };
     }
 
