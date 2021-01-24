@@ -20,7 +20,6 @@ namespace ice
         auto operator=(Buffer const& other) noexcept -> Buffer&;
 
         operator ice::Data() const noexcept;
-        operator ice::Memory() const noexcept;
 
         ice::Allocator* _allocator;
         ice::u32 _size = 0;
@@ -60,20 +59,26 @@ namespace ice
 
         auto append(ice::Buffer& buffer, const void* data, u32 size, u32 alignment) noexcept -> void*;
 
+        auto extrude_memory(ice::Buffer& buffer) noexcept -> ice::Memory;
+
     } // namespace buffer
 
     inline Buffer::operator ice::Data() const noexcept
     {
-        return this->operator ice::Memory();
-    }
-
-    inline Buffer::operator ice::Memory() const noexcept
-    {
-        return Memory{
+        return Data{
             .location = _data,
             .size = _size,
             .alignment = ice::Allocator::Constant_DefaultAlignment
         };
     }
+
+    //inline Buffer::operator ice::Memory() const noexcept
+    //{
+    //    return Memory{
+    //        .location = _data,
+    //        .size = _size,
+    //        .alignment = ice::Allocator::Constant_DefaultAlignment
+    //    };
+    //}
 
 } // namespace ice

@@ -210,6 +210,17 @@ namespace ice
             return ice::buffer::append(buffer, ice::data_view(data, size, alignment));
         }
 
+        auto extrude_memory(ice::Buffer& buffer) noexcept -> ice::Memory
+        {
+            buffer._capacity = 0;
+
+            return ice::Memory{
+                .location = ice::exchange(buffer._data, nullptr),
+                .size = ice::exchange(buffer._size, 0),
+                .alignment = ice::Allocator::Constant_DefaultAlignment,
+            };
+        }
+
     } // namespace buffer
 
 } // namespace ice
