@@ -1,0 +1,23 @@
+.Project =
+[
+    .Name = 'iceshard_pipelines'
+    .Kind = .Kind_SharedLib
+    .Group = 'Modules'
+
+    .BaseDir = '$WorkspaceCodeDir$/modules/iceshard_pipelines'
+    .UnityBuilds = false
+
+    .Private =
+    [
+        .Modules = {
+            'Assimp'
+        }
+        .Uses = {
+            'utils'
+            'modules'
+            'asset_system'
+            'render_system'
+        }
+    ]
+]
+.Projects + .Project
