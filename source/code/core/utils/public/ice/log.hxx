@@ -25,7 +25,7 @@ namespace ice::detail
 } // namespace ice::detail
 
 #if defined ICE_LOG
-#error "Previous definition for for 'ICE_LOG'!"
+#error "Found existing definition of 'ICE_LOG'!"
 #endif
 
 #define ICE_LOG(severity, tag, format, ...) \
