@@ -2,6 +2,7 @@
 #include <ice/unique_ptr.hxx>
 #include <ice/string.hxx>
 #include <ice/stringid.hxx>
+#include <ice/pod/collections.hxx>
 #include <ice/module.hxx>
 
 namespace ice
@@ -27,9 +28,17 @@ namespace ice
             ice::StringID_Arg api_name,
             ice::u32 version,
             void** api_ptr
-        ) noexcept = 0;
+        ) const noexcept = 0;
+
+        virtual bool find_module_apis(
+            ice::StringID_Arg api_name,
+            ice::u32 version,
+            ice::pod::Array<void*>& api_ptrs_out
+        ) const noexcept = 0;
     };
 
-    auto create_default_module_register(ice::Allocator& alloc) noexcept -> ice::UniquePtr<ModuleRegister>;
+    auto create_default_module_register(
+        ice::Allocator& alloc
+    ) noexcept -> ice::UniquePtr<ice::ModuleRegister>;
 
 } // namespace ice

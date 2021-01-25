@@ -14,7 +14,6 @@ namespace ice
         ice::Allocator* module_allocator;
         ice::ModuleProcGetAPI* lookup_api;
         ice::ModuleProcUnload* unload_proc;
-        ice::win32::ModuleHandle handle;
     };
 
     struct ModuleNegotiatorContext
@@ -37,7 +36,7 @@ namespace ice
             ice::String path
         ) noexcept override;
 
-        virtual bool load_module(
+        bool load_module(
             ice::Allocator& alloc,
             ice::ModuleProcLoad* load_fn,
             ice::ModuleProcUnload* unload_fn
@@ -47,7 +46,13 @@ namespace ice
             ice::StringID_Arg api_name,
             ice::u32 version,
             void** api_ptr
-        ) noexcept override;
+        ) const noexcept override;
+
+        bool find_module_apis(
+            ice::StringID_Arg api_name,
+            ice::u32 version,
+            ice::pod::Array<void*>& api_ptrs_out
+        ) const noexcept override;
 
         bool register_module(
             ice::Win32ModuleEntry const& entry
@@ -56,11 +61,13 @@ namespace ice
     private:
         ice::Allocator& _allocator;
         ice::pod::Hash<Win32ModuleEntry> _modules;
+        ice::pod::Array<ice::win32::ModuleHandle> _module_handles;
     };
 
     Win32ModuleRegister::Win32ModuleRegister(ice::Allocator& alloc) noexcept
         : _allocator{ alloc }
         , _modules{ _allocator }
+        , _module_handles{ _allocator }
     { }
 
     Win32ModuleRegister::~Win32ModuleRegister() noexcept
@@ -70,10 +77,11 @@ namespace ice
             entry.value.unload_proc(
                 entry.value.module_allocator
             );
-            if (entry.value.handle != nullptr)
-            {
-                FreeLibrary(entry.value.handle);
-            }
+        }
+
+        for (auto const& handle : _module_handles)
+        {
+            FreeLibrary(handle);
         }
     }
 
@@ -82,45 +90,30 @@ namespace ice
         ice::String path
     ) noexcept
     {
-        win32::ModuleHandle mod = LoadLibraryEx(ice::string::data(path), NULL, NULL);
-        if (mod != nullptr)
+        win32::ModuleHandle module_handle = LoadLibraryEx(ice::string::data(path), NULL, NULL);
+        if (module_handle != nullptr)
         {
-            void* const load_proc = GetProcAddress(mod, "ice_module_load");
-            void* const unload_proc = GetProcAddress(mod, "ice_module_unload");
+            void* const load_proc = GetProcAddress(module_handle, "ice_module_load");
+            void* const unload_proc = GetProcAddress(module_handle, "ice_module_unload");
 
             if (load_proc != nullptr && unload_proc != nullptr)
             {
-                Win32ModuleEntry module_entry{
-                    .module_allocator = &alloc,
-                    .lookup_api = nullptr,
-                    .unload_proc = reinterpret_cast<ice::ModuleProcUnload*>(unload_proc),
-                    .handle = mod,
-                };
-
-                ModuleNegotiatorContext negotiator_context{
-                    .module_register = this,
-                    .current_module = module_entry,
-                };
-
-                ModuleNegotiator negotiator{
-                    .fn_get_module_api = ModuleNegotiatorContext::get_module_api,
-                    .fn_register_module = ModuleNegotiatorContext::register_module,
-                };
-
-                reinterpret_cast<ice::ModuleProcLoad*>(load_proc)(
-                    module_entry.module_allocator,
-                    &negotiator_context,
-                    &negotiator
+                load_module(
+                    alloc,
+                    reinterpret_cast<ice::ModuleProcLoad*>(load_proc),
+                    reinterpret_cast<ice::ModuleProcUnload*>(unload_proc)
                 );
+
+                ice::pod::array::push_back(_module_handles, module_handle);
             }
             else
             {
-                FreeLibrary(mod);
-                mod = nullptr;
+                FreeLibrary(module_handle);
+                module_handle = nullptr;
             }
         }
 
-        return mod != nullptr;
+        return module_handle != nullptr;
     }
 
     bool Win32ModuleRegister::load_module(
@@ -133,7 +126,6 @@ namespace ice
             .module_allocator = &alloc,
             .lookup_api = nullptr,
             .unload_proc = unload_fn,
-            .handle = nullptr,
         };
 
         ModuleNegotiatorContext negotiator_context{
@@ -158,7 +150,7 @@ namespace ice
         ice::StringID_Arg api_name,
         ice::u32 version,
         void** api_ptr
-    ) noexcept
+    ) const noexcept
     {
         if (api_ptr == nullptr)
         {
@@ -175,6 +167,25 @@ namespace ice
         }
 
         return api_found;
+    }
+
+    bool Win32ModuleRegister::find_module_apis(
+        ice::StringID_Arg api_name,
+        ice::u32 version,
+        ice::pod::Array<void*>& api_ptrs_out
+    ) const noexcept
+    {
+        auto* it = ice::pod::multi_hash::find_first(_modules, ice::hash(api_name));
+        while (it != nullptr)
+        {
+            void* api_ptr;
+            if (it->value.lookup_api(ice::stringid_hash(api_name), version, &api_ptr))
+            {
+                ice::pod::array::push_back(api_ptrs_out, api_ptr);
+            }
+            it = ice::pod::multi_hash::find_next(_modules, it);
+        }
+        return ice::pod::array::any(api_ptrs_out);
     }
 
     bool Win32ModuleRegister::register_module(
