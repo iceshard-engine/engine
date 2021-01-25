@@ -5,6 +5,8 @@
 namespace ice
 {
 
+    class ResourceSystem;
+
     enum class BakeResult : ice::u32
     {
         Success = 0x0,
