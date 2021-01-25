@@ -1,5 +1,6 @@
 #include <ice/resource_index.hxx>
 #include <ice/resource_query.hxx>
+#include <ice/resource_meta.hxx>
 #include <ice/platform/windows.hxx>
 #include <ice/unique_ptr.hxx>
 #include <ice/resource_index.hxx>
@@ -38,9 +39,9 @@ namespace ice
                 return _uri;
             }
 
-            auto metadata() const noexcept -> ice::Data override
+            auto metadata() const noexcept -> ice::Metadata const& override
             {
-                return { };
+                return ice::Metadata{ };
             }
 
             auto data() noexcept -> ice::Data override
@@ -78,7 +79,7 @@ namespace ice
         ice::pod::Array<ice::Resource*> _event_objects;
     };
 
-    WindowsDllIndex::WindowsDllIndex(ice::Allocator& alloc, ice::String base_path) noexcept
+    WindowsDllIndex::WindowsDllIndex(ice::Allocator& alloc, ice::String /*base_path*/) noexcept
         : ice::ResourceIndex{ }
         , _allocator{ alloc }
         , _app_location{ _allocator }
@@ -140,7 +141,7 @@ namespace ice
                 {
                     ice::Resource* resource = _allocator.make<detail::DllResource>(
                         ice::move(file_path),
-                        ice::URI{ }
+                        ice::URI{ ice::scheme_dynlib, file_path }
                     );
 
                     ice::pod::array::push_back(_resources, resource);

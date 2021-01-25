@@ -1,9 +1,13 @@
 #include <ice/resource_index.hxx>
 #include <ice/resource_query.hxx>
+#include <ice/resource_meta.hxx>
 #include <ice/platform/windows.hxx>
 #include <ice/memory/proxy_allocator.hxx>
+#include <ice/memory/stack_allocator.hxx>
+#include <ice/memory/memory_globals.hxx>
 #include <ice/pod/array.hxx>
 #include <ice/pod/hash.hxx>
+#include <ice/buffer.hxx>
 #include <filesystem>
 
 #include "path_utils.hxx"
@@ -15,6 +19,43 @@ namespace ice
 
     namespace detail
     {
+
+        struct GuardedMemory final
+        {
+            GuardedMemory(ice::Allocator& alloc, ice::u32 size) noexcept
+                : alloc{ alloc }
+                , memory{ alloc.allocate(size, 4), size, 4 }
+            {
+            }
+            ~GuardedMemory() noexcept
+            {
+                alloc.deallocate(memory.location);
+            }
+
+            ice::Allocator& alloc;
+            Memory memory;
+        };
+
+        void load_file_to_buffer(ice::String path, ice::Buffer& file_data) noexcept
+        {
+            FILE* file_native = nullptr;
+            fopen_s(&file_native, ice::string::data(path), "rb");
+
+            if (file_native)
+            {
+                ice::memory::StackAllocator_4096 kib4_alloc;
+                GuardedMemory file_chunk{ kib4_alloc, 1024u * 4u };
+
+                auto characters_read = fread_s(file_chunk.memory.location, file_chunk.memory.size, sizeof(char), file_chunk.memory.size, file_native);
+                while (characters_read > 0)
+                {
+                    ice::buffer::append(file_data, file_chunk.memory.location, static_cast<ice::u32>(characters_read), 4);
+                    characters_read = fread_s(file_chunk.memory.location, file_chunk.memory.size, sizeof(char), file_chunk.memory.size, file_native);
+                }
+
+                fclose(file_native);
+            }
+        }
 
         class FileResource final : public ice::Resource
         {
@@ -36,7 +77,7 @@ namespace ice
                 return _uri;
             }
 
-            auto metadata() const noexcept -> ice::Data override
+            auto metadata() const noexcept -> ice::Metadata const& override
             {
                 return {};
             }
@@ -66,7 +107,18 @@ namespace ice
                 , _meta_path{ ice::move(meta_path) }
                 , _file_relative{ file_relative }
                 , _uri{ uri }
-            { }
+                , _metadata{ ice::memory::default_allocator() }
+                , _resource_data{ ice::memory::default_allocator() }
+            {
+                if (_metadata_loaded == false && ice::string::empty(_meta_path) == false)
+                {
+                    ice::Buffer temp_bufer{ ice::memory::default_scratch_allocator() };
+                    load_file_to_buffer(_meta_path, temp_bufer);
+                    ice::meta_deserialize(temp_bufer, _metadata);
+                    _metadata_view = _metadata;
+                    _metadata_loaded = true;
+                }
+            }
 
             auto name() const noexcept -> ice::String override
             {
@@ -78,14 +130,18 @@ namespace ice
                 return _uri;
             }
 
-            auto metadata() const noexcept -> ice::Data override
+            auto metadata() const noexcept -> ice::Metadata const& override
             {
-                return {};
+                return _metadata_view;
             }
 
             auto data() noexcept -> ice::Data override
             {
-                return {};
+                if (ice::buffer::empty(_resource_data))
+                {
+                    load_file_to_buffer(_file_path, _resource_data);
+                }
+                return _resource_data;
             }
 
         private:
@@ -93,6 +149,11 @@ namespace ice
             ice::HeapString<> _meta_path;
             ice::String _file_relative;
             ice::URI _uri;
+
+            ice::MutableMetadata _metadata;
+            ice::Metadata _metadata_view;
+            ice::Buffer _resource_data;
+            bool _metadata_loaded = false;
         };
 
     } // namespace detail

@@ -1,9 +1,11 @@
 #pragma once
-#include <ice/base.hxx>
+#include <ice/uri.hxx>
 #include <ice/data.hxx>
 
 namespace ice
 {
+
+    struct Metadata;
 
     class Resource
     {
@@ -14,7 +16,7 @@ namespace ice
 
         virtual auto location() const noexcept -> ice::URI const& = 0;
 
-        virtual auto metadata() const noexcept -> ice::Data = 0;
+        virtual auto metadata() const noexcept -> ice::Metadata const& = 0;
 
         virtual auto data() noexcept -> ice::Data = 0;
     };

@@ -1,6 +1,7 @@
 #pragma once
 #include <ice/uri.hxx>
 #include <ice/urn.hxx>
+#include <ice/span.hxx>
 #include <ice/unique_ptr.hxx>
 
 namespace ice
@@ -23,7 +24,7 @@ namespace ice
         virtual ~ResourceSystem() noexcept = default;
 
         virtual void register_index(
-            ice::StringID_Arg scheme,
+            ice::Span<ice::StringID> schemes,
             ice::UniquePtr<ice::ResourceIndex> index
         ) noexcept = 0;
 

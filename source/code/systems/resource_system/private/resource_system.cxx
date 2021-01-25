@@ -15,7 +15,7 @@ namespace ice
         ~SimpleResourceSystem() noexcept override = default;
 
         void register_index(
-            ice::StringID_Arg scheme,
+            ice::Span<ice::StringID> schemes,
             ice::UniquePtr<ice::ResourceIndex> index
         ) noexcept override;
 
@@ -57,9 +57,15 @@ namespace ice
         , _event_objects{ _allocator }
     { }
 
-    void SimpleResourceSystem::register_index(ice::StringID_Arg scheme, ice::UniquePtr<ice::ResourceIndex> index) noexcept
+    void SimpleResourceSystem::register_index(
+        ice::Span<ice::StringID> schemes,
+        ice::UniquePtr<ice::ResourceIndex> index
+    ) noexcept
     {
-        ice::pod::multi_hash::insert(_index_map, ice::hash(scheme), index.get());
+        for (ice::StringID const& scheme : schemes)
+        {
+            ice::pod::multi_hash::insert(_index_map, ice::hash(scheme), index.get());
+        }
         _index_list.push_back(std::move(index));
     }
 
@@ -78,11 +84,23 @@ namespace ice
     {
         if (ice::stringid_hash(uri.scheme) == ice::stringid_hash(ice::scheme_resource))
         {
-            ice::Resource const* resource = ice::pod::hash::get(
-                _known_resources,
-                ice::hash(uri.fragment),
-                nullptr
-            );
+            ice::Resource const* resource;
+            if (uri.fragment == ice::stringid_invalid)
+            {
+                resource = ice::pod::hash::get(
+                    _known_resources,
+                    ice::hash(ice::stringid(uri.path)),
+                    nullptr
+                );
+            }
+            else
+            {
+                resource = ice::pod::hash::get(
+                    _known_resources,
+                    ice::hash(uri.fragment),
+                    nullptr
+                );
+            }
             return resource == nullptr ? ice::uri_invalid : resource->location();
         }
         else
@@ -105,7 +123,7 @@ namespace ice
     {
         if (ice::stringid_hash(uri.scheme) == ice::stringid_hash(ice::scheme_resource))
         {
-            // #todo assert, invalid URI
+            // #todo error reporting
             return 0;
         }
 
@@ -132,6 +150,12 @@ namespace ice
             ice::u32 const object_count = ice::pod::array::size(query.objects);
             for (ice::u32 idx = 0; idx < object_count; ++idx)
             {
+                if (query.events[idx] == ice::ResourceEvent::MountError)
+                {
+                    // #todo error reporting
+                    continue;
+                }
+
                 ice::Resource const* const resource = query.objects[idx];
                 ice::StringID const resouce_name = ice::stringid(resource->name());
 
@@ -166,6 +190,11 @@ namespace ice
 
             return object_count;
         }
+        else
+        {
+            // #todo error reporting
+        }
+
         return 0;
     }
 

@@ -12,9 +12,11 @@ namespace ice
         Replaced,
         Removed,
         MountError,
+        MountError_URI_InvalidScheme,
+        MountError_URI_InvalidPath,
     };
 
-    struct ResourceQuery
+    struct ResourceQuery final
     {
         ice::pod::Array<ice::ResourceEvent> events{ ice::memory::null_allocator() };
         ice::pod::Array<ice::Resource*> objects{ ice::memory::null_allocator() };
