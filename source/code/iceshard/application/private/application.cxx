@@ -1,84 +1,80 @@
-#include <application/application.hxx>
-#include <core/platform/utility.hxx>
+#include <ice/application.hxx>
+#include <ice/platform/windows.hxx>
+#include <ice/app_info.hxx>
 
-#include <core/memory.hxx>
-#include <core/allocators/proxy_allocator.hxx>
-#include <core/pod/array.hxx>
-#include <core/string.hxx>
-#include <core/string_view.hxx>
+#include <ice/memory.hxx>
+#include <ice/memory/memory_globals.hxx>
+#include <ice/memory/proxy_allocator.hxx>
+#include <ice/pod/array.hxx>
+#include <ice/string.hxx>
+#include <ice/heap_string.hxx>
 
-#include <resource/resource_system.hxx>
-#include <resource/modules/dynlib_module.hxx>
-#include <resource/modules/filesystem_module.hxx>
+#include <ice/resource_system.hxx>
+#include <ice/resource_index.hxx>
 
 int main(int, char**)
 {
-    if constexpr (core::build::is_release == false)
+    if constexpr (ice::build::is_release == false)
     {
-        core::memory::globals::init_with_stats();
+        ice::memory::init_with_stats();
     }
     else
     {
-        core::memory::globals::init();
+        ice::memory::init();
     }
 
-    // The main allocator object
-    auto& main_allocator = core::memory::globals::default_allocator();
+    ice::Allocator& main_allocator = ice::memory::default_allocator();
 
-    // Special proxy allocators for the game and internal systems.
-    core::memory::proxy_allocator filesystem_allocator{ "resource-filesystem", main_allocator };
-    core::memory::proxy_allocator dynlib_allocator{ "resource-dynlib", main_allocator };
+    ice::memory::ProxyAllocator filesystem_allocator{ main_allocator, "resource-filesystem" };
+    ice::memory::ProxyAllocator dynlib_allocator{ main_allocator, "resource-dynlib" };
 
-    // Game result
-    int result = -1;
+    ice::i32 app_result = -1;
 
     // The application lifetime scope
     {
-        resource::ResourceSystem resource_system{ main_allocator };
+        ice::UniquePtr<ice::ResourceSystem> resource_system = ice::create_resource_system(main_allocator);
 
         {
-            auto working_dir = core::working_directory(main_allocator);
-            fmt::print("Initializing filesystem module at: {}\n", working_dir);
+            ice::HeapString<> working_dir{ main_allocator };
+            ice::working_directory(working_dir);
 
-            core::pod::Array<core::stringid_type> schemes{ core::memory::globals::default_scratch_allocator() };
-            core::pod::array::push_back(schemes, resource::scheme_file);
-            core::pod::array::push_back(schemes, resource::scheme_directory);
-            resource_system.add_module(
-                core::memory::make_unique<resource::ResourceModule, resource::FileSystem>(
-                    main_allocator
-                    , filesystem_allocator
-                    , working_dir)
-                , schemes
+            // #todo logger
+            // fmt::print("Initializing filesystem module at: {}\n", working_dir);
+
+            ice::pod::Array<ice::StringID> schemes{ ice::memory::default_scratch_allocator() };
+            ice::pod::array::push_back(schemes, ice::scheme_file);
+            ice::pod::array::push_back(schemes, ice::scheme_directory);
+
+            resource_system->register_index(
+                schemes,
+                ice::create_filesystem_index(filesystem_allocator, working_dir)
             );
 
-            core::pod::array::clear(schemes);
-            core::pod::array::push_back(schemes, resource::scheme_dynlib);
-            resource_system.add_module(core::memory::make_unique<resource::ResourceModule, resource::DynLibSystem>(main_allocator, dynlib_allocator), schemes);
+            ice::pod::array::clear(schemes);
+            ice::pod::array::push_back(schemes, ice::scheme_dynlib);
+
+            resource_system->register_index(
+                schemes,
+                ice::create_dynlib_index(dynlib_allocator, ".")
+            );
         }
 
-        // Initial mount points
-        {
-            using resource::URI;
-            using resource::URN;
+        using ice::operator""_uri;
 
-            // Dynamic Library Resources
-            resource_system.mount(URI{ resource::scheme_dynlib, "bin" });
-        }
+        ice::u32 const mounted_modules = resource_system->mount("dynlib://./.."_uri);
 
-        // The game entry point
-        {
-            core::memory::proxy_allocator game_allocator{ "game", main_allocator };
-            result = game_main(game_allocator, resource_system);
-        }
+        ice::memory::ProxyAllocator game_alloc{ main_allocator, "game" };
+        app_result = game_main(game_alloc, *resource_system);
     }
 
-    if constexpr (core::build::is_release == false)
+    if constexpr (ice::build::is_release == false)
     {
-        auto& stats_allocator = static_cast<core::memory::proxy_allocator&>(main_allocator);
-        fmt::print("Memory stats:\n");
-        fmt::print("- total allocation count: {}\n", stats_allocator.allocation_count());
+        ice::memory::ProxyAllocator& stats_allocator = static_cast<ice::memory::ProxyAllocator&>(main_allocator);
+        // #todo log
+        //fmt::print("Memory stats:\n");
+        //fmt::print("- total allocation count: {}\n", stats_allocator.allocation_count());
     }
 
-    core::memory::globals::shutdown();
-    return result;
+    ice::memory::shutdown();
+    return app_result;
 }
