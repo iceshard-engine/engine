@@ -19,12 +19,12 @@ namespace ice
         virtual ~AssetSystem() noexcept = default;
 
         virtual bool add_pipeline(
-            ice::StringID name,
+            ice::StringID_Arg name,
             ice::UniquePtr<AssetPipeline> pipeline
         ) noexcept = 0;
 
         virtual bool remove_pipeline(
-            ice::StringID name
+            ice::StringID_Arg name
         ) noexcept = 0;
 
         virtual void bind_resources(
@@ -33,13 +33,13 @@ namespace ice
 
         virtual bool bind_resource(
             ice::AssetType type,
-            ice::StringID name,
+            ice::StringID_Arg name,
             ice::Resource* resource
         ) noexcept = 0;
 
         virtual auto request(
             ice::AssetType type,
-            ice::StringID name
+            ice::StringID_Arg name
         ) noexcept -> Asset = 0;
 
         virtual auto load(
@@ -52,7 +52,7 @@ namespace ice
         ) noexcept = 0;
     };
 
-    auto default_asset_system(
+    auto create_asset_system(
         ice::Allocator& alloc,
         ice::ResourceSystem& resource_system
     ) noexcept -> ice::UniquePtr<ice::AssetSystem>;

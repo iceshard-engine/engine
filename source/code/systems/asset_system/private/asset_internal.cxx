@@ -12,7 +12,7 @@ namespace ice::detail
     {
         return alloc.make<AssetObject>(
             status,
-            ice::Memory{ },
+            ice::Data{ },
             ice::Data{ }
         );
     }
@@ -24,7 +24,6 @@ namespace ice::detail
     {
         if (object != nullptr)
         {
-            alloc.deallocate(object->data.location);
             alloc.destroy(object);
         }
     }

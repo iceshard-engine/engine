@@ -8,6 +8,7 @@ namespace ice
     enum class BakeResult : ice::u32
     {
         Success = 0x0,
+        Skipped = 0x1,
         Failure_InvalidData,
         Failure_MissingDependencies,
     };
@@ -15,7 +16,7 @@ namespace ice
     class AssetOven
     {
     public:
-        virtual ~AssetOven() noexcept = 0;
+        virtual ~AssetOven() noexcept = default;
 
         virtual auto bake(
             ice::Data resource_data,

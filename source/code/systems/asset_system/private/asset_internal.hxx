@@ -9,7 +9,7 @@ namespace ice::detail
     struct AssetObject
     {
         ice::AssetStatus status;
-        ice::Memory data;
+        ice::Data data;
         ice::Data metadata;
     };
 

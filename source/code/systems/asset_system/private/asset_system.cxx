@@ -9,6 +9,7 @@
 #include <ice/unique_ptr.hxx>
 #include <ice/memory/proxy_allocator.hxx>
 #include <ice/map.hxx>
+#include <ice/assert.hxx>
 
 #include "asset_internal.hxx"
 
@@ -30,6 +31,8 @@ namespace ice
             ice::URI location;
             ice::Resource* resource;
             ice::AssetPipeline* pipeline;
+            ice::Memory baked_data;
+            ice::Memory loaded_data;
             AssetObject* object;
         };
 
@@ -46,12 +49,12 @@ namespace ice
         ~SimpleAssetSystem() noexcept override;
 
         bool add_pipeline(
-            ice::StringID name,
+            ice::StringID_Arg name,
             ice::UniquePtr<AssetPipeline> pipeline
         ) noexcept override;
 
         bool remove_pipeline(
-            ice::StringID name
+            ice::StringID_Arg name
         ) noexcept override;
 
         void bind_resources(
@@ -60,13 +63,13 @@ namespace ice
 
         bool bind_resource(
             ice::AssetType type,
-            ice::StringID name,
+            ice::StringID_Arg name,
             ice::Resource* resource
         ) noexcept override;
 
         auto request(
             ice::AssetType type,
-            ice::StringID name
+            ice::StringID_Arg name
         ) noexcept -> ice::Asset override;
 
         auto load(
@@ -108,31 +111,36 @@ namespace ice
     {
         for (detail::AssetInfo& info : _assets)
         {
-            _oven_alloc.deallocate(info.object->data.location);
+            _oven_alloc.deallocate(info.loaded_data.location);
+            _oven_alloc.deallocate(info.baked_data.location);
             _allocator.destroy(info.object);
         }
     }
 
     bool SimpleAssetSystem::add_pipeline(
-        ice::StringID name,
+        ice::StringID_Arg name,
         ice::UniquePtr<AssetPipeline> pipeline
     ) noexcept
     {
-        if (ice::map::has(_pipelines, ice::stringid_hash(name)))
+        ICE_ASSERT(
+            ice::map::has(_pipelines, ice::stringid_hash(name)) == false,
+            "A pipeline with this name {} is already present!", 0
+        );
+
+        if (ice::map::has(_pipelines, ice::stringid_hash(name)) == false)
         {
             for (ice::AssetType const type : pipeline->supported_types())
             {
                 ice::pod::multi_hash::insert(_asset_pipelines, ice::hash(type), pipeline.get());
             }
 
-            // #todo assert has(_pipelines, name) == false
             ice::map::set(_pipelines, ice::stringid_hash(name), ice::move(pipeline));
             return true;
         }
         return false;
     }
 
-    bool SimpleAssetSystem::remove_pipeline(ice::StringID name) noexcept
+    bool SimpleAssetSystem::remove_pipeline(ice::StringID_Arg name) noexcept
     {
         // #todo assert/warning has(_pipelines, name) == true
 
@@ -171,7 +179,7 @@ namespace ice
             ice::u32 const extension_pos = ice::string::find_first_of(resource->name(), '.');
             ice::String const basename = ice::string::substr(resource->name(), 0, extension_pos);
             ice::String const extension = ice::string::substr(resource->name(), extension_pos);
-            ice::Metadata const meta = ice::meta_load(resource->metadata());
+            ice::Metadata const& meta = resource->metadata();
 
             ice::AssetType result_type = AssetType::Unresolved;
             ice::AssetStatus result_status = AssetStatus::Invalid;
@@ -240,6 +248,8 @@ namespace ice
                         .location = resource->location(),
                         .resource = resource,
                         .pipeline = pipeline,
+                        .baked_data = ice::Memory{ },
+                        .loaded_data = ice::Memory{ },
                         .object = detail::make_empty_object(_allocator, result_status),
                     }
                 );
@@ -270,13 +280,13 @@ namespace ice
 
     bool SimpleAssetSystem::bind_resource(
         ice::AssetType type,
-        ice::StringID name,
+        ice::StringID_Arg name,
         ice::Resource* resource
     ) noexcept
     {
         ice::u32 const extension_pos = ice::string::find_first_of(resource->name(), '.');
         ice::String const extension = ice::string::substr(resource->name(), extension_pos);
-        ice::Metadata const meta = ice::meta_load(resource->metadata());
+        ice::Metadata const& meta = resource->metadata();
 
         ice::AssetType result_type = AssetType::Unresolved;
         ice::AssetStatus result_status = AssetStatus::Invalid;
@@ -313,7 +323,9 @@ namespace ice
             }
         }
 
-        ice::u64 name_hash = ice::hash(name);
+        ice::String base_name = ice::string::substr(resource->name(), 0, extension_pos);
+
+        ice::u64 const name_hash = ice::hash(base_name);
 
         auto* entry = ice::pod::multi_hash::find_first(_asset_entries, name_hash);
         while (entry != nullptr)
@@ -343,6 +355,8 @@ namespace ice
                     .location = resource->location(),
                     .resource = resource,
                     .pipeline = pipeline,
+                    .baked_data = ice::Memory{ },
+                    .loaded_data = ice::Memory{ },
                     .object = detail::make_empty_object(_allocator, result_status),
                 }
             );
@@ -350,15 +364,15 @@ namespace ice
         else
         {
             detail::AssetInfo& current_info = _assets[entry->value.data_index];
-            if (current_info.object->status == AssetStatus::Available_Raw && result_status == AssetStatus::Available)
+            if (current_info.object->status == AssetStatus::Loaded && result_status == AssetStatus::Available)
             {
                 current_info.location = resource->location();
                 current_info.resource = resource;
                 current_info.pipeline = pipeline;
 
-                _oven_alloc.deallocate(current_info.object->data.location);
+                //_oven_alloc.deallocate(current_info.object->data.location);
                 _allocator.destroy(current_info.object);
-                current_info.object = detail::make_empty_object(_allocator, result_status);
+                current_info.object = detail::make_empty_object(_allocator, AssetStatus::Unloading);
 
                 // #todo log asset replacement
             }
@@ -370,7 +384,7 @@ namespace ice
         return true;
     }
 
-    auto SimpleAssetSystem::request(ice::AssetType type, ice::StringID name) noexcept -> ice::Asset
+    auto SimpleAssetSystem::request(ice::AssetType type, ice::StringID_Arg name) noexcept -> ice::Asset
     {
         // Get the requested asset object
         auto entry = ice::pod::multi_hash::find_first(_asset_entries, ice::hash(name));
@@ -388,16 +402,35 @@ namespace ice
         detail::AssetInfo& asset_info = _assets[entry->value.data_index];
         detail::AssetObject& asset_object = *asset_info.object;
 
+        // If the current asset is already unloading, release it
+        // This should only happen in a single case, when an asset is reloading
+        //  after an update for such an asset was requested.
+        if (asset_object.status == AssetStatus::Unloading)
+        {
+            // #todo log unloading status
+
+            _oven_alloc.deallocate(asset_info.loaded_data.location);
+            _oven_alloc.deallocate(asset_info.baked_data.location);
+            asset_info.loaded_data = ice::Memory{ };
+            asset_info.baked_data = ice::Memory{ };
+            asset_object.status = AssetStatus::Available;
+        }
+
+        ice::Data asset_data;
+        ice::BakeResult bake_result = BakeResult::Skipped;
+
         // Try compiling if needed
         if (asset_object.status == AssetStatus::Available_Raw)
         {
+            ice::Metadata resource_meta = asset_info.resource->metadata();
+
             ice::AssetOven* oven = asset_info.pipeline->request_oven(type);
             ice::BakeResult bake_result = oven->bake(
                 asset_info.resource->data(),
-                ice::meta_load(asset_info.resource->metadata()),
+                resource_meta,
                 _resource_system,
                 _oven_alloc,
-                asset_object.data
+                asset_info.baked_data
             );
 
             if (bake_result != BakeResult::Success)
@@ -406,36 +439,31 @@ namespace ice
                 return Asset::Invalid;
             }
 
+            asset_data = asset_info.baked_data;
             asset_object.status = AssetStatus::Available;
+        }
+        else
+        {
+            asset_data = asset_info.resource->data();
         }
 
         ice::AssetLoader* const loader = asset_info.pipeline->request_loader(type);
         ice::AssetStatus load_status = AssetStatus::Invalid;
 
-        // If the current asset is already unloading, release it
-        // This should only happen in a single case, when an asset is reloading
-        //  after an update for such an asset was requested.
-        if (asset_object.status == AssetStatus::Unloading)
-        {
-            // #todo log unloading status
-
-            _oven_alloc.deallocate(asset_object.data.location);
-            asset_object.status = AssetStatus::Available;
-        }
-
         // Try to load the new asset
         {
-            ice::Memory load_result;
-
             load_status = loader->load(
                 type,
-                asset_object.data,
+                asset_data,
                 _oven_alloc,
-                load_result
+                asset_info.loaded_data
             );
 
             if (load_status == AssetStatus::Loaded)
             {
+                asset_object.status = load_status;
+                asset_object.data = asset_info.loaded_data;
+                return detail::make_asset(asset_info.object);
             }
             else
             {
@@ -444,7 +472,7 @@ namespace ice
             }
         }
 
-        return detail::make_asset(asset_info.object);
+        return Asset::Invalid;
     }
 
     auto SimpleAssetSystem::load(ice::AssetType type, ice::Resource* resource) noexcept -> Asset
@@ -456,9 +484,9 @@ namespace ice
     {
     }
 
-    auto default_asset_system(ice::Allocator& alloc, ice::ResourceSystem& resource_system) noexcept -> ice::UniquePtr<ice::AssetSystem>
+    auto create_asset_system(ice::Allocator& alloc, ice::ResourceSystem& resource_system) noexcept -> ice::UniquePtr<ice::AssetSystem>
     {
-        return ice::make_unique_null<ice::AssetSystem>();
+        return ice::make_unique<ice::AssetSystem, ice::SimpleAssetSystem>(alloc, alloc, resource_system);
     }
 
 } // namespace ice

@@ -18,6 +18,10 @@
         .Modules = {
             'rapidjson'
         }
+        .Uses = {
+            'utils'
+            'modules'
+        }
         // .CompilerFlags = {
         //     '/wd4996' // RapidJson warnings
         //     '/wd5054' // RapidJson warnings
