@@ -17,6 +17,11 @@ namespace ice::input
             ice::input::DeviceHandle device
         ) noexcept;
 
+        auto handle() const noexcept -> ice::input::DeviceHandle override
+        {
+            return _device;
+        }
+
         void on_tick(
             ice::Timer const& timer
         ) noexcept override;
