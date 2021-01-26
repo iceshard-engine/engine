@@ -85,7 +85,7 @@ namespace ice
     namespace stopwatch
     {
 
-        auto create_stopwatch(Clock const& clock) noexcept;
+        auto create_stopwatch(Clock const& clock) noexcept-> Stopwatch;
 
         void start(Stopwatch& stopwatch) noexcept;
 
