@@ -149,16 +149,16 @@ namespace ice::memory
         return distance;
     }
 
-    bool ScratchAllocator::reset() noexcept
+    bool ScratchAllocator::reset_and_discard() noexcept
     {
-        const bool empty = total_allocated() == 0;
+        const bool discarded_memory = total_allocated() > 0;
 
         // Always reset pointers on the allocator!
         _allocate = _begin;
         _free = _begin;
 
         // Set the memory to zeros
-        return empty;
+        return discarded_memory;
     }
 
     bool ScratchAllocator::is_locked(void* pointer) noexcept

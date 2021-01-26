@@ -49,7 +49,7 @@ namespace ice::memory
         auto backing_allocator() noexcept -> ice::Allocator& { return _backing; }
 
         //! \brief Resets the allocator forgetting about all allocations.
-        bool reset() noexcept;
+        bool reset_and_discard() noexcept;
 
     protected:
         //! \brief Checks if the given pointer is locked in the ring buffer.
