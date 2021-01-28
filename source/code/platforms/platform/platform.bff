@@ -1,0 +1,17 @@
+.Project =
+[
+    .Name = 'platform'
+    .Kind = .Kind_StaticLib
+    .BaseDir = '$WorkspaceCodeDir$/platforms/platform'
+    .Group = 'Platforms'
+
+    .Public =
+    [
+        .Uses = {
+            'input_system'
+            'modules'
+            'utils'
+        }
+    ]
+]
+.Projects + .Project

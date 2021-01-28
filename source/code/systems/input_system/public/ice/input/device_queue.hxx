@@ -65,8 +65,8 @@ namespace ice::input
             }
         };
 
-        auto begin() const noexcept -> Iterator;
-        auto end() const noexcept -> Iterator;
+        inline auto begin() const noexcept -> Iterator;
+        inline auto end() const noexcept -> Iterator;
 
     private:
         ice::pod::Array<DeviceEvent> _queue;
@@ -94,7 +94,7 @@ namespace ice::input
     {
         using PayloadType = typename detail::FirstType<Args...>::Type;
 
-        if constexpr (std::is_same_v<PayloadType, void> == false)
+        if constexpr (std::is_same_v<PayloadType, void>)
         {
             this->push(
                 DeviceEvent{
@@ -119,15 +119,16 @@ namespace ice::input
             }
             else
             {
-                DeviceEventPayload payload = detail::payload_info<PayloadType>;
-                static_assert(payload.type != 0x0, "Payload type is not supported");
-                static_assert(payload.size == sizeof(PayloadType) || sizeof...(values) == 0, "Payload type has invalid size == 0");
-                static_assert(payload.count == 0x0, "Payload type has invalid default count != 0");
+                constexpr DeviceEventPayload payload_info = detail::payload_info<PayloadType>;
+                static_assert(payload_info.type != 0x0, "Payload type is not supported");
+                static_assert(payload_info.size == sizeof(PayloadType) || sizeof...(values) == 0, "Payload type has invalid size == 0");
+                static_assert(payload_info.count == 0x0, "Payload type has invalid default count != 0");
 
                 PayloadType const values_array[] = {
                     values...
                 };
 
+                DeviceEventPayload payload = payload_info;
                 payload.count = sizeof...(values);
                 payload_data.location = &values_array;
                 payload_data.size = payload.size * payload.count;
@@ -147,7 +148,7 @@ namespace ice::input
         }
     }
 
-    auto DeviceQueue::begin() const noexcept -> Iterator
+    inline auto DeviceQueue::begin() const noexcept -> Iterator
     {
         return Iterator{
             ._queue = &_queue,
@@ -157,7 +158,7 @@ namespace ice::input
         };
     }
 
-    auto DeviceQueue::end() const noexcept -> Iterator
+    inline auto DeviceQueue::end() const noexcept -> Iterator
     {
         return Iterator{
             ._queue = &_queue,

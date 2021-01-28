@@ -1,5 +1,5 @@
 #include <ice/application.hxx>
-#include <ice/platform/windows.hxx>
+#include <ice/os/windows.hxx>
 #include <ice/app_info.hxx>
 
 #include <ice/memory.hxx>
@@ -11,6 +11,8 @@
 
 #include <ice/resource_system.hxx>
 #include <ice/resource_index.hxx>
+
+#include <ice/app_info.hxx>
 
 int main(int, char**)
 {
@@ -38,6 +40,9 @@ int main(int, char**)
             ice::HeapString<> working_dir{ main_allocator };
             ice::working_directory(working_dir);
 
+            ice::HeapString<> app_location{ main_allocator };
+            ice::app_location(app_location);
+
             // #todo logger
             // fmt::print("Initializing filesystem module at: {}\n", working_dir);
 
@@ -55,7 +60,7 @@ int main(int, char**)
 
             resource_system->register_index(
                 schemes,
-                ice::create_dynlib_index(dynlib_allocator, ".")
+                ice::create_dynlib_index(dynlib_allocator, app_location)
             );
         }
 

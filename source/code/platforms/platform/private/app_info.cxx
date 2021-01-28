@@ -1,8 +1,8 @@
 #include <ice/app_info.hxx>
 #include <ice/heap_string.hxx>
 #include <ice/stack_string.hxx>
-#include <ice/platform/windows.hxx>
-#include <ice/platform/unix.hxx>
+#include <ice/os/windows.hxx>
+#include <ice/os/unix.hxx>
 
 #include <filesystem>
 

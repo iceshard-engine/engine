@@ -52,6 +52,12 @@ namespace ice::input
         , _controls{ alloc }
     {
         ice::pod::array::resize(_controls, mouse_button_num + 5);
+        for (detail::ControlState& control : _controls)
+        {
+            control.id = InputID::Invalid;
+            control.tick = 0;
+            control.value.button.value_i32 = 0;
+        }
     }
 
     void MouseDevice::on_tick(ice::Timer const& timer) noexcept

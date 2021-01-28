@@ -1,0 +1,23 @@
+.Project =
+[
+    .Name = 'platform_win32'
+    .Kind = .Kind_StaticLib
+    .BaseDir = '$WorkspaceCodeDir$/platforms/platform_win32'
+    .Group = 'Platforms'
+
+    .Private =
+    [
+        .Uses = {
+            'platform'
+            'utils'
+        }
+    ]
+
+    .Public =
+    [
+        .Modules = {
+            'SDL2'
+        }
+    ]
+]
+.Projects + .Project

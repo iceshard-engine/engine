@@ -9,7 +9,6 @@
     .Public =
     [
         .Uses = {
-            'platform'
             'collections'
         }
     ]

@@ -4,7 +4,6 @@
 #include "core/core/core.bff"
 #include "core/memsys/memsys.bff"
 #include "core/collections/collections.bff"
-#include "core/platform/platform.bff"
 #include "core/modules/modules.bff"
 #include "core/utils/utils.bff"
 ; #include "core/tasks/tasks.bff"
@@ -13,6 +12,9 @@
 #include "systems/asset_system/asset_system.bff"
 ; #include "systems/render_system/render_system.bff"
 #include "systems/input_system/input_system.bff"
+
+#include "platforms/platform/platform.bff"
+#include "platforms/platform_win32/platform_win32.bff"
 ;
 ; #include "drivers/sdl2_driver/sdl2_driver.bff"
 ; #include "drivers/vulkan_driver/vulkan_driver.bff"
@@ -23,7 +25,7 @@
 ; #include "iceshard/iceshard/iceshard.bff"
 ;
 ; #include "modules/debug_module/debug_module.bff"
-; #include "modules/asset_module/asset_module.bff"
+; #include "modules/iceshard_pipelines/iceshard_pipelines.bff"
 ;
 ; #include "tools/asset_compiler/asset_compiler.bff"
 ;

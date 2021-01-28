@@ -6,6 +6,7 @@ namespace ice::build
 
     enum class System : uint32_t
     {
+        UWP,
         Windows,
         Unix
     };
@@ -49,6 +50,12 @@ namespace ice::build
     constexpr auto to_string(Compiler type) noexcept -> std::string_view;
     constexpr auto to_string(Platform const& type) noexcept -> std::string_view;
 
+    static constexpr Platform platform_uwp_x64_msvc = {
+        .name = "uwp-x64-msvc",
+        .system = System::UWP,
+        .architecture = Architecture::x64,
+        .compiler = Compiler::MSVC
+    };
 
     static constexpr Platform platform_windows_x64_msvc = {
         .name = "windows-x64-msvc",
@@ -72,6 +79,7 @@ namespace ice::build
     };
 
     static constexpr Platform all_platforms[] = {
+        platform_uwp_x64_msvc,
         platform_windows_x64_msvc,
         platform_windows_x64_clang,
         platform_unix_x64_clang,
@@ -144,6 +152,8 @@ namespace ice::build
     {
         switch (system)
         {
+        case ice::build::System::UWP:
+            return "universal_windows_platform";
         case ice::build::System::Windows:
             return "windows";
         case ice::build::System::Unix:

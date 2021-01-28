@@ -1,6 +1,6 @@
 #include <ice/clock.hxx>
-#include <ice/platform/windows.hxx>
-#include <ice/platform/unix.hxx>
+#include <ice/os/windows.hxx>
+#include <ice/os/unix.hxx>
 
 namespace ice
 {

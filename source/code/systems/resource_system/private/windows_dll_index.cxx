@@ -1,10 +1,9 @@
 #include <ice/resource_index.hxx>
 #include <ice/resource_query.hxx>
 #include <ice/resource_meta.hxx>
-#include <ice/platform/windows.hxx>
+#include <ice/os/windows.hxx>
 #include <ice/unique_ptr.hxx>
 #include <ice/resource_index.hxx>
-#include <ice/app_info.hxx>
 #include <ice/pod/array.hxx>
 #include "path_utils.hxx"
 
@@ -41,7 +40,7 @@ namespace ice
 
             auto metadata() const noexcept -> ice::Metadata const& override
             {
-                return ice::Metadata{ };
+                return _metadata_view;
             }
 
             auto data() noexcept -> ice::Data override
@@ -52,6 +51,8 @@ namespace ice
         private:
             ice::HeapString<> _file_path;
             ice::URI _uri;
+
+            ice::Metadata _metadata_view;
         };
 
     } // namespace detail
@@ -70,8 +71,7 @@ namespace ice
     private:
     private:
         ice::Allocator& _allocator;
-        ice::HeapString<> _app_location;
-        ice::HeapString<> _working_directory;
+        ice::HeapString<> _base_path;
 
         ice::pod::Array<ice::Resource*> _resources;
 
@@ -79,17 +79,14 @@ namespace ice
         ice::pod::Array<ice::Resource*> _event_objects;
     };
 
-    WindowsDllIndex::WindowsDllIndex(ice::Allocator& alloc, ice::String /*base_path*/) noexcept
+    WindowsDllIndex::WindowsDllIndex(ice::Allocator& alloc, ice::String base_path) noexcept
         : ice::ResourceIndex{ }
         , _allocator{ alloc }
-        , _app_location{ _allocator }
-        , _working_directory{ _allocator }
+        , _base_path{ _allocator, base_path }
         , _resources{ _allocator }
         , _events{ _allocator }
         , _event_objects{ _allocator }
     {
-        ice::app_location(_app_location);
-        ice::working_directory(_working_directory);
     }
 
     WindowsDllIndex::~WindowsDllIndex() noexcept
@@ -118,7 +115,7 @@ namespace ice
             return false;
         }
 
-        ice::HeapString<> directory_path{ _allocator, _app_location };
+        ice::HeapString<> directory_path{ _allocator, _base_path };
         ice::path::join(directory_path, uri.path);
 
         std::filesystem::path mount_path = std::filesystem::weakly_canonical(ice::String{ directory_path });

@@ -1,7 +1,7 @@
 #include <ice/log.hxx>
 #include <ice/memory/memory_globals.hxx>
 #include <ice/memory/pointer_arithmetic.hxx>
-#include <ice/platform/windows.hxx>
+#include <ice/os/windows.hxx>
 
 #include "log_internal.hxx"
 #include "log_buffer.hxx"

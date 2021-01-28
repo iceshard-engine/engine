@@ -1,7 +1,7 @@
 #include <ice/module_register.hxx>
 #include <ice/module.hxx>
 #include <ice/pod/hash.hxx>
-#include <ice/platform/windows.hxx>
+#include <ice/os/windows.hxx>
 
 namespace ice
 {

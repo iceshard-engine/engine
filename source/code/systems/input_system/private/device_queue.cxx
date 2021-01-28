@@ -26,7 +26,10 @@ namespace ice::input
     ) noexcept
     {
         ice::pod::array::push_back(_queue, event);
-        ice::buffer::append(_data, payload);
+        if (event.payload.type != 0)
+        {
+            ice::buffer::append(_data, payload);
+        }
     }
 
 } // namespace ice::input

@@ -10,7 +10,6 @@
     [
         .Uses = {
             'collections'
-            'platform'
         }
     ]
 

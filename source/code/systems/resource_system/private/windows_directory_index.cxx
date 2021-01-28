@@ -1,10 +1,10 @@
 #include <ice/resource_index.hxx>
 #include <ice/resource_query.hxx>
 #include <ice/resource_meta.hxx>
-#include <ice/platform/windows.hxx>
 #include <ice/memory/proxy_allocator.hxx>
 #include <ice/memory/stack_allocator.hxx>
 #include <ice/memory/memory_globals.hxx>
+#include <ice/os/windows.hxx>
 #include <ice/pod/array.hxx>
 #include <ice/pod/hash.hxx>
 #include <ice/buffer.hxx>
@@ -79,7 +79,7 @@ namespace ice
 
             auto metadata() const noexcept -> ice::Metadata const& override
             {
-                return {};
+                return _metadata_view;
             }
 
             auto data() noexcept -> ice::Data override
@@ -91,6 +91,8 @@ namespace ice
             ice::HeapString<> _file_path;
             ice::HeapString<> _meta_path;
             ice::URI _uri;
+
+            ice::Metadata _metadata_view;
         };
 
         class DirectoryResource final : public ice::Resource
