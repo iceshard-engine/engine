@@ -1,28 +1,30 @@
 #pragma once
-#include <ice/platform_render_surface.hxx>
+#include <ice/platform_window_surface.hxx>
 #include <SDL.h>
 
 namespace ice::platform
 {
 
-    class SDL2_RenderSurface final : public ice::platform::RenderSurface
+    class SDL2_WindowSurface final : public ice::platform::WindowSurface
     {
     public:
-        SDL2_RenderSurface(
+        SDL2_WindowSurface(
             ice::Allocator& alloc,
-            ice::platform::RenderDriver render_driver
+            ice::render::RenderDriverAPI driver_api
         ) noexcept;
-        ~SDL2_RenderSurface() noexcept override;
+        ~SDL2_WindowSurface() noexcept override;
 
-        bool query_details(SurfaceDetails*) const noexcept override;
+        bool query_details(
+            ice::render::SurfaceInfo& surface_info_out
+        ) const noexcept override;
 
-        auto render_driver() const noexcept -> ice::platform::RenderDriver override;
+        auto render_driver() const noexcept -> ice::render::RenderDriverAPI override;
 
         auto dimensions() const noexcept -> ice::vec2u override;
 
     private:
         ice::Allocator& _allocator;
-        ice::platform::RenderDriver const _render_driver;
+        ice::render::RenderDriverAPI _render_driver;
 
         SDL_Window* _window;
     };

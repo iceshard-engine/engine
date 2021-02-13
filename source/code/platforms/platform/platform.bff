@@ -9,6 +9,7 @@
     [
         .Uses = {
             'input_system'
+            'render_system'
             'modules'
             'utils'
         }

@@ -16,8 +16,6 @@ namespace ice::platform
 
         auto run() noexcept -> ice::i32 override;
 
-        auto create_surface(RenderDriver driver) noexcept -> ice::UniquePtr<ice::platform::RenderSurface> override;
-
     private:
         ice::Allocator& _allocator;
         ice::UniquePtr<ice::platform::App> _app;

@@ -103,8 +103,6 @@ namespace ice::platform
         , _allocator{ alloc }
         , _app{ ice::move(app) }
     {
-        SDL_Init(0);
-
         [[maybe_unused]]
         bool const init_success = SDL_InitSubSystem(SDL_INIT_EVENTS) >= 0;
         ICE_ASSERT(init_success, "Initialization error for SDL2 'Events' subsystem.");
@@ -113,7 +111,6 @@ namespace ice::platform
     SDL2_Container::~SDL2_Container() noexcept
     {
         SDL_QuitSubSystem(SDL_INIT_EVENTS);
-        SDL_Quit();
     }
 
     auto SDL2_Container::run() noexcept -> ice::i32
@@ -167,11 +164,6 @@ namespace ice::platform
         }
 
         return 0;
-    }
-
-    auto SDL2_Container::create_surface(RenderDriver driver) noexcept -> ice::UniquePtr<ice::platform::RenderSurface>
-    {
-        return ice::make_unique<RenderSurface, SDL2_RenderSurface>(_allocator, _allocator, driver);
     }
 
     auto create_app_container(

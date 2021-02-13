@@ -31,8 +31,6 @@ namespace ice::platform
     public:
         virtual ~Container() noexcept = default;
 
-        virtual auto create_surface(RenderDriver driver) noexcept -> ice::UniquePtr<ice::platform::RenderSurface> = 0;
-
         virtual auto run() noexcept -> ice::i32 = 0;
     };
 
