@@ -1,4 +1,5 @@
 #include <ice/render/render_module.hxx>
+#include <ice/render/render_driver.hxx>
 
 namespace ice::render
 {
