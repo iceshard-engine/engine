@@ -16,7 +16,7 @@ namespace ice
         ice::Memory& asset_data
     ) noexcept -> ice::BakeResult
     {
-        using ice::render::Image;
+        using ice::render::ImageInfo;
 
         stbi_uc const* image_buffer_raw = reinterpret_cast<stbi_uc const*>(resource_data.location);
 
@@ -40,16 +40,16 @@ namespace ice
             );
 
             ice::Buffer out_data{ asset_alloc };
-            ice::buffer::reserve(out_data, sizeof(Image) + image_data.size + 8);
+            ice::buffer::reserve(out_data, sizeof(ImageInfo) + image_data.size + 8);
 
             void* image_ptr = ice::buffer::append(
                 out_data,
-                ice::Data{ nullptr, sizeof(Image) }
+                ice::Data{ nullptr, sizeof(ImageInfo) }
             );
 
             void* data_ptr = ice::buffer::append(out_data, image_data);
 
-            auto* texture = reinterpret_cast<Image*>(image_ptr);
+            auto* texture = reinterpret_cast<ImageInfo*>(image_ptr);
             texture->width = width;
             texture->height = height;
             texture->format = ice::render::ImageFormat::UNORM_RGBA;
