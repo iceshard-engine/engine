@@ -10,26 +10,26 @@
 
 #include "systems/resource_system/resource_system.bff"
 #include "systems/asset_system/asset_system.bff"
-; #include "systems/render_system/render_system.bff"
+#include "systems/render_system/render_system.bff"
 #include "systems/input_system/input_system.bff"
 
 #include "platforms/platform/platform.bff"
 #include "platforms/platform_win32/platform_win32.bff"
 ;
 ; #include "drivers/sdl2_driver/sdl2_driver.bff"
-; #include "drivers/vulkan_driver/vulkan_driver.bff"
 ;
-; #include "iceshard/application/application.bff"
-; #include "iceshard/engine/engine.bff"
+#include "iceshard/application/application.bff"
+#include "iceshard/engine/engine.bff"
 ; #include "iceshard/engine_debug/engine_debug.bff"
-; #include "iceshard/iceshard/iceshard.bff"
+#include "iceshard/iceshard/iceshard.bff"
 ;
 ; #include "modules/debug_module/debug_module.bff"
-; #include "modules/iceshard_pipelines/iceshard_pipelines.bff"
-;
+#include "modules/iceshard_pipelines/iceshard_pipelines.bff"
+#include "modules/vulkan_renderer/vulkan_renderer.bff"
+
 ; #include "tools/asset_compiler/asset_compiler.bff"
 ;
-; #include "test/test.bff"
+#include "test/test.bff"
 
 #include "core/core/core_tests.bff"
 #include "core/memsys/memsys_tests.bff"

@@ -14,9 +14,10 @@
         [
             .Runtime = {
                 'iceshard'
-                'asset_module'
-                'debug_module'
-                'sdl2_driver'
+                'vulkan_renderer'
+                // 'asset_module'
+                // 'debug_module'
+                // 'sdl2_driver'
             }
 #if exists(VULKAN_SDK)
             .Runtime + 'vulkan_driver'
@@ -24,14 +25,17 @@
         ]
 
         .Modules = {
-            'imgui'
-            'SDL2'
+            // 'imgui'
+            // 'SDL2'
             'Assimp'
         }
         .Uses = {
+            'utils'
+            'modules'
             'engine'
-            'engine_debug'
+            // 'engine_debug'
             'application'
+            'platform_win32'
         }
     ]
 ]

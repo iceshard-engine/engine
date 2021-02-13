@@ -1,420 +1,760 @@
-#include <core/memory.hxx>
-#include <core/allocators/proxy_allocator.hxx>
-#include <core/string.hxx>
-#include <core/stack_string.hxx>
-#include <core/string_view.hxx>
-#include <core/pod/array.hxx>
-#include <core/collections.hxx>
-#include <core/datetime/datetime.hxx>
-#include <core/platform/windows.hxx>
+#include <ice/allocator.hxx>
+#include <ice/module_register.hxx>
 
-#include <core/cexpr/stringid.hxx>
-#include <core/scope_exit.hxx>
-#include <core/debug/profiler.hxx>
-#include <core/pod/hash.hxx>
-#include <core/pod/algorithm.hxx>
-#include <core/clock.hxx>
+#include <ice/resource.hxx>
+#include <ice/resource_system.hxx>
 
-#include <resource/uri.hxx>
-#include <resource/resource_system.hxx>
-#include <resource/modules/dynlib_module.hxx>
-#include <resource/modules/filesystem_module.hxx>
+#include <ice/log.hxx>
+#include <ice/log_module.hxx>
+#include <ice/assert.hxx>
 
-#include <core/message/buffer.hxx>
-#include <core/message/operations.hxx>
+//#include <core/memory.hxx>
+//#include <core/allocators/proxy_allocator.hxx>
+//#include <core/string.hxx>
+//#include <core/stack_string.hxx>
+//#include <core/string_view.hxx>
+//#include <core/pod/array.hxx>
+//#include <core/collections.hxx>
+//#include <core/datetime/datetime.hxx>
+//#include <core/platform/windows.hxx>
+//
+//#include <core/cexpr/stringid.hxx>
+//#include <core/scope_exit.hxx>
+//#include <core/debug/profiler.hxx>
+//#include <core/pod/hash.hxx>
+//#include <core/pod/algorithm.hxx>
+//#include <core/clock.hxx>
+//
+//#include <resource/uri.hxx>
+//#include <resource/resource_system.hxx>
+//#include <resource/modules/dynlib_module.hxx>
+//#include <resource/modules/filesystem_module.hxx>
+//
+//#include <core/message/buffer.hxx>
+//#include <core/message/operations.hxx>
+//
+//#include <input_system/module.hxx>
+//#include <input_system/message/app.hxx>
+//#include <input_system/message/keyboard.hxx>
+//#include <input_system/message/window.hxx>
+//
+//#include <asset_system/asset_system.hxx>
+//#include <asset_system/assets/asset_config.hxx>
+//#include <asset_system/assets/asset_shader.hxx>
+//#include <asset_system/assets/asset_mesh.hxx>
+//#include <asset_system/asset_module.hxx>
+//
+//#include <fmt/format.h>
+//#include <application/application.hxx>
+//
+//#include <iceshard/math.hxx>
+//#include <iceshard/module.hxx>
+//#include <iceshard/engine.hxx>
+//#include <iceshard/execution.hxx>
+//#include <iceshard/frame.hxx>
+//
+//#include <iceshard/world/world.hxx>
+//#include <iceshard/entity/entity_index.hxx>
+//#include <iceshard/entity/entity_command_buffer.hxx>
+//
+//#include <iceshard/component/component_system.hxx>
+//#include <iceshard/component/component_block.hxx>
+//#include <iceshard/component/component_block_operation.hxx>
+//#include <iceshard/component/component_block_allocator.hxx>
+//#include <iceshard/component/component_archetype_index.hxx>
+//#include <iceshard/component/component_archetype_iterator.hxx>
+//
+//#include <iceshard/action/action.hxx>
+//#include <iceshard/action/action_trigger.hxx>
+//#include <iceshard/action/action_trigger_data.hxx>
+//#include <iceshard/action/action_system.hxx>
+//
+//#include <iceshard/renderer/render_pipeline.hxx>
+//#include <iceshard/renderer/render_resources.hxx>
+//#include <iceshard/renderer/render_pass.hxx>
+//#include <iceshard/renderer/render_model.hxx>
+//#include <iceshard/renderer/render_funcs.hxx>
+//#include <iceshard/renderer/render_commands.hxx>
+//#include <iceshard/renderer/render_buffers.hxx>
+//
+//#include <iceshard/render/render_stage.hxx>
+//#include <iceshard/render/render_system.hxx>
+//#include <iceshard/render/render_pass.hxx>
+//
+//#include <iceshard/material/material.hxx>
+//#include <iceshard/material/material_system.hxx>
+//
+//#include <iceshard/input/input_mouse.hxx>
+//#include <iceshard/input/input_keyboard.hxx>
+//#include <iceshard/input/input_controller.hxx>
+//
+//#include <iceshard/ecs/model.hxx>
+//#include <iceshard/ecs/transform.hxx>
+//#include <iceshard/ecs/light.hxx>
+//#include <iceshard/ecs/camera.hxx>
+//#include <iceshard/math.hxx>
+//
+//#include <iceshard/debug/debug_module.hxx>
+//#include <iceshard/debug/debug_system.hxx>
+//
+//class TileRenderer : public iceshard::ComponentSystem, public iceshard::RenderStageTaskFactory
+//{
+//public:
+//    static constexpr core::math::u32 TileWidth = 64.f;
+//    static constexpr core::math::u32 TileHeight = 64.f;
+//
+//    static constexpr core::math::f32 TilesetTileWidth = 16.f;
+//    static constexpr core::math::f32 TilesetTileHeight = 16.f;
+//
+//    static constexpr core::math::vec2f TilesetTileUV{ 16.f / 368.f, 16.f / 224.f };
+//
+//    TileRenderer(iceshard::MaterialSystem& material_system, iceshard::renderer::RenderSystem& render_system) noexcept
+//        : _material_system{ material_system }
+//        , _render_system{ render_system }
+//    {
+//        _material_system.create_material("cotm.tileset"_sid,
+//            iceshard::Material{
+//                .texture_diffuse = "cotm/tileset_a"_sid,
+//                .shader_vertex = "shaders/isometric/texture-vert"_sid,
+//                .shader_fragment = "shaders/isometric/texture-frag"_sid,
+//            },
+//            iceshard::renderer::RenderPipelineLayout::Tiled
+//        );
+//
+//        struct Vertice
+//        {
+//            ism::vec3f pos;
+//            ism::vec3f norm;
+//            ism::vec2f uv;
+//        };
+//
+//        _tile_data = iceshard::renderer::create_buffer(
+//            iceshard::renderer::api::BufferType::VertexBuffer,
+//            sizeof(Vertice) * 4
+//        );
+//        _tile_indices = iceshard::renderer::create_buffer(
+//            iceshard::renderer::api::BufferType::IndexBuffer,
+//            sizeof(core::math::u16) * 6
+//        );
+//        _tile_instances = iceshard::renderer::create_buffer(
+//            iceshard::renderer::api::BufferType::VertexBuffer,
+//            sizeof(core::math::mat4x4) * 100
+//        );
+//
+//        iceshard::renderer::Buffer buffers[] = {
+//            _tile_data,
+//            _tile_indices,
+//            _tile_instances
+//        };
+//        iceshard::renderer::api::DataView views[core::size(buffers)];
+//
+//        auto buffers_arr = core::pod::array::create_view(buffers);
+//        auto views_arr = core::pod::array::create_view(views);
+//
+//        iceshard::renderer::map_buffers(
+//            buffers_arr,
+//            views_arr
+//        );
+//
+//        Vertice vertices[] = {
+//            Vertice{
+//                .pos = { 0.f, 0.f, 0.f },
+//                .norm = { 0.f, 0.f, 0.f },
+//                .uv = { 0.f, 1.f }
+//            },
+//            Vertice{
+//                .pos = { 0.f, 1.f, 0.f },
+//                .norm = { 0.f, 0.f, 0.f },
+//                .uv = { 0.f, 0.f }
+//            },
+//            Vertice{
+//                .pos = { 1.f, 1.f, 0.f },
+//                .norm = { 0.f, 1.f, 0.f },
+//                .uv = { 1.f, 0.f }
+//            },
+//            Vertice{
+//                .pos = { 1.f, 0.f, 0.f },
+//                .norm = { 0.f, 0.f, 0.f },
+//                .uv = { 1.f, 1.f }
+//            },
+//        };
+//
+//        ism::u16 indices[] = {
+//            0, 2, 1,
+//            0, 3, 2
+//        };
+//
+//        struct Instance
+//        {
+//            ism::vec2f pos;
+//            ism::vec2u tile;
+//        };
+//
+//        Instance instances[] = {
+//            Instance{.pos = {0.f, 0.f}, .tile = {3, 1}},
+//            Instance{.pos = {1.f, 0.f}, .tile = {3, 1}},
+//            Instance{.pos = {0.f, 1.f}, .tile = {3, 1}},
+//            Instance{.pos = {1.f, 1.f}, .tile = {3, 1}},
+//            Instance{.pos = {1.f, 2.f}, .tile = {3, 1}},
+//        };
+//
+//        memcpy(views[0].data, vertices, sizeof(vertices));
+//        memcpy(views[1].data, indices, sizeof(indices));
+//        memcpy(views[2].data, instances, sizeof(instances));
+//
+//        iceshard::renderer::unmap_buffers(
+//            buffers_arr
+//        );
+//    }
+//
+//    auto render_task_factory() noexcept -> iceshard::RenderStageTaskFactory*
+//    {
+//        return this;
+//    }
+//
+//    void create_render_tasks(
+//        iceshard::Frame const& current,
+//        iceshard::renderer::api::CommandBuffer cmds,
+//        core::Vector<cppcoro::task<>>& task_list
+//    ) noexcept override
+//    {
+//        task_list.push_back(draw_tiles(cmds));
+//    }
+//
+//    void update(iceshard::Frame& frame) noexcept override
+//    {
+//        //core::pod::Array<int>& tiles = *frame.new_frame_object<core::pod::Array<int>>("demo.tiles"_sid);
+//    }
+//
+//    auto draw_tiles(iceshard::renderer::CommandBuffer cmds) noexcept -> cppcoro::task<>
+//    {
+//        iceshard::MaterialResources mat;
+//        _material_system.get_material("cotm.tileset"_sid, mat);
+//
+//        namespace cmd = iceshard::renderer::commands;
+//        cmd::set_viewport(cmds, _viewport.x, _viewport.y);
+//        cmd::set_scissor(cmds, _viewport.x, _viewport.y);
+//
+//        cmd::bind_pipeline(cmds, mat.pipeline);
+//
+//        iceshard::renderer::api::ResourceSet resources[] = {
+//            mat.resource,
+//            _render_system.get_resource_set("tiled.view-projection-clip"_sid)
+//        };
+//
+//        cmd::bind_resource_sets(cmds, core::pod::array::create_view(resources));
+//        cmd::bind_index_buffer(cmds, _tile_indices);
+//
+//        iceshard::renderer::Buffer buffers[] = {
+//            _tile_data,
+//            _tile_instances,
+//        };
+//        cmd::bind_vertex_buffers(cmds, core::pod::array::create_view(buffers));
+//
+//        cmd::draw_indexed(cmds, 6, 5, 0, 0, 0);
+//        co_return;
+//    }
+//
+//private:
+//    iceshard::MaterialSystem& _material_system;
+//    iceshard::renderer::RenderSystem& _render_system;
+//
+//    ism::vec2u _viewport{ 1280, 720 };
+//
+//    iceshard::renderer::Buffer _tile_data;
+//    iceshard::renderer::Buffer _tile_indices;
+//    iceshard::renderer::Buffer _tile_instances;
+//};
 
-#include <input_system/module.hxx>
-#include <input_system/message/app.hxx>
-#include <input_system/message/keyboard.hxx>
-#include <input_system/message/window.hxx>
+#include <ice/resource_query.hxx>
 
-#include <asset_system/asset_system.hxx>
-#include <asset_system/assets/asset_config.hxx>
-#include <asset_system/assets/asset_shader.hxx>
-#include <asset_system/assets/asset_mesh.hxx>
-#include <asset_system/asset_module.hxx>
+#include <ice/asset.hxx>
+#include <ice/asset_system.hxx>
+#include <ice/asset_module.hxx>
 
-#include <fmt/format.h>
-#include <application/application.hxx>
+#include <ice/render/render_model.hxx>
+#include <ice/render/render_module.hxx>
+#include <ice/render/render_queue.hxx>
+#include <ice/render/render_pass.hxx>
+#include <ice/render/render_swapchain.hxx>
 
-#include <iceshard/math.hxx>
-#include <iceshard/module.hxx>
-#include <iceshard/engine.hxx>
-#include <iceshard/execution.hxx>
-#include <iceshard/frame.hxx>
+#include <ice/engine.hxx>
+#include <ice/engine_runner.hxx>
+#include <ice/engine_frame.hxx>
+#include <ice/engine_module.hxx>
 
-#include <iceshard/world/world.hxx>
-#include <iceshard/entity/entity_index.hxx>
-#include <iceshard/entity/entity_command_buffer.hxx>
+#include <ice/os/windows.hxx>
+#include <ice/platform_app.hxx>
+#include <ice/platform_window_surface.hxx>
 
-#include <iceshard/component/component_system.hxx>
-#include <iceshard/component/component_block.hxx>
-#include <iceshard/component/component_block_operation.hxx>
-#include <iceshard/component/component_block_allocator.hxx>
-#include <iceshard/component/component_archetype_index.hxx>
-#include <iceshard/component/component_archetype_iterator.hxx>
+#include <ice/input/input_tracker.hxx>
+#include <ice/input/input_mouse.hxx>
 
-#include <iceshard/action/action.hxx>
-#include <iceshard/action/action_trigger.hxx>
-#include <iceshard/action/action_trigger_data.hxx>
-#include <iceshard/action/action_system.hxx>
-
-#include <iceshard/renderer/render_pipeline.hxx>
-#include <iceshard/renderer/render_resources.hxx>
-#include <iceshard/renderer/render_pass.hxx>
-#include <iceshard/renderer/render_model.hxx>
-#include <iceshard/renderer/render_funcs.hxx>
-#include <iceshard/renderer/render_commands.hxx>
-#include <iceshard/renderer/render_buffers.hxx>
-
-#include <iceshard/render/render_stage.hxx>
-#include <iceshard/render/render_system.hxx>
-#include <iceshard/render/render_pass.hxx>
-
-#include <iceshard/material/material.hxx>
-#include <iceshard/material/material_system.hxx>
-
-#include <iceshard/input/input_mouse.hxx>
-#include <iceshard/input/input_keyboard.hxx>
-#include <iceshard/input/input_controller.hxx>
-
-#include <iceshard/ecs/model.hxx>
-#include <iceshard/ecs/transform.hxx>
-#include <iceshard/ecs/light.hxx>
-#include <iceshard/ecs/camera.hxx>
-#include <iceshard/math.hxx>
-
-#include <iceshard/debug/debug_module.hxx>
-#include <iceshard/debug/debug_system.hxx>
-
-class TileRenderer : public iceshard::ComponentSystem, public iceshard::RenderStageTaskFactory
+class TestApp final : public ice::platform::App
 {
 public:
-    static constexpr core::math::u32 TileWidth = 64.f;
-    static constexpr core::math::u32 TileHeight = 64.f;
-
-    static constexpr core::math::f32 TilesetTileWidth = 16.f;
-    static constexpr core::math::f32 TilesetTileHeight = 16.f;
-
-    static constexpr core::math::vec2f TilesetTileUV{ 16.f / 368.f, 16.f / 224.f };
-
-    TileRenderer(iceshard::MaterialSystem& material_system, iceshard::renderer::RenderSystem& render_system) noexcept
-        : _material_system{ material_system }
-        , _render_system{ render_system }
+    TestApp(
+        ice::Allocator& alloc,
+        ice::UniquePtr<ice::EngineRunner> runner
+    ) noexcept
+        : _allocator{ alloc }
+        , _runner{ ice::move(runner) }
+        , _clock{ ice::clock::create_clock() }
+        , _timeline{ ice::timeline::create_timeline(_clock) }
+        , _input_tracker{ ice::input::create_default_input_tracker(_allocator, _clock) }
+        , _input_events{ _allocator }
     {
-        _material_system.create_material("cotm.tileset"_sid,
-            iceshard::Material{
-                .texture_diffuse = "cotm/tileset_a"_sid,
-                .shader_vertex = "shaders/isometric/texture-vert"_sid,
-                .shader_fragment = "shaders/isometric/texture-frag"_sid,
-            },
-            iceshard::renderer::RenderPipelineLayout::Tiled
-        );
-
-        struct Vertice
-        {
-            ism::vec3f pos;
-            ism::vec3f norm;
-            ism::vec2f uv;
-        };
-
-        _tile_data = iceshard::renderer::create_buffer(
-            iceshard::renderer::api::BufferType::VertexBuffer,
-            sizeof(Vertice) * 4
-        );
-        _tile_indices = iceshard::renderer::create_buffer(
-            iceshard::renderer::api::BufferType::IndexBuffer,
-            sizeof(core::math::u16) * 6
-        );
-        _tile_instances = iceshard::renderer::create_buffer(
-            iceshard::renderer::api::BufferType::VertexBuffer,
-            sizeof(core::math::mat4x4) * 100
-        );
-
-        iceshard::renderer::Buffer buffers[] = {
-            _tile_data,
-            _tile_indices,
-            _tile_instances
-        };
-        iceshard::renderer::api::DataView views[core::size(buffers)];
-
-        auto buffers_arr = core::pod::array::create_view(buffers);
-        auto views_arr = core::pod::array::create_view(views);
-
-        iceshard::renderer::map_buffers(
-            buffers_arr,
-            views_arr
-        );
-
-        Vertice vertices[] = {
-            Vertice{
-                .pos = { 0.f, 0.f, 0.f },
-                .norm = { 0.f, 0.f, 0.f },
-                .uv = { 0.f, 1.f }
-            },
-            Vertice{
-                .pos = { 0.f, 1.f, 0.f },
-                .norm = { 0.f, 0.f, 0.f },
-                .uv = { 0.f, 0.f }
-            },
-            Vertice{
-                .pos = { 1.f, 1.f, 0.f },
-                .norm = { 0.f, 1.f, 0.f },
-                .uv = { 1.f, 0.f }
-            },
-            Vertice{
-                .pos = { 1.f, 0.f, 0.f },
-                .norm = { 0.f, 0.f, 0.f },
-                .uv = { 1.f, 1.f }
-            },
-        };
-
-        ism::u16 indices[] = {
-            0, 2, 1,
-            0, 3, 2
-        };
-
-        struct Instance
-        {
-            ism::vec2f pos;
-            ism::vec2u tile;
-        };
-
-        Instance instances[] = {
-            Instance{.pos = {0.f, 0.f}, .tile = {3, 1}},
-            Instance{.pos = {1.f, 0.f}, .tile = {3, 1}},
-            Instance{.pos = {0.f, 1.f}, .tile = {3, 1}},
-            Instance{.pos = {1.f, 1.f}, .tile = {3, 1}},
-            Instance{.pos = {1.f, 2.f}, .tile = {3, 1}},
-        };
-
-        memcpy(views[0].data, vertices, sizeof(vertices));
-        memcpy(views[1].data, indices, sizeof(indices));
-        memcpy(views[2].data, instances, sizeof(instances));
-
-        iceshard::renderer::unmap_buffers(
-            buffers_arr
+        _input_tracker->register_device_type(
+            ice::input::DeviceType::Mouse,
+            ice::input::get_default_device_factory()
         );
     }
 
-    auto render_task_factory() noexcept -> iceshard::RenderStageTaskFactory*
+    ~TestApp() noexcept override
     {
-        return this;
+        ICE_LOG(
+            ice::LogSeverity::Debug, ice::LogTag::Game,
+            "Elapsed time during testing {}s.",
+            ice::timeline::elapsed(_timeline)
+        );
     }
 
-    void create_render_tasks(
-        iceshard::Frame const& current,
-        iceshard::renderer::api::CommandBuffer cmds,
-        core::Vector<cppcoro::task<>>& task_list
+    void handle_inputs(
+        ice::input::DeviceQueue const& device_events
     ) noexcept override
     {
-        task_list.push_back(draw_tiles(cmds));
+        using namespace ice::input;
+
+        ice::pod::array::clear(_input_events);
+        _input_tracker->process_device_queue(device_events, _input_events);
+
+        for (InputEvent const& ev : _input_events)
+        {
+            if (ev.identifier == input_identifier(DeviceType::Mouse, MouseInput::ButtonLeft) && (ev.value.button.state.clicked || ev.value.button.state.repeat))
+            {
+                ICE_LOG(
+                    ice::LogSeverity::Debug, ice::LogTag::Game,
+                    "Left Mouse button down for device {} with identifier {}",
+                    static_cast<ice::u8>(ev.device),
+                    static_cast<ice::u16>(ev.identifier)
+                );
+            }
+        }
     }
 
-    void update(iceshard::Frame& frame) noexcept override
+    void update(
+        ice::pod::Array<ice::platform::Event> const& events
+    ) noexcept override
     {
-        //core::pod::Array<int>& tiles = *frame.new_frame_object<core::pod::Array<int>>("demo.tiles"_sid);
-    }
+        //ICE_LOG(
+        //    ice::LogSeverity::Debug, ice::LogTag::Game,
+        //    "Current frame memory consumption: {} bytes.",
+        //    _runner->current_frame().memory_consumption()
+        //);
 
-    auto draw_tiles(iceshard::renderer::CommandBuffer cmds) noexcept -> cppcoro::task<>
-    {
-        iceshard::MaterialResources mat;
-        _material_system.get_material("cotm.tileset"_sid, mat);
+        _runner->next_frame();
 
-        namespace cmd = iceshard::renderer::commands;
-        cmd::set_viewport(cmds, _viewport.x, _viewport.y);
-        cmd::set_scissor(cmds, _viewport.x, _viewport.y);
-
-        cmd::bind_pipeline(cmds, mat.pipeline);
-
-        iceshard::renderer::api::ResourceSet resources[] = {
-            mat.resource,
-            _render_system.get_resource_set("tiled.view-projection-clip"_sid)
-        };
-
-        cmd::bind_resource_sets(cmds, core::pod::array::create_view(resources));
-        cmd::bind_index_buffer(cmds, _tile_indices);
-
-        iceshard::renderer::Buffer buffers[] = {
-            _tile_data,
-            _tile_instances,
-        };
-        cmd::bind_vertex_buffers(cmds, core::pod::array::create_view(buffers));
-
-        cmd::draw_indexed(cmds, 6, 5, 0, 0, 0);
-        co_return;
+        ice::clock::update(_clock);
     }
 
 private:
-    iceshard::MaterialSystem& _material_system;
-    iceshard::renderer::RenderSystem& _render_system;
+    ice::Allocator& _allocator;
+    ice::UniquePtr<ice::EngineRunner> _runner;
 
-    ism::vec2u _viewport{ 1280, 720 };
+    ice::SystemClock _clock = ice::clock::create_clock();
+    ice::Timeline _timeline = ice::timeline::create_timeline(_clock);
 
-    iceshard::renderer::Buffer _tile_data;
-    iceshard::renderer::Buffer _tile_indices;
-    iceshard::renderer::Buffer _tile_instances;
+    ice::UniquePtr<ice::input::InputTracker> _input_tracker;
+    ice::pod::Array<ice::input::InputEvent> _input_events;
 };
 
-int game_main(core::allocator& alloc, resource::ResourceSystem& resource_system)
+ice::i32 game_main(ice::Allocator& alloc, ice::ResourceSystem& resource_system)
 {
-    using resource::URN;
-    using resource::URI;
+    using ice::operator""_sid;
+    using ice::operator""_uri;
 
-    resource_system.mount(URI{ resource::scheme_file, "../source/data/config.json" });
+    resource_system.mount("file://../source/data/config.json"_uri);
 
-    auto* engine_module_location = resource_system.find(URN{ "iceshard.dll" });
-    IS_ASSERT(engine_module_location != nullptr, "Missing engine module!");
 
-    if (auto engine_module = iceshard::load_engine_module(alloc, engine_module_location->location().path))
+    ice::UniquePtr<ice::ModuleRegister> module_register = ice::create_default_module_register(alloc);
+    module_register->load_module(
+        alloc,
+        ice::load_log_module,
+        ice::unload_log_module
+    );
+
+
+    ice::Resource* const pipelines_module = resource_system.request("res://iceshard_pipelines.dll"_uri);
+    ice::Resource* const engine_module = resource_system.request("res://iceshard.dll"_uri);
+    ice::Resource* const vulkan_module = resource_system.request("res://vulkan_renderer.dll"_uri);
+
+    ICE_ASSERT(pipelines_module != nullptr, "Missing `iceshard_pipelines.dll` module!");
+    ICE_ASSERT(engine_module != nullptr, "Missing `iceshard.dll` module!");
+    ICE_ASSERT(engine_module != nullptr, "Missing `vulkan_renderer.dll` module!");
+
+    module_register->load_module(alloc, pipelines_module->location().path);
+    module_register->load_module(alloc, engine_module->location().path);
+    module_register->load_module(alloc, vulkan_module->location().path);
+
+
+    ice::ResourceQuery resource_query;
+    resource_system.query_changes(resource_query);
+    resource_system.mount("file://mount.isr"_uri);
+
+    ice::Resource* const mount_file = resource_system.request("file://mount.isr"_uri);
+    if (mount_file != nullptr)
     {
-        // Default file system mount points
-        resource_system.flush_messages();
-        resource_system.mount(URI{ resource::scheme_file, "mount.isr" });
-
-        // Check for an user defined mounting file
-        if (auto* mount_resource = resource_system.find(URI{ resource::scheme_file, "mount.isr" }))
-        {
-            fmt::print("Custom mount resource found: {}\n", mount_resource->location());
-        }
-
-        auto engine_instance = engine_module->create_instance(alloc, resource_system);
-
-        resource_system.flush_messages();
-        resource_system.mount(URI{ resource::scheme_directory, "../source/data" });
-
-        // Prepare the asset system
-        auto& asset_system = engine_instance->asset_system();
-
-        auto* assimp_module_location = resource_system.find(URN{ "asset_module.dll" });
-        auto assimp_module = iceshard::load_asset_module(alloc, assimp_module_location->location().path, asset_system);
-        if (assimp_module == nullptr)
-        {
-            fmt::print("ERROR: Couldn't properly load `asset_module.dll`!\n");
-        }
-
-        asset_system.add_resolver(asset::default_resolver_mesh(alloc));
-        asset_system.add_resolver(asset::default_resolver_shader(alloc));
-        asset_system.add_loader(asset::default_loader_mesh(alloc));
-        asset_system.add_loader(asset::default_loader_shader(alloc));
-        asset_system.update();
-        resource_system.flush_messages();
-
-        // Prepare the render system
-        auto& render_system = engine_instance->render_system();
-
-        using iceshard::renderer::RenderResource;
-        using iceshard::renderer::RenderResourceType;
-
-        // Debug UI module
-        core::memory::unique_pointer<iceshard::debug::DebugSystemModule> debugui_module{ nullptr, { alloc } };
-        core::memory::unique_pointer<iceshard::debug::DebugModule> engine_debugui{ nullptr, { alloc } };
-
-        if constexpr (core::build::is_release == false)
-        {
-            auto* debugui_module_location = resource_system.find(URN{ "debug_module.dll" });
-            if (debugui_module_location != nullptr)
-            {
-                debugui_module = iceshard::debug::load_debug_system_module(
-                    alloc,
-                    debugui_module_location->location().path,
-                    *engine_instance
-                );
-
-                engine_debugui = iceshard::debug::load_debug_module_from_handle(
-                    alloc, engine_module->native_handle(), debugui_module->debug_system()
-                );
-            }
-        }
-
-        fmt::print("IceShard engine revision: {}\n", engine_instance->revision());
-
-        [[maybe_unused]]
-        iceshard::World* world = engine_instance->world_manager().create_world("test-world"_sid);
-
-        auto arch_idx = world->service_provider()->archetype_index();
-
-        iceshard::Entity camera_entity = engine_instance->entity_manager().create();
-        arch_idx->add_component(camera_entity,
-            iceshard::component::Camera{
-                .position = { 0.0f, 0.0f, 1.0f },
-                .front = { 0.0f, 0.0f, 1.0f },
-                .yaw = -90.f,
-                .pitch = 0.0f,
-            }
-        );
-
-        arch_idx->add_component(camera_entity,
-            iceshard::component::ProjectionPerspective{
-                .fovy = 45.f
-            }
-        );
-
-        auto& material_system = engine_instance->material_system();
-
-        material_system.create_material("temp.backpack"_sid,
-            iceshard::Material{
-                .texture_diffuse = "temp/backpack_diffuse"_sid,
-                .shader_vertex = "shaders/debug/texture-vert"_sid,
-                .shader_fragment = "shaders/debug/texture-frag"_sid,
-            },
-            iceshard::renderer::RenderPipelineLayout::Textured
-        );
-
-        auto e = engine_instance->entity_manager().create();
-        arch_idx->add_component(
-            e, iceshard::component::Transform{ ism::identity<ism::mat4>() }
-        );
-        arch_idx->add_component(
-            e, iceshard::component::ModelName{ "temp/backpack"_sid }
-        );
-        arch_idx->add_component(
-            e, iceshard::component::Material{ "temp.backpack"_sid }
-        );
-
-        //arch_idx->add_component(camera_entity,
-        //    iceshard::component::ProjectionOrtographic{
-        //        .left_right = { 0.0f, 1280.f / TileRenderer::TileWidth },
-        //        .top_bottom = { 0.f, 720.f / TileRenderer::TileHeight },
-        //        .near_far = { 0.1f, 100.f },
-        //    }
-        //);
-
-        auto execution_instance = engine_instance->execution_instance();
-        iceshard::register_common_triggers(execution_instance->input_actions().trigger_database());
-
-        TileRenderer map_system{ material_system, engine_instance->render_system() };
-        engine_instance->services().add_system("demo.isometric"_sid, &map_system);
-
-        auto* const render_pass = execution_instance->render_system().render_pass("isc.render-pass.default"_sid);
-        if (render_pass != nullptr)
-        {
-            auto* const render_stage = render_pass->render_stage("isr.render-stage.opaque"_sid);
-
-            if (render_stage != nullptr)
-            {
-                render_stage->add_system_before("demo.isometric"_sid, "isc.system.static-mesh-renderer"_sid);
-            }
-        }
-
-        bool quit = false;
-        while (quit == false)
-        {
-            auto& frame = execution_instance->current_frame();
-
-            core::message::filter<input::message::AppExit>(frame.messages(), [&quit](auto const&) noexcept
-                {
-                    quit = true;
-                });
-
-            execution_instance->next_frame();
-        }
-
-        engine_instance->world_manager().destroy_world("test-world"_sid);
-
-        engine_debugui = nullptr;
-        debugui_module = nullptr;
+        ICE_LOG(ice::LogSeverity::Info, ice::LogTag::Game, "Custom mount file found: {}\n", mount_file->location().path);
     }
 
+    resource_system.query_changes(resource_query);
+    resource_system.mount("dir://../source/data"_uri);
+    resource_system.query_changes(resource_query);
+
+    ice::UniquePtr<ice::AssetSystem> asset_system = ice::create_asset_system(alloc, resource_system);
+    ice::load_asset_pipeline_modules(alloc, *module_register, *asset_system);
+
+    asset_system->bind_resources(resource_query.objects);
+
+    ice::Asset model_asset = asset_system->request(ice::AssetType::Mesh, "/mesh/box/box"_sid);
+
+    ice::Data model_data;
+    ice::asset_data(model_asset, model_data);
+
+    ice::render::Model const* render_model = reinterpret_cast<ice::render::Model const*>(model_data.location);
+
+    ICE_ASSERT(render_model != nullptr, "Unable to load test `render_model`");
+    ICE_LOG(
+        ice::LogSeverity::Debug, ice::LogTag::Game,
+        "Test `model` has {} vertices and {} indices.",
+        render_model->mesh_list[0].vertice_count,
+        render_model->mesh_list[0].indice_count
+    );
+
+    asset_system->release(model_asset);
+
+
+    ice::UniquePtr<ice::Engine> engine = ice::create_engine(alloc, *asset_system, *module_register);
+    if (engine != nullptr)
+    {
+        ice::UniquePtr<ice::render::RenderDriver> render_driver = ice::render::create_render_driver(
+            alloc, *module_register
+        );
+
+        ice::UniquePtr<ice::platform::WindowSurface> platform_surface = ice::platform::create_window_surface(
+            alloc, ice::render::RenderDriverAPI::Vulkan
+        );
+
+        ice::render::SurfaceInfo surface_info;
+
+        [[maybe_unused]]
+        bool const query_success = platform_surface->query_details(surface_info);
+        ICE_ASSERT(query_success, "Couldn't query surface details from platform surface!");
+
+        ice::render::RenderSurface* render_surface = render_driver->create_surface(surface_info);
+
+        ice::pod::Array<ice::render::QueueFamilyInfo> queue_families{ alloc };
+        render_driver->query_queue_infos(queue_families);
+
+        using ice::render::QueueFlags;
+        using ice::render::QueueInfo;
+        using ice::render::QueueID;
+
+        constexpr QueueFlags required_flags = QueueFlags::Graphics | QueueFlags::Compute | QueueFlags::Present;
+
+        QueueID queue_id = QueueID::Invalid;
+        for (ice::render::QueueFamilyInfo const& queue_family : queue_families)
+        {
+            if ((queue_family.flags & required_flags) == required_flags)
+            {
+                queue_id = queue_family.id;
+                break;
+            }
+        }
+
+        ice::render::RenderDevice* render_device = nullptr;
+        ice::render::RenderSwapchain* render_swapchain = nullptr;
+
+        ice::render::RenderPass forward_pass = ice::render::RenderPass::Invalid;
+        ice::render::Image depth_stencil_image = ice::render::Image::Invalid;
+        ice::render::Framebuffer framebuffers[2];
+        ice::render::RenderQueue* default_queue;
+
+        ice::render::CommandBuffer cmd_buffers_array[6];
+        ice::Span<ice::render::CommandBuffer> cmd_buffers = cmd_buffers_array;
+
+        if (queue_id != QueueID::Invalid)
+        {
+            QueueInfo queues[]{
+                QueueInfo{.id = queue_id, .count = 3 }
+            };
+
+            render_device = render_driver->create_device(queues);
+            render_swapchain = render_device->create_swapchain(render_surface);
+
+            default_queue = render_device->create_queue(queues[0].id, 0, 2);
+            default_queue->allocate_buffers(
+                0,
+                ice::render::CommandBufferType::Primary,
+                cmd_buffers.subspan(0, 1)
+            );
+            default_queue->allocate_buffers(
+                1,
+                ice::render::CommandBufferType::Primary,
+                cmd_buffers.subspan(3, 1)
+            );
+
+            using namespace ice::render;
+
+            RenderAttachment attachments[]{
+                RenderAttachment{
+                    .format = render_swapchain->image_format(),
+                    .layout = ImageLayout::Present,
+                    .type = AttachmentType::SwapchainImage,
+                    .operations = {
+                        AttachmentOperation::Load_Clear,
+                        AttachmentOperation::Store_Store
+                    },
+                },
+                RenderAttachment{
+                    .format = ImageFormat::UNORM_D24_UINT_S8,
+                    .layout = ImageLayout::DepthStencil,
+                    .type = AttachmentType::DepthStencil,
+                },
+            };
+
+            AttachmentReference references[]{
+                AttachmentReference{
+                    .attachment_index = 0,
+                    .layout = ImageLayout::Color
+                },
+                AttachmentReference{
+                    .attachment_index = 1,
+                    .layout = ImageLayout::DepthStencil
+                },
+            };
+
+            RenderSubPass subpasses[]{
+                RenderSubPass{
+                    .color_attachments = { references + 0, 1 },
+                },
+                RenderSubPass{
+                    .color_attachments = { references + 0, 1 },
+                    .depth_stencil_attachment = references[1],
+                }
+            };
+
+            SubpassDependency dependencies[]{
+                SubpassDependency{
+                    .source_subpass = 0,
+                    .source_stage = PipelineStage::ColorAttachmentOutput,
+                    .source_access = AccessFlags::ColorAttachmentWrite,
+                    .destination_subpass = 1,
+                    .destination_stage = PipelineStage::ColorAttachmentOutput,
+                    .destination_access = AccessFlags::ColorAttachmentWrite,
+                }
+            };
+
+            RenderPassInfo renderpass_info{
+                .attachments = attachments,
+                .subpasses = subpasses,
+                .dependencies = dependencies,
+            };
+
+            forward_pass = render_device->create_renderpass(renderpass_info);
+
+            ice::vec2u const swapchain_extent = render_swapchain->extent();
+
+            ImageInfo ds_image_info;
+            ds_image_info.type = ImageType::Image2D;
+            ds_image_info.format = ImageFormat::UNORM_D24_UINT_S8;
+            ds_image_info.usage = ImageUsageFlags::DepthStencilAttachment;
+            ds_image_info.width = swapchain_extent.x;
+            ds_image_info.height = swapchain_extent.y;
+
+            depth_stencil_image = render_device->create_image(ds_image_info, { });
+
+            Image framebuffer_images[]{
+                Image::Invalid,
+                depth_stencil_image
+            };
+
+            framebuffer_images[0] = render_swapchain->image(0);
+            framebuffers[0] = render_device->create_framebuffer(
+                swapchain_extent,
+                forward_pass,
+                framebuffer_images
+            );
+
+            framebuffer_images[0] = render_swapchain->image(1);
+            framebuffers[1] = render_device->create_framebuffer(
+                swapchain_extent,
+                forward_pass,
+                framebuffer_images
+            );
+
+            ice::u32 const framebuffer_idx = render_swapchain->aquire_image();
+
+            ice::vec4f const clear_color{ 0.2f };
+
+            ice::render::RenderCommands& cmds = render_device->get_commands();
+            cmds.begin(cmd_buffers[0]);
+            cmds.begin_renderpass(cmd_buffers[0], forward_pass, framebuffers[framebuffer_idx], swapchain_extent, clear_color);
+            cmds.next_subpass(cmd_buffers[0], SubPassContents::Inline);
+            cmds.end_renderpass(cmd_buffers[0]);
+            cmds.end(cmd_buffers[0]);
+
+            default_queue->submit(cmd_buffers.subspan<0, 1>());
+            default_queue->present(render_swapchain);
+
+            ice::UniquePtr<ice::platform::Container> app = ice::platform::create_app_container(
+                alloc,
+                ice::make_unique<ice::platform::App, TestApp>(alloc, alloc, engine->create_runner())
+            );
+
+            app->run();
+
+
+            render_device->destroy_queue(default_queue);
+            render_device->destroy_framebuffer(framebuffers[0]);
+            render_device->destroy_framebuffer(framebuffers[1]);
+            render_device->destroy_image(depth_stencil_image);
+            render_device->destroy_swapchain(render_swapchain);
+            render_device->destroy_renderpass(forward_pass);
+            render_driver->destroy_device(render_device);
+            render_driver->destroy_surface(render_surface);
+        }
+
+        //ice::render::QueueCreateInfo queues{
+        //    .graphics_queue_count = 1,
+        //    .compute_queue_count = 1,
+        //    .transfer_queue_count = 1,
+        //    .presentation_queue = true
+        //};
+
+        //render_driver->create_queues(queues);
+
+
+    }
+
+    engine = nullptr;
+    asset_system = nullptr;
+
     return 0;
+
+//        auto& render_system = engine_instance->render_system();
+//
+//        using iceshard::renderer::RenderResource;
+//        using iceshard::renderer::RenderResourceType;
+//
+//        // Debug UI module
+//        core::memory::unique_pointer<iceshard::debug::DebugSystemModule> debugui_module{ nullptr, { alloc } };
+//        core::memory::unique_pointer<iceshard::debug::DebugModule> engine_debugui{ nullptr, { alloc } };
+//
+//        if constexpr (core::build::is_release == false)
+//        {
+//            auto* debugui_module_location = resource_system.find(URN{ "debug_module.dll" });
+//            if (debugui_module_location != nullptr)
+//            {
+//                debugui_module = iceshard::debug::load_debug_system_module(
+//                    alloc,
+//                    debugui_module_location->location().path,
+//                    *engine_instance
+//                );
+//
+//                engine_debugui = iceshard::debug::load_debug_module_from_handle(
+//                    alloc, engine_module->native_handle(), debugui_module->debug_system()
+//                );
+//            }
+//        }
+//
+//        fmt::print("IceShard engine revision: {}\n", engine_instance->revision());
+//
+//        [[maybe_unused]]
+//        iceshard::World* world = engine_instance->world_manager().create_world("test-world"_sid);
+//
+//        auto arch_idx = world->service_provider()->archetype_index();
+//
+//        iceshard::Entity camera_entity = engine_instance->entity_manager().create();
+//        arch_idx->add_component(camera_entity,
+//            iceshard::component::Camera{
+//                .position = { 0.0f, 0.0f, 1.0f },
+//                .front = { 0.0f, 0.0f, 1.0f },
+//                .yaw = -90.f,
+//                .pitch = 0.0f,
+//            }
+//        );
+//
+//        arch_idx->add_component(camera_entity,
+//            iceshard::component::ProjectionPerspective{
+//                .fovy = 45.f
+//            }
+//        );
+//
+//        auto& material_system = engine_instance->material_system();
+//
+//        material_system.create_material("temp.backpack"_sid,
+//            iceshard::Material{
+//                .texture_diffuse = "temp/backpack_diffuse"_sid,
+//                .shader_vertex = "shaders/debug/texture-vert"_sid,
+//                .shader_fragment = "shaders/debug/texture-frag"_sid,
+//            },
+//            iceshard::renderer::RenderPipelineLayout::Textured
+//        );
+//
+//        auto e = engine_instance->entity_manager().create();
+//        arch_idx->add_component(
+//            e, iceshard::component::Transform{ ism::identity<ism::mat4>() }
+//        );
+//        arch_idx->add_component(
+//            e, iceshard::component::ModelName{ "temp/backpack"_sid }
+//        );
+//        arch_idx->add_component(
+//            e, iceshard::component::Material{ "temp.backpack"_sid }
+//        );
+//
+//        //arch_idx->add_component(camera_entity,
+//        //    iceshard::component::ProjectionOrtographic{
+//        //        .left_right = { 0.0f, 1280.f / TileRenderer::TileWidth },
+//        //        .top_bottom = { 0.f, 720.f / TileRenderer::TileHeight },
+//        //        .near_far = { 0.1f, 100.f },
+//        //    }
+//        //);
+//
+//        auto execution_instance = engine_instance->execution_instance();
+//        iceshard::register_common_triggers(execution_instance->input_actions().trigger_database());
+//
+//        TileRenderer map_system{ material_system, engine_instance->render_system() };
+//        engine_instance->services().add_system("demo.isometric"_sid, &map_system);
+//
+//        auto* const render_pass = execution_instance->render_system().render_pass("isc.render-pass.default"_sid);
+//        if (render_pass != nullptr)
+//        {
+//            auto* const render_stage = render_pass->render_stage("isr.render-stage.opaque"_sid);
+//
+//            if (render_stage != nullptr)
+//            {
+//                render_stage->add_system_before("demo.isometric"_sid, "isc.system.static-mesh-renderer"_sid);
+//            }
+//        }
+//
+//        bool quit = false;
+//        while (quit == false)
+//        {
+//            auto& frame = execution_instance->current_frame();
+//
+//            core::message::filter<input::message::AppExit>(frame.messages(), [&quit](auto const&) noexcept
+//                {
+//                    quit = true;
+//                });
+//
+//            execution_instance->next_frame();
+//        }
+//
+//        engine_instance->world_manager().destroy_world("test-world"_sid);
+//
+//        engine_debugui = nullptr;
+//        debugui_module = nullptr;
+//    }
+
 }
