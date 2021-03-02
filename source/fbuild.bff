@@ -12,4 +12,10 @@ Settings
 
 #endif
 
+^SolutionItems = {
+    '$WorkspaceCodeDir$/../conanfile.txt'
+    '$WorkspaceCodeDir$/../fbuild.bff'
+    '$WorkspaceCodeDir$/projects.bff'
+}
+
 #include "code/projects.bff"
