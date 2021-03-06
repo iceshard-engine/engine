@@ -12,7 +12,11 @@ namespace ice
 
     } // namespace detail
 
-    IceshardEngineRunner::IceshardEngineRunner(ice::Allocator& alloc) noexcept
+    IceshardEngineRunner::IceshardEngineRunner(
+        ice::Allocator& alloc,
+        ice::render::RenderSurface* render_surface,
+        ice::render::RenderDriver* render_driver
+    ) noexcept
         : ice::EngineRunner{ }
         , _allocator{ alloc }
         , _clock{ ice::clock::create_clock() }
@@ -23,6 +27,8 @@ namespace ice
         }
         , _previous_frame{ ice::make_unique_null<ice::IceshardMemoryFrame>() }
         , _current_frame{ ice::make_unique_null<ice::IceshardMemoryFrame>() }
+        , _gfx_device{ ice::make_unique_null<ice::gfx::IceGfxDevice>() }
+        , _gfx_current_frame{ ice::make_unique_null<ice::gfx::IceGfxFrame>() }
     {
         _previous_frame = ice::make_unique<ice::IceshardMemoryFrame>(
             _allocator,
@@ -32,10 +38,20 @@ namespace ice
             _allocator,
             _frame_data_allocator[1]
         );
+
+        _gfx_device = ice::make_unique<ice::gfx::IceGfxDevice>(
+            _allocator,
+            _allocator,
+            render_driver,
+            render_surface
+        );
+        _gfx_current_frame = _gfx_device->next_frame(_allocator);
     }
 
     IceshardEngineRunner::~IceshardEngineRunner() noexcept
     {
+        _gfx_current_frame = nullptr;
+        _gfx_device = nullptr;
         _current_frame = nullptr;
         _previous_frame = nullptr;
     }
@@ -43,6 +59,11 @@ namespace ice
     auto IceshardEngineRunner::clock() const noexcept -> ice::Clock const&
     {
         return _clock;
+    }
+
+    auto IceshardEngineRunner::graphics_device() noexcept -> ice::gfx::GfxDevice&
+    {
+        return *_gfx_device;
     }
 
     auto IceshardEngineRunner::previous_frame() const noexcept -> EngineFrame const&
@@ -65,6 +86,8 @@ namespace ice
         // Move the current frame to the 'previous' slot.
         _previous_frame = ice::move(_current_frame);
 
+        _gfx_current_frame->present();
+
         // Reset the frame allocator inner pointers.
         [[maybe_unused]]
         bool const discarded_memory = _frame_data_allocator[_next_free_allocator].reset_and_discard();
@@ -72,8 +95,10 @@ namespace ice
 
         ice::clock::update(_clock);
 
+        _gfx_current_frame = _gfx_device->next_frame(_allocator);
+
         _current_frame = ice::make_unique<IceshardMemoryFrame>(
-            _frame_allocator,
+            _allocator,
             _frame_data_allocator[_next_free_allocator]
         );
 

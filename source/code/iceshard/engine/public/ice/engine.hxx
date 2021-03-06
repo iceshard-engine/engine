@@ -1,5 +1,6 @@
 #pragma once
 #include <ice/unique_ptr.hxx>
+#include <ice/render/render_driver.hxx>
 
 namespace ice
 {
@@ -11,7 +12,10 @@ namespace ice
     public:
         virtual ~Engine() noexcept = default;
 
-        virtual auto create_runner() noexcept -> ice::UniquePtr<EngineRunner> = 0;
+        virtual auto create_runner(
+            ice::render::RenderSurface* render_surface,
+            ice::render::RenderDriver* render_driver
+        ) noexcept -> ice::UniquePtr<EngineRunner> = 0;
     };
 
 } // namespace ice

@@ -375,7 +375,6 @@ ice::i32 game_main(ice::Allocator& alloc, ice::ResourceSystem& resource_system)
 
     resource_system.mount("file://../source/data/config.json"_uri);
 
-
     ice::UniquePtr<ice::ModuleRegister> module_register = ice::create_default_module_register(alloc);
     module_register->load_module(
         alloc,
@@ -390,7 +389,7 @@ ice::i32 game_main(ice::Allocator& alloc, ice::ResourceSystem& resource_system)
 
     ICE_ASSERT(pipelines_module != nullptr, "Missing `iceshard_pipelines.dll` module!");
     ICE_ASSERT(engine_module != nullptr, "Missing `iceshard.dll` module!");
-    ICE_ASSERT(engine_module != nullptr, "Missing `vulkan_renderer.dll` module!");
+    ICE_ASSERT(vulkan_module != nullptr, "Missing `vulkan_renderer.dll` module!");
 
     module_register->load_module(alloc, pipelines_module->location().path);
     module_register->load_module(alloc, engine_module->location().path);
@@ -453,177 +452,17 @@ ice::i32 game_main(ice::Allocator& alloc, ice::ResourceSystem& resource_system)
 
         ice::render::RenderSurface* render_surface = render_driver->create_surface(surface_info);
 
-        ice::pod::Array<ice::render::QueueFamilyInfo> queue_families{ alloc };
-        render_driver->query_queue_infos(queue_families);
+        ice::UniquePtr<ice::platform::Container> app = ice::platform::create_app_container(
+            alloc,
+            ice::make_unique<ice::platform::App, TestApp>(alloc, alloc,
+                engine->create_runner(render_surface, render_driver.get())
+            )
+        );
 
-        using ice::render::QueueFlags;
-        using ice::render::QueueInfo;
-        using ice::render::QueueID;
+        app->run();
+        app = nullptr;
 
-        constexpr QueueFlags required_flags = QueueFlags::Graphics | QueueFlags::Compute | QueueFlags::Present;
-
-        QueueID queue_id = QueueID::Invalid;
-        for (ice::render::QueueFamilyInfo const& queue_family : queue_families)
-        {
-            if ((queue_family.flags & required_flags) == required_flags)
-            {
-                queue_id = queue_family.id;
-                break;
-            }
-        }
-
-        ice::render::RenderDevice* render_device = nullptr;
-        ice::render::RenderSwapchain* render_swapchain = nullptr;
-
-        ice::render::RenderPass forward_pass = ice::render::RenderPass::Invalid;
-        ice::render::Image depth_stencil_image = ice::render::Image::Invalid;
-        ice::render::Framebuffer framebuffers[2];
-        ice::render::RenderQueue* default_queue;
-
-        ice::render::CommandBuffer cmd_buffers_array[6];
-        ice::Span<ice::render::CommandBuffer> cmd_buffers = cmd_buffers_array;
-
-        if (queue_id != QueueID::Invalid)
-        {
-            QueueInfo queues[]{
-                QueueInfo{.id = queue_id, .count = 3 }
-            };
-
-            render_device = render_driver->create_device(queues);
-            render_swapchain = render_device->create_swapchain(render_surface);
-
-            default_queue = render_device->create_queue(queues[0].id, 0, 2);
-            default_queue->allocate_buffers(
-                0,
-                ice::render::CommandBufferType::Primary,
-                cmd_buffers.subspan(0, 1)
-            );
-            default_queue->allocate_buffers(
-                1,
-                ice::render::CommandBufferType::Primary,
-                cmd_buffers.subspan(3, 1)
-            );
-
-            using namespace ice::render;
-
-            RenderAttachment attachments[]{
-                RenderAttachment{
-                    .format = render_swapchain->image_format(),
-                    .layout = ImageLayout::Present,
-                    .type = AttachmentType::SwapchainImage,
-                    .operations = {
-                        AttachmentOperation::Load_Clear,
-                        AttachmentOperation::Store_Store
-                    },
-                },
-                RenderAttachment{
-                    .format = ImageFormat::UNORM_D24_UINT_S8,
-                    .layout = ImageLayout::DepthStencil,
-                    .type = AttachmentType::DepthStencil,
-                },
-            };
-
-            AttachmentReference references[]{
-                AttachmentReference{
-                    .attachment_index = 0,
-                    .layout = ImageLayout::Color
-                },
-                AttachmentReference{
-                    .attachment_index = 1,
-                    .layout = ImageLayout::DepthStencil
-                },
-            };
-
-            RenderSubPass subpasses[]{
-                RenderSubPass{
-                    .color_attachments = { references + 0, 1 },
-                },
-                RenderSubPass{
-                    .color_attachments = { references + 0, 1 },
-                    .depth_stencil_attachment = references[1],
-                }
-            };
-
-            SubpassDependency dependencies[]{
-                SubpassDependency{
-                    .source_subpass = 0,
-                    .source_stage = PipelineStage::ColorAttachmentOutput,
-                    .source_access = AccessFlags::ColorAttachmentWrite,
-                    .destination_subpass = 1,
-                    .destination_stage = PipelineStage::ColorAttachmentOutput,
-                    .destination_access = AccessFlags::ColorAttachmentWrite,
-                }
-            };
-
-            RenderPassInfo renderpass_info{
-                .attachments = attachments,
-                .subpasses = subpasses,
-                .dependencies = dependencies,
-            };
-
-            forward_pass = render_device->create_renderpass(renderpass_info);
-
-            ice::vec2u const swapchain_extent = render_swapchain->extent();
-
-            ImageInfo ds_image_info;
-            ds_image_info.type = ImageType::Image2D;
-            ds_image_info.format = ImageFormat::UNORM_D24_UINT_S8;
-            ds_image_info.usage = ImageUsageFlags::DepthStencilAttachment;
-            ds_image_info.width = swapchain_extent.x;
-            ds_image_info.height = swapchain_extent.y;
-
-            depth_stencil_image = render_device->create_image(ds_image_info, { });
-
-            Image framebuffer_images[]{
-                Image::Invalid,
-                depth_stencil_image
-            };
-
-            framebuffer_images[0] = render_swapchain->image(0);
-            framebuffers[0] = render_device->create_framebuffer(
-                swapchain_extent,
-                forward_pass,
-                framebuffer_images
-            );
-
-            framebuffer_images[0] = render_swapchain->image(1);
-            framebuffers[1] = render_device->create_framebuffer(
-                swapchain_extent,
-                forward_pass,
-                framebuffer_images
-            );
-
-            ice::u32 const framebuffer_idx = render_swapchain->aquire_image();
-
-            ice::vec4f const clear_color{ 0.2f };
-
-            ice::render::RenderCommands& cmds = render_device->get_commands();
-            cmds.begin(cmd_buffers[0]);
-            cmds.begin_renderpass(cmd_buffers[0], forward_pass, framebuffers[framebuffer_idx], swapchain_extent, clear_color);
-            cmds.next_subpass(cmd_buffers[0], SubPassContents::Inline);
-            cmds.end_renderpass(cmd_buffers[0]);
-            cmds.end(cmd_buffers[0]);
-
-            default_queue->submit(cmd_buffers.subspan<0, 1>());
-            default_queue->present(render_swapchain);
-
-            ice::UniquePtr<ice::platform::Container> app = ice::platform::create_app_container(
-                alloc,
-                ice::make_unique<ice::platform::App, TestApp>(alloc, alloc, engine->create_runner())
-            );
-
-            app->run();
-
-
-            render_device->destroy_queue(default_queue);
-            render_device->destroy_framebuffer(framebuffers[0]);
-            render_device->destroy_framebuffer(framebuffers[1]);
-            render_device->destroy_image(depth_stencil_image);
-            render_device->destroy_swapchain(render_swapchain);
-            render_device->destroy_renderpass(forward_pass);
-            render_driver->destroy_device(render_device);
-            render_driver->destroy_surface(render_surface);
-        }
+        render_driver->destroy_surface(render_surface);
 
         //ice::render::QueueCreateInfo queues{
         //    .graphics_queue_count = 1,

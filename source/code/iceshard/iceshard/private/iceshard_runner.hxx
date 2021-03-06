@@ -1,8 +1,18 @@
 #pragma once
 #include <ice/engine_runner.hxx>
+
+#include <ice/render/render_driver.hxx>
+#include <ice/render/render_device.hxx>
+#include <ice/render/render_swapchain.hxx>
+#include <ice/render/render_framebuffer.hxx>
+#include <ice/render/render_pass.hxx>
+
 #include <ice/memory/proxy_allocator.hxx>
 #include <ice/memory/scratch_allocator.hxx>
 #include <ice/unique_ptr.hxx>
+
+#include "gfx/iceshard_gfx_device.hxx"
+#include "gfx/iceshard_gfx_frame.hxx"
 
 namespace ice
 {
@@ -12,10 +22,16 @@ namespace ice
     class IceshardEngineRunner final : public ice::EngineRunner
     {
     public:
-        IceshardEngineRunner(ice::Allocator& alloc) noexcept;
+        IceshardEngineRunner(
+            ice::Allocator& alloc,
+            ice::render::RenderSurface* render_surface,
+            ice::render::RenderDriver* render_driver
+        ) noexcept;
         ~IceshardEngineRunner() noexcept override;
 
         auto clock() const noexcept -> ice::Clock const& override;
+
+        auto graphics_device() noexcept -> ice::gfx::GfxDevice& override;
 
         auto previous_frame() const noexcept -> EngineFrame const& override;
         auto current_frame() const noexcept -> EngineFrame const& override;
@@ -32,6 +48,9 @@ namespace ice
 
         ice::UniquePtr<ice::IceshardMemoryFrame> _previous_frame;
         ice::UniquePtr<ice::IceshardMemoryFrame> _current_frame;
+
+        ice::UniquePtr<ice::gfx::IceGfxDevice> _gfx_device;
+        ice::UniquePtr<ice::gfx::IceGfxFrame> _gfx_current_frame;
     };
 
 } // namespace ice

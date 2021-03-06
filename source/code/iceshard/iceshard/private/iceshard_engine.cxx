@@ -28,9 +28,43 @@ namespace ice
     {
     }
 
-    auto IceshardEngine::create_runner() noexcept -> ice::UniquePtr<EngineRunner>
+    auto IceshardEngine::create_runner(
+        ice::render::RenderSurface* render_surface,
+        ice::render::RenderDriver* render_driver
+    ) noexcept -> ice::UniquePtr<EngineRunner>
     {
-        return ice::make_unique<EngineRunner, IceshardEngineRunner>(_allocator, _allocator);
+        ice::pod::Array<ice::render::QueueFamilyInfo> queue_families{ _allocator };
+        render_driver->query_queue_infos(queue_families);
+
+        using ice::render::QueueFlags;
+        using ice::render::QueueInfo;
+        using ice::render::QueueID;
+
+        constexpr QueueFlags required_flags = QueueFlags::Graphics | QueueFlags::Compute | QueueFlags::Present;
+
+        QueueID queue_id = QueueID::Invalid;
+        for (ice::render::QueueFamilyInfo const& queue_family : queue_families)
+        {
+            if ((queue_family.flags & required_flags) == required_flags)
+            {
+                queue_id = queue_family.id;
+                break;
+            }
+        }
+
+        if (queue_id != QueueID::Invalid)
+        {
+            return ice::make_unique<EngineRunner, IceshardEngineRunner>(
+                _allocator,
+                _allocator,
+                render_surface,
+                render_driver
+            );
+        }
+        else
+        {
+            return ice::make_unique_null<ice::EngineRunner>();
+        }
     }
 
     auto create_engine_fn(

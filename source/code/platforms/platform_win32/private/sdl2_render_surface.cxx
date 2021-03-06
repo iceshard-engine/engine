@@ -19,7 +19,7 @@ namespace ice::platform
 
         SDL_InitSubSystem(SDL_INIT_VIDEO);
 
-        ice::i32 creation_flags = SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI | SDL_WINDOW_SHOWN;
+        ice::i32 creation_flags = SDL_WINDOW_ALLOW_HIGHDPI | SDL_WINDOW_SHOWN;
         ice::StackString<64> window_title;
         if (_render_driver == RenderDriverAPI::Vulkan)
         {

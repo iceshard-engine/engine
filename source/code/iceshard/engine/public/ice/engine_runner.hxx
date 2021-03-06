@@ -1,5 +1,6 @@
 #pragma once
 #include <ice/clock.hxx>
+#include <ice/gfx/gfx_types.hxx>
 
 namespace ice
 {
@@ -10,6 +11,8 @@ namespace ice
     {
     public:
         virtual ~EngineRunner() noexcept = default;
+
+        virtual auto graphics_device() noexcept -> ice::gfx::GfxDevice& = 0;
 
         virtual auto clock() const noexcept -> ice::Clock const& = 0;
 

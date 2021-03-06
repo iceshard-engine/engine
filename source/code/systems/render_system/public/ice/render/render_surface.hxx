@@ -1,4 +1,5 @@
 #pragma once
+#include <ice/math.hxx>
 
 namespace ice::render
 {
@@ -7,8 +8,6 @@ namespace ice::render
     {
     protected:
         virtual ~RenderSurface() noexcept = default;
-
-    public:
     };
 
     enum class SurfaceType
