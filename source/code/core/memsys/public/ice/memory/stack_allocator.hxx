@@ -1,8 +1,6 @@
 #pragma once
 #include <ice/allocator.hxx>
 #include <ice/memory/pointer_arithmetic.hxx>
-//#include <core/debug/assert.hxx>
-#include <cassert>
 
 namespace ice::memory
 {
@@ -68,7 +66,7 @@ namespace ice::memory
         void* free_location = ptr_align_forward(_next_free, align);
         _next_free = ptr_add(free_location, size);
 
-        assert(ptr_distance(_static_memory, _next_free) <= Constant_BufferSize);/* ,
+        /*assert(ptr_distance(_static_memory, _next_free) <= Constant_BufferSize); ,
             "Stack allocator overgrown by {} bytes!",
             utils::pointer_distance(_static_memory, _next_free)
         );*/

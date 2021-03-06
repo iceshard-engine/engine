@@ -122,7 +122,7 @@ namespace ice::detail::murmur3_hash
             uint32_t const const_2 = 0x1b873593;
             uint32_t hash_r1 = seed;
 
-            char const* blocks_end = string_data + block_num * block_byte_size;
+            char const* blocks_end = string_data + static_cast<uintptr_t>(block_num) * block_byte_size;
 
             for (size_t idx = block_num; idx > 0; --idx)
             {
@@ -146,8 +146,10 @@ namespace ice::detail::murmur3_hash
             {
             case 3:
                 k1 ^= static_cast<uint8_t const>(tail[2]) << 16;
+                [[fallthrough]];
             case 2:
                 k1 ^= static_cast<uint8_t const>(tail[1]) << 8;
+                [[fallthrough]];
             case 1:
                 k1 ^= static_cast<uint8_t const>(tail[0]);
             };
@@ -188,7 +190,7 @@ namespace ice::detail::murmur3_hash
             uint32_t const const_3 = 0x38b34ae5;
             uint32_t const const_4 = 0xa1e38b93;
 
-            char const* blocks_end = string_data + block_num * block_byte_size;
+            char const* blocks_end = string_data + static_cast<uintptr_t>(block_num) * block_byte_size;
 
             for (size_t idx = block_num; idx > 0; --idx)
             {
@@ -235,28 +237,42 @@ namespace ice::detail::murmur3_hash
             switch (string_length & 15)
             {
             case 15: k4 ^= static_cast<uint8_t const>(tail[14]) << 16;
+                [[fallthrough]];
             case 14: k4 ^= static_cast<uint8_t const>(tail[13]) << 8;
+                [[fallthrough]];
             case 13: k4 ^= static_cast<uint8_t const>(tail[12]) << 0;
                 k4 = cexpr_rotl32(k4 * const_4, 18) * const_1;
                 hash_r4 ^= k4;
+                [[fallthrough]];
 
             case 12: k3 ^= static_cast<uint8_t const>(tail[11]) << 24;
+                [[fallthrough]];
             case 11: k3 ^= static_cast<uint8_t const>(tail[10]) << 16;
+                [[fallthrough]];
             case 10: k3 ^= static_cast<uint8_t const>(tail[9]) << 8;
+                [[fallthrough]];
             case  9: k3 ^= static_cast<uint8_t const>(tail[8]) << 0;
                 k3 = cexpr_rotl32(k3 * const_3, 17) * const_4;
                 hash_r3 ^= k3;
+                [[fallthrough]];
 
             case  8: k2 ^= static_cast<uint8_t const>(tail[7]) << 24;
+                [[fallthrough]];
             case  7: k2 ^= static_cast<uint8_t const>(tail[6]) << 16;
+                [[fallthrough]];
             case  6: k2 ^= static_cast<uint8_t const>(tail[5]) << 8;
+                [[fallthrough]];
             case  5: k2 ^= static_cast<uint8_t const>(tail[4]) << 0;
                 k2 = cexpr_rotl32(k2 * const_2, 16) * const_3;
                 hash_r2 ^= k2;
+                [[fallthrough]];
 
             case  4: k1 ^= static_cast<uint8_t const>(tail[3]) << 24;
+                [[fallthrough]];
             case  3: k1 ^= static_cast<uint8_t const>(tail[2]) << 16;
+                [[fallthrough]];
             case  2: k1 ^= static_cast<uint8_t const>(tail[1]) << 8;
+                [[fallthrough]];
             case  1: k1 ^= static_cast<uint8_t const>(tail[0]) << 0;
                 k1 = cexpr_rotl32(k1 * const_1, 15) * const_2;
                 hash_r1 ^= k1;
@@ -342,22 +358,36 @@ namespace ice::detail::murmur3_hash
             switch (string_length & 15)
             {
             case 15: k2 ^= static_cast<uint64_t const>(static_cast<uint8_t const>(tail[14])) << 48;
+                [[fallthrough]];
             case 14: k2 ^= static_cast<uint64_t const>(static_cast<uint8_t const>(tail[13])) << 40;
+                [[fallthrough]];
             case 13: k2 ^= static_cast<uint64_t const>(static_cast<uint8_t const>(tail[12])) << 32;
+                [[fallthrough]];
             case 12: k2 ^= static_cast<uint64_t const>(static_cast<uint8_t const>(tail[11])) << 24;
+                [[fallthrough]];
             case 11: k2 ^= static_cast<uint64_t const>(static_cast<uint8_t const>(tail[10])) << 16;
+                [[fallthrough]];
             case 10: k2 ^= static_cast<uint64_t const>(static_cast<uint8_t const>(tail[9])) << 8;
+                [[fallthrough]];
             case  9: k2 ^= static_cast<uint64_t const>(static_cast<uint8_t const>(tail[8])) << 0;
                 k2 = cexpr_rotl64(k2 * const_2, 33) * const_1;
                 hash_r2 ^= k2;
+                [[fallthrough]];
 
             case  8: k1 ^= static_cast<uint64_t const>(static_cast<uint8_t const>(tail[7])) << 56;
+                [[fallthrough]];
             case  7: k1 ^= static_cast<uint64_t const>(static_cast<uint8_t const>(tail[6])) << 48;
+                [[fallthrough]];
             case  6: k1 ^= static_cast<uint64_t const>(static_cast<uint8_t const>(tail[5])) << 40;
+                [[fallthrough]];
             case  5: k1 ^= static_cast<uint64_t const>(static_cast<uint8_t const>(tail[4])) << 32;
+                [[fallthrough]];
             case  4: k1 ^= static_cast<uint64_t const>(static_cast<uint8_t const>(tail[3])) << 24;
+                [[fallthrough]];
             case  3: k1 ^= static_cast<uint64_t const>(static_cast<uint8_t const>(tail[2])) << 16;
+                [[fallthrough]];
             case  2: k1 ^= static_cast<uint64_t const>(static_cast<uint8_t const>(tail[1])) << 8;
+                [[fallthrough]];
             case  1: k1 ^= static_cast<uint64_t const>(static_cast<uint8_t const>(tail[0])) << 0;
                 k1 = cexpr_rotl64(k1 * const_1, 31) * const_2;
                 hash_r1 ^= k1;

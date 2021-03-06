@@ -17,6 +17,7 @@ namespace ice
     using std::forward;
     using std::exchange;
     using std::memcpy;
+    using std::memset;
 
     template<typename T>
     constexpr auto size(T const& cont) noexcept -> decltype(cont._size)
@@ -29,5 +30,8 @@ namespace ice
     {
         return Size;
     }
+
+    template<typename T>
+    using clean_type = std::remove_pointer_t<std::remove_reference_t<std::remove_cv_t<T>>>;
 
 } // namespace ice
