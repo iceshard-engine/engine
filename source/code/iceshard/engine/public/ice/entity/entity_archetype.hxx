@@ -1,5 +1,6 @@
 #pragma once
 #include <ice/entity/entity_component.hxx>
+#include <ice/pod/array.hxx>
 #include <algorithm>
 #include <array>
 

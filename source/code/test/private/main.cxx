@@ -292,12 +292,19 @@
 
 #include <ice/gfx/gfx_device.hxx>
 
+#include <ice/world/world_manager.hxx>
+#include <ice/world/world.hxx>
+#include <ice/world/world_trait.hxx>
+
 #include <ice/os/windows.hxx>
 #include <ice/platform_app.hxx>
 #include <ice/platform_window_surface.hxx>
 
 #include <ice/input/input_tracker.hxx>
 #include <ice/input/input_mouse.hxx>
+
+using ice::operator""_sid;
+using ice::operator""_uri;
 
 struct TestComponent
 {
@@ -320,20 +327,34 @@ struct FooComponent
     int xa[3];
 };
 
-class TestApp final : public ice::platform::App
+class TestApp final : public ice::platform::App, public ice::WorldTrait
 {
 public:
     TestApp(
         ice::Allocator& alloc,
+        ice::Engine* engine,
+        ice::EntityStorage& storage,
         ice::UniquePtr<ice::EngineRunner> runner
     ) noexcept
         : _allocator{ alloc }
+        , _engine{ engine }
         , _runner{ ice::move(runner) }
+        , _entity_storage{ storage }
         , _clock{ ice::clock::create_clock() }
         , _timeline{ ice::timeline::create_timeline(_clock) }
         , _input_tracker{ ice::input::create_default_input_tracker(_allocator, _clock) }
         , _input_events{ _allocator }
     {
+        _default_world = _engine->world_manager().create_world(
+            "default"_sid,
+            &_entity_storage
+        );
+
+        _default_world->add_trait(
+            "app"_sid,
+            this
+        );
+
         _input_tracker->register_device_type(
             ice::input::DeviceType::Mouse,
             ice::input::get_default_device_factory()
@@ -342,6 +363,9 @@ public:
 
     ~TestApp() noexcept override
     {
+        _default_world->remove_trait("app"_sid);
+        _engine->world_manager().destroy_world("default"_sid);
+
         ICE_LOG(
             ice::LogSeverity::Debug, ice::LogTag::Game,
             "Elapsed time during testing {}s.",
@@ -372,6 +396,14 @@ public:
         }
     }
 
+    void on_update(
+        ice::EngineFrame& frame,
+        ice::EngineRunner& runner,
+        ice::World& world
+    ) noexcept override
+    {
+    }
+
     void update(
         ice::pod::Array<ice::platform::Event> const& events
     ) noexcept override
@@ -383,13 +415,18 @@ public:
         //);
 
         _runner->next_frame();
+        _runner->update_world(_default_world);
 
         ice::clock::update(_clock);
     }
 
 private:
     ice::Allocator& _allocator;
+    ice::Engine* _engine;
     ice::UniquePtr<ice::EngineRunner> _runner;
+
+    ice::EntityStorage& _entity_storage;
+    ice::World* _default_world;
 
     ice::SystemClock _clock = ice::clock::create_clock();
     ice::Timeline _timeline = ice::timeline::create_timeline(_clock);
@@ -400,9 +437,6 @@ private:
 
 ice::i32 game_main(ice::Allocator& alloc, ice::ResourceSystem& resource_system)
 {
-    using ice::operator""_sid;
-    using ice::operator""_uri;
-
     resource_system.mount("file://../source/data/config.json"_uri);
 
     ice::UniquePtr<ice::ModuleRegister> module_register = ice::create_default_module_register(alloc);
@@ -560,42 +594,59 @@ ice::i32 game_main(ice::Allocator& alloc, ice::ResourceSystem& resource_system)
     //auto entity_it = query.result_by_entity(alloc, entity_storage);
     //auto entity_it2 = query2.result_by_entity(alloc, entity_storage);
 
-    //entity_it.for_each([](TestComponent* test, FooComponent const&)
-    //{
-    //    if (test)
-    //    {
-    //        test->test = 33.f;
-    //    }
-    //    else
-    //    {
-    //        ICE_LOG(
-    //            ice::LogSeverity::Debug, ice::LogTag::Game,
-    //            "Foo only entity"
-    //        );
-    //    }
-    //});
+    entity_it.for_each([](TestComponent* test, FooComponent const&)
+    {
+        if (test)
+        {
+            static ice::f32 aa = 33.f;
+            test->test = aa++;
+        }
+        else
+        {
+            ICE_LOG(
+                ice::LogSeverity::Debug, ice::LogTag::Game,
+                "Foo only entity"
+            );
+        }
+    });
 
-    //entity_it2.for_each([](TestComponent* test, BarComponent const&)
-    //{
-    //    if (test)
-    //    {
-    //        if (test->test == 33.f)
-    //        {
-    //            ICE_LOG(
-    //                ice::LogSeverity::Debug, ice::LogTag::Game,
-    //                "Already set to 33.f"
-    //            );
-    //        }
-    //        else
-    //        {
-    //            test->test = 33.f;
-    //            ICE_LOG(
-    //                ice::LogSeverity::Debug, ice::LogTag::Game,
-    //                "Setting to 33.f"
-    //            );
-    //        }
-    //    }
-    //});
+    entity_it2.for_each([](TestComponent* test, BarComponent const&)
+    {
+        if (test)
+        {
+            if (test->test >= 33.f)
+            {
+                ICE_LOG(
+                    ice::LogSeverity::Debug, ice::LogTag::Game,
+                    "Already set to {}.f",
+                    test->test
+                );
+            }
+            else
+            {
+                test->test = 32.f;
+                ICE_LOG(
+                    ice::LogSeverity::Debug, ice::LogTag::Game,
+                    "Setting to 32.f"
+                );
+            }
+        }
+    });
+
+    ice::ComponentQuery<TestComponent const&>{ alloc, *archetype_index }
+        .result_by_block(alloc, entity_storage)
+        .for_each([](ice::u32 count, TestComponent const* test)
+    {
+        for (ice::u32 idx = 0; idx < count; ++idx)
+        {
+            ICE_LOG(
+                ice::LogSeverity::Debug, ice::LogTag::Game,
+                "Test value [{}]: {}.f",
+                idx, test->test
+            );
+        }
+    });
+
     //ice::ComponentQuery:: query.result_by_entity(alloc);
 
     //ice::pod::Array<ice::ArchetypeHandle> archetypes{ alloc };
@@ -673,6 +724,8 @@ ice::i32 game_main(ice::Allocator& alloc, ice::ResourceSystem& resource_system)
         ice::UniquePtr<ice::platform::Container> app = ice::platform::create_app_container(
             alloc,
             ice::make_unique<ice::platform::App, TestApp>(alloc, alloc,
+                engine.get(),
+                entity_storage,
                 engine->create_runner(gfx_device_info)
             )
         );
@@ -690,8 +743,6 @@ ice::i32 game_main(ice::Allocator& alloc, ice::ResourceSystem& resource_system)
         //};
 
         //render_driver->create_queues(queues);
-
-
     }
 
     engine = nullptr;

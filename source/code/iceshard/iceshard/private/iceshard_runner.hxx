@@ -37,6 +37,10 @@ namespace ice
         auto current_frame() noexcept -> EngineFrame& override;
         void next_frame() noexcept override;
 
+        void update_world(
+            ice::World* world
+        ) noexcept override;
+
     private:
         ice::Allocator& _allocator;
         ice::SystemClock _clock;

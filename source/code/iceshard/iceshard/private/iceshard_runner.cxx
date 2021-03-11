@@ -1,5 +1,7 @@
 #include "iceshard_runner.hxx"
 #include "iceshard_frame.hxx"
+#include "world/iceshard_world.hxx"
+#include <ice/world/world.hxx>
 #include <ice/assert.hxx>
 
 namespace ice
@@ -98,6 +100,13 @@ namespace ice
         // We need to update the allocator index
         _next_free_allocator += 1;
         _next_free_allocator %= ice::size(_frame_data_allocator);
+    }
+
+    void IceshardEngineRunner::update_world(
+        ice::World* world
+    ) noexcept
+    {
+        world->update(*this, WorldUpdateKey{ });
     }
 
 } // namespace ice

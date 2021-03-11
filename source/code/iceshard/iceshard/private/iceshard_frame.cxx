@@ -16,7 +16,9 @@ namespace ice
 
     } // namespace detail
 
-    IceshardMemoryFrame::IceshardMemoryFrame(ice::memory::ScratchAllocator& alloc) noexcept
+    IceshardMemoryFrame::IceshardMemoryFrame(
+        ice::memory::ScratchAllocator& alloc
+    ) noexcept
         : ice::EngineFrame{ }
         , _allocator{ alloc }
         , _inputs_allocator{ _allocator, detail::InputsAllocatorCapacity }

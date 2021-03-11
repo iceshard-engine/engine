@@ -26,6 +26,8 @@ namespace ice
         : ice::Engine{ }
         , _allocator{ alloc }
         , _asset_system{ asset_system }
+        , _entity_index{ _allocator, 100'000, 500'000 }
+        , _world_manager{ _allocator }
     {
     }
 
@@ -50,6 +52,16 @@ namespace ice
         {
             return ice::make_unique_null<ice::EngineRunner>();
         }
+    }
+
+    auto IceshardEngine::entity_index() noexcept -> ice::EntityIndex&
+    {
+        return _entity_index;
+    }
+
+    auto IceshardEngine::world_manager() noexcept -> ice::WorldManager&
+    {
+        return _world_manager;
     }
 
     auto create_engine_fn(

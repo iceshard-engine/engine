@@ -8,7 +8,9 @@ namespace ice
     class IceshardMemoryFrame final : public ice::EngineFrame
     {
     public:
-        IceshardMemoryFrame(ice::memory::ScratchAllocator& alloc) noexcept;
+        IceshardMemoryFrame(
+            ice::memory::ScratchAllocator& alloc
+        ) noexcept;
         ~IceshardMemoryFrame() noexcept override = default;
 
         auto memory_consumption() noexcept -> ice::u32 override;

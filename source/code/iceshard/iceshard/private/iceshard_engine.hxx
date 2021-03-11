@@ -1,6 +1,8 @@
 #pragma once
 #include <ice/engine.hxx>
 #include <ice/asset_system.hxx>
+#include <ice/entity/entity_index.hxx>
+#include "world/iceshard_world_manager.hxx"
 
 namespace ice
 {
@@ -20,9 +22,15 @@ namespace ice
             ice::gfx::GfxDeviceCreateInfo const& gfx_create_info
         ) noexcept -> ice::UniquePtr<EngineRunner> override;
 
+        auto entity_index() noexcept -> ice::EntityIndex& override;
+
+        auto world_manager() noexcept -> ice::WorldManager& override;
+
     private:
         ice::Allocator& _allocator;
         ice::AssetSystem& _asset_system;
+        ice::EntityIndex _entity_index;
+        ice::IceWorldManager _world_manager;
     };
 
 } // namespace ice

@@ -5,6 +5,8 @@
 namespace ice
 {
 
+    class World;
+
     class EngineFrame;
 
     class EngineRunner
@@ -23,6 +25,10 @@ namespace ice
         virtual auto current_frame() noexcept -> EngineFrame& = 0;
 
         virtual void next_frame() noexcept = 0;
+
+        virtual void update_world(
+            ice::World* world
+        ) noexcept = 0;
     };
 
 } // namespace ice
