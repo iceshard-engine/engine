@@ -31,6 +31,7 @@ namespace ice
         auto clock() const noexcept -> ice::Clock const& override;
 
         auto graphics_device() noexcept -> ice::gfx::GfxDevice& override;
+        auto graphics_frame() noexcept -> ice::gfx::GfxFrame& override;
 
         auto previous_frame() const noexcept -> EngineFrame const& override;
         auto current_frame() const noexcept -> EngineFrame const& override;

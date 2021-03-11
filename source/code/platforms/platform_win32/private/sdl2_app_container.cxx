@@ -93,6 +93,14 @@ namespace ice::platform
             }
         }
 
+        void keyboard_input_events(
+            ice::input::DeviceQueue& input_queue,
+            SDL_Event const& sdl_event
+        ) noexcept
+        {
+
+        }
+
     } // namespace detail
 
     SDL2_Container::SDL2_Container(
@@ -124,6 +132,10 @@ namespace ice::platform
             make_device_handle(DeviceType::Mouse, DeviceIndex(0)),
             DeviceMessage::DeviceConnected
         );
+        device_events.push(
+            make_device_handle(DeviceType::Keyboard, DeviceIndex(0)),
+            DeviceMessage::DeviceConnected
+        );
 
         while (_request_quit == false)
         {
@@ -140,6 +152,10 @@ namespace ice::platform
                         }
                     );
 
+                    device_events.push(
+                        make_device_handle(DeviceType::Keyboard, DeviceIndex(0)),
+                        DeviceMessage::DeviceDisconnected
+                    );
                     device_events.push(
                         make_device_handle(DeviceType::Mouse, DeviceIndex(0)),
                         DeviceMessage::DeviceDisconnected

@@ -20,6 +20,8 @@ namespace ice::render
         virtual auto image(ice::u32 index) const noexcept -> ice::render::Image = 0;
 
         virtual auto aquire_image() noexcept -> ice::u32 = 0;
+
+        virtual auto current_image_index() const noexcept -> ice::u32 = 0;
     };
 
 } // namespace ice::render

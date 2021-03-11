@@ -31,7 +31,7 @@ namespace ice::render::vk
 
         auto aquire_image() noexcept -> ice::u32 override;
 
-        auto aquired_image_index() const noexcept -> ice::u32;
+        auto current_image_index() const noexcept -> ice::u32 override;
 
     private:
         VkSwapchainKHR _vk_swapchain;

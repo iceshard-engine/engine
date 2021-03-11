@@ -1,6 +1,8 @@
 #pragma once
-#include <ice/gfx/gfx_pass.hxx>
+#include <ice/allocator.hxx>
+#include <ice/pod/array.hxx>
 #include <ice/render/render_queue.hxx>
+#include <ice/gfx/gfx_pass.hxx>
 
 namespace ice::gfx
 {
@@ -9,6 +11,8 @@ namespace ice::gfx
     {
     public:
         IceGfxPass(
+            ice::Allocator& alloc,
+            ice::render::RenderCommands& commands,
             ice::render::RenderQueue* queue,
             ice::u32 pool_index
         ) noexcept;
@@ -26,17 +30,22 @@ namespace ice::gfx
             ice::Span<ice::render::CommandBuffer> buffers
         ) noexcept;
 
-        auto add_stage(
+        void add_stage(
             ice::StringID_Arg name,
+            ice::gfx::GfxStage* stage,
             ice::Span<ice::gfx::GfxStage*> fence_wait
-        ) noexcept -> ice::gfx::GfxStage* override;
+        ) noexcept override;
 
         void execute() noexcept;
 
     private:
+        ice::render::RenderCommands& _render_commands;
         ice::render::RenderQueue* _render_queue;
         ice::u32 _queue_pool_index;
         bool _presenting = false;
+
+        ice::render::CommandBuffer _primary_commands;
+        ice::pod::Array<ice::gfx::GfxStage*> _stages;
     };
 
 } // namespace ice

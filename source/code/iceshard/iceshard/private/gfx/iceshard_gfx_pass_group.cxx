@@ -27,6 +27,7 @@ namespace ice::gfx
 
     auto IceGfxPassGroup::add_pass(
         ice::StringID_Arg name,
+        ice::render::RenderCommands& commands,
         ice::render::RenderQueue* queue,
         ice::u32 pool_index
     ) noexcept -> ice::gfx::IceGfxPass*
@@ -39,6 +40,8 @@ namespace ice::gfx
         );
 
         ice::gfx::IceGfxPass* pass = _allocator.make<ice::gfx::IceGfxPass>(
+            _allocator,
+            commands,
             queue,
             pool_index
         );
@@ -59,6 +62,22 @@ namespace ice::gfx
             ice::hash(name),
             nullptr
         );
+    }
+
+    void IceGfxPassGroup::prepare_all() noexcept
+    {
+        for (auto const& entry : _gfx_passes)
+        {
+            entry.value->prepare();
+        }
+    }
+
+    void IceGfxPassGroup::execute_all() noexcept
+    {
+        for (auto const& entry : _gfx_passes)
+        {
+            entry.value->execute();
+        }
     }
 
     void IceGfxPassGroup::get_render_queues(

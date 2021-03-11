@@ -104,7 +104,7 @@ namespace ice::render::vk
     {
         VulkanSwapchain const* const vk_swapchain = static_cast<VulkanSwapchain*>(swapchain);
 
-        ice::u32 indices = vk_swapchain->aquired_image_index();
+        ice::u32 indices = vk_swapchain->current_image_index();
         VkSwapchainKHR swapchains[1]{ vk_swapchain->handle() };
 
         VkPresentInfoKHR present_info{ VK_STRUCTURE_TYPE_PRESENT_INFO_KHR };

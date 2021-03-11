@@ -24,15 +24,12 @@ namespace ice::gfx
         ) noexcept;
         ~IceGfxDevice() noexcept override;
 
-        auto device() noexcept -> ice::render::RenderDevice&;
-        auto swapchain() noexcept -> ice::render::RenderSwapchain&;
+        auto device() noexcept -> ice::render::RenderDevice& override;
+        auto swapchain() noexcept -> ice::render::RenderSwapchain const& override;
 
         auto default_queue() noexcept -> ice::render::RenderQueue&;
 
         auto next_frame(ice::Allocator& alloc) noexcept -> ice::UniquePtr<ice::gfx::IceGfxFrame>;
-
-    private:
-        void create_temporary_resources() noexcept;
 
     private:
         ice::Allocator& _allocator;
@@ -43,11 +40,6 @@ namespace ice::gfx
         ice::render::RenderSwapchain* _render_swapchain;
 
         ice::pod::Array<ice::gfx::IceGfxPassGroup*> _graphics_passes;
-
-        // Temporary here
-        ice::render::RenderPass _render_pass;
-        ice::render::Image _depth_stencil_image;
-        ice::render::Framebuffer _render_framebuffers[2];
     };
 
     auto create_graphics_device(

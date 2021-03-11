@@ -1,15 +1,20 @@
 #include "iceshard_gfx_pass.hxx"
+#include <ice/gfx/gfx_stage.hxx>
 
 namespace ice::gfx
 {
 
     IceGfxPass::IceGfxPass(
+        ice::Allocator& alloc,
+        ice::render::RenderCommands& commands,
         ice::render::RenderQueue* queue,
         ice::u32 pool_index
     ) noexcept
         : ice::gfx::GfxPass{ }
+        , _render_commands{ commands }
         , _render_queue{ queue }
         , _queue_pool_index{ pool_index }
+        , _stages{ alloc }
     {
     }
 
@@ -30,7 +35,14 @@ namespace ice::gfx
 
     void IceGfxPass::prepare() noexcept
     {
+        ice::pod::array::clear(_stages);
+
         _render_queue->reset_pool(_queue_pool_index);
+        _render_queue->allocate_buffers(
+            _queue_pool_index,
+            ice::render::CommandBufferType::Primary,
+            ice::Span<ice::render::CommandBuffer>{ &_primary_commands, 1 }
+        );
     }
 
     void IceGfxPass::alloc_command_buffers(
@@ -41,16 +53,31 @@ namespace ice::gfx
         _render_queue->allocate_buffers(_queue_pool_index, type, buffers);
     }
 
-    auto IceGfxPass::add_stage(
+    void IceGfxPass::add_stage(
         ice::StringID_Arg name,
+        ice::gfx::GfxStage* stage,
         ice::Span<ice::gfx::GfxStage*> fence_wait
-    ) noexcept -> ice::gfx::GfxStage*
+    ) noexcept
     {
-        return nullptr;
+        ice::pod::array::push_back(
+            _stages,
+            stage
+        );
     }
 
     void IceGfxPass::execute() noexcept
     {
+        for (ice::gfx::GfxStage* stage : _stages)
+        {
+            stage->record_commands(
+                _primary_commands,
+                _render_commands
+            );
+        }
+
+        _render_queue->submit(
+            ice::Span<ice::render::CommandBuffer>{ &_primary_commands, 1 }
+        );
     }
 
 } // namespace ice::gfx

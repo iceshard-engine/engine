@@ -12,8 +12,6 @@ namespace ice::gfx
         IceGfxFrame(
             ice::render::RenderDevice* device,
             ice::render::RenderSwapchain* swapchain,
-            ice::render::RenderPass renderpass,
-            ice::render::Framebuffer framebuffer,
             ice::gfx::IceGfxPassGroup* pass_group
         ) noexcept;
 
@@ -29,10 +27,6 @@ namespace ice::gfx
         ice::render::RenderDevice* _render_device;
         ice::render::RenderSwapchain* _render_swapchain;
         ice::gfx::IceGfxPassGroup* _pass_group;
-
-        ice::render::CommandBuffer _cmd_buffer;
-
-        bool _quitting = false;
     };
 
 } // namespace ice::gfx

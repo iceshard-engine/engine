@@ -44,16 +44,10 @@ namespace ice::gfx
         , _graphics_passes{ ice::move(graphics_passes) }
     {
         _render_swapchain = _render_device->create_swapchain(_render_surface);
-
-        create_temporary_resources();
     }
 
     IceGfxDevice::~IceGfxDevice() noexcept
     {
-        _render_device->destroy_framebuffer(_render_framebuffers[1]);
-        _render_device->destroy_framebuffer(_render_framebuffers[0]);
-        _render_device->destroy_image(_depth_stencil_image);
-        _render_device->destroy_renderpass(_render_pass);
         _render_device->destroy_swapchain(_render_swapchain);
 
         bool first = true;
@@ -81,7 +75,7 @@ namespace ice::gfx
         return *_render_device;
     }
 
-    auto IceGfxDevice::swapchain() noexcept -> ice::render::RenderSwapchain&
+    auto IceGfxDevice::swapchain() noexcept -> ice::render::RenderSwapchain const&
     {
         return *_render_swapchain;
     }
@@ -99,100 +93,7 @@ namespace ice::gfx
             alloc,
             _render_device,
             _render_swapchain,
-            _render_pass,
-            _render_framebuffers[framebuffer_index],
             _graphics_passes[framebuffer_index]
-        );
-    }
-
-    void IceGfxDevice::create_temporary_resources() noexcept
-    {
-        using namespace ice::render;
-
-        ice::vec2u const swapchain_extent = _render_swapchain->extent();
-
-        RenderAttachment attachments[]{
-            RenderAttachment{
-                .format = _render_swapchain->image_format(),
-                .layout = ImageLayout::Present,
-                .type = AttachmentType::SwapchainImage,
-                .operations = {
-                    AttachmentOperation::Load_Clear,
-                    AttachmentOperation::Store_Store
-                },
-            },
-            RenderAttachment{
-                .format = ImageFormat::UNORM_D24_UINT_S8,
-                .layout = ImageLayout::DepthStencil,
-                .type = AttachmentType::DepthStencil,
-            },
-        };
-
-        AttachmentReference references[]{
-            AttachmentReference{
-                .attachment_index = 0,
-                .layout = ImageLayout::Color
-            },
-            AttachmentReference{
-                .attachment_index = 1,
-                .layout = ImageLayout::DepthStencil
-            },
-        };
-
-        RenderSubPass subpasses[]{
-            RenderSubPass{
-                .color_attachments = { references + 0, 1 },
-            },
-            RenderSubPass{
-                .color_attachments = { references + 0, 1 },
-                .depth_stencil_attachment = references[1],
-            }
-        };
-
-        SubpassDependency dependencies[]{
-            SubpassDependency{
-                .source_subpass = 0,
-                .source_stage = PipelineStage::ColorAttachmentOutput,
-                .source_access = AccessFlags::ColorAttachmentWrite,
-                .destination_subpass = 1,
-                .destination_stage = PipelineStage::ColorAttachmentOutput,
-                .destination_access = AccessFlags::ColorAttachmentWrite,
-            }
-        };
-
-        RenderPassInfo renderpass_info{
-            .attachments = attachments,
-            .subpasses = subpasses,
-            .dependencies = dependencies,
-        };
-
-        _render_pass = _render_device->create_renderpass(renderpass_info);
-
-        ImageInfo image_info;
-        image_info.type = ImageType::Image2D;
-        image_info.format = ImageFormat::UNORM_D24_UINT_S8;
-        image_info.usage = ImageUsageFlags::DepthStencilAttachment;
-        image_info.width = swapchain_extent.x;
-        image_info.height = swapchain_extent.y;
-        _depth_stencil_image = _render_device->create_image(image_info, { });
-
-        Image framebuffer_images[]{
-            Image::Invalid,
-            _depth_stencil_image
-        };
-
-        framebuffer_images[0] = _render_swapchain->image(0);
-        _render_framebuffers[0] = _render_device->create_framebuffer(
-            swapchain_extent,
-            _render_pass,
-            framebuffer_images
-        );
-
-        framebuffer_images[0] = _render_swapchain->image(1);
-        _render_framebuffers[1] = _render_device->create_framebuffer(
-            swapchain_extent,
-            _render_pass,
-            framebuffer_images
         );
     }
 
@@ -330,6 +231,7 @@ namespace ice::gfx
                 {
                     pass_groups[group_index]->add_pass(
                         pass_info.name,
+                        render_device->get_commands(),
                         render_queue,
                         group_index
                     )->set_presenting((pass_info.queue_flags & QueueFlags::Present) == QueueFlags::Present);

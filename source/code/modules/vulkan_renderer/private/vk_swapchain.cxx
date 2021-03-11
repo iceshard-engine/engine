@@ -137,7 +137,7 @@ namespace ice::render::vk
         return _current_image;
     }
 
-    auto VulkanSwapchain::aquired_image_index() const noexcept -> ice::u32
+    auto VulkanSwapchain::current_image_index() const noexcept -> ice::u32
     {
         return _current_image;
     }

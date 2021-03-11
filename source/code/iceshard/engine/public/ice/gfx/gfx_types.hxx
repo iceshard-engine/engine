@@ -8,4 +8,6 @@ namespace ice::gfx
 
     class GfxDevice;
 
+    class GfxFrame;
+
 } // namespace ice::gfx

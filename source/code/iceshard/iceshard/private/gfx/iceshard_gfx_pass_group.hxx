@@ -21,6 +21,7 @@ namespace ice::gfx
 
         auto add_pass(
             ice::StringID_Arg name,
+            ice::render::RenderCommands& commands,
             ice::render::RenderQueue* queue,
             ice::u32 pool_index
         ) noexcept -> ice::gfx::IceGfxPass*;
@@ -28,6 +29,9 @@ namespace ice::gfx
         auto get_pass(
             ice::StringID_Arg name
         ) noexcept -> ice::gfx::IceGfxPass*;
+
+        void prepare_all() noexcept;
+        void execute_all() noexcept;
 
         void get_render_queues(
             ice::pod::Array<ice::render::RenderQueue*>& queues_out

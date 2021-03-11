@@ -16,6 +16,8 @@ namespace ice
 
         virtual auto graphics_device() noexcept -> ice::gfx::GfxDevice& = 0;
 
+        virtual auto graphics_frame() noexcept -> ice::gfx::GfxFrame& = 0;
+
         virtual auto clock() const noexcept -> ice::Clock const& = 0;
 
         virtual auto previous_frame() const noexcept -> EngineFrame const& = 0;

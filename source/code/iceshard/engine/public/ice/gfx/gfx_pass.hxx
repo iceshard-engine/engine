@@ -15,10 +15,11 @@ namespace ice::gfx
         virtual bool presenting() const noexcept = 0;
         virtual void set_presenting(bool is_presenting) noexcept = 0;
 
-        virtual auto add_stage(
+        virtual void add_stage(
             ice::StringID_Arg name,
+            ice::gfx::GfxStage* stage,
             ice::Span<ice::gfx::GfxStage*> fence_wait
-        ) noexcept -> ice::gfx::GfxStage* = 0;
+        ) noexcept = 0;
     };
 
 } // namespace ice::gfx

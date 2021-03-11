@@ -61,6 +61,11 @@ namespace ice
         return *_gfx_device;
     }
 
+    auto IceshardEngineRunner::graphics_frame() noexcept -> ice::gfx::GfxFrame&
+    {
+        return *_gfx_current_frame;
+    }
+
     auto IceshardEngineRunner::previous_frame() const noexcept -> EngineFrame const&
     {
         return *_previous_frame;

@@ -25,6 +25,8 @@ namespace ice::gfx
         virtual ~GfxDevice() noexcept = default;
 
     public:
+        virtual auto device() noexcept -> ice::render::RenderDevice& = 0;
+        virtual auto swapchain() noexcept -> ice::render::RenderSwapchain const& = 0;
     };
 
 } // namespace ice::gfx
