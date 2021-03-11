@@ -1,0 +1,20 @@
+{
+    "default": "dbg",
+    "scenarios":
+    {
+        "dbg": [
+            {
+                "working_dir": "./build/",
+                "executable": "./build/bin/Windows-x64-Debug-MSVC-x64-v142/test/test.exe",
+                "options": [ ]
+            }
+        ],
+        "dev": [
+            {
+                "working_dir": "./build/",
+                "executable": "./build/bin/Windows-x64-Develop-MSVC-x64-v142/test/test.exe",
+                "options": [ ]
+            }
+        ]
+    }
+}
