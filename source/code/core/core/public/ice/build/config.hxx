@@ -16,33 +16,33 @@ namespace ice::build
     constexpr auto to_string(Configuration type) noexcept -> std::string_view;
 
 
-#if defined ISC_DEBUG
+#if defined ICE_DEBUG
 
     static constexpr Configuration current_config = Configuration::Debug;
 
-#undef ISC_DEBUG
-#define ISC_DEBUG  1
+#undef ICE_DEBUG
+#define ICE_DEBUG  1
 
-#elif defined ISC_DEVELOP
+#elif defined ICE_DEVELOP
 
     static constexpr Configuration current_config = Configuration::Develop;
 
-#undef ISC_DEVELOP
-#define ISC_DEVELOP  1
+#undef ICE_DEVELOP
+#define ICE_DEVELOP  1
 
-#elif defined ISC_PROFILE
+#elif defined ICE_PROFILE
 
     static constexpr Configuration current_config = Configuration::Profile;
 
-#undef ISC_PROFILE
-#define ISC_PROFILE  1
+#undef ICE_PROFILE
+#define ICE_PROFILE  1
 
-#elif defined ISC_RELEASE
+#elif defined ICE_RELEASE
 
     static constexpr Configuration current_config = Configuration::Release;
 
-#undef ISC_RELEASE
-#define ISC_RELEASE  1
+#undef ICE_RELEASE
+#define ICE_RELEASE  1
 
 #else
 

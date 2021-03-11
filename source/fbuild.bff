@@ -12,6 +12,8 @@ Settings
 
 #endif
 
+#include "configs.bff"
+
 ^SolutionItems = {
     '$WorkspaceCodeDir$/../conanfile.txt'
     '$WorkspaceCodeDir$/../fbuild.bff'
