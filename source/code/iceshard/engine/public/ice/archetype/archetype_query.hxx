@@ -287,7 +287,7 @@ namespace ice
                         detail::query_cast<Components>::to(
                             block_pointers[--component_index]
                         )...
-                        );
+                    );
                 }
 
                 block_it += 1;

@@ -18,6 +18,7 @@ namespace ice
     using std::exchange;
     using std::memcpy;
     using std::memset;
+    using std::addressof;
 
     template<typename T>
     constexpr auto size(T const& cont) noexcept -> decltype(cont._size)
