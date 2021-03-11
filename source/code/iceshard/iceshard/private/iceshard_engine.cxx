@@ -14,6 +14,7 @@
 #include <ice/engine_module.hxx>
 
 #include "iceshard_runner.hxx"
+#include "gfx/iceshard_gfx_device.hxx"
 
 namespace ice
 {
@@ -29,36 +30,20 @@ namespace ice
     }
 
     auto IceshardEngine::create_runner(
-        ice::render::RenderSurface* render_surface,
-        ice::render::RenderDriver* render_driver
+        ice::gfx::GfxDeviceCreateInfo const& gfx_create_info
     ) noexcept -> ice::UniquePtr<EngineRunner>
     {
-        ice::pod::Array<ice::render::QueueFamilyInfo> queue_families{ _allocator };
-        render_driver->query_queue_infos(queue_families);
+        ice::UniquePtr<ice::gfx::IceGfxDevice> gfx_device = ice::gfx::create_graphics_device(
+            _allocator,
+            gfx_create_info
+        );
 
-        using ice::render::QueueFlags;
-        using ice::render::QueueInfo;
-        using ice::render::QueueID;
-
-        constexpr QueueFlags required_flags = QueueFlags::Graphics | QueueFlags::Compute | QueueFlags::Present;
-
-        QueueID queue_id = QueueID::Invalid;
-        for (ice::render::QueueFamilyInfo const& queue_family : queue_families)
-        {
-            if ((queue_family.flags & required_flags) == required_flags)
-            {
-                queue_id = queue_family.id;
-                break;
-            }
-        }
-
-        if (queue_id != QueueID::Invalid)
+        if (gfx_device != nullptr)
         {
             return ice::make_unique<EngineRunner, IceshardEngineRunner>(
                 _allocator,
                 _allocator,
-                render_surface,
-                render_driver
+                ice::move(gfx_device)
             );
         }
         else

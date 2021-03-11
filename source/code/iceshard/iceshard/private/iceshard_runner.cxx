@@ -14,8 +14,7 @@ namespace ice
 
     IceshardEngineRunner::IceshardEngineRunner(
         ice::Allocator& alloc,
-        ice::render::RenderSurface* render_surface,
-        ice::render::RenderDriver* render_driver
+        ice::UniquePtr<ice::gfx::IceGfxDevice> gfx_device
     ) noexcept
         : ice::EngineRunner{ }
         , _allocator{ alloc }
@@ -27,7 +26,7 @@ namespace ice
         }
         , _previous_frame{ ice::make_unique_null<ice::IceshardMemoryFrame>() }
         , _current_frame{ ice::make_unique_null<ice::IceshardMemoryFrame>() }
-        , _gfx_device{ ice::make_unique_null<ice::gfx::IceGfxDevice>() }
+        , _gfx_device{ ice::move(gfx_device) }
         , _gfx_current_frame{ ice::make_unique_null<ice::gfx::IceGfxFrame>() }
     {
         _previous_frame = ice::make_unique<ice::IceshardMemoryFrame>(
@@ -39,12 +38,6 @@ namespace ice
             _frame_data_allocator[1]
         );
 
-        _gfx_device = ice::make_unique<ice::gfx::IceGfxDevice>(
-            _allocator,
-            _allocator,
-            render_driver,
-            render_surface
-        );
         _gfx_current_frame = _gfx_device->next_frame(_allocator);
     }
 

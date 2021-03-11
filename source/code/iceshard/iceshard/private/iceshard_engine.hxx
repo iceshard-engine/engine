@@ -17,8 +17,7 @@ namespace ice
         ~IceshardEngine() noexcept override = default;
 
         auto create_runner(
-            ice::render::RenderSurface* render_surface,
-            ice::render::RenderDriver* render_driver
+            ice::gfx::GfxDeviceCreateInfo const& gfx_create_info
         ) noexcept -> ice::UniquePtr<EngineRunner> override;
 
     private:

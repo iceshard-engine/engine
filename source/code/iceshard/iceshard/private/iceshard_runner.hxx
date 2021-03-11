@@ -24,8 +24,7 @@ namespace ice
     public:
         IceshardEngineRunner(
             ice::Allocator& alloc,
-            ice::render::RenderSurface* render_surface,
-            ice::render::RenderDriver* render_driver
+            ice::UniquePtr<ice::gfx::IceGfxDevice> gfx_device
         ) noexcept;
         ~IceshardEngineRunner() noexcept override;
 

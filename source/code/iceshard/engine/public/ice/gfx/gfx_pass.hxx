@@ -1,4 +1,5 @@
 #pragma once
+#include <ice/span.hxx>
 #include <ice/stringid.hxx>
 
 namespace ice::gfx
@@ -9,11 +10,15 @@ namespace ice::gfx
     class GfxPass
     {
     public:
-        virtual ~GfxPass() noexcept = 0;
+        virtual ~GfxPass() noexcept = default;
 
-        virtual auto get_stage(
-            ice::StringID_Arg name
-        ) noexcept -> GfxStage* = 0;
+        virtual bool presenting() const noexcept = 0;
+        virtual void set_presenting(bool is_presenting) noexcept = 0;
+
+        virtual auto add_stage(
+            ice::StringID_Arg name,
+            ice::Span<ice::gfx::GfxStage*> fence_wait
+        ) noexcept -> ice::gfx::GfxStage* = 0;
     };
 
 } // namespace ice::gfx

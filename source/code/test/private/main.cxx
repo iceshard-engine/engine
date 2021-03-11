@@ -290,6 +290,8 @@
 #include <ice/archetype/archetype_index.hxx>
 #include <ice/archetype/archetype_info.hxx>
 
+#include <ice/gfx/gfx_device.hxx>
+
 #include <ice/os/windows.hxx>
 #include <ice/platform_app.hxx>
 #include <ice/platform_window_surface.hxx>
@@ -458,6 +460,33 @@ ice::i32 game_main(ice::Allocator& alloc, ice::ResourceSystem& resource_system)
         render_model->mesh_list[0].indice_count
     );
 
+    //auto bar_task = []() -> ice::Task<int>
+    //{
+    //    co_return 42;
+    //};
+
+    //auto foo_task = [bar_task]() -> ice::Task<>
+    //{
+    //    ICE_LOG(
+    //        ice::LogSeverity::Debug,
+    //        ice::LogTag::Game,
+    //        "foo task!"
+    //    );
+
+    //    int bar_result = co_await bar_task();
+
+    //    ICE_LOG(
+    //        ice::LogSeverity::Debug,
+    //        ice::LogTag::Game,
+    //        "bar task: {}",
+    //        co_await bar_task()
+    //    );
+
+    //    co_return;
+    //};
+
+    //foo_task();
+
     asset_system->release(model_asset);
 
     ice::memory::ProxyAllocator entity_index_alloc{ alloc, "Entity-Index" };
@@ -465,14 +494,14 @@ ice::i32 game_main(ice::Allocator& alloc, ice::ResourceSystem& resource_system)
     ice::EntityIndex entity_index{ entity_index_alloc, 100024 };
     ice::EntityTracker entity_tracker{ alloc, entity_index };
 
-    ice::ArchetypeBlockAllocator block_allocator{ alloc };
-    ice::UniquePtr<ice::ArchetypeIndex> archetype_index = ice::create_archetype_index(alloc);
-    ice::EntityStorage entity_storage{ alloc, *archetype_index, block_allocator };
+    //ice::ArchetypeBlockAllocator block_allocator{ alloc };
+    //ice::UniquePtr<ice::ArchetypeIndex> archetype_index = ice::create_archetype_index(alloc);
+    //ice::EntityStorage entity_storage{ alloc, *archetype_index, block_allocator };
 
-    ice::ArchetypeHandle base = archetype_index->register_archetype<>(&block_allocator);
-    ice::ArchetypeHandle test_bar = archetype_index->register_archetype<TestComponent, BarComponent>(&block_allocator);
-    ice::ArchetypeHandle foo = archetype_index->register_archetype<FooComponent>(&block_allocator);
-    ice::ArchetypeHandle foo_test_bar = archetype_index->register_archetype<FooComponent, TestComponent, BarComponent>(&block_allocator);
+    //ice::ArchetypeHandle base = archetype_index->register_archetype<>(&block_allocator);
+    //ice::ArchetypeHandle test_bar = archetype_index->register_archetype<TestComponent, BarComponent>(&block_allocator);
+    //ice::ArchetypeHandle foo = archetype_index->register_archetype<FooComponent>(&block_allocator);
+    //ice::ArchetypeHandle foo_test_bar = archetype_index->register_archetype<FooComponent, TestComponent, BarComponent>(&block_allocator);
 
     ice::Entity player;
     if (entity_tracker.create_entity("ice.player"_sid, player))
@@ -491,9 +520,9 @@ ice::i32 game_main(ice::Allocator& alloc, ice::ResourceSystem& resource_system)
 
     entity_tracker.create_entity("ice.player"_sid, player);
 
-    entity_storage.set_archetype(player, foo);
-    entity_storage.change_archetype(player, test_bar);
-    entity_storage.change_archetype(player, foo_test_bar);
+    //entity_storage.set_archetype(player, foo);
+    //entity_storage.change_archetype(player, test_bar);
+    //entity_storage.change_archetype(player, foo_test_bar);
     //entity_storage.change_archetype(player, foo);
     //entity_storage.erase_data(player);
 
@@ -505,68 +534,68 @@ ice::i32 game_main(ice::Allocator& alloc, ice::ResourceSystem& resource_system)
     entity_index.destroy(entities[0]);
     entities[0] = entity_index.create(&entities);
 
-    entity_storage.set_archetype(
-        entities[0], foo
-    );
-    entity_storage.set_archetype(
-        entities[1], test_bar
-    );
-    entity_storage.set_archetype(
-        entities[2], foo_test_bar
-    );
-    entity_storage.set_archetype(
-        entities[3], foo
-    );
+    //entity_storage.set_archetype(
+    //    entities[0], foo
+    //);
+    //entity_storage.set_archetype(
+    //    entities[1], test_bar
+    //);
+    //entity_storage.set_archetype(
+    //    entities[2], foo_test_bar
+    //);
+    //entity_storage.set_archetype(
+    //    entities[3], foo
+    //);
 
     static constexpr auto arch1 = ice::Archetype<TestComponent, FooComponent>{};
     //ice::ArchetypeComponent[] archetype_info = arch1.components;
 
     //std::is_same_v<ice::ComponentIdentifier<TestComponent>, ice::StringID const> ct = 333;
-    ice::ComponentQueryInfo<TestComponent*, FooComponent const&> query_info;
-    ice::ComponentQueryInfo<TestComponent*, BarComponent const&> query_info2;
+    //ice::ComponentQueryInfo<TestComponent*, FooComponent const&> query_info;
+    //ice::ComponentQueryInfo<TestComponent*, BarComponent const&> query_info2;
 
-    ice::ComponentQuery query{ query_info, alloc, *archetype_index };
-    ice::ComponentQuery query2{ query_info2, alloc, *archetype_index };
+    //ice::ComponentQuery query{ query_info, alloc, *archetype_index };
+    //ice::ComponentQuery query2{ query_info2, alloc, *archetype_index };
 
-    auto entity_it = query.result_by_entity(alloc, entity_storage);
-    auto entity_it2 = query2.result_by_entity(alloc, entity_storage);
+    //auto entity_it = query.result_by_entity(alloc, entity_storage);
+    //auto entity_it2 = query2.result_by_entity(alloc, entity_storage);
 
-    entity_it.for_each([](TestComponent* test, FooComponent const&)
-    {
-        if (test)
-        {
-            test->test = 33.f;
-        }
-        else
-        {
-            ICE_LOG(
-                ice::LogSeverity::Debug, ice::LogTag::Game,
-                "Foo only entity"
-            );
-        }
-    });
+    //entity_it.for_each([](TestComponent* test, FooComponent const&)
+    //{
+    //    if (test)
+    //    {
+    //        test->test = 33.f;
+    //    }
+    //    else
+    //    {
+    //        ICE_LOG(
+    //            ice::LogSeverity::Debug, ice::LogTag::Game,
+    //            "Foo only entity"
+    //        );
+    //    }
+    //});
 
-    entity_it2.for_each([](TestComponent* test, BarComponent const&)
-    {
-        if (test)
-        {
-            if (test->test == 33.f)
-            {
-                ICE_LOG(
-                    ice::LogSeverity::Debug, ice::LogTag::Game,
-                    "Already set to 33.f"
-                );
-            }
-            else
-            {
-                test->test = 33.f;
-                ICE_LOG(
-                    ice::LogSeverity::Debug, ice::LogTag::Game,
-                    "Setting to 33.f"
-                );
-            }
-        }
-    });
+    //entity_it2.for_each([](TestComponent* test, BarComponent const&)
+    //{
+    //    if (test)
+    //    {
+    //        if (test->test == 33.f)
+    //        {
+    //            ICE_LOG(
+    //                ice::LogSeverity::Debug, ice::LogTag::Game,
+    //                "Already set to 33.f"
+    //            );
+    //        }
+    //        else
+    //        {
+    //            test->test = 33.f;
+    //            ICE_LOG(
+    //                ice::LogSeverity::Debug, ice::LogTag::Game,
+    //                "Setting to 33.f"
+    //            );
+    //        }
+    //    }
+    //});
     //ice::ComponentQuery:: query.result_by_entity(alloc);
 
     //ice::pod::Array<ice::ArchetypeHandle> archetypes{ alloc };
@@ -628,10 +657,23 @@ ice::i32 game_main(ice::Allocator& alloc, ice::ResourceSystem& resource_system)
 
         ice::render::RenderSurface* render_surface = render_driver->create_surface(surface_info);
 
+        ice::gfx::GfxPassCreateInfo gfx_pass_info[]{
+            ice::gfx::GfxPassCreateInfo{
+                .name = "default"_sid,
+                .queue_flags = ice::render::QueueFlags::Graphics | ice::render::QueueFlags::Present
+            }
+        };
+
+        ice::gfx::GfxDeviceCreateInfo gfx_device_info{
+            .render_driver = render_driver.get(),
+            .render_surface = render_surface,
+            .pass_list = gfx_pass_info
+        };
+
         ice::UniquePtr<ice::platform::Container> app = ice::platform::create_app_container(
             alloc,
             ice::make_unique<ice::platform::App, TestApp>(alloc, alloc,
-                engine->create_runner(render_surface, render_driver.get())
+                engine->create_runner(gfx_device_info)
             )
         );
 

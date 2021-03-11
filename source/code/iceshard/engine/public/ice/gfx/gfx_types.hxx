@@ -4,6 +4,8 @@
 namespace ice::gfx
 {
 
+    struct GfxDeviceCreateInfo;
+
     class GfxDevice;
 
 } // namespace ice::gfx

@@ -1,5 +1,7 @@
 #include "iceshard_gfx_frame.hxx"
+#include "iceshard_gfx_pass.hxx"
 #include <ice/render/render_swapchain.hxx>
+#include <ice/assert.hxx>
 
 namespace ice::gfx
 {
@@ -9,17 +11,19 @@ namespace ice::gfx
         ice::render::RenderSwapchain* swapchain,
         ice::render::RenderPass renderpass,
         ice::render::Framebuffer framebuffer,
-        ice::render::RenderQueue* queue,
-        ice::u32 queue_pool_idx
+        ice::gfx::IceGfxPassGroup* pass_group
     ) noexcept
         : GfxFrame{ }
         , _render_device{ device }
         , _render_swapchain{ swapchain }
-        , _render_queue{ queue }
+        , _pass_group{ pass_group }
     {
-        _render_queue->reset_pool(queue_pool_idx);
-        _render_queue->allocate_buffers(
-            queue_pool_idx,
+        ice::gfx::IceGfxPass* pass = _pass_group->get_pass(
+            "default"_sid
+        );
+
+        pass->prepare();
+        pass->alloc_command_buffers(
             ice::render::CommandBufferType::Primary,
             ice::Span<ice::render::CommandBuffer>(&_cmd_buffer, 1)
         );
@@ -40,8 +44,30 @@ namespace ice::gfx
 
     void IceGfxFrame::present() noexcept
     {
-        _render_queue->submit(ice::Span<ice::render::CommandBuffer>(&_cmd_buffer, 1));
-        _render_queue->present(_render_swapchain);
+        ice::gfx::IceGfxPass* pass = _pass_group->get_pass(
+            "default"_sid
+        );
+        ice::render::RenderQueue* queue = pass->render_queue();
+        queue->submit(ice::Span<ice::render::CommandBuffer>(&_cmd_buffer, 1));
+
+        ice::render::RenderQueue* presenting_queue;
+        if (_pass_group->get_presenting_queue(presenting_queue))
+        {
+            presenting_queue->present(_render_swapchain);
+        }
+        else
+        {
+            ICE_ASSERT(
+                false, "No graphics pass set as presenting!"
+            );
+        }
+    }
+
+    auto IceGfxFrame::get_pass(
+        ice::StringID_Arg name
+    ) noexcept -> GfxPass*
+    {
+        return _pass_group->get_pass(name);
     }
 
 } // namespace ice::gfx

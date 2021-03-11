@@ -10,13 +10,17 @@ namespace ice::gfx
 
     class IceGfxFrame;
 
+    class IceGfxPassGroup;
+
     class IceGfxDevice final : public ice::gfx::GfxDevice
     {
     public:
         IceGfxDevice(
             ice::Allocator& alloc,
             ice::render::RenderDriver* driver,
-            ice::render::RenderSurface* render_surface
+            ice::render::RenderSurface* render_surface,
+            ice::render::RenderDevice* render_device,
+            ice::pod::Array<ice::gfx::IceGfxPassGroup*> graphics_passes
         ) noexcept;
         ~IceGfxDevice() noexcept override;
 
@@ -31,18 +35,24 @@ namespace ice::gfx
         void create_temporary_resources() noexcept;
 
     private:
+        ice::Allocator& _allocator;
         ice::render::RenderDriver* const _render_driver;
         ice::render::RenderSurface* const _render_surface;
-        ice::render::QueueID const _default_queue_id;
+        ice::render::RenderDevice* const _render_device;
 
-        ice::render::RenderDevice* _render_device;
         ice::render::RenderSwapchain* _render_swapchain;
-        ice::pod::Array<ice::render::RenderQueue*> _render_queues;
+
+        ice::pod::Array<ice::gfx::IceGfxPassGroup*> _graphics_passes;
 
         // Temporary here
         ice::render::RenderPass _render_pass;
         ice::render::Image _depth_stencil_image;
         ice::render::Framebuffer _render_framebuffers[2];
     };
+
+    auto create_graphics_device(
+        ice::Allocator& alloc,
+        ice::gfx::GfxDeviceCreateInfo const& create_info
+    ) noexcept -> ice::UniquePtr<ice::gfx::IceGfxDevice>;
 
 } // namespace ice::gfx
