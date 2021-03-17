@@ -5,6 +5,8 @@
 namespace ice
 {
 
+    class AssetSystem;
+
     class EntityIndex;
 
     class WorldManager;
@@ -21,6 +23,8 @@ namespace ice
         ) noexcept -> ice::UniquePtr<EngineRunner> = 0;
 
         virtual auto entity_index() noexcept -> ice::EntityIndex& = 0;
+
+        virtual auto asset_system() noexcept -> ice::AssetSystem& = 0;
 
         virtual auto world_manager() noexcept -> ice::WorldManager& = 0;
     };

@@ -59,6 +59,11 @@ namespace ice
         return _entity_index;
     }
 
+    auto IceshardEngine::asset_system() noexcept -> ice::AssetSystem&
+    {
+        return _asset_system;
+    }
+
     auto IceshardEngine::world_manager() noexcept -> ice::WorldManager&
     {
         return _world_manager;

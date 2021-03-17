@@ -24,6 +24,8 @@ namespace ice
 
         auto entity_index() noexcept -> ice::EntityIndex& override;
 
+        auto asset_system() noexcept -> ice::AssetSystem& override;
+
         auto world_manager() noexcept -> ice::WorldManager& override;
 
     private:
