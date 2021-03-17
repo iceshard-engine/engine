@@ -8,6 +8,9 @@
 #include <ice/engine_runner.hxx>
 #include <ice/engine_frame.hxx>
 
+#include <ice/asset.hxx>
+#include <ice/asset_system.hxx>
+
 #include <ice/assert.hxx>
 #include <ice/log.hxx>
 #include <ice/stringid.hxx>
@@ -20,6 +23,7 @@ class ClearStage final : ice::gfx::GfxStage
 {
 public:
     ClearStage(
+        ice::AssetSystem& asset_system,
         ice::render::RenderSwapchain const& swapchain,
         ice::render::RenderDevice& render_device
     ) noexcept
@@ -43,6 +47,9 @@ public:
                 .format = ImageFormat::UNORM_D24_UINT_S8,
                 .layout = ImageLayout::DepthStencil,
                 .type = AttachmentType::DepthStencil,
+                .operations = {
+                    AttachmentOperation::Load_Clear
+                }
             },
         };
 
@@ -112,10 +119,137 @@ public:
             _render_pass,
             framebuffer_images
         );
+
+        ice::render::ResourceSetLayoutBinding bindings[]{
+            ice::render::ResourceSetLayoutBinding{
+                .binding_index = 0,
+                .resource_count = 1,
+                .resource_type = ResourceType::UniformBuffer,
+                .shader_stage_flags = ShaderStageFlags::FragmentStage | ShaderStageFlags::VertexStage
+            }
+        };
+
+        _nomaterial_layout = _render_device.create_resourceset_layout(
+            bindings
+        );
+        _render_device.create_resourcesets(
+            ice::Span<ice::render::ResourceSetLayout const>{ &_nomaterial_layout, 1 },
+            ice::Span<ice::render::ResourceSet>{ &_empty_material, 1 }
+        );
+
+        _opaque_layout = _render_device.create_pipeline_layout(
+            PipelineLayoutInfo{
+                .push_constants = { },
+                .resource_layouts = ice::Span<ice::render::ResourceSetLayout>{ &_nomaterial_layout, 1 }
+            }
+        );
+
+        ice::render::ShaderInputAttribute attribs[]{
+            ShaderInputAttribute{.location = 0, .offset = 0, .type = ShaderAttribType::Vec2f },
+            ShaderInputAttribute{.location = 1, .offset = 8, .type = ShaderAttribType::Vec2f },
+        };
+
+        ice::render::ShaderInputBinding shader_bindings[]{
+            ShaderInputBinding{
+                .binding = 0,
+                .stride = 16,
+                .instanced = 0,
+                .attributes = attribs
+            }
+        };
+
+        ice::Asset blue_vert = asset_system.request(ice::AssetType::Shader, "/shaders/color/blue-vert"_sid);
+        ice::Asset blue_frag = asset_system.request(ice::AssetType::Shader, "/shaders/color/blue-frag"_sid);
+
+        ice::Data blue_vert_data;
+        ice::Data blue_frag_data;
+        ice::asset_data(blue_vert, blue_vert_data);
+        ice::asset_data(blue_frag, blue_frag_data);
+
+        ice::render::ShaderInfo shader_infos[]{
+            ShaderInfo{
+                .shader_data = *reinterpret_cast<ice::Data const*>(blue_vert_data.location),
+                .shader_stage = ice::render::ShaderStageFlags::VertexStage
+            },
+            ShaderInfo{
+                .shader_data = *reinterpret_cast<ice::Data const*>(blue_frag_data.location),
+                .shader_stage = ice::render::ShaderStageFlags::FragmentStage
+            },
+        };
+        ice::render::ShaderStageFlags stages[2]{
+            ShaderStageFlags::VertexStage,
+            ShaderStageFlags::FragmentStage
+        };
+
+        _shader_count = ice::size(shader_infos);
+
+        for (ice::u32 idx = 0; idx < _shader_count; ++idx)
+        {
+            _shaders[idx] = _render_device.create_shader(shader_infos[idx]);
+        }
+
+        ice::render::PipelineInfo pipeline_info{
+            .layout = _opaque_layout,
+            .renderpass = _render_pass,
+            .shaders = _shaders,
+            .shaders_stages = stages,
+            .shader_bindings = shader_bindings
+        };
+
+        _opaque_pipeline = _render_device.create_pipeline(
+            pipeline_info
+        );
+
+        _vertex_buffer = _render_device.create_buffer(
+            ice::render::BufferType::Vertex, sizeof(ice::vec3f) * 256
+        );
+
+        _indice_buffer = _render_device.create_buffer(
+            ice::render::BufferType::Index, sizeof(ice::u16) * 1024
+        );
+
+        ice::u16 indices[] = {
+            0, 1, 2,
+            0, 2, 3,
+        };
+
+        ice::vec2f vertices[] = {
+            ice::vec2f{ 0.f, 0.f },
+            ice::vec2f{ 0.f, 0.f },
+            ice::vec2f{ 0.f, 1.f },
+            ice::vec2f{ 0.f, 0.f },
+            ice::vec2f{ 1.f, 1.f },
+            ice::vec2f{ 0.f, 0.f },
+            ice::vec2f{ 1.f, 0.f },
+            ice::vec2f{ 0.f, 0.f },
+        };
+
+        ice::render::BufferUpdateInfo update_info[]{
+            BufferUpdateInfo{.buffer = _indice_buffer, .data = ice::data_view(indices, sizeof(indices)) },
+            BufferUpdateInfo{.buffer = _vertex_buffer, .data = ice::data_view(vertices, sizeof(vertices)) },
+        };
+
+        _render_device.update_buffers(
+            update_info
+        );
     }
 
     ~ClearStage() noexcept
     {
+        _render_device.destroy_buffer(_indice_buffer);
+        _render_device.destroy_buffer(_vertex_buffer);
+        _render_device.destroy_pipeline(_opaque_pipeline);
+
+        for (ice::u32 idx = 0; idx < _shader_count; ++idx)
+        {
+            _render_device.destroy_shader(_shaders[idx]);
+        }
+        _render_device.destroy_pipeline_layout(_opaque_layout);
+        _render_device.destroy_resourcesets(
+            ice::Span<ice::render::ResourceSet const>{ &_empty_material, 1 }
+        );
+        _render_device.destroy_resourceset_layout(_nomaterial_layout);
+
         _render_device.destroy_framebuffer(_framebuffers[0]);
         _render_device.destroy_framebuffer(_framebuffers[1]);
         _render_device.destroy_image(_depth_stencil_image);
@@ -134,8 +268,13 @@ public:
         cmds.begin(cmd_buffer);
         cmds.begin_renderpass(cmd_buffer, _render_pass, _framebuffers[framebuffer_idx], _extent, clear_color);
         cmds.next_subpass(cmd_buffer, ice::render::SubPassContents::Inline);
-        cmds.end_renderpass(cmd_buffer);
-        cmds.end(cmd_buffer);
+        cmds.bind_pipeline(cmd_buffer, _opaque_pipeline);
+        cmds.bind_resource_set(cmd_buffer, _opaque_layout, _empty_material, 0);
+        cmds.set_viewport(cmd_buffer, ice::vec4u{ 0, 0, 600, 600 });
+        cmds.set_scissor(cmd_buffer, ice::vec4u{ 0, 0, 600, 600 });
+        cmds.bind_index_buffer(cmd_buffer, _indice_buffer);
+        cmds.bind_vertex_buffer(cmd_buffer, _vertex_buffer, 0);
+        cmds.draw_indexed(cmd_buffer, 6, 1);
     }
 
 private:
@@ -146,6 +285,44 @@ private:
     ice::render::RenderPass _render_pass;
     ice::render::Image _depth_stencil_image;
     ice::render::Framebuffer _framebuffers[2];
+
+    ice::u32 _shader_count = 0;
+    ice::render::ResourceSetLayout _nomaterial_layout;
+    ice::render::ResourceSet _empty_material;
+    ice::render::Shader _shaders[20]{ };
+    ice::render::PipelineLayout _opaque_layout;
+    ice::render::Pipeline _opaque_pipeline;
+    ice::render::Buffer _indice_buffer;
+    ice::render::Buffer _vertex_buffer;
+};
+
+class DrawStage final : ice::gfx::GfxStage
+{
+public:
+    void record_commands(
+        ice::render::CommandBuffer cmd_buffer,
+        ice::render::RenderCommands& cmds
+    ) noexcept override
+    {
+        ice::vec3f points[]{
+            ice::vec3f{ 0.0, 0.0, 0.0 },
+            ice::vec3f{ 0.5, 0.0, 0.0 },
+            ice::vec3f{ 0.0, 0.5, 0.0 },
+        };
+    }
+};
+
+class EndStage final : ice::gfx::GfxStage
+{
+public:
+    void record_commands(
+        ice::render::CommandBuffer cmd_buffer,
+        ice::render::RenderCommands& cmds
+    ) noexcept override
+    {
+        cmds.end_renderpass(cmd_buffer);
+        cmds.end(cmd_buffer);
+    }
 };
 
 TestGame::TestGame(
@@ -182,9 +359,20 @@ TestGame::TestGame(
     ice::pod::array::push_back(
         _stages,
         _allocator.make<ClearStage>(
+            _engine.asset_system(),
             _gfx_device.swapchain(),
             _render_device
         )
+    );
+
+    ice::pod::array::push_back(
+        _stages,
+        _allocator.make<DrawStage>()
+    );
+
+    ice::pod::array::push_back(
+        _stages,
+        _allocator.make<EndStage>()
     );
 }
 
@@ -214,7 +402,7 @@ void TestGame::update() noexcept
     for (ice::gfx::GfxStage* stage : _stages)
     {
         default_pass->add_stage(
-            "default.clear"_sid,
+            ice::stringid_invalid,
             stage,
             { }
         );
