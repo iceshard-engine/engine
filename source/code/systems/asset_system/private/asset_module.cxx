@@ -28,7 +28,7 @@ namespace ice
                 if (pipeline != nullptr)
                 {
                     asset_system.add_pipeline(
-                        ""_sid,
+                        module_api->name_fn(),
                         ice::UniquePtr<ice::AssetPipeline>{ pipeline, { alloc, module_api->destroy_pipeline_fn } }
                     );
                 }

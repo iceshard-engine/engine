@@ -1,6 +1,7 @@
 #pragma once
 #include <ice/allocator.hxx>
 #include <ice/unique_ptr.hxx>
+#include <ice/stringid.hxx>
 
 namespace ice
 {
@@ -18,12 +19,13 @@ namespace ice
 
     namespace detail::asset_system::v1
     {
-
+        using NameFn = auto() noexcept -> ice::StringID;
         using CreateFn = auto(ice::Allocator&) noexcept -> ice::AssetPipeline*;
         using DestroyFn = void(ice::Allocator& alloc, ice::AssetPipeline*) noexcept;
 
         struct AssetModuleAPI
         {
+            NameFn* name_fn;
             CreateFn* create_pipeline_fn;
             DestroyFn* destroy_pipeline_fn;
         };
