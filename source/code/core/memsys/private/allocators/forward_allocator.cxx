@@ -82,6 +82,10 @@ namespace ice::memory
                 current_head->free = ptr_add(free_location, size);
             }
         }
+        else
+        {
+            current_head->free = ptr_add(free_location, size);
+        }
 
         return free_location;
     }
