@@ -23,18 +23,27 @@ class RunCommand extends Command
             -- Close the file
             run_scenarios\close!
 
-
-        os.chdir project.output_dir
-
     execute: (args) =>
         if not @scenario
             print "No valid scenario was selected! Provided scenario name: #{args.scenario}"
             return false
 
         else
+            os.chdir @current_dir
+
             for step in *@scenario
-                app_path = @current_dir .. '/' .. step.executable
-                os.execute "start #{app_path} \"#{table.concat step.options, ' '}\""
+                app_path = step.executable
+                if step.working_dir
+                    os.chdir step.working_dir
+
+                if not os.isfile app_path
+                    app_path = @current_dir .. '/' .. step.executable
+
+                if step.use_start_cmd
+                    app_path = "start " .. app_path
+
+                --print "#{app_path} #{table.concat step.options, ' '}"
+                os.execute "#{app_path} #{table.concat step.options, ' '}"
 
             return true
 

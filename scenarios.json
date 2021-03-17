@@ -4,6 +4,7 @@
     {
         "dbg": [
             {
+                "use_start_cmd": true,
                 "working_dir": "./build/",
                 "executable": "./build/bin/Windows-x64-Debug-MSVC-x64-v142/test/test.exe",
                 "options": [ ]
@@ -11,9 +12,22 @@
         ],
         "dev": [
             {
+                "use_start_cmd": true,
                 "working_dir": "./build/",
                 "executable": "./build/bin/Windows-x64-Develop-MSVC-x64-v142/test/test.exe",
                 "options": [ ]
+            }
+        ],
+        "shaders": [
+            {
+                "working_dir": "./source/data/shaders/color",
+                "executable": "C:/VulkanSDK/1.2.154.1/Bin/glslc.exe",
+                "options": ["--target-env=vulkan", "-fshader-stage=vert", "-o", "blue-vert.spv", "blue-vert.glsl"]
+            },
+            {
+                "working_dir": "./source/data/shaders/color",
+                "executable": "C:/VulkanSDK/1.2.154.1/Bin/glslc.exe",
+                "options": ["--target-env=vulkan", "-fshader-stage=frag", "-o", "blue-frag.spv", "blue-frag.glsl"]
             }
         ]
     }
