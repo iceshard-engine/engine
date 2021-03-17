@@ -36,7 +36,7 @@ namespace ice::gfx
             ice::Span<ice::gfx::GfxStage*> fence_wait
         ) noexcept override;
 
-        void execute(ice::render::Semaphore) noexcept;
+        void execute() noexcept;
 
     private:
         ice::render::RenderCommands& _render_commands;

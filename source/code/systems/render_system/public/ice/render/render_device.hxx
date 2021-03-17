@@ -125,8 +125,6 @@ namespace ice::render
         ) const noexcept = 0;
 
         virtual auto get_commands() noexcept -> ice::render::RenderCommands& = 0;
-
-        virtual auto temp_submit_semaphore() noexcept -> ice::render::Semaphore = 0;
     };
 
 } // namespace ice::render

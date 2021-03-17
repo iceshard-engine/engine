@@ -61,25 +61,10 @@ namespace ice::render::vk
             result == VkResult::VK_SUCCESS,
             "Failed to create descriptor pool!"
         );
-
-        VkSemaphoreCreateInfo semaphore_info{ VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO };
-
-        vkCreateSemaphore(
-            _vk_device,
-            &semaphore_info,
-            nullptr,
-            &_submit_semaphore
-        );
     }
 
     VulkanRenderDevice::~VulkanRenderDevice() noexcept
     {
-        vkDestroySemaphore(
-            _vk_device,
-            _submit_semaphore,
-            nullptr
-        );
-
         vkDestroyDescriptorPool(
             _vk_device,
             _vk_descriptor_pool,
@@ -964,11 +949,6 @@ namespace ice::render::vk
     auto VulkanRenderDevice::get_commands() noexcept -> ice::render::RenderCommands&
     {
         return _vk_render_commands;
-    }
-
-    auto VulkanRenderDevice::temp_submit_semaphore() noexcept -> Semaphore
-    {
-        return static_cast<Semaphore>(reinterpret_cast<ice::uptr>(_submit_semaphore));
     }
 
     auto native_handle(CommandBuffer cmds) noexcept -> VkCommandBuffer

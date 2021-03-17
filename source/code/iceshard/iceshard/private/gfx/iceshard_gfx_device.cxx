@@ -87,7 +87,7 @@ namespace ice::gfx
 
     auto IceGfxDevice::next_frame(ice::Allocator& alloc) noexcept -> ice::UniquePtr<ice::gfx::IceGfxFrame>
     {
-        ice::u32 const framebuffer_index = _render_swapchain->aquire_image(_render_device->temp_submit_semaphore());
+        ice::u32 const framebuffer_index = _render_swapchain->aquire_image();
 
         return ice::make_unique<gfx::IceGfxFrame>(
             alloc,

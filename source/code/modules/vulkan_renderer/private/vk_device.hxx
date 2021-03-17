@@ -192,14 +192,11 @@ namespace ice::render::vk
 
         auto get_commands() noexcept -> ice::render::RenderCommands& override;
 
-        auto temp_submit_semaphore() noexcept -> Semaphore override;
-
     private:
         ice::Allocator& _allocator;
         VkDevice _vk_device;
         VkPhysicalDevice _vk_physical_device;
         VkDescriptorPool _vk_descriptor_pool;
-        VkSemaphore _submit_semaphore;
 
         ice::UniquePtr<VulkanMemoryManager> _vk_memory_manager;
 

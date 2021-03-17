@@ -65,7 +65,7 @@ namespace ice::gfx
         );
     }
 
-    void IceGfxPass::execute(ice::render::Semaphore semaphore) noexcept
+    void IceGfxPass::execute() noexcept
     {
         bool const contains_work = ice::pod::array::empty(_stages) == false;
         if (contains_work)
@@ -79,8 +79,7 @@ namespace ice::gfx
             }
 
             _render_queue->submit(
-                ice::Span<ice::render::CommandBuffer>{ &_primary_commands, 1 },
-                semaphore
+                ice::Span<ice::render::CommandBuffer>{ &_primary_commands, 1 }
             );
         }
     }

@@ -28,8 +28,7 @@ namespace ice::render::vk
         ) noexcept override;
 
         void submit(
-            ice::Span<ice::render::CommandBuffer> buffers,
-            ice::render::Semaphore semaphore
+            ice::Span<ice::render::CommandBuffer> buffers
         ) noexcept override;
 
         void present(
