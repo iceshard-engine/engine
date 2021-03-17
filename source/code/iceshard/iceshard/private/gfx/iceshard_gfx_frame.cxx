@@ -25,7 +25,7 @@ namespace ice::gfx
 
     void IceGfxFrame::present() noexcept
     {
-        _pass_group->execute_all();
+        _pass_group->execute_all(_render_device->temp_submit_semaphore());
 
         ice::render::RenderQueue* presenting_queue;
         if (_pass_group->get_presenting_queue(presenting_queue))

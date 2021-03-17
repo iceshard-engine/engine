@@ -32,6 +32,45 @@ namespace ice::render::vk
             ice::render::SubPassContents contents
         ) noexcept override;
 
+        void set_viewport(
+            ice::render::CommandBuffer cmds,
+            ice::vec4u viewport_rect
+        ) noexcept override;
+
+        void set_scissor(
+            ice::render::CommandBuffer cmds,
+            ice::vec4u scissor_rect
+        ) noexcept override;
+
+        void bind_pipeline(
+            ice::render::CommandBuffer cmds,
+            ice::render::Pipeline pipeline
+        ) noexcept override;
+
+        void bind_resource_set(
+            ice::render::CommandBuffer cmds,
+            ice::render::PipelineLayout pipeline_layout,
+            ice::render::ResourceSet resource_set,
+            ice::u32 bind_point
+        ) noexcept override;
+
+        void bind_index_buffer(
+            ice::render::CommandBuffer cmds,
+            ice::render::Buffer buffer
+        ) noexcept override;
+
+        void bind_vertex_buffer(
+            ice::render::CommandBuffer cmds,
+            ice::render::Buffer buffer,
+            ice::u32 binding
+        ) noexcept override;
+
+        void draw_indexed(
+            ice::render::CommandBuffer cmds,
+            ice::u32 vertex_count,
+            ice::u32 instance_count
+        ) noexcept override;
+
         void end_renderpass(
             ice::render::CommandBuffer cmds
         ) noexcept override;
@@ -68,10 +107,64 @@ namespace ice::render::vk
             ice::render::RenderPass render_pass
         ) noexcept override;
 
+        auto create_resourceset_layout(
+            ice::Span<ice::render::ResourceSetLayoutBinding const> bindings
+        ) noexcept -> ice::render::ResourceSetLayout override;
+
+        void destroy_resourceset_layout(
+            ice::render::ResourceSetLayout resourceset_layout
+        ) noexcept override;
+
+        bool create_resourcesets(
+            ice::Span<ice::render::ResourceSetLayout const> resource_set_layouts,
+            ice::Span<ice::render::ResourceSet> resource_sets_out
+        ) noexcept override;
+
+        void destroy_resourcesets(
+            ice::Span<ice::render::ResourceSet const> resource_sets
+        ) noexcept override;
+
+        auto create_pipeline_layout(
+            ice::render::PipelineLayoutInfo const& info
+        ) noexcept -> ice::render::PipelineLayout override;
+
+        void destroy_pipeline_layout(
+            ice::render::PipelineLayout pipeline_layout
+        ) noexcept override;
+
+        auto create_shader(
+            ice::render::ShaderInfo const& shader_info
+        ) noexcept -> ice::render::Shader override;
+
+        void destroy_shader(
+            ice::render::Shader shader
+        ) noexcept override;
+
+        auto create_pipeline(
+            ice::render::PipelineInfo const& info
+        ) noexcept -> ice::render::Pipeline override;
+
+        void destroy_pipeline(
+            ice::render::Pipeline pipeline
+        ) noexcept override;
+
+        auto create_buffer(
+            ice::render::BufferType buffer_type,
+            ice::u32 buffer_size
+        ) noexcept -> ice::render::Buffer override;
+
+        void destroy_buffer(
+            ice::render::Buffer buffer
+        ) noexcept override;
+
+        void update_buffers(
+            ice::Span<ice::render::BufferUpdateInfo const> update_infos
+        ) noexcept override;
+
         auto create_framebuffer(
             ice::vec2u extent,
             ice::render::RenderPass renderpass,
-            ice::Span<ice::render::Image> images
+            ice::Span<ice::render::Image const> images
         ) noexcept -> ice::render::Framebuffer override;
 
         void destroy_framebuffer(
@@ -99,10 +192,14 @@ namespace ice::render::vk
 
         auto get_commands() noexcept -> ice::render::RenderCommands& override;
 
+        auto temp_submit_semaphore() noexcept -> Semaphore override;
+
     private:
         ice::Allocator& _allocator;
         VkDevice _vk_device;
         VkPhysicalDevice _vk_physical_device;
+        VkDescriptorPool _vk_descriptor_pool;
+        VkSemaphore _submit_semaphore;
 
         ice::UniquePtr<VulkanMemoryManager> _vk_memory_manager;
 

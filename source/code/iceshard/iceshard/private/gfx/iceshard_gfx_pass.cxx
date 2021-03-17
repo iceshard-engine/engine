@@ -65,19 +65,24 @@ namespace ice::gfx
         );
     }
 
-    void IceGfxPass::execute() noexcept
+    void IceGfxPass::execute(ice::render::Semaphore semaphore) noexcept
     {
-        for (ice::gfx::GfxStage* stage : _stages)
+        bool const contains_work = ice::pod::array::empty(_stages) == false;
+        if (contains_work)
         {
-            stage->record_commands(
-                _primary_commands,
-                _render_commands
+            for (ice::gfx::GfxStage* stage : _stages)
+            {
+                stage->record_commands(
+                    _primary_commands,
+                    _render_commands
+                );
+            }
+
+            _render_queue->submit(
+                ice::Span<ice::render::CommandBuffer>{ &_primary_commands, 1 },
+                semaphore
             );
         }
-
-        _render_queue->submit(
-            ice::Span<ice::render::CommandBuffer>{ &_primary_commands, 1 }
-        );
     }
 
 } // namespace ice::gfx

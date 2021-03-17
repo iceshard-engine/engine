@@ -5,6 +5,8 @@
 namespace ice::render
 {
 
+    enum class Semaphore : ice::uptr;
+
     enum class QueueID : ice::u32
     {
         Invalid = 0xffff'ffff
@@ -52,7 +54,8 @@ namespace ice::render
         ) noexcept = 0;
 
         virtual void submit(
-            ice::Span<ice::render::CommandBuffer> buffers
+            ice::Span<ice::render::CommandBuffer> buffers,
+            ice::render::Semaphore semaphore
         ) noexcept = 0;
 
         virtual void present(

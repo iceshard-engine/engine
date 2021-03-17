@@ -68,7 +68,8 @@ namespace ice::render::vk
     }
 
     void VulkanQueue::submit(
-        ice::Span<ice::render::CommandBuffer> buffers
+        ice::Span<ice::render::CommandBuffer> buffers,
+        ice::render::Semaphore semaphore
     ) noexcept
     {
         CommandBuffer* buffers_ptr = buffers.data();
@@ -76,9 +77,11 @@ namespace ice::render::vk
 
         VkPipelineStageFlags pipe_stage_flags = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 
+        VkSemaphore vk_semaphore = reinterpret_cast<VkSemaphore>(static_cast<ice::uptr>(semaphore));
+
         VkSubmitInfo submit_info{ VK_STRUCTURE_TYPE_SUBMIT_INFO };
-        submit_info.waitSemaphoreCount = 0;
-        submit_info.pWaitSemaphores = nullptr;
+        submit_info.waitSemaphoreCount = 1;
+        submit_info.pWaitSemaphores = &vk_semaphore;
         submit_info.pWaitDstStageMask = &pipe_stage_flags;
         submit_info.commandBufferCount = static_cast<ice::u32>(buffers.size());
         submit_info.pCommandBuffers = vk_buffers;

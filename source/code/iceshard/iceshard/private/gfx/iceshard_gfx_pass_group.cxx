@@ -72,11 +72,11 @@ namespace ice::gfx
         }
     }
 
-    void IceGfxPassGroup::execute_all() noexcept
+    void IceGfxPassGroup::execute_all(ice::render::Semaphore semaphore) noexcept
     {
         for (auto const& entry : _gfx_passes)
         {
-            entry.value->execute();
+            entry.value->execute(semaphore);
         }
     }
 

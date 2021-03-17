@@ -29,7 +29,7 @@ namespace ice::render::vk
 
         auto image_extent() const noexcept -> VkExtent2D;
 
-        auto aquire_image() noexcept -> ice::u32 override;
+        auto aquire_image(ice::render::Semaphore semaphore) noexcept -> ice::u32 override;
 
         auto current_image_index() const noexcept -> ice::u32 override;
 

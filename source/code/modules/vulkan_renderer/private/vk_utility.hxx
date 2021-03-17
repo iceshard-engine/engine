@@ -5,6 +5,8 @@
 
 #include <ice/render/render_pass.hxx>
 #include <ice/render/render_image.hxx>
+#include <ice/render/render_resource.hxx>
+#include <ice/render/render_pipeline.hxx>
 #include "vk_include.hxx"
 
 
@@ -47,7 +49,17 @@ namespace ice::render::vk
 
     inline auto native_enum_value(AccessFlags flags) noexcept -> VkAccessFlags;
 
+    inline auto native_enum_value(ResourceType type) noexcept -> VkDescriptorType;
+
+    inline auto native_enum_value(BufferType type) noexcept -> VkBufferUsageFlags;
+
+    inline auto native_enum_value(ShaderStageFlags flags) noexcept -> VkShaderStageFlagBits;
+
+    inline auto native_enum_value(ShaderAttribType type) noexcept -> VkFormat;
+
     inline auto native_enum_flags(ImageUsageFlags flags) noexcept -> VkImageUsageFlags;
+
+    inline auto native_enum_flags(ShaderStageFlags flags) noexcept -> VkShaderStageFlags;
 
 
     template<typename T, typename Fn, typename... Args>
@@ -105,6 +117,10 @@ namespace ice::render::vk
             return VK_FORMAT_B8G8R8A8_SRGB;
         case ImageFormat::UNORM_D24_UINT_S8:
             return VK_FORMAT_D24_UNORM_S8_UINT;
+        case ImageFormat::SFLOAT_D32_UINT_S8:
+            return VK_FORMAT_D32_SFLOAT_S8_UINT;
+        case ImageFormat::SFLOAT_D32:
+            return VK_FORMAT_D32_SFLOAT;
         default:
             return VK_FORMAT_UNDEFINED;
         }
@@ -200,6 +216,71 @@ namespace ice::render::vk
         }
     }
 
+    auto native_enum_value(ResourceType type) noexcept -> VkDescriptorType
+    {
+        switch (type)
+        {
+        case ResourceType::Sampler:
+        case ResourceType::SamplerImmutable:
+            return VK_DESCRIPTOR_TYPE_SAMPLER;
+        case ResourceType::SampledImage:
+            return VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+        case ResourceType::CombinedImageSampler:
+            return VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        case ResourceType::UniformBuffer:
+            return VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        default:
+            return VK_DESCRIPTOR_TYPE_MAX_ENUM;
+        }
+    }
+
+    auto native_enum_value(ice::render::BufferType type) noexcept -> VkBufferUsageFlags
+    {
+        switch (type)
+        {
+        case BufferType::Index:
+            return VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
+        case BufferType::Vertex:
+            return VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+        case BufferType::Uniform:
+            return VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+        case BufferType::Transfer:
+            return VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+        default:
+            return VK_BUFFER_USAGE_FLAG_BITS_MAX_ENUM;
+        }
+    }
+
+    auto native_enum_value(ShaderStageFlags value) noexcept -> VkShaderStageFlagBits
+    {
+        switch (value)
+        {
+        case ShaderStageFlags::VertexStage:
+            return VK_SHADER_STAGE_VERTEX_BIT;
+        case ShaderStageFlags::FragmentStage:
+            return VK_SHADER_STAGE_FRAGMENT_BIT;
+        default:
+            return VK_SHADER_STAGE_FLAG_BITS_MAX_ENUM;
+        }
+    }
+
+    auto native_enum_value(ShaderAttribType type) noexcept -> VkFormat
+    {
+        switch (type)
+        {
+        case ShaderAttribType::Vec1f:
+            return VK_FORMAT_R32_SFLOAT;
+        case ShaderAttribType::Vec2f:
+            return VK_FORMAT_R32G32_SFLOAT;
+        case ShaderAttribType::Vec3f:
+            return VK_FORMAT_R32G32B32_SFLOAT;
+        case ShaderAttribType::Vec4f:
+            return VK_FORMAT_R32G32B32A32_SFLOAT;
+        default:
+            return VK_FORMAT_MAX_ENUM;
+        }
+    }
+
     template<typename T>
     bool has_flag(T flags, T flag) noexcept
     {
@@ -223,6 +304,20 @@ namespace ice::render::vk
         if (has_flag(flags, ImageUsageFlags::DepthStencilAttachment))
         {
             usage_flags |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+        }
+        return usage_flags;
+    }
+
+    auto native_enum_flags(ShaderStageFlags flags) noexcept -> VkShaderStageFlags
+    {
+        VkShaderStageFlags usage_flags = 0;
+        if (has_flag(flags, ShaderStageFlags::VertexStage))
+        {
+            usage_flags |= VK_SHADER_STAGE_VERTEX_BIT;
+        }
+        if (has_flag(flags, ShaderStageFlags::FragmentStage))
+        {
+            usage_flags |= VK_SHADER_STAGE_FRAGMENT_BIT;
         }
         return usage_flags;
     }

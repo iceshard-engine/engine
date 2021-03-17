@@ -2,11 +2,21 @@
 #include "vk_swapchain.hxx"
 #include "vk_render_surface.hxx"
 #include "vk_image.hxx"
+#include "vk_buffer.hxx"
 #include "vk_utility.hxx"
 #include <ice/assert.hxx>
 
 namespace ice::render::vk
 {
+
+    auto native_handle(CommandBuffer cmds) noexcept -> VkCommandBuffer;
+    auto native_handle(RenderPass renderpass) noexcept -> VkRenderPass;
+    auto native_handle(Framebuffer framebuffer) noexcept -> VkFramebuffer;
+    auto native_handle(ResourceSetLayout resourceset_layout) noexcept -> VkDescriptorSetLayout;
+    auto native_handle(ResourceSet resourceset_layout) noexcept -> VkDescriptorSet;
+    auto native_handle(PipelineLayout pipeline_layout) noexcept -> VkPipelineLayout;
+    auto native_handle(Pipeline pipeline_layout) noexcept -> VkPipeline;
+    auto native_handle(Shader shader) noexcept -> VkShaderModule;
 
     VulkanRenderDevice::VulkanRenderDevice(
         ice::Allocator& alloc,
@@ -20,10 +30,62 @@ namespace ice::render::vk
         , _vk_memory_manager{ ice::make_unique<VulkanMemoryManager>(_allocator, _allocator, _vk_device, memory_properties) }
         , _vk_queues{ _allocator }
     {
+        VkDescriptorPoolSize pool_sizes[] =
+        {
+            { VK_DESCRIPTOR_TYPE_SAMPLER, 1000 },
+            { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000 },
+            { VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1000 },
+            { VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1000 },
+            { VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 1000 },
+            { VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1000 },
+            { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1000 },
+            { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1000 },
+            { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1000 },
+            { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1000 },
+            { VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1000 }
+        };
+
+        VkDescriptorPoolCreateInfo pool_info{ VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO };
+        pool_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
+        pool_info.maxSets = 1000;
+        pool_info.poolSizeCount = ice::size(pool_sizes);
+        pool_info.pPoolSizes = pool_sizes;
+
+        VkResult result = vkCreateDescriptorPool(
+            _vk_device,
+            &pool_info,
+            nullptr,
+            &_vk_descriptor_pool
+        );
+        ICE_ASSERT(
+            result == VkResult::VK_SUCCESS,
+            "Failed to create descriptor pool!"
+        );
+
+        VkSemaphoreCreateInfo semaphore_info{ VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO };
+
+        vkCreateSemaphore(
+            _vk_device,
+            &semaphore_info,
+            nullptr,
+            &_submit_semaphore
+        );
     }
 
     VulkanRenderDevice::~VulkanRenderDevice() noexcept
     {
+        vkDestroySemaphore(
+            _vk_device,
+            _submit_semaphore,
+            nullptr
+        );
+
+        vkDestroyDescriptorPool(
+            _vk_device,
+            _vk_descriptor_pool,
+            nullptr
+        );
+
         _vk_memory_manager = nullptr;
         vkDestroyDevice(_vk_device, nullptr);
     }
@@ -261,14 +323,484 @@ namespace ice::render::vk
 
     void VulkanRenderDevice::destroy_renderpass(ice::render::RenderPass renderpass) noexcept
     {
-        VkRenderPass vk_renderpass = reinterpret_cast<VkRenderPass>(static_cast<ice::uptr>(renderpass));
-        vkDestroyRenderPass(_vk_device, vk_renderpass, nullptr);
+        vkDestroyRenderPass(
+            _vk_device,
+            native_handle(renderpass),
+            nullptr
+        );
+    }
+
+    auto VulkanRenderDevice::create_resourceset_layout(
+        ice::Span<ice::render::ResourceSetLayoutBinding const> bindings
+    ) noexcept -> ice::render::ResourceSetLayout
+    {
+        ice::pod::Array<VkDescriptorSetLayoutBinding> vk_bindings{ _allocator };
+        ice::pod::array::reserve(vk_bindings, ice::size(bindings));
+
+        for (ResourceSetLayoutBinding const& binding : bindings)
+        {
+            ice::pod::array::push_back(
+                vk_bindings,
+                VkDescriptorSetLayoutBinding{
+                    .binding = binding.binding_index,
+                    .descriptorType = native_enum_value(binding.resource_type),
+                    .descriptorCount = binding.resource_count,
+                    .stageFlags = native_enum_flags(binding.shader_stage_flags),
+                    .pImmutableSamplers = nullptr
+                }
+            );
+        }
+
+        VkDescriptorSetLayoutCreateInfo layout_info{ VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO };
+        layout_info.bindingCount = ice::size(bindings);
+        layout_info.pBindings = ice::pod::begin(vk_bindings);
+
+        VkDescriptorSetLayout vk_descriptor_set_layout = vk_nullptr;
+        VkResult result = vkCreateDescriptorSetLayout(
+            _vk_device,
+            &layout_info,
+            nullptr,
+            &vk_descriptor_set_layout
+        );
+        ICE_ASSERT(
+            result == VkResult::VK_SUCCESS,
+            "Couldn't create `DescriptorSetLayout` with given bindings!"
+        );
+
+        return static_cast<ResourceSetLayout>(reinterpret_cast<ice::uptr>(vk_descriptor_set_layout));
+    }
+
+    void VulkanRenderDevice::destroy_resourceset_layout(
+        ice::render::ResourceSetLayout resourceset_layout
+    ) noexcept
+    {
+        vkDestroyDescriptorSetLayout(
+            _vk_device,
+            native_handle(resourceset_layout),
+            nullptr
+        );
+    }
+
+    bool VulkanRenderDevice::create_resourcesets(
+        ice::Span<ice::render::ResourceSetLayout const> resource_set_layouts,
+        ice::Span<ice::render::ResourceSet> resource_sets_out
+    ) noexcept
+    {
+        static_assert(
+            sizeof(ice::render::ResourceSet)
+            ==
+            sizeof(VkDescriptorSet),
+            "Descriptor set handle has a different size than resource set handle!"
+        );
+
+        ICE_ASSERT(
+            ice::size(resource_set_layouts) == ice::size(resource_sets_out),
+            "The output span size does not match the size of provided layouts span."
+        );
+
+        //ice::pod::array::resize(resource_sets_out, ice::size(resource_set_layouts));
+
+        VkDescriptorSetAllocateInfo descriptorset_info{ VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO };
+        descriptorset_info.descriptorPool = _vk_descriptor_pool;
+        descriptorset_info.descriptorSetCount = ice::size(resource_set_layouts);
+        descriptorset_info.pSetLayouts = reinterpret_cast<VkDescriptorSetLayout const*>(resource_set_layouts.data());
+
+        VkResult result = vkAllocateDescriptorSets(
+            _vk_device,
+            &descriptorset_info,
+            reinterpret_cast<VkDescriptorSet*>(resource_sets_out.data())
+        );
+        ICE_ASSERT(
+            result == VkResult::VK_SUCCESS,
+            "Couldn't allocate new {} descriptor sets.",
+            ice::size(resource_set_layouts)
+        );
+        return true;
+    }
+
+    void VulkanRenderDevice::destroy_resourcesets(
+        ice::Span<ice::render::ResourceSet const> resource_sets
+    ) noexcept
+    {
+        VkResult result = vkFreeDescriptorSets(
+            _vk_device,
+            _vk_descriptor_pool,
+            ice::size(resource_sets),
+            reinterpret_cast<VkDescriptorSet const*>(resource_sets.data())
+        );
+        ICE_ASSERT(
+            result == VkResult::VK_SUCCESS,
+            "Failed to free given {} descriptor sets.",
+            ice::size(resource_sets)
+        );
+    }
+
+    auto VulkanRenderDevice::create_pipeline_layout(
+        ice::render::PipelineLayoutInfo const& info
+    ) noexcept -> ice::render::PipelineLayout
+    {
+        ice::pod::Array<VkPushConstantRange> vk_push_constants{ _allocator };
+        ice::pod::array::reserve(vk_push_constants, ice::size(info.push_constants));
+
+        ice::pod::Array<VkDescriptorSetLayout> vk_descriptorset_layouts{ _allocator };
+        ice::pod::array::reserve(vk_descriptorset_layouts, ice::size(info.resource_layouts));
+
+        for (PipelinePushConstant const& push_constant : info.push_constants)
+        {
+            ice::pod::array::push_back(
+                vk_push_constants,
+                VkPushConstantRange{
+                    .stageFlags = native_enum_flags(push_constant.shader_stage_flags),
+                    .offset = push_constant.offset,
+                    .size = push_constant.size,
+                }
+            );
+        }
+
+        for (ResourceSetLayout layout : info.resource_layouts)
+        {
+            ice::pod::array::push_back(
+                vk_descriptorset_layouts,
+                native_handle(layout)
+            );
+        }
+
+        VkPipelineLayoutCreateInfo pipeline_info{ VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO };
+        pipeline_info.pushConstantRangeCount = ice::size(info.push_constants);
+        pipeline_info.pPushConstantRanges = ice::pod::begin(vk_push_constants);
+        pipeline_info.setLayoutCount = ice::size(info.resource_layouts);
+        pipeline_info.pSetLayouts = ice::pod::begin(vk_descriptorset_layouts);
+
+        VkPipelineLayout pipeline_layout = vk_nullptr;
+        VkResult result = vkCreatePipelineLayout(
+            _vk_device,
+            &pipeline_info,
+            nullptr,
+            &pipeline_layout
+        );
+        ICE_ASSERT(
+            result == VkResult::VK_SUCCESS,
+            "Couldn't create `PieplineLayout` with given push constants and resource layouts!"
+        );
+
+        return static_cast<ice::render::PipelineLayout>(reinterpret_cast<ice::uptr>(pipeline_layout));
+    }
+
+    void VulkanRenderDevice::destroy_pipeline_layout(
+        ice::render::PipelineLayout pipeline_layout
+    ) noexcept
+    {
+        vkDestroyPipelineLayout(
+            _vk_device,
+            native_handle(pipeline_layout),
+            nullptr
+        );
+    }
+
+    auto VulkanRenderDevice::create_shader(
+        ice::render::ShaderInfo const& info
+    ) noexcept -> ice::render::Shader
+    {
+        VkShaderModuleCreateInfo shader_info{ VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO };
+        shader_info.codeSize = info.shader_data.size;
+        shader_info.pCode = reinterpret_cast<ice::u32 const*>(info.shader_data.location);
+        shader_info.flags = native_enum_flags(info.shader_stage);
+
+        VkShaderModule vk_shader;
+        VkResult result = vkCreateShaderModule(
+            _vk_device,
+            &shader_info,
+            nullptr,
+            &vk_shader
+        );
+        ICE_ASSERT(
+            result == VkResult::VK_SUCCESS,
+            "Couldn't create Shader Module with given data!"
+        );
+
+        return static_cast<ice::render::Shader>(reinterpret_cast<ice::uptr>(vk_shader));
+    }
+
+    void VulkanRenderDevice::destroy_shader(
+        ice::render::Shader shader
+    ) noexcept
+    {
+        vkDestroyShaderModule(
+            _vk_device,
+            native_handle(shader),
+            nullptr
+        );
+    }
+
+    auto VulkanRenderDevice::create_pipeline(
+        ice::render::PipelineInfo const& info
+    ) noexcept -> ice::render::Pipeline
+    {
+        VkPipelineShaderStageCreateInfo shader_stages[2];
+
+        uint32_t stage_idx = 0;
+        for (; stage_idx < 2; ++stage_idx)
+        {
+            VkPipelineShaderStageCreateInfo& shader_stage = shader_stages[stage_idx];
+            shader_stage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+            shader_stage.pNext = nullptr;
+            shader_stage.pSpecializationInfo = nullptr;
+            shader_stage.flags = 0;
+            shader_stage.stage = native_enum_value(info.shaders_stages[stage_idx]);
+            shader_stage.module = native_handle(info.shaders[stage_idx]);
+            shader_stage.pName = "main";
+        }
+
+        VkDynamicState dynamic_states[2]; // max: VK_DYNAMIC_STATE_RANGE_SIZE
+        dynamic_states[0] = VkDynamicState::VK_DYNAMIC_STATE_VIEWPORT;
+        dynamic_states[1] = VkDynamicState::VK_DYNAMIC_STATE_SCISSOR;
+
+        VkPipelineDynamicStateCreateInfo dynamic_state{ VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO };
+        dynamic_state.pDynamicStates = dynamic_states;
+        dynamic_state.dynamicStateCount = ice::size(dynamic_states);
+
+        ice::pod::Array<VkVertexInputBindingDescription> vertex_input_bindings{ _allocator };
+        ice::pod::Array<VkVertexInputAttributeDescription> vertex_input_attributes{ _allocator };
+
+        ice::pod::array::reserve(vertex_input_bindings, ice::size(info.shader_bindings));
+        ice::pod::array::reserve(vertex_input_attributes, ice::size(info.shader_bindings) * 4);
+
+        for (ice::render::ShaderInputBinding const& binding : info.shader_bindings)
+        {
+            VkVertexInputBindingDescription vk_binding{ };
+            vk_binding.binding = binding.binding;
+            vk_binding.stride = binding.stride;
+            vk_binding.inputRate = static_cast<VkVertexInputRate>(binding.instanced);
+            ice::pod::array::push_back(vertex_input_bindings, vk_binding);
+
+            for (ice::render::ShaderInputAttribute const& attrib : binding.attributes)
+            {
+                VkVertexInputAttributeDescription vk_attrib{ };
+                vk_attrib.format = native_enum_value(attrib.type);
+                vk_attrib.location = attrib.location;
+                vk_attrib.offset = attrib.offset;
+                vk_attrib.binding = binding.binding;
+                ice::pod::array::push_back(vertex_input_attributes, vk_attrib);
+            }
+        }
+
+        VkPipelineVertexInputStateCreateInfo vertex_input{ VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO };
+        vertex_input.vertexBindingDescriptionCount = ice::pod::array::size(vertex_input_bindings);
+        vertex_input.pVertexBindingDescriptions = ice::pod::array::begin(vertex_input_bindings);
+        vertex_input.vertexAttributeDescriptionCount = ice::pod::array::size(vertex_input_attributes);
+        vertex_input.pVertexAttributeDescriptions = ice::pod::array::begin(vertex_input_attributes);
+
+        VkPipelineInputAssemblyStateCreateInfo input_assembly{ VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO };
+        input_assembly.primitiveRestartEnable = VK_FALSE;
+        input_assembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+
+        VkPipelineRasterizationStateCreateInfo rasterization{ VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO };
+        rasterization.polygonMode = VK_POLYGON_MODE_FILL;
+        rasterization.cullMode = VK_CULL_MODE_NONE; // VK_CULL_MODE_BACK_BIT // Specific to Default pipeline
+        rasterization.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
+        rasterization.depthClampEnable = VK_FALSE;
+        rasterization.rasterizerDiscardEnable = VK_FALSE;
+        rasterization.depthBiasEnable = VK_FALSE;
+        rasterization.depthBiasConstantFactor = 0;
+        rasterization.depthBiasClamp = 0;
+        rasterization.depthBiasSlopeFactor = 0;
+        rasterization.lineWidth = 1.0f;
+
+        VkPipelineColorBlendStateCreateInfo blend_info{ VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO };
+
+        VkPipelineColorBlendAttachmentState attachment_state[1];
+        attachment_state[0].colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+        attachment_state[0].blendEnable = VK_FALSE;
+        attachment_state[0].alphaBlendOp = VK_BLEND_OP_ADD;
+        attachment_state[0].colorBlendOp = VK_BLEND_OP_ADD;
+        attachment_state[0].srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
+        attachment_state[0].dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+        attachment_state[0].srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+        attachment_state[0].dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
+
+        blend_info.attachmentCount = 1;
+        blend_info.pAttachments = attachment_state;
+        blend_info.logicOpEnable = VK_FALSE;
+        blend_info.logicOp = VK_LOGIC_OP_NO_OP;
+        blend_info.blendConstants[0] = 1.0f;
+        blend_info.blendConstants[1] = 1.0f;
+        blend_info.blendConstants[2] = 1.0f;
+        blend_info.blendConstants[3] = 1.0f;
+
+        VkPipelineDepthStencilStateCreateInfo depthstencil{ VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO };
+        depthstencil.depthTestEnable = VK_FALSE;
+        depthstencil.depthWriteEnable = VK_TRUE;
+        depthstencil.depthCompareOp = VK_COMPARE_OP_LESS_OR_EQUAL;
+        depthstencil.depthBoundsTestEnable = VK_FALSE;
+        depthstencil.minDepthBounds = 0;
+        depthstencil.maxDepthBounds = 0;
+        depthstencil.stencilTestEnable = VK_FALSE;
+        depthstencil.back.failOp = VK_STENCIL_OP_KEEP;
+        depthstencil.back.passOp = VK_STENCIL_OP_KEEP;
+        depthstencil.back.compareOp = VK_COMPARE_OP_ALWAYS;
+        depthstencil.back.compareMask = 0;
+        depthstencil.back.reference = 0;
+        depthstencil.back.depthFailOp = VK_STENCIL_OP_KEEP;
+        depthstencil.back.writeMask = 0;
+        depthstencil.front = depthstencil.back;
+
+        VkPipelineMultisampleStateCreateInfo multisample{ VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO };
+        multisample.pSampleMask = nullptr;
+        multisample.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+        multisample.sampleShadingEnable = VK_FALSE;
+        multisample.alphaToCoverageEnable = VK_FALSE;
+        multisample.alphaToOneEnable = VK_FALSE;
+        multisample.minSampleShading = 0.0;
+
+        VkPipelineViewportStateCreateInfo viewport{ VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO };
+        viewport.viewportCount = 1;
+        viewport.scissorCount = 1;
+        viewport.pScissors = vk_nullptr;
+        viewport.pViewports = vk_nullptr;
+
+        VkGraphicsPipelineCreateInfo pipeline_info{ VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO };
+        pipeline_info.layout = native_handle(info.layout);
+        pipeline_info.basePipelineHandle = vk_nullptr;
+        pipeline_info.basePipelineIndex = 0;
+        pipeline_info.flags = 0;
+        pipeline_info.pVertexInputState = &vertex_input;
+        pipeline_info.pInputAssemblyState = &input_assembly;
+        pipeline_info.pRasterizationState = &rasterization;
+        pipeline_info.pColorBlendState = &blend_info;
+        pipeline_info.pTessellationState = nullptr;
+        pipeline_info.pMultisampleState = &multisample;
+        pipeline_info.pDynamicState = &dynamic_state;
+        pipeline_info.pViewportState = &viewport;
+        pipeline_info.pDepthStencilState = &depthstencil;
+        pipeline_info.pStages = shader_stages;
+        pipeline_info.stageCount = ice::size(shader_stages);
+        pipeline_info.renderPass = native_handle(info.renderpass);
+        pipeline_info.subpass = 1;
+
+        VkPipeline vk_pipeline;
+        VkResult result = vkCreateGraphicsPipelines(
+            _vk_device,
+            vk_nullptr,
+            1,
+            &pipeline_info,
+            nullptr,
+            &vk_pipeline
+        );
+        ICE_ASSERT(
+            result == VkResult::VK_SUCCESS,
+            "Couldn't create graphics pipeline!"
+        );
+
+        return static_cast<Pipeline>(reinterpret_cast<ice::uptr>(vk_pipeline));
+    }
+
+    void VulkanRenderDevice::destroy_pipeline(
+        ice::render::Pipeline pipeline
+    ) noexcept
+    {
+        vkDestroyPipeline(
+            _vk_device,
+            native_handle(pipeline),
+            nullptr
+        );
+    }
+
+    auto VulkanRenderDevice::create_buffer(
+        ice::render::BufferType buffer_type,
+        ice::u32 buffer_size
+    ) noexcept -> ice::render::Buffer
+    {
+        VkBufferCreateInfo buffer_info{ VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO };
+        buffer_info.usage = native_enum_value(buffer_type);
+        buffer_info.size = buffer_size;
+        buffer_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+        VkBuffer vk_buffer = vk_nullptr;
+        VkResult result = vkCreateBuffer(
+            _vk_device,
+            &buffer_info,
+            nullptr,
+            &vk_buffer
+        );
+
+        AllocationInfo memory_info;
+        AllocationHandle memory_handle = _vk_memory_manager->allocate(
+            vk_buffer,
+            VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
+            AllocationType::RenderTarget,
+            memory_info
+        );
+
+        VulkanBuffer* buffer_ptr = _allocator.make<VulkanBuffer>(vk_buffer, memory_handle);
+        return static_cast<Buffer>(reinterpret_cast<ice::uptr>(buffer_ptr));
+    }
+
+    void VulkanRenderDevice::destroy_buffer(
+        ice::render::Buffer buffer
+    ) noexcept
+    {
+        VulkanBuffer* const buffer_ptr = reinterpret_cast<VulkanBuffer*>(static_cast<ice::uptr>(buffer));
+        vkDestroyBuffer(
+            _vk_device,
+            buffer_ptr->vk_buffer,
+            nullptr
+        );
+        _vk_memory_manager->release(buffer_ptr->vk_alloc_handle);
+        _allocator.destroy(buffer_ptr);
+    }
+
+    void VulkanRenderDevice::update_buffers(
+        ice::Span<ice::render::BufferUpdateInfo const> update_infos
+    ) noexcept
+    {
+        ice::u32 const update_count = ice::size(update_infos);
+
+        ice::pod::Array<AllocationHandle> allocation_handles{ _allocator };
+        ice::pod::array::reserve(allocation_handles, update_count);
+
+        for (BufferUpdateInfo const& update_info : update_infos)
+        {
+            VulkanBuffer* const buffer_ptr = reinterpret_cast<VulkanBuffer*>(static_cast<ice::uptr>(update_info.buffer));
+            ice::pod::array::push_back(
+                allocation_handles,
+                buffer_ptr->vk_alloc_handle
+            );
+        }
+
+        ice::pod::Array<ice::Memory> data_blocks{ _allocator };
+        ice::pod::array::resize(data_blocks, update_count);
+
+        _vk_memory_manager->map_memory(
+            allocation_handles,
+            data_blocks
+        );
+
+        for (ice::u32 idx = 0; idx < update_count; ++idx)
+        {
+            BufferUpdateInfo const& update_info = update_infos[idx];
+            Memory& target = data_blocks[idx];
+
+            ICE_ASSERT(
+                target.size >= update_info.data.size,
+                "Target memory buffer is smaller than provided size to copy!"
+            );
+
+            ice::memcpy(
+                target.location,
+                update_info.data.location,
+                update_info.data.size
+            );
+        }
+
+        _vk_memory_manager->unmap_memory(
+            allocation_handles
+        );
     }
 
     auto VulkanRenderDevice::create_framebuffer(
         ice::vec2u extent,
         ice::render::RenderPass renderpass,
-        ice::Span<ice::render::Image> images
+        ice::Span<ice::render::Image const> images
     ) noexcept -> ice::render::Framebuffer
     {
         VkRenderPass vk_renderpass = reinterpret_cast<VkRenderPass>(static_cast<ice::uptr>(renderpass));
@@ -434,19 +966,54 @@ namespace ice::render::vk
         return _vk_render_commands;
     }
 
-    auto native_handle(CommandBuffer cmds) noexcept
+    auto VulkanRenderDevice::temp_submit_semaphore() noexcept -> Semaphore
+    {
+        return static_cast<Semaphore>(reinterpret_cast<ice::uptr>(_submit_semaphore));
+    }
+
+    auto native_handle(CommandBuffer cmds) noexcept -> VkCommandBuffer
     {
         return reinterpret_cast<VkCommandBuffer>(static_cast<ice::uptr>(cmds));
     }
 
-    auto native_handle(RenderPass renderpass) noexcept
+    auto native_handle(Buffer buffer) noexcept -> VkBuffer
+    {
+        return reinterpret_cast<VulkanBuffer*>(static_cast<ice::uptr>(buffer))->vk_buffer;
+    }
+
+    auto native_handle(RenderPass renderpass) noexcept -> VkRenderPass
     {
         return reinterpret_cast<VkRenderPass>(static_cast<ice::uptr>(renderpass));
     }
 
-    auto native_handle(Framebuffer framebuffer) noexcept
+    auto native_handle(Framebuffer framebuffer) noexcept -> VkFramebuffer
     {
         return reinterpret_cast<VkFramebuffer>(static_cast<ice::uptr>(framebuffer));
+    }
+
+    auto native_handle(ResourceSetLayout resourceset_layout) noexcept -> VkDescriptorSetLayout
+    {
+        return reinterpret_cast<VkDescriptorSetLayout>(static_cast<ice::uptr>(resourceset_layout));
+    }
+
+    auto native_handle(ResourceSet resourceset) noexcept -> VkDescriptorSet
+    {
+        return reinterpret_cast<VkDescriptorSet>(static_cast<ice::uptr>(resourceset));
+    }
+
+    auto native_handle(PipelineLayout pipeline_layout) noexcept -> VkPipelineLayout
+    {
+        return reinterpret_cast<VkPipelineLayout>(static_cast<ice::uptr>(pipeline_layout));
+    }
+
+    auto native_handle(Pipeline pipeline) noexcept -> VkPipeline
+    {
+        return reinterpret_cast<VkPipeline>(static_cast<ice::uptr>(pipeline));
+    }
+
+    auto native_handle(Shader shader) noexcept -> VkShaderModule
+    {
+        return reinterpret_cast<VkShaderModule>(static_cast<ice::uptr>(shader));
     }
 
     void VulkanRenderCommands::begin(
@@ -454,6 +1021,7 @@ namespace ice::render::vk
     ) noexcept
     {
         VkCommandBufferBeginInfo begin_info{ VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO };
+        begin_info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
         vkBeginCommandBuffer(
             native_handle(cmds),
             &begin_info
@@ -490,6 +1058,119 @@ namespace ice::render::vk
             native_handle(cmds),
             &begin_info,
             VkSubpassContents::VK_SUBPASS_CONTENTS_INLINE
+        );
+    }
+
+    void VulkanRenderCommands::set_viewport(
+        ice::render::CommandBuffer cmds,
+        ice::vec4u viewport_rect
+    ) noexcept
+    {
+        VkViewport viewport{ };
+        viewport.x = viewport_rect.x;
+        viewport.y = viewport_rect.y;
+        viewport.width = viewport_rect.z;
+        viewport.height = viewport_rect.w;
+        viewport.minDepth = 0.0f;
+        viewport.minDepth = 1.0f;
+
+        vkCmdSetViewport(
+            native_handle(cmds),
+            0, 1,
+            &viewport
+        );
+    }
+
+    void VulkanRenderCommands::set_scissor(
+        ice::render::CommandBuffer cmds,
+        ice::vec4u scissor_rect
+    ) noexcept
+    {
+        VkRect2D scissor{ };
+        scissor.offset.x = scissor_rect.x;
+        scissor.offset.y = scissor_rect.y;
+        scissor.extent.width = scissor_rect.z;
+        scissor.extent.height = scissor_rect.w;
+
+        vkCmdSetScissor(
+            native_handle(cmds),
+            0, 1,
+            &scissor
+        );
+    }
+
+    void VulkanRenderCommands::bind_pipeline(
+        ice::render::CommandBuffer cmds,
+        ice::render::Pipeline pipeline
+    ) noexcept
+    {
+        vkCmdBindPipeline(
+            native_handle(cmds),
+            VkPipelineBindPoint::VK_PIPELINE_BIND_POINT_GRAPHICS,
+            native_handle(pipeline)
+        );
+    }
+
+    void VulkanRenderCommands::bind_resource_set(
+        ice::render::CommandBuffer cmds,
+        ice::render::PipelineLayout pipeline_layout,
+        ice::render::ResourceSet resource_set,
+        ice::u32 bind_point
+    ) noexcept
+    {
+        VkDescriptorSet descriptor_set = native_handle(resource_set);
+
+        vkCmdBindDescriptorSets(
+            native_handle(cmds),
+            VK_PIPELINE_BIND_POINT_GRAPHICS,
+            native_handle(pipeline_layout),
+            bind_point, 1,
+            &descriptor_set,
+            0, nullptr
+        );
+    }
+
+    void VulkanRenderCommands::bind_index_buffer(
+        ice::render::CommandBuffer cmds,
+        ice::render::Buffer buffer
+    ) noexcept
+    {
+        vkCmdBindIndexBuffer(
+            native_handle(cmds),
+            native_handle(buffer),
+            0,
+            VkIndexType::VK_INDEX_TYPE_UINT16
+        );
+    }
+
+    void VulkanRenderCommands::bind_vertex_buffer(
+        ice::render::CommandBuffer cmds,
+        ice::render::Buffer buffer,
+        ice::u32 binding
+    ) noexcept
+    {
+        VkBuffer const vk_buffer = native_handle(buffer);
+        VkDeviceSize const vk_offsets = 0;
+
+        vkCmdBindVertexBuffers(
+            native_handle(cmds),
+            binding, 1,
+            &vk_buffer,
+            &vk_offsets
+        );
+    }
+
+    void VulkanRenderCommands::draw_indexed(
+        ice::render::CommandBuffer cmds,
+        ice::u32 index_count,
+        ice::u32 instance_count
+    ) noexcept
+    {
+        vkCmdDrawIndexed(
+            native_handle(cmds),
+            index_count,
+            instance_count,
+            0, 0, 0
         );
     }
 

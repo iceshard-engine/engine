@@ -18,6 +18,8 @@ namespace ice::render
         UNORM_RGBA,
         UNORM_BGRA,
         UNORM_D24_UINT_S8,
+        SFLOAT_D32,
+        SFLOAT_D32_UINT_S8,
     };
 
     enum class ImageUsageFlags : ice::u32
@@ -56,7 +58,7 @@ namespace ice::render
     {
         ice::u32 left_value = static_cast<ice::u32>(left);
         ice::u32 right_value = static_cast<ice::u32>(right);
-        return static_cast<ImageUsageFlags>(left | right);
+        return static_cast<ImageUsageFlags>(left_value | right_value);
     }
 
 } // namespace ice::render

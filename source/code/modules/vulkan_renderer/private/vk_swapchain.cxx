@@ -105,7 +105,7 @@ namespace ice::render::vk
         return _vk_extent;
     }
 
-    auto VulkanSwapchain::aquire_image() noexcept -> ice::u32
+    auto VulkanSwapchain::aquire_image(Semaphore semaphore) noexcept -> ice::u32
     {
         //VkAcquireNextImageInfoKHR aquire_info{ VK_STRUCTURE_TYPE_ACQUIRE_NEXT_IMAGE_INFO_KHR };
         //aquire_info.swapchain = _vk_swapchain;
@@ -116,7 +116,7 @@ namespace ice::render::vk
             _vk_device,
             _vk_swapchain,
             UINT64_MAX,
-            vk_nullptr,
+            reinterpret_cast<VkSemaphore>(static_cast<ice::uptr>(semaphore)),
             _vk_aquire_fence,
             &_current_image
         );

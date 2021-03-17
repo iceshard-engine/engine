@@ -1,6 +1,7 @@
 #pragma once
 #include <ice/string.hxx>
 #include <ice/pod/hash.hxx>
+#include <ice/memory.hxx>
 #include <ice/memory/forward_allocator.hxx>
 #include "vk_include.hxx"
 
@@ -59,15 +60,15 @@ namespace ice::render::vk
 
     struct AllocationEntry
     {
-        ice::u32 size;
-        ice::u32 offset;
+        ice::u32 size = 0;
+        ice::u32 offset = 0;
         AllocationEntry* next = nullptr;
     };
 
     struct AllocationBlock
     {;
         ice::i16 memory_type_index = -1;
-        ice::u16 block_identifier;
+        ice::u16 block_identifier = 0;
         AllocationBlockInfo const* info = nullptr;
         AllocationEntry* free = nullptr;
         AllocationEntry* used = nullptr;
@@ -101,10 +102,33 @@ namespace ice::render::vk
             VkImage image,
             VkMemoryPropertyFlags flags,
             AllocationType type,
-            AllocationInfo& info
+            AllocationInfo& info_out
+        ) noexcept -> AllocationHandle;
+
+        auto allocate(
+            VkBuffer image,
+            VkMemoryPropertyFlags flags,
+            AllocationType type,
+            AllocationInfo& info_out
         ) noexcept -> AllocationHandle;
 
         void release(AllocationHandle handle) noexcept;
+
+        void map_memory(
+            ice::Span<AllocationHandle const> handles,
+            ice::Span<ice::Memory> out_data
+        ) noexcept;
+
+        void unmap_memory(
+            ice::Span<AllocationHandle const> handles
+        ) noexcept;
+
+    protected:
+        bool find_block_and_entry(
+            AllocationHandle handle,
+            AllocationBlock*& block,
+            AllocationEntry*& entry
+        ) noexcept;
 
     private:
         ice::Allocator& _allocator;

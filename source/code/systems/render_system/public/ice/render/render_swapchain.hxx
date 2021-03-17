@@ -5,6 +5,8 @@
 namespace ice::render
 {
 
+    enum class Semaphore : ice::uptr;
+
     class RenderSwapchain
     {
     protected:
@@ -19,7 +21,7 @@ namespace ice::render
 
         virtual auto image(ice::u32 index) const noexcept -> ice::render::Image = 0;
 
-        virtual auto aquire_image() noexcept -> ice::u32 = 0;
+        virtual auto aquire_image(ice::render::Semaphore semaphore) noexcept -> ice::u32 = 0;
 
         virtual auto current_image_index() const noexcept -> ice::u32 = 0;
     };
