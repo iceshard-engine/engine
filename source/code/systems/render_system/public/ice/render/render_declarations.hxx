@@ -14,6 +14,7 @@ namespace ice::render
     struct SurfaceInfo;
     struct RenderpassInfo;
     struct ResourceSetLayoutBinding;
+    struct ResourceSetUpdateInfo;
     struct PipelineLayoutInfo;
     struct PipelineInfo;
     struct QueueFamilyInfo;

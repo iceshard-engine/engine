@@ -23,6 +23,13 @@
 using ice::operator""_sid;
 using ice::operator""_uri;
 
+struct ViewProjectionClip
+{
+    ice::mat4x4 view;
+    ice::mat4x4 projection;
+    ice::mat4x4 clip;
+};
+
 class ClearStage final : ice::gfx::GfxStage
 {
 public:
@@ -204,6 +211,10 @@ public:
             pipeline_info
         );
 
+        _camera_data = _render_device.create_buffer(
+            ice::render::BufferType::Uniform, sizeof(ViewProjectionClip)
+        );
+
         _vertex_buffer = _render_device.create_buffer(
             ice::render::BufferType::Vertex, sizeof(ice::vec3f) * 256
         );
@@ -218,23 +229,59 @@ public:
         };
 
         ice::vec2f vertices[] = {
+            ice::vec2f{ -0.5f, -0.5f },
             ice::vec2f{ 0.f, 0.f },
+            ice::vec2f{ 0.5f, -0.5f },
             ice::vec2f{ 0.f, 0.f },
-            ice::vec2f{ 0.f, 1.f },
+            ice::vec2f{ 0.5f, 0.5f },
             ice::vec2f{ 0.f, 0.f },
-            ice::vec2f{ 1.f, 1.f },
+            ice::vec2f{ -0.5f, 0.5f },
             ice::vec2f{ 0.f, 0.f },
-            ice::vec2f{ 1.f, 0.f },
-            ice::vec2f{ 0.f, 0.f },
+        };
+
+        ViewProjectionClip vpc{
+            .clip = ice::mat4x4{
+                .v {
+                    { 1.0f, 0.0f, 0.0f, 0.0f },
+                    { 0.0f, -1.0f, 0.0f, 0.0f },
+                    { 0.0f, 0.0f, 0.5f, 0.5f },
+                    { 0.0f, 0.0f, 0.0f, 1.0f },
+                }
+            }
         };
 
         ice::render::BufferUpdateInfo update_info[]{
             BufferUpdateInfo{.buffer = _indice_buffer, .data = ice::data_view(indices, sizeof(indices)) },
             BufferUpdateInfo{.buffer = _vertex_buffer, .data = ice::data_view(vertices, sizeof(vertices)) },
+            BufferUpdateInfo{.buffer = _camera_data, .data = ice::data_view(vpc) }
         };
 
         _render_device.update_buffers(
             update_info
+        );
+
+        ice::render::ResourceUpdateInfo camera_buffers[1]{
+            ResourceUpdateInfo {
+                .uniform_buffer = {
+                    .buffer = _camera_data,
+                    .offset = 0,
+                    .size = sizeof(ViewProjectionClip)
+                }
+            }
+        };
+
+        ice::render::ResourceSetUpdateInfo camera_update[1]{
+            ResourceSetUpdateInfo{
+                .resource_set = _empty_material,
+                .resource_type = ResourceType::UniformBuffer,
+                .binding_index = 0,
+                .array_element = 0,
+                .resources = { camera_buffers }
+            }
+        };
+
+        _render_device.update_resourceset(
+            camera_update
         );
     }
 
@@ -242,6 +289,7 @@ public:
     {
         _render_device.destroy_buffer(_indice_buffer);
         _render_device.destroy_buffer(_vertex_buffer);
+        _render_device.destroy_buffer(_camera_data);
         _render_device.destroy_pipeline(_opaque_pipeline);
 
         for (ice::u32 idx = 0; idx < _shader_count; ++idx)
@@ -274,8 +322,8 @@ public:
         cmds.next_subpass(cmd_buffer, ice::render::SubPassContents::Inline);
         cmds.bind_pipeline(cmd_buffer, _opaque_pipeline);
         cmds.bind_resource_set(cmd_buffer, _opaque_layout, _empty_material, 0);
-        cmds.set_viewport(cmd_buffer, ice::vec4u{ 0, 0, 600, 600 });
-        cmds.set_scissor(cmd_buffer, ice::vec4u{ 0, 0, 600, 600 });
+        cmds.set_viewport(cmd_buffer, ice::vec4u{ 0, 0, _extent.x, _extent.y });
+        cmds.set_scissor(cmd_buffer, ice::vec4u{ 0, 0, _extent.x, _extent.y });
         cmds.bind_index_buffer(cmd_buffer, _indice_buffer);
         cmds.bind_vertex_buffer(cmd_buffer, _vertex_buffer, 0);
         cmds.draw_indexed(cmd_buffer, 6, 1);
@@ -298,6 +346,7 @@ private:
     ice::render::Pipeline _opaque_pipeline;
     ice::render::Buffer _indice_buffer;
     ice::render::Buffer _vertex_buffer;
+    ice::render::Buffer _camera_data;
 };
 
 class DrawStage final : ice::gfx::GfxStage

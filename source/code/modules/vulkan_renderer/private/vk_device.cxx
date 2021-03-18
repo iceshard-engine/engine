@@ -421,6 +421,78 @@ namespace ice::render::vk
         );
     }
 
+    void VulkanRenderDevice::update_resourceset(
+        ice::Span<ice::render::ResourceSetUpdateInfo const> update_infos
+    ) noexcept
+    {
+        ice::pod::Array<VkWriteDescriptorSet> vk_writes{ _allocator };
+        ice::pod::array::reserve(vk_writes, ice::size(update_infos));
+
+        ice::pod::Array<VkDescriptorImageInfo> write_image_info{ _allocator };
+        ice::pod::Array<VkDescriptorBufferInfo> write_buffer_info{ _allocator };
+
+        for (ResourceSetUpdateInfo const& update_info : update_infos)
+        {
+            VkWriteDescriptorSet descriptor_set_write{ VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET };
+            descriptor_set_write.dstBinding = update_info.binding_index;
+            descriptor_set_write.dstArrayElement = update_info.array_element;
+            descriptor_set_write.dstSet = native_handle(update_info.resource_set);
+            descriptor_set_write.descriptorCount = ice::size(update_info.resources);
+            descriptor_set_write.descriptorType = native_enum_value(update_info.resource_type);
+
+            if (update_info.resource_type == ResourceType::SampledImage)
+            {
+                ice::u32 const image_info_index = ice::pod::array::size(write_image_info);
+
+                for (ResourceUpdateInfo const& resource_info : update_info.resources)
+                {
+                    VulkanImage* const image_ptr = reinterpret_cast<VulkanImage*>(
+                        static_cast<ice::uptr>(resource_info.image)
+                    );
+
+                    VkDescriptorImageInfo image_info;
+                    image_info.sampler = nullptr;
+                    image_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+                    image_info.imageView = image_ptr->vk_image_view;
+
+                    ice::pod::array::push_back(write_image_info, image_info);
+                }
+
+                descriptor_set_write.pImageInfo = ice::addressof(write_image_info[image_info_index]);
+            }
+
+            if (update_info.resource_type == ResourceType::UniformBuffer)
+            {
+                ice::u32 const buffer_info_index = ice::pod::array::size(write_buffer_info);
+
+                for (ResourceUpdateInfo const& resource_info : update_info.resources)
+                {
+                    VulkanBuffer* const buffer_ptr = reinterpret_cast<VulkanBuffer*>(
+                        static_cast<ice::uptr>(resource_info.uniform_buffer.buffer)
+                    );
+
+                    VkDescriptorBufferInfo buffer_info;
+                    buffer_info.buffer = buffer_ptr->vk_buffer;
+                    buffer_info.offset = resource_info.uniform_buffer.offset;
+                    buffer_info.range = resource_info.uniform_buffer.size;
+
+                    ice::pod::array::push_back(write_buffer_info, buffer_info);
+                }
+
+                descriptor_set_write.pBufferInfo = ice::addressof(write_buffer_info[buffer_info_index]);
+            }
+
+            ice::pod::array::push_back(vk_writes, descriptor_set_write);
+        }
+
+        vkUpdateDescriptorSets(
+            _vk_device,
+            ice::size(vk_writes),
+            ice::pod::begin(vk_writes),
+            0, nullptr
+        );
+    }
+
     auto VulkanRenderDevice::create_pipeline_layout(
         ice::render::PipelineLayoutInfo const& info
     ) noexcept -> ice::render::PipelineLayout

@@ -31,4 +31,28 @@ namespace ice::render
         ice::render::ShaderStageFlags shader_stage_flags;
     };
 
+    struct ResourceUpdateInfo
+    {
+        union
+        {
+            struct
+            {
+                ice::render::Buffer buffer;
+                ice::u32 offset;
+                ice::u32 size;
+            } uniform_buffer;
+
+            ice::render::Image image;
+        };
+    };
+
+    struct ResourceSetUpdateInfo
+    {
+        ice::render::ResourceSet resource_set;
+        ice::render::ResourceType resource_type;
+        ice::u32 binding_index;
+        ice::u32 array_element = 0;
+        ice::Span<ice::render::ResourceUpdateInfo> resources;
+    };
+
 } // namespace ice::render

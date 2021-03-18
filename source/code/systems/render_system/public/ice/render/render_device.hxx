@@ -41,6 +41,10 @@ namespace ice::render
             ice::Span<ice::render::ResourceSet> resource_sets_out
         ) noexcept = 0;
 
+        virtual void update_resourceset(
+            ice::Span<ice::render::ResourceSetUpdateInfo const> update_infos
+        ) noexcept = 0;
+
         virtual void destroy_resourcesets(
             ice::Span<ice::render::ResourceSet const> resource_sets
         ) noexcept = 0;

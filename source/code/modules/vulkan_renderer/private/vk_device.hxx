@@ -120,6 +120,10 @@ namespace ice::render::vk
             ice::Span<ice::render::ResourceSet> resource_sets_out
         ) noexcept override;
 
+        void update_resourceset(
+            ice::Span<ice::render::ResourceSetUpdateInfo const> update_infos
+        ) noexcept override;
+
         void destroy_resourcesets(
             ice::Span<ice::render::ResourceSet const> resource_sets
         ) noexcept override;
