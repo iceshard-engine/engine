@@ -17,6 +17,7 @@
             'modules'
             'asset_system'
             'render_system'
+            'engine'
         }
     ]
 ]

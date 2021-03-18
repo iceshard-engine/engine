@@ -1,4 +1,5 @@
 #include "mesh_loader.hxx"
+#include <ice/gfx/gfx_model.hxx>
 #include <ice/memory/pointer_arithmetic.hxx>
 
 namespace ice
@@ -11,9 +12,9 @@ namespace ice
         ice::Memory& out_data
     ) noexcept -> ice::AssetStatus
     {
-        using ice::render::Model;
-        using ice::render::Mesh;
-        using ice::render::Vertice;
+        using ice::gfx::Model;
+        using ice::gfx::Mesh;
+        using ice::gfx::Vertice;
 
         out_data.size = sizeof(Model);
         out_data.alignment = alignof(Model);

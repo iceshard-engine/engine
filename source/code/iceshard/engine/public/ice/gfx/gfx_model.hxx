@@ -1,7 +1,7 @@
 #pragma once
 #include <ice/math.hxx>
 
-namespace ice::render
+namespace ice::gfx
 {
 
     struct Vertice
@@ -26,8 +26,8 @@ namespace ice::render
         ice::u32 vertice_data_size;
         ice::u32 indice_data_size;
         ice::u16 const* indice_data;
-        ice::render::Vertice const* vertice_data;
-        ice::render::Mesh const* mesh_list;
+        ice::gfx::Vertice const* vertice_data;
+        ice::gfx::Mesh const* mesh_list;
     };
 
-} // namespace ice::render
+} // namespace ice::gfx

@@ -39,24 +39,6 @@ namespace ice::render::vk
             ice::render::RenderDevice* device
         ) noexcept override;
 
-        //void _queue_infos(
-        //    ice::pod::Array<ice::render::QueueInfo>& queue_info
-        //) noexcept override;
-
-        //bool create_queues(
-        //    ice::render::QueueCreateInfo const& queue_info
-        //) noexcept override;
-        //auto get_queue(
-        //    ice::render::QueueType type,
-        //    ice::u32 queue_index
-        //) noexcept -> ice::render::RenderQueue* override;
-
-        void create_buffer() noexcept override;
-        void release_buffer() noexcept override;
-
-        void create_resource_set() noexcept override;
-        void release_resource_set() noexcept override;
-
     private:
         ice::Allocator& _allocator;
         ice::UniquePtr<VulkanAllocator> _vk_alloc;

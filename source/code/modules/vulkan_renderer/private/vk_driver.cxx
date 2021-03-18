@@ -266,14 +266,6 @@ namespace ice::render::vk
 
     //}
 
-    void VulkanRenderDriver::create_buffer() noexcept { }
-
-    void VulkanRenderDriver::release_buffer() noexcept { }
-
-    void VulkanRenderDriver::create_resource_set() noexcept { }
-
-    void VulkanRenderDriver::release_resource_set() noexcept { }
-
     auto detail::to_string(VkPhysicalDeviceType type) noexcept -> ice::String
     {
         switch (type)

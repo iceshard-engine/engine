@@ -6,7 +6,10 @@
 namespace ice::render
 {
 
-    struct RenderAttachment;
+    enum class Renderpass : ice::uptr
+    {
+        Invalid = 0x0
+    };
 
     enum class AttachmentType : ice::u32
     {
@@ -69,16 +72,11 @@ namespace ice::render
         ice::render::AttachmentReference depth_stencil_attachment;
     };
 
-    struct RenderPassInfo
+    struct RenderpassInfo
     {
         ice::Span<ice::render::RenderAttachment> attachments;
         ice::Span<ice::render::RenderSubPass> subpasses;
         ice::Span<ice::render::SubpassDependency> dependencies;
-    };
-
-    enum class RenderPass : ice::uptr
-    {
-        Invalid = 0x0
     };
 
 } // namespace ice::render

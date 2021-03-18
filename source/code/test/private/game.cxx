@@ -1,5 +1,9 @@
 #include "game.hxx"
+#include <ice/render/render_device.hxx>
+#include <ice/render/render_pass.hxx>
 #include <ice/render/render_swapchain.hxx>
+#include <ice/render/render_resource.hxx>
+#include <ice/render/render_buffer.hxx>
 #include <ice/gfx/gfx_device.hxx>
 #include <ice/gfx/gfx_frame.hxx>
 #include <ice/gfx/gfx_pass.hxx>
@@ -85,7 +89,7 @@ public:
             }
         };
 
-        RenderPassInfo renderpass_info{
+        RenderpassInfo renderpass_info{
             .attachments = attachments,
             .subpasses = subpasses,
             .dependencies = dependencies,
@@ -282,7 +286,7 @@ private:
     ice::render::RenderSwapchain const& _render_swapchain;
     ice::vec2u _extent;
 
-    ice::render::RenderPass _render_pass;
+    ice::render::Renderpass _render_pass;
     ice::render::Image _depth_stencil_image;
     ice::render::Framebuffer _framebuffers[2];
 

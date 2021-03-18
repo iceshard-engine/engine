@@ -21,7 +21,7 @@ namespace ice::render::vk
 
         void begin_renderpass(
             ice::render::CommandBuffer cmds,
-            ice::render::RenderPass renderpass,
+            ice::render::Renderpass renderpass,
             ice::render::Framebuffer framebuffer,
             ice::vec2u extent,
             ice::vec4f clear_color
@@ -100,11 +100,11 @@ namespace ice::render::vk
         ) noexcept override;
 
         auto create_renderpass(
-            ice::render::RenderPassInfo const& info
-        ) noexcept -> ice::render::RenderPass override;
+            ice::render::RenderpassInfo const& info
+        ) noexcept -> ice::render::Renderpass override;
 
         void destroy_renderpass(
-            ice::render::RenderPass render_pass
+            ice::render::Renderpass render_pass
         ) noexcept override;
 
         auto create_resourceset_layout(
@@ -163,7 +163,7 @@ namespace ice::render::vk
 
         auto create_framebuffer(
             ice::vec2u extent,
-            ice::render::RenderPass renderpass,
+            ice::render::Renderpass renderpass,
             ice::Span<ice::render::Image const> images
         ) noexcept -> ice::render::Framebuffer override;
 

@@ -1,11 +1,9 @@
 #pragma once
 #include <ice/math.hxx>
-#include <ice/render/render_image.hxx>
+#include <ice/render/render_declarations.hxx>
 
 namespace ice::render
 {
-
-    enum class Semaphore : ice::uptr;
 
     class RenderSwapchain
     {

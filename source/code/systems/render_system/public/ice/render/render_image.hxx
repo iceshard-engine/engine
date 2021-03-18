@@ -4,6 +4,11 @@
 namespace ice::render
 {
 
+    enum class Image : ice::uptr
+    {
+        Invalid = 0x0
+    };
+
     enum class ImageType : ice::u32
     {
         Image2D,
@@ -37,11 +42,6 @@ namespace ice::render
         Present,
         DepthStencil,
         ShaderReadOnly,
-    };
-
-    enum class Image : ice::uptr
-    {
-        Invalid = 0x0
     };
 
     struct ImageInfo

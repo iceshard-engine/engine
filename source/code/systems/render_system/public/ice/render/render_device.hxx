@@ -1,22 +1,10 @@
 #pragma once
-#include <ice/render/render_queue.hxx>
-#include <ice/render/render_pass.hxx>
-#include <ice/render/render_pipeline.hxx>
-#include <ice/render/render_resource.hxx>
-#include <ice/render/render_framebuffer.hxx>
-#include <ice/render/render_buffer.hxx>
+#include <ice/data.hxx>
+#include <ice/span.hxx>
+#include <ice/render/render_declarations.hxx>
 
 namespace ice::render
 {
-
-    enum class Semaphore : ice::uptr
-    {
-        Invalid = 0x0
-    };
-
-    class RenderSurface;
-
-    class RenderSwapchain;
 
     class RenderDevice
     {
@@ -24,7 +12,6 @@ namespace ice::render
         virtual ~RenderDevice() noexcept = default;
 
     public:
-        //virtual auto active_queue_count() const noexcept -> ice::u32 = 0;
         virtual auto create_swapchain(
             ice::render::RenderSurface* surface
         ) noexcept -> ice::render::RenderSwapchain* = 0;
@@ -34,11 +21,11 @@ namespace ice::render
         ) noexcept = 0;
 
         virtual auto create_renderpass(
-            ice::render::RenderPassInfo const& info
-        ) noexcept -> ice::render::RenderPass = 0;
+            ice::render::RenderpassInfo const& info
+        ) noexcept -> ice::render::Renderpass = 0;
 
         virtual void destroy_renderpass(
-            ice::render::RenderPass render_pass
+            ice::render::Renderpass render_pass
         ) noexcept = 0;
 
         virtual auto create_resourceset_layout(
@@ -97,7 +84,7 @@ namespace ice::render
 
         virtual auto create_framebuffer(
             ice::vec2u extent,
-            ice::render::RenderPass renderpass,
+            ice::render::Renderpass renderpass,
             ice::Span<ice::render::Image const> images
         ) noexcept -> ice::render::Framebuffer = 0;
 

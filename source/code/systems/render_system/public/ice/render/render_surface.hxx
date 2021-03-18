@@ -26,6 +26,16 @@ namespace ice::render
                 void* hinstance;
                 void* hwn;
             } win32;
+
+            struct
+            {
+                void* reserved[2];
+            } uwp;
+
+            struct
+            {
+                void* reserved[2];
+            } wayland;
         };
     };
 

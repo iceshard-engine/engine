@@ -4,17 +4,17 @@
 namespace ice::render
 {
 
-    enum class BufferType
+    enum class Buffer : ice::uptr
+    {
+        Invalid = 0x0
+    };
+
+    enum class BufferType : ice::u32
     {
         Uniform,
         Vertex,
         Index,
         Transfer,
-    };
-
-    enum class Buffer : ice::uptr
-    {
-        Invalid = 0x0
     };
 
     struct BufferUpdateInfo

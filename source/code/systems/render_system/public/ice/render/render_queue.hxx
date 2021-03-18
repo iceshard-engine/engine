@@ -33,13 +33,8 @@ namespace ice::render
         ice::u32 count;
     };
 
-    class RenderSwapchain;
-
     class RenderQueue
     {
-    protected:
-        virtual ~RenderQueue() noexcept = default;
-
     public:
         virtual void allocate_buffers(
             ice::u32 pool_index,
@@ -58,6 +53,9 @@ namespace ice::render
         virtual void present(
             ice::render::RenderSwapchain* swapchain
         ) noexcept = 0;
+
+    protected:
+        virtual ~RenderQueue() noexcept = default;
     };
 
     constexpr auto operator|(QueueFlags left, QueueFlags right) noexcept -> QueueFlags

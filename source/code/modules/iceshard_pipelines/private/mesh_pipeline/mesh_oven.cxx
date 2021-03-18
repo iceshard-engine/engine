@@ -1,5 +1,5 @@
 #include "mesh_oven.hxx"
-#include <ice/render/render_model.hxx>
+#include <ice/gfx/gfx_model.hxx>
 #include <ice/assert.hxx>
 
 #include <assimp/Importer.hpp>
@@ -17,14 +17,14 @@ namespace ice
             ice::u32 mesh_count;
             ice::u32 vertice_data_size;
             ice::u32 indice_data_size;
-            ice::render::Mesh* mesh_list;
-            ice::render::Vertice* vertice_data;
+            ice::gfx::Mesh* mesh_list;
+            ice::gfx::Vertice* vertice_data;
             ice::u16* indice_data;
         };
 
         void process_mesh(
             ice::detail::MutableModel& model,
-            ice::render::Mesh& model_mesh,
+            ice::gfx::Mesh& model_mesh,
             aiMesh* mesh,
             aiMatrix4x4 const& mtx
         ) noexcept
@@ -34,8 +34,8 @@ namespace ice
             using ice::math::vec3f;
 
             {
-                ice::render::Vertice* vertice_data = model.vertice_data + model_mesh.vertice_offset;
-                ice::render::Vertice const* const vertice_data_end = vertice_data + model_mesh.vertice_count;
+                ice::gfx::Vertice* vertice_data = model.vertice_data + model_mesh.vertice_offset;
+                ice::gfx::Vertice const* const vertice_data_end = vertice_data + model_mesh.vertice_count;
 
                 aiVector3D* uvs_array = mesh->mTextureCoords[0];
                 for (ice::u32 i = 0; i < model_mesh.vertice_count; ++i)
@@ -44,7 +44,7 @@ namespace ice
                     aiVector3D& uvs = uvs_array[i];
                     aiVector3D& norm = mesh->mNormals[i];
 
-                    ice::render::Vertice& v = *vertice_data;
+                    ice::gfx::Vertice& v = *vertice_data;
                     v.pos = {
                         vec.x,
                         vec.y,
@@ -177,12 +177,12 @@ namespace ice
                 indice_offset += scene_mesh->mNumFaces * 3;
             }
 
-            ice::u32 const vertice_data_size = vertice_offset * sizeof(ice::render::Vertice);
+            ice::u32 const vertice_data_size = vertice_offset * sizeof(ice::gfx::Vertice);
             ice::u32 const indice_data_size = indice_offset * sizeof(ice::u16);
 
             ice::u32 total_data_size = 0;
-            total_data_size += sizeof(ice::render::Model);
-            total_data_size += sizeof(ice::render::Mesh) * scene->mNumMeshes;
+            total_data_size += sizeof(ice::gfx::Model);
+            total_data_size += sizeof(ice::gfx::Mesh) * scene->mNumMeshes;
             total_data_size += vertice_data_size;
             total_data_size += indice_data_size;
             total_data_size += alignof(ice::math::vec3f) * 2 * scene->mNumMeshes;
@@ -193,22 +193,22 @@ namespace ice
             void* const model_ptr = ice::buffer::append(
                 out_data,
                 ice::Data{
-                    .size = sizeof(ice::render::Model),
-                    .alignment = alignof(ice::render::Model)
+                    .size = sizeof(ice::gfx::Model),
+                    .alignment = alignof(ice::gfx::Model)
                 }
             );
 
             void* const mesh_ptr = ice::buffer::append(
                 out_data,
                 ice::Data{
-                    .size = sizeof(ice::render::Mesh) * scene->mNumMeshes,
-                    .alignment = alignof(ice::render::Mesh)
+                    .size = sizeof(ice::gfx::Mesh) * scene->mNumMeshes,
+                    .alignment = alignof(ice::gfx::Mesh)
                 }
             );
 
-            ice::render::Model* model = reinterpret_cast<ice::render::Model*>(model_ptr);
+            ice::gfx::Model* model = reinterpret_cast<ice::gfx::Model*>(model_ptr);
             model->mesh_count = scene->mNumMeshes;
-            model->mesh_list = reinterpret_cast<ice::render::Mesh*>(mesh_ptr);
+            model->mesh_list = reinterpret_cast<ice::gfx::Mesh*>(mesh_ptr);
             model->vertice_data = nullptr;
             model->vertice_data_size = vertice_data_size;
             model->indice_data = nullptr;
@@ -216,7 +216,7 @@ namespace ice
 
             detail::MutableModel mutable_model;
             mutable_model.mesh_count = scene->mNumMeshes;
-            mutable_model.mesh_list = reinterpret_cast<ice::render::Mesh*>(mesh_ptr);
+            mutable_model.mesh_list = reinterpret_cast<ice::gfx::Mesh*>(mesh_ptr);
             mutable_model.vertice_data = nullptr;
             mutable_model.vertice_data_size = vertice_data_size;
             mutable_model.indice_data = nullptr;
@@ -228,7 +228,7 @@ namespace ice
             for (ice::u32 mesh_idx = 0; mesh_idx < model->mesh_count; ++mesh_idx)
             {
                 aiMesh const* const scene_mesh = scene->mMeshes[mesh_idx];
-                ice::render::Mesh& model_mesh = mutable_model.mesh_list[mesh_idx];
+                ice::gfx::Mesh& model_mesh = mutable_model.mesh_list[mesh_idx];
 
                 model_mesh.vertice_count = scene_mesh->mNumVertices;
                 model_mesh.vertice_offset = vertice_offset;
@@ -243,7 +243,7 @@ namespace ice
                 out_data,
                 ice::Data{
                     .size = model->vertice_data_size,
-                    .alignment = alignof(ice::render::Vertice)
+                    .alignment = alignof(ice::gfx::Vertice)
                 }
             );
 
@@ -255,7 +255,7 @@ namespace ice
                 }
             );
 
-            mutable_model.vertice_data = reinterpret_cast<ice::render::Vertice*>(vertice_ptr);
+            mutable_model.vertice_data = reinterpret_cast<ice::gfx::Vertice*>(vertice_ptr);
             mutable_model.indice_data = reinterpret_cast<ice::u16*>(indice_ptr);
 
             detail::process_node(
@@ -267,13 +267,13 @@ namespace ice
 
             void* const data_begin = ice::buffer::data(out_data);
 
-            model->mesh_list = reinterpret_cast<ice::render::Mesh*>(
+            model->mesh_list = reinterpret_cast<ice::gfx::Mesh*>(
                 static_cast<ice::uptr>(
                     ice::memory::ptr_distance(data_begin, mesh_ptr)
                 )
             );
 
-            model->vertice_data = reinterpret_cast<ice::render::Vertice*>(
+            model->vertice_data = reinterpret_cast<ice::gfx::Vertice*>(
                 static_cast<ice::uptr>(
                     ice::memory::ptr_distance(data_begin, vertice_ptr)
                 )

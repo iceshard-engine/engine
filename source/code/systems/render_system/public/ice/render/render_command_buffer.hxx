@@ -1,10 +1,15 @@
 #pragma once
-#include <ice/base.hxx>
+#include <ice/render/render_declarations.hxx>
 
 namespace ice::render
 {
 
-    enum class CommandBufferType
+    enum class CommandBuffer : ice::uptr
+    {
+        Invalid = 0x0
+    };
+
+    enum class CommandBufferType : ice::u32
     {
         Primary,
         Secondary,
@@ -16,28 +21,8 @@ namespace ice::render
         SecondaryCommandBuffers
     };
 
-    enum class CommandBuffer : ice::uptr
-    {
-        Invalid = 0x0
-    };
-
-    enum class Pipeline : ice::uptr;
-
-    enum class PipelineLayout : ice::uptr;
-
-    enum class ResourceSet : ice::uptr;
-
-    enum class Buffer : ice::uptr;
-
-    enum class RenderPass : ice::uptr;
-
-    enum class Framebuffer : ice::uptr;
-
     class RenderCommands
     {
-    protected:
-        virtual ~RenderCommands() noexcept = default;
-
     public:
         virtual void begin(
             ice::render::CommandBuffer cmds
@@ -45,7 +30,7 @@ namespace ice::render
 
         virtual void begin_renderpass(
             ice::render::CommandBuffer cmds,
-            ice::render::RenderPass renderpass,
+            ice::render::Renderpass renderpass,
             ice::render::Framebuffer framebuffer,
             ice::vec2u extent,
             ice::vec4f clear_color
@@ -102,6 +87,9 @@ namespace ice::render
         virtual void end(
             ice::render::CommandBuffer cmds
         ) noexcept = 0;
+
+    protected:
+        virtual ~RenderCommands() noexcept = default;
     };
 
 } // namespace ice::render

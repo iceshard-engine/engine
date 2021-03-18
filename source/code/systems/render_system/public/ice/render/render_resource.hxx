@@ -1,10 +1,18 @@
 #pragma once
-#include <ice/span.hxx>
+#include <ice/render/render_declarations.hxx>
 
 namespace ice::render
 {
 
-    enum class ShaderStageFlags : ice::u32;
+    enum class ResourceSetLayout : ice::uptr
+    {
+        Invalid = 0x0
+    };
+
+    enum class ResourceSet : ice::uptr
+    {
+        Invalid = 0x0
+    };
 
     enum class ResourceType
     {
@@ -21,16 +29,6 @@ namespace ice::render
         ice::u32 resource_count = 1;
         ice::render::ResourceType resource_type;
         ice::render::ShaderStageFlags shader_stage_flags;
-    };
-
-    enum class ResourceSetLayout : ice::uptr
-    {
-        Invalid = 0x0
-    };
-
-    enum class ResourceSet : ice::uptr
-    {
-        Invalid = 0x0
     };
 
 } // namespace ice::render

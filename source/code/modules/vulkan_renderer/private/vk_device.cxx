@@ -4,13 +4,14 @@
 #include "vk_image.hxx"
 #include "vk_buffer.hxx"
 #include "vk_utility.hxx"
+#include "vk_buffer.hxx"
 #include <ice/assert.hxx>
 
 namespace ice::render::vk
 {
 
     auto native_handle(CommandBuffer cmds) noexcept -> VkCommandBuffer;
-    auto native_handle(RenderPass renderpass) noexcept -> VkRenderPass;
+    auto native_handle(Renderpass renderpass) noexcept -> VkRenderPass;
     auto native_handle(Framebuffer framebuffer) noexcept -> VkFramebuffer;
     auto native_handle(ResourceSetLayout resourceset_layout) noexcept -> VkDescriptorSetLayout;
     auto native_handle(ResourceSet resourceset_layout) noexcept -> VkDescriptorSet;
@@ -187,7 +188,7 @@ namespace ice::render::vk
         _allocator.destroy(static_cast<VulkanSwapchain*>(swapchain));
     }
 
-    auto VulkanRenderDevice::create_renderpass(ice::render::RenderPassInfo const& info) noexcept -> ice::render::RenderPass
+    auto VulkanRenderDevice::create_renderpass(ice::render::RenderpassInfo const& info) noexcept -> ice::render::Renderpass
     {
         ice::pod::Array<VkAttachmentDescription> attachments{ _allocator };
         ice::pod::array::reserve(attachments, static_cast<ice::u32>(info.attachments.size()));
@@ -303,10 +304,10 @@ namespace ice::render::vk
             "Couldn't create render pass with given description!"
         );
 
-        return static_cast<RenderPass>(reinterpret_cast<ice::uptr>(renderpass));
+        return static_cast<Renderpass>(reinterpret_cast<ice::uptr>(renderpass));
     }
 
-    void VulkanRenderDevice::destroy_renderpass(ice::render::RenderPass renderpass) noexcept
+    void VulkanRenderDevice::destroy_renderpass(ice::render::Renderpass renderpass) noexcept
     {
         vkDestroyRenderPass(
             _vk_device,
@@ -784,7 +785,7 @@ namespace ice::render::vk
 
     auto VulkanRenderDevice::create_framebuffer(
         ice::vec2u extent,
-        ice::render::RenderPass renderpass,
+        ice::render::Renderpass renderpass,
         ice::Span<ice::render::Image const> images
     ) noexcept -> ice::render::Framebuffer
     {
@@ -961,7 +962,7 @@ namespace ice::render::vk
         return reinterpret_cast<VulkanBuffer*>(static_cast<ice::uptr>(buffer))->vk_buffer;
     }
 
-    auto native_handle(RenderPass renderpass) noexcept -> VkRenderPass
+    auto native_handle(Renderpass renderpass) noexcept -> VkRenderPass
     {
         return reinterpret_cast<VkRenderPass>(static_cast<ice::uptr>(renderpass));
     }
@@ -1010,7 +1011,7 @@ namespace ice::render::vk
 
     void VulkanRenderCommands::begin_renderpass(
         ice::render::CommandBuffer cmds,
-        ice::render::RenderPass renderpass,
+        ice::render::Renderpass renderpass,
         ice::render::Framebuffer framebuffer,
         ice::vec2u extent,
         ice::vec4f clear_color

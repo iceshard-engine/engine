@@ -1,6 +1,5 @@
 #pragma once
 #include <ice/asset_loader.hxx>
-#include <ice/render/render_model.hxx>
 
 namespace ice
 {
