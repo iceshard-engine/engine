@@ -21,12 +21,12 @@
         "shaders": [
             {
                 "working_dir": "./source/data/shaders/color",
-                "executable": "C:/VulkanSDK/1.2.154.1/Bin/glslc.exe",
+                "executable": "%VULKAN_SDK%/Bin/glslc.exe",
                 "options": ["--target-env=vulkan", "-fshader-stage=vert", "-o", "blue-vert.spv", "blue-vert.glsl"]
             },
             {
                 "working_dir": "./source/data/shaders/color",
-                "executable": "C:/VulkanSDK/1.2.154.1/Bin/glslc.exe",
+                "executable": "%VULKAN_SDK%/Bin/glslc.exe",
                 "options": ["--target-env=vulkan", "-fshader-stage=frag", "-o", "blue-frag.spv", "blue-frag.glsl"]
             }
         ]

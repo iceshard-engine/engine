@@ -20,6 +20,12 @@ class RunCommand extends Command
             -- Get the selected scenario
             @scenario = scenario_file.scenarios[selected_scenario_name]
 
+            -- Prepare all steps
+            for step in *@scenario
+                result = step.executable\gsub "%%([a-zA-Z_%-]+)%%", (match) ->
+                    (os.getenv match) or error "Enviroment variable #{match} not found!"
+                step.executable = result\gsub "\\", '/'
+
             -- Close the file
             run_scenarios\close!
 
