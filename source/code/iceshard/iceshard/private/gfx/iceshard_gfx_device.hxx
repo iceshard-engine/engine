@@ -10,7 +10,7 @@ namespace ice::gfx
 
     class IceGfxFrame;
 
-    class IceGfxPassGroup;
+    class IceGfxQueueGroup;
 
     class IceGfxDevice final : public ice::gfx::GfxDevice
     {
@@ -20,7 +20,7 @@ namespace ice::gfx
             ice::render::RenderDriver* driver,
             ice::render::RenderSurface* render_surface,
             ice::render::RenderDevice* render_device,
-            ice::pod::Array<ice::gfx::IceGfxPassGroup*> graphics_passes
+            ice::pod::Array<ice::gfx::IceGfxQueueGroup*> graphics_passes
         ) noexcept;
         ~IceGfxDevice() noexcept override;
 
@@ -39,7 +39,7 @@ namespace ice::gfx
 
         ice::render::RenderSwapchain* _render_swapchain;
 
-        ice::pod::Array<ice::gfx::IceGfxPassGroup*> _graphics_passes;
+        ice::pod::Array<ice::gfx::IceGfxQueueGroup*> _graphics_passes;
     };
 
     auto create_graphics_device(

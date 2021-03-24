@@ -1,86 +1,86 @@
 #pragma once
-#include "iceshard_gfx_pass_group.hxx"
-#include "iceshard_gfx_pass.hxx"
+#include "iceshard_gfx_queue_group.hxx"
+#include "iceshard_gfx_queue.hxx"
 #include <ice/pod/hash.hxx>
 #include <ice/assert.hxx>
 
 namespace ice::gfx
 {
 
-    IceGfxPassGroup::IceGfxPassGroup(
+    IceGfxQueueGroup::IceGfxQueueGroup(
         ice::Allocator& alloc,
-        ice::u32 pass_count
+        ice::u32 queue_count
     ) noexcept
         : _allocator{ alloc }
-        , _gfx_passes{ _allocator }
+        , _gfx_queues{ _allocator }
     {
-        ice::pod::hash::reserve(_gfx_passes, pass_count * 2);
+        ice::pod::hash::reserve(_gfx_queues, queue_count * 2);
     }
 
-    IceGfxPassGroup::~IceGfxPassGroup() noexcept
+    IceGfxQueueGroup::~IceGfxQueueGroup() noexcept
     {
-        for (auto const& entry : _gfx_passes)
+        for (auto const& entry : _gfx_queues)
         {
             _allocator.destroy(entry.value);
         }
     }
 
-    auto IceGfxPassGroup::add_pass(
+    auto IceGfxQueueGroup::add_queue(
         ice::StringID_Arg name,
         ice::render::RenderCommands& commands,
-        ice::render::RenderQueue* queue,
+        ice::render::RenderQueue* render_queue,
         ice::u32 pool_index
-    ) noexcept -> ice::gfx::IceGfxPass*
+    ) noexcept -> ice::gfx::IceGfxQueue*
     {
         ice::u64 const name_hash = ice::hash(name);
         ICE_ASSERT(
-            ice::pod::hash::has(_gfx_passes, name_hash) == false,
-            "Duplicate graphics pass encountered! [{}]",
+            ice::pod::hash::has(_gfx_queues, name_hash) == false,
+            "Duplicate graphics queue encountered! [{}]",
             ice::stringid_hint(name)
         );
 
-        ice::gfx::IceGfxPass* pass = _allocator.make<ice::gfx::IceGfxPass>(
+        ice::gfx::IceGfxQueue* queue = _allocator.make<ice::gfx::IceGfxQueue>(
             _allocator,
             commands,
-            queue,
+            render_queue,
             pool_index
         );
 
         ice::pod::hash::set(
-            _gfx_passes,
+            _gfx_queues,
             name_hash,
-            pass
+            queue
         );
 
-        return pass;
+        return queue;
     }
 
-    auto IceGfxPassGroup::get_pass(ice::StringID_Arg name) noexcept -> ice::gfx::IceGfxPass*
+    auto IceGfxQueueGroup::get_queue(ice::StringID_Arg name) noexcept -> ice::gfx::IceGfxQueue*
     {
         return ice::pod::hash::get(
-            _gfx_passes,
+            _gfx_queues,
             ice::hash(name),
             nullptr
         );
     }
 
-    void IceGfxPassGroup::prepare_all() noexcept
+    void IceGfxQueueGroup::prepare_all() noexcept
     {
-        for (auto const& entry : _gfx_passes)
+        for (auto const& entry : _gfx_queues)
         {
             entry.value->prepare();
         }
     }
 
-    void IceGfxPassGroup::execute_all() noexcept
+    void IceGfxQueueGroup::execute_all() noexcept
     {
-        for (auto const& entry : _gfx_passes)
+        for (auto const& entry : _gfx_queues)
         {
             entry.value->execute();
         }
     }
 
-    void IceGfxPassGroup::get_render_queues(
+    void IceGfxQueueGroup::get_render_queues(
         ice::pod::Array<ice::render::RenderQueue*>& queues_out
     ) noexcept
     {
@@ -94,7 +94,7 @@ namespace ice::gfx
             return has_queue;
         };
 
-        for (auto const& entry : _gfx_passes)
+        for (auto const& entry : _gfx_queues)
         {
             ice::render::RenderQueue* queue = entry.value->render_queue();
             if (has_queue(queues_out, queue) == false)
@@ -107,12 +107,12 @@ namespace ice::gfx
         }
     }
 
-    bool IceGfxPassGroup::get_presenting_queue(
+    bool IceGfxQueueGroup::get_presenting_queue(
         ice::render::RenderQueue*& queue_out
     ) noexcept
     {
         queue_out = nullptr;
-        for (auto const& entry : _gfx_passes)
+        for (auto const& entry : _gfx_queues)
         {
             if (entry.value->presenting())
             {

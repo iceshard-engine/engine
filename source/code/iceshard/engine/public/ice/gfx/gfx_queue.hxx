@@ -7,10 +7,10 @@ namespace ice::gfx
 
     class GfxStage;
 
-    class GfxPass
+    class GfxQueue
     {
     public:
-        virtual ~GfxPass() noexcept = default;
+        virtual ~GfxQueue() noexcept = default;
 
         virtual bool presenting() const noexcept = 0;
         virtual void set_presenting(bool is_presenting) noexcept = 0;

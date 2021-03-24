@@ -5,7 +5,7 @@
 namespace ice::gfx
 {
 
-    class GfxPass;
+    class GfxQueue;
 
     class GfxFrame
     {
@@ -15,7 +15,7 @@ namespace ice::gfx
     public:
         virtual auto get_pass(
             ice::StringID_Arg name
-        ) noexcept -> GfxPass* = 0;
+        ) noexcept -> GfxQueue* = 0;
     };
 
 } // namespace ice::gfx

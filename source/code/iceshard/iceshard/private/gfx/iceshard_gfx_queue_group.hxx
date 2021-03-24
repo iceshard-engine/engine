@@ -1,34 +1,34 @@
 #pragma once
 #include <ice/allocator.hxx>
 #include <ice/render/render_queue.hxx>
-#include <ice/gfx/gfx_pass.hxx>
+#include <ice/gfx/gfx_queue.hxx>
 #include <ice/pod/array.hxx>
 
 namespace ice::gfx
 {
 
-    class IceGfxPass;
+    class IceGfxQueue;
 
-    class IceGfxPassGroup
+    class IceGfxQueueGroup
     {
     public:
-        IceGfxPassGroup(
+        IceGfxQueueGroup(
             ice::Allocator& alloc,
-            ice::u32 pass_count
+            ice::u32 queue_count
         ) noexcept;
 
-        ~IceGfxPassGroup() noexcept;
+        ~IceGfxQueueGroup() noexcept;
 
-        auto add_pass(
+        auto add_queue(
             ice::StringID_Arg name,
             ice::render::RenderCommands& commands,
             ice::render::RenderQueue* queue,
             ice::u32 pool_index
-        ) noexcept -> ice::gfx::IceGfxPass*;
+        ) noexcept -> ice::gfx::IceGfxQueue*;
 
-        auto get_pass(
+        auto get_queue(
             ice::StringID_Arg name
-        ) noexcept -> ice::gfx::IceGfxPass*;
+        ) noexcept -> ice::gfx::IceGfxQueue*;
 
         void prepare_all() noexcept;
         void execute_all() noexcept;
@@ -43,7 +43,7 @@ namespace ice::gfx
 
     private:
         ice::Allocator& _allocator;
-        ice::pod::Hash<ice::gfx::IceGfxPass*> _gfx_passes;
+        ice::pod::Hash<ice::gfx::IceGfxQueue*> _gfx_queues;
     };
 
 } // namespace ice

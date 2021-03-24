@@ -2,21 +2,21 @@
 #include <ice/allocator.hxx>
 #include <ice/pod/array.hxx>
 #include <ice/render/render_queue.hxx>
-#include <ice/gfx/gfx_pass.hxx>
+#include <ice/gfx/gfx_queue.hxx>
 
 namespace ice::gfx
 {
 
-    class IceGfxPass final : public ice::gfx::GfxPass
+    class IceGfxQueue final : public ice::gfx::GfxQueue
     {
     public:
-        IceGfxPass(
+        IceGfxQueue(
             ice::Allocator& alloc,
             ice::render::RenderCommands& commands,
             ice::render::RenderQueue* queue,
             ice::u32 pool_index
         ) noexcept;
-        ~IceGfxPass() noexcept = default;
+        ~IceGfxQueue() noexcept = default;
 
         bool presenting() const noexcept override;
         void set_presenting(bool is_presenting) noexcept override;

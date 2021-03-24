@@ -6,7 +6,7 @@
 #include <ice/render/render_buffer.hxx>
 #include <ice/gfx/gfx_device.hxx>
 #include <ice/gfx/gfx_frame.hxx>
-#include <ice/gfx/gfx_pass.hxx>
+#include <ice/gfx/gfx_queue.hxx>
 #include <ice/gfx/gfx_stage.hxx>
 #include <ice/world/world_manager.hxx>
 #include <ice/engine_runner.hxx>
@@ -449,7 +449,7 @@ void TestGame::update() noexcept
 
     ice::EngineFrame& frame = _runner->current_frame();
     ice::gfx::GfxFrame& gfx_frame = _runner->graphics_frame();
-    ice::gfx::GfxPass* default_pass = gfx_frame.get_pass("default"_sid);
+    ice::gfx::GfxQueue* default_pass = gfx_frame.get_pass("default"_sid);
     ICE_ASSERT(default_pass != nullptr, "The 'default' graphics pass, does not exist!");
 
     for (ice::gfx::GfxStage* stage : _stages)

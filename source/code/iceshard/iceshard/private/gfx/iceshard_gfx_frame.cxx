@@ -1,5 +1,5 @@
 #include "iceshard_gfx_frame.hxx"
-#include "iceshard_gfx_pass.hxx"
+#include "iceshard_gfx_queue.hxx"
 #include <ice/render/render_swapchain.hxx>
 #include <ice/assert.hxx>
 
@@ -9,7 +9,7 @@ namespace ice::gfx
     IceGfxFrame::IceGfxFrame(
         ice::render::RenderDevice* device,
         ice::render::RenderSwapchain* swapchain,
-        ice::gfx::IceGfxPassGroup* pass_group
+        ice::gfx::IceGfxQueueGroup* pass_group
     ) noexcept
         : GfxFrame{ }
         , _render_device{ device }
@@ -42,9 +42,9 @@ namespace ice::gfx
 
     auto IceGfxFrame::get_pass(
         ice::StringID_Arg name
-    ) noexcept -> GfxPass*
+    ) noexcept -> GfxQueue*
     {
-        return _pass_group->get_pass(name);
+        return _pass_group->get_queue(name);
     }
 
 } // namespace ice::gfx

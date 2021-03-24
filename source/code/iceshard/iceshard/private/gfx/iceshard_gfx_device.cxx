@@ -6,8 +6,8 @@
 #include <ice/pod/hash.hxx>
 #include <ice/assert.hxx>
 
-#include "iceshard_gfx_pass_group.hxx"
-#include "iceshard_gfx_pass.hxx"
+#include "iceshard_gfx_queue_group.hxx"
+#include "iceshard_gfx_queue.hxx"
 
 namespace ice::gfx
 {
@@ -34,7 +34,7 @@ namespace ice::gfx
         ice::render::RenderDriver* driver,
         ice::render::RenderSurface* render_surface,
         ice::render::RenderDevice* render_device,
-        ice::pod::Array<ice::gfx::IceGfxPassGroup*> graphics_passes
+        ice::pod::Array<ice::gfx::IceGfxQueueGroup*> graphics_passes
     ) noexcept
         : _allocator{ alloc }
         , _render_driver{ driver }
@@ -52,7 +52,7 @@ namespace ice::gfx
 
         bool first = true;
         ice::pod::Array<ice::render::RenderQueue*> queues{ _allocator };
-        for (ice::gfx::IceGfxPassGroup* group : _graphics_passes)
+        for (ice::gfx::IceGfxQueueGroup* group : _graphics_passes)
         {
             if (first)
             {
@@ -198,14 +198,14 @@ namespace ice::gfx
         ice::render::RenderDevice* const render_device = render_driver->create_device(queues);
         if (render_device != nullptr)
         {
-            ice::pod::Array<ice::gfx::IceGfxPassGroup*> pass_groups{ alloc };
+            ice::pod::Array<ice::gfx::IceGfxQueueGroup*> pass_groups{ alloc };
             ice::pod::array::reserve(pass_groups, pass_group_count);
 
             for (ice::u32 group_pool_index = 0; group_pool_index < pass_group_count; ++group_pool_index)
             {
                 ice::pod::array::push_back(
                     pass_groups,
-                    alloc.make<IceGfxPassGroup>(
+                    alloc.make<IceGfxQueueGroup>(
                         alloc,
                         ice::size(create_info.pass_list)
                     )
@@ -229,7 +229,7 @@ namespace ice::gfx
 
                 for (ice::u32 group_index = 0; group_index < pass_group_count; ++group_index)
                 {
-                    pass_groups[group_index]->add_pass(
+                    pass_groups[group_index]->add_queue(
                         pass_info.name,
                         render_device->get_commands(),
                         render_queue,

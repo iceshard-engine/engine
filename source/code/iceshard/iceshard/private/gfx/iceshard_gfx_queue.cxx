@@ -1,16 +1,16 @@
-#include "iceshard_gfx_pass.hxx"
+#include "iceshard_gfx_queue.hxx"
 #include <ice/gfx/gfx_stage.hxx>
 
 namespace ice::gfx
 {
 
-    IceGfxPass::IceGfxPass(
+    IceGfxQueue::IceGfxQueue(
         ice::Allocator& alloc,
         ice::render::RenderCommands& commands,
         ice::render::RenderQueue* queue,
         ice::u32 pool_index
     ) noexcept
-        : ice::gfx::GfxPass{ }
+        : ice::gfx::GfxQueue{ }
         , _render_commands{ commands }
         , _render_queue{ queue }
         , _queue_pool_index{ pool_index }
@@ -18,22 +18,22 @@ namespace ice::gfx
     {
     }
 
-    bool IceGfxPass::presenting() const noexcept
+    bool IceGfxQueue::presenting() const noexcept
     {
         return _presenting;
     }
 
-    void IceGfxPass::set_presenting(bool is_presenting) noexcept
+    void IceGfxQueue::set_presenting(bool is_presenting) noexcept
     {
         _presenting = is_presenting;
     }
 
-    auto IceGfxPass::render_queue() noexcept -> ice::render::RenderQueue*
+    auto IceGfxQueue::render_queue() noexcept -> ice::render::RenderQueue*
     {
         return _render_queue;
     }
 
-    void IceGfxPass::prepare() noexcept
+    void IceGfxQueue::prepare() noexcept
     {
         ice::pod::array::clear(_stages);
 
@@ -45,7 +45,7 @@ namespace ice::gfx
         );
     }
 
-    void IceGfxPass::alloc_command_buffers(
+    void IceGfxQueue::alloc_command_buffers(
         ice::render::CommandBufferType type,
         ice::Span<ice::render::CommandBuffer> buffers
     ) noexcept
@@ -53,7 +53,7 @@ namespace ice::gfx
         _render_queue->allocate_buffers(_queue_pool_index, type, buffers);
     }
 
-    void IceGfxPass::add_stage(
+    void IceGfxQueue::add_stage(
         ice::StringID_Arg name,
         ice::gfx::GfxStage* stage,
         ice::Span<ice::gfx::GfxStage*> fence_wait
@@ -65,7 +65,7 @@ namespace ice::gfx
         );
     }
 
-    void IceGfxPass::execute() noexcept
+    void IceGfxQueue::execute() noexcept
     {
         bool const contains_work = ice::pod::array::empty(_stages) == false;
         if (contains_work)
