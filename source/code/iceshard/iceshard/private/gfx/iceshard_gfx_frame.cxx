@@ -9,14 +9,14 @@ namespace ice::gfx
     IceGfxFrame::IceGfxFrame(
         ice::render::RenderDevice* device,
         ice::render::RenderSwapchain* swapchain,
-        ice::gfx::IceGfxQueueGroup* pass_group
+        ice::gfx::IceGfxQueueGroup* queue_group
     ) noexcept
         : GfxFrame{ }
         , _render_device{ device }
         , _render_swapchain{ swapchain }
-        , _pass_group{ pass_group }
+        , _queue_group{ queue_group }
     {
-        _pass_group->prepare_all();
+        _queue_group->prepare_all();
     }
 
     IceGfxFrame::~IceGfxFrame() noexcept
@@ -25,10 +25,10 @@ namespace ice::gfx
 
     void IceGfxFrame::present() noexcept
     {
-        _pass_group->execute_all();
+        //_pass_group->execute_all();
 
         ice::render::RenderQueue* presenting_queue;
-        if (_pass_group->get_presenting_queue(presenting_queue))
+        if (_queue_group->get_presenting_queue(presenting_queue))
         {
             presenting_queue->present(_render_swapchain);
         }
@@ -40,11 +40,11 @@ namespace ice::gfx
         }
     }
 
-    auto IceGfxFrame::get_pass(
+    auto IceGfxFrame::get_queue(
         ice::StringID_Arg name
     ) noexcept -> GfxQueue*
     {
-        return _pass_group->get_queue(name);
+        return _queue_group->get_queue(name);
     }
 
 } // namespace ice::gfx

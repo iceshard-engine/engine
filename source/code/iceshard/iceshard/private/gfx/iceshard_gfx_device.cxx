@@ -8,6 +8,7 @@
 
 #include "iceshard_gfx_queue_group.hxx"
 #include "iceshard_gfx_queue.hxx"
+#include "iceshard_gfx_pass.hxx"
 
 namespace ice::gfx
 {
@@ -42,6 +43,7 @@ namespace ice::gfx
         , _render_device{ render_device }
         , _render_swapchain{ nullptr }
         , _graphics_passes{ ice::move(graphics_passes) }
+        , _resource_tracker{ _allocator }
     {
         _render_swapchain = _render_device->create_swapchain(_render_surface);
     }
@@ -80,9 +82,14 @@ namespace ice::gfx
         return *_render_swapchain;
     }
 
-    auto IceGfxDevice::default_queue() noexcept -> ice::render::RenderQueue&
+    auto IceGfxDevice::create_pass() noexcept -> ice::UniquePtr<ice::gfx::GfxPass>
     {
-        return *((ice::render::RenderQueue*)0);
+        return ice::make_unique<ice::gfx::GfxPass, ice::gfx::IceGfxPass>(_allocator, _allocator);
+    }
+
+    auto IceGfxDevice::resource_tracker() noexcept -> ice::gfx::GfxResourceTracker&
+    {
+        return _resource_tracker;
     }
 
     auto IceGfxDevice::next_frame(ice::Allocator& alloc) noexcept -> ice::UniquePtr<ice::gfx::IceGfxFrame>
@@ -132,7 +139,7 @@ namespace ice::gfx
         using ice::render::QueueID;
 
         ice::pod::Array<ice::render::QueueInfo> queues{ alloc };
-        ice::pod::array::reserve(queues, ice::size(create_info.pass_list));
+        ice::pod::array::reserve(queues, ice::size(create_info.queue_list));
 
         auto find_queue_index = [](auto const& array_, QueueID id_, ice::u32& idx_out) noexcept -> bool
         {
@@ -148,7 +155,7 @@ namespace ice::gfx
         };
 
         ice::pod::Hash<ice::u32> queue_index_tracker{ alloc };
-        for (ice::gfx::GfxPassCreateInfo const& pass_info : create_info.pass_list)
+        for (ice::gfx::GfxQueueCreateInfo const& pass_info : create_info.queue_list)
         {
             QueueID const pass_queue_id = detail::find_queue_id(queue_families, pass_info.queue_flags);
             ICE_ASSERT(
@@ -207,12 +214,12 @@ namespace ice::gfx
                     pass_groups,
                     alloc.make<IceGfxQueueGroup>(
                         alloc,
-                        ice::size(create_info.pass_list)
+                        ice::size(create_info.queue_list)
                     )
                 );
             }
 
-            for (ice::gfx::GfxPassCreateInfo const& pass_info : create_info.pass_list)
+            for (ice::gfx::GfxQueueCreateInfo const& pass_info : create_info.queue_list)
             {
                 QueueID const pass_queue_id = detail::find_queue_id(queue_families, pass_info.queue_flags);
                 ice::u32 const pass_queue_index = ice::pod::hash::get(

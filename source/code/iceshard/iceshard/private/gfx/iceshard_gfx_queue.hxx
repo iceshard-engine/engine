@@ -30,13 +30,9 @@ namespace ice::gfx
             ice::Span<ice::render::CommandBuffer> buffers
         ) noexcept;
 
-        void add_stage(
-            ice::StringID_Arg name,
-            ice::gfx::GfxStage* stage,
-            ice::Span<ice::gfx::GfxStage*> fence_wait
+        void execute_pass(
+            ice::gfx::GfxPass* gfx_pass
         ) noexcept override;
-
-        void execute() noexcept;
 
     private:
         ice::render::RenderCommands& _render_commands;
@@ -45,7 +41,6 @@ namespace ice::gfx
         bool _presenting = false;
 
         ice::render::CommandBuffer _primary_commands;
-        ice::pod::Array<ice::gfx::GfxStage*> _stages;
     };
 
 } // namespace ice

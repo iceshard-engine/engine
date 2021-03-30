@@ -2,6 +2,7 @@
 #include <ice/allocator.hxx>
 #include <ice/gfx/gfx_device.hxx>
 #include <ice/gfx/gfx_stage.hxx>
+#include <ice/gfx/gfx_pass.hxx>
 #include <ice/entity/entity_storage.hxx>
 #include <ice/world/world.hxx>
 #include <ice/engine.hxx>
@@ -24,6 +25,8 @@ private:
     ice::UniquePtr<ice::EngineRunner> _runner;
     ice::gfx::GfxDevice& _gfx_device;
     ice::render::RenderDevice& _render_device;
+
+    ice::UniquePtr<ice::gfx::GfxPass> _gfx_pass;
 
     ice::UniquePtr<ice::ArchetypeIndex> _archetype_index;
     ice::UniquePtr<ice::ArchetypeBlockAllocator> _archetype_alloc;

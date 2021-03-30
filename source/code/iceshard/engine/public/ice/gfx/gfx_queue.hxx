@@ -5,7 +5,7 @@
 namespace ice::gfx
 {
 
-    class GfxStage;
+    class GfxPass;
 
     class GfxQueue
     {
@@ -15,10 +15,8 @@ namespace ice::gfx
         virtual bool presenting() const noexcept = 0;
         virtual void set_presenting(bool is_presenting) noexcept = 0;
 
-        virtual void add_stage(
-            ice::StringID_Arg name,
-            ice::gfx::GfxStage* stage,
-            ice::Span<ice::gfx::GfxStage*> fence_wait
+        virtual void execute_pass(
+            ice::gfx::GfxPass* gfx_pass
         ) noexcept = 0;
     };
 

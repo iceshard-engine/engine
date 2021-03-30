@@ -1,4 +1,5 @@
 #include "iceshard_gfx_queue.hxx"
+#include "iceshard_gfx_pass.hxx"
 #include <ice/gfx/gfx_stage.hxx>
 
 namespace ice::gfx
@@ -14,7 +15,6 @@ namespace ice::gfx
         , _render_commands{ commands }
         , _render_queue{ queue }
         , _queue_pool_index{ pool_index }
-        , _stages{ alloc }
     {
     }
 
@@ -35,8 +35,6 @@ namespace ice::gfx
 
     void IceGfxQueue::prepare() noexcept
     {
-        ice::pod::array::clear(_stages);
-
         _render_queue->reset_pool(_queue_pool_index);
         _render_queue->allocate_buffers(
             _queue_pool_index,
@@ -53,35 +51,17 @@ namespace ice::gfx
         _render_queue->allocate_buffers(_queue_pool_index, type, buffers);
     }
 
-    void IceGfxQueue::add_stage(
-        ice::StringID_Arg name,
-        ice::gfx::GfxStage* stage,
-        ice::Span<ice::gfx::GfxStage*> fence_wait
-    ) noexcept
+    void IceGfxQueue::execute_pass(ice::gfx::GfxPass* gfx_pass) noexcept
     {
-        ice::pod::array::push_back(
-            _stages,
-            stage
-        );
-    }
-
-    void IceGfxQueue::execute() noexcept
-    {
-        bool const contains_work = ice::pod::array::empty(_stages) == false;
-        if (contains_work)
+        ice::gfx::IceGfxPass* const ice_pass = static_cast<ice::gfx::IceGfxPass*>(gfx_pass);
+        if (ice_pass->has_work())
         {
-            for (ice::gfx::GfxStage* stage : _stages)
-            {
-                stage->record_commands(
-                    _primary_commands,
-                    _render_commands
-                );
-            }
-
-            _render_queue->submit(
-                ice::Span<ice::render::CommandBuffer>{ &_primary_commands, 1 }
-            );
+            ice_pass->record_commands(_primary_commands, _render_commands);
         }
+
+        _render_queue->submit(
+            ice::Span<ice::render::CommandBuffer>{ &_primary_commands, 1 }
+        );
     }
 
 } // namespace ice::gfx

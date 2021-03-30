@@ -35,17 +35,21 @@ TestGameApp::TestGameApp(
 
     _render_surface = _render_driver.create_surface(surface_info);
 
-    ice::gfx::GfxPassCreateInfo gfx_pass_info[]{
-        ice::gfx::GfxPassCreateInfo{
+    ice::gfx::GfxQueueCreateInfo gfx_queue_info[]{
+        ice::gfx::GfxQueueCreateInfo{
             .name = "default"_sid,
             .queue_flags = ice::render::QueueFlags::Graphics | ice::render::QueueFlags::Present
+        },
+        ice::gfx::GfxQueueCreateInfo{
+            .name = "transfer"_sid,
+            .queue_flags = ice::render::QueueFlags::Transfer
         }
     };
 
     ice::gfx::GfxDeviceCreateInfo gfx_device_info{
         .render_driver = &_render_driver,
         .render_surface = _render_surface,
-        .pass_list = gfx_pass_info
+        .queue_list = gfx_queue_info
     };
 
     _game = ice::make_unique<TestGame>(

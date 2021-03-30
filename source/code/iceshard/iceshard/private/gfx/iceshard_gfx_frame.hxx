@@ -19,14 +19,14 @@ namespace ice::gfx
 
         void present() noexcept;
 
-        auto get_pass(
+        auto get_queue(
             ice::StringID_Arg name
         ) noexcept -> GfxQueue* override;
 
     private:
         ice::render::RenderDevice* _render_device;
         ice::render::RenderSwapchain* _render_swapchain;
-        ice::gfx::IceGfxQueueGroup* _pass_group;
+        ice::gfx::IceGfxQueueGroup* _queue_group;
     };
 
 } // namespace ice::gfx

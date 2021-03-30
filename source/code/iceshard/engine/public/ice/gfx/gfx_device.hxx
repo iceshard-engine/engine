@@ -1,12 +1,13 @@
 #pragma once
 #include <ice/stringid.hxx>
+#include <ice/unique_ptr.hxx>
 #include <ice/render/render_queue.hxx>
 #include <ice/render/render_driver.hxx>
 
 namespace ice::gfx
 {
 
-    struct GfxPassCreateInfo
+    struct GfxQueueCreateInfo
     {
         ice::StringID name;
         ice::render::QueueFlags queue_flags;
@@ -16,8 +17,12 @@ namespace ice::gfx
     {
         ice::render::RenderDriver* render_driver;
         ice::render::RenderSurface* render_surface;
-        ice::Span<ice::gfx::GfxPassCreateInfo> pass_list;
+        ice::Span<ice::gfx::GfxQueueCreateInfo> queue_list;
     };
+
+    class GfxPass;
+
+    class GfxResourceTracker;
 
     class GfxDevice
     {
@@ -27,6 +32,10 @@ namespace ice::gfx
     public:
         virtual auto device() noexcept -> ice::render::RenderDevice& = 0;
         virtual auto swapchain() noexcept -> ice::render::RenderSwapchain const& = 0;
+
+        virtual auto create_pass() noexcept -> ice::UniquePtr<ice::gfx::GfxPass> = 0;
+
+        virtual auto resource_tracker() noexcept -> ice::gfx::GfxResourceTracker& = 0;
     };
 
 } // namespace ice::gfx

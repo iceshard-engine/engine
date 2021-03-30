@@ -31,7 +31,6 @@ namespace ice::gfx
         ) noexcept -> ice::gfx::IceGfxQueue*;
 
         void prepare_all() noexcept;
-        void execute_all() noexcept;
 
         void get_render_queues(
             ice::pod::Array<ice::render::RenderQueue*>& queues_out

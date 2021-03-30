@@ -72,14 +72,6 @@ namespace ice::gfx
         }
     }
 
-    void IceGfxQueueGroup::execute_all() noexcept
-    {
-        for (auto const& entry : _gfx_queues)
-        {
-            entry.value->execute();
-        }
-    }
-
     void IceGfxQueueGroup::get_render_queues(
         ice::pod::Array<ice::render::RenderQueue*>& queues_out
     ) noexcept

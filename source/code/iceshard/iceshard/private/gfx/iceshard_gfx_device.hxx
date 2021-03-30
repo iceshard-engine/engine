@@ -4,6 +4,7 @@
 #include <ice/render/render_driver.hxx>
 #include <ice/unique_ptr.hxx>
 #include <ice/pod/array.hxx>
+#include "iceshard_gfx_resource_tracker.hxx"
 
 namespace ice::gfx
 {
@@ -27,7 +28,9 @@ namespace ice::gfx
         auto device() noexcept -> ice::render::RenderDevice& override;
         auto swapchain() noexcept -> ice::render::RenderSwapchain const& override;
 
-        auto default_queue() noexcept -> ice::render::RenderQueue&;
+        auto create_pass() noexcept -> ice::UniquePtr<ice::gfx::GfxPass> override;
+
+        auto resource_tracker() noexcept -> ice::gfx::GfxResourceTracker& override;
 
         auto next_frame(ice::Allocator& alloc) noexcept -> ice::UniquePtr<ice::gfx::IceGfxFrame>;
 
@@ -40,6 +43,7 @@ namespace ice::gfx
         ice::render::RenderSwapchain* _render_swapchain;
 
         ice::pod::Array<ice::gfx::IceGfxQueueGroup*> _graphics_passes;
+        ice::gfx::IceGfxResourceTracker _resource_tracker;
     };
 
     auto create_graphics_device(

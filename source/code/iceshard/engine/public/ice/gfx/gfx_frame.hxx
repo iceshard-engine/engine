@@ -13,7 +13,7 @@ namespace ice::gfx
         virtual ~GfxFrame() noexcept = default;
 
     public:
-        virtual auto get_pass(
+        virtual auto get_queue(
             ice::StringID_Arg name
         ) noexcept -> GfxQueue* = 0;
     };
