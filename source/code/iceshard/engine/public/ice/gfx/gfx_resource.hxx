@@ -17,6 +17,7 @@ namespace ice::gfx
             Pipeline,
             Shader,
             Image,
+            Sampler,
             Buffer
         };
 
@@ -32,6 +33,7 @@ namespace ice::gfx
             ice::render::Pipeline pipeline;
             ice::render::Shader shader;
             ice::render::Image image;
+            ice::render::Sampler sampler;
             ice::render::Buffer buffer;
         } value;
     };

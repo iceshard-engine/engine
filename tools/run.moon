@@ -40,7 +40,7 @@ class RunCommand extends Command
             for step in *@scenario
                 app_path = step.executable
                 if step.working_dir
-                    os.chdir step.working_dir
+                    os.chdir "#{@current_dir}/#{step.working_dir}"
 
                 if not os.isfile app_path
                     app_path = @current_dir .. '/' .. step.executable

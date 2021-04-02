@@ -28,7 +28,6 @@ namespace ice::render
     struct ShaderInfo
     {
         ice::Data shader_data;
-        ice::render::ShaderStageFlags shader_stage;
     };
 
     struct ShaderInputAttribute

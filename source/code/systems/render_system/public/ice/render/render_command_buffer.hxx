@@ -1,4 +1,5 @@
 #pragma once
+#include <ice/span.hxx>
 #include <ice/render/render_declarations.hxx>
 
 namespace ice::render
@@ -34,6 +35,14 @@ namespace ice::render
             ice::render::Framebuffer framebuffer,
             ice::vec2u extent,
             ice::vec4f clear_color
+        ) noexcept = 0;
+
+        virtual void begin_renderpass(
+            ice::render::CommandBuffer cmds,
+            ice::render::Renderpass renderpass,
+            ice::render::Framebuffer framebuffer,
+            ice::Span<ice::vec4f> clear_values,
+            ice::vec2u extent
         ) noexcept = 0;
 
         virtual void next_subpass(

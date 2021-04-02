@@ -586,7 +586,7 @@ namespace ice::render::vk
 
                 if (block->memory_handle == mapping_entry.device_memory)
                 {
-                    out_data[idx].location = ice::memory::ptr_add(block_ptr, entry->offset);
+                    out_data[idx].location = ice::memory::ptr_add(block_ptr, entry->offset - mapping_entry.offset);
                     out_data[idx].size = entry->size;
                     out_data[idx].alignment = 0;
                 }

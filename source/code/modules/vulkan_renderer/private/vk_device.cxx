@@ -18,6 +18,7 @@ namespace ice::render::vk
     auto native_handle(PipelineLayout pipeline_layout) noexcept -> VkPipelineLayout;
     auto native_handle(Pipeline pipeline_layout) noexcept -> VkPipeline;
     auto native_handle(Shader shader) noexcept -> VkShaderModule;
+    auto native_handle(Sampler shader) noexcept -> VkSampler;
 
     VulkanRenderDevice::VulkanRenderDevice(
         ice::Allocator& alloc,
@@ -220,8 +221,8 @@ namespace ice::render::vk
                 native_enum_value(op, attachment.stencilStoreOp);
             }
 
-            attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-            attachment.finalLayout = native_enum_value(attachment_info.layout);
+            attachment.initialLayout = native_enum_value(attachment_info.initial_layout);;
+            attachment.finalLayout = native_enum_value(attachment_info.final_layout);
 
             ice::pod::array::push_back(attachments, attachment);
         }
@@ -285,6 +286,7 @@ namespace ice::render::vk
             dependency.dstSubpass = dependency_info.destination_subpass;
             dependency.dstStageMask = native_enum_value(dependency_info.destination_stage);
             dependency.dstAccessMask = native_enum_value(dependency_info.destination_access);
+            dependency.dependencyFlags = VkDependencyFlagBits::VK_DEPENDENCY_BY_REGION_BIT;
 
             ice::pod::array::push_back(dependencies, dependency);
         }
@@ -440,7 +442,7 @@ namespace ice::render::vk
             descriptor_set_write.descriptorCount = ice::size(update_info.resources);
             descriptor_set_write.descriptorType = native_enum_value(update_info.resource_type);
 
-            if (update_info.resource_type == ResourceType::SampledImage)
+            if (update_info.resource_type == ResourceType::SampledImage || update_info.resource_type == ResourceType::InputAttachment)
             {
                 ice::u32 const image_info_index = ice::pod::array::size(write_image_info);
 
@@ -456,6 +458,23 @@ namespace ice::render::vk
                     image_info.imageView = image_ptr->vk_image_view;
 
                     ice::pod::array::push_back(write_image_info, image_info);
+                }
+
+                descriptor_set_write.pImageInfo = ice::addressof(write_image_info[image_info_index]);
+            }
+
+            if (update_info.resource_type == ResourceType::Sampler)
+            {
+                ice::u32 const image_info_index = ice::pod::array::size(write_image_info);
+
+                for (ResourceUpdateInfo const& resource_info : update_info.resources)
+                {
+                    VkSampler vk_sampler = native_handle(resource_info.sampler);
+
+                    VkDescriptorImageInfo sampler_info;
+                    sampler_info.sampler = vk_sampler;
+
+                    ice::pod::array::push_back(write_image_info, sampler_info);
                 }
 
                 descriptor_set_write.pImageInfo = ice::addressof(write_image_info[image_info_index]);
@@ -562,7 +581,6 @@ namespace ice::render::vk
         VkShaderModuleCreateInfo shader_info{ VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO };
         shader_info.codeSize = info.shader_data.size;
         shader_info.pCode = reinterpret_cast<ice::u32 const*>(info.shader_data.location);
-        shader_info.flags = native_enum_flags(info.shader_stage);
 
         VkShaderModule vk_shader;
         VkResult result = vkCreateShaderModule(
@@ -733,7 +751,7 @@ namespace ice::render::vk
         pipeline_info.pStages = shader_stages;
         pipeline_info.stageCount = ice::size(shader_stages);
         pipeline_info.renderPass = native_handle(info.renderpass);
-        pipeline_info.subpass = 1;
+        pipeline_info.subpass = info.subpass_index;
 
         VkPipeline vk_pipeline;
         VkResult result = vkCreateGraphicsPipelines(
@@ -898,7 +916,10 @@ namespace ice::render::vk
         vkDestroyFramebuffer(_vk_device, vk_framebuffer, nullptr);
     }
 
-    auto VulkanRenderDevice::create_image(ice::render::ImageInfo image, ice::Data data) noexcept -> ice::render::Image
+    auto VulkanRenderDevice::create_image(
+        ice::render::ImageInfo const& image,
+        ice::Data data
+    ) noexcept -> ice::render::Image
     {
         VkImageCreateInfo image_info{ VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO };
         image_info.imageType = VK_IMAGE_TYPE_2D;
@@ -1024,6 +1045,53 @@ namespace ice::render::vk
         return _vk_render_commands;
     }
 
+    auto VulkanRenderDevice::create_sampler(
+        ice::render::SamplerInfo const& sampler_info
+    ) noexcept -> ice::render::Sampler
+    {
+        VkSamplerCreateInfo vk_sampler_info{ VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO };
+        vk_sampler_info.minFilter = native_enum_value(sampler_info.min_filter);
+        vk_sampler_info.magFilter = native_enum_value(sampler_info.mag_filter);
+        vk_sampler_info.addressModeU = native_enum_value(sampler_info.address_mode.u);
+        vk_sampler_info.addressModeV = native_enum_value(sampler_info.address_mode.v);
+        vk_sampler_info.addressModeW = native_enum_value(sampler_info.address_mode.w);
+        vk_sampler_info.anisotropyEnable = VK_FALSE;
+        vk_sampler_info.maxAnisotropy = 1;
+        vk_sampler_info.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+        vk_sampler_info.unnormalizedCoordinates = sampler_info.normalized_coordinates == false ? VK_TRUE : VK_FALSE; // Care, the target member is negated!
+        vk_sampler_info.compareEnable = VK_FALSE;
+        vk_sampler_info.compareOp = VK_COMPARE_OP_LESS;
+        vk_sampler_info.mipmapMode = native_enum_value(sampler_info.mip_map_mode);
+        vk_sampler_info.mipLodBias = 0.0f;
+        vk_sampler_info.minLod = 0.0f;
+        vk_sampler_info.maxLod = 0.0f;
+
+        VkSampler vk_sampler = vk_nullptr;
+        VkResult result = vkCreateSampler(
+            _vk_device,
+            &vk_sampler_info,
+            nullptr,
+            &vk_sampler
+        );
+        ICE_ASSERT(
+            result == VkResult::VK_SUCCESS,
+            "Failed to create sampler!"
+        );
+
+        return static_cast<ice::render::Sampler>(reinterpret_cast<ice::uptr>(vk_sampler));
+    }
+
+    void VulkanRenderDevice::destroy_sampler(
+        ice::render::Sampler sampler
+    ) noexcept
+    {
+        vkDestroySampler(
+            _vk_device,
+            native_handle(sampler),
+            nullptr
+        );
+    }
+
     auto native_handle(CommandBuffer cmds) noexcept -> VkCommandBuffer
     {
         return reinterpret_cast<VkCommandBuffer>(static_cast<ice::uptr>(cmds));
@@ -1067,6 +1135,11 @@ namespace ice::render::vk
     auto native_handle(Shader shader) noexcept -> VkShaderModule
     {
         return reinterpret_cast<VkShaderModule>(static_cast<ice::uptr>(shader));
+    }
+
+    auto native_handle(Sampler shader) noexcept -> VkSampler
+    {
+        return reinterpret_cast<VkSampler>(static_cast<ice::uptr>(shader));
     }
 
     void VulkanRenderCommands::begin(
@@ -1193,6 +1266,39 @@ namespace ice::render::vk
             native_handle(buffer),
             0,
             VkIndexType::VK_INDEX_TYPE_UINT16
+        );
+    }
+
+    void VulkanRenderCommands::begin_renderpass(
+        ice::render::CommandBuffer cmds,
+        ice::render::Renderpass renderpass,
+        ice::render::Framebuffer framebuffer,
+        ice::Span<ice::vec4f> clear_values,
+        ice::vec2u extent
+    ) noexcept
+    {
+        VkClearValue vk_clear_values[10]{ };
+
+        ice::u32 idx = 0;
+        for (ice::vec4f const& clear_value : clear_values)
+        {
+            ice::memcpy(vk_clear_values[idx].color.float32, clear_value.v, sizeof(ice::f32) * 4);
+            idx += 1;
+        }
+
+        VkRenderPassBeginInfo begin_info{ VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO };
+        begin_info.renderPass = native_handle(renderpass);
+        begin_info.framebuffer = native_handle(framebuffer);
+        begin_info.renderArea.offset.x = 0;
+        begin_info.renderArea.offset.y = 0;
+        begin_info.renderArea.extent = { extent.x, extent.y };
+        begin_info.clearValueCount = idx;
+        begin_info.pClearValues = vk_clear_values;
+
+        vkCmdBeginRenderPass(
+            native_handle(cmds),
+            &begin_info,
+            VkSubpassContents::VK_SUBPASS_CONTENTS_INLINE
         );
     }
 

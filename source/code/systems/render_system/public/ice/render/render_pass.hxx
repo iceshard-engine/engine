@@ -36,7 +36,8 @@ namespace ice::render
     struct RenderAttachment
     {
         ice::render::ImageFormat format = ImageFormat::Invalid;
-        ice::render::ImageLayout layout = ImageLayout::Undefined;
+        ice::render::ImageLayout initial_layout = ImageLayout::Undefined;
+        ice::render::ImageLayout final_layout = ImageLayout::Undefined;
         ice::render::AttachmentType type = AttachmentType::Undefined;
         ice::render::AttachmentOperation operations[2]{
             AttachmentOperation::Load_DontCare,

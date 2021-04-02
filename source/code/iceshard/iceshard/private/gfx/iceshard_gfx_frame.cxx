@@ -11,7 +11,7 @@ namespace ice::gfx
         ice::render::RenderSwapchain* swapchain,
         ice::gfx::IceGfxQueueGroup* queue_group
     ) noexcept
-        : GfxFrame{ }
+        : IceGfxBaseFrame{ }
         , _render_device{ device }
         , _render_swapchain{ swapchain }
         , _queue_group{ queue_group }

@@ -6,7 +6,23 @@
 namespace ice::gfx
 {
 
-    class IceGfxFrame final : public ice::gfx::GfxFrame
+    class IceGfxBaseFrame : public ice::gfx::GfxFrame
+    {
+    public:
+        IceGfxBaseFrame() noexcept = default;
+        ~IceGfxBaseFrame() noexcept override = default;
+
+        virtual void present() noexcept { }
+
+        virtual auto get_queue(
+            ice::StringID_Arg name
+        ) noexcept -> GfxQueue* override
+        {
+            return nullptr;
+        }
+    };
+
+    class IceGfxFrame final : public IceGfxBaseFrame
     {
     public:
         IceGfxFrame(

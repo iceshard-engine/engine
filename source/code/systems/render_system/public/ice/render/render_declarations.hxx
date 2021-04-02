@@ -21,6 +21,7 @@ namespace ice::render
     struct QueueInfo;
     struct ShaderInfo;
     struct ImageInfo;
+    struct SamplerInfo;
     struct BufferUpdateInfo;
 
     enum class Framebuffer : ice::uptr;
@@ -31,6 +32,7 @@ namespace ice::render
     enum class Pipeline : ice::uptr;
     enum class Shader : ice::uptr;
     enum class Image : ice::uptr;
+    enum class Sampler : ice::uptr;
     enum class Buffer : ice::uptr;
     enum class CommandBuffer : ice::uptr;
     enum class Semaphore : ice::uptr;

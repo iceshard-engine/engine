@@ -28,6 +28,16 @@
                 "working_dir": "./source/data/shaders/color",
                 "executable": "%VULKAN_SDK%/Bin/glslc.exe",
                 "options": ["--target-env=vulkan", "-fshader-stage=frag", "-o", "blue-frag.spv", "blue-frag.glsl"]
+            },
+            {
+                "working_dir": "./source/data/shaders/debug",
+                "executable": "%VULKAN_SDK%/Bin/glslc.exe",
+                "options": ["--target-env=vulkan", "-fshader-stage=vert", "-o", "pp-vert.spv", "pp-vert.glsl"]
+            },
+            {
+                "working_dir": "./source/data/shaders/debug",
+                "executable": "%VULKAN_SDK%/Bin/glslc.exe",
+                "options": ["--target-env=vulkan", "-fshader-stage=frag", "-o", "pp-frag.spv", "pp-frag.glsl"]
             }
         ]
     }

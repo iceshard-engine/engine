@@ -54,7 +54,7 @@ namespace ice
         ice::UniquePtr<ice::IceshardMemoryFrame> _current_frame;
 
         ice::UniquePtr<ice::gfx::IceGfxDevice> _gfx_device;
-        ice::UniquePtr<ice::gfx::IceGfxFrame> _gfx_current_frame;
+        ice::UniquePtr<ice::gfx::IceGfxBaseFrame> _gfx_current_frame;
     };
 
 } // namespace ice

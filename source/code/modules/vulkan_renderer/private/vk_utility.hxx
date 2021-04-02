@@ -57,6 +57,12 @@ namespace ice::render::vk
 
     inline auto native_enum_value(ShaderAttribType type) noexcept -> VkFormat;
 
+    inline auto native_enum_value(SamplerFilter filter) noexcept -> VkFilter;
+
+    inline auto native_enum_value(SamplerAddressMode address_mode) noexcept -> VkSamplerAddressMode;
+
+    inline auto native_enum_value(SamplerMipMapMode mipmap_mode) noexcept -> VkSamplerMipmapMode;
+
     inline auto native_enum_flags(ImageUsageFlags flags) noexcept -> VkImageUsageFlags;
 
     inline auto native_enum_flags(ShaderStageFlags flags) noexcept -> VkShaderStageFlags;
@@ -229,6 +235,8 @@ namespace ice::render::vk
             return VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
         case ResourceType::UniformBuffer:
             return VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        case ResourceType::InputAttachment:
+            return VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT;
         default:
             return VK_DESCRIPTOR_TYPE_MAX_ENUM;
         }
@@ -281,6 +289,55 @@ namespace ice::render::vk
         }
     }
 
+    auto native_enum_value(SamplerFilter filter) noexcept -> VkFilter
+    {
+        switch (filter)
+        {
+        case SamplerFilter::Nearest:
+            return VkFilter::VK_FILTER_NEAREST;
+        case SamplerFilter::Linear:
+            return VkFilter::VK_FILTER_LINEAR;
+        case SamplerFilter::CubicImg:
+            return VkFilter::VK_FILTER_CUBIC_IMG;
+        case SamplerFilter::CubicExt:
+            return VkFilter::VK_FILTER_CUBIC_EXT;
+        default:
+            return VkFilter::VK_FILTER_MAX_ENUM;
+        }
+    }
+
+    auto native_enum_value(SamplerAddressMode address_mode) noexcept -> VkSamplerAddressMode
+    {
+        switch (address_mode)
+        {
+        case SamplerAddressMode::Repeat:
+            return VkSamplerAddressMode::VK_SAMPLER_ADDRESS_MODE_REPEAT;
+        case SamplerAddressMode::RepeatMirrored:
+            return VkSamplerAddressMode::VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
+        case SamplerAddressMode::ClampToBorder:
+            return VkSamplerAddressMode::VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+        case SamplerAddressMode::ClampToEdge:
+            return VkSamplerAddressMode::VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+        case SamplerAddressMode::ClampToEdgeMirrored:
+            return VkSamplerAddressMode::VK_SAMPLER_ADDRESS_MODE_MIRROR_CLAMP_TO_EDGE;
+        default:
+            return VkSamplerAddressMode::VK_SAMPLER_ADDRESS_MODE_MAX_ENUM;
+        }
+    }
+
+    auto native_enum_value(SamplerMipMapMode mipmap_mode) noexcept -> VkSamplerMipmapMode
+    {
+        switch (mipmap_mode)
+        {
+        case SamplerMipMapMode::Nearest:
+            return VkSamplerMipmapMode::VK_SAMPLER_MIPMAP_MODE_NEAREST;
+        case SamplerMipMapMode::Linear:
+            return VkSamplerMipmapMode::VK_SAMPLER_MIPMAP_MODE_LINEAR;
+        default:
+            return VkSamplerMipmapMode::VK_SAMPLER_MIPMAP_MODE_MAX_ENUM;
+        }
+    }
+
     template<typename T>
     bool has_flag(T flags, T flag) noexcept
     {
@@ -300,6 +357,10 @@ namespace ice::render::vk
         if (has_flag(flags, ImageUsageFlags::ColorAttachment))
         {
             usage_flags |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+        }
+        if (has_flag(flags, ImageUsageFlags::InputAttachment))
+        {
+            usage_flags |= VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT;
         }
         if (has_flag(flags, ImageUsageFlags::DepthStencilAttachment))
         {

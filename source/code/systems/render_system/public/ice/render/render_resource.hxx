@@ -21,6 +21,7 @@ namespace ice::render
         SampledImage,
         CombinedImageSampler,
         UniformBuffer,
+        InputAttachment,
     };
 
     struct ResourceSetLayoutBinding
@@ -41,8 +42,8 @@ namespace ice::render
                 ice::u32 offset;
                 ice::u32 size;
             } uniform_buffer;
-
             ice::render::Image image;
+            ice::render::Sampler sampler;
         };
     };
 

@@ -41,6 +41,9 @@ namespace ice::render
         ice::Span<ice::render::Shader> shaders;
         ice::Span<ice::render::ShaderStageFlags> shaders_stages;
         ice::Span<ice::render::ShaderInputBinding> shader_bindings;
+
+        ice::u32 subpass_index;
+        bool depth_test = true;
     };
 
 } // namespace ice::render

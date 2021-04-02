@@ -9,7 +9,7 @@
 namespace ice::gfx
 {
 
-    class IceGfxFrame;
+    class IceGfxBaseFrame;
 
     class IceGfxQueueGroup;
 
@@ -32,7 +32,7 @@ namespace ice::gfx
 
         auto resource_tracker() noexcept -> ice::gfx::GfxResourceTracker& override;
 
-        auto next_frame(ice::Allocator& alloc) noexcept -> ice::UniquePtr<ice::gfx::IceGfxFrame>;
+        auto next_frame(ice::Allocator& alloc) noexcept -> ice::UniquePtr<ice::gfx::IceGfxBaseFrame>;
 
     private:
         ice::Allocator& _allocator;

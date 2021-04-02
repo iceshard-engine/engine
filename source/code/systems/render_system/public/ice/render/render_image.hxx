@@ -32,7 +32,8 @@ namespace ice::render
         None = 0x0,
         Sampled = 0x0000'0001,
         ColorAttachment = 0x0001'0000,
-        DepthStencilAttachment = 0x0002'0000,
+        InputAttachment = 0x0002'0000,
+        DepthStencilAttachment = 0x0004'0000,
     };
 
     enum class ImageLayout : ice::u32
@@ -60,5 +61,51 @@ namespace ice::render
         ice::u32 right_value = static_cast<ice::u32>(right);
         return static_cast<ImageUsageFlags>(left_value | right_value);
     }
+
+    enum class Sampler : ice::uptr
+    {
+        Invalid
+    };
+
+    enum class SamplerFilter : ice::u32
+    {
+        Nearest,
+        Linear,
+        CubicImg,
+        CubicExt,
+    };
+
+    enum class SamplerAddressMode : ice::u32
+    {
+        Repeat,
+        RepeatMirrored,
+        ClampToEdge,
+        ClampToEdgeMirrored,
+        ClampToBorder,
+    };
+
+    enum class SamplerMipMapMode : ice::u32
+    {
+        None,
+        Nearest,
+        Linear,
+    };
+
+    struct SamplerInfo
+    {
+        ice::render::SamplerFilter min_filter;
+        ice::render::SamplerFilter mag_filter;
+
+        struct AddressMode
+        {
+            ice::render::SamplerAddressMode u;
+            ice::render::SamplerAddressMode v;
+            ice::render::SamplerAddressMode w;
+        } address_mode;
+
+        ice::render::SamplerMipMapMode mip_map_mode;
+
+        bool normalized_coordinates = true;
+    };
 
 } // namespace ice::render

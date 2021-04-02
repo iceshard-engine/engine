@@ -92,11 +92,11 @@ namespace ice::gfx
         return _resource_tracker;
     }
 
-    auto IceGfxDevice::next_frame(ice::Allocator& alloc) noexcept -> ice::UniquePtr<ice::gfx::IceGfxFrame>
+    auto IceGfxDevice::next_frame(ice::Allocator& alloc) noexcept -> ice::UniquePtr<ice::gfx::IceGfxBaseFrame>
     {
         ice::u32 const framebuffer_index = _render_swapchain->aquire_image();
 
-        return ice::make_unique<gfx::IceGfxFrame>(
+        return ice::make_unique<gfx::IceGfxBaseFrame, gfx::IceGfxFrame>(
             alloc,
             _render_device,
             _render_swapchain,

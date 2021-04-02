@@ -29,7 +29,7 @@ namespace ice
         , _previous_frame{ ice::make_unique_null<ice::IceshardMemoryFrame>() }
         , _current_frame{ ice::make_unique_null<ice::IceshardMemoryFrame>() }
         , _gfx_device{ ice::move(gfx_device) }
-        , _gfx_current_frame{ ice::make_unique_null<ice::gfx::IceGfxFrame>() }
+        , _gfx_current_frame{ ice::make_unique_null<ice::gfx::IceGfxBaseFrame>() }
     {
         _previous_frame = ice::make_unique<ice::IceshardMemoryFrame>(
             _allocator,
@@ -40,7 +40,7 @@ namespace ice
             _frame_data_allocator[1]
         );
 
-        _gfx_current_frame = _gfx_device->next_frame(_allocator);
+        _gfx_current_frame = ice::make_unique<ice::gfx::IceGfxBaseFrame>(_allocator);
     }
 
     IceshardEngineRunner::~IceshardEngineRunner() noexcept

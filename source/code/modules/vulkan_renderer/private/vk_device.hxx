@@ -27,6 +27,14 @@ namespace ice::render::vk
             ice::vec4f clear_color
         ) noexcept override;
 
+        void begin_renderpass(
+            ice::render::CommandBuffer cmds,
+            ice::render::Renderpass renderpass,
+            ice::render::Framebuffer framebuffer,
+            ice::Span<ice::vec4f> clear_values,
+            ice::vec2u extent
+        ) noexcept override;
+
         void next_subpass(
             ice::render::CommandBuffer cmds,
             ice::render::SubPassContents contents
@@ -176,12 +184,20 @@ namespace ice::render::vk
         ) noexcept override;
 
         auto create_image(
-            ice::render::ImageInfo image_info,
+            ice::render::ImageInfo const& image_info,
             ice::Data data
         ) noexcept -> ice::render::Image override;
 
         void destroy_image(
             ice::render::Image image
+        ) noexcept override;
+
+        auto create_sampler(
+            ice::render::SamplerInfo const& sampler_info
+        ) noexcept -> ice::render::Sampler override;
+
+        void destroy_sampler(
+            ice::render::Sampler sampler
         ) noexcept override;
 
         auto create_queue(

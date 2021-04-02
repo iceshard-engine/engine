@@ -97,12 +97,20 @@ namespace ice::render
         ) noexcept = 0;
 
         virtual auto create_image(
-            ice::render::ImageInfo image_info,
+            ice::render::ImageInfo const& image_info,
             ice::Data data
         ) noexcept -> ice::render::Image = 0;
 
         virtual void destroy_image(
             ice::render::Image image
+        ) noexcept = 0;
+
+        virtual auto create_sampler(
+            ice::render::SamplerInfo const& sampler_info
+        ) noexcept -> ice::render::Sampler = 0;
+
+        virtual void destroy_sampler(
+            ice::render::Sampler sampler
         ) noexcept = 0;
 
         virtual auto create_queue(
