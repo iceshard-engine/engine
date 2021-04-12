@@ -501,6 +501,7 @@ TestGame::TestGame(
     , _archetype_alloc{ ice::make_unique_null<ice::ArchetypeBlockAllocator>() }
     , _entity_storage{ ice::make_unique_null<ice::EntityStorage>() }
     , _world{ nullptr }
+    , _terrain{ _allocator, _engine }
     , _stages{ _allocator }
 {
     _archetype_index = ice::create_archetype_index(_allocator, { });
@@ -517,6 +518,13 @@ TestGame::TestGame(
     _world = _engine.world_manager().create_world(
         "default"_sid, _entity_storage.get()
     );
+
+    _world->add_trait("test.terrain"_sid, &_terrain);
+
+    ice::EngineRequest requests[]{
+        ice::create_request(ice::Request_ActivateWorld, _world)
+    };
+    _runner->current_frame().push_requests(requests);
 
     ice::gfx::GfxResourceTracker& res_tracker = _gfx_device.resource_tracker();
 
@@ -831,13 +839,16 @@ TestGame::~TestGame() noexcept
         res_tracker.find_resource("pipeline_layout.pp"_sid, GfxResource::Type::PipelineLayout).value.pipeline_layout
     );
 
-    _engine.world_manager().destroy_world("default"_sid);
 
     _entity_storage = nullptr;
     _archetype_alloc = nullptr;
     _archetype_index = nullptr;
 
     _gfx_pass = nullptr;
+
+    _runner = nullptr;
+
+    _engine.world_manager().destroy_world("default"_sid);
 }
 
 void TestGame::update() noexcept

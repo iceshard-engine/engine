@@ -7,6 +7,8 @@
 #include <ice/world/world.hxx>
 #include <ice/engine.hxx>
 
+#include "systems/terrain.hxx"
+
 class TestGame final
 {
 public:
@@ -32,6 +34,8 @@ private:
     ice::UniquePtr<ice::ArchetypeBlockAllocator> _archetype_alloc;
     ice::UniquePtr<ice::EntityStorage> _entity_storage;
     ice::World* _world;
+
+    ice::trait::Terrain _terrain;
 
     ice::pod::Array<ice::gfx::GfxStage*> _stages;
 };
