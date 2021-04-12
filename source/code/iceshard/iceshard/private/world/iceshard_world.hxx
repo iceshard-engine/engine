@@ -13,15 +13,17 @@ namespace ice
         ice::u32 reserved;
     };
 
-    class IceWorld final : public ice::World
+    class IceshardWorld final : public ice::World
     {
     public:
-        IceWorld(
+        IceshardWorld(
             ice::Allocator& alloc,
             ice::EntityStorage* entity_storage
         ) noexcept;
 
         auto entity_storage() noexcept -> ice::EntityStorage& override;
+
+        void set_state(WorldState state) noexcept;
 
         void add_trait(
             ice::StringID_Arg name,

@@ -11,11 +11,16 @@
 #include <ice/memory/scratch_allocator.hxx>
 #include <ice/unique_ptr.hxx>
 
+#include "world/iceshard_world_tracker.hxx"
+
 #include "gfx/iceshard_gfx_device.hxx"
 #include "gfx/iceshard_gfx_frame.hxx"
 
 namespace ice
 {
+
+    class IceshardWorldManager;
+    class IceshardWorldTracker;
 
     class IceshardMemoryFrame;
 
@@ -24,6 +29,7 @@ namespace ice
     public:
         IceshardEngineRunner(
             ice::Allocator& alloc,
+            ice::IceshardWorldManager& world_manager,
             ice::UniquePtr<ice::gfx::IceGfxDevice> gfx_device
         ) noexcept;
         ~IceshardEngineRunner() noexcept override;
@@ -38,9 +44,9 @@ namespace ice
         auto current_frame() noexcept -> EngineFrame& override;
         void next_frame() noexcept override;
 
-        void update_world(
-            ice::World* world
-        ) noexcept override;
+    protected:
+        void activate_worlds() noexcept;
+        void deactivate_worlds() noexcept;
 
     private:
         ice::Allocator& _allocator;
@@ -52,6 +58,9 @@ namespace ice
 
         ice::UniquePtr<ice::IceshardMemoryFrame> _previous_frame;
         ice::UniquePtr<ice::IceshardMemoryFrame> _current_frame;
+
+        ice::IceshardWorldManager& _world_manager;
+        ice::IceshardWorldTracker _world_tracker;
 
         ice::UniquePtr<ice::gfx::IceGfxDevice> _gfx_device;
         ice::UniquePtr<ice::gfx::IceGfxBaseFrame> _gfx_current_frame;

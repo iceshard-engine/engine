@@ -62,4 +62,10 @@ namespace ice
         return ice::detail::murmur3_hash::cexpr_murmur3_x86_32(value, 0x428639DA).h[0];
     }
 
+    template<typename T>
+    constexpr auto hash_from_ptr(T* ptr) noexcept -> ice::u64
+    {
+        return hash(reinterpret_cast<ice::uptr>(ptr));
+    }
+
 } // namespace ice

@@ -32,7 +32,7 @@ namespace ice
         ice::Allocator& _allocator;
         ice::AssetSystem& _asset_system;
         ice::EntityIndex _entity_index;
-        ice::IceWorldManager _world_manager;
+        ice::IceshardWorldManager _world_manager;
     };
 
 } // namespace ice

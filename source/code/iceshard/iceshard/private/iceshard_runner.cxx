@@ -1,8 +1,11 @@
 #include "iceshard_runner.hxx"
 #include "iceshard_frame.hxx"
+
 #include "world/iceshard_world.hxx"
-#include <ice/world/world.hxx>
+#include "world/iceshard_world_manager.hxx"
+
 #include <ice/assert.hxx>
+
 
 namespace ice
 {
@@ -16,6 +19,7 @@ namespace ice
 
     IceshardEngineRunner::IceshardEngineRunner(
         ice::Allocator& alloc,
+        ice::IceshardWorldManager& world_manager,
         ice::UniquePtr<ice::gfx::IceGfxDevice> gfx_device
     ) noexcept
         : ice::EngineRunner{ }
@@ -28,6 +32,8 @@ namespace ice
         }
         , _previous_frame{ ice::make_unique_null<ice::IceshardMemoryFrame>() }
         , _current_frame{ ice::make_unique_null<ice::IceshardMemoryFrame>() }
+        , _world_manager{ world_manager }
+        , _world_tracker{ _allocator }
         , _gfx_device{ ice::move(gfx_device) }
         , _gfx_current_frame{ ice::make_unique_null<ice::gfx::IceGfxBaseFrame>() }
     {
@@ -41,11 +47,16 @@ namespace ice
         );
 
         _gfx_current_frame = ice::make_unique<ice::gfx::IceGfxBaseFrame>(_allocator);
+
+        activate_worlds();
     }
 
     IceshardEngineRunner::~IceshardEngineRunner() noexcept
     {
+        deactivate_worlds();
+
         _gfx_current_frame = nullptr;
+
         _gfx_device = nullptr;
         _current_frame = nullptr;
         _previous_frame = nullptr;
@@ -86,6 +97,29 @@ namespace ice
         // Move the current frame to the 'previous' slot.
         _previous_frame = ice::move(_current_frame);
 
+        for (ice::EngineRequest const& request : _previous_frame->requests())
+        {
+            switch (request.name.hash_value)
+            {
+            case ice::stringid_hash(Request_ActivateWorld):
+                _world_tracker.activate_world(*this,
+                    static_cast<ice::IceshardWorld*>(
+                        reinterpret_cast<ice::World*>(request.payload)
+                    )
+                );
+                break;
+            case ice::stringid_hash(Request_DeactivateWorld):
+                _world_tracker.deactivate_world(*this,
+                    static_cast<ice::IceshardWorld*>(
+                        reinterpret_cast<ice::World*>(request.payload)
+                    )
+                );
+                break;
+            default:
+                break;
+            }
+        }
+
         _gfx_current_frame->present();
 
         // Reset the frame allocator inner pointers.
@@ -105,13 +139,25 @@ namespace ice
         // We need to update the allocator index
         _next_free_allocator += 1;
         _next_free_allocator %= ice::size(_frame_data_allocator);
+
+        // Update all active worlds
+
     }
 
-    void IceshardEngineRunner::update_world(
-        ice::World* world
-    ) noexcept
+    void IceshardEngineRunner::activate_worlds() noexcept
     {
-        world->update(*this, WorldUpdateKey{ });
+        for (auto const& entry : _world_manager.worlds())
+        {
+            _world_tracker.activate_world(*this, entry.value);
+        }
+    }
+
+    void IceshardEngineRunner::deactivate_worlds() noexcept
+    {
+        for (auto const& entry : _world_manager.worlds())
+        {
+            _world_tracker.deactivate_world(*this, entry.value);
+        }
     }
 
 } // namespace ice

@@ -45,6 +45,7 @@ namespace ice
             return ice::make_unique<EngineRunner, IceshardEngineRunner>(
                 _allocator,
                 _allocator,
+                _world_manager,
                 ice::move(gfx_device)
             );
         }

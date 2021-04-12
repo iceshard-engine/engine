@@ -1,8 +1,10 @@
 #pragma once
-#include <ice/base.hxx>
+#include <ice/span.hxx>
 
 namespace ice
 {
+
+    struct EngineRequest;
 
     class EngineFrame
     {
@@ -10,6 +12,10 @@ namespace ice
         virtual ~EngineFrame() noexcept = default;
 
         virtual auto memory_consumption() noexcept -> ice::u32 = 0;
+
+        virtual void push_requests(
+            ice::Span<EngineRequest const> requests
+        ) noexcept = 0;
     };
 
 } // namespace ice

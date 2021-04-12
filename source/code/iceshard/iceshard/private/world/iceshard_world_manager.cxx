@@ -7,7 +7,7 @@ namespace ice
 
 
 
-    IceWorldManager::IceWorldManager(
+    IceshardWorldManager::IceshardWorldManager(
         ice::Allocator& alloc
     ) noexcept
         : _allocator{ alloc }
@@ -15,7 +15,7 @@ namespace ice
     {
     }
 
-    IceWorldManager::~IceWorldManager() noexcept
+    IceshardWorldManager::~IceshardWorldManager() noexcept
     {
         for (auto const& entry : _worlds)
         {
@@ -23,7 +23,7 @@ namespace ice
         }
     }
 
-    auto IceWorldManager::create_world(
+    auto IceshardWorldManager::create_world(
         ice::StringID_Arg name,
         ice::EntityStorage* entity_storage
     ) noexcept -> World*
@@ -35,7 +35,7 @@ namespace ice
             ice::stringid_hint(name)
         );
 
-        IceWorld* const world = _allocator.make<IceWorld>(_allocator, entity_storage);
+        IceshardWorld* const world = _allocator.make<IceshardWorld>(_allocator, entity_storage);
         ice::pod::hash::set(
             _worlds,
             name_hash,
@@ -44,7 +44,7 @@ namespace ice
         return world;
     }
 
-    auto IceWorldManager::find_world(
+    auto IceshardWorldManager::find_world(
         ice::StringID_Arg name
     ) noexcept -> World*
     {
@@ -52,18 +52,23 @@ namespace ice
         return ice::pod::hash::get(_worlds, name_hash, nullptr);
     }
 
-    void IceWorldManager::destroy_world(
+    void IceshardWorldManager::destroy_world(
         ice::StringID_Arg name
     ) noexcept
     {
         ice::u64 const name_hash = ice::hash(name);
-        ice::IceWorld* const world = ice::pod::hash::get(_worlds, name_hash, nullptr);
+        ice::IceshardWorld* const world = ice::pod::hash::get(_worlds, name_hash, nullptr);
 
         if (world != nullptr)
         {
             _allocator.destroy(world);
             ice::pod::hash::remove(_worlds, name_hash);
         }
+    }
+
+    auto IceshardWorldManager::worlds() const noexcept -> ice::pod::Hash<ice::IceshardWorld*> const&
+    {
+        return _worlds;
     }
 
 } // namespace ice

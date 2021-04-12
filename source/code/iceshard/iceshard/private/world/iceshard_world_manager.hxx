@@ -5,13 +5,13 @@
 namespace ice
 {
 
-    class IceWorldManager final : public ice::WorldManager
+    class IceshardWorldManager final : public ice::WorldManager
     {
     public:
-        IceWorldManager(
+        IceshardWorldManager(
             ice::Allocator& alloc
         ) noexcept;
-        ~IceWorldManager() noexcept override;
+        ~IceshardWorldManager() noexcept override;
 
         auto create_world(
             ice::StringID_Arg name,
@@ -26,9 +26,11 @@ namespace ice
             ice::StringID_Arg name
         ) noexcept override;
 
+        auto worlds() const noexcept -> ice::pod::Hash<ice::IceshardWorld*> const&;
+
     private:
         ice::Allocator& _allocator;
-        ice::pod::Hash<ice::IceWorld*> _worlds;
+        ice::pod::Hash<ice::IceshardWorld*> _worlds;
     };
 
 } // namespace ice

@@ -7,7 +7,7 @@
 namespace ice
 {
 
-    IceWorld::IceWorld(
+    IceshardWorld::IceshardWorld(
         ice::Allocator& alloc,
         ice::EntityStorage* entity_storage
     ) noexcept
@@ -17,12 +17,12 @@ namespace ice
     {
     }
 
-    auto IceWorld::entity_storage() noexcept -> ice::EntityStorage&
+    auto IceshardWorld::entity_storage() noexcept -> ice::EntityStorage&
     {
         return *_entity_storage;
     }
 
-	void IceWorld::add_trait(
+	void IceshardWorld::add_trait(
         ice::StringID_Arg name,
         ice::WorldTrait* trait
     ) noexcept
@@ -41,7 +41,7 @@ namespace ice
         );
 	}
 
-    void IceWorld::remove_trait(
+    void IceshardWorld::remove_trait(
         ice::StringID_Arg name
     ) noexcept
     {
@@ -51,7 +51,7 @@ namespace ice
         );
     }
 
-    void IceWorld::update(
+    void IceshardWorld::update(
         ice::EngineRunner& runner,
         WorldUpdateKey
     ) noexcept
@@ -66,7 +66,7 @@ namespace ice
         }
     }
 
-    auto IceWorld::traits() noexcept -> ice::pod::Hash<ice::WorldTrait*>&
+    auto IceshardWorld::traits() noexcept -> ice::pod::Hash<ice::WorldTrait*>&
     {
         return _traits;
     }
