@@ -261,7 +261,7 @@ namespace ice::pod
         template<typename T>
         inline void push_back(ice::pod::Array<T>& arr, ice::Span<T const> items) noexcept
         {
-            uint32_t const required_capacity = arr._capacity + items.size(); // #todo free-function APi
+            uint32_t const required_capacity = arr._size + items.size(); // #todo free-function APi
             if (required_capacity > arr._capacity)
             {
                 ice::pod::array::grow(arr, required_capacity);
