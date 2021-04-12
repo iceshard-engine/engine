@@ -16,6 +16,11 @@ namespace ice::gfx
         , _render_queue{ queue }
         , _queue_pool_index{ pool_index }
     {
+        _render_queue->allocate_buffers(
+            _queue_pool_index,
+            ice::render::CommandBufferType::Primary,
+            ice::Span<ice::render::CommandBuffer>{ &_primary_commands, 1 }
+        );
     }
 
     bool IceGfxQueue::presenting() const noexcept
@@ -36,11 +41,6 @@ namespace ice::gfx
     void IceGfxQueue::prepare() noexcept
     {
         _render_queue->reset_pool(_queue_pool_index);
-        _render_queue->allocate_buffers(
-            _queue_pool_index,
-            ice::render::CommandBufferType::Primary,
-            ice::Span<ice::render::CommandBuffer>{ &_primary_commands, 1 }
-        );
     }
 
     void IceGfxQueue::alloc_command_buffers(
