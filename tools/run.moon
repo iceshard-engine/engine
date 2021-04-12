@@ -49,7 +49,7 @@ class RunCommand extends Command
                     app_path = "start " .. app_path
 
                 --print "#{app_path} #{table.concat step.options, ' '}"
-                os.execute "#{app_path} #{table.concat step.options, ' '}"
+                os.execute "\"#{app_path}\" #{table.concat step.options, ' '}"
 
             return true
 
