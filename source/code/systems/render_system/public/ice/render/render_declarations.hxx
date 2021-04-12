@@ -24,19 +24,19 @@ namespace ice::render
     struct SamplerInfo;
     struct BufferUpdateInfo;
 
-    enum class Framebuffer : ice::uptr;
-    enum class Renderpass : ice::uptr;
-    enum class ResourceSetLayout : ice::uptr;
-    enum class ResourceSet : ice::uptr;
-    enum class PipelineLayout : ice::uptr;
-    enum class Pipeline : ice::uptr;
-    enum class Shader : ice::uptr;
-    enum class Image : ice::uptr;
-    enum class Sampler : ice::uptr;
-    enum class Buffer : ice::uptr;
-    enum class CommandBuffer : ice::uptr;
-    enum class Semaphore : ice::uptr;
-    enum class Fence : ice::uptr;
+    enum class [[nodiscard]] Framebuffer : ice::uptr;
+    enum class [[nodiscard]] Renderpass : ice::uptr;
+    enum class [[nodiscard]] ResourceSetLayout : ice::uptr;
+    enum class [[nodiscard]] ResourceSet : ice::uptr;
+    enum class [[nodiscard]] PipelineLayout : ice::uptr;
+    enum class [[nodiscard]] Pipeline : ice::uptr;
+    enum class [[nodiscard]] Shader : ice::uptr;
+    enum class [[nodiscard]] Image : ice::uptr;
+    enum class [[nodiscard]] Sampler : ice::uptr;
+    enum class [[nodiscard]] Buffer : ice::uptr;
+    enum class [[nodiscard]] CommandBuffer : ice::uptr;
+    enum class [[nodiscard]] Semaphore : ice::uptr;
+    enum class [[nodiscard]] Fence : ice::uptr;
 
     enum class QueueID : ice::u32;
     enum class ImageFormat : ice::u32;
