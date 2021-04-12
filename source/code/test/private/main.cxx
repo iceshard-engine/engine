@@ -1,4 +1,6 @@
 #include <ice/allocator.hxx>
+#include <ice/memory/memory_globals.hxx>
+#include <ice/memory/proxy_allocator.hxx>
 #include <ice/module_register.hxx>
 #include <ice/resource.hxx>
 #include <ice/resource_query.hxx>
@@ -81,6 +83,17 @@ ice::i32 game_main(ice::Allocator& alloc, ice::ResourceSystem& resource_system)
 
     engine = nullptr;
     asset_system = nullptr;
+
+    if constexpr (ice::build::is_release == false)
+    {
+        ice::memory::ProxyAllocator& stats_allocator = static_cast<ice::memory::ProxyAllocator&>(ice::memory::default_allocator());
+
+        ICE_LOG(
+            ice::LogSeverity::Debug, ice::LogTag::Game,
+            "Total allocation requests: {}",
+            stats_allocator.allocation_count()
+        );
+    }
 
     return 0;
 }

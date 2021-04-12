@@ -72,14 +72,6 @@ int main(int, char**)
         app_result = game_main(game_alloc, *resource_system);
     }
 
-    if constexpr (ice::build::is_release == false)
-    {
-        ice::memory::ProxyAllocator& stats_allocator = static_cast<ice::memory::ProxyAllocator&>(main_allocator);
-        // #todo log
-        //fmt::print("Memory stats:\n");
-        //fmt::print("- total allocation count: {}\n", stats_allocator.allocation_count());
-    }
-
     ice::memory::shutdown();
     return app_result;
 }
