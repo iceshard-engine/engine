@@ -284,6 +284,8 @@ namespace ice::render::vk
             return VK_FORMAT_R32G32B32_SFLOAT;
         case ShaderAttribType::Vec4f:
             return VK_FORMAT_R32G32B32A32_SFLOAT;
+        case ShaderAttribType::Vec4f_Unorm8:
+            return VK_FORMAT_R8G8B8A8_UNORM;
         default:
             return VK_FORMAT_MAX_ENUM;
         }
@@ -353,6 +355,10 @@ namespace ice::render::vk
         if (has_flag(flags, ImageUsageFlags::Sampled))
         {
             usage_flags |= VK_IMAGE_USAGE_SAMPLED_BIT;
+        }
+        if (has_flag(flags, ImageUsageFlags::TransferDst))
+        {
+            usage_flags |= VK_IMAGE_USAGE_TRANSFER_DST_BIT;
         }
         if (has_flag(flags, ImageUsageFlags::ColorAttachment))
         {

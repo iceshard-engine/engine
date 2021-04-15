@@ -5,7 +5,9 @@
 #include "vk_buffer.hxx"
 #include "vk_utility.hxx"
 #include "vk_buffer.hxx"
+
 #include <ice/assert.hxx>
+#include <ice/memory/pointer_arithmetic.hxx>
 
 namespace ice::render::vk
 {
@@ -686,7 +688,7 @@ namespace ice::render::vk
 
         VkPipelineColorBlendAttachmentState attachment_state[1];
         attachment_state[0].colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
-        attachment_state[0].blendEnable = VK_FALSE;
+        attachment_state[0].blendEnable = VK_TRUE;
         attachment_state[0].alphaBlendOp = VK_BLEND_OP_ADD;
         attachment_state[0].colorBlendOp = VK_BLEND_OP_ADD;
         attachment_state[0].srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
@@ -862,7 +864,7 @@ namespace ice::render::vk
             );
 
             ice::memcpy(
-                target.location,
+                ice::memory::ptr_add(target.location, update_info.offset),
                 update_info.data.location,
                 update_info.data.size
             );
@@ -1241,7 +1243,7 @@ namespace ice::render::vk
         ice::render::CommandBuffer cmds,
         ice::render::PipelineLayout pipeline_layout,
         ice::render::ResourceSet resource_set,
-        ice::u32 bind_point
+        ice::u32 first_set
     ) noexcept
     {
         VkDescriptorSet descriptor_set = native_handle(resource_set);
@@ -1250,7 +1252,7 @@ namespace ice::render::vk
             native_handle(cmds),
             VK_PIPELINE_BIND_POINT_GRAPHICS,
             native_handle(pipeline_layout),
-            bind_point, 1,
+            first_set, 1,
             &descriptor_set,
             0, nullptr
         );
@@ -1333,6 +1335,25 @@ namespace ice::render::vk
         );
     }
 
+    void VulkanRenderCommands::draw_indexed(
+        ice::render::CommandBuffer cmds,
+        ice::u32 index_count,
+        ice::u32 instance_count,
+        ice::u32 index_offset,
+        ice::u32 vertex_offset,
+        ice::u32 instance_offset
+    ) noexcept
+    {
+        vkCmdDrawIndexed(
+            native_handle(cmds),
+            index_count,
+            instance_count,
+            index_offset,
+            vertex_offset,
+            instance_offset
+        );
+    }
+
     void VulkanRenderCommands::next_subpass(
         ice::render::CommandBuffer cmds,
         ice::render::SubPassContents contents
@@ -1361,6 +1382,99 @@ namespace ice::render::vk
     {
         vkEndCommandBuffer(
             native_handle(cmds)
+        );
+    }
+
+    void VulkanRenderCommands::update_texture(
+        ice::render::CommandBuffer cmds,
+        ice::render::Image image,
+        ice::render::Buffer image_contents,
+        ice::vec2u extents
+    ) noexcept
+    {
+        VulkanImage* const image_ptr = reinterpret_cast<VulkanImage*>(static_cast<ice::uptr>(image));
+
+        auto native_cb = native_handle(cmds);
+        auto buffer_handle = native_handle(image_contents);
+
+        VkImageMemoryBarrier barrier = {};
+        barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+        barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+        barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        barrier.image = image_ptr->vk_image;
+        barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        barrier.subresourceRange.baseMipLevel = 0;
+        barrier.subresourceRange.levelCount = 1;
+        barrier.subresourceRange.baseArrayLayer = 0;
+        barrier.subresourceRange.layerCount = 1;
+        barrier.srcAccessMask = 0; // TODO
+        barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT; // TODO
+
+        vkCmdPipelineBarrier(
+            native_cb,
+            VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
+            0,
+            0, nullptr,
+            0, nullptr,
+            1, &barrier
+        );
+
+        VkBufferImageCopy region = {};
+        region.bufferOffset = 0;
+        region.bufferRowLength = 0;
+        region.bufferImageHeight = 0;
+
+        region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        region.imageSubresource.mipLevel = 0;
+        region.imageSubresource.baseArrayLayer = 0;
+        region.imageSubresource.layerCount = 1;
+
+        region.imageOffset = { 0, 0, 0 };
+        region.imageExtent.width = extents.x;
+        region.imageExtent.height = extents.y;
+        region.imageExtent.depth = 1;
+        vkCmdCopyBufferToImage(
+            native_cb,
+            buffer_handle,
+            image_ptr->vk_image,
+            VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+            1,
+            &region
+        );
+
+
+        barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+        barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+        barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+        vkCmdPipelineBarrier(
+            native_cb,
+            VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+            0,
+            0, nullptr,
+            0, nullptr,
+            1, &barrier
+        );
+    }
+
+    void VulkanRenderCommands::push_constant(
+        ice::render::CommandBuffer cmds,
+        ice::render::PipelineLayout pipeline,
+        ice::render::ShaderStageFlags shader_stages,
+        ice::Data data,
+        ice::u32 offset
+    ) noexcept
+    {
+        vkCmdPushConstants(
+            native_handle(cmds),
+            native_handle(pipeline),
+            native_enum_flags(shader_stages),
+            offset,
+            data.size,
+            data.location
         );
     }
 

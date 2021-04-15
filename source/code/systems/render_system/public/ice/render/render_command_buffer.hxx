@@ -1,5 +1,6 @@
 #pragma once
 #include <ice/span.hxx>
+#include <ice/data.hxx>
 #include <ice/render/render_declarations.hxx>
 
 namespace ice::render
@@ -69,7 +70,7 @@ namespace ice::render
             ice::render::CommandBuffer cmds,
             ice::render::PipelineLayout pipeline_layout,
             ice::render::ResourceSet resource_set,
-            ice::u32 bind_point
+            ice::u32 first_set
         ) noexcept = 0;
 
         virtual void bind_index_buffer(
@@ -89,12 +90,36 @@ namespace ice::render
             ice::u32 instance_count
         ) noexcept = 0;
 
+        virtual void draw_indexed(
+            ice::render::CommandBuffer cmds,
+            ice::u32 vertex_count,
+            ice::u32 instance_count,
+            ice::u32 index_offset,
+            ice::u32 vertex_offset,
+            ice::u32 instance_offset
+        ) noexcept = 0;
+
         virtual void end_renderpass(
             ice::render::CommandBuffer cmds
         ) noexcept = 0;
 
         virtual void end(
             ice::render::CommandBuffer cmds
+        ) noexcept = 0;
+
+        virtual void update_texture(
+            ice::render::CommandBuffer cmds,
+            ice::render::Image image,
+            ice::render::Buffer image_contents,
+            ice::vec2u extents
+        ) noexcept = 0;
+
+        virtual void push_constant(
+            ice::render::CommandBuffer cmds,
+            ice::render::PipelineLayout pipeline,
+            ice::render::ShaderStageFlags shader_stages,
+            ice::Data data,
+            ice::u32 offset
         ) noexcept = 0;
 
     protected:
