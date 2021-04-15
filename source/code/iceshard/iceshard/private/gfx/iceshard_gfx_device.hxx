@@ -1,5 +1,6 @@
 #pragma once
 #include <ice/gfx/gfx_device.hxx>
+
 #include <ice/render/render_device.hxx>
 #include <ice/render/render_driver.hxx>
 #include <ice/unique_ptr.hxx>
@@ -8,6 +9,8 @@
 
 namespace ice::gfx
 {
+
+    class IceGfxPass;
 
     class IceGfxBaseFrame;
 
@@ -42,7 +45,7 @@ namespace ice::gfx
 
         ice::render::RenderSwapchain* _render_swapchain;
 
-        ice::pod::Array<ice::gfx::IceGfxQueueGroup*> _graphics_passes;
+        ice::pod::Array<ice::gfx::IceGfxQueueGroup*> _graphics_queues;
         ice::gfx::IceGfxResourceTracker _resource_tracker;
     };
 

@@ -51,16 +51,26 @@ namespace ice::gfx
         _render_queue->allocate_buffers(_queue_pool_index, type, buffers);
     }
 
-    void IceGfxQueue::execute_pass(ice::gfx::GfxPass* gfx_pass) noexcept
+    void IceGfxQueue::submit_command_buffers(
+        ice::Span<ice::render::CommandBuffer> buffers
+    ) noexcept
+    {
+        _render_queue->submit(buffers, false);
+    }
+
+    void IceGfxQueue::execute_pass(
+        ice::EngineFrame const& frame,
+        ice::gfx::GfxPass* gfx_pass
+    ) noexcept
     {
         ice::gfx::IceGfxPass* const ice_pass = static_cast<ice::gfx::IceGfxPass*>(gfx_pass);
         if (ice_pass->has_work())
         {
-            ice_pass->record_commands(_primary_commands, _render_commands);
+            ice_pass->record_commands(frame, _primary_commands, _render_commands);
         }
 
         _render_queue->submit(
-            ice::Span<ice::render::CommandBuffer>{ &_primary_commands, 1 }
+            ice::Span<ice::render::CommandBuffer>{ &_primary_commands, 1 }, true
         );
     }
 

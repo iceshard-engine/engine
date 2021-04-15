@@ -5,25 +5,25 @@
 namespace ice::gfx
 {
 
+    class GfxResourceTracker;
+
+    template<typename T>
+    inline auto track_resource(
+        ice::gfx::GfxResourceTracker& tracker,
+        ice::StringID_Arg name,
+        T resource_handle
+    ) noexcept;
+
+    template<typename T>
+    inline auto find_resource(
+        ice::gfx::GfxResourceTracker& tracker,
+        ice::StringID_Arg name
+    ) noexcept -> T;
+
     class GfxResourceTracker
     {
     public:
         virtual ~GfxResourceTracker() noexcept = default;
-
-        inline void track_resource(
-            ice::StringID_Arg name,
-            ice::render::Renderpass renderpass
-        ) noexcept;
-
-        inline void track_resource(
-            ice::StringID_Arg name,
-            ice::render::Framebuffer framebuffer
-        ) noexcept;
-
-        inline void track_resource(
-            ice::StringID_Arg name,
-            ice::render::Image image
-        ) noexcept;
 
         virtual void track_resource(
             ice::StringID_Arg name,
@@ -36,46 +36,101 @@ namespace ice::gfx
         ) noexcept -> ice::gfx::GfxResource = 0;
     };
 
-    inline void GfxResourceTracker::track_resource(
+    namespace detail
+    {
+
+        template<typename T>
+        static constexpr GfxResource::Type Constant_GfxResourceType = GfxResource::Type::Invalid;
+
+        template<>
+        static constexpr GfxResource::Type Constant_GfxResourceType<ice::render::Framebuffer> = GfxResource::Type::Framebuffer;
+
+        template<>
+        static constexpr GfxResource::Type Constant_GfxResourceType<ice::render::Renderpass> = GfxResource::Type::Renderpass;
+
+        template<>
+        static constexpr GfxResource::Type Constant_GfxResourceType<ice::render::ResourceSetLayout> = GfxResource::Type::ResourceSetLayout;
+
+        template<>
+        static constexpr GfxResource::Type Constant_GfxResourceType<ice::render::PipelineLayout> = GfxResource::Type::PipelineLayout;
+
+        template<>
+        static constexpr GfxResource::Type Constant_GfxResourceType<ice::render::Image> = GfxResource::Type::Image;
+
+        template<typename T>
+        auto constexpr MemberPtr_GfxResourceValue() noexcept
+        {
+            return nullptr;
+        }
+
+        template<>
+        auto constexpr MemberPtr_GfxResourceValue<ice::render::Framebuffer>() noexcept
+        {
+            return &GfxResource::Value::framebuffer;
+        }
+
+        template<>
+        auto constexpr MemberPtr_GfxResourceValue<ice::render::Renderpass>() noexcept
+        {
+            return &GfxResource::Value::renderpass;
+        }
+
+        template<>
+        auto constexpr MemberPtr_GfxResourceValue<ice::render::ResourceSetLayout>() noexcept
+        {
+            return &GfxResource::Value::resourceset_layout;
+        }
+
+        template<>
+        auto constexpr MemberPtr_GfxResourceValue<ice::render::PipelineLayout>() noexcept
+        {
+            return &GfxResource::Value::pipeline_layout;
+        }
+
+        template<>
+        auto constexpr MemberPtr_GfxResourceValue<ice::render::Image>() noexcept
+        {
+            return &GfxResource::Value::image;
+        }
+
+    } // namespace detail
+
+    template<typename T>
+    inline auto track_resource(
+        ice::gfx::GfxResourceTracker& tracker,
         ice::StringID_Arg name,
-        ice::render::Renderpass renderpass
+        T resource_handle
     ) noexcept
     {
-        this->track_resource(
-            name,
-            ice::gfx::GfxResource{
-                .type = GfxResource::Type::Renderpass,
-                .value{.renderpass = renderpass}
-            }
+        static_assert(
+            detail::Constant_GfxResourceType<T> != GfxResource::Type::Invalid,
+            "Trying to track unknown resource handle type!"
         );
+
+        if constexpr (detail::Constant_GfxResourceType<T> != GfxResource::Type::Invalid)
+        {
+            GfxResource resource{ .type = detail::Constant_GfxResourceType<T> };
+            (resource.value.*detail::MemberPtr_GfxResourceValue<T>()) = resource_handle;
+            tracker.track_resource(name, resource);
+        }
     }
 
-    inline void GfxResourceTracker::track_resource(
-        ice::StringID_Arg name,
-        ice::render::Framebuffer framebuffer
-    ) noexcept
+    template<typename T>
+    inline auto find_resource(
+        ice::gfx::GfxResourceTracker& tracker,
+        ice::StringID_Arg name
+    ) noexcept -> T
     {
-        this->track_resource(
-            name,
-            ice::gfx::GfxResource{
-                .type = GfxResource::Type::Framebuffer,
-                .value{.framebuffer = framebuffer}
-            }
+        static_assert(
+            detail::Constant_GfxResourceType<T> != GfxResource::Type::Invalid,
+            "Trying to find resource with unknown handle type!"
         );
-    }
 
-    inline void GfxResourceTracker::track_resource(
-        ice::StringID_Arg name,
-        ice::render::Image image
-    ) noexcept
-    {
-        this->track_resource(
-            name,
-            ice::gfx::GfxResource{
-                .type = GfxResource::Type::Image,
-                .value{.image = image}
-            }
-        );
+        if constexpr (detail::Constant_GfxResourceType<T> != GfxResource::Type::Invalid)
+        {
+            GfxResource resource = tracker.find_resource(name, detail::Constant_GfxResourceType<T>);
+            return (resource.value.*detail::MemberPtr_GfxResourceValue<T>());
+        }
     }
 
 } // namespace ice::gfx
