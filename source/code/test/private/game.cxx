@@ -9,6 +9,7 @@
 #include <ice/gfx/gfx_queue.hxx>
 #include <ice/gfx/gfx_stage.hxx>
 #include <ice/gfx/gfx_resource_tracker.hxx>
+#include <ice/gfx/gfx_subpass.hxx>
 #include <ice/world/world_manager.hxx>
 #include <ice/engine_runner.hxx>
 #include <ice/engine_frame.hxx>
@@ -31,7 +32,30 @@ struct ViewProjectionClip
     ice::mat4x4 clip;
 };
 
-class ClearStage final : ice::gfx::GfxStage
+class NamedStage : public ice::gfx::GfxStage
+{
+public:
+    NamedStage(ice::StringID_Arg name, ice::Span<ice::StringID const> dependencies = { }) noexcept
+        : _name{ name }
+        , _dependencies{ dependencies }
+    { }
+
+    auto name() const noexcept -> ice::StringID
+    {
+        return _name;
+    }
+
+    auto dependencies() const noexcept -> ice::Span<ice::StringID const>
+    {
+        return _dependencies;
+    }
+
+private:
+    ice::StringID _name;
+    ice::Span<ice::StringID const> _dependencies;
+};
+
+class ClearStage final : NamedStage
 {
 public:
     ClearStage(
@@ -40,34 +64,78 @@ public:
         ice::render::RenderSwapchain const& swapchain,
         ice::render::RenderDevice& render_device
     ) noexcept
-        : _render_device{ render_device }
+        : NamedStage{ "test.stage.clear"_sid }
         , _resource_tracker{ res_tracker }
         , _render_swapchain{ swapchain }
         , _extent{ swapchain.extent() }
     {
+    }
+
+    ~ClearStage() noexcept = default;
+
+    void record_commands(
+        ice::EngineFrame const& frame,
+        ice::render::CommandBuffer cmd_buffer,
+        ice::render::RenderCommands& cmds
+    ) noexcept override
+    {
+        using ice::gfx::GfxResource;
+        static ice::vec4f const clear_color{ 0.2f };
+
+        ice::u32 const framebuffer_idx = _render_swapchain.current_image_index();
+
+        ice::StringID constexpr framebuffers[]{
+            "ice.gfx.framebuffer[0]"_sid,
+            "ice.gfx.framebuffer[1]"_sid
+        };
+
+        ice::vec4f clear_values[]{
+            ice::vec4f{ 0.2f },
+            ice::vec4f{ 0.2f },
+            ice::vec4f{ 1.0f, 0.0f, 0.0f, 0.0f }
+        };
+
+        cmds.begin(cmd_buffer);
+        cmds.begin_renderpass(
+            cmd_buffer,
+            ice::gfx::find_resource<ice::render::Renderpass>(_resource_tracker, "renderpass.default"_sid),
+            ice::gfx::find_resource<ice::render::Framebuffer>(_resource_tracker, framebuffers[framebuffer_idx]),
+            clear_values,
+            _extent
+        );
+
+        cmds.next_subpass(cmd_buffer, ice::render::SubPassContents::Inline);
+        cmds.set_viewport(cmd_buffer, ice::vec4u{ 0, 0, _extent.x, _extent.y });
+        cmds.set_scissor(cmd_buffer, ice::vec4u{ 0, 0, _extent.x, _extent.y });
+    }
+
+private:
+    ice::render::RenderSwapchain const& _render_swapchain;
+    ice::vec2u _extent;
+
+    ice::gfx::GfxResourceTracker& _resource_tracker;
+};
+
+
+class DrawStage final : NamedStage
+{
+    static constexpr ice::StringID Constant_Dependencies[]{
+        "test.stage.clear"_sid,
+        "camera.update_view"_sid,
+    };
+
+public:
+    DrawStage(
+        ice::AssetSystem& asset_system,
+        ice::gfx::GfxResourceTracker& res_tracker,
+        ice::render::RenderDevice& render_device
+    ) noexcept
+        : NamedStage{ "test.stage.draw"_sid, Constant_Dependencies }
+        , _render_device{ render_device }
+        , _resource_tracker{ res_tracker }
+    {
         using namespace ice::render;
         using ice::gfx::GfxResource;
-
-        ResourceSetLayout gui_res_lay = _resource_tracker.find_resource(
-            "resourceset_layout.game"_sid, GfxResource::Type::ResourceSetLayout
-        ).value.resourceset_layout;
-
-        PipelineLayout gui_lay = _resource_tracker.find_resource(
-            "pipeline_layout.game"_sid, GfxResource::Type::PipelineLayout
-        ).value.pipeline_layout;
-
-        _render_device.create_resourcesets(
-            ice::Span<ice::render::ResourceSetLayout const>{ &gui_res_lay, 1 },
-            ice::Span<ice::render::ResourceSet>{ &_empty_material, 1 }
-        );
-
-        res_tracker.track_resource(
-            "resource_set.empty_material"_sid,
-            GfxResource{
-                .type = GfxResource::Type::ResourceSet,
-                .value = {.resourceset = _empty_material}
-            }
-        );
 
         ice::render::ShaderInputAttribute attribs[]{
             ShaderInputAttribute{.location = 0, .offset = 0, .type = ShaderAttribType::Vec2f },
@@ -112,8 +180,8 @@ public:
         }
 
         ice::render::PipelineInfo pipeline_info{
-            .layout = gui_lay,
-            .renderpass = res_tracker.find_resource("renderpass.default"_sid, ice::gfx::GfxResource::Type::Renderpass).value.renderpass,
+            .layout = ice::gfx::find_resource<PipelineLayout>(res_tracker, ice::gfx::GfxSubpass_Primitives::ResName_PipelineLayout),
+            .renderpass = ice::gfx::find_resource<Renderpass>(res_tracker, "renderpass.default"_sid),
             .shaders = _shaders,
             .shaders_stages = stages,
             .shader_bindings = shader_bindings,
@@ -122,10 +190,6 @@ public:
 
         _opaque_pipeline = _render_device.create_pipeline(
             pipeline_info
-        );
-
-        _camera_data = _render_device.create_buffer(
-            ice::render::BufferType::Uniform, sizeof(ViewProjectionClip)
         );
 
         _vertex_buffer = _render_device.create_buffer(
@@ -152,135 +216,30 @@ public:
             ice::vec2f{ 0.f, 0.f },
         };
 
-        ViewProjectionClip vpc{
-            .clip = ice::mat4x4{
-                .v {
-                    { 1.0f, 0.0f, 0.0f, 0.0f },
-                    { 0.0f, -1.0f, 0.0f, 0.0f },
-                    { 0.0f, 0.0f, 0.5f, 0.5f },
-                    { 0.0f, 0.0f, 0.0f, 1.0f },
-                }
-            }
-        };
-
         ice::render::BufferUpdateInfo update_info[]{
             BufferUpdateInfo{.buffer = _indice_buffer, .data = ice::data_view(indices, sizeof(indices)) },
             BufferUpdateInfo{.buffer = _vertex_buffer, .data = ice::data_view(vertices, sizeof(vertices)) },
-            BufferUpdateInfo{.buffer = _camera_data, .data = ice::data_view(vpc) }
         };
 
         _render_device.update_buffers(
             update_info
         );
-
-        ice::render::ResourceUpdateInfo resources[1]{
-            ResourceUpdateInfo {
-                .uniform_buffer = {
-                    .buffer = _camera_data,
-                    .offset = 0,
-                    .size = sizeof(ViewProjectionClip)
-                }
-            },
-        };
-
-        ice::render::ResourceSetUpdateInfo camera_update[1]{
-            ResourceSetUpdateInfo{
-                .resource_set = _empty_material,
-                .resource_type = ResourceType::UniformBuffer,
-                .binding_index = 0,
-                .array_element = 0,
-                .resources = { resources + 0, 1 }
-            },
-        };
-
-        _render_device.update_resourceset(
-            camera_update
-        );
     }
 
-    ~ClearStage() noexcept
+    ~DrawStage() noexcept
     {
         _render_device.destroy_buffer(_indice_buffer);
         _render_device.destroy_buffer(_vertex_buffer);
-        _render_device.destroy_buffer(_camera_data);
         _render_device.destroy_pipeline(_opaque_pipeline);
 
         for (ice::u32 idx = 0; idx < _shader_count; ++idx)
         {
             _render_device.destroy_shader(_shaders[idx]);
         }
-        _render_device.destroy_resourcesets(
-            ice::Span<ice::render::ResourceSet const>{ &_empty_material, 1 }
-        );
     }
 
     void record_commands(
-        ice::render::CommandBuffer cmd_buffer,
-        ice::render::RenderCommands& cmds
-    ) noexcept override
-    {
-        using ice::gfx::GfxResource;
-        static ice::vec4f const clear_color{ 0.2f };
-
-        ice::u32 const framebuffer_idx = _render_swapchain.current_image_index();
-
-        ice::StringID constexpr framebuffers[]{
-            "ice.gfx.framebuffer[0]"_sid,
-            "ice.gfx.framebuffer[1]"_sid
-        };
-
-        ice::gfx::GfxResource renderpass = _resource_tracker.find_resource("renderpass.default"_sid, GfxResource::Type::Renderpass);
-        ice::gfx::GfxResource framebuffer = _resource_tracker.find_resource(framebuffers[framebuffer_idx], GfxResource::Type::Framebuffer);
-
-        ice::gfx::GfxResource gui_lay = _resource_tracker.find_resource(
-            "pipeline_layout.game"_sid, GfxResource::Type::PipelineLayout
-        );
-
-        ice::vec4f clear_values[]{
-            ice::vec4f{ 0.2f },
-            ice::vec4f{ 0.2f },
-            ice::vec4f{ 1.0f, 0.0f, 0.0f, 0.0f }
-        };
-
-        cmds.begin(cmd_buffer);
-        cmds.begin_renderpass(
-            cmd_buffer,
-            renderpass.value.renderpass,
-            framebuffer.value.framebuffer,
-            clear_values,
-            _extent
-        );
-
-        cmds.next_subpass(cmd_buffer, ice::render::SubPassContents::Inline);
-        cmds.bind_pipeline(cmd_buffer, _opaque_pipeline);
-        cmds.bind_resource_set(cmd_buffer, gui_lay.value.pipeline_layout, _empty_material, 0);
-        cmds.set_viewport(cmd_buffer, ice::vec4u{ 0, 0, _extent.x, _extent.y });
-        cmds.set_scissor(cmd_buffer, ice::vec4u{ 0, 0, _extent.x, _extent.y });
-        cmds.bind_index_buffer(cmd_buffer, _indice_buffer);
-        cmds.bind_vertex_buffer(cmd_buffer, _vertex_buffer, 0);
-        cmds.draw_indexed(cmd_buffer, 6, 1);
-    }
-
-private:
-    ice::render::RenderDevice& _render_device;
-    ice::render::RenderSwapchain const& _render_swapchain;
-    ice::vec2u _extent;
-
-    ice::gfx::GfxResourceTracker& _resource_tracker;
-
-    ice::u32 _shader_count = 0;
-    ice::render::ResourceSet _empty_material;
-    ice::render::Shader _shaders[20]{ };
-    ice::render::Pipeline _opaque_pipeline;
-    ice::render::Buffer _indice_buffer;
-    ice::render::Buffer _vertex_buffer;
-    ice::render::Buffer _camera_data;
-};
-
-class DrawStage final : ice::gfx::GfxStage
-{
-public:
-    void record_commands(
+        ice::EngineFrame const& frame,
         ice::render::CommandBuffer cmd_buffer,
         ice::render::RenderCommands& cmds
     ) noexcept override
@@ -290,11 +249,30 @@ public:
             ice::vec3f{ 0.5, 0.0, 0.0 },
             ice::vec3f{ 0.0, 0.5, 0.0 },
         };
+
+        cmds.bind_pipeline(cmd_buffer, _opaque_pipeline);
+        cmds.bind_index_buffer(cmd_buffer, _indice_buffer);
+        cmds.bind_vertex_buffer(cmd_buffer, _vertex_buffer, 0);
+        cmds.draw_indexed(cmd_buffer, 6, 1);
     }
+
+private:
+    ice::render::RenderDevice& _render_device;
+    ice::gfx::GfxResourceTracker& _resource_tracker;
+
+    ice::u32 _shader_count = 0;
+    ice::render::Shader _shaders[20]{ };
+    ice::render::Pipeline _opaque_pipeline;
+    ice::render::Buffer _indice_buffer;
+    ice::render::Buffer _vertex_buffer;
 };
 
-class EndStage final : ice::gfx::GfxStage
+class EndStage final : NamedStage
 {
+    static constexpr ice::StringID Constant_Dependencies[]{
+        "test.stage.draw"_sid
+    };
+
 public:
     EndStage(
         ice::AssetSystem& asset_system,
@@ -302,7 +280,8 @@ public:
         ice::render::RenderSwapchain const& swapchain,
         ice::render::RenderDevice& render_device
     ) noexcept
-        : _resource_tracker{ res_tracker }
+        : NamedStage{ "test.stage.end"_sid, Constant_Dependencies }
+        , _resource_tracker{ res_tracker }
         , _render_device{ render_device }
         , _swapchain{ swapchain }
     {
@@ -450,6 +429,7 @@ public:
     }
 
     void record_commands(
+        ice::EngineFrame const& frame,
         ice::render::CommandBuffer cmd_buffer,
         ice::render::RenderCommands& cmds
     ) noexcept override
@@ -460,6 +440,10 @@ public:
         ice::gfx::GfxResource gui_lay = _resource_tracker.find_resource(
             "pipeline_layout.pp"_sid, GfxResource::Type::PipelineLayout
         );
+
+        auto extent = _swapchain.extent();
+        cmds.set_viewport(cmd_buffer, ice::vec4u{ 0, 0, extent.x, extent.y });
+        cmds.set_scissor(cmd_buffer, ice::vec4u{ 0, 0, extent.x, extent.y });
 
         cmds.next_subpass(cmd_buffer, ice::render::SubPassContents::Inline);
         cmds.bind_pipeline(cmd_buffer, _pp_pipeline);
@@ -502,6 +486,8 @@ TestGame::TestGame(
     , _entity_storage{ ice::make_unique_null<ice::EntityStorage>() }
     , _world{ nullptr }
     , _terrain{ _allocator, _engine }
+    , _camera_manager{ _allocator, _engine }
+    , _imgui{ _allocator, _engine, _gfx_device.swapchain() }
     , _stages{ _allocator }
 {
     _archetype_index = ice::create_archetype_index(_allocator, { });
@@ -514,17 +500,6 @@ TestGame::TestGame(
         *_archetype_index,
         *_archetype_alloc
     );
-
-    _world = _engine.world_manager().create_world(
-        "default"_sid, _entity_storage.get()
-    );
-
-    _world->add_trait("test.terrain"_sid, &_terrain);
-
-    ice::EngineRequest requests[]{
-        ice::create_request(ice::Request_ActivateWorld, _world)
-    };
-    _runner->current_frame().push_requests(requests);
 
     ice::gfx::GfxResourceTracker& res_tracker = _gfx_device.resource_tracker();
 
@@ -547,7 +522,7 @@ TestGame::TestGame(
             .final_layout = ImageLayout::Present,
             .type = AttachmentType::SwapchainImage,
             .operations = {
-                AttachmentOperation::Load_DontCare,
+                AttachmentOperation::Load_Clear,
                 AttachmentOperation::Store_Store
             },
         },
@@ -620,7 +595,8 @@ TestGame::TestGame(
     };
 
     Renderpass renderpass = _render_device.create_renderpass(renderpass_info);
-    res_tracker.track_resource(
+    ice::gfx::track_resource(
+        res_tracker,
         "renderpass.default"_sid,
         renderpass
     );
@@ -635,7 +611,8 @@ TestGame::TestGame(
     image_info.height = extent.y;
 
     Image depth_stencil = _render_device.create_image(image_info, { });
-    res_tracker.track_resource("image.depth_stencil"_sid, depth_stencil);
+
+    ice::gfx::track_resource(res_tracker, "image.depth_stencil"_sid, depth_stencil);
 
     image_info.type = ImageType::Image2D;
     image_info.format = swapchain.image_format();
@@ -644,7 +621,7 @@ TestGame::TestGame(
     image_info.height = extent.y;
 
     Image color_attach = _render_device.create_image(image_info, { });
-    res_tracker.track_resource("image.color_attach"_sid, color_attach);
+    ice::gfx::track_resource(res_tracker, "image.color_attach"_sid, color_attach);
 
     Image framebuffer_images[]{
         color_attach,
@@ -673,7 +650,7 @@ TestGame::TestGame(
     );
 
     framebuffer_images[1] = swapchain.image(0);
-    res_tracker.track_resource(
+    ice::gfx::track_resource(res_tracker,
         "ice.gfx.framebuffer[0]"_sid,
         _render_device.create_framebuffer(
             extent,
@@ -683,7 +660,7 @@ TestGame::TestGame(
     );
 
     framebuffer_images[1] = swapchain.image(1);
-    res_tracker.track_resource(
+    ice::gfx::track_resource(res_tracker,
         "ice.gfx.framebuffer[1]"_sid,
         _render_device.create_framebuffer(
             extent,
@@ -716,39 +693,14 @@ TestGame::TestGame(
 
     using ice::gfx::GfxResource;
 
-    ResourceSetLayout game_resource_layoyt = _render_device.create_resourceset_layout({ bindings, 1 });
     ResourceSetLayout pp_resource_layout = _render_device.create_resourceset_layout(bindings);
 
-    res_tracker.track_resource(
-        "resourceset_layout.game"_sid,
-        GfxResource{
-            .type = GfxResource::Type::ResourceSetLayout,
-            .value = {
-                .resourceset_layout = game_resource_layoyt
-            }
-        }
-    );
     res_tracker.track_resource(
         "resourceset_layout.pp"_sid,
         GfxResource{
             .type = GfxResource::Type::ResourceSetLayout,
             .value = {
                 .resourceset_layout = pp_resource_layout
-            }
-        }
-    );
-
-    res_tracker.track_resource(
-        "pipeline_layout.game"_sid,
-        GfxResource{
-            .type = GfxResource::Type::PipelineLayout,
-            .value = {
-                .pipeline_layout = _render_device.create_pipeline_layout(
-                    PipelineLayoutInfo{
-                        .push_constants = { },
-                        .resource_layouts = ice::Span<ice::render::ResourceSetLayout>{ &game_resource_layoyt, 1 }
-                    }
-                )
             }
         }
     );
@@ -768,6 +720,19 @@ TestGame::TestGame(
         }
     );
 
+    _world = _engine.world_manager().create_world(
+        "default"_sid, _entity_storage.get()
+    );
+
+    _world->add_trait("test.terrain"_sid, &_terrain);
+    _world->add_trait("test.cameras"_sid, &_camera_manager);
+    _world->add_trait("test.imgui"_sid, &_imgui);
+
+    ice::EngineRequest requests[]{
+        ice::create_request(ice::Request_ActivateWorld, _world)
+    };
+    _runner->current_frame().push_requests(requests);
+
 
     ice::pod::array::push_back(
         _stages,
@@ -781,7 +746,11 @@ TestGame::TestGame(
 
     ice::pod::array::push_back(
         _stages,
-        _allocator.make<DrawStage>()
+        _allocator.make<DrawStage>(
+            _engine.asset_system(),
+            _gfx_device.resource_tracker(),
+            _render_device
+        )
     );
 
     ice::pod::array::push_back(
@@ -827,13 +796,7 @@ TestGame::~TestGame() noexcept
     );
 
     _render_device.destroy_resourceset_layout(
-        res_tracker.find_resource("resourceset_layout.game"_sid, GfxResource::Type::ResourceSetLayout).value.resourceset_layout
-    );
-    _render_device.destroy_resourceset_layout(
         res_tracker.find_resource("resourceset_layout.pp"_sid, GfxResource::Type::ResourceSetLayout).value.resourceset_layout
-    );
-    _render_device.destroy_pipeline_layout(
-        res_tracker.find_resource("pipeline_layout.game"_sid, GfxResource::Type::PipelineLayout).value.pipeline_layout
     );
     _render_device.destroy_pipeline_layout(
         res_tracker.find_resource("pipeline_layout.pp"_sid, GfxResource::Type::PipelineLayout).value.pipeline_layout
@@ -855,15 +818,44 @@ void TestGame::update() noexcept
 {
     _runner->next_frame();
 
-    ice::EngineFrame& frame = _runner->current_frame();
-    ice::gfx::GfxFrame& gfx_frame = _runner->graphics_frame();
-    ice::gfx::GfxQueue* default_queue = gfx_frame.get_queue("default"_sid);
-    ICE_ASSERT(default_queue != nullptr, "The 'default' graphics pass, does not exist!");
+    _gfx_pass->add_stage(
+        _stages[0]->name(),
+        _stages[0]->dependencies(),
+        _stages[0]
+    );
+    _gfx_pass->add_stage(
+        _stages[1]->name(),
+        _stages[1]->dependencies(),
+        _stages[1]
+    );
 
-    for (ice::gfx::GfxStage* stage : _stages)
-    {
-        _gfx_pass->add_stage(stage);
-    }
+    static ice::StringID deps[]{
+        "test.stage.clear"_sid
+    };
+    static ice::StringID deps2[]{
+        "camera.update_view"_sid,
+    };
 
-    default_queue->execute_pass(_gfx_pass.get());
+    _gfx_pass->add_stage(
+        "camera.update_view"_sid,
+        deps,
+        &_camera_manager
+    );
+
+    _gfx_pass->add_stage(
+        "imgui"_sid,
+        deps2,
+        &_imgui
+    );
+
+    _gfx_pass->add_stage(
+        _stages[2]->name(),
+        _stages[2]->dependencies(),
+        _stages[2]
+    );
+
+    _runner->graphics_frame().enqueue_pass(
+        "default"_sid,
+        _gfx_pass.get()
+    );
 }

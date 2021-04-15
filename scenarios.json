@@ -40,6 +40,16 @@
                 "options": ["--target-env=vulkan", "-fshader-stage=frag", "-o", "pp-frag.spv", "pp-frag.glsl"]
             },
             {
+                "working_dir": "./source/data/shaders/debug",
+                "executable": "%VULKAN_SDK%/Bin/glslc.exe",
+                "options": ["--target-env=vulkan", "-fshader-stage=vert", "-o", "imgui-vert.spv", "imgui-vert.glsl"]
+            },
+            {
+                "working_dir": "./source/data/shaders/debug",
+                "executable": "%VULKAN_SDK%/Bin/glslc.exe",
+                "options": ["--target-env=vulkan", "-fshader-stage=frag", "-o", "imgui-frag.spv", "imgui-frag.glsl"]
+            },
+            {
                 "working_dir": "./source/data/shaders/terrain",
                 "executable": "%VULKAN_SDK%/Bin/glslc.exe",
                 "options": ["--target-env=vulkan", "-fshader-stage=vert", "-o", "terrain-vert.spv", "terrain-vert.glsl"]

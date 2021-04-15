@@ -5,6 +5,7 @@ Catch2/2.13.2@iceshard/stable
 rapidjson/1.1.0
 Assimp/5.0.1@iceshard/stable
 SDL2/2.0.12@iceshard/stable
+imgui/1.77@iceshard/docking
 
 [build_requires]
 fastbuild-generator/0.2@iceshard/stable

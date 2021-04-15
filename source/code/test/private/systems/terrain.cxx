@@ -69,6 +69,22 @@ namespace ice::trait
         using namespace ice::gfx;
         using namespace ice::render;
 
+        AssetSystem& asset_system = _engine.asset_system();
+        Asset vert_shader = asset_system.request(AssetType::Shader, "/shaders/terrain/terrain-vert"_sid);
+        Asset frag_shader = asset_system.request(AssetType::Shader, "/shaders/terrain/terrain-frag"_sid);
+
+        Data vert_shader_data;
+        Data frag_shader_data;
+
+        {
+            Data temp_data;
+            ice::asset_data(vert_shader, temp_data);
+            vert_shader_data = *reinterpret_cast<Data const*>(temp_data.location);
+
+            ice::asset_data(frag_shader, temp_data);
+            frag_shader_data = *reinterpret_cast<Data const*>(temp_data.location);
+        }
+
         GfxDevice& gfx_device = runner.graphics_device();
         GfxResourceTracker& gfx_resources = gfx_device.resource_tracker();
 
