@@ -60,6 +60,10 @@ namespace ice::input
                 current_data.location = ice::memory::ptr_add(_data.location, _data_offset);
                 current_data.size = current_event.payload.size * current_event.payload.count;
                 _data_offset += current_data.size;
+                if ((_data_offset % 4) != 0)
+                {
+                    _data_offset += (4 - (_data_offset % 4));
+                }
 
                 return { current_event, current_data };
             }
