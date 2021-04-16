@@ -231,6 +231,8 @@ namespace ice
                     .shaders = _shaders,
                     .shaders_stages = shader_stages,
                     .shader_bindings = bindings,
+                    .cull_mode = CullMode::Disabled,
+                    .front_face = FrontFace::CounterClockWise,
                     .subpass_index = 1,
                     .depth_test = false,
                 }

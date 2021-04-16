@@ -21,6 +21,19 @@ namespace ice::render
         FramentShader,
     };
 
+    enum class CullMode : ice::u32
+    {
+        Disabled,
+        BackFace,
+        FrontFace,
+    };
+
+    enum class FrontFace : ice::u32
+    {
+        ClockWise,
+        CounterClockWise,
+    };
+
     struct PipelinePushConstant
     {
         ice::render::ShaderStageFlags shader_stage_flags;
@@ -41,6 +54,9 @@ namespace ice::render
         ice::Span<ice::render::Shader> shaders;
         ice::Span<ice::render::ShaderStageFlags> shaders_stages;
         ice::Span<ice::render::ShaderInputBinding> shader_bindings;
+
+        ice::render::CullMode cull_mode = CullMode::Disabled;
+        ice::render::FrontFace front_face = FrontFace::ClockWise;
 
         ice::u32 subpass_index;
         bool depth_test = true;

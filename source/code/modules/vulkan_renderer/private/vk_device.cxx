@@ -121,7 +121,7 @@ namespace ice::render::vk
         swapchain_info.imageArrayLayers = 1;
         swapchain_info.oldSwapchain = VK_NULL_HANDLE;
         swapchain_info.clipped = false; // Clipped for android only?
-        swapchain_info.presentMode = VK_PRESENT_MODE_FIFO_KHR;
+        swapchain_info.presentMode = VK_PRESENT_MODE_MAILBOX_KHR;
         swapchain_info.imageColorSpace = surface_format.colorSpace;
         swapchain_info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
         swapchain_info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
@@ -674,8 +674,27 @@ namespace ice::render::vk
 
         VkPipelineRasterizationStateCreateInfo rasterization{ VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO };
         rasterization.polygonMode = VK_POLYGON_MODE_FILL;
-        rasterization.cullMode = VK_CULL_MODE_NONE; // VK_CULL_MODE_BACK_BIT // Specific to Default pipeline
-        rasterization.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
+        switch (info.cull_mode)
+        {
+        case CullMode::Disabled:
+            rasterization.cullMode = VK_CULL_MODE_NONE;
+            break;
+        case CullMode::FrontFace:
+            rasterization.cullMode = VK_CULL_MODE_FRONT_BIT;
+            break;
+        case CullMode::BackFace:
+            rasterization.cullMode = VK_CULL_MODE_BACK_BIT;
+            break;
+        }
+        switch (info.front_face)
+        {
+        case FrontFace::ClockWise:
+            rasterization.frontFace = VK_FRONT_FACE_CLOCKWISE;
+            break;
+        case FrontFace::CounterClockWise:
+            rasterization.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
+            break;
+        }
         rasterization.depthClampEnable = VK_FALSE;
         rasterization.rasterizerDiscardEnable = VK_FALSE;
         rasterization.depthBiasEnable = VK_FALSE;
@@ -706,7 +725,7 @@ namespace ice::render::vk
         blend_info.blendConstants[3] = 1.0f;
 
         VkPipelineDepthStencilStateCreateInfo depthstencil{ VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO };
-        depthstencil.depthTestEnable = VK_FALSE;
+        depthstencil.depthTestEnable = info.depth_test ? VK_TRUE : VK_FALSE;
         depthstencil.depthWriteEnable = VK_TRUE;
         depthstencil.depthCompareOp = VK_COMPARE_OP_LESS_OR_EQUAL;
         depthstencil.depthBoundsTestEnable = VK_FALSE;

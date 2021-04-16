@@ -87,6 +87,7 @@ namespace ice::gfx
     void IceGfxStageBatch::clear() noexcept
     {
         ice::pod::array::clear(_entries);
+        ice::pod::array::clear(_dependencies);
     }
 
     IceGfxPass::IceGfxPass(ice::Allocator& alloc) noexcept
