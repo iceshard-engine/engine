@@ -1219,7 +1219,7 @@ namespace ice::render::vk
         viewport.width = viewport_rect.z;
         viewport.height = viewport_rect.w;
         viewport.minDepth = 0.0f;
-        viewport.minDepth = 1.0f;
+        viewport.maxDepth = 1.0f;
 
         vkCmdSetViewport(
             native_handle(cmds),
