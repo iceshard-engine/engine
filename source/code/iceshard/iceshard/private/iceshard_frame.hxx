@@ -20,6 +20,20 @@ namespace ice
             ice::Span<EngineRequest const> requests
         ) noexcept override;
 
+        auto named_data(
+            ice::StringID_Arg name
+        ) noexcept -> void* override;
+
+        auto named_data(
+            ice::StringID_Arg name
+        ) const noexcept -> void const* override;
+
+        auto allocate_named_data(
+            ice::StringID_Arg name,
+            ice::u32 size,
+            ice::u32 alignment
+        ) noexcept -> void* override;
+
         auto requests() const noexcept -> ice::Span<EngineRequest const>;
 
     private:
@@ -31,6 +45,7 @@ namespace ice
         ice::memory::ScratchAllocator _data_allocator;
 
         ice::pod::Array<ice::EngineRequest> _requests;
+        ice::pod::Hash<void*> _named_objects;
     };
 
 } // namespace ice

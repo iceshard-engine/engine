@@ -4,6 +4,8 @@
 #include "world/iceshard_world.hxx"
 #include "world/iceshard_world_manager.hxx"
 
+#include "gfx/iceshard_gfx_pass.hxx"
+
 #include <ice/assert.hxx>
 
 
@@ -46,7 +48,7 @@ namespace ice
             _frame_data_allocator[1]
         );
 
-        _gfx_current_frame = ice::make_unique<ice::gfx::IceGfxBaseFrame>(_allocator);
+        _gfx_current_frame = _gfx_device->next_frame(_allocator);// ice::make_unique<ice::gfx::IceGfxBaseFrame>(_allocator);
 
         activate_worlds();
     }
@@ -97,6 +99,8 @@ namespace ice
         // Move the current frame to the 'previous' slot.
         _previous_frame = ice::move(_current_frame);
 
+        _gfx_current_frame->execute_passes(previous_frame());
+
         for (ice::EngineRequest const& request : _previous_frame->requests())
         {
             switch (request.name.hash_value)
@@ -120,16 +124,12 @@ namespace ice
             }
         }
 
-        _gfx_current_frame->present();
-
         // Reset the frame allocator inner pointers.
         [[maybe_unused]]
         bool const discarded_memory = _frame_data_allocator[_next_free_allocator].reset_and_discard();
         ICE_ASSERT(discarded_memory == false, "Memory was discarded during frame allocator reset!");
 
         ice::clock::update(_clock);
-
-        _gfx_current_frame = _gfx_device->next_frame(_allocator);
 
         _current_frame = ice::make_unique<IceshardMemoryFrame>(
             _allocator,
@@ -141,7 +141,10 @@ namespace ice
         _next_free_allocator %= ice::size(_frame_data_allocator);
 
         // Update all active worlds
+        _world_tracker.update_active_worlds(*this);
 
+        _gfx_current_frame->present();
+        _gfx_current_frame = _gfx_device->next_frame(_allocator);
     }
 
     void IceshardEngineRunner::activate_worlds() noexcept

@@ -71,6 +71,7 @@ void TestGameApp::handle_inputs(
     ice::input::DeviceQueue const& device_events
 ) noexcept
 {
+
 }
 
 void TestGameApp::update(

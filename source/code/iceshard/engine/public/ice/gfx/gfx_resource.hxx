@@ -1,4 +1,5 @@
 #pragma once
+#include <ice/stringid.hxx>
 #include <ice/render/render_declarations.hxx>
 
 namespace ice::gfx
@@ -23,7 +24,7 @@ namespace ice::gfx
 
         Type type;
 
-        union
+        union Value
         {
             ice::render::Framebuffer framebuffer;
             ice::render::Renderpass renderpass;

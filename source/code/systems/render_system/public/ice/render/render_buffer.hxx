@@ -21,6 +21,7 @@ namespace ice::render
     {
         ice::render::Buffer buffer;
         ice::Data data;
+        ice::u32 offset;
     };
 
 } // namespace ice::render

@@ -15,5 +15,5 @@ layout (std140, set = 0, binding = 0) uniform Camera
 void main()
 {
     out_uv = in_uv;
-    gl_Position = cam.clip * vec4(in_pos, 0, 1);
+    gl_Position =  cam.clip * cam.projection * cam.view * vec4(in_pos, 0, 1);
 }

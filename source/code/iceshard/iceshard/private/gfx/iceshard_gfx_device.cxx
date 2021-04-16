@@ -9,6 +9,7 @@
 #include "iceshard_gfx_queue_group.hxx"
 #include "iceshard_gfx_queue.hxx"
 #include "iceshard_gfx_pass.hxx"
+#include "subpass/iceshard_gfx_subpass.hxx"
 
 namespace ice::gfx
 {
@@ -35,26 +36,32 @@ namespace ice::gfx
         ice::render::RenderDriver* driver,
         ice::render::RenderSurface* render_surface,
         ice::render::RenderDevice* render_device,
-        ice::pod::Array<ice::gfx::IceGfxQueueGroup*> graphics_passes
+        ice::pod::Array<ice::gfx::IceGfxQueueGroup*> graphics_queues
     ) noexcept
         : _allocator{ alloc }
         , _render_driver{ driver }
         , _render_surface{ render_surface }
         , _render_device{ render_device }
         , _render_swapchain{ nullptr }
-        , _graphics_passes{ ice::move(graphics_passes) }
+        , _graphics_queues{ ice::move(graphics_queues) }
         , _resource_tracker{ _allocator }
     {
         _render_swapchain = _render_device->create_swapchain(_render_surface);
+
+        create_subpass_resources_primitives(*_render_device, _resource_tracker);
+        create_subpass_resources_imgui(*_render_device, _resource_tracker);
     }
 
     IceGfxDevice::~IceGfxDevice() noexcept
     {
+        destroy_subpass_resources_imgui(*_render_device, _resource_tracker);
+        destroy_subpass_resources_primitives(*_render_device, _resource_tracker);
+
         _render_device->destroy_swapchain(_render_swapchain);
 
         bool first = true;
         ice::pod::Array<ice::render::RenderQueue*> queues{ _allocator };
-        for (ice::gfx::IceGfxQueueGroup* group : _graphics_passes)
+        for (ice::gfx::IceGfxQueueGroup* group : _graphics_queues)
         {
             if (first)
             {
@@ -98,9 +105,10 @@ namespace ice::gfx
 
         return ice::make_unique<gfx::IceGfxBaseFrame, gfx::IceGfxFrame>(
             alloc,
+            alloc,
             _render_device,
             _render_swapchain,
-            _graphics_passes[framebuffer_index]
+            _graphics_queues[framebuffer_index]
         );
     }
 

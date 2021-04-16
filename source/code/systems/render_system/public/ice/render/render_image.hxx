@@ -31,6 +31,7 @@ namespace ice::render
     {
         None = 0x0,
         Sampled = 0x0000'0001,
+        TransferDst = 0x0000'0002,
         ColorAttachment = 0x0001'0000,
         InputAttachment = 0x0002'0000,
         DepthStencilAttachment = 0x0004'0000,

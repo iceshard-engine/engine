@@ -25,7 +25,7 @@
         ]
 
         .Modules = {
-            // 'imgui'
+            'imgui'
             // 'SDL2'
             'Assimp'
         }

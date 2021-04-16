@@ -8,6 +8,10 @@
 #include <ice/engine.hxx>
 
 #include "systems/terrain.hxx"
+#include "systems/camera.hxx"
+#include "systems/imgui.hxx"
+
+class NamedStage;
 
 class TestGame final
 {
@@ -36,7 +40,9 @@ private:
     ice::World* _world;
 
     ice::trait::Terrain _terrain;
+    ice::trait::CameraManager _camera_manager;
+    ice::Ice_ImGui _imgui;
 
-    ice::pod::Array<ice::gfx::GfxStage*> _stages;
+    ice::pod::Array<NamedStage*> _stages;
 };
 

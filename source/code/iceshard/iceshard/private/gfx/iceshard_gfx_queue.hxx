@@ -1,6 +1,7 @@
 #pragma once
 #include <ice/allocator.hxx>
 #include <ice/pod/array.hxx>
+#include <ice/engine_frame.hxx>
 #include <ice/render/render_queue.hxx>
 #include <ice/gfx/gfx_queue.hxx>
 
@@ -28,11 +29,16 @@ namespace ice::gfx
         void alloc_command_buffers(
             ice::render::CommandBufferType type,
             ice::Span<ice::render::CommandBuffer> buffers
-        ) noexcept;
+        ) noexcept override;
+
+        void submit_command_buffers(
+            ice::Span<ice::render::CommandBuffer> buffers
+        ) noexcept override;
 
         void execute_pass(
+            ice::EngineFrame const& frame,
             ice::gfx::GfxPass* gfx_pass
-        ) noexcept override;
+        ) noexcept;
 
     private:
         ice::render::RenderCommands& _render_commands;
