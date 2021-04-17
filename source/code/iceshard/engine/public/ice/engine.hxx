@@ -1,5 +1,6 @@
 #pragma once
 #include <ice/unique_ptr.hxx>
+#include <ice/input/input_types.hxx>
 #include <ice/gfx/gfx_types.hxx>
 
 namespace ice
@@ -19,6 +20,7 @@ namespace ice
         virtual ~Engine() noexcept = default;
 
         virtual auto create_runner(
+            ice::UniquePtr<ice::input::InputTracker> input_tracker,
             ice::gfx::GfxDeviceCreateInfo const& gfx_create_info
         ) noexcept -> ice::UniquePtr<EngineRunner> = 0;
 

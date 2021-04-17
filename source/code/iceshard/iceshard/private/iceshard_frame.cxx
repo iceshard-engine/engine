@@ -12,11 +12,11 @@ namespace ice
         static constexpr ice::u32 KiB = 1024;
         static constexpr ice::u32 MiB = 1024 * KiB;
 
-        static constexpr ice::u32 InputsAllocatorCapacity = 4 * MiB;
+        static constexpr ice::u32 InputsAllocatorCapacity = 1 * MiB;
         static constexpr ice::u32 RequestAllocatorCapacity = 1 * MiB;
-        static constexpr ice::u32 MessageAllocatorCapacity = 18 * MiB;
+        static constexpr ice::u32 MessageAllocatorCapacity = 20 * MiB;
         static constexpr ice::u32 StorageAllocatorCapacity = 1 * MiB;
-        static constexpr ice::u32 DataAllocatorCapacity = 204 * MiB;
+        static constexpr ice::u32 DataAllocatorCapacity = 206 * MiB;
 
         static ice::u32 global_frame_counter = 0;
 
@@ -32,11 +32,13 @@ namespace ice
         , _message_allocator{ _allocator, detail::MessageAllocatorCapacity }
         , _storage_allocator{ _allocator, detail::StorageAllocatorCapacity }
         , _data_allocator{ _allocator, detail::DataAllocatorCapacity }
+        , _input_events{ _allocator }
         , _requests{ _request_allocator }
         , _named_objects{ _storage_allocator }
     {
         detail::global_frame_counter += 1;
 
+        ice::pod::array::reserve(_input_events, (detail::InputsAllocatorCapacity / sizeof(ice::input::InputEvent)) - 10);
         ice::pod::array::reserve(_requests, (detail::RequestAllocatorCapacity / sizeof(ice::EngineRequest)) - 10);
         ice::pod::hash::reserve(_named_objects, (detail::StorageAllocatorCapacity / (sizeof(ice::pod::Hash<ice::uptr>::Entry) + sizeof(ice::u32))) - 10);
     }
@@ -57,6 +59,16 @@ namespace ice
             + _message_allocator.total_allocated()
             + _storage_allocator.total_allocated()
             + _data_allocator.total_allocated();
+    }
+
+    auto IceshardMemoryFrame::input_events() noexcept -> ice::pod::Array<ice::input::InputEvent>&
+    {
+        return _input_events;
+    }
+
+    auto IceshardMemoryFrame::input_events() const noexcept -> ice::Span<ice::input::InputEvent const>
+    {
+        return _input_events;
     }
 
     void IceshardMemoryFrame::push_requests(

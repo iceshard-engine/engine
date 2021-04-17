@@ -1,5 +1,7 @@
 #include "iceshard_engine.hxx"
 
+#include <ice/input/input_tracker.hxx>
+
 #include <ice/engine_runner.hxx>
 #include <ice/engine_frame.hxx>
 
@@ -32,6 +34,7 @@ namespace ice
     }
 
     auto IceshardEngine::create_runner(
+        ice::UniquePtr<ice::input::InputTracker> input_tracker,
         ice::gfx::GfxDeviceCreateInfo const& gfx_create_info
     ) noexcept -> ice::UniquePtr<EngineRunner>
     {
@@ -46,6 +49,7 @@ namespace ice
                 _allocator,
                 _allocator,
                 _world_manager,
+                ice::move(input_tracker),
                 ice::move(gfx_device)
             );
         }

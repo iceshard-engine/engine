@@ -2,6 +2,7 @@
 #include <ice/engine.hxx>
 #include <ice/asset_system.hxx>
 #include <ice/entity/entity_index.hxx>
+#include <ice/input/input_types.hxx>
 #include "world/iceshard_world_manager.hxx"
 
 namespace ice
@@ -19,6 +20,7 @@ namespace ice
         ~IceshardEngine() noexcept override = default;
 
         auto create_runner(
+            ice::UniquePtr<ice::input::InputTracker> input_tracker,
             ice::gfx::GfxDeviceCreateInfo const& gfx_create_info
         ) noexcept -> ice::UniquePtr<EngineRunner> override;
 

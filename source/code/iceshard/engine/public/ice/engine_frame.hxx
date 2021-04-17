@@ -1,6 +1,7 @@
 #pragma once
 #include <ice/span.hxx>
 #include <ice/stringid.hxx>
+#include <ice/input/input_types.hxx>
 
 namespace ice
 {
@@ -13,6 +14,8 @@ namespace ice
         virtual ~EngineFrame() noexcept = default;
 
         virtual auto memory_consumption() noexcept -> ice::u32 = 0;
+
+        virtual auto input_events() const noexcept -> ice::Span<ice::input::InputEvent const> = 0;
 
         virtual void push_requests(
             ice::Span<EngineRequest const> requests

@@ -86,6 +86,12 @@ namespace ice::input
         , _controls{ alloc }
     {
         ice::pod::array::resize(_controls, keyboard_key_num + keyboard_mod_num + 10);
+        for (detail::ControlState& control : _controls)
+        {
+            control.id = InputID::Invalid;
+            control.tick = 0;
+            control.value.button.value_i32 = 0;
+        }
     }
 
     void KeyboardDevice::on_tick(ice::Timer const& timer) noexcept

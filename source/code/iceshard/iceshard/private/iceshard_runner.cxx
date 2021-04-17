@@ -6,6 +6,7 @@
 
 #include "gfx/iceshard_gfx_pass.hxx"
 
+#include <ice/input/input_tracker.hxx>
 #include <ice/assert.hxx>
 
 
@@ -22,6 +23,7 @@ namespace ice
     IceshardEngineRunner::IceshardEngineRunner(
         ice::Allocator& alloc,
         ice::IceshardWorldManager& world_manager,
+        ice::UniquePtr<ice::input::InputTracker> input_tracker,
         ice::UniquePtr<ice::gfx::IceGfxDevice> gfx_device
     ) noexcept
         : ice::EngineRunner{ }
@@ -36,6 +38,7 @@ namespace ice
         , _current_frame{ ice::make_unique_null<ice::IceshardMemoryFrame>() }
         , _world_manager{ world_manager }
         , _world_tracker{ _allocator }
+        , _input_tracker{ ice::move(input_tracker) }
         , _gfx_device{ ice::move(gfx_device) }
         , _gfx_current_frame{ ice::make_unique_null<ice::gfx::IceGfxBaseFrame>() }
     {
@@ -69,6 +72,18 @@ namespace ice
         return _clock;
     }
 
+    auto IceshardEngineRunner::input_tracker() noexcept -> ice::input::InputTracker&
+    {
+        return *_input_tracker;
+    }
+
+    void IceshardEngineRunner::process_device_queue(
+        ice::input::DeviceQueue const& device_queue
+    ) noexcept
+    {
+        _input_tracker->process_device_queue(device_queue, _current_frame->input_events());
+    }
+
     auto IceshardEngineRunner::graphics_device() noexcept -> ice::gfx::GfxDevice&
     {
         return *_gfx_device;
@@ -96,6 +111,9 @@ namespace ice
 
     void IceshardEngineRunner::next_frame() noexcept
     {
+        // Update all active worlds
+        _world_tracker.update_active_worlds(*this);
+
         // Move the current frame to the 'previous' slot.
         _previous_frame = ice::move(_current_frame);
 
@@ -139,9 +157,6 @@ namespace ice
         // We need to update the allocator index
         _next_free_allocator += 1;
         _next_free_allocator %= ice::size(_frame_data_allocator);
-
-        // Update all active worlds
-        _world_tracker.update_active_worlds(*this);
 
         _gfx_current_frame->present();
         _gfx_current_frame = _gfx_device->next_frame(_allocator);

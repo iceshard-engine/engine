@@ -1,6 +1,8 @@
 #pragma once
 #include <ice/engine_runner.hxx>
 
+#include <ice/input/input_types.hxx>
+
 #include <ice/render/render_driver.hxx>
 #include <ice/render/render_device.hxx>
 #include <ice/render/render_swapchain.hxx>
@@ -30,11 +32,17 @@ namespace ice
         IceshardEngineRunner(
             ice::Allocator& alloc,
             ice::IceshardWorldManager& world_manager,
+            ice::UniquePtr<ice::input::InputTracker> input_tracker,
             ice::UniquePtr<ice::gfx::IceGfxDevice> gfx_device
         ) noexcept;
         ~IceshardEngineRunner() noexcept override;
 
         auto clock() const noexcept -> ice::Clock const& override;
+
+        auto input_tracker() noexcept -> ice::input::InputTracker& override;
+        void process_device_queue(
+            ice::input::DeviceQueue const& device_queue
+        ) noexcept override;
 
         auto graphics_device() noexcept -> ice::gfx::GfxDevice& override;
         auto graphics_frame() noexcept -> ice::gfx::GfxFrame& override;
@@ -61,6 +69,8 @@ namespace ice
 
         ice::IceshardWorldManager& _world_manager;
         ice::IceshardWorldTracker _world_tracker;
+
+        ice::UniquePtr<ice::input::InputTracker> _input_tracker;
 
         ice::UniquePtr<ice::gfx::IceGfxDevice> _gfx_device;
         ice::UniquePtr<ice::gfx::IceGfxBaseFrame> _gfx_current_frame;
