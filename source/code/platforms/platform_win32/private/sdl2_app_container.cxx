@@ -4,7 +4,9 @@
 #include <ice/pod/array.hxx>
 #include <ice/platform_event.hxx>
 #include <ice/input/input_mouse.hxx>
+#include <ice/input/input_keyboard.hxx>
 #include <ice/input/device_queue.hxx>
+#include <ice/log.hxx>
 
 #include <SDL.h>
 
@@ -35,6 +37,132 @@ namespace ice::platform
             }
             return MouseInput::Unknown;
         }
+
+
+        auto map_sdl_key_scancode(SDL_Scancode scancode) noexcept -> ice::input::KeyboardKey
+        {
+            using ice::input::KeyboardKey;
+
+            if (scancode >= SDL_SCANCODE_A && scancode <= SDL_SCANCODE_Z)
+            {
+                return KeyboardKey(static_cast<ice::u32>(KeyboardKey::KeyA) + (scancode - SDL_SCANCODE_A));
+            }
+
+            if (scancode >= SDL_SCANCODE_F1 && scancode <= SDL_SCANCODE_F12)
+            {
+                return KeyboardKey(static_cast<ice::u32>(KeyboardKey::KeyF1) + (scancode - SDL_SCANCODE_F1));
+            }
+
+            if (scancode == SDL_SCANCODE_0)
+            {
+                return KeyboardKey(static_cast<ice::u32>(KeyboardKey::Key0));
+            }
+            else if (scancode >= SDL_SCANCODE_1 && scancode <= SDL_SCANCODE_9)
+            {
+                return KeyboardKey(static_cast<ice::u32>(KeyboardKey::Key1) + (scancode - SDL_SCANCODE_1));
+            }
+
+            switch (scancode)
+            {
+                // Special codes (I)
+            case SDL_SCANCODE_RETURN: return KeyboardKey::Return;
+            case SDL_SCANCODE_ESCAPE: return KeyboardKey::Escape;
+            case SDL_SCANCODE_BACKSPACE: return KeyboardKey::Backspace;
+            case SDL_SCANCODE_TAB: return KeyboardKey::Tab;
+            case SDL_SCANCODE_SPACE: return KeyboardKey::Space;
+            case SDL_SCANCODE_APOSTROPHE: return KeyboardKey::Quote;
+            case SDL_SCANCODE_COMMA: return KeyboardKey::Comma;
+            case SDL_SCANCODE_MINUS: return KeyboardKey::Minus;
+            case SDL_SCANCODE_PERIOD: return KeyboardKey::Period;
+            case SDL_SCANCODE_SLASH: return KeyboardKey::Slash;
+                // Special codes (II)
+            case SDL_SCANCODE_SEMICOLON: return KeyboardKey::SemiColon;
+            case SDL_SCANCODE_EQUALS: return KeyboardKey::Equals;
+            case SDL_SCANCODE_LEFTBRACKET: return KeyboardKey::LeftBracket;
+            case SDL_SCANCODE_BACKSLASH: return KeyboardKey::BackSlash;
+            case SDL_SCANCODE_RIGHTBRACKET: return KeyboardKey::RightBracket;
+            case SDL_SCANCODE_GRAVE: return KeyboardKey::BackQuote;
+                // Special codes (III)
+            case SDL_SCANCODE_DELETE: return KeyboardKey::Delete;
+            case SDL_SCANCODE_CAPSLOCK: return KeyboardKey::CapsLock;
+            default:
+                break;
+            }
+
+            //case SDL_SCANCODE_EXCLAIM: return KeyboardKey::Exclaim;
+            //case SDL_SCANCODE_QUOTEDBL: return KeyboardKey::QuoteDouble;
+            //case SDL_SCANCODE_HASH: return KeyboardKey::Hash;
+            //case SDL_SCANCODE_PERCENT: return KeyboardKey::Percent;
+            //case SDL_SCANCODE_AMPERSAND: return KeyboardKey::Ampersand;
+            //case SDL_SCANCODE_LEFTPAREN: return KeyboardKey::LeftParen;
+            //case SDL_SCANCODE_RIGHTPAREN: return KeyboardKey::RightParen;
+            //case SDL_SCANCODE_ASTERISK: return KeyboardKey::Asteriks;
+            //case SDL_SCANCODE_PLUS: return KeyboardKey::Plus;
+            //case SDL_SCANCODE_COLON: return KeyboardKey::Colon;
+            //case SDL_SCANCODE_LESS: return KeyboardKey::Less;
+            //case SDL_SCANCODE_GREATER: return KeyboardKey::Greater;
+            //case SDL_SCANCODE_QUESTION: return KeyboardKey::Question;
+            //case SDL_SCANCODE_AT: return KeyboardKey::At;
+            //case SDL_SCANCODE_CARET: return KeyboardKey::Caret;
+            //case SDL_SCANCODE_UNDERSCORE: return KeyboardKey::Underscore;
+
+            return KeyboardKey::Unknown;
+        }
+
+        auto map_sdl_mod_scancode(SDL_Scancode scancode) noexcept -> ice::input::KeyboardMod
+        {
+            using ice::input::KeyboardMod;
+
+            if (scancode == SDL_Scancode::SDL_SCANCODE_LCTRL)
+            {
+                return KeyboardMod::CtrlLeft;
+            }
+            if (scancode == SDL_Scancode::SDL_SCANCODE_LSHIFT)
+            {
+                return KeyboardMod::ShiftLeft;
+            }
+            if (scancode == SDL_Scancode::SDL_SCANCODE_LALT)
+            {
+                return KeyboardMod::AltLeft;
+            }
+            if (scancode == SDL_Scancode::SDL_SCANCODE_LGUI)
+            {
+                return KeyboardMod::GuiLeft;
+            }
+
+            if (scancode == SDL_Scancode::SDL_SCANCODE_RCTRL)
+            {
+                return KeyboardMod::CtrlRight;
+            }
+            if (scancode == SDL_Scancode::SDL_SCANCODE_RSHIFT)
+            {
+                return KeyboardMod::ShiftRight;
+            }
+            if (scancode == SDL_Scancode::SDL_SCANCODE_RALT)
+            {
+                return KeyboardMod::AltRight;
+            }
+            if (scancode == SDL_Scancode::SDL_SCANCODE_RGUI)
+            {
+                return KeyboardMod::GuiRight;
+            }
+
+            if (scancode == SDL_Scancode::SDL_SCANCODE_MODE)
+            {
+                return KeyboardMod::Mode;
+            }
+            if (scancode == SDL_Scancode::SDL_SCANCODE_NUMLOCKCLEAR)
+            {
+                return KeyboardMod::NumLock;
+            }
+            if (scancode == SDL_Scancode::SDL_SCANCODE_CAPSLOCK)
+            {
+                return KeyboardMod::CapsLock;
+            }
+
+            return KeyboardMod::None;
+        }
+
 
         void mouse_input_events(
             ice::input::DeviceQueue& input_queue,
@@ -98,7 +226,52 @@ namespace ice::platform
             SDL_Event const& sdl_event
         ) noexcept
         {
+            using namespace ice::input;
+            DeviceHandle const device = make_device_handle(DeviceType::Keyboard, DeviceIndex{ 0 });
 
+            KeyboardKey const key = map_sdl_key_scancode(sdl_event.key.keysym.scancode);
+            if (key != KeyboardKey::Unknown)
+            {
+                if (sdl_event.key.type == SDL_KEYDOWN)
+                {
+                    input_queue.push(
+                        device,
+                        DeviceMessage::KeyboardButtonDown,
+                        key
+                    );
+                }
+                else if (sdl_event.key.type == SDL_KEYUP)
+                {
+                    input_queue.push(
+                        device,
+                        DeviceMessage::KeyboardButtonUp,
+                        key
+                    );
+                }
+            }
+            else
+            {
+                KeyboardMod const mod = map_sdl_mod_scancode(sdl_event.key.keysym.scancode);
+                if (mod != KeyboardMod::None)
+                {
+                    if (sdl_event.key.type == SDL_KEYDOWN)
+                    {
+                        input_queue.push(
+                            device,
+                            DeviceMessage::KeyboardModifierDown,
+                            mod
+                        );
+                    }
+                    else if (sdl_event.key.type == SDL_KEYUP)
+                    {
+                        input_queue.push(
+                            device,
+                            DeviceMessage::KeyboardModifierUp,
+                            mod
+                        );
+                    }
+                }
+            }
         }
 
     } // namespace detail
@@ -129,11 +302,11 @@ namespace ice::platform
         ice::pod::Array<ice::platform::Event> events{ _allocator };
 
         device_events.push(
-            make_device_handle(DeviceType::Mouse, DeviceIndex(0)),
+            make_device_handle(DeviceType::Mouse, DeviceIndex{ 0 }),
             DeviceMessage::DeviceConnected
         );
         device_events.push(
-            make_device_handle(DeviceType::Keyboard, DeviceIndex(0)),
+            make_device_handle(DeviceType::Keyboard, DeviceIndex{ 0 }),
             DeviceMessage::DeviceConnected
         );
 
@@ -181,6 +354,10 @@ namespace ice::platform
                 case SDL_MOUSEWHEEL:
                 case SDL_MOUSEMOTION:
                     detail::mouse_input_events(device_events, current_event);
+                    break;
+                case SDL_KEYDOWN:
+                case SDL_KEYUP:
+                    detail::keyboard_input_events(device_events, current_event);
                     break;
                 }
             }

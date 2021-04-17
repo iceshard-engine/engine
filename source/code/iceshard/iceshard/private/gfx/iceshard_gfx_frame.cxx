@@ -80,6 +80,8 @@ namespace ice::gfx
                 queue->execute_pass(frame, entry.value);
             }
         }
+
+        ice::pod::hash::clear(_enqueued_passes);
     }
 
 } // namespace ice::gfx

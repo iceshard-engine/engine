@@ -129,11 +129,11 @@ namespace ice::trait
         ice::World& world
     ) noexcept
     {
-        static ice::vec4f camera_pos = { -2.f, 0.f, -2.f, 1.f };
+        static ice::vec4f camera_pos = { -5.f, 0.f, -5.f, 1.f };
         ice::vec3f look_at = { 0.f, 0.f, 0.f };
 
         static ice::deg angle = { 0.0f };
-        angle.value += 1.f;
+        angle.value += 0.1f;
 
         //camera_pos.z -= 0.01;
 

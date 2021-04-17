@@ -5,6 +5,7 @@
 #include <ice/render/render_swapchain.hxx>
 #include <ice/render/render_resource.hxx>
 #include <ice/render/render_buffer.hxx>
+#include <ice/gfx/gfx_model.hxx>
 #include <ice/gfx/gfx_device.hxx>
 #include <ice/gfx/gfx_frame.hxx>
 #include <ice/gfx/gfx_queue.hxx>
@@ -139,18 +140,36 @@ public:
         using ice::gfx::GfxResource;
 
         ice::render::ShaderInputAttribute attribs[]{
-            ShaderInputAttribute{.location = 0, .offset = 0, .type = ShaderAttribType::Vec2f },
-            ShaderInputAttribute{.location = 1, .offset = 8, .type = ShaderAttribType::Vec2f },
+            ShaderInputAttribute{.location = 0, .offset = 0, .type = ShaderAttribType::Vec3f },
+            ShaderInputAttribute{.location = 1, .offset = 12, .type = ShaderAttribType::Vec3f },
+            ShaderInputAttribute{.location = 2, .offset = 24, .type = ShaderAttribType::Vec2f },
+            ShaderInputAttribute{.location = 3, .offset = 0, .type = ShaderAttribType::Vec4f },
+            ShaderInputAttribute{.location = 4, .offset = 16, .type = ShaderAttribType::Vec4f },
+            ShaderInputAttribute{.location = 5, .offset = 32, .type = ShaderAttribType::Vec4f },
+            ShaderInputAttribute{.location = 6, .offset = 48, .type = ShaderAttribType::Vec4f },
         };
 
         ice::render::ShaderInputBinding shader_bindings[]{
             ShaderInputBinding{
                 .binding = 0,
-                .stride = 16,
+                .stride = 32,
                 .instanced = 0,
-                .attributes = attribs
+                .attributes = { attribs + 0, 3 }
+            },
+            ShaderInputBinding{
+                .binding = 1,
+                .stride = sizeof(ice::mat4),
+                .instanced = 1,
+                .attributes = { attribs + 3, 4 }
             }
         };
+
+        ice::Asset box_mesh_asset = asset_system.request(ice::AssetType::Mesh, "/mesh/box/dbox"_sid);
+
+        ice::Data box_mesh_data;
+        ice::asset_data(box_mesh_asset, box_mesh_data);
+
+        _model = reinterpret_cast<ice::gfx::Model const*>(box_mesh_data.location);
 
         ice::Asset blue_vert = asset_system.request(ice::AssetType::Shader, "/shaders/color/blue-vert"_sid);
         ice::Asset blue_frag = asset_system.request(ice::AssetType::Shader, "/shaders/color/blue-frag"_sid);
@@ -186,20 +205,43 @@ public:
             .shaders = _shaders,
             .shaders_stages = stages,
             .shader_bindings = shader_bindings,
+            .cull_mode = CullMode::BackFace,
+            .front_face = FrontFace::CounterClockWise,
             .subpass_index = 1,
+            .depth_test = true
         };
 
         _opaque_pipeline = _render_device.create_pipeline(
             pipeline_info
         );
 
-        _vertex_buffer = _render_device.create_buffer(
+        _vertex_buffer[0] = _render_device.create_buffer(
+            ice::render::BufferType::Vertex, sizeof(ice::mat4) * 32 * 32
+        );
+
+        _indice_buffer[0] = _render_device.create_buffer(
+            ice::render::BufferType::Vertex, sizeof(ice::u16) * 1024
+        );
+
+        _vertex_buffer[1] = _render_device.create_buffer(
             ice::render::BufferType::Vertex, sizeof(ice::vec3f) * 256
         );
 
-        _indice_buffer = _render_device.create_buffer(
+        _indice_buffer[1] = _render_device.create_buffer(
             ice::render::BufferType::Index, sizeof(ice::u16) * 1024
         );
+
+        ice::mat4 instances[32 * 32]{};
+
+        for (ice::u32 i = 0; i < 32; ++i)
+        {
+            for (ice::u32 j = 0; j < 32; ++j)
+            {
+                ice::vec3i rand{ (::rand() % 100) - 50, (::rand() % 100) - 50, (::rand() % 100) - 50 };
+
+                instances[i * 32 + j] = ice::translate(ice::vec3f(i, j, i + j) + rand);
+            }
+        }
 
         ice::u16 indices[] = {
             0, 1, 2,
@@ -218,8 +260,10 @@ public:
         };
 
         ice::render::BufferUpdateInfo update_info[]{
-            BufferUpdateInfo{.buffer = _indice_buffer, .data = ice::data_view(indices, sizeof(indices)) },
-            BufferUpdateInfo{.buffer = _vertex_buffer, .data = ice::data_view(vertices, sizeof(vertices)) },
+            BufferUpdateInfo{.buffer = _indice_buffer[0], .data = ice::data_view(indices, sizeof(indices)) },
+            BufferUpdateInfo{.buffer = _indice_buffer[1], .data = ice::data_view(_model->indice_data, _model->indice_data_size) },
+            BufferUpdateInfo{.buffer = _vertex_buffer[0], .data = ice::data_view(instances, sizeof(instances)) },
+            BufferUpdateInfo{.buffer = _vertex_buffer[1], .data = ice::data_view(_model->vertice_data, _model->vertice_data_size) },
         };
 
         _render_device.update_buffers(
@@ -229,8 +273,10 @@ public:
 
     ~DrawStage() noexcept
     {
-        _render_device.destroy_buffer(_indice_buffer);
-        _render_device.destroy_buffer(_vertex_buffer);
+        _render_device.destroy_buffer(_indice_buffer[0]);
+        _render_device.destroy_buffer(_vertex_buffer[0]);
+        _render_device.destroy_buffer(_indice_buffer[1]);
+        _render_device.destroy_buffer(_vertex_buffer[1]);
         _render_device.destroy_pipeline(_opaque_pipeline);
 
         for (ice::u32 idx = 0; idx < _shader_count; ++idx)
@@ -252,20 +298,32 @@ public:
         };
 
         cmds.bind_pipeline(cmd_buffer, _opaque_pipeline);
-        cmds.bind_index_buffer(cmd_buffer, _indice_buffer);
-        cmds.bind_vertex_buffer(cmd_buffer, _vertex_buffer, 0);
-        cmds.draw_indexed(cmd_buffer, 6, 1);
+        //cmds.bind_index_buffer(cmd_buffer, _indice_buffer[0]);
+        //cmds.bind_vertex_buffer(cmd_buffer, _vertex_buffer[0], 0);
+        //cmds.draw_indexed(cmd_buffer, 6, 1);
+        cmds.bind_index_buffer(cmd_buffer, _indice_buffer[1]);
+        cmds.bind_vertex_buffer(cmd_buffer, _vertex_buffer[1], 0);
+        cmds.bind_vertex_buffer(cmd_buffer, _vertex_buffer[0], 1);
+        cmds.draw_indexed(
+            cmd_buffer,
+            _model->mesh_list[0].indice_count, 32 * 32,
+            _model->mesh_list[0].indice_offset,
+            _model->mesh_list[0].vertice_offset,
+            0
+        );
     }
 
 private:
     ice::render::RenderDevice& _render_device;
     ice::gfx::GfxResourceTracker& _resource_tracker;
 
+    ice::gfx::Model const* _model;
+
     ice::u32 _shader_count = 0;
     ice::render::Shader _shaders[20]{ };
     ice::render::Pipeline _opaque_pipeline;
-    ice::render::Buffer _indice_buffer;
-    ice::render::Buffer _vertex_buffer;
+    ice::render::Buffer _indice_buffer[2];
+    ice::render::Buffer _vertex_buffer[2];
 };
 
 class EndStage final : NamedStage
@@ -824,17 +882,9 @@ void TestGame::update() noexcept
         _stages[0]->dependencies(),
         _stages[0]
     );
-    _gfx_pass->add_stage(
-        _stages[1]->name(),
-        _stages[1]->dependencies(),
-        _stages[1]
-    );
 
     static ice::StringID deps[]{
         "test.stage.clear"_sid
-    };
-    static ice::StringID deps2[]{
-        "camera.update_view"_sid,
     };
 
     _gfx_pass->add_stage(
@@ -842,6 +892,15 @@ void TestGame::update() noexcept
         deps,
         &_camera_manager
     );
+
+    _gfx_pass->add_stage(
+        _stages[1]->name(),
+        _stages[1]->dependencies(),
+        _stages[1]
+    );
+    static ice::StringID deps2[]{
+        "camera.update_view"_sid,
+    };
 
     _gfx_pass->add_stage(
         "imgui"_sid,
