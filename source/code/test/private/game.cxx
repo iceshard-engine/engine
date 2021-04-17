@@ -1,4 +1,5 @@
 #include "game.hxx"
+#include <ice/input/input_tracker.hxx>
 #include <ice/render/render_device.hxx>
 #include <ice/render/render_pass.hxx>
 #include <ice/render/render_swapchain.hxx>
@@ -858,4 +859,9 @@ void TestGame::update() noexcept
         "default"_sid,
         _gfx_pass.get()
     );
+}
+
+void TestGame::update_inputs(ice::input::DeviceQueue const& deivce_queue) noexcept
+{
+    _runner->process_device_queue(deivce_queue);
 }

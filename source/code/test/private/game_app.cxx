@@ -2,6 +2,7 @@
 #include <ice/stringid.hxx>
 #include <ice/uri.hxx>
 
+#include <ice/input/input_tracker.hxx>
 #include <ice/gfx/gfx_device.hxx>
 #include <ice/engine.hxx>
 
@@ -52,11 +53,18 @@ TestGameApp::TestGameApp(
         .queue_list = gfx_queue_info
     };
 
+    auto input_tracker = ice::input::create_default_input_tracker(_allocator, _app_clock);
+    input_tracker->register_device_type(ice::input::DeviceType::Mouse, ice::input::get_default_device_factory());
+    input_tracker->register_device_type(ice::input::DeviceType::Keyboard, ice::input::get_default_device_factory());
+
     _game = ice::make_unique<TestGame>(
         _allocator,
         _allocator,
         _engine,
-        _engine.create_runner(gfx_device_info)
+        _engine.create_runner(
+            ice::move(input_tracker),
+            gfx_device_info
+        )
     );
 }
 
@@ -71,7 +79,8 @@ void TestGameApp::handle_inputs(
     ice::input::DeviceQueue const& device_events
 ) noexcept
 {
-
+    ice::clock::update(_app_clock);
+    _game->update_inputs(device_events);
 }
 
 void TestGameApp::update(

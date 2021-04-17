@@ -24,6 +24,7 @@ public:
     ) noexcept override;
 
 private:
+    ice::SystemClock _app_clock;
     ice::Allocator& _allocator;
     ice::Engine& _engine;
     ice::render::RenderDriver& _render_driver;

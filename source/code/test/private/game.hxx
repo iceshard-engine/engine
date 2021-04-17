@@ -25,6 +25,10 @@ public:
 
     void update() noexcept;
 
+    void update_inputs(
+        ice::input::DeviceQueue const& device_events
+    ) noexcept;
+
 private:
     ice::Allocator& _allocator;
     ice::Engine& _engine;

@@ -15,6 +15,8 @@
 #include <ice/render/render_command_buffer.hxx>
 #include <ice/render/render_device.hxx>
 
+#include <ice/log.hxx>
+
 namespace ice::trait
 {
 
@@ -154,6 +156,11 @@ namespace ice::trait
     ) noexcept
     {
         ice::render::RenderDevice& device = runner.graphics_device().device();
+
+        ICE_LOG(
+            ice::LogSeverity::Debug, ice::LogTag::Module,
+            "input events: {}", ice::size(runner.previous_frame().input_events())
+        );
 
         terrain_update_render_cache(*_render_cache, _asset_system, device);
     }

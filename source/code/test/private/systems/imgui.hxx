@@ -20,7 +20,9 @@
 #include <ice/asset.hxx>
 #include <ice/asset_system.hxx>
 
+#include <ice/input/input_mouse.hxx>
 #include <ice/input/input_keyboard.hxx>
+#include <ice/input/input_event.hxx>
 
 #include <ice/world/world_trait.hxx>
 #include <ice/gfx/gfx_stage.hxx>
@@ -236,11 +238,11 @@ namespace ice
                 }
             );
 
-            _indices = device.create_buffer(BufferType::Index, 1024 * 16);
-            _vertices = device.create_buffer(BufferType::Vertex, 1024 * 64);
+            _indices = device.create_buffer(BufferType::Index, 256 * 1024);
+            _vertices = device.create_buffer(BufferType::Vertex, 1 * 1024 * 1024);
             _device = &device;
 
-            ImGui::NewFrame();
+            //ImGui::NewFrame();
         }
 
         void on_deactivate(
@@ -271,6 +273,42 @@ namespace ice
             ice::World& world
         ) noexcept
         {
+            using ice::input::InputEvent;
+            using ice::input::MouseInput;
+
+            auto& io = ImGui::GetIO();
+
+            for (InputEvent const& event : frame.input_events())
+            {
+                if (ice::input::input_identifier_device(event.identifier) == ice::input::DeviceType::Mouse)
+                {
+                    MouseInput const input_source = MouseInput(ice::input::input_identifier_value(event.identifier));
+
+                    switch (input_source)
+                    {
+                    case MouseInput::ButtonLeft:
+                        io.MouseDown[0] = event.value.button.state.pressed;
+                        break;
+                    case MouseInput::ButtonRight:
+                        io.MouseDown[1] = event.value.button.state.pressed;
+                        break;
+                    case MouseInput::ButtonMiddle:
+                        io.MouseDown[2] = event.value.button.state.pressed;
+                        break;
+                    case MouseInput::PositionX:
+                        io.MousePos.x = event.value.axis.value_i32;
+                        break;
+                    case MouseInput::PositionY:
+                        io.MousePos.y = event.value.axis.value_i32;
+                        break;
+                    case MouseInput::Wheel:
+                        io.MouseWheel = event.value.axis.value_i32;
+                        break;
+                    }
+                }
+            }
+
+            ImGui::NewFrame();
             ImGui::ShowDemoWindow();
         }
 
@@ -397,8 +435,6 @@ namespace ice
                 vtx_buffer_offset += cmd_list->VtxBuffer.Size;
                 idx_buffer_offset += cmd_list->IdxBuffer.Size;
             }
-
-            ImGui::NewFrame();
         }
 
     private:
