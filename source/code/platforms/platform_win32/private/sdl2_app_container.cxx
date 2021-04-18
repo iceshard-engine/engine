@@ -310,6 +310,7 @@ namespace ice::platform
             DeviceMessage::DeviceConnected
         );
 
+        // [issue #33]
         static char text_buffer[32];
 
         while (_request_quit == false)
@@ -361,6 +362,7 @@ namespace ice::platform
                 case SDL_KEYUP:
                     detail::keyboard_input_events(device_events, current_event);
                     break;
+                // [issue #33]
                 case SDL_TEXTINPUT:
                     ice::memcpy(text_buffer, current_event.text.text, 32);
                     ice::pod::array::push_back(events,

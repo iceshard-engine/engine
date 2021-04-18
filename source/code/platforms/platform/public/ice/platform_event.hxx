@@ -31,6 +31,7 @@ namespace ice::platform
         WindowFocusTake,
         WindowMouseEntered,
         WindowMouseLeft,
+        // [issue #33]
         InputText,
     };
 
