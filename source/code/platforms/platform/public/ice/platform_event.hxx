@@ -31,6 +31,7 @@ namespace ice::platform
         WindowFocusTake,
         WindowMouseEntered,
         WindowMouseLeft,
+        InputText,
     };
 
     struct Event
@@ -50,6 +51,10 @@ namespace ice::platform
                     ice::vec2i size;
                 };
             } window;
+            struct
+            {
+                ice::String text;
+            } input;
         } data;
     };
 

@@ -310,6 +310,8 @@ namespace ice::platform
             DeviceMessage::DeviceConnected
         );
 
+        static char text_buffer[32];
+
         while (_request_quit == false)
         {
             static SDL_Event current_event{ };
@@ -359,6 +361,17 @@ namespace ice::platform
                 case SDL_KEYUP:
                     detail::keyboard_input_events(device_events, current_event);
                     break;
+                case SDL_TEXTINPUT:
+                    ice::memcpy(text_buffer, current_event.text.text, 32);
+                    ice::pod::array::push_back(events,
+                        Event
+                        {
+                            .type = EventType::InputText,
+                            .data = {
+                                .input = { .text = ice::String(text_buffer) }
+                            }
+                        }
+                    );
                 }
             }
 
