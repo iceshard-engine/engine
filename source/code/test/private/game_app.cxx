@@ -2,6 +2,7 @@
 #include <ice/stringid.hxx>
 #include <ice/uri.hxx>
 
+#include <ice/platform_event.hxx>
 #include <ice/input/input_tracker.hxx>
 #include <ice/gfx/gfx_device.hxx>
 #include <ice/engine.hxx>
@@ -87,5 +88,16 @@ void TestGameApp::update(
     ice::pod::Array<ice::platform::Event> const& events
 ) noexcept
 {
+    auto& io = ImGui::GetIO();
+
+    // [issue #33]
+    for (ice::platform::Event const& event : events)
+    {
+        if (event.type == ice::platform::EventType::InputText)
+        {
+            io.AddInputCharactersUTF8(event.data.input.text.data());
+        }
+    }
+
     _game->update();
 }

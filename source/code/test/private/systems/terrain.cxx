@@ -157,11 +157,6 @@ namespace ice::trait
     {
         ice::render::RenderDevice& device = runner.graphics_device().device();
 
-        ICE_LOG(
-            ice::LogSeverity::Debug, ice::LogTag::Module,
-            "input events: {}", ice::size(runner.previous_frame().input_events())
-        );
-
         terrain_update_render_cache(*_render_cache, _asset_system, device);
     }
 

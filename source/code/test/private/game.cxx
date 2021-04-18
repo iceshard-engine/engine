@@ -119,7 +119,7 @@ private:
 };
 
 
-class DrawStage final : NamedStage
+class DrawStage final : NamedStage, public ice::WorldTrait
 {
     static constexpr ice::StringID Constant_Dependencies[]{
         "test.stage.clear"_sid,
@@ -231,15 +231,13 @@ public:
             ice::render::BufferType::Index, sizeof(ice::u16) * 1024
         );
 
-        ice::mat4 instances[32 * 32]{};
-
         for (ice::u32 i = 0; i < 32; ++i)
         {
             for (ice::u32 j = 0; j < 32; ++j)
             {
                 ice::vec3i rand{ (::rand() % 100) - 50, (::rand() % 100) - 50, (::rand() % 100) - 50 };
 
-                instances[i * 32 + j] = ice::translate(ice::vec3f(i, j, i + j) + rand);
+                _instances[i * 32 + j] = ice::translate(ice::vec3f(i, j, i + j) + rand);
             }
         }
 
@@ -262,7 +260,7 @@ public:
         ice::render::BufferUpdateInfo update_info[]{
             BufferUpdateInfo{.buffer = _indice_buffer[0], .data = ice::data_view(indices, sizeof(indices)) },
             BufferUpdateInfo{.buffer = _indice_buffer[1], .data = ice::data_view(_model->indice_data, _model->indice_data_size) },
-            BufferUpdateInfo{.buffer = _vertex_buffer[0], .data = ice::data_view(instances, sizeof(instances)) },
+            BufferUpdateInfo{.buffer = _vertex_buffer[0], .data = ice::data_view(_instances, sizeof(_instances)) },
             BufferUpdateInfo{.buffer = _vertex_buffer[1], .data = ice::data_view(_model->vertice_data, _model->vertice_data_size) },
         };
 
@@ -283,6 +281,33 @@ public:
         {
             _render_device.destroy_shader(_shaders[idx]);
         }
+    }
+
+    void on_update(
+        ice::EngineFrame& frame,
+        ice::EngineRunner& runner,
+        ice::World& world
+    ) noexcept override
+    {
+
+        //for (ice::u32 i = 0; i < 32; ++i)
+        //{
+        //    for (ice::u32 j = 0; j < 32; ++j)
+        //    {
+        //        ice::vec3f rand((::rand() % 100) - 50, (::rand() % 100) - 50, (::rand() % 100) - 50);
+        //        rand = rand / 10000.f;
+
+        //        _instances[i * 32 + j] = ice::translate(_instances[i * 32 + j], rand);
+        //    }
+        //}
+
+        //ice::render::BufferUpdateInfo update_info[]{
+        //    ice::render::BufferUpdateInfo{.buffer = _vertex_buffer[0], .data = ice::data_view(_instances, sizeof(_instances)) },
+        //};
+
+        //_render_device.update_buffers(
+        //    update_info
+        //);
     }
 
     void record_commands(
@@ -317,6 +342,8 @@ private:
     ice::render::RenderDevice& _render_device;
     ice::gfx::GfxResourceTracker& _resource_tracker;
 
+
+    ice::mat4 _instances[32 * 32]{};
     ice::gfx::Model const* _model;
 
     ice::u32 _shader_count = 0;
@@ -803,13 +830,15 @@ TestGame::TestGame(
         )
     );
 
+    DrawStage* stage = _allocator.make<DrawStage>(
+        _engine.asset_system(),
+        _gfx_device.resource_tracker(),
+        _render_device
+    );
+
     ice::pod::array::push_back(
         _stages,
-        _allocator.make<DrawStage>(
-            _engine.asset_system(),
-            _gfx_device.resource_tracker(),
-            _render_device
-        )
+        stage
     );
 
     ice::pod::array::push_back(
@@ -822,6 +851,8 @@ TestGame::TestGame(
         )
     );
 
+    _world->add_trait("test.draw"_sid, stage);
+
 }
 
 TestGame::~TestGame() noexcept
@@ -829,6 +860,8 @@ TestGame::~TestGame() noexcept
     ice::gfx::GfxResourceTracker& res_tracker = _gfx_device.resource_tracker();
 
     using ice::gfx::GfxResource;
+
+    _world->remove_trait("test.draw"_sid);
 
     for (ice::gfx::GfxStage* stage : _stages)
     {
@@ -869,7 +902,6 @@ TestGame::~TestGame() noexcept
     _gfx_pass = nullptr;
 
     _runner = nullptr;
-
     _engine.world_manager().destroy_world("default"_sid);
 }
 

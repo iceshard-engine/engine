@@ -147,7 +147,7 @@ namespace ice::trait
         ice::gfx::GfxCameraUniform& camera_data = *frame.create_named_object<ice::gfx::GfxCameraUniform>("camera.uniform.data"_sid);
         camera_data.view_matrix = ice::lookat(final_pos, final_pos + direction, { 0.f, 1.f, 0.f });
         camera_data.projection_matrix = ice::perspective(
-            ice::radians(ice::deg{ 90.f }),
+            ice::radians(ice::deg{ 70.f }),
             16.f / 9.f,
             0.1f, 100.f
         );

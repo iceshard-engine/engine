@@ -308,6 +308,22 @@ namespace ice
                         break;
                     }
                 }
+                if (ice::input::input_identifier_device(event.identifier) == ice::input::DeviceType::Keyboard)
+                {
+                    using namespace ice::input;
+                    ice::u32 const input_source = ice::input::input_identifier_value(event.identifier);
+
+                    io.KeysDown[input_source] = event.value.button.state.pressed;
+
+                    InputID constexpr left_ctrl_key_mod = ice::input::input_identifier(DeviceType::Keyboard, KeyboardMod::CtrlLeft, mod_identifier_base_value);
+                    InputID constexpr right_ctrl_key_mod = ice::input::input_identifier(DeviceType::Keyboard, KeyboardMod::CtrlRight, mod_identifier_base_value);
+
+                    if (event.identifier == left_ctrl_key_mod || event.identifier == right_ctrl_key_mod)
+                    {
+                        io.KeyCtrl = event.value.button.state.pressed;
+                    }
+                }
+
             }
 
             ImGui::NewFrame();
