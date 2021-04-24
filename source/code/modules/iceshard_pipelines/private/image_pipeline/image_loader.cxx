@@ -20,6 +20,9 @@ namespace ice
 
         ImageInfo const& image_data = *reinterpret_cast<ImageInfo const*>(data.location);
         ImageInfo* image = reinterpret_cast<ImageInfo*>(out_data.location);
+        image->type = image_data.type;
+        image->usage = image_data.usage;
+        image->format = image_data.format;
         image->width = image_data.width;
         image->height = image_data.height;
         image->data = ice::memory::ptr_add(

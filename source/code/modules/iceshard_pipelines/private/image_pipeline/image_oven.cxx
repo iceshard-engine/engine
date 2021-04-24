@@ -44,21 +44,26 @@ namespace ice
 
             void* image_ptr = ice::buffer::append(
                 out_data,
-                ice::Data{ nullptr, sizeof(ImageInfo) }
+                ice::Data{ nullptr, sizeof(ImageInfo), alignof(ImageInfo) }
             );
 
             void* data_ptr = ice::buffer::append(out_data, image_data);
 
             auto* texture = reinterpret_cast<ImageInfo*>(image_ptr);
+            texture->type = ice::render::ImageType::Image2D;
             texture->width = width;
             texture->height = height;
             texture->format = ice::render::ImageFormat::UNORM_RGBA;
+            texture->usage = ice::render::ImageUsageFlags::TransferDst
+                | ice::render::ImageUsageFlags::Sampled;
             texture->data = reinterpret_cast<void const*>(
                 static_cast<ice::uptr>(
                     ice::memory::ptr_distance(image_ptr, data_ptr)
                 )
             );
 
+            asset_data = ice::buffer::extrude_memory(out_data);
+            stbi_image_free(image_buffer);
             return BakeResult::Success;
         }
         return BakeResult::Failure_InvalidData;
