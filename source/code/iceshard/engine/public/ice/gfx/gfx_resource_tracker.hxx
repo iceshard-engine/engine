@@ -55,6 +55,12 @@ namespace ice::gfx
         static constexpr GfxResource::Type Constant_GfxResourceType<ice::render::PipelineLayout> = GfxResource::Type::PipelineLayout;
 
         template<>
+        static constexpr GfxResource::Type Constant_GfxResourceType<ice::render::ResourceSet> = GfxResource::Type::ResourceSet;
+
+        template<>
+        static constexpr GfxResource::Type Constant_GfxResourceType<ice::render::Buffer> = GfxResource::Type::Buffer;
+
+        template<>
         static constexpr GfxResource::Type Constant_GfxResourceType<ice::render::Image> = GfxResource::Type::Image;
 
         template<typename T>
@@ -85,6 +91,18 @@ namespace ice::gfx
         auto constexpr MemberPtr_GfxResourceValue<ice::render::PipelineLayout>() noexcept
         {
             return &GfxResource::Value::pipeline_layout;
+        }
+
+        template<>
+        auto constexpr MemberPtr_GfxResourceValue<ice::render::ResourceSet>() noexcept
+        {
+            return &GfxResource::Value::resourceset;
+        }
+
+        template<>
+        auto constexpr MemberPtr_GfxResourceValue<ice::render::Buffer>() noexcept
+        {
+            return &GfxResource::Value::buffer;
         }
 
         template<>
