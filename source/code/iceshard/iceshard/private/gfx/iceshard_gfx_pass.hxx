@@ -86,6 +86,7 @@ namespace ice::gfx
     private:
         ice::Allocator& _allocator;
         ice::pod::Array<ice::gfx::IceGfxStageBatch*> _stage_batches;
+        ice::pod::Array<ice::gfx::IceGfxStageBatch*> _free_batches;
         ice::pod::Array<ice::gfx::GfxStage*> _update_stages;
     };
 

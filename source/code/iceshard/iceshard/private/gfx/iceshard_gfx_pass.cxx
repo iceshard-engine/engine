@@ -93,9 +93,11 @@ namespace ice::gfx
     IceGfxPass::IceGfxPass(ice::Allocator& alloc) noexcept
         : _allocator{ alloc }
         , _stage_batches{ _allocator }
+        , _free_batches{ _allocator }
         , _update_stages{ _allocator }
     {
         ice::pod::array::reserve(_stage_batches, 5);
+        ice::pod::array::reserve(_free_batches, 5);
         ice::pod::array::push_back(
             _stage_batches,
             _allocator.make<IceGfxStageBatch>(_allocator)
@@ -151,6 +153,21 @@ namespace ice::gfx
     {
         IceGfxStageBatch* target_batch = nullptr;
 
+        auto get_free_stage_batch = [this]() noexcept
+        {
+            IceGfxStageBatch* free_batch = nullptr;
+            if (ice::pod::array::any(_free_batches))
+            {
+                free_batch = ice::pod::array::back(_free_batches);
+                ice::pod::array::pop_back(_free_batches);
+            }
+            else
+            {
+                free_batch = _allocator.make<IceGfxStageBatch>(_allocator);
+            }
+            return free_batch;
+        };
+
         {
             auto candidate_batch = ice::pod::array::rbegin(_stage_batches);
             auto const end_batch = ice::pod::array::rend(_stage_batches);
@@ -171,13 +188,13 @@ namespace ice::gfx
 
         if (target_batch == nullptr)
         {
-            target_batch = _allocator.make<IceGfxStageBatch>(_allocator);
+            target_batch = get_free_stage_batch();
             ice::pod::array::push_back(_stage_batches, target_batch);
         }
 
         if (target_batch->has_dependency(name))
         {
-            IceGfxStageBatch* new_target_batch = _allocator.make<IceGfxStageBatch>(_allocator);
+            IceGfxStageBatch* new_target_batch = get_free_stage_batch();
 
             ice::u32 const batch_count = ice::size(_stage_batches);
             ice::u32 target_batch_idx = 0;
@@ -237,6 +254,12 @@ namespace ice::gfx
             );
             batch->clear();
         }
+
+        // Copy all pointers so we dont need to re-allocate the array after a while
+        _free_batches = _stage_batches;
+
+        // Clear the stage batches array so it's empty but the underlying memory is not freed
+        ice::pod::array::clear(_stage_batches);
     }
 
 } // namespace ice::gfx
