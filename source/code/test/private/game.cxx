@@ -329,13 +329,13 @@ public:
         cmds.bind_index_buffer(cmd_buffer, _indice_buffer[1]);
         cmds.bind_vertex_buffer(cmd_buffer, _vertex_buffer[1], 0);
         cmds.bind_vertex_buffer(cmd_buffer, _vertex_buffer[0], 1);
-        cmds.draw_indexed(
-            cmd_buffer,
-            _model->mesh_list[0].indice_count, 32 * 32,
-            _model->mesh_list[0].indice_offset,
-            _model->mesh_list[0].vertice_offset,
-            0
-        );
+        //cmds.draw_indexed(
+        //    cmd_buffer,
+        //    _model->mesh_list[0].indice_count, 32 * 32,
+        //    _model->mesh_list[0].indice_offset,
+        //    _model->mesh_list[0].vertice_offset,
+        //    0
+        //);
     }
 
 private:
@@ -810,8 +810,8 @@ TestGame::TestGame(
         "default"_sid, _entity_storage.get()
     );
 
-    _world->add_trait("test.terrain"_sid, &_terrain);
     _world->add_trait("test.cameras"_sid, &_camera_manager);
+    _world->add_trait("test.terrain"_sid, &_terrain);
     _world->add_trait("test.imgui"_sid, &_imgui);
 
     ice::EngineRequest requests[]{
@@ -909,6 +909,11 @@ void TestGame::update() noexcept
 {
     _runner->next_frame();
 
+    for (ice::gfx::GfxStage* stage : _terrain.udpate_stages())
+    {
+        _gfx_pass->add_update_stage(stage);
+    }
+
     _gfx_pass->add_stage(
         _stages[0]->name(),
         _stages[0]->dependencies(),
@@ -925,14 +930,21 @@ void TestGame::update() noexcept
         &_camera_manager
     );
 
+    static ice::StringID deps2[]{
+        "camera.update_view"_sid,
+    };
+
+    _gfx_pass->add_stage(
+        "terrain"_sid,
+        deps2,
+        &_terrain
+    );
+
     _gfx_pass->add_stage(
         _stages[1]->name(),
         _stages[1]->dependencies(),
         _stages[1]
     );
-    static ice::StringID deps2[]{
-        "camera.update_view"_sid,
-    };
 
     _gfx_pass->add_stage(
         "imgui"_sid,

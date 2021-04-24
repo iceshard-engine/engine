@@ -16,6 +16,11 @@
 #include <ice/render/render_buffer.hxx>
 #include <ice/render/render_resource.hxx>
 
+#include <ice/input/input_event.hxx>
+#include <ice/input/input_keyboard.hxx>
+#include <ice/input/input_mouse.hxx>
+#include <ice/input/input_controller.hxx>
+
 #include <ice/math/lookat.hxx>
 #include <ice/math/projection.hxx>
 
@@ -70,6 +75,9 @@ namespace ice::trait
             { &rs_layout, 1 },
             { &_render_objects->resource_set, 1 }
         );
+
+        track_resource(gfx_resources, "resourceset.camera"_sid, _render_objects->resource_set);
+        track_resource(gfx_resources, "uniform_buffer.camera"_sid, _render_objects->uniform_data);
 
         ResourceUpdateInfo resource_update_info[]{
             ResourceUpdateInfo{
@@ -129,46 +137,156 @@ namespace ice::trait
         ice::World& world
     ) noexcept
     {
-        static ice::vec4f camera_pos = { -5.f, 0.f, -5.f, 1.f };
-        ice::vec3f look_at = { 0.f, 0.f, 0.f };
+        static ice::vec3f camera_pos = { -5.f, 0.f, -5.f };
+        static ice::vec3f camera_front = camera_pos + ice::vec3f{ 1.f, 0.f, 0.f };
+        static ice::deg camera_yaw{ 0.f };
+        static ice::deg camera_pitch{ 0.f };
+        static float speed_mul = 1.0f;
 
-        static ice::deg angle = { 0.0f };
-        angle.value += 0.1f;
+        float const camera_speed = 5.f * (1.0f / 144.f); // adjust accordingly
 
-        //camera_pos.z -= 0.01;
+        {
+            using namespace ice::input;
 
-        ice::vec4f temp_pos = ice::rotate(ice::radians(angle), { 0.f, 1.f, 0.f }) * camera_pos;
-        ice::vec3f final_pos = { temp_pos.x / temp_pos.w, temp_pos.y / temp_pos.w, temp_pos.z / temp_pos.w };
+            const float sensitivity = 0.2f;
 
-        //camera_pos.z += 0.01f;
+            bool speed_up = false;
+            float move_y = 0.0f;
+            float move_x = 0.0f;
 
-        ice::vec3f direction = ice::normalize(look_at - final_pos);
+            float xoffset = 0.f;
+            float yoffset = 0.f;
 
-        ice::gfx::GfxCameraUniform& camera_data = *frame.create_named_object<ice::gfx::GfxCameraUniform>("camera.uniform.data"_sid);
-        camera_data.view_matrix = ice::lookat(final_pos, final_pos + direction, { 0.f, 1.f, 0.f });
-        camera_data.projection_matrix = ice::perspective(
-            ice::radians(ice::deg{ 70.f }),
-            16.f / 9.f,
-            0.1f, 100.f
-        );
-        camera_data.clip_matrix = {
-            .v = {
-                { 1.0f, 0.0f, 0.0f, 0.0f },
-                { 0.0f, -1.0f, 0.0f, 0.0f },
-                { 0.0f, 0.0f, 0.5f, 0.5f },
-                { 0.0f, 0.0f, 0.0f, 0.1f },
+            for (InputEvent const& event : frame.input_events())
+            {
+                switch (event.identifier)
+                {
+                case input_identifier(DeviceType::Controller, ControllerInput::LeftTrigger):
+                    speed_up = event.value.axis.value_f32 > 0.5f;
+                    break;
+                case input_identifier(DeviceType::Keyboard, KeyboardMod::ShiftLeft, mod_identifier_base_value):
+                    speed_up = event.value.button.state.pressed;
+                    break;
+                case input_identifier(DeviceType::Keyboard, KeyboardKey::Space, key_identifier_base_value):
+                    if (event.value.button.state.pressed)
+                    {
+                        camera_pos.y += camera_speed * speed_mul;
+                    }
+                    break;
+                case input_identifier(DeviceType::Keyboard, KeyboardKey::KeyX):
+                    if (event.value.button.state.pressed)
+                    {
+                        camera_pos.y -= camera_speed * speed_mul;
+                    }
+                    break;
+                case input_identifier(DeviceType::Keyboard, KeyboardKey::KeyW):
+                    move_y = event.value.button.state.pressed ? -1.0f : 0.0f;
+                    break;
+                case input_identifier(DeviceType::Keyboard, KeyboardKey::KeyS):
+                    move_y = event.value.button.state.pressed ? 1.0f : 0.0f;
+                    break;
+                case input_identifier(DeviceType::Controller, ControllerInput::LeftAxisY):
+                    if (event.value.axis.value_f32 >= 0.01f)
+                    {
+                        move_y = 1.0;
+                    }
+                    else if (event.value.axis.value_f32 <= -0.01f)
+                    {
+                        move_y = -1.0;
+                    }
+                    break;
+                case input_identifier(DeviceType::Keyboard, KeyboardKey::KeyA):
+                    move_x = event.value.button.state.pressed ? 1.0f : 0.0f;
+                    break;
+                case input_identifier(DeviceType::Keyboard, KeyboardKey::KeyD):
+                    move_x = event.value.button.state.pressed ? -1.0f : 0.0f;
+                    break;
+                case input_identifier(DeviceType::Controller, ControllerInput::LeftAxisX):
+                    if (event.value.axis.value_f32 >= 0.01f)
+                    {
+                        move_x = -1.0;
+                    }
+                    else if (event.value.axis.value_f32 <= -0.01f)
+                    {
+                        move_x = 1.0;
+                    }
+                    break;
+                case input_identifier(DeviceType::Mouse, MouseInput::PositionXRelative):
+                    xoffset = static_cast<float>(event.value.axis.value_i32) * camera_speed * 10.0;
+                    break;
+                case input_identifier(DeviceType::Mouse, MouseInput::PositionYRelative):
+                    yoffset = static_cast<float>(-event.value.axis.value_i32) * camera_speed * 10.0;
+                    break;
+                case input_identifier(DeviceType::Controller, ControllerInput::RightAxisX):
+                    xoffset = event.value.axis.value_f32 * camera_speed * 20.0;
+                    break;
+                case input_identifier(DeviceType::Controller, ControllerInput::RightAxisY):
+                    yoffset = -event.value.axis.value_f32 * camera_speed * 20.0;
+                    break;
+                }
             }
-        };
 
-        ice::render::RenderDevice& device = runner.graphics_device().device();
-        ice::render::BufferUpdateInfo camera_data_update[]{
-            ice::render::BufferUpdateInfo{
-                .buffer = _render_objects->uniform_data,
-                .data = ice::data_view(camera_data)
+            if (speed_up)
+            {
+                speed_mul = 4.0f;
             }
-        };
+            else
+            {
+                speed_mul = 1.0f;
+            }
 
-        device.update_buffers(camera_data_update);
+            camera_pos = camera_pos - camera_front * camera_speed * speed_mul * move_y;
+
+            camera_pos = camera_pos + ice::normalize(
+                ice::cross({ 0.f, 1.f, 0.f }, camera_front)
+            ) * camera_speed * speed_mul * move_x;
+
+
+            camera_yaw.value += speed_mul * (xoffset < 0 ? std::max(xoffset, -10.f) : std::min(xoffset, 10.f));
+            camera_pitch.value += speed_mul * (yoffset < 0 ? std::max(yoffset, -10.f) : std::min(yoffset, 10.f));
+
+            if (camera_pitch.value > 89.0f)
+                camera_pitch.value = 89.0f;
+            if (camera_pitch.value < -89.0f)
+                camera_pitch.value = -89.0f;
+
+            ice::vec3f direction;
+            direction.x = ice::cos(ice::radians(camera_yaw)) * ice::cos(ice::radians(camera_pitch));
+            direction.y = ice::sin(ice::radians(camera_pitch));
+            direction.z = ice::sin(ice::radians(camera_yaw)) * ice::cos(ice::radians(camera_pitch));
+            camera_front = ice::normalize(direction);
+
+
+            ice::gfx::GfxCameraUniform& camera_data = *frame.create_named_object<ice::gfx::GfxCameraUniform>("camera.uniform.data"_sid);
+            camera_data.view_matrix = ice::lookat(
+                camera_pos,
+                camera_pos + camera_front,
+                { 0.f, 1.f, 0.f }
+            );
+            camera_data.projection_matrix = ice::perspective(
+                ice::radians(ice::deg{ 70.f }),
+                16.f / 9.f,
+                0.1f, 100.f
+            );
+            camera_data.clip_matrix = {
+                .v = {
+                    { 1.0f, 0.0f, 0.0f, 0.0f },
+                    { 0.0f, -1.0f, 0.0f, 0.0f },
+                    { 0.0f, 0.0f, 0.5f, 0.5f },
+                    { 0.0f, 0.0f, 0.0f, 0.1f },
+                }
+            };
+
+            ice::render::RenderDevice& device = runner.graphics_device().device();
+            ice::render::BufferUpdateInfo camera_data_update[]{
+                ice::render::BufferUpdateInfo{
+                    .buffer = _render_objects->uniform_data,
+                    .data = ice::data_view(camera_data)
+                }
+            };
+
+            device.update_buffers(camera_data_update);
+        }
     }
 
     void CameraManager::record_commands(
