@@ -89,11 +89,14 @@ namespace ice::render::vk
             auto* it = ice::pod::multi_hash::find_first(blocks, memory_type_index);
             while (it != nullptr && found_free_block == false)
             {
-                AllocationEntry* entry = it->value->free;
-                while (entry != nullptr && found_free_block == false)
+                if (it->value->info == info)
                 {
-                    found_free_block = entry->size >= required_size;
-                    entry = entry->next;
+                    AllocationEntry* entry = it->value->free;
+                    while (entry != nullptr && found_free_block == false)
+                    {
+                        found_free_block = entry->size >= required_size;
+                        entry = entry->next;
+                    }
                 }
 
                 it = ice::pod::multi_hash::find_next(blocks, it);
@@ -294,7 +297,7 @@ namespace ice::render::vk
         }
 
         ice::u32 const size = static_cast<ice::u32>(memory_requirements.size);
-        ice::render::vk::AllocationBlockInfo const* info = &defined_allocation_blocks[ice::u32{ 0 }];
+        ice::render::vk::AllocationBlockInfo const* info = &defined_allocation_blocks[static_cast<ice::u32>(type)];
         if (info->allocation_max < size)
         {
             info = &defined_allocation_blocks[ice::u32(AllocationType::ImageLarge)];
@@ -379,7 +382,7 @@ namespace ice::render::vk
         }
 
         ice::u32 const size = static_cast<ice::u32>(memory_requirements.size);
-        ice::render::vk::AllocationBlockInfo const* info = &defined_allocation_blocks[ice::u32{ 3 }];
+        ice::render::vk::AllocationBlockInfo const* info = &defined_allocation_blocks[static_cast<ice::u32>(type)];
         ICE_ASSERT(
             size <= info->allocation_max,
             "Requested buffer size too big!"
@@ -517,7 +520,7 @@ namespace ice::render::vk
                     DeviceMappingEntry& entry = array_[idx];
                     if (entry.offset > offset)
                     {
-                        ice::u32 const total_size = entry.offset - offset + entry.size;
+                        ice::u32 const total_size = (entry.offset - offset) + entry.size;
                         entry.size = total_size;
                         entry.offset = offset;
                     }
@@ -526,11 +529,11 @@ namespace ice::render::vk
                         ice::u32 const size_diff = (offset - entry.offset) + size;
                         if (size_diff > entry.size)
                         {
-                            VK_LOG(
-                                ice::LogSeverity::Warning,
-                                "Unexpected size difference! [ new:{}, old:{} ]",
-                                size_diff, entry.size
-                            );
+                            //VK_LOG(
+                            //    ice::LogSeverity::Warning,
+                            //    "Unexpected size difference! [ new:{}, old:{} ]",
+                            //    size_diff, entry.size
+                            //);
                             entry.size = size_diff;
                         }
                     }

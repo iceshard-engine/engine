@@ -34,6 +34,13 @@ namespace ice::render
         CounterClockWise,
     };
 
+    enum class PrimitiveTopology : ice::u32
+    {
+        TriangleList,
+        TriangleStrip,
+        PatchList,
+    };
+
     struct PipelinePushConstant
     {
         ice::render::ShaderStageFlags shader_stage_flags;
@@ -51,10 +58,11 @@ namespace ice::render
     {
         ice::render::PipelineLayout layout;
         ice::render::Renderpass renderpass;
-        ice::Span<ice::render::Shader> shaders;
-        ice::Span<ice::render::ShaderStageFlags> shaders_stages;
-        ice::Span<ice::render::ShaderInputBinding> shader_bindings;
+        ice::Span<ice::render::Shader const> shaders;
+        ice::Span<ice::render::ShaderStageFlags const> shaders_stages;
+        ice::Span<ice::render::ShaderInputBinding const> shader_bindings;
 
+        ice::render::PrimitiveTopology primitive_topology = PrimitiveTopology::TriangleList;
         ice::render::CullMode cull_mode = CullMode::Disabled;
         ice::render::FrontFace front_face = FrontFace::ClockWise;
 

@@ -54,6 +54,7 @@ namespace ice::gfx
         ~IceGfxPass() noexcept;
 
         bool has_work() const noexcept;
+        bool has_update_work() const noexcept;
 
         void add_stage(
             ice::StringID_Arg name,
@@ -66,6 +67,16 @@ namespace ice::gfx
             ice::gfx::GfxStage* stage
         ) noexcept override;
 
+        void add_update_stage(
+            ice::gfx::GfxStage* stage
+        ) noexcept override;
+
+        void record_update_commands(
+            ice::EngineFrame const& frame,
+            ice::render::CommandBuffer cmd_buffer,
+            ice::render::RenderCommands& cmds
+        ) noexcept;
+
         void record_commands(
             ice::EngineFrame const& frame,
             ice::render::CommandBuffer cmd_buffer,
@@ -75,6 +86,7 @@ namespace ice::gfx
     private:
         ice::Allocator& _allocator;
         ice::pod::Array<ice::gfx::IceGfxStageBatch*> _stage_batches;
+        ice::pod::Array<ice::gfx::GfxStage*> _update_stages;
     };
 
 } // namespace ice::gfx

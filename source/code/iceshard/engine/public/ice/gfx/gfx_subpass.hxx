@@ -17,6 +17,21 @@ namespace ice::gfx
         static constexpr ice::u32 ResConst_CameraUniformBinding = 0;
     };
 
+    struct GfxSubpass_Terrain : GfxSubpass_Primitives
+    {
+        static constexpr ice::StringID ResName_PipelineLayout =
+            "ice.gfx_subpass.terrain_pipeline_layout"_sid;
+
+        static constexpr ice::StringID ResName_ResourceLayout =
+            "ice.gfx_subpass.terrain_resource_layout"_sid;
+
+        static constexpr ice::u32 ResConst_TerrainHeightmapSet = 1;
+
+        static constexpr ice::u32 ResConst_TerrainHeightmapBinding = 0;
+        static constexpr ice::u32 ResConst_TerrainSamplerBinding = 1;
+        static constexpr ice::u32 ResConst_TerrainUniformBinding = 2;
+    };
+
     struct GfxSubpass_ImGui
     {
         static constexpr ice::StringID ResName_PipelineLayout =

@@ -211,7 +211,15 @@ namespace ice::render::vk
             VK_KHR_SWAPCHAIN_EXTENSION_NAME
         };
 
+        VkPhysicalDeviceFeatures available_device_features{ };
+        vkGetPhysicalDeviceFeatures(_vk_physical_device, &available_device_features);
+
+        VkPhysicalDeviceFeatures enabled_device_features{ };
+        enabled_device_features.geometryShader = available_device_features.geometryShader;
+        enabled_device_features.tessellationShader = available_device_features.tessellationShader;
+
         VkDeviceCreateInfo device_create_info{ .sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO };
+        device_create_info.pEnabledFeatures = &enabled_device_features;
         device_create_info.enabledExtensionCount = ice::size(extension_names);
         device_create_info.ppEnabledExtensionNames = &extension_names[0];
         device_create_info.pQueueCreateInfos = ice::pod::array::begin(queue_create_infos);

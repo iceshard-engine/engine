@@ -614,10 +614,11 @@ namespace ice::render::vk
         ice::render::PipelineInfo const& info
     ) noexcept -> ice::render::Pipeline
     {
-        VkPipelineShaderStageCreateInfo shader_stages[2];
+        VkPipelineShaderStageCreateInfo shader_stages[10];
+        ice::u32 const stage_count = ice::size(info.shaders_stages);
 
         uint32_t stage_idx = 0;
-        for (; stage_idx < 2; ++stage_idx)
+        for (; stage_idx < stage_count; ++stage_idx)
         {
             VkPipelineShaderStageCreateInfo& shader_stage = shader_stages[stage_idx];
             shader_stage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
@@ -670,7 +671,7 @@ namespace ice::render::vk
 
         VkPipelineInputAssemblyStateCreateInfo input_assembly{ VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO };
         input_assembly.primitiveRestartEnable = VK_FALSE;
-        input_assembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+        input_assembly.topology = native_enum_value(info.primitive_topology);
 
         VkPipelineRasterizationStateCreateInfo rasterization{ VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO };
         rasterization.polygonMode = VK_POLYGON_MODE_FILL;
@@ -678,6 +679,11 @@ namespace ice::render::vk
         {
         case CullMode::Disabled:
             rasterization.cullMode = VK_CULL_MODE_NONE;
+            // [issue #34] Needs to be properly available in the creation API.
+            if (ice::size(info.shaders_stages) == 5)
+            {
+                rasterization.polygonMode = VK_POLYGON_MODE_LINE;
+            }
             break;
         case CullMode::FrontFace:
             rasterization.cullMode = VK_CULL_MODE_FRONT_BIT;
@@ -755,6 +761,9 @@ namespace ice::render::vk
         viewport.pScissors = vk_nullptr;
         viewport.pViewports = vk_nullptr;
 
+        VkPipelineTessellationStateCreateInfo tesselation{ VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO };
+        tesselation.patchControlPoints = 4;
+
         VkGraphicsPipelineCreateInfo pipeline_info{ VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO };
         pipeline_info.layout = native_handle(info.layout);
         pipeline_info.basePipelineHandle = vk_nullptr;
@@ -764,13 +773,13 @@ namespace ice::render::vk
         pipeline_info.pInputAssemblyState = &input_assembly;
         pipeline_info.pRasterizationState = &rasterization;
         pipeline_info.pColorBlendState = &blend_info;
-        pipeline_info.pTessellationState = nullptr;
+        pipeline_info.pTessellationState = &tesselation;
         pipeline_info.pMultisampleState = &multisample;
         pipeline_info.pDynamicState = &dynamic_state;
         pipeline_info.pViewportState = &viewport;
         pipeline_info.pDepthStencilState = &depthstencil;
         pipeline_info.pStages = shader_stages;
-        pipeline_info.stageCount = ice::size(shader_stages);
+        pipeline_info.stageCount = stage_count;
         pipeline_info.renderPass = native_handle(info.renderpass);
         pipeline_info.subpass = info.subpass_index;
 
@@ -824,7 +833,7 @@ namespace ice::render::vk
         AllocationHandle memory_handle = _vk_memory_manager->allocate(
             vk_buffer,
             VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
-            AllocationType::RenderTarget,
+            BufferType::Transfer == buffer_type ? AllocationType::TransferBuffer : AllocationType::Buffer,
             memory_info
         );
 
@@ -965,11 +974,17 @@ namespace ice::render::vk
             "Couldn't create image object!"
         );
 
+        AllocationType alloc_type = AllocationType::Implicit;
+        if (has_flag(image.usage, ImageUsageFlags::ColorAttachment) || has_flag(image.usage, ImageUsageFlags::DepthStencilAttachment))
+        {
+            alloc_type = AllocationType::RenderTarget;
+        }
+
         AllocationInfo memory_info;
         AllocationHandle memory_handle = _vk_memory_manager->allocate(
             vk_image,
             VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-            AllocationType::RenderTarget,
+            alloc_type,
             memory_info
         );
 

@@ -59,6 +59,8 @@ namespace ice::render::vk
 
     inline auto native_enum_value(SamplerFilter filter) noexcept -> VkFilter;
 
+    inline auto native_enum_value(PrimitiveTopology topology) noexcept -> VkPrimitiveTopology;
+
     inline auto native_enum_value(SamplerAddressMode address_mode) noexcept -> VkSamplerAddressMode;
 
     inline auto native_enum_value(SamplerMipMapMode mipmap_mode) noexcept -> VkSamplerMipmapMode;
@@ -267,6 +269,12 @@ namespace ice::render::vk
             return VK_SHADER_STAGE_VERTEX_BIT;
         case ShaderStageFlags::FragmentStage:
             return VK_SHADER_STAGE_FRAGMENT_BIT;
+        case ShaderStageFlags::GeometryStage:
+            return VK_SHADER_STAGE_GEOMETRY_BIT;
+        case ShaderStageFlags::TesselationControlStage:
+            return VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
+        case ShaderStageFlags::TesselationEvaluationStage:
+            return VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
         default:
             return VK_SHADER_STAGE_FLAG_BITS_MAX_ENUM;
         }
@@ -305,6 +313,21 @@ namespace ice::render::vk
             return VkFilter::VK_FILTER_CUBIC_EXT;
         default:
             return VkFilter::VK_FILTER_MAX_ENUM;
+        }
+    }
+
+    auto native_enum_value(PrimitiveTopology topology) noexcept -> VkPrimitiveTopology
+    {
+        switch (topology)
+        {
+        case ice::render::PrimitiveTopology::TriangleList:
+            return VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+        case ice::render::PrimitiveTopology::TriangleStrip:
+            return VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
+        case ice::render::PrimitiveTopology::PatchList:
+            return VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_PATCH_LIST;
+        default:
+            break;
         }
     }
 
@@ -385,6 +408,18 @@ namespace ice::render::vk
         if (has_flag(flags, ShaderStageFlags::FragmentStage))
         {
             usage_flags |= VK_SHADER_STAGE_FRAGMENT_BIT;
+        }
+        if (has_flag(flags, ShaderStageFlags::GeometryStage))
+        {
+            usage_flags |= VK_SHADER_STAGE_GEOMETRY_BIT;
+        }
+        if (has_flag(flags, ShaderStageFlags::TesselationControlStage))
+        {
+            usage_flags |= VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
+        }
+        if (has_flag(flags, ShaderStageFlags::TesselationEvaluationStage))
+        {
+            usage_flags |= VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
         }
         return usage_flags;
     }

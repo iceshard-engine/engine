@@ -15,6 +15,9 @@ namespace ice::render
         None = 0x0,
         VertexStage = 0x0001,
         FragmentStage = 0x0002,
+        GeometryStage = 0x0004,
+        TesselationControlStage = 0x0008,
+        TesselationEvaluationStage = 0x0010,
     };
 
     enum class ShaderAttribType

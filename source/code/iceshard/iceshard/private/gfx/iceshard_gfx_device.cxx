@@ -2,6 +2,7 @@
 #include "iceshard_gfx_frame.hxx"
 #include <ice/render/render_surface.hxx>
 #include <ice/render/render_swapchain.hxx>
+#include <ice/render/render_buffer.hxx>
 #include <ice/memory/stack_allocator.hxx>
 #include <ice/pod/hash.hxx>
 #include <ice/assert.hxx>
@@ -48,14 +49,26 @@ namespace ice::gfx
     {
         _render_swapchain = _render_device->create_swapchain(_render_surface);
 
+        track_resource(
+            _resource_tracker,
+            "temp.buffer.image_transfer"_sid,
+            _render_device->create_buffer(ice::render::BufferType::Transfer, 2048 * 2048 * 4 * sizeof(ice::u8))
+        );
+
         create_subpass_resources_primitives(*_render_device, _resource_tracker);
+        create_subpass_resources_terrain(*_render_device, _resource_tracker);
         create_subpass_resources_imgui(*_render_device, _resource_tracker);
     }
 
     IceGfxDevice::~IceGfxDevice() noexcept
     {
         destroy_subpass_resources_imgui(*_render_device, _resource_tracker);
+        destroy_subpass_resources_terrain(*_render_device, _resource_tracker);
         destroy_subpass_resources_primitives(*_render_device, _resource_tracker);
+
+        _render_device->destroy_buffer(
+            find_resource<ice::render::Buffer>(_resource_tracker, "temp.buffer.image_transfer"_sid)
+        );
 
         _render_device->destroy_swapchain(_render_swapchain);
 

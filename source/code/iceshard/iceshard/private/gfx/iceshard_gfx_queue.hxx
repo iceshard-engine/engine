@@ -46,7 +46,7 @@ namespace ice::gfx
         ice::u32 _queue_pool_index;
         bool _presenting = false;
 
-        ice::render::CommandBuffer _primary_commands;
+        ice::render::CommandBuffer _primary_commands[2];
     };
 
 } // namespace ice

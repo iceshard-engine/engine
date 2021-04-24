@@ -10,11 +10,13 @@ namespace ice::render::vk
 
     enum class AllocationType : ice::u32
     {
-        Implicit = 0x0,
+        RenderTarget = 0x0,
         ImageSmall,
         ImageLarge,
         Buffer,
-        RenderTarget,
+        TransferBuffer,
+
+        Implicit = 0xffff'ffff,
     };
 
     struct AllocationBlockInfo
@@ -55,6 +57,13 @@ namespace ice::render::vk
             .allocation_max = 1024 * 1024,
             .allocation_stride = 256,
             .name = "Buffer Memory"
+        },
+        AllocationBlockInfo{
+            .block_size = 0,
+            .allocation_min = 16 * 16 * 4,
+            .allocation_max = 4096 * 4096 * 4,
+            .allocation_stride = 16 * 16 * 4,
+            .name = "Transfer Buffer Memory"
         },
     };
 

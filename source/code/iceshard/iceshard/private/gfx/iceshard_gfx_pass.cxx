@@ -93,12 +93,14 @@ namespace ice::gfx
     IceGfxPass::IceGfxPass(ice::Allocator& alloc) noexcept
         : _allocator{ alloc }
         , _stage_batches{ _allocator }
+        , _update_stages{ _allocator }
     {
         ice::pod::array::reserve(_stage_batches, 5);
         ice::pod::array::push_back(
             _stage_batches,
             _allocator.make<IceGfxStageBatch>(_allocator)
         );
+        ice::pod::array::reserve(_update_stages, 10);
     }
 
     IceGfxPass::~IceGfxPass() noexcept
@@ -117,6 +119,11 @@ namespace ice::gfx
             has_work |= batch->has_work();
         }
         return has_work;
+    }
+
+    bool IceGfxPass::has_update_work() const noexcept
+    {
+        return ice::pod::array::empty(_update_stages) == false;
     }
 
     void IceGfxPass::add_stage(
@@ -193,6 +200,26 @@ namespace ice::gfx
         }
 
         target_batch->add_stage(name, dependencies, stage);
+    }
+
+    void IceGfxPass::add_update_stage(
+        ice::gfx::GfxStage* stage
+    ) noexcept
+    {
+        ice::pod::array::push_back(_update_stages, stage);
+    }
+
+    void IceGfxPass::record_update_commands(
+        ice::EngineFrame const& frame,
+        ice::render::CommandBuffer cmd_buffer,
+        ice::render::RenderCommands& cmds
+    ) noexcept
+    {
+        for (GfxStage* update_stage : _update_stages)
+        {
+            update_stage->record_commands(frame, cmd_buffer, cmds);
+        }
+        ice::pod::array::clear(_update_stages);
     }
 
     void IceGfxPass::record_commands(

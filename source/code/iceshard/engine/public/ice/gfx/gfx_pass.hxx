@@ -22,6 +22,10 @@ namespace ice::gfx
             ice::Span<ice::StringID const> dependencies,
             ice::gfx::GfxStage* stage
         ) noexcept = 0;
+
+        virtual void add_update_stage(
+            ice::gfx::GfxStage* stage
+        ) noexcept = 0;
     };
 
 } // namespace ice::gfx

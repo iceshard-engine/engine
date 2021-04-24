@@ -19,7 +19,7 @@ namespace ice::gfx
         _render_queue->allocate_buffers(
             _queue_pool_index,
             ice::render::CommandBufferType::Primary,
-            ice::Span<ice::render::CommandBuffer>{ &_primary_commands, 1 }
+            _primary_commands
         );
     }
 
@@ -64,13 +64,23 @@ namespace ice::gfx
     ) noexcept
     {
         ice::gfx::IceGfxPass* const ice_pass = static_cast<ice::gfx::IceGfxPass*>(gfx_pass);
+        if (ice_pass->has_update_work())
+        {
+            _render_commands.begin(_primary_commands[0]);
+            ice_pass->record_update_commands(frame, _primary_commands[0], _render_commands);
+            _render_commands.end(_primary_commands[0]);
+
+            _render_queue->submit(
+                ice::Span<ice::render::CommandBuffer>{ _primary_commands + 0, 1 }, true
+            );
+        }
         if (ice_pass->has_work())
         {
-            ice_pass->record_commands(frame, _primary_commands, _render_commands);
+            ice_pass->record_commands(frame, _primary_commands[1], _render_commands);
         }
 
         _render_queue->submit(
-            ice::Span<ice::render::CommandBuffer>{ &_primary_commands, 1 }, true
+            ice::Span<ice::render::CommandBuffer>{ _primary_commands + 1, 1 }, true
         );
     }
 

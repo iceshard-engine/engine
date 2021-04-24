@@ -16,6 +16,16 @@ namespace ice::gfx
         ice::gfx::GfxResourceTracker& resource_tracker
     ) noexcept;
 
+    void create_subpass_resources_terrain(
+        ice::render::RenderDevice& render_device,
+        ice::gfx::GfxResourceTracker& resource_tracker
+    ) noexcept;
+
+    void destroy_subpass_resources_terrain(
+        ice::render::RenderDevice& render_device,
+        ice::gfx::GfxResourceTracker& resource_tracker
+    ) noexcept;
+
     void create_subpass_resources_imgui(
         ice::render::RenderDevice& render_device,
         ice::gfx::GfxResourceTracker& resource_tracker
