@@ -13,18 +13,33 @@
 using ice::operator""_sid;
 using ice::operator""_uri;
 
+#include <ice/task.hxx>
+
+auto foo_task() noexcept -> ice::Task<void>
+{
+    ICE_LOG(
+        ice::LogSeverity::Retail, ice::LogTag::Game,
+        "Threaded log!"
+    );
+    co_return;
+}
+
 TestGameApp::TestGameApp(
     ice::Allocator& alloc,
     ice::Engine& engine,
     ice::render::RenderDriver& render_driver
 ) noexcept
     : _allocator{ alloc }
+    , _task_thread{ ice::make_unique_null<ice::TaskThread>() }
     , _engine{ engine }
     , _render_driver{ render_driver }
     , _platform_surface{ ice::make_unique_null<ice::platform::WindowSurface>() }
     , _render_surface{ nullptr }
     , _game{ ice::make_unique_null<TestGame>() }
 {
+    _task_thread = ice::create_task_thread(_allocator);
+    _task_thread->scheduler().schedule(foo_task());
+
     _platform_surface = ice::platform::create_window_surface(
         alloc, ice::render::RenderDriverAPI::Vulkan
     );
@@ -74,6 +89,8 @@ TestGameApp::~TestGameApp() noexcept
     _game = nullptr;
     _render_driver.destroy_surface(_render_surface);
     _platform_surface = nullptr;
+
+    _task_thread->stop();
 }
 
 void TestGameApp::handle_inputs(

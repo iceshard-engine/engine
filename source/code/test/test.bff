@@ -31,6 +31,7 @@
         }
         .Uses = {
             'utils'
+            'tasks'
             'modules'
             'engine'
             // 'engine_debug'

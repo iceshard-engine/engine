@@ -137,7 +137,7 @@ namespace ice::trait
         ice::World& world
     ) noexcept
     {
-        static ice::vec3f camera_pos = { -5.f, 0.f, -5.f };
+        static ice::vec3f camera_pos = { -8.f, 4.f, -8.f };
         static ice::vec3f camera_front = camera_pos + ice::vec3f{ 1.f, 0.f, 0.f };
         static ice::deg camera_yaw{ 0.f };
         static ice::deg camera_pitch{ 0.f };

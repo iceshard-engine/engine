@@ -19,6 +19,7 @@
 #include <ice/asset.hxx>
 #include <ice/asset_system.hxx>
 
+#include <ice/task.hxx>
 #include <ice/assert.hxx>
 #include <ice/log.hxx>
 #include <ice/stringid.hxx>
@@ -909,6 +910,15 @@ void TestGame::update() noexcept
 {
     _runner->next_frame();
 
+    // We execute the `update_stages` task on the current frame.
+    //  This way we dont run into issues where it could add stages to the same
+    //  GfxPass object twice.
+    _runner->current_frame().execute_task(update_stages());
+}
+
+auto TestGame::update_stages() noexcept -> ice::Task<>
+{
+
     for (ice::gfx::GfxStage* stage : _terrain.udpate_stages())
     {
         _gfx_pass->add_update_stage(stage);
@@ -924,12 +934,6 @@ void TestGame::update() noexcept
         "test.stage.clear"_sid
     };
 
-    _gfx_pass->add_stage(
-        "camera.update_view"_sid,
-        deps,
-        &_camera_manager
-    );
-
     static ice::StringID deps2[]{
         "camera.update_view"_sid,
     };
@@ -938,6 +942,12 @@ void TestGame::update() noexcept
         "terrain"_sid,
         deps2,
         &_terrain
+    );
+
+    _gfx_pass->add_stage(
+        "camera.update_view"_sid,
+        deps,
+        &_camera_manager
     );
 
     _gfx_pass->add_stage(
@@ -962,6 +972,8 @@ void TestGame::update() noexcept
         "default"_sid,
         _gfx_pass.get()
     );
+
+    co_return;
 }
 
 void TestGame::update_inputs(ice::input::DeviceQueue const& deivce_queue) noexcept

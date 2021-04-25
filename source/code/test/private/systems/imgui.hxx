@@ -244,7 +244,7 @@ namespace ice
             _vertices = device.create_buffer(BufferType::Vertex, 1 * 1024 * 1024);
             _device = &device;
 
-            //ImGui::NewFrame();
+            ImGui::NewFrame();
         }
 
         void on_deactivate(
@@ -326,7 +326,6 @@ namespace ice
 
             }
 
-            ImGui::NewFrame();
             ImGui::ShowDemoWindow();
         }
 
@@ -453,6 +452,8 @@ namespace ice
                 vtx_buffer_offset += cmd_list->VtxBuffer.Size;
                 idx_buffer_offset += cmd_list->IdxBuffer.Size;
             }
+
+            ImGui::NewFrame();
         }
 
     private:

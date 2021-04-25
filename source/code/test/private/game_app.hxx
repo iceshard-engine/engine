@@ -5,6 +5,9 @@
 #include <ice/engine.hxx>
 #include "game.hxx"
 
+#include <ice/task.hxx>
+#include <ice/task_thread.hxx>
+
 class TestGameApp final : public ice::platform::App
 {
 public:
@@ -24,6 +27,8 @@ public:
     ) noexcept override;
 
 private:
+    ice::UniquePtr<ice::TaskThread> _task_thread;
+
     ice::SystemClock _app_clock;
     ice::Allocator& _allocator;
     ice::Engine& _engine;

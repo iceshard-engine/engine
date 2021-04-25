@@ -65,8 +65,9 @@ namespace ice::trait
         ) noexcept override
         {
             using namespace ice::render;
-            BufferUpdateInfo image_buffer_update[1]{
-                BufferUpdateInfo{.buffer = _temp_transfer_buffer, .data = { _image_info.data, _image_info.width * _image_info.height * 4 } }
+            BufferUpdateInfo image_buffer_update[2]{
+                BufferUpdateInfo{.buffer = _temp_transfer_buffer, .data = { _image_info.data, _image_info.width * _image_info.height * 4 } },
+                BufferUpdateInfo{.buffer = _terrain_settings_buffer, .data = ice::data_view(_terrain_settings) },
             };
             _render_device->update_buffers(image_buffer_update);
 
@@ -364,8 +365,8 @@ namespace ice::trait
         _render_cache->_terrain_mesh_vertices = render_device.create_buffer(BufferType::Vertex, sizeof(vertices));
         _render_cache->_terrain_settings_buffer = render_device.create_buffer(BufferType::Uniform, sizeof(TerrainSettings));
 
-        _render_cache->_terrain_settings.level_inner = 1;
-        _render_cache->_terrain_settings.level_outer = 1;
+        _render_cache->_terrain_settings.level_inner = 2;
+        _render_cache->_terrain_settings.level_outer = 2;
 
         BufferUpdateInfo buffer_updates[]{
             BufferUpdateInfo{ .buffer = _render_cache->_terrain_mesh_indices, .data = ice::data_view(indices, sizeof(indices)) },
@@ -438,13 +439,13 @@ namespace ice::trait
                 }
                 break;
             case input_identifier(DeviceType::Keyboard, KeyboardKey::KeyP):
-                if (ev.value.button.state.clicked)
+                if (ev.value.button.state.clicked || ev.value.button.state.repeat)
                 {
                     _debug_pl = !_debug_pl;
                 }
                 break;
             case input_identifier(DeviceType::Keyboard, KeyboardKey::KeyI):
-                if (ev.value.button.state.clicked)
+                if (ev.value.button.state.clicked || ev.value.button.state.repeat)
                 {
                     *value_ptr[0] *= 2.f;
                     if (*value_ptr[0] > 64.f)
@@ -460,7 +461,7 @@ namespace ice::trait
                 }
                 break;
             case input_identifier(DeviceType::Keyboard, KeyboardKey::KeyU):
-                if (ev.value.button.state.clicked)
+                if (ev.value.button.state.clicked || ev.value.button.state.repeat)
                 {
                     *value_ptr[0] /= 2.f;
                     if (*value_ptr[0] < 1.f)
@@ -477,11 +478,6 @@ namespace ice::trait
                 break;
             }
         }
-
-        ICE_LOG(
-            ice::LogSeverity::Debug, ice::LogTag::Game,
-            "{} : {}", *value_ptr[0], *value_ptr[1]
-        );
 
         ice::render::RenderDevice& device = runner.graphics_device().device();
     }

@@ -6,7 +6,7 @@
 #include "core/collections/collections.bff"
 #include "core/modules/modules.bff"
 #include "core/utils/utils.bff"
-; #include "core/tasks/tasks.bff"
+#include "core/tasks/tasks.bff"
 
 #include "systems/resource_system/resource_system.bff"
 #include "systems/asset_system/asset_system.bff"

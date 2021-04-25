@@ -7,6 +7,8 @@
 #include <ice/world/world.hxx>
 #include <ice/engine.hxx>
 
+#include <ice/task.hxx>
+
 #include "systems/terrain.hxx"
 #include "systems/camera.hxx"
 #include "systems/imgui.hxx"
@@ -24,6 +26,8 @@ public:
     ~TestGame() noexcept;
 
     void update() noexcept;
+
+    auto update_stages() noexcept -> ice::Task<>;
 
     void update_inputs(
         ice::input::DeviceQueue const& device_events
