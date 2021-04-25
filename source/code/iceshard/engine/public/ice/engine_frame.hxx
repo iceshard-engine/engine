@@ -6,6 +6,9 @@
 namespace ice
 {
 
+    template<typename T>
+    class Task;
+
     struct EngineRequest;
 
     class EngineFrame
@@ -16,6 +19,8 @@ namespace ice
         virtual auto memory_consumption() noexcept -> ice::u32 = 0;
 
         virtual auto input_events() const noexcept -> ice::Span<ice::input::InputEvent const> = 0;
+
+        virtual void execute_task(ice::Task<void> task) noexcept = 0;
 
         virtual void push_requests(
             ice::Span<EngineRequest const> requests

@@ -1,6 +1,10 @@
 #pragma once
 #include <ice/engine_runner.hxx>
 
+#include <ice/task.hxx>
+#include <ice/task_thread.hxx>
+#include <ice/sync_manual_events.hxx>
+
 #include <ice/input/input_types.hxx>
 
 #include <ice/render/render_driver.hxx>
@@ -52,6 +56,10 @@ namespace ice
         auto current_frame() noexcept -> EngineFrame& override;
         void next_frame() noexcept override;
 
+        auto graphics_task(
+            ice::ManualResetEvent* reset_event
+        ) noexcept -> ice::Task<>;
+
     protected:
         void activate_worlds() noexcept;
         void deactivate_worlds() noexcept;
@@ -59,6 +67,9 @@ namespace ice
     private:
         ice::Allocator& _allocator;
         ice::SystemClock _clock;
+
+        ice::UniquePtr<ice::TaskThread> _graphics_thread;
+        ice::ManualResetEvent _graphics_thread_event = true;
 
         ice::memory::ProxyAllocator _frame_allocator;
         ice::memory::ScratchAllocator _frame_data_allocator[2];

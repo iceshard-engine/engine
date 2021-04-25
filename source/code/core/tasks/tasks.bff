@@ -1,0 +1,21 @@
+.Project =
+[
+    .Name = 'tasks'
+    .Kind = .Kind_StaticLib
+    .Group = 'Core'
+
+    .BaseDir = '$WorkspaceCodeDir$/core/tasks'
+
+    .Public =
+    [
+        .Uses = {
+            'utils'
+            'collections'
+        }
+
+        .Libs = {
+            'Synchronization'
+        }
+    ]
+]
+.Projects + .Project

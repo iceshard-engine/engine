@@ -29,6 +29,7 @@ namespace ice
         : ice::EngineRunner{ }
         , _allocator{ alloc }
         , _clock{ ice::clock::create_clock() }
+        , _graphics_thread{ ice::create_task_thread(_allocator) }
         , _frame_allocator{ _allocator, "frame-allocator" }
         , _frame_data_allocator{
             ice::memory::ScratchAllocator{ _frame_allocator, detail::FrameAllocatorCapacity },
@@ -58,6 +59,9 @@ namespace ice
 
     IceshardEngineRunner::~IceshardEngineRunner() noexcept
     {
+        _graphics_thread->stop();
+        _graphics_thread->join();
+
         deactivate_worlds();
 
         _gfx_current_frame = nullptr;
@@ -112,12 +116,18 @@ namespace ice
     void IceshardEngineRunner::next_frame() noexcept
     {
         // Update all active worlds
+        _graphics_thread_event.wait();
+        _graphics_thread_event.reset();
+
         _world_tracker.update_active_worlds(*this);
 
         // Move the current frame to the 'previous' slot.
         _previous_frame = ice::move(_current_frame);
+        _previous_frame->wait_ready();
 
-        _gfx_current_frame->execute_passes(previous_frame());
+        _graphics_thread->scheduler().schedule(
+            graphics_task(&_graphics_thread_event)
+        );
 
         for (ice::EngineRequest const& request : _previous_frame->requests())
         {
@@ -157,9 +167,18 @@ namespace ice
         // We need to update the allocator index
         _next_free_allocator += 1;
         _next_free_allocator %= ice::size(_frame_data_allocator);
+    }
 
+    auto IceshardEngineRunner::graphics_task(
+        ice::ManualResetEvent* reset_event
+    ) noexcept -> ice::Task<>
+    {
+        _gfx_current_frame->execute_passes(previous_frame());
         _gfx_current_frame->present();
         _gfx_current_frame = _gfx_device->next_frame(_allocator);
+
+        reset_event->set();
+        co_return;
     }
 
     void IceshardEngineRunner::activate_worlds() noexcept
