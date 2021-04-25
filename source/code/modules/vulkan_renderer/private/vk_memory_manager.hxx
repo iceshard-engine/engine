@@ -45,7 +45,7 @@ namespace ice::render::vk
             .name = "Small Image Memory"
         },
         AllocationBlockInfo{
-            .block_size = 1024 * 1024 * 16,
+            .block_size = 2048 * 2048 * 4 * 2,
             .allocation_min = 128 * 128 * 4 + 1,
             .allocation_max = 2048 * 2048 * 4,
             .allocation_stride = 16 * 16 * 4,
