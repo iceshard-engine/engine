@@ -217,6 +217,7 @@ namespace ice::render::vk
         VkPhysicalDeviceFeatures enabled_device_features{ };
         enabled_device_features.geometryShader = available_device_features.geometryShader;
         enabled_device_features.tessellationShader = available_device_features.tessellationShader;
+        enabled_device_features.fillModeNonSolid = available_device_features.fillModeNonSolid;
 
         VkDeviceCreateInfo device_create_info{ .sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO };
         device_create_info.pEnabledFeatures = &enabled_device_features;
