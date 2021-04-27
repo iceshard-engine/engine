@@ -30,7 +30,7 @@ void main()
 	vec2 uv = gl_TessCoord.xy;// mix(uv1, uv2, gl_TessCoord.y);
 
     float height = texture(sampler2D(hm_image, hm_sampler), uv).x;
-    pos.y += height * 2;
+    pos.y += height * 10;
     gl_Position = pos;
     tes_height = height;
 }

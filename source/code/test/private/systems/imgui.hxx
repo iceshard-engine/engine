@@ -38,8 +38,7 @@ namespace ice
     public:
         Ice_ImGui(
             ice::Allocator&,
-            ice::Engine& engine,
-            ice::render::RenderSwapchain const& swapchain
+            ice::Engine& engine
         ) noexcept
             : _engine{ engine }
         {
@@ -49,10 +48,6 @@ namespace ice
             io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
             io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
             io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
-
-            ice::vec2u extent = swapchain.extent();
-            io.DisplaySize.x = extent.x;
-            io.DisplaySize.y = extent.y;
         }
 
         ~Ice_ImGui() noexcept
@@ -72,8 +67,14 @@ namespace ice
             ice::i32 width, height;
 
             RenderDevice& device = runner.graphics_device().device();
+            RenderSwapchain const& swapchain = runner.graphics_device().swapchain();
+
+            ice::vec2u extent = swapchain.extent();
 
             auto& io = ImGui::GetIO();
+            io.DisplaySize.x = extent.x;
+            io.DisplaySize.y = extent.y;
+
             io.Fonts->GetTexDataAsRGBA32(&pixels, &width, &height);
 
             io.KeyMap[ImGuiKey_Tab] = (uint32_t)ice::input::KeyboardKey::Tab;

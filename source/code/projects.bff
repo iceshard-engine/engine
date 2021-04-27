@@ -15,20 +15,19 @@
 
 #include "platforms/platform/platform.bff"
 #include "platforms/platform_win32/platform_win32.bff"
-;
-; #include "drivers/sdl2_driver/sdl2_driver.bff"
-;
+
 #include "iceshard/application/application.bff"
 #include "iceshard/engine/engine.bff"
 ; #include "iceshard/engine_debug/engine_debug.bff"
 #include "iceshard/iceshard/iceshard.bff"
-;
+
 ; #include "modules/debug_module/debug_module.bff"
 #include "modules/iceshard_pipelines/iceshard_pipelines.bff"
 #include "modules/vulkan_renderer/vulkan_renderer.bff"
 
-; #include "tools/asset_compiler/asset_compiler.bff"
-;
+#include "framework/base/framework_base.bff"
+#include "framework/game2d/framework_game2d.bff"
+
 #include "test/test.bff"
 
 #include "core/core/core_tests.bff"

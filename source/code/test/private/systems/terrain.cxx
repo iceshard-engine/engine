@@ -350,10 +350,10 @@ namespace ice::trait
         );
 
         ice::gfx::Vertice vertices[]{
-            Vertice{ .pos = { -10.f, 0.f, -10.f }, .norm = { 0.f, 1.f, 0.f }, .uv = { 0.f, 0.f } },
-            Vertice{ .pos = { -10.f, 0.f, 10.f }, .norm = { 0.f, 1.f, 0.f }, .uv = { 0.f, 1.f } },
-            Vertice{ .pos = { 10.f, 0.f, 10.f }, .norm = { 0.f, 1.f, 0.f }, .uv = { 1.f, 1.f } },
-            Vertice{ .pos = { 10.f, 0.f, -10.f }, .norm = { 0.f, 1.f, 0.f }, .uv = { 1.f, 0.f } },
+            Vertice{ .pos = { -50.f, 0.f, -50.f }, .norm = { 0.f, 1.f, 0.f }, .uv = { 0.f, 0.f } },
+            Vertice{ .pos = { -50.f, 0.f, 50.f }, .norm = { 0.f, 1.f, 0.f }, .uv = { 0.f, 1.f } },
+            Vertice{ .pos = { 50.f, 0.f, 50.f }, .norm = { 0.f, 1.f, 0.f }, .uv = { 1.f, 1.f } },
+            Vertice{ .pos = { 50.f, 0.f, -50.f }, .norm = { 0.f, 1.f, 0.f }, .uv = { 1.f, 0.f } },
         };
 
         ice::u16 indices[]{

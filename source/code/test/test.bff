@@ -37,6 +37,7 @@
             // 'engine_debug'
             'application'
             'platform_win32'
+            'framework_base'
         }
     ]
 ]
