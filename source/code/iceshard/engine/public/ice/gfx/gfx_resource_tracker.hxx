@@ -63,6 +63,9 @@ namespace ice::gfx
         template<>
         static constexpr GfxResource::Type Constant_GfxResourceType<ice::render::Image> = GfxResource::Type::Image;
 
+        template<>
+        static constexpr GfxResource::Type Constant_GfxResourceType<ice::render::Sampler> = GfxResource::Type::Sampler;
+
         template<typename T>
         auto constexpr MemberPtr_GfxResourceValue() noexcept
         {
@@ -109,6 +112,12 @@ namespace ice::gfx
         auto constexpr MemberPtr_GfxResourceValue<ice::render::Image>() noexcept
         {
             return &GfxResource::Value::image;
+        }
+
+        template<>
+        auto constexpr MemberPtr_GfxResourceValue<ice::render::Sampler>() noexcept
+        {
+            return &GfxResource::Value::sampler;
         }
 
     } // namespace detail

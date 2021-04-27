@@ -28,7 +28,7 @@ namespace ice
             ice::EngineFrame& frame,
             ice::EngineRunner& runner,
             ice::World& world
-        ) noexcept = 0;
+        ) noexcept { }
     };
 
 } // namespace ice

@@ -327,7 +327,7 @@ namespace ice::render::vk
         case ice::render::PrimitiveTopology::PatchList:
             return VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_PATCH_LIST;
         default:
-            break;
+            return VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_MAX_ENUM;
         }
     }
 

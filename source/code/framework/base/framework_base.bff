@@ -1,0 +1,47 @@
+.Project =
+[
+    .Name = 'framework_base'
+    .Kind = .Kind_ObjectList
+    .Group = 'Framework'
+
+    .BaseDir = '$WorkspaceCodeDir$/framework/base'
+
+    .Public =
+    [
+        .DependsOn =
+        [
+            .Runtime = {
+                'iceshard'
+            }
+        ]
+
+        .Modules = { }
+
+        .Uses = {
+            'utils'
+            'tasks'
+            'modules'
+            'engine'
+            'application'
+            'platform_win32'
+        }
+    ]
+
+//     .Rule_Win32
+//     {
+//         .Name = 'Game2D-Win32'
+//         .Requires = { }
+//
+//         .Public =
+//         [
+//             .Uses = {
+//                 'platform_win32'
+//             }
+//         ]
+//     }
+//
+//     .Rules = {
+//         .Rule_Win32
+//     }
+]
+.Projects + .Project

@@ -42,5 +42,6 @@ namespace ice::render
     enum class ImageFormat : ice::u32;
     enum class BufferType : ice::u32;
     enum class ShaderStageFlags : ice::u32;
+    enum class CommandBufferType : ice::u32;
 
 } // namespace ice::render
