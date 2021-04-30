@@ -68,7 +68,7 @@ namespace ice::input
 
         for (detail::ControlState& control : _controls)
         {
-            detail::handle_value_button_hold(control);
+            detail::handle_value_button_hold_and_repeat(control);
         }
     }
 

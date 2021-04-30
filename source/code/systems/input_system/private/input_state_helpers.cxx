@@ -22,7 +22,7 @@ namespace ice::input::detail
         button.state.pressed = true;
     }
 
-    void handle_value_button_hold(ControlState& value) noexcept
+    void handle_value_button_hold_and_repeat(ControlState& value) noexcept
     {
         auto& button = value.value.button;
 

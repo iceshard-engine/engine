@@ -15,7 +15,7 @@ namespace ice::input::detail
     };
 
     void handle_value_button_down(ControlState& value) noexcept;
-    void handle_value_button_hold(ControlState& value) noexcept;
+    void handle_value_button_hold_and_repeat(ControlState& value) noexcept;
     void handle_value_button_up(ControlState& value) noexcept;
 
     void handle_value_button_down_simplified(ControlState& value) noexcept;
