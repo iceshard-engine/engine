@@ -24,8 +24,11 @@ namespace ice
         Invalid = 0x0,
         Config,
         Mesh,
+        Shape2D,
         Shader,
         Texture,
+
+        Level,
 
         Reserved = 0x00ff'ffff,
         Unresolved = 0xffff'ffff,
