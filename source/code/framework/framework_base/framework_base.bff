@@ -4,7 +4,7 @@
     .Kind = .Kind_ObjectList
     .Group = 'Framework'
 
-    .BaseDir = '$WorkspaceCodeDir$/framework/base'
+    .BaseDir = '$WorkspaceCodeDir$/framework/framework_base'
 
     .Public =
     [

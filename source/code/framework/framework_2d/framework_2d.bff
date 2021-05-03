@@ -1,0 +1,17 @@
+.Project =
+[
+    .Name = 'framework_2d'
+    .Kind = .Kind_ObjectList
+    .Group = 'Framework'
+
+    .BaseDir = '$WorkspaceCodeDir$/framework/framework_2d'
+
+    .Public =
+    [
+        .Uses = {
+            'framework_base'
+        }
+    ]
+]
+
+.Projects + .Project
