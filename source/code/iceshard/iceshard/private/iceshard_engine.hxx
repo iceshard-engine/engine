@@ -3,6 +3,7 @@
 #include <ice/asset_system.hxx>
 #include <ice/entity/entity_index.hxx>
 #include <ice/input/input_types.hxx>
+#include <ice/memory/proxy_allocator.hxx>
 #include "world/iceshard_world_manager.hxx"
 
 namespace ice
@@ -17,7 +18,7 @@ namespace ice
             ice::Allocator& alloc,
             ice::AssetSystem& asset_system
         ) noexcept;
-        ~IceshardEngine() noexcept override = default;
+        ~IceshardEngine() noexcept override;
 
         auto create_runner(
             ice::UniquePtr<ice::input::InputTracker> input_tracker,
@@ -31,7 +32,7 @@ namespace ice
         auto world_manager() noexcept -> ice::WorldManager& override;
 
     private:
-        ice::Allocator& _allocator;
+        ice::memory::ProxyAllocator _allocator;
         ice::AssetSystem& _asset_system;
         ice::EntityIndex _entity_index;
         ice::IceshardWorldManager _world_manager;

@@ -12,14 +12,25 @@ namespace ice
         ice::EntityStorage* entity_storage
     ) noexcept
         : _allocator{ alloc }
-        , _entity_storage{ _entity_storage }
+        , _entity_storage{ entity_storage }
         , _traits{ _allocator }
+        , _data_storage{ _allocator }
     {
+    }
+
+    auto IceshardWorld::allocator() noexcept -> ice::Allocator&
+    {
+        return _allocator;
     }
 
     auto IceshardWorld::entity_storage() noexcept -> ice::EntityStorage&
     {
         return *_entity_storage;
+    }
+
+    auto IceshardWorld::data_storage() noexcept -> ice::DataStorage&
+    {
+        return _data_storage;
     }
 
 	void IceshardWorld::add_trait(

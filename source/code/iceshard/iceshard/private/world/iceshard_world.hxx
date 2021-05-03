@@ -1,7 +1,7 @@
 #pragma once
 #include <ice/world/world.hxx>
 #include <ice/entity/entity_storage.hxx>
-#include <ice/allocator.hxx>
+#include <ice/data_storage.hxx>
 
 namespace ice
 {
@@ -21,9 +21,10 @@ namespace ice
             ice::EntityStorage* entity_storage
         ) noexcept;
 
+        auto allocator() noexcept -> ice::Allocator& override;
         auto entity_storage() noexcept -> ice::EntityStorage& override;
 
-        void set_state(WorldState state) noexcept;
+        auto data_storage() noexcept -> ice::DataStorage& override;
 
         void add_trait(
             ice::StringID_Arg name,
@@ -46,6 +47,7 @@ namespace ice
         ice::EntityStorage* _entity_storage;
 
         ice::pod::Hash<ice::WorldTrait*> _traits;
+        ice::HashedDataStorage _data_storage;
     };
 
 } // namespace ice

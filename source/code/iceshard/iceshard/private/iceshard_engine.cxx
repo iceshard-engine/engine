@@ -26,10 +26,14 @@ namespace ice
         ice::AssetSystem& asset_system
     ) noexcept
         : ice::Engine{ }
-        , _allocator{ alloc }
+        , _allocator{ alloc, "engine" }
         , _asset_system{ asset_system }
         , _entity_index{ _allocator, 100'000, 500'000 }
         , _world_manager{ _allocator }
+    {
+    }
+
+    IceshardEngine::~IceshardEngine() noexcept
     {
     }
 
@@ -48,6 +52,7 @@ namespace ice
             return ice::make_unique<EngineRunner, IceshardEngineRunner>(
                 _allocator,
                 _allocator,
+                *this,
                 _world_manager,
                 ice::move(input_tracker),
                 ice::move(gfx_device)

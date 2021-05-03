@@ -1,4 +1,5 @@
 #include "iceshard_runner.hxx"
+#include "iceshard_engine.hxx"
 #include "iceshard_frame.hxx"
 
 #include "world/iceshard_world.hxx"
@@ -22,12 +23,14 @@ namespace ice
 
     IceshardEngineRunner::IceshardEngineRunner(
         ice::Allocator& alloc,
+        ice::IceshardEngine& engine,
         ice::IceshardWorldManager& world_manager,
         ice::UniquePtr<ice::input::InputTracker> input_tracker,
         ice::UniquePtr<ice::gfx::IceGfxDevice> gfx_device
     ) noexcept
         : ice::EngineRunner{ }
-        , _allocator{ alloc }
+        , _allocator{ alloc, "engine-runner" }
+        , _engine{ engine }
         , _clock{ ice::clock::create_clock() }
         , _graphics_thread{ ice::create_task_thread(_allocator) }
         , _frame_allocator{ _allocator, "frame-allocator" }
@@ -115,10 +118,10 @@ namespace ice
 
     void IceshardEngineRunner::next_frame() noexcept
     {
-        // Update all active worlds
         _graphics_thread_event.wait();
         _graphics_thread_event.reset();
 
+        // Update all active worlds
         _world_tracker.update_active_worlds(*this);
 
         // Move the current frame to the 'previous' slot.
@@ -134,14 +137,16 @@ namespace ice
             switch (request.name.hash_value)
             {
             case ice::stringid_hash(Request_ActivateWorld):
-                _world_tracker.activate_world(*this,
+                _world_tracker.activate_world(
+                    _engine, *this,
                     static_cast<ice::IceshardWorld*>(
                         reinterpret_cast<ice::World*>(request.payload)
                     )
                 );
                 break;
             case ice::stringid_hash(Request_DeactivateWorld):
-                _world_tracker.deactivate_world(*this,
+                _world_tracker.deactivate_world(
+                    _engine, *this,
                     static_cast<ice::IceshardWorld*>(
                         reinterpret_cast<ice::World*>(request.payload)
                     )
@@ -173,6 +178,7 @@ namespace ice
         ice::ManualResetEvent* reset_event
     ) noexcept -> ice::Task<>
     {
+        _gfx_current_frame->wait_ready();
         _gfx_current_frame->execute_passes(previous_frame());
         _gfx_current_frame->present();
         _gfx_current_frame = _gfx_device->next_frame(_allocator);
@@ -185,7 +191,7 @@ namespace ice
     {
         for (auto const& entry : _world_manager.worlds())
         {
-            _world_tracker.activate_world(*this, entry.value);
+            _world_tracker.activate_world(_engine, *this, entry.value);
         }
     }
 
@@ -193,7 +199,7 @@ namespace ice
     {
         for (auto const& entry : _world_manager.worlds())
         {
-            _world_tracker.deactivate_world(*this, entry.value);
+            _world_tracker.deactivate_world(_engine, *this, entry.value);
         }
     }
 

@@ -1,6 +1,7 @@
 #pragma once
 #include <ice/engine_request.hxx>
 #include <ice/entity/entity_storage.hxx>
+#include <ice/data_storage.hxx>
 
 namespace ice
 {
@@ -20,7 +21,10 @@ namespace ice
     class World
     {
     public:
+        virtual auto allocator() noexcept -> ice::Allocator& = 0;
         virtual auto entity_storage() noexcept -> ice::EntityStorage& = 0;
+
+        virtual auto data_storage() noexcept -> ice::DataStorage& = 0;
 
         virtual void add_trait(
             ice::StringID_Arg name,

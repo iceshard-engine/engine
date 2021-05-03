@@ -17,6 +17,7 @@ namespace ice
         ) noexcept;
         ~IceshardMemoryFrame() noexcept override;
 
+        auto allocator() noexcept -> ice::Allocator& override;
         auto memory_consumption() noexcept -> ice::u32 override;
 
         auto input_events() noexcept -> ice::pod::Array<ice::input::InputEvent>&;
@@ -42,6 +43,10 @@ namespace ice
             ice::u32 size,
             ice::u32 alignment
         ) noexcept -> void* override;
+
+        void release_named_data(
+            ice::StringID_Arg name
+        ) noexcept override;
 
         auto requests() const noexcept -> ice::Span<EngineRequest const>;
 

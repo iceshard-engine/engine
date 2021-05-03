@@ -6,6 +6,9 @@
 namespace ice::gfx
 {
 
+    template<typename T>
+    class Task;
+
     class GfxQueue;
 
     class GfxFrame
@@ -14,6 +17,10 @@ namespace ice::gfx
         virtual ~GfxFrame() noexcept = default;
 
     public:
+        virtual void execute_task(
+            ice::Task<void> task
+        ) noexcept = 0;
+
         virtual void enqueue_pass(
             ice::StringID_Arg queue_name,
             ice::gfx::GfxPass* pass

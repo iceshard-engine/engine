@@ -4,6 +4,7 @@
 namespace ice
 {
 
+    class Engine;
     class EngineRunner;
 
     class IceshardWorldTracker
@@ -13,11 +14,13 @@ namespace ice
         ~IceshardWorldTracker() noexcept;
 
         void activate_world(
+            ice::Engine& engine,
             ice::EngineRunner& runner,
             ice::IceshardWorld* world
         ) noexcept;
 
         void deactivate_world(
+            ice::Engine& engine,
             ice::EngineRunner& runner,
             ice::IceshardWorld* world
         ) noexcept;

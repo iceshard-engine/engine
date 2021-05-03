@@ -1,4 +1,5 @@
 #include "iceshard_frame.hxx"
+#include "iceshard_task_executor.hxx"
 #include <ice/task_sync_wait.hxx>
 #include <ice/sync_manual_events.hxx>
 #include <ice/engine_request.hxx>
@@ -46,7 +47,7 @@ namespace ice
         ice::pod::array::reserve(_requests, (detail::RequestAllocatorCapacity / sizeof(ice::EngineRequest)) - 10);
         ice::pod::hash::reserve(_named_objects, (detail::StorageAllocatorCapacity / (sizeof(ice::pod::Hash<ice::uptr>::Entry) + sizeof(ice::u32))) - 10);
 
-        _frame_tasks.reserve(detail::TaskAllocatorCapacity / sizeof(ice::Task<void>) - 10);
+        _frame_tasks.reserve((detail::TaskAllocatorCapacity - 1024) / sizeof(ice::Task<void>));
     }
 
     IceshardMemoryFrame::~IceshardMemoryFrame() noexcept
@@ -55,6 +56,11 @@ namespace ice
         {
             _data_allocator.deallocate(entry.value);
         }
+    }
+
+    auto IceshardMemoryFrame::allocator() noexcept -> ice::Allocator&
+    {
+        return _data_allocator;
     }
 
     auto IceshardMemoryFrame::memory_consumption() noexcept -> ice::u32
@@ -85,44 +91,7 @@ namespace ice
 
     void IceshardMemoryFrame::wait_ready() noexcept
     {
-        if (_frame_tasks.empty() == false)
-        {
-            ice::u32 const task_count = static_cast<ice::u32>(_frame_tasks.size());
-
-            // [issue #36] There is currently an issue that prevents to use a std::pmr::vector for
-            //  any object containing a std::atomic<T> member.
-            //  This issue exists for both the standard vector version and the Iceshard version, `ice::Vector`.
-            //  Because of this we allocate enough memory, constructor and pass the needed array of ManualResetEvents manualy.
-            void* ptr = _allocator.allocate(task_count * sizeof(ManualResetEvent) + 8);
-            void* aligned_ptr = ice::memory::ptr_align_forward(ptr, alignof(ManualResetEvent));
-
-            // Call for each event the default constructor.
-            ManualResetEvent* ptr_events = reinterpret_cast<ManualResetEvent*>(aligned_ptr);
-            for (ice::u32 idx = 0; idx < task_count; ++idx)
-            {
-                new (reinterpret_cast<void*>(ptr_events + idx)) ManualResetEvent{ };
-            }
-
-            // [issue #35] Wait for all frame tasks to finish.
-            //  Currently the `sync_wait_all` calls the .wait() method on all events.
-            //  We should probably re-think the whole API.
-            ice::sync_wait_all(
-                _allocator,
-                _frame_tasks,
-                { ptr_events, task_count }
-            );
-
-            _frame_tasks.clear();
-
-            // Call for each event their destructor.
-            for (ice::u32 idx = 0; idx < task_count; ++idx)
-            {
-                (ptr_events + idx)->~ManualResetEvent();
-            }
-
-            // Deallocate the memory.
-            _allocator.deallocate(ptr);
-        }
+        IceshardTaskExecutor{ _allocator, ice::move(_frame_tasks) }.wait_ready();
     }
 
     void IceshardMemoryFrame::push_requests(
@@ -162,6 +131,20 @@ namespace ice
         void* object_ptr = _data_allocator.allocate(size, alignment);
         ice::pod::hash::set(_named_objects, name_hash, object_ptr);
         return object_ptr;
+    }
+
+    void IceshardMemoryFrame::release_named_data(ice::StringID_Arg name) noexcept
+    {
+        ice::u64 const name_hash = ice::hash(name);
+        ICE_ASSERT(
+            ice::pod::hash::has(_named_objects, name_hash) == true,
+            "An object with this name `{}` already exists in this frame!",
+            ice::stringid_hint(name)
+        );
+
+        void* data = ice::pod::hash::get<void*>(_named_objects, name_hash, nullptr);
+        _allocator.deallocate(data);
+        ice::pod::hash::set<void*>(_named_objects, name_hash, nullptr);
     }
 
     auto IceshardMemoryFrame::requests() const noexcept -> ice::Span<EngineRequest const>

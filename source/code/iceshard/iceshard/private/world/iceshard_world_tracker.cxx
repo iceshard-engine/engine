@@ -17,6 +17,7 @@ namespace ice
     }
 
     void IceshardWorldTracker::activate_world(
+        ice::Engine& engine,
         ice::EngineRunner& runner,
         ice::IceshardWorld* world
     ) noexcept
@@ -31,7 +32,7 @@ namespace ice
         {
             for (auto const& trait_entry : entry.world->traits())
             {
-                trait_entry.value->on_activate(runner, *world);
+                trait_entry.value->on_activate(engine, runner, *world);
             }
             entry.current_state = WorldState::Active;
         }
@@ -40,6 +41,7 @@ namespace ice
     }
 
     void IceshardWorldTracker::deactivate_world(
+        ice::Engine& engine,
         ice::EngineRunner& runner,
         ice::IceshardWorld* world
     ) noexcept
@@ -54,7 +56,7 @@ namespace ice
         {
             for (auto const& trait_entry : entry.world->traits())
             {
-                trait_entry.value->on_deactivate(runner, *world);
+                trait_entry.value->on_deactivate(engine, runner, *world);
             }
 
             ice::pod::hash::remove(_worlds, ice::hash_from_ptr(world));

@@ -2,6 +2,10 @@
 #include <ice/render/render_device.hxx>
 #include <ice/engine_frame.hxx>
 #include <ice/gfx/gfx_frame.hxx>
+#include <ice/memory/proxy_allocator.hxx>
+#include <ice/collections.hxx>
+#include <ice/task.hxx>
+
 #include "iceshard_gfx_queue_group.hxx"
 
 namespace ice::gfx
@@ -14,6 +18,8 @@ namespace ice::gfx
         ~IceGfxBaseFrame() noexcept override = default;
 
         virtual void present() noexcept { }
+
+        virtual void wait_ready() noexcept { }
 
         auto get_queue(
             ice::StringID_Arg name
@@ -46,6 +52,9 @@ namespace ice::gfx
 
         void present() noexcept;
 
+        void execute_task(ice::Task<void> task) noexcept override;
+        void wait_ready() noexcept;
+
         void enqueue_pass(
             ice::StringID_Arg queue_name,
             ice::gfx::GfxPass* pass
@@ -56,10 +65,12 @@ namespace ice::gfx
         ) noexcept override;
 
     private:
+        ice::memory::ProxyAllocator _allocator;
         ice::render::RenderDevice* _render_device;
         ice::render::RenderSwapchain* _render_swapchain;
 
         ice::pod::Hash<ice::gfx::GfxPass*> _enqueued_passes;
+        ice::Vector<ice::Task<>> _frame_tasks;
     };
 
 } // namespace ice::gfx

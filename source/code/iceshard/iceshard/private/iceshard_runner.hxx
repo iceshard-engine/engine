@@ -25,6 +25,7 @@
 namespace ice
 {
 
+    class IceshardEngine;
     class IceshardWorldManager;
     class IceshardWorldTracker;
 
@@ -35,6 +36,7 @@ namespace ice
     public:
         IceshardEngineRunner(
             ice::Allocator& alloc,
+            ice::IceshardEngine& engine,
             ice::IceshardWorldManager& world_manager,
             ice::UniquePtr<ice::input::InputTracker> input_tracker,
             ice::UniquePtr<ice::gfx::IceGfxDevice> gfx_device
@@ -65,8 +67,10 @@ namespace ice
         void deactivate_worlds() noexcept;
 
     private:
-        ice::Allocator& _allocator;
+        ice::memory::ProxyAllocator _allocator;
         ice::SystemClock _clock;
+
+        ice::IceshardEngine& _engine;
 
         ice::UniquePtr<ice::TaskThread> _graphics_thread;
         ice::ManualResetEvent _graphics_thread_event = true;
