@@ -198,6 +198,8 @@ namespace ice
             ice::pod::Array<ice::ArchetypeInfo> const& infos
         ) noexcept;
 
+        inline auto entity_count() const noexcept -> ice::u32;
+
         template<typename Fn>
         inline void for_each(Fn&& fn) noexcept;
 
@@ -216,6 +218,8 @@ namespace ice
             ice::Allocator& alloc,
             ice::pod::Array<ice::ArchetypeInfo> const& infos
         ) noexcept;
+
+        inline auto entity_count() const noexcept -> ice::u32;
 
         template<typename Fn>
         inline void for_each(Fn&& fn) noexcept;
@@ -293,6 +297,21 @@ namespace ice
         , _archetype_block_count{ alloc }
         , _archetype_blocks{ alloc }
     { }
+
+    template<ComponentQueryType... Components>
+    inline auto ComponentQuery<Components...>::ResultByEntity::entity_count() const noexcept -> ice::u32
+    {
+        ice::ArchetypeBlock* const* block_it = ice::pod::begin(_archetype_blocks);
+        ice::ArchetypeBlock* const* const block_end = ice::pod::end(_archetype_blocks);
+
+        ice::u32 result = 0;
+        while (block_it != block_end)
+        {
+            result += (*block_it)->entity_count;
+            block_it += 1;
+        }
+        return result;
+    }
 
     template<ComponentQueryType... Components>
     template<typename Fn>
@@ -388,6 +407,21 @@ namespace ice
         , _archetype_block_count{ alloc }
         , _archetype_blocks{ alloc }
     { }
+
+    template<ComponentQueryType... Components>
+    inline auto ComponentQuery<Components...>::ResultByBlock::entity_count() const noexcept -> ice::u32
+    {
+        ice::ArchetypeBlock** block_it = ice::pod::begin(_archetype_blocks);
+        ice::ArchetypeBlock** const block_end = ice::pod::end(_archetype_blocks);
+
+        ice::u32 result = 0;
+        while (block_it != block_end)
+        {
+            result += (*block_it)->entity_count;
+            block_it += 1;
+        }
+        return result;
+    }
 
     template<ComponentQueryType... Components>
     template<typename Fn>

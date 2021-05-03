@@ -170,6 +170,11 @@ namespace ice
         }
     }
 
+    auto EntityStorage::archetype_index() noexcept -> ice::ArchetypeIndex&
+    {
+        return _archetype_index;
+    }
+
     void EntityStorage::set_archetype(
         ice::Entity entity,
         ice::ArchetypeHandle archetype

@@ -21,6 +21,8 @@ namespace ice
         ) noexcept;
         ~EntityStorage() noexcept;
 
+        auto archetype_index() noexcept -> ice::ArchetypeIndex&;
+
         void set_archetype(
             ice::Entity entity,
             ice::ArchetypeHandle archetype
