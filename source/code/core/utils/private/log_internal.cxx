@@ -22,4 +22,14 @@ namespace ice::detail
         return ice::map::get(_tags, tag, _empty_tag);
     }
 
+
+	auto make_string(char const* begin, char const* end) noexcept -> ice::String
+	{
+#if _MSC_VER == 1927
+		return ice::String{ begin, static_cast<ice::u64>(end - begin) };
+#else
+		return ice::String{ begin, end };
+#endif
+	}
+
 } // namespace ice::detail

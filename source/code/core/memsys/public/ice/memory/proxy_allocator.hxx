@@ -28,10 +28,10 @@ namespace ice::memory
         void deallocate(void* ptr) noexcept override;
 
         //! \copydoc allocator::allocated_size(void* ptr)
-        auto allocated_size(void* ptr) noexcept -> uint32_t override;
+        auto allocated_size(void* ptr) const noexcept -> uint32_t override;
 
         //! \copydoc allocator::total_allocated
-        auto total_allocated() noexcept -> uint32_t override;
+        auto total_allocated() const noexcept -> uint32_t override;
 
         //! \brief The backing allocator.
         auto backing_allocator() noexcept -> ice::Allocator& { return _backing_allocator; }

@@ -26,7 +26,6 @@
 #include "modules/vulkan_renderer/vulkan_renderer.bff"
 
 #include "framework/base/framework_base.bff"
-#include "framework/game2d/framework_game2d.bff"
 
 #include "test/test.bff"
 

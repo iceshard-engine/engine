@@ -26,7 +26,7 @@ namespace ice::memory
     } // namespace detail
 
     ScratchAllocator::ScratchAllocator(ice::Allocator& backing, uint32_t size) noexcept
-        : ice::Allocator{ }
+        : ice::Allocator{ backing }
         , _backing{ backing }
     {
         _begin = _backing.allocate(size, alignof(tracking::AllocationHeader));
@@ -119,7 +119,7 @@ namespace ice::memory
         }
     }
 
-    auto ScratchAllocator::allocated_size(void* pointer) noexcept -> uint32_t
+    auto ScratchAllocator::allocated_size(void* pointer) const noexcept -> uint32_t
     {
         if (is_backing_pointer(pointer))
         {
@@ -139,7 +139,7 @@ namespace ice::memory
         }
     }
 
-    auto ScratchAllocator::total_allocated() noexcept -> uint32_t
+    auto ScratchAllocator::total_allocated() const noexcept -> uint32_t
     {
         auto distance = ptr_distance(_free, _allocate);
         if (distance < 0)
@@ -176,7 +176,7 @@ namespace ice::memory
         return pointer >= _free || pointer < _allocate;
     }
 
-    bool ScratchAllocator::is_backing_pointer(void* pointer) noexcept
+    bool ScratchAllocator::is_backing_pointer(void* pointer) const noexcept
     {
         return pointer < _begin || pointer >= _end;
     }

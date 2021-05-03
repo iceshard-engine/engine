@@ -89,7 +89,7 @@ namespace ice::detail
             final_buffer.push_back('\n');
         }
 
-        fmt::print(stderr, ice::String{ final_buffer.begin(), final_buffer.end() });
+        fmt::print(stderr, make_string(final_buffer.begin(), final_buffer.end()));
 
         final_buffer.push_back('\0');
         OutputDebugString(final_buffer.data());
