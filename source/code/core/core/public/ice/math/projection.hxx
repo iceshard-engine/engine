@@ -47,12 +47,14 @@ namespace ice::math
     ) noexcept -> mat<4, 4, f32>
     {
         mat<4, 4, f32> result{ };
+        // [issue #37] Pick a single coordinate system and check this code.
+        //  As it might work for now but not be 100% valid.
         result.v[0][0] = 2.f / (right - left);
-        result.v[1][1] = 2.f / (bottom - top);
-        result.v[2][2] = 1.f / (nearv - farv);
+        result.v[1][1] = 2.f / (top - bottom);
+        result.v[2][2] = 2.f / (farv - nearv);
         result.v[3][0] = -(right + left) / (right - left);
-        result.v[3][1] = -(bottom + top) / (bottom - top);
-        result.v[3][2] = nearv / (nearv - farv);
+        result.v[3][1] = -(top + bottom) / (top - bottom);
+        result.v[3][2] = -(farv + nearv) / (farv - nearv);
         result.v[3][3] = 1.f;
         return result;
     }
