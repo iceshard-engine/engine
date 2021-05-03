@@ -11,8 +11,9 @@ namespace ice
         static constexpr uint32_t Constant_SizeNotTracked = 0xffffffffu;
         static constexpr uint32_t Constant_DefaultAlignment = 4u;
 
-		BaseAllocator() noexcept = default;
-		BaseAllocator(BaseAllocator&) noexcept { }
+        BaseAllocator() noexcept = default;
+        BaseAllocator(BaseAllocator&) noexcept { }
+        BaseAllocator(BaseAllocator&, std::string_view) noexcept { }
         virtual ~BaseAllocator() noexcept = default;
 
         template<class T, class... Args>
@@ -31,7 +32,7 @@ namespace ice
         virtual auto total_allocated() const noexcept -> uint32_t = 0;
 
 
-		BaseAllocator(BaseAllocator const& other) noexcept = delete;
+        BaseAllocator(BaseAllocator const& other) noexcept = delete;
         auto operator=(BaseAllocator const& other) noexcept -> BaseAllocator& = delete;
 
     private:
@@ -58,7 +59,7 @@ namespace ice
     template<class T, class... Args>
     auto BaseAllocator::make(Args&&... args) noexcept -> T*
     {
-		return new (allocate(sizeof(T), alignof(T))) T{ ice::forward<Args>(args)... };
+        return new (allocate(sizeof(T), alignof(T))) T{ ice::forward<Args>(args)... };
     }
 
     template<class T>
@@ -74,80 +75,93 @@ namespace ice
         }
     }
 
-	class TrackedAllocator : public ice::BaseAllocator
-	{
-	public:
-		TrackedAllocator() noexcept = default;
-		TrackedAllocator(ice::TrackedAllocator& alloc) noexcept
-			: _parent{ &alloc }
-		{
-			_parent->track_child(this);
-		}
+    class TrackedAllocator : public ice::BaseAllocator
+    {
+    public:
+        TrackedAllocator() noexcept = default;
+        TrackedAllocator(ice::TrackedAllocator& alloc) noexcept
+            : _parent{ &alloc }
+        {
+            _parent->track_child(this);
+        }
+        TrackedAllocator(ice::TrackedAllocator& alloc, std::string_view name) noexcept
+            : _name{ name }
+            , _parent{ &alloc }
+        {
+            _parent->track_child(this);
+        }
 
-		~TrackedAllocator() noexcept override
-		{
-			if (_parent != nullptr)
-			{
-				if (_prev_sibling == nullptr)
-				{
-					_parent->_childs = _next_sibling;
-					if (_next_sibling != nullptr)
-					{
-						_next_sibling->_prev_sibling = nullptr;
-					}
-				}
-				else
-				{
-					_prev_sibling->_next_sibling = _next_sibling;
-					if (_next_sibling != nullptr)
-					{
-						_next_sibling->_prev_sibling = _prev_sibling;
-					}
-				}
-			}
-		}
+        ~TrackedAllocator() noexcept override
+        {
+            if (_parent != nullptr)
+            {
+                if (_prev_sibling == nullptr)
+                {
+                    _parent->_childs = _next_sibling;
+                    if (_next_sibling != nullptr)
+                    {
+                        _next_sibling->_prev_sibling = nullptr;
+                    }
+                }
+                else
+                {
+                    _prev_sibling->_next_sibling = _next_sibling;
+                    if (_next_sibling != nullptr)
+                    {
+                        _next_sibling->_prev_sibling = _prev_sibling;
+                    }
+                }
+            }
+        }
 
-		void track_child(ice::TrackedAllocator* child_allocator) noexcept
-		{
-			child_allocator->_next_sibling = _childs;
-			if (_childs != nullptr)
-			{
-				_childs->_prev_sibling = child_allocator;
-			}
-			_childs = child_allocator;
-			_childs->_prev_sibling = nullptr;
-		}
+        auto name() const noexcept -> std::string_view
+        {
+            return _name;
+        }
 
-		auto child_allocators() const noexcept -> ice::TrackedAllocator const*
-		{
-			return _childs;
-		}
+        void track_child(ice::TrackedAllocator* child_allocator) noexcept
+        {
+            child_allocator->_next_sibling = _childs;
+            if (_childs != nullptr)
+            {
+                _childs->_prev_sibling = child_allocator;
+            }
+            _childs = child_allocator;
+            _childs->_prev_sibling = nullptr;
+        }
 
-		auto next_sibling() const noexcept -> ice::TrackedAllocator const*
-		{
-			return _next_sibling;
-		}
+        auto child_allocators() const noexcept -> ice::TrackedAllocator const*
+        {
+            return _childs;
+        }
 
-	private:
-		ice::TrackedAllocator* const _parent = nullptr;
-		ice::TrackedAllocator* _childs = nullptr;
-		ice::TrackedAllocator* _next_sibling = nullptr;
-		ice::TrackedAllocator* _prev_sibling = nullptr;
-	};
+        auto next_sibling() const noexcept -> ice::TrackedAllocator const*
+        {
+            return _next_sibling;
+        }
 
-	template<bool debug_build = ice::build::is_debug>
-	struct BaseAllocatorPicker
-	{
-		using AllocatorType = ice::BaseAllocator;
-	};
+    private:
+        std::string const _name{ };
 
-	template<>
-	struct BaseAllocatorPicker<true>
-	{
-		using AllocatorType = ice::TrackedAllocator;
-	};
+        ice::TrackedAllocator* const _parent = nullptr;
+        ice::TrackedAllocator* _childs = nullptr;
+        ice::TrackedAllocator* _next_sibling = nullptr;
+        ice::TrackedAllocator* _prev_sibling = nullptr;
+    };
 
-	using Allocator = typename BaseAllocatorPicker<>::AllocatorType;
+    template<bool debug_build = ice::build::is_debug>
+    struct BaseAllocatorPicker
+    {
+        using AllocatorType = ice::BaseAllocator;
+    };
+
+    template<>
+    struct BaseAllocatorPicker<true>
+    {
+        using AllocatorType = ice::TrackedAllocator;
+    };
+
+    using Allocator = typename BaseAllocatorPicker<>::AllocatorType;
 
     namespace memory
     {

@@ -23,13 +23,13 @@ namespace ice::detail
     }
 
 
-	auto make_string(char const* begin, char const* end) noexcept -> ice::String
-	{
+    auto make_string(char const* begin, char const* end) noexcept -> ice::String
+    {
 #if _MSC_VER == 1927
-		return ice::String{ begin, static_cast<ice::u64>(end - begin) };
+        return ice::String{ begin, static_cast<ice::u64>(end - begin) };
 #else
-		return ice::String{ begin, end };
+        return ice::String{ begin, end };
 #endif
-	}
+    }
 
 } // namespace ice::detail

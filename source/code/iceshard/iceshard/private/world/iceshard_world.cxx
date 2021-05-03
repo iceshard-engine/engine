@@ -22,11 +22,11 @@ namespace ice
         return *_entity_storage;
     }
 
-	void IceshardWorld::add_trait(
+    void IceshardWorld::add_trait(
         ice::StringID_Arg name,
         ice::WorldTrait* trait
     ) noexcept
-	{
+    {
         ice::u64 const name_hash = ice::hash(name);
         ICE_ASSERT(
             ice::pod::hash::has(_traits, name_hash) == false,
@@ -39,7 +39,7 @@ namespace ice
             name_hash,
             trait
         );
-	}
+    }
 
     void IceshardWorld::remove_trait(
         ice::StringID_Arg name
