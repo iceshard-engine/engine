@@ -1355,6 +1355,23 @@ namespace ice::render::vk
         );
     }
 
+    void VulkanRenderCommands::draw(
+        ice::render::CommandBuffer cmds,
+        ice::u32 vertex_count,
+        ice::u32 instance_count,
+        ice::u32 vertex_offset,
+        ice::u32 instance_offset
+    ) noexcept
+    {
+        vkCmdDraw(
+            native_handle(cmds),
+            vertex_count,
+            instance_count,
+            vertex_offset,
+            instance_offset
+        );
+    }
+
     void VulkanRenderCommands::draw_indexed(
         ice::render::CommandBuffer cmds,
         ice::u32 index_count,

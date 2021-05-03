@@ -84,6 +84,14 @@ namespace ice::render
             ice::u32 binding
         ) noexcept = 0;
 
+        virtual void draw(
+            ice::render::CommandBuffer cmds,
+            ice::u32 vertex_count,
+            ice::u32 instance_count,
+            ice::u32 vertex_offset,
+            ice::u32 instance_offset
+        ) noexcept = 0;
+
         virtual void draw_indexed(
             ice::render::CommandBuffer cmds,
             ice::u32 vertex_count,

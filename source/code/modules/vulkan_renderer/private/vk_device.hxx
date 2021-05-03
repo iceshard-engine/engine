@@ -73,6 +73,14 @@ namespace ice::render::vk
             ice::u32 binding
         ) noexcept override;
 
+        void draw(
+            ice::render::CommandBuffer cmds,
+            ice::u32 vertex_count,
+            ice::u32 instance_count,
+            ice::u32 vertex_offset,
+            ice::u32 instance_offset
+        ) noexcept override;
+
         void draw_indexed(
             ice::render::CommandBuffer cmds,
             ice::u32 vertex_count,

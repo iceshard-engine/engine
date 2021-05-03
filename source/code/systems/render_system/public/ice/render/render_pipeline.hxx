@@ -38,6 +38,7 @@ namespace ice::render
     {
         TriangleList,
         TriangleStrip,
+        TriangleFan,
         PatchList,
     };
 

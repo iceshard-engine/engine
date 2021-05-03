@@ -324,6 +324,8 @@ namespace ice::render::vk
             return VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
         case ice::render::PrimitiveTopology::TriangleStrip:
             return VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
+        case ice::render::PrimitiveTopology::TriangleFan:
+            return VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN;
         case ice::render::PrimitiveTopology::PatchList:
             return VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_PATCH_LIST;
         default:
