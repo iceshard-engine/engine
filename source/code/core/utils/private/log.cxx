@@ -123,11 +123,11 @@ namespace ice::detail
 
         if (severity == LogSeverity::Critical || severity == LogSeverity::Error)
         {
-            fmt::print(stderr, ice::String{ final_buffer.begin(), final_buffer.end() });
+            fmt::print(stderr, make_string(final_buffer.begin(), final_buffer.end()));
         }
         else
         {
-            fmt::print(stdout, ice::String{ final_buffer.begin(), final_buffer.end() });
+            fmt::print(stdout, make_string(final_buffer.begin(), final_buffer.end()));
         }
 
         final_buffer.push_back('\0');

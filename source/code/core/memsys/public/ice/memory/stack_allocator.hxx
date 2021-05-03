@@ -23,10 +23,10 @@ namespace ice::memory
         void deallocate(void* ptr) noexcept override;
 
         //! \copydoc allocator::allocated_size(void* ptr)
-        auto allocated_size(void* ptr) noexcept -> uint32_t override;
+        auto allocated_size(void* ptr) const noexcept -> uint32_t override;
 
         //! \copydoc allocator::total_allocated
-        auto total_allocated() noexcept -> uint32_t override;
+        auto total_allocated() const noexcept -> uint32_t override;
 
         //! \brief Resets the allocator internal State.
         void clear() noexcept;
@@ -80,13 +80,13 @@ namespace ice::memory
     }
 
     template<uint32_t BufferSize>
-    auto StackAllocator<BufferSize>::allocated_size(void*) noexcept -> uint32_t
+    auto StackAllocator<BufferSize>::allocated_size(void*) const noexcept -> uint32_t
     {
         return Constant_SizeNotTracked;
     }
 
     template<uint32_t BufferSize>
-    auto StackAllocator<BufferSize>::total_allocated() noexcept -> uint32_t
+    auto StackAllocator<BufferSize>::total_allocated() const noexcept -> uint32_t
     {
         return Constant_SizeNotTracked;
     }

@@ -18,6 +18,7 @@
 
 #include <ice/asset.hxx>
 #include <ice/asset_system.hxx>
+#include <ice/stack_string.hxx>
 
 #include <ice/task.hxx>
 #include <ice/assert.hxx>
@@ -863,11 +864,42 @@ struct MyGame::TraitContainer : public ice::WorldTrait
     {
     }
 
+    void list_allocator_allocations(ice::StackString<1024>& offset, ice::TrackedAllocator const* ta) noexcept
+    {
+        while (ta != nullptr)
+        {
+            ICE_LOG(
+                ice::LogSeverity::Debug, ice::LogTag::Game,
+                "{}# Allocator `{}` total: {} [{:.3} MiB]",
+                offset,
+                ta->name(),
+                ta->total_allocated(),
+                ice::f32(ta->total_allocated()) / (1024.f * 1024.f)
+            );
+            if (ta->child_allocators())
+            {
+                ICE_LOG(
+                    ice::LogSeverity::Debug, ice::LogTag::Game,
+                    "{}> Sub-Allocators...",
+                    offset
+                );
+                ice::string::push_back(offset, "| ");
+                list_allocator_allocations(offset, ta->child_allocators());
+                ice::string::pop_back(offset, 2);
+            }
+            ta = ta->next_sibling();
+        }
+    };
+
     void on_update(ice::EngineFrame& f, ice::EngineRunner& r, ice::World&) noexcept override
     {
-        // #note for some reason we are getting a memory leak when we pass this task to the graphics frame.
-        //  r.graphics_frame().
-        //  This needs to be investigates after we get more debug tools for allocators themselfs.
+        if constexpr (ice::build::is_debug)
+        {
+            ice::StackString<1024> offset{ "" };
+            ice::TrackedAllocator& tracked_alloc = static_cast<ice::TrackedAllocator&>(ice::memory::default_allocator());
+            list_allocator_allocations(offset, &tracked_alloc);
+        }
+
         f.execute_task(update_stages(r.graphics_device().aquire_pass("pass.default"_sid), r));
     }
 

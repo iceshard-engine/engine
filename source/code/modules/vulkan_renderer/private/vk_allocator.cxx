@@ -87,7 +87,8 @@ namespace ice::render::vk
     } // namespace detail
 
     VulkanAllocator::VulkanAllocator(ice::Allocator& backing_allocator) noexcept
-        : _backing_allocator{ backing_allocator }
+        : ice::Allocator{ backing_allocator }
+        , _backing_allocator{ backing_allocator }
         , _allocation_tracker{ _backing_allocator }
     {
         _vulkan_callbacks.pUserData = this;
@@ -180,7 +181,7 @@ namespace ice::render::vk
     }
 
     //! \copydoc allocator::allocated_size(void*) noexcept
-    auto VulkanAllocator::allocated_size(void* ptr) noexcept -> ice::u32
+    auto VulkanAllocator::allocated_size(void* ptr) const noexcept -> ice::u32
     {
         ice::u32 result = 0;
         if (ptr != nullptr)
@@ -201,7 +202,7 @@ namespace ice::render::vk
     }
 
     //! \copydoc allocator::total_allocated() noexcept
-    auto VulkanAllocator::total_allocated() noexcept -> ice::u32
+    auto VulkanAllocator::total_allocated() const noexcept -> ice::u32
     {
         return _total_allocated;
     }

@@ -74,4 +74,6 @@ namespace ice::detail
 
     extern AssertFn* assert_fn;
 
+    auto make_string(char const* begin, char const* end) noexcept -> ice::String;
+
 } // namespace ice::detail

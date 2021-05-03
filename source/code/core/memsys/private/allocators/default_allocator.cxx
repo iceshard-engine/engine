@@ -64,12 +64,12 @@ namespace ice::memory
         detail::aligned_free(alloc_header);
     }
 
-    auto DefaultAllocator::allocated_size(void* pointer) noexcept -> uint32_t
+    auto DefaultAllocator::allocated_size(void* pointer) const noexcept -> uint32_t
     {
         return tracking::header(pointer)->requested_size;
     }
 
-    auto DefaultAllocator::total_allocated() noexcept -> uint32_t
+    auto DefaultAllocator::total_allocated() const noexcept -> uint32_t
     {
         return _total_allocated;
     }

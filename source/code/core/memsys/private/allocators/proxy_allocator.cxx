@@ -4,10 +4,11 @@
 namespace ice::memory
 {
 
+#if ICE_DEBUG || ICE_DEVELOP
+
     ProxyAllocator::ProxyAllocator(ice::Allocator& alloc, std::string_view name) noexcept
-        : ice::Allocator{ }
+        : ice::Allocator{ alloc, name }
         , _backing_allocator{ alloc }
-        , _name{ std::move(name) }
         , _allocation_tracking{ _backing_allocator.total_allocated() != Constant_SizeNotTracked }
     {
     }
@@ -46,14 +47,16 @@ namespace ice::memory
         }
     }
 
-    auto ProxyAllocator::allocated_size(void* ptr) noexcept -> uint32_t
+    auto ProxyAllocator::allocated_size(void* ptr) const noexcept -> uint32_t
     {
         return _backing_allocator.allocated_size(ptr);
     }
 
-    auto ProxyAllocator::total_allocated() noexcept -> uint32_t
+    auto ProxyAllocator::total_allocated() const noexcept -> uint32_t
     {
         return _allocation_tracking ? _allocation_total : Constant_SizeNotTracked;
     }
+
+#endif // #if ICE_DEBUG || ICE_DEVELOP
 
 } // namespace ice::memory

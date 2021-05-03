@@ -19,7 +19,7 @@ namespace ice::memory
     };
 
     ForwardAllocator::ForwardAllocator(ice::Allocator& backing, uint32_t bucket_size) noexcept
-        : ice::Allocator{ }
+        : ice::Allocator{ backing }
         , _backing_allocator{ backing }
         , _bucket_list{ nullptr }
         , _bucket_size{ bucket_size }
@@ -95,12 +95,12 @@ namespace ice::memory
         /* we don't release memory here */
     }
 
-    auto ForwardAllocator::allocated_size(void*) noexcept -> uint32_t
+    auto ForwardAllocator::allocated_size(void*) const noexcept -> uint32_t
     {
         return ice::Allocator::Constant_SizeNotTracked;
     }
 
-    auto ForwardAllocator::total_allocated() noexcept -> uint32_t
+    auto ForwardAllocator::total_allocated() const noexcept -> uint32_t
     {
         // #todo Implement allocated size counting.
         return ice::Allocator::Constant_SizeNotTracked;
