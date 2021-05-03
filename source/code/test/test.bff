@@ -13,20 +13,12 @@
         .DependsOn =
         [
             .Runtime = {
-                'iceshard'
                 'vulkan_renderer'
-                // 'asset_module'
-                // 'debug_module'
-                // 'sdl2_driver'
             }
-#if exists(VULKAN_SDK)
-            .Runtime + 'vulkan_driver'
-#endif
         ]
 
         .Modules = {
             'imgui'
-            // 'SDL2'
             'Assimp'
         }
         .Uses = {
@@ -37,7 +29,7 @@
             // 'engine_debug'
             'application'
             'platform_win32'
-            'framework_base'
+            'framework_2d'
         }
     ]
 ]

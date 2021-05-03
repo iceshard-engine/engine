@@ -17,11 +17,13 @@ namespace ice::trait
         ~Terrain() noexcept override = default;
 
         void on_activate(
+            ice::Engine&,
             ice::EngineRunner& runner,
             ice::World& world
         ) noexcept override;
 
         void on_deactivate(
+            ice::Engine&,
             ice::EngineRunner& runner,
             ice::World& world
         ) noexcept override;

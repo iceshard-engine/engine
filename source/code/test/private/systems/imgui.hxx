@@ -56,9 +56,10 @@ namespace ice
         }
 
         void on_activate(
+            ice::Engine&,
             ice::EngineRunner& runner,
             ice::World& world
-        ) noexcept
+        ) noexcept override
         {
             using namespace ice::gfx;
             using namespace ice::render;
@@ -249,9 +250,10 @@ namespace ice
         }
 
         void on_deactivate(
+            ice::Engine&,
             ice::EngineRunner& runner,
             ice::World& world
-        ) noexcept
+        ) noexcept override
         {
             using namespace ice::render;
 

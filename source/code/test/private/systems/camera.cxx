@@ -12,6 +12,7 @@
 #include <ice/gfx/gfx_camera.hxx>
 #include <ice/gfx/gfx_subpass.hxx>
 
+#include <ice/render/render_swapchain.hxx>
 #include <ice/render/render_device.hxx>
 #include <ice/render/render_buffer.hxx>
 #include <ice/render/render_resource.hxx>
@@ -31,6 +32,7 @@ namespace ice::trait
 
     struct CameraManager::RenderObjects
     {
+        ice::vec2u extents;
         ice::render::Buffer uniform_data;
         ice::render::PipelineLayout pipeline_layout;
         ice::render::ResourceSet resource_set;
@@ -52,6 +54,7 @@ namespace ice::trait
     }
 
     void CameraManager::on_activate(
+        ice::Engine&,
         ice::EngineRunner& runner,
         ice::World& world
     ) noexcept
@@ -62,6 +65,8 @@ namespace ice::trait
         GfxDevice& gfx_device = runner.graphics_device();
         GfxResourceTracker& gfx_resources = gfx_device.resource_tracker();
 
+        RenderSwapchain const& swapchain = gfx_device.swapchain();
+        _render_objects->extents = swapchain.extent();
         RenderDevice& device = gfx_device.device();
 
         _render_objects->uniform_data = device.create_buffer(
@@ -115,6 +120,7 @@ namespace ice::trait
     }
 
     void CameraManager::on_deactivate(
+        ice::Engine&,
         ice::EngineRunner& runner,
         ice::World& world
     ) noexcept
@@ -137,8 +143,8 @@ namespace ice::trait
         ice::World& world
     ) noexcept
     {
-        static ice::vec3f camera_pos = { -8.f, 4.f, -8.f };
-        static ice::vec3f camera_front = camera_pos + ice::vec3f{ 1.f, 0.f, 0.f };
+        static ice::vec3f camera_pos = { 0.f, 0.f, -1.f };
+        static ice::vec3f camera_front = ice::vec3f{ 0.f, 0.f, 1.f };
         static ice::deg camera_yaw{ 0.f };
         static ice::deg camera_pitch{ 0.f };
         static float speed_mul = 1.0f;
@@ -150,6 +156,7 @@ namespace ice::trait
 
             const float sensitivity = 0.2f;
 
+            bool use_orto = false;
             bool speed_up = false;
             float move_y = 0.0f;
             float move_x = 0.0f;
@@ -181,6 +188,9 @@ namespace ice::trait
                     break;
                 case input_identifier(DeviceType::Keyboard, KeyboardKey::KeyW):
                     move_y = event.value.button.state.pressed ? -1.0f : 0.0f;
+                    break;
+                case input_identifier(DeviceType::Keyboard, KeyboardKey::KeyQ):
+                    use_orto = !use_orto;
                     break;
                 case input_identifier(DeviceType::Keyboard, KeyboardKey::KeyS):
                     move_y = event.value.button.state.pressed ? 1.0f : 0.0f;
@@ -258,24 +268,56 @@ namespace ice::trait
 
 
             ice::gfx::GfxCameraUniform& camera_data = *frame.create_named_object<ice::gfx::GfxCameraUniform>("camera.uniform.data"_sid);
-            camera_data.view_matrix = ice::lookat(
-                camera_pos,
-                camera_pos + camera_front,
-                { 0.f, 1.f, 0.f }
-            );
-            camera_data.projection_matrix = ice::perspective(
-                ice::radians(ice::deg{ 70.f }),
-                16.f / 9.f,
-                0.1f, 100.f
-            );
-            camera_data.clip_matrix = {
-                .v = {
-                    { 1.0f, 0.0f, 0.0f, 0.0f },
-                    { 0.0f, -1.0f, 0.0f, 0.0f },
-                    { 0.0f, 0.0f, 0.5f, 0.5f },
-                    { 0.0f, 0.0f, 0.0f, 0.1f },
-                }
-            };
+
+            if (use_orto)
+            {
+                camera_data.view_matrix = ice::lookat(
+                    { 0.f, 0.f, 0.f },
+                    { 0.f, 0.f, -1.f },
+                    { 0.f, 1.f, 0.f }
+                );
+
+                vec2f const extent{
+                    (float)_render_objects->extents.x,
+                    (float)_render_objects->extents.y
+                };
+
+                camera_data.projection_matrix = ice::orthographic(
+                    vec2f{ 0.f, extent.x },
+                    vec2f{ extent.y, 0.f },
+                    vec2f{ 0.1f, 100.f }
+                );
+
+                camera_data.clip_matrix = {
+                    .v = {
+                        { 1.0f, 0.0f, 0.0f, 0.0f },
+                        { 0.0f, -1.0f, 0.0f, 0.0f },
+                        { 0.0f, 0.0f, 0.5f, 0.0f },
+                        { 0.0f, 0.0f, 0.5f, 1.f },
+                    }
+                };
+            }
+            else
+            {
+                camera_data.view_matrix = ice::lookat(
+                    camera_pos,
+                    camera_pos + camera_front,
+                    { 0.f, 1.f, 0.f }
+                );
+                camera_data.projection_matrix = ice::perspective(
+                    ice::radians(ice::deg{ 70.f }),
+                    16.f / 9.f,
+                    0.1f, 100.f
+                );
+                camera_data.clip_matrix = {
+                    .v = {
+                        { 1.0f, 0.0f, 0.0f, 0.0f },
+                        { 0.0f, -1.0f, 0.0f, 0.0f },
+                        { 0.0f, 0.0f, 0.5f, 0.5f },
+                        { 0.0f, 0.0f, 0.0f, 0.1f },
+                    }
+                };
+            }
 
             ice::render::RenderDevice& device = runner.graphics_device().device();
             ice::render::BufferUpdateInfo camera_data_update[]{

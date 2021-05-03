@@ -3,7 +3,9 @@
 #include <ice/gfx/gfx_device.hxx>
 #include <ice/gfx/gfx_stage.hxx>
 #include <ice/gfx/gfx_pass.hxx>
+#include <ice/entity/entity_index.hxx>
 #include <ice/entity/entity_storage.hxx>
+#include <ice/archetype/archetype_query.hxx>
 #include <ice/world/world_manager.hxx>
 #include <ice/world/world.hxx>
 #include <ice/engine.hxx>
@@ -15,6 +17,9 @@
 #include "systems/imgui.hxx"
 
 #include <ice/game_framework.hxx>
+#include <ice/game2d_trait.hxx>
+#include <ice/game2d_object.hxx>
+
 #include <ice/module_register.hxx>
 #include <ice/resource_system.hxx>
 #include <ice/resource.hxx>
@@ -32,6 +37,7 @@ public:
         , _archetype_alloc{ _allocator }
         , _archetype_index{ ice::create_archetype_index(_allocator) }
         , _entity_storage{ _allocator, *_archetype_index, _archetype_alloc  }
+        , _game2d_trait{ ice::make_unique_null<ice::Game2DTrait>() }
     {
     }
 
@@ -63,7 +69,36 @@ public:
 
         ice::WorldManager& world_manager = _current_engine->world_manager();
         ice::World* world = world_manager.create_world("default"_sid, &_entity_storage);
+
         add_world_traits(engine, world);
+
+        _archetype_index->register_archetype<ice::Obj2dTransform>(&_archetype_alloc);
+        auto a = _archetype_index->register_archetype<ice::Obj2dShape, ice::Obj2dTransform>(&_archetype_alloc);
+        auto a2 = _archetype_index->register_archetype<ice::Obj2dShape, ice::Obj2dTransform, ice::Obj2dMaterial>(&_archetype_alloc);
+
+        ice::EntityIndex& idx = engine.entity_index();
+
+        _entity_storage.set_archetype(idx.create(), a);
+        _entity_storage.set_archetype(idx.create(), a);
+        _entity_storage.set_archetype(idx.create(), a2);
+        _entity_storage.set_archetype(idx.create(), a2);
+        _entity_storage.set_archetype(idx.create(), a);
+
+        ice::ComponentQuery<ice::Obj2dShape&, ice::Obj2dTransform&> query{ _allocator, *_archetype_index };
+        auto result = query.result_by_entity(_allocator, _entity_storage);
+
+        ice::rad angle{ 0 };
+        ice::vec3f initial_pos{ 64.f, 64.f, 1.f };
+        result.for_each([&](ice::Obj2dShape& shape, ice::Obj2dTransform& xform)
+            {
+                shape.shape_definition = nullptr;
+                xform.position = initial_pos;
+                xform.rotation = angle.value;
+                initial_pos.x += 64.f;
+                initial_pos.y += 64.f;
+                initial_pos.z += 1.f;
+                angle.value += 0.1;
+            });
     }
 
     void on_app_shutdown(ice::Engine& engine) noexcept
@@ -95,6 +130,8 @@ protected:
 public:
     ice::Allocator& _allocator;
     ice::Engine* _current_engine;
+
+    ice::UniquePtr<ice::Game2DTrait> _game2d_trait;
 
     ice::ArchetypeBlockAllocator _archetype_alloc;
     ice::UniquePtr<ice::ArchetypeIndex> _archetype_index;

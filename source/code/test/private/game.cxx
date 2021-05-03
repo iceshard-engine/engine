@@ -61,7 +61,7 @@ public:
 
     ~ClearStage() noexcept = default;
 
-    void on_activate(ice::EngineRunner& r, ice::World& w) noexcept override
+    void on_activate(ice::Engine&, ice::EngineRunner& r, ice::World& w) noexcept override
     {
         ice::gfx::GfxResourceTracker& res_tracker = r.graphics_device().resource_tracker();
 
@@ -77,7 +77,7 @@ public:
         _framebuffers[1] = ice::gfx::find_resource<ice::render::Framebuffer>(res_tracker, framebuffers[1]);
     }
 
-    void on_deactivate(ice::EngineRunner& r, ice::World& w) noexcept override
+    void on_deactivate(ice::Engine&, ice::EngineRunner& r, ice::World& w) noexcept override
     {
         ice::gfx::GfxResourceTracker& res_tracker = r.graphics_device().resource_tracker();
     }
@@ -156,6 +156,7 @@ public:
     }
 
     void on_activate(
+        ice::Engine&,
         ice::EngineRunner& runner,
         ice::World& world
     ) noexcept override
@@ -283,7 +284,7 @@ public:
         );
     }
 
-    void on_deactivate(ice::EngineRunner& runner, ice::World& world) noexcept override
+    void on_deactivate(ice::Engine&, ice::EngineRunner& runner, ice::World& world) noexcept override
     {
         ice::gfx::GfxDevice& gfx_device = runner.graphics_device();
         ice::gfx::GfxResourceTracker& res_tracker = gfx_device.resource_tracker();
@@ -390,7 +391,7 @@ public:
         _shader_data[1] = *reinterpret_cast<ice::Data const*>(pp_frag_data.location);
     }
 
-    void on_activate(ice::EngineRunner& r, ice::World& w) noexcept override
+    void on_activate(ice::Engine&, ice::EngineRunner& r, ice::World& w) noexcept override
     {
         ice::gfx::GfxResourceTracker& res_tracker = r.graphics_device().resource_tracker();
         ice::render::RenderDevice& render_device = r.graphics_device().device();
@@ -523,7 +524,7 @@ public:
         );
     }
 
-    void on_deactivate(ice::EngineRunner& r, ice::World& w) noexcept override
+    void on_deactivate(ice::Engine&, ice::EngineRunner& r, ice::World& w) noexcept override
     {
         ice::render::RenderDevice& render_device = r.graphics_device().device();
 
@@ -580,9 +581,10 @@ class RenderObjects_Trait : public ice::WorldTrait
 {
 public:
     void on_activate(
+        ice::Engine&,
         ice::EngineRunner& runner,
         ice::World& world
-    ) noexcept
+    ) noexcept override
     {
         ice::gfx::GfxDevice& gfx_device = runner.graphics_device();
         ice::gfx::GfxResourceTracker& res_tracker = gfx_device.resource_tracker();
@@ -794,9 +796,10 @@ public:
     }
 
     void on_deactivate(
+        ice::Engine&,
         ice::EngineRunner& runner,
         ice::World& world
-    ) noexcept
+    ) noexcept override
     {
         ice::gfx::GfxDevice& gfx_device = runner.graphics_device();
         ice::gfx::GfxResourceTracker& res_tracker = gfx_device.resource_tracker();
@@ -850,8 +853,7 @@ struct MyGame::TraitContainer : public ice::WorldTrait
         ice::Engine& engine,
         ice::AssetSystem& asset_system
     ) noexcept
-        : _pass{ ice::make_unique_null<ice::gfx::GfxPass>() }
-        , _render_objects{ }
+        : _render_objects{ }
         , _camera{ alloc, engine }
         , _terrain{ alloc, engine }
         , _imgui{ alloc, engine }
@@ -861,19 +863,12 @@ struct MyGame::TraitContainer : public ice::WorldTrait
     {
     }
 
-    void on_activate(ice::EngineRunner& r, ice::World&) noexcept override
-    {
-        _pass = r.graphics_device().create_pass();
-    }
-
-    void on_deactivate(ice::EngineRunner& r, ice::World&) noexcept override
-    {
-        _pass = nullptr;
-    }
-
     void on_update(ice::EngineFrame& f, ice::EngineRunner& r, ice::World&) noexcept override
     {
-        f.execute_task(update_stages(*_pass, r));
+        // #note for some reason we are getting a memory leak when we pass this task to the graphics frame.
+        //  r.graphics_frame().
+        //  This needs to be investigates after we get more debug tools for allocators themselfs.
+        f.execute_task(update_stages(r.graphics_device().aquire_pass("pass.default"_sid), r));
     }
 
     auto update_stages(ice::gfx::GfxPass& pass, ice::EngineRunner& r) noexcept -> ice::Task<>
@@ -935,8 +930,6 @@ struct MyGame::TraitContainer : public ice::WorldTrait
         co_return;
     }
 
-    ice::UniquePtr<ice::gfx::GfxPass> _pass;
-
     RenderObjects_Trait _render_objects;
     ice::trait::CameraManager _camera;
     ice::trait::Terrain _terrain;
@@ -965,9 +958,12 @@ void MyGame::add_world_traits(
 ) noexcept
 {
     _traits = _allocator.make<TraitContainer>(_allocator, engine, engine.asset_system());
+    _game2d_trait = ice::create_game2d_trait(_allocator);
 
     world->add_trait("game"_sid, _traits);
     world->add_trait("render.objects"_sid, &_traits->_render_objects);
+    world->add_trait("game2d"_sid, _game2d_trait.get());
+
     //world->add_trait("game.update"_sid, _traits->);
     world->add_trait("test.cameras"_sid, &_traits->_camera);
     world->add_trait("test.terrain"_sid, &_traits->_terrain);
@@ -986,8 +982,11 @@ void MyGame::remove_world_traits(ice::World* world) noexcept
     world->remove_trait("test.terrain"_sid);
     world->remove_trait("test.cameras"_sid);
     //world->remove_trait("game.update"_sid);
+
+    world->remove_trait("game2d"_sid);
     world->remove_trait("render.objects"_sid);
     world->remove_trait("game"_sid);
 
+    _game2d_trait = nullptr;
     _allocator.destroy(_traits);
 }
