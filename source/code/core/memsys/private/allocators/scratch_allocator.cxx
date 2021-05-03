@@ -53,7 +53,7 @@ namespace ice::memory
         void* alloc_data_end = ptr_add(alloc_data, size);
 
         [[unlikely]]
-        if (alloc_data_end > _end)
+        if (alloc_data_end >= _end)
         {
             // Save the amount of bytes we are ignoring.
             alloc_header->allocated_size = ptr_distance(alloc_header, _end) | detail::Constant_FreeMemoryBit;
