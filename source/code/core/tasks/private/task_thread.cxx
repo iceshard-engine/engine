@@ -36,6 +36,18 @@ namespace ice
         ~SimpleTaskThread() noexcept override
         {
             join();
+
+            // Destroy any tasks that are still waiting for processing
+            ice::memory::StackAllocator_1024 thread_alloc{ };
+            ice::TaskList thread_tasks{ thread_alloc };
+
+            ice::pod::array::reserve(thread_tasks, thread_alloc.Constant_BufferSize / sizeof(std::coroutine_handle<>) - 1);
+            _task_lists.swap_and_aquire_tasks(thread_tasks);
+
+            for (std::coroutine_handle<> coro_task : thread_tasks)
+            {
+                coro_task.destroy();
+            }
         }
 
         void stop() noexcept
