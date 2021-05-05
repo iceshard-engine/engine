@@ -25,8 +25,8 @@ namespace ice::memory
 
     } // namespace detail
 
-    ScratchAllocator::ScratchAllocator(ice::Allocator& backing, uint32_t size) noexcept
-        : ice::Allocator{ backing }
+    ScratchAllocator::ScratchAllocator(ice::Allocator& backing, uint32_t size, std::string_view name) noexcept
+        : ice::Allocator{ backing, name }
         , _backing{ backing }
     {
         _begin = _backing.allocate(size, alignof(tracking::AllocationHeader));

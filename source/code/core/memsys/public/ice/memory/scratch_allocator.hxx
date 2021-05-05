@@ -28,7 +28,11 @@ namespace ice::memory
         //!
         //! \param [in] backing Specifies the backing allocator.
         //! \param [in] size Specifies the size of the ring buffer.
-        ScratchAllocator(ice::Allocator& backing, uint32_t size) noexcept;
+        ScratchAllocator(
+            ice::Allocator& backing,
+            uint32_t size,
+            std::string_view name = { }
+        ) noexcept;
 
         //! \brief Checks the allocation status and releases the ring buffer.
         ~ScratchAllocator() noexcept override;
