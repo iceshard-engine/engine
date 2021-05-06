@@ -33,6 +33,30 @@
 namespace ice
 {
 
+    struct UpdateFontsTexture_Stage : ice::gfx::GfxStage
+    {
+        ice::Allocator* _allocator;
+
+        ice::render::Image _texture;
+        ice::render::Buffer _texture_data;
+        ice::vec2u _size;
+
+        void record_commands(
+            ice::EngineFrame const& frame,
+            ice::render::CommandBuffer cmds,
+            ice::render::RenderCommands& api
+        ) noexcept
+        {
+            using namespace ice::gfx;
+            using namespace ice::render;
+
+            api.update_texture(cmds, _texture, _texture_data, _size);
+
+            ice::Allocator* alloc = _allocator;
+            alloc->destroy(this);
+        }
+    };
+
     class Ice_ImGui : public ice::WorldTrait, public ice::gfx::GfxStage
     {
     public:
@@ -122,17 +146,14 @@ namespace ice
 
             device.update_buffers(font_buffer_update);
 
-            GfxQueue* gfx_queue = runner.graphics_frame().get_queue("default"_sid);
+            GfxPass& pass = runner.graphics_device().aquire_pass("pass.default"_sid);
 
-            CommandBuffer cmds;
-            gfx_queue->alloc_command_buffers(CommandBufferType::Primary, { &cmds, 1 });
-
-            RenderCommands& commands = runner.graphics_device().device().get_commands();
-            commands.begin(cmds);
-            commands.update_texture(cmds, _font_texture, _font_transfer_buffer, ice::vec2u(width, height));
-            commands.end(cmds);
-
-            gfx_queue->submit_command_buffers({ &cmds, 1 });
+            UpdateFontsTexture_Stage* stage = world.allocator().make<UpdateFontsTexture_Stage>();
+            stage->_allocator = &world.allocator();
+            stage->_texture = _font_texture;
+            stage->_texture_data = _font_transfer_buffer;
+            stage->_size = ice::vec2u(width, height);
+            pass.add_update_stage(stage);
 
             io.Fonts->TexID = reinterpret_cast<ImTextureID>(_font_texture);
 
