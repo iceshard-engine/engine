@@ -29,6 +29,9 @@ namespace ice::pod
         inline void push_back(ice::pod::Array<T>& arr, U const& item) noexcept;
 
         template<typename T>
+        inline void push_back(ice::pod::Array<T>& arr, ice::pod::Array<T> const& items) noexcept;
+
+        template<typename T>
         inline void push_back(ice::pod::Array<T>& arr, ice::Span<T const> items) noexcept;
 
         template<typename T>
@@ -256,6 +259,12 @@ namespace ice::pod
 
             arr._data[arr._size] = T{ item };
             arr._size += 1;
+        }
+
+        template<typename T>
+        inline void push_back(ice::pod::Array<T>& arr, ice::pod::Array<T> const& items) noexcept
+        {
+            ice::pod::array::push_back(arr, ice::Span<T const>{ items });
         }
 
         template<typename T>
