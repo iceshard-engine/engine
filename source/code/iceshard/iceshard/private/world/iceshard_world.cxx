@@ -56,9 +56,15 @@ namespace ice
         ice::StringID_Arg name
     ) noexcept
     {
+        ice::u64 const name_hash = ice::hash(name);
+        ICE_ASSERT(
+            ice::pod::hash::has(_traits, name_hash) == true,
+            "World does not contain a trait with name {}",
+            ice::stringid_hint(name)
+        );
         ice::pod::hash::remove(
             _traits,
-            ice::hash(name)
+            ice::hash(name_hash)
         );
     }
 

@@ -25,7 +25,7 @@ namespace ice
             ice::SystemClock& clock,
             ice::UniquePtr<ice::platform::WindowSurface> window_surface,
             ice::UniquePtr<ice::render::RenderDriver> render_driver,
-            ice::render::RenderSurface* render_surface, // #todo
+            ice::render::RenderSurface* render_surface,
             ice::UniquePtr<ice::EngineRunner> runner
         ) noexcept
             : _framework{ framework }

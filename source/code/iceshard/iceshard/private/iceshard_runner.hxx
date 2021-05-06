@@ -59,6 +59,7 @@ namespace ice
         void next_frame() noexcept override;
 
         auto graphics_task(
+            ice::UniquePtr<ice::gfx::IceGfxFrame> gfx_frame,
             ice::ManualResetEvent* reset_event
         ) noexcept -> ice::Task<>;
 
@@ -77,7 +78,8 @@ namespace ice
 
         ice::memory::ProxyAllocator _frame_allocator;
         ice::memory::ScratchAllocator _frame_data_allocator[2];
-        ice::u32 _next_free_allocator = 0;
+        ice::memory::ProxyAllocator _frame_gfx_allocator[2];
+        ice::u32 _next_free_allocator;
 
         ice::UniquePtr<ice::IceshardMemoryFrame> _previous_frame;
         ice::UniquePtr<ice::IceshardMemoryFrame> _current_frame;
@@ -88,7 +90,7 @@ namespace ice
         ice::UniquePtr<ice::input::InputTracker> _input_tracker;
 
         ice::UniquePtr<ice::gfx::IceGfxDevice> _gfx_device;
-        ice::UniquePtr<ice::gfx::IceGfxBaseFrame> _gfx_current_frame;
+        ice::UniquePtr<ice::gfx::IceGfxFrame> _gfx_current_frame;
     };
 
 } // namespace ice

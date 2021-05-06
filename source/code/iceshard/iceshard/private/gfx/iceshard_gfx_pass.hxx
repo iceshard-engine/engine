@@ -2,6 +2,7 @@
 #include <ice/pod/array.hxx>
 #include <ice/engine_frame.hxx>
 #include <ice/gfx/gfx_pass.hxx>
+#include <ice/memory/proxy_allocator.hxx>
 
 namespace ice::gfx
 {
@@ -33,6 +34,8 @@ namespace ice::gfx
         void clear() noexcept;
 
     private:
+        ice::memory::ProxyAllocator _allocator;
+
         struct Entry
         {
             ice::StringID name;
@@ -84,7 +87,7 @@ namespace ice::gfx
         ) noexcept;
 
     private:
-        ice::Allocator& _allocator;
+        ice::memory::ProxyAllocator _allocator;
         ice::pod::Array<ice::gfx::IceGfxStageBatch*> _stage_batches;
         ice::pod::Array<ice::gfx::IceGfxStageBatch*> _free_batches;
         ice::pod::Array<ice::gfx::GfxStage*> _update_stages;

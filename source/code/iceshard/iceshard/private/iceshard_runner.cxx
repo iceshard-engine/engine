@@ -18,6 +18,7 @@ namespace ice
     {
 
         static constexpr ice::u32 FrameAllocatorCapacity = 256u * 1024u * 1024u;
+        static constexpr ice::u32 GfxFrameAllocatorCapacity = 16u * 1024u * 1024u;
 
     } // namespace detail
 
@@ -35,16 +36,21 @@ namespace ice
         , _graphics_thread{ ice::create_task_thread(_allocator) }
         , _frame_allocator{ _allocator, "frame-allocator" }
         , _frame_data_allocator{
-            ice::memory::ScratchAllocator{ _frame_allocator, detail::FrameAllocatorCapacity },
-            ice::memory::ScratchAllocator{ _frame_allocator, detail::FrameAllocatorCapacity }
+            ice::memory::ScratchAllocator{ _frame_allocator, detail::FrameAllocatorCapacity, "frame-alloc-1" },
+            ice::memory::ScratchAllocator{ _frame_allocator, detail::FrameAllocatorCapacity, "frame-alloc-2" }
         }
+        , _frame_gfx_allocator{
+            ice::memory::ProxyAllocator{ _frame_allocator, "gfx-frame-alloc-1" },
+            ice::memory::ProxyAllocator{ _frame_allocator, "gfx-frame-alloc-2" }
+        }
+        , _next_free_allocator{ 0 }
         , _previous_frame{ ice::make_unique_null<ice::IceshardMemoryFrame>() }
         , _current_frame{ ice::make_unique_null<ice::IceshardMemoryFrame>() }
         , _world_manager{ world_manager }
         , _world_tracker{ _allocator }
         , _input_tracker{ ice::move(input_tracker) }
         , _gfx_device{ ice::move(gfx_device) }
-        , _gfx_current_frame{ ice::make_unique_null<ice::gfx::IceGfxBaseFrame>() }
+        , _gfx_current_frame{ ice::make_unique_null<ice::gfx::IceGfxFrame>() }
     {
         _previous_frame = ice::make_unique<ice::IceshardMemoryFrame>(
             _allocator,
@@ -55,15 +61,18 @@ namespace ice
             _frame_data_allocator[1]
         );
 
-        _gfx_current_frame = _gfx_device->next_frame(_allocator);// ice::make_unique<ice::gfx::IceGfxBaseFrame>(_allocator);
+        _gfx_current_frame = ice::make_unique<ice::gfx::IceGfxFrame>(
+            _allocator, _frame_gfx_allocator[1]
+        );
 
         activate_worlds();
     }
 
     IceshardEngineRunner::~IceshardEngineRunner() noexcept
     {
-        _graphics_thread->stop();
-        _graphics_thread->join();
+         _graphics_thread->stop();
+         _graphics_thread->join();
+         _graphics_thread = nullptr;
 
         deactivate_worlds();
 
@@ -118,6 +127,7 @@ namespace ice
 
     void IceshardEngineRunner::next_frame() noexcept
     {
+        // [issue #??] We cannot move this wait lower as for now we are still accessing a single GfxPass object from both the Gfx and Runtim threads.
         _graphics_thread_event.wait();
         _graphics_thread_event.reset();
 
@@ -129,9 +139,34 @@ namespace ice
         _previous_frame->wait_ready();
 
         _graphics_thread->scheduler().schedule(
-            graphics_task(&_graphics_thread_event)
+            graphics_task(
+                ice::move(_gfx_current_frame),
+                &_graphics_thread_event
+            )
         );
 
+        // Reset the frame allocator inner pointers.
+        [[maybe_unused]]
+        bool const discarded_memory = _frame_data_allocator[_next_free_allocator].reset_and_discard();
+        ICE_ASSERT(discarded_memory == false, "Memory was discarded during frame allocator reset!");
+
+        ice::clock::update(_clock);
+
+        _current_frame = ice::make_unique<IceshardMemoryFrame>(
+            _allocator,
+            _frame_data_allocator[_next_free_allocator]
+        );
+
+        _gfx_current_frame = ice::make_unique<ice::gfx::IceGfxFrame>(
+            _allocator,
+            _frame_gfx_allocator[_next_free_allocator]
+        );
+
+        // We need to update the allocator index
+        _next_free_allocator += 1;
+        _next_free_allocator %= ice::size(_frame_data_allocator);
+
+        // Handle requests for the next frame
         for (ice::EngineRequest const& request : _previous_frame->requests())
         {
             switch (request.name.hash_value)
@@ -156,32 +191,19 @@ namespace ice
                 break;
             }
         }
-
-        // Reset the frame allocator inner pointers.
-        [[maybe_unused]]
-        bool const discarded_memory = _frame_data_allocator[_next_free_allocator].reset_and_discard();
-        ICE_ASSERT(discarded_memory == false, "Memory was discarded during frame allocator reset!");
-
-        ice::clock::update(_clock);
-
-        _current_frame = ice::make_unique<IceshardMemoryFrame>(
-            _allocator,
-            _frame_data_allocator[_next_free_allocator]
-        );
-
-        // We need to update the allocator index
-        _next_free_allocator += 1;
-        _next_free_allocator %= ice::size(_frame_data_allocator);
     }
 
     auto IceshardEngineRunner::graphics_task(
+        ice::UniquePtr<ice::gfx::IceGfxFrame> gfx_frame,
         ice::ManualResetEvent* reset_event
     ) noexcept -> ice::Task<>
     {
-        _gfx_current_frame->wait_ready();
-        _gfx_current_frame->execute_passes(previous_frame());
-        _gfx_current_frame->present();
-        _gfx_current_frame = _gfx_device->next_frame(_allocator);
+        ice::u32 const image_index = _gfx_device->next_frame();
+        ice::gfx::IceGfxQueueGroup& queue_group = _gfx_device->queue_group(image_index);
+
+        gfx_frame->wait_ready();
+        gfx_frame->execute_passes(previous_frame(), queue_group);
+        _gfx_device->present(image_index);
 
         reset_event->set();
         co_return;

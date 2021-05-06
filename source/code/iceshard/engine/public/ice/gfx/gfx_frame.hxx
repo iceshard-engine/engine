@@ -25,11 +25,6 @@ namespace ice::gfx
             ice::StringID_Arg queue_name,
             ice::gfx::GfxPass* pass
         ) noexcept = 0;
-
-        [[deprecated("This function will be removed at a later stage.")]]
-        virtual auto get_queue(
-            ice::StringID_Arg name
-        ) noexcept -> GfxQueue* = 0;
     };
 
 } // namespace ice::gfx

@@ -12,8 +12,6 @@ namespace ice::gfx
 
     class IceGfxPass;
 
-    class IceGfxBaseFrame;
-
     class IceGfxQueueGroup;
 
     class IceGfxDevice final : public ice::gfx::GfxDevice
@@ -36,7 +34,11 @@ namespace ice::gfx
 
         auto resource_tracker() noexcept -> ice::gfx::GfxResourceTracker& override;
 
-        auto next_frame(ice::Allocator& alloc) noexcept -> ice::UniquePtr<ice::gfx::IceGfxBaseFrame>;
+        auto next_frame() noexcept -> ice::u32;
+
+        auto queue_group(ice::u32 image_index) noexcept -> ice::gfx::IceGfxQueueGroup&;
+
+        void present(ice::u32 image_index) noexcept;
 
     private:
         ice::Allocator& _allocator;

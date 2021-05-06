@@ -129,17 +129,29 @@ namespace ice::gfx
         return _resource_tracker;
     }
 
-    auto IceGfxDevice::next_frame(ice::Allocator& alloc) noexcept -> ice::UniquePtr<ice::gfx::IceGfxBaseFrame>
+    auto IceGfxDevice::next_frame() noexcept -> ice::u32
     {
-        ice::u32 const framebuffer_index = _render_swapchain->aquire_image();
+        return _render_swapchain->aquire_image();
+    }
 
-        return ice::make_unique<gfx::IceGfxBaseFrame, gfx::IceGfxFrame>(
-            alloc,
-            alloc,
-            _render_device,
-            _render_swapchain,
-            _graphics_queues[framebuffer_index]
-        );
+    void IceGfxDevice::present(ice::u32 image_index) noexcept
+    {
+        ice::render::RenderQueue* presenting_queue;
+        if (_graphics_queues[image_index]->get_presenting_queue(presenting_queue))
+        {
+            presenting_queue->present(_render_swapchain);
+        }
+        else
+        {
+            ICE_ASSERT(
+                false, "No graphics pass set as presenting!"
+            );
+        }
+    }
+
+    auto IceGfxDevice::queue_group(ice::u32 image_index) noexcept -> ice::gfx::IceGfxQueueGroup&
+    {
+        return *_graphics_queues[image_index];
     }
 
     auto detail::find_queue_id(

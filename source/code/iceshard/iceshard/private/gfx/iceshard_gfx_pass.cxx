@@ -6,8 +6,9 @@ namespace ice::gfx
 {
 
     IceGfxStageBatch::IceGfxStageBatch(ice::Allocator& alloc) noexcept
-        : _entries{ alloc }
-        , _dependencies{ alloc }
+        : _allocator{ alloc, "iceshard-gfx-stage-batch" }
+        , _entries{ _allocator }
+        , _dependencies{ _allocator }
     {
         ice::pod::array::reserve(_entries, 10);
         ice::pod::array::reserve(_dependencies, 25);
@@ -91,7 +92,7 @@ namespace ice::gfx
     }
 
     IceGfxPass::IceGfxPass(ice::Allocator& alloc) noexcept
-        : _allocator{ alloc }
+        : _allocator{ alloc, "iceshard-gfx-pass" }
         , _stage_batches{ _allocator }
         , _free_batches{ _allocator }
         , _update_stages{ _allocator }
@@ -108,6 +109,10 @@ namespace ice::gfx
     IceGfxPass::~IceGfxPass() noexcept
     {
         for (IceGfxStageBatch* batch : _stage_batches)
+        {
+            _allocator.destroy(batch);
+        }
+        for (IceGfxStageBatch* batch : _free_batches)
         {
             _allocator.destroy(batch);
         }
@@ -256,7 +261,7 @@ namespace ice::gfx
         }
 
         // Copy all pointers so we dont need to re-allocate the array after a while
-        _free_batches = _stage_batches;
+        ice::pod::array::push_back(_free_batches, _stage_batches);
 
         // Clear the stage batches array so it's empty but the underlying memory is not freed
         ice::pod::array::clear(_stage_batches);
