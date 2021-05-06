@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
 
-  <Type Name="core::cexpr::stringid_hash_type">
-    <DisplayString>core::cexpr::stringid_hash_type</DisplayString>
+  <Type Name="ice::detail::stringid_type_v2::StringID_Hash">
+    <DisplayString>ice::StringID_Hash</DisplayString>
     <Expand>
     </Expand>
   </Type>
 
-  <Type Name="core::cexpr::stringid_type">
-    <DisplayString Condition="hash_value == 0">StrID {{ invalid }}</DisplayString>
+  <Type Name="ice::detail::stringid_type_v2::StringID&lt;*&gt;">
+    <DisplayString Condition="hash_value == 0">StringID {{ invalid }}</DisplayString>
     <DisplayString Optional="true">StringID {{ {hash_value,x} : {hash_origin,s} }}</DisplayString>
     <DisplayString>StrID {{ {hash_value,x} }}</DisplayString>
     <Expand>
@@ -16,7 +16,8 @@
       <Synthetic Name="[hash]" Condition="hash_value == 0" ExcludeView="simple">
         <DisplayString>invalid</DisplayString>
       </Synthetic>
-      <Item Optional="true" Name="[origin]" ExcludeView="simple">hash_origin,s</Item>
+      <Item Optional="true" Condition="hash_origin[0] != '~'" Name="[origin_hint]" ExcludeView="simple">hash_origin,s</Item>
+      <Item Optional="true" Condition="hash_origin[0] == '~'" Name="[origin_hint]" ExcludeView="simple">hash_origin,24s</Item>
     </Expand>
   </Type>
 

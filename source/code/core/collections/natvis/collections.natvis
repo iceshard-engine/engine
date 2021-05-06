@@ -32,8 +32,8 @@
     <DisplayString>Hash::Entry {{ key={key,X}, value={value} }} : {"$T1",sb}</DisplayString>
     <Expand>
       <Item Name="[key]">key,X</Item>
-      <Item Name="[value]">value</Item>
       <Item Name="[next]" Condition="next != 0xffffffff">next</Item>
+      <Item Name="[value]">value</Item>
     </Expand>
   </Type>
 
