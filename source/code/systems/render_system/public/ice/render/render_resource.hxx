@@ -4,12 +4,12 @@
 namespace ice::render
 {
 
-    enum class ResourceSetLayout : ice::uptr
+    enum class [[nodiscard]] ResourceSetLayout : ice::uptr
     {
         Invalid = 0x0
     };
 
-    enum class ResourceSet : ice::uptr
+    enum class [[nodiscard]] ResourceSet : ice::uptr
     {
         Invalid = 0x0
     };

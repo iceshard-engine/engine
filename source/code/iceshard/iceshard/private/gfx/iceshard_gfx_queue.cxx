@@ -58,22 +58,25 @@ namespace ice::gfx
         _render_queue->submit(buffers, false);
     }
 
+    void IceGfxQueue::test_begin() noexcept
+    {
+        _render_commands.begin(_primary_commands[0]);
+    }
+
+    void IceGfxQueue::test_end() noexcept
+    {
+        _render_commands.end(_primary_commands[0]);
+        _render_queue->submit(
+            ice::Span<ice::render::CommandBuffer>{ _primary_commands + 0, 1 }, true
+        );
+    }
+
     void IceGfxQueue::execute_pass(
         ice::EngineFrame const& frame,
         ice::gfx::GfxPass* gfx_pass
     ) noexcept
     {
         ice::gfx::IceGfxPass* const ice_pass = static_cast<ice::gfx::IceGfxPass*>(gfx_pass);
-        if (ice_pass->has_update_work())
-        {
-            _render_commands.begin(_primary_commands[0]);
-            ice_pass->record_update_commands(frame, _primary_commands[0], _render_commands);
-            _render_commands.end(_primary_commands[0]);
-
-            _render_queue->submit(
-                ice::Span<ice::render::CommandBuffer>{ _primary_commands + 0, 1 }, true
-            );
-        }
         if (ice_pass->has_work())
         {
             ice_pass->record_commands(frame, _primary_commands[1], _render_commands);
@@ -82,6 +85,15 @@ namespace ice::gfx
         _render_queue->submit(
             ice::Span<ice::render::CommandBuffer>{ _primary_commands + 1, 1 }, true
         );
+    }
+
+    void IceGfxQueue::update_texture(
+        ice::render::Image image,
+        ice::render::Buffer image_contents,
+        ice::vec2u extents
+    ) noexcept
+    {
+        _render_commands.update_texture(_primary_commands[0], image, image_contents, extents);
     }
 
 } // namespace ice::gfx

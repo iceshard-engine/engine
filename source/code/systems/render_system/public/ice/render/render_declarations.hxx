@@ -40,6 +40,7 @@ namespace ice::render
 
     enum class QueueID : ice::u32;
     enum class ImageFormat : ice::u32;
+    enum class AttachmentType : ice::u32;
     enum class BufferType : ice::u32;
     enum class ShaderStageFlags : ice::u32;
     enum class CommandBufferType : ice::u32;

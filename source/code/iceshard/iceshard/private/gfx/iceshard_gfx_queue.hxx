@@ -4,11 +4,12 @@
 #include <ice/engine_frame.hxx>
 #include <ice/render/render_queue.hxx>
 #include <ice/gfx/gfx_queue.hxx>
+#include <ice/gfx/gfx_task.hxx>
 
 namespace ice::gfx
 {
 
-    class IceGfxQueue final : public ice::gfx::GfxQueue
+    class IceGfxQueue final : public ice::gfx::GfxQueue, public ice::gfx::GfxTaskCommands
     {
     public:
         IceGfxQueue(
@@ -35,10 +36,19 @@ namespace ice::gfx
             ice::Span<ice::render::CommandBuffer> buffers
         ) noexcept override;
 
+        void test_begin() noexcept;
+        void test_end() noexcept;
+
         void execute_pass(
             ice::EngineFrame const& frame,
             ice::gfx::GfxPass* gfx_pass
         ) noexcept;
+
+        void update_texture(
+            ice::render::Image image,
+            ice::render::Buffer image_contents,
+            ice::vec2u extents
+        ) noexcept override;
 
     private:
         ice::render::RenderCommands& _render_commands;
