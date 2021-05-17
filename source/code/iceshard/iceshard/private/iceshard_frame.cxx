@@ -40,6 +40,7 @@ namespace ice
         , _requests{ _request_allocator }
         , _named_objects{ _storage_allocator }
         , _frame_tasks{ _tasks_allocator }
+        , _task_executor{ _allocator, ice::Vector<ice::Task<void>>{ _allocator } }
     {
         detail::global_frame_counter += 1;
 
@@ -52,6 +53,8 @@ namespace ice
 
     IceshardMemoryFrame::~IceshardMemoryFrame() noexcept
     {
+        _task_executor.wait_ready();
+
         for (auto const& entry : _named_objects)
         {
             _data_allocator.deallocate(entry.value);
@@ -89,9 +92,15 @@ namespace ice
         _frame_tasks.push_back(ice::move(task));
     }
 
+    void IceshardMemoryFrame::start_all() noexcept
+    {
+        _task_executor = IceshardTaskExecutor{ _allocator, ice::move(_frame_tasks) };
+        _task_executor.start_all();
+    }
+
     void IceshardMemoryFrame::wait_ready() noexcept
     {
-        IceshardTaskExecutor{ _allocator, ice::move(_frame_tasks) }.wait_ready();
+        _task_executor.wait_ready();
     }
 
     void IceshardMemoryFrame::push_requests(

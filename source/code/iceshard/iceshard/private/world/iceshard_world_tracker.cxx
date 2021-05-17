@@ -30,10 +30,7 @@ namespace ice
 
         if (entry.current_state != WorldState::Active)
         {
-            for (auto const& trait_entry : entry.world->traits())
-            {
-                trait_entry.value->on_activate(engine, runner, *world);
-            }
+            entry.world->activate(engine, runner);
             entry.current_state = WorldState::Active;
         }
 
@@ -54,11 +51,7 @@ namespace ice
 
         if (entry.current_state != WorldState::Idle)
         {
-            for (auto const& trait_entry : entry.world->traits())
-            {
-                trait_entry.value->on_deactivate(engine, runner, *world);
-            }
-
+            entry.world->deactivate(engine, runner);
             ice::pod::hash::remove(_worlds, ice::hash_from_ptr(world));
         }
     }
@@ -71,7 +64,7 @@ namespace ice
         {
             if (entry.value.current_state == WorldState::Active)
             {
-                entry.value.world->update(runner, WorldUpdateKey{ });
+                entry.value.world->update(runner);
             }
         }
     }

@@ -91,6 +91,9 @@ namespace ice
 
         ice::UniquePtr<ice::gfx::IceGfxDevice> _gfx_device;
         ice::UniquePtr<ice::gfx::IceGfxFrame> _gfx_current_frame;
+
+        ice::Vector<ice::Task<void>> _next_tasks;
+        ice::Vector<ice::Task<void>> _gfx_next_tasks;
     };
 
 } // namespace ice

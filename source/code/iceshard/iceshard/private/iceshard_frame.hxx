@@ -6,6 +6,8 @@
 #include <ice/pod/array.hxx>
 #include <ice/collections.hxx>
 
+#include "iceshard_task_executor.hxx"
+
 namespace ice
 {
 
@@ -24,6 +26,7 @@ namespace ice
         auto input_events() const noexcept -> ice::Span<ice::input::InputEvent const> override;
 
         void execute_task(ice::Task<void> task) noexcept override;
+        void start_all() noexcept;
         void wait_ready() noexcept;
 
         void push_requests(
@@ -63,6 +66,7 @@ namespace ice
         ice::pod::Hash<void*> _named_objects;
 
         ice::Vector<ice::Task<>> _frame_tasks;
+        ice::IceshardTaskExecutor _task_executor;
     };
 
 } // namespace ice

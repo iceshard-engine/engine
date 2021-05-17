@@ -8,6 +8,7 @@
 #include "gfx/iceshard_gfx_pass.hxx"
 
 #include <ice/input/input_tracker.hxx>
+#include <ice/task_scheduler.hxx>
 #include <ice/assert.hxx>
 
 
@@ -51,6 +52,8 @@ namespace ice
         , _input_tracker{ ice::move(input_tracker) }
         , _gfx_device{ ice::move(gfx_device) }
         , _gfx_current_frame{ ice::make_unique_null<ice::gfx::IceGfxFrame>() }
+        , _next_tasks{ _allocator }
+        , _gfx_next_tasks{ _allocator }
     {
         _previous_frame = ice::make_unique<ice::IceshardMemoryFrame>(
             _allocator,
@@ -64,6 +67,9 @@ namespace ice
         _gfx_current_frame = ice::make_unique<ice::gfx::IceGfxFrame>(
             _allocator, _frame_gfx_allocator[1]
         );
+
+        _next_tasks.reserve(100);
+        _gfx_next_tasks.reserve(100);
 
         activate_worlds();
     }
@@ -136,7 +142,7 @@ namespace ice
 
         // Move the current frame to the 'previous' slot.
         _previous_frame = ice::move(_current_frame);
-        _previous_frame->wait_ready();
+        _previous_frame->start_all();
 
         _graphics_thread->scheduler().schedule(
             graphics_task(
@@ -201,8 +207,11 @@ namespace ice
         ice::u32 const image_index = _gfx_device->next_frame();
         ice::gfx::IceGfxQueueGroup& queue_group = _gfx_device->queue_group(image_index);
 
-        gfx_frame->wait_ready();
+        gfx_frame->start_all();
         gfx_frame->execute_passes(previous_frame(), queue_group);
+        gfx_frame->wait_ready();
+        _previous_frame->wait_ready();
+
         _gfx_device->present(image_index);
 
         reset_event->set();

@@ -1,17 +1,14 @@
 #pragma once
 #include <ice/world/world.hxx>
 #include <ice/entity/entity_storage.hxx>
-#include <ice/data_storage.hxx>
+
+#include "iceshard_world_portal.hxx"
 
 namespace ice
 {
 
+    class Engine;
     class EngineRunner;
-
-    struct WorldUpdateKey
-    {
-        ice::u32 reserved;
-    };
 
     class IceshardWorld final : public ice::World
     {
@@ -24,8 +21,6 @@ namespace ice
         auto allocator() noexcept -> ice::Allocator& override;
         auto entity_storage() noexcept -> ice::EntityStorage& override;
 
-        auto data_storage() noexcept -> ice::DataStorage& override;
-
         void add_trait(
             ice::StringID_Arg name,
             ice::WorldTrait* trait
@@ -35,19 +30,28 @@ namespace ice
             ice::StringID_Arg name
         ) noexcept override;
 
-        void update(
-            ice::EngineRunner& runner,
-            WorldUpdateKey
-        ) noexcept override;
+        void activate(
+            ice::Engine& engine,
+            ice::EngineRunner& runner
+        ) noexcept;
 
-        auto traits() noexcept -> ice::pod::Hash<ice::WorldTrait*>&;
+        void deactivate(
+            ice::Engine& engine,
+            ice::EngineRunner& runner
+        ) noexcept;
+
+        void update(
+            ice::EngineRunner& runner
+        ) noexcept;
+
+        auto traits() noexcept -> ice::pod::Array<ice::WorldTrait*>&;
 
     private:
         ice::Allocator& _allocator;
         ice::EntityStorage* _entity_storage;
 
-        ice::pod::Hash<ice::WorldTrait*> _traits;
-        ice::HashedDataStorage _data_storage;
+        ice::pod::Array<ice::WorldTrait*> _traits;
+        ice::pod::Hash<ice::IceshardWorldPortal*> _portals;
     };
 
 } // namespace ice
