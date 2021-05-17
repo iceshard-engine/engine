@@ -44,7 +44,14 @@ namespace ice::memory
 
     auto ScratchAllocator::allocate(uint32_t size, uint32_t align) noexcept -> void*
     {
-        assert((align % 4) == 0); // , "Invalid alignment value '{}' passed to allocation function!", align);
+        if (align < 4)
+        {
+            align = 4;
+        }
+        else
+        {
+            assert((align % 4) == 0); // , "Invalid alignment value '{}' passed to allocation function!", align);
+        }
 
         void* candidate_pointer = _allocate;
 
