@@ -42,4 +42,9 @@ namespace ice
         }
     }
 
+    bool ManualResetEvent::is_set() const noexcept
+    {
+        return _internal_value.load(std::memory_order_relaxed) == 1;
+    }
+
 } // namespace ice

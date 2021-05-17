@@ -13,6 +13,18 @@ namespace ice
     namespace detail
     {
 
+        struct OneWaytask
+        {
+            struct promise_type
+            {
+                auto initial_suspend() const noexcept { return std::suspend_never{ }; }
+                auto final_suspend() const noexcept { return std::suspend_never{ }; }
+                auto return_void() noexcept { }
+
+                auto get_return_object() noexcept { return OneWaytask{ }; }
+            };
+        };
+
         auto create_internal_synced_task(
             ice::Task<void> task,
             ice::ManualResetEvent* reset_event
@@ -26,11 +38,12 @@ namespace ice
 
     } // namespace detail
 
-    auto sync_wait(
-        ice::Task<void> task,
-        ice::ManualResetEvent& sync_event
+    void sync_wait(
+        ice::Task<void> task
     ) noexcept
     {
+        ManualResetEvent sync_event{ };
+
         ice::detail::InternalTask internal_task = detail::create_internal_synced_task(
             ice::move(task),
             &sync_event
@@ -38,6 +51,21 @@ namespace ice
 
         internal_task.resume();
         sync_event.wait();
+    }
+
+    void sync_manual_wait(
+        ice::Task<void> task,
+        ice::ManualResetEvent& reset_event
+    ) noexcept
+    {
+        [](ice::Task<void> task, ice::ManualResetEvent* reset_event) noexcept -> detail::OneWaytask
+        {
+            co_await task;
+            int x = 3;
+            reset_event->set();
+            co_return;
+
+        }(ice::move(task), &reset_event);
     }
 
     void sync_wait_all(
@@ -71,6 +99,38 @@ namespace ice
         {
             reset_events[idx].wait();
         }
+
+        for (ice::detail::InternalTask& task : internal_tasks)
+        {
+            if (task.is_ready() == false)
+            {
+                ICE_LOG(ice::LogSeverity::Warning, ice::LogTag::Engine, "Task not finished!");
+            }
+        }
+    }
+
+    //void when_all_ready(
+    //    //ice::Allocator& alloc,
+    //    ice::Span<ice::Task<void>> tasks,
+    //    ice::Span<ice::ManualResetEvent> reset_events
+    //) noexcept
+    //{
+    //    []() noexcept -> detail::OneWayTask
+    //    {
+
+    //    }();
+    //}
+
+    auto sync_task(ice::Task<void> task, ice::ManualResetEvent* reset_event) noexcept -> ice::Task<>
+    {
+        ice::detail::InternalTask internal_task = detail::create_internal_synced_task(
+            ice::move(task),
+            reset_event
+        );
+
+        internal_task.resume();
+        reset_event->wait();
+        co_return;
     }
 
 } // namespace ice

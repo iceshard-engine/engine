@@ -4,16 +4,7 @@
 namespace ice
 {
 
-    template<typename T>
-    class Task;
-
-    class TaskScheduler
-    {
-    public:
-        virtual ~TaskScheduler() noexcept = default;
-
-        virtual void schedule(ice::Task<void> task) noexcept = 0;
-    };
+    class TaskScheduler;
 
     class TaskThread
     {

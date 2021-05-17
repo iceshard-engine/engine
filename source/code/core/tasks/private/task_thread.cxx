@@ -1,4 +1,5 @@
 #include <ice/task_thread.hxx>
+#include <ice/task_scheduler.hxx>
 #include <ice/task_list.hxx>
 #include <ice/task.hxx>
 #include <ice/os/windows.hxx>
@@ -44,6 +45,29 @@ namespace ice
             ice::pod::array::reserve(thread_tasks, thread_alloc.Constant_BufferSize / sizeof(std::coroutine_handle<>) - 1);
             _task_lists.swap_and_aquire_tasks(thread_tasks);
 
+            ice::ScheduleOperation* expected_initial_task = _head.load(std::memory_order_acquire);
+            if (expected_initial_task != nullptr)
+            {
+                while (
+                    _head.compare_exchange_weak(
+                        expected_initial_task,
+                        nullptr,
+                        std::memory_order::acquire,
+                        std::memory_order::relaxed
+                    ) == false
+                )
+                {
+                    continue;
+                }
+
+                while (expected_initial_task != nullptr)
+                {
+                    ScheduleOperation* next_op = expected_initial_task->_next;
+                    expected_initial_task->_coro.destroy();
+                    expected_initial_task = next_op;
+                }
+            }
+
             for (std::coroutine_handle<> coro_task : thread_tasks)
             {
                 coro_task.destroy();
@@ -79,6 +103,30 @@ namespace ice
             );
         }
 
+        void schedule_test_internal(ice::ScheduleOperation* schedule_op) noexcept
+        {
+            ScheduleOperation* expected_head = _head.load(std::memory_order_acquire);
+
+            do
+            {
+                schedule_op->_next = expected_head;
+            }
+            while (
+                _head.compare_exchange_weak(
+                    expected_head,
+                    schedule_op,
+                    std::memory_order_release,
+                    std::memory_order_acquire
+                ) == false
+            );
+
+        }
+
+        auto schedule_test() noexcept -> ice::ScheduleOperation override
+        {
+            return ScheduleOperation{ *this };
+        }
+
     protected:
         void thread_routine() noexcept
         {
@@ -92,17 +140,54 @@ namespace ice
             {
                 _task_lists.swap_and_aquire_tasks(thread_tasks);
 
-                if (ice::pod::array::empty(thread_tasks))
+                ice::ScheduleOperation* expected_initial_task = _head.load(std::memory_order_acquire);
+                if (expected_initial_task != nullptr)
+                {
+                    while (
+                        _head.compare_exchange_weak(
+                            expected_initial_task,
+                            nullptr,
+                            std::memory_order::acquire,
+                            std::memory_order::relaxed
+                        ) == false
+                    )
+                    {
+                        continue;
+                    }
+                }
+
+                if (ice::pod::array::empty(thread_tasks) && expected_initial_task == nullptr)
                 {
                     SleepEx(1, 0);
                 }
                 else
                 {
+                    while (expected_initial_task != nullptr)
+                    {
+                        ScheduleOperation* next_op = expected_initial_task->_next;
+
+                        std::coroutine_handle<> coro_task = expected_initial_task->_coro;
+                        if (coro_task.resume(); coro_task.done())
+                        {
+                            coro_task.destroy();
+                        }
+                        else
+                        {
+                            ICE_LOG(ice::LogSeverity::Warning, ice::LogTag::Engine, "TThread, task not finished!");
+                        }
+
+                        expected_initial_task = next_op;
+                    }
+
                     for (std::coroutine_handle<> coro_task : thread_tasks)
                     {
                         if (coro_task.resume(); coro_task.done())
                         {
                             coro_task.destroy();
+                        }
+                        else
+                        {
+                            ICE_LOG(ice::LogSeverity::Warning, ice::LogTag::Engine, "TThread, task not finished!");
                         }
                     }
                 }
@@ -113,6 +198,7 @@ namespace ice
         std::thread _thread;
         bool _stop_requested = false;
 
+        std::atomic<ice::ScheduleOperation*> _head = nullptr;
         ice::TaskListContainer _task_lists;
     };
 
@@ -121,10 +207,17 @@ namespace ice
         return ice::make_unique<TaskThread, SimpleTaskThread>(alloc, alloc);
     }
 
-    void detail::task_thread_routine(void* task_thread_object) noexcept
-    {
-        SimpleTaskThread* task_thread = reinterpret_cast<SimpleTaskThread*>(task_thread_object);
+    //void detail::task_thread_routine(void* task_thread_object) noexcept
+    //{
+    //    SimpleTaskThread* task_thread = reinterpret_cast<SimpleTaskThread*>(task_thread_object);
 
+    //}
+
+    void ScheduleOperation::await_suspend(std::coroutine_handle<void> coro) noexcept
+    {
+        SimpleTaskThread& thread_scheduler = static_cast<SimpleTaskThread&>(_scheduler);
+
+        thread_scheduler.schedule_test_internal(this);
     }
 
 } // namespace ice

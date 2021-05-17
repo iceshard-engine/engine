@@ -16,6 +16,21 @@ namespace ice
         class TaskPromiseBase
         {
         public:
+            friend struct FinalAwaitable;
+
+            struct FinalAwaitable
+            {
+                bool await_ready() const noexcept { return false; }
+
+                template<typename Promise>
+                auto await_suspend(std::coroutine_handle<Promise> coro) noexcept -> std::coroutine_handle<>
+                {
+                    return coro.promise()._continuation;
+                }
+
+                void await_resume() noexcept { }
+            };
+
             auto initial_suspend() noexcept
             {
                 return std::suspend_always{};
@@ -23,11 +38,24 @@ namespace ice
 
             auto final_suspend() noexcept
             {
-                return std::suspend_always{};
+                return FinalAwaitable{};
+            }
+
+            auto set_continuation(std::coroutine_handle<> coro) noexcept
+            {
+                _continuation = coro;
+            }
+
+            auto continuation() const noexcept -> std::coroutine_handle<>
+            {
+                return _continuation;
             }
 
         protected:
             TaskPromiseBase() noexcept = default;
+
+        protected:
+            std::coroutine_handle<> _continuation;
         };
 
         template<typename T>

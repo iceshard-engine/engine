@@ -30,8 +30,8 @@ namespace ice
                 std::coroutine_handle<> awaiting_coroutine
             ) noexcept -> std::coroutine_handle<>
             {
-                _coroutine.resume();
-                return awaiting_coroutine;
+                _coroutine.promise().set_continuation(awaiting_coroutine);
+                return _coroutine;
             }
         };
 
@@ -92,7 +92,10 @@ namespace ice
                         "Broken promise on coroutine Task!"
                     );
 
-                    return this->_coroutine.promise().result();
+                    if constexpr (std::is_same_v<T, void> == false)
+                    {
+                        return this->_coroutine.promise().result();
+                    }
                 }
             };
 
@@ -112,7 +115,10 @@ namespace ice
                         "Broken promise on coroutine Task!"
                     );
 
-                    return std::move(this->_coroutine.promise().result());
+                    if constexpr (std::is_same_v<T, void> == false)
+                    {
+                        return std::move(this->_coroutine.promise().result());
+                    }
                 }
             };
 
