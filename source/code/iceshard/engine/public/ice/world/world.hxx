@@ -6,11 +6,8 @@
 namespace ice
 {
 
-    class EngineRunner;
-
     class WorldTrait;
-
-    struct WorldUpdateKey;
+    class WorldPortal;
 
     enum class WorldState
     {
@@ -24,8 +21,6 @@ namespace ice
         virtual auto allocator() noexcept -> ice::Allocator& = 0;
         virtual auto entity_storage() noexcept -> ice::EntityStorage& = 0;
 
-        virtual auto data_storage() noexcept -> ice::DataStorage& = 0;
-
         virtual void add_trait(
             ice::StringID_Arg name,
             ice::WorldTrait* trait
@@ -33,11 +28,6 @@ namespace ice
 
         virtual void remove_trait(
             ice::StringID_Arg name
-        ) = 0;
-
-        virtual void update(
-            ice::EngineRunner& runner,
-            WorldUpdateKey
         ) noexcept = 0;
 
     protected:

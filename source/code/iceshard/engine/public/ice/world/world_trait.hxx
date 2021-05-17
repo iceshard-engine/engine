@@ -7,7 +7,7 @@ namespace ice
     class EngineFrame;
     class EngineRunner;
 
-    class World;
+    class WorldPortal;
 
     class WorldTrait
     {
@@ -17,19 +17,19 @@ namespace ice
         virtual void on_activate(
             ice::Engine& engine,
             ice::EngineRunner& runner,
-            ice::World& world
+            ice::WorldPortal& portal
         ) noexcept { }
 
         virtual void on_deactivate(
             ice::Engine& engine,
             ice::EngineRunner& runner,
-            ice::World& world
+            ice::WorldPortal& portal
         ) noexcept { }
 
         virtual void on_update(
             ice::EngineFrame& frame,
             ice::EngineRunner& runner,
-            ice::World& world
+            ice::WorldPortal& portal
         ) noexcept { }
     };
 
