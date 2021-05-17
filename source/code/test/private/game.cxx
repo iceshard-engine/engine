@@ -13,6 +13,7 @@
 #include <ice/gfx/gfx_resource_tracker.hxx>
 #include <ice/gfx/gfx_subpass.hxx>
 #include <ice/world/world_manager.hxx>
+#include <ice/world/world_portal.hxx>
 #include <ice/engine_runner.hxx>
 #include <ice/engine_frame.hxx>
 
@@ -62,7 +63,7 @@ public:
 
     ~ClearStage() noexcept = default;
 
-    void on_activate(ice::Engine&, ice::EngineRunner& r, ice::World& w) noexcept override
+    void on_activate(ice::Engine&, ice::EngineRunner& r, ice::WorldPortal& p) noexcept override
     {
         ice::gfx::GfxResourceTracker& res_tracker = r.graphics_device().resource_tracker();
 
@@ -78,7 +79,7 @@ public:
         _framebuffers[1] = ice::gfx::find_resource<ice::render::Framebuffer>(res_tracker, framebuffers[1]);
     }
 
-    void on_deactivate(ice::Engine&, ice::EngineRunner& r, ice::World& w) noexcept override
+    void on_deactivate(ice::Engine&, ice::EngineRunner& r, ice::WorldPortal& p) noexcept override
     {
         ice::gfx::GfxResourceTracker& res_tracker = r.graphics_device().resource_tracker();
     }
@@ -159,7 +160,7 @@ public:
     void on_activate(
         ice::Engine&,
         ice::EngineRunner& runner,
-        ice::World& world
+        ice::WorldPortal& portal
     ) noexcept override
     {
         ice::gfx::GfxDevice& gfx_device = runner.graphics_device();
@@ -285,7 +286,7 @@ public:
         );
     }
 
-    void on_deactivate(ice::Engine&, ice::EngineRunner& runner, ice::World& world) noexcept override
+    void on_deactivate(ice::Engine&, ice::EngineRunner& runner, ice::WorldPortal& portal) noexcept override
     {
         ice::gfx::GfxDevice& gfx_device = runner.graphics_device();
         ice::gfx::GfxResourceTracker& res_tracker = gfx_device.resource_tracker();
@@ -306,7 +307,7 @@ public:
     void on_update(
         ice::EngineFrame& frame,
         ice::EngineRunner& runner,
-        ice::World& world
+        ice::WorldPortal& portal
     ) noexcept override
     {
 
@@ -392,7 +393,7 @@ public:
         _shader_data[1] = *reinterpret_cast<ice::Data const*>(pp_frag_data.location);
     }
 
-    void on_activate(ice::Engine&, ice::EngineRunner& r, ice::World& w) noexcept override
+    void on_activate(ice::Engine&, ice::EngineRunner& r, ice::WorldPortal& p) noexcept override
     {
         ice::gfx::GfxResourceTracker& res_tracker = r.graphics_device().resource_tracker();
         ice::render::RenderDevice& render_device = r.graphics_device().device();
@@ -525,7 +526,7 @@ public:
         );
     }
 
-    void on_deactivate(ice::Engine&, ice::EngineRunner& r, ice::World& w) noexcept override
+    void on_deactivate(ice::Engine&, ice::EngineRunner& r, ice::WorldPortal& p) noexcept override
     {
         ice::render::RenderDevice& render_device = r.graphics_device().device();
 
@@ -584,7 +585,7 @@ public:
     void on_activate(
         ice::Engine&,
         ice::EngineRunner& runner,
-        ice::World& world
+        ice::WorldPortal& portal
     ) noexcept override
     {
         ice::gfx::GfxDevice& gfx_device = runner.graphics_device();
@@ -799,7 +800,7 @@ public:
     void on_deactivate(
         ice::Engine&,
         ice::EngineRunner& runner,
-        ice::World& world
+        ice::WorldPortal& portal
     ) noexcept override
     {
         ice::gfx::GfxDevice& gfx_device = runner.graphics_device();
@@ -891,25 +892,20 @@ struct MyGame::TraitContainer : public ice::WorldTrait
         }
     };
 
-    void on_update(ice::EngineFrame& f, ice::EngineRunner& r, ice::World&) noexcept override
+    void on_update(ice::EngineFrame& f, ice::EngineRunner& r, ice::WorldPortal&) noexcept override
     {
-        if constexpr (ice::build::is_debug)
-        {
-            ice::StackString<1024> offset{ "" };
-            ice::TrackedAllocator& tracked_alloc = static_cast<ice::TrackedAllocator&>(ice::memory::default_allocator());
-            list_allocator_allocations(offset, &tracked_alloc);
-        }
+        //if constexpr (ice::build::is_debug)
+        //{
+        //    ice::StackString<1024> offset{ "" };
+        //    ice::TrackedAllocator& tracked_alloc = static_cast<ice::TrackedAllocator&>(ice::memory::default_allocator());
+        //    list_allocator_allocations(offset, &tracked_alloc);
+        //}
 
         f.execute_task(update_stages(r.graphics_device().aquire_pass("pass.default"_sid), r));
     }
 
     auto update_stages(ice::gfx::GfxPass& pass, ice::EngineRunner& r) noexcept -> ice::Task<>
     {
-        for (ice::gfx::GfxStage* stage : _terrain.udpate_stages())
-        {
-            pass.add_update_stage(stage);
-        }
-
         pass.add_stage(
             _clear.name(),
             _clear.dependencies(),

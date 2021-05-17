@@ -56,7 +56,7 @@ namespace ice::trait
     void CameraManager::on_activate(
         ice::Engine&,
         ice::EngineRunner& runner,
-        ice::World& world
+        ice::WorldPortal& portal
     ) noexcept
     {
         using namespace ice::gfx;
@@ -122,7 +122,7 @@ namespace ice::trait
     void CameraManager::on_deactivate(
         ice::Engine&,
         ice::EngineRunner& runner,
-        ice::World& world
+        ice::WorldPortal& portal
     ) noexcept
     {
         using namespace ice::gfx;
@@ -140,7 +140,7 @@ namespace ice::trait
     void CameraManager::on_update(
         ice::EngineFrame& frame,
         ice::EngineRunner& runner,
-        ice::World& world
+        ice::WorldPortal& portal
     ) noexcept
     {
         static ice::vec3f camera_pos = { 0.f, 0.f, -1.f };

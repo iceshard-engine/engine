@@ -26,36 +26,14 @@
 
 #include <ice/world/world_trait.hxx>
 #include <ice/gfx/gfx_stage.hxx>
+#include <ice/gfx/gfx_task.hxx>
+#include <ice/task_sync_wait.hxx>
 
 #include <imgui/imgui.h>
 #undef assert
 
 namespace ice
 {
-
-    struct UpdateFontsTexture_Stage : ice::gfx::GfxStage
-    {
-        ice::Allocator* _allocator;
-
-        ice::render::Image _texture;
-        ice::render::Buffer _texture_data;
-        ice::vec2u _size;
-
-        void record_commands(
-            ice::EngineFrame const& frame,
-            ice::render::CommandBuffer cmds,
-            ice::render::RenderCommands& api
-        ) noexcept
-        {
-            using namespace ice::gfx;
-            using namespace ice::render;
-
-            api.update_texture(cmds, _texture, _texture_data, _size);
-
-            ice::Allocator* alloc = _allocator;
-            alloc->destroy(this);
-        }
-    };
 
     class Ice_ImGui : public ice::WorldTrait, public ice::gfx::GfxStage
     {
@@ -79,10 +57,27 @@ namespace ice
             ImGui::DestroyContext(_context);
         }
 
+        auto update_task(
+            ice::gfx::GfxDevice& device,
+            ice::gfx::GfxFrame& frame,
+            ice::render::Image image,
+            ice::render::ImageInfo image_info
+        ) noexcept -> ice::Task<>
+        {
+            //using namespace gfx;
+            ice::gfx::GfxTaskLoadImage const task_info{
+                .image = image,
+                .image_info = image_info
+            };
+
+            co_await ice::gfx::load_image_data_task(device, frame, task_info);
+            co_return;
+        };
+
         void on_activate(
             ice::Engine&,
             ice::EngineRunner& runner,
-            ice::World& world
+            ice::WorldPortal& portal
         ) noexcept override
         {
             using namespace ice::gfx;
@@ -133,32 +128,24 @@ namespace ice
             font_texture.format = ImageFormat::UNORM_RGBA;
             font_texture.width = width;
             font_texture.height = height;
+            font_texture.data = pixels;
 
             _font_texture = device.create_image(font_texture, { });
-            _font_transfer_buffer = device.create_buffer(BufferType::Transfer, upload_size);
-
-            BufferUpdateInfo font_buffer_update[]{
-                BufferUpdateInfo{
-                    .buffer = _font_transfer_buffer,
-                    .data = { pixels, upload_size }
-                }
-            };
-
-            device.update_buffers(font_buffer_update);
 
             GfxPass& pass = runner.graphics_device().aquire_pass("pass.default"_sid);
 
-            UpdateFontsTexture_Stage* stage = world.allocator().make<UpdateFontsTexture_Stage>();
-            stage->_allocator = &world.allocator();
-            stage->_texture = _font_texture;
-            stage->_texture_data = _font_transfer_buffer;
-            stage->_size = ice::vec2u(width, height);
-            pass.add_update_stage(stage);
+            runner.graphics_frame().execute_task(
+                update_task(
+                    runner.graphics_device(),
+                    runner.graphics_frame(),
+                    _font_texture,
+                    font_texture
+                )
+            );
 
             io.Fonts->TexID = reinterpret_cast<ImTextureID>(_font_texture);
 
             auto& res = runner.graphics_device().resource_tracker();
-            using namespace ice::gfx;
 
             ResourceSetLayout res_layouts[]{
                 find_resource<ResourceSetLayout>(res, GfxSubpass_ImGui::ResName_ResourceLayout)
@@ -273,7 +260,7 @@ namespace ice
         void on_deactivate(
             ice::Engine&,
             ice::EngineRunner& runner,
-            ice::World& world
+            ice::WorldPortal& portal
         ) noexcept override
         {
             using namespace ice::render;
@@ -288,8 +275,6 @@ namespace ice
             device.destroy_resourcesets({ &_resources, 1 });
 
             device.destroy_sampler(_sampler);
-
-            device.destroy_buffer(_font_transfer_buffer);
             device.destroy_image(_font_texture);
         }
 

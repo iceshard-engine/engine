@@ -12,6 +12,8 @@
 #include <ice/gfx/gfx_model.hxx>
 #include <ice/gfx/gfx_subpass.hxx>
 #include <ice/gfx/gfx_camera.hxx>
+#include <ice/gfx/gfx_task.hxx>
+#include <ice/gfx/gfx_frame.hxx>
 
 #include <ice/render/render_buffer.hxx>
 #include <ice/render/render_pipeline.hxx>
@@ -31,7 +33,7 @@ namespace ice::trait
         ice::f32 level_outer;
     };
 
-    struct Terrain::RenderCache : public ice::gfx::GfxStage
+    struct Terrain::RenderCache
     {
         ice::u32 status;
 
@@ -58,24 +60,38 @@ namespace ice::trait
         TerrainSettings _terrain_settings;
         ice::render::Buffer _terrain_settings_buffer;
 
-        void record_commands(
-            ice::EngineFrame const& frame,
-            ice::render::CommandBuffer cmds,
-            ice::render::RenderCommands& api
-        ) noexcept override
+        auto update_uniform_resources(
+            ice::gfx::GfxDevice& gfx_device
+        ) noexcept -> ice::Task<>
         {
-            using namespace ice::render;
-            BufferUpdateInfo image_buffer_update[2]{
-                BufferUpdateInfo{.buffer = _temp_transfer_buffer, .data = { _image_info.data, _image_info.width * _image_info.height * 4 } },
+            using namespace render;
+
+            RenderDevice& device = gfx_device.device();
+
+            BufferUpdateInfo image_buffer_update[1]{
                 BufferUpdateInfo{.buffer = _terrain_settings_buffer, .data = ice::data_view(_terrain_settings) },
             };
             _render_device->update_buffers(image_buffer_update);
+            co_return;
+        }
 
-            api.update_texture(cmds, _terrain_heightmap, _temp_transfer_buffer, { _image_info.width, _image_info.height });
+        auto update_all_resources(
+            ice::gfx::GfxDevice& gfx_device,
+            ice::gfx::GfxFrame& gfx_frame
+        ) noexcept -> ice::Task<>
+        {
+            using namespace render;
+
+            RenderDevice& device = gfx_device.device();
+
+            BufferUpdateInfo image_buffer_update[1]{
+                BufferUpdateInfo{.buffer = _temp_transfer_buffer, .data = { _image_info.data, _image_info.width * _image_info.height * 4 } },
+            };
+            _render_device->update_buffers(image_buffer_update);
 
             ResourceUpdateInfo update_resources[]{
-                ResourceUpdateInfo{ .image = _terrain_heightmap },
-                ResourceUpdateInfo{ .sampler = _terrain_sampler },
+                ResourceUpdateInfo{.image = _terrain_heightmap },
+                ResourceUpdateInfo{.sampler = _terrain_sampler },
                 ResourceUpdateInfo
                 {
                     .uniform_buffer =
@@ -128,6 +144,10 @@ namespace ice::trait
             };
 
             _render_device->update_resourceset(update_terrain_set);
+
+            ice::gfx::GfxTaskCommands& cmds = co_await gfx_frame.aquire_task_commands("default"_sid);
+
+            cmds.update_texture(_terrain_heightmap, _temp_transfer_buffer, { _image_info.width, _image_info.height });
         }
     };
 
@@ -155,7 +175,7 @@ namespace ice::trait
         : _engine{ engine }
         , _asset_system{ _engine.asset_system() }
         , _render_cache{ ice::make_unique<RenderCache>(alloc) }
-        , _update_stages{ alloc }
+        //, _update_stages{ alloc }
     {
         _render_cache->status = 1;
     }
@@ -163,7 +183,7 @@ namespace ice::trait
     void Terrain::on_activate(
         ice::Engine&,
         ice::EngineRunner& runner,
-        ice::World& world
+        ice::WorldPortal& portal
     ) noexcept
     {
         using namespace ice::gfx;
@@ -377,13 +397,18 @@ namespace ice::trait
 
         render_device.update_buffers(buffer_updates);
 
-        ice::pod::array::push_back(_update_stages, _render_cache.get());
+        runner.graphics_frame().execute_task(
+            _render_cache->update_all_resources(
+                runner.graphics_device(),
+                runner.graphics_frame()
+            )
+        );
     }
 
     void Terrain::on_deactivate(
         ice::Engine&,
         ice::EngineRunner& runner,
-        ice::World& world
+        ice::WorldPortal& portal
     ) noexcept
     {
         using namespace ice::gfx;
@@ -419,7 +444,7 @@ namespace ice::trait
     void Terrain::on_update (
         ice::EngineFrame& frame,
         ice::EngineRunner& runner,
-        ice::World& world
+        ice::WorldPortal& portal
     ) noexcept
     {
         using namespace ice::input;
@@ -481,7 +506,9 @@ namespace ice::trait
             }
         }
 
-        ice::render::RenderDevice& device = runner.graphics_device().device();
+        runner.graphics_frame().execute_task(
+            _render_cache->update_uniform_resources(runner.graphics_device())
+        );
     }
 
     void Terrain::record_commands(
@@ -490,12 +517,6 @@ namespace ice::trait
         ice::render::RenderCommands& render_commands
     ) noexcept
     {
-        using namespace ice::render;
-        BufferUpdateInfo updates[1]{
-            BufferUpdateInfo{.buffer = _render_cache->_terrain_settings_buffer, .data = ice::data_view(_render_cache->_terrain_settings) }
-        };
-        _render_cache->_render_device->update_buffers(updates);
-
         render_commands.bind_pipeline(cmds, _render_cache->_terrain_pipeline[_debug_pl]);
         render_commands.bind_resource_set(cmds, _render_cache->_terrain_pipeline_layout, _render_cache->_terrain_resources, 1);
         render_commands.bind_vertex_buffer(cmds, _render_cache->_terrain_mesh_vertices, 0);

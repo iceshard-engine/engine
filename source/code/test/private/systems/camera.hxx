@@ -19,19 +19,19 @@ namespace ice::trait
         void on_activate(
             ice::Engine&,
             ice::EngineRunner& runner,
-            ice::World& world
+            ice::WorldPortal& portal
         ) noexcept override;
 
         void on_deactivate(
             ice::Engine&,
             ice::EngineRunner& runner,
-            ice::World& world
+            ice::WorldPortal& portal
         ) noexcept override;
 
         void on_update(
             ice::EngineFrame& frame,
             ice::EngineRunner& runner,
-            ice::World& world
+            ice::WorldPortal& portal
         ) noexcept override;
 
         void record_commands(
