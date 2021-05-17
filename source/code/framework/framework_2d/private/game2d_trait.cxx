@@ -4,12 +4,13 @@
 #include <ice/engine.hxx>
 #include <ice/engine_runner.hxx>
 #include <ice/engine_frame.hxx>
-#include <ice/world/world.hxx>
+#include <ice/world/world_portal.hxx>
 
 #include <ice/entity/entity_storage.hxx>
 #include <ice/archetype/archetype_query.hxx>
 
 #include <ice/gfx/gfx_pass.hxx>
+#include <ice/gfx/gfx_task.hxx>
 #include <ice/gfx/gfx_frame.hxx>
 #include <ice/gfx/gfx_stage.hxx>
 #include <ice/gfx/gfx_device.hxx>
@@ -88,63 +89,6 @@ namespace ice
         return result;
     }
 
-    struct Game2D_UpdateImage : public ice::gfx::GfxStage
-    {
-        Game2D_UpdateImage(
-            ice::Allocator& alloc,
-            ice::render::RenderDevice& device,
-            ice::render::ImageInfo image_info,
-            ice::render::Image image
-        ) noexcept
-            : _allocator{ alloc }
-            , _device{ device }
-            , _image_data{ }
-            , _image_info{ image_info }
-            , _image{ image }
-        {
-        }
-
-        auto update_buffers() noexcept -> ice::Task<>
-        {
-            using namespace ice::render;
-
-            ice::u32 const bytes = _image_info.width * _image_info.height * 4;
-
-            _image_data = _device.create_buffer(BufferType::Transfer, bytes);
-
-            BufferUpdateInfo updates[]{
-                BufferUpdateInfo{ .buffer = _image_data, .data = { _image_info.data, bytes } }
-            };
-
-            _device.update_buffers(updates);
-            co_return;
-        }
-
-        ~Game2D_UpdateImage() noexcept
-        {
-            _device.destroy_buffer(_image_data);
-        }
-
-        void record_commands(
-            ice::EngineFrame const& frame,
-            ice::render::CommandBuffer cmds,
-            ice::render::RenderCommands& api
-        ) noexcept
-        {
-            api.update_texture(cmds, _image, _image_data, { _image_info.width, _image_info.height });
-
-            // We want to self-delete us!
-            ice::Allocator& alloc = _allocator;
-            alloc.destroy(this);
-        }
-
-    private:
-        ice::Allocator& _allocator;
-        ice::render::RenderDevice& _device;
-        ice::render::Buffer _image_data;
-        ice::render::ImageInfo _image_info;
-        ice::render::Image _image;
-    };
 
     struct Game2D_RenderObjects : public ice::gfx::GfxStage
     {
@@ -202,18 +146,39 @@ namespace ice
         IceGame2DTrait(ice::Allocator& alloc) noexcept;
         ~IceGame2DTrait() noexcept override = default;
 
+        auto update_image_task(
+            ice::gfx::GfxDevice& device,
+            ice::gfx::GfxFrame& frame,
+            ice::render::Image image,
+            ice::render::ImageInfo image_info
+        ) noexcept -> ice::Task<>
+        {
+            ice::gfx::GfxTaskLoadImage const task_info{
+                .image = image,
+                .image_info = image_info
+            };
+
+            co_await ice::gfx::load_image_data_task(
+                device,
+                frame,
+                task_info
+            );
+            co_return;
+        }
+
         void on_activate(
             ice::Engine& engine,
             ice::EngineRunner& runner,
-            ice::World& world
+            ice::WorldPortal& portal
         ) noexcept override
         {
             using namespace ice::gfx;
             using namespace ice::render;
 
-            world.data_storage().create_named_object<ObjectQuery>(
+            portal.storage().create_named_object<ObjectQuery>(
                 "game2d.level.query"_sid,
-                _allocator, world.entity_storage().archetype_index()
+                _allocator,
+                portal.entity_storage().archetype_index()
             );
 
             GfxResourceTracker& gfxres = runner.graphics_device().resource_tracker();
@@ -342,21 +307,22 @@ namespace ice
 
             _render.pipeline = device.create_pipeline(pipeline_info);
 
-            Game2D_UpdateImage* tiles_update_stage = _allocator.make<Game2D_UpdateImage>(_allocator, device, tiles_texture_info, _render.textures);
-
-            runner.graphics_device().aquire_pass("pass.default"_sid).add_update_stage(
-                tiles_update_stage
+            runner.graphics_frame().execute_task(
+                update_image_task(
+                    runner.graphics_device(),
+                    runner.graphics_frame(),
+                    _render.textures,
+                    tiles_texture_info
+                )
             );
-
             runner.graphics_frame().execute_task(update_buffers(device));
-            runner.graphics_frame().execute_task(tiles_update_stage->update_buffers());
             runner.graphics_frame().execute_task(update_textures(runner.graphics_device().device()));
         }
 
         void on_deactivate(
             ice::Engine& engine,
             ice::EngineRunner& runner,
-            ice::World& world
+            ice::WorldPortal& portal
         ) noexcept override
         {
             using namespace ice::gfx;
@@ -383,13 +349,13 @@ namespace ice
             device.destroy_pipeline_layout(_render.pipeline_layout);
             device.destroy_resourceset_layout(_render.resourceset_layouts[1]);
 
-            world.data_storage().destroy_named_object<ObjectQuery>("game2d.level.query"_sid);
+            portal.storage().destroy_named_object<ObjectQuery>("game2d.level.query"_sid);
         }
 
         void on_update(
             ice::EngineFrame& frame,
             ice::EngineRunner& runner,
-            ice::World& world
+            ice::WorldPortal& portal
         ) noexcept override
         {
             static ice::StringID deps[]{
@@ -397,8 +363,8 @@ namespace ice
                 "camera.update_view"_sid,
             };
 
-            ObjectQuery& query = *world.data_storage().named_object<ObjectQuery>("game2d.level.query"_sid);
-            ObjectQuery::ResultByEntity result = query.result_by_entity(frame.allocator(), world.entity_storage());
+            ObjectQuery& query = *portal.storage().named_object<ObjectQuery>("game2d.level.query"_sid);
+            ObjectQuery::ResultByEntity result = query.result_by_entity(frame.allocator(), portal.entity_storage());
 
             Span<Obj2dTransform> xform_span = frame.create_named_span<Obj2dTransform>("game2d.level.instances"_sid, result.entity_count());
             *frame.create_named_object<ice::u32>("game2d.level.instance_count"_sid) = result.entity_count();
