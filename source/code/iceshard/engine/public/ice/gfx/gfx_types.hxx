@@ -7,6 +7,7 @@ namespace ice::gfx
     struct GfxDeviceCreateInfo;
 
     class GfxDevice;
+    class GfxRunner;
     class GfxFrame;
     class GfxPass;
 
