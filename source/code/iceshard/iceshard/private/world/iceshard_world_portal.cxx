@@ -22,6 +22,10 @@ namespace ice
                 auto return_void() noexcept { }
 
                 auto get_return_object() noexcept;
+                void unhandled_exception() noexcept
+                {
+                    ICE_ASSERT(false, "Unhandled coroutine exception!");
+                }
             };
         };
 

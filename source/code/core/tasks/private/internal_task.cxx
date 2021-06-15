@@ -4,6 +4,7 @@
 
 #include <ice/collections.hxx>
 #include <ice/memory/memory_globals.hxx>
+#include <ice/assert.hxx>
 
 #include "internal_task.hxx"
 
@@ -22,6 +23,10 @@ namespace ice
                 auto return_void() noexcept { }
 
                 auto get_return_object() noexcept { return OneWaytask{ }; }
+                void unhandled_exception() noexcept
+                {
+                    ICE_ASSERT(false, "Unexpected coroutine exception!");
+                }
             };
         };
 
