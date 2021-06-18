@@ -294,6 +294,8 @@ namespace ice::render::vk
             return VK_FORMAT_R32G32B32A32_SFLOAT;
         case ShaderAttribType::Vec4f_Unorm8:
             return VK_FORMAT_R8G8B8A8_UNORM;
+        case ShaderAttribType::Vec1i:
+            return VK_FORMAT_R32_SINT;
         default:
             return VK_FORMAT_MAX_ENUM;
         }

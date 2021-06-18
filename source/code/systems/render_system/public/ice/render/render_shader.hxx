@@ -27,6 +27,7 @@ namespace ice::render
         Vec3f,
         Vec4f,
         Vec4f_Unorm8,
+        Vec1i
     };
 
     struct ShaderInfo
