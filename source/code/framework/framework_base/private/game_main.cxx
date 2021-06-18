@@ -25,15 +25,22 @@ auto game_main(ice::Allocator& alloc, ice::ResourceSystem& resources) -> ice::i3
 
     ice::i32 main_result = 0;
 
-    ice::UniquePtr<ice::ModuleRegister> module_register = ice::create_default_module_register(alloc);
+    ice::memory::ProxyAllocator module_alloc{ alloc, "module-alloc" };
+
+    ice::UniquePtr<ice::ModuleRegister> module_register = ice::create_default_module_register(module_alloc);
     module_register->load_module(
-        alloc,
+        module_alloc,
         ice::load_log_module,
         ice::unload_log_module
     );
 
+    ice::memory::ProxyAllocator framework_alloc{ alloc, "game-framework-alloc" };
+    ice::memory::ProxyAllocator asset_alloc{ alloc, "asset-alloc" };
+    ice::memory::ProxyAllocator engine_alloc{ alloc, "engine-alloc" };
+    ice::memory::ProxyAllocator app_alloc{ alloc, "app-alloc" };
+
     ice::GameFramework* game_framework = ice::create_game_object(
-        alloc,
+        framework_alloc,
         resources,
         *module_register
     );
@@ -66,11 +73,11 @@ auto game_main(ice::Allocator& alloc, ice::ResourceSystem& resources) -> ice::i3
     resources.mount("dir://../source/data"_uri);
     resources.query_changes(resource_query);
 
-    ice::UniquePtr<ice::AssetSystem> asset_system = ice::create_asset_system(alloc, resources);
-    ice::load_asset_pipeline_modules(alloc, *module_register, *asset_system);
+    ice::UniquePtr<ice::AssetSystem> asset_system = ice::create_asset_system(asset_alloc, resources);
+    ice::load_asset_pipeline_modules(asset_alloc, *module_register, *asset_system);
     asset_system->bind_resources(resource_query.objects);
 
-    ice::UniquePtr<ice::Engine> engine = ice::create_engine(alloc, *asset_system, *module_register);
+    ice::UniquePtr<ice::Engine> engine = ice::create_engine(engine_alloc, *asset_system, *module_register);
     if (engine != nullptr)
     {
         game_framework->startup(*engine);
@@ -78,14 +85,14 @@ auto game_main(ice::Allocator& alloc, ice::ResourceSystem& resources) -> ice::i3
         ice::UniquePtr<ice::platform::App> platform_app = game_framework->platform_app();
         if (platform_app != nullptr)
         {
-            main_result = ice::platform::create_app_container(alloc, ice::move(platform_app))->run();
+            main_result = ice::platform::create_app_container(app_alloc, ice::move(platform_app))->run();
         }
 
         game_framework->shutdown(*engine);
     }
     engine = nullptr;
 
-    alloc.destroy(game_framework);
+    framework_alloc.destroy(game_framework);
 
     asset_system = nullptr;
     module_register = nullptr;
