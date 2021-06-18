@@ -402,6 +402,11 @@ namespace ice
         detail::AssetInfo& asset_info = _assets[entry->value.data_index];
         detail::AssetObject& asset_object = *asset_info.object;
 
+        if (asset_object.status == AssetStatus::Loaded)
+        {
+            return detail::make_asset(asset_info.object);
+        }
+
         // If the current asset is already unloading, release it
         // This should only happen in a single case, when an asset is reloading
         //  after an update for such an asset was requested.
