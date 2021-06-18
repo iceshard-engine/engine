@@ -8,7 +8,7 @@ namespace ice
 {
 
     template<typename T>
-    concept ComponentQueryType = EntityComponent<T>
+    concept ComponentQueryType = (EntityComponent<T> || std::is_same_v<ice::Entity, T>)
         && (std::is_pointer_v<T> || std::is_reference_v<T> || std::is_same_v<ice::Entity, T>);
 
     namespace detail
@@ -78,6 +78,17 @@ namespace ice
             }
         };
 
+        template<>
+        struct QueryInvokeHelper<ice::Entity>
+        {
+            using PointerType = ice::Entity*;
+
+            static constexpr auto ToFinalObject(ice::Entity* ptr, ice::u32 idx) noexcept -> ice::Entity
+            {
+                return *(ptr + idx);
+            }
+        };
+
         template<typename Fn, typename... Components>
         void query_invoke(
             Fn&& fn,
@@ -94,7 +105,21 @@ namespace ice
         };
 
         template<typename T>
-        struct query_cast{ };
+        struct query_cast { };
+
+        template<>
+        struct query_cast<ice::Entity>
+        {
+            static auto to(
+                void** ptr,
+                ice::u32& component_idx,
+                ice::u32 entity_idx = 0
+            ) noexcept -> ice::Entity*
+            {
+                component_idx -= 1;
+                return reinterpret_cast<ice::Entity*>(ptr[component_idx]);
+            }
+        };
 
         template<typename T>
         struct query_cast<T*>
@@ -171,12 +196,12 @@ namespace ice
         inline auto result_by_entity(
             ice::Allocator& alloc,
             ice::EntityStorage& storage
-        ) noexcept -> ResultByEntity;
+        ) const noexcept -> ResultByEntity;
 
         inline auto result_by_block(
             ice::Allocator& alloc,
             ice::EntityStorage& storage
-        ) noexcept -> ResultByBlock;
+        ) const noexcept -> ResultByBlock;
 
         ice::ArchetypeIndex& _archetype_index;
         ice::pod::Array<ice::ArchetypeHandle> _archetypes;
@@ -262,7 +287,7 @@ namespace ice
     inline auto ComponentQuery<Components...>::result_by_entity(
         ice::Allocator& alloc,
         ice::EntityStorage& storage
-    ) noexcept -> ResultByEntity
+    ) const noexcept -> ResultByEntity
     {
         ResultByEntity result{ alloc, _archetype_infos };
         storage.query_blocks(
@@ -277,7 +302,7 @@ namespace ice
     inline auto ComponentQuery<Components...>::result_by_block(
         ice::Allocator& alloc,
         ice::EntityStorage& storage
-    ) noexcept -> ResultByBlock
+    ) const noexcept -> ResultByBlock
     {
         ResultByBlock result{ alloc, _archetype_infos };
         storage.query_blocks(
