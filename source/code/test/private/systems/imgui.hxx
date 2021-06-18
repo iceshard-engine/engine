@@ -281,8 +281,8 @@ namespace ice
         void on_update(
             ice::EngineFrame& frame,
             ice::EngineRunner& runner,
-            ice::World& world
-        ) noexcept
+            ice::WorldPortal& portal
+        ) noexcept override
         {
             using ice::input::InputEvent;
             using ice::input::MouseInput;
