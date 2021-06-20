@@ -8,7 +8,6 @@
 #include "gfx/iceshard_gfx_pass.hxx"
 
 #include <ice/input/input_tracker.hxx>
-#include <ice/task_scheduler.hxx>
 #include <ice/assert.hxx>
 
 
@@ -34,6 +33,7 @@ namespace ice
         , _allocator{ alloc, "engine-runner" }
         , _engine{ engine }
         , _clock{ ice::clock::create_clock() }
+        , _thread_pool{ ice::create_simple_threadpool(_allocator, 4) }
         , _graphics_thread{ ice::create_task_thread(_allocator) }
         , _frame_allocator{ _allocator, "frame-allocator" }
         , _frame_data_allocator{
@@ -79,6 +79,7 @@ namespace ice
          _graphics_thread->stop();
          _graphics_thread->join();
          _graphics_thread = nullptr;
+         _thread_pool = nullptr;
 
         deactivate_worlds();
 
@@ -104,6 +105,11 @@ namespace ice
     ) noexcept
     {
         _input_tracker->process_device_queue(device_queue, _current_frame->input_events());
+    }
+
+    auto IceshardEngineRunner::thread_pool() noexcept -> ice::TaskThreadPool&
+    {
+        return *_thread_pool;
     }
 
     auto IceshardEngineRunner::graphics_device() noexcept -> ice::gfx::GfxDevice&
@@ -144,7 +150,7 @@ namespace ice
         _previous_frame = ice::move(_current_frame);
         _previous_frame->start_all();
 
-        _graphics_thread->scheduler().schedule(
+        _graphics_thread->schedule(
             graphics_task(
                 ice::move(_gfx_current_frame),
                 &_graphics_thread_event

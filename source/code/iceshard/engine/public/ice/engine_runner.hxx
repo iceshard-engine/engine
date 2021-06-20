@@ -6,6 +6,8 @@
 namespace ice
 {
 
+    class TaskThreadPool;
+
     class World;
 
     class EngineFrame;
@@ -22,7 +24,10 @@ namespace ice
             ice::input::DeviceQueue const& device_queue
         ) noexcept = 0;
 
+        virtual auto thread_pool() noexcept -> ice::TaskThreadPool& = 0;
+
         virtual auto graphics_device() noexcept -> ice::gfx::GfxDevice& = 0;
+        // virtual auto graphics_runner() noexcept -> ice::gfx::GfxRunner& = 0;
         virtual auto graphics_frame() noexcept -> ice::gfx::GfxFrame& = 0;
 
         virtual auto previous_frame() const noexcept -> EngineFrame const& = 0;

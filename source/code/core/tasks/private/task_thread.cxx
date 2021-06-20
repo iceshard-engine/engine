@@ -1,5 +1,4 @@
 #include <ice/task_thread.hxx>
-#include <ice/task_scheduler.hxx>
 #include <ice/task_list.hxx>
 #include <ice/task.hxx>
 #include <ice/os/windows.hxx>
@@ -14,8 +13,6 @@ namespace ice
     namespace detail
     {
 
-        void task_thread_routine(void* task_thread_object) noexcept;
-
         auto create_internal_task(ice::Task<void> task) noexcept -> ice::detail::InternalTask
         {
             co_await task;
@@ -24,9 +21,11 @@ namespace ice
 
     } // namespace detail
 
-    class SimpleTaskThread : public ice::TaskThread, public ice::TaskScheduler
+    class SimpleTaskThread : public ice::TaskThread
     {
     public:
+        using ScheduleOperation = ice::ScheduleOperation<ice::TaskThread>;
+
         SimpleTaskThread(ice::Allocator& alloc) noexcept
             : _thread{ }
             , _task_lists{ alloc }
@@ -45,7 +44,7 @@ namespace ice
             ice::pod::array::reserve(thread_tasks, thread_alloc.Constant_BufferSize / sizeof(std::coroutine_handle<>) - 1);
             _task_lists.swap_and_aquire_tasks(thread_tasks);
 
-            ice::ScheduleOperation* expected_initial_task = _head.load(std::memory_order_acquire);
+            ice::detail::ScheduleOperationData* expected_initial_task = _head.load(std::memory_order_acquire);
             if (expected_initial_task != nullptr)
             {
                 while (
@@ -62,8 +61,8 @@ namespace ice
 
                 while (expected_initial_task != nullptr)
                 {
-                    ScheduleOperation* next_op = expected_initial_task->_next;
-                    expected_initial_task->_coro.destroy();
+                    ice::detail::ScheduleOperationData* next_op = expected_initial_task->_next;
+                    expected_initial_task->_coroutine.destroy();
                     expected_initial_task = next_op;
                 }
             }
@@ -87,12 +86,29 @@ namespace ice
             }
         }
 
-        auto scheduler() noexcept -> ice::TaskScheduler&
+        void schedule_internal(
+            ScheduleOperation* op,
+            ScheduleOperation::DataMemberType data_member
+        ) noexcept override
         {
-            return *this;
+            ice::detail::ScheduleOperationData& data = op->*data_member;
+            ice::detail::ScheduleOperationData* expected_head = _head.load(std::memory_order_acquire);
+
+            do
+            {
+                data._next = expected_head;
+            }
+            while (
+                _head.compare_exchange_weak(
+                    expected_head,
+                    &data,
+                    std::memory_order_release,
+                    std::memory_order_acquire
+                ) == false
+            );
         }
 
-        void schedule(ice::Task<void> task) noexcept
+        void schedule(ice::Task<void> task) noexcept override
         {
             ice::ScopedTaskList scoped_list = _task_lists.aquire_list();
             ice::TaskList& task_list = scoped_list;
@@ -101,30 +117,6 @@ namespace ice
                 task_list,
                 detail::create_internal_task(ice::move(task)).move_and_reset()
             );
-        }
-
-        void schedule_test_internal(ice::ScheduleOperation* schedule_op) noexcept
-        {
-            ScheduleOperation* expected_head = _head.load(std::memory_order_acquire);
-
-            do
-            {
-                schedule_op->_next = expected_head;
-            }
-            while (
-                _head.compare_exchange_weak(
-                    expected_head,
-                    schedule_op,
-                    std::memory_order_release,
-                    std::memory_order_acquire
-                ) == false
-            );
-
-        }
-
-        auto schedule_test() noexcept -> ice::ScheduleOperation override
-        {
-            return ScheduleOperation{ *this };
         }
 
     protected:
@@ -140,7 +132,7 @@ namespace ice
             {
                 _task_lists.swap_and_aquire_tasks(thread_tasks);
 
-                ice::ScheduleOperation* expected_initial_task = _head.load(std::memory_order_acquire);
+                ice::detail::ScheduleOperationData* expected_initial_task = _head.load(std::memory_order_acquire);
                 if (expected_initial_task != nullptr)
                 {
                     while (
@@ -164,9 +156,9 @@ namespace ice
                 {
                     while (expected_initial_task != nullptr)
                     {
-                        ScheduleOperation* next_op = expected_initial_task->_next;
+                        ice::detail::ScheduleOperationData* next_op = expected_initial_task->_next;
 
-                        std::coroutine_handle<> coro_task = expected_initial_task->_coro;
+                        std::coroutine_handle<> coro_task = expected_initial_task->_coroutine;
                         if (coro_task.resume(); coro_task.done())
                         {
                             coro_task.destroy();
@@ -198,26 +190,13 @@ namespace ice
         std::thread _thread;
         bool _stop_requested = false;
 
-        std::atomic<ice::ScheduleOperation*> _head = nullptr;
+        std::atomic<ice::detail::ScheduleOperationData*> _head = nullptr;
         ice::TaskListContainer _task_lists;
     };
 
     auto create_task_thread(ice::Allocator& alloc) noexcept -> ice::UniquePtr<TaskThread>
     {
         return ice::make_unique<TaskThread, SimpleTaskThread>(alloc, alloc);
-    }
-
-    //void detail::task_thread_routine(void* task_thread_object) noexcept
-    //{
-    //    SimpleTaskThread* task_thread = reinterpret_cast<SimpleTaskThread*>(task_thread_object);
-
-    //}
-
-    void ScheduleOperation::await_suspend(std::coroutine_handle<void> coro) noexcept
-    {
-        SimpleTaskThread& thread_scheduler = static_cast<SimpleTaskThread&>(_scheduler);
-
-        thread_scheduler.schedule_test_internal(this);
     }
 
 } // namespace ice

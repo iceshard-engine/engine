@@ -1,0 +1,101 @@
+#pragma once
+#include <ice/base.hxx>
+#include <coroutine>
+
+namespace ice
+{
+
+    template<typename T>
+    class ScheduleOperation;
+
+    template<typename T>
+    class ScheduleDelayedOperation;
+
+
+    namespace detail
+    {
+
+        struct ScheduleOperationData
+        {
+            std::coroutine_handle<> _coroutine = nullptr;
+            ice::detail::ScheduleOperationData* _next = nullptr;
+        };
+
+        struct ScheduleDelayedOperationData
+        {
+            ice::u32 const _target_time;
+            std::coroutine_handle<> _coroutine = nullptr;
+            ice::detail::ScheduleDelayedOperationData* _next = nullptr;
+        };
+
+    } // namespace detail
+
+
+    template<typename T>
+    class ScheduleOperation final
+    {
+    public:
+        using DataMemberType = ice::detail::ScheduleOperationData ScheduleOperation<T>::*;
+
+        inline ScheduleOperation(T& target) noexcept;
+
+        inline bool await_ready() const noexcept { return false; }
+        inline void await_suspend(std::coroutine_handle<void> coro) noexcept;
+        inline void await_resume() const noexcept { }
+
+    private:
+        T& _target;
+        ice::detail::ScheduleOperationData _data;
+    };
+
+    template<typename T>
+    inline ScheduleOperation<T>::ScheduleOperation(T& target) noexcept
+        : _target{ target }
+        , _data{ }
+    {
+    }
+
+    template<typename T>
+    inline void ScheduleOperation<T>::await_suspend(std::coroutine_handle<void> coro) noexcept
+    {
+        _data._coroutine = coro;
+        _target.schedule_internal(this, &ScheduleOperation::_data);
+    }
+
+
+    template<typename T>
+    class ScheduleDelayedOperation final
+    {
+    public:
+        inline ScheduleDelayedOperation(T& target, ice::u32 target_time) noexcept;
+
+        inline bool await_ready() const noexcept { return false; }
+        inline void await_suspend(std::coroutine_handle<void> coro) noexcept;
+        inline void await_resume() const noexcept { }
+
+    private:
+        T& _target;
+        ice::detail::ScheduleOperationData _data;
+    };
+
+    template<typename T>
+    inline ScheduleDelayedOperation<T>::ScheduleDelayedOperation(T& target, ice::u32 target_time) noexcept
+        : _target{ target }
+        , _data{ target_time }
+    {
+    }
+
+    template<typename T>
+    inline void ScheduleDelayedOperation<T>::await_suspend(std::coroutine_handle<void> coro) noexcept
+    {
+        _data._coroutine = coro;
+        _target.schedule_internal(this, &ScheduleDelayedOperation::_data);
+    }
+
+    template<typename T> requires ice::AwaitableScheduler<T>
+    inline auto operator co_await(T& scheduler) noexcept
+    {
+        return scheduler.schedule();
+    }
+
+} // namespace ice

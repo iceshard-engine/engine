@@ -3,6 +3,7 @@
 
 #include <ice/task.hxx>
 #include <ice/task_thread.hxx>
+#include <ice/task_thread_pool.hxx>
 #include <ice/sync_manual_events.hxx>
 
 #include <ice/input/input_types.hxx>
@@ -50,6 +51,8 @@ namespace ice
             ice::input::DeviceQueue const& device_queue
         ) noexcept override;
 
+        auto thread_pool() noexcept -> ice::TaskThreadPool& override;
+
         auto graphics_device() noexcept -> ice::gfx::GfxDevice& override;
         auto graphics_frame() noexcept -> ice::gfx::GfxFrame& override;
 
@@ -73,6 +76,7 @@ namespace ice
 
         ice::IceshardEngine& _engine;
 
+        ice::UniquePtr<ice::TaskThreadPool> _thread_pool;
         ice::UniquePtr<ice::TaskThread> _graphics_thread;
         ice::ManualResetEvent _graphics_thread_event = true;
 
