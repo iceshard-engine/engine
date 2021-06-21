@@ -1,6 +1,5 @@
 #pragma once
 #include <ice/task.hxx>
-#include <ice/task_scheduler.hxx>
 
 namespace ice::gfx
 {
