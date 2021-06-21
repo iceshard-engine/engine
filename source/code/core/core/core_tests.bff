@@ -1,0 +1,25 @@
+.Project =
+[
+    .Name = 'core_tests'
+    .Kind = .Kind_ConsoleApp
+    .Group = 'Tests'
+
+    .BaseDir = '$WorkspaceCodeDir$/core/core'
+
+    .InputPaths = {
+        'tests'
+    }
+    .VStudioPaths = .InputPaths
+
+    .Private =
+    [
+        .Uses = {
+            'core'
+        }
+
+        .Modules = {
+            'Catch2'
+        }
+    ]
+]
+.Projects + .Project

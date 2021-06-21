@@ -1,5 +1,6 @@
-#import SystemRoot
+#if __WINDOWS__
 
+#import SystemRoot
 Settings
 {
     .Environment =
@@ -7,6 +8,16 @@ Settings
         "SystemRoot=$SystemRoot$"
         "TMP=$SystemRoot$\temp"
     }
+}
+
+#endif
+
+#include "configs.bff"
+
+^SolutionItems = {
+    '$WorkspaceCodeDir$/../conanfile.txt'
+    '$WorkspaceCodeDir$/../fbuild.bff'
+    '$WorkspaceCodeDir$/projects.bff'
 }
 
 #include "code/projects.bff"

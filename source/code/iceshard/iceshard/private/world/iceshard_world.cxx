@@ -1,63 +1,140 @@
 #include "iceshard_world.hxx"
-#include "iceshard_world_service_provider.hxx"
+#include <ice/world/world_trait.hxx>
+#include <ice/engine_runner.hxx>
+#include <ice/pod/hash.hxx>
+#include <ice/assert.hxx>
 
-#include <iceshard/engine.hxx>
-#include <iceshard/component/component_system.hxx>
-#include <iceshard/execution.hxx>
+#include "iceshard_world_portal.hxx"
 
-namespace iceshard
+namespace ice
 {
 
     IceshardWorld::IceshardWorld(
-        core::allocator& alloc,
-        core::stringid_arg_type world_name,
-        iceshard::Entity world_entity,
-        iceshard::ServiceProvider& engine_service_provider
+        ice::Allocator& alloc,
+        ice::EntityStorage* entity_storage
     ) noexcept
-        : World{ world_name, world_entity }
-        , _allocator{ alloc }
-        , _component_systems{ _allocator }
-        , _service_provider{ nullptr, { _allocator } }
+        : _allocator{ alloc }
+        , _entity_storage{ entity_storage }
+        , _traits{ _allocator }
+        , _portals{ _allocator }
     {
-        _service_provider = core::memory::make_unique<iceshard::IceshardWorldServiceProvider>(
-            _allocator
-            , _allocator
-            , engine_service_provider
-            , _component_systems
+    }
+
+    auto IceshardWorld::allocator() noexcept -> ice::Allocator&
+    {
+        return _allocator;
+    }
+
+    auto IceshardWorld::entity_storage() noexcept -> ice::EntityStorage&
+    {
+        return *_entity_storage;
+    }
+
+    void IceshardWorld::add_trait(
+        ice::StringID_Arg name,
+        ice::WorldTrait* trait
+    ) noexcept
+    {
+        ice::u64 const name_hash = ice::hash(name);
+        ICE_ASSERT(
+            ice::pod::hash::has(_portals, name_hash) == false,
+            "World already contains a trait of name {}",
+            ice::stringid_hint(name)
+        );
+
+        ice::pod::array::push_back(
+            _traits,
+            trait
+        );
+
+        ice::pod::hash::set(
+            _portals,
+            name_hash,
+            _allocator.make<IceshardWorldPortal>(
+                _allocator,
+                *this,
+                trait,
+                *_entity_storage
+            )
         );
     }
 
-    IceshardWorld::~IceshardWorld() noexcept
-    {
-        for (auto const& entry : _component_systems)
-        {
-            _allocator.destroy(entry.value);
-        }
-    }
-
-    void IceshardWorld::update(iceshard::ExecutionInstance& execution_instance) noexcept
-    {
-        for (auto const& entry : _component_systems)
-        {
-            entry.value->update(execution_instance.current_frame(), execution_instance.previous_frame());
-        }
-    }
-
-    void IceshardWorld::add_component_system(
-        core::stringid_arg_type component_name,
-        ComponentSystemFactory factory,
-        void* userdata
+    void IceshardWorld::remove_trait(
+        ice::StringID_Arg name
     ) noexcept
     {
-        auto const component_system_hash = core::hash(component_name);
-        IS_ASSERT(!core::pod::hash::has(_component_systems, component_system_hash), "Component with given name already exists!");
+        ice::u64 const name_hash = ice::hash(name);
+        ICE_ASSERT(
+            ice::pod::hash::has(_portals, name_hash) == true,
+            "World does not contain a trait with name {}",
+            ice::stringid_hint(name)
+        );
 
-        core::pod::hash::set(_component_systems, component_system_hash, factory(_allocator, userdata));
+        ice::IceshardWorldPortal* const portal = ice::pod::hash::get(_portals, name_hash, nullptr);
+
+        auto* it = ice::pod::array::begin(_traits);
+        auto* const end = ice::pod::array::end(_traits);
+        while (it != end && (*it) != portal->trait())
+        {
+            it += 1;
+        }
+
+        ICE_ASSERT(it != end, "Couldnt find location of the world trait to be removed!");
+        *it = ice::pod::array::back(_traits);
+        ice::pod::array::pop_back(_traits);
+
+        ice::pod::hash::remove(
+            _portals,
+            ice::hash(name_hash)
+        );
+
+        _allocator.destroy(portal);
     }
 
-    auto IceshardWorld::service_provider() noexcept -> iceshard::ServiceProvider*
+    void IceshardWorld::activate(
+        ice::Engine& engine,
+        ice::EngineRunner& runner
+    ) noexcept
     {
-        return _service_provider.get();
+        for (auto& entry : _portals)
+        {
+            entry.value->trait()->on_activate(
+                engine, runner, *entry.value
+            );
+        }
     }
 
-} // namespace iceshard::world
+    void IceshardWorld::deactivate(
+        ice::Engine& engine,
+        ice::EngineRunner& runner
+    ) noexcept
+    {
+        for (auto& entry : _portals)
+        {
+            entry.value->trait()->on_deactivate(
+                engine, runner, *entry.value
+            );
+        }
+    }
+
+    void IceshardWorld::update(
+        ice::EngineRunner& runner
+    ) noexcept
+    {
+        for (auto& entry : _portals)
+        {
+            entry.value->remove_finished_tasks();
+            entry.value->trait()->on_update(
+                runner.current_frame(),
+                runner,
+                *entry.value
+            );
+        }
+    }
+
+    auto IceshardWorld::traits() noexcept -> ice::pod::Array<ice::WorldTrait*>&
+    {
+        return _traits;
+    }
+
+} // namespace ice

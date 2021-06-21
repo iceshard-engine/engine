@@ -1,0 +1,54 @@
+.Config_MSVC =
+[
+    .Name = 'Config-MSVC'
+    .Requires = { 'MSVC' }
+    .BuildOptions = {
+        '/std:c++latest'
+        '/wd4127' // conditional expression is constant'
+        '/permissive-'
+    }
+]
+
+.Config_Debug =
+[
+    .Name = 'Config-Debug'
+    .Requires = { 'Debug' }
+    .Defines = {
+        'ICE_DEBUG'
+    }
+]
+
+.Config_Develop =
+[
+    .Name = 'Config-Develop'
+    .Requires = { 'Develop' }
+    .Defines = {
+        'ICE_DEVELOP'
+    }
+]
+
+.Config_Profile =
+[
+    .Name = 'Config-Profile'
+    .Requires = { 'Profile' }
+    .Defines = {
+        'ICE_PROFILE'
+    }
+]
+
+.Config_Release =
+[
+    .Name = 'Config-Release'
+    .Requires = { 'Release' }
+    .Defines = {
+        'ICE_RELEASE'
+    }
+]
+
+^GlobalRules = {
+    .Config_MSVC
+    .Config_Debug
+    .Config_Develop
+    .Config_Profile
+    .Config_Release
+}

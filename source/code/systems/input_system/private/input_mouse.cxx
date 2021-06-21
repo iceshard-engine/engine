@@ -1,139 +1,180 @@
-#include <iceshard/input/input_mouse.hxx>
-#include <iceshard/input/input_state_manager.hxx>
-#include <core/pod/hash.hxx>
-
+#include "input_devices.hxx"
 #include "input_state_helpers.hxx"
 
-namespace iceshard::input
+#include <ice/input/input_mouse.hxx>
+#include <ice/pod/array.hxx>
+
+namespace ice::input
 {
 
-    class MouseDeviceState : public DeviceState
+    static constexpr ice::u32 mouse_button_num = static_cast<ice::u32>(MouseInput::ButtonCustom1);
+
+    class MouseDevice : public InputDevice
     {
     public:
-        MouseDeviceState(core::allocator& alloc, DeviceHandle device) noexcept;
+        MouseDevice(
+            ice::Allocator& alloc,
+            ice::input::DeviceHandle device
+        ) noexcept;
 
-        void on_tick() noexcept override;
-        void on_message(DeviceInputMessage msg, void const* data) noexcept override;
-        void on_publish(core::pod::Array<InputEvent>& events_out) noexcept override;
+        auto handle() const noexcept -> ice::input::DeviceHandle override
+        {
+            return _device;
+        }
+
+        void on_tick(
+            ice::Timer const& timer
+        ) noexcept override;
+
+        void on_event(
+            ice::input::DeviceEvent event,
+            ice::Data payload
+        ) noexcept override;
+
+        void on_publish(
+            ice::pod::Array<ice::input::InputEvent>& events_out
+        ) noexcept override;
 
     private:
-        DeviceHandle _device;
-        core::pod::Hash<InputValueState> _inputs;
+        ice::input::DeviceHandle _device;
+        ice::pod::Array<detail::ControlState> _controls;
 
-        int32_t _position[2] = { 0, 0 };
-        int32_t _position_rel[2] = { 0, 0 };
-        int32_t _wheel = 0;
+        ice::i32 _position[2]{ 0, 0 };
+        ice::i32 _position_relative[2]{ 0, 0 };
+        ice::i32 _wheel = 0;
     };
 
-    MouseDeviceState::MouseDeviceState(core::allocator& alloc, DeviceHandle device) noexcept
+    MouseDevice::MouseDevice(
+        ice::Allocator& alloc,
+        ice::input::DeviceHandle device
+    ) noexcept
         : _device{ device }
-        , _inputs{ alloc }
-    { }
-
-    void MouseDeviceState::on_tick() noexcept
+        , _controls{ alloc }
     {
-        _wheel = 0;
-        _position_rel[0] = 0;
-        _position_rel[1] = 0;
-
-        for (auto& input : _inputs)
+        ice::pod::array::resize(_controls, mouse_button_num + 5);
+        for (detail::ControlState& control : _controls)
         {
-            handle_value_button_hold(input.value);
+            control.id = InputID::Invalid;
+            control.tick = 0;
+            control.value.button.value_i32 = 0;
         }
     }
 
-    void MouseDeviceState::on_message(DeviceInputMessage const msg, void const* data) noexcept
+    void MouseDevice::on_tick(ice::Timer const& timer) noexcept
+    {
+        _wheel = 0;
+        _position_relative[0] = 0;
+        _position_relative[1] = 0;
+
+        for (detail::ControlState& control : _controls)
+        {
+            detail::handle_value_button_hold_and_repeat(control);
+        }
+    }
+
+    void MouseDevice::on_event(
+        ice::input::DeviceEvent event,
+        ice::Data payload
+    ) noexcept
     {
         InputID input = InputID::Invalid;
 
-        switch (msg.input_type)
+        switch (event.message)
         {
-        case DeviceInputType::MouseButtonDown:
-        case DeviceInputType::MouseButtonUp:
-            input = create_inputid(DeviceType::Mouse, read_one<MouseInput>(msg, data));
+        case DeviceMessage::MouseButtonDown:
+        case DeviceMessage::MouseButtonUp:
+            input = input_identifier(DeviceType::Mouse, detail::read_one<MouseInput>(event, payload));
             break;
-        case DeviceInputType::MousePosition:
+        case DeviceMessage::MousePosition:
         {
-            auto const pos = read<uint32_t>(msg, data);
+            ice::Span<ice::i32 const> const pos = detail::read<ice::i32>(event, payload);
 
-            _position_rel[0] = pos[0] - _position[0];
-            _position_rel[1] = pos[1] - _position[1];
+            _position_relative[0] = pos[0] - _position[0];
+            _position_relative[1] = pos[1] - _position[1];
 
             _position[0] = pos[0];
             _position[1] = pos[1];
             return;
         }
-        case DeviceInputType::MouseWheel:
-            _wheel = read_one<int32_t>(msg, data);
+        case DeviceMessage::MouseWheel:
+            _wheel = detail::read_one<ice::i32>(event, payload);
             return;
         default:
             return;
         }
 
-        auto const input_hash = core::hash(input);
-        auto input_value = core::pod::hash::get(
-            _inputs,
-            input_hash,
-            InputValueState{ }
-        );
-
-        if (msg.input_type == DeviceInputType::MouseButtonDown)
+        if (input != InputID::Invalid)
         {
-            handle_value_button_down(input_value);
-        }
-        else if (msg.input_type == DeviceInputType::MouseButtonUp)
-        {
-            handle_value_button_up(input_value);
-        }
+            ice::i32 const control_index = input_identifier_value(input);
+            // #todo assert control_index < ice::pod::array::size(_controls)
 
-        core::pod::hash::set(_inputs, input_hash, input_value);
+            detail::ControlState control = _controls[control_index];
+            control.id = input;
+
+            if (event.message == DeviceMessage::MouseButtonDown)
+            {
+                detail::handle_value_button_down(control);
+            }
+            else if (event.message == DeviceMessage::MouseButtonUp)
+            {
+                detail::handle_value_button_up(control);
+            }
+
+            _controls[control_index] = control;
+        }
     }
 
-    void MouseDeviceState::on_publish(core::pod::Array<InputEvent>& events_out) noexcept
+    void MouseDevice::on_publish(
+        ice::pod::Array<ice::input::InputEvent>& events_out
+    ) noexcept
     {
-        InputEvent event;
-        event.device = static_cast<InputDevice>(_device);
+        InputEvent event{
+            .device = _device
+        };
 
-        event.identifier = create_inputid(DeviceType::Mouse, MouseInput::PositionX);
+        event.identifier = input_identifier(DeviceType::Mouse, MouseInput::PositionX);
         event.value.axis.value_i32 = _position[0];
-        core::pod::array::push_back(events_out, event);
+        ice::pod::array::push_back(events_out, event);
 
-        event.identifier = create_inputid(DeviceType::Mouse, MouseInput::PositionY);
+        event.identifier = input_identifier(DeviceType::Mouse, MouseInput::PositionY);
         event.value.axis.value_i32 = _position[1];
-        core::pod::array::push_back(events_out, event);
+        ice::pod::array::push_back(events_out, event);
 
-        if (_position_rel[0] != 0)
+        if (_position_relative[0] != 0)
         {
-            event.identifier = create_inputid(DeviceType::Mouse, MouseInput::PositionXRelative);
-            event.value.axis.value_i32 = _position_rel[0];
-            core::pod::array::push_back(events_out, event);
+            event.identifier = input_identifier(DeviceType::Mouse, MouseInput::PositionXRelative);
+            event.value.axis.value_i32 = _position_relative[0];
+            ice::pod::array::push_back(events_out, event);
         }
-        if (_position_rel[1] != 0)
+        if (_position_relative[1] != 0)
         {
-            event.identifier = create_inputid(DeviceType::Mouse, MouseInput::PositionYRelative);
-            event.value.axis.value_i32 = _position_rel[1];
-            core::pod::array::push_back(events_out, event);
+            event.identifier = input_identifier(DeviceType::Mouse, MouseInput::PositionYRelative);
+            event.value.axis.value_i32 = _position_relative[1];
+            ice::pod::array::push_back(events_out, event);
         }
 
         if (_wheel != 0)
         {
-            event.identifier = create_inputid(DeviceType::Mouse, MouseInput::Wheel);
+            event.identifier = input_identifier(DeviceType::Mouse, MouseInput::Wheel);
             event.value.axis.value_i32 = _wheel;
-            core::pod::array::push_back(events_out, event);
+            ice::pod::array::push_back(events_out, event);
         }
 
-        for (auto& input : _inputs)
+        for (detail::ControlState& control : _controls)
         {
-            if (prepared_input_event(InputID{ input.key }, input.value, event))
+            if (detail::prepared_input_event(control, event))
             {
-                core::pod::array::push_back(events_out, event);
+                ice::pod::array::push_back(events_out, event);
             }
         }
     }
 
-    auto default_mouse_state_factory(core::allocator& alloc, DeviceHandle device) noexcept -> DeviceState*
+    auto create_mouse_device(
+        ice::Allocator& alloc,
+        ice::input::DeviceHandle device
+    ) noexcept -> ice::input::InputDevice*
     {
-        return alloc.make<MouseDeviceState>(alloc, device);
+        return alloc.make<MouseDevice>(alloc, device);
     }
 
-} // namespace iceshard::input
+} // namespace ice::input

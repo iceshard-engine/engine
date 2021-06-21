@@ -2,6 +2,7 @@
 /.vs/
 /.vscode/
 /build/
+/test_files/
 
 # Binary compiled assets
 *.isr
@@ -13,6 +14,8 @@
 
 # Temporary files to ignore
 compile_commands.json
+*.patch
+*.cso
 *.sln
 *.fdb
 *.spv*

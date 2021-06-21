@@ -1,46 +1,36 @@
 #pragma once
-#include <iceshard/world/world_manager.hxx>
-#include <iceshard/entity/entity_manager.hxx>
-
-#include <core/allocator.hxx>
-#include <core/pod/collections.hxx>
-
+#include <ice/world/world_manager.hxx>
 #include "iceshard_world.hxx"
 
-namespace iceshard
+namespace ice
 {
 
-    class IceshardWorldManager : public WorldManager
+    class IceshardWorldManager final : public ice::WorldManager
     {
     public:
         IceshardWorldManager(
-            core::allocator& alloc,
-            iceshard::ServiceProvider& engine_service_provider
+            ice::Allocator& alloc
         ) noexcept;
+        ~IceshardWorldManager() noexcept override;
 
-        ~IceshardWorldManager() noexcept override = default;
+        auto create_world(
+            ice::StringID_Arg name,
+            ice::EntityStorage* entity_storage
+        ) noexcept -> World* override;
 
-        auto get_world(core::stringid_arg_type world_name) noexcept -> World* override;
+        auto find_world(
+            ice::StringID_Arg name
+        ) noexcept -> World* override;
 
-        auto create_world(core::stringid_arg_type world_name) noexcept -> World* override;
+        void destroy_world(
+            ice::StringID_Arg name
+        ) noexcept override;
 
-        void destroy_world(core::stringid_arg_type world_name) noexcept override;
-
-        template<typename Fn>
-        void foreach_world(Fn&& fn) noexcept
-        {
-            for (auto const& entry : _worlds)
-            {
-                std::forward<Fn>(fn)(*entry.value);
-            }
-        }
+        auto worlds() const noexcept -> ice::pod::Hash<ice::IceshardWorld*> const&;
 
     private:
-        core::allocator& _allocator;
-
-        iceshard::ServiceProvider& _engine_service_provider;
-
-        core::pod::Hash<IceshardWorld*> _worlds;
+        ice::Allocator& _allocator;
+        ice::pod::Hash<ice::IceshardWorld*> _worlds;
     };
 
-} // namespace iceshard::world
+} // namespace ice

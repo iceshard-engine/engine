@@ -1,210 +1,246 @@
-#include <resource/resource_system.hxx>
-#include <resource/resource_messages.hxx>
-#include <resource/resource_meta.hxx>
-#include "modules/module_messages.hxx"
+#include <ice/resource_system.hxx>
+#include <ice/resource_index.hxx>
+#include <ice/resource_meta.hxx>
+#include <ice/resource_query.hxx>
+#include <ice/pod/hash.hxx>
+#include <ice/map.hxx>
 
-#include <core/cexpr/stringid.hxx>
-
-#include <core/memory.hxx>
-#include <core/pod/hash.hxx>
-
-namespace resource
+namespace ice
 {
-    namespace hash = core::pod::hash;
 
-    namespace detail
+    class SimpleResourceSystem : public ResourceSystem
     {
-        class StdFileResource : public Resource, public OutputResource
-        {
-        public:
-            StdFileResource(URI location, FILE* handle) noexcept
-                : _location{ std::move(location) }
-                , _handle{ handle }
-            {
-            }
+    public:
+        SimpleResourceSystem(ice::Allocator& alloc) noexcept;
+        ~SimpleResourceSystem() noexcept override = default;
 
-            auto location() const noexcept -> const URI& override
-            {
-                return _location;
-            }
+        void register_index(
+            ice::Span<ice::StringID> schemes,
+            ice::UniquePtr<ice::ResourceIndex> index
+        ) noexcept override;
 
-            auto data() noexcept -> core::data_view override
-            {
-                return core::data_view{ };
-            }
+        bool query_changes(ice::ResourceQuery& query) noexcept override;
 
-            auto metadata() noexcept -> resource::ResourceMetaView override
-            {
-                return resource::load_meta_view({});
-            }
+        auto locate_or_passthrough(ice::URI const& uri) noexcept -> ice::URI const&;
 
-            auto name() const noexcept -> core::StringView override
-            {
-                return { _location.path };
-            }
+        auto locate(ice::URN urn) const noexcept -> ice::URI override;
 
-            void write(core::data_view wdata) noexcept override
-            {
-                fwrite(wdata.data(), sizeof(char), wdata.size(), _handle);
-            }
+        auto mount(ice::URI const& uri) noexcept -> ice::u32 override;
 
-            void flush() noexcept override
-            {
-                fflush(_handle);
-            }
+        auto request(ice::URI const& uri) noexcept -> ice::Resource* override;
 
-        private:
-            FILE* _handle;
+        void release(ice::URI const& uri) noexcept override;
 
-            URI _location;
-        };
+        auto open(ice::URI const& uri) noexcept -> ice::Sink* override;
 
-    } // namespace detail
+        void close(ice::URI const& uri) noexcept override;
 
-    ResourceSystem::ResourceSystem(core::allocator& alloc) noexcept
-        : _allocator{ "resource-system", alloc }
-        , _internal_resources{ alloc }
-        , _named_resources{ alloc }
-        , _named_output_resources{ alloc }
-        , _scheme_handlers{ alloc }
-        , _messages{ alloc }
+    private:
+        ice::Allocator& _allocator;
+
+        ice::Vector<ice::UniquePtr<ice::ResourceIndex>> _index_list;
+        ice::pod::Hash<ice::ResourceIndex*> _index_map;
+
+        ice::pod::Hash<ice::Resource const*> _known_resources;
+
+        ice::pod::Array<ice::ResourceEvent> _events;
+        ice::pod::Array<ice::Resource*> _event_objects;
+    };
+
+    SimpleResourceSystem::SimpleResourceSystem(ice::Allocator& alloc) noexcept
+        : ice::ResourceSystem{ }
+        , _allocator{ alloc }
+        , _index_list{ _allocator }
+        , _index_map{ _allocator }
+        , _known_resources{ _allocator }
+        , _events{ _allocator }
+        , _event_objects{ _allocator }
+    { }
+
+    void SimpleResourceSystem::register_index(
+        ice::Span<ice::StringID> schemes,
+        ice::UniquePtr<ice::ResourceIndex> index
+    ) noexcept
     {
-        hash::reserve(_named_resources, 200);
-        hash::reserve(_scheme_handlers, 10);
-
-        core::pod::array::push_back(
-            _internal_resources,
-            static_cast<resource::Resource*>(_allocator.make<detail::StdFileResource>(URI{ "internal"_sid, "<stderr>" }, stderr)));
-        core::pod::array::push_back(
-            _internal_resources,
-            static_cast<resource::Resource*>(_allocator.make<detail::StdFileResource>(URI{ "internal"_sid, "<stdout>" }, stdout)));
-
-        for (auto* res : _internal_resources)
+        for (ice::StringID const& scheme : schemes)
         {
-            const auto& name = resource::get_name(res->location());
-            auto name_hash = static_cast<uint64_t>(name.name.hash_value);
-
-            core::pod::hash::set(_named_output_resources, name_hash, static_cast<OutputResource*>(static_cast<detail::StdFileResource*>(res)));
+            ice::pod::multi_hash::insert(_index_map, ice::hash(scheme), index.get());
         }
+        _index_list.push_back(std::move(index));
     }
 
-    ResourceSystem::~ResourceSystem() noexcept
+    bool SimpleResourceSystem::query_changes(ice::ResourceQuery& query) noexcept
     {
-        core::pod::hash::clear(_named_resources);
-        core::pod::hash::clear(_scheme_handlers);
-
-        _modules.clear();
-
-        for (auto* res : _internal_resources)
+        if (ice::pod::array::any(_events))
         {
-            _allocator.destroy(res);
+            query.events = ice::move(_events);
+            query.objects = ice::move(_event_objects);
+            return true;
         }
-
-        core::pod::array::clear(_internal_resources);
+        return false;
     }
 
-    void ResourceSystem::add_module(core::memory::unique_pointer<ResourceModule> module_ptr, core::pod::Array<core::stringid_type> const& schemes) noexcept
+    auto SimpleResourceSystem::locate_or_passthrough(ice::URI const& uri) noexcept -> ice::URI const&
     {
-        auto* module_object = module_ptr.get();
-        for (auto& scheme : schemes)
+        if (ice::stringid_hash(uri.scheme) == ice::stringid_hash(ice::scheme_resource))
         {
-            IS_ASSERT(
-                hash::has(_scheme_handlers, static_cast<uint64_t>(scheme.hash_value)) == false, "A handler for the given scheme {} already exists!", scheme);
-            hash::set(_scheme_handlers, static_cast<uint64_t>(scheme.hash_value), module_object);
-        }
-        _modules.push_back(std::move(module_ptr));
-    }
-
-    auto ResourceSystem::find(const URI& location) noexcept -> Resource*
-    {
-        auto* module_object = hash::get<ResourceModule*>(_scheme_handlers, static_cast<uint64_t>(location.scheme.hash_value), nullptr);
-        return module_object != nullptr ? module_object->find(location) : nullptr;
-    }
-
-    auto ResourceSystem::find(const URN& name) noexcept -> Resource*
-    {
-        return hash::get<Resource*>(_named_resources, static_cast<uint64_t>(name.name.hash_value), nullptr);
-    }
-
-    auto ResourceSystem::open(const URI& location) noexcept -> OutputResource*
-    {
-        OutputResource* result = nullptr;
-        auto* module_object = hash::get<ResourceModule*>(_scheme_handlers, static_cast<uint64_t>(location.scheme.hash_value), nullptr);
-        if (module_object != nullptr)
-        {
-            core::MessageBuffer module_messages{ core::memory::globals::default_allocator() };
-            result = module_object->open(location, module_messages);
-
-            core::message::for_each(module_messages, std::bind(&ResourceSystem::handle_module_message, this, std::placeholders::_1));
-        }
-        return result;
-    }
-
-    auto ResourceSystem::open(const URN& name) noexcept -> OutputResource*
-    {
-        return hash::get<OutputResource*>(_named_output_resources, static_cast<uint64_t>(name.name.hash_value), nullptr);
-    }
-
-    auto ResourceSystem::mount(const URI& location) noexcept -> uint32_t
-    {
-        uint32_t resource_count = 0;
-
-        auto* module_object = hash::get<ResourceModule*>(_scheme_handlers, static_cast<uint64_t>(location.scheme.hash_value), nullptr);
-        if (module_object != nullptr)
-        {
-            core::MessageBuffer module_messages{ core::memory::globals::default_allocator() };
-            resource_count = module_object->mount(location, module_messages);
-
-            core::message::for_each(module_messages, std::bind(&ResourceSystem::handle_module_message, this, std::placeholders::_1));
-        }
-        return resource_count;
-    }
-
-    auto ResourceSystem::mount(const URN& name) noexcept -> uint32_t
-    {
-        uint32_t resource_count = 0;
-
-        auto* resource_object = find(name);
-        if (resource_object != nullptr)
-        {
-            resource_count = this->mount(resource_object->location());
-        }
-        return resource_count;
-    }
-
-    void ResourceSystem::handle_module_message(core::Message const& message) noexcept
-    {
-        if (message.header.type == resource::message::ModuleResourceMounted::message_type)
-        {
-            auto const& msg_mounted = *reinterpret_cast<resource::message::ModuleResourceMounted const*>(message.data._data);
-            auto* const resource_object = msg_mounted.resource_object;
-
-            URN provided_name = resource_object->name();
-            URN calculated_name = resource::get_name(resource_object->location());
-            IS_ASSERT(calculated_name.name == provided_name.name, "Resource names are not consitent! {} != {}", calculated_name, provided_name);
-
-            const auto& name_hash = static_cast<uint64_t>(provided_name.name.hash_value);
-            if (hash::has(_named_resources, name_hash))
+            ice::Resource const* resource;
+            if (uri.fragment == ice::stringid_invalid)
             {
-                auto* old_res = hash::get<Resource*>(_named_resources, name_hash, nullptr);
-                fmt::print("Updating resource with name {}!\n> old: {}\n> new: {}\n", calculated_name, old_res->location(), resource_object->location());
+                resource = ice::pod::hash::get(
+                    _known_resources,
+                    ice::hash(ice::stringid(uri.path)),
+                    nullptr
+                );
             }
-
-            hash::set(_named_resources, name_hash, resource_object);
-
-            core::message::push(_messages, resource::message::ResourceAdded{
-                    resource_object
-                });
+            else
+            {
+                resource = ice::pod::hash::get(
+                    _known_resources,
+                    ice::hash(uri.fragment),
+                    nullptr
+                );
+            }
+            return resource == nullptr ? ice::uri_invalid : resource->location();
         }
         else
         {
-            IS_ASSERT(false, "Unhandled module message type: {}!", message.header.type);
+            return uri;
         }
     }
 
-    void ResourceSystem::flush_messages() noexcept
+    auto SimpleResourceSystem::locate(ice::URN urn) const noexcept -> ice::URI
     {
-        core::message::clear(_messages);
+        ice::Resource const* resource = ice::pod::hash::get(
+            _known_resources,
+            ice::hash(urn.name),
+            nullptr
+        );
+        return resource == nullptr ? ice::uri_invalid : resource->location();
     }
 
-} // namespace resource
+    auto SimpleResourceSystem::mount(ice::URI const& uri) noexcept -> ice::u32
+    {
+        if (ice::stringid_hash(uri.scheme) == ice::stringid_hash(ice::scheme_resource))
+        {
+            // #todo error reporting
+            return 0;
+        }
+
+        ice::u64 const scheme_hash = ice::hash(uri.scheme);
+        ice::ResourceIndex* mounting_index = nullptr;
+
+        auto index_entry = ice::pod::multi_hash::find_first(_index_map, scheme_hash);
+        while (index_entry != nullptr && mounting_index == nullptr)
+        {
+            if (index_entry->value->mount(uri))
+            {
+                mounting_index = index_entry->value;
+            }
+
+            // Get the next entry
+            index_entry = ice::pod::multi_hash::find_next(_index_map, index_entry);
+        }
+
+        if (mounting_index != nullptr)
+        {
+            ice::ResourceQuery query;
+            mounting_index->query_changes(query);
+
+            ice::u32 const object_count = ice::pod::array::size(query.objects);
+            for (ice::u32 idx = 0; idx < object_count; ++idx)
+            {
+                if (query.events[idx] == ice::ResourceEvent::MountError)
+                {
+                    // #todo error reporting
+                    continue;
+                }
+
+                ice::Resource const* const resource = query.objects[idx];
+                ice::StringID const resouce_name = ice::stringid(resource->name());
+
+                ice::Resource const* const known_resource = ice::pod::hash::get(
+                    _known_resources,
+                    ice::hash(resouce_name),
+                    nullptr
+                );
+
+                if (known_resource == resource)
+                {
+                    ice::pod::array::push_back(_events, ice::ResourceEvent::Updated);
+                    ice::pod::array::push_back(_event_objects, known_resource);
+                }
+                else
+                {
+                    if (known_resource != nullptr)
+                    {
+                        ice::pod::array::push_back(_events, ice::ResourceEvent::Replaced);
+                        ice::pod::array::push_back(_event_objects, known_resource);
+                    }
+
+                    ice::pod::array::push_back(_events, ice::ResourceEvent::Added);
+                    ice::pod::array::push_back(_event_objects, resource);
+                    ice::pod::hash::set(
+                        _known_resources,
+                        ice::hash(resouce_name),
+                        resource
+                    );
+                }
+            }
+
+            return object_count;
+        }
+        else
+        {
+            // #todo error reporting
+        }
+
+        return 0;
+    }
+
+    auto SimpleResourceSystem::request(ice::URI const& uri) noexcept -> ice::Resource*
+    {
+        ice::URI const& located_uri = locate_or_passthrough(uri);
+        ice::Resource* result = nullptr;
+
+        auto* entry = ice::pod::multi_hash::find_first(_index_map, ice::hash(located_uri.scheme));
+        while (entry != nullptr && result == nullptr)
+        {
+            result = entry->value->request(located_uri);
+            entry = ice::pod::multi_hash::find_next(_index_map, entry);
+        }
+
+        return result;
+    }
+
+    void SimpleResourceSystem::release(ice::URI const& uri) noexcept
+    {
+        ice::URI const& located_uri = locate_or_passthrough(uri);
+
+        auto* entry = ice::pod::multi_hash::find_first(_index_map, ice::hash(located_uri.scheme));
+        while (entry != nullptr)
+        {
+            if (entry->value->release(located_uri))
+            {
+                break;
+            }
+
+            entry = ice::pod::multi_hash::find_next(_index_map, entry);
+        }
+    }
+
+    auto SimpleResourceSystem::open(ice::URI const& uri) noexcept -> ice::Sink*
+    {
+        return nullptr;
+    }
+
+    void SimpleResourceSystem::close(ice::URI const& uri) noexcept
+    {
+    }
+
+    auto create_resource_system(ice::Allocator& alloc) noexcept -> ice::UniquePtr<ResourceSystem>
+    {
+        return ice::make_unique<ice::ResourceSystem, ice::SimpleResourceSystem>(alloc, alloc);
+    }
+
+} // namespace ice

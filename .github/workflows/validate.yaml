@@ -1,28 +1,66 @@
 name: Validation
 
-on: [push, pull_request]
+on:
+  push:
+    branches:
+    - pre-alpha-cleanup
+  pull_request:
+    branches:
+    - master
 
 jobs:
-  validation-build:
-    runs-on: ${{ matrix.os }}
+  validation-build-windows:
+    runs-on: windows-latest
     strategy:
       matrix:
-        os: [windows-latest]
-        configuration: [Debug, Develop, Profile, Release]
+        configuration: [Debug, Develop]
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v2
     - name: Setup repository
       run: |
-        pip install conan
+        pip3 install setuptools
+        pip3 install conan
         conan remote add conan-iceshard https://conan.iceshard.net/
         conan remote add conan-bincrafters https://api.bintray.com/conan/bincrafters/public-conan
-    - name: Build
+    - name: Build (Windows-${{ matrix.configuration }})
       shell: cmd
       run: |
         ice build -t all-x64-${{ matrix.configuration }}
-    - name: Notify
+    - name: Run tests
       run: |
-        echo Nothing to verify yet
+        ./build/bin/Windows-x64-${{ matrix.configuration }}-MSVC-x64-v142/core_tests/core_tests.exe
+        ./build/bin/Windows-x64-${{ matrix.configuration }}-MSVC-x64-v142/memsys_tests/memsys_tests.exe
+
+  validation-build-ubuntu:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        configuration: [Debug, Develop]
+    steps:
+    - uses: actions/checkout@v2
+    - name: Setup repository
+      run: |
+        pip3 install setuptools
+        pip3 install conan
+        export PATH=~/.local/bin/:$PATH
+        conan remote add conan-iceshard https://conan.iceshard.net/
+        conan remote add conan-bincrafters https://api.bintray.com/conan/bincrafters/public-conan
+        conan profile new --detect default
+        conan profile update settings.compiler=clang default
+        conan profile update settings.compiler.version=9 default
+        conan profile update settings.compiler.libcxx=libstdc++11 default
+    - name: Build (Linux-${{ matrix.configuration }})
+      shell: bash
+      run: |
+        export PATH=~/.local/bin/:$PATH
+        ./ice.sh build -t all-x64-${{ matrix.configuration }}
+    - name: Run tests
+      run: |
+        ./build/bin/Linux-x64-${{ matrix.configuration }}-clang-x64-900/core_tests/core_tests
+        ./build/bin/Linux-x64-${{ matrix.configuration }}-clang-x64-900/memsys_tests/memsys_tests
+    - name: Success
+      run: |
+        echo Validation successful
 
   commits-notify:
     runs-on: ubuntu-latest

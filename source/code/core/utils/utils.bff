@@ -1,0 +1,19 @@
+.Project =
+[
+    .Name = 'utils'
+    .Kind = .Kind_StaticLib
+    .Group = 'Core'
+
+    .BaseDir = '$WorkspaceCodeDir$/core/utils'
+
+    .Public =
+    [
+        .Modules = {
+            'fmt'
+        }
+        .Uses = {
+            'modules'
+        }
+    ]
+]
+.Projects + .Project

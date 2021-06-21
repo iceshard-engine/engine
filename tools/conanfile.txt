@@ -1,6 +1,6 @@
 [requires]
-fastbuild-installer/0.99@iceshard/stable
-ice-build-tools/0.1.5@iceshard/stable
+fastbuild-installer/1.04@iceshard/stable
+ice-build-tools/0.4.4@iceshard/stable
 
 [generators]
 virtualenv

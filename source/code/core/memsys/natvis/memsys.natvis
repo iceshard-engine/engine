@@ -2,19 +2,77 @@
 <AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
 
   <!-- Native Visualization for the allocator type -->
-  <Type Name="core::allocator" >
-    <DisplayString>Allocator</DisplayString>
+  <Type Name="ice::BaseAllocator">
+    <DisplayString>BaseAllocator</DisplayString>
+  </Type>
+
+  <Type Name="ice::TrackedAllocator" >
+    <DisplayString Optional="true">TrackedAllocator {{ {_name,s} }}</DisplayString>
+    <DisplayString>TrackedAllocator</DisplayString>
+    <Expand>
+      <Item Name="[name]" Optional="true">_name,s</Item>
+      <Item Name="[parent_allocator]" Optional="true">_parent</Item>
+      <Synthetic Name="[child_allocators]" Optional="true">
+        <Expand>
+          <LinkedListItems Optional="true">
+            <HeadPointer>_childs</HeadPointer>
+            <NextPointer>_next_sibling</NextPointer>
+            <ValueNode>this</ValueNode>
+          </LinkedListItems>
+        </Expand>
+      </Synthetic>
+    </Expand>
   </Type>
 
   <!-- Native Visualization for the allocator type -->
-  <Type Name="core::memory::proxy_allocator" >
-    <DisplayString>Allocator {{ {_name,s} }}</DisplayString>
+  <Type Name="ice::memory::ProxyAllocator">
+    <DisplayString Optional="true">ProxyAllocator {{ {_name,s}, allocated: {_allocation_total / (1024 * 1024),f} MiB with {_allocation_requests} allocations }}</DisplayString>
+    <DisplayString>ProxyAllocator</DisplayString>
     <Expand>
       <Synthetic Name="[allocated_bytes]" Condition="!_allocation_tracking" ExcludeView="simple">
         <DisplayString>not tracked</DisplayString>
       </Synthetic>
-      <Item Name="[allocated_bytes]" Condition="_allocation_tracking">_allocation_total</Item>
+      <Synthetic Name="[allocated_bytes]" Condition="_allocation_tracking">
+        <DisplayString>{_allocation_total,f}</DisplayString>
+      </Synthetic>
       <Item Name="[total_allocation_count]">_allocation_requests</Item>
+
+      <Item Name="[name]" Optional="true">_name,s</Item>
+      <Item Name="[parent_allocator]" Optional="true">_parent</Item>
+      <Synthetic Name="[child_allocators]" Optional="true">
+        <Expand>
+          <LinkedListItems Optional="true">
+            <HeadPointer>_childs</HeadPointer>
+            <NextPointer>_next_sibling</NextPointer>
+            <ValueNode>this</ValueNode>
+          </LinkedListItems>
+        </Expand>
+      </Synthetic>
+    </Expand>
+  </Type>
+
+  <!-- Native Visualization for the allocator type -->
+  <Type Name="ice::memory::ScratchAllocator">
+    <DisplayString Optional="true">ScratchAllocator {{ {_name,s}, capacity: {((char*)_end - (char*)_begin) / (1024 * 1024),f} MiB }}</DisplayString>
+    <DisplayString>ScratchAllocator {{ {((char*)_end - (char*)_begin) / (1024 * 1024),f} MiB }}</DisplayString>
+    <Expand>
+      <Item Name="[buffer_capacity]">(char*)_end - (char*)_begin</Item>
+      <Item Name="[buffer_allocated]" Condition="_allocate >= _free">((char*)_allocate - (char*)_free)</Item>
+      <Item Name="[buffer_allocated]" Condition="_allocate &lt; _free">(((char*)_end - (char*)_begin) - ((char*)_free - (char*)_allocate))</Item>
+      <Item Name="[buffer_load_factor]" Condition="_allocate >= _free">(float)((char*)_allocate - (char*)_free) / (float)((char*)_end - (char*)_begin),f</Item>
+      <Item Name="[buffer_load_factor]" Condition="_allocate &lt; _free">(float)(((char*)_end - (char*)_begin) - ((char*)_free - (char*)_allocate)) / (float)((char*)_end - (char*)_begin),f</Item>
+
+      <Item Name="[name]" Optional="true">_name,s</Item>
+      <Item Name="[parent_allocator]" Optional="true">_parent</Item>
+      <Synthetic Name="[child_allocators]" Optional="true">
+        <Expand>
+          <LinkedListItems Optional="true">
+            <HeadPointer>_childs</HeadPointer>
+            <NextPointer>_next_sibling</NextPointer>
+            <ValueNode>this</ValueNode>
+          </LinkedListItems>
+        </Expand>
+      </Synthetic>
     </Expand>
   </Type>
 

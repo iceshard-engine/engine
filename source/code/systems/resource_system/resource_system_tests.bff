@@ -1,0 +1,25 @@
+.Project =
+[
+    .Name = 'resource_system_tests'
+    .Kind = .Kind_ConsoleApp
+    .Group = 'Tests'
+
+    .BaseDir = '$WorkspaceCodeDir$/systems/resource_system'
+
+    .InputPaths = {
+        'tests'
+    }
+    .VStudioPaths = .InputPaths
+
+    .Private =
+    [
+        .Uses = {
+            'resource_system'
+        }
+
+        .Modules = {
+            'Catch2'
+        }
+    ]
+]
+.Projects + .Project

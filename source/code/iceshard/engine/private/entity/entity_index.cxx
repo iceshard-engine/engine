@@ -1,173 +1,203 @@
-#include <iceshard/entity/entity_index.hxx>
-#include <iceshard/component/component_system.hxx>
-#include <core/pod/hash.hxx>
+#include <ice/entity/entity_index.hxx>
+#include <ice/pod/queue.hxx>
+#include <ice/pod/array.hxx>
+#include <ice/assert.hxx>
 
-namespace iceshard
+namespace ice
 {
+
     namespace detail
     {
 
-        auto hash(core::stringid_arg_type sid) noexcept
+        static constexpr ice::u32 minimum_free_indices_before_reuse = 1024;
+
+        union EntityHelper
         {
-            return static_cast<uint64_t>(sid.hash_value);
+            Entity handle;
+            EntityInfo info;
+        };
+
+        auto get_entity_info(ice::Entity entity) noexcept -> ice::EntityInfo
+        {
+            EntityHelper const helper{ .handle = entity };
+            return helper.info;
         }
 
-        //auto hash(ComponentSystem* component_system) noexcept
-        //{
-        //    return hash(component_system->name());
-        //}
-
-        auto hash_mix(uint64_t left, uint64_t right) noexcept
+        auto make_entity(ice::EntityInfo info) noexcept -> ice::Entity
         {
-            left ^= (left >> 33);
-            left ^= right;
-            left *= 0xff51afd7ed558ccd;
-            left ^= (left >> 33);
-            left ^= right;
-            left *= 0xc4ceb9fe1a85ec53;
-            left ^= (left >> 33);
-            return left;
-        }
-
-        auto make_prototype(uint64_t prototype_hash) noexcept -> core::stringid_type
-        {
-            return { core::cexpr::stringid_hash_type{ prototype_hash } };
+            EntityHelper const helper{ .info = info };
+            return helper.handle;
         }
 
     } // namespace detail
 
-    EntityIndex::EntityIndex(core::allocator& alloc) noexcept
-        : _temp_allocator{ alloc, 4096 }
-        , _entity_index{ alloc }
-        , _prototype_map{ alloc }
+    EntityIndex::EntityIndex(
+        ice::Allocator& alloc,
+        ice::u32 estimated_entity_count,
+        ice::u32 maximum_entity_count /*= std::numeric_limits<ice::u32>::max()*/
+    ) noexcept
+        : _allocator{ alloc }
+        , _max_entity_count{ maximum_entity_count }
+        , _free_indices{ _allocator }
+        , _generation{ _allocator }
+        , _owner{ _allocator }
     {
-        core::pod::hash::reserve(_prototype_map, 100);
-    }
-
-    void EntityIndex::register_component(Entity entity, core::stringid_arg_type component_name, ComponentSystem* component_system) noexcept
-    {
-        const auto entity_prototype = core::pod::hash::get(_entity_index, core::hash(entity), core::stringid_invalid);
-        const auto new_prototype_hash = detail::hash_mix(
-            detail::hash(entity_prototype),
-            detail::hash_mix(detail::hash(component_name), detail::hash("out-of-date"_sid))
+        ICE_ASSERT(
+            estimated_entity_count <= _max_entity_count,
+            "Estimated entity count is higher than the maximum allowed number of entities! [ estimated: {}, maximum: {} ]",
+            estimated_entity_count,
+            _max_entity_count
         );
 
-        if (!core::pod::hash::has(_prototype_map, new_prototype_hash))
+        ice::pod::array::reserve(_generation, estimated_entity_count);
+        ice::pod::array::reserve(_owner, estimated_entity_count);
+    }
+
+    auto EntityIndex::count() noexcept -> ice::u32
+    {
+        return ice::pod::array::size(_generation) - ice::pod::queue::size(_free_indices);
+    }
+
+    bool EntityIndex::is_alive(ice::Entity entity) noexcept
+    {
+        EntityInfo const info = detail::get_entity_info(entity);
+        return _generation[info.index] == info.generation;
+    }
+
+    auto EntityIndex::create(void const* owner) noexcept -> ice::Entity
+    {
+        ice::u32 index = 0;
+
+        if (ice::pod::queue::size(_free_indices) >= detail::minimum_free_indices_before_reuse)
         {
-            core::pod::hash::set(_prototype_map, new_prototype_hash, { entity_prototype, component_name, component_system });
+            index = ice::pod::queue::front(_free_indices);
+            ice::pod::queue::pop_front(_free_indices);
+        }
+        else
+        {
+            index = ice::pod::array::size(_generation);
+            ice::pod::array::push_back(_generation, ice::u16{ 0 });
+            ice::pod::array::push_back(_owner, owner);
         }
 
-        core::pod::hash::set(_entity_index, core::hash(entity), detail::make_prototype(new_prototype_hash));
-    }
-
-    auto EntityIndex::find_component_system(Entity entity, core::stringid_arg_type component_name) noexcept -> ComponentSystem *
-    {
-        auto entity_prototype = core::pod::hash::get(_entity_index, core::hash(entity), core::stringid_invalid);
-        while (entity_prototype != core::stringid_invalid)
-        {
-            const auto prototype_hash = detail::hash(entity_prototype);
-
-            auto prototype_info = core::pod::hash::get(
-                _prototype_map,
-                prototype_hash,
-                { core::stringid_invalid, core::stringid_invalid, nullptr }
-            );
-
-            if (prototype_info.component_name == component_name)
-            {
-                return prototype_info.component_system;
+        return detail::make_entity(
+            EntityInfo{
+                .index = index,
+                .generation = _generation[index],
+                .reserved = 0
             }
-            entity_prototype = prototype_info.base_prototype;
-        }
-        return nullptr;
+        );
     }
 
-    void EntityIndex::remove_component(Entity entity, core::stringid_arg_type component_name) noexcept
-    {
-        //const auto entity_hash = detail::hash(entity);
-        //const auto entity_prototype = core::pod::hash::get(_entity_index, entity_hash, core::cexpr::stringid_invalid);
-        //const auto prototype_hash = detail::hash(entity_prototype);
-
-        //if (core::pod::hash::has(_entity_index, entity_hash))
-        //{
-        //    const auto prototype_info = core::pod::hash::get(
-        //        _prototype_map,
-        //        prototype_hash,
-        //        { core::cexpr::stringid_invalid, core::cexpr::stringid_invalid, nullptr }
-        //    );
-
-        //    core::pod::hash::set(_entity_index, entity_hash, prototype_info.base_prototype);
-        //}
-
-        core::pod::Array<PrototypeInfo> _prototypes{ _temp_allocator };
-
-        auto old_entity_prototype = core::pod::hash::get(_entity_index, core::hash(entity), core::stringid_invalid);
-        while (old_entity_prototype != core::stringid_invalid)
-        {
-            const auto prototype_hash = detail::hash(old_entity_prototype);
-
-            auto prototype_info = core::pod::hash::get(
-                _prototype_map,
-                prototype_hash,
-                { core::stringid_invalid, core::stringid_invalid, nullptr }
-            );
-
-            if (prototype_info.component_name == component_name)
-            {
-                auto new_entity_protype = prototype_info.base_prototype;
-
-                while (!core::pod::array::empty(_prototypes))
-                {
-                    const auto& prototype = core::pod::array::back(_prototypes);
-                    core::pod::array::pop_back(_prototypes);
-
-                    // Create a new prototype from those stored back for later
-                    const auto new_prototype_hash = detail::hash_mix(
-                        detail::hash(new_entity_protype),
-                        detail::hash_mix(detail::hash(prototype.component_name), detail::hash("out-of-date"_sid))
-                    );
-
-                    // Store the created prototype if not existing
-                    if (!core::pod::hash::has(_prototype_map, new_prototype_hash))
-                    {
-                        core::pod::hash::set(_prototype_map, new_prototype_hash, { new_entity_protype, prototype.component_name, prototype.component_system });
-                    }
-
-                    new_entity_protype = detail::make_prototype(new_prototype_hash);
-                }
-
-                core::pod::hash::set(_entity_index, core::hash(entity), new_entity_protype);
-                return;
-            }
-            else
-            {
-                core::pod::array::push_back(_prototypes, prototype_info);
-            }
-            old_entity_prototype = prototype_info.base_prototype;
-        }
-        return;
-    }
-
-    void EntityIndex::remove_entity(Entity entity) noexcept
-    {
-        core::pod::hash::remove(_entity_index, core::hash(entity));
-    }
-
-    void EntityIndex::query_prototypes_with_components(
-        [[maybe_unused]] core::pod::Array<core::stringid_type>& prototypes,
-        [[maybe_unused]] core::pod::Array<core::stringid_type> const& components
+    bool EntityIndex::create_many(
+        ice::Span<ice::Entity> values_out,
+        void const* owner
     ) noexcept
     {
-        //for (auto const& entry : _prototype_map)
-        //{
-        //    if (core::pod::array::contains(components, prototype.component_name))
-        //    {
-        //        core::pod::array::push_back(prototypes, entry.key);
-        //        continue;
-        //    }
+        // For now when creating entities in bulk, we skip the check of _free_indices.
+        ice::u32 index = ice::pod::array::size(_generation);
+        ice::u32 const final_index = index + static_cast<ice::u32>(values_out.size());
 
+        // #todo Check for maximum allowed number of entities
 
-        //}
+        // Resize the generation and owner arrays to hold at least the `end_index`
+        ice::pod::array::resize(_generation, final_index);
+        ice::pod::array::resize(_owner, final_index);
+
+        auto out_it = values_out.begin();
+
+        // Set the generation from 'start_index' to 'end_index' to 0.
+        while (index < final_index)
+        {
+            _generation[index] = ice::u16{ 0 };
+            _owner[index] = owner;
+
+            // Add the resulting entity to the result array.
+            *out_it = detail::make_entity(
+                EntityInfo{
+                    .index = index,
+                    .generation = 0,
+                    .reserved = 0,
+                }
+            );
+
+            // Advance the index and iterator
+            index += 1;
+            out_it += 1;
+        }
+
+        return true;
     }
 
-} // namespace iceshard
+    void EntityIndex::destroy(ice::Entity entity) noexcept
+    {
+        EntityInfo const info = detail::get_entity_info(entity);
+        _owner[info.index] = nullptr;
+        _generation[info.index] += 1;
+        ice::pod::queue::push_back(_free_indices, info.index);
+    }
+
+    auto EntityIndex::count_owned(void const* owner) noexcept -> ice::u32
+    {
+        if (owner == nullptr) [[unlikely]]
+        {
+            return 0;
+        }
+
+        ice::u32 result = 0;
+        for (void const* entity_owner : _owner)
+        {
+            if (entity_owner == owner)
+            {
+                result += 1;
+            }
+        }
+        return result;
+    }
+
+    void EntityIndex::get_owned(
+        void const* owner,
+        ice::pod::Array<ice::Entity>& entities_out
+    ) noexcept
+    {
+        ice::u32 const size = ice::pod::array::size(_owner);
+        for (ice::u32 index = 0; index < size; ++index)
+        {
+            if (_owner[index] == owner)
+            {
+                ice::pod::array::push_back(
+                    entities_out,
+                    detail::make_entity(
+                        EntityInfo{
+                            .index = index,
+                            .generation = _generation[index],
+                            .reserved = 0,
+                        }
+                    )
+                );
+            }
+        }
+    }
+
+    bool EntityIndex::destroy_owned(void const* owner) noexcept
+    {
+        if (owner == nullptr) [[unlikely]]
+        {
+            return false;
+        }
+
+        ice::u32 const size = ice::pod::array::size(_owner);
+        for (ice::u32 index = 0; index < size; ++index)
+        {
+            if (_owner[index] == owner)
+            {
+                _owner[index] = nullptr;
+                _generation[index] += 1;
+
+                ice::pod::queue::push_back(_free_indices, index);
+            }
+        }
+        return true;
+    }
+
+} // namespace ice

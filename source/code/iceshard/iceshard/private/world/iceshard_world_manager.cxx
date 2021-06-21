@@ -1,57 +1,74 @@
 #include "iceshard_world_manager.hxx"
-#include <core/pod/hash.hxx>
+#include <ice/pod/hash.hxx>
+#include <ice/assert.hxx>
 
-namespace iceshard
+namespace ice
 {
 
+
+
     IceshardWorldManager::IceshardWorldManager(
-        core::allocator& alloc,
-        iceshard::ServiceProvider& engine_service_provider
+        ice::Allocator& alloc
     ) noexcept
-        : WorldManager{ }
-        , _allocator{ alloc }
-        , _engine_service_provider{ engine_service_provider }
+        : _allocator{ alloc }
         , _worlds{ _allocator }
     {
-        core::pod::hash::reserve(_worlds, 5);
     }
 
-    auto IceshardWorldManager::get_world(core::stringid_arg_type world_name) noexcept -> World*
+    IceshardWorldManager::~IceshardWorldManager() noexcept
     {
-        return core::pod::hash::get<IceshardWorld*>(_worlds, static_cast<uint64_t>(world_name.hash_value), nullptr);
+        for (auto const& entry : _worlds)
+        {
+            _allocator.destroy(entry.value);
+        }
     }
 
-    auto IceshardWorldManager::create_world(core::stringid_arg_type world_name) noexcept -> World*
+    auto IceshardWorldManager::create_world(
+        ice::StringID_Arg name,
+        ice::EntityStorage* entity_storage
+    ) noexcept -> World*
     {
-        const auto world_hash_value = static_cast<uint64_t>(world_name.hash_value);
-        IS_ASSERT(core::pod::hash::has(_worlds, world_hash_value) == false, "World with the given name already exist! [ name: {} ]", world_name);
-
-        // Creates a new world object and saves it in the map
-        auto* world_instance = _allocator.make<IceshardWorld>(
-            _allocator,
-            world_name,
-            _engine_service_provider.entity_manager()->create(this),
-            _engine_service_provider
+        ice::u64 const name_hash = ice::hash(name);
+        ICE_ASSERT(
+            ice::pod::hash::has(_worlds, name_hash) == false,
+            "A World with name {} already exists!",
+            ice::stringid_hint(name)
         );
-        core::pod::hash::set(_worlds, world_hash_value, world_instance);
 
-        return world_instance;
+        IceshardWorld* const world = _allocator.make<IceshardWorld>(_allocator, entity_storage);
+        ice::pod::hash::set(
+            _worlds,
+            name_hash,
+            world
+        );
+        return world;
     }
 
-    void IceshardWorldManager::destroy_world(core::stringid_arg_type world_name) noexcept
+    auto IceshardWorldManager::find_world(
+        ice::StringID_Arg name
+    ) noexcept -> World*
     {
-        const auto world_hash_value = static_cast<uint64_t>(world_name.hash_value);
-        IS_ASSERT(core::pod::hash::has(_worlds, world_hash_value) == true, "World with the given name does not exist! [ name: {} ]", world_name);
-
-        // Get the world instance and remove it from the map
-        auto* world_instance = core::pod::hash::get<IceshardWorld*>(_worlds, world_hash_value, nullptr);
-        core::pod::hash::remove(_worlds, world_hash_value);
-
-        // Destroy the entity object
-        _engine_service_provider.entity_manager()->destroy(world_instance->entity());
-
-        // Destroys the world object
-        _allocator.destroy(world_instance);
+        ice::u64 const name_hash = ice::hash(name);
+        return ice::pod::hash::get(_worlds, name_hash, nullptr);
     }
 
-} // namespace iceshard::world
+    void IceshardWorldManager::destroy_world(
+        ice::StringID_Arg name
+    ) noexcept
+    {
+        ice::u64 const name_hash = ice::hash(name);
+        ice::IceshardWorld* const world = ice::pod::hash::get(_worlds, name_hash, nullptr);
+
+        if (world != nullptr)
+        {
+            _allocator.destroy(world);
+            ice::pod::hash::remove(_worlds, name_hash);
+        }
+    }
+
+    auto IceshardWorldManager::worlds() const noexcept -> ice::pod::Hash<ice::IceshardWorld*> const&
+    {
+        return _worlds;
+    }
+
+} // namespace ice

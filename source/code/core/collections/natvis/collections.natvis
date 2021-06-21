@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
 
-  <!-- Native Visualization for the core::pod::Array type -->
-  <Type Name="core::pod::Array&lt;*&gt;">
+  <!-- Native Visualization for the ice::pod::Array type -->
+  <Type Name="ice::pod::Array&lt;*&gt;">
     <DisplayString Condition="_size == 0">Array {{ empty }}</DisplayString>
     <DisplayString>Array {{ size={ _size }, capacity={ _capacity } }}</DisplayString>
     <Expand>
@@ -15,8 +15,8 @@
     </Expand>
   </Type>
 
-  <!-- Native Visualization for the core::pod::Queue type -->
-  <Type Name="core::pod::Queue&lt;*&gt;">
+  <!-- Native Visualization for the ice::pod::Queue type -->
+  <Type Name="ice::pod::Queue&lt;*&gt;">
     <DisplayString>Queue {{ size={ _size } }}</DisplayString>
     <Expand>
       <Item Name="[size]">_size</Item>
@@ -27,18 +27,18 @@
     </Expand>
   </Type>
 
-  <!-- Native Visualization for the core::pod::Hash::Entry type -->
-  <Type Name="core::pod::Hash&lt;*&gt;::Entry">
+  <!-- Native Visualization for the ice::pod::Hash::Entry type -->
+  <Type Name="ice::pod::Hash&lt;*&gt;::Entry">
     <DisplayString>Hash::Entry {{ key={key,X}, value={value} }} : {"$T1",sb}</DisplayString>
     <Expand>
       <Item Name="[key]">key,X</Item>
-      <Item Name="[value]">value</Item>
       <Item Name="[next]" Condition="next != 0xffffffff">next</Item>
+      <Item Name="[value]">value</Item>
     </Expand>
   </Type>
 
-  <!-- Native Visualization for the core::pod::Hash type -->
-  <Type Name="core::pod::Hash&lt;*&gt;">
+  <!-- Native Visualization for the ice::pod::Hash type -->
+  <Type Name="ice::pod::Hash&lt;*&gt;">
     <DisplayString>Hash {{ size={_data._size}, capacity={_hash._size}, load_factor={(float)_data._size/(float)_hash._size,g} }}</DisplayString>
     <Expand>
       <Item Name="[size]">_data._size</Item>

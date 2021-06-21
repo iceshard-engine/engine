@@ -1,11 +1,14 @@
-#include <core/clock.hxx>
-#include <core/platform/windows.hxx>
+#include <ice/clock.hxx>
+#include <ice/os/windows.hxx>
+#include <ice/os/unix.hxx>
 
-namespace core
+namespace ice
 {
 
     namespace clock
     {
+
+#if ISP_WINDOWS
 
         auto clock_frequency() noexcept -> float
         {
@@ -20,7 +23,7 @@ namespace core
             return static_cast<float>(cpu_frequency);
         }
 
-        auto core::clock::create_clock() noexcept -> SystemClock
+        auto create_clock() noexcept -> SystemClock
         {
             LARGE_INTEGER large_int;
             QueryPerformanceCounter(&large_int);
@@ -46,6 +49,36 @@ namespace core
             clock.previous_timestamp = clock.latest_timestamp;
             clock.latest_timestamp = large_int.QuadPart;
         }
+
+#elif ISP_UNIX
+
+
+        auto clock_frequency() noexcept -> float
+        {
+            return static_cast<float>(1.f);
+        }
+
+        auto create_clock() noexcept -> SystemClock
+        {
+            return SystemClock{ 0, 0 };
+        }
+
+        auto create_clock(Clock const& clock, float modifier) noexcept -> CustomClock
+        {
+            auto result = CustomClock{
+                .base_clock = &clock,
+                .modifier = modifier
+            };
+            result.previous_timestamp = clock.latest_timestamp;
+            result.latest_timestamp = clock.latest_timestamp;
+            return result;
+        }
+
+        void update([[maybe_unused]] SystemClock& clock) noexcept
+        {
+        }
+
+#endif // ISP_WINDOWS
 
         void update(CustomClock& c) noexcept
         {
@@ -75,7 +108,7 @@ namespace core
         {
             return Timer{
                 .clock = &clock,
-                .step = static_cast<int64_t>(core::clock::clock_frequency() * step_seconds),
+                .step = static_cast<int64_t>(ice::clock::clock_frequency() * step_seconds),
                 .last_tick_timestamp = clock.latest_timestamp,
             };
         }
@@ -111,7 +144,7 @@ namespace core
         auto elapsed(Timer const& timer) noexcept -> float
         {
             return static_cast<float>(timer.clock->latest_timestamp - timer.last_tick_timestamp)
-                / core::clock::clock_frequency();
+                / ice::clock::clock_frequency();
         }
 
         auto alpha(Timer const& timer) noexcept -> float
@@ -136,7 +169,7 @@ namespace core
         auto elapsed(Timeline const& timeline) noexcept -> float
         {
             return (
-                static_cast<float>(timeline.clock->latest_timestamp - timeline.initial_timestap) / core::clock::clock_frequency()
+                static_cast<float>(timeline.clock->latest_timestamp - timeline.initial_timestap) / ice::clock::clock_frequency()
             );
         }
 
@@ -145,7 +178,7 @@ namespace core
     namespace stopwatch
     {
 
-        auto create_stopwatch(Clock const& clock) noexcept
+        auto create_stopwatch(Clock const& clock) noexcept -> Stopwatch
         {
             return Stopwatch{ &clock, 0, 0 };
         }

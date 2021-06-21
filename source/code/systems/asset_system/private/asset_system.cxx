@@ -1,520 +1,497 @@
-#include <asset_system/asset_system.hxx>
-#include <asset_system/asset_resolver.hxx>
-#include <asset_system/asset_compiler.hxx>
-#include <resource/resource_messages.hxx>
-#include <resource/resource_meta.hxx>
+#include <ice/asset_system.hxx>
+#include <ice/asset_pipeline.hxx>
+#include <ice/asset_oven.hxx>
+#include <ice/asset_loader.hxx>
+#include <ice/resource.hxx>
+#include <ice/resource_system.hxx>
+#include <ice/pod/array.hxx>
+#include <ice/pod/hash.hxx>
+#include <ice/unique_ptr.hxx>
+#include <ice/memory/proxy_allocator.hxx>
+#include <ice/map.hxx>
+#include <ice/assert.hxx>
 
-namespace asset
+#include "asset_internal.hxx"
+
+namespace ice
 {
 
     namespace detail
     {
 
-        class ResourceAssetResolved final : public AssetResolver
+        struct AssetEntry
         {
-        public:
-            bool resolve_asset_info(
-                core::StringView extension,
-                resource::ResourceMetaView const& meta,
-                asset::AssetStatus& status_out,
-                asset::AssetType& type_out
-            ) noexcept override
-            {
-                if (core::string::equals(extension, ".isr"))
-                {
-                    int32_t asset_type_value = 0;
-                    if (resource::get_meta_int32(meta, "asset.type"_sid, asset_type_value))
-                    {
-                        type_out = AssetType{ asset_type_value };
-                        status_out = AssetStatus::Available;
-                    }
-                }
-                return type_out != AssetType::Unresolved;
-            }
+            ice::u32 data_index;
+            ice::AssetType type;
+            ice::StringID name;
         };
 
-        class ConfigAssetResolver final : public AssetResolver
+        struct AssetInfo
         {
-        public:
-            bool resolve_asset_info(
-                core::StringView extension,
-                resource::ResourceMetaView const& /*meta*/,
-                asset::AssetStatus& status_out,
-                asset::AssetType& type_out
-            ) noexcept override
-            {
-                if (core::string::equals(extension, ".json"))
-                {
-                    type_out = AssetType::Config;
-                    status_out = AssetStatus::Available;
-                    return true;
-                }
-                return false;
-            }
+            ice::URI location;
+            ice::Resource* resource;
+            ice::AssetPipeline* pipeline;
+            ice::Memory baked_data;
+            ice::Memory loaded_data;
+            AssetObject* object;
         };
 
     } // namespace detail
 
-    AssetSystem::AssetSystem(core::allocator& alloc, resource::ResourceSystem& resource_system) noexcept
+    class SimpleAssetSystem final : public AssetSystem
+    {
+    public:
+        SimpleAssetSystem(
+            ice::Allocator& alloc,
+            ice::ResourceSystem& resource_system
+        ) noexcept;
+
+        ~SimpleAssetSystem() noexcept override;
+
+        bool add_pipeline(
+            ice::StringID_Arg name,
+            ice::UniquePtr<AssetPipeline> pipeline
+        ) noexcept override;
+
+        bool remove_pipeline(
+            ice::StringID_Arg name
+        ) noexcept override;
+
+        void bind_resources(
+            ice::Span<ice::Resource*> resources
+        ) noexcept override;
+
+        bool bind_resource(
+            ice::AssetType type,
+            ice::StringID_Arg name,
+            ice::Resource* resource
+        ) noexcept override;
+
+        auto request(
+            ice::AssetType type,
+            ice::StringID_Arg name
+        ) noexcept -> ice::Asset override;
+
+        auto load(
+            ice::AssetType type,
+            ice::Resource* resource
+        ) noexcept -> Asset override;
+
+        void release(
+            ice::Asset asset
+        ) noexcept override;
+
+    private:
+        ice::Allocator& _allocator;
+        ice::ResourceSystem& _resource_system;
+
+        ice::memory::ProxyAllocator _oven_alloc;
+        ice::Map<ice::StringID_Hash, ice::UniquePtr<ice::AssetPipeline>> _pipelines;
+
+        ice::pod::Hash<ice::AssetPipeline*> _asset_pipelines;
+        ice::pod::Hash<detail::AssetEntry> _asset_entries;
+        ice::pod::Array<detail::AssetInfo> _assets;
+    };
+
+    SimpleAssetSystem::SimpleAssetSystem(
+        ice::Allocator& alloc,
+        ice::ResourceSystem& resource_system
+    ) noexcept
         : _allocator{ alloc }
         , _resource_system{ resource_system }
-        , _resource_database{ _allocator }
-        , _asset_objects{ _allocator }
-        , _asset_resolvers{ _allocator }
-        , _asset_compilers{ _allocator }
-        , _asset_loaders{ _allocator }
-        , _asset_compiler_map{ _allocator }
-        , _asset_loader_map{ _allocator }
+        , _oven_alloc{ _allocator, "asset-oven-allocator" }
+        , _pipelines{ _allocator }
+        , _asset_pipelines{ _allocator }
+        , _asset_entries{ _allocator }
+        , _assets{ _allocator }
     {
-        add_resolver(core::memory::make_unique<asset::AssetResolver, asset::detail::ResourceAssetResolved>(_allocator));
-        add_resolver(core::memory::make_unique<asset::AssetResolver, asset::detail::ConfigAssetResolver>(_allocator));
     }
 
-    AssetSystem::~AssetSystem() noexcept
+    SimpleAssetSystem::~SimpleAssetSystem() noexcept
     {
-        for (AssetReference const& ref : _resource_database)
+        for (detail::AssetInfo& info : _assets)
         {
-            _allocator.destroy(ref.compiled_asset);
+            _oven_alloc.deallocate(info.loaded_data.location);
+            _oven_alloc.deallocate(info.baked_data.location);
+            _allocator.destroy(info.object);
         }
     }
 
-    auto AssetSystem::add_resolver(
-        core::memory::unique_pointer<asset::AssetResolver> resolver
-    ) noexcept -> AssetResolverHandle
+    bool SimpleAssetSystem::add_pipeline(
+        ice::StringID_Arg name,
+        ice::UniquePtr<AssetPipeline> pipeline
+    ) noexcept
     {
-        _next_resolver_handle += 1;
-        AssetResolverHandle resolver_handle{ _next_resolver_handle };
+        ICE_ASSERT(
+            ice::map::has(_pipelines, ice::stringid_hash(name)) == false,
+            "A pipeline with this name {} is already present!", 0
+        );
 
-        _asset_resolvers.emplace(resolver_handle, std::move(resolver));
-        return resolver_handle;
-    }
-
-    void AssetSystem::remove_resolver(asset::AssetResolverHandle resolver_handle) noexcept
-    {
-        auto const it = _asset_resolvers.find(resolver_handle);
-        if (it != _asset_resolvers.end())
+        if (ice::map::has(_pipelines, ice::stringid_hash(name)) == false)
         {
-            _asset_resolvers.erase(it);
-        }
-    }
-
-    auto AssetSystem::add_compiler(
-        core::memory::unique_pointer<asset::AssetCompiler> compiler
-    ) noexcept -> asset::AssetCompilerHandle
-    {
-        _next_compiler_handle += 1;
-        AssetCompilerHandle compiler_handle{ _next_compiler_handle };
-
-        for (auto asset_type : compiler->supported_asset_types())
-        {
-            _asset_compiler_map[asset_type].push_back(compiler.get());
-        }
-
-        _asset_compilers.emplace(compiler_handle, std::move(compiler));
-        return compiler_handle;
-    }
-
-    void AssetSystem::remove_compiler(asset::AssetCompilerHandle compiler_handle) noexcept
-    {
-        auto const it = _asset_compilers.find(compiler_handle);
-        if (it != _asset_compilers.end())
-        {
-            auto const& element_to_remove = it->second;
-
-            for (auto asset_type : element_to_remove->supported_asset_types())
+            for (ice::AssetType const type : pipeline->supported_types())
             {
-                auto& compiler_vector = _asset_compiler_map[asset_type];
-
-                auto compiler_to_remove = std::find(compiler_vector.begin(), compiler_vector.end(), element_to_remove.get());
-                compiler_vector.erase(compiler_to_remove);
+                ice::pod::multi_hash::insert(_asset_pipelines, ice::hash(type), pipeline.get());
             }
 
-            _asset_compilers.erase(it);
+            ice::map::set(_pipelines, ice::stringid_hash(name), ice::move(pipeline));
+            return true;
         }
+        return false;
     }
 
-    auto AssetSystem::add_loader(
-        core::memory::unique_pointer<asset::AssetLoader> loader
-    ) noexcept -> AssetLoaderHandle
+    bool SimpleAssetSystem::remove_pipeline(ice::StringID_Arg name) noexcept
     {
-        _next_loader_handle += 1;
-        AssetLoaderHandle loader_handle{ _next_loader_handle };
+        // #todo assert/warning has(_pipelines, name) == true
 
-        for (auto asset_type : loader->supported_asset_types())
+        if (ice::map::has(_pipelines, ice::stringid_hash(name)))
         {
-            _asset_loader_map[asset_type].push_back(loader.get());
-        }
+            ice::AssetPipeline* const pipeline = ice::map::get(
+                _pipelines,
+                ice::stringid_hash(name),
+                ice::make_unique_null<ice::AssetPipeline>()
+            ).get();
 
-        _asset_loaders.emplace(loader_handle, std::move(loader));
-        return loader_handle;
-    }
-
-    void AssetSystem::remove_loader(asset::AssetLoaderHandle loader_handle) noexcept
-    {
-        auto const it = _asset_loaders.find(loader_handle);
-        if (it != _asset_loaders.end())
-        {
-            auto const& element_to_remove = it->second;
-
-            for (auto asset_type : element_to_remove->supported_asset_types())
+            // #todo assert pipeline_ptr != nullptr
+            for (ice::AssetType const type : pipeline->supported_types())
             {
-                auto& loader_vector = _asset_loader_map[asset_type];
+                auto* entry = ice::pod::multi_hash::find_first(_asset_pipelines, ice::hash(type));
+                while (entry != nullptr && entry->value != pipeline)
+                {
+                    entry = ice::pod::multi_hash::find_next(_asset_pipelines, entry);
+                }
 
-                auto loader_to_remove = std::find(loader_vector.begin(), loader_vector.end(), element_to_remove.get());
-                loader_vector.erase(loader_to_remove);
+                if (entry != nullptr)
+                {
+                    ice::pod::multi_hash::remove(_asset_pipelines, entry);
+                }
+            }
+            ice::map::remove(_pipelines, ice::stringid_hash(name));
+            return true;
+        }
+        return false;
+    }
+
+    void SimpleAssetSystem::bind_resources(ice::Span<ice::Resource*> resources) noexcept
+    {
+        for (ice::Resource* resource : resources)
+        {
+            ice::u32 const extension_pos = ice::string::find_first_of(resource->name(), '.');
+            ice::String const basename = ice::string::substr(resource->name(), 0, extension_pos);
+            ice::String const extension = ice::string::substr(resource->name(), extension_pos);
+            ice::Metadata const& meta = resource->metadata();
+
+            ice::AssetType result_type = AssetType::Unresolved;
+            ice::AssetStatus result_status = AssetStatus::Invalid;
+
+            auto* pipeline_it = ice::pod::hash::begin(_asset_pipelines);
+            auto* const piepeline_end = ice::pod::hash::end(_asset_pipelines);
+
+            ice::AssetPipeline* pipeline = nullptr;
+            while (pipeline_it != piepeline_end && result_type == AssetType::Unresolved)
+            {
+                pipeline = pipeline_it->value;
+                pipeline->resolve(
+                    extension,
+                    meta,
+                    result_type,
+                    result_status
+                );
+
+                pipeline_it += 1;
             }
 
-            _asset_loaders.erase(it);
-        }
-    }
-
-    void AssetSystem::update() noexcept
-    {
-        core::message::filter<resource::message::ResourceAdded>(_resource_system.messages(), [&](resource::message::ResourceAdded const& msg) noexcept
+            if (result_type == AssetType::Unresolved)
             {
-                auto native_name = msg.resource->name();
-                auto extension_pos = core::string::find_first_of(native_name, '.');
+                // #todo info result_type == AssetType::Unresolved
+                continue;
+            }
 
-                auto basename = core::string::substr(native_name, 0, extension_pos);
-                auto extension = core::string::substr(native_name, extension_pos);
-
-                auto it = _asset_resolvers.begin();
-                auto const end = _asset_resolvers.end();
-
-                AssetType resolved_type = AssetType::Unresolved;
-                AssetStatus resolved_status = AssetStatus::Invalid;
-
-                bool asset_info_resolved = false;
-                while (asset_info_resolved == false && it != end)
+            if (result_status == AssetStatus::Available_Raw)
+            {
+                // #todo warning/error/assert pipeline->supports_baking(result_type)
+                if (pipeline->supports_baking(result_type) == false)
                 {
-                    asset_info_resolved = it->second->resolve_asset_info(
-                        extension,
-                        msg.resource->metadata(),
-                        resolved_status,
-                        resolved_type
-                    );
-
-                    it = std::next(it);
+                    continue;
                 }
+            }
 
-                // Resource is not a known asset!
-                if (asset_info_resolved == false)
+            ice::StringID const asset_name = ice::stringid(basename);
+            ice::u64 const asset_name_hash = ice::hash(asset_name);
+
+            auto entry = ice::pod::multi_hash::find_first(_asset_entries, asset_name_hash);
+            while (entry != nullptr)
+            {
+                // We found an asset with the same basename and type
+                if (entry->value.type == result_type)
                 {
-                    // #todo verbose message?
-                    return;
+                    break;
                 }
+                entry = ice::pod::multi_hash::find_next(_asset_entries, entry);
+            }
 
-                IS_ASSERT(resolved_type != AssetType::Unresolved, "Asset type resolving failed");
-                IS_ASSERT(resolved_status != AssetStatus::Invalid, "Asset type resolving failed");
-
-                Asset reference{ basename, resolved_type };
-
-                auto asset_it = core::pod::multi_hash::find_first(_asset_objects, core::hash(reference.name));
-                while (asset_it != nullptr)
-                {
-                    // We found an asset with the same basename and type
-                    if (asset_it->value.reference.type == reference.type)
-                    {
-                        break;
+            if (entry == nullptr)
+            {
+                ice::pod::multi_hash::insert(
+                    _asset_entries,
+                    asset_name_hash,
+                    detail::AssetEntry{
+                        .data_index = ice::pod::array::size(_assets),
+                        .type = result_type,
+                        .name = asset_name,
                     }
-                    asset_it = core::pod::multi_hash::find_next(_asset_objects, asset_it);
-                }
+                );
 
-                if (asset_it == nullptr)
+                ice::pod::array::push_back(
+                    _assets,
+                    detail::AssetInfo{
+                        .location = resource->location(),
+                        .resource = resource,
+                        .pipeline = pipeline,
+                        .baked_data = ice::Memory{ },
+                        .loaded_data = ice::Memory{ },
+                        .object = detail::make_empty_object(_allocator, result_status),
+                    }
+                );
+            }
+            else
+            {
+                detail::AssetInfo& current_info = _assets[entry->value.data_index];
+                if (current_info.object->status == AssetStatus::Available_Raw && result_status == AssetStatus::Available)
                 {
-                    core::pod::multi_hash::insert(
-                        _asset_objects,
-                        static_cast<uint64_t>(reference.name.hash_value),
-                        AssetObject{ core::pod::array::size(_resource_database), std::move(reference) }
-                    );
-                    core::pod::array::push_back(
-                        _resource_database,
-                        AssetReference{
-                            .content_location = msg.resource->location(),
-                            .resource_object = msg.resource,
-                            .status = resolved_status,
-                            .compiled_asset = nullptr
-                        }
-                    );
+                    current_info.location = resource->location();
+                    current_info.resource = resource;
+                    current_info.pipeline = pipeline;
+
+                    _allocator.destroy(current_info.object);
+                    current_info.object = detail::make_empty_object(_allocator, result_status);
+
+                    // #todo log asset replacement
                 }
                 else
                 {
-                    AssetReference& ref = _resource_database[asset_it->value.resource_index];
-                    if (ref.status == AssetStatus::Available_Raw && resolved_status == AssetStatus::Available)
-                    {
-                        ref.content_location = msg.resource->location();
-                        ref.resource_object = msg.resource;
-                        ref.status = resolved_status;
-
-                        fmt::print(
-                            "Replacing asset {} resource [ {} => {} ]\n",
-                            reference.name,
-                            msg.resource->location(),
-                            ref.resource_object->location()
-                        );
-                    }
-                    else
-                    {
-                        fmt::print(
-                            "Ignoring probaby duplicate asset resource: {}\n",
-                            msg.resource->location()
-                        );
-                    }
+                    // #todo log asset ignored
                 }
-            });
-    }
-
-    auto AssetSystem::update(Asset reference, resource::URI content_location) noexcept -> AssetStatus
-    {
-        auto* const resource = _resource_system.find(content_location);
-        if (resource != nullptr)
-        {
-            auto const name_hash = core::hash(reference.name);
-
-            int32_t removed_resource_index = -1;
-
-            // Remove same reference
-            auto* entry = core::pod::multi_hash::find_first(_asset_objects, name_hash);
-            while (entry != nullptr)
-            {
-                if (entry->value.reference.type == reference.type)
-                {
-                    removed_resource_index = entry->value.resource_index;
-                    core::pod::multi_hash::remove(_asset_objects, entry);
-                    break;
-                }
-                entry = core::pod::multi_hash::find_next(_asset_objects, entry);
             }
 
-            if (removed_resource_index >= 0)
+            // #todo assert result_type != AssetType::Invalid
+        }
+    }
+
+    bool SimpleAssetSystem::bind_resource(
+        ice::AssetType type,
+        ice::StringID_Arg name,
+        ice::Resource* resource
+    ) noexcept
+    {
+        ice::u32 const extension_pos = ice::string::find_first_of(resource->name(), '.');
+        ice::String const extension = ice::string::substr(resource->name(), extension_pos);
+        ice::Metadata const& meta = resource->metadata();
+
+        ice::AssetType result_type = AssetType::Unresolved;
+        ice::AssetStatus result_status = AssetStatus::Invalid;
+
+        auto* pipeline_it = ice::pod::hash::begin(_asset_pipelines);
+        auto* const piepeline_end = ice::pod::hash::end(_asset_pipelines);
+
+        ice::AssetPipeline* pipeline = nullptr;
+        while (pipeline_it != piepeline_end && result_type == AssetType::Unresolved)
+        {
+            pipeline = pipeline_it->value;
+            pipeline->resolve(
+                extension,
+                meta,
+                result_type,
+                result_status
+            );
+
+            pipeline_it += 1;
+        }
+
+        if (result_type == AssetType::Unresolved)
+        {
+            // #todo info result_type == AssetType::Unresolved
+            return false;
+        }
+
+        if (result_status == AssetStatus::Available_Raw)
+        {
+            // #todo warning/error/assert pipeline->supports_baking(result_type)
+            if (pipeline->supports_baking(result_type) == false)
             {
-                core::pod::multi_hash::insert(
-                    _asset_objects,
-                    name_hash,
-                    AssetObject{ static_cast<uint64_t>(removed_resource_index), std::move(reference) }
-                );
-                _resource_database[removed_resource_index] = AssetReference{
-                    .content_location = resource->location(),
-                    .resource_object = resource,
-                    .status = AssetStatus::Unloading,
-                    .compiled_asset = nullptr
-                };
+                return false;
+            }
+        }
+
+        ice::String base_name = ice::string::substr(resource->name(), 0, extension_pos);
+
+        ice::u64 const name_hash = ice::hash(base_name);
+
+        auto* entry = ice::pod::multi_hash::find_first(_asset_entries, name_hash);
+        while (entry != nullptr)
+        {
+            if (entry->value.type == type)
+            {
+                break;
+            }
+            entry = ice::pod::multi_hash::find_next(_asset_entries, entry);
+        }
+
+        if (entry == nullptr)
+        {
+            ice::pod::multi_hash::insert(
+                _asset_entries,
+                name_hash,
+                detail::AssetEntry{
+                    .data_index = ice::pod::array::size(_assets),
+                    .type = type,
+                    .name = name,
+                }
+            );
+
+            ice::pod::array::push_back(
+                _assets,
+                detail::AssetInfo{
+                    .location = resource->location(),
+                    .resource = resource,
+                    .pipeline = pipeline,
+                    .baked_data = ice::Memory{ },
+                    .loaded_data = ice::Memory{ },
+                    .object = detail::make_empty_object(_allocator, result_status),
+                }
+            );
+        }
+        else
+        {
+            detail::AssetInfo& current_info = _assets[entry->value.data_index];
+            if (current_info.object->status == AssetStatus::Loaded && result_status == AssetStatus::Available)
+            {
+                current_info.location = resource->location();
+                current_info.resource = resource;
+                current_info.pipeline = pipeline;
+
+                //_oven_alloc.deallocate(current_info.object->data.location);
+                _allocator.destroy(current_info.object);
+                current_info.object = detail::make_empty_object(_allocator, AssetStatus::Unloading);
+
+                // #todo log asset replacement
             }
             else
             {
-                core::pod::multi_hash::insert(
-                    _asset_objects,
-                    name_hash,
-                    AssetObject{ core::pod::array::size(_resource_database), std::move(reference) }
-                );
-                core::pod::array::push_back(
-                    _resource_database,
-                    AssetReference{
-                        .content_location = resource->location(),
-                        .resource_object = resource,
-                        .status = AssetStatus::Available_Raw,
-                        .compiled_asset = nullptr
-                    }
-                );
+                // #todo log asset ignored
             }
         }
-        return resource == nullptr ? AssetStatus::Invalid : AssetStatus::Available;
+        return true;
     }
 
-    auto AssetSystem::load(Asset ref, AssetData& result_data) noexcept -> AssetStatus
+    auto SimpleAssetSystem::request(ice::AssetType type, ice::StringID_Arg name) noexcept -> ice::Asset
     {
-        if (_asset_loader_map.contains(ref.type) == false || _asset_loader_map[ref.type].empty())
-        {
-            // No loader available
-            return AssetStatus::Invalid;
-        }
-
         // Get the requested asset object
-        auto asset_object = core::pod::multi_hash::find_first(_asset_objects, static_cast<uint64_t>(ref.name.hash_value));
-        while (asset_object != nullptr && asset_object->value.reference.type != ref.type)
+        auto entry = ice::pod::multi_hash::find_first(_asset_entries, ice::hash(name));
+        while (entry != nullptr && entry->value.type != type)
         {
-            asset_object = core::pod::multi_hash::find_next(_asset_objects, asset_object);
+            entry = ice::pod::multi_hash::find_next(_asset_entries, entry);
         }
 
-        if (asset_object == nullptr)
+        if (entry == nullptr)
         {
             // Asset does not exist
-            return AssetStatus::Invalid;
+            return Asset::Invalid;
         }
 
-        auto& asset_resources = _resource_database[asset_object->value.resource_index];
+        detail::AssetInfo& asset_info = _assets[entry->value.data_index];
+        detail::AssetObject& asset_object = *asset_info.object;
 
-        if (asset_resources.resource_object == nullptr)
+        if (asset_object.status == AssetStatus::Loaded)
         {
-            asset_resources.resource_object = _resource_system.find(asset_resources.content_location);
-
-            // #todo at some point we will assume this is not 'raw' but 'baked' data.
-            asset_resources.status = asset::AssetStatus::Available_Raw;
+            return detail::make_asset(asset_info.object);
         }
-
-        // Try compiling if needed
-        if (asset_resources.status == AssetStatus::Available_Raw)
-        {
-            auto it = _asset_compiler_map[ref.type].rbegin();
-            auto const it_end = _asset_compiler_map[ref.type].rend();
-
-            auto* compilation_result = _allocator.make<AssetCompilationResult>(_allocator);
-
-            AssetCompilationStatus compilation_status = AssetCompilationStatus::Failed;
-            while (it != it_end && compilation_status != AssetCompilationStatus::Success)
-            {
-                compilation_status = (*it)->compile_asset(
-                    _allocator, _resource_system, ref,
-                    asset_resources.resource_object->data(),
-                    asset_resources.resource_object->metadata(),
-                    *compilation_result
-                );
-            }
-
-            if (compilation_status == AssetCompilationStatus::Success)
-            {
-                asset_resources.compiled_asset = compilation_result;
-                asset_resources.status = AssetStatus::Available;
-            }
-            else
-            {
-                _allocator.destroy(compilation_result);
-                asset_resources.status = AssetStatus::Invalid;
-            }
-        }
-
-        auto it_beg = _asset_loader_map[ref.type].rbegin();
-        auto const it_end = _asset_loader_map[ref.type].rend();
-        AssetStatus load_status = AssetStatus::Invalid;
 
         // If the current asset is already unloading, release it
         // This should only happen in a single case, when an asset is reloading
         //  after an update for such an asset was requested.
-        if (asset_resources.status == asset::AssetStatus::Unloading)
+        if (asset_object.status == AssetStatus::Unloading)
         {
-            auto it = it_beg;
+            // #todo log unloading status
 
-            bool unloaded = false;
-            while (it != it_end && unloaded == false)
-            {
-                unloaded = (*it)->release_asset(asset_object->value.reference);
-                it += 1;
-            }
+            _oven_alloc.deallocate(asset_info.loaded_data.location);
+            _oven_alloc.deallocate(asset_info.baked_data.location);
+            asset_info.loaded_data = ice::Memory{ };
+            asset_info.baked_data = ice::Memory{ };
+            asset_object.status = AssetStatus::Available;
+        }
 
-            IS_ASSERT(
-                unloaded == true,
-                "Pending unload failed for asset {}", ref.name
+        ice::Data asset_data;
+        ice::BakeResult bake_result = BakeResult::Skipped;
+
+        // Try compiling if needed
+        if (asset_object.status == AssetStatus::Available_Raw)
+        {
+            ice::Metadata resource_meta = asset_info.resource->metadata();
+
+            ice::AssetOven* oven = asset_info.pipeline->request_oven(type);
+            ice::BakeResult bake_result = oven->bake(
+                asset_info.resource->data(),
+                resource_meta,
+                _resource_system,
+                _oven_alloc,
+                asset_info.baked_data
             );
 
-            asset_resources.status = asset::AssetStatus::Available;
+            if (bake_result != BakeResult::Success)
+            {
+                // #todo log baking failure
+                return Asset::Invalid;
+            }
+
+            asset_data = asset_info.baked_data;
+            asset_object.status = AssetStatus::Available;
         }
+        else
+        {
+            asset_data = asset_info.resource->data();
+        }
+
+        ice::AssetLoader* const loader = asset_info.pipeline->request_loader(type);
+        ice::AssetStatus load_status = AssetStatus::Invalid;
 
         // Try to load the new asset
         {
-            auto it = it_beg;
-            while (it != it_end && load_status == AssetStatus::Invalid) // We can assume its either Invalid or Loaded
+            load_status = loader->load(
+                type,
+                asset_data,
+                _oven_alloc,
+                asset_info.loaded_data
+            );
+
+            if (load_status == AssetStatus::Loaded)
             {
-                if (asset_resources.resource_object != nullptr)
-                {
-                    resource::ResourceMetaView resource_meta = asset_resources.resource_object->metadata();
-                    core::data_view resource_data = asset_resources.resource_object->data();
-
-                    if (asset_resources.compiled_asset != nullptr)
-                    {
-                        resource_data = asset_resources.compiled_asset->data;
-                        resource_meta = resource::create_meta_view(asset_resources.compiled_asset->metadata);
-                    }
-
-                    load_status = (*it)->load_asset(
-                        asset_object->value.reference,
-                        resource_meta,
-                        resource_data,
-                        result_data
-                    );
-
-                    asset_resources.status = load_status;
-                }
-                else
-                {
-                    asset_resources.status = AssetStatus::Invalid;
-                }
-
-                it += 1;
-            }
-        }
-
-        return load_status;
-    }
-
-    auto AssetSystem::read(Asset ref, AssetData& data) noexcept -> AssetStatus
-    {
-        asset::AssetStatus result_status = AssetStatus::Invalid;
-
-        // Get the requested asset object
-        auto asset_object = core::pod::multi_hash::find_first(_asset_objects, static_cast<uint64_t>(ref.name.hash_value));
-        while (asset_object != nullptr && asset_object->value.reference.type != ref.type)
-        {
-            asset_object = core::pod::multi_hash::find_next(_asset_objects, asset_object);
-        }
-
-        if (asset_object == nullptr)
-        {
-            return result_status;
-        }
-
-        auto& asset_resources = _resource_database[asset_object->value.resource_index];
-
-        if (asset_resources.resource_object == nullptr)
-        {
-            asset_resources.resource_object = _resource_system.find(asset_resources.content_location);
-
-            // #todo at some point we will assume this is not 'raw' but 'baked' data.
-            asset_resources.status = asset::AssetStatus::Available_Raw;
-        }
-
-        // Try compiling if needed
-        if (asset_resources.status == AssetStatus::Available_Raw)
-        {
-            auto it = _asset_compiler_map[ref.type].rbegin();
-            auto const it_end = _asset_compiler_map[ref.type].rend();
-
-            auto* compilation_result = _allocator.make<AssetCompilationResult>(_allocator);
-
-            AssetCompilationStatus compilation_status = AssetCompilationStatus::Failed;
-            while (it != it_end && compilation_status != AssetCompilationStatus::Success)
-            {
-                compilation_status = (*it)->compile_asset(
-                    _allocator, _resource_system, ref,
-                    asset_resources.resource_object->data(),
-                    asset_resources.resource_object->metadata(),
-                    *compilation_result
-                );
-            }
-
-            if (compilation_status == AssetCompilationStatus::Success)
-            {
-                asset_resources.compiled_asset = compilation_result;
-                asset_resources.status = AssetStatus::Available;
-                result_status = AssetStatus::Compiled;
-
-                data.content = asset_resources.compiled_asset->data;
-                data.metadata = resource::create_meta_view(asset_resources.compiled_asset->metadata);
+                asset_object.status = load_status;
+                asset_object.data = asset_info.loaded_data;
+                return detail::make_asset(asset_info.object);
             }
             else
             {
-                _allocator.destroy(compilation_result);
-                asset_resources.status = AssetStatus::Invalid;
-                result_status = AssetStatus::Invalid;
+                // #todo log invalid load
+                asset_object.status = AssetStatus::Invalid;
             }
         }
-        else if (asset_resources.status == AssetStatus::Available)
-        {
-            data.content = asset_resources.resource_object->data();
-            data.metadata = asset_resources.resource_object->metadata();
-            result_status = AssetStatus::Available;
-        }
 
-        return result_status;
+        return Asset::Invalid;
     }
 
-} // namespace asset
+    auto SimpleAssetSystem::load(ice::AssetType type, ice::Resource* resource) noexcept -> Asset
+    {
+        return Asset::Invalid;
+    }
+
+    void SimpleAssetSystem::release(ice::Asset asset) noexcept
+    {
+    }
+
+    auto create_asset_system(ice::Allocator& alloc, ice::ResourceSystem& resource_system) noexcept -> ice::UniquePtr<ice::AssetSystem>
+    {
+        return ice::make_unique<ice::AssetSystem, ice::SimpleAssetSystem>(alloc, alloc, resource_system);
+    }
+
+} // namespace ice

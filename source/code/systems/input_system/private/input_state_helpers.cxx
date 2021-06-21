@@ -1,10 +1,10 @@
 #include "input_state_helpers.hxx"
-#include <fmt/format.h>
+#include <ice/input/input_tracker.hxx>
 
-namespace iceshard::input
+namespace ice::input::detail
 {
 
-    void handle_value_button_down(InputValueState& value) noexcept
+    void handle_value_button_down(ControlState& value) noexcept
     {
         auto& button = value.value.button;
 
@@ -15,21 +15,21 @@ namespace iceshard::input
         }
         else if (button.state.released)
         {
-            button.state_value = 0;
+            button.value_i32 = 0;
         }
 
         button.state.released = false;
         button.state.pressed = true;
     }
 
-    void handle_value_button_hold(InputValueState& value) noexcept
+    void handle_value_button_hold_and_repeat(ControlState& value) noexcept
     {
         auto& button = value.value.button;
 
-        if (button.state_value != 0)
+        if (button.value_i32 != 0)
         {
             value.tick += 1;
-            if (value.tick > button_hold_tick_threshold)
+            if (value.tick > ice::input::default_button_event_treshold_hold)
             {
                 if (button.state.pressed)
                 {
@@ -41,28 +41,28 @@ namespace iceshard::input
                 }
                 else
                 {
-                    button.state_value = 0;
+                    button.value_i32 = 0;
                 }
             }
-            else if (value.tick > button_repeat_tick_threshold)
+            else if (value.tick > ice::input::default_button_event_treshold_repeat)
             {
                 if (!button.state.pressed && (button.state.clicked || button.state.repeat > 0))
                 {
-                    button.state_value = 0;
+                    button.value_i32 = 0;
                 }
             }
         }
     }
 
-    void handle_value_button_up(InputValueState& value) noexcept
+    void handle_value_button_up(ControlState& value) noexcept
     {
         auto& button = value.value.button;
 
         if (button.state.hold)
         {
-            button.state_value = 0;
+            button.value_i32 = 0;
         }
-        else if (value.tick <= button_repeat_tick_threshold)
+        else if (value.tick <= ice::input::default_button_event_treshold_repeat)
         {
             if (button.state.repeat > 0)
             {
@@ -71,60 +71,63 @@ namespace iceshard::input
             }
             else if (button.state.clicked)
             {
-                button.state_value = 0;
+                button.value_i32 = 0;
                 button.state.repeat = 2;
             }
             else
             {
-                button.state_value = 0;
+                button.value_i32 = 0;
                 button.state.clicked = true;
             }
         }
-        else if (value.tick <= button_hold_tick_threshold)
+        else if (value.tick <= ice::input::default_button_event_treshold_hold)
         {
-            button.state_value = 0;
+            button.value_i32 = 0;
         }
 
         button.state.released = true;
         value.tick = 0;
     }
 
-    void handle_value_button_down_simplified(InputValueState& value) noexcept
+    void handle_value_button_down_simplified(ControlState& value) noexcept
     {
         value.tick = 0;
-        if (value.value.button.state_value == 0)
+        if (value.value.button.value_i32 == 0)
         {
             value.value.button.state.pressed = true;
         }
     }
 
-    void handle_value_button_up_simplified(InputValueState& value) noexcept
+    void handle_value_button_up_simplified(ControlState& value) noexcept
     {
         if (value.value.button.state.pressed || value.value.button.state.hold)
         {
             value.tick = 0;
-            value.value.button.state_value = 0;
+            value.value.button.value_i32 = 0;
             value.value.button.state.released = true;
         }
     }
 
-    bool prepared_input_event(InputID input, InputValueState& value, InputEvent& event) noexcept
+    bool prepared_input_event(
+        ControlState& value,
+        ice::input::InputEvent& event
+    ) noexcept
     {
         if (value.tick == 0)
         {
-            event.identifier = input;
-            event.button_state = true;
+            event.identifier = value.id;
             event.initial_event = true;
+            event.value_type = InputValueType::Button;
             event.value = value.value;
             value.tick = 1;
             return true;
         }
         else if (value.value.button.state.pressed)
         {
-            event.identifier = input;
-            event.button_state = true;
+            event.identifier = value.id;
             event.initial_event = false;
-            event.value.button.state_value = 0;
+            event.value_type = InputValueType::Button;
+            event.value.button.value_i32 = 0;
             event.value.button.state.pressed = true;
             return true;
         }

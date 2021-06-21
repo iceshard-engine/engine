@@ -1,133 +1,164 @@
 #include "iceshard_frame.hxx"
+#include "iceshard_task_executor.hxx"
+#include <ice/task_sync_wait.hxx>
+#include <ice/sync_manual_events.hxx>
+#include <ice/engine_request.hxx>
+#include <ice/memory/pointer_arithmetic.hxx>
+#include <ice/pod/hash.hxx>
+#include <ice/assert.hxx>
 
-#include <core/debug/assert.hxx>
-#include <core/message/operations.hxx>
-#include <core/datetime/datetime.hxx>
-#include <core/pod/hash.hxx>
-
-#include "iceshard_execution_instance.hxx"
-
-namespace iceshard
+namespace ice
 {
 
     namespace detail
     {
-        static constexpr uint32_t MiB = 1024 * 1024;
-        static constexpr uint32_t inputs_allocator_pool = 4 * MiB;
-        static constexpr uint32_t message_allocator_pool = 20 * MiB;
-        static constexpr uint32_t storage_allocator_pool = 8 * MiB;
-        static constexpr uint32_t data_allocator_pool = 196 * MiB;
 
-        static uint32_t next_frame_index = 0;
-    }
+        static constexpr ice::u32 KiB = 1024;
+        static constexpr ice::u32 MiB = 1024 * KiB;
 
-    MemoryFrame::MemoryFrame(
-        core::memory::scratch_allocator& alloc,
-        iceshard::Engine& engine,
-        iceshard::IceshardExecutionInstance& execution_instance
+        static constexpr ice::u32 InputsAllocatorCapacity = 1 * MiB;
+        static constexpr ice::u32 RequestAllocatorCapacity = 1 * MiB;
+        static constexpr ice::u32 TaskAllocatorCapacity = 1 * MiB;
+        static constexpr ice::u32 StorageAllocatorCapacity = 1 * MiB;
+        static constexpr ice::u32 DataAllocatorCapacity = 224 * MiB;
+
+        static ice::u32 global_frame_counter = 0;
+
+    } // namespace detail
+
+    IceshardMemoryFrame::IceshardMemoryFrame(
+        ice::memory::ScratchAllocator& alloc
     ) noexcept
-        : iceshard::Frame{ }
-        , _frame_allocator{ alloc }
-        , _engine{ engine }
-        , _execution_instance{ execution_instance }
-        , _inputs_allocator{ _frame_allocator, detail::inputs_allocator_pool }
-        , _message_allocator{ _frame_allocator, detail::message_allocator_pool }
-        , _storage_allocator{ _frame_allocator, detail::storage_allocator_pool }
-        , _data_allocator{ _frame_allocator, detail::data_allocator_pool }
-        , _input_queue{ _inputs_allocator }
+        : ice::EngineFrame{ }
+        , _allocator{ alloc }
+        , _inputs_allocator{ _allocator, detail::InputsAllocatorCapacity }
+        , _request_allocator{ _allocator, detail::RequestAllocatorCapacity }
+        , _tasks_allocator{ _allocator, detail::TaskAllocatorCapacity }
+        , _storage_allocator{ _allocator, detail::StorageAllocatorCapacity }
+        , _data_allocator{ _allocator, detail::DataAllocatorCapacity }
         , _input_events{ _inputs_allocator }
-        , _input_actions{ _inputs_allocator }
-        , _frame_messages{ _message_allocator }
-        , _frame_storage{ _storage_allocator }
+        , _requests{ _request_allocator }
+        , _named_objects{ _storage_allocator }
+        , _frame_tasks{ _tasks_allocator }
+        , _task_executor{ _allocator, ice::Vector<ice::Task<void>>{ _allocator } }
     {
-        core::message::push(_frame_messages, FrameMessage{ detail::next_frame_index++, core::datetime::now().tick });
+        detail::global_frame_counter += 1;
+
+        ice::pod::array::reserve(_input_events, (detail::InputsAllocatorCapacity / sizeof(ice::input::InputEvent)) - 10);
+        ice::pod::array::reserve(_requests, (detail::RequestAllocatorCapacity / sizeof(ice::EngineRequest)) - 10);
+        ice::pod::hash::reserve(_named_objects, (detail::StorageAllocatorCapacity / (sizeof(ice::pod::Hash<ice::uptr>::Entry) + sizeof(ice::u32))) - 10);
+
+        _frame_tasks.reserve((detail::TaskAllocatorCapacity - 1024) / sizeof(ice::Task<void>));
     }
 
-    MemoryFrame::~MemoryFrame() noexcept
+    IceshardMemoryFrame::~IceshardMemoryFrame() noexcept
     {
-        core::datetime::tick_type frame_end_tick = core::datetime::now().tick;
-        core::datetime::tick_type frame_begin_tick;
-        core::message::filter<FrameMessage>(_frame_messages, [&frame_begin_tick](FrameMessage const& msg) noexcept
-            {
-                frame_begin_tick = msg.tick;
-            });
+        _task_executor.wait_ready();
 
-        auto const tick_count = frame_end_tick.value - frame_begin_tick.value;
-        if (tick_count > 4001310)
+        for (auto const& entry : _named_objects)
         {
-            fmt::print("Ticks on frame: {}\n", tick_count);
-        }
-
-        core::message::clear(_frame_messages);
-        for (const auto& entry : _frame_storage)
-        {
-            entry.value.object_deleter(frame_allocator(), entry.value.object_instance);
+            _data_allocator.deallocate(entry.value);
         }
     }
 
-    auto MemoryFrame::engine() noexcept -> Engine&
-    {
-        return _engine;
-    }
-
-    auto MemoryFrame::messages() const noexcept -> const core::MessageBuffer&
-    {
-        return _frame_messages;
-    }
-
-    auto MemoryFrame::input_queue() const noexcept -> iceshard::input::DeviceInputQueue const&
-    {
-        return _input_queue;
-    }
-
-    auto MemoryFrame::input_events() const noexcept -> core::pod::Array<iceshard::input::InputEvent> const&
-    {
-        return _input_events;
-    }
-
-    auto MemoryFrame::input_actions() const noexcept -> core::pod::Array<core::stringid_type> const&
-    {
-        return _input_actions;
-    }
-
-    auto MemoryFrame::find_frame_object(core::stringid_arg_type name) noexcept -> void*
-    {
-        uint64_t hash_value = static_cast<uint64_t>(name.hash_value);
-        return core::pod::hash::get<frame_object_entry>(_frame_storage, hash_value, { nullptr, nullptr }).object_instance;
-    }
-
-    auto MemoryFrame::find_frame_object(core::stringid_arg_type name) const noexcept -> const void*
-    {
-        uint64_t hash_value = static_cast<uint64_t>(name.hash_value);
-        return core::pod::hash::get<frame_object_entry>(_frame_storage, hash_value, { nullptr, nullptr }).object_instance;
-    }
-
-    void MemoryFrame::add_frame_object(core::stringid_arg_type name, void* frame_object, void(*deleter)(core::allocator&, void*)) noexcept
-    {
-        uint64_t hash_value = static_cast<uint64_t>(name.hash_value);
-
-        IS_ASSERT(!core::pod::hash::has(_frame_storage, hash_value), "Frame object with name '{}' already exists!");
-        core::pod::hash::set(_frame_storage, hash_value, { frame_object, deleter });
-    }
-
-    auto MemoryFrame::frame_allocator() noexcept -> core::allocator&
+    auto IceshardMemoryFrame::allocator() noexcept -> ice::Allocator&
     {
         return _data_allocator;
     }
 
-    auto MemoryFrame::engine_clock() const noexcept -> core::Clock const&
+    auto IceshardMemoryFrame::memory_consumption() noexcept -> ice::u32
     {
-        return _execution_instance.engine_clock();
+        return sizeof(IceshardMemoryFrame)
+            + _inputs_allocator.total_allocated()
+            + _request_allocator.total_allocated()
+            + _tasks_allocator.total_allocated()
+            + _storage_allocator.total_allocated()
+            + _data_allocator.total_allocated();
     }
 
-    auto MemoryFrame::elapsed_time() const noexcept -> float
+    auto IceshardMemoryFrame::input_events() noexcept -> ice::pod::Array<ice::input::InputEvent>&
     {
-        return core::clock::elapsed(engine_clock());
+        return _input_events;
     }
 
-    void MemoryFrame::add_task(cppcoro::task<> task) noexcept
+    auto IceshardMemoryFrame::input_events() const noexcept -> ice::Span<ice::input::InputEvent const>
     {
-        _execution_instance.add_task(std::move(task));
+        return _input_events;
     }
 
-} // namespace iceshard
+    void IceshardMemoryFrame::execute_task(ice::Task<void> task) noexcept
+    {
+        // Adds a task to be executed later during the frame update.
+        _frame_tasks.push_back(ice::move(task));
+    }
+
+    void IceshardMemoryFrame::start_all() noexcept
+    {
+        _task_executor = IceshardTaskExecutor{ _allocator, ice::move(_frame_tasks) };
+        _task_executor.start_all();
+    }
+
+    void IceshardMemoryFrame::wait_ready() noexcept
+    {
+        _task_executor.wait_ready();
+    }
+
+    void IceshardMemoryFrame::push_requests(
+        ice::Span<EngineRequest const> requests
+    ) noexcept
+    {
+        ice::pod::array::push_back(_requests, requests);
+    }
+
+    auto IceshardMemoryFrame::named_data(
+        ice::StringID_Arg name
+    ) noexcept -> void*
+    {
+        return ice::pod::hash::get(_named_objects, ice::hash(name), nullptr);
+    }
+
+    auto IceshardMemoryFrame::named_data(
+        ice::StringID_Arg name
+    ) const noexcept -> void const*
+    {
+        return ice::pod::hash::get(_named_objects, ice::hash(name), nullptr);
+    }
+
+    auto IceshardMemoryFrame::allocate_named_data(
+        ice::StringID_Arg name,
+        ice::u32 size,
+        ice::u32 alignment
+    ) noexcept -> void*
+    {
+        ice::u64 const name_hash = ice::hash(name);
+        ICE_ASSERT(
+            ice::pod::hash::has(_named_objects, name_hash) == false,
+            "An object with this name `{}` already exists in this frame!",
+            ice::stringid_hint(name)
+        );
+
+        void* object_ptr = _data_allocator.allocate(size, alignment);
+        ice::pod::hash::set(_named_objects, name_hash, object_ptr);
+        return object_ptr;
+    }
+
+    void IceshardMemoryFrame::release_named_data(ice::StringID_Arg name) noexcept
+    {
+        ice::u64 const name_hash = ice::hash(name);
+        ICE_ASSERT(
+            ice::pod::hash::has(_named_objects, name_hash) == true,
+            "An object with this name `{}` already exists in this frame!",
+            ice::stringid_hint(name)
+        );
+
+        void* data = ice::pod::hash::get<void*>(_named_objects, name_hash, nullptr);
+        _allocator.deallocate(data);
+        ice::pod::hash::set<void*>(_named_objects, name_hash, nullptr);
+    }
+
+    auto IceshardMemoryFrame::requests() const noexcept -> ice::Span<EngineRequest const>
+    {
+        return _requests;
+    }
+
+} // namespace ice

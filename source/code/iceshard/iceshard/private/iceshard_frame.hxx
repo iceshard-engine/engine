@@ -1,87 +1,72 @@
 #pragma once
-#include <iceshard/frame.hxx>
+#include <ice/task.hxx>
+#include <ice/engine_frame.hxx>
+#include <ice/input/input_event.hxx>
+#include <ice/memory/scratch_allocator.hxx>
+#include <ice/pod/array.hxx>
+#include <ice/collections.hxx>
 
-#include <core/allocator.hxx>
-#include <core/allocators/proxy_allocator.hxx>
-#include <core/allocators/scratch_allocator.hxx>
-#include <core/clock.hxx>
+#include "iceshard_task_executor.hxx"
 
-namespace iceshard
+namespace ice
 {
 
-    class IceshardExecutionInstance;
-
-    //! \brief A single engine frame with a preallocated ring buffer allocator.
-    class MemoryFrame final : public iceshard::Frame
+    class IceshardMemoryFrame final : public ice::EngineFrame
     {
     public:
-        MemoryFrame(
-            core::memory::scratch_allocator& alloc,
-            iceshard::Engine& engine,
-            iceshard::IceshardExecutionInstance& execution_instance
+        IceshardMemoryFrame(
+            ice::memory::ScratchAllocator& alloc
         ) noexcept;
-        ~MemoryFrame() noexcept;
+        ~IceshardMemoryFrame() noexcept override;
 
-        auto engine() noexcept -> Engine& override;
+        auto allocator() noexcept -> ice::Allocator& override;
+        auto memory_consumption() noexcept -> ice::u32 override;
 
-        auto execution_instance() const noexcept -> IceshardExecutionInstance const&
-        {
-            return _execution_instance;
-        }
+        auto input_events() noexcept -> ice::pod::Array<ice::input::InputEvent>&;
+        auto input_events() const noexcept -> ice::Span<ice::input::InputEvent const> override;
 
-        auto messages() noexcept -> core::MessageBuffer& { return _frame_messages; }
+        void execute_task(ice::Task<void> task) noexcept override;
+        void start_all() noexcept;
+        void wait_ready() noexcept;
 
-        auto messages() const noexcept -> core::MessageBuffer const& override;
+        void push_requests(
+            ice::Span<EngineRequest const> requests
+        ) noexcept override;
 
-        auto input_queue() noexcept -> iceshard::input::DeviceInputQueue& { return _input_queue; }
+        auto named_data(
+            ice::StringID_Arg name
+        ) noexcept -> void* override;
 
-        auto input_queue() const noexcept -> iceshard::input::DeviceInputQueue const& override;
+        auto named_data(
+            ice::StringID_Arg name
+        ) const noexcept -> void const* override;
 
-        auto input_events() noexcept -> core::pod::Array<iceshard::input::InputEvent>& { return _input_events; }
+        auto allocate_named_data(
+            ice::StringID_Arg name,
+            ice::u32 size,
+            ice::u32 alignment
+        ) noexcept -> void* override;
 
-        auto input_events() const noexcept -> core::pod::Array<iceshard::input::InputEvent> const& override;
+        void release_named_data(
+            ice::StringID_Arg name
+        ) noexcept override;
 
-        auto input_actions() noexcept -> core::pod::Array<core::stringid_type>& { return _input_actions; }
-
-        auto input_actions() const noexcept -> core::pod::Array<core::stringid_type> const& override;
-
-        auto find_frame_object(core::stringid_arg_type name) noexcept -> void* override;
-
-        auto find_frame_object(core::stringid_arg_type name) const noexcept -> const void* override;
-
-        void add_frame_object(core::stringid_arg_type name, void* frame_object, void(*deleter)(core::allocator&, void*)) noexcept override;
-
-        auto frame_allocator() noexcept -> core::allocator& override;
-
-        auto engine_clock() const noexcept -> core::Clock const& override;
-
-        auto elapsed_time() const noexcept -> float override;
-
-        void add_task(cppcoro::task<> task) noexcept override;
+        auto requests() const noexcept -> ice::Span<EngineRequest const>;
 
     private:
-        core::memory::scratch_allocator& _frame_allocator;
-        iceshard::Engine& _engine;
-        iceshard::IceshardExecutionInstance& _execution_instance;
+        ice::memory::ScratchAllocator& _allocator;
+        ice::memory::ScratchAllocator _inputs_allocator;
+        ice::memory::ScratchAllocator _request_allocator;
+        ice::memory::ScratchAllocator _tasks_allocator;
+        ice::memory::ScratchAllocator _storage_allocator;
+        ice::memory::ScratchAllocator _data_allocator;
 
-        core::memory::scratch_allocator _inputs_allocator;
-        core::memory::scratch_allocator _message_allocator;
-        core::memory::scratch_allocator _storage_allocator;
-        core::memory::scratch_allocator _data_allocator;
+        ice::pod::Array<ice::input::InputEvent> _input_events;
+        ice::pod::Array<ice::EngineRequest> _requests;
+        ice::pod::Hash<void*> _named_objects;
 
-        iceshard::input::DeviceInputQueue _input_queue;
-        core::pod::Array<iceshard::input::InputEvent> _input_events;
-        core::pod::Array<core::stringid_type> _input_actions;
-
-        core::MessageBuffer _frame_messages;
-
-        struct frame_object_entry
-        {
-            void* object_instance;
-            void(*object_deleter)(core::allocator&, void*);
-        };
-        core::pod::Hash<frame_object_entry> _frame_storage;
+        ice::Vector<ice::Task<>> _frame_tasks;
+        ice::IceshardTaskExecutor _task_executor;
     };
 
-
-} // namespace iceshard
+} // namespace ice

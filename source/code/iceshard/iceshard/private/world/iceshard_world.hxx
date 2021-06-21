@@ -1,39 +1,57 @@
 #pragma once
-#include <iceshard/world/world.hxx>
-#include <core/pointer.hxx>
+#include <ice/world/world.hxx>
+#include <ice/entity/entity_storage.hxx>
 
-#include "iceshard_world_service_provider.hxx"
+#include "iceshard_world_portal.hxx"
 
-namespace iceshard
+namespace ice
 {
 
-    class ExecutionInstance;
+    class Engine;
+    class EngineRunner;
 
-    class IceshardWorld : public World
+    class IceshardWorld final : public ice::World
     {
     public:
         IceshardWorld(
-            core::allocator& alloc,
-            core::stringid_arg_type world_name,
-            iceshard::Entity world_entity,
-            iceshard::ServiceProvider& engine_service_provider
+            ice::Allocator& alloc,
+            ice::EntityStorage* entity_storage
         ) noexcept;
 
-        ~IceshardWorld() noexcept override;
+        auto allocator() noexcept -> ice::Allocator& override;
+        auto entity_storage() noexcept -> ice::EntityStorage& override;
 
-        void update(ExecutionInstance& engine) noexcept;
+        void add_trait(
+            ice::StringID_Arg name,
+            ice::WorldTrait* trait
+        ) noexcept override;
 
-        void add_component_system(core::stringid_arg_type component_name, ComponentSystemFactory factory, void* userdata) noexcept override;
+        void remove_trait(
+            ice::StringID_Arg name
+        ) noexcept override;
 
-        //! \brief The worlds service provider.
-        auto service_provider() noexcept -> iceshard::ServiceProvider* override;
+        void activate(
+            ice::Engine& engine,
+            ice::EngineRunner& runner
+        ) noexcept;
+
+        void deactivate(
+            ice::Engine& engine,
+            ice::EngineRunner& runner
+        ) noexcept;
+
+        void update(
+            ice::EngineRunner& runner
+        ) noexcept;
+
+        auto traits() noexcept -> ice::pod::Array<ice::WorldTrait*>&;
 
     private:
-        core::allocator& _allocator;
+        ice::Allocator& _allocator;
+        ice::EntityStorage* _entity_storage;
 
-        core::pod::Hash<ComponentSystem*> _component_systems;
-
-        core::memory::unique_pointer<iceshard::IceshardWorldServiceProvider> _service_provider;
+        ice::pod::Array<ice::WorldTrait*> _traits;
+        ice::pod::Hash<ice::IceshardWorldPortal*> _portals;
     };
 
-} // namespace iceshard::world
+} // namespace ice

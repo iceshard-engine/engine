@@ -9,11 +9,20 @@
     .Public =
     [
         .Modules = {
-            'cppcoro'
+            // 'cppcoro'
         }
         .Uses = {
+            'tasks'
+            'modules'
             'input_system'
             'render_system'
+        }
+    ]
+
+    .Private =
+    [
+        .Uses = {
+            'utils'
         }
     ]
 ]
