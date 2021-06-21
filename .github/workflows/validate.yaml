@@ -3,8 +3,10 @@ name: Validation
 on:
   push:
     branches:
-    - master
     - pre-alpha-cleanup
+  pull_request:
+    branches:
+    - master
 
 jobs:
   validation-build-windows:
@@ -71,4 +73,4 @@ jobs:
       with:
         args: |
           New commits have been pushed to `{{ EVENT_PAYLOAD.repository.full_name }}`!
-          {{ EVENT_PAYLOAD.commits.map(e => '- ' + e.message + ' (' + e.url + ') <' + e.author.name + '>').join('\n') }}
+          {{ EVENT_PAYLOAD.commits.map(e => '- ' + e.message + ' (<' + e.url + '>) <' + e.author.name + '>').join('\n') }}
