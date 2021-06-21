@@ -43,10 +43,10 @@ namespace ice
     };
 
     static ice::vec2f Constant_BoxShapeUvs[]{
-        { 3.0, 4.0 },
-        { 3.0, 3.0 },
-        { 4.0, 3.0 },
-        { 4.0, 4.0 },
+        vec2f{ 0.0, 1.0 } + vec2f{ 15.0, 0.f },
+        vec2f{ 0.0, 0.0 } + vec2f{ 15.0, 0.f },
+        vec2f{ 1.0, 0.0 } + vec2f{ 15.0, 0.f },
+        vec2f{ 1.0, 1.0 } + vec2f{ 15.0, 0.f },
     };
 
     static ice::Obj2dShapeDefinition Constant_BoxShape
@@ -184,8 +184,8 @@ namespace ice
             GfxResourceTracker& gfxres = runner.graphics_device().resource_tracker();
             RenderDevice& device = runner.graphics_device().device();
 
-            Data vtx_shader_data = load_shader(engine.asset_system(), "/shaders/game2d/tiled-vtx"_sid);
-            Data pix_shader_data = load_shader(engine.asset_system(), "/shaders/game2d/tiled-pix"_sid);
+            Data vtx_shader_data = load_shader(engine.asset_system(), "/shaders/game2d/sprite-vtx"_sid);
+            Data pix_shader_data = load_shader(engine.asset_system(), "/shaders/game2d/sprite-pix"_sid);
 
             ResourceSetLayoutBinding resourceset_binding[]{
                 ResourceSetLayoutBinding{
@@ -236,14 +236,14 @@ namespace ice
             _render.tilemap_props.height_scale = Constant_TileHeight / tiles_texture_info.height;
 
             SamplerInfo sampler_info{
-                .min_filter = SamplerFilter::Linear,
-                .mag_filter = SamplerFilter::Linear,
+                .min_filter = SamplerFilter::Nearest,
+                .mag_filter = SamplerFilter::Nearest,
                 .address_mode = {
-                    .u = SamplerAddressMode::Repeat,
-                    .v = SamplerAddressMode::Repeat,
-                    .w = SamplerAddressMode::Repeat,
+                    .u = SamplerAddressMode::ClampToEdge,
+                    .v = SamplerAddressMode::ClampToEdge,
+                    .w = SamplerAddressMode::ClampToEdge,
                 },
-                .mip_map_mode = SamplerMipMapMode::Linear,
+                .mip_map_mode = SamplerMipMapMode::Nearest,
             };
 
             _render.sampler = device.create_sampler(sampler_info);

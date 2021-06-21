@@ -1,5 +1,6 @@
 #pragma once
 #include <ice/allocator.hxx>
+#include <ice/memory/proxy_allocator.hxx>
 #include <ice/gfx/gfx_device.hxx>
 #include <ice/gfx/gfx_stage.hxx>
 #include <ice/gfx/gfx_pass.hxx>
@@ -19,6 +20,8 @@
 #include <ice/game_framework.hxx>
 #include <ice/game2d_trait.hxx>
 #include <ice/game2d_object.hxx>
+#include <ice/game2d_tilemap.hxx>
+#include <ice/game2d_physics.hxx>
 
 #include <ice/module_register.hxx>
 #include <ice/resource_system.hxx>
@@ -32,12 +35,15 @@ class MyGame
 public:
     static constexpr ice::URI ConfigFile = "file://../source/data/config.json"_uri;
 
-    MyGame(ice::Allocator& alloc) noexcept
-        : _allocator{ alloc }
+    MyGame(ice::Allocator& alloc, ice::Clock const& clock) noexcept
+        : _allocator{ alloc, "MyGame-alloc" }
+        , _clock{ clock }
         , _archetype_alloc{ _allocator }
         , _archetype_index{ ice::create_archetype_index(_allocator) }
         , _entity_storage{ _allocator, *_archetype_index, _archetype_alloc  }
         , _game2d_trait{ ice::make_unique_null<ice::Game2DTrait>() }
+        , _tilemap_trait{ ice::make_unique_null<ice::TileMap2DTrait>() }
+        , _physics_trait{ ice::make_unique_null<ice::Physics2DTrait>() }
     {
     }
 
@@ -73,6 +79,10 @@ public:
         add_world_traits(engine, world);
 
         _archetype_index->register_archetype<ice::Obj2dTransform>(&_archetype_alloc);
+        auto tilemap_arch = _archetype_index->register_archetype<ice::TileMapComponent>(&_archetype_alloc);
+
+
+
         auto a = _archetype_index->register_archetype<ice::Obj2dShape, ice::Obj2dTransform>(&_archetype_alloc);
         auto a2 = _archetype_index->register_archetype<ice::Obj2dShape, ice::Obj2dTransform, ice::Obj2dMaterial>(&_archetype_alloc);
 
@@ -83,21 +93,32 @@ public:
         _entity_storage.set_archetype(idx.create(), a2);
         _entity_storage.set_archetype(idx.create(), a2);
         _entity_storage.set_archetype(idx.create(), a);
+        _entity_storage.set_archetype(idx.create(), tilemap_arch);
 
-        ice::ComponentQuery<ice::Obj2dShape&, ice::Obj2dTransform&> query{ _allocator, *_archetype_index };
-        auto result = query.result_by_entity(_allocator, _entity_storage);
+
+        using ObjectQuery = ice::ComponentQuery<ice::Obj2dShape&, ice::Obj2dTransform&>;
+        ObjectQuery obj_query{ _allocator, *_archetype_index };
+        auto obj_result = obj_query.result_by_entity(_allocator, _entity_storage);
 
         ice::rad angle{ 0 };
-        ice::vec3f initial_pos{ 64.f, 64.f, 1.f };
-        result.for_each([&](ice::Obj2dShape& shape, ice::Obj2dTransform& xform)
+        ice::vec3f initial_pos{ 32.f, 32.f, 1.f };
+        obj_result.for_each([&](ice::Obj2dShape& shape, ice::Obj2dTransform& xform)
             {
                 shape.shape_definition = nullptr;
                 xform.position = initial_pos;
                 xform.rotation = angle.value;
-                initial_pos.x += 64.f;
-                initial_pos.y += 64.f;
+                initial_pos.x += 32.f;
+                initial_pos.y += 32.f;
                 initial_pos.z += 1.f;
                 angle.value += 0.1;
+            });
+
+        ice::ComponentQuery<ice::TileMapComponent&> query{ _allocator, *_archetype_index };
+        auto result = query.result_by_entity(_allocator, _entity_storage);
+
+        result.for_each([&](ice::TileMapComponent& tilemap)
+            {
+                tilemap.name = "test"_sid;
             });
     }
 
@@ -128,10 +149,14 @@ protected:
     void remove_world_traits(ice::World* world) noexcept;
 
 public:
-    ice::Allocator& _allocator;
+    ice::memory::ProxyAllocator _allocator;
+    ice::Clock const& _clock;
+
     ice::Engine* _current_engine;
 
     ice::UniquePtr<ice::Game2DTrait> _game2d_trait;
+    ice::UniquePtr<ice::TileMap2DTrait> _tilemap_trait;
+    ice::UniquePtr<ice::Physics2DTrait> _physics_trait;
 
     ice::ArchetypeBlockAllocator _archetype_alloc;
     ice::UniquePtr<ice::ArchetypeIndex> _archetype_index;

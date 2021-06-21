@@ -7,7 +7,7 @@
 namespace ice
 {
 
-    static constexpr ice::f32 Constant_TileSize = 64.f;
+    static constexpr ice::f32 Constant_TileSize = 32.f;
 
     class Game2DTrait : public ice::WorldTrait
     {

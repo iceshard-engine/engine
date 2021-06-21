@@ -54,10 +54,9 @@ namespace ice
 
     protected:
         ice::Allocator& _allocator;
-
-    private:
         ice::SystemClock _system_clock;
 
+    private:
         ice::ResourceSystem& _resource_system;
         ice::ModuleRegister& _module_register;
 
@@ -108,7 +107,7 @@ namespace ice
             ice::ModuleRegister& module_register
         ) noexcept
             : GameFramework{ alloc, resource_system, module_register }
-            , _game{ _allocator }
+            , _game{ _allocator, _system_clock }
         { }
 
     private:

@@ -11,6 +11,9 @@
         .Uses = {
             'framework_base'
         }
+        .Modules = {
+            'box2d'
+        }
     ]
 ]
 

@@ -29,6 +29,7 @@ namespace ice
         Texture,
 
         Level,
+        TileMap,
 
         Reserved = 0x00ff'ffff,
         Unresolved = 0xffff'ffff,

@@ -938,11 +938,11 @@ struct MyGame::TraitContainer : public ice::WorldTrait
             &_draw
         );
 
-        pass.add_stage(
-            "imgui"_sid,
-            deps2,
-            &_imgui
-        );
+        //pass.add_stage(
+        //    "imgui"_sid,
+        //    deps2,
+        //    &_imgui
+        //);
 
         pass.add_stage(
             _end.name(),
@@ -987,15 +987,93 @@ void MyGame::add_world_traits(
 {
     _traits = _allocator.make<TraitContainer>(_allocator, engine, engine.asset_system());
     _game2d_trait = ice::create_game2d_trait(_allocator);
+    _tilemap_trait = ice::create_tilemap_trait(_allocator, engine.asset_system());
+    _physics_trait = ice::create_physics2d_trait(_allocator, _clock);
+
+    static ice::TileMaterialGroup tilemap_mats[1]
+    {
+        ice::TileMaterialGroup
+        {
+            .group_id = 0,
+            .image_asset = "/cotm/tileset_a"_sid,
+        }
+    };
+
+    static ice::vec2f tiles_pos[16 * 16];
+    static ice::TileMaterial tiles_mat[16 * 16];
+
+    for (ice::u32 i = 0; i < 16; ++i)
+    {
+        for (ice::u32 j = 0; j < 16; ++j)
+        {
+            tiles_pos[i * 16 + j] = { 32.f * j, 32.f * i };
+
+            tiles_mat[i * 16 + j] = ice::TileMaterial{ .group_id = 0, .material_id_x = 1, .material_id_y = 0 };
+            if (j == 0 || j == 15)
+            {
+                tiles_mat[i * 16 + j] = ice::TileMaterial{ .group_id = 0, .material_id_x = 0, .material_id_y = 0 };
+            }
+            if (i == 0)
+            {
+                tiles_mat[i * 16 + j] = ice::TileMaterial{ .group_id = 0, .material_id_x = 2, .material_id_y = 0 };
+            }
+            if (i == 15)
+            {
+                tiles_mat[i * 16 + j] = ice::TileMaterial{ .group_id = 0, .material_id_x = 0, .material_id_y = 1 };
+            }
+
+        }
+    }
+
+    //static ice::vec2f tiles_pos[2]
+    //{
+    //    ice::vec2f{ 0.f, 0.f },
+    //    ice::vec2f{ 0.f, 32.f },
+    //};
+
+    //static ice::TileMaterial tiles_mat[2]
+    //{
+    //    ice::TileMaterial{.group_id = 0, .material_id_x = 0, .material_id_y = 0 },
+    //    ice::TileMaterial{.group_id = 0, .material_id_x = 1, .material_id_y = 10 },
+    //};
+
+    static ice::TileRoom tilemap_rooms[1]
+    {
+        ice::TileRoom
+        {
+            .name = "test"_sid,
+            .portals = { },
+            .tiles_count = ice::size(tiles_pos),
+            .tiles_position = tiles_pos,
+            .tiles_material = tiles_mat
+        }
+    };
+
+    static ice::TileMap tilemap
+    {
+        .name = "test"_sid,
+        .material_groups = tilemap_mats,
+        .rooms = tilemap_rooms,
+    };
+
+    ice::TileMaterial rigid_materials[]{
+        ice::TileMaterial{.group_id = 0, .material_id_x = 0, .material_id_y = 1 },
+        ice::TileMaterial{.group_id = 0, .material_id_x = 2, .material_id_y = 0 },
+    };
+
+    _tilemap_trait->load_tilemap("test"_sid, tilemap);
+    _physics_trait->load_tilemap_room(tilemap.rooms[0], rigid_materials);
 
     world->add_trait("game"_sid, _traits);
     world->add_trait("render.objects"_sid, &_traits->_render_objects);
     world->add_trait("game2d"_sid, _game2d_trait.get());
+    world->add_trait("tilemap"_sid, _tilemap_trait.get());
+    world->add_trait("tilemap.physics"_sid, _physics_trait.get());
 
     //world->add_trait("game.update"_sid, _traits->);
     world->add_trait("test.cameras"_sid, &_traits->_camera);
     world->add_trait("test.terrain"_sid, &_traits->_terrain);
-    world->add_trait("test.imgui"_sid, &_traits->_imgui);
+    //world->add_trait("test.imgui"_sid, &_traits->_imgui);
     world->add_trait("test.clear"_sid, &_traits->_clear);
     world->add_trait("test.draw"_sid, &_traits->_draw);
     world->add_trait("test.end"_sid, &_traits->_end);
@@ -1006,15 +1084,19 @@ void MyGame::remove_world_traits(ice::World* world) noexcept
     world->remove_trait("test.end"_sid);
     world->remove_trait("test.draw"_sid);
     world->remove_trait("test.clear"_sid);
-    world->remove_trait("test.imgui"_sid);
+    //world->remove_trait("test.imgui"_sid);
     world->remove_trait("test.terrain"_sid);
     world->remove_trait("test.cameras"_sid);
     //world->remove_trait("game.update"_sid);
 
+    world->remove_trait("tilemap.physics"_sid);
+    world->remove_trait("tilemap"_sid);
     world->remove_trait("game2d"_sid);
     world->remove_trait("render.objects"_sid);
     world->remove_trait("game"_sid);
 
-    _game2d_trait = nullptr;
+    _physics_trait = nullptr;
+    _tilemap_trait = nullptr;
+    // _game2d_trait = nullptr;
     _allocator.destroy(_traits);
 }

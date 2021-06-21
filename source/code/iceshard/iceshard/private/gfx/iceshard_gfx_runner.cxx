@@ -17,7 +17,7 @@ namespace ice::gfx
 
     void IceGfxRunner::push_task(ice::Task<void> task) noexcept
     {
-        _thread->scheduler().schedule(ice::move(task));
+        _thread->schedule(ice::move(task));
     }
 
 } // namespace ice::gfx

@@ -269,7 +269,7 @@ namespace ice::trait
 
             ice::gfx::GfxCameraUniform& camera_data = *frame.create_named_object<ice::gfx::GfxCameraUniform>("camera.uniform.data"_sid);
 
-            if (use_orto)
+            if (!use_orto)
             {
                 camera_data.view_matrix = ice::lookat(
                     { 0.f, 0.f, 0.f },

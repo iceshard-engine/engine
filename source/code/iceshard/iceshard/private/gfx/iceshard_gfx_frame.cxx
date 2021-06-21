@@ -74,7 +74,7 @@ namespace ice::gfx
         }
     }
 
-    auto IceGfxFrame::aquire_task_commands(ice::StringID_Arg& queue_name) noexcept -> GfxFrame::GfxAwaitCommandsOperation
+    auto IceGfxFrame::aquire_task_commands(ice::StringID_Arg queue_name) noexcept -> GfxFrame::GfxAwaitCommandsOperation
     {
         return GfxAwaitCommandsOperation{ *this, queue_name };
     }
