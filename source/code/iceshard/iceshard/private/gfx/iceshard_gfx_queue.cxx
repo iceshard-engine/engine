@@ -1,6 +1,9 @@
 #include "iceshard_gfx_queue.hxx"
 #include "iceshard_gfx_pass.hxx"
+
 #include <ice/gfx/gfx_stage.hxx>
+#include <ice/gfx/gfx_pass.hxx>
+#include <ice/memory/stack_allocator.hxx>
 
 namespace ice::gfx
 {
@@ -73,18 +76,33 @@ namespace ice::gfx
 
     void IceGfxQueue::execute_pass(
         ice::EngineFrame const& frame,
-        ice::gfx::GfxPass* gfx_pass
+        ice::gfx::GfxPass const* gfx_pass,
+        ice::pod::Hash<ice::gfx::IceGfxStage> const& stages
     ) noexcept
     {
-        ice::gfx::IceGfxPass* const ice_pass = static_cast<ice::gfx::IceGfxPass*>(gfx_pass);
-        if (ice_pass->has_work())
+        ice::memory::StackAllocator_1024 alloc;
+
+        ice::pod::Array<ice::StringID_Hash> stage_order{ alloc };
+        gfx_pass->query_stage_order(stage_order);
+
+        bool has_all = true;
+        for (ice::StringID_Hash stage_id : stage_order)
         {
-            ice_pass->record_commands(frame, _primary_commands[1], _render_commands);
+            has_all &= ice::pod::hash::has(stages, ice::hash(stage_id));
         }
 
-        _render_queue->submit(
-            ice::Span<ice::render::CommandBuffer>{ _primary_commands + 1, 1 }, true
-        );
+        if (has_all)
+        {
+            for (ice::StringID_Hash stage_id : stage_order)
+            {
+                ice::gfx::GfxStage* stage = ice::pod::hash::get(stages, ice::hash(stage_id), IceGfxStage{ }).stage;
+                stage->record_commands(frame, _primary_commands[1], _render_commands);
+            }
+
+            _render_queue->submit(
+                ice::Span<ice::render::CommandBuffer>{ _primary_commands + 1, 1 }, true
+            );
+        }
     }
 
     void IceGfxQueue::update_texture(

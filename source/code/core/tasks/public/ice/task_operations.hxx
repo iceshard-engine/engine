@@ -11,7 +11,6 @@ namespace ice
     template<typename T>
     class ScheduleDelayedOperation;
 
-
     namespace detail
     {
 
@@ -30,9 +29,8 @@ namespace ice
 
     } // namespace detail
 
-
     template<typename T>
-    class ScheduleOperation final
+    class ScheduleOperation
     {
     public:
         using DataMemberType = ice::detail::ScheduleOperationData ScheduleOperation<T>::*;
@@ -43,10 +41,21 @@ namespace ice
         inline void await_suspend(std::coroutine_handle<void> coro) noexcept;
         inline void await_resume() const noexcept { }
 
-    private:
+    protected:
         T& _target;
         ice::detail::ScheduleOperationData _data;
     };
+
+    template<typename T>
+    concept TaskScheduler = requires(T t) {
+        { &T::schedule_internal } -> std::convertible_to<void(T::*)(ice::ScheduleOperation<T>*, typename ice::ScheduleOperation<T>::DataMemberType)noexcept>;
+    };
+
+    template<typename T> requires ice::TaskScheduler<T>
+    inline auto operator co_await(T& target) noexcept
+    {
+        return ice::ScheduleOperation<T>{ target };
+    }
 
     template<typename T>
     inline ScheduleOperation<T>::ScheduleOperation(T& target) noexcept
@@ -92,10 +101,30 @@ namespace ice
         _target.schedule_internal(this, &ScheduleDelayedOperation::_data);
     }
 
-    template<typename T> requires ice::AwaitableScheduler<T>
-    inline auto operator co_await(T& scheduler) noexcept
+
+    template<typename T, typename K>
+    class ScheduleContextOperation : public ice::ScheduleOperation<T>
     {
-        return scheduler.schedule();
+    public:
+        inline ScheduleContextOperation(T& target, K& context) noexcept;
+
+        inline auto await_resume() const noexcept -> K&;
+
+    private:
+        K& _context;
+    };
+
+    template<typename T, typename K>
+    inline ScheduleContextOperation<T, K>::ScheduleContextOperation(T& target, K& context) noexcept
+        : ice::ScheduleOperation<T>{ target }
+        , _context{ context }
+    {
+    }
+
+    template<typename T, typename K>
+    inline auto ScheduleContextOperation<T, K>::await_resume() const noexcept -> K&
+    {
+        return _context;
     }
 
 } // namespace ice

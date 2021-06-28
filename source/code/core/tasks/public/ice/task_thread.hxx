@@ -1,4 +1,5 @@
 #pragma once
+#include <ice/task.hxx>
 #include <ice/task_operations.hxx>
 #include <ice/unique_ptr.hxx>
 

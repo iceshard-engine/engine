@@ -61,12 +61,14 @@ namespace ice::trait
         ice::render::Buffer _terrain_settings_buffer;
 
         auto update_uniform_resources(
-            ice::gfx::GfxDevice& gfx_device
+            ice::EngineRunner& runner
         ) noexcept -> ice::Task<>
         {
             using namespace render;
 
-            RenderDevice& device = gfx_device.device();
+            //co_await runner.graphics_frame().frame_start();
+
+            RenderDevice& device = runner.graphics_device().device();
 
             BufferUpdateInfo image_buffer_update[1]{
                 BufferUpdateInfo{.buffer = _terrain_settings_buffer, .data = ice::data_view(_terrain_settings) },
@@ -76,11 +78,13 @@ namespace ice::trait
         }
 
         auto update_all_resources(
-            ice::gfx::GfxDevice& gfx_device,
-            ice::gfx::GfxFrame& gfx_frame
+            ice::EngineRunner& runner,
+            ice::gfx::GfxDevice& gfx_device
         ) noexcept -> ice::Task<>
         {
             using namespace render;
+
+            //co_await runner.graphics_frame().frame_start();
 
             RenderDevice& device = gfx_device.device();
 
@@ -145,7 +149,7 @@ namespace ice::trait
 
             _render_device->update_resourceset(update_terrain_set);
 
-            ice::gfx::GfxTaskCommands& cmds = co_await gfx_frame.aquire_task_commands("default"_sid);
+            ice::gfx::GfxTaskCommands& cmds = co_await runner.graphics_frame().frame_commands("default"_sid);
 
             cmds.update_texture(_terrain_heightmap, _temp_transfer_buffer, { _image_info.width, _image_info.height });
         }
@@ -397,11 +401,11 @@ namespace ice::trait
 
         render_device.update_buffers(buffer_updates);
 
-        runner.graphics_frame().execute_task(
+        runner.execute_task(
             _render_cache->update_all_resources(
-                runner.graphics_device(),
-                runner.graphics_frame()
-            )
+                runner,
+                runner.graphics_device()
+            ), EngineContext::GraphicsFrame
         );
     }
 
@@ -506,8 +510,9 @@ namespace ice::trait
             }
         }
 
-        runner.graphics_frame().execute_task(
-            _render_cache->update_uniform_resources(runner.graphics_device())
+        runner.execute_task(
+            _render_cache->update_uniform_resources(runner),
+            EngineContext::GraphicsFrame
         );
     }
 

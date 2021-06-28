@@ -6,6 +6,8 @@
 #include <ice/gfx/gfx_queue.hxx>
 #include <ice/gfx/gfx_task.hxx>
 
+#include "iceshard_gfx_pass.hxx"
+
 namespace ice::gfx
 {
 
@@ -41,7 +43,8 @@ namespace ice::gfx
 
         void execute_pass(
             ice::EngineFrame const& frame,
-            ice::gfx::GfxPass* gfx_pass
+            ice::gfx::GfxPass const* gfx_pass,
+            ice::pod::Hash<ice::gfx::IceGfxStage> const& stages
         ) noexcept;
 
         void update_texture(

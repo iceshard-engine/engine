@@ -45,7 +45,7 @@ namespace ice::gfx
         , _render_device{ render_device }
         , _render_swapchain{ nullptr }
         , _graphics_queues{ ice::move(graphics_queues) }
-        , _graphics_passes{ _allocator }
+        //, _graphics_passes{ _allocator }
         , _resource_tracker{ _allocator }
     {
         _render_swapchain = _render_device->create_swapchain(_render_surface);
@@ -63,10 +63,10 @@ namespace ice::gfx
 
     IceGfxDevice::~IceGfxDevice() noexcept
     {
-        for (auto const& entry : _graphics_passes)
-        {
-            _allocator.destroy(entry.value);
-        }
+        //for (auto const& entry : _graphics_passes)
+        //{
+        //    _allocator.destroy(entry.value);
+        //}
 
         destroy_subpass_resources_imgui(*_render_device, _resource_tracker);
         destroy_subpass_resources_terrain(*_render_device, _resource_tracker);
@@ -108,16 +108,16 @@ namespace ice::gfx
         return *_render_swapchain;
     }
 
-    auto IceGfxDevice::aquire_pass(ice::StringID_Arg name) noexcept -> ice::gfx::GfxPass&
-    {
-        ice::u64 const name_hash = ice::hash(name);
-        if (ice::pod::hash::has(_graphics_passes, name_hash) == false)
-        {
-            ice::pod::hash::set(_graphics_passes, name_hash, _allocator.make<IceGfxPass>(_allocator));
-        }
+    //auto IceGfxDevice::aquire_pass(ice::StringID_Arg name) noexcept -> ice::gfx::GfxPass&
+    //{
+    //    ice::u64 const name_hash = ice::hash(name);
+    //    if (ice::pod::hash::has(_graphics_passes, name_hash) == false)
+    //    {
+    //        ice::pod::hash::set(_graphics_passes, name_hash, _allocator.make<IceGfxPass>(_allocator));
+    //    }
 
-        return *ice::pod::hash::get(_graphics_passes, name_hash, nullptr);
-    }
+    //    return *ice::pod::hash::get(_graphics_passes, name_hash, nullptr);
+    //}
 
     //auto IceGfxDevice::create_pass() noexcept -> ice::UniquePtr<ice::gfx::GfxPass>
     //{

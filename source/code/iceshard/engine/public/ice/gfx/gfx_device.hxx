@@ -33,7 +33,7 @@ namespace ice::gfx
         virtual auto device() noexcept -> ice::render::RenderDevice& = 0;
         virtual auto swapchain() noexcept -> ice::render::RenderSwapchain const& = 0;
 
-        virtual auto aquire_pass(ice::StringID_Arg name) noexcept -> ice::gfx::GfxPass& = 0;
+        // virtual auto aquire_pass(ice::StringID_Arg name) noexcept -> ice::gfx::GfxPass& = 0;
 
         virtual auto resource_tracker() noexcept -> ice::gfx::GfxResourceTracker& = 0;
     };

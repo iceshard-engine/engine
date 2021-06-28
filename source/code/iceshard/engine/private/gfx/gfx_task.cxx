@@ -40,7 +40,7 @@ namespace ice::gfx
         // Await command recording stage
         //  Here we have access to a command buffer where we can record commands.
         //  These commands will be later executed on the graphics thread.
-        ice::gfx::GfxTaskCommands& cmds = co_await gfx_frame.aquire_task_commands("default"_sid);
+        ice::gfx::GfxTaskCommands& cmds = co_await gfx_frame.frame_commands("default"_sid);
 
         cmds.update_texture(
             gfx_task_info.image,

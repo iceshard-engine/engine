@@ -20,21 +20,4 @@ namespace ice::gfx
         ) noexcept = 0;
     };
 
-    class GfxUpdateStage
-    {
-    public:
-        virtual ~GfxUpdateStage() noexcept = default;
-
-        virtual void prepare_data(
-            ice::gfx::GfxDevice& device
-        ) noexcept { }
-
-        virtual auto record_commands(
-            ice::render::CommandBuffer command_buffer,
-            ice::render::RenderCommands& render_commands
-        ) noexcept -> ice::Task<void> { co_return; }
-
-        virtual auto final_task() noexcept -> ice::Task<void> { co_return; }
-    };
-
 } // namespace ice::gfx

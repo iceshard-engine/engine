@@ -1,0 +1,96 @@
+#include "trait_render_clear.hxx"
+
+#include <ice/engine_runner.hxx>
+#include <ice/world/world_portal.hxx>
+
+#include <ice/gfx/gfx_device.hxx>
+#include <ice/gfx/gfx_resource_tracker.hxx>
+#include <ice/gfx/gfx_frame.hxx>
+
+#include <ice/render/render_command_buffer.hxx>
+#include <ice/render/render_swapchain.hxx>
+
+namespace ice
+{
+
+    void IceWorldTrait_RenderClear::on_activate(
+        ice::Engine& engine,
+        ice::EngineRunner& runner,
+        ice::WorldPortal& portal
+    ) noexcept
+    {
+        ice::gfx::GfxDevice& gfx_device = runner.graphics_device();
+
+        _default_swapchain = &gfx_device.swapchain();
+
+        portal.execute(task_activate_graphics(runner, gfx_device));
+    }
+
+    void IceWorldTrait_RenderClear::on_deactivate(
+        ice::Engine& engine,
+        ice::EngineRunner& runner,
+        ice::WorldPortal& portal
+    ) noexcept
+    {
+        _render_stage = nullptr;
+    }
+
+    void IceWorldTrait_RenderClear::on_update(
+        ice::EngineFrame& frame,
+        ice::EngineRunner& runner,
+        ice::WorldPortal& portal
+    ) noexcept
+    {
+        ice::gfx::GfxFrame& gfx_frame = runner.graphics_frame();
+        gfx_frame.set_stage(gfx_stage_name(), gfx_stage());
+    }
+
+    void IceWorldTrait_RenderClear::record_commands(
+        ice::EngineFrame const& frame,
+        ice::render::CommandBuffer cmds,
+        ice::render::RenderCommands& api
+    ) noexcept
+    {
+        ice::vec4f clear_values[4]
+        {
+            ice::vec4f{ 0.3f },
+            ice::vec4f{ 0.3f },
+            ice::vec4f{ 0.3f },
+            ice::vec4f{ 0.3f },
+        };
+
+        api.begin(cmds);
+        api.begin_renderpass(
+            cmds,
+            _default_renderpass,
+            _default_framebuffers[_default_swapchain->current_image_index()],
+            clear_values,
+            _default_swapchain->extent()
+        );
+        api.next_subpass(cmds, ice::render::SubPassContents::Inline);
+        api.next_subpass(cmds, ice::render::SubPassContents::Inline);
+        api.end_renderpass(cmds);
+        api.end(cmds);
+    }
+
+    auto IceWorldTrait_RenderClear::task_activate_graphics(
+        ice::EngineRunner& runner,
+        ice::gfx::GfxDevice& gfx_device
+    ) noexcept -> ice::Task<>
+    {
+        co_await runner.graphics_frame().frame_start();
+
+        using namespace ice::gfx;
+        using namespace ice::render;
+
+        GfxResourceTracker& gfx_restracker = gfx_device.resource_tracker();
+        _default_renderpass = ice::gfx::find_resource<Renderpass>(gfx_restracker, "ice.gfx.renderpass.default"_sid);
+        _default_framebuffers[0] = ice::gfx::find_resource<Framebuffer>(gfx_restracker, "ice.gfx.framebuffer.0"_sid);
+        _default_framebuffers[1] = ice::gfx::find_resource<Framebuffer>(gfx_restracker, "ice.gfx.framebuffer.1"_sid);
+
+        co_await runner.schedule_next_frame();
+
+        _render_stage = this;
+    }
+
+} // namespace ice

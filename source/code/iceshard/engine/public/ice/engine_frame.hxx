@@ -17,12 +17,12 @@ namespace ice
     public:
         virtual ~EngineFrame() noexcept = default;
 
+        virtual auto index() const noexcept -> ice::u32 = 0;
+
         virtual auto allocator() noexcept -> ice::Allocator& = 0;
         virtual auto memory_consumption() noexcept -> ice::u32 = 0;
 
-        virtual auto input_events() const noexcept -> ice::Span<ice::input::InputEvent const> = 0;
-
-        virtual void execute_task(ice::Task<void> task) noexcept = 0;
+        virtual auto input_events() const noexcept -> ice::Span<ice::input::InputEvent const> = 0;;
 
         virtual void push_requests(
             ice::Span<EngineRequest const> requests

@@ -30,6 +30,7 @@ namespace ice
         ice::memory::ScratchAllocator& alloc
     ) noexcept
         : ice::EngineFrame{ }
+        , _index{ detail::global_frame_counter }
         , _allocator{ alloc }
         , _inputs_allocator{ _allocator, detail::InputsAllocatorCapacity }
         , _request_allocator{ _allocator, detail::RequestAllocatorCapacity }
@@ -59,6 +60,11 @@ namespace ice
         {
             _data_allocator.deallocate(entry.value);
         }
+    }
+
+    auto IceshardMemoryFrame::index() const noexcept -> ice::u32
+    {
+        return _index;
     }
 
     auto IceshardMemoryFrame::allocator() noexcept -> ice::Allocator&
