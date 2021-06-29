@@ -84,6 +84,7 @@ namespace ice::gfx
 
     IceGfxDynamicPass::IceGfxDynamicPass(ice::Allocator& alloc) noexcept
         : _allocator{ alloc }
+        , _special_stages{ { .name = ice::stringid_invalid }, { .name = ice::stringid_invalid } }
         , _stages{ _allocator }
         , _free_stages{ _allocator }
     {
@@ -117,11 +118,33 @@ namespace ice::gfx
         return has_work;
     }
 
-    void IceGfxDynamicPass::add_stage(
-        ice::StringID_Arg name,
-        ice::Span<ice::StringID const> dependencies
+    void IceGfxDynamicPass::add_stages(
+        ice::Span<ice::gfx::GfxStageInfo const> stage_infos
     ) noexcept
     {
+        for (ice::gfx::GfxStageInfo const& stage_info : stage_infos)
+        {
+            add_stage(stage_info);
+        }
+    }
+
+    void IceGfxDynamicPass::add_stage(
+        ice::gfx::GfxStageInfo const& stage_info
+    ) noexcept
+    {
+        switch (stage_info.type)
+        {
+        case GfxStageType::InitialStage:
+            _special_stages[0] = stage_info;
+            return;
+        case GfxStageType::FinalStage:
+            _special_stages[1] = stage_info;
+            return;
+        default:
+            break;
+        }
+
+
         GfxDynamicPassStageGroup* target_stage = nullptr;
 
         auto get_free_stage = [this]() noexcept
@@ -146,7 +169,7 @@ namespace ice::gfx
 
             while (candidate_batch != end_batch)
             {
-                if ((*candidate_batch)->contains_any(dependencies) == false)
+                if ((*candidate_batch)->contains_any(stage_info.dependencies) == false)
                 {
                     target_stage = *candidate_batch;
                     candidate_batch += 1;
@@ -164,7 +187,7 @@ namespace ice::gfx
             ice::pod::array::push_back(_stages, target_stage);
         }
 
-        if (target_stage->has_dependency(name))
+        if (target_stage->has_dependency(stage_info.name))
         {
             GfxDynamicPassStageGroup* new_target_stage = get_free_stage();
 
@@ -188,7 +211,7 @@ namespace ice::gfx
             target_stage = new_target_stage;
         }
 
-        target_stage->add_stage(name, dependencies);
+        target_stage->add_stage(stage_info.name, stage_info.dependencies);
     }
 
     void IceGfxDynamicPass::clear() noexcept
@@ -204,10 +227,21 @@ namespace ice::gfx
         ice::pod::Array<ice::StringID_Hash>& stage_order_out
     ) const noexcept
     {
+        bool valid_pass = ice::pod::array::any(_stages);
+        valid_pass &= _special_stages[0].name != ice::stringid_invalid;
+        valid_pass &= _special_stages[1].name != ice::stringid_invalid;
+
+        if (valid_pass == false)
+        {
+            return;
+        }
+
+        ice::pod::array::push_back(stage_order_out, ice::stringid_hash(_special_stages[0].name));
         for (auto const* stage_group : _stages)
         {
             stage_group->query_stage_order(stage_order_out);
         }
+        ice::pod::array::push_back(stage_order_out, ice::stringid_hash(_special_stages[1].name));
     }
 
 } // namespace ice::gfx

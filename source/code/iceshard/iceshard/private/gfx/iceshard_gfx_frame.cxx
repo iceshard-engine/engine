@@ -290,19 +290,30 @@ namespace ice::gfx
         //_task_executor.wait_ready();
     }
 
-    void IceGfxFrame::set_stage(
-        ice::StringID_Arg name,
-        ice::gfx::GfxStage* stage
+
+    void IceGfxFrame::set_stage_slot(
+        ice::gfx::GfxStageSlot slot
     ) noexcept
     {
-        if (stage != nullptr)
+        if (slot.stage != nullptr)
+        {
+            set_stage_slots({ &slot, 1 });
+        }
+    }
+
+
+    void IceGfxFrame::set_stage_slots(
+        ice::Span<ice::gfx::GfxStageSlot const> slots
+    ) noexcept
+    {
+        for (ice::gfx::GfxStageSlot const& slot : slots)
         {
             ice::pod::hash::set(
                 _stages,
-                ice::hash(name),
+                ice::hash(slot.name),
                 IceGfxStage{
-                    .name = name,
-                    .stage = stage
+                    .name = slot.name,
+                    .stage = slot.stage
                 }
             );
         }

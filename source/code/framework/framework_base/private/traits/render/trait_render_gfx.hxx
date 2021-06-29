@@ -5,9 +5,12 @@
 namespace ice
 {
 
-    class IceWorldTrait_RenderGfx : public ice::WorldTrait
+    class IceWorldTrait_RenderGfx : public ice::GameWorldTrait_Render
     {
     public:
+        auto gfx_stage_infos() const noexcept -> ice::Span<ice::gfx::GfxStageInfo const> override;
+        auto gfx_stage_slots() const noexcept -> ice::Span<ice::gfx::GfxStageSlot const> override;
+
         void on_activate(
             ice::Engine& engine,
             ice::EngineRunner& runner,

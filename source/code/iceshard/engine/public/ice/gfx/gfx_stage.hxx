@@ -6,7 +6,29 @@
 namespace ice::gfx
 {
 
-    class GfxDevice;
+    class GfxStage;
+
+    enum class GfxStageType
+    {
+        InitialStage,
+        TransferStage,
+        FinalStage,
+        DrawStage,
+        CustomStage,
+    };
+
+    struct GfxStageInfo
+    {
+        ice::StringID name;
+        ice::Span<ice::StringID const> dependencies;
+        ice::gfx::GfxStageType type = GfxStageType::DrawStage;
+    };
+
+    struct GfxStageSlot
+    {
+        ice::StringID name;
+        ice::gfx::GfxStage* stage;
+    };
 
     class GfxStage
     {

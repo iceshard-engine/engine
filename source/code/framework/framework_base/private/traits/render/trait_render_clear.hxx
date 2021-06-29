@@ -1,6 +1,7 @@
 #pragma once
 #include <ice/game_render_traits.hxx>
 #include <ice/render/render_declarations.hxx>
+#include <ice/gfx/gfx_device.hxx>
 
 namespace ice
 {
@@ -8,15 +9,8 @@ namespace ice
     class IceWorldTrait_RenderClear : public ice::GameWorldTrait_Render, public ice::gfx::GfxStage
     {
     public:
-        inline auto gfx_stage_name() const noexcept -> ice::StringID override
-        {
-            return "frame.clear"_sid;
-        }
-
-        inline auto gfx_stage() const noexcept -> ice::gfx::GfxStage* override
-        {
-            return _render_stage;
-        }
+        auto gfx_stage_infos() const noexcept -> ice::Span<ice::gfx::GfxStageInfo const> override;
+        auto gfx_stage_slots() const noexcept -> ice::Span<ice::gfx::GfxStageSlot const> override;
 
         void on_activate(
             ice::Engine& engine,
@@ -49,7 +43,8 @@ namespace ice
         ) noexcept -> ice::Task<>;
 
     private:
-        ice::gfx::GfxStage* _render_stage;
+        ice::u32 _stage_slot_count = 0;
+        ice::gfx::GfxStageSlot _stage_slots[1];
 
         ice::render::RenderSwapchain const* _default_swapchain;
         ice::render::Renderpass _default_renderpass;

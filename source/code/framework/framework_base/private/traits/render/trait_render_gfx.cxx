@@ -1,6 +1,7 @@
 #include "trait_render_gfx.hxx"
 
 #include <ice/gfx/gfx_device.hxx>
+#include <ice/gfx/gfx_frame.hxx>
 #include <ice/gfx/gfx_resource_tracker.hxx>
 
 #include <ice/engine_runner.hxx>
@@ -14,6 +15,69 @@
 
 namespace ice
 {
+
+    namespace detail
+    {
+
+        class IceRenderStage_Initial : public ice::gfx::GfxStage
+        {
+        public:
+            void record_commands(
+                ice::EngineFrame const& frame,
+                ice::render::CommandBuffer cmds,
+                ice::render::RenderCommands& api
+            ) noexcept override
+            {
+                api.begin(cmds);
+            }
+        };
+
+        class IceRenderStage_Final : public ice::gfx::GfxStage
+        {
+        public:
+            void record_commands(
+                ice::EngineFrame const& frame,
+                ice::render::CommandBuffer cmds,
+                ice::render::RenderCommands& api
+            ) noexcept override
+            {
+                api.end(cmds);
+            }
+        };
+
+    } // namespace detail
+
+    auto IceWorldTrait_RenderGfx::gfx_stage_infos() const noexcept -> ice::Span<ice::gfx::GfxStageInfo const>
+    {
+        static ice::gfx::GfxStageInfo const infos[]{
+            ice::gfx::GfxStageInfo
+            {
+                .name = "frame.begin"_sid,
+                .dependencies = {},
+                .type = ice::gfx::GfxStageType::InitialStage
+            },
+            ice::gfx::GfxStageInfo
+            {
+                .name = "frame.end"_sid,
+                .dependencies = {},
+                .type = ice::gfx::GfxStageType::FinalStage
+            },
+        };
+        return infos;
+    }
+
+    auto IceWorldTrait_RenderGfx::gfx_stage_slots() const noexcept -> ice::Span<ice::gfx::GfxStageSlot const>
+    {
+        static detail::IceRenderStage_Initial initial_stage;
+        static detail::IceRenderStage_Final final_stage;
+
+        static ice::gfx::GfxStageSlot const slots[2]{
+            ice::gfx::GfxStageSlot{.name = "frame.begin"_sid, .stage = &initial_stage},
+            ice::gfx::GfxStageSlot{.name = "frame.end"_sid, .stage = &final_stage},
+        };
+
+        return slots;
+    }
 
     void IceWorldTrait_RenderGfx::on_activate(
         ice::Engine& engine,
@@ -239,6 +303,7 @@ namespace ice
         ice::WorldPortal& portal
     ) noexcept
     {
+        runner.graphics_frame().set_stage_slots(gfx_stage_slots());
     }
 
 } // namespace ice

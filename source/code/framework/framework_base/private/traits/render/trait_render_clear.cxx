@@ -13,6 +13,24 @@
 namespace ice
 {
 
+    auto IceWorldTrait_RenderClear::gfx_stage_infos() const noexcept -> ice::Span<ice::gfx::GfxStageInfo const>
+    {
+        static ice::gfx::GfxStageInfo const infos[]{
+            ice::gfx::GfxStageInfo
+            {
+                .name = "frame.clear"_sid,
+                .dependencies = {},
+                .type = ice::gfx::GfxStageType::DrawStage
+        }
+        };
+        return infos;
+    }
+
+    auto IceWorldTrait_RenderClear::gfx_stage_slots() const noexcept -> ice::Span<ice::gfx::GfxStageSlot const>
+    {
+        return { _stage_slots, _stage_slot_count };
+    }
+
     void IceWorldTrait_RenderClear::on_activate(
         ice::Engine& engine,
         ice::EngineRunner& runner,
@@ -32,7 +50,7 @@ namespace ice
         ice::WorldPortal& portal
     ) noexcept
     {
-        _render_stage = nullptr;
+        _stage_slot_count = 0;
     }
 
     void IceWorldTrait_RenderClear::on_update(
@@ -42,7 +60,7 @@ namespace ice
     ) noexcept
     {
         ice::gfx::GfxFrame& gfx_frame = runner.graphics_frame();
-        gfx_frame.set_stage(gfx_stage_name(), gfx_stage());
+        gfx_frame.set_stage_slots(gfx_stage_slots());
     }
 
     void IceWorldTrait_RenderClear::record_commands(
@@ -59,7 +77,6 @@ namespace ice
             ice::vec4f{ 0.3f },
         };
 
-        api.begin(cmds);
         api.begin_renderpass(
             cmds,
             _default_renderpass,
@@ -70,7 +87,6 @@ namespace ice
         api.next_subpass(cmds, ice::render::SubPassContents::Inline);
         api.next_subpass(cmds, ice::render::SubPassContents::Inline);
         api.end_renderpass(cmds);
-        api.end(cmds);
     }
 
     auto IceWorldTrait_RenderClear::task_activate_graphics(
@@ -90,7 +106,12 @@ namespace ice
 
         co_await runner.schedule_next_frame();
 
-        _render_stage = this;
+        _stage_slot_count = 1;
+        _stage_slots[0] = ice::gfx::GfxStageSlot
+        {
+            .name = "frame.clear"_sid,
+            .stage = this
+        };
     }
 
 } // namespace ice

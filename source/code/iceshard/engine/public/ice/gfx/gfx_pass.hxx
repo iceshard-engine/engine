@@ -5,6 +5,8 @@
 #include <ice/render/render_command_buffer.hxx>
 #include <ice/pod/array.hxx>
 
+#include <ice/gfx/gfx_stage.hxx>
+
 namespace ice::gfx
 {
 
@@ -46,10 +48,13 @@ namespace ice::gfx
     public:
         virtual void clear() noexcept = 0;
 
-        virtual void add_stage(
-            ice::StringID_Arg name,
-            ice::Span<ice::StringID const> dependencies
+        virtual void add_stages(
+            ice::Span<ice::gfx::GfxStageInfo const> stage_info
         ) noexcept = 0;
+
+        inline void add_stage(
+            ice::gfx::GfxStageInfo stage_info
+        ) noexcept;
 
         inline void add_stage(
             ice::StringID_Arg name,
@@ -62,7 +67,19 @@ namespace ice::gfx
         std::initializer_list<ice::StringID const> dependencies
     ) noexcept
     {
-        add_stage(name, ice::Span<ice::StringID const>{ dependencies.begin(), dependencies.size() });
+        add_stage(
+            GfxStageInfo{
+                .name = name,
+                .dependencies = ice::Span<ice::StringID const>{ dependencies.begin(), dependencies.size() }
+            }
+        );
+    }
+
+    inline void GfxDynamicPass::add_stage(
+        ice::gfx::GfxStageInfo stage_info
+    ) noexcept
+    {
+        add_stages({ &stage_info, 1 });
     }
 
     auto create_static_pass(

@@ -4,6 +4,7 @@
 #include <ice/task_operations.hxx>
 #include <ice/render/render_command_buffer.hxx>
 #include <ice/gfx/gfx_pass.hxx>
+#include <ice/gfx/gfx_stage.hxx>
 
 namespace ice::gfx
 {
@@ -141,9 +142,12 @@ namespace ice::gfx
         //virtual void execute_task(
         //    ice::Task<void> task
         //) noexcept = 0;
-        virtual void set_stage(
-            ice::StringID_Arg name,
-            ice::gfx::GfxStage* stage
+        virtual void set_stage_slot(
+            ice::gfx::GfxStageSlot slot
+        ) noexcept = 0;
+
+        virtual void set_stage_slots(
+            ice::Span<ice::gfx::GfxStageSlot const> slots
         ) noexcept = 0;
 
         virtual void enqueue_pass(

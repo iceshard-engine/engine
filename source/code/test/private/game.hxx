@@ -72,7 +72,8 @@ public:
         _trait_render_clear = ice::create_trait_render_clear(_allocator);
 
 
-        _game_gfx_pass->add_stage(_trait_render_clear->gfx_stage_name(), { });
+        _game_gfx_pass->add_stages(_trait_render_gfx->gfx_stage_infos());
+        _game_gfx_pass->add_stages(_trait_render_clear->gfx_stage_infos());
         //_game_gfx_pass->add_stage("frame.draw"_sid, { _trait_render_clear->gfx_stage_name() });
         //_game_gfx_pass->add_stage("frame.postprocess"_sid, { "frame.draw"_sid });
         //_game_gfx_pass->add_stage("frame.present"_sid, { "frame.postprocess"_sid });
@@ -185,7 +186,7 @@ public:
     ice::EntityStorage _entity_storage;
 
     ice::UniquePtr<ice::gfx::GfxDynamicPass> _game_gfx_pass;
-    ice::UniquePtr<ice::WorldTrait> _trait_render_gfx{ ice::make_unique_null<ice::WorldTrait>() };
+    ice::UniquePtr<ice::GameWorldTrait_Render> _trait_render_gfx{ ice::make_unique_null<ice::GameWorldTrait_Render>() };
     ice::UniquePtr<ice::GameWorldTrait_Render> _trait_render_clear{ ice::make_unique_null<ice::GameWorldTrait_Render>() };
 
     ice::World* _test_world;

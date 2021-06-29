@@ -87,9 +87,12 @@ namespace ice::gfx
 
         ~IceGfxFrame() noexcept override;
 
-        void set_stage(
-            ice::StringID_Arg name,
-            ice::gfx::GfxStage* stage
+        void set_stage_slot(
+            ice::gfx::GfxStageSlot slot
+        ) noexcept override;
+
+        void set_stage_slots(
+            ice::Span<ice::gfx::GfxStageSlot const> slots
         ) noexcept override;
 
 
