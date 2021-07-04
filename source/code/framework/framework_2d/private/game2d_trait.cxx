@@ -123,7 +123,7 @@ namespace ice
             ice::EngineFrame const& frame,
             ice::render::CommandBuffer cmds,
             ice::render::RenderCommands& api
-        ) noexcept
+        ) const noexcept override
         {
             ice::u32 const instance_count = *frame.named_object<ice::u32>("game2d.level.instance_count"_sid);
             if (instance_count > 0)

@@ -34,7 +34,7 @@ namespace ice
             ice::EngineFrame const& frame,
             ice::render::CommandBuffer cmds,
             ice::render::RenderCommands& api
-        ) noexcept override;
+        ) const noexcept override;
 
     protected:
         auto task_activate_graphics(

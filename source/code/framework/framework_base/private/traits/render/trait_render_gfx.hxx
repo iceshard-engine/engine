@@ -29,6 +29,10 @@ namespace ice
             ice::WorldPortal& portal
         ) noexcept override;
 
+    protected:
+        auto task_create_render_objects(ice::gfx::GfxDevice& gfx_device) noexcept -> ice::Task<>;
+        auto task_destroy_render_objects(ice::gfx::GfxDevice& gfx_device) noexcept -> ice::Task<>;
+
     private:
         ice::render::Renderpass _default_renderpass;
         ice::render::Framebuffer _default_framebuffers[2];

@@ -26,7 +26,7 @@ namespace ice
                 ice::EngineFrame const& frame,
                 ice::render::CommandBuffer cmds,
                 ice::render::RenderCommands& api
-            ) noexcept override
+            ) const noexcept override
             {
                 api.begin(cmds);
             }
@@ -39,7 +39,7 @@ namespace ice
                 ice::EngineFrame const& frame,
                 ice::render::CommandBuffer cmds,
                 ice::render::RenderCommands& api
-            ) noexcept override
+            ) const noexcept override
             {
                 api.end(cmds);
             }
@@ -85,10 +85,75 @@ namespace ice
         ice::WorldPortal& portal
     ) noexcept
     {
+        runner.execute_task(
+            task_create_render_objects(runner.graphics_device()),
+            EngineContext::GraphicsFrame
+        );
+        //ResourceSetLayoutBinding bindings[]{
+        //    ResourceSetLayoutBinding{
+        //        .binding_index = 0,
+        //        .resource_count = 1,
+        //        .resource_type = ResourceType::UniformBuffer,
+        //        .shader_stage_flags = ShaderStageFlags::FragmentStage | ShaderStageFlags::VertexStage
+        //    },
+        //    ResourceSetLayoutBinding {
+        //        .binding_index = 1,
+        //        .resource_count = 1,
+        //        .resource_type = ResourceType::InputAttachment,
+        //        .shader_stage_flags = ShaderStageFlags::FragmentStage
+        //    },
+        //    ResourceSetLayoutBinding {
+        //        .binding_index = 2,
+        //        .resource_count = 1,
+        //        .resource_type = ResourceType::SamplerImmutable,
+        //        .shader_stage_flags = ShaderStageFlags::FragmentStage
+        //    },
+        //};
+
+        //using ice::gfx::GfxResource;
+
+        //ResourceSetLayout pp_resource_layout = render_device.create_resourceset_layout(bindings);
+
+        //PipelineLayout pipeline_layout = render_device.create_pipeline_layout(
+        //    PipelineLayoutInfo{
+        //        .push_constants = { },
+        //        .resource_layouts = ice::Span<ice::render::ResourceSetLayout>{ &pp_resource_layout, 1 }
+        //    }
+        //);
+
+        //ice::gfx::track_resource(res_tracker, "ice.gfx.sampler.default"_sid, basic_sampler);
+        //ice::gfx::track_resource(res_tracker, "ice.gfx.resource_layout.default"_sid, pp_resource_layout);
+        //ice::gfx::track_resource(res_tracker, "ice.gfx.pipeline_layoyt.default"_sid, pipeline_layout);
+    }
+
+    void IceWorldTrait_RenderGfx::on_deactivate(
+        ice::Engine& engine,
+        ice::EngineRunner& runner,
+        ice::WorldPortal& portal
+    ) noexcept
+    {
+        runner.execute_task(
+            task_destroy_render_objects(runner.graphics_device()),
+            EngineContext::GraphicsFrame
+        );
+    }
+
+    void IceWorldTrait_RenderGfx::on_update(
+        ice::EngineFrame& frame,
+        ice::EngineRunner& runner,
+        ice::WorldPortal& portal
+    ) noexcept
+    {
+        runner.graphics_frame().set_stage_slots(gfx_stage_slots());
+    }
+
+    auto IceWorldTrait_RenderGfx::task_create_render_objects(
+        ice::gfx::GfxDevice& gfx_device
+    ) noexcept -> ice::Task<>
+    {
         using namespace gfx;
         using namespace ice::render;
 
-        GfxDevice& gfx_device = runner.graphics_device();
         GfxResourceTracker& res_tracker = gfx_device.resource_tracker();
 
         RenderDevice& render_device = gfx_device.device();
@@ -235,59 +300,19 @@ namespace ice
             framebuffer_images
         );
 
-        //ResourceSetLayoutBinding bindings[]{
-        //    ResourceSetLayoutBinding{
-        //        .binding_index = 0,
-        //        .resource_count = 1,
-        //        .resource_type = ResourceType::UniformBuffer,
-        //        .shader_stage_flags = ShaderStageFlags::FragmentStage | ShaderStageFlags::VertexStage
-        //    },
-        //    ResourceSetLayoutBinding {
-        //        .binding_index = 1,
-        //        .resource_count = 1,
-        //        .resource_type = ResourceType::InputAttachment,
-        //        .shader_stage_flags = ShaderStageFlags::FragmentStage
-        //    },
-        //    ResourceSetLayoutBinding {
-        //        .binding_index = 2,
-        //        .resource_count = 1,
-        //        .resource_type = ResourceType::SamplerImmutable,
-        //        .shader_stage_flags = ShaderStageFlags::FragmentStage
-        //    },
-        //};
-
-        //using ice::gfx::GfxResource;
-
-        //ResourceSetLayout pp_resource_layout = render_device.create_resourceset_layout(bindings);
-
-        //PipelineLayout pipeline_layout = render_device.create_pipeline_layout(
-        //    PipelineLayoutInfo{
-        //        .push_constants = { },
-        //        .resource_layouts = ice::Span<ice::render::ResourceSetLayout>{ &pp_resource_layout, 1 }
-        //    }
-        //);
-
         ice::gfx::track_resource(res_tracker, "ice.gfx.renderpass.default"_sid, _default_renderpass);
         ice::gfx::track_resource(res_tracker, "ice.gfx.attachment.image.depth_stencil"_sid, _default_attachment_depth_stencil);
         ice::gfx::track_resource(res_tracker, "ice.gfx.attachment.image.color"_sid, _default_attachment_color);
         ice::gfx::track_resource(res_tracker, "ice.gfx.framebuffer.0"_sid, _default_framebuffers[0]);
         ice::gfx::track_resource(res_tracker, "ice.gfx.framebuffer.1"_sid, _default_framebuffers[1]);
-
-        //ice::gfx::track_resource(res_tracker, "ice.gfx.sampler.default"_sid, basic_sampler);
-        //ice::gfx::track_resource(res_tracker, "ice.gfx.resource_layout.default"_sid, pp_resource_layout);
-        //ice::gfx::track_resource(res_tracker, "ice.gfx.pipeline_layoyt.default"_sid, pipeline_layout);
+        co_return;
     }
 
-    void IceWorldTrait_RenderGfx::on_deactivate(
-        ice::Engine& engine,
-        ice::EngineRunner& runner,
-        ice::WorldPortal& portal
-    ) noexcept
+    auto IceWorldTrait_RenderGfx::task_destroy_render_objects(ice::gfx::GfxDevice& gfx_device) noexcept -> ice::Task<>
     {
         using namespace ice::gfx;
         using namespace ice::render;
 
-        GfxDevice& gfx_device = runner.graphics_device();
         RenderDevice& render_device = gfx_device.device();
 
         render_device.destroy_framebuffer(_default_framebuffers[0]);
@@ -295,15 +320,7 @@ namespace ice
         render_device.destroy_image(_default_attachment_depth_stencil);
         render_device.destroy_image(_default_attachment_color);
         render_device.destroy_renderpass(_default_renderpass);
-    }
-
-    void IceWorldTrait_RenderGfx::on_update(
-        ice::EngineFrame& frame,
-        ice::EngineRunner& runner,
-        ice::WorldPortal& portal
-    ) noexcept
-    {
-        runner.graphics_frame().set_stage_slots(gfx_stage_slots());
+        co_return;
     }
 
 } // namespace ice

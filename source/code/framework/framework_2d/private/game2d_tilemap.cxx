@@ -124,7 +124,7 @@ namespace ice
                 ice::EngineFrame const& frame,
                 ice::render::CommandBuffer cmds,
                 ice::render::RenderCommands& api
-            ) noexcept
+            ) const noexcept
             {
                 api.bind_vertex_buffer(cmds, _render_shared.tile_shape_buffer, 0);
                 api.bind_vertex_buffer(cmds, _render_objects.position_buffer, 1);

@@ -67,7 +67,7 @@ namespace ice
         ice::EngineFrame const& frame,
         ice::render::CommandBuffer cmds,
         ice::render::RenderCommands& api
-    ) noexcept
+    ) const noexcept
     {
         ice::vec4f clear_values[4]
         {
