@@ -39,7 +39,7 @@ namespace ice
 
         bool archetype_info(
             ice::Span<ice::ArchetypeHandle const> archetypes,
-            ice::pod::Array<ice::ArchetypeInfo>& archetype_infos_out
+            ice::Span<ice::ArchetypeInfo> archetype_infos_out
         ) const noexcept override;
 
         auto archetype_info(
