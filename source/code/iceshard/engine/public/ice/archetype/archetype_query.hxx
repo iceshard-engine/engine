@@ -266,7 +266,7 @@ namespace ice
     {
         if (index.find_archetypes(Constant_QueryInfo.index_query, _archetypes))
         {
-            ice::pod::array::reserve(_archetype_infos, ice::size(_archetypes));
+            ice::pod::array::resize(_archetype_infos, ice::size(_archetypes));
             index.archetype_info(
                 _archetypes,
                 _archetype_infos
@@ -436,8 +436,8 @@ namespace ice
     template<ComponentQueryType... Components>
     inline auto ComponentQuery<Components...>::ResultByBlock::entity_count() const noexcept -> ice::u32
     {
-        ice::ArchetypeBlock** block_it = ice::pod::begin(_archetype_blocks);
-        ice::ArchetypeBlock** const block_end = ice::pod::end(_archetype_blocks);
+        ice::ArchetypeBlock* const* block_it = ice::pod::begin(_archetype_blocks);
+        ice::ArchetypeBlock* const* const block_end = ice::pod::end(_archetype_blocks);
 
         ice::u32 result = 0;
         while (block_it != block_end)

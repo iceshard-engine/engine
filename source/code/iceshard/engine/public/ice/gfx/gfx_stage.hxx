@@ -27,7 +27,7 @@ namespace ice::gfx
     struct GfxStageSlot
     {
         ice::StringID name;
-        ice::gfx::GfxStage* stage;
+        ice::gfx::GfxStage const* stage;
     };
 
     class GfxStage
@@ -39,7 +39,7 @@ namespace ice::gfx
             ice::EngineFrame const& frame,
             ice::render::CommandBuffer command_buffer,
             ice::render::RenderCommands& render_commands
-        ) noexcept = 0;
+        ) const noexcept = 0;
     };
 
 } // namespace ice::gfx

@@ -58,26 +58,17 @@ namespace ice
         virtual auto thread_pool() noexcept -> ice::TaskThreadPool& = 0;
 
         virtual auto graphics_device() noexcept -> ice::gfx::GfxDevice& = 0;
-        // virtual auto graphics_runner() noexcept -> ice::gfx::GfxRunner& = 0;
         virtual auto graphics_frame() noexcept -> ice::gfx::GfxFrame& = 0;
 
-        ////virtual auto previous_frame() const noexcept -> EngineFrame const& = 0;
+        virtual auto previous_frame() const noexcept -> ice::EngineFrame const& = 0;
         virtual auto current_frame() const noexcept -> ice::EngineFrame const& = 0;
         virtual auto current_frame() noexcept -> ice::EngineFrame& = 0;
         virtual void next_frame() noexcept = 0;
-
-        //using ScheduleCurrentFrameOperation = ice::ScheduleOperation<ice::EngineRunner>;
-        //using ScheduleNextFrameOperation = ice::ScheduleContextOperation<ice::EngineRunner, ice::EngineFrame&>;
 
         virtual void execute_task(ice::Task<> task, ice::EngineContext context) noexcept = 0;
 
         virtual auto schedule_current_frame() noexcept -> ice::CurrentFrameOperation = 0;
         virtual auto schedule_next_frame() noexcept -> ice::NextFrameOperation = 0;
-
-        //virtual void schedule_internal(
-        //    ScheduleCurrentFrameOperation* operation,
-        //    ScheduleCurrentFrameOperation::DataMemberType data_member
-        //) noexcept = 0;
 
     protected:
         friend CurrentFrameOperation;
