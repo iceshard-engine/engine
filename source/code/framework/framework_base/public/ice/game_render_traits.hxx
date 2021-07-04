@@ -22,4 +22,8 @@ namespace ice
         ice::Allocator& alloc
     ) noexcept -> ice::UniquePtr<ice::GameWorldTrait_Render>;
 
+    auto create_trait_render_finish(
+        ice::Allocator& alloc
+    ) noexcept -> ice::UniquePtr<ice::GameWorldTrait_Render>;
+
 } // namespace ice

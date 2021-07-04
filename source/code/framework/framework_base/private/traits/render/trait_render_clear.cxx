@@ -86,7 +86,6 @@ namespace ice
         );
         api.next_subpass(cmds, ice::render::SubPassContents::Inline);
         api.next_subpass(cmds, ice::render::SubPassContents::Inline);
-        api.end_renderpass(cmds);
     }
 
     auto IceWorldTrait_RenderClear::task_activate_graphics(

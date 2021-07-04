@@ -94,17 +94,20 @@ public:
 
         _trait_render_gfx = ice::create_trait_render_gfx(_allocator);
         _trait_render_clear = ice::create_trait_render_clear(_allocator);
+        _trait_render_finish = ice::create_trait_render_finish(_allocator);
         _trait_render_camera = ice::create_trait_camera(_allocator);
 
 
         _game_gfx_pass->add_stages(_trait_render_gfx->gfx_stage_infos());
         _game_gfx_pass->add_stages(_trait_render_clear->gfx_stage_infos());
+        _game_gfx_pass->add_stages(_trait_render_finish->gfx_stage_infos());
 
 
         ice::WorldManager& world_manager = engine.world_manager();
         _test_world = world_manager.create_world("game.test_world"_sid, &_entity_storage);
         _test_world->add_trait("ice.render_gfx"_sid, _trait_render_gfx.get());
         _test_world->add_trait("ice.render_clear"_sid, _trait_render_clear.get());
+        _test_world->add_trait("ice.render_finish"_sid, _trait_render_finish.get());
         _test_world->add_trait("ice.camera"_sid, _trait_render_camera.get());
         _test_world->add_trait("game"_sid, this);
 
@@ -200,6 +203,7 @@ public:
     {
         _test_world->remove_trait("game"_sid);
         _test_world->remove_trait("ice.camera"_sid);
+        _test_world->remove_trait("ice.render_finish"_sid);
         _test_world->remove_trait("ice.render_clear"_sid);
         _test_world->remove_trait("ice.render_gfx"_sid);
 
@@ -207,6 +211,7 @@ public:
         world_manager.destroy_world("game.test_world"_sid);
 
         _trait_render_camera = nullptr;
+        _trait_render_finish = nullptr;
         _trait_render_clear = nullptr;
         _trait_render_gfx = nullptr;
         _game_gfx_pass = nullptr;
@@ -254,6 +259,7 @@ public:
     ice::UniquePtr<ice::gfx::GfxDynamicPass> _game_gfx_pass;
     ice::UniquePtr<ice::GameWorldTrait_Render> _trait_render_gfx{ ice::make_unique_null<ice::GameWorldTrait_Render>() };
     ice::UniquePtr<ice::GameWorldTrait_Render> _trait_render_clear{ ice::make_unique_null<ice::GameWorldTrait_Render>() };
+    ice::UniquePtr<ice::GameWorldTrait_Render> _trait_render_finish{ ice::make_unique_null<ice::GameWorldTrait_Render>() };
     ice::UniquePtr<ice::WorldTrait> _trait_render_camera{ ice::make_unique_null<ice::WorldTrait>() };
 
     ice::World* _test_world;

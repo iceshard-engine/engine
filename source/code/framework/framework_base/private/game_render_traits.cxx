@@ -1,6 +1,7 @@
 #include <ice/game_render_traits.hxx>
 #include "traits/render/trait_render_gfx.hxx"
 #include "traits/render/trait_render_clear.hxx"
+#include "traits/render/trait_render_finish.hxx"
 
 namespace ice
 {
@@ -17,6 +18,13 @@ namespace ice
     ) noexcept -> ice::UniquePtr<ice::GameWorldTrait_Render>
     {
         return ice::make_unique<ice::GameWorldTrait_Render, ice::IceWorldTrait_RenderClear>(alloc);
+    }
+
+    auto create_trait_render_finish(
+        ice::Allocator& alloc
+    ) noexcept -> ice::UniquePtr<ice::GameWorldTrait_Render>
+    {
+        return ice::make_unique<ice::GameWorldTrait_Render, ice::IceWorldTrait_RenderFinish>(alloc);
     }
 
 } // namespace ice
