@@ -12,23 +12,9 @@
 
 #include "../iceshard_task_executor.hxx"
 #include "iceshard_gfx_queue_group.hxx"
-#include "iceshard_gfx_pass.hxx"
 
 namespace ice::gfx
 {
-
-    //class IceGfxContextTaskCommands final : public ice::gfx::GfxTaskCommands
-    //{
-    //public:
-    //    IceGfxContextTaskCommands() noexcept = default;
-    //    ~IceGfxContextTaskCommands() noexcept override = default;
-
-    //    void update_texture(
-    //        ice::render::Image image,
-    //        ice::render::Buffer image_contents,
-    //        ice::vec2u extents
-    //    ) noexcept override;
-    //};
 
     class IceGfxTaskFrame : public ice::gfx::GfxFrame
     {
@@ -64,6 +50,8 @@ namespace ice::gfx
         ) noexcept;
         void resume_on_end_stage() noexcept;
 
+        void execute_final_tasks() noexcept;
+
     private:
         ice::Allocator& _allocator;
         ice::gfx::GfxTaskCommands* _task_commands;
@@ -85,7 +73,7 @@ namespace ice::gfx
             ice::Allocator& alloc
         ) noexcept;
 
-        ~IceGfxFrame() noexcept override;
+        ~IceGfxFrame() noexcept override = default;
 
         void set_stage_slot(
             ice::gfx::GfxStageSlot slot
@@ -94,15 +82,6 @@ namespace ice::gfx
         void set_stage_slots(
             ice::Span<ice::gfx::GfxStageSlot const> slots
         ) noexcept override;
-
-
-        //auto aquire_task_commands(ice::StringID_Arg) noexcept -> GfxFrame::GfxAwaitCommandsOperation override;
-
-        //auto frame_end() noexcept -> GfxAwaitFrameEnd override;
-
-        //void execute_task(ice::Task<void> task) noexcept override;
-        void start_all() noexcept;
-        void wait_ready() noexcept;
 
         void enqueue_pass(
             ice::StringID_Arg queue_name,
@@ -118,19 +97,14 @@ namespace ice::gfx
             ice::gfx::IceGfxQueueGroup& queue_group
         ) noexcept;
 
-        //auto task_commands(
-        //    ice::StringID_Arg queue_name
-        //) noexcept -> ice::gfx::GfxTaskCommands& override;
-
     private:
         ice::memory::ProxyAllocator _allocator;
 
         ice::pod::Hash<ice::gfx::GfxPass*> _enqueued_passes;
-        ice::pod::Hash<ice::gfx::IceGfxStage> _stages;
+        ice::pod::Hash<ice::gfx::GfxStageSlot> _stages;
 
         // #todo
         ice::gfx::IceGfxQueueGroup* _queue_group;
-        //ice::IceshardTaskExecutor _task_executor;
     };
 
 } // namespace ice::gfx

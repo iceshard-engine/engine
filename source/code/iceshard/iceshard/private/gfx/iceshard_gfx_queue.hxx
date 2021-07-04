@@ -6,10 +6,10 @@
 #include <ice/gfx/gfx_queue.hxx>
 #include <ice/gfx/gfx_task.hxx>
 
-#include "iceshard_gfx_pass.hxx"
-
 namespace ice::gfx
 {
+
+    struct GfxStageSlot;
 
     class IceGfxQueue final : public ice::gfx::GfxQueue, public ice::gfx::GfxTaskCommands
     {
@@ -44,7 +44,7 @@ namespace ice::gfx
         void execute_pass(
             ice::EngineFrame const& frame,
             ice::gfx::GfxPass const* gfx_pass,
-            ice::pod::Hash<ice::gfx::IceGfxStage> const& stages
+            ice::pod::Hash<ice::gfx::GfxStageSlot> const& stages
         ) noexcept;
 
         void update_texture(

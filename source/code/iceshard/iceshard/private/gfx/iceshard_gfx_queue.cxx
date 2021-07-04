@@ -1,5 +1,4 @@
 #include "iceshard_gfx_queue.hxx"
-#include "iceshard_gfx_pass.hxx"
 
 #include <ice/gfx/gfx_stage.hxx>
 #include <ice/gfx/gfx_pass.hxx>
@@ -77,7 +76,7 @@ namespace ice::gfx
     void IceGfxQueue::execute_pass(
         ice::EngineFrame const& frame,
         ice::gfx::GfxPass const* gfx_pass,
-        ice::pod::Hash<ice::gfx::IceGfxStage> const& stages
+        ice::pod::Hash<ice::gfx::GfxStageSlot> const& stages
     ) noexcept
     {
         ice::memory::StackAllocator_1024 alloc;
@@ -95,7 +94,12 @@ namespace ice::gfx
         {
             for (ice::StringID_Hash stage_id : stage_order)
             {
-                ice::gfx::GfxStage* stage = ice::pod::hash::get(stages, ice::hash(stage_id), IceGfxStage{ }).stage;
+                ice::gfx::GfxStage const* stage = ice::pod::hash::get(
+                    stages,
+                    ice::hash(stage_id),
+                    ice::gfx::GfxStageSlot{ }
+                ).stage;
+
                 stage->record_commands(frame, _primary_commands[1], _render_commands);
             }
 
