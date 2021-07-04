@@ -55,6 +55,13 @@ namespace ice
 
         auto requests() const noexcept -> ice::Span<EngineRequest const>;
 
+        auto schedule_frame_end() noexcept -> ice::FrameEndOperation override;
+
+    protected:
+        void schedule_internal(
+            ice::FrameEndOperationData& operation
+        ) noexcept override;
+
     private:
         ice::u32 const _index;
         ice::memory::ScratchAllocator& _allocator;
@@ -70,6 +77,8 @@ namespace ice
 
         ice::Vector<ice::Task<>> _frame_tasks;
         ice::IceshardTaskExecutor _task_executor;
+
+        std::atomic<ice::FrameEndOperationData*> _frame_end_operation;
     };
 
 } // namespace ice

@@ -5,7 +5,6 @@
 #include "world/iceshard_world.hxx"
 #include "world/iceshard_world_manager.hxx"
 
-#include "gfx/iceshard_gfx_pass.hxx"
 #include "gfx/iceshard_gfx_queue.hxx"
 
 #include <ice/gfx/gfx_queue.hxx>
@@ -112,12 +111,18 @@ namespace ice
             _allocator.destroy(trait_task.event);
         }
 
-         _graphics_thread->stop();
-         _graphics_thread->join();
-         _graphics_thread = nullptr;
-         _thread_pool = nullptr;
+        _mre_frame_logic.wait();
+        _mre_gfx_commands.wait();
+        _mre_gfx_draw.wait();
 
         deactivate_worlds();
+
+        _gfx_current_frame->execute_final_tasks();
+
+        _graphics_thread->stop();
+        _graphics_thread->join();
+        _graphics_thread = nullptr;
+        _thread_pool = nullptr;
 
         _gfx_current_frame = nullptr;
 
@@ -153,20 +158,15 @@ namespace ice
         return *_gfx_device;
     }
 
-    //auto IceshardEngineRunner::graphics_frame() noexcept -> ice::gfx::GfxScheduleFrameOperation
-    //{
-    //    return ice::gfx::GfxScheduleFrameOperation{ *_graphics_thread, *_gfx_current_frame };
-    //}
-
     auto IceshardEngineRunner::graphics_frame() noexcept -> ice::gfx::GfxFrame&
     {
         return *_gfx_current_frame;
     }
 
-    //auto IceshardEngineRunner::previous_frame() const noexcept -> EngineFrame const&
-    //{
-    //    return *_previous_frame;
-    //}
+    auto IceshardEngineRunner::previous_frame() const noexcept -> ice::EngineFrame const&
+    {
+        return *_previous_frame;
+    }
 
     auto IceshardEngineRunner::current_frame() const noexcept -> EngineFrame const&
     {
@@ -481,25 +481,6 @@ namespace ice
         //    }
         //}
     }
-
-    //auto IceshardEngineRunner::graphics_task(
-    //    ice::UniquePtr<ice::gfx::IceGfxFrame> gfx_frame,
-    //    ice::ManualResetEvent* reset_event
-    //) noexcept -> ice::Task<>
-    //{
-    //    ice::u32 const image_index = _gfx_device->next_frame();
-    //    ice::gfx::IceGfxQueueGroup& queue_group = _gfx_device->queue_group(image_index);
-
-    //    gfx_frame->start_all();
-    //    //gfx_frame->execute_passes(previous_frame(), queue_group);
-    //    gfx_frame->wait_ready();
-    //    _previous_frame->wait_ready();
-
-    //    _gfx_device->present(image_index);
-
-    //    reset_event->set();
-    //    co_return;
-    //}
 
     void IceshardEngineRunner::execute_task(ice::Task<> task, ice::EngineContext context) noexcept
     {

@@ -54,6 +54,20 @@ namespace ice
 
     IceshardMemoryFrame::~IceshardMemoryFrame() noexcept
     {
+        ice::FrameEndOperationData* operation_head = _frame_end_operation;
+        while (_frame_end_operation.compare_exchange_weak(operation_head, nullptr, std::memory_order::relaxed, std::memory_order::acquire) == false)
+        {
+            continue;
+        }
+
+        ice::EngineTaskOperationBaseData* operation = operation_head;
+        while (operation != nullptr)
+        {
+            ice::EngineTaskOperationBaseData* next_operation = operation->next;
+            operation->coroutine.resume();
+            operation = next_operation;
+        }
+
         _task_executor.wait_ready();
 
         for (auto const& entry : _named_objects)
@@ -165,6 +179,29 @@ namespace ice
     auto IceshardMemoryFrame::requests() const noexcept -> ice::Span<EngineRequest const>
     {
         return _requests;
+    }
+
+    auto IceshardMemoryFrame::schedule_frame_end() noexcept -> ice::FrameEndOperation
+    {
+        return { *this };
+    }
+
+    void IceshardMemoryFrame::schedule_internal(ice::FrameEndOperationData& operation) noexcept
+    {
+        ice::FrameEndOperationData* expected_head = _frame_end_operation.load(std::memory_order_acquire);
+
+        do
+        {
+            operation.next = expected_head;
+        }
+        while (
+            _frame_end_operation.compare_exchange_weak(
+                expected_head,
+                &operation,
+                std::memory_order_release,
+                std::memory_order_acquire
+            ) == false
+        );
     }
 
 } // namespace ice

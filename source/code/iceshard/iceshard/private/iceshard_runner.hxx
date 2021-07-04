@@ -56,9 +56,7 @@ namespace ice
         auto graphics_device() noexcept -> ice::gfx::GfxDevice& override;
         auto graphics_frame() noexcept -> ice::gfx::GfxFrame& override;
 
-        //auto graphics_frame() noexcept -> ice::gfx::GfxScheduleFrameOperation override;
-
-        //auto previous_frame() const noexcept -> EngineFrame const& override;
+        auto previous_frame() const noexcept -> ice::EngineFrame const& override;
         auto current_frame() const noexcept -> EngineFrame const& override;
         auto current_frame() noexcept -> EngineFrame& override;
         void next_frame() noexcept override;
@@ -71,11 +69,6 @@ namespace ice
             ice::u32 framebuffer_index,
             ice::UniquePtr<ice::gfx::IceGfxFrame> gfx_frame
         ) noexcept -> ice::Task<>;
-
-        //auto graphics_task(
-        //    ice::UniquePtr<ice::gfx::IceGfxFrame> gfx_frame,
-        //    ice::ManualResetEvent* reset_event
-        //) noexcept -> ice::Task<>;
 
         void execute_task(ice::Task<> task, ice::EngineContext context) noexcept override;
         void remove_finished_tasks() noexcept;
