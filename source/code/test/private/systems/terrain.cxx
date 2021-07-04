@@ -520,7 +520,7 @@ namespace ice::trait
         ice::EngineFrame const& frame,
         ice::render::CommandBuffer cmds,
         ice::render::RenderCommands& render_commands
-    ) noexcept
+    ) const noexcept
     {
         render_commands.bind_pipeline(cmds, _render_cache->_terrain_pipeline[_debug_pl]);
         render_commands.bind_resource_set(cmds, _render_cache->_terrain_pipeline_layout, _render_cache->_terrain_resources, 1);

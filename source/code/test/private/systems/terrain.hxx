@@ -38,7 +38,7 @@ namespace ice::trait
             ice::EngineFrame const& frame,
             ice::render::CommandBuffer command_buffer,
             ice::render::RenderCommands& render_commands
-        ) noexcept override;
+        ) const noexcept override;
 
         struct RenderCache;
 

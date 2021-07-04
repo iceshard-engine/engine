@@ -703,14 +703,31 @@ struct MyGame::TraitContainer : public ice::WorldTrait
     //EndStage _end;
 };
 
-auto foo(ice::EngineRunner& runner) noexcept -> ice::Task<>
-{
-    co_return;
-}
-
 void MyGame::on_game_begin(ice::EngineRunner& runner) noexcept
 {
-    runner.execute_task(foo(runner), ice::EngineContext::EngineRunner);
+    ice::vec2u extent = runner.graphics_device().swapchain().extent();
+
+    ice::StringID components[]{ ice::Camera::Identifier, ice::CameraOrtho::Identifier };
+    ice::ArchetypeQueryCriteria query_criteria{
+        .components = components
+    };
+
+    ice::ArchetypeHandle ortho_arch = _archetype_index->find_archetype(query_criteria);
+
+    ice::Camera const camera{
+        .name = "camera.default"_sid,
+        .position = { 0.f, 0.f, 0.f },
+        .front = { 0.f, 0.f, -1.f }
+    };
+    ice::CameraOrtho const orto_values{
+        .left_right = { 0.f, (ice::f32)extent.x },
+        .top_bottom = { (ice::f32)extent.y, 0.f },
+        .near_far = { 0.1f, 100.f }
+    };
+
+    ice::Entity camera_entity = _current_engine->entity_index().create();
+    _entity_storage.set_archetype_with_data(camera_entity, ortho_arch, camera, orto_values);
+
 
     ice::EngineRequest requests[]{
         ice::create_request(ice::Request_ActivateWorld, _test_world)

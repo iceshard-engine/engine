@@ -335,7 +335,7 @@ namespace ice::trait
         ice::EngineFrame const& frame,
         ice::render::CommandBuffer cmds,
         ice::render::RenderCommands& api
-    ) noexcept
+    ) const noexcept
     {
         api.bind_resource_set(
             cmds,
