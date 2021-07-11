@@ -43,20 +43,18 @@ namespace ice::gfx
     ) noexcept
     {
         ice::detail::ScheduleOperationData& data = operation->*data_member;
-        ice::detail::ScheduleOperationData* expected_head = _task_head_start.load(std::memory_order_acquire);
 
-        do
+        ice::detail::ScheduleOperationData* new_operation = &data;
+        ice::detail::ScheduleOperationData* old_operation = _task_head_start.exchange(new_operation, std::memory_order::memory_order_acquire);
+
+        if (old_operation == nullptr)
         {
-            data._next = expected_head;
+            _task_head_start.store(new_operation, std::memory_order::relaxed);
         }
-        while (
-            _task_head_start.compare_exchange_weak(
-                expected_head,
-                &data,
-                std::memory_order_release,
-                std::memory_order_acquire
-            ) == false
-        );
+        else
+        {
+            old_operation->_next = new_operation;
+        }
     }
 
     void IceGfxTaskFrame::schedule_internal(

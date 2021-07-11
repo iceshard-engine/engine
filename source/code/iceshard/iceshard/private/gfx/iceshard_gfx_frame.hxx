@@ -60,6 +60,8 @@ namespace ice::gfx
         ice::IceshardTaskExecutor _task_executor;
 
         std::atomic<ice::detail::ScheduleOperationData*> _task_head_start;
+        std::atomic<ice::detail::ScheduleOperationData*> _task_tail_start;
+
         std::atomic<ice::gfx::GfxFrameCommandsOperation::OperationData*> _task_head_commands;
         std::atomic<ice::detail::ScheduleOperationData*> _task_head_end;
 
