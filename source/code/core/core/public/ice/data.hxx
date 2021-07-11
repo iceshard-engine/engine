@@ -42,6 +42,16 @@ namespace ice
     }
 
     template<typename T>
+    constexpr auto data_view(ice::Span<T> span, ice::u32 alignment = alignof(T)) noexcept -> ice::Data
+    {
+        return Data{
+            .location = span.data(),
+            .size = static_cast<ice::u32>(span.size_bytes()),
+            .alignment = alignment,
+        };
+    }
+
+    template<typename T>
     constexpr auto data_view(ice::Span<T const> span, ice::u32 alignment = alignof(T)) noexcept -> ice::Data
     {
         return Data{
