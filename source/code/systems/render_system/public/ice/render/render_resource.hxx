@@ -53,7 +53,7 @@ namespace ice::render
         ice::render::ResourceType resource_type;
         ice::u32 binding_index;
         ice::u32 array_element = 0;
-        ice::Span<ice::render::ResourceUpdateInfo> resources;
+        ice::Span<ice::render::ResourceUpdateInfo const> resources;
     };
 
 } // namespace ice::render

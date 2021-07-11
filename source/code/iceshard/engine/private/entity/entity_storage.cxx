@@ -92,7 +92,7 @@ namespace ice
             ice::u32& out_block_index
         ) noexcept
         {
-            ice::ArchetypeBlock*& first_block = out_block;
+            ice::ArchetypeBlock* first_block = out_block;
             if (detail::find_free_block(out_block, out_block_index) == false)
             {
                 out_block_index = 0;
@@ -149,21 +149,17 @@ namespace ice
 
     EntityStorage::~EntityStorage() noexcept
     {
-        ice::pod::Array<ice::ArchetypeInfo> info{ _allocator };
-
         for (auto const& entry : _archetype_blocks)
         {
-            ice::pod::array::clear(info);
-            ice::ArchetypeHandle const handle = static_cast<ice::ArchetypeHandle>(entry.key);
-            _archetype_index.archetype_info(
-                ice::Span<ice::ArchetypeHandle const>{ &handle , 1 },
-                info
-            );
+            ice::ArchetypeHandle const handle[1]{ static_cast<ice::ArchetypeHandle>(entry.key) };
+            ice::ArchetypeInfo info[1];
+            _archetype_index.archetype_info(handle, info);
 
             ice::ArchetypeBlock* block = entry.value;
             while (block != nullptr)
             {
                 ice::ArchetypeBlock* next_block = block->next;
+                block->next = nullptr; // TODO: Remove the tail block removal assert?
                 info[0].block_allocator->release_block(block);
                 block = next_block;
             }
@@ -193,14 +189,11 @@ namespace ice
         }
 
         ice::ArchetypeHandle const archetypes[2]{
-            info.archetype,
-            archetype
+            archetype,
+            info.archetype
         };
-        ice::pod::Array<ice::ArchetypeInfo> archetype_info{ _allocator };
-        _archetype_index.archetype_info(
-            ice::Span<ArchetypeHandle const>{ archetypes, 2 },
-            archetype_info
-        );
+        ice::ArchetypeInfo archetype_info[2]{ };
+        _archetype_index.archetype_info(archetypes, archetype_info);
 
         if (info.archetype != ArchetypeHandle::Invalid)
         {
@@ -216,11 +209,11 @@ namespace ice
 
                 if (source_index != info.index)
                 {
-                    detail::ArchetypeDataOperation move_operation{ };
-                    move_operation.source_archetype = &archetype_info[0];
+                    detail::EntityDataOperation move_operation{ };
+                    move_operation.source_archetype = &archetype_info[1];
                     move_operation.source_block = old_block;
                     move_operation.source_index = source_index;
-                    move_operation.destination_archetype = &archetype_info[0];
+                    move_operation.destination_archetype = &archetype_info[1];
                     move_operation.destination_block = old_block;
                     move_operation.destination_index = info.index;
 
@@ -238,8 +231,6 @@ namespace ice
             }
         }
 
-        ice::u32 const dst_archetype_index = ice::pod::array::size(archetype_info) - 1;
-
         // Get the destination archetype block
         ice::ArchetypeBlock* dst_block = ice::pod::hash::get(
             _archetype_blocks,
@@ -249,7 +240,7 @@ namespace ice
 
         ice::u32 block_index;
         detail::find_or_allocate_block(
-            archetype_info[dst_archetype_index],
+            archetype_info[0],
             dst_block,
             block_index
         );
@@ -270,7 +261,7 @@ namespace ice
 
         detail::prepare_entity_data(
             entity,
-            archetype_info[dst_archetype_index],
+            archetype_info[0],
             dst_block,
             info.index
         );
@@ -283,6 +274,122 @@ namespace ice
             ice::hash(entity),
             detail::make_instance(info)
         );
+    }
+
+    void EntityStorage::set_archetypes(
+        ice::ArchetypeHandle archetype,
+        ice::Span<ice::Entity const> entities,
+        ice::ArchetypeOperation operation
+    ) noexcept
+    {
+        // TODO: Remove that const cast for the operation.
+        ice::detail::ArchetypeConstBlock const data_operation_block{
+            .entity_count = operation.source_entity_count,
+            .block_size = operation.source_data.size,
+            .block_data = operation.source_data.location,
+        };
+        ice::detail::ArchetypeDataOperation data_operation{
+            .source_archetype = operation.source_archetype,
+            .source_block = &data_operation_block,
+            .source_offset = operation.source_data_offset,
+            .source_count = operation.source_entity_count,
+        };
+        //ice::pod::Array<ice::detail::ArchetypeDataOperation> data_operations{ _allocator };
+        //ice::pod::array::push_back(data_operations,
+        //    ice::detail::ArchetypeDataOperation
+        //    {
+        //        .source_archetype = operation.source_archetype,
+        //        .source_block = operation.source_block,
+        //        .source_offset = 0,
+        //        .source_count = 0,
+        //    }
+        //);
+
+        for (ice::Entity entity : entities)
+        {
+            ICE_ASSERT(
+                ice::pod::hash::has(_instances, ice::hash(entity)) == false,
+                "Cannot set an archetype in bulk for entities that already have an archetype!"
+            );
+        }
+
+        ice::ArchetypeInfo archetype_infos[1]{ };
+        ice::ArchetypeHandle const archetype_handles[1]{ archetype };
+        if (_archetype_index.archetype_info(archetype_handles, archetype_infos) == false)
+        {
+            // TODO: assert?
+            return;
+        }
+
+        // Get the destination archetype block
+        ice::ArchetypeBlock* dst_block = ice::pod::hash::get(
+            _archetype_blocks,
+            ice::hash(archetype),
+            nullptr
+        );
+
+        ice::u32 block_index;
+        detail::find_or_allocate_block(
+            archetype_infos[0],
+            dst_block,
+            block_index
+        );
+
+        if (block_index == 0)
+        {
+            ice::pod::hash::set(
+                _archetype_blocks,
+                ice::hash(archetype),
+                dst_block
+            );
+        }
+
+        ice::ArchetypeBlock* const first_block = ice::pod::hash::get(
+            _archetype_blocks,
+            ice::hash(archetype),
+            nullptr
+        );
+
+        ice::u32 const predicted_instance_count = ice::u32(
+            ice::f32(ice::pod::array::size(_instances._hash) + data_operation.source_count) / 0.6f
+        );
+        ice::pod::hash::reserve(_instances, predicted_instance_count);
+
+        do
+        {
+            dst_block = first_block;
+            detail::find_or_allocate_block(
+                archetype_infos[0],
+                dst_block,
+                block_index
+            );
+
+            data_operation.destination_archetype = archetype_infos + 0;
+            data_operation.destination_block = dst_block;
+            data_operation.destination_offset = dst_block->entity_count;
+            data_operation.destination_count = ice::min(dst_block->entity_count_max - dst_block->entity_count, data_operation.source_count);
+            dst_block->entity_count += data_operation.destination_count;
+
+            detail::EntityInstanceInfo instance_info;
+            instance_info.archetype = archetype;
+            instance_info.block = block_index;
+            instance_info.index = data_operation.destination_offset;
+
+            // Create a instance for each entity we just wrote to
+            for (ice::u32 entity_idx = 0; entity_idx < data_operation.destination_count; ++entity_idx)
+            {
+                ice::pod::hash::set(
+                    _instances,
+                    ice::hash(entities[entity_idx]),
+                    detail::make_instance(instance_info)
+                );
+
+                instance_info.index += 1;
+            }
+
+            data_operation = detail::copy_archetype_data(data_operation);
+
+        } while (data_operation.source_count > 0);
     }
 
     void EntityStorage::change_archetype(
@@ -306,11 +413,8 @@ namespace ice
             info.archetype,
             new_archetype
         };
-        ice::pod::Array<ice::ArchetypeInfo> archetype_info{ _allocator };
-        _archetype_index.archetype_info(
-            ice::Span<ArchetypeHandle const>{ archetypes, 2 },
-            archetype_info
-        );
+        ice::ArchetypeInfo archetype_info[2]{ };
+        _archetype_index.archetype_info(archetypes, archetype_info);
 
         // Get the destination archetype block
         ice::ArchetypeBlock* dst_block = ice::pod::hash::get(
@@ -339,7 +443,7 @@ namespace ice
             if (detail::get_block_at_index(src_block, info.block))
             {
                 // Copy to new archetype block
-                detail::ArchetypeDataOperation move_operation{ };
+                detail::EntityDataOperation move_operation{ };
                 move_operation.source_archetype = &archetype_info[0];
                 move_operation.source_block = src_block;
                 move_operation.source_index = info.index;
@@ -452,11 +556,9 @@ namespace ice
         }
         else
         {
-            ice::pod::Array<ice::ArchetypeInfo> archetype_info{ _allocator };
-            _archetype_index.archetype_info(
-                ice::Span<ArchetypeHandle const>{ &info.archetype, 1 },
-                archetype_info
-            );
+            ice::ArchetypeHandle archetype_handles[1]{ info.archetype };
+            ice::ArchetypeInfo archetype_info[1]{ };
+            _archetype_index.archetype_info(archetype_handles, archetype_info);
 
             ice::pod::array::reserve(new_components, ice::size(archetype_info[0].components) + 1);
             ice::pod::array::push_back(new_components, archetype_info[0].components);
@@ -506,11 +608,9 @@ namespace ice
             return;
         }
 
-        ice::pod::Array<ice::ArchetypeInfo> archetype_info{ _allocator };
-        _archetype_index.archetype_info(
-            ice::Span<ArchetypeHandle const>{ &info.archetype, 1 },
-            archetype_info
-        );
+        ice::ArchetypeHandle archetype_handle[1]{ info.archetype };
+        ice::ArchetypeInfo archetype_info[1]{ };
+        _archetype_index.archetype_info(archetype_handle, archetype_info);
 
         ice::pod::array::reserve(new_components, ice::size(archetype_info[0].components));
         for (ice::StringID_Arg component : archetype_info[0].components)
@@ -559,11 +659,9 @@ namespace ice
             return;
         }
 
-        ice::pod::Array<ice::ArchetypeInfo> archetype_info{ _allocator };
-        _archetype_index.archetype_info(
-            ice::Span<ArchetypeHandle const>{ &info.archetype, 1 },
-            archetype_info
-        );
+        ice::ArchetypeHandle archetype_handle[1]{ info.archetype };
+        ice::ArchetypeInfo archetype_info[1]{ };
+        _archetype_index.archetype_info(archetype_handle, archetype_info);
 
         ice::ArchetypeBlock* old_block = ice::pod::hash::get(
             _archetype_blocks,
@@ -577,7 +675,7 @@ namespace ice
 
             if (source_index != info.index)
             {
-                detail::ArchetypeDataOperation move_operation{ };
+                detail::EntityDataOperation move_operation{ };
                 move_operation.source_archetype = &archetype_info[0];
                 move_operation.source_block = old_block;
                 move_operation.source_index = source_index;
@@ -633,5 +731,49 @@ namespace ice
             );
         }
     }
+
+    //bool EntityStorage::query_entity(
+    //    ice::Entity entity,
+    //    ice::ArchetypeInfo* archetype_info_out,
+    //    ice::ArchetypeBlock* entity_block_out,
+    //    ice::u32 entity_index_out
+    //) noexcept
+    //{
+    //    ice::EntityInstance instance = ice::pod::hash::get(_instances, ice::hash(entity), ice::EntityInstance::Invalid);
+
+    //    ice::detail::EntityInstanceInfo instance_info = detail::get_instance_info(instance);
+    //    if (instance_info.archetype == ArchetypeHandle::Invalid)
+    //    {
+    //        return false;
+    //    }
+
+    //    ice::ArchetypeBlock* block = ice::pod::hash::get(_archetype_blocks, ice::hash(instance_info.archetype), nullptr);
+    //    if (detail::get_block_at_index(block, instance_info.block) == false)
+    //    {
+    //        ICE_LOG(
+    //            ice::LogSeverity::Error, ice::LogTag::Engine,
+    //            "Encountered invalid Archetype entity instance. This entity [{:x}] seems to be dead?",
+    //            ice::hash(entity)
+    //        );
+    //        return false;
+    //    }
+
+    //    ice::pod::Array<ice::ArchetypeInfo> archetype_info{ _allocator };
+    //    bool const found_archetype = _archetype_index.archetype_info(
+    //        ice::Span<ArchetypeHandle const>{ &instance_info.archetype, 1 },
+    //        archetype_info
+    //    );
+
+    //    if (found_archetype == false)
+    //    {
+    //        return false;
+    //    }
+
+    //    *archetype_info_out = archetype_info[0];
+    //    *entity_block_out = *block; // makes a copy
+    //    entity_block_out->next = nullptr;
+    //    entity_index_out = instance_info.index;
+    //    return true;
+    //}
 
 } // namespace ice

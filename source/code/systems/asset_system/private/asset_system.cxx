@@ -250,7 +250,7 @@ namespace ice
                         .pipeline = pipeline,
                         .baked_data = ice::Memory{ },
                         .loaded_data = ice::Memory{ },
-                        .object = detail::make_empty_object(_allocator, result_status),
+                        .object = detail::make_empty_object(_allocator, result_status, resource->metadata()),
                     }
                 );
             }
@@ -264,7 +264,7 @@ namespace ice
                     current_info.pipeline = pipeline;
 
                     _allocator.destroy(current_info.object);
-                    current_info.object = detail::make_empty_object(_allocator, result_status);
+                    current_info.object = detail::make_empty_object(_allocator, result_status, resource->metadata());
 
                     // #todo log asset replacement
                 }
@@ -357,7 +357,7 @@ namespace ice
                     .pipeline = pipeline,
                     .baked_data = ice::Memory{ },
                     .loaded_data = ice::Memory{ },
-                    .object = detail::make_empty_object(_allocator, result_status),
+                    .object = detail::make_empty_object(_allocator, result_status, resource->metadata()),
                 }
             );
         }
@@ -372,7 +372,7 @@ namespace ice
 
                 //_oven_alloc.deallocate(current_info.object->data.location);
                 _allocator.destroy(current_info.object);
-                current_info.object = detail::make_empty_object(_allocator, AssetStatus::Unloading);
+                current_info.object = detail::make_empty_object(_allocator, AssetStatus::Unloading, { });
 
                 // #todo log asset replacement
             }

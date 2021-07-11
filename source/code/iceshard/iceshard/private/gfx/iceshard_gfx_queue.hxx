@@ -9,6 +9,8 @@
 namespace ice::gfx
 {
 
+    struct GfxStageSlot;
+
     class IceGfxQueue final : public ice::gfx::GfxQueue, public ice::gfx::GfxTaskCommands
     {
     public:
@@ -41,7 +43,8 @@ namespace ice::gfx
 
         void execute_pass(
             ice::EngineFrame const& frame,
-            ice::gfx::GfxPass* gfx_pass
+            ice::gfx::GfxPass const* gfx_pass,
+            ice::pod::Hash<ice::gfx::GfxStageSlot> const& stages
         ) noexcept;
 
         void update_texture(

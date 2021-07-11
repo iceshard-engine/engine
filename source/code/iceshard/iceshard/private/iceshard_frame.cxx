@@ -30,6 +30,7 @@ namespace ice
         ice::memory::ScratchAllocator& alloc
     ) noexcept
         : ice::EngineFrame{ }
+        , _index{ detail::global_frame_counter }
         , _allocator{ alloc }
         , _inputs_allocator{ _allocator, detail::InputsAllocatorCapacity }
         , _request_allocator{ _allocator, detail::RequestAllocatorCapacity }
@@ -53,12 +54,31 @@ namespace ice
 
     IceshardMemoryFrame::~IceshardMemoryFrame() noexcept
     {
+        ice::FrameEndOperationData* operation_head = _frame_end_operation;
+        while (_frame_end_operation.compare_exchange_weak(operation_head, nullptr, std::memory_order::relaxed, std::memory_order::acquire) == false)
+        {
+            continue;
+        }
+
+        ice::EngineTaskOperationBaseData* operation = operation_head;
+        while (operation != nullptr)
+        {
+            ice::EngineTaskOperationBaseData* next_operation = operation->next;
+            operation->coroutine.resume();
+            operation = next_operation;
+        }
+
         _task_executor.wait_ready();
 
         for (auto const& entry : _named_objects)
         {
             _data_allocator.deallocate(entry.value);
         }
+    }
+
+    auto IceshardMemoryFrame::index() const noexcept -> ice::u32
+    {
+        return _index;
     }
 
     auto IceshardMemoryFrame::allocator() noexcept -> ice::Allocator&
@@ -159,6 +179,29 @@ namespace ice
     auto IceshardMemoryFrame::requests() const noexcept -> ice::Span<EngineRequest const>
     {
         return _requests;
+    }
+
+    auto IceshardMemoryFrame::schedule_frame_end() noexcept -> ice::FrameEndOperation
+    {
+        return { *this };
+    }
+
+    void IceshardMemoryFrame::schedule_internal(ice::FrameEndOperationData& operation) noexcept
+    {
+        ice::FrameEndOperationData* expected_head = _frame_end_operation.load(std::memory_order_acquire);
+
+        do
+        {
+            operation.next = expected_head;
+        }
+        while (
+            _frame_end_operation.compare_exchange_weak(
+                expected_head,
+                &operation,
+                std::memory_order_release,
+                std::memory_order_acquire
+            ) == false
+        );
     }
 
 } // namespace ice

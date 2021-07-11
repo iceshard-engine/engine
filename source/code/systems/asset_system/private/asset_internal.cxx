@@ -8,12 +8,12 @@ namespace ice::detail
         return static_cast<ice::Asset>(reinterpret_cast<uintptr_t>(object));
     }
 
-    auto make_empty_object(ice::Allocator& alloc, ice::AssetStatus status) noexcept -> AssetObject*
+    auto make_empty_object(ice::Allocator& alloc, ice::AssetStatus status, ice::Metadata metadata) noexcept -> AssetObject*
     {
         return alloc.make<AssetObject>(
             status,
             ice::Data{ },
-            ice::Data{ }
+            metadata
         );
     }
 

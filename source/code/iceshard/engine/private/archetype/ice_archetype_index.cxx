@@ -227,11 +227,12 @@ namespace ice
 
     bool IceArchetypeIndex::archetype_info(
         ice::Span<ice::ArchetypeHandle const> archetypes,
-        ice::pod::Array<ice::ArchetypeInfo>& archetype_infos_out
+        ice::Span<ice::ArchetypeInfo> archetype_infos_out
     ) const noexcept
     {
         static ice::IceArchetypeInstance null_instance{ .component_count = 0 };
 
+        ice::u32 archetype_idx = 0;
         ice::u32 archetypes_found = 0;
         for (ice::ArchetypeHandle const handle : archetypes)
         {
@@ -250,14 +251,13 @@ namespace ice
             if (archetype_instance.component_count > 0)
             {
                 archetypes_found += 1;
-                ice::pod::array::push_back(
-                    archetype_infos_out,
-                    archetype_info(archetype_instance)
-                );
+                archetype_infos_out[archetype_idx] = archetype_info(archetype_instance);
             }
+
+            archetype_idx += 1;
         }
 
-        return archetypes_found == ice::size(archetypes);
+        return archetypes_found == archetype_idx;
     }
 
     auto IceArchetypeIndex::archetype_info(

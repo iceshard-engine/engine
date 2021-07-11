@@ -10,8 +10,6 @@
 namespace ice::gfx
 {
 
-    class IceGfxPass;
-
     class IceGfxQueueGroup;
 
     class IceGfxDevice final : public ice::gfx::GfxDevice
@@ -28,9 +26,6 @@ namespace ice::gfx
 
         auto device() noexcept -> ice::render::RenderDevice& override;
         auto swapchain() noexcept -> ice::render::RenderSwapchain const& override;
-
-        auto aquire_pass(ice::StringID_Arg name) noexcept -> ice::gfx::GfxPass& override;
-        //auto create_pass() noexcept -> ice::UniquePtr<ice::gfx::GfxPass> override;
 
         auto resource_tracker() noexcept -> ice::gfx::GfxResourceTracker& override;
 
@@ -49,7 +44,6 @@ namespace ice::gfx
         ice::render::RenderSwapchain* _render_swapchain;
 
         ice::pod::Array<ice::gfx::IceGfxQueueGroup*> _graphics_queues;
-        ice::pod::Hash<ice::gfx::IceGfxPass*> _graphics_passes;
         ice::gfx::IceGfxResourceTracker _resource_tracker;
     };
 

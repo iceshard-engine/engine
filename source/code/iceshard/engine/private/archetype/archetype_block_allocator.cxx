@@ -4,6 +4,8 @@
 namespace ice
 {
 
+    static constexpr ice::u32 Constant_DefaultBlockSize = 64 * 1024;
+
     ArchetypeBlockAllocator::ArchetypeBlockAllocator(
         ice::Allocator& alloc
     ) noexcept
@@ -25,7 +27,7 @@ namespace ice
 
     auto ArchetypeBlockAllocator::block_size() const -> ice::u32
     {
-        return 16 * 1024 - sizeof(ArchetypeBlock);
+        return Constant_DefaultBlockSize - sizeof(ArchetypeBlock);
     }
 
     auto ArchetypeBlockAllocator::allocate_block() noexcept -> ice::ArchetypeBlock*
@@ -41,9 +43,9 @@ namespace ice
 
         if (free_block == nullptr)
         {
-            void* block_data = _allocator.allocate(16 * 1024); // 16 KB blocks
+            void* block_data = _allocator.allocate(Constant_DefaultBlockSize); // 16 KB blocks
             free_block = reinterpret_cast<ArchetypeBlock*>(block_data);
-            free_block->block_size = 16 * 1024 - sizeof(ArchetypeBlock);
+            free_block->block_size = Constant_DefaultBlockSize - sizeof(ArchetypeBlock);
             free_block->block_data = free_block + 1;
         }
 

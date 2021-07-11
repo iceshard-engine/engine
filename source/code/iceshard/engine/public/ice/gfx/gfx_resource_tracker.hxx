@@ -8,7 +8,7 @@ namespace ice::gfx
     class GfxResourceTracker;
 
     template<typename T>
-    inline auto track_resource(
+    inline void track_resource(
         ice::gfx::GfxResourceTracker& tracker,
         ice::StringID_Arg name,
         T resource_handle
@@ -123,7 +123,7 @@ namespace ice::gfx
     } // namespace detail
 
     template<typename T>
-    inline auto track_resource(
+    inline void track_resource(
         ice::gfx::GfxResourceTracker& tracker,
         ice::StringID_Arg name,
         T resource_handle

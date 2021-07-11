@@ -4,10 +4,10 @@ layout (location = 0) in vec2 in_uv;
 
 layout (location = 0) out vec4 out_color;
 
-layout(set = 1, binding = 0) uniform texture2D default_image;
-layout(set = 1, binding = 1) uniform sampler default_sampler;
+layout(set = 0, binding = 1) uniform sampler default_sampler;
+layout(set = 1, binding = 2) uniform texture2D default_image;
 
-layout (std140, set = 1, binding = 2) uniform TilemapProps
+layout (std140, set = 1, binding = 3) uniform TilemapProps
 {
     float width_scale;
     float height_scale;

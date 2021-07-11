@@ -58,12 +58,14 @@ namespace ice
         }
 
         auto update_task(
+            ice::EngineRunner& runner,
             ice::gfx::GfxDevice& device,
-            ice::gfx::GfxFrame& frame,
             ice::render::Image image,
             ice::render::ImageInfo image_info
         ) noexcept -> ice::Task<>
         {
+            ice::gfx::GfxFrame& frame = runner.graphics_frame();
+
             //using namespace gfx;
             ice::gfx::GfxTaskLoadImage const task_info{
                 .image = image,
@@ -132,15 +134,15 @@ namespace ice
 
             _font_texture = device.create_image(font_texture, { });
 
-            GfxPass& pass = runner.graphics_device().aquire_pass("pass.default"_sid);
+            //GfxPass& pass = runner.graphics_device().aquire_pass("pass.default"_sid);
 
-            runner.graphics_frame().execute_task(
+            runner.execute_task(
                 update_task(
+                    runner,
                     runner.graphics_device(),
-                    runner.graphics_frame(),
                     _font_texture,
                     font_texture
-                )
+                ), EngineContext::GraphicsFrame
             );
 
             io.Fonts->TexID = reinterpret_cast<ImTextureID>(_font_texture);

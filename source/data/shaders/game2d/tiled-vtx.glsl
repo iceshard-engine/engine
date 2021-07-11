@@ -22,7 +22,7 @@ void main()
     int matid_offset_x = (in_matid & 0x0003fff0) >> 4;
     int matid_offset_y = (in_matid & 0xfffc0000) >> 18;
 
-    out_uv = in_uv + vec2(matid_offset_x, mattid_offset_y);
+    out_uv = in_uv + vec2(matid_offset_x, matid_offset_y);
 
     vec3 pos = vec3(in_pos, 0) + vec3(in_offset, 1);
     gl_Position = cam.clip * cam.projection * cam.view * vec4(pos, 1);

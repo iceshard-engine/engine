@@ -123,7 +123,7 @@ namespace ice
             ice::EngineFrame const& frame,
             ice::render::CommandBuffer cmds,
             ice::render::RenderCommands& api
-        ) noexcept
+        ) const noexcept override
         {
             ice::u32 const instance_count = *frame.named_object<ice::u32>("game2d.level.instance_count"_sid);
             if (instance_count > 0)
@@ -307,16 +307,23 @@ namespace ice
 
             _render.pipeline = device.create_pipeline(pipeline_info);
 
-            runner.graphics_frame().execute_task(
-                update_image_task(
+            auto update_graphics_task = [](ice::IceGame2DTrait* self, ice::EngineRunner& runner, ImageInfo tiles_texture) -> ice::Task<>
+            {
+                ice::gfx::GfxFrame& gfx_frame = runner.graphics_frame();
+                ice::render::RenderDevice& device = runner.graphics_device().device();
+
+                co_await self->update_image_task(
                     runner.graphics_device(),
-                    runner.graphics_frame(),
-                    _render.textures,
-                    tiles_texture_info
-                )
-            );
-            runner.graphics_frame().execute_task(update_buffers(device));
-            runner.graphics_frame().execute_task(update_textures(runner.graphics_device().device()));
+                    gfx_frame,
+                    self->_render.textures,
+                    tiles_texture
+                );
+
+                co_await self->update_buffers(device);
+                co_await self->update_textures(device);
+            };
+
+            runner.execute_task(update_graphics_task(this, runner, tiles_texture_info), EngineContext::GraphicsFrame);
         }
 
         void on_deactivate(
@@ -376,16 +383,22 @@ namespace ice
                     current_xform += 1;
                 });
 
-            runner.graphics_frame().execute_task(
-                update_instances(runner.graphics_device().device(), xform_span)
-            );
-
-            if (_render.textures != ice::render::Image::Invalid)
+            auto update_graphics_task = [](ice::IceGame2DTrait* self, ice::EngineRunner& runner, Span<Obj2dTransform> xform_span) -> ice::Task<>
             {
-                runner.graphics_device().aquire_pass("pass.default"_sid).add_stage(
-                    "game2d.level"_sid, deps, &_render
-                );
-            }
+                ice::gfx::GfxFrame& gfx_frame = runner.graphics_frame();
+                ice::render::RenderDevice& device = runner.graphics_device().device();
+
+                co_await self->update_instances(runner.graphics_device().device(), xform_span);
+            };
+
+            runner.execute_task(update_graphics_task(this, runner, xform_span), EngineContext::GraphicsFrame);
+
+            //if (_render.textures != ice::render::Image::Invalid)
+            //{
+            //    runner.graphics_device().aquire_pass("pass.default"_sid).add_stage(
+            //        "game2d.level"_sid, deps, &_render
+            //    );
+            //}
         }
 
         auto update_instances(ice::render::RenderDevice& device, ice::Span<Obj2dTransform> const instances) noexcept -> ice::Task<void>

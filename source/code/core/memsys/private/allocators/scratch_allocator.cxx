@@ -62,8 +62,12 @@ namespace ice::memory
         [[unlikely]]
         if (alloc_data_end >= _end)
         {
-            // Save the amount of bytes we are ignoring.
-            alloc_header->allocated_size = ptr_distance(alloc_header, _end) | detail::Constant_FreeMemoryBit;
+            // First we need to check if we even can write into the header!
+            if (ptr_distance(alloc_header, _end) >= sizeof(memory::tracking::AllocationHeader))
+            {
+                // Save the amount of bytes we are ignoring.
+                alloc_header->allocated_size = ptr_distance(alloc_header, _end) | detail::Constant_FreeMemoryBit;
+            }
 
             // The new candidate for the allocation
             candidate_pointer = _begin;
@@ -106,6 +110,12 @@ namespace ice::memory
         // We don't need 'h' anymore.
         alloc_header = nullptr;
 
+        // First we need to check if we even can write into the header!
+        if (ptr_distance(_free, _end) <= sizeof(memory::tracking::AllocationHeader))
+        {
+            _free = _begin;
+        }
+
         // Advance the free pointer past all free slots.
         while (_free != _allocate)
         {
@@ -119,7 +129,7 @@ namespace ice::memory
 
             // Move the free pointer by the given amount of bytes.
             _free = ptr_add(alloc_header, alloc_header->allocated_size & detail::Constant_FreeMemoryMask);
-            if (_free == _end)
+            if (ptr_distance(_free, _end) <= sizeof(memory::tracking::AllocationHeader))
             {
                 _free = _begin;
             }

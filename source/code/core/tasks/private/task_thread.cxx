@@ -159,14 +159,15 @@ namespace ice
                         ice::detail::ScheduleOperationData* next_op = expected_initial_task->_next;
 
                         std::coroutine_handle<> coro_task = expected_initial_task->_coroutine;
-                        if (coro_task.resume(); coro_task.done())
-                        {
-                            coro_task.destroy();
-                        }
-                        else
-                        {
-                            ICE_LOG(ice::LogSeverity::Warning, ice::LogTag::Engine, "TThread, task not finished!");
-                        }
+                        coro_task.resume();
+                        //if (; coro_task.done())
+                        //{
+                        //    //coro_task.destroy();
+                        //}
+                        //else
+                        //{
+                        //    ICE_LOG(ice::LogSeverity::Warning, ice::LogTag::Engine, "TThread, task not finished!");
+                        //}
 
                         expected_initial_task = next_op;
                     }

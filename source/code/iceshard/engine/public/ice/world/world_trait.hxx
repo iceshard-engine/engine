@@ -1,4 +1,5 @@
 #pragma once
+#include <ice/task.hxx>
 
 namespace ice
 {

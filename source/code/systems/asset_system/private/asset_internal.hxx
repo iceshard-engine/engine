@@ -2,6 +2,7 @@
 #include <ice/asset.hxx>
 #include <ice/memory.hxx>
 #include <ice/allocator.hxx>
+#include <ice/resource_meta.hxx>
 
 namespace ice::detail
 {
@@ -10,7 +11,7 @@ namespace ice::detail
     {
         ice::AssetStatus status;
         ice::Data data;
-        ice::Data metadata;
+        ice::Metadata metadata;
     };
 
     auto make_asset(
@@ -19,7 +20,8 @@ namespace ice::detail
 
     auto make_empty_object(
         ice::Allocator& alloc,
-        ice::AssetStatus status
+        ice::AssetStatus status,
+        ice::Metadata metadata
     ) noexcept -> AssetObject*;
 
 } // namespace ice

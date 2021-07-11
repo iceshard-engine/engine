@@ -56,19 +56,38 @@ namespace ice
         auto graphics_device() noexcept -> ice::gfx::GfxDevice& override;
         auto graphics_frame() noexcept -> ice::gfx::GfxFrame& override;
 
-        auto previous_frame() const noexcept -> EngineFrame const& override;
+        auto previous_frame() const noexcept -> ice::EngineFrame const& override;
         auto current_frame() const noexcept -> EngineFrame const& override;
         auto current_frame() noexcept -> EngineFrame& override;
         void next_frame() noexcept override;
 
-        auto graphics_task(
-            ice::UniquePtr<ice::gfx::IceGfxFrame> gfx_frame,
-            ice::ManualResetEvent* reset_event
+        auto logic_frame_task() noexcept -> ice::Task<>;
+        auto excute_frame_task() noexcept -> ice::Task<>;
+
+        auto graphics_frame_task() noexcept -> ice::Task<>;
+        auto render_frame_task(
+            ice::u32 framebuffer_index,
+            ice::UniquePtr<ice::gfx::IceGfxFrame> gfx_frame
         ) noexcept -> ice::Task<>;
+
+        void execute_task(ice::Task<> task, ice::EngineContext context) noexcept override;
+        void remove_finished_tasks() noexcept;
+
+        auto schedule_current_frame() noexcept -> ice::CurrentFrameOperation override;
+        auto schedule_next_frame() noexcept -> ice::NextFrameOperation override;
 
     protected:
         void activate_worlds() noexcept;
         void deactivate_worlds() noexcept;
+
+    private:
+        void schedule_internal(
+            ice::CurrentFrameOperationData& operation
+        ) noexcept override;
+
+        void schedule_internal(
+            ice::NextFrameOperationData& operation
+        ) noexcept override;
 
     private:
         ice::memory::ProxyAllocator _allocator;
@@ -96,8 +115,20 @@ namespace ice
         ice::UniquePtr<ice::gfx::IceGfxDevice> _gfx_device;
         ice::UniquePtr<ice::gfx::IceGfxFrame> _gfx_current_frame;
 
-        ice::Vector<ice::Task<void>> _next_tasks;
-        ice::Vector<ice::Task<void>> _gfx_next_tasks;
+        ice::ManualResetEvent _mre_frame_start = true;
+        ice::ManualResetEvent _mre_frame_logic = true;
+        ice::ManualResetEvent _mre_gfx_commands = true;
+        ice::ManualResetEvent _mre_gfx_draw = true;
+
+        struct TraitTask
+        {
+            ice::ManualResetEvent* event;
+            std::coroutine_handle<> coroutine;
+        };
+        ice::pod::Array<TraitTask> _runner_tasks;
+
+        std::atomic<ice::CurrentFrameOperationData*> _current_op_head;
+        std::atomic<ice::NextFrameOperationData*> _next_op_head;
     };
 
 } // namespace ice

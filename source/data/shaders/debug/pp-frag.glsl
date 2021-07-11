@@ -4,9 +4,9 @@ layout (location = 0) in vec2 in_uv;
 
 layout (location = 0) out vec4 out_color;
 
-layout(input_attachment_index = 0, set = 0, binding = 1) uniform subpassInput rendered_image;
+layout(set = 0, binding = 1) uniform sampler default_sampler;
 
-layout(set = 0, binding = 2) uniform sampler default_sampler;
+layout(input_attachment_index = 0, set = 0, binding = 2) uniform subpassInput rendered_image;
 
 vec3 sepia(vec3 color)
 {

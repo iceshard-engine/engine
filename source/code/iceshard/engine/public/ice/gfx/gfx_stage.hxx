@@ -6,7 +6,29 @@
 namespace ice::gfx
 {
 
-    class GfxDevice;
+    class GfxStage;
+
+    enum class GfxStageType
+    {
+        InitialStage,
+        TransferStage,
+        FinalStage,
+        DrawStage,
+        CustomStage,
+    };
+
+    struct GfxStageInfo
+    {
+        ice::StringID name;
+        ice::Span<ice::StringID const> dependencies;
+        ice::gfx::GfxStageType type = GfxStageType::DrawStage;
+    };
+
+    struct GfxStageSlot
+    {
+        ice::StringID name;
+        ice::gfx::GfxStage const* stage;
+    };
 
     class GfxStage
     {
@@ -17,24 +39,7 @@ namespace ice::gfx
             ice::EngineFrame const& frame,
             ice::render::CommandBuffer command_buffer,
             ice::render::RenderCommands& render_commands
-        ) noexcept = 0;
-    };
-
-    class GfxUpdateStage
-    {
-    public:
-        virtual ~GfxUpdateStage() noexcept = default;
-
-        virtual void prepare_data(
-            ice::gfx::GfxDevice& device
-        ) noexcept { }
-
-        virtual auto record_commands(
-            ice::render::CommandBuffer command_buffer,
-            ice::render::RenderCommands& render_commands
-        ) noexcept -> ice::Task<void> { co_return; }
-
-        virtual auto final_task() noexcept -> ice::Task<void> { co_return; }
+        ) const noexcept = 0;
     };
 
 } // namespace ice::gfx

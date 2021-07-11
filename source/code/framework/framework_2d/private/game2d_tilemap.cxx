@@ -124,7 +124,7 @@ namespace ice
                 ice::EngineFrame const& frame,
                 ice::render::CommandBuffer cmds,
                 ice::render::RenderCommands& api
-            ) noexcept
+            ) const noexcept
             {
                 api.bind_vertex_buffer(cmds, _render_shared.tile_shape_buffer, 0);
                 api.bind_vertex_buffer(cmds, _render_objects.position_buffer, 1);
@@ -236,10 +236,15 @@ namespace ice
                 _loaded = false;
             }
 
-            auto update_images(ice::render::RenderDevice& device) noexcept -> ice::Task<>
+            auto update_images(
+                ice::EngineRunner& runner,
+                ice::render::RenderDevice& device
+            ) noexcept -> ice::Task<>
             {
                 using ice::render::ResourceUpdateInfo;
                 using ice::render::ResourceSetUpdateInfo;
+
+                //co_await runner.graphics_frame().frame_start();
 
                 ResourceUpdateInfo resource_updates[5]{
                     ResourceUpdateInfo{.image = _render_objects.images[0] },
@@ -333,16 +338,15 @@ namespace ice
             }
 
             void update_images(
-                ice::gfx::GfxDevice& device,
-                ice::gfx::GfxFrame& frame
+                ice::EngineRunner& runner
             ) noexcept
             {
                 auto image_task = [](
+                    ice::EngineRunner& runner,
                     ice::gfx::GfxDevice& device,
-                    ice::gfx::GfxFrame& frame,
                     ice::render::Image image,
                     ice::render::ImageInfo image_info
-                ) -> ice::Task<>
+                    ) -> ice::Task<>
                 {
                     ice::gfx::GfxTaskLoadImage const task_info{
                         .image = image,
@@ -351,16 +355,14 @@ namespace ice
 
                     co_await ice::gfx::load_image_data_task(
                         device,
-                        frame,
+                        runner.graphics_frame(),
                         task_info
                     );
                 };
 
                 for (ice::u32 image_idx = 0; image_idx < _render_objects.image_count; ++image_idx)
                 {
-                    frame.execute_task(
-                        image_task(device, frame, _render_objects.images[image_idx], *_render_objects.image_infos[image_idx])
-                    );
+                    image_task(runner, runner.graphics_device(), _render_objects.images[image_idx], *_render_objects.image_infos[image_idx]);
                 }
             }
 
@@ -741,7 +743,13 @@ namespace ice
 
         _render_shared.pipeline = device.create_pipeline(pipeline_info);
 
-        runner.graphics_frame().execute_task(update_buffers(device));
+        auto update_task = [](IceTileMap2D* self, ice::EngineRunner& runner, ice::render::RenderDevice& device) noexcept -> ice::Task<void>
+        {
+            self->update_buffers(device);
+            co_return;
+        };
+
+        runner.execute_task(update_task(this, runner, device), EngineContext::GraphicsFrame);
     }
 
     void IceTileMap2D::on_deactivate(
@@ -804,10 +812,11 @@ namespace ice
                         {
                             tilemap->set_loading();
                             tilemap->create_render_data(_assets, runner.graphics_device(), _render_shared.resource_layout[1]);
-                            runner.graphics_frame().execute_task(
-                                tilemap->update_images(runner.graphics_device().device())
+                            runner.execute_task(
+                                tilemap->update_images(runner, runner.graphics_device().device()),
+                                EngineContext::GraphicsFrame
                             );
-                            tilemap->update_images(runner.graphics_device(), runner.graphics_frame());
+                            tilemap->update_images(runner);
                         }
                         // wait
                     }
@@ -818,9 +827,9 @@ namespace ice
                             "camera.update_view"_sid,
                         };
 
-                        runner.graphics_device().aquire_pass("pass.default"_sid).add_stage(
-                            "game2d.level"_sid, deps, tilemap
-                        );
+                        //runner.graphics_device().aquire_pass("pass.default"_sid).add_stage(
+                        //    "game2d.level"_sid, deps, tilemap
+                        //);
                     }
                 }
             }

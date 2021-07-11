@@ -3,6 +3,9 @@
 #include <ice/unique_ptr.hxx>
 #include <ice/render/render_declarations.hxx>
 #include <ice/render/render_command_buffer.hxx>
+#include <ice/pod/array.hxx>
+
+#include <ice/gfx/gfx_stage.hxx>
 
 namespace ice::gfx
 {
@@ -30,30 +33,63 @@ namespace ice::gfx
     };
 
 
-    class GfxStage;
-
     class GfxPass
     {
     public:
         virtual ~GfxPass() noexcept = default;
 
-        virtual void add_stage(
-            ice::StringID_Arg name,
-            ice::gfx::GfxStage* stage
+        virtual void query_stage_order(
+            ice::pod::Array<ice::StringID_Hash>& stage_order_out
+        ) const noexcept = 0;
+    };
+
+    class GfxDynamicPass : public GfxPass
+    {
+    public:
+        virtual void clear() noexcept = 0;
+
+        virtual void add_stages(
+            ice::Span<ice::gfx::GfxStageInfo const> stage_info
         ) noexcept = 0;
 
-        [[deprecated("A gfx pass will soon no longer accept dynamic dependencies out of the box.")]]
-        virtual void add_stage(
+        inline void add_stage(
+            ice::gfx::GfxStageInfo stage_info
+        ) noexcept;
+
+        inline void add_stage(
             ice::StringID_Arg name,
-            ice::Span<ice::StringID const> dependencies,
-            ice::gfx::GfxStage* stage
-        ) noexcept = 0;
+            std::initializer_list<ice::StringID const> dependencies
+        ) noexcept;
     };
+
+    inline void GfxDynamicPass::add_stage(
+        ice::StringID_Arg name,
+        std::initializer_list<ice::StringID const> dependencies
+    ) noexcept
+    {
+        add_stage(
+            GfxStageInfo{
+                .name = name,
+                .dependencies = ice::Span<ice::StringID const>{ dependencies.begin(), dependencies.size() }
+            }
+        );
+    }
+
+    inline void GfxDynamicPass::add_stage(
+        ice::gfx::GfxStageInfo stage_info
+    ) noexcept
+    {
+        add_stages({ &stage_info, 1 });
+    }
 
     auto create_static_pass(
         ice::Allocator& alloc,
         ice::render::RenderDevice& render_device,
         ice::gfx::GfxPassInfo const& pass_description
     ) noexcept -> ice::UniquePtr<ice::gfx::GfxPass>;
+
+    auto create_dynamic_pass(
+        ice::Allocator& alloc
+    ) noexcept -> ice::UniquePtr<ice::gfx::GfxDynamicPass>;
 
 } // namespace ice::gfx

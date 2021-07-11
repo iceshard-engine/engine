@@ -19,13 +19,15 @@ namespace ice
         ) noexcept;
         ~IceshardMemoryFrame() noexcept override;
 
+        auto index() const noexcept -> ice::u32 override;
+
         auto allocator() noexcept -> ice::Allocator& override;
         auto memory_consumption() noexcept -> ice::u32 override;
 
         auto input_events() noexcept -> ice::pod::Array<ice::input::InputEvent>&;
         auto input_events() const noexcept -> ice::Span<ice::input::InputEvent const> override;
 
-        void execute_task(ice::Task<void> task) noexcept override;
+        void execute_task(ice::Task<void> task) noexcept;
         void start_all() noexcept;
         void wait_ready() noexcept;
 
@@ -53,7 +55,15 @@ namespace ice
 
         auto requests() const noexcept -> ice::Span<EngineRequest const>;
 
+        auto schedule_frame_end() noexcept -> ice::FrameEndOperation override;
+
+    protected:
+        void schedule_internal(
+            ice::FrameEndOperationData& operation
+        ) noexcept override;
+
     private:
+        ice::u32 const _index;
         ice::memory::ScratchAllocator& _allocator;
         ice::memory::ScratchAllocator _inputs_allocator;
         ice::memory::ScratchAllocator _request_allocator;
@@ -67,6 +77,8 @@ namespace ice
 
         ice::Vector<ice::Task<>> _frame_tasks;
         ice::IceshardTaskExecutor _task_executor;
+
+        std::atomic<ice::FrameEndOperationData*> _frame_end_operation;
     };
 
 } // namespace ice

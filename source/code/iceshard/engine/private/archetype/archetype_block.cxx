@@ -23,7 +23,7 @@ namespace ice::detail
         );
     }
 
-    void move_entity_data(ArchetypeDataOperation const& operation) noexcept
+    void move_entity_data(EntityDataOperation const& operation) noexcept
     {
         ice::ArchetypeInfo const* src_archetype = operation.source_archetype;
 
@@ -47,7 +47,7 @@ namespace ice::detail
         entities[operation.source_index] = Entity{ };
     }
 
-    void copy_entity_data(ArchetypeDataOperation const& operation) noexcept
+    void copy_entity_data(EntityDataOperation const& operation) noexcept
     {
         ice::ArchetypeInfo const* src_archetype = operation.source_archetype;
         ice::ArchetypeInfo const* dst_archetype = operation.destination_archetype;
@@ -101,5 +101,78 @@ namespace ice::detail
             sub_component_index += 1;
         }
     }
+
+    auto copy_archetype_data(ArchetypeDataOperation const& operation) noexcept -> ArchetypeDataOperation
+    {
+        ICE_ASSERT(
+            operation.source_count >= operation.destination_count,
+            "An archetype operation cannot provide less source values than it wants to write! [ source: {}, destination: {} ]",
+            operation.source_count, operation.destination_count
+        );
+
+        ice::ArchetypeInfo const* src_archetype = operation.source_archetype;
+        ice::ArchetypeInfo const* dst_archetype = operation.destination_archetype;
+
+        ice::u32 const src_component_count = ice::size(src_archetype->components);
+        ice::u32 const dst_component_count = ice::size(dst_archetype->components);
+        ice::u32 const max_component_count = ice::max(src_component_count, dst_component_count);
+        bool const source_is_smaller = src_component_count < max_component_count;
+
+        ice::u32 src_component_index = 0;
+        ice::u32 dst_component_index = 0;
+
+        ice::u32& main_component_index = (source_is_smaller ? dst_component_index : src_component_index);
+        ice::u32& sub_component_index = (source_is_smaller ? src_component_index : dst_component_index);
+
+        // Iterate over each component in the source archetype
+        for (; main_component_index < max_component_count && src_component_index < src_component_count; ++main_component_index)
+        {
+            ice::u32 const dst_size = dst_archetype->sizes[dst_component_index];
+            ice::u32 const dst_offset = dst_archetype->offsets[dst_component_index] + dst_size * operation.destination_offset;
+
+            // If components do not match, skip the copy and clear memory
+            if (src_archetype->components[src_component_index] != dst_archetype->components[dst_component_index])
+            {
+                void* const ptr = ice::memory::ptr_add(operation.destination_block->block_data, dst_offset);
+
+                ice::memset(ptr, '\0', dst_size * operation.destination_count);
+                continue;
+            }
+
+            ice::u32 const src_size = src_archetype->sizes[src_component_index];
+            ice::u32 const src_offset = src_archetype->offsets[src_component_index] + src_size * operation.source_offset;
+
+            ICE_ASSERT(
+                src_size == dst_size,
+                "Mismatched data size {} != {} for components with the same ID. source: {} ({}), destination: {} ({})",
+                src_size, dst_size,
+                ice::stringid_hint(src_archetype->components[src_component_index]),
+                ice::hash(src_archetype->components[src_component_index]),
+                ice::stringid_hint(src_archetype->components[dst_component_index]),
+                ice::hash(src_archetype->components[dst_component_index])
+            );
+
+            void const* const src_ptr = ice::memory::ptr_add(operation.source_block->block_data, src_offset);
+            void* const dst_ptr = ice::memory::ptr_add(operation.destination_block->block_data, dst_offset);
+
+            // Do a plain copy (we require components to be standard layout and trivially copyable)
+            ice::memcpy(dst_ptr, src_ptr, src_size * operation.destination_count);
+
+            // Increment the sub index
+            sub_component_index += 1;
+        }
+
+        return ArchetypeDataOperation{
+            .source_archetype = operation.source_archetype,
+            .source_block = operation.source_block,
+            .source_offset = operation.source_offset + operation.destination_count,
+            .source_count = operation.source_count - operation.destination_count,
+            .destination_archetype = nullptr,
+            .destination_block = nullptr,
+            .destination_offset = 0,
+            .destination_count = 0,
+        };
+    }
+
 
 } // namespace ice::detail
