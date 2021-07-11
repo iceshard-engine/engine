@@ -51,8 +51,8 @@ namespace ice::render
 
     struct PipelineLayoutInfo
     {
-        ice::Span<ice::render::PipelinePushConstant> push_constants;
-        ice::Span<ice::render::ResourceSetLayout> resource_layouts;
+        ice::Span<ice::render::PipelinePushConstant const> push_constants;
+        ice::Span<ice::render::ResourceSetLayout const> resource_layouts;
     };
 
     struct PipelineInfo
