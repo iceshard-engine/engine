@@ -1,6 +1,8 @@
 #pragma once
 #include <ice/game_framework.hxx>
 #include <ice/game_render_traits.hxx>
+#include <ice/game_sprites.hxx>
+#include <ice/game_entity.hxx>
 #include <ice/game_camera.hxx>
 
 #include <ice/memory/proxy_allocator.hxx>
@@ -30,11 +32,11 @@
 using ice::operator""_sid;
 using ice::operator""_uri;
 
-struct TestComponent
+struct AnimComponent
 {
-    static constexpr ice::StringID Identifier = "test.component"_sid;
-
-    ice::i32 entity_index;
+    static constexpr ice::StringID Identifier = "test.anim"_sid;
+    ice::u32 steps;
+    ice::f32 speed;
 };
 struct TestComponent2
 {
@@ -63,6 +65,7 @@ public:
         , _entity_storage{ _allocator, *_archetype_index, _archetype_alloc }
         , _game_gfx_pass{ ice::gfx::create_dynamic_pass(_allocator) }
         , _army{ _allocator }
+        , _anim_timer{ ice::timer::create_timer(_clock, 1.f / 10) }
     {
     }
 
@@ -95,12 +98,16 @@ public:
         _trait_render_gfx = ice::create_trait_render_gfx(_allocator);
         _trait_render_clear = ice::create_trait_render_clear(_allocator);
         _trait_render_finish = ice::create_trait_render_finish(_allocator);
+        _trait_render_postprocess = ice::create_trait_render_postprocess(_allocator);
+        _trait_render_sprites = ice::create_trait_render_sprites(_allocator);
         _trait_render_camera = ice::create_trait_camera(_allocator);
 
 
         _game_gfx_pass->add_stages(_trait_render_gfx->gfx_stage_infos());
         _game_gfx_pass->add_stages(_trait_render_clear->gfx_stage_infos());
         _game_gfx_pass->add_stages(_trait_render_finish->gfx_stage_infos());
+        _game_gfx_pass->add_stages(_trait_render_sprites->gfx_stage_infos());
+        _game_gfx_pass->add_stages(_trait_render_postprocess->gfx_stage_infos());
 
 
         ice::WorldManager& world_manager = engine.world_manager();
@@ -109,10 +116,16 @@ public:
         _test_world->add_trait("ice.render_clear"_sid, _trait_render_clear.get());
         _test_world->add_trait("ice.render_finish"_sid, _trait_render_finish.get());
         _test_world->add_trait("ice.camera"_sid, _trait_render_camera.get());
+        _test_world->add_trait("ice.render_postprocess"_sid, _trait_render_postprocess.get());
+        _test_world->add_trait("ice.render_sprites"_sid, _trait_render_sprites.get());
         _test_world->add_trait("game"_sid, this);
 
         ice::ArchetypeHandle ortho_arch = _archetype_index->register_archetype<ice::Camera, ice::CameraOrtho>(&_archetype_alloc);
         ice::ArchetypeHandle persp_arch = _archetype_index->register_archetype<ice::Camera, ice::CameraPerspective>(&_archetype_alloc);
+        _archetype_index->register_archetype<ice::Transform2DStatic, ice::Sprite>(&_archetype_alloc);
+        _archetype_index->register_archetype<ice::Transform2DStatic, ice::Sprite, ice::SpriteTile, AnimComponent>(&_archetype_alloc);
+
+        _anim_query = _allocator.make<ice::ComponentQuery<AnimComponent const&, ice::SpriteTile&>>(_allocator, *_archetype_index);
 
         //ice::ArchetypeHandle test_arch = _archetype_index->register_archetype<TestComponent2, TestComponent3, TestComponent>(&_archetype_alloc);
 
@@ -201,8 +214,12 @@ public:
 
     void on_app_shutdown(ice::Engine& engine) noexcept
     {
+        _allocator.destroy(_anim_query);
+
         _test_world->remove_trait("game"_sid);
         _test_world->remove_trait("ice.camera"_sid);
+        _test_world->remove_trait("ice.render_sprites"_sid);
+        _test_world->remove_trait("ice.render_postprocess"_sid);
         _test_world->remove_trait("ice.render_finish"_sid);
         _test_world->remove_trait("ice.render_clear"_sid);
         _test_world->remove_trait("ice.render_gfx"_sid);
@@ -211,6 +228,8 @@ public:
         world_manager.destroy_world("game.test_world"_sid);
 
         _trait_render_camera = nullptr;
+        _trait_render_postprocess = nullptr;
+        _trait_render_sprites = nullptr;
         _trait_render_finish = nullptr;
         _trait_render_clear = nullptr;
         _trait_render_gfx = nullptr;
@@ -234,6 +253,21 @@ public:
         ice::WorldPortal& portal
     ) noexcept
     {
+        auto result = _anim_query->result_by_entity(runner.current_frame().allocator(), _entity_storage);
+
+        if (ice::timer::update_by_step(_anim_timer))
+        {
+            result.for_each([&](AnimComponent const& anim, ice::SpriteTile& tile) noexcept
+                {
+                    tile.material_tile.x += 1;
+                    if (anim.steps == tile.material_tile.x)
+                    {
+                        tile.material_tile.x = 0;
+                    }
+                }
+            );
+        }
+
         runner.graphics_frame().enqueue_pass("default"_sid, _game_gfx_pass.get());
     }
 
@@ -260,11 +294,16 @@ public:
     ice::UniquePtr<ice::GameWorldTrait_Render> _trait_render_gfx{ ice::make_unique_null<ice::GameWorldTrait_Render>() };
     ice::UniquePtr<ice::GameWorldTrait_Render> _trait_render_clear{ ice::make_unique_null<ice::GameWorldTrait_Render>() };
     ice::UniquePtr<ice::GameWorldTrait_Render> _trait_render_finish{ ice::make_unique_null<ice::GameWorldTrait_Render>() };
+    ice::UniquePtr<ice::GameWorldTrait_Render> _trait_render_postprocess{ ice::make_unique_null<ice::GameWorldTrait_Render>() };
+    ice::UniquePtr<ice::GameWorldTrait_RenderDraw> _trait_render_sprites{ ice::make_unique_null<ice::GameWorldTrait_RenderDraw>() };
     ice::UniquePtr<ice::WorldTrait> _trait_render_camera{ ice::make_unique_null<ice::WorldTrait>() };
 
     ice::World* _test_world;
 
     ice::pod::Array<ice::Entity> _army;
+
+    ice::Timer _anim_timer;
+    ice::ComponentQuery<AnimComponent const&, ice::SpriteTile&>* _anim_query;
 };
 
 ICE_REGISTER_GAMEAPP(MyGame);

@@ -707,12 +707,23 @@ void MyGame::on_game_begin(ice::EngineRunner& runner) noexcept
 {
     ice::vec2u extent = runner.graphics_device().swapchain().extent();
 
-    ice::StringID components[]{ ice::Camera::Identifier, ice::CameraOrtho::Identifier };
-    ice::ArchetypeQueryCriteria query_criteria{
+    constexpr ice::StringID components[]{ ice::Camera::Identifier, ice::CameraOrtho::Identifier };
+    constexpr ice::ArchetypeQueryCriteria query_criteria{
         .components = components
     };
 
+    constexpr ice::StringID sprite_components[]{ ice::Sprite::Identifier, ice::SpriteTile::Identifier };
+    constexpr ice::ArchetypeQueryCriteria sprite_query_criteria{
+        .components = sprite_components
+    };
+
     ice::ArchetypeHandle ortho_arch = _archetype_index->find_archetype(query_criteria);
+    ice::ArchetypeHandle sprite_arch = _archetype_index->find_archetype(sprite_query_criteria);
+
+    ice::Entity camera_entity = _current_engine->entity_index().create();
+    ice::Entity sprite_entity = _current_engine->entity_index().create();
+    ice::Entity sprite_entity2 = _current_engine->entity_index().create();
+    ice::Entity sprite_entity3 = _current_engine->entity_index().create();
 
     ice::Camera const camera{
         .name = "camera.default"_sid,
@@ -724,10 +735,34 @@ void MyGame::on_game_begin(ice::EngineRunner& runner) noexcept
         .top_bottom = { (ice::f32)extent.y, 0.f },
         .near_far = { 0.1f, 100.f }
     };
-
-    ice::Entity camera_entity = _current_engine->entity_index().create();
     _entity_storage.set_archetype_with_data(camera_entity, ortho_arch, camera, orto_values);
 
+    AnimComponent anim{
+        .steps = 18,
+    };
+    ice::Transform2DStatic sprite_pos{
+        .position = { 48.f, 48.f, 1.f },
+        .scale = { 3.f, 3.f }
+    };
+    ice::Sprite sprite{
+        .material = "/cotm/cotm_hero"_sid,
+    };
+    ice::SpriteTile sprite_tile{
+        .material_tile = { 0, 0 }
+    };
+    _entity_storage.set_archetype_with_data(sprite_entity, sprite_arch, anim, sprite_pos, sprite, sprite_tile);
+
+    anim.steps = 4;
+    sprite_pos.position = { 120.f, 48.f, 1.f };
+    sprite_tile.material_tile = { 0, 1 };
+    _entity_storage.set_archetype_with_data(sprite_entity2, sprite_arch, anim, sprite_pos, sprite, sprite_tile);
+
+    anim.steps = 7;
+    sprite_pos.position = { 180.f, 48.f, 1.f };
+    sprite_tile.material_tile = { 0, 2 };
+    _entity_storage.set_archetype_with_data(sprite_entity3, sprite_arch, anim, sprite_pos, sprite, sprite_tile);
+
+    _trait_render_sprites->set_camera("camera.default"_sid);
 
     ice::EngineRequest requests[]{
         ice::create_request(ice::Request_ActivateWorld, _test_world)
