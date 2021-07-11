@@ -34,21 +34,6 @@ namespace ice
             );
         }
 
-        //auto get_camera_data(ice::DataStorage const& storage, ice::StringID_Arg name) noexcept -> ice::render::Buffer const*
-        //{
-        //    return storage.named_object<ice::render::Buffer>(name);
-        //}
-
-        //auto get_camera_data(ice::DataStorage& storage, ice::StringID_Arg name) noexcept -> ice::render::Buffer*
-        //{
-        //    ice::render::Buffer* data_buffer = storage.named_object<ice::render::Buffer>(name);
-        //    if (data_buffer == nullptr)
-        //    {
-        //        data_buffer = storage.create_named_object<ice::render::Buffer>(name, ice::render::Buffer::Invalid);
-        //    }
-        //    return data_buffer;
-        //}
-
     } // namespace detail
 
     IceWorldTrait_RenderCamera::IceWorldTrait_RenderCamera(ice::Allocator& alloc) noexcept
@@ -91,12 +76,6 @@ namespace ice
             );
             portal.allocator().destroy(entry.value);
         }
-
-        //detail::QueryCamera const* const camera_query = detail::get_camera_query(portal);
-        //detail::QueryCamera::ResultByEntity camera_results = camera_query->result_by_entity(
-        //    alloc,
-        //    portal.entity_storage()
-        //);
 
         portal.storage().destroy_named_object<detail::QueryCamera>(
             "ice.trait.camera-query"_sid
@@ -224,10 +203,6 @@ namespace ice
         );
 
         co_return;
-        //co_await frame.schedule_frame_end();
-
-        //ice::pod::array::clear(_camera_stages);
-        //ice::pod::array::clear(_camera_stage_slots);
     }
 
     auto IceWorldTrait_RenderCamera::task_update_camera_data(
@@ -248,7 +223,7 @@ namespace ice
             ice::render::BufferUpdateInfo
             {
                 .buffer = camera_data.uniform_buffer,
-                .data = ice::addressof(camera_data.render_data),
+                .data = ice::data_view(camera_data.render_data),
                 .offset = 0
             }
         };
@@ -256,35 +231,6 @@ namespace ice
         device.update_buffers(updates);
         co_return;
     }
-
-    //auto IceWorldTrait_RenderCamera::task_update_camera_data(
-    //    ice::render::RenderDevice& device,
-    //    ice::TraitCameraData& camera_data,
-    //    ice::Camera const& camera,
-    //    ice::CameraPerspective const& camera_persp
-    //) noexcept -> ice::Task<>
-    //{
-    //    if (camera_data.uniform_buffer == ice::render::Buffer::Invalid)
-    //    {
-    //        camera_data.uniform_buffer = device.create_buffer(
-    //            ice::render::BufferType::Uniform,
-    //            sizeof(ice::mat4x4) * 2
-    //        );
-    //    }
-
-    //    ice::render::BufferUpdateInfo updates[]
-    //    {
-    //        ice::render::BufferUpdateInfo
-    //        {
-    //            .buffer = camera_data.uniform_buffer,
-    //            .data = ice::addressof(camera_data.render_data),
-    //            .offset = 0
-    //        }
-    //    };
-
-    //    device.update_buffers(updates);
-    //    co_return;
-    //}
 
     auto create_trait_camera(
         ice::Allocator& alloc

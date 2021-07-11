@@ -145,6 +145,7 @@ namespace ice
     ) noexcept
     {
         runner.graphics_frame().set_stage_slots(gfx_stage_slots());
+        frame.create_named_object<ice::render::Renderpass>("ice.gfx.renderpass"_sid, _default_renderpass);
     }
 
     auto IceWorldTrait_RenderGfx::task_create_render_objects(
@@ -274,16 +275,16 @@ namespace ice
             _default_attachment_depth_stencil
         };
 
-        SamplerInfo sampler_info{
-            .min_filter = SamplerFilter::Linear,
-            .mag_filter = SamplerFilter::Linear,
-            .address_mode = {
-                .u = SamplerAddressMode::Repeat,
-                .v = SamplerAddressMode::Repeat,
-                .w = SamplerAddressMode::Repeat,
-            },
-            .mip_map_mode = SamplerMipMapMode::Linear,
-        };
+        //SamplerInfo sampler_info{
+        //    .min_filter = SamplerFilter::Linear,
+        //    .mag_filter = SamplerFilter::Linear,
+        //    .address_mode = {
+        //        .u = SamplerAddressMode::Repeat,
+        //        .v = SamplerAddressMode::Repeat,
+        //        .w = SamplerAddressMode::Repeat,
+        //    },
+        //    .mip_map_mode = SamplerMipMapMode::Linear,
+        //};
 
         //Sampler basic_sampler = render_device.create_sampler(sampler_info);
 

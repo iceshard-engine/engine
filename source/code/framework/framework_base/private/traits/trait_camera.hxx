@@ -54,17 +54,7 @@ namespace ice
         auto task_update_camera_data(
             ice::render::RenderDevice& device,
             ice::TraitCameraData& render_data
-            //ice::TraitCameraData& trait_camera_data,
-            //ice::Camera const& camera,
-            //ice::CameraOrtho const& camera_ortho
         ) noexcept -> ice::Task<>;
-
-        //auto task_update_camera_data(
-        //    ice::render::RenderDevice& device,
-        //    ice::TraitCameraData& trait_camera_data,
-        //    ice::Camera const& camera,
-        //    ice::CameraPerspective const& camera_persp
-        //) noexcept -> ice::Task<>;
 
     private:
         ice::pod::Hash<ice::TraitCameraData*> _camera_data;
