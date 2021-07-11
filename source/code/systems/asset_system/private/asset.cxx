@@ -30,7 +30,7 @@ namespace ice
         return object->status;
     }
 
-    auto asset_metadata(ice::Asset asset, ice::Data& out_data) noexcept -> ice::AssetStatus
+    auto asset_metadata(ice::Asset asset, ice::Metadata& out_metadata) noexcept -> ice::AssetStatus
     {
         if (asset == Asset::Invalid)
         {
@@ -40,7 +40,7 @@ namespace ice
         detail::AssetObject const* const object = reinterpret_cast<detail::AssetObject*>(asset);
         if (object->status != AssetStatus::Invalid)
         {
-            out_data = object->metadata;
+            out_metadata = object->metadata;
         }
         return object->status;
     }
