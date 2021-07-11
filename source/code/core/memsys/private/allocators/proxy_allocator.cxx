@@ -1,4 +1,5 @@
 #include <ice/memory/proxy_allocator.hxx>
+#include <ice/profiler.hxx>
 #include <cassert>
 
 namespace ice::memory
@@ -55,6 +56,21 @@ namespace ice::memory
     auto ProxyAllocator::total_allocated() const noexcept -> uint32_t
     {
         return _allocation_tracking ? _allocation_total : Constant_SizeNotTracked;
+    }
+
+#elif ICE_PROFILE
+
+    auto ProxyAllocator::allocate(uint32_t size, uint32_t align) noexcept -> void*
+    {
+        void* ptr = _backing_allocator.allocate(size, align);
+        // TracyAllocNS(ptr, size, 8, _name.data());
+        return ptr;
+    }
+
+    void ProxyAllocator::deallocate(void* ptr) noexcept
+    {
+        // TracyFreeNS(ptr, 8, _name.data());
+        return _backing_allocator.deallocate(ptr);
     }
 
 #endif // #if ICE_DEBUG || ICE_DEVELOP
