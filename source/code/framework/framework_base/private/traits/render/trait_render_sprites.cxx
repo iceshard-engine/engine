@@ -25,6 +25,8 @@
 #include <ice/resource_meta.hxx>
 #include <ice/asset_system.hxx>
 
+#include <ice/profiler.hxx>
+
 namespace ice
 {
 
@@ -160,6 +162,8 @@ namespace ice
         ice::WorldPortal& portal
     ) noexcept
     {
+        IPT_ZONE_SCOPED_NAMED("[Trait] Sprites :: Update");
+
         ice::gfx::GfxFrame& gfx_frame = runner.graphics_frame();
 
         if (_resource_set_layouts[0] == ice::render::ResourceSetLayout::Invalid)
@@ -288,6 +292,8 @@ namespace ice
         ice::render::RenderCommands& api
     ) const noexcept
     {
+        IPT_ZONE_SCOPED_NAMED("[Trait] Sprites :: Graphics Commands");
+
         ice::Span<detail::SpriteInstanceInfo> const* const instances = frame.named_object<ice::Span<detail::SpriteInstanceInfo>>("ice.sprite.instance_infos_span"_sid);
         if (instances != nullptr)
         {

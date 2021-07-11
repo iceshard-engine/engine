@@ -15,5 +15,18 @@
             'modules'
         }
     ]
+
+    ; We only profile the tracy module in the 'Profile' configuration.
+    .TracyProfiler =
+    [
+        .Requires = { 'Profile' }
+        .Public =
+        [
+            .Modules = {
+                'Tracy'
+            }
+        ]
+    ]
+    .Rules = { .TracyProfiler }
 ]
 .Projects + .Project

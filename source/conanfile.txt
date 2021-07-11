@@ -2,6 +2,7 @@
 fmt/7.0.3@iceshard/stable
 Catch2/2.13.2@iceshard/stable
 box2d/2.4.1@iceshard/stable
+Tracy/0.7.8@iceshard/stable
 
 rapidjson/1.1.0
 Assimp/5.0.1@iceshard/stable

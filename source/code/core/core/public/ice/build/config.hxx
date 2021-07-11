@@ -21,28 +21,40 @@ namespace ice::build
     static constexpr Configuration current_config = Configuration::Debug;
 
 #undef ICE_DEBUG
-#define ICE_DEBUG  1
+#define ICE_DEBUG 1
+#define ICE_DEVELOP 0
+#define ICE_PROFILE 0
+#define ICE_RELEASE 0
 
 #elif defined ICE_DEVELOP
 
     static constexpr Configuration current_config = Configuration::Develop;
 
 #undef ICE_DEVELOP
-#define ICE_DEVELOP  1
+#define ICE_DEBUG 0
+#define ICE_DEVELOP 1
+#define ICE_PROFILE 0
+#define ICE_RELEASE 0
 
 #elif defined ICE_PROFILE
 
     static constexpr Configuration current_config = Configuration::Profile;
 
 #undef ICE_PROFILE
-#define ICE_PROFILE  1
+#define ICE_DEBUG 0
+#define ICE_DEVELOP 0
+#define ICE_PROFILE 1
+#define ICE_RELEASE 0
 
 #elif defined ICE_RELEASE
 
     static constexpr Configuration current_config = Configuration::Release;
 
 #undef ICE_RELEASE
-#define ICE_RELEASE  1
+#define ICE_DEBUG 0
+#define ICE_DEVELOP 0
+#define ICE_PROFILE 0
+#define ICE_RELEASE 1
 
 #else
 
