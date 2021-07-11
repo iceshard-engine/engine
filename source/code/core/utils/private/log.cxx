@@ -85,12 +85,12 @@ namespace ice::detail
         fmt::format_to_n_result format_result = fmt::format_to_n(
             header_buffer_raw,
             128,
-            "{:%T} [{}] {}{}{}",
+            fmt::to_string_view("{:%T} [{}] {}{}{}"),
             fmt::localtime(std::time(nullptr)),
-            detail::severity_value[static_cast<ice::u32>(severity)],
-            base_tag_name,
-            ice::string::empty(tag_name) || ice::string::empty(base_tag_name) ? "" : " | ",
-            tag_name
+            fmt::to_string_view(detail::severity_value[static_cast<ice::u32>(severity)]),
+            fmt::to_string_view(base_tag_name),
+            fmt::to_string_view(ice::string::empty(tag_name) || ice::string::empty(base_tag_name) ? "" : " | "),
+            fmt::to_string_view(tag_name)
         );
 
         if (log_header_size < format_result.size)
