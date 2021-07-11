@@ -1,4 +1,5 @@
 #include "default_allocator.hxx"
+#include <ice/profiler.hxx>
 #include <cassert>
 
 namespace ice::memory
@@ -46,6 +47,10 @@ namespace ice::memory
         auto* alloc_header = reinterpret_cast<tracking::AllocationHeader*>(alloc_ptr);
         auto* alloc_data = tracking::data_pointer(alloc_header, align);
 
+#if ICE_PROFILE
+        TracyAlloc(alloc_header, alloc_size);
+#endif
+
         tracking::fill(alloc_header, alloc_data, alloc_size, size);
         _total_allocated += alloc_size;
         return alloc_data;
@@ -60,6 +65,11 @@ namespace ice::memory
 
         // Release the pointer
         auto* alloc_header = tracking::header(pointer);
+
+#if ICE_PROFILE
+        TracyFree(alloc_header);
+#endif
+
         _total_allocated -= alloc_header->allocated_size;
         detail::aligned_free(alloc_header);
     }
