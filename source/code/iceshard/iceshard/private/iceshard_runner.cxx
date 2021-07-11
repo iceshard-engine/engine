@@ -426,10 +426,10 @@ namespace ice
         _mre_frame_logic.wait();
 
         // Move the current frame to the 'previous' slot.
-        _previous_frame = ice::move(_current_frame);
-
         _mre_gfx_commands.wait();
         _mre_gfx_commands.reset();
+        _previous_frame = ice::move(_current_frame);
+
         ice::sync_manual_wait(graphics_frame_task(), _mre_gfx_commands);
 
         [[maybe_unused]]
