@@ -16,7 +16,9 @@ namespace ice
     auto IceWorldTrait_RenderFinish::gfx_stage_infos() const noexcept -> ice::Span<ice::gfx::GfxStageInfo const>
     {
         static ice::StringID const dependencies[]{
-            "frame.clear"_sid
+            "frame.clear"_sid,
+            "frame.render-sprites"_sid,
+            "frame.render-postprocess"_sid,
         };
         static ice::gfx::GfxStageInfo const infos[]{
             ice::gfx::GfxStageInfo
