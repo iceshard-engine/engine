@@ -84,7 +84,15 @@ namespace ice
             clear_values,
             _default_swapchain->extent()
         );
-        api.next_subpass(cmds, ice::render::SubPassContents::Inline);
+
+        ice::vec4u scissor_and_viewport{
+            0, 0,
+            _default_swapchain->extent().x,
+            _default_swapchain->extent().y
+        };
+
+        api.set_scissor(cmds, scissor_and_viewport);
+        api.set_viewport(cmds, scissor_and_viewport);
         api.next_subpass(cmds, ice::render::SubPassContents::Inline);
     }
 
