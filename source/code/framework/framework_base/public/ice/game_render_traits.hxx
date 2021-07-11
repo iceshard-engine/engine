@@ -14,6 +14,14 @@ namespace ice
         virtual auto gfx_stage_slots() const noexcept -> ice::Span<ice::gfx::GfxStageSlot const> = 0;
     };
 
+    class GameWorldTrait_RenderDraw : public ice::GameWorldTrait_Render
+    {
+    public:
+        virtual void set_camera(
+            ice::StringID_Arg camera_name
+        ) noexcept = 0;
+    };
+
     auto create_trait_render_gfx(
         ice::Allocator& alloc
     ) noexcept -> ice::UniquePtr<ice::GameWorldTrait_Render>;
@@ -22,8 +30,16 @@ namespace ice
         ice::Allocator& alloc
     ) noexcept -> ice::UniquePtr<ice::GameWorldTrait_Render>;
 
+    auto create_trait_render_postprocess(
+        ice::Allocator& alloc
+    ) noexcept -> ice::UniquePtr<ice::GameWorldTrait_Render>;
+
     auto create_trait_render_finish(
         ice::Allocator& alloc
     ) noexcept -> ice::UniquePtr<ice::GameWorldTrait_Render>;
+
+    auto create_trait_render_sprites(
+        ice::Allocator& alloc
+    ) noexcept -> ice::UniquePtr<ice::GameWorldTrait_RenderDraw>;
 
 } // namespace ice
