@@ -13,6 +13,7 @@ namespace ice
     class WorldManager;
 
     class EngineRunner;
+    class EngineDevUI;
 
     class Engine
     {
@@ -29,6 +30,8 @@ namespace ice
         virtual auto asset_system() noexcept -> ice::AssetSystem& = 0;
 
         virtual auto world_manager() noexcept -> ice::WorldManager& = 0;
+
+        virtual auto developer_ui() noexcept -> ice::EngineDevUI& = 0;
     };
 
 } // namespace ice

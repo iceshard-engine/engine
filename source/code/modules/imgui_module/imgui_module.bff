@@ -1,10 +1,10 @@
 .Project =
 [
-    .Name = 'debug_module'
+    .Name = 'imgui_module'
     .Kind = .Kind_SharedLib
     .Group = 'Modules'
 
-    .BaseDir = '$WorkspaceCodeDir$/modules/debug_module'
+    .BaseDir = '$WorkspaceCodeDir$/modules/imgui_module'
 
     .Private =
     [
@@ -12,7 +12,8 @@
             'imgui'
         }
         .Uses = {
-            'engine_debug'
+            'devui'
+            'utils'
         }
     ]
 ]

@@ -18,10 +18,10 @@
 
 #include "iceshard/application/application.bff"
 #include "iceshard/engine/engine.bff"
-; #include "iceshard/engine_debug/engine_debug.bff"
+#include "iceshard/devui/devui.bff"
 #include "iceshard/iceshard/iceshard.bff"
 
-; #include "modules/debug_module/debug_module.bff"
+#include "modules/imgui_module/imgui_module.bff"
 #include "modules/iceshard_pipelines/iceshard_pipelines.bff"
 #include "modules/vulkan_renderer/vulkan_renderer.bff"
 
