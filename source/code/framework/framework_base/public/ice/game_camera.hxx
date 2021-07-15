@@ -2,7 +2,6 @@
 #include <ice/math.hxx>
 #include <ice/stringid.hxx>
 #include <ice/unique_ptr.hxx>
-#include <ice/world/world_trait.hxx>
 
 namespace ice
 {
@@ -33,6 +32,8 @@ namespace ice
         ice::f32 aspect_ration;
         ice::vec2f near_far;
     };
+
+    class WorldTrait;
 
     auto create_trait_camera(
         ice::Allocator& alloc

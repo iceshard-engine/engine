@@ -1,6 +1,5 @@
 #pragma once
 #include <ice/allocator.hxx>
-#include <ice/data_storage.hxx>
 
 namespace ice
 {
@@ -8,6 +7,7 @@ namespace ice
     template<typename T>
     class Task;
 
+    class DataStorage;
     class EntityStorage;
     class World;
 
