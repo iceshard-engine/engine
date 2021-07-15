@@ -15,6 +15,7 @@
 #include <ice/gfx/gfx_pass.hxx>
 
 #include <ice/asset_system.hxx>
+#include <ice/profiler.hxx>
 
 namespace ice
 {
@@ -102,6 +103,8 @@ namespace ice
         ice::WorldPortal& portal
     ) noexcept
     {
+        IPT_ZONE_SCOPED_NAMED("[Trait] PostProcess :: Update");
+
         runner.graphics_frame().set_stage_slots(gfx_stage_slots());
     }
 
@@ -111,6 +114,8 @@ namespace ice
         ice::render::RenderCommands& api
     ) const noexcept
     {
+        IPT_ZONE_SCOPED_NAMED("[Trait] PostProcess :: Graphics Commands");
+
         api.next_subpass(cmds, ice::render::SubPassContents::Inline);
         api.bind_pipeline(cmds, _pipeline);
         api.bind_resource_set(cmds, _layout, _resource_set, 0);

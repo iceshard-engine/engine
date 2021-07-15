@@ -13,6 +13,7 @@
 #include <ice/input/input_tracker.hxx>
 #include <ice/assert.hxx>
 
+#include <ice/profiler.hxx>
 
 namespace ice
 {
@@ -64,7 +65,7 @@ namespace ice
         , _allocator{ alloc, "engine-runner" }
         , _engine{ engine }
         , _clock{ ice::clock::create_clock() }
-        , _thread_pool{ ice::create_simple_threadpool(_allocator, 4) }
+        , _thread_pool{ ice::create_simple_threadpool(_allocator, 6) }
         , _graphics_thread{ ice::create_task_thread(_allocator) }
         , _frame_allocator{ _allocator, "frame-allocator" }
         , _frame_data_allocator{
@@ -180,19 +181,7 @@ namespace ice
 
     auto IceshardEngineRunner::logic_frame_task() noexcept -> ice::Task<>
     {
-        //_mre_frame_start.wait();
-        ////_mre_frame_logic.reset();
-        //// TODO: Aquire the logic lock for the new current_frame
-
-        //// NOTE: We can now safely access results from the previous frame and calculate logic for the next frame
-        //_current_frame = ice::make_unique<IceshardMemoryFrame>(
-        //    _allocator,
-        //    _frame_data_allocator[_next_free_allocator]
-        //);
-
-        //// NOTE: We can update the allocator idex to be used next time
-        //_next_free_allocator += 1;
-        //_next_free_allocator %= ice::size(_frame_data_allocator);
+        IPT_FRAME_MARK;
 
         // Handle requests for the next frame
         for (ice::EngineRequest const& request : _previous_frame->requests())
@@ -264,58 +253,6 @@ namespace ice
         }
 
         tasks_finished_event.wait();
-
-
-#if 1
-        //_mre_gfx_commands.wait();
-        //_mre_gfx_commands.reset();
-
-        //_previous_frame = ice::move(_current_frame);
-
-        //ice::sync_manual_wait(graphics_frame_task(), _mre_gfx_commands);
-
-        //// Reset the frame allocator inner pointers.
-        //[[maybe_unused]]
-        //bool const discarded_memory = _frame_data_allocator[_next_free_allocator].reset_and_discard();
-        //ICE_ASSERT(discarded_memory == false, "Memory was discarded during frame allocator reset!");
-
-        //ice::clock::update(_clock);
-
-        //_current_frame = ice::make_unique<IceshardMemoryFrame>(
-        //    _allocator,
-        //    _frame_data_allocator[_next_free_allocator]
-        //);
-
-        //_gfx_current_frame = ice::make_unique<ice::gfx::IceGfxFrame>(
-        //    _allocator,
-        //    _frame_gfx_allocator[_next_free_allocator]
-        //);
-
-        //// We need to update the allocator index
-        //_next_free_allocator += 1;
-        //_next_free_allocator %= ice::size(_frame_data_allocator);
-#endif
-        //// TODO: We wait for the graphics frame to be finished with command recording, as this will ensure that the previous frame is no longer required.
-
-        //_previous_frame = ice::move(_current_frame);
-        //// TODO: Notify that we finished calculating the current frame
-
-        //// NOTE: We await resuming on the graphics thread
-        //co_await *_graphics_thread;
-
-        //// NOTE: We aquire the next image index to be rendered.
-        //ice::u32 const image_index = _gfx_device->next_frame();
-
-        //// NOTE: We aquire the graphics queues for this frame index.
-        //ice::gfx::IceGfxQueueGroup& queue_group = _gfx_device->queue_group(image_index);
-
-        //// TODO: We need to record command buffers here.
-
-        //// TODO: We need to notify we finished command buffer recording.
-
-        //// TODO: We need to submit all recorded command buffers here and wait for results.
-
-        //// ?? TODO: Notify we finished graphics tasks
         co_return;
     }
 
@@ -362,64 +299,12 @@ namespace ice
 
         // NOTE: We are presenting the resulting image.
         _gfx_device->present(framebuffer_index);
+        IPT_FRAME_MARK_NAMED("Graphics Frame");
         co_return;
     }
 
     void IceshardEngineRunner::next_frame() noexcept
     {
-
-#if 0
-
-        // [issue #??] We cannot move this wait lower as for now we are still accessing a single GfxPass object from both the Gfx and Runtim threads.
-        //_graphics_thread_event.wait();
-        //_graphics_thread_event.reset();
-
-        // Update all active worlds
-        //_world_tracker.update_active_worlds(*this);
-        _mre_frame_logic.wait();
-        _mre_frame_logic.reset();
-
-        // Move the current frame to the 'previous' slot.
-        _previous_frame = ice::move(_current_frame);
-        //_previous_frame->start_all();
-
-        _mre_gfx_commands.wait();
-        _mre_gfx_commands.reset();
-        ice::sync_manual_wait(graphics_frame_task(), _mre_gfx_commands);
-
-        // Start the graphics task
-        //ice::sync_manual_wait(render_frame_task(), _mre_gfx_draw);
-
-        //_graphics_thread->schedule(
-        //    graphics_task(
-        //        ice::move(_gfx_current_frame),
-        //        &_graphics_thread_event
-        //    )
-        //);
-
-        // Reset the frame allocator inner pointers.
-        [[maybe_unused]]
-        bool const discarded_memory = _frame_data_allocator[_next_free_allocator].reset_and_discard();
-        ICE_ASSERT(discarded_memory == false, "Memory was discarded during frame allocator reset!");
-
-        ice::clock::update(_clock);
-
-        _current_frame = ice::make_unique<IceshardMemoryFrame>(
-            _allocator,
-            _frame_data_allocator[_next_free_allocator]
-        );
-
-        _gfx_current_frame = ice::make_unique<ice::gfx::IceGfxFrame>(
-            _allocator,
-            _frame_gfx_allocator[_next_free_allocator]
-        );
-
-        // We need to update the allocator index
-        _next_free_allocator += 1;
-        _next_free_allocator %= ice::size(_frame_data_allocator);
-
-        ice::sync_manual_wait(logic_frame_task(), _mre_frame_logic);
-#else
         _mre_frame_logic.reset();
 
         ice::sync_manual_wait(logic_frame_task(), _mre_frame_logic);
@@ -453,33 +338,6 @@ namespace ice
         _next_free_allocator %= ice::size(_frame_data_allocator);
 
         remove_finished_tasks();
-#endif
-
-        //// Handle requests for the next frame
-        //for (ice::EngineRequest const& request : _previous_frame->requests())
-        //{
-        //    switch (request.name.hash_value)
-        //    {
-        //    case ice::stringid_hash(Request_ActivateWorld):
-        //        _world_tracker.activate_world(
-        //            _engine, *this,
-        //            static_cast<ice::IceshardWorld*>(
-        //                reinterpret_cast<ice::World*>(request.payload)
-        //            )
-        //        );
-        //        break;
-        //    case ice::stringid_hash(Request_DeactivateWorld):
-        //        _world_tracker.deactivate_world(
-        //            _engine, *this,
-        //            static_cast<ice::IceshardWorld*>(
-        //                reinterpret_cast<ice::World*>(request.payload)
-        //            )
-        //        );
-        //        break;
-        //    default:
-        //        break;
-        //    }
-        //}
     }
 
     void IceshardEngineRunner::execute_task(ice::Task<> task, ice::EngineContext context) noexcept

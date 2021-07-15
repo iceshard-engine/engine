@@ -10,6 +10,8 @@
 #include <ice/render/render_command_buffer.hxx>
 #include <ice/render/render_swapchain.hxx>
 
+#include <ice/profiler.hxx>
+
 namespace ice
 {
 
@@ -59,6 +61,8 @@ namespace ice
         ice::WorldPortal& portal
     ) noexcept
     {
+        IPT_ZONE_SCOPED_NAMED("[Trait] Clear :: Update");
+
         ice::gfx::GfxFrame& gfx_frame = runner.graphics_frame();
         gfx_frame.set_stage_slots(gfx_stage_slots());
     }
@@ -69,6 +73,8 @@ namespace ice
         ice::render::RenderCommands& api
     ) const noexcept
     {
+        IPT_ZONE_SCOPED_NAMED("[Trait] Clear :: Graphics Commands");
+
         ice::vec4f clear_values[4]
         {
             ice::vec4f{ 0.3f },

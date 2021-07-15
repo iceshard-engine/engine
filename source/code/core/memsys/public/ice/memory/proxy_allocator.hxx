@@ -55,12 +55,52 @@ namespace ice::memory
         uint32_t _allocation_requests{ 0 };
     };
 
-#else // #if ICE_DEBUG || ICE_DEVELOP
+#elif ICE_PROFILE
 
     class ProxyAllocator final : public ice::Allocator
     {
     public:
-        ProxyAllocator(ice::Allocator& alloc, std::string_view) noexcept 
+        ProxyAllocator(ice::Allocator& alloc, std::string_view name) noexcept
+            : _name{ name }
+            , _backing_allocator{ alloc }
+        { }
+        ~ProxyAllocator() noexcept override = default;
+
+        auto allocate(uint32_t size, uint32_t align = Constant_DefaultAlignment) noexcept -> void* override;
+
+        void deallocate(void* ptr) noexcept override;
+
+        inline auto allocated_size(void* ptr) const noexcept -> uint32_t override
+        {
+            return _backing_allocator.allocated_size(ptr);
+        }
+
+        inline auto total_allocated() const noexcept -> uint32_t override
+        {
+            return _backing_allocator.total_allocated();
+        }
+
+        inline auto backing_allocator() noexcept -> ice::Allocator&
+        {
+            return _backing_allocator;
+        }
+
+        auto allocation_count() const noexcept -> uint32_t
+        {
+            return Constant_SizeNotTracked;
+        }
+
+    private:
+        std::string_view _name;
+        ice::Allocator& _backing_allocator;
+    };
+
+#else // #if ICE_DEBUG || ICE_DEVELOP || ICE_PROFILE
+
+    class ProxyAllocator final : public ice::Allocator
+    {
+    public:
+        ProxyAllocator(ice::Allocator& alloc, std::string_view) noexcept
             : _backing_allocator{ alloc }
         { }
         ~ProxyAllocator() noexcept override = default;
