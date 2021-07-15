@@ -6,6 +6,7 @@
 #include <ice/gfx/gfx_operations.hxx>
 #include <ice/task_operations.hxx>
 #include <ice/engine_task_operations.hxx>
+#include <ice/platform_event.hxx>
 
 namespace ice
 {
@@ -50,6 +51,7 @@ namespace ice
 
         virtual auto clock() const noexcept -> ice::Clock const& = 0;
 
+        virtual auto platform_events() noexcept -> ice::Span<ice::platform::Event const> = 0;
         virtual auto input_tracker() noexcept -> ice::input::InputTracker& = 0;
         virtual void process_device_queue(
             ice::input::DeviceQueue const& device_queue
@@ -63,7 +65,9 @@ namespace ice
         virtual auto previous_frame() const noexcept -> ice::EngineFrame const& = 0;
         virtual auto current_frame() const noexcept -> ice::EngineFrame const& = 0;
         virtual auto current_frame() noexcept -> ice::EngineFrame& = 0;
-        virtual void next_frame() noexcept = 0;
+        virtual void next_frame(
+            ice::Span<ice::platform::Event const> events
+        ) noexcept = 0;
 
         virtual void execute_task(ice::Task<> task, ice::EngineContext context) noexcept = 0;
 

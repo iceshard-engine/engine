@@ -85,6 +85,11 @@ namespace ice::platform
                 // Special codes (III)
             case SDL_SCANCODE_DELETE: return KeyboardKey::Delete;
             case SDL_SCANCODE_CAPSLOCK: return KeyboardKey::CapsLock;
+                // Special codes (IV)
+            case SDL_SCANCODE_UP: return KeyboardKey::Up;
+            case SDL_SCANCODE_DOWN: return KeyboardKey::Down;
+            case SDL_SCANCODE_LEFT: return KeyboardKey::Left;
+            case SDL_SCANCODE_RIGHT: return KeyboardKey::Right;
             default:
                 break;
             }

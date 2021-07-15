@@ -59,7 +59,7 @@ namespace ice
             ice::pod::Array<ice::platform::Event> const& events
         ) noexcept override
         {
-            _runner->next_frame();
+            _runner->next_frame(events);
         }
 
     private:
