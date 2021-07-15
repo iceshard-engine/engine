@@ -9,17 +9,19 @@ namespace ice
     class AssetSystem;
 
     class Engine;
+    class EngineDevUI;
 
     auto create_engine(
         ice::Allocator& alloc,
         ice::AssetSystem& asset_system,
-        ice::ModuleRegister& registry
+        ice::ModuleRegister& registry,
+        ice::EngineDevUI* devui = nullptr
     ) noexcept -> ice::UniquePtr<ice::Engine>;
 
     namespace detail::engine::v1
     {
 
-        using CreateFn = auto(ice::Allocator&, ice::AssetSystem&, ice::ModuleRegister&) noexcept -> ice::Engine*;
+        using CreateFn = auto(ice::Allocator&, ice::AssetSystem&, ice::ModuleRegister&, ice::EngineDevUI* devui) noexcept -> ice::Engine*;
         using DestroyFn = void(ice::Allocator& alloc, ice::Engine*) noexcept;
 
         struct EngineAPI

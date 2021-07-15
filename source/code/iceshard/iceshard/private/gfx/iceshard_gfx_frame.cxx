@@ -43,18 +43,19 @@ namespace ice::gfx
     ) noexcept
     {
         ice::detail::ScheduleOperationData& data = operation->*data_member;
+        ice::detail::ScheduleOperationData* expected_head = _task_head_start.load(std::memory_order_acquire);
 
-        ice::detail::ScheduleOperationData* new_operation = &data;
-        ice::detail::ScheduleOperationData* old_operation = _task_head_start.exchange(new_operation, std::memory_order::memory_order_acquire);
-
-        if (old_operation == nullptr)
+        do
         {
-            _task_head_start.store(new_operation, std::memory_order::relaxed);
-        }
-        else
-        {
-            old_operation->_next = new_operation;
-        }
+            data._next = expected_head;
+        } while (
+            _task_head_start.compare_exchange_weak(
+                expected_head,
+                &data,
+                std::memory_order_release,
+                std::memory_order_acquire
+            ) == false
+        );
     }
 
     void IceGfxTaskFrame::schedule_internal(
@@ -106,12 +107,20 @@ namespace ice::gfx
         _task_executor = ice::IceshardTaskExecutor{ _allocator, ice::move(_tasks) };
         _task_executor.start_all();
 
+        ice::pod::Array<ice::detail::ScheduleOperationData*> operations{ _allocator };
+
         ice::detail::ScheduleOperationData* operation = _task_head_start.load();
         while (operation != nullptr)
         {
             auto* next_operation = operation->_next;
-            operation->_coroutine.resume();
+            ice::pod::array::push_back(operations, operation);
             operation = next_operation;
+        }
+
+        ice::i32 const count = static_cast<ice::i32>(ice::pod::array::size(operations));
+        for (ice::i32 idx = count - 1; idx >= 0; --idx)
+        {
+            operations[idx]->_coroutine.resume();
         }
     }
 
@@ -182,7 +191,7 @@ namespace ice::gfx
         ice::Allocator& alloc
     ) noexcept
         : ice::gfx::IceGfxTaskFrame{ alloc }
-        , _allocator{ alloc, "gfx-frame" }
+        , _allocator{ alloc }
         , _enqueued_passes{ _allocator }
         , _queue_group{ nullptr }
         , _stages{ _allocator }

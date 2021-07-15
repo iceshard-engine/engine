@@ -1,0 +1,20 @@
+.Project =
+[
+    .Name = 'devui'
+    .Kind = .Kind_StaticLib
+    .Group = 'Engine'
+
+    .BaseDir = '$WorkspaceCodeDir$/iceshard/devui'
+
+    .Public =
+    [
+        .Modules = {
+            'imgui'
+        }
+        .Uses = {
+            'modules'
+            'engine'
+        }
+    ]
+]
+.Projects + .Project
