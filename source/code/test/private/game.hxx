@@ -58,10 +58,11 @@ public:
     ice::UniquePtr<ice::GameWorldTrait_Render> _trait_render_postprocess{ ice::make_unique_null<ice::GameWorldTrait_Render>() };
     ice::UniquePtr<ice::GameWorldTrait_RenderDraw> _trait_render_sprites{ ice::make_unique_null<ice::GameWorldTrait_RenderDraw>() };
     ice::UniquePtr<ice::WorldTrait> _trait_render_camera{ ice::make_unique_null<ice::WorldTrait>() };
+    ice::UniquePtr<ice::WorldTrait> _trait_actor{ ice::make_unique_null<ice::WorldTrait>() };
 
     ice::World* _test_world;
     ice::Timer _anim_timer;
-    ice::ComponentQuery<AnimComponent const&, ice::SpriteTile&>* _anim_query;
+    ice::ComponentQuery<AnimComponent&, ice::SpriteTile&>* _anim_query;
 };
 
 ICE_REGISTER_GAMEAPP(MyGame);
