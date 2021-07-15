@@ -202,9 +202,6 @@ namespace ice
         IPT_FRAME_MARK;
         IPT_ZONE_SCOPED_NAMED("Logic Frame");
 
-        //ice::EngineDevUI& devui = _engine.developer_ui();
-        //devui.internal_prepared_widgets(_devui_key);
-
         // Handle requests for the next frame
         for (ice::EngineRequest const& request : _previous_frame->requests())
         {
@@ -327,6 +324,7 @@ namespace ice
 
         // NOTE: We are presenting the resulting image.
         _gfx_device->present(framebuffer_index);
+        IPT_FRAME_MARK_NAMED("Graphics Frame");
         co_return;
     }
 
@@ -335,7 +333,6 @@ namespace ice
     ) noexcept
     {
         IPT_ZONE_SCOPED_NAMED("Runner - Next Frame");
-
         _mre_frame_logic.reset();
 
         _events = events;
