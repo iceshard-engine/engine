@@ -10,13 +10,15 @@ namespace ice
 {
 
     class AssetSystem;
+    class EngineDevUI;
 
     class IceshardEngine final : public ice::Engine
     {
     public:
         IceshardEngine(
             ice::Allocator& alloc,
-            ice::AssetSystem& asset_system
+            ice::AssetSystem& asset_system,
+            ice::EngineDevUI* devui
         ) noexcept;
         ~IceshardEngine() noexcept override;
 
@@ -31,11 +33,14 @@ namespace ice
 
         auto world_manager() noexcept -> ice::WorldManager& override;
 
+        auto developer_ui() noexcept -> ice::EngineDevUI& override;
+
     private:
         ice::memory::ProxyAllocator _allocator;
         ice::AssetSystem& _asset_system;
         ice::EntityIndex _entity_index;
         ice::IceshardWorldManager _world_manager;
+        ice::EngineDevUI* const _devui;
     };
 
 } // namespace ice

@@ -16,18 +16,23 @@
 #include <ice/engine_module.hxx>
 
 #include "iceshard_runner.hxx"
+#include "iceshard_noop_devui.hxx"
 #include "gfx/iceshard_gfx_device.hxx"
 
 namespace ice
 {
 
+    static ice::IceshardNoopDevUI Global_NoopDevUI;
+
     IceshardEngine::IceshardEngine(
         ice::Allocator& alloc,
-        ice::AssetSystem& asset_system
+        ice::AssetSystem& asset_system,
+        ice::EngineDevUI* devui
     ) noexcept
         : ice::Engine{ }
         , _allocator{ alloc, "engine" }
         , _asset_system{ asset_system }
+        , _devui{ devui == nullptr ? &Global_NoopDevUI : devui }
         , _entity_index{ _allocator, 100'000, 500'000 }
         , _world_manager{ _allocator }
     {
@@ -79,13 +84,19 @@ namespace ice
         return _world_manager;
     }
 
+    auto IceshardEngine::developer_ui() noexcept -> ice::EngineDevUI&
+    {
+        return *_devui;
+    }
+
     auto create_engine_fn(
         ice::Allocator& alloc,
         ice::AssetSystem& asset_system,
-        ice::ModuleRegister& registry
+        ice::ModuleRegister& registry,
+        ice::EngineDevUI* devui
     ) noexcept -> ice::Engine*
     {
-        return alloc.make<IceshardEngine>(alloc, asset_system);
+        return alloc.make<IceshardEngine>(alloc, asset_system, devui);
     }
 
     auto destroy_engine_fn(ice::Allocator& alloc, ice::Engine* engine) noexcept

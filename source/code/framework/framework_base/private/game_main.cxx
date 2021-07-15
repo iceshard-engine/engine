@@ -7,6 +7,9 @@
 #include <ice/render/render_module.hxx>
 #include <ice/engine_module.hxx>
 
+#include <ice/devui/devui_module.hxx>
+#include <ice/devui/devui_system.hxx>
+
 #include <ice/resource_query.hxx>
 #include <ice/resource_system.hxx>
 #include <ice/asset_system.hxx>
@@ -77,7 +80,8 @@ auto game_main(ice::Allocator& alloc, ice::ResourceSystem& resources) -> ice::i3
     ice::load_asset_pipeline_modules(asset_alloc, *module_register, *asset_system);
     asset_system->bind_resources(resource_query.objects);
 
-    ice::UniquePtr<ice::Engine> engine = ice::create_engine(engine_alloc, *asset_system, *module_register);
+    ice::UniquePtr<ice::devui::DevUISystem> engine_devui = ice::devui::create_devui_system(engine_alloc, *module_register);
+    ice::UniquePtr<ice::Engine> engine = ice::create_engine(engine_alloc, *asset_system, *module_register, engine_devui.get());
     if (engine != nullptr)
     {
         game_framework->startup(*engine);
@@ -91,6 +95,7 @@ auto game_main(ice::Allocator& alloc, ice::ResourceSystem& resources) -> ice::i3
         game_framework->shutdown(*engine);
     }
     engine = nullptr;
+    engine_devui = nullptr;
 
     framework_alloc.destroy(game_framework);
 

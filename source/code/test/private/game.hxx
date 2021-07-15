@@ -16,6 +16,9 @@
 #include <ice/archetype/archetype_query.hxx>
 #include <ice/archetype/archetype_block_allocator.hxx>
 
+#include <ice/engine_devui.hxx>
+#include <ice/devui/devui_render_trait.hxx>
+
 #include <ice/world/world.hxx>
 #include <ice/world/world_trait.hxx>
 #include <ice/world/world_manager.hxx>
@@ -77,6 +80,7 @@ public:
         ice::Resource* const pipelines_module = res.request("res://iceshard_pipelines.dll"_uri);
         ice::Resource* const engine_module = res.request("res://iceshard.dll"_uri);
         ice::Resource* const vulkan_module = res.request("res://vulkan_renderer.dll"_uri);
+        ice::Resource* const imgui_module = res.request("res://imgui_module.dll"_uri);
 
         ICE_ASSERT(pipelines_module != nullptr, "Missing `iceshard_pipelines.dll` module!");
         ICE_ASSERT(engine_module != nullptr, "Missing `iceshard.dll` module!");
@@ -85,6 +89,11 @@ public:
         mod.load_module(_allocator, pipelines_module->location().path);
         mod.load_module(_allocator, engine_module->location().path);
         mod.load_module(_allocator, vulkan_module->location().path);
+
+        if (imgui_module != nullptr)
+        {
+            mod.load_module(_allocator, imgui_module->location().path);
+        }
     }
 
     void on_app_startup(ice::Engine& engine) noexcept
@@ -94,6 +103,8 @@ public:
             ice::LogSeverity::Debug, ice::LogTag::Game,
             "Hello, world!"
         );
+
+        ice::EngineDevUI& devui = engine.developer_ui();
 
         _trait_render_gfx = ice::create_trait_render_gfx(_allocator);
         _trait_render_clear = ice::create_trait_render_clear(_allocator);
@@ -105,9 +116,36 @@ public:
 
         _game_gfx_pass->add_stages(_trait_render_gfx->gfx_stage_infos());
         _game_gfx_pass->add_stages(_trait_render_clear->gfx_stage_infos());
-        _game_gfx_pass->add_stages(_trait_render_finish->gfx_stage_infos());
         _game_gfx_pass->add_stages(_trait_render_sprites->gfx_stage_infos());
         _game_gfx_pass->add_stages(_trait_render_postprocess->gfx_stage_infos());
+
+        if (devui.world_trait() != nullptr)
+        {
+            ice::gfx::GfxStageInfo devui_stage = devui.world_trait()->gfx_stage_info();
+
+            ice::pod::Array<ice::StringID> dependencies{ _allocator };
+            ice::pod::array::push_back(dependencies, devui_stage.dependencies);
+            for (ice::gfx::GfxStageInfo const& stage_info : _trait_render_postprocess->gfx_stage_infos())
+            {
+                ice::pod::array::push_back(dependencies, stage_info.name);
+            }
+
+            devui_stage.dependencies = dependencies;
+            _game_gfx_pass->add_stage(devui_stage);
+        }
+
+        {
+            ice::gfx::GfxStageInfo devui_stage = devui.world_trait()->gfx_stage_info();
+            for (ice::gfx::GfxStageInfo stage_info : _trait_render_finish->gfx_stage_infos())
+            {
+                ice::pod::Array<ice::StringID> dependencies{ _allocator };
+                ice::pod::array::push_back(dependencies, stage_info.dependencies);
+                ice::pod::array::push_back(dependencies, devui_stage.name);
+
+                stage_info.dependencies = dependencies;
+                _game_gfx_pass->add_stage(stage_info);
+            }
+        }
 
 
         ice::WorldManager& world_manager = engine.world_manager();
@@ -118,6 +156,7 @@ public:
         _test_world->add_trait("ice.camera"_sid, _trait_render_camera.get());
         _test_world->add_trait("ice.render_postprocess"_sid, _trait_render_postprocess.get());
         _test_world->add_trait("ice.render_sprites"_sid, _trait_render_sprites.get());
+        _test_world->add_trait("ice.devui"_sid, devui.world_trait());
         _test_world->add_trait("game"_sid, this);
 
         ice::ArchetypeHandle ortho_arch = _archetype_index->register_archetype<ice::Camera, ice::CameraOrtho>(&_archetype_alloc);
@@ -217,6 +256,7 @@ public:
         _allocator.destroy(_anim_query);
 
         _test_world->remove_trait("game"_sid);
+        _test_world->remove_trait("ice.devui"_sid);
         _test_world->remove_trait("ice.camera"_sid);
         _test_world->remove_trait("ice.render_sprites"_sid);
         _test_world->remove_trait("ice.render_postprocess"_sid);

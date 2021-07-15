@@ -1,5 +1,6 @@
 #pragma once
 #include <ice/engine_runner.hxx>
+#include <ice/engine_devui.hxx>
 
 #include <ice/task.hxx>
 #include <ice/task_thread.hxx>
@@ -16,6 +17,7 @@
 
 #include <ice/memory/proxy_allocator.hxx>
 #include <ice/memory/scratch_allocator.hxx>
+#include <ice/memory/forward_allocator.hxx>
 #include <ice/unique_ptr.hxx>
 
 #include "world/iceshard_world_tracker.hxx"
@@ -46,6 +48,8 @@ namespace ice
 
         auto clock() const noexcept -> ice::Clock const& override;
 
+        auto platform_events() noexcept -> ice::Span<ice::platform::Event const> override;
+
         auto input_tracker() noexcept -> ice::input::InputTracker& override;
         void process_device_queue(
             ice::input::DeviceQueue const& device_queue
@@ -57,9 +61,11 @@ namespace ice
         auto graphics_frame() noexcept -> ice::gfx::GfxFrame& override;
 
         auto previous_frame() const noexcept -> ice::EngineFrame const& override;
-        auto current_frame() const noexcept -> EngineFrame const& override;
-        auto current_frame() noexcept -> EngineFrame& override;
-        void next_frame() noexcept override;
+        auto current_frame() const noexcept -> ice::EngineFrame const& override;
+        auto current_frame() noexcept -> ice::EngineFrame& override;
+        void next_frame(
+            ice::Span<ice::platform::Event const> events
+        ) noexcept override;
 
         auto logic_frame_task() noexcept -> ice::Task<>;
         auto excute_frame_task() noexcept -> ice::Task<>;
@@ -94,6 +100,7 @@ namespace ice
         ice::SystemClock _clock;
 
         ice::IceshardEngine& _engine;
+        ice::devui::DevUIExecutionKey const _devui_key;
 
         ice::UniquePtr<ice::TaskThreadPool> _thread_pool;
         ice::UniquePtr<ice::TaskThread> _graphics_thread;
@@ -101,7 +108,7 @@ namespace ice
 
         ice::memory::ProxyAllocator _frame_allocator;
         ice::memory::ScratchAllocator _frame_data_allocator[2];
-        ice::memory::ProxyAllocator _frame_gfx_allocator[2];
+        ice::memory::ScratchAllocator _frame_gfx_allocator[2];
         ice::u32 _next_free_allocator;
 
         ice::UniquePtr<ice::IceshardMemoryFrame> _previous_frame;
@@ -110,6 +117,7 @@ namespace ice
         ice::IceshardWorldManager& _world_manager;
         ice::IceshardWorldTracker _world_tracker;
 
+        ice::Span<ice::platform::Event const> _events;
         ice::UniquePtr<ice::input::InputTracker> _input_tracker;
 
         ice::UniquePtr<ice::gfx::IceGfxDevice> _gfx_device;

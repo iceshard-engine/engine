@@ -18,6 +18,16 @@
 namespace ice
 {
 
+    namespace devui
+    {
+
+        inline auto execution_key_from_pointer(void const* ptr) noexcept
+        {
+            return static_cast<DevUIExecutionKey>(static_cast<ice::u32>(reinterpret_cast<ice::uptr>(ptr) >> 16));
+        }
+
+    } // namespace devui
+
     namespace detail
     {
 
@@ -64,6 +74,7 @@ namespace ice
         : ice::EngineRunner{ }
         , _allocator{ alloc, "engine-runner" }
         , _engine{ engine }
+        , _devui_key{ devui::execution_key_from_pointer(ice::addressof(_engine)) }
         , _clock{ ice::clock::create_clock() }
         , _thread_pool{ ice::create_simple_threadpool(_allocator, 6) }
         , _graphics_thread{ ice::create_task_thread(_allocator) }
@@ -73,8 +84,8 @@ namespace ice
             ice::memory::ScratchAllocator{ _frame_allocator, detail::FrameAllocatorCapacity, "frame-alloc-2" }
         }
         , _frame_gfx_allocator{
-            ice::memory::ProxyAllocator{ _frame_allocator, "gfx-frame-alloc-1" },
-            ice::memory::ProxyAllocator{ _frame_allocator, "gfx-frame-alloc-2" }
+            ice::memory::ScratchAllocator{ _frame_allocator, 1024 * 16, "gfx-frame-alloc-1" },
+            ice::memory::ScratchAllocator{ _frame_allocator, 1024 * 16, "gfx-frame-alloc-2" }
         }
         , _next_free_allocator{ 0 }
         , _previous_frame{ ice::make_unique_null<ice::IceshardMemoryFrame>() }
@@ -86,6 +97,8 @@ namespace ice
         , _gfx_current_frame{ ice::make_unique_null<ice::gfx::IceGfxFrame>() }
         , _runner_tasks{ _allocator }
     {
+        _engine.developer_ui().internal_set_key(_devui_key);
+
         _previous_frame = ice::make_unique<ice::IceshardMemoryFrame>(
             _allocator,
             _frame_data_allocator[0]
@@ -137,6 +150,11 @@ namespace ice
         return _clock;
     }
 
+    auto IceshardEngineRunner::platform_events() noexcept -> ice::Span<ice::platform::Event const>
+    {
+        return _events;
+    }
+
     auto IceshardEngineRunner::input_tracker() noexcept -> ice::input::InputTracker&
     {
         return *_input_tracker;
@@ -182,6 +200,10 @@ namespace ice
     auto IceshardEngineRunner::logic_frame_task() noexcept -> ice::Task<>
     {
         IPT_FRAME_MARK;
+        IPT_ZONE_SCOPED_NAMED("Logic Frame");
+
+        //ice::EngineDevUI& devui = _engine.developer_ui();
+        //devui.internal_prepared_widgets(_devui_key);
 
         // Handle requests for the next frame
         for (ice::EngineRequest const& request : _previous_frame->requests())
@@ -259,15 +281,20 @@ namespace ice
     auto IceshardEngineRunner::excute_frame_task() noexcept -> ice::Task<>
     {
         co_await thread_pool();
+
+        IPT_ZONE_SCOPED_NAMED("Logic Frame - Wait for tasks");
         _current_frame->wait_ready();
     }
 
     auto IceshardEngineRunner::graphics_frame_task() noexcept -> ice::Task<>
     {
+        IPT_FRAME_MARK_NAMED("Graphics Frame");
         ice::UniquePtr<ice::gfx::IceGfxFrame> gfx_frame = ice::move(_gfx_current_frame);
 
         // Await the graphics thread context
         co_await *_graphics_thread;
+
+        IPT_ZONE_SCOPED_NAMED("Graphis Frame");
 
         // Wait for the previous render task to end
         _mre_gfx_draw.wait();
@@ -295,24 +322,35 @@ namespace ice
         ice::UniquePtr<ice::gfx::IceGfxFrame> gfx_frame
     ) noexcept -> ice::Task<>
     {
-        co_await thread_pool();
+        IPT_ZONE_SCOPED_NAMED("Graphis Frame - Present");
+        //co_await thread_pool();
 
         // NOTE: We are presenting the resulting image.
         _gfx_device->present(framebuffer_index);
-        IPT_FRAME_MARK_NAMED("Graphics Frame");
         co_return;
     }
 
-    void IceshardEngineRunner::next_frame() noexcept
+    void IceshardEngineRunner::next_frame(
+        ice::Span<ice::platform::Event const> events
+    ) noexcept
     {
+        IPT_ZONE_SCOPED_NAMED("Runner - Next Frame");
+
         _mre_frame_logic.reset();
 
+        _events = events;
         ice::sync_manual_wait(logic_frame_task(), _mre_frame_logic);
         _mre_frame_logic.wait();
 
         // Move the current frame to the 'previous' slot.
         _mre_gfx_commands.wait();
         _mre_gfx_commands.reset();
+
+        {
+            IPT_ZONE_SCOPED_NAMED("Runner Frame - Build Developer UI");
+            _engine.developer_ui().internal_build_widgets(*_current_frame, _devui_key);
+        }
+
         _previous_frame = ice::move(_current_frame);
 
         ice::sync_manual_wait(graphics_frame_task(), _mre_gfx_commands);
@@ -320,6 +358,10 @@ namespace ice
         [[maybe_unused]]
         bool const discarded_memory = _frame_data_allocator[_next_free_allocator].reset_and_discard();
         ICE_ASSERT(discarded_memory == false, "Memory was discarded during frame allocator reset!");
+
+        ice::u32 const total_allocated = _frame_gfx_allocator[_next_free_allocator].total_allocated();
+        bool const gfx_discarded_memory = _frame_gfx_allocator[_next_free_allocator].reset_and_discard();
+        //ICE_ASSERT(gfx_discarded_memory == false, "Memory was discarded ({}) during graphics allocator reset!", total_allocated);
 
         ice::clock::update(_clock);
 
