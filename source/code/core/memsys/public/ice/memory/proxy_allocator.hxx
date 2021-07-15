@@ -39,7 +39,7 @@ namespace ice::memory
         auto backing_allocator() noexcept -> ice::Allocator& { return _backing_allocator; }
 
         //! \brief Returns the total number of allocations.
-        auto allocation_count() const noexcept -> uint32_t { return _allocation_requests; }
+        auto allocation_count() const noexcept -> uint32_t override { return _allocation_requests; }
 
     private:
         //! \brief Backing allocator.

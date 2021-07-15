@@ -31,6 +31,7 @@ namespace ice
 
         virtual auto total_allocated() const noexcept -> uint32_t = 0;
 
+        virtual auto allocation_count() const noexcept -> uint32_t { return Constant_SizeNotTracked; }
 
         BaseAllocator(BaseAllocator const& other) noexcept = delete;
         auto operator=(BaseAllocator const& other) noexcept -> BaseAllocator& = delete;
@@ -128,6 +129,11 @@ namespace ice
             }
             _childs = child_allocator;
             _childs->_prev_sibling = nullptr;
+        }
+
+        auto parent_allocator() const noexcept -> ice::TrackedAllocator const*
+        {
+            return _parent;
         }
 
         auto child_allocators() const noexcept -> ice::TrackedAllocator const*
