@@ -69,7 +69,7 @@ namespace ice::gfx
     {
         _render_commands.end(_primary_commands[0]);
         _render_queue->submit(
-            ice::Span<ice::render::CommandBuffer>{ _primary_commands + 0, 1 }, true
+            ice::Span<ice::render::CommandBuffer>{ _primary_commands + 0, 1 }, false
         );
     }
 
