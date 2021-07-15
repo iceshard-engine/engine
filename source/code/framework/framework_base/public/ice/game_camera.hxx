@@ -33,4 +33,10 @@ namespace ice
         ice::vec2f near_far;
     };
 
+    class WorldTrait;
+
+    auto create_trait_camera(
+        ice::Allocator& alloc
+    ) noexcept -> ice::UniquePtr<ice::WorldTrait>;
+
 } // namespace ice
