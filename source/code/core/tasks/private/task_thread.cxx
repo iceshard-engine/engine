@@ -148,11 +148,7 @@ namespace ice
                     }
                 }
 
-                if (ice::pod::array::empty(thread_tasks) && expected_initial_task == nullptr)
-                {
-                    SleepEx(1, 0);
-                }
-                else
+                if (ice::pod::array::any(thread_tasks) || expected_initial_task != nullptr)
                 {
                     while (expected_initial_task != nullptr)
                     {
@@ -160,15 +156,6 @@ namespace ice
 
                         std::coroutine_handle<> coro_task = expected_initial_task->_coroutine;
                         coro_task.resume();
-                        //if (; coro_task.done())
-                        //{
-                        //    //coro_task.destroy();
-                        //}
-                        //else
-                        //{
-                        //    ICE_LOG(ice::LogSeverity::Warning, ice::LogTag::Engine, "TThread, task not finished!");
-                        //}
-
                         expected_initial_task = next_op;
                     }
 
