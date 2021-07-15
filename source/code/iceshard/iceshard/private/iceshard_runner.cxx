@@ -320,11 +320,9 @@ namespace ice
     ) noexcept -> ice::Task<>
     {
         IPT_ZONE_SCOPED_NAMED("Graphis Frame - Present");
-        //co_await thread_pool();
 
         // NOTE: We are presenting the resulting image.
         _gfx_device->present(framebuffer_index);
-        IPT_FRAME_MARK_NAMED("Graphics Frame");
         co_return;
     }
 
