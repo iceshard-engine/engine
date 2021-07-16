@@ -1,8 +1,29 @@
 #!/bin/sh
 
+find_profile_arg() {
+    conan_profile='default'
+
+    while [ $# -gt 0 ] ; do
+        if [ "$1" = "--conan_profile" ]; then
+            shift
+            if [ -n "$1" ]; then
+                conan_profile="$1"
+                shift
+            else
+                echo "Error: Missing value for --conan_profile argument!"
+                exit 1
+            fi
+        else
+            shift
+        fi
+    done
+}
+
 ice_initialize() {
+    find_profile_arg $*
+
     cd build/tools
-    conan install ../../tools --build=missing
+    conan install ../../tools --build=missing --profile $conan_profile
     cd ../..
 }
 
@@ -11,7 +32,9 @@ ice_initialize() {
 
 [ ! -d "build/tools" ] && mkdir -p "build/tools"
 
-[ ! -f "build/tools/activate.sh" ] && ice_initialize
+[ ! -f "build/tools/activate.sh" ] && ice_initialize $*
+
+[ "$1" = "init" ] && ice_initialize $*
 
 # Activate the enviroment
 . ./build/tools/activate.sh
