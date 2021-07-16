@@ -5,6 +5,7 @@ on:
     branches:
     - pre-alpha-cleanup
   pull_request:
+    types: [opened,edited,reopened]
     branches:
     - master
 
@@ -20,8 +21,7 @@ jobs:
       run: |
         pip3 install setuptools
         pip3 install conan
-        conan remote add conan-iceshard https://conan.iceshard.net/
-        conan remote add conan-bincrafters https://api.bintray.com/conan/bincrafters/public-conan
+        conan config install https://github.com/iceshard-engine/conan-config.git
     - name: Build (Windows-${{ matrix.configuration }})
       shell: cmd
       run: |
@@ -43,12 +43,8 @@ jobs:
         pip3 install setuptools
         pip3 install conan
         export PATH=~/.local/bin/:$PATH
-        conan remote add conan-iceshard https://conan.iceshard.net/
-        conan remote add conan-bincrafters https://api.bintray.com/conan/bincrafters/public-conan
-        conan profile new --detect default
-        conan profile update settings.compiler=clang default
-        conan profile update settings.compiler.version=9 default
-        conan profile update settings.compiler.libcxx=libstdc++11 default
+        conan config install https://github.com/iceshard-engine/conan-config.git
+        ./ice.sh init --conan_profile clang-10.0-linux-x86_64
     - name: Build (Linux-${{ matrix.configuration }})
       shell: bash
       run: |
@@ -56,8 +52,8 @@ jobs:
         ./ice.sh build -t all-x64-${{ matrix.configuration }}
     - name: Run tests
       run: |
-        ./build/bin/Linux-x64-${{ matrix.configuration }}-clang-x64-900/core_tests/core_tests
-        ./build/bin/Linux-x64-${{ matrix.configuration }}-clang-x64-900/memsys_tests/memsys_tests
+        ./build/bin/Linux-x64-${{ matrix.configuration }}-clang-x64-1000/core_tests/core_tests
+        ./build/bin/Linux-x64-${{ matrix.configuration }}-clang-x64-1000/memsys_tests/memsys_tests
     - name: Success
       run: |
         echo Validation successful
