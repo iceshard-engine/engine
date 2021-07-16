@@ -55,7 +55,8 @@ jobs:
     - name: Run unit tests
       shell: bash
       run: |
-        ./ice.sh build -t test-all-x64-${{ matrix.configuration }}
+        ./build/bin/Linux-x64-${{ matrix.configuration }}-clang-x64-1000/core_tests/core_tests
+        ./build/bin/Linux-x64-${{ matrix.configuration }}-clang-x64-1000/memsys_tests/memsys_tests
     - name: Success
       run: |
         echo Validation successful
