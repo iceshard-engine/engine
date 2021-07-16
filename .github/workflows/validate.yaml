@@ -3,7 +3,7 @@ name: Validation
 on:
   push:
     branches:
-    - pre-alpha-cleanup
+    - github-workflow-fixes
   pull_request:
     types: [opened,edited,reopened]
     branches:
