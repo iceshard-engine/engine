@@ -10,10 +10,9 @@ SCENARIO("memory :: default allocator", "[allocators]")
         ice::Allocator& default_alloc = ice::memory::default_allocator();
         ice::Allocator& default_scratch_alloc = ice::memory::default_scratch_allocator();
 
-        THEN("we know the initial allocated memory")
+        THEN("the default allocator has nothing allocated yet")
         {
-            // Internally the allocation header is currently 8 bytes large and has a 4 bytes alignment thus adding a whole 12 bytes to the requested allocation.
-            CHECK(default_alloc.total_allocated() == 64 + 12 /* internal overhead */);
+            CHECK(default_alloc.total_allocated() == 0);
         }
 
         AND_THEN("allocate memory on the scratch allocator")
@@ -54,8 +53,7 @@ SCENARIO("memory :: default allocator", "[allocators]")
 
         THEN("we don't have memory leaks")
         {
-            // Internally the allocation header is currently 8 bytes large and has a 4 bytes alignment thus adding a whole 12 bytes to the requested allocation.
-            CHECK(default_alloc.total_allocated() == 64 + 12 /* internal overhead */);
+            CHECK(default_alloc.total_allocated() == 0);
         }
 
         ice::memory::shutdown();

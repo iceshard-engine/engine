@@ -36,7 +36,7 @@ namespace ice::memory
             temporary_memory
         };
 
-        if constexpr (ice::build::is_debug || ice::build::is_profile)
+        if constexpr (ice::build::is_debug || ice::build::is_develop)
         {
             g_memory_globals._stats_allocator = g_memory_globals._default_allocator->make<ice::memory::ProxyAllocator>(
                 *g_memory_globals._default_allocator,
