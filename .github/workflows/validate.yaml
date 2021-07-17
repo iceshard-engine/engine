@@ -27,6 +27,7 @@ jobs:
       run: |
         ice build -t all-x64-${{ matrix.configuration }}
     - name: Run unit tests
+      shell: cmd
       run: |
         ice build -t test-all-x64-${{ matrix.configuration }}
     - name: Success
@@ -52,6 +53,7 @@ jobs:
       run: |
         ./ice.sh build -t all-x64-${{ matrix.configuration }}
     - name: Run unit tests
+      shell: bash
       run: |
         ./ice.sh build -t test-all-x64-${{ matrix.configuration }}
     - name: Success
