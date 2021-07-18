@@ -6,6 +6,10 @@
         '/std:c++latest'
         '/wd4127' // conditional expression is constant'
         '/permissive-'
+        '/Z7'
+        ; '/fsanitize=address'
+        ; '/Zi'
+        ; '/FS'
     }
 ]
 

@@ -304,7 +304,8 @@ namespace ice
 
             for (detail::SpriteInstanceInfo const& instance : *instances)
             {
-                detail::RenderData_Sprite const& sprite_render_data = ice::pod::hash::get(_sprite_materials, ice::hash(instance.materialid), {});
+                static detail::RenderData_Sprite no_data{ .material = { ice::render::Image::Invalid } };
+                detail::RenderData_Sprite const& sprite_render_data = ice::pod::hash::get(_sprite_materials, ice::hash(instance.materialid), no_data);
                 if (sprite_render_data.material[0] == ice::render::Image::Invalid)
                 {
                     continue;

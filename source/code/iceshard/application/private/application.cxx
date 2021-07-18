@@ -25,15 +25,15 @@ int main(int, char**)
         ice::memory::init();
     }
 
-    ice::Allocator& main_allocator = ice::memory::default_allocator();
-
-    ice::memory::ProxyAllocator filesystem_allocator{ main_allocator, "resource-filesystem" };
-    ice::memory::ProxyAllocator dynlib_allocator{ main_allocator, "resource-dynlib" };
-
     ice::i32 app_result = -1;
 
     // The application lifetime scope
     {
+        ice::Allocator& main_allocator = ice::memory::default_allocator();
+
+        ice::memory::ProxyAllocator filesystem_allocator{ main_allocator, "resource-filesystem" };
+        ice::memory::ProxyAllocator dynlib_allocator{ main_allocator, "resource-dynlib" };
+
         ice::UniquePtr<ice::ResourceSystem> resource_system = ice::create_resource_system(main_allocator);
 
         {

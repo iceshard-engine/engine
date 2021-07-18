@@ -66,6 +66,11 @@ namespace ice::memory
     {
         g_memory_globals._global_allocator = nullptr;
 
+        if constexpr (ice::build::is_debug || ice::build::is_develop)
+        {
+            g_memory_globals._stats_allocator->~Allocator();
+        }
+
         g_memory_globals._default_allocator->deallocate(g_memory_globals._stats_allocator);
         g_memory_globals._default_scratch_allocator->~ScratchAllocator();
         g_memory_globals._default_allocator->~DefaultAllocator();
