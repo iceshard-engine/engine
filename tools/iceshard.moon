@@ -1,6 +1,6 @@
 import Application from require 'ice.application'
 
-import InstallCommand from require 'ice.commands.install'
+import UpdateCommand from require 'ice.commands.update'
 import BuildCommand from require 'ice.commands.build'
 import VStudioCommand from require 'ice.commands.vstudio'
 import RunCommand from require 'tools.run'
@@ -10,7 +10,7 @@ class IceShard extends Application
     @description: 'IceShard engine project tool.'
     @commands: {
         'build': BuildCommand
-        'install': InstallCommand
+        'update': UpdateCommand
         'vstudio': VStudioCommand
         'run': RunCommand
     }
