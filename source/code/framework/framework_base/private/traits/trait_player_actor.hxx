@@ -31,7 +31,7 @@ namespace ice
         ) noexcept override;
 
     private:
-        using Query = ice::ComponentQuery<ice::Actor const&, ice::Animation&, ice::Transform2DStatic&>;
+        using Query = ice::ComponentQuery<ice::Actor const&, ice::Animation&, ice::Transform2DDynamic&>;
     };
 
 } // namespace ice

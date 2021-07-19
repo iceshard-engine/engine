@@ -67,7 +67,7 @@ namespace ice
         }
 
         result.for_each(
-            [&](ice::Actor const& actor, ice::Animation& anim, ice::Transform2DStatic& xform) noexcept
+            [&](ice::Actor const& actor, ice::Animation& anim, ice::Transform2DDynamic& xform) noexcept
             {
                 if (actor.type == ActorType::Player)
                 {
