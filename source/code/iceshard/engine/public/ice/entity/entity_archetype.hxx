@@ -135,14 +135,14 @@ namespace ice
         return ice::hash(left.name) < ice::hash(right.name);
     }
 
-    struct Position2D
+    struct ValidationComponent_Position2D
     {
         static constexpr ice::StringID Identifier = "ice.position2d"_sid;
 
         ice::vec2f pos;
     };
 
-    struct Velocity2D
+    struct ValidationComponent_Velocity2D
     {
         static constexpr ice::StringID Identifier = "ice.velocity2d"_sid;
 
@@ -150,13 +150,13 @@ namespace ice
         ice::vec2f angVel;
     };
 
-    auto constexpr physic2d_archetype = Archetype<Position2D, Velocity2D>{ };
-    auto constexpr physic2d_archetype_2 = Archetype<Velocity2D, Position2D>{ };
+    auto constexpr physic2d_archetype = Archetype<ValidationComponent_Position2D, ValidationComponent_Velocity2D>{ };
+    auto constexpr physic2d_archetype_2 = Archetype<ValidationComponent_Velocity2D, ValidationComponent_Position2D>{ };
 
     static_assert(
-        Archetype<Position2D, Velocity2D>{ }.components[0]
+        Archetype<ValidationComponent_Position2D, ValidationComponent_Velocity2D>{ }.components[0]
         ==
-        Archetype<Velocity2D, Position2D>{ }.components[0]
+        Archetype<ValidationComponent_Velocity2D, ValidationComponent_Position2D>{ }.components[0]
     );
 
     static_assert(physic2d_archetype.components.size() == 3);
