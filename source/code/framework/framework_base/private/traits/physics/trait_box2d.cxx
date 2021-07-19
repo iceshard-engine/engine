@@ -119,30 +119,17 @@ namespace ice
                     fixture_def.friction = 0.0f;
 
                     body->CreateFixture(&fixture_def);
-
-                    phx_body.ts = runner.clock().latest_timestamp;
                 }
                 else
                 {
                     b2Body* body = reinterpret_cast<b2Body*>(phx_body.trait_data);
                     b2Vec2 body_pos = body->GetPosition();
 
-                    if (actor != nullptr)
-                    {
-                        if (actor->state == ActorState::Moving || actor->state == ActorState::Jumping)
-                        {
-                            b2Vec2 vec{ dyn_xform.position.x / Constant_PixelsInMeter, body_pos.y };
-
-                            body->SetTransform(vec, body->GetAngle());
-                        }
-
-                        ice::Timer timer = ice::timer::create_timer(runner.clock(), 1.f, phx_body.ts);
-                        if (actor->state == ActorState::Jumping && ice::timer::update(timer))
-                        {
-                            body->SetLinearVelocity({ 0.f, 4.f });
-                            phx_body.ts = timer.last_tick_timestamp;
-                        }
-                    }
+                    //if (actor != nullptr)
+                    //{
+                    //    b2Vec2 vec{ dyn_xform.position.x / Constant_PixelsInMeter, dyn_xform.position.y / Constant_PixelsInMeter };
+                    //    body->SetTransform(vec, body->GetAngle());
+                    //}
 
                     dyn_xform.position = ice::vec3f{ body_pos.x * Constant_PixelsInMeter, body_pos.y * Constant_PixelsInMeter, 1.f };
                 }
