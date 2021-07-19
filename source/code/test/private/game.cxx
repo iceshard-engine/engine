@@ -1,6 +1,7 @@
 #include "game.hxx"
 
 #include <ice/game_actor.hxx>
+#include <ice/game_anim.hxx>
 
 #include <ice/engine.hxx>
 #include <ice/engine_runner.hxx>
@@ -37,8 +38,6 @@ MyGame::MyGame(ice::Allocator& alloc, ice::Clock const& clock) noexcept
     , _entity_storage{ _allocator, *_archetype_index, _archetype_alloc }
     , _game_gfx_pass{ ice::gfx::create_dynamic_pass(_allocator) }
     , _test_world{ nullptr }
-    , _anim_timer{ ice::timer::create_timer(_clock, 1.f / 10) }
-    , _anim_query{ nullptr }
 {
 }
 
@@ -76,6 +75,7 @@ void MyGame::on_app_startup(ice::Engine& engine) noexcept
 
     ice::EngineDevUI& devui = engine.developer_ui();
 
+    _trait_animator = ice::create_trait_animator(_allocator);
     _trait_actor = ice::create_trait_actor(_allocator);
     _trait_render_gfx = ice::create_trait_render_gfx(_allocator);
     _trait_render_clear = ice::create_trait_render_clear(_allocator);
@@ -121,6 +121,7 @@ void MyGame::on_app_startup(ice::Engine& engine) noexcept
 
     ice::WorldManager& world_manager = engine.world_manager();
     _test_world = world_manager.create_world("game.test_world"_sid, &_entity_storage);
+    _test_world->add_trait("ice.anim"_sid, _trait_animator.get());
     _test_world->add_trait("ice.actor"_sid, _trait_actor.get());
     _test_world->add_trait("ice.render_gfx"_sid, _trait_render_gfx.get());
     _test_world->add_trait("ice.render_clear"_sid, _trait_render_clear.get());
@@ -134,16 +135,12 @@ void MyGame::on_app_startup(ice::Engine& engine) noexcept
     ice::ArchetypeHandle ortho_arch = _archetype_index->register_archetype<ice::Camera, ice::CameraOrtho>(&_archetype_alloc);
     ice::ArchetypeHandle persp_arch = _archetype_index->register_archetype<ice::Camera, ice::CameraPerspective>(&_archetype_alloc);
     _archetype_index->register_archetype<ice::Transform2DStatic, ice::Sprite>(&_archetype_alloc);
-    _archetype_index->register_archetype<ice::Transform2DStatic, ice::Sprite, ice::SpriteTile, AnimComponent>(&_archetype_alloc);
-    _archetype_index->register_archetype<ice::Transform2DStatic, ice::Sprite, ice::SpriteTile, ice::Actor, AnimComponent>(&_archetype_alloc);
-
-    _anim_query = _allocator.make<ice::ComponentQuery<AnimComponent&, ice::SpriteTile&>>(_allocator, *_archetype_index);
+    _archetype_index->register_archetype<ice::Transform2DStatic, ice::Sprite, ice::SpriteTile, ice::Animation, ice::AnimationState>(&_archetype_alloc);
+    _archetype_index->register_archetype<ice::Transform2DStatic, ice::Sprite, ice::SpriteTile, ice::Actor, ice::Animation, ice::AnimationState>(&_archetype_alloc);
 }
 
 void MyGame::on_app_shutdown(ice::Engine& engine) noexcept
 {
-    _allocator.destroy(_anim_query);
-
     _test_world->remove_trait("game"_sid);
     _test_world->remove_trait("ice.devui"_sid);
     _test_world->remove_trait("ice.camera"_sid);
@@ -153,6 +150,7 @@ void MyGame::on_app_shutdown(ice::Engine& engine) noexcept
     _test_world->remove_trait("ice.render_clear"_sid);
     _test_world->remove_trait("ice.render_gfx"_sid);
     _test_world->remove_trait("ice.actor"_sid);
+    _test_world->remove_trait("ice.anim"_sid);
 
     ice::WorldManager& world_manager = engine.world_manager();
     world_manager.destroy_world("game.test_world"_sid);
@@ -175,6 +173,8 @@ void MyGame::on_app_shutdown(ice::Engine& engine) noexcept
 
 void MyGame::on_game_begin(ice::EngineRunner& runner) noexcept
 {
+    using ice::operator""_sid_hash;
+
     ice::vec2u extent = runner.graphics_device().swapchain().extent();
 
     constexpr ice::StringID components[]{ ice::Camera::Identifier, ice::CameraOrtho::Identifier };
@@ -182,7 +182,9 @@ void MyGame::on_game_begin(ice::EngineRunner& runner) noexcept
         .components = components
     };
 
-    constexpr ice::StringID sprite_components[]{ ice::Sprite::Identifier, ice::SpriteTile::Identifier };
+    constexpr ice::StringID sprite_components[]{
+        ice::Transform2DStatic::Identifier, ice::Sprite::Identifier, ice::SpriteTile::Identifier, ice::Animation::Identifier, ice::AnimationState::Identifier
+    };
     constexpr ice::ArchetypeQueryCriteria sprite_query_criteria{
         .components = sprite_components
     };
@@ -212,12 +214,13 @@ void MyGame::on_game_begin(ice::EngineRunner& runner) noexcept
     };
     _entity_storage.set_archetype_with_data(camera_entity, ortho_arch, camera, orto_values);
 
-    AnimComponent anim{
-        .steps = 18,
+    ice::Animation anim{
+        .animation = "cotm_idle"_sid_hash,
+        .speed = 1.f / 60.f
     };
     ice::Transform2DStatic sprite_pos{
         .position = { 48.f, 48.f, 1.f },
-        .scale = { 2.f, 2.f }
+        .scale = { 1.f, 0.f }
     };
     ice::Sprite sprite{
         .material = "/cotm/cotm_hero"_sid,
@@ -227,14 +230,14 @@ void MyGame::on_game_begin(ice::EngineRunner& runner) noexcept
     };
     _entity_storage.set_archetype_with_data(sprite_entity, sprite_arch, anim, sprite_pos, sprite, sprite_tile);
 
-    anim.steps = 4;
     sprite_pos.position = { 48.f * 2, 48.f, 1.f };
     sprite_tile.material_tile = { 0, 1 };
+    anim.speed = 1.f / 15.f;
     _entity_storage.set_archetype_with_data(sprite_entity2, actor_arch, anim, sprite_pos, sprite, sprite_tile, ice::Actor{ .type = ice::ActorType::Player });
 
-    anim.steps = 7;
     sprite_pos.position = { 48.f * 3, 48.f, 1.f };
     sprite_tile.material_tile = { 0, 2 };
+    anim.speed = 1.f / 30.f;
     _entity_storage.set_archetype_with_data(sprite_entity3, sprite_arch, anim, sprite_pos, sprite, sprite_tile);
 
     _trait_render_sprites->set_camera("camera.default"_sid);
@@ -251,39 +254,5 @@ void MyGame::on_game_end() noexcept
 
 void MyGame::on_update(ice::EngineFrame& frame, ice::EngineRunner& runner, ice::WorldPortal& portal) noexcept
 {
-    auto result = _anim_query->result_by_entity(runner.current_frame().allocator(), _entity_storage);
-
-    if (ice::timer::update_by_step(_anim_timer))
-    {
-        result.for_each([&](AnimComponent& anim, ice::SpriteTile& tile) noexcept
-            {
-                tile.material_tile.x += 1;
-                if (anim.steps == tile.material_tile.x)
-                {
-                    tile.material_tile.x = 0;
-                    tile.material_tile.y += 1;
-
-                    if (tile.material_tile.y == 3)
-                    {
-                        tile.material_tile.y = 0;
-                    }
-
-                    if (tile.material_tile.y == 0)
-                    {
-                        anim.steps = 18;
-                    }
-                    else if (tile.material_tile.y == 1)
-                    {
-                        anim.steps = 4;
-                    }
-                    else if (tile.material_tile.y == 2)
-                    {
-                        anim.steps = 7;
-                    }
-                }
-            }
-        );
-    }
-
     runner.graphics_frame().enqueue_pass("default"_sid, _game_gfx_pass.get());
 }

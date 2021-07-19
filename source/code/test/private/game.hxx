@@ -14,13 +14,6 @@
 using ice::operator""_sid;
 using ice::operator""_uri;
 
-struct AnimComponent
-{
-    static constexpr ice::StringID Identifier = "test.anim"_sid;
-    ice::u32 steps;
-    ice::f32 speed;
-};
-
 class MyGame : public ice::WorldTrait
 {
 public:
@@ -59,10 +52,9 @@ public:
     ice::UniquePtr<ice::GameWorldTrait_RenderDraw> _trait_render_sprites{ ice::make_unique_null<ice::GameWorldTrait_RenderDraw>() };
     ice::UniquePtr<ice::WorldTrait> _trait_render_camera{ ice::make_unique_null<ice::WorldTrait>() };
     ice::UniquePtr<ice::WorldTrait> _trait_actor{ ice::make_unique_null<ice::WorldTrait>() };
+    ice::UniquePtr<ice::WorldTrait> _trait_animator{ ice::make_unique_null<ice::WorldTrait>() };
 
     ice::World* _test_world;
-    ice::Timer _anim_timer;
-    ice::ComponentQuery<AnimComponent&, ice::SpriteTile&>* _anim_query;
 };
 
 ICE_REGISTER_GAMEAPP(MyGame);

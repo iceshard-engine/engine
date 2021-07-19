@@ -367,7 +367,7 @@ namespace ice
             .min_filter = SamplerFilter::Nearest,
             .mag_filter = SamplerFilter::Nearest,
             .address_mode = {
-                .u = SamplerAddressMode::ClampToEdge,
+                .u = SamplerAddressMode::RepeatMirrored,
                 .v = SamplerAddressMode::ClampToEdge,
                 .w = SamplerAddressMode::ClampToEdge,
             },
@@ -688,10 +688,10 @@ namespace ice
 
         if (has_vertex_offsets)
         {
-            vertices[0] = { 0.f, ice::f32(tile_height), 0.f, 0.f };
+            vertices[0] = { 0.f, ice::f32(tile_height) * 2, 0.f, 0.f };
             vertices[1] = { 0.f, 0.f, 0.f, 1.f };
-            vertices[2] = { ice::f32(tile_width), 0.f, 1.f, 1.f };
-            vertices[3] = { ice::f32(tile_width), ice::f32(tile_height), 1.f, 0.f };
+            vertices[2] = { ice::f32(tile_width) * 2, 0.f, 1.f, 1.f };
+            vertices[3] = { ice::f32(tile_width) * 2, ice::f32(tile_height) * 2, 1.f, 0.f };
 
             updates[2].buffer = _vertex_buffer;
             updates[2].data = ice::data_view(vertices);
