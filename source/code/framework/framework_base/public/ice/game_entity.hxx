@@ -39,4 +39,13 @@ namespace ice
         ice::rad rotation{ 0.f };
     };
 
+    struct Transform2DDynamic
+    {
+        static constexpr ice::StringID Identifier = "ice.component.xform-2d-dynamic"_sid;
+
+        ice::vec3f position{ 0.f };
+        ice::vec2f scale{ 1.f };
+        ice::rad rotation{ 0.f };
+    };
+
 } // namespace ice
