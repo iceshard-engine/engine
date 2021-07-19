@@ -53,6 +53,7 @@ public:
     ice::UniquePtr<ice::WorldTrait> _trait_render_camera{ ice::make_unique_null<ice::WorldTrait>() };
     ice::UniquePtr<ice::WorldTrait> _trait_actor{ ice::make_unique_null<ice::WorldTrait>() };
     ice::UniquePtr<ice::WorldTrait> _trait_animator{ ice::make_unique_null<ice::WorldTrait>() };
+    ice::UniquePtr<ice::WorldTrait> _trait_physics{ ice::make_unique_null<ice::WorldTrait>() };
 
     ice::World* _test_world;
 };

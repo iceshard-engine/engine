@@ -2,6 +2,7 @@
 
 #include <ice/game_actor.hxx>
 #include <ice/game_anim.hxx>
+#include <ice/game_physics.hxx>
 
 #include <ice/engine.hxx>
 #include <ice/engine_runner.hxx>
@@ -75,6 +76,7 @@ void MyGame::on_app_startup(ice::Engine& engine) noexcept
 
     ice::EngineDevUI& devui = engine.developer_ui();
 
+    _trait_physics = ice::create_trait_physics(_allocator);
     _trait_animator = ice::create_trait_animator(_allocator);
     _trait_actor = ice::create_trait_actor(_allocator);
     _trait_render_gfx = ice::create_trait_render_gfx(_allocator);
@@ -121,6 +123,7 @@ void MyGame::on_app_startup(ice::Engine& engine) noexcept
 
     ice::WorldManager& world_manager = engine.world_manager();
     _test_world = world_manager.create_world("game.test_world"_sid, &_entity_storage);
+    _test_world->add_trait("ice.physics"_sid, _trait_physics.get());
     _test_world->add_trait("ice.anim"_sid, _trait_animator.get());
     _test_world->add_trait("ice.actor"_sid, _trait_actor.get());
     _test_world->add_trait("ice.render_gfx"_sid, _trait_render_gfx.get());
@@ -135,8 +138,8 @@ void MyGame::on_app_startup(ice::Engine& engine) noexcept
     ice::ArchetypeHandle ortho_arch = _archetype_index->register_archetype<ice::Camera, ice::CameraOrtho>(&_archetype_alloc);
     ice::ArchetypeHandle persp_arch = _archetype_index->register_archetype<ice::Camera, ice::CameraPerspective>(&_archetype_alloc);
     _archetype_index->register_archetype<ice::Transform2DStatic, ice::Sprite>(&_archetype_alloc);
-    _archetype_index->register_archetype<ice::Transform2DStatic, ice::Sprite, ice::SpriteTile, ice::Animation, ice::AnimationState>(&_archetype_alloc);
-    _archetype_index->register_archetype<ice::Transform2DStatic, ice::Sprite, ice::SpriteTile, ice::Actor, ice::Animation, ice::AnimationState>(&_archetype_alloc);
+    _archetype_index->register_archetype<ice::Transform2DDynamic, ice::Sprite, ice::SpriteTile, ice::Animation, ice::AnimationState>(&_archetype_alloc);
+    _archetype_index->register_archetype<ice::Transform2DDynamic, ice::Sprite, ice::SpriteTile, ice::Animation, ice::AnimationState, ice::Actor, ice::PhysicsBody>(&_archetype_alloc);
 }
 
 void MyGame::on_app_shutdown(ice::Engine& engine) noexcept
@@ -151,6 +154,7 @@ void MyGame::on_app_shutdown(ice::Engine& engine) noexcept
     _test_world->remove_trait("ice.render_gfx"_sid);
     _test_world->remove_trait("ice.actor"_sid);
     _test_world->remove_trait("ice.anim"_sid);
+    _test_world->remove_trait("ice.physics"_sid);
 
     ice::WorldManager& world_manager = engine.world_manager();
     world_manager.destroy_world("game.test_world"_sid);
@@ -162,6 +166,8 @@ void MyGame::on_app_shutdown(ice::Engine& engine) noexcept
     _trait_render_clear = nullptr;
     _trait_render_gfx = nullptr;
     _trait_actor = nullptr;
+    _trait_animator = nullptr;
+    _trait_physics = nullptr;
     _game_gfx_pass = nullptr;
 
     ICE_LOG(
@@ -183,12 +189,14 @@ void MyGame::on_game_begin(ice::EngineRunner& runner) noexcept
     };
 
     constexpr ice::StringID sprite_components[]{
-        ice::Transform2DStatic::Identifier, ice::Sprite::Identifier, ice::SpriteTile::Identifier, ice::Animation::Identifier, ice::AnimationState::Identifier
+        ice::Transform2DDynamic::Identifier, ice::Sprite::Identifier, ice::SpriteTile::Identifier, ice::Animation::Identifier, ice::AnimationState::Identifier
     };
     constexpr ice::ArchetypeQueryCriteria sprite_query_criteria{
         .components = sprite_components
     };
-    constexpr ice::StringID actor_components[]{ ice::Actor::Identifier };
+    constexpr ice::StringID actor_components[]{
+        ice::Transform2DDynamic::Identifier, ice::Sprite::Identifier, ice::SpriteTile::Identifier, ice::Animation::Identifier, ice::AnimationState::Identifier, ice::Actor::Identifier
+    };
     constexpr ice::ArchetypeQueryCriteria actor_query_criteria{
         .components = actor_components
     };
@@ -218,7 +226,7 @@ void MyGame::on_game_begin(ice::EngineRunner& runner) noexcept
         .animation = "cotm_idle"_sid_hash,
         .speed = 1.f / 60.f
     };
-    ice::Transform2DStatic sprite_pos{
+    ice::Transform2DDynamic sprite_pos{
         .position = { 48.f, 48.f, 1.f },
         .scale = { 1.f, 0.f }
     };
@@ -233,7 +241,8 @@ void MyGame::on_game_begin(ice::EngineRunner& runner) noexcept
     sprite_pos.position = { 48.f * 2, 48.f, 1.f };
     sprite_tile.material_tile = { 0, 1 };
     anim.speed = 1.f / 15.f;
-    _entity_storage.set_archetype_with_data(sprite_entity2, actor_arch, anim, sprite_pos, sprite, sprite_tile, ice::Actor{ .type = ice::ActorType::Player });
+    ice::Actor actor{ .type = ice::ActorType::Player };
+    _entity_storage.set_archetype_with_data(sprite_entity2, actor_arch, anim, sprite_pos, sprite, sprite_tile, actor, ice::PhysicsBody{});
 
     sprite_pos.position = { 48.f * 3, 48.f, 1.f };
     sprite_tile.material_tile = { 0, 2 };
