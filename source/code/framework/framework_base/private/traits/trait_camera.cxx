@@ -89,7 +89,7 @@ namespace ice
         ice::WorldPortal& portal
     ) noexcept
     {
-        portal.execute(task_update_cameras(frame, runner, portal));
+        runner.execute_task(task_update_cameras(frame, runner, portal), EngineContext::LogicFrame);
     }
 
     auto IceWorldTrait_RenderCamera::task_update_cameras(
