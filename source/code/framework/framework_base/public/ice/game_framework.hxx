@@ -107,7 +107,7 @@ namespace ice
             ice::ModuleRegister& module_register
         ) noexcept
             : GameFramework{ alloc, resource_system, module_register }
-            , _game{ _allocator, _system_clock }
+            , _game{ alloc, _system_clock }
         { }
 
     private:

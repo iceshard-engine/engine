@@ -2,6 +2,7 @@
 #include <ice/game_entity.hxx>
 #include <ice/game_camera.hxx>
 
+#include <ice/engine.hxx>
 #include <ice/engine_runner.hxx>
 #include <ice/engine_frame.hxx>
 #include <ice/world/world_portal.hxx>
@@ -88,7 +89,7 @@ namespace ice
         ice::WorldPortal& portal
     ) noexcept
     {
-        portal.execute(task_update_cameras(frame, runner, portal));
+        runner.execute_task(task_update_cameras(frame, runner, portal), EngineContext::LogicFrame);
     }
 
     auto IceWorldTrait_RenderCamera::task_update_cameras(

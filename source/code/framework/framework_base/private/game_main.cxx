@@ -37,70 +37,76 @@ auto game_main(ice::Allocator& alloc, ice::ResourceSystem& resources) -> ice::i3
         ice::unload_log_module
     );
 
-    ice::memory::ProxyAllocator framework_alloc{ alloc, "game-framework-alloc" };
-    ice::memory::ProxyAllocator asset_alloc{ alloc, "asset-alloc" };
-    ice::memory::ProxyAllocator engine_alloc{ alloc, "engine-alloc" };
-    ice::memory::ProxyAllocator app_alloc{ alloc, "app-alloc" };
-
-    ice::GameFramework* game_framework = ice::create_game_object(
-        framework_alloc,
-        resources,
-        *module_register
-    );
-
-    game_framework->load_modules();
-
-    // Mount the current working directory
-    //  This allows to automatically detect any `config.json` file stored with the executable.
-    resources.mount("dir://."_uri);
-
-    ice::URI const config_file = game_framework->config_uri();
-    ice::u32 const mounted_files = resources.mount(config_file);
-    ICE_ASSERT(
-        mounted_files >= 1,
-        "Missing config file for URI: {}",
-        config_file.path
-    );
-
-    ice::ResourceQuery resource_query;
-    resources.query_changes(resource_query);
-    resources.mount("file://mount.isr"_uri);
-
-    ice::Resource* const mount_file = resources.request("urn://mount.isr"_uri);
-    if (mount_file != nullptr)
     {
-        ICE_LOG(ice::LogSeverity::Info, ice::LogTag::Game, "Custom mount file found: {}\n", mount_file->location().path);
-    }
+        ice::memory::ProxyAllocator framework_alloc{ alloc, "game-framework-alloc" };
+        ice::memory::ProxyAllocator asset_alloc{ alloc, "asset-alloc" };
+        ice::memory::ProxyAllocator engine_alloc{ alloc, "engine-alloc" };
+        ice::memory::ProxyAllocator app_alloc{ alloc, "app-alloc" };
 
-    resources.query_changes(resource_query);
-    resources.mount("dir://../source/data"_uri);
-    resources.query_changes(resource_query);
+        ice::GameFramework* game_framework = ice::create_game_object(
+            framework_alloc,
+            resources,
+            *module_register
+        );
 
-    ice::UniquePtr<ice::AssetSystem> asset_system = ice::create_asset_system(asset_alloc, resources);
-    ice::load_asset_pipeline_modules(asset_alloc, *module_register, *asset_system);
-    asset_system->bind_resources(resource_query.objects);
+        game_framework->load_modules();
 
-    ice::UniquePtr<ice::devui::DevUISystem> engine_devui = ice::devui::create_devui_system(engine_alloc, *module_register);
-    ice::UniquePtr<ice::Engine> engine = ice::create_engine(engine_alloc, *asset_system, *module_register, engine_devui.get());
-    if (engine != nullptr)
-    {
-        game_framework->startup(*engine);
+        // Mount the current working directory
+        //  This allows to automatically detect any `config.json` file stored with the executable.
+        resources.mount("dir://."_uri);
 
-        ice::UniquePtr<ice::platform::App> platform_app = game_framework->platform_app();
-        if (platform_app != nullptr)
+        ice::URI const config_file = game_framework->config_uri();
+        ice::u32 const mounted_files = resources.mount(config_file);
+        ICE_ASSERT(
+            mounted_files >= 1,
+            "Missing config file for URI: {}",
+            config_file.path
+        );
+
+        ice::UniquePtr<ice::AssetSystem> asset_system = ice::make_unique_null<ice::AssetSystem>();
+
         {
-            main_result = ice::platform::create_app_container(app_alloc, ice::move(platform_app))->run();
+            ice::ResourceQuery resource_query;
+            resources.query_changes(resource_query);
+            resources.mount("file://mount.isr"_uri);
+
+            ice::Resource* const mount_file = resources.request("urn://mount.isr"_uri);
+            if (mount_file != nullptr)
+            {
+                ICE_LOG(ice::LogSeverity::Info, ice::LogTag::Game, "Custom mount file found: {}\n", mount_file->location().path);
+            }
+
+            resources.query_changes(resource_query);
+            resources.mount("dir://../source/data"_uri);
+            resources.query_changes(resource_query);
+
+            asset_system = ice::create_asset_system(asset_alloc, resources);
+            ice::load_asset_pipeline_modules(asset_alloc, *module_register, *asset_system);
+            asset_system->bind_resources(resource_query.objects);
         }
 
-        game_framework->shutdown(*engine);
+        ice::UniquePtr<ice::devui::DevUISystem> engine_devui = ice::devui::create_devui_system(engine_alloc, *module_register);
+        ice::UniquePtr<ice::Engine> engine = ice::create_engine(engine_alloc, *asset_system, *module_register, engine_devui.get());
+        if (engine != nullptr)
+        {
+            game_framework->startup(*engine);
+
+            ice::UniquePtr<ice::platform::App> platform_app = game_framework->platform_app();
+            if (platform_app != nullptr)
+            {
+                main_result = ice::platform::create_app_container(app_alloc, ice::move(platform_app))->run();
+            }
+
+            game_framework->shutdown(*engine);
+        }
+        engine = nullptr;
+        engine_devui = nullptr;
+
+        framework_alloc.destroy(game_framework);
+
+        asset_system = nullptr;
+        module_register = nullptr;
     }
-    engine = nullptr;
-    engine_devui = nullptr;
-
-    framework_alloc.destroy(game_framework);
-
-    asset_system = nullptr;
-    module_register = nullptr;
 
     return main_result;
 }

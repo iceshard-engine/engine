@@ -19,10 +19,11 @@ namespace ice::render::vk
     } // namespace detail
 
     VulkanRenderDriver::VulkanRenderDriver(
+        ice::Allocator& alloc,
         ice::UniquePtr<VulkanAllocator> vk_alloc,
         VkInstance vk_instance
     ) noexcept
-        : _allocator{ vk_alloc->backing_allocator() }
+        : _allocator{ alloc, "vk-driver" }
         , _vk_alloc{ ice::move(vk_alloc) }
         , _vk_instance{ vk_instance }
         , _vk_physical_device{ vk_nullptr }
@@ -132,7 +133,7 @@ namespace ice::render::vk
         ice::render::RenderSurface* surface
     ) noexcept
     {
-        _vk_alloc->destroy(reinterpret_cast<VulkanRenderSurface*>(surface));
+        _vk_alloc->destroy(static_cast<VulkanRenderSurface*>(surface));
     }
 
     void VulkanRenderDriver::query_queue_infos(

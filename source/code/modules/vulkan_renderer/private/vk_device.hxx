@@ -1,5 +1,6 @@
 #pragma once
 #include <ice/render/render_device.hxx>
+#include <ice/memory/scratch_allocator.hxx>
 #include <ice/pod/array.hxx>
 #include <ice/unique_ptr.hxx>
 
@@ -246,6 +247,8 @@ namespace ice::render::vk
 
     private:
         ice::Allocator& _allocator;
+        ice::memory::ScratchAllocator _gfx_thread_alloc;
+
         VkDevice _vk_device;
         VkPhysicalDevice _vk_physical_device;
         VkDescriptorPool _vk_descriptor_pool;

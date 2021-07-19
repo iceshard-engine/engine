@@ -250,6 +250,7 @@ namespace ice::render::vk
         VkPhysicalDeviceMemoryProperties const& memory_properties
     ) noexcept
         : _allocator{ alloc }
+        , _map_allocator{ _allocator, 1024 * 1024 * 2 }
         , _block_allocator{ _allocator, sizeof(AllocationBlock) * 8 }
         , _entry_allocator{ _allocator, sizeof(AllocationEntry) * 32 }
         , _blocks{ _allocator }
@@ -507,7 +508,10 @@ namespace ice::render::vk
             VkDeviceSize size;
         };
 
-        ice::pod::Array<DeviceMappingEntry> vk_mapping_entries{ _allocator };
+        // [issue #49]: This part of the code is generally run on a graphics thread. Because of this we need to have a dedicated memory pool / allocator. So it won't interfer with
+        //  other allocations done in the mean time on any other thrads.
+        //  We should probably slowly invest some time into thread safe allocators.
+        ice::pod::Array<DeviceMappingEntry> vk_mapping_entries{ _map_allocator };
         ice::pod::array::reserve(vk_mapping_entries, ice::size(handles));
 
         auto push_back_unique_and_update = [](auto& array_, VkDeviceMemory vk_memory, VkDeviceSize offset, VkDeviceSize size) noexcept
@@ -601,7 +605,10 @@ namespace ice::render::vk
         ice::Span<AllocationHandle const> handles
     ) noexcept
     {
-        ice::pod::Array<VkDeviceMemory> vk_unmapped_entries{ _allocator };
+        // [issue #49]: This part of the code is generally run on a graphics thread. Because of this we need to have a dedicated memory pool / allocator. So it won't interfer with
+        //  other allocations done in the mean time on any other thrads.
+        //  We should probably slowly invest some time into thread safe allocators.
+        ice::pod::Array<VkDeviceMemory> vk_unmapped_entries{ _map_allocator };
         ice::pod::array::reserve(vk_unmapped_entries, ice::size(handles));
 
         auto unmap_unique = [&](auto& array_, VkDeviceMemory vk_memory) noexcept

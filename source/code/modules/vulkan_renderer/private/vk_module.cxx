@@ -38,7 +38,7 @@ namespace ice::render::vk
         VkResult const vk_create_result = vkCreateInstance(&instance_create_info, vk_alloc->vulkan_callbacks(), &vk_instance);
         ICE_ASSERT(vk_create_result == VkResult::VK_SUCCESS, "Creation of Vulkan instance failed!");
 
-        return alloc.make<VulkanRenderDriver>(ice::move(vk_alloc), vk_instance);
+        return alloc.make<VulkanRenderDriver>(alloc, ice::move(vk_alloc), vk_instance);
     }
 
     auto destroy_vulkan_driver(ice::Allocator& alloc, ice::render::RenderDriver* driver) noexcept

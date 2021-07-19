@@ -1,4 +1,5 @@
 #pragma once
+#include <ice/world/world_trait.hxx>
 #include <ice/entity/entity.hxx>
 #include <ice/game_camera.hxx>
 #include <ice/render/render_declarations.hxx>

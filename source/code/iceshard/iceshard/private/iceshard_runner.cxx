@@ -113,8 +113,6 @@ namespace ice
         );
 
         ice::pod::array::reserve(_runner_tasks, 10);
-
-        activate_worlds();
     }
 
     IceshardEngineRunner::~IceshardEngineRunner() noexcept

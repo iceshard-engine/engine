@@ -68,7 +68,7 @@ namespace ice
     {
         if (ptr != nullptr)
         {
-            if constexpr (std::is_same_v<std::remove_pointer_t<std::remove_cv_t<std::remove_reference_t<T>>>, void> == false)
+            if constexpr (std::is_same_v<std::remove_cv_t<T>, void> == false)
             {
                 ptr->~T();
             }
@@ -155,7 +155,7 @@ namespace ice
         ice::TrackedAllocator* _prev_sibling = nullptr;
     };
 
-    template<bool debug_build = ice::build::is_debug>
+    template<bool debug_build = ice::build::is_debug || ice::build::is_develop>
     struct BaseAllocatorPicker
     {
         using AllocatorType = ice::BaseAllocator;

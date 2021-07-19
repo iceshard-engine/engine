@@ -31,7 +31,7 @@ namespace ice::memory
         void* ptr = _backing_allocator.allocate(size, align);
         if (_allocation_tracking)
         {
-            _allocation_total += allocated_size(ptr);
+            _allocation_total.fetch_add(allocated_size(ptr), std::memory_order_relaxed);
         }
         return ptr;
     }
@@ -42,7 +42,7 @@ namespace ice::memory
         {
             if (_allocation_tracking)
             {
-                _allocation_total -= allocated_size(ptr);
+                _allocation_total.fetch_sub(allocated_size(ptr), std::memory_order_relaxed);
             }
             _backing_allocator.deallocate(ptr);
         }
@@ -55,7 +55,7 @@ namespace ice::memory
 
     auto ProxyAllocator::total_allocated() const noexcept -> uint32_t
     {
-        return _allocation_tracking ? _allocation_total : Constant_SizeNotTracked;
+        return _allocation_tracking ? _allocation_total.load(std::memory_order_relaxed) : Constant_SizeNotTracked;
     }
 
 #elif ICE_PROFILE
