@@ -110,7 +110,6 @@ namespace ice
         Components const&... values
     ) noexcept
     {
-
         if constexpr (sizeof...(values) == 0)
         {
             set_archetype(entity, archetype);
@@ -128,10 +127,10 @@ namespace ice
             };
 
             constexpr ice::Archetype<Components...> archetype_component_info;
-            constexpr ice::u32 component_count = sizeof...(Components);
-            constexpr ice::StringID unsorted_component_names[]{ Components::Identifier... };
-            constexpr ice::u32 unsorted_component_sizes[]{ sizeof(Components)... };
-            constexpr ice::u32 unsorted_component_alignments[]{ alignof(Components)... };
+            constexpr ice::u32 component_count = 1 + sizeof...(Components);
+            constexpr ice::StringID unsorted_component_names[]{ ice::ComponentIdentifier<ice::Entity>, Components::Identifier... };
+            constexpr ice::u32 unsorted_component_sizes[]{ sizeof(ice::Entity), sizeof(Components)... };
+            constexpr ice::u32 unsorted_component_alignments[]{ alignof(ice::Entity), alignof(Components)... };
 
             ice::StringID component_names[component_count]{ };
             ice::u32 component_sizes[component_count]{ };
@@ -144,22 +143,22 @@ namespace ice
                 for (ice::u32 idx = 0; idx < component_count; ++idx)
                 {
                     // We skip the initial component which will always be the 'ice::Entity' object.
-                    ice::ArchetypeComponent const& component = archetype_component_info.components[idx + 1];
+                    ice::ArchetypeComponent const& component = archetype_component_info.components[idx];
 
                     component_names[idx] = ice::StringID{ component.name };
                     component_sizes[idx] = component.size;
                     component_alignments[idx] = component.alignment;
 
-                    component_idx_mapping[idx] = 0;
+                    ice::u32 arg_idx = 0;
                     for (ice::StringID_Arg component_arg : unsorted_component_names)
                     {
                         if (component_arg.hash_value == component.name)
                         {
                             break;
                         }
-
-                        component_idx_mapping[idx] += 1;
+                        arg_idx += 1;
                     }
+                    component_idx_mapping[arg_idx] = idx;
                 }
             }
 
@@ -182,10 +181,12 @@ namespace ice
                     current_offset += component_sizes[idx];
                 }
 
-                ice::u32 idx = 0;
+                ice::u32 idx = 1;
                 ice::u32 helper_list[]{
                     (*reinterpret_cast<Components*>(buffer + component_offsets[component_idx_mapping[idx]]) = values, idx++)...,
                 };
+
+                *reinterpret_cast<ice::Entity*>(buffer + component_offsets[component_idx_mapping[0]]) = entity;
             }
 
             ice::ArchetypeInfo const archetype_info{
