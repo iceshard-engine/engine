@@ -33,7 +33,7 @@ namespace ice
     namespace detail
     {
 
-        using SpriteQuery = ice::ComponentQuery<ice::Transform2DStatic const&, ice::Sprite const&, ice::SpriteTile const*>;
+        using SpriteQuery = ice::ComponentQuery<ice::Transform2DStatic const*, ice::Transform2DDynamic const*, ice::Sprite const&, ice::SpriteTile const*>;
         static constexpr ice::StringID SpriteQueryId = "ice.trait.sprite-query"_sid;
 
         auto load_sprite_shader(ice::AssetSystem& assets, ice::StringID name) noexcept -> ice::Data
@@ -182,8 +182,18 @@ namespace ice
 
         ice::u32 valid_entity_count = 0;
         result.for_each(
-            [&](ice::Transform2DStatic const& xform, ice::Sprite const& sprite, ice::SpriteTile const* sprite_tile) noexcept
+            [&](
+                ice::Transform2DStatic const* xform,
+                ice::Transform2DDynamic const* dyn_xform,
+                ice::Sprite const& sprite,
+                ice::SpriteTile const* sprite_tile
+            ) noexcept
             {
+                if (xform == nullptr && dyn_xform == nullptr)
+                {
+                    return;
+                }
+
                 ice::u64 const material_hash = ice::hash(sprite.material);
 
                 if (ice::pod::hash::has(_sprite_materials, material_hash))
@@ -204,9 +214,6 @@ namespace ice
                     instance_info.instance_count += 1;
                     valid_entity_count += 1;
                 }
-                else
-                {
-                }
             }
         );
 
@@ -215,7 +222,7 @@ namespace ice
         ice::Span<detail::SpriteInstance> instances = frame.create_named_span<detail::SpriteInstance>("ice.sprite.instances"_sid, valid_entity_count);
 
         result.for_each(
-            [&](ice::Transform2DStatic const& xform, ice::Sprite const& sprite, ice::SpriteTile const* sprite_tile) noexcept
+            [&](ice::Transform2DStatic const* xform, ice::Transform2DDynamic const* dyn_xform, ice::Sprite const& sprite, ice::SpriteTile const* sprite_tile) noexcept
             {
                 ice::u64 const material_hash = ice::hash(sprite.material);
                 if (ice::pod::hash::has(instance_info_idx, material_hash) == false)
@@ -240,18 +247,31 @@ namespace ice
                     current_instance_offset += instance_info.instance_count;
                 }
 
-                instances[instance_info.next_instance] = detail::SpriteInstance
+                if (dyn_xform != nullptr)
                 {
-                    .position = xform.position,
-                    .scale = xform.scale,
-                    .tile_offset = tile
-                };
-                instance_info.next_instance += 1;
+                    instances[instance_info.next_instance] = detail::SpriteInstance
+                    {
+                        .position = dyn_xform->position,
+                        .scale = dyn_xform->scale,
+                        .tile_offset = tile
+                    };
+                    instance_info.next_instance += 1;
+                }
+                else if (xform != nullptr)
+                {
+                    instances[instance_info.next_instance] = detail::SpriteInstance
+                    {
+                        .position = xform->position,
+                        .scale = xform->scale,
+                        .tile_offset = tile
+                    };
+                    instance_info.next_instance += 1;
+                }
             }
         );
 
         result.for_each(
-            [&](ice::Transform2DStatic const& xform, ice::Sprite const& sprite, ice::SpriteTile const* sprite_tile) noexcept
+            [&](ice::Transform2DStatic const*, ice::Transform2DDynamic const*, ice::Sprite const& sprite, ice::SpriteTile const* sprite_tile) noexcept
             {
                 ice::u64 const material_hash = ice::hash(sprite.material);
                 if (ice::pod::hash::has(_sprite_materials, material_hash) == false)
