@@ -29,6 +29,7 @@ namespace ice::render::vk
         VkPhysicalDeviceMemoryProperties const& memory_properties
     ) noexcept
         : _allocator{ alloc }
+        , _gfx_thread_alloc{ _allocator, 1024 * 1024 * 2 }
         , _vk_device{ vk_device }
         , _vk_physical_device{ vk_physical_device }
         , _vk_memory_manager{ ice::make_unique<VulkanMemoryManager>(_allocator, _allocator, _vk_device, memory_properties) }
@@ -861,7 +862,10 @@ namespace ice::render::vk
     {
         ice::u32 const update_count = ice::size(update_infos);
 
-        ice::pod::Array<AllocationHandle> allocation_handles{ _allocator };
+        // [issue #49]: This part of the code is generally run on a graphics thread. Because of this we need to have a dedicated memory pool / allocator. So it won't interfer with
+        //  other allocations done in the mean time on any other thrads.
+        //  We should probably slowly invest some time into thread safe allocators.
+        ice::pod::Array<AllocationHandle> allocation_handles{ _gfx_thread_alloc };
         ice::pod::array::reserve(allocation_handles, update_count);
 
         for (BufferUpdateInfo const& update_info : update_infos)
@@ -873,7 +877,10 @@ namespace ice::render::vk
             );
         }
 
-        ice::pod::Array<ice::Memory> data_blocks{ _allocator };
+        // [issue #49]: This part of the code is generally run on a graphics thread. Because of this we need to have a dedicated memory pool / allocator. So it won't interfer with
+        //  other allocations done in the mean time on any other thrads.
+        //  We should probably slowly invest some time into thread safe allocators.
+        ice::pod::Array<ice::Memory> data_blocks{ _gfx_thread_alloc };
         ice::pod::array::resize(data_blocks, update_count);
 
         _vk_memory_manager->map_memory(

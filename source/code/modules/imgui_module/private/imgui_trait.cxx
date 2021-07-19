@@ -57,6 +57,7 @@ namespace ice::devui
     ImGuiTrait::ImGuiTrait(ice::Allocator& alloc) noexcept
         : _vertex_buffers{ alloc }
         , _index_buffers{ alloc }
+        , _imgui_timer{ .clock = nullptr }
     {
         ice::pod::array::reserve(_index_buffers, 10);
         ice::pod::array::reserve(_vertex_buffers, 10);
@@ -350,6 +351,12 @@ namespace ice::devui
 
     bool ImGuiTrait::start_frame() noexcept
     {
+        // TODO: Make a proper 'init' guard
+        if (_imgui_timer.clock == nullptr)
+        {
+            return false;
+        }
+
         if (ice::timer::update(_imgui_timer))
         {
             _next_frame = _initialized;
@@ -366,6 +373,12 @@ namespace ice::devui
         ice::EngineFrame& frame
     ) noexcept
     {
+        // TODO: Make a proper 'init' guard
+        if (_imgui_timer.clock == nullptr)
+        {
+            return;
+        }
+
         if (_next_frame)
         {
             _next_frame = false;

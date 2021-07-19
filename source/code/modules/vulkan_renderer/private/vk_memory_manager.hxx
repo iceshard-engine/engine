@@ -2,6 +2,7 @@
 #include <ice/string.hxx>
 #include <ice/pod/hash.hxx>
 #include <ice/memory.hxx>
+#include <ice/memory/scratch_allocator.hxx>
 #include <ice/memory/forward_allocator.hxx>
 #include "vk_include.hxx"
 
@@ -141,6 +142,7 @@ namespace ice::render::vk
 
     private:
         ice::Allocator& _allocator;
+        ice::memory::ScratchAllocator _map_allocator;
         ice::memory::ForwardAllocator _block_allocator;
         ice::memory::ForwardAllocator _entry_allocator;
         ice::pod::Hash<AllocationBlock*> _blocks;

@@ -3,8 +3,9 @@ name: Validation
 on:
   push:
     branches:
-    - pre-alpha-cleanup
+    - github-workflow-fixes
   pull_request:
+    types: [opened,edited,reopened]
     branches:
     - master
 
@@ -20,16 +21,18 @@ jobs:
       run: |
         pip3 install setuptools
         pip3 install conan
-        conan remote add conan-iceshard https://conan.iceshard.net/
-        conan remote add conan-bincrafters https://api.bintray.com/conan/bincrafters/public-conan
+        conan config install https://github.com/iceshard-engine/conan-config.git
     - name: Build (Windows-${{ matrix.configuration }})
       shell: cmd
       run: |
         ice build -t all-x64-${{ matrix.configuration }}
-    - name: Run tests
+    - name: Run unit tests
+      shell: cmd
       run: |
-        ./build/bin/Windows-x64-${{ matrix.configuration }}-MSVC-x64-v142/core_tests/core_tests.exe
-        ./build/bin/Windows-x64-${{ matrix.configuration }}-MSVC-x64-v142/memsys_tests/memsys_tests.exe
+        ice build -t test-all-x64-${{ matrix.configuration }}
+    - name: Success
+      run: |
+        echo Validation successful
 
   validation-build-ubuntu:
     runs-on: ubuntu-latest
@@ -43,21 +46,16 @@ jobs:
         pip3 install setuptools
         pip3 install conan
         export PATH=~/.local/bin/:$PATH
-        conan remote add conan-iceshard https://conan.iceshard.net/
-        conan remote add conan-bincrafters https://api.bintray.com/conan/bincrafters/public-conan
-        conan profile new --detect default
-        conan profile update settings.compiler=clang default
-        conan profile update settings.compiler.version=9 default
-        conan profile update settings.compiler.libcxx=libstdc++11 default
+        conan config install https://github.com/iceshard-engine/conan-config.git
+        ./ice.sh init --conan_profile clang-10.0-linux-x86_64
     - name: Build (Linux-${{ matrix.configuration }})
       shell: bash
       run: |
-        export PATH=~/.local/bin/:$PATH
         ./ice.sh build -t all-x64-${{ matrix.configuration }}
-    - name: Run tests
+    - name: Run unit tests
+      shell: bash
       run: |
-        ./build/bin/Linux-x64-${{ matrix.configuration }}-clang-x64-900/core_tests/core_tests
-        ./build/bin/Linux-x64-${{ matrix.configuration }}-clang-x64-900/memsys_tests/memsys_tests
+        ./ice.sh build -t test-all-x64-${{ matrix.configuration }}
     - name: Success
       run: |
         echo Validation successful

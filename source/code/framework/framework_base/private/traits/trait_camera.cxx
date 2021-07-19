@@ -2,6 +2,7 @@
 #include <ice/game_entity.hxx>
 #include <ice/game_camera.hxx>
 
+#include <ice/engine.hxx>
 #include <ice/engine_runner.hxx>
 #include <ice/engine_frame.hxx>
 #include <ice/world/world_portal.hxx>

@@ -26,12 +26,6 @@ void main()
     // out_mat_y = in_mat_y;
     out_uv = in_uv + vec2(in_mat_x, in_mat_y);
 
-    mat4 model = mat4(0);
-    model[0][0] = in_scale.x;
-    model[1][1] = in_scale.y;
-    model[2][2] = 1.f;
-    model[3][3] = 1.f;
-
-    vec3 pos = vec3(in_pos, 0) + in_offset;
-    gl_Position = cam.clip * cam.projection * cam.view * model * vec4(pos, 1);
+    vec3 pos = vec3(in_pos * in_scale, 0) + in_offset;
+    gl_Position = cam.clip * cam.projection * cam.view * vec4(pos, 1);
 }

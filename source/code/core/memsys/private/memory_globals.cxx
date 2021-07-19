@@ -19,7 +19,7 @@ namespace ice::memory
         ice::memory::DefaultAllocator* _default_allocator{ nullptr };
         ice::memory::ScratchAllocator* _default_scratch_allocator{ nullptr };
 
-        ice::Allocator* _stats_allocator{ nullptr };
+        ice::memory::ProxyAllocator* _stats_allocator{ nullptr };
         ice::Allocator* _global_allocator{ nullptr };
     };
 
@@ -36,7 +36,7 @@ namespace ice::memory
             temporary_memory
         };
 
-        if constexpr (ice::build::is_debug || ice::build::is_profile)
+        if constexpr (ice::build::is_debug || ice::build::is_develop)
         {
             g_memory_globals._stats_allocator = g_memory_globals._default_allocator->make<ice::memory::ProxyAllocator>(
                 *g_memory_globals._default_allocator,
@@ -65,6 +65,11 @@ namespace ice::memory
     void shutdown() noexcept
     {
         g_memory_globals._global_allocator = nullptr;
+
+        if constexpr (ice::build::is_debug || ice::build::is_develop)
+        {
+            g_memory_globals._stats_allocator->~ProxyAllocator();
+        }
 
         g_memory_globals._default_allocator->deallocate(g_memory_globals._stats_allocator);
         g_memory_globals._default_scratch_allocator->~ScratchAllocator();

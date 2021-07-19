@@ -1,5 +1,6 @@
 #pragma once
 #include <ice/allocator.hxx>
+#include <atomic>
 #include <string_view>
 #include <string>
 
@@ -49,10 +50,10 @@ namespace ice::memory
         bool const _allocation_tracking;
 
         //! \brief Total allocated size.
-        uint32_t _allocation_total{ 0 };
+        std::atomic<ice::u32> _allocation_total{ 0 };
 
         //! \brief Number of allocations.
-        uint32_t _allocation_requests{ 0 };
+        std::atomic<ice::u32> _allocation_requests{ 0 };
     };
 
 #elif ICE_PROFILE

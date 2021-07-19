@@ -1,6 +1,7 @@
 #pragma once
 #include "vk_include.hxx"
 #include <ice/allocator.hxx>
+#include <ice/memory/proxy_allocator.hxx>
 #include <ice/map.hxx>
 
 namespace ice::render::vk
@@ -25,11 +26,9 @@ namespace ice::render::vk
 
         auto vulkan_callbacks() const noexcept -> VkAllocationCallbacks const*;
 
-        auto backing_allocator() const noexcept -> ice::Allocator&;
-
     private:
-        ice::Allocator& _backing_allocator;
-        ice::Map<void*, ice::u32> _allocation_tracker;
+        ice::memory::ProxyAllocator _backing_allocator;
+        //ice::Map<void*, ice::u32> _allocation_tracker;
         ice::u32 _total_allocated{ 0 };
 
         VkAllocationCallbacks _vulkan_callbacks;

@@ -88,8 +88,8 @@ namespace ice::render::vk
 
     VulkanAllocator::VulkanAllocator(ice::Allocator& backing_allocator) noexcept
         : ice::Allocator{ backing_allocator }
-        , _backing_allocator{ backing_allocator }
-        , _allocation_tracker{ _backing_allocator }
+        , _backing_allocator{ backing_allocator, "vk-alloc" }
+        //, _allocation_tracker{ _backing_allocator }
     {
         _vulkan_callbacks.pUserData = this;
         _vulkan_callbacks.pfnAllocation = detail::vk_iceshard_allocate;
@@ -112,7 +112,7 @@ namespace ice::render::vk
         // We use the alignment of the allocation_header so we don't waste data on the backing allocator, we already accounted for the alignment.
         void* result = _backing_allocator.allocate(total_size, static_cast<ice::u32>(alignof(detail::AllocationHeader)));
 
-        _allocation_tracker[result] += 1;
+        //_allocation_tracker[result] += 1;
 
         detail::AllocationHeader* header = reinterpret_cast<detail::AllocationHeader*>(result);
         void* data_pointer = detail::data_pointer(header, align);
@@ -173,7 +173,7 @@ namespace ice::render::vk
             detail::AllocationHeader* header = detail::header(ptr);
             _total_allocated -= header->requested_size;
 
-            _allocation_tracker[header] -= 1;
+            //_allocation_tracker[header] -= 1;
 
             // We need to pass the header pointer because this pointer was returned by the backing allocator.
             _backing_allocator.deallocate(header);
@@ -194,11 +194,6 @@ namespace ice::render::vk
     auto VulkanAllocator::vulkan_callbacks() const noexcept -> VkAllocationCallbacks const*
     {
         return &_vulkan_callbacks;
-    }
-
-    auto VulkanAllocator::backing_allocator() const noexcept -> ice::Allocator&
-    {
-        return _backing_allocator;
     }
 
     //! \copydoc allocator::total_allocated() noexcept

@@ -15,12 +15,11 @@ jobs:
       run: |
         pip3 install setuptools
         pip3 install conan
-        conan remote add conan-iceshard https://conan.iceshard.net/
-        conan remote add conan-bincrafters https://api.bintray.com/conan/bincrafters/public-conan
-    - name: Build (Develop)
+        conan config install https://github.com/iceshard-engine/conan-config.git
+    - name: Build (Windows-Develop)
       shell: cmd
       run: |
-        ice build
-    - name: Verify
+        ice build -t all-x64-Develop
+    - name: Run unit tests
       run: |
-        echo Nothing to verify yet
+        ice build -t test-all-x64-Develop

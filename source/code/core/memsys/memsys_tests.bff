@@ -21,5 +21,10 @@
             'Catch2'
         }
     ]
+
+    .UnitTests =
+    [
+        .Enabled = true
+    ]
 ]
 .Projects + .Project
