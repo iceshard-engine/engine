@@ -113,6 +113,15 @@ namespace ice
             };
         }
 
+        auto create_timer(Clock const& clock, float step_seconds, int64_t initial_timestamp) noexcept -> Timer
+        {
+            return Timer{
+                .clock = &clock,
+                .step = static_cast<int64_t>(ice::clock::clock_frequency() * step_seconds),
+                .last_tick_timestamp = initial_timestamp,
+            };
+        }
+
         bool update(Timer& timer) noexcept
         {
             auto const time_passed_since_tick = timer.clock->latest_timestamp - timer.last_tick_timestamp;

@@ -63,6 +63,8 @@ namespace ice
 
         auto create_timer(Clock const& clock, float step_seconds) noexcept -> Timer;
 
+        auto create_timer(Clock const& clock, float step_seconds, int64_t initial_timestamp) noexcept -> Timer;
+
         bool update(Timer& timer) noexcept;
 
         bool update_by_step(Timer& timer) noexcept;
