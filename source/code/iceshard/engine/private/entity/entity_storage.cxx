@@ -659,6 +659,8 @@ namespace ice
             return;
         }
 
+        ice::pod::hash::remove(_instances, ice::hash(entity));
+
         ice::ArchetypeHandle archetype_handle[1]{ info.archetype };
         ice::ArchetypeInfo archetype_info[1]{ };
         _archetype_index.archetype_info(archetype_handle, archetype_info);

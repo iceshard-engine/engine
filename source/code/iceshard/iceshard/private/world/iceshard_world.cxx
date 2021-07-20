@@ -118,9 +118,17 @@ namespace ice
     }
 
     void IceshardWorld::update(
-        ice::EngineRunner& runner
+        ice::EngineRunner& runner,
+        ice::Span<ice::EntityCommandBuffer::Command const> commands
     ) noexcept
     {
+        using Command = ice::EntityCommandBuffer::Command;
+
+        for (Command const& cmd : commands)
+        {
+            _entity_storage->erase_data(cmd.entity);
+        }
+
         for (auto& entry : _portals)
         {
             entry.value->remove_finished_tasks();

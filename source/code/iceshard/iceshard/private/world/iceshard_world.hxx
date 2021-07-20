@@ -1,6 +1,7 @@
 #pragma once
 #include <ice/world/world.hxx>
 #include <ice/entity/entity_storage.hxx>
+#include <ice/entity/entity_command_buffer.hxx>
 
 #include "iceshard_world_portal.hxx"
 
@@ -41,7 +42,8 @@ namespace ice
         ) noexcept;
 
         void update(
-            ice::EngineRunner& runner
+            ice::EngineRunner& runner,
+            ice::Span<ice::EntityCommandBuffer::Command const> commands
         ) noexcept;
 
         auto traits() noexcept -> ice::pod::Array<ice::WorldTrait*>&;

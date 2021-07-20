@@ -1,5 +1,6 @@
 #pragma once
 #include "iceshard_world.hxx"
+#include <ice/entity/entity_command_buffer.hxx>
 
 namespace ice
 {
@@ -26,7 +27,8 @@ namespace ice
         ) noexcept;
 
         void update_active_worlds(
-            ice::EngineRunner& runner
+            ice::EngineRunner& runner,
+            ice::Span<ice::EntityCommandBuffer::Command const> commands
         ) noexcept;
 
     private:

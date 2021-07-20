@@ -31,8 +31,8 @@ namespace ice
     namespace detail
     {
 
-        static constexpr ice::u32 FrameAllocatorCapacity = 256u * 1024u * 1024u;
-        static constexpr ice::u32 GfxFrameAllocatorCapacity = 16u * 1024u * 1024u;
+        static constexpr ice::u32 FrameAllocatorCapacity = 24u * 1024u * 1024u;
+        static constexpr ice::u32 GfxFrameAllocatorCapacity = 16u * 1024u;
 
         struct RunnerTask
         {
@@ -84,8 +84,8 @@ namespace ice
             ice::memory::ScratchAllocator{ _frame_allocator, detail::FrameAllocatorCapacity, "frame-alloc-2" }
         }
         , _frame_gfx_allocator{
-            ice::memory::ScratchAllocator{ _frame_allocator, 1024 * 16, "gfx-frame-alloc-1" },
-            ice::memory::ScratchAllocator{ _frame_allocator, 1024 * 16, "gfx-frame-alloc-2" }
+            ice::memory::ScratchAllocator{ _frame_allocator, detail::GfxFrameAllocatorCapacity, "gfx-frame-alloc-1" },
+            ice::memory::ScratchAllocator{ _frame_allocator, detail::GfxFrameAllocatorCapacity, "gfx-frame-alloc-2" }
         }
         , _next_free_allocator{ 0 }
         , _previous_frame{ ice::make_unique_null<ice::IceshardMemoryFrame>() }
@@ -200,27 +200,48 @@ namespace ice
         IPT_FRAME_MARK;
         IPT_ZONE_SCOPED_NAMED("Logic Frame");
 
-        // Handle requests for the next frame
-        for (ice::EngineRequest const& request : _previous_frame->requests())
+        using EntityCommand = ice::EntityCommandBuffer::Command;
+
+        ice::pod::Array<EntityCommand> final_commands{ _current_frame->allocator() };
+
         {
-            switch (request.name.hash_value)
+            ice::EntityIndex& index = _engine.entity_index();
+            ice::Span<EntityCommand const> commands = _previous_frame->entity_commands().commands();
+            ice::pod::array::reserve(final_commands, ice::size(commands));
+
+            for (EntityCommand const& cmd : commands)
             {
-            case ice::stringid_hash(Request_ActivateWorld):
-                _world_tracker.activate_world(
-                    _engine, *this,
-                    static_cast<ice::IceshardWorld*>(
-                        reinterpret_cast<ice::World*>(request.payload)
-                    )
-                );
+                if (index.is_alive(cmd.entity))
+                {
+                    index.destroy(cmd.entity);
+                    ice::pod::array::push_back(final_commands, cmd);
+                }
+            }
+        }
+
+        // Handle requests for the next frame
+        for (ice::Shard const& shard : _previous_frame->shards())
+        {
+            ice::World* world;
+
+            switch (shard.name)
+            {
+            case ice::Shard_WorldActivate.name:
+            {
+                if (ice::inspect_shard(shard, world))
+                {
+                    _world_tracker.activate_world(_engine, *this, static_cast<IceshardWorld*>(world));
+                }
                 break;
-            case ice::stringid_hash(Request_DeactivateWorld):
-                _world_tracker.deactivate_world(
-                    _engine, *this,
-                    static_cast<ice::IceshardWorld*>(
-                        reinterpret_cast<ice::World*>(request.payload)
-                    )
-                );
+            }
+            case ice::Shard_WorldDeactivate.name:
+            {
+                if (ice::inspect_shard(shard, world))
+                {
+                    _world_tracker.deactivate_world(_engine, *this, static_cast<IceshardWorld*>(world));
+                }
                 break;
+            }
             default:
                 break;
             }
@@ -244,7 +265,7 @@ namespace ice
             }
         }
 
-        _world_tracker.update_active_worlds(*this);
+        _world_tracker.update_active_worlds(*this, final_commands);
 
 
         _current_frame->start_all();
