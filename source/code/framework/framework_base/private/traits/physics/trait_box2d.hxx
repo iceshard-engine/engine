@@ -33,8 +33,9 @@ namespace ice
         ) noexcept override;
 
     private:
-        using DynamicQuery = ice::ComponentQuery<ice::Transform2DDynamic&, ice::PhysicsBody&, ice::Actor const*>;
+        using DynamicQuery = ice::ComponentQuery<ice::Entity, ice::Transform2DDynamic&, ice::PhysicsBody&, ice::Actor const*>;
 
+        ice::Engine* _engine = nullptr;
         b2World* _world = nullptr;
     };
 

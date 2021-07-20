@@ -1,8 +1,10 @@
 #include "trait_box2d.hxx"
 #include <ice/game_anim.hxx>
 
+#include <ice/engine.hxx>
 #include <ice/engine_frame.hxx>
 #include <ice/engine_runner.hxx>
+#include <ice/entity/entity_index.hxx>
 #include <ice/world/world_portal.hxx>
 
 #include <ice/input/input_device.hxx>
@@ -21,10 +23,10 @@ namespace ice
         ice::WorldPortal& portal
     ) noexcept
     {
+        _engine = ice::addressof(engine);
+
         b2Vec2 gravity{ 0.f, -10.f };
         _world = portal.allocator().make<b2World>(gravity, static_cast<ice::Allocator*>(ice::addressof(portal.allocator())));
-
-
 
         b2BodyDef body_def{ };
         body_def.position.Set(0, -0.5f);
@@ -45,11 +47,13 @@ namespace ice
         ice::WorldPortal& portal
     ) noexcept
     {
+        _engine = nullptr;
+
         DynamicQuery& query = *portal.storage().named_object<DynamicQuery>("ice.query.physics_bodies"_sid);
         DynamicQuery::ResultByEntity result = query.result_by_entity(portal.allocator(), portal.entity_storage());
 
         result.for_each(
-            [&](ice::Transform2DDynamic const& dyn_xform, ice::PhysicsBody& phx_body, ice::Actor const*) noexcept
+            [&](ice::Entity, ice::Transform2DDynamic const& dyn_xform, ice::PhysicsBody& phx_body, ice::Actor const*) noexcept
             {
                 phx_body.trait_data = nullptr;
             }
@@ -92,13 +96,25 @@ namespace ice
         //    b2Vec2 body_pos = body->GetPosition();
         //    xform.position = ice::vec3f{ body_pos.x * Constant_TileSize, body_pos.y * Constant_TileSize, 1.f };
         //}
+        b2Body* body = _world->GetBodyList();
+        while(body != nullptr)
+        {
+            b2Body* next = body->GetNext();
+            if (_engine->entity_index().is_alive(body->GetUserData().entity) == false)
+            {
+                _world->DestroyBody(body);
+            }
+
+            body = next;
+        }
+
         _world->Step(1.f / 120.f, 6, 2);
 
         DynamicQuery& query = *portal.storage().named_object<DynamicQuery>("ice.query.physics_bodies"_sid);
         DynamicQuery::ResultByEntity result = query.result_by_entity(frame.allocator(), portal.entity_storage());
 
         result.for_each(
-            [&](ice::Transform2DDynamic& dyn_xform, ice::PhysicsBody& phx_body, ice::Actor const* actor) noexcept
+            [&](ice::Entity e, ice::Transform2DDynamic& dyn_xform, ice::PhysicsBody& phx_body, ice::Actor const* actor) noexcept
             {
                 if (phx_body.trait_data == nullptr)
                 {
@@ -107,6 +123,7 @@ namespace ice
                     body_def.position.Set(dyn_xform.position.x / Constant_PixelsInMeter, dyn_xform.position.y / Constant_PixelsInMeter);
 
                     b2Body* body = _world->CreateBody(&body_def);
+                    body->GetUserData().entity = e;
                     phx_body.trait_data = body;
 
                     b2PolygonShape tile_shape;
