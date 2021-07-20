@@ -32,6 +32,7 @@ namespace ice
         body_def.position.Set(0, -0.5f);
 
         b2Body* body = _world->CreateBody(&body_def);
+        body->GetUserData().entity = ice::Entity{ };
 
         b2PolygonShape tile_shape;
         tile_shape.SetAsBox(50.f, 0.5, { 0.5f, 0.5f }, 0.f);
@@ -100,7 +101,9 @@ namespace ice
         while(body != nullptr)
         {
             b2Body* next = body->GetNext();
-            if (_engine->entity_index().is_alive(body->GetUserData().entity) == false)
+            auto const& userdata = body->GetUserData();
+
+            if (userdata.entity != Entity{} && _engine->entity_index().is_alive(userdata.entity) == false)
             {
                 _world->DestroyBody(body);
             }
