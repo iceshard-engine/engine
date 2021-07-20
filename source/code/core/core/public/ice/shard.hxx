@@ -8,9 +8,9 @@ namespace ice
 
     struct Shard
     {
-        ice::u32 const name;
-        ice::u32 const payload_id;
-        ice::u64 const payload;
+        ice::u32 name;
+        ice::u32 payload_id;
+        ice::u64 payload;
     };
 
     template<typename T>
@@ -77,6 +77,29 @@ namespace ice
         };
     }
 
+    constexpr auto operator>>(ice::Shard left, ice::Shard right) noexcept -> ice::Shard
+    {
+        return {
+            .name = right.name,
+            .payload_id = left.payload_id,
+            .payload = left.payload
+        };
+    }
+
+    constexpr auto operator==(ice::Shard left, ice::Shard right) noexcept -> bool
+    {
+        if (left.name == right.name)
+        {
+            return left.payload_id == 0 || right.payload_id == 0 || right.payload_id == left.payload_id;
+        }
+        return false;
+    }
+
+    constexpr auto operator!=(ice::Shard left, ice::Shard right) noexcept -> bool
+    {
+        return !(left == right);
+    }
+
     template<typename T>
     constexpr bool inspect_shard(ice::Shard shard, T& value) noexcept
     {
@@ -88,6 +111,38 @@ namespace ice
         }
         return false;
     }
+
+    namespace _validate
+    {
+
+        static constexpr ice::Shard shard_without_payload = "test/shard"_shard;
+        static constexpr ice::Shard shard_with_payload_u32 = "test/shard"_shard | ice::u32{ 42 };
+        static constexpr ice::Shard shard_with_payload_i32 = "test/shard"_shard | ice::i32{ 42 };
+
+        static constexpr ice::Shard shard2_without_payload = "test/shard2"_shard;
+        static constexpr ice::Shard shard2_with_payload_u32 = "test/shard2"_shard | ice::u32{ 42 };
+        static constexpr ice::Shard shard2_with_payload_i32 = "test/shard2"_shard | ice::i32{ 42 };
+
+        static_assert(shard_without_payload == shard_without_payload, "Assert: Shards are equal to themselfs.");
+        static_assert(shard_with_payload_u32 == shard_with_payload_u32, "Assert: Shards are equal to themselfs.");
+
+        static_assert(shard_without_payload == shard_with_payload_u32, "Assert: Shards without payload are equal to similar Shards with payload.");
+        static_assert(shard_without_payload == shard_with_payload_i32, "Assert: Shards without payload are equal to similar Shards with payload.");
+        static_assert(shard_with_payload_u32 == shard_without_payload, "Assert: Shards without payload are equal to similar Shards with payload.");
+        static_assert(shard_with_payload_i32 == shard_without_payload, "Assert: Shards without payload are equal to similar Shards with payload.");
+
+        static_assert(shard_with_payload_i32 != shard_with_payload_u32, "Assert: Shards with different payloads are not equal.");
+        static_assert(shard_with_payload_u32 != shard_with_payload_i32, "Assert: Shards with different payloads are not equal.");
+
+        static_assert(shard_without_payload != shard2_without_payload, "Assert: Different Shards are not equal.");
+
+        static_assert(shard2_with_payload_u32 != shard_with_payload_u32, "Assert: Different Shards with same payloads are not equal.");
+        static_assert(shard2_with_payload_i32 != shard_with_payload_i32, "Assert: Different Shards with same payloads are not equal.");
+
+        static_assert(shard2_with_payload_u32 != shard_with_payload_i32, "Assert: Different Shards with different payloads are not equal.");
+        static_assert(shard2_with_payload_i32 != shard_with_payload_u32, "Assert: Different Shards with different payloads are not equal.");
+
+    } // namespace detail
 
 } // namespace ice
 
