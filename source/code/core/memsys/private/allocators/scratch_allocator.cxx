@@ -132,6 +132,14 @@ namespace ice::memory
             if (ptr_distance(_free, _end) <= sizeof(memory::tracking::AllocationHeader))
             {
                 _free = _begin;
+
+                // If the next allocation is above we can safely move it as it would do it anyway on the next allocation.
+                // This alos prevents a infinite loop when we have an empty scratch allocator.
+                // If the _allocate value would be higher or equal to _free it would hit the loop condition.
+                if (_allocate >= _free)
+                {
+                    _allocate = _begin;
+                }
             }
         }
     }
