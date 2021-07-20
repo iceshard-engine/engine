@@ -21,5 +21,6 @@ jobs:
       run: |
         ice build -t all-x64-Develop
     - name: Run unit tests
+      shell: cmd
       run: |
         ice build -t test-all-x64-Develop
