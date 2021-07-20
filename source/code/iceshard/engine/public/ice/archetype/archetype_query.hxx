@@ -116,8 +116,7 @@ namespace ice
         {
             static auto to(
                 void** ptr,
-                ice::u32& component_idx,
-                ice::u32 entity_idx = 0
+                ice::u32& component_idx
             ) noexcept -> ice::Entity*
             {
                 component_idx -= 1;
@@ -130,8 +129,7 @@ namespace ice
         {
             static constexpr auto to(
                 void** ptr,
-                ice::u32& component_idx,
-                ice::u32 entity_idx = 0
+                ice::u32& component_idx
             ) noexcept -> T*
             {
                 component_idx -= 1;
@@ -375,7 +373,6 @@ namespace ice
                 }
 
                 ice::u32 component_index = Constant_ComponentCount;
-
                 detail::query_invoke<Fn, Components...>(
                     std::forward<Fn>(fn),
                     block->entity_count,

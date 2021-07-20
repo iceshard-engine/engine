@@ -20,8 +20,6 @@ namespace ice
         ice::StringID target_portal;
     };
 
-    constexpr static ice::i32 foo = 1 << 0xc;
-
     struct TileMaterial
     {
         union

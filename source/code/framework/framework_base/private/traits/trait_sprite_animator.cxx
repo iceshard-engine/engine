@@ -143,7 +143,7 @@ namespace ice
             [&](ice::Animation const& anim, ice::AnimationState& state, ice::SpriteTile& sprite_tile) noexcept
             {
                 Timer anim_timer = ice::timer::create_timer(runner.clock(), anim.speed, state.timestamp);
-                if (ice::timer::update_by_step(anim_timer))
+                if (ice::timer::update(anim_timer))
                 {
                     static ice::TraitAnimatorAnimationInfo null_info{ .name = ice::StringID_Hash::Invalid };
                     ice::TraitAnimatorAnimationInfo const& anim_info = ice::pod::hash::get(_anim_infos, ice::hash(anim.animation), null_info);
