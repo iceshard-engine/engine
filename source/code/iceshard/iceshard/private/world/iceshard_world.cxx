@@ -1,6 +1,8 @@
 #include "iceshard_world.hxx"
 #include <ice/world/world_trait.hxx>
 #include <ice/engine_runner.hxx>
+#include <ice/engine_frame.hxx>
+#include <ice/engine_shards.hxx>
 #include <ice/pod/hash.hxx>
 #include <ice/assert.hxx>
 
@@ -118,15 +120,18 @@ namespace ice
     }
 
     void IceshardWorld::update(
-        ice::EngineRunner& runner,
-        ice::Span<ice::EntityCommandBuffer::Command const> commands
+        ice::EngineRunner& runner
     ) noexcept
     {
-        using Command = ice::EntityCommandBuffer::Command;
+        ice::EngineFrame& current_frame = runner.current_frame();
 
-        for (Command const& cmd : commands)
+        ice::Entity entity;
+        for (ice::Shard const& shard : current_frame.shards())
         {
-            _entity_storage->erase_data(cmd.entity);
+            if (shard == Shard_EntityDestroyed && ice::inspect_shard(shard, entity))
+            {
+                _entity_storage->erase_data(entity);
+            }
         }
 
         for (auto& entry : _portals)

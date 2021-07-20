@@ -1,6 +1,5 @@
 #pragma once
 #include <ice/base.hxx>
-#include <ice/shard.hxx>
 
 namespace ice
 {
@@ -25,6 +24,3 @@ namespace ice
     );
 
 } // namespace ice
-
-template<>
-static constexpr ice::u32 ice::detail::Constant_ShardPayloadID<ice::Entity> = ice::hash32("ice::Entity");

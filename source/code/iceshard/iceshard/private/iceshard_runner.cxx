@@ -7,6 +7,7 @@
 
 #include "gfx/iceshard_gfx_queue.hxx"
 
+#include <ice/engine_shards.hxx>
 #include <ice/gfx/gfx_queue.hxx>
 
 #include <ice/task_sync_wait.hxx>
@@ -200,21 +201,19 @@ namespace ice
         IPT_FRAME_MARK;
         IPT_ZONE_SCOPED_NAMED("Logic Frame");
 
-        using EntityCommand = ice::EntityCommandBuffer::Command;
-
-        ice::pod::Array<EntityCommand> final_commands{ _current_frame->allocator() };
-
         {
             ice::EntityIndex& index = _engine.entity_index();
-            ice::Span<EntityCommand const> commands = _previous_frame->entity_commands().commands();
-            ice::pod::array::reserve(final_commands, ice::size(commands));
+            ice::Span<ice::Shard const> commands = _previous_frame->entity_commands().commands();
 
-            for (EntityCommand const& cmd : commands)
+            ice::Entity entity;
+            for (ice::Shard const& command : commands)
             {
-                if (index.is_alive(cmd.entity))
+                if (command == Shard_EntityDestroy && ice::inspect_shard(command, entity) && index.is_alive(entity))
                 {
-                    index.destroy(cmd.entity);
-                    ice::pod::array::push_back(final_commands, cmd);
+                    index.destroy(entity);
+
+                    ice::Shard const shards[1]{ command >> Shard_EntityDestroyed };
+                    _current_frame->push_shards(shards);
                 }
             }
         }
@@ -265,7 +264,7 @@ namespace ice
             }
         }
 
-        _world_tracker.update_active_worlds(*this, final_commands);
+        _world_tracker.update_active_worlds(*this);
 
 
         _current_frame->start_all();

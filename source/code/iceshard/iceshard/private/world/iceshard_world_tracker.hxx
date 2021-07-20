@@ -27,8 +27,7 @@ namespace ice
         ) noexcept;
 
         void update_active_worlds(
-            ice::EngineRunner& runner,
-            ice::Span<ice::EntityCommandBuffer::Command const> commands
+            ice::EngineRunner& runner
         ) noexcept;
 
     private:

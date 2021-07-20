@@ -3,14 +3,10 @@
 #include <ice/pod/array.hxx>
 #include <ice/entity/entity.hxx>
 #include <ice/span.hxx>
+#include <ice/shard.hxx>
 
 namespace ice
 {
-
-    enum class CommandType : ice::u32
-    {
-        DestroyEntity
-    };
 
     class EntityCommandBuffer
     {
@@ -23,17 +19,10 @@ namespace ice
 
         void destroy_entity(ice::Entity entity) noexcept;
 
-        struct Command
-        {
-            ice::CommandType type;
-            ice::u32 reserved;
-            ice::Entity entity;
-        };
-
-        auto commands() const noexcept -> ice::Span<Command const>;
+        auto commands() const noexcept -> ice::Span<ice::Shard const>;
 
     private:
-        ice::pod::Array<Command> _commands;
+        ice::pod::Array<ice::Shard> _commands;
     };
 
 } // namespace ice

@@ -57,15 +57,14 @@ namespace ice
     }
 
     void IceshardWorldTracker::update_active_worlds(
-        ice::EngineRunner& runner,
-        ice::Span<ice::EntityCommandBuffer::Command const> commands
+        ice::EngineRunner& runner
     ) noexcept
     {
         for (auto const& entry : _worlds)
         {
             if (entry.value.current_state == WorldState::Active)
             {
-                entry.value.world->update(runner, commands);
+                entry.value.world->update(runner);
             }
         }
     }

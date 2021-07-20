@@ -42,8 +42,7 @@ namespace ice
         ) noexcept;
 
         void update(
-            ice::EngineRunner& runner,
-            ice::Span<ice::EntityCommandBuffer::Command const> commands
+            ice::EngineRunner& runner
         ) noexcept;
 
         auto traits() noexcept -> ice::pod::Array<ice::WorldTrait*>&;

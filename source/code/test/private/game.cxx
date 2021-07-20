@@ -7,6 +7,7 @@
 #include <ice/engine.hxx>
 #include <ice/engine_runner.hxx>
 #include <ice/engine_devui.hxx>
+#include <ice/engine_shards.hxx>
 #include <ice/devui/devui_render_trait.hxx>
 
 #include <ice/entity/entity_index.hxx>

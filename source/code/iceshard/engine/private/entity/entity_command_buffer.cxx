@@ -1,5 +1,5 @@
 #include <ice/entity/entity_command_buffer.hxx>
-#include <ice/hash.hxx>
+#include <ice/engine_shards.hxx>
 
 namespace ice
 {
@@ -16,16 +16,10 @@ namespace ice
 
     void EntityCommandBuffer::destroy_entity(ice::Entity entity) noexcept
     {
-        ice::pod::array::push_back(
-            _commands, Command
-            {
-                .type = CommandType::DestroyEntity,
-                .entity = entity
-            }
-        );
+        ice::pod::array::push_back(_commands, Shard_EntityDestroy | entity);
     }
 
-    auto EntityCommandBuffer::commands() const noexcept -> ice::Span<Command const>
+    auto EntityCommandBuffer::commands() const noexcept -> ice::Span<ice::Shard const>
     {
         return _commands;
     }
