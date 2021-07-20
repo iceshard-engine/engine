@@ -55,7 +55,9 @@ public:
     ice::UniquePtr<ice::WorldTrait> _trait_animator{ ice::make_unique_null<ice::WorldTrait>() };
     ice::UniquePtr<ice::WorldTrait> _trait_physics{ ice::make_unique_null<ice::WorldTrait>() };
 
+    bool _active = false;
     ice::World* _test_world;
+    ice::World* _render_world;
 };
 
 ICE_REGISTER_GAMEAPP(MyGame);

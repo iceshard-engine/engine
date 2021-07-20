@@ -6,14 +6,16 @@
 
 #include <ice/engine.hxx>
 #include <ice/engine_runner.hxx>
+#include <ice/engine_devui.hxx>
+#include <ice/devui/devui_render_trait.hxx>
 
 #include <ice/entity/entity_index.hxx>
 #include <ice/entity/entity_storage.hxx>
+#include <ice/entity/entity_command_buffer.hxx>
+#include <ice/entity/entity_query_utils.hxx>
+
 #include <ice/archetype/archetype_index.hxx>
 #include <ice/archetype/archetype_block_allocator.hxx>
-
-#include <ice/engine_devui.hxx>
-#include <ice/devui/devui_render_trait.hxx>
 
 #include <ice/world/world.hxx>
 #include <ice/world/world_trait.hxx>
@@ -25,10 +27,17 @@
 #include <ice/gfx/gfx_pass.hxx>
 #include <ice/render/render_swapchain.hxx>
 
+#include <ice/input/input_event.hxx>
+#include <ice/input/input_keyboard.hxx>
+#include <ice/input/input_tracker.hxx>
+
+#include <ice/task_thread_pool.hxx>
 #include <ice/module_register.hxx>
 #include <ice/resource_system.hxx>
 #include <ice/resource.hxx>
 #include <ice/assert.hxx>
+
+#include <ice/os/windows.hxx>
 
 MyGame::MyGame(ice::Allocator& alloc, ice::Clock const& clock) noexcept
     : _allocator{ alloc, "MyGame-alloc" }
@@ -39,6 +48,7 @@ MyGame::MyGame(ice::Allocator& alloc, ice::Clock const& clock) noexcept
     , _entity_storage{ _allocator, *_archetype_index, _archetype_alloc }
     , _game_gfx_pass{ ice::gfx::create_dynamic_pass(_allocator) }
     , _test_world{ nullptr }
+    , _render_world{ nullptr }
 {
 }
 
@@ -122,42 +132,47 @@ void MyGame::on_app_startup(ice::Engine& engine) noexcept
 
 
     ice::WorldManager& world_manager = engine.world_manager();
+    _render_world = world_manager.create_world("game.render_world"_sid, &_entity_storage);
+
     _test_world = world_manager.create_world("game.test_world"_sid, &_entity_storage);
     _test_world->add_trait("ice.physics"_sid, _trait_physics.get());
     _test_world->add_trait("ice.anim"_sid, _trait_animator.get());
     _test_world->add_trait("ice.actor"_sid, _trait_actor.get());
-    _test_world->add_trait("ice.render_gfx"_sid, _trait_render_gfx.get());
-    _test_world->add_trait("ice.render_clear"_sid, _trait_render_clear.get());
-    _test_world->add_trait("ice.render_finish"_sid, _trait_render_finish.get());
-    _test_world->add_trait("ice.camera"_sid, _trait_render_camera.get());
-    _test_world->add_trait("ice.render_postprocess"_sid, _trait_render_postprocess.get());
-    _test_world->add_trait("ice.render_sprites"_sid, _trait_render_sprites.get());
-    _test_world->add_trait("ice.devui"_sid, devui.world_trait());
-    _test_world->add_trait("game"_sid, this);
+
+    _render_world->add_trait("game"_sid, this);
+    _render_world->add_trait("ice.render_gfx"_sid, _trait_render_gfx.get());
+    _render_world->add_trait("ice.render_clear"_sid, _trait_render_clear.get());
+    _render_world->add_trait("ice.render_finish"_sid, _trait_render_finish.get());
+    _render_world->add_trait("ice.camera"_sid, _trait_render_camera.get());
+    _render_world->add_trait("ice.render_postprocess"_sid, _trait_render_postprocess.get());
+    _render_world->add_trait("ice.render_sprites"_sid, _trait_render_sprites.get());
+    _render_world->add_trait("ice.devui"_sid, devui.world_trait());
 
     ice::ArchetypeHandle ortho_arch = _archetype_index->register_archetype<ice::Camera, ice::CameraOrtho>(&_archetype_alloc);
     ice::ArchetypeHandle persp_arch = _archetype_index->register_archetype<ice::Camera, ice::CameraPerspective>(&_archetype_alloc);
     _archetype_index->register_archetype<ice::Transform2DStatic, ice::Sprite>(&_archetype_alloc);
-    _archetype_index->register_archetype<ice::Transform2DDynamic, ice::Sprite, ice::SpriteTile, ice::Animation, ice::AnimationState>(&_archetype_alloc);
+    _archetype_index->register_archetype<ice::Transform2DDynamic, ice::Sprite, ice::SpriteTile, ice::Animation, ice::AnimationState, ice::PhysicsBody>(&_archetype_alloc);
     _archetype_index->register_archetype<ice::Transform2DDynamic, ice::Sprite, ice::SpriteTile, ice::Animation, ice::AnimationState, ice::Actor, ice::PhysicsBody>(&_archetype_alloc);
 }
 
 void MyGame::on_app_shutdown(ice::Engine& engine) noexcept
 {
-    _test_world->remove_trait("game"_sid);
-    _test_world->remove_trait("ice.devui"_sid);
-    _test_world->remove_trait("ice.camera"_sid);
-    _test_world->remove_trait("ice.render_sprites"_sid);
-    _test_world->remove_trait("ice.render_postprocess"_sid);
-    _test_world->remove_trait("ice.render_finish"_sid);
-    _test_world->remove_trait("ice.render_clear"_sid);
-    _test_world->remove_trait("ice.render_gfx"_sid);
+    _render_world->remove_trait("ice.devui"_sid);
+    _render_world->remove_trait("ice.camera"_sid);
+    _render_world->remove_trait("ice.render_sprites"_sid);
+    _render_world->remove_trait("ice.render_postprocess"_sid);
+    _render_world->remove_trait("ice.render_finish"_sid);
+    _render_world->remove_trait("ice.render_clear"_sid);
+    _render_world->remove_trait("ice.render_gfx"_sid);
+    _render_world->remove_trait("game"_sid);
+
     _test_world->remove_trait("ice.actor"_sid);
     _test_world->remove_trait("ice.anim"_sid);
     _test_world->remove_trait("ice.physics"_sid);
 
     ice::WorldManager& world_manager = engine.world_manager();
     world_manager.destroy_world("game.test_world"_sid);
+    world_manager.destroy_world("game.render_world"_sid);
 
     _trait_render_camera = nullptr;
     _trait_render_postprocess = nullptr;
@@ -227,7 +242,7 @@ void MyGame::on_game_begin(ice::EngineRunner& runner) noexcept
         .speed = 1.f / 60.f
     };
     ice::Transform2DDynamic sprite_pos{
-        .position = { 48.f, 48.f, 1.f },
+        .position = { 48.f, 448.f, 1.f },
         .scale = { 1.f, 0.f }
     };
     ice::Sprite sprite{
@@ -236,25 +251,40 @@ void MyGame::on_game_begin(ice::EngineRunner& runner) noexcept
     ice::SpriteTile sprite_tile{
         .material_tile = { 0, 0 }
     };
-    _entity_storage.set_archetype_with_data(sprite_entity, sprite_arch, anim, sprite_pos, sprite, sprite_tile);
+    _entity_storage.set_archetype_with_data(sprite_entity, sprite_arch, anim, sprite_pos, sprite, sprite_tile, ice::PhysicsBody{});
 
-    sprite_pos.position = { 48.f * 2, 48.f, 1.f };
+    sprite_pos.position = { 48.f * 2, 448.f, 1.f };
     sprite_tile.material_tile = { 0, 1 };
     anim.speed = 1.f / 15.f;
     ice::Actor actor{ .type = ice::ActorType::Player };
     _entity_storage.set_archetype_with_data(sprite_entity2, actor_arch, anim, sprite_pos, sprite, sprite_tile, actor, ice::PhysicsBody{});
 
-    sprite_pos.position = { 48.f * 3, 48.f, 1.f };
+    sprite_pos.position = { 48.f * 3, 448.f, 1.f };
     sprite_tile.material_tile = { 0, 2 };
     anim.speed = 1.f / 30.f;
-    _entity_storage.set_archetype_with_data(sprite_entity3, sprite_arch, anim, sprite_pos, sprite, sprite_tile);
+    _entity_storage.set_archetype_with_data(sprite_entity3, sprite_arch, anim, sprite_pos, sprite, sprite_tile, ice::PhysicsBody{});
+
+    auto erase_entity_task = [](ice::EngineRunner& runner, ice::Entity entity) -> ice::Task<>
+    {
+        co_await runner.thread_pool();
+        SleepEx(1000 * 1, false);
+
+        ice::EngineFrame& frame = co_await runner.schedule_next_frame();
+        frame.entity_commands().destroy_entity(entity);
+    };
+
+    runner.execute_task(
+        erase_entity_task(runner, sprite_entity3),
+        ice::EngineContext::EngineRunner
+    );
 
     _trait_render_sprites->set_camera("camera.default"_sid);
 
-    ice::EngineRequest requests[]{
-        ice::create_request(ice::Request_ActivateWorld, _test_world)
+    ice::Shard shards[]{
+        ice::Shard_WorldActivate | _test_world,
+        ice::Shard_WorldActivate | _render_world,
     };
-    runner.current_frame().push_requests(requests);
+    runner.current_frame().push_shards(shards);
 }
 
 void MyGame::on_game_end() noexcept
@@ -264,4 +294,31 @@ void MyGame::on_game_end() noexcept
 void MyGame::on_update(ice::EngineFrame& frame, ice::EngineRunner& runner, ice::WorldPortal& portal) noexcept
 {
     runner.graphics_frame().enqueue_pass("default"_sid, _game_gfx_pass.get());
+
+    bool was_active = _active;
+    for (ice::input::InputEvent const& event : frame.input_events())
+    {
+        if (ice::input::input_identifier(ice::input::DeviceType::Keyboard, ice::input::KeyboardKey::KeyP) == event.identifier)
+        {
+            if (event.value.button.state.clicked)
+            {
+                _active = !_active;
+            }
+        }
+    }
+
+    if (was_active == true && _active == false)
+    {
+        ice::Shard shards[]{
+            ice::Shard_WorldDeactivate | _test_world
+        };
+        runner.current_frame().push_shards(shards);
+    }
+    else if (was_active == false && _active == true)
+    {
+        ice::Shard shards[]{
+            ice::Shard_WorldActivate | _test_world
+        };
+        runner.current_frame().push_shards(shards);
+    }
 }
