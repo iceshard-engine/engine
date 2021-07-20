@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
+    <Type Name="ice::Shard">
+        <DisplayString Condition="name == 2878671717">Shard {{ action/entity/destroy }}</DisplayString>
+        <DisplayString Condition="name == 2222547571">Shard {{ action/world/activate }}</DisplayString>
+        <DisplayString Condition="name == 517635588">Shard {{ test/shard2 }}</DisplayString>
+        <DisplayString Condition="name == 647074787">Shard {{ test/shard }}</DisplayString>
+        <DisplayString Condition="name == 4074741589">Shard {{ event/entity/created }}</DisplayString>
+        <DisplayString Condition="name == 1994726566">Shard {{ event/entity/destroyed }}</DisplayString>
+        <DisplayString Condition="name == 1865136619">Shard {{ action/world/deactivate }}</DisplayString>
+        <DisplayString>Shard {{ {name,h}, unknown_name }}</DisplayString>
+        <Expand>
+            <Synthetic Name="[payload type]">
+                <DisplayString Condition="payload_id == 1622554074">ice::Entity</DisplayString>
+                <DisplayString Condition="payload_id == 2511786707">ice::i32</DisplayString>
+                <DisplayString Condition="payload_id == 3035887879">ice::u64</DisplayString>
+                <DisplayString Condition="payload_id == 3725678933">ice::u32</DisplayString>
+                <DisplayString Condition="payload_id == 1753932510">ice::i64</DisplayString>
+                <DisplayString Condition="payload_id == 1506352867">ice::World*</DisplayString>
+                <DisplayString>{payload_id}, unknown_type</DisplayString>
+            </Synthetic>
+            <Item Name="[payload]" Optional="true" Condition="payload_id == 1622554074">(ice::Entity)payload</Item>
+            <Item Name="[payload]" Optional="true" Condition="payload_id == 2511786707">(ice::i32)payload</Item>
+            <Item Name="[payload]" Optional="true" Condition="payload_id == 3035887879">(ice::u64)payload</Item>
+            <Item Name="[payload]" Optional="true" Condition="payload_id == 3725678933">(ice::u32)payload</Item>
+            <Item Name="[payload]" Optional="true" Condition="payload_id == 1753932510">(ice::i64)payload</Item>
+            <Item Name="[payload]" Optional="true" Condition="payload_id == 1506352867">(ice::World*)payload</Item>
+        </Expand>
+    </Type>
+</AutoVisualizer>
