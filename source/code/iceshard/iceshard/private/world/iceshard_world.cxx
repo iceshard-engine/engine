@@ -128,7 +128,7 @@ namespace ice
         ice::Entity entity;
         for (ice::Shard const& shard : current_frame.shards())
         {
-            if (shard == Shard_EntityDestroyed && ice::inspect_shard(shard, entity))
+            if (shard == Shard_EntityDestroyed && ice::shard_inspect(shard, entity))
             {
                 _entity_storage->erase_data(entity);
             }

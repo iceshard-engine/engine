@@ -208,7 +208,7 @@ namespace ice
             ice::Entity entity;
             for (ice::Shard const& command : commands)
             {
-                if (command == Shard_EntityDestroy && ice::inspect_shard(command, entity) && index.is_alive(entity))
+                if (command == Shard_EntityDestroy && ice::shard_inspect(command, entity) && index.is_alive(entity))
                 {
                     index.destroy(entity);
 
@@ -227,7 +227,7 @@ namespace ice
             {
             case ice::Shard_WorldActivate.name:
             {
-                if (ice::inspect_shard(shard, world))
+                if (ice::shard_inspect(shard, world))
                 {
                     _world_tracker.activate_world(_engine, *this, static_cast<IceshardWorld*>(world));
                 }
@@ -235,7 +235,7 @@ namespace ice
             }
             case ice::Shard_WorldDeactivate.name:
             {
-                if (ice::inspect_shard(shard, world))
+                if (ice::shard_inspect(shard, world))
                 {
                     _world_tracker.deactivate_world(_engine, *this, static_cast<IceshardWorld*>(world));
                 }
