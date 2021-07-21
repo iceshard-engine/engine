@@ -4,6 +4,7 @@
 #include <ice/engine.hxx>
 #include <ice/engine_frame.hxx>
 #include <ice/engine_runner.hxx>
+#include <ice/engine_shards.hxx>
 #include <ice/entity/entity_index.hxx>
 #include <ice/world/world_portal.hxx>
 
@@ -12,6 +13,7 @@
 #include <ice/input/input_keyboard.hxx>
 
 #include <ice/data_storage.hxx>
+#include <ice/span_filter.hxx>
 #include <ice/clock.hxx>
 
 namespace ice
@@ -72,43 +74,25 @@ namespace ice
         ice::WorldPortal& portal
     ) noexcept
     {
-        //if (ice::pod::hash::has(_entity_bodies, ice::hash(e)) == false)
-        //{
-        //    b2BodyDef body_def{ };
-        //    body_def.type = b2_dynamicBody;
-        //    body_def.position.Set(xform.position.x / Constant_TileSize, xform.position.y / Constant_TileSize);
-
-        //    b2Body* body = _world.CreateBody(&body_def);
-        //    ice::pod::hash::set(_entity_bodies, ice::hash(e), body);
-
-        //    b2PolygonShape tile_shape;
-        //    tile_shape.SetAsBox(0.25, 0.25, { 0.25f, 0.25f }, 0.f);
-
-        //    b2FixtureDef fixture_def;
-        //    fixture_def.shape = &tile_shape;
-        //    fixture_def.density = 1.0f;
-        //    fixture_def.friction = 0.3f;
-
-        //    body->CreateFixture(&fixture_def);
-        //}
-        //else
-        //{
-        //    b2Body* body = ice::pod::hash::get(_entity_bodies, ice::hash(e), nullptr);
-        //    b2Vec2 body_pos = body->GetPosition();
-        //    xform.position = ice::vec3f{ body_pos.x * Constant_TileSize, body_pos.y * Constant_TileSize, 1.f };
-        //}
-        b2Body* body = _world->GetBodyList();
-        while(body != nullptr)
+        for (ice::Shard const& shard : ice::filter_span(frame.shards(), ice::any_of<Shard_EntityDestroyed>))
         {
-            b2Body* next = body->GetNext();
-            auto const& userdata = body->GetUserData();
-
-            if (userdata.entity != Entity{} && _engine->entity_index().is_alive(userdata.entity) == false)
+            ice::Entity entity;
+            if (ice::shard_inspect(shard, entity))
             {
-                _world->DestroyBody(body);
-            }
+                b2Body* body = _world->GetBodyList();
+                while (body != nullptr)
+                {
+                    b2Body* next = body->GetNext();
+                    auto const& userdata = body->GetUserData();
 
-            body = next;
+                    if (userdata.entity == entity)
+                    {
+                        _world->DestroyBody(body);
+                    }
+
+                    body = next;
+                }
+            }
         }
 
         _world->Step(1.f / 120.f, 6, 2);
