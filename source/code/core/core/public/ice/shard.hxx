@@ -14,9 +14,12 @@ namespace ice
     };
 
     template<typename T>
-    constexpr bool inspect_shard(ice::Shard shard, T& value) noexcept;
+    constexpr bool shard_inspect(ice::Shard shard, T& value) noexcept;
 
-    constexpr auto create_shard(std::string_view sv) noexcept
+    template<typename T>
+    inline auto shard_shatter(ice::Shard shard) noexcept -> T;
+
+    constexpr auto shard_create(std::string_view sv) noexcept
     {
         return ice::Shard{
             .name = ice::hash32(sv),
@@ -27,12 +30,12 @@ namespace ice
 
     constexpr auto operator""_shard(const char* str, size_t size) noexcept
     {
-        return ice::create_shard({ str, size });
+        return ice::shard_create({ str, size });
     }
 
     constexpr auto operator""_shard_name(const char* str, size_t size) noexcept
     {
-        return ice::create_shard({ str, size }).name;
+        return ice::shard_create({ str, size }).name;
     }
 
     namespace detail
@@ -101,15 +104,34 @@ namespace ice
     }
 
     template<typename T>
-    constexpr bool inspect_shard(ice::Shard shard, T& value) noexcept
+    constexpr bool shard_inspect(ice::Shard shard, T& value) noexcept
     {
-        static_assert(ice::detail::Constant_ShardPayloadID<T> != 0, "The given type cannot be used to insert a shard object.");
+        static_assert(ice::detail::Constant_ShardPayloadID<T> != 0, "The given type cannot be used to inspect a shard object.");
         if (ice::detail::Constant_ShardPayloadID<T> == shard.payload_id)
         {
-            value = *reinterpret_cast<T const*>(ice::addressof(shard.payload));
+            value = static_cast<T>(shard.payload);
             return true;
         }
         return false;
+    }
+
+    template<typename T>
+    inline bool shard_inspect(ice::Shard shard, T*& value) noexcept
+    {
+        static_assert(ice::detail::Constant_ShardPayloadID<T*> != 0, "The given type cannot be used to inspect a shard object.");
+        if (ice::detail::Constant_ShardPayloadID<T*> == shard.payload_id)
+        {
+            value = reinterpret_cast<T*>(static_cast<uptr>(shard.payload));
+            return true;
+        }
+        return false;
+    }
+
+    template<typename T>
+    inline auto shard_shatter(ice::Shard shard) noexcept -> T
+    {
+        static_assert(ice::detail::Constant_ShardPayloadID<T> != 0, "The given type cannot be used to shatter a shard object.");
+        return *reinterpret_cast<T const*>(ice::addressof(shard.payload));
     }
 
     namespace _validate
