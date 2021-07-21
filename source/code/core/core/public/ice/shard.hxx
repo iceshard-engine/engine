@@ -13,30 +13,19 @@ namespace ice
         ice::u64 payload;
     };
 
+    constexpr auto shard_create(std::string_view sv) noexcept  -> ice::Shard;
+
+    template<typename T>
+    constexpr auto shard_create(std::string_view sv, T value) noexcept  -> ice::Shard;
+
+    template<typename T>
+    constexpr auto shard_create(ice::Shard sv, T value) noexcept  -> ice::Shard;
+
     template<typename T>
     constexpr bool shard_inspect(ice::Shard shard, T& value) noexcept;
 
     template<typename T>
     inline auto shard_shatter(ice::Shard shard) noexcept -> T;
-
-    constexpr auto shard_create(std::string_view sv) noexcept
-    {
-        return ice::Shard{
-            .name = ice::hash32(sv),
-            .payload_id = 0,
-            .payload = 0,
-        };
-    }
-
-    constexpr auto operator""_shard(const char* str, size_t size) noexcept
-    {
-        return ice::shard_create({ str, size });
-    }
-
-    constexpr auto operator""_shard_name(const char* str, size_t size) noexcept
-    {
-        return ice::shard_create({ str, size }).name;
-    }
 
     namespace detail
     {
@@ -58,49 +47,57 @@ namespace ice
 
     } // namespace detail
 
+    constexpr auto shard_create(std::string_view sv) noexcept  -> ice::Shard
+    {
+        return ice::Shard{
+            .name = ice::hash32(sv),
+            .payload_id = 0,
+            .payload = 0,
+        };
+    }
+
     template<typename T>
-    constexpr auto operator|(ice::Shard shard, T payload) noexcept -> ice::Shard
+    constexpr auto shard_create(std::string_view sv, T payload) noexcept -> ice::Shard
     {
         static_assert(ice::detail::Constant_ShardPayloadID<T> != 0, "The given type cannot be used to attach a shard payload.");
-        return {
-            .name = shard.name,
-            .payload_id = ice::detail::Constant_ShardPayloadID<T>,
-            .payload = static_cast<ice::u64>(payload)
-        };
+        if constexpr (std::is_pointer_v<T> == false)
+        {
+            return {
+                .name = ice::hash32(sv),
+                .payload_id = ice::detail::Constant_ShardPayloadID<T>,
+                .payload = static_cast<ice::u64>(payload)
+            };
+        }
+        else
+        {
+            return {
+                .name = ice::hash32(sv),
+                .payload_id = ice::detail::Constant_ShardPayloadID<T>,
+                .payload = static_cast<ice::u64>(reinterpret_cast<ice::uptr>(payload))
+            };
+        }
     }
 
     template<typename T>
-    constexpr auto operator|(ice::Shard shard, T* payload) noexcept -> ice::Shard
+    constexpr auto shard_create(ice::Shard shard, T payload) noexcept  -> ice::Shard
     {
-        static_assert(ice::detail::Constant_ShardPayloadID<T*> != 0, "The given type cannot be used to attach a shard payload.");
-        return {
-            .name = shard.name,
-            .payload_id = ice::detail::Constant_ShardPayloadID<T*>,
-            .payload = static_cast<ice::u64>(reinterpret_cast<ice::uptr>(payload))
-        };
-    }
-
-    constexpr auto operator>>(ice::Shard left, ice::Shard right) noexcept -> ice::Shard
-    {
-        return {
-            .name = right.name,
-            .payload_id = left.payload_id,
-            .payload = left.payload
-        };
-    }
-
-    constexpr auto operator==(ice::Shard left, ice::Shard right) noexcept -> bool
-    {
-        if (left.name == right.name)
+        static_assert(ice::detail::Constant_ShardPayloadID<T> != 0, "The given type cannot be used to attach a shard payload.");
+        if constexpr (std::is_pointer_v<T> == false)
         {
-            return left.payload_id == 0 || right.payload_id == 0 || right.payload_id == left.payload_id;
+            return {
+                .name = shard.name,
+                .payload_id = ice::detail::Constant_ShardPayloadID<T>,
+                .payload = static_cast<ice::u64>(payload)
+            };
         }
-        return false;
-    }
-
-    constexpr auto operator!=(ice::Shard left, ice::Shard right) noexcept -> bool
-    {
-        return !(left == right);
+        else
+        {
+            return {
+                .name = shard.name,
+                .payload_id = ice::detail::Constant_ShardPayloadID<T>,
+                .payload = static_cast<ice::u64>(reinterpret_cast<ice::uptr>(payload))
+            };
+        }
     }
 
     template<typename T>
@@ -132,6 +129,51 @@ namespace ice
     {
         static_assert(ice::detail::Constant_ShardPayloadID<T> != 0, "The given type cannot be used to shatter a shard object.");
         return *reinterpret_cast<T const*>(ice::addressof(shard.payload));
+    }
+
+    constexpr auto operator""_shard(const char* str, size_t size) noexcept
+    {
+        return ice::shard_create({ str, size });
+    }
+
+    constexpr auto operator""_shard_name(const char* str, size_t size) noexcept
+    {
+        return ice::shard_create({ str, size }).name;
+    }
+
+    template<typename T>
+    constexpr auto operator|(ice::Shard shard, T payload) noexcept -> ice::Shard
+    {
+        return ice::shard_create(shard, payload);
+    }
+
+    template<typename T>
+    constexpr auto operator|(ice::Shard shard, T* payload) noexcept -> ice::Shard
+    {
+        return ice::shard_create(shard, payload);
+    }
+
+    constexpr auto operator>>(ice::Shard left, ice::Shard right) noexcept -> ice::Shard
+    {
+        return {
+            .name = right.name,
+            .payload_id = left.payload_id,
+            .payload = left.payload
+        };
+    }
+
+    constexpr auto operator==(ice::Shard left, ice::Shard right) noexcept -> bool
+    {
+        if (left.name == right.name)
+        {
+            return left.payload_id == 0 || right.payload_id == 0 || right.payload_id == left.payload_id;
+        }
+        return false;
+    }
+
+    constexpr auto operator!=(ice::Shard left, ice::Shard right) noexcept -> bool
+    {
+        return !(left == right);
     }
 
     namespace _validate
