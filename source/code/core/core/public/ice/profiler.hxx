@@ -1,7 +1,7 @@
 #pragma once
 #include <ice/base.hxx>
 
-#if ICE_PROFILE
+#if ICE_PROFILE || ICE_DEVELOP
 
 #define TRACY_ENABLE
 #define TRACY_IMPORTS
