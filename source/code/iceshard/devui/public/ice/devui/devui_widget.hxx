@@ -8,6 +8,8 @@ namespace ice::devui
     public:
         virtual ~DevUIWidget() noexcept = default;
 
+        virtual void on_prepare(void* context) noexcept { }
+
         virtual void on_draw() noexcept = 0;
     };
 
