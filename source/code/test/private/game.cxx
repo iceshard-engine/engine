@@ -38,8 +38,6 @@
 #include <ice/resource.hxx>
 #include <ice/assert.hxx>
 
-#include <ice/os/windows.hxx>
-
 MyGame::MyGame(ice::Allocator& alloc, ice::Clock const& clock) noexcept
     : _allocator{ alloc, "MyGame-alloc" }
     , _clock{ clock }
@@ -261,25 +259,16 @@ void MyGame::on_game_begin(ice::EngineRunner& runner) noexcept
     _entity_storage.set_archetype_with_data(sprite_entity2, actor_arch, anim, sprite_pos, sprite, sprite_tile, actor, ice::PhysicsBody{});
 
     sprite_pos.position = { 48.f * 3, 448.f, 1.f };
-    sprite_tile.material_tile = { 0, 2 };
+    sprite_tile.material_tile = { 4, 5 };
     anim.speed = 1.f / 30.f;
+    sprite.material = "/cotm/tileset_a"_sid;
+    anim.animation = "null"_sid_hash;
     _entity_storage.set_archetype_with_data(sprite_entity3, sprite_arch, anim, sprite_pos, sprite, sprite_tile, ice::PhysicsBody{});
 
-    auto erase_entity_task = [](ice::EngineRunner& runner, ice::Entity entity) -> ice::Task<>
-    {
-        co_await runner.thread_pool();
-        SleepEx(1000 * 1, false);
-
-        ice::EngineFrame& frame = co_await runner.schedule_next_frame();
-        frame.entity_commands().destroy_entity(entity);
-    };
-
-    runner.execute_task(
-        erase_entity_task(runner, sprite_entity3),
-        ice::EngineContext::EngineRunner
-    );
-
     _trait_render_sprites->set_camera("camera.default"_sid);
+
+    ice::math::deg d1{ 180 };
+    ice::math::rad d1r = radians(d1);
 
     ice::Shard shards[]{
         ice::Shard_WorldActivate | _test_world,
