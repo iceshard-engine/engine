@@ -124,6 +124,8 @@ namespace ice::render
         ) const noexcept = 0;
 
         virtual auto get_commands() noexcept -> ice::render::RenderCommands& = 0;
+
+        virtual void wait_idle() const noexcept = 0;
     };
 
 } // namespace ice::render

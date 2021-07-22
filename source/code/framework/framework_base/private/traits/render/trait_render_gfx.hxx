@@ -30,6 +30,7 @@ namespace ice
         ) noexcept override;
 
     protected:
+        auto task_rebuild_renderpass(ice::gfx::GfxDevice& gfx_device) noexcept -> ice::Task<>;
         auto task_create_render_objects(ice::gfx::GfxDevice& gfx_device) noexcept -> ice::Task<>;
         auto task_destroy_render_objects(ice::gfx::GfxDevice& gfx_device) noexcept -> ice::Task<>;
 

@@ -10,6 +10,7 @@
 #include <ice/render/render_command_buffer.hxx>
 #include <ice/render/render_swapchain.hxx>
 
+#include <ice/span_filter.hxx>
 #include <ice/profiler.hxx>
 
 namespace ice
@@ -63,6 +64,11 @@ namespace ice
     {
         IPT_ZONE_SCOPED_NAMED("[Trait] Clear :: Update");
 
+        for (ice::Shard const& shard : ice::filter_span(frame.shards(), ice::any_of<ice::platform::Shard_WindowSizeChanged>))
+        {
+            runner.execute_task(task_update_objects(runner.graphics_device()), EngineContext::GraphicsFrame);
+        }
+
         ice::gfx::GfxFrame& gfx_frame = runner.graphics_frame();
         gfx_frame.set_stage_slots(gfx_stage_slots());
     }
@@ -109,13 +115,7 @@ namespace ice
     {
         co_await runner.graphics_frame().frame_start();
 
-        using namespace ice::gfx;
-        using namespace ice::render;
-
-        GfxResourceTracker& gfx_restracker = gfx_device.resource_tracker();
-        _default_renderpass = ice::gfx::find_resource<Renderpass>(gfx_restracker, "ice.gfx.renderpass.default"_sid);
-        _default_framebuffers[0] = ice::gfx::find_resource<Framebuffer>(gfx_restracker, "ice.gfx.framebuffer.0"_sid);
-        _default_framebuffers[1] = ice::gfx::find_resource<Framebuffer>(gfx_restracker, "ice.gfx.framebuffer.1"_sid);
+        co_await task_update_objects(gfx_device);
 
         co_await runner.schedule_next_frame();
 
@@ -125,6 +125,21 @@ namespace ice
             .name = "frame.clear"_sid,
             .stage = this
         };
+    }
+
+    auto IceWorldTrait_RenderClear::task_update_objects(
+        ice::gfx::GfxDevice& gfx_device
+    ) noexcept -> ice::Task<>
+    {
+        using namespace ice::gfx;
+        using namespace ice::render;
+
+        GfxResourceTracker& gfx_restracker = gfx_device.resource_tracker();
+        _default_swapchain = ice::addressof(gfx_device.swapchain());
+        _default_renderpass = ice::gfx::find_resource<Renderpass>(gfx_restracker, "ice.gfx.renderpass.default"_sid);
+        _default_framebuffers[0] = ice::gfx::find_resource<Framebuffer>(gfx_restracker, "ice.gfx.framebuffer.0"_sid);
+        _default_framebuffers[1] = ice::gfx::find_resource<Framebuffer>(gfx_restracker, "ice.gfx.framebuffer.1"_sid);
+        co_return;
     }
 
 } // namespace ice

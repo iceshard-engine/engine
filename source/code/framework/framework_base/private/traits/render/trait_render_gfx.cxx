@@ -4,6 +4,8 @@
 #include <ice/gfx/gfx_frame.hxx>
 #include <ice/gfx/gfx_resource_tracker.hxx>
 
+#include <ice/platform_event.hxx>
+
 #include <ice/engine_runner.hxx>
 
 #include <ice/render/render_device.hxx>
@@ -144,8 +146,45 @@ namespace ice
         ice::WorldPortal& portal
     ) noexcept
     {
+        ice::Span<ice::Shard const> shards = frame.shards();
+
+        auto result = std::find_if(shards.begin(), shards.end(), ice::any_of<ice::platform::Shard_WindowSizeChanged>);
+        if (result != shards.end())
+        {
+            ice::vec2i new_size;
+            if (ice::shard_inspect(*result, new_size))
+            {
+                runner.execute_task(
+                    task_rebuild_renderpass(runner.graphics_device()),
+                    EngineContext::GraphicsFrame
+                );
+            }
+        }
+
         runner.graphics_frame().set_stage_slots(gfx_stage_slots());
         frame.create_named_object<ice::render::Renderpass>("ice.gfx.renderpass"_sid, _default_renderpass);
+    }
+
+    auto IceWorldTrait_RenderGfx::task_rebuild_renderpass(
+        ice::gfx::GfxDevice& gfx_device
+    ) noexcept -> ice::Task<>
+    {
+        using namespace gfx;
+        using namespace ice::render;
+
+        gfx_device.recreate_swapchain();
+
+        RenderDevice& render_device = gfx_device.device();
+        //RenderSwapchain const& swapchain = gfx_device.swapchain();
+
+        render_device.destroy_framebuffer(_default_framebuffers[0]);
+        render_device.destroy_framebuffer(_default_framebuffers[1]);
+        render_device.destroy_image(_default_attachment_depth_stencil);
+        render_device.destroy_image(_default_attachment_color);
+        render_device.destroy_renderpass(_default_renderpass);
+
+        co_await task_create_render_objects(gfx_device);
+        co_return;
     }
 
     auto IceWorldTrait_RenderGfx::task_create_render_objects(

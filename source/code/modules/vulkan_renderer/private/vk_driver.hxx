@@ -21,6 +21,7 @@ namespace ice::render::vk
 
         auto render_api() const noexcept -> ice::render::RenderDriverAPI override;
 
+        [[deprecated]]
         auto create_surface(
             ice::render::SurfaceInfo const& surface_info
         ) noexcept -> ice::render::RenderSurface* override;
@@ -28,6 +29,7 @@ namespace ice::render::vk
             ice::render::RenderSurface* surface
         ) noexcept override;
 
+        [[deprecated]]
         void query_queue_infos(
             ice::pod::Array<ice::render::QueueFamilyInfo>& queue_info
         ) noexcept override;
@@ -50,6 +52,7 @@ namespace ice::render::vk
         VkPhysicalDeviceMemoryProperties _vk_physical_device_memory_properties;
         ice::pod::Array<VkQueueFamilyProperties> _vk_queue_family_properties;
 
+        // TODO: This value should not be stored here, as it might change for each created surface!
         ice::i32 _vk_presentation_queue_family_index = -1;
     };
 

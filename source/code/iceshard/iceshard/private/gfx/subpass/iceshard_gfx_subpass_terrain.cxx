@@ -2,7 +2,6 @@
 
 #include <ice/render/render_device.hxx>
 #include <ice/render/render_pass.hxx>
-#include <ice/render/render_swapchain.hxx>
 #include <ice/render/render_resource.hxx>
 #include <ice/render/render_buffer.hxx>
 

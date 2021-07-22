@@ -24,8 +24,19 @@ namespace ice
 
         auto create_runner(
             ice::UniquePtr<ice::input::InputTracker> input_tracker,
-            ice::gfx::GfxDeviceCreateInfo const& gfx_create_info
-        ) noexcept -> ice::UniquePtr<EngineRunner> override;
+            ice::UniquePtr<ice::gfx::GfxRunner> graphics_runner
+        ) noexcept -> ice::UniquePtr<ice::EngineRunner> override;
+
+        auto create_graphics_runner(
+            ice::render::RenderDriver& render_driver,
+            ice::render::RenderSurface& render_surface,
+            ice::Span<ice::RenderQueueDefinition const> render_queues
+        ) noexcept -> ice::UniquePtr<ice::gfx::GfxRunner> override;
+
+        void update_runner_graphics(
+            ice::EngineRunner& runner,
+            ice::UniquePtr<ice::gfx::GfxRunner> graphics_runner
+        ) noexcept override;
 
         auto entity_index() noexcept -> ice::EntityIndex& override;
 

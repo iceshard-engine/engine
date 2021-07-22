@@ -70,23 +70,19 @@ namespace ice
         ice::IceshardEngine& engine,
         ice::IceshardWorldManager& world_manager,
         ice::UniquePtr<ice::input::InputTracker> input_tracker,
-        ice::UniquePtr<ice::gfx::IceGfxDevice> gfx_device
+        ice::UniquePtr<ice::gfx::GfxRunner> gfx_runner
     ) noexcept
         : ice::EngineRunner{ }
         , _allocator{ alloc, "engine-runner" }
+        , _clock{ ice::clock::create_clock() }
         , _engine{ engine }
         , _devui_key{ devui::execution_key_from_pointer(ice::addressof(_engine)) }
-        , _clock{ ice::clock::create_clock() }
+        , _gfx_runner{ ice::move(gfx_runner) }
         , _thread_pool{ ice::create_simple_threadpool(_allocator, 6) }
-        , _graphics_thread{ ice::create_task_thread(_allocator) }
         , _frame_allocator{ _allocator, "frame-allocator" }
         , _frame_data_allocator{
             ice::memory::ScratchAllocator{ _frame_allocator, detail::FrameAllocatorCapacity, "frame-alloc-1" },
             ice::memory::ScratchAllocator{ _frame_allocator, detail::FrameAllocatorCapacity, "frame-alloc-2" }
-        }
-        , _frame_gfx_allocator{
-            ice::memory::ScratchAllocator{ _frame_allocator, detail::GfxFrameAllocatorCapacity, "gfx-frame-alloc-1" },
-            ice::memory::ScratchAllocator{ _frame_allocator, detail::GfxFrameAllocatorCapacity, "gfx-frame-alloc-2" }
         }
         , _next_free_allocator{ 0 }
         , _previous_frame{ ice::make_unique_null<ice::IceshardMemoryFrame>() }
@@ -94,8 +90,6 @@ namespace ice
         , _world_manager{ world_manager }
         , _world_tracker{ _allocator }
         , _input_tracker{ ice::move(input_tracker) }
-        , _gfx_device{ ice::move(gfx_device) }
-        , _gfx_current_frame{ ice::make_unique_null<ice::gfx::IceGfxFrame>() }
         , _runner_tasks{ _allocator }
     {
         _engine.developer_ui().internal_set_key(_devui_key);
@@ -109,9 +103,7 @@ namespace ice
             _frame_data_allocator[1]
         );
 
-        _gfx_current_frame = ice::make_unique<ice::gfx::IceGfxFrame>(
-            _allocator, _frame_gfx_allocator[1]
-        );
+        _gfx_runner->set_event(&_mre_graphics_frame);
 
         ice::pod::array::reserve(_runner_tasks, 10);
     }
@@ -125,21 +117,15 @@ namespace ice
         }
 
         _mre_frame_logic.wait();
-        _mre_gfx_commands.wait();
-        _mre_gfx_draw.wait();
+
+        // _mre_gfx_commands.wait();
+        _mre_graphics_frame.wait();
 
         deactivate_worlds();
 
-        _gfx_current_frame->execute_final_tasks();
-
-        _graphics_thread->stop();
-        _graphics_thread->join();
-        _graphics_thread = nullptr;
+        // First kill the gfx runner, so we dont care for any gfx data flying around.
+        _gfx_runner = nullptr;
         _thread_pool = nullptr;
-
-        _gfx_current_frame = nullptr;
-
-        _gfx_device = nullptr;
         _current_frame = nullptr;
         _previous_frame = nullptr;
     }
@@ -173,12 +159,12 @@ namespace ice
 
     auto IceshardEngineRunner::graphics_device() noexcept -> ice::gfx::GfxDevice&
     {
-        return *_gfx_device;
+        return _gfx_runner->device();
     }
 
     auto IceshardEngineRunner::graphics_frame() noexcept -> ice::gfx::GfxFrame&
     {
-        return *_gfx_current_frame;
+        return _gfx_runner->frame();
     }
 
     auto IceshardEngineRunner::previous_frame() const noexcept -> ice::EngineFrame const&
@@ -215,6 +201,18 @@ namespace ice
                     ice::Shard const shards[1]{ command >> Shard_EntityDestroyed };
                     _current_frame->push_shards(shards);
                 }
+            }
+        }
+
+        for (ice::platform::Event const& ev : _events)
+        {
+            if (ev.type == ice::platform::EventType::WindowSizeChanged)
+            {
+                // Force wait for the graphics frame to finish!
+                _mre_graphics_frame.wait();
+
+                ice::Shard const shards[1]{ ice::platform::Shard_WindowSizeChanged | ev.data.window.size };
+                _current_frame->push_shards(shards);
             }
         }
 
@@ -301,49 +299,6 @@ namespace ice
         _current_frame->wait_ready();
     }
 
-    auto IceshardEngineRunner::graphics_frame_task() noexcept -> ice::Task<>
-    {
-        IPT_FRAME_MARK_NAMED("Graphics Frame");
-        ice::UniquePtr<ice::gfx::IceGfxFrame> gfx_frame = ice::move(_gfx_current_frame);
-
-        // Await the graphics thread context
-        co_await *_graphics_thread;
-
-        IPT_ZONE_SCOPED_NAMED("Graphis Frame");
-
-        // Wait for the previous render task to end
-        _mre_gfx_draw.wait();
-        _mre_gfx_draw.reset();
-
-        // NOTE: We aquire the next image index to be rendered.
-        ice::u32 const image_index = _gfx_device->next_frame();
-
-        // NOTE: We aquire the graphics queues for this frame index.
-        ice::gfx::IceGfxQueueGroup& queue_group = _gfx_device->queue_group(image_index);
-
-        gfx_frame->resume_on_start_stage();
-        gfx_frame->resume_on_commands_stage("default"_sid, queue_group.get_queue("default"_sid));
-        gfx_frame->resume_on_end_stage();
-
-        gfx_frame->execute_passes(*_previous_frame, queue_group);
-
-        // Start the draw task and
-        ice::sync_manual_wait(render_frame_task(image_index, ice::move(gfx_frame)), _mre_gfx_draw);
-        co_return;
-    }
-
-    auto IceshardEngineRunner::render_frame_task(
-        ice::u32 framebuffer_index,
-        ice::UniquePtr<ice::gfx::IceGfxFrame> gfx_frame
-    ) noexcept -> ice::Task<>
-    {
-        IPT_ZONE_SCOPED_NAMED("Graphis Frame - Present");
-
-        // NOTE: We are presenting the resulting image.
-        _gfx_device->present(framebuffer_index);
-        co_return;
-    }
-
     void IceshardEngineRunner::next_frame(
         ice::Span<ice::platform::Event const> events
     ) noexcept
@@ -355,26 +310,22 @@ namespace ice
         ice::sync_manual_wait(logic_frame_task(), _mre_frame_logic);
         _mre_frame_logic.wait();
 
-        // Move the current frame to the 'previous' slot.
-        _mre_gfx_commands.wait();
-        _mre_gfx_commands.reset();
+        // Wait for the graphics runner to set this event, we know that it finished it's work.
+        _mre_graphics_frame.wait();
 
         {
             IPT_ZONE_SCOPED_NAMED("Runner Frame - Build Developer UI");
             _engine.developer_ui().internal_build_widgets(*_current_frame, _devui_key);
         }
 
+        // Move the current frame to the 'previous' slot.
         _previous_frame = ice::move(_current_frame);
 
-        ice::sync_manual_wait(graphics_frame_task(), _mre_gfx_commands);
+        _gfx_runner->draw_frame(*_previous_frame);
 
         [[maybe_unused]]
         bool const discarded_memory = _frame_data_allocator[_next_free_allocator].reset_and_discard();
         ICE_ASSERT(discarded_memory == false, "Memory was discarded during frame allocator reset!");
-
-        ice::u32 const total_allocated = _frame_gfx_allocator[_next_free_allocator].total_allocated();
-        bool const gfx_discarded_memory = _frame_gfx_allocator[_next_free_allocator].reset_and_discard();
-        //ICE_ASSERT(gfx_discarded_memory == false, "Memory was discarded ({}) during graphics allocator reset!", total_allocated);
 
         ice::clock::update(_clock);
 
@@ -383,16 +334,18 @@ namespace ice
             _frame_data_allocator[_next_free_allocator]
         );
 
-        _gfx_current_frame = ice::make_unique<ice::gfx::IceGfxFrame>(
-            _allocator,
-            _frame_gfx_allocator[_next_free_allocator]
-        );
-
         // We need to update the allocator index
         _next_free_allocator += 1;
         _next_free_allocator %= ice::size(_frame_data_allocator);
 
         remove_finished_tasks();
+    }
+
+    void IceshardEngineRunner::set_graphics_runner(
+        ice::UniquePtr<ice::gfx::GfxRunner> gfx_runner
+    ) noexcept
+    {
+        _gfx_runner = nullptr;
     }
 
     void IceshardEngineRunner::execute_task(ice::Task<> task, ice::EngineContext context) noexcept
@@ -421,7 +374,7 @@ namespace ice
             _current_frame->execute_task(ice::move(task));
             break;
         case ice::EngineContext::GraphicsFrame:
-            _gfx_current_frame->execute_task(ice::move(task));
+            static_cast<ice::gfx::IceGfxFrame&>(graphics_frame()).execute_task(ice::move(task));
             break;
         default:
             break;

@@ -245,6 +245,8 @@ namespace ice::render::vk
 
         auto get_commands() noexcept -> ice::render::RenderCommands& override;
 
+        void wait_idle() const noexcept override;
+
     private:
         ice::Allocator& _allocator;
         ice::memory::ScratchAllocator _gfx_thread_alloc;

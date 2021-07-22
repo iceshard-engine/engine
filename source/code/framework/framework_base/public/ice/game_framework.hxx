@@ -13,6 +13,8 @@ namespace ice
     class ResourceSystem;
     class ModuleRegister;
 
+    namespace gfx { class GfxRunner; }
+
     struct GameServices
     {
         virtual ~GameServices() noexcept = default;
@@ -43,7 +45,9 @@ namespace ice
         auto resource_system() noexcept -> ice::ResourceSystem& final;
         auto module_registry() noexcept -> ice::ModuleRegister& final;
 
-        auto platform_app() noexcept -> ice::UniquePtr<ice::platform::App>;
+        auto create_app(
+            ice::UniquePtr<ice::gfx::GfxRunner> gfx_runner
+        ) noexcept -> ice::UniquePtr<ice::platform::App>;
 
     protected:
         virtual void on_app_startup_internal(ice::Engine& engine) noexcept = 0;

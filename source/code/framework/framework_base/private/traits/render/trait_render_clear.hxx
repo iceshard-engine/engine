@@ -42,6 +42,10 @@ namespace ice
             ice::gfx::GfxDevice& gfx_device
         ) noexcept -> ice::Task<>;
 
+        auto task_update_objects(
+            ice::gfx::GfxDevice& runner
+        ) noexcept -> ice::Task<>;
+
     private:
         ice::u32 _stage_slot_count = 0;
         ice::gfx::GfxStageSlot _stage_slots[1];

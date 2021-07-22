@@ -1088,6 +1088,11 @@ namespace ice::render::vk
         return _vk_render_commands;
     }
 
+    void VulkanRenderDevice::wait_idle() const noexcept
+    {
+        vkDeviceWaitIdle(_vk_device);
+    }
+
     auto VulkanRenderDevice::create_sampler(
         ice::render::SamplerInfo const& sampler_info
     ) noexcept -> ice::render::Sampler

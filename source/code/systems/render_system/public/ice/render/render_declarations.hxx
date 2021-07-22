@@ -39,6 +39,7 @@ namespace ice::render
     enum class [[nodiscard]] Fence : ice::uptr;
 
     enum class QueueID : ice::u32;
+    enum class QueueFlags : ice::u32;
     enum class ImageFormat : ice::u32;
     enum class AttachmentType : ice::u32;
     enum class BufferType : ice::u32;

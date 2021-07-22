@@ -15,6 +15,7 @@
 #include <ice/gfx/gfx_pass.hxx>
 
 #include <ice/asset_system.hxx>
+#include <ice/span_filter.hxx>
 #include <ice/profiler.hxx>
 
 namespace ice
@@ -104,6 +105,11 @@ namespace ice
     ) noexcept
     {
         IPT_ZONE_SCOPED_NAMED("[Trait] PostProcess :: Update");
+
+        for (ice::Shard const& shard : ice::filter_span(frame.shards(), ice::any_of<ice::platform::Shard_WindowSizeChanged>))
+        {
+            runner.execute_task(task_update_resources(runner.graphics_device()), EngineContext::GraphicsFrame);
+        }
 
         runner.graphics_frame().set_stage_slots(gfx_stage_slots());
     }
@@ -256,10 +262,23 @@ namespace ice
         };
         device.update_buffers(buffer_updates);
 
+
+        co_await task_update_resources(gfx_device);
+
+        co_await runner.schedule_next_frame();
+        _slot_count = 1;
+    }
+
+    auto IceWorldTrait_RenderPostProcess::task_update_resources(ice::gfx::GfxDevice& gfx_device) noexcept -> ice::Task<>
+    {
+        using namespace ice::render;
+
+        RenderDevice& device = gfx_device.device();
+
         ResourceUpdateInfo const resource_updates[]
         {
-            ResourceUpdateInfo{ .sampler = _sampler, },
-            ResourceUpdateInfo{ .image = ice::gfx::find_resource<ice::render::Image>(gfx_device.resource_tracker(), "ice.gfx.attachment.image.color"_sid) }
+            ResourceUpdateInfo{.sampler = _sampler, },
+            ResourceUpdateInfo{.image = ice::gfx::find_resource<ice::render::Image>(gfx_device.resource_tracker(), "ice.gfx.attachment.image.color"_sid) }
         };
         ResourceSetUpdateInfo const set_updates[]
         {
@@ -280,10 +299,9 @@ namespace ice
                 .resources = { resource_updates + 1, 1 },
             },
         };
-        device.update_resourceset(set_updates);
 
-        co_await runner.schedule_next_frame();
-        _slot_count = 1;
+        device.update_resourceset(set_updates);
+        co_return;
     }
 
     auto IceWorldTrait_RenderPostProcess::task_destroy_render_objects(

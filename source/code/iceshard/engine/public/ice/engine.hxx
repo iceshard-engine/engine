@@ -1,19 +1,23 @@
 #pragma once
+#include <ice/span.hxx>
+#include <ice/stringid.hxx>
 #include <ice/unique_ptr.hxx>
-#include <ice/input/input_types.hxx>
+#include <ice/engine_types.hxx>
 #include <ice/gfx/gfx_types.hxx>
+#include <ice/input/input_types.hxx>
+#include <ice/render/render_declarations.hxx>
 
 namespace ice
 {
 
     class AssetSystem;
-
     class EntityIndex;
 
-    class WorldManager;
-
-    class EngineRunner;
-    class EngineDevUI;
+    struct RenderQueueDefinition
+    {
+        ice::StringID name;
+        ice::render::QueueFlags flags;
+    };
 
     class Engine
     {
@@ -22,8 +26,19 @@ namespace ice
 
         virtual auto create_runner(
             ice::UniquePtr<ice::input::InputTracker> input_tracker,
-            ice::gfx::GfxDeviceCreateInfo const& gfx_create_info
-        ) noexcept -> ice::UniquePtr<EngineRunner> = 0;
+            ice::UniquePtr<ice::gfx::GfxRunner> graphics_runner
+        ) noexcept -> ice::UniquePtr<ice::EngineRunner> = 0;
+
+        virtual auto create_graphics_runner(
+            ice::render::RenderDriver& render_driver,
+            ice::render::RenderSurface& render_surface,
+            ice::Span<ice::RenderQueueDefinition const> render_queues
+        ) noexcept -> ice::UniquePtr<ice::gfx::GfxRunner> = 0;
+
+        virtual void update_runner_graphics(
+            ice::EngineRunner& runner,
+            ice::UniquePtr<ice::gfx::GfxRunner> graphics_runner
+        ) noexcept = 0;
 
         virtual auto entity_index() noexcept -> ice::EntityIndex& = 0;
 

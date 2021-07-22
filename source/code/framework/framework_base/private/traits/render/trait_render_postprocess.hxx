@@ -45,6 +45,10 @@ namespace ice
             ice::gfx::GfxDevice& gfx_device
         ) noexcept -> ice::Task<>;
 
+        auto task_update_resources(
+            ice::gfx::GfxDevice& gfx_device
+        ) noexcept -> ice::Task<>;
+
         auto task_destroy_render_objects(
             ice::gfx::GfxDevice& gfx_device
         ) noexcept -> ice::Task<>;

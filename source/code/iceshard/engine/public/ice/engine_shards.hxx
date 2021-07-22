@@ -25,10 +25,4 @@ namespace ice
 
     } // namespace detail
 
-    template<ice::Shard... TestShards>
-    constexpr bool any_of(ice::Shard const& shard) noexcept
-    {
-        return ((shard == TestShards) || ...);
-    }
-
 } // namespace ice
