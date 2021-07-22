@@ -19,9 +19,6 @@
 
 #include <ice/profiler.hxx>
 
-#include <imgui/imgui.h>
-#undef assert
-
 namespace ice::devui
 {
 
@@ -30,6 +27,7 @@ namespace ice::devui
 
         struct DrawCommand
         {
+            ice::render::ResourceSet resource_set;
             ice::u32 index_count;
             ice::u32 index_offset;
             ice::u32 vertex_offset;
@@ -61,10 +59,13 @@ namespace ice::devui
     {
         ice::pod::array::reserve(_index_buffers, 10);
         ice::pod::array::reserve(_vertex_buffers, 10);
+
+        _imgui_context = ImGui::CreateContext();
     }
 
     ImGuiTrait::~ImGuiTrait() noexcept
     {
+        ImGui::DestroyContext();
     }
 
     auto ImGuiTrait::gfx_stage_info() const noexcept -> ice::gfx::GfxStageInfo
@@ -94,8 +95,6 @@ namespace ice::devui
     {
         _imgui_timer = ice::timer::create_timer(runner.clock(), 1.f / 60.f);
         _display_size = runner.graphics_device().swapchain().extent();
-
-        ImGui::CreateContext();
 
         auto& io = ImGui::GetIO();
         io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
@@ -139,8 +138,6 @@ namespace ice::devui
         ice::WorldPortal& portal
     ) noexcept
     {
-        ImGui::DestroyContext();
-
         runner.execute_task(
             task_destroy_render_objects(runner.graphics_device()),
             EngineContext::GraphicsFrame
@@ -265,10 +262,12 @@ namespace ice::devui
         translate[0] = -1.0f; // -1.0f - width * scale[0];
         translate[1] = -1.0f; //-1.0f - height * scale[1];
 
+        ResourceSet last_resource = _resources[0];
+
         api.push_constant(cmds, _pipeline_layout, ShaderStageFlags::VertexStage, { scale, sizeof(scale) }, 0);
         api.push_constant(cmds, _pipeline_layout, ShaderStageFlags::VertexStage, { translate, sizeof(translate) }, sizeof(scale));
         api.bind_pipeline(cmds, _pipeline);
-        api.bind_resource_set(cmds, _pipeline_layout, _resources, 0);
+        api.bind_resource_set(cmds, _pipeline_layout, _resources[0], 0);
         api.bind_vertex_buffer(cmds, _vertex_buffers[0], 0);
         api.bind_index_buffer(cmds, _index_buffers[0]);
 
@@ -299,6 +298,18 @@ namespace ice::devui
                 viewport_rect.z = (uint32_t)(clip_rect.z - clip_rect.x);
                 viewport_rect.w = (uint32_t)(clip_rect.w - clip_rect.y);
                 api.set_scissor(cmds, viewport_rect);
+
+                ResourceSet new_set = _resources[0];
+                if (cmd.resource_set != ResourceSet::Invalid)
+                {
+                    new_set = cmd.resource_set;
+                }
+
+                if (new_set != last_resource)
+                {
+                    last_resource = new_set;
+                    api.bind_resource_set(cmds, _pipeline_layout, new_set, 0);
+                }
 
                 // Draw
                 api.draw_indexed(cmds, cmd.index_count, 1, cmd.index_offset /*+ idx_buffer_offset*/, cmd.vertex_offset /*+ vtx_buffer_offset*/, 0);
@@ -401,6 +412,11 @@ namespace ice::devui
         }
     }
 
+    auto ImGuiTrait::imgui_context() const noexcept -> ImGuiContext*
+    {
+        return _imgui_context;
+    }
+
     auto ImGuiTrait::task_create_render_objects(
         ice::EngineRunner& runner,
         ice::AssetSystem& asset_system,
@@ -495,8 +511,15 @@ namespace ice::devui
         };
 
         _resource_layout = device.create_resourceset_layout({ resource_bindings + 0, 2 });
+
+        ResourceSetLayout resource_layouts[20]{ };
+        for (auto& layout : resource_layouts)
+        {
+            layout = _resource_layout;
+        }
+
         //_resource_layout[1] = device.create_resourceset_layout({ resource_bindings + 2, 2 });
-        device.create_resourcesets({ &_resource_layout, 1 }, { &_resources, 1 });
+        device.create_resourcesets(resource_layouts, _resources);
 
         ResourceUpdateInfo resource_update[]{
             ResourceUpdateInfo
@@ -511,14 +534,14 @@ namespace ice::devui
 
         ResourceSetUpdateInfo update_infos[]{
             ResourceSetUpdateInfo{
-                .resource_set = _resources,
+                .resource_set = _resources[0],
                 .resource_type = ResourceType::Sampler,
                 .binding_index = 1,
                 .array_element = 0,
                 .resources = { resource_update + 0, 1 }
             },
             ResourceSetUpdateInfo{
-                .resource_set = _resources,
+                .resource_set = _resources[0],
                 .resource_type = ResourceType::SampledImage,
                 .binding_index = 2,
                 .array_element = 0,
@@ -635,7 +658,7 @@ namespace ice::devui
         device.destroy_sampler(_sampler);
         device.destroy_shader(_shaders[1]);
         device.destroy_shader(_shaders[0]);
-        device.destroy_resourcesets({ &_resources, 1 });
+        device.destroy_resourcesets(_resources);
         device.destroy_resourceset_layout(_resource_layout);
         co_return;
     }
@@ -670,6 +693,34 @@ namespace ice::devui
         ImVec2 clip_off = draw_data->DisplayPos;         // (0,0) unless using multi-viewports
         ImVec2 clip_scale = draw_data->FramebufferScale; // (1,1) unless using retina display which are often (2,2)
 
+        ImTextureID last_texid = nullptr; // ImGui::GetIO().tex
+        ice::u32 next_resource_idx = 1;
+        ResourceUpdateInfo resource_update[]{
+            ResourceUpdateInfo
+            {
+                .sampler = _sampler
+            },
+            ResourceUpdateInfo
+            {
+                .image = Image::Invalid,
+            },
+        };
+
+        ResourceSetUpdateInfo resource_set_update[]{
+            ResourceSetUpdateInfo{
+                .resource_type = ResourceType::Sampler,
+                .binding_index = 1,
+                .array_element = 0,
+                .resources = { resource_update + 0, 1 }
+            },
+            ResourceSetUpdateInfo{
+                .resource_type = ResourceType::SampledImage,
+                .binding_index = 2,
+                .array_element = 0,
+                .resources = { resource_update + 1, 1 }
+            },
+        };
+
         // Upload vertex/index data into a single contiguous GPU buffer
         ice::u32 vtx_buffer_offset = 0;
         ice::u32 idx_buffer_offset = 0;
@@ -678,10 +729,24 @@ namespace ice::devui
         for (int n = 0; n < draw_data->CmdListsCount; n++)
         {
             ImDrawList const* cmd_list = draw_data->CmdLists[n];
+
             for (int cmd_i = 0; cmd_i < cmd_list->CmdBuffer.Size; cmd_i++)
             {
                 ImDrawCmd const* pcmd = &cmd_list->CmdBuffer[cmd_i];
                 detail::DrawCommand& cmd = (*cmds_span)[command_idx];
+                cmd.resource_set = ResourceSet::Invalid;
+
+                if (pcmd->TextureId != nullptr && pcmd->TextureId != last_texid)
+                {
+                    last_texid = pcmd->TextureId;
+                    resource_update[1].image = static_cast<Image>(reinterpret_cast<ice::uptr>(last_texid));
+                    resource_set_update[0].resource_set = _resources[next_resource_idx];
+                    resource_set_update[1].resource_set = _resources[next_resource_idx];
+                    cmd.resource_set = _resources[next_resource_idx];
+
+                    device.update_resourceset(resource_set_update);
+                    next_resource_idx += 1;
+                }
 
                 ImVec4 clip_rect;
                 clip_rect.x = (pcmd->ClipRect.x - clip_off.x) * clip_scale.x;

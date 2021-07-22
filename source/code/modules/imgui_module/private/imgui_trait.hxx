@@ -5,6 +5,9 @@
 #include <ice/asset_system.hxx>
 #include <ice/clock.hxx>
 
+#include <imgui/imgui.h>
+#undef assert
+
 namespace ice::devui
 {
 
@@ -46,6 +49,8 @@ namespace ice::devui
             ice::EngineFrame& frame
         ) noexcept;
 
+        auto imgui_context() const noexcept -> ImGuiContext*;
+
     protected:
         auto task_create_render_objects(
             ice::EngineRunner& runner,
@@ -65,11 +70,14 @@ namespace ice::devui
     private:
         bool _next_frame = false;
         bool _initialized = false;
+
+        ImGuiContext* _imgui_context = nullptr;
+
         ice::vec2u _display_size;
         ice::Timer _imgui_timer;
 
         ice::render::ResourceSetLayout _resource_layout;
-        ice::render::ResourceSet _resources;
+        ice::render::ResourceSet _resources[20];
         ice::render::PipelineLayout _pipeline_layout;
         ice::render::Pipeline _pipeline;
 
