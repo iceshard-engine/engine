@@ -19,7 +19,7 @@ class NatvisCommand extends Command
 
         if f = io.open path, "rb"
             for line in f\lines!
-                var, val = line\match 'static constexpr ice::Shard ([%w_:]+) = "([%w/]+)"_shard'
+                var, val = line\match 'static constexpr ice::Shard ([%w_:]+) = "([%w/-]+)"_shard'
                 if var and val
                     shard_names.shard[var] = val
                     continue
@@ -69,7 +69,7 @@ class NatvisCommand extends Command
             f\write '                <DisplayString Condition="payload_id == ' .. hash .. '">' .. name .. '</DisplayString>\n' for name, hash in pairs payload_hashes
             f\write '                <DisplayString>{payload_id}, unknown_type</DisplayString>\n'
             f\write '            </Synthetic>\n'
-            f\write '            <Item Name="[payload]" Optional="true" Condition="payload_id == ' .. hash .. '">(' .. name .. ')payload</Item>\n' for name, hash in pairs payload_hashes
+            f\write '            <Item Name="[payload]" Optional="true" Condition="payload_id == ' .. hash .. '">*(' .. name .. '*)&amp;payload</Item>\n' for name, hash in pairs payload_hashes
             f\write '        </Expand>\n'
             f\write '    </Type>\n'
             f\write '</AutoVisualizer>\n'
