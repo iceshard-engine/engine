@@ -27,6 +27,12 @@ namespace ice
     template<typename T>
     inline auto shard_shatter(ice::Shard shard) noexcept -> T;
 
+    template<ice::Shard... TestShards>
+    constexpr bool any_of(ice::Shard const& shard) noexcept
+    {
+        return ((shard == TestShards) || ...);
+    }
+
     namespace detail
     {
 
@@ -45,6 +51,12 @@ namespace ice
         template<>
         constexpr ice::u32 Constant_ShardPayloadID<ice::u64> = ice::hash32("ice::u64");
 
+        template<>
+        constexpr ice::u32 Constant_ShardPayloadID<ice::math::vec2i> = ice::hash32("ice::math::vec2i");
+
+        template<>
+        constexpr ice::u32 Constant_ShardPayloadID<ice::math::vec2u> = ice::hash32("ice::math::vec2u");
+
     } // namespace detail
 
     constexpr auto shard_create(std::string_view sv) noexcept  -> ice::Shard
@@ -59,6 +71,7 @@ namespace ice
     template<typename T>
     constexpr auto shard_create(std::string_view sv, T payload) noexcept -> ice::Shard
     {
+        static_assert(sizeof(T) <= sizeof(ice::Shard::payload), "The given payload is bigger than a shard can have attached.");
         static_assert(ice::detail::Constant_ShardPayloadID<T> != 0, "The given type cannot be used to attach a shard payload.");
         if constexpr (std::is_pointer_v<T> == false)
         {
@@ -73,7 +86,7 @@ namespace ice
             return {
                 .name = ice::hash32(sv),
                 .payload_id = ice::detail::Constant_ShardPayloadID<T>,
-                .payload = static_cast<ice::u64>(reinterpret_cast<ice::uptr>(payload))
+                .payload = *reinterpret_cast<ice::u64 const*>(ice::addressof(payload))
             };
         }
     }
@@ -81,8 +94,9 @@ namespace ice
     template<typename T>
     constexpr auto shard_create(ice::Shard shard, T payload) noexcept  -> ice::Shard
     {
+        static_assert(sizeof(T) <= sizeof(ice::Shard::payload), "The given payload is bigger than a shard can have attached.");
         static_assert(ice::detail::Constant_ShardPayloadID<T> != 0, "The given type cannot be used to attach a shard payload.");
-        if constexpr (std::is_pointer_v<T> == false)
+        if constexpr (std::is_pointer_v<T> == false && std::is_class_v<T> == false)
         {
             return {
                 .name = shard.name,
@@ -95,7 +109,7 @@ namespace ice
             return {
                 .name = shard.name,
                 .payload_id = ice::detail::Constant_ShardPayloadID<T>,
-                .payload = static_cast<ice::u64>(reinterpret_cast<ice::uptr>(payload))
+                .payload = *reinterpret_cast<ice::u64 const*>(ice::addressof(payload))
             };
         }
     }
