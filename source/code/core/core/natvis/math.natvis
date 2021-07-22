@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
+
+  <Type Name="ice::math::rad">
+    <DisplayString>radians {{ {value} }}</DisplayString>
+    <Expand>
+      <Item Name="[approx. degrees]">(value * 180) / 3.14159265358979323846</Item>
+    </Expand>
+  </Type>
+
+  <Type Name="ice::math::deg">
+    <DisplayString>degrees {{ {value} }}</DisplayString>
+    <Expand>
+      <Item Name="[approx. radians]">value * (3.14159265358979323846 / 180)</Item>
+    </Expand>
+  </Type>
+
+  <Type Name="ice::math::mat&lt;*,1,int&gt;">
+    <DisplayString Condition="$T1 == 1">vec{$T1}i {{ x={v[0][0]} }}</DisplayString>
+    <DisplayString Condition="$T1 == 2">vec{$T1}i {{ x={v[0][0]}, y={v[0][1]} }}</DisplayString>
+    <DisplayString Condition="$T1 == 3">vec{$T1}i {{ x={v[0][0]}, y={v[0][1]}, z={v[0][2]} }}</DisplayString>
+    <DisplayString Condition="$T1 == 4">vec{$T1}i {{ x={v[0][0]}, y={v[0][1]}, z={v[0][2]}, w={v[0][3]} }}</DisplayString>
+    <Expand>
+      <Item Name="[x]" Condition="$T1 &gt;= 1">v[0][0]</Item>
+      <Item Name="[y]" Condition="$T1 &gt;= 2">v[0][1]</Item>
+      <Item Name="[z]" Condition="$T1 &gt;= 3">v[0][2]</Item>
+      <Item Name="[w]" Condition="$T1 == 4">v[0][3]</Item>
+    </Expand>
+  </Type>
+
+  <Type Name="ice::math::mat&lt;*,1,unsigned int&gt;">
+    <DisplayString Condition="$T1 == 1">vec{$T1}u {{ x={v[0][0]} }}</DisplayString>
+    <DisplayString Condition="$T1 == 2">vec{$T1}u {{ x={v[0][0]}, y={v[0][1]} }}</DisplayString>
+    <DisplayString Condition="$T1 == 3">vec{$T1}u {{ x={v[0][0]}, y={v[0][1]}, z={v[0][2]} }}</DisplayString>
+    <DisplayString Condition="$T1 == 4">vec{$T1}u {{ x={v[0][0]}, y={v[0][1]}, z={v[0][2]}, w={v[0][3]} }}</DisplayString>
+    <Expand>
+      <Item Name="[x]" Condition="$T1 &gt;= 1">v[0][0]</Item>
+      <Item Name="[y]" Condition="$T1 &gt;= 2">v[0][1]</Item>
+      <Item Name="[z]" Condition="$T1 &gt;= 3">v[0][2]</Item>
+      <Item Name="[w]" Condition="$T1 == 4">v[0][3]</Item>
+    </Expand>
+  </Type>
+
+  <Type Name="ice::math::mat&lt;*,1,float&gt;">
+    <DisplayString Condition="$T1 &gt;= 1">vec{$T1}f {{ x={v[0][0]} }}</DisplayString>
+    <DisplayString Condition="$T1 &gt;= 2">vec{$T1}f {{ x={v[0][0]}, y={v[0][1]} }}</DisplayString>
+    <DisplayString Condition="$T1 &gt;= 3">vec{$T1}f {{ x={v[0][0]}, y={v[0][1]}, z={v[0][2]} }}</DisplayString>
+    <DisplayString Condition="$T1 == 4">vec{$T1}f {{ x={v[0][0]}, y={v[0][1]}, z={v[0][2]}, w={v[0][3]} }}</DisplayString>
+    <Expand>
+      <Item Name="[x]" Condition="$T1 &gt;= 1">v[0][0]</Item>
+      <Item Name="[y]" Condition="$T1 &gt;= 2">v[0][1]</Item>
+      <Item Name="[z]" Condition="$T1 &gt;= 3">v[0][2]</Item>
+      <Item Name="[w]" Condition="$T1 == 4">v[0][3]</Item>
+    </Expand>
+  </Type>
+
+</AutoVisualizer>
