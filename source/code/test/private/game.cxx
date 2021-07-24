@@ -131,7 +131,7 @@ void MyGame::on_app_startup(ice::Engine& engine) noexcept
 
 
     ice::WorldManager& world_manager = engine.world_manager();
-    _render_world = world_manager.create_world("game.render_world"_sid, &_entity_storage);
+    _render_world = world_manager.create_world(GraphicsWorldName, &_entity_storage);
 
     _test_world = world_manager.create_world("game.test_world"_sid, &_entity_storage);
     _test_world->add_trait("ice.physics"_sid, _trait_physics.get());
@@ -171,7 +171,7 @@ void MyGame::on_app_shutdown(ice::Engine& engine) noexcept
 
     ice::WorldManager& world_manager = engine.world_manager();
     world_manager.destroy_world("game.test_world"_sid);
-    world_manager.destroy_world("game.render_world"_sid);
+    world_manager.destroy_world(GraphicsWorldName);
 
     _trait_render_camera = nullptr;
     _trait_render_postprocess = nullptr;

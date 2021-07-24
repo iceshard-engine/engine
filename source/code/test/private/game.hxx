@@ -18,6 +18,7 @@ class MyGame : public ice::WorldTrait
 {
 public:
     static constexpr ice::URI ConfigFile = "file://../source/data/config.json"_uri;
+    static constexpr ice::StringID GraphicsWorldName = "game.render_world"_sid;
 
     MyGame(ice::Allocator& alloc, ice::Clock const& clock) noexcept;
 
