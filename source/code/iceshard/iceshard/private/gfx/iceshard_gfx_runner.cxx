@@ -3,7 +3,6 @@
 #include "iceshard_gfx_device.hxx"
 #include "iceshard_gfx_world.hxx"
 
-#include <ice/gfx/gfx_trait.hxx>
 #include <ice/task_sync_wait.hxx>
 #include <ice/profiler.hxx>
 
@@ -28,19 +27,20 @@ namespace ice::gfx
         , _current_frame{ ice::make_unique_null<ice::gfx::IceGfxFrame>() }
         , _gfx_world_name{ "default"_sid }
         , _traits{ _allocator }
+        , _runner_trait{ *this }
         , _mre_internal{ true }
         , _mre_selected{ &_mre_internal }
     {
         _current_frame = ice::make_unique<ice::gfx::IceGfxFrame>(
             _allocator, _frame_allocator[1]
         );
+
+        add_trait("ice.gfx.runner"_sid, &_runner_trait);
     }
 
     IceGfxRunner::~IceGfxRunner() noexcept
     {
         _mre_selected->wait();
-
-        // Deactivate Gfx World
 
         // Wait for the current GfxFrame to send final tasks
         _current_frame->execute_final_tasks();
@@ -91,7 +91,6 @@ namespace ice::gfx
 
     void IceGfxRunner::add_trait(ice::StringID_Arg name, ice::gfx::GfxTrait* trait) noexcept
     {
-        _mre_selected->wait();
         ice::pod::array::push_back(_traits, { name, trait });
     }
 
@@ -103,24 +102,6 @@ namespace ice::gfx
     auto IceGfxRunner::get_graphics_world() noexcept -> ice::StringID
     {
         return _gfx_world_name;
-    }
-
-    void IceGfxRunner::setup_graphics_world(ice::World* gfx_world) noexcept
-    {
-        _mre_selected->wait();
-        for (ice::gfx::IceGfxTraitEntry const& entry : _traits)
-        {
-            gfx_world->add_trait(entry.name, entry.trait);
-        }
-    }
-
-    void IceGfxRunner::teardown_graphics_world(ice::World* gfx_world) noexcept
-    {
-        _mre_selected->wait();
-        for (ice::gfx::IceGfxTraitEntry const& entry : _traits)
-        {
-            gfx_world->remove_trait(entry.name);
-        }
     }
 
     void IceGfxRunner::set_event(ice::ManualResetEvent* mre_event) noexcept
@@ -165,6 +146,24 @@ namespace ice::gfx
         return *_current_frame;
     }
 
+    auto IceGfxRunner::task_setup_gfx_traits() noexcept -> ice::Task<>
+    {
+        for (ice::gfx::IceGfxTraitEntry const& entry : _traits)
+        {
+            entry.trait->gfx_context_setup(*_device, _context);
+        }
+        co_return;
+    }
+
+    auto IceGfxRunner::task_cleanup_gfx_traits() noexcept -> ice::Task<>
+    {
+        for (ice::gfx::IceGfxTraitEntry const& entry : _traits)
+        {
+            entry.trait->gfx_context_cleanup(*_device, _context);
+        }
+        co_return;
+    }
+
     auto IceGfxRunner::task_frame(
         ice::EngineFrame const& engine_frame,
         ice::UniquePtr<ice::gfx::IceGfxFrame> frame
@@ -194,7 +193,6 @@ namespace ice::gfx
             IPT_ZONE_SCOPED_NAMED("Graphis Frame - Present");
             _device->present(image_index);
         }
-
         co_return;
     }
 

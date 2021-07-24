@@ -26,24 +26,24 @@ namespace ice::gfx
     class GfxTrait : public ice::WorldTrait
     {
     public:
-        virtual auto gfx_render_stages() noexcept -> ice::Span<ice::StringID> = 0;
+        virtual auto gfx_render_stages() noexcept -> ice::Span<ice::StringID> { return {}; }
 
         virtual void gfx_context_setup(
             ice::gfx::GfxDevice& device,
             ice::gfx::GfxContext& context
-        ) noexcept = 0;
+        ) noexcept { }
 
         virtual void gfx_context_cleanup(
             ice::gfx::GfxDevice& device,
             ice::gfx::GfxContext& context
-        ) noexcept = 0;
+        ) noexcept { }
 
         virtual void gfx_update(
             ice::EngineFrame const& engine_frame,
             ice::gfx::GfxDevice& device,
             ice::gfx::GfxContext& context,
             ice::gfx::GfxFrame& frame
-        ) noexcept = 0;
+        ) noexcept { }
     };
 
 } // namespace ice::gfx

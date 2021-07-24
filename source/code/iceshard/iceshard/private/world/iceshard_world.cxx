@@ -22,6 +22,14 @@ namespace ice
     {
     }
 
+    IceshardWorld::~IceshardWorld() noexcept
+    {
+        ICE_ASSERT(
+            ice::pod::array::empty(_portals._data),
+            "Not all traits where removed from this World before destruction!"
+        );
+    }
+
     auto IceshardWorld::allocator() noexcept -> ice::Allocator&
     {
         return _allocator;

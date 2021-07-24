@@ -18,6 +18,7 @@ namespace ice
             ice::Allocator& alloc,
             ice::EntityStorage* entity_storage
         ) noexcept;
+        ~IceshardWorld() noexcept override;
 
         auto allocator() noexcept -> ice::Allocator& override;
         auto entity_storage() noexcept -> ice::EntityStorage& override;

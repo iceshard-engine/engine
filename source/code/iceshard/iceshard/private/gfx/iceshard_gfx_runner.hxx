@@ -1,10 +1,15 @@
 #pragma once
 #include <ice/gfx/gfx_runner.hxx>
+#include <ice/gfx/gfx_trait.hxx>
+#include <ice/gfx/gfx_context.hxx>
+
 #include <ice/task_thread.hxx>
 #include <ice/world/world.hxx>
 
 #include <ice/memory/proxy_allocator.hxx>
 #include <ice/memory/scratch_allocator.hxx>
+
+#include "iceshard_gfx_runner_trait.hxx"
 
 namespace ice::gfx
 {
@@ -46,9 +51,6 @@ namespace ice::gfx
             ice::StringID_Arg world_name
         ) noexcept override;
 
-        void setup_graphics_world(ice::World* gfx_world) noexcept;
-        void teardown_graphics_world(ice::World* gfx_world) noexcept;
-
         void set_event(ice::ManualResetEvent* event) noexcept override;
 
         void draw_frame(
@@ -58,7 +60,10 @@ namespace ice::gfx
         auto device() noexcept -> ice::gfx::GfxDevice& override;
         auto frame() noexcept -> ice::gfx::GfxFrame& override;
 
-    protected:
+        auto task_setup_gfx_traits() noexcept -> ice::Task<>;
+        auto task_cleanup_gfx_traits() noexcept  -> ice::Task<>;
+
+    private:
         auto task_frame(
             ice::EngineFrame const& engine_frame,
             ice::UniquePtr<ice::gfx::IceGfxFrame> frame
@@ -69,6 +74,8 @@ namespace ice::gfx
         ice::UniquePtr<ice::TaskThread> _thread;
         ice::UniquePtr<ice::gfx::IceGfxDevice> _device;
 
+        ice::gfx::GfxContext _context;
+
         ice::memory::ScratchAllocator _frame_allocator[2];
         ice::u32 _next_free_allocator;
 
@@ -76,6 +83,8 @@ namespace ice::gfx
 
         ice::StringID _gfx_world_name;
         ice::pod::Array<ice::gfx::IceGfxTraitEntry> _traits;
+
+        ice::gfx::IceGfxRunnerTrait _runner_trait;
 
         ice::ManualResetEvent _mre_internal;
         ice::ManualResetEvent* _mre_selected;
