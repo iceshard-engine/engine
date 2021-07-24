@@ -47,7 +47,7 @@ public:
 
     ice::UniquePtr<ice::gfx::GfxDynamicPass> _game_gfx_pass;
     ice::UniquePtr<ice::gfx::GfxTrait> _trait_render_gfx{ ice::make_unique_null<ice::gfx::GfxTrait>() };
-    ice::UniquePtr<ice::GameWorldTrait_Render> _trait_render_clear{ ice::make_unique_null<ice::GameWorldTrait_Render>() };
+    ice::UniquePtr<ice::gfx::GfxTrait> _trait_render_clear{ ice::make_unique_null<ice::gfx::GfxTrait>() };
     ice::UniquePtr<ice::GameWorldTrait_Render> _trait_render_finish{ ice::make_unique_null<ice::GameWorldTrait_Render>() };
     ice::UniquePtr<ice::GameWorldTrait_Render> _trait_render_postprocess{ ice::make_unique_null<ice::GameWorldTrait_Render>() };
     ice::UniquePtr<ice::GameWorldTrait_RenderDraw> _trait_render_sprites{ ice::make_unique_null<ice::GameWorldTrait_RenderDraw>() };

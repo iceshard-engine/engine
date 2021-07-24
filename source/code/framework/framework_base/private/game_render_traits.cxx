@@ -18,9 +18,9 @@ namespace ice
 
     auto create_trait_render_clear(
         ice::Allocator& alloc
-    ) noexcept -> ice::UniquePtr<ice::GameWorldTrait_Render>
+    ) noexcept -> ice::UniquePtr<ice::gfx::GfxTrait>
     {
-        return ice::make_unique<ice::GameWorldTrait_Render, ice::IceWorldTrait_RenderClear>(alloc);
+        return ice::make_unique<ice::gfx::GfxTrait, ice::IceWorldTrait_RenderClear>(alloc);
     }
 
     auto create_trait_render_resource(

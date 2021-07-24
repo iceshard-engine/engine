@@ -16,61 +16,48 @@
 namespace ice
 {
 
-    auto IceWorldTrait_RenderClear::gfx_stage_infos() const noexcept -> ice::Span<ice::gfx::GfxStageInfo const>
+    auto IceWorldTrait_RenderClear::gfx_render_stages() noexcept -> ice::Span<ice::StringID const>
     {
-        static ice::gfx::GfxStageInfo const infos[]{
-            ice::gfx::GfxStageInfo
-            {
-                .name = "frame.clear"_sid,
-                .dependencies = {},
-                .type = ice::gfx::GfxStageType::DrawStage
-        }
+        static constexpr ice::StringID names[]{
+            "ice.clear"_sid
         };
-        return infos;
+        return names;
     }
 
-    auto IceWorldTrait_RenderClear::gfx_stage_slots() const noexcept -> ice::Span<ice::gfx::GfxStageSlot const>
-    {
-        return { _stage_slots, _stage_slot_count };
-    }
-
-    void IceWorldTrait_RenderClear::on_activate(
-        ice::Engine& engine,
-        ice::EngineRunner& runner,
-        ice::WorldPortal& portal
+    void IceWorldTrait_RenderClear::gfx_context_setup(
+        ice::gfx::GfxDevice& device,
+        ice::gfx::GfxContext& context
     ) noexcept
     {
-        ice::gfx::GfxDevice& gfx_device = runner.graphics_device();
+        IPT_ZONE_SCOPED_NAMED("[Trait] Clear :: Setup");
 
-        _default_swapchain = &gfx_device.swapchain();
+        using namespace ice::gfx;
+        using namespace ice::render;
 
-        portal.execute(task_activate_graphics(runner, gfx_device));
+        _default_swapchain = &device.swapchain();
+
+        GfxResourceTracker& gfx_restracker = device.resource_tracker();
+        _default_swapchain = ice::addressof(device.swapchain());
+        _default_renderpass = ice::gfx::find_resource<Renderpass>(gfx_restracker, "ice.gfx.renderpass.default"_sid);
+        _default_framebuffers[0] = ice::gfx::find_resource<Framebuffer>(gfx_restracker, "ice.gfx.framebuffer.0"_sid);
+        _default_framebuffers[1] = ice::gfx::find_resource<Framebuffer>(gfx_restracker, "ice.gfx.framebuffer.1"_sid);
     }
 
-    void IceWorldTrait_RenderClear::on_deactivate(
-        ice::Engine& engine,
-        ice::EngineRunner& runner,
-        ice::WorldPortal& portal
-    ) noexcept
-    {
-        _stage_slot_count = 0;
-    }
-
-    void IceWorldTrait_RenderClear::on_update(
-        ice::EngineFrame& frame,
-        ice::EngineRunner& runner,
-        ice::WorldPortal& portal
+    void IceWorldTrait_RenderClear::gfx_update(
+        ice::EngineFrame const& engine_frame,
+        ice::gfx::GfxDevice& device,
+        ice::gfx::GfxContext& context,
+        ice::gfx::GfxFrame& frame
     ) noexcept
     {
         IPT_ZONE_SCOPED_NAMED("[Trait] Clear :: Update");
 
-        for (ice::Shard const& shard : ice::filter_span(frame.shards(), ice::any_of<ice::platform::Shard_WindowSizeChanged>))
+        for (ice::Shard const& shard : ice::filter_span(engine_frame.shards(), ice::any_of<ice::platform::Shard_WindowSizeChanged>))
         {
-            runner.execute_task(task_update_objects(runner.graphics_device()), EngineContext::GraphicsFrame);
+            gfx_context_setup(device, context);
         }
 
-        ice::gfx::GfxFrame& gfx_frame = runner.graphics_frame();
-        gfx_frame.set_stage_slots(gfx_stage_slots());
+        frame.set_stage_slot({ .name = "ice.clear"_sid, .stage = this });
     }
 
     void IceWorldTrait_RenderClear::record_commands(
@@ -106,40 +93,6 @@ namespace ice
         api.set_scissor(cmds, scissor_and_viewport);
         api.set_viewport(cmds, scissor_and_viewport);
         api.next_subpass(cmds, ice::render::SubPassContents::Inline);
-    }
-
-    auto IceWorldTrait_RenderClear::task_activate_graphics(
-        ice::EngineRunner& runner,
-        ice::gfx::GfxDevice& gfx_device
-    ) noexcept -> ice::Task<>
-    {
-        co_await runner.graphics_frame().frame_start();
-
-        co_await task_update_objects(gfx_device);
-
-        co_await runner.schedule_next_frame();
-
-        _stage_slot_count = 1;
-        _stage_slots[0] = ice::gfx::GfxStageSlot
-        {
-            .name = "frame.clear"_sid,
-            .stage = this
-        };
-    }
-
-    auto IceWorldTrait_RenderClear::task_update_objects(
-        ice::gfx::GfxDevice& gfx_device
-    ) noexcept -> ice::Task<>
-    {
-        using namespace ice::gfx;
-        using namespace ice::render;
-
-        GfxResourceTracker& gfx_restracker = gfx_device.resource_tracker();
-        _default_swapchain = ice::addressof(gfx_device.swapchain());
-        _default_renderpass = ice::gfx::find_resource<Renderpass>(gfx_restracker, "ice.gfx.renderpass.default"_sid);
-        _default_framebuffers[0] = ice::gfx::find_resource<Framebuffer>(gfx_restracker, "ice.gfx.framebuffer.0"_sid);
-        _default_framebuffers[1] = ice::gfx::find_resource<Framebuffer>(gfx_restracker, "ice.gfx.framebuffer.1"_sid);
-        co_return;
     }
 
 } // namespace ice

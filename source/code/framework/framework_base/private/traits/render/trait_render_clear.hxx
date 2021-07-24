@@ -6,28 +6,21 @@
 namespace ice
 {
 
-    class IceWorldTrait_RenderClear : public ice::GameWorldTrait_Render, public ice::gfx::GfxStage
+    class IceWorldTrait_RenderClear : public ice::gfx::GfxTrait, public ice::gfx::GfxStage
     {
     public:
-        auto gfx_stage_infos() const noexcept -> ice::Span<ice::gfx::GfxStageInfo const> override;
-        auto gfx_stage_slots() const noexcept -> ice::Span<ice::gfx::GfxStageSlot const> override;
+        auto gfx_render_stages() noexcept -> ice::Span<ice::StringID const> override;
 
-        void on_activate(
-            ice::Engine& engine,
-            ice::EngineRunner& runner,
-            ice::WorldPortal& portal
+        void gfx_context_setup(
+            ice::gfx::GfxDevice& device,
+            ice::gfx::GfxContext& context
         ) noexcept override;
 
-        void on_deactivate(
-            ice::Engine& engine,
-            ice::EngineRunner& runner,
-            ice::WorldPortal& portal
-        ) noexcept override;
-
-        void on_update(
-            ice::EngineFrame& frame,
-            ice::EngineRunner& runner,
-            ice::WorldPortal& portal
+        void gfx_update(
+            ice::EngineFrame const& engine_frame,
+            ice::gfx::GfxDevice& device,
+            ice::gfx::GfxContext& context,
+            ice::gfx::GfxFrame& frame
         ) noexcept override;
 
         void record_commands(
@@ -36,20 +29,7 @@ namespace ice
             ice::render::RenderCommands& api
         ) const noexcept override;
 
-    protected:
-        auto task_activate_graphics(
-            ice::EngineRunner& runner,
-            ice::gfx::GfxDevice& gfx_device
-        ) noexcept -> ice::Task<>;
-
-        auto task_update_objects(
-            ice::gfx::GfxDevice& runner
-        ) noexcept -> ice::Task<>;
-
     private:
-        ice::u32 _stage_slot_count = 0;
-        ice::gfx::GfxStageSlot _stage_slots[1];
-
         ice::render::RenderSwapchain const* _default_swapchain;
         ice::render::Renderpass _default_renderpass;
         ice::render::Framebuffer _default_framebuffers[2];

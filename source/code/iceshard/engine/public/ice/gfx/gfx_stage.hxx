@@ -20,7 +20,7 @@ namespace ice::gfx
     struct [[deprecated]] GfxStageInfo
     {
         ice::StringID name;
-        ice::Span<ice::StringID const> dependencies;
+        ice::Span<ice::StringID const> dependencies = { };
         ice::gfx::GfxStageType type = GfxStageType::DrawStage;
     };
 

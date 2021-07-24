@@ -29,7 +29,7 @@ namespace ice
 
     auto create_trait_render_clear(
         ice::Allocator& alloc
-    ) noexcept -> ice::UniquePtr<ice::GameWorldTrait_Render>;
+    ) noexcept -> ice::UniquePtr<ice::gfx::GfxTrait>;
 
     auto create_trait_render_postprocess(
         ice::Allocator& alloc

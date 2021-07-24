@@ -97,6 +97,7 @@ void MyGame::on_app_startup(ice::Engine& engine, ice::gfx::GfxRunner& gfx_runner
     _trait_render_camera = ice::create_trait_camera(_allocator);
 
     gfx_runner.add_trait("ice.render_gfx"_sid, _trait_render_gfx.get());
+    gfx_runner.add_trait("ice.render_clear"_sid, _trait_render_clear.get());
 
     ice::gfx::GfxStageInfo gfx_stages[]
     {
@@ -111,7 +112,7 @@ void MyGame::on_app_startup(ice::Engine& engine, ice::gfx::GfxRunner& gfx_runner
     };
 
     _game_gfx_pass->add_stages(gfx_stages);
-    _game_gfx_pass->add_stages(_trait_render_clear->gfx_stage_infos());
+    _game_gfx_pass->add_stage({ _trait_render_clear->gfx_render_stages()[0] });
     _game_gfx_pass->add_stages(_trait_render_sprites->gfx_stage_infos());
     _game_gfx_pass->add_stages(_trait_render_postprocess->gfx_stage_infos());
 
@@ -154,7 +155,7 @@ void MyGame::on_app_startup(ice::Engine& engine, ice::gfx::GfxRunner& gfx_runner
 
     _render_world->add_trait("game"_sid, this);
     //_render_world->add_trait("ice.render_gfx"_sid, _trait_render_gfx.get());
-    _render_world->add_trait("ice.render_clear"_sid, _trait_render_clear.get());
+    //_render_world->add_trait("ice.render_clear"_sid, _trait_render_clear.get());
     _render_world->add_trait("ice.render_finish"_sid, _trait_render_finish.get());
     _render_world->add_trait("ice.camera"_sid, _trait_render_camera.get());
     _render_world->add_trait("ice.render_postprocess"_sid, _trait_render_postprocess.get());
@@ -175,7 +176,7 @@ void MyGame::on_app_shutdown(ice::Engine& engine) noexcept
     _render_world->remove_trait("ice.render_sprites"_sid);
     _render_world->remove_trait("ice.render_postprocess"_sid);
     _render_world->remove_trait("ice.render_finish"_sid);
-    _render_world->remove_trait("ice.render_clear"_sid);
+    //_render_world->remove_trait("ice.render_clear"_sid);
     //_render_world->remove_trait("ice.render_gfx"_sid);
     _render_world->remove_trait("game"_sid);
 
