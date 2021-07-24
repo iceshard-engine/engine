@@ -428,4 +428,4 @@ namespace ice::detail::murmur3_hash
         return detail::cexpr_murmur3_x64_128(key, seed);
     }
 
-} // namespace ice::detail::murmur3
+} // namespace ice::detail::murmur3_hash
