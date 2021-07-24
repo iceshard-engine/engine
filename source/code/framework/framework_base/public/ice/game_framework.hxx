@@ -38,7 +38,7 @@ namespace ice
 
         virtual void load_modules() noexcept = 0;
 
-        void startup(ice::Engine& engine) noexcept;
+        void startup(ice::Engine& engine, ice::gfx::GfxRunner& gfx_runner) noexcept;
         void shutdown(ice::Engine& engine) noexcept;
 
         void game_begin(ice::EngineRunner& runner) noexcept;
@@ -52,7 +52,7 @@ namespace ice
         ) noexcept -> ice::UniquePtr<ice::platform::App>;
 
     protected:
-        virtual void on_app_startup_internal(ice::Engine& engine) noexcept = 0;
+        virtual void on_app_startup_internal(ice::Engine& engine, ice::gfx::GfxRunner& gfx_runner) noexcept = 0;
         virtual void on_app_shutdown_internal(ice::Engine& engine) noexcept = 0;
 
         virtual void on_game_begin_internal(ice::EngineRunner& runner) noexcept = 0;
@@ -150,9 +150,9 @@ namespace ice
             _game.on_load_modules(static_cast<GameServices&>(*this));
         }
 
-        void on_app_startup_internal(ice::Engine& engine) noexcept final
+        void on_app_startup_internal(ice::Engine& engine, ice::gfx::GfxRunner& gfx_runner) noexcept final
         {
-            _game.on_app_startup(engine);
+            _game.on_app_startup(engine, gfx_runner);
         }
 
         void on_app_shutdown_internal(ice::Engine& engine) noexcept final

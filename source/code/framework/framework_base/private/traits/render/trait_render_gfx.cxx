@@ -3,6 +3,7 @@
 #include <ice/gfx/gfx_device.hxx>
 #include <ice/gfx/gfx_frame.hxx>
 #include <ice/gfx/gfx_resource_tracker.hxx>
+#include <ice/gfx/gfx_stage.hxx>
 
 #include <ice/platform_event.hxx>
 
@@ -49,155 +50,37 @@ namespace ice
 
     } // namespace detail
 
-    auto IceWorldTrait_RenderGfx::gfx_stage_infos() const noexcept -> ice::Span<ice::gfx::GfxStageInfo const>
-    {
-        static ice::gfx::GfxStageInfo const infos[]{
-            ice::gfx::GfxStageInfo
-            {
-                .name = "frame.begin"_sid,
-                .dependencies = {},
-                .type = ice::gfx::GfxStageType::InitialStage
-            },
-            ice::gfx::GfxStageInfo
-            {
-                .name = "frame.end"_sid,
-                .dependencies = {},
-                .type = ice::gfx::GfxStageType::FinalStage
-            },
-        };
-        return infos;
-    }
-
-    auto IceWorldTrait_RenderGfx::gfx_stage_slots() const noexcept -> ice::Span<ice::gfx::GfxStageSlot const>
-    {
-        static detail::IceRenderStage_Initial initial_stage;
-        static detail::IceRenderStage_Final final_stage;
-
-        static ice::gfx::GfxStageSlot const slots[2]{
-            ice::gfx::GfxStageSlot{.name = "frame.begin"_sid, .stage = &initial_stage},
-            ice::gfx::GfxStageSlot{.name = "frame.end"_sid, .stage = &final_stage},
-        };
-
-        return slots;
-    }
-
-    void IceWorldTrait_RenderGfx::on_activate(
-        ice::Engine& engine,
-        ice::EngineRunner& runner,
-        ice::WorldPortal& portal
-    ) noexcept
-    {
-        runner.execute_task(
-            task_create_render_objects(runner.graphics_device()),
-            EngineContext::GraphicsFrame
-        );
-        //ResourceSetLayoutBinding bindings[]{
-        //    ResourceSetLayoutBinding{
-        //        .binding_index = 0,
-        //        .resource_count = 1,
-        //        .resource_type = ResourceType::UniformBuffer,
-        //        .shader_stage_flags = ShaderStageFlags::FragmentStage | ShaderStageFlags::VertexStage
-        //    },
-        //    ResourceSetLayoutBinding {
-        //        .binding_index = 1,
-        //        .resource_count = 1,
-        //        .resource_type = ResourceType::InputAttachment,
-        //        .shader_stage_flags = ShaderStageFlags::FragmentStage
-        //    },
-        //    ResourceSetLayoutBinding {
-        //        .binding_index = 2,
-        //        .resource_count = 1,
-        //        .resource_type = ResourceType::SamplerImmutable,
-        //        .shader_stage_flags = ShaderStageFlags::FragmentStage
-        //    },
-        //};
-
-        //using ice::gfx::GfxResource;
-
-        //ResourceSetLayout pp_resource_layout = render_device.create_resourceset_layout(bindings);
-
-        //PipelineLayout pipeline_layout = render_device.create_pipeline_layout(
-        //    PipelineLayoutInfo{
-        //        .push_constants = { },
-        //        .resource_layouts = ice::Span<ice::render::ResourceSetLayout>{ &pp_resource_layout, 1 }
-        //    }
-        //);
-
-        //ice::gfx::track_resource(res_tracker, "ice.gfx.sampler.default"_sid, basic_sampler);
-        //ice::gfx::track_resource(res_tracker, "ice.gfx.resource_layout.default"_sid, pp_resource_layout);
-        //ice::gfx::track_resource(res_tracker, "ice.gfx.pipeline_layoyt.default"_sid, pipeline_layout);
-    }
-
-    void IceWorldTrait_RenderGfx::on_deactivate(
-        ice::Engine& engine,
-        ice::EngineRunner& runner,
-        ice::WorldPortal& portal
-    ) noexcept
-    {
-        runner.execute_task(
-            task_destroy_render_objects(runner.graphics_device()),
-            EngineContext::GraphicsFrame
-        );
-    }
-
     void IceWorldTrait_RenderGfx::on_update(
         ice::EngineFrame& frame,
         ice::EngineRunner& runner,
         ice::WorldPortal& portal
     ) noexcept
     {
-        ice::Span<ice::Shard const> shards = frame.shards();
-
-        auto result = std::find_if(shards.begin(), shards.end(), ice::any_of<ice::platform::Shard_WindowSizeChanged>);
-        if (result != shards.end())
-        {
-            ice::vec2i new_size;
-            if (ice::shard_inspect(*result, new_size))
-            {
-                runner.execute_task(
-                    task_rebuild_renderpass(runner.graphics_device()),
-                    EngineContext::GraphicsFrame
-                );
-            }
-        }
-
-        runner.graphics_frame().set_stage_slots(gfx_stage_slots());
         frame.create_named_object<ice::render::Renderpass>("ice.gfx.renderpass"_sid, _default_renderpass);
     }
 
-    auto IceWorldTrait_RenderGfx::task_rebuild_renderpass(
-        ice::gfx::GfxDevice& gfx_device
-    ) noexcept -> ice::Task<>
+    auto IceWorldTrait_RenderGfx::gfx_render_stages() noexcept -> ice::Span<ice::StringID const>
     {
-        using namespace gfx;
-        using namespace ice::render;
-
-        gfx_device.recreate_swapchain();
-
-        RenderDevice& render_device = gfx_device.device();
-        //RenderSwapchain const& swapchain = gfx_device.swapchain();
-
-        render_device.destroy_framebuffer(_default_framebuffers[0]);
-        render_device.destroy_framebuffer(_default_framebuffers[1]);
-        render_device.destroy_image(_default_attachment_depth_stencil);
-        render_device.destroy_image(_default_attachment_color);
-        render_device.destroy_renderpass(_default_renderpass);
-
-        co_await task_create_render_objects(gfx_device);
-        co_return;
+        static ice::StringID const stages[]
+        {
+            "frame.begin"_sid,
+            "frame.end"_sid,
+        };
+        return stages;
     }
 
-    auto IceWorldTrait_RenderGfx::task_create_render_objects(
-        ice::gfx::GfxDevice& gfx_device
-    ) noexcept -> ice::Task<>
+    void IceWorldTrait_RenderGfx::gfx_context_setup(
+        ice::gfx::GfxDevice& device,
+        ice::gfx::GfxContext& context
+    ) noexcept
     {
         using namespace gfx;
         using namespace ice::render;
 
-        GfxResourceTracker& res_tracker = gfx_device.resource_tracker();
+        GfxResourceTracker& res_tracker = device.resource_tracker();
 
-        RenderDevice& render_device = gfx_device.device();
-        RenderSwapchain const& swapchain = gfx_device.swapchain();
+        RenderDevice& render_device = device.device();
+        RenderSwapchain const& swapchain = device.swapchain();
 
 
         RenderAttachment attachments[]{
@@ -345,22 +228,71 @@ namespace ice
         ice::gfx::track_resource(res_tracker, "ice.gfx.attachment.image.color"_sid, _default_attachment_color);
         ice::gfx::track_resource(res_tracker, "ice.gfx.framebuffer.0"_sid, _default_framebuffers[0]);
         ice::gfx::track_resource(res_tracker, "ice.gfx.framebuffer.1"_sid, _default_framebuffers[1]);
-        co_return;
     }
 
-    auto IceWorldTrait_RenderGfx::task_destroy_render_objects(ice::gfx::GfxDevice& gfx_device) noexcept -> ice::Task<>
+    void IceWorldTrait_RenderGfx::gfx_context_cleanup(
+        ice::gfx::GfxDevice& device,
+        ice::gfx::GfxContext& context
+    ) noexcept
     {
         using namespace ice::gfx;
         using namespace ice::render;
 
-        RenderDevice& render_device = gfx_device.device();
+        RenderDevice& render_device = device.device();
 
         render_device.destroy_framebuffer(_default_framebuffers[0]);
         render_device.destroy_framebuffer(_default_framebuffers[1]);
         render_device.destroy_image(_default_attachment_depth_stencil);
         render_device.destroy_image(_default_attachment_color);
         render_device.destroy_renderpass(_default_renderpass);
-        co_return;
+    }
+
+    void IceWorldTrait_RenderGfx::gfx_update(
+        ice::EngineFrame const& engine_frame,
+        ice::gfx::GfxDevice& device,
+        ice::gfx::GfxContext& context,
+        ice::gfx::GfxFrame& frame
+    ) noexcept
+    {
+        ice::Span<ice::Shard const> shards = engine_frame.shards();
+
+        bool rebuild_renderpass = false;
+        auto result = std::find_if(shards.begin(), shards.end(), ice::any_of<ice::platform::Shard_WindowSizeChanged>);
+        if (result != shards.end())
+        {
+            ice::vec2i new_size;
+            if (ice::shard_inspect(*result, new_size))
+            {
+                rebuild_renderpass = true;
+            }
+        }
+
+        if (rebuild_renderpass)
+        {
+            device.recreate_swapchain();
+
+            gfx_context_cleanup(device, context);
+            gfx_context_setup(device, context);
+        }
+
+        static detail::IceRenderStage_Initial initial_stage;
+        static detail::IceRenderStage_Final final_stage;
+
+        frame.set_stage_slot(
+            ice::gfx::GfxStageSlot
+            {
+                .name = gfx_render_stages()[0],
+                .stage = &initial_stage
+            }
+        );
+        frame.set_stage_slot(
+            ice::gfx::GfxStageSlot
+            {
+                .name = gfx_render_stages()[1],
+                .stage = &final_stage
+            }
+        );
+        //runner.graphics_frame().set_stage_slots(gfx_stage_slots());
     }
 
 } // namespace ice

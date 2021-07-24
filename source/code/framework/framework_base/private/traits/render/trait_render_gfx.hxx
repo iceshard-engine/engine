@@ -1,38 +1,38 @@
 #pragma once
 #include <ice/game_render_traits.hxx>
 #include <ice/render/render_declarations.hxx>
+#include <ice/gfx/gfx_trait.hxx>
 
 namespace ice
 {
 
-    class IceWorldTrait_RenderGfx : public ice::GameWorldTrait_Render
+    class IceWorldTrait_RenderGfx : public ice::gfx::GfxTrait
     {
     public:
-        auto gfx_stage_infos() const noexcept -> ice::Span<ice::gfx::GfxStageInfo const> override;
-        auto gfx_stage_slots() const noexcept -> ice::Span<ice::gfx::GfxStageSlot const> override;
-
-        void on_activate(
-            ice::Engine& engine,
-            ice::EngineRunner& runner,
-            ice::WorldPortal& portal
-        ) noexcept override;
-
-        void on_deactivate(
-            ice::Engine& engine,
-            ice::EngineRunner& runner,
-            ice::WorldPortal& portal
-        ) noexcept override;
-
         void on_update(
             ice::EngineFrame& frame,
             ice::EngineRunner& runner,
             ice::WorldPortal& portal
         ) noexcept override;
 
-    protected:
-        auto task_rebuild_renderpass(ice::gfx::GfxDevice& gfx_device) noexcept -> ice::Task<>;
-        auto task_create_render_objects(ice::gfx::GfxDevice& gfx_device) noexcept -> ice::Task<>;
-        auto task_destroy_render_objects(ice::gfx::GfxDevice& gfx_device) noexcept -> ice::Task<>;
+        auto gfx_render_stages() noexcept -> ice::Span<ice::StringID const> override;
+
+        void gfx_context_setup(
+            ice::gfx::GfxDevice& device,
+            ice::gfx::GfxContext& context
+        ) noexcept override;
+
+        void gfx_context_cleanup(
+            ice::gfx::GfxDevice& device,
+            ice::gfx::GfxContext& context
+        ) noexcept override;
+
+        void gfx_update(
+            ice::EngineFrame const& engine_frame,
+            ice::gfx::GfxDevice& device,
+            ice::gfx::GfxContext& context,
+            ice::gfx::GfxFrame& frame
+        ) noexcept override;
 
     private:
         ice::render::Renderpass _default_renderpass;

@@ -3,6 +3,7 @@
 #include <ice/unique_ptr.hxx>
 #include <ice/world/world_trait.hxx>
 #include <ice/gfx/gfx_stage.hxx>
+#include <ice/gfx/gfx_trait.hxx>
 
 namespace ice
 {
@@ -24,7 +25,7 @@ namespace ice
 
     auto create_trait_render_gfx(
         ice::Allocator& alloc
-    ) noexcept -> ice::UniquePtr<ice::GameWorldTrait_Render>;
+    ) noexcept -> ice::UniquePtr<ice::gfx::GfxTrait>;
 
     auto create_trait_render_clear(
         ice::Allocator& alloc

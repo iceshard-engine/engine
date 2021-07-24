@@ -134,7 +134,7 @@ auto game_main(ice::Allocator& alloc, ice::ResourceSystem& resources) -> ice::i3
             if (gfx_runner != nullptr)
             {
                 gfx_runner->set_graphics_world(game_framework->graphics_world_name());
-                game_framework->startup(*engine);
+                game_framework->startup(*engine, *gfx_runner);
 
                 ice::UniquePtr<ice::platform::App> platform_app = game_framework->create_app(ice::move(gfx_runner));
                 if (platform_app != nullptr)

@@ -118,10 +118,10 @@ namespace ice
         );
     }
 
-    void GameFramework::startup(ice::Engine& engine) noexcept
+    void GameFramework::startup(ice::Engine& engine, ice::gfx::GfxRunner& gfx_runner) noexcept
     {
         _current_engine = &engine;
-        this->on_app_startup_internal(engine);
+        this->on_app_startup_internal(engine, gfx_runner);
     }
 
     void GameFramework::shutdown(ice::Engine& engine) noexcept
