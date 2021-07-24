@@ -23,7 +23,7 @@ public:
     MyGame(ice::Allocator& alloc, ice::Clock const& clock) noexcept;
 
     void on_load_modules(ice::GameServices& sercies) noexcept;
-    void on_app_startup(ice::Engine& engine) noexcept;
+    void on_app_startup(ice::Engine& engine, ice::gfx::GfxRunner& gfx_runner) noexcept;
     void on_app_shutdown(ice::Engine& engine) noexcept;
 
     void on_game_begin(ice::EngineRunner& runner) noexcept;
@@ -46,7 +46,7 @@ public:
     ice::EntityStorage _entity_storage;
 
     ice::UniquePtr<ice::gfx::GfxDynamicPass> _game_gfx_pass;
-    ice::UniquePtr<ice::GameWorldTrait_Render> _trait_render_gfx{ ice::make_unique_null<ice::GameWorldTrait_Render>() };
+    ice::UniquePtr<ice::gfx::GfxTrait> _trait_render_gfx{ ice::make_unique_null<ice::gfx::GfxTrait>() };
     ice::UniquePtr<ice::GameWorldTrait_Render> _trait_render_clear{ ice::make_unique_null<ice::GameWorldTrait_Render>() };
     ice::UniquePtr<ice::GameWorldTrait_Render> _trait_render_finish{ ice::make_unique_null<ice::GameWorldTrait_Render>() };
     ice::UniquePtr<ice::GameWorldTrait_Render> _trait_render_postprocess{ ice::make_unique_null<ice::GameWorldTrait_Render>() };

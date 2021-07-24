@@ -26,6 +26,7 @@
 #include <ice/gfx/gfx_device.hxx>
 #include <ice/gfx/gfx_frame.hxx>
 #include <ice/gfx/gfx_pass.hxx>
+#include <ice/gfx/gfx_runner.hxx>
 #include <ice/render/render_swapchain.hxx>
 
 #include <ice/input/input_event.hxx>
@@ -75,7 +76,7 @@ void MyGame::on_load_modules(ice::GameServices& sercies) noexcept
     }
 }
 
-void MyGame::on_app_startup(ice::Engine& engine) noexcept
+void MyGame::on_app_startup(ice::Engine& engine, ice::gfx::GfxRunner& gfx_runner) noexcept
 {
     _current_engine = &engine;
     ICE_LOG(
@@ -95,8 +96,21 @@ void MyGame::on_app_startup(ice::Engine& engine) noexcept
     _trait_render_sprites = ice::create_trait_render_sprites(_allocator);
     _trait_render_camera = ice::create_trait_camera(_allocator);
 
+    gfx_runner.add_trait("ice.render_gfx"_sid, _trait_render_gfx.get());
 
-    _game_gfx_pass->add_stages(_trait_render_gfx->gfx_stage_infos());
+    ice::gfx::GfxStageInfo gfx_stages[]
+    {
+        {
+            .name = _trait_render_gfx->gfx_render_stages()[0],
+            .type = ice::gfx::GfxStageType::InitialStage,
+        },
+        {
+            .name = _trait_render_gfx->gfx_render_stages()[1],
+            .type = ice::gfx::GfxStageType::FinalStage,
+        }
+    };
+
+    _game_gfx_pass->add_stages(gfx_stages);
     _game_gfx_pass->add_stages(_trait_render_clear->gfx_stage_infos());
     _game_gfx_pass->add_stages(_trait_render_sprites->gfx_stage_infos());
     _game_gfx_pass->add_stages(_trait_render_postprocess->gfx_stage_infos());
@@ -139,7 +153,7 @@ void MyGame::on_app_startup(ice::Engine& engine) noexcept
     _test_world->add_trait("ice.actor"_sid, _trait_actor.get());
 
     _render_world->add_trait("game"_sid, this);
-    _render_world->add_trait("ice.render_gfx"_sid, _trait_render_gfx.get());
+    //_render_world->add_trait("ice.render_gfx"_sid, _trait_render_gfx.get());
     _render_world->add_trait("ice.render_clear"_sid, _trait_render_clear.get());
     _render_world->add_trait("ice.render_finish"_sid, _trait_render_finish.get());
     _render_world->add_trait("ice.camera"_sid, _trait_render_camera.get());
@@ -162,7 +176,7 @@ void MyGame::on_app_shutdown(ice::Engine& engine) noexcept
     _render_world->remove_trait("ice.render_postprocess"_sid);
     _render_world->remove_trait("ice.render_finish"_sid);
     _render_world->remove_trait("ice.render_clear"_sid);
-    _render_world->remove_trait("ice.render_gfx"_sid);
+    //_render_world->remove_trait("ice.render_gfx"_sid);
     _render_world->remove_trait("game"_sid);
 
     _test_world->remove_trait("ice.actor"_sid);
