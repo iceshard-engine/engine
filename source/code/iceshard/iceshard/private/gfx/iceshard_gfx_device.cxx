@@ -273,8 +273,9 @@ namespace ice::gfx
                         pass_info.name,
                         render_device->get_commands(),
                         render_queue,
+                        pass_info.flags,
                         group_index
-                    )->set_presenting((pass_info.flags & QueueFlags::Present) == QueueFlags::Present);
+                    );
                 }
             }
 

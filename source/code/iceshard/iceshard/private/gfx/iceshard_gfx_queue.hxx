@@ -11,55 +11,48 @@ namespace ice::gfx
 
     struct GfxStageSlot;
 
-    class IceGfxQueue final : public ice::gfx::GfxQueue, public ice::gfx::GfxTaskCommands
+    class IceGfxQueue final : public ice::gfx::GfxQueue
     {
     public:
         IceGfxQueue(
             ice::Allocator& alloc,
+            ice::StringID_Arg name,
             ice::render::RenderCommands& commands,
             ice::render::RenderQueue* queue,
+            ice::render::QueueFlags const flags,
             ice::u32 pool_index
         ) noexcept;
         ~IceGfxQueue() noexcept = default;
 
+        auto name() const noexcept -> ice::StringID_Arg;
+        auto queue_flags() const noexcept -> ice::render::QueueFlags;
+
         bool presenting() const noexcept override;
-        void set_presenting(bool is_presenting) noexcept override;
 
         auto render_queue() noexcept -> ice::render::RenderQueue*;
 
-        void prepare() noexcept;
+        void reset() noexcept;
 
-        void alloc_command_buffers(
+        void request_command_buffers(
             ice::render::CommandBufferType type,
             ice::Span<ice::render::CommandBuffer> buffers
-        ) noexcept override;
-
-        void submit_command_buffers(
-            ice::Span<ice::render::CommandBuffer> buffers
-        ) noexcept override;
-
-        void test_begin() noexcept;
-        void test_end() noexcept;
-
-        void execute_pass(
-            ice::EngineFrame const& frame,
-            ice::gfx::GfxPass const* gfx_pass,
-            ice::pod::Hash<ice::gfx::GfxStageSlot> const& stages
         ) noexcept;
 
-        void update_texture(
-            ice::render::Image image,
-            ice::render::Buffer image_contents,
-            ice::vec2u extents
-        ) noexcept override;
+        void submit_command_buffers(
+            ice::Span<ice::render::CommandBuffer> buffers,
+            ice::render::RenderFence const* fence
+        ) noexcept;
 
     private:
+        ice::StringID const _name;
         ice::render::RenderCommands& _render_commands;
         ice::render::RenderQueue* _render_queue;
+        ice::render::QueueFlags const _flags;
         ice::u32 _queue_pool_index;
-        bool _presenting = false;
 
-        ice::render::CommandBuffer _primary_commands[2];
+        ice::u32 _cmd_buffers_used[2]{ };
+        ice::pod::Array<ice::render::CommandBuffer> _primary;
+        ice::pod::Array<ice::render::CommandBuffer> _secondary;
     };
 
 } // namespace ice

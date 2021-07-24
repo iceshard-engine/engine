@@ -28,14 +28,14 @@ namespace ice::gfx
         {
             std::coroutine_handle<> _coroutine = nullptr;
             OperationData* _next = nullptr;
-            ice::StringID_Hash queue_name;
+            ice::StringID_Hash _queue_name;
+            ice::gfx::GfxTaskCommands* _commands;
         };
 
         using DataMemberType = OperationData GfxFrameCommandsOperation::*;
 
         inline GfxFrameCommandsOperation(
             ice::gfx::GfxTaskFrame& task_frame,
-            ice::gfx::GfxTaskCommands*& task_commands,
             ice::StringID_Arg queue_name
         ) noexcept;
 
@@ -45,18 +45,15 @@ namespace ice::gfx
 
     private:
         ice::gfx::GfxTaskFrame& _target;
-        ice::gfx::GfxTaskCommands*& _task_commands;
         OperationData _data;
     };
 
     inline GfxFrameCommandsOperation::GfxFrameCommandsOperation(
         ice::gfx::GfxTaskFrame& task_frame,
-        ice::gfx::GfxTaskCommands*& task_commands,
         ice::StringID_Arg queue_name
     ) noexcept
         : _target{ task_frame }
-        , _task_commands{ task_commands }
-        , _data{ .queue_name = ice::stringid_hash(queue_name) }
+        , _data{ ._queue_name = ice::stringid_hash(queue_name) }
     { }
 
     class GfxFrameEndOperation : public ice::ScheduleOperation<ice::gfx::GfxTaskFrame>
@@ -114,7 +111,7 @@ namespace ice::gfx
 
     inline auto GfxFrameCommandsOperation::await_resume() const noexcept -> ice::gfx::GfxTaskCommands&
     {
-        return *_task_commands;
+        return *_data._commands;
     }
 
     inline void GfxFrameEndOperation::await_suspend(std::coroutine_handle<void> coro) noexcept

@@ -74,6 +74,8 @@ namespace ice::gfx
         ice::UniquePtr<ice::TaskThread> _thread;
         ice::UniquePtr<ice::gfx::IceGfxDevice> _device;
 
+        ice::render::RenderFence* _fences[2];
+
         ice::gfx::GfxContext _context;
 
         ice::memory::ScratchAllocator _frame_allocator[2];
