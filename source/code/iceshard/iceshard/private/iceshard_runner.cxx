@@ -8,6 +8,8 @@
 #include "gfx/iceshard_gfx_queue.hxx"
 
 #include <ice/engine_shards.hxx>
+
+#include <ice/gfx/gfx_trait.hxx>
 #include <ice/gfx/gfx_queue.hxx>
 
 #include <ice/task_sync_wait.hxx>
@@ -77,6 +79,8 @@ namespace ice
         , _clock{ ice::clock::create_clock() }
         , _engine{ engine }
         , _devui_key{ devui::execution_key_from_pointer(ice::addressof(_engine)) }
+        , _gfx_world{ nullptr }
+        , _gfx_trait_names{ _allocator }
         , _gfx_runner{ ice::move(gfx_runner) }
         , _thread_pool{ ice::create_simple_threadpool(_allocator, 6) }
         , _frame_allocator{ _allocator, "frame-allocator" }
@@ -92,6 +96,8 @@ namespace ice
         , _input_tracker{ ice::move(input_tracker) }
         , _runner_tasks{ _allocator }
     {
+        ICE_ASSERT(_gfx_runner != nullptr, "Currently every Engine Runner requires a valid Graphics Runner on creation.");
+
         _engine.developer_ui().internal_set_key(_devui_key);
 
         _previous_frame = ice::make_unique<ice::IceshardMemoryFrame>(
@@ -104,6 +110,25 @@ namespace ice
         );
 
         _gfx_runner->set_event(&_mre_graphics_frame);
+        _gfx_world = static_cast<ice::IceshardWorld*>(_world_manager.find_world(_gfx_runner->get_graphics_world()));
+        ICE_ASSERT(
+            _gfx_world != nullptr,
+            "The request Graphics Runner world {} does not exist in World Manager.",
+            ice::stringid_hint(_gfx_runner->get_graphics_world())
+        );
+
+        ice::pod::Array<ice::gfx::GfxTrait*> traits{ _allocator };
+
+        ice::u32 const trait_count = _gfx_runner->trait_count();
+        ice::pod::array::resize(_gfx_trait_names, trait_count);
+        ice::pod::array::resize(traits, trait_count);
+        _gfx_runner->query_traits(_gfx_trait_names, traits);
+
+        for (ice::u32 idx = 0; idx < trait_count; ++idx)
+        {
+            _gfx_world->add_trait(_gfx_trait_names[idx], traits[idx]);
+        }
+        _world_tracker.activate_world(_engine, *this, _gfx_world);
 
         ice::pod::array::reserve(_runner_tasks, 10);
     }
@@ -227,7 +252,10 @@ namespace ice
             {
                 if (ice::shard_inspect(shard, world))
                 {
-                    _world_tracker.activate_world(_engine, *this, static_cast<IceshardWorld*>(world));
+                    if (world != _gfx_world)
+                    {
+                        _world_tracker.activate_world(_engine, *this, static_cast<IceshardWorld*>(world));
+                    }
                 }
                 break;
             }
@@ -235,7 +263,10 @@ namespace ice
             {
                 if (ice::shard_inspect(shard, world))
                 {
-                    _world_tracker.deactivate_world(_engine, *this, static_cast<IceshardWorld*>(world));
+                    if (world != _gfx_world)
+                    {
+                        _world_tracker.deactivate_world(_engine, *this, static_cast<IceshardWorld*>(world));
+                    }
                 }
                 break;
             }
@@ -345,7 +376,40 @@ namespace ice
         ice::UniquePtr<ice::gfx::GfxRunner> gfx_runner
     ) noexcept
     {
-        _gfx_runner = nullptr;
+        ICE_ASSERT(gfx_runner != nullptr, "Currently a Engine Runner cannot work without an attached graphics runner.");
+        if (_gfx_runner != nullptr)
+        {
+            _mre_graphics_frame.wait();
+            ice::UniquePtr<ice::gfx::GfxRunner> old_runner = ice::move(_gfx_runner);
+
+            _world_tracker.deactivate_world(_engine, *this, _gfx_world);
+            for (ice::StringID_Arg trait_name : _gfx_trait_names)
+            {
+                _gfx_world->remove_trait(trait_name);
+            }
+
+            old_runner->set_event(nullptr); // Probably not needed
+            old_runner = nullptr;
+        }
+
+        _gfx_runner = ice::move(gfx_runner);
+        _gfx_runner->set_event(&_mre_graphics_frame);
+
+        ice::u32 const trait_count = _gfx_runner->trait_count();
+
+        ice::pod::Array<ice::gfx::GfxTrait*> traits{ _allocator };
+        ice::pod::array::resize(_gfx_trait_names, trait_count);
+        ice::pod::array::resize(traits, trait_count);
+        _gfx_runner->query_traits(_gfx_trait_names, traits);
+
+        for (ice::u32 idx = 0; idx < trait_count; ++idx)
+        {
+            _gfx_world->add_trait(_gfx_trait_names[idx], traits[idx]);
+        }
+
+        _world_tracker.activate_world(_engine, *this, _gfx_world);
+        // ASSERT: Graphics world is deactivated
+        // TODO: Activate graphics world
     }
 
     void IceshardEngineRunner::execute_task(ice::Task<> task, ice::EngineContext context) noexcept

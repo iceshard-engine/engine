@@ -8,7 +8,7 @@ namespace ice::gfx
 
     class GfxStage;
 
-    enum class GfxStageType
+    enum class [[deprecated]] GfxStageType
     {
         InitialStage,
         TransferStage,
@@ -17,14 +17,14 @@ namespace ice::gfx
         CustomStage,
     };
 
-    struct GfxStageInfo
+    struct [[deprecated]] GfxStageInfo
     {
         ice::StringID name;
         ice::Span<ice::StringID const> dependencies;
         ice::gfx::GfxStageType type = GfxStageType::DrawStage;
     };
 
-    struct GfxStageSlot
+    struct [[deprecated]] GfxStageSlot
     {
         ice::StringID name;
         ice::gfx::GfxStage const* stage;

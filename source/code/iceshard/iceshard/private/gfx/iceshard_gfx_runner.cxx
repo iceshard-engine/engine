@@ -3,6 +3,7 @@
 #include "iceshard_gfx_device.hxx"
 #include "iceshard_gfx_world.hxx"
 
+#include <ice/gfx/gfx_trait.hxx>
 #include <ice/task_sync_wait.hxx>
 #include <ice/profiler.hxx>
 
@@ -19,13 +20,14 @@ namespace ice::gfx
         : _allocator{ alloc, "gfx-runner"}
         , _thread{ ice::create_task_thread(_allocator) }
         , _device{ ice::move(device) }
-        //, _world{ ice::move(world) }
         , _frame_allocator{
             { _allocator, Constant_GfxFrameAllocatorCapacity },
             { _allocator, Constant_GfxFrameAllocatorCapacity }
         }
         , _next_free_allocator{ 0 }
         , _current_frame{ ice::make_unique_null<ice::gfx::IceGfxFrame>() }
+        , _gfx_world_name{ "default"_sid }
+        , _traits{ _allocator }
         , _mre_internal{ true }
         , _mre_selected{ &_mre_internal }
     {
@@ -50,6 +52,75 @@ namespace ice::gfx
 
         // Destroy the frame safely.
         _current_frame = nullptr;
+    }
+
+    auto IceGfxRunner::trait_count() const noexcept -> ice::u32
+    {
+        return ice::pod::array::size(_traits);
+    }
+
+    void IceGfxRunner::query_traits(
+        ice::Span<ice::StringID> out_trait_names,
+        ice::Span<ice::gfx::GfxTrait*> out_traits
+    ) const noexcept
+    {
+        if (ice::size(out_trait_names) != trait_count())
+        {
+            return;
+        }
+
+        ice::u32 idx = 0;
+        if (ice::size(out_trait_names) != ice::size(out_traits))
+        {
+            for (ice::gfx::IceGfxTraitEntry const& entry : _traits)
+            {
+                out_trait_names[idx] = entry.name;
+                idx += 1;
+            }
+        }
+        else
+        {
+            for (ice::gfx::IceGfxTraitEntry const& entry : _traits)
+            {
+                out_trait_names[idx] = entry.name;
+                out_traits[idx] = entry.trait;
+                idx += 1;
+            }
+        }
+    }
+
+    void IceGfxRunner::add_trait(ice::StringID_Arg name, ice::gfx::GfxTrait* trait) noexcept
+    {
+        _mre_selected->wait();
+        ice::pod::array::push_back(_traits, { name, trait });
+    }
+
+    void IceGfxRunner::set_graphics_world(ice::StringID_Arg world_name) noexcept
+    {
+        _gfx_world_name = world_name;
+    }
+
+    auto IceGfxRunner::get_graphics_world() noexcept -> ice::StringID
+    {
+        return _gfx_world_name;
+    }
+
+    void IceGfxRunner::setup_graphics_world(ice::World* gfx_world) noexcept
+    {
+        _mre_selected->wait();
+        for (ice::gfx::IceGfxTraitEntry const& entry : _traits)
+        {
+            gfx_world->add_trait(entry.name, entry.trait);
+        }
+    }
+
+    void IceGfxRunner::teardown_graphics_world(ice::World* gfx_world) noexcept
+    {
+        _mre_selected->wait();
+        for (ice::gfx::IceGfxTraitEntry const& entry : _traits)
+        {
+            gfx_world->remove_trait(entry.name);
+        }
     }
 
     void IceGfxRunner::set_event(ice::ManualResetEvent* mre_event) noexcept
@@ -100,16 +171,11 @@ namespace ice::gfx
     ) noexcept -> ice::Task<>
     {
         IPT_FRAME_MARK_NAMED("Graphics Frame");
-        //ice::UniquePtr<ice::gfx::IceGfxFrame> gfx_frame = ice::move(_current_frame);
 
         // Await the graphics thread context
         co_await *_thread;
 
         IPT_ZONE_SCOPED_NAMED("Graphis Frame");
-
-        // Wait for the previous render task to end
-        //_mre_gfx_draw.wait();
-        //_mre_gfx_draw.reset();
 
         // NOTE: We aquire the next image index to be rendered.
         ice::u32 const image_index = _device->next_frame();
@@ -128,13 +194,8 @@ namespace ice::gfx
             IPT_ZONE_SCOPED_NAMED("Graphis Frame - Present");
             _device->present(image_index);
         }
-        //ice::sync_manual_wait(render_frame_task(image_index, ice::move(gfx_frame)), _mre_gfx_draw);
-        co_return;
-    }
 
-    void IceGfxRunner::add_trait(ice::gfx::GfxTrait* trait) noexcept
-    {
-        _mre_selected->wait(); // Always wait for the runner to have finished tasks.
+        co_return;
     }
 
 } // namespace ice::gfx

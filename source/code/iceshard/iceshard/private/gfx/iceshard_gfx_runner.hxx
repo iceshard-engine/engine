@@ -13,6 +13,12 @@ namespace ice::gfx
     class IceGfxDevice;
     class IceGfxFrame;
 
+    struct IceGfxTraitEntry
+    {
+        ice::StringID name;
+        ice::gfx::GfxTrait* trait;
+    };
+
     class IceGfxRunner : public ice::gfx::GfxRunner
     {
     public:
@@ -23,9 +29,27 @@ namespace ice::gfx
         ) noexcept;
         ~IceGfxRunner() noexcept override;
 
-        void add_trait(ice::gfx::GfxTrait* trait) noexcept;
+        auto trait_count() const noexcept -> ice::u32 override;
 
-        void set_event(ice::ManualResetEvent* event) noexcept;
+        void query_traits(
+            ice::Span<ice::StringID> out_trait_names,
+            ice::Span<ice::gfx::GfxTrait*> out_traits
+        ) const noexcept override;
+
+        void add_trait(
+            ice::StringID_Arg name,
+            ice::gfx::GfxTrait* trait
+        ) noexcept override;
+
+        auto get_graphics_world() noexcept -> ice::StringID override;
+        void set_graphics_world(
+            ice::StringID_Arg world_name
+        ) noexcept override;
+
+        void setup_graphics_world(ice::World* gfx_world) noexcept;
+        void teardown_graphics_world(ice::World* gfx_world) noexcept;
+
+        void set_event(ice::ManualResetEvent* event) noexcept override;
 
         void draw_frame(
             ice::EngineFrame const& engine_frame
@@ -44,12 +68,14 @@ namespace ice::gfx
         ice::memory::ProxyAllocator _allocator;
         ice::UniquePtr<ice::TaskThread> _thread;
         ice::UniquePtr<ice::gfx::IceGfxDevice> _device;
-        //ice::UniquePtr<ice::gfx::IceGfxWorld> _world;
 
         ice::memory::ScratchAllocator _frame_allocator[2];
         ice::u32 _next_free_allocator;
 
         ice::UniquePtr<ice::gfx::IceGfxFrame> _current_frame;
+
+        ice::StringID _gfx_world_name;
+        ice::pod::Array<ice::gfx::IceGfxTraitEntry> _traits;
 
         ice::ManualResetEvent _mre_internal;
         ice::ManualResetEvent* _mre_selected;
