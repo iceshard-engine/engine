@@ -6,6 +6,8 @@
 #include <ice/platform_window_surface.hxx>
 
 #include <ice/gfx/gfx_device.hxx>
+#include <ice/gfx/gfx_runner.hxx>
+
 #include <ice/render/render_module.hxx>
 #include <ice/engine.hxx>
 #include <ice/engine_module.hxx>
@@ -131,6 +133,7 @@ auto game_main(ice::Allocator& alloc, ice::ResourceSystem& resources) -> ice::i3
 
             if (gfx_runner != nullptr)
             {
+                gfx_runner->set_graphics_world(game_framework->graphics_world_name());
                 game_framework->startup(*engine);
 
                 ice::UniquePtr<ice::platform::App> platform_app = game_framework->create_app(ice::move(gfx_runner));

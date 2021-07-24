@@ -34,6 +34,8 @@ namespace ice
         virtual ~GameFramework() noexcept override;
 
         virtual auto config_uri() const noexcept -> ice::URI = 0;
+        virtual auto graphics_world_name() const noexcept -> ice::StringID = 0;
+
         virtual void load_modules() noexcept = 0;
 
         void startup(ice::Engine& engine) noexcept;
@@ -70,6 +72,10 @@ namespace ice
     template<typename T>
     concept HasConfigFileMember = requires (T t) {
         { T::ConfigFile } -> std::convertible_to<ice::URI const&>;
+    };
+    template<typename T>
+    concept HasGraphicsWorldNameMember = requires (T t) {
+        { T::GraphicsWorldName } -> std::convertible_to<ice::StringID const&>;
     };
     template<typename T>
     concept HasLoadModulesMethod = requires (T t) {
@@ -124,6 +130,18 @@ namespace ice
             else
             {
                 return "urn://config.json"_uri;
+            }
+        }
+
+        auto graphics_world_name() const noexcept -> ice::StringID final
+        {
+            if constexpr (HasGraphicsWorldNameMember<T>)
+            {
+                return T::GraphicsWorldName;
+            }
+            else
+            {
+                return "default.graphics-world"_sid;
             }
         }
 
