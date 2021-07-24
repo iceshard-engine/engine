@@ -10,6 +10,7 @@ namespace ice::render
     class RenderSwapchain;
     class RenderQueue;
     class RenderCommands;
+    class RenderFence;
 
     struct SurfaceInfo;
     struct RenderpassInfo;
@@ -36,7 +37,6 @@ namespace ice::render
     enum class [[nodiscard]] Buffer : ice::uptr;
     enum class [[nodiscard]] CommandBuffer : ice::uptr;
     enum class [[nodiscard]] Semaphore : ice::uptr;
-    enum class [[nodiscard]] Fence : ice::uptr;
 
     enum class QueueID : ice::u32;
     enum class QueueFlags : ice::u32;

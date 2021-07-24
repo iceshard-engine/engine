@@ -243,6 +243,12 @@ namespace ice::render::vk
             ice::render::RenderQueue* queue
         ) const noexcept override;
 
+        auto create_fence() noexcept -> ice::render::RenderFence*;
+
+        void destroy_fence(
+            ice::render::RenderFence* fence
+        ) noexcept;
+
         auto get_commands() noexcept -> ice::render::RenderCommands& override;
 
         void wait_idle() const noexcept override;

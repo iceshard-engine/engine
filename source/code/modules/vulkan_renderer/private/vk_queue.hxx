@@ -29,7 +29,7 @@ namespace ice::render::vk
 
         void submit(
             ice::Span<ice::render::CommandBuffer> buffers,
-            bool wait_flags
+            ice::render::RenderFence const* fence
         ) noexcept override;
 
         void present(

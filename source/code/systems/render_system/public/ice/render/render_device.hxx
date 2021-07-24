@@ -123,6 +123,11 @@ namespace ice::render
             ice::render::RenderQueue* queue
         ) const noexcept = 0;
 
+        virtual auto create_fence() noexcept -> ice::render::RenderFence* = 0;
+        virtual void destroy_fence(
+            ice::render::RenderFence* fence
+        ) noexcept = 0;
+
         virtual auto get_commands() noexcept -> ice::render::RenderCommands& = 0;
 
         virtual void wait_idle() const noexcept = 0;
