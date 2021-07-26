@@ -128,11 +128,8 @@ namespace ice::gfx
 
     public:
         virtual void set_stage_slot(
-            ice::gfx::GfxStageSlot slot
-        ) noexcept = 0;
-
-        virtual void set_stage_slots(
-            ice::Span<ice::gfx::GfxStageSlot const> slots
+            ice::StringID_Arg stage_name,
+            ice::gfx::GfxStage* stage
         ) noexcept = 0;
 
         virtual void enqueue_pass(

@@ -26,8 +26,6 @@ namespace ice::gfx
     class GfxTrait : public ice::WorldTrait
     {
     public:
-        virtual auto gfx_render_stages() noexcept -> ice::Span<ice::StringID const> { return {}; }
-
         virtual void gfx_context_setup(
             ice::gfx::GfxDevice& device,
             ice::gfx::GfxContext& context

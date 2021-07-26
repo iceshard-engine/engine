@@ -16,7 +16,6 @@ namespace ice::gfx
     IceGfxTaskFrame::IceGfxTaskFrame(ice::Allocator& alloc) noexcept
         : _allocator{ alloc }
         , _tasks{ _allocator }
-        , _task_executor{ _allocator, ice::move(_tasks) }
     { }
 
     void IceGfxTaskFrame::execute_task(ice::Task<> task) noexcept
@@ -149,11 +148,13 @@ namespace ice::gfx
         );
     }
 
+    auto IceGfxTaskFrame::create_task_executor() noexcept -> ice::IceshardTaskExecutor
+    {
+        return ice::IceshardTaskExecutor{ _allocator, ice::move(_tasks) };
+    }
+
     void IceGfxTaskFrame::resume_on_start_stage() noexcept
     {
-        _task_executor = ice::IceshardTaskExecutor{ _allocator, ice::move(_tasks) };
-        _task_executor.start_all();
-
         ice::pod::Array<ice::detail::ScheduleOperationData*> operations{ _allocator };
 
         ice::detail::ScheduleOperationData* operation = _task_head_start.load();
@@ -181,14 +182,7 @@ namespace ice::gfx
             operation = next_operation;
         }
 
-        _task_executor.wait_ready();
-    }
-
-    void IceGfxTaskFrame::execute_final_tasks() noexcept
-    {
-        _task_executor = ice::IceshardTaskExecutor{ _allocator, ice::move(_tasks) };
-        _task_executor.start_all();
-        _task_executor.wait_ready();
+        //_task_executor.wait_ready();
     }
 
     IceGfxFrame::IceGfxFrame(
@@ -203,28 +197,15 @@ namespace ice::gfx
     }
 
     void IceGfxFrame::set_stage_slot(
-        ice::gfx::GfxStageSlot slot
+        ice::StringID_Arg stage_name,
+        ice::gfx::GfxStage* stage
     ) noexcept
     {
-        if (slot.stage != nullptr)
-        {
-            set_stage_slots({ &slot, 1 });
-        }
-    }
-
-
-    void IceGfxFrame::set_stage_slots(
-        ice::Span<ice::gfx::GfxStageSlot const> slots
-    ) noexcept
-    {
-        for (ice::gfx::GfxStageSlot const& slot : slots)
-        {
-            ice::pod::hash::set(
-                _stages,
-                ice::hash(slot.name),
-                slot
-            );
-        }
+        ice::pod::hash::set(
+            _stages,
+            ice::hash(stage_name),
+            stage
+        );
     }
 
     void IceGfxFrame::enqueue_pass(
@@ -274,8 +255,8 @@ namespace ice::gfx
                 ice::gfx::GfxStage const* stage = ice::pod::hash::get(
                     _stages,
                     ice::hash(stage_id),
-                    ice::gfx::GfxStageSlot{ }
-                ).stage;
+                    nullptr
+                );
 
                 ice::pod::array::push_back(out_stages, stage);
             }
@@ -289,11 +270,6 @@ namespace ice::gfx
         ice::gfx::IceGfxQueue& queue
     ) noexcept
     {
-        //for (auto const& entry : _enqueued_passes)
-        //{
-        //    queue.execute_pass(frame, entry.value, _stages);
-        //}
-
         ice::pod::hash::clear(_enqueued_passes);
     }
 
@@ -372,10 +348,11 @@ namespace ice::gfx
 
     void IceGfxPassExecutor::record(ice::EngineFrame const& frame, ice::render::RenderCommands& api) noexcept
     {
+        api.begin(_command_buffer);
+
         _api = &api;
         if (_operations != nullptr)
         {
-            api.begin(_command_buffer);
             while (_operations != nullptr)
             {
                 auto* next_operation = _operations->_next;
@@ -383,7 +360,6 @@ namespace ice::gfx
                 _operations->_coroutine.resume();
                 _operations = next_operation;
             }
-            api.end(_command_buffer);
         }
         _api = nullptr;
 
@@ -391,16 +367,14 @@ namespace ice::gfx
         {
             stage->record_commands(frame, _command_buffer, api);
         }
+
+        api.end(_command_buffer);
     }
 
     void IceGfxPassExecutor::execute() noexcept
     {
         _queue->submit_command_buffers({ &_command_buffer, 1 }, &_fence);
     }
-
-    //void IceGfxPassExecutor::wait() const noexcept
-    //{
-    //}
 
     void IceGfxPassExecutor::update_texture(
         ice::render::Image image,

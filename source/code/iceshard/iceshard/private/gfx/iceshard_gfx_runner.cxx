@@ -48,7 +48,9 @@ namespace ice::gfx
         _mre_selected->wait();
 
         // Wait for the current GfxFrame to send final tasks
-        _current_frame->execute_final_tasks();
+        ice::IceshardTaskExecutor frame_tasks = _current_frame->create_task_executor();
+        frame_tasks.start_all();
+        frame_tasks.wait_ready();
 
         // Now stop the thread and wait for everything to finish.
         _thread->stop();
@@ -183,6 +185,7 @@ namespace ice::gfx
         ice::memory::ScratchAllocator alloc{ initial_alloc, 1024 };
 
         IPT_FRAME_MARK_NAMED("Graphics Frame");
+        ice::IceshardTaskExecutor frame_tasks = frame->create_task_executor();
 
         // Await the graphics thread context
         co_await *_thread;
@@ -210,6 +213,8 @@ namespace ice::gfx
             {
                 entry.trait->gfx_update(engine_frame, *_device, _context, *frame);
             }
+
+            frame_tasks.start_all();
 
             // First run all tasks that where scheduled from previous frames
             frame->resume_on_start_stage();
@@ -272,6 +277,8 @@ namespace ice::gfx
         {
             IPT_ZONE_SCOPED_NAMED("Graphis Frame - Final tasks");
             frame->resume_on_end_stage();
+
+            frame_tasks.wait_ready();
         }
 
         // Start the draw task and

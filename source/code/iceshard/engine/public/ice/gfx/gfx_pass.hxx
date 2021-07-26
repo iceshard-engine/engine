@@ -48,38 +48,28 @@ namespace ice::gfx
     public:
         virtual void clear() noexcept = 0;
 
-        virtual void add_stages(
-            ice::Span<ice::gfx::GfxStageInfo const> stage_info
+        virtual void add_stage(
+            ice::StringID_Arg stage_name,
+            ice::Span<ice::StringID const> dependencies
         ) noexcept = 0;
 
-        inline void add_stage(
-            ice::gfx::GfxStageInfo stage_info
-        ) noexcept;
+        template<typename... Deps>
+        void add_stage(ice::StringID_Arg name, Deps... deps) noexcept
+        {
+            ice::StringID const dependency_names[]{ deps... };
+            add_stage(name, { dependency_names + 0, sizeof...(Deps) });
+        }
 
         inline void add_stage(
-            ice::StringID_Arg name,
-            std::initializer_list<ice::StringID const> dependencies
+            ice::StringID_Arg name
         ) noexcept;
     };
 
     inline void GfxDynamicPass::add_stage(
-        ice::StringID_Arg name,
-        std::initializer_list<ice::StringID const> dependencies
+        ice::StringID_Arg name
     ) noexcept
     {
-        add_stage(
-            GfxStageInfo{
-                .name = name,
-                .dependencies = ice::Span<ice::StringID const>{ dependencies.begin(), dependencies.size() }
-            }
-        );
-    }
-
-    inline void GfxDynamicPass::add_stage(
-        ice::gfx::GfxStageInfo stage_info
-    ) noexcept
-    {
-        add_stages({ &stage_info, 1 });
+        add_stage(name, { });
     }
 
     auto create_static_pass(

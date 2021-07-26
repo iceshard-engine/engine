@@ -52,17 +52,16 @@ namespace ice::gfx
             ice::gfx::GfxFrameEndOperation::DataMemberType data
         ) noexcept override;
 
+        auto create_task_executor() noexcept -> ice::IceshardTaskExecutor;
+
         void resume_on_start_stage() noexcept;
         void resume_on_end_stage() noexcept;
-
-        void execute_final_tasks() noexcept;
 
     private:
         ice::Allocator& _allocator;
         ice::gfx::GfxTaskCommands* _task_commands;
 
         ice::Vector<ice::Task<>> _tasks;
-        ice::IceshardTaskExecutor _task_executor;
 
         std::atomic<ice::detail::ScheduleOperationData*> _task_head_start;
 
@@ -82,11 +81,8 @@ namespace ice::gfx
         ~IceGfxFrame() noexcept override = default;
 
         void set_stage_slot(
-            ice::gfx::GfxStageSlot slot
-        ) noexcept override;
-
-        void set_stage_slots(
-            ice::Span<ice::gfx::GfxStageSlot const> slots
+            ice::StringID_Arg stage_name,
+            ice::gfx::GfxStage* stage
         ) noexcept override;
 
         void enqueue_pass(
@@ -108,9 +104,8 @@ namespace ice::gfx
         ice::Allocator& _allocator;
 
         ice::pod::Hash<ice::gfx::GfxPass*> _enqueued_passes;
-        ice::pod::Hash<ice::gfx::GfxStageSlot> _stages;
+        ice::pod::Hash<ice::gfx::GfxStage*> _stages;
 
-        // #todo
         ice::gfx::IceGfxQueueGroup* _queue_group;
     };
 

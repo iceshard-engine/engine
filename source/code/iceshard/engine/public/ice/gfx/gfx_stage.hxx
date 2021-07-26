@@ -6,30 +6,6 @@
 namespace ice::gfx
 {
 
-    class GfxStage;
-
-    enum class [[deprecated]] GfxStageType
-    {
-        InitialStage,
-        TransferStage,
-        FinalStage,
-        DrawStage,
-        CustomStage,
-    };
-
-    struct [[deprecated]] GfxStageInfo
-    {
-        ice::StringID name;
-        ice::Span<ice::StringID const> dependencies = { };
-        ice::gfx::GfxStageType type = GfxStageType::DrawStage;
-    };
-
-    struct [[deprecated]] GfxStageSlot
-    {
-        ice::StringID name;
-        ice::gfx::GfxStage const* stage;
-    };
-
     class GfxStage
     {
     public:
