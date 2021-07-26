@@ -2,6 +2,7 @@
 #include <ice/gfx/gfx_frame.hxx>
 #include <ice/gfx/gfx_queue.hxx>
 #include <ice/gfx/gfx_task.hxx>
+#include <ice/gfx/gfx_context.hxx>
 
 #include <ice/render/render_device.hxx>
 #include <ice/engine_frame.hxx>
@@ -20,13 +21,15 @@ namespace ice::gfx
 
     using GfxCmdOperation = ice::gfx::GfxFrameCommandsOperation::OperationData;
 
-    class IceGfxTaskFrame : public ice::gfx::GfxFrame
+    class IceGfxTaskFrame : public ice::gfx::GfxFrame, public ice::gfx::GfxContext
     {
     public:
         IceGfxTaskFrame(ice::Allocator& alloc) noexcept;
         ~IceGfxTaskFrame() noexcept override = default;
 
-        void execute_task(ice::Task<> task) noexcept;
+        void add_task(ice::Task<> task) noexcept override;
+
+        auto frame() noexcept -> ice::gfx::GfxFrame& override;
 
         void query_operations(
             ice::Span<ice::StringID_Hash const> names,

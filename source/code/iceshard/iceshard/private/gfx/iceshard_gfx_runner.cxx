@@ -160,7 +160,7 @@ namespace ice::gfx
     {
         for (ice::gfx::IceGfxTraitEntry const& entry : _traits)
         {
-            entry.trait->gfx_context_setup(*_device, _context);
+            entry.trait->gfx_context_setup(*_device, *_current_frame);
         }
         co_return;
     }
@@ -169,7 +169,7 @@ namespace ice::gfx
     {
         for (ice::gfx::IceGfxTraitEntry const& entry : _traits)
         {
-            entry.trait->gfx_context_cleanup(*_device, _context);
+            entry.trait->gfx_context_cleanup(*_device, *_current_frame);
         }
         co_return;
     }
@@ -211,7 +211,7 @@ namespace ice::gfx
             // Secondly call all GfxTrait::gfx_update methods
             for (ice::gfx::IceGfxTraitEntry const& entry : _traits)
             {
-                entry.trait->gfx_update(engine_frame, *_device, _context, *frame);
+                entry.trait->gfx_update(engine_frame, *_device, *frame, *frame);
             }
 
             frame_tasks.start_all();

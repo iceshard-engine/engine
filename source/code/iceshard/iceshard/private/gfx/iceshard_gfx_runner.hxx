@@ -76,8 +76,6 @@ namespace ice::gfx
 
         ice::render::RenderFence* _fences[2];
 
-        ice::gfx::GfxContext _context;
-
         ice::memory::ScratchAllocator _frame_allocator[2];
         ice::u32 _next_free_allocator;
 

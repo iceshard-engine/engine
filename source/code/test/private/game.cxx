@@ -90,60 +90,33 @@ void MyGame::on_app_startup(ice::Engine& engine, ice::gfx::GfxRunner& gfx_runner
     _trait_animator = ice::create_trait_animator(_allocator);
     _trait_actor = ice::create_trait_actor(_allocator);
     _trait_render_gfx = ice::create_trait_render_gfx(_allocator);
-    _trait_render_clear = ice::create_trait_render_clear(_allocator);
-    _trait_render_finish = ice::create_trait_render_finish(_allocator);
-    _trait_render_postprocess = ice::create_trait_render_postprocess(_allocator);
-    _trait_render_sprites = ice::create_trait_render_sprites(_allocator);
+    _trait_render_clear = ice::create_trait_render_clear(_allocator, "ice.gfx.stage.clear"_sid);
+    _trait_render_finish = ice::create_trait_render_finish(_allocator, "ice.gfx.stage.finish"_sid);
+    _trait_render_postprocess = ice::create_trait_render_postprocess(_allocator, "ice.gfx.stage.postprocess"_sid);
+    _trait_render_sprites = ice::create_trait_render_sprites(_allocator, "ice.gfx.stage.sprites"_sid);
     _trait_render_camera = ice::create_trait_camera(_allocator);
 
     gfx_runner.add_trait("ice.render_gfx"_sid, _trait_render_gfx.get());
     gfx_runner.add_trait("ice.render_clear"_sid, _trait_render_clear.get());
+    gfx_runner.add_trait("ice.render_postprocess"_sid, _trait_render_postprocess.get());
+    gfx_runner.add_trait("ice.render_finish"_sid, _trait_render_finish.get());
+    gfx_runner.add_trait("ice.render_sprites"_sid, _trait_render_sprites.get());
 
-    ice::gfx::GfxStageInfo gfx_stages[]
-    {
-        {
-            .name = _trait_render_gfx->gfx_render_stages()[0],
-            .type = ice::gfx::GfxStageType::InitialStage,
-        },
-        {
-            .name = _trait_render_gfx->gfx_render_stages()[1],
-            .type = ice::gfx::GfxStageType::FinalStage,
-        }
-    };
-
-    _game_gfx_pass->add_stages(gfx_stages);
-    _game_gfx_pass->add_stage({ _trait_render_clear->gfx_render_stages()[0] });
-    _game_gfx_pass->add_stages(_trait_render_sprites->gfx_stage_infos());
-    _game_gfx_pass->add_stages(_trait_render_postprocess->gfx_stage_infos());
+    _game_gfx_pass->add_stage("ice.gfx.stage.clear"_sid);
+    _game_gfx_pass->add_stage("ice.gfx.stage.sprites"_sid, "ice.gfx.stage.clear"_sid);
+    _game_gfx_pass->add_stage("ice.gfx.stage.postprocess"_sid, "ice.gfx.stage.sprites"_sid);
 
     if (devui.world_trait() != nullptr)
     {
-        ice::gfx::GfxStageInfo devui_stage = devui.world_trait()->gfx_stage_info();
+        gfx_runner.add_trait("ice.devui"_sid, devui.world_trait());
 
-        ice::pod::Array<ice::StringID> dependencies{ _allocator };
-        ice::pod::array::push_back(dependencies, devui_stage.dependencies);
-        for (ice::gfx::GfxStageInfo const& stage_info : _trait_render_postprocess->gfx_stage_infos())
-        {
-            ice::pod::array::push_back(dependencies, stage_info.name);
-        }
-
-        devui_stage.dependencies = dependencies;
-        _game_gfx_pass->add_stage(devui_stage);
+        _game_gfx_pass->add_stage(devui.world_trait()->gfx_stage_name(), "ice.gfx.stage.postprocess"_sid);
+        _game_gfx_pass->add_stage("ice.gfx.stage.finish"_sid, devui.world_trait()->gfx_stage_name());
     }
-
+    else
     {
-        ice::gfx::GfxStageInfo devui_stage = devui.world_trait()->gfx_stage_info();
-        for (ice::gfx::GfxStageInfo stage_info : _trait_render_finish->gfx_stage_infos())
-        {
-            ice::pod::Array<ice::StringID> dependencies{ _allocator };
-            ice::pod::array::push_back(dependencies, stage_info.dependencies);
-            ice::pod::array::push_back(dependencies, devui_stage.name);
-
-            stage_info.dependencies = dependencies;
-            _game_gfx_pass->add_stage(stage_info);
-        }
+        _game_gfx_pass->add_stage("ice.gfx.stage.finish"_sid, "ice.gfx.stage.postprocess"_sid);
     }
-
 
     ice::WorldManager& world_manager = engine.world_manager();
     _render_world = world_manager.create_world(GraphicsWorldName, &_entity_storage);
@@ -154,13 +127,7 @@ void MyGame::on_app_startup(ice::Engine& engine, ice::gfx::GfxRunner& gfx_runner
     _test_world->add_trait("ice.actor"_sid, _trait_actor.get());
 
     _render_world->add_trait("game"_sid, this);
-    //_render_world->add_trait("ice.render_gfx"_sid, _trait_render_gfx.get());
-    //_render_world->add_trait("ice.render_clear"_sid, _trait_render_clear.get());
-    _render_world->add_trait("ice.render_finish"_sid, _trait_render_finish.get());
     _render_world->add_trait("ice.camera"_sid, _trait_render_camera.get());
-    _render_world->add_trait("ice.render_postprocess"_sid, _trait_render_postprocess.get());
-    _render_world->add_trait("ice.render_sprites"_sid, _trait_render_sprites.get());
-    _render_world->add_trait("ice.devui"_sid, devui.world_trait());
 
     ice::ArchetypeHandle ortho_arch = _archetype_index->register_archetype<ice::Camera, ice::CameraOrtho>(&_archetype_alloc);
     ice::ArchetypeHandle persp_arch = _archetype_index->register_archetype<ice::Camera, ice::CameraPerspective>(&_archetype_alloc);
@@ -171,13 +138,7 @@ void MyGame::on_app_startup(ice::Engine& engine, ice::gfx::GfxRunner& gfx_runner
 
 void MyGame::on_app_shutdown(ice::Engine& engine) noexcept
 {
-    _render_world->remove_trait("ice.devui"_sid);
     _render_world->remove_trait("ice.camera"_sid);
-    _render_world->remove_trait("ice.render_sprites"_sid);
-    _render_world->remove_trait("ice.render_postprocess"_sid);
-    _render_world->remove_trait("ice.render_finish"_sid);
-    //_render_world->remove_trait("ice.render_clear"_sid);
-    //_render_world->remove_trait("ice.render_gfx"_sid);
     _render_world->remove_trait("game"_sid);
 
     _test_world->remove_trait("ice.actor"_sid);
@@ -280,14 +241,13 @@ void MyGame::on_game_begin(ice::EngineRunner& runner) noexcept
     anim.animation = "null"_sid_hash;
     _entity_storage.set_archetype_with_data(sprite_entity3, sprite_arch, anim, sprite_pos, sprite, sprite_tile, ice::PhysicsBody{});
 
-    _trait_render_sprites->set_camera("camera.default"_sid);
-
     ice::math::deg d1{ 180 };
     ice::math::rad d1r = radians(d1);
 
     ice::Shard shards[]{
         ice::Shard_WorldActivate | _test_world,
         ice::Shard_WorldActivate | _render_world,
+        ice::Shard_SetDefaultCamera | "camera.default"_sid_hash
     };
     runner.current_frame().push_shards(shards);
 }

@@ -18,11 +18,16 @@ namespace ice::gfx
         , _tasks{ _allocator }
     { }
 
-    void IceGfxTaskFrame::execute_task(ice::Task<> task) noexcept
+    void IceGfxTaskFrame::add_task(ice::Task<> task) noexcept
     {
         // #TODO: The '_tasks' array is not thread safe and the game may crash here when at the same time this list
         // is moved in the `resume_on_start_stage` on the graphics thread.
         _tasks.push_back(ice::move(task));
+    }
+
+    auto IceGfxTaskFrame::frame() noexcept -> ice::gfx::GfxFrame&
+    {
+        return *this;
     }
 
     void IceGfxTaskFrame::query_operations(ice::Span<ice::StringID_Hash const> names, ice::Span<GfxCmdOperation*> operation_heads) noexcept

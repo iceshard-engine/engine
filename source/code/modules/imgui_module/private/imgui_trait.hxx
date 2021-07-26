@@ -17,16 +17,26 @@ namespace ice::devui
         ImGuiTrait(ice::Allocator& alloc) noexcept;
         ~ImGuiTrait() noexcept override;
 
-        auto gfx_stage_info() const noexcept -> ice::gfx::GfxStageInfo override;
-        auto gfx_stage_slot() const noexcept -> ice::gfx::GfxStageSlot override;
+        auto gfx_stage_name() const noexcept -> ice::StringID override;
 
-        void on_activate(
-            ice::Engine& engine,
-            ice::EngineRunner& runner,
-            ice::WorldPortal& portal
+        void gfx_context_setup(
+            ice::gfx::GfxDevice& device,
+            ice::gfx::GfxContext& context
         ) noexcept override;
 
-        void on_deactivate(
+        void gfx_context_cleanup(
+            ice::gfx::GfxDevice& device,
+            ice::gfx::GfxContext& context
+        ) noexcept override;
+
+        void gfx_update(
+            ice::EngineFrame const& engine_frame,
+            ice::gfx::GfxDevice& device,
+            ice::gfx::GfxContext& context,
+            ice::gfx::GfxFrame& frame
+        ) noexcept override;
+
+        void on_activate(
             ice::Engine& engine,
             ice::EngineRunner& runner,
             ice::WorldPortal& portal
@@ -52,24 +62,11 @@ namespace ice::devui
         auto imgui_context() const noexcept -> ImGuiContext*;
 
     protected:
-        auto task_create_render_objects(
-            ice::EngineRunner& runner,
-            ice::AssetSystem& asset_system,
-            ice::gfx::GfxDevice& gfx_device
-        ) noexcept -> ice::Task<>;
-
-        auto task_destroy_render_objects(
-            ice::gfx::GfxDevice& gfx_device
-        ) noexcept -> ice::Task<>;
-
-        auto task_update_buffers(
-            ice::EngineFrame& frame,
-            ice::gfx::GfxDevice& gfx_device
-        ) noexcept -> ice::Task<>;
+        void build_internal_command_list(ice::EngineFrame& frame) noexcept;
 
     private:
-        bool _next_frame = false;
         bool _initialized = false;
+        bool _next_frame = false;
 
         ImGuiContext* _imgui_context = nullptr;
 
@@ -85,6 +82,7 @@ namespace ice::devui
         ice::render::Image _font_texture;
         ice::render::ShaderStageFlags _shader_stages[2];
         ice::render::Shader _shaders[2];
+        ice::Data _shader_data[2];
 
         ice::pod::Array<ice::render::Buffer> _index_buffers;
         ice::pod::Array<ice::render::Buffer> _vertex_buffers;
