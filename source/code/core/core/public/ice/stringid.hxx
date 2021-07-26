@@ -8,6 +8,9 @@ namespace ice
     namespace detail::stringid_type_v2
     {
 
+        // #TODO: Move ths to a proper 'settings' file at some point
+        static constexpr bool use_stringid_debug_implementation = ice::build::is_debug || ice::build::is_develop;
+
         enum class StringID_Hash : uint64_t
         {
             Invalid = 0x0
@@ -93,7 +96,7 @@ namespace ice
             typename TypePicker<false>::StringID_Arg right
         ) noexcept;
 
-        using StringID_Types = TypePicker<ice::build::is_release == false>;
+        using StringID_Types = TypePicker<use_stringid_debug_implementation>;
 
     } // namespace detail::stringid_type_v2
 
@@ -222,7 +225,7 @@ namespace ice
 
     constexpr auto stringid(std::string_view value) noexcept -> ice::StringID
     {
-        return ice::detail::stringid_type_v2::stringid<ice::build::is_release == false>(value);
+        return ice::detail::stringid_type_v2::stringid<ice::detail::stringid_type_v2::use_stringid_debug_implementation>(value);
     }
 
     constexpr auto stringid_hint(StringID_Arg value) noexcept -> std::string_view
