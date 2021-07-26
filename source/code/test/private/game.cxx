@@ -206,8 +206,8 @@ void MyGame::on_game_begin(ice::EngineRunner& runner) noexcept
         .front = { 0.f, 0.f, -1.f }
     };
     ice::CameraOrtho const orto_values{
-        .left_right = { 0.f, (ice::f32)extent.x },
-        .top_bottom = { (ice::f32)extent.y, 0.f },
+        .left_right = { 0.f, 480.f },
+        .top_bottom = { 320.f, 0.f },
         .near_far = { 0.1f, 100.f }
     };
     _entity_storage.set_archetype_with_data(camera_entity, ortho_arch, camera, orto_values);

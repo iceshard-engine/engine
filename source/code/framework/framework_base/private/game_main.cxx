@@ -91,7 +91,11 @@ auto game_main(ice::Allocator& alloc, ice::ResourceSystem& resources) -> ice::i3
             asset_system->bind_resources(resource_query.objects);
         }
 
-        ice::UniquePtr<ice::devui::DevUISystem> engine_devui = ice::devui::create_devui_system(engine_alloc, *module_register);
+        ice::UniquePtr<ice::devui::DevUISystem> engine_devui = ice::make_unique_null<ice::devui::DevUISystem>();
+        if (ice::build::is_debug || ice::build::is_develop)
+        {
+            engine_devui = ice::devui::create_devui_system(engine_alloc, *module_register);
+        }
         ice::UniquePtr<ice::Engine> engine = ice::create_engine(engine_alloc, *asset_system, *module_register, engine_devui.get());
         ice::UniquePtr<ice::render::RenderDriver> render_driver = ice::render::create_render_driver(alloc, *module_register);
 
