@@ -5,16 +5,16 @@
 namespace ice
 {
 
-    class IceWorldTrait_RenderFinish : public ice::GameWorldTrait_Render, public ice::gfx::GfxStage
+    class IceWorldTrait_RenderFinish : public ice::gfx::GfxTrait, public ice::gfx::GfxStage
     {
     public:
-        auto gfx_stage_infos() const noexcept -> ice::Span<ice::gfx::GfxStageInfo const> override;
-        auto gfx_stage_slots() const noexcept -> ice::Span<ice::gfx::GfxStageSlot const> override;
+        IceWorldTrait_RenderFinish(ice::StringID_Arg stage_name) noexcept;
 
-        void on_update(
-            ice::EngineFrame& frame,
-            ice::EngineRunner& runner,
-            ice::WorldPortal& portal
+        void gfx_update(
+            ice::EngineFrame const& engine_frame,
+            ice::gfx::GfxDevice& device,
+            ice::gfx::GfxContext& context,
+            ice::gfx::GfxFrame& frame
         ) noexcept override;
 
         void record_commands(
@@ -22,6 +22,9 @@ namespace ice
             ice::render::CommandBuffer cmds,
             ice::render::RenderCommands& api
         ) const noexcept override;
+
+    private:
+        ice::StringID const _stage_name;
     };
 
 } // namespace ice

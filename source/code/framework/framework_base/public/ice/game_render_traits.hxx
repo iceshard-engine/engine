@@ -8,39 +8,33 @@
 namespace ice
 {
 
-    class GameWorldTrait_Render : public ice::WorldTrait
-    {
-    public:
-        virtual auto gfx_stage_infos() const noexcept -> ice::Span<ice::gfx::GfxStageInfo const> = 0;
-        virtual auto gfx_stage_slots() const noexcept -> ice::Span<ice::gfx::GfxStageSlot const> = 0;
-    };
-
-    class GameWorldTrait_RenderDraw : public ice::GameWorldTrait_Render
-    {
-    public:
-        virtual void set_camera(
-            ice::StringID_Arg camera_name
-        ) noexcept = 0;
-    };
+    static constexpr ice::Shard Shard_SetDefaultCamera = "action/camera/set-default"_shard;
 
     auto create_trait_render_gfx(
         ice::Allocator& alloc
     ) noexcept -> ice::UniquePtr<ice::gfx::GfxTrait>;
 
     auto create_trait_render_clear(
-        ice::Allocator& alloc
+        ice::Allocator& alloc,
+        ice::StringID_Arg stage_name
     ) noexcept -> ice::UniquePtr<ice::gfx::GfxTrait>;
 
     auto create_trait_render_postprocess(
-        ice::Allocator& alloc
-    ) noexcept -> ice::UniquePtr<ice::GameWorldTrait_Render>;
+        ice::Allocator& alloc,
+        ice::StringID_Arg stage_name
+    ) noexcept -> ice::UniquePtr<ice::gfx::GfxTrait>;
 
     auto create_trait_render_finish(
-        ice::Allocator& alloc
-    ) noexcept -> ice::UniquePtr<ice::GameWorldTrait_Render>;
+        ice::Allocator& alloc,
+        ice::StringID_Arg stage_name
+    ) noexcept -> ice::UniquePtr<ice::gfx::GfxTrait>;
 
     auto create_trait_render_sprites(
-        ice::Allocator& alloc
-    ) noexcept -> ice::UniquePtr<ice::GameWorldTrait_RenderDraw>;
+        ice::Allocator& alloc,
+        ice::StringID_Arg stage_name
+    ) noexcept -> ice::UniquePtr<ice::gfx::GfxTrait>;
 
 } // namespace ice
+
+template<>
+constexpr ice::u32 ice::detail::Constant_ShardPayloadID<ice::StringID_Hash> = ice::hash32("ice::StringID_Hash");

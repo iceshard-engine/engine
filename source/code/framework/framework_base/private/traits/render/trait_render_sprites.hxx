@@ -26,18 +26,29 @@ namespace ice
 
     class AssetSystem;
 
-    class IceWorldTrait_RenderSprites : public ice::GameWorldTrait_RenderDraw, public ice::gfx::GfxStage
+    class IceWorldTrait_RenderSprites : public ice::gfx::GfxTrait, public ice::gfx::GfxStage
     {
     public:
         IceWorldTrait_RenderSprites(
-            ice::Allocator& alloc
+            ice::Allocator& alloc,
+            ice::StringID_Arg stage_name
         ) noexcept;
 
-        auto gfx_stage_infos() const noexcept -> ice::Span<ice::gfx::GfxStageInfo const> override;
-        auto gfx_stage_slots() const noexcept -> ice::Span<ice::gfx::GfxStageSlot const> override;
+        void gfx_context_setup(
+            ice::gfx::GfxDevice& device,
+            ice::gfx::GfxContext& context
+        ) noexcept override;
 
-        void set_camera(
-            ice::StringID_Arg camera_name
+        void gfx_context_cleanup(
+            ice::gfx::GfxDevice& device,
+            ice::gfx::GfxContext& context
+        ) noexcept override;
+
+        void gfx_update(
+            ice::EngineFrame const& engine_frame,
+            ice::gfx::GfxDevice& device,
+            ice::gfx::GfxContext& context,
+            ice::gfx::GfxFrame& frame
         ) noexcept override;
 
         void on_activate(
@@ -65,24 +76,19 @@ namespace ice
         ) const noexcept override;
 
     protected:
-        auto task_create_render_objects(
-            ice::EngineRunner& runner,
-            ice::AssetSystem& asset_system,
+        void update_resource_camera(
             ice::gfx::GfxDevice& gfx_device
-        ) noexcept -> ice::Task<>;
+        ) noexcept;
 
-        auto task_destroy_render_objects(
-            ice::gfx::GfxDevice& gfx_device
-        ) noexcept -> ice::Task<>;
-
-        auto task_update_resource_camera(
-            ice::gfx::GfxDevice& gfx_device
-        ) noexcept -> ice::Task<>;
-
-        auto task_update_resource_data(
+        void update_resource_data(
             ice::gfx::GfxDevice& gfx_device,
             ice::Span<detail::SpriteInstance> instances
-        ) noexcept -> ice::Task<>;
+        ) noexcept;
+
+        void destroy_resource_material(
+            ice::gfx::GfxDevice& gfx_device,
+            ice::detail::RenderData_Sprite const& sprite_data
+        ) noexcept;
 
         auto task_load_resource_material(
             ice::StringID_Arg material_name,
@@ -97,12 +103,8 @@ namespace ice
             detail::RenderData_Sprite sprite_data
         ) noexcept -> ice::Task<>;
 
-        auto task_destroy_resource_material(
-            ice::gfx::GfxDevice& gfx_device,
-            ice::detail::RenderData_Sprite sprite_data
-        ) noexcept -> ice::Task<>;
-
     private:
+        ice::StringID const _stage_name;
         ice::AssetSystem* _asset_system = nullptr;
         ice::pod::Hash<ice::detail::RenderData_Sprite> _sprite_materials;
 
@@ -112,6 +114,8 @@ namespace ice
         ice::render::Pipeline _pipeline;
         ice::render::ShaderStageFlags _shader_stages[2];
         ice::render::Shader _shaders[2];
+        ice::Data _shader_data[2];
+
         ice::render::Sampler _sampler;
         ice::render::Image _textures[2];
 

@@ -13,44 +13,19 @@
 namespace ice
 {
 
-    auto IceWorldTrait_RenderFinish::gfx_stage_infos() const noexcept -> ice::Span<ice::gfx::GfxStageInfo const>
+    IceWorldTrait_RenderFinish::IceWorldTrait_RenderFinish(ice::StringID_Arg stage_name) noexcept
+        : _stage_name{ stage_name }
     {
-        static ice::StringID const dependencies[]{
-            "frame.clear"_sid,
-            "frame.render-sprites"_sid,
-            "frame.render-postprocess"_sid,
-        };
-        static ice::gfx::GfxStageInfo const infos[]{
-            ice::gfx::GfxStageInfo
-            {
-                .name = "frame.finish"_sid,
-                .dependencies = dependencies,
-                .type = ice::gfx::GfxStageType::DrawStage
-            }
-        };
-        return infos;
     }
 
-    auto IceWorldTrait_RenderFinish::gfx_stage_slots() const noexcept -> ice::Span<ice::gfx::GfxStageSlot const>
-    {
-        static ice::gfx::GfxStageSlot const slots[]{
-            ice::gfx::GfxStageSlot
-            {
-                .name = "frame.finish"_sid,
-                .stage = this
-            }
-        };
-        return slots;
-    }
-
-    void IceWorldTrait_RenderFinish::on_update(
-        ice::EngineFrame& frame,
-        ice::EngineRunner& runner,
-        ice::WorldPortal& portal
+    void IceWorldTrait_RenderFinish::gfx_update(
+        ice::EngineFrame const& engine_frame,
+        ice::gfx::GfxDevice& device,
+        ice::gfx::GfxContext& context,
+        ice::gfx::GfxFrame& frame
     ) noexcept
     {
-        ice::gfx::GfxFrame& gfx_frame = runner.graphics_frame();
-        gfx_frame.set_stage_slots(gfx_stage_slots());
+        frame.set_stage_slot(_stage_name, this);
     }
 
     void IceWorldTrait_RenderFinish::record_commands(

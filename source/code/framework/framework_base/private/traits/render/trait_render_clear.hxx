@@ -9,7 +9,7 @@ namespace ice
     class IceWorldTrait_RenderClear : public ice::gfx::GfxTrait, public ice::gfx::GfxStage
     {
     public:
-        auto gfx_render_stages() noexcept -> ice::Span<ice::StringID const> override;
+        IceWorldTrait_RenderClear(ice::StringID_Arg stage_name) noexcept;
 
         void gfx_context_setup(
             ice::gfx::GfxDevice& device,
@@ -30,6 +30,7 @@ namespace ice
         ) const noexcept override;
 
     private:
+        ice::StringID const _stage_name;
         ice::render::RenderSwapchain const* _default_swapchain;
         ice::render::Renderpass _default_renderpass;
         ice::render::Framebuffer _default_framebuffers[2];

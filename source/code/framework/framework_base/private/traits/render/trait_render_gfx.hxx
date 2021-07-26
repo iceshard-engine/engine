@@ -15,8 +15,6 @@ namespace ice
             ice::WorldPortal& portal
         ) noexcept override;
 
-        auto gfx_render_stages() noexcept -> ice::Span<ice::StringID const> override;
-
         void gfx_context_setup(
             ice::gfx::GfxDevice& device,
             ice::gfx::GfxContext& context

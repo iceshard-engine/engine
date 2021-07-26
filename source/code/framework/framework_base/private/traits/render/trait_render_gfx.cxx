@@ -19,37 +19,6 @@
 namespace ice
 {
 
-    namespace detail
-    {
-
-        class IceRenderStage_Initial : public ice::gfx::GfxStage
-        {
-        public:
-            void record_commands(
-                ice::EngineFrame const& frame,
-                ice::render::CommandBuffer cmds,
-                ice::render::RenderCommands& api
-            ) const noexcept override
-            {
-                api.begin(cmds);
-            }
-        };
-
-        class IceRenderStage_Final : public ice::gfx::GfxStage
-        {
-        public:
-            void record_commands(
-                ice::EngineFrame const& frame,
-                ice::render::CommandBuffer cmds,
-                ice::render::RenderCommands& api
-            ) const noexcept override
-            {
-                api.end(cmds);
-            }
-        };
-
-    } // namespace detail
-
     void IceWorldTrait_RenderGfx::on_update(
         ice::EngineFrame& frame,
         ice::EngineRunner& runner,
@@ -57,16 +26,6 @@ namespace ice
     ) noexcept
     {
         frame.create_named_object<ice::render::Renderpass>("ice.gfx.renderpass"_sid, _default_renderpass);
-    }
-
-    auto IceWorldTrait_RenderGfx::gfx_render_stages() noexcept -> ice::Span<ice::StringID const>
-    {
-        static ice::StringID const stages[]
-        {
-            "frame.begin"_sid,
-            "frame.end"_sid,
-        };
-        return stages;
     }
 
     void IceWorldTrait_RenderGfx::gfx_context_setup(
@@ -274,25 +233,6 @@ namespace ice
             gfx_context_cleanup(device, context);
             gfx_context_setup(device, context);
         }
-
-        static detail::IceRenderStage_Initial initial_stage;
-        static detail::IceRenderStage_Final final_stage;
-
-        frame.set_stage_slot(
-            ice::gfx::GfxStageSlot
-            {
-                .name = gfx_render_stages()[0],
-                .stage = &initial_stage
-            }
-        );
-        frame.set_stage_slot(
-            ice::gfx::GfxStageSlot
-            {
-                .name = gfx_render_stages()[1],
-                .stage = &final_stage
-            }
-        );
-        //runner.graphics_frame().set_stage_slots(gfx_stage_slots());
     }
 
 } // namespace ice

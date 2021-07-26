@@ -16,12 +16,9 @@
 namespace ice
 {
 
-    auto IceWorldTrait_RenderClear::gfx_render_stages() noexcept -> ice::Span<ice::StringID const>
+    IceWorldTrait_RenderClear::IceWorldTrait_RenderClear(ice::StringID_Arg stage_name) noexcept
+        : _stage_name{ stage_name }
     {
-        static constexpr ice::StringID names[]{
-            "ice.clear"_sid
-        };
-        return names;
     }
 
     void IceWorldTrait_RenderClear::gfx_context_setup(
@@ -57,7 +54,7 @@ namespace ice
             gfx_context_setup(device, context);
         }
 
-        frame.set_stage_slot({ .name = "ice.clear"_sid, .stage = this });
+        frame.set_stage_slot(_stage_name, this);
     }
 
     void IceWorldTrait_RenderClear::record_commands(
