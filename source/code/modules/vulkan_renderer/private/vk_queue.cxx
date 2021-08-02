@@ -70,12 +70,12 @@ namespace ice::render::vk
     }
 
     void VulkanQueue::submit(
-        ice::Span<ice::render::CommandBuffer> buffers,
+        ice::Span<ice::render::CommandBuffer const> buffers,
         ice::render::RenderFence const* fence
     ) noexcept
     {
-        CommandBuffer* buffers_ptr = buffers.data();
-        VkCommandBuffer* vk_buffers = reinterpret_cast<VkCommandBuffer*>(buffers_ptr);
+        CommandBuffer const* buffers_ptr = buffers.data();
+        VkCommandBuffer const* vk_buffers = reinterpret_cast<VkCommandBuffer const*>(buffers_ptr);
 
         VkSubmitInfo submit_info{ VK_STRUCTURE_TYPE_SUBMIT_INFO };
         submit_info.waitSemaphoreCount = 0;

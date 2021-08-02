@@ -28,7 +28,7 @@ namespace ice::render::vk
         ) noexcept override;
 
         void submit(
-            ice::Span<ice::render::CommandBuffer> buffers,
+            ice::Span<ice::render::CommandBuffer const> buffers,
             ice::render::RenderFence const* fence
         ) noexcept override;
 
