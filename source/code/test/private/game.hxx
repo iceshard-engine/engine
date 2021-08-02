@@ -51,7 +51,7 @@ public:
     ice::UniquePtr<ice::gfx::GfxTrait> _trait_render_finish{ ice::make_unique_null<ice::gfx::GfxTrait>() };
     ice::UniquePtr<ice::gfx::GfxTrait> _trait_render_postprocess{ ice::make_unique_null<ice::gfx::GfxTrait>() };
     ice::UniquePtr<ice::gfx::GfxTrait> _trait_render_sprites{ ice::make_unique_null<ice::gfx::GfxTrait>() };
-    ice::UniquePtr<ice::WorldTrait> _trait_render_camera{ ice::make_unique_null<ice::WorldTrait>() };
+    ice::UniquePtr<ice::gfx::GfxTrait> _trait_render_camera{ ice::make_unique_null<ice::gfx::GfxTrait>() };
     ice::UniquePtr<ice::WorldTrait> _trait_actor{ ice::make_unique_null<ice::WorldTrait>() };
     ice::UniquePtr<ice::WorldTrait> _trait_animator{ ice::make_unique_null<ice::WorldTrait>() };
     ice::UniquePtr<ice::WorldTrait> _trait_physics{ ice::make_unique_null<ice::WorldTrait>() };

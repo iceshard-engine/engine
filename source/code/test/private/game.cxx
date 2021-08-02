@@ -96,6 +96,7 @@ void MyGame::on_app_startup(ice::Engine& engine, ice::gfx::GfxRunner& gfx_runner
     _trait_render_sprites = ice::create_trait_render_sprites(_allocator, "ice.gfx.stage.sprites"_sid);
     _trait_render_camera = ice::create_trait_camera(_allocator);
 
+    gfx_runner.add_trait("ice.render_camera"_sid, _trait_render_camera.get());
     gfx_runner.add_trait("ice.render_gfx"_sid, _trait_render_gfx.get());
     gfx_runner.add_trait("ice.render_clear"_sid, _trait_render_clear.get());
     gfx_runner.add_trait("ice.render_postprocess"_sid, _trait_render_postprocess.get());
@@ -127,7 +128,6 @@ void MyGame::on_app_startup(ice::Engine& engine, ice::gfx::GfxRunner& gfx_runner
     _test_world->add_trait("ice.actor"_sid, _trait_actor.get());
 
     _render_world->add_trait("game"_sid, this);
-    _render_world->add_trait("ice.camera"_sid, _trait_render_camera.get());
 
     ice::ArchetypeHandle ortho_arch = _archetype_index->register_archetype<ice::Camera, ice::CameraOrtho>(&_archetype_alloc);
     ice::ArchetypeHandle persp_arch = _archetype_index->register_archetype<ice::Camera, ice::CameraPerspective>(&_archetype_alloc);
@@ -138,7 +138,6 @@ void MyGame::on_app_startup(ice::Engine& engine, ice::gfx::GfxRunner& gfx_runner
 
 void MyGame::on_app_shutdown(ice::Engine& engine) noexcept
 {
-    _render_world->remove_trait("ice.camera"_sid);
     _render_world->remove_trait("game"_sid);
 
     _test_world->remove_trait("ice.actor"_sid);
@@ -258,7 +257,7 @@ void MyGame::on_game_end() noexcept
 
 void MyGame::on_update(ice::EngineFrame& frame, ice::EngineRunner& runner, ice::WorldPortal& portal) noexcept
 {
-    runner.graphics_frame().enqueue_pass("default"_sid, _game_gfx_pass.get());
+    runner.graphics_frame().enqueue_pass("default"_sid, "game.render"_sid, _game_gfx_pass.get());
 
     bool was_active = _active;
     for (ice::input::InputEvent const& event : frame.input_events())
