@@ -11,7 +11,6 @@
 #include <ice/gfx/gfx_device.hxx>
 #include <ice/gfx/gfx_resource_tracker.hxx>
 #include <ice/gfx/gfx_frame.hxx>
-#include <ice/gfx/gfx_task.hxx>
 
 #include <ice/render/render_command_buffer.hxx>
 #include <ice/render/render_swapchain.hxx>
@@ -80,9 +79,9 @@ namespace ice
     {
     }
 
-    void IceWorldTrait_RenderSprites::gfx_context_setup(
-        ice::gfx::GfxDevice& gfx_device,
-        ice::gfx::GfxContext& context
+    void IceWorldTrait_RenderSprites::gfx_setup(
+        ice::gfx::GfxFrame& gfx_frame,
+        ice::gfx::GfxDevice& gfx_device
     ) noexcept
     {
 
@@ -221,9 +220,9 @@ namespace ice
         _instance_buffer = device.create_buffer(BufferType::Vertex, 1024 * 1024 * 4);
     }
 
-    void IceWorldTrait_RenderSprites::gfx_context_cleanup(
-        ice::gfx::GfxDevice& gfx_device,
-        ice::gfx::GfxContext& context
+    void IceWorldTrait_RenderSprites::gfx_cleanup(
+        ice::gfx::GfxFrame& gfx_frame,
+        ice::gfx::GfxDevice& gfx_device
     ) noexcept
     {
         using namespace ice::gfx;
@@ -249,9 +248,8 @@ namespace ice
 
     void IceWorldTrait_RenderSprites::gfx_update(
         ice::EngineFrame const& engine_frame,
-        ice::gfx::GfxDevice& device,
-        ice::gfx::GfxContext& context,
-        ice::gfx::GfxFrame& frame
+        ice::gfx::GfxFrame& gfx_frame,
+        ice::gfx::GfxDevice& gfx_device
     ) noexcept
     {
         for (ice::Shard const& shard : engine_frame.shards())
@@ -263,22 +261,23 @@ namespace ice
             }
         }
 
-        ice::render::Buffer const* camera_buffer = engine_frame.named_object<ice::render::Buffer>(_render_camera);
-        if (camera_buffer != nullptr)
+        ice::render::Buffer const camera_buffer = ice::gfx::find_resource<ice::render::Buffer>(
+            gfx_device.resource_tracker(),
+            _render_camera
+        );
+
+        if (_render_camera_buffer != camera_buffer && camera_buffer != ice::render::Buffer::Invalid)
         {
-            if (_render_camera_buffer != *camera_buffer)
-            {
-                _render_camera_buffer = *camera_buffer;
-                update_resource_camera(device);
-            }
+            _render_camera_buffer = camera_buffer;
+            update_resource_camera(gfx_device);
         }
 
         if (_render_camera_buffer != ice::render::Buffer::Invalid)
         {
             ice::Span<detail::SpriteInstance> const* instances = engine_frame.named_object<ice::Span<detail::SpriteInstance>>("ice.sprite.instances_span"_sid);
-            update_resource_data(device, *instances);
+            update_resource_data(gfx_device, *instances);
 
-            frame.set_stage_slot(_stage_name, this);
+            gfx_frame.set_stage_slot(_stage_name, this);
         }
     }
 
@@ -437,6 +436,7 @@ namespace ice
     }
 
     void IceWorldTrait_RenderSprites::record_commands(
+        ice::gfx::GfxContext const& context,
         ice::EngineFrame const& frame,
         ice::render::CommandBuffer cmds,
         ice::render::RenderCommands& api
@@ -632,7 +632,7 @@ namespace ice
 
         ice::vec4f vertices[4];
 
-        co_await gfx_frame.frame_start();
+        co_await gfx_frame.frame_begin();
 
         RenderDevice& device = gfx_device.device();
         ice::render::Buffer const data_buffer = device.create_buffer(
@@ -681,16 +681,35 @@ namespace ice
 
         device.update_buffers({ updates, update_count });
 
+        struct : public ice::gfx::GfxFrameStage
+        {
+            void record_commands(
+                ice::EngineFrame const& frame,
+                ice::render::CommandBuffer cmds,
+                ice::render::RenderCommands& api
+            ) const noexcept override
+            {
+                api.update_texture(
+                    cmds,
+                    image,
+                    image_data,
+                    image_size
+                );
+            }
+
+            ice::render::Image image;
+            ice::render::Buffer image_data;
+            ice::vec2u image_size;
+        } frame_stage;
+
+        frame_stage.image = sprite_data.material[0];
+        frame_stage.image_data = data_buffer;
+        frame_stage.image_size = { image_data->width, image_data->height };
+
         // Await command recording stage
         //  Here we have access to a command buffer where we can record commands.
         //  These commands will be later executed on the graphics thread.
-        ice::gfx::GfxTaskCommands& cmds = co_await gfx_frame.frame_commands("transfer"_sid);
-
-        cmds.update_texture(
-            sprite_data.material[0],
-            data_buffer,
-            { image_data->width, image_data->height }
-        );
+        co_await gfx_frame.frame_commands(&frame_stage);
 
         // Await end of graphics frame.
         //  Here we know that all commands have been executed
@@ -716,7 +735,7 @@ namespace ice
     {
         using namespace ice::render;
 
-        co_await runner.graphics_frame().frame_start();
+        co_await runner.graphics_frame().frame_begin();
 
         RenderDevice& device = gfx_device.device();
 

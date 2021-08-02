@@ -15,21 +15,20 @@ namespace ice
             ice::WorldPortal& portal
         ) noexcept override;
 
-        void gfx_context_setup(
-            ice::gfx::GfxDevice& device,
-            ice::gfx::GfxContext& context
+        void gfx_setup(
+            ice::gfx::GfxFrame& gfx_frame,
+            ice::gfx::GfxDevice& gfx_device
         ) noexcept override;
 
-        void gfx_context_cleanup(
-            ice::gfx::GfxDevice& device,
-            ice::gfx::GfxContext& context
+        void gfx_cleanup(
+            ice::gfx::GfxFrame& gfx_frame,
+            ice::gfx::GfxDevice& gfx_device
         ) noexcept override;
 
         void gfx_update(
             ice::EngineFrame const& engine_frame,
-            ice::gfx::GfxDevice& device,
-            ice::gfx::GfxContext& context,
-            ice::gfx::GfxFrame& frame
+            ice::gfx::GfxFrame& gfx_frame,
+            ice::gfx::GfxDevice& gfx_device
         ) noexcept override;
 
     private:

@@ -21,9 +21,9 @@ namespace ice
     {
     }
 
-    void IceWorldTrait_RenderClear::gfx_context_setup(
-        ice::gfx::GfxDevice& device,
-        ice::gfx::GfxContext& context
+    void IceWorldTrait_RenderClear::gfx_setup(
+        ice::gfx::GfxFrame& gfx_frame,
+        ice::gfx::GfxDevice& gfx_device
     ) noexcept
     {
         IPT_ZONE_SCOPED_NAMED("[Trait] Clear :: Setup");
@@ -31,10 +31,9 @@ namespace ice
         using namespace ice::gfx;
         using namespace ice::render;
 
-        _default_swapchain = &device.swapchain();
+        GfxResourceTracker& gfx_restracker = gfx_device.resource_tracker();
 
-        GfxResourceTracker& gfx_restracker = device.resource_tracker();
-        _default_swapchain = ice::addressof(device.swapchain());
+        _default_swapchain = ice::addressof(gfx_device.swapchain());
         _default_renderpass = ice::gfx::find_resource<Renderpass>(gfx_restracker, "ice.gfx.renderpass.default"_sid);
         _default_framebuffers[0] = ice::gfx::find_resource<Framebuffer>(gfx_restracker, "ice.gfx.framebuffer.0"_sid);
         _default_framebuffers[1] = ice::gfx::find_resource<Framebuffer>(gfx_restracker, "ice.gfx.framebuffer.1"_sid);
@@ -42,22 +41,22 @@ namespace ice
 
     void IceWorldTrait_RenderClear::gfx_update(
         ice::EngineFrame const& engine_frame,
-        ice::gfx::GfxDevice& device,
-        ice::gfx::GfxContext& context,
-        ice::gfx::GfxFrame& frame
+        ice::gfx::GfxFrame& gfx_frame,
+        ice::gfx::GfxDevice& gfx_device
     ) noexcept
     {
         IPT_ZONE_SCOPED_NAMED("[Trait] Clear :: Update");
 
         for (ice::Shard const& shard : ice::filter_span(engine_frame.shards(), ice::any_of<ice::platform::Shard_WindowSizeChanged>))
         {
-            gfx_context_setup(device, context);
+            gfx_setup(gfx_frame, gfx_device);
         }
 
-        frame.set_stage_slot(_stage_name, this);
+        gfx_frame.set_stage_slot(_stage_name, this);
     }
 
     void IceWorldTrait_RenderClear::record_commands(
+        ice::gfx::GfxContext const& context,
         ice::EngineFrame const& frame,
         ice::render::CommandBuffer cmds,
         ice::render::RenderCommands& api

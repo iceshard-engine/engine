@@ -20,15 +20,15 @@ namespace ice
 
     void IceWorldTrait_RenderFinish::gfx_update(
         ice::EngineFrame const& engine_frame,
-        ice::gfx::GfxDevice& device,
-        ice::gfx::GfxContext& context,
-        ice::gfx::GfxFrame& frame
+        ice::gfx::GfxFrame& gfx_frame,
+        ice::gfx::GfxDevice& gfx_device
     ) noexcept
     {
-        frame.set_stage_slot(_stage_name, this);
+        gfx_frame.set_stage_slot(_stage_name, this);
     }
 
     void IceWorldTrait_RenderFinish::record_commands(
+        ice::gfx::GfxContext const& context,
         ice::EngineFrame const& frame,
         ice::render::CommandBuffer cmds,
         ice::render::RenderCommands& api

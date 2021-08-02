@@ -28,18 +28,18 @@ namespace ice
         frame.create_named_object<ice::render::Renderpass>("ice.gfx.renderpass"_sid, _default_renderpass);
     }
 
-    void IceWorldTrait_RenderGfx::gfx_context_setup(
-        ice::gfx::GfxDevice& device,
-        ice::gfx::GfxContext& context
+    void IceWorldTrait_RenderGfx::gfx_setup(
+        ice::gfx::GfxFrame& gfx_frame,
+        ice::gfx::GfxDevice& gfx_device
     ) noexcept
     {
         using namespace gfx;
         using namespace ice::render;
 
-        GfxResourceTracker& res_tracker = device.resource_tracker();
+        GfxResourceTracker& res_tracker = gfx_device.resource_tracker();
 
-        RenderDevice& render_device = device.device();
-        RenderSwapchain const& swapchain = device.swapchain();
+        RenderDevice& render_device = gfx_device.device();
+        RenderSwapchain const& swapchain = gfx_device.swapchain();
 
 
         RenderAttachment attachments[]{
@@ -189,15 +189,15 @@ namespace ice
         ice::gfx::track_resource(res_tracker, "ice.gfx.framebuffer.1"_sid, _default_framebuffers[1]);
     }
 
-    void IceWorldTrait_RenderGfx::gfx_context_cleanup(
-        ice::gfx::GfxDevice& device,
-        ice::gfx::GfxContext& context
+    void IceWorldTrait_RenderGfx::gfx_cleanup(
+        ice::gfx::GfxFrame& gfx_frame,
+        ice::gfx::GfxDevice& gfx_device
     ) noexcept
     {
         using namespace ice::gfx;
         using namespace ice::render;
 
-        RenderDevice& render_device = device.device();
+        RenderDevice& render_device = gfx_device.device();
 
         render_device.destroy_framebuffer(_default_framebuffers[0]);
         render_device.destroy_framebuffer(_default_framebuffers[1]);
@@ -208,9 +208,8 @@ namespace ice
 
     void IceWorldTrait_RenderGfx::gfx_update(
         ice::EngineFrame const& engine_frame,
-        ice::gfx::GfxDevice& device,
-        ice::gfx::GfxContext& context,
-        ice::gfx::GfxFrame& frame
+        ice::gfx::GfxFrame& gfx_frame,
+        ice::gfx::GfxDevice& gfx_device
     ) noexcept
     {
         ice::Span<ice::Shard const> shards = engine_frame.shards();
@@ -228,10 +227,10 @@ namespace ice
 
         if (rebuild_renderpass)
         {
-            device.recreate_swapchain();
+            gfx_device.recreate_swapchain();
 
-            gfx_context_cleanup(device, context);
-            gfx_context_setup(device, context);
+            gfx_cleanup(gfx_frame, gfx_device);
+            gfx_setup(gfx_frame, gfx_device);
         }
     }
 

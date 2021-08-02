@@ -6,27 +6,27 @@
 namespace ice
 {
 
-    class IceWorldTrait_RenderClear : public ice::gfx::GfxTrait, public ice::gfx::GfxStage
+    class IceWorldTrait_RenderClear : public ice::gfx::GfxTrait, public ice::gfx::GfxContextStage
     {
     public:
         IceWorldTrait_RenderClear(ice::StringID_Arg stage_name) noexcept;
 
-        void gfx_context_setup(
-            ice::gfx::GfxDevice& device,
-            ice::gfx::GfxContext& context
+        void gfx_setup(
+            ice::gfx::GfxFrame& gfx_frame,
+            ice::gfx::GfxDevice& gfx_device
         ) noexcept override;
 
         void gfx_update(
             ice::EngineFrame const& engine_frame,
-            ice::gfx::GfxDevice& device,
-            ice::gfx::GfxContext& context,
-            ice::gfx::GfxFrame& frame
+            ice::gfx::GfxFrame& gfx_frame,
+            ice::gfx::GfxDevice& gfx_device
         ) noexcept override;
 
         void record_commands(
+            ice::gfx::GfxContext const& context,
             ice::EngineFrame const& frame,
-            ice::render::CommandBuffer cmds,
-            ice::render::RenderCommands& api
+            ice::render::CommandBuffer command_buffer,
+            ice::render::RenderCommands& render_commands
         ) const noexcept override;
 
     private:

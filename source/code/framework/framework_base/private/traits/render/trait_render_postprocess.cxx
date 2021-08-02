@@ -47,9 +47,9 @@ namespace ice
     {
     }
 
-    void IceWorldTrait_RenderPostProcess::gfx_context_setup(
-        ice::gfx::GfxDevice& gfx_device,
-        ice::gfx::GfxContext& context
+    void IceWorldTrait_RenderPostProcess::gfx_setup(
+        ice::gfx::GfxFrame& gfx_frame,
+        ice::gfx::GfxDevice& gfx_device
     ) noexcept
     {
         using namespace ice::gfx;
@@ -168,9 +168,9 @@ namespace ice
         update_resources(gfx_device);
     }
 
-    void IceWorldTrait_RenderPostProcess::gfx_context_cleanup(
-        ice::gfx::GfxDevice& gfx_device,
-        ice::gfx::GfxContext& context
+    void IceWorldTrait_RenderPostProcess::gfx_cleanup(
+        ice::gfx::GfxFrame& gfx_frame,
+        ice::gfx::GfxDevice& gfx_device
     ) noexcept
     {
         using namespace ice::render;
@@ -188,19 +188,18 @@ namespace ice
 
     void IceWorldTrait_RenderPostProcess::gfx_update(
         ice::EngineFrame const& engine_frame,
-        ice::gfx::GfxDevice& device,
-        ice::gfx::GfxContext& context,
-        ice::gfx::GfxFrame& frame
+        ice::gfx::GfxFrame& gfx_frame,
+        ice::gfx::GfxDevice& gfx_device
     ) noexcept
     {
         IPT_ZONE_SCOPED_NAMED("[Trait] PostProcess :: Update");
 
         for (ice::Shard const& shard : ice::filter_span(engine_frame.shards(), ice::any_of<ice::platform::Shard_WindowSizeChanged>))
         {
-            update_resources(device);
+            update_resources(gfx_device);
         }
 
-        frame.set_stage_slot(_stage_name, this);
+        gfx_frame.set_stage_slot(_stage_name, this);
     }
 
     void IceWorldTrait_RenderPostProcess::on_activate(
@@ -216,6 +215,7 @@ namespace ice
     }
 
     void IceWorldTrait_RenderPostProcess::record_commands(
+        ice::gfx::GfxContext const& context,
         ice::EngineFrame const& frame,
         ice::render::CommandBuffer cmds,
         ice::render::RenderCommands& api
