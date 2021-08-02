@@ -29,6 +29,7 @@ namespace ice::gfx
         ice::StringID_Arg name,
         ice::render::RenderCommands& commands,
         ice::render::RenderQueue* render_queue,
+        ice::render::QueueFlags flags,
         ice::u32 pool_index
     ) noexcept -> ice::gfx::IceGfxQueue*
     {
@@ -41,8 +42,10 @@ namespace ice::gfx
 
         ice::gfx::IceGfxQueue* queue = _allocator.make<ice::gfx::IceGfxQueue>(
             _allocator,
+            name,
             commands,
             render_queue,
+            flags,
             pool_index
         );
 
@@ -55,6 +58,27 @@ namespace ice::gfx
         return queue;
     }
 
+    bool IceGfxQueueGroup::get_queue(
+        ice::render::QueueFlags flags,
+        ice::gfx::IceGfxQueue*& out_queue
+    ) noexcept
+    {
+        if (flags == ice::render::QueueFlags::Invalid)
+        {
+            return false;
+        }
+
+        for (auto const& entry : _gfx_queues)
+        {
+            if ((entry.value->queue_flags() & flags) == flags)
+            {
+                out_queue = entry.value;
+                return true;
+            }
+        }
+        return false;
+    }
+
     auto IceGfxQueueGroup::get_queue(ice::StringID_Arg name) noexcept -> ice::gfx::IceGfxQueue*
     {
         return ice::pod::hash::get(
@@ -64,11 +88,19 @@ namespace ice::gfx
         );
     }
 
-    void IceGfxQueueGroup::prepare_all() noexcept
+    void IceGfxQueueGroup::reset_all() noexcept
     {
         for (auto const& entry : _gfx_queues)
         {
-            entry.value->prepare();
+            entry.value->reset();
+        }
+    }
+
+    void IceGfxQueueGroup::query_queues(ice::pod::Array<ice::StringID_Hash>& out_names) noexcept
+    {
+        for (auto const& entry : _gfx_queues)
+        {
+            ice::pod::array::push_back(out_names, StringID_Hash{ entry.key });
         }
     }
 

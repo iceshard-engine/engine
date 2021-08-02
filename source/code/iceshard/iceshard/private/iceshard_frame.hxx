@@ -1,10 +1,13 @@
 #pragma once
-#include <ice/task.hxx>
 #include <ice/engine_frame.hxx>
+#include <ice/entity/entity_command_buffer.hxx>
+
 #include <ice/input/input_event.hxx>
+#include <ice/task.hxx>
+
 #include <ice/memory/scratch_allocator.hxx>
-#include <ice/pod/array.hxx>
 #include <ice/collections.hxx>
+#include <ice/pod/array.hxx>
 
 #include "iceshard_task_executor.hxx"
 
@@ -31,9 +34,12 @@ namespace ice
         void start_all() noexcept;
         void wait_ready() noexcept;
 
-        void push_requests(
-            ice::Span<EngineRequest const> requests
-        ) noexcept override;
+        auto shards() const noexcept -> ice::Span<ice::Shard const> override;
+        void push_shards(ice::Span<ice::Shard const> shards) noexcept override;
+
+        auto entity_commands() noexcept -> ice::EntityCommandBuffer& override;
+
+        auto entity_commands() const noexcept -> ice::EntityCommandBuffer const&;
 
         auto named_data(
             ice::StringID_Arg name
@@ -53,8 +59,6 @@ namespace ice
             ice::StringID_Arg name
         ) noexcept override;
 
-        auto requests() const noexcept -> ice::Span<EngineRequest const>;
-
         auto schedule_frame_end() noexcept -> ice::FrameEndOperation override;
 
     protected:
@@ -72,7 +76,8 @@ namespace ice
         ice::memory::ScratchAllocator _data_allocator;
 
         ice::pod::Array<ice::input::InputEvent> _input_events;
-        ice::pod::Array<ice::EngineRequest> _requests;
+        ice::pod::Array<ice::Shard> _shards;
+        ice::EntityCommandBuffer _entity_commands;
         ice::pod::Hash<void*> _named_objects;
 
         ice::Vector<ice::Task<>> _frame_tasks;

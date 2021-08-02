@@ -1,4 +1,6 @@
 #include "vk_queue.hxx"
+#include "vk_fence.hxx"
+
 #include <ice/assert.hxx>
 
 namespace ice::render::vk
@@ -68,40 +70,27 @@ namespace ice::render::vk
     }
 
     void VulkanQueue::submit(
-        ice::Span<ice::render::CommandBuffer> buffers,
-        bool wait_flags
+        ice::Span<ice::render::CommandBuffer const> buffers,
+        ice::render::RenderFence const* fence
     ) noexcept
     {
-        CommandBuffer* buffers_ptr = buffers.data();
-        VkCommandBuffer* vk_buffers = reinterpret_cast<VkCommandBuffer*>(buffers_ptr);
-
-        VkPipelineStageFlags pipe_stage_flags = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+        CommandBuffer const* buffers_ptr = buffers.data();
+        VkCommandBuffer const* vk_buffers = reinterpret_cast<VkCommandBuffer const*>(buffers_ptr);
 
         VkSubmitInfo submit_info{ VK_STRUCTURE_TYPE_SUBMIT_INFO };
         submit_info.waitSemaphoreCount = 0;
         submit_info.pWaitSemaphores = nullptr;
-        if (wait_flags)
-        {
-            submit_info.pWaitDstStageMask = &pipe_stage_flags;
-        }
+        submit_info.pWaitDstStageMask = nullptr;
         submit_info.commandBufferCount = static_cast<ice::u32>(buffers.size());
         submit_info.pCommandBuffers = vk_buffers;
         submit_info.signalSemaphoreCount = 0;
         submit_info.pSignalSemaphores = nullptr;
 
-        VkResult result = vkQueueSubmit(_vk_queue, 1, &submit_info, _vk_submit_fence);
+        VkResult result = vkQueueSubmit(_vk_queue, 1, &submit_info, static_cast<VulkanFence const*>(fence)->native());
         ICE_ASSERT(
             result == VK_SUCCESS,
             "Couldn't submit command buffers to queue!"
         );
-
-        do
-        {
-            constexpr auto FENCE_TIMEOUT = 100'000'000; // in ns
-            result = vkWaitForFences(_vk_device, 1, &_vk_submit_fence, VK_TRUE, FENCE_TIMEOUT);
-        } while (result == VK_TIMEOUT);
-
-        vkResetFences(_vk_device, 1, &_vk_submit_fence);
     }
 
     void VulkanQueue::present(ice::render::RenderSwapchain* swapchain) noexcept

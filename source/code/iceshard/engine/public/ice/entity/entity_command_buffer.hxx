@@ -1,7 +1,9 @@
 #pragma once
 #include <ice/allocator.hxx>
+#include <ice/pod/array.hxx>
 #include <ice/entity/entity.hxx>
-#include <ice/archetype/archetype.hxx>
+#include <ice/span.hxx>
+#include <ice/shard.hxx>
 
 namespace ice
 {
@@ -13,52 +15,14 @@ namespace ice
             ice::Allocator& alloc
         ) noexcept;
 
-        void set_archetype(
-            ice::Entity entity,
-            ice::ArchetypeHandle archetype
-        ) noexcept;
+        ~EntityCommandBuffer() noexcept;
 
-        void change_archetype(
-            ice::Entity entity,
-            ice::ArchetypeHandle archetype
-        ) noexcept;
+        void destroy_entity(ice::Entity entity) noexcept;
 
+        auto commands() const noexcept -> ice::Span<ice::Shard const>;
 
-        void set_components(
-            ice::Entity entity,
-            ice::Span<ComponentInfo const> components
-        ) noexcept;
-
-        template<typename... Components>
-        void set_components(
-            ice::Entity entity
-        ) noexcept;
-
-        template<typename Component>
-        void add_component(
-            ice::Entity entity
-        ) noexcept;
-
-        template<typename Component>
-        void remove_component(
-            ice::Entity entity
-        ) noexcept;
-
-
-        void add_tag(
-            ice::Entity entity,
-            ice::StringID_Arg tag
-        ) noexcept;
-
-        void remove_tag(
-            ice::Entity entity,
-            ice::StringID_Arg tag
-        ) noexcept;
-
-
-        void erase_data(
-            ice::Entity entity
-        ) noexcept;
+    private:
+        ice::pod::Array<ice::Shard> _commands;
     };
 
 } // namespace ice

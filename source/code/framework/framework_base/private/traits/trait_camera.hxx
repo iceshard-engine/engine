@@ -1,5 +1,5 @@
 #pragma once
-#include <ice/world/world_trait.hxx>
+#include <ice/gfx/gfx_trait.hxx>
 #include <ice/entity/entity.hxx>
 #include <ice/game_camera.hxx>
 #include <ice/render/render_declarations.hxx>
@@ -17,12 +17,11 @@ namespace ice
 
     struct TraitCameraData
     {
-        ice::Entity entity;
-        ice::render::Buffer uniform_buffer;
+        ice::StringID camera_name;
         ice::TraitCameraRenderData render_data;
     };
 
-    class IceWorldTrait_RenderCamera : public ice::WorldTrait
+    class IceWorldTrait_RenderCamera : public ice::gfx::GfxTrait
     {
     public:
         IceWorldTrait_RenderCamera(ice::Allocator& alloc) noexcept;
@@ -45,6 +44,22 @@ namespace ice
             ice::WorldPortal& portal
         ) noexcept override;
 
+        void gfx_update(
+            ice::EngineFrame const& engine_frame,
+            ice::gfx::GfxFrame& gfx_frame,
+            ice::gfx::GfxDevice& gfx_device
+        ) noexcept override;
+
+        void gfx_setup(
+            ice::gfx::GfxFrame& gfx_frame,
+            ice::gfx::GfxDevice& gfx_device
+        ) noexcept override;
+
+        void gfx_cleanup(
+            ice::gfx::GfxFrame& gfx_frame,
+            ice::gfx::GfxDevice& gfx_device
+        ) noexcept override;
+
     protected:
         auto task_update_cameras(
             ice::EngineFrame& frame,
@@ -52,13 +67,8 @@ namespace ice
             ice::WorldPortal& portal
         ) noexcept -> ice::Task<>;
 
-        auto task_update_camera_data(
-            ice::render::RenderDevice& device,
-            ice::TraitCameraData& render_data
-        ) noexcept -> ice::Task<>;
-
     private:
-        ice::pod::Hash<ice::TraitCameraData*> _camera_data;
+        ice::pod::Array<ice::render::Buffer> _camera_buffers;
     };
 
 } // namespace ice

@@ -11,6 +11,8 @@ namespace ice::gfx
         GfxDynamicPassStageGroup(ice::Allocator& alloc) noexcept;
         ~GfxDynamicPassStageGroup() noexcept = default;
 
+        auto stage_count() const noexcept -> ice::u32;
+
         bool has_work() const noexcept;
 
         bool contains_any(ice::Span<ice::StringID const> stage_names) const noexcept;
@@ -50,15 +52,14 @@ namespace ice::gfx
         ) noexcept;
         ~IceGfxDynamicPass() noexcept;
 
+        auto stage_count() const noexcept -> ice::u32;
+
         bool has_work() const noexcept;
 
-        void add_stages(
-            ice::Span<ice::gfx::GfxStageInfo const> stage_info
-        ) noexcept override;
-
         void add_stage(
-            ice::gfx::GfxStageInfo const& stage_info
-        ) noexcept;
+            ice::StringID_Arg stage_name,
+            ice::Span<ice::StringID const> dependencies
+        ) noexcept override;
 
         void clear() noexcept override;
 
@@ -66,7 +67,6 @@ namespace ice::gfx
 
     private:
         ice::Allocator& _allocator;
-        ice::gfx::GfxStageInfo _special_stages[2];
         ice::pod::Array<ice::gfx::GfxDynamicPassStageGroup*> _stages;
         ice::pod::Array<ice::gfx::GfxDynamicPassStageGroup*> _free_stages;
     };

@@ -344,19 +344,26 @@ namespace ice::platform
 
                     _request_quit = true;
                     break;
-                case SDL_WINDOWEVENT_SIZE_CHANGED:
-                case SDL_WINDOWEVENT_RESIZED:
-                    ice::pod::array::push_back(events,
-                        Event{
-                            .type = EventType::WindowSizeChanged,
-                            .data = {
-                                .window = {
-                                    .size = { current_event.window.data1, current_event.window.data2 }
+                case SDL_WINDOWEVENT:
+                {
+                    switch (current_event.window.event)
+                    {
+                    //case SDL_WINDOWEVENT_SIZE_CHANGED:
+                    case SDL_WINDOWEVENT_RESIZED:
+                        ice::pod::array::push_back(events,
+                            Event{
+                                .type = EventType::WindowSizeChanged,
+                                .data = {
+                                    .window = {
+                                        .size = { current_event.window.data1, current_event.window.data2 }
+                                    }
                                 }
                             }
-                        }
-                    );
+                        );
+                        break;
+                    }
                     break;
+                }
                 case SDL_MOUSEBUTTONUP:
                 case SDL_MOUSEBUTTONDOWN:
                 case SDL_MOUSEWHEEL:

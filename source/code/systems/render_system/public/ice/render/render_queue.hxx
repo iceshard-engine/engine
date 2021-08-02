@@ -47,8 +47,8 @@ namespace ice::render
         ) noexcept = 0;
 
         virtual void submit(
-            ice::Span<ice::render::CommandBuffer> buffers,
-            bool wait_flags
+            ice::Span<ice::render::CommandBuffer const> buffers,
+            ice::render::RenderFence const* fence
         ) noexcept = 0;
 
         virtual void present(

@@ -8,11 +8,26 @@ namespace ice
 
     class AssetSystem;
 
-    class IceWorldTrait_RenderPostProcess : public ice::GameWorldTrait_Render, public ice::gfx::GfxStage
+    class IceWorldTrait_RenderPostProcess : public ice::gfx::GfxTrait, public ice::gfx::GfxContextStage
     {
     public:
-        auto gfx_stage_infos() const noexcept -> ice::Span<ice::gfx::GfxStageInfo const> override;
-        auto gfx_stage_slots() const noexcept -> ice::Span<ice::gfx::GfxStageSlot const> override;
+        IceWorldTrait_RenderPostProcess(ice::StringID_Arg stage_name) noexcept;
+
+        void gfx_setup(
+            ice::gfx::GfxFrame& gfx_frame,
+            ice::gfx::GfxDevice& gfx_device
+        ) noexcept override;
+
+        void gfx_cleanup(
+            ice::gfx::GfxFrame& gfx_frame,
+            ice::gfx::GfxDevice& gfx_device
+        ) noexcept override;
+
+        void gfx_update(
+            ice::EngineFrame const& engine_frame,
+            ice::gfx::GfxFrame& gfx_frame,
+            ice::gfx::GfxDevice& gfx_device
+        ) noexcept override;
 
         void on_activate(
             ice::Engine& engine,
@@ -20,37 +35,20 @@ namespace ice
             ice::WorldPortal& portal
         ) noexcept override;
 
-        void on_deactivate(
-            ice::Engine& engine,
-            ice::EngineRunner& runner,
-            ice::WorldPortal& portal
-        ) noexcept override;
-
-        void on_update(
-            ice::EngineFrame& frame,
-            ice::EngineRunner& runner,
-            ice::WorldPortal& portal
-        ) noexcept override;
-
         void record_commands(
+            ice::gfx::GfxContext const& context,
             ice::EngineFrame const& frame,
-            ice::render::CommandBuffer cmds,
-            ice::render::RenderCommands& api
+            ice::render::CommandBuffer command_buffer,
+            ice::render::RenderCommands& render_commands
         ) const noexcept override;
 
     protected:
-        auto task_create_render_objects(
-            ice::AssetSystem& asset_system,
-            ice::EngineRunner& runner,
+        void update_resources(
             ice::gfx::GfxDevice& gfx_device
-        ) noexcept -> ice::Task<>;
-
-        auto task_destroy_render_objects(
-            ice::gfx::GfxDevice& gfx_device
-        ) noexcept -> ice::Task<>;
+        ) noexcept;
 
     private:
-        ice::u32 _slot_count = 0;
+        ice::StringID const _stage_name;
         ice::render::ResourceSetLayout _resource_layout;
         ice::render::ResourceSet _resource_set;
         ice::render::PipelineLayout _layout;
@@ -61,6 +59,7 @@ namespace ice
 
         ice::render::ShaderStageFlags _shader_stages[2];
         ice::render::Shader _shaders[2];
+        ice::Data _shader_data[2];
     };
 
 } // namespace ice

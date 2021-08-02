@@ -28,8 +28,8 @@ namespace ice::render::vk
         ) noexcept override;
 
         void submit(
-            ice::Span<ice::render::CommandBuffer> buffers,
-            bool wait_flags
+            ice::Span<ice::render::CommandBuffer const> buffers,
+            ice::render::RenderFence const* fence
         ) noexcept override;
 
         void present(

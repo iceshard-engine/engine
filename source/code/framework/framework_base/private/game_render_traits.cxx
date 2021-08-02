@@ -11,45 +11,41 @@ namespace ice
 
     auto create_trait_render_gfx(
         ice::Allocator& alloc
-    ) noexcept -> ice::UniquePtr<ice::GameWorldTrait_Render>
+    ) noexcept -> ice::UniquePtr<ice::gfx::GfxTrait>
     {
-        return ice::make_unique<ice::GameWorldTrait_Render, ice::IceWorldTrait_RenderGfx>(alloc);
+        return ice::make_unique<ice::gfx::GfxTrait, ice::IceWorldTrait_RenderGfx>(alloc);
     }
 
     auto create_trait_render_clear(
-        ice::Allocator& alloc
-    ) noexcept -> ice::UniquePtr<ice::GameWorldTrait_Render>
+        ice::Allocator& alloc,
+        ice::StringID_Arg stage_name
+    ) noexcept -> ice::UniquePtr<ice::gfx::GfxTrait>
     {
-        return ice::make_unique<ice::GameWorldTrait_Render, ice::IceWorldTrait_RenderClear>(alloc);
-    }
-
-    auto create_trait_render_resource(
-        ice::Allocator& alloc
-    ) noexcept -> ice::UniquePtr<ice::GameWorldTrait_Render>
-    {
-        return ice::make_unique_null<ice::GameWorldTrait_Render>();
-        //return ice::make_unique<ice::GameWorldTrait_Render, ice::IceWorldTrait_RenderResource>(alloc, alloc);
+        return ice::make_unique<ice::gfx::GfxTrait, ice::IceWorldTrait_RenderClear>(alloc, stage_name);
     }
 
     auto create_trait_render_postprocess(
-        ice::Allocator& alloc
-    ) noexcept -> ice::UniquePtr<ice::GameWorldTrait_Render>
+        ice::Allocator& alloc,
+        ice::StringID_Arg stage_name
+    ) noexcept -> ice::UniquePtr<ice::gfx::GfxTrait>
     {
-        return ice::make_unique<ice::GameWorldTrait_Render, ice::IceWorldTrait_RenderPostProcess>(alloc);
+        return ice::make_unique<ice::gfx::GfxTrait, ice::IceWorldTrait_RenderPostProcess>(alloc, stage_name);
     }
 
     auto create_trait_render_finish(
-        ice::Allocator& alloc
-    ) noexcept -> ice::UniquePtr<ice::GameWorldTrait_Render>
+        ice::Allocator& alloc,
+        ice::StringID_Arg stage_name
+    ) noexcept -> ice::UniquePtr<ice::gfx::GfxTrait>
     {
-        return ice::make_unique<ice::GameWorldTrait_Render, ice::IceWorldTrait_RenderFinish>(alloc);
+        return ice::make_unique<ice::gfx::GfxTrait, ice::IceWorldTrait_RenderFinish>(alloc, stage_name);
     }
 
     auto create_trait_render_sprites(
-        ice::Allocator& alloc
-    ) noexcept -> ice::UniquePtr<ice::GameWorldTrait_RenderDraw>
+        ice::Allocator& alloc,
+        ice::StringID_Arg stage_name
+    ) noexcept -> ice::UniquePtr<ice::gfx::GfxTrait>
     {
-        return ice::make_unique<ice::GameWorldTrait_RenderDraw, ice::IceWorldTrait_RenderSprites>(alloc, alloc);
+        return ice::make_unique<ice::gfx::GfxTrait, ice::IceWorldTrait_RenderSprites>(alloc, alloc, stage_name);
     }
 
 } // namespace ice

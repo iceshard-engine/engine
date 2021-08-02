@@ -7,7 +7,7 @@
 namespace ice::trait
 {
 
-    class Terrain final : public ice::WorldTrait, public ice::gfx::GfxStage
+    class Terrain final : public ice::WorldTrait//, public ice::gfx::GfxStage
     {
     public:
         Terrain(
@@ -34,11 +34,11 @@ namespace ice::trait
             ice::WorldPortal& portal
         ) noexcept override;
 
-        void record_commands(
-            ice::EngineFrame const& frame,
-            ice::render::CommandBuffer command_buffer,
-            ice::render::RenderCommands& render_commands
-        ) const noexcept override;
+        //void record_commands(
+        //    ice::EngineFrame const& frame,
+        //    ice::render::CommandBuffer command_buffer,
+        //    ice::render::RenderCommands& render_commands
+        //) const noexcept override;
 
         struct RenderCache;
 

@@ -1,39 +1,40 @@
 #pragma once
-#include <ice/task.hxx>
 #include <ice/engine_frame.hxx>
-#include <ice/render/render_command_buffer.hxx>
+#include <ice/render/render_declarations.hxx>
 
 namespace ice::gfx
 {
 
-    class GfxStage;
+    class GfxDevice;
+    class GfxContext;
 
-    enum class GfxStageType
-    {
-        InitialStage,
-        TransferStage,
-        FinalStage,
-        DrawStage,
-        CustomStage,
-    };
-
-    struct GfxStageInfo
-    {
-        ice::StringID name;
-        ice::Span<ice::StringID const> dependencies;
-        ice::gfx::GfxStageType type = GfxStageType::DrawStage;
-    };
-
-    struct GfxStageSlot
-    {
-        ice::StringID name;
-        ice::gfx::GfxStage const* stage;
-    };
-
-    class GfxStage
+    class GfxContextStage
     {
     public:
-        virtual ~GfxStage() noexcept = default;
+        virtual ~GfxContextStage() noexcept = default;
+
+        virtual void prepare_context(
+            ice::gfx::GfxContext& context,
+            ice::gfx::GfxDevice& device
+        ) const noexcept { }
+
+        virtual void clear_context(
+            ice::gfx::GfxContext& context,
+            ice::gfx::GfxDevice& device
+        ) const noexcept { }
+
+        virtual void record_commands(
+            ice::gfx::GfxContext const& context,
+            ice::EngineFrame const& frame,
+            ice::render::CommandBuffer command_buffer,
+            ice::render::RenderCommands& render_commands
+        ) const noexcept = 0;
+    };
+
+    class GfxFrameStage
+    {
+    public:
+        virtual ~GfxFrameStage() noexcept = default;
 
         virtual void record_commands(
             ice::EngineFrame const& frame,

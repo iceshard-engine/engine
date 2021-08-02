@@ -14,7 +14,7 @@
 #include <ice/gfx/gfx_device.hxx>
 #include <ice/gfx/gfx_subpass.hxx>
 #include <ice/gfx/gfx_frame.hxx>
-#include <ice/gfx/gfx_task.hxx>
+//#include <ice/gfx/gfx_task.hxx>
 
 #include <ice/render/render_image.hxx>
 #include <ice/render/render_device.hxx>
@@ -88,7 +88,7 @@ namespace ice
             ice::render::Buffer instance_buffer;
         };
 
-        class IceTileMap : public ice::gfx::GfxStage
+        class IceTileMap // : public ice::gfx::GfxStage
         {
         public:
             IceTileMap(
@@ -299,24 +299,24 @@ namespace ice
                 ice::u32 total_tile_count = 0;
                 for (ice::TileRoom const& room : _tilemap_data->rooms)
                 {
-                    ice::pod::array::push_back(
-                        buffer_updates,
-                        BufferUpdateInfo
-                        {
-                            .buffer = _render_objects.position_buffer,
-                            .data = ice::data_view(room.tiles_position),
-                            .offset = total_tile_count * sizeof(ice::vec2f)
-                        }
-                    );
-                    ice::pod::array::push_back(
-                        buffer_updates,
-                        BufferUpdateInfo
-                        {
-                            .buffer = _render_objects.material_buffer,
-                            .data = ice::data_view(room.tiles_material),
-                            .offset = total_tile_count * sizeof(ice::TileMaterial)
-                        }
-                    );
+                    //ice::pod::array::push_back(
+                    //    buffer_updates,
+                    //    BufferUpdateInfo
+                    //    {
+                    //        .buffer = _render_objects.position_buffer,
+                    //        .data = ice::data_view(room.tiles_position),
+                    //        .offset = total_tile_count * sizeof(ice::vec2f)
+                    //    }
+                    //);
+                    //ice::pod::array::push_back(
+                    //    buffer_updates,
+                    //    BufferUpdateInfo
+                    //    {
+                    //        .buffer = _render_objects.material_buffer,
+                    //        .data = ice::data_view(room.tiles_material),
+                    //        .offset = total_tile_count * sizeof(ice::TileMaterial)
+                    //    }
+                    //);
 
                     total_tile_count += room.tiles_count;
                 }
@@ -337,34 +337,36 @@ namespace ice
                 co_return;
             }
 
-            void update_images(
-                ice::EngineRunner& runner
-            ) noexcept
-            {
-                auto image_task = [](
-                    ice::EngineRunner& runner,
-                    ice::gfx::GfxDevice& device,
-                    ice::render::Image image,
-                    ice::render::ImageInfo image_info
-                    ) -> ice::Task<>
-                {
-                    ice::gfx::GfxTaskLoadImage const task_info{
-                        .image = image,
-                        .image_info = image_info
-                    };
+            //void update_images(
+            //    ice::EngineRunner& runner
+            //) noexcept
+            //{
+            //    auto image_task = [](
+            //        ice::EngineRunner& runner,
+            //        ice::gfx::GfxDevice& device,
+            //        ice::render::Image image,
+            //        ice::render::ImageInfo image_info
+            //        ) -> ice::Task<>
+            //    {
+            //        ICE_ASSERT(false, "fail");
 
-                    co_await ice::gfx::load_image_data_task(
-                        device,
-                        runner.graphics_frame(),
-                        task_info
-                    );
-                };
+            //        ice::gfx::GfxTaskLoadImage const task_info{
+            //            .image = image,
+            //            .image_info = image_info
+            //        };
 
-                for (ice::u32 image_idx = 0; image_idx < _render_objects.image_count; ++image_idx)
-                {
-                    image_task(runner, runner.graphics_device(), _render_objects.images[image_idx], *_render_objects.image_infos[image_idx]);
-                }
-            }
+            //        co_await ice::gfx::load_image_data_task(
+            //            device,
+            //            runner.graphics_frame(),
+            //            task_info
+            //        );
+            //    };
+
+            //    for (ice::u32 image_idx = 0; image_idx < _render_objects.image_count; ++image_idx)
+            //    {
+            //        image_task(runner, runner.graphics_device(), _render_objects.images[image_idx], *_render_objects.image_infos[image_idx]);
+            //    }
+            //}
 
         private:
             ice::TileMap const* const _tilemap_data;
@@ -816,7 +818,7 @@ namespace ice
                                 tilemap->update_images(runner, runner.graphics_device().device()),
                                 EngineContext::GraphicsFrame
                             );
-                            tilemap->update_images(runner);
+                            //tilemap->update_images(runner);
                         }
                         // wait
                     }

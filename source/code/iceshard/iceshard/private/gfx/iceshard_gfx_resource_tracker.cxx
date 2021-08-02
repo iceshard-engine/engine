@@ -14,11 +14,11 @@ namespace ice::gfx
         ice::gfx::GfxResource resource
     ) noexcept
     {
-        ICE_ASSERT(
-            ice::pod::hash::has(_resources, ice::hash(name)) == false,
-            "A resource with this name {} is already tracked!",
-            ice::stringid_hint(name)
-        );
+        //ICE_ASSERT(
+        //    ice::pod::hash::has(_resources, ice::hash(name)) == false,
+        //    "A resource with this name {} is already tracked!",
+        //    ice::stringid_hint(name)
+        //);
 
         ice::pod::hash::set(
             _resources,

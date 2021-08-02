@@ -9,6 +9,7 @@
 #include <ice/archetype/archetype_query.hxx>
 
 #include <ice/gfx/gfx_device.hxx>
+#include <ice/gfx/gfx_resource_tracker.hxx>
 
 #include <ice/render/render_device.hxx>
 #include <ice/render/render_resource.hxx>
@@ -38,10 +39,9 @@ namespace ice
     } // namespace detail
 
     IceWorldTrait_RenderCamera::IceWorldTrait_RenderCamera(ice::Allocator& alloc) noexcept
-        : WorldTrait{ }
-        , _camera_data{ alloc }
+        : ice::gfx::GfxTrait{ }
+        , _camera_buffers{ alloc }
     {
-        ice::pod::hash::reserve(_camera_data, 10);
     }
 
     void IceWorldTrait_RenderCamera::on_activate(
@@ -63,21 +63,6 @@ namespace ice
         ice::WorldPortal& portal
     ) noexcept
     {
-        auto task_destroy_uniform_buffer = [](ice::render::RenderDevice& device, ice::render::Buffer buffer) noexcept -> ice::Task<>
-        {
-            device.destroy_buffer(buffer);
-            co_return;
-        };
-
-        for (auto const& entry : _camera_data)
-        {
-            runner.execute_task(
-                task_destroy_uniform_buffer(runner.graphics_device().device(), entry.value->uniform_buffer),
-                EngineContext::GraphicsFrame
-            );
-            portal.allocator().destroy(entry.value);
-        }
-
         portal.storage().destroy_named_object<detail::QueryCamera>(
             "ice.trait.camera-query"_sid
         );
@@ -89,7 +74,77 @@ namespace ice
         ice::WorldPortal& portal
     ) noexcept
     {
-        portal.execute(task_update_cameras(frame, runner, portal));
+        runner.execute_task(
+            task_update_cameras(frame, runner, portal),
+            EngineContext::LogicFrame
+        );
+    }
+
+    void IceWorldTrait_RenderCamera::gfx_update(
+        ice::EngineFrame const& engine_frame,
+        ice::gfx::GfxFrame& gfx_frame,
+        ice::gfx::GfxDevice& gfx_device
+    ) noexcept
+    {
+        ice::Span<ice::TraitCameraData const> const& cameras = *engine_frame.named_object<ice::Span<ice::TraitCameraData const>>("ice.cameras.span"_sid);
+        ice::u32 const camera_count = ice::size(cameras);
+
+        ice::render::RenderDevice& device = gfx_device.device();
+
+        for (ice::u32 idx = 0; idx < camera_count; ++idx)
+        {
+            if (_camera_buffers[idx] == ice::render::Buffer::Invalid)
+            {
+                _camera_buffers[idx] = device.create_buffer(
+                    ice::render::BufferType::Uniform,
+                    sizeof(ice::TraitCameraRenderData)
+                );
+            }
+
+            ice::render::BufferUpdateInfo updates[]
+            {
+                ice::render::BufferUpdateInfo
+                {
+                    .buffer = _camera_buffers[idx],
+                    .data = ice::data_view(cameras[idx].render_data),
+                    .offset = 0
+                }
+            };
+
+            device.update_buffers(updates);
+
+            ice::gfx::track_resource(
+                gfx_device.resource_tracker(),
+                cameras[idx].camera_name,
+                _camera_buffers[idx]
+            );
+        }
+    }
+
+    void IceWorldTrait_RenderCamera::gfx_setup(
+        ice::gfx::GfxFrame& gfx_frame,
+        ice::gfx::GfxDevice& gfx_device
+    ) noexcept
+    {
+        for (ice::render::Buffer& buffer : _camera_buffers)
+        {
+            buffer = ice::render::Buffer::Invalid;
+        }
+    }
+
+    void IceWorldTrait_RenderCamera::gfx_cleanup(
+        ice::gfx::GfxFrame& gfx_frame,
+        ice::gfx::GfxDevice& gfx_device
+    ) noexcept
+    {
+        ice::render::RenderDevice& device = gfx_device.device();
+        for (ice::render::Buffer const buffer : _camera_buffers)
+        {
+            if (buffer != ice::render::Buffer::Invalid)
+            {
+                device.destroy_buffer(buffer);
+            }
+        }
     }
 
     auto IceWorldTrait_RenderCamera::task_update_cameras(
@@ -107,11 +162,11 @@ namespace ice
         );
 
         ice::u32 const camera_count = camera_results.entity_count();
-        ice::pod::hash::reserve(_camera_data, ice::u32(ice::f32(camera_count) / 0.6));
+
+        ice::Span<ice::TraitCameraData> camera_span = frame.create_named_span<ice::TraitCameraData>("ice.cameras"_sid, camera_count);
 
         // Await work to be executed on a worker thread
-        // TODO: Requires a thread-safe allocator implementation
-        //co_await runner.thread_pool();
+        co_await runner.thread_pool();
 
         ice::u32 cam_idx = 0;
         camera_results.for_each(
@@ -131,19 +186,10 @@ namespace ice
                     "Camera is not properly set-up, defining both orthographics and perspective parameters."
                 );
 
-                TraitCameraData* camera_data = ice::pod::hash::get(
-                    _camera_data,
-                    ice::hash(entity),
-                    nullptr
-                );
+                ice::TraitCameraData& camera_data = camera_span[cam_idx];
+                camera_data.camera_name = cam.name;
 
-                if (camera_data == nullptr)
-                {
-                    camera_data = portal.allocator().make<TraitCameraData>(TraitCameraData{ .uniform_buffer = ice::render::Buffer::Invalid });
-                    ice::pod::hash::set(_camera_data, ice::hash(entity), camera_data);
-                }
-
-                ice::TraitCameraRenderData& render_data = camera_data->render_data;
+                ice::TraitCameraRenderData& render_data = camera_data.render_data;
                 if (ortho != nullptr)
                 {
                     render_data.view = ice::lookat(
@@ -188,56 +234,29 @@ namespace ice
                     };
                 }
 
-                if (camera_data->uniform_buffer != ice::render::Buffer::Invalid)
-                {
-                    frame.create_named_object<ice::render::Buffer>(cam.name, camera_data->uniform_buffer);
-                }
-
-                runner.execute_task(
-                    task_update_camera_data(
-                        runner.graphics_device().device(),
-                        *camera_data
-                    ),
-                    EngineContext::GraphicsFrame
-                );
+                cam_idx += 1;
             }
         );
 
-        co_return;
-    }
+        // TODO: Requires a thread-safe allocator implementation if we want to skip a revisit on the frame thread.
+        co_await runner.schedule_current_frame();
 
-    auto IceWorldTrait_RenderCamera::task_update_camera_data(
-        ice::render::RenderDevice& device,
-        ice::TraitCameraData& camera_data
-    ) noexcept -> ice::Task<>
-    {
-        if (camera_data.uniform_buffer == ice::render::Buffer::Invalid)
+        ice::u32 const current_buffer_count = ice::pod::array::size(_camera_buffers);
+        ice::u32 const required_buffer_count = cam_idx;
+        for (ice::u32 idx = current_buffer_count; idx < required_buffer_count; ++idx)
         {
-            camera_data.uniform_buffer = device.create_buffer(
-                ice::render::BufferType::Uniform,
-                sizeof(ice::TraitCameraRenderData)
-            );
+            ice::pod::array::push_back(_camera_buffers, ice::render::Buffer::Invalid);
         }
 
-        ice::render::BufferUpdateInfo updates[]
-        {
-            ice::render::BufferUpdateInfo
-            {
-                .buffer = camera_data.uniform_buffer,
-                .data = ice::data_view(camera_data.render_data),
-                .offset = 0
-            }
-        };
-
-        device.update_buffers(updates);
+        frame.create_named_object<ice::Span<ice::TraitCameraData>>("ice.cameras.span"_sid, camera_span.subspan(0, cam_idx));
         co_return;
     }
 
     auto create_trait_camera(
         ice::Allocator& alloc
-    ) noexcept -> ice::UniquePtr<ice::WorldTrait>
+    ) noexcept -> ice::UniquePtr<ice::gfx::GfxTrait>
     {
-        return ice::make_unique<ice::WorldTrait, ice::IceWorldTrait_RenderCamera>(alloc, alloc);
+        return ice::make_unique<ice::gfx::GfxTrait, ice::IceWorldTrait_RenderCamera>(alloc, alloc);
     }
 
 } // namespace ice

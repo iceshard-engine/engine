@@ -2,7 +2,6 @@
 #include "iceshard_task_executor.hxx"
 #include <ice/task_sync_wait.hxx>
 #include <ice/sync_manual_events.hxx>
-#include <ice/engine_request.hxx>
 #include <ice/memory/pointer_arithmetic.hxx>
 #include <ice/pod/hash.hxx>
 #include <ice/assert.hxx>
@@ -20,7 +19,7 @@ namespace ice
         static constexpr ice::u32 RequestAllocatorCapacity = 1 * MiB;
         static constexpr ice::u32 TaskAllocatorCapacity = 1 * MiB;
         static constexpr ice::u32 StorageAllocatorCapacity = 1 * MiB;
-        static constexpr ice::u32 DataAllocatorCapacity = 224 * MiB;
+        static constexpr ice::u32 DataAllocatorCapacity = 16 * MiB;
 
         static ice::u32 global_frame_counter = 0;
 
@@ -38,7 +37,8 @@ namespace ice
         , _storage_allocator{ _allocator, detail::StorageAllocatorCapacity }
         , _data_allocator{ _allocator, detail::DataAllocatorCapacity }
         , _input_events{ _inputs_allocator }
-        , _requests{ _request_allocator }
+        , _shards{ _request_allocator }
+        , _entity_commands{ _data_allocator } // #todo change the allocator?
         , _named_objects{ _storage_allocator }
         , _frame_tasks{ _tasks_allocator }
         , _task_executor{ _allocator, ice::Vector<ice::Task<void>>{ _allocator } }
@@ -46,7 +46,7 @@ namespace ice
         detail::global_frame_counter += 1;
 
         ice::pod::array::reserve(_input_events, (detail::InputsAllocatorCapacity / sizeof(ice::input::InputEvent)) - 10);
-        ice::pod::array::reserve(_requests, (detail::RequestAllocatorCapacity / sizeof(ice::EngineRequest)) - 10);
+        ice::pod::array::reserve(_shards, (detail::RequestAllocatorCapacity / sizeof(ice::Shard)) - 10);
         ice::pod::hash::reserve(_named_objects, (detail::StorageAllocatorCapacity / (sizeof(ice::pod::Hash<ice::uptr>::Entry) + sizeof(ice::u32))) - 10);
 
         _frame_tasks.reserve((detail::TaskAllocatorCapacity - 1024) / sizeof(ice::Task<void>));
@@ -123,11 +123,24 @@ namespace ice
         _task_executor.wait_ready();
     }
 
-    void IceshardMemoryFrame::push_requests(
-        ice::Span<EngineRequest const> requests
-    ) noexcept
+    auto IceshardMemoryFrame::shards() const noexcept -> ice::Span<ice::Shard const>
     {
-        ice::pod::array::push_back(_requests, requests);
+        return _shards;
+    }
+
+    void IceshardMemoryFrame::push_shards(ice::Span<ice::Shard const> shards) noexcept
+    {
+        ice::pod::array::push_back(_shards, shards);
+    }
+
+    auto IceshardMemoryFrame::entity_commands() noexcept -> ice::EntityCommandBuffer&
+    {
+        return _entity_commands;
+    }
+
+    auto IceshardMemoryFrame::entity_commands() const noexcept -> ice::EntityCommandBuffer const&
+    {
+        return _entity_commands;
     }
 
     auto IceshardMemoryFrame::named_data(
@@ -174,11 +187,6 @@ namespace ice
         void* data = ice::pod::hash::get<void*>(_named_objects, name_hash, nullptr);
         _allocator.deallocate(data);
         ice::pod::hash::set<void*>(_named_objects, name_hash, nullptr);
-    }
-
-    auto IceshardMemoryFrame::requests() const noexcept -> ice::Span<EngineRequest const>
-    {
-        return _requests;
     }
 
     auto IceshardMemoryFrame::schedule_frame_end() noexcept -> ice::FrameEndOperation

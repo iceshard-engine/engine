@@ -21,6 +21,7 @@
 #include <ice/unique_ptr.hxx>
 
 #include "world/iceshard_world_tracker.hxx"
+#include <ice/gfx/gfx_runner.hxx>
 
 #include "gfx/iceshard_gfx_device.hxx"
 #include "gfx/iceshard_gfx_frame.hxx"
@@ -42,12 +43,13 @@ namespace ice
             ice::IceshardEngine& engine,
             ice::IceshardWorldManager& world_manager,
             ice::UniquePtr<ice::input::InputTracker> input_tracker,
-            ice::UniquePtr<ice::gfx::IceGfxDevice> gfx_device
+            ice::UniquePtr<ice::gfx::GfxRunner> gfx_runner
         ) noexcept;
         ~IceshardEngineRunner() noexcept override;
 
         auto clock() const noexcept -> ice::Clock const& override;
 
+        [[deprecated]]
         auto platform_events() noexcept -> ice::Span<ice::platform::Event const> override;
 
         auto input_tracker() noexcept -> ice::input::InputTracker& override;
@@ -67,14 +69,12 @@ namespace ice
             ice::Span<ice::platform::Event const> events
         ) noexcept override;
 
+        void set_graphics_runner(
+            ice::UniquePtr<ice::gfx::GfxRunner> gfx_runner
+        ) noexcept;
+
         auto logic_frame_task() noexcept -> ice::Task<>;
         auto excute_frame_task() noexcept -> ice::Task<>;
-
-        auto graphics_frame_task() noexcept -> ice::Task<>;
-        auto render_frame_task(
-            ice::u32 framebuffer_index,
-            ice::UniquePtr<ice::gfx::IceGfxFrame> gfx_frame
-        ) noexcept -> ice::Task<>;
 
         void execute_task(ice::Task<> task, ice::EngineContext context) noexcept override;
         void remove_finished_tasks() noexcept;
@@ -102,13 +102,14 @@ namespace ice
         ice::IceshardEngine& _engine;
         ice::devui::DevUIExecutionKey const _devui_key;
 
+        ice::IceshardWorld* _gfx_world;
+        ice::pod::Array<ice::StringID> _gfx_trait_names;
+        ice::UniquePtr<ice::gfx::GfxRunner> _gfx_runner;
+
         ice::UniquePtr<ice::TaskThreadPool> _thread_pool;
-        ice::UniquePtr<ice::TaskThread> _graphics_thread;
-        ice::ManualResetEvent _graphics_thread_event = true;
 
         ice::memory::ProxyAllocator _frame_allocator;
         ice::memory::ScratchAllocator _frame_data_allocator[2];
-        ice::memory::ScratchAllocator _frame_gfx_allocator[2];
         ice::u32 _next_free_allocator;
 
         ice::UniquePtr<ice::IceshardMemoryFrame> _previous_frame;
@@ -120,13 +121,8 @@ namespace ice
         ice::Span<ice::platform::Event const> _events;
         ice::UniquePtr<ice::input::InputTracker> _input_tracker;
 
-        ice::UniquePtr<ice::gfx::IceGfxDevice> _gfx_device;
-        ice::UniquePtr<ice::gfx::IceGfxFrame> _gfx_current_frame;
-
-        ice::ManualResetEvent _mre_frame_start = true;
         ice::ManualResetEvent _mre_frame_logic = true;
-        ice::ManualResetEvent _mre_gfx_commands = true;
-        ice::ManualResetEvent _mre_gfx_draw = true;
+        ice::ManualResetEvent _mre_graphics_frame = true;
 
         struct TraitTask
         {

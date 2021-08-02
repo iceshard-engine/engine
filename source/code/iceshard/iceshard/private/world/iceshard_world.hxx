@@ -1,6 +1,7 @@
 #pragma once
 #include <ice/world/world.hxx>
 #include <ice/entity/entity_storage.hxx>
+#include <ice/entity/entity_command_buffer.hxx>
 
 #include "iceshard_world_portal.hxx"
 
@@ -17,6 +18,7 @@ namespace ice
             ice::Allocator& alloc,
             ice::EntityStorage* entity_storage
         ) noexcept;
+        ~IceshardWorld() noexcept override;
 
         auto allocator() noexcept -> ice::Allocator& override;
         auto entity_storage() noexcept -> ice::EntityStorage& override;

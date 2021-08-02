@@ -135,37 +135,42 @@ namespace ice
         return ice::hash(left.name) < ice::hash(right.name);
     }
 
-    struct Position2D
+    namespace detail
     {
-        static constexpr ice::StringID Identifier = "ice.position2d"_sid;
 
-        ice::vec2f pos;
-    };
+        struct ValidationComponent_Position2D
+        {
+            static constexpr ice::StringID Identifier = "ice.position2d"_sid;
 
-    struct Velocity2D
-    {
-        static constexpr ice::StringID Identifier = "ice.velocity2d"_sid;
+            ice::vec2f pos;
+        };
 
-        ice::vec2f vel;
-        ice::vec2f angVel;
-    };
+        struct ValidationComponent_Velocity2D
+        {
+            static constexpr ice::StringID Identifier = "ice.velocity2d"_sid;
 
-    auto constexpr physic2d_archetype = Archetype<Position2D, Velocity2D>{ };
-    auto constexpr physic2d_archetype_2 = Archetype<Velocity2D, Position2D>{ };
+            ice::vec2f vel;
+            ice::vec2f angVel;
+        };
 
-    static_assert(
-        Archetype<Position2D, Velocity2D>{ }.components[0]
-        ==
-        Archetype<Velocity2D, Position2D>{ }.components[0]
-    );
+        auto constexpr validation_physic2d_archetype = Archetype<ValidationComponent_Position2D, ValidationComponent_Velocity2D>{ };
+        auto constexpr validation_physic2d_archetype_2 = Archetype<ValidationComponent_Velocity2D, ValidationComponent_Position2D>{ };
 
-    static_assert(physic2d_archetype.components.size() == 3);
-    static_assert(physic2d_archetype_2.components.size() == 3);
+        static_assert(
+            Archetype<ValidationComponent_Position2D, ValidationComponent_Velocity2D>{ }.components[0]
+            ==
+            Archetype<ValidationComponent_Velocity2D, ValidationComponent_Position2D>{ }.components[0]
+        );
 
-    static_assert(physic2d_archetype_2.components[0].name == physic2d_archetype.components[0].name);
-    static_assert(physic2d_archetype_2.components[1].name == physic2d_archetype.components[1].name);
+        static_assert(validation_physic2d_archetype.components.size() == 3);
+        static_assert(validation_physic2d_archetype_2.components.size() == 3);
 
-    static_assert(physic2d_archetype_2.components[0].name == physic2d_archetype.components[0].name);
-    static_assert(physic2d_archetype_2.components[1].name == physic2d_archetype.components[1].name);
+        static_assert(validation_physic2d_archetype_2.components[0].name == validation_physic2d_archetype.components[0].name);
+        static_assert(validation_physic2d_archetype_2.components[1].name == validation_physic2d_archetype.components[1].name);
+
+        static_assert(validation_physic2d_archetype_2.components[0].name == validation_physic2d_archetype.components[0].name);
+        static_assert(validation_physic2d_archetype_2.components[1].name == validation_physic2d_archetype.components[1].name);
+
+    } // namespace detail
 
 } // namespace ice

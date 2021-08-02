@@ -12,7 +12,7 @@
 #include <ice/gfx/gfx_model.hxx>
 #include <ice/gfx/gfx_subpass.hxx>
 #include <ice/gfx/gfx_camera.hxx>
-#include <ice/gfx/gfx_task.hxx>
+//#include <ice/gfx/gfx_task.hxx>
 #include <ice/gfx/gfx_frame.hxx>
 
 #include <ice/render/render_buffer.hxx>
@@ -149,9 +149,10 @@ namespace ice::trait
 
             _render_device->update_resourceset(update_terrain_set);
 
-            ice::gfx::GfxTaskCommands& cmds = co_await runner.graphics_frame().frame_commands("default"_sid);
+            //ice::gfx::GfxTaskCommands& cmds = co_await runner.graphics_frame().frame_commands("default"_sid);
 
-            cmds.update_texture(_terrain_heightmap, _temp_transfer_buffer, { _image_info.width, _image_info.height });
+            ICE_ASSERT(false, "Fail");
+            //cmds.update_texture(_terrain_heightmap, _temp_transfer_buffer, { _image_info.width, _image_info.height });
         }
     };
 
@@ -516,17 +517,17 @@ namespace ice::trait
         );
     }
 
-    void Terrain::record_commands(
-        ice::EngineFrame const& frame,
-        ice::render::CommandBuffer cmds,
-        ice::render::RenderCommands& render_commands
-    ) const noexcept
-    {
-        render_commands.bind_pipeline(cmds, _render_cache->_terrain_pipeline[_debug_pl]);
-        render_commands.bind_resource_set(cmds, _render_cache->_terrain_pipeline_layout, _render_cache->_terrain_resources, 1);
-        render_commands.bind_vertex_buffer(cmds, _render_cache->_terrain_mesh_vertices, 0);
-        render_commands.bind_index_buffer(cmds, _render_cache->_terrain_mesh_indices);
-        render_commands.draw_indexed(cmds, 4, 1);
-    }
+    //void Terrain::record_commands(
+    //    ice::EngineFrame const& frame,
+    //    ice::render::CommandBuffer cmds,
+    //    ice::render::RenderCommands& render_commands
+    //) const noexcept
+    //{
+    //    render_commands.bind_pipeline(cmds, _render_cache->_terrain_pipeline[_debug_pl]);
+    //    render_commands.bind_resource_set(cmds, _render_cache->_terrain_pipeline_layout, _render_cache->_terrain_resources, 1);
+    //    render_commands.bind_vertex_buffer(cmds, _render_cache->_terrain_mesh_vertices, 0);
+    //    render_commands.bind_index_buffer(cmds, _render_cache->_terrain_mesh_indices);
+    //    render_commands.draw_indexed(cmds, 4, 1);
+    //}
 
 } // namespace ice::trait

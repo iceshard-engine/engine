@@ -1,5 +1,6 @@
 #pragma once
 #include "iceshard_world.hxx"
+#include <ice/entity/entity_command_buffer.hxx>
 
 namespace ice
 {

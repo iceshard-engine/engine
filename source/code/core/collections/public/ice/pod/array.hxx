@@ -25,6 +25,9 @@ namespace ice::pod
         template<typename T>
         inline void clear(ice::pod::Array<T>& arr) noexcept;
 
+        template<typename T>
+        inline auto span(ice::pod::Array<T>& arr, ice::u32 offset = 0, ice::u32 count = ~0u) noexcept -> ice::Span<T>;
+
         template<typename T, typename U = T>
         inline void push_back(ice::pod::Array<T>& arr, U const& item) noexcept;
 
@@ -61,6 +64,9 @@ namespace ice::pod
 
         template<typename T>
         inline bool empty(ice::pod::Array<T> const& arr) noexcept;
+
+        template<typename T>
+        inline auto span(ice::pod::Array<T> const& arr, ice::u32 offset = 0, ice::u32 count = ~0u) noexcept -> ice::Span<T const>;
 
         template<typename T>
         inline auto begin(ice::pod::Array<T> const& arr) noexcept -> typename ice::pod::Array<T>::ConstIterator;
@@ -249,6 +255,12 @@ namespace ice::pod
             ice::pod::array::resize(arr, 0);
         }
 
+        template<typename T>
+        inline auto span(ice::pod::Array<T>& arr, ice::u32 offset, ice::u32 count) noexcept -> ice::Span<T>
+        {
+            return ice::Span<T>{ arr }.subspan(offset, (count == ~0) ? std::dynamic_extent : size_t{ count });
+        }
+
         template<typename T, typename U>
         inline void push_back(ice::pod::Array<T>& arr, U const& item) noexcept
         {
@@ -340,6 +352,12 @@ namespace ice::pod
         inline bool empty(ice::pod::Array<T> const& arr) noexcept
         {
             return arr._size == 0;
+        }
+
+        template<typename T>
+        inline auto span(ice::pod::Array<T> const& arr, ice::u32 offset, ice::u32 count) noexcept -> ice::Span<T const>
+        {
+            return ice::Span<T const>{ arr }.subspan(offset, (count == ~0) ? std::dynamic_extent : size_t{ count });
         }
 
         template<typename T>

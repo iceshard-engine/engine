@@ -351,7 +351,7 @@ namespace ice
         );
 
         ice::u32 const predicted_instance_count = ice::u32(
-            ice::f32(ice::pod::array::size(_instances._hash) + data_operation.source_count) / 0.6f
+            ice::f32(ice::pod::array::size(_instances._data) + data_operation.source_count) / 0.6f
         );
         ice::pod::hash::reserve(_instances, predicted_instance_count);
 
@@ -658,6 +658,8 @@ namespace ice
         {
             return;
         }
+
+        ice::pod::hash::remove(_instances, ice::hash(entity));
 
         ice::ArchetypeHandle archetype_handle[1]{ info.archetype };
         ice::ArchetypeInfo archetype_info[1]{ };

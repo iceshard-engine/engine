@@ -49,6 +49,7 @@ namespace ice::devui
 
     void ImGuiSystem::register_widget(ice::devui::DevUIWidget* widget) noexcept
     {
+        widget->on_prepare(_render_trait.imgui_context());
         ice::pod::array::push_back(_widgets, widget);
     }
 

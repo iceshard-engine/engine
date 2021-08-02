@@ -19,7 +19,7 @@ namespace ice::platform
 
         SDL_InitSubSystem(SDL_INIT_VIDEO);
 
-        ice::i32 creation_flags = SDL_WINDOW_ALLOW_HIGHDPI | SDL_WINDOW_SHOWN;
+        ice::i32 creation_flags = SDL_WINDOW_ALLOW_HIGHDPI | SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE;
         ice::StackString<64> window_title;
         if (_render_driver == RenderDriverAPI::Vulkan)
         {
@@ -36,7 +36,7 @@ namespace ice::platform
             ice::string::data(window_title),
             SDL_WINDOWPOS_CENTERED,
             SDL_WINDOWPOS_CENTERED,
-            1080, 756,
+            1920, 1080,
             creation_flags
         );
     }
@@ -67,7 +67,7 @@ namespace ice::platform
 
     auto SDL2_WindowSurface::dimensions() const noexcept -> ice::vec2u
     {
-        return { 1080, 756 };
+        return { 1920, 1080 };
     }
 
     auto create_window_surface(

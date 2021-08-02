@@ -22,7 +22,7 @@ namespace ice
     {
         EngineRunner,
         LogicFrame,
-        GraphicsFrame,
+        GraphicsFrame [[deprecated]],
     };
 
     struct CurrentFrameOperationData : ice::EngineTaskOperationBaseData { };
@@ -51,7 +51,9 @@ namespace ice
 
         virtual auto clock() const noexcept -> ice::Clock const& = 0;
 
+        [[deprecated]]
         virtual auto platform_events() noexcept -> ice::Span<ice::platform::Event const> = 0;
+
         virtual auto input_tracker() noexcept -> ice::input::InputTracker& = 0;
         virtual void process_device_queue(
             ice::input::DeviceQueue const& device_queue
@@ -59,7 +61,10 @@ namespace ice
 
         virtual auto thread_pool() noexcept -> ice::TaskThreadPool& = 0;
 
+        [[deprecated]]
         virtual auto graphics_device() noexcept -> ice::gfx::GfxDevice& = 0;
+
+        [[deprecated]]
         virtual auto graphics_frame() noexcept -> ice::gfx::GfxFrame& = 0;
 
         virtual auto previous_frame() const noexcept -> ice::EngineFrame const& = 0;

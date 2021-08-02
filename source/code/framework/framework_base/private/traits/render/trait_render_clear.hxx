@@ -6,46 +6,31 @@
 namespace ice
 {
 
-    class IceWorldTrait_RenderClear : public ice::GameWorldTrait_Render, public ice::gfx::GfxStage
+    class IceWorldTrait_RenderClear : public ice::gfx::GfxTrait, public ice::gfx::GfxContextStage
     {
     public:
-        auto gfx_stage_infos() const noexcept -> ice::Span<ice::gfx::GfxStageInfo const> override;
-        auto gfx_stage_slots() const noexcept -> ice::Span<ice::gfx::GfxStageSlot const> override;
+        IceWorldTrait_RenderClear(ice::StringID_Arg stage_name) noexcept;
 
-        void on_activate(
-            ice::Engine& engine,
-            ice::EngineRunner& runner,
-            ice::WorldPortal& portal
+        void gfx_setup(
+            ice::gfx::GfxFrame& gfx_frame,
+            ice::gfx::GfxDevice& gfx_device
         ) noexcept override;
 
-        void on_deactivate(
-            ice::Engine& engine,
-            ice::EngineRunner& runner,
-            ice::WorldPortal& portal
-        ) noexcept override;
-
-        void on_update(
-            ice::EngineFrame& frame,
-            ice::EngineRunner& runner,
-            ice::WorldPortal& portal
+        void gfx_update(
+            ice::EngineFrame const& engine_frame,
+            ice::gfx::GfxFrame& gfx_frame,
+            ice::gfx::GfxDevice& gfx_device
         ) noexcept override;
 
         void record_commands(
+            ice::gfx::GfxContext const& context,
             ice::EngineFrame const& frame,
-            ice::render::CommandBuffer cmds,
-            ice::render::RenderCommands& api
+            ice::render::CommandBuffer command_buffer,
+            ice::render::RenderCommands& render_commands
         ) const noexcept override;
 
-    protected:
-        auto task_activate_graphics(
-            ice::EngineRunner& runner,
-            ice::gfx::GfxDevice& gfx_device
-        ) noexcept -> ice::Task<>;
-
     private:
-        ice::u32 _stage_slot_count = 0;
-        ice::gfx::GfxStageSlot _stage_slots[1];
-
+        ice::StringID const _stage_name;
         ice::render::RenderSwapchain const* _default_swapchain;
         ice::render::Renderpass _default_renderpass;
         ice::render::Framebuffer _default_framebuffers[2];

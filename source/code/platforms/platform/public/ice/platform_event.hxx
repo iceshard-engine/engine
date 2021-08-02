@@ -1,6 +1,6 @@
 #pragma once
-#include <ice/base.hxx>
 #include <ice/span.hxx>
+#include <ice/shard.hxx>
 
 namespace ice::platform
 {
@@ -12,6 +12,11 @@ namespace ice::platform
     enum class EventType : ice::u32
     {
         AppQuit = 1,
+        WindowResized,
+        WindowSizeChanged = WindowResized,
+
+        // [issue #33]
+        InputText,
 
         // Not implemented
         AppTerminate,
@@ -20,8 +25,6 @@ namespace ice::platform
         AppResuming,
         AppResumed,
         WindowClosed,
-        WindowResized,
-        WindowSizeChanged = WindowResized,
         WindowMoved,
         WindowMinimized,
         WindowMaximized,
@@ -31,8 +34,6 @@ namespace ice::platform
         WindowFocusTake,
         WindowMouseEntered,
         WindowMouseLeft,
-        // [issue #33]
-        InputText,
     };
 
     struct Event
@@ -58,5 +59,7 @@ namespace ice::platform
             } input;
         } data;
     };
+
+    static constexpr ice::Shard Shard_WindowSizeChanged = "event/window/size-changed"_shard;
 
 } // namespace ice::platform

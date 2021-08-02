@@ -1,6 +1,8 @@
 #include "iceshard_world.hxx"
 #include <ice/world/world_trait.hxx>
 #include <ice/engine_runner.hxx>
+#include <ice/engine_frame.hxx>
+#include <ice/engine_shards.hxx>
 #include <ice/pod/hash.hxx>
 #include <ice/assert.hxx>
 
@@ -18,6 +20,14 @@ namespace ice
         , _traits{ _allocator }
         , _portals{ _allocator }
     {
+    }
+
+    IceshardWorld::~IceshardWorld() noexcept
+    {
+        ICE_ASSERT(
+            ice::pod::array::empty(_portals._data),
+            "Not all traits where removed from this World before destruction!"
+        );
     }
 
     auto IceshardWorld::allocator() noexcept -> ice::Allocator&
@@ -121,6 +131,17 @@ namespace ice
         ice::EngineRunner& runner
     ) noexcept
     {
+        ice::EngineFrame& current_frame = runner.current_frame();
+
+        ice::Entity entity;
+        for (ice::Shard const& shard : current_frame.shards())
+        {
+            if (shard == Shard_EntityDestroyed && ice::shard_inspect(shard, entity))
+            {
+                _entity_storage->erase_data(entity);
+            }
+        }
+
         for (auto& entry : _portals)
         {
             entry.value->remove_finished_tasks();

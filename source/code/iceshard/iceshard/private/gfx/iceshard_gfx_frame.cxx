@@ -6,252 +6,192 @@
 #include <ice/task_list.hxx>
 #include <ice/assert.hxx>
 
+#include <ice/memory/stack_allocator.hxx>
+
 #include "../iceshard_task_executor.hxx"
 
 namespace ice::gfx
 {
 
-    IceGfxTaskFrame::IceGfxTaskFrame(ice::Allocator& alloc) noexcept
-        : _allocator{ alloc }
-        , _tasks{ _allocator }
-        , _task_executor{ _allocator, ice::move(_tasks) }
-    { }
-
-    void IceGfxTaskFrame::execute_task(ice::Task<> task) noexcept
+    namespace detail
     {
-        _tasks.push_back(ice::move(task));
-    }
 
-    auto IceGfxTaskFrame::frame_start() noexcept -> ice::gfx::GfxFrameStartOperation
-    {
-        return GfxFrameStartOperation{ *this };
-    }
-
-    auto IceGfxTaskFrame::frame_commands(ice::StringID_Arg queue_name) noexcept -> ice::gfx::GfxFrameCommandsOperation
-    {
-        return GfxFrameCommandsOperation{ *this, _task_commands, queue_name };
-    }
-
-    auto IceGfxTaskFrame::frame_end() noexcept -> ice::gfx::GfxFrameEndOperation
-    {
-        return GfxFrameEndOperation{ *this };
-    }
-
-    void IceGfxTaskFrame::schedule_internal(
-        ice::gfx::GfxFrameStartOperation* operation,
-        ice::gfx::GfxFrameStartOperation::DataMemberType data_member
-    ) noexcept
-    {
-        ice::detail::ScheduleOperationData& data = operation->*data_member;
-        ice::detail::ScheduleOperationData* expected_head = _task_head_start.load(std::memory_order_acquire);
-
-        do
+        template<typename T>
+        void util_schedule_internal(std::atomic<T*>& atomic, T& operation) noexcept
         {
-            data._next = expected_head;
-        } while (
-            _task_head_start.compare_exchange_weak(
-                expected_head,
-                &data,
-                std::memory_order_release,
-                std::memory_order_acquire
-            ) == false
-        );
-    }
+            T* expected_head = atomic.load(std::memory_order::acquire);
 
-    void IceGfxTaskFrame::schedule_internal(
-        ice::gfx::GfxFrameCommandsOperation* operation,
-        ice::gfx::GfxFrameCommandsOperation::DataMemberType data_member
-    ) noexcept
-    {
-        ice::gfx::GfxFrameCommandsOperation::OperationData& data = operation->*data_member;
-        ice::gfx::GfxFrameCommandsOperation::OperationData* expected_head = _task_head_commands.load(std::memory_order_acquire);
+            bool schedule_success = false;
 
-        do
-        {
-            data._next = expected_head;
-        }
-        while (
-            _task_head_commands.compare_exchange_weak(
-                expected_head,
-                &data,
-                std::memory_order_release,
-                std::memory_order_acquire
-            ) == false
-        );
-    }
-
-    void IceGfxTaskFrame::schedule_internal(
-        ice::gfx::GfxFrameEndOperation* operation,
-        ice::gfx::GfxFrameEndOperation::DataMemberType data_member
-    ) noexcept
-    {
-        ice::detail::ScheduleOperationData& data = operation->*data_member;
-        ice::detail::ScheduleOperationData* expected_head = _task_head_end.load(std::memory_order_acquire);
-
-        do
-        {
-            data._next = expected_head;
-        }
-        while (
-            _task_head_end.compare_exchange_weak(
-                expected_head,
-                &data,
-                std::memory_order_release,
-                std::memory_order_acquire
-            ) == false
-        );
-    }
-
-    void IceGfxTaskFrame::resume_on_start_stage() noexcept
-    {
-        _task_executor = ice::IceshardTaskExecutor{ _allocator, ice::move(_tasks) };
-        _task_executor.start_all();
-
-        ice::pod::Array<ice::detail::ScheduleOperationData*> operations{ _allocator };
-
-        ice::detail::ScheduleOperationData* operation = _task_head_start.load();
-        while (operation != nullptr)
-        {
-            auto* next_operation = operation->_next;
-            ice::pod::array::push_back(operations, operation);
-            operation = next_operation;
-        }
-
-        ice::i32 const count = static_cast<ice::i32>(ice::pod::array::size(operations));
-        for (ice::i32 idx = count - 1; idx >= 0; --idx)
-        {
-            operations[idx]->_coroutine.resume();
-        }
-    }
-
-    void IceGfxTaskFrame::resume_on_commands_stage(
-        ice::StringID_Arg queue_name,
-        ice::gfx::IceGfxQueue* queue
-    ) noexcept
-    {
-        ICE_ASSERT(
-            queue != nullptr,
-            "Cannot resume `commands stage` without a valid `GfxQueue` object!"
-        );
-
-        // Update the context value for `_task_commands` as it will now be used by each resumed task!
-        _task_commands = queue;
-
-        // We can now safely resume all tasks.
-        ice::gfx::GfxFrameCommandsOperation::OperationData* operation = _task_head_commands.load();
-        if (operation == nullptr)
-        {
-            operation = _skipped_tasks_temporary;
-            _skipped_tasks_temporary = nullptr;
-        }
-
-        queue->test_begin();
-        while (operation != nullptr)
-        {
-            if (operation->queue_name == ice::stringid_hash(queue_name))
+            do
             {
-                auto* next_operation = operation->_next;
-                operation->_coroutine.resume();
-                operation = next_operation;
-            }
-            else
-            {
-                auto* next_operation = operation->_next;
+                operation.next = expected_head;
 
-                operation->_next = _skipped_tasks_temporary;
-                _skipped_tasks_temporary = operation;
-
-                operation = next_operation;
-            }
-        }
-        queue->test_end();
-    }
-
-    void IceGfxTaskFrame::resume_on_end_stage() noexcept
-    {
-        ice::detail::ScheduleOperationData* operation = _task_head_end.load();
-        while (operation != nullptr)
-        {
-            auto* next_operation = operation->_next;
-            operation->_coroutine.resume();
-            operation = next_operation;
+                schedule_success = atomic.compare_exchange_weak(
+                    expected_head,
+                    &operation,
+                    std::memory_order::release,
+                    std::memory_order::acquire
+                );
+            } while (schedule_success == false);
         }
 
-        _task_executor.wait_ready();
-    }
-
-    void IceGfxTaskFrame::execute_final_tasks() noexcept
-    {
-        _task_executor = ice::IceshardTaskExecutor{ _allocator, ice::move(_tasks) };
-        _task_executor.start_all();
-        _task_executor.wait_ready();
-    }
+    } // namespace detail
 
     IceGfxFrame::IceGfxFrame(
         ice::Allocator& alloc
     ) noexcept
-        : ice::gfx::IceGfxTaskFrame{ alloc }
+        : ice::gfx::GfxFrame{ }
         , _allocator{ alloc }
-        , _enqueued_passes{ _allocator }
-        , _queue_group{ nullptr }
-        , _stages{ _allocator }
+        , _tasks{ _allocator }
+        , _passes{ _allocator }
+        , _frame_stages{ _allocator }
+        , _context_stages{ _allocator }
     {
+    }
+
+    void IceGfxFrame::add_task(ice::Task<> task) noexcept
+    {
+        _tasks.push_back(ice::move(task));
     }
 
     void IceGfxFrame::set_stage_slot(
-        ice::gfx::GfxStageSlot slot
+        ice::StringID_Arg stage_name,
+        ice::gfx::GfxContextStage const* stage
     ) noexcept
     {
-        if (slot.stage != nullptr)
-        {
-            set_stage_slots({ &slot, 1 });
-        }
-    }
-
-
-    void IceGfxFrame::set_stage_slots(
-        ice::Span<ice::gfx::GfxStageSlot const> slots
-    ) noexcept
-    {
-        for (ice::gfx::GfxStageSlot const& slot : slots)
-        {
-            ice::pod::hash::set(
-                _stages,
-                ice::hash(slot.name),
-                slot
-            );
-        }
+        ice::pod::hash::set(
+            _context_stages,
+            ice::hash(stage_name),
+            stage
+        );
     }
 
     void IceGfxFrame::enqueue_pass(
         ice::StringID_Arg queue_name,
-        ice::gfx::GfxPass* pass
+        ice::StringID_Arg pass_name,
+        ice::gfx::GfxPass const* pass
     ) noexcept
     {
-        ice::pod::multi_hash::insert(
-            _enqueued_passes,
-            ice::hash(queue_name),
-            pass
+        ice::pod::array::push_back(
+            _passes,
+            IceGfxPassEntry
+            {
+                .queue_name = queue_name,
+                .pass_name = pass_name,
+                .pass = pass,
+            }
         );
     }
 
-    void IceGfxFrame::execute_passes(
-        ice::EngineFrame const& frame,
-        ice::gfx::IceGfxQueueGroup& queue_group
+    bool IceGfxFrame::query_queue_stages(
+        ice::Span<ice::StringID_Hash const> stage_order,
+        ice::Span<ice::gfx::GfxContextStage const*> out_stages
     ) noexcept
     {
-        _queue_group = &queue_group;
-
-        for (auto const& entry : _enqueued_passes)
+        bool has_all = true;
+        for (ice::StringID_Hash stage_id : stage_order)
         {
-            ice::gfx::IceGfxQueue* const queue = queue_group.get_queue(ice::StringID{ StringID_Hash{ entry.key } });
-            if (queue != nullptr)
+            has_all &= ice::pod::hash::has(_context_stages, ice::hash(stage_id));
+        }
+
+        if (has_all)
+        {
+            ICE_ASSERT(ice::size(stage_order) == ice::size(out_stages), "Cannot query stages into output span. Sizes differ!");
+
+            ice::u32 idx = 0;
+            for (ice::StringID_Hash stage_id : stage_order)
             {
-                queue->execute_pass(frame, entry.value, _stages);
+                ice::gfx::GfxContextStage const* stage = ice::pod::hash::get(
+                    _context_stages,
+                    ice::hash(stage_id),
+                    nullptr
+                );
+
+                out_stages[idx] = stage;
+                idx += 1;
             }
         }
 
-        ice::pod::hash::clear(_enqueued_passes);
+        return has_all;
+    }
+
+    auto IceGfxFrame::enqueued_passes() const noexcept -> ice::Span<ice::gfx::IceGfxPassEntry const>
+    {
+        return _passes;
+    }
+
+    auto IceGfxFrame::create_task_executor() noexcept -> ice::IceshardTaskExecutor
+    {
+        return ice::IceshardTaskExecutor{ _allocator, ice::move(_tasks) };
+    }
+
+    void IceGfxFrame::on_frame_begin() noexcept
+    {
+        ice::gfx::detail::GfxTaskOperationData* operation = _operations_frame_begin.load();
+        while (operation != nullptr)
+        {
+            ice::gfx::detail::GfxTaskOperationData* next_operation = operation->next;
+            operation->coroutine.resume();
+            operation = next_operation;
+        }
+    }
+
+    void IceGfxFrame::on_frame_stage(
+        ice::EngineFrame const& frame,
+        ice::render::CommandBuffer command_buffer,
+        ice::render::RenderCommands& render_commands
+    ) noexcept
+    {
+        render_commands.begin(command_buffer);
+
+        ice::gfx::GfxAwaitExecuteStageData* operation = _operations_stage_execute.load();
+        while (operation != nullptr)
+        {
+            ice::gfx::GfxAwaitExecuteStageData* next_operation = operation->next;
+            operation->stage->record_commands(frame, command_buffer, render_commands);
+            operation->coroutine.resume();
+            operation = next_operation;
+        }
+
+        render_commands.end(command_buffer);
+    }
+
+    void IceGfxFrame::on_frame_end() noexcept
+    {
+        ice::gfx::detail::GfxTaskOperationData* operation = _operations_frame_end.load();
+        while (operation != nullptr)
+        {
+            ice::gfx::detail::GfxTaskOperationData* next_operation = operation->next;
+            operation->coroutine.resume();
+            operation = next_operation;
+        }
+    }
+
+    void IceGfxFrame::schedule_internal(
+        ice::gfx::GfxAwaitBeginFrameData& operation
+    ) noexcept
+    {
+        detail::util_schedule_internal(_operations_frame_begin, operation);
+    }
+
+    void IceGfxFrame::schedule_internal(
+        ice::gfx::GfxAwaitExecuteStageData& operation
+    ) noexcept
+    {
+        ICE_ASSERT(
+            operation.stage != nullptr,
+            "Cannot schedule a stage operation without a valid stage object!"
+        );
+
+        detail::util_schedule_internal(_operations_stage_execute, operation);
+    }
+
+    void IceGfxFrame::schedule_internal(
+        ice::gfx::GfxAwaitEndFrameData& operation
+    ) noexcept
+    {
+        detail::util_schedule_internal(_operations_frame_end, operation);
     }
 
 } // namespace ice::gfx

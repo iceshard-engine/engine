@@ -15,6 +15,7 @@
 #include <ice/gfx/gfx_pass.hxx>
 
 #include <ice/asset_system.hxx>
+#include <ice/span_filter.hxx>
 #include <ice/profiler.hxx>
 
 namespace ice
@@ -41,123 +42,31 @@ namespace ice
 
     } // namespace detail
 
-    auto IceWorldTrait_RenderPostProcess::gfx_stage_infos() const noexcept -> ice::Span<ice::gfx::GfxStageInfo const>
+    IceWorldTrait_RenderPostProcess::IceWorldTrait_RenderPostProcess(ice::StringID_Arg stage_name) noexcept
+        : _stage_name{ stage_name }
     {
-        static ice::StringID const dependencies[]
-        {
-            "frame.clear"_sid,
-            "frame.render-sprites"_sid,
-        };
-        static ice::gfx::GfxStageInfo const infos[]
-        {
-            ice::gfx::GfxStageInfo
-            {
-                .name = "frame.render-postprocess"_sid,
-                .dependencies = dependencies,
-                .type = gfx::GfxStageType::DrawStage
-            }
-        };
-        return infos;
     }
 
-    auto IceWorldTrait_RenderPostProcess::gfx_stage_slots() const noexcept -> ice::Span<ice::gfx::GfxStageSlot const>
-    {
-        static ice::gfx::GfxStageSlot const slots[]
-        {
-            ice::gfx::GfxStageSlot
-            {
-                .name = "frame.render-postprocess"_sid,
-                .stage = this
-            }
-        };
-        return { slots, _slot_count };
-    }
-
-    void IceWorldTrait_RenderPostProcess::on_activate(
-        ice::Engine& engine,
-        ice::EngineRunner& runner,
-        ice::WorldPortal& portal
-    ) noexcept
-    {
-        runner.execute_task(
-            task_create_render_objects(engine.asset_system(), runner, runner.graphics_device()),
-            EngineContext::EngineRunner
-        );
-    }
-
-    void IceWorldTrait_RenderPostProcess::on_deactivate(
-        ice::Engine& engine,
-        ice::EngineRunner& runner,
-        ice::WorldPortal& portal
-    ) noexcept
-    {
-        runner.execute_task(
-            task_destroy_render_objects(runner.graphics_device()),
-            EngineContext::GraphicsFrame
-        );
-    }
-
-    void IceWorldTrait_RenderPostProcess::on_update(
-        ice::EngineFrame& frame,
-        ice::EngineRunner& runner,
-        ice::WorldPortal& portal
-    ) noexcept
-    {
-        IPT_ZONE_SCOPED_NAMED("[Trait] PostProcess :: Update");
-
-        runner.graphics_frame().set_stage_slots(gfx_stage_slots());
-    }
-
-    void IceWorldTrait_RenderPostProcess::record_commands(
-        ice::EngineFrame const& frame,
-        ice::render::CommandBuffer cmds,
-        ice::render::RenderCommands& api
-    ) const noexcept
-    {
-        IPT_ZONE_SCOPED_NAMED("[Trait] PostProcess :: Graphics Commands");
-
-        api.next_subpass(cmds, ice::render::SubPassContents::Inline);
-        api.bind_pipeline(cmds, _pipeline);
-        api.bind_resource_set(cmds, _layout, _resource_set, 0);
-        api.bind_vertex_buffer(cmds, _vertices, 0);
-        api.draw(cmds, 3, 1, 0, 0);
-    }
-
-    auto IceWorldTrait_RenderPostProcess::task_create_render_objects(
-        ice::AssetSystem& asset_system,
-        ice::EngineRunner& runner,
+    void IceWorldTrait_RenderPostProcess::gfx_setup(
+        ice::gfx::GfxFrame& gfx_frame,
         ice::gfx::GfxDevice& gfx_device
-    ) noexcept -> ice::Task<>
+    ) noexcept
     {
         using namespace ice::gfx;
         using namespace ice::render;
 
-        Data vtx_shader_data = ice::detail::load_postprocess_shader(asset_system, "/shaders/debug/pp-vert"_sid);
-        Data pix_shader_data = ice::detail::load_postprocess_shader(asset_system, "/shaders/debug/pp-frag"_sid);
-
-        ice::render::Renderpass renderpass = Renderpass::Invalid;
-        while (renderpass == Renderpass::Invalid)
-        {
-            ice::EngineFrame& frame = co_await runner.schedule_next_frame();
-
-            co_await frame.schedule_frame_end();
-
-            ice::render::Renderpass* candidate_renderpass = frame.named_object<ice::render::Renderpass>("ice.gfx.renderpass"_sid);
-            if (candidate_renderpass != nullptr)
-            {
-                renderpass = *candidate_renderpass;
-            }
-        }
-
-        co_await runner.schedule_current_frame();
-        co_await runner.graphics_frame().frame_start();
+        Renderpass renderpass = ice::gfx::find_resource<Renderpass>(gfx_device.resource_tracker(), "ice.gfx.renderpass.default"_sid);
+        ICE_ASSERT(
+            renderpass != Renderpass::Invalid,
+            "Trait cannot properly setup render objects due to a missing renderpass object!"
+        );
 
         RenderDevice& device = gfx_device.device();
 
         _shader_stages[0] = ShaderStageFlags::VertexStage;
         _shader_stages[1] = ShaderStageFlags::FragmentStage;
-        _shaders[0] = device.create_shader(ShaderInfo{ .shader_data = vtx_shader_data });
-        _shaders[1] = device.create_shader(ShaderInfo{ .shader_data = pix_shader_data });
+        _shaders[0] = device.create_shader(ShaderInfo{ .shader_data = _shader_data[0] });
+        _shaders[1] = device.create_shader(ShaderInfo{ .shader_data = _shader_data[1] });
 
         SamplerInfo sampler_info{
             .min_filter = SamplerFilter::Linear,
@@ -256,10 +165,81 @@ namespace ice
         };
         device.update_buffers(buffer_updates);
 
+        update_resources(gfx_device);
+    }
+
+    void IceWorldTrait_RenderPostProcess::gfx_cleanup(
+        ice::gfx::GfxFrame& gfx_frame,
+        ice::gfx::GfxDevice& gfx_device
+    ) noexcept
+    {
+        using namespace ice::render;
+        RenderDevice& device = gfx_device.device();
+
+        device.destroy_buffer(_vertices);
+        device.destroy_sampler(_sampler);
+        device.destroy_shader(_shaders[0]);
+        device.destroy_shader(_shaders[1]);
+        device.destroy_pipeline(_pipeline);
+        device.destroy_pipeline_layout(_layout);
+        device.destroy_resourcesets({ &_resource_set, 1 });
+        device.destroy_resourceset_layout(_resource_layout);
+    }
+
+    void IceWorldTrait_RenderPostProcess::gfx_update(
+        ice::EngineFrame const& engine_frame,
+        ice::gfx::GfxFrame& gfx_frame,
+        ice::gfx::GfxDevice& gfx_device
+    ) noexcept
+    {
+        IPT_ZONE_SCOPED_NAMED("[Trait] PostProcess :: Update");
+
+        for (ice::Shard const& shard : ice::filter_span(engine_frame.shards(), ice::any_of<ice::platform::Shard_WindowSizeChanged>))
+        {
+            update_resources(gfx_device);
+        }
+
+        gfx_frame.set_stage_slot(_stage_name, this);
+    }
+
+    void IceWorldTrait_RenderPostProcess::on_activate(
+        ice::Engine& engine,
+        ice::EngineRunner& runner,
+        ice::WorldPortal& portal
+    ) noexcept
+    {
+        ice::AssetSystem& asset_system = engine.asset_system();
+
+        _shader_data[0] = ice::detail::load_postprocess_shader(asset_system, "/shaders/debug/pp-vert"_sid);
+        _shader_data[1] = ice::detail::load_postprocess_shader(asset_system, "/shaders/debug/pp-frag"_sid);
+    }
+
+    void IceWorldTrait_RenderPostProcess::record_commands(
+        ice::gfx::GfxContext const& context,
+        ice::EngineFrame const& frame,
+        ice::render::CommandBuffer cmds,
+        ice::render::RenderCommands& api
+    ) const noexcept
+    {
+        IPT_ZONE_SCOPED_NAMED("[Trait] PostProcess :: Graphics Commands");
+
+        api.next_subpass(cmds, ice::render::SubPassContents::Inline);
+        api.bind_pipeline(cmds, _pipeline);
+        api.bind_resource_set(cmds, _layout, _resource_set, 0);
+        api.bind_vertex_buffer(cmds, _vertices, 0);
+        api.draw(cmds, 3, 1, 0, 0);
+    }
+
+    void IceWorldTrait_RenderPostProcess::update_resources(ice::gfx::GfxDevice& gfx_device) noexcept
+    {
+        using namespace ice::render;
+
+        RenderDevice& device = gfx_device.device();
+
         ResourceUpdateInfo const resource_updates[]
         {
-            ResourceUpdateInfo{ .sampler = _sampler, },
-            ResourceUpdateInfo{ .image = ice::gfx::find_resource<ice::render::Image>(gfx_device.resource_tracker(), "ice.gfx.attachment.image.color"_sid) }
+            ResourceUpdateInfo{.sampler = _sampler, },
+            ResourceUpdateInfo{.image = ice::gfx::find_resource<ice::render::Image>(gfx_device.resource_tracker(), "ice.gfx.attachment.image.color"_sid) }
         };
         ResourceSetUpdateInfo const set_updates[]
         {
@@ -280,29 +260,8 @@ namespace ice
                 .resources = { resource_updates + 1, 1 },
             },
         };
+
         device.update_resourceset(set_updates);
-
-        co_await runner.schedule_next_frame();
-        _slot_count = 1;
-    }
-
-    auto IceWorldTrait_RenderPostProcess::task_destroy_render_objects(
-        ice::gfx::GfxDevice& gfx_device
-    ) noexcept -> ice::Task<>
-    {
-        using namespace ice::render;
-        RenderDevice& device = gfx_device.device();
-
-        device.destroy_buffer(_vertices);
-        device.destroy_sampler(_sampler);
-        device.destroy_shader(_shaders[0]);
-        device.destroy_shader(_shaders[1]);
-        device.destroy_pipeline(_pipeline);
-        device.destroy_pipeline_layout(_layout);
-        device.destroy_resourcesets({ &_resource_set, 1 });
-        device.destroy_resourceset_layout(_resource_layout);
-
-        co_return;
     }
 
 } // namespace ice

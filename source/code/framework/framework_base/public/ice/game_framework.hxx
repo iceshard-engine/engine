@@ -13,6 +13,8 @@ namespace ice
     class ResourceSystem;
     class ModuleRegister;
 
+    namespace gfx { class GfxRunner; }
+
     struct GameServices
     {
         virtual ~GameServices() noexcept = default;
@@ -32,9 +34,11 @@ namespace ice
         virtual ~GameFramework() noexcept override;
 
         virtual auto config_uri() const noexcept -> ice::URI = 0;
+        virtual auto graphics_world_name() const noexcept -> ice::StringID = 0;
+
         virtual void load_modules() noexcept = 0;
 
-        void startup(ice::Engine& engine) noexcept;
+        void startup(ice::Engine& engine, ice::gfx::GfxRunner& gfx_runner) noexcept;
         void shutdown(ice::Engine& engine) noexcept;
 
         void game_begin(ice::EngineRunner& runner) noexcept;
@@ -43,10 +47,12 @@ namespace ice
         auto resource_system() noexcept -> ice::ResourceSystem& final;
         auto module_registry() noexcept -> ice::ModuleRegister& final;
 
-        auto platform_app() noexcept -> ice::UniquePtr<ice::platform::App>;
+        auto create_app(
+            ice::UniquePtr<ice::gfx::GfxRunner> gfx_runner
+        ) noexcept -> ice::UniquePtr<ice::platform::App>;
 
     protected:
-        virtual void on_app_startup_internal(ice::Engine& engine) noexcept = 0;
+        virtual void on_app_startup_internal(ice::Engine& engine, ice::gfx::GfxRunner& gfx_runner) noexcept = 0;
         virtual void on_app_shutdown_internal(ice::Engine& engine) noexcept = 0;
 
         virtual void on_game_begin_internal(ice::EngineRunner& runner) noexcept = 0;
@@ -66,6 +72,10 @@ namespace ice
     template<typename T>
     concept HasConfigFileMember = requires (T t) {
         { T::ConfigFile } -> std::convertible_to<ice::URI const&>;
+    };
+    template<typename T>
+    concept HasGraphicsWorldNameMember = requires (T t) {
+        { T::GraphicsWorldName } -> std::convertible_to<ice::StringID const&>;
     };
     template<typename T>
     concept HasLoadModulesMethod = requires (T t) {
@@ -123,14 +133,26 @@ namespace ice
             }
         }
 
+        auto graphics_world_name() const noexcept -> ice::StringID final
+        {
+            if constexpr (HasGraphicsWorldNameMember<T>)
+            {
+                return T::GraphicsWorldName;
+            }
+            else
+            {
+                return "default.graphics-world"_sid;
+            }
+        }
+
         void load_modules() noexcept
         {
             _game.on_load_modules(static_cast<GameServices&>(*this));
         }
 
-        void on_app_startup_internal(ice::Engine& engine) noexcept final
+        void on_app_startup_internal(ice::Engine& engine, ice::gfx::GfxRunner& gfx_runner) noexcept final
         {
-            _game.on_app_startup(engine);
+            _game.on_app_startup(engine, gfx_runner);
         }
 
         void on_app_shutdown_internal(ice::Engine& engine) noexcept final

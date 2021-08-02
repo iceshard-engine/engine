@@ -17,7 +17,10 @@
 
 #include "iceshard_runner.hxx"
 #include "iceshard_noop_devui.hxx"
+
 #include "gfx/iceshard_gfx_device.hxx"
+#include "gfx/iceshard_gfx_runner.hxx"
+#include "gfx/iceshard_gfx_world.hxx"
 
 namespace ice
 {
@@ -44,29 +47,54 @@ namespace ice
 
     auto IceshardEngine::create_runner(
         ice::UniquePtr<ice::input::InputTracker> input_tracker,
-        ice::gfx::GfxDeviceCreateInfo const& gfx_create_info
-    ) noexcept -> ice::UniquePtr<EngineRunner>
+        ice::UniquePtr<ice::gfx::GfxRunner> graphics_runner
+    ) noexcept -> ice::UniquePtr<ice::EngineRunner>
+    {
+        return ice::make_unique<EngineRunner, IceshardEngineRunner>(
+            _allocator,
+            _allocator,
+            *this,
+            _world_manager,
+            ice::move(input_tracker),
+            ice::move(graphics_runner)
+        );
+    }
+
+    auto IceshardEngine::create_graphics_runner(
+        ice::render::RenderDriver& render_driver,
+        ice::render::RenderSurface& render_surface,
+        ice::Span<ice::RenderQueueDefinition const> render_queues
+    ) noexcept -> ice::UniquePtr<ice::gfx::GfxRunner>
     {
         ice::UniquePtr<ice::gfx::IceGfxDevice> gfx_device = ice::gfx::create_graphics_device(
             _allocator,
-            gfx_create_info
+            render_driver,
+            render_surface,
+            render_queues
         );
 
         if (gfx_device != nullptr)
         {
-            return ice::make_unique<EngineRunner, IceshardEngineRunner>(
+            return ice::make_unique<ice::gfx::GfxRunner, ice::gfx::IceGfxRunner>(
                 _allocator,
                 _allocator,
-                *this,
-                _world_manager,
-                ice::move(input_tracker),
-                ice::move(gfx_device)
+                ice::move(gfx_device),
+                ice::make_unique_null<ice::gfx::IceGfxWorld>()
             );
         }
         else
         {
-            return ice::make_unique_null<ice::EngineRunner>();
+            return ice::make_unique_null<ice::gfx::GfxRunner>();
         }
+    }
+
+    void IceshardEngine::update_runner_graphics(
+        ice::EngineRunner& runner,
+        ice::UniquePtr<ice::gfx::GfxRunner> graphics_runner
+    ) noexcept
+    {
+        IceshardEngineRunner& iceshard_runner = static_cast<IceshardEngineRunner&>(runner);
+        iceshard_runner.set_graphics_runner(ice::move(graphics_runner));
     }
 
     auto IceshardEngine::entity_index() noexcept -> ice::EntityIndex&

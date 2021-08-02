@@ -15,7 +15,9 @@
             }
         ]
 
-        .Modules = { }
+        .Modules = {
+            'box2d'
+        }
 
         .Uses = {
             'utils'

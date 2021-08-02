@@ -33,8 +33,8 @@ namespace ice::gfx
 
     IceGfxDevice::IceGfxDevice(
         ice::Allocator& alloc,
-        ice::render::RenderDriver* driver,
-        ice::render::RenderSurface* render_surface,
+        ice::render::RenderDriver& driver,
+        ice::render::RenderSurface& render_surface,
         ice::render::RenderDevice* render_device,
         ice::pod::Array<ice::gfx::IceGfxQueueGroup*> graphics_queues
     ) noexcept
@@ -44,10 +44,9 @@ namespace ice::gfx
         , _render_device{ render_device }
         , _render_swapchain{ nullptr }
         , _graphics_queues{ ice::move(graphics_queues) }
-        //, _graphics_passes{ _allocator }
         , _resource_tracker{ _allocator }
     {
-        _render_swapchain = _render_device->create_swapchain(_render_surface);
+        _render_swapchain = _render_device->create_swapchain(&_render_surface);
 
         track_resource(
             _resource_tracker,
@@ -89,7 +88,7 @@ namespace ice::gfx
             _render_device->destroy_queue(queue);
         }
 
-        _render_driver->destroy_device(_render_device);
+        _render_driver.destroy_device(_render_device);
     }
 
     auto IceGfxDevice::device() noexcept -> ice::render::RenderDevice&
@@ -100,6 +99,13 @@ namespace ice::gfx
     auto IceGfxDevice::swapchain() noexcept -> ice::render::RenderSwapchain const&
     {
         return *_render_swapchain;
+    }
+
+    void IceGfxDevice::recreate_swapchain() noexcept
+    {
+        _render_device->wait_idle();
+        _render_device->destroy_swapchain(_render_swapchain);
+        _render_swapchain = _render_device->create_swapchain(&_render_surface);
     }
 
     auto IceGfxDevice::resource_tracker() noexcept -> ice::gfx::GfxResourceTracker&
@@ -152,22 +158,21 @@ namespace ice::gfx
 
     auto create_graphics_device(
         ice::Allocator& alloc,
-        ice::gfx::GfxDeviceCreateInfo const& create_info
+        ice::render::RenderDriver& render_driver,
+        ice::render::RenderSurface& render_surface,
+        ice::Span<ice::RenderQueueDefinition const> render_queues
     ) noexcept -> ice::UniquePtr<ice::gfx::IceGfxDevice>
     {
-        ice::render::RenderDriver* render_driver = create_info.render_driver;
-
-        //ice::memory::StackAllocator<sizeof(ice::render::QueueFamilyInfo) * 21> temp_alloc;
         ice::pod::Array<ice::render::QueueFamilyInfo> queue_families{ alloc };
         ice::pod::array::reserve(queue_families, 20);
-        render_driver->query_queue_infos(queue_families);
+        render_driver.query_queue_infos(queue_families);
 
         using ice::render::QueueFlags;
         using ice::render::QueueInfo;
         using ice::render::QueueID;
 
         ice::pod::Array<ice::render::QueueInfo> queues{ alloc };
-        ice::pod::array::reserve(queues, ice::size(create_info.queue_list));
+        ice::pod::array::reserve(queues, ice::size(render_queues));
 
         auto find_queue_index = [](auto const& array_, QueueID id_, ice::u32& idx_out) noexcept -> bool
         {
@@ -183,9 +188,9 @@ namespace ice::gfx
         };
 
         ice::pod::Hash<ice::u32> queue_index_tracker{ alloc };
-        for (ice::gfx::GfxQueueCreateInfo const& pass_info : create_info.queue_list)
+        for (ice::RenderQueueDefinition const& pass_info : render_queues)
         {
-            QueueID const pass_queue_id = detail::find_queue_id(queue_families, pass_info.queue_flags);
+            QueueID const pass_queue_id = detail::find_queue_id(queue_families, pass_info.flags);
             ICE_ASSERT(
                 pass_queue_id != QueueID::Invalid,
                 "Graphics pass queue flags cannot be satisfied!"
@@ -230,7 +235,7 @@ namespace ice::gfx
 
         ice::u32 constexpr pass_group_count = 2;
 
-        ice::render::RenderDevice* const render_device = render_driver->create_device(queues);
+        ice::render::RenderDevice* const render_device = render_driver.create_device(queues);
         if (render_device != nullptr)
         {
             ice::pod::Array<ice::gfx::IceGfxQueueGroup*> pass_groups{ alloc };
@@ -242,14 +247,14 @@ namespace ice::gfx
                     pass_groups,
                     alloc.make<IceGfxQueueGroup>(
                         alloc,
-                        ice::size(create_info.queue_list)
+                        ice::size(render_queues)
                     )
                 );
             }
 
-            for (ice::gfx::GfxQueueCreateInfo const& pass_info : create_info.queue_list)
+            for (ice::RenderQueueDefinition const& pass_info : render_queues)
             {
-                QueueID const pass_queue_id = detail::find_queue_id(queue_families, pass_info.queue_flags);
+                QueueID const pass_queue_id = detail::find_queue_id(queue_families, pass_info.flags);
                 ice::u32 const pass_queue_index = ice::pod::hash::get(
                     queue_index_tracker,
                     ice::hash(reinterpret_cast<ice::uptr>(&pass_info)),
@@ -268,15 +273,16 @@ namespace ice::gfx
                         pass_info.name,
                         render_device->get_commands(),
                         render_queue,
+                        pass_info.flags,
                         group_index
-                    )->set_presenting((pass_info.queue_flags & QueueFlags::Present) == QueueFlags::Present);
+                    );
                 }
             }
 
             return ice::make_unique<ice::gfx::IceGfxDevice>(
                 alloc, alloc,
-                create_info.render_driver,
-                create_info.render_surface,
+                render_driver,
+                render_surface,
                 render_device,
                 ice::move(pass_groups)
             );

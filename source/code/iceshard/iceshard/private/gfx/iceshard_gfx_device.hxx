@@ -1,10 +1,11 @@
 #pragma once
+#include <ice/engine.hxx>
 #include <ice/gfx/gfx_device.hxx>
-
 #include <ice/render/render_device.hxx>
 #include <ice/render/render_driver.hxx>
 #include <ice/unique_ptr.hxx>
 #include <ice/pod/array.hxx>
+
 #include "iceshard_gfx_resource_tracker.hxx"
 
 namespace ice::gfx
@@ -17,8 +18,8 @@ namespace ice::gfx
     public:
         IceGfxDevice(
             ice::Allocator& alloc,
-            ice::render::RenderDriver* driver,
-            ice::render::RenderSurface* render_surface,
+            ice::render::RenderDriver& driver,
+            ice::render::RenderSurface& render_surface,
             ice::render::RenderDevice* render_device,
             ice::pod::Array<ice::gfx::IceGfxQueueGroup*> graphics_passes
         ) noexcept;
@@ -26,6 +27,8 @@ namespace ice::gfx
 
         auto device() noexcept -> ice::render::RenderDevice& override;
         auto swapchain() noexcept -> ice::render::RenderSwapchain const& override;
+
+        void recreate_swapchain() noexcept override;
 
         auto resource_tracker() noexcept -> ice::gfx::GfxResourceTracker& override;
 
@@ -37,8 +40,8 @@ namespace ice::gfx
 
     private:
         ice::Allocator& _allocator;
-        ice::render::RenderDriver* const _render_driver;
-        ice::render::RenderSurface* const _render_surface;
+        ice::render::RenderDriver& _render_driver;
+        ice::render::RenderSurface& _render_surface;
         ice::render::RenderDevice* const _render_device;
 
         ice::render::RenderSwapchain* _render_swapchain;
@@ -49,7 +52,9 @@ namespace ice::gfx
 
     auto create_graphics_device(
         ice::Allocator& alloc,
-        ice::gfx::GfxDeviceCreateInfo const& create_info
+        ice::render::RenderDriver& render_driver,
+        ice::render::RenderSurface& render_surface,
+        ice::Span<ice::RenderQueueDefinition const> render_queues
     ) noexcept -> ice::UniquePtr<ice::gfx::IceGfxDevice>;
 
 } // namespace ice::gfx

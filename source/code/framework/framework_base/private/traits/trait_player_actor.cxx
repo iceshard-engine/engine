@@ -1,4 +1,5 @@
 #include "trait_player_actor.hxx"
+#include <ice/game_anim.hxx>
 
 #include <ice/engine_frame.hxx>
 #include <ice/world/world_portal.hxx>
@@ -49,16 +50,16 @@ namespace ice
             switch (input.identifier)
             {
             case input_identifier(DeviceType::Keyboard, KeyboardKey::KeyW):
-                movement.y += 4.f;
+                movement.y += 2.f;
                 break;
             case input_identifier(DeviceType::Keyboard, KeyboardKey::KeyS):
-                movement.y -= 4.f;
+                movement.y -= 2.f;
                 break;
             case input_identifier(DeviceType::Keyboard, KeyboardKey::KeyA):
-                movement.x -= 4.f;
+                movement.x -= 2.f;
                 break;
             case input_identifier(DeviceType::Keyboard, KeyboardKey::KeyD):
-                movement.x += 4.f;
+                movement.x += 2.f;
                 break;
             default:
                 break;
@@ -66,11 +67,29 @@ namespace ice
         }
 
         result.for_each(
-            [&](ice::Actor const& actor, ice::Transform2DStatic& xform) noexcept
+            [&](ice::Actor const& actor, ice::Animation& anim, ice::Transform2DDynamic& xform) noexcept
             {
                 if (actor.type == ActorType::Player)
                 {
                     xform.position = xform.position + ice::vec3f{ movement.x, movement.y, 0 };
+                }
+
+                if (movement.x != 0.f)
+                {
+                    anim.speed = 1.f / 15.f;
+                    if (movement.x > 0)
+                    {
+                        anim.animation = "cotm_run_right"_sid_hash;
+                    }
+                    else
+                    {
+                        anim.animation = "cotm_run_left"_sid_hash;
+                    }
+                }
+                else
+                {
+                    anim.animation = "cotm_idle"_sid_hash;
+                    anim.speed = 1.f / 15.f;
                 }
             }
         );

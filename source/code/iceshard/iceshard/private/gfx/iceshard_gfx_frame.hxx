@@ -1,6 +1,8 @@
 #pragma once
 #include <ice/gfx/gfx_frame.hxx>
 #include <ice/gfx/gfx_queue.hxx>
+#include <ice/gfx/gfx_context.hxx>
+
 #include <ice/render/render_device.hxx>
 #include <ice/engine_frame.hxx>
 
@@ -16,58 +18,14 @@
 namespace ice::gfx
 {
 
-    class IceGfxTaskFrame : public ice::gfx::GfxFrame
+    struct IceGfxPassEntry
     {
-    public:
-        IceGfxTaskFrame(ice::Allocator& alloc) noexcept;
-        ~IceGfxTaskFrame() noexcept override = default;
-
-        void execute_task(ice::Task<> task) noexcept;
-
-        auto frame_start() noexcept -> ice::gfx::GfxFrameStartOperation override;
-        auto frame_commands(ice::StringID_Arg queue_name) noexcept -> ice::gfx::GfxFrameCommandsOperation override;
-        auto frame_end() noexcept -> ice::gfx::GfxFrameEndOperation override;
-
-        void schedule_internal(
-            ice::gfx::GfxFrameStartOperation* operation,
-            ice::gfx::GfxFrameStartOperation::DataMemberType data
-        ) noexcept override;
-
-        void schedule_internal(
-            ice::gfx::GfxFrameCommandsOperation* operation,
-            ice::gfx::GfxFrameCommandsOperation::DataMemberType data
-        ) noexcept override;
-
-        void schedule_internal(
-            ice::gfx::GfxFrameEndOperation* operation,
-            ice::gfx::GfxFrameEndOperation::DataMemberType data
-        ) noexcept override;
-
-        void resume_on_start_stage() noexcept;
-        void resume_on_commands_stage(
-            ice::StringID_Arg queue_name,
-            ice::gfx::IceGfxQueue* queue
-        ) noexcept;
-        void resume_on_end_stage() noexcept;
-
-        void execute_final_tasks() noexcept;
-
-    private:
-        ice::Allocator& _allocator;
-        ice::gfx::GfxTaskCommands* _task_commands;
-
-        ice::Vector<ice::Task<>> _tasks;
-        ice::IceshardTaskExecutor _task_executor;
-
-        std::atomic<ice::detail::ScheduleOperationData*> _task_head_start;
-
-        std::atomic<ice::gfx::GfxFrameCommandsOperation::OperationData*> _task_head_commands;
-        std::atomic<ice::detail::ScheduleOperationData*> _task_head_end;
-
-        ice::gfx::GfxFrameCommandsOperation::OperationData* _skipped_tasks_temporary = nullptr;
+        ice::StringID queue_name;
+        ice::StringID pass_name;
+        ice::gfx::GfxPass const* pass;
     };
 
-    class IceGfxFrame final : public IceGfxTaskFrame
+    class IceGfxFrame final : public ice::gfx::GfxFrame
     {
     public:
         IceGfxFrame(
@@ -76,36 +34,60 @@ namespace ice::gfx
 
         ~IceGfxFrame() noexcept override = default;
 
-        void set_stage_slot(
-            ice::gfx::GfxStageSlot slot
-        ) noexcept override;
+        void add_task(ice::Task<> task) noexcept override;
 
-        void set_stage_slots(
-            ice::Span<ice::gfx::GfxStageSlot const> slots
+        void set_stage_slot(
+            ice::StringID_Arg stage_name,
+            ice::gfx::GfxContextStage const* stage
         ) noexcept override;
 
         void enqueue_pass(
             ice::StringID_Arg queue_name,
-            ice::gfx::GfxPass* pass
+            ice::StringID_Arg pass_name,
+            ice::gfx::GfxPass const* pass
         ) noexcept override;
 
-        void prepare_frame(
-            ice::gfx::IceGfxQueueGroup& queue_group
+        bool query_queue_stages(
+            ice::Span<ice::StringID_Hash const> stage_order,
+            ice::Span<ice::gfx::GfxContextStage const*> out_stages
         ) noexcept;
 
-        void execute_passes(
+        auto enqueued_passes() const noexcept -> ice::Span<ice::gfx::IceGfxPassEntry const>;
+
+        auto create_task_executor() noexcept -> ice::IceshardTaskExecutor;
+
+        void on_frame_begin() noexcept;
+        void on_frame_stage(
             ice::EngineFrame const& frame,
-            ice::gfx::IceGfxQueueGroup& queue_group
+            ice::render::CommandBuffer command_buffer,
+            ice::render::RenderCommands& render_commands
         ) noexcept;
+        void on_frame_end() noexcept;
+
+    protected:
+        void schedule_internal(
+            ice::gfx::GfxAwaitBeginFrameData& operation
+        ) noexcept override;
+
+        void schedule_internal(
+            ice::gfx::GfxAwaitExecuteStageData& operation
+        ) noexcept override;
+
+        void schedule_internal(
+            ice::gfx::GfxAwaitEndFrameData& operation
+        ) noexcept override;
 
     private:
         ice::Allocator& _allocator;
+        ice::Vector<ice::Task<>> _tasks;
+        ice::pod::Array<ice::gfx::IceGfxPassEntry> _passes;
 
-        ice::pod::Hash<ice::gfx::GfxPass*> _enqueued_passes;
-        ice::pod::Hash<ice::gfx::GfxStageSlot> _stages;
+        ice::pod::Hash<ice::gfx::GfxFrameStage const*> _frame_stages;
+        ice::pod::Hash<ice::gfx::GfxContextStage const*> _context_stages;
 
-        // #todo
-        ice::gfx::IceGfxQueueGroup* _queue_group;
+        std::atomic<ice::gfx::GfxAwaitBeginFrameData*> _operations_frame_begin = nullptr;
+        std::atomic<ice::gfx::GfxAwaitExecuteStageData*> _operations_stage_execute = nullptr;
+        std::atomic<ice::gfx::GfxAwaitEndFrameData*> _operations_frame_end = nullptr;
     };
 
 } // namespace ice::gfx

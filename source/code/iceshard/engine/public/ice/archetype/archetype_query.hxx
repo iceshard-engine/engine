@@ -2,6 +2,7 @@
 #include <ice/memory/stack_allocator.hxx>
 #include <ice/entity/entity_component.hxx>
 #include <ice/entity/entity_storage.hxx>
+#include <ice/entity/entity_query_utils.hxx>
 #include <ice/archetype/archetype_info.hxx>
 
 namespace ice
@@ -13,6 +14,9 @@ namespace ice
 
     namespace detail
     {
+
+        template<ComponentQueryType T>
+        using ComponentTypeFromQueryType = std::remove_const_t<std::remove_reference_t<std::remove_pointer_t<T>>>;
 
         template<typename T>
         struct QueryComponentOptional { };
@@ -112,8 +116,7 @@ namespace ice
         {
             static auto to(
                 void** ptr,
-                ice::u32& component_idx,
-                ice::u32 entity_idx = 0
+                ice::u32& component_idx
             ) noexcept -> ice::Entity*
             {
                 component_idx -= 1;
@@ -126,8 +129,7 @@ namespace ice
         {
             static constexpr auto to(
                 void** ptr,
-                ice::u32& component_idx,
-                ice::u32 entity_idx = 0
+                ice::u32& component_idx
             ) noexcept -> T*
             {
                 component_idx -= 1;
@@ -342,51 +344,14 @@ namespace ice
     template<typename Fn>
     inline void ComponentQuery<Components...>::ResultByEntity::for_each(Fn&& fn) noexcept
     {
-        ice::memory::StackAllocator_512 temp_alloc{};
-        ice::u32 component_offsets[Constant_ComponentCount]{};
         void* block_pointers[Constant_ComponentCount]{};
-
-        ice::pod::Hash<ice::u32*> archetype_offset_helper{ temp_alloc };
-        ice::pod::hash::reserve(archetype_offset_helper, Constant_ComponentCount);
-
-        {
-            ice::u32 idx = 0;
-            for (ice::StringID_Arg component_hash : Constant_QueryInfo.Const_Identifiers)
-            {
-                ice::pod::hash::set(
-                    archetype_offset_helper,
-                    ice::hash(component_hash),
-                    &component_offsets[idx]
-                );
-                idx += 1;
-            }
-        }
 
         ice::ArchetypeBlock** block_it = ice::pod::begin(_archetype_blocks);
 
         ice::u32 archetype_idx = 0;
         for (ice::ArchetypeInfo const& archetype : _archetype_infos)
         {
-            for (ice::u32& offset : component_offsets)
-            {
-                offset = 1;
-            }
-
-            ice::u32 const archetype_component_count = ice::size(archetype.components);
-            for (ice::u32 idx = 0; idx < archetype_component_count; ++idx)
-            {
-                ice::u64 const component_hash = ice::hash(archetype.components[idx]);
-                ice::u32* const offset_ptr = ice::pod::hash::get(
-                    archetype_offset_helper,
-                    component_hash,
-                    nullptr
-                );
-
-                if (offset_ptr != nullptr)
-                {
-                    *offset_ptr = archetype.offsets[idx];
-                }
-            }
+            auto const idx_map = ice::detail::map_arguments_to_archetype_index<detail::ComponentTypeFromQueryType<Components>...>(archetype);
 
             ice::u32 block_count = _archetype_block_count[archetype_idx];
             while (block_count > 0)
@@ -394,20 +359,20 @@ namespace ice
                 ice::ArchetypeBlock* block = *block_it;
                 for (ice::u32 idx = 0; idx < Constant_ComponentCount; ++idx)
                 {
-                    if (component_offsets[idx] == 1)
+                    if (idx_map[idx] == std::numeric_limits<ice::u32>::max())
                     {
                         block_pointers[idx] = nullptr;
                     }
                     else
                     {
                         block_pointers[idx] = ice::memory::ptr_add(
-                            block->block_data, component_offsets[idx]
+                            block->block_data,
+                            archetype.offsets[idx_map[idx]]
                         );
                     }
                 }
 
                 ice::u32 component_index = Constant_ComponentCount;
-
                 detail::query_invoke<Fn, Components...>(
                     std::forward<Fn>(fn),
                     block->entity_count,
@@ -452,51 +417,14 @@ namespace ice
     template<typename Fn>
     inline void ComponentQuery<Components...>::ResultByBlock::for_each(Fn&& fn) noexcept
     {
-        ice::memory::StackAllocator_512 temp_alloc{};
-        ice::u32 component_offsets[Constant_ComponentCount]{};
         void* block_pointers[Constant_ComponentCount]{};
-
-        ice::pod::Hash<ice::u32*> archetype_offset_helper{ temp_alloc };
-        ice::pod::hash::reserve(archetype_offset_helper, Constant_ComponentCount);
-
-        {
-            ice::u32 idx = 0;
-            for (ice::StringID_Arg component_hash : Constant_QueryInfo.Const_Identifiers)
-            {
-                ice::pod::hash::set(
-                    archetype_offset_helper,
-                    ice::hash(component_hash),
-                    &component_offsets[idx]
-                );
-                idx += 1;
-            }
-        }
 
         ice::ArchetypeBlock** block_it = ice::pod::begin(_archetype_blocks);
 
         ice::u32 archetype_idx = 0;
         for (ice::ArchetypeInfo const& archetype : _archetype_infos)
         {
-            for (ice::u32& offset : component_offsets)
-            {
-                offset = 1;
-            }
-
-            ice::u32 const archetype_component_count = ice::size(archetype.components);
-            for (ice::u32 idx = 0; idx < archetype_component_count; ++idx)
-            {
-                ice::u64 const component_hash = ice::hash(archetype.components[idx]);
-                ice::u32* const offset_ptr = ice::pod::hash::get(
-                    archetype_offset_helper,
-                    component_hash,
-                    nullptr
-                );
-
-                if (offset_ptr != nullptr)
-                {
-                    *offset_ptr = archetype.offsets[idx];
-                }
-            }
+            auto const idx_map = ice::detail::map_arguments_to_archetype_index<detail::ComponentTypeFromQueryType<Components>...>(archetype);
 
             ice::u32 block_count = _archetype_block_count[archetype_idx];
             while (block_count > 0)
@@ -504,15 +432,16 @@ namespace ice
                 ice::ArchetypeBlock* block = *block_it;
                 for (ice::u32 idx = 0; idx < Constant_ComponentCount; ++idx)
                 {
-                    if (component_offsets[idx] == 1)
+                    if (idx_map[idx] == std::numeric_limits<ice::u32>::max())
                     {
                         block_pointers[idx] = nullptr;
                     }
                     else
                     {
                         block_pointers[idx] = ice::memory::ptr_add(
-                            block->block_data, component_offsets[idx]
-                    );
+                            block->block_data,
+                            archetype.offsets[idx_map[idx]]
+                        );
                     }
                 }
 

@@ -5,6 +5,7 @@
 #include "vk_buffer.hxx"
 #include "vk_utility.hxx"
 #include "vk_buffer.hxx"
+#include "vk_fence.hxx"
 
 #include <ice/assert.hxx>
 #include <ice/memory/pointer_arithmetic.hxx>
@@ -1083,9 +1084,33 @@ namespace ice::render::vk
         _allocator.destroy(static_cast<VulkanQueue*>(queue));
     }
 
+    auto VulkanRenderDevice::create_fence() noexcept -> ice::render::RenderFence*
+    {
+        VkFenceCreateInfo fence_info{ .sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO };
+
+        VkFence fence;
+        VkResult result = vkCreateFence(_vk_device, &fence_info, nullptr, &fence);
+        ICE_ASSERT(
+            result == VkResult::VK_SUCCESS,
+            "Failed to create fence for device!"
+        );
+
+        return _allocator.make<VulkanFence>(_vk_device, fence);
+    }
+
+    void VulkanRenderDevice::destroy_fence(ice::render::RenderFence* fence) noexcept
+    {
+        _allocator.destroy(static_cast<VulkanFence*>(fence));
+    }
+
     auto VulkanRenderDevice::get_commands() noexcept -> ice::render::RenderCommands&
     {
         return _vk_render_commands;
+    }
+
+    void VulkanRenderDevice::wait_idle() const noexcept
+    {
+        vkDeviceWaitIdle(_vk_device);
     }
 
     auto VulkanRenderDevice::create_sampler(
