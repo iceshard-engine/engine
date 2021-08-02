@@ -63,7 +63,7 @@ namespace ice::gfx
 
     void IceGfxQueue::request_command_buffers(
         ice::render::CommandBufferType type,
-        ice::Span<ice::render::CommandBuffer> buffers
+        ice::Span<ice::render::CommandBuffer> out_buffers
     ) noexcept
     {
         using ice::render::CommandBuffer;
@@ -72,7 +72,7 @@ namespace ice::gfx
         ice::pod::Array<CommandBuffer>& cmds = (type == CommandBufferType::Primary) ? _primary : _secondary;
         ice::u32& used = _cmd_buffers_used[static_cast<ice::u32>(type)];
         ice::u32 const available = ice::pod::array::size(cmds) - used;
-        ice::u32 const required = ice::size(buffers);
+        ice::u32 const required = ice::size(out_buffers);
 
         if (available < required)
         {
@@ -84,13 +84,13 @@ namespace ice::gfx
 
         for (ice::u32 idx = 0; idx < required; ++idx)
         {
-            buffers[idx] = from[idx];
+            out_buffers[idx] = from[idx];
         }
         used += required;
     }
 
     void IceGfxQueue::submit_command_buffers(
-        ice::Span<ice::render::CommandBuffer> buffers,
+        ice::Span<ice::render::CommandBuffer const> buffers,
         ice::render::RenderFence const* fence
     ) noexcept
     {

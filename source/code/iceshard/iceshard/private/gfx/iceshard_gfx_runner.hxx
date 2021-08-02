@@ -6,10 +6,12 @@
 #include <ice/task_thread.hxx>
 #include <ice/world/world.hxx>
 
+#include <ice/pod/hash.hxx>
 #include <ice/memory/proxy_allocator.hxx>
 #include <ice/memory/scratch_allocator.hxx>
 
 #include "iceshard_gfx_runner_trait.hxx"
+#include "iceshard_gfx_context.hxx"
 
 namespace ice::gfx
 {
@@ -60,6 +62,8 @@ namespace ice::gfx
         auto device() noexcept -> ice::gfx::GfxDevice& override;
         auto frame() noexcept -> ice::gfx::GfxFrame& override;
 
+        auto task_cleanup_gfx_contexts() noexcept  -> ice::Task<>;
+
         auto task_setup_gfx_traits() noexcept -> ice::Task<>;
         auto task_cleanup_gfx_traits() noexcept  -> ice::Task<>;
 
@@ -69,12 +73,17 @@ namespace ice::gfx
             ice::UniquePtr<ice::gfx::IceGfxFrame> frame
         ) noexcept -> ice::Task<>;
 
+        auto get_or_create_context(
+            ice::StringID_Arg context_name,
+            ice::gfx::GfxPass const& gfx_pass
+        ) noexcept -> ice::gfx::IceGfxContext*;
+
     private:
         ice::memory::ProxyAllocator _allocator;
         ice::UniquePtr<ice::TaskThread> _thread;
         ice::UniquePtr<ice::gfx::IceGfxDevice> _device;
 
-        ice::render::RenderFence* _fences[2];
+        ice::render::RenderFence* _fences[4];
 
         ice::memory::ScratchAllocator _frame_allocator[2];
         ice::u32 _next_free_allocator;
@@ -85,6 +94,7 @@ namespace ice::gfx
         ice::pod::Array<ice::gfx::IceGfxTraitEntry> _traits;
 
         ice::gfx::IceGfxRunnerTrait _runner_trait;
+        ice::pod::Hash<ice::gfx::IceGfxContext*> _contexts;
 
         ice::ManualResetEvent _mre_internal;
         ice::ManualResetEvent* _mre_selected;

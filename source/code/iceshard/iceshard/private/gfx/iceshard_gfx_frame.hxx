@@ -1,7 +1,6 @@
 #pragma once
 #include <ice/gfx/gfx_frame.hxx>
 #include <ice/gfx/gfx_queue.hxx>
-#include <ice/gfx/gfx_task.hxx>
 #include <ice/gfx/gfx_context.hxx>
 
 #include <ice/render/render_device.hxx>
@@ -19,62 +18,14 @@
 namespace ice::gfx
 {
 
-    using GfxCmdOperation = ice::gfx::GfxFrameCommandsOperation::OperationData;
-
-    class IceGfxTaskFrame : public ice::gfx::GfxFrame, public ice::gfx::GfxContext
+    struct IceGfxPassEntry
     {
-    public:
-        IceGfxTaskFrame(ice::Allocator& alloc) noexcept;
-        ~IceGfxTaskFrame() noexcept override = default;
-
-        void add_task(ice::Task<> task) noexcept override;
-
-        auto frame() noexcept -> ice::gfx::GfxFrame& override;
-
-        void query_operations(
-            ice::Span<ice::StringID_Hash const> names,
-            ice::Span<GfxCmdOperation*> operation_heads
-        ) noexcept;
-
-        auto frame_start() noexcept -> ice::gfx::GfxFrameStartOperation override;
-        auto frame_commands(ice::StringID_Arg queue_name) noexcept -> ice::gfx::GfxFrameCommandsOperation override;
-        auto frame_end() noexcept -> ice::gfx::GfxFrameEndOperation override;
-
-        void schedule_internal(
-            ice::gfx::GfxFrameStartOperation* operation,
-            ice::gfx::GfxFrameStartOperation::DataMemberType data
-        ) noexcept override;
-
-        void schedule_internal(
-            ice::gfx::GfxFrameCommandsOperation* operation,
-            ice::gfx::GfxFrameCommandsOperation::DataMemberType data
-        ) noexcept override;
-
-        void schedule_internal(
-            ice::gfx::GfxFrameEndOperation* operation,
-            ice::gfx::GfxFrameEndOperation::DataMemberType data
-        ) noexcept override;
-
-        auto create_task_executor() noexcept -> ice::IceshardTaskExecutor;
-
-        void resume_on_start_stage() noexcept;
-        void resume_on_end_stage() noexcept;
-
-    private:
-        ice::Allocator& _allocator;
-        ice::gfx::GfxTaskCommands* _task_commands;
-
-        ice::Vector<ice::Task<>> _tasks;
-
-        std::atomic<ice::detail::ScheduleOperationData*> _task_head_start;
-
-        std::atomic<ice::gfx::GfxFrameCommandsOperation::OperationData*> _task_head_commands;
-        std::atomic<ice::detail::ScheduleOperationData*> _task_head_end;
-
-        ice::gfx::GfxFrameCommandsOperation::OperationData* _skipped_tasks_temporary = nullptr;
+        ice::StringID queue_name;
+        ice::StringID pass_name;
+        ice::gfx::GfxPass const* pass;
     };
 
-    class IceGfxFrame final : public IceGfxTaskFrame
+    class IceGfxFrame final : public ice::gfx::GfxFrame
     {
     public:
         IceGfxFrame(
@@ -83,76 +34,60 @@ namespace ice::gfx
 
         ~IceGfxFrame() noexcept override = default;
 
+        void add_task(ice::Task<> task) noexcept override;
+
         void set_stage_slot(
             ice::StringID_Arg stage_name,
-            ice::gfx::GfxStage* stage
+            ice::gfx::GfxContextStage const* stage
         ) noexcept override;
 
         void enqueue_pass(
             ice::StringID_Arg queue_name,
-            ice::gfx::GfxPass* pass
+            ice::StringID_Arg pass_name,
+            ice::gfx::GfxPass const* pass
         ) noexcept override;
 
         bool query_queue_stages(
-            ice::StringID_Arg queue_name,
-            ice::pod::Array<ice::gfx::GfxStage*>& out_stages
+            ice::Span<ice::StringID_Hash const> stage_order,
+            ice::Span<ice::gfx::GfxContextStage const*> out_stages
         ) noexcept;
 
-        void execute_passes(
+        auto enqueued_passes() const noexcept -> ice::Span<ice::gfx::IceGfxPassEntry const>;
+
+        auto create_task_executor() noexcept -> ice::IceshardTaskExecutor;
+
+        void on_frame_begin() noexcept;
+        void on_frame_stage(
             ice::EngineFrame const& frame,
-            ice::gfx::IceGfxQueue& queue
+            ice::render::CommandBuffer command_buffer,
+            ice::render::RenderCommands& render_commands
         ) noexcept;
-
-    private:
-        ice::Allocator& _allocator;
-
-        ice::pod::Hash<ice::gfx::GfxPass*> _enqueued_passes;
-        ice::pod::Hash<ice::gfx::GfxStage*> _stages;
-
-        ice::gfx::IceGfxQueueGroup* _queue_group;
-    };
-
-    class IceGfxPassExecutor : public ice::gfx::GfxTaskCommands
-    {
-    public:
-        IceGfxPassExecutor(
-            ice::render::RenderFence const& fence,
-            ice::gfx::IceGfxQueue* queue,
-            ice::gfx::GfxCmdOperation* operations,
-            ice::pod::Array<ice::gfx::GfxStage*> stages
-        ) noexcept;
-
-        void record(ice::EngineFrame const& frame, ice::render::RenderCommands& api) noexcept;
-
-        void execute() noexcept;
+        void on_frame_end() noexcept;
 
     protected:
-        void update_texture(
-            ice::render::Image image,
-            ice::render::Buffer image_contents,
-            ice::vec2u extents
+        void schedule_internal(
+            ice::gfx::GfxAwaitBeginFrameData& operation
+        ) noexcept override;
+
+        void schedule_internal(
+            ice::gfx::GfxAwaitExecuteStageData& operation
+        ) noexcept override;
+
+        void schedule_internal(
+            ice::gfx::GfxAwaitEndFrameData& operation
         ) noexcept override;
 
     private:
-        ice::render::RenderFence const& _fence;
-        ice::gfx::IceGfxQueue* const _queue;
-        ice::render::CommandBuffer _command_buffer;
+        ice::Allocator& _allocator;
+        ice::Vector<ice::Task<>> _tasks;
+        ice::pod::Array<ice::gfx::IceGfxPassEntry> _passes;
 
-        ice::gfx::GfxCmdOperation* _operations;
-        ice::pod::Array<ice::gfx::GfxStage*> _stages;
+        ice::pod::Hash<ice::gfx::GfxFrameStage const*> _frame_stages;
+        ice::pod::Hash<ice::gfx::GfxContextStage const*> _context_stages;
 
-        // HACKS:
-        ice::render::RenderCommands* _api = nullptr;
+        std::atomic<ice::gfx::GfxAwaitBeginFrameData*> _operations_frame_begin = nullptr;
+        std::atomic<ice::gfx::GfxAwaitExecuteStageData*> _operations_stage_execute = nullptr;
+        std::atomic<ice::gfx::GfxAwaitEndFrameData*> _operations_frame_end = nullptr;
     };
-
-    auto create_pass_executor(
-        ice::Allocator& _allocator,
-        ice::render::RenderFence const& fence,
-        ice::render::QueueFlags flags,
-        ice::gfx::IceGfxQueueGroup& queue_group,
-        ice::gfx::IceGfxFrame& gfx_frame,
-        ice::Span<ice::StringID_Hash> names,
-        ice::Span<ice::gfx::GfxCmdOperation*> operations
-    ) noexcept -> ice::UniquePtr<IceGfxPassExecutor>;
 
 } // namespace ice::gfx

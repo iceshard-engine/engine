@@ -27,19 +27,20 @@ namespace ice::gfx
         ice::WorldPortal& portal
     ) noexcept
     {
+        static_cast<ice::gfx::IceGfxFrame&>(_runner.frame()).add_task(_runner.task_cleanup_gfx_contexts());
         static_cast<ice::gfx::IceGfxFrame&>(_runner.frame()).add_task(_runner.task_cleanup_gfx_traits());
     }
 
-    void IceGfxRunnerTrait::gfx_context_setup(
-        ice::gfx::GfxDevice& device,
-        ice::gfx::GfxContext& context
+    void IceGfxRunnerTrait::gfx_setup(
+        ice::gfx::GfxFrame& frame,
+        ice::gfx::GfxDevice& device
     ) noexcept
     {
     }
 
-    void IceGfxRunnerTrait::gfx_context_cleanup(
-        ice::gfx::GfxDevice& device,
-        ice::gfx::GfxContext& context
+    void IceGfxRunnerTrait::gfx_cleanup(
+        ice::gfx::GfxFrame& frame,
+        ice::gfx::GfxDevice& device
     ) noexcept
     {
     }

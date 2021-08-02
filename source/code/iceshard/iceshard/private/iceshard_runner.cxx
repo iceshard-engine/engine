@@ -435,10 +435,8 @@ namespace ice
         case ice::EngineContext::LogicFrame:
             _current_frame->execute_task(ice::move(task));
             break;
-        case ice::EngineContext::GraphicsFrame:
-            static_cast<ice::gfx::IceGfxFrame&>(graphics_frame()).add_task(ice::move(task));
-            break;
         default:
+            ICE_ASSERT(false, "Unknown engine context value for task execution.");
             break;
         }
     }

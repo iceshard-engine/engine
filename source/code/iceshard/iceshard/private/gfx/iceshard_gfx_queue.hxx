@@ -4,7 +4,6 @@
 #include <ice/engine_frame.hxx>
 #include <ice/render/render_queue.hxx>
 #include <ice/gfx/gfx_queue.hxx>
-#include <ice/gfx/gfx_task.hxx>
 
 namespace ice::gfx
 {
@@ -35,11 +34,11 @@ namespace ice::gfx
 
         void request_command_buffers(
             ice::render::CommandBufferType type,
-            ice::Span<ice::render::CommandBuffer> buffers
+            ice::Span<ice::render::CommandBuffer> out_buffers
         ) noexcept;
 
         void submit_command_buffers(
-            ice::Span<ice::render::CommandBuffer> buffers,
+            ice::Span<ice::render::CommandBuffer const> buffers,
             ice::render::RenderFence const* fence
         ) noexcept;
 

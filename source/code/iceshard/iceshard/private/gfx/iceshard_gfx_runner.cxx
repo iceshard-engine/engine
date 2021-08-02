@@ -2,6 +2,7 @@
 #include "iceshard_gfx_frame.hxx"
 #include "iceshard_gfx_device.hxx"
 #include "iceshard_gfx_world.hxx"
+#include "iceshard_gfx_queue.hxx"
 
 #include <ice/render/render_fence.hxx>
 #include <ice/memory/stack_allocator.hxx>
@@ -10,6 +11,18 @@
 
 namespace ice::gfx
 {
+
+    namespace detail
+    {
+
+        struct IceGfxSubmitEntry
+        {
+            ice::gfx::IceGfxQueue* queue;
+            ice::render::CommandBuffer command_buffers[1];
+            ice::render::RenderFence* fence;
+        };
+
+    } // namespace detail
 
     static constexpr ice::u32 Constant_GfxFrameAllocatorCapacity = 16u * 1024u;
 
@@ -30,15 +43,20 @@ namespace ice::gfx
         , _gfx_world_name{ "default"_sid }
         , _traits{ _allocator }
         , _runner_trait{ *this }
+        , _contexts{ _allocator }
         , _mre_internal{ true }
         , _mre_selected{ &_mre_internal }
     {
+        ice::pod::hash::reserve(_contexts, 10);
+
         _current_frame = ice::make_unique<ice::gfx::IceGfxFrame>(
             _allocator, _frame_allocator[1]
         );
 
-        _fences[0] = _device->device().create_fence();
-        _fences[1] = _device->device().create_fence();
+        for (ice::render::RenderFence*& fence_ptr : _fences)
+        {
+            fence_ptr = _device->device().create_fence();
+        }
 
         add_trait("ice.gfx.runner"_sid, &_runner_trait);
     }
@@ -57,8 +75,15 @@ namespace ice::gfx
         _thread->join();
         _thread = nullptr;
 
-        _device->device().destroy_fence(_fences[1]);
-        _device->device().destroy_fence(_fences[0]);
+        for (auto const& entry : _contexts)
+        {
+            _allocator.destroy(entry.value);
+        }
+
+        for (ice::render::RenderFence*& fence_ptr : _fences)
+        {
+            _device->device().destroy_fence(fence_ptr);
+        }
 
         // Destroy the frame safely.
         _current_frame = nullptr;
@@ -156,11 +181,20 @@ namespace ice::gfx
         return *_current_frame;
     }
 
+    auto IceGfxRunner::task_cleanup_gfx_contexts() noexcept -> ice::Task<>
+    {
+        for (auto const& entry : _contexts)
+        {
+            entry.value->clear_context(*_device);
+        }
+        co_return;
+    }
+
     auto IceGfxRunner::task_setup_gfx_traits() noexcept -> ice::Task<>
     {
         for (ice::gfx::IceGfxTraitEntry const& entry : _traits)
         {
-            entry.trait->gfx_context_setup(*_device, *_current_frame);
+            entry.trait->gfx_setup(*_current_frame, *_device);
         }
         co_return;
     }
@@ -169,7 +203,7 @@ namespace ice::gfx
     {
         for (ice::gfx::IceGfxTraitEntry const& entry : _traits)
         {
-            entry.trait->gfx_context_cleanup(*_device, *_current_frame);
+            entry.trait->gfx_cleanup(*_current_frame, *_device);
         }
         co_return;
     }
@@ -181,10 +215,26 @@ namespace ice::gfx
     {
         using ice::render::QueueFlags;
 
-        ice::memory::StackAllocator<1024> initial_alloc;
-        ice::memory::ScratchAllocator alloc{ initial_alloc, 1024 };
+        ice::memory::StackAllocator<2048> initial_alloc;
+        ice::memory::ScratchAllocator alloc{ initial_alloc, 256 };
+        ice::memory::ScratchAllocator temp_alloc{ initial_alloc, 1536 };
 
         IPT_FRAME_MARK_NAMED("Graphics Frame");
+
+        ice::Span<ice::gfx::IceGfxPassEntry const> pass_list = frame->enqueued_passes();
+        ice::u32 const pass_count = ice::size(pass_list);
+
+        ice::pod::Array<ice::gfx::IceGfxContext*> frame_contexts{ alloc };
+        ice::pod::array::reserve(frame_contexts, pass_count);
+
+        for (ice::gfx::IceGfxPassEntry const& gfx_pass : pass_list)
+        {
+            ice::pod::array::push_back(
+                frame_contexts,
+                get_or_create_context(gfx_pass.pass_name, *gfx_pass.pass)
+            );
+        }
+
         ice::IceshardTaskExecutor frame_tasks = frame->create_task_executor();
 
         // Await the graphics thread context
@@ -199,87 +249,102 @@ namespace ice::gfx
         // NOTE: We aquire the graphics queues for this frame index.
         ice::gfx::IceGfxQueueGroup& queue_group = _device->queue_group(image_index);
         queue_group.reset_all();
+        frame_tasks.start_all();
 
-        for (auto* fence : _fences)
+        // Secondly call all GfxTrait::gfx_update methods
+        for (ice::gfx::IceGfxTraitEntry const& entry : _traits)
         {
-            fence->reset();
+            entry.trait->gfx_update(engine_frame, *frame, *_device);
         }
 
+        frame->on_frame_begin();
+
+        // First take care of the Transfer queue.
+        ice::gfx::IceGfxQueue* transfer_queue = nullptr;
         {
-            IPT_ZONE_SCOPED_NAMED("Graphis Frame - Initial Tasks");
-
-            // Secondly call all GfxTrait::gfx_update methods
-            for (ice::gfx::IceGfxTraitEntry const& entry : _traits)
+            if (queue_group.get_queue(QueueFlags::Transfer, transfer_queue))
             {
-                entry.trait->gfx_update(engine_frame, *_device, *frame, *frame);
-            }
+                ice::render::CommandBuffer command_buffer[1];
+                transfer_queue->request_command_buffers(
+                    ice::render::CommandBufferType::Primary,
+                    command_buffer
+                );
 
-            frame_tasks.start_all();
+                frame->on_frame_stage(
+                    engine_frame,
+                    command_buffer[0],
+                    _device->device().get_commands()
+                );
 
-            // First run all tasks that where scheduled from previous frames
-            frame->resume_on_start_stage();
-        }
-
-        {
-            IPT_ZONE_SCOPED_NAMED("Graphis Frame - Command recording and execution");
-
-            // Find operations
-            ice::pod::Array<ice::StringID_Hash> queue_names{ alloc };
-            queue_group.query_queues(queue_names);
-            ice::pod::Array<GfxCmdOperation*> queue_operations{ alloc };
-            ice::pod::array::resize(queue_operations, ice::pod::array::size(queue_names));
-            frame->query_operations(queue_names, queue_operations);
-
-            // Find whole executors
-            ice::UniquePtr<IceGfxPassExecutor> transfer_executor = ice::gfx::create_pass_executor(
-                _allocator,
-                *_fences[0],
-                QueueFlags::Transfer,
-                queue_group,
-                *frame,
-                queue_names,
-                queue_operations
-            );
-
-            ice::UniquePtr<IceGfxPassExecutor> graphics_executor = ice::gfx::create_pass_executor(
-                _allocator,
-                *_fences[1],
-                QueueFlags::Graphics,
-                queue_group,
-                *frame,
-                queue_names,
-                queue_operations
-            );
-
-            if (transfer_executor != nullptr)
-            {
-                transfer_executor->record(engine_frame, _device->device().get_commands());
-                transfer_executor->execute();
-            }
-
-            if (graphics_executor != nullptr)
-            {
-                graphics_executor->record(engine_frame, _device->device().get_commands());
-            }
-
-            if (transfer_executor != nullptr)
-            {
-                _fences[0]->wait(100'000'000);
-            }
-
-            if (graphics_executor != nullptr)
-            {
-                graphics_executor->execute();
-                _fences[1]->wait(100'000'000);
+                _fences[0]->reset();
+                transfer_queue->submit_command_buffers(command_buffer, _fences[0]);
             }
         }
 
-        {
-            IPT_ZONE_SCOPED_NAMED("Graphis Frame - Final tasks");
-            frame->resume_on_end_stage();
+        ice::u32 submit_count = 0;
+        detail::IceGfxSubmitEntry submit_entries[3]{ };
 
-            frame_tasks.wait_ready();
+        for (ice::u32 idx = 0; idx < pass_count; ++idx)
+        {
+            ice::gfx::IceGfxPassEntry const& gfx_pass = pass_list[idx];
+            ice::gfx::IceGfxQueue* const queue = queue_group.get_queue(gfx_pass.queue_name);
+            if (queue == nullptr)
+            {
+                continue;
+            }
+
+            ice::pod::Array<ice::StringID_Hash> stage_order{ temp_alloc };
+            gfx_pass.pass->query_stage_order(stage_order);
+
+            ice::pod::Array<ice::gfx::GfxContextStage const*> context_stages{ temp_alloc };
+            ice::pod::array::resize(context_stages, ice::size(stage_order));
+
+            if (frame->query_queue_stages(stage_order, context_stages))
+            {
+                // TODO: Lets do this better in the next stage.
+                ICE_ASSERT(
+                    submit_count < ice::size(submit_entries),
+                    "Moved past maximum number of submits in this implementation."
+                );
+
+                ice::render::CommandBuffer command_buffer[1];
+                queue->request_command_buffers(
+                    ice::render::CommandBufferType::Primary,
+                    command_buffer
+                );
+
+                frame_contexts[idx]->prepare_context(
+                    context_stages,
+                    *_device
+                );
+
+                frame_contexts[idx]->record_commands(
+                    engine_frame,
+                    command_buffer[0],
+                    _device->device().get_commands()
+                );
+
+                submit_entries[submit_count].queue = queue;
+                submit_entries[submit_count].command_buffers[0] = command_buffer[0];
+                submit_entries[submit_count].fence = _fences[submit_count + 1];
+                submit_count += 1;
+            }
         }
+
+        if (transfer_queue != nullptr)
+        {
+            _fences[0]->wait(100'000'000);
+        }
+
+        for (detail::IceGfxSubmitEntry const& entry : ice::Span<detail::IceGfxSubmitEntry const>{ submit_entries, submit_count })
+        {
+            entry.fence->reset();
+            entry.queue->submit_command_buffers(entry.command_buffers, entry.fence);
+            entry.fence->wait(100'000'000);
+        }
+
+        frame->on_frame_end();
+        frame_tasks.wait_ready();
 
         // Start the draw task and
         {
@@ -287,6 +352,22 @@ namespace ice::gfx
             _device->present(image_index);
         }
         co_return;
+    }
+
+    auto IceGfxRunner::get_or_create_context(
+        ice::StringID_Arg context_name,
+        ice::gfx::GfxPass const& gfx_pass
+    ) noexcept -> ice::gfx::IceGfxContext*
+    {
+        ice::gfx::IceGfxContext* result = ice::pod::hash::get(_contexts, ice::hash(context_name), nullptr);
+
+        if (result == nullptr)
+        {
+            result = _allocator.make<ice::gfx::IceGfxContext>(_allocator, gfx_pass);
+            ice::pod::hash::set(_contexts, ice::hash(context_name), result);
+        }
+
+        return result;
     }
 
 } // namespace ice::gfx
