@@ -10,6 +10,10 @@ namespace ice
 
     static constexpr ice::Shard Shard_SetDefaultCamera = "action/camera/set-default"_shard;
 
+    auto create_trait_camera(
+        ice::Allocator& alloc
+    ) noexcept -> ice::UniquePtr<ice::gfx::GfxTrait>;
+
     auto create_trait_render_gfx(
         ice::Allocator& alloc
     ) noexcept -> ice::UniquePtr<ice::gfx::GfxTrait>;
