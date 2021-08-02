@@ -3,7 +3,6 @@
 #include <ice/engine.hxx>
 #include <ice/engine_runner.hxx>
 #include <ice/gfx/gfx_frame.hxx>
-#include <ice/gfx/gfx_task.hxx>
 #include <ice/gfx/gfx_context.hxx>
 #include <ice/gfx/gfx_resource_tracker.hxx>
 
@@ -75,9 +74,9 @@ namespace ice::devui
         return "ice.devui.imgui-render"_sid;
     }
 
-    void ImGuiTrait::gfx_context_setup(
-        ice::gfx::GfxDevice& gfx_device,
-        ice::gfx::GfxContext& context
+    void ImGuiTrait::gfx_setup(
+        ice::gfx::GfxFrame& gfx_frame,
+        ice::gfx::GfxDevice& gfx_device
     ) noexcept
     {
         using namespace ice::gfx;
@@ -279,16 +278,35 @@ namespace ice::devui
 
             device.update_buffers(updates);
 
+            struct : public ice::gfx::GfxFrameStage
+            {
+                void record_commands(
+                    ice::EngineFrame const& frame,
+                    ice::render::CommandBuffer cmds,
+                    ice::render::RenderCommands& api
+                ) const noexcept override
+                {
+                    api.update_texture(
+                        cmds,
+                        image,
+                        image_data,
+                        image_size
+                    );
+                }
+
+                ice::render::Image image;
+                ice::render::Buffer image_data;
+                ice::vec2u image_size;
+            } frame_stage;
+
+            frame_stage.image = image;
+            frame_stage.image_data = data_buffer;
+            frame_stage.image_size = { image_info.width, image_info.height };
+
             // Await command recording stage
             //  Here we have access to a command buffer where we can record commands.
             //  These commands will be later executed on the graphics thread.
-            ice::gfx::GfxTaskCommands& cmds = co_await gfx_frame.frame_commands("transfer"_sid);
-
-            cmds.update_texture(
-                image,
-                data_buffer,
-                { image_info.width, image_info.height }
-            );
+            co_await gfx_frame.frame_commands(&frame_stage);
 
             // Await end of graphics frame.
             //  Here we know that all commands have been executed
@@ -298,14 +316,14 @@ namespace ice::devui
             device.destroy_buffer(data_buffer);
         };
 
-        context.add_task(update_texture_task(gfx_device, context.frame(), _font_texture, font_info));
+        gfx_frame.add_task(update_texture_task(gfx_device, gfx_frame, _font_texture, font_info));
 
         _initialized = true;
     }
 
-    void ImGuiTrait::gfx_context_cleanup(
-        ice::gfx::GfxDevice& gfx_device,
-        ice::gfx::GfxContext& context
+    void ImGuiTrait::gfx_cleanup(
+        ice::gfx::GfxFrame& gfx_frame,
+        ice::gfx::GfxDevice& gfx_device
     ) noexcept
     {
         using namespace ice::gfx;
@@ -332,9 +350,8 @@ namespace ice::devui
 
     void ImGuiTrait::gfx_update(
         ice::EngineFrame const& engine_frame,
-        ice::gfx::GfxDevice& gfx_device,
-        ice::gfx::GfxContext& context,
-        ice::gfx::GfxFrame& frame
+        ice::gfx::GfxFrame& gfx_frame,
+        ice::gfx::GfxDevice& gfx_device
     ) noexcept
     {
         IPT_ZONE_SCOPED_NAMED("DevUI - Gfx - ImGui update buffers.");
@@ -448,7 +465,7 @@ namespace ice::devui
             device.update_buffers({ buffer_updates, buffer_update_count });
         }
 
-        frame.set_stage_slot(gfx_stage_name(), this);
+        gfx_frame.set_stage_slot(gfx_stage_name(), this);
     }
 
     void ImGuiTrait::on_activate(
@@ -568,6 +585,7 @@ namespace ice::devui
     }
 
     void ImGuiTrait::record_commands(
+        ice::gfx::GfxContext const& context,
         ice::EngineFrame const& frame,
         ice::render::CommandBuffer cmds,
         ice::render::RenderCommands& api

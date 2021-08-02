@@ -11,7 +11,7 @@
 namespace ice::devui
 {
 
-    class ImGuiTrait final : public ice::devui::DevUITrait, public ice::gfx::GfxStage
+    class ImGuiTrait final : public ice::devui::DevUITrait, public ice::gfx::GfxContextStage
     {
     public:
         ImGuiTrait(ice::Allocator& alloc) noexcept;
@@ -19,21 +19,20 @@ namespace ice::devui
 
         auto gfx_stage_name() const noexcept -> ice::StringID override;
 
-        void gfx_context_setup(
-            ice::gfx::GfxDevice& device,
-            ice::gfx::GfxContext& context
+        void gfx_setup(
+            ice::gfx::GfxFrame& gfx_frame,
+            ice::gfx::GfxDevice& gfx_device
         ) noexcept override;
 
-        void gfx_context_cleanup(
-            ice::gfx::GfxDevice& device,
-            ice::gfx::GfxContext& context
+        void gfx_cleanup(
+            ice::gfx::GfxFrame& gfx_frame,
+            ice::gfx::GfxDevice& gfx_device
         ) noexcept override;
 
         void gfx_update(
             ice::EngineFrame const& engine_frame,
-            ice::gfx::GfxDevice& device,
-            ice::gfx::GfxContext& context,
-            ice::gfx::GfxFrame& frame
+            ice::gfx::GfxFrame& gfx_frame,
+            ice::gfx::GfxDevice& gfx_device
         ) noexcept override;
 
         void on_activate(
@@ -49,6 +48,7 @@ namespace ice::devui
         ) noexcept override;
 
         void record_commands(
+            ice::gfx::GfxContext const& context,
             ice::EngineFrame const& frame,
             ice::render::CommandBuffer command_buffer,
             ice::render::RenderCommands& render_commands
