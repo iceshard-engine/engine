@@ -13,6 +13,11 @@ namespace ice::gfx
         ice::pod::array::reserve(_dependencies, 25);
     }
 
+    auto GfxDynamicPassStageGroup::stage_count() const noexcept -> ice::u32
+    {
+        return ice::pod::array::size(_entries);
+    }
+
     bool GfxDynamicPassStageGroup::has_work() const noexcept
     {
         return ice::pod::array::empty(_entries) == false;
@@ -105,6 +110,16 @@ namespace ice::gfx
         {
             _allocator.destroy(stage_desc);
         }
+    }
+
+    auto IceGfxDynamicPass::stage_count() const noexcept -> ice::u32
+    {
+        ice::u32 result = 0;
+        for (GfxDynamicPassStageGroup* stage_desc : _stages)
+        {
+            result += stage_desc->stage_count();
+        }
+        return result;
     }
 
     bool IceGfxDynamicPass::has_work() const noexcept

@@ -11,6 +11,8 @@ namespace ice::gfx
         GfxDynamicPassStageGroup(ice::Allocator& alloc) noexcept;
         ~GfxDynamicPassStageGroup() noexcept = default;
 
+        auto stage_count() const noexcept -> ice::u32;
+
         bool has_work() const noexcept;
 
         bool contains_any(ice::Span<ice::StringID const> stage_names) const noexcept;
@@ -49,6 +51,8 @@ namespace ice::gfx
             ice::Allocator& alloc
         ) noexcept;
         ~IceGfxDynamicPass() noexcept;
+
+        auto stage_count() const noexcept -> ice::u32;
 
         bool has_work() const noexcept;
 

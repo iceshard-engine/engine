@@ -38,6 +38,8 @@ namespace ice::gfx
     public:
         virtual ~GfxPass() noexcept = default;
 
+        virtual auto stage_count() const noexcept -> ice::u32 = 0;
+
         virtual void query_stage_order(
             ice::pod::Array<ice::StringID_Hash>& stage_order_out
         ) const noexcept = 0;
