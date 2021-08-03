@@ -1,54 +1,109 @@
-# IceShard engine
+# IceShard
 
-[IceShard WebSite](https://iceshard.net/)
+The project is a game engine with a heavy focus on finding the best solution for a given problem, but not limiting to a single design approach.
+More info about the development approach can be found in our [wiki]().
 
-[![](https://github.com/iceshard-engine/engine/workflows/Nightly/badge.svg)](https://github.com/iceshard-engine/engine/actions?workflow=Nightly)
-[![](https://github.com/iceshard-engine/engine/workflows/Validation/badge.svg)](https://github.com/iceshard-engine/engine/actions?workflow=Validation)
+## Features
 
-## Prerequesites
-To use this engine you will need the following tools:
-* [Conan Package Manager](https://conan.io/) - for dependency management.
-* \[windows\] Visual Studio 2019 16.4 or later
-* \[macosx\] Not supported yet.
-* \[unix\] *(in-development)* Clang-9 and Clang-10.
+Currently the codebase features simple implementations of:
+* Allocator oriented memory access.
+    * Only `placement new` operators used.
+* Support for **Tracy** profiler.
+* Device inputs and events.
+* Resource and asset access.
+    * Runtime building of some assets.
+* Abstracted API for rendering.
+    * With an working implementation for vulkan.
+* An extensive engine API.
+    * Heavily data-oriented ECS implementation.
+    * **World** design with user **Traits** as extension points.
+    * Graphics layer build on top of the Render API and world traits.
+    * Fully removable DevUI API.
+* ...
 
-## Installation
-The installation process is really simple.
-Just add the below conan repositories and start working ;)
+## Building the engine
 
-```bash
-conan remote add conan-iceshard https://conan.iceshard.net/
-conan remote add conan-bincrafters https://api.bintray.com/conan/bincrafters/public-conan
+A quick overview how to build the engine localy on your machine.
+
+### Prerequesites
+To build this engine you will need the following tools on your PC installed:
+* [Conan Package Manager](https://conan.io/) - Used to access project dependencies.
+    * This also requires python3 as a dependency.
+* **Windows:**
+    * Required: Visual Studio 2019 _(16.10 or later)_
+    * Required: Windows Kit (10.0.19041.0 or later)
+    * Required: Vulkan SDK _(1.2.170.0 or later)_
+        * Optional when a DX1* implementation is available.
+* **Linux** - _(Under heavy development, currently not available in the repository)_
+    * Preferred: Ubuntu 20.0 distribution or later
+    * Required: Clang-10 C++ compiler or later
+    * Required: standard library libc++-10 or later
+    * Required: Vulkan SDK _(1.2.170.0 or later)_
+        * Optional when a OpenGL implementation is available.
+* **MacOS:**
+    * No support
+
+### Configuring Conan
+
+To properly initialize the workspace you will need to download Conan configuration from the [Conan Config](https://github.com/iceshard-engine/conan-config.git) repository.
+This contains the Conan clang profiles and remotes that should be used with this project.
+
+The quickest way to setup Conan for this project is to use the following command:
+
+```
+conan config install https://github.com/iceshard-engine/conan-config.git
 ```
 
-**Note:** If some conan packages are shown as missing you will need to build the localy.
+### Ice Build Tools
 
-## Project generation (currently windows only)
-To generate projects for development run the following command in the root directory:
-```bash
-ice generate
-```
+This project uses it's own command line tool named **Ice Build Tools** to provide various tools that can be used during development.
 
-This will generate the Visual Studio solution **IceShard.sln**.
+It is a Conan package that will be installed on first use. It can be easily updated at any point or by removing the `./build/` entire directory when something goes wrong.
 
-## Building
-To just build the engine run the following command in the root directory:
+---
+#### The `build` command
 
-```bash
-ice build
-```
+Building the engine is straight forward, all you need to do is to call this command in your terminal and you have build the engine.
 
-This will build the engine in the ReleaseDebug configuration for the host platform.
+    ./ice.sh build
+    ./ice.bat build
 
-## GitHub Actions CI
+You can further specifiy the target you want to build by using the `-t --target` option.
 
-Currently this project using the **GitHub Actions** service for CI.
+    ice build -t all-x64-Debug
 
-Builds are there mostly for validation and will be expanded with new targets as time goes.
+---
+#### The `vstudio` command
 
-## Coding style
+This command allows to generate project files for Visual Studio.
 
-[Coding Style](https://github.com/iceshard-engine/coding-style)
+    ./ice.bat vstudio
+
+---
+#### The `run` command
+
+This command allows to execute pre-defined lists of other commands or tools in order. These execution `scenarios` are stored in the `scenarios.json` file and currently provide a quick way to run the test application and to build shaders on the Windows platform.
+
+    :: Build all shaders into Vulkan SPIR-V
+    ./ice.bat run -s shaders
+
+    :: Run the default built test application executable (all-x64-Develop)
+    ./ice.bat run
+
+
+## Contributing
+
+Contributions are welcome, however they need to follow the
+[Coding Style](https://github.com/iceshard-engine/coding-style) of the engine and pass the review process.
+
+Additionally some contributions might also require additional changes if the implementation does not follow the design principles of this project.
+
+It is however possible to ask for a separate repository that will and provide new features via modules API.This would only require to follow the aformentioned coding style.
+
+
+## License
+
+The engine is licensed under [BSD 3-Clause Clear License](https://github.com/iceshard-engine/engine/blob/master/LICENSE).
 
 ## Aknowledgements
 
