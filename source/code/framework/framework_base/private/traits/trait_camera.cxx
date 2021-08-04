@@ -218,7 +218,7 @@ namespace ice
                         cam.position + cam.front,
                         { 0.f, 1.f, 0.f }
                     );
-                    render_data.projection = ice::perspective(
+                    render_data.projection = ice::perspective_fovx(
                         persp->field_of_view,
                         persp->aspect_ration,
                         persp->near_far.x,
@@ -227,9 +227,9 @@ namespace ice
                     render_data.clip = {
                         .v = {
                             { 1.0f, 0.0f, 0.0f, 0.0f },
-                            { 0.0f, -1.0f, 0.0f, 0.0f },
-                            { 0.0f, 0.0f, 0.5f, 0.5f },
-                            { 0.0f, 0.0f, 0.0f, 0.1f },
+                            { 0.0f, 1.0f, 0.0f, 0.0f },
+                            { 0.0f, 0.0f, 1.0f, 0.0f },
+                            { 0.0f, 0.0f, 0.0f, 1.0f },
                         }
                     };
                 }
