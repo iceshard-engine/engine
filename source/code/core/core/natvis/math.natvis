@@ -16,10 +16,10 @@
   </Type>
 
   <Type Name="ice::math::mat&lt;*,1,int&gt;">
-    <DisplayString Condition="$T1 == 1">vec{$T1}i {{ x={v[0][0]} }}</DisplayString>
-    <DisplayString Condition="$T1 == 2">vec{$T1}i {{ x={v[0][0]}, y={v[0][1]} }}</DisplayString>
-    <DisplayString Condition="$T1 == 3">vec{$T1}i {{ x={v[0][0]}, y={v[0][1]}, z={v[0][2]} }}</DisplayString>
-    <DisplayString Condition="$T1 == 4">vec{$T1}i {{ x={v[0][0]}, y={v[0][1]}, z={v[0][2]}, w={v[0][3]} }}</DisplayString>
+    <DisplayString Condition="$T1 == 1">vec{$T1,d}i {{ x={v[0][0]} }}</DisplayString>
+    <DisplayString Condition="$T1 == 2">vec{$T1,d}i {{ x={v[0][0]}, y={v[0][1]} }}</DisplayString>
+    <DisplayString Condition="$T1 == 3">vec{$T1,d}i {{ x={v[0][0]}, y={v[0][1]}, z={v[0][2]} }}</DisplayString>
+    <DisplayString Condition="$T1 == 4">vec{$T1,d}i {{ x={v[0][0]}, y={v[0][1]}, z={v[0][2]}, w={v[0][3]} }}</DisplayString>
     <Expand>
       <Item Name="[x]" Condition="$T1 &gt;= 1">v[0][0]</Item>
       <Item Name="[y]" Condition="$T1 &gt;= 2">v[0][1]</Item>
@@ -29,10 +29,10 @@
   </Type>
 
   <Type Name="ice::math::mat&lt;*,1,unsigned int&gt;">
-    <DisplayString Condition="$T1 == 1">vec{$T1}u {{ x={v[0][0]} }}</DisplayString>
-    <DisplayString Condition="$T1 == 2">vec{$T1}u {{ x={v[0][0]}, y={v[0][1]} }}</DisplayString>
-    <DisplayString Condition="$T1 == 3">vec{$T1}u {{ x={v[0][0]}, y={v[0][1]}, z={v[0][2]} }}</DisplayString>
-    <DisplayString Condition="$T1 == 4">vec{$T1}u {{ x={v[0][0]}, y={v[0][1]}, z={v[0][2]}, w={v[0][3]} }}</DisplayString>
+    <DisplayString Condition="$T1 == 1">vec{$T1,d}u {{ x={v[0][0]} }}</DisplayString>
+    <DisplayString Condition="$T1 == 2">vec{$T1,d}u {{ x={v[0][0]}, y={v[0][1]} }}</DisplayString>
+    <DisplayString Condition="$T1 == 3">vec{$T1,d}u {{ x={v[0][0]}, y={v[0][1]}, z={v[0][2]} }}</DisplayString>
+    <DisplayString Condition="$T1 == 4">vec{$T1,d}u {{ x={v[0][0]}, y={v[0][1]}, z={v[0][2]}, w={v[0][3]} }}</DisplayString>
     <Expand>
       <Item Name="[x]" Condition="$T1 &gt;= 1">v[0][0]</Item>
       <Item Name="[y]" Condition="$T1 &gt;= 2">v[0][1]</Item>
@@ -42,10 +42,10 @@
   </Type>
 
   <Type Name="ice::math::mat&lt;*,1,float&gt;">
-    <DisplayString Condition="$T1 &gt;= 1">vec{$T1}f {{ x={v[0][0]} }}</DisplayString>
-    <DisplayString Condition="$T1 &gt;= 2">vec{$T1}f {{ x={v[0][0]}, y={v[0][1]} }}</DisplayString>
-    <DisplayString Condition="$T1 &gt;= 3">vec{$T1}f {{ x={v[0][0]}, y={v[0][1]}, z={v[0][2]} }}</DisplayString>
-    <DisplayString Condition="$T1 == 4">vec{$T1}f {{ x={v[0][0]}, y={v[0][1]}, z={v[0][2]}, w={v[0][3]} }}</DisplayString>
+    <DisplayString Condition="$T1 == 1">vec{$T1,d}f {{ x={v[0][0]} }}</DisplayString>
+    <DisplayString Condition="$T1 == 2">vec{$T1,d}f {{ x={v[0][0]}, y={v[0][1]} }}</DisplayString>
+    <DisplayString Condition="$T1 == 3">vec{$T1,d}f {{ x={v[0][0]}, y={v[0][1]}, z={v[0][2]} }}</DisplayString>
+    <DisplayString Condition="$T1 == 4">vec{$T1,d}f {{ x={v[0][0]}, y={v[0][1]}, z={v[0][2]}, w={v[0][3]} }}</DisplayString>
     <Expand>
       <Item Name="[x]" Condition="$T1 &gt;= 1">v[0][0]</Item>
       <Item Name="[y]" Condition="$T1 &gt;= 2">v[0][1]</Item>
