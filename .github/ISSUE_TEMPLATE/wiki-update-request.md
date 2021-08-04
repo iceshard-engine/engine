@@ -7,4 +7,10 @@ assignees: ''
 
 ---
 
-Brief description of the information you are missing on the wiki:
+**Describe your question you want have answered**
+A clear and concise description of what you were searching an answer for.
+Example: "I wanted to know how to create a new World Trait."
+
+**Provide detailed information**
+Provide what topics, related to your question, you want to have better documentation of.
+Example: "Adding a world trait to a world."
