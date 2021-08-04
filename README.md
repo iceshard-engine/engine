@@ -1,11 +1,11 @@
 # IceShard
 
-The project is a game engine with a heavy focus on finding the best solution for a given problem, but not limiting to a single design approach.
-More info about the development approach can be found in our [wiki]().
+The project is a game engine with heavy focus on finding the best solution for a given problem, by using different design approaches.
+More info about the development approach can be found in our [wiki](https://github.com/iceshard-engine/engine/wiki).
 
 ## Features
 
-Currently the codebase features simple implementations of:
+Current list of features:
 * Allocator oriented memory access.
     * Only `placement new` operators used.
 * Support for **Tracy** profiler.
@@ -13,7 +13,7 @@ Currently the codebase features simple implementations of:
 * Resource and asset access.
     * Runtime building of some assets.
 * Abstracted API for rendering.
-    * With an working implementation for vulkan.
+    * With a working implementation for Vulkan.
 * An extensive engine API.
     * Heavily data-oriented ECS implementation.
     * **World** design with user **Traits** as extension points.
@@ -23,11 +23,11 @@ Currently the codebase features simple implementations of:
 
 ## Building the engine
 
-A quick overview how to build the engine localy on your machine.
+A quick overview how to build the engine on your machine.
 
-### Prerequesites
-To build this engine you will need the following tools on your PC installed:
-* [Conan Package Manager](https://conan.io/) - Used to access project dependencies.
+### Prerequisites
+To build this engine you will need the following tools and SDKs installed:
+* [Conan Package Manager](https://conan.io/) - Used to manage project dependencies.
     * This also requires python3 as a dependency.
 * **Windows:**
     * Required: Visual Studio 2019 _(16.10 or later)_
@@ -45,7 +45,7 @@ To build this engine you will need the following tools on your PC installed:
 
 ### Configuring Conan
 
-To properly initialize the workspace you will need to download Conan configuration from the [Conan Config](https://github.com/iceshard-engine/conan-config.git) repository.
+To properly initialize the workspace, you will need to setup Conan with configurations from the [IceShard-Conan-Config](https://github.com/iceshard-engine/conan-config.git) repository.
 This contains the Conan clang profiles and remotes that should be used with this project.
 
 The quickest way to setup Conan for this project is to use the following command:
@@ -56,19 +56,19 @@ conan config install https://github.com/iceshard-engine/conan-config.git
 
 ### Ice Build Tools
 
-This project uses it's own command line tool named **Ice Build Tools** to provide various tools that can be used during development.
+This project uses its own command line tool named **Ice Build Tools** to provide various utilities that can be used during development.
 
-It is a Conan package that will be installed on first use. It can be easily updated at any point or by removing the `./build/` entire directory when something goes wrong.
+It is a Conan package that will be installed on first use. It can be easily updated at any point or reset by removing the `./build/` directory when something goes wrong.
 
 ---
 #### The `build` command
 
-Building the engine is straight forward, all you need to do is to call this command in your terminal and you have build the engine.
+Building the engine is straight forward, all you need to do is to call this command in your terminal and you have built the engine.
 
     ./ice.sh build
     ./ice.bat build
 
-You can further specifiy the target you want to build by using the `-t --target` option.
+You can further specify the target you want to build by using the `-t --target` option.
 
     ice build -t all-x64-Debug
 
@@ -87,7 +87,7 @@ This command allows to execute pre-defined lists of other commands or tools in o
     :: Build all shaders into Vulkan SPIR-V
     ./ice.bat run -s shaders
 
-    :: Run the default built test application executable (all-x64-Develop)
+    :: Run the default-built test application executable (all-x64-Develop)
     ./ice.bat run
 
 
@@ -96,19 +96,18 @@ This command allows to execute pre-defined lists of other commands or tools in o
 Contributions are welcome, however they need to follow the
 [Coding Style](https://github.com/iceshard-engine/coding-style) of the engine and pass the review process.
 
-Additionally some contributions might also require additional changes if the implementation does not follow the design principles of this project.
+Additionally, some contributions might also require additional changes if the implementation does not follow the design principles of this project.
 
-It is however possible to ask for a separate repository that will and provide new features via modules API.This would only require to follow the aformentioned coding style.
+It is however possible to ask for a separate repository that will and provide new features via modules API. This would only require to follow the aforementioned coding style.
 
 
 ## License
 
 The engine is licensed under [BSD 3-Clause Clear License](https://github.com/iceshard-engine/engine/blob/master/LICENSE).
 
-## Aknowledgements
+## Acknowledgements
 
 This project was heavily influenced by several articles, but mostly by the BitSquid development blog.
-Because of this some parts of the engine may resemble solutins which can be found in the blogs posts.
 
-Additionally, some parts of the engine where based on the **BitSquid Foundation Library** which was discussed here:
+Additionally, some parts of the engine were based on the **BitSquid Foundation Library** which was discussed here:
 https://bitsquid.blogspot.com/2012/11/bitsquid-foundation-library.html
