@@ -68,8 +68,8 @@ namespace ice
         {
             ice::vec4f{ 0.3f },
             ice::vec4f{ 0.3f },
-            ice::vec4f{ 0.3f },
-            ice::vec4f{ 0.3f },
+            ice::vec4f{ 1.0f },
+            ice::vec4f{ 1.0f },
         };
 
         api.begin_renderpass(
