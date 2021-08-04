@@ -1,7 +1,7 @@
 # IceShard
 
 The project is a game engine with heavy focus on finding the best solution for a given problem, by using different design approaches.
-More info about the development approach can be found in our [wiki]().
+More info about the development approach can be found in our [wiki](https://github.com/iceshard-engine/engine/wiki).
 
 ## Features
 
