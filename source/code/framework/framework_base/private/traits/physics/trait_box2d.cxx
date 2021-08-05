@@ -135,7 +135,7 @@ namespace ice
                     //    body->SetTransform(vec, body->GetAngle());
                     //}
 
-                    dyn_xform.position = ice::vec3f{ body_pos.x * Constant_PixelsInMeter, body_pos.y * Constant_PixelsInMeter, 1.f };
+                    dyn_xform.position = ice::vec3f{ body_pos.x * Constant_PixelsInMeter, body_pos.y * Constant_PixelsInMeter, dyn_xform.position.z };
                 }
             }
         );
