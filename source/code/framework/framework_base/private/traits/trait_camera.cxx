@@ -189,6 +189,15 @@ namespace ice
                 ice::TraitCameraData& camera_data = camera_span[cam_idx];
                 camera_data.camera_name = cam.name;
 
+                static ice::mat4x4 const clip = {
+                    .v = {
+                        { 1.0f, 0.0f, 0.0f, 0.0f },
+                        { 0.0f, -1.0f, 0.0f, 0.0f },
+                        { 0.0f, 0.0f, 1.0f, 0.0f },
+                        { 0.0f, 0.0f, 0.0f, 1.f },
+                    }
+                };
+
                 ice::TraitCameraRenderData& render_data = camera_data.render_data;
                 if (ortho != nullptr)
                 {
@@ -197,19 +206,11 @@ namespace ice
                         cam.position + cam.front,
                         { 0.f, 1.f, 0.f }
                     );
-                    render_data.projection = ice::orthographic(
+                    render_data.projection = clip * ice::orthographic(
                         ortho->left_right,
-                        ortho->top_bottom,
+                        ortho->bottom_top,
                         ortho->near_far
                     );
-                    render_data.clip = {
-                        .v = {
-                            { 1.0f, 0.0f, 0.0f, 0.0f },
-                            { 0.0f, -1.0f, 0.0f, 0.0f },
-                            { 0.0f, 0.0f, 0.5f, 0.0f },
-                            { 0.0f, 0.0f, 0.5f, 1.f },
-                        }
-                    };
                 }
                 else if (persp != nullptr)
                 {
@@ -218,20 +219,12 @@ namespace ice
                         cam.position + cam.front,
                         { 0.f, 1.f, 0.f }
                     );
-                    render_data.projection = ice::perspective_fovx(
+                    render_data.projection = clip * ice::perspective_fovx(
                         persp->field_of_view,
                         persp->aspect_ration,
                         persp->near_far.x,
                         persp->near_far.y
                     );
-                    render_data.clip = {
-                        .v = {
-                            { 1.0f, 0.0f, 0.0f, 0.0f },
-                            { 0.0f, 1.0f, 0.0f, 0.0f },
-                            { 0.0f, 0.0f, 1.0f, 0.0f },
-                            { 0.0f, 0.0f, 0.0f, 1.0f },
-                        }
-                    };
                 }
 
                 cam_idx += 1;

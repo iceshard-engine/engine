@@ -12,7 +12,6 @@ namespace ice
     {
         ice::mat4x4 view;
         ice::mat4x4 projection;
-        ice::mat4x4 clip;
     };
 
     struct TraitCameraData

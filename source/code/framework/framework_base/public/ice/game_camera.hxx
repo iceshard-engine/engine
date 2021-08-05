@@ -20,7 +20,7 @@ namespace ice
         static constexpr ice::StringID Identifier = "ice.component.camera-ortographic"_sid;
 
         ice::vec2f left_right;
-        ice::vec2f top_bottom;
+        ice::vec2f bottom_top;
         ice::vec2f near_far;
     };
 

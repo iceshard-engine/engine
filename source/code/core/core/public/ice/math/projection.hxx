@@ -21,25 +21,8 @@ namespace ice::math
     constexpr auto orthographic(
         f32 left, f32 right,
         f32 bottom, f32 top,
-        f32 nearv, f32 farv
+        f32 near_plane, f32 far_plane
     ) noexcept -> mat<4, 4, f32>;
-
-
-    constexpr auto orthographic(
-        vec<2, f32> left_right,
-        vec<2, f32> bottom_top,
-        vec<2, f32> near_far
-    ) noexcept -> mat<4, 4, f32>
-    {
-        return orthographic(
-            left_right.v[0][0],
-            left_right.v[0][1],
-            bottom_top.v[0][0],
-            bottom_top.v[0][1],
-            near_far.v[0][0],
-            near_far.v[0][1]
-        );
-    }
 
     namespace math_detail
     {
@@ -54,11 +37,9 @@ namespace ice::math
         ) noexcept -> mat<4, 4, f32>
         {
             mat<4, 4, f32> result{ };
-            result.v[0][0] = 2.f * plane_near / (right - left);
 
-            // #todo: Remove the negation as it's only valid for the Vulkan renderer. #54
-            //  This should be fixed when proper works starts on additional renderer implementations.
-            result.v[1][1] = -1.f * 2.f * plane_near / (top - bottom);
+            result.v[0][0] = 2.f * plane_near / (right - left);
+            result.v[1][1] = 2.f * plane_near / (top - bottom);
             result.v[2][0] = (right + left) / (right - left);
             result.v[2][1] = (top + bottom) / (top - bottom);
             result.v[2][2] = plane_far / (plane_near - plane_far);
@@ -109,20 +90,35 @@ namespace ice::math
     }
 
     constexpr auto orthographic(
+        vec<2, f32> left_right,
+        vec<2, f32> bottom_top,
+        vec<2, f32> near_far
+    ) noexcept -> mat<4, 4, f32>
+    {
+        return orthographic(
+            left_right.v[0][0],
+            left_right.v[0][1],
+            bottom_top.v[0][0],
+            bottom_top.v[0][1],
+            near_far.v[0][0],
+            near_far.v[0][1]
+        );
+    }
+
+    constexpr auto orthographic(
         f32 left, f32 right,
         f32 bottom, f32 top,
-        f32 nearv, f32 farv
+        f32 near_plane, f32 far_plane
     ) noexcept -> mat<4, 4, f32>
     {
         mat<4, 4, f32> result{ };
-        // [issue #37] Pick a single coordinate system and check this code.
-        //  As it might work for now but not be 100% valid.
+
         result.v[0][0] = 2.f / (right - left);
         result.v[1][1] = 2.f / (top - bottom);
-        result.v[2][2] = 2.f / (farv - nearv);
+        result.v[2][2] = -1.f / (far_plane - near_plane);
         result.v[3][0] = -(right + left) / (right - left);
         result.v[3][1] = -(top + bottom) / (top - bottom);
-        result.v[3][2] = -(farv + nearv) / (farv - nearv);
+        result.v[3][2] = -near_plane / (far_plane - near_plane);
         result.v[3][3] = 1.f;
         return result;
     }

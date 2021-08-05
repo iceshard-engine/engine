@@ -17,7 +17,6 @@ layout (std140, set = 0, binding = 0) uniform Camera
 {
     mat4 view;
     mat4 projection;
-    mat4 clip;
 } cam;
 
 void main()
@@ -27,5 +26,5 @@ void main()
     out_uv = in_uv + vec2(in_mat_x, in_mat_y);
 
     vec3 pos = vec3(in_pos, 0) + in_offset;
-    gl_Position = cam.clip * cam.projection * cam.view * vec4(pos, 1);
+    gl_Position = cam.projection * cam.view * vec4(pos, 1);
 }
