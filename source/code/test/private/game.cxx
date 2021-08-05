@@ -205,8 +205,8 @@ void MyGame::on_game_begin(ice::EngineRunner& runner) noexcept
         .front = { 0.f, 0.f, -1.f }
     };
     ice::CameraOrtho const orto_values{
-        .left_right = { 0.f, 480.f },
-        .top_bottom = { 320.f, 0.f },
+        .left_right = { 0.f, (ice::f32) extent.x / 2.f },
+        .bottom_top = { 0.f, (ice::f32) extent.y / 2.f },
         .near_far = { 0.1f, 100.f }
     };
     _entity_storage.set_archetype_with_data(camera_entity, ortho_arch, camera, orto_values);
@@ -216,7 +216,7 @@ void MyGame::on_game_begin(ice::EngineRunner& runner) noexcept
         .speed = 1.f / 60.f
     };
     ice::Transform2DDynamic sprite_pos{
-        .position = { 48.f, 448.f, 1.f },
+        .position = { 48.f, 448.f, -1.f },
         .scale = { 1.f, 0.f }
     };
     ice::Sprite sprite{
@@ -227,13 +227,13 @@ void MyGame::on_game_begin(ice::EngineRunner& runner) noexcept
     };
     _entity_storage.set_archetype_with_data(sprite_entity, sprite_arch, anim, sprite_pos, sprite, sprite_tile, ice::PhysicsBody{});
 
-    sprite_pos.position = { 48.f * 2, 448.f, 1.f };
+    sprite_pos.position = { 48.f * 2, 448.f, -1.f };
     sprite_tile.material_tile = { 0, 1 };
     anim.speed = 1.f / 15.f;
     ice::Actor actor{ .type = ice::ActorType::Player };
     _entity_storage.set_archetype_with_data(sprite_entity2, actor_arch, anim, sprite_pos, sprite, sprite_tile, actor, ice::PhysicsBody{});
 
-    sprite_pos.position = { 48.f * 3, 448.f, 1.f };
+    sprite_pos.position = { 48.f * 3, 448.f, -1.f };
     sprite_tile.material_tile = { 4, 5 };
     anim.speed = 1.f / 30.f;
     sprite.material = "/cotm/tileset_a"_sid;
