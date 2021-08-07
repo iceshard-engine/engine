@@ -38,6 +38,11 @@ namespace ice
         ice::StringID_Arg stage_name
     ) noexcept -> ice::UniquePtr<ice::gfx::GfxTrait>;
 
+    auto create_trait_render_tilemap(
+        ice::Allocator& alloc,
+        ice::StringID_Arg stage_name
+    ) noexcept -> ice::UniquePtr<ice::gfx::GfxTrait>;
+
 } // namespace ice
 
 template<>

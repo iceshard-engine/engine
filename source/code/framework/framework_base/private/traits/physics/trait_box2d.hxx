@@ -11,9 +11,19 @@
 namespace ice
 {
 
-    class IceWorldTrait_PhysicsBox2D : public ice::WorldTrait
+    class IceWorldTrait_PhysicsBox2D : public ice::WorldTrait_Physics2D
     {
     public:
+        auto create_static_body(
+            ice::vec2f position,
+            ice::PhysicsShape shape,
+            ice::vec2f dimensions
+        ) noexcept -> ice::PhysicsID override;
+
+        void destroy_body(
+            ice::PhysicsID physics_id
+        ) noexcept override;
+
         void on_activate(
             ice::Engine& engine,
             ice::EngineRunner& runner,

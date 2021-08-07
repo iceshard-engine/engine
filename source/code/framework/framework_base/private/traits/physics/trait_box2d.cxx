@@ -19,6 +19,50 @@
 namespace ice
 {
 
+    namespace detail
+    {
+
+        inline auto body_to_physics_id(b2Body* body) noexcept
+        {
+            return static_cast<ice::PhysicsID>(reinterpret_cast<ice::uptr>(body));
+        }
+
+        inline auto body_from_physics_id(ice::PhysicsID physics_id) noexcept
+        {
+            return reinterpret_cast<b2Body*>(static_cast<ice::uptr>(physics_id));
+        }
+
+    } // namespace detail
+
+    auto IceWorldTrait_PhysicsBox2D::create_static_body(
+        ice::vec2f position,
+        ice::PhysicsShape shape,
+        ice::vec2f dimensions
+    ) noexcept -> ice::PhysicsID
+    {
+        b2BodyDef body_def{ };
+        body_def.type = b2BodyType::b2_staticBody;
+        body_def.position.Set(position.x, position.y);
+
+        b2Body* body = _world->CreateBody(&body_def);
+        body->GetUserData().entity = ice::Entity{ };
+
+        b2PolygonShape tile_shape{ };
+        ice::vec2f const center = dimensions / 2.f;
+        tile_shape.SetAsBox(center.x, center.y, { center.x, center.y }, 0.f);
+        body->CreateFixture(&tile_shape, 0.f);
+
+        return detail::body_to_physics_id(body);
+    }
+
+    void IceWorldTrait_PhysicsBox2D::destroy_body(
+        ice::PhysicsID physics_id
+    ) noexcept
+    {
+        b2Body* body = detail::body_from_physics_id(physics_id);
+        _world->DestroyBody(body);
+    }
+
     void IceWorldTrait_PhysicsBox2D::on_activate(
         ice::Engine& engine,
         ice::EngineRunner& runner,
@@ -143,9 +187,9 @@ namespace ice
 
     auto create_trait_physics(
         ice::Allocator& alloc
-    ) noexcept -> ice::UniquePtr<ice::WorldTrait>
+    ) noexcept -> ice::UniquePtr<ice::WorldTrait_Physics2D>
     {
-        return ice::make_unique<ice::WorldTrait, ice::IceWorldTrait_PhysicsBox2D>(alloc);
+        return ice::make_unique<ice::WorldTrait_Physics2D, ice::IceWorldTrait_PhysicsBox2D>(alloc);
     }
 
 } // namespace ice
