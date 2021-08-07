@@ -35,7 +35,7 @@ namespace ice::render::vk
             .block_size = 0,
             .allocation_min = 0,
             .allocation_max = 4096 * 4096 * 4,
-            .allocation_stride = 1,
+            .allocation_stride = 256,
             .name = "Render Target Memory"
         },
         AllocationBlockInfo{
@@ -63,7 +63,7 @@ namespace ice::render::vk
             .block_size = 0,
             .allocation_min = 16 * 16 * 4,
             .allocation_max = 4096 * 4096 * 4,
-            .allocation_stride = 16 * 16 * 4,
+            .allocation_stride = 256,
             .name = "Transfer Buffer Memory"
         },
     };
