@@ -36,22 +36,18 @@ namespace ice::gfx
         ) noexcept;
         ~IceGfxRunner() noexcept override;
 
-        auto trait_count() const noexcept -> ice::u32 override;
-
-        void query_traits(
-            ice::Span<ice::StringID> out_trait_names,
-            ice::Span<ice::gfx::GfxTrait*> out_traits
-        ) const noexcept override;
-
         void add_trait(
             ice::StringID_Arg name,
             ice::gfx::GfxTrait* trait
         ) noexcept override;
 
-        auto get_graphics_world() noexcept -> ice::StringID override;
+        auto graphics_world_name() noexcept -> ice::StringID override;
         void set_graphics_world(
             ice::StringID_Arg world_name
         ) noexcept override;
+
+        void prepare_world(ice::World* world) noexcept override;
+        void cleanup_world(ice::World* world) noexcept override;
 
         void set_event(ice::ManualResetEvent* event) noexcept override;
 
@@ -62,6 +58,10 @@ namespace ice::gfx
         auto device() noexcept -> ice::gfx::GfxDevice& override;
         auto frame() noexcept -> ice::gfx::GfxFrame& override;
 
+        void setup_traits() noexcept;
+        void cleanup_traits() noexcept;
+
+    protected:
         auto task_cleanup_gfx_contexts() noexcept  -> ice::Task<>;
 
         auto task_setup_gfx_traits() noexcept -> ice::Task<>;

@@ -103,7 +103,6 @@ namespace ice
         ice::devui::DevUIExecutionKey const _devui_key;
 
         ice::IceshardWorld* _gfx_world;
-        ice::pod::Array<ice::StringID> _gfx_trait_names;
         ice::UniquePtr<ice::gfx::GfxRunner> _gfx_runner;
 
         ice::UniquePtr<ice::TaskThreadPool> _thread_pool;

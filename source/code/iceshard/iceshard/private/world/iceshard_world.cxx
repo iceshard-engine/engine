@@ -17,6 +17,7 @@ namespace ice
     ) noexcept
         : _allocator{ alloc }
         , _entity_storage{ entity_storage }
+        , _state{ WorldState::Idle }
         , _traits{ _allocator }
         , _portals{ _allocator }
     {
@@ -38,6 +39,18 @@ namespace ice
     auto IceshardWorld::entity_storage() noexcept -> ice::EntityStorage&
     {
         return *_entity_storage;
+    }
+
+    auto IceshardWorld::state_hint() const noexcept -> ice::WorldState
+    {
+        return _state;
+    }
+
+    void IceshardWorld::set_state(
+        ice::WorldState state
+    ) noexcept
+    {
+        _state = state;
     }
 
     void IceshardWorld::add_trait(

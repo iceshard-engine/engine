@@ -57,7 +57,7 @@ namespace ice::gfx
         auto create_task_executor() noexcept -> ice::IceshardTaskExecutor;
 
         void on_frame_begin() noexcept;
-        void on_frame_stage(
+        bool on_frame_stage(
             ice::EngineFrame const& frame,
             ice::render::CommandBuffer command_buffer,
             ice::render::RenderCommands& render_commands

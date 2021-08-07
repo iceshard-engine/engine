@@ -86,7 +86,50 @@ void MyGame::on_app_startup(ice::Engine& engine, ice::gfx::GfxRunner& gfx_runner
 
     ice::EngineDevUI& devui = engine.developer_ui();
 
+    static ice::Tile tiles[]{
+        ice::Tile{
+            .position = { 0.f, 0.f },
+            .tile_id = ice::make_tileid(0, 0, 0),
+        },
+        ice::Tile{
+            .position = { 1.f, 0.f },
+            .tile_id = ice::make_tileid(0, 0, 1),
+        },
+        ice::Tile{
+            .position = { 2.f, 0.f },
+            .tile_id = ice::make_tileid(0, 0, 2),
+        },
+        ice::Tile{
+            .position = { 2.f, 1.f },
+            .tile_id = ice::make_tileid(0, 0, 3),
+        },
+        ice::Tile{
+            .position = { 4.f, 2.f },
+            .tile_id = ice::make_tileid(1, 1, 2),
+        },
+        ice::Tile{
+            .position = { 5.f, 2.f },
+            .tile_id = ice::make_tileid(1, 1, 1),
+        },
+        ice::Tile{
+            .position = { 6.f, 2.f },
+            .tile_id = ice::make_tileid(1, 1, 0),
+        },
+    };
+    static ice::TileRoom tilerooms[]{
+        ice::TileRoom{
+            .tiles = tiles
+        }
+    };
+    static ice::TileMap tilemap{ .rooms = tilerooms };
+    tilemap.tilesets[0] = "/cotm/tileset_a"_sid;
+    tilemap.tilesets[1] = "/cotm/tiles_sheet"_sid;
+
     _trait_physics = ice::create_trait_physics(_allocator);
+    _trait_tilemap = ice::create_tilemap_trait(_allocator, *_trait_physics);
+    _trait_tilemap->prepare_tilemap(tilemap);
+    _trait_tilemap->set_tilesize({ 32.f, 32.f });
+
     _trait_animator = ice::create_trait_animator(_allocator);
     _trait_actor = ice::create_trait_actor(_allocator);
     _trait_render_gfx = ice::create_trait_render_gfx(_allocator);
@@ -94,6 +137,7 @@ void MyGame::on_app_startup(ice::Engine& engine, ice::gfx::GfxRunner& gfx_runner
     _trait_render_finish = ice::create_trait_render_finish(_allocator, "ice.gfx.stage.finish"_sid);
     _trait_render_postprocess = ice::create_trait_render_postprocess(_allocator, "ice.gfx.stage.postprocess"_sid);
     _trait_render_sprites = ice::create_trait_render_sprites(_allocator, "ice.gfx.stage.sprites"_sid);
+    _trait_render_tilemap = ice::create_trait_render_tilemap(_allocator, "ice.gfx.stage.tilemap"_sid);
     _trait_render_camera = ice::create_trait_camera(_allocator);
 
     gfx_runner.add_trait("ice.render_camera"_sid, _trait_render_camera.get());
@@ -101,10 +145,12 @@ void MyGame::on_app_startup(ice::Engine& engine, ice::gfx::GfxRunner& gfx_runner
     gfx_runner.add_trait("ice.render_clear"_sid, _trait_render_clear.get());
     gfx_runner.add_trait("ice.render_postprocess"_sid, _trait_render_postprocess.get());
     gfx_runner.add_trait("ice.render_finish"_sid, _trait_render_finish.get());
+    gfx_runner.add_trait("ice.render_tilemap"_sid, _trait_render_tilemap.get());
     gfx_runner.add_trait("ice.render_sprites"_sid, _trait_render_sprites.get());
 
     _game_gfx_pass->add_stage("ice.gfx.stage.clear"_sid);
-    _game_gfx_pass->add_stage("ice.gfx.stage.sprites"_sid, "ice.gfx.stage.clear"_sid);
+    _game_gfx_pass->add_stage("ice.gfx.stage.tilemap"_sid, "ice.gfx.stage.clear"_sid);
+    _game_gfx_pass->add_stage("ice.gfx.stage.sprites"_sid, "ice.gfx.stage.tilemap"_sid, "ice.gfx.stage.clear"_sid);
     _game_gfx_pass->add_stage("ice.gfx.stage.postprocess"_sid, "ice.gfx.stage.sprites"_sid);
 
     if (devui.world_trait() != nullptr)
@@ -123,6 +169,7 @@ void MyGame::on_app_startup(ice::Engine& engine, ice::gfx::GfxRunner& gfx_runner
     _render_world = world_manager.create_world(GraphicsWorldName, &_entity_storage);
 
     _test_world = world_manager.create_world("game.test_world"_sid, &_entity_storage);
+    _test_world->add_trait("ice.tilemap"_sid, _trait_tilemap.get());
     _test_world->add_trait("ice.physics"_sid, _trait_physics.get());
     _test_world->add_trait("ice.anim"_sid, _trait_animator.get());
     _test_world->add_trait("ice.actor"_sid, _trait_actor.get());
@@ -142,6 +189,7 @@ void MyGame::on_app_shutdown(ice::Engine& engine) noexcept
 
     _test_world->remove_trait("ice.actor"_sid);
     _test_world->remove_trait("ice.anim"_sid);
+    _test_world->remove_trait("ice.tilemap"_sid);
     _test_world->remove_trait("ice.physics"_sid);
 
     ice::WorldManager& world_manager = engine.world_manager();
@@ -150,12 +198,14 @@ void MyGame::on_app_shutdown(ice::Engine& engine) noexcept
 
     _trait_render_camera = nullptr;
     _trait_render_postprocess = nullptr;
+    _trait_render_tilemap = nullptr;
     _trait_render_sprites = nullptr;
     _trait_render_finish = nullptr;
     _trait_render_clear = nullptr;
     _trait_render_gfx = nullptr;
     _trait_actor = nullptr;
     _trait_animator = nullptr;
+    _trait_tilemap = nullptr;
     _trait_physics = nullptr;
     _game_gfx_pass = nullptr;
 

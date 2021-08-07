@@ -12,6 +12,7 @@ namespace ice
     {
         Idle,
         Active,
+        Managed,
     };
 
     class World
@@ -19,6 +20,8 @@ namespace ice
     public:
         virtual auto allocator() noexcept -> ice::Allocator& = 0;
         virtual auto entity_storage() noexcept -> ice::EntityStorage& = 0;
+
+        virtual auto state_hint() const noexcept -> ice::WorldState = 0;
 
         virtual void add_trait(
             ice::StringID_Arg name,
