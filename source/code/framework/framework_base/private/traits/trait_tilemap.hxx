@@ -18,7 +18,7 @@ namespace ice
 
         void set_tilesize(ice::vec2f tile_size) noexcept override;
 
-        void prepare_tilemap(
+        void load_tilemap(
             ice::TileMap const& tilemap
         ) noexcept override;
 
@@ -41,9 +41,12 @@ namespace ice
         ) noexcept override;
 
     private:
+        ice::Allocator& _allocator;
         ice::WorldTrait_Physics2D& _physics;
         ice::vec2f _tilesize;
+
         ice::pod::Array<ice::TileMap const*> _tilemaps;
+        ice::pod::Array<ice::Memory> _tilemap_memory;
     };
 
 } // namespace ice

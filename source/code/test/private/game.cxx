@@ -86,7 +86,7 @@ void MyGame::on_app_startup(ice::Engine& engine, ice::gfx::GfxRunner& gfx_runner
 
     ice::EngineDevUI& devui = engine.developer_ui();
 
-    static ice::Tile tiles[]{
+    ice::Tile const tiles[]{
         ice::Tile{
             .position = { 0.f, 0.f },
             .tile_id = ice::make_tileid(0, 0, 0),
@@ -116,18 +116,25 @@ void MyGame::on_app_startup(ice::Engine& engine, ice::gfx::GfxRunner& gfx_runner
             .tile_id = ice::make_tileid(1, 1, 0),
         },
     };
-    static ice::TileRoom tilerooms[]{
+    ice::TileRoom const tilerooms[]{
         ice::TileRoom{
-            .tiles = tiles
+            .name = "hub"_sid,
+            .world_offset = { 0, 0 },
+            .tiles = { tiles, 4 },
+        },
+        ice::TileRoom{
+            .name = "overworld"_sid,
+            .world_offset = { 10, 10 },
+            .tiles = { tiles + 4, 3 },
         }
     };
-    static ice::TileMap tilemap{ .rooms = tilerooms };
+    ice::TileMap tilemap{ .rooms = { tilerooms, 2 } };
     tilemap.tilesets[0] = "/cotm/tileset_a"_sid;
     tilemap.tilesets[1] = "/cotm/tiles_sheet"_sid;
 
     _trait_physics = ice::create_trait_physics(_allocator);
     _trait_tilemap = ice::create_tilemap_trait(_allocator, *_trait_physics);
-    _trait_tilemap->prepare_tilemap(tilemap);
+    _trait_tilemap->load_tilemap(tilemap);
     _trait_tilemap->set_tilesize({ 32.f, 32.f });
 
     _trait_animator = ice::create_trait_animator(_allocator);

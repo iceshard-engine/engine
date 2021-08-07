@@ -11,14 +11,15 @@ namespace ice
     static constexpr ice::StringID Tilemap_VtxShader = "/shaders/game2d/tiled-vtx"_sid;
     static constexpr ice::StringID Tilemap_PixShader = "/shaders/game2d/tiled-pix"_sid;
 
-    class TileMap;
+    struct Tile;
+    struct TileMap;
+
     class AssetSystem;
 
     struct IceTileRoom_RenderInfo
     {
         bool visible;
-        ice::u32 room_index;
-        ice::vec2f room_offset;
+        ice::Span<ice::Tile const> tiles;
     };
 
     struct IceTileMap_RenderInfo

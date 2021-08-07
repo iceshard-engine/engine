@@ -36,6 +36,7 @@ namespace ice
     struct TileRoom
     {
         ice::StringID name;
+        ice::vec2f world_offset{ 0.f };
         ice::Span<ice::Tile const> tiles;
         ice::Span<ice::TilePhysics const> tiles_physics;
     };
@@ -53,7 +54,7 @@ namespace ice
     public:
         virtual void set_tilesize(ice::vec2f tile_size) noexcept = 0;
 
-        virtual void prepare_tilemap(ice::TileMap const& tilemap) noexcept = 0;
+        virtual void load_tilemap(ice::TileMap const& tilemap) noexcept = 0;
     };
 
     auto create_tilemap_trait(
