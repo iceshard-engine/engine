@@ -153,6 +153,7 @@ namespace ice::trait
 
             ICE_ASSERT(false, "Fail");
             //cmds.update_texture(_terrain_heightmap, _temp_transfer_buffer, { _image_info.width, _image_info.height });
+            co_return;
         }
     };
 
