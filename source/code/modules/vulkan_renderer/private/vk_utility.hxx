@@ -167,6 +167,9 @@ namespace ice::render::vk
             return VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
         case ImageLayout::DepthStencil:
             return VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+        case ImageLayout::TransferDstOptimal:
+            return VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+        case ImageLayout::Undefined:
         default:
             return VK_IMAGE_LAYOUT_UNDEFINED;
         }
@@ -202,6 +205,10 @@ namespace ice::render::vk
     {
         switch (stage)
         {
+        case PipelineStage::TopOfPipe:
+            return VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+        case PipelineStage::Transfer:
+            return VK_PIPELINE_STAGE_TRANSFER_BIT;
         case PipelineStage::ColorAttachmentOutput:
             return VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
         case PipelineStage::FramentShader:
@@ -215,10 +222,16 @@ namespace ice::render::vk
     {
         switch (flags)
         {
-        case AccessFlags::ColorAttachmentWrite:
-            return VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+        case AccessFlags::None:
+            return VK_ACCESS_NONE_KHR;
+        case AccessFlags::ShaderRead:
+            return VK_ACCESS_SHADER_READ_BIT;
         case AccessFlags::InputAttachmentRead:
             return VK_ACCESS_INPUT_ATTACHMENT_READ_BIT;
+        case AccessFlags::TransferWrite:
+            return VK_ACCESS_TRANSFER_WRITE_BIT;
+        case AccessFlags::ColorAttachmentWrite:
+            return VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
         default:
             return VK_ACCESS_FLAG_BITS_MAX_ENUM;
         }
