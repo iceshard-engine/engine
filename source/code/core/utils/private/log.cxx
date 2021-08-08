@@ -61,6 +61,8 @@ namespace ice::detail
             return "System";
         case LogTag::Engine:
             return "Engine";
+        case LogTag::Asset:
+            return "Asset";
         case LogTag::Game:
             return "Game";
         default:
