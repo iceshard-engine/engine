@@ -1,4 +1,5 @@
-#include <ice/memory.hxx>
+#include <ice/memory/pointer_arithmetic.hxx>
+
 #include "path_utils.hxx"
 
 namespace ice::path
@@ -38,13 +39,14 @@ namespace ice::path
         return ice::string::substr(str, separator_pos == ice::string_npos ? ice::string::size(str) : 0, separator_pos);
     }
 
-    auto normalize(ice::HeapString<> path) noexcept -> ice::String
+    auto normalize(ice::HeapString<>& path) noexcept -> ice::String
     {
         char* it = ice::string::begin(path);
-        char* reminder = nullptr;
-        char const* end = ice::string::end(path);
+        char const* const beg = ice::string::begin(path);
+        //char* reminder = nullptr;
+        char const* const end = ice::string::end(path);
 
-        while(it != end)
+        while (it != end)
         {
             if (*it == '\\')
             {
@@ -53,6 +55,41 @@ namespace ice::path
 
             it += 1;
         }
+
+        it = ice::string::begin(path);
+
+        ice::u32 const begin = ice::string::find_first_of(path, ':');
+        if (begin != ice::string_npos)
+        {
+            it += begin + 1;
+        }
+
+        char* copy_to = it;
+        while (it != end)
+        {
+            if (*it == '.' && *(it + 1) == '.')
+            {
+                copy_to -= 1; // move to the previous slash '/'
+                copy_to -= (copy_to != beg); // Move past the shash if we are not at the path begining
+
+                while (*copy_to != '/' && copy_to != beg)
+                {
+                    copy_to -= 1;
+                }
+
+                it += 2; // Move past the two dots
+            }
+
+            if (copy_to != it)
+            {
+                *copy_to = *it;
+            }
+
+            it += 1;
+            copy_to += 1;
+        }
+
+        ice::string::resize(path, ice::memory::ptr_distance(ice::string::begin(path), copy_to));
 
         return path;
     }
