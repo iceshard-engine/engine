@@ -18,7 +18,7 @@ namespace ice
             ice::Data data,
             ice::Allocator& alloc,
             ice::Memory& out_data
-        ) noexcept -> ice::AssetStatus = 0;
+        ) const noexcept -> ice::AssetStatus = 0;
     };
 
 } // namespace ice

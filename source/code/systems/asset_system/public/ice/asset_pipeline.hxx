@@ -21,18 +21,20 @@ namespace ice
 
         virtual bool resolve(
             ice::String resource_extension,
-            ice::Metadata resource_metadata,
+            ice::Metadata const& resource_metadata,
             ice::AssetType& out_type,
             ice::AssetStatus& out_status
-        ) noexcept = 0;
+        ) const noexcept = 0;
 
         virtual auto request_oven(
-            ice::AssetType type
-        ) noexcept -> ice::AssetOven* = 0;
+            ice::AssetType type,
+            ice::String extension,
+            ice::Metadata const& metadata
+        ) noexcept -> ice::AssetOven const* = 0;
 
         virtual auto request_loader(
             ice::AssetType type
-        ) noexcept -> ice::AssetLoader* = 0;
+        ) noexcept -> ice::AssetLoader const* = 0;
     };
 
 } // namespace ice

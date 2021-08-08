@@ -20,10 +20,10 @@ namespace ice
 
     bool IceshardMeshPipeline::resolve(
         ice::String resource_extension,
-        ice::Metadata resource_metadata,
+        ice::Metadata const& resource_metadata,
         ice::AssetType& out_type,
         ice::AssetStatus& out_status
-    ) noexcept
+    ) const noexcept
     {
         if (resource_extension == ".fbx"
             || resource_extension == ".x3d"
@@ -38,15 +38,17 @@ namespace ice
     }
 
     auto IceshardMeshPipeline::request_oven(
-        ice::AssetType type
-    ) noexcept -> ice::AssetOven*
+        ice::AssetType type,
+        ice::String extension,
+        ice::Metadata const& metadata
+    ) noexcept -> ice::AssetOven const*
     {
         return &_mesh_oven;
     }
 
     auto IceshardMeshPipeline::request_loader(
         ice::AssetType type
-    ) noexcept -> ice::AssetLoader*
+    ) noexcept -> ice::AssetLoader const*
     {
         return &_mesh_loader;
     }

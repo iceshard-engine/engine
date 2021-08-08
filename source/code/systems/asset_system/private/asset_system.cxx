@@ -427,12 +427,17 @@ namespace ice
         // Try compiling if needed
         if (asset_object.status == AssetStatus::Available_Raw)
         {
-            ice::Metadata resource_meta = asset_info.resource->metadata();
+            ice::u32 const extension_pos = ice::string::find_first_of(asset_info.resource->name(), '.');
+            ice::String const extension = ice::string::substr(asset_info.resource->name(), extension_pos);
 
-            ice::AssetOven* oven = asset_info.pipeline->request_oven(type);
+            ice::AssetOven const* oven = asset_info.pipeline->request_oven(
+                type,
+                extension,
+                asset_info.resource->metadata()
+            );
+
             ice::BakeResult bake_result = oven->bake(
-                asset_info.resource->data(),
-                resource_meta,
+                *asset_info.resource,
                 _resource_system,
                 _oven_alloc,
                 asset_info.baked_data
@@ -452,7 +457,7 @@ namespace ice
             asset_data = asset_info.resource->data();
         }
 
-        ice::AssetLoader* const loader = asset_info.pipeline->request_loader(type);
+        ice::AssetLoader const* const loader = asset_info.pipeline->request_loader(type);
         ice::AssetStatus load_status = AssetStatus::Invalid;
 
         // Try to load the new asset

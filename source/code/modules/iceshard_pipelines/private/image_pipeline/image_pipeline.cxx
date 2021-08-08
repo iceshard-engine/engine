@@ -20,10 +20,10 @@ namespace ice
 
     bool IceshardImagePipeline::resolve(
         ice::String resource_extension,
-        ice::Metadata resource_metadata,
+        ice::Metadata const& resource_metadata,
         ice::AssetType& out_type,
         ice::AssetStatus& out_status
-    ) noexcept
+    ) const noexcept
     {
         if (resource_extension == ".jpg"
             || resource_extension == ".jpeg"
@@ -38,15 +38,17 @@ namespace ice
     }
 
     auto IceshardImagePipeline::request_oven(
-        ice::AssetType type
-    ) noexcept -> ice::AssetOven*
+        ice::AssetType type,
+        ice::String extension,
+        ice::Metadata const& metadata
+    ) noexcept -> ice::AssetOven const*
     {
         return &_image_oven;
     }
 
     auto IceshardImagePipeline::request_loader(
         ice::AssetType type
-    ) noexcept -> ice::AssetLoader*
+    ) noexcept -> ice::AssetLoader const*
     {
         return &_image_loader;
     }

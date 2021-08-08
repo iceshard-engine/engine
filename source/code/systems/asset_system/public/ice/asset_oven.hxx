@@ -1,10 +1,11 @@
 #pragma once
-#include <ice/data.hxx>
-#include <ice/resource_meta.hxx>
+#include <ice/memory.hxx>
+#include <ice/allocator.hxx>
 
 namespace ice
 {
 
+    class Resource;
     class ResourceSystem;
 
     enum class BakeResult : ice::u32
@@ -21,12 +22,11 @@ namespace ice
         virtual ~AssetOven() noexcept = default;
 
         virtual auto bake(
-            ice::Data resource_data,
-            ice::Metadata const& resource_meta,
+            ice::Resource& resource,
             ice::ResourceSystem& resource_system,
             ice::Allocator& asset_alloc,
             ice::Memory& asset_data
-        ) noexcept -> ice::BakeResult = 0;
+        ) const noexcept -> ice::BakeResult = 0;
     };
 
 } // namespace ice

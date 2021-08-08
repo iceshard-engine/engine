@@ -27,10 +27,10 @@ namespace ice
 
         bool resolve(
             ice::String resource_extension,
-            ice::Metadata resource_metadata,
+            ice::Metadata const& resource_metadata,
             ice::AssetType& out_type,
             ice::AssetStatus& out_status
-        ) noexcept override
+        ) const noexcept override
         {
             if (resource_extension == ".spv")
             {
@@ -42,15 +42,17 @@ namespace ice
         }
 
         auto request_oven(
-            ice::AssetType type
-        ) noexcept -> ice::AssetOven* override
+            ice::AssetType type,
+            ice::String extension,
+            ice::Metadata const& metadata
+        ) noexcept -> ice::AssetOven const* override
         {
             return nullptr;
         }
 
         auto request_loader(
             ice::AssetType type
-        ) noexcept -> ice::AssetLoader* override
+        ) noexcept -> ice::AssetLoader const* override
         {
             return this;
         }
@@ -60,7 +62,7 @@ namespace ice
             ice::Data data,
             ice::Allocator& alloc,
             ice::Memory& out_data
-        ) noexcept -> ice::AssetStatus override
+        ) const noexcept -> ice::AssetStatus override
         {
             out_data.size = sizeof(Data);
             out_data.alignment = alignof(Data);

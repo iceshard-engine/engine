@@ -10,7 +10,7 @@ namespace ice
         ice::Data data,
         ice::Allocator& alloc,
         ice::Memory& out_data
-    ) noexcept -> ice::AssetStatus
+    ) const noexcept -> ice::AssetStatus
     {
         using ice::gfx::Model;
         using ice::gfx::Mesh;
