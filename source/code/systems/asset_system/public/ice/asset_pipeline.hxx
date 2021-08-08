@@ -15,7 +15,7 @@ namespace ice
     public:
         virtual ~AssetPipeline() noexcept = default;
 
-        virtual auto supported_types() const noexcept -> ice::Span<AssetType> = 0;
+        virtual auto supported_types() const noexcept -> ice::Span<AssetType const> = 0;
 
         virtual bool supports_baking(ice::AssetType type) const noexcept = 0;
 

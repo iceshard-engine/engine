@@ -3,7 +3,7 @@
 namespace ice
 {
 
-    auto IceshardMeshPipeline::supported_types() const noexcept -> ice::Span<AssetType>
+    auto IceshardMeshPipeline::supported_types() const noexcept -> ice::Span<AssetType const>
     {
         static ice::AssetType supported_types[]{
             AssetType::Mesh

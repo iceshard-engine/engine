@@ -12,7 +12,7 @@ namespace ice
     class IceshardShaderPipeline final : public ice::AssetPipeline, public ice::AssetLoader
     {
     public:
-        auto supported_types() const noexcept -> ice::Span<AssetType> override
+        auto supported_types() const noexcept -> ice::Span<AssetType const> override
         {
             static AssetType types[]{
                 AssetType::Shader
@@ -200,20 +200,19 @@ namespace ice
 extern "C"
 {
 
-    __declspec(dllexport) bool ice_module_load(
+    __declspec(dllexport) void ice_module_load(
         ice::Allocator* alloc,
         ice::ModuleNegotiatorContext* ctx,
         ice::ModuleNegotiator* negotiator
     )
     {
-        return ice::ice_module_load(alloc, ctx, negotiator);
+        ice::ice_module_load(alloc, ctx, negotiator);
     }
 
-    __declspec(dllexport) bool ice_module_unload(
+    __declspec(dllexport) void ice_module_unload(
         ice::Allocator* alloc
     )
     {
-        return true;
     }
 
 } // extern "C"
