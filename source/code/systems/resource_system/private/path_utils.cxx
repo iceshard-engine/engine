@@ -102,7 +102,7 @@ namespace ice::path
             return left.operator=(right);
         }
 
-        if (auto last_char = ice::string::back(left); last_char != '/')
+        if (auto last_char = ice::string::back(left); last_char != '/' && last_char != '.')
         {
             if (last_char == '\\')
             {
