@@ -2,6 +2,7 @@
 #include <ice/uri.hxx>
 #include <ice/urn.hxx>
 #include <ice/span.hxx>
+#include <ice/string.hxx>
 #include <ice/unique_ptr.hxx>
 
 namespace ice
@@ -14,9 +15,6 @@ namespace ice
     class ResourceIndex;
 
     struct ResourceQuery;
-
-    //using ResourceIndexFactory = auto(ice::Allocator&, ice::URI const&) noexcept -> ice::UniquePtr<ice::ResourceIndex>;
-
 
     class ResourceSystem
     {
@@ -33,6 +31,11 @@ namespace ice
         virtual bool query_changes(ice::ResourceQuery& query) noexcept = 0;
 
         virtual auto mount(ice::URI const& uri) noexcept -> ice::u32 = 0;
+
+        virtual auto find_relative(
+            ice::Resource& root_resource,
+            ice::String path
+        ) noexcept -> ice::Resource* = 0;
 
         virtual auto request(ice::URI const& uri) noexcept -> ice::Resource* = 0;
 

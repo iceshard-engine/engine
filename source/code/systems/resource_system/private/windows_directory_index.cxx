@@ -10,6 +10,8 @@
 #include <ice/buffer.hxx>
 #include <filesystem>
 
+#include <ice/heap_string.hxx>
+
 #include "path_utils.hxx"
 
 #if ISP_WINDOWS
@@ -67,6 +69,11 @@ namespace ice
                 , _uri{ ice::scheme_file, _file_path, ice::stringid_invalid }
             { }
 
+            auto native_path() const noexcept -> ice::String
+            {
+                return _file_path;
+            }
+
             auto name() const noexcept -> ice::String override
             {
                 return ice::path::filename(_file_path);
@@ -122,6 +129,16 @@ namespace ice
                 }
             }
 
+            auto native_path() const noexcept -> ice::String
+            {
+                return _file_path;
+            }
+
+            auto directory_path() const noexcept -> ice::String
+            {
+                return ice::string::substr(_file_path, 0, ice::string::size(_file_path) - ice::string::size(_file_relative));
+            }
+
             auto name() const noexcept -> ice::String override
             {
                 return _file_relative;
@@ -166,9 +183,16 @@ namespace ice
         WindowsIndex(ice::Allocator& alloc, ice::String base_path) noexcept;
         ~WindowsIndex() noexcept override;
 
+        auto find_relative(
+            ice::Resource const& root_resource,
+            ice::String path
+        ) noexcept -> ice::Resource* override;
+
         bool query_changes(ice::ResourceQuery& query) noexcept override;
         bool mount(ice::URI const& uri) noexcept override;
+
         auto request(ice::URI const& uri) noexcept -> ice::Resource* override;
+
         bool release(ice::URI const& uri) noexcept override;
 
     protected:
@@ -207,6 +231,80 @@ namespace ice
         {
             _allocator.destroy(entry.value);
         }
+    }
+
+    auto WindowsIndex::find_relative(
+        ice::Resource const& root_resource,
+        ice::String path
+    ) noexcept -> ice::Resource*
+    {
+        using ice::detail::FileResource;
+        using ice::detail::DirectoryResource;
+
+        URI const& root_uri = root_resource.location();
+
+        auto* entry = ice::pod::multi_hash::find_first(_resources, ice::hash(root_uri.fragment));
+        while (entry != nullptr)
+        {
+            ice::URI const& possible_uri = entry->value->location();
+            if (possible_uri.scheme != root_uri.scheme || possible_uri.path != root_uri.path)
+            {
+                entry = ice::pod::multi_hash::find_next(_resources, entry);
+            }
+            else
+            {
+                break;
+            }
+        }
+
+        if (entry == nullptr)
+        {
+            return nullptr;
+        }
+
+        ice::HeapString file_path{ _allocator };
+        ice::URI predicted_uri = ice::uri_invalid;
+        if (root_uri.scheme == ice::stringid_hash(ice::scheme_file))
+        {
+            FileResource const& file_res = static_cast<FileResource const&>(root_resource);
+
+            file_path = file_res.native_path();
+            ice::path::replace_filename(file_path, path);
+            ice::path::normalize(file_path);
+
+            ice::String file_name = ice::path::filename(file_path);
+
+            predicted_uri = ice::URI{
+                ice::scheme_file,
+                file_path,
+                ice::stringid_invalid
+            };
+        }
+        else if (root_uri.scheme == ice::stringid_hash(ice::scheme_directory))
+        {
+            DirectoryResource const& file_res = static_cast<DirectoryResource const&>(root_resource);
+
+            file_path = file_res.native_path();
+            ice::path::replace_filename(file_path, path);
+            ice::path::normalize(file_path);
+
+            ice::String directory_path = file_res.directory_path();
+            ice::String file_relative = ice::string::substr(file_path, ice::string::size(directory_path));
+
+            predicted_uri = ice::URI{
+                ice::scheme_directory,
+                directory_path,
+                ice::stringid(file_relative)
+            };
+        }
+
+        Resource* result = nullptr;
+        if (predicted_uri.scheme != ice::stringid_hash(ice::scheme_invalid))
+        {
+            result = request(predicted_uri);
+        }
+
+        return result;
     }
 
     bool WindowsIndex::query_changes(ice::ResourceQuery& query) noexcept
@@ -328,7 +426,7 @@ namespace ice
             }
 
             ice::String relative_path = ice::string::substr(file_path, ice::string::length(dir_path));
-            ice::String directory_path = ice::string::substr(file_path, 0, ice::string::length(dir_path) - 1);
+            ice::String directory_path = ice::string::substr(file_path, 0, ice::string::length(dir_path));
 
             Resource* resource = nullptr;
             if (extension == ".isr")

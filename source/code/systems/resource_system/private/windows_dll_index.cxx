@@ -63,6 +63,11 @@ namespace ice
         WindowsDllIndex(ice::Allocator& alloc, ice::String base_path) noexcept;
         ~WindowsDllIndex() noexcept;
 
+        auto find_relative(
+            ice::Resource const& root_resource,
+            ice::String path
+        ) noexcept -> ice::Resource* override;
+
         bool query_changes(ice::ResourceQuery& query) noexcept override;
         bool mount(ice::URI const& uri) noexcept override;
         auto request(ice::URI const& uri) noexcept -> ice::Resource* override;
@@ -95,6 +100,11 @@ namespace ice
         {
             _allocator.destroy(res);
         }
+    }
+
+    auto WindowsDllIndex::find_relative(ice::Resource const& root_resource, ice::String path) noexcept -> ice::Resource*
+    {
+        return nullptr;
     }
 
     bool WindowsDllIndex::query_changes(ice::ResourceQuery& query) noexcept

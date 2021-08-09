@@ -25,6 +25,11 @@ namespace ice
 
         auto locate(ice::URN urn) const noexcept -> ice::URI override;
 
+        auto find_relative(
+            ice::Resource& root_resource,
+            ice::String path
+        ) noexcept -> ice::Resource* override;
+
         auto mount(ice::URI const& uri) noexcept -> ice::u32 override;
 
         auto request(ice::URI const& uri) noexcept -> ice::Resource* override;
@@ -196,6 +201,24 @@ namespace ice
         }
 
         return 0;
+    }
+
+    auto SimpleResourceSystem::find_relative(
+        ice::Resource& root_resource,
+        ice::String path
+    ) noexcept -> ice::Resource*
+    {
+        ice::URI const& root_uri = root_resource.location();
+        ice::Resource* result = nullptr;
+
+        auto* entry = ice::pod::multi_hash::find_first(_index_map, ice::hash(root_uri.scheme));
+        while (entry != nullptr && result == nullptr)
+        {
+            result = entry->value->find_relative(root_resource, path);
+            entry = ice::pod::multi_hash::find_next(_index_map, entry);
+        }
+
+        return result;
     }
 
     auto SimpleResourceSystem::request(ice::URI const& uri) noexcept -> ice::Resource*
