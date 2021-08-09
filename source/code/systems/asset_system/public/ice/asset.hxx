@@ -11,6 +11,7 @@ namespace ice
     enum class AssetType : ice::u32;
     enum class AssetStatus : ice::u32;
 
+    auto asset_name(ice::Asset asset) noexcept -> ice::StringID;
     auto asset_status(ice::Asset asset) noexcept -> ice::AssetStatus;
     auto asset_data(ice::Asset asset, ice::Data& out_data) noexcept -> ice::AssetStatus;
     auto asset_metadata(ice::Asset asset, ice::Metadata& out_metadata) noexcept -> ice::AssetStatus;
