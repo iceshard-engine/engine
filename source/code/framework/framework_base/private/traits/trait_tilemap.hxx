@@ -46,7 +46,7 @@ namespace ice
         ice::vec2f _tilesize;
 
         ice::pod::Array<ice::TileMap const*> _tilemaps;
-        ice::pod::Array<ice::Memory> _tilemap_memory;
+        //ice::pod::Array<ice::Memory> _tilemap_memory;
     };
 
 } // namespace ice

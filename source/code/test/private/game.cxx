@@ -36,6 +36,8 @@
 #include <ice/task_thread_pool.hxx>
 #include <ice/module_register.hxx>
 #include <ice/resource_system.hxx>
+#include <ice/asset_system.hxx>
+#include <ice/asset_pipeline.hxx>
 #include <ice/resource.hxx>
 #include <ice/assert.hxx>
 
@@ -70,6 +72,8 @@ void MyGame::on_load_modules(ice::GameServices& sercies) noexcept
     mod.load_module(_allocator, engine_module->location().path);
     mod.load_module(_allocator, vulkan_module->location().path);
 
+    ice::register_asset_modules(_allocator, mod);
+
     if (imgui_module != nullptr)
     {
         mod.load_module(_allocator, imgui_module->location().path);
@@ -86,56 +90,21 @@ void MyGame::on_app_startup(ice::Engine& engine, ice::gfx::GfxRunner& gfx_runner
 
     ice::EngineDevUI& devui = engine.developer_ui();
 
-    ice::Tile const tiles[]{
-        ice::Tile{
-            .position = { 0.f, 0.f },
-            .tile_id = ice::make_tileid(0, 0, 0),
-        },
-        ice::Tile{
-            .position = { 1.f, 0.f },
-            .tile_id = ice::make_tileid(0, 0, 1),
-        },
-        ice::Tile{
-            .position = { 2.f, 0.f },
-            .tile_id = ice::make_tileid(0, 0, 2),
-        },
-        ice::Tile{
-            .position = { 2.f, 1.f },
-            .tile_id = ice::make_tileid(0, 0, 3),
-        },
-        ice::Tile{
-            .position = { 4.f, 2.f },
-            .tile_id = ice::make_tileid(1, 1, 2),
-        },
-        ice::Tile{
-            .position = { 5.f, 2.f },
-            .tile_id = ice::make_tileid(1, 1, 1),
-        },
-        ice::Tile{
-            .position = { 6.f, 2.f },
-            .tile_id = ice::make_tileid(1, 1, 0),
-        },
-    };
-    ice::TileRoom const tilerooms[]{
-        ice::TileRoom{
-            .name = "hub"_sid,
-            .world_offset = { 0, 0 },
-            .tiles = { tiles, 4 },
-        },
-        ice::TileRoom{
-            .name = "overworld"_sid,
-            .world_offset = { 10, 10 },
-            .tiles = { tiles + 4, 3 },
-        }
-    };
-    ice::TileMap tilemap{ .rooms = { tilerooms, 2 } };
-    tilemap.tilesets[0] = "/cotm/tileset_a"_sid;
-    tilemap.tilesets[1] = "/cotm/tiles_sheet"_sid;
+    ice::Asset test_tilemap = engine.asset_system().request(ice::AssetType::TileMap, "/cotm/test_level_2/tiled/0002_Level_1"_sid);
+    ICE_ASSERT(test_tilemap != ice::Asset::Invalid, "");
+
+    ice::Data tilemap_data;
+    ice::asset_data(test_tilemap, tilemap_data);
+
+    ice::TileMap const* tilemap = reinterpret_cast<ice::TileMap const*>(tilemap_data.location);
 
     _trait_physics = ice::create_trait_physics(_allocator);
     _trait_tilemap = ice::create_tilemap_trait(_allocator, *_trait_physics);
-    _trait_tilemap->load_tilemap(tilemap);
-    _trait_tilemap->set_tilesize({ 32.f, 32.f });
+    _trait_tilemap->set_tilesize(tilemap->tile_size * 1.0f);
+    if (tilemap != nullptr)
+    {
+        _trait_tilemap->load_tilemap(*tilemap);
+    }
 
     _trait_animator = ice::create_trait_animator(_allocator);
     _trait_actor = ice::create_trait_actor(_allocator);

@@ -16,7 +16,7 @@ namespace ice
 
     class AssetSystem;
 
-    struct IceTileRoom_RenderInfo
+    struct IceTileLayer_RenderInfo
     {
         bool visible;
         ice::Span<ice::Tile const> tiles;
@@ -26,7 +26,7 @@ namespace ice
     {
         ice::vec2f tilesize;
         ice::TileMap const* tilemap;
-        ice::IceTileRoom_RenderInfo tilerooms[5];
+        ice::IceTileLayer_RenderInfo layers[5];
     };
 
     struct IceTileMap_RenderCache

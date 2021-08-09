@@ -17,6 +17,7 @@
 
         .Modules = {
             'box2d'
+            'rapidxml'
         }
 
         .Uses = {

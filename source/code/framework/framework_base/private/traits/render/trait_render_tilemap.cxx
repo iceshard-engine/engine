@@ -130,7 +130,7 @@ namespace ice
         if (tilemap_render != nullptr)
         {
             ice::TileMap const* tilemap = tilemap_render->tilemap;
-            ice::IceTileMap_RenderCache* render_cache = ice::pod::hash::get(_render_cache, ice::hash(tilemap->name), nullptr);
+            ice::IceTileMap_RenderCache* render_cache = ice::pod::hash::get(_render_cache, ice::hash_from_ptr(tilemap), nullptr);
 
             if (render_cache != nullptr)
             {
@@ -147,7 +147,7 @@ namespace ice
 
                 ice::pod::hash::set(
                     _render_cache,
-                    ice::hash(tilemap->name),
+                    ice::hash_from_ptr(tilemap),
                     render_cache
                 );
 
@@ -156,14 +156,12 @@ namespace ice
                 operation.render_cache = render_cache;
                 operation.tile_render_size = tilemap_render->tilesize;
 
-                for (ice::u32 idx = 0; idx < ice::size(tilemap->tilesets); ++idx)
+                for (ice::u32 idx = 0; idx < tilemap->tileset_count; ++idx)
                 {
-                    if (tilemap->tilesets[idx] != ice::stringid_invalid)
+                    if (tilemap->tilesets[idx].asset != Asset::Invalid)
                     {
-                        Asset tileset_asset = _asset_system->request(AssetType::Texture, tilemap->tilesets[idx]);
-
                         Metadata& tileset_meta = operation.image_metadata[operation.image_count];
-                        if (asset_metadata(tileset_asset, tileset_meta) != AssetStatus::Loaded)
+                        if (asset_metadata(tilemap->tilesets[idx].asset, tileset_meta) != AssetStatus::Loaded)
                         {
                             continue;
                         }
@@ -176,7 +174,7 @@ namespace ice
                             continue;
                         }
 
-                        if (asset_data(tileset_asset, operation.image_data[operation.image_count]) != AssetStatus::Loaded)
+                        if (asset_data(tilemap->tilesets[idx].asset, operation.image_data[operation.image_count]) != AssetStatus::Loaded)
                         {
                             continue;
                         }
@@ -278,11 +276,11 @@ namespace ice
             ShaderInputAttribute{
                 .location = 2,
                 .offset = 0,
-                .type = ShaderAttribType::Vec2f
+                .type = ShaderAttribType::Vec1f
             },
             ShaderInputAttribute{
                 .location = 3,
-                .offset = 8,
+                .offset = 4,
                 .type = ShaderAttribType::Vec1i
             },
         };
@@ -296,7 +294,7 @@ namespace ice
             },
             ShaderInputBinding{
                 .binding = 1,
-                .stride = 12,
+                .stride = 8,
                 .instanced = true,
                 .attributes = { attribs + 2, 2 }
             },
@@ -312,7 +310,7 @@ namespace ice
             .cull_mode = CullMode::Disabled,
             .front_face = FrontFace::CounterClockWise,
             .subpass_index = 1,
-            .depth_test = true
+            .depth_test = false
         };
 
         _pipeline = device.create_pipeline(pipeline_info);
@@ -426,7 +424,6 @@ namespace ice
         );
 
         ice::TileMap const* tilemap = draw_operation->tilemap;
-        ice::Span<ice::TileRoom const> tilemap_rooms = tilemap->rooms;
 
         api.bind_pipeline(cmds, _pipeline);
         api.bind_resource_set(cmds, _pipeline_layout, _resource_sets[0], 0);
@@ -441,11 +438,11 @@ namespace ice
         );
 
         ice::u32 instance_offset = 0;
-        for (ice::IceTileRoom_RenderInfo const& room : draw_operation->render_info->tilerooms)
+        for (ice::IceTileLayer_RenderInfo const& layer : draw_operation->render_info->layers)
         {
-            if (room.visible)
+            if (layer.visible)
             {
-                ice::u32 const instance_count = ice::size(room.tiles);
+                ice::u32 const instance_count = ice::size(layer.tiles);
 
                 api.draw(
                     cmds,
@@ -483,20 +480,18 @@ namespace ice
             }
         };
 
-        ice::Span<ice::TileRoom const> tilemap_rooms = tilemap_info.tilemap->rooms;
-
         ice::u32 instance_offset = 0;
-        for (ice::IceTileRoom_RenderInfo const& room : tilemap_info.tilerooms)
+        for (ice::IceTileLayer_RenderInfo const& layer : tilemap_info.layers)
         {
-            if (room.visible)
+            if (layer.visible)
             {
                 ice::u32 const instance_byte_offset = sizeof(Tile) * instance_offset;
 
-                instance_offset += ice::size(room.tiles);
+                instance_offset += ice::size(layer.tiles);
                 updates[update_count] = ice::render::BufferUpdateInfo
                 {
                     .buffer = _instance_buffer,
-                    .data = ice::data_view(room.tiles),
+                    .data = ice::data_view(layer.tiles),
                     .offset = instance_byte_offset,
                 };
                 update_count += 1;

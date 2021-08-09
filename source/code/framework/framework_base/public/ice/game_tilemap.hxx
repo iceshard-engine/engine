@@ -7,6 +7,8 @@
 namespace ice
 {
 
+    enum class Asset : ice::u64;
+
     enum class TileID : ice::u32
     {
         Invalid = 0xffff'ffff
@@ -14,38 +16,33 @@ namespace ice
 
     struct Tile
     {
-        ice::vec2f position;
+        ice::u32 offset;
         ice::TileID tile_id;
     };
 
-    inline auto make_tileid(ice::u8 tilemap_idx, ice::u32 tile_x, ice::u32 tile_y) noexcept -> ice::TileID
-    {
-        ice::u32 result = 0x0000'3fff & tile_y;
-        result <<= 14;
-        result |= 0x0000'3fff & tile_x;
-        result <<= 4;
-        result |= 0x0000'000f & tilemap_idx;
-        return static_cast<ice::TileID>(result);
-    }
-
-    struct TilePhysics
-    {
-        ice::f32 mass = 0.f;
-    };
-
-    struct TileRoom
+    struct TileLayer
     {
         ice::StringID name;
-        ice::vec2f world_offset{ 0.f };
-        ice::Span<ice::Tile const> tiles;
-        ice::Span<ice::TilePhysics const> tiles_physics;
+        ice::u32 tile_count;
+        ice::u32 tile_offset;
+    };
+
+    struct TileSet
+    {
+        ice::Asset asset;
+        ice::vec2f element_size;
     };
 
     struct TileMap
     {
-        ice::StringID name;
-        ice::StringID tilesets[4];
-        ice::Span<ice::TileRoom const> rooms;
+        ice::vec2f tile_size;
+
+        ice::u32 tileset_count;
+        ice::u32 layer_count;
+
+        ice::TileSet const* tilesets;
+        ice::TileLayer const* layers;
+        ice::Tile const* tiles;
     };
 
     class WorldTrait_Physics2D;
@@ -61,5 +58,18 @@ namespace ice
         ice::Allocator& alloc,
         ice::WorldTrait_Physics2D& trait_physics
     ) noexcept -> ice::UniquePtr<ice::WorldTrait_TileMap>;
+
+    class ModuleRegister;
+    void register_asset_modules(
+        ice::Allocator& alloc,
+        ice::ModuleRegister& registry
+    ) noexcept;
+
+    auto make_tileid(
+        ice::u8 tileset_idx,
+        ice::u8 tile_flip,
+        ice::u16 tile_x,
+        ice::u16 tile_y
+    ) noexcept -> ice::TileID;
 
 } // namespace ice
