@@ -16,6 +16,8 @@ namespace ice
         Failure_MissingDependencies,
     };
 
+    class AssetSystem;
+
     class AssetOven
     {
     public:
@@ -26,7 +28,21 @@ namespace ice
             ice::ResourceSystem& resource_system,
             ice::Allocator& asset_alloc,
             ice::Memory& asset_data
-        ) const noexcept -> ice::BakeResult = 0;
+        ) const noexcept -> ice::BakeResult
+        {
+            return BakeResult::Skipped;
+        }
+
+        virtual auto bake(
+            ice::Resource& resource,
+            ice::ResourceSystem& resource_system,
+            ice::AssetSystem& asset_system,
+            ice::Allocator& asset_alloc,
+            ice::Memory& asset_data
+        ) const noexcept -> ice::BakeResult
+        {
+            return bake(resource, resource_system, asset_alloc, asset_data);
+        }
     };
 
 } // namespace ice

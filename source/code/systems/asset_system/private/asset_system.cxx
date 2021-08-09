@@ -11,6 +11,8 @@
 #include <ice/map.hxx>
 #include <ice/assert.hxx>
 
+#include <ice/stack_string.hxx>
+
 #include "asset_internal.hxx"
 
 namespace ice
@@ -34,6 +36,88 @@ namespace ice
             ice::Memory baked_data;
             ice::Memory loaded_data;
             AssetObject* object;
+        };
+
+        class ExplicitAssetSolver : public ice::AssetSolver
+        {
+        public:
+            ExplicitAssetSolver(
+                ice::Allocator& alloc,
+                ice::AssetSystem& assets,
+                ice::ResourceSystem& resources,
+                ice::Metadata const& metadata
+            ) noexcept
+                : _allocator{ alloc }
+                , _assets{ assets }
+                , _resources{ resources }
+                , _metadata{ metadata }
+            { }
+
+            auto find_asset(
+                ice::AssetType type,
+                ice::StringID_Hash asset_name_hash
+            ) noexcept -> ice::Asset
+            {
+                ice::Resource* explicit_resource = nullptr;
+                ice::pod::Array<ice::String> explicit_dependencies{ _allocator };
+                if (ice::meta_read_string_array(_metadata, "asset.explicit_dependencies"_sid, explicit_dependencies))
+                {
+                    ice::u32 idx = 0;
+                    for (ice::String dep : explicit_dependencies)
+                    {
+                        if (ice::stringid_hash(ice::stringid(dep)) == asset_name_hash)
+                        {
+                            break;
+                        }
+                        idx += 1;
+                    }
+
+                    ice::pod::Array<ice::String> explicit_resources{ _allocator };
+                    if (ice::meta_read_string_array(_metadata, "asset.explicit_resources"_sid, explicit_resources))
+                    {
+                        if (ice::size(explicit_resources) > idx)
+                        {
+                            explicit_resource = _resources.request(ice::URI{ explicit_resources[idx] });
+                        }
+                    }
+                }
+
+                if (explicit_resource == nullptr)
+                {
+                    return _assets.request(type, ice::StringID{ asset_name_hash });
+                }
+                else
+                {
+                    return _assets.load(type, explicit_resource);
+                }
+            }
+
+        private:
+            ice::Allocator& _allocator;
+            ice::AssetSystem& _assets;
+            ice::ResourceSystem& _resources;
+            ice::Metadata const& _metadata;
+        };
+
+        class GenericAssetSolver : public ice::AssetSolver
+        {
+        public:
+            GenericAssetSolver(
+                ice::AssetSystem& assets
+            ) noexcept
+                : _assets{ assets }
+            { }
+
+            auto find_asset(
+                ice::AssetType type,
+                ice::StringID_Hash asset_name_hash
+            ) noexcept -> ice::Asset
+            {
+                return _assets.request(type, ice::StringID{ asset_name_hash });
+            }
+
+        private:
+            ice::AssetSystem& _assets;
         };
 
     } // namespace detail
@@ -87,8 +171,9 @@ namespace ice
 
         ice::memory::ProxyAllocator _oven_alloc;
         ice::Map<ice::StringID_Hash, ice::UniquePtr<ice::AssetPipeline>> _pipelines;
-
         ice::pod::Hash<ice::AssetPipeline*> _asset_pipelines;
+
+        ice::pod::Hash<detail::AssetEntry> _explicit_entiries;
         ice::pod::Hash<detail::AssetEntry> _asset_entries;
         ice::pod::Array<detail::AssetInfo> _assets;
     };
@@ -102,6 +187,7 @@ namespace ice
         , _oven_alloc{ _allocator, "asset-oven-allocator" }
         , _pipelines{ _allocator }
         , _asset_pipelines{ _allocator }
+        , _explicit_entiries{ _allocator }
         , _asset_entries{ _allocator }
         , _assets{ _allocator }
     {
@@ -250,7 +336,7 @@ namespace ice
                         .pipeline = pipeline,
                         .baked_data = ice::Memory{ },
                         .loaded_data = ice::Memory{ },
-                        .object = detail::make_empty_object(_allocator, result_status, resource->metadata()),
+                        .object = detail::make_empty_object(_allocator, asset_name, result_status, resource->metadata()),
                     }
                 );
             }
@@ -264,7 +350,7 @@ namespace ice
                     current_info.pipeline = pipeline;
 
                     _allocator.destroy(current_info.object);
-                    current_info.object = detail::make_empty_object(_allocator, result_status, resource->metadata());
+                    current_info.object = detail::make_empty_object(_allocator, asset_name, result_status, resource->metadata());
 
                     // #todo log asset replacement
                 }
@@ -357,7 +443,7 @@ namespace ice
                     .pipeline = pipeline,
                     .baked_data = ice::Memory{ },
                     .loaded_data = ice::Memory{ },
-                    .object = detail::make_empty_object(_allocator, result_status, resource->metadata()),
+                    .object = detail::make_empty_object(_allocator, name, result_status, resource->metadata()),
                 }
             );
         }
@@ -372,7 +458,7 @@ namespace ice
 
                 //_oven_alloc.deallocate(current_info.object->data.location);
                 _allocator.destroy(current_info.object);
-                current_info.object = detail::make_empty_object(_allocator, AssetStatus::Unloading, { });
+                current_info.object = detail::make_empty_object(_allocator, name, AssetStatus::Unloading, { });
 
                 // #todo log asset replacement
             }
@@ -439,6 +525,7 @@ namespace ice
             ice::BakeResult bake_result = oven->bake(
                 *asset_info.resource,
                 _resource_system,
+                *this,
                 _oven_alloc,
                 asset_info.baked_data
             );
@@ -462,12 +549,31 @@ namespace ice
 
         // Try to load the new asset
         {
-            load_status = loader->load(
-                type,
-                asset_data,
-                _oven_alloc,
-                asset_info.loaded_data
-            );
+            ice::Metadata const& meta = asset_info.resource->metadata();
+            if (ice::meta_has_entry(meta, "asset.explicit_dependencies"_sid))
+            {
+                detail::ExplicitAssetSolver explicit_solver{ _allocator, *this, _resource_system, meta };
+
+                load_status = loader->load(
+                    explicit_solver,
+                    type,
+                    asset_data,
+                    _oven_alloc,
+                    asset_info.loaded_data
+                );
+            }
+            else
+            {
+                detail::GenericAssetSolver generic_solver{ *this };
+
+                load_status = loader->load(
+                    generic_solver,
+                    type,
+                    asset_data,
+                    _oven_alloc,
+                    asset_info.loaded_data
+                );
+            }
 
             if (load_status == AssetStatus::Loaded)
             {
@@ -487,6 +593,175 @@ namespace ice
 
     auto SimpleAssetSystem::load(ice::AssetType type, ice::Resource* resource) noexcept -> Asset
     {
+        ice::u32 const extension_pos = ice::string::find_first_of(resource->name(), '.');
+        ice::String const extension = ice::string::substr(resource->name(), extension_pos);
+        ice::Metadata const& meta = resource->metadata();
+
+        ice::AssetType result_type = AssetType::Unresolved;
+        ice::AssetStatus result_status = AssetStatus::Invalid;
+
+        auto* pipeline_it = ice::pod::hash::begin(_asset_pipelines);
+        auto* const piepeline_end = ice::pod::hash::end(_asset_pipelines);
+
+        ice::AssetPipeline* pipeline = nullptr;
+        while (pipeline_it != piepeline_end && result_type == AssetType::Unresolved)
+        {
+            pipeline = pipeline_it->value;
+            pipeline->resolve(
+                extension,
+                meta,
+                result_type,
+                result_status
+            );
+
+            pipeline_it += 1;
+        }
+
+        if (result_type == AssetType::Unresolved)
+        {
+            // #todo info result_type == AssetType::Unresolved
+            return Asset::Invalid;
+        }
+
+        if (result_status == AssetStatus::Available_Raw)
+        {
+            // #todo warning/error/assert pipeline->supports_baking(result_type)
+            if (pipeline->supports_baking(result_type) == false)
+            {
+                return Asset::Invalid;
+            }
+        }
+
+        ice::String base_name = ice::string::substr(resource->name(), 0, extension_pos);
+
+        ice::u64 const name_hash = ice::hash(base_name);
+
+        auto* entry = ice::pod::multi_hash::find_first(_explicit_entiries, name_hash);
+        while (entry != nullptr)
+        {
+            if (entry->value.type == type)
+            {
+                break;
+            }
+            entry = ice::pod::multi_hash::find_next(_explicit_entiries, entry);
+        }
+
+        if (entry == nullptr)
+        {
+            ice::u32 const asset_data_index = ice::pod::array::size(_assets);
+            ice::StringID const asset_name = stringid(base_name);
+
+            ice::pod::multi_hash::insert(
+                _explicit_entiries,
+                name_hash,
+                detail::AssetEntry{
+                    .data_index = asset_data_index,
+                    .type = type,
+                    .name = asset_name,
+                }
+            );
+
+            ice::pod::array::push_back(
+                _assets,
+                detail::AssetInfo{
+                    .location = resource->location(),
+                    .resource = resource,
+                    .pipeline = pipeline,
+                    .baked_data = ice::Memory{ },
+                    .loaded_data = ice::Memory{ },
+                    .object = detail::make_empty_object(_allocator, asset_name, result_status, resource->metadata()),
+                }
+            );
+
+            detail::AssetInfo& asset_info = _assets[asset_data_index];
+            detail::AssetObject& asset_object = *asset_info.object;
+
+            ice::Data asset_data;
+            ice::BakeResult bake_result = BakeResult::Skipped;
+
+            // Try compiling if needed
+            if (asset_object.status == AssetStatus::Available_Raw)
+            {
+                ice::AssetOven const* oven = asset_info.pipeline->request_oven(
+                    type,
+                    extension,
+                    asset_info.resource->metadata()
+                );
+
+                ice::BakeResult bake_result = oven->bake(
+                    *asset_info.resource,
+                    _resource_system,
+                    *this,
+                    _oven_alloc,
+                    asset_info.baked_data
+                );
+
+                if (bake_result != BakeResult::Success)
+                {
+                    // #todo log baking failure
+                    return Asset::Invalid;
+                }
+
+                asset_data = asset_info.baked_data;
+                asset_object.status = AssetStatus::Available;
+            }
+            else
+            {
+                asset_data = asset_info.resource->data();
+            }
+
+            ice::AssetLoader const* const loader = asset_info.pipeline->request_loader(type);
+            ice::AssetStatus load_status = AssetStatus::Invalid;
+
+            // Try to load the new asset
+            {
+                ice::Metadata const& meta = asset_info.resource->metadata();
+                if (ice::meta_has_entry(meta, "asset.explicit_dependencies"_sid))
+                {
+                    detail::ExplicitAssetSolver explicit_solver{ _allocator, *this, _resource_system, meta };
+
+                    load_status = loader->load(
+                        explicit_solver,
+                        type,
+                        asset_data,
+                        _oven_alloc,
+                        asset_info.loaded_data
+                    );
+                }
+                else
+                {
+                    detail::GenericAssetSolver generic_solver{ *this };
+
+                    load_status = loader->load(
+                        generic_solver,
+                        type,
+                        asset_data,
+                        _oven_alloc,
+                        asset_info.loaded_data
+                    );
+                }
+
+                if (load_status == AssetStatus::Loaded)
+                {
+                    asset_object.status = load_status;
+                    asset_object.data = asset_info.loaded_data;
+                    return detail::make_asset(asset_info.object);
+                }
+                else
+                {
+                    // #todo log invalid load
+                    asset_object.status = AssetStatus::Invalid;
+                }
+            }
+
+            return Asset::Invalid;
+
+        }
+        else
+        {
+            return detail::make_asset(_assets[entry->value.data_index].object);
+        }
+
         return Asset::Invalid;
     }
 
