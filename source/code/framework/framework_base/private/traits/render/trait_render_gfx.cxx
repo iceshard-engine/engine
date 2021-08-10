@@ -215,7 +215,7 @@ namespace ice
         ice::Span<ice::Shard const> shards = engine_frame.shards();
 
         bool rebuild_renderpass = false;
-        auto result = std::find_if(shards.begin(), shards.end(), ice::any_of<ice::platform::Shard_WindowSizeChanged>);
+        auto result = std::find_if(shards.begin(), shards.end(), ice::shard_any_of<ice::platform::Shard_WindowSizeChanged>);
         if (result != shards.end())
         {
             ice::vec2i new_size;

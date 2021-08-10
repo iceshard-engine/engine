@@ -47,7 +47,7 @@ namespace ice
     {
         IPT_ZONE_SCOPED_NAMED("[Trait] Clear :: Update");
 
-        for (ice::Shard const& shard : ice::filter_span(engine_frame.shards(), ice::any_of<ice::platform::Shard_WindowSizeChanged>))
+        for (ice::Shard const& shard : ice::filter_span(engine_frame.shards(), ice::shard_any_of<ice::platform::Shard_WindowSizeChanged>))
         {
             gfx_setup(gfx_frame, gfx_device);
         }

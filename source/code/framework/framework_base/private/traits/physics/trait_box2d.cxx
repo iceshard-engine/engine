@@ -74,7 +74,7 @@ namespace ice
         ice::WorldPortal& portal
     ) noexcept
     {
-        for (ice::Shard const& shard : ice::filter_span(frame.shards(), ice::any_of<Shard_EntityDestroyed>))
+        for (ice::Shard const& shard : ice::filter_span(frame.shards(), ice::shard_any_of<Shard_EntityDestroyed>))
         {
             ice::Entity entity;
             if (ice::shard_inspect(shard, entity))

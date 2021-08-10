@@ -28,7 +28,7 @@ namespace ice
     inline auto shard_shatter(ice::Shard shard) noexcept -> T;
 
     template<ice::Shard... TestShards>
-    constexpr bool any_of(ice::Shard const& shard) noexcept
+    constexpr bool shard_any_of(ice::Shard const& shard) noexcept
     {
         return ((shard == TestShards) || ...);
     }
