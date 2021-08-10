@@ -42,6 +42,6 @@ namespace ice
         ice::IceTiledAssetLoader _loader;
     };
 
-    constexpr LogTagDefinition LogTag_TiledOven = ice::create_log_tag(ice::LogTag::Asset, "Tiled");
+    constexpr LogTagDefinition LogTag_TiledOven = ice::create_log_tag(ice::LogTag::Asset, "Tiled TMX Oven");
 
 } // namespace ice

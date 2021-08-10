@@ -9,6 +9,7 @@ namespace ice
 
     enum class Asset : ice::u64;
 
+    // #todo rename to TileSetID as thats what it is.
     enum class TileID : ice::u32
     {
         Invalid = 0xffff'ffff
@@ -23,6 +24,7 @@ namespace ice
     struct TileLayer
     {
         ice::StringID name;
+        ice::vec2u size;
         ice::u32 tile_count;
         ice::u32 tile_offset;
     };
