@@ -225,10 +225,11 @@ namespace ice::pod
 
             if (last.data_prev != Constant_EndOfList)
             {
-                T saved_value = hsh._data[fr.data_prev].value;
+                T const saved_value = hsh._data[last.data_prev].value;
+                ice::u64 const saved_key = hsh._data[last.data_prev].key;
 
-                new (hsh._data._data + fr.data_prev) typename ice::pod::Hash<T>::Entry{
-                    .key = hsh._data[fr.data_i].key,
+                new (hsh._data._data + last.data_prev) typename ice::pod::Hash<T>::Entry{
+                    .key = saved_key,
                     .next = fr.data_i,
                     .value = saved_value,
                 };
