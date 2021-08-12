@@ -52,6 +52,16 @@
             {
                 "working_dir": "./source/data/shaders/debug",
                 "executable": "%VULKAN_SDK%/Bin/glslc.exe",
+                "options": ["--target-env=vulkan", "-fshader-stage=vert", "-o", "debug-vert.spv", "debug-vert.glsl"]
+            },
+            {
+                "working_dir": "./source/data/shaders/debug",
+                "executable": "%VULKAN_SDK%/Bin/glslc.exe",
+                "options": ["--target-env=vulkan", "-fshader-stage=frag", "-o", "debug-frag.spv", "debug-frag.glsl"]
+            },
+            {
+                "working_dir": "./source/data/shaders/debug",
+                "executable": "%VULKAN_SDK%/Bin/glslc.exe",
                 "options": ["--target-env=vulkan", "-fshader-stage=vert", "-o", "pp-vert.spv", "pp-vert.glsl"]
             },
             {
