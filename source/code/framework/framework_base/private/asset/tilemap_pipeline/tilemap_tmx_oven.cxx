@@ -294,6 +294,10 @@ namespace ice
             {
                 valid_map &= parse_node_layer_estimate_data(node_child, tilemap_info);
             }
+            else
+            {
+                TILED_LOG(LogSeverity::Info, "Skipping unsupported node {}...", child_name);
+            }
 
             detail::next_sibling(node_child, node_child);
         }
