@@ -335,13 +335,17 @@ namespace ice::render::vk
     {
         switch (topology)
         {
-        case ice::render::PrimitiveTopology::TriangleList:
+        case PrimitiveTopology::LineStrip:
+            return VK_PRIMITIVE_TOPOLOGY_LINE_STRIP;
+        case PrimitiveTopology::LineStripWithAdjency:
+            return VK_PRIMITIVE_TOPOLOGY_LINE_STRIP_WITH_ADJACENCY;
+        case PrimitiveTopology::TriangleList:
             return VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-        case ice::render::PrimitiveTopology::TriangleStrip:
+        case PrimitiveTopology::TriangleStrip:
             return VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
-        case ice::render::PrimitiveTopology::TriangleFan:
+        case PrimitiveTopology::TriangleFan:
             return VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN;
-        case ice::render::PrimitiveTopology::PatchList:
+        case PrimitiveTopology::PatchList:
             return VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_PATCH_LIST;
         default:
             return VkPrimitiveTopology::VK_PRIMITIVE_TOPOLOGY_MAX_ENUM;

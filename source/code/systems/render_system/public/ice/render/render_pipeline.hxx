@@ -38,6 +38,8 @@ namespace ice::render
 
     enum class PrimitiveTopology : ice::u32
     {
+        LineStrip,
+        LineStripWithAdjency,
         TriangleList,
         TriangleStrip,
         TriangleFan,
