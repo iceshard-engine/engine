@@ -67,11 +67,11 @@ namespace ice
         }
 
         result.for_each(
-            [&](ice::Actor const& actor, ice::Animation& anim, ice::Transform2DDynamic& xform) noexcept
+            [&](ice::Actor const& actor, ice::PhysicsVelocity& vel, ice::Animation& anim, ice::Transform2DDynamic& xform) noexcept
             {
                 if (actor.type == ActorType::Player)
                 {
-                    xform.position = xform.position + ice::vec3f{ movement.x, movement.y, 0 };
+                    vel.velocity = movement;
                 }
 
                 if (movement.x != 0.f)

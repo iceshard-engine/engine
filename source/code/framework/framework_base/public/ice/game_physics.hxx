@@ -25,6 +25,13 @@ namespace ice
         void* trait_data = nullptr;
     };
 
+    struct PhysicsVelocity
+    {
+        static constexpr ice::StringID Identifier = "ice.component.phx-velocity"_sid;
+
+        ice::vec2f velocity;
+    };
+
     class WorldTrait_Physics2D : public ice::WorldTrait
     {
     public:
