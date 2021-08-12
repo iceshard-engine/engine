@@ -1,7 +1,7 @@
 #version 450
 
 layout (location = 0) in vec2 in_uv;
-layout (location = 1) flat in int in_mat;
+layout (location = 1) flat in uint in_mat;
 
 layout (location = 0) out vec4 out_color;
 
