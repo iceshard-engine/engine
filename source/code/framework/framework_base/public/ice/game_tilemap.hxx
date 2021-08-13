@@ -21,6 +21,11 @@ namespace ice
         ice::TileID tile_id;
     };
 
+    struct TileTerrain
+    {
+        ice::TileID tile_id;
+    };
+
     struct TileLayer
     {
         ice::StringID name;
@@ -33,6 +38,8 @@ namespace ice
     {
         ice::Asset asset;
         ice::vec2f element_size;
+        ice::u32 terrain_count;
+        ice::u32 terrain_offset;
     };
 
     struct TileMap
@@ -44,6 +51,7 @@ namespace ice
 
         ice::TileSet const* tilesets;
         ice::TileLayer const* layers;
+        ice::TileTerrain const* terrain;
         ice::Tile const* tiles;
     };
 

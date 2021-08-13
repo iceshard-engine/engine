@@ -24,25 +24,35 @@ namespace ice
     namespace detail
     {
 
+        struct TileSetInfo
+        {
+            ice::u16 gid;
+            ice::u16 columns;
+            ice::vec2f element_size;
+            ice::String image;
+            ice::u16 terrain_count;
+        };
+
         struct TileMapInfo
         {
             ice::vec2f map_size;
             ice::vec2f tile_size;
 
-            ice::u32 layer_count;
-            ice::u32 tile_count;
-
             ice::u32 tileset_count;
-            ice::u16 tileset_gids[16];
-            ice::u16 tileset_columns[16];
-            ice::vec2f tileset_element_size[16];
-            ice::String tileset_image[16];
+            ice::detail::TileSetInfo tileset_info[16];
+
+            ice::u32 layer_count;
+            ice::u32 terrain_count;
+            ice::u32 tile_count;
 
             //ice::TileMap* tilemap;
             ice::TileSet* tilesets;
             ice::TileLayer* layers;
+            ice::TileTerrain* terrain;
             ice::Tile* tiles;
         };
+
+        constexpr auto x = sizeof(TileMapInfo);
 
         bool get_child(
             rapidxml::xml_node<> const* node,
@@ -125,6 +135,8 @@ namespace ice
         ice::TileMapInfo& tilemap_info
     ) noexcept
     {
+        ice::u32 const tileset_idx = tilemap_info.tileset_count;
+
         rapidxml::xml_node<> const* node_image;
         if (detail::get_child(node_tileset, node_image, "image") == false)
         {
@@ -141,7 +153,7 @@ namespace ice
 
         ice::String image_source;
         detail::attrib_value(attrib, image_source);
-        tilemap_info.tileset_image[tilemap_info.tileset_count] = image_source;
+        tilemap_info.tileset_info[tileset_idx].image = image_source;
 
         if (detail::get_attrib(node_tileset, attrib, "firstgid") == false)
         {
@@ -157,7 +169,7 @@ namespace ice
             TILED_LOG(LogSeverity::Error, "Unsupported TMX resource, 'gid' values over {} are not supported.", 0x0000'ffff);
             return false;
         }
-        tilemap_info.tileset_gids[tilemap_info.tileset_count] = static_cast<ice::u16>(gid);
+        tilemap_info.tileset_info[tileset_idx].gid = static_cast<ice::u16>(gid);
 
         ice::String name = "<unknown>";
         detail::next_attrib(attrib, attrib, "name");
@@ -165,15 +177,28 @@ namespace ice
         TILED_LOG(LogSeverity::Info, "Parsing tileset: {}", name);
 
         detail::next_attrib(attrib, attrib, "tilewidth");
-        detail::attrib_value(attrib, tilemap_info.tileset_element_size[tilemap_info.tileset_count].x);
+        detail::attrib_value(attrib, tilemap_info.tileset_info[tileset_idx].element_size.x);
         detail::next_attrib(attrib, attrib, "tileheight");
-        detail::attrib_value(attrib, tilemap_info.tileset_element_size[tilemap_info.tileset_count].y);
+        detail::attrib_value(attrib, tilemap_info.tileset_info[tileset_idx].element_size.y);
 
         ice::u32 tileset_columns = 0;
         detail::next_attrib(attrib, attrib, "columns");
         detail::attrib_value(attrib, tileset_columns);
-        tilemap_info.tileset_columns[tilemap_info.tileset_count] = tileset_columns;
+        tilemap_info.tileset_info[tileset_idx].columns = tileset_columns;
 
+        rapidxml::xml_node<> const* node_terrain;
+        if (detail::get_child(node_tileset, node_terrain, "terraintypes"))
+        {
+            detail::get_child(node_terrain, node_terrain, "terrain");
+            while (node_terrain != nullptr)
+            {
+                tilemap_info.tileset_info[tileset_idx].terrain_count += 1;
+
+                detail::next_sibling(node_terrain, node_terrain);
+            }
+        }
+
+        tilemap_info.terrain_count += tilemap_info.tileset_info[tileset_idx].terrain_count;
         tilemap_info.tileset_count += 1;
 
         if (attrib == nullptr)
@@ -321,6 +346,43 @@ namespace ice
         return valid_map;
     }
 
+    void bake_tileset_terraintypes(
+        rapidxml::xml_node<> const* node_tileset,
+        ice::TileMapInfo const& tilemap_info,
+        ice::u32 tileset_index,
+        ice::TileTerrain* tileset_terrain_tiles
+    ) noexcept
+    {
+        ice::u32 const tileset_columns = tilemap_info.tileset_info[tileset_index].columns;
+
+        rapidxml::xml_node<> const* node_terrain;
+        if (detail::get_child(node_tileset, node_terrain, "terraintypes"))
+        {
+            detail::get_child(node_terrain, node_terrain, "terrain");
+            while (node_terrain != nullptr)
+            {
+                rapidxml::xml_attribute<> const* attrib;
+                detail::get_attrib(node_terrain, attrib, "tile");
+
+                ice::u32 local_tile_id;
+                detail::attrib_value(attrib, local_tile_id);
+
+                ice::u16 const tile_id = static_cast<ice::u16>(local_tile_id);
+
+                tileset_terrain_tiles->tile_id = ice::make_tileid(
+                    static_cast<ice::u8>(tileset_index),
+                    0,
+                    tile_id % tileset_columns,
+                    tile_id / tileset_columns
+                );
+
+                tileset_terrain_tiles += 1;
+
+                detail::next_sibling(node_terrain, node_terrain);
+            }
+        }
+    }
+
     void bake_layer_tiles(
         rapidxml::xml_node<> const* node_layer,
         ice::TileMapInfo const& tilemap_info,
@@ -347,8 +409,8 @@ namespace ice
             ice::u32 idx = tilemap_info.tileset_count - 1;
             for (; idx != ~0; --idx)
             {
-                last_gid = tilemap_info.tileset_gids[idx];
-                if (tilemap_info.tileset_gids[idx] < tile_gid)
+                last_gid = tilemap_info.tileset_info[idx].gid;
+                if (tilemap_info.tileset_info[idx].gid < tile_gid)
                 {
                     break;
                 }
@@ -400,7 +462,7 @@ namespace ice
 
                     ice::u32 const tileset_idx = find_local_id(tile_local_id);
                     ICE_ASSERT(tileset_idx != ~0, "Node global ID {} couldn not be moved to tileset local ID.", tile_local_id);
-                    ice::u16 const tileset_columns = tilemap_info.tileset_columns[tileset_idx];
+                    ice::u16 const tileset_columns = tilemap_info.tileset_info[tileset_idx].columns;
 
                     ice::u16 const tile_id = static_cast<ice::u16>(tile_local_id);
                     ice::u32 const tile_index = total_tile_count;
@@ -441,25 +503,44 @@ namespace ice
     ) noexcept
     {
         ice::u32 layer_idx = 0;
+        ice::u32 layer_tiles_offset = 0;
 
-        ice::u32 layer_offset = 0;
+        ice::u32 tileset_idx = 0;
+        ice::u32 tileset_terrain_offset = 0;
+
         ice::Tile* layer_tiles = tilemap_info.tiles;
+        ice::TileTerrain* terrain_tiles = tilemap_info.terrain;
 
         rapidxml::xml_node<> const* node_child;
-        detail::get_child(node_map, node_child, "layer");
+        detail::get_child(node_map, node_child);
         while (node_child != nullptr)
         {
-            ice::TileLayer& layer = tilemap_info.layers[layer_idx];
-            layer.tile_count = 0;
+            ice::String const child_name = detail::node_name(node_child);
+            if (child_name == "tileset")
+            {
+                ice::TileSet& tileset = tilemap_info.tilesets[tileset_idx];
 
-            bake_layer_tiles(node_child, tilemap_info, layer, layer_tiles);
-            layer.tile_offset = layer_offset;
+                bake_tileset_terraintypes(node_child, tilemap_info, tileset_idx, terrain_tiles);
+                tileset.terrain_offset = tileset_terrain_offset;
 
-            layer_offset += layer.tile_count;
-            layer_tiles += layer.tile_count;
-            layer_idx += 1;
+                terrain_tiles += tileset.terrain_count;
+                tileset_terrain_offset += tileset.terrain_count;
+                tileset_idx += 1;
+            }
+            else if (child_name == "layer")
+            {
+                ice::TileLayer& layer = tilemap_info.layers[layer_idx];
+                layer.tile_count = 0;
 
-            detail::next_sibling(node_child, node_child, "layer");
+                bake_layer_tiles(node_child, tilemap_info, layer, layer_tiles);
+                layer.tile_offset = layer_tiles_offset;
+
+                layer_tiles += layer.tile_count;
+                layer_tiles_offset += layer.tile_count;
+                layer_idx += 1;
+            }
+
+            detail::next_sibling(node_child, node_child);
         }
     }
 
@@ -494,6 +575,7 @@ namespace ice
                 total_tilemap_bytes += sizeof(ice::TileSet) * tilemap_info.tileset_count;
                 total_tilemap_bytes += sizeof(ice::TileLayer) * tilemap_info.layer_count;
                 total_tilemap_bytes += sizeof(ice::Tile) * tilemap_info.tile_count;
+                total_tilemap_bytes += sizeof(ice::TileTerrain) * tilemap_info.terrain_count;
 
                 void* tilemap_data = asset_alloc.allocate(total_tilemap_bytes);
 
@@ -504,15 +586,16 @@ namespace ice
                 ice::TileLayer* layers = reinterpret_cast<ice::TileLayer*>(
                     ice::memory::ptr_align_forward(tilesets + tilemap_info.tileset_count, alignof(ice::TileLayer))
                 );
-                ice::Tile* tiles = reinterpret_cast<ice::Tile*>(layers + tilemap_info.layer_count);
+                ice::TileTerrain* terrain_tiles = reinterpret_cast<ice::TileTerrain*>(layers + tilemap_info.layer_count);
+                ice::Tile* tiles = reinterpret_cast<ice::Tile*>(terrain_tiles + tilemap_info.terrain_count);
 
                 result = BakeResult::Success;
                 for (ice::u32 idx = 0; idx < tilemap_info.tileset_count; ++idx)
                 {
-                    ice::Resource* dependency_resource = resource_system.find_relative(resource, tilemap_info.tileset_image[idx]);
+                    ice::Resource* dependency_resource = resource_system.find_relative(resource, tilemap_info.tileset_info[idx].image);
                     if (dependency_resource == nullptr)
                     {
-                        TILED_LOG(LogSeverity::Error, "Invalid TMX resource, failed to find image resource at: {}", tilemap_info.tileset_image[idx]);
+                        TILED_LOG(LogSeverity::Error, "Invalid TMX resource, failed to find image resource at: {}", tilemap_info.tileset_info[idx].image);
                         result = BakeResult::Failure_MissingDependencies;
                         break;
                     }
@@ -520,13 +603,13 @@ namespace ice
                     ice::Asset dependency_asset = asset_system.load(AssetType::Texture, dependency_resource);
                     if (dependency_asset == Asset::Invalid)
                     {
-                        TILED_LOG(LogSeverity::Error, "Invalid TMX resource, failed to load image asset for image at: {}", tilemap_info.tileset_image[idx]);
+                        TILED_LOG(LogSeverity::Error, "Invalid TMX resource, failed to load image asset for image at: {}", tilemap_info.tileset_info[idx].image);
                         result = BakeResult::Failure_MissingDependencies;
                         break;
                     }
 
                     // Baked assets keep the Asset name hash in the same location where later the Asset object is stored.
-                    tilesets[idx].element_size = tilemap_info.tileset_element_size[idx];
+                    tilesets[idx].element_size = tilemap_info.tileset_info[idx].element_size;
                     tilesets[idx].asset = static_cast<ice::Asset>(ice::stringid_hash(ice::asset_name(dependency_asset)));
                 }
 
@@ -539,6 +622,7 @@ namespace ice
 
                     tilemap_info.tilesets = tilesets;
                     tilemap_info.layers = layers;
+                    tilemap_info.terrain = terrain_tiles;
                     tilemap_info.tiles = tiles;
 
                     tilemap->tile_size = tilemap_info.tile_size;
@@ -546,19 +630,23 @@ namespace ice
                     tilemap->layer_count = tilemap_info.layer_count;
                     tilemap->tilesets = nullptr;
                     tilemap->layers = nullptr;
+                    tilemap->terrain = nullptr;
                     tilemap->tiles = nullptr;
 
                     bake_tilemap_asset(doc->first_node(), tilemap_info);
 
                     // Change pointers into offset values
-                    tilemap->tiles = reinterpret_cast<ice::Tile*>(
-                        static_cast<ice::uptr>(ice::memory::ptr_distance(tilemap_data, tiles))
-                    );
                     tilemap->tilesets = reinterpret_cast<ice::TileSet*>(
                         static_cast<ice::uptr>(ice::memory::ptr_distance(tilemap_data, tilesets))
                     );
                     tilemap->layers = reinterpret_cast<ice::TileLayer*>(
                         static_cast<ice::uptr>(ice::memory::ptr_distance(tilemap_data, layers))
+                    );
+                    tilemap->terrain = reinterpret_cast<ice::TileTerrain*>(
+                        static_cast<ice::uptr>(ice::memory::ptr_distance(tilemap_data, terrain_tiles))
+                    );
+                    tilemap->tiles = reinterpret_cast<ice::Tile*>(
+                        static_cast<ice::uptr>(ice::memory::ptr_distance(tilemap_data, tiles))
                     );
 
                     // Update the output Memory object.
