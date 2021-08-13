@@ -7,6 +7,14 @@
 namespace ice
 {
 
+    struct TileMapInstance
+    {
+        ice::TileMap const* tilemap;
+
+        ice::u32 fixture_count;
+        ice::PhysicsID* fixture_ids;
+    };
+
     class IceWorldTrait_TileMap : public ice::WorldTrait_TileMap
     {
     public:
@@ -45,7 +53,7 @@ namespace ice
         ice::WorldTrait_Physics2D& _physics;
         ice::vec2f _tilesize;
 
-        ice::pod::Array<ice::TileMap const*> _tilemaps;
+        ice::pod::Array<ice::TileMapInstance> _tilemaps;
         //ice::pod::Array<ice::Memory> _tilemap_memory;
     };
 
