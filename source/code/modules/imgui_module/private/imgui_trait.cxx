@@ -111,30 +111,30 @@ namespace ice::devui
             .min_filter = SamplerFilter::Nearest,
             .mag_filter = SamplerFilter::Nearest,
             .address_mode = {
-                .u = SamplerAddressMode::ClampToEdge,
-                .v = SamplerAddressMode::ClampToEdge,
-                .w = SamplerAddressMode::ClampToEdge,
-            },
-            .mip_map_mode = SamplerMipMapMode::Nearest,
+            .u = SamplerAddressMode::ClampToEdge,
+            .v = SamplerAddressMode::ClampToEdge,
+            .w = SamplerAddressMode::ClampToEdge,
+        },
+        .mip_map_mode = SamplerMipMapMode::Nearest,
         };
 
         _sampler = device.create_sampler(sampler_info);
 
         ResourceSetLayoutBinding const resource_bindings[]{
             ResourceSetLayoutBinding
-            {
-                .binding_index = 1,
-                .resource_count = 1,
-                .resource_type = ResourceType::Sampler,
-                .shader_stage_flags = ShaderStageFlags::FragmentStage
-            },
+        {
+            .binding_index = 1,
+            .resource_count = 1,
+            .resource_type = ResourceType::Sampler,
+            .shader_stage_flags = ShaderStageFlags::FragmentStage
+        },
             ResourceSetLayoutBinding
-            {
-                .binding_index = 2,
-                .resource_count = 1,
-                .resource_type = ResourceType::SampledImage,
-                .shader_stage_flags = ShaderStageFlags::FragmentStage
-            },
+        {
+            .binding_index = 2,
+            .resource_count = 1,
+            .resource_type = ResourceType::SampledImage,
+            .shader_stage_flags = ShaderStageFlags::FragmentStage
+        },
         };
 
         _resource_layout = device.create_resourceset_layout({ resource_bindings + 0, 2 });
@@ -150,41 +150,41 @@ namespace ice::devui
 
         ResourceUpdateInfo resource_update[]{
             ResourceUpdateInfo
-            {
-                .sampler = _sampler
-            },
+        {
+            .sampler = _sampler
+        },
             ResourceUpdateInfo
-            {
-                .image = _font_texture,
-            },
+        {
+            .image = _font_texture,
+        },
         };
 
         ResourceSetUpdateInfo update_infos[]{
             ResourceSetUpdateInfo{
-                .resource_set = _resources[0],
-                .resource_type = ResourceType::Sampler,
-                .binding_index = 1,
-                .array_element = 0,
-                .resources = { resource_update + 0, 1 }
-            },
+            .resource_set = _resources[0],
+            .resource_type = ResourceType::Sampler,
+            .binding_index = 1,
+            .array_element = 0,
+            .resources = { resource_update + 0, 1 }
+        },
             ResourceSetUpdateInfo{
-                .resource_set = _resources[0],
-                .resource_type = ResourceType::SampledImage,
-                .binding_index = 2,
-                .array_element = 0,
-                .resources = { resource_update + 1, 1 }
-            },
+            .resource_set = _resources[0],
+            .resource_type = ResourceType::SampledImage,
+            .binding_index = 2,
+            .array_element = 0,
+            .resources = { resource_update + 1, 1 }
+        },
         };
 
         device.update_resourceset(update_infos);
 
         PipelinePushConstant const push_constants[]{
             PipelinePushConstant
-            {
-                .shader_stage_flags = ShaderStageFlags::VertexStage,
-                .offset = 0,
-                .size = sizeof(ice::vec2f) * 2,
-            }
+        {
+            .shader_stage_flags = ShaderStageFlags::VertexStage,
+            .offset = 0,
+            .size = sizeof(ice::vec2f) * 2,
+        }
         };
         PipelineLayoutInfo const layout_info
         {
@@ -196,29 +196,29 @@ namespace ice::devui
 
         ShaderInputAttribute attribs[]{
             ShaderInputAttribute{
-                .location = 0,
-                .offset = 0,
-                .type = ShaderAttribType::Vec2f
-            },
+            .location = 0,
+            .offset = 0,
+            .type = ShaderAttribType::Vec2f
+        },
             ShaderInputAttribute{
-                .location = 1,
-                .offset = 8,
-                .type = ShaderAttribType::Vec2f
-            },
+            .location = 1,
+            .offset = 8,
+            .type = ShaderAttribType::Vec2f
+        },
             ShaderInputAttribute{
-                .location = 2,
-                .offset = 16,
-                .type = ShaderAttribType::Vec4f_Unorm8
-            },
+            .location = 2,
+            .offset = 16,
+            .type = ShaderAttribType::Vec4f_Unorm8
+        },
         };
 
         ShaderInputBinding bindings[]{
             ShaderInputBinding{
-                .binding = 0,
-                .stride = sizeof(ImDrawVert),
-                .instanced = false,
-                .attributes = { attribs + 0, 3 }
-            },
+            .binding = 0,
+            .stride = sizeof(ImDrawVert),
+            .instanced = false,
+            .attributes = { attribs + 0, 3 }
+        },
         };
 
         PipelineInfo pipeline_info{
@@ -266,14 +266,14 @@ namespace ice::devui
 
             ice::render::BufferUpdateInfo updates[]{
                 ice::render::BufferUpdateInfo
-                {
-                    .buffer = data_buffer,
-                    .data = {
-                        .location = image_info.data,
-                        .size = image_data_size,
-                        .alignment = 4
-                    }
-                }
+            {
+                .buffer = data_buffer,
+                .data = {
+                .location = image_info.data,
+                .size = image_data_size,
+                .alignment = 4
+            }
+            }
             };
 
             device.update_buffers(updates);
@@ -377,28 +377,28 @@ namespace ice::devui
         ice::u32 next_resource_idx = 1;
         ResourceUpdateInfo resource_update[]{
             ResourceUpdateInfo
-            {
-                .sampler = _sampler
-            },
+        {
+            .sampler = _sampler
+        },
             ResourceUpdateInfo
-            {
-                .image = Image::Invalid,
-            },
+        {
+            .image = Image::Invalid,
+        },
         };
 
         ResourceSetUpdateInfo resource_set_update[]{
             ResourceSetUpdateInfo{
-                .resource_type = ResourceType::Sampler,
-                .binding_index = 1,
-                .array_element = 0,
-                .resources = { resource_update + 0, 1 }
-            },
+            .resource_type = ResourceType::Sampler,
+            .binding_index = 1,
+            .array_element = 0,
+            .resources = { resource_update + 0, 1 }
+        },
             ResourceSetUpdateInfo{
-                .resource_type = ResourceType::SampledImage,
-                .binding_index = 2,
-                .array_element = 0,
-                .resources = { resource_update + 1, 1 }
-            },
+            .resource_type = ResourceType::SampledImage,
+            .binding_index = 2,
+            .array_element = 0,
+            .resources = { resource_update + 1, 1 }
+        },
         };
 
         // Upload vertex/index data into a single contiguous GPU buffer
@@ -523,6 +523,21 @@ namespace ice::devui
         using ice::input::MouseInput;
 
         auto& io = ImGui::GetIO();
+
+        for (ice::Shard const& shard : frame.shards())
+        {
+            if (shard == ice::platform::Shard_WindowSizeChanged)
+            {
+                ice::vec2i window_size{ };
+                if (ice::shard_inspect(shard, window_size))
+                {
+                    _display_size = { (ice::u32) window_size.x, (ice::u32) window_size.y };
+                    io.DisplaySize.x = _display_size.x;
+                    io.DisplaySize.y = _display_size.y;
+                }
+            }
+        }
+
         for (ice::platform::Event const& event : runner.platform_events())
         {
             if (event.type == ice::platform::EventType::InputText)
