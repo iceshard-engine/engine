@@ -15,12 +15,16 @@ namespace ice
 
     enum class PhysicsShape : ice::u32
     {
-        Box
+        Box,
+        Capsule,
     };
 
     struct PhysicsBody
     {
         static constexpr ice::StringID Identifier = "ice.component.phx-body"_sid;
+
+        ice::PhysicsShape shape;
+        ice::vec2f dimensions;
 
         void* trait_data = nullptr;
     };

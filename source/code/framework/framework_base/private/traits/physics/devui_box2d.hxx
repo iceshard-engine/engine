@@ -21,7 +21,8 @@ namespace ice
 
     private:
         b2World& _world;
-        bool _visible = true;
+        ice::u32 _debug_draw_flags;
+        bool _visible;
     };
 
 } // namespace ice

@@ -49,7 +49,6 @@ namespace ice
 
             ice::u32* fixture_count;
 
-            //ice::TileMap* tilemap;
             ice::TileSet* tilesets;
             ice::TileLayer* layers;
             ice::TileTerrain* terrain;

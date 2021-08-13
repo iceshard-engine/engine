@@ -49,10 +49,18 @@ namespace ice
         b2Body* body = _world->CreateBody(&body_def);
         body->GetUserData().entity = ice::Entity{ };
 
-        b2PolygonShape tile_shape{ };
-        ice::vec2f const center = dimensions / 2.f;
-        tile_shape.SetAsBox(center.x, center.y, { center.x, center.y }, 0.f);
-        body->CreateFixture(&tile_shape, 0.f);
+
+        if (shape == PhysicsShape::Box)
+        {
+            b2PolygonShape tile_shape{ };
+            ice::vec2f const center = dimensions / 2.f;
+            tile_shape.SetAsBox(center.x, center.y, { center.x, center.y }, 0.f);
+
+            b2FixtureDef fixture_def{ };
+            fixture_def.shape = &tile_shape;
+            fixture_def.friction = 1.f;
+            body->CreateFixture(&fixture_def);
+        }
 
         return detail::body_to_physics_id(body);
     }
@@ -185,34 +193,70 @@ namespace ice
             {
                 if (phx_body.trait_data == nullptr)
                 {
+                    ice::vec2f const half = (phx_body.dimensions / Constant_PixelsInMeter) / 2.f;
+                    ice::vec2f const workaround_recenter = (ice::vec2f{ 48.f / 2, 0.f } / Constant_PixelsInMeter) - ice::vec2f{ half.x, 0.f };
+
                     b2BodyDef body_def{ };
                     body_def.type = b2_dynamicBody;
                     body_def.position.Set(dyn_xform.position.x / Constant_PixelsInMeter, dyn_xform.position.y / Constant_PixelsInMeter);
-                    body_def.angularDamping = 1.f;
 
                     b2Body* body = _world->CreateBody(&body_def);
                     body->GetUserData().entity = e;
                     phx_body.trait_data = body;
 
-                    b2PolygonShape tile_shape;
-                    tile_shape.SetAsBox(0.25, 0.25, { 0.25f, 0.25f }, 0.f);
-                    //ice::pod::hash::set(_entity_bodies, ice::hash(e), body);
+                    if (phx_body.shape == PhysicsShape::Box)
+                    {
+                        ice::vec2f const half = (phx_body.dimensions / Constant_PixelsInMeter) / 2.f;
 
-                    b2FixtureDef fixture_def;
-                    fixture_def.shape = &tile_shape;
-                    fixture_def.density = 1.0f;
-                    fixture_def.friction = 1.0f;
+                        b2PolygonShape tile_shape;
+                        tile_shape.SetAsBox(
+                            half.x,
+                            half.y,
+                            { half.x + workaround_recenter.x, half.y },
+                            0.f
+                        );
+
+                        b2FixtureDef fixture_def;
+                        fixture_def.shape = &tile_shape;
+                        fixture_def.density = 1.0f;
+                        fixture_def.friction = 1.0f;
+                        body->CreateFixture(&fixture_def);
+                    }
+                    else if (phx_body.shape == PhysicsShape::Capsule)
+                    {
+                        ice::vec2f const half_half = half / 2.f;
+
+                        b2CircleShape shape{ };
+                        shape.m_p = { half.x + workaround_recenter.x, half_half.y };
+                        shape.m_radius = half.x;
+
+                        b2PolygonShape tile_shape;
+                        tile_shape.SetAsBox(
+                            half.x,
+                            half_half.y,
+                            { half.x + workaround_recenter.x, half.y },
+                            0.f
+                        );
+
+                        b2FixtureDef fixture_def;
+                        fixture_def.shape = &shape;
+                        fixture_def.density = 1.0f;
+                        fixture_def.friction = 1.0f;
+                        body->CreateFixture(&fixture_def);
+
+                        shape.m_p.y += half.y;
+                        body->CreateFixture(&fixture_def);
+
+                        fixture_def.shape = &tile_shape;
+                        body->CreateFixture(&fixture_def);
+                    }
 
                     body->SetFixedRotation(true);
-                    body->CreateFixture(&fixture_def);
                 }
                 else
                 {
                     b2Body* body = reinterpret_cast<b2Body*>(phx_body.trait_data);
-                    b2Vec2 body_pos = body->GetWorldPoint(body->GetLocalCenter());
-
-                    body_pos.y -= 0.25;
-                    body_pos.x -= 0.25;
+                    b2Vec2 body_pos = body->GetPosition();
 
                     dyn_xform.position = ice::vec3f{ body_pos.x * Constant_PixelsInMeter, body_pos.y * Constant_PixelsInMeter, dyn_xform.position.z };
                 }

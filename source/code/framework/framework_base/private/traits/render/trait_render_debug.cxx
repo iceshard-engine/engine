@@ -154,8 +154,8 @@ namespace ice
         };
         _pipeline = device.create_pipeline(pipeline_info);
 
-        _vertices = device.create_buffer(BufferType::Vertex, 1024 * 12);
-        _colors = device.create_buffer(BufferType::Vertex, 1024 * 4);
+        _vertices = device.create_buffer(BufferType::Vertex, 1024 * 96);
+        _colors = device.create_buffer(BufferType::Vertex, 1024 * 32);
     }
 
     void IceWorldTrait_RenderDebug::gfx_cleanup(

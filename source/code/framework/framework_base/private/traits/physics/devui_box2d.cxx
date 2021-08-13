@@ -29,9 +29,9 @@ namespace ice
         class DevUI_DebugDrawCommandRecorder : public b2Draw
         {
         public:
-            DevUI_DebugDrawCommandRecorder() noexcept
+            DevUI_DebugDrawCommandRecorder(ice::u32 flags) noexcept
             {
-                SetFlags(b2Draw::e_shapeBit | b2Draw::e_centerOfMassBit);
+                SetFlags(flags);
             }
 
             void SetLists(
@@ -57,10 +57,10 @@ namespace ice
             void DrawSolidPolygon(const b2Vec2* vertices, int32 vertexCount, const b2Color& color) noexcept override;
 
             /// Draw a circle.
-            void DrawCircle(const b2Vec2& center, float radius, const b2Color& color) override { }
+            void DrawCircle(const b2Vec2& center, float radius, const b2Color& color) noexcept override;
 
             /// Draw a solid circle.
-            void DrawSolidCircle(const b2Vec2& center, float radius, const b2Vec2& axis, const b2Color& color) override { }
+            void DrawSolidCircle(const b2Vec2& center, float radius, const b2Vec2& axis, const b2Color& color) noexcept override;
 
             /// Draw a line segment.
             void DrawSegment(const b2Vec2& p1, const b2Vec2& p2, const b2Color& color) override { }
@@ -87,7 +87,8 @@ namespace ice
 
     DevUI_Box2D::DevUI_Box2D(b2World& box2d_world) noexcept
         : _world{ box2d_world }
-        , _visible{ false }
+        , _debug_draw_flags{ b2Draw::e_shapeBit }
+        , _visible{ true }
     {
     }
 
@@ -114,6 +115,9 @@ namespace ice
 
             if (ImGui::Begin("Physics2D (Box2D)", &_visible))
             {
+                ImGui::CheckboxFlags("Draw Shapes", &_debug_draw_flags, b2Draw::e_shapeBit);
+                ImGui::CheckboxFlags("Draw Bounding Boxes", &_debug_draw_flags, b2Draw::e_aabbBit);
+                ImGui::CheckboxFlags("Draw Transforms", &_debug_draw_flags, b2Draw::e_centerOfMassBit);
             }
             ImGui::End();
         }
@@ -121,9 +125,9 @@ namespace ice
 
     void DevUI_Box2D::on_frame(ice::EngineFrame& frame) noexcept
     {
-        if (_visible)
+        if (_visible && _debug_draw_flags != 0)
         {
-            detail::DevUI_DebugDrawCommandRecorder recorder{ };
+            detail::DevUI_DebugDrawCommandRecorder recorder{ _debug_draw_flags };
 
             _world.SetDebugDraw(&recorder);
             _world.DebugDraw();
@@ -168,40 +172,12 @@ namespace ice
 
     void detail::DevUI_DebugDrawCommandRecorder::DrawPolygon(b2Vec2 const* vertices, int32 vertex_count, b2Color const& color) noexcept
     {
-        //if (_command_list != nullptr)
-        //{
-        //    ice::vec3f* vertex = _vertex_list + draw_vertex_count;
-
-        //    *vertex = ice::vec3f{ vertices[0].x, vertices[0].y, 0.f } * Constant_PixelsInMeter;
-        //    vertex += 1;
-
-        //    for (ice::u32 idx = 0; idx < vertex_count; ++idx)
-        //    {
-        //        *vertex = ice::vec3f{ vertices[idx + 1].x, vertices[idx + 1].y, 1.f } * Constant_PixelsInMeter;
-        //        vertex += 1;
-        //    }
-
-        //    _command_list[draw_commands] = DebugDrawCommand{
-        //        .color = ice::vec4f{ color.r, color.g , color.b , color.a },
-        //        .vertex_count = static_cast<ice::u32>(vertex_count),
-        //        .vertex_list = _vertex_list + draw_vertex_count,
-        //    };
-        //}
-
-        //draw_commands += 1;
-        //draw_vertex_count += vertex_count + 1;
-    }
-
-    /// Draw a solid closed polygon provided in CCW order.
-
-    void detail::DevUI_DebugDrawCommandRecorder::DrawSolidPolygon(b2Vec2 const* vertices, int32 vertex_count, b2Color const& color) noexcept
-    {
         if (_command_list != nullptr)
         {
             ice::vec3f* vertex = _vertex_list + draw_vertex_count;
             ice::vec1u* vertex_color = _color_list + draw_vertex_count;
 
-            *vertex = ice::vec3f{ vertices[vertex_count-1].x, vertices[vertex_count-1].y, 0.f } * Constant_PixelsInMeter;
+            *vertex = ice::vec3f{ vertices[vertex_count - 1].x, vertices[vertex_count - 1].y, 0.f } *Constant_PixelsInMeter;
             *vertex_color = as_debug_color(color, 0.f);
 
             vertex += 1;
@@ -209,14 +185,14 @@ namespace ice
 
             for (ice::u32 idx = 0; idx < vertex_count; ++idx)
             {
-                *vertex = ice::vec3f{ vertices[idx].x, vertices[idx].y, color.r } * Constant_PixelsInMeter;
+                *vertex = ice::vec3f{ vertices[idx].x, vertices[idx].y, color.r } *Constant_PixelsInMeter;
                 *vertex_color = as_debug_color(color);
 
                 vertex += 1;
                 vertex_color += 1;
             }
 
-            *vertex = ice::vec3f{ vertices[0].x, vertices[0].y, 0.f } * Constant_PixelsInMeter;
+            *vertex = ice::vec3f{ vertices[0].x, vertices[0].y, 0.f } *Constant_PixelsInMeter;
             *vertex_color = as_debug_color(color, 0.f);
 
             vertex += 1;
@@ -241,6 +217,43 @@ namespace ice
 
         //draw_commands += 1;
         draw_vertex_count += vertex_count + 2;
+    }
+
+    /// Draw a solid closed polygon provided in CCW order.
+
+    void detail::DevUI_DebugDrawCommandRecorder::DrawSolidPolygon(b2Vec2 const* vertices, int32 vertex_count, b2Color const& color) noexcept
+    {
+        DrawPolygon(vertices, vertex_count, color);
+    }
+
+    void detail::DevUI_DebugDrawCommandRecorder::DrawCircle(b2Vec2 const& center, float radius, b2Color const& color) noexcept
+    {
+        ice::rad constexpr angle = ice::math::radians(ice::deg{ 15.f });
+        ice::u32 constexpr vertex_count = (360.f / 15.f);
+
+        ice::mat2x2 const rotation_mtx{
+            .v = {
+                { ice::math::cos(angle), ice::math::sin(angle) },
+                { -ice::math::sin(angle), ice::math::cos(angle) }
+            }
+        };
+
+        b2Vec2 vertices[vertex_count]{ };
+
+        ice::vec2f point = { 0.f, radius };
+        for (ice::u32 idx = 0; idx < vertex_count; ++idx)
+        {
+            vertices[idx].x = point.x + center.x;
+            vertices[idx].y = point.y + center.y;
+            point = rotation_mtx * point;
+        }
+
+        DrawPolygon(vertices, vertex_count, color);
+    }
+
+    void detail::DevUI_DebugDrawCommandRecorder::DrawSolidCircle(b2Vec2 const& center, float radius, b2Vec2 const& axis, b2Color const& color) noexcept
+    {
+        DrawCircle(center, radius, color);
     }
 
     void detail::DevUI_DebugDrawCommandRecorder::DrawTransform(b2Transform const& xf)
