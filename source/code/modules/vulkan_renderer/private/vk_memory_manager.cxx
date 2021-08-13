@@ -9,34 +9,45 @@ namespace ice::render::vk
     namespace detail
     {
 
+        struct VulkanMemoryRequirements
+        {
+            ice::u32 size;
+            ice::u32 alignment;
+            ice::i32 memory_index;
+        };
+
         void get_memory_requirements_and_index(
             VkDevice vk_device,
             VkImage vk_image,
             VkMemoryPropertyFlags flags,
             VkPhysicalDeviceMemoryProperties const& memory_properties,
-            VkMemoryRequirements& requirements_out,
-            ice::i32& index_out
+            VulkanMemoryRequirements& out_requirements
         ) noexcept
         {
-            vkGetImageMemoryRequirements(vk_device, vk_image, &requirements_out);
+            VkMemoryRequirements memory_requirements{ };
+            vkGetImageMemoryRequirements(vk_device, vk_image, &memory_requirements);
 
-            index_out = -1;
+            ice::i32 memory_index = -1;
             for (ice::i32 i = 0; i < memory_properties.memoryTypeCount; ++i)
             {
-                if ((requirements_out.memoryTypeBits & 0x1) == 0x1)
+                if ((memory_requirements.memoryTypeBits & 0x1) == 0x1)
                 {
                     // Type is available, does it match user properties?
                     if ((memory_properties.memoryTypes[i].propertyFlags & flags) == flags)
                     {
-                        index_out = i;
+                        memory_index = i;
                         break;
                     }
                 }
-                requirements_out.memoryTypeBits >>= 1;
+                memory_requirements.memoryTypeBits >>= 1;
             }
 
+            out_requirements.size = memory_requirements.size;
+            out_requirements.alignment = memory_requirements.alignment;
+            out_requirements.memory_index = memory_index;
+
             ICE_ASSERT(
-                index_out != -1,
+                memory_index != -1,
                 "No valid memory type found!"
             );
         }
@@ -46,29 +57,33 @@ namespace ice::render::vk
             VkBuffer vk_buffer,
             VkMemoryPropertyFlags flags,
             VkPhysicalDeviceMemoryProperties const& memory_properties,
-            VkMemoryRequirements& requirements_out,
-            ice::i32& index_out
+            VulkanMemoryRequirements& out_requirements
         ) noexcept
         {
-            vkGetBufferMemoryRequirements(vk_device, vk_buffer, &requirements_out);
+            VkMemoryRequirements memory_requirements{ };
+            vkGetBufferMemoryRequirements(vk_device, vk_buffer, &memory_requirements);
 
-            index_out = -1;
+            ice::i32 memory_index = -1;
             for (ice::i32 i = 0; i < memory_properties.memoryTypeCount; ++i)
             {
-                if ((requirements_out.memoryTypeBits & 0x1) == 0x1)
+                if ((memory_requirements.memoryTypeBits & 0x1) == 0x1)
                 {
                     // Type is available, does it match user properties?
                     if ((memory_properties.memoryTypes[i].propertyFlags & flags) == flags)
                     {
-                        index_out = i;
+                        memory_index = i;
                         break;
                     }
                 }
-                requirements_out.memoryTypeBits >>= 1;
+                memory_requirements.memoryTypeBits >>= 1;
             }
 
+            out_requirements.size = memory_requirements.size;
+            out_requirements.alignment = memory_requirements.alignment;
+            out_requirements.memory_index = memory_index;
+
             ICE_ASSERT(
-                index_out != -1,
+                memory_index != -1,
                 "No valid memory type found!"
             );
         }
@@ -77,8 +92,7 @@ namespace ice::render::vk
 
         void ensure_free_block_exists(
             VkDevice device,
-            ice::u32 required_size,
-            ice::i32 memory_type_index,
+            VulkanMemoryRequirements const& requirements,
             ice::render::vk::AllocationBlockInfo const* info,
             ice::memory::ForwardAllocator& block_alloc,
             ice::memory::ForwardAllocator& entry_alloc,
@@ -86,7 +100,8 @@ namespace ice::render::vk
         ) noexcept
         {
             bool found_free_block = false;
-            auto* it = ice::pod::multi_hash::find_first(blocks, memory_type_index);
+
+            auto* it = ice::pod::multi_hash::find_first(blocks, requirements.memory_index);
             while (it != nullptr && found_free_block == false)
             {
                 if (it->value->info == info)
@@ -94,7 +109,13 @@ namespace ice::render::vk
                     AllocationEntry* entry = it->value->free;
                     while (entry != nullptr && found_free_block == false)
                     {
-                        found_free_block = entry->size >= required_size;
+                        ice::u32 available_size = entry->size;
+                        if (ice::u32 const remainder = entry->offset % requirements.alignment; remainder != 0)
+                        {
+                            available_size -= (requirements.alignment - remainder);
+                        }
+
+                        found_free_block = available_size >= requirements.size;
                         entry = entry->next;
                     }
                 }
@@ -107,8 +128,13 @@ namespace ice::render::vk
                 VkMemoryAllocateInfo alloc_info = {};
                 alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
                 alloc_info.pNext = nullptr;
-                alloc_info.allocationSize = info->block_size == 0 ? required_size : info->block_size;
-                alloc_info.memoryTypeIndex = memory_type_index;
+                alloc_info.allocationSize = info->block_size == 0 ? requirements.size : info->block_size;
+                alloc_info.memoryTypeIndex = requirements.memory_index;
+
+                if (ice::u32 const remainder = alloc_info.allocationSize % requirements.alignment; remainder != 0)
+                {
+                    alloc_info.allocationSize += requirements.alignment - remainder;
+                }
 
                 VkDeviceMemory memory_handle;
                 VkResult api_result = vkAllocateMemory(device, &alloc_info, nullptr, &memory_handle);
@@ -123,7 +149,7 @@ namespace ice::render::vk
                 entry->size = alloc_info.allocationSize;
 
                 AllocationBlock* block = block_alloc.make<AllocationBlock>();
-                block->memory_type_index = static_cast<ice::i16>(memory_type_index);
+                block->memory_type_index = static_cast<ice::i16>(requirements.memory_index);
                 block->block_identifier = global_block_identifier++;
                 block->info = info;
                 block->free = entry;
@@ -132,15 +158,14 @@ namespace ice::render::vk
 
                 ice::pod::multi_hash::insert(
                     blocks,
-                    memory_type_index,
+                    requirements.memory_index,
                     block
                 );
             }
         }
 
         void select_block_and_entry(
-            ice::u32 required_size,
-            ice::i32 memory_type_index,
+            VulkanMemoryRequirements const& requirements,
             ice::render::vk::AllocationBlockInfo const* info,
             ice::memory::ForwardAllocator& entry_alloc,
             ice::pod::Hash<AllocationBlock*>& blocks,
@@ -148,14 +173,7 @@ namespace ice::render::vk
             ice::render::vk::AllocationEntry*& selected_entry_out
         ) noexcept
         {
-            ice::u32 alloc_size = required_size;
-            ice::u32 stride_modulo = required_size % info->allocation_stride;
-            if (stride_modulo > 0)
-            {
-                alloc_size += info->allocation_stride - stride_modulo;
-            }
-
-            auto* it = ice::pod::multi_hash::find_first(blocks, memory_type_index);
+            auto* it = ice::pod::multi_hash::find_first(blocks, requirements.memory_index);
             while (it != nullptr && selected_block_out == nullptr)
             {
                 AllocationBlock* candidate_block = it->value;
@@ -166,9 +184,15 @@ namespace ice::render::vk
                     AllocationEntry* candidate_entry = nullptr;
                     while (next_entry != nullptr)
                     {
-                        if (next_entry->size >= alloc_size)
+                        ice::u32 available_size = next_entry->size;
+                        if (ice::u32 const remainder = next_entry->offset % requirements.alignment; remainder != 0)
                         {
-                            if (candidate_entry == nullptr || next_entry->size <= candidate_entry->size)
+                            available_size -= (requirements.alignment - remainder);
+                        }
+
+                        if (available_size >= requirements.size)
+                        {
+                            if (candidate_entry == nullptr || available_size <= candidate_entry->size)
                             {
                                 candidate_entry = next_entry;
                             }
@@ -194,12 +218,18 @@ namespace ice::render::vk
                             parent_entry->next = candidate_entry->next;
                         }
 
-                        ice::u32 const remaining_size = candidate_entry->size - alloc_size;
+                        ice::u32 final_size = requirements.size;
+                        if (ice::u32 const remainder = final_size % requirements.alignment; remainder != 0)
+                        {
+                            final_size += requirements.alignment - remainder;
+                        }
+
+                        ice::u32 const remaining_size = candidate_entry->size - final_size;
                         if (remaining_size > 0 && remaining_size >= info->allocation_min)
                         {
                             AllocationEntry* free_entry = entry_alloc.make<AllocationEntry>();
                             free_entry->next = nullptr;
-                            free_entry->offset = candidate_entry->offset + alloc_size;
+                            free_entry->offset = candidate_entry->offset + final_size;
                             free_entry->size = remaining_size;
 
                             if (parent_entry != nullptr)
@@ -211,7 +241,7 @@ namespace ice::render::vk
                             {
                                 candidate_block->free = free_entry;
                             }
-                            candidate_entry->size = alloc_size;
+                            candidate_entry->size = final_size;
                         }
 
                         selected_block_out = candidate_block;
@@ -281,15 +311,13 @@ namespace ice::render::vk
         AllocationInfo& info_out
     ) noexcept -> AllocationHandle
     {
-        ice::i32 memory_type_index;
-        VkMemoryRequirements memory_requirements;
+        detail::VulkanMemoryRequirements memory_requirements;
         detail::get_memory_requirements_and_index(
             _vk_device,
             image,
             flags,
             _vk_physical_device_memory_properties,
-            memory_requirements,
-            memory_type_index
+            memory_requirements
         );
 
         if (type == AllocationType::Implicit)
@@ -297,21 +325,19 @@ namespace ice::render::vk
             type = AllocationType::ImageSmall;
         }
 
-        ice::u32 const size = static_cast<ice::u32>(memory_requirements.size);
         ice::render::vk::AllocationBlockInfo const* info = &defined_allocation_blocks[static_cast<ice::u32>(type)];
-        if (info->allocation_max < size)
+        if (info->allocation_max < memory_requirements.size)
         {
             info = &defined_allocation_blocks[ice::u32(AllocationType::ImageLarge)];
             ICE_ASSERT(
-                size <= info->allocation_max,
+                memory_requirements.size <= info->allocation_max,
                 "Requested image memory size too big!"
             );
         };
 
         detail::ensure_free_block_exists(
             _vk_device,
-            size,
-            memory_type_index,
+            memory_requirements,
             info,
             _block_allocator,
             _entry_allocator,
@@ -321,8 +347,7 @@ namespace ice::render::vk
         AllocationBlock* selected_block = nullptr;
         AllocationEntry* selected_entry = nullptr;
         detail::select_block_and_entry(
-            size,
-            memory_type_index,
+            memory_requirements,
             info,
             _entry_allocator,
             _blocks,
@@ -334,12 +359,18 @@ namespace ice::render::vk
         selected_entry->next = selected_block->used;
         selected_block->used = selected_entry;
 
+        ice::u32 memory_offset = selected_entry->offset;
+        if (ice::u32 const remainder = memory_offset % memory_requirements.alignment; remainder != 0)
+        {
+            memory_offset += memory_requirements.alignment - remainder;
+        }
+
         // Bind the memory to the image handle
         VkResult api_result = vkBindImageMemory(
             _vk_device,
             image,
             selected_block->memory_handle,
-            selected_entry->offset
+            memory_offset
         );
         ICE_ASSERT(
             api_result == VkResult::VK_SUCCESS,
@@ -347,8 +378,8 @@ namespace ice::render::vk
         );
 
         info_out = AllocationInfo{
-            .size = selected_entry->size,
-            .offset = selected_entry->offset,
+            .size = memory_requirements.size,
+            .offset = memory_offset,
             .memory_handle = selected_block->memory_handle,
         };
 
@@ -366,15 +397,13 @@ namespace ice::render::vk
         AllocationInfo& info_out
     ) noexcept -> AllocationHandle
     {
-        ice::i32 memory_type_index;
-        VkMemoryRequirements memory_requirements;
+        detail::VulkanMemoryRequirements memory_requirements;
         detail::get_memory_requirements_and_index(
             _vk_device,
             buffer,
             flags,
             _vk_physical_device_memory_properties,
-            memory_requirements,
-            memory_type_index
+            memory_requirements
         );
 
         if (type == AllocationType::Implicit)
@@ -382,17 +411,15 @@ namespace ice::render::vk
             type = AllocationType::Buffer;
         }
 
-        ice::u32 const size = static_cast<ice::u32>(memory_requirements.size);
         ice::render::vk::AllocationBlockInfo const* info = &defined_allocation_blocks[static_cast<ice::u32>(type)];
         ICE_ASSERT(
-            size <= info->allocation_max,
+            memory_requirements.size <= info->allocation_max,
             "Requested buffer size too big!"
         );
 
         detail::ensure_free_block_exists(
             _vk_device,
-            size,
-            memory_type_index,
+            memory_requirements,
             info,
             _block_allocator,
             _entry_allocator,
@@ -402,8 +429,7 @@ namespace ice::render::vk
         AllocationBlock* selected_block = nullptr;
         AllocationEntry* selected_entry = nullptr;
         detail::select_block_and_entry(
-            size,
-            memory_type_index,
+            memory_requirements,
             info,
             _entry_allocator,
             _blocks,
@@ -415,12 +441,18 @@ namespace ice::render::vk
         selected_entry->next = selected_block->used;
         selected_block->used = selected_entry;
 
+        ice::u32 memory_offset = selected_entry->offset;
+        if (ice::u32 const remainder = memory_offset % memory_requirements.alignment; remainder != 0)
+        {
+            memory_offset += memory_requirements.alignment - remainder;
+        }
+
         // Bind the memory to the image handle
         VkResult api_result = vkBindBufferMemory(
             _vk_device,
             buffer,
             selected_block->memory_handle,
-            selected_entry->offset
+            memory_offset
         );
         ICE_ASSERT(
             api_result == VkResult::VK_SUCCESS,
@@ -428,8 +460,8 @@ namespace ice::render::vk
         );
 
         info_out = AllocationInfo{
-            .size = selected_entry->size,
-            .offset = selected_entry->offset,
+            .size = memory_requirements.size,
+            .offset = memory_offset,
             .memory_handle = selected_block->memory_handle,
         };
 
