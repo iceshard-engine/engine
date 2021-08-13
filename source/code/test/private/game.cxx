@@ -256,20 +256,20 @@ void MyGame::on_game_begin(ice::EngineRunner& runner) noexcept
     ice::SpriteTile sprite_tile{
         .material_tile = { 0, 0 }
     };
-    _entity_storage.set_archetype_with_data(sprite_entity, sprite_arch, anim, sprite_pos, sprite, sprite_tile, ice::PhysicsBody{});
+    _entity_storage.set_archetype_with_data(sprite_entity, sprite_arch, anim, sprite_pos, sprite, sprite_tile, ice::PhysicsBody{ .shape = ice::PhysicsShape::Capsule, .dimensions = { 16.f, 32.f } });
 
     sprite_pos.position = { 48.f * 2, 448.f, -1.f };
     sprite_tile.material_tile = { 0, 1 };
     anim.speed = 1.f / 15.f;
     ice::Actor actor{ .type = ice::ActorType::Player };
-    _entity_storage.set_archetype_with_data(sprite_entity2, actor_arch, anim, sprite_pos, sprite, sprite_tile, actor, ice::PhysicsBody{});
+    _entity_storage.set_archetype_with_data(sprite_entity2, actor_arch, anim, sprite_pos, sprite, sprite_tile, actor, ice::PhysicsBody{ .shape = ice::PhysicsShape::Capsule, .dimensions = { 16.f, 32.f } });
 
     sprite_pos.position = { 48.f * 3, 448.f, -1.f };
     sprite_tile.material_tile = { 4, 5 };
     anim.speed = 1.f / 30.f;
     sprite.material = "/cotm/tileset_a"_sid;
     anim.animation = "null"_sid_hash;
-    _entity_storage.set_archetype_with_data(sprite_entity3, sprite_arch, anim, sprite_pos, sprite, sprite_tile, ice::PhysicsBody{});
+    _entity_storage.set_archetype_with_data(sprite_entity3, sprite_arch, anim, sprite_pos, sprite, sprite_tile, ice::PhysicsBody{ .dimensions = { 16.f, 16.f } });
 
     ice::math::deg d1{ 180 };
     ice::math::rad d1r = radians(d1);
