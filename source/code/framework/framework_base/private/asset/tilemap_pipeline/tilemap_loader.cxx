@@ -31,6 +31,9 @@ namespace ice
         tilemap->layers = reinterpret_cast<ice::TileLayer const*>(
             ice::memory::ptr_add(data.location, static_cast<ice::u32>(reinterpret_cast<ice::uptr>(tilemap->layers)))
         );
+        tilemap->terrain = reinterpret_cast<ice::TileTerrain const*>(
+            ice::memory::ptr_add(data.location, static_cast<ice::u32>(reinterpret_cast<ice::uptr>(tilemap->terrain)))
+        );
         tilemap->tiles = reinterpret_cast<ice::Tile const*>(
             ice::memory::ptr_add(data.location, static_cast<ice::u32>(reinterpret_cast<ice::uptr>(tilemap->tiles)))
         );

@@ -30,7 +30,9 @@ namespace ice
             ice::u16 columns;
             ice::vec2f element_size;
             ice::String image;
-            ice::u16 terrain_count;
+
+            ice::u32 terrain_count;
+            ice::u32 terrain_offset;
         };
 
         struct TileMapInfo
@@ -44,6 +46,8 @@ namespace ice
             ice::u32 layer_count;
             ice::u32 terrain_count;
             ice::u32 tile_count;
+
+            ice::u32* fixture_count;
 
             //ice::TileMap* tilemap;
             ice::TileSet* tilesets;
@@ -350,7 +354,7 @@ namespace ice
         rapidxml::xml_node<> const* node_tileset,
         ice::TileMapInfo const& tilemap_info,
         ice::u32 tileset_index,
-        ice::TileTerrain* tileset_terrain_tiles
+        ice::TileTerrain* tileset_terrains
     ) noexcept
     {
         ice::u32 const tileset_columns = tilemap_info.tileset_info[tileset_index].columns;
@@ -369,14 +373,14 @@ namespace ice
 
                 ice::u16 const tile_id = static_cast<ice::u16>(local_tile_id);
 
-                tileset_terrain_tiles->tile_id = ice::make_tileid(
+                tileset_terrains->tile_id = ice::make_tileid(
                     static_cast<ice::u8>(tileset_index),
                     0,
                     tile_id % tileset_columns,
                     tile_id / tileset_columns
                 );
 
-                tileset_terrain_tiles += 1;
+                tileset_terrains += 1;
 
                 detail::next_sibling(node_terrain, node_terrain);
             }
@@ -386,6 +390,8 @@ namespace ice
     void bake_layer_tiles(
         rapidxml::xml_node<> const* node_layer,
         ice::TileMapInfo const& tilemap_info,
+        ice::TileSet const* tilesets,
+        ice::TileTerrain const* tileset_terrains,
         ice::TileLayer& layer,
         ice::Tile* layer_tiles
     ) noexcept
@@ -478,6 +484,18 @@ namespace ice
                         tile_id / tileset_columns
                     );
 
+                    detail::TileSetInfo const& tileset_info = tilemap_info.tileset_info[tileset_idx];
+                    ice::TileTerrain const* terrain_list = tileset_terrains + tileset_info.terrain_offset;
+                    for (ice::u32 idx = 0; idx < tileset_info.terrain_count; ++idx)
+                    {
+                        if (layer_tiles->tile_id == terrain_list[idx].tile_id)
+                        {
+                           *tilemap_info.fixture_count += 1;
+                           break;
+                        }
+                    }
+
+
                     layer_tiles += 1;
                     layer.tile_count += 1;
                 }
@@ -518,13 +536,11 @@ namespace ice
             ice::String const child_name = detail::node_name(node_child);
             if (child_name == "tileset")
             {
-                ice::TileSet& tileset = tilemap_info.tilesets[tileset_idx];
-
                 bake_tileset_terraintypes(node_child, tilemap_info, tileset_idx, terrain_tiles);
-                tileset.terrain_offset = tileset_terrain_offset;
 
-                terrain_tiles += tileset.terrain_count;
-                tileset_terrain_offset += tileset.terrain_count;
+                ice::u32 const terrain_count = tilemap_info.tileset_info[tileset_idx].terrain_count;
+                terrain_tiles += terrain_count;
+                tileset_terrain_offset += terrain_count;
                 tileset_idx += 1;
             }
             else if (child_name == "layer")
@@ -532,7 +548,7 @@ namespace ice
                 ice::TileLayer& layer = tilemap_info.layers[layer_idx];
                 layer.tile_count = 0;
 
-                bake_layer_tiles(node_child, tilemap_info, layer, layer_tiles);
+                bake_layer_tiles(node_child, tilemap_info, tilemap_info.tilesets, tilemap_info.terrain, layer, layer_tiles);
                 layer.tile_offset = layer_tiles_offset;
 
                 layer_tiles += layer.tile_count;
@@ -620,6 +636,7 @@ namespace ice
                         "Allocation was to small for the gathered tilemap data."
                     );
 
+                    tilemap_info.fixture_count = ice::addressof(tilemap->fixture_count);
                     tilemap_info.tilesets = tilesets;
                     tilemap_info.layers = layers;
                     tilemap_info.terrain = terrain_tiles;
@@ -628,6 +645,8 @@ namespace ice
                     tilemap->tile_size = tilemap_info.tile_size;
                     tilemap->tileset_count = tilemap_info.tileset_count;
                     tilemap->layer_count = tilemap_info.layer_count;
+                    tilemap->terrain_count = tilemap_info.terrain_count;
+                    tilemap->fixture_count = 0;
                     tilemap->tilesets = nullptr;
                     tilemap->layers = nullptr;
                     tilemap->terrain = nullptr;

@@ -38,8 +38,6 @@ namespace ice
     {
         ice::Asset asset;
         ice::vec2f element_size;
-        ice::u32 terrain_count;
-        ice::u32 terrain_offset;
     };
 
     struct TileMap
@@ -48,6 +46,8 @@ namespace ice
 
         ice::u32 tileset_count;
         ice::u32 layer_count;
+        ice::u32 terrain_count;
+        ice::u32 fixture_count;
 
         ice::TileSet const* tilesets;
         ice::TileLayer const* layers;
