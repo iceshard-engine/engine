@@ -24,6 +24,21 @@ namespace ice
     namespace detail
     {
 
+        inline auto make_tileid_tmx_flipfix(
+            ice::u8 tileset_idx,
+            ice::u8 tile_flip,
+            ice::u16 tile_x,
+            ice::u16 tile_y
+        ) noexcept -> ice::TileID
+        {
+            ice::u8 iceshard_tile_flip = 0x0;
+            iceshard_tile_flip |= (tile_flip & 0b0010) << 1; // diagonal flip -> flip top right with bottom left (rotate left)
+            iceshard_tile_flip |= (tile_flip & 0b0100) >> 2; // vertical flip -> flip along X axis
+            iceshard_tile_flip |= (tile_flip & 0b1000) >> 2; // horizontal flip -> flip along Y axis
+
+            return ice::make_tileid(tileset_idx, iceshard_tile_flip, tile_x, tile_y);
+        }
+
         struct TileSetInfo
         {
             ice::u16 gid;
@@ -226,8 +241,13 @@ namespace ice
             char const* val_beg = csv_data.data() + beg;
             char const* val_end = csv_data.data() + end;
 
+            while(std::isdigit(*val_beg) == false && val_beg != val_end)
+            {
+                val_beg += 1;
+            }
+
             ice::u32 value = 0;
-            if (std::from_chars(val_beg, val_end, value).ptr == val_end)
+            if (std::from_chars(val_beg, val_end, value).ec == std::errc{ 0 })
             {
                 ice::forward<Fn>(tileid_callback)(value);
             }
@@ -240,8 +260,13 @@ namespace ice
             char const* val_beg = csv_data.data() + beg;
             char const* val_end = csv_data.data() + node_data->value_size();
 
+            while (std::isdigit(*val_beg) == false && val_beg != val_end)
+            {
+                val_beg += 1;
+            }
+
             ice::u32 value = 0;
-            if (std::from_chars(val_beg, val_end, value).ptr == val_end)
+            if (std::from_chars(val_beg, val_end, value).ec == std::errc{ 0 })
             {
                 ice::forward<Fn>(tileid_callback)(value);
             }
@@ -372,7 +397,7 @@ namespace ice
 
                 ice::u16 const tile_id = static_cast<ice::u16>(local_tile_id);
 
-                tileset_terrains->tile_id = ice::make_tileid(
+                tileset_terrains->tile_id = ice::detail::make_tileid_tmx_flipfix(
                     static_cast<ice::u8>(tileset_index),
                     0,
                     tile_id % tileset_columns,
@@ -462,7 +487,7 @@ namespace ice
             {
                 if (tile_value != 0)
                 {
-                    ice::u8 const value_flips = static_cast<ice::u8>((tile_value & 0xe000'0000) >> 29);
+                    ice::u8 const value_flips = static_cast<ice::u8>((tile_value & 0xe000'0000) >> 28);
                     ice::u32 tile_local_id = (tile_value & 0x1fff'ffff);
 
                     ice::u32 const tileset_idx = find_local_id(tile_local_id);
@@ -476,7 +501,7 @@ namespace ice
                     ice::u32 const tile_y = layer.size.y - (tile_index / layer.size.x) - 1;
 
                     layer_tiles->offset = (tile_y << 16) | (0x0000'ffff & tile_x);
-                    layer_tiles->tile_id = ice::make_tileid(
+                    layer_tiles->tile_id = ice::detail::make_tileid_tmx_flipfix(
                         static_cast<ice::u8>(tileset_idx),
                         value_flips,
                         tile_id % tileset_columns,

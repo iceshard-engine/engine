@@ -329,43 +329,43 @@ namespace ice
 
         _tile_flip_buffer = device.create_buffer(BufferType::Vertex, 1024 * 1024 * 1);
 
-        ice::vec2f flip_vertex_operations[]{
+        ice::vec2f flip_vertex_operations[32]{
             ice::vec2f{ 0.f }, // No Flip
             ice::vec2f{ 0.f },
             ice::vec2f{ 0.f },
             ice::vec2f{ 0.f },
 
-            ice::vec2f{ 0.f, 1.f }, // Horizontal flip (1)
+            ice::vec2f{ 0.f, 1.f }, // Flip along X axis
             ice::vec2f{ 0.f, -1.f },
             ice::vec2f{ 0.f, -1.f },
             ice::vec2f{ 0.f, 1.f },
 
-            ice::vec2f{ 1.f, 0.f }, // Vertical flip
+            ice::vec2f{ 1.f, 0.f }, // Flip along Y axis
             ice::vec2f{ 1.f, 0.f },
             ice::vec2f{ -1.f, 0.f },
             ice::vec2f{ -1.f, 0.f },
 
-            ice::vec2f{ 1.f, 1.f },  // Horizontal + Vertical flip
+            ice::vec2f{ 1.f, 1.f },  // Flip along X and Y axis
             ice::vec2f{ 1.f, -1.f },
             ice::vec2f{ -1.f, -1.f },
             ice::vec2f{ -1.f, 1.f },
 
-            ice::vec2f{ 0.f, 0.f },  // Diagonal flip
+            ice::vec2f{ 0.f, 0.f },  // Diagonal flip (left rotation)
             ice::vec2f{ 1.f, -1.f },
             ice::vec2f{ 0.f, 0.f },
             ice::vec2f{ -1.f, 1.f },
 
-            ice::vec2f{ 1.f, 0.f },  // Diagonal + Horizontal flip
+            ice::vec2f{ 1.f, 0.f },  // Diagonal flip (left rotation) + flip along X axis
             ice::vec2f{ 0.f, -1.f },
             ice::vec2f{ -1.f, 0.f },
             ice::vec2f{ 0.f, 1.f },
 
-            ice::vec2f{ 0.f, 1.f },  // Diagonal + Vertical flip
+            ice::vec2f{ 0.f, 1.f },  // Diagonal flip (left rotation) + flip along Y axis
             ice::vec2f{ 1.f, 0.f },
             ice::vec2f{ 0.f, -1.f },
             ice::vec2f{ -1.f, 0.f },
 
-            ice::vec2f{ 1.f, 1.f },  // Diagonal + Horizontal + Vertical flip
+            ice::vec2f{ 1.f, 1.f },  // Diagonal flip (left rotation) + flip along X and Y axis
             ice::vec2f{ 0.f, 0.f },
             ice::vec2f{ -1.f, -1.f },
             ice::vec2f{ 0.f, 0.f },

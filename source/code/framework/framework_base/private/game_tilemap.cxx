@@ -14,7 +14,7 @@ namespace ice
         ice::u32 result = tileset_idx & 0x0000'000f;
         result <<= 4;
         result |= tile_flip & 0x0000'000f;
-        result <<= 4;
+        result <<= 12;
         result |= 0x0000'0fff & tile_y;
         result <<= 12;
         result |= 0x0000'0fff & tile_x;
