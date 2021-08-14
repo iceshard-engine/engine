@@ -152,6 +152,10 @@ namespace ice::gfx
         _mre_selected->reset();
         ice::sync_manual_wait(task_frame(engine_frame, ice::move(_current_frame)), *_mre_selected);
 
+        [[maybe_unused]]
+        bool const discarded_memory = _frame_allocator[_next_free_allocator].reset_and_discard();
+        ICE_ASSERT(discarded_memory == false, "Memory was discarded during frame allocator reset!");
+
         _current_frame = ice::make_unique<ice::gfx::IceGfxFrame>(
             _allocator,
             _frame_allocator[_next_free_allocator]
