@@ -113,6 +113,7 @@ namespace ice
 
         ice::StringID _render_camera;
         ice::render::Buffer _render_camera_buffer;
+        ice::render::Buffer _tile_flip_buffer;
         ice::render::Buffer _vertex_buffer;
         ice::render::Buffer _instance_buffer;
 

@@ -230,27 +230,34 @@ namespace ice
             {
                 .binding_index = 1,
                 .resource_count = 1,
-                .resource_type = ResourceType::Sampler,
-                .shader_stage_flags = ShaderStageFlags::FragmentStage
+                .resource_type = ResourceType::UniformBuffer,
+                .shader_stage_flags = ShaderStageFlags::VertexStage
             },
             ResourceSetLayoutBinding
             {
                 .binding_index = 2,
-                .resource_count = 4,
-                .resource_type = ResourceType::SampledImage,
+                .resource_count = 1,
+                .resource_type = ResourceType::Sampler,
                 .shader_stage_flags = ShaderStageFlags::FragmentStage
             },
             ResourceSetLayoutBinding
             {
                 .binding_index = 3,
                 .resource_count = 4,
+                .resource_type = ResourceType::SampledImage,
+                .shader_stage_flags = ShaderStageFlags::FragmentStage
+            },
+            ResourceSetLayoutBinding
+            {
+                .binding_index = 4,
+                .resource_count = 4,
                 .resource_type = ResourceType::UniformBuffer,
                 .shader_stage_flags = ShaderStageFlags::VertexStage | ShaderStageFlags::FragmentStage
             },
         };
 
-        _resource_set_layouts[0] = device.create_resourceset_layout({ resource_bindings + 0, 2 });
-        _resource_set_layouts[1] = device.create_resourceset_layout({ resource_bindings + 2, 2 });
+        _resource_set_layouts[0] = device.create_resourceset_layout({ resource_bindings + 0, 3 });
+        _resource_set_layouts[1] = device.create_resourceset_layout({ resource_bindings + 3, 2 });
         device.create_resourcesets({ _resource_set_layouts + 0, 1 }, _resource_sets);
 
         PipelineLayoutInfo const layout_info
@@ -275,28 +282,33 @@ namespace ice
             },
             ShaderInputAttribute{
                 .location = 2,
+                .offset = 16,
+                .type = ShaderAttribType::Vec1u
+            },
+            ShaderInputAttribute{
+                .location = 3,
                 .offset = 0,
                 .type = ShaderAttribType::Vec1f
             },
             ShaderInputAttribute{
-                .location = 3,
+                .location = 4,
                 .offset = 4,
-                .type = ShaderAttribType::Vec1i
+                .type = ShaderAttribType::Vec1u
             },
         };
 
         ShaderInputBinding bindings[]{
             ShaderInputBinding{
                 .binding = 0,
-                .stride = 16,
+                .stride = 20,
                 .instanced = false,
-                .attributes = { attribs + 0, 2 }
+                .attributes = { attribs + 0, 3 }
             },
             ShaderInputBinding{
                 .binding = 1,
                 .stride = 8,
                 .instanced = true,
-                .attributes = { attribs + 2, 2 }
+                .attributes = { attribs + 3, 2 }
             },
         };
 
@@ -307,7 +319,7 @@ namespace ice
             .shaders_stages = _shader_stages,
             .shader_bindings = bindings,
             .primitive_topology = PrimitiveTopology::TriangleFan,
-            .cull_mode = CullMode::Disabled,
+            .cull_mode = CullMode::BackFace,
             .front_face = FrontFace::CounterClockWise,
             .subpass_index = 1,
             .depth_test = false
@@ -315,8 +327,64 @@ namespace ice
 
         _pipeline = device.create_pipeline(pipeline_info);
 
-        _vertex_buffer = device.create_buffer(BufferType::Vertex, 1024 * 1024 * 1);
-        _instance_buffer = device.create_buffer(BufferType::Vertex, 1024 * 1024 * 4);
+        _tile_flip_buffer = device.create_buffer(BufferType::Vertex, 1024 * 1024 * 1);
+
+        ice::vec2f flip_vertex_operations[]{
+            ice::vec2f{ 0.f }, // No Flip
+            ice::vec2f{ 0.f },
+            ice::vec2f{ 0.f },
+            ice::vec2f{ 0.f },
+
+            ice::vec2f{ 0.f, 1.f }, // Horizontal flip (1)
+            ice::vec2f{ 0.f, -1.f },
+            ice::vec2f{ 0.f, -1.f },
+            ice::vec2f{ 0.f, 1.f },
+
+            ice::vec2f{ 1.f, 0.f }, // Vertical flip
+            ice::vec2f{ 1.f, 0.f },
+            ice::vec2f{ -1.f, 0.f },
+            ice::vec2f{ -1.f, 0.f },
+
+            ice::vec2f{ 1.f, 1.f },  // Horizontal + Vertical flip
+            ice::vec2f{ 1.f, -1.f },
+            ice::vec2f{ -1.f, -1.f },
+            ice::vec2f{ -1.f, 1.f },
+
+            ice::vec2f{ 0.f, 0.f },  // Diagonal flip
+            ice::vec2f{ 1.f, -1.f },
+            ice::vec2f{ 0.f, 0.f },
+            ice::vec2f{ -1.f, 1.f },
+
+            ice::vec2f{ 1.f, 0.f },  // Diagonal + Horizontal flip
+            ice::vec2f{ 0.f, -1.f },
+            ice::vec2f{ -1.f, 0.f },
+            ice::vec2f{ 0.f, 1.f },
+
+            ice::vec2f{ 0.f, 1.f },  // Diagonal + Vertical flip
+            ice::vec2f{ 1.f, 0.f },
+            ice::vec2f{ 0.f, -1.f },
+            ice::vec2f{ -1.f, 0.f },
+
+            ice::vec2f{ 1.f, 1.f },  // Diagonal + Horizontal + Vertical flip
+            ice::vec2f{ 0.f, 0.f },
+            ice::vec2f{ -1.f, -1.f },
+            ice::vec2f{ 0.f, 0.f },
+        };
+
+        BufferUpdateInfo updates[]{
+            BufferUpdateInfo
+            {
+                .buffer = _tile_flip_buffer,
+                .data = ice::data_view(flip_vertex_operations),
+                .offset = 0
+            }
+        };
+
+        device.update_buffers(updates);
+
+
+        _vertex_buffer = device.create_buffer(BufferType::Vertex, 1024 * 1024 * 2);
+        _instance_buffer = device.create_buffer(BufferType::Vertex, 1024 * 1024 * 1);
     }
 
     void IceWorldTrait_RenderTilemap::gfx_cleanup(
@@ -329,6 +397,7 @@ namespace ice
         RenderDevice& device = gfx_device.device();
         device.destroy_buffer(_instance_buffer);
         device.destroy_buffer(_vertex_buffer);
+        device.destroy_buffer(_tile_flip_buffer);
         device.destroy_pipeline(_pipeline);
         device.destroy_pipeline_layout(_pipeline_layout);
         device.destroy_sampler(_sampler);
@@ -465,11 +534,17 @@ namespace ice
         ice::f32 tile_height = tilemap_info.tilesize.x;
         ice::f32 tile_width = tilemap_info.tilesize.y;
 
-        ice::vec4f vertices[4];
-        vertices[0] = { 0.f, ice::f32(tile_height) * 1, 0.f, 0.f };
-        vertices[1] = { 0.f, 0.f, 0.f, 1.f };
-        vertices[2] = { ice::f32(tile_width) * 1, 0.f, 1.f, 1.f };
-        vertices[3] = { ice::f32(tile_width) * 1, ice::f32(tile_height) * 1, 1.f, 0.f };
+        struct Vertex
+        {
+            ice::vec4f pos_and_uv;
+            ice::vec1u index;
+        };
+
+        Vertex vertices[4];
+        vertices[0] = Vertex{ .pos_and_uv = { 0.f, ice::f32(tile_height) * 1, 0.f, 0.f }, .index = vec1u{ 0 } };
+        vertices[1] = Vertex{ .pos_and_uv = { 0.f, 0.f, 0.f, 1.f }, .index = vec1u{ 1 } };
+        vertices[2] = Vertex{ .pos_and_uv = { ice::f32(tile_width) * 1, 0.f, 1.f, 1.f }, .index = vec1u{ 2 } };
+        vertices[3] = Vertex{ .pos_and_uv = { ice::f32(tile_width) * 1, ice::f32(tile_height) * 1, 1.f, 0.f }, .index = vec1u{ 3 } };
 
         ice::u32 update_count = 1;
         ice::render::BufferUpdateInfo updates[6]{
@@ -519,6 +594,14 @@ namespace ice
             },
             ResourceUpdateInfo
             {
+                .uniform_buffer = {
+                    .buffer = _tile_flip_buffer,
+                    .offset = 0,
+                    .size = sizeof(ice::vec2f) * 32
+                }
+            },
+            ResourceUpdateInfo
+            {
                 .sampler = _sampler
             },
         };
@@ -535,10 +618,18 @@ namespace ice
             ResourceSetUpdateInfo
             {
                 .resource_set = _resource_sets[0],
-                .resource_type = ResourceType::Sampler,
+                .resource_type = ResourceType::UniformBuffer,
                 .binding_index = 1,
                 .array_element = 0,
                 .resources = { res_updates + 1, 1 },
+            },
+            ResourceSetUpdateInfo
+            {
+                .resource_set = _resource_sets[0],
+                .resource_type = ResourceType::Sampler,
+                .binding_index = 2,
+                .array_element = 0,
+                .resources = { res_updates + 2, 1 },
             }
         };
 
@@ -666,7 +757,7 @@ namespace ice
             {
                 .resource_set = operation.render_cache->tileset_resourceset[0],
                 .resource_type = ResourceType::SampledImage,
-                .binding_index = 2,
+                .binding_index = 3,
                 .array_element = 0,
                 .resources = { resource_updates + 0, 4 },
             },
@@ -674,7 +765,7 @@ namespace ice
             {
                 .resource_set = operation.render_cache->tileset_resourceset[0],
                 .resource_type = ResourceType::UniformBuffer,
-                .binding_index = 3,
+                .binding_index = 4,
                 .array_element = 0,
                 .resources = { resource_updates + 4, 4 },
             }
