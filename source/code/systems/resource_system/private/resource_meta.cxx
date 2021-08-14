@@ -225,6 +225,12 @@ namespace ice
 
     } // namespace detail
 
+    bool meta_has_entry(ice::Metadata const& meta, ice::StringID_Arg key) noexcept
+    {
+        detail::MetadataEntry entry;
+        return detail::get_entry(meta, key, detail::MetadataEntryType::Invalid, entry) == false;
+    }
+
     auto meta_read_bool(
         ice::Metadata const& meta,
         ice::StringID_Arg key,

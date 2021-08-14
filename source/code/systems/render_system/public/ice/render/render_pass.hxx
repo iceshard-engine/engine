@@ -29,8 +29,11 @@ namespace ice::render
 
     enum class AccessFlags : ice::u32
     {
-        ColorAttachmentWrite,
+        None,
+        ShaderRead,
         InputAttachmentRead,
+        TransferWrite,
+        ColorAttachmentWrite,
     };
 
     struct RenderAttachment

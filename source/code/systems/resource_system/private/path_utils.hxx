@@ -21,7 +21,7 @@ namespace ice::path
     [[nodiscard]]
     auto directory(ice::String path) noexcept -> ice::String;
 
-    auto normalize(ice::HeapString<> path) noexcept -> ice::String;
+    auto normalize(ice::HeapString<>& path) noexcept -> ice::String;
 
     auto join(ice::HeapString<>& left, ice::String right) noexcept -> ice::String;
 

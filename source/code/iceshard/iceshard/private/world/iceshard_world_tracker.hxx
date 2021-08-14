@@ -14,6 +14,14 @@ namespace ice
         IceshardWorldTracker(ice::Allocator& alloc) noexcept;
         ~IceshardWorldTracker() noexcept;
 
+        void set_managed_world(
+            ice::IceshardWorld* world
+        ) noexcept;
+
+        void unset_manager_world(
+            ice::IceshardWorld* world
+        ) noexcept;
+
         void activate_world(
             ice::Engine& engine,
             ice::EngineRunner& runner,

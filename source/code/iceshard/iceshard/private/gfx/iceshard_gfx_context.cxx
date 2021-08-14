@@ -54,7 +54,10 @@ namespace ice::gfx
     {
         for (IceGfxContextStage& stage_entry : _cached_stages)
         {
-            stage_entry.stage->clear_context(*this, device);
+            if (stage_entry.stage)
+            {
+                stage_entry.stage->clear_context(*this, device);
+            }
         }
     }
 

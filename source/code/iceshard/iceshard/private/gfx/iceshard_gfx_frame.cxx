@@ -137,24 +137,30 @@ namespace ice::gfx
         }
     }
 
-    void IceGfxFrame::on_frame_stage(
+    bool IceGfxFrame::on_frame_stage(
         ice::EngineFrame const& frame,
         ice::render::CommandBuffer command_buffer,
         ice::render::RenderCommands& render_commands
     ) noexcept
     {
-        render_commands.begin(command_buffer);
 
         ice::gfx::GfxAwaitExecuteStageData* operation = _operations_stage_execute.load();
-        while (operation != nullptr)
+        bool const result = operation != nullptr;
+
+        if (result)
         {
-            ice::gfx::GfxAwaitExecuteStageData* next_operation = operation->next;
-            operation->stage->record_commands(frame, command_buffer, render_commands);
-            operation->coroutine.resume();
-            operation = next_operation;
+            render_commands.begin(command_buffer);
+            while (operation != nullptr)
+            {
+                ice::gfx::GfxAwaitExecuteStageData* next_operation = operation->next;
+                operation->stage->record_commands(frame, command_buffer, render_commands);
+                operation->coroutine.resume();
+                operation = next_operation;
+            }
+            render_commands.end(command_buffer);
         }
 
-        render_commands.end(command_buffer);
+        return result;
     }
 
     void IceGfxFrame::on_frame_end() noexcept

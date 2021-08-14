@@ -15,6 +15,7 @@ Settings
 #include "configs.bff"
 
 ^SolutionItems = {
+    '$WorkspaceRoot$/.editorconfig'
     '$WorkspaceCodeDir$/../conanfile.txt'
     '$WorkspaceCodeDir$/../fbuild.bff'
     '$WorkspaceCodeDir$/projects.bff'

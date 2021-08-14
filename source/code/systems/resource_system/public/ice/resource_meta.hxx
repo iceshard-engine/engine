@@ -18,6 +18,10 @@ namespace ice
 
     void meta_store(ice::Metadata const& meta, ice::Buffer& buffer) noexcept;
 
+    bool meta_has_entry(
+        ice::Metadata const& meta,
+        ice::StringID_Arg key
+    ) noexcept;
 
     auto meta_read_bool(
         ice::Metadata const& meta,

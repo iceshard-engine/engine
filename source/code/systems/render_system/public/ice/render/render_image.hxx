@@ -1,5 +1,5 @@
 #pragma once
-#include <ice/data.hxx>
+#include <ice/render/render_declarations.hxx>
 
 namespace ice::render
 {
@@ -44,6 +44,7 @@ namespace ice::render
         Present,
         DepthStencil,
         ShaderReadOnly,
+        TransferDstOptimal,
     };
 
     struct ImageInfo
@@ -54,6 +55,15 @@ namespace ice::render
         ice::u32 width;
         ice::u32 height;
         void const* data;
+    };
+
+    struct ImageBarrier
+    {
+        ice::render::Image image;
+        ice::render::ImageLayout source_layout;
+        ice::render::ImageLayout destination_layout;
+        ice::render::AccessFlags source_access;
+        ice::render::AccessFlags destination_access;
     };
 
     constexpr auto operator|(ImageUsageFlags left, ImageUsageFlags right) noexcept -> ImageUsageFlags

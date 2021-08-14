@@ -9,7 +9,7 @@ namespace ice
     class IceshardMeshPipeline final : public ice::AssetPipeline
     {
     public:
-        auto supported_types() const noexcept -> ice::Span<AssetType> override;
+        auto supported_types() const noexcept -> ice::Span<AssetType const> override;
 
         bool supports_baking(
             ice::AssetType type
@@ -17,18 +17,20 @@ namespace ice
 
         bool resolve(
             ice::String resource_extension,
-            ice::Metadata resource_metadata,
+            ice::Metadata const& resource_metadata,
             ice::AssetType& out_type,
             ice::AssetStatus& out_status
-        ) noexcept override;
+        ) const noexcept override;
 
         auto request_oven(
-            ice::AssetType type
-        ) noexcept -> ice::AssetOven* override;
+            ice::AssetType type,
+            ice::String extension,
+            ice::Metadata const& metadata
+        ) noexcept -> ice::AssetOven const* override;
 
         auto request_loader(
             ice::AssetType type
-        ) noexcept -> ice::AssetLoader* override;
+        ) noexcept -> ice::AssetLoader const* override;
 
     private:
         ice::IceshardMeshOven _mesh_oven;

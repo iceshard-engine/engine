@@ -1468,6 +1468,50 @@ namespace ice::render::vk
         );
     }
 
+    void VulkanRenderCommands::pipeline_image_barrier(
+        ice::render::CommandBuffer cmds,
+        ice::render::PipelineStage source_stage,
+        ice::render::PipelineStage destination_stage,
+        ice::Span<ice::render::ImageBarrier const> image_barriers
+    ) noexcept
+    {
+        auto native_cb = native_handle(cmds);
+
+        ice::u32 barrier_count = 0;
+        VkImageMemoryBarrier barriers[4] {};
+        for (ice::render::ImageBarrier const& barrier : image_barriers)
+        {
+            VulkanImage* const image_ptr = reinterpret_cast<VulkanImage*>(static_cast<ice::uptr>(barrier.image));
+
+            VkImageMemoryBarrier& image_barrier = barriers[barrier_count];
+            image_barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+            image_barrier.oldLayout = native_enum_value(barrier.source_layout);
+            image_barrier.newLayout = native_enum_value(barrier.destination_layout);
+            image_barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+            image_barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+            image_barrier.image = image_ptr->vk_image;
+            image_barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+            image_barrier.subresourceRange.baseMipLevel = 0;
+            image_barrier.subresourceRange.levelCount = 1;
+            image_barrier.subresourceRange.baseArrayLayer = 0;
+            image_barrier.subresourceRange.layerCount = 1;
+            image_barrier.srcAccessMask = native_enum_value(barrier.source_access);
+            image_barrier.dstAccessMask = native_enum_value(barrier.destination_access);
+
+            barrier_count += 1;
+        }
+
+        vkCmdPipelineBarrier(
+            native_cb,
+            native_enum_value(source_stage),
+            native_enum_value(destination_stage),
+            0,
+            0, nullptr,
+            0, nullptr,
+            barrier_count, barriers
+        );
+    }
+
     void VulkanRenderCommands::update_texture(
         ice::render::CommandBuffer cmds,
         ice::render::Image image,
@@ -1540,6 +1584,42 @@ namespace ice::render::vk
             0, nullptr,
             0, nullptr,
             1, &barrier
+        );
+    }
+
+    void VulkanRenderCommands::update_texture_v2(
+        ice::render::CommandBuffer cmds,
+        ice::render::Image image,
+        ice::render::Buffer image_contents,
+        ice::vec2u extents
+    ) noexcept
+    {
+        VulkanImage* const image_ptr = reinterpret_cast<VulkanImage*>(static_cast<ice::uptr>(image));
+
+        auto native_cb = native_handle(cmds);
+        auto buffer_handle = native_handle(image_contents);
+
+        VkBufferImageCopy region = {};
+        region.bufferOffset = 0;
+        region.bufferRowLength = 0;
+        region.bufferImageHeight = 0;
+
+        region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        region.imageSubresource.mipLevel = 0;
+        region.imageSubresource.baseArrayLayer = 0;
+        region.imageSubresource.layerCount = 1;
+
+        region.imageOffset = { 0, 0, 0 };
+        region.imageExtent.width = extents.x;
+        region.imageExtent.height = extents.y;
+        region.imageExtent.depth = 1;
+        vkCmdCopyBufferToImage(
+            native_cb,
+            buffer_handle,
+            image_ptr->vk_image,
+            VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+            1,
+            &region
         );
     }
 

@@ -12,7 +12,7 @@ namespace ice
             ice::Data data,
             ice::Allocator& alloc,
             ice::Memory& out_data
-        ) noexcept -> ice::AssetStatus override;
+        ) const noexcept -> ice::AssetStatus override;
     };
 
 } // namespace iceshard

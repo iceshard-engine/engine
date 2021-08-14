@@ -23,6 +23,9 @@ namespace ice
         auto allocator() noexcept -> ice::Allocator& override;
         auto entity_storage() noexcept -> ice::EntityStorage& override;
 
+        auto state_hint() const noexcept -> ice::WorldState override;
+        void set_state(ice::WorldState state) noexcept;
+
         void add_trait(
             ice::StringID_Arg name,
             ice::WorldTrait* trait
@@ -51,6 +54,7 @@ namespace ice
     private:
         ice::Allocator& _allocator;
         ice::EntityStorage* _entity_storage;
+        ice::WorldState _state;
 
         ice::pod::Array<ice::WorldTrait*> _traits;
         ice::pod::Hash<ice::IceshardWorldPortal*> _portals;

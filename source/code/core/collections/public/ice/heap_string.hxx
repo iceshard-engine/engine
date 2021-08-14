@@ -473,7 +473,7 @@ namespace ice
         {
             uint32_t result = 0;
 
-            auto const it = ice::string::begin(str);
+            auto it = ice::string::begin(str);
             auto const it_end = ice::string::end(str);
 
             while(it != it_end && *it != character_value)
@@ -516,7 +516,7 @@ namespace ice
                 result += 1;
             }
 
-            return it == it_end ? ice::string_npos : result;
+            return it == it_end ? ice::string_npos : (str._size - result - 1);
         }
 
         template<typename CharType>
@@ -533,7 +533,7 @@ namespace ice
                 result += 1;
             }
 
-            return it == it_end ? ice::string_npos : result;
+            return it == it_end ? ice::string_npos : (str._size - result - 1);
         }
 
         template<typename CharType>

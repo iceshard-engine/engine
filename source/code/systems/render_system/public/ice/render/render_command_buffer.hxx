@@ -115,7 +115,22 @@ namespace ice::render
             ice::render::CommandBuffer cmds
         ) noexcept = 0;
 
+        virtual void pipeline_image_barrier(
+            ice::render::CommandBuffer cmds,
+            ice::render::PipelineStage source_stage,
+            ice::render::PipelineStage destination_stage,
+            ice::Span<ice::render::ImageBarrier const> image_barriers
+        ) noexcept = 0;
+
+        [[deprecated]]
         virtual void update_texture(
+            ice::render::CommandBuffer cmds,
+            ice::render::Image image,
+            ice::render::Buffer image_contents,
+            ice::vec2u extents
+        ) noexcept = 0;
+
+        virtual void update_texture_v2(
             ice::render::CommandBuffer cmds,
             ice::render::Image image,
             ice::render::Buffer image_contents,

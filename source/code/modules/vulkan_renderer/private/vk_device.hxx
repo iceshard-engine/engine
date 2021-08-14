@@ -105,7 +105,21 @@ namespace ice::render::vk
             ice::render::CommandBuffer cmds
         ) noexcept override;
 
+        void pipeline_image_barrier(
+            ice::render::CommandBuffer cmds,
+            ice::render::PipelineStage source_stage,
+            ice::render::PipelineStage destination_stage,
+            ice::Span<ice::render::ImageBarrier const> image_barriers
+        ) noexcept override;
+
         void update_texture(
+            ice::render::CommandBuffer cmds,
+            ice::render::Image image,
+            ice::render::Buffer image_contents,
+            ice::vec2u extents
+        ) noexcept override;
+
+        void update_texture_v2(
             ice::render::CommandBuffer cmds,
             ice::render::Image image,
             ice::render::Buffer image_contents,

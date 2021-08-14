@@ -22,6 +22,7 @@ namespace ice::render
     struct QueueInfo;
     struct ShaderInfo;
     struct ImageInfo;
+    struct ImageBarrier;
     struct SamplerInfo;
     struct BufferUpdateInfo;
 
@@ -41,9 +42,13 @@ namespace ice::render
     enum class QueueID : ice::u32;
     enum class QueueFlags : ice::u32;
     enum class ImageFormat : ice::u32;
+    enum class ImageLayout : ice::u32;
     enum class AttachmentType : ice::u32;
+    enum class AccessFlags : ice::u32;
     enum class BufferType : ice::u32;
+    enum class PipelineStage : ice::u32;
     enum class ShaderStageFlags : ice::u32;
     enum class CommandBufferType : ice::u32;
+    enum class BarrierDependency : ice::u32;
 
 } // namespace ice::render

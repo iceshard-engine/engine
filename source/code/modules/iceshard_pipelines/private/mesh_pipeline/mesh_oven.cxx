@@ -1,5 +1,10 @@
 #include "mesh_oven.hxx"
 #include <ice/gfx/gfx_model.hxx>
+
+#include <ice/resource.hxx>
+#include <ice/resource_meta.hxx>
+#include <ice/memory.hxx>
+#include <ice/data.hxx>
 #include <ice/assert.hxx>
 
 #include <assimp/Importer.hpp>
@@ -124,15 +129,17 @@ namespace ice
     } // namespace detail
 
     auto IceshardMeshOven::bake(
-        ice::Data resource_data,
-        ice::Metadata const& resource_meta,
+        ice::Resource& resource,
         ice::ResourceSystem& resource_system,
         ice::Allocator& asset_alloc,
         ice::Memory& asset_data
-    ) noexcept -> ice::BakeResult
+    ) const noexcept -> ice::BakeResult
     {
         Assimp::Importer importer;
         //importer.SetPropertyFloat(AI_CONFIG_PP_GSN_MAX_SMOOTHING_ANGLE, 80);
+
+        Data resource_data = resource.data();
+        Metadata const& resource_meta = resource.metadata();
 
         aiScene const* scene = nullptr;
 

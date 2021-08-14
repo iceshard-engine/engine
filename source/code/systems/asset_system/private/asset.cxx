@@ -4,6 +4,17 @@
 namespace ice
 {
 
+    auto asset_name(ice::Asset asset) noexcept -> ice::StringID
+    {
+        if (asset == Asset::Invalid)
+        {
+            return ice::stringid_invalid;
+        }
+
+        detail::AssetObject const* const object = reinterpret_cast<detail::AssetObject*>(asset);
+        return object->name;
+    }
+
     auto asset_status(ice::Asset asset) noexcept -> ice::AssetStatus
     {
         if (asset == Asset::Invalid)

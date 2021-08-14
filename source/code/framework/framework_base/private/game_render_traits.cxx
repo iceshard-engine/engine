@@ -5,6 +5,8 @@
 #include "traits/render/trait_render_postprocess.hxx"
 #include "traits/render/trait_render_finish.hxx"
 #include "traits/render/trait_render_sprites.hxx"
+#include "traits/render/trait_render_tilemap.hxx"
+#include "traits/render/trait_render_debug.hxx"
 
 namespace ice
 {
@@ -46,6 +48,22 @@ namespace ice
     ) noexcept -> ice::UniquePtr<ice::gfx::GfxTrait>
     {
         return ice::make_unique<ice::gfx::GfxTrait, ice::IceWorldTrait_RenderSprites>(alloc, alloc, stage_name);
+    }
+
+    auto create_trait_render_tilemap(
+        ice::Allocator& alloc,
+        ice::StringID_Arg stage_name
+    ) noexcept -> ice::UniquePtr<ice::gfx::GfxTrait>
+    {
+        return ice::make_unique<ice::gfx::GfxTrait, ice::IceWorldTrait_RenderTilemap>(alloc, alloc, stage_name);
+    }
+
+    auto create_trait_render_debug(
+        ice::Allocator& alloc,
+        ice::StringID_Arg stage_name
+    ) noexcept -> ice::UniquePtr<ice::gfx::GfxTrait>
+    {
+        return ice::make_unique<ice::gfx::GfxTrait, ice::IceWorldTrait_RenderDebug>(alloc, stage_name);
     }
 
 } // namespace ice

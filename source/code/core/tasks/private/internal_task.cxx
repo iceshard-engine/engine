@@ -66,7 +66,7 @@ namespace ice
         [](ice::Task<void> task, ice::ManualResetEvent* reset_event) noexcept -> detail::OneWaytask
         {
             co_await task;
-            int x = 3;
+            task = ice::Task<>{ };
             reset_event->set();
             co_return;
 

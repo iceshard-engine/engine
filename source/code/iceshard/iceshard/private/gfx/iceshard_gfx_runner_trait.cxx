@@ -18,7 +18,7 @@ namespace ice::gfx
         ice::WorldPortal& portal
     ) noexcept
     {
-        static_cast<ice::gfx::IceGfxFrame&>(_runner.frame()).add_task(_runner.task_setup_gfx_traits());
+        _runner.setup_traits();
     }
 
     void IceGfxRunnerTrait::on_deactivate(
@@ -27,8 +27,7 @@ namespace ice::gfx
         ice::WorldPortal& portal
     ) noexcept
     {
-        static_cast<ice::gfx::IceGfxFrame&>(_runner.frame()).add_task(_runner.task_cleanup_gfx_contexts());
-        static_cast<ice::gfx::IceGfxFrame&>(_runner.frame()).add_task(_runner.task_cleanup_gfx_traits());
+        _runner.cleanup_traits();
     }
 
     void IceGfxRunnerTrait::gfx_setup(

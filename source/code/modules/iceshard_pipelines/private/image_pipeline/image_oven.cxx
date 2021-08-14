@@ -1,5 +1,6 @@
 #include "image_oven.hxx"
 #include <ice/render/render_image.hxx>
+#include <ice/resource.hxx>
 #include <ice/buffer.hxx>
 
 #define STB_IMAGE_IMPLEMENTATION
@@ -9,14 +10,15 @@ namespace ice
 {
 
     auto ice::IceshardImageOven::bake(
-        ice::Data resource_data,
-        ice::Metadata const& resource_meta,
+        ice::Resource& resource,
         ice::ResourceSystem& resource_system,
         ice::Allocator& asset_alloc,
         ice::Memory& asset_data
-    ) noexcept -> ice::BakeResult
+    ) const noexcept -> ice::BakeResult
     {
         using ice::render::ImageInfo;
+
+        ice::Data resource_data = resource.data();
 
         stbi_uc const* image_buffer_raw = reinterpret_cast<stbi_uc const*>(resource_data.location);
 

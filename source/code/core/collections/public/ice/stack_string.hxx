@@ -416,7 +416,7 @@ namespace ice
                 result += 1;
             }
 
-            return it == it_end ? ice::string_npos : result;
+            return it == it_end ? ice::string_npos : (str._size - result - 1);
         }
 
         template<uint32_t Size, typename CharType>
@@ -433,7 +433,7 @@ namespace ice
                 result += 1;
             }
 
-            return it == it_end ? ice::string_npos : result;
+            return it == it_end ? ice::string_npos : (str._size - result - 1);
         }
 
         template<uint32_t Size, typename CharType>

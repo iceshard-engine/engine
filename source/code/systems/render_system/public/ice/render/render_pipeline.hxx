@@ -17,6 +17,8 @@ namespace ice::render
 
     enum class PipelineStage : ice::u32
     {
+        TopOfPipe,
+        Transfer,
         ColorAttachmentOutput,
         FramentShader,
     };
@@ -36,6 +38,8 @@ namespace ice::render
 
     enum class PrimitiveTopology : ice::u32
     {
+        LineStrip,
+        LineStripWithAdjency,
         TriangleList,
         TriangleStrip,
         TriangleFan,
