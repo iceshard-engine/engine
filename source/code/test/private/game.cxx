@@ -100,11 +100,7 @@ void MyGame::on_app_startup(ice::Engine& engine, ice::gfx::GfxRunner& gfx_runner
 
     _trait_physics = ice::create_trait_physics(_allocator);
     _trait_tilemap = ice::create_tilemap_trait(_allocator, *_trait_physics);
-    _trait_tilemap->set_tilesize(tilemap->tile_size * 1.0f);
-    if (tilemap != nullptr)
-    {
-        _trait_tilemap->load_tilemap(*tilemap);
-    }
+    _trait_tilemap->load_tilemap(*tilemap);
 
     _trait_animator = ice::create_trait_animator(_allocator);
     _trait_actor = ice::create_trait_actor(_allocator);

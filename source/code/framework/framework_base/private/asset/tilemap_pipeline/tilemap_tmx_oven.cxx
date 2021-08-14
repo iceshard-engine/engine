@@ -24,19 +24,19 @@ namespace ice
     namespace detail
     {
 
-        inline auto make_tileid_tmx_flipfix(
+        inline auto tmx_make_tileset_id(
             ice::u8 tileset_idx,
             ice::u8 tile_flip,
             ice::u16 tile_x,
             ice::u16 tile_y
-        ) noexcept -> ice::TileID
+        ) noexcept -> ice::TileSetID
         {
             ice::u8 iceshard_tile_flip = 0x0;
             iceshard_tile_flip |= (tile_flip & 0b0010) << 1; // diagonal flip -> flip top right with bottom left (rotate left)
             iceshard_tile_flip |= (tile_flip & 0b0100) >> 2; // vertical flip -> flip along X axis
             iceshard_tile_flip |= (tile_flip & 0b1000) >> 2; // horizontal flip -> flip along Y axis
 
-            return ice::make_tileid(tileset_idx, iceshard_tile_flip, tile_x, tile_y);
+            return ice::make_tileset_id(tileset_idx, iceshard_tile_flip, tile_x, tile_y);
         }
 
         struct TileSetInfo
@@ -397,7 +397,7 @@ namespace ice
 
                 ice::u16 const tile_id = static_cast<ice::u16>(local_tile_id);
 
-                tileset_terrains->tile_id = ice::detail::make_tileid_tmx_flipfix(
+                tileset_terrains->tile_id = ice::detail::tmx_make_tileset_id(
                     static_cast<ice::u8>(tileset_index),
                     0,
                     tile_id % tileset_columns,
@@ -501,7 +501,7 @@ namespace ice
                     ice::u32 const tile_y = layer.size.y - (tile_index / layer.size.x) - 1;
 
                     layer_tiles->offset = (tile_y << 16) | (0x0000'ffff & tile_x);
-                    layer_tiles->tile_id = ice::detail::make_tileid_tmx_flipfix(
+                    layer_tiles->tile_id = ice::detail::tmx_make_tileset_id(
                         static_cast<ice::u8>(tileset_idx),
                         value_flips,
                         tile_id % tileset_columns,

@@ -10,7 +10,7 @@ namespace ice
     enum class Asset : ice::u64;
 
     // #todo rename to TileSetID as thats what it is.
-    enum class TileID : ice::u32
+    enum class TileSetID : ice::u32
     {
         Invalid = 0xffff'ffff
     };
@@ -18,12 +18,12 @@ namespace ice
     struct Tile
     {
         ice::u32 offset;
-        ice::TileID tile_id;
+        ice::TileSetID tile_id;
     };
 
     struct TileTerrain
     {
-        ice::TileID tile_id;
+        ice::TileSetID tile_id;
     };
 
     struct TileLayer
@@ -59,8 +59,6 @@ namespace ice
     class WorldTrait_TileMap : public ice::WorldTrait
     {
     public:
-        virtual void set_tilesize(ice::vec2f tile_size) noexcept = 0;
-
         virtual void load_tilemap(ice::TileMap const& tilemap) noexcept = 0;
     };
 
@@ -75,11 +73,11 @@ namespace ice
         ice::ModuleRegister& registry
     ) noexcept;
 
-    auto make_tileid(
+    auto make_tileset_id(
         ice::u8 tileset_idx,
         ice::u8 tile_flip,
         ice::u16 tile_x,
         ice::u16 tile_y
-    ) noexcept -> ice::TileID;
+    ) noexcept -> ice::TileSetID;
 
 } // namespace ice
