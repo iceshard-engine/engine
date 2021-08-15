@@ -286,12 +286,12 @@ namespace ice
 
             ice::vec2f const points[]{ p0, py, p0, px, p0, p0 };
             ice::vec1u const colors[]{
-                as_debug_color({ }),
+                as_debug_color({ 0.f, 0.f, 0.f, 0.f }),
                 as_debug_color({ 0.f, 1.f, 0.f, 1.f }),
                 as_debug_color({ 0.f, 1.f, 0.f, 1.f }),
                 as_debug_color({ 1.f, 0.f, 0.f, 1.f }),
                 as_debug_color({ 1.f, 0.f, 0.f, 1.f }),
-                as_debug_color({ }),
+                as_debug_color({ 0.f, 0.f, 0.f, 0.f }),
             };
 
             for (ice::u32 idx = 0; idx < ice::size(points); ++idx)
