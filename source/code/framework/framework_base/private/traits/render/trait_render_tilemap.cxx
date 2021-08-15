@@ -288,7 +288,7 @@ namespace ice
             ShaderInputAttribute{
                 .location = 3,
                 .offset = 0,
-                .type = ShaderAttribType::Vec1f
+                .type = ShaderAttribType::Vec1u
             },
             ShaderInputAttribute{
                 .location = 4,
@@ -326,8 +326,6 @@ namespace ice
         };
 
         _pipeline = device.create_pipeline(pipeline_info);
-
-        _tile_flip_buffer = device.create_buffer(BufferType::Vertex, 1024 * 1024 * 1);
 
         ice::vec2f flip_vertex_operations[32]{
             ice::vec2f{ 0.f }, // No Flip
@@ -370,6 +368,8 @@ namespace ice
             ice::vec2f{ -1.f, -1.f },
             ice::vec2f{ 0.f, 0.f },
         };
+
+        _tile_flip_buffer = device.create_buffer(BufferType::Uniform, sizeof(flip_vertex_operations));
 
         BufferUpdateInfo updates[]{
             BufferUpdateInfo
@@ -801,7 +801,7 @@ namespace ice
 
                 for (ice::u32 idx = 0; idx < image_count; ++idx)
                 {
-                    api.update_texture(
+                    api.update_texture_v2(
                         cmds,
                         image[idx],
                         image_data[idx],
