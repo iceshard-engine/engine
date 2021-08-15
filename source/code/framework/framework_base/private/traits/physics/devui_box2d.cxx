@@ -82,12 +82,15 @@ namespace ice
             ice::DebugDrawCommand* _command_list = nullptr;
             ice::DebugDrawCommand* _polygon_draw_command = nullptr;
             ice::DebugDrawCommand* _transform_draw_command = nullptr;
+
+            ice::u32 available_polygon_commands = 1;
+            ice::u32 available_transform_commands = 1;
         };
     }
 
     DevUI_Box2D::DevUI_Box2D(b2World& box2d_world) noexcept
         : _world{ box2d_world }
-        , _debug_draw_flags{ b2Draw::e_shapeBit }
+        , _debug_draw_flags{ 0 }
         , _visible{ true }
     {
     }
@@ -111,8 +114,6 @@ namespace ice
 
         if (_visible)
         {
-            _world.DebugDraw();
-
             if (ImGui::Begin("Physics2D (Box2D)", &_visible))
             {
                 ImGui::CheckboxFlags("Draw Shapes", &_debug_draw_flags, b2Draw::e_shapeBit);
@@ -132,7 +133,11 @@ namespace ice
             _world.SetDebugDraw(&recorder);
             _world.DebugDraw();
 
-            recorder.draw_commands += 2;
+            if (recorder.draw_commands == 0)
+            {
+                _world.SetDebugDraw(nullptr);
+                return;
+            }
 
             ice::DebugDrawCommand* const commands = (ice::DebugDrawCommand*) frame.allocate_named_data(
                 "physics2d.debug-draw.commands"_sid,
@@ -213,6 +218,11 @@ namespace ice
             {
                 _polygon_draw_command->vertex_count += vertex_count + 2;
             }
+        }
+        else
+        {
+            draw_commands += available_polygon_commands;
+            available_polygon_commands = 0;
         }
 
         //draw_commands += 1;
@@ -308,6 +318,11 @@ namespace ice
             {
                 _transform_draw_command->vertex_count += 6;
             }
+        }
+        else
+        {
+            draw_commands += available_transform_commands;
+            available_polygon_commands = 0;
         }
 
         //draw_commands += 1;
