@@ -327,7 +327,6 @@ namespace ice
         ice::pod::hash::reserve(instance_info_idx, 64);
 
         ice::Span<detail::SpriteInstanceInfo> instance_infos = frame.create_named_span<detail::SpriteInstanceInfo>("ice.sprite.instance_infos"_sid, 64);
-        frame.create_named_object<ice::Span<detail::SpriteInstanceInfo>>("ice.sprite.instance_infos_span"_sid, instance_infos);
 
         ice::u32 valid_entity_count = 0;
         result.for_each(
@@ -366,9 +365,12 @@ namespace ice
             }
         );
 
+        frame.create_named_object<ice::Span<detail::SpriteInstanceInfo>>("ice.sprite.instance_infos_span"_sid, instance_infos.subspan(0, next_instance_idx));
+
 
         ice::u32 current_instance_offset = 0;
         ice::Span<detail::SpriteInstance> instances = frame.create_named_span<detail::SpriteInstance>("ice.sprite.instances"_sid, valid_entity_count);
+
         frame.create_named_object<ice::Span<detail::SpriteInstance>>("ice.sprite.instances_span"_sid, instances);
 
         result.for_each(
