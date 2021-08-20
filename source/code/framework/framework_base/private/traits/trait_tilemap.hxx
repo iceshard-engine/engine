@@ -10,9 +10,7 @@ namespace ice
     struct TileMapInstance
     {
         ice::TileMap const* tilemap;
-
-        ice::u32 fixture_count;
-        ice::PhysicsID* fixture_ids;
+        ice::PhysicsID* physics_ids;
     };
 
     class IceWorldTrait_TileMap : public ice::WorldTrait_TileMap

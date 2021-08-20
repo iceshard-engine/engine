@@ -9,7 +9,6 @@ namespace ice
 
     enum class Asset : ice::u64;
 
-    // #todo rename to TileSetID as thats what it is.
     enum class TileSetID : ice::u32
     {
         Invalid = 0xffff'ffff
@@ -21,17 +20,24 @@ namespace ice
         ice::TileSetID tile_id;
     };
 
-    struct TileTerrain
+    struct TileCollision
     {
         ice::TileSetID tile_id;
+        ice::u32 object_offset;
+    };
+
+    struct TileObject
+    {
+        ice::u32 vertex_offset;
+        ice::u32 vertex_count;
     };
 
     struct TileLayer
     {
         ice::StringID name;
         ice::vec2u size;
-        ice::u32 tile_count;
         ice::u32 tile_offset;
+        ice::u32 tile_count;
     };
 
     struct TileSet
@@ -46,13 +52,16 @@ namespace ice
 
         ice::u32 tileset_count;
         ice::u32 layer_count;
-        ice::u32 terrain_count;
-        ice::u32 fixture_count;
+        ice::u32 objects_count;
+        ice::u32 tile_collision_count;
+        ice::u32 map_collision_count;
 
         ice::TileSet const* tilesets;
         ice::TileLayer const* layers;
-        ice::TileTerrain const* terrain;
         ice::Tile const* tiles;
+        ice::TileObject const* objects;
+        ice::TileCollision const* tile_collisions;
+        ice::vec2f const* object_vertices;
     };
 
     class WorldTrait_Physics2D;
