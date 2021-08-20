@@ -125,6 +125,110 @@ namespace ice
 
     using ice::detail::TileMapInfo;
 
+
+
+    template<typename Fn>
+    void parse_node_data_csv(
+        rapidxml::xml_node<> const* node_data,
+        Fn&& tileid_callback
+    ) noexcept
+    {
+        ice::String csv_data{ node_data->value(), node_data->value_size() };
+
+        ice::u32 beg = 0;
+        ice::u32 end = csv_data.find_first_of(',');
+        while (end != ice::string_npos)
+        {
+            char const* val_beg = csv_data.data() + beg;
+            char const* val_end = csv_data.data() + end;
+
+            while (std::isdigit(*val_beg) == false && val_beg != val_end)
+            {
+                val_beg += 1;
+            }
+
+            ice::u32 value = 0;
+            if (std::from_chars(val_beg, val_end, value).ec == std::errc{ 0 })
+            {
+                ice::forward<Fn>(tileid_callback)(value);
+            }
+
+            beg = end + 1;
+            end = csv_data.find_first_of(',', beg);
+        }
+
+        {
+            char const* val_beg = csv_data.data() + beg;
+            char const* val_end = csv_data.data() + node_data->value_size();
+
+            while (std::isdigit(*val_beg) == false && val_beg != val_end)
+            {
+                val_beg += 1;
+            }
+
+            ice::u32 value = 0;
+            if (std::from_chars(val_beg, val_end, value).ec == std::errc{ 0 })
+            {
+                ice::forward<Fn>(tileid_callback)(value);
+            }
+        }
+    }
+
+    template<typename Fn>
+    void parse_points_string(
+        ice::String points,
+        Fn&& point_callback
+    ) noexcept
+    {
+        char const* const data = points.data();
+
+        ice::u32 beg = 0;
+        ice::u32 end = points.find_first_of(' ');
+        while (end != ice::string_npos)
+        {
+            char const* val_beg = data + beg;
+            char const* val_delim = data + points.find_first_of(',', beg);
+            char const* val_end = data + end;
+
+            while (std::isdigit(*val_beg) == false && val_beg != val_end)
+            {
+                val_beg += 1;
+            }
+
+            ice::vec2f value{ 0 };
+            bool result = std::from_chars(val_beg, val_delim, value.x).ec == std::errc{ 0 };
+            result &= std::from_chars(val_delim + 1, val_end, value.y).ec == std::errc{ 0 };
+
+            if (result)
+            {
+                ice::forward<Fn>(point_callback)(value);
+            }
+
+            beg = end + 1;
+            end = points.find_first_of(' ', beg);
+        }
+
+        {
+            char const* val_beg = data + beg;
+            char const* val_delim = data + points.find_first_of(',', beg);
+            char const* val_end = data + points.size();
+
+            while (std::isdigit(*val_beg) == false && val_beg != val_end)
+            {
+                val_beg += 1;
+            }
+
+            ice::vec2f value{ 0 };
+            bool result = std::from_chars(val_beg, val_delim, value.x).ec == std::errc{ 0 };
+            result &= std::from_chars(val_delim + 1, val_end, value.y).ec == std::errc{ 0 };
+
+            if (result)
+            {
+                ice::forward<Fn>(point_callback)(value);
+            }
+        }
+    }
+
     bool parse_node_map(
         rapidxml::xml_node<> const* node_map,
         ice::TileMapInfo& tilemap_info
@@ -218,7 +322,6 @@ namespace ice
         ice::u32 tile_collision_count = 0;
         ice::u32 collision_object_count = 0;
         ice::u32 vertice_count = 0;
-        ice::u32 group_highest_id = 0;
 
         rapidxml::xml_node<> const* node_tile;
         if (detail::get_child(node_tileset, node_tile, "tile"))
@@ -237,19 +340,29 @@ namespace ice
 
                     while (node_object != nullptr)
                     {
-                        if (group_id > group_highest_id)
+                        collision_object_count += 1;
+
+                        rapidxml::xml_node<> const* node_polygon;
+                        if (detail::get_child(node_object, node_polygon, "ploygon"))
                         {
-                            collision_object_count += 1;
+                            ice::String points;
+                            detail::get_attrib(node_polygon, attrib, "points");
+                            detail::attrib_value(attrib, points);
+
+                            parse_points_string(points,
+                                [&](ice::vec2f point) noexcept
+                                {
+                                    vertice_count += 1;
+                                }
+                            );
+                        }
+                        else
+                        {
                             vertice_count += 4;
                         }
                         tile_collision_count += 1;
 
                         detail::next_sibling(node_object, node_object, "object");
-                    }
-
-                    if (group_id > group_highest_id)
-                    {
-                        group_highest_id = group_id;
                     }
                 }
 
@@ -270,53 +383,6 @@ namespace ice
             TILED_LOG(LogSeverity::Error, "Invalid TMX resource, failed to read one or multiple 'tileset' attributes.");
         }
         return attrib != nullptr;
-    }
-
-    template<typename Fn>
-    void parse_node_data_csv(
-        rapidxml::xml_node<> const* node_data,
-        Fn&& tileid_callback
-    ) noexcept
-    {
-        ice::String csv_data{ node_data->value(), node_data->value_size() };
-
-        ice::u32 beg = 0;
-        ice::u32 end = csv_data.find_first_of(',');
-        while (end != ice::string_npos)
-        {
-            char const* val_beg = csv_data.data() + beg;
-            char const* val_end = csv_data.data() + end;
-
-            while(std::isdigit(*val_beg) == false && val_beg != val_end)
-            {
-                val_beg += 1;
-            }
-
-            ice::u32 value = 0;
-            if (std::from_chars(val_beg, val_end, value).ec == std::errc{ 0 })
-            {
-                ice::forward<Fn>(tileid_callback)(value);
-            }
-
-            beg = end + 1;
-            end = csv_data.find_first_of(',', beg);
-        }
-
-        {
-            char const* val_beg = csv_data.data() + beg;
-            char const* val_end = csv_data.data() + node_data->value_size();
-
-            while (std::isdigit(*val_beg) == false && val_beg != val_end)
-            {
-                val_beg += 1;
-            }
-
-            ice::u32 value = 0;
-            if (std::from_chars(val_beg, val_end, value).ec == std::errc{ 0 })
-            {
-                ice::forward<Fn>(tileid_callback)(value);
-            }
-        }
     }
 
     bool parse_node_layer_estimate_data(
@@ -436,7 +502,6 @@ namespace ice
         ice::detail::TileCollisionInfo* const collision_infos_beg = collision_infos;
 
         ice::u32 collision_count = 0;
-        ice::u32 group_highest_id = 0;
 
         rapidxml::xml_node<> const* node_tile;
         if (detail::get_child(node_tileset, node_tile, "tile"))
@@ -463,77 +528,77 @@ namespace ice
                     detail::get_attrib(node_object, attrib, "id");
                     detail::attrib_value(attrib, group_id);
 
-                    if (group_id > group_highest_id)
+                    detail::get_child(node_object, node_object, "object");
+
+                    while (node_object != nullptr)
                     {
-                        detail::get_child(node_object, node_object, "object");
+                        objects->vertex_count = 0;
+                        objects->vertex_offset = vertice_offset;
 
-                        while (node_object != nullptr)
+                        ice::vec2f pos;
+                        ice::vec2f size;
+
+                        bool valid_object = true;
+                        valid_object &= detail::get_attrib(node_object, attrib, "x");
+                        detail::attrib_value(attrib, pos.x);
+                        valid_object &= detail::next_attrib(attrib, attrib, "y");
+                        detail::attrib_value(attrib, pos.y);
+                        bool valid_square = detail::next_attrib(attrib, attrib, "width");
+                        detail::attrib_value(attrib, size.x);
+                        valid_square &= detail::next_attrib(attrib, attrib, "height");
+                        detail::attrib_value(attrib, size.y);
+
+                        ice::vec2f const y_offset{ 0.f, tilemap_info.tile_size.y };
+
+                        if (valid_object && valid_square)
                         {
-                            objects->vertex_count = 0;
-                            objects->vertex_offset = vertice_offset;
+                            ice::vec2f const half = size / 2.f;
 
-                            ice::vec2f pos;
-                            ice::vec2f size;
+                            vertices[0] = ice::vec2f { pos.x, tilemap_info.tile_size.y - pos.y } + vec2f{ 0.f, 0.f };
+                            vertices[1] = ice::vec2f { pos.x, tilemap_info.tile_size.y - pos.y } + ice::vec2f{ size.x, 0.f };
+                            vertices[2] = ice::vec2f { pos.x, tilemap_info.tile_size.y - pos.y } + ice::vec2f{ size.x, -size.y };
+                            vertices[3] = ice::vec2f { pos.x, tilemap_info.tile_size.y - pos.y } + ice::vec2f{ 0.f, -size.y };
 
-                            bool valid_object = true;
-                            valid_object &= detail::get_attrib(node_object, attrib, "x");
-                            detail::attrib_value(attrib, pos.x);
-                            valid_object &= detail::next_attrib(attrib, attrib, "y");
-                            detail::attrib_value(attrib, pos.y);
-                            valid_object &= detail::next_attrib(attrib, attrib, "width");
-                            detail::attrib_value(attrib, size.x);
-                            valid_object &= detail::next_attrib(attrib, attrib, "height");
-                            detail::attrib_value(attrib, size.y);
-
-                            if (valid_object)
+                            objects->vertex_count = 4;
+                        }
+                        else if (valid_object)
+                        {
+                            rapidxml::xml_node<> const* node_polygon;
+                            if (detail::get_child(node_object, node_polygon, "polygon"))
                             {
-                                ice::vec2f const half = size / 2.f;
+                                ice::String points;
+                                detail::get_attrib(node_polygon, attrib, "points");
+                                detail::attrib_value(attrib, points);
 
-                                vertices[0] = pos;
-                                vertices[1] = pos + ice::vec2f{ size.x, 0.f };
-                                vertices[2] = pos + size;
-                                vertices[3] = pos + ice::vec2f{ 0.f, size.y };
+                                objects->vertex_count = 0;
 
-                                objects->vertex_count = 4;
+                                parse_points_string(points,
+                                    [&](ice::vec2f point) noexcept
+                                    {
+                                        //vertices[objects->vertex_count] = pos + (y_offset + vec2f{ point.x, -point.y });
+
+                                        vertices[objects->vertex_count] = ice::vec2f { pos.x, tilemap_info.tile_size.y - pos.y } + vec2f{point.x, -point.y};
+                                        objects->vertex_count += 1;
+                                    }
+                                );
                             }
-
-                            collisions->object_offset = object_offset;
-                            collisions->tile_id = tile_id;
-
-                            collision_infos->collision = *collisions;
-                            collision_infos->group_id = group_id;
-
-                            collision_infos += 1;
-                            collisions += 1;
-
-                            vertice_offset += objects->vertex_count;
-                            vertices += objects->vertex_count;
-                            object_offset += 1;
-                            objects += 1;
-
-                            detail::next_sibling(node_object, node_object, "object");
                         }
 
-                        group_highest_id = group_id;
-                    }
-                    else
-                    {
-                        ice::detail::TileCollisionInfo* collision_infos_it = collision_infos_beg;
+                        collisions->object_offset = object_offset;
+                        collisions->tile_id = tile_id;
 
-                        while (collision_infos_it != collision_infos && collision_infos_it->group_id != group_id)
-                        {
-                            collision_infos_it += 1;
-                        }
+                        collision_infos->collision = *collisions;
+                        collision_infos->group_id = group_id;
 
-                        while (collision_infos_it->group_id == group_id)
-                        {
-                            *collisions = collision_infos_it->collision;
-                            collisions->tile_id = tile_id;
-                            collisions += 1;
+                        collision_infos += 1;
+                        collisions += 1;
 
-                            collision_infos_it += 1;
-                        }
+                        vertice_offset += objects->vertex_count;
+                        vertices += objects->vertex_count;
+                        object_offset += 1;
+                        objects += 1;
 
+                        detail::next_sibling(node_object, node_object, "object");
                     }
                 }
 
