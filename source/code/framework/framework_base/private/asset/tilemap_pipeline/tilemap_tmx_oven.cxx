@@ -39,6 +39,12 @@ namespace ice
             return ice::make_tileset_id(tileset_idx, iceshard_tile_flip, tile_x, tile_y);
         }
 
+        struct TileCollisionInfo
+        {
+            ice::TileCollision collision;
+            ice::u32 group_id;
+        };
+
         struct TileSetInfo
         {
             ice::u16 gid;
@@ -46,8 +52,8 @@ namespace ice
             ice::vec2f element_size;
             ice::String image;
 
-            ice::u32 terrain_count;
-            ice::u32 terrain_offset;
+            ice::u32 tile_collision_object_count;
+            ice::u32 tile_object_vertex_count;
         };
 
         struct TileMapInfo
@@ -57,23 +63,28 @@ namespace ice
 
             ice::u32 tileset_count;
             ice::detail::TileSetInfo tileset_info[16];
+            ice::detail::TileCollisionInfo* collisions_info;
 
             ice::u32 layer_count;
-            ice::u32 terrain_count;
             ice::u32 tile_count;
+            ice::u32 object_count;
+            ice::u32 tile_collision_count;
+            ice::u32 object_vertice_count;
 
-            ice::u32* fixture_count;
+            ice::u32* map_collision_count;
 
             ice::TileSet* tilesets;
             ice::TileLayer* layers;
-            ice::TileTerrain* terrain;
             ice::Tile* tiles;
+            ice::TileObject* objects;
+            ice::TileCollision* tile_collisions;
+            ice::vec2f* object_vertices;
         };
 
         constexpr auto x = sizeof(TileMapInfo);
 
         bool get_child(
-            rapidxml::xml_node<> const* node,
+            rapidxml::xml_node<> const* parent_node,
             rapidxml::xml_node<> const*& out_node,
             char const* name = nullptr
         ) noexcept;
@@ -113,6 +124,110 @@ namespace ice
     } // namespace detail
 
     using ice::detail::TileMapInfo;
+
+
+
+    template<typename Fn>
+    void parse_node_data_csv(
+        rapidxml::xml_node<> const* node_data,
+        Fn&& tileid_callback
+    ) noexcept
+    {
+        ice::String csv_data{ node_data->value(), node_data->value_size() };
+
+        ice::u32 beg = 0;
+        ice::u32 end = csv_data.find_first_of(',');
+        while (end != ice::string_npos)
+        {
+            char const* val_beg = csv_data.data() + beg;
+            char const* val_end = csv_data.data() + end;
+
+            while (std::isdigit(*val_beg) == false && val_beg != val_end)
+            {
+                val_beg += 1;
+            }
+
+            ice::u32 value = 0;
+            if (std::from_chars(val_beg, val_end, value).ec == std::errc{ 0 })
+            {
+                ice::forward<Fn>(tileid_callback)(value);
+            }
+
+            beg = end + 1;
+            end = csv_data.find_first_of(',', beg);
+        }
+
+        {
+            char const* val_beg = csv_data.data() + beg;
+            char const* val_end = csv_data.data() + node_data->value_size();
+
+            while (std::isdigit(*val_beg) == false && val_beg != val_end)
+            {
+                val_beg += 1;
+            }
+
+            ice::u32 value = 0;
+            if (std::from_chars(val_beg, val_end, value).ec == std::errc{ 0 })
+            {
+                ice::forward<Fn>(tileid_callback)(value);
+            }
+        }
+    }
+
+    template<typename Fn>
+    void parse_points_string(
+        ice::String points,
+        Fn&& point_callback
+    ) noexcept
+    {
+        char const* const data = points.data();
+
+        ice::u32 beg = 0;
+        ice::u32 end = points.find_first_of(' ');
+        while (end != ice::string_npos)
+        {
+            char const* val_beg = data + beg;
+            char const* val_delim = data + points.find_first_of(',', beg);
+            char const* val_end = data + end;
+
+            while (std::isdigit(*val_beg) == false && val_beg != val_end)
+            {
+                val_beg += 1;
+            }
+
+            ice::vec2f value{ 0 };
+            bool result = std::from_chars(val_beg, val_delim, value.x).ec == std::errc{ 0 };
+            result &= std::from_chars(val_delim + 1, val_end, value.y).ec == std::errc{ 0 };
+
+            if (result)
+            {
+                ice::forward<Fn>(point_callback)(value);
+            }
+
+            beg = end + 1;
+            end = points.find_first_of(' ', beg);
+        }
+
+        {
+            char const* val_beg = data + beg;
+            char const* val_delim = data + points.find_first_of(',', beg);
+            char const* val_end = data + points.size();
+
+            while (std::isdigit(*val_beg) == false && val_beg != val_end)
+            {
+                val_beg += 1;
+            }
+
+            ice::vec2f value{ 0 };
+            bool result = std::from_chars(val_beg, val_delim, value.x).ec == std::errc{ 0 };
+            result &= std::from_chars(val_delim + 1, val_end, value.y).ec == std::errc{ 0 };
+
+            if (result)
+            {
+                ice::forward<Fn>(point_callback)(value);
+            }
+        }
+    }
 
     bool parse_node_map(
         rapidxml::xml_node<> const* node_map,
@@ -204,19 +319,63 @@ namespace ice
         detail::attrib_value(attrib, tileset_columns);
         tilemap_info.tileset_info[tileset_idx].columns = tileset_columns;
 
-        rapidxml::xml_node<> const* node_terrain;
-        if (detail::get_child(node_tileset, node_terrain, "terraintypes"))
-        {
-            detail::get_child(node_terrain, node_terrain, "terrain");
-            while (node_terrain != nullptr)
-            {
-                tilemap_info.tileset_info[tileset_idx].terrain_count += 1;
+        ice::u32 tile_collision_count = 0;
+        ice::u32 collision_object_count = 0;
+        ice::u32 vertice_count = 0;
 
-                detail::next_sibling(node_terrain, node_terrain);
+        rapidxml::xml_node<> const* node_tile;
+        if (detail::get_child(node_tileset, node_tile, "tile"))
+        {
+            while (node_tile != nullptr)
+            {
+                rapidxml::xml_node<> const* node_object;
+                if (detail::get_child(node_tile, node_object, "objectgroup"))
+                {
+                    detail::get_attrib(node_object, attrib, "id");
+
+                    ice::u32 group_id = 0;
+                    detail::attrib_value(attrib, group_id);
+
+                    detail::get_child(node_object, node_object, "object");
+
+                    while (node_object != nullptr)
+                    {
+                        collision_object_count += 1;
+
+                        rapidxml::xml_node<> const* node_polygon;
+                        if (detail::get_child(node_object, node_polygon, "ploygon"))
+                        {
+                            ice::String points;
+                            detail::get_attrib(node_polygon, attrib, "points");
+                            detail::attrib_value(attrib, points);
+
+                            parse_points_string(points,
+                                [&](ice::vec2f point) noexcept
+                                {
+                                    vertice_count += 1;
+                                }
+                            );
+                        }
+                        else
+                        {
+                            vertice_count += 4;
+                        }
+                        tile_collision_count += 1;
+
+                        detail::next_sibling(node_object, node_object, "object");
+                    }
+                }
+
+                detail::next_sibling(node_tile, node_tile);
             }
         }
 
-        tilemap_info.terrain_count += tilemap_info.tileset_info[tileset_idx].terrain_count;
+        tilemap_info.tileset_info[tileset_idx].tile_object_vertex_count = vertice_count;
+        tilemap_info.tileset_info[tileset_idx].tile_collision_object_count = collision_object_count;
+
+        tilemap_info.tile_collision_count += tile_collision_count;
+        tilemap_info.object_vertice_count += vertice_count;
+        tilemap_info.object_count += collision_object_count;
         tilemap_info.tileset_count += 1;
 
         if (attrib == nullptr)
@@ -224,53 +383,6 @@ namespace ice
             TILED_LOG(LogSeverity::Error, "Invalid TMX resource, failed to read one or multiple 'tileset' attributes.");
         }
         return attrib != nullptr;
-    }
-
-    template<typename Fn>
-    void parse_node_data_csv(
-        rapidxml::xml_node<> const* node_data,
-        Fn&& tileid_callback
-    ) noexcept
-    {
-        ice::String csv_data{ node_data->value(), node_data->value_size() };
-
-        ice::u32 beg = 0;
-        ice::u32 end = csv_data.find_first_of(',');
-        while (end != ice::string_npos)
-        {
-            char const* val_beg = csv_data.data() + beg;
-            char const* val_end = csv_data.data() + end;
-
-            while(std::isdigit(*val_beg) == false && val_beg != val_end)
-            {
-                val_beg += 1;
-            }
-
-            ice::u32 value = 0;
-            if (std::from_chars(val_beg, val_end, value).ec == std::errc{ 0 })
-            {
-                ice::forward<Fn>(tileid_callback)(value);
-            }
-
-            beg = end + 1;
-            end = csv_data.find_first_of(',', beg);
-        }
-
-        {
-            char const* val_beg = csv_data.data() + beg;
-            char const* val_end = csv_data.data() + node_data->value_size();
-
-            while (std::isdigit(*val_beg) == false && val_beg != val_end)
-            {
-                val_beg += 1;
-            }
-
-            ice::u32 value = 0;
-            if (std::from_chars(val_beg, val_end, value).ec == std::errc{ 0 })
-            {
-                ice::forward<Fn>(tileid_callback)(value);
-            }
-        }
     }
 
     bool parse_node_layer_estimate_data(
@@ -300,9 +412,9 @@ namespace ice
             return false;
         }
 
-        parse_node_data_csv(node_data, [&](ice::u32 node_id) noexcept
+        parse_node_data_csv(node_data, [&](ice::u32 tile_value) noexcept
             {
-                tilemap_info.tile_count += (node_id != 0);
+                tilemap_info.tile_count += (tile_value != 0);
             }
         );
 
@@ -374,39 +486,123 @@ namespace ice
         return valid_map;
     }
 
-    void bake_tileset_terraintypes(
+    void bake_tileset_collision_objects(
         rapidxml::xml_node<> const* node_tileset,
         ice::TileMapInfo const& tilemap_info,
         ice::u32 tileset_index,
-        ice::TileTerrain* tileset_terrains
+        ice::detail::TileCollisionInfo* collision_infos,
+        ice::TileCollision*& collisions,
+        ice::u32 object_offset,
+        ice::TileObject* objects,
+        ice::u32 vertice_offset,
+        ice::vec2f* vertices
     ) noexcept
     {
         ice::u32 const tileset_columns = tilemap_info.tileset_info[tileset_index].columns;
+        ice::detail::TileCollisionInfo* const collision_infos_beg = collision_infos;
 
-        rapidxml::xml_node<> const* node_terrain;
-        if (detail::get_child(node_tileset, node_terrain, "terraintypes"))
+        ice::u32 collision_count = 0;
+
+        rapidxml::xml_node<> const* node_tile;
+        if (detail::get_child(node_tileset, node_tile, "tile"))
         {
-            detail::get_child(node_terrain, node_terrain, "terrain");
-            while (node_terrain != nullptr)
+            while (node_tile != nullptr)
             {
                 rapidxml::xml_attribute<> const* attrib;
-                detail::get_attrib(node_terrain, attrib, "tile");
+                detail::get_attrib(node_tile, attrib, "id");
 
                 ice::u32 local_tile_id;
                 detail::attrib_value(attrib, local_tile_id);
 
-                ice::u16 const tile_id = static_cast<ice::u16>(local_tile_id);
+                rapidxml::xml_node<> const* node_object;
+                if (detail::get_child(node_tile, node_object, "objectgroup"))
+                {
+                    ice::TileSetID const tile_id = ice::detail::tmx_make_tileset_id(
+                        static_cast<ice::u8>(tileset_index),
+                        0,
+                        static_cast<ice::u16>(local_tile_id % tileset_columns),
+                        static_cast<ice::u16>(local_tile_id / tileset_columns)
+                    );
 
-                tileset_terrains->tile_id = ice::detail::tmx_make_tileset_id(
-                    static_cast<ice::u8>(tileset_index),
-                    0,
-                    tile_id % tileset_columns,
-                    tile_id / tileset_columns
-                );
+                    ice::u32 group_id = 0;
+                    detail::get_attrib(node_object, attrib, "id");
+                    detail::attrib_value(attrib, group_id);
 
-                tileset_terrains += 1;
+                    detail::get_child(node_object, node_object, "object");
 
-                detail::next_sibling(node_terrain, node_terrain);
+                    while (node_object != nullptr)
+                    {
+                        objects->vertex_count = 0;
+                        objects->vertex_offset = vertice_offset;
+
+                        ice::vec2f pos;
+                        ice::vec2f size;
+
+                        bool valid_object = true;
+                        valid_object &= detail::get_attrib(node_object, attrib, "x");
+                        detail::attrib_value(attrib, pos.x);
+                        valid_object &= detail::next_attrib(attrib, attrib, "y");
+                        detail::attrib_value(attrib, pos.y);
+                        bool valid_square = detail::next_attrib(attrib, attrib, "width");
+                        detail::attrib_value(attrib, size.x);
+                        valid_square &= detail::next_attrib(attrib, attrib, "height");
+                        detail::attrib_value(attrib, size.y);
+
+                        ice::vec2f const y_offset{ 0.f, tilemap_info.tile_size.y };
+
+                        if (valid_object && valid_square)
+                        {
+                            ice::vec2f const half = size / 2.f;
+
+                            vertices[0] = ice::vec2f { pos.x, tilemap_info.tile_size.y - pos.y } + vec2f{ 0.f, 0.f };
+                            vertices[1] = ice::vec2f { pos.x, tilemap_info.tile_size.y - pos.y } + ice::vec2f{ size.x, 0.f };
+                            vertices[2] = ice::vec2f { pos.x, tilemap_info.tile_size.y - pos.y } + ice::vec2f{ size.x, -size.y };
+                            vertices[3] = ice::vec2f { pos.x, tilemap_info.tile_size.y - pos.y } + ice::vec2f{ 0.f, -size.y };
+
+                            objects->vertex_count = 4;
+                        }
+                        else if (valid_object)
+                        {
+                            rapidxml::xml_node<> const* node_polygon;
+                            if (detail::get_child(node_object, node_polygon, "polygon"))
+                            {
+                                ice::String points;
+                                detail::get_attrib(node_polygon, attrib, "points");
+                                detail::attrib_value(attrib, points);
+
+                                objects->vertex_count = 0;
+
+                                parse_points_string(points,
+                                    [&](ice::vec2f point) noexcept
+                                    {
+                                        //vertices[objects->vertex_count] = pos + (y_offset + vec2f{ point.x, -point.y });
+
+                                        vertices[objects->vertex_count] = ice::vec2f { pos.x, tilemap_info.tile_size.y - pos.y } + vec2f{point.x, -point.y};
+                                        objects->vertex_count += 1;
+                                    }
+                                );
+                            }
+                        }
+
+                        collisions->object_offset = object_offset;
+                        collisions->tile_id = tile_id;
+
+                        collision_infos->collision = *collisions;
+                        collision_infos->group_id = group_id;
+
+                        collision_infos += 1;
+                        collisions += 1;
+
+                        vertice_offset += objects->vertex_count;
+                        vertices += objects->vertex_count;
+                        object_offset += 1;
+                        objects += 1;
+
+                        detail::next_sibling(node_object, node_object, "object");
+                    }
+                }
+
+                detail::next_sibling(node_tile, node_tile);
             }
         }
     }
@@ -415,7 +611,6 @@ namespace ice
         rapidxml::xml_node<> const* node_layer,
         ice::TileMapInfo const& tilemap_info,
         ice::TileSet const* tilesets,
-        ice::TileTerrain const* tileset_terrains,
         ice::TileLayer& layer,
         ice::Tile* layer_tiles
     ) noexcept
@@ -508,17 +703,14 @@ namespace ice
                         tile_id / tileset_columns
                     );
 
-                    detail::TileSetInfo const& tileset_info = tilemap_info.tileset_info[tileset_idx];
-                    ice::TileTerrain const* terrain_list = tileset_terrains + tileset_info.terrain_offset;
-                    for (ice::u32 idx = 0; idx < tileset_info.terrain_count; ++idx)
+                    ice::TileCollision const* tile_collissions = tilemap_info.tile_collisions;
+                    for (ice::u32 idx = 0; idx < tilemap_info.tile_collision_count; ++idx)
                     {
-                        if (layer_tiles->tile_id == terrain_list[idx].tile_id)
+                        if (layer_tiles->tile_id == tile_collissions[idx].tile_id)
                         {
-                           *tilemap_info.fixture_count += 1;
-                           break;
+                            *tilemap_info.map_collision_count += 1;
                         }
                     }
-
 
                     layer_tiles += 1;
                     layer.tile_count += 1;
@@ -540,6 +732,7 @@ namespace ice
     }
 
     void bake_tilemap_asset(
+        ice::Allocator& alloc,
         rapidxml::xml_node<> const* node_map,
         ice::TileMapInfo const& tilemap_info
     ) noexcept
@@ -548,10 +741,17 @@ namespace ice
         ice::u32 layer_tiles_offset = 0;
 
         ice::u32 tileset_idx = 0;
-        ice::u32 tileset_terrain_offset = 0;
+        ice::u32 objects_offset = 0;
+        ice::u32 object_vertice_offset = 0;
 
         ice::Tile* layer_tiles = tilemap_info.tiles;
-        ice::TileTerrain* terrain_tiles = tilemap_info.terrain;
+        ice::TileObject* objects = tilemap_info.objects;
+        ice::vec2f* object_vertices = tilemap_info.object_vertices;
+        ice::TileCollision* tile_collisions = tilemap_info.tile_collisions;
+
+        ice::detail::TileCollisionInfo* tile_collision_info = reinterpret_cast<ice::detail::TileCollisionInfo*>(
+            alloc.allocate(sizeof(ice::detail::TileCollisionInfo) * tilemap_info.tile_collision_count, alignof(ice::detail::TileCollisionInfo))
+        );
 
         rapidxml::xml_node<> const* node_child;
         detail::get_child(node_map, node_child);
@@ -560,11 +760,27 @@ namespace ice
             ice::String const child_name = detail::node_name(node_child);
             if (child_name == "tileset")
             {
-                bake_tileset_terraintypes(node_child, tilemap_info, tileset_idx, terrain_tiles);
+                bake_tileset_collision_objects(
+                    node_child,
+                    tilemap_info,
+                    tileset_idx,
+                    tile_collision_info,
+                    tile_collisions,
+                    objects_offset,
+                    objects,
+                    object_vertice_offset,
+                    object_vertices
+                );
 
-                ice::u32 const terrain_count = tilemap_info.tileset_info[tileset_idx].terrain_count;
-                terrain_tiles += terrain_count;
-                tileset_terrain_offset += terrain_count;
+                ice::u32 const object_count = tilemap_info.tileset_info[tileset_idx].tile_collision_object_count;
+                ice::u32 const vertex_count = tilemap_info.tileset_info[tileset_idx].tile_object_vertex_count;
+
+                objects_offset += object_count;
+                objects += object_count;
+
+                object_vertice_offset += vertex_count;
+                object_vertices += vertex_count;
+
                 tileset_idx += 1;
             }
             else if (child_name == "layer")
@@ -572,7 +788,7 @@ namespace ice
                 ice::TileLayer& layer = tilemap_info.layers[layer_idx];
                 layer.tile_count = 0;
 
-                bake_layer_tiles(node_child, tilemap_info, tilemap_info.tilesets, tilemap_info.terrain, layer, layer_tiles);
+                bake_layer_tiles(node_child, tilemap_info, tilemap_info.tilesets, layer, layer_tiles);
                 layer.tile_offset = layer_tiles_offset;
 
                 layer_tiles += layer.tile_count;
@@ -582,6 +798,11 @@ namespace ice
 
             detail::next_sibling(node_child, node_child);
         }
+
+        alloc.destroy(tile_collision_info);
+
+        ice::u32 const tile_collision_count = tile_collisions - tilemap_info.tile_collisions;
+        ICE_ASSERT(tile_collision_count <= tilemap_info.tile_collision_count, "");
     }
 
     auto IceTiledTmxAssetOven::bake(
@@ -607,15 +828,26 @@ namespace ice
         doc->parse<0>(raw_doc);
         if (doc->first_node() != nullptr)
         {
-            ice::TileMapInfo tilemap_info{ };
+            ice::TileMapInfo* tilemap_info_ptr = asset_alloc.make<ice::TileMapInfo>();
+            ice::TileMapInfo& tilemap_info = *tilemap_info_ptr;
+
             if (gather_tilemap_info(doc->first_node(), tilemap_info))
             {
                 ice::u32 total_tilemap_bytes = alignof(ice::TileSet) + alignof(ice::TileLayer);
                 total_tilemap_bytes += sizeof(ice::TileMap);
                 total_tilemap_bytes += sizeof(ice::TileSet) * tilemap_info.tileset_count;
                 total_tilemap_bytes += sizeof(ice::TileLayer) * tilemap_info.layer_count;
+
                 total_tilemap_bytes += sizeof(ice::Tile) * tilemap_info.tile_count;
-                total_tilemap_bytes += sizeof(ice::TileTerrain) * tilemap_info.terrain_count;
+                total_tilemap_bytes += sizeof(ice::TileObject) * tilemap_info.object_count;
+                total_tilemap_bytes += sizeof(ice::TileCollision) * tilemap_info.tile_collision_count;
+                total_tilemap_bytes += sizeof(ice::vec2f) * tilemap_info.object_vertice_count;
+
+                // This ensures we dont need to care about alignment of the below 3 types
+                static_assert(alignof(ice::Tile) == 4 && sizeof(ice::Tile) % 4 == 0);
+                static_assert(alignof(ice::TileObject) == 4 && sizeof(ice::TileObject) % 4 == 0);
+                static_assert(alignof(ice::TileCollision) == 4 && sizeof(ice::TileCollision) % 4 == 0);
+                static_assert(alignof(ice::vec2f) == 4 && sizeof(ice::vec2f) % 4 == 0);
 
                 void* tilemap_data = asset_alloc.allocate(total_tilemap_bytes);
 
@@ -626,8 +858,10 @@ namespace ice
                 ice::TileLayer* layers = reinterpret_cast<ice::TileLayer*>(
                     ice::memory::ptr_align_forward(tilesets + tilemap_info.tileset_count, alignof(ice::TileLayer))
                 );
-                ice::TileTerrain* terrain_tiles = reinterpret_cast<ice::TileTerrain*>(layers + tilemap_info.layer_count);
-                ice::Tile* tiles = reinterpret_cast<ice::Tile*>(terrain_tiles + tilemap_info.terrain_count);
+                ice::Tile* tiles = reinterpret_cast<ice::Tile*>(layers + tilemap_info.layer_count);
+                ice::TileObject* objects = reinterpret_cast<ice::TileObject*>(tiles + tilemap_info.tile_count);
+                ice::TileCollision* tile_collisions = reinterpret_cast<ice::TileCollision*>(objects + tilemap_info.object_count);
+                ice::vec2f* object_vertices = reinterpret_cast<ice::vec2f*>(tile_collisions + tilemap_info.tile_collision_count);
 
                 result = BakeResult::Success;
                 for (ice::u32 idx = 0; idx < tilemap_info.tileset_count; ++idx)
@@ -660,23 +894,29 @@ namespace ice
                         "Allocation was to small for the gathered tilemap data."
                     );
 
-                    tilemap_info.fixture_count = ice::addressof(tilemap->fixture_count);
+                    //tilemap_info.tile_collision_count = ice::addressof(tilemap->tile_collisions);
                     tilemap_info.tilesets = tilesets;
                     tilemap_info.layers = layers;
-                    tilemap_info.terrain = terrain_tiles;
                     tilemap_info.tiles = tiles;
+                    tilemap_info.objects = objects;
+                    tilemap_info.tile_collisions = tile_collisions;
+                    tilemap_info.object_vertices = object_vertices;
+                    tilemap_info.map_collision_count = &tilemap->map_collision_count;
 
                     tilemap->tile_size = tilemap_info.tile_size;
                     tilemap->tileset_count = tilemap_info.tileset_count;
                     tilemap->layer_count = tilemap_info.layer_count;
-                    tilemap->terrain_count = tilemap_info.terrain_count;
-                    tilemap->fixture_count = 0;
+                    tilemap->objects_count = tilemap_info.object_count;
+                    tilemap->tile_collision_count = tilemap_info.tile_collision_count;
+                    tilemap->map_collision_count = 0;
                     tilemap->tilesets = nullptr;
                     tilemap->layers = nullptr;
-                    tilemap->terrain = nullptr;
                     tilemap->tiles = nullptr;
+                    tilemap->objects = nullptr;
+                    tilemap->tile_collisions = nullptr;
+                    tilemap->object_vertices = nullptr;
 
-                    bake_tilemap_asset(doc->first_node(), tilemap_info);
+                    bake_tilemap_asset(asset_alloc, doc->first_node(), tilemap_info);
 
                     // Change pointers into offset values
                     tilemap->tilesets = reinterpret_cast<ice::TileSet*>(
@@ -685,11 +925,17 @@ namespace ice
                     tilemap->layers = reinterpret_cast<ice::TileLayer*>(
                         static_cast<ice::uptr>(ice::memory::ptr_distance(tilemap_data, layers))
                     );
-                    tilemap->terrain = reinterpret_cast<ice::TileTerrain*>(
-                        static_cast<ice::uptr>(ice::memory::ptr_distance(tilemap_data, terrain_tiles))
-                    );
                     tilemap->tiles = reinterpret_cast<ice::Tile*>(
                         static_cast<ice::uptr>(ice::memory::ptr_distance(tilemap_data, tiles))
+                    );
+                    tilemap->objects = reinterpret_cast<ice::TileObject*>(
+                        static_cast<ice::uptr>(ice::memory::ptr_distance(tilemap_data, objects))
+                    );
+                    tilemap->tile_collisions = reinterpret_cast<ice::TileCollision*>(
+                        static_cast<ice::uptr>(ice::memory::ptr_distance(tilemap_data, tile_collisions))
+                    );
+                    tilemap->object_vertices = reinterpret_cast<ice::vec2f*>(
+                        static_cast<ice::uptr>(ice::memory::ptr_distance(tilemap_data, object_vertices))
                     );
 
                     // Update the output Memory object.
@@ -702,6 +948,8 @@ namespace ice
                     asset_alloc.deallocate(tilemap_data);
                 }
             }
+
+            asset_alloc.destroy(tilemap_info_ptr);
         }
 
         asset_alloc.destroy(doc);
@@ -709,12 +957,12 @@ namespace ice
         return result;
     }
 
-    bool detail::get_child(rapidxml::xml_node<> const* node, rapidxml::xml_node<> const*& out_node, char const* name) noexcept
+    bool detail::get_child(rapidxml::xml_node<> const* parent_node, rapidxml::xml_node<> const*& out_node, char const* name) noexcept
     {
         out_node = nullptr;
-        if (node != nullptr)
+        if (parent_node != nullptr)
         {
-            out_node = node->first_node(name);
+            out_node = parent_node->first_node(name);
         }
         return out_node != nullptr;
     }

@@ -45,6 +45,12 @@ namespace ice
             ice::vec2f dimensions
         ) noexcept -> ice::PhysicsID = 0;
 
+        virtual auto create_static_body(
+            ice::vec2f position,
+            ice::u32 vertice_count,
+            ice::vec2f const* vertices
+        ) noexcept -> ice::PhysicsID = 0;
+
         virtual void destroy_body(
             ice::PhysicsID physics_id
         ) noexcept = 0;

@@ -74,8 +74,7 @@ namespace ice
         IPT_ZONE_SCOPED_NAMED("[Trait] TileMap :: Load Tilemap");
 
         ice::TileMapInstance instance{ ice::addressof(tilemap) };
-        instance.fixture_count = tilemap.fixture_count;
-        instance.fixture_ids = nullptr;
+        instance.physics_ids = nullptr;
 
         ice::pod::array::push_back(_tilemaps, instance);
     }
@@ -98,7 +97,7 @@ namespace ice
 
         for (ice::TileMapInstance const& instance : _tilemaps)
         {
-            _allocator.destroy(instance.fixture_ids);
+            _allocator.deallocate(instance.physics_ids);
         }
 
         ice::pod::array::clear(_tilemaps);
@@ -116,42 +115,58 @@ namespace ice
         {
             ice::TileMapInstance& tilemap_info = _tilemaps[0];
 
-            if (tilemap_info.fixture_count > 0 && tilemap_info.fixture_ids == nullptr)
+            if (tilemap_info.tilemap->tile_collisions > 0 && tilemap_info.physics_ids == nullptr)
             {
-                tilemap_info.fixture_ids = reinterpret_cast<ice::PhysicsID*>(_allocator.allocate(tilemap_info.fixture_count * sizeof(ice::PhysicsID)));
-
-                ice::PhysicsID* fixture_id = tilemap_info.fixture_ids;
-
                 ice::TileMap const& tilemap = *tilemap_info.tilemap;
-                ice::TileTerrain const* terrain = tilemap.terrain;
+                ice::Span<ice::TileCollision const> tile_collisions = { tilemap.tile_collisions, tilemap.tile_collision_count };
 
+                tilemap_info.physics_ids = reinterpret_cast<ice::PhysicsID*>(
+                    _allocator.allocate(sizeof(ice::PhysicsID) * tilemap.map_collision_count)
+                );
+
+                ice::vec2f temp_vertices[20];
+
+                ice::PhysicsID* physics_ids = tilemap_info.physics_ids;
                 for (ice::u32 layer_idx = 0; layer_idx < tilemap.layer_count; ++layer_idx)
                 {
                     ice::TileLayer const& layer = tilemap.layers[layer_idx];
-                    ice::Tile const* layer_tiles = tilemap.tiles + layer.tile_offset;
+                    ice::Tile const* tiles = tilemap.tiles + layer.tile_offset;
 
-                    for (ice::u32 tile_idx = 0; tile_idx < layer.tile_count; ++tile_idx)
+                    for (ice::u32 idx = 0; idx < layer.tile_count; ++idx)
                     {
-                        for (ice::u32 terrain_idx = 0; terrain_idx < tilemap.terrain_count; ++terrain_idx)
-                        {
-                            if (layer_tiles->tile_id == terrain[terrain_idx].tile_id)
-                            {
-                                ice::f32 const tile_x = layer_tiles->offset & 0x0000'ffff;
-                                ice::f32 const tile_y = (layer_tiles->offset & 0xffff'0000) >> 16;
+                        ice::u32 const tile_x = (tiles[idx].offset & 0x0000'ffff) >> 0;
+                        ice::u32 const tile_y = (tiles[idx].offset & 0xffff'0000) >> 16;
 
-                                *fixture_id = _physics.create_static_body(
-                                    ice::vec2f{ tile_x * tilemap.tile_size.x, tile_y * tilemap.tile_size.y } / Constant_PixelsInMeter,
-                                    ice::PhysicsShape::Box,
-                                    tilemap.tile_size / Constant_PixelsInMeter
-                                );
-                                fixture_id += 1;
-                                break;
+                        for (ice::TileCollision const& collision : tile_collisions)
+                        {
+
+                            if (collision.tile_id == tiles[idx].tile_id)
+                            {
+                                ice::TileObject const* const object = tilemap.objects + collision.object_offset;
+                                ice::vec2f const* const object_vertices = tilemap.object_vertices + object->vertex_offset;
+
+                                if (object->vertex_count > 0)
+                                {
+                                    ice::memcpy(temp_vertices, tilemap.object_vertices + object->vertex_offset, sizeof(ice::vec2f) * object->vertex_count);
+
+                                    for (ice::u32 vtx = 0; vtx < object->vertex_count; ++vtx)
+                                    {
+                                        temp_vertices[vtx] = temp_vertices[vtx] / Constant_PixelsInMeter;
+                                    }
+
+                                    *physics_ids = _physics.create_static_body(
+                                        ice::vec2f{ tile_x * tilemap.tile_size.x, tile_y * tilemap.tile_size.y } / Constant_PixelsInMeter,
+                                        object->vertex_count,
+                                        temp_vertices
+                                    );
+                                    physics_ids += 1;
+                                }
                             }
                         }
-
-                        layer_tiles += 1;
                     }
                 }
+
+                ICE_ASSERT((physics_ids - tilemap_info.physics_ids) <= tilemap.map_collision_count, "Invalid number of collision objects created!");
             }
 
             ice::IceTileMap_RenderInfo* render_info = frame.create_named_object<ice::IceTileMap_RenderInfo>("tilemap.render-info"_sid);

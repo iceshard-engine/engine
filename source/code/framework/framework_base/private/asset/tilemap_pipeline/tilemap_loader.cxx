@@ -31,11 +31,17 @@ namespace ice
         tilemap->layers = reinterpret_cast<ice::TileLayer const*>(
             ice::memory::ptr_add(data.location, static_cast<ice::u32>(reinterpret_cast<ice::uptr>(tilemap->layers)))
         );
-        tilemap->terrain = reinterpret_cast<ice::TileTerrain const*>(
-            ice::memory::ptr_add(data.location, static_cast<ice::u32>(reinterpret_cast<ice::uptr>(tilemap->terrain)))
-        );
         tilemap->tiles = reinterpret_cast<ice::Tile const*>(
             ice::memory::ptr_add(data.location, static_cast<ice::u32>(reinterpret_cast<ice::uptr>(tilemap->tiles)))
+        );
+        tilemap->objects = reinterpret_cast<ice::TileObject const*>(
+            ice::memory::ptr_add(data.location, static_cast<ice::u32>(reinterpret_cast<ice::uptr>(tilemap->objects)))
+        );
+        tilemap->tile_collisions = reinterpret_cast<ice::TileCollision const*>(
+            ice::memory::ptr_add(data.location, static_cast<ice::u32>(reinterpret_cast<ice::uptr>(tilemap->tile_collisions)))
+        );
+        tilemap->object_vertices = reinterpret_cast<ice::vec2f const*>(
+            ice::memory::ptr_add(data.location, static_cast<ice::u32>(reinterpret_cast<ice::uptr>(tilemap->object_vertices)))
         );
 
         ice::TileSet* resolved_tilesets = reinterpret_cast<ice::TileSet*>(ice::memory::ptr_align_forward(tilemap + 1, alignof(ice::TileSet)));

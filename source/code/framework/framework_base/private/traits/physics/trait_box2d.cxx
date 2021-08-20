@@ -65,6 +65,30 @@ namespace ice
         return detail::body_to_physics_id(body);
     }
 
+    auto IceWorldTrait_PhysicsBox2D::create_static_body(
+        ice::vec2f position,
+        ice::u32 vertice_count,
+        ice::vec2f const* vertices
+    ) noexcept -> ice::PhysicsID
+    {
+        b2BodyDef body_def{ };
+        body_def.type = b2BodyType::b2_staticBody;
+        body_def.position.Set(position.x, position.y);
+
+        b2Body* body = _world->CreateBody(&body_def);
+        body->GetUserData().entity = ice::Entity{ };
+
+        b2PolygonShape tile_shape{ };
+        tile_shape.Set(reinterpret_cast<b2Vec2 const*>(vertices), vertice_count);
+
+        b2FixtureDef fixture_def{ };
+        fixture_def.shape = &tile_shape;
+        fixture_def.friction = 1.f;
+        body->CreateFixture(&fixture_def);
+
+        return detail::body_to_physics_id(body);
+    }
+
     void IceWorldTrait_PhysicsBox2D::destroy_body(
         ice::PhysicsID physics_id
     ) noexcept
