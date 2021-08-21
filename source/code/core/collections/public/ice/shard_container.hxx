@@ -8,6 +8,9 @@ namespace ice
 
     struct ShardContainer
     {
+        using Iterator = ice::pod::Array<ice::Shard>::Iterator;
+        using ConstIterator = ice::pod::Array<ice::Shard>::ConstIterator;
+
         inline explicit ShardContainer(ice::Allocator& alloc) noexcept;
         inline ShardContainer(ShardContainer&& other) noexcept;
         inline ShardContainer(ShardContainer const& other) noexcept;
@@ -36,6 +39,10 @@ namespace ice
 
         inline void remove_all_of(ice::ShardContainer& container, ice::Shard value) noexcept;
 
+        inline auto begin(ice::ShardContainer& container) noexcept -> ice::ShardContainer::Iterator;
+
+        inline auto end(ice::ShardContainer& container) noexcept -> ice::ShardContainer::Iterator;
+
 
         inline auto empty(ice::ShardContainer const& container) noexcept -> bool;
 
@@ -54,11 +61,18 @@ namespace ice
         template<typename T>
         inline auto inspect_all(ice::ShardContainer const& container, ice::Shard shard_type, ice::pod::Array<T>& payloads) noexcept -> ice::u32;
 
+        template<typename T, typename Fn>
+        inline auto inspect_each(ice::ShardContainer const& container, ice::Shard shard_type, Fn&& callback) noexcept -> ice::u32;
+
         template<typename T>
         inline bool inspect_first(ice::ShardContainer const& container, ice::Shard shard, T& payload) noexcept;
 
         template<typename T>
         inline bool inspect_last(ice::ShardContainer const& container, ice::Shard shard, T& payload) noexcept;
+
+        inline auto begin(ice::ShardContainer const& container) noexcept -> ice::ShardContainer::ConstIterator;
+
+        inline auto end(ice::ShardContainer const& container) noexcept -> ice::ShardContainer::ConstIterator;
 
     } // namespace shard
 
@@ -154,6 +168,17 @@ namespace ice
 
             ice::pod::array::resize(data, count);
         }
+
+        inline auto begin(ice::ShardContainer& container) noexcept -> ice::ShardContainer::Iterator
+        {
+            return ice::pod::array::begin(container._data);
+        }
+
+        inline auto end(ice::ShardContainer& container) noexcept -> ice::ShardContainer::Iterator
+        {
+            return ice::pod::array::end(container._data);
+        }
+
 
         inline auto empty(ice::ShardContainer const& container) noexcept -> bool
         {
@@ -253,6 +278,21 @@ namespace ice
             return count;
         }
 
+        template<typename T, typename Fn>
+        inline auto inspect_each(ice::ShardContainer const& container, ice::Shard shard_type, Fn&& callback) noexcept -> ice::u32
+        {
+            T payload;
+            ice::u32 count = 0;
+            for (ice::Shard const shard : container._data)
+            {
+                if (shard == shard_type && ice::shard_inspect(shard, payload))
+                {
+                    ice::forward<Fn>(callback)(payload);
+                }
+            }
+            return count;
+        }
+
         template<typename T>
         inline bool inspect_first(ice::ShardContainer const& container, ice::Shard shard_type, T& payload) noexcept
         {
@@ -266,6 +306,19 @@ namespace ice
             ice::Shard const shard = ice::shards::find_last_of(container, shard_type);
             return ice::shard_inspect(shard, payload);
         }
+
+        inline auto begin(ice::ShardContainer const& container) noexcept -> ice::ShardContainer::ConstIterator
+        {
+            return ice::pod::array::begin(container._data);
+        }
+
+        inline auto end(ice::ShardContainer const& container) noexcept -> ice::ShardContainer::ConstIterator
+        {
+            return ice::pod::array::end(container._data);
+        }
     }
+
+    using shards::begin;
+    using shards::end;
 
 } // namespace ice
