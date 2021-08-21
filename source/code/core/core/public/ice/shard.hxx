@@ -13,6 +13,8 @@ namespace ice
         ice::u64 payload;
     };
 
+    static constexpr ice::Shard shard_invalid{ 0, 0, 0 };
+
     constexpr auto shard_create(std::string_view sv) noexcept  -> ice::Shard;
 
     template<typename T>
@@ -26,6 +28,8 @@ namespace ice
 
     template<typename T>
     inline auto shard_shatter(ice::Shard shard) noexcept -> T;
+
+    constexpr auto shard_transform(ice::Shard old_shard, ice::Shard new_shard) noexcept -> ice::Shard;
 
     template<ice::Shard... TestShards>
     constexpr bool shard_any_of(ice::Shard const& shard) noexcept
@@ -56,6 +60,9 @@ namespace ice
 
         template<>
         constexpr ice::u32 Constant_ShardPayloadID<ice::math::vec2u> = ice::hash32("ice::math::vec2u");
+
+        template<>
+        constexpr ice::u32 Constant_ShardPayloadID<ice::math::vec2f> = ice::hash32("ice::math::vec2f");
 
     } // namespace detail
 
@@ -114,13 +121,25 @@ namespace ice
         }
     }
 
-    template<typename T>
+    template<typename T> requires (std::is_pointer_v<T> == false && std::is_class_v<T> == false)
     constexpr bool shard_inspect(ice::Shard shard, T& value) noexcept
     {
         static_assert(ice::detail::Constant_ShardPayloadID<T> != 0, "The given type cannot be used to inspect a shard object.");
         if (ice::detail::Constant_ShardPayloadID<T> == shard.payload_id)
         {
             value = static_cast<T>(shard.payload);
+            return true;
+        }
+        return false;
+    }
+
+    template<typename T> requires (std::is_pointer_v<T> == false && std::is_class_v<T>)
+    constexpr bool shard_inspect(ice::Shard shard, T& value) noexcept
+    {
+        static_assert(ice::detail::Constant_ShardPayloadID<T> != 0, "The given type cannot be used to inspect a shard object.");
+        if (ice::detail::Constant_ShardPayloadID<T> == shard.payload_id)
+        {
+            value = *reinterpret_cast<T const*>(ice::addressof(shard.payload));
             return true;
         }
         return false;
@@ -143,6 +162,15 @@ namespace ice
     {
         static_assert(ice::detail::Constant_ShardPayloadID<T> != 0, "The given type cannot be used to shatter a shard object.");
         return *reinterpret_cast<T const*>(ice::addressof(shard.payload));
+    }
+
+    constexpr auto shard_transform(ice::Shard source_shard, ice::Shard destination_shard) noexcept -> ice::Shard
+    {
+        return {
+            .name = destination_shard.name,
+            .payload_id = source_shard.payload_id,
+            .payload = source_shard.payload
+        };
     }
 
     constexpr auto operator""_shard(const char* str, size_t size) noexcept
@@ -169,11 +197,7 @@ namespace ice
 
     constexpr auto operator>>(ice::Shard left, ice::Shard right) noexcept -> ice::Shard
     {
-        return {
-            .name = right.name,
-            .payload_id = left.payload_id,
-            .payload = left.payload
-        };
+        return ice::shard_transform(left, right);
     }
 
     constexpr auto operator==(ice::Shard left, ice::Shard right) noexcept -> bool
