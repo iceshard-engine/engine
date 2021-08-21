@@ -50,10 +50,16 @@ namespace ice
         constexpr ice::u32 Constant_ShardPayloadID<ice::u32> = ice::hash32("ice::u32");
 
         template<>
+        constexpr ice::u32 Constant_ShardPayloadID<ice::f32> = ice::hash32("ice::f32");
+
+        template<>
         constexpr ice::u32 Constant_ShardPayloadID<ice::i64> = ice::hash32("ice::i64");
 
         template<>
         constexpr ice::u32 Constant_ShardPayloadID<ice::u64> = ice::hash32("ice::u64");
+
+        template<>
+        constexpr ice::u32 Constant_ShardPayloadID<ice::f64> = ice::hash32("ice::f64");
 
         template<>
         constexpr ice::u32 Constant_ShardPayloadID<ice::math::vec2i> = ice::hash32("ice::math::vec2i");
