@@ -17,22 +17,24 @@
                 <DisplayString Condition="payload_id == 1506352867">ice::World*</DisplayString>
                 <DisplayString Condition="payload_id == 3725678933">ice::u32</DisplayString>
                 <DisplayString Condition="payload_id == 1997334060">ice::StringID_Hash</DisplayString>
-                <DisplayString Condition="payload_id == 1622554074">ice::Entity</DisplayString>
+                <DisplayString Condition="payload_id == 3972990833">ice::math::vec2f</DisplayString>
                 <DisplayString Condition="payload_id == 2445304050">ice::math::vec2u</DisplayString>
                 <DisplayString Condition="payload_id == 2511786707">ice::i32</DisplayString>
                 <DisplayString Condition="payload_id == 3035887879">ice::u64</DisplayString>
                 <DisplayString Condition="payload_id == 983740932">ice::math::vec2i</DisplayString>
+                <DisplayString Condition="payload_id == 1622554074">ice::Entity</DisplayString>
                 <DisplayString>{payload_id}, unknown_type</DisplayString>
             </Synthetic>
             <Item Name="[payload]" Optional="true" Condition="payload_id == 1753932510">*(ice::i64*)&amp;payload</Item>
             <Item Name="[payload]" Optional="true" Condition="payload_id == 1506352867">*(ice::World**)&amp;payload</Item>
             <Item Name="[payload]" Optional="true" Condition="payload_id == 3725678933">*(ice::u32*)&amp;payload</Item>
             <Item Name="[payload]" Optional="true" Condition="payload_id == 1997334060">*(ice::StringID_Hash*)&amp;payload</Item>
-            <Item Name="[payload]" Optional="true" Condition="payload_id == 1622554074">*(ice::Entity*)&amp;payload</Item>
+            <Item Name="[payload]" Optional="true" Condition="payload_id == 3972990833">*(ice::math::vec2f*)&amp;payload</Item>
             <Item Name="[payload]" Optional="true" Condition="payload_id == 2445304050">*(ice::math::vec2u*)&amp;payload</Item>
             <Item Name="[payload]" Optional="true" Condition="payload_id == 2511786707">*(ice::i32*)&amp;payload</Item>
             <Item Name="[payload]" Optional="true" Condition="payload_id == 3035887879">*(ice::u64*)&amp;payload</Item>
             <Item Name="[payload]" Optional="true" Condition="payload_id == 983740932">*(ice::math::vec2i*)&amp;payload</Item>
+            <Item Name="[payload]" Optional="true" Condition="payload_id == 1622554074">*(ice::Entity*)&amp;payload</Item>
         </Expand>
     </Type>
 </AutoVisualizer>
