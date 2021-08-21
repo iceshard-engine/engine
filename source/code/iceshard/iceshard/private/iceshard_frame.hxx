@@ -34,8 +34,8 @@ namespace ice
         void start_all() noexcept;
         void wait_ready() noexcept;
 
-        auto shards() const noexcept -> ice::Span<ice::Shard const> override;
-        void push_shards(ice::Span<ice::Shard const> shards) noexcept override;
+        auto shards() noexcept -> ice::ShardContainer& override;
+        auto shards() const noexcept -> ice::ShardContainer const& override;
 
         auto entity_commands() noexcept -> ice::EntityCommandBuffer& override;
 
@@ -76,7 +76,7 @@ namespace ice
         ice::memory::ScratchAllocator _data_allocator;
 
         ice::pod::Array<ice::input::InputEvent> _input_events;
-        ice::pod::Array<ice::Shard> _shards;
+        ice::ShardContainer _shards;
         ice::EntityCommandBuffer _entity_commands;
         ice::pod::Hash<void*> _named_objects;
 

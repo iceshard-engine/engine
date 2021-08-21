@@ -185,12 +185,11 @@ namespace ice
 
         ice::u32 buffer_offset = 0;
         ice::u32 color_buffer_offset = 0;
-        for (ice::Shard shard : engine_frame.shards())
-        {
-            ice::DebugDrawCommandList const* debug_draw_list = nullptr;
-            if (shard == ice::Shard_DebugDrawCommand && ice::shard_inspect(shard, debug_draw_list))
+
+        ice::shards::inspect_each<ice::DebugDrawCommandList const*>(engine_frame.shards(), ice::Shard_DebugDrawCommand,
+            [&, this](ice::DebugDrawCommandList const* draw_list) noexcept
             {
-                ice::Span<ice::DebugDrawCommand const> commands{ debug_draw_list->list, debug_draw_list->list_size };
+                ice::Span<ice::DebugDrawCommand const> commands{ draw_list->list, draw_list->list_size };
                 for (ice::DebugDrawCommand const& command : commands)
                 {
                     Data vertex_data = ice::data_view(command.vertex_list, command.vertex_count * sizeof(ice::vec3f));
@@ -217,12 +216,12 @@ namespace ice
                     gfx_device.device().update_buffers(updates);
                 }
             }
+        );
 
-            ice::StringID_Hash camera_name;
-            if (shard == ice::Shard_SetDefaultCamera && ice::shard_inspect(shard, camera_name))
-            {
-                _render_camera = ice::StringID{ camera_name };
-            }
+        ice::StringID_Hash camera_name;
+        if (ice::shards::inspect_last(engine_frame.shards(), ice::Shard_SetDefaultCamera, camera_name))
+        {
+            _render_camera = ice::StringID{ camera_name };
         }
 
         ice::render::Buffer const camera_buffer = ice::gfx::find_resource<ice::render::Buffer>(
@@ -278,13 +277,12 @@ namespace ice
         api.bind_vertex_buffer(cmds, _colors, 1);
         api.bind_pipeline(cmds, _pipeline);
 
-        ice::u32 vertex_offset = 0;
-        for (ice::Shard shard : engine_frame.shards())
-        {
-            ice::DebugDrawCommandList const* debug_draw_list = nullptr;
-            if (shard == ice::Shard_DebugDrawCommand && ice::shard_inspect(shard, debug_draw_list))
+        ice::shards::inspect_each<ice::DebugDrawCommandList const*>(engine_frame.shards(), ice::Shard_DebugDrawCommand,
+            [&, this](ice::DebugDrawCommandList const* draw_list) noexcept
             {
-                ice::Span< ice::DebugDrawCommand const> commands{ debug_draw_list->list, debug_draw_list->list_size };
+                ice::u32 vertex_offset = 0;
+
+                ice::Span< ice::DebugDrawCommand const> commands{ draw_list->list, draw_list->list_size };
                 for (ice::DebugDrawCommand const& command : commands)
                 {
                     api.draw(
@@ -298,7 +296,7 @@ namespace ice
                     vertex_offset += command.vertex_count;
                 }
             }
-        }
+        );
     }
 
 } // namespace ice

@@ -46,8 +46,8 @@ namespace ice
         detail::global_frame_counter += 1;
 
         ice::pod::array::reserve(_input_events, (detail::InputsAllocatorCapacity / sizeof(ice::input::InputEvent)) - 10);
-        ice::pod::array::reserve(_shards, (detail::RequestAllocatorCapacity / sizeof(ice::Shard)) - 10);
         ice::pod::hash::reserve(_named_objects, (detail::StorageAllocatorCapacity / (sizeof(ice::pod::Hash<ice::uptr>::Entry) + sizeof(ice::u32))) - 10);
+        ice::shards::reserve(_shards, (detail::RequestAllocatorCapacity / sizeof(ice::Shard)) - 10);
 
         _frame_tasks.reserve((detail::TaskAllocatorCapacity - 1024) / sizeof(ice::Task<void>));
     }
@@ -123,14 +123,14 @@ namespace ice
         _task_executor.wait_ready();
     }
 
-    auto IceshardMemoryFrame::shards() const noexcept -> ice::Span<ice::Shard const>
+    auto IceshardMemoryFrame::shards() noexcept -> ice::ShardContainer&
     {
         return _shards;
     }
 
-    void IceshardMemoryFrame::push_shards(ice::Span<ice::Shard const> shards) noexcept
+    auto IceshardMemoryFrame::shards() const noexcept -> ice::ShardContainer const&
     {
-        ice::pod::array::push_back(_shards, shards);
+        return _shards;
     }
 
     auto IceshardMemoryFrame::entity_commands() noexcept -> ice::EntityCommandBuffer&

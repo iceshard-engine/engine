@@ -161,10 +161,8 @@ namespace ice
         ice::WorldPortal& portal
     ) noexcept
     {
-        for (ice::Shard const& shard : ice::filter_span(frame.shards(), ice::shard_any_of<Shard_EntityDestroyed>))
-        {
-            ice::Entity entity;
-            if (ice::shard_inspect(shard, entity))
+        ice::shards::inspect_each<ice::Entity>(frame.shards(), Shard_EntityDestroyed,
+            [this](ice::Entity entity) noexcept
             {
                 b2Body* body = _world->GetBodyList();
                 while (body != nullptr)
@@ -180,7 +178,7 @@ namespace ice
                     body = next;
                 }
             }
-        }
+        );
 
         PhysicsQuery& phx_query = *portal.storage().named_object<PhysicsQuery>("ice.query.physics_data"_sid);
         PhysicsQuery::ResultByEntity phx_result = phx_query.result_by_entity(frame.allocator(), portal.entity_storage());

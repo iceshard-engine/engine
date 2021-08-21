@@ -168,8 +168,10 @@ namespace ice
                 commands
             );
 
-            ice::Shard const shards[]{ ice::Shard_DebugDrawCommand | command_list };
-            frame.push_shards(shards);
+            ice::shards::push_back(
+                frame.shards(),
+                ice::Shard_DebugDrawCommand | command_list
+            );
         }
     }
 

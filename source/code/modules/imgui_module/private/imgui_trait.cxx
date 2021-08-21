@@ -544,18 +544,12 @@ namespace ice::devui
 
         auto& io = ImGui::GetIO();
 
-        for (ice::Shard const& shard : frame.shards())
+        ice::vec2i window_size{ };
+        if (ice::shards::inspect_last(frame.shards(), ice::platform::Shard_WindowSizeChanged, window_size))
         {
-            if (shard == ice::platform::Shard_WindowSizeChanged)
-            {
-                ice::vec2i window_size{ };
-                if (ice::shard_inspect(shard, window_size))
-                {
-                    _display_size = { (ice::u32) window_size.x, (ice::u32) window_size.y };
-                    io.DisplaySize.x = _display_size.x;
-                    io.DisplaySize.y = _display_size.y;
-                }
-            }
+            _display_size = { (ice::u32)window_size.x, (ice::u32)window_size.y };
+            io.DisplaySize.x = _display_size.x;
+            io.DisplaySize.y = _display_size.y;
         }
 
         for (ice::platform::Event const& event : runner.platform_events())

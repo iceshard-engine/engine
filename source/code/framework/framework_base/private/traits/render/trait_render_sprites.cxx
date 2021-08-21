@@ -252,13 +252,10 @@ namespace ice
         ice::gfx::GfxDevice& gfx_device
     ) noexcept
     {
-        for (ice::Shard const& shard : engine_frame.shards())
+        ice::StringID_Hash camera_name;
+        if (ice::shards::inspect_last(engine_frame.shards(), ice::Shard_SetDefaultCamera, camera_name))
         {
-            ice::StringID_Hash camera_name;
-            if (shard == ice::Shard_SetDefaultCamera && ice::shard_inspect(shard, camera_name))
-            {
-                _render_camera = ice::StringID{ camera_name };
-            }
+            _render_camera = ice::StringID{ camera_name };
         }
 
         ice::render::Buffer const camera_buffer = ice::gfx::find_resource<ice::render::Buffer>(

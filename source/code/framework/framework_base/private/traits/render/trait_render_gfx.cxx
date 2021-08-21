@@ -212,20 +212,7 @@ namespace ice
         ice::gfx::GfxDevice& gfx_device
     ) noexcept
     {
-        ice::Span<ice::Shard const> shards = engine_frame.shards();
-
-        bool rebuild_renderpass = false;
-        auto result = std::find_if(shards.begin(), shards.end(), ice::shard_any_of<ice::platform::Shard_WindowSizeChanged>);
-        if (result != shards.end())
-        {
-            ice::vec2i new_size;
-            if (ice::shard_inspect(*result, new_size))
-            {
-                rebuild_renderpass = true;
-            }
-        }
-
-        if (rebuild_renderpass)
+        if (ice::shards::contains(engine_frame.shards(), ice::platform::Shard_WindowSizeChanged))
         {
             gfx_device.recreate_swapchain();
 
