@@ -169,15 +169,13 @@ void MyGame::on_app_startup(ice::Engine& engine, ice::gfx::GfxRunner& gfx_runner
 
     Action my_action;
     my_action.name = "test-action"_sid;
-    my_action.failure_shardid = "test-action/failure"_shardid;
-    my_action.success_shardid = "test-action/success"_shardid;
-    my_action.reset_shardid = "test-action/reset"_shardid;
     my_action.stage_count = 1;
     my_action.trigger_count = 3;
 
     ActionStage stages[]{
         ActionStage
         {
+            .stage_shardid = "event/player/can_jump_again"_shardid,
             .success_trigger_offset = 0,
             .success_trigger_count = 1,
             .failure_trigger_offset = 1,
@@ -374,20 +372,24 @@ void MyGame::on_update(ice::EngineFrame& frame, ice::EngineRunner& runner, ice::
         }
     }
 
-    _action_system->step_actions(frame);
+    _action_system->step_actions(frame.shards());
 
     using ice::operator""_shardid;
     for (ice::Shard const shard : frame.shards())
     {
-        if (shard == "test-action/success"_shardid)
+        if (shard == "event/player/can_jump_again"_shardid)
+        {
+            ICE_LOG(ice::LogSeverity::Debug, ice::LogTag::Game, "We can jump!");
+        }
+        if (shard == ice::action::Shard_ActionEventSuccess)
         {
             ICE_LOG(ice::LogSeverity::Debug, ice::LogTag::Game, "Success!");
         }
-        if (shard == "test-action/failure"_shardid)
+        if (shard == ice::action::Shard_ActionEventFailed)
         {
             ICE_LOG(ice::LogSeverity::Debug, ice::LogTag::Game, "Failure!");
         }
-        if (shard == "test-action/reset"_shardid)
+        if (shard == ice::action::Shard_ActionEventReset)
         {
             ICE_LOG(ice::LogSeverity::Debug, ice::LogTag::Game, "Reset!");
         }
