@@ -5,8 +5,14 @@
         <DisplayString Condition="name == 2878671717">Shard {{ action/entity/destroy }}</DisplayString>
         <DisplayString Condition="name == 2222547571">Shard {{ action/world/activate }}</DisplayString>
         <DisplayString Condition="name == 1865136619">Shard {{ action/world/deactivate }}</DisplayString>
+        <DisplayString Condition="name == 2653397447">Shard {{ event/action/failed }}</DisplayString>
+        <DisplayString Condition="name == 2071265310">Shard {{ event/action/reset }}</DisplayString>
+        <DisplayString Condition="name == 126348260">Shard {{ event/action/success }}</DisplayString>
         <DisplayString Condition="name == 4074741589">Shard {{ event/entity/created }}</DisplayString>
         <DisplayString Condition="name == 1994726566">Shard {{ event/entity/destroyed }}</DisplayString>
+        <DisplayString Condition="name == 2744387612">Shard {{ event/frame/tick }}</DisplayString>
+        <DisplayString Condition="name == 2408849273">Shard {{ event/input/axis }}</DisplayString>
+        <DisplayString Condition="name == 3721564947">Shard {{ event/input/button }}</DisplayString>
         <DisplayString Condition="name == 3371021896">Shard {{ event/window/size-changed }}</DisplayString>
         <DisplayString Condition="name == 647074787">Shard {{ test/shard }}</DisplayString>
         <DisplayString Condition="name == 517635588">Shard {{ test/shard2 }}</DisplayString>
