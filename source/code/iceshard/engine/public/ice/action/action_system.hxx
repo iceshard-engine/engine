@@ -1,6 +1,7 @@
 #pragma once
 #include <ice/stringid.hxx>
 #include <ice/unique_ptr.hxx>
+#include <ice/shard_container.hxx>
 #include <ice/engine_types.hxx>
 #include <ice/clock.hxx>
 
@@ -20,7 +21,7 @@ namespace ice::action
         ) noexcept = 0;
 
         virtual void step_actions(
-            ice::EngineFrame& frame
+            ice::ShardContainer& shards
         ) noexcept = 0;
     };
 

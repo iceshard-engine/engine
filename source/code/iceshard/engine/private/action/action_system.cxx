@@ -5,6 +5,7 @@
 #include <ice/engine_frame.hxx>
 
 #include <ice/memory/pointer_arithmetic.hxx>
+#include <ice/memory/scratch_allocator.hxx>
 #include <ice/pod/array.hxx>
 #include <ice/clock.hxx>
 
@@ -28,9 +29,7 @@ namespace ice::action
 
     struct ActionInstance
     {
-        ice::ShardID success_shardid;
-        ice::ShardID failure_shardid;
-        ice::ShardID reset_shardid;
+        ice::StringID name;
 
         ice::u32 stage_count;
         ice::u32 trigger_count;
@@ -79,9 +78,7 @@ namespace ice::action
             ice::memory::ptr_align_forward(stages + action.stage_count, alignof(ActionTriggerInstance))
         );
 
-        action_instance->success_shardid = action.success_shardid;
-        action_instance->failure_shardid = action.failure_shardid;
-        action_instance->reset_shardid = action.reset_shardid;
+        action_instance->name = action.name;
 
         action_instance->stage_count = action.stage_count;
         action_instance->trigger_count = action.trigger_count;
@@ -126,14 +123,16 @@ namespace ice::action
         ) noexcept override;
 
         void step_actions(
-            ice::EngineFrame& frame
+            ice::ShardContainer& shards
         ) noexcept override;
 
     private:
         ice::Allocator& _allocator;
+        ice::memory::ScratchAllocator _step_shards_alloc;
         ice::Clock const& _clock;
         ice::action::ActionTriggerDatabase& _trigger_database;
         ice::pod::Array<ice::action::ActionInstance*> _actions;
+
     };
 
     SimpleActionSystem::SimpleActionSystem(
@@ -142,6 +141,7 @@ namespace ice::action
         ice::action::ActionTriggerDatabase& trigger_database
     ) noexcept
         : _allocator{ alloc }
+        , _step_shards_alloc{ alloc, 70 * sizeof(ice::Shard) }
         , _clock{ clock }
         , _trigger_database{ trigger_database }
         , _actions{ alloc }
@@ -173,10 +173,11 @@ namespace ice::action
     }
 
     void SimpleActionSystem::step_actions(
-        ice::EngineFrame& frame
+        ice::ShardContainer& shards
     ) noexcept
     {
-        ice::ShardContainer& shards = frame.shards();
+        ice::ShardContainer new_shards{ _step_shards_alloc };
+        ice::shards::reserve(new_shards, 64);
 
         for (ActionInstance* const action : _actions)
         {
@@ -211,7 +212,14 @@ namespace ice::action
 
             if (action->state == ActionState::Active)
             {
-                ice::shards::push_back(shards, ice::shard_create(action->reset_shardid));
+                ice::StringID_Hash action_name = ice::stringid_hash(action->name);
+                ice::shards::push_back(new_shards, ice::action::Shard_ActionEventReset | action_name);
+
+                current_stage = stages + action->current_stage_idx;
+                if (current_stage->stage_shardid != ice::ShardID_Invalid)
+                {
+                    ice::shards::push_back(new_shards, ice::shard_create(current_stage->stage_shardid) | action_name);
+                }
             }
         }
 
@@ -270,6 +278,11 @@ namespace ice::action
                                 current_stage += 1;
                                 failure_trigger = triggers + current_stage->failure_trigger_offset + action->current_failure_trigger_idx;
                                 success_trigger = triggers + current_stage->success_trigger_offset + action->current_success_trigger_idx;
+
+                                if (current_stage->stage_shardid != ice::ShardID_Invalid)
+                                {
+                                    ice::shards::push_back(new_shards, ice::shard_create(current_stage->stage_shardid) | ice::stringid_hash(action->name));
+                                }
                             }
                         }
                         else
@@ -285,13 +298,15 @@ namespace ice::action
         {
             if (action->state == ActionState::FinishedSuccess)
             {
-                ice::shards::push_back(shards, ice::shard_create(action->success_shardid));
+                ice::shards::push_back(new_shards, ice::action::Shard_ActionEventSuccess | ice::stringid_hash(action->name));
             }
             else if (action->state == ActionState::FinishedFailure)
             {
-                ice::shards::push_back(shards, ice::shard_create(action->failure_shardid));
+                ice::shards::push_back(new_shards, ice::action::Shard_ActionEventFailed | ice::stringid_hash(action->name));
             }
         }
+
+        ice::shards::push_back(shards, new_shards);
     }
 
     auto create_action_system(

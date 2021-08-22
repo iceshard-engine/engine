@@ -5,8 +5,14 @@
 namespace ice::action
 {
 
+    static constexpr ice::Shard Shard_ActionEventSuccess = "event/action/success"_shard;
+    static constexpr ice::Shard Shard_ActionEventFailed = "event/action/failed"_shard;
+    static constexpr ice::Shard Shard_ActionEventReset = "event/action/reset"_shard;
+
     struct ActionStage
     {
+        ice::ShardID stage_shardid;
+
         ice::u32 success_trigger_offset;
         ice::u32 success_trigger_count;
 
@@ -25,10 +31,6 @@ namespace ice::action
     struct Action
     {
         ice::StringID name;
-
-        ice::ShardID success_shardid;
-        ice::ShardID failure_shardid;
-        ice::ShardID reset_shardid;
 
         ice::u32 stage_count;
         ice::u32 trigger_count;
