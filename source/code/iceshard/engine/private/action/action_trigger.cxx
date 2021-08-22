@@ -1,6 +1,7 @@
 #include <ice/action/action_trigger.hxx>
 #include <ice/input/input_event.hxx>
 #include <ice/input/input_controller.hxx>
+#include <ice/pod/hash.hxx>
 
 namespace ice::action
 {
@@ -77,108 +78,107 @@ namespace ice::action
 
     } // namespace detail
 
+    class SimpleTriggerDatabase : public ice::action::ActionTriggerDatabase
+    {
+    public:
+        SimpleTriggerDatabase(ice::Allocator& alloc) noexcept;
+
+        void add_trigger(
+            ice::StringID_Arg name,
+            ice::action::ActionTriggerDefinition trigger_info
+        ) noexcept override;
+
+        auto get_trigger(
+            ice::StringID_Arg name
+        ) const noexcept -> ice::action::ActionTriggerDefinition override;
+
+    private:
+        ice::pod::Hash<ice::action::ActionTriggerDefinition> _triggers;
+    };
+
+    SimpleTriggerDatabase::SimpleTriggerDatabase(ice::Allocator& alloc) noexcept
+        : _triggers{ alloc }
+    {
+    }
+
+    void SimpleTriggerDatabase::add_trigger(ice::StringID_Arg name, ice::action::ActionTriggerDefinition trigger_info) noexcept
+    {
+        ice::pod::hash::set(_triggers, ice::hash(name), trigger_info);
+    }
+
+    auto SimpleTriggerDatabase::get_trigger(ice::StringID_Arg name) const noexcept -> ice::action::ActionTriggerDefinition
+    {
+        return ice::pod::hash::get(_triggers, ice::hash(name), ActionTriggerDefinition{ ice::ShardID_Invalid });
+    }
+
+    auto create_trigger_database(
+        ice::Allocator& alloc
+    ) noexcept -> ice::UniquePtr<ice::action::ActionTriggerDatabase>
+    {
+        return ice::make_unique<ActionTriggerDatabase, SimpleTriggerDatabase>(alloc, alloc);
+    }
+
     void setup_common_triggers(
         ice::action::ActionTriggerDatabase& database
     ) noexcept
     {
         database.add_trigger(
             "trigger.success"_sid,
-            ActionTrigger{
-                .trigger_shardid = ice::ShardID_Invalid,
+            ActionTriggerDefinition{
+                .trigger_shardid = "abstract/always"_shardid,
                 .trigger_handler = detail::trigger_success
             }
         );
         database.add_trigger(
             "trigger.failure"_sid,
-            ActionTrigger{
-                .trigger_shardid = ice::ShardID_Invalid,
+            ActionTriggerDefinition{
+                .trigger_shardid = "abstract/always"_shardid,
                 .trigger_handler = detail::trigger_failure
             }
         );
         database.add_trigger(
             "trigger.elapsed-time"_sid,
-            ActionTrigger{
-                .trigger_shardid = "event/frame/new-frame"_shardid,
+            ActionTriggerDefinition{
+                .trigger_shardid = "event/tick"_shardid,
                 .trigger_handler = detail::trigger_time_elapsed
             }
         );
         database.add_trigger(
             "trigger.action-success"_sid,
-            ActionTrigger{
+            ActionTriggerDefinition{
                 .trigger_shardid = "event/action/success"_shardid,
                 .trigger_handler = detail::trigger_check_action
             }
         );
         database.add_trigger(
             "trigger.action-no-success"_sid,
-            ActionTrigger{
+            ActionTriggerDefinition{
                 .trigger_shardid = "event/action/no-success"_shardid,
                 .trigger_handler = detail::trigger_check_action
             }
         );
         database.add_trigger(
             "trigger.action-input-button"_sid,
-            ActionTrigger{
+            ActionTriggerDefinition{
                 .trigger_shardid = "event/input/button"_shardid,
                 .trigger_handler = detail::trigger_input_button
             }
         );
         database.add_trigger(
             "trigger.action-input-axis-above"_sid,
-            ActionTrigger{
-                .trigger_shardid = "event/input/axis-above"_shardid,
+            ActionTriggerDefinition{
+                .trigger_shardid = "event/input/axis"_shardid,
                 .trigger_handler = detail::trigger_input_axis_above
             }
         );
         database.add_trigger(
             "trigger.action-input-axis-below"_sid,
-            ActionTrigger{
-                .trigger_shardid = "event/input/axis-below"_shardid,
+            ActionTriggerDefinition{
+                .trigger_shardid = "event/input/axis"_shardid,
                 .trigger_handler = detail::trigger_input_axis_below
             }
         );
 
-        //database.add_trigger_definition("trigger.action-success"_sid,
-        //    ActionTriggerDefinition{
-        //        .event = ActionTriggerEvent::ActionEvent,
-        //        .func = detail::trigger_action_success
-        //    }
-        //);
-
-        //database.add_trigger_definition("trigger.action-not-success"_sid,
-        //    ActionTriggerDefinition{
-        //        .event = ActionTriggerEvent::ActionEvent,
-        //        .func = detail::trigger_action_not_success
-        //    }
-        //);
-
-        //database.add_trigger_definition("trigger.button-pressed"_sid,
-        //    ActionTriggerDefinition{
-        //        .event = ActionTriggerEvent::InputEvent,
-        //        .func = detail::trigger_button_pressed
-        //    }
-        //);
-
-        //database.add_trigger_definition("trigger.button-released"_sid,
-        //    ActionTriggerDefinition{
-        //        .event = ActionTriggerEvent::InputEvent,
-        //        .func = detail::trigger_button_released
-        //    }
-        //);
-
-        //database.add_trigger_definition("trigger.button-clicked"_sid,
-        //    ActionTriggerDefinition{
-        //        .event = ActionTriggerEvent::InputEvent,
-        //        .func = detail::trigger_button_clicked
-        //    }
-        //);
-
-        //database.add_trigger_definition("trigger.button-hold"_sid,
-        //    ActionTriggerDefinition{
-        //        .event = ActionTriggerEvent::InputEvent,
-        //        .func = detail::trigger_button_hold
-        //    }
-        //);
     }
 
 } // namespace ice::action

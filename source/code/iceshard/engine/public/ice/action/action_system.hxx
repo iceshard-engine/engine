@@ -1,10 +1,13 @@
 #pragma once
 #include <ice/stringid.hxx>
+#include <ice/unique_ptr.hxx>
+#include <ice/engine_types.hxx>
+#include <ice/clock.hxx>
 
 namespace ice::action
 {
 
-    struct ActionDefinition;
+    struct Action;
 
     class ActionSystem
     {
@@ -13,8 +16,20 @@ namespace ice::action
 
         virtual void create_action(
             ice::StringID_Arg action_name,
-            ice::action::ActionDefinition const& action_definition
+            ice::action::Action const& action
+        ) noexcept = 0;
+
+        virtual void step_actions(
+            ice::EngineFrame& frame
         ) noexcept = 0;
     };
+
+    class ActionTriggerDatabase;
+
+    auto create_action_system(
+        ice::Allocator& alloc,
+        ice::Clock const& clock,
+        ice::action::ActionTriggerDatabase& triggers
+    ) noexcept -> ice::UniquePtr<ice::action::ActionSystem>;
 
 } // namespace ice::action

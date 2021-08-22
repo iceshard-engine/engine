@@ -5,18 +5,8 @@
 namespace ice::action
 {
 
-    struct ActionTriggerDefinition
+    struct ActionStage
     {
-        ice::StringID name;
-        ice::Shard user_shard;
-    };
-
-    struct ActionStageDefinition
-    {
-        ice::ShardID success_shardid;
-        ice::ShardID failure_shardid;
-        ice::ShardID reset_shardid;
-
         ice::u32 success_trigger_offset;
         ice::u32 success_trigger_count;
 
@@ -26,14 +16,24 @@ namespace ice::action
         ice::u32 reset_trigger_offset;
     };
 
-    struct ActionDefinition
+    struct ActionTrigger
+    {
+        ice::StringID name;
+        ice::Shard user_shard;
+    };
+
+    struct Action
     {
         ice::StringID name;
 
+        ice::ShardID success_shardid;
+        ice::ShardID failure_shardid;
+        ice::ShardID reset_shardid;
+
         ice::u32 stage_count;
         ice::u32 trigger_count;
-        ice::action::ActionStageDefinition const* stages;
-        ice::action::ActionTriggerDefinition const* triggers;
+        ice::action::ActionStage const* stages;
+        ice::action::ActionTrigger const* triggers;
     };
 
 } // namespace ice::action

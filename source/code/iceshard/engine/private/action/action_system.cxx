@@ -1,0 +1,307 @@
+#pragma once
+#include <ice/action/action.hxx>
+#include <ice/action/action_trigger.hxx>
+#include <ice/action/action_system.hxx>
+#include <ice/engine_frame.hxx>
+
+#include <ice/memory/pointer_arithmetic.hxx>
+#include <ice/pod/array.hxx>
+#include <ice/clock.hxx>
+
+namespace ice::action
+{
+
+    enum class ActionState : ice::u32
+    {
+        Idle,
+        Active,
+        FinishedSuccess,
+        FinishedFailure,
+    };
+
+    struct ActionTriggerInstance
+    {
+        ice::Shard user_shard;
+        ice::ShardID trigger_shardid;
+        ice::action::ActionTriggerHandler* handler;
+    };
+
+    struct ActionInstance
+    {
+        ice::ShardID success_shardid;
+        ice::ShardID failure_shardid;
+        ice::ShardID reset_shardid;
+
+        ice::u32 stage_count;
+        ice::u32 trigger_count;
+
+        ice::u32 current_stage_idx;
+        ice::u32 current_failure_trigger_idx;
+        ice::u32 current_success_trigger_idx;
+
+        ice::Timeline stage_timeline;
+
+        ice::action::ActionState state;
+        ice::action::ActionStage const* stages;
+        ice::action::ActionTriggerInstance const* trigger_instances;
+    };
+
+    auto create_action_instance(
+        ice::Allocator& alloc,
+        ice::action::ActionTriggerDatabase& triggers,
+        ice::action::Action const& action
+    ) noexcept -> ice::action::ActionInstance*
+    {
+        bool has_all_triggers = true;
+        for (ice::u32 idx = 0; idx < action.trigger_count; ++idx)
+        {
+            has_all_triggers &= triggers.get_trigger(action.triggers[idx].name).trigger_shardid != ice::ShardID_Invalid;
+        }
+
+        if (has_all_triggers == false)
+        {
+            return nullptr;
+        }
+
+        ice::u32 instance_byte_size = sizeof(ActionInstance);
+        instance_byte_size += action.stage_count * sizeof(ActionStage) + alignof(ActionStage);
+        //instance_byte_size += action.trigger_count * sizeof(ActionTrigger) + alignof(ActionTrigger);
+        instance_byte_size += action.trigger_count * sizeof(ActionTriggerInstance) + alignof(ActionTriggerInstance);
+
+        ActionInstance* action_instance = reinterpret_cast<ActionInstance*>(alloc.allocate(instance_byte_size, alignof(ActionInstance)));
+        ActionStage* stages = reinterpret_cast<ActionStage*>(
+            ice::memory::ptr_align_forward(action_instance + 1, alignof(ActionStage))
+        );
+        //ActionTrigger* triggers = reinterpret_cast<ActionTrigger*>(
+        //    ice::memory::ptr_align_forward(stages + action.stage_count, alignof(ActionTrigger))
+        //);
+        ActionTriggerInstance* trigger_instances = reinterpret_cast<ActionTriggerInstance*>(
+            ice::memory::ptr_align_forward(stages + action.stage_count, alignof(ActionTriggerInstance))
+        );
+
+        action_instance->success_shardid = action.success_shardid;
+        action_instance->failure_shardid = action.failure_shardid;
+        action_instance->reset_shardid = action.reset_shardid;
+
+        action_instance->stage_count = action.stage_count;
+        action_instance->trigger_count = action.trigger_count;
+
+        action_instance->current_stage_idx = 0;
+        action_instance->current_failure_trigger_idx = 0;
+        action_instance->current_success_trigger_idx = 0;
+
+        action_instance->state = ActionState::Active;
+        action_instance->stages = stages;
+        action_instance->trigger_instances = trigger_instances;
+
+        for (ice::u32 idx = 0; idx < action.stage_count; ++idx)
+        {
+            stages[idx] = action.stages[idx];
+        }
+
+        for (ice::u32 idx = 0; idx < action.trigger_count; ++idx)
+        {
+            ActionTriggerDefinition trigger_def = triggers.get_trigger(action.triggers[idx].name);
+            trigger_instances[idx].user_shard = action.triggers[idx].user_shard;
+            trigger_instances[idx].handler = trigger_def.trigger_handler;
+            trigger_instances[idx].trigger_shardid = trigger_def.trigger_shardid;
+        }
+
+        return action_instance;
+    }
+
+    class SimpleActionSystem : public ice::action::ActionSystem
+    {
+    public:
+        SimpleActionSystem(
+            ice::Allocator& alloc,
+            ice::Clock const& clock,
+            ice::action::ActionTriggerDatabase& trigger_database
+        ) noexcept;
+        ~SimpleActionSystem() noexcept override;
+
+        void create_action(
+            ice::StringID_Arg action_name,
+            ice::action::Action const& action
+        ) noexcept override;
+
+        void step_actions(
+            ice::EngineFrame& frame
+        ) noexcept override;
+
+    private:
+        ice::Allocator& _allocator;
+        ice::Clock const& _clock;
+        ice::action::ActionTriggerDatabase& _trigger_database;
+        ice::pod::Array<ice::action::ActionInstance*> _actions;
+    };
+
+    SimpleActionSystem::SimpleActionSystem(
+        ice::Allocator& alloc,
+        ice::Clock const& clock,
+        ice::action::ActionTriggerDatabase& trigger_database
+    ) noexcept
+        : _allocator{ alloc }
+        , _clock{ clock }
+        , _trigger_database{ trigger_database }
+        , _actions{ alloc }
+    {
+    }
+
+    SimpleActionSystem::~SimpleActionSystem() noexcept
+    {
+        for (ActionInstance* action : _actions)
+        {
+            _allocator.destroy(action);
+        }
+    }
+
+    void SimpleActionSystem::create_action(
+        ice::StringID_Arg action_name,
+        ice::action::Action const& action
+    ) noexcept
+    {
+        ActionInstance* instance = create_action_instance(_allocator, _trigger_database, action);
+        if (instance != nullptr)
+        {
+            instance->stage_timeline = ice::timeline::create_timeline(_clock);
+            ice::pod::array::push_back(
+                _actions,
+                instance
+            );
+        }
+    }
+
+    void SimpleActionSystem::step_actions(
+        ice::EngineFrame& frame
+    ) noexcept
+    {
+        ice::ShardContainer& shards = frame.shards();
+
+        for (ActionInstance* const action : _actions)
+        {
+            if (action->state == ActionState::Active)
+            {
+                continue;
+            }
+            else if (action->state != ActionState::Idle)
+            {
+                action->stage_timeline = ice::timeline::create_timeline(_clock);
+            }
+
+            action->state = ActionState::Idle;
+
+            ActionStage const* const stages = action->stages;
+            ActionTriggerInstance const* const triggers = action->trigger_instances;
+
+            ActionStage const* current_stage = stages + action->current_stage_idx;
+            ActionTriggerInstance const* reset_trigger = triggers + current_stage->reset_trigger_offset;
+
+            for (ice::Shard const shard : shards)
+            {
+                if (reset_trigger->handler(reset_trigger->user_shard, shard, ice::timeline::elapsed(action->stage_timeline)))
+                {
+                    action->current_stage_idx = 0;
+                    action->current_failure_trigger_idx = 0;
+                    action->current_success_trigger_idx = 0;
+                    action->state = ActionState::Active;
+                    break;
+                }
+            }
+
+            if (action->state == ActionState::Active)
+            {
+                ice::shards::push_back(shards, ice::shard_create(action->reset_shardid));
+            }
+        }
+
+        for (ActionInstance* const action : _actions)
+        {
+            if (action->state != ActionState::Active)
+            {
+                continue;
+            }
+
+            ActionStage const* const stages = action->stages;
+            ActionTriggerInstance const* const triggers = action->trigger_instances;
+
+            ActionStage const* current_stage = stages + action->current_stage_idx;
+            ActionTriggerInstance const* failure_trigger = triggers + current_stage->failure_trigger_offset + action->current_failure_trigger_idx;
+            ActionTriggerInstance const* success_trigger = triggers + current_stage->success_trigger_offset + action->current_success_trigger_idx;
+
+            ice::f32 const stage_elapsed_time = ice::timeline::elapsed(action->stage_timeline);
+
+            for (ice::Shard const shard : shards)
+            {
+                if (current_stage->failure_trigger_count > 0 && shard == failure_trigger->trigger_shardid)
+                {
+                    if (failure_trigger->handler(failure_trigger->user_shard, shard, stage_elapsed_time))
+                    {
+                        action->current_failure_trigger_idx += 1;
+                        if (action->current_failure_trigger_idx == current_stage->failure_trigger_count)
+                        {
+                            action->state = ActionState::FinishedFailure;
+                        }
+                        else
+                        {
+                            failure_trigger += 1;
+                        }
+                    }
+                }
+
+                if (action->state == ActionState::Active && shard == success_trigger->trigger_shardid)
+                {
+                    if (success_trigger->handler(success_trigger->user_shard, shard, stage_elapsed_time))
+                    {
+                        action->current_success_trigger_idx += 1;
+                        if (action->current_success_trigger_idx == current_stage->success_trigger_count)
+                        {
+                            if ((action->current_stage_idx + 1) == action->stage_count)
+                            {
+                                action->state = ActionState::FinishedSuccess;
+                            }
+                            else
+                            {
+                                action->current_stage_idx += 1;
+                                action->current_failure_trigger_idx = 0;
+                                action->current_success_trigger_idx = 0;
+                                action->stage_timeline = ice::timeline::create_timeline(_clock);
+
+                                current_stage += 1;
+                                failure_trigger = triggers + current_stage->failure_trigger_offset + action->current_failure_trigger_idx;
+                                success_trigger = triggers + current_stage->success_trigger_offset + action->current_success_trigger_idx;
+                            }
+                        }
+                        else
+                        {
+                            success_trigger += 1;
+                        }
+                    }
+                }
+            }
+        }
+
+        for (ActionInstance* const action : _actions)
+        {
+            if (action->state == ActionState::FinishedSuccess)
+            {
+                ice::shards::push_back(shards, ice::shard_create(action->success_shardid));
+            }
+            else if (action->state == ActionState::FinishedFailure)
+            {
+                ice::shards::push_back(shards, ice::shard_create(action->failure_shardid));
+            }
+        }
+    }
+
+    auto create_action_system(
+        ice::Allocator& alloc,
+        ice::Clock const& clock,
+        ice::action::ActionTriggerDatabase& triggers
+    ) noexcept -> ice::UniquePtr<ice::action::ActionSystem>
+    {
+        return ice::make_unique<ice::action::ActionSystem, ice::action::SimpleActionSystem>(alloc, alloc, clock, triggers);
+    }
+
+} // namespace ice::action
+;
