@@ -1,5 +1,6 @@
 #pragma once
 #include <ice/input/device_handle.hxx>
+#include <ice/shard.hxx>
 #include <ice/hash.hxx>
 
 namespace ice::input
@@ -137,3 +138,6 @@ constexpr inline auto ice::hash<ice::input::InputID>(ice::input::InputID value) 
 {
     return static_cast<ice::u64>(value);
 }
+
+template<>
+static constexpr ice::PayloadID ice::detail::Constant_ShardPayloadID<ice::input::InputEvent> = ice::payload_id("ice::input::InputEvent");
