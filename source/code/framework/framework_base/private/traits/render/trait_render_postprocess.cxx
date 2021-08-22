@@ -194,9 +194,10 @@ namespace ice
     {
         IPT_ZONE_SCOPED_NAMED("[Trait] PostProcess :: Update");
 
-        for (ice::Shard const& shard : ice::filter_span(engine_frame.shards(), ice::any_of<ice::platform::Shard_WindowSizeChanged>))
+        if (ice::shards::contains(engine_frame.shards(), ice::platform::Shard_WindowSizeChanged))
         {
-            update_resources(gfx_device);
+            gfx_cleanup(gfx_frame, gfx_device);
+            gfx_setup(gfx_frame, gfx_device);
         }
 
         gfx_frame.set_stage_slot(_stage_name, this);

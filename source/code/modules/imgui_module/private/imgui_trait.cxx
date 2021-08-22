@@ -107,10 +107,12 @@ namespace ice::devui
         _shaders[0] = device.create_shader(ShaderInfo{ .shader_data = _shader_data[0] });
         _shaders[1] = device.create_shader(ShaderInfo{ .shader_data = _shader_data[1] });
 
-        SamplerInfo sampler_info{
+        SamplerInfo sampler_info
+        {
             .min_filter = SamplerFilter::Nearest,
             .mag_filter = SamplerFilter::Nearest,
-            .address_mode = {
+            .address_mode =
+            {
                 .u = SamplerAddressMode::ClampToEdge,
                 .v = SamplerAddressMode::ClampToEdge,
                 .w = SamplerAddressMode::ClampToEdge,
@@ -120,7 +122,8 @@ namespace ice::devui
 
         _sampler = device.create_sampler(sampler_info);
 
-        ResourceSetLayoutBinding const resource_bindings[]{
+        ResourceSetLayoutBinding const resource_bindings[]
+        {
             ResourceSetLayoutBinding
             {
                 .binding_index = 1,
@@ -148,7 +151,8 @@ namespace ice::devui
         //_resource_layout[1] = device.create_resourceset_layout({ resource_bindings + 2, 2 });
         device.create_resourcesets(resource_layouts, _resources);
 
-        ResourceUpdateInfo resource_update[]{
+        ResourceUpdateInfo resource_update[]
+        {
             ResourceUpdateInfo
             {
                 .sampler = _sampler
@@ -159,15 +163,18 @@ namespace ice::devui
             },
         };
 
-        ResourceSetUpdateInfo update_infos[]{
-            ResourceSetUpdateInfo{
+        ResourceSetUpdateInfo update_infos[]
+        {
+            ResourceSetUpdateInfo
+            {
                 .resource_set = _resources[0],
                 .resource_type = ResourceType::Sampler,
                 .binding_index = 1,
                 .array_element = 0,
                 .resources = { resource_update + 0, 1 }
             },
-            ResourceSetUpdateInfo{
+            ResourceSetUpdateInfo
+            {
                 .resource_set = _resources[0],
                 .resource_type = ResourceType::SampledImage,
                 .binding_index = 2,
@@ -178,7 +185,8 @@ namespace ice::devui
 
         device.update_resourceset(update_infos);
 
-        PipelinePushConstant const push_constants[]{
+        PipelinePushConstant const push_constants[]
+        {
             PipelinePushConstant
             {
                 .shader_stage_flags = ShaderStageFlags::VertexStage,
@@ -194,26 +202,32 @@ namespace ice::devui
 
         _pipeline_layout = device.create_pipeline_layout(layout_info);
 
-        ShaderInputAttribute attribs[]{
-            ShaderInputAttribute{
+        ShaderInputAttribute attribs[]
+        {
+            ShaderInputAttribute
+            {
                 .location = 0,
                 .offset = 0,
                 .type = ShaderAttribType::Vec2f
             },
-            ShaderInputAttribute{
+            ShaderInputAttribute
+            {
                 .location = 1,
                 .offset = 8,
                 .type = ShaderAttribType::Vec2f
             },
-            ShaderInputAttribute{
+            ShaderInputAttribute
+            {
                 .location = 2,
                 .offset = 16,
                 .type = ShaderAttribType::Vec4f_Unorm8
             },
         };
 
-        ShaderInputBinding bindings[]{
-            ShaderInputBinding{
+        ShaderInputBinding bindings[]
+        {
+            ShaderInputBinding
+            {
                 .binding = 0,
                 .stride = sizeof(ImDrawVert),
                 .instanced = false,
@@ -264,11 +278,13 @@ namespace ice::devui
                 image_data_size
             );
 
-            ice::render::BufferUpdateInfo updates[]{
+            ice::render::BufferUpdateInfo updates[]
+            {
                 ice::render::BufferUpdateInfo
                 {
                     .buffer = data_buffer,
-                    .data = {
+                    .data =
+                    {
                         .location = image_info.data,
                         .size = image_data_size,
                         .alignment = 4
@@ -375,7 +391,8 @@ namespace ice::devui
 
         ImTextureID last_texid = nullptr; // ImGui::GetIO().tex
         ice::u32 next_resource_idx = 1;
-        ResourceUpdateInfo resource_update[]{
+        ResourceUpdateInfo resource_update[]
+        {
             ResourceUpdateInfo
             {
                 .sampler = _sampler
@@ -386,14 +403,17 @@ namespace ice::devui
             },
         };
 
-        ResourceSetUpdateInfo resource_set_update[]{
-            ResourceSetUpdateInfo{
+        ResourceSetUpdateInfo resource_set_update[]
+        {
+            ResourceSetUpdateInfo
+            {
                 .resource_type = ResourceType::Sampler,
                 .binding_index = 1,
                 .array_element = 0,
                 .resources = { resource_update + 0, 1 }
             },
-            ResourceSetUpdateInfo{
+            ResourceSetUpdateInfo
+            {
                 .resource_type = ResourceType::SampledImage,
                 .binding_index = 2,
                 .array_element = 0,
@@ -523,6 +543,15 @@ namespace ice::devui
         using ice::input::MouseInput;
 
         auto& io = ImGui::GetIO();
+
+        ice::vec2i window_size{ };
+        if (ice::shards::inspect_last(frame.shards(), ice::platform::Shard_WindowSizeChanged, window_size))
+        {
+            _display_size = { (ice::u32)window_size.x, (ice::u32)window_size.y };
+            io.DisplaySize.x = _display_size.x;
+            io.DisplaySize.y = _display_size.y;
+        }
+
         for (ice::platform::Event const& event : runner.platform_events())
         {
             if (event.type == ice::platform::EventType::InputText)

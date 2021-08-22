@@ -210,8 +210,10 @@ namespace ice
                 {
                     index.destroy(entity);
 
-                    ice::Shard const shards[1]{ command >> Shard_EntityDestroyed };
-                    _current_frame->push_shards(shards);
+                    ice::shards::push_back(
+                        _current_frame->shards(),
+                        command >> Shard_EntityDestroyed
+                    );
                 }
             }
         }
@@ -223,8 +225,10 @@ namespace ice
                 // Force wait for the graphics frame to finish!
                 _mre_graphics_frame.wait();
 
-                ice::Shard const shards[1]{ ice::platform::Shard_WindowSizeChanged | ev.data.window.size };
-                _current_frame->push_shards(shards);
+                ice::shards::push_back(
+                    _current_frame->shards(),
+                    ice::platform::Shard_WindowSizeChanged | ev.data.window.size
+                );
             }
         }
 

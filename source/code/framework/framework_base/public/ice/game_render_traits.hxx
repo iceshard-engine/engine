@@ -65,7 +65,4 @@ namespace ice
 } // namespace ice
 
 template<>
-constexpr ice::u32 ice::detail::Constant_ShardPayloadID<ice::StringID_Hash> = ice::hash32("ice::StringID_Hash");
-
-template<>
-constexpr ice::u32 ice::detail::Constant_ShardPayloadID<ice::DebugDrawCommandList const*> = ice::hash32("ice::DebugDrawCommandList const*");
+constexpr ice::PayloadID ice::detail::Constant_ShardPayloadID<ice::DebugDrawCommandList const*> = ice::payload_id("ice::DebugDrawCommandList const*");

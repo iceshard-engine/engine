@@ -275,7 +275,10 @@ void MyGame::on_game_begin(ice::EngineRunner& runner) noexcept
         ice::Shard_WorldActivate | _render_world,
         ice::Shard_SetDefaultCamera | "camera.default"_sid_hash
     };
-    runner.current_frame().push_shards(shards);
+    ice::shards::push_back(
+        runner.current_frame().shards(),
+        shards
+    );
 }
 
 void MyGame::on_game_end() noexcept
@@ -300,16 +303,16 @@ void MyGame::on_update(ice::EngineFrame& frame, ice::EngineRunner& runner, ice::
 
     if (was_active == true && _active == false)
     {
-        ice::Shard shards[]{
+        ice::shards::push_back(
+            runner.current_frame().shards(),
             ice::Shard_WorldDeactivate | _test_world
-        };
-        runner.current_frame().push_shards(shards);
+        );
     }
     else if (was_active == false && _active == true)
     {
-        ice::Shard shards[]{
+        ice::shards::push_back(
+            runner.current_frame().shards(),
             ice::Shard_WorldActivate | _test_world
-        };
-        runner.current_frame().push_shards(shards);
+        );
     }
 }

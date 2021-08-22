@@ -6,7 +6,7 @@
 namespace ice
 {
 
-    static constexpr ice::f32 Constant_PixelsInMeter = 96.f;
+    static constexpr ice::f32 Constant_PixelsInMeter = 64.f;
 
     enum class PhysicsID : ice::u64
     {

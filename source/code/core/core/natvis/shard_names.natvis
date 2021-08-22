@@ -1,38 +1,47 @@
 <?xml version="1.0" encoding="utf-8"?>
 <AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
     <Type Name="ice::Shard">
+        <DisplayString Condition="name == 2824422235">Shard {{ action/camera/set-default }}</DisplayString>
         <DisplayString Condition="name == 2878671717">Shard {{ action/entity/destroy }}</DisplayString>
         <DisplayString Condition="name == 2222547571">Shard {{ action/world/activate }}</DisplayString>
-        <DisplayString Condition="name == 517635588">Shard {{ test/shard2 }}</DisplayString>
-        <DisplayString Condition="name == 647074787">Shard {{ test/shard }}</DisplayString>
+        <DisplayString Condition="name == 1865136619">Shard {{ action/world/deactivate }}</DisplayString>
         <DisplayString Condition="name == 4074741589">Shard {{ event/entity/created }}</DisplayString>
         <DisplayString Condition="name == 1994726566">Shard {{ event/entity/destroyed }}</DisplayString>
-        <DisplayString Condition="name == 1865136619">Shard {{ action/world/deactivate }}</DisplayString>
         <DisplayString Condition="name == 3371021896">Shard {{ event/window/size-changed }}</DisplayString>
-        <DisplayString Condition="name == 2824422235">Shard {{ action/camera/set-default }}</DisplayString>
+        <DisplayString Condition="name == 647074787">Shard {{ test/shard }}</DisplayString>
+        <DisplayString Condition="name == 517635588">Shard {{ test/shard2 }}</DisplayString>
         <DisplayString>Shard {{ {name,h}, unknown_name }}</DisplayString>
         <Expand>
             <Synthetic Name="[payload type]">
-                <DisplayString Condition="payload_id == 1753932510">ice::i64</DisplayString>
-                <DisplayString Condition="payload_id == 1506352867">ice::World*</DisplayString>
-                <DisplayString Condition="payload_id == 3725678933">ice::u32</DisplayString>
-                <DisplayString Condition="payload_id == 1997334060">ice::StringID_Hash</DisplayString>
                 <DisplayString Condition="payload_id == 1622554074">ice::Entity</DisplayString>
-                <DisplayString Condition="payload_id == 2445304050">ice::math::vec2u</DisplayString>
+                <DisplayString Condition="payload_id == 1997334060">ice::StringID_Hash</DisplayString>
+                <DisplayString Condition="payload_id == 1506352867">ice::World*</DisplayString>
+                <DisplayString Condition="payload_id == 3403308880">ice::f32</DisplayString>
+                <DisplayString Condition="payload_id == 1583352821">ice::f64</DisplayString>
                 <DisplayString Condition="payload_id == 2511786707">ice::i32</DisplayString>
-                <DisplayString Condition="payload_id == 3035887879">ice::u64</DisplayString>
+                <DisplayString Condition="payload_id == 1753932510">ice::i64</DisplayString>
+                <DisplayString Condition="payload_id == 3430340776">ice::input::InputID</DisplayString>
+                <DisplayString Condition="payload_id == 3972990833">ice::math::vec2f</DisplayString>
                 <DisplayString Condition="payload_id == 983740932">ice::math::vec2i</DisplayString>
+                <DisplayString Condition="payload_id == 2445304050">ice::math::vec2u</DisplayString>
+                <DisplayString Condition="payload_id == 3725678933">ice::u32</DisplayString>
+                <DisplayString Condition="payload_id == 3035887879">ice::u64</DisplayString>
+                <DisplayString Condition="payload_id == 0">{payload_id}, type_not_set</DisplayString>
                 <DisplayString>{payload_id}, unknown_type</DisplayString>
             </Synthetic>
-            <Item Name="[payload]" Optional="true" Condition="payload_id == 1753932510">*(ice::i64*)&amp;payload</Item>
-            <Item Name="[payload]" Optional="true" Condition="payload_id == 1506352867">*(ice::World**)&amp;payload</Item>
-            <Item Name="[payload]" Optional="true" Condition="payload_id == 3725678933">*(ice::u32*)&amp;payload</Item>
-            <Item Name="[payload]" Optional="true" Condition="payload_id == 1997334060">*(ice::StringID_Hash*)&amp;payload</Item>
             <Item Name="[payload]" Optional="true" Condition="payload_id == 1622554074">*(ice::Entity*)&amp;payload</Item>
-            <Item Name="[payload]" Optional="true" Condition="payload_id == 2445304050">*(ice::math::vec2u*)&amp;payload</Item>
+            <Item Name="[payload]" Optional="true" Condition="payload_id == 1997334060">*(ice::StringID_Hash*)&amp;payload</Item>
+            <Item Name="[payload]" Optional="true" Condition="payload_id == 1506352867">*(ice::World**)&amp;payload</Item>
+            <Item Name="[payload]" Optional="true" Condition="payload_id == 3403308880">*(ice::f32*)&amp;payload</Item>
+            <Item Name="[payload]" Optional="true" Condition="payload_id == 1583352821">*(ice::f64*)&amp;payload</Item>
             <Item Name="[payload]" Optional="true" Condition="payload_id == 2511786707">*(ice::i32*)&amp;payload</Item>
-            <Item Name="[payload]" Optional="true" Condition="payload_id == 3035887879">*(ice::u64*)&amp;payload</Item>
+            <Item Name="[payload]" Optional="true" Condition="payload_id == 1753932510">*(ice::i64*)&amp;payload</Item>
+            <Item Name="[payload]" Optional="true" Condition="payload_id == 3430340776">*(ice::input::InputID*)&amp;payload</Item>
+            <Item Name="[payload]" Optional="true" Condition="payload_id == 3972990833">*(ice::math::vec2f*)&amp;payload</Item>
             <Item Name="[payload]" Optional="true" Condition="payload_id == 983740932">*(ice::math::vec2i*)&amp;payload</Item>
+            <Item Name="[payload]" Optional="true" Condition="payload_id == 2445304050">*(ice::math::vec2u*)&amp;payload</Item>
+            <Item Name="[payload]" Optional="true" Condition="payload_id == 3725678933">*(ice::u32*)&amp;payload</Item>
+            <Item Name="[payload]" Optional="true" Condition="payload_id == 3035887879">*(ice::u64*)&amp;payload</Item>
         </Expand>
     </Type>
 </AutoVisualizer>

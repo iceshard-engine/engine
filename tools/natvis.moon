@@ -24,7 +24,7 @@ class NatvisCommand extends Command
                     shard_names.shard[var] = val
                     continue
 
-                var, val = line\match 'Constant_ShardPayloadID<([%w_:%*]+)> = ice::hash32%("([%w_:*]+)"%)'
+                var, val = line\match 'Constant_ShardPayloadID<([%w_:%*]+)> = ice::payload_id%("([%w_:*]+)"%)'
                 if var or val
                     shard_names.payloadid[var] = val
 
@@ -55,21 +55,30 @@ class NatvisCommand extends Command
 
             (loadstring "{\n" .. hash_results .. "\n}")!
 
-        hashes = generate_hashes names.shard
-        payload_hashes = generate_hashes names.payloadid
+        sort_results = (hash_results) ->
+            sorted_list = { }
+            for name, hash in pairs hash_results
+                table.insert sorted_list, { :name, :hash }
+
+            table.sort sorted_list, (left, right) -> left.name < right.name
+            return sorted_list
+
+        hashes = sort_results generate_hashes names.shard
+        payload_hashes = sort_results generate_hashes names.payloadid
 
         if f = io.open "./core/core/natvis/shard_names.natvis", "wb+"
             f\write '<?xml version="1.0" encoding="utf-8"?>\n'
             f\write '<AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">\n'
             f\write '    <Type Name="ice::Shard">\n'
-            f\write '        <DisplayString Condition="name == ' .. hash .. '">Shard {{ ' .. name .. ' }}</DisplayString>\n' for name, hash in pairs hashes
+            f\write '        <DisplayString Condition="name == ' .. hash .. '">Shard {{ ' .. name .. ' }}</DisplayString>\n' for { :name, :hash } in *hashes
             f\write '        <DisplayString>Shard {{ {name,h}, unknown_name }}</DisplayString>\n'
             f\write '        <Expand>\n'
             f\write '            <Synthetic Name="[payload type]">\n'
-            f\write '                <DisplayString Condition="payload_id == ' .. hash .. '">' .. name .. '</DisplayString>\n' for name, hash in pairs payload_hashes
+            f\write '                <DisplayString Condition="payload_id == ' .. hash .. '">' .. name .. '</DisplayString>\n' for { :name, :hash } in *payload_hashes
+            f\write '                <DisplayString Condition="payload_id == 0">{payload_id}, type_not_set</DisplayString>\n'
             f\write '                <DisplayString>{payload_id}, unknown_type</DisplayString>\n'
             f\write '            </Synthetic>\n'
-            f\write '            <Item Name="[payload]" Optional="true" Condition="payload_id == ' .. hash .. '">*(' .. name .. '*)&amp;payload</Item>\n' for name, hash in pairs payload_hashes
+            f\write '            <Item Name="[payload]" Optional="true" Condition="payload_id == ' .. hash .. '">*(' .. name .. '*)&amp;payload</Item>\n' for { :name, :hash } in *payload_hashes
             f\write '        </Expand>\n'
             f\write '    </Type>\n'
             f\write '</AutoVisualizer>\n'

@@ -431,19 +431,16 @@ namespace ice
         {
             IPT_ZONE_SCOPED_NAMED("[GfxTrait] TileMap :: Update Camera");
 
-            for (ice::Shard const& shard : engine_frame.shards())
+            ice::StringID_Hash camera_name;
+            if (ice::shards::inspect_last(engine_frame.shards(), ice::Shard_SetDefaultCamera, camera_name))
             {
-                ice::StringID_Hash camera_name;
-                if (shard == ice::Shard_SetDefaultCamera && ice::shard_inspect(shard, camera_name))
-                {
-                    _render_camera = ice::StringID{ camera_name };
-                }
+                _render_camera = ice::StringID{ camera_name };
             }
 
             ice::render::Buffer const camera_buffer = ice::gfx::find_resource<ice::render::Buffer>(
                 gfx_device.resource_tracker(),
                 _render_camera
-                );
+            );
 
             if (_render_camera_buffer != camera_buffer && camera_buffer != ice::render::Buffer::Invalid)
             {

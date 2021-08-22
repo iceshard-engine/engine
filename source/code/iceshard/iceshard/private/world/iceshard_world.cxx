@@ -146,14 +146,12 @@ namespace ice
     {
         ice::EngineFrame& current_frame = runner.current_frame();
 
-        ice::Entity entity;
-        for (ice::Shard const& shard : current_frame.shards())
-        {
-            if (shard == Shard_EntityDestroyed && ice::shard_inspect(shard, entity))
+        ice::shards::inspect_each<ice::Entity>(current_frame.shards(), Shard_EntityDestroyed,
+            [this](ice::Entity entity) noexcept
             {
                 _entity_storage->erase_data(entity);
             }
-        }
+        );
 
         for (auto& entry : _portals)
         {

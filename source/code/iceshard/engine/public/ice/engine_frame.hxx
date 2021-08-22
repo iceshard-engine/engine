@@ -1,8 +1,8 @@
 #pragma once
 #include <ice/span.hxx>
-#include <ice/shard.hxx>
 #include <ice/stringid.hxx>
 #include <ice/data_storage.hxx>
+#include <ice/shard_container.hxx>
 #include <ice/input/input_types.hxx>
 
 #include <ice/engine_task_operations.hxx>
@@ -33,8 +33,8 @@ namespace ice
 
         virtual auto input_events() const noexcept -> ice::Span<ice::input::InputEvent const> = 0;;
 
-        virtual auto shards() const noexcept -> ice::Span<ice::Shard const> = 0;
-        virtual void push_shards(ice::Span<ice::Shard const> shards) noexcept = 0;
+        virtual auto shards() noexcept -> ice::ShardContainer& = 0;
+        virtual auto shards() const noexcept -> ice::ShardContainer const& = 0;
 
         virtual auto entity_commands() noexcept -> ice::EntityCommandBuffer& = 0;
 
