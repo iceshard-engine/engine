@@ -20,7 +20,7 @@
                 <DisplayString Condition="payload_id == 1583352821">ice::f64</DisplayString>
                 <DisplayString Condition="payload_id == 2511786707">ice::i32</DisplayString>
                 <DisplayString Condition="payload_id == 1753932510">ice::i64</DisplayString>
-                <DisplayString Condition="payload_id == 3430340776">ice::input::InputID</DisplayString>
+                <DisplayString Condition="payload_id == 470055387">ice::input::InputEvent</DisplayString>
                 <DisplayString Condition="payload_id == 3972990833">ice::math::vec2f</DisplayString>
                 <DisplayString Condition="payload_id == 983740932">ice::math::vec2i</DisplayString>
                 <DisplayString Condition="payload_id == 2445304050">ice::math::vec2u</DisplayString>
@@ -36,7 +36,7 @@
             <Item Name="[payload]" Optional="true" Condition="payload_id == 1583352821">*(ice::f64*)&amp;payload</Item>
             <Item Name="[payload]" Optional="true" Condition="payload_id == 2511786707">*(ice::i32*)&amp;payload</Item>
             <Item Name="[payload]" Optional="true" Condition="payload_id == 1753932510">*(ice::i64*)&amp;payload</Item>
-            <Item Name="[payload]" Optional="true" Condition="payload_id == 3430340776">*(ice::input::InputID*)&amp;payload</Item>
+            <Item Name="[payload]" Optional="true" Condition="payload_id == 470055387">*(ice::input::InputEvent*)&amp;payload</Item>
             <Item Name="[payload]" Optional="true" Condition="payload_id == 3972990833">*(ice::math::vec2f*)&amp;payload</Item>
             <Item Name="[payload]" Optional="true" Condition="payload_id == 983740932">*(ice::math::vec2i*)&amp;payload</Item>
             <Item Name="[payload]" Optional="true" Condition="payload_id == 2445304050">*(ice::math::vec2u*)&amp;payload</Item>
