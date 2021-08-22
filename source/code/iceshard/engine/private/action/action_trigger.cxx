@@ -1,4 +1,6 @@
 #include <ice/action/action_trigger.hxx>
+#include <ice/engine_shards.hxx>
+
 #include <ice/input/input_event.hxx>
 #include <ice/input/input_controller.hxx>
 #include <ice/pod/hash.hxx>
@@ -125,21 +127,21 @@ namespace ice::action
         database.add_trigger(
             "trigger.success"_sid,
             ActionTriggerDefinition{
-                .trigger_shardid = "abstract/always"_shardid,
+                .trigger_shardid = ice::shard_id(ice::Shard_FrameTick),
                 .trigger_handler = detail::trigger_success
             }
         );
         database.add_trigger(
             "trigger.failure"_sid,
             ActionTriggerDefinition{
-                .trigger_shardid = "abstract/always"_shardid,
+                .trigger_shardid = ice::shard_id(ice::Shard_FrameTick),
                 .trigger_handler = detail::trigger_failure
             }
         );
         database.add_trigger(
             "trigger.elapsed-time"_sid,
             ActionTriggerDefinition{
-                .trigger_shardid = "event/tick"_shardid,
+                .trigger_shardid = ice::shard_id(ice::Shard_FrameTick),
                 .trigger_handler = detail::trigger_time_elapsed
             }
         );
@@ -160,21 +162,21 @@ namespace ice::action
         database.add_trigger(
             "trigger.action-input-button"_sid,
             ActionTriggerDefinition{
-                .trigger_shardid = "event/input/button"_shardid,
+                .trigger_shardid = ice::shard_id(ice::Shard_InputEventButton),
                 .trigger_handler = detail::trigger_input_button
             }
         );
         database.add_trigger(
             "trigger.action-input-axis-above"_sid,
             ActionTriggerDefinition{
-                .trigger_shardid = "event/input/axis"_shardid,
+                .trigger_shardid = ice::shard_id(ice::Shard_InputEventAxis),
                 .trigger_handler = detail::trigger_input_axis_above
             }
         );
         database.add_trigger(
             "trigger.action-input-axis-below"_sid,
             ActionTriggerDefinition{
-                .trigger_shardid = "event/input/axis"_shardid,
+                .trigger_shardid = ice::shard_id(ice::Shard_InputEventAxis),
                 .trigger_handler = detail::trigger_input_axis_below
             }
         );
