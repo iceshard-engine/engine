@@ -220,7 +220,7 @@ namespace ice
                 it = std::next(it, ice::min(offset, ice::shards::size(container)));
             }
 
-            ice::Shard result = ice::shard_invalid;
+            ice::Shard result = ice::Shard_Invalid;
             while (it != end)
             {
                 if ((*it) == shard)
@@ -246,7 +246,7 @@ namespace ice
                 it = std::next(it, ice::min(offset, ice::shards::size(container)));
             }
 
-            ice::Shard result = ice::shard_invalid;
+            ice::Shard result = ice::Shard_Invalid;
             while (it != end)
             {
                 if ((*it) == shard)

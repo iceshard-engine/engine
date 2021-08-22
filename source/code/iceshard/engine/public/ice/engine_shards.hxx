@@ -18,10 +18,10 @@ namespace ice
     {
 
         template<>
-        static constexpr ice::u32 Constant_ShardPayloadID<ice::World*> = ice::hash32("ice::World*");
+        static constexpr ice::PayloadID Constant_ShardPayloadID<ice::World*> = ice::payload_id("ice::World*");
 
         template<>
-        static constexpr ice::u32 Constant_ShardPayloadID<ice::Entity> = ice::hash32("ice::Entity");
+        static constexpr ice::PayloadID Constant_ShardPayloadID<ice::Entity> = ice::payload_id("ice::Entity");
 
     } // namespace detail
 

@@ -23,7 +23,7 @@ SCENARIO("ice :: shard :: ShardContainer")
             ice::shards::push_back(test_container, test_shard_1);
 
             CHECK(ice::shards::size(test_container) == 1);
-            CHECK(ice::shards::count(test_container, ice::shard_invalid) == 0);
+            CHECK(ice::shards::count(test_container, ice::Shard_Invalid) == 0);
             CHECK(ice::shards::count(test_container, test_shard_1) == 1);
             CHECK(ice::shards::count(test_container, test_shard_2) == 0);
 
@@ -32,7 +32,7 @@ SCENARIO("ice :: shard :: ShardContainer")
                 ice::shards::remove_all_of(test_container, test_shard_1);
 
                 CHECK(ice::shards::size(test_container) == 0);
-                CHECK(ice::shards::count(test_container, ice::shard_invalid) == 0);
+                CHECK(ice::shards::count(test_container, ice::Shard_Invalid) == 0);
                 CHECK(ice::shards::count(test_container, test_shard_1) == 0);
                 CHECK(ice::shards::count(test_container, test_shard_2) == 0);
             }
@@ -42,7 +42,7 @@ SCENARIO("ice :: shard :: ShardContainer")
                 ice::shards::remove_all_of(test_container, test_shard_2);
 
                 CHECK(ice::shards::size(test_container) == 1);
-                CHECK(ice::shards::count(test_container, ice::shard_invalid) == 0);
+                CHECK(ice::shards::count(test_container, ice::Shard_Invalid) == 0);
                 CHECK(ice::shards::count(test_container, test_shard_1) == 1);
                 CHECK(ice::shards::count(test_container, test_shard_2) == 0);
             }
@@ -62,7 +62,7 @@ SCENARIO("ice :: shard :: ShardContainer")
             ice::shards::push_back(test_container, test_shard_2 | test_payload_value);
 
             CHECK(ice::shards::size(test_container) == 1);
-            CHECK(ice::shards::count(test_container, ice::shard_invalid) == 0);
+            CHECK(ice::shards::count(test_container, ice::Shard_Invalid) == 0);
             CHECK(ice::shards::count(test_container, test_shard_1) == 0);
             CHECK(ice::shards::count(test_container, test_shard_2) == 1);
 
@@ -71,7 +71,7 @@ SCENARIO("ice :: shard :: ShardContainer")
                 ice::shards::remove_all_of(test_container, test_shard_1);
 
                 CHECK(ice::shards::size(test_container) == 1);
-                CHECK(ice::shards::count(test_container, ice::shard_invalid) == 0);
+                CHECK(ice::shards::count(test_container, ice::Shard_Invalid) == 0);
                 CHECK(ice::shards::count(test_container, test_shard_1) == 0);
                 CHECK(ice::shards::count(test_container, test_shard_2) == 1);
             }
@@ -81,7 +81,7 @@ SCENARIO("ice :: shard :: ShardContainer")
                 ice::shards::remove_all_of(test_container, test_shard_2);
 
                 CHECK(ice::shards::size(test_container) == 0);
-                CHECK(ice::shards::count(test_container, ice::shard_invalid) == 0);
+                CHECK(ice::shards::count(test_container, ice::Shard_Invalid) == 0);
                 CHECK(ice::shards::count(test_container, test_shard_1) == 0);
                 CHECK(ice::shards::count(test_container, test_shard_2) == 0);
             }
@@ -121,7 +121,7 @@ SCENARIO("ice :: shard :: ShardContainer")
 
 
             CHECK(ice::shards::size(test_container) == 8);
-            CHECK(ice::shards::count(test_container, ice::shard_invalid) == 0);
+            CHECK(ice::shards::count(test_container, ice::Shard_Invalid) == 0);
             CHECK(ice::shards::count(test_container, test_shard_1) == 2);
             CHECK(ice::shards::count(test_container, test_shard_2) == 2);
             CHECK(ice::shards::count(test_container, test_shard_3) == 2);
@@ -135,7 +135,7 @@ SCENARIO("ice :: shard :: ShardContainer")
                 ice::shards::push_back(test_container, test_shard_4 | test_u32_payload_value1);
 
                 CHECK(ice::shards::size(test_container) == 12);
-                CHECK(ice::shards::count(test_container, ice::shard_invalid) == 0);
+                CHECK(ice::shards::count(test_container, ice::Shard_Invalid) == 0);
                 CHECK(ice::shards::count(test_container, test_shard_1) == 3);
                 CHECK(ice::shards::count(test_container, test_shard_2) == 3);
                 CHECK(ice::shards::count(test_container, test_shard_3) == 3);
@@ -214,7 +214,7 @@ SCENARIO("ice :: shard :: ShardContainer")
                     ice::shards::remove_all_of(test_container, test_shard_1);
 
                     CHECK(ice::shards::size(test_container) == 9);
-                    CHECK(ice::shards::count(test_container, ice::shard_invalid) == 0);
+                    CHECK(ice::shards::count(test_container, ice::Shard_Invalid) == 0);
                     CHECK(ice::shards::count(test_container, test_shard_1) == 0);
                     CHECK(ice::shards::count(test_container, test_shard_2) == 3);
                     CHECK(ice::shards::count(test_container, test_shard_3) == 3);
@@ -234,7 +234,7 @@ SCENARIO("ice :: shard :: ShardContainer")
                     ice::shards::remove_all_of(test_container, test_shard_4 | ice::u32{});
 
                     CHECK(ice::shards::size(test_container) == 9);
-                    CHECK(ice::shards::count(test_container, ice::shard_invalid) == 0);
+                    CHECK(ice::shards::count(test_container, ice::Shard_Invalid) == 0);
                     CHECK(ice::shards::count(test_container, test_shard_1) == 2);
                     CHECK(ice::shards::count(test_container, test_shard_2) == 3);
                     CHECK(ice::shards::count(test_container, test_shard_3) == 2);
