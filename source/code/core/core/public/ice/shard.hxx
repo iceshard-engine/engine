@@ -113,6 +113,13 @@ namespace ice
         return shard_id(shard.name, shard.payload_id);
     }
 
+    namespace detail::stringid_type_v2
+    {
+
+        enum class StringID_Hash : uint64_t;
+
+    } // namespace detail::stringid_type_v2
+
     namespace detail
     {
 
@@ -145,6 +152,9 @@ namespace ice
 
         template<>
         constexpr ice::PayloadID Constant_ShardPayloadID<ice::math::vec2f> = ice::payload_id("ice::math::vec2f");
+
+        template<>
+        static constexpr ice::PayloadID Constant_ShardPayloadID<ice::detail::stringid_type_v2::StringID_Hash> = ice::payload_id("ice::StringID_Hash");
 
     } // namespace detail
 
