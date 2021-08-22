@@ -65,7 +65,4 @@ namespace ice
 } // namespace ice
 
 template<>
-constexpr ice::PayloadID ice::detail::Constant_ShardPayloadID<ice::StringID_Hash> = ice::payload_id("ice::StringID_Hash");
-
-template<>
 constexpr ice::PayloadID ice::detail::Constant_ShardPayloadID<ice::DebugDrawCommandList const*> = ice::payload_id("ice::DebugDrawCommandList const*");
