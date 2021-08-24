@@ -9,6 +9,9 @@
 #include <ice/math/vector.hxx>
 #include <ice/math/vector/vector_operations.hxx>
 #include <ice/math/vector/vector_operators.hxx>
+#include <ice/math/array.hxx>
+#include <ice/math/array/array_operations.hxx>
+#include <ice/math/array/array_operators.hxx>
 #include <ice/math/translate.hxx>
 #include <ice/math/scale.hxx>
 #include <ice/math/rotate.hxx>
