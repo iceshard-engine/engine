@@ -1,5 +1,6 @@
 #include "iceshard_frame.hxx"
 #include "iceshard_task_executor.hxx"
+#include <ice/engine_shards.hxx>
 #include <ice/task_sync_wait.hxx>
 #include <ice/sync_manual_events.hxx>
 #include <ice/memory/pointer_arithmetic.hxx>
@@ -50,6 +51,8 @@ namespace ice
         ice::shards::reserve(_shards, (detail::RequestAllocatorCapacity / sizeof(ice::Shard)) - 10);
 
         _frame_tasks.reserve((detail::TaskAllocatorCapacity - 1024) / sizeof(ice::Task<void>));
+
+        ice::shards::push_back(_shards, ice::Shard_FrameTick | _index);
     }
 
     IceshardMemoryFrame::~IceshardMemoryFrame() noexcept

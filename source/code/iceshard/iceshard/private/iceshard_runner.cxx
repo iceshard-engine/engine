@@ -162,6 +162,25 @@ namespace ice
     ) noexcept
     {
         _input_tracker->process_device_queue(device_queue, _current_frame->input_events());
+
+        ice::ShardContainer& shards = _current_frame->shards();
+        for (ice::input::InputEvent input_event : _current_frame->input_events())
+        {
+            if (input_event.value_type == ice::input::InputValueType::Button)
+            {
+                ice::shards::push_back(
+                    shards,
+                    ice::Shard_InputEventButton | input_event
+                );
+            }
+            else if (input_event.value_type == ice::input::InputValueType::Axis)
+            {
+                ice::shards::push_back(
+                    shards,
+                    ice::Shard_InputEventAxis | input_event
+                );
+            }
+        }
     }
 
     auto IceshardEngineRunner::thread_pool() noexcept -> ice::TaskThreadPool&

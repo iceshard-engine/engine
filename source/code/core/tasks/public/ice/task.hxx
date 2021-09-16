@@ -138,26 +138,6 @@ namespace ice
         }
 
     private:
-        //friend void fire_and_forget(ice::multi_threading::Thread& thread, ice::task<> t) noexcept;
-        //friend void fire_and_forget(ice::multi_threading::ThreadPool& thread_pool, ice::task<> t) noexcept;
-        //friend void fire_and_forget(ice::multi_threading::ThreadPool& pool, ice::task<> t, std::chrono::milliseconds ms) noexcept;
-
-        //template<typename T>
-        //friend auto fire_async(ice::multi_threading::ThreadPool& pool, ice::task<T> t) noexcept -> ice::future<T>;
-        //template<typename T>
-        //friend auto sync_wait(ice::task<T> t) noexcept -> T;
-
-
-        //auto handle() noexcept
-        //{
-        //    return _coroutine;
-        //}
-
-        //auto move_and_reset() noexcept
-        //{
-        //    return std::exchange(_coroutine, nullptr);
-        //}
-
         std::coroutine_handle<PromiseType> _coroutine;
 
     public:
