@@ -52,7 +52,7 @@ jobs:
     - name: Setup runner (Clang-12)
       shell: bash
       run: |
-        sudo apt install libc++-12-dev  libc++abi-12-dev
+        sudo apt install libc++-12-dev libc++abi-12-dev --fix-missing
     - name: Build (Linux-${{ matrix.configuration }})
       shell: bash
       run: |
