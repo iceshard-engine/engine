@@ -51,6 +51,7 @@ jobs:
         conan config install https://github.com/iceshard-engine/conan-config.git
     - name: Setup runner (Clang-12)
       run: |
+        sudo apt update
         sudo apt install libc++-12-dev libc++abi-12-dev --fix-missing
     - name: Build (Linux-${{ matrix.configuration }})
       shell: bash
