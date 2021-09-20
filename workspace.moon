@@ -7,11 +7,6 @@ with Project "IceShard"
     \profiles "source/conan_profiles.json"
     \fastbuild_script "source/fbuild.bff"
 
-    \set_conan_profile {
-        windows: 'default'
-        unix: 'clang-10.0-linux-x86_64'
-    }
-
     \output "build"
     \sources "source/code"
     \working_dir "build"
