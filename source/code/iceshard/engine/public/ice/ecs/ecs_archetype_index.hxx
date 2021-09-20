@@ -8,12 +8,6 @@ namespace ice::ecs
 
     class DataBlockPool;
 
-    struct ArchetypePoolSubscription
-    {
-        ice::ecs::ArchetypeComponentsInfo components_info;
-        ice::ecs::DataBlockPool* component_block_pool;
-    };
-
     class ArchetypeIndex
     {
     public:
@@ -24,21 +18,18 @@ namespace ice::ecs
         ~ArchetypeIndex() noexcept = default;
 
         auto subscribe_archetype(
-            ice::ecs::ArchetypePoolSubscription const& pool_subscription
-        ) noexcept -> ice::ecs::Archetype;
-
-        auto subscribe_archetype(
-            ice::Span<ice::ecs::ArchetypePoolSubscription const> pool_subscriptions
+            ice::ecs::ArchetypeComponentsInfo const& archetype_components_info,
+            ice::ecs::DataBlockPool* component_block_pool = nullptr
         ) noexcept -> ice::ecs::Archetype;
 
         // #todo Create a archetype component query
-        auto find_archetype_pool(
+        auto find_archetype(
             ice::ecs::ArchetypeComponentsInfo const& components_info
-        ) noexcept -> ice::ecs::DataBlockPool*;
+        ) noexcept -> ice::ecs::Archetype;
 
-        auto get_archetype_pool(
+        auto get_component_block_pool(
             ice::ecs::Archetype archetype
-        ) noexcept -> ice::ecs::DataBlockPool*;
+        ) noexcept -> ice::ecs::DataBlockPool&;
 
     private:
         ice::Allocator& _allocator;
