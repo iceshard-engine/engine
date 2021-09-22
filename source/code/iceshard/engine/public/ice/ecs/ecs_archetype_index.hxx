@@ -17,7 +17,7 @@ namespace ice::ecs
 
         ~ArchetypeIndex() noexcept = default;
 
-        auto subscribe_archetype(
+        auto register_archetype(
             ice::ecs::ArchetypeComponentsInfo const& archetype_components_info,
             ice::ecs::DataBlockPool* component_block_pool = nullptr
         ) noexcept -> ice::ecs::Archetype;

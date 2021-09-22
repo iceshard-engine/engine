@@ -9,6 +9,11 @@ namespace ice::ecs
 
     class ArchetypeIndex;
 
+    // Set Archetype: {EntityHandle[], DstArchetype, ComponentData[]} // set
+    // Rep Archetype: {EntityHandle[], DstArchetype, <implicit: SrcArchetype>, ComponentData[]} // change
+    // Set Component: {EntityHandle[], None, ComponentData[]} // update data
+    // Set Component: {EntityHandle[], None} // remove
+
     struct EntityStorageOperation;
 
     class EntityStorage
