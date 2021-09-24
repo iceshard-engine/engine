@@ -1,5 +1,6 @@
 #pragma once
 #include <ice/base.hxx>
+#include <ice/shard.hxx>
 
 namespace ice::ecs
 {
@@ -73,3 +74,9 @@ namespace ice::ecs
     }
 
 } // namespace ice::ecs
+
+template<>
+static constexpr ice::PayloadID ice::detail::Constant_ShardPayloadID<ice::ecs::Entity> = ice::payload_id("ice::ecs::Entity");
+
+template<>
+static constexpr ice::PayloadID ice::detail::Constant_ShardPayloadID<ice::ecs::EntityHandle> = ice::payload_id("ice::ecs::EntityHandle");
