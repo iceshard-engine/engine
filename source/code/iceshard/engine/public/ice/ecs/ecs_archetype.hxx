@@ -31,14 +31,14 @@ namespace ice::ecs
 
     struct ArchetypeComponentsInfo
     {
+        ice::Span<ice::StringID const> component_identifiers;
+        ice::Span<ice::u32 const> component_sizes;
+        ice::Span<ice::u32 const> component_alignments;
+
         template<ice::ecs::Component... Components>
         inline constexpr ArchetypeComponentsInfo(
             ice::ecs::ArchetypeInfo<Components...> const& archetype_info
         ) noexcept;
-
-        ice::Span<ice::StringID const> component_identifiers;
-        ice::Span<ice::u32 const> component_sizes;
-        ice::Span<ice::u32 const> component_alignments;
     };
 
 
