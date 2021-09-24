@@ -8,13 +8,10 @@
 namespace ice::ecs
 {
 
-    struct EntityOperationData
-    {
-        ice::ecs::EntityOperationData* next;
-
-        void* operation_data;
-        ice::u32 available_data_size;
-    };
+    // Set Archetype: {EntityHandle[], DstArchetype, ComponentData[]} // set
+    // Rep Archetype: {EntityHandle[], DstArchetype, <implicit: SrcArchetype>, ComponentData[]} // change
+    // Set Component: {EntityHandle[], None, ComponentData[]} // update data
+    // Set Component: {EntityHandle[], None} // remove
 
     struct EntityOperation
     {
@@ -36,10 +33,19 @@ namespace ice::ecs
 
         void grow(ice::u32 count) noexcept;
 
+        auto new_storage_operation() noexcept -> ice::ecs::EntityOperation*;
+
+        auto new_storage_operation(
+            ice::u32 required_data_size,
+            void*& out_operation_data_ptr
+        ) noexcept -> ice::ecs::EntityOperation*;
+
         void set_archetype(
             ice::ecs::EntityHandle entity,
             ice::ecs::Archetype archetype
         ) noexcept;
+
+        struct EntityOperationData;
 
     private:
         ice::Allocator& _allocator;
@@ -47,7 +53,13 @@ namespace ice::ecs
         ice::ecs::EntityOperation* _operations;
         ice::ecs::EntityOperation* _free_operations;
 
-        ice::ecs::EntityOperationData* _data_nodes;
+        EntityOperationData* _data_nodes;
     };
+
+    void queue_set_archetype(
+        ice::ecs::EntityOperations& entity_operations,
+        ice::ecs::EntityHandle entity,
+        ice::ecs::Archetype archetype
+    ) noexcept;
 
 } // namespace ice::ecs

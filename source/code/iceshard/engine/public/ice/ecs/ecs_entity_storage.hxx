@@ -9,12 +9,7 @@ namespace ice::ecs
 
     class ArchetypeIndex;
 
-    // Set Archetype: {EntityHandle[], DstArchetype, ComponentData[]} // set
-    // Rep Archetype: {EntityHandle[], DstArchetype, <implicit: SrcArchetype>, ComponentData[]} // change
-    // Set Component: {EntityHandle[], None, ComponentData[]} // update data
-    // Set Component: {EntityHandle[], None} // remove
-
-    struct EntityStorageOperation;
+    class EntityOperations;
 
     class EntityStorage
     {
@@ -26,7 +21,9 @@ namespace ice::ecs
 
         ~EntityStorage() noexcept = default;
 
-        void execute_operations(ice::Span<ice::ecs::EntityStorageOperation> const& shards) noexcept;
+        void execute_operations(
+            ice::ecs::EntityOperations const& operations
+        ) noexcept;
 
     private:
         ice::Allocator& _allocator;

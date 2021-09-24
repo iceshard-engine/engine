@@ -1,11 +1,17 @@
 #pragma once
 #include <ice/span.hxx>
-#include <ice/pod/hash.hxx>
+#include <ice/pod/collections.hxx>
 #include <ice/ecs/ecs_entity.hxx>
 #include <atomic>
 
 namespace ice::ecs
 {
+
+    //! \brief A constant value that is used to cut of where the Entity Index
+    //!  is allowed to re-use already destroyed entities.
+    //! \note If the `_free_indices` array is bigger than this value, the index is allowed
+    //!  to reuse the released indices first.
+    static constexpr ice::u32 Constant_MinimumFreeIndicesBeforeReuse = 1024;
 
     class EntityIndex
     {

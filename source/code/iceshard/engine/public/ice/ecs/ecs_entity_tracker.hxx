@@ -9,6 +9,10 @@
 namespace ice::ecs
 {
 
+    static constexpr ice::Shard Shard_EntityCreated = "event/ecs-v2/entity-created"_shard;
+    static constexpr ice::Shard Shard_EntityDestroyed = "event/ecs-v2/entity-destroyed"_shard;
+    static constexpr ice::Shard Shard_EntityHandleChanged = "event/ecs-v2/entity-handle-changed"_shard;
+
     class EntityTracker
     {
     public:
@@ -17,9 +21,14 @@ namespace ice::ecs
         ) noexcept;
         ~EntityTracker() noexcept;
 
-        auto find_entity(ice::StringID name) const noexcept -> ice::ecs::Entity;
+        auto find_handle(ice::ecs::Entity entity) const noexcept -> ice::ecs::EntityHandle;
+        auto find_handle(ice::StringID name) const noexcept -> ice::ecs::EntityHandle;
 
-        void track_entity(ice::ecs::Entity, ice::StringID name = ice::stringid_invalid) noexcept;
+        void track_entity(
+            ice::ecs::Entity entity,
+            ice::StringID name = ice::stringid_invalid
+        ) noexcept;
+
         void forget_entity(ice::ecs::Entity entity) noexcept;
         void forget_entity(ice::StringID name) noexcept;
 
