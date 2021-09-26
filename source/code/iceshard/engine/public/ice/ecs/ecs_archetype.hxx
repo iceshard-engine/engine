@@ -8,37 +8,52 @@
 namespace ice::ecs
 {
 
-    enum class Archetype : ice::u64
+    enum class Archetype : ice::u32
     {
         Invalid = 0x0
     };
 
+
     template<ice::ecs::Component... Components>
-    struct ArchetypeInfo
+    struct ArchetypeDefinition
     {
         static constexpr ice::u32 Const_ComponentCount = sizeof...(Components) + 1;
 
+        ice::ecs::Archetype identifier;
         std::array<ice::StringID, Const_ComponentCount> component_identifiers;
         std::array<ice::u32, Const_ComponentCount> component_sizes;
         std::array<ice::u32, Const_ComponentCount> component_alignments;
 
-        inline constexpr ArchetypeInfo() noexcept;
+        inline constexpr ArchetypeDefinition() noexcept;
     };
 
+
     template<ice::ecs::Component... Components>
-    static constexpr ArchetypeInfo<Components...> Constant_ArchetypeInfo{ };
+    static constexpr ArchetypeDefinition<Components...> Constant_ArchetypeDefinition{ };
+
+    template<ice::ecs::Component... Components>
+    static constexpr ice::ecs::Archetype Constant_Archetype = Constant_ArchetypeDefinition<Components...>.identifier;
 
 
-    struct ArchetypeComponentsInfo
+    struct ArchetypeInfo
     {
+        ice::ecs::Archetype identifier;
         ice::Span<ice::StringID const> component_identifiers;
         ice::Span<ice::u32 const> component_sizes;
         ice::Span<ice::u32 const> component_alignments;
 
         template<ice::ecs::Component... Components>
-        inline constexpr ArchetypeComponentsInfo(
-            ice::ecs::ArchetypeInfo<Components...> const& archetype_info
+        inline constexpr ArchetypeInfo(
+            ice::ecs::ArchetypeDefinition<Components...> const& archetype_info
         ) noexcept;
+    };
+
+    struct ArchetypeInstanceInfo
+    {
+        ice::Span<ice::StringID const> component_identifiers;
+        ice::Span<ice::u32 const> component_sizes;
+        ice::Span<ice::u32 const> component_alignments;
+        ice::Span<ice::u32 const> component_offsets;
     };
 
 
@@ -79,11 +94,24 @@ namespace ice::ecs
                 constexpr_sort_array(UnsortedArchetypeInfo<Components...>::Const_UnsortedCcomponents);
         };
 
+        constexpr auto make_archetype_identifier(
+            ice::Span<ice::StringID const> component_identifiers
+        ) noexcept -> ice::ecs::Archetype
+        {
+            ice::u32 handle_hash = ice::hash32("ice.__ecs_archetype__");
+            for (ice::StringID_Arg component : component_identifiers)
+            {
+                handle_hash <<= 5;
+                handle_hash ^= ice::hash32(ice::hash(component) >> 17);
+            }
+            return static_cast<Archetype>(handle_hash);
+        }
+
     } // namespace detail
 
 
     template<ice::ecs::Component... Components>
-    inline constexpr ArchetypeInfo<Components...>::ArchetypeInfo() noexcept
+    inline constexpr ArchetypeDefinition<Components...>::ArchetypeDefinition() noexcept
         : component_identifiers{ ice::ecs::ComponentIdentifier<ice::ecs::EntityHandle> }
         , component_sizes{ sizeof(ice::ecs::EntityHandle) }
         , component_alignments{ alignof(ice::ecs::EntityHandle) }
@@ -96,13 +124,16 @@ namespace ice::ecs
             component_sizes[idx] = sorted_components[idx-1].size;
             component_alignments[idx] = sorted_components[idx-1].alignment;
         }
+
+        identifier = ice::ecs::detail::make_archetype_identifier(component_identifiers);
     }
 
     template<ice::ecs::Component ...Components>
-    inline constexpr ArchetypeComponentsInfo::ArchetypeComponentsInfo(
-        ice::ecs::ArchetypeInfo<Components...> const& archetype_info
+    inline constexpr ArchetypeInfo::ArchetypeInfo(
+        ice::ecs::ArchetypeDefinition<Components...> const& archetype_info
     ) noexcept
-        : component_identifiers{ archetype_info.component_identifiers }
+        : identifier{ archetype_info.identifier }
+        , component_identifiers{ archetype_info.component_identifiers }
         , component_sizes{ archetype_info.component_sizes }
         , component_alignments{ archetype_info.component_alignments }
     {
@@ -127,8 +158,10 @@ namespace ice::ecs
             ice::vec2f angVel;
         };
 
-        static constexpr auto Validation_Archetype_1 = ice::ecs::Constant_ArchetypeInfo<ValidationComponent_0x10, ValidationComponent_0x20>;
-        static constexpr auto Validation_Archetype_2 = ice::ecs::Constant_ArchetypeInfo<ValidationComponent_0x20, ValidationComponent_0x10>;
+        static constexpr auto Validation_Archetype_1 = ice::ecs::Constant_ArchetypeDefinition<ValidationComponent_0x10, ValidationComponent_0x20>;
+        static constexpr auto Validation_Archetype_2 = ice::ecs::Constant_ArchetypeDefinition<ValidationComponent_0x20, ValidationComponent_0x10>;
+
+        static_assert(Validation_Archetype_1.identifier == Validation_Archetype_2.identifier);
 
         static_assert(Validation_Archetype_1.component_identifiers.size() == 3);
         static_assert(Validation_Archetype_2.component_identifiers.size() == 3);

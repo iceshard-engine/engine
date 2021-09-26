@@ -18,11 +18,25 @@ namespace ice::ecs
     };
 
 
+    static constexpr ice::u32 Constant_EntitySlotArchetype_Bits = 12;
+    static constexpr ice::u32 Constant_EntitySlotBlock_Bits = 8;
+    static constexpr ice::u32 Constant_EntitySlotIndex_Bits = 12;
+
+    static constexpr ice::u32 Constant_MaxArchetypeCount = 1 << Constant_EntitySlotArchetype_Bits;
+    static constexpr ice::u32 Constant_MaxBlockCount = 1 << Constant_EntitySlotBlock_Bits;
+    static constexpr ice::u32 Constant_MaxBlockEntityIndex = 1 << Constant_EntitySlotIndex_Bits;
+
+    static_assert(
+        Constant_EntitySlotArchetype_Bits + Constant_EntitySlotBlock_Bits + Constant_EntitySlotIndex_Bits == 32,
+        "The entity slot can currently only use 32 bits of data to address a single entity. Depending on the use case this can be changed or worked around."
+    );
+
+
     struct EntitySlotInfo
     {
-        ice::u32 archetype : 12;
-        ice::u32 block : 8;
-        ice::u32 index : 12;
+        ice::u32 archetype : Constant_EntitySlotArchetype_Bits;
+        ice::u32 block     : Constant_EntitySlotBlock_Bits;
+        ice::u32 index     : Constant_EntitySlotIndex_Bits;
     };
 
     struct EntityHandleInfo
