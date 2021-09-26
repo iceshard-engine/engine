@@ -6,6 +6,8 @@
 namespace ice::ecs
 {
 
+    static constexpr ice::u32 Constant_DefaultBlockSize = 32 * 1024;
+
     class DataBlockPool
     {
     public:
@@ -17,8 +19,7 @@ namespace ice::ecs
 
     private:
         ice::Allocator& _allocator;
-
-        std::atomic<ice::ecs::DataBlock*> _free_block_stack;
+        ice::ecs::DataBlock* _free_block_list;
     };
 
 } // namespace ice::ecs
