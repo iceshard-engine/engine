@@ -21,10 +21,9 @@ jobs:
       # env:
       #  COMMIT_MESSAGES: ${{ fromJSON(env.GITHUB_EVENT_PATH) }}
       run: |
-        echo '$GITHUB_EVENT_PATH'
-        cat $GITHUB_EVENT_PATH
         set GITHUB_EVENT_PAYLOAD=`cat $GITHUB_EVENT_PATH`
-        echo '::set-output name=tags::$GITHUB_EVENT_PAYLOAD'
+        echo "$GITHUB_EVENT_PAYLOAD"
+        echo "::set-output name=tags::$GITHUB_EVENT_PAYLOAD"
 
   print_workflow_tags:
     name: Print workflow tags
