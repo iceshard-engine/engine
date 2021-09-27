@@ -1,0 +1,95 @@
+name: Validation (Advanced)
+
+on: push
+  # push:
+  #   branches:
+  #   - github-workflow-fixes
+  # pull_request:
+  #   types: [opened,edited,reopened]
+  #   branches:
+  #   - master
+
+jobs:
+  extract_workflow_tags:
+    name: Extract workflow tags
+    runs-on: ubuntu-latest
+    outputs:
+      tags_v1: ${{ steps.extract-tags.outputs.tags }}
+    steps:
+    - id: extract-tags
+      name: Extract tags from commits
+      env:
+        COMMIT_MESSAGES: ${{ (EVENT_PAYLOAD.commits.*.message).join(';') }}
+      run: |
+        echo '::set-output name=tags::$COMMIT_MESSAGES'
+
+  print_workflow_tags:
+    name: Print workflow tags
+    runs-on: ubuntu-latest
+    needs: extract_workflow_tags
+    steps:
+    - name: Print
+      run: |
+        echo '${{ needs.extract_workflow_tags.outputs.tags_v1 }}'
+  # validation-build-windows:
+  #   runs-on: windows-latest
+  #   strategy:
+  #     matrix:
+  #       configuration: [Debug, Develop]
+  #   steps:
+  #   - uses: actions/checkout@v2
+  #   - name: Setup repository
+  #     run: |
+  #       pip3 install setuptools
+  #       pip3 install conan
+  #       conan config install https://github.com/iceshard-engine/conan-config.git
+  #   - name: Build (Windows-${{ matrix.configuration }})
+  #     shell: cmd
+  #     run: |
+  #       ice build -t all-x64-${{ matrix.configuration }}
+  #   - name: Run unit tests
+  #     shell: cmd
+  #     run: |
+  #       ice build -t test-all-x64-${{ matrix.configuration }}
+  #   - name: Success
+  #     run: |
+  #       echo Validation successful
+
+  # validation-build-ubuntu:
+  #   runs-on: ubuntu-latest
+  #   strategy:
+  #     matrix:
+  #       configuration: [Debug, Develop]
+  #   steps:
+  #   - uses: actions/checkout@v2
+  #   - name: Setup repository
+  #     run: |
+  #       pip3 install setuptools
+  #       pip3 install conan
+  #       export PATH=~/.local/bin/:$PATH
+  #       conan config install https://github.com/iceshard-engine/conan-config.git
+  #       ./ice.sh init --conan_profile clang-10.0-linux-x86_64
+  #   - name: Build (Linux-${{ matrix.configuration }})
+  #     shell: bash
+  #     run: |
+  #       ./ice.sh build -t all-x64-${{ matrix.configuration }}
+  #   - name: Run unit tests
+  #     shell: bash
+  #     run: |
+  #       ./ice.sh build -t test-all-x64-${{ matrix.configuration }}
+  #   - name: Success
+  #     run: |
+  #       echo Validation successful
+
+  # commits-notify:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #   - name: Notify commit (Discord)
+  #     uses: Ilshidur/action-discord@master
+  #     env:
+  #       DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_YUKI }}
+  #       DISCORD_USERNAME: 'Yuki <IceShard Engine>'
+  #     with:
+  #       args: |
+  #         New commits have been pushed to `{{ EVENT_PAYLOAD.repository.full_name }}`!
+  #         {{ EVENT_PAYLOAD.commits.map(e => '- ' + e.message + ' (<' + e.url + '>) <' + e.author.name + '>').join('\n') }}
