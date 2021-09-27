@@ -21,11 +21,14 @@ jobs:
       # env:
       #  COMMIT_MESSAGES: ${{ fromJSON(env.GITHUB_EVENT_PATH) }}
       run: |
-        GITHUB_EVENT_PAYLOAD=$(cat $GITHUB_EVENT_PATH)
-        echo ${{ join(fromJSON(env.GITHUB_EVENT_PAYLOAD).commits.*.message, ';') }}
-        COMMIT_MESSAGES='${{ join(fromJSON(env.GITHUB_EVENT_PAYLOAD).commits.*.message, ';') }}'
+        payload_content=$(cat $GITHUB_EVENT_PATH)
+        payload_content="${payload_content//'%'/'%25'}"
+        payload_content="${payload_content//$'\n'/'%0A'}"
+        payload_content="${payload_content//$'\r'/'%0D'}"
+        echo "::set-output name=tags::$payload_content"
+          
+        COMMIT_MESSAGES='${{ join(fromJSON(env.payload_content).commits.*.message, ';') }}'
         echo $COMMIT_MESSAGES
-        echo "::set-output name=tags::$COMMIT_MESSAGES"
 
   print_workflow_tags:
     name: Print workflow tags
