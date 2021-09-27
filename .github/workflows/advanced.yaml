@@ -10,13 +10,14 @@ on: push
   #   - master
 
 jobs:
-  extract_workflow_tags:
-    name: Extract workflow tags
+  extract_event_payload:
+    name: Extract event payload
     runs-on: ubuntu-latest
     outputs:
-      tags_v1: ${{ steps.extract-tags.outputs.tags }}
+      event_payload: ${{ steps.extract-payload.outputs.payload }}
+      event_commit_messages: ${{ steps.extract-tags.outputs.tags }}
     steps:
-    - id: extract-tags
+    - id: extract-payload
       name: Extract tags from commits
       # env:
       #  COMMIT_MESSAGES: ${{ fromJSON(env.GITHUB_EVENT_PATH) }}
@@ -25,18 +26,19 @@ jobs:
         payload_content="${payload_content//'%'/'%25'}"
         payload_content="${payload_content//$'\n'/'%0A'}"
         payload_content="${payload_content//$'\r'/'%0D'}"
-        echo "::set-output name=tags::$payload_content"
+        echo "::set-output name=payload::$payload_content"
     - run: |
-        echo "${{join(fromJson(steps.extract-tags.outputs.tags).commits.*.message, ';')}}"
+        commit_messages="${{ toJSON(fromJson(steps.extract-payload.outputs.payload).commits.*.message) }}"
+        echo "::set-output name=event_commit_messages::$commit_messages"
         
   print_workflow_tags:
     name: Print workflow tags
     runs-on: ubuntu-latest
-    needs: extract_workflow_tags
+    needs: extract_event_payload
     steps:
     - name: Print
       run: |
-        echo '${{ needs.extract_workflow_tags.outputs.tags_v1 }}'
+        echo '${{ needs.extract_event_payload.outputs.event_commit_messages }}'
   # validation-build-windows:
   #   runs-on: windows-latest
   #   strategy:
