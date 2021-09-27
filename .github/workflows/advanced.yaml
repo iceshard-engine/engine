@@ -26,6 +26,8 @@ jobs:
         payload_content="${payload_content//$'\n'/'%0A'}"
         payload_content="${payload_content//$'\r'/'%0D'}"
         echo "::set-output name=tags::$payload_content"
+    - run: |
+        echo "${{fromJson(steps.extract-tags.outputs.tags).after}}"
         
   print_workflow_tags:
     name: Print workflow tags
