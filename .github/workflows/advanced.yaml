@@ -26,10 +26,7 @@ jobs:
         payload_content="${payload_content//$'\n'/'%0A'}"
         payload_content="${payload_content//$'\r'/'%0D'}"
         echo "::set-output name=tags::$payload_content"
-          
-        COMMIT_MESSAGES='${{ join(fromJSON(env.payload_content).commits.*.message, ';') }}'
-        echo $COMMIT_MESSAGES
-
+        
   print_workflow_tags:
     name: Print workflow tags
     runs-on: ubuntu-latest
