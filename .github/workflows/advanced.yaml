@@ -30,9 +30,9 @@ jobs:
     - id: extract-commit-messages
       run: |
         commit_messages=$(echo '${{ toJSON(fromJson(steps.extract-payload.outputs.payload).commits.*.message) }}')
-        commit_messages="${payload_content//'%'/'%25'}"
-        commit_messages="${payload_content//$'\n'/'%0A'}"
-        commit_messages="${payload_content//$'\r'/'%0D'}"
+        commit_messages="${commit_messages//'%'/'%25'}"
+        commit_messages="${commit_messages//$'\n'/'%0A'}"
+        commit_messages="${commit_messages//$'\r'/'%0D'}"
         echo $commit_messages
         echo "::set-output name=commit_messages::$commit_messages"
         
