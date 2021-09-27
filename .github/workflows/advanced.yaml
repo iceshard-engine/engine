@@ -27,7 +27,7 @@ jobs:
         payload_content="${payload_content//$'\r'/'%0D'}"
         echo "::set-output name=tags::$payload_content"
     - run: |
-        echo "${{fromJson(steps.extract-tags.outputs.tags).after}}"
+        echo "${{join(fromJson(steps.extract-tags.outputs.tags).commits.*.message, ';')}}"
         
   print_workflow_tags:
     name: Print workflow tags
