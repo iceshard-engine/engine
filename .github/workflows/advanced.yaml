@@ -22,7 +22,7 @@ jobs:
       #  COMMIT_MESSAGES: ${{ fromJSON(env.GITHUB_EVENT_PATH) }}
       run: |
         GITHUB_EVENT_PAYLOAD=$(cat $GITHUB_EVENT_PATH)
-        echo ${{ env.GITHUB_EVENT_PAYLOAD.commits.*.message.join(';') }}
+        echo ${{ join(env.GITHUB_EVENT_PAYLOAD.commits.*.message, ';') }}
         COMMIT_MESSAGES='${{ join(env.GITHUB_EVENT_PAYLOAD.commits.*.message, ';') }}'
         echo $COMMIT_MESSAGES
         echo "::set-output name=tags::$COMMIT_MESSAGES"
