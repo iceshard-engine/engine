@@ -21,7 +21,7 @@ jobs:
       # env:
       #  COMMIT_MESSAGES: ${{ fromJSON(env.GITHUB_EVENT_PATH) }}
       run: |
-        set GITHUB_EVENT_PAYLOAD=`cat $GITHUB_EVENT_PATH`
+        GITHUB_EVENT_PAYLOAD=$(cat $GITHUB_EVENT_PATH)
         echo $GITHUB_EVENT_PAYLOAD
         echo "::set-output name=tags::$GITHUB_EVENT_PAYLOAD"
 
