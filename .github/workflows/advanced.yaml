@@ -19,7 +19,7 @@ jobs:
     - id: extract-tags
       name: Extract tags from commits
       env:
-        COMMIT_MESSAGES: ${{ fromJSON(GITHUB_EVENT_PATH) }}
+        COMMIT_MESSAGES: ${{ fromJSON(env.GITHUB_EVENT_PATH) }}
       run: |
         echo '::set-output name=tags::$COMMIT_MESSAGES'
 
