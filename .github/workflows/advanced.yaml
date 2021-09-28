@@ -63,6 +63,27 @@ jobs:
     - name: Prepare
       run: |
         echo 'Preparing workspace...'
+        
+
+  test-windows:
+    name: Test (Windows)
+    runs-on: windows-latest
+    needs: validate-windows
+    if: contains(needs.extract_event_payload.outputs.event_commit_tags, 'skip-tests') == false
+    steps:
+    - name: Prepare
+      run: |
+        echo 'Get test binaries...'
+        
+  test-linux:
+    name: Test (Linux)
+    runs-on: ubuntu-latest
+    needs: validate-linux
+    if: contains(needs.extract_event_payload.outputs.event_commit_tags, 'skip-tests') == false
+    steps:
+    - name: Prepare
+      run: |
+        echo 'Get test binaries...'
   
   notify-discord:
     name: Notify Discord
@@ -79,8 +100,8 @@ jobs:
     runs-on: ubuntu-latest
     if: always()
     needs:
-    - validate-windows
-    - validate-linux
+    - test-windows
+    - test-linux
     - notify-discord
     steps:
     - name: Send summary
