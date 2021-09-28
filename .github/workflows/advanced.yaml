@@ -16,6 +16,7 @@ jobs:
     outputs:
       event_payload: ${{ steps.extract-payload.outputs.payload }}
       event_commit_messages: ${{ steps.extract-commit-messages.outputs.commit_messages }}
+      event_commit_tags: ${{ steps.extract-tags.outputs.tags }}
     steps:
     - id: extract-payload
       name: Extract payload
@@ -39,16 +40,24 @@ jobs:
       name: Extract tags v2
       continue-on-error: true
       run: |
-        echo '${{ steps.extract-commit-messages.outputs.commit_messages }}' | grep -oP '\[.*?\]' | sed 's/\([^\[\]]*\)/"\1",/'
+        tags_array=$(echo '${{ steps.extract-commit-messages.outputs.commit_messages }}' | grep -oP '\[.*?\]' | sed 's/\([^\[\]]*\)/"\1",/')
+        tags_array="${tags_array//'%'/'%25'}"
+        tags_array="${tags_array//$'\n'/'%0A'}"
+        tags_array="${tags_array//$'\r'/'%0D'}"
+        echo '[ $tags_array \'\' ]'
+        echo "::set-output name=tags::[$tags_array '']"
 
   print_workflow_tags:
     name: Print workflow tags
     runs-on: ubuntu-latest
     needs: extract_event_payload
+    strategy:
+      matrix:
+        tag: ${{ fromJSON(needs.extract_event_payload.outputs.event_commit_tags) }}
     steps:
-    - name: Print
+    - name: Print tag [${{ matrix.tag }}]
       run: |
-        echo '${{ needs.extract_event_payload.outputs.event_commit_messages }}'
+        echo 'Tag ${{ matrix.tag }}'
 
   # commits-notify:
   #   runs-on: ubuntu-latest
