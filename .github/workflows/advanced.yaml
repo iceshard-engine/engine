@@ -39,7 +39,7 @@ jobs:
       name: Extract tags v2
       continue-on-error: true
       run: |
-        grep -oP '\[.*?\]' $GITHUB_EVENT_PATH
+        grep -oP '\[.*?\]' <<< ${{ steps.extract-payload.outputs.payload }}
         
   print_workflow_tags:
     name: Print workflow tags
