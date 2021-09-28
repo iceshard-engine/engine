@@ -24,10 +24,55 @@ namespace ice::ecs
             return base_offset;
         }
 
-    }
+        auto contains_required_components(
+            ice::Span<ice::ecs::ArchetypeQuery::QueryCondition const> const& conditions,
+            ice::Span<ice::StringID const> const& identifiers
+        ) noexcept -> ice::u32
+        {
+            using Condition = ArchetypeQuery::QueryCondition;
+
+            ice::u32 const condition_count = ice::size(conditions);
+            ice::u32 const identifier_count = ice::size(identifiers);
+            ice::u32 const identifier_last_index = identifier_count - 1;
+
+            ice::u32 condition_idx = 0;
+            ice::u32 identifier_idx = 0;
+            ice::u64 identifier_hash = ice::hash(identifiers[0]);
+
+            // As long as we have something to check and we did not fail search for the next ID
+            ice::u32 matched_components = 0;
+
+            bool result = true;
+            for (; (condition_idx < condition_count) && (identifier_idx < identifier_count) && result; ++condition_idx)
+            {
+                Condition const& condition = conditions[condition_idx];
+                ice::u64 const condition_hash = ice::hash(condition.identifier);
+
+                // As long as `condition_hash` is greater than `identifier_hash` check the next identifier.
+                while (condition_hash > identifier_hash && identifier_idx < identifier_last_index)
+                {
+                    identifier_idx += 1;
+                    identifier_hash = ice::hash(identifiers[identifier_idx]);
+                }
+
+                // We are either equal or smaller
+                //  - if smaller, then there is not a single value left in `identifiers` that would match.
+                //  - if we failed to match, we can still check if the condition was optional
+                result &= (identifier_hash == condition_hash) || condition.optional;
+
+                // We only care for properly matched components, as this will allow us to even handle fully optional queries a bit better.
+                //  - support for fully optional queries is there to enable them if required at some point. However we are trying to avoid it for now.
+                matched_components += (identifier_hash == condition_hash);
+            }
+
+            return result ? matched_components : 0;
+        }
+
+    } // namespace detail
 
     struct ArchetypeIndex::ArchetypeDataHeader
     {
+        ice::ecs::Archetype archetype_identifier;
         ice::ecs::ArchetypeInstanceInfo archetype_info;
         ice::ecs::DataBlockPool* block_pool;
         ice::ecs::DataBlock* first_block;
@@ -105,6 +150,7 @@ namespace ice::ecs
             ICE_ASSERT(data_component_info == data_component_info_end, "Copying the component info did move past the reserved space!");
         }
 
+        data_header->archetype_identifier = archetype_info.identifier;
         data_header->archetype_info.component_identifiers = ice::Span<ice::StringID const>{ component_identifiers, component_count };
         data_header->archetype_info.component_sizes = ice::Span<ice::u32 const>{ component_sizes, component_count };
         data_header->archetype_info.component_alignments = ice::Span<ice::u32 const>{ component_alignments, component_count };
@@ -164,10 +210,93 @@ namespace ice::ecs
     }
 
     void ArchetypeIndex::find_archetypes(
-        ice::ecs::ArchetypeInfo const& components_info,
+        ice::ecs::ArchetypeQuery const& query_info,
         ice::pod::Array<ice::ecs::Archetype>& out_archetypes
-    ) noexcept
+    ) const noexcept
     {
+        ice::pod::array::clear(out_archetypes);
+
+        ice::u32 const query_condition_count = ice::size(query_info.query_conditions);
+        ice::u32 const required_component_count = [](auto const& query_conditions) noexcept -> ice::u32
+        {
+            ice::u32 result = 0;
+            for (ice::ecs::ArchetypeQuery::QueryCondition const& condition : query_conditions)
+            {
+                result += ice::u32{ condition.optional == false };
+            }
+            return result;
+        }(query_info.query_conditions);
+
+        ICE_ASSERT(
+            required_component_count == 0,
+            "An query without any required component might impact performance as it will check every archetype possible for a match."
+        );
+
+        for (ArchetypeDataHeader const* entry : _archetype_data)
+        {
+            ArchetypeInstanceInfo const& archetype_info = entry->archetype_info;
+
+            ice::u32 const archetype_component_count = ice::size(archetype_info.component_identifiers);
+            if (archetype_component_count < required_component_count)
+            {
+                continue;
+            }
+
+            ice::u32 const matched_components = ice::ecs::detail::contains_required_components(
+                query_info.query_conditions,
+                archetype_info.component_identifiers
+            );
+
+            // If we don't match any component in a full optional query, we still skip this archetype.
+            //  #todo: we should probably also check for the existance of the EntityHandle in the query. Then the check should be `> 1`
+            if (matched_components > 0)
+            {
+                ice::pod::array::push_back(out_archetypes, entry->archetype_identifier);
+            }
+        }
+    }
+
+    void ArchetypeIndex::fetch_archetype_instance_infos(
+        ice::Span<ice::ecs::Archetype const> archetypes,
+        ice::Span<ice::ecs::ArchetypeInstanceInfo const*> out_instance_infos
+    ) const noexcept
+    {
+        ice::u32 const instance_count = ice::pod::array::size(_archetype_data);
+
+        ice::u32 archetype_idx = 0;
+        for (Archetype archetype : archetypes)
+        {
+            ice::u32 const instance_idx = ice::pod::hash::get(_archetype_index, ice::hash(archetype), ice::u32_max);
+            ICE_ASSERT(
+                instance_idx < instance_count,
+                "Unknown archetype handle {} provided while fetching instance infos. Did you forget to register this archetype?",
+                ice::hash(archetype)
+            );
+
+            out_instance_infos[archetype_idx] = ice::addressof(_archetype_data[instance_idx]->archetype_info);
+        }
+
+    }
+
+    void ArchetypeIndex::fetch_archetype_instance_info_with_pool(
+        ice::ecs::Archetype archetype,
+        ice::ecs::ArchetypeInstanceInfo const*& out_instance_info,
+        ice::ecs::DataBlockPool*& out_block_pool
+    ) const noexcept
+    {
+        ice::u32 const instance_count = ice::pod::array::size(_archetype_data);
+        ice::u32 const instance_idx = ice::pod::hash::get(_archetype_index, ice::hash(archetype), ice::u32_max);
+
+        ICE_ASSERT(
+            instance_idx < instance_count,
+            "Unknown archetype handle {} provided while fetching instance info with block pool. Did you forget to register the archetype?",
+            ice::hash(archetype)
+        );
+
+        ArchetypeDataHeader const* const header = _archetype_data[instance_idx];
+
+        out_instance_info = ice::addressof(header->archetype_info);
+        out_block_pool = header->block_pool;
     }
 
 } // ice::ecs

@@ -7,6 +7,17 @@
 namespace ice::ecs
 {
 
+    struct ArchetypeQuery
+    {
+        struct QueryCondition
+        {
+            ice::StringID identifier;
+            bool optional = false;
+        };
+
+        ice::Span<QueryCondition const> query_conditions;
+    };
+
     class DataBlockPool;
 
     class ArchetypeIndex
@@ -23,15 +34,21 @@ namespace ice::ecs
             ice::ecs::DataBlockPool* data_block_pool = nullptr
         ) noexcept -> ice::ecs::Archetype;
 
-        // #todo Create a archetype component query
         void find_archetypes(
-            ice::ecs::ArchetypeInfo const& components_info,
+            ice::ecs::ArchetypeQuery const& query_info,
             ice::pod::Array<ice::ecs::Archetype>& out_archetypes
-        ) noexcept;
+        ) const noexcept;
 
-        auto get_component_block_pool(
-            ice::ecs::Archetype archetype
-        ) noexcept -> ice::ecs::DataBlockPool&;
+        void fetch_archetype_instance_infos(
+            ice::Span<ice::ecs::Archetype const> archetypes,
+            ice::Span<ice::ecs::ArchetypeInstanceInfo const*> out_instance_infos
+        ) const noexcept;
+
+        void fetch_archetype_instance_info_with_pool(
+            ice::ecs::Archetype archetype,
+            ice::ecs::ArchetypeInstanceInfo const*& out_instance_info,
+            ice::ecs::DataBlockPool*& out_block_pool
+        ) const noexcept;
 
     private:
         ice::Allocator& _allocator;
