@@ -95,13 +95,24 @@ jobs:
       run: |
         echo 'Preparing message...'
         
-  finalize:
-    name: Finalize
+  finalize-tests:
+    name: Tests summary
     runs-on: ubuntu-latest
     if: always()
     needs:
     - test-windows
     - test-linux
+    steps:
+    - name: Send summary
+      run: |
+        echo 'sending summary...'
+        
+  finalize:
+    name: Finalize
+    runs-on: ubuntu-latest
+    if: always()
+    needs:
+    - finalize-tests
     - notify-discord
     steps:
     - name: Send summary
