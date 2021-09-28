@@ -45,7 +45,20 @@ namespace ice::ecs
             ice::ecs::Archetype archetype
         ) noexcept;
 
+
         struct EntityOperationData;
+        struct OperationIterator
+        {
+            auto operator*() const noexcept -> EntityOperation const&;
+            bool operator==(OperationIterator const& other) const noexcept;
+            bool operator!=(OperationIterator const& other) const noexcept;
+            auto operator++() noexcept -> OperationIterator&;
+
+            ice::ecs::EntityOperation const* _entry;
+        };
+
+        auto begin() const noexcept -> OperationIterator;
+        auto end() const noexcept -> OperationIterator;
 
     private:
         ice::Allocator& _allocator;

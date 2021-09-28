@@ -13,6 +13,33 @@ namespace ice::ecs
         ice::u32 available_data_size;
     };
 
+    auto EntityOperations::OperationIterator::operator*() const noexcept -> EntityOperation const&
+    {
+        return *_entry;
+    }
+
+    bool EntityOperations::OperationIterator::operator==(OperationIterator const& other) const noexcept
+    {
+        return _entry == other._entry;
+    }
+
+    bool EntityOperations::OperationIterator::operator!=(OperationIterator const& other) const noexcept
+    {
+        return !(*this == other);
+    }
+
+    auto EntityOperations::OperationIterator::operator++() noexcept -> OperationIterator&
+    {
+        _entry = _entry->next;
+
+        // We need to skip over operations that are acting as block heads
+        while (_entry != nullptr && _entry->entities == reinterpret_cast<EntityHandle const*>(1))
+        {
+            _entry = _entry->next;
+        }
+        return *this;
+    }
+
     namespace detail
     {
 
@@ -201,6 +228,16 @@ namespace ice::ecs
         *_operations->entities = entity;
         _operations->component_data = nullptr;
         _operations->component_data_size = 0;
+    }
+
+    auto EntityOperations::begin() const noexcept -> OperationIterator
+    {
+        return OperationIterator{ ._entry = _root };
+    }
+
+    auto EntityOperations::end() const noexcept -> OperationIterator
+    {
+        return OperationIterator{ ._entry = nullptr };
     }
 
     void queue_set_archetype(
