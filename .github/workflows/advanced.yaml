@@ -18,7 +18,7 @@ jobs:
       event_commit_messages: ${{ steps.extract-commit-messages.outputs.commit_messages }}
     steps:
     - id: extract-payload
-      name: Extract tags from commits
+      name: Extract payload
       # env:
       #  COMMIT_MESSAGES: ${{ fromJSON(env.GITHUB_EVENT_PATH) }}
       run: |
@@ -35,6 +35,10 @@ jobs:
         commit_messages="${commit_messages//$'\r'/'%0D'}"
         echo $commit_messages
         echo "::set-output name=commit_messages::$commit_messages"
+    - id: extract-tags
+      name: Extract tags v2
+      run: |
+        grep -oP '\[.*?\]' $GITHUB_EVENT_PATH
         
   print_workflow_tags:
     name: Print workflow tags
