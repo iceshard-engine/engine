@@ -41,6 +41,7 @@ jobs:
       continue-on-error: true
       run: |
         tags_array=$(echo '${{ steps.extract-commit-messages.outputs.commit_messages }}' | grep -oP '\[.*?\]' | sed 's/\[\(.*\)\]/"\1",/')
+        echo 'TODO: Handle a missing tag situation.'
         tags_array="${tags_array//'%'/'%25'}"
         tags_array="${tags_array//$'\n'/'%0A'}"
         tags_array="${tags_array//$'\r'/'%0D'}"
