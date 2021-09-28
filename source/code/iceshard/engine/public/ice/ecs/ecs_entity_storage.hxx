@@ -27,7 +27,7 @@ namespace ice::ecs
 
     private:
         ice::Allocator& _allocator;
-        ice::ecs::ArchetypeIndex& _archetype_index;
+        ice::ecs::ArchetypeIndex const& _archetype_index;
     };
 
 } // namespace ice::ecs
