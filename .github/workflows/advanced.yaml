@@ -39,7 +39,7 @@ jobs:
       name: Extract tags v2
       continue-on-error: true
       run: |
-        echo '${{ steps.extract-commit-messages.outputs.commit_messages }}' | grep -oP '\[.*?\]' | sed 's/\([^\[\]]*\)/"\1",/'
+        echo '${{ steps.extract-commit-messages.outputs.commit_messages }}' | grep -oP '\[.*?\]' | sed 's/\[\([^\[\]]*\)\]/"\1",/'
 
   print_workflow_tags:
     name: Print workflow tags
