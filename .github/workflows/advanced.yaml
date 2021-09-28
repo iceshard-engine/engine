@@ -45,8 +45,8 @@ jobs:
         tags_array="${tags_array//'%'/'%25'}"
         tags_array="${tags_array//$'\n'/'%0A'}"
         tags_array="${tags_array//$'\r'/'%0D'}"
-        echo '[ $tags_array \'\' ]'
-        echo "::set-output name=tags::[$tags_array '']"
+        echo '[ $tags_array "" ]'
+        echo "::set-output name=tags::[$tags_array \"\"]"
 
   print_workflow_tags:
     name: Print workflow tags
