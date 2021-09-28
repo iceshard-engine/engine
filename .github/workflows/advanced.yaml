@@ -49,29 +49,6 @@ jobs:
     - name: Print
       run: |
         echo '${{ needs.extract_event_payload.outputs.event_commit_messages }}'
-  # validation-build-windows:
-  #   runs-on: windows-latest
-  #   strategy:
-  #     matrix:
-  #       configuration: [Debug, Develop]
-  #   steps:
-  #   - uses: actions/checkout@v2
-  #   - name: Setup repository
-  #     run: |
-  #       pip3 install setuptools
-  #       pip3 install conan
-  #       conan config install https://github.com/iceshard-engine/conan-config.git
-  #   - name: Build (Windows-${{ matrix.configuration }})
-  #     shell: cmd
-  #     run: |
-  #       ice build -t all-x64-${{ matrix.configuration }}
-  #   - name: Run unit tests
-  #     shell: cmd
-  #     run: |
-  #       ice build -t test-all-x64-${{ matrix.configuration }}
-  #   - name: Success
-  #     run: |
-  #       echo Validation successful
 
   # commits-notify:
   #   runs-on: ubuntu-latest
