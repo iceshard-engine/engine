@@ -75,7 +75,7 @@ jobs:
         echo 'Preparing message...'
         
   finalize:
-    name: Print workflow tags
+    name: Finalize
     runs-on: ubuntu-latest
     needs:
     - validate-windows
