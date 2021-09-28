@@ -37,6 +37,7 @@ jobs:
         echo "::set-output name=commit_messages::$commit_messages"
     - id: extract-tags
       name: Extract tags v2
+      continue-on-error: true
       run: |
         grep -oP '\[.*?\]' $GITHUB_EVENT_PATH
         
