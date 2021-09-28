@@ -14,6 +14,8 @@ namespace ice::ecs
         DataBlockPool(ice::Allocator& alloc) noexcept;
         ~DataBlockPool() noexcept;
 
+        auto provided_block_size() const noexcept -> ice::u32;
+
         auto request_block() noexcept -> ice::ecs::DataBlock*;
         void release_block(ice::ecs::DataBlock* block) noexcept;
 

@@ -22,6 +22,11 @@ namespace ice::ecs
         }
     }
 
+    auto DataBlockPool::provided_block_size() const noexcept -> ice::u32
+    {
+        return Constant_DefaultBlockSize - sizeof(DataBlock);
+    }
+
     auto DataBlockPool::request_block() noexcept -> ice::ecs::DataBlock*
     {
         DataBlock* free_block = _free_block_list;
