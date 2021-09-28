@@ -40,25 +40,74 @@ jobs:
       name: Extract tags v2
       continue-on-error: true
       run: |
-        tags_array=$(echo '${{ steps.extract-commit-messages.outputs.commit_messages }}' | grep -oP '\[.*?\]' | sed 's/\[\(.*\)\]/"\1",/')
-        echo 'TODO: Handle a missing tag situation.'
-        tags_array="${tags_array//'%'/'%25'}"
-        tags_array="${tags_array//$'\n'/'%0A'}"
-        tags_array="${tags_array//$'\r'/'%0D'}"
-        echo '[ $tags_array "" ]'
-        echo "::set-output name=tags::[$tags_array \"\"]"
+        tags_array=$(echo '${{ steps.extract-commit-messages.outputs.commit_messages }}' | grep -oP '\[.*?\]' | sed 's/\[\(.*\)\]\\n*/\1 /')
+        echo $tags_array
+        echo "::set-output name=tags::$tags_array"
 
-  print_workflow_tags:
-    name: Print workflow tags
+  validate-windows:
+    name: Validate (Windows)
+    runs-on: windows-latest
+    needs: extract_event_payload
+    if: contains(needs.extract_event_payload.outputs.event_commit_tags, 'skip-win') == false
+    steps:
+    - name: Prepare
+      run: |
+        echo 'Preparing workspace...'
+
+  validate-linux:
+    name: Validate (Linux)
     runs-on: ubuntu-latest
     needs: extract_event_payload
-    strategy:
-      matrix:
-        tag: ${{ fromJSON(needs.extract_event_payload.outputs.event_commit_tags) }}
+    if: contains(needs.extract_event_payload.outputs.event_commit_tags, 'skip-unix') == false
     steps:
-    - name: Print tag [${{ matrix.tag }}]
+    - name: Prepare
       run: |
-        echo 'Tag ${{ matrix.tag }}'
+        echo 'Preparing workspace...'
+  
+  notify-discord:
+    name: Notify Discord
+    runs-on: ubuntu-latest
+    needs: extract_event_payload
+    if: contains(needs.extract_event_payload.outputs.event_commit_tags, 'skip-discord') == false
+    steps:
+    - name: Send notification
+      run: |
+        echo 'Preparing message...'
+        
+  finalize:
+    name: Print workflow tags
+    runs-on: ubuntu-latest
+    needs:
+    - validate-windows
+    - validate-linux
+    - notify-discord
+    steps:
+    - name: Send summary
+      run: |
+        echo 'sending summary...'
+
+#     - id: extract-tags
+#       name: Extract tags v2
+#       continue-on-error: true
+#       run: |
+#         tags_array=$(echo '${{ steps.extract-commit-messages.outputs.commit_messages }}' | grep -oP '\[.*?\]' | sed 's/\[\(.*\)\]/"\1",/')
+#         echo 'TODO: Handle a missing tag situation.'
+#         tags_array="${tags_array//'%'/'%25'}"
+#         tags_array="${tags_array//$'\n'/'%0A'}"
+#         tags_array="${tags_array//$'\r'/'%0D'}"
+#         echo '[ $tags_array "" ]'
+#         echo "::set-output name=tags::[$tags_array \"\"]"
+#   print_workflow_tags:
+#     name: Print workflow tags
+#     runs-on: ubuntu-latest
+#     needs: extract_event_payload
+#     strategy:
+#       matrix:
+#         tag: ${{ fromJSON(needs.extract_event_payload.outputs.event_commit_tags) }}
+#     steps:
+#     - name: Print tag [${{ matrix.tag }}]
+#       run: |
+#         echo 'Tag ${{ matrix.tag }}'
 
   # commits-notify:
   #   runs-on: ubuntu-latest
