@@ -39,7 +39,7 @@ jobs:
       name: Extract tags v2
       continue-on-error: true
       run: |
-        grep -oP '\[.*?\]' <<< ${{ steps.extract-payload.outputs.payload }}
+        echo '${{ needs.extract_event_payload.outputs.event_commit_messages }}' | grep -oP '\[.*?\]'
         
   print_workflow_tags:
     name: Print workflow tags
