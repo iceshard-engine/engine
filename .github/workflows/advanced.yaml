@@ -60,8 +60,10 @@ jobs:
     steps:
     - name: Prepare workspace
       run: |
-        echo "Build: ${{ ' all-' + matrix.arch + '-' + join(fromJSON(needs.setup_workflow.outputs.build_configs), ' all-' + matrix.arch + '-') }}"
-        
+        BUILD_CONFIGS="${{ join(fromJSON(needs.setup_workflow.outputs.build_configs), ' ') }}"
+        echo $BUILD_CONFIGS
+        BUILD_TARGETS=$(echo "$BUILD_CONFIGS" | sed 's/\(\S+\)/all-\1-${{ matrix.arch }}/')
+        echo $BUILD_TARGETS
 
 #   extract_event_payload:
 #     name: Extract event payload
