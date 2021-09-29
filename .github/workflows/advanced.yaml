@@ -79,7 +79,7 @@ jobs:
       if: ${{ startsWith(matrix.os, 'windows-') }}
       shell: pwsh
       run: |
-         "${{ join(fromJSON(needs.setup_workflow.outputs.build_configs), '\",\"') }}" | ForEach-Object { "-t all-${{matrix.arch}}-$_" } | Join-String " "
+         "${{ join(fromJSON(needs.setup_workflow.outputs.build_configs), '","') }}" | ForEach-Object { "-t all-${{matrix.arch}}-$_" } | Join-String " "
 #        set BUILD_TARGETS=$(echo "$BUILD_CONFIGS" | grep -oP '\S+' | sed 's/\(\S*\)/-t all-${{matrix.arch}}-\1/')
 #        ice init
 #     - name: Prepare workspace
