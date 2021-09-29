@@ -26,14 +26,16 @@ jobs:
     - id: parse_commits
       name: Extract CI tags from commits
       run: |
-        echo "::debug::Event file: $GITHUB_EVENT_PATH"
         PAYLOAD_CONTENT=$(cat $GITHUB_EVENT_PATH)
-        echo "::debug::Event payload (raw): $PAYLOAD_CONTENT"
+        echo "::debug::Raw payload content"
+        echo $PAYLOAD_CONTENT
         # PAYLOAD_CONTENT="${PAYLOAD_CONTENT//'%'/'%25'}"
-        PAYLOAD_CONTENT="${PAYLOAD_CONTENT//$'\n'/''}"
-        PAYLOAD_CONTENT="${PAYLOAD_CONTENT//$'\r'/''}"
-        echo "::debug::Event payload (sanitized): $PAYLOAD_CONTENT"
+        PAYLOAD_CONTENT="${PAYLOAD_CONTENT//$'\n'/' '}"
+        PAYLOAD_CONTENT="${PAYLOAD_CONTENT//$'\r'/' '}"
+        echo "::debug::Sanitized payload content"
+        echo $PAYLOAD_CONTENT
         
+        echo "::debug::Parsing payload content"
         COMMIT_MESSAGES=${{ join(fromJSON(env.PAYLOAD_CONTENT).commits.*.message, ';') }}
         COMMIT_TAGS=$(echo $COMMIT_MESSAGES | grep -oP '\[.*?\]' | sed 's/\[\(.*\)\]\\n*/\1 /')
 
