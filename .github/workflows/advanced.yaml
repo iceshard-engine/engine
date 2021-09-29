@@ -74,7 +74,9 @@ jobs:
         cache-name: cache-conan-packages
       with:
         path: ~/.conan
-        key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/metadata.json') }}
+        key: ${{ runner.os }}-build-${{ env.cache-name }}
+        restore-keys: |
+          ${{ runner.os }}-build-
         
     - name: Build targets
       if: ${{ startsWith(matrix.os, 'ubuntu-') }}
