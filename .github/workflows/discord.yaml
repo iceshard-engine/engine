@@ -1,0 +1,21 @@
+name: Discord notification
+
+on: 
+  push:
+    branches: '*'
+
+jobs:
+  notify_discord_build_started:
+    runs-on: ubuntu-latest
+    needs: setup_workflow
+    steps:
+    - name: Notify build started
+      uses: Ilshidur/action-discord@master
+      env:
+        DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_YUKI }}
+        DISCORD_USERNAME: 'Yuki <IceShard Engine>'
+      with:
+        args: |
+          New commits have been pushed to `{{ EVENT_PAYLOAD.repository.full_name }}`!
+          {{ EVENT_PAYLOAD.commits.map(e => '- ' + e.message + ' (<' + e.url + '>) <' + e.author.name + '>').join('\n') }}
+          
