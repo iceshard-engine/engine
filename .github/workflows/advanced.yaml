@@ -79,9 +79,10 @@ jobs:
       if: ${{ startsWith(matrix.os, 'windows-') }}
       shell: pwsh
       run: |
-        $BuildTargets = "${{ join(fromJSON(needs.setup_workflow.outputs.build_configs), '","') }}" | ForEach-Object { "-t all-${{matrix.arch}}-$_" } | Join-String " "
+        $BuildTargets = "${{ join(fromJSON(needs.setup_workflow.outputs.build_configs), '","') }}" | ForEach-Object { "-t all-${{matrix.arch}}-$_" }
+        $BuildTargetsOption = $BuildTargets -join " "
         cmd /C ".\ice.bat init"
-        cmd /C ".\ice.bat build $BuildTargets"
+        cmd /C ".\ice.bat build $BuildTargetsOption"
 #     - name: Prepare workspace
 #       run: | 
       #  BUILD_CONFIGS="${{ join(fromJSON(needs.setup_workflow.outputs.build_configs), ' ') }}"
