@@ -60,7 +60,7 @@ jobs:
     steps:
     - name: Prepare workspace
       run: |
-        echo "Build: ${{ join(fromJSON(needs.setup_workflow.outputs.build_configs).map(config => 'all-' + matrix.arch + '-' + config), ' ') }}"
+        echo "Build: ${{ fromJSON(needs.setup_workflow.outputs.build_configs).map(config => 'all-' + matrix.arch + '-' + config).join(' ') }}"
         
 
 #   extract_event_payload:
