@@ -43,9 +43,9 @@ jobs:
       name: Select build configs
       run: |
         if [[ "${{ steps.extract_ci_tags.outputs.tags }}" == *"all_configs"* ]]; then
-          echo "::set-output name=build_configs::{\"Debug\",\"Develop\",\"Profile\",\"Release\"}"
+          echo "::set-output name=build_configs::[\"Debug\",\"Develop\",\"Profile\",\"Release\"]"
         else
-          echo "::set-output name=build_configs::{\"Debug\",\"Develop\"}"
+          echo "::set-output name=build_configs::[\"Debug\",\"Develop\"]"
         fi
         
   build_configurations:
