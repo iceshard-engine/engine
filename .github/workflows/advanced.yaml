@@ -1,4 +1,4 @@
-name: Source Validation
+name: Validation
 
 # This workflow will run on every push on every branch. It will not be triggered on pull requests.
 #   - At some point it will be cut down to only be triggered on source code changes and branches with specific naming.
@@ -14,7 +14,7 @@ on:
 #   - (wip) [benchmark] - Runs benchmarks additionally to unit tests. (wip)
 #   - (wip) [snapshot] - Deploys a 'Develop' build to conan on the 'snapshot' channel. (wip)
 #   - [all_configs] - Runs all checks on all configurations. (wip, some limitations apply)
-#   - (wip) [separate_configs] - Runs all checks on all configurations. (wip, some limitations apply)
+#   - (wip) [separate_configs] - Runs every configuration on a separate job. (wip, some limitations apply)
 
 jobs:
   setup_workflow:
@@ -60,6 +60,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
     - uses: actions/checkout@v2
+    
     - name: Prepare workspace
       shell: pwsh
       run: |
@@ -86,6 +87,7 @@ jobs:
         
         ./ice.sh init
         ./ice.sh build $BUILD_TARGETS
+        
     - name: Build targets
       if: ${{ startsWith(matrix.os, 'windows-') }}
       shell: pwsh
@@ -94,6 +96,7 @@ jobs:
         $BuildTargetsOption = $BuildTargets -join " "
         cmd /C ".\ice.bat init"
         cmd /C ".\ice.bat build $BuildTargetsOption"
+        
     - name: Execute Tests
       if: ${{ startsWith(matrix.os, 'windows-') }}
       shell: pwsh
@@ -101,156 +104,3 @@ jobs:
         $BuildTargets = "${{ join(fromJSON(needs.setup_workflow.outputs.build_configs), '","') }}" | ForEach-Object { "-t test-all-${{matrix.arch}}-$_" }
         $BuildTargetsOption = $BuildTargets -join " "
         cmd /C ".\ice.bat build $BuildTargetsOption"
-        
-#     - name: Prepare workspace
-#       run: | 
-      #  BUILD_CONFIGS="${{ join(fromJSON(needs.setup_workflow.outputs.build_configs), ' ') }}"
-      #  BUILD_TARGETS=$(echo "$BUILD_CONFIGS" | grep -oP '\S+' | sed 's/\(\S*\)/all-${{matrix.arch}}-\1/')
-        
-      #  echo $BUILD_CONFIGS
-      #  echo $BUILD_TARGETS
-#   extract_event_payload:
-#     name: Extract event payload
-#     runs-on: ubuntu-latest
-#     outputs:
-#       event_payload: ${{ steps.extract-payload.outputs.payload }}
-#       event_commit_messages: ${{ steps.extract-commit-messages.outputs.commit_messages }}
-#       event_commit_tags: ${{ steps.extract-tags.outputs.tags }}
-#     steps:
-#     - id: extract-payload
-#       name: Extract payload
-#       # env:
-#       #  COMMIT_MESSAGES: ${{ fromJSON(env.GITHUB_EVENT_PATH) }}
-#       run: |
-#         payload_content=$(cat $GITHUB_EVENT_PATH)
-#         payload_content="${payload_content//'%'/'%25'}"
-#         payload_content="${payload_content//$'\n'/'%0A'}"
-#         payload_content="${payload_content//$'\r'/'%0D'}"
-#         echo "::set-output name=payload::$payload_content"
-#     - id: extract-commit-messages
-#       run: |
-#         commit_messages=$(echo '${{ toJSON(fromJson(steps.extract-payload.outputs.payload).commits.*.message) }}')
-#         commit_messages="${commit_messages//'%'/'%25'}"
-#         commit_messages="${commit_messages//$'\n'/'%0A'}"
-#         commit_messages="${commit_messages//$'\r'/'%0D'}"
-#         echo $commit_messages
-#         echo "::set-output name=commit_messages::$commit_messages"
-#     - id: extract-tags
-#       name: Extract tags v2
-#       continue-on-error: true
-#       run: |
-#         tags_array=$(echo '${{ steps.extract-commit-messages.outputs.commit_messages }}' | grep -oP '\[.*?\]' | sed 's/\[\(.*\)\]\\n*/\1 /')
-#         echo $tags_array
-#         echo "::set-output name=tags::$tags_array"
-
-#   validate-windows:
-#     name: Validate (Windows)
-#     runs-on: windows-latest
-#     needs: extract_event_payload
-#     if: contains(needs.extract_event_payload.outputs.event_commit_tags, 'skip-win') == false
-#     steps:
-#     - name: Prepare
-#       run: |
-#         echo 'Preparing workspace...'
-
-#   validate-linux:
-#     name: Validate (Linux)
-#     runs-on: ubuntu-latest
-#     needs: extract_event_payload
-#     if: contains(needs.extract_event_payload.outputs.event_commit_tags, 'skip-unix') == false
-#     steps:
-#     - name: Prepare
-#       run: |
-#         echo 'Preparing workspace...'
-        
-
-#   test-windows:
-#     name: Test (Windows)
-#     runs-on: windows-latest
-#     needs: validate-windows
-#     if: success() && contains(needs.extract_event_payload.outputs.event_commit_tags, 'skip-tests') == false
-#     steps:
-#     - name: Prepare
-#       run: |
-#         echo 'Get test binaries...'
-        
-#   test-linux:
-#     name: Test (Linux)
-#     runs-on: ubuntu-latest
-#     needs: validate-linux
-#     if: success() && contains(needs.extract_event_payload.outputs.event_commit_tags, 'skip-tests') == false
-#     steps:
-#     - name: Prepare
-#       run: |
-#         echo 'Get test binaries...'
-  
-#   notify-discord:
-#     name: Notify Discord
-#     runs-on: ubuntu-latest
-#     needs: extract_event_payload
-#     if: contains(needs.extract_event_payload.outputs.event_commit_tags, 'skip-discord') == false
-#     steps:
-#     - name: Send notification
-#       run: |
-#         echo '${{ needs.extract_event_payload.outputs.event_commit_tags }}'
-#         echo 'Preparing message...'
-        
-#   finalize-tests:
-#     name: Tests summary
-#     runs-on: ubuntu-latest
-#     if: always()
-#     needs:
-#     - test-windows
-#     - test-linux
-#     steps:
-#     - name: Send summary
-#       run: |
-#         echo 'sending summary...'
-        
-#   finalize:
-#     name: Finalize
-#     runs-on: ubuntu-latest
-#     if: always()
-#     needs:
-#     - finalize-tests
-#     - notify-discord
-#     steps:
-#     - name: Send summary
-#       run: |
-#         echo 'sending summary...'
-
-#     - id: extract-tags
-#       name: Extract tags v2
-#       continue-on-error: true
-#       run: |
-#         tags_array=$(echo '${{ steps.extract-commit-messages.outputs.commit_messages }}' | grep -oP '\[.*?\]' | sed 's/\[\(.*\)\]/"\1",/')
-#         echo 'TODO: Handle a missing tag situation.'
-#         tags_array="${tags_array//'%'/'%25'}"
-#         tags_array="${tags_array//$'\n'/'%0A'}"
-#         tags_array="${tags_array//$'\r'/'%0D'}"
-#         echo '[ $tags_array "" ]'
-#         echo "::set-output name=tags::[$tags_array \"\"]"
-#   print_workflow_tags:
-#     name: Print workflow tags
-#     runs-on: ubuntu-latest
-#     needs: extract_event_payload
-#     strategy:
-#       matrix:
-#         tag: ${{ fromJSON(needs.extract_event_payload.outputs.event_commit_tags) }}
-#     steps:
-#     - name: Print tag [${{ matrix.tag }}]
-#       run: |
-#         echo 'Tag ${{ matrix.tag }}'
-
-  # commits-notify:
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #   - name: Notify commit (Discord)
-  #     uses: Ilshidur/action-discord@master
-  #     env:
-  #       DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_YUKI }}
-  #       DISCORD_USERNAME: 'Yuki <IceShard Engine>'
-  #     with:
-  #       args: |
-  #         New commits have been pushed to `{{ EVENT_PAYLOAD.repository.full_name }}`!
-  #         {{ EVENT_PAYLOAD.commits.map(e => '- ' + e.message + ' (<' + e.url + '>) <' + e.author.name + '>').join('\n') }}
