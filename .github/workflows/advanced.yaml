@@ -36,7 +36,7 @@ jobs:
         echo $PAYLOAD_CONTENT
         
         echo "::debug::Parsing payload content"
-        COMMIT_MESSAGES=${{ join(fromJSON(env.PAYLOAD_CONTENT).commits.*.message, ';') }}
+        COMMIT_MESSAGES=${{ join(fromJSON('\{\}').commits.*.message, ';') }}
         COMMIT_TAGS=$(echo $COMMIT_MESSAGES | grep -oP '\[.*?\]' | sed 's/\[\(.*\)\]\\n*/\1 /')
 
     - id: select_build_configs
