@@ -13,7 +13,8 @@ on:
 #   - (wip) [asan] - Runs all unit tests with an adress sanitizer enabled. (wip)
 #   - (wip) [benchmark] - Runs benchmarks additionally to unit tests. (wip)
 #   - (wip) [snapshot] - Deploys a 'Develop' build to conan on the 'snapshot' channel. (wip)
-#   - (wip) [all_configs] - Runs all checks on all configurations. (wip, some limitations apply)
+#   - [all_configs] - Runs all checks on all configurations. (wip, some limitations apply)
+#   - (wip) [separate_configs] - Runs all checks on all configurations. (wip, some limitations apply)
 
 jobs:
   setup_workflow:
@@ -59,12 +60,18 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
     - name: Prepare workspace
+      shell: pwsh
       run: |
-        BUILD_CONFIGS="${{ join(fromJSON(needs.setup_workflow.outputs.build_configs), ' ') }}"
-        echo $BUILD_CONFIGS
-        BUILD_TARGETS=$(echo "$BUILD_CONFIGS" | grep -oP '\S+' | sed 's/\(\S*\)/all-${{matrix.arch}}-\1/')
-        echo $BUILD_TARGETS
+        pip3 install setuptools
+        pip3 install conan
 
+#     - name: Prepare workspace
+#       run: | 
+      #  BUILD_CONFIGS="${{ join(fromJSON(needs.setup_workflow.outputs.build_configs), ' ') }}"
+      #  BUILD_TARGETS=$(echo "$BUILD_CONFIGS" | grep -oP '\S+' | sed 's/\(\S*\)/all-${{matrix.arch}}-\1/')
+        
+      #  echo $BUILD_CONFIGS
+      #  echo $BUILD_TARGETS
 #   extract_event_payload:
 #     name: Extract event payload
 #     runs-on: ubuntu-latest
