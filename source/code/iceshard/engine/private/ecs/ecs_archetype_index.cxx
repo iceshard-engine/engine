@@ -75,7 +75,6 @@ namespace ice::ecs
         ice::ecs::Archetype archetype_identifier;
         ice::ecs::ArchetypeInstanceInfo archetype_info;
         ice::ecs::DataBlockPool* block_pool;
-        ice::u32 block_entity_count_max;
     };
 
     static constexpr ice::u32 Constant_TotalMemoryUsedForArchetypeHeaders_KiB = ice::ecs::Constant_MaxArchetypeCount * sizeof(void*) / 1024;
@@ -87,6 +86,12 @@ namespace ice::ecs
         , _archetype_data{ _allocator }
     {
         ice::pod::array::reserve(_archetype_data, ice::ecs::Constant_MaxArchetypeCount);
+        ice::pod::array::push_back(_archetype_data, nullptr);
+    }
+
+    auto ArchetypeIndex::registered_archetype_count() const noexcept -> ice::u32
+    {
+        return ice::pod::array::size(_archetype_data);
     }
 
     auto ArchetypeIndex::register_archetype(
@@ -110,6 +115,11 @@ namespace ice::ecs
         }
 
         ice::u32 const component_count = ice::size(archetype_info.component_identifiers);
+
+        ICE_ASSERT(
+            component_count >= 2,
+            "You cannot register an archetype with no component types!"
+        );
 
         // We calculate the required space to store all information related to the current archetype.
         //  We need enough space for every components: identifier, size, alignment, offset
@@ -183,7 +193,7 @@ namespace ice::ecs
             ice::u32 const block_size = data_block_pool->provided_block_size();
             ice::u32 const available_block_size = block_size - component_alignment_sum;
 
-            data_header->block_entity_count_max = available_block_size / component_size_sum;
+            data_header->archetype_info.component_entity_count_max = available_block_size / component_size_sum;
 
             ice::u32 next_component_offset = 0;
             for (ice::u32 idx = 0; idx < component_count; ++idx)
@@ -191,11 +201,13 @@ namespace ice::ecs
                 next_component_offset = ice::ecs::detail::align_forward_u32(next_component_offset, component_alignments[idx]);
                 component_offsets[idx] = next_component_offset;
 
-                next_component_offset = component_sizes[idx] * data_header->block_entity_count_max;
+                next_component_offset = component_sizes[idx] * data_header->archetype_info.component_entity_count_max;
             }
         }
 
         ice::u32 const archetype_index = ice::pod::array::size(_archetype_data);
+        data_header->archetype_info.archetype_instance = ArchetypeInstance{ archetype_index };
+
         ice::pod::array::push_back(_archetype_data, data_header);
         ice::pod::hash::set(_archetype_index, ice::hash(archetype_info.identifier), archetype_index);
 
@@ -254,6 +266,11 @@ namespace ice::ecs
         ice::Span<ice::ecs::ArchetypeInstanceInfo const*> out_instance_infos
     ) const noexcept
     {
+        ICE_ASSERT(
+            ice::size(archetypes) == ice::size(out_instance_infos),
+            "Archetype instance fetch called with different input and output array sizes."
+        );
+
         ice::u32 const instance_count = ice::pod::array::size(_archetype_data);
 
         ice::u32 archetype_idx = 0;
@@ -271,6 +288,33 @@ namespace ice::ecs
 
     }
 
+    void ArchetypeIndex::fetch_archetype_instance_infos(
+        ice::Span<ice::ecs::ArchetypeInstance const> archetype_instances,
+        ice::Span<ice::ecs::ArchetypeInstanceInfo const*> out_instance_infos
+    ) const noexcept
+    {
+        ICE_ASSERT(
+            ice::size(archetype_instances) == ice::size(out_instance_infos),
+            "Archetype instance fetch called with different input and output array sizes."
+        );
+
+        ice::u32 const instance_count = ice::pod::array::size(_archetype_data);
+
+        ice::u32 archetype_idx = 0;
+        for (ArchetypeInstance archetype_instance : archetype_instances)
+        {
+            ice::u32 const instance_idx = static_cast<ice::u32>(archetype_instance);
+            ICE_ASSERT(
+                instance_idx < instance_count,
+                "Provided archetype instance {} is invalid!",
+                ice::hash(archetype_instance)
+            );
+
+            out_instance_infos[archetype_idx] = ice::addressof(_archetype_data[instance_idx]->archetype_info);
+        }
+
+    }
+
     void ArchetypeIndex::fetch_archetype_instance_info_with_pool(
         ice::ecs::Archetype archetype,
         ice::ecs::ArchetypeInstanceInfo const*& out_instance_info,
@@ -280,16 +324,18 @@ namespace ice::ecs
         ice::u32 const instance_count = ice::pod::array::size(_archetype_data);
         ice::u32 const instance_idx = ice::pod::hash::get(_archetype_index, ice::hash(archetype), ice::u32_max);
 
-        ICE_ASSERT(
-            instance_idx < instance_count,
-            "Unknown archetype handle {} provided while fetching instance info with block pool. Did you forget to register the archetype?",
-            ice::hash(archetype)
-        );
+        if (instance_idx < instance_count)
+        {
+            ArchetypeDataHeader const* const header = _archetype_data[instance_idx];
 
-        ArchetypeDataHeader const* const header = _archetype_data[instance_idx];
-
-        out_instance_info = ice::addressof(header->archetype_info);
-        out_block_pool = header->block_pool;
+            out_instance_info = ice::addressof(header->archetype_info);
+            out_block_pool = header->block_pool;
+        }
+        else
+        {
+            out_instance_info = nullptr;
+            out_block_pool = nullptr;
+        }
     }
 
 } // ice::ecs

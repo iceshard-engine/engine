@@ -29,6 +29,8 @@ namespace ice::ecs
 
         ~ArchetypeIndex() noexcept = default;
 
+        auto registered_archetype_count() const noexcept -> ice::u32;
+
         auto register_archetype(
             ice::ecs::ArchetypeInfo const& archetype_info,
             ice::ecs::DataBlockPool* data_block_pool = nullptr
@@ -41,6 +43,11 @@ namespace ice::ecs
 
         void fetch_archetype_instance_infos(
             ice::Span<ice::ecs::Archetype const> archetypes,
+            ice::Span<ice::ecs::ArchetypeInstanceInfo const*> out_instance_infos
+        ) const noexcept;
+
+        void fetch_archetype_instance_infos(
+            ice::Span<ice::ecs::ArchetypeInstance const> archetype_instances,
             ice::Span<ice::ecs::ArchetypeInstanceInfo const*> out_instance_infos
         ) const noexcept;
 

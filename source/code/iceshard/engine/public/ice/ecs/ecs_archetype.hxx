@@ -8,9 +8,13 @@
 namespace ice::ecs
 {
 
-    enum class Archetype : ice::u32
+    enum class Archetype : ice::u64
     {
         Invalid = 0x0
+    };
+
+    enum class ArchetypeInstance : ice::u32
+    {
     };
 
 
@@ -50,10 +54,12 @@ namespace ice::ecs
 
     struct ArchetypeInstanceInfo
     {
+        ice::ecs::ArchetypeInstance archetype_instance;
         ice::Span<ice::StringID const> component_identifiers;
         ice::Span<ice::u32 const> component_sizes;
         ice::Span<ice::u32 const> component_alignments;
         ice::Span<ice::u32 const> component_offsets;
+        ice::u32 component_entity_count_max;
     };
 
 
@@ -98,11 +104,11 @@ namespace ice::ecs
             ice::Span<ice::StringID const> component_identifiers
         ) noexcept -> ice::ecs::Archetype
         {
-            ice::u32 handle_hash = ice::hash32("ice.__ecs_archetype__");
+            ice::u64 handle_hash = ice::hash32("ice.__ecs_archetype__");
             for (ice::StringID_Arg component : component_identifiers)
             {
                 handle_hash <<= 5;
-                handle_hash ^= ice::hash32(ice::hash(component) >> 17);
+                handle_hash ^= ice::hash(component);
             }
             return static_cast<Archetype>(handle_hash);
         }
