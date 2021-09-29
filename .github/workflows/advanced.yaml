@@ -63,6 +63,7 @@ jobs:
       shell: pwsh
       run: |
         pip3 install setuptools
+        pip3 install wheel
         pip3 install conan
 
 #     - name: Prepare workspace
