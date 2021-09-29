@@ -51,14 +51,16 @@ jobs:
   build_configurations:
     name: Build selected configs
     needs: setup_workflow
+    continue-on-error: true
     strategy:
       matrix:
-        build_config: ${{ fromJSON(needs.setup_workflow.outputs.build_configs) }}
-    runs-on: ubuntu-latest
+        arch: [x64]
+        os: [windows-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
     steps:
-    - name: Prepare workspace (Ubuntu, ${{ matrix.build_config }})
+    - name: Prepare workspace
       run: |
-        echo "${{ matrix.build_config }}"
+        echo "Build: ${{ join(fromJSON(needs.setup_workflow.outputs.build_configs).map(config => 'all-' + matrix.arch + '-' + config), ' ') }}"
         
 
 #   extract_event_payload:
