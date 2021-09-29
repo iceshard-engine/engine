@@ -70,11 +70,18 @@ jobs:
     - name: Build targets
       if: ${{ startsWith(matrix.os, 'ubuntu-') }}
       run: |
-        ./ice.sh init --conan_profile clang-12.0-linux-x86_64
+        BUILD_CONFIGS="${{ join(fromJSON(needs.setup_workflow.outputs.build_configs), ' ') }}"
+        BUILD_TARGETS=$(echo "$BUILD_CONFIGS" | grep -oP '\S+' | sed 's/\(\S*\)/-t all-${{matrix.arch}}-\1/')
+        
+        ./ice.sh init
+        ./ice.sh build $BUILD_TARGETS
     - name: Build targets
       if: ${{ startsWith(matrix.os, 'windows-') }}
+      shell: pwsh
       run: |
-        ice init
+         "${{ join(fromJSON(needs.setup_workflow.outputs.build_configs), '\",\"') }}" | ForEach-Object { "-t all-${{matrix.arch}}-$_" } | Join-String " "
+#        set BUILD_TARGETS=$(echo "$BUILD_CONFIGS" | grep -oP '\S+' | sed 's/\(\S*\)/-t all-${{matrix.arch}}-\1/')
+#        ice init
 #     - name: Prepare workspace
 #       run: | 
       #  BUILD_CONFIGS="${{ join(fromJSON(needs.setup_workflow.outputs.build_configs), ' ') }}"
