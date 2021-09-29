@@ -19,26 +19,26 @@ jobs:
   setup_workflow:
     name: Setup workflow
     runs-on: ubuntu-latest
-    outputs:
-      build_configs: ${{ steps.select_build_configs.outputs.build_configs }}
+    # outputs:
+      # build_configs: ${{ steps.select_build_configs.outputs.build_configs }}
       # tags: ${{ steps.parse_commits.outputs.tags }}
     steps:
-    - id: parse_commits
-      name: Extract CI tags from commits
+    - id: load_event_payload
+      name: Load event payload
       run: |
         PAYLOAD_CONTENT=$(cat $GITHUB_EVENT_PATH)
-        echo "::debug::Raw payload content"
-        echo $PAYLOAD_CONTENT
-        # PAYLOAD_CONTENT="${PAYLOAD_CONTENT//'%'/'%25'}"
+        PAYLOAD_CONTENT="${PAYLOAD_CONTENT//'%'/'%25'}"
         PAYLOAD_CONTENT="${PAYLOAD_CONTENT//$'\n'/' '}"
         PAYLOAD_CONTENT="${PAYLOAD_CONTENT//$'\r'/' '}"
-        echo "::debug::Sanitized payload content"
-        echo $PAYLOAD_CONTENT
-        
-        echo "::debug::Parsing payload content"
-        COMMIT_MESSAGES=${{ join(fromJSON('\{\}').commits.*.message, ';') }}
+        echo "::set-output name=payload::$PAYLOAD_CONTENT"
+    - id: extract_ci_tags
+      name: Extract CI tags from commits
+      run: |
+        COMMIT_MESSAGES=${{ join(fromJSON(steps.load_event_payload.outputs.payload).commits.*.message, ';') }}
         COMMIT_TAGS=$(echo $COMMIT_MESSAGES | grep -oP '\[.*?\]' | sed 's/\[\(.*\)\]\\n*/\1 /')
-
+        echo $COMMIT_MESSAGES
+        echo $COMMIT_TAGS
+        
     - id: select_build_configs
       name: Select build configs
       run: |
