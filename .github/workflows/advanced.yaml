@@ -27,9 +27,9 @@ jobs:
       name: Extract CI tags from commits
       run: |
         PAYLOAD_CONTENT=$(cat $GITHUB_EVENT_PATH)
-        PAYLOAD_CONTENT="${PAYLOAD_CONTENT//'%'/'%25'}"
-        PAYLOAD_CONTENT="${PAYLOAD_CONTENT//$'\n'/'%0A'}"
-        PAYLOAD_CONTENT="${PAYLOAD_CONTENT//$'\r'/'%0D'}"
+        # PAYLOAD_CONTENT="${PAYLOAD_CONTENT//'%'/'%25'}"
+        PAYLOAD_CONTENT="${PAYLOAD_CONTENT//$'\n'/''}"
+        PAYLOAD_CONTENT="${PAYLOAD_CONTENT//$'\r'/''}"
         
         COMMIT_MESSAGES=${{ join(fromJSON(env.PAYLOAD_CONTENT).commits.*.message, ';') }}
         COMMIT_TAGS=$(echo $COMMIT_MESSAGES | grep -oP '\[.*?\]' | sed 's/\[\(.*\)\]\\n*/\1 /')
