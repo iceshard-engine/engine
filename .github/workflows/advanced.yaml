@@ -65,7 +65,11 @@ jobs:
         pip3 install setuptools
         pip3 install wheel
         pip3 install conan
-
+        conan config install https://github.com/iceshard-engine/conan-config.git
+    - name: Build targets
+      if: ${{ matrix.os == 'ubuntu-latest' }}
+      run: |
+        ./ice.sh init --conan_profile clang-12.0-linux-x86_64
 #     - name: Prepare workspace
 #       run: | 
       #  BUILD_CONFIGS="${{ join(fromJSON(needs.setup_workflow.outputs.build_configs), ' ') }}"
