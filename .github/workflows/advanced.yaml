@@ -1,124 +1,154 @@
-name: Validation (Advanced)
+name: Source Validation
 
-on: push
-  # push:
-  #   branches:
-  #   - github-workflow-fixes
-  # pull_request:
-  #   types: [opened,edited,reopened]
-  #   branches:
-  #   - master
+# This workflow will run on every push on every branch. It will not be triggered on pull requests.
+#   - At some point it will be cut down to only be triggered on source code changes and branches with specific naming.
+# 
+
+on: 
+  push:
+    branches: '*'
+
+# This workflow supports the following additional CI tags:
+#   - [skip ci] - skips the whole workflow (available, github implicit)
+#   - (wip) [asan] - Runs all unit tests with an adress sanitizer enabled. (wip)
+#   - (wip) [benchmark] - Runs benchmarks additionally to unit tests. (wip)
+#   - (wip) [snapshot] - Deploys a 'Develop' build to conan on the 'snapshot' channel. (wip)
+#   - (wip) [all_configs] - Runs all checks on all configurations. (wip, some limitations apply)
 
 jobs:
-  extract_event_payload:
-    name: Extract event payload
+  setup_workflow:
+    name: Setup workflow
     runs-on: ubuntu-latest
     outputs:
-      event_payload: ${{ steps.extract-payload.outputs.payload }}
-      event_commit_messages: ${{ steps.extract-commit-messages.outputs.commit_messages }}
-      event_commit_tags: ${{ steps.extract-tags.outputs.tags }}
+      build_configs: ${{ steps.select_build_configs.outputs.build_configs }}
+      # tags: ${{ steps.parse_commits.outputs.tags }}
     steps:
-    - id: extract-payload
-      name: Extract payload
-      # env:
-      #  COMMIT_MESSAGES: ${{ fromJSON(env.GITHUB_EVENT_PATH) }}
+    - id: parse_commits
+      name: Extract CI tags from commits
       run: |
-        payload_content=$(cat $GITHUB_EVENT_PATH)
-        payload_content="${payload_content//'%'/'%25'}"
-        payload_content="${payload_content//$'\n'/'%0A'}"
-        payload_content="${payload_content//$'\r'/'%0D'}"
-        echo "::set-output name=payload::$payload_content"
-    - id: extract-commit-messages
-      run: |
-        commit_messages=$(echo '${{ toJSON(fromJson(steps.extract-payload.outputs.payload).commits.*.message) }}')
-        commit_messages="${commit_messages//'%'/'%25'}"
-        commit_messages="${commit_messages//$'\n'/'%0A'}"
-        commit_messages="${commit_messages//$'\r'/'%0D'}"
-        echo $commit_messages
-        echo "::set-output name=commit_messages::$commit_messages"
-    - id: extract-tags
-      name: Extract tags v2
-      continue-on-error: true
-      run: |
-        tags_array=$(echo '${{ steps.extract-commit-messages.outputs.commit_messages }}' | grep -oP '\[.*?\]' | sed 's/\[\(.*\)\]\\n*/\1 /')
-        echo $tags_array
-        echo "::set-output name=tags::$tags_array"
+        PAYLOAD_CONTENT=$(cat $GITHUB_EVENT_PATH)
+        PAYLOAD_CONTENT="${PAYLOAD_CONTENT//'%'/'%25'}"
+        PAYLOAD_CONTENT="${PAYLOAD_CONTENT//$'\n'/'%0A'}"
+        PAYLOAD_CONTENT="${PAYLOAD_CONTENT//$'\r'/'%0D'}"
+        
+        COMMIT_MESSAGES=${{ join(fromJSON(env.PAYLOAD_CONTENT).commits.*.message, ';') }}
+        COMMIT_TAGS=$(echo $COMMIT_MESSAGES | grep -oP '\[.*?\]' | sed 's/\[\(.*\)\]\\n*/\1 /')
 
-  validate-windows:
-    name: Validate (Windows)
-    runs-on: windows-latest
-    needs: extract_event_payload
-    if: contains(needs.extract_event_payload.outputs.event_commit_tags, 'skip-win') == false
-    steps:
-    - name: Prepare
+    - id: select_build_configs
+      name: Select build configs
       run: |
-        echo 'Preparing workspace...'
+        echo $COMMIT_MESSAGES
+        echo $COMMIT_TAGS
 
-  validate-linux:
-    name: Validate (Linux)
-    runs-on: ubuntu-latest
-    needs: extract_event_payload
-    if: contains(needs.extract_event_payload.outputs.event_commit_tags, 'skip-unix') == false
-    steps:
-    - name: Prepare
-      run: |
-        echo 'Preparing workspace...'
+#   extract_event_payload:
+#     name: Extract event payload
+#     runs-on: ubuntu-latest
+#     outputs:
+#       event_payload: ${{ steps.extract-payload.outputs.payload }}
+#       event_commit_messages: ${{ steps.extract-commit-messages.outputs.commit_messages }}
+#       event_commit_tags: ${{ steps.extract-tags.outputs.tags }}
+#     steps:
+#     - id: extract-payload
+#       name: Extract payload
+#       # env:
+#       #  COMMIT_MESSAGES: ${{ fromJSON(env.GITHUB_EVENT_PATH) }}
+#       run: |
+#         payload_content=$(cat $GITHUB_EVENT_PATH)
+#         payload_content="${payload_content//'%'/'%25'}"
+#         payload_content="${payload_content//$'\n'/'%0A'}"
+#         payload_content="${payload_content//$'\r'/'%0D'}"
+#         echo "::set-output name=payload::$payload_content"
+#     - id: extract-commit-messages
+#       run: |
+#         commit_messages=$(echo '${{ toJSON(fromJson(steps.extract-payload.outputs.payload).commits.*.message) }}')
+#         commit_messages="${commit_messages//'%'/'%25'}"
+#         commit_messages="${commit_messages//$'\n'/'%0A'}"
+#         commit_messages="${commit_messages//$'\r'/'%0D'}"
+#         echo $commit_messages
+#         echo "::set-output name=commit_messages::$commit_messages"
+#     - id: extract-tags
+#       name: Extract tags v2
+#       continue-on-error: true
+#       run: |
+#         tags_array=$(echo '${{ steps.extract-commit-messages.outputs.commit_messages }}' | grep -oP '\[.*?\]' | sed 's/\[\(.*\)\]\\n*/\1 /')
+#         echo $tags_array
+#         echo "::set-output name=tags::$tags_array"
+
+#   validate-windows:
+#     name: Validate (Windows)
+#     runs-on: windows-latest
+#     needs: extract_event_payload
+#     if: contains(needs.extract_event_payload.outputs.event_commit_tags, 'skip-win') == false
+#     steps:
+#     - name: Prepare
+#       run: |
+#         echo 'Preparing workspace...'
+
+#   validate-linux:
+#     name: Validate (Linux)
+#     runs-on: ubuntu-latest
+#     needs: extract_event_payload
+#     if: contains(needs.extract_event_payload.outputs.event_commit_tags, 'skip-unix') == false
+#     steps:
+#     - name: Prepare
+#       run: |
+#         echo 'Preparing workspace...'
         
 
-  test-windows:
-    name: Test (Windows)
-    runs-on: windows-latest
-    needs: validate-windows
-    if: success() && contains(needs.extract_event_payload.outputs.event_commit_tags, 'skip-tests') == false
-    steps:
-    - name: Prepare
-      run: |
-        echo 'Get test binaries...'
+#   test-windows:
+#     name: Test (Windows)
+#     runs-on: windows-latest
+#     needs: validate-windows
+#     if: success() && contains(needs.extract_event_payload.outputs.event_commit_tags, 'skip-tests') == false
+#     steps:
+#     - name: Prepare
+#       run: |
+#         echo 'Get test binaries...'
         
-  test-linux:
-    name: Test (Linux)
-    runs-on: ubuntu-latest
-    needs: validate-linux
-    if: success() && contains(needs.extract_event_payload.outputs.event_commit_tags, 'skip-tests') == false
-    steps:
-    - name: Prepare
-      run: |
-        echo 'Get test binaries...'
+#   test-linux:
+#     name: Test (Linux)
+#     runs-on: ubuntu-latest
+#     needs: validate-linux
+#     if: success() && contains(needs.extract_event_payload.outputs.event_commit_tags, 'skip-tests') == false
+#     steps:
+#     - name: Prepare
+#       run: |
+#         echo 'Get test binaries...'
   
-  notify-discord:
-    name: Notify Discord
-    runs-on: ubuntu-latest
-    needs: extract_event_payload
-    if: contains(needs.extract_event_payload.outputs.event_commit_tags, 'skip-discord') == false
-    steps:
-    - name: Send notification
-      run: |
-        echo '${{ needs.extract_event_payload.outputs.event_commit_tags }}'
-        echo 'Preparing message...'
+#   notify-discord:
+#     name: Notify Discord
+#     runs-on: ubuntu-latest
+#     needs: extract_event_payload
+#     if: contains(needs.extract_event_payload.outputs.event_commit_tags, 'skip-discord') == false
+#     steps:
+#     - name: Send notification
+#       run: |
+#         echo '${{ needs.extract_event_payload.outputs.event_commit_tags }}'
+#         echo 'Preparing message...'
         
-  finalize-tests:
-    name: Tests summary
-    runs-on: ubuntu-latest
-    if: always()
-    needs:
-    - test-windows
-    - test-linux
-    steps:
-    - name: Send summary
-      run: |
-        echo 'sending summary...'
+#   finalize-tests:
+#     name: Tests summary
+#     runs-on: ubuntu-latest
+#     if: always()
+#     needs:
+#     - test-windows
+#     - test-linux
+#     steps:
+#     - name: Send summary
+#       run: |
+#         echo 'sending summary...'
         
-  finalize:
-    name: Finalize
-    runs-on: ubuntu-latest
-    if: always()
-    needs:
-    - finalize-tests
-    - notify-discord
-    steps:
-    - name: Send summary
-      run: |
-        echo 'sending summary...'
+#   finalize:
+#     name: Finalize
+#     runs-on: ubuntu-latest
+#     if: always()
+#     needs:
+#     - finalize-tests
+#     - notify-discord
+#     steps:
+#     - name: Send summary
+#       run: |
+#         echo 'sending summary...'
 
 #     - id: extract-tags
 #       name: Extract tags v2
