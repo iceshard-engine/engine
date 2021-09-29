@@ -19,8 +19,8 @@ jobs:
   setup_workflow:
     name: Setup workflow
     runs-on: ubuntu-latest
-    # outputs:
-      # build_configs: ${{ steps.select_build_configs.outputs.build_configs }}
+    outputs:
+      build_configs: ${{ steps.select_build_configs.outputs.build_configs }}
       # tags: ${{ steps.parse_commits.outputs.tags }}
     steps:
     - id: load_event_payload
@@ -31,19 +31,35 @@ jobs:
         PAYLOAD_CONTENT="${PAYLOAD_CONTENT//$'\n'/' '}"
         PAYLOAD_CONTENT="${PAYLOAD_CONTENT//$'\r'/' '}"
         echo "::set-output name=payload::$PAYLOAD_CONTENT"
+        
     - id: extract_ci_tags
       name: Extract CI tags from commits
       run: |
         COMMIT_MESSAGES="${{ join(fromJSON(steps.load_event_payload.outputs.payload).commits.*.message, ';') }}"
         COMMIT_TAGS=$(echo "$COMMIT_MESSAGES" | grep -oP '\[.*?\]' | sed 's/\[\(.*\)\]\\n*/\1 /')
-        echo $COMMIT_MESSAGES
-        echo $COMMIT_TAGS
+        echo "::set-output name=tags::$COMMIT_TAGS"
         
     - id: select_build_configs
       name: Select build configs
       run: |
-        echo $COMMIT_MESSAGES
-        echo $COMMIT_TAGS
+        if [[ "${{ steps.extract_ci_tags.outputs.tags }}" == *"all_configs"* ]]; then
+          echo "::set-output name=build_configs::{\"Debug\",\"Develop\",\"Profile\",\"Release\"}"
+        else
+          echo "::set-output name=build_configs::{\"Debug\",\"Develop\"}"
+        fi
+        
+  build_configurations:
+    name: Build selected configs
+    needs: setup_workflow
+    strategy:
+      matrix:
+        build_config: ${{ fromJSON(needs.setup_workflow.outputs.build_configs) }}
+    runs-on: ubuntu-latest
+    steps:
+    - name: Prepare workspace (Ubuntu, ${{ matrix.build_config }})
+      run: |
+        echo "${{ matrix.build_config }}"
+        
 
 #   extract_event_payload:
 #     name: Extract event payload
