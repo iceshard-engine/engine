@@ -81,7 +81,7 @@ jobs:
           
     - name: 'Call: Build parallel'
       if: ${{ startsWith(matrix.os, 'windows-') }}
-      uses: ./.github/actions/cw_build_parallel.yaml@831805845cbfcebea88b3ebdc7ca9cf7029b7d00
+      uses: ./.github/workflows/cw_build_parallel.yaml@advanced-workflows
       with:
         configs: ${{ needs.setup_workflow.outputs.build_configs }}
         platform: 'windows'
