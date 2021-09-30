@@ -21,8 +21,8 @@ jobs:
     name: Setup workflow
     runs-on: ubuntu-latest
     outputs:
+      tags: ${{ steps.extract_ci_tags.outputs.tags }}
       build_configs: ${{ steps.select_build_configs.outputs.build_configs }}
-      tags: ${{ steps.parse_commits.outputs.tags }}
     steps:
     - id: load_event_payload
       name: Load event payload
@@ -37,7 +37,7 @@ jobs:
       name: Extract CI tags from commits
       run: |
         COMMIT_MESSAGES="${{ join(fromJSON(steps.load_event_payload.outputs.payload).commits.*.message, ';') }}"
-        COMMIT_TAGS=$(echo "$COMMIT_MESSAGES" | grep -oP '\[.*?\]' | sed 's/\[\(.*\)\]/\1 /' | tr '\n' ' ')
+        COMMIT_TAGS=$(echo "$COMMIT_MESSAGES" | grep -oP '\[.*?\]' | sed 's/\[\(.*\)\]/\1/' | tr '\n' ' ')
         echo "::set-output name=tags::$COMMIT_TAGS"
         
     - id: select_build_configs
@@ -50,7 +50,7 @@ jobs:
         fi
           
   call_build_parallel_windows:
-    name: 'Call: Build parallel (Windows)'
+    name: 'Call: Build (Windows, parallel)'
     needs: setup_workflow
     if: ${{ contains(needs.setup_workflow.outputs.tags, 'parallel') == true }}
     uses: iceshard-engine/engine/.github/workflows/cw_build_parallel.yaml@advanced-workflows
@@ -60,7 +60,7 @@ jobs:
       architecture: x64
           
   call_build_parallel_linux:
-    name: 'Call: Build parallel (Linux)'
+    name: 'Call: Build (Linux, parallel)'
     needs: setup_workflow
     if: ${{ contains(needs.setup_workflow.outputs.tags, 'parallel') == true }}
     uses: iceshard-engine/engine/.github/workflows/cw_build_parallel.yaml@advanced-workflows
