@@ -80,8 +80,8 @@ jobs:
           ${{ runner.os }}-build-
           
     - name: 'Call: Build parallel'
-      if: ${{ startsWith(matrix.os, 'windows-')
-      uses: ./.github/actions/cw_build_parallel.yaml@6e4d8b5a0a97d2d8e6b245318d801f66943b7106
+      if: ${{ startsWith(matrix.os, 'windows-') }}
+      uses: ./.github/actions/cw_build_parallel.yaml@831805845cbfcebea88b3ebdc7ca9cf7029b7d00
       with:
         configs: ${{ needs.setup_workflow.outputs.build_configs }}
         platform: 'windows'
