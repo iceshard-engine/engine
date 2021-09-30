@@ -22,7 +22,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       build_configs: ${{ steps.select_build_configs.outputs.build_configs }}
-      # tags: ${{ steps.parse_commits.outputs.tags }}
+      tags: ${{ steps.parse_commits.outputs.tags }}
     steps:
     - id: load_event_payload
       name: Load event payload
@@ -69,59 +69,59 @@ jobs:
       platform: 'linux'
       architecture: x64
         
-  build_configurations:
-    name: Build selected configs
-    needs: setup_workflow
-    if: contains(needs.setup_workflow.outputs.tags, 'parallel') == false
-    continue-on-error: true
-    strategy:
-      matrix:
-        arch: [x64]
-        os: [windows-latest, ubuntu-latest]
-    runs-on: ${{ matrix.os }}
-    steps:
-    - uses: actions/checkout@v2
+#   build_configurations:
+#     name: Build selected configs
+#     needs: setup_workflow
+#     if: contains(needs.setup_workflow.outputs.tags, 'parallel') == false
+#     continue-on-error: true
+#     strategy:
+#       matrix:
+#         arch: [x64]
+#         os: [windows-latest, ubuntu-latest]
+#     runs-on: ${{ matrix.os }}
+#     steps:
+#     - uses: actions/checkout@v2
     
-    - name: Prepare workspace
-      shell: pwsh
-      run: |
-        pip3 install setuptools
-        pip3 install wheel
-        pip3 install conan
-        conan config install https://github.com/iceshard-engine/conan-config.git
+#     - name: Prepare workspace
+#       shell: pwsh
+#       run: |
+#         pip3 install setuptools
+#         pip3 install wheel
+#         pip3 install conan
+#         conan config install https://github.com/iceshard-engine/conan-config.git
         
-    - name: Cache Conan packages
-      uses: actions/cache@v2
-      env:
-        cache-name: cache-conan-packages
-      with:
-        path: ~/.conan
-        key: ${{ runner.os }}-build-${{ env.cache-name }}
-        restore-keys: |
-          ${{ runner.os }}-build-
+#     - name: Cache Conan packages
+#       uses: actions/cache@v2
+#       env:
+#         cache-name: cache-conan-packages
+#       with:
+#         path: ~/.conan
+#         key: ${{ runner.os }}-build-${{ env.cache-name }}
+#         restore-keys: |
+#           ${{ runner.os }}-build-
         
-    - name: Build targets
-      if: ${{ startsWith(matrix.os, 'ubuntu-') }}
-      run: |
-        BUILD_CONFIGS="${{ join(fromJSON(needs.setup_workflow.outputs.build_configs), ' ') }}"
-        BUILD_TARGETS=$(echo "$BUILD_CONFIGS" | grep -oP '\S+' | sed 's/\(\S*\)/-t all-${{matrix.arch}}-\1/')
+#     - name: Build targets
+#       if: ${{ startsWith(matrix.os, 'ubuntu-') }}
+#       run: |
+#         BUILD_CONFIGS="${{ join(fromJSON(needs.setup_workflow.outputs.build_configs), ' ') }}"
+#         BUILD_TARGETS=$(echo "$BUILD_CONFIGS" | grep -oP '\S+' | sed 's/\(\S*\)/-t all-${{matrix.arch}}-\1/')
         
-        ./ice.sh init
-        ./ice.sh build $BUILD_TARGETS
+#         ./ice.sh init
+#         ./ice.sh build $BUILD_TARGETS
         
-    - name: Build targets
-      if: ${{ startsWith(matrix.os, 'windows-') }}
-      shell: pwsh
-      run: |
-        $BuildTargets = "${{ join(fromJSON(needs.setup_workflow.outputs.build_configs), '","') }}" | ForEach-Object { "-t all-${{matrix.arch}}-$_" }
-        $BuildTargetsOption = $BuildTargets -join " "
-        cmd /C ".\ice.bat init"
-        cmd /C ".\ice.bat build $BuildTargetsOption"
+#     - name: Build targets
+#       if: ${{ startsWith(matrix.os, 'windows-') }}
+#       shell: pwsh
+#       run: |
+#         $BuildTargets = "${{ join(fromJSON(needs.setup_workflow.outputs.build_configs), '","') }}" | ForEach-Object { "-t all-${{matrix.arch}}-$_" }
+#         $BuildTargetsOption = $BuildTargets -join " "
+#         cmd /C ".\ice.bat init"
+#         cmd /C ".\ice.bat build $BuildTargetsOption"
         
-    - name: Execute Tests
-      if: ${{ startsWith(matrix.os, 'windows-') }}
-      shell: pwsh
-      run: |
-        $BuildTargets = "${{ join(fromJSON(needs.setup_workflow.outputs.build_configs), '","') }}" | ForEach-Object { "-t test-all-${{matrix.arch}}-$_" }
-        $BuildTargetsOption = $BuildTargets -join " "
-        cmd /C ".\ice.bat build $BuildTargetsOption"
+#     - name: Execute Tests
+#       if: ${{ startsWith(matrix.os, 'windows-') }}
+#       shell: pwsh
+#       run: |
+#         $BuildTargets = "${{ join(fromJSON(needs.setup_workflow.outputs.build_configs), '","') }}" | ForEach-Object { "-t test-all-${{matrix.arch}}-$_" }
+#         $BuildTargetsOption = $BuildTargets -join " "
+#         cmd /C ".\ice.bat build $BuildTargetsOption"
