@@ -14,7 +14,7 @@ on:
 #   - (wip) [benchmark] - Runs benchmarks additionally to unit tests. (wip)
 #   - (wip) [snapshot] - Deploys a 'Develop' build to conan on the 'snapshot' channel. (wip)
 #   - [all_configs] - Runs all checks on all configurations. (wip, some limitations apply)
-#   - (wip) [separate_configs] - Runs every configuration on a separate job. (wip, some limitations apply)
+#   - [parallel] - Runs every configuration on a separate job. (wip, some limitations apply)
 
 jobs:
   setup_workflow:
@@ -78,9 +78,17 @@ jobs:
         key: ${{ runner.os }}-build-${{ env.cache-name }}
         restore-keys: |
           ${{ runner.os }}-build-
+          
+    - name: 'Call: Build parallel'
+      if: ${{ startsWith(matrix.os, 'windows-')
+      uses: ./.github/actions/cw_build_parallel.yaml@6e4d8b5a0a97d2d8e6b245318d801f66943b7106
+      with:
+        configs: ${{ needs.setup_workflow.outputs.build_configs }}
+        platform: 'windows'
+        architecture: x64
         
     - name: Build targets
-      if: ${{ startsWith(matrix.os, 'ubuntu-') }}
+      if: ${{ startsWith(matrix.os, 'ubuntu-') && contains(steps.extract_ci_tags.outputs.tags, 'parallel') == false }}
       run: |
         BUILD_CONFIGS="${{ join(fromJSON(needs.setup_workflow.outputs.build_configs), ' ') }}"
         BUILD_TARGETS=$(echo "$BUILD_CONFIGS" | grep -oP '\S+' | sed 's/\(\S*\)/-t all-${{matrix.arch}}-\1/')
@@ -89,7 +97,7 @@ jobs:
         ./ice.sh build $BUILD_TARGETS
         
     - name: Build targets
-      if: ${{ startsWith(matrix.os, 'windows-') }}
+      if: ${{ startsWith(matrix.os, 'windows-') && contains(steps.extract_ci_tags.outputs.tags, 'parallel') == false }}
       shell: pwsh
       run: |
         $BuildTargets = "${{ join(fromJSON(needs.setup_workflow.outputs.build_configs), '","') }}" | ForEach-Object { "-t all-${{matrix.arch}}-$_" }
@@ -98,7 +106,7 @@ jobs:
         cmd /C ".\ice.bat build $BuildTargetsOption"
         
     - name: Execute Tests
-      if: ${{ startsWith(matrix.os, 'windows-') }}
+      if: ${{ startsWith(matrix.os, 'windows-') && contains(steps.extract_ci_tags.outputs.tags, 'parallel') == false }}
       shell: pwsh
       run: |
         $BuildTargets = "${{ join(fromJSON(needs.setup_workflow.outputs.build_configs), '","') }}" | ForEach-Object { "-t test-all-${{matrix.arch}}-$_" }
