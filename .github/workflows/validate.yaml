@@ -37,7 +37,7 @@ jobs:
       name: Extract CI tags from commits
       run: |
         COMMIT_MESSAGES="${{ join(fromJSON(steps.load_event_payload.outputs.payload).commits.*.message, ';') }}"
-        COMMIT_TAGS=$(echo "$COMMIT_MESSAGES" | grep -oP '\[.*?\]' | sed 's/\[\(.*\)\]\\n*/\1 /')
+        COMMIT_TAGS=$(echo "$COMMIT_MESSAGES" | grep -oP '\[.*?\]' | sed 's/\[\(.*\)\]/\1 /')
         echo "::set-output name=tags::$COMMIT_TAGS"
         
     - id: select_build_configs
