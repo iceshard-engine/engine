@@ -81,7 +81,7 @@ jobs:
           
     - name: 'Call: Build parallel'
       if: ${{ startsWith(matrix.os, 'windows-') }}
-      uses: ./.github/workflows/cw_build_parallel.yaml@advanced-workflows
+      uses: iceshard-engine/engine/.github/workflows/cw_build_parallel.yaml@advanced-workflows
       with:
         configs: ${{ needs.setup_workflow.outputs.build_configs }}
         platform: 'windows'
