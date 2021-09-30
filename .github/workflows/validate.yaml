@@ -87,6 +87,14 @@ jobs:
         platform: 'windows'
         architecture: x64
         
+    - name: 'Call: Build parallel'
+      if: ${{ startsWith(matrix.os, 'ubuntu-') }}
+      uses: iceshard-engine/engine/.github/workflows/cw_build_parallel.yaml@advanced-workflows
+      with:
+        configs: ${{ needs.setup_workflow.outputs.build_configs }}
+        platform: 'linux'
+        architecture: x64
+        
     - name: Build targets
       if: ${{ startsWith(matrix.os, 'ubuntu-') && contains(steps.extract_ci_tags.outputs.tags, 'parallel') == false }}
       run: |
