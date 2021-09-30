@@ -48,10 +48,30 @@ jobs:
         else
           echo "::set-output name=build_configs::[\"Debug\",\"Develop\"]"
         fi
+          
+  call_build_parallel_windows:
+    name: 'Call: Build parallel (Windows)'
+    needs: setup_workflow
+    if: contains(needs.setup_workflow.outputs.tags, 'parallel') == true
+    uses: iceshard-engine/engine/.github/workflows/cw_build_parallel.yaml@advanced-workflows
+    with:
+      configs: ${{ needs.setup_workflow.outputs.build_configs }}
+      platform: 'windows'
+      architecture: x64
+          
+  call_build_parallel_linux:
+    name: 'Call: Build parallel (Linux)'
+    needs: setup_workflow
+    uses: iceshard-engine/engine/.github/workflows/cw_build_parallel.yaml@advanced-workflows
+    with:
+      configs: ${{ needs.setup_workflow.outputs.build_configs }}
+      platform: 'linux'
+      architecture: x64
         
   build_configurations:
     name: Build selected configs
     needs: setup_workflow
+    if: contains(needs.setup_workflow.outputs.tags, 'parallel') == false
     continue-on-error: true
     strategy:
       matrix:
@@ -78,17 +98,9 @@ jobs:
         key: ${{ runner.os }}-build-${{ env.cache-name }}
         restore-keys: |
           ${{ runner.os }}-build-
-          
-    - name: 'Call: Build parallel'
-      if: ${{ startsWith(matrix.os, 'windows-') }}
-      uses: iceshard-engine/engine/.github/workflows/cw_build_parallel.yaml@advanced-workflows
-      with:
-        configs: ${{ needs.setup_workflow.outputs.build_configs }}
-        platform: 'windows'
-        architecture: x64
         
     - name: Build targets
-      if: ${{ startsWith(matrix.os, 'ubuntu-') && contains(steps.extract_ci_tags.outputs.tags, 'parallel') == false }}
+      if: ${{ startsWith(matrix.os, 'ubuntu-') }}
       run: |
         BUILD_CONFIGS="${{ join(fromJSON(needs.setup_workflow.outputs.build_configs), ' ') }}"
         BUILD_TARGETS=$(echo "$BUILD_CONFIGS" | grep -oP '\S+' | sed 's/\(\S*\)/-t all-${{matrix.arch}}-\1/')
@@ -97,7 +109,7 @@ jobs:
         ./ice.sh build $BUILD_TARGETS
         
     - name: Build targets
-      if: ${{ startsWith(matrix.os, 'windows-') && contains(steps.extract_ci_tags.outputs.tags, 'parallel') == false }}
+      if: ${{ startsWith(matrix.os, 'windows-') }}
       shell: pwsh
       run: |
         $BuildTargets = "${{ join(fromJSON(needs.setup_workflow.outputs.build_configs), '","') }}" | ForEach-Object { "-t all-${{matrix.arch}}-$_" }
@@ -106,7 +118,7 @@ jobs:
         cmd /C ".\ice.bat build $BuildTargetsOption"
         
     - name: Execute Tests
-      if: ${{ startsWith(matrix.os, 'windows-') && contains(steps.extract_ci_tags.outputs.tags, 'parallel') == false }}
+      if: ${{ startsWith(matrix.os, 'windows-') }}
       shell: pwsh
       run: |
         $BuildTargets = "${{ join(fromJSON(needs.setup_workflow.outputs.build_configs), '","') }}" | ForEach-Object { "-t test-all-${{matrix.arch}}-$_" }
