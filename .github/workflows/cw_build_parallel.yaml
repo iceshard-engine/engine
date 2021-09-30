@@ -1,4 +1,4 @@
-name: Build Configurations (Parallel)
+name: Build (Parallel)
 
 on:
   workflow_call:
@@ -18,7 +18,7 @@ on:
         
 jobs:
   build_configurations_windows:
-    name: Build configs (Windows)
+    name: Windows
     continue-on-error: true
     runs-on: windows-latest
     if: ${{ inputs.platform == 'windows' }}
@@ -53,7 +53,7 @@ jobs:
         cmd /C ".\ice.bat build $BuildTargetsOption"
         
   build_configurations_linux:
-    name: Build configs (Linux)
+    name: Linux
     continue-on-error: true
     runs-on: ubuntu-latest
     if: ${{ inputs.platform == 'linux' }}
