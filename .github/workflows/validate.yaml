@@ -52,7 +52,7 @@ jobs:
   call_build_parallel_windows:
     name: 'Call: Build parallel (Windows)'
     needs: setup_workflow
-    if: contains(needs.setup_workflow.outputs.tags, 'parallel') == true
+    if: ${{ contains(needs.setup_workflow.outputs.tags, 'parallel') == true }}
     uses: iceshard-engine/engine/.github/workflows/cw_build_parallel.yaml@advanced-workflows
     with:
       configs: ${{ needs.setup_workflow.outputs.build_configs }}
@@ -62,6 +62,7 @@ jobs:
   call_build_parallel_linux:
     name: 'Call: Build parallel (Linux)'
     needs: setup_workflow
+    if: ${{ contains(needs.setup_workflow.outputs.tags, 'parallel') == true }}
     uses: iceshard-engine/engine/.github/workflows/cw_build_parallel.yaml@advanced-workflows
     with:
       configs: ${{ needs.setup_workflow.outputs.build_configs }}
