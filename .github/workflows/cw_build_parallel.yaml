@@ -1,0 +1,90 @@
+name: Build Configurations (Parallel)
+
+on:
+  workflow_call:
+    inputs:
+      configs:
+        description: A json array of configuration names that should be build.
+        required: true
+        type: string
+      platform:
+        description: The platform we want to build for.
+        required: true
+        type: string
+      architecture:
+        description: The architecture we want to build for.
+        required: true
+        type: string
+        
+jobs:
+  build_configurations_windows:
+    name: Build selected configs
+    continue-on-error: true
+    runs-on: windows-latest
+    if: ${{ inputs.platform == 'windows' }}
+    strategy:
+      matrix:
+        arch: [${{ inputs.architecture }}]
+        config: ${{ fromJSON(inputs.configs) }}
+    steps:
+    - uses: actions/checkout@v2
+    
+    - name: Prepare workspace
+      shell: pwsh
+      run: |
+        pip3 install setuptools
+        pip3 install wheel
+        pip3 install conan
+        conan config install https://github.com/iceshard-engine/conan-config.git
+        
+    - name: Cache Conan packages
+      uses: actions/cache@v2
+      env:
+        cache-name: cache-conan-packages
+      with:
+        path: ~/.conan
+        key: ${{ runner.os }}-build-${{ env.cache-name }}
+        
+    - name: Build targets
+      shell: pwsh
+      run: |
+        $BuildTargets = "${{ join(fromJSON(needs.setup_workflow.outputs.build_configs), '","') }}" | ForEach-Object { "-t all-${{matrix.arch}}-$_" }
+        $BuildTargetsOption = $BuildTargets -join " "
+        cmd /C ".\ice.bat init"
+        cmd /C ".\ice.bat build $BuildTargetsOption"
+        
+  build_configurations_linux:
+    name: Build selected configs
+    continue-on-error: true
+    runs-on: ubuntu-latest
+    if: ${{ inputs.platform == 'linux' }}
+    strategy:
+      matrix:
+        arch: [${{ inputs.architecture }}]
+        config: ${{ fromJSON(inputs.configs) }}
+    steps:
+    - uses: actions/checkout@v2
+    
+    - name: Prepare workspace
+      shell: pwsh
+      run: |
+        pip3 install setuptools
+        pip3 install wheel
+        pip3 install conan
+        conan config install https://github.com/iceshard-engine/conan-config.git
+        
+    - name: Cache Conan packages
+      uses: actions/cache@v2
+      env:
+        cache-name: cache-conan-packages
+      with:
+        path: ~/.conan
+        key: ${{ runner.os }}-build-${{ env.cache-name }}
+        
+    - name: Build targets
+      run: |
+        BUILD_CONFIGS="${{ join(fromJSON(needs.setup_workflow.outputs.build_configs), ' ') }}"
+        BUILD_TARGETS=$(echo "$BUILD_CONFIGS" | grep -oP '\S+' | sed 's/\(\S*\)/-t all-${{matrix.arch}}-\1/')
+        
+        ./ice.sh init
+        ./ice.sh build $BUILD_TARGETS
