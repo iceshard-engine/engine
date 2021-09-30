@@ -18,13 +18,12 @@ on:
         
 jobs:
   build_configurations_windows:
-    name: Build selected configs
+    name: Build configs (Windows)
     continue-on-error: true
     runs-on: windows-latest
     if: ${{ inputs.platform == 'windows' }}
     strategy:
       matrix:
-        arch: [${{ inputs.architecture }}]
         config: ${{ fromJSON(inputs.configs) }}
     steps:
     - uses: actions/checkout@v2
@@ -48,19 +47,18 @@ jobs:
     - name: Build targets
       shell: pwsh
       run: |
-        $BuildTargets = "${{ join(fromJSON(needs.setup_workflow.outputs.build_configs), '","') }}" | ForEach-Object { "-t all-${{matrix.arch}}-$_" }
+        $BuildTargets = "${{ join(fromJSON(needs.setup_workflow.outputs.build_configs), '","') }}" | ForEach-Object { "-t all-${{inputs.architecture}}-$_" }
         $BuildTargetsOption = $BuildTargets -join " "
         cmd /C ".\ice.bat init"
         cmd /C ".\ice.bat build $BuildTargetsOption"
         
   build_configurations_linux:
-    name: Build selected configs
+    name: Build configs (Linux)
     continue-on-error: true
     runs-on: ubuntu-latest
     if: ${{ inputs.platform == 'linux' }}
     strategy:
       matrix:
-        arch: [${{ inputs.architecture }}]
         config: ${{ fromJSON(inputs.configs) }}
     steps:
     - uses: actions/checkout@v2
@@ -84,7 +82,7 @@ jobs:
     - name: Build targets
       run: |
         BUILD_CONFIGS="${{ join(fromJSON(needs.setup_workflow.outputs.build_configs), ' ') }}"
-        BUILD_TARGETS=$(echo "$BUILD_CONFIGS" | grep -oP '\S+' | sed 's/\(\S*\)/-t all-${{matrix.arch}}-\1/')
+        BUILD_TARGETS=$(echo "$BUILD_CONFIGS" | grep -oP '\S+' | sed 's/\(\S*\)/-t all-${{inputs.architecture}}-\1/')
         
         ./ice.sh init
         ./ice.sh build $BUILD_TARGETS
