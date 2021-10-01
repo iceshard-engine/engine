@@ -51,9 +51,9 @@ jobs:
       shell: pwsh
       run: |
         .\tools\gh_ice.ps1 init
-        .\tools\gh_ice.ps1 build -t all-x64-${{ matrix.config }}
+        .\tools\gh_ice.ps1 build -t all-${{ inputs.architecture }}-${{ matrix.config }}
 
     - name: Run tests
       shell: pwsh
       run: |
-        .\tools\gh_ice.ps1 build -t test-all-x64-${{ matrix.config }}
+        .\tools\gh_ice.ps1 build -t test-all-${{ inputs.architecture }}-${{ matrix.config }}

@@ -47,7 +47,7 @@ jobs:
     - name: Build targets
       shell: pwsh
       run: |
-        $BuildTargets = "${{ join(fromJSON(inputs.configs), '","') }}" | ForEach-Object { "-t all-${{matrix.arch}}-$_" }
+        $BuildTargets = "${{ join(fromJSON(inputs.configs), '","') }}" | ForEach-Object { "-t all-${{ inputs.architecture }}-$_" }
         $BuildTargetsStr = $BuildTargets -join " "
 
         .\tools\gh_ice.ps1 init
@@ -56,7 +56,7 @@ jobs:
     - name: Run tests
       shell: pwsh
       run: |
-        $BuildTargets = "${{ join(fromJSON(inputs.config), '","') }}" | ForEach-Object { "-t test-all-${{matrix.arch}}-$_" }
+        $BuildTargets = "${{ join(fromJSON(inputs.config), '","') }}" | ForEach-Object { "-t test-all-${{ inputs.architecture }}-$_" }
         $BuildTargetsStr = $BuildTargets -join " "
 
         .\tools\gh_ice.ps1 build $BuildTargetsStr
