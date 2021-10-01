@@ -49,30 +49,12 @@ jobs:
           echo "::set-output name=build_configs::[\"Debug\",\"Develop\"]"
         fi
 
-  call_build_parallel_windows:
-    name: 'Build (Windows, parallel)'
-    needs: setup_workflow
-    if: ${{ contains(needs.setup_workflow.outputs.tags, 'parallel') == true }}
-    uses: iceshard-engine/engine/.github/workflows/cw_build_parallel.yaml@advanced-workflows
-    with:
-      host: windows-latest
-      configs: ${{ needs.setup_workflow.outputs.build_configs }}
-      platform: 'windows'
-      architecture: x64
-
-  call_build_parallel_linux:
-    name: 'Build (Linux, parallel)'
-    needs: setup_workflow
-    if: ${{ contains(needs.setup_workflow.outputs.tags, 'parallel') == true }}
-    uses: iceshard-engine/engine/.github/workflows/cw_build_parallel.yaml@advanced-workflows
-    with:
-      host: ubuntu-latest
-      configs: ${{ needs.setup_workflow.outputs.build_configs }}
-      platform: 'linux'
-      architecture: x64
+  ## Build using a single job for all configurations
+  #   - Allows to cut down on build time as it's does not need to recreate the workspace for each configuration.
+  #   - This is the default way of validating builds
 
   call_build_single_windows:
-    name: 'Build (Windows, single)'
+    name: 'Build (Windows)'
     needs: setup_workflow
     if: ${{ contains(needs.setup_workflow.outputs.tags, 'parallel') == false }}
     uses: iceshard-engine/engine/.github/workflows/cw_build_single.yaml@advanced-workflows
@@ -83,7 +65,7 @@ jobs:
       architecture: x64
 
   call_build_single_linux:
-    name: 'Build (Linux, single)'
+    name: 'Build (Linux)'
     needs: setup_workflow
     if: ${{ contains(needs.setup_workflow.outputs.tags, 'parallel') == false }}
     uses: iceshard-engine/engine/.github/workflows/cw_build_single.yaml@advanced-workflows
@@ -93,59 +75,28 @@ jobs:
       platform: 'linux'
       architecture: x64
 
-#   build_configurations:
-#     name: Build selected configs
-#     needs: setup_workflow
-#     if: contains(needs.setup_workflow.outputs.tags, 'parallel') == false
-#     continue-on-error: true
-#     strategy:
-#       matrix:
-#         arch: [x64]
-#         os: [windows-latest, ubuntu-latest]
-#     runs-on: ${{ matrix.os }}
-#     steps:
-#     - uses: actions/checkout@v2
+  ## Build using a separate job for each configuration
+  #   - Should be used when it's necessary to check every configuration build process on clean workspaces.
+  #   - Can be triggered using the [parallel] tag in a commit message body.
 
-#     - name: Prepare workspace
-#       shell: pwsh
-#       run: |
-#         pip3 install setuptools
-#         pip3 install wheel
-#         pip3 install conan
-#         conan config install https://github.com/iceshard-engine/conan-config.git
+  call_build_parallel_windows:
+    name: 'Build (Windows)'
+    needs: setup_workflow
+    if: ${{ contains(needs.setup_workflow.outputs.tags, 'parallel') == true }}
+    uses: iceshard-engine/engine/.github/workflows/cw_build_parallel.yaml@advanced-workflows
+    with:
+      host: windows-latest
+      configs: ${{ needs.setup_workflow.outputs.build_configs }}
+      platform: 'windows'
+      architecture: x64
 
-#     - name: Cache Conan packages
-#       uses: actions/cache@v2
-#       env:
-#         cache-name: cache-conan-packages
-#       with:
-#         path: ~/.conan
-#         key: ${{ runner.os }}-build-${{ env.cache-name }}
-#         restore-keys: |
-#           ${{ runner.os }}-build-
-
-#     - name: Build targets
-#       if: ${{ startsWith(matrix.os, 'ubuntu-') }}
-#       run: |
-#         BUILD_CONFIGS="${{ join(fromJSON(needs.setup_workflow.outputs.build_configs), ' ') }}"
-#         BUILD_TARGETS=$(echo "$BUILD_CONFIGS" | grep -oP '\S+' | sed 's/\(\S*\)/-t all-${{matrix.arch}}-\1/')
-
-#         ./ice.sh init
-#         ./ice.sh build $BUILD_TARGETS
-
-#     - name: Build targets
-#       if: ${{ startsWith(matrix.os, 'windows-') }}
-#       shell: pwsh
-#       run: |
-#         $BuildTargets = "${{ join(fromJSON(needs.setup_workflow.outputs.build_configs), '","') }}" | ForEach-Object { "-t all-${{matrix.arch}}-$_" }
-#         $BuildTargetsOption = $BuildTargets -join " "
-#         cmd /C ".\ice.bat init"
-#         cmd /C ".\ice.bat build $BuildTargetsOption"
-
-#     - name: Execute Tests
-#       if: ${{ startsWith(matrix.os, 'windows-') }}
-#       shell: pwsh
-#       run: |
-#         $BuildTargets = "${{ join(fromJSON(needs.setup_workflow.outputs.build_configs), '","') }}" | ForEach-Object { "-t test-all-${{matrix.arch}}-$_" }
-#         $BuildTargetsOption = $BuildTargets -join " "
-#         cmd /C ".\ice.bat build $BuildTargetsOption"
+  call_build_parallel_linux:
+    name: 'Build (Linux)'
+    needs: setup_workflow
+    if: ${{ contains(needs.setup_workflow.outputs.tags, 'parallel') == true }}
+    uses: iceshard-engine/engine/.github/workflows/cw_build_parallel.yaml@advanced-workflows
+    with:
+      host: ubuntu-latest
+      configs: ${{ needs.setup_workflow.outputs.build_configs }}
+      platform: 'linux'
+      architecture: x64
