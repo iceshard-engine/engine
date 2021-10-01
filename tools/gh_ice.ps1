@@ -5,5 +5,5 @@ if ($IsLinux) {
     bash "$ScriptDirectory/../ice.sh" $ScriptArgs
 } elseif ($IsWindows) {
     $ScriptArgs = ($Args -join ' ')
-    cmd /C "$ScriptDirectory/../ice.bat" $ScriptArgs
+    cmd /C "$ScriptDirectory/../ice.bat $ScriptArgs"
 }
