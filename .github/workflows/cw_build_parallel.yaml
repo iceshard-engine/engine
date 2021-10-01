@@ -21,7 +21,7 @@ on:
         type: string
 
 jobs:
-  build_configurations_windows:
+  build_configurations:
     name: (${{ matrix.config }})
     continue-on-error: true
     runs-on: ${{ inputs.host }}
@@ -38,6 +38,12 @@ jobs:
         pip3 install wheel
         pip3 install conan
         conan config install https://github.com/iceshard-engine/conan-config.git
+
+    - name: Install clang-12 (Ubuntu)
+      if: ${{ startsWith(inputs.host, 'ubuntu-') }}
+      run: |
+        sudo apt update
+        sudo apt install libc++-12-dev libc++abi-12-dev --fix-missing
 
     - name: Cache Conan packages
       uses: actions/cache@v2
