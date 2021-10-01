@@ -53,8 +53,8 @@ jobs:
         $BuildTargets = "${{ join(fromJSON(needs.setup_workflow.outputs.build_configs), '","') }}" | ForEach-Object { "-t all-${{matrix.arch}}-$_" }
         $BuildTargetsStr = $BuildTargets -join " "
 
-        tools\gh_ice.ps1 init
-        tools\gh_ice.ps1 build $BuildTargetsStr
+        .\tools\gh_ice.ps1 init
+        .\tools\gh_ice.ps1 build $BuildTargetsStr
 
     - name: Run tests
       shell: pwsh
@@ -62,5 +62,4 @@ jobs:
         $BuildTargets = "${{ join(fromJSON(needs.setup_workflow.outputs.build_configs), '","') }}" | ForEach-Object { "-t test-all-${{matrix.arch}}-$_" }
         $BuildTargetsStr = $BuildTargets -join " "
 
-        tools\gh_ice.ps1 init
-        tools\gh_ice.ps1 build $BuildTargetsStr
+        .\tools\gh_ice.ps1 build $BuildTargetsStr
