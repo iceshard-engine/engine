@@ -1,79 +1,102 @@
 name: Validation
 
+# This workflow will run on every push on every branch. It will not be triggered on pull requests.
+#   - At some point it will be cut down to only be triggered on source code changes and branches with specific naming.
+#
+
 on:
   push:
-    branches:
-    - '*-platform'
-  pull_request:
-    types: [opened,edited,reopened]
-    branches:
-    - master
+    branches: '*'
+
+# This workflow supports the following additional CI tags:
+#   - [skip ci] - skips the whole workflow (available, github implicit)
+#   - (wip) [asan] - Runs all unit tests with an adress sanitizer enabled. (wip)
+#   - (wip) [benchmark] - Runs benchmarks additionally to unit tests. (wip)
+#   - (wip) [snapshot] - Deploys a 'Develop' build to conan on the 'snapshot' channel. (wip)
+#   - [all_configs] - Runs all checks on all configurations. (wip, some limitations apply)
+#   - [parallel] - Runs every configuration on a separate job. (wip, some limitations apply)
 
 jobs:
-  validation-build-windows:
-    name: Validate (Windows, msvc-latest)
-    runs-on: windows-latest
-    strategy:
-      matrix:
-        configuration: [Debug, Develop]
-    steps:
-    - uses: actions/checkout@v2
-    - name: Setup repository
-      run: |
-        pip3 install setuptools
-        pip3 install conan
-        conan config install https://github.com/iceshard-engine/conan-config.git
-    - name: Build (Windows-${{ matrix.configuration }})
-      shell: cmd
-      run: |
-        ice build -t all-x64-${{ matrix.configuration }}
-    - name: Run unit tests
-      shell: cmd
-      run: |
-        ice build -t test-all-x64-${{ matrix.configuration }}
-    - name: Success
-      run: |
-        echo Validation successful
-
-  validation-build-ubuntu:
-    name: Validate (Ubuntu, clang-12)
+  setup_workflow:
+    name: Setup workflow
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        configuration: [Debug, Develop]
+    outputs:
+      tags: ${{ steps.extract_ci_tags.outputs.tags }}
+      build_configs: ${{ steps.select_build_configs.outputs.build_configs }}
     steps:
-    - uses: actions/checkout@v2
-    - name: Setup repository
+    - id: load_event_payload
+      name: Load event payload
       run: |
-        pip3 install setuptools
-        pip3 install conan
-        export PATH=~/.local/bin/:$PATH
-        conan config install https://github.com/iceshard-engine/conan-config.git
-    - name: Setup runner (Clang-12)
-      run: |
-        sudo apt update
-        sudo apt install libc++-12-dev libc++abi-12-dev --fix-missing
-    - name: Build (Linux-${{ matrix.configuration }})
-      shell: bash
-      run: |
-        ./ice.sh build -t all-x64-${{ matrix.configuration }}
-    - name: Run unit tests
-      shell: bash
-      run: |
-        ./ice.sh build -t test-all-x64-${{ matrix.configuration }}
-    - name: Success
-      run: |
-        echo Validation successful
+        PAYLOAD_CONTENT=$(cat $GITHUB_EVENT_PATH)
+        PAYLOAD_CONTENT="${PAYLOAD_CONTENT//'%'/'%25'}"
+        PAYLOAD_CONTENT="${PAYLOAD_CONTENT//$'\n'/' '}"
+        PAYLOAD_CONTENT="${PAYLOAD_CONTENT//$'\r'/' '}"
+        echo "::set-output name=payload::$PAYLOAD_CONTENT"
 
-  commits-notify:
-    runs-on: ubuntu-latest
-    steps:
-    - name: Notify commit (Discord)
-      uses: Ilshidur/action-discord@master
-      env:
-        DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_YUKI }}
-        DISCORD_USERNAME: 'Yuki <IceShard Engine>'
-      with:
-        args: |
-          New commits have been pushed to `{{ EVENT_PAYLOAD.repository.full_name }}`!
-          {{ EVENT_PAYLOAD.commits.map(e => '- ' + e.message + ' (<' + e.url + '>) <' + e.author.name + '>').join('\n') }}
+    - id: extract_ci_tags
+      name: Extract CI tags from commits
+      run: |
+        COMMIT_MESSAGES="${{ join(fromJSON(steps.load_event_payload.outputs.payload).commits.*.message, ';') }}"
+        COMMIT_TAGS=$(echo "$COMMIT_MESSAGES" | grep -oP '\[.*?\]' | sed 's/\[\(.*\)\]/\1/' | tr '\n' ' ')
+        echo "::set-output name=tags::$COMMIT_TAGS"
+
+    - id: select_build_configs
+      name: Select build configs
+      run: |
+        if [[ "${{ steps.extract_ci_tags.outputs.tags }}" == *"all_configs"* ]]; then
+          echo "::set-output name=build_configs::[\"Debug\",\"Develop\",\"Profile\",\"Release\"]"
+        else
+          echo "::set-output name=build_configs::[\"Debug\",\"Develop\"]"
+        fi
+
+  ## Build using a single job for all configurations
+  #   - Allows to cut down on build time as it's does not need to recreate the workspace for each configuration.
+  #   - This is the default way of validating builds
+
+  call_build_single_windows:
+    name: 'Build (Windows)'
+    needs: setup_workflow
+    if: ${{ contains(needs.setup_workflow.outputs.tags, 'parallel') == false }}
+    uses: iceshard-engine/engine/.github/workflows/cw_build_single.yaml@advanced-workflows
+    with:
+      host: windows-latest
+      configs: ${{ needs.setup_workflow.outputs.build_configs }}
+      platform: 'windows'
+      architecture: x64
+
+  call_build_single_linux:
+    name: 'Build (Linux)'
+    needs: setup_workflow
+    if: ${{ contains(needs.setup_workflow.outputs.tags, 'parallel') == false }}
+    uses: iceshard-engine/engine/.github/workflows/cw_build_single.yaml@advanced-workflows
+    with:
+      host: ubuntu-latest
+      configs: ${{ needs.setup_workflow.outputs.build_configs }}
+      platform: 'linux'
+      architecture: x64
+
+  ## Build using a separate job for each configuration
+  #   - Should be used when it's necessary to check every configuration build process on clean workspaces.
+  #   - Can be triggered using the [parallel] tag in a commit message body.
+
+  call_build_parallel_windows:
+    name: 'Build (Windows)'
+    needs: setup_workflow
+    if: ${{ contains(needs.setup_workflow.outputs.tags, 'parallel') == true }}
+    uses: iceshard-engine/engine/.github/workflows/cw_build_parallel.yaml@advanced-workflows
+    with:
+      host: windows-latest
+      configs: ${{ needs.setup_workflow.outputs.build_configs }}
+      platform: 'windows'
+      architecture: x64
+
+  call_build_parallel_linux:
+    name: 'Build (Linux)'
+    needs: setup_workflow
+    if: ${{ contains(needs.setup_workflow.outputs.tags, 'parallel') == true }}
+    uses: iceshard-engine/engine/.github/workflows/cw_build_parallel.yaml@advanced-workflows
+    with:
+      host: ubuntu-latest
+      configs: ${{ needs.setup_workflow.outputs.build_configs }}
+      platform: 'linux'
+      architecture: x64
