@@ -22,7 +22,7 @@ on:
 
 jobs:
   build_configurations_windows:
-    name: (${{ join(fromJSON(inputs.configs), '","') }})
+    name: (${{ join(fromJSON(inputs.configs), ', ') }})
     continue-on-error: true
     runs-on: ${{ inputs.host }}
     steps:
