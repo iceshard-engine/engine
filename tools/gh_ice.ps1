@@ -1,7 +1,9 @@
 $ScriptDirectory = Split-Path $MyInvocation.MyCommand.Path -Parent
 
 if ($IsLinux) {
-    bash "$ScriptDirectory/../ice.sh" + ($Args -join ' ')
+    $ScriptCall = "$ScriptDirectory/../ice.sh" + ($Args -join ' ')
+    bash "$ScriptCall"
 } elseif ($IsWindows) {
-    cmd /C "$ScriptDirectory/../ice.bat" + ($Args -join ' ')
+    $ScriptCall = "$ScriptDirectory/../ice.bat" + ($Args -join ' ')
+    cmd /C "$ScriptCall"
 }
