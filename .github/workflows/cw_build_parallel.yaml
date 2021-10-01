@@ -22,7 +22,7 @@ on:
 
 jobs:
   build_configurations_windows:
-    name: ${{ inputs.platform }}
+    name: (${{ matrix.config }})
     continue-on-error: true
     runs-on: ${{ inputs.host }}
     strategy:

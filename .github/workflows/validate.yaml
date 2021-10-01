@@ -50,7 +50,7 @@ jobs:
         fi
 
   call_build_parallel_windows:
-    name: 'Call: Build (Windows, parallel)'
+    name: 'Build (Windows, parallel)'
     needs: setup_workflow
     if: ${{ contains(needs.setup_workflow.outputs.tags, 'parallel') == true }}
     uses: iceshard-engine/engine/.github/workflows/cw_build_parallel.yaml@advanced-workflows
@@ -61,7 +61,7 @@ jobs:
       architecture: x64
 
   call_build_parallel_linux:
-    name: 'Call: Build (Linux, parallel)'
+    name: 'Build (Linux, parallel)'
     needs: setup_workflow
     if: ${{ contains(needs.setup_workflow.outputs.tags, 'parallel') == true }}
     uses: iceshard-engine/engine/.github/workflows/cw_build_parallel.yaml@advanced-workflows
@@ -72,7 +72,7 @@ jobs:
       architecture: x64
 
   call_build_single_windows:
-    name: 'Call: Build (Windows, single)'
+    name: 'Build (Windows, single)'
     needs: setup_workflow
     if: ${{ contains(needs.setup_workflow.outputs.tags, 'parallel') == false }}
     uses: iceshard-engine/engine/.github/workflows/cw_build_single.yaml@advanced-workflows
@@ -83,7 +83,7 @@ jobs:
       architecture: x64
 
   call_build_single_linux:
-    name: 'Call: Build (Linux, single)'
+    name: 'Build (Linux, single)'
     needs: setup_workflow
     if: ${{ contains(needs.setup_workflow.outputs.tags, 'parallel') == false }}
     uses: iceshard-engine/engine/.github/workflows/cw_build_single.yaml@advanced-workflows
