@@ -25,9 +25,6 @@ jobs:
     name: ${{ inputs.platform }}
     continue-on-error: true
     runs-on: ${{ inputs.host }}
-    strategy:
-      matrix:
-        config: ${{ fromJSON(inputs.configs) }}
     steps:
     - uses: actions/checkout@v2
 
@@ -50,7 +47,7 @@ jobs:
     - name: Build targets
       shell: pwsh
       run: |
-        $BuildTargets = "${{ join(fromJSON(needs.setup_workflow.outputs.build_configs), '","') }}" | ForEach-Object { "-t all-${{matrix.arch}}-$_" }
+        $BuildTargets = "${{ join(fromJSON(inputs.configs), '","') }}" | ForEach-Object { "-t all-${{matrix.arch}}-$_" }
         $BuildTargetsStr = $BuildTargets -join " "
 
         .\tools\gh_ice.ps1 init
@@ -59,7 +56,7 @@ jobs:
     - name: Run tests
       shell: pwsh
       run: |
-        $BuildTargets = "${{ join(fromJSON(needs.setup_workflow.outputs.build_configs), '","') }}" | ForEach-Object { "-t test-all-${{matrix.arch}}-$_" }
+        $BuildTargets = "${{ join(fromJSON(inputs.config), '","') }}" | ForEach-Object { "-t test-all-${{matrix.arch}}-$_" }
         $BuildTargetsStr = $BuildTargets -join " "
 
         .\tools\gh_ice.ps1 build $BuildTargetsStr
