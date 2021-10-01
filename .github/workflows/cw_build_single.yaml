@@ -1,4 +1,4 @@
-name: Build (Parallel jobs)
+name: Build (Single job)
 
 on:
   workflow_call:
@@ -50,10 +50,17 @@ jobs:
     - name: Build targets
       shell: pwsh
       run: |
+        $BuildTargets = "${{ join(fromJSON(needs.setup_workflow.outputs.build_configs), '","') }}" | ForEach-Object { "-t all-${{matrix.arch}}-$_" }
+        $BuildTargetsStr = $BuildTargets -join " "
+
         tools\gh_ice.ps1 init
-        tools\gh_ice.ps1 build -t all-x64-${{ matrix.config }}
+        tools\gh_ice.ps1 build $BuildTargetsStr
 
     - name: Run tests
       shell: pwsh
       run: |
-        tools\gh_ice.ps1 build -t test-all-x64-${{ matrix.config }}
+        $BuildTargets = "${{ join(fromJSON(needs.setup_workflow.outputs.build_configs), '","') }}" | ForEach-Object { "-t test-all-${{matrix.arch}}-$_" }
+        $BuildTargetsStr = $BuildTargets -join " "
+
+        tools\gh_ice.ps1 init
+        tools\gh_ice.ps1 build $BuildTargetsStr

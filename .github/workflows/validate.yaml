@@ -71,6 +71,28 @@ jobs:
       platform: 'linux'
       architecture: x64
 
+  call_build_single_windows:
+    name: 'Call: Build (Windows, parallel)'
+    needs: setup_workflow
+    if: ${{ contains(needs.setup_workflow.outputs.tags, 'parallel') == true }}
+    uses: iceshard-engine/engine/.github/workflows/cw_build_single.yaml@advanced-workflows
+    with:
+      host: windows-latest
+      configs: ${{ needs.setup_workflow.outputs.build_configs }}
+      platform: 'windows'
+      architecture: x64
+
+  call_build_single_linux:
+    name: 'Call: Build (Linux, parallel)'
+    needs: setup_workflow
+    if: ${{ contains(needs.setup_workflow.outputs.tags, 'parallel') == true }}
+    uses: iceshard-engine/engine/.github/workflows/cw_build_single.yaml@advanced-workflows
+    with:
+      host: ubuntu-latest
+      configs: ${{ needs.setup_workflow.outputs.build_configs }}
+      platform: 'linux'
+      architecture: x64
+
 #   build_configurations:
 #     name: Build selected configs
 #     needs: setup_workflow
