@@ -3,6 +3,10 @@ name: Build (Parallel)
 on:
   workflow_call:
     inputs:
+      host:
+        description: The host machine to be used for the build process.
+        required: true
+        type: string
       configs:
         description: A json array of configuration names that should be build.
         required: true
@@ -17,18 +21,10 @@ on:
         type: string
 
 jobs:
-  test_job:
-    name: Test
-    runs-on: ubuntu-latest
-    steps:
-    - run: |
-        echo ${{ inputs.configs }}
-
   build_configurations_windows:
-    name: Windows
+    name: ${{ inputs.platform }}
     continue-on-error: true
-    runs-on: windows-latest
-    if: ${{ inputs.platform == 'windows' }}
+    runs-on: ${{ inputs.host }}
     strategy:
       matrix:
         config: ${{ fromJSON(inputs.configs) }}
@@ -54,42 +50,5 @@ jobs:
     - name: Build targets
       shell: pwsh
       run: |
-        $BuildTargets = "${{ join(fromJSON(needs.setup_workflow.outputs.build_configs), '","') }}" | ForEach-Object { "-t all-${{inputs.architecture}}-$_" }
-        $BuildTargetsOption = $BuildTargets -join " "
-        cmd /C ".\ice.bat init"
-        cmd /C ".\ice.bat build $BuildTargetsOption"
-
-  build_configurations_linux:
-    name: Linux
-    continue-on-error: true
-    runs-on: ubuntu-latest
-    if: ${{ inputs.platform == 'linux' }}
-    strategy:
-      matrix:
-        config: ${{ fromJSON(inputs.configs) }}
-    steps:
-    - uses: actions/checkout@v2
-
-    - name: Prepare workspace
-      shell: pwsh
-      run: |
-        pip3 install setuptools
-        pip3 install wheel
-        pip3 install conan
-        conan config install https://github.com/iceshard-engine/conan-config.git
-
-    - name: Cache Conan packages
-      uses: actions/cache@v2
-      env:
-        cache-name: cache-conan-packages
-      with:
-        path: ~/.conan
-        key: ${{ runner.os }}-build-${{ env.cache-name }}
-
-    - name: Build targets
-      run: |
-        BUILD_CONFIGS="${{ join(fromJSON(needs.setup_workflow.outputs.build_configs), ' ') }}"
-        BUILD_TARGETS=$(echo "$BUILD_CONFIGS" | grep -oP '\S+' | sed 's/\(\S*\)/-t all-${{inputs.architecture}}-\1/')
-
-        ./ice.sh init
-        ./ice.sh build $BUILD_TARGETS
+        tools\gh_ice.ps1 init
+        tools\gh_ice.ps1 build -t all-x64-${{ matrix.config }}

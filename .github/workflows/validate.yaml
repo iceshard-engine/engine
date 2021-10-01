@@ -2,9 +2,9 @@ name: Validation
 
 # This workflow will run on every push on every branch. It will not be triggered on pull requests.
 #   - At some point it will be cut down to only be triggered on source code changes and branches with specific naming.
-# 
+#
 
-on: 
+on:
   push:
     branches: '*'
 
@@ -32,14 +32,14 @@ jobs:
         PAYLOAD_CONTENT="${PAYLOAD_CONTENT//$'\n'/' '}"
         PAYLOAD_CONTENT="${PAYLOAD_CONTENT//$'\r'/' '}"
         echo "::set-output name=payload::$PAYLOAD_CONTENT"
-        
+
     - id: extract_ci_tags
       name: Extract CI tags from commits
       run: |
         COMMIT_MESSAGES="${{ join(fromJSON(steps.load_event_payload.outputs.payload).commits.*.message, ';') }}"
         COMMIT_TAGS=$(echo "$COMMIT_MESSAGES" | grep -oP '\[.*?\]' | sed 's/\[\(.*\)\]/\1/' | tr '\n' ' ')
         echo "::set-output name=tags::$COMMIT_TAGS"
-        
+
     - id: select_build_configs
       name: Select build configs
       run: |
@@ -48,27 +48,29 @@ jobs:
         else
           echo "::set-output name=build_configs::[\"Debug\",\"Develop\"]"
         fi
-          
+
   call_build_parallel_windows:
     name: 'Call: Build (Windows, parallel)'
     needs: setup_workflow
     if: ${{ contains(needs.setup_workflow.outputs.tags, 'parallel') == true }}
     uses: iceshard-engine/engine/.github/workflows/cw_build_parallel.yaml@advanced-workflows
     with:
+      host: windows-latest
       configs: ${{ needs.setup_workflow.outputs.build_configs }}
       platform: 'windows'
       architecture: x64
-          
+
   call_build_parallel_linux:
     name: 'Call: Build (Linux, parallel)'
     needs: setup_workflow
     if: ${{ contains(needs.setup_workflow.outputs.tags, 'parallel') == true }}
     uses: iceshard-engine/engine/.github/workflows/cw_build_parallel.yaml@advanced-workflows
     with:
+      host: ubuntu-latest
       configs: ${{ needs.setup_workflow.outputs.build_configs }}
       platform: 'linux'
       architecture: x64
-        
+
 #   build_configurations:
 #     name: Build selected configs
 #     needs: setup_workflow
@@ -81,7 +83,7 @@ jobs:
 #     runs-on: ${{ matrix.os }}
 #     steps:
 #     - uses: actions/checkout@v2
-    
+
 #     - name: Prepare workspace
 #       shell: pwsh
 #       run: |
@@ -89,7 +91,7 @@ jobs:
 #         pip3 install wheel
 #         pip3 install conan
 #         conan config install https://github.com/iceshard-engine/conan-config.git
-        
+
 #     - name: Cache Conan packages
 #       uses: actions/cache@v2
 #       env:
@@ -99,16 +101,16 @@ jobs:
 #         key: ${{ runner.os }}-build-${{ env.cache-name }}
 #         restore-keys: |
 #           ${{ runner.os }}-build-
-        
+
 #     - name: Build targets
 #       if: ${{ startsWith(matrix.os, 'ubuntu-') }}
 #       run: |
 #         BUILD_CONFIGS="${{ join(fromJSON(needs.setup_workflow.outputs.build_configs), ' ') }}"
 #         BUILD_TARGETS=$(echo "$BUILD_CONFIGS" | grep -oP '\S+' | sed 's/\(\S*\)/-t all-${{matrix.arch}}-\1/')
-        
+
 #         ./ice.sh init
 #         ./ice.sh build $BUILD_TARGETS
-        
+
 #     - name: Build targets
 #       if: ${{ startsWith(matrix.os, 'windows-') }}
 #       shell: pwsh
@@ -117,7 +119,7 @@ jobs:
 #         $BuildTargetsOption = $BuildTargets -join " "
 #         cmd /C ".\ice.bat init"
 #         cmd /C ".\ice.bat build $BuildTargetsOption"
-        
+
 #     - name: Execute Tests
 #       if: ${{ startsWith(matrix.os, 'windows-') }}
 #       shell: pwsh
