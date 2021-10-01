@@ -195,32 +195,45 @@ namespace ice::gfx
     auto IceGfxRunner::task_cleanup_gfx_contexts() noexcept -> ice::Task<>
     {
         co_await *_thread;
-
-        for (auto const& entry : _contexts)
-        {
-            entry.value->clear_context(*_device);
-        }
+        cleanup_gfx_contexts();
         co_return;
     }
 
     auto IceGfxRunner::task_setup_gfx_traits() noexcept -> ice::Task<>
     {
-        for (ice::gfx::IceGfxTraitEntry const& entry : _traits)
-        {
-            entry.trait->gfx_setup(*_current_frame, *_device);
-        }
+        setup_gfx_traits();
         co_return;
     }
 
     auto IceGfxRunner::task_cleanup_gfx_traits() noexcept -> ice::Task<>
     {
         co_await *_thread;
+        cleanup_gfx_traits();
+        co_return;
+    }
 
+    void IceGfxRunner::cleanup_gfx_contexts() noexcept
+    {
+        for (auto const& entry : _contexts)
+        {
+            entry.value->clear_context(*_device);
+        }
+    }
+
+    void IceGfxRunner::setup_gfx_traits() noexcept
+    {
+        for (ice::gfx::IceGfxTraitEntry const& entry : _traits)
+        {
+            entry.trait->gfx_setup(*_current_frame, *_device);
+        }
+    }
+
+    void IceGfxRunner::cleanup_gfx_traits() noexcept
+    {
         for (ice::gfx::IceGfxTraitEntry const& entry : _traits)
         {
             entry.trait->gfx_cleanup(*_current_frame, *_device);
         }
-        co_return;
     }
 
     auto IceGfxRunner::task_frame(

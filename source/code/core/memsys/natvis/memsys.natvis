@@ -53,13 +53,16 @@
 
   <!-- Native Visualization for the allocator type -->
   <Type Name="ice::memory::ScratchAllocator">
-    <DisplayString Optional="true">ScratchAllocator {{ {_name,s}, capacity: {((char*)_end - (char*)_begin) / (1024 * 1024),f} MiB }}</DisplayString>
-    <DisplayString>ScratchAllocator {{ {((char*)_end - (char*)_begin) / (1024 * 1024),f} MiB }}</DisplayString>
+    <DisplayString Condition="((char*)_end - (char*)_begin) &gt; 1024 * 1024" Optional="true">ScratchAllocator {{ {_name,s}, capacity: {((char*)_end - (char*)_begin) / (1024 * 1024),f} MiB }}</DisplayString>
+    <DisplayString Condition="((char*)_end - (char*)_begin) &gt; 1024" Optional="true">ScratchAllocator {{ {_name,s}, capacity: {((char*)_end - (char*)_begin) / 1024,f} KiB }}</DisplayString>
+    <DisplayString>ScratchAllocator {{ {((char*)_end - (char*)_begin),f} Bytes }}</DisplayString>
     <Expand>
       <Item Name="[buffer_capacity]">(char*)_end - (char*)_begin</Item>
-      <Item Name="[buffer_allocated]" Condition="_allocate >= _free">((char*)_allocate - (char*)_free)</Item>
+      <Item Name="[buffer_allocated]" Condition="_allocate &gt; _free">((char*)_allocate - (char*)_free)</Item>
+      <Item Name="[buffer_allocated]" Condition="_allocate == _free">((char*)_allocate - (char*)_begin)</Item>
       <Item Name="[buffer_allocated]" Condition="_allocate &lt; _free">(((char*)_end - (char*)_begin) - ((char*)_free - (char*)_allocate))</Item>
-      <Item Name="[buffer_load_factor]" Condition="_allocate >= _free">(float)((char*)_allocate - (char*)_free) / (float)((char*)_end - (char*)_begin),f</Item>
+      <Item Name="[buffer_load_factor]" Condition="_allocate &gt; _free">(float)((char*)_allocate - (char*)_free) / (float)((char*)_end - (char*)_begin),f</Item>
+      <Item Name="[buffer_load_factor]" Condition="_allocate == _free">(float)((char*)_allocate - (char*)_begin) / (float)((char*)_end - (char*)_begin),f</Item>
       <Item Name="[buffer_load_factor]" Condition="_allocate &lt; _free">(float)(((char*)_end - (char*)_begin) - ((char*)_free - (char*)_allocate)) / (float)((char*)_end - (char*)_begin),f</Item>
 
       <Item Name="[name]" Optional="true">_name,s</Item>

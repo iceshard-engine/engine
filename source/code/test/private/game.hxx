@@ -7,6 +7,10 @@
 #include <ice/game_tilemap.hxx>
 #include <ice/game_physics.hxx>
 
+#include <ice/action/action.hxx>
+#include <ice/action/action_system.hxx>
+#include <ice/action/action_trigger.hxx>
+
 #include <ice/world/world.hxx>
 #include <ice/gfx/gfx_pass.hxx>
 
@@ -60,6 +64,9 @@ public:
     ice::UniquePtr<ice::WorldTrait> _trait_animator{ ice::make_unique_null<ice::WorldTrait>() };
     ice::UniquePtr<ice::WorldTrait_Physics2D> _trait_physics{ ice::make_unique_null<ice::WorldTrait_Physics2D>() };
     ice::UniquePtr<ice::WorldTrait_TileMap> _trait_tilemap{ ice::make_unique_null<ice::WorldTrait_TileMap>() };
+
+    ice::UniquePtr<ice::action::ActionTriggerDatabase> _action_triggers{ ice::make_unique_null<ice::action::ActionTriggerDatabase>() };
+    ice::UniquePtr<ice::action::ActionSystem> _action_system{ ice::make_unique_null<ice::action::ActionSystem>() };
 
     bool _active = false;
     ice::World* _test_world;

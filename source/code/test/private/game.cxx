@@ -40,6 +40,7 @@
 #include <ice/asset_pipeline.hxx>
 #include <ice/resource.hxx>
 #include <ice/assert.hxx>
+#include <ice/shard.hxx>
 
 MyGame::MyGame(ice::Allocator& alloc, ice::Clock const& clock) noexcept
     : _allocator{ alloc, "MyGame-alloc" }
@@ -157,10 +158,80 @@ void MyGame::on_app_startup(ice::Engine& engine, ice::gfx::GfxRunner& gfx_runner
     _archetype_index->register_archetype<ice::Transform2DStatic, ice::Sprite>(&_archetype_alloc);
     _archetype_index->register_archetype<ice::Transform2DDynamic, ice::Sprite, ice::SpriteTile, ice::Animation, ice::AnimationState, ice::PhysicsBody>(&_archetype_alloc);
     _archetype_index->register_archetype<ice::Transform2DDynamic, ice::Sprite, ice::SpriteTile, ice::Animation, ice::AnimationState, ice::Actor, ice::PhysicsVelocity, ice::PhysicsBody>(&_archetype_alloc);
+
+    _action_triggers = ice::action::create_trigger_database(_allocator);
+    _action_system = ice::action::create_action_system(_allocator, _clock, *_action_triggers);
+    ice::action::setup_common_triggers(*_action_triggers);
+
+    using ice::operator""_shard;
+    using ice::operator""_shardid;
+    using namespace ice::action;
+
+    Action my_action;
+    my_action.name = "test-action"_sid;
+    my_action.stage_count = 1;
+    my_action.trigger_count = 3;
+
+    ActionStage stages[]{
+        ActionStage
+        {
+            .stage_shardid = "event/player/can_jump_again"_shardid,
+            .success_trigger_offset = 0,
+            .success_trigger_count = 1,
+            .failure_trigger_offset = 1,
+            .failure_trigger_count = 1,
+            .reset_trigger_offset = 2
+        }
+    };
+
+    ice::input::InputEvent event_w{ };
+    ice::input::InputEvent event_a{ };
+    ice::input::InputEvent event_d{ };
+
+    event_w.device = ice::input::make_device_handle(ice::input::DeviceType::Keyboard, ice::input::DeviceIndex{ 0 });
+    event_a.device = ice::input::make_device_handle(ice::input::DeviceType::Keyboard, ice::input::DeviceIndex{ 0 });
+    event_d.device = ice::input::make_device_handle(ice::input::DeviceType::Keyboard, ice::input::DeviceIndex{ 0 });
+
+    event_w.identifier = ice::input::input_identifier(ice::input::DeviceType::Keyboard, ice::input::KeyboardKey::KeyW, ice::input::key_identifier_base_value);
+    event_a.identifier = ice::input::input_identifier(ice::input::DeviceType::Keyboard, ice::input::KeyboardKey::KeyA, ice::input::key_identifier_base_value);
+    event_d.identifier = ice::input::input_identifier(ice::input::DeviceType::Keyboard, ice::input::KeyboardKey::KeyD, ice::input::key_identifier_base_value);
+
+    event_w.value_type = ice::input::InputValueType::Button;
+    event_a.value_type = ice::input::InputValueType::Button;
+    event_d.value_type = ice::input::InputValueType::Button;
+
+    event_w.value.button.state.pressed = true;
+    event_a.value.button.state.pressed = true;
+    event_d.value.button.state.pressed = true;
+
+    ActionTrigger triggers[]{
+        ActionTrigger
+        {
+            .name = "trigger.action-input-button"_sid,
+            .user_shard = "key"_shard | event_w
+        },
+        ActionTrigger
+        {
+            .name = "trigger.action-input-button"_sid,
+            .user_shard = "key"_shard | event_a
+        },
+        ActionTrigger
+        {
+            .name = "trigger.elapsed-time"_sid,
+            .user_shard = "time"_shard | ice::f32{ 3.f }
+        }
+    };
+
+    my_action.stages = stages;
+    my_action.triggers = triggers;
+    _action_system->create_action(my_action.name, my_action);
 }
 
 void MyGame::on_app_shutdown(ice::Engine& engine) noexcept
 {
+    _action_system = nullptr;
+    _action_triggers = nullptr;
+
     _test_world->remove_trait("game"_sid);
 
     _test_world->remove_trait("ice.actor"_sid);
@@ -300,6 +371,30 @@ void MyGame::on_update(ice::EngineFrame& frame, ice::EngineRunner& runner, ice::
             }
         }
     }
+
+    _action_system->step_actions(frame.shards());
+
+    using ice::operator""_shardid;
+    for (ice::Shard const shard : frame.shards())
+    {
+        if (shard == "event/player/can_jump_again"_shardid)
+        {
+            ICE_LOG(ice::LogSeverity::Debug, ice::LogTag::Game, "We can jump!");
+        }
+        if (shard == ice::action::Shard_ActionEventSuccess)
+        {
+            ICE_LOG(ice::LogSeverity::Debug, ice::LogTag::Game, "Success!");
+        }
+        if (shard == ice::action::Shard_ActionEventFailed)
+        {
+            ICE_LOG(ice::LogSeverity::Debug, ice::LogTag::Game, "Failure!");
+        }
+        if (shard == ice::action::Shard_ActionEventReset)
+        {
+            ICE_LOG(ice::LogSeverity::Debug, ice::LogTag::Game, "Reset!");
+        }
+    }
+
 
     if (was_active == true && _active == false)
     {
