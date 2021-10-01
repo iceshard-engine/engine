@@ -1,0 +1,23 @@
+name: Discord notification
+
+# TODO: We will change this workflow later into a 'workflow_call' allowing us to send various notifications from other workflows easily
+#
+
+on:
+  push:
+    branches: '*'
+
+jobs:
+  notify_discord_commits_pushed:
+    name: Notify discord (commits)
+    runs-on: ubuntu-latest
+    steps:
+    - name: Notify build started
+      uses: Ilshidur/action-discord@master
+      env:
+        DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_YUKI }}
+        DISCORD_USERNAME: 'Yuki <IceShard Engine>'
+      with:
+        args: |
+          New commits have been pushed to `{{ EVENT_PAYLOAD.repository.full_name }}`!
+          {{ EVENT_PAYLOAD.commits.map(e => '- ' + e.message + ' (<' + e.url + '>) <' + e.author.name + '>').join('\n') }}
