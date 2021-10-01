@@ -1,14 +1,15 @@
 name: Discord notification
 
 # TODO: We will change this workflow later into a 'workflow_call' allowing us to send various notifications from other workflows easily
-# 
+#
 
-on: 
+on:
   push:
     branches: '*'
 
 jobs:
   notify_discord_commits_pushed:
+    name: Notify discord (commits)
     runs-on: ubuntu-latest
     steps:
     - name: Notify build started
@@ -20,4 +21,3 @@ jobs:
         args: |
           New commits have been pushed to `{{ EVENT_PAYLOAD.repository.full_name }}`!
           {{ EVENT_PAYLOAD.commits.map(e => '- ' + e.message + ' (<' + e.url + '>) <' + e.author.name + '>').join('\n') }}
-          
