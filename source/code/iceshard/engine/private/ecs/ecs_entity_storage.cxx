@@ -1,6 +1,7 @@
 #include <ice/ecs/ecs_entity_storage.hxx>
 #include <ice/ecs/ecs_entity_operations.hxx>
 #include <ice/ecs/ecs_archetype_index.hxx>
+#include <ice/memory/pointer_arithmetic.hxx>
 #include <ice/pod/hash.hxx>
 #include <ice/assert.hxx>
 
@@ -10,7 +11,191 @@ namespace ice::ecs
     namespace detail
     {
 
+        struct OperationDetails
+        {
+            ice::u32 block_offset;
+            void* block_data;
+        };
 
+        auto make_entity_handle(
+            ice::ecs::Entity entity,
+            ice::ecs::EntitySlotInfo slot_info
+        ) noexcept -> ice::ecs::EntityHandle
+        {
+            struct HandleParts
+            {
+                ice::ecs::Entity entity;
+                ice::ecs::EntitySlotInfo slot_info; // Corresponds to `ice::ecs::EntitySlot`
+            };
+
+            static_assert(sizeof(HandleParts) == sizeof(EntityHandle));
+
+            union
+            {
+                HandleParts parts;
+                ice::ecs::EntityHandle handle;
+            } const helper{ { .entity = entity, .slot_info = slot_info } };
+
+            return helper.handle;
+        }
+
+        auto get_entity_array(
+            ice::ecs::EntityOperations::ComponentInfo const& info,
+            ice::ecs::detail::OperationDetails const& data_details,
+            ice::u32 entity_count
+        ) noexcept -> ice::Span<ice::ecs::EntityHandle>
+        {
+            void* const entity_array_ptr = ice::memory::ptr_add(
+                data_details.block_data,
+                info.offsets[0]
+            );
+
+            return ice::Span<ice::ecs::EntityHandle>(
+                reinterpret_cast<ice::ecs::EntityHandle*>(entity_array_ptr) + data_details.block_offset,
+                entity_count
+            );
+        }
+
+        void store_entities_with_data(
+            ice::Span<ice::ecs::EntityHandle const> src_entities,
+            ice::ecs::EntitySlotInfo base_slot,
+            ice::ecs::EntityOperations::ComponentInfo const& src_info,
+            ice::ecs::EntityOperations::ComponentInfo const& dst_info,
+            ice::ecs::detail::OperationDetails const& src_data_details,
+            ice::ecs::detail::OperationDetails const& dst_data_details
+        ) noexcept
+        {
+            ice::u32 const entity_count = ice::size(src_entities);
+
+            ice::u32 const src_component_count = ice::size(src_info.names);
+            ice::u32 const dst_component_count = ice::size(dst_info.names);
+            ice::u32 const max_component_count = ice::max(src_component_count, dst_component_count);
+            bool const source_is_smaller = src_component_count < max_component_count;
+
+            ice::u32 src_component_index = 0;
+            ice::u32 dst_component_index = 0;
+
+            ice::u32& main_component_index = (source_is_smaller ? dst_component_index : src_component_index);
+            ice::u32& sub_component_index = (source_is_smaller ? src_component_index : dst_component_index);
+
+            // Iterate over each component in the source archetype
+            for (; main_component_index < max_component_count && src_component_index < src_component_count; ++main_component_index)
+            {
+                ice::u32 const dst_size = dst_info.sizes[dst_component_index];
+                ice::u32 const dst_offset = dst_info.offsets[dst_component_index] + dst_size * dst_data_details.block_offset;
+
+                // If components do not match, skip the copy and clear memory
+                if (src_info.names[src_component_index] != dst_info.names[dst_component_index])
+                {
+                    void* const ptr = ice::memory::ptr_add(dst_data_details.block_data, dst_offset);
+
+                    ice::memset(ptr, '\0', dst_size * entity_count);
+                    continue;
+                }
+
+                ice::u32 const src_size = src_info.sizes[src_component_index];
+                ice::u32 const src_offset = src_info.offsets[src_component_index] + src_size * src_data_details.block_offset;
+
+                ICE_ASSERT(
+                    src_size == dst_size,
+                    "Mismatched data size {} != {} for components with the same ID. source: {} ({}), destination: {} ({})",
+                    src_size, dst_size,
+                    ice::stringid_hint(src_info.names[src_component_index]),
+                    ice::hash(src_info.names[src_component_index]),
+                    ice::stringid_hint(dst_info.names[dst_component_index]),
+                    ice::hash(dst_info.names[dst_component_index])
+                );
+
+                void const* const src_ptr = ice::memory::ptr_add(src_data_details.block_data, src_offset);
+                void* const dst_ptr = ice::memory::ptr_add(dst_data_details.block_data, dst_offset);
+
+                // Do a plain copy (we require components to be standard layout and trivially copyable)
+                ice::memcpy(dst_ptr, src_ptr, src_size * entity_count);
+
+                // Increment the sub index
+                sub_component_index += 1;
+            }
+
+            ice::Span<ice::ecs::EntityHandle> const dst_entities = ice::ecs::detail::get_entity_array(
+                dst_info,
+                dst_data_details,
+                entity_count
+            );
+
+            for (ice::u32 idx = 0; idx < entity_count; ++idx)
+            {
+                base_slot.index = dst_data_details.block_offset + idx;
+
+                ICE_ASSERT(
+                    base_slot.archetype < (1 << ice::ecs::Constant_EntitySlotArchetype_Bits),
+                    "Invalid archetype instance value!"
+                );
+                ICE_ASSERT(
+                    base_slot.block < (1 << ice::ecs::Constant_EntitySlotBlock_Bits),
+                    "Invalid archetype instance value!"
+                );
+                ICE_ASSERT(
+                    base_slot.index < (1 << ice::ecs::Constant_EntitySlotIndex_Bits),
+                    "Invalid archetype instance value!"
+                );
+
+                ice::ecs::EntityHandleInfo handle_info = ice::ecs::entity_handle_info(src_entities[idx]);
+
+                // Save the new handle
+                dst_entities[idx] = make_entity_handle(handle_info.entity, base_slot);
+            }
+        }
+
+        void store_entities_without_data(
+            ice::Span<ice::ecs::EntityHandle const> src_entities,
+            ice::ecs::EntitySlotInfo base_slot,
+            ice::ecs::EntityOperations::ComponentInfo const& info,
+            ice::ecs::detail::OperationDetails const& data_details
+        ) noexcept
+        {
+            ice::u32 const entity_count = ice::size(src_entities);
+            ice::u32 const component_count = ice::size(info.names);
+
+            // Iterate over each component in the source archetype
+            for (ice::u32 component_index = 0; component_index < component_count; ++component_index)
+            {
+                ice::u32 const size = info.sizes[component_index];
+                ice::u32 const offset = info.offsets[component_index] + size * data_details.block_offset;
+
+                void* const ptr = ice::memory::ptr_add(data_details.block_data, offset);
+
+                ice::memset(ptr, '\0', size * entity_count);
+            }
+
+            ice::Span<ice::ecs::EntityHandle> const dst_entities = ice::ecs::detail::get_entity_array(
+                info,
+                data_details,
+                entity_count
+            );
+
+            for (ice::u32 idx = 0; idx < entity_count; ++idx)
+            {
+                base_slot.index = data_details.block_offset + idx;
+
+                ICE_ASSERT(
+                    base_slot.archetype < (1 << ice::ecs::Constant_EntitySlotArchetype_Bits),
+                    "Invalid archetype instance value!"
+                );
+                ICE_ASSERT(
+                    base_slot.block < (1 << ice::ecs::Constant_EntitySlotBlock_Bits),
+                    "Invalid archetype instance value!"
+                );
+                ICE_ASSERT(
+                    base_slot.index < (1 << ice::ecs::Constant_EntitySlotIndex_Bits),
+                    "Invalid archetype instance value!"
+                );
+
+                ice::ecs::EntityHandleInfo handle_info = ice::ecs::entity_handle_info(src_entities[idx]);
+
+                // Save the new handle
+                dst_entities[idx] = make_entity_handle(handle_info.entity, base_slot);
+            }
+        }
 
     } // namespace detail
 
@@ -21,7 +206,6 @@ namespace ice::ecs
         : _allocator{ alloc }
         , _archetype_index{ archetype_index }
         , _data_blocks{ _allocator }
-        //, _archetype_heads{ _allocator }
     {
         ice::pod::array::resize(_data_blocks, _archetype_index.registered_archetype_count());
 
@@ -30,7 +214,33 @@ namespace ice::ecs
         {
             data_block_ptr = nullptr;
         }
-        //ice::pod::hash::reserve(_archetype_heads, ice::pod::array::capacity(_data_blocks) / 0.6f);
+    }
+
+    EntityStorage::~EntityStorage() noexcept
+    {
+        ice::u32 block_idx = 0;
+        for (DataBlock* const data_block : _data_blocks)
+        {
+            if (data_block != nullptr)
+            {
+                DataBlockPool* block_pool;
+                _archetype_index.fetch_archetype_instance_pool(ArchetypeInstance{ block_idx }, block_pool);
+
+                ICE_ASSERT(block_pool != nullptr, "Error while trying to release data block!");
+
+                DataBlock* block_it = data_block;
+                while (block_it != nullptr)
+                {
+                    DataBlock* next_block = block_it->next;
+                    block_it->next = nullptr;
+
+                    block_pool->release_block(block_it);
+                    block_it = next_block;
+                }
+            }
+
+            block_idx += 1;
+        }
     }
 
     void EntityStorage::execute_operations(
@@ -93,23 +303,51 @@ namespace ice::ecs
             EntityHandleInfo const handle_info = ice::ecs::entity_handle_info(handle);
             EntitySlotInfo const slot_info = ice::ecs::entity_slot_info(handle_info.slot);
 
-            ArchetypeInstance const src_isntance[1]{ ArchetypeInstance{ slot_info.archetype } };
             ArchetypeInstanceInfo const* src_instance_info[1]{ nullptr };
             if (slot_info.archetype != 0)
             {
+                ArchetypeInstance const src_isntance[1]{ ArchetypeInstance{ slot_info.archetype } };
                 _archetype_index.fetch_archetype_instance_infos(src_isntance, src_instance_info);
             }
 
             DataBlockPool* dst_instance_pool = nullptr;
-            ArchetypeInstanceInfo* dst_instance_info = nullptr;
+            ArchetypeInstanceInfo const* dst_instance_info = nullptr;
 
-            // #todo: this function assumes that the archetype is valid, otherwise it asserts. Maybe we should allow invalid archetypes?
             _archetype_index.fetch_archetype_instance_info_with_pool(operation.archetype, dst_instance_info, dst_instance_pool);
+
+
+            EntityOperations::ComponentInfo const* const src_component_info = reinterpret_cast<EntityOperations::ComponentInfo const*>(
+                operation.component_data
+            );
+
+            detail::OperationDetails src_data_details{
+                //.block_size = 0,
+                .block_offset = 0,
+                .block_data = nullptr
+            };
+
+            if (src_component_info != nullptr)
+            {
+                src_data_details.block_data = ice::memory::ptr_add(operation.component_data, sizeof(EntityOperations::ComponentInfo));
+            }
 
             // We have a valid destination archetype...
             if (dst_instance_info != nullptr)
             {
                 ice::u32 const dst_instance_idx = static_cast<ice::u32>(dst_instance_info->archetype_instance);
+
+                EntityOperations::ComponentInfo const dst_component_info{
+                    .names = dst_instance_info->component_identifiers,
+                    .sizes = dst_instance_info->component_sizes,
+                    .offsets = dst_instance_info->component_offsets,
+                };
+                detail::OperationDetails dst_data_details{
+                    .block_offset = 0,
+                    .block_data = nullptr,
+                };
+
+                // We need to track the current block index
+                ice::u32 block_idx = 0;
 
                 // We need at least the initial data block.
                 DataBlock* data_block_it = _data_blocks[dst_instance_idx];
@@ -123,6 +361,7 @@ namespace ice::ecs
                 }
 
                 // Number of remaining entities to process
+                ice::u32 processed_count = 0;
                 ice::u32 remaining_count = operation.entity_count;
 
                 // Run an operation as long as we have entities to process
@@ -131,15 +370,47 @@ namespace ice::ecs
                     ice::u32 const available_space = data_block_it->block_entity_count_max - data_block_it->block_entity_count;
                     if (available_space > 0)
                     {
-                        ice::u32 const entities_stored = ice::min(available_space, remaining_count);
+                        dst_data_details.block_data = data_block_it->block_data;
+                        dst_data_details.block_offset = data_block_it->block_entity_count;
 
-                        if (src_instance_info[0] != nullptr)
+                        ice::ecs::EntitySlotInfo const base_slot{
+                            .archetype = dst_instance_idx,
+                            .block = block_idx,
+                            .index = data_block_it->block_entity_count,
+                        };
+
+                        ice::u32 const entities_stored = ice::min(available_space, remaining_count);
+                        ice::Span<ice::ecs::EntityHandle const> const entities{
+                            operation.entities + processed_count,
+                            entities_stored
+                        };
+
+                        if (src_instance_info[0] == nullptr)
                         {
-                            // todo: move entities
+                            if (src_component_info != nullptr)
+                            {
+                                ice::ecs::detail::store_entities_with_data(
+                                    entities,
+                                    base_slot,
+                                    *src_component_info,
+                                    dst_component_info,
+                                    src_data_details, /* src data block */
+                                    dst_data_details /* dst data block */
+                                );
+                            }
+                            else
+                            {
+                                ice::ecs::detail::store_entities_without_data(
+                                    entities,
+                                    base_slot,
+                                    dst_component_info,
+                                    dst_data_details /* dst data block */
+                                );
+                            }
                         }
                         else
                         {
-                            // todo: create entities
+                            // todo: move entities
                         }
 
                         // Update the remianing count
@@ -147,16 +418,26 @@ namespace ice::ecs
                         data_block_it->block_entity_count += entities_stored;
                     }
 
-                    if (remaining_count > 0 && data_block_it->next == nullptr)
+                    // Get the next block
+                    if (remaining_count > 0)
                     {
-                        data_block_it->next = dst_instance_pool->request_block();
+                        if (data_block_it->next == nullptr)
+                        {
+                            data_block_it->next = dst_instance_pool->request_block();
 
-                        data_block_it = data_block_it->next;
-                        data_block_it->block_entity_count_max = dst_instance_info->component_entity_count_max;
-                        data_block_it->block_entity_count = 0;
+                            data_block_it = data_block_it->next;
+                            data_block_it->block_entity_count_max = dst_instance_info->component_entity_count_max;
+                            data_block_it->block_entity_count = 0;
+                        }
+                        else
+                        {
+                            data_block_it = data_block_it->next;
+                        }
+
+                        block_idx += 1;
                     }
 
-                } while (false);
+                } while (remaining_count > 0);
             }
             else
             {

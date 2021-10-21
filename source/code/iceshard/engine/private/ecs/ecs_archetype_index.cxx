@@ -89,6 +89,14 @@ namespace ice::ecs
         ice::pod::array::push_back(_archetype_data, nullptr);
     }
 
+    ArchetypeIndex::~ArchetypeIndex() noexcept
+    {
+        for (ArchetypeDataHeader* header : ice::pod::array::span(_archetype_data, 1))
+        {
+            _allocator.deallocate(header);
+        }
+    }
+
     auto ArchetypeIndex::registered_archetype_count() const noexcept -> ice::u32
     {
         return ice::pod::array::size(_archetype_data);
@@ -201,7 +209,7 @@ namespace ice::ecs
                 next_component_offset = ice::ecs::detail::align_forward_u32(next_component_offset, component_alignments[idx]);
                 component_offsets[idx] = next_component_offset;
 
-                next_component_offset = component_sizes[idx] * data_header->archetype_info.component_entity_count_max;
+                next_component_offset += component_sizes[idx] * data_header->archetype_info.component_entity_count_max;
             }
         }
 
@@ -334,6 +342,25 @@ namespace ice::ecs
         else
         {
             out_instance_info = nullptr;
+            out_block_pool = nullptr;
+        }
+    }
+
+    void ArchetypeIndex::fetch_archetype_instance_pool(
+        ice::ecs::ArchetypeInstance archetype_instance,
+        ice::ecs::DataBlockPool*& out_block_pool
+    ) const noexcept
+    {
+        ice::u32 const instance_count = ice::pod::array::size(_archetype_data);
+        ice::u32 const instance_idx = static_cast<ice::u32>(archetype_instance);
+
+        if (instance_idx < instance_count)
+        {
+            ArchetypeDataHeader const* const header = _archetype_data[instance_idx];
+            out_block_pool = header->block_pool;
+        }
+        else
+        {
             out_block_pool = nullptr;
         }
     }

@@ -40,11 +40,12 @@ namespace ice::ecs
             void*& out_operation_data_ptr
         ) noexcept -> ice::ecs::EntityOperation*;
 
-        void set_archetype(
-            ice::ecs::EntityHandle entity,
-            ice::ecs::Archetype archetype
-        ) noexcept;
-
+        struct ComponentInfo
+        {
+            ice::Span<ice::StringID const> names;
+            ice::Span<ice::u32 const> sizes;
+            ice::Span<ice::u32 const> offsets;
+        };
 
         struct EntityOperationData;
         struct OperationIterator
@@ -71,7 +72,7 @@ namespace ice::ecs
 
     void queue_set_archetype(
         ice::ecs::EntityOperations& entity_operations,
-        ice::ecs::EntityHandle entity,
+        ice::ecs::Entity entity,
         ice::ecs::Archetype archetype
     ) noexcept;
 

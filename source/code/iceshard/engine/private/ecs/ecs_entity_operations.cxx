@@ -43,6 +43,24 @@ namespace ice::ecs
     namespace detail
     {
 
+        auto make_empty_entity_handle(
+            ice::ecs::Entity entity
+        ) noexcept -> ice::ecs::EntityHandle
+        {
+            union
+            {
+                ice::ecs::EntityHandleInfo info;
+                ice::ecs::EntityHandle handle;
+            } const helper{
+                .info = {
+                    .entity = entity,
+                    .slot = ice::ecs::EntitySlot::Invalid
+                }
+            };
+
+            return helper.handle;
+        }
+
         auto allocate_operation_nodes(
             ice::Allocator& alloc,
             ice::u32 count
@@ -54,11 +72,11 @@ namespace ice::ecs
             );
 
             EntityOperation* operations = reinterpret_cast<EntityOperation*>(node_data);
-            for (ice::u32 idx = 1; idx < count; ++idx)
+            for (ice::u32 idx = 1; idx <= count; ++idx)
             {
                 operations[idx - 1].next = operations + idx;
             }
-            operations[15].next = nullptr;
+            operations[count].next = nullptr;
 
             // Make the first operation empty and mark it as an allocation guard node.
             operations->entity_count = 0;
@@ -108,10 +126,6 @@ namespace ice::ecs
         _operations = new_operations;
         _free_operations = _operations->next;
         _operations->next = nullptr;
-
-        ice::ecs::EntityOperation* const new_data_node = detail::allocate_operation_nodes(
-            _allocator, initial_count
-        );
     }
 
     EntityOperations::~EntityOperations() noexcept
@@ -131,6 +145,12 @@ namespace ice::ecs
         }
 
         _allocator.deallocate(allocation_node);
+
+        EntityOperationData* data_it = _data_nodes;
+        while (data_it != nullptr)
+        {
+            _allocator.deallocate(ice::exchange(data_it, data_it->next));
+        }
     }
 
     void EntityOperations::grow(ice::u32 count) noexcept
@@ -181,6 +201,7 @@ namespace ice::ecs
             }
 
             out_operation_data_ptr = ice::memory::ptr_align_forward(_data_nodes->operation_data, 8);
+            out_operation_data_ptr = ice::memory::ptr_add(out_operation_data_ptr, required_data_size);
 
             _data_nodes->available_data_size -= ice::memory::ptr_distance(
                 _data_nodes->operation_data,
@@ -191,48 +212,9 @@ namespace ice::ecs
         return _operations;
     }
 
-    void EntityOperations::set_archetype(ice::ecs::EntityHandle entity, ice::ecs::Archetype archetype) noexcept
-    {
-        if (_free_operations == nullptr)
-        {
-            grow(16);
-        }
-
-        EntityOperation* free_operation = _free_operations;
-        _free_operations = free_operation->next;
-        free_operation->next = nullptr;
-
-        _operations->next = free_operation;
-        _operations = free_operation;
-
-        _operations->archetype = archetype;
-        _operations->entity_count = 1;
-
-        // Ensure 8 bytes available in data nodes
-        if (_data_nodes->available_data_size <= sizeof(ice::ecs::EntityHandle))
-        {
-            _data_nodes->available_data_size = 0;
-            _data_nodes = detail::allocate_data_node(_allocator, 1024 * 16, _data_nodes);
-        }
-
-        _operations->entities = reinterpret_cast<EntityHandle*>(
-            ice::memory::ptr_align_forward(_data_nodes->operation_data, 8)
-        );
-
-        _data_nodes->available_data_size -= ice::memory::ptr_distance(
-            _data_nodes->operation_data,
-            _operations->entities
-        );
-
-        // Assign the one entity into the array.
-        *_operations->entities = entity;
-        _operations->component_data = nullptr;
-        _operations->component_data_size = 0;
-    }
-
     auto EntityOperations::begin() const noexcept -> OperationIterator
     {
-        return OperationIterator{ ._entry = _root };
+        return OperationIterator{ ._entry = _root->next };
     }
 
     auto EntityOperations::end() const noexcept -> OperationIterator
@@ -242,7 +224,7 @@ namespace ice::ecs
 
     void queue_set_archetype(
         ice::ecs::EntityOperations& entity_operations,
-        ice::ecs::EntityHandle entity,
+        ice::ecs::Entity entity,
         ice::ecs::Archetype archetype
     ) noexcept
     {
@@ -250,8 +232,10 @@ namespace ice::ecs
         EntityOperation* operation = entity_operations.new_storage_operation(sizeof(ice::ecs::EntityHandle), handle_loc);
         operation->archetype = archetype;
         operation->entities = reinterpret_cast<ice::ecs::EntityHandle*>(handle_loc);
-        *operation->entities = entity;
+        *operation->entities = detail::make_empty_entity_handle(entity);
         operation->entity_count = 1;
+        operation->component_data = nullptr;
+        operation->component_data_size = 0;
     }
 
 } // namespace ice::ecs
