@@ -42,6 +42,12 @@
 #include <ice/assert.hxx>
 #include <ice/shard.hxx>
 
+#include <ice/ecs/ecs_archetype_index.hxx>
+#include <ice/ecs/ecs_entity_index.hxx>
+#include <ice/ecs/ecs_entity_storage.hxx>
+#include <ice/ecs/ecs_entity_operations.hxx>
+
+
 MyGame::MyGame(ice::Allocator& alloc, ice::Clock const& clock) noexcept
     : _allocator{ alloc, "MyGame-alloc" }
     , _clock{ clock }
@@ -88,6 +94,28 @@ void MyGame::on_app_startup(ice::Engine& engine, ice::gfx::GfxRunner& gfx_runner
         ice::LogSeverity::Debug, ice::LogTag::Game,
         "Hello, world!"
     );
+
+    {
+        ice::Allocator& alloc{ _allocator };
+
+        ice::ecs::EntityIndex entity_index{ alloc, 1000 };
+        ice::ecs::ArchetypeIndex archetype_index{ alloc };
+        ice::ecs::EntityOperations entity_operations{ alloc };
+
+        ice::ecs::Entity entities[100];
+        entity_index.create_many(entities);
+        {
+            auto a1 = archetype_index.register_archetype(ice::ecs::static_validation::Validation_Archetype_1);
+            auto a2 = archetype_index.register_archetype(ice::ecs::static_validation::Validation_Archetype_2);
+
+            ice::ecs::EntityStorage entity_storage{ alloc, archetype_index };
+            {
+                ice::ecs::queue_set_archetype(entity_operations, entities[0], a1);
+                entity_storage.execute_operations(entity_operations);
+            }
+        }
+        entity_index.destroy_many(entities);
+    }
 
     ice::EngineDevUI& devui = engine.developer_ui();
 
