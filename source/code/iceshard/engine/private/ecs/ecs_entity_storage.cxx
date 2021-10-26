@@ -146,6 +146,63 @@ namespace ice::ecs
             }
         }
 
+        void update_entities_with_data(
+            ice::Span<ice::ecs::EntityHandle const> entities,
+            ice::ecs::EntityOperations::ComponentInfo const& src_info,
+            ice::ecs::EntityOperations::ComponentInfo const& dst_info,
+            ice::ecs::detail::OperationDetails const& src_data_details,
+            ice::ecs::detail::OperationDetails const& dst_data_details
+        ) noexcept
+        {
+            ice::u32 const entity_count = ice::size(entities);
+
+            ice::u32 const src_component_count = ice::size(src_info.names);
+            ice::u32 const dst_component_count = ice::size(dst_info.names);
+            ice::u32 const max_component_count = ice::max(src_component_count, dst_component_count);
+            bool const source_is_smaller = src_component_count < max_component_count;
+
+            ice::u32 src_component_index = 0;
+            ice::u32 dst_component_index = 0;
+
+            ice::u32& main_component_index = (source_is_smaller ? dst_component_index : src_component_index);
+            ice::u32& sub_component_index = (source_is_smaller ? src_component_index : dst_component_index);
+
+            // Iterate over each component in the source archetype
+            for (; main_component_index < max_component_count && src_component_index < src_component_count; ++main_component_index)
+            {
+                ice::u32 const dst_size = dst_info.sizes[dst_component_index];
+                ice::u32 const dst_offset = dst_info.offsets[dst_component_index] + dst_size * dst_data_details.block_offset;
+
+                // If components do not match, skip any operation, we only update for data we have
+                if (src_info.names[src_component_index] != dst_info.names[dst_component_index])
+                {
+                    continue;
+                }
+
+                ice::u32 const src_size = src_info.sizes[src_component_index];
+                ice::u32 const src_offset = src_info.offsets[src_component_index] + src_size * src_data_details.block_offset;
+
+                ICE_ASSERT(
+                    src_size == dst_size,
+                    "Mismatched data size {} != {} for components with the same ID. source: {} ({}), destination: {} ({})",
+                    src_size, dst_size,
+                    ice::stringid_hint(src_info.names[src_component_index]),
+                    ice::hash(src_info.names[src_component_index]),
+                    ice::stringid_hint(dst_info.names[dst_component_index]),
+                    ice::hash(dst_info.names[dst_component_index])
+                );
+
+                void const* const src_ptr = ice::memory::ptr_add(src_data_details.block_data, src_offset);
+                void* const dst_ptr = ice::memory::ptr_add(dst_data_details.block_data, dst_offset);
+
+                // Do a plain copy (we require components to be standard layout and trivially copyable)
+                ice::memcpy(dst_ptr, src_ptr, src_size * entity_count);
+
+                // Increment the sub index
+                sub_component_index += 1;
+            }
+        }
+
         void store_entities_without_data(
             ice::Span<ice::ecs::EntityHandle const> src_entities,
             ice::ecs::EntitySlotInfo base_slot,
@@ -316,19 +373,19 @@ namespace ice::ecs
             _archetype_index.fetch_archetype_instance_info_with_pool(operation.archetype, dst_instance_info, dst_instance_pool);
 
 
-            EntityOperations::ComponentInfo const* const src_component_info = reinterpret_cast<EntityOperations::ComponentInfo const*>(
+            EntityOperations::ComponentInfo const* const provided_component_info = reinterpret_cast<EntityOperations::ComponentInfo const*>(
                 operation.component_data
             );
 
-            detail::OperationDetails src_data_details{
+            detail::OperationDetails provided_data_details{
                 //.block_size = 0,
                 .block_offset = 0,
                 .block_data = nullptr
             };
 
-            if (src_component_info != nullptr)
+            if (provided_component_info != nullptr)
             {
-                src_data_details.block_data = ice::memory::ptr_add(operation.component_data, sizeof(EntityOperations::ComponentInfo));
+                provided_data_details.block_data = ice::memory::ptr_add(operation.component_data, sizeof(EntityOperations::ComponentInfo));
             }
 
             // We have a valid destination archetype...
@@ -387,14 +444,14 @@ namespace ice::ecs
 
                         if (src_instance_info[0] == nullptr)
                         {
-                            if (src_component_info != nullptr)
+                            if (provided_component_info != nullptr)
                             {
                                 ice::ecs::detail::store_entities_with_data(
                                     entities,
                                     base_slot,
-                                    *src_component_info,
+                                    *provided_component_info,
                                     dst_component_info,
-                                    src_data_details, /* src data block */
+                                    provided_data_details, /* src data block */
                                     dst_data_details /* dst data block */
                                 );
                             }
@@ -410,7 +467,101 @@ namespace ice::ecs
                         }
                         else
                         {
-                            // todo: move entities
+                            // #todo get rid of this simplification at some point? But is it really requied?
+                            ICE_ASSERT(
+                                operation.entity_count == 1,
+                                "It's not allowed to move more than a single entity between archetypes."
+                            );
+
+                            ice::u32 const src_instance_idx = static_cast<ice::u32>(src_instance_info[0]->archetype_instance);
+
+                            EntityOperations::ComponentInfo const src_component_info{
+                                .names = src_instance_info[0]->component_identifiers,
+                                .sizes = src_instance_info[0]->component_sizes,
+                                .offsets = src_instance_info[0]->component_offsets,
+                            };
+
+                            DataBlock* data_block_it = _data_blocks[src_instance_idx];
+                            ICE_ASSERT(
+                                data_block_it != nullptr,
+                                "This storage has no data associated with the given source archetype!"
+                            );
+
+                            uint32_t block_idx = slot_info.block;
+                            while (block_idx > 0)
+                            {
+                                data_block_it = data_block_it->next;
+                                block_idx -= 1;
+
+                                ICE_ASSERT(
+                                    data_block_it != nullptr,
+                                    "This storage has no data associated with the given entity handle!"
+                                );
+                            }
+
+                            ICE_ASSERT(
+                                data_block_it->block_entity_count > slot_info.index,
+                                "This storage has no data associated with the given entity handle!"
+                            );
+
+                            detail::OperationDetails src_data_details{
+                                .block_offset = slot_info.index,
+                                .block_data = data_block_it->block_data,
+                            };
+
+                            // Moving is generally a very expensive operation as it needs to change both the source archetype storage and the target storage.
+                            // 1. First we need to copy all similar data to the target storage.
+
+                            ice::ecs::detail::store_entities_with_data(
+                                entities,
+                                base_slot,
+                                src_component_info,
+                                dst_component_info,
+                                src_data_details, /* src data block */
+                                dst_data_details /* dst data block */
+                            );
+
+                            // 2. Apply the new provided data if any.
+                            if (provided_component_info != nullptr)
+                            {
+                                ice::ecs::detail::update_entities_with_data(
+                                    entities,
+                                    *provided_component_info,
+                                    dst_component_info,
+                                    provided_data_details, /* src data block */
+                                    dst_data_details /* dst data block */
+                                );
+                            }
+
+                            // 3. We need to remove all the copied data from the source storage.
+                            //  We only do this if we have more than one entity and if the enitity is not at the end of the block
+                            if (data_block_it->block_entity_count > 2 && (data_block_it->block_entity_count - 1) != src_data_details.block_offset)
+                            {
+                                dst_data_details = src_data_details;
+                                src_data_details.block_offset = data_block_it->block_entity_count - 1; // Get the last entity
+
+                                ice::ecs::EntityHandle const move_entities[1]{
+                                    ice::ecs::detail::get_entity_array(src_component_info, src_data_details, 1).front()
+                                };
+
+                                EntitySlotInfo const move_slot{
+                                    .archetype = src_instance_idx,
+                                    .block = slot_info.block,
+                                    .index = slot_info.index
+                                };
+
+                                ice::ecs::detail::store_entities_with_data(
+                                    move_entities,
+                                    move_slot,
+                                    src_component_info,
+                                    src_component_info,
+                                    src_data_details, /* src data block */
+                                    dst_data_details /* dst data block */
+                                );
+                            }
+
+                            // Remove entity count from the block we moved from (we can just forget the data existed)
+                            data_block_it->block_entity_count -= 1;
                         }
 
                         // Update the remianing count
