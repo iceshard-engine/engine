@@ -21,6 +21,7 @@ class NatvisCommand extends Command
             for line in f\lines!
                 var, val = line\match 'static constexpr ice::Shard ([%w_:]+) = "([%w/-]+)"_shard'
                 if var and val
+                    print "Warning: Shard with this name '#{var}' already exists!" if shard_names.shard[var]
                     shard_names.shard[var] = val
                     continue
 
