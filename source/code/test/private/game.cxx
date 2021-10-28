@@ -102,7 +102,7 @@ void MyGame::on_app_startup(ice::Engine& engine, ice::gfx::GfxRunner& gfx_runner
         ice::ecs::ArchetypeIndex archetype_index{ alloc };
         ice::ecs::EntityOperations entity_operations{ alloc };
 
-        ice::ecs::Entity entities[100];
+        ice::ecs::Entity entities[10];
         entity_index.create_many(entities);
         {
             auto a1 = archetype_index.register_archetype(ice::ecs::static_validation::Validation_Archetype_1);
@@ -110,8 +110,15 @@ void MyGame::on_app_startup(ice::Engine& engine, ice::gfx::GfxRunner& gfx_runner
 
             ice::ecs::EntityStorage entity_storage{ alloc, archetype_index };
             {
-                ice::ecs::queue_set_archetype(entity_operations, entities[0], a1);
-                entity_storage.execute_operations(entity_operations);
+                ice::ecs::queue_set_archetype(entity_operations, entities, a1, true);
+
+                ice::ShardContainer shards{ _allocator };
+                entity_storage.execute_operations(entity_operations, shards);
+                entity_operations.clear();
+
+                ice::ecs::queue_remove_entity(entity_operations, ice::shard_shatter<ice::ecs::EntityHandle>(shards._data[3]));
+                ice::ecs::queue_set_archetype(entity_operations, entities[3], a1);
+                entity_storage.execute_operations(entity_operations, shards);
             }
         }
         entity_index.destroy_many(entities);
