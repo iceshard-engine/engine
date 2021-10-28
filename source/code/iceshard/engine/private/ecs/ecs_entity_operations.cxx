@@ -153,6 +153,44 @@ namespace ice::ecs
         }
     }
 
+    void EntityOperations::clear() noexcept
+    {
+        ice::ecs::EntityOperation* it = _root;
+        ice::ecs::EntityOperation* allocation_node = it;
+
+        while (it->next != nullptr)
+        {
+            it = it->next;
+
+            if (reinterpret_cast<ice::uptr>(it->entities) == 1)
+            {
+                _allocator.deallocate(allocation_node);
+                allocation_node = it;
+            }
+        }
+
+        _allocator.deallocate(allocation_node);
+
+        // Clear all data nodes keep one
+        EntityOperationData* data_it = _data_nodes;
+        while (data_it != nullptr)
+        {
+            _allocator.deallocate(ice::exchange(data_it, data_it->next));
+        }
+
+        // #todo: implement reusing of previously allocated blocks
+        _data_nodes = detail::allocate_data_node(_allocator, 1024 * 16, nullptr);
+
+        ice::ecs::EntityOperation* const new_operations = detail::allocate_operation_nodes(
+            _allocator, 16
+        );
+
+        _root = new_operations;
+        _operations = new_operations;
+        _free_operations = _operations->next;
+        _operations->next = nullptr;
+    }
+
     void EntityOperations::grow(ice::u32 count) noexcept
     {
         ICE_ASSERT(_free_operations == nullptr, "There are still nodes available!");
@@ -200,12 +238,12 @@ namespace ice::ecs
                 _data_nodes = detail::allocate_data_node(_allocator, ice::max(required_data_size, 1024 * 16u), _data_nodes);
             }
 
-            out_operation_data_ptr = ice::memory::ptr_align_forward(_data_nodes->operation_data, 8);
-            out_operation_data_ptr = ice::memory::ptr_add(out_operation_data_ptr, required_data_size);
+            out_operation_data_ptr = ice::memory::ptr_align_forward(_data_nodes->operation_data, 8); // #todo: take into account these 8 bytes when checking for space.
+            _data_nodes->operation_data = ice::memory::ptr_add(out_operation_data_ptr, required_data_size);
 
             _data_nodes->available_data_size -= ice::memory::ptr_distance(
-                _data_nodes->operation_data,
-                out_operation_data_ptr
+                out_operation_data_ptr,
+                _data_nodes->operation_data
             );
         }
 
@@ -234,6 +272,47 @@ namespace ice::ecs
         operation->entities = reinterpret_cast<ice::ecs::EntityHandle*>(handle_loc);
         *operation->entities = detail::make_empty_entity_handle(entity);
         operation->entity_count = 1;
+        operation->notify_entity_changes = true;
+        operation->component_data = nullptr;
+        operation->component_data_size = 0;
+    }
+
+    void queue_set_archetype(
+        ice::ecs::EntityOperations& entity_operations,
+        ice::Span<ice::ecs::Entity const> entities,
+        ice::ecs::Archetype archetype,
+        bool notify_changes /*= false*/
+    ) noexcept
+    {
+        ice::u32 const entity_count = ice::size(entities);
+
+        void* handle_loc;
+        EntityOperation* operation = entity_operations.new_storage_operation(sizeof(ice::ecs::EntityHandle) * entity_count, handle_loc);
+        operation->archetype = archetype;
+        operation->entities = reinterpret_cast<ice::ecs::EntityHandle*>(handle_loc);
+        operation->entity_count = entity_count;
+        operation->notify_entity_changes = notify_changes;
+        operation->component_data = nullptr;
+        operation->component_data_size = 0;
+
+        for (ice::u32 idx = 0; idx < entity_count; ++idx)
+        {
+            operation->entities[idx] = detail::make_empty_entity_handle(entities[idx]);
+        }
+    }
+
+    void queue_remove_entity(
+        ice::ecs::EntityOperations& entity_operations,
+        ice::ecs::EntityHandle entity
+    ) noexcept
+    {
+        void* handle_loc;
+        EntityOperation* operation = entity_operations.new_storage_operation(sizeof(ice::ecs::EntityHandle), handle_loc);
+        operation->archetype = ice::ecs::Archetype::Invalid;
+        operation->entities = reinterpret_cast<ice::ecs::EntityHandle*>(handle_loc);
+        *operation->entities = entity;
+        operation->entity_count = 1;
+        operation->notify_entity_changes = true;
         operation->component_data = nullptr;
         operation->component_data_size = 0;
     }

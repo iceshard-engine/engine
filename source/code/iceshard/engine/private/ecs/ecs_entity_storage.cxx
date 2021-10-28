@@ -30,13 +30,11 @@ namespace ice::ecs
 
             static_assert(sizeof(HandleParts) == sizeof(EntityHandle));
 
-            union
-            {
-                HandleParts parts;
-                ice::ecs::EntityHandle handle;
-            } const helper{ { .entity = entity, .slot_info = slot_info } };
-
-            return helper.handle;
+            HandleParts const parts{
+                .entity = entity,
+                .slot_info = slot_info
+            };
+            return std::bit_cast<ice::ecs::EntityHandle>(parts);
         }
 
         auto get_entity_array(
@@ -147,15 +145,13 @@ namespace ice::ecs
         }
 
         void update_entities_with_data(
-            ice::Span<ice::ecs::EntityHandle const> entities,
+            ice::u32 entity_count,
             ice::ecs::EntityOperations::ComponentInfo const& src_info,
             ice::ecs::EntityOperations::ComponentInfo const& dst_info,
             ice::ecs::detail::OperationDetails const& src_data_details,
             ice::ecs::detail::OperationDetails const& dst_data_details
         ) noexcept
         {
-            ice::u32 const entity_count = ice::size(entities);
-
             ice::u32 const src_component_count = ice::size(src_info.names);
             ice::u32 const dst_component_count = ice::size(dst_info.names);
             ice::u32 const max_component_count = ice::max(src_component_count, dst_component_count);
@@ -301,13 +297,14 @@ namespace ice::ecs
     }
 
     void EntityStorage::execute_operations(
-        ice::ecs::EntityOperations const& operations
+        ice::ecs::EntityOperations const& operations,
+        ice::ShardContainer& out_shards
     ) noexcept
     {
-        // Set Archetype: {EntityHandle[], DstArchetype, ComponentData[]} // add
-        // Rep Archetype: {EntityHandle[], DstArchetype, <implicit: SrcArchetype>, ComponentData[]} // change
-        // Set Component: {EntityHandle[], None, ComponentData[]} // update data
-        // Set Component: {EntityHandle[], None} // remove
+        // [Done] Set Archetype: {EntityHandle[*], DstArchetype, ComponentData[*]} // add
+        // [Done] Rep Archetype: {EntityHandle[1], DstArchetype, <implicit: SrcArchetype>, ComponentData[*]} // change
+        // [Done] Set Component: {EntityHandle[1], None, ComponentData[*]} // update data
+        // [Done] Set Component: {EntityHandle[1], None} // remove
 
         for (EntityOperation const& operation : operations)
         {
@@ -464,6 +461,20 @@ namespace ice::ecs
                                     dst_data_details /* dst data block */
                                 );
                             }
+
+                            if (operation.notify_entity_changes)
+                            {
+                                ice::Span<ice::ecs::EntityHandle const> entities = ice::ecs::detail::get_entity_array(
+                                    dst_component_info,
+                                    dst_data_details,
+                                    entities_stored
+                                );
+
+                                for (ice::ecs::EntityHandle handle : entities)
+                                {
+                                    ice::shards::push_back(out_shards, ice::shard_create(ice::ecs::Shard_EntityCreated, handle));
+                                }
+                            }
                         }
                         else
                         {
@@ -521,11 +532,23 @@ namespace ice::ecs
                                 dst_data_details /* dst data block */
                             );
 
+                            if (operation.notify_entity_changes)
+                            {
+                                ice::Span<ice::ecs::EntityHandle const> entities = ice::ecs::detail::get_entity_array(
+                                    dst_component_info,
+                                    dst_data_details,
+                                    entities_stored
+                                );
+
+                                ICE_ASSERT(ice::size(entities) == 0, "");
+                                ice::shards::push_back(out_shards, ice::shard_create(ice::ecs::Shard_EntityArchetypeChanged, entities[0]));
+                            }
+
                             // 2. Apply the new provided data if any.
                             if (provided_component_info != nullptr)
                             {
                                 ice::ecs::detail::update_entities_with_data(
-                                    entities,
+                                    operation.entity_count,
                                     *provided_component_info,
                                     dst_component_info,
                                     provided_data_details, /* src data block */
@@ -558,6 +581,18 @@ namespace ice::ecs
                                     src_data_details, /* src data block */
                                     dst_data_details /* dst data block */
                                 );
+
+                                if (operation.notify_entity_changes)
+                                {
+                                    ice::Span<ice::ecs::EntityHandle const> entities = ice::ecs::detail::get_entity_array(
+                                        src_component_info,
+                                        dst_data_details,
+                                        entities_stored
+                                    );
+
+                                    ICE_ASSERT(ice::size(entities) == 1, "");
+                                    ice::shards::push_back(out_shards, ice::shard_create(ice::ecs::Shard_EntityHandleChanged, entities[0]));
+                                }
                             }
 
                             // Remove entity count from the block we moved from (we can just forget the data existed)
@@ -590,11 +625,114 @@ namespace ice::ecs
 
                 } while (remaining_count > 0);
             }
+            else if (src_instance_info[0] != nullptr)
+            {
+                // #todo get rid of this simplification at some point? But is it really requied?
+                ICE_ASSERT(
+                    operation.entity_count == 1,
+                    "It's not allowed to update or remove more than a single in a operation."
+                );
+
+                ice::u32 const src_instance_idx = static_cast<ice::u32>(src_instance_info[0]->archetype_instance);
+
+                EntityOperations::ComponentInfo const src_component_info{
+                    .names = src_instance_info[0]->component_identifiers,
+                    .sizes = src_instance_info[0]->component_sizes,
+                    .offsets = src_instance_info[0]->component_offsets,
+                };
+
+                DataBlock* data_block_it = _data_blocks[src_instance_idx];
+                ICE_ASSERT(
+                    data_block_it != nullptr,
+                    "This storage has no data associated with the given source archetype!"
+                );
+
+                uint32_t block_idx = slot_info.block;
+                while (block_idx > 0)
+                {
+                    data_block_it = data_block_it->next;
+                    block_idx -= 1;
+
+                    ICE_ASSERT(
+                        data_block_it != nullptr,
+                        "This storage has no data associated with the given entity handle!"
+                    );
+                }
+
+                ICE_ASSERT(
+                    data_block_it->block_entity_count > slot_info.index,
+                    "This storage has no data associated with the given entity handle!"
+                );
+
+                detail::OperationDetails src_data_details{
+                    .block_offset = slot_info.index,
+                    .block_data = data_block_it->block_data,
+                };
+
+                if (provided_component_info != nullptr)
+                {
+                    ice::ecs::detail::update_entities_with_data(
+                        operation.entity_count,
+                        *provided_component_info,
+                        src_component_info,
+                        provided_data_details, /* src data block */
+                        src_data_details /* dst data block */
+                    );
+                }
+                else
+                {
+                    if (data_block_it->block_entity_count > 2 && (data_block_it->block_entity_count - 1) != src_data_details.block_offset)
+                    {
+                        detail::OperationDetails const dst_data_details = src_data_details;
+                        src_data_details.block_offset = data_block_it->block_entity_count - 1; // Get the last entity
+
+                        ice::Span<ice::ecs::EntityHandle const> entities = ice::ecs::detail::get_entity_array(
+                            src_component_info,
+                            detail::OperationDetails{ .block_offset = 0, .block_data = data_block_it->block_data },
+                            data_block_it->block_entity_count
+                        );
+
+                        ice::ecs::EntityHandle const destroyed_entities[1]{
+                            entities[dst_data_details.block_offset]
+                        };
+                        ice::ecs::EntityHandle const move_entities[1]{
+                            entities[src_data_details.block_offset]
+                        };
+
+                        EntitySlotInfo const move_slot{
+                            .archetype = src_instance_idx,
+                            .block = slot_info.block,
+                            .index = slot_info.index
+                        };
+
+                        ice::ecs::detail::store_entities_with_data(
+                            move_entities,
+                            move_slot,
+                            src_component_info,
+                            src_component_info,
+                            src_data_details, /* src data block */
+                            dst_data_details /* dst data block */
+                        );
+
+                        if (operation.notify_entity_changes)
+                        {
+                            ice::shards::push_back(out_shards, ice::shard_create(ice::ecs::Shard_EntityDestroyed, destroyed_entities[0]));
+                            ice::shards::push_back(out_shards, ice::shard_create(ice::ecs::Shard_EntityHandleChanged, entities[dst_data_details.block_offset]));
+                        }
+                    }
+
+                    // Remove entity count from the block we moved from (we can just forget the data existed)
+                    data_block_it->block_entity_count -= 1;
+                }
+            }
             else
             {
-                // Remove or Update entities
-            }
+                ICE_LOG(
+                    ice::LogSeverity::Warning, ice::LogTag::Engine,
+                    "Operation is is not valid for given entitity. The entity cannot be found in this storage."
+                );
 
+            }
         }
     }
 

@@ -2,22 +2,24 @@
 #include <ice/data.hxx>
 #include <ice/allocator.hxx>
 #include <ice/pod/array.hxx>
+#include <ice/shard_container.hxx>
 #include <ice/ecs/ecs_entity.hxx>
 #include <ice/ecs/ecs_archetype.hxx>
 
 namespace ice::ecs
 {
 
-    // Set Archetype: {EntityHandle[], DstArchetype, ComponentData[]} // set
-    // Rep Archetype: {EntityHandle[], DstArchetype, <implicit: SrcArchetype>, ComponentData[]} // change
-    // Set Component: {EntityHandle[], None, ComponentData[]} // update data
-    // Set Component: {EntityHandle[], None} // remove
+    static constexpr ice::Shard Shard_EntityCreated = "event/ecs-v2/entity-created"_shard;
+    static constexpr ice::Shard Shard_EntityDestroyed = "event/ecs-v2/entity-destroyed"_shard;
+    static constexpr ice::Shard Shard_EntityHandleChanged = "event/ecs-v2/entity-handle-changed"_shard;
+    static constexpr ice::Shard Shard_EntityArchetypeChanged = "event/ecs-v2/entity-archetype-changed"_shard;
 
     struct EntityOperation
     {
         ice::ecs::EntityOperation* next;
 
-        ice::u32 entity_count;
+        ice::u32 entity_count : 31;
+        ice::u32 notify_entity_changes : 1;
         ice::u32 component_data_size;
 
         ice::ecs::Archetype archetype;
@@ -31,6 +33,7 @@ namespace ice::ecs
         EntityOperations(ice::Allocator& alloc, ice::u32 prealloc = 16) noexcept;
         ~EntityOperations() noexcept;
 
+        void clear() noexcept;
         void grow(ice::u32 count) noexcept;
 
         auto new_storage_operation() noexcept -> ice::ecs::EntityOperation*;
@@ -74,6 +77,18 @@ namespace ice::ecs
         ice::ecs::EntityOperations& entity_operations,
         ice::ecs::Entity entity,
         ice::ecs::Archetype archetype
+    ) noexcept;
+
+    void queue_set_archetype(
+        ice::ecs::EntityOperations& entity_operations,
+        ice::Span<ice::ecs::Entity const> entities,
+        ice::ecs::Archetype archetype,
+        bool notify_changes = false
+    ) noexcept;
+
+    void queue_remove_entity(
+        ice::ecs::EntityOperations& entity_operations,
+        ice::ecs::EntityHandle entity_handle
     ) noexcept;
 
 } // namespace ice::ecs

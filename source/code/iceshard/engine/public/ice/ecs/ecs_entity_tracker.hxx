@@ -9,10 +9,6 @@
 namespace ice::ecs
 {
 
-    static constexpr ice::Shard Shard_EntityCreated = "event/ecs-v2/entity-created"_shard;
-    static constexpr ice::Shard Shard_EntityDestroyed = "event/ecs-v2/entity-destroyed"_shard;
-    static constexpr ice::Shard Shard_EntityHandleChanged = "event/ecs-v2/entity-handle-changed"_shard;
-
     class EntityTracker
     {
     public:

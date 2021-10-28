@@ -22,7 +22,8 @@ namespace ice::ecs
         ~EntityStorage() noexcept;
 
         void execute_operations(
-            ice::ecs::EntityOperations const& operations
+            ice::ecs::EntityOperations const& operations,
+            ice::ShardContainer& out_shards
         ) noexcept;
 
     private:
