@@ -64,7 +64,7 @@ jobs:
     - name: Run tests
       shell: pwsh
       run: |
-        $BuildTargets = "${{ join(fromJSON(inputs.config), '","') }}" | ForEach-Object { "-t test-all-${{ inputs.architecture }}-$_" }
+        $BuildTargets = "${{ join(fromJSON(inputs.configs), '","') }}" | ForEach-Object { "-t test-all-${{ inputs.architecture }}-$_" }
         $BuildTargetsStr = $BuildTargets -join " "
 
         .\tools\gh_ice.ps1 build $BuildTargetsStr
