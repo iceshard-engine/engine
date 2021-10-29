@@ -48,7 +48,9 @@ jobs:
         cache-name: cache-conan-packages
       with:
         path: ~/.conan
-        key: ${{ runner.os }}-build-${{ env.cache-name }}
+        key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/conanfile.txt', '**/conan_profiles.json') }}
+        restore-keys: |
+          ${{ runner.os }}-build-${{ env.cache-name }}-
 
     - name: Build targets
       shell: pwsh
@@ -62,7 +64,7 @@ jobs:
     - name: Run tests
       shell: pwsh
       run: |
-        $BuildTargets = "${{ join(fromJSON(inputs.config), '","') }}" | ForEach-Object { "-t test-all-${{ inputs.architecture }}-$_" }
+        $BuildTargets = "${{ join(fromJSON(inputs.configs), '","') }}" | ForEach-Object { "-t test-all-${{ inputs.architecture }}-$_" }
         $BuildTargetsStr = $BuildTargets -join " "
 
         .\tools\gh_ice.ps1 build $BuildTargetsStr
