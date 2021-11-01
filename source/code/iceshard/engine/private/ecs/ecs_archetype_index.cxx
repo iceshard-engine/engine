@@ -206,10 +206,24 @@ namespace ice::ecs
             ice::u32 next_component_offset = 0;
             for (ice::u32 idx = 0; idx < component_count; ++idx)
             {
-                next_component_offset = ice::ecs::detail::align_forward_u32(next_component_offset, component_alignments[idx]);
-                component_offsets[idx] = next_component_offset;
+                // TAG Components have size and alignment set to '0', handle differently
+                if (component_alignments[idx] == 0)
+                {
+                    ICE_ASSERT(
+                        component_sizes[idx] == 0,
+                        "Invalid component information! This '{}' seems not to be a valid tag component!",
+                        ice::stringid_hint(component_identifiers[idx])
+                    );
 
-                next_component_offset += component_sizes[idx] * data_header->archetype_info.component_entity_count_max;
+                    component_offsets[idx] = ice::u32_max;
+                }
+                else
+                {
+                    next_component_offset = ice::ecs::detail::align_forward_u32(next_component_offset, component_alignments[idx]);
+                    component_offsets[idx] = next_component_offset;
+
+                    next_component_offset += component_sizes[idx] * data_header->archetype_info.component_entity_count_max;
+                }
             }
         }
 

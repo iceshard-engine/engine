@@ -82,6 +82,16 @@ namespace ice::ecs
                 ice::u32 const dst_size = dst_info.sizes[dst_component_index];
                 ice::u32 const dst_offset = dst_info.offsets[dst_component_index] + dst_size * dst_data_details.block_offset;
 
+                // If this is a tag component skip it.
+                if (dst_offset == ice::u32_max)
+                {
+                    ICE_ASSERT(
+                        dst_size == 0,
+                        "A critical error occured, this offset should only be used for 'tag components' which have size and alignment set to '0'"
+                    );
+                    continue;
+                }
+
                 // If components do not match, skip the copy and clear memory
                 if (src_info.names[src_component_index] != dst_info.names[dst_component_index])
                 {
@@ -169,6 +179,16 @@ namespace ice::ecs
                 ice::u32 const dst_size = dst_info.sizes[dst_component_index];
                 ice::u32 const dst_offset = dst_info.offsets[dst_component_index] + dst_size * dst_data_details.block_offset;
 
+                // If this is a tag component skip it.
+                if (dst_offset == ice::u32_max)
+                {
+                    ICE_ASSERT(
+                        dst_size == 0,
+                        "A critical error occured, this offset should only be used for 'tag components' which have size and alignment set to '0'"
+                    );
+                    continue;
+                }
+
                 // If components do not match, skip any operation, we only update for data we have
                 if (src_info.names[src_component_index] != dst_info.names[dst_component_index])
                 {
@@ -214,6 +234,16 @@ namespace ice::ecs
             {
                 ice::u32 const size = info.sizes[component_index];
                 ice::u32 const offset = info.offsets[component_index] + size * data_details.block_offset;
+
+                // If this is a tag component skip it.
+                if (offset == ice::u32_max)
+                {
+                    ICE_ASSERT(
+                        size == 0,
+                        "A critical error occured, this offset should only be used for 'tag components' which have size and alignment set to '0'"
+                    );
+                    continue;
+                }
 
                 void* const ptr = ice::memory::ptr_add(data_details.block_data, offset);
 

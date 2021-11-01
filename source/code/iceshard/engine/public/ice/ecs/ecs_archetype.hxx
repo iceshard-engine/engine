@@ -86,9 +86,9 @@ namespace ice::ecs
         {
             static constexpr std::array<SortableArchetypeComponent, sizeof...(Components)> const Const_UnsortedCcomponents{
                 SortableArchetypeComponent{
-                    .identifier = ice::ecs::ComponentIdentifier<Components>,
-                    .size = sizeof(Components),
-                    .alignment = alignof(Components),
+                    .identifier = ice::ecs::Const_ComponentIdentifier<Components>,
+                    .size = ice::ecs::Const_ComponentSize<Components>,
+                    .alignment = ice::ecs::Const_ComponentAlignment<Components>,
                 }...
             };
         };
@@ -118,9 +118,9 @@ namespace ice::ecs
 
     template<ice::ecs::Component... Components>
     inline constexpr ArchetypeDefinition<Components...>::ArchetypeDefinition() noexcept
-        : component_identifiers{ ice::ecs::ComponentIdentifier<ice::ecs::EntityHandle> }
-        , component_sizes{ sizeof(ice::ecs::EntityHandle) }
-        , component_alignments{ alignof(ice::ecs::EntityHandle) }
+        : component_identifiers{ ice::ecs::Const_ComponentIdentifier<ice::ecs::EntityHandle> }
+        , component_sizes{ ice::ecs::Const_ComponentSize<ice::ecs::EntityHandle> }
+        , component_alignments{ ice::ecs::Const_ComponentAlignment<ice::ecs::EntityHandle> }
     {
         auto const& sorted_components = ice::ecs::detail::SortedArchetypeInfo<Components...>::Const_SortedComponents;
 
@@ -172,9 +172,9 @@ namespace ice::ecs
         static_assert(Validation_Archetype_1.component_identifiers.size() == 3);
         static_assert(Validation_Archetype_2.component_identifiers.size() == 3);
 
-        static_assert(Validation_Archetype_1.component_identifiers[0] == ice::ecs::ComponentIdentifier<ice::ecs::EntityHandle>);
-        static_assert(Validation_Archetype_1.component_identifiers[1] == ice::ecs::ComponentIdentifier<ice::ecs::static_validation::ValidationComponent_0x10>);
-        static_assert(Validation_Archetype_1.component_identifiers[2] == ice::ecs::ComponentIdentifier<ice::ecs::static_validation::ValidationComponent_0x20>);
+        static_assert(Validation_Archetype_1.component_identifiers[0] == ice::ecs::Const_ComponentIdentifier<ice::ecs::EntityHandle>);
+        static_assert(Validation_Archetype_1.component_identifiers[1] == ice::ecs::Const_ComponentIdentifier<ice::ecs::static_validation::ValidationComponent_0x10>);
+        static_assert(Validation_Archetype_1.component_identifiers[2] == ice::ecs::Const_ComponentIdentifier<ice::ecs::static_validation::ValidationComponent_0x20>);
 
         static_assert(Validation_Archetype_1.component_identifiers[0] == Validation_Archetype_2.component_identifiers[0]);
         static_assert(Validation_Archetype_1.component_identifiers[1] == Validation_Archetype_2.component_identifiers[1]);
