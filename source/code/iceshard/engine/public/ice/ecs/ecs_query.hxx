@@ -1,4 +1,5 @@
 #pragma once
+#include <ice/ecs/ecs_query_details.hxx>
 
 namespace ice::ecs
 {
