@@ -288,14 +288,28 @@ namespace ice::ecs
     ) noexcept
         : _allocator{ alloc }
         , _archetype_index{ archetype_index }
+        , _head_blocks{ _allocator }
         , _data_blocks{ _allocator }
     {
-        ice::pod::array::resize(_data_blocks, _archetype_index.registered_archetype_count());
+        ice::u32 const archetype_count = _archetype_index.registered_archetype_count();
 
-        // Set the whole array to nullptrs.
-        for (DataBlock*& data_block_ptr : _data_blocks)
+        ice::pod::array::resize(_head_blocks, archetype_count);
+        ice::pod::array::resize(_data_blocks, archetype_count);
+
+        // Setup the empty head blocks.
+        //  This approach gives two benefits:
+        //  1. Queries are returning valid pointers for head blocks, that can be skipped if no entity was ever allocate
+        //  2. We dont have any allocation overhead for archetypes that exist bur where never used, or are used rarely.
+        for (ice::u32 idx = 0; idx < archetype_count; ++idx)
         {
-            data_block_ptr = nullptr;
+            DataBlock* head_block = ice::addressof(_head_blocks[idx]);
+            head_block->block_data = nullptr;
+            head_block->block_data_size = 0;
+            head_block->block_entity_count = 0;
+            head_block->block_entity_count_max = 0;
+            head_block->next = nullptr;
+
+            _data_blocks[idx] = head_block;
         }
     }
 
@@ -304,14 +318,14 @@ namespace ice::ecs
         ice::u32 block_idx = 0;
         for (DataBlock* const data_block : _data_blocks)
         {
-            if (data_block != nullptr)
+            if (data_block->next != nullptr)
             {
                 DataBlockPool* block_pool;
                 _archetype_index.fetch_archetype_instance_pool(ArchetypeInstance{ block_idx }, block_pool);
 
                 ICE_ASSERT(block_pool != nullptr, "Error while trying to release data block!");
 
-                DataBlock* block_it = data_block;
+                DataBlock* block_it = data_block->next;
                 while (block_it != nullptr)
                 {
                     DataBlock* next_block = block_it->next;

@@ -72,6 +72,7 @@ namespace ice::ecs
         ice::Allocator& _allocator;
         ice::ecs::ArchetypeIndex const& _archetype_index;
 
+        ice::pod::Array<ice::ecs::DataBlock> _head_blocks;
         ice::pod::Array<ice::ecs::DataBlock*> _data_blocks;
     };
 
