@@ -1,16 +1,17 @@
 #pragma once
 #include <ice/ecs/ecs_entity.hxx>
 #include <ice/ecs/ecs_component.hxx>
+#include <ice/static_array.hxx>
 
 namespace ice::ecs::detail
 {
 
     struct QueryTypeInfo
     {
-        ice::StringID const identifier;
+        ice::StringID identifier;
 
-        bool const is_writable = false;
-        bool const is_optional = false;
+        bool is_writable = false;
+        bool is_optional = false;
     };
 
 
@@ -43,6 +44,30 @@ namespace ice::ecs::detail
     {
         return QueryTypeInfo{ .identifier = identifier, .is_writable = is_writable, .is_optional = is_optional };
     }
+
+
+    constexpr bool operator<(
+        ice::ecs::detail::QueryTypeInfo const& left,
+        ice::ecs::detail::QueryTypeInfo const& right
+    ) noexcept
+    {
+        return ice::hash(left.identifier) < ice::hash(right.identifier);
+    }
+
+    template<QueryType... Components>
+    struct UnsortedQueryRequirements
+    {
+        static constexpr ice::StaticArray<ice::ecs::detail::QueryTypeInfo, sizeof...(Components)> const Constant_Requirements{
+            ice::ecs::detail::QueryComponentTypeInfo<Components>{}...
+        };
+    };
+
+    template<QueryType First, QueryType... Components>
+    struct QueryRequirements
+    {
+        static constexpr ice::StaticArray<ice::ecs::detail::QueryTypeInfo, 1 + sizeof...(Components)> const Constant_Requirements =
+            constexpr_sort_array(UnsortedQueryRequirements<First, Components...>::Constant_Requirements, static_cast<ice::u32>(std::is_same_v<First, ice::ecs::EntityHandle>));
+    };
 
 
     template<QueryType Arg>

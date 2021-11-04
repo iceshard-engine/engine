@@ -2,21 +2,11 @@
 #include <ice/allocator.hxx>
 #include <ice/ecs/ecs_archetype.hxx>
 #include <ice/ecs/ecs_data_block_pool.hxx>
+#include <ice/ecs/ecs_query_details.hxx>
 #include <ice/span.hxx>
 
 namespace ice::ecs
 {
-
-    struct ArchetypeQuery
-    {
-        struct QueryCondition
-        {
-            ice::StringID identifier;
-            bool optional = false;
-        };
-
-        ice::Span<QueryCondition const> query_conditions;
-    };
 
     class DataBlockPool;
 
@@ -37,7 +27,7 @@ namespace ice::ecs
         ) noexcept -> ice::ecs::Archetype;
 
         void find_archetypes(
-            ice::ecs::ArchetypeQuery const& query_info,
+            ice::Span<ice::ecs::detail::QueryTypeInfo const> query_info,
             ice::pod::Array<ice::ecs::Archetype>& out_archetypes
         ) const noexcept;
 

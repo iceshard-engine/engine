@@ -84,7 +84,7 @@ namespace ice::ecs
         template<ice::ecs::Component... Components>
         struct UnsortedArchetypeInfo
         {
-            static constexpr std::array<SortableArchetypeComponent, sizeof...(Components)> const Const_UnsortedCcomponents{
+            static constexpr std::array<SortableArchetypeComponent, sizeof...(Components)> const Const_Components{
                 SortableArchetypeComponent{
                     .identifier = ice::ecs::Constant_ComponentIdentifier<Components>,
                     .size = ice::ecs::Constant_ComponentSize<Components>,
@@ -96,8 +96,8 @@ namespace ice::ecs
         template<ice::ecs::Component... Components>
         struct SortedArchetypeInfo
         {
-            static constexpr std::array<SortableArchetypeComponent, sizeof...(Components)> const Const_SortedComponents =
-                constexpr_sort_array(UnsortedArchetypeInfo<Components...>::Const_UnsortedCcomponents);
+            static constexpr std::array<SortableArchetypeComponent, sizeof...(Components)> const Const_Components =
+                constexpr_sort_array(UnsortedArchetypeInfo<Components...>::Const_Components);
         };
 
         constexpr auto make_archetype_identifier(
@@ -122,7 +122,7 @@ namespace ice::ecs
         , component_sizes{ ice::ecs::Constant_ComponentSize<ice::ecs::EntityHandle> }
         , component_alignments{ ice::ecs::Constant_ComponentAlignment<ice::ecs::EntityHandle> }
     {
-        auto const& sorted_components = ice::ecs::detail::SortedArchetypeInfo<Components...>::Const_SortedComponents;
+        auto const& sorted_components = ice::ecs::detail::SortedArchetypeInfo<Components...>::Const_Components;
 
         for (ice::u32 idx = 1; idx < Const_ComponentCount; ++idx)
         {

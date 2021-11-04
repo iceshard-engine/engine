@@ -8,8 +8,9 @@
 namespace ice::ecs
 {
 
+    using ice::ecs::detail::QueryType;
 
-    template<typename Definition> //template<ice::ecs::detail::Query_Type... QueryComponents>
+    template<typename Definition>
     struct Query;
 
     namespace query
@@ -34,7 +35,7 @@ namespace ice::ecs
     //! \tparam ...QueryComponents Component types, with decorators, we want to access in the qyery.
     //!
     //! \example QueryDefinition<ComponentB&, const ComponentA*>
-    template<ice::ecs::detail::QueryType... QueryComponents>
+    template<ice::ecs::QueryType... QueryComponents>
     struct QueryDefinition
     {
         using Query = ice::ecs::Query<ice::ecs::QueryDefinition<QueryComponents...>>;
@@ -62,10 +63,7 @@ namespace ice::ecs
 
         ice::u32 const component_count = sizeof...(QueryComponents);
 
-        ice::ecs::detail::QueryTypeInfo const requirements[sizeof...(QueryComponents)] =
-        {
-            ice::ecs::detail::QueryComponentTypeInfo<QueryComponents>{ }...
-        };
+        ice::StaticArray<ice::ecs::detail::QueryTypeInfo, sizeof...(QueryComponents)> const requirements = ice::ecs::detail::QueryRequirements<QueryComponents...>::Constant_Requirements;
     };
 
     //! \brief A query holds information about all archetypes that should be iterated but it's not yet executed.
@@ -74,10 +72,10 @@ namespace ice::ecs
     {
         static constexpr Definition Constant_Definition{ };
 
-        ice::Span<ice::ecs::ArchetypeInstanceInfo const*> const archetype_instances;
-        ice::Span<ice::ecs::DataBlock const*> archetype_data_blocks;
+        ice::pod::Array<ice::ecs::ArchetypeInstanceInfo const*> const archetype_instances;
+        ice::pod::Array<ice::ecs::DataBlock const*> const archetype_data_blocks;
 
-        ice::Span<ice::u32 const[Constant_Definition.component_count]> const archetype_argument_idx_map;
+        ice::pod::Array<ice::StaticArray<ice::u32, Constant_Definition.component_count>> const archetype_argument_idx_map;
     };
 
 

@@ -14,10 +14,10 @@ namespace ice::ecs
         };
 
         template<typename T>
-        constexpr auto constexpr_sort_array(T const& arr) noexcept
+        constexpr auto constexpr_sort_array(T const& arr, ice::u32 start_offset = 0) noexcept
         {
             auto result = arr;
-            std::sort(std::begin(result), std::end(result));
+            std::sort(std::next(std::begin(result), start_offset), std::end(result));
             return result;
         }
 

@@ -25,19 +25,19 @@ namespace ice::ecs
         }
 
         auto contains_required_components(
-            ice::Span<ice::ecs::ArchetypeQuery::QueryCondition const> const& conditions,
+            ice::Span<ice::ecs::detail::QueryTypeInfo const> const& conditions,
             ice::Span<ice::StringID const> const& identifiers
         ) noexcept -> ice::u32
         {
-            using Condition = ArchetypeQuery::QueryCondition;
+            using QueryTypeInfo = ice::ecs::detail::QueryTypeInfo;
 
             ice::u32 const condition_count = ice::size(conditions);
             ice::u32 const identifier_count = ice::size(identifiers);
             ice::u32 const identifier_last_index = identifier_count - 1;
 
             ice::u32 condition_idx = 0;
-            ice::u32 identifier_idx = 0;
-            ice::u64 identifier_hash = ice::hash(identifiers[0]);
+            ice::u32 identifier_idx = 1;
+            ice::u64 identifier_hash = ice::hash(identifiers[1]);
 
             // As long as we have something to check and we did not fail search for the next ID
             ice::u32 matched_components = 0;
@@ -45,7 +45,7 @@ namespace ice::ecs
             bool result = true;
             for (; (condition_idx < condition_count) && (identifier_idx < identifier_count) && result; ++condition_idx)
             {
-                Condition const& condition = conditions[condition_idx];
+                QueryTypeInfo const& condition = conditions[condition_idx];
                 ice::u64 const condition_hash = ice::hash(condition.identifier);
 
                 // As long as `condition_hash` is greater than `identifier_hash` check the next identifier.
@@ -58,7 +58,7 @@ namespace ice::ecs
                 // We are either equal or smaller
                 //  - if smaller, then there is not a single value left in `identifiers` that would match.
                 //  - if we failed to match, we can still check if the condition was optional
-                result &= (identifier_hash == condition_hash) || condition.optional;
+                result &= (identifier_hash == condition_hash) || condition.is_optional;
 
                 // We only care for properly matched components, as this will allow us to even handle fully optional queries a bit better.
                 //  - support for fully optional queries is there to enable them if required at some point. However we are trying to avoid it for now.
@@ -237,29 +237,36 @@ namespace ice::ecs
     }
 
     void ArchetypeIndex::find_archetypes(
-        ice::ecs::ArchetypeQuery const& query_info,
+        ice::Span<ice::ecs::detail::QueryTypeInfo const> query_info,
         ice::pod::Array<ice::ecs::Archetype>& out_archetypes
     ) const noexcept
     {
         ice::pod::array::clear(out_archetypes);
 
-        ice::u32 const query_condition_count = ice::size(query_info.query_conditions);
+        // We need to skip the first query entry if it's for `ice::ecs::EntityHandle`
+        // This is due to the fact that it's always there and is not taken into account when sorting components by identifiers.
+        if (query_info.front().identifier == ice::ecs::Constant_ComponentIdentifier<ice::ecs::EntityHandle>)
+        {
+            query_info = query_info.subspan(1);
+        }
+
+        ice::u32 const query_condition_count = ice::size(query_info);
         ice::u32 const required_component_count = [](auto const& query_conditions) noexcept -> ice::u32
         {
             ice::u32 result = 0;
-            for (ice::ecs::ArchetypeQuery::QueryCondition const& condition : query_conditions)
+            for (ice::ecs::detail::QueryTypeInfo const& condition : query_conditions)
             {
-                result += ice::u32{ condition.optional == false };
+                result += ice::u32{ condition.is_optional == false };
             }
             return result;
-        }(query_info.query_conditions);
+        }(query_info);
 
         ICE_ASSERT(
-            required_component_count == 0,
+            required_component_count != 0,
             "An query without any required component might impact performance as it will check every archetype possible for a match."
         );
 
-        for (ArchetypeDataHeader const* entry : _archetype_data)
+        for (ArchetypeDataHeader const* entry : ice::pod::array::span(_archetype_data, 1))
         {
             ArchetypeInstanceInfo const& archetype_info = entry->archetype_info;
 
@@ -270,7 +277,7 @@ namespace ice::ecs
             }
 
             ice::u32 const matched_components = ice::ecs::detail::contains_required_components(
-                query_info.query_conditions,
+                query_info,
                 archetype_info.component_identifiers
             );
 
