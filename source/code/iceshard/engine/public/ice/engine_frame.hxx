@@ -6,6 +6,7 @@
 #include <ice/input/input_types.hxx>
 
 #include <ice/engine_task_operations.hxx>
+#include <ice/ecs/ecs_query_scheduler.hxx>
 
 namespace ice
 {
@@ -21,7 +22,7 @@ namespace ice
 
     using FrameEndOperation = ice::EngineTaskOperation<ice::EngineFrame, ice::FrameEndOperationData>;
 
-    class EngineFrame : public ice::DataStorage
+    class EngineFrame : public ice::DataStorage, public ice::ecs::QueryScheduler
     {
     public:
         virtual ~EngineFrame() noexcept = default;

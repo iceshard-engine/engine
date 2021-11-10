@@ -215,4 +215,21 @@ namespace ice
         );
     }
 
+    void IceshardMemoryFrame::schedule_query_internal(ice::ecs::ScheduledQueryData& query_data) noexcept
+    {
+        ice::ecs::ScheduledQueryData* expected_head = _query_operation.load(std::memory_order_acquire);
+
+        do
+        {
+            query_data.next = expected_head;
+        } while (
+            _query_operation.compare_exchange_weak(
+                expected_head,
+                &query_data,
+                std::memory_order_release,
+                std::memory_order_acquire
+            ) == false
+        );
+    }
+
 } // namespace ice

@@ -38,7 +38,6 @@ namespace ice
         auto shards() const noexcept -> ice::ShardContainer const& override;
 
         auto entity_commands() noexcept -> ice::EntityCommandBuffer& override;
-
         auto entity_commands() const noexcept -> ice::EntityCommandBuffer const&;
 
         auto named_data(
@@ -66,6 +65,10 @@ namespace ice
             ice::FrameEndOperationData& operation
         ) noexcept override;
 
+        void schedule_query_internal(
+            ice::ecs::ScheduledQueryData& query_data
+        ) noexcept override;
+
     private:
         ice::u32 const _index;
         ice::memory::ScratchAllocator& _allocator;
@@ -83,6 +86,7 @@ namespace ice
         ice::Vector<ice::Task<>> _frame_tasks;
         ice::IceshardTaskExecutor _task_executor;
 
+        std::atomic<ice::ecs::ScheduledQueryData*> _query_operation;
         std::atomic<ice::FrameEndOperationData*> _frame_end_operation;
     };
 

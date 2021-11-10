@@ -7,7 +7,7 @@
 #include <box2d/b2_types.h>
 #include <box2d/b2_api.h>
 
-#include <varargs.h>
+#include <stdarg.h>
 // Tunable Constants
 
 /// You can use this to change the length scale used by your game.
@@ -54,7 +54,7 @@ inline void b2Log(const char* string, ...)
     char final_message[512];
 
     va_list args;
-    va_start(args);
+    va_start(args, string);
     vsnprintf_s(final_message, _TRUNCATE, string, args);
     va_end(args);
 

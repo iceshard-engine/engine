@@ -127,7 +127,7 @@ namespace ice::ecs
             {
                 ice::ecs::ArchetypeInstanceInfo const* arch = query.archetype_instances[arch_idx];
                 ice::ecs::DataBlock const* block = query.archetype_data_blocks[arch_idx];
-                ice::u32 const (&argument_idx_map)[query_definition.component_count] = query.archetype_argument_idx_map[arch_idx];
+                ice::StaticArray<ice::u32, query_definition.component_count> const& argument_idx_map = query.archetype_argument_idx_map[arch_idx];
 
                 while (block != nullptr)
                 {
@@ -172,7 +172,7 @@ namespace ice::ecs
             {
                 ice::ecs::ArchetypeInstanceInfo const* arch = query.archetype_instances[arch_idx];
                 ice::ecs::DataBlock const* block = query.archetype_data_blocks[arch_idx];
-                ice::u32 const (&argument_idx_map)[query_definition.component_count] = query.archetype_argument_idx_map[arch_idx];
+                ice::StaticArray<ice::u32, query_definition.component_count> const& argument_idx_map = query.archetype_argument_idx_map[arch_idx];
 
                 while (block != nullptr)
                 {

@@ -780,4 +780,26 @@ namespace ice::ecs
         }
     }
 
+    void EntityStorage::query_internal(
+        ice::Span<ice::ecs::detail::QueryTypeInfo const> query_info,
+        ice::pod::Array<ice::ecs::ArchetypeInstanceInfo const*>& out_instance_infos,
+        ice::pod::Array<ice::ecs::DataBlock const*>& out_data_blocks
+    ) const noexcept
+    {
+        ice::pod::Array<ice::ecs::Archetype> archetypes{ _allocator };
+        _archetype_index.find_archetypes(query_info, archetypes);
+
+        ice::u32 const archetype_count = ice::size(archetypes);
+        ice::pod::array::resize(out_instance_infos, archetype_count);
+        ice::pod::array::reserve(out_data_blocks, archetype_count);
+
+        _archetype_index.fetch_archetype_instance_infos(archetypes, out_instance_infos);
+
+        for (ice::ecs::ArchetypeInstanceInfo const* instance : out_instance_infos)
+        {
+            ice::u32 const instance_idx = static_cast<ice::u32>(instance->archetype_instance);
+            ice::pod::array::push_back(out_data_blocks, _data_blocks[instance_idx]);
+        }
+    }
+
 } // namespace ice::ecs
