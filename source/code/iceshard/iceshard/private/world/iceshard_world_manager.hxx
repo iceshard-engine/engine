@@ -15,7 +15,7 @@ namespace ice
 
         auto create_world(
             ice::StringID_Arg name,
-            ice::EntityStorage* entity_storage
+            ice::ecs::EntityStorage* entity_storage
         ) noexcept -> World* override;
 
         auto find_world(

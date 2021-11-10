@@ -1,6 +1,6 @@
 #pragma once
 #include <ice/engine_frame.hxx>
-#include <ice/entity/entity_command_buffer.hxx>
+#include <ice/ecs/ecs_entity_operations.hxx>
 
 #include <ice/input/input_event.hxx>
 #include <ice/task.hxx>
@@ -37,8 +37,8 @@ namespace ice
         auto shards() noexcept -> ice::ShardContainer& override;
         auto shards() const noexcept -> ice::ShardContainer const& override;
 
-        auto entity_commands() noexcept -> ice::EntityCommandBuffer& override;
-        auto entity_commands() const noexcept -> ice::EntityCommandBuffer const&;
+        auto entity_operations() noexcept -> ice::ecs::EntityOperations& override;
+        auto entity_operations() const noexcept -> ice::ecs::EntityOperations const& override;
 
         auto named_data(
             ice::StringID_Arg name
@@ -80,7 +80,7 @@ namespace ice
 
         ice::pod::Array<ice::input::InputEvent> _input_events;
         ice::ShardContainer _shards;
-        ice::EntityCommandBuffer _entity_commands;
+        ice::ecs::EntityOperations _entity_operations;
         ice::pod::Hash<void*> _named_objects;
 
         ice::Vector<ice::Task<>> _frame_tasks;

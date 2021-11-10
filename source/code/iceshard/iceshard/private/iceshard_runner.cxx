@@ -218,24 +218,24 @@ namespace ice
         IPT_FRAME_MARK;
         IPT_ZONE_SCOPED_NAMED("Logic Frame");
 
-        {
-            ice::EntityIndex& index = _engine.entity_index();
-            ice::Span<ice::Shard const> commands = _previous_frame->entity_commands().commands();
+        //{
+        //    ice::ecs::EntityIndex& index = _engine.entity_index();
+        //    ice::Span<ice::Shard const> commands = _previous_frame->entity_commands().commands();
 
-            ice::Entity entity;
-            for (ice::Shard const& command : commands)
-            {
-                if (command == Shard_EntityDestroy && ice::shard_inspect(command, entity) && index.is_alive(entity))
-                {
-                    index.destroy(entity);
+        //    ice::Entity entity;
+        //    for (ice::Shard const& command : commands)
+        //    {
+        //        if (command == Shard_EntityDestroy && ice::shard_inspect(command, entity) && index.is_alive(entity))
+        //        {
+        //            index.destroy(entity);
 
-                    ice::shards::push_back(
-                        _current_frame->shards(),
-                        command >> Shard_EntityDestroyed
-                    );
-                }
-            }
-        }
+        //            //ice::shards::push_back(
+        //            //    _current_frame->shards(),
+        //            //    command >> Shard_EntityDestroyed
+        //            //);
+        //        }
+        //    }
+        //}
 
         for (ice::platform::Event const& ev : _events)
         {

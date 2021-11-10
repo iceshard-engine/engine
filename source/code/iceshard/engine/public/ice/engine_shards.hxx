@@ -13,9 +13,6 @@ namespace ice
     enum class Entity : ice::u64;
     static constexpr ice::Shard Shard_EntityDestroy = "action/entity/destroy"_shard;
 
-    static constexpr ice::Shard Shard_EntityCreated = "event/entity/created"_shard;
-    static constexpr ice::Shard Shard_EntityDestroyed = "event/entity/destroyed"_shard;
-
     static constexpr ice::Shard Shard_InputEventButton = "event/input/button"_shard;
     static constexpr ice::Shard Shard_InputEventAxis = "event/input/axis"_shard;
 

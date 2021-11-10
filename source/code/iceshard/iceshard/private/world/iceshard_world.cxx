@@ -13,7 +13,7 @@ namespace ice
 
     IceshardWorld::IceshardWorld(
         ice::Allocator& alloc,
-        ice::EntityStorage* entity_storage
+        ice::ecs::EntityStorage* entity_storage
     ) noexcept
         : _allocator{ alloc }
         , _entity_storage{ entity_storage }
@@ -36,7 +36,7 @@ namespace ice
         return _allocator;
     }
 
-    auto IceshardWorld::entity_storage() noexcept -> ice::EntityStorage&
+    auto IceshardWorld::entity_storage() noexcept -> ice::ecs::EntityStorage&
     {
         return *_entity_storage;
     }
@@ -146,11 +146,10 @@ namespace ice
     {
         ice::EngineFrame& current_frame = runner.current_frame();
 
-        ice::shards::inspect_each<ice::Entity>(current_frame.shards(), Shard_EntityDestroyed,
-            [this](ice::Entity entity) noexcept
-            {
-                _entity_storage->erase_data(entity);
-            }
+        // #todo: This needs to change, we need to make works responsible for: EntityStorage, EntityOperations and probably QueryScheduling
+        _entity_storage->execute_operations(
+            runner.previous_frame().entity_operations(),
+            current_frame.shards()
         );
 
         for (auto& entry : _portals)

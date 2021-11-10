@@ -1,7 +1,6 @@
 #pragma once
 #include <ice/world/world.hxx>
-#include <ice/entity/entity_storage.hxx>
-#include <ice/entity/entity_command_buffer.hxx>
+#include <ice/ecs/ecs_entity_storage.hxx>
 
 #include "iceshard_world_portal.hxx"
 
@@ -16,12 +15,12 @@ namespace ice
     public:
         IceshardWorld(
             ice::Allocator& alloc,
-            ice::EntityStorage* entity_storage
+            ice::ecs::EntityStorage* entity_storage
         ) noexcept;
         ~IceshardWorld() noexcept override;
 
         auto allocator() noexcept -> ice::Allocator& override;
-        auto entity_storage() noexcept -> ice::EntityStorage& override;
+        auto entity_storage() noexcept -> ice::ecs::EntityStorage& override;
 
         auto state_hint() const noexcept -> ice::WorldState override;
         void set_state(ice::WorldState state) noexcept;
@@ -53,7 +52,7 @@ namespace ice
 
     private:
         ice::Allocator& _allocator;
-        ice::EntityStorage* _entity_storage;
+        ice::ecs::EntityStorage* _entity_storage;
         ice::WorldState _state;
 
         ice::pod::Array<ice::WorldTrait*> _traits;

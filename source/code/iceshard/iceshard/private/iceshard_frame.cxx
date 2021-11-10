@@ -39,7 +39,7 @@ namespace ice
         , _data_allocator{ _allocator, detail::DataAllocatorCapacity }
         , _input_events{ _inputs_allocator }
         , _shards{ _request_allocator }
-        , _entity_commands{ _data_allocator } // #todo change the allocator?
+        , _entity_operations{ _data_allocator } // #todo change the allocator?
         , _named_objects{ _storage_allocator }
         , _frame_tasks{ _tasks_allocator }
         , _task_executor{ _allocator, ice::Vector<ice::Task<void>>{ _allocator } }
@@ -136,14 +136,14 @@ namespace ice
         return _shards;
     }
 
-    auto IceshardMemoryFrame::entity_commands() noexcept -> ice::EntityCommandBuffer&
+    auto IceshardMemoryFrame::entity_operations() noexcept -> ice::ecs::EntityOperations&
     {
-        return _entity_commands;
+        return _entity_operations;
     }
 
-    auto IceshardMemoryFrame::entity_commands() const noexcept -> ice::EntityCommandBuffer const&
+    auto IceshardMemoryFrame::entity_operations() const noexcept -> ice::ecs::EntityOperations const&
     {
-        return _entity_commands;
+        return _entity_operations;
     }
 
     auto IceshardMemoryFrame::named_data(
