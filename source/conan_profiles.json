@@ -1,6 +1,6 @@
 {
     "windows": {
-        "default": "vs2022",
+        "default": "vs2019",
         "vs2019": {
             "build_types": [
                 "Debug",
