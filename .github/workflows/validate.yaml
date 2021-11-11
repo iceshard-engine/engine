@@ -33,6 +33,12 @@ jobs:
         PAYLOAD_CONTENT="${PAYLOAD_CONTENT//$'\r'/' '}"
         echo "::set-output name=payload::$PAYLOAD_CONTENT"
 
+    - id: validate_commit_messages
+      name: Potentially unsafe commit messages
+      if: ${{ contains(join(fromJSON(steps.load_event_payload.outputs.payload).commits.*.message, ';'), '`') == false }}
+      run: |
+          echo "::error::Commit messages contain potentially unsafe characters. Failing build process..."
+
     - id: extract_ci_tags
       name: Extract CI tags from commits
       run: |
