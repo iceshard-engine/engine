@@ -3,6 +3,7 @@
 
 #include <ice/engine_frame.hxx>
 #include <ice/world/world_portal.hxx>
+#include <ice/ecs/ecs_entity_storage.hxx>
 
 #include <ice/input/input_device.hxx>
 #include <ice/input/input_event.hxx>
@@ -19,7 +20,7 @@ namespace ice
         ice::WorldPortal& portal
     ) noexcept
     {
-        portal.storage().create_named_object<Query>("ice.query.player_actors"_sid, portal.allocator(), portal.entity_storage().archetype_index());
+        portal.storage().create_named_object<Query::Query>("ice.query.player_actors"_sid, portal.entity_storage().create_query(portal.allocator(), Query{}));
     }
 
     void IceWorldTrait_PlayerActor::on_deactivate(
@@ -28,7 +29,7 @@ namespace ice
         ice::WorldPortal& portal
     ) noexcept
     {
-        portal.storage().destroy_named_object<Query>("ice.query.player_actors"_sid);
+        portal.storage().destroy_named_object<Query::Query>("ice.query.player_actors"_sid);
     }
 
     void IceWorldTrait_PlayerActor::on_update(
@@ -41,8 +42,7 @@ namespace ice
         using ice::input::KeyboardKey;
         using ice::input::input_identifier;
 
-        Query& query = *portal.storage().named_object<Query>("ice.query.player_actors"_sid);
-        Query::ResultByEntity result = query.result_by_entity(frame.allocator(), portal.entity_storage());
+        Query::Query& query = *portal.storage().named_object<Query::Query>("ice.query.player_actors"_sid);
 
         ice::vec2f movement;
         for (ice::input::InputEvent const& input : frame.input_events())
@@ -66,7 +66,8 @@ namespace ice
             }
         }
 
-        result.for_each(
+        ice::ecs::query::for_each_entity(
+            query,
             [&](ice::Actor const& actor, ice::PhysicsVelocity& vel, ice::Animation& anim, ice::Transform2DDynamic& xform) noexcept
             {
                 if (actor.type == ActorType::Player)

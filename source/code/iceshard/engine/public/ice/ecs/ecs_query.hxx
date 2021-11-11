@@ -40,22 +40,21 @@ namespace ice::ecs
     {
         using Query = ice::ecs::Query<ice::ecs::QueryDefinition<QueryComponents...>>;
 
-        using ForEachBlockFn = ice::ecs::detail::QueryBlockIteratorSignature<QueryComponents...>;
-        using ForEachEntityFn = ice::ecs::detail::QueryEntityIteratorSignature<QueryComponents...>;
-
-        static void invoke_for_each_block(ForEachBlockFn&& fn, ice::u32 count, void** component_pointer_array) noexcept
+        template<typename Fn>
+        static void invoke_for_each_block(Fn&& fn, ice::u32 count, void** component_pointer_array) noexcept
         {
-            return ice::ecs::detail::invoke_for_each_block<ForEachBlockFn, QueryComponents...>(
-                ice::forward<ForEachBlockFn>(fn),
+            return ice::ecs::detail::invoke_for_each_block<Fn, QueryComponents...>(
+                ice::forward<Fn>(fn),
                 count,
                 component_pointer_array
             );
         }
 
-        static void invoke_for_each_entity(ForEachEntityFn&& fn, ice::u32 count, void** component_pointer_array) noexcept
+        template<typename Fn>
+        static void invoke_for_each_entity(Fn&& fn, ice::u32 count, void** component_pointer_array) noexcept
         {
-            return ice::ecs::detail::invoke_for_each_entity<ForEachEntityFn, QueryComponents...>(
-                ice::forward<ForEachEntityFn>(fn),
+            return ice::ecs::detail::invoke_for_each_entity<Fn, QueryComponents...>(
+                ice::forward<Fn>(fn),
                 count,
                 component_pointer_array
             );
@@ -86,9 +85,9 @@ namespace ice::ecs
         auto block_count(ice::ecs::Query<Definition> const& query) noexcept -> ice::u32
         {
             ice::u32 result = 0;
-            for (ice::ecs::DataBlock* const head_block : query.archetype_data_blocks)
+            for (ice::ecs::DataBlock const* const head_block : query.archetype_data_blocks)
             {
-                ice::ecs::DataBlock* it = head_block;
+                ice::ecs::DataBlock const* it = head_block;
                 while (it != nullptr)
                 {
                     result += 1;
@@ -102,9 +101,9 @@ namespace ice::ecs
         auto entity_count(ice::ecs::Query<Definition> const& query) noexcept -> ice::u32
         {
             ice::u32 result = 0;
-            for (ice::ecs::DataBlock* const head_block : query.archetype_data_blocks)
+            for (ice::ecs::DataBlock const* const head_block : query.archetype_data_blocks)
             {
-                ice::ecs::DataBlock* it = head_block;
+                ice::ecs::DataBlock const* it = head_block;
                 while (it != nullptr)
                 {
                     result += it->block_entity_count;
@@ -115,8 +114,8 @@ namespace ice::ecs
         }
 
 
-        template<typename Definition>
-        auto for_each_block(ice::ecs::Query<Definition> const& query, typename Definition::ForEachBlockFn&& fn) noexcept
+        template<typename Definition, typename Fn>
+        auto for_each_block(ice::ecs::Query<Definition> const& query, Fn&& fn) noexcept
         {
             static constexpr Definition const& query_definition = ice::ecs::Query<Definition>::Constant_Definition;
 
@@ -149,7 +148,7 @@ namespace ice::ecs
                     }
 
                     Definition::invoke_for_each_block(
-                        ice::forward<typename Definition::ForEachBlockFn>(fn),
+                        ice::forward<Fn>(fn),
                         block->block_entity_count,
                         helper_pointer_array
                     );
@@ -160,8 +159,8 @@ namespace ice::ecs
         }
 
 
-        template<typename Definition>
-        auto for_each_entity(ice::ecs::Query<Definition> const& query, typename Definition::ForEachEntityFn&& fn) noexcept
+        template<typename Definition, typename Fn>
+        auto for_each_entity(ice::ecs::Query<Definition> const& query, Fn&& fn) noexcept
         {
             static constexpr Definition const& query_definition = ice::ecs::Query<Definition>::Constant_Definition;
 
@@ -194,7 +193,7 @@ namespace ice::ecs
                     }
 
                     Definition::invoke_for_each_entity(
-                        ice::forward<typename Definition::ForEachEntityFn>(fn),
+                        ice::forward<Fn>(fn),
                         block->block_entity_count,
                         helper_pointer_array
                     );

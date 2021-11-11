@@ -6,7 +6,8 @@
 #include <ice/engine.hxx>
 #include <ice/engine_runner.hxx>
 #include <ice/world/world_portal.hxx>
-#include <ice/archetype/archetype_query.hxx>
+#include <ice/ecs/ecs_query.hxx>
+#include <ice/ecs/ecs_entity_storage.hxx>
 
 #include <ice/gfx/gfx_device.hxx>
 #include <ice/gfx/gfx_resource_tracker.hxx>
@@ -33,7 +34,7 @@ namespace ice
     namespace detail
     {
 
-        using SpriteQuery = ice::ComponentQuery<ice::Transform2DStatic const*, ice::Transform2DDynamic const*, ice::Sprite const&, ice::SpriteTile const*>;
+        using SpriteQuery = ice::ecs::QueryDefinition<ice::Transform2DStatic const*, ice::Transform2DDynamic const*, ice::Sprite const&, ice::SpriteTile const*>;
         static constexpr ice::StringID SpriteQueryId = "ice.trait.sprite-query"_sid;
 
         auto load_sprite_shader(ice::AssetSystem& assets, ice::StringID name) noexcept -> ice::Data
@@ -289,10 +290,9 @@ namespace ice
         _shader_data[0] = ice::detail::load_sprite_shader(*_asset_system, "/shaders/game2d/sprite-vtx"_sid);
         _shader_data[1] = ice::detail::load_sprite_shader(*_asset_system, "/shaders/game2d/sprite-pix"_sid);
 
-        portal.storage().create_named_object<detail::SpriteQuery>(
+        portal.storage().create_named_object<detail::SpriteQuery::Query>(
             detail::SpriteQueryId,
-            portal.allocator(),
-            portal.entity_storage().archetype_index()
+            portal.entity_storage().create_query(portal.allocator(), detail::SpriteQuery{})
         );
     }
 
@@ -302,7 +302,7 @@ namespace ice
         ice::WorldPortal& portal
     ) noexcept
     {
-        portal.storage().destroy_named_object<detail::SpriteQuery>(detail::SpriteQueryId);
+        portal.storage().destroy_named_object<detail::SpriteQuery::Query>(detail::SpriteQueryId);
 
         _asset_system = nullptr;
     }
@@ -317,7 +317,7 @@ namespace ice
 
         ice::gfx::GfxFrame& gfx_frame = runner.graphics_frame();
 
-        detail::SpriteQuery::ResultByEntity result = portal.storage().named_object<detail::SpriteQuery>(detail::SpriteQueryId)->result_by_entity(frame.allocator(), portal.entity_storage());
+        detail::SpriteQuery::Query const& query = *portal.storage().named_object<detail::SpriteQuery::Query>(detail::SpriteQueryId);
 
         ice::u32 next_instance_idx = 0;
         ice::pod::Hash<ice::u32> instance_info_idx{ frame.allocator() };
@@ -326,7 +326,8 @@ namespace ice
         ice::Span<detail::SpriteInstanceInfo> instance_infos = frame.create_named_span<detail::SpriteInstanceInfo>("ice.sprite.instance_infos"_sid, 64);
 
         ice::u32 valid_entity_count = 0;
-        result.for_each(
+        ice::ecs::query::for_each_entity(
+            query,
             [&](
                 ice::Transform2DStatic const* xform,
                 ice::Transform2DDynamic const* dyn_xform,
@@ -370,7 +371,8 @@ namespace ice
 
         frame.create_named_object<ice::Span<detail::SpriteInstance>>("ice.sprite.instances_span"_sid, instances);
 
-        result.for_each(
+        ice::ecs::query::for_each_entity(
+            query,
             [&](ice::Transform2DStatic const* xform, ice::Transform2DDynamic const* dyn_xform, ice::Sprite const& sprite, ice::SpriteTile const* sprite_tile) noexcept
             {
                 ice::u64 const material_hash = ice::hash(sprite.material);
@@ -419,7 +421,8 @@ namespace ice
             }
         );
 
-        result.for_each(
+        ice::ecs::query::for_each_entity(
+            query,
             [&](ice::Transform2DStatic const*, ice::Transform2DDynamic const*, ice::Sprite const& sprite, ice::SpriteTile const* sprite_tile) noexcept
             {
                 ice::u64 const material_hash = ice::hash(sprite.material);

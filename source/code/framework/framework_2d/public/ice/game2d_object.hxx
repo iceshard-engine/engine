@@ -1,6 +1,6 @@
 #pragma once
 #include <ice/render/render_image.hxx>
-#include <ice/entity/entity_component.hxx>
+#include <ice/ecs/ecs_component.hxx>
 
 namespace ice
 {

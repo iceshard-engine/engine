@@ -313,6 +313,7 @@ namespace ice::ecs
             );
 
             out_instance_infos[archetype_idx] = ice::addressof(_archetype_data[instance_idx]->archetype_info);
+            archetype_idx += 1;
         }
 
     }

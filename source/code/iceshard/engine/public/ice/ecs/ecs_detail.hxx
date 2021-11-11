@@ -1,6 +1,7 @@
 #pragma once
 #include <ice/stringid.hxx>
 #include <ice/ecs/ecs_entity.hxx>
+#include <algorithm>
 
 namespace ice::ecs
 {

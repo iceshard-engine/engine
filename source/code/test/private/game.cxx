@@ -10,14 +10,6 @@
 #include <ice/engine_shards.hxx>
 #include <ice/devui/devui_render_trait.hxx>
 
-#include <ice/entity/entity_index.hxx>
-#include <ice/entity/entity_storage.hxx>
-#include <ice/entity/entity_command_buffer.hxx>
-#include <ice/entity/entity_query_utils.hxx>
-
-#include <ice/archetype/archetype_index.hxx>
-#include <ice/archetype/archetype_block_allocator.hxx>
-
 #include <ice/world/world.hxx>
 #include <ice/world/world_trait.hxx>
 #include <ice/world/world_manager.hxx>
@@ -52,9 +44,9 @@ MyGame::MyGame(ice::Allocator& alloc, ice::Clock const& clock) noexcept
     : _allocator{ alloc, "MyGame-alloc" }
     , _clock{ clock }
     , _current_engine{ nullptr }
-    , _archetype_alloc{ _allocator }
-    , _archetype_index{ ice::create_archetype_index(_allocator) }
-    , _entity_storage{ _allocator, *_archetype_index, _archetype_alloc }
+    , _ecs_archetypes{ _allocator }
+    , _ecs_block_pool{ _allocator }
+    , _ecs_storage{ ice::make_unique_null<ice::ecs::EntityStorage>() }
     , _game_gfx_pass{ ice::gfx::create_dynamic_pass(_allocator) }
     , _test_world{ nullptr }
     , _render_world{ nullptr }
@@ -177,22 +169,27 @@ void MyGame::on_app_startup(ice::Engine& engine, ice::gfx::GfxRunner& gfx_runner
         _game_gfx_pass->add_stage("ice.gfx.stage.finish"_sid, "ice.gfx.stage.postprocess"_sid);
     }
 
-    ice::WorldManager& world_manager = engine.world_manager();
-    _render_world = world_manager.create_world(GraphicsWorldName, &_entity_storage);
+    // Initialize archetypes
+    {
+        _ecs_archetypes.register_archetype(ice::ecs::Constant_ArchetypeDefinition<ice::Camera, ice::CameraOrtho>);
+        _ecs_archetypes.register_archetype(ice::ecs::Constant_ArchetypeDefinition<ice::Camera, ice::CameraPerspective>);
+        _ecs_archetypes.register_archetype(ice::ecs::Constant_ArchetypeDefinition<ice::Transform2DStatic, ice::Sprite>);
+        _ecs_archetypes.register_archetype(ice::ecs::Constant_ArchetypeDefinition<ice::Transform2DDynamic, ice::Sprite, ice::SpriteTile, ice::Animation, ice::AnimationState, ice::PhysicsBody>);
+        _ecs_archetypes.register_archetype(ice::ecs::Constant_ArchetypeDefinition<ice::Transform2DDynamic, ice::Sprite, ice::SpriteTile, ice::Animation, ice::AnimationState, ice::Actor, ice::PhysicsVelocity, ice::PhysicsBody>);
 
-    _test_world = world_manager.create_world("game.test_world"_sid, &_entity_storage);
+        _ecs_storage = ice::make_unique<ice::ecs::EntityStorage>(_allocator, _allocator, _ecs_archetypes);
+    }
+
+    ice::WorldManager& world_manager = engine.world_manager();
+    _render_world = world_manager.create_world(GraphicsWorldName, _ecs_storage.get());
+
+    _test_world = world_manager.create_world("game.test_world"_sid, _ecs_storage.get());
     _test_world->add_trait("ice.tilemap"_sid, _trait_tilemap.get());
     _test_world->add_trait("ice.physics"_sid, _trait_physics.get());
     _test_world->add_trait("ice.anim"_sid, _trait_animator.get());
     _test_world->add_trait("ice.actor"_sid, _trait_actor.get());
 
     _test_world->add_trait("game"_sid, this);
-
-    ice::ArchetypeHandle ortho_arch = _archetype_index->register_archetype<ice::Camera, ice::CameraOrtho>(&_archetype_alloc);
-    ice::ArchetypeHandle persp_arch = _archetype_index->register_archetype<ice::Camera, ice::CameraPerspective>(&_archetype_alloc);
-    _archetype_index->register_archetype<ice::Transform2DStatic, ice::Sprite>(&_archetype_alloc);
-    _archetype_index->register_archetype<ice::Transform2DDynamic, ice::Sprite, ice::SpriteTile, ice::Animation, ice::AnimationState, ice::PhysicsBody>(&_archetype_alloc);
-    _archetype_index->register_archetype<ice::Transform2DDynamic, ice::Sprite, ice::SpriteTile, ice::Animation, ice::AnimationState, ice::Actor, ice::PhysicsVelocity, ice::PhysicsBody>(&_archetype_alloc);
 
     _action_triggers = ice::action::create_trigger_database(_allocator);
     _action_system = ice::action::create_action_system(_allocator, _clock, *_action_triggers);
@@ -278,6 +275,9 @@ void MyGame::on_app_shutdown(ice::Engine& engine) noexcept
     world_manager.destroy_world("game.test_world"_sid);
     world_manager.destroy_world(GraphicsWorldName);
 
+    // Destroy ECS storage
+    _ecs_storage = nullptr;
+
     _trait_render_camera = nullptr;
     _trait_render_debug = nullptr;
     _trait_render_postprocess = nullptr;
@@ -305,32 +305,33 @@ void MyGame::on_game_begin(ice::EngineRunner& runner) noexcept
 
     ice::vec2u extent = runner.graphics_device().swapchain().extent();
 
-    constexpr ice::StringID components[]{ ice::Camera::Identifier, ice::CameraOrtho::Identifier };
-    constexpr ice::ArchetypeQueryCriteria query_criteria{
-        .components = components
-    };
+    //constexpr ice::StringID components[]{ ice::Camera::Identifier, ice::CameraOrtho::Identifier };
+    //constexpr ice::ArchetypeQueryCriteria query_criteria{
+    //    .components = components
+    //};
 
-    constexpr ice::StringID sprite_components[]{
-        ice::Transform2DDynamic::Identifier, ice::Sprite::Identifier, ice::SpriteTile::Identifier, ice::Animation::Identifier, ice::AnimationState::Identifier
-    };
-    constexpr ice::ArchetypeQueryCriteria sprite_query_criteria{
-        .components = sprite_components
-    };
-    constexpr ice::StringID actor_components[]{
-        ice::Transform2DDynamic::Identifier, ice::Sprite::Identifier, ice::SpriteTile::Identifier, ice::Animation::Identifier, ice::AnimationState::Identifier, ice::Actor::Identifier
-    };
-    constexpr ice::ArchetypeQueryCriteria actor_query_criteria{
-        .components = actor_components
-    };
+    //constexpr ice::StringID sprite_components[]{
+    //    ice::Transform2DDynamic::Identifier, ice::Sprite::Identifier, ice::SpriteTile::Identifier, ice::Animation::Identifier, ice::AnimationState::Identifier
+    //};
+    //constexpr ice::ArchetypeQueryCriteria sprite_query_criteria{
+    //    .components = sprite_components
+    //};
+    //constexpr ice::StringID actor_components[]{
+    //    ice::Transform2DDynamic::Identifier, ice::Sprite::Identifier, ice::SpriteTile::Identifier, ice::Animation::Identifier, ice::AnimationState::Identifier, ice::Actor::Identifier
+    //};
+    //constexpr ice::ArchetypeQueryCriteria actor_query_criteria{
+    //    .components = actor_components
+    //};
 
-    ice::ArchetypeHandle ortho_arch = _archetype_index->find_archetype(query_criteria);
-    ice::ArchetypeHandle sprite_arch = _archetype_index->find_archetype(sprite_query_criteria);
-    ice::ArchetypeHandle actor_arch = _archetype_index->find_archetype(actor_query_criteria);
+    
+    //ice::ArchetypeHandle ortho_arch = _archetype_index->find_archetype(query_criteria);
+    //ice::ArchetypeHandle sprite_arch = _archetype_index->find_archetype(sprite_query_criteria);
+    //ice::ArchetypeHandle actor_arch = _archetype_index->find_archetype(actor_query_criteria);
 
-    ice::Entity camera_entity = _current_engine->entity_index().create();
-    ice::Entity sprite_entity = _current_engine->entity_index().create();
-    ice::Entity sprite_entity2 = _current_engine->entity_index().create();
-    ice::Entity sprite_entity3 = _current_engine->entity_index().create();
+    ice::ecs::Entity camera_entity = _current_engine->entity_index().create();
+    //ice::Entity sprite_entity = _current_engine->entity_index().create();
+    //ice::Entity sprite_entity2 = _current_engine->entity_index().create();
+    //ice::Entity sprite_entity3 = _current_engine->entity_index().create();
 
     ice::Camera const camera{
         .name = "camera.default"_sid,
@@ -342,39 +343,46 @@ void MyGame::on_game_begin(ice::EngineRunner& runner) noexcept
         .bottom_top = { 0.f, (ice::f32) extent.y / 2.f },
         .near_far = { 0.1f, 100.f }
     };
-    _entity_storage.set_archetype_with_data(camera_entity, ortho_arch, camera, orto_values);
 
-    ice::Animation anim{
-        .animation = "cotm_idle"_sid_hash,
-        .speed = 1.f / 60.f
-    };
-    ice::Transform2DDynamic sprite_pos{
-        .position = { 48.f, 448.f, -1.f },
-        .scale = { 1.f, 0.f }
-    };
-    ice::Sprite sprite{
-        .material = "/cotm/cotm_hero"_sid,
-    };
-    ice::SpriteTile sprite_tile{
-        .material_tile = { 0, 0 }
-    };
-    _entity_storage.set_archetype_with_data(sprite_entity, sprite_arch, anim, sprite_pos, sprite, sprite_tile, ice::PhysicsBody{ .shape = ice::PhysicsShape::Capsule, .dimensions = { 16.f, 32.f } });
+    ice::ecs::EntityOperations ops{ _allocator };
+    ice::ecs::queue_set_archetype(ops, camera_entity, ice::ecs::Constant_Archetype<ice::Camera, ice::CameraOrtho>);
 
-    sprite_pos.position = { 48.f * 2, 448.f, -1.f };
-    sprite_tile.material_tile = { 0, 1 };
-    anim.speed = 1.f / 15.f;
-    ice::Actor actor{ .type = ice::ActorType::Player };
-    _entity_storage.set_archetype_with_data(sprite_entity2, actor_arch, anim, sprite_pos, sprite, sprite_tile, actor, ice::PhysicsBody{ .shape = ice::PhysicsShape::Capsule, .dimensions = { 16.f, 32.f } });
+    ice::ShardContainer shardsc{ _allocator };
+    _ecs_storage->execute_operations(ops, shardsc);
 
-    sprite_pos.position = { 48.f * 3, 448.f, -1.f };
-    sprite_tile.material_tile = { 4, 5 };
-    anim.speed = 1.f / 30.f;
-    sprite.material = "/cotm/tileset_a"_sid;
-    anim.animation = "null"_sid_hash;
-    _entity_storage.set_archetype_with_data(sprite_entity3, sprite_arch, anim, sprite_pos, sprite, sprite_tile, ice::PhysicsBody{ .dimensions = { 16.f, 16.f } });
+    //_entity_storage.set_archetype_with_data(camera_entity, ortho_arch, camera, orto_values);
 
-    ice::math::deg d1{ 180 };
-    ice::math::rad d1r = radians(d1);
+    //ice::Animation anim{
+    //    .animation = "cotm_idle"_sid_hash,
+    //    .speed = 1.f / 60.f
+    //};
+    //ice::Transform2DDynamic sprite_pos{
+    //    .position = { 48.f, 448.f, -1.f },
+    //    .scale = { 1.f, 0.f }
+    //};
+    //ice::Sprite sprite{
+    //    .material = "/cotm/cotm_hero"_sid,
+    //};
+    //ice::SpriteTile sprite_tile{
+    //    .material_tile = { 0, 0 }
+    //};
+    //_entity_storage.set_archetype_with_data(sprite_entity, sprite_arch, anim, sprite_pos, sprite, sprite_tile, ice::PhysicsBody{ .shape = ice::PhysicsShape::Capsule, .dimensions = { 16.f, 32.f } });
+
+    //sprite_pos.position = { 48.f * 2, 448.f, -1.f };
+    //sprite_tile.material_tile = { 0, 1 };
+    //anim.speed = 1.f / 15.f;
+    //ice::Actor actor{ .type = ice::ActorType::Player };
+    //_entity_storage.set_archetype_with_data(sprite_entity2, actor_arch, anim, sprite_pos, sprite, sprite_tile, actor, ice::PhysicsBody{ .shape = ice::PhysicsShape::Capsule, .dimensions = { 16.f, 32.f } });
+
+    //sprite_pos.position = { 48.f * 3, 448.f, -1.f };
+    //sprite_tile.material_tile = { 4, 5 };
+    //anim.speed = 1.f / 30.f;
+    //sprite.material = "/cotm/tileset_a"_sid;
+    //anim.animation = "null"_sid_hash;
+    //_entity_storage.set_archetype_with_data(sprite_entity3, sprite_arch, anim, sprite_pos, sprite, sprite_tile, ice::PhysicsBody{ .dimensions = { 16.f, 16.f } });
+
+    //ice::math::deg d1{ 180 };
+    //ice::math::rad d1r = radians(d1);
 
     ice::Shard shards[]{
         ice::Shard_WorldActivate | _test_world,

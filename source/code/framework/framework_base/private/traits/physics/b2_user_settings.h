@@ -2,7 +2,7 @@
 #include <ice/base.hxx>
 #include <ice/allocator.hxx>
 #include <ice/log.hxx>
-#include <ice/entity/entity.hxx>
+#include <ice/ecs/ecs_entity.hxx>
 
 #include <box2d/b2_types.h>
 #include <box2d/b2_api.h>
@@ -23,7 +23,7 @@
 /// You can define this to inject whatever data you want in b2Body
 struct B2_API b2BodyUserData
 {
-    ice::Entity entity;
+    ice::ecs::Entity entity;
 };
 
 /// You can define this to inject whatever data you want in b2Fixture

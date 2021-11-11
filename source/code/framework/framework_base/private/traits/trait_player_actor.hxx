@@ -5,7 +5,7 @@
 #include <ice/game_physics.hxx>
 
 #include <ice/world/world_trait.hxx>
-#include <ice/archetype/archetype_query.hxx>
+#include <ice/ecs/ecs_query.hxx>
 
 namespace ice
 {
@@ -32,7 +32,7 @@ namespace ice
         ) noexcept override;
 
     private:
-        using Query = ice::ComponentQuery<ice::Actor const&, ice::PhysicsVelocity&, ice::Animation&, ice::Transform2DDynamic&>;
+        using Query = ice::ecs::QueryDefinition<ice::Actor const&, ice::PhysicsVelocity&, ice::Animation&, ice::Transform2DDynamic&>;
     };
 
 } // namespace ice

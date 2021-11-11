@@ -6,8 +6,8 @@
 #include <ice/engine_frame.hxx>
 #include <ice/world/world_portal.hxx>
 
-#include <ice/entity/entity_storage.hxx>
-#include <ice/archetype/archetype_query.hxx>
+#include <ice/ecs/ecs_query.hxx>
+#include <ice/ecs/ecs_entity_storage.hxx>
 
 #include <ice/gfx/gfx_pass.hxx>
 #include <ice/gfx/gfx_frame.hxx>
@@ -140,7 +140,7 @@ namespace ice
     class IceGame2DTrait : public ice::Game2DTrait
     {
     public:
-        using ObjectQuery = ice::ComponentQuery<ice::Obj2dShape&, ice::Obj2dTransform&>;
+        using ObjectQuery = ice::ecs::QueryDefinition<ice::Obj2dShape&, ice::Obj2dTransform&>;
 
         IceGame2DTrait(ice::Allocator& alloc) noexcept;
         ~IceGame2DTrait() noexcept override = default;
@@ -175,10 +175,9 @@ namespace ice
             using namespace ice::gfx;
             using namespace ice::render;
 
-            portal.storage().create_named_object<ObjectQuery>(
+            portal.storage().create_named_object<ObjectQuery::Query>(
                 "game2d.level.query"_sid,
-                _allocator,
-                portal.entity_storage().archetype_index()
+                portal.entity_storage().create_query(_allocator, ObjectQuery{})
             );
 
             GfxResourceTracker& gfxres = runner.graphics_device().resource_tracker();
@@ -370,14 +369,15 @@ namespace ice
                 "camera.update_view"_sid,
             };
 
-            ObjectQuery& query = *portal.storage().named_object<ObjectQuery>("game2d.level.query"_sid);
-            ObjectQuery::ResultByEntity result = query.result_by_entity(frame.allocator(), portal.entity_storage());
+            ObjectQuery::Query const& query = *portal.storage().named_object<ObjectQuery::Query>("game2d.level.query"_sid);
 
-            Span<Obj2dTransform> xform_span = frame.create_named_span<Obj2dTransform>("game2d.level.instances"_sid, result.entity_count());
-            *frame.create_named_object<ice::u32>("game2d.level.instance_count"_sid) = result.entity_count();
+            ice::u32 const entity_count = ice::ecs::query::entity_count(query);
+
+            Span<Obj2dTransform> xform_span = frame.create_named_span<Obj2dTransform>("game2d.level.instances"_sid, entity_count);
+            *frame.create_named_object<ice::u32>("game2d.level.instance_count"_sid) = entity_count;
 
             ice::u32 current_xform = 0;
-            result.for_each([&](Obj2dShape& shape, Obj2dTransform& xform) noexcept
+            ice::ecs::query::for_each_entity(query, [&](Obj2dShape& shape, Obj2dTransform& xform) noexcept
                 {
                     xform_span[current_xform] = xform;
                     current_xform += 1;
