@@ -35,9 +35,10 @@ jobs:
 
     - id: validate_commit_messages
       name: Potentially unsafe commit messages
-      if: ${{ contains(join(fromJSON(steps.load_event_payload.outputs.payload).commits.*.message, ';'), '`') == false }}
+      if: ${{ contains(join(fromJSON(steps.load_event_payload.outputs.payload).commits.*.message, ';'), '`') == true }}
       run: |
           echo "::error::Commit messages contain potentially unsafe characters. Failing build process..."
+          exit 1
 
     - id: extract_ci_tags
       name: Extract CI tags from commits
