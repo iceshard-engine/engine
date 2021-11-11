@@ -47,7 +47,7 @@ namespace ice
         body_def.position.Set(position.x, position.y);
 
         b2Body* body = _world->CreateBody(&body_def);
-        body->GetUserData().entity = ice::ecs::Entity{ };
+        body->GetUserData().entity = ice::ecs::EntityHandle::Invalid;
 
 
         if (shape == PhysicsShape::Box)
@@ -76,7 +76,7 @@ namespace ice
         body_def.position.Set(position.x, position.y);
 
         b2Body* body = _world->CreateBody(&body_def);
-        body->GetUserData().entity = ice::ecs::Entity{ };
+        body->GetUserData().entity = ice::ecs::EntityHandle::Invalid;
 
         b2PolygonShape tile_shape{ };
         tile_shape.Set(reinterpret_cast<b2Vec2 const*>(vertices), vertice_count);
@@ -112,7 +112,7 @@ namespace ice
         body_def.position.Set(0, -0.5f);
 
         b2Body* body = _world->CreateBody(&body_def);
-        body->GetUserData().entity = ice::ecs::Entity{ };
+        body->GetUserData().entity = ice::ecs::EntityHandle::Invalid;
 
         b2PolygonShape tile_shape;
         tile_shape.SetAsBox(50.f, 0.5, { 0.5f, 0.5f }, 0.f);
@@ -223,7 +223,7 @@ namespace ice
                     b2Body* body = _world->CreateBody(&body_def);
 
 
-                    body->GetUserData().entity = ice::ecs::entity_handle_info(e).entity;
+                    body->GetUserData().entity = e;
                     phx_body.trait_data = body;
 
                     if (phx_body.shape == PhysicsShape::Box)
