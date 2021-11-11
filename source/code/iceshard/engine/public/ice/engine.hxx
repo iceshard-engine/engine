@@ -3,6 +3,8 @@
 #include <ice/stringid.hxx>
 #include <ice/unique_ptr.hxx>
 #include <ice/engine_types.hxx>
+#include <ice/ecs/ecs_types.hxx>
+
 #include <ice/gfx/gfx_types.hxx>
 #include <ice/input/input_types.hxx>
 #include <ice/render/render_declarations.hxx>
@@ -11,7 +13,6 @@ namespace ice
 {
 
     class AssetSystem;
-    class EntityIndex;
 
     struct RenderQueueDefinition
     {
@@ -40,7 +41,7 @@ namespace ice
             ice::UniquePtr<ice::gfx::GfxRunner> graphics_runner
         ) noexcept = 0;
 
-        virtual auto entity_index() noexcept -> ice::EntityIndex& = 0;
+        virtual auto entity_index() noexcept -> ice::ecs::EntityIndex& = 0;
 
         virtual auto asset_system() noexcept -> ice::AssetSystem& = 0;
 

@@ -33,6 +33,9 @@ namespace ice
     }
 
     template<typename T>
-    using clean_type = std::remove_pointer_t<std::remove_reference_t<std::remove_cv_t<T>>>;
+    using clear_type_t = std::remove_pointer_t<std::remove_reference_t<std::remove_cv_t<T>>>;
+
+    template<typename T>
+    using clean_type = clear_type_t<T>;
 
 } // namespace ice

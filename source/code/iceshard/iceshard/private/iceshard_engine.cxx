@@ -97,7 +97,7 @@ namespace ice
         iceshard_runner.set_graphics_runner(ice::move(graphics_runner));
     }
 
-    auto IceshardEngine::entity_index() noexcept -> ice::EntityIndex&
+    auto IceshardEngine::entity_index() noexcept -> ice::ecs::EntityIndex&
     {
         return _entity_index;
     }

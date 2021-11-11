@@ -1,9 +1,9 @@
 #pragma once
 #include <ice/pod/hash.hxx>
 #include <ice/world/world_trait.hxx>
-#include <ice/archetype/archetype_query.hxx>
 #include <ice/game_anim.hxx>
 #include <ice/game_sprites.hxx>
+#include <ice/ecs/ecs_query.hxx>
 
 #include <ice/render/render_resource.hxx>
 #include <ice/render/render_image.hxx>
@@ -53,8 +53,8 @@ namespace ice
         ) noexcept override;
 
     private:
-        using SpriteQuery = ice::ComponentQuery<ice::Animation const&, ice::Sprite const&>;
-        using AnimQuery = ice::ComponentQuery<ice::Animation const&, ice::AnimationState&, ice::SpriteTile&>;
+        using SpriteQuery = ice::ecs::QueryDefinition<ice::Animation const&, ice::Sprite const&>;
+        using AnimQuery = ice::ecs::QueryDefinition<ice::Animation const&, ice::AnimationState&, ice::SpriteTile&>;
 
         ice::AssetSystem* _assets;
         ice::pod::Hash<ice::TraitAnimatorAnimationInfo> _anim_infos;

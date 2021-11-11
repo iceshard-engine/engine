@@ -1,16 +1,10 @@
 #pragma once
 #include <ice/stringid.hxx>
-#include <ice/entity/entity.hxx>
+#include <ice/ecs/ecs_component.hxx>
+#include <ice/ecs/ecs_entity.hxx>
 
 namespace ice
 {
-
-    struct Parent
-    {
-        static constexpr ice::StringID Identifier = "ice.component.parent"_sid;
-
-        ice::Entity parent;
-    };
 
     struct TransformStatic
     {

@@ -40,7 +40,7 @@ namespace ice
         ice::Allocator& alloc,
         ice::World const& world,
         ice::WorldTrait* trait,
-        ice::EntityStorage& entity_storage
+        ice::ecs::EntityStorage& entity_storage
     ) noexcept
         : _allocator{ alloc }
         , _world{ world }
@@ -82,7 +82,7 @@ namespace ice
         return _storage;
     }
 
-    auto IceshardWorldPortal::entity_storage() noexcept -> ice::EntityStorage&
+    auto IceshardWorldPortal::entity_storage() noexcept -> ice::ecs::EntityStorage&
     {
         return _entity_storage;
     }

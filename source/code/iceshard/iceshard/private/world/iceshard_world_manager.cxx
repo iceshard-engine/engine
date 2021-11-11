@@ -25,7 +25,7 @@ namespace ice
 
     auto IceshardWorldManager::create_world(
         ice::StringID_Arg name,
-        ice::EntityStorage* entity_storage
+        ice::ecs::EntityStorage* entity_storage
     ) noexcept -> World*
     {
         ice::u64 const name_hash = ice::hash(name);

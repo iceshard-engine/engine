@@ -1,6 +1,6 @@
 #pragma once
 #include <ice/stringid.hxx>
-#include <ice/entity/entity_storage.hxx>
+#include <ice/ecs/ecs_entity_storage.hxx>
 
 namespace ice
 {
@@ -12,7 +12,7 @@ namespace ice
     public:
         virtual auto create_world(
             ice::StringID_Arg name,
-            ice::EntityStorage* entity_storage
+            ice::ecs::EntityStorage* entity_storage
         ) noexcept -> World* = 0;
 
         virtual auto find_world(

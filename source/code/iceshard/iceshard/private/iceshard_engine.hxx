@@ -1,9 +1,10 @@
 #pragma once
 #include <ice/engine.hxx>
 #include <ice/asset_system.hxx>
-#include <ice/entity/entity_index.hxx>
 #include <ice/input/input_types.hxx>
 #include <ice/memory/proxy_allocator.hxx>
+#include <ice/ecs/ecs_entity_index.hxx>
+
 #include "world/iceshard_world_manager.hxx"
 
 namespace ice
@@ -38,7 +39,7 @@ namespace ice
             ice::UniquePtr<ice::gfx::GfxRunner> graphics_runner
         ) noexcept override;
 
-        auto entity_index() noexcept -> ice::EntityIndex& override;
+        auto entity_index() noexcept -> ice::ecs::EntityIndex& override;
 
         auto asset_system() noexcept -> ice::AssetSystem& override;
 
@@ -49,7 +50,7 @@ namespace ice
     private:
         ice::memory::ProxyAllocator _allocator;
         ice::AssetSystem& _asset_system;
-        ice::EntityIndex _entity_index;
+        ice::ecs::EntityIndex _entity_index;
         ice::IceshardWorldManager _world_manager;
         ice::EngineDevUI* const _devui;
     };

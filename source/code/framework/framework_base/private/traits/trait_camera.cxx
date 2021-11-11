@@ -5,9 +5,11 @@
 #include <ice/engine.hxx>
 #include <ice/engine_runner.hxx>
 #include <ice/engine_frame.hxx>
-#include <ice/world/world_portal.hxx>
-#include <ice/archetype/archetype_query.hxx>
 
+#include <ice/ecs/ecs_query.hxx>
+#include <ice/ecs/ecs_entity_storage.hxx>
+
+#include <ice/world/world_portal.hxx>
 #include <ice/gfx/gfx_device.hxx>
 #include <ice/gfx/gfx_resource_tracker.hxx>
 
@@ -27,11 +29,11 @@ namespace ice
     namespace detail
     {
 
-        using QueryCamera = ice::ComponentQuery<ice::Entity, ice::Camera const&, ice::CameraOrtho const*, ice::CameraPerspective const*>;
+        using QueryCamera = ice::ecs::QueryDefinition<ice::ecs::EntityHandle, ice::Camera const&, ice::CameraOrtho const*, ice::CameraPerspective const*>;
 
         auto get_camera_query(ice::WorldPortal& portal) noexcept
         {
-            return portal.storage().named_object<detail::QueryCamera>(
+            return portal.storage().named_object<detail::QueryCamera::Query>(
                 "ice.trait.camera-query"_sid
             );
         }
@@ -50,10 +52,9 @@ namespace ice
         ice::WorldPortal& portal
     ) noexcept
     {
-        portal.storage().create_named_object<detail::QueryCamera>(
+        portal.storage().create_named_object<detail::QueryCamera::Query>(
             "ice.trait.camera-query"_sid,
-            portal.allocator(),
-            portal.entity_storage().archetype_index()
+            portal.entity_storage().create_query(portal.allocator(), detail::QueryCamera{})
         );
     }
 
@@ -63,7 +64,7 @@ namespace ice
         ice::WorldPortal& portal
     ) noexcept
     {
-        portal.storage().destroy_named_object<detail::QueryCamera>(
+        portal.storage().destroy_named_object<detail::QueryCamera::Query>(
             "ice.trait.camera-query"_sid
         );
     }
@@ -155,22 +156,19 @@ namespace ice
     {
         ice::Allocator& alloc = frame.allocator();
 
-        detail::QueryCamera const* const camera_query = detail::get_camera_query(portal);
-        detail::QueryCamera::ResultByEntity camera_results = camera_query->result_by_entity(
-            alloc,
-            portal.entity_storage()
-        );
+        detail::QueryCamera::Query const* const camera_query = detail::get_camera_query(portal);
 
-        ice::u32 const camera_count = camera_results.entity_count();
-
+        ice::u32 const camera_count = ice::ecs::query::entity_count(*camera_query);
         ice::Span<ice::TraitCameraData> camera_span = frame.create_named_span<ice::TraitCameraData>("ice.cameras"_sid, camera_count);
+
+
 
         // Await work to be executed on a worker thread
         co_await runner.thread_pool();
 
         ice::u32 cam_idx = 0;
-        camera_results.for_each(
-            [&, this](ice::Entity entity, ice::Camera const& cam, ice::CameraOrtho const* ortho, ice::CameraPerspective const* persp) noexcept
+        ice::ecs::query::for_each_entity(*camera_query,
+            [&, this](ice::ecs::EntityHandle entity, ice::Camera const& cam, ice::CameraOrtho const* ortho, ice::CameraPerspective const* persp) noexcept
             {
                 if (cam.name == ice::stringid_invalid)
                 {
@@ -230,6 +228,7 @@ namespace ice
                 cam_idx += 1;
             }
         );
+
 
         // TODO: Requires a thread-safe allocator implementation if we want to skip a revisit on the frame thread.
         co_await runner.schedule_current_frame();

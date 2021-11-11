@@ -39,7 +39,7 @@ namespace ice
         , _data_allocator{ _allocator, detail::DataAllocatorCapacity }
         , _input_events{ _inputs_allocator }
         , _shards{ _request_allocator }
-        , _entity_commands{ _data_allocator } // #todo change the allocator?
+        , _entity_operations{ _data_allocator } // #todo change the allocator?
         , _named_objects{ _storage_allocator }
         , _frame_tasks{ _tasks_allocator }
         , _task_executor{ _allocator, ice::Vector<ice::Task<void>>{ _allocator } }
@@ -136,14 +136,14 @@ namespace ice
         return _shards;
     }
 
-    auto IceshardMemoryFrame::entity_commands() noexcept -> ice::EntityCommandBuffer&
+    auto IceshardMemoryFrame::entity_operations() noexcept -> ice::ecs::EntityOperations&
     {
-        return _entity_commands;
+        return _entity_operations;
     }
 
-    auto IceshardMemoryFrame::entity_commands() const noexcept -> ice::EntityCommandBuffer const&
+    auto IceshardMemoryFrame::entity_operations() const noexcept -> ice::ecs::EntityOperations const&
     {
-        return _entity_commands;
+        return _entity_operations;
     }
 
     auto IceshardMemoryFrame::named_data(
@@ -209,6 +209,23 @@ namespace ice
             _frame_end_operation.compare_exchange_weak(
                 expected_head,
                 &operation,
+                std::memory_order_release,
+                std::memory_order_acquire
+            ) == false
+        );
+    }
+
+    void IceshardMemoryFrame::schedule_query_internal(ice::ecs::ScheduledQueryData& query_data) noexcept
+    {
+        ice::ecs::ScheduledQueryData* expected_head = _query_operation.load(std::memory_order_acquire);
+
+        do
+        {
+            query_data.next = expected_head;
+        } while (
+            _query_operation.compare_exchange_weak(
+                expected_head,
+                &query_data,
                 std::memory_order_release,
                 std::memory_order_acquire
             ) == false

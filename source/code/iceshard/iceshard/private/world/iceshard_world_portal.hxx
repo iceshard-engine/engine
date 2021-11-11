@@ -17,7 +17,7 @@ namespace ice
             ice::Allocator& alloc,
             ice::World const& world,
             ice::WorldTrait* trait,
-            ice::EntityStorage& entity_storage
+            ice::ecs::EntityStorage& entity_storage
         ) noexcept;
 
         ~IceshardWorldPortal() noexcept override;
@@ -28,7 +28,7 @@ namespace ice
         auto allocator() noexcept -> ice::Allocator& override;
 
         auto storage() noexcept -> ice::DataStorage& override;
-        auto entity_storage() noexcept -> ice::EntityStorage& override;
+        auto entity_storage() noexcept -> ice::ecs::EntityStorage& override;
 
         void execute(ice::Task<void> task) noexcept override;
 
@@ -40,7 +40,7 @@ namespace ice
         ice::WorldTrait* _trait;
 
         ice::HashedDataStorage _storage;
-        ice::EntityStorage& _entity_storage;
+        ice::ecs::EntityStorage& _entity_storage;
 
         ice::memory::ScratchAllocator _wait_event_allocator;
 

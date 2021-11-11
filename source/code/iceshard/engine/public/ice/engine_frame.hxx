@@ -6,6 +6,8 @@
 #include <ice/input/input_types.hxx>
 
 #include <ice/engine_task_operations.hxx>
+#include <ice/ecs/ecs_types.hxx>
+#include <ice/ecs/ecs_query_scheduler.hxx>
 
 namespace ice
 {
@@ -21,7 +23,7 @@ namespace ice
 
     using FrameEndOperation = ice::EngineTaskOperation<ice::EngineFrame, ice::FrameEndOperationData>;
 
-    class EngineFrame : public ice::DataStorage
+    class EngineFrame : public ice::DataStorage, public ice::ecs::QueryScheduler
     {
     public:
         virtual ~EngineFrame() noexcept = default;
@@ -35,8 +37,9 @@ namespace ice
 
         virtual auto shards() noexcept -> ice::ShardContainer& = 0;
         virtual auto shards() const noexcept -> ice::ShardContainer const& = 0;
-
-        virtual auto entity_commands() noexcept -> ice::EntityCommandBuffer& = 0;
+        
+        virtual auto entity_operations() noexcept -> ice::ecs::EntityOperations& = 0;
+        virtual auto entity_operations() const noexcept -> ice::ecs::EntityOperations const& = 0;
 
         virtual auto schedule_frame_end() noexcept -> ice::FrameEndOperation = 0;
 
