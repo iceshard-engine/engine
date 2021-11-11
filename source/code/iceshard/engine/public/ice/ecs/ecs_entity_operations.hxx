@@ -86,9 +86,68 @@ namespace ice::ecs
         bool notify_changes = false
     ) noexcept;
 
+    void queue_set_archetype_with_data(
+        ice::ecs::EntityOperations& entity_operations,
+        ice::Span<ice::ecs::Entity const> entities,
+        ice::ecs::Archetype archetype,
+        ice::ecs::EntityOperations::ComponentInfo component_info,
+        ice::Span<ice::Data> component_data,
+        bool notify_changes = false
+    ) noexcept;
+
+    template<ice::ecs::Component... Components>
+    void queue_set_archetype_with_data(
+        ice::ecs::EntityOperations& entity_operations,
+        ice::ecs::Entity entity,
+        ice::ecs::Archetype archetype,
+        Components const&... components
+    ) noexcept;
+
     void queue_remove_entity(
         ice::ecs::EntityOperations& entity_operations,
         ice::ecs::EntityHandle entity_handle
     ) noexcept;
+
+
+    template<ice::ecs::Component ...Components>
+    void queue_set_archetype_with_data(
+        ice::ecs::EntityOperations& entity_operations,
+        ice::ecs::Entity entity,
+        ice::ecs::Archetype archetype,
+        Components const&... components
+    ) noexcept
+    {
+        constexpr ice::ecs::ArchetypeDefinition<Components...> const& pseudo_archetype_definition = ice::ecs::Constant_ArchetypeDefinition<Components...>;
+
+        constexpr ice::StaticArray<ice::u32, sizeof...(Components)> const idx_map = ice::ecs::detail::argument_idx_map<Components...>(
+            pseudo_archetype_definition.component_identifiers
+        );
+
+        constexpr ice::ecs::EntityOperations::ComponentInfo const component_info{
+            .names = ice::make_span(pseudo_archetype_definition.component_identifiers).subspan(1),
+            .sizes = ice::make_span(pseudo_archetype_definition.component_sizes).subspan(1),
+            // We can store alignments here instead of offsets.
+            .offsets = ice::make_span(pseudo_archetype_definition.component_alignments).subspan(1)
+        };
+
+        ice::Data const component_data_array_unsorted[]{
+            ice::Data{ ice::addressof(components), sizeof(Components), alignof(Components) }...
+        };
+
+        ice::StaticArray<ice::Data, sizeof...(Components)> data_array;
+        for (ice::u32 idx = 0; idx < sizeof...(Components); ++idx)
+        {
+            data_array[idx_map[idx] - 1] = component_data_array_unsorted[idx];
+        }
+
+        ice::ecs::queue_set_archetype_with_data(
+            entity_operations,
+            ice::Span<ice::ecs::Entity const>{ &entity, 1 },
+            archetype,
+            component_info,
+            data_array,
+            true
+        );
+    }
 
 } // namespace ice::ecs

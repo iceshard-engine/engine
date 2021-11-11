@@ -301,6 +301,92 @@ namespace ice::ecs
         }
     }
 
+    void queue_set_archetype_with_data(
+        ice::ecs::EntityOperations& entity_operations, 
+        ice::Span<ice::ecs::Entity const> entities, 
+        ice::ecs::Archetype archetype, 
+        ice::ecs::EntityOperations::ComponentInfo component_info,
+        ice::Span<ice::Data> component_data,
+        bool notify_changes
+    ) noexcept
+    {
+        ice::u32 const entity_count = ice::size(entities);
+
+        ice::u32 additional_data_size = sizeof(ice::ecs::EntityHandle) * entity_count;
+
+        // Data for storing component info
+        additional_data_size += sizeof(ice::ecs::EntityOperations::ComponentInfo);
+        additional_data_size += component_info.names.size_bytes();
+        additional_data_size += component_info.sizes.size_bytes();
+        additional_data_size += component_info.offsets.size_bytes();
+
+        // Component data
+        for (ice::Data const& data : component_data)
+        {
+            additional_data_size += data.alignment + data.size;
+        }
+
+        // Setup the operation
+        void* handle_loc;
+        EntityOperation* operation = entity_operations.new_storage_operation(additional_data_size, handle_loc);
+
+        // Set entity handles
+        ice::ecs::EntityHandle* entities_ptr = reinterpret_cast<ice::ecs::EntityHandle*>(handle_loc);
+        handle_loc = entities_ptr + entity_count;
+
+        for (ice::u32 idx = 0; idx < entity_count; ++idx)
+        {
+            entities_ptr[idx] = detail::make_empty_entity_handle(entities[idx]);
+        }
+
+        // Set component info object
+        ice::StringID* names_ptr = reinterpret_cast<ice::StringID*>(handle_loc);
+        ice::memcpy(names_ptr, component_info.names.data(), component_info.names.size_bytes());
+        handle_loc = ice::memory::ptr_add(handle_loc, component_info.names.size_bytes());
+
+        ice::u32* sizes_ptr = reinterpret_cast<ice::u32*>(handle_loc);
+        ice::memcpy(sizes_ptr, component_info.sizes.data(), component_info.sizes.size_bytes());
+        handle_loc = ice::memory::ptr_add(handle_loc, component_info.sizes.size_bytes());
+
+        ice::u32* offsets_ptr = reinterpret_cast<ice::u32*>(handle_loc);
+        ice::memcpy(offsets_ptr, component_info.offsets.data(), component_info.offsets.size_bytes());
+        handle_loc = ice::memory::ptr_add(handle_loc, component_info.offsets.size_bytes());
+
+        ice::ecs::EntityOperations::ComponentInfo* component_info_ptr = reinterpret_cast<ice::ecs::EntityOperations::ComponentInfo*>(handle_loc);
+        handle_loc = component_info_ptr + 1;
+
+        ice::u32 const component_count = ice::size(component_info.names);
+        component_info_ptr->names = ice::Span<ice::StringID const>{ names_ptr, component_count };
+        component_info_ptr->sizes = ice::Span<ice::u32 const>{ sizes_ptr, component_count };
+        component_info_ptr->offsets = ice::Span<ice::u32 const>{ offsets_ptr, component_count };
+        
+        // Copy over component data
+        void const* const data_beg = handle_loc;
+
+        ice::u32 component_idx = 0;
+        for (ice::Data const& data : component_data)
+        {
+            // Align target pointer
+            handle_loc = ice::memory::ptr_align_forward(handle_loc, data.alignment);
+
+            // Copy over the data
+            ice::memcpy(handle_loc, data.location, data.size);
+
+            // Save the offset
+            offsets_ptr[component_idx] = ice::memory::ptr_distance(data_beg, handle_loc);
+
+            handle_loc = ice::memory::ptr_add(handle_loc, data.size);
+            component_idx += 1;
+        }
+
+        operation->archetype = archetype;
+        operation->entities = entities_ptr;
+        operation->entity_count = entity_count;
+        operation->notify_entity_changes = notify_changes;
+        operation->component_data = component_info_ptr;
+        operation->component_data_size = ice::memory::ptr_distance(component_info_ptr, handle_loc);
+    }
+
     void queue_remove_entity(
         ice::ecs::EntityOperations& entity_operations,
         ice::ecs::EntityHandle entity

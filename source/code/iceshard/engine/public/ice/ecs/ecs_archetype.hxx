@@ -2,8 +2,8 @@
 #include <ice/stringid.hxx>
 #include <ice/ecs/ecs_component.hxx>
 #include <ice/ecs/ecs_detail.hxx>
+#include <ice/static_array.hxx>
 #include <ice/span.hxx>
-#include <array>
 
 namespace ice::ecs
 {
@@ -111,6 +111,33 @@ namespace ice::ecs
                 handle_hash ^= ice::hash(component);
             }
             return static_cast<Archetype>(handle_hash);
+        }
+
+        template<ice::ecs::Component... Components>
+        constexpr auto argument_idx_map(
+            ice::Span<ice::StringID const> component_identifiers_target_order
+        ) noexcept -> ice::StaticArray<ice::u32, sizeof...(Components)>
+        {
+            constexpr ice::u32 component_count = sizeof...(Components);
+            constexpr ice::StringID components_identifiers_original_order[]{ ice::ecs::Constant_ComponentIdentifier<Components>... };
+
+            ice::StaticArray<ice::u32, component_count> result{ ice::u32_max };
+            for (ice::u32 idx = 0; idx < component_count; ++idx)
+            {
+                result[idx] = std::numeric_limits<ice::u32>::max();
+
+                ice::u32 arg_idx = 0;
+                for (ice::StringID_Arg component_arg : component_identifiers_target_order)
+                {
+                    if (component_arg == components_identifiers_original_order[idx])
+                    {
+                        result[idx] = arg_idx;
+                        break;
+                    }
+                    arg_idx += 1;
+                }
+            }
+            return result;
         }
 
     } // namespace detail
