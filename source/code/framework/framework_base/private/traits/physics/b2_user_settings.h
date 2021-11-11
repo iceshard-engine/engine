@@ -23,7 +23,7 @@
 /// You can define this to inject whatever data you want in b2Body
 struct B2_API b2BodyUserData
 {
-    ice::ecs::Entity entity;
+    ice::ecs::EntityHandle entity;
 };
 
 /// You can define this to inject whatever data you want in b2Fixture
