@@ -1,0 +1,70 @@
+name: Build (Single job)
+
+on:
+  workflow_call:
+    inputs:
+      host:
+        description: The host machine to be used for the build process.
+        required: true
+        type: string
+      configs:
+        description: A json array of configuration names that should be build.
+        required: true
+        type: string
+      platform:
+        description: The platform we want to build for.
+        required: true
+        type: string
+      architecture:
+        description: The architecture we want to build for.
+        required: true
+        type: string
+
+jobs:
+  build_configurations:
+    name: (${{ join(fromJSON(inputs.configs), ', ') }})
+    continue-on-error: true
+    runs-on: ${{ inputs.host }}
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Prepare workspace
+      shell: pwsh
+      run: |
+        pip3 install setuptools
+        pip3 install wheel
+        pip3 install conan
+        conan config install https://github.com/iceshard-engine/conan-config.git
+
+    - name: Install clang-12 (Ubuntu)
+      if: ${{ startsWith(inputs.host, 'ubuntu-') }}
+      run: |
+        sudo apt update
+        sudo apt install libc++-12-dev libc++abi-12-dev --fix-missing
+
+    - name: Cache Conan packages
+      uses: actions/cache@v2
+      env:
+        cache-name: cache-conan-packages
+      with:
+        path: ~/.conan
+        key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/conanfile.txt', '**/conan_profiles.json') }}
+        restore-keys: |
+          ${{ runner.os }}-build-${{ env.cache-name }}-
+
+    - name: Build targets
+      shell: pwsh
+      run: |
+        $BuildTargets = "${{ join(fromJSON(inputs.configs), '","') }}" | ForEach-Object { "-t all-${{ inputs.architecture }}-$_" }
+        $BuildTargetsStr = $BuildTargets -join " "
+
+        .\tools\gh_ice.ps1 init
+        .\tools\gh_ice.ps1 build $BuildTargetsStr
+
+    - name: Run tests
+      shell: pwsh
+      run: |
+        $BuildTargets = "${{ join(fromJSON(inputs.configs), '","') }}" | ForEach-Object { "-t test-all-${{ inputs.architecture }}-$_" }
+        $BuildTargetsStr = $BuildTargets -join " "
+
+        .\tools\gh_ice.ps1 build $BuildTargetsStr
