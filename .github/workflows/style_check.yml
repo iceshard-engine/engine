@@ -12,7 +12,7 @@ jobs:
       - uses: actions/checkout@v2
       
       - name: Style check (Uncrustify)
-        uses: dolik-rce/actions-uncrustify@v1.1
+        uses: dolik-rce/actions-uncrustify@ffbff3ba7c8b3e490f6ace8ce5784ed2443d5257
         with:
           configPath: source/code_style.cfg
           fileMask: '*.cxx *.hxx'
