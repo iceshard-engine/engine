@@ -1,0 +1,22 @@
+name: Style check
+
+on:
+  pull_request:
+    branches: [ master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Run check
+    runs-on: ubuntu-latest
+    container: tomeinc/uncrustify:0.73.0
+    steps:
+      - uses: actions/checkout@v2
+      - uses: technote-space/get-diff-action@v5
+        with:
+          PATTERNS: |
+            +(source/code)/**/*.[hc]xx
+      - name: Style check (Uncrustify)
+        if: env.GIT_DIFF
+        run: |
+          uncrustify --check -c source/code_style.cfg -F- ${{ env.GIT_DIFF_FILTERED }}
