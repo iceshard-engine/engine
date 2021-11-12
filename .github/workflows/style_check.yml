@@ -7,11 +7,16 @@ on:
 
 jobs:
   build:
+    name: Run check
     runs-on: ubuntu-latest
+    container: tomeinc/uncrustify:0.73.0
     steps:
       - uses: actions/checkout@v2
-      
-      - name: Style check (Uncrustify)
-        uses: old-mibmo/uncrustify-check@v0.1.0
+      - uses: technote-space/get-diff-action@v5
         with:
-          configFile: source/code_style.cfg
+          PATTERNS: |
+            +(source/code)/**/*.[hc]xx
+      - name: Style check (Uncrustify)
+        if: env.GIT_DIFF
+        run: |
+          uncrustify --check -c source/code_style.cfg -F- ${{ env.GIT_DIFF_FILTERED }}
