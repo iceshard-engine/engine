@@ -6,18 +6,12 @@
 
     .BaseDir = '$WorkspaceCodeDir$/iceshard/iceshard'
 
-    .UnityBuilds = false
-
     .Private =
     [
-        .Modules = {
-            // 'imgui'
-        }
         .Uses = {
             'utils'
             'modules'
             'engine'
-            // 'engine_debug'
         }
     ]
 ]
