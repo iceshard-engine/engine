@@ -7,12 +7,11 @@ on:
 
 jobs:
   build:
+    name: Run check
     runs-on: ubuntu-latest
+    container: tomeinc/uncrustify:0.73.0
     steps:
       - uses: actions/checkout@v2
-      
       - name: Style check (Uncrustify)
-        uses: dolik-rce/actions-uncrustify@ffbff3ba7c8b3e490f6ace8ce5784ed2443d5257
-        with:
-          configPath: source/code_style.cfg
-          fileMask: '*.cxx *.hxx'
+        run: |
+          uncrustify -v
