@@ -8,6 +8,7 @@
 #include <ice/engine_runner.hxx>
 #include <ice/engine_shards.hxx>
 #include <ice/ecs/ecs_entity_storage.hxx>
+#include <ice/ecs/ecs_entity_operations.hxx>
 #include <ice/world/world_portal.hxx>
 
 #include <ice/input/input_device.hxx>
@@ -140,7 +141,7 @@ namespace ice
 
         DynamicQuery::Query& query = *portal.storage().named_object<DynamicQuery::Query>("ice.query.physics_bodies"_sid);
 
-        ice::ecs::query::for_each_entity(query, 
+        ice::ecs::query::for_each_entity(query,
             [&](ice::ecs::EntityHandle, ice::Transform2DDynamic const& dyn_xform, ice::PhysicsBody& phx_body, ice::Actor const*) noexcept
             {
                 phx_body.trait_data = nullptr;
@@ -160,24 +161,26 @@ namespace ice
         ice::WorldPortal& portal
     ) noexcept
     {
-        //ice::shards::inspect_each<ice::Entity>(frame.shards(), Shard_EntityDestroyed,
-        //    [this](ice::Entity entity) noexcept
-        //    {
-        //        b2Body* body = _world->GetBodyList();
-        //        while (body != nullptr)
-        //        {
-        //            b2Body* next = body->GetNext();
-        //            auto const& userdata = body->GetUserData();
+        ice::shards::inspect_each<ice::ecs::EntityHandle>(
+            frame.shards(),
+            ice::ecs::Shard_EntityDestroyed,
+            [this](ice::ecs::EntityHandle entity) noexcept
+            {
+                b2Body* body = _world->GetBodyList();
+                while (body != nullptr)
+                {
+                    b2Body* next = body->GetNext();
+                    auto const& userdata = body->GetUserData();
 
-        //            if (userdata.entity == entity)
-        //            {
-        //                _world->DestroyBody(body);
-        //            }
+                    if (userdata.entity == entity)
+                    {
+                        _world->DestroyBody(body);
+                    }
 
-        //            body = next;
-        //        }
-        //    }
-        //);
+                    body = next;
+                }
+            }
+        );
 
         PhysicsQuery::Query const& phx_query = *portal.storage().named_object<PhysicsQuery::Query>("ice.query.physics_data"_sid);
 

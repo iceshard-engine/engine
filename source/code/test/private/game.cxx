@@ -321,9 +321,8 @@ void MyGame::on_game_begin(ice::EngineRunner& runner) noexcept
         .near_far = { 0.1f, 100.f }
     };
 
-    ice::ecs::EntityOperations ops{ _allocator };
     ice::ecs::queue_set_archetype_with_data(
-        ops,
+        runner.current_frame().entity_operations(),
         camera_entity,
         ice::ecs::Constant_Archetype<ice::Camera, ice::CameraOrtho>,
         camera,
@@ -331,7 +330,7 @@ void MyGame::on_game_begin(ice::EngineRunner& runner) noexcept
     );
 
     ice::ecs::queue_set_archetype_with_data(
-        ops,
+        runner.current_frame().entity_operations(),
         player_entity,
         player_arch,
         ice::Animation{ .animation = "cotm_idle"_sid_hash, .speed = 1.f / 60.f },
@@ -343,13 +342,9 @@ void MyGame::on_game_begin(ice::EngineRunner& runner) noexcept
         ice::SpriteTile{ .material_tile = { 0, 0 } }
     );
 
-    ice::ShardContainer shardsc{ _allocator };
-    _ecs_storage->execute_operations(ops, shardsc);
-
     ice::Shard shards[]{
         ice::Shard_WorldActivate | _test_world,
         ice::Shard_WorldActivate | _render_world,
-        ice::Shard_SetDefaultCamera | "camera.default"_sid_hash
     };
     ice::shards::push_back(
         runner.current_frame().shards(),
@@ -363,6 +358,8 @@ void MyGame::on_game_end() noexcept
 
 void MyGame::on_update(ice::EngineFrame& frame, ice::EngineRunner& runner, ice::WorldPortal& portal) noexcept
 {
+    using ice::operator""_sid_hash;
+
     runner.graphics_frame().enqueue_pass("default"_sid, "game.render"_sid, _game_gfx_pass.get());
 
     bool was_active = _active;
@@ -398,6 +395,21 @@ void MyGame::on_update(ice::EngineFrame& frame, ice::EngineRunner& runner, ice::
         {
             ICE_LOG(ice::LogSeverity::Debug, ice::LogTag::Game, "Reset!");
         }
+    }
+
+    ice::Shard const player_entity_created = ice::shards::find_last_of(frame.shards(), ice::ecs::Shard_EntityCreated);
+
+    if (player_entity_created != ice::Shard_Invalid)
+    {
+        //ice::ecs::queue_remove_entity(
+        //    frame.entity_operations(),
+        //    ice::shard_shatter<ice::ecs::EntityHandle>(player_entity_created)
+        //);
+
+        ice::shards::push_back(
+            frame.shards(),
+            ice::Shard_SetDefaultCamera | "camera.default"_sid_hash
+        );
     }
 
 

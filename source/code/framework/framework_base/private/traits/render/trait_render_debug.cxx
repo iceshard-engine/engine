@@ -218,48 +218,51 @@ namespace ice
             }
         );
 
-        ice::StringID_Hash camera_name;
+        ice::StringID_Hash camera_name = ice::StringID_Hash::Invalid;
         if (ice::shards::inspect_last(engine_frame.shards(), ice::Shard_SetDefaultCamera, camera_name))
         {
             _render_camera = ice::StringID{ camera_name };
         }
 
-        ice::render::Buffer const camera_buffer = ice::gfx::find_resource<ice::render::Buffer>(
-            gfx_device.resource_tracker(),
-            _render_camera
-        );
-
-        if (_render_camera_buffer != camera_buffer && camera_buffer != ice::render::Buffer::Invalid)
+        if (camera_name != ice::stringid_hash(ice::stringid_invalid))
         {
-            using namespace render;
+            ice::render::Buffer const camera_buffer = ice::gfx::find_resource<ice::render::Buffer>(
+                gfx_device.resource_tracker(),
+                _render_camera
+            );
 
-            _render_camera_buffer = camera_buffer;
+            if (_render_camera_buffer != camera_buffer && camera_buffer != ice::render::Buffer::Invalid)
+            {
+                using namespace render;
 
-            RenderDevice& device = gfx_device.device();
+                _render_camera_buffer = camera_buffer;
 
-            ResourceUpdateInfo res_updates[]{
-                ResourceUpdateInfo
-                {
-                    .uniform_buffer = {
-                        .buffer = _render_camera_buffer,
-                        .offset = 0,
-                        .size = sizeof(ice::TraitCameraRenderData)
+                RenderDevice& device = gfx_device.device();
+
+                ResourceUpdateInfo res_updates[]{
+                    ResourceUpdateInfo
+                    {
+                        .uniform_buffer = {
+                            .buffer = _render_camera_buffer,
+                            .offset = 0,
+                            .size = sizeof(ice::TraitCameraRenderData)
+                        }
                     }
-                }
-            };
+                };
 
-            ResourceSetUpdateInfo set_updates[]{
-                ResourceSetUpdateInfo
-                {
-                    .resource_set = _resource_set,
-                    .resource_type = ResourceType::UniformBuffer,
-                    .binding_index = 0,
-                    .array_element = 0,
-                    .resources = { res_updates + 0, 1 },
-                },
-            };
+                ResourceSetUpdateInfo set_updates[]{
+                    ResourceSetUpdateInfo
+                    {
+                        .resource_set = _resource_set,
+                        .resource_type = ResourceType::UniformBuffer,
+                        .binding_index = 0,
+                        .array_element = 0,
+                        .resources = { res_updates + 0, 1 },
+                    },
+                };
 
-            device.update_resourceset(set_updates);
+                device.update_resourceset(set_updates);
+            }
         }
 
         gfx_frame.set_stage_slot(_stage_name, this);

@@ -725,20 +725,27 @@ namespace ice::ecs
                 }
                 else
                 {
+                    detail::OperationDetails const dst_data_details = src_data_details;
+
+                    ice::Span<ice::ecs::EntityHandle const> entities = ice::ecs::detail::get_entity_array(
+                        src_component_info,
+                        detail::OperationDetails{ .block_offset = 0, .block_data = data_block_it->block_data },
+                        data_block_it->block_entity_count
+                    );
+
+                    ice::ecs::EntityHandle const destroyed_entities[1]{
+                        entities[dst_data_details.block_offset]
+                    };
+
+                    if (operation.notify_entity_changes)
+                    {
+                        ice::shards::push_back(out_shards, ice::shard_create(ice::ecs::Shard_EntityDestroyed, destroyed_entities[0]));
+                    }
+
                     if (data_block_it->block_entity_count > 2 && (data_block_it->block_entity_count - 1) != src_data_details.block_offset)
                     {
-                        detail::OperationDetails const dst_data_details = src_data_details;
                         src_data_details.block_offset = data_block_it->block_entity_count - 1; // Get the last entity
 
-                        ice::Span<ice::ecs::EntityHandle const> entities = ice::ecs::detail::get_entity_array(
-                            src_component_info,
-                            detail::OperationDetails{ .block_offset = 0, .block_data = data_block_it->block_data },
-                            data_block_it->block_entity_count
-                        );
-
-                        ice::ecs::EntityHandle const destroyed_entities[1]{
-                            entities[dst_data_details.block_offset]
-                        };
                         ice::ecs::EntityHandle const move_entities[1]{
                             entities[src_data_details.block_offset]
                         };
@@ -760,8 +767,13 @@ namespace ice::ecs
 
                         if (operation.notify_entity_changes)
                         {
-                            ice::shards::push_back(out_shards, ice::shard_create(ice::ecs::Shard_EntityDestroyed, destroyed_entities[0]));
-                            ice::shards::push_back(out_shards, ice::shard_create(ice::ecs::Shard_EntityHandleChanged, entities[dst_data_details.block_offset]));
+                            ice::shards::push_back(
+                                out_shards,
+                                ice::shard_create(
+                                    ice::ecs::Shard_EntityHandleChanged,
+                                    entities[dst_data_details.block_offset]
+                                )
+                            );
                         }
                     }
 

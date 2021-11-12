@@ -146,7 +146,7 @@ namespace ice
     {
         ice::EngineFrame& current_frame = runner.current_frame();
 
-        // #todo: This needs to change, we need to make works responsible for: EntityStorage, EntityOperations and probably QueryScheduling
+        // #todo: This needs to change, we need to make worlds responsible for: EntityStorage, EntityOperations and probably QueryScheduling
         _entity_storage->execute_operations(
             runner.previous_frame().entity_operations(),
             current_frame.shards()
