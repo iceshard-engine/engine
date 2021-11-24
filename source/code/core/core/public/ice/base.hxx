@@ -27,7 +27,7 @@ namespace ice
     }
 
     template<typename T, ice::u32 Size>
-    constexpr auto size(T const(&)[Size]) noexcept -> ice::u32
+    constexpr auto size(T const (&)[Size]) noexcept -> ice::u32
     {
         return Size;
     }
