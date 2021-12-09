@@ -22,3 +22,14 @@ Settings
 }
 
 #include "code/projects.bff"
+
+.Unity_Pipeline_Windows_x64 =
+[
+    Using( .Pipeline_Windows_x64 )
+
+    .PipelineAllowUnityBuilds = true
+]
+
+^BuildPipelines = {
+    .Unity_Pipeline_Windows_x64
+}
