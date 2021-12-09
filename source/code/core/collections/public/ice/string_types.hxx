@@ -56,7 +56,7 @@ namespace ice
 
         StackString() noexcept = default;
         template<uint32_t ArraySize>
-        StackString(CharType(&char_array)[ArraySize]) noexcept;
+        StackString(CharType (&char_array)[ArraySize]) noexcept;
         StackString(ice::BasicString<CharType> str) noexcept;
         ~StackString() noexcept = default;
 

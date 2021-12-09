@@ -51,7 +51,7 @@ namespace ice
         template<typename T>
         class IceCustomDeleter
         {
-            using CustomDeleterFunction = void(ice::Allocator&, T*);
+            using CustomDeleterFunction = void (ice::Allocator&, T*);
         public:
             //! \brief Empty deleter objects are not allowed.
             IceCustomDeleter() noexcept = delete;

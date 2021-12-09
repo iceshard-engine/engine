@@ -79,23 +79,23 @@ namespace ice
     };
     template<typename T>
     concept HasLoadModulesMethod = requires (T t) {
-        { &T::on_load_modules } -> std::convertible_to<void(T::*)(ice::GameServices&) noexcept>;
+        { &T::on_load_modules } -> std::convertible_to<void (T::*)(ice::GameServices&) noexcept>;
     };
     template<typename T>
     concept HasAppStartupMethod = requires (T t) {
-        { &T::on_app_startup } -> std::convertible_to<void(T::*)(ice::Engine&) noexcept>;
+        { &T::on_app_startup } -> std::convertible_to<void (T::*)(ice::Engine&) noexcept>;
     };
     template<typename T>
     concept HasAppShutdownMethod = requires (T t) {
-        { &T::on_app_shutdown } -> std::convertible_to<void(T::*)(ice::Engine&) noexcept>;
+        { &T::on_app_shutdown } -> std::convertible_to<void (T::*)(ice::Engine&) noexcept>;
     };
     template<typename T>
     concept HasGameStartMethod = requires (T t) {
-        { &T::on_game_begin } -> std::convertible_to<void(T::*)(ice::EngineRunner&) noexcept>;
+        { &T::on_game_begin } -> std::convertible_to<void (T::*)(ice::EngineRunner&) noexcept>;
     };
     template<typename T>
     concept HasGameEndMethod = requires (T t) {
-        { &T::on_game_end } -> std::convertible_to<void(T::*)(ice::EngineRunner&) noexcept>;
+        { &T::on_game_end } -> std::convertible_to<void (T::*)(ice::EngineRunner&) noexcept>;
     };
 
     template<typename T>
@@ -184,10 +184,10 @@ namespace ice
 
 #define ICE_REGISTER_GAMEAPP(Type) \
     auto ice::create_game_object( \
-        ice::Allocator& alloc, \
-        ice::ResourceSystem& resource_system, \
-        ice::ModuleRegister& module_register \
-    ) noexcept -> ice::GameFramework* \
+    ice::Allocator& alloc, \
+    ice::ResourceSystem& resource_system, \
+    ice::ModuleRegister& module_register \
+    ) noexcept -> ice::GameFramework * \
     { \
         return alloc.make<ice::Game<Type>>(alloc, resource_system, module_register); \
     }

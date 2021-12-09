@@ -186,7 +186,9 @@ namespace ice
         ice::u32 buffer_offset = 0;
         ice::u32 color_buffer_offset = 0;
 
-        ice::shards::inspect_each<ice::DebugDrawCommandList const*>(engine_frame.shards(), ice::Shard_DebugDrawCommand,
+        ice::shards::inspect_each<ice::DebugDrawCommandList const*>(
+            engine_frame.shards(),
+            ice::Shard_DebugDrawCommand,
             [&, this](ice::DebugDrawCommandList const* draw_list) noexcept
             {
                 ice::Span<ice::DebugDrawCommand const> commands{ draw_list->list, draw_list->list_size };
@@ -280,12 +282,14 @@ namespace ice
         api.bind_vertex_buffer(cmds, _colors, 1);
         api.bind_pipeline(cmds, _pipeline);
 
-        ice::shards::inspect_each<ice::DebugDrawCommandList const*>(engine_frame.shards(), ice::Shard_DebugDrawCommand,
+        ice::shards::inspect_each<ice::DebugDrawCommandList const*>(
+            engine_frame.shards(),
+            ice::Shard_DebugDrawCommand,
             [&, this](ice::DebugDrawCommandList const* draw_list) noexcept
             {
                 ice::u32 vertex_offset = 0;
 
-                ice::Span< ice::DebugDrawCommand const> commands{ draw_list->list, draw_list->list_size };
+                ice::Span<ice::DebugDrawCommand const> commands{ draw_list->list, draw_list->list_size };
                 for (ice::DebugDrawCommand const& command : commands)
                 {
                     api.draw(

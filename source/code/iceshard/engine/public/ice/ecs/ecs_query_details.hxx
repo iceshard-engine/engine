@@ -128,10 +128,10 @@ namespace ice::ecs::detail
     };
 
     template<QueryType... Args>
-    using QueryBlockIteratorSignature = void(ice::u32, typename QueryIteratorArgument<Args>::BlockIteratorArg...);
+    using QueryBlockIteratorSignature = void (ice::u32, typename QueryIteratorArgument<Args>::BlockIteratorArg...);
 
     template<QueryType... Args>
-    using QueryEntityIteratorSignature = void(typename QueryIteratorArgument<Args>::EntityIteratorArg...);
+    using QueryEntityIteratorSignature = void (typename QueryIteratorArgument<Args>::EntityIteratorArg...);
 
 
     template<QueryType... Components>

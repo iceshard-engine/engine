@@ -738,7 +738,7 @@ namespace ice
             ice::render::Buffer buffer = operation.render_cache->tileset_properties[idx];
             if (idx >= image_count)
             {
-                buffer = operation.render_cache->tileset_properties[image_count -1];
+                buffer = operation.render_cache->tileset_properties[image_count - 1];
             }
 
             resource_updates[resource_update_count] = ResourceUpdateInfo

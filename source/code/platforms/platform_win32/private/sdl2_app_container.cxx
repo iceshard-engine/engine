@@ -64,7 +64,6 @@ namespace ice::platform
 
             switch (scancode)
             {
-                // Special codes (I)
             case SDL_SCANCODE_RETURN: return KeyboardKey::Return;
             case SDL_SCANCODE_ESCAPE: return KeyboardKey::Escape;
             case SDL_SCANCODE_BACKSPACE: return KeyboardKey::Backspace;
@@ -75,17 +74,17 @@ namespace ice::platform
             case SDL_SCANCODE_MINUS: return KeyboardKey::Minus;
             case SDL_SCANCODE_PERIOD: return KeyboardKey::Period;
             case SDL_SCANCODE_SLASH: return KeyboardKey::Slash;
-                // Special codes (II)
+
             case SDL_SCANCODE_SEMICOLON: return KeyboardKey::SemiColon;
             case SDL_SCANCODE_EQUALS: return KeyboardKey::Equals;
             case SDL_SCANCODE_LEFTBRACKET: return KeyboardKey::LeftBracket;
             case SDL_SCANCODE_BACKSLASH: return KeyboardKey::BackSlash;
             case SDL_SCANCODE_RIGHTBRACKET: return KeyboardKey::RightBracket;
             case SDL_SCANCODE_GRAVE: return KeyboardKey::BackQuote;
-                // Special codes (III)
+
             case SDL_SCANCODE_DELETE: return KeyboardKey::Delete;
             case SDL_SCANCODE_CAPSLOCK: return KeyboardKey::CapsLock;
-                // Special codes (IV)
+
             case SDL_SCANCODE_UP: return KeyboardKey::Up;
             case SDL_SCANCODE_DOWN: return KeyboardKey::Down;
             case SDL_SCANCODE_LEFT: return KeyboardKey::Left;
@@ -326,7 +325,8 @@ namespace ice::platform
                 switch (current_event.type)
                 {
                 case SDL_QUIT:
-                    ice::pod::array::push_back(events,
+                    ice::pod::array::push_back(
+                        events,
                         Event{
                             .type = EventType::AppQuit,
                             .data = { }
@@ -350,7 +350,8 @@ namespace ice::platform
                     {
                     //case SDL_WINDOWEVENT_SIZE_CHANGED:
                     case SDL_WINDOWEVENT_RESIZED:
-                        ice::pod::array::push_back(events,
+                        ice::pod::array::push_back(
+                            events,
                             Event{
                                 .type = EventType::WindowSizeChanged,
                                 .data = {
@@ -377,9 +378,9 @@ namespace ice::platform
                 // [issue #33]
                 case SDL_TEXTINPUT:
                     ice::memcpy(text_buffer, current_event.text.text, 32);
-                    ice::pod::array::push_back(events,
-                        Event
-                        {
+                    ice::pod::array::push_back(
+                        events,
+                        Event{
                             .type = EventType::InputText,
                             .data = {
                                 .input = { .text = ice::String(text_buffer) }

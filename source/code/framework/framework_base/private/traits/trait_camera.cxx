@@ -167,7 +167,8 @@ namespace ice
         co_await runner.thread_pool();
 
         ice::u32 cam_idx = 0;
-        ice::ecs::query::for_each_entity(*camera_query,
+        ice::ecs::query::for_each_entity(
+            *camera_query,
             [&, this](ice::ecs::EntityHandle entity, ice::Camera const& cam, ice::CameraOrtho const* ortho, ice::CameraPerspective const* persp) noexcept
             {
                 if (cam.name == ice::stringid_invalid)

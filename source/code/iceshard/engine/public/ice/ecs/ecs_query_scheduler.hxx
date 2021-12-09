@@ -55,10 +55,10 @@ namespace ice::ecs
     ) noexcept
         : _scheduler{ scheduler }
         , _query{ ice::move(query) }
-        , _data{ 
-            .coroutine = nullptr, 
-            .next = nullptr, 
-            .requirements = Query::Constant_QueryDefinition.requirements 
+        , _data{
+            .coroutine = nullptr,
+            .next = nullptr,
+            .requirements = Query::Constant_QueryDefinition.requirements
         }
     {
     }

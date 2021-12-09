@@ -141,7 +141,8 @@ namespace ice
 
         DynamicQuery::Query& query = *portal.storage().named_object<DynamicQuery::Query>("ice.query.physics_bodies"_sid);
 
-        ice::ecs::query::for_each_entity(query,
+        ice::ecs::query::for_each_entity(
+            query,
             [&](ice::ecs::EntityHandle, ice::Transform2DDynamic const& dyn_xform, ice::PhysicsBody& phx_body, ice::Actor const*) noexcept
             {
                 phx_body.trait_data = nullptr;
@@ -184,7 +185,9 @@ namespace ice
 
         PhysicsQuery::Query const& phx_query = *portal.storage().named_object<PhysicsQuery::Query>("ice.query.physics_data"_sid);
 
-        ice::ecs::query::for_each_entity(phx_query, [](ice::ecs::EntityHandle e, ice::PhysicsBody& phx_body, ice::PhysicsVelocity& vel) noexcept
+        ice::ecs::query::for_each_entity(
+            phx_query,
+            [](ice::ecs::EntityHandle e, ice::PhysicsBody& phx_body, ice::PhysicsVelocity& vel) noexcept
             {
                 if (phx_body.trait_data != nullptr)
                 {

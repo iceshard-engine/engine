@@ -10,8 +10,10 @@ namespace ice::input
     static constexpr ice::i32 default_button_event_treshold_hold = 40;
     static constexpr ice::i32 default_button_event_treshold_repeat = 20;
 
-    using DeviceFactory = auto(ice::Allocator&, ice::input::DeviceHandle) noexcept
-        -> ice::input::InputDevice*;
+    using DeviceFactory = auto (
+        ice::Allocator&,
+        ice::input::DeviceHandle
+    ) noexcept -> ice::input::InputDevice*;
 
     class InputTracker
     {

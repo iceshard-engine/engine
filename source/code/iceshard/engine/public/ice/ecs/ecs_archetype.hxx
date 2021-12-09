@@ -153,15 +153,15 @@ namespace ice::ecs
 
         for (ice::u32 idx = 1; idx < Const_ComponentCount; ++idx)
         {
-            component_identifiers[idx] = sorted_components[idx-1].identifier;
-            component_sizes[idx] = sorted_components[idx-1].size;
-            component_alignments[idx] = sorted_components[idx-1].alignment;
+            component_identifiers[idx] = sorted_components[idx - 1].identifier;
+            component_sizes[idx] = sorted_components[idx - 1].size;
+            component_alignments[idx] = sorted_components[idx - 1].alignment;
         }
 
         identifier = ice::ecs::detail::make_archetype_identifier(component_identifiers);
     }
 
-    template<ice::ecs::Component ...Components>
+    template<ice::ecs::Component... Components>
     inline constexpr ArchetypeInfo::ArchetypeInfo(
         ice::ecs::ArchetypeDefinition<Components...> const& archetype_info
     ) noexcept

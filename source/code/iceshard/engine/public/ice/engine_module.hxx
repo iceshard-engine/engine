@@ -21,8 +21,14 @@ namespace ice
     namespace detail::engine::v1
     {
 
-        using CreateFn = auto(ice::Allocator&, ice::AssetSystem&, ice::ModuleRegister&, ice::EngineDevUI* devui) noexcept -> ice::Engine*;
-        using DestroyFn = void(ice::Allocator& alloc, ice::Engine*) noexcept;
+        using CreateFn = auto (
+            ice::Allocator&,
+            ice::AssetSystem&,
+            ice::ModuleRegister&,
+            ice::EngineDevUI*
+        ) noexcept -> ice::Engine*;
+
+        using DestroyFn = void (ice::Allocator& alloc, ice::Engine*) noexcept;
 
         struct EngineAPI
         {

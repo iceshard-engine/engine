@@ -19,9 +19,9 @@ namespace ice
 
     namespace detail::asset_system::v1
     {
-        using NameFn = auto() noexcept -> ice::StringID;
-        using CreateFn = auto(ice::Allocator&) noexcept -> ice::AssetPipeline*;
-        using DestroyFn = void(ice::Allocator& alloc, ice::AssetPipeline*) noexcept;
+        using NameFn = auto () noexcept -> ice::StringID;
+        using CreateFn = auto (ice::Allocator&) noexcept -> ice::AssetPipeline*;
+        using DestroyFn = void (ice::Allocator& alloc, ice::AssetPipeline*) noexcept;
 
         struct AssetModuleAPI
         {

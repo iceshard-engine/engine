@@ -87,7 +87,7 @@ namespace ice
                 return _value;
             }
 
-            auto result() && noexcept -> T&&
+            auto result() && noexcept -> T &&
             {
                 return std::move(_value);
             }
