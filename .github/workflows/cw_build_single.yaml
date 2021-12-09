@@ -23,7 +23,6 @@ on:
 jobs:
   build_configurations:
     name: (${{ join(fromJSON(inputs.configs), ', ') }})
-    continue-on-error: true
     runs-on: ${{ inputs.host }}
     steps:
     - uses: actions/checkout@v2

@@ -23,7 +23,6 @@ on:
 jobs:
   build_configurations:
     name: (${{ matrix.config }})
-    continue-on-error: true
     runs-on: ${{ inputs.host }}
     strategy:
       matrix:
