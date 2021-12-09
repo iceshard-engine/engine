@@ -377,11 +377,13 @@ namespace ice
             *frame.create_named_object<ice::u32>("game2d.level.instance_count"_sid) = entity_count;
 
             ice::u32 current_xform = 0;
-            ice::ecs::query::for_each_entity(query, [&](Obj2dShape& shape, Obj2dTransform& xform) noexcept
+            ice::ecs::query::for_each_entity(
+                query, [&](Obj2dShape& shape, Obj2dTransform& xform) noexcept
                 {
                     xform_span[current_xform] = xform;
                     current_xform += 1;
-                });
+                }
+            );
 
             auto update_graphics_task = [](ice::IceGame2DTrait* self, ice::EngineRunner& runner, Span<Obj2dTransform> xform_span) -> ice::Task<>
             {

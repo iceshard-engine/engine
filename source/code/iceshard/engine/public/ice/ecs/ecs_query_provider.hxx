@@ -20,7 +20,7 @@ namespace ice::ecs
         template<ice::ecs::QueryType... Args>
         constexpr auto create_query_work(
             ice::Allocator& alloc,
-            void(*function_ptr)(Args...)
+            void (*function_ptr)(Args...)
         ) const noexcept -> ice::ecs::QueryWork<Args...>;
 
         template<ice::ecs::QueryType... Types>
@@ -39,7 +39,7 @@ namespace ice::ecs
 
 
     template<ice::ecs::QueryType... Args>
-    constexpr auto QueryProvider::create_query_work(ice::Allocator& alloc, void(*function_ptr)(Args...)) const noexcept -> ice::ecs::QueryWork<Args...>
+    constexpr auto QueryProvider::create_query_work(ice::Allocator& alloc, void (*function_ptr)(Args...)) const noexcept -> ice::ecs::QueryWork<Args...>
     {
         return { .query = create_query(alloc, ice::ecs::QueryDefinition<Args...>{}), .work_function = function_ptr };
     }

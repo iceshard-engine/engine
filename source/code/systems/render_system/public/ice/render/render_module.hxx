@@ -10,8 +10,8 @@ namespace ice::render
     namespace detail::v1
     {
 
-        using CreateFn = auto(ice::Allocator&) noexcept -> ice::render::RenderDriver*;
-        using DestroyFn = void(ice::Allocator&, ice::render::RenderDriver*) noexcept;
+        using CreateFn = auto (ice::Allocator&) noexcept -> ice::render::RenderDriver*;
+        using DestroyFn = void (ice::Allocator&, ice::render::RenderDriver*) noexcept;
 
         struct RenderAPI
         {

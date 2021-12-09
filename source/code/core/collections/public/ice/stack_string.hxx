@@ -112,7 +112,7 @@ namespace ice
 
     template<uint32_t Size, typename CharType>
     template<uint32_t ArraySize>
-    inline StackString<Size, CharType>::StackString(CharType(&char_array)[ArraySize]) noexcept
+    inline StackString<Size, CharType>::StackString(CharType (&char_array)[ArraySize]) noexcept
         : StackString{ ice::BasicString<CharType>{ char_array } }
     {
     }
@@ -148,7 +148,7 @@ namespace ice
     template<uint32_t Size, typename CharType>
     inline auto StackString<Size, CharType>::operator=(ice::BasicString<CharType> other) noexcept -> StackString<Size, CharType>&
     {
-        _size = ice::min(Size -1, ice::string::size(other));
+        _size = ice::min(Size - 1, ice::string::size(other));
         ice::memcpy(_data, ice::string::data(other), sizeof(value_type) * _size);
         _data[_size] = value_type{ 0 };
         return *this;

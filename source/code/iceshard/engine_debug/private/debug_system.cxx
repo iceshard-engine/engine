@@ -8,8 +8,8 @@ namespace iceshard::debug
     namespace detail
     {
 
-        using DebugSystemCreateFunc = auto(core::allocator& alloc, iceshard::Engine&) -> DebugSystem*;
-        using DebugSystemDestroyFunc = void(core::allocator& alloc, DebugSystem*);
+        using DebugSystemCreateFunc = auto (core::allocator& alloc, iceshard::Engine&) -> DebugSystem*;
+        using DebugSystemDestroyFunc = void (core::allocator& alloc, DebugSystem*);
 
         class IceDebugSystemModule : public DebugSystemModule
         {

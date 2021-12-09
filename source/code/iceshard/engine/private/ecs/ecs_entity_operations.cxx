@@ -302,9 +302,9 @@ namespace ice::ecs
     }
 
     void queue_set_archetype_with_data(
-        ice::ecs::EntityOperations& entity_operations, 
-        ice::Span<ice::ecs::Entity const> entities, 
-        ice::ecs::Archetype archetype, 
+        ice::ecs::EntityOperations& entity_operations,
+        ice::Span<ice::ecs::Entity const> entities,
+        ice::ecs::Archetype archetype,
         ice::ecs::EntityOperations::ComponentInfo component_info,
         ice::Span<ice::Data> component_data,
         bool notify_changes
@@ -359,7 +359,7 @@ namespace ice::ecs
         component_info_ptr->names = ice::Span<ice::StringID const>{ names_ptr, component_count };
         component_info_ptr->sizes = ice::Span<ice::u32 const>{ sizes_ptr, component_count };
         component_info_ptr->offsets = ice::Span<ice::u32 const>{ offsets_ptr, component_count };
-        
+
         // Copy over component data
         void const* const data_beg = handle_loc;
 

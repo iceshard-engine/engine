@@ -52,13 +52,13 @@ namespace ice::detail
     static uint32_t log_header_size = 0;
 
 
-    using RegisterLogTagFn = void(
+    using RegisterLogTagFn = void (
         ice::LogTagDefinition tag_definition
     ) noexcept;
 
     extern RegisterLogTagFn* register_log_tag_fn;
 
-    using LogFn = void(
+    using LogFn = void (
         ice::LogSeverity severity,
         ice::LogTag tag,
         ice::String message,
@@ -68,7 +68,7 @@ namespace ice::detail
 
     extern LogFn* log_fn;
 
-    using AssertFn = void(
+    using AssertFn = void (
         ice::String condition,
         ice::String message,
         fmt::format_args args,

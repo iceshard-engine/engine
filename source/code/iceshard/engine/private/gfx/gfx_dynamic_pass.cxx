@@ -60,7 +60,8 @@ namespace ice::gfx
         ice::Span<ice::StringID const> dependencies
     ) noexcept
     {
-        ice::pod::array::push_back(_entries,
+        ice::pod::array::push_back(
+            _entries,
             Entry{
                 .name = name,
                 .dependency_offset = ice::size(_dependencies),

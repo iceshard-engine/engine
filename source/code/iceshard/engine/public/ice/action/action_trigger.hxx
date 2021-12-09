@@ -6,7 +6,11 @@
 namespace ice::action
 {
 
-    using ActionTriggerHandler = bool(ice::Shard const& user_shard, ice::Shard const& event_shard, ice::f32 stage_time_elapsed) noexcept;
+    using ActionTriggerHandler = bool (
+        ice::Shard const& user_shard,
+        ice::Shard const& event_shard,
+        ice::f32 stage_time_elapsed
+    ) noexcept;
 
     struct ActionTriggerDefinition
     {

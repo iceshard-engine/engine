@@ -145,7 +145,8 @@ namespace ice
             MetadataEntryType data_type;
             ice::u16 data_count;
 
-            union {
+            union
+            {
                 ice::i32 value_int;
                 ice::f32 value_float;
                 MetadataEntryBuffer value_buffer;

@@ -14,11 +14,13 @@ class Uncrustify extends Exec
         cmd ..= " #{args.input}" if args.mode == 'check'
         cmd ..= " --check" if args.mode == 'check'
 
-        cmd ..= " -f #{args.input}" if args.mode == 'diff' or args.mode == 'replace'
+        cmd ..= " -i #{args.input}" if args.mode == 'replace'
+        cmd ..= " -f #{args.input}" if args.mode == 'diff'
         cmd ..= " -o #{args.output}" if args.mode == 'diff'
 
         cmd ..= " --if-changed" if args.mode == 'diff'
         cmd ..= " --replace" if args.mode == 'replace'
+        cmd ..= " --no-backup" if args.mode == 'replace'
 
         cmd ..= " > nul 2>&1" if args.mode == 'check' and args.quiet
         (super cmd) == 0

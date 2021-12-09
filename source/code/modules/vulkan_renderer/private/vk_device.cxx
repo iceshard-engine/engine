@@ -234,7 +234,7 @@ namespace ice::render::vk
         ice::u64 reference_count = 0;
         for (RenderSubPass const& subpass_info : info.subpasses)
         {
-             reference_count += subpass_info.color_attachments.size()
+            reference_count += subpass_info.color_attachments.size()
                 + subpass_info.input_attachments.size()
                 + 1;
 
@@ -1040,11 +1040,6 @@ namespace ice::render::vk
         vkDestroyImage(_vk_device, image_ptr->vk_image, nullptr);
         _allocator.destroy(image_ptr);
     }
-
-    /*auto VulkanRenderDevice::queue_count() const noexcept -> ice::u32
-    {
-        return ice::pod::array::size(_vk_queues);
-    }*/
 
     auto VulkanRenderDevice::create_queue(
         ice::render::QueueID queue_id,

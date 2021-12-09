@@ -109,7 +109,7 @@ namespace ice::ecs
     ) noexcept;
 
 
-    template<ice::ecs::Component ...Components>
+    template<ice::ecs::Component... Components>
     void queue_set_archetype_with_data(
         ice::ecs::EntityOperations& entity_operations,
         ice::ecs::Entity entity,

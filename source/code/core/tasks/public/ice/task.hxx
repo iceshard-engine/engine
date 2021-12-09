@@ -102,7 +102,7 @@ namespace ice
             return TaskAwaitable{ _coroutine };
         }
 
-        auto operator co_await() const&& noexcept
+        auto operator co_await() const && noexcept
         {
             struct TaskAwaitable : AwaitableBase
             {
