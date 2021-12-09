@@ -1,6 +1,7 @@
 #pragma once
-#include <ice/input/input_types.hxx>
+#include <ice/stringid.hxx>
 #include <ice/unique_ptr.hxx>
+#include <ice/input/input_types.hxx>
 
 namespace ice
 {

@@ -1,5 +1,6 @@
 #include <ice/asset_module.hxx>
 #include <ice/asset_system.hxx>
+#include <ice/asset_pipeline.hxx>
 #include <ice/pod/array.hxx>
 #include <ice/memory/memory_globals.hxx>
 #include <ice/module_register.hxx>

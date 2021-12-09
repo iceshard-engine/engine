@@ -2,7 +2,6 @@
 #include <ice/log.hxx>
 #include <ice/assert.hxx>
 #include <ice/stringid.hxx>
-
 #include "log_internal.hxx"
 
 namespace ice
@@ -17,6 +16,8 @@ namespace ice
             LogFn** log_fn = &ice::detail::log_fn;
             AssertFn** assert_fn = &ice::detail::assert_fn;
         };
+
+        LogState* internal_log_state = nullptr;
 
     } // namespace detail
 

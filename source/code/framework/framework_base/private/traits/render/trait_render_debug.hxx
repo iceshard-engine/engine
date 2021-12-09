@@ -1,6 +1,7 @@
 #pragma once
 #include <ice/gfx/gfx_trait.hxx>
 #include <ice/gfx/gfx_stage.hxx>
+#include <ice/data.hxx>
 
 namespace ice
 {

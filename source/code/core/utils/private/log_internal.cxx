@@ -12,7 +12,7 @@ namespace ice::detail
     LogState::~LogState() noexcept
     { }
 
-    auto LogState::register_tag(ice::LogTagDefinition tag_def) noexcept
+    void LogState::register_tag(ice::LogTagDefinition tag_def) noexcept
     {
         ice::map::set(_tags, tag_def.tag, ice::HeapString<char>{ _allocator, tag_def.name });
     }
