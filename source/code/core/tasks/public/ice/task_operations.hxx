@@ -48,7 +48,7 @@ namespace ice
 
     template<typename T>
     concept TaskScheduler = requires(T t) {
-        { &T::schedule_internal } -> std::convertible_to<void(T::*)(ice::ScheduleOperation<T>*, typename ice::ScheduleOperation<T>::DataMemberType)noexcept>;
+        { &T::schedule_internal } -> std::convertible_to<void (T::*)(ice::ScheduleOperation<T>*, typename ice::ScheduleOperation<T>::DataMemberType)noexcept>;
     };
 
     template<typename T> requires ice::TaskScheduler<T>

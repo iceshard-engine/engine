@@ -76,7 +76,7 @@ namespace ice::render::vk
     };
 
     struct AllocationBlock
-    {;
+    {
         ice::i16 memory_type_index = -1;
         ice::u16 block_identifier = 0;
         AllocationBlockInfo const* info = nullptr;

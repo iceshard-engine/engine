@@ -35,7 +35,7 @@ namespace ice::math
         static_assert(
             Mat::count_columns == Mat::count_rows,
             "Only even martices can be used with 'core::math::identity()'"
-            );
+        );
 
         Mat result{ };
         for (u32 col = 0; col < Mat::count_columns; ++col)

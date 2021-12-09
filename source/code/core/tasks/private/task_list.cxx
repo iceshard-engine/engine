@@ -70,12 +70,14 @@ namespace ice
 
         // Try to aquire the pointer to the currently mutable task list
         //  Leave behind a nullptr value, so neither the swap not another aquire will pass their checks.
-        while (_mutable_task_list.compare_exchange_weak(
-            expected_list,
-            nullptr,
-            std::memory_order::memory_order_relaxed,
-            std::memory_order::memory_order_acquire
-        ) == false)
+        while (
+            _mutable_task_list.compare_exchange_weak(
+                expected_list,
+                nullptr,
+                std::memory_order::memory_order_relaxed,
+                std::memory_order::memory_order_acquire
+            ) == false
+        )
         {
             expected_list = _task_lists[_mutable_task_list_index];
         }
@@ -97,12 +99,14 @@ namespace ice
         // Try to replace the current task list with the next one in order.
         //  If the replacement succeeds we have now explicit access to the `current_mutable_list`
         ice::TaskList* expected_list = current_mutable_list;
-        while (_mutable_task_list.compare_exchange_weak(
-            expected_list,
-            new_mutable_list,
-            std::memory_order::memory_order_acq_rel,
-            std::memory_order::memory_order_acquire
-        ) == false)
+        while (
+            _mutable_task_list.compare_exchange_weak(
+                expected_list,
+                new_mutable_list,
+                std::memory_order::memory_order_acq_rel,
+                std::memory_order::memory_order_acquire
+            ) == false
+        )
         {
             expected_list = current_mutable_list;
         }

@@ -293,7 +293,7 @@ namespace ice::trait
 
         render_device.create_resourcesets(
             { &_render_cache->_terrain_resource_layout, 1 },
-            { &_render_cache->_terrain_resources , 1 }
+            { &_render_cache->_terrain_resources, 1 }
         );
 
         SamplerInfo sampler_info{
