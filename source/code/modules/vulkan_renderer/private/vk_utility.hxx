@@ -7,6 +7,8 @@
 #include <ice/render/render_image.hxx>
 #include <ice/render/render_resource.hxx>
 #include <ice/render/render_pipeline.hxx>
+#include <ice/render/render_buffer.hxx>
+
 #include "vk_include.hxx"
 
 

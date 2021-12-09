@@ -3,6 +3,7 @@
 #include <ice/ecs/ecs_data_block.hxx>
 #include <ice/ecs/ecs_query_details.hxx>
 #include <ice/memory/pointer_arithmetic.hxx>
+#include <ice/pod/array.hxx>
 #include <ice/span.hxx>
 
 namespace ice::ecs

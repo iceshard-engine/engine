@@ -1,6 +1,10 @@
 #pragma once
 #include <ice/log.hxx>
 
+#ifdef assert
+#error Assert is defined!
+#endif
+
 namespace ice::detail
 {
 

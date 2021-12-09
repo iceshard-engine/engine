@@ -1,4 +1,5 @@
 #include <ice/ecs/ecs_entity_tracker.hxx>
+#include <ice/ecs/ecs_entity_operations.hxx>
 #include <ice/pod/hash.hxx>
 #include <ice/assert.hxx>
 

@@ -1,6 +1,7 @@
 #pragma once
 #include <ice/game_render_traits.hxx>
 #include <ice/render/render_declarations.hxx>
+#include <ice/data.hxx>
 
 namespace ice
 {

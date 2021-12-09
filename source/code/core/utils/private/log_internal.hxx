@@ -2,6 +2,10 @@
 #include <ice/map.hxx>
 #include <ice/heap_string.hxx>
 #include <ice/log_tag.hxx>
+#include <ice/log_severity.hxx>
+#include <ice/log.hxx>
+
+#include <fmt/format.h>
 
 namespace ice::detail
 {
@@ -12,7 +16,7 @@ namespace ice::detail
         LogState(ice::Allocator& alloc) noexcept;
         ~LogState() noexcept;
 
-        auto register_tag(ice::LogTagDefinition tag_def) noexcept;
+        void register_tag(ice::LogTagDefinition tag_def) noexcept;
 
         auto tag_name(ice::LogTag tag) const noexcept -> ice::String;
 
@@ -23,8 +27,7 @@ namespace ice::detail
         ice::Map<ice::LogTag, ice::HeapString<>> _tags;
     };
 
-    static LogState* internal_log_state = nullptr;
-
+    extern LogState* internal_log_state;
 
     void default_register_tag_fn(
         ice::LogTagDefinition tag_def
@@ -39,7 +42,7 @@ namespace ice::detail
     ) noexcept;
 
     void default_assert_fn(
-        ice::LogTag tag,
+        ice::String condition,
         ice::String message,
         fmt::format_args args,
         ice::detail::LogLocation location
@@ -70,7 +73,7 @@ namespace ice::detail
         ice::String message,
         fmt::format_args args,
         ice::detail::LogLocation location
-        ) noexcept;
+    ) noexcept;
 
     extern AssertFn* assert_fn;
 
