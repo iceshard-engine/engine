@@ -65,26 +65,14 @@ namespace ice::ecs
         ice::ecs::EntitySlot slot
     ) noexcept -> ice::ecs::EntitySlotInfo
     {
-        union
-        {
-            ice::ecs::EntitySlot slot;
-            ice::ecs::EntitySlotInfo info;
-        } const helper{ .slot = slot };
-
-        return helper.info;
+        return std::bit_cast<ice::ecs::EntitySlotInfo>(slot);
     }
 
     constexpr auto entity_handle_info(
         ice::ecs::EntityHandle handle
     ) noexcept -> ice::ecs::EntityHandleInfo
     {
-        union
-        {
-            ice::ecs::EntityHandle handle;
-            ice::ecs::EntityHandleInfo info;
-        } const helper{ .handle = handle };
-
-        return helper.info;
+        return std::bit_cast<ice::ecs::EntityHandleInfo>(handle);
     }
 
 } // namespace ice::ecs

@@ -65,24 +65,14 @@ namespace ice::input
         ice::input::Device device
     ) noexcept -> ice::input::DeviceHandle
     {
-        union
-        {
-            Device device;
-            DeviceHandle device_handle;
-        } converter{ .device = device };
-        return converter.device_handle;
+        return std::bit_cast<ice::input::DeviceHandle>(device);
     }
 
     inline auto make_device(
         ice::input::DeviceHandle handle
     ) noexcept -> ice::input::Device
     {
-        union
-        {
-            Device device;
-            DeviceHandle device_handle;
-        } converter{ .device_handle = handle };
-        return converter.device;
+        return std::bit_cast<ice::input::Device>(handle);
     }
 
 } // ice::input

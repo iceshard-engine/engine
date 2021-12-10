@@ -47,18 +47,11 @@ namespace ice::ecs
             ice::ecs::Entity entity
         ) noexcept -> ice::ecs::EntityHandle
         {
-            union
-            {
-                ice::ecs::EntityHandleInfo info;
-                ice::ecs::EntityHandle handle;
-            } const helper{
-                .info = {
+            ice::ecs::EntityHandleInfo const info{
                     .entity = entity,
                     .slot = ice::ecs::EntitySlot::Invalid
-                }
             };
-
-            return helper.handle;
+            return std::bit_cast<ice::ecs::EntityHandle>(info);
         }
 
         auto allocate_operation_nodes(
