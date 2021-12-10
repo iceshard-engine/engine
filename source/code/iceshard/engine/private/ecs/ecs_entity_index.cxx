@@ -19,13 +19,7 @@ namespace ice::ecs
             ice::ecs::Entity entity
         ) noexcept -> ice::ecs::detail::EntityInfo
         {
-            union
-            {
-                ice::ecs::Entity entity;
-                ice::ecs::detail::EntityInfo info;
-            } const helper{ .entity = entity };
-
-            return helper.info;
+            return std::bit_cast<ice::ecs::detail::EntityInfo>(entity);
         }
 
         auto make_entity(
@@ -33,18 +27,12 @@ namespace ice::ecs
             ice::u32 generation
         ) noexcept -> ice::ecs::Entity
         {
-            union
-            {
-                ice::ecs::detail::EntityInfo info;
-                ice::ecs::Entity entity;
-            } const helper{
-                .info = {
-                    .index = index,
-                    .generation = generation
-                }
+            ice::ecs::detail::EntityInfo const info{
+                .index = index,
+                .generation = generation
             };
 
-            return helper.entity;
+            return std::bit_cast<ice::ecs::Entity>(info);
         }
 
     } // namespace detail
