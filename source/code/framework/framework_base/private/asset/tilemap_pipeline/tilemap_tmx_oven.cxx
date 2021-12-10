@@ -349,7 +349,8 @@ namespace ice
                             detail::get_attrib(node_polygon, attrib, "points");
                             detail::attrib_value(attrib, points);
 
-                            parse_points_string(points,
+                            parse_points_string(
+                                points,
                                 [&](ice::vec2f point) noexcept
                                 {
                                     vertice_count += 1;
@@ -412,7 +413,9 @@ namespace ice
             return false;
         }
 
-        parse_node_data_csv(node_data, [&](ice::u32 tile_value) noexcept
+        parse_node_data_csv(
+            node_data,
+            [&](ice::u32 tile_value) noexcept
             {
                 tilemap_info.tile_count += (tile_value != 0);
             }
@@ -572,7 +575,8 @@ namespace ice
 
                                 objects->vertex_count = 0;
 
-                                parse_points_string(points,
+                                parse_points_string(
+                                    points,
                                     [&](ice::vec2f point) noexcept
                                     {
                                         //vertices[objects->vertex_count] = pos + (y_offset + vec2f{ point.x, -point.y });
@@ -678,7 +682,9 @@ namespace ice
         detail::attrib_value(attrib, layer.size.y);
 
         ice::u32 total_tile_count = 0;
-        parse_node_data_csv(node_data, [&](ice::u32 tile_value) noexcept
+        parse_node_data_csv(
+            node_data,
+            [&](ice::u32 tile_value) noexcept
             {
                 if (tile_value != 0)
                 {

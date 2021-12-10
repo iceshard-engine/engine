@@ -75,8 +75,7 @@ namespace ice::gfx
     {
         ice::pod::array::push_back(
             _passes,
-            IceGfxPassEntry
-            {
+            IceGfxPassEntry{
                 .queue_name = queue_name,
                 .pass_name = pass_name,
                 .pass = pass,

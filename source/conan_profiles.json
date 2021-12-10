@@ -10,6 +10,17 @@
                 "name": "Visual Studio",
                 "version": "16"
             }
+        },
+        "vs2022": {
+            "build_types": [
+                "Debug",
+                "Release"
+            ],
+            "compiler": {
+                "name": "Visual Studio",
+                "version": "17",
+                "conan_version": "16"
+            }
         }
     },
     "linux": {

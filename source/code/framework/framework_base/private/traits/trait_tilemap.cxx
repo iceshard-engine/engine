@@ -115,7 +115,7 @@ namespace ice
         {
             ice::TileMapInstance& tilemap_info = _tilemaps[0];
 
-            if (tilemap_info.tilemap->tile_collisions > 0 && tilemap_info.physics_ids == nullptr)
+            if (tilemap_info.tilemap->tile_collision_count > 0 && tilemap_info.physics_ids == nullptr)
             {
                 ice::TileMap const& tilemap = *tilemap_info.tilemap;
                 ice::Span<ice::TileCollision const> tile_collisions = { tilemap.tile_collisions, tilemap.tile_collision_count };

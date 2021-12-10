@@ -1,121 +1,120 @@
 {
-    "default": "dev",
-    "scenarios":
-    {
-        "dbg": [
-            {
-                "use_start_cmd": true,
-                "working_dir": "./build/",
-                "executable": "./build/bin/Windows-x64-Debug-MSVC-x64-v142/test/test.exe",
-                "options": [ ]
-            }
-        ],
-        "dev": [
-            {
-                "use_start_cmd": true,
-                "working_dir": "./build/",
-                "executable": "./build/bin/Windows-x64-Develop-MSVC-x64-v142/test/test.exe",
-                "options": [ ]
-            }
-        ],
-        "shaders": [
-            {
-                "working_dir": "./source/data/shaders/color",
-                "executable": "%VULKAN_SDK%/Bin/glslc.exe",
-                "options": ["--target-env=vulkan", "-fshader-stage=vert", "-o", "blue-vert.spv", "blue-vert.glsl"]
-            },
-            {
-                "working_dir": "./source/data/shaders/color",
-                "executable": "%VULKAN_SDK%/Bin/glslc.exe",
-                "options": ["--target-env=vulkan", "-fshader-stage=frag", "-o", "blue-frag.spv", "blue-frag.glsl"]
-            },
-            {
-                "working_dir": "./source/data/shaders/game2d",
-                "executable": "%VULKAN_SDK%/Bin/glslc.exe",
-                "options": ["--target-env=vulkan", "-fshader-stage=vert", "-o", "tiled-vtx.spv", "tiled-vtx.glsl"]
-            },
-            {
-                "working_dir": "./source/data/shaders/game2d",
-                "executable": "%VULKAN_SDK%/Bin/glslc.exe",
-                "options": ["--target-env=vulkan", "-fshader-stage=frag", "-o", "tiled-pix.spv", "tiled-pix.glsl"]
-            },
-            {
-                "working_dir": "./source/data/shaders/game2d",
-                "executable": "%VULKAN_SDK%/Bin/glslc.exe",
-                "options": ["--target-env=vulkan", "-fshader-stage=vert", "-o", "sprite-vtx.spv", "sprite-vtx.glsl"]
-            },
-            {
-                "working_dir": "./source/data/shaders/game2d",
-                "executable": "%VULKAN_SDK%/Bin/glslc.exe",
-                "options": ["--target-env=vulkan", "-fshader-stage=frag", "-o", "sprite-pix.spv", "sprite-pix.glsl"]
-            },
-            {
-                "working_dir": "./source/data/shaders/debug",
-                "executable": "%VULKAN_SDK%/Bin/glslc.exe",
-                "options": ["--target-env=vulkan", "-fshader-stage=vert", "-o", "debug-vert.spv", "debug-vert.glsl"]
-            },
-            {
-                "working_dir": "./source/data/shaders/debug",
-                "executable": "%VULKAN_SDK%/Bin/glslc.exe",
-                "options": ["--target-env=vulkan", "-fshader-stage=frag", "-o", "debug-frag.spv", "debug-frag.glsl"]
-            },
-            {
-                "working_dir": "./source/data/shaders/debug",
-                "executable": "%VULKAN_SDK%/Bin/glslc.exe",
-                "options": ["--target-env=vulkan", "-fshader-stage=vert", "-o", "pp-vert.spv", "pp-vert.glsl"]
-            },
-            {
-                "working_dir": "./source/data/shaders/debug",
-                "executable": "%VULKAN_SDK%/Bin/glslc.exe",
-                "options": ["--target-env=vulkan", "-fshader-stage=frag", "-o", "pp-frag.spv", "pp-frag.glsl"]
-            },
-            {
-                "working_dir": "./source/data/shaders/debug",
-                "executable": "%VULKAN_SDK%/Bin/glslc.exe",
-                "options": ["--target-env=vulkan", "-fshader-stage=vert", "-o", "imgui-vert.spv", "imgui-vert.glsl"]
-            },
-            {
-                "working_dir": "./source/data/shaders/debug",
-                "executable": "%VULKAN_SDK%/Bin/glslc.exe",
-                "options": ["--target-env=vulkan", "-fshader-stage=frag", "-o", "imgui-frag.spv", "imgui-frag.glsl"]
-            },
-            {
-                "working_dir": "./source/data/shaders/terrain",
-                "executable": "%VULKAN_SDK%/Bin/glslc.exe",
-                "options": ["--target-env=vulkan", "-fshader-stage=vert", "-o", "terrain-vert.spv", "terrain-hm-vert.glsl"]
-            },
-            {
-                "working_dir": "./source/data/shaders/terrain",
-                "executable": "%VULKAN_SDK%/Bin/glslc.exe",
-                "options": ["--target-env=vulkan", "-fshader-stage=tesscontrol", "-o", "terrain-tes-ctrl.spv", "terrain-hm-tes-ctrl.glsl"]
-            },
-            {
-                "working_dir": "./source/data/shaders/terrain",
-                "executable": "%VULKAN_SDK%/Bin/glslc.exe",
-                "options": ["--target-env=vulkan", "-fshader-stage=tesseval", "-o", "terrain-tes-eval.spv", "terrain-hm-tes-eval.glsl"]
-            },
-            {
-                "working_dir": "./source/data/shaders/terrain",
-                "executable": "%VULKAN_SDK%/Bin/glslc.exe",
-                "options": ["--target-env=vulkan", "-fshader-stage=geom", "-o", "terrain-geom.spv", "terrain-hm-geom.glsl"]
-            },
-            {
-                "working_dir": "./source/data/shaders/terrain",
-                "executable": "%VULKAN_SDK%/Bin/glslc.exe",
-                "options": ["--target-env=vulkan", "-fshader-stage=frag", "-o", "terrain-frag.spv", "terrain-hm-frag.glsl"]
-            }
-        ],
-        "hlsl": [
-            {
-                "working_dir": "./source/data/shaders/hlsl",
-                "executable": "C:/Program Files (x86)/Windows Kits/10/bin/10.0.19041.0/x64/dxc.exe",
-                "options": ["-T", "vs_5_0", "-E", "VertexShaderFunction", "-O3", "-Fo", "test-vert.cso", "test-vert.hlsl"]
-            },
-            {
-                "working_dir": "./source/data/shaders/hlsl",
-                "executable": "C:/Program Files (x86)/Windows Kits/10/bin/10.0.19041.0/x64/dxc.exe",
-                "options": ["-T", "ps_5_0", "-E", "PixelShaderFunction", "-O3", "-Fo", "test-frag.cso", "test-frag.hlsl"]
-            }
-        ]
-    }
+  "default": "dev",
+  "scenarios": {
+    "dbg": [
+      {
+        "use_start_cmd": true,
+        "working_dir": "./build/",
+        "executable": "./build/bin/x64/Windows-Debug-msvc-x64-v142/test/test.exe",
+        "options": []
+      }
+    ],
+    "dev": [
+      {
+        "use_start_cmd": true,
+        "working_dir": "./build/",
+        "executable": "./build/bin/x64/Windows-Release-msvc-x64-v142/test/test.exe",
+        "options": []
+      }
+    ],
+    "shaders": [
+      {
+        "working_dir": "./source/data/shaders/color",
+        "executable": "%VULKAN_SDK%/Bin/glslc.exe",
+        "options": [ "--target-env=vulkan", "-fshader-stage=vert", "-o", "blue-vert.spv", "blue-vert.glsl" ]
+      },
+      {
+        "working_dir": "./source/data/shaders/color",
+        "executable": "%VULKAN_SDK%/Bin/glslc.exe",
+        "options": [ "--target-env=vulkan", "-fshader-stage=frag", "-o", "blue-frag.spv", "blue-frag.glsl" ]
+      },
+      {
+        "working_dir": "./source/data/shaders/game2d",
+        "executable": "%VULKAN_SDK%/Bin/glslc.exe",
+        "options": [ "--target-env=vulkan", "-fshader-stage=vert", "-o", "tiled-vtx.spv", "tiled-vtx.glsl" ]
+      },
+      {
+        "working_dir": "./source/data/shaders/game2d",
+        "executable": "%VULKAN_SDK%/Bin/glslc.exe",
+        "options": [ "--target-env=vulkan", "-fshader-stage=frag", "-o", "tiled-pix.spv", "tiled-pix.glsl" ]
+      },
+      {
+        "working_dir": "./source/data/shaders/game2d",
+        "executable": "%VULKAN_SDK%/Bin/glslc.exe",
+        "options": [ "--target-env=vulkan", "-fshader-stage=vert", "-o", "sprite-vtx.spv", "sprite-vtx.glsl" ]
+      },
+      {
+        "working_dir": "./source/data/shaders/game2d",
+        "executable": "%VULKAN_SDK%/Bin/glslc.exe",
+        "options": [ "--target-env=vulkan", "-fshader-stage=frag", "-o", "sprite-pix.spv", "sprite-pix.glsl" ]
+      },
+      {
+        "working_dir": "./source/data/shaders/debug",
+        "executable": "%VULKAN_SDK%/Bin/glslc.exe",
+        "options": [ "--target-env=vulkan", "-fshader-stage=vert", "-o", "debug-vert.spv", "debug-vert.glsl" ]
+      },
+      {
+        "working_dir": "./source/data/shaders/debug",
+        "executable": "%VULKAN_SDK%/Bin/glslc.exe",
+        "options": [ "--target-env=vulkan", "-fshader-stage=frag", "-o", "debug-frag.spv", "debug-frag.glsl" ]
+      },
+      {
+        "working_dir": "./source/data/shaders/debug",
+        "executable": "%VULKAN_SDK%/Bin/glslc.exe",
+        "options": [ "--target-env=vulkan", "-fshader-stage=vert", "-o", "pp-vert.spv", "pp-vert.glsl" ]
+      },
+      {
+        "working_dir": "./source/data/shaders/debug",
+        "executable": "%VULKAN_SDK%/Bin/glslc.exe",
+        "options": [ "--target-env=vulkan", "-fshader-stage=frag", "-o", "pp-frag.spv", "pp-frag.glsl" ]
+      },
+      {
+        "working_dir": "./source/data/shaders/debug",
+        "executable": "%VULKAN_SDK%/Bin/glslc.exe",
+        "options": [ "--target-env=vulkan", "-fshader-stage=vert", "-o", "imgui-vert.spv", "imgui-vert.glsl" ]
+      },
+      {
+        "working_dir": "./source/data/shaders/debug",
+        "executable": "%VULKAN_SDK%/Bin/glslc.exe",
+        "options": [ "--target-env=vulkan", "-fshader-stage=frag", "-o", "imgui-frag.spv", "imgui-frag.glsl" ]
+      },
+      {
+        "working_dir": "./source/data/shaders/terrain",
+        "executable": "%VULKAN_SDK%/Bin/glslc.exe",
+        "options": [ "--target-env=vulkan", "-fshader-stage=vert", "-o", "terrain-vert.spv", "terrain-hm-vert.glsl" ]
+      },
+      {
+        "working_dir": "./source/data/shaders/terrain",
+        "executable": "%VULKAN_SDK%/Bin/glslc.exe",
+        "options": [ "--target-env=vulkan", "-fshader-stage=tesscontrol", "-o", "terrain-tes-ctrl.spv", "terrain-hm-tes-ctrl.glsl" ]
+      },
+      {
+        "working_dir": "./source/data/shaders/terrain",
+        "executable": "%VULKAN_SDK%/Bin/glslc.exe",
+        "options": [ "--target-env=vulkan", "-fshader-stage=tesseval", "-o", "terrain-tes-eval.spv", "terrain-hm-tes-eval.glsl" ]
+      },
+      {
+        "working_dir": "./source/data/shaders/terrain",
+        "executable": "%VULKAN_SDK%/Bin/glslc.exe",
+        "options": [ "--target-env=vulkan", "-fshader-stage=geom", "-o", "terrain-geom.spv", "terrain-hm-geom.glsl" ]
+      },
+      {
+        "working_dir": "./source/data/shaders/terrain",
+        "executable": "%VULKAN_SDK%/Bin/glslc.exe",
+        "options": [ "--target-env=vulkan", "-fshader-stage=frag", "-o", "terrain-frag.spv", "terrain-hm-frag.glsl" ]
+      }
+    ],
+    "hlsl": [
+      {
+        "working_dir": "./source/data/shaders/hlsl",
+        "executable": "C:/Program Files (x86)/Windows Kits/10/bin/10.0.19041.0/x64/dxc.exe",
+        "options": [ "-T", "vs_5_0", "-E", "VertexShaderFunction", "-O3", "-Fo", "test-vert.cso", "test-vert.hlsl" ]
+      },
+      {
+        "working_dir": "./source/data/shaders/hlsl",
+        "executable": "C:/Program Files (x86)/Windows Kits/10/bin/10.0.19041.0/x64/dxc.exe",
+        "options": [ "-T", "ps_5_0", "-E", "PixelShaderFunction", "-O3", "-Fo", "test-frag.cso", "test-frag.hlsl" ]
+      }
+    ]
+  }
 }

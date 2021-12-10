@@ -127,7 +127,7 @@ namespace ice::detail
         using promise_type = PromiseType;
     };
 
-    auto InternalPromiseType::get_return_object() noexcept -> InternalTask
+    inline auto InternalPromiseType::get_return_object() noexcept -> InternalTask
     {
         return InternalTask{ std::coroutine_handle<InternalPromiseType>::from_promise(*this) };
     }

@@ -32,13 +32,13 @@ namespace ice
 
     constexpr auto shard_create(ice::ShardID shard_id) noexcept -> ice::Shard;
 
-    constexpr auto shard_create(std::string_view sv) noexcept  -> ice::Shard;
+    constexpr auto shard_create(std::string_view sv) noexcept -> ice::Shard;
 
     template<typename T>
-    constexpr auto shard_create(std::string_view sv, T value) noexcept  -> ice::Shard;
+    constexpr auto shard_create(std::string_view sv, T value) noexcept -> ice::Shard;
 
     template<typename T>
-    constexpr auto shard_create(ice::Shard sv, T value) noexcept  -> ice::Shard;
+    constexpr auto shard_create(ice::Shard sv, T value) noexcept -> ice::Shard;
 
     template<typename T>
     constexpr bool shard_inspect(ice::Shard shard, T& value) noexcept;
@@ -170,7 +170,7 @@ namespace ice
         };
     }
 
-    constexpr auto shard_create(std::string_view sv) noexcept  -> ice::Shard
+    constexpr auto shard_create(std::string_view sv) noexcept -> ice::Shard
     {
         return ice::Shard{
             .name = ice::shard_name(sv),
@@ -203,7 +203,7 @@ namespace ice
     }
 
     template<typename T>
-    constexpr auto shard_create(ice::Shard shard, T payload) noexcept  -> ice::Shard
+    constexpr auto shard_create(ice::Shard shard, T payload) noexcept -> ice::Shard
     {
         static_assert(sizeof(T) <= sizeof(ice::Shard::payload), "The given payload is bigger than a shard can have attached.");
         static_assert(ice::detail::Constant_ShardPayloadID<T> != PayloadID::NotSet, "The given type cannot be used to attach a shard payload.");

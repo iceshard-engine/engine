@@ -4,7 +4,7 @@
 #include <ice/game_actor.hxx>
 
 #include <ice/world/world_trait.hxx>
-#include <ice/archetype/archetype_query.hxx>
+#include <ice/ecs/ecs_query.hxx>
 
 #include "devui_box2d.hxx"
 #include "box2d.hxx"
@@ -52,8 +52,8 @@ namespace ice
         ) noexcept override;
 
     private:
-        using DynamicQuery = ice::ComponentQuery<ice::Entity, ice::Transform2DDynamic&, ice::PhysicsBody&, ice::Actor const*>;
-        using PhysicsQuery = ice::ComponentQuery<ice::Entity, ice::PhysicsBody&, ice::PhysicsVelocity&>;
+        using DynamicQuery = ice::ecs::QueryDefinition<ice::ecs::EntityHandle, ice::Transform2DDynamic&, ice::PhysicsBody&, ice::Actor const*>;
+        using PhysicsQuery = ice::ecs::QueryDefinition<ice::ecs::EntityHandle, ice::PhysicsBody&, ice::PhysicsVelocity&>;
 
         ice::Engine* _engine = nullptr;
         b2World* _world = nullptr;

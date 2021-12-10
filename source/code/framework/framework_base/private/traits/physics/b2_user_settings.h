@@ -2,12 +2,12 @@
 #include <ice/base.hxx>
 #include <ice/allocator.hxx>
 #include <ice/log.hxx>
-#include <ice/entity/entity.hxx>
+#include <ice/ecs/ecs_entity.hxx>
 
 #include <box2d/b2_types.h>
 #include <box2d/b2_api.h>
 
-#include <varargs.h>
+#include <stdarg.h>
 // Tunable Constants
 
 /// You can use this to change the length scale used by your game.
@@ -23,7 +23,7 @@
 /// You can define this to inject whatever data you want in b2Body
 struct B2_API b2BodyUserData
 {
-    ice::Entity entity;
+    ice::ecs::EntityHandle entity;
 };
 
 /// You can define this to inject whatever data you want in b2Fixture
@@ -54,7 +54,7 @@ inline void b2Log(const char* string, ...)
     char final_message[512];
 
     va_list args;
-    va_start(args);
+    va_start(args, string);
     vsnprintf_s(final_message, _TRUNCATE, string, args);
     va_end(args);
 

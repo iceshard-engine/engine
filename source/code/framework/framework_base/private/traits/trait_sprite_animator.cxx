@@ -5,6 +5,7 @@
 
 #include <ice/engine_frame.hxx>
 #include <ice/world/world_portal.hxx>
+#include <ice/ecs/ecs_entity_storage.hxx>
 
 #include <ice/engine.hxx>
 #include <ice/engine_runner.hxx>
@@ -45,8 +46,8 @@ namespace ice
     {
         _assets = ice::addressof(engine.asset_system());
 
-        portal.storage().create_named_object<SpriteQuery>("ice.query.animator_sprites"_sid, portal.allocator(), portal.entity_storage().archetype_index());
-        portal.storage().create_named_object<AnimQuery>("ice.query.animator"_sid, portal.allocator(), portal.entity_storage().archetype_index());
+        portal.storage().create_named_object<SpriteQuery::Query>("ice.query.animator_sprites"_sid, portal.entity_storage().create_query(portal.allocator(), SpriteQuery{}));
+        portal.storage().create_named_object<AnimQuery::Query>("ice.query.animator"_sid, portal.entity_storage().create_query(portal.allocator(), AnimQuery{}));
     }
 
     void IceWorldTrait_SpriteAnimator::on_deactivate(
@@ -55,8 +56,8 @@ namespace ice
         ice::WorldPortal& portal
     ) noexcept
     {
-        portal.storage().destroy_named_object<SpriteQuery>("ice.query.animator_sprites"_sid);
-        portal.storage().destroy_named_object<AnimQuery>("ice.query.animator"_sid);
+        portal.storage().destroy_named_object<SpriteQuery::Query>("ice.query.animator_sprites"_sid);
+        portal.storage().destroy_named_object<AnimQuery::Query>("ice.query.animator"_sid);
     }
 
     void IceWorldTrait_SpriteAnimator::on_update(
@@ -65,10 +66,10 @@ namespace ice
         ice::WorldPortal& portal
     ) noexcept
     {
-        SpriteQuery& sprite_query = *portal.storage().named_object<SpriteQuery>("ice.query.animator_sprites"_sid);
-        SpriteQuery::ResultByEntity sprite_result = sprite_query.result_by_entity(frame.allocator(), portal.entity_storage());
+        SpriteQuery::Query const& sprite_query = *portal.storage().named_object<SpriteQuery::Query>("ice.query.animator_sprites"_sid);
 
-        sprite_result.for_each(
+        ice::ecs::query::for_each_entity(
+            sprite_query,
             [&](ice::Animation const& anim, ice::Sprite const& sprite) noexcept
             {
                 Asset sprite_asset = _assets->request(AssetType::Texture, sprite.material);
@@ -136,10 +137,10 @@ namespace ice
             }
         );
 
-        AnimQuery& anim_query = *portal.storage().named_object<AnimQuery>("ice.query.animator"_sid);
-        AnimQuery::ResultByEntity anim_result = anim_query.result_by_entity(frame.allocator(), portal.entity_storage());
+        AnimQuery::Query& anim_query = *portal.storage().named_object<AnimQuery::Query>("ice.query.animator"_sid);
 
-        anim_result.for_each(
+        ice::ecs::query::for_each_entity(
+            anim_query,
             [&](ice::Animation const& anim, ice::AnimationState& state, ice::SpriteTile& sprite_tile) noexcept
             {
                 Timer anim_timer = ice::timer::create_timer(runner.clock(), anim.speed, state.timestamp);

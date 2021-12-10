@@ -1,3 +1,36 @@
+
+.Configuration_Debug =
+[
+    .ConfigurationName = 'Debug'
+    .ConanConfiguration = 'Debug'
+]
+
+.Configuration_Develop =
+[
+    .ConfigurationName = 'Develop'
+    .ConanConfiguration = 'Release'
+]
+
+.Configuration_Profile =
+[
+    .ConfigurationName = 'Profile'
+    .ConanConfiguration = 'Release'
+]
+
+.Configuration_Release =
+[
+    .ConfigurationName = 'Release'
+    .ConanConfiguration = 'Release'
+]
+
+^ConfigurationList = {
+    .Configuration_Debug
+    .Configuration_Develop
+    .Configuration_Profile
+    .Configuration_Release
+}
+
+
 .Config_MSVC =
 [
     .Name = 'Config-MSVC'
@@ -7,19 +40,32 @@
         '/wd4127' // conditional expression is constant'
         '/permissive-'
         '/Z7'
-        ; '/fsanitize=address'
-        ; '/Zi'
-        ; '/FS'
+        '/EHsc'
     }
 ]
 
-.Config_Clang =
+.Config_MSVC_BinaryBase =
 [
-    .Name = 'Config-Clang'
-    .Requires = { 'clang' }
-    .BuildOptions = {
-        '-std=c++20'
+    .Name = 'MSVC-Binary'
+    .LinkOptions = {
+        '/DEBUG'
     }
+]
+
+.Config_MSVC_BinaryDll =
+[
+    Using( .Config_MSVC_BinaryBase )
+    .Requires = { 'MSVC', 'SharedLib' }
+]
+.Config_MSVC_BinaryApp =
+[
+    Using( .Config_MSVC_BinaryBase )
+    .Requires = { 'MSVC', 'WindowerApp' }
+]
+.Config_MSVC_BinaryApp2 =
+[
+    Using( .Config_MSVC_BinaryBase )
+    .Requires = { 'MSVC', 'ConsoleApp' }
 ]
 
 .Config_Debug =
@@ -28,6 +74,52 @@
     .Requires = { 'Debug' }
     .Defines = {
         'ICE_DEBUG'
+    }
+]
+
+.Config_Debug_MSVC =
+[
+    .Name = 'Config-Debug-MSVC'
+    .Requires = { 'Debug', 'MSVC' }
+    .Defines = {
+        '_DEBUG'
+    }
+    .BuildOptions = {
+        ' /Od'
+        ' /MDd'
+    }
+]
+
+.Config_Develop_MSVC =
+[
+    .Name = 'Config-Develop-MSVC'
+    .Requires = { 'Develop', 'MSVC' }
+    .Defines = { }
+    .BuildOptions = {
+        ' /O1'
+        ' /MD'
+    }
+]
+
+.Config_Profile_MSVC =
+[
+    .Name = 'Config-Profile-MSVC'
+    .Requires = { 'Profile', 'MSVC' }
+    .Defines = { }
+    .BuildOptions = {
+        ' /O2'
+        ' /MD'
+    }
+]
+
+.Config_Release_MSVC =
+[
+    .Name = 'Config-Release-MSVC'
+    .Requires = { 'Release', 'MSVC' }
+    .Defines = { }
+    .BuildOptions = {
+        ' /O2'
+        ' /MD'
     }
 ]
 
@@ -60,9 +152,15 @@
 
 ^GlobalRules = {
     .Config_MSVC
-    .Config_Clang
+    .Config_MSVC_BinaryDll
+    .Config_MSVC_BinaryApp
+    .Config_MSVC_BinaryApp2
     .Config_Debug
+    .Config_Debug_MSVC
     .Config_Develop
+    .Config_Develop_MSVC
     .Config_Profile
+    .Config_Profile_MSVC
     .Config_Release
+    .Config_Release_MSVC
 }

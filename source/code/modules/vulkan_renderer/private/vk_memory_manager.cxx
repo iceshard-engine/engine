@@ -577,9 +577,9 @@ namespace ice::render::vk
                 }
             }
 
-            ice::pod::array::push_back(array_,
-                DeviceMappingEntry
-                {
+            ice::pod::array::push_back(
+                array_,
+                DeviceMappingEntry{
                     .device_memory = vk_memory,
                     .offset = offset,
                     .size = size

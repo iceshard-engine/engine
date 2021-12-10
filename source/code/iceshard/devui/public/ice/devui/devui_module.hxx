@@ -15,8 +15,8 @@ namespace ice::devui
     namespace detail::v1
     {
 
-        using CreateFn = auto(ice::Allocator&) noexcept -> ice::devui::DevUISystem*;
-        using DestroyFn = void(ice::Allocator&, ice::devui::DevUISystem*) noexcept;
+        using CreateFn = auto (ice::Allocator&) noexcept -> ice::devui::DevUISystem*;
+        using DestroyFn = void (ice::Allocator&, ice::devui::DevUISystem*) noexcept;
 
         struct DevUI_API
         {

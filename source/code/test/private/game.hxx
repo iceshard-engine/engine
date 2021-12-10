@@ -15,7 +15,8 @@
 #include <ice/gfx/gfx_pass.hxx>
 
 #include <ice/memory/proxy_allocator.hxx>
-#include <ice/archetype/archetype_query.hxx>
+#include <ice/ecs/ecs_data_block.hxx>
+#include <ice/ecs/ecs_archetype_index.hxx>
 
 using ice::operator""_sid;
 using ice::operator""_uri;
@@ -47,9 +48,9 @@ public:
 
     ice::Engine* _current_engine;
 
-    ice::ArchetypeBlockAllocator _archetype_alloc;
-    ice::UniquePtr<ice::ArchetypeIndex> _archetype_index;
-    ice::EntityStorage _entity_storage;
+    ice::ecs::ArchetypeIndex _ecs_archetypes;
+    ice::ecs::DataBlockPool _ecs_block_pool;
+    ice::UniquePtr<ice::ecs::EntityStorage> _ecs_storage;
 
     ice::UniquePtr<ice::gfx::GfxDynamicPass> _game_gfx_pass;
     ice::UniquePtr<ice::gfx::GfxTrait> _trait_render_gfx{ ice::make_unique_null<ice::gfx::GfxTrait>() };

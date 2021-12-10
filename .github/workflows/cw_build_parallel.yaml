@@ -23,7 +23,6 @@ on:
 jobs:
   build_configurations:
     name: (${{ matrix.config }})
-    continue-on-error: true
     runs-on: ${{ inputs.host }}
     strategy:
       matrix:
@@ -51,7 +50,9 @@ jobs:
         cache-name: cache-conan-packages
       with:
         path: ~/.conan
-        key: ${{ runner.os }}-build-${{ env.cache-name }}
+        key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/conanfile.txt', '**/conan_profiles.json') }}
+        restore-keys: |
+          ${{ runner.os }}-build-${{ env.cache-name }}-
 
     - name: Build targets
       shell: pwsh
@@ -59,7 +60,7 @@ jobs:
         .\tools\gh_ice.ps1 init
         .\tools\gh_ice.ps1 build -t all-${{ inputs.architecture }}-${{ matrix.config }}
 
-    - name: Run tests
-      shell: pwsh
-      run: |
-        .\tools\gh_ice.ps1 build -t test-all-${{ inputs.architecture }}-${{ matrix.config }}
+    # - name: Run tests
+    #   shell: pwsh
+    #   run: |
+    #     .\tools\gh_ice.ps1 build -t test-all-${{ inputs.architecture }}-${{ matrix.config }}

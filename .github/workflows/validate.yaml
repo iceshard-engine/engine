@@ -33,6 +33,13 @@ jobs:
         PAYLOAD_CONTENT="${PAYLOAD_CONTENT//$'\r'/' '}"
         echo "::set-output name=payload::$PAYLOAD_CONTENT"
 
+    - id: validate_commit_messages
+      name: Potentially unsafe commit messages
+      if: ${{ contains(join(fromJSON(steps.load_event_payload.outputs.payload).commits.*.message, ';'), '`') == true }}
+      run: |
+          echo "::error::Commit messages contain potentially unsafe characters. Failing build process..."
+          exit 1
+
     - id: extract_ci_tags
       name: Extract CI tags from commits
       run: |
@@ -67,7 +74,7 @@ jobs:
   call_build_single_linux:
     name: 'Build (Linux)'
     needs: setup_workflow
-    if: ${{ contains(needs.setup_workflow.outputs.tags, 'parallel') == false }}
+    if: ${{ contains(needs.setup_workflow.outputs.tags, 'parallel') == false && contains(needs.setup_workflow.outputs.tags, 'linux') }}
     uses: iceshard-engine/engine/.github/workflows/cw_build_single.yaml@master
     with:
       host: ubuntu-latest
@@ -93,7 +100,7 @@ jobs:
   call_build_parallel_linux:
     name: 'Build (Linux)'
     needs: setup_workflow
-    if: ${{ contains(needs.setup_workflow.outputs.tags, 'parallel') == true }}
+    if: ${{ contains(needs.setup_workflow.outputs.tags, 'parallel') == true && contains(needs.setup_workflow.outputs.tags, 'linux') }}
     uses: iceshard-engine/engine/.github/workflows/cw_build_parallel.yaml@master
     with:
       host: ubuntu-latest

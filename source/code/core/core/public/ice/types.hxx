@@ -20,4 +20,54 @@ namespace ice
 
     using uptr = std::uintptr_t;
 
+    //template<typename T = void>
+    //struct ptr
+    //{
+    //    T* val;
+
+    //    constexpr auto operator*() noexcept -> T&
+    //    {
+    //        return *val;
+    //    }
+
+    //    constexpr auto operator*() const noexcept -> T const&
+    //    {
+    //        return *val;
+    //    }
+
+    //    constexpr auto operator->() noexcept -> T*
+    //    {
+    //        return val;
+    //    }
+
+    //    constexpr auto operator->() const noexcept -> T const*
+    //    {
+    //        return val;
+    //    }
+
+    //    constexpr auto operator T*() const noexcept
+    //    {
+    //        return val;
+    //    }
+    //};
+
+    //template<typename T>
+    //constexpr auto num_max() noexcept -> T
+    //{
+    //    return std::numeric_limits<T>::max();
+    //}
+
+    constexpr ice::f32 const f32_max = std::numeric_limits<ice::f32>::max();
+    constexpr ice::f64 const f64_max = std::numeric_limits<ice::f64>::max();
+
+    constexpr ice::i8 const i8_max = std::numeric_limits<ice::i8>::max();
+    constexpr ice::i16 const i16_max = std::numeric_limits<ice::i16>::max();
+    constexpr ice::i32 const i32_max = std::numeric_limits<ice::i32>::max();
+    constexpr ice::i64 const i64_max = std::numeric_limits<ice::i64>::max();
+
+    constexpr ice::u8 const u8_max = std::numeric_limits<ice::u8>::max();
+    constexpr ice::u16 const u16_max = std::numeric_limits<ice::u16>::max();
+    constexpr ice::u32 const u32_max = std::numeric_limits<ice::u32>::max();
+    constexpr ice::u64 const u64_max = std::numeric_limits<ice::u64>::max();
+
 } // namespace ice

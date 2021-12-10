@@ -23,7 +23,6 @@ on:
 jobs:
   build_configurations:
     name: (${{ join(fromJSON(inputs.configs), ', ') }})
-    continue-on-error: true
     runs-on: ${{ inputs.host }}
     steps:
     - uses: actions/checkout@v2
@@ -61,10 +60,10 @@ jobs:
         .\tools\gh_ice.ps1 init
         .\tools\gh_ice.ps1 build $BuildTargetsStr
 
-    - name: Run tests
-      shell: pwsh
-      run: |
-        $BuildTargets = "${{ join(fromJSON(inputs.configs), '","') }}" | ForEach-Object { "-t test-all-${{ inputs.architecture }}-$_" }
-        $BuildTargetsStr = $BuildTargets -join " "
+    # - name: Run tests
+    #   shell: pwsh
+    #   run: |
+    #     $BuildTargets = "${{ join(fromJSON(inputs.configs), '","') }}" | ForEach-Object { "-t test-all-${{ inputs.architecture }}-$_" }
+    #     $BuildTargetsStr = $BuildTargets -join " "
 
-        .\tools\gh_ice.ps1 build $BuildTargetsStr
+    #     .\tools\gh_ice.ps1 build $BuildTargetsStr

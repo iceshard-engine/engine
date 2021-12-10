@@ -8,9 +8,9 @@ namespace ice
     struct ModuleNegotiator;
     struct ModuleNegotiatorContext;
 
-    using ModuleProcLoad = void(ice::Allocator*, ice::ModuleNegotiatorContext*, ice::ModuleNegotiator*);
-    using ModuleProcUnload = void(ice::Allocator*);
-    using ModuleProcGetAPI = bool(ice::StringID_Hash, ice::u32, void**);
+    using ModuleProcLoad = void (ice::Allocator*, ice::ModuleNegotiatorContext*, ice::ModuleNegotiator*);
+    using ModuleProcUnload = void (ice::Allocator*);
+    using ModuleProcGetAPI = bool (ice::StringID_Hash, ice::u32, void**);
 
     struct ModuleNegotiator
     {

@@ -218,25 +218,6 @@ namespace ice
         IPT_FRAME_MARK;
         IPT_ZONE_SCOPED_NAMED("Logic Frame");
 
-        {
-            ice::EntityIndex& index = _engine.entity_index();
-            ice::Span<ice::Shard const> commands = _previous_frame->entity_commands().commands();
-
-            ice::Entity entity;
-            for (ice::Shard const& command : commands)
-            {
-                if (command == Shard_EntityDestroy && ice::shard_inspect(command, entity) && index.is_alive(entity))
-                {
-                    index.destroy(entity);
-
-                    ice::shards::push_back(
-                        _current_frame->shards(),
-                        command >> Shard_EntityDestroyed
-                    );
-                }
-            }
-        }
-
         for (ice::platform::Event const& ev : _events)
         {
             if (ev.type == ice::platform::EventType::WindowSizeChanged)
@@ -297,12 +278,36 @@ namespace ice
             }
         }
 
+        // #todo: We need to remove entity operations beein processed by each world!
         _world_tracker.update_active_worlds(*this);
+
+        // Clear operations before we can make more problems.
+        _previous_frame->entity_operations().clear();
 
         // Always update the gfx world last.
         _gfx_world->update(*this);
 
+
         _current_frame->start_all();
+
+        // Remove entities from the entity index
+        // We do this after task have been scheduled on threads because we have now some time before they finish.
+        {
+            ice::ecs::EntityIndex& index = _engine.entity_index();
+
+            // #todo: We need to move this before worlds update.
+            //  This is required so the index will return 'is_alive == false'
+            //  Currently even when the entity wont exist in a second it will still be seen as 'alive' until the next frame
+            ice::shards::inspect_each<ice::ecs::EntityHandle>(
+                _current_frame->shards(),
+                ice::ecs::Shard_EntityDestroyed,
+                [&index](ice::ecs::EntityHandle entity) noexcept
+                {
+                    ice::ecs::EntityHandleInfo const info = ice::ecs::entity_handle_info(entity);
+                    index.destroy(info.entity);
+                }
+            );
+        }
 
         ice::ManualResetEvent tasks_finished_event;
         ice::sync_manual_wait(excute_frame_task(), tasks_finished_event);

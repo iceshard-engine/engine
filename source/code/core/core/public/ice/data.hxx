@@ -32,7 +32,7 @@ namespace ice
     }
 
     template<typename T, ice::u32 Size>
-    constexpr auto data_view(T const(&object)[Size], ice::u32 alignment = alignof(T)) noexcept -> ice::Data
+    constexpr auto data_view(T const (&object)[Size], ice::u32 alignment = alignof(T)) noexcept -> ice::Data
     {
         return Data{
             .location = &object,

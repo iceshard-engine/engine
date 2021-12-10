@@ -25,8 +25,8 @@ namespace iceshard::debug
             }
         }
 
-        using DebugModuleCreateFunc = auto(core::allocator&, iceshard::debug::DebugSystem&) -> DebugModule*;
-        using DebugModuleReleaseFunc = void(core::allocator&, DebugModule*);
+        using DebugModuleCreateFunc = auto (core::allocator&, iceshard::debug::DebugSystem&) -> DebugModule*;
+        using DebugModuleReleaseFunc = void (core::allocator&, DebugModule*);
 
         class DebugModuleWrapper final : public DebugModule
         {

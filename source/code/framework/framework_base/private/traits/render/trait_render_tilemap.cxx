@@ -431,21 +431,24 @@ namespace ice
         {
             IPT_ZONE_SCOPED_NAMED("[GfxTrait] TileMap :: Update Camera");
 
-            ice::StringID_Hash camera_name;
+            ice::StringID_Hash camera_name = ice::StringID_Hash::Invalid;
             if (ice::shards::inspect_last(engine_frame.shards(), ice::Shard_SetDefaultCamera, camera_name))
             {
                 _render_camera = ice::StringID{ camera_name };
             }
 
-            ice::render::Buffer const camera_buffer = ice::gfx::find_resource<ice::render::Buffer>(
-                gfx_device.resource_tracker(),
-                _render_camera
-            );
-
-            if (_render_camera_buffer != camera_buffer && camera_buffer != ice::render::Buffer::Invalid)
+            if (camera_name != ice::stringid_hash(ice::stringid_invalid))
             {
-                _render_camera_buffer = camera_buffer;
-                update_resource_camera(gfx_device);
+                ice::render::Buffer const camera_buffer = ice::gfx::find_resource<ice::render::Buffer>(
+                    gfx_device.resource_tracker(),
+                    _render_camera
+                );
+
+                if (_render_camera_buffer != camera_buffer && camera_buffer != ice::render::Buffer::Invalid)
+                {
+                    _render_camera_buffer = camera_buffer;
+                    update_resource_camera(gfx_device);
+                }
             }
         }
 
@@ -735,7 +738,7 @@ namespace ice
             ice::render::Buffer buffer = operation.render_cache->tileset_properties[idx];
             if (idx >= image_count)
             {
-                buffer = operation.render_cache->tileset_properties[image_count -1];
+                buffer = operation.render_cache->tileset_properties[image_count - 1];
             }
 
             resource_updates[resource_update_count] = ResourceUpdateInfo

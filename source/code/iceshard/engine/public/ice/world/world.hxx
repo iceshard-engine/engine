@@ -1,6 +1,6 @@
 #pragma once
-#include <ice/entity/entity_storage.hxx>
 #include <ice/data_storage.hxx>
+#include <ice/ecs/ecs_entity_storage.hxx>
 
 namespace ice
 {
@@ -19,7 +19,7 @@ namespace ice
     {
     public:
         virtual auto allocator() noexcept -> ice::Allocator& = 0;
-        virtual auto entity_storage() noexcept -> ice::EntityStorage& = 0;
+        virtual auto entity_storage() noexcept -> ice::ecs::EntityStorage& = 0;
 
         virtual auto state_hint() const noexcept -> ice::WorldState = 0;
 

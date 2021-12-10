@@ -1,5 +1,6 @@
 #pragma once
 #include <ice/allocator.hxx>
+#include <ice/ecs/ecs_types.hxx>
 
 namespace ice
 {
@@ -8,7 +9,6 @@ namespace ice
     class Task;
 
     class DataStorage;
-    class EntityStorage;
     class World;
 
     class WorldPortal
@@ -21,7 +21,7 @@ namespace ice
         virtual auto allocator() noexcept -> ice::Allocator& = 0;
 
         virtual auto storage() noexcept -> ice::DataStorage& = 0;
-        virtual auto entity_storage() noexcept -> ice::EntityStorage& = 0;
+        virtual auto entity_storage() noexcept -> ice::ecs::EntityStorage& = 0;
 
         virtual void execute(ice::Task<void> task) noexcept = 0;
     };
