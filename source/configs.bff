@@ -44,6 +44,29 @@
     }
 ]
 
+.Config_Unix =
+[
+    .Name = 'Config-Unix'
+    .Requires = { 'Unix' }
+    .BuildOptions = {
+        '-Wall'
+        '-Werror'
+        '-Wno-error=deprecated-declarations'
+        '-Wno-switch'
+        '-std=c++20'
+    }
+]
+
+.Config_GCC_Tests =
+[
+    .Name = 'Config-Unix'
+    .Requires = { 'Unix', 'UnitTests' }
+    .BuildOptions = {
+        '-Wno-unused-variable'
+        '-Wno-unused-value'
+    }
+]
+
 .Config_MSVC_BinaryBase =
 [
     .Name = 'MSVC-Binary'
@@ -155,6 +178,8 @@
     .Config_MSVC_BinaryDll
     .Config_MSVC_BinaryApp
     .Config_MSVC_BinaryApp2
+    .Config_Unix
+    .Config_GCC_Tests
     .Config_Debug
     .Config_Debug_MSVC
     .Config_Develop

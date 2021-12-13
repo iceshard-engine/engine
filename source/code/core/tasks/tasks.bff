@@ -12,10 +12,19 @@
             'utils'
             'collections'
         }
-
-        .Libs = {
-            'Synchronization'
-        }
     ]
+
+    .Win32_Libs = 
+    [
+        .Name = 'Win32-Synchronization'
+        .Requires = { 'SDK-Windows-10' }
+        .Public = 
+        [
+            .Libs = {
+                'Synchronization'
+            }
+        ]
+    ]
+    .Rules = { .Win32_Libs }
 ]
 .Projects + .Project

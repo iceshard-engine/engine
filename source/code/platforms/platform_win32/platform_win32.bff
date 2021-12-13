@@ -5,6 +5,8 @@
     .BaseDir = '$WorkspaceCodeDir$/platforms/platform_win32'
     .Group = 'Platforms'
 
+    .Requires = { 'SDK-Windows-10' }
+
     .Private =
     [
         .Uses = {

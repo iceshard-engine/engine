@@ -3,6 +3,7 @@
     .Name = 'resource_system_tests'
     .Kind = .Kind_ConsoleApp
     .Group = 'Tests'
+    .Tags = { 'UnitTests' }
 
     .BaseDir = '$WorkspaceCodeDir$/systems/resource_system'
 
