@@ -508,7 +508,6 @@ namespace ice
         }
 
         ice::Data asset_data;
-        ice::BakeResult bake_result = BakeResult::Skipped;
 
         // Try compiling if needed
         if (asset_object.status == AssetStatus::Available_Raw)
@@ -677,7 +676,6 @@ namespace ice
             detail::AssetObject& asset_object = *asset_info.object;
 
             ice::Data asset_data;
-            ice::BakeResult bake_result = BakeResult::Skipped;
 
             // Try compiling if needed
             if (asset_object.status == AssetStatus::Available_Raw)

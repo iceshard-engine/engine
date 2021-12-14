@@ -40,31 +40,31 @@ namespace ice::gfx
     {
 
         template<typename T>
-        static constexpr GfxResource::Type Constant_GfxResourceType = GfxResource::Type::Invalid;
+        constexpr GfxResource::Type Constant_GfxResourceType = GfxResource::Type::Invalid;
 
         template<>
-        static constexpr GfxResource::Type Constant_GfxResourceType<ice::render::Framebuffer> = GfxResource::Type::Framebuffer;
+        constexpr GfxResource::Type Constant_GfxResourceType<ice::render::Framebuffer> = GfxResource::Type::Framebuffer;
 
         template<>
-        static constexpr GfxResource::Type Constant_GfxResourceType<ice::render::Renderpass> = GfxResource::Type::Renderpass;
+        constexpr GfxResource::Type Constant_GfxResourceType<ice::render::Renderpass> = GfxResource::Type::Renderpass;
 
         template<>
-        static constexpr GfxResource::Type Constant_GfxResourceType<ice::render::ResourceSetLayout> = GfxResource::Type::ResourceSetLayout;
+        constexpr GfxResource::Type Constant_GfxResourceType<ice::render::ResourceSetLayout> = GfxResource::Type::ResourceSetLayout;
 
         template<>
-        static constexpr GfxResource::Type Constant_GfxResourceType<ice::render::PipelineLayout> = GfxResource::Type::PipelineLayout;
+        constexpr GfxResource::Type Constant_GfxResourceType<ice::render::PipelineLayout> = GfxResource::Type::PipelineLayout;
 
         template<>
-        static constexpr GfxResource::Type Constant_GfxResourceType<ice::render::ResourceSet> = GfxResource::Type::ResourceSet;
+        constexpr GfxResource::Type Constant_GfxResourceType<ice::render::ResourceSet> = GfxResource::Type::ResourceSet;
 
         template<>
-        static constexpr GfxResource::Type Constant_GfxResourceType<ice::render::Buffer> = GfxResource::Type::Buffer;
+        constexpr GfxResource::Type Constant_GfxResourceType<ice::render::Buffer> = GfxResource::Type::Buffer;
 
         template<>
-        static constexpr GfxResource::Type Constant_GfxResourceType<ice::render::Image> = GfxResource::Type::Image;
+        constexpr GfxResource::Type Constant_GfxResourceType<ice::render::Image> = GfxResource::Type::Image;
 
         template<>
-        static constexpr GfxResource::Type Constant_GfxResourceType<ice::render::Sampler> = GfxResource::Type::Sampler;
+        constexpr GfxResource::Type Constant_GfxResourceType<ice::render::Sampler> = GfxResource::Type::Sampler;
 
         template<typename T>
         auto constexpr MemberPtr_GfxResourceValue() noexcept

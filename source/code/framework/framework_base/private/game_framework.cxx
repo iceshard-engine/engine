@@ -57,8 +57,8 @@ namespace ice
         ice::ResourceSystem& resource_system,
         ice::ModuleRegister& module_register
     ) noexcept
-        : _system_clock{ ice::clock::create_clock() }
-        , _allocator{ alloc }
+        : _allocator{ alloc }
+        , _system_clock{ ice::clock::create_clock() }
         , _resource_system{ resource_system }
         , _module_register{ module_register }
         , _current_engine{ nullptr }

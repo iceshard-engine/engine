@@ -190,7 +190,7 @@ namespace ice
             vertex += 1;
             vertex_color += 1;
 
-            for (ice::u32 idx = 0; idx < vertex_count; ++idx)
+            for (ice::i32 idx = 0; idx < vertex_count; ++idx)
             {
                 *vertex = ice::vec3f{ vertices[idx].x, vertices[idx].y, color.r } *Constant_PixelsInMeter;
                 *vertex_color = as_debug_color(color);

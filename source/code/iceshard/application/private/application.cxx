@@ -66,7 +66,14 @@ int main(int, char**)
 
         using ice::operator""_uri;
 
+        [[maybe_unused]]
         ice::u32 const mounted_modules = resource_system->mount("dynlib://./.."_uri);
+
+        ICE_LOG(
+            ice::LogSeverity::Info, ice::LogTag::Game,
+            "The game successfully mounted {} modules from the filesystem...",
+            mounted_modules
+        );
 
         ice::memory::ProxyAllocator game_alloc{ main_allocator, "game" };
         app_result = game_main(game_alloc, *resource_system);

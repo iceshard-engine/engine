@@ -35,8 +35,4 @@ namespace ice
 
     class WorldTrait;
 
-    auto create_trait_camera(
-        ice::Allocator& alloc
-    ) noexcept -> ice::UniquePtr<ice::WorldTrait>;
-
 } // namespace ice

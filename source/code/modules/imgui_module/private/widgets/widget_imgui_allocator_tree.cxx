@@ -61,7 +61,6 @@ namespace ice::devui
                 alloc_name = "<unnamed_allocator>";
             }
 
-            bool show_child_allocs = false;
             if (child_alloc == nullptr)
             {
                 ImGui::Text(alloc_name.data());

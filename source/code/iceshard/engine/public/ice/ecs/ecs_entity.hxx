@@ -78,7 +78,7 @@ namespace ice::ecs
 } // namespace ice::ecs
 
 template<>
-static constexpr ice::PayloadID ice::detail::Constant_ShardPayloadID<ice::ecs::Entity> = ice::payload_id("ice::ecs::Entity");
+constexpr ice::PayloadID ice::detail::Constant_ShardPayloadID<ice::ecs::Entity> = ice::payload_id("ice::ecs::Entity");
 
 template<>
-static constexpr ice::PayloadID ice::detail::Constant_ShardPayloadID<ice::ecs::EntityHandle> = ice::payload_id("ice::ecs::EntityHandle");
+constexpr ice::PayloadID ice::detail::Constant_ShardPayloadID<ice::ecs::EntityHandle> = ice::payload_id("ice::ecs::EntityHandle");

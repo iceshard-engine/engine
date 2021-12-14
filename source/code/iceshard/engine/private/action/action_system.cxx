@@ -1,4 +1,3 @@
-#pragma once
 #include <ice/action/action.hxx>
 #include <ice/action/action_trigger.hxx>
 #include <ice/action/action_system.hxx>

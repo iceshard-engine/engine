@@ -54,10 +54,10 @@ namespace ice::input
     {
 
         template<typename T>
-        static constexpr DeviceEventPayload payload_info{ };
+        constexpr DeviceEventPayload payload_info{ };
 
         template<>
-        static constexpr DeviceEventPayload payload_info<bool>
+        constexpr DeviceEventPayload payload_info<bool>
         {
             .type = 0x1,
             .size = 1,
@@ -65,7 +65,7 @@ namespace ice::input
         };
 
         template<>
-        static constexpr DeviceEventPayload payload_info<ice::i8>
+        constexpr DeviceEventPayload payload_info<ice::i8>
         {
             .type = 0x2,
             .size = 1,
@@ -73,7 +73,7 @@ namespace ice::input
         };
 
         template<>
-        static constexpr DeviceEventPayload payload_info<ice::i16>
+        constexpr DeviceEventPayload payload_info<ice::i16>
         {
             .type = 0x3,
             .size = 2,
@@ -81,7 +81,7 @@ namespace ice::input
         };
 
         template<>
-        static constexpr DeviceEventPayload payload_info<ice::u16>
+        constexpr DeviceEventPayload payload_info<ice::u16>
         {
             .type = 0x4,
             .size = 2,
@@ -89,7 +89,7 @@ namespace ice::input
         };
 
         template<>
-        static constexpr DeviceEventPayload payload_info<ice::i32>
+        constexpr DeviceEventPayload payload_info<ice::i32>
         {
             .type = 0x5,
             .size = 4,
@@ -97,7 +97,7 @@ namespace ice::input
         };
 
         template<>
-        static constexpr DeviceEventPayload payload_info<ice::f32>
+        constexpr DeviceEventPayload payload_info<ice::f32>
         {
             .type = 0x6,
             .size = 4,

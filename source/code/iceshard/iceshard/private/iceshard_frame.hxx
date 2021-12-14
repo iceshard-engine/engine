@@ -8,6 +8,7 @@
 #include <ice/memory/scratch_allocator.hxx>
 #include <ice/collections.hxx>
 #include <ice/pod/array.hxx>
+#include <atomic>
 
 #include "iceshard_task_executor.hxx"
 

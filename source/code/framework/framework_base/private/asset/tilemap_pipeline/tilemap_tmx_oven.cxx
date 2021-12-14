@@ -1,4 +1,6 @@
-#pragma once
+// #TODO: https://github.com/iceshard-engine/engine/issues/91
+#if ISP_WINDOWS
+
 #include "tilemap_tmx_oven.hxx"
 #include "tilemap_pipeline.hxx"
 
@@ -1050,3 +1052,5 @@ namespace ice
     }
 
 } // namespace ice
+
+#endif 

@@ -68,8 +68,6 @@ namespace ice::trait
 
             //co_await runner.graphics_frame().frame_start();
 
-            RenderDevice& device = runner.graphics_device().device();
-
             BufferUpdateInfo image_buffer_update[1]{
                 BufferUpdateInfo{.buffer = _terrain_settings_buffer, .data = ice::data_view(_terrain_settings) },
             };
@@ -85,8 +83,6 @@ namespace ice::trait
             using namespace render;
 
             //co_await runner.graphics_frame().frame_start();
-
-            RenderDevice& device = gfx_device.device();
 
             BufferUpdateInfo image_buffer_update[1]{
                 BufferUpdateInfo{.buffer = _temp_transfer_buffer, .data = { _image_info.data, _image_info.width * _image_info.height * 4 } },
@@ -421,8 +417,6 @@ namespace ice::trait
         using namespace ice::render;
 
         GfxDevice& gfx_device = runner.graphics_device();
-        GfxResourceTracker& gfx_resources = gfx_device.resource_tracker();
-
         RenderDevice& render_device = gfx_device.device();
 
         render_device.destroy_resourcesets({ &_render_cache->_terrain_resources, 1 });

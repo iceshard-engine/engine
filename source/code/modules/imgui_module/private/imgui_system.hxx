@@ -30,7 +30,7 @@ namespace ice::devui
         ice::Allocator& _allocator;
         ice::devui::DevUIExecutionKey _execution_key;
         ice::devui::ImGuiTrait _render_trait;
-        ice::devui::ImGui_AllocatorTreeWidget* _widget_alloc_tree = nullptr;
+        ice::devui::ImGui_AllocatorTreeWidget* _widget_alloc_tree;
 
         ice::pod::Array<ice::devui::DevUIWidget*> _widgets;
     };

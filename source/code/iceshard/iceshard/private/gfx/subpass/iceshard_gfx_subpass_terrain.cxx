@@ -50,10 +50,10 @@ namespace ice::gfx
             resourceset_bindings
         );
 
-        PipelinePushConstant push_constants[]{
-            PipelinePushConstant{ .shader_stage_flags = ShaderStageFlags::VertexStage, .offset = 0, .size = 16 },
-            //PipelinePushConstant{ .shader_stage_flags = ShaderStageFlags::VertexStage, .offset = 8, .size = 8 },
-        };
+        // PipelinePushConstant push_constants[]{
+        //     PipelinePushConstant{ .shader_stage_flags = ShaderStageFlags::VertexStage, .offset = 0, .size = 16 },
+        //     //PipelinePushConstant{ .shader_stage_flags = ShaderStageFlags::VertexStage, .offset = 8, .size = 8 },
+        // };
 
         PipelineLayout pipeline_layout = render_device.create_pipeline_layout(
             PipelineLayoutInfo{

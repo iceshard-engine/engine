@@ -4,6 +4,7 @@
 #include <ice/memory/forward_allocator.hxx>
 #include <ice/memory/pointer_arithmetic.hxx>
 #include <ice/stringid.hxx>
+#include <ice/assert.hxx>
 
 #include <rapidjson/document.h>
 
@@ -193,8 +194,12 @@ namespace ice
 
                 if constexpr (ice::build::is_release == false)
                 {
+                    [[maybe_unused]]
                     void const* hash_end = ice::memory::ptr_add(hash_it, hash_count * hash_type_size);
-                    //IS_ASSERT(core::memory::utils::pointer_distance(data._data, hash_end) < static_cast<int32_t>(data._size), "Moved past the data buffer!");
+                    ICE_ASSERT(
+                        ice::memory::ptr_distance(data._data, hash_end) < static_cast<ice::i32>(data._size), 
+                        "Moved past the data buffer!"
+                    );
                 }
 
                 ice::pod::array::resize(meta._meta_entries._hash, hash_count);
@@ -206,8 +211,12 @@ namespace ice
 
                 if constexpr (ice::build::is_release == false)
                 {
+                    [[maybe_unused]]
                     auto const value_end = ice::memory::ptr_add(value_it, hash_count * hash_type_size);
-                    //IS_ASSERT(core::memory::utils::pointer_distance(data._data, value_end) < static_cast<int32_t>(data._size), "Moved past the data buffer!");
+                    ICE_ASSERT(
+                        ice::memory::ptr_distance(data._data, value_end) < static_cast<ice::i32>(data._size), 
+                        "Moved past the data buffer!"
+                    );
                 }
 
                 ice::pod::array::resize(meta._meta_entries._data, value_count);
@@ -724,7 +733,10 @@ namespace ice
         ice::u32 const value_offset = *reinterpret_cast<ice::u32 const*>(it + 4);
         ice::u32 const data_offset = *reinterpret_cast<ice::u32 const*>(it + 8);
 
+        [[maybe_unused]]
         ice::u32 const hash_type_size = sizeof(*result_meta._meta_entries._hash._data);
+        
+        [[maybe_unused]]
         ice::u32 const value_type_size = sizeof(*result_meta._meta_entries._data._data);
 
         {
@@ -732,9 +744,11 @@ namespace ice
 
             if constexpr (ice::build::is_release == false)
             {
-                // #todo assert
-                //auto const hash_end = core::memory::utils::pointer_add(hash_it, hash_count * hash_type_size);
-                //IS_ASSERT(icecore::memory::utils::pointer_distance(data._data, hash_end) < static_cast<int32_t>(data._size), "Moved past the data buffer!");
+                auto const hash_end = core::memory::utils::pointer_add(hash_it, hash_count * hash_type_size);
+                ICE_ASSERT(
+                    ice::memory::ptr_distance(data._data, hash_end) < static_cast<ice::i32>(data._size), 
+                    "Moved past the data buffer!"
+                );
             }
 
             result_meta._meta_entries._hash._data = const_cast<ice::u32*>(
@@ -749,9 +763,11 @@ namespace ice
 
             if constexpr (ice::build::is_release == false)
             {
-                // #todo assert
-                //auto const value_end = core::memory::utils::pointer_add(value_it, value_count * value_type_size);
-                //IS_ASSERT(core::memory::utils::pointer_distance(data._data, value_end) <= static_cast<int32_t>(data._size), "Moved past the data buffer!");
+                auto const value_end = core::memory::utils::pointer_add(value_it, value_count * value_type_size);
+                ICE_ASSERT(
+                    ice::memory::ptr_distance(data._data, value_end) <= static_cast<ice::i32>(data._size), 
+                    "Moved past the data buffer!"
+                );
             }
 
             // #todo make a special Hash type for metadata objects, we DO NOT WANT ANY const_cast!!!

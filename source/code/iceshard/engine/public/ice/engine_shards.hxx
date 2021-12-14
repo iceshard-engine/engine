@@ -17,7 +17,7 @@ namespace ice
     {
 
         template<>
-        static constexpr ice::PayloadID Constant_ShardPayloadID<ice::World*> = ice::payload_id("ice::World*");
+        constexpr ice::PayloadID Constant_ShardPayloadID<ice::World*> = ice::payload_id("ice::World*");
 
     } // namespace detail
 

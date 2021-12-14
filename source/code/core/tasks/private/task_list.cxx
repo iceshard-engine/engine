@@ -1,6 +1,6 @@
-#pragma once
 #include <ice/task_list.hxx>
 #include <ice/assert.hxx>
+#include <atomic>
 
 namespace ice
 {
@@ -26,7 +26,7 @@ namespace ice
             bool const returned_task_list_successful = _owning_pointer.compare_exchange_strong(
                 expected_list,
                 _task_list,
-                std::memory_order::memory_order_release
+                std::memory_order::release
             );
 
             ICE_ASSERT(
@@ -74,8 +74,8 @@ namespace ice
             _mutable_task_list.compare_exchange_weak(
                 expected_list,
                 nullptr,
-                std::memory_order::memory_order_relaxed,
-                std::memory_order::memory_order_acquire
+                std::memory_order::relaxed,
+                std::memory_order::acquire
             ) == false
         )
         {
@@ -103,8 +103,8 @@ namespace ice
             _mutable_task_list.compare_exchange_weak(
                 expected_list,
                 new_mutable_list,
-                std::memory_order::memory_order_acq_rel,
-                std::memory_order::memory_order_acquire
+                std::memory_order::acq_rel,
+                std::memory_order::acquire
             ) == false
         )
         {

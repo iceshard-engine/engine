@@ -46,7 +46,7 @@ namespace ice
         ice::Vector<ice::UniquePtr<ice::ResourceIndex>> _index_list;
         ice::pod::Hash<ice::ResourceIndex*> _index_map;
 
-        ice::pod::Hash<ice::Resource const*> _known_resources;
+        ice::pod::Hash<ice::Resource*> _known_resources;
 
         ice::pod::Array<ice::ResourceEvent> _events;
         ice::pod::Array<ice::Resource*> _event_objects;
@@ -161,10 +161,10 @@ namespace ice
                     continue;
                 }
 
-                ice::Resource const* const resource = query.objects[idx];
+                ice::Resource* const resource = query.objects[idx];
                 ice::StringID const resouce_name = ice::stringid(resource->name());
 
-                ice::Resource const* const known_resource = ice::pod::hash::get(
+                ice::Resource* const known_resource = ice::pod::hash::get(
                     _known_resources,
                     ice::hash(resouce_name),
                     nullptr

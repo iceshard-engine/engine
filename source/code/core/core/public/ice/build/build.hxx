@@ -20,4 +20,11 @@ namespace ice::build
 
     static constexpr bool is_x64 = current_platform == Architecture::x64;
 
+
+    static constexpr bool is_msvc = current_platform == Compiler::MSVC;
+
+    static constexpr bool is_clang = current_platform == Compiler::Clang;
+
+    static constexpr bool is_gcc = current_platform == Compiler::GCC;
+
 } // namespace ice::build

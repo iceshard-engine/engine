@@ -1,5 +1,6 @@
 #pragma once
 #include <ice/allocator.hxx>
+#include <memory>
 
 namespace ice
 {

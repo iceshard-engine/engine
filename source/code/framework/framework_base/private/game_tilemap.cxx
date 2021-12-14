@@ -1,4 +1,3 @@
-#pragma once
 #include <ice/game_tilemap.hxx>
 
 namespace ice

@@ -97,7 +97,10 @@ void MyGame::on_app_startup(ice::Engine& engine, ice::gfx::GfxRunner& gfx_runner
         ice::ecs::Entity entities[10];
         entity_index.create_many(entities);
         {
+            [[maybe_unused]]
             auto a1 = archetype_index.register_archetype(ice::ecs::static_validation::Validation_Archetype_1);
+            
+            [[maybe_unused]]
             auto a2 = archetype_index.register_archetype(ice::ecs::static_validation::Validation_Archetype_2);
 
             ice::ecs::EntityStorage entity_storage{ alloc, archetype_index };
@@ -216,8 +219,13 @@ void MyGame::on_app_startup(ice::Engine& engine, ice::gfx::GfxRunner& gfx_runner
         }
     };
 
+    [[maybe_unused]]
     ice::input::InputEvent event_w{ };
+
+    [[maybe_unused]]
     ice::input::InputEvent event_a{ };
+
+    [[maybe_unused]]
     ice::input::InputEvent event_d{ };
 
     event_w.device = ice::input::make_device_handle(ice::input::DeviceType::Keyboard, ice::input::DeviceIndex{ 0 });

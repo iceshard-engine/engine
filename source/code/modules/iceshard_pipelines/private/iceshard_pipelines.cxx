@@ -201,7 +201,8 @@ namespace ice
 
 extern "C"
 {
-
+    // #TODO: https://github.com/iceshard-engine/engine/issues/92
+#if ISP_WINDOWS
     __declspec(dllexport) void ice_module_load(
         ice::Allocator* alloc,
         ice::ModuleNegotiatorContext* ctx,
@@ -216,5 +217,6 @@ extern "C"
     )
     {
     }
+#endif // #if ISP_WINDOWS
 
 } // extern "C"

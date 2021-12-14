@@ -250,7 +250,6 @@ namespace ice::ecs
             query_info = query_info.subspan(1);
         }
 
-        ice::u32 const query_condition_count = ice::size(query_info);
         ice::u32 const required_component_count = [](auto const& query_conditions) noexcept -> ice::u32
         {
             ice::u32 result = 0;

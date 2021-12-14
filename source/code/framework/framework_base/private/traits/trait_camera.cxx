@@ -154,8 +154,6 @@ namespace ice
         ice::WorldPortal& portal
     ) noexcept -> ice::Task<>
     {
-        ice::Allocator& alloc = frame.allocator();
-
         detail::QueryCamera::Query const* const camera_query = detail::get_camera_query(portal);
 
         ice::u32 const camera_count = ice::ecs::query::entity_count(*camera_query);

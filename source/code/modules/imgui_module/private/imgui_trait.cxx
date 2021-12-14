@@ -54,9 +54,9 @@ namespace ice::devui
     } // namespace detail
 
     ImGuiTrait::ImGuiTrait(ice::Allocator& alloc) noexcept
-        : _vertex_buffers{ alloc }
+        : _imgui_timer{ .clock = nullptr }
+        , _vertex_buffers{ alloc }
         , _index_buffers{ alloc }
-        , _imgui_timer{ .clock = nullptr }
     {
         ice::pod::array::reserve(_index_buffers, 10);
         ice::pod::array::reserve(_vertex_buffers, 10);
@@ -91,7 +91,7 @@ namespace ice::devui
         io.Fonts->GetTexDataAsRGBA32(&pixels, &font_texture_width, &font_texture_height);
 
         RenderDevice& device = gfx_device.device();
-        ice::u32 upload_size = font_texture_width * font_texture_height * 4 * sizeof(char);
+        // ice::u32 upload_size = font_texture_width * font_texture_height * 4 * sizeof(char);
         ice::render::ImageInfo font_info;
         font_info.type = ImageType::Image2D;
         font_info.usage = ImageUsageFlags::Sampled | ImageUsageFlags::TransferDst;

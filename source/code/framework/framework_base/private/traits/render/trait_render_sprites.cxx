@@ -318,8 +318,6 @@ namespace ice
     {
         IPT_ZONE_SCOPED_NAMED("[Trait] Sprites :: Update");
 
-        ice::gfx::GfxFrame& gfx_frame = runner.graphics_frame();
-
         detail::SpriteQuery::Query const& query = *portal.storage().named_object<detail::SpriteQuery::Query>(detail::SpriteQueryId);
 
         ice::u32 next_instance_idx = 0;
@@ -632,7 +630,6 @@ namespace ice
             ice::f32(tile_height) / ice::f32(image_data->height),
         };
 
-        ice::EngineFrame& frame = runner.current_frame();
         ice::gfx::GfxFrame& gfx_frame = runner.graphics_frame();
 
         ice::vec4f vertices[4];

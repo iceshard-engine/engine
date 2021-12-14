@@ -180,32 +180,32 @@ namespace ice
                 portal.entity_storage().create_query(_allocator, ObjectQuery{})
             );
 
-            GfxResourceTracker& gfxres = runner.graphics_device().resource_tracker();
-            RenderDevice& device = runner.graphics_device().device();
+            // GfxResourceTracker& gfxres = runner.graphics_device().resource_tracker();
+            // RenderDevice& device = runner.graphics_device().device();
 
-            Data vtx_shader_data = load_shader(engine.asset_system(), "/shaders/game2d/sprite-vtx"_sid);
-            Data pix_shader_data = load_shader(engine.asset_system(), "/shaders/game2d/sprite-pix"_sid);
+            // Data vtx_shader_data = load_shader(engine.asset_system(), "/shaders/game2d/sprite-vtx"_sid);
+            // Data pix_shader_data = load_shader(engine.asset_system(), "/shaders/game2d/sprite-pix"_sid);
 
-            ResourceSetLayoutBinding resourceset_binding[]{
-                ResourceSetLayoutBinding{
-                    .binding_index = 0,
-                    .resource_count = 1,
-                    .resource_type = ResourceType::SampledImage,
-                    .shader_stage_flags = ShaderStageFlags::FragmentStage
-                },
-                ResourceSetLayoutBinding{
-                    .binding_index = 1,
-                    .resource_count = 1,
-                    .resource_type = ResourceType::Sampler,
-                    .shader_stage_flags = ShaderStageFlags::FragmentStage
-                },
-                ResourceSetLayoutBinding{
-                    .binding_index = 2,
-                    .resource_count = 1,
-                    .resource_type = ResourceType::UniformBuffer,
-                    .shader_stage_flags = ShaderStageFlags::FragmentStage
-                },
-            };
+            // ResourceSetLayoutBinding resourceset_binding[]{
+            //     ResourceSetLayoutBinding{
+            //         .binding_index = 0,
+            //         .resource_count = 1,
+            //         .resource_type = ResourceType::SampledImage,
+            //         .shader_stage_flags = ShaderStageFlags::FragmentStage
+            //     },
+            //     ResourceSetLayoutBinding{
+            //         .binding_index = 1,
+            //         .resource_count = 1,
+            //         .resource_type = ResourceType::Sampler,
+            //         .shader_stage_flags = ShaderStageFlags::FragmentStage
+            //     },
+            //     ResourceSetLayoutBinding{
+            //         .binding_index = 2,
+            //         .resource_count = 1,
+            //         .resource_type = ResourceType::UniformBuffer,
+            //         .shader_stage_flags = ShaderStageFlags::FragmentStage
+            //     },
+            // };
 
             //_render.resourceset_layouts[0] = find_resource<ResourceSetLayout>(gfxres, GfxSubpass_Primitives::ResName_ResourceLayout);
             //_render.resourceset_layouts[1] = device.create_resourceset_layout({ resourceset_binding + 0, 3 });
@@ -334,8 +334,6 @@ namespace ice
             using namespace ice::gfx;
             using namespace ice::render;
 
-            RenderDevice& device = runner.graphics_device().device();
-
             //device.destroy_pipeline(_render.pipeline);
 
             //device.destroy_buffer(_render.buffer_inst);
@@ -364,10 +362,10 @@ namespace ice
             ice::WorldPortal& portal
         ) noexcept override
         {
-            static ice::StringID deps[]{
-                "test.stage.clear"_sid,
-                "camera.update_view"_sid,
-            };
+            // static ice::StringID deps[]{
+            //     "test.stage.clear"_sid,
+            //     "camera.update_view"_sid,
+            // };
 
             ObjectQuery::Query const& query = *portal.storage().named_object<ObjectQuery::Query>("game2d.level.query"_sid);
 
@@ -387,9 +385,6 @@ namespace ice
 
             auto update_graphics_task = [](ice::IceGame2DTrait* self, ice::EngineRunner& runner, Span<Obj2dTransform> xform_span) -> ice::Task<>
             {
-                ice::gfx::GfxFrame& gfx_frame = runner.graphics_frame();
-                ice::render::RenderDevice& device = runner.graphics_device().device();
-
                 co_await self->update_instances(runner.graphics_device().device(), xform_span);
             };
 

@@ -1,4 +1,3 @@
-#pragma once
 #include "iceshard_gfx_queue_group.hxx"
 #include "iceshard_gfx_queue.hxx"
 #include <ice/pod/hash.hxx>

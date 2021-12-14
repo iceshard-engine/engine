@@ -127,7 +127,6 @@ namespace ice
 
             ice::pod::array::reserve(thread_tasks, thread_alloc.Constant_BufferSize / sizeof(std::coroutine_handle<>) - 1);
 
-            ice::u32 loops = 0;
             while (_stop_requested == false)
             {
                 _task_lists.swap_and_aquire_tasks(thread_tasks);

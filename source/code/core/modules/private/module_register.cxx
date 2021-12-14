@@ -25,6 +25,8 @@ namespace ice
         static bool register_module(ModuleNegotiatorContext*, ice::StringID_Hash, ModuleProcGetAPI*) noexcept;
     };
 
+#if ISP_WINDOWS
+
     class Win32ModuleRegister final : public ModuleRegister
     {
     public:
@@ -226,5 +228,15 @@ namespace ice
     {
         return ice::make_unique<ModuleRegister, Win32ModuleRegister>(alloc, alloc);
     }
+
+#else
+
+    // #TODO: https://github.com/iceshard-engine/engine/issues/89
+    auto create_default_module_register(ice::Allocator& alloc) noexcept -> ice::UniquePtr<ModuleRegister>
+    {
+        return ice::make_unique_null<ModuleRegister>();
+    }
+
+#endif // #if ISP_WINDOWS
 
 } // namespace ice

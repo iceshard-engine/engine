@@ -2,7 +2,7 @@
 #include <ice/allocator.hxx>
 #include <ice/render/render_queue.hxx>
 #include <ice/gfx/gfx_queue.hxx>
-#include <ice/pod/array.hxx>
+#include <ice/pod/hash.hxx>
 
 namespace ice::gfx
 {

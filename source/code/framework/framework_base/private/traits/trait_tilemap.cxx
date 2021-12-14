@@ -48,7 +48,6 @@ namespace ice
                 {
                     ice::TileLayer const& layer = tilemap.layers[idx];
                     ice::Tile const* tiles = tilemap.tiles + layer.tile_offset;
-                    ice::IceTileLayer_RenderInfo& layer_render_info = render_info.layers[idx];
 
                     ice::memcpy(layer_tiles[idx].data(), tiles, layer.tile_count * sizeof(ice::Tile));
                 }
@@ -143,7 +142,6 @@ namespace ice
                             if (collision.tile_id == tiles[idx].tile_id)
                             {
                                 ice::TileObject const* const object = tilemap.objects + collision.object_offset;
-                                ice::vec2f const* const object_vertices = tilemap.object_vertices + object->vertex_offset;
 
                                 if (object->vertex_count > 0)
                                 {
