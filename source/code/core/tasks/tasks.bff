@@ -14,14 +14,26 @@
         }
     ]
 
-    .Win32_Libs = 
+    .Win32_Libs =
     [
         .Name = 'Win32-Synchronization'
         .Requires = { 'SDK-Windows-10' }
-        .Public = 
+        .Public =
         [
             .Libs = {
                 'Synchronization'
+            }
+        ]
+    ]
+    .Unix_Libs =
+    [
+        .Name = 'Win32-Synchronization'
+        .Requires = { 'POSIX' }
+
+        .Public =
+        [
+            .Libs = {
+                'pthread'
             }
         ]
     ]

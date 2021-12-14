@@ -32,7 +32,7 @@
             ],
             "compiler": {
                 "name": "clang",
-                "version": "11",
+                "version": "10",
                 "libcxx": "libc++"
             }
         },

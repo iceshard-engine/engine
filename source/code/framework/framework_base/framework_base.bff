@@ -32,8 +32,6 @@
 
     .Rule_Win32 =
     [
-        .Name = 'FrameworkBase-Win32'
-        .Requires = { }
         .Public =
         [
             .Uses = {
