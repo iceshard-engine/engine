@@ -35,10 +35,10 @@ To build this engine you will need the following tools and SDKs installed:
     * Required: Vulkan SDK _(1.2.170.0 or later)_
         * Optional when a DX1* implementation is available.
 * **Linux** - _(Under heavy development, currently not available in the repository)_
-    * Preferred: Ubuntu 20.0 distribution or later
-    * Required: Clang-10 C++ compiler or later
-    * Required: standard library libc++-10 or later
-    * Required: Vulkan SDK _(1.2.170.0 or later)_
+    * Tested On: Manjarno Linux (KDE Plasma) (Kernel 5.15.6-2-MANJARNO x64)
+    * Required: GCC-11 C++ compiler or later
+    * Required: standard library libstdc++ v6 or later
+    * ~~Required: Vulkan SDK _(1.2.170.0 or later)_~~ - Not implemented yet.
         * Optional when a OpenGL implementation is available.
 * **MacOS:**
     * No support
