@@ -35,11 +35,18 @@ jobs:
         pip3 install conan
         conan config install https://github.com/iceshard-engine/conan-config.git
 
-    - name: Install clang-12 (Ubuntu)
+    # - name: Install clang-12 (Ubuntu)
+    #   if: ${{ startsWith(inputs.host, 'ubuntu-') }}
+    #   run: |
+    #     sudo apt update
+    #     sudo apt install libc++-12-dev libc++abi-12-dev --fix-missing
+
+    - name: Install GCC-11 (Ubuntu)
       if: ${{ startsWith(inputs.host, 'ubuntu-') }}
       run: |
-        sudo apt update
-        sudo apt install libc++-12-dev libc++abi-12-dev --fix-missing
+        sudo add-apt-repository ppa:ubuntu-toolchain-r/test
+        sudo apt install -y gcc-11
+        sudo apt install -y libstdc++6
 
     - name: Cache Conan packages
       uses: actions/cache@v2
