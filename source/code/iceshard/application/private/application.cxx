@@ -13,17 +13,11 @@
 #include <ice/resource_index.hxx>
 
 #include <ice/app_info.hxx>
+#include <ice/log.hxx>
 
 int main(int, char**)
 {
-    if constexpr (ice::build::is_release == false)
-    {
-        ice::memory::init_with_stats();
-    }
-    else
-    {
-        ice::memory::init();
-    }
+    ice::memory::init();
 
     ice::i32 app_result = -1;
 

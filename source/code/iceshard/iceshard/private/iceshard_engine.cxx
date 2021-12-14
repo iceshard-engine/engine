@@ -35,9 +35,9 @@ namespace ice
         : ice::Engine{ }
         , _allocator{ alloc, "engine" }
         , _asset_system{ asset_system }
-        , _devui{ devui == nullptr ? &Global_NoopDevUI : devui }
         , _entity_index{ _allocator, 100'000, 500'000 }
         , _world_manager{ _allocator }
+        , _devui{ devui == nullptr ? &Global_NoopDevUI : devui }
     {
     }
 

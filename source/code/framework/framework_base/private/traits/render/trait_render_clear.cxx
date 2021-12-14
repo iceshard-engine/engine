@@ -10,7 +10,6 @@
 #include <ice/render/render_command_buffer.hxx>
 #include <ice/render/render_swapchain.hxx>
 
-#include <ice/span_filter.hxx>
 #include <ice/profiler.hxx>
 
 namespace ice

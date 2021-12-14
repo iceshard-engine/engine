@@ -13,6 +13,8 @@ namespace ice::detail
     class LogState final
     {
     public:
+        static ice::u32 minimal_header_length;
+
         LogState(ice::Allocator& alloc) noexcept;
         ~LogState() noexcept;
 
@@ -47,10 +49,6 @@ namespace ice::detail
         fmt::format_args args,
         ice::detail::LogLocation location
     ) noexcept;
-
-
-    static uint32_t log_header_size = 0;
-
 
     using RegisterLogTagFn = void (
         ice::LogTagDefinition tag_definition

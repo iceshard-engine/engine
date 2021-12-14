@@ -156,7 +156,7 @@ namespace ice::input
     {
         return Iterator{
             ._queue = &_queue,
-            ._data = ice::buffer::data(_data),
+            ._data = _data,
             ._index = 0,
             ._data_offset = 0,
         };

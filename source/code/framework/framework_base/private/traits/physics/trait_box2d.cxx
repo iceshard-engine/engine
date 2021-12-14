@@ -16,7 +16,6 @@
 #include <ice/input/input_keyboard.hxx>
 
 #include <ice/data_storage.hxx>
-#include <ice/span_filter.hxx>
 #include <ice/clock.hxx>
 
 namespace ice

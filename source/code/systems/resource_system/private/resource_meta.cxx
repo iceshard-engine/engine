@@ -4,9 +4,11 @@
 #include <ice/memory/forward_allocator.hxx>
 #include <ice/memory/pointer_arithmetic.hxx>
 #include <ice/stringid.hxx>
+#include <ice/string.hxx>
 #include <ice/assert.hxx>
 
 #include <rapidjson/document.h>
+#undef assert
 
 namespace ice
 {
@@ -159,7 +161,7 @@ namespace ice
                     }
                     else
                     {
-                        //IS_ASSERT(false, "Unknown value type in resource meta!");
+                        ICE_ASSERT(false, "Unknown value type in resource meta!");
                     }
                 }
             }
@@ -197,7 +199,7 @@ namespace ice
                     [[maybe_unused]]
                     void const* hash_end = ice::memory::ptr_add(hash_it, hash_count * hash_type_size);
                     ICE_ASSERT(
-                        ice::memory::ptr_distance(data._data, hash_end) < static_cast<ice::i32>(data._size), 
+                        ice::memory::ptr_distance(data.location, hash_end) < static_cast<ice::i32>(data.size),
                         "Moved past the data buffer!"
                     );
                 }
@@ -214,7 +216,7 @@ namespace ice
                     [[maybe_unused]]
                     auto const value_end = ice::memory::ptr_add(value_it, hash_count * hash_type_size);
                     ICE_ASSERT(
-                        ice::memory::ptr_distance(data._data, value_end) < static_cast<ice::i32>(data._size), 
+                        ice::memory::ptr_distance(data.location, value_end) < static_cast<ice::i32>(data.size),
                         "Moved past the data buffer!"
                     );
                 }
@@ -720,9 +722,8 @@ namespace ice
 
         char const* it = reinterpret_cast<char const*>(data.location);
 
-        // #todo assert
-        //core::StringView head{ it, 4 };
-        //IS_ASSERT(core::string::equals(head, "ISAD"), "Invalid IceShard meta header!");
+        ice::String const head{ it, 4 };
+        ICE_ASSERT(ice::string::equals(head, ice::String{ "ISAD" }), "Invalid IceShard meta header!");
         it += 4;
 
         ice::u32 const hash_count = *reinterpret_cast<ice::u32 const*>(it + 0);
@@ -735,18 +736,18 @@ namespace ice
 
         [[maybe_unused]]
         ice::u32 const hash_type_size = sizeof(*result_meta._meta_entries._hash._data);
-        
+
         [[maybe_unused]]
         ice::u32 const value_type_size = sizeof(*result_meta._meta_entries._data._data);
 
         {
-            auto hash_it = ice::memory::ptr_add(data.location, hash_offset);
+            void const* hash_it = ice::memory::ptr_add(data.location, hash_offset);
 
             if constexpr (ice::build::is_release == false)
             {
-                auto const hash_end = core::memory::utils::pointer_add(hash_it, hash_count * hash_type_size);
+                void  const* hash_end = ice::memory::ptr_add(hash_it, hash_count * hash_type_size);
                 ICE_ASSERT(
-                    ice::memory::ptr_distance(data._data, hash_end) < static_cast<ice::i32>(data._size), 
+                    ice::memory::ptr_distance(data.location, hash_end) < static_cast<ice::i32>(data.size),
                     "Moved past the data buffer!"
                 );
             }
@@ -759,13 +760,13 @@ namespace ice
         }
 
         {
-            auto value_it = ice::memory::ptr_add(data.location, value_offset);
+            void const* value_it = ice::memory::ptr_add(data.location, value_offset);
 
             if constexpr (ice::build::is_release == false)
             {
-                auto const value_end = core::memory::utils::pointer_add(value_it, value_count * value_type_size);
+                void const* value_end = ice::memory::ptr_add(value_it, value_count * value_type_size);
                 ICE_ASSERT(
-                    ice::memory::ptr_distance(data._data, value_end) <= static_cast<ice::i32>(data._size), 
+                    ice::memory::ptr_distance(data.location, value_end) <= static_cast<ice::i32>(data.size),
                     "Moved past the data buffer!"
                 );
             }
@@ -777,7 +778,7 @@ namespace ice
             result_meta._meta_entries._data._capacity = value_count;
             result_meta._meta_entries._data._size = value_count;
 
-            auto data_it = ice::memory::ptr_add(data.location, data_offset);
+            void const* data_it = ice::memory::ptr_add(data.location, data_offset);
             result_meta._additional_data = { data_it, data.size - data_offset };
         }
 

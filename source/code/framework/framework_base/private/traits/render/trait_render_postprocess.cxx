@@ -15,7 +15,6 @@
 #include <ice/gfx/gfx_pass.hxx>
 
 #include <ice/asset_system.hxx>
-#include <ice/span_filter.hxx>
 #include <ice/profiler.hxx>
 
 namespace ice

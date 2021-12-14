@@ -3,6 +3,8 @@
 namespace ice::detail
 {
 
+    ice::u32 LogState::minimal_header_length = 0;
+
     LogState::LogState(ice::Allocator& alloc) noexcept
         : _allocator{ alloc }
         , _empty_tag{ _allocator }

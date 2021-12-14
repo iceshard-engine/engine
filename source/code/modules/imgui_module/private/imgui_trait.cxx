@@ -55,8 +55,8 @@ namespace ice::devui
 
     ImGuiTrait::ImGuiTrait(ice::Allocator& alloc) noexcept
         : _imgui_timer{ .clock = nullptr }
-        , _vertex_buffers{ alloc }
         , _index_buffers{ alloc }
+        , _vertex_buffers{ alloc }
     {
         ice::pod::array::reserve(_index_buffers, 10);
         ice::pod::array::reserve(_vertex_buffers, 10);

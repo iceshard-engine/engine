@@ -37,8 +37,6 @@ namespace ice::detail
         ice::detail::LogLocation location
     ) noexcept
     {
-        detail::LogState const* const log_state = detail::internal_log_state;
-
         char header_buffer_raw[128 + 256];
         fmt::format_to_n_result format_result = fmt::format_to_n(
             header_buffer_raw,
@@ -47,9 +45,9 @@ namespace ice::detail
             fmt::localtime(std::time(nullptr))
         );
 
-        if (log_header_size < format_result.size)
+        if (LogState::minimal_header_length < format_result.size)
         {
-            log_header_size = format_result.size;
+            LogState::minimal_header_length = format_result.size;
         }
 
         fmt::string_view log_header{ &header_buffer_raw[0], format_result.size };
@@ -92,7 +90,10 @@ namespace ice::detail
         fmt::print(stderr, make_string(final_buffer.begin(), final_buffer.end()));
 
         final_buffer.push_back('\0');
+
+#if ISP_WINDOWS
         OutputDebugString(final_buffer.data());
+#endif
     }
 
     void uninitialized_assert_fn(
