@@ -63,14 +63,14 @@ namespace ice::devui
 
             if (child_alloc == nullptr)
             {
-                ImGui::Text(alloc_name.data());
+                ImGui::Text("%s", alloc_name.data());
                 ImGui::NextColumn();
                 build_info_column(allocator);
                 ImGui::NextColumn(); // We start from the first column again
             }
             else
             {
-                bool show_childs = ImGui::TreeNode(&allocator, alloc_name.data());
+                bool show_childs = ImGui::TreeNode(&allocator, "%s", alloc_name.data());
                 ImGui::NextColumn();
                 build_info_column(allocator);
 
