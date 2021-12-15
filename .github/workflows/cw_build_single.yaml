@@ -63,20 +63,9 @@ jobs:
       run: |
         $BuildTargets = "${{ join(fromJSON(inputs.configs), '","') }}" | ForEach-Object { "-t all-${{ inputs.architecture }}-$_" }
         $BuildTargetsStr = $BuildTargets -join " "
-        
-        which gcc
-        which g++
-        which gcc-11
-        which g++-11
-        gcc --version
-        g++ --version
-        gcc-11 --version
-        g++-11 --version
 
-    #   .\tools\gh_ice.ps1 init
-    #   .\tools\gh_ice.ps1 build $BuildTargetsStr
-        
-    #    Get-Content -Path "build/compiler_detection.log"
+        .\tools\gh_ice.ps1 init
+        .\tools\gh_ice.ps1 build $BuildTargetsStr
 
     # - name: Run tests
     #   shell: pwsh
