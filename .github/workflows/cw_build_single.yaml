@@ -66,8 +66,12 @@ jobs:
         
         which gcc
         which g++
+        which gcc-11
+        which g++-11
         gcc --version
         g++ --version
+        gcc-11 --version
+        g++-11 --version
 
     #   .\tools\gh_ice.ps1 init
     #   .\tools\gh_ice.ps1 build $BuildTargetsStr
