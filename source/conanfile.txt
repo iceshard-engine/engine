@@ -1,13 +1,13 @@
 [requires]
 fmt/7.0.3@iceshard/stable
-Catch2/2.13.2@iceshard/stable
+catch2/2.13.2@iceshard/stable
 box2d/2.4.1@iceshard/stable
-Tracy/0.7.8@iceshard/stable
+tracy/0.7.8@iceshard/stable
 
 rapidjson/1.1.0
 rapidxml/1.13
 Assimp/5.0.1@iceshard/stable
-SDL2/2.0.14@iceshard/stable
+sdl2/2.0.14@iceshard/stable
 imgui/1.85@iceshard/stable
 
 [build_requires]
@@ -15,7 +15,7 @@ fastbuild-generator/0.2.0@iceshard/stable
 
 [options]
 imgui:docking_branch=True
-SDL2:shared=True
+sdl2:shared=True
 Assimp:shared=True
 box2d:undefined_user_symbols=True
 

@@ -19,7 +19,7 @@
         }
 
         .Modules = {
-            'Catch2'
+            'catch2'
         }
     ]
 
