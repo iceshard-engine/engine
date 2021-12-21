@@ -4,7 +4,14 @@
 #include <ice/buffer.hxx>
 
 #define STB_IMAGE_IMPLEMENTATION
-#include "external/stb_image.hxx"
+#if ISP_COMPILER_GCC
+#   pragma GCC diagnostic warning "-Wunused-but-set-variable"
+#   pragma GCC diagnostic warning "-Wsign-compare"
+#   include "external/stb_image.hxx"
+#   pragma GCC diagnostic pop
+#else
+#   include "external/stb_image.hxx"
+#endif
 #undef assert
 
 namespace ice

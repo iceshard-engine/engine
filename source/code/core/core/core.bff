@@ -20,7 +20,7 @@
         .Public =
         [
             .Modules = {
-                'Tracy'
+                'tracy'
             }
         ]
     ]
@@ -30,7 +30,7 @@
         .Public =
         [
             .Modules = {
-                'Tracy'
+                'tracy'
             }
         ]
     ]

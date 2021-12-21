@@ -59,21 +59,21 @@ namespace ice
         template<bool DebugImpl>
         struct TypePicker
         {
-            using StringID = StringID<DebugImpl>;
+            using StringID_Type = StringID<DebugImpl>;
 
-            using StringID_Arg = StringID;
+            using StringID_Arg = StringID_Type;
 
-            using StringID_Hash = StringID_Hash;
+            using StringID_Hash_Type = StringID_Hash;
         };
 
         template<>
         struct TypePicker<true>
         {
-            using StringID = StringID<true>;
+            using StringID_Type = StringID<true>;
 
-            using StringID_Arg = StringID const&;
+            using StringID_Arg = StringID_Type const&;
 
-            using StringID_Hash = StringID_Hash;
+            using StringID_Hash_Type = StringID_Hash;
         };
 
         constexpr bool operator==(
@@ -101,11 +101,11 @@ namespace ice
     } // namespace detail::stringid_type_v2
 
 
-    using StringID = detail::stringid_type_v2::StringID_Types::StringID;
+    using StringID = detail::stringid_type_v2::StringID_Types::StringID_Type;
 
     using StringID_Arg = detail::stringid_type_v2::StringID_Types::StringID_Arg;
 
-    using StringID_Hash = detail::stringid_type_v2::StringID_Types::StringID_Hash;
+    using StringID_Hash = detail::stringid_type_v2::StringID_Types::StringID_Hash_Type;
 
     static constexpr StringID stringid_invalid = StringID{ StringID_Hash{ 0 } };
 

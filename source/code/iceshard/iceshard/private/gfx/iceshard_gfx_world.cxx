@@ -1,4 +1,3 @@
-#pragma once
 #include "iceshard_gfx_world.hxx"
 
 namespace ice::gfx

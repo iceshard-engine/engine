@@ -20,6 +20,7 @@ namespace ice::build
     {
         MSVC,
         Clang,
+        GCC,
     };
 
     struct Platform
@@ -78,29 +79,61 @@ namespace ice::build
         .compiler = Compiler::Clang
     };
 
+    static constexpr Platform platform_unix_x64_gcc = {
+        .name = "unix-x64-gcc",
+        .system = System::Unix,
+        .architecture = Architecture::x64,
+        .compiler = Compiler::GCC
+    };
+
     static constexpr Platform all_platforms[] = {
         platform_uwp_x64_msvc,
         platform_windows_x64_msvc,
         platform_windows_x64_clang,
         platform_unix_x64_clang,
+        platform_unix_x64_gcc,
     };
 
 
 #if defined(_WIN64)
 #   define ISP_UNIX 0
 #   define ISP_WINDOWS 1
-#if defined(__clang__)
-    static constexpr Platform current_platform = platform_windows_x64_clang;
-#else
-    static constexpr Platform current_platform = platform_windows_x64_msvc;
-#endif
+#   if defined(__clang__)
+#       define ISP_COMPILER_MSVC 0
+#       define ISP_COMPILER_CLANG 1
+#       define ISP_COMPILER_GCC 0
+
+        static constexpr Platform current_platform = platform_windows_x64_clang;
+#   else
+#       define ISP_COMPILER_MSVC 1
+#       define ISP_COMPILER_CLANG 0
+#       define ISP_COMPILER_GCC 0
+
+        static constexpr Platform current_platform = platform_windows_x64_msvc;
+#   endif
+#elif __unix__ and !__clang__
+#   define ISP_UNIX 1
+#   define ISP_WINDOWS 0
+#   define ISP_COMPILER_MSVC 0
+#   define ISP_COMPILER_CLANG 0
+#   define ISP_COMPILER_GCC 1
+
+    static constexpr Platform current_platform = platform_unix_x64_gcc;
 #elif __unix__ and __clang__
 #   define ISP_UNIX 1
 #   define ISP_WINDOWS 0
+#   define ISP_COMPILER_MSVC 0
+#   define ISP_COMPILER_CLANG 1
+#   define ISP_COMPILER_GCC 0
+
     static constexpr Platform current_platform = platform_unix_x64_clang;
 #else
 #   define ISP_UNIX 0
 #   define ISP_WINDOWS 0
+#   define ISP_COMPILER_MSVC 0
+#   define ISP_COMPILER_CLANG 0
+#   define ISP_COMPILER_GCC 0
+
     static_assert(false, "Unknow platform!");
 #endif
 

@@ -492,8 +492,6 @@ namespace ice
             "tilemap_render.draw_operation"_sid
         );
 
-        ice::TileMap const* tilemap = draw_operation->tilemap;
-
         api.bind_pipeline(cmds, _pipeline);
         api.bind_resource_set(cmds, _pipeline_layout, _resource_sets[0], 0);
         api.bind_vertex_buffer(cmds, _vertex_buffer, 0);

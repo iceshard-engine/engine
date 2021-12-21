@@ -1,4 +1,3 @@
-#pragma once
 #include "tilemap_loader.hxx"
 
 #include <ice/game_tilemap.hxx>

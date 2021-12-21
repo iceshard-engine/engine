@@ -16,7 +16,6 @@
 #include <ice/input/input_keyboard.hxx>
 
 #include <ice/data_storage.hxx>
-#include <ice/span_filter.hxx>
 #include <ice/clock.hxx>
 
 namespace ice
@@ -48,7 +47,7 @@ namespace ice
         body_def.position.Set(position.x, position.y);
 
         b2Body* body = _world->CreateBody(&body_def);
-        body->GetUserData().entity = ice::ecs::EntityHandle::Invalid;
+        body->GetUserData().pointer = static_cast<std::uintptr_t>(ice::ecs::EntityHandle::Invalid);
 
 
         if (shape == PhysicsShape::Box)
@@ -77,7 +76,7 @@ namespace ice
         body_def.position.Set(position.x, position.y);
 
         b2Body* body = _world->CreateBody(&body_def);
-        body->GetUserData().entity = ice::ecs::EntityHandle::Invalid;
+        body->GetUserData().pointer = static_cast<std::uintptr_t>(ice::ecs::EntityHandle::Invalid);
 
         b2PolygonShape tile_shape{ };
         tile_shape.Set(reinterpret_cast<b2Vec2 const*>(vertices), vertice_count);
@@ -113,7 +112,7 @@ namespace ice
         body_def.position.Set(0, -0.5f);
 
         b2Body* body = _world->CreateBody(&body_def);
-        body->GetUserData().entity = ice::ecs::EntityHandle::Invalid;
+        body->GetUserData().pointer = static_cast<std::uintptr_t>(ice::ecs::EntityHandle::Invalid);
 
         b2PolygonShape tile_shape;
         tile_shape.SetAsBox(50.f, 0.5, { 0.5f, 0.5f }, 0.f);
@@ -173,7 +172,7 @@ namespace ice
                     b2Body* next = body->GetNext();
                     auto const& userdata = body->GetUserData();
 
-                    if (userdata.entity == entity)
+                    if (static_cast<ice::ecs::EntityHandle>(userdata.pointer) == entity)
                     {
                         _world->DestroyBody(body);
                     }
@@ -229,7 +228,7 @@ namespace ice
                     b2Body* body = _world->CreateBody(&body_def);
 
 
-                    body->GetUserData().entity = e;
+                    body->GetUserData().pointer = static_cast<std::uintptr_t>(e);
                     phx_body.trait_data = body;
 
                     if (phx_body.shape == PhysicsShape::Box)

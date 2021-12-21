@@ -154,7 +154,7 @@ namespace ice
         constexpr ice::PayloadID Constant_ShardPayloadID<ice::math::vec2f> = ice::payload_id("ice::math::vec2f");
 
         template<>
-        static constexpr ice::PayloadID Constant_ShardPayloadID<ice::detail::stringid_type_v2::StringID_Hash> = ice::payload_id("ice::StringID_Hash");
+        constexpr ice::PayloadID Constant_ShardPayloadID<ice::detail::stringid_type_v2::StringID_Hash> = ice::payload_id("ice::StringID_Hash");
 
     } // namespace detail
 

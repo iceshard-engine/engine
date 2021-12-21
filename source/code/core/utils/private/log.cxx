@@ -95,9 +95,9 @@ namespace ice::detail
             fmt::to_string_view(tag_name)
         );
 
-        if (log_header_size < format_result.size)
+        if (LogState::minimal_header_length < format_result.size)
         {
-            log_header_size = format_result.size;
+            LogState::minimal_header_length = format_result.size;
         }
 
         fmt::string_view log_header{ &header_buffer_raw[0], format_result.size };
@@ -108,7 +108,7 @@ namespace ice::detail
         fmt::vformat_to(
             final_buffer,
             "{: <{}s} > ",
-            fmt::make_format_args(log_header, log_header_size)
+            fmt::make_format_args(log_header, LogState::minimal_header_length)
         );
 
         fmt::vformat_to(
@@ -133,7 +133,10 @@ namespace ice::detail
         }
 
         final_buffer.push_back('\0');
+
+#if ISP_WINDOWS
         OutputDebugString(final_buffer.data());
+#endif
     }
 
     void uninitialized_log_fn(

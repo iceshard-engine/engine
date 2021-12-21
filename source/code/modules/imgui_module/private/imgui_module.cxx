@@ -54,6 +54,8 @@ namespace ice::devui
 extern "C"
 {
 
+    // #TODO: https://github.com/iceshard-engine/engine/issues/92
+#if ISP_WINDOWS
     __declspec(dllexport) bool ice_module_load(
         ice::Allocator* alloc,
         ice::ModuleNegotiatorContext* ctx,
@@ -69,5 +71,6 @@ extern "C"
     {
         return true;
     }
+#endif 
 
 } // extern "C"

@@ -190,7 +190,7 @@ namespace ice
 
             ice::u32 total_data_size = 0;
             total_data_size += sizeof(ice::gfx::Model);
-            total_data_size += sizeof(ice::gfx::Mesh) * scene->mNumMeshes;
+            total_data_size += static_cast<ice::u32>(sizeof(ice::gfx::Mesh) * scene->mNumMeshes);
             total_data_size += vertice_data_size;
             total_data_size += indice_data_size;
             total_data_size += alignof(ice::math::vec3f) * 2 * scene->mNumMeshes;
@@ -209,7 +209,7 @@ namespace ice
             void* const mesh_ptr = ice::buffer::append(
                 out_data,
                 ice::Data{
-                    .size = sizeof(ice::gfx::Mesh) * scene->mNumMeshes,
+                    .size =  static_cast<ice::u32>(sizeof(ice::gfx::Mesh) * scene->mNumMeshes),
                     .alignment = alignof(ice::gfx::Mesh)
                 }
             );

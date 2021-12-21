@@ -79,10 +79,9 @@ namespace ice::ecs::detail
         using BlockIteratorArg = Arg*;
         using EntityIteratorArg = Arg*;
 
-        template<std::size_t Idx>
-        static auto select_block_array(void** array_ptrs)
+        static auto block_array(void* array_ptrs)
         {
-            return reinterpret_cast<BlockIteratorArg>(array_ptrs[Idx]);
+            return reinterpret_cast<BlockIteratorArg>(array_ptrs);
         }
 
         static auto select_entity(BlockIteratorArg block_ptr, ice::u32 idx) noexcept -> Arg*
@@ -97,10 +96,9 @@ namespace ice::ecs::detail
         using BlockIteratorArg = Arg*;
         using EntityIteratorArg = Arg&;
 
-        template<std::size_t Idx>
-        static auto select_block_array(void** array_ptrs)
+        static auto block_array(void* array_ptrs)
         {
-            return reinterpret_cast<BlockIteratorArg>(array_ptrs[Idx]);
+            return reinterpret_cast<BlockIteratorArg>(array_ptrs);
         }
 
         static auto select_entity(BlockIteratorArg block_ptr, ice::u32 idx) noexcept -> Arg&
@@ -115,10 +113,9 @@ namespace ice::ecs::detail
         using BlockIteratorArg = ice::ecs::EntityHandle const*;
         using EntityIteratorArg = ice::ecs::EntityHandle;
 
-        template<std::size_t Idx>
-        static auto select_block_array(void** array_ptrs)
+        static auto block_array(void* array_ptrs)
         {
-            return reinterpret_cast<BlockIteratorArg>(array_ptrs[Idx]);
+            return reinterpret_cast<BlockIteratorArg>(array_ptrs);
         }
 
         static auto select_entity(BlockIteratorArg block_ptr, ice::u32 idx) noexcept -> ice::ecs::EntityHandle
@@ -170,7 +167,7 @@ namespace ice::ecs::detail
         {
             ice::forward<Fn>(fn)(
                 count,
-                ice::ecs::detail::QueryIteratorArgument<std::tuple_element_t<Idx, QueryTypeTuple>>::select_block_array<Idx>(component_pointer_array)...
+                ice::ecs::detail::QueryIteratorArgument<std::tuple_element_t<Idx, QueryTypeTuple>>::block_array(component_pointer_array[Idx])...
             );
         };
 
@@ -196,7 +193,7 @@ namespace ice::ecs::detail
         {
             enumerate_entities(
                 count,
-                ice::ecs::detail::QueryIteratorArgument<std::tuple_element_t<Idx, QueryTypeTuple>>::select_block_array<Idx>(component_pointer_array)...
+                ice::ecs::detail::QueryIteratorArgument<std::tuple_element_t<Idx, QueryTypeTuple>>::block_array(component_pointer_array[Idx])...
             );
         };
 

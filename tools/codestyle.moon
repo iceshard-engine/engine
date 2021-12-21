@@ -3,7 +3,7 @@ import Exec, Where from require "ice.tools.exec"
 import Json from require "ice.util.json"
 
 class Uncrustify extends Exec
-    new: (path) => super path or (os.iswindows and Where\path "uncrustify.exe") or Where\path "uncrustify"
+    new: (path) => super path or (os.iswindows and Where\path "uncrustify.exe") or (Where\path "uncrustify") or 'uncrustify'
 
     run: (args) =>
         return false unless os.isfile args.input
@@ -26,8 +26,6 @@ class Uncrustify extends Exec
         (super cmd) == 0
 
 class CodeStyleCommand extends Command
-    @uncrustify = Uncrustify!
-
     @arguments {
         option 'path',
             name: '-p --path'
@@ -43,6 +41,10 @@ class CodeStyleCommand extends Command
         os.chdir args.path
 
     execute: (args) =>
+        uncrustify = Uncrustify!
+        unless os.isfile uncrustify.exec
+            return
+
         for_each_source_file = (path, fn) ->
             os.chdir path, (dir) ->
                 for entry in os.listdir dir
@@ -57,7 +59,7 @@ class CodeStyleCommand extends Command
         for_each_source_file '.', (file) ->
             out_file = file .. ".fixed"
 
-            result = @@uncrustify\run
+            result = uncrustify\run
                 config: @style_file
                 input: file
                 output: out_file

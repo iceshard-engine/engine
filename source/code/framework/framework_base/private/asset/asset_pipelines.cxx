@@ -1,4 +1,3 @@
-#pragma once
 #include "asset_pipelines.hxx"
 #include "tilemap_pipeline/tilemap_pipeline.hxx"
 #include "tilemap_pipeline/tilemap_tmx_oven.hxx"

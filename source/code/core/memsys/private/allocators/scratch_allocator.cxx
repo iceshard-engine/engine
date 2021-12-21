@@ -63,7 +63,7 @@ namespace ice::memory
         if (alloc_data_end >= _end)
         {
             // First we need to check if we even can write into the header!
-            if (ptr_distance(alloc_header, _end) >= sizeof(memory::tracking::AllocationHeader))
+            if (static_cast<ice::u32>(ptr_distance(alloc_header, _end)) >= sizeof(memory::tracking::AllocationHeader))
             {
                 // Save the amount of bytes we are ignoring.
                 alloc_header->allocated_size = ptr_distance(alloc_header, _end) | detail::Constant_FreeMemoryBit;
@@ -111,7 +111,7 @@ namespace ice::memory
         alloc_header = nullptr;
 
         // First we need to check if we even can write into the header!
-        if (ptr_distance(_free, _end) <= sizeof(memory::tracking::AllocationHeader))
+        if (static_cast<ice::u32>(ptr_distance(_free, _end)) <= sizeof(memory::tracking::AllocationHeader))
         {
             _free = _begin;
         }
@@ -129,7 +129,7 @@ namespace ice::memory
 
             // Move the free pointer by the given amount of bytes.
             _free = ptr_add(alloc_header, alloc_header->allocated_size & detail::Constant_FreeMemoryMask);
-            if (ptr_distance(_free, _end) <= sizeof(memory::tracking::AllocationHeader))
+            if (static_cast<ice::u32>(ptr_distance(_free, _end)) <= sizeof(memory::tracking::AllocationHeader))
             {
                 _free = _begin;
 

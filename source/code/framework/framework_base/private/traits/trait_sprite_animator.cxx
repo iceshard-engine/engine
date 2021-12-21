@@ -1,4 +1,3 @@
-#pragma once
 #include "trait_sprite_animator.hxx"
 #include <ice/game_anim.hxx>
 #include <ice/game_entity.hxx>

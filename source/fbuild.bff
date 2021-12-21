@@ -30,6 +30,16 @@ Settings
     .PipelineAllowUnityBuilds = true
 ]
 
+.Unity_Pipeline_Linux_x64 =
+[
+    Using( .Pipeline_Linux_x64 )
+
+    .PipelineAllowUnityBuilds = true
+    .PipelineSteps = { 'Build' } // Linking still doesn't work
+]
+
+
 ^BuildPipelines = {
     .Unity_Pipeline_Windows_x64
+    .Unity_Pipeline_Linux_x64
 }

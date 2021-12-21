@@ -24,7 +24,7 @@
         }
     },
     "linux": {
-        "default": "clang_10",
+        "default": "gcc_11",
         "clang_10": {
             "build_types": [
                 "Debug",
@@ -34,6 +34,39 @@
                 "name": "clang",
                 "version": "10",
                 "libcxx": "libc++"
+            }
+        },
+        "clang_11": {
+            "build_types": [
+                "Debug",
+                "Release"
+            ],
+            "compiler": {
+                "name": "clang",
+                "version": "11",
+                "libcxx": "libc++"
+            }
+        },
+        "clang_12": {
+            "build_types": [
+                "Debug",
+                "Release"
+            ],
+            "compiler": {
+                "name": "clang",
+                "version": "12",
+                "libcxx": "libc++"
+            }
+        },
+        "gcc_11": {
+            "build_types": [
+                "Debug",
+                "Release"
+            ],
+            "compiler": {
+                "name": "gcc",
+                "version": "11",
+                "libcxx": "libstdc++"
             }
         }
     }

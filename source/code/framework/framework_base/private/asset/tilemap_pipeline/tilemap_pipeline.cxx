@@ -1,4 +1,3 @@
-#pragma once
 #include "tilemap_pipeline.hxx"
 #include "tilemap_tmx_oven.hxx"
 #include "tilemap_loader.hxx"

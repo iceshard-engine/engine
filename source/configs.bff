@@ -44,6 +44,63 @@
     }
 ]
 
+.Config_Unix =
+[
+    .Name = 'Config-Unix'
+    .Requires = { 'Unix' }
+    .BuildOptions = {
+        '-Wall'
+        '-Werror'
+        // We use [[deprecated]] to keep track of some old API usage without the need to fix them asap.
+        '-Wno-error=deprecated-declarations'
+        // This seems to be a compiler issue related to generated 'coroutine frame stages', probably needs investigation.
+        '-Wno-error=subobject-linkage'
+        '-Wno-switch'
+        '-std=c++20'
+    }
+]
+
+
+.Config_Unix_BinaryBase =
+[
+    .Name = 'Config-Unix-Binary'
+    .Requires = { 'Unix' }
+    .LinkOptions = {
+        '-lc'
+        '-lm'
+        '-lstdc++'
+    }
+]
+
+.Config_Unix_BinaryDll =
+[
+    Using( .Config_Unix_BinaryBase )
+    .Requires + { 'SharedLib' }
+]
+
+.Config_Unix_BinaryApp =
+[
+    Using( .Config_Unix_BinaryBase )
+    .Requires + { 'WindowerApp' }
+]
+
+.Config_Unix_BinaryApp2 =
+[
+    Using( .Config_Unix_BinaryBase )
+    .Requires + { 'ConsoleApp' }
+]
+
+
+.Config_GCC_Tests =
+[
+    .Name = 'Config-Unix'
+    .Requires = { 'Unix', 'UnitTests' }
+    .BuildOptions = {
+        '-Wno-unused-variable'
+        '-Wno-unused-value'
+    }
+]
+
 .Config_MSVC_BinaryBase =
 [
     .Name = 'MSVC-Binary'
@@ -155,6 +212,11 @@
     .Config_MSVC_BinaryDll
     .Config_MSVC_BinaryApp
     .Config_MSVC_BinaryApp2
+    .Config_Unix
+    .Config_Unix_BinaryDll
+    .Config_Unix_BinaryApp
+    .Config_Unix_BinaryApp2
+    .Config_GCC_Tests
     .Config_Debug
     .Config_Debug_MSVC
     .Config_Develop

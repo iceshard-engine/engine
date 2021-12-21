@@ -69,9 +69,15 @@ namespace ice::gfx
 
         // #TODO: Workaround due a compiler bug in VS16.11. Remove it once it is fixed.
         // Bug report: https://developercommunity.visualstudio.com/t/Coroutine-compilation-resulting-in-erro/1510427
+#if ISP_WINDOWS
         __declspec(noinline) void cleanup_gfx_contexts() noexcept;
         __declspec(noinline) void setup_gfx_traits() noexcept;
         __declspec(noinline) void cleanup_gfx_traits() noexcept;
+#else
+        void cleanup_gfx_contexts() noexcept;
+        void setup_gfx_traits() noexcept;
+        void cleanup_gfx_traits() noexcept;
+#endif
 
     private:
         auto task_frame(

@@ -11,7 +11,7 @@ int main(int argc, char* argv[])
     int result = 0;
 
     {
-        ice::memory::init_with_stats();
+        ice::memory::init();
 
         {
             auto& stats = static_cast<ice::memory::ProxyAllocator&>(ice::memory::default_allocator());

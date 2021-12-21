@@ -72,13 +72,4 @@ namespace ice
         };
     }
 
-    //inline Buffer::operator ice::Memory() const noexcept
-    //{
-    //    return Memory{
-    //        .location = _data,
-    //        .size = _size,
-    //        .alignment = ice::Allocator::Constant_DefaultAlignment
-    //    };
-    //}
-
 } // namespace ice

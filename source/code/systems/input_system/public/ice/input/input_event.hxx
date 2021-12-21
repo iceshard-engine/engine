@@ -140,4 +140,4 @@ constexpr inline auto ice::hash<ice::input::InputID>(ice::input::InputID value) 
 }
 
 template<>
-static constexpr ice::PayloadID ice::detail::Constant_ShardPayloadID<ice::input::InputEvent> = ice::payload_id("ice::input::InputEvent");
+constexpr ice::PayloadID ice::detail::Constant_ShardPayloadID<ice::input::InputEvent> = ice::payload_id("ice::input::InputEvent");

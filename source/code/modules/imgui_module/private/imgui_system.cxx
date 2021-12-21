@@ -29,9 +29,10 @@ namespace ice::devui
 
     ImGuiSystem::ImGuiSystem(ice::Allocator& alloc) noexcept
         : _allocator{ alloc }
+        , _execution_key{ }
         , _render_trait{ alloc }
-        , _widgets{ alloc }
         , _widget_alloc_tree{ nullptr }
+        , _widgets{ alloc }
     {
         ice::pod::array::reserve(_widgets, 100);
         detail::create_alloc_tree_widget(*this, _allocator);
