@@ -12,7 +12,7 @@ jobs:
 
   call_build_single_windows:
     name: 'Build (Windows)'
-    uses: iceshard-engine/engine/.github/workflows/cw_build_single.yaml@linux-platform
+    uses: iceshard-engine/engine/.github/workflows/cw_build_single.yaml@master
     with:
       host: windows-latest
       configs: '["Develop"]'
@@ -21,7 +21,7 @@ jobs:
 
   call_build_single_linux:
     name: 'Build (Linux)'
-    uses: iceshard-engine/engine/.github/workflows/cw_build_single.yaml@linux-platform
+    uses: iceshard-engine/engine/.github/workflows/cw_build_single.yaml@master
     with:
       host: ubuntu-latest
       configs: '["Develop"]'
