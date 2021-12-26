@@ -3,24 +3,27 @@ name: Nightly
 on:
   schedule:
     # Every day at 2 am
-    - cron: 0 2 * * *
+    - cron: 0 20 * * *
 
 jobs:
-  nightly-build-windows:
-    runs-on: windows-latest
-    steps:
-    - name: Checkout repository
-      uses: actions/checkout@v2
-    - name: Setup repository
-      run: |
-        pip3 install setuptools
-        pip3 install conan
-        conan config install https://github.com/iceshard-engine/conan-config.git
-    - name: Build (Windows-Develop)
-      shell: cmd
-      run: |
-        ice build -t all-x64-Develop
-    - name: Run unit tests
-      shell: cmd
-      run: |
-        ice build -t test-all-x64-Develop
+  ## Build using a single job for all configurations
+  #   - Allows to cut down on build time as it's does not need to recreate the workspace for each configuration.
+  #   - This is the default way of validating builds
+
+  call_build_single_windows:
+    name: 'Build (Windows)'
+    uses: iceshard-engine/engine/.github/workflows/cw_build_single.yaml@linux-platform
+    with:
+      host: windows-latest
+      configs: '["Develop"]'
+      platform: 'windows'
+      architecture: x64
+
+  call_build_single_linux:
+    name: 'Build (Linux)'
+    uses: iceshard-engine/engine/.github/workflows/cw_build_single.yaml@linux-platform
+    with:
+      host: ubuntu-latest
+      configs: '["Develop"]'
+      platform: 'linux'
+      architecture: x64
