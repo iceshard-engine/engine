@@ -14,7 +14,7 @@ struct fmt::formatter<ice::detail::stringid_type_v2::StringID<DebugImpl>>
     template<typename FormatContext>
     constexpr auto format(ice::StringID_Arg value, FormatContext& ctx)
     {
-        if (value == ice::Constant_InvalidStringID)
+        if (value == ice::stringid_invalid)
         {
             return fmt::format_to(ctx.out(), "[sid:<invalid>]");
         }

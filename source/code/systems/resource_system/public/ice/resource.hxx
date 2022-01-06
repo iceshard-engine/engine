@@ -23,3 +23,33 @@ namespace ice
 
 
 } // namespace ice
+
+namespace ice
+{
+
+    enum class ResourceStatus_v2 : ice::u32
+    {
+        Unknown,
+        Available,
+        Loaded,
+        Updated,
+        Unloaded,
+        Released,
+        Failure,
+    };
+
+    class Resource_v2
+    {
+    public:
+        virtual ~Resource_v2() noexcept = 0;
+
+        //virtual auto urn() const noexcept -> ice::URN = 0;
+        virtual auto uri() const noexcept -> ice::URI const& = 0;
+
+        virtual auto name() const noexcept -> ice::String = 0;
+        virtual auto origin() const noexcept -> ice::String = 0;
+
+        virtual auto metadata() const noexcept -> ice::Metadata const& = 0;
+    };
+
+} // ice::res_v2

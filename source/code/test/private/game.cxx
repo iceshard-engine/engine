@@ -58,10 +58,10 @@ void MyGame::on_load_modules(ice::GameServices& sercies) noexcept
     ice::ModuleRegister& mod = sercies.module_registry();
     ice::ResourceSystem& res = sercies.resource_system();
 
-    ice::Resource* const pipelines_module = res.request("res://iceshard_pipelines.dll"_uri);
-    ice::Resource* const engine_module = res.request("res://iceshard.dll"_uri);
-    ice::Resource* const vulkan_module = res.request("res://vulkan_renderer.dll"_uri);
-    ice::Resource* const imgui_module = res.request("res://imgui_module.dll"_uri);
+    ice::Resource* const pipelines_module = res.request("urn://iceshard_pipelines.dll"_uri);
+    ice::Resource* const engine_module = res.request("urn://iceshard.dll"_uri);
+    ice::Resource* const vulkan_module = res.request("urn://vulkan_renderer.dll"_uri);
+    ice::Resource* const imgui_module = res.request("urn://imgui_module.dll"_uri);
 
     ICE_ASSERT(pipelines_module != nullptr, "Missing `iceshard_pipelines.dll` module!");
     ICE_ASSERT(engine_module != nullptr, "Missing `iceshard.dll` module!");
@@ -99,7 +99,7 @@ void MyGame::on_app_startup(ice::Engine& engine, ice::gfx::GfxRunner& gfx_runner
         {
             [[maybe_unused]]
             auto a1 = archetype_index.register_archetype(ice::ecs::static_validation::Validation_Archetype_1);
-            
+
             [[maybe_unused]]
             auto a2 = archetype_index.register_archetype(ice::ecs::static_validation::Validation_Archetype_2);
 
