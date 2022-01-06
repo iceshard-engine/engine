@@ -64,7 +64,7 @@ jobs:
     name: 'Build (Windows)'
     needs: setup_workflow
     if: ${{ contains(needs.setup_workflow.outputs.tags, 'parallel') == false }}
-    uses: iceshard-engine/engine/.github/workflows/cw_build_single.yaml
+    uses: iceshard-engine/engine/.github/workflows/cw_build_single.yaml@v1
     with:
       host: windows-latest
       configs: ${{ needs.setup_workflow.outputs.build_configs }}
@@ -75,7 +75,7 @@ jobs:
     name: 'Build (Linux)'
     needs: setup_workflow
     if: ${{ contains(needs.setup_workflow.outputs.tags, 'parallel') == false }}
-    uses: iceshard-engine/engine/.github/workflows/cw_build_single.yaml
+    uses: iceshard-engine/engine/.github/workflows/cw_build_single.yaml@v1
     with:
       host: ubuntu-latest
       configs: ${{ needs.setup_workflow.outputs.build_configs }}
@@ -90,7 +90,7 @@ jobs:
     name: 'Build (Windows)'
     needs: setup_workflow
     if: ${{ contains(needs.setup_workflow.outputs.tags, 'parallel') == true }}
-    uses: iceshard-engine/engine/.github/workflows/cw_build_parallel.yaml
+    uses: iceshard-engine/engine/.github/workflows/cw_build_parallel.yaml@v1
     with:
       host: windows-latest
       configs: ${{ needs.setup_workflow.outputs.build_configs }}
@@ -101,7 +101,7 @@ jobs:
     name: 'Build (Linux)'
     needs: setup_workflow
     if: ${{ contains(needs.setup_workflow.outputs.tags, 'parallel') == true }}
-    uses: iceshard-engine/engine/.github/workflows/cw_build_parallel.yaml
+    uses: iceshard-engine/engine/.github/workflows/cw_build_parallel.yaml@v1
     with:
       host: ubuntu-latest
       configs: ${{ needs.setup_workflow.outputs.build_configs }}
