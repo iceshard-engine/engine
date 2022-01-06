@@ -28,20 +28,22 @@ A quick overview how to build the engine on your machine.
 ### Prerequisites
 To build this engine you will need the following tools and SDKs installed:
 * [Conan Package Manager](https://conan.io/) - Used to manage project dependencies.
-    * This also requires python3 as a dependency.
+   * This also requires python3 as a dependency.
 * **Windows:**
-    * Required: Visual Studio 2019 _(16.10 or later)_
-    * Required: Windows Kit (10.0.19041.0 or later)
-    * Required: Vulkan SDK _(1.2.170.0 or later)_
-        * Optional when a DX1* implementation is available.
+   * Required: Visual Studio 2019 _(16.10 or later)_
+   * Required: Windows Kit (10.0.19041.0 or later)
+   * Required: Vulkan SDK _(1.2.170.0 or later)_
+      * Optional when a DX1* implementation is available.
 * **Linux** - _(Under heavy development, currently not available in the repository)_
-    * Tested On: Manjarno Linux (KDE Plasma) (Kernel 5.15.6-2-MANJARNO x64)
-    * Required: GCC-11 C++ compiler or later
-    * Required: standard library libstdc++ v6 or later
-    * ~~Required: Vulkan SDK _(1.2.170.0 or later)_~~ - Not implemented yet.
-        * Optional when a OpenGL implementation is available.
+   * Tested On: 
+      * Manjarno Linux (KDE Plasma) (Kernel 5.15.6-2-MANJARNO x64)
+      * GitHub Runner: Ubuntu-Latest
+   * Required: GCC-11 C++ compiler or later
+   * Required: standard library libstdc++ v6 or later
+   * ~~Required: Vulkan SDK _(1.2.170.0 or later)_~~ - Not implemented yet.
+      * Optional when a OpenGL implementation is available.
 * **MacOS:**
-    * No support
+   * No support
 
 ### Configuring Conan
 
