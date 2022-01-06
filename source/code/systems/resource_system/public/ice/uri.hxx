@@ -10,7 +10,8 @@ namespace ice
     static constexpr ice::StringID scheme_directory = "dir"_sid;
     static constexpr ice::StringID scheme_pack = "pack"_sid;
     static constexpr ice::StringID scheme_dynlib = "dynlib"_sid;
-    static constexpr ice::StringID scheme_resource = "res"_sid;
+    static constexpr ice::StringID scheme_resource = "urn"_sid;
+    static constexpr ice::StringID scheme_https = "https"_sid;
 
     static constexpr ice::StringID scheme_invalid = "<invalid>"_sid;
 
@@ -23,7 +24,7 @@ namespace ice
         constexpr URI(ice::StringID_Arg scheme, ice::String path) noexcept;
         constexpr URI(ice::StringID_Arg scheme, ice::String path, ice::StringID_Arg fragment) noexcept;
 
-        constexpr URI(URI const& other) noexcept;
+        constexpr URI(ice::URI const& other) noexcept;
 
         ice::StringID_Hash scheme;
 
@@ -38,7 +39,7 @@ namespace ice
 
         constexpr auto scheme_from_uri(ice::String uri) noexcept -> ice::StringID_Hash
         {
-            u32 const loc = ice::string::find_first_of(uri, ':');
+            ice::u32 const loc = ice::string::find_first_of(uri, ':');
 
             if (loc == ice::string_npos)
             {
@@ -52,7 +53,7 @@ namespace ice
 
         constexpr auto fragment_from_uri(ice::String uri) noexcept -> ice::StringID
         {
-            u32 const loc = ice::string::find_last_of(uri, '#');
+            ice::u32 const loc = ice::string::find_last_of(uri, '#');
 
             if (loc == ice::string_npos)
             {
@@ -66,8 +67,8 @@ namespace ice
 
         constexpr auto path_from_uri(ice::String uri) noexcept
         {
-            u32 scheme_loc = ice::string::find_first_of(uri, ':');
-            u32 fragment_loc = ice::string::find_last_of(uri, '#');
+            ice::u32 scheme_loc = ice::string::find_first_of(uri, ':');
+            ice::u32 fragment_loc = ice::string::find_last_of(uri, '#');
 
             if (scheme_loc == ice::string_npos)
             {
@@ -117,7 +118,7 @@ namespace ice
         , path{ path }
     { }
 
-    constexpr URI::URI(URI const& other) noexcept
+    constexpr URI::URI(ice::URI const& other) noexcept
         : scheme{ other.scheme }
         , fragment{ other.fragment }
         , path{ other.path }

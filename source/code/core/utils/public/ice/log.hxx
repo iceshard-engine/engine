@@ -2,8 +2,7 @@
 #include <ice/string.hxx>
 #include <ice/log_severity.hxx>
 #include <ice/log_tag.hxx>
-
-#include <fmt/format.h>
+#include <ice/log_formatters.hxx>
 
 namespace ice::detail
 {

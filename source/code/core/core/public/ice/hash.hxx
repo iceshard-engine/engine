@@ -35,13 +35,19 @@ namespace ice
     template<>
     constexpr auto hash(std::string_view value) noexcept -> ice::u64
     {
-        return ice::detail::murmur2_hash::cexpr_murmur2_x64_64(value, 0x8642DA39).h[0];
+        using namespace ice::detail::murmur2_hash;
+
+        mm2_x64_64 const result = cexpr_murmur2_x64_64(value, 0x8642DA39);
+        return result.h[0];
     }
 
     template<>
     constexpr auto hash(char const* value) noexcept -> ice::u64
     {
-        return ice::detail::murmur2_hash::cexpr_murmur2_x64_64(value, 0x8642DA39).h[0];
+        using namespace ice::detail::murmur2_hash;
+
+        mm2_x64_64 const result = cexpr_murmur2_x64_64(value, 0x8642DA39);
+        return result.h[0];
     }
 
     template<typename T>
@@ -53,13 +59,19 @@ namespace ice
     template<>
     constexpr auto hash32(std::string_view value) noexcept -> ice::u32
     {
-        return ice::detail::murmur3_hash::cexpr_murmur3_x86_32(value, 0x428639DA).h[0];
+        using namespace ice::detail::murmur3_hash;
+
+        mm3_x86_h32 const result = cexpr_murmur3_x86_32(value, 0x428639DA);
+        return result.h[0];
     }
 
     template<>
     constexpr auto hash32(char const* value) noexcept -> ice::u32
     {
-        return ice::detail::murmur3_hash::cexpr_murmur3_x86_32(value, 0x428639DA).h[0];
+        using namespace ice::detail::murmur3_hash;
+
+        mm3_x86_h32 const result = cexpr_murmur3_x86_32(value, 0x428639DA);
+        return result.h[0];
     }
 
     template<typename T>
