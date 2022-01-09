@@ -9,8 +9,6 @@ namespace ice::path
 
     static constexpr ice::String separators_directory = "/\\";
 
-    static constexpr ice::WString Constant_DirectorySeparators = L"/\\";
-
     [[nodiscard]]
     bool is_absolute(ice::String path) noexcept;
 
@@ -23,7 +21,9 @@ namespace ice::path
     [[nodiscard]]
     auto directory(ice::String path) noexcept -> ice::String;
 
-#if ISP_WINDOWS
+#if !ISP_WINDOWS
+
+    static constexpr ice::WString Constant_DirectorySeparators = L"/\\";
 
     [[nodiscard]]
     auto directory(ice::WString path) noexcept -> ice::WString;
