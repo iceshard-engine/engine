@@ -21,7 +21,7 @@ namespace ice::path
     [[nodiscard]]
     auto directory(ice::String path) noexcept -> ice::String;
 
-#if !ISP_WINDOWS
+#if ISP_WINDOWS
 
     static constexpr ice::WString Constant_DirectorySeparators = L"/\\";
 
