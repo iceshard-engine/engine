@@ -23,8 +23,12 @@ namespace ice::path
     [[nodiscard]]
     auto directory(ice::String path) noexcept -> ice::String;
 
+#if ISP_WINDOWS
+
     [[nodiscard]]
     auto directory(ice::WString path) noexcept -> ice::WString;
+
+#endif
 
     auto normalize(ice::HeapString<>& path) noexcept -> ice::String;
 
