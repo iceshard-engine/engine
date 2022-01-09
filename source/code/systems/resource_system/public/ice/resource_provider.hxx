@@ -2,6 +2,7 @@
 #include <ice/data.hxx>
 #include <ice/task.hxx>
 #include <ice/userdata.hxx>
+#include <ice/unique_ptr.hxx>
 #include <ice/pod/array.hxx>
 
 namespace ice
@@ -25,5 +26,10 @@ namespace ice
 
         virtual bool query_changes(ice::pod::Array<ice::Resource_v2 const*>& out_changes) const noexcept = 0;
     };
+
+    auto create_resource_provider(
+        ice::Allocator& alloc,
+        ice::Utf8String path
+    ) noexcept -> ice::UniquePtr<ice::ResourceProvider_v2>;
 
 } // namespace ice

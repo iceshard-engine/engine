@@ -8,6 +8,11 @@ namespace ice::pod
     template<typename T>
     struct Array final
     {
+        static_assert(
+            ::std::is_trivially_copyable_v<T>,
+            "ice::pod::Hash only accepts trivially copyable objects."
+        );
+
         using ValueType = T;
         using Iterator = T*;
         using ReverSeIterator = std::reverse_iterator<T*>;
@@ -37,6 +42,11 @@ namespace ice::pod
     template<typename T>
     struct Queue final
     {
+        static_assert(
+            ::std::is_trivially_copyable_v<T>,
+            "ice::pod::Hash only accepts trivially copyable objects."
+        );
+
         using ValueType = T;
 
         explicit Queue(ice::Allocator& alloc) noexcept;
@@ -53,6 +63,11 @@ namespace ice::pod
     template<typename T>
     struct Hash final
     {
+        static_assert(
+            ::std::is_trivially_copyable_v<T>,
+            "ice::pod::Hash only accepts trivially copyable objects."
+        );
+
         struct Entry
         {
             uint64_t key;

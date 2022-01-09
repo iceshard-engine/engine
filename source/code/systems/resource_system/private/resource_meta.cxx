@@ -16,10 +16,9 @@ namespace ice
     namespace detail
     {
 
-        constexpr ice::String internal_metadata_header{ "ISAD" };
-        constexpr ice::Data internal_metadata_header_data{
-            .location = ice::string::data(internal_metadata_header),
-            .size = ice::string::size(internal_metadata_header),
+        constexpr ice::Data Constant_FileHeaderData_MetadataFile{
+            .location = ice::string::data(Constant_FileHeader_MetadataFile),
+            .size = ice::string::size(Constant_FileHeader_MetadataFile),
             .alignment = 1
         };
 
@@ -646,7 +645,7 @@ namespace ice
         {
             ice::String const loaded_header{ it, 4 };
 
-            if (loaded_header == detail::internal_metadata_header)
+            if (loaded_header == ice::Constant_FileHeader_MetadataFile)
             {
                 detail::deserialize_binary_meta(ice::Data{ it + 4, data.size - 4, data.alignment }, meta);
             }
@@ -673,7 +672,7 @@ namespace ice
 
         {
             ice::buffer::set_capacity_aligned(buffer, static_metadata_size, 8);
-            ice::buffer::append(buffer, detail::internal_metadata_header_data);
+            ice::buffer::append(buffer, detail::Constant_FileHeaderData_MetadataFile);
             ice::buffer::append(buffer, &hash_count, sizeof(hash_count), 1);
             ice::buffer::append(buffer, &value_count, sizeof(value_count), 1);
 
@@ -723,7 +722,7 @@ namespace ice
         char const* it = reinterpret_cast<char const*>(data.location);
 
         ice::String const head{ it, 4 };
-        ICE_ASSERT(ice::string::equals(head, ice::String{ "ISAD" }), "Invalid IceShard meta header!");
+        ICE_ASSERT(ice::string::equals(head, ice::Constant_FileHeader_MetadataFile), "Invalid IceShard meta header!");
         it += 4;
 
         ice::u32 const hash_count = *reinterpret_cast<ice::u32 const*>(it + 0);

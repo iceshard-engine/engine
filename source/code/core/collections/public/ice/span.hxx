@@ -5,8 +5,8 @@
 namespace ice
 {
 
-    template<typename T, std::size_t Extent = std::dynamic_extent>
-    using Span = std::span<T, Extent>;
+    template<typename T, ::std::size_t Extent = ::std::dynamic_extent>
+    using Span = ::std::span<T, Extent>;
 
     template<typename T>
     constexpr auto size(ice::Span<T> const& span) noexcept -> ice::u32
@@ -20,10 +20,16 @@ namespace ice
         return { cont.data(), cont.size() };
     }
 
-    template<typename T, std::size_t Size, template<typename, std::size_t> typename Container>
+    template<typename T, ::std::size_t Size, template<typename, ::std::size_t> typename Container>
     constexpr auto make_span(Container<T, Size> const& cont) noexcept -> ice::Span<T const, Size>
     {
         return cont;
+    }
+
+    template<typename T, ::std::size_t Size>
+    constexpr auto make_span(T(&array_obj)[Size]) noexcept -> ice::Span<T const, Size>
+    {
+        return { array_obj };
     }
 
 } // namespace ice

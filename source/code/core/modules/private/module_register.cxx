@@ -2,6 +2,7 @@
 #include <ice/module.hxx>
 #include <ice/pod/hash.hxx>
 #include <ice/os/windows.hxx>
+#include <ice/collections.hxx>
 
 namespace ice
 {
@@ -63,7 +64,7 @@ namespace ice
     private:
         ice::Allocator& _allocator;
         ice::pod::Hash<Win32ModuleEntry> _modules;
-        ice::pod::Array<ice::win32::ModuleHandle> _module_handles;
+        ice::Vector<ice::win32::SHHModule> _module_handles;
     };
 
     Win32ModuleRegister::Win32ModuleRegister(ice::Allocator& alloc) noexcept
@@ -80,11 +81,6 @@ namespace ice
                 entry.value.module_allocator
             );
         }
-
-        for (auto const& handle : _module_handles)
-        {
-            FreeLibrary(handle);
-        }
     }
 
     bool Win32ModuleRegister::load_module(
@@ -92,11 +88,11 @@ namespace ice
         ice::String path
     ) noexcept
     {
-        win32::ModuleHandle module_handle = LoadLibraryEx(ice::string::data(path), NULL, NULL);
-        if (module_handle != nullptr)
+        win32::SHHModule module_handle{ LoadLibraryExA(ice::string::data(path), NULL, NULL) };
+        if (module_handle)
         {
-            void* const load_proc = GetProcAddress(module_handle, "ice_module_load");
-            void* const unload_proc = GetProcAddress(module_handle, "ice_module_unload");
+            void* const load_proc = GetProcAddress(module_handle.native(), "ice_module_load");
+            void* const unload_proc = GetProcAddress(module_handle.native(), "ice_module_unload");
 
             if (load_proc != nullptr && unload_proc != nullptr)
             {
@@ -106,16 +102,11 @@ namespace ice
                     reinterpret_cast<ice::ModuleProcUnload*>(unload_proc)
                 );
 
-                ice::pod::array::push_back(_module_handles, module_handle);
-            }
-            else
-            {
-                FreeLibrary(module_handle);
-                module_handle = nullptr;
+                _module_handles.push_back(ice::move(module_handle));
             }
         }
 
-        return module_handle != nullptr;
+        return module_handle;
     }
 
     bool Win32ModuleRegister::load_module(

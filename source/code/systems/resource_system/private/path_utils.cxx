@@ -39,6 +39,12 @@ namespace ice::path
         return ice::string::substr(str, separator_pos == ice::string_npos ? ice::string::size(str) : 0, separator_pos);
     }
 
+    auto directory(ice::WString path) noexcept -> ice::WString
+    {
+        auto const separator_pos = ice::string::find_last_of(path, Constant_DirectorySeparators);
+        return ice::string::substr(path, separator_pos == ice::string_npos ? ice::string::size(path) : 0, separator_pos);
+    }
+
     auto normalize(ice::HeapString<>& path) noexcept -> ice::String
     {
         char* it = ice::string::begin(path);

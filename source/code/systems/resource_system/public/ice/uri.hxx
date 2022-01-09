@@ -18,18 +18,16 @@ namespace ice
     struct URI
     {
         constexpr URI() noexcept;
+        constexpr URI(ice::URI const& other) noexcept = default;
+
         constexpr explicit URI(char const* uri_raw) noexcept;
         constexpr explicit URI(ice::String uri) noexcept;
 
         constexpr URI(ice::StringID_Arg scheme, ice::String path) noexcept;
         constexpr URI(ice::StringID_Arg scheme, ice::String path, ice::StringID_Arg fragment) noexcept;
 
-        constexpr URI(ice::URI const& other) noexcept;
-
         ice::StringID_Hash scheme;
-
         ice::StringID fragment;
-
         ice::String path;
     };
 
@@ -88,6 +86,53 @@ namespace ice
             return ice::string::substr(uri, scheme_loc, fragment_loc);
         }
 
+        //constexpr auto path_from_uri(ice::String uri) noexcept
+        //{
+        //    ice::u32 scheme_loc = ice::string::find_first_of(uri, ':');
+        //    ice::u32 query_loc = ice::string::find_first_of(uri, '?');
+        //    ice::u32 fragment_loc = ice::string::find_last_of(uri, '#');
+
+        //    if (scheme_loc == ice::string_npos)
+        //    {
+        //        scheme_loc = 0;
+        //    }
+        //    else
+        //    {
+        //        // We move past the following sequence: `://`
+        //        scheme_loc += 3;
+        //    }
+
+        //    ice::u32 length = ice::string_npos;
+        //    if (query_loc != ice::string_npos)
+        //    {
+        //        length = query_loc - scheme_loc;
+        //    }
+        //    else if (fragment_loc != ice::string_npos)
+        //    {
+        //        length = fragment_loc - scheme_loc;
+        //    }
+
+        //    return ice::string::substr(uri, scheme_loc, length);
+        //}
+
+        //constexpr auto query_from_uri(ice::String uri) noexcept
+        //{
+        //    u32 query_loc = ice::string::find_first_of(uri, '?');
+        //    u32 fragment_loc = ice::string::find_last_of(uri, '#');
+
+        //    if (query_loc == ice::string_npos)
+        //    {
+        //        return ice::String{ };
+        //    }
+
+        //    if (fragment_loc != ice::string_npos)
+        //    {
+        //        fragment_loc -= query_loc;
+        //    }
+
+        //    return ice::string::substr(uri, query_loc, fragment_loc);
+        //}
+
     } // namespace detail
 
     constexpr URI::URI() noexcept
@@ -116,12 +161,6 @@ namespace ice
         : scheme{ ice::stringid_hash(scheme) }
         , fragment{ fragment }
         , path{ path }
-    { }
-
-    constexpr URI::URI(ice::URI const& other) noexcept
-        : scheme{ other.scheme }
-        , fragment{ other.fragment }
-        , path{ other.path }
     { }
 
     constexpr auto operator""_uri(char const* raw_uri, std::size_t length) noexcept -> ice::URI

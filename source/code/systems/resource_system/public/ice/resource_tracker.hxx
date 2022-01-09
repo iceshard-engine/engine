@@ -3,6 +3,7 @@
 #include <ice/shard.hxx>
 #include <ice/data.hxx>
 #include <ice/pod/array.hxx>
+#include <ice/unique_ptr.hxx>
 #include <ice/resource_meta.hxx>
 #include <ice/resource_action.hxx>
 
@@ -25,7 +26,6 @@ namespace ice
     {
     public:
         virtual ~ResourceTracker_v2() noexcept = default;
-
 
         virtual bool attach_provider(ice::ResourceProvider_v2* provider) noexcept = 0;
         virtual bool detach_provider(ice::ResourceProvider_v2* provider) noexcept = 0;
@@ -75,5 +75,9 @@ namespace ice
         // Probably prepare an interface or concept for this method?
         //virtual void query_shards(ice::pod::Array<ice::Shard>& out_shards) noexcept = 0;
     };
+
+    auto create_resource_tracker(
+        ice::Allocator& alloc
+    ) noexcept -> ice::UniquePtr<ice::ResourceTracker_v2>;
 
 } // namespace ice

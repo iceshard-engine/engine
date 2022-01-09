@@ -272,12 +272,12 @@ namespace ice
         template<typename CharType>
         inline void resize(ice::HeapString<CharType>& str, uint32_t new_size) noexcept
         {
-            if (new_size > str._capacity - 1)
+            if ((new_size + 1) > str._capacity)
             {
                 ice::string::grow(str, new_size + 1);
             }
             str._size = new_size;
-            str._data[str._size] = CharType{ 0 };
+            str._data[str._size] = value_type{ 0 };
         }
 
         template<typename CharType>
@@ -302,7 +302,7 @@ namespace ice
 
             str._data[str._size] = character;
             str._size += 1;
-            str._data[str._size] = CharType{ 0 };
+            str._data[str._size] = value_type{ 0 };
         }
 
         template<typename CharType>
@@ -328,7 +328,7 @@ namespace ice
                     ice::string::grow(str, new_size + 1);
                 }
 
-                ice::memcpy(ice::string::end(str), ice::string::data(other), ice::string::size(other));
+                ice::memcpy(ice::string::end(str), ice::string::data(other), ice::string::size(other) * sizeof(value_type));
                 str._size = new_size;
                 str._data[str._size] = 0;
             }
@@ -340,7 +340,7 @@ namespace ice
             if (str._data != nullptr)
             {
                 str._size -= ice::min(str._size, count);
-                str._data[str._size] = CharType{ 0 };
+                str._data[str._size] = value_type{ 0 };
             }
         }
 

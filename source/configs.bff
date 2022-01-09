@@ -42,6 +42,9 @@
         '/Z7'
         '/EHsc'
     }
+    .Defines = {
+        'UNICODE'
+    }
 ]
 
 .Config_Unix =

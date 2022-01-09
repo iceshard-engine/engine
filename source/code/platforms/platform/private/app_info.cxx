@@ -14,14 +14,14 @@ namespace ice
     void app_location(ice::HeapString<>& out) noexcept
     {
         ice::StackString<256> temp{ "" };
-        GetModuleFileName(NULL, ice::string::begin(temp), ice::string::capacity(temp));
+        GetModuleFileNameA(NULL, ice::string::begin(temp), ice::string::capacity(temp));
         out = std::filesystem::canonical(ice::string::data(temp)).parent_path().generic_string();
     }
 
     void working_directory(ice::HeapString<>& out) noexcept
     {
         ice::StackString<256> temp{ "" };
-        GetCurrentDirectory(ice::string::capacity(temp), ice::string::begin(temp));
+        GetCurrentDirectoryA(ice::string::capacity(temp), ice::string::begin(temp));
         out = std::filesystem::canonical(ice::string::data(temp)).generic_string();
     }
 

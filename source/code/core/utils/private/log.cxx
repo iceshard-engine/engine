@@ -135,7 +135,7 @@ namespace ice::detail
         final_buffer.push_back('\0');
 
 #if ISP_WINDOWS
-        OutputDebugString(final_buffer.data());
+        OutputDebugStringA(final_buffer.data());
 #endif
     }
 

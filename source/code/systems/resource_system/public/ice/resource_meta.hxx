@@ -188,4 +188,8 @@ namespace ice
         ice::Data _additional_data;
     };
 
+
+    static constexpr ice::String Constant_FileHeader_MetadataFile = "ISMF";
+    static constexpr ice::String Constant_FileHeader_ResourceFile = "ISRF";
+
 } // namespace ice
