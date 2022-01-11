@@ -116,7 +116,7 @@ namespace ice
         ice::win32::SHHandle handle = CreateFile(
             ice::string::data(path),
             GENERIC_READ,
-            0, // FILE_SHARE_*
+            FILE_SHARE_READ | FILE_SHARE_WRITE, // FILE_SHARE_*
             NULL, // SECURITY ATTRIBS
             OPEN_EXISTING,
             FILE_ATTRIBUTE_NORMAL, // At some point we might add: FILE_FLAG_OVERLAPPED, FILE_FLAG_RANDOM_ACCESS
@@ -208,12 +208,13 @@ namespace ice
                 );
 
                 ice::pod::Array<ice::Utf8String> paths{ alloc };
+                ice::pod::array::reserve(paths, 4);
                 ice::pod::array::push_back(paths, utf8_data_file_path);
 
                 ice::pod::Array<ice::i32> flags{ alloc };
+                ice::pod::array::reserve(flags, 4);
                 ice::pod::array::push_back(flags, 0);
 
-#if 0
                 if (has_paths && has_flags)
                 {
                     ice::meta_read_utf8_array(mutable_meta, "resource.extra_files.paths"_sid, paths);
@@ -226,9 +227,10 @@ namespace ice
                     extra_handles.push_back(ice::move(data_handle));
 
                     ice::HeapString<wchar_t> full_path{ alloc, base_dir };
-                    ice::u32 const base_dir_size = ice::string::size(base_dir);
+                    ice::string::push_back(full_path, L'/');
+                    ice::u32 const base_dir_size = ice::string::size(base_dir) + 1;
 
-                    for (ice::Utf8String const& file_path : paths)
+                    for (ice::Utf8String& file_path : ice::pod::array::span(paths, 1))
                     {
                         ice::string::resize(full_path, base_dir_size);
                         utf8_to_wide_append(file_path, full_path);
@@ -242,15 +244,13 @@ namespace ice
 
                         if (!extra_handle)
                         {
+                            file_path = {};
                             extra_handle = HANDLE{ };
                         }
 
                         extra_handles.push_back(ice::move(extra_handle));
                     }
-
-
                 }
-#endif
 
                 result = alloc.make<ice::Resource_LooseFilesWin32>(
                     ice::move(mutable_meta),

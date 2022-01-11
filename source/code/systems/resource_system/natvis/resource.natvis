@@ -50,7 +50,8 @@
   </Type>
 
   <Type Name="ice::Resource_LooseFilesWin32">
-    <DisplayString>Resource "{_origin_name,s8b}" [loose, meta_entries: {_metadata._meta_entries._data._size}, files: {_data_files._size}]</DisplayString>
+    <DisplayString Condition="_data_files._size == 1">Resource [metadata: {_metadata._meta_entries._data._size}, loose file] "{_origin_name,s8b}"</DisplayString>
+    <DisplayString Condition="_data_files._size &gt; 1">Resource [metadata: {_metadata._meta_entries._data._size}, loose files: {_data_files._size}] "{_origin_name,s8b}"</DisplayString>
     <Expand>
       <Item Name="[name]">_origin_name,s8</Item>
       <Item Name="[origin]">_origin_path._data,s8</Item>
