@@ -1,0 +1,13 @@
+{
+    "render_drivers": {
+        "vulkan": {
+            "name": "Vulkan Driver",
+            "resource": "vulkan_driver.dll"
+        },
+        "none": {
+            "name": "No Driver",
+            "resource": ""
+        }
+    },
+    "render_driver": "vulkan"
+}
