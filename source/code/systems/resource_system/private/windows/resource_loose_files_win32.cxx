@@ -1,4 +1,4 @@
-#include "resorce_file_win32.hxx"
+#include "resource_loose_files_win32.hxx"
 #include <ice/assert.hxx>
 #include <ice/memory/stack_allocator.hxx>
 #include <ice/collections.hxx>

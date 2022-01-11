@@ -1,4 +1,4 @@
-#include "resorce_dir_win32.hxx"
+#include "resource_baked_win32.hxx"
 
 namespace ice
 {

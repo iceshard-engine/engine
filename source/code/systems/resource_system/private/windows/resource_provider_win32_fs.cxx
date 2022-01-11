@@ -5,7 +5,7 @@
 #include <ice/os/windows.hxx>
 #include <ice/heap_string.hxx>
 
-#include "resorce_file_win32.hxx"
+#include "resource_loose_files_win32.hxx"
 #include "../path_utils.hxx"
 
 #if ISP_WINDOWS
