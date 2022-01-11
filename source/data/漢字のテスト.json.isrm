@@ -1,4 +1,4 @@
-﻿{
+{
   "resource": {
     "bools": [ true, false, true, false ],
     "integers": [ 2, 4, 8, 42, 42069 ],
