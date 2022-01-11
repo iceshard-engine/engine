@@ -5,6 +5,12 @@
 # top-most EditorConfig file
 root = true
 
+[*.{natvis,xml}]
+indent_style = space
+indent_size = 2
+insert_final_newline = true
+
+
 [*.{c++,cc,cpp,cppm,cxx,h,h++,hh,hpp,hxx,inl,ipp,ixx,tlh,tli}]
 indent_style = space
 insert_final_newline = true
