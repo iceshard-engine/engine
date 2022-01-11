@@ -9,7 +9,9 @@ namespace ice
     using BasicString = std::basic_string_view<CharType>;
 
     using String = BasicString<char>;
+
     using Utf8String = BasicString<char8_t>;
+    using AsciiString = BasicString<char>;
 
 #if ISP_WINDOWS
     using WString = BasicString<wchar_t>;

@@ -39,16 +39,6 @@ namespace ice::path
         return ice::string::substr(str, separator_pos == ice::string_npos ? ice::string::size(str) : 0, separator_pos);
     }
 
-#if ISP_WINDOWS
-
-    auto directory(ice::WString path) noexcept -> ice::WString
-    {
-        auto const separator_pos = ice::string::find_last_of(path, Constant_DirectorySeparators);
-        return ice::string::substr(path, separator_pos == ice::string_npos ? ice::string::size(path) : 0, separator_pos);
-    }
-
-#endif
-
     auto normalize(ice::HeapString<>& path) noexcept -> ice::String
     {
         char* it = ice::string::begin(path);
@@ -168,5 +158,56 @@ namespace ice::path
 
         return str;
     }
+
+#if ISP_WINDOWS
+
+    bool is_absolute(ice::WString path) noexcept
+    {
+        if constexpr (ice::build::is_windows)
+        {
+            if (path.size() >= 3)
+            {
+                return path[1] == L':' && ice::string::find_first_of(Constant_DirectorySeparators, path[2]) != ice::string_npos;
+            }
+            return false;
+        }
+        else
+        {
+            return false;
+        }
+    }
+
+    auto directory(ice::WString path) noexcept -> ice::WString
+    {
+        auto const separator_pos = ice::string::find_last_of(path, Constant_DirectorySeparators);
+        return ice::string::substr(path, separator_pos == ice::string_npos ? ice::string::size(path) : 0, separator_pos);
+    }
+
+    auto join(ice::HeapString<wchar_t>& left, ice::WString right) noexcept -> ice::WString
+    {
+        // This one was taken from MS's std::filesystem implementation.
+        if (is_absolute(right))
+        {
+            return left.operator=(right);
+        }
+
+        if (auto last_char = ice::string::back(left); last_char != '/' && last_char != '.')
+        {
+            if (last_char == '\\')
+            {
+                ice::string::pop_back(left);
+            }
+            ice::string::push_back(left, L'/');
+        }
+
+        if (right != L".")
+        {
+            ice::string::push_back(left, right);
+        }
+
+        return left;
+    }
+
+#endif
 
 } // namespace ice::path

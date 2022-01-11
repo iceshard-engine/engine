@@ -31,6 +31,22 @@ namespace ice
         ice::String path;
     };
 
+    struct URI_v2
+    {
+        constexpr URI_v2() noexcept;
+        constexpr URI_v2(ice::URI_v2 const& other) noexcept = default;
+
+        constexpr explicit URI_v2(char8_t const* uri_raw) noexcept;
+        constexpr explicit URI_v2(ice::Utf8String uri) noexcept;
+
+        constexpr URI_v2(ice::StringID_Arg scheme, ice::Utf8String path) noexcept;
+        constexpr URI_v2(ice::StringID_Arg scheme, ice::Utf8String path, ice::StringID_Arg fragment) noexcept;
+
+        ice::StringID_Hash scheme;
+        ice::StringID fragment;
+        ice::Utf8String path;
+    };
+
 
     namespace detail
     {
@@ -158,6 +174,35 @@ namespace ice
     { }
 
     constexpr URI::URI(ice::StringID_Arg scheme, ice::String path, ice::StringID_Arg fragment) noexcept
+        : scheme{ ice::stringid_hash(scheme) }
+        , fragment{ fragment }
+        , path{ path }
+    { }
+
+
+    constexpr URI_v2::URI_v2() noexcept
+        : scheme{ ice::stringid_hash(ice::scheme_invalid) }
+        , fragment{ ice::stringid_invalid }
+        , path{ u8"" }
+    { }
+
+    constexpr URI_v2::URI_v2(char8_t const* uri_raw) noexcept
+        : URI_v2{ ice::Utf8String{ uri_raw } }
+    { }
+
+    //constexpr URI_v2::URI_v2(ice::Utf8String uri) noexcept
+    //    : scheme{ detail::scheme_from_uri(uri) }
+    //    , fragment{ detail::fragment_from_uri(uri) }
+    //    , path{ detail::path_from_uri(uri) }
+    //{ }
+
+    constexpr URI_v2::URI_v2(ice::StringID_Arg scheme, ice::Utf8String path) noexcept
+        : scheme{ ice::stringid_hash(scheme) }
+        , fragment{ ice::stringid_hash(ice::stringid_invalid) }
+        , path{ path }
+    { }
+
+    constexpr URI_v2::URI_v2(ice::StringID_Arg scheme, ice::Utf8String path, ice::StringID_Arg fragment) noexcept
         : scheme{ ice::stringid_hash(scheme) }
         , fragment{ fragment }
         , path{ path }

@@ -44,32 +44,32 @@ namespace ice
             ice::URI const& uri,
             ice::Metadata const& metadata,
             ice::Data data
-        ) noexcept -> ice::Task<ice::ResourceAction_v2::Result> = 0;
+        ) noexcept -> ice::Task<ice::ResourceActionResult> = 0;
 
         virtual auto set_resource(
             ice::URI const& uri,
             ice::Resource_v2 const* resource,
             bool replace = false
-        ) noexcept -> ice::Task<ice::ResourceAction_v2::Result> = 0;
+        ) noexcept -> ice::Task<ice::ResourceActionResult> = 0;
 
 
         virtual auto load_resource(
             ice::Resource_v2 const* resource
-        ) noexcept -> ice::Task<ice::ResourceAction_v2::Result> = 0;
+        ) noexcept -> ice::Task<ice::ResourceActionResult> = 0;
 
         virtual auto release_resource(
             ice::Resource_v2 const* resource
-        ) noexcept -> ice::Task<ice::ResourceAction_v2::Result> = 0;
+        ) noexcept -> ice::Task<ice::ResourceActionResult> = 0;
 
         virtual auto unload_resource(
             ice::Resource_v2 const* resource
-        ) noexcept -> ice::Task<ice::ResourceAction_v2::Result> = 0;
+        ) noexcept -> ice::Task<ice::ResourceActionResult> = 0;
 
         virtual auto update_resource(
             ice::Resource_v2 const* resource,
             ice::Metadata const* metadata,
             ice::Data data
-        ) noexcept -> ice::Task<ice::ResourceAction_v2::Result> = 0;
+        ) noexcept -> ice::Task<ice::ResourceActionResult> = 0;
 
     public:
         // Probably prepare an interface or concept for this method?

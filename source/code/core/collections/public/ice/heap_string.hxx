@@ -445,7 +445,7 @@ namespace ice
         template<typename CharType>
         inline auto substr(ice::HeapString<CharType> const& str, uint32_t pos, uint32_t len) noexcept -> ice::BasicString<CharType>
         {
-            return ice::string::substr(str.operator ice::String(), pos, len);
+            return ice::string::substr(ice::BasicString<CharType>{ str }, pos, len);
         }
 
         template<typename CharType>
