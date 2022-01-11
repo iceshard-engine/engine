@@ -86,9 +86,24 @@ namespace ice
 
                 for (auto const& value : arr)
                 {
-                    if (value.IsInt())
+                    if (value.IsFloat())
                     {
                         ice::pod::array::push_back(final_values, value.GetFloat());
+                    }
+                }
+
+                ice::meta_set_float_array(meta, key, ice::Span<ice::f32>{ final_values });
+            }
+            else if (arr[0].IsDouble())
+            {
+                ice::pod::Array<ice::f32> final_values{ alloc };
+                ice::pod::array::reserve(final_values, count);
+
+                for (auto const& value : arr)
+                {
+                    if (value.IsDouble())
+                    {
+                        ice::pod::array::push_back(final_values, static_cast<ice::f32>(value.GetDouble()));
                     }
                 }
 
@@ -153,6 +168,10 @@ namespace ice
                     else if (entry.value.IsFloat())
                     {
                         ice::meta_set_float(meta, ice::stringid(field_key), entry.value.GetFloat());
+                    }
+                    else if (entry.value.IsDouble())
+                    {
+                        ice::meta_set_float(meta, ice::stringid(field_key), static_cast<ice::f32>(entry.value.GetDouble()));
                     }
                     else if (entry.value.IsString())
                     {

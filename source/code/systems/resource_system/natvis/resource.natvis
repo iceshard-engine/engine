@@ -44,16 +44,16 @@
       <Item Name="[value]" Condition="data_count == 0 &amp;&amp; data_type == 1">value_int,b</Item>
       <Item Name="[value]" Condition="data_count == 0 &amp;&amp; data_type == 2">value_int</Item>
       <Item Name="[value]" Condition="data_count == 0 &amp;&amp; data_type == 3">value_float</Item>
-      <Item Name="[offset]" Condition="data_type &gt;= 4">value_buffer.offset</Item>
-      <Item Name="[size]" Condition="data_type &gt;= 4">value_buffer.size</Item>
+      <Item Name="[offset]" Condition="data_count != 0 || data_type &gt;= 4">value_buffer.offset</Item>
+      <Item Name="[size]" Condition="data_count != 0 || data_type &gt;= 4">value_buffer.size</Item>
     </Expand>
   </Type>
 
   <Type Name="ice::Resource_LooseFilesWin32">
-    <DisplayString>Resource "{_origin_name,sb}" [loose, meta_entries: {_metadata._meta_entries._data._size}, files: {_data_files._size}]</DisplayString>
+    <DisplayString>Resource "{_origin_name,s8b}" [loose, meta_entries: {_metadata._meta_entries._data._size}, files: {_data_files._size}]</DisplayString>
     <Expand>
-      <Item Name="[name]">_origin_name,s</Item>
-      <Item Name="[origin]">_origin_path._data,s</Item>
+      <Item Name="[name]">_origin_name,s8</Item>
+      <Item Name="[origin]">_origin_path._data,s8</Item>
       <Item Name="[metadata]">_metadata</Item>
       <Item Name="[files]">_data_files</Item>
       <Item Name="[flags]">_data_files_flags</Item>
