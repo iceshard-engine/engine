@@ -8,8 +8,8 @@
 namespace ice
 {
 
-    static constexpr ice::StringID Tilemap_VtxShader = "/shaders/game2d/tiled-vtx"_sid;
-    static constexpr ice::StringID Tilemap_PixShader = "/shaders/game2d/tiled-pix"_sid;
+    static constexpr ice::StringID Tilemap_VtxShader = "shaders/game2d/tiled-vtx"_sid;
+    static constexpr ice::StringID Tilemap_PixShader = "shaders/game2d/tiled-pix"_sid;
 
     struct Tile;
     struct TileMap;

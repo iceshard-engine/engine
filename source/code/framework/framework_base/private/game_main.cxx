@@ -16,7 +16,7 @@
 #include <ice/devui/devui_system.hxx>
 
 #include <ice/resource_query.hxx>
-#include <ice/resource_system.hxx>
+#include <ice/resource_tracker.hxx>
 #include <ice/asset_system.hxx>
 #include <ice/asset_module.hxx>
 
@@ -27,7 +27,7 @@
 #include <ice/memory/memory_globals.hxx>
 #include <ice/memory/proxy_allocator.hxx>
 
-auto game_main(ice::Allocator& alloc, ice::ResourceSystem& resources) -> ice::i32
+auto game_main(ice::Allocator& alloc, ice::ResourceTracker_v2& resources) -> ice::i32
 {
     using ice::operator""_uri;
     using ice::operator""_sid;
@@ -57,39 +57,15 @@ auto game_main(ice::Allocator& alloc, ice::ResourceSystem& resources) -> ice::i3
 
         game_framework->load_modules();
 
-        // Mount the current working directory
-        //  This allows to automatically detect any `config.json` file stored with the executable.
-        resources.mount("dir://."_uri);
+        ice::URI_v2 const config_file = game_framework->config_uri();
 
-        ice::URI const config_file = game_framework->config_uri();
-        ice::u32 const mounted_files = resources.mount(config_file);
-        ICE_ASSERT(
-            mounted_files >= 1,
-            "Missing config file for URI: {}",
-            config_file.path
-        );
+        ice::pod::Array<ice::ResourceHandle*> gathered_resources{ alloc };
+        resources.gather_resources(gathered_resources);
 
-        ice::UniquePtr<ice::AssetSystem> asset_system = ice::make_unique_null<ice::AssetSystem>();
+        ice::UniquePtr<ice::AssetSystem> asset_system = ice::create_asset_system(asset_alloc, resources);
+        ice::load_asset_pipeline_modules(asset_alloc, *module_register, *asset_system);
 
-        {
-            ice::ResourceQuery resource_query;
-            resources.query_changes(resource_query);
-            resources.mount("file://mount.isr"_uri);
-
-            ice::Resource* const mount_file = resources.request("urn://mount.isr"_uri);
-            if (mount_file != nullptr)
-            {
-                ICE_LOG(ice::LogSeverity::Info, ice::LogTag::Game, "Custom mount file found: {}\n", mount_file->location().path);
-            }
-
-            resources.query_changes(resource_query);
-            resources.mount("dir://../source/data"_uri);
-            resources.query_changes(resource_query);
-
-            asset_system = ice::create_asset_system(asset_alloc, resources);
-            ice::load_asset_pipeline_modules(asset_alloc, *module_register, *asset_system);
-            asset_system->bind_resources(resource_query.objects);
-        }
+        asset_system->bind_resources(gathered_resources);
 
         ice::UniquePtr<ice::devui::DevUISystem> engine_devui = ice::make_unique_null<ice::devui::DevUISystem>();
         if (ice::build::is_debug || ice::build::is_develop)

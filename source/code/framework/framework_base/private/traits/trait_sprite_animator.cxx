@@ -78,13 +78,13 @@ namespace ice
                     return;
                 }
 
-                ice::pod::Array<ice::String> anim_names{ frame.allocator() };
-                if (meta_read_string_array(asset_meta, "animation.names"_sid, anim_names) == false)
+                ice::pod::Array<ice::Utf8String> anim_names{ frame.allocator() };
+                if (meta_read_utf8_array(asset_meta, "animation.names"_sid, anim_names) == false)
                 {
                     return;
                 }
 
-                for (ice::String const& name : anim_names)
+                for (ice::Utf8String const& name : anim_names)
                 {
                     ice::StringID nameid = ice::stringid(name);
 
@@ -93,9 +93,9 @@ namespace ice
                         return;
                     }
 
-                    ice::StackString<64> meta_key{ "animation." };
+                    ice::StackString<64, char8_t> meta_key{ u8"animation." };
                     ice::string::push_back(meta_key, name);
-                    ice::string::push_back(meta_key, '.');
+                    ice::string::push_back(meta_key, u8'.');
                     ice::u32 const base_key_size = ice::string::size(meta_key);
 
                     ice::i32 frame_count;
@@ -104,19 +104,19 @@ namespace ice
 
                     // Frame count
                     bool success = true;
-                    ice::string::push_back(meta_key, "frame_count");
+                    ice::string::push_back(meta_key, u8"frame_count");
                     success &= ice::meta_read_int32(asset_meta, ice::stringid(meta_key), frame_count);
 
                     ice::string::resize(meta_key, base_key_size);
-                    ice::string::push_back(meta_key, "frame_step");
+                    ice::string::push_back(meta_key, u8"frame_step");
                     ice::meta_read_int32(asset_meta, ice::stringid(meta_key), frame_step);
 
                     ice::string::resize(meta_key, base_key_size);
-                    ice::string::push_back(meta_key, "frame_initial_x");
+                    ice::string::push_back(meta_key, u8"frame_initial_x");
                     success &= ice::meta_read_int32(asset_meta, ice::stringid(meta_key), frame_initial[0]);
 
                     ice::string::resize(meta_key, base_key_size);
-                    ice::string::push_back(meta_key, "frame_initial_y");
+                    ice::string::push_back(meta_key, u8"frame_initial_y");
                     success &= ice::meta_read_int32(asset_meta, ice::stringid(meta_key), frame_initial[1]);
 
                     if (success == false)

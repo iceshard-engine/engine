@@ -210,8 +210,8 @@ namespace ice
     {
         ice::AssetSystem& asset_system = engine.asset_system();
 
-        _shader_data[0] = ice::detail::load_postprocess_shader(asset_system, "/shaders/debug/pp-vert"_sid);
-        _shader_data[1] = ice::detail::load_postprocess_shader(asset_system, "/shaders/debug/pp-frag"_sid);
+        _shader_data[0] = ice::detail::load_postprocess_shader(asset_system, "shaders/debug/pp-vert"_sid);
+        _shader_data[1] = ice::detail::load_postprocess_shader(asset_system, "shaders/debug/pp-frag"_sid);
     }
 
     void IceWorldTrait_RenderPostProcess::record_commands(

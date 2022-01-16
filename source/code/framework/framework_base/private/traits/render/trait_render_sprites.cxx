@@ -290,8 +290,8 @@ namespace ice
     {
         _asset_system = ice::addressof(engine.asset_system());
 
-        _shader_data[0] = ice::detail::load_sprite_shader(*_asset_system, "/shaders/game2d/sprite-vtx"_sid);
-        _shader_data[1] = ice::detail::load_sprite_shader(*_asset_system, "/shaders/game2d/sprite-pix"_sid);
+        _shader_data[0] = ice::detail::load_sprite_shader(*_asset_system, "shaders/game2d/sprite-vtx"_sid);
+        _shader_data[1] = ice::detail::load_sprite_shader(*_asset_system, "shaders/game2d/sprite-pix"_sid);
 
         portal.storage().create_named_object<detail::SpriteQuery::Query>(
             detail::SpriteQueryId,

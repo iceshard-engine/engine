@@ -527,8 +527,8 @@ namespace ice::devui
         io.KeyMap[ImGuiKey_Y] = (uint32_t)ice::input::KeyboardKey::KeyY;
         io.KeyMap[ImGuiKey_Z] = (uint32_t)ice::input::KeyboardKey::KeyZ;
 
-        _shader_data[0] = detail::load_imgui_shader(engine.asset_system(), "/shaders/debug/imgui-vert"_sid);
-        _shader_data[1] = detail::load_imgui_shader(engine.asset_system(), "/shaders/debug/imgui-frag"_sid);
+        _shader_data[0] = detail::load_imgui_shader(engine.asset_system(), "shaders/debug/imgui-vert"_sid);
+        _shader_data[1] = detail::load_imgui_shader(engine.asset_system(), "shaders/debug/imgui-frag"_sid);
     }
 
     void ImGuiTrait::on_update(

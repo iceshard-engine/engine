@@ -62,8 +62,8 @@ namespace ice
     {
         ice::AssetSystem& asset_system = engine.asset_system();
 
-        _shader_data[0] = ice::detail::load_debug_shader(asset_system, "/shaders/debug/debug-vert"_sid);
-        _shader_data[1] = ice::detail::load_debug_shader(asset_system, "/shaders/debug/debug-frag"_sid);
+        _shader_data[0] = ice::detail::load_debug_shader(asset_system, "shaders/debug/debug-vert"_sid);
+        _shader_data[1] = ice::detail::load_debug_shader(asset_system, "shaders/debug/debug-frag"_sid);
     }
 
     void IceWorldTrait_RenderDebug::gfx_setup(
