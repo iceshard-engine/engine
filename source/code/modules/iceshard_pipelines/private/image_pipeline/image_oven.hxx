@@ -4,8 +4,8 @@
 namespace ice
 {
 
-    class ResourceHandle;
     class ResourceTracker_v2;
+    struct ResourceHandle;
 
     class IceshardImageOven final : public ice::AssetOven
     {

@@ -12,8 +12,10 @@ namespace ice
 
     class Resource_v2;
     class ResourceProvider_v2;
+    struct ResourceHandle;
 
-    using Res = ResourceHandle*;
+    auto resource_origin(ice::ResourceHandle const* handle) noexcept -> ice::Utf8String;
+    auto resource_object_DEPRECATED(ice::ResourceHandle const* handle) noexcept -> ice::Resource_v2 const*;
 
     enum class ResourceFlags_v2 : ice::u32
     {
@@ -24,25 +26,6 @@ namespace ice
         Phone
     };
 
-    struct ResourceHandle
-    {
-        ice::ResourceProvider_v2* provider;
-        ice::Resource_v2 const* resource;
-        ice::Memory data;
-
-        ice::ResourceStatus_v2 status;
-        ice::u32 refcount;
-        ice::u32 usecount;
-    };
-
-    inline auto resource_object(ice::ResourceHandle const* handle) noexcept -> ice::Resource_v2 const*
-    {
-        return handle->resource;
-    }
-
-    auto resource_origin(ice::ResourceHandle const* handle) noexcept -> ice::Utf8String;
-
-    auto resource_object(ice::ResourceHandle const* handle) noexcept -> ice::Resource_v2 const*;
 
     class ResourceTracker_v2
     {
@@ -54,7 +37,8 @@ namespace ice
 
         virtual void refresh_providers() noexcept = 0;
 
-        virtual void gather_resources(
+
+        virtual void gather_resources_DEPRECATED(
             ice::pod::Array<ice::ResourceHandle*>& handles
         ) const noexcept = 0;
 
@@ -64,17 +48,10 @@ namespace ice
         ) const noexcept -> ice::ResourceHandle* = 0;
 
 
-        //virtual auto create_resource(
-        //    ice::URI_v2 const& uri,
-        //    ice::Metadata const& metadata,
-        //    ice::Data data
-        //) noexcept -> ice::Task<ice::ResourceActionResult> = 0;
-
         virtual auto set_resource(
             ice::URI_v2 const& uri,
             ice::ResourceHandle* resource_handle
         ) noexcept -> ice::Task<ice::ResourceActionResult> = 0;
-
 
         virtual auto load_resource(
             ice::ResourceHandle* resource_handle
@@ -87,16 +64,6 @@ namespace ice
         virtual auto unload_resource(
             ice::ResourceHandle* resource_handle
         ) noexcept -> ice::Task<ice::ResourceActionResult> = 0;
-
-        //virtual auto update_resource(
-        //    ice::Resource_v2 const* resource_handle,
-        //    ice::Metadata const* metadata,
-        //    ice::Data data
-        //) noexcept -> ice::Task<ice::ResourceActionResult> = 0;
-
-    public:
-        // Probably prepare an interface or concept for this method?
-        //virtual void query_shards(ice::pod::Array<ice::Shard>& out_shards) noexcept = 0;
     };
 
     auto create_resource_tracker(

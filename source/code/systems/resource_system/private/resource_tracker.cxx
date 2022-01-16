@@ -17,10 +17,25 @@ namespace ice
 
     static constexpr ice::LogTagDefinition LogTag_ResourceSystem = ice::create_log_tag(ice::LogTag::System, "Resources");
 
+    struct ResourceHandle
+    {
+        ice::ResourceProvider_v2* provider;
+        ice::Resource_v2 const* resource;
+        ice::Memory data;
+
+        ice::ResourceStatus_v2 status;
+        ice::u32 refcount;
+        ice::u32 usecount;
+    };
 
     auto resource_origin(ice::ResourceHandle const* handle) noexcept -> ice::Utf8String
     {
         return handle->resource->origin();
+    }
+
+    auto resource_object_DEPRECATED(ice::ResourceHandle const* handle) noexcept -> ice::Resource_v2 const*
+    {
+        return handle->resource;
     }
 
     class ResourceTracker_Impl final : public ice::ResourceTracker_v2, public ice::TaskScheduler_v2
@@ -132,7 +147,7 @@ namespace ice
             }
         }
 
-        void gather_resources(
+        void gather_resources_DEPRECATED(
             ice::pod::Array<ice::ResourceHandle*>& handles
         ) const noexcept override
         {

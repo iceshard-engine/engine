@@ -265,7 +265,7 @@ namespace ice
     {
         for (ice::ResourceHandle* handle : resources)
         {
-            ice::Resource_v2 const* resource = ice::resource_object(handle);
+            ice::Resource_v2 const* resource = ice::resource_object_DEPRECATED(handle);
 
             // TODO: Remove during asset system refactor.
             ice::String const res_name_DEPRECATED{ reinterpret_cast<char const*>(resource->name().data()), resource->name().size() };
@@ -378,7 +378,7 @@ namespace ice
         ice::ResourceHandle* handle
     ) noexcept
     {
-        ice::Resource_v2 const* resource = ice::resource_object(handle);
+        ice::Resource_v2 const* resource = ice::resource_object_DEPRECATED(handle);
 
         // TODO: Remove during asset system refactor.
         ice::String const res_name_DEPRECATED{ reinterpret_cast<char const*>(resource->name().data()), resource->name().size() };
@@ -525,7 +525,7 @@ namespace ice
         // Try compiling if needed
         if (asset_object.status == AssetStatus::Available_Raw)
         {
-            ice::Resource_v2 const* resource = ice::resource_object(asset_info.handle);
+            ice::Resource_v2 const* resource = ice::resource_object_DEPRECATED(asset_info.handle);
 
             // TODO: Remove during asset system refactor.
             ice::String const res_name_DEPRECATED{ reinterpret_cast<char const*>(resource->name().data()), resource->name().size() };
@@ -570,7 +570,7 @@ namespace ice
 
         // Try to load the new asset
         {
-            ice::Metadata const& meta = ice::resource_object(asset_info.handle)->metadata();
+            ice::Metadata const& meta = ice::resource_object_DEPRECATED(asset_info.handle)->metadata();
             if (ice::meta_has_entry(meta, "asset.explicit_dependencies"_sid))
             {
                 detail::ExplicitAssetSolver explicit_solver{ _allocator, *this, _resource_system, meta };
@@ -614,7 +614,7 @@ namespace ice
 
     auto SimpleAssetSystem::load(ice::AssetType type, ice::ResourceHandle* handle) noexcept -> Asset
     {
-        ice::Resource_v2 const* resource = ice::resource_object(handle);
+        ice::Resource_v2 const* resource = ice::resource_object_DEPRECATED(handle);
 
         // TODO: Remove during asset system refactor.
         ice::String const res_name_DEPRECATED{ reinterpret_cast<char const*>(resource->name().data()), resource->name().size() };

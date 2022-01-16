@@ -309,9 +309,9 @@ namespace ice::ecs
 
         // Data for storing component info
         additional_data_size += sizeof(ice::ecs::EntityOperations::ComponentInfo);
-        additional_data_size += component_info.names.size_bytes();
-        additional_data_size += component_info.sizes.size_bytes();
-        additional_data_size += component_info.offsets.size_bytes();
+        additional_data_size += static_cast<ice::u32>(component_info.names.size_bytes());
+        additional_data_size += static_cast<ice::u32>(component_info.sizes.size_bytes());
+        additional_data_size += static_cast<ice::u32>(component_info.offsets.size_bytes());
 
         // Component data
         for (ice::Data const& data : component_data)

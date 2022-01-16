@@ -5,8 +5,8 @@
 namespace ice
 {
 
-    class ResourceHandle;
     class ResourceTracker_v2;
+    struct ResourceHandle;
 
     enum class BakeResult : ice::u32
     {

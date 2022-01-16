@@ -30,7 +30,7 @@ namespace ice::detail
         }
 
         void* old_data = this->data();
-        char* new_data = reinterpret_cast<char*>(_allocator.allocate(new_capacity));
+        char* new_data = reinterpret_cast<char*>(_allocator.allocate(static_cast<ice::u32>(new_capacity)));
 
         // The following code doesn't throw, so the raw pointer above doesn't leak.
         ice::memcpy(new_data, old_data, old_capacity);

@@ -59,7 +59,7 @@ auto game_main(ice::Allocator& alloc, ice::ResourceTracker_v2& resources) -> ice
         ice::URI_v2 const config_file = game_framework->config_uri();
 
         ice::pod::Array<ice::ResourceHandle*> gathered_resources{ alloc };
-        resources.gather_resources(gathered_resources);
+        resources.gather_resources_DEPRECATED(gathered_resources);
 
         ice::UniquePtr<ice::AssetSystem> asset_system = ice::create_asset_system(asset_alloc, resources);
         ice::load_asset_pipeline_modules(asset_alloc, *module_register, *asset_system);

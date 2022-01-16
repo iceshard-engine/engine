@@ -215,6 +215,8 @@ namespace ice::build
             return "msvc";
         case Compiler::Clang:
             return "clang";
+        case Compiler::GCC:
+            return "gcc";
         default:
             return "<invalid>";
         }

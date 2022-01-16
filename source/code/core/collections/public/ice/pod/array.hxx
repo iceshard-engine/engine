@@ -282,14 +282,14 @@ namespace ice::pod
         template<typename T>
         inline void push_back(ice::pod::Array<T>& arr, ice::Span<T const> items) noexcept
         {
-            uint32_t const required_capacity = arr._size + items.size(); // #todo free-function APi
+            uint32_t const required_capacity = arr._size + ice::size(items);
             if (required_capacity > arr._capacity)
             {
                 ice::pod::array::grow(arr, required_capacity);
             }
 
-            ice::memcpy(ice::pod::array::end(arr), items.data(), items.size_bytes()); // #todo free-function API
-            arr._size += items.size(); // #todo free-function API
+            ice::memcpy(ice::pod::array::end(arr), items.data(), items.size_bytes());
+            arr._size += ice::size(items);
         }
 
         template<typename T>

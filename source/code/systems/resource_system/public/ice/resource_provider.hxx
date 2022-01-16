@@ -1,5 +1,5 @@
 #pragma once
-#include <ice/data.hxx>
+#include <ice/memory.hxx>
 #include <ice/task.hxx>
 #include <ice/userdata.hxx>
 #include <ice/unique_ptr.hxx>

@@ -83,7 +83,7 @@ namespace ice
         void update(CustomClock& c) noexcept
         {
             c.previous_timestamp = c.latest_timestamp;
-            c.latest_timestamp += (c.base_clock->latest_timestamp - c.base_clock->previous_timestamp) * c.modifier;
+            c.latest_timestamp += static_cast<ice::i64>((c.base_clock->latest_timestamp - c.base_clock->previous_timestamp) * c.modifier);
         }
 
         void update_max_delta(CustomClock& c, float max_elapsed_seconds)

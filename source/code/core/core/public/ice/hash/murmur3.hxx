@@ -110,7 +110,7 @@ namespace ice::detail::murmur3_hash
         constexpr auto cexpr_murmur3_x86_32(std::string_view key, uint32_t seed) noexcept -> mm3_x86_h32
         {
             char const* string_data = key.data();
-            uint32_t const string_length = key.length();
+            uint32_t const string_length = static_cast<uint32_t>(key.length());
 
             uint32_t const block_byte_size = 4u;
             uint32_t const block_num = string_length / block_byte_size;
@@ -172,7 +172,7 @@ namespace ice::detail::murmur3_hash
         constexpr auto cexpr_murmur3_x86_128(std::string_view key, uint32_t seed) noexcept -> mm3_x86_h128
         {
             char const* string_data = key.data();
-            uint32_t const string_length = key.length();
+            uint32_t const string_length = static_cast<uint32_t>(key.length());
 
             uint32_t const block_byte_size = 16u;
             uint32_t const block_num = string_length / block_byte_size;

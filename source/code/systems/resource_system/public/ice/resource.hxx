@@ -5,7 +5,7 @@
 namespace ice
 {
 
-    class ResourceHandle;
+    struct Metadata;
 
     enum class ResourceStatus_v2 : ice::u32
     {

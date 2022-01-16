@@ -8,8 +8,8 @@ namespace ice
 {
 
     class Resource_v2;
-    class ResourceHandle;
     class ResourceTracker_v2;
+    struct ResourceHandle;
 
     class AssetPipeline;
 

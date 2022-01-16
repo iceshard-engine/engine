@@ -279,7 +279,7 @@ namespace ice::pod
         {
             ice::pod::Hash<T> nh{ *hsh._hash._allocator };
             ice::pod::array::resize(nh._hash, new_size);
-            ice::pod::array::reserve(nh._data, ice::pod::array::size(nh._hash) * (Constant_MaxLoadFactor + 0.05f));
+            ice::pod::array::reserve(nh._data, static_cast<ice::u32>(ice::pod::array::size(nh._hash) * (Constant_MaxLoadFactor + 0.05f)));
             for (uint32_t i = 0; i < new_size; ++i)
             {
                 nh._hash[i] = Constant_EndOfList;

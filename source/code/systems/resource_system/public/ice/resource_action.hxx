@@ -6,12 +6,9 @@
 namespace ice
 {
 
+    class Resource_v2;
     class ResourceProvider_v2;
-
     enum class ResourceStatus_v2 : ice::u32;
-
-    struct Resource_v2;
-    struct ResourceHandle;
 
     struct ResourceActionResult
     {
