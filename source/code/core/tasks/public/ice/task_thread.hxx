@@ -1,6 +1,7 @@
 #pragma once
 #include <ice/task.hxx>
 #include <ice/task_operations.hxx>
+#include <ice/task_scheduler.hxx>
 #include <ice/unique_ptr.hxx>
 
 namespace ice
@@ -27,6 +28,17 @@ namespace ice
         ) noexcept = 0;
     };
 
+    class TaskThread_v2 : public ice::TaskScheduler_v2
+    {
+    public:
+        virtual ~TaskThread_v2() noexcept = default;
+
+        virtual void stop() noexcept = 0;
+
+        virtual void join() noexcept = 0;
+    };
+
     auto create_task_thread(ice::Allocator& alloc) noexcept -> ice::UniquePtr<ice::TaskThread>;
+    auto create_task_thread_v2(ice::Allocator& alloc) noexcept -> ice::UniquePtr<ice::TaskThread_v2>;
 
 } // namespace ice

@@ -10,6 +10,21 @@ namespace ice
         ice::Task<void> task
     ) noexcept;
 
+    template<typename T>
+    auto sync_wait(
+        ice::Task<T> task
+    ) noexcept -> T
+    {
+        T result;
+        auto const task_wrapper = [&result](ice::Task<T> awaited_task) noexcept -> ice::Task<>
+        {
+            result = co_await awaited_task;
+        };
+
+        ice::sync_wait(task_wrapper(ice::move(task)));
+        return result;
+    }
+
     void sync_manual_wait(
         ice::Task<void> task,
         ice::ManualResetEvent& reset_event
