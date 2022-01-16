@@ -148,6 +148,7 @@ namespace ice::detail
     ) noexcept
     {
         fmt::vprint(message, ice::move(args));
+        fmt::print("\n");
     }
 
 } // namespace ice::detail
