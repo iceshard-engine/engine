@@ -145,9 +145,11 @@ namespace ice
         template<bool DebugImpl>
         constexpr auto stringid(std::u8string_view value) noexcept -> StringID<DebugImpl>
         {
+            ice::detail::murmur2_hash::mm2_x64_64 const hash_result = ice::detail::murmur2_hash::cexpr_murmur2_x64_64(value, 0xDA864239);
+
             return StringID<DebugImpl> {
                 .hash_value = StringID_Hash{
-                    ice::detail::murmur2_hash::cexpr_murmur2_x64_64(value, 0xDA864239).h[0]
+                    hash_result.h[0]
                 },
             };
         }
@@ -155,9 +157,11 @@ namespace ice
         template<>
         constexpr auto stringid<false>(std::string_view value) noexcept -> StringID<false>
         {
+            ice::detail::murmur2_hash::mm2_x64_64 const hash_result = ice::detail::murmur2_hash::cexpr_murmur2_x64_64(value, 0xDA864239);
+
             return StringID<false> {
                 .hash_value = StringID_Hash{
-                    ice::detail::murmur2_hash::cexpr_murmur2_x64_64(value, 0xDA864239).h[0]
+                    hash_result.h[0]
                 },
             };
         }
