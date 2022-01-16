@@ -5,28 +5,6 @@
 namespace ice
 {
 
-    struct Metadata;
-
-    //class Resource
-    //{
-    //public:
-    //    virtual ~Resource() noexcept = default;
-
-    //    virtual auto name() const noexcept -> ice::String = 0;
-
-    //    virtual auto location() const noexcept -> ice::URI const& = 0;
-
-    //    virtual auto metadata() const noexcept -> ice::Metadata const& = 0;
-
-    //    virtual auto data() noexcept -> ice::Data = 0;
-    //};
-
-
-} // namespace ice
-
-namespace ice
-{
-
     class ResourceHandle;
 
     enum class ResourceStatus_v2 : ice::u32
@@ -34,8 +12,6 @@ namespace ice
         Invalid = 0x00'01,
         Available = 0x00'02,
         Loaded = 0x00'04,
-        //Unloaded = 0x00'08,
-        //Released = 0x01'00,
         Loading = 0x02'00,
         Unloading = 0x04'00,
     };
@@ -45,7 +21,6 @@ namespace ice
     public:
         virtual ~Resource_v2() noexcept = default;
 
-        //virtual auto urn() const noexcept -> ice::URN = 0;
         virtual auto uri() const noexcept -> ice::URI_v2 const& = 0;
 
         virtual auto name() const noexcept -> ice::Utf8String = 0;

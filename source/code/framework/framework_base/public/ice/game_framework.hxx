@@ -71,7 +71,7 @@ namespace ice
 
     template<typename T>
     concept HasConfigFileMember = requires (T t) {
-        { T::ConfigFile } -> std::convertible_to<ice::URI const&>;
+        { T::ConfigFile } -> std::convertible_to<ice::URI_v2 const&>;
     };
     template<typename T>
     concept HasGraphicsWorldNameMember = requires (T t) {

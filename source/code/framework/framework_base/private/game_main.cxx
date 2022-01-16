@@ -15,7 +15,6 @@
 #include <ice/devui/devui_module.hxx>
 #include <ice/devui/devui_system.hxx>
 
-#include <ice/resource_query.hxx>
 #include <ice/resource_tracker.hxx>
 #include <ice/asset_system.hxx>
 #include <ice/asset_module.hxx>

@@ -10,10 +10,14 @@ namespace ice
 {
 
     class Resource_v2;
-
-    enum class ResourceProviderResult : ice::u32;
-
     class TaskScheduler_v2;
+
+    enum class ResourceProviderResult : ice::u32
+    {
+        Success,
+        Failure,
+        Skipped,
+    };
 
     class ResourceProvider_v2
     {

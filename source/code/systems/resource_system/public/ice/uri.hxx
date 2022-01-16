@@ -1,35 +1,15 @@
 #pragma once
 #include <ice/string.hxx>
 #include <ice/stringid.hxx>
-#include <ice/urn.hxx>
 
 namespace ice
 {
 
     static constexpr ice::StringID scheme_file = "file"_sid;
-    static constexpr ice::StringID scheme_directory = "dir"_sid;
-    static constexpr ice::StringID scheme_pack = "pack"_sid;
     static constexpr ice::StringID scheme_dynlib = "dynlib"_sid;
-    static constexpr ice::StringID scheme_resource = "urn"_sid;
-    static constexpr ice::StringID scheme_https = "https"_sid;
+    static constexpr ice::StringID scheme_urn = "urn"_sid;
 
     static constexpr ice::StringID scheme_invalid = "<invalid>"_sid;
-
-    struct URI
-    {
-        constexpr URI() noexcept;
-        constexpr URI(ice::URI const& other) noexcept = default;
-
-        constexpr explicit URI(char const* uri_raw) noexcept;
-        constexpr explicit URI(ice::String uri) noexcept;
-
-        constexpr URI(ice::StringID_Arg scheme, ice::String path) noexcept;
-        constexpr URI(ice::StringID_Arg scheme, ice::String path, ice::StringID_Arg fragment) noexcept;
-
-        ice::StringID_Hash scheme;
-        ice::StringID fragment;
-        ice::String path;
-    };
 
     struct URI_v2
     {
@@ -90,8 +70,9 @@ namespace ice
             }
             else
             {
-                // We move past the following sequence: `://`
-                scheme_loc += 3;
+                scheme_loc += 1;
+                scheme_loc += ice::u32{ uri[scheme_loc] == '/' };
+                scheme_loc += ice::u32{ uri[scheme_loc] == '/' };
             }
 
             if (fragment_loc != ice::string_npos)
@@ -150,34 +131,6 @@ namespace ice
         //}
 
     } // namespace detail
-
-    //constexpr URI::URI() noexcept
-    //    : scheme{ ice::stringid_hash(ice::scheme_invalid) }
-    //    , fragment{ ice::stringid_invalid }
-    //    , path{ "" }
-    //{ }
-
-    //constexpr URI::URI(char const* uri_raw) noexcept
-    //    : URI{ ice::String{ uri_raw } }
-    //{ }
-
-    //constexpr URI::URI(ice::String uri) noexcept
-    //    : scheme{ detail::scheme_from_uri(uri) }
-    //    , fragment{ detail::fragment_from_uri(uri) }
-    //    , path{ detail::path_from_uri(uri) }
-    //{ }
-
-    //constexpr URI::URI(ice::StringID_Arg scheme, ice::String path) noexcept
-    //    : scheme{ ice::stringid_hash(scheme) }
-    //    , fragment{ ice::stringid_hash(ice::stringid_invalid) }
-    //    , path{ path }
-    //{ }
-
-    //constexpr URI::URI(ice::StringID_Arg scheme, ice::String path, ice::StringID_Arg fragment) noexcept
-    //    : scheme{ ice::stringid_hash(scheme) }
-    //    , fragment{ fragment }
-    //    , path{ path }
-    //{ }
 
 
     constexpr URI_v2::URI_v2() noexcept

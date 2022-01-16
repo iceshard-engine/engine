@@ -1,6 +1,5 @@
 #include <ice/resource_tracker.hxx>
 #include <ice/resource_provider.hxx>
-#include <ice/resource_provider_action.hxx>
 #include <ice/resource.hxx>
 #include <ice/resource_action.hxx>
 #include <ice/resource.hxx>

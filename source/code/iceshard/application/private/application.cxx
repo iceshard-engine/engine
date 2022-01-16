@@ -9,8 +9,6 @@
 #include <ice/string.hxx>
 #include <ice/heap_string.hxx>
 
-#include <ice/resource_system.hxx>
-#include <ice/resource_index.hxx>
 #include <ice/resource_provider.hxx>
 #include <ice/resource_tracker.hxx>
 

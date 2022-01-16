@@ -1,5 +1,4 @@
 #include <ice/resource_provider.hxx>
-#include <ice/resource_provider_action.hxx>
 #include <ice/resource_action.hxx>
 #include <ice/task_scheduler.hxx>
 #include <ice/memory/stack_allocator.hxx>

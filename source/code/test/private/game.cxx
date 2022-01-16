@@ -27,7 +27,6 @@
 
 #include <ice/task_thread_pool.hxx>
 #include <ice/module_register.hxx>
-#include <ice/resource_system.hxx>
 #include <ice/resource_tracker.hxx>
 #include <ice/resource_provider.hxx>
 #include <ice/asset_system.hxx>
@@ -60,10 +59,10 @@ void MyGame::on_load_modules(ice::GameServices& sercies) noexcept
     ice::ModuleRegister& mod = sercies.module_registry();
     ice::ResourceTracker_v2& res = sercies.resource_system();
 
-    ice::ResourceHandle* const pipelines_module = res.find_resource(ice::URI_v2{ ice::scheme_resource, u8"iceshard_pipelines.dll" });
-    ice::ResourceHandle* const engine_module = res.find_resource(ice::URI_v2{ ice::scheme_resource, u8"iceshard.dll" });
-    ice::ResourceHandle* const vulkan_module = res.find_resource(ice::URI_v2{ ice::scheme_resource, u8"vulkan_renderer.dll" });
-    ice::ResourceHandle* const imgui_module = res.find_resource(ice::URI_v2{ ice::scheme_resource, u8"imgui_module.dll" });
+    ice::ResourceHandle* const pipelines_module = res.find_resource(u8"urn:iceshard_pipelines.dll"_uri);
+    ice::ResourceHandle* const engine_module = res.find_resource(u8"urn:iceshard.dll"_uri);
+    ice::ResourceHandle* const vulkan_module = res.find_resource(u8"urn:vulkan_renderer.dll"_uri);
+    ice::ResourceHandle* const imgui_module = res.find_resource(u8"urn:imgui_module.dll"_uri);
 
     ICE_ASSERT(pipelines_module != nullptr, "Missing `iceshard_pipelines.dll` module!");
     ICE_ASSERT(engine_module != nullptr, "Missing `iceshard.dll` module!");
