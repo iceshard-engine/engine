@@ -357,7 +357,7 @@ namespace ice::pod
         template<typename T>
         inline auto span(ice::pod::Array<T> const& arr, ice::u32 offset, ice::u32 count) noexcept -> ice::Span<T const>
         {
-            return ice::Span<T const>{ arr }.subspan(offset, (count == ~0) ? std::dynamic_extent : size_t{ count });
+            return ice::Span<T const>{ arr }.subspan(offset, (count == ~ice::u32{}) ? (arr._size - offset) : size_t{ count });
         }
 
         template<typename T>

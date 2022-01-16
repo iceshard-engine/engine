@@ -50,6 +50,24 @@ namespace ice
         return result.h[0];
     }
 
+    template<>
+    constexpr auto hash(std::u8string_view value) noexcept -> ice::u64
+    {
+        using namespace ice::detail::murmur2_hash;
+
+        mm2_x64_64 const result = cexpr_murmur2_x64_64(value, 0x8642DA39);
+        return result.h[0];
+    }
+
+    template<>
+    constexpr auto hash(char8_t const* value) noexcept -> ice::u64
+    {
+        using namespace ice::detail::murmur2_hash;
+
+        mm2_x64_64 const result = cexpr_murmur2_x64_64(value, 0x8642DA39);
+        return result.h[0];
+    }
+
     template<typename T>
     constexpr auto hash32(T value) noexcept -> ice::u32
     {

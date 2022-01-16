@@ -22,6 +22,9 @@ namespace ice::pod
 
 
         template<typename T>
+        inline bool empty(ice::pod::Hash<T> const& hsh) noexcept;
+
+        template<typename T>
         inline bool has(ice::pod::Hash<T> const& hsh, uint64_t key) noexcept;
 
         template<typename T>
@@ -344,6 +347,12 @@ namespace ice::pod
             detail::hash::find_and_erase(hsh, key);
         }
 
+
+        template<typename T>
+        inline bool empty(ice::pod::Hash<T> const& hsh) noexcept
+        {
+            return ice::pod::array::empty(hsh._data);
+        }
 
         template<typename T>
         inline bool has(ice::pod::Hash<T> const& hsh, uint64_t key) noexcept

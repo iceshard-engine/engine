@@ -52,6 +52,9 @@ namespace ice
         template<bool DebugImpl = false>
         constexpr auto stringid(std::string_view value) noexcept -> StringID<DebugImpl>;
 
+        template<bool DebugImpl = false>
+        constexpr auto stringid(std::u8string_view value) noexcept -> StringID<DebugImpl>;
+
         template<>
         constexpr auto stringid<false>(std::string_view value) noexcept -> StringID<false>;
 
@@ -139,6 +142,16 @@ namespace ice
     namespace detail::stringid_type_v2
     {
 
+        template<bool DebugImpl>
+        constexpr auto stringid(std::u8string_view value) noexcept -> StringID<DebugImpl>
+        {
+            return StringID<DebugImpl> {
+                .hash_value = StringID_Hash{
+                    ice::detail::murmur2_hash::cexpr_murmur2_x64_64(value, 0xDA864239).h[0]
+                },
+            };
+        }
+
         template<>
         constexpr auto stringid<false>(std::string_view value) noexcept -> StringID<false>
         {
@@ -186,7 +199,7 @@ namespace ice
                     {
                         v = char{};
                     }
-                    
+
                     i += 1;
                 }
 
@@ -272,6 +285,11 @@ namespace ice
         return ice::detail::stringid_type_v2::stringid<ice::detail::stringid_type_v2::use_stringid_debug_implementation>(value);
     }
 
+    constexpr auto stringid(std::u8string_view value) noexcept -> ice::StringID
+    {
+        return ice::detail::stringid_type_v2::stringid<ice::detail::stringid_type_v2::use_stringid_debug_implementation>(value);
+    }
+
     constexpr auto stringid_hint(StringID_Arg value) noexcept -> std::string_view
     {
         return ice::detail::stringid_type_v2::origin_value(value);
@@ -298,6 +316,16 @@ namespace ice
     }
 
     constexpr auto operator""_sid_hash(const char* cstr, size_t length) noexcept -> ice::StringID_Hash
+    {
+        return stringid({ cstr, length }).hash_value;
+    }
+
+    constexpr auto operator""_sid(const char8_t* cstr, size_t length) noexcept -> ice::StringID
+    {
+        return stringid({ cstr, length });
+    }
+
+    constexpr auto operator""_sid_hash(const char8_t* cstr, size_t length) noexcept -> ice::StringID_Hash
     {
         return stringid({ cstr, length }).hash_value;
     }

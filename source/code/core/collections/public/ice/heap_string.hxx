@@ -192,12 +192,6 @@ namespace ice
     }
 
     template<typename CharType>
-    inline HeapString<CharType>::operator ice::BasicString<CharType>() const noexcept
-    {
-        return { _data, _size };
-    }
-
-    template<typename CharType>
     inline auto operator==(HeapString<CharType> const& left, CharType const* right) noexcept
     {
         return ice::string::equals(left.operator ice::String(), ice::BasicString<CharType>{ right });
@@ -213,6 +207,24 @@ namespace ice
     inline auto operator==(BasicString<CharType> left, ice::HeapString<CharType> const& right) noexcept
     {
         return ice::string::equals(left.operator ice::String(), right.operator ice::String());
+    }
+
+    template<typename CharType>
+    inline auto HeapString<CharType>::operator[](uint32_t index) noexcept -> CharType&
+    {
+        return _data[index];
+    }
+
+    template<typename CharType>
+    inline auto HeapString<CharType>::operator[](uint32_t index) const noexcept -> CharType const&
+    {
+        return _data[index];
+    }
+
+    template<typename CharType>
+    inline HeapString<CharType>::operator ice::BasicString<CharType>() const noexcept
+    {
+        return { _data, _size };
     }
 
     namespace string
