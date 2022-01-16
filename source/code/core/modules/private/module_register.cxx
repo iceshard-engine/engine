@@ -3,6 +3,7 @@
 #include <ice/pod/hash.hxx>
 #include <ice/os/windows.hxx>
 #include <ice/collections.hxx>
+#include <ice/heap_string.hxx>
 
 namespace ice
 {
@@ -28,6 +29,39 @@ namespace ice
 
 #if ISP_WINDOWS
 
+    bool utf8_to_wide_append_module(
+        ice::Utf8String path,
+        ice::HeapString<wchar_t>& out_str
+    ) noexcept
+    {
+        ice::i32 const required_size = MultiByteToWideChar(
+            CP_UTF8,
+            0,
+            reinterpret_cast<char const*>(ice::string::data(path)),
+            static_cast<ice::i32>(ice::string::size(path)),
+            NULL,
+            0
+        );
+
+        if (required_size != 0)
+        {
+            ice::u32 const current_size = ice::string::size(out_str);
+            ice::u32 const total_size = static_cast<ice::u32>(required_size) + ice::string::size(out_str);
+            ice::string::resize(out_str, total_size);
+
+            ice::i32 const chars_written = MultiByteToWideChar(
+                CP_UTF8,
+                0,
+                (const char*)ice::string::data(path),
+                ice::as_i32<NC_SIGN>(ice::string::size(path)),
+                ice::string::begin(out_str) + current_size,
+                ice::string::size(out_str) - current_size
+            );
+        }
+
+        return required_size != 0;
+    }
+
     class Win32ModuleRegister final : public ModuleRegister
     {
     public:
@@ -36,7 +70,7 @@ namespace ice
 
         bool load_module(
             ice::Allocator& alloc,
-            ice::String path
+            ice::Utf8String path
         ) noexcept override;
 
         bool load_module(
@@ -85,28 +119,32 @@ namespace ice
 
     bool Win32ModuleRegister::load_module(
         ice::Allocator& alloc,
-        ice::String path
+        ice::Utf8String path
     ) noexcept
     {
-        win32::SHHModule module_handle{ LoadLibraryExA(ice::string::data(path), NULL, NULL) };
-        if (module_handle)
+        ice::HeapString<wchar_t> wide_path{ _allocator };
+        if (utf8_to_wide_append_module(path, wide_path))
         {
-            void* const load_proc = GetProcAddress(module_handle.native(), "ice_module_load");
-            void* const unload_proc = GetProcAddress(module_handle.native(), "ice_module_unload");
-
-            if (load_proc != nullptr && unload_proc != nullptr)
+            win32::SHHModule module_handle{ LoadLibraryExW(ice::string::data(wide_path), NULL, NULL) };
+            if (module_handle)
             {
-                load_module(
-                    alloc,
-                    reinterpret_cast<ice::ModuleProcLoad*>(load_proc),
-                    reinterpret_cast<ice::ModuleProcUnload*>(unload_proc)
-                );
+                void* const load_proc = GetProcAddress(module_handle.native(), "ice_module_load");
+                void* const unload_proc = GetProcAddress(module_handle.native(), "ice_module_unload");
 
-                _module_handles.push_back(ice::move(module_handle));
+                if (load_proc != nullptr && unload_proc != nullptr)
+                {
+                    load_module(
+                        alloc,
+                        reinterpret_cast<ice::ModuleProcLoad*>(load_proc),
+                        reinterpret_cast<ice::ModuleProcUnload*>(unload_proc)
+                    );
+
+                    _module_handles.push_back(ice::move(module_handle));
+                }
             }
+            return module_handle;
         }
-
-        return module_handle;
+        return { };
     }
 
     bool Win32ModuleRegister::load_module(
