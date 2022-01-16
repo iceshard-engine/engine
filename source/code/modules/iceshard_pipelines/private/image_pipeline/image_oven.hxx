@@ -4,14 +4,15 @@
 namespace ice
 {
 
-    class ResourceSystem;
+    class ResourceHandle;
+    class ResourceTracker_v2;
 
     class IceshardImageOven final : public ice::AssetOven
     {
     public:
         auto bake(
-            ice::Resource& resource,
-            ice::ResourceSystem& resource_system,
+            ice::ResourceHandle& resource,
+            ice::ResourceTracker_v2& resource_tracker,
             ice::Allocator& asset_alloc,
             ice::Memory& asset_data
         ) const noexcept -> ice::BakeResult override;

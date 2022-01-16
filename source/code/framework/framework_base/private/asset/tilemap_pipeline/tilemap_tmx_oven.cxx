@@ -1,5 +1,4 @@
 // #TODO: https://github.com/iceshard-engine/engine/issues/91
-#if ISP_WINDOWS
 
 #include "tilemap_tmx_oven.hxx"
 #include "tilemap_pipeline.hxx"
@@ -7,7 +6,9 @@
 #include <ice/game_tilemap.hxx>
 #include <ice/resource.hxx>
 #include <ice/resource_meta.hxx>
-#include <ice/resource_system.hxx>
+#include <ice/resource_tracker.hxx>
+#include <ice/resource_action.hxx>
+#include <ice/task_sync_wait.hxx>
 
 #include <ice/asset_system.hxx>
 
@@ -19,6 +20,8 @@
 
 #define TILED_LOG(severity, format, ...) \
     ICE_LOG(severity, LogTag_TiledOven, format, ##__VA_ARGS__)
+
+#if ISP_WINDOWS
 
 namespace ice
 {
@@ -52,7 +55,7 @@ namespace ice
             ice::u16 gid;
             ice::u16 columns;
             ice::vec2f element_size;
-            ice::String image;
+            ice::Utf8String image;
 
             ice::u32 tile_collision_object_count;
             ice::u32 tile_object_vertex_count;
@@ -116,6 +119,9 @@ namespace ice
 
         template<>
         bool attrib_value<ice::String>(rapidxml::xml_attribute<> const* attrib, ice::String& out_value) noexcept;
+
+        template<>
+        bool attrib_value<ice::Utf8String>(rapidxml::xml_attribute<> const* attrib, ice::Utf8String& out_value) noexcept;
 
         template<>
         bool attrib_value<ice::u32>(rapidxml::xml_attribute<> const* attrib, ice::u32& out_value) noexcept;
@@ -286,7 +292,7 @@ namespace ice
             return false;
         }
 
-        ice::String image_source;
+        ice::Utf8String image_source;
         detail::attrib_value(attrib, image_source);
         tilemap_info.tileset_info[tileset_idx].image = image_source;
 
@@ -814,15 +820,21 @@ namespace ice
     }
 
     auto IceTiledTmxAssetOven::bake(
-        ice::Resource& resource,
-        ice::ResourceSystem& resource_system,
+        ice::ResourceHandle& resource,
+        ice::ResourceTracker_v2& resource_tracker,
         ice::AssetSystem& asset_system,
         ice::Allocator& asset_alloc,
         ice::Memory& asset_data
     ) const noexcept -> ice::BakeResult
     {
-        Data resource_data = resource.data();
-        Metadata const& resource_meta = resource.metadata();
+        ice::ResourceActionResult const load_result = ice::sync_wait(resource_tracker.load_resource(&resource));
+        if (load_result.resource_status != ice::ResourceStatus_v2::Loaded)
+        {
+            return BakeResult::Failure_InvalidData;
+        }
+
+        Data resource_data = load_result.data;
+        Metadata const& resource_meta = load_result.resource->metadata();
 
         void* resource_copy = asset_alloc.allocate(resource_data.size + 1, resource_data.alignment);
         ice::memcpy(resource_copy, resource_data.location, resource_data.size);
@@ -874,10 +886,10 @@ namespace ice
                 result = BakeResult::Success;
                 for (ice::u32 idx = 0; idx < tilemap_info.tileset_count; ++idx)
                 {
-                    ice::Resource* dependency_resource = resource_system.find_relative(resource, tilemap_info.tileset_info[idx].image);
+                    ice::ResourceHandle* dependency_resource = resource_tracker.find_resource(ice::URI_v2{ ice::scheme_file, tilemap_info.tileset_info[idx].image });
                     if (dependency_resource == nullptr)
                     {
-                        TILED_LOG(LogSeverity::Error, "Invalid TMX resource, failed to find image resource at: {}", tilemap_info.tileset_info[idx].image);
+                        //TILED_LOG(LogSeverity::Error, "Invalid TMX resource, failed to find image resource at: {}", tilemap_info.tileset_info[idx].image);
                         result = BakeResult::Failure_MissingDependencies;
                         break;
                     }
@@ -885,7 +897,7 @@ namespace ice
                     ice::Asset dependency_asset = asset_system.load(AssetType::Texture, dependency_resource);
                     if (dependency_asset == Asset::Invalid)
                     {
-                        TILED_LOG(LogSeverity::Error, "Invalid TMX resource, failed to load image asset for image at: {}", tilemap_info.tileset_info[idx].image);
+                        //TILED_LOG(LogSeverity::Error, "Invalid TMX resource, failed to load image asset for image at: {}", tilemap_info.tileset_info[idx].image);
                         result = BakeResult::Failure_MissingDependencies;
                         break;
                     }
@@ -1026,6 +1038,17 @@ namespace ice
     }
 
     template<>
+    bool detail::attrib_value<ice::Utf8String>(rapidxml::xml_attribute<> const* attrib, ice::Utf8String& out_value) noexcept
+    {
+        if (attrib != nullptr)
+        {
+            out_value = ice::Utf8String{ (char8_t*) attrib->value(), attrib->value_size() };
+            return true;
+        }
+        return false;
+    }
+
+    template<>
     bool detail::attrib_value<ice::u32>(rapidxml::xml_attribute<> const* attrib, ice::u32& out_value) noexcept
     {
         if (attrib != nullptr)
@@ -1053,4 +1076,4 @@ namespace ice
 
 } // namespace ice
 
-#endif 
+#endif

@@ -3,12 +3,13 @@
 #include <ice/asset_oven.hxx>
 #include <ice/asset_loader.hxx>
 #include <ice/resource.hxx>
-#include <ice/resource_system.hxx>
+#include <ice/resource_tracker.hxx>
 #include <ice/pod/array.hxx>
 #include <ice/pod/hash.hxx>
 #include <ice/unique_ptr.hxx>
 #include <ice/memory/proxy_allocator.hxx>
 #include <ice/map.hxx>
+#include <ice/task_sync_wait.hxx>
 #include <ice/assert.hxx>
 
 #include <ice/stack_string.hxx>
@@ -30,8 +31,8 @@ namespace ice
 
         struct AssetInfo
         {
-            ice::URI location;
-            ice::Resource* resource;
+            ice::URI_v2 location;
+            ice::ResourceHandle* handle;
             ice::AssetPipeline* pipeline;
             ice::Memory baked_data;
             ice::Memory loaded_data;
@@ -44,21 +45,22 @@ namespace ice
             ExplicitAssetSolver(
                 ice::Allocator& alloc,
                 ice::AssetSystem& assets,
-                ice::ResourceSystem& resources,
+                ice::ResourceTracker_v2& resources,
                 ice::Metadata const& metadata
             ) noexcept
                 : _allocator{ alloc }
                 , _assets{ assets }
                 , _resources{ resources }
                 , _metadata{ metadata }
-            { }
+            {
+            }
 
             auto find_asset(
                 ice::AssetType type,
                 ice::StringID_Hash asset_name_hash
             ) noexcept -> ice::Asset
             {
-                ice::Resource* explicit_resource = nullptr;
+                ice::ResourceHandle* explicit_resource = nullptr;
                 ice::pod::Array<ice::String> explicit_dependencies{ _allocator };
                 if (ice::meta_read_string_array(_metadata, "asset.explicit_dependencies"_sid, explicit_dependencies))
                 {
@@ -72,12 +74,12 @@ namespace ice
                         idx += 1;
                     }
 
-                    ice::pod::Array<ice::String> explicit_resources{ _allocator };
-                    if (ice::meta_read_string_array(_metadata, "asset.explicit_resources"_sid, explicit_resources))
+                    ice::pod::Array<ice::Utf8String> explicit_resources{ _allocator };
+                    if (ice::meta_read_utf8_array(_metadata, "asset.explicit_resources"_sid, explicit_resources))
                     {
                         if (ice::size(explicit_resources) > idx)
                         {
-                            explicit_resource = _resources.request(ice::URI{ explicit_resources[idx] });
+                            explicit_resource = _resources.find_resource(ice::URI_v2{ explicit_resources[idx] });
                         }
                     }
                 }
@@ -95,7 +97,7 @@ namespace ice
         private:
             ice::Allocator& _allocator;
             ice::AssetSystem& _assets;
-            ice::ResourceSystem& _resources;
+            ice::ResourceTracker_v2& _resources;
             ice::Metadata const& _metadata;
         };
 
@@ -127,7 +129,7 @@ namespace ice
     public:
         SimpleAssetSystem(
             ice::Allocator& alloc,
-            ice::ResourceSystem& resource_system
+            ice::ResourceTracker_v2& resource_system
         ) noexcept;
 
         ~SimpleAssetSystem() noexcept override;
@@ -142,13 +144,13 @@ namespace ice
         ) noexcept override;
 
         void bind_resources(
-            ice::Span<ice::Resource*> resources
+            ice::Span<ice::ResourceHandle*> resources
         ) noexcept override;
 
         bool bind_resource(
             ice::AssetType type,
             ice::StringID_Arg name,
-            ice::Resource* resource
+            ice::ResourceHandle* resource
         ) noexcept override;
 
         auto request(
@@ -158,7 +160,7 @@ namespace ice
 
         auto load(
             ice::AssetType type,
-            ice::Resource* resource
+            ice::ResourceHandle* resource
         ) noexcept -> Asset override;
 
         void release(
@@ -167,7 +169,7 @@ namespace ice
 
     private:
         ice::Allocator& _allocator;
-        ice::ResourceSystem& _resource_system;
+        ice::ResourceTracker_v2& _resource_system;
 
         ice::memory::ProxyAllocator _oven_alloc;
         ice::Map<ice::StringID_Hash, ice::UniquePtr<ice::AssetPipeline>> _pipelines;
@@ -180,10 +182,10 @@ namespace ice
 
     SimpleAssetSystem::SimpleAssetSystem(
         ice::Allocator& alloc,
-        ice::ResourceSystem& resource_system
+        ice::ResourceTracker_v2& resource_tracker
     ) noexcept
         : _allocator{ alloc }
-        , _resource_system{ resource_system }
+        , _resource_system{ resource_tracker }
         , _oven_alloc{ _allocator, "asset-oven-allocator" }
         , _pipelines{ _allocator }
         , _asset_pipelines{ _allocator }
@@ -191,6 +193,7 @@ namespace ice
         , _asset_entries{ _allocator }
         , _assets{ _allocator }
     {
+        ice::pod::array::reserve(_assets, 1000);
     }
 
     SimpleAssetSystem::~SimpleAssetSystem() noexcept
@@ -258,13 +261,18 @@ namespace ice
         return false;
     }
 
-    void SimpleAssetSystem::bind_resources(ice::Span<ice::Resource*> resources) noexcept
+    void SimpleAssetSystem::bind_resources(ice::Span<ice::ResourceHandle*> resources) noexcept
     {
-        for (ice::Resource* resource : resources)
+        for (ice::ResourceHandle* handle : resources)
         {
-            ice::u32 const extension_pos = ice::string::find_first_of(resource->name(), '.');
-            ice::String const basename = ice::string::substr(resource->name(), 0, extension_pos);
-            ice::String const extension = ice::string::substr(resource->name(), extension_pos);
+            ice::Resource_v2 const* resource = ice::resource_object(handle);
+
+            // TODO: Remove during asset system refactor.
+            ice::String const res_name_DEPRECATED{ reinterpret_cast<char const*>(resource->name().data()), resource->name().size() };
+
+            ice::u32 const extension_pos = ice::string::find_first_of(res_name_DEPRECATED, '.');
+            ice::String const basename = ice::string::substr(res_name_DEPRECATED, 0, extension_pos);
+            ice::String const extension = ice::string::substr(res_name_DEPRECATED, extension_pos);
             ice::Metadata const& meta = resource->metadata();
 
             ice::AssetType result_type = AssetType::Unresolved;
@@ -331,8 +339,8 @@ namespace ice
                 ice::pod::array::push_back(
                     _assets,
                     detail::AssetInfo{
-                        .location = resource->location(),
-                        .resource = resource,
+                        .location = resource->uri(),
+                        .handle = handle,
                         .pipeline = pipeline,
                         .baked_data = ice::Memory{ },
                         .loaded_data = ice::Memory{ },
@@ -345,8 +353,8 @@ namespace ice
                 detail::AssetInfo& current_info = _assets[entry->value.data_index];
                 if (current_info.object->status == AssetStatus::Available_Raw && result_status == AssetStatus::Available)
                 {
-                    current_info.location = resource->location();
-                    current_info.resource = resource;
+                    current_info.location = resource->uri();
+                    current_info.handle = handle;
                     current_info.pipeline = pipeline;
 
                     _allocator.destroy(current_info.object);
@@ -367,11 +375,16 @@ namespace ice
     bool SimpleAssetSystem::bind_resource(
         ice::AssetType type,
         ice::StringID_Arg name,
-        ice::Resource* resource
+        ice::ResourceHandle* handle
     ) noexcept
     {
-        ice::u32 const extension_pos = ice::string::find_first_of(resource->name(), '.');
-        ice::String const extension = ice::string::substr(resource->name(), extension_pos);
+        ice::Resource_v2 const* resource = ice::resource_object(handle);
+
+        // TODO: Remove during asset system refactor.
+        ice::String const res_name_DEPRECATED{ reinterpret_cast<char const*>(resource->name().data()), resource->name().size() };
+
+        ice::u32 const extension_pos = ice::string::find_first_of(res_name_DEPRECATED, '.');
+        ice::String const extension = ice::string::substr(res_name_DEPRECATED, extension_pos);
         ice::Metadata const& meta = resource->metadata();
 
         ice::AssetType result_type = AssetType::Unresolved;
@@ -409,7 +422,7 @@ namespace ice
             }
         }
 
-        ice::String base_name = ice::string::substr(resource->name(), 0, extension_pos);
+        ice::String base_name = ice::string::substr(res_name_DEPRECATED, 0, extension_pos);
 
         ice::u64 const name_hash = ice::hash(base_name);
 
@@ -438,8 +451,8 @@ namespace ice
             ice::pod::array::push_back(
                 _assets,
                 detail::AssetInfo{
-                    .location = resource->location(),
-                    .resource = resource,
+                    .location = resource->uri(),
+                    .handle = handle,
                     .pipeline = pipeline,
                     .baked_data = ice::Memory{ },
                     .loaded_data = ice::Memory{ },
@@ -452,8 +465,8 @@ namespace ice
             detail::AssetInfo& current_info = _assets[entry->value.data_index];
             if (current_info.object->status == AssetStatus::Loaded && result_status == AssetStatus::Available)
             {
-                current_info.location = resource->location();
-                current_info.resource = resource;
+                current_info.location = resource->uri();
+                current_info.handle = handle;
                 current_info.pipeline = pipeline;
 
                 //_oven_alloc.deallocate(current_info.object->data.location);
@@ -512,17 +525,22 @@ namespace ice
         // Try compiling if needed
         if (asset_object.status == AssetStatus::Available_Raw)
         {
-            ice::u32 const extension_pos = ice::string::find_first_of(asset_info.resource->name(), '.');
-            ice::String const extension = ice::string::substr(asset_info.resource->name(), extension_pos);
+            ice::Resource_v2 const* resource = ice::resource_object(asset_info.handle);
+
+            // TODO: Remove during asset system refactor.
+            ice::String const res_name_DEPRECATED{ reinterpret_cast<char const*>(resource->name().data()), resource->name().size() };
+
+            ice::u32 const extension_pos = ice::string::find_first_of(res_name_DEPRECATED, '.');
+            ice::String const extension = ice::string::substr(res_name_DEPRECATED, extension_pos);
 
             ice::AssetOven const* oven = asset_info.pipeline->request_oven(
                 type,
                 extension,
-                asset_info.resource->metadata()
+                resource->metadata()
             );
 
             ice::BakeResult bake_result = oven->bake(
-                *asset_info.resource,
+                *asset_info.handle,
                 _resource_system,
                 *this,
                 _oven_alloc,
@@ -540,7 +558,11 @@ namespace ice
         }
         else
         {
-            asset_data = asset_info.resource->data();
+            ice::ResourceActionResult const load_result = ice::sync_wait(_resource_system.load_resource(asset_info.handle));
+            if (load_result.resource_status == ice::ResourceStatus_v2::Loaded)
+            {
+                asset_data = load_result.data;
+            }
         }
 
         ice::AssetLoader const* const loader = asset_info.pipeline->request_loader(type);
@@ -548,7 +570,7 @@ namespace ice
 
         // Try to load the new asset
         {
-            ice::Metadata const& meta = asset_info.resource->metadata();
+            ice::Metadata const& meta = ice::resource_object(asset_info.handle)->metadata();
             if (ice::meta_has_entry(meta, "asset.explicit_dependencies"_sid))
             {
                 detail::ExplicitAssetSolver explicit_solver{ _allocator, *this, _resource_system, meta };
@@ -590,10 +612,15 @@ namespace ice
         return Asset::Invalid;
     }
 
-    auto SimpleAssetSystem::load(ice::AssetType type, ice::Resource* resource) noexcept -> Asset
+    auto SimpleAssetSystem::load(ice::AssetType type, ice::ResourceHandle* handle) noexcept -> Asset
     {
-        ice::u32 const extension_pos = ice::string::find_first_of(resource->name(), '.');
-        ice::String const extension = ice::string::substr(resource->name(), extension_pos);
+        ice::Resource_v2 const* resource = ice::resource_object(handle);
+
+        // TODO: Remove during asset system refactor.
+        ice::String const res_name_DEPRECATED{ reinterpret_cast<char const*>(resource->name().data()), resource->name().size() };
+
+        ice::u32 const extension_pos = ice::string::find_first_of(res_name_DEPRECATED, '.');
+        ice::String const extension = ice::string::substr(res_name_DEPRECATED, extension_pos);
         ice::Metadata const& meta = resource->metadata();
 
         ice::AssetType result_type = AssetType::Unresolved;
@@ -631,7 +658,7 @@ namespace ice
             }
         }
 
-        ice::String base_name = ice::string::substr(resource->name(), 0, extension_pos);
+        ice::String base_name = ice::string::substr(res_name_DEPRECATED, 0, extension_pos);
 
         ice::u64 const name_hash = ice::hash(base_name);
 
@@ -663,8 +690,8 @@ namespace ice
             ice::pod::array::push_back(
                 _assets,
                 detail::AssetInfo{
-                    .location = resource->location(),
-                    .resource = resource,
+                    .location = resource->uri(),
+                    .handle = handle,
                     .pipeline = pipeline,
                     .baked_data = ice::Memory{ },
                     .loaded_data = ice::Memory{ },
@@ -683,11 +710,11 @@ namespace ice
                 ice::AssetOven const* oven = asset_info.pipeline->request_oven(
                     type,
                     extension,
-                    asset_info.resource->metadata()
+                    resource->metadata()
                 );
 
                 ice::BakeResult bake_result = oven->bake(
-                    *asset_info.resource,
+                    *asset_info.handle,
                     _resource_system,
                     *this,
                     _oven_alloc,
@@ -705,7 +732,11 @@ namespace ice
             }
             else
             {
-                asset_data = asset_info.resource->data();
+                ice::ResourceActionResult const load_result = ice::sync_wait(_resource_system.load_resource(asset_info.handle));
+                if (load_result.resource_status == ice::ResourceStatus_v2::Loaded)
+                {
+                    asset_data = load_result.data;
+                }
             }
 
             ice::AssetLoader const* const loader = asset_info.pipeline->request_loader(type);
@@ -713,7 +744,7 @@ namespace ice
 
             // Try to load the new asset
             {
-                ice::Metadata const& meta = asset_info.resource->metadata();
+                ice::Metadata const& meta = resource->metadata();
                 if (ice::meta_has_entry(meta, "asset.explicit_dependencies"_sid))
                 {
                     detail::ExplicitAssetSolver explicit_solver{ _allocator, *this, _resource_system, meta };
@@ -767,7 +798,7 @@ namespace ice
     {
     }
 
-    auto create_asset_system(ice::Allocator& alloc, ice::ResourceSystem& resource_system) noexcept -> ice::UniquePtr<ice::AssetSystem>
+    auto create_asset_system(ice::Allocator& alloc, ice::ResourceTracker_v2& resource_system) noexcept -> ice::UniquePtr<ice::AssetSystem>
     {
         return ice::make_unique<ice::AssetSystem, ice::SimpleAssetSystem>(alloc, alloc, resource_system);
     }

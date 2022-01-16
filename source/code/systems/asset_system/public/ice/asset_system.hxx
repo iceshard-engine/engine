@@ -7,9 +7,9 @@
 namespace ice
 {
 
-    class Resource;
-
-    class ResourceSystem;
+    class Resource_v2;
+    class ResourceHandle;
+    class ResourceTracker_v2;
 
     class AssetPipeline;
 
@@ -28,13 +28,13 @@ namespace ice
         ) noexcept = 0;
 
         virtual void bind_resources(
-            ice::Span<ice::Resource*> resources
+            ice::Span<ice::ResourceHandle*> resources
         ) noexcept = 0;
 
         virtual bool bind_resource(
             ice::AssetType type,
             ice::StringID_Arg name,
-            ice::Resource* resource
+            ice::ResourceHandle* resource
         ) noexcept = 0;
 
         virtual auto request(
@@ -44,7 +44,7 @@ namespace ice
 
         virtual auto load(
             ice::AssetType type,
-            ice::Resource* resource
+            ice::ResourceHandle* resource
         ) noexcept -> Asset = 0;
 
         virtual void release(
@@ -54,7 +54,7 @@ namespace ice
 
     auto create_asset_system(
         ice::Allocator& alloc,
-        ice::ResourceSystem& resource_system
+        ice::ResourceTracker_v2& resource_system
     ) noexcept -> ice::UniquePtr<ice::AssetSystem>;
 
 } // namespace ice

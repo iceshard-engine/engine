@@ -1,6 +1,8 @@
 #include "image_oven.hxx"
 #include <ice/render/render_image.hxx>
 #include <ice/resource.hxx>
+#include <ice/resource_tracker.hxx>
+#include <ice/task_sync_wait.hxx>
 #include <ice/buffer.hxx>
 
 #define STB_IMAGE_IMPLEMENTATION
@@ -18,17 +20,21 @@ namespace ice
 {
 
     auto ice::IceshardImageOven::bake(
-        ice::Resource& resource,
-        ice::ResourceSystem& resource_system,
+        ice::ResourceHandle& resource,
+        ice::ResourceTracker_v2& resource_tracker,
         ice::Allocator& asset_alloc,
         ice::Memory& asset_data
     ) const noexcept -> ice::BakeResult
     {
         using ice::render::ImageInfo;
 
-        ice::Data resource_data = resource.data();
+        ice::ResourceActionResult const load_result = ice::sync_wait(resource_tracker.load_resource(&resource));
+        if (load_result.resource_status != ice::ResourceStatus_v2::Loaded)
+        {
+            return BakeResult::Failure_InvalidData;
+        }
 
-        stbi_uc const* image_buffer_raw = reinterpret_cast<stbi_uc const*>(resource_data.location);
+        stbi_uc const* image_buffer_raw = reinterpret_cast<stbi_uc const*>(load_result.data.location);
 
         ice::i32 width = 0;
         ice::i32 height = 0;
@@ -36,7 +42,7 @@ namespace ice
 
         stbi_uc* const image_buffer = stbi_load_from_memory(
             image_buffer_raw,
-            resource_data.size,
+            load_result.data.size,
             &width, &height, &channels,
             STBI_rgb_alpha
         );

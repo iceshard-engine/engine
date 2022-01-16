@@ -5,8 +5,8 @@
 namespace ice
 {
 
-    class Resource;
-    class ResourceSystem;
+    class ResourceHandle;
+    class ResourceTracker_v2;
 
     enum class BakeResult : ice::u32
     {
@@ -24,8 +24,8 @@ namespace ice
         virtual ~AssetOven() noexcept = default;
 
         virtual auto bake(
-            ice::Resource& resource,
-            ice::ResourceSystem& resource_system,
+            ice::ResourceHandle& resource,
+            ice::ResourceTracker_v2& resource_tracker,
             ice::Allocator& asset_alloc,
             ice::Memory& asset_data
         ) const noexcept -> ice::BakeResult
@@ -34,14 +34,14 @@ namespace ice
         }
 
         virtual auto bake(
-            ice::Resource& resource,
-            ice::ResourceSystem& resource_system,
+            ice::ResourceHandle& resource,
+            ice::ResourceTracker_v2& resource_tracker,
             ice::AssetSystem& asset_system,
             ice::Allocator& asset_alloc,
             ice::Memory& asset_data
         ) const noexcept -> ice::BakeResult
         {
-            return bake(resource, resource_system, asset_alloc, asset_data);
+            return bake(resource, resource_tracker, asset_alloc, asset_data);
         }
     };
 

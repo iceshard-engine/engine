@@ -2,7 +2,9 @@
 #include <ice/gfx/gfx_model.hxx>
 
 #include <ice/resource.hxx>
+#include <ice/resource_tracker.hxx>
 #include <ice/resource_meta.hxx>
+#include <ice/task_sync_wait.hxx>
 #include <ice/memory.hxx>
 #include <ice/data.hxx>
 #include <ice/assert.hxx>
@@ -130,8 +132,8 @@ namespace ice
     } // namespace detail
 
     auto IceshardMeshOven::bake(
-        ice::Resource& resource,
-        ice::ResourceSystem& resource_system,
+        ice::ResourceHandle& resource,
+        ice::ResourceTracker_v2& resource_tracker,
         ice::Allocator& asset_alloc,
         ice::Memory& asset_data
     ) const noexcept -> ice::BakeResult
@@ -139,8 +141,14 @@ namespace ice
         Assimp::Importer importer;
         //importer.SetPropertyFloat(AI_CONFIG_PP_GSN_MAX_SMOOTHING_ANGLE, 80);
 
-        Data resource_data = resource.data();
-        Metadata const& resource_meta = resource.metadata();
+        ice::ResourceActionResult const load_result = ice::sync_wait(resource_tracker.load_resource(&resource));
+        if (load_result.resource_status != ice::ResourceStatus_v2::Loaded)
+        {
+            return BakeResult::Failure_InvalidData;
+        }
+
+        Data resource_data = load_result.data;
+        Metadata const& resource_meta = load_result.resource->metadata();
 
         aiScene const* scene = nullptr;
 
