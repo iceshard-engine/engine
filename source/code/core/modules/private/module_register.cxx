@@ -53,7 +53,7 @@ namespace ice
                 CP_UTF8,
                 0,
                 (const char*)ice::string::data(path),
-                ice::as_i32<NC_SIGN>(ice::string::size(path)),
+                static_cast<ice::i32>(ice::string::size(path)),
                 ice::string::begin(out_str) + current_size,
                 ice::string::size(out_str) - current_size
             );
