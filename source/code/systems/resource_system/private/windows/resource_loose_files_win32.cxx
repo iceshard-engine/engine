@@ -3,163 +3,182 @@
 #include <ice/memory/stack_allocator.hxx>
 #include <ice/collections.hxx>
 
-#include "../path_utils.hxx"
+#include "resource_utils_win32.hxx"
 
 #if ISP_WINDOWS
 
 namespace ice
 {
 
-    bool utf8_to_wide_append(ice::Utf8String path, ice::HeapString<wchar_t>& out_str) noexcept
+    void internal_overlapped_completion_routine(
+        DWORD dwErrorCode,
+        DWORD dwNumberOfBytesTransfered,
+        LPOVERLAPPED lpOverlapped
+    ) noexcept
     {
-        ice::i32 const required_size = MultiByteToWideChar(
-            CP_UTF8,
-            0,
-            (const char*)ice::string::data(path),
-            ice::as_i32<NC_SIGN>(ice::string::size(path)),
-            NULL,
-            0
-        );
+        ICE_LOG(ice::LogSeverity::Debug, ice::LogTag::System, "internal_overlapped_completion_routine()!");
+    }
 
-        if (required_size != 0)
+    auto internal_overlapped_file_load(HANDLE file, Memory& data, ice::TaskScheduler_v2& scheduler) noexcept -> ice::Task<bool>
+    {
+        OVERLAPPED overlapped{ };
+
+        ice::u32 file_offset = 0;
+        ice::u32 file_size_remaining = data.size;
+        while (file_size_remaining > 0)
         {
-            ice::u32 const current_size = ice::string::size(out_str);
-            ice::u32 const total_size = static_cast<ice::u32>(required_size) + ice::string::size(out_str);
-            ice::string::resize(out_str, total_size);
+            overlapped.Offset = file_offset;
 
-            ice::i32 const chars_written = MultiByteToWideChar(
-                CP_UTF8,
-                0,
-                (const char*)ice::string::data(path),
-                ice::as_i32<NC_SIGN>(ice::string::size(path)),
-                ice::string::begin(out_str) + current_size,
-                ice::string::size(out_str) - current_size
+            co_await scheduler;
+
+            BOOL const read_result = ReadFileEx(
+                file,
+                ice::memory::ptr_add(data.location, file_offset),
+                ice::min(file_size_remaining, 1024u * 32u),
+                &overlapped,
+                internal_overlapped_completion_routine
             );
 
-            ICE_ASSERT(
-                chars_written == required_size,
-                "The predicted string size seems to be off! [{} != {}]",
-                chars_written,
-                required_size
-            );
-        }
-
-        return required_size != 0;
-    }
-
-    auto utf8_to_wide(ice::Allocator& alloc, ice::Utf8String path) noexcept -> ice::HeapString<wchar_t>
-    {
-        ice::HeapString<wchar_t> result{ alloc };
-        utf8_to_wide_append(path, result);
-        return result;
-    }
-
-    auto wide_to_utf8(ice::WString path, ice::HeapString<char8_t>& out_str) noexcept
-    {
-        ice::i32 const required_size = WideCharToMultiByte(
-            CP_UTF8,
-            0,
-            ice::string::data(path),
-            ice::as_i32<NC_SIGN>(ice::string::size(path)),
-            NULL,
-            0,
-            NULL,
-            NULL
-        );
-
-        if (required_size != 0)
-        {
-            ice::u32 const current_size = ice::string::size(out_str);
-            ice::u32 const total_size = static_cast<ice::u32>(required_size) + ice::string::size(out_str);
-            ice::string::resize(out_str, total_size);
-
-            ice::i32 const chars_written = WideCharToMultiByte(
-                CP_UTF8,
-                0,
-                ice::string::data(path),
-                ice::as_i32<NC_SIGN>(ice::string::size(path)),
-                (char*)ice::string::begin(out_str) + current_size,
-                ice::string::size(out_str) - current_size,
-                NULL,
-                NULL
-            );
-
-            ICE_ASSERT(
-                chars_written == required_size,
-                "The predicted string size seems to be off! [{} != {}]",
-                chars_written,
-                required_size
-            );
-        }
-
-        return required_size != 0;
-    }
-
-    auto wide_to_utf8_size(ice::WString path) noexcept -> ice::u32
-    {
-        ice::i32 const required_size = WideCharToMultiByte(
-            CP_UTF8,
-            0,
-            ice::string::data(path),
-            ice::as_i32<NC_SIGN>(ice::string::size(path)),
-            NULL,
-            0,
-            NULL,
-            NULL
-        );
-        return static_cast<ice::u32>(required_size);
-    }
-
-
-    auto win32_open_file(ice::WString path) noexcept -> ice::win32::SHHandle
-    {
-        ice::win32::SHHandle handle = CreateFile(
-            ice::string::data(path),
-            GENERIC_READ,
-            FILE_SHARE_READ | FILE_SHARE_WRITE, // FILE_SHARE_*
-            NULL, // SECURITY ATTRIBS
-            OPEN_EXISTING,
-            FILE_ATTRIBUTE_NORMAL, // At some point we might add: FILE_FLAG_OVERLAPPED, FILE_FLAG_RANDOM_ACCESS
-            NULL
-        );
-        return handle;
-    }
-
-    bool win32_load_file(ice::win32::SHHandle const& handle, ice::Buffer& out_buffer) noexcept
-    {
-        ice::memory::StackAllocator_4096 kib4_alloc;
-        ice::Memory memory_chunk = {
-            .location = kib4_alloc.allocate(kib4_alloc.Constant_BufferSize),
-            .size = kib4_alloc.Constant_BufferSize,
-            .alignment = 1 // Characters are not aligned to any particular number
-        };
-
-        BOOL result = FALSE;
-        DWORD characters_read = 0;
-        do
-        {
-            result = ReadFile(
-                handle.native(),
-                memory_chunk.location,
-                memory_chunk.size,
-                &characters_read,
-                nullptr
-            );
-
-            if (characters_read > 0)
+            if (read_result == FALSE)
             {
-                ice::buffer::append(
-                    out_buffer,
-                    memory_chunk.location,
-                    characters_read,
-                    memory_chunk.alignment
-                );
+                break;
             }
 
-        } while (characters_read == 0 && result != FALSE);
+            DWORD loaded_size;
+            BOOL const overlapped_result = GetOverlappedResultEx(file, &overlapped, &loaded_size, 0, TRUE);
+            if (overlapped_result == FALSE)
+            {
+                DWORD const overlapped_error = GetLastError();
+                ICE_LOG(ice::LogSeverity::Error, ice::LogTag::Core, "{}", overlapped_error);
+                if (overlapped_error != WAIT_IO_COMPLETION)
+                {
+                    ICE_LOG(ice::LogSeverity::Error, ice::LogTag::Core, "Overlapped error: {}", overlapped_error);
+                }
+                else
+                {
+                    ICE_LOG(ice::LogSeverity::Error, ice::LogTag::Core, "WAIT_IO_COMPLETION");
+                }
+            }
+            else
+            {
+                file_size_remaining -= loaded_size;
+                file_offset += loaded_size; // 4 KiB
+            }
+        }
 
-        kib4_alloc.deallocate(memory_chunk.location);
-        return result != FALSE;
+        ICE_ASSERT(file_size_remaining == 0, "Error!");
+        co_return file_size_remaining == 0;
+    }
+
+    Resource_LooseFilesWin32::Resource_LooseFilesWin32(
+        ice::MutableMetadata metadata,
+        ice::pod::Array<ice::Utf8String> data_files,
+        ice::pod::Array<ice::i32> data_files_flags,
+        ice::HeapString<char8_t> origin_path,
+        ice::Utf8String origin_name
+    ) noexcept
+        : ice::Resource_Win32{ }
+        , _mutable_metadata{ ice::move(metadata) }
+        , _metadata{ _mutable_metadata }
+        , _data_files{ ice::move(data_files) }
+        , _data_files_flags{ ice::move(data_files_flags) }
+        , _origin_path{ ice::move(origin_path) }
+        , _origin_name{ origin_name }
+        , _uri{ ice::scheme_file, _origin_name }
+    {
+    }
+
+    Resource_LooseFilesWin32::~Resource_LooseFilesWin32() noexcept
+    {
+    }
+
+    auto Resource_LooseFilesWin32::uri() const noexcept -> ice::URI_v2 const&
+    {
+        return _uri;
+    }
+
+    auto Resource_LooseFilesWin32::name() const noexcept -> ice::Utf8String
+    {
+        return _origin_name;
+    }
+
+    auto Resource_LooseFilesWin32::origin() const noexcept -> ice::Utf8String
+    {
+        return _origin_path;
+    }
+
+    auto Resource_LooseFilesWin32::metadata() const noexcept -> ice::Metadata const&
+    {
+        return _metadata;
+    }
+
+    auto Resource_LooseFilesWin32::load_data_for_flags(
+        ice::Allocator& alloc,
+        ice::u32 flags,
+        ice::TaskScheduler_v2& scheduler
+    ) const noexcept -> ice::Task<ice::Memory>
+    {
+        ice::Utf8String file_location = ice::pod::array::front(_data_files);
+        ICE_ASSERT(flags == 0, "Only default flags value is supported for now!");
+
+        //if (flags != 0)
+        //{
+        //    for (ice::u32 idx = 1; idx < ice::pod::array::size(_data_files); ++idx)
+        //    {
+        //        if ((_data_files_flags[idx] & flags) == flags)
+        //        {
+        //            file_location = _data_files[idx];
+        //        }
+        //    }
+        //}
+
+        ice::HeapString<wchar_t> file_location_wide{ alloc };
+        ice::utf8_to_wide_append(_origin_path, file_location_wide);
+
+        //ice::WString directory = ice::path::directory(file_location_wide);
+        //ice::string::resize(file_location_wide, ice::string::size(directory) + 1);
+        //ice::utf8_to_wide_append(file_location, file_location_wide);
+
+        ice::Memory result{
+            .location = nullptr,
+            .size = 0,
+            .alignment = 0,
+        };
+
+        ice::win32::SHHandle const file_handle = ice::win32_open_file(file_location_wide, FILE_FLAG_OVERLAPPED);
+        if (file_handle)
+        {
+            LARGE_INTEGER file_size;
+            if (GetFileSizeEx(file_handle.native(), &file_size) == 0)
+            {
+                co_return result;
+            }
+
+            ice::u32 const casted_file_size = static_cast<ice::u32>(file_size.QuadPart);
+
+            // #TODO: Implement a `ice::size` type that will be used for memory only.
+            ICE_ASSERT(casted_file_size == file_size.QuadPart, "Unsupported file size of over 4GB!");
+
+            ice::Memory data{
+                .location = alloc.allocate(casted_file_size),
+                .size = casted_file_size,
+                .alignment = 4
+            };
+
+
+            bool const success = co_await internal_overlapped_file_load(file_handle.native(), data, scheduler);
+            if (success)
+            {
+                result = data;
+            }
+            else
+            {
+                alloc.deallocate(data.location);
+            }
+
+        }
+
+        co_return result;
     }
 
     auto create_resource_from_loose_files(
@@ -167,12 +186,12 @@ namespace ice
         ice::WString base_path,
         ice::WString meta_file,
         ice::WString data_file
-    ) noexcept -> ice::Resource_v2*
+    ) noexcept -> ice::Resource_Win32*
     {
-        ice::win32::SHHandle meta_handle = win32_open_file(meta_file);
-        ice::win32::SHHandle data_handle = win32_open_file(data_file);
+        ice::win32::SHHandle meta_handle = win32_open_file(meta_file, FILE_ATTRIBUTE_NORMAL);
+        ice::win32::SHHandle data_handle = win32_open_file(data_file, FILE_ATTRIBUTE_NORMAL);
 
-        ice::Resource_v2* result = nullptr;
+        ice::Resource_Win32* result = nullptr;
         if (meta_handle && data_handle)
         {
             ice::Buffer meta_file_data{ alloc };
@@ -235,7 +254,7 @@ namespace ice
                         ice::string::resize(full_path, base_dir_size);
                         utf8_to_wide_append(file_path, full_path);
 
-                        ice::win32::SHHandle extra_handle = win32_open_file(full_path);
+                        ice::win32::SHHandle extra_handle = win32_open_file(full_path, FILE_ATTRIBUTE_NORMAL);
                         //ICE_ASSERT(
                         //    extra_handle == true,
                         //    "Extra file '{}' couldn't be opened.",
@@ -258,31 +277,11 @@ namespace ice
                     ice::move(flags),
                     ice::move(utf8_data_file_path),
                     utf8_origin_name
-                );
+                    );
             }
         }
 
         return result;
-    }
-
-    Resource_LooseFilesWin32::Resource_LooseFilesWin32(
-        ice::MutableMetadata metadata,
-        ice::pod::Array<ice::Utf8String> data_files,
-        ice::pod::Array<ice::i32> data_files_flags,
-        ice::HeapString<char8_t> origin_path,
-        ice::Utf8String origin_name
-    ) noexcept
-        : ice::Resource_v2{ }
-        , _metadata{ ice::move(metadata) }
-        , _data_files{ ice::move(data_files) }
-        , _data_files_flags{ ice::move(data_files_flags) }
-        , _origin_path{ ice::move(origin_path) }
-        , _origin_name{ origin_name }
-    {
-    }
-
-    Resource_LooseFilesWin32::~Resource_LooseFilesWin32() noexcept
-    {
     }
 
 } // namespace ice

@@ -1,12 +1,14 @@
 #include <ice/resource_provider.hxx>
 #include <ice/resource_provider_action.hxx>
 #include <ice/resource_action.hxx>
+#include <ice/task_scheduler.hxx>
 #include <ice/memory/stack_allocator.hxx>
 #include <ice/os/windows.hxx>
 #include <ice/heap_string.hxx>
+#include <ice/pod/hash.hxx>
 
 #include "resource_loose_files_win32.hxx"
-#include "../path_utils.hxx"
+#include "resource_utils_win32.hxx"
 
 #if ISP_WINDOWS
 
@@ -29,15 +31,10 @@ namespace ice
 
         ~ResourceProvider_Win32Filesystem() noexcept override
         {
-            for (ice::Resource_v2* res : _resources)
+            for (auto const& res_entry : _resources)
             {
-                _allocator.destroy(res);
+                _allocator.destroy(res_entry.value);
             }
-        }
-
-        bool query_changes(ice::pod::Array<ice::Resource_v2 const*>& out_changes) const noexcept
-        {
-            return false;
         }
 
         template<typename Fn>
@@ -123,18 +120,40 @@ namespace ice
                 ice::HeapString<wchar_t> meta_file{ temp_path_alloc, file };
                 ice::HeapString<wchar_t> data_file{ temp_path_alloc, ice::string::substr(file, 0, ice::string::find_last_of(file, L'.')) };
 
-                ice::pod::array::push_back(
-                    _resources,
-                    create_resource_from_loose_files(_allocator, _base_path, meta_file, data_file)
+                ice::Resource_Win32* const resource = create_resource_from_loose_files(
+                    _allocator,
+                    _base_path,
+                    meta_file,
+                    data_file
                 );
+
+                if (resource != nullptr)
+                {
+                    ice::pod::hash::set(
+                        _resources,
+                        ice::hash(resource->name()),
+                        resource
+                    );
+                }
             };
 
             traverse_directory(dir_tracker, fncb);
         }
 
+        auto query_resources(
+            ice::pod::Array<ice::Resource_v2 const*>& out_changes
+        ) const noexcept -> ice::u32 override
+        {
+            for (auto const& entry : _resources)
+            {
+                ice::pod::array::push_back(out_changes, entry.value);
+            }
+            return 0;
+        }
+
         auto refresh() noexcept -> ice::Task<ice::ResourceProviderResult>
         {
-            if (ice::pod::array::empty(_resources))
+            if (ice::pod::hash::empty(_resources))
             {
                 initial_traverse();
             }
@@ -142,16 +161,41 @@ namespace ice
             co_return ResourceProviderResult::Success;
         }
 
-        auto reset() noexcept -> ice::Task<ice::ResourceProviderResult>
+        auto load_resource(
+            ice::Allocator& alloc,
+            ice::Resource_v2 const* resource,
+            ice::TaskScheduler_v2& scheduler
+        ) noexcept -> ice::Task<ice::Memory> override
         {
-            co_return ResourceProviderResult::Skipped;
+            ice::Resource_Win32 const* const win_res = static_cast<ice::Resource_Win32 const*>(resource);
+            co_return co_await win_res->load_data_for_flags(alloc, 0, scheduler);
+        }
+
+        auto release_resource(
+            ice::Resource_v2 const* resource,
+            ice::TaskScheduler_v2& scheduler
+        ) noexcept -> ice::Task<>
+        {
+            ice::Resource_Win32 const* const win_res = static_cast<ice::Resource_Win32 const*>(resource);
+            ice::u64 const hash = ice::hash(win_res->name());
+
+            ice::Resource_Win32* win_res_mut = ice::pod::hash::get(_resources, hash, nullptr);
+            ICE_ASSERT(win_res == win_res_mut, "Trying to delete resource with similar name but object pointers differ!");
+
+            ice::pod::hash::remove(
+                _resources,
+                hash
+            );
+
+            _allocator.destroy(win_res_mut);
+            co_return;
         }
 
     private:
         ice::Allocator& _allocator;
         ice::HeapString<wchar_t> _base_path;
 
-        ice::pod::Array<ice::Resource_v2*> _resources;
+        ice::pod::Hash<ice::Resource_Win32*> _resources;
     };
 
     auto create_resource_provider(

@@ -7,19 +7,19 @@ namespace ice
 
     struct Metadata;
 
-    class Resource
-    {
-    public:
-        virtual ~Resource() noexcept = default;
+    //class Resource
+    //{
+    //public:
+    //    virtual ~Resource() noexcept = default;
 
-        virtual auto name() const noexcept -> ice::String = 0;
+    //    virtual auto name() const noexcept -> ice::String = 0;
 
-        virtual auto location() const noexcept -> ice::URI const& = 0;
+    //    virtual auto location() const noexcept -> ice::URI const& = 0;
 
-        virtual auto metadata() const noexcept -> ice::Metadata const& = 0;
+    //    virtual auto metadata() const noexcept -> ice::Metadata const& = 0;
 
-        virtual auto data() noexcept -> ice::Data = 0;
-    };
+    //    virtual auto data() noexcept -> ice::Data = 0;
+    //};
 
 
 } // namespace ice
@@ -27,15 +27,17 @@ namespace ice
 namespace ice
 {
 
+    class ResourceHandle;
+
     enum class ResourceStatus_v2 : ice::u32
     {
-        Unknown,
-        Available,
-        Loaded,
-        Updated,
-        Unloaded,
-        Released,
-        Failure,
+        Invalid = 0x00'01,
+        Available = 0x00'02,
+        Loaded = 0x00'04,
+        //Unloaded = 0x00'08,
+        //Released = 0x01'00,
+        Loading = 0x02'00,
+        Unloading = 0x04'00,
     };
 
     class Resource_v2
@@ -51,5 +53,48 @@ namespace ice
 
         virtual auto metadata() const noexcept -> ice::Metadata const& = 0;
     };
+
+    constexpr auto operator|(
+        ice::ResourceStatus_v2 left,
+        ice::ResourceStatus_v2 right
+    ) noexcept -> ice::ResourceStatus_v2
+    {
+        ice::u32 const left_val = static_cast<ice::u32>(left);
+        ice::u32 const right_val = static_cast<ice::u32>(right);
+        return static_cast<ice::ResourceStatus_v2>(left_val | right_val);
+    }
+
+    constexpr auto operator|=(
+        ice::ResourceStatus_v2& left,
+        ice::ResourceStatus_v2 right
+    ) noexcept -> ice::ResourceStatus_v2&
+    {
+        left = left | right;
+        return left;
+    }
+
+    constexpr auto operator&(
+        ice::ResourceStatus_v2 left,
+        ice::ResourceStatus_v2 right
+    ) noexcept -> ice::ResourceStatus_v2
+    {
+        ice::u32 const left_val = static_cast<ice::u32>(left);
+        ice::u32 const right_val = static_cast<ice::u32>(right);
+        return static_cast<ice::ResourceStatus_v2>(left_val & right_val);
+    }
+
+    constexpr auto operator&=(
+        ice::ResourceStatus_v2& left,
+        ice::ResourceStatus_v2 right
+    ) noexcept -> ice::ResourceStatus_v2&
+    {
+        left = left & right;
+        return left;
+    }
+
+    constexpr bool has_flag(ice::ResourceStatus_v2 value, ice::ResourceStatus_v2 searched_mask) noexcept
+    {
+        return (value & searched_mask) == searched_mask;
+    }
 
 } // ice::res_v2
