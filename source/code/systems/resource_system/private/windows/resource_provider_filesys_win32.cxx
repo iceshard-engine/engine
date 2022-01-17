@@ -105,7 +105,8 @@ namespace ice
             }
         }
 
-        void initial_traverse() noexcept
+        // GitHub Issue: #108
+        void ISATTR_NOINLINE initial_traverse() noexcept
         {
             ice::HeapString<wchar_t> dir_tracker = _base_path;
             ice::path::join(dir_tracker, L"."); // Ensure we end with a '/' character
@@ -150,7 +151,7 @@ namespace ice
             return 0;
         }
 
-        auto refresh() noexcept -> ice::Task<ice::ResourceProviderResult>
+        auto refresh() noexcept -> ice::Task<ice::ResourceProviderResult> override
         {
             if (ice::pod::hash::empty(_resources))
             {
