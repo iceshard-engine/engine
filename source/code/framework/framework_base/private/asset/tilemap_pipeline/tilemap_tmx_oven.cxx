@@ -886,7 +886,10 @@ namespace ice
                 result = BakeResult::Success;
                 for (ice::u32 idx = 0; idx < tilemap_info.tileset_count; ++idx)
                 {
-                    ice::ResourceHandle* dependency_resource = resource_tracker.find_resource(ice::URI_v2{ ice::scheme_file, tilemap_info.tileset_info[idx].image });
+                    ice::ResourceHandle* dependency_resource = resource_tracker.find_resource_relative(
+                        ice::URI_v2{ ice::scheme_file, tilemap_info.tileset_info[idx].image },
+                        &resource
+                    );
                     if (dependency_resource == nullptr)
                     {
                         //TILED_LOG(LogSeverity::Error, "Invalid TMX resource, failed to find image resource at: {}", tilemap_info.tileset_info[idx].image);

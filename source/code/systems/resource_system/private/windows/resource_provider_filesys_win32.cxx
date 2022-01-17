@@ -191,6 +191,39 @@ namespace ice
             co_return;
         }
 
+        auto resolve_relative_uri(
+            ice::URI_v2 const& relative_uri,
+            ice::Resource_v2 const* root_resource
+        ) const noexcept -> ice::URI_v2 const& override
+        {
+            ice::u32 const origin_size = ice::string::size(root_resource->origin());
+
+            ice::HeapString<char8_t> relative_path{ _allocator, };
+            ice::string::reserve(relative_path, origin_size + ice::string::size(relative_uri.path));
+
+            relative_path = ice::string::substr(
+                root_resource->origin(),
+                0,
+                origin_size - ice::string::size(ice::path::filename(root_resource->name()))
+            );
+
+            ice::path::join(relative_path, relative_uri.path);
+            ice::path::normalize(relative_path);
+
+            ice::Utf8String const resource_name = ice::string::substr(relative_path, origin_size - ice::string::size(root_resource->name()));
+            ice::u64 const resource_hash = ice::hash(resource_name);
+
+            ice::Resource_Win32 const* found_resource = ice::pod::hash::get(_resources, resource_hash, nullptr);
+            if (found_resource != nullptr)
+            {
+                return found_resource->uri();
+            }
+            else
+            {
+                return ice::uri_invalid;
+            }
+        }
+
     private:
         ice::Allocator& _allocator;
         ice::HeapString<wchar_t> _base_path;

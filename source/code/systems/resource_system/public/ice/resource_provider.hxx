@@ -40,6 +40,14 @@ namespace ice
             ice::Resource_v2 const* resource,
             ice::TaskScheduler_v2& scheduler
         ) noexcept -> ice::Task<> = 0;
+
+        virtual auto resolve_relative_uri(
+            ice::URI_v2 const& relative_uri,
+            ice::Resource_v2 const* root_resource
+        ) const noexcept -> ice::URI_v2 const&
+        {
+            return ice::uri_invalid;
+        }
     };
 
     auto create_resource_provider(

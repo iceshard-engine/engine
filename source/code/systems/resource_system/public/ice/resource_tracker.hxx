@@ -47,6 +47,12 @@ namespace ice
             ice::ResourceFlags_v2 flags = ice::ResourceFlags_v2::None
         ) const noexcept -> ice::ResourceHandle* = 0;
 
+        virtual auto find_resource_relative(
+            ice::URI_v2 const& uri,
+            ice::ResourceHandle* resource_handle,
+            ice::ResourceFlags_v2 flags = ice::ResourceFlags_v2::None
+        ) const noexcept -> ice::ResourceHandle* = 0;
+
 
         virtual auto set_resource(
             ice::URI_v2 const& uri,

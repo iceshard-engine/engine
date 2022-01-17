@@ -5,7 +5,7 @@
 namespace ice::path
 {
 
-    bool is_absolute(ice::String path) noexcept
+    bool is_absolute(ice::Utf8String path) noexcept
     {
         if constexpr (ice::build::is_windows)
         {
@@ -27,30 +27,30 @@ namespace ice::path
         return ice::string::substr(str, separator_pos == ice::string_npos ? ice::string::size(str) : separator_pos);
     }
 
-    auto filename(ice::String str) noexcept -> ice::String
+    auto filename(ice::Utf8String str) noexcept -> ice::Utf8String
     {
         auto const separator_pos = ice::string::find_last_of(str, separators_directory);
         return ice::string::substr(str, separator_pos == ice::string_npos ? 0 : separator_pos + 1);
     }
 
-    auto directory(ice::String str) noexcept -> ice::String
+    auto directory(ice::Utf8String str) noexcept -> ice::Utf8String
     {
         auto const separator_pos = ice::string::find_last_of(str, separators_directory);
         return ice::string::substr(str, separator_pos == ice::string_npos ? ice::string::size(str) : 0, separator_pos);
     }
 
-    auto normalize(ice::HeapString<>& path) noexcept -> ice::String
+    auto normalize(ice::HeapString<char8_t>& path) noexcept -> ice::Utf8String
     {
-        char* it = ice::string::begin(path);
-        char const* const beg = ice::string::begin(path);
+        char8_t* it = ice::string::begin(path);
+        char8_t const* const beg = ice::string::begin(path);
         //char* reminder = nullptr;
-        char const* const end = ice::string::end(path);
+        char8_t const* const end = ice::string::end(path);
 
         while (it != end)
         {
-            if (*it == '\\')
+            if (*it == u8'\\')
             {
-                *it = '/';
+                *it = u8'/';
             }
 
             it += 1;
@@ -58,21 +58,21 @@ namespace ice::path
 
         it = ice::string::begin(path);
 
-        ice::u32 const begin = ice::string::find_first_of(path, ':');
+        ice::u32 const begin = ice::string::find_first_of(path, u8':');
         if (begin != ice::string_npos)
         {
             it += begin + 1;
         }
 
-        char* copy_to = it;
+        char8_t* copy_to = it;
         while (it != end)
         {
-            if (*it == '.' && *(it + 1) == '.')
+            if (*it == u8'.' && *(it + 1) == u8'.')
             {
                 copy_to -= 1; // move to the previous slash '/'
                 copy_to -= (copy_to != beg); // Move past the shash if we are not at the path begining
 
-                while (*copy_to != '/' && copy_to != beg)
+                while (*copy_to != u8'/' && copy_to != beg)
                 {
                     copy_to -= 1;
                 }
@@ -94,7 +94,7 @@ namespace ice::path
         return path;
     }
 
-    auto join(ice::HeapString<>& left, ice::String right) noexcept -> ice::String
+    auto join(ice::HeapString<char8_t>& left, ice::Utf8String right) noexcept -> ice::Utf8String
     {
         // This one was taken from MS's std::filesystem implementation.
         if (is_absolute(right))
@@ -102,16 +102,16 @@ namespace ice::path
             return left.operator=(right);
         }
 
-        if (auto last_char = ice::string::back(left); last_char != '/' && last_char != '.')
+        if (auto last_char = ice::string::back(left); last_char != u8'/' && last_char != u8'.')
         {
-            if (last_char == '\\')
+            if (last_char == u8'\\')
             {
                 ice::string::pop_back(left);
             }
-            ice::string::push_back(left, '/');
+            ice::string::push_back(left, u8'/');
         }
 
-        if (right != ".")
+        if (right != u8".")
         {
             ice::string::push_back(left, right);
         }
@@ -119,7 +119,7 @@ namespace ice::path
         return left;
     }
 
-    auto replace_filename(ice::HeapString<>& str, ice::String name) noexcept -> ice::String
+    auto replace_filename(ice::HeapString<char8_t>& str, ice::Utf8String name) noexcept -> ice::Utf8String
     {
         auto const separator_pos = ice::string::find_last_of(str, separators_directory);
         if (separator_pos != ice::string_npos)

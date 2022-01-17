@@ -185,6 +185,25 @@ namespace ice
             return result;
         }
 
+        auto find_resource_relative(
+            ice::URI_v2 const& uri,
+            ice::ResourceHandle* handle,
+            ice::ResourceFlags_v2 flags
+        ) const noexcept -> ice::ResourceHandle* override
+        {
+            ICE_ASSERT(handle != nullptr, "Trying to set resource from invalid handle!");
+            ice::u64 const hash = ice::hash(uri.path);
+
+            ice::ResourceHandle* result = nullptr;
+
+            ice::URI_v2 const& resolved_uri = handle->provider->resolve_relative_uri(uri, handle->resource);
+            if (resolved_uri.scheme != ice::uri_invalid.scheme)
+            {
+                result = this->find_resource(resolved_uri, flags);
+            }
+            return result;
+        }
+
         //auto create_resource(
         //    ice::URI_v2 const& uri,
         //    ice::Metadata const& metadata,
