@@ -11,16 +11,16 @@ namespace ice
 
     static constexpr ice::StringID scheme_invalid = "<invalid>"_sid;
 
-    struct URI_v2
+    struct URI
     {
-        constexpr URI_v2() noexcept;
-        constexpr URI_v2(ice::URI_v2 const& other) noexcept = default;
+        constexpr URI() noexcept;
+        constexpr URI(ice::URI const& other) noexcept = default;
 
-        constexpr explicit URI_v2(char8_t const* uri_raw) noexcept;
-        constexpr explicit URI_v2(ice::Utf8String uri) noexcept;
+        constexpr explicit URI(char8_t const* uri_raw) noexcept;
+        constexpr explicit URI(ice::Utf8String uri) noexcept;
 
-        constexpr URI_v2(ice::StringID_Arg scheme, ice::Utf8String path) noexcept;
-        constexpr URI_v2(ice::StringID_Arg scheme, ice::Utf8String path, ice::StringID_Arg fragment) noexcept;
+        constexpr URI(ice::StringID_Arg scheme, ice::Utf8String path) noexcept;
+        constexpr URI(ice::StringID_Arg scheme, ice::Utf8String path, ice::StringID_Arg fragment) noexcept;
 
         ice::StringID_Hash scheme;
         ice::StringID fragment;
@@ -133,39 +133,39 @@ namespace ice
     } // namespace detail
 
 
-    constexpr URI_v2::URI_v2() noexcept
+    constexpr URI::URI() noexcept
         : scheme{ ice::stringid_hash(ice::scheme_invalid) }
         , fragment{ ice::stringid_invalid }
         , path{ u8"" }
     { }
 
-    constexpr URI_v2::URI_v2(char8_t const* uri_raw) noexcept
-        : URI_v2{ ice::Utf8String{ uri_raw } }
+    constexpr URI::URI(char8_t const* uri_raw) noexcept
+        : URI{ ice::Utf8String{ uri_raw } }
     { }
 
-    constexpr URI_v2::URI_v2(ice::Utf8String uri) noexcept
+    constexpr URI::URI(ice::Utf8String uri) noexcept
         : scheme{ detail::scheme_from_uri(uri) }
         , fragment{ detail::fragment_from_uri(uri) }
         , path{ detail::path_from_uri(uri) }
     { }
 
-    constexpr URI_v2::URI_v2(ice::StringID_Arg scheme, ice::Utf8String path) noexcept
+    constexpr URI::URI(ice::StringID_Arg scheme, ice::Utf8String path) noexcept
         : scheme{ ice::stringid_hash(scheme) }
         , fragment{ ice::stringid_hash(ice::stringid_invalid) }
         , path{ path }
     { }
 
-    constexpr URI_v2::URI_v2(ice::StringID_Arg scheme, ice::Utf8String path, ice::StringID_Arg fragment) noexcept
+    constexpr URI::URI(ice::StringID_Arg scheme, ice::Utf8String path, ice::StringID_Arg fragment) noexcept
         : scheme{ ice::stringid_hash(scheme) }
         , fragment{ fragment }
         , path{ path }
     { }
 
-    constexpr auto operator""_uri(char8_t const* raw_uri, std::size_t length) noexcept -> ice::URI_v2
+    constexpr auto operator""_uri(char8_t const* raw_uri, std::size_t length) noexcept -> ice::URI
     {
-        return URI_v2{ ice::Utf8String{ raw_uri, length } };
+        return URI{ ice::Utf8String{ raw_uri, length } };
     }
 
-    constexpr static ice::URI_v2 uri_invalid = u8""_uri;
+    constexpr static ice::URI uri_invalid = u8""_uri;
 
 } // namespace ice

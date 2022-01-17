@@ -11,7 +11,7 @@
 namespace ice
 {
 
-    class ResourceProvider_Win32Dlls final : public ice::ResourceProvider_v2
+    class ResourceProvider_Win32Dlls final : public ice::ResourceProvider
     {
     public:
         ResourceProvider_Win32Dlls(
@@ -191,9 +191,9 @@ namespace ice
     auto create_resource_provider_dlls(
         ice::Allocator& alloc,
         ice::Utf8String path
-    ) noexcept -> ice::UniquePtr<ice::ResourceProvider_v2>
+    ) noexcept -> ice::UniquePtr<ice::ResourceProvider>
     {
-        return ice::make_unique<ice::ResourceProvider_v2, ice::ResourceProvider_Win32Dlls>(alloc, alloc, path);
+        return ice::make_unique<ice::ResourceProvider, ice::ResourceProvider_Win32Dlls>(alloc, alloc, path);
     }
 
 } // namespace ice

@@ -21,15 +21,15 @@ namespace ice
 
     auto ice::IceshardImageOven::bake(
         ice::ResourceHandle& resource,
-        ice::ResourceTracker_v2& resource_tracker,
+        ice::ResourceTracker& resource_tracker,
         ice::Allocator& asset_alloc,
         ice::Memory& asset_data
     ) const noexcept -> ice::BakeResult
     {
         using ice::render::ImageInfo;
 
-        ice::ResourceActionResult const load_result = ice::sync_wait(resource_tracker.load_resource(&resource));
-        if (load_result.resource_status != ice::ResourceStatus_v2::Loaded)
+        ice::ResourceResult const load_result = ice::sync_wait(resource_tracker.load_resource(&resource));
+        if (load_result.resource_status != ice::ResourceStatus::Loaded)
         {
             return BakeResult::Failure_InvalidData;
         }

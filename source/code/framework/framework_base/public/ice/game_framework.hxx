@@ -10,7 +10,7 @@ namespace ice
     class Engine;
     class EngineRunner;
 
-    class ResourceTracker_v2;
+    class ResourceTracker;
     class ModuleRegister;
 
     namespace gfx { class GfxRunner; }
@@ -18,7 +18,7 @@ namespace ice
     struct GameServices
     {
         virtual ~GameServices() noexcept = default;
-        virtual auto resource_system() noexcept -> ice::ResourceTracker_v2 & = 0;
+        virtual auto resource_system() noexcept -> ice::ResourceTracker & = 0;
         virtual auto module_registry() noexcept -> ice::ModuleRegister& = 0;
     };
 
@@ -27,13 +27,13 @@ namespace ice
     public:
         GameFramework(
             ice::Allocator& alloc,
-            ice::ResourceTracker_v2& resource_system,
+            ice::ResourceTracker& resource_system,
             ice::ModuleRegister& module_register
         ) noexcept;
 
         virtual ~GameFramework() noexcept override;
 
-        virtual auto config_uri() const noexcept -> ice::URI_v2 = 0;
+        virtual auto config_uri() const noexcept -> ice::URI = 0;
         virtual auto graphics_world_name() const noexcept -> ice::StringID = 0;
 
         virtual void load_modules() noexcept = 0;
@@ -44,7 +44,7 @@ namespace ice
         void game_begin(ice::EngineRunner& runner) noexcept;
         void game_end() noexcept;
 
-        auto resource_system() noexcept -> ice::ResourceTracker_v2& final;
+        auto resource_system() noexcept -> ice::ResourceTracker& final;
         auto module_registry() noexcept -> ice::ModuleRegister& final;
 
         auto create_app(
@@ -63,7 +63,7 @@ namespace ice
         ice::SystemClock _system_clock;
 
     private:
-        ice::ResourceTracker_v2& _resource_system;
+        ice::ResourceTracker& _resource_system;
         ice::ModuleRegister& _module_register;
 
         ice::Engine* _current_engine;
@@ -71,7 +71,7 @@ namespace ice
 
     template<typename T>
     concept HasConfigFileMember = requires (T t) {
-        { T::ConfigFile } -> std::convertible_to<ice::URI_v2 const&>;
+        { T::ConfigFile } -> std::convertible_to<ice::URI const&>;
     };
     template<typename T>
     concept HasGraphicsWorldNameMember = requires (T t) {
@@ -113,7 +113,7 @@ namespace ice
     public:
         Game(
             ice::Allocator& alloc,
-            ice::ResourceTracker_v2& resource_tracker,
+            ice::ResourceTracker& resource_tracker,
             ice::ModuleRegister& module_register
         ) noexcept
             : GameFramework{ alloc, resource_tracker, module_register }
@@ -121,7 +121,7 @@ namespace ice
         { }
 
     private:
-        auto config_uri() const noexcept -> ice::URI_v2 final
+        auto config_uri() const noexcept -> ice::URI final
         {
             if constexpr (HasConfigFileMember<T>)
             {
@@ -129,7 +129,7 @@ namespace ice
             }
             else
             {
-                return ice::URI_v2{ ice::scheme_file, u8"config.json" };
+                return ice::URI{ ice::scheme_file, u8"config.json" };
             }
         }
 
@@ -176,7 +176,7 @@ namespace ice
 
     auto create_game_object(
         ice::Allocator& alloc,
-        ice::ResourceTracker_v2& resource_tracker,
+        ice::ResourceTracker& resource_tracker,
         ice::ModuleRegister& module_register
     ) noexcept -> ice::GameFramework*;
 
@@ -185,7 +185,7 @@ namespace ice
 #define ICE_REGISTER_GAMEAPP(Type) \
     auto ice::create_game_object( \
         ice::Allocator& alloc, \
-        ice::ResourceTracker_v2& resource_tracker, \
+        ice::ResourceTracker& resource_tracker, \
         ice::ModuleRegister& module_register \
     ) noexcept -> ice::GameFramework * \
     { \

@@ -16,7 +16,7 @@ namespace ice
     {
     }
 
-    auto Resource_DllsWin32::uri() const noexcept -> ice::URI_v2 const&
+    auto Resource_DllsWin32::uri() const noexcept -> ice::URI const&
     {
         return _uri;
     }

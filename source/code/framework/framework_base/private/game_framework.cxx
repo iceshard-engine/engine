@@ -54,7 +54,7 @@ namespace ice
 
     GameFramework::GameFramework(
         ice::Allocator& alloc,
-        ice::ResourceTracker_v2& resource_system,
+        ice::ResourceTracker& resource_system,
         ice::ModuleRegister& module_register
     ) noexcept
         : _allocator{ alloc }
@@ -69,7 +69,7 @@ namespace ice
     {
     }
 
-    auto GameFramework::resource_system() noexcept -> ice::ResourceTracker_v2&
+    auto GameFramework::resource_system() noexcept -> ice::ResourceTracker&
     {
         return _resource_system;
     }

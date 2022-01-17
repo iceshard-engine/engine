@@ -57,7 +57,7 @@ MyGame::MyGame(ice::Allocator& alloc, ice::Clock const& clock) noexcept
 void MyGame::on_load_modules(ice::GameServices& sercies) noexcept
 {
     ice::ModuleRegister& mod = sercies.module_registry();
-    ice::ResourceTracker_v2& res = sercies.resource_system();
+    ice::ResourceTracker& res = sercies.resource_system();
 
     ice::ResourceHandle* const pipelines_module = res.find_resource(u8"urn:iceshard_pipelines.dll"_uri);
     ice::ResourceHandle* const engine_module = res.find_resource(u8"urn:iceshard.dll"_uri);

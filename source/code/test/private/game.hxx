@@ -24,7 +24,7 @@ using ice::operator""_uri;
 class MyGame : public ice::WorldTrait
 {
 public:
-    static constexpr ice::URI_v2 ConfigFile = ice::URI_v2{ ice::scheme_file, u8"config.json" };
+    static constexpr ice::URI ConfigFile = ice::URI{ ice::scheme_file, u8"config.json" };
     static constexpr ice::StringID GraphicsWorldName = "game.render_world"_sid;
 
     MyGame(ice::Allocator& alloc, ice::Clock const& clock) noexcept;

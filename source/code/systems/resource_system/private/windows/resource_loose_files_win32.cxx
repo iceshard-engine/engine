@@ -1,7 +1,8 @@
 #include "resource_loose_files_win32.hxx"
-#include <ice/assert.hxx>
 #include <ice/memory/stack_allocator.hxx>
+#include <ice/task_scheduler.hxx>
 #include <ice/collections.hxx>
+#include <ice/assert.hxx>
 
 #include "resource_utils_win32.hxx"
 
@@ -92,7 +93,7 @@ namespace ice
     {
     }
 
-    auto Resource_LooseFilesWin32::uri() const noexcept -> ice::URI_v2 const&
+    auto Resource_LooseFilesWin32::uri() const noexcept -> ice::URI const&
     {
         return _uri;
     }

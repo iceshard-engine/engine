@@ -8,7 +8,7 @@ namespace ice
 {
 
     class Resource_v2;
-    class ResourceTracker_v2;
+    class ResourceTracker;
     struct ResourceHandle;
 
     class AssetPipeline;
@@ -54,7 +54,7 @@ namespace ice
 
     auto create_asset_system(
         ice::Allocator& alloc,
-        ice::ResourceTracker_v2& resource_system
+        ice::ResourceTracker& resource_system
     ) noexcept -> ice::UniquePtr<ice::AssetSystem>;
 
 } // namespace ice

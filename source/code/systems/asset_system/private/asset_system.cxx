@@ -3,6 +3,7 @@
 #include <ice/asset_oven.hxx>
 #include <ice/asset_loader.hxx>
 #include <ice/resource.hxx>
+#include <ice/resource_status.hxx>
 #include <ice/resource_tracker.hxx>
 #include <ice/pod/array.hxx>
 #include <ice/pod/hash.hxx>
@@ -31,7 +32,7 @@ namespace ice
 
         struct AssetInfo
         {
-            ice::URI_v2 location;
+            ice::URI location;
             ice::ResourceHandle* handle;
             ice::AssetPipeline* pipeline;
             ice::Memory baked_data;
@@ -45,7 +46,7 @@ namespace ice
             ExplicitAssetSolver(
                 ice::Allocator& alloc,
                 ice::AssetSystem& assets,
-                ice::ResourceTracker_v2& resources,
+                ice::ResourceTracker& resources,
                 ice::Metadata const& metadata
             ) noexcept
                 : _allocator{ alloc }
@@ -79,7 +80,7 @@ namespace ice
                     {
                         if (ice::size(explicit_resources) > idx)
                         {
-                            explicit_resource = _resources.find_resource(ice::URI_v2{ explicit_resources[idx] });
+                            explicit_resource = _resources.find_resource(ice::URI{ explicit_resources[idx] });
                         }
                     }
                 }
@@ -97,7 +98,7 @@ namespace ice
         private:
             ice::Allocator& _allocator;
             ice::AssetSystem& _assets;
-            ice::ResourceTracker_v2& _resources;
+            ice::ResourceTracker& _resources;
             ice::Metadata const& _metadata;
         };
 
@@ -129,7 +130,7 @@ namespace ice
     public:
         SimpleAssetSystem(
             ice::Allocator& alloc,
-            ice::ResourceTracker_v2& resource_system
+            ice::ResourceTracker& resource_system
         ) noexcept;
 
         ~SimpleAssetSystem() noexcept override;
@@ -169,7 +170,7 @@ namespace ice
 
     private:
         ice::Allocator& _allocator;
-        ice::ResourceTracker_v2& _resource_system;
+        ice::ResourceTracker& _resource_system;
 
         ice::memory::ProxyAllocator _oven_alloc;
         ice::Map<ice::StringID_Hash, ice::UniquePtr<ice::AssetPipeline>> _pipelines;
@@ -182,7 +183,7 @@ namespace ice
 
     SimpleAssetSystem::SimpleAssetSystem(
         ice::Allocator& alloc,
-        ice::ResourceTracker_v2& resource_tracker
+        ice::ResourceTracker& resource_tracker
     ) noexcept
         : _allocator{ alloc }
         , _resource_system{ resource_tracker }
@@ -558,8 +559,8 @@ namespace ice
         }
         else
         {
-            ice::ResourceActionResult const load_result = ice::sync_wait(_resource_system.load_resource(asset_info.handle));
-            if (load_result.resource_status == ice::ResourceStatus_v2::Loaded)
+            ice::ResourceResult const load_result = ice::sync_wait(_resource_system.load_resource(asset_info.handle));
+            if (load_result.resource_status == ice::ResourceStatus::Loaded)
             {
                 asset_data = load_result.data;
             }
@@ -732,8 +733,8 @@ namespace ice
             }
             else
             {
-                ice::ResourceActionResult const load_result = ice::sync_wait(_resource_system.load_resource(asset_info.handle));
-                if (load_result.resource_status == ice::ResourceStatus_v2::Loaded)
+                ice::ResourceResult const load_result = ice::sync_wait(_resource_system.load_resource(asset_info.handle));
+                if (load_result.resource_status == ice::ResourceStatus::Loaded)
                 {
                     asset_data = load_result.data;
                 }
@@ -798,7 +799,7 @@ namespace ice
     {
     }
 
-    auto create_asset_system(ice::Allocator& alloc, ice::ResourceTracker_v2& resource_system) noexcept -> ice::UniquePtr<ice::AssetSystem>
+    auto create_asset_system(ice::Allocator& alloc, ice::ResourceTracker& resource_system) noexcept -> ice::UniquePtr<ice::AssetSystem>
     {
         return ice::make_unique<ice::AssetSystem, ice::SimpleAssetSystem>(alloc, alloc, resource_system);
     }

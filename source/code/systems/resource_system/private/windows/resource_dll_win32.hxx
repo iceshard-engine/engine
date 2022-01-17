@@ -1,6 +1,8 @@
 #pragma once
+#include <ice/resource.hxx>
 #include <ice/os/windows.hxx>
 #include <ice/string_types.hxx>
+#include <ice/uri.hxx>
 
 #include "resource_common_win32.hxx"
 
@@ -19,7 +21,7 @@ namespace ice
 
         ~Resource_DllsWin32() noexcept override = default;
 
-        auto uri() const noexcept -> ice::URI_v2 const& override;
+        auto uri() const noexcept -> ice::URI const& override;
         auto name() const noexcept -> ice::Utf8String override;
         auto origin() const noexcept -> ice::Utf8String override;
 
@@ -29,7 +31,7 @@ namespace ice
         ice::HeapString<char8_t> _origin_path;
         ice::Utf8String _origin_name;
 
-        ice::URI_v2 _uri;
+        ice::URI _uri;
     };
 
     auto create_resource_from_dll_path(

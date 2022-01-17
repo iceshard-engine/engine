@@ -26,7 +26,7 @@
 #include <ice/memory/memory_globals.hxx>
 #include <ice/memory/proxy_allocator.hxx>
 
-auto game_main(ice::Allocator& alloc, ice::ResourceTracker_v2& resources) -> ice::i32
+auto game_main(ice::Allocator& alloc, ice::ResourceTracker& resources) -> ice::i32
 {
     using ice::operator""_uri;
     using ice::operator""_sid;
@@ -56,7 +56,7 @@ auto game_main(ice::Allocator& alloc, ice::ResourceTracker_v2& resources) -> ice
 
         game_framework->load_modules();
 
-        ice::URI_v2 const config_file = game_framework->config_uri();
+        ice::URI const config_file = game_framework->config_uri();
 
         ice::pod::Array<ice::ResourceHandle*> gathered_resources{ alloc };
         resources.gather_resources_DEPRECATED(gathered_resources);

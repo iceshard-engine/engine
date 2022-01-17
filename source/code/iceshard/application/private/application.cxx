@@ -38,14 +38,14 @@ int main(int, char**)
         // NOTE: this change is temporary so we don't change anything that might have been depending that we are in the 'build' directory.
         ice::string::resize(working_dir, ice::string::size(working_dir) - (ice::size("build") - 1));
         ice::string::push_back(working_dir, u8"source\\data\\");
-        ice::UniquePtr<ice::ResourceProvider_v2> filesys_provider = ice::create_resource_provider(filesystem_allocator, working_dir);
+        ice::UniquePtr<ice::ResourceProvider> filesys_provider = ice::create_resource_provider(filesystem_allocator, working_dir);
 
         // TODO: allow to set dynlib dir via arguments.
         // NOTE: this change is temporary so we don't change anything that might have been depending that we are in the 'build' directory.
         ice::string::resize(app_location, ice::string::size(app_location) - (ice::size("test\\test.exe") - 1));
-        ice::UniquePtr<ice::ResourceProvider_v2> dynlib_provider = ice::create_resource_provider_dlls(dynlib_allocator, app_location);
+        ice::UniquePtr<ice::ResourceProvider> dynlib_provider = ice::create_resource_provider_dlls(dynlib_allocator, app_location);
 
-        ice::UniquePtr<ice::ResourceTracker_v2> resource_tracker = ice::create_resource_tracker(main_allocator, true);
+        ice::UniquePtr<ice::ResourceTracker> resource_tracker = ice::create_resource_tracker(main_allocator, true);
 
         resource_tracker->attach_provider(filesys_provider.get());
         resource_tracker->attach_provider(dynlib_provider.get());

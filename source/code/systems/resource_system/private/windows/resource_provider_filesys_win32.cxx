@@ -1,5 +1,4 @@
 #include <ice/resource_provider.hxx>
-#include <ice/resource_action.hxx>
 #include <ice/task_scheduler.hxx>
 #include <ice/memory/stack_allocator.hxx>
 #include <ice/os/windows.hxx>
@@ -14,7 +13,7 @@
 namespace ice
 {
 
-    class ResourceProvider_Win32Filesystem final : public ice::ResourceProvider_v2
+    class ResourceProvider_Win32Filesystem final : public ice::ResourceProvider
     {
     public:
         ResourceProvider_Win32Filesystem(
@@ -192,9 +191,9 @@ namespace ice
         }
 
         auto resolve_relative_uri(
-            ice::URI_v2 const& relative_uri,
+            ice::URI const& relative_uri,
             ice::Resource_v2 const* root_resource
-        ) const noexcept -> ice::URI_v2 const& override
+        ) const noexcept -> ice::URI const& override
         {
             ice::u32 const origin_size = ice::string::size(root_resource->origin());
 
@@ -234,9 +233,9 @@ namespace ice
     auto create_resource_provider(
         ice::Allocator& alloc,
         ice::Utf8String path
-    ) noexcept -> ice::UniquePtr<ice::ResourceProvider_v2>
+    ) noexcept -> ice::UniquePtr<ice::ResourceProvider>
     {
-        return ice::make_unique<ice::ResourceProvider_v2, ice::ResourceProvider_Win32Filesystem>(alloc, alloc, path);
+        return ice::make_unique<ice::ResourceProvider, ice::ResourceProvider_Win32Filesystem>(alloc, alloc, path);
     }
 
 } // namespace ice

@@ -4,12 +4,12 @@
 #include <ice/userdata.hxx>
 #include <ice/unique_ptr.hxx>
 #include <ice/pod/array.hxx>
-#include <ice/resource_action.hxx>
+#include <ice/resource_types.hxx>
+#include <ice/uri.hxx>
 
 namespace ice
 {
 
-    class Resource_v2;
     class TaskScheduler_v2;
 
     enum class ResourceProviderResult : ice::u32
@@ -19,10 +19,10 @@ namespace ice
         Skipped,
     };
 
-    class ResourceProvider_v2
+    class ResourceProvider
     {
     public:
-        virtual ~ResourceProvider_v2() noexcept = default;
+        virtual ~ResourceProvider() noexcept = default;
 
         virtual auto query_resources(
             ice::pod::Array<ice::Resource_v2 const*>& out_changes
@@ -42,9 +42,9 @@ namespace ice
         ) noexcept -> ice::Task<> = 0;
 
         virtual auto resolve_relative_uri(
-            ice::URI_v2 const& relative_uri,
+            ice::URI const& relative_uri,
             ice::Resource_v2 const* root_resource
-        ) const noexcept -> ice::URI_v2 const&
+        ) const noexcept -> ice::URI const&
         {
             return ice::uri_invalid;
         }
@@ -53,11 +53,11 @@ namespace ice
     auto create_resource_provider(
         ice::Allocator& alloc,
         ice::Utf8String path
-    ) noexcept -> ice::UniquePtr<ice::ResourceProvider_v2>;
+    ) noexcept -> ice::UniquePtr<ice::ResourceProvider>;
 
     auto create_resource_provider_dlls(
         ice::Allocator& alloc,
         ice::Utf8String path
-    ) noexcept -> ice::UniquePtr<ice::ResourceProvider_v2>;
+    ) noexcept -> ice::UniquePtr<ice::ResourceProvider>;
 
 } // namespace ice

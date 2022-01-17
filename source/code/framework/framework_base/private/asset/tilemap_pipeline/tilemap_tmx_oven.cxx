@@ -7,7 +7,6 @@
 #include <ice/resource.hxx>
 #include <ice/resource_meta.hxx>
 #include <ice/resource_tracker.hxx>
-#include <ice/resource_action.hxx>
 #include <ice/task_sync_wait.hxx>
 
 #include <ice/asset_system.hxx>
@@ -821,14 +820,14 @@ namespace ice
 
     auto IceTiledTmxAssetOven::bake(
         ice::ResourceHandle& resource,
-        ice::ResourceTracker_v2& resource_tracker,
+        ice::ResourceTracker& resource_tracker,
         ice::AssetSystem& asset_system,
         ice::Allocator& asset_alloc,
         ice::Memory& asset_data
     ) const noexcept -> ice::BakeResult
     {
-        ice::ResourceActionResult const load_result = ice::sync_wait(resource_tracker.load_resource(&resource));
-        if (load_result.resource_status != ice::ResourceStatus_v2::Loaded)
+        ice::ResourceResult const load_result = ice::sync_wait(resource_tracker.load_resource(&resource));
+        if (load_result.resource_status != ice::ResourceStatus::Loaded)
         {
             return BakeResult::Failure_InvalidData;
         }
@@ -887,7 +886,7 @@ namespace ice
                 for (ice::u32 idx = 0; idx < tilemap_info.tileset_count; ++idx)
                 {
                     ice::ResourceHandle* dependency_resource = resource_tracker.find_resource_relative(
-                        ice::URI_v2{ ice::scheme_file, tilemap_info.tileset_info[idx].image },
+                        ice::URI{ ice::scheme_file, tilemap_info.tileset_info[idx].image },
                         &resource
                     );
                     if (dependency_resource == nullptr)

@@ -133,7 +133,7 @@ namespace ice
 
     auto IceshardMeshOven::bake(
         ice::ResourceHandle& resource,
-        ice::ResourceTracker_v2& resource_tracker,
+        ice::ResourceTracker& resource_tracker,
         ice::Allocator& asset_alloc,
         ice::Memory& asset_data
     ) const noexcept -> ice::BakeResult
@@ -141,8 +141,8 @@ namespace ice
         Assimp::Importer importer;
         //importer.SetPropertyFloat(AI_CONFIG_PP_GSN_MAX_SMOOTHING_ANGLE, 80);
 
-        ice::ResourceActionResult const load_result = ice::sync_wait(resource_tracker.load_resource(&resource));
-        if (load_result.resource_status != ice::ResourceStatus_v2::Loaded)
+        ice::ResourceResult const load_result = ice::sync_wait(resource_tracker.load_resource(&resource));
+        if (load_result.resource_status != ice::ResourceStatus::Loaded)
         {
             return BakeResult::Failure_InvalidData;
         }
