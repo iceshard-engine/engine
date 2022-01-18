@@ -3,6 +3,7 @@
 #include <ice/stringid.hxx>
 #include <ice/buffer.hxx>
 #include <ice/pod/array.hxx>
+#include <ice/resource_types.hxx>
 
 namespace ice
 {
@@ -63,6 +64,12 @@ namespace ice
         ice::Metadata const& meta,
         ice::StringID_Arg key,
         ice::pod::Array<ice::i32>& results
+    ) noexcept -> bool;
+
+    auto meta_read_flags_array(
+        ice::Metadata const& meta,
+        ice::StringID_Arg key,
+        ice::pod::Array<ice::ResourceFlags>& results
     ) noexcept -> bool;
 
     auto meta_read_float_array(

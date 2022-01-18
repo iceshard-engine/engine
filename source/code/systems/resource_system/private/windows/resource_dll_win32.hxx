@@ -22,6 +22,8 @@ namespace ice
         ~Resource_DllsWin32() noexcept override = default;
 
         auto uri() const noexcept -> ice::URI const& override;
+        auto flags() const noexcept -> ice::ResourceFlags override;
+
         auto name() const noexcept -> ice::Utf8String override;
         auto origin() const noexcept -> ice::Utf8String override;
 

@@ -5,7 +5,6 @@
 #include <ice/unique_ptr.hxx>
 #include <ice/pod/array.hxx>
 #include <ice/resource_types.hxx>
-#include <ice/uri.hxx>
 
 namespace ice
 {
@@ -41,12 +40,12 @@ namespace ice
             ice::TaskScheduler_v2& scheduler
         ) noexcept -> ice::Task<> = 0;
 
-        virtual auto resolve_relative_uri(
+        virtual auto resolve_relative_resource(
             ice::URI const& relative_uri,
             ice::Resource_v2 const* root_resource
-        ) const noexcept -> ice::URI const&
+        ) const noexcept -> ice::Resource_v2 const*
         {
-            return ice::uri_invalid;
+            return nullptr;
         }
     };
 

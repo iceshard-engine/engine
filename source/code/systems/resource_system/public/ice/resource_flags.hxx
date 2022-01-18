@@ -32,7 +32,7 @@ namespace ice
         Mask_LODs = 0x0000'0FF0,
     };
 
-    static constexpr ice::ResourceFlags Constant_DefaultFlags = []() noexcept -> ice::ResourceFlags
+    static constexpr ice::ResourceFlags Constant_DefaultResourceFlags = []() noexcept -> ice::ResourceFlags
     {
         switch (ice::build::current_platform.system)
         {

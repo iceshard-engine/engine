@@ -111,7 +111,7 @@ namespace ice
                             }
                         );
 
-                        ice::pod::hash::set(
+                        ice::pod::multi_hash::insert(
                             _tracked_handles,
                             hash,
                             handle
@@ -163,30 +163,47 @@ namespace ice
             ice::ResourceHandle* result = nullptr;
 
             ice::u64 const hash = ice::hash(uri.path);
-            if (ice::pod::hash::has(_tracked_handles, hash))
-            {
-                ice::ResourceHandle* const handle = ice::pod::hash::get(
-                    _tracked_handles,
-                    hash,
-                    nullptr
-                );
 
-                if (handle != nullptr && handle->resource != nullptr)
+            auto it = ice::pod::multi_hash::find_first(_tracked_handles, hash);
+            if (it != nullptr)
+            {
+                ice::ResourceHandle* const default_resource = it->value;
+                ice::ResourceHandle* selected_resource = default_resource;
+
+                if (flags != ice::ResourceFlags::None)
                 {
-                    ICE_ASSERT(handle->provider != nullptr, "Resource handle is missing associated provider object!");
+                    // If we dont find anything we are going to take the first resource we found.
+                    while (it != nullptr && selected_resource == default_resource)
+                    {
+                        ice::Resource_v2 const* res = it->value->resource;
+
+                        // #TODO: Flags need more sophisticated cheks, as part of them are flags and part are just values in bit ranges.
+                        if (res->flags() == flags)
+                        {
+                            selected_resource = it->value;
+                        }
+
+                        it = ice::pod::multi_hash::find_next(_tracked_handles, it);
+                    }
+                }
+
+                if (selected_resource != nullptr && selected_resource->resource != nullptr)
+                {
+                    ICE_ASSERT(
+                        selected_resource->provider != nullptr,
+                        "Resource handle is missing associated provider object!"
+                    );
 
                     // Save the result.
-                    result = handle;
+                    result = selected_resource;
                 }
             }
-
             return result;
         }
 
         auto find_resource_relative(
             ice::URI const& uri,
-            ice::ResourceHandle* handle,
-            ice::ResourceFlags flags
+            ice::ResourceHandle* handle
         ) const noexcept -> ice::ResourceHandle* override
         {
             ICE_ASSERT(handle != nullptr, "Trying to set resource from invalid handle!");
@@ -194,10 +211,10 @@ namespace ice
 
             ice::ResourceHandle* result = nullptr;
 
-            ice::URI const& resolved_uri = handle->provider->resolve_relative_uri(uri, handle->resource);
-            if (resolved_uri.scheme != ice::uri_invalid.scheme)
+            ice::Resource_v2 const* resource = handle->provider->resolve_relative_resource(uri, handle->resource);
+            if (resource != nullptr)
             {
-                result = this->find_resource(resolved_uri, flags);
+                result = this->find_resource(resource->uri(), resource->flags());
             }
             return result;
         }

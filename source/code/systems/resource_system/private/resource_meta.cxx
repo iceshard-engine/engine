@@ -386,6 +386,26 @@ namespace ice
         return valid;
     }
 
+    auto meta_read_flags_array(
+        ice::Metadata const& meta,
+        ice::StringID_Arg key,
+        ice::pod::Array<ice::ResourceFlags>& results
+    ) noexcept -> bool
+    {
+        detail::MetadataEntry entry;
+        bool const valid = detail::get_entry(meta, key, detail::MetadataEntryType::Integer, entry);
+
+        if (valid && entry.data_count != 0)
+        {
+            ice::ResourceFlags const* array_beg = reinterpret_cast<ice::ResourceFlags const*>(
+                ice::memory::ptr_add(meta._additional_data.location, entry.value_buffer.offset)
+            );
+            ice::pod::array::push_back(results, ice::Span<ice::ResourceFlags const>{ array_beg, entry.value_buffer.size });
+        }
+
+        return valid;
+    }
+
     auto meta_read_float_array(
         ice::Metadata const& meta,
         ice::StringID_Arg key,

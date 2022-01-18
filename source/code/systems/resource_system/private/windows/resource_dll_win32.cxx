@@ -1,5 +1,6 @@
 #include "resource_dll_win32.hxx"
 #include <ice/resource_meta.hxx>
+#include <ice/resource_flags.hxx>
 
 #include "resource_utils_win32.hxx"
 
@@ -19,6 +20,11 @@ namespace ice
     auto Resource_DllsWin32::uri() const noexcept -> ice::URI const&
     {
         return _uri;
+    }
+
+    auto Resource_DllsWin32::flags() const noexcept -> ice::ResourceFlags
+    {
+        return ice::ResourceFlags::None;
     }
 
     auto Resource_DllsWin32::name() const noexcept -> ice::Utf8String

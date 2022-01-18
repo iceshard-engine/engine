@@ -40,8 +40,7 @@ namespace ice
 
         virtual auto find_resource_relative(
             ice::URI const& uri,
-            ice::ResourceHandle* resource_handle,
-            ice::ResourceFlags flags = ice::ResourceFlags::None
+            ice::ResourceHandle* resource_handle
         ) const noexcept -> ice::ResourceHandle* = 0;
 
 

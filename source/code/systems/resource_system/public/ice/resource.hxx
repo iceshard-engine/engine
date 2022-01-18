@@ -14,6 +14,7 @@ namespace ice
         virtual ~Resource_v2() noexcept = default;
 
         virtual auto uri() const noexcept -> ice::URI const& = 0;
+        virtual auto flags() const noexcept -> ice::ResourceFlags = 0;
 
         virtual auto name() const noexcept -> ice::Utf8String = 0;
         virtual auto origin() const noexcept -> ice::Utf8String = 0;
