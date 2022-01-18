@@ -86,4 +86,9 @@ namespace ice
 
     static constexpr uint32_t string_npos = std::numeric_limits<uint32_t>::max();
 
+    static constexpr auto operator""_str(char8_t const* str, std::size_t size) noexcept
+    {
+        return ice::Utf8String{ str, size };
+    }
+
 } // namespace ice
