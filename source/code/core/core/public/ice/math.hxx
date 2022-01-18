@@ -15,4 +15,6 @@ namespace ice
 
     using namespace math;
 
+    using std::abs;
+
 } // namespace ice

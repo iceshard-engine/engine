@@ -45,7 +45,7 @@ int main(int, char**)
         ice::string::resize(app_location, ice::string::size(app_location) - (ice::size("test\\test.exe") - 1));
         ice::UniquePtr<ice::ResourceProvider> dynlib_provider = ice::create_resource_provider_dlls(dynlib_allocator, app_location);
 
-        ice::UniquePtr<ice::ResourceTracker> resource_tracker = ice::create_resource_tracker(main_allocator, true);
+        ice::UniquePtr<ice::ResourceTracker> resource_tracker = ice::create_resource_tracker(main_allocator, { .create_loader_thread = true });
 
         resource_tracker->attach_provider(filesys_provider.get());
         resource_tracker->attach_provider(dynlib_provider.get());

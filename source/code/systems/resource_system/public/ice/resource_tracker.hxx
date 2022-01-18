@@ -18,6 +18,12 @@ namespace ice
         ice::Data data;
     };
 
+    struct ResourceTrackerCreateInfo
+    {
+        bool create_loader_thread = false;
+        ice::ResourceFlagsCompareFn* compare_fn = ice::default_resource_flags_compare_function;
+    };
+
     class ResourceTracker
     {
     public:
@@ -67,7 +73,7 @@ namespace ice
 
     auto create_resource_tracker(
         ice::Allocator& alloc,
-        bool async = false
+        ice::ResourceTrackerCreateInfo const& create_info
     ) noexcept -> ice::UniquePtr<ice::ResourceTracker>;
 
 } // namespace ice

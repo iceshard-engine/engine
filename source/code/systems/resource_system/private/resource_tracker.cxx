@@ -39,7 +39,10 @@ namespace ice
     class ResourceTracker_Impl final : public ice::ResourceTracker, public ice::TaskScheduler_v2
     {
     public:
-        ResourceTracker_Impl(ice::Allocator& alloc, bool async) noexcept
+        ResourceTracker_Impl(
+            ice::Allocator& alloc,
+            ice::ResourceTrackerCreateInfo const& create_info
+        ) noexcept
             : _allocator{ alloc }
             , _handle_allocator{ _allocator }
             , _data_allocator{ _allocator }
@@ -47,8 +50,9 @@ namespace ice
             , _tracked_handles{ _allocator }
             , _thread{ ice::make_unique_null<ice::TaskThread_v2>()}
             , _scheduler{ this }
+            , _compare_fn{ create_info.compare_fn }
         {
-            if (async)
+            if (create_info.create_loader_thread)
             {
                 _thread = ice::create_task_thread_v2(_allocator);
                 _scheduler = _thread.get();
@@ -170,21 +174,23 @@ namespace ice
                 ice::ResourceHandle* const default_resource = it->value;
                 ice::ResourceHandle* selected_resource = default_resource;
 
-                if (flags != ice::ResourceFlags::None)
+                ice::u32 priority = 0;
+                ice::ResourceFlags selected_flags = ice::ResourceFlags::None;
+
+                // We try to find the best matching flags, so if they are equal we got a jackpot.
+                while (it != nullptr && selected_flags != flags)
                 {
-                    // If we dont find anything we are going to take the first resource we found.
-                    while (it != nullptr && selected_resource == default_resource)
+                    ice::Resource_v2 const* res = it->value->resource;
+
+                    // The higher the '
+                    if (ice::u32 const new_priority = _compare_fn(flags, res->flags(), selected_flags); priority < new_priority)
                     {
-                        ice::Resource_v2 const* res = it->value->resource;
-
-                        // #TODO: Flags need more sophisticated cheks, as part of them are flags and part are just values in bit ranges.
-                        if (res->flags() == flags)
-                        {
-                            selected_resource = it->value;
-                        }
-
-                        it = ice::pod::multi_hash::find_next(_tracked_handles, it);
+                        priority = new_priority;
+                        selected_flags = res->flags();
+                        selected_resource = it->value;
                     }
+
+                    it = ice::pod::multi_hash::find_next(_tracked_handles, it);
                 }
 
                 if (selected_resource != nullptr && selected_resource->resource != nullptr)
@@ -417,14 +423,22 @@ namespace ice
 
         ice::UniquePtr<ice::TaskThread_v2> _thread;
         ice::TaskScheduler_v2* _scheduler;
+
+        // User provided values.
+        ice::ResourceFlagsCompareFn* _compare_fn;
     };
 
     auto create_resource_tracker(
         ice::Allocator& alloc,
-        bool async
+        ice::ResourceTrackerCreateInfo const& create_info
     ) noexcept -> ice::UniquePtr<ice::ResourceTracker>
     {
-        return ice::make_unique<ice::ResourceTracker, ice::ResourceTracker_Impl>(alloc, alloc, async);
+        ICE_ASSERT(
+            create_info.compare_fn != nullptr,
+            "Trying to create resource system without flags compare function!"
+        );
+
+        return ice::make_unique<ice::ResourceTracker, ice::ResourceTracker_Impl>(alloc, alloc, create_info);
     }
 
 } // namespace ice
