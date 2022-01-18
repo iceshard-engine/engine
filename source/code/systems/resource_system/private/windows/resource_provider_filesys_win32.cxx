@@ -35,6 +35,11 @@ namespace ice
             }
         }
 
+        auto schemeid() const noexcept -> ice::StringID override
+        {
+            return ice::scheme_file;
+        }
+
         template<typename Fn>
         void traverse_directory(ice::HeapString<wchar_t>& directory_path, Fn&& callback) noexcept
         {
@@ -108,7 +113,10 @@ namespace ice
         void ISATTR_NOINLINE initial_traverse() noexcept
         {
             ice::HeapString<wchar_t> dir_tracker = _base_path;
+            ice::string::reserve(dir_tracker, 512);
             ice::path::join(dir_tracker, L"."); // Ensure we end with a '/' character
+
+            ice::WString uri_base_path = ice::path::directory(ice::path::directory(dir_tracker));
 
             ice::pod::Array<ice::Resource_Win32*> resources{ _allocator };
             ice::pod::array::reserve(resources, 10);
@@ -127,6 +135,7 @@ namespace ice
                 create_resources_from_loose_files(
                     _allocator,
                     _base_path,
+                    uri_base_path,
                     meta_file,
                     data_file,
                     resources
@@ -170,6 +179,38 @@ namespace ice
             }
 
             co_return ResourceProviderResult::Success;
+        }
+
+        auto find_resource(
+            ice::URI const& uri
+        ) const noexcept -> ice::Resource_v2 const* override
+        {
+            ICE_ASSERT(
+                uri.scheme == ice::stringid_hash(schemeid()),
+                "Trying to find resource for URI that is not handled by this provider."
+            );
+
+            ice::u32 const origin_size = ice::string::size(uri.path);
+
+            ice::HeapString<char8_t> predicted_path{ _allocator, };
+            ice::string::reserve(predicted_path, origin_size + ice::string::size(_base_path));
+
+            ice::wide_to_utf8(_base_path, predicted_path);
+            ice::path::join(predicted_path, u8".."); // Remove one directory (because it's the common value of the base path and the uri path)
+            ice::path::join(predicted_path, uri.path);
+            ice::path::normalize(predicted_path);
+
+            ice::u64 const resource_hash = ice::hash(ice::Utf8String{ predicted_path });
+
+            ice::Resource_Win32 const* found_resource = ice::pod::hash::get(_resources, resource_hash, nullptr);
+            if (found_resource != nullptr)
+            {
+                return found_resource;
+            }
+            else
+            {
+                return nullptr;
+            }
         }
 
         auto load_resource(

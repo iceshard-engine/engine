@@ -23,11 +23,20 @@ namespace ice
     public:
         virtual ~ResourceProvider() noexcept = default;
 
+        virtual auto schemeid() const noexcept -> ice::StringID = 0;
+
         virtual auto query_resources(
             ice::pod::Array<ice::Resource_v2 const*>& out_changes
         ) const noexcept -> ice::u32 = 0;
 
         virtual auto refresh() noexcept -> ice::Task<ice::ResourceProviderResult> = 0;
+
+        virtual auto find_resource(
+            ice::URI const& uri
+        ) const noexcept -> ice::Resource_v2 const*
+        {
+            return nullptr;
+        }
 
         virtual auto load_resource(
             ice::Allocator& alloc,

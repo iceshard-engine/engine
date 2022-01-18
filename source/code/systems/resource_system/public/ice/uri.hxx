@@ -5,9 +5,9 @@
 namespace ice
 {
 
+    static constexpr ice::StringID scheme_urn = "urn"_sid;
     static constexpr ice::StringID scheme_file = "file"_sid;
     static constexpr ice::StringID scheme_dynlib = "dynlib"_sid;
-    static constexpr ice::StringID scheme_urn = "urn"_sid;
 
     static constexpr ice::StringID scheme_invalid = "<invalid>"_sid;
 
@@ -61,6 +61,7 @@ namespace ice
 
         constexpr auto path_from_uri(ice::Utf8String uri) noexcept
         {
+            ice::u32 const size = ice::string::size(uri);
             ice::u32 scheme_loc = ice::string::find_first_of(uri, u8':');
             ice::u32 fragment_loc = ice::string::find_last_of(uri, u8'#');
 
@@ -71,8 +72,17 @@ namespace ice
             else
             {
                 scheme_loc += 1;
-                scheme_loc += ice::u32{ uri[scheme_loc] == '/' };
-                scheme_loc += ice::u32{ uri[scheme_loc] == '/' };
+
+                if (size > (scheme_loc + 1))
+                {
+                    // The following series operations allows us to properly handle the optional '//' prefix in URI paths.
+                    //  Some examples: (1: 'file:/asd' -> '/asd'), (2: 'file:///asd' -> '/asd'), (3: 'file://asd' -> 'asd')
+                    //
+                    // NOTE: last one does not have the preceding '/' because it's seen as the optional double '/' for URI's.
+
+                    // (check the current and next character for slashes)
+                    scheme_loc += ice::u32{ uri[scheme_loc] == '/' } *ice::u32{ uri[scheme_loc + 1] == '/' } *2;
+                }
             }
 
             if (fragment_loc != ice::string_npos)
@@ -82,6 +92,11 @@ namespace ice
 
             return ice::string::substr(uri, scheme_loc, fragment_loc);
         }
+
+        static_assert(path_from_uri(u8"file:path/name.file") == u8"path/name.file"_str);
+        static_assert(path_from_uri(u8"file:/path/name.file") == u8"/path/name.file"_str);
+        static_assert(path_from_uri(u8"file://path/name.file") == u8"path/name.file"_str);
+        static_assert(path_from_uri(u8"file:///path/name.file") == u8"/path/name.file"_str);
 
         //constexpr auto path_from_uri(ice::String uri) noexcept
         //{

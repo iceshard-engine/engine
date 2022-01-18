@@ -40,6 +40,11 @@ namespace ice
             }
         }
 
+        auto schemeid() const noexcept -> ice::StringID override
+        {
+            return ice::scheme_dynlib;
+        }
+
         template<typename Fn>
         void traverse_directory(ice::HeapString<wchar_t>& directory_path, Fn&& callback) noexcept
         {

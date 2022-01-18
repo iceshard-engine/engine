@@ -86,7 +86,8 @@ namespace ice
 
             ice::pod::Array<ice::Resource_v2 const*> temp_resources{ _allocator };
 
-            ice::u64 const hash_value = ice::hash_from_ptr(provider);
+            ice::u64 const hash_value = ice::hash(provider->schemeid());
+
             bool has_provider = ice::pod::hash::has(_providers, hash_value);
             if (has_provider == false)
             {
@@ -103,8 +104,6 @@ namespace ice
                     provider->query_resources(temp_resources);
                     for (ice::Resource_v2 const* resource : temp_resources)
                     {
-                        ice::Utf8String path = resource->uri().path;
-                        ice::u64 const hash = ice::hash(path);
                         ice::ResourceHandle* handle = _handle_allocator.make<ice::ResourceHandle>(
                             ice::ResourceHandle{
                                 .provider = provider,
@@ -117,7 +116,7 @@ namespace ice
 
                         ice::pod::multi_hash::insert(
                             _tracked_handles,
-                            hash,
+                            ice::hash(resource->name()),
                             handle
                         );
                     }
@@ -165,6 +164,35 @@ namespace ice
         ) const noexcept -> ice::ResourceHandle* override
         {
             ice::ResourceHandle* result = nullptr;
+
+            // TODO: Pass non urn values to a provider associated with a that scheme.
+            if (uri.scheme != ice::scheme_urn.hash_value)
+            {
+                ice::ResourceProvider* const provider = ice::pod::hash::get(_providers, ice::hash(uri.scheme), nullptr);
+                if (provider != nullptr)
+                {
+                    ice::Resource_v2 const* found_resource = provider->find_resource(uri, flags);
+
+                    ice::u64 const hash = ice::hash(found_resource->name());
+
+                    auto it = ice::pod::multi_hash::find_first(_tracked_handles, hash);
+                    if (it != nullptr)
+                    {
+                        // We try to find the best matching flags, so if they are equal we got a jackpot.
+                        while (it != nullptr && result == nullptr)
+                        {
+                            if (it->value->resource != found_resource)
+                            {
+                                result = it->value;
+                            }
+
+                            it = ice::pod::multi_hash::find_next(_tracked_handles, it);
+                        }
+                    }
+                }
+
+                return result;
+            }
 
             ice::u64 const hash = ice::hash(uri.path);
 

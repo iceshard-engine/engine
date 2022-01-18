@@ -20,7 +20,8 @@ namespace ice
         Resource_LooseFilesWin32(
             ice::MutableMetadata metadata,
             ice::HeapString<char8_t> origin_path,
-            ice::Utf8String origin_name
+            ice::Utf8String origin_name,
+            ice::Utf8String uri_path
         ) noexcept;
 
         ~Resource_LooseFilesWin32() noexcept override;
@@ -47,6 +48,7 @@ namespace ice
 
         ice::HeapString<char8_t> _origin_path;
         ice::Utf8String _origin_name;
+        ice::Utf8String _uri_path;
 
         ice::URI _uri;
     };
@@ -84,6 +86,7 @@ namespace ice
     void create_resources_from_loose_files(
         ice::Allocator& alloc,
         ice::WString base_path,
+        ice::WString uri_base_path,
         ice::WString meta_file,
         ice::WString data_file,
         ice::pod::Array<ice::Resource_Win32*>& out_resources

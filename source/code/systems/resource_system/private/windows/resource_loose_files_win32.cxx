@@ -74,14 +74,16 @@ namespace ice
     Resource_LooseFilesWin32::Resource_LooseFilesWin32(
         ice::MutableMetadata metadata,
         ice::HeapString<char8_t> origin_path,
-        ice::Utf8String origin_name
+        ice::Utf8String origin_name,
+        ice::Utf8String uri_path
     ) noexcept
         : ice::Resource_Win32{ }
         , _mutable_metadata{ ice::move(metadata) }
         , _metadata{ _mutable_metadata }
         , _origin_path{ ice::move(origin_path) }
         , _origin_name{ origin_name }
-        , _uri{ ice::scheme_file, _origin_name }
+        , _uri_path{ uri_path }
+        , _uri{ ice::scheme_file, uri_path }
     {
     }
 
@@ -255,6 +257,7 @@ namespace ice
     void create_resources_from_loose_files(
         ice::Allocator& alloc,
         ice::WString base_path,
+        ice::WString uri_base_path,
         ice::WString meta_file,
         ice::WString data_file,
         ice::pod::Array<ice::Resource_Win32*>& out_resources
@@ -287,6 +290,7 @@ namespace ice
                     ice::path::normalize(utf8_file_path);
 
                     ice::Utf8String utf8_origin_name = ice::string::substr(utf8_file_path, wide_to_utf8_size(base_path));
+                    ice::Utf8String utf8_uri_path = ice::string::substr(utf8_file_path, wide_to_utf8_size(uri_base_path));
 
                     // We have a loose resource files which contain metadata associated data.
                     // We need now to read the metadata and check if there are more file associated and if all are available.
@@ -296,7 +300,8 @@ namespace ice
                     main_resource = alloc.make<ice::Resource_LooseFilesWin32>(
                         ice::move(mutable_meta),
                         ice::move(utf8_file_path), // we move so the pointer 'origin_name' calculated from 'utf8_file_path' is still valid!
-                        utf8_origin_name
+                        utf8_origin_name,
+                        utf8_uri_path
                     );
 
                     ice::pod::array::push_back(out_resources, main_resource);
