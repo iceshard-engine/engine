@@ -171,7 +171,7 @@ namespace ice
                 ice::ResourceProvider* const provider = ice::pod::hash::get(_providers, ice::hash(uri.scheme), nullptr);
                 if (provider != nullptr)
                 {
-                    ice::Resource_v2 const* found_resource = provider->find_resource(uri, flags);
+                    ice::Resource_v2 const* found_resource = provider->find_resource(uri);
 
                     ice::u64 const hash = ice::hash(found_resource->name());
 
