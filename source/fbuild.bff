@@ -27,7 +27,16 @@ Settings
 [
     Using( .Pipeline_Windows_x64 )
 
-    .PipelineAllowUnityBuilds = true
+
+    .PipelineToolchain = 'msvc-x64-v143'
+    .PipelineAllowUnityBuilds = false
+
+    .PipelineVSInfo =
+    [
+        .VSEnabled = true
+        .VSToolset = 'v143'
+        .VSSuffix = ''
+    ]
 ]
 
 .Unity_Pipeline_Linux_x64 =
