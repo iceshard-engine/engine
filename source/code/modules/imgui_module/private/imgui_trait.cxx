@@ -35,18 +35,18 @@ namespace ice::devui
             ImVec4 clip_rect;
         };
 
-        auto load_imgui_shader(ice::AssetSystem& assets, ice::StringID name) noexcept -> ice::Data
+        auto load_imgui_shader(ice::AssetStorage& assets, ice::StringID name) noexcept -> ice::Data
         {
             Data result;
-            Asset const shader_asset = assets.request(ice::AssetType::Shader, name);
-            if (shader_asset != Asset::Invalid)
-            {
-                Data temp;
-                if (ice::asset_data(shader_asset, temp) == AssetStatus::Loaded)
-                {
-                    result = *reinterpret_cast<ice::Data const*>(temp.location);
-                }
-            }
+            //Asset const shader_asset = assets.request(ice::AssetType::Shader, name);
+            //if (shader_asset != Asset::Invalid)
+            //{
+            //    Data temp;
+            //    if (ice::asset_data(shader_asset, temp) == AssetStatus::Loaded)
+            //    {
+            //        result = *reinterpret_cast<ice::Data const*>(temp.location);
+            //    }
+            //}
 
             return result;
         }
@@ -527,8 +527,8 @@ namespace ice::devui
         io.KeyMap[ImGuiKey_Y] = (uint32_t)ice::input::KeyboardKey::KeyY;
         io.KeyMap[ImGuiKey_Z] = (uint32_t)ice::input::KeyboardKey::KeyZ;
 
-        _shader_data[0] = detail::load_imgui_shader(engine.asset_system(), "shaders/debug/imgui-vert"_sid);
-        _shader_data[1] = detail::load_imgui_shader(engine.asset_system(), "shaders/debug/imgui-frag"_sid);
+        _shader_data[0] = detail::load_imgui_shader(engine.asset_storage(), "shaders/debug/imgui-vert"_sid);
+        _shader_data[1] = detail::load_imgui_shader(engine.asset_storage(), "shaders/debug/imgui-frag"_sid);
     }
 
     void ImGuiTrait::on_update(

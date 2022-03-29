@@ -6,14 +6,14 @@
 namespace ice
 {
 
-    class AssetSystem;
+    class AssetStorage;
 
     class Engine;
     class EngineDevUI;
 
     auto create_engine(
         ice::Allocator& alloc,
-        ice::AssetSystem& asset_system,
+        ice::AssetStorage& asset_storage,
         ice::ModuleRegister& registry,
         ice::EngineDevUI* devui = nullptr
     ) noexcept -> ice::UniquePtr<ice::Engine>;
@@ -23,7 +23,7 @@ namespace ice
 
         using CreateFn = auto (
             ice::Allocator&,
-            ice::AssetSystem&,
+            ice::AssetStorage&,
             ice::ModuleRegister&,
             ice::EngineDevUI*
         ) noexcept -> ice::Engine*;

@@ -3,11 +3,10 @@
 #include <ice/stringid.hxx>
 #include <ice/unique_ptr.hxx>
 #include <ice/world/world_trait.hxx>
+#include <ice/asset.hxx>
 
 namespace ice
 {
-
-    enum class Asset : ice::u64;
 
     enum class TileSetID : ice::u32
     {

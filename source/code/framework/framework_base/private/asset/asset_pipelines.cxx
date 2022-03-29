@@ -14,15 +14,15 @@ namespace ice
         return "ice.tilemap.Tiled"_sid;
     };
 
-    auto create_tiled_pipeline(ice::Allocator& alloc) noexcept -> ice::AssetPipeline*
-    {
-        return alloc.make<IceTiledAssetPipeline>();
-    }
+    //auto create_tiled_pipeline(ice::Allocator& alloc) noexcept -> ice::AssetPipeline*
+    //{
+    //    return alloc.make<IceTiledAssetPipeline>();
+    //}
 
-    auto destroy_tiled_pipeline(ice::Allocator& alloc, ice::AssetPipeline* pipeline) noexcept
-    {
-        alloc.destroy(pipeline);
-    }
+    //auto destroy_tiled_pipeline(ice::Allocator& alloc, ice::AssetPipeline* pipeline) noexcept
+    //{
+    //    alloc.destroy(pipeline);
+    //}
 
     bool iceshard_tiled_pipeline_api(
         ice::StringID_Hash name,
@@ -30,10 +30,10 @@ namespace ice
         void** api_ptr
     ) noexcept
     {
-        static ice::detail::asset_system::v1::AssetModuleAPI mesh_api{
-            .name_fn = get_tiled_pipeline_name,
-            .create_pipeline_fn = create_tiled_pipeline,
-            .destroy_pipeline_fn = destroy_tiled_pipeline,
+        static ice::detail::asset_system::v1::AssetRegisterTypesAPI mesh_api{
+            //.name_fn = get_tiled_pipeline_name,
+            //.create_pipeline_fn = create_tiled_pipeline,
+            //.destroy_pipeline_fn = destroy_tiled_pipeline,
         };
 
         if (name == "ice.asset_module"_sid_hash && version == 1)

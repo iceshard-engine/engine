@@ -6,55 +6,7 @@
 namespace ice
 {
 
-    struct Metadata;
-
-    class AssetStorage;
-
-    enum class Asset : ice::u64;
-    enum class AssetType : ice::u32;
-    enum class AssetStatus : ice::u32;
-
-    auto asset_name(ice::Asset asset) noexcept -> ice::StringID;
-    auto asset_status(ice::Asset asset) noexcept -> ice::AssetStatus;
-    auto asset_data(ice::Asset asset, ice::Data& out_data) noexcept -> ice::AssetStatus;
-    auto asset_metadata(ice::Asset asset, ice::Metadata& out_metadata) noexcept -> ice::AssetStatus;
-
-
-    enum class Asset : ice::u64
-    {
-        Invalid = 0x0
-    };
-
-    enum class AssetType : ice::u32
-    {
-        Invalid = 0x0,
-        Config,
-        Mesh,
-        Shape2D,
-        Shader,
-        Texture,
-
-        Level,
-        TileMap,
-
-        Reserved = 0x00ff'ffff,
-        Unresolved = 0xffff'ffff,
-    };
-
-    enum class AssetStatus : ice::u32
-    {
-        Invalid = 0x0,
-        Available_Raw,
-        Available,
-        Requested,
-        Baking,
-        Baked,
-        Loading,
-        Loaded,
-        Unused,
-        Unloading,
-    };
-
+    struct AssetHandle;
 
     enum class AssetState : ice::u32
     {
@@ -79,9 +31,7 @@ namespace ice
         Runtime,
     };
 
-    struct AssetHandle;
-
-    struct Asset_v2
+    struct Asset
     {
         ice::AssetHandle* handle;
         ice::AssetState state;

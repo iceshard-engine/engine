@@ -16,7 +16,8 @@
 #include <ice/devui/devui_system.hxx>
 
 #include <ice/resource_tracker.hxx>
-#include <ice/asset_system.hxx>
+#include <ice/asset_type_archive.hxx>
+#include <ice/asset_storage.hxx>
 #include <ice/asset_module.hxx>
 
 #include <ice/log_module.hxx>
@@ -61,17 +62,17 @@ auto game_main(ice::Allocator& alloc, ice::ResourceTracker& resources) -> ice::i
         ice::pod::Array<ice::ResourceHandle*> gathered_resources{ alloc };
         resources.gather_resources_DEPRECATED(gathered_resources);
 
-        ice::UniquePtr<ice::AssetSystem> asset_system = ice::create_asset_system(asset_alloc, resources);
-        ice::load_asset_pipeline_modules(asset_alloc, *module_register, *asset_system);
+        ice::UniquePtr<ice::AssetTypeArchive> asset_types = ice::create_asset_type_archive(engine_alloc);
+        ice::load_asset_type_definitions(asset_alloc, *module_register, *asset_types);
 
-        asset_system->bind_resources(gathered_resources);
+        ice::UniquePtr<ice::AssetStorage> asset_storage = ice::create_asset_storage(asset_alloc, resources, ice::move(asset_types));
 
         ice::UniquePtr<ice::devui::DevUISystem> engine_devui = ice::make_unique_null<ice::devui::DevUISystem>();
         if (ice::build::is_debug || ice::build::is_develop)
         {
             engine_devui = ice::devui::create_devui_system(engine_alloc, *module_register);
         }
-        ice::UniquePtr<ice::Engine> engine = ice::create_engine(engine_alloc, *asset_system, *module_register, engine_devui.get());
+        ice::UniquePtr<ice::Engine> engine = ice::create_engine(engine_alloc, *asset_storage, *module_register, engine_devui.get());
         ice::UniquePtr<ice::render::RenderDriver> render_driver = ice::render::create_render_driver(alloc, *module_register);
 
         if (engine != nullptr && render_driver != nullptr)
@@ -134,7 +135,7 @@ auto game_main(ice::Allocator& alloc, ice::ResourceTracker& resources) -> ice::i
 
         framework_alloc.destroy(game_framework);
 
-        asset_system = nullptr;
+        asset_storage = nullptr;
         module_register = nullptr;
     }
 

@@ -6,6 +6,7 @@
 #include <ice/resource.hxx>
 #include <ice/pod/hash.hxx>
 #include <ice/stack_string.hxx>
+#include <ice/uri.hxx>
 
 #include "asset_entry.hxx"
 #include "asset_shelve.hxx"
@@ -99,13 +100,13 @@ namespace ice
         ~DefaultAssetStorage() noexcept override;
 
         auto request(
-            ice::AssetType_v2 type,
+            ice::AssetType type,
             ice::Utf8String name,
             ice::AssetState requested_state
-        ) noexcept -> ice::Task<ice::Asset_v2> override;
+        ) noexcept -> ice::Task<ice::Asset> override;
 
         auto aquire_request(
-            ice::AssetType_v2 type,
+            ice::AssetType type,
             ice::AssetState requested_state
         ) noexcept -> ice::AssetRequest*
         {
@@ -119,7 +120,7 @@ namespace ice
         }
 
         auto release(
-            ice::Asset_v2 asset
+            ice::Asset asset
         ) noexcept -> ice::Task<> override;
 
     private:
@@ -139,10 +140,10 @@ namespace ice
         , _asset_archive{ ice::move(asset_archive) }
         , _asset_shevles{ _allocator }
     {
-        ice::Span<ice::AssetType_v2 const> types = _asset_archive->asset_types();
+        ice::Span<ice::AssetType const> types = _asset_archive->asset_types();
         ice::pod::hash::reserve(_asset_shevles, static_cast<ice::u32>(ice::size(types) / ice::pod::detail::hash::Constant_MaxLoadFactor) + 1);
 
-        for (ice::AssetType_v2_Arg type : types)
+        for (ice::AssetType_Arg type : types)
         {
             ice::pod::hash::set(
                 _asset_shevles,
@@ -164,13 +165,13 @@ namespace ice
     }
 
     auto DefaultAssetStorage::request(
-        ice::AssetType_v2 type,
+        ice::AssetType type,
         ice::Utf8String name,
         ice::AssetState requested_state
-    ) noexcept -> ice::Task<ice::Asset_v2>
+    ) noexcept -> ice::Task<ice::Asset>
     {
         ice::StringID const nameid = ice::stringid(name);
-        ice::Asset_v2 result{ .state = AssetState::Invalid };
+        ice::Asset result{ .state = AssetState::Invalid };
 
         ice::AssetShelve* shelve = ice::pod::hash::get(_asset_shevles, type.identifier, nullptr);
         if (shelve != nullptr)
@@ -336,7 +337,7 @@ namespace ice
     }
 
     auto DefaultAssetStorage::release(
-        ice::Asset_v2 asset
+        ice::Asset asset
     ) noexcept -> ice::Task<>
     {
         ICE_ASSERT(asset.handle != nullptr, "Invalid asset object! No valid handle found!");

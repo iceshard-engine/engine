@@ -8,25 +8,23 @@
 namespace ice
 {
 
-    struct Asset_v2;
-
     namespace detail
     {
 
         static constexpr bool Constant_UseAssetTypeDebugDefinition = ice::build::is_debug || ice::build::is_develop;
 
         template<bool DebugImpl>
-        struct AssetType_v2
+        struct AssetType
         {
-            using ArgType = AssetType_v2;
+            using ArgType = AssetType;
 
             ice::u64 identifier;
         };
 
         template<>
-        struct AssetType_v2<true>
+        struct AssetType<true>
         {
-            using ArgType = const AssetType_v2&;
+            using ArgType = const AssetType&;
 
             ice::u64 identifier;
             ice::Utf8String name;
@@ -39,7 +37,7 @@ namespace ice
 
             if constexpr (Constant_UseAssetTypeDebugDefinition)
             {
-                return ice::detail::AssetType_v2<true>
+                return ice::detail::AssetType<true>
                 {
                     .identifier = result.h[0],
                     .name = name
@@ -47,7 +45,7 @@ namespace ice
             }
             else
             {
-                return ice::detail::AssetType_v2<false>{
+                return ice::detail::AssetType<false>{
                     .identifier = result.h[0]
                 };
             }
@@ -55,27 +53,27 @@ namespace ice
 
         struct AssetTypePicker
         {
-            using AssetType = AssetType_v2<ice::build::is_debug || ice::build::is_develop>;
+            using AssetType_Type = AssetType<ice::build::is_debug || ice::build::is_develop>;
 
-            using AssetType_Arg = AssetType_v2<ice::build::is_debug || ice::build::is_develop>::ArgType;
+            using AssetType_Arg = AssetType_Type::ArgType;
         };
 
     } // namespace detail
 
-    using AssetType_v2 = ice::detail::AssetTypePicker::AssetType;
-    using AssetType_v2_Arg = ice::detail::AssetTypePicker::AssetType_Arg;
+    using AssetType = ice::detail::AssetTypePicker::AssetType_Type;
+    using AssetType_Arg = ice::detail::AssetTypePicker::AssetType_Arg;
 
-    constexpr auto make_asset_type(ice::Utf8String name) noexcept -> ice::AssetType_v2
+    constexpr auto make_asset_type(ice::Utf8String name) noexcept -> ice::AssetType
     {
         return ice::detail::make_asset_type(name);
     }
 
-    constexpr auto asset_type_hint(ice::detail::AssetType_v2<false>) noexcept -> ice::Utf8String
+    constexpr auto asset_type_hint(ice::detail::AssetType<false>) noexcept -> ice::Utf8String
     {
         return u8"<no_debug_info_available>";
     }
 
-    constexpr auto asset_type_hint(ice::detail::AssetType_v2<true> const& type) noexcept -> ice::Utf8String
+    constexpr auto asset_type_hint(ice::detail::AssetType<true> const& type) noexcept -> ice::Utf8String
     {
         return type.name;
     }

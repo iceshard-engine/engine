@@ -24,8 +24,7 @@ namespace ice
 
     } // namespace detail
 
-
-    class AssetSystem;
+    class AssetStorage;
 
     class IceWorldTrait_RenderSprites : public ice::gfx::GfxTrait, public ice::gfx::GfxContextStage
     {
@@ -106,7 +105,7 @@ namespace ice
 
     private:
         ice::StringID const _stage_name;
-        ice::AssetSystem* _asset_system = nullptr;
+        ice::AssetStorage* _asset_system = nullptr;
         ice::pod::Hash<ice::detail::RenderData_Sprite> _sprite_materials;
 
         ice::render::ResourceSetLayout _resource_set_layouts[2]{ };

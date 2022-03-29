@@ -7,27 +7,24 @@ namespace ice
 {
 
     class ModuleRegister;
+    class AssetTypeArchive;
 
-    class AssetSystem;
-    class AssetPipeline;
-
-    void load_asset_pipeline_modules(
+    void load_asset_type_definitions(
         ice::Allocator& alloc,
         ice::ModuleRegister const& registry,
-        ice::AssetSystem& asset_system
+        ice::AssetTypeArchive& asset_type_archive
     ) noexcept;
 
     namespace detail::asset_system::v1
     {
-        using NameFn = auto () noexcept -> ice::StringID;
-        using CreateFn = auto (ice::Allocator&) noexcept -> ice::AssetPipeline*;
-        using DestroyFn = void (ice::Allocator& alloc, ice::AssetPipeline*) noexcept;
 
-        struct AssetModuleAPI
+
+        using RegisterTypesFn = void (ice::AssetTypeArchive&) noexcept;
+
+        struct AssetRegisterTypesAPI
         {
-            NameFn* name_fn;
-            CreateFn* create_pipeline_fn;
-            DestroyFn* destroy_pipeline_fn;
+            RegisterTypesFn* register_types_fn;
+            // TODO: Unregister or Reload function?
         };
 
     } // detail::engine::v1

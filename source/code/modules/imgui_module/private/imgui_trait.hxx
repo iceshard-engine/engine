@@ -2,7 +2,7 @@
 #include <ice/devui/devui_render_trait.hxx>
 #include <ice/gfx/gfx_device.hxx>
 #include <ice/gfx/gfx_stage.hxx>
-#include <ice/asset_system.hxx>
+#include <ice/asset_storage.hxx>
 #include <ice/clock.hxx>
 
 #include <imgui/imgui.h>

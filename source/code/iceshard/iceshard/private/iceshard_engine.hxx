@@ -1,6 +1,6 @@
 #pragma once
 #include <ice/engine.hxx>
-#include <ice/asset_system.hxx>
+#include <ice/asset_storage.hxx>
 #include <ice/input/input_types.hxx>
 #include <ice/memory/proxy_allocator.hxx>
 #include <ice/ecs/ecs_entity_index.hxx>
@@ -10,7 +10,6 @@
 namespace ice
 {
 
-    class AssetSystem;
     class EngineDevUI;
 
     class IceshardEngine final : public ice::Engine
@@ -18,7 +17,7 @@ namespace ice
     public:
         IceshardEngine(
             ice::Allocator& alloc,
-            ice::AssetSystem& asset_system,
+            ice::AssetStorage& asset_system,
             ice::EngineDevUI* devui
         ) noexcept;
         ~IceshardEngine() noexcept override;
@@ -41,7 +40,7 @@ namespace ice
 
         auto entity_index() noexcept -> ice::ecs::EntityIndex& override;
 
-        auto asset_system() noexcept -> ice::AssetSystem& override;
+        auto asset_storage() noexcept -> ice::AssetStorage& override;
 
         auto world_manager() noexcept -> ice::WorldManager& override;
 
@@ -49,7 +48,7 @@ namespace ice
 
     private:
         ice::memory::ProxyAllocator _allocator;
-        ice::AssetSystem& _asset_system;
+        ice::AssetStorage& _asset_storage;
         ice::ecs::EntityIndex _entity_index;
         ice::IceshardWorldManager _world_manager;
         ice::EngineDevUI* const _devui;

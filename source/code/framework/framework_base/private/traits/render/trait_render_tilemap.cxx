@@ -21,7 +21,7 @@
 #include <ice/render/render_pass.hxx>
 
 #include <ice/resource_meta.hxx>
-#include <ice/asset_system.hxx>
+#include <ice/asset_storage.hxx>
 #include <ice/asset.hxx>
 
 #include <ice/profiler.hxx>
@@ -56,18 +56,18 @@ namespace ice
             ice::Metadata image_metadata[4];
         };
 
-        auto load_tilemap_shader(ice::AssetSystem& assets, ice::StringID name) noexcept -> ice::Data
+        auto load_tilemap_shader(ice::AssetStorage& assets, ice::StringID name) noexcept -> ice::Data
         {
             Data result;
-            Asset const shader_asset = assets.request(ice::AssetType::Shader, name);
-            if (shader_asset != Asset::Invalid)
-            {
-                Data temp;
-                if (ice::asset_data(shader_asset, temp) == AssetStatus::Loaded)
-                {
-                    result = *reinterpret_cast<ice::Data const*>(temp.location);
-                }
-            }
+            //Asset const shader_asset = assets.request(ice::AssetType::Shader, name);
+            //if (shader_asset != Asset::Invalid)
+            //{
+            //    Data temp;
+            //    if (ice::asset_data(shader_asset, temp) == AssetStatus::Loaded)
+            //    {
+            //        result = *reinterpret_cast<ice::Data const*>(temp.location);
+            //    }
+            //}
 
             return result;
         }
@@ -98,7 +98,7 @@ namespace ice
         ice::WorldPortal& portal
     ) noexcept
     {
-        _asset_system = ice::addressof(engine.asset_system());
+        _asset_system = ice::addressof(engine.asset_storage());
         _shader_data[0] = detail::load_tilemap_shader(*_asset_system, Tilemap_VtxShader);
         _shader_data[1] = detail::load_tilemap_shader(*_asset_system, Tilemap_PixShader);
     }
@@ -158,26 +158,26 @@ namespace ice
 
                 for (ice::u32 idx = 0; idx < tilemap->tileset_count; ++idx)
                 {
-                    if (tilemap->tilesets[idx].asset != Asset::Invalid)
+                    if (tilemap->tilesets[idx].asset.state != AssetState::Invalid)
                     {
                         Metadata& tileset_meta = operation.image_metadata[operation.image_count];
-                        if (asset_metadata(tilemap->tilesets[idx].asset, tileset_meta) != AssetStatus::Loaded)
-                        {
-                            continue;
-                        }
+                        //if (asset_metadata(tilemap->tilesets[idx].asset, tileset_meta) != AssetStatus::Loaded)
+                        //{
+                        //    continue;
+                        //}
 
-                        ice::i32 tileset_type = -1;
+                        //ice::i32 tileset_type = -1;
 
-                        bool const meta_valid = meta_read_int32(tileset_meta, "tileset.type"_sid, tileset_type);
-                        if (meta_valid == false || tileset_type != 0)
-                        {
-                            continue;
-                        }
+                        //bool const meta_valid = meta_read_int32(tileset_meta, "tileset.type"_sid, tileset_type);
+                        //if (meta_valid == false || tileset_type != 0)
+                        //{
+                        //    continue;
+                        //}
 
-                        if (asset_data(tilemap->tilesets[idx].asset, operation.image_data[operation.image_count]) != AssetStatus::Loaded)
-                        {
-                            continue;
-                        }
+                        //if (asset_data(tilemap->tilesets[idx].asset, operation.image_data[operation.image_count]) != AssetStatus::Loaded)
+                        //{
+                        //    continue;
+                        //}
 
                         operation.image_count += 1;
                     }

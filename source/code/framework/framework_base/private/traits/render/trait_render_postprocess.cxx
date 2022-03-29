@@ -14,7 +14,7 @@
 #include <ice/gfx/gfx_frame.hxx>
 #include <ice/gfx/gfx_pass.hxx>
 
-#include <ice/asset_system.hxx>
+#include <ice/asset_storage.hxx>
 #include <ice/profiler.hxx>
 
 namespace ice
@@ -23,18 +23,18 @@ namespace ice
     namespace detail
     {
 
-        auto load_postprocess_shader(ice::AssetSystem& assets, ice::StringID_Arg name) noexcept -> ice::Data
+        auto load_postprocess_shader(ice::AssetStorage& assets, ice::StringID_Arg name) noexcept -> ice::Data
         {
             Data result;
-            Asset const shader_asset = assets.request(ice::AssetType::Shader, name);
-            if (shader_asset != Asset::Invalid)
-            {
-                Data temp;
-                if (ice::asset_data(shader_asset, temp) == AssetStatus::Loaded)
-                {
-                    result = *reinterpret_cast<ice::Data const*>(temp.location);
-                }
-            }
+            //Asset const shader_asset = assets.request(ice::AssetType::Shader, name);
+            //if (shader_asset != Asset::Invalid)
+            //{
+            //    Data temp;
+            //    if (ice::asset_data(shader_asset, temp) == AssetStatus::Loaded)
+            //    {
+            //        result = *reinterpret_cast<ice::Data const*>(temp.location);
+            //    }
+            //}
 
             return result;
         }
@@ -208,7 +208,7 @@ namespace ice
         ice::WorldPortal& portal
     ) noexcept
     {
-        ice::AssetSystem& asset_system = engine.asset_system();
+        ice::AssetStorage& asset_system = engine.asset_storage();
 
         _shader_data[0] = ice::detail::load_postprocess_shader(asset_system, "shaders/debug/pp-vert"_sid);
         _shader_data[1] = ice::detail::load_postprocess_shader(asset_system, "shaders/debug/pp-frag"_sid);

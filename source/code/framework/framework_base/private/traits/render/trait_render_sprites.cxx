@@ -23,7 +23,7 @@
 #include <ice/render/render_pass.hxx>
 
 #include <ice/resource_meta.hxx>
-#include <ice/asset_system.hxx>
+#include <ice/asset_storage.hxx>
 
 #include <ice/profiler.hxx>
 #include <ice/hash.hxx>
@@ -37,18 +37,18 @@ namespace ice
         using SpriteQuery = ice::ecs::QueryDefinition<ice::Transform2DStatic const*, ice::Transform2DDynamic const*, ice::Sprite const&, ice::SpriteTile const*>;
         static constexpr ice::StringID SpriteQueryId = "ice.trait.sprite-query"_sid;
 
-        auto load_sprite_shader(ice::AssetSystem& assets, ice::StringID name) noexcept -> ice::Data
+        auto load_sprite_shader(ice::AssetStorage& assets, ice::StringID name) noexcept -> ice::Data
         {
             Data result;
-            Asset const shader_asset = assets.request(ice::AssetType::Shader, name);
-            if (shader_asset != Asset::Invalid)
-            {
-                Data temp;
-                if (ice::asset_data(shader_asset, temp) == AssetStatus::Loaded)
-                {
-                    result = *reinterpret_cast<ice::Data const*>(temp.location);
-                }
-            }
+            //Asset const shader_asset = assets.request(ice::AssetType::Shader, name);
+            //if (shader_asset != Asset::Invalid)
+            //{
+            //    Data temp;
+            //    if (ice::asset_data(shader_asset, temp) == AssetStatus::Loaded)
+            //    {
+            //        result = *reinterpret_cast<ice::Data const*>(temp.location);
+            //    }
+            //}
 
             return result;
         }
@@ -288,7 +288,7 @@ namespace ice
         ice::WorldPortal& portal
     ) noexcept
     {
-        _asset_system = ice::addressof(engine.asset_system());
+        _asset_system = ice::addressof(engine.asset_storage());
 
         _shader_data[0] = ice::detail::load_sprite_shader(*_asset_system, "shaders/game2d/sprite-vtx"_sid);
         _shader_data[1] = ice::detail::load_sprite_shader(*_asset_system, "shaders/game2d/sprite-pix"_sid);
@@ -571,19 +571,20 @@ namespace ice
             co_return;
         }
 
-        Asset image_asset = _asset_system->request(AssetType::Texture, material_name);
+        Asset image_asset;
+        //Asset image_asset = _asset_storage->request(AssetType::Texture, material_name);
 
         Data image_asset_data;
         Metadata image_metadata;
-        if (asset_data(image_asset, image_asset_data) != AssetStatus::Loaded)
-        {
-            co_return;
-        }
+        //if (asset_data(image_asset, image_asset_data) != AssetStatus::Loaded)
+        //{
+        //    co_return;
+        //}
 
-        if (asset_metadata(image_asset, image_metadata) != AssetStatus::Loaded)
-        {
-            co_return;
-        }
+        //if (asset_metadata(image_asset, image_metadata) != AssetStatus::Loaded)
+        //{
+        //    co_return;
+        //}
 
         ice::i32 tile_width;
         ice::i32 tile_height;

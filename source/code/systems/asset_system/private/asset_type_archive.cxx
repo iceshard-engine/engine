@@ -12,7 +12,7 @@ namespace ice
 
     struct InternalAssetType
     {
-        ice::AssetType_v2 type = ice::make_asset_type(u8"<unknown>");
+        ice::AssetType type = ice::make_asset_type(u8"<unknown>");
         ice::AssetTypeDefinition definition{
             .fn_asset_type_resolver = unknown_asset_type_resolver
         };
@@ -23,19 +23,19 @@ namespace ice
     public:
         SimpleAssetTypeArchive(ice::Allocator& alloc) noexcept;
 
-        auto asset_types() const noexcept -> ice::Span<ice::AssetType_v2 const>;
+        auto asset_types() const noexcept -> ice::Span<ice::AssetType const>;
 
         bool register_type(
-            ice::AssetType_v2_Arg type,
+            ice::AssetType_Arg type,
             ice::AssetTypeDefinition type_definition
         ) noexcept override;
 
         auto find_definition(
-            ice::AssetType_v2_Arg type
+            ice::AssetType_Arg type
         ) const noexcept -> ice::AssetTypeDefinition const& override;
 
     private:
-        ice::pod::Array<ice::AssetType_v2> _types;
+        ice::pod::Array<ice::AssetType> _types;
         ice::pod::Hash<ice::InternalAssetType> _definitions;
     };
 
@@ -45,13 +45,13 @@ namespace ice
     {
     }
 
-    auto SimpleAssetTypeArchive::asset_types() const noexcept -> ice::Span<ice::AssetType_v2 const>
+    auto SimpleAssetTypeArchive::asset_types() const noexcept -> ice::Span<ice::AssetType const>
     {
         return _types;
     }
 
     bool SimpleAssetTypeArchive::register_type(
-        ice::AssetType_v2_Arg type,
+        ice::AssetType_Arg type,
         ice::AssetTypeDefinition type_definition
     ) noexcept
     {
@@ -82,7 +82,7 @@ namespace ice
     }
 
     auto SimpleAssetTypeArchive::find_definition(
-        ice::AssetType_v2_Arg type
+        ice::AssetType_Arg type
     ) const noexcept -> ice::AssetTypeDefinition const&
     {
         static ice::InternalAssetType empty_type{};

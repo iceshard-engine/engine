@@ -17,7 +17,7 @@
 #include <ice/gfx/gfx_resource_tracker.hxx>
 
 #include <ice/asset.hxx>
-#include <ice/asset_system.hxx>
+#include <ice/asset_storage.hxx>
 
 #include <ice/render/render_device.hxx>
 #include <ice/render/render_resource.hxx>
@@ -56,34 +56,34 @@ namespace ice
         .vertex_count = ice::size(Constant_BoxShapeVertices)
     };
 
-    auto load_texture(ice::AssetSystem& assets, ice::StringID name) noexcept -> ice::render::ImageInfo
+    auto load_texture(ice::AssetStorage& assets, ice::StringID name) noexcept -> ice::render::ImageInfo
     {
         ice::render::ImageInfo result{ };
-        Asset const shader_asset = assets.request(ice::AssetType::Texture, name);
-        if (shader_asset != Asset::Invalid)
-        {
-            Data temp;
-            if (ice::asset_data(shader_asset, temp) == AssetStatus::Loaded)
-            {
-                result = *reinterpret_cast<ice::render::ImageInfo const*>(temp.location);
-            }
-        }
+        //Asset const shader_asset = assets.request(ice::AssetType::Texture, name);
+        //if (shader_asset != Asset::Invalid)
+        //{
+        //    Data temp;
+        //    if (ice::asset_data(shader_asset, temp) == AssetStatus::Loaded)
+        //    {
+        //        result = *reinterpret_cast<ice::render::ImageInfo const*>(temp.location);
+        //    }
+        //}
 
         return result;
     }
 
-    auto load_shader(ice::AssetSystem& assets, ice::StringID name) noexcept -> ice::Data
+    auto load_shader(ice::AssetStorage& assets, ice::StringID name) noexcept -> ice::Data
     {
         Data result;
-        Asset const shader_asset = assets.request(ice::AssetType::Shader, name);
-        if (shader_asset != Asset::Invalid)
-        {
-            Data temp;
-            if (ice::asset_data(shader_asset, temp) == AssetStatus::Loaded)
-            {
-                result = *reinterpret_cast<ice::Data const*>(temp.location);
-            }
-        }
+        //Asset const shader_asset = assets.request(ice::AssetType::Shader, name);
+        //if (shader_asset != Asset::Invalid)
+        //{
+        //    Data temp;
+        //    if (ice::asset_data(shader_asset, temp) == AssetStatus::Loaded)
+        //    {
+        //        result = *reinterpret_cast<ice::Data const*>(temp.location);
+        //    }
+        //}
 
         return result;
     }

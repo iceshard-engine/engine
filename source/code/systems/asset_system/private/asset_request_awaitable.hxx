@@ -1,5 +1,5 @@
 #pragma once
-#include <ice/asset_storage.hxx>
+#include <ice/asset_request.hxx>
 #include <ice/memory.hxx>
 #include <coroutine>
 
@@ -51,6 +51,5 @@ namespace ice
 
         std::coroutine_handle<> _coroutine;
     };
-
 
 } // namespace ice

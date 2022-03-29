@@ -5,7 +5,7 @@
 
 #include <ice/input/input_event.hxx>
 #include <ice/input/input_keyboard.hxx>
-#include <ice/asset_system.hxx>
+#include <ice/asset_storage.hxx>
 
 #include <ice/gfx/gfx_device.hxx>
 #include <ice/gfx/gfx_resource_tracker.hxx>
@@ -155,7 +155,7 @@ namespace ice::trait
 
     void terrain_update_render_cache(
         Terrain::RenderCache& cache,
-        ice::AssetSystem& assets,
+        ice::AssetStorage& assets,
         ice::render::RenderDevice& device
     )
     {
@@ -175,7 +175,7 @@ namespace ice::trait
         ice::Engine& engine
     ) noexcept
         : _engine{ engine }
-        , _asset_system{ _engine.asset_system() }
+        , _asset_system{ _engine.asset_storage() }
         , _render_cache{ ice::make_unique<RenderCache>(alloc) }
         //, _update_stages{ alloc }
     {
@@ -191,65 +191,65 @@ namespace ice::trait
         using namespace ice::gfx;
         using namespace ice::render;
 
-        AssetSystem& asset_system = _engine.asset_system();
-        Asset vert_shader = asset_system.request(AssetType::Shader, "/shaders/terrain/terrain-vert"_sid);
-        Asset tes_ctrl_shader = asset_system.request(AssetType::Shader, "/shaders/terrain/terrain-tes-ctrl"_sid);
-        Asset tes_eval_shader = asset_system.request(AssetType::Shader, "/shaders/terrain/terrain-tes-eval"_sid);
-        Asset geom_shader = asset_system.request(AssetType::Shader, "/shaders/terrain/terrain-geom"_sid);
-        Asset frag_shader = asset_system.request(AssetType::Shader, "/shaders/terrain/terrain-frag"_sid);
+        //AssetSystem& asset_system = _engine.asset_system();
+        //Asset vert_shader = asset_system.request(AssetType::Shader, "/shaders/terrain/terrain-vert"_sid);
+        //Asset tes_ctrl_shader = asset_system.request(AssetType::Shader, "/shaders/terrain/terrain-tes-ctrl"_sid);
+        //Asset tes_eval_shader = asset_system.request(AssetType::Shader, "/shaders/terrain/terrain-tes-eval"_sid);
+        //Asset geom_shader = asset_system.request(AssetType::Shader, "/shaders/terrain/terrain-geom"_sid);
+        //Asset frag_shader = asset_system.request(AssetType::Shader, "/shaders/terrain/terrain-frag"_sid);
 
-        Asset heightmap_image = asset_system.request(AssetType::Texture, "/terrain/map"_sid);
+        //Asset heightmap_image = asset_system.request(AssetType::Texture, "/terrain/map"_sid);
 
-        Data vert_shader_data;
-        Data tesc_shader_data;
-        Data tese_shader_data;
-        Data geom_shader_data;
-        Data frag_shader_data;
+        //Data vert_shader_data;
+        //Data tesc_shader_data;
+        //Data tese_shader_data;
+        //Data geom_shader_data;
+        //Data frag_shader_data;
 
-        {
-            Data temp_data;
-            ice::asset_data(vert_shader, temp_data);
-            vert_shader_data = *reinterpret_cast<Data const*>(temp_data.location);
+        //{
+        //    Data temp_data;
+        //    ice::asset_data(vert_shader, temp_data);
+        //    vert_shader_data = *reinterpret_cast<Data const*>(temp_data.location);
 
-            ice::asset_data(tes_ctrl_shader, temp_data);
-            tesc_shader_data = *reinterpret_cast<Data const*>(temp_data.location);
+        //    ice::asset_data(tes_ctrl_shader, temp_data);
+        //    tesc_shader_data = *reinterpret_cast<Data const*>(temp_data.location);
 
-            ice::asset_data(tes_eval_shader, temp_data);
-            tese_shader_data = *reinterpret_cast<Data const*>(temp_data.location);
+        //    ice::asset_data(tes_eval_shader, temp_data);
+        //    tese_shader_data = *reinterpret_cast<Data const*>(temp_data.location);
 
-            ice::asset_data(geom_shader, temp_data);
-            geom_shader_data = *reinterpret_cast<Data const*>(temp_data.location);
+        //    ice::asset_data(geom_shader, temp_data);
+        //    geom_shader_data = *reinterpret_cast<Data const*>(temp_data.location);
 
-            ice::asset_data(frag_shader, temp_data);
-            frag_shader_data = *reinterpret_cast<Data const*>(temp_data.location);
+        //    ice::asset_data(frag_shader, temp_data);
+        //    frag_shader_data = *reinterpret_cast<Data const*>(temp_data.location);
 
-            ice::asset_data(heightmap_image, temp_data);
-            _render_cache->_image_info = *reinterpret_cast<ImageInfo const*>(temp_data.location);
-        }
+        //    ice::asset_data(heightmap_image, temp_data);
+        //    _render_cache->_image_info = *reinterpret_cast<ImageInfo const*>(temp_data.location);
+        //}
 
-        GfxDevice& gfx_device = runner.graphics_device();
-        GfxResourceTracker& gfx_resources = gfx_device.resource_tracker();
+        //GfxDevice& gfx_device = runner.graphics_device();
+        //GfxResourceTracker& gfx_resources = gfx_device.resource_tracker();
 
-        Renderpass renderpass = find_resource<Renderpass>(gfx_resources, "renderpass.default"_sid);
-        ice::render::Buffer camera_buffer = find_resource<ice::render::Buffer>(gfx_resources, "uniform_buffer.camera"_sid);
+        //Renderpass renderpass = find_resource<Renderpass>(gfx_resources, "renderpass.default"_sid);
+        //ice::render::Buffer camera_buffer = find_resource<ice::render::Buffer>(gfx_resources, "uniform_buffer.camera"_sid);
 
-        RenderDevice& render_device = gfx_device.device();
+        //RenderDevice& render_device = gfx_device.device();
 
-        _render_cache->_render_device = &render_device;
-        _render_cache->_terrain_shaders[0] = render_device.create_shader(ShaderInfo{ .shader_data = vert_shader_data });
-        _render_cache->_terrain_shaders[1] = render_device.create_shader(ShaderInfo{ .shader_data = tesc_shader_data });
-        _render_cache->_terrain_shaders[2] = render_device.create_shader(ShaderInfo{ .shader_data = tese_shader_data });
-        _render_cache->_terrain_shaders[3] = render_device.create_shader(ShaderInfo{ .shader_data = geom_shader_data });
-        _render_cache->_terrain_shaders[4] = render_device.create_shader(ShaderInfo{ .shader_data = frag_shader_data });
+        //_render_cache->_render_device = &render_device;
+        //_render_cache->_terrain_shaders[0] = render_device.create_shader(ShaderInfo{ .shader_data = vert_shader_data });
+        //_render_cache->_terrain_shaders[1] = render_device.create_shader(ShaderInfo{ .shader_data = tesc_shader_data });
+        //_render_cache->_terrain_shaders[2] = render_device.create_shader(ShaderInfo{ .shader_data = tese_shader_data });
+        //_render_cache->_terrain_shaders[3] = render_device.create_shader(ShaderInfo{ .shader_data = geom_shader_data });
+        //_render_cache->_terrain_shaders[4] = render_device.create_shader(ShaderInfo{ .shader_data = frag_shader_data });
 
-        _render_cache->_terrain_pipeline_layout = find_resource<PipelineLayout>(gfx_resources, GfxSubpass_Terrain::ResName_PipelineLayout);
-        _render_cache->_terrain_resource_layout = find_resource<ResourceSetLayout>(gfx_resources, GfxSubpass_Terrain::ResName_ResourceLayout);
+        //_render_cache->_terrain_pipeline_layout = find_resource<PipelineLayout>(gfx_resources, GfxSubpass_Terrain::ResName_PipelineLayout);
+        //_render_cache->_terrain_resource_layout = find_resource<ResourceSetLayout>(gfx_resources, GfxSubpass_Terrain::ResName_ResourceLayout);
 
-        _render_cache->_temp_transfer_buffer = find_resource<ice::render::Buffer>(gfx_resources, "temp.buffer.image_transfer"_sid);
-        _render_cache->_terrain_heightmap = render_device.create_image(
-            _render_cache->_image_info, { }
-        );
-        _render_cache->_camera_buffer = camera_buffer;
+        //_render_cache->_temp_transfer_buffer = find_resource<ice::render::Buffer>(gfx_resources, "temp.buffer.image_transfer"_sid);
+        //_render_cache->_terrain_heightmap = render_device.create_image(
+        //    _render_cache->_image_info, { }
+        //);
+        //_render_cache->_camera_buffer = camera_buffer;
 
 
         //ResourceSetLayout rs_layout = find_resource<ResourceSetLayout>(gfx_resources, GfxSubpass_Primitives::ResName_ResourceLayout);
@@ -287,124 +287,124 @@ namespace ice::trait
         //    { &_render_cache->_terrain_resources, 1 }
         //);
 
-        render_device.create_resourcesets(
-            { &_render_cache->_terrain_resource_layout, 1 },
-            { &_render_cache->_terrain_resources, 1 }
-        );
+        //render_device.create_resourcesets(
+        //    { &_render_cache->_terrain_resource_layout, 1 },
+        //    { &_render_cache->_terrain_resources, 1 }
+        //);
 
-        SamplerInfo sampler_info{
-            .min_filter = SamplerFilter::Nearest,
-            .mag_filter = SamplerFilter::Nearest,
-            .address_mode = {
-                .u = SamplerAddressMode::Repeat,
-                .v = SamplerAddressMode::Repeat,
-                .w = SamplerAddressMode::Repeat,
-            },
-            .mip_map_mode = SamplerMipMapMode::Nearest,
-        };
+        //SamplerInfo sampler_info{
+        //    .min_filter = SamplerFilter::Nearest,
+        //    .mag_filter = SamplerFilter::Nearest,
+        //    .address_mode = {
+        //        .u = SamplerAddressMode::Repeat,
+        //        .v = SamplerAddressMode::Repeat,
+        //        .w = SamplerAddressMode::Repeat,
+        //    },
+        //    .mip_map_mode = SamplerMipMapMode::Nearest,
+        //};
 
-        _render_cache->_terrain_sampler = render_device.create_sampler(sampler_info);
+        //_render_cache->_terrain_sampler = render_device.create_sampler(sampler_info);
 
-        ShaderStageFlags const shader_stages[]{
-            ShaderStageFlags::VertexStage,
-            ShaderStageFlags::TesselationControlStage,
-            ShaderStageFlags::TesselationEvaluationStage,
-            ShaderStageFlags::GeometryStage,
-            ShaderStageFlags::FragmentStage,
-        };
+        //ShaderStageFlags const shader_stages[]{
+        //    ShaderStageFlags::VertexStage,
+        //    ShaderStageFlags::TesselationControlStage,
+        //    ShaderStageFlags::TesselationEvaluationStage,
+        //    ShaderStageFlags::GeometryStage,
+        //    ShaderStageFlags::FragmentStage,
+        //};
 
-        ice::render::ShaderInputAttribute attribs[]{
-            ShaderInputAttribute{.location = 0, .offset = 0, .type = ShaderAttribType::Vec3f },
-            ShaderInputAttribute{.location = 1, .offset = 12, .type = ShaderAttribType::Vec3f },
-            ShaderInputAttribute{.location = 2, .offset = 24, .type = ShaderAttribType::Vec2f },
-            ShaderInputAttribute{.location = 3, .offset = 0, .type = ShaderAttribType::Vec4f },
-            ShaderInputAttribute{.location = 4, .offset = 16, .type = ShaderAttribType::Vec4f },
-            ShaderInputAttribute{.location = 5, .offset = 32, .type = ShaderAttribType::Vec4f },
-            ShaderInputAttribute{.location = 6, .offset = 48, .type = ShaderAttribType::Vec4f },
-        };
+        //ice::render::ShaderInputAttribute attribs[]{
+        //    ShaderInputAttribute{.location = 0, .offset = 0, .type = ShaderAttribType::Vec3f },
+        //    ShaderInputAttribute{.location = 1, .offset = 12, .type = ShaderAttribType::Vec3f },
+        //    ShaderInputAttribute{.location = 2, .offset = 24, .type = ShaderAttribType::Vec2f },
+        //    ShaderInputAttribute{.location = 3, .offset = 0, .type = ShaderAttribType::Vec4f },
+        //    ShaderInputAttribute{.location = 4, .offset = 16, .type = ShaderAttribType::Vec4f },
+        //    ShaderInputAttribute{.location = 5, .offset = 32, .type = ShaderAttribType::Vec4f },
+        //    ShaderInputAttribute{.location = 6, .offset = 48, .type = ShaderAttribType::Vec4f },
+        //};
 
-        ice::render::ShaderInputBinding shader_bindings[]{
-            ShaderInputBinding{
-                .binding = 0,
-                .stride = 32,
-                .instanced = 0,
-                .attributes = { attribs + 0, 3 }
-            },
-            //ShaderInputBinding{
-            //    .binding = 1,
-            //    .stride = sizeof(ice::mat4),
-            //    .instanced = 1,
-            //    .attributes = { attribs + 3, 4 }
-            //}
-        };
+        //ice::render::ShaderInputBinding shader_bindings[]{
+        //    ShaderInputBinding{
+        //        .binding = 0,
+        //        .stride = 32,
+        //        .instanced = 0,
+        //        .attributes = { attribs + 0, 3 }
+        //    },
+        //    //ShaderInputBinding{
+        //    //    .binding = 1,
+        //    //    .stride = sizeof(ice::mat4),
+        //    //    .instanced = 1,
+        //    //    .attributes = { attribs + 3, 4 }
+        //    //}
+        //};
 
-        PipelineInfo terrain_pipeline{
-            .layout = _render_cache->_terrain_pipeline_layout,
-            .renderpass = renderpass,
-            .shaders = _render_cache->_terrain_shaders,
-            .shaders_stages = { shader_stages },
-            .shader_bindings = shader_bindings,
-            .primitive_topology = PrimitiveTopology::PatchList,
-            .cull_mode = CullMode::BackFace,
-            .front_face = FrontFace::CounterClockWise,
-            .subpass_index = 1,
-            .depth_test = true,
-        };
+        //PipelineInfo terrain_pipeline{
+        //    .layout = _render_cache->_terrain_pipeline_layout,
+        //    .renderpass = renderpass,
+        //    .shaders = _render_cache->_terrain_shaders,
+        //    .shaders_stages = { shader_stages },
+        //    .shader_bindings = shader_bindings,
+        //    .primitive_topology = PrimitiveTopology::PatchList,
+        //    .cull_mode = CullMode::BackFace,
+        //    .front_face = FrontFace::CounterClockWise,
+        //    .subpass_index = 1,
+        //    .depth_test = true,
+        //};
 
-        _render_cache->_terrain_pipeline[0] = render_device.create_pipeline(
-            terrain_pipeline
-        );
+        //_render_cache->_terrain_pipeline[0] = render_device.create_pipeline(
+        //    terrain_pipeline
+        //);
 
-        terrain_pipeline = PipelineInfo{
-            .layout = _render_cache->_terrain_pipeline_layout,
-            .renderpass = renderpass,
-            .shaders = _render_cache->_terrain_shaders,
-            .shaders_stages = { shader_stages },
-            .shader_bindings = shader_bindings,
-            .primitive_topology = PrimitiveTopology::PatchList,
-            .cull_mode = CullMode::Disabled,
-            .front_face = FrontFace::CounterClockWise,
-            .subpass_index = 1,
-            .depth_test = false,
-        };
+        //terrain_pipeline = PipelineInfo{
+        //    .layout = _render_cache->_terrain_pipeline_layout,
+        //    .renderpass = renderpass,
+        //    .shaders = _render_cache->_terrain_shaders,
+        //    .shaders_stages = { shader_stages },
+        //    .shader_bindings = shader_bindings,
+        //    .primitive_topology = PrimitiveTopology::PatchList,
+        //    .cull_mode = CullMode::Disabled,
+        //    .front_face = FrontFace::CounterClockWise,
+        //    .subpass_index = 1,
+        //    .depth_test = false,
+        //};
 
-        _render_cache->_terrain_pipeline[1] = render_device.create_pipeline(
-            terrain_pipeline
-        );
+        //_render_cache->_terrain_pipeline[1] = render_device.create_pipeline(
+        //    terrain_pipeline
+        //);
 
-        ice::gfx::Vertice vertices[]{
-            Vertice{ .pos = { -50.f, 0.f, -50.f }, .norm = { 0.f, 1.f, 0.f }, .uv = { 0.f, 0.f } },
-            Vertice{ .pos = { -50.f, 0.f, 50.f }, .norm = { 0.f, 1.f, 0.f }, .uv = { 0.f, 1.f } },
-            Vertice{ .pos = { 50.f, 0.f, 50.f }, .norm = { 0.f, 1.f, 0.f }, .uv = { 1.f, 1.f } },
-            Vertice{ .pos = { 50.f, 0.f, -50.f }, .norm = { 0.f, 1.f, 0.f }, .uv = { 1.f, 0.f } },
-        };
+        //ice::gfx::Vertice vertices[]{
+        //    Vertice{ .pos = { -50.f, 0.f, -50.f }, .norm = { 0.f, 1.f, 0.f }, .uv = { 0.f, 0.f } },
+        //    Vertice{ .pos = { -50.f, 0.f, 50.f }, .norm = { 0.f, 1.f, 0.f }, .uv = { 0.f, 1.f } },
+        //    Vertice{ .pos = { 50.f, 0.f, 50.f }, .norm = { 0.f, 1.f, 0.f }, .uv = { 1.f, 1.f } },
+        //    Vertice{ .pos = { 50.f, 0.f, -50.f }, .norm = { 0.f, 1.f, 0.f }, .uv = { 1.f, 0.f } },
+        //};
 
-        ice::u16 indices[]{
-            0, 1, 2, 3
-            //0, 2, 3,
-        };
+        //ice::u16 indices[]{
+        //    0, 1, 2, 3
+        //    //0, 2, 3,
+        //};
 
-        _render_cache->_terrain_mesh_indices = render_device.create_buffer(BufferType::Index, sizeof(indices));
-        _render_cache->_terrain_mesh_vertices = render_device.create_buffer(BufferType::Vertex, sizeof(vertices));
-        _render_cache->_terrain_settings_buffer = render_device.create_buffer(BufferType::Uniform, sizeof(TerrainSettings));
+        //_render_cache->_terrain_mesh_indices = render_device.create_buffer(BufferType::Index, sizeof(indices));
+        //_render_cache->_terrain_mesh_vertices = render_device.create_buffer(BufferType::Vertex, sizeof(vertices));
+        //_render_cache->_terrain_settings_buffer = render_device.create_buffer(BufferType::Uniform, sizeof(TerrainSettings));
 
-        _render_cache->_terrain_settings.level_inner = 2;
-        _render_cache->_terrain_settings.level_outer = 2;
+        //_render_cache->_terrain_settings.level_inner = 2;
+        //_render_cache->_terrain_settings.level_outer = 2;
 
-        BufferUpdateInfo buffer_updates[]{
-            BufferUpdateInfo{ .buffer = _render_cache->_terrain_mesh_indices, .data = ice::data_view(indices, sizeof(indices)) },
-            BufferUpdateInfo{ .buffer = _render_cache->_terrain_mesh_vertices, .data = ice::data_view(vertices, sizeof(vertices)) },
-            BufferUpdateInfo{ .buffer = _render_cache->_terrain_settings_buffer, .data = ice::data_view(_render_cache->_terrain_settings) },
-        };
+        //BufferUpdateInfo buffer_updates[]{
+        //    BufferUpdateInfo{ .buffer = _render_cache->_terrain_mesh_indices, .data = ice::data_view(indices, sizeof(indices)) },
+        //    BufferUpdateInfo{ .buffer = _render_cache->_terrain_mesh_vertices, .data = ice::data_view(vertices, sizeof(vertices)) },
+        //    BufferUpdateInfo{ .buffer = _render_cache->_terrain_settings_buffer, .data = ice::data_view(_render_cache->_terrain_settings) },
+        //};
 
-        render_device.update_buffers(buffer_updates);
+        //render_device.update_buffers(buffer_updates);
 
-        runner.execute_task(
-            _render_cache->update_all_resources(
-                runner,
-                runner.graphics_device()
-            ), EngineContext::GraphicsFrame
-        );
+        //runner.execute_task(
+        //    _render_cache->update_all_resources(
+        //        runner,
+        //        runner.graphics_device()
+        //    ), EngineContext::GraphicsFrame
+        //);
     }
 
     void Terrain::on_deactivate(

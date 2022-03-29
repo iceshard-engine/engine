@@ -3,7 +3,6 @@
 #include <ice/asset_type.hxx>
 #include <ice/resource_meta.hxx>
 #include <ice/resource_types.hxx>
-#include <ice/userdata.hxx>
 #include <ice/unique_ptr.hxx>
 #include <ice/func.hxx>
 
@@ -24,14 +23,14 @@ namespace ice
     public:
         virtual ~AssetTypeArchive() = default;
 
-        virtual auto asset_types() const noexcept -> ice::Span<ice::AssetType_v2 const> = 0;
+        virtual auto asset_types() const noexcept -> ice::Span<ice::AssetType const> = 0;
 
         virtual auto find_definition(
-            ice::AssetType_v2_Arg type
+            ice::AssetType_Arg type
         ) const noexcept -> ice::AssetTypeDefinition const& = 0;
 
         virtual bool register_type(
-            ice::AssetType_v2_Arg type,
+            ice::AssetType_Arg type,
             ice::AssetTypeDefinition type_definition
         ) noexcept = 0;
     };

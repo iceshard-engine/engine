@@ -29,8 +29,7 @@
 #include <ice/module_register.hxx>
 #include <ice/resource_tracker.hxx>
 #include <ice/resource_provider.hxx>
-#include <ice/asset_system.hxx>
-#include <ice/asset_pipeline.hxx>
+#include <ice/asset_storage.hxx>
 #include <ice/resource.hxx>
 #include <ice/assert.hxx>
 #include <ice/shard.hxx>
@@ -122,17 +121,17 @@ void MyGame::on_app_startup(ice::Engine& engine, ice::gfx::GfxRunner& gfx_runner
 
     ice::EngineDevUI& devui = engine.developer_ui();
 
-    ice::Asset test_tilemap = engine.asset_system().request(ice::AssetType::TileMap, "cotm/test_level_2/tiled/0002_Level_1"_sid);
-    ICE_ASSERT(test_tilemap != ice::Asset::Invalid, "");
+    //ice::Asset test_tilemap = engine.asset_system().request(ice::AssetType::TileMap, "cotm/test_level_2/tiled/0002_Level_1"_sid);
+    //ICE_ASSERT(test_tilemap != ice::Asset::Invalid, "");
 
-    ice::Data tilemap_data;
-    ice::asset_data(test_tilemap, tilemap_data);
+    //ice::Data tilemap_data;
+    //ice::asset_data(test_tilemap, tilemap_data);
 
-    ice::TileMap const* tilemap = reinterpret_cast<ice::TileMap const*>(tilemap_data.location);
+    //ice::TileMap const* tilemap = reinterpret_cast<ice::TileMap const*>(tilemap_data.location);
 
     _trait_physics = ice::create_trait_physics(_allocator);
     _trait_tilemap = ice::create_tilemap_trait(_allocator, *_trait_physics);
-    _trait_tilemap->load_tilemap(*tilemap);
+    //_trait_tilemap->load_tilemap(*tilemap);
 
     _trait_animator = ice::create_trait_animator(_allocator);
     _trait_actor = ice::create_trait_actor(_allocator);
