@@ -15,6 +15,8 @@ namespace ice
         Quality_Low = 0x0000'0004,
         Quality_Lowest = 0x0000'0005,
 
+        Status_Baked = 0x0000'0008,
+
         // 28 bits to make use of. Please update this enum when this changes.
         First_UnusedValue = 0x0000'0010,
 
