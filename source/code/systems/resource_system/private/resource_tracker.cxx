@@ -403,7 +403,7 @@ namespace ice
                 std::atomic_thread_fence(std::memory_order::acquire);
 
                 ICE_ASSERT(
-                    ice::has_flag(handle->status, ice::ResourceStatus::Loading),
+                    ice::has_flag(handle->status, ice::ResourceStatus::Loading) == false,
                     "Trying to unload resource during loading!"
                 );
 

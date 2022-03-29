@@ -83,7 +83,7 @@ namespace ice
 
                     for (ice::u32 fi = 0; fi < face->mNumIndices; ++fi)
                     {
-                        *indice_data++ = face->mIndices[fi];
+                        *indice_data++ = static_cast<ice::u16>(face->mIndices[fi]);
                     }
                 }
 

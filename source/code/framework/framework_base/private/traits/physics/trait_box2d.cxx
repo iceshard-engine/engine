@@ -233,8 +233,6 @@ namespace ice
 
                     if (phx_body.shape == PhysicsShape::Box)
                     {
-                        ice::vec2f const half = (phx_body.dimensions / Constant_PixelsInMeter) / 2.f;
-
                         b2PolygonShape tile_shape;
                         tile_shape.SetAsBox(
                             half.x,

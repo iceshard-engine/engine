@@ -18,7 +18,7 @@ namespace ice
     struct GameServices
     {
         virtual ~GameServices() noexcept = default;
-        virtual auto resource_system() noexcept -> ice::ResourceTracker & = 0;
+        virtual auto resource_system() noexcept -> ice::ResourceTracker& = 0;
         virtual auto module_registry() noexcept -> ice::ModuleRegister& = 0;
     };
 
