@@ -5,6 +5,8 @@
 namespace ice
 {
 
+    using c8utf = char8_t;
+
     using f32 = std::float_t;
     using f64 = std::double_t;
 

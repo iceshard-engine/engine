@@ -1,5 +1,6 @@
 #pragma once
 #include <ice/base.hxx>
+#include <ice/data.hxx>
 #include <span>
 
 namespace ice
@@ -30,6 +31,26 @@ namespace ice
     constexpr auto make_span(T(&array_obj)[Size]) noexcept -> ice::Span<T const, Size>
     {
         return { array_obj };
+    }
+
+    template<typename T>
+    constexpr auto data_view(ice::Span<T> span, ice::u32 alignment = alignof(T)) noexcept -> ice::Data
+    {
+        return Data{
+            .location = span.data(),
+            .size = static_cast<ice::u32>(span.size_bytes()),
+            .alignment = alignment,
+        };
+    }
+
+    template<typename T>
+    constexpr auto data_view(ice::Span<T const> span, ice::u32 alignment = alignof(T)) noexcept -> ice::Data
+    {
+        return Data{
+            .location = span.data(),
+            .size = static_cast<ice::u32>(span.size_bytes()),
+            .alignment = alignment,
+        };
     }
 
 } // namespace ice
