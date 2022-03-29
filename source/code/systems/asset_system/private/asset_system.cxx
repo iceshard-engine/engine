@@ -14,6 +14,7 @@
 #include <ice/assert.hxx>
 
 #include <ice/stack_string.hxx>
+#include <ice/asset_type.hxx>
 
 #include "asset_internal.hxx"
 
@@ -745,10 +746,10 @@ namespace ice
 
             // Try to load the new asset
             {
-                ice::Metadata const& meta = resource->metadata();
-                if (ice::meta_has_entry(meta, "asset.explicit_dependencies"_sid))
+                ice::Metadata const& meta_2 = resource->metadata();
+                if (ice::meta_has_entry(meta_2, "asset.explicit_dependencies"_sid))
                 {
-                    detail::ExplicitAssetSolver explicit_solver{ _allocator, *this, _resource_system, meta };
+                    detail::ExplicitAssetSolver explicit_solver{ _allocator, *this, _resource_system, meta_2 };
 
                     load_status = loader->load(
                         explicit_solver,
