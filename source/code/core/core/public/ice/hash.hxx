@@ -92,6 +92,24 @@ namespace ice
         return result.h[0];
     }
 
+    template<>
+    constexpr auto hash32(std::u8string_view value) noexcept -> ice::u32
+    {
+        using namespace ice::detail::murmur3_hash;
+
+        mm3_x86_h32 const result = cexpr_murmur3_x86_32(value, 0x428639DA);
+        return result.h[0];
+    }
+
+    template<>
+    constexpr auto hash32(char8_t const* value) noexcept -> ice::u32
+    {
+        using namespace ice::detail::murmur3_hash;
+
+        mm3_x86_h32 const result = cexpr_murmur3_x86_32(value, 0x428639DA);
+        return result.h[0];
+    }
+
     template<typename T>
     constexpr auto hash_from_ptr(T* ptr) noexcept -> ice::u64
     {
