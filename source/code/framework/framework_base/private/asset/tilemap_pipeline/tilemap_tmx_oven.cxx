@@ -1,7 +1,7 @@
 // #TODO: https://github.com/iceshard-engine/engine/issues/91
-#if ISP_WINDOWS
-
 #include "tilemap_tmx_oven.hxx"
+
+#if ISP_WINDOWS
 #include "tilemap_pipeline.hxx"
 
 #include <ice/game_tilemap.hxx>
@@ -1053,4 +1053,4 @@ namespace ice
 
 } // namespace ice
 
-#endif 
+#endif

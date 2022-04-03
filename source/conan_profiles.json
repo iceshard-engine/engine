@@ -18,8 +18,7 @@
             ],
             "compiler": {
                 "name": "Visual Studio",
-                "version": "17",
-                "conan_version": "16"
+                "version": "17"
             }
         }
     },
