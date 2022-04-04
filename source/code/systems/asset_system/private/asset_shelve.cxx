@@ -26,6 +26,7 @@ namespace ice
             ice::AssetEntry* asset = entry.value;
             _allocator.deallocate(asset->data_baked.location);
             _allocator.deallocate(asset->data_loaded.location);
+            _allocator.deallocate(asset->data_runtime.location);
             _allocator.destroy(asset);
         }
     }
@@ -83,10 +84,12 @@ namespace ice
         ice::AssetState state
     ) noexcept
     {
-        ice::u32 const state_idx = static_cast<ice::u32>(state);
-        ICE_ASSERT(state_idx >= 2, "Invalid state used to apped requset!");
+        ice::u32 const state_base_idx = static_cast<ice::u32>(AssetState::Baked);
 
-        std::atomic<ice::AssetRequestAwaitable*>& queue = _new_requests[state_idx - 2];
+        ice::u32 const state_idx = static_cast<ice::u32>(state);
+        ICE_ASSERT(state_idx >= state_base_idx, "Invalid state used to apped requset!");
+
+        std::atomic<ice::AssetRequestAwaitable*>& queue = _new_requests[state_idx - state_base_idx];
 
         ice::AssetRequestAwaitable* expected_head = queue.load(std::memory_order_acquire);
 
@@ -105,11 +108,13 @@ namespace ice
 
     auto AssetShelve::aquire_request(ice::AssetState state) noexcept -> ice::AssetRequestAwaitable*
     {
-        ice::u32 const state_idx = static_cast<ice::u32>(state);
-        ICE_ASSERT(state_idx >= 2, "Invalid state used to apped requset!");
+        ice::u32 const state_base_idx = static_cast<ice::u32>(AssetState::Baked);
 
-        std::atomic<ice::AssetRequestAwaitable*>& queue = _new_requests[state_idx - 2];
-        std::atomic<ice::AssetRequestAwaitable*>& reversed_queue = _reversed_requests[state_idx - 2];
+        ice::u32 const state_idx = static_cast<ice::u32>(state);
+        ICE_ASSERT(state_idx >= state_base_idx, "Invalid state used to apped requset!");
+
+        std::atomic<ice::AssetRequestAwaitable*>& queue = _new_requests[state_idx - state_base_idx];
+        std::atomic<ice::AssetRequestAwaitable*>& reversed_queue = _reversed_requests[state_idx - state_base_idx];
 
         ice::AssetRequestAwaitable* selected_request = reversed_queue.load(std::memory_order_relaxed);
 

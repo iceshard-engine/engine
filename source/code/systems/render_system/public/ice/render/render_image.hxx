@@ -1,4 +1,5 @@
 #pragma once
+#include <ice/asset_type.hxx>
 #include <ice/render/render_declarations.hxx>
 
 namespace ice::render
@@ -118,5 +119,7 @@ namespace ice::render
 
         bool normalized_coordinates = true;
     };
+
+    static constexpr ice::AssetType AssetType_Texture2D = ice::make_asset_type(u8"ice/render_system/texture-2d");
 
 } // namespace ice::render

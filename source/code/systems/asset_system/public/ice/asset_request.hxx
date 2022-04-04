@@ -17,7 +17,8 @@ namespace ice
         enum class Result
         {
             Error,
-            Success
+            Skipped,
+            Success,
         };
 
         virtual ~AssetRequest() noexcept = default;

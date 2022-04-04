@@ -19,6 +19,10 @@ namespace ice
         ice::Allocator& alloc
     ) noexcept -> ice::UniquePtr<ice::gfx::GfxTrait>;
 
+    auto create_trait_render_texture_loader(
+        ice::Allocator& alloc
+    ) noexcept -> ice::UniquePtr<ice::gfx::GfxTrait>;
+
     auto create_trait_render_clear(
         ice::Allocator& alloc,
         ice::StringID_Arg stage_name

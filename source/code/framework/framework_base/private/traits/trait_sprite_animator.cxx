@@ -6,6 +6,8 @@
 #include <ice/world/world_portal.hxx>
 #include <ice/ecs/ecs_entity_storage.hxx>
 
+#include <ice/render/render_image.hxx>
+
 #include <ice/engine.hxx>
 #include <ice/engine_runner.hxx>
 #include <ice/engine_frame.hxx>
@@ -13,6 +15,7 @@
 #include <ice/stack_string.hxx>
 #include <ice/data_storage.hxx>
 #include <ice/resource_meta.hxx>
+#include <ice/task_sync_wait.hxx>
 #include <ice/asset_storage.hxx>
 #include <ice/asset.hxx>
 
@@ -71,12 +74,8 @@ namespace ice
             sprite_query,
             [&](ice::Animation const& anim, ice::Sprite const& sprite) noexcept
             {
-                Asset sprite_asset;// = _assets->request(AssetType::Texture, sprite.material);
-                Metadata asset_meta;
-                //if (asset_metadata(sprite_asset, asset_meta) == AssetStatus::Invalid)
-                //{
-                //    return;
-                //}
+                Asset sprite_asset = ice::sync_wait(_assets->request(ice::render::AssetType_Texture2D, sprite.material, AssetState::Baked));
+                Metadata asset_meta = sprite_asset.metadata();
 
                 ice::pod::Array<ice::Utf8String> anim_names{ frame.allocator() };
                 if (meta_read_utf8_array(asset_meta, "animation.names"_sid, anim_names) == false)

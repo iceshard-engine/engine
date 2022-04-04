@@ -1,18 +1,23 @@
 #pragma once
-//#include <ice/asset_loader.hxx>
+#include <ice/asset_type_archive.hxx>
 
 namespace ice
 {
 
-    //class IceshardImageLoader final : public ice::AssetLoader
-    //{
-    //public:
-    //    auto load(
-    //        ice::AssetType type,
-    //        ice::Data data,
-    //        ice::Allocator& alloc,
-    //        ice::Memory& out_data
-    //    ) const noexcept -> ice::AssetStatus override;
-    //};
+    bool asset_image_oven(
+        void*,
+        ice::Allocator&,
+        ice::Resource_v2 const&,
+        ice::Data,
+        ice::Memory&
+    ) noexcept;
+
+    bool asset_image_loader(
+        void*,
+        ice::Allocator& alloc,
+        ice::Metadata const& meta,
+        ice::Data data,
+        ice::Memory& out_data
+    ) noexcept;
 
 } // namespace iceshard

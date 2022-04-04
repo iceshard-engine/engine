@@ -41,7 +41,7 @@ namespace ice
 
     struct TileSet
     {
-        ice::Asset asset;
+        ice::Utf8String asset;
         ice::vec2f element_size;
     };
 

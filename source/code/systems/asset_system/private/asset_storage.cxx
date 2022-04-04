@@ -194,17 +194,30 @@ namespace ice
             }
 
             ice::ResourceResult const load_result = co_await _resource_tracker.load_resource(resource);
-            if (load_result.resource_status == ResourceStatus::Loaded && asset_entry == nullptr)
+            if (load_result.resource_status == ResourceStatus::Loaded)
             {
-                bool const is_baked = (load_result.resource->flags() & ResourceFlags::Status_Baked) == ResourceFlags::Status_Baked;
-
-                asset_entry = shelve->store(
-                    nameid,
-                    resource,
-                    load_result.resource,
-                    is_baked ? AssetState::Baked : AssetState::Raw,
-                    load_result.data
+                ice::AssetState const state = shelve->definition.fn_asset_state(
+                    shelve->definition,
+                    load_result.resource->metadata(),
+                    load_result.resource->uri()
                 );
+
+                if (asset_entry == nullptr)
+                {
+                    asset_entry = shelve->store(
+                        nameid,
+                        resource,
+                        load_result.resource,
+                        state,
+                        load_result.data
+                    );
+
+                    asset_entry->state = state;
+                }
+                else if (asset_entry->state == AssetState::Unknown)
+                {
+                    asset_entry->state = state;
+                }
             }
 
             // Failed to acquire asset entry
@@ -253,11 +266,7 @@ namespace ice
                 }
                 case AssetState::Runtime:
                 {
-                    result.data = ice::Data{
-                        .location = reinterpret_cast<void*>(asset_entry->runtime_handle),
-                        .size = 8,
-                        .alignment = 8
-                    };
+                    result.data = asset_entry->data_runtime;
                     result.state = requested_state;
                     break;
                 }
@@ -292,7 +301,7 @@ namespace ice
                     result_data = asset_entry->data_baked;
                 }
 
-                if (requested_state != AssetState::Baked)
+                if (requested_state != AssetState::Baked && asset_entry->state == AssetState::Baked)
                 {
                     ice::Memory loaded_memory;
                     bool const load_success = ice::detail::load_asset(
@@ -314,22 +323,32 @@ namespace ice
                     asset_entry->state = AssetState::Loaded;
 
                     result_data = asset_entry->data_loaded;
+                }
 
-                    if (requested_state != AssetState::Loaded)
+                if (requested_state == AssetState::Runtime)
+                {
+                    if (asset_entry->state != AssetState::Runtime)
                     {
-                        loaded_memory = co_await AssetRequestAwaitable{ nameid, *shelve, asset_entry, AssetState::Runtime };
-                        if (loaded_memory.location != nullptr)
+                        ice::Memory runtime_data = co_await AssetRequestAwaitable{ nameid, *shelve, asset_entry, AssetState::Runtime };
+                        if (runtime_data.location != nullptr)
                         {
                             asset_entry->state = AssetState::Runtime;
-                            asset_entry->runtime_handle = reinterpret_cast<ice::uptr>(loaded_memory.location);
-                            result_data = loaded_memory;
+                            asset_entry->data_runtime = runtime_data;
+                            result_data = runtime_data;
                         }
+                    }
+                    else
+                    {
+                        result_data = asset_entry->data_runtime;
                     }
                 }
 
-                result.data = result_data;
-                result.state = result_data.location != nullptr ? requested_state : AssetState::Invalid;
-                result.handle = result_data.location != nullptr ? asset_entry : nullptr;
+                if (requested_state == asset_entry->state)
+                {
+                    result.data = result_data;
+                    result.state = result_data.location != nullptr ? requested_state : AssetState::Invalid;
+                    result.handle = result_data.location != nullptr ? asset_entry : nullptr;
+                }
             }
         }
 
@@ -346,10 +365,8 @@ namespace ice
         ice::ResourceResult const result = co_await _resource_tracker.unload_resource(entry->resource_handle);
         if ((result.resource_status & ice::ResourceStatus::Available) == ice::ResourceStatus::Available)
         {
-            bool const is_baked = (result.resource->flags() & ResourceFlags::Status_Baked) == ResourceFlags::Status_Baked;
-
             entry->data = result.data;
-            entry->state = is_baked ? AssetState::Baked : AssetState::Raw;
+            entry->state = AssetState::Unknown;
         }
     }
 

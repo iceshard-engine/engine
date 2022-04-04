@@ -2,6 +2,8 @@
 #include "asset_shelve.hxx"
 #include "asset_entry.hxx"
 
+#include <ice/assert.hxx>
+
 namespace ice
 {
 
@@ -27,7 +29,18 @@ namespace ice
 
     auto AssetRequestAwaitable::data() const noexcept -> ice::Data
     {
-        return _asset_entry->data;
+        switch (_requested_state)
+        {
+        case AssetState::Baked:
+            return _asset_entry->data;
+        case AssetState::Loaded:
+            return _asset_entry->data_baked.location != nullptr ? _asset_entry->data_baked : _asset_entry->data;
+        case AssetState::Runtime:
+            return _asset_entry->data_loaded;
+        default:
+            ICE_ASSERT(false, "Required request data not available!");
+        }
+        return { };
     }
 
     auto AssetRequestAwaitable::resource() const noexcept -> ice::Resource_v2 const&
@@ -43,9 +56,9 @@ namespace ice
     auto AssetRequestAwaitable::allocate(ice::u32 size) const noexcept -> ice::Memory
     {
         return ice::Memory{
-            .location = _asset_shelve.asset_allocator().allocate(size),
+            .location = _asset_shelve.asset_allocator().allocate(size, 8),
             .size = size,
-            .alignment = 4
+            .alignment = 8
         };
     }
 
@@ -54,9 +67,10 @@ namespace ice
         ice::Memory memory
     ) noexcept
     {
-        if (result == AssetRequest::Result::Error)
+        if (result != AssetRequest::Result::Success)
         {
             _asset_shelve.asset_allocator().deallocate(memory.location);
+            _result_data = { };
         }
         else
         {

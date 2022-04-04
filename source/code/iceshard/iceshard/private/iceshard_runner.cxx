@@ -188,6 +188,11 @@ namespace ice
         return *_thread_pool;
     }
 
+    auto IceshardEngineRunner::asset_storage() noexcept -> ice::AssetStorage&
+    {
+        return _engine.asset_storage();
+    }
+
     auto IceshardEngineRunner::graphics_device() noexcept -> ice::gfx::GfxDevice&
     {
         return _gfx_runner->device();

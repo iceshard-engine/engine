@@ -12,16 +12,17 @@ namespace ice
         ice::AssetTypeArchive& asset_type_archive
     ) noexcept
     {
-        using ice::detail::asset_system::v1::AssetRegisterTypesAPI;
+        using ice::detail::asset_system::v1::AssetTypeArchiveAPI;
+        using ice::detail::asset_system::v1::Constant_APIName_AssetTypeArchive;
 
         ice::pod::Array<void*> api_ptrs{ ice::memory::default_scratch_allocator() };
         ice::pod::array::reserve(api_ptrs, 10);
 
-        if (registry.find_module_apis("ice.asset_register_types"_sid, 1, api_ptrs))
+        if (registry.find_module_apis(Constant_APIName_AssetTypeArchive, 1, api_ptrs))
         {
             for (void* api_ptr : api_ptrs)
             {
-                AssetRegisterTypesAPI* module_api = reinterpret_cast<AssetRegisterTypesAPI*>(api_ptr);
+                AssetTypeArchiveAPI* module_api = reinterpret_cast<AssetTypeArchiveAPI*>(api_ptr);
                 module_api->register_types_fn(asset_type_archive);
             }
         }

@@ -2,10 +2,12 @@
 #include <coroutine>
 #include <ice/data.hxx>
 #include <ice/stringid.hxx>
+#include <ice/resource_meta.hxx>
 
 namespace ice
 {
 
+    struct Metadata;
     struct AssetHandle;
 
     enum class AssetState : ice::u32
@@ -13,6 +15,9 @@ namespace ice
         //! \brief The asset could not be accessed.
         //! \detail Either an error occured or the asset does not exist.
         Invalid,
+
+        //! \brief The asset data state is not known and needs another pass to the Asset Type Resolver.
+        Unknown,
 
         //! \brief The asset data is represented in raw format of the source file.
         //! \detail This means that you might get raw jpg or png image data.
@@ -36,6 +41,8 @@ namespace ice
         ice::AssetHandle* handle;
         ice::AssetState state;
         ice::Data data;
+
+        auto metadata() const noexcept -> ice::Metadata const&;
     };
 
 } // namespace ice

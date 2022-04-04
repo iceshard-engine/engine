@@ -18,10 +18,11 @@ namespace ice
     namespace detail::asset_system::v1
     {
 
+        static constexpr ice::StringID Constant_APIName_AssetTypeArchive = "ice.asset-type-archive"_sid;
 
         using RegisterTypesFn = void (ice::AssetTypeArchive&) noexcept;
 
-        struct AssetRegisterTypesAPI
+        struct AssetTypeArchiveAPI
         {
             RegisterTypesFn* register_types_fn;
             // TODO: Unregister or Reload function?

@@ -10,8 +10,8 @@ namespace ice
 
     class AssetStorage;
 
-    static constexpr ice::StringID Tilemap_VtxShader = "shaders/game2d/tiled-vtx"_sid;
-    static constexpr ice::StringID Tilemap_PixShader = "shaders/game2d/tiled-pix"_sid;
+    static constexpr ice::Utf8String Tilemap_VtxShader = u8"shaders/game2d/tiled-vtx";
+    static constexpr ice::Utf8String Tilemap_PixShader = u8"shaders/game2d/tiled-pix";
 
     struct Tile;
     struct TileMap;

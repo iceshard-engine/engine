@@ -21,7 +21,7 @@ namespace ice
         ice::Data data;
         ice::Memory data_baked;
         ice::Memory data_loaded;
-        ice::uptr runtime_handle;
+        ice::Memory data_runtime;
     };
 
 } // namespace ice

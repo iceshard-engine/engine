@@ -18,6 +18,7 @@
 #include <ice/input/input_mouse.hxx>
 #include <ice/input/input_event.hxx>
 
+#include <ice/task_sync_wait.hxx>
 #include <ice/profiler.hxx>
 
 namespace ice::devui
@@ -35,20 +36,11 @@ namespace ice::devui
             ImVec4 clip_rect;
         };
 
-        auto load_imgui_shader(ice::AssetStorage& assets, ice::StringID name) noexcept -> ice::Data
+        auto load_imgui_shader(ice::AssetStorage& assets, ice::Utf8String name) noexcept -> ice::Task<ice::Data>
         {
-            Data result;
-            //Asset const shader_asset = assets.request(ice::AssetType::Shader, name);
-            //if (shader_asset != Asset::Invalid)
-            //{
-            //    Data temp;
-            //    if (ice::asset_data(shader_asset, temp) == AssetStatus::Loaded)
-            //    {
-            //        result = *reinterpret_cast<ice::Data const*>(temp.location);
-            //    }
-            //}
-
-            return result;
+            ice::Asset const asset = co_await assets.request(ice::render::AssetType_Shader, name, ice::AssetState::Baked);
+            ICE_ASSERT(asset.state == AssetState::Baked, "Shader not available!");
+            co_return asset.data;
         }
 
     } // namespace detail
@@ -527,8 +519,8 @@ namespace ice::devui
         io.KeyMap[ImGuiKey_Y] = (uint32_t)ice::input::KeyboardKey::KeyY;
         io.KeyMap[ImGuiKey_Z] = (uint32_t)ice::input::KeyboardKey::KeyZ;
 
-        _shader_data[0] = detail::load_imgui_shader(engine.asset_storage(), "shaders/debug/imgui-vert"_sid);
-        _shader_data[1] = detail::load_imgui_shader(engine.asset_storage(), "shaders/debug/imgui-frag"_sid);
+        _shader_data[0] = ice::sync_wait(detail::load_imgui_shader(engine.asset_storage(), u8"shaders/debug/imgui-vert"));
+        _shader_data[1] = ice::sync_wait(detail::load_imgui_shader(engine.asset_storage(), u8"shaders/debug/imgui-frag"));
     }
 
     void ImGuiTrait::on_update(

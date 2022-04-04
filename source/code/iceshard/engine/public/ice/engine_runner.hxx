@@ -11,6 +11,7 @@
 namespace ice
 {
 
+    class AssetStorage;
     class TaskThreadPool;
 
     class World;
@@ -60,6 +61,8 @@ namespace ice
         ) noexcept = 0;
 
         virtual auto thread_pool() noexcept -> ice::TaskThreadPool& = 0;
+
+        virtual auto asset_storage() noexcept -> ice::AssetStorage& = 0;
 
         [[deprecated]]
         virtual auto graphics_device() noexcept -> ice::gfx::GfxDevice& = 0;

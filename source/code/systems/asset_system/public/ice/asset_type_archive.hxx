@@ -9,11 +9,13 @@
 namespace ice
 {
 
+    enum class AssetState : ice::u32;
+
     struct AssetTypeDefinition
     {
         ice::Span<ice::Utf8String const> resource_extensions;
 
-        ice::Fn<bool(ice::FnUserdata, ice::AssetTypeDefinition const&, ice::Metadata const&) noexcept> fn_asset_type_resolver;
+        ice::Fn<auto(ice::FnUserdata, ice::AssetTypeDefinition const&, ice::Metadata const&, ice::URI const&) noexcept -> ice::AssetState> fn_asset_state;
         ice::Fn<bool(ice::FnUserdata, ice::Allocator&, ice::Resource_v2 const&, ice::Data, ice::Memory&) noexcept> fn_asset_oven;
         ice::Fn<bool(ice::FnUserdata, ice::Allocator&, ice::Metadata const&, ice::Data, ice::Memory&) noexcept> fn_asset_loader;
     };

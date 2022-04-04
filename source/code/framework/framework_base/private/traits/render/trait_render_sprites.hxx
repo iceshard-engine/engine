@@ -91,7 +91,7 @@ namespace ice
         ) noexcept;
 
         auto task_load_resource_material(
-            ice::StringID_Arg material_name,
+            ice::Utf8String material_name,
             ice::EngineRunner& runner,
             ice::gfx::GfxDevice& gfx_device
         ) noexcept -> ice::Task<>;

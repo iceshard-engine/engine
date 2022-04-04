@@ -1,5 +1,6 @@
 #include <ice/game_render_traits.hxx>
 #include "traits/render/trait_render_gfx.hxx"
+#include "traits/render/trait_render_texture_loader.hxx"
 #include "traits/render/trait_render_clear.hxx"
 #include "traits/render/trait_render_resource.hxx"
 #include "traits/render/trait_render_postprocess.hxx"
@@ -16,6 +17,13 @@ namespace ice
     ) noexcept -> ice::UniquePtr<ice::gfx::GfxTrait>
     {
         return ice::make_unique<ice::gfx::GfxTrait, ice::IceWorldTrait_RenderGfx>(alloc);
+    }
+
+    auto create_trait_render_texture_loader(
+        ice::Allocator& alloc
+    ) noexcept -> ice::UniquePtr<ice::gfx::GfxTrait>
+    {
+        return ice::make_unique<ice::gfx::GfxTrait, ice::IceWorldTrait_RenderTextureLoader>(alloc, alloc);
     }
 
     auto create_trait_render_clear(
