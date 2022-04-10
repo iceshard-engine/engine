@@ -64,7 +64,7 @@ namespace ice
         {
             if (definition.fn_asset_oven.is_set())
             {
-                return definition.fn_asset_oven(alloc, *asset_entry->resource, asset_entry->data, result);
+                return definition.fn_asset_oven(alloc, resource_tracker, *asset_entry->resource, asset_entry->data, result);
             }
             return false;
         }
@@ -72,7 +72,7 @@ namespace ice
         bool load_asset(
             ice::Allocator& alloc,
             ice::AssetTypeDefinition const& definition,
-            ice::ResourceTracker& resource_tracker,
+            ice::AssetStorage& asset_storage,
             ice::Metadata const& asset_metadata,
             ice::Data baked_data,
             ice::Memory& result
@@ -80,7 +80,7 @@ namespace ice
         {
             if (definition.fn_asset_loader.is_set())
             {
-                return definition.fn_asset_loader(alloc, asset_metadata, baked_data, result);
+                return definition.fn_asset_loader(alloc, asset_storage, asset_metadata, baked_data, result);
             }
             return false;
         }
@@ -307,7 +307,7 @@ namespace ice
                     bool const load_success = ice::detail::load_asset(
                         asset_alloc,
                         shelve->definition,
-                        _resource_tracker,
+                        *this,
                         asset_entry->resource->metadata(),
                         asset_entry->data_baked,
                         loaded_memory

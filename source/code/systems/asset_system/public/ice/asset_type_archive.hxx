@@ -9,6 +9,8 @@
 namespace ice
 {
 
+    class AssetStorage;
+
     enum class AssetState : ice::u32;
 
     struct AssetTypeDefinition
@@ -16,8 +18,8 @@ namespace ice
         ice::Span<ice::Utf8String const> resource_extensions;
 
         ice::Fn<auto(ice::FnUserdata, ice::AssetTypeDefinition const&, ice::Metadata const&, ice::URI const&) noexcept -> ice::AssetState> fn_asset_state;
-        ice::Fn<bool(ice::FnUserdata, ice::Allocator&, ice::Resource_v2 const&, ice::Data, ice::Memory&) noexcept> fn_asset_oven;
-        ice::Fn<bool(ice::FnUserdata, ice::Allocator&, ice::Metadata const&, ice::Data, ice::Memory&) noexcept> fn_asset_loader;
+        ice::Fn<bool(ice::FnUserdata, ice::Allocator&, ice::ResourceTracker const&, ice::Resource_v2 const&, ice::Data, ice::Memory&) noexcept> fn_asset_oven;
+        ice::Fn<bool(ice::FnUserdata, ice::Allocator&, ice::AssetStorage&, ice::Metadata const&, ice::Data, ice::Memory&) noexcept> fn_asset_loader;
     };
 
     class AssetTypeArchive

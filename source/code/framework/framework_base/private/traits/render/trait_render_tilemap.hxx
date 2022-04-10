@@ -33,6 +33,7 @@ namespace ice
     {
         ice::u32 image_count;
         ice::render::Image tileset_images[4];
+        // TODO: Add image asset tracking
         ice::render::Buffer tileset_properties[4];
         ice::render::ResourceSet tileset_resourceset[1];
     };

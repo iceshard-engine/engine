@@ -35,10 +35,6 @@ namespace ice
         virtual void refresh_providers() noexcept = 0;
 
 
-        virtual void gather_resources_DEPRECATED(
-            ice::pod::Array<ice::ResourceHandle*>& handles
-        ) const noexcept = 0;
-
         virtual auto find_resource(
             ice::URI const& uri,
             ice::ResourceFlags flags = ice::ResourceFlags::None
@@ -69,7 +65,8 @@ namespace ice
     };
 
     auto resource_origin(ice::ResourceHandle const* handle) noexcept -> ice::Utf8String;
-    auto resource_object_DEPRECATED(ice::ResourceHandle const* handle) noexcept -> ice::Resource_v2 const*;
+
+    auto resource_path(ice::ResourceHandle const* handle) noexcept -> ice::Utf8String;
 
     auto create_resource_tracker(
         ice::Allocator& alloc,

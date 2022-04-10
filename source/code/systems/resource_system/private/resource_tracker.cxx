@@ -31,9 +31,9 @@ namespace ice
         return handle->resource->origin();
     }
 
-    auto resource_object_DEPRECATED(ice::ResourceHandle const* handle) noexcept -> ice::Resource_v2 const*
+    auto resource_path(ice::ResourceHandle const* handle) noexcept -> ice::Utf8String
     {
-        return handle->resource;
+        return handle->resource->name();
     }
 
     class ResourceTracker_Impl final : public ice::ResourceTracker, public ice::TaskScheduler_v2
@@ -148,16 +148,6 @@ namespace ice
             }
         }
 
-        void gather_resources_DEPRECATED(
-            ice::pod::Array<ice::ResourceHandle*>& handles
-        ) const noexcept override
-        {
-            for (auto const& entry : _tracked_handles)
-            {
-                ice::pod::array::push_back(handles, entry.value);
-            }
-        }
-
         auto find_resource(
             ice::URI const& uri,
             ice::ResourceFlags flags = ice::ResourceFlags::None
@@ -172,21 +162,23 @@ namespace ice
                 if (provider != nullptr)
                 {
                     ice::Resource_v2 const* found_resource = provider->find_resource(uri);
-
-                    ice::u64 const hash = ice::hash(found_resource->name());
-
-                    auto it = ice::pod::multi_hash::find_first(_tracked_handles, hash);
-                    if (it != nullptr)
+                    if (found_resource != nullptr)
                     {
-                        // We try to find the best matching flags, so if they are equal we got a jackpot.
-                        while (it != nullptr && result == nullptr)
-                        {
-                            if (it->value->resource != found_resource)
-                            {
-                                result = it->value;
-                            }
+                        ice::u64 const hash = ice::hash(found_resource->name());
 
-                            it = ice::pod::multi_hash::find_next(_tracked_handles, it);
+                        auto it = ice::pod::multi_hash::find_first(_tracked_handles, hash);
+                        if (it != nullptr)
+                        {
+                            // We try to find the best matching flags, so if they are equal we got a jackpot.
+                            while (it != nullptr && result == nullptr)
+                            {
+                                if (it->value->resource->flags() == found_resource->flags())
+                                {
+                                    result = it->value;
+                                }
+
+                                it = ice::pod::multi_hash::find_next(_tracked_handles, it);
+                            }
                         }
                     }
                 }
@@ -199,18 +191,18 @@ namespace ice
             auto it = ice::pod::multi_hash::find_first(_tracked_handles, hash);
             if (it != nullptr)
             {
+                // TODO: Revisit how flags are compared and how resources should be selected when no flags are given but sub-resources have flags like: Quality_Highest.
                 ice::ResourceHandle* const default_resource = it->value;
                 ice::ResourceHandle* selected_resource = default_resource;
 
                 ice::u32 priority = 0;
-                ice::ResourceFlags selected_flags = ice::ResourceFlags::None;
+                ice::ResourceFlags selected_flags = it->value->resource->flags();
 
                 // We try to find the best matching flags, so if they are equal we got a jackpot.
                 while (it != nullptr && selected_flags != flags)
                 {
                     ice::Resource_v2 const* res = it->value->resource;
 
-                    // The higher the '
                     if (ice::u32 const new_priority = _compare_fn(flags, res->flags(), selected_flags); priority < new_priority)
                     {
                         priority = new_priority;

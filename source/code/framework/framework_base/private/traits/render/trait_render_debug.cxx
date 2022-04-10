@@ -2,6 +2,7 @@
 #include "../trait_camera.hxx"
 
 #include <ice/game_render_traits.hxx>
+#include <ice/task_sync_wait.hxx>
 #include <ice/engine.hxx>
 
 #include <ice/gfx/gfx_device.hxx>
@@ -29,20 +30,11 @@ namespace ice
             ice::vec4f color;
         };
 
-        auto load_debug_shader(ice::AssetStorage& assets, ice::StringID_Arg name) noexcept -> ice::Data
+        auto load_debug_shader(ice::AssetStorage& assets, ice::Utf8String name) noexcept -> ice::Task<ice::Data>
         {
-            Data result;
-            //Asset const shader_asset = assets.request(ice::AssetType::Shader, name);
-            //if (shader_asset != Asset::Invalid)
-            //{
-            //    Data temp;
-            //    if (ice::asset_data(shader_asset, temp) == AssetStatus::Loaded)
-            //    {
-            //        result = *reinterpret_cast<ice::Data const*>(temp.location);
-            //    }
-            //}
-
-            return result;
+            ice::Asset const asset = co_await assets.request(ice::render::AssetType_Shader, name, ice::AssetState::Baked);
+            ICE_ASSERT(asset.state == AssetState::Baked, "Shader not available!");
+            co_return asset.data;
         }
 
     } // namespace detail
@@ -62,8 +54,8 @@ namespace ice
     {
         ice::AssetStorage& asset_system = engine.asset_storage();
 
-        _shader_data[0] = ice::detail::load_debug_shader(asset_system, "shaders/debug/debug-vert"_sid);
-        _shader_data[1] = ice::detail::load_debug_shader(asset_system, "shaders/debug/debug-frag"_sid);
+        _shader_data[0] = ice::sync_wait(ice::detail::load_debug_shader(asset_system, u8"shaders/debug/debug-vert"));
+        _shader_data[1] = ice::sync_wait(ice::detail::load_debug_shader(asset_system, u8"shaders/debug/debug-frag"));
     }
 
     void IceWorldTrait_RenderDebug::gfx_setup(

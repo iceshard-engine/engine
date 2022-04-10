@@ -1,4 +1,5 @@
 #pragma once
+#include <ice/asset_type.hxx>
 #include <ice/game_physics.hxx>
 #include <ice/game_tilemap.hxx>
 
@@ -23,8 +24,13 @@ namespace ice
         ~IceWorldTrait_TileMap() noexcept = default;
 
         void load_tilemap(
-            ice::TileMap const& tilemap
+            ice::Utf8String tilemap
         ) noexcept override;
+
+        auto load_tilemap_task(
+            ice::Utf8String tilemap,
+            ice::EngineRunner& runner
+        ) noexcept -> ice::Task<>;
 
         void on_activate(
             ice::Engine& engine,
@@ -48,6 +54,7 @@ namespace ice
         ice::Allocator& _allocator;
         ice::WorldTrait_Physics2D& _physics;
 
+        ice::Utf8String _requested_tilemap;
         ice::pod::Array<ice::TileMapInstance> _tilemaps;
     };
 

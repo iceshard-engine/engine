@@ -30,4 +30,6 @@ namespace ice
 
     } // detail::engine::v1
 
+    using detail::asset_system::v1::Constant_APIName_AssetTypeArchive;
+
 } // namespace ice

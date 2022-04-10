@@ -379,7 +379,6 @@ namespace ice
                 if (sprite_tile != nullptr)
                 {
                     tile = { ice::i32(sprite_tile->material_tile.x), ice::i32(sprite_tile->material_tile.y) };
-                    //tile = { ice::u32(sprite_tile->material_tile.x), ice::u32(sprite_tile->material_tile.y) };
                 }
 
                 ice::u32 const info_idx = ice::pod::hash::get(instance_info_idx, material_hash, std::numeric_limits<ice::u32>::max());

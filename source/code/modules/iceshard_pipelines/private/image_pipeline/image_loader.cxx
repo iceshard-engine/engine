@@ -16,7 +16,14 @@
 namespace ice
 {
 
-    bool asset_image_oven(void*, ice::Allocator& alloc, ice::Resource_v2 const& resource, ice::Data data, ice::Memory& memory) noexcept
+    bool asset_image_oven(
+        void*,
+        ice::Allocator& alloc,
+        ice::ResourceTracker const&,
+        ice::Resource_v2 const& resource,
+        ice::Data data,
+        ice::Memory& memory
+    ) noexcept
     {
         using ice::render::ImageInfo;
 
@@ -71,7 +78,7 @@ namespace ice
         return width != 0 && height != 0;
     }
 
-    bool asset_image_loader(void*, ice::Allocator& alloc, ice::Metadata const& meta, ice::Data data, ice::Memory& out_data) noexcept
+    bool asset_image_loader(void*, ice::Allocator& alloc, ice::AssetStorage&, ice::Metadata const& meta, ice::Data data, ice::Memory& out_data) noexcept
     {
             using ice::render::ImageInfo;
 

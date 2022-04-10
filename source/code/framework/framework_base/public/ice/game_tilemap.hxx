@@ -3,10 +3,12 @@
 #include <ice/stringid.hxx>
 #include <ice/unique_ptr.hxx>
 #include <ice/world/world_trait.hxx>
-#include <ice/asset.hxx>
+#include <ice/asset_type.hxx>
 
 namespace ice
 {
+
+    static constexpr ice::AssetType AssetType_TileMap = ice::make_asset_type(u8"ice/framework/tile-map");
 
     enum class TileSetID : ice::u32
     {
@@ -67,7 +69,7 @@ namespace ice
     class WorldTrait_TileMap : public ice::WorldTrait
     {
     public:
-        virtual void load_tilemap(ice::TileMap const& tilemap) noexcept = 0;
+        virtual void load_tilemap(ice::Utf8String tilemap) noexcept = 0;
     };
 
     auto create_tilemap_trait(

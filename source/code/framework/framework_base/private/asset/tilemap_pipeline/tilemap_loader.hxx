@@ -1,19 +1,32 @@
 #pragma once
-//#include <ice/asset_loader.hxx>
+#include <ice/resource.hxx>
+#include <ice/resource_meta.hxx>
+#include <ice/log_tag.hxx>
 
 namespace ice
 {
 
-    //class IceTiledAssetLoader : public ice::AssetLoader
-    //{
-    //public:
-    //    auto load(
-    //        ice::AssetSolver& asset_solver,
-    //        ice::AssetType type,
-    //        ice::Data data,
-    //        ice::Allocator& alloc,
-    //        ice::Memory& out_data
-    //    ) const noexcept -> ice::AssetStatus override;
-    //};
+    class AssetStorage;
+    class ResourceTracker;
+
+    bool asset_tmx_oven(
+        void*,
+        ice::Allocator&,
+        ice::ResourceTracker const&,
+        ice::Resource_v2 const&,
+        ice::Data,
+        ice::Memory&
+    ) noexcept;
+
+    bool asset_tmx_loader(
+        void*,
+        ice::Allocator& alloc,
+        ice::AssetStorage&,
+        ice::Metadata const& meta,
+        ice::Data data,
+        ice::Memory& out_data
+    ) noexcept;
+
+    constexpr LogTagDefinition LogTag_TiledOven = ice::create_log_tag(ice::LogTag::Asset, "Tiled TMX Oven");
 
 } // namespace ice

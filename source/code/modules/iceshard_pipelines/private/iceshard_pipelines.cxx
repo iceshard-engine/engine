@@ -28,6 +28,7 @@ namespace ice
     bool asset_shader_loader(
         void*,
         ice::Allocator& alloc,
+        ice::AssetStorage&,
         ice::Metadata const& meta,
         ice::Data data,
         ice::Memory& out_data
