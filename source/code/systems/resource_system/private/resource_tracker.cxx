@@ -233,10 +233,8 @@ namespace ice
         ) const noexcept -> ice::ResourceHandle* override
         {
             ICE_ASSERT(handle != nullptr, "Trying to set resource from invalid handle!");
-            ice::u64 const hash = ice::hash(uri.path);
 
             ice::ResourceHandle* result = nullptr;
-
             ice::Resource_v2 const* resource = handle->provider->resolve_relative_resource(uri, handle->resource);
             if (resource != nullptr)
             {

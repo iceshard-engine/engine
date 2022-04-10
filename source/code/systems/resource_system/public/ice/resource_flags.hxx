@@ -50,7 +50,7 @@ namespace ice
         return left;
     }
 
-    static auto default_resource_flags_compare_function(
+    static inline auto default_resource_flags_compare_function(
         ice::ResourceFlags expected,
         ice::ResourceFlags current,
         ice::ResourceFlags /*selected*/

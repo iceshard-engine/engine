@@ -9,7 +9,7 @@ namespace ice
     class AssetStorage;
     class ResourceTracker;
 
-    bool asset_tmx_oven(
+    bool asset_tilemap_oven_tmx(
         void*,
         ice::Allocator&,
         ice::ResourceTracker const&,
@@ -18,7 +18,7 @@ namespace ice
         ice::Memory&
     ) noexcept;
 
-    bool asset_tmx_loader(
+    bool asset_tilemap_loader(
         void*,
         ice::Allocator& alloc,
         ice::AssetStorage&,
@@ -27,6 +27,6 @@ namespace ice
         ice::Memory& out_data
     ) noexcept;
 
-    constexpr LogTagDefinition LogTag_TiledOven = ice::create_log_tag(ice::LogTag::Asset, "Tiled TMX Oven");
+    constexpr ice::LogTagDefinition LogTag_TiledOven = ice::create_log_tag(ice::LogTag::Asset, "Tiled TMX Oven");
 
 } // namespace ice

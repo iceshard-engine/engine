@@ -1,4 +1,4 @@
-#include "tilemap_loader.hxx"
+#include "asset_tilemap.hxx"
 
 #include <ice/game_tilemap.hxx>
 #include <ice/memory/pointer_arithmetic.hxx>>
@@ -8,7 +8,7 @@ namespace ice
 {
 
 
-    bool asset_tmx_loader(
+    bool asset_tilemap_loader(
         void*,
         ice::Allocator& alloc,
         ice::AssetStorage& asset_storage,

@@ -1,5 +1,4 @@
-#include "asset_pipelines.hxx"
-#include "tilemap_pipeline/tilemap_loader.hxx"
+#include "tilemap/asset_tilemap.hxx"
 
 #include <ice/game_tilemap.hxx>
 #include <ice/unique_ptr.hxx>
@@ -9,11 +8,6 @@
 
 namespace ice
 {
-
-    auto get_tiled_pipeline_name() noexcept -> ice::StringID
-    {
-        return "ice.tilemap.Tiled"_sid;
-    };
 
     void iceshard_register_tmx_tilemap_asset_type(
         ice::AssetTypeArchive& type_archive
@@ -25,8 +19,8 @@ namespace ice
 
         static ice::AssetTypeDefinition type_definition{
             .resource_extensions = extensions,
-            .fn_asset_oven = asset_tmx_oven,
-            .fn_asset_loader = asset_tmx_loader
+            .fn_asset_oven = asset_tilemap_oven_tmx,
+            .fn_asset_loader = asset_tilemap_loader
         };
 
         type_archive.register_type(ice::AssetType_TileMap, type_definition);

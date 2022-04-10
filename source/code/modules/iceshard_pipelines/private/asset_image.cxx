@@ -1,4 +1,4 @@
-#include "image_loader.hxx"
+#include "asset_image.hxx"
 #include <ice/render/render_image.hxx>
 #include <ice/memory/pointer_arithmetic.hxx>
 
@@ -6,10 +6,10 @@
 #if ISP_COMPILER_GCC
 #   pragma GCC diagnostic warning "-Wunused-but-set-variable"
 #   pragma GCC diagnostic warning "-Wsign-compare"
-#   include "external/stb_image.hxx"
+#   include "asset_image_external/stb_image.hxx"
 #   pragma GCC diagnostic pop
 #else
-#   include "external/stb_image.hxx"
+#   include "asset_image_external/stb_image.hxx"
 #endif
 #undef assert
 
@@ -99,6 +99,19 @@ namespace ice
             );
 
             return true;
+    }
+
+    void asset_type_image_definition(ice::AssetTypeArchive& asset_type_archive) noexcept
+    {
+        static ice::Utf8String extensions[]{ u8".jpg", u8".png", u8".jpeg", u8".bmp" };
+
+        static ice::AssetTypeDefinition type_definition{
+            .resource_extensions = extensions,
+            .fn_asset_oven = asset_image_oven,
+            .fn_asset_loader = asset_image_loader
+        };
+
+        asset_type_archive.register_type(ice::render::AssetType_Texture2D, type_definition);
     }
 
 } // namespace ice

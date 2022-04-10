@@ -1,5 +1,4 @@
-#include "tilemap_tmx_oven.hxx"
-#include "tilemap_loader.hxx"
+#include "asset_tilemap.hxx"
 
 #include <ice/game_tilemap.hxx>
 
@@ -818,7 +817,7 @@ namespace ice
         ICE_ASSERT(tile_collision_count <= tilemap_info.tile_collision_count, "");
     }
 
-    bool asset_tmx_oven(
+    bool asset_tilemap_oven_tmx(
         void* userdata,
         ice::Allocator& asset_alloc,
         ice::ResourceTracker const& resource_tracker,
