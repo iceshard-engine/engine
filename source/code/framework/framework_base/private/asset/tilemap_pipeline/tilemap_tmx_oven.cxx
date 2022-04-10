@@ -1,5 +1,5 @@
 #include "tilemap_tmx_oven.hxx"
-#include "tilemap_pipeline.hxx"
+#include "tilemap_loader.hxx"
 
 #include <ice/game_tilemap.hxx>
 
