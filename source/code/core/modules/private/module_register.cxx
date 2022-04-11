@@ -49,6 +49,7 @@ namespace ice
             ice::u32 const total_size = static_cast<ice::u32>(required_size) + ice::string::size(out_str);
             ice::string::resize(out_str, total_size);
 
+            [[maybe_unused]]
             ice::i32 const chars_written = MultiByteToWideChar(
                 CP_UTF8,
                 0,

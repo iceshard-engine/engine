@@ -323,7 +323,7 @@ namespace ice
         ice::u32 tileset_columns = 0;
         detail::next_attrib(attrib, attrib, "columns");
         detail::attrib_value(attrib, tileset_columns);
-        tilemap_info.tileset_info[tileset_idx].columns = tileset_columns;
+        tilemap_info.tileset_info[tileset_idx].columns = static_cast<ice::u16>(tileset_columns);
 
         ice::u32 tile_collision_count = 0;
         ice::u32 collision_object_count = 0;
@@ -508,9 +508,6 @@ namespace ice
     ) noexcept
     {
         ice::u32 const tileset_columns = tilemap_info.tileset_info[tileset_index].columns;
-        ice::detail::TileCollisionInfo* const collision_infos_beg = collision_infos;
-
-        ice::u32 collision_count = 0;
 
         rapidxml::xml_node<> const* node_tile;
         if (detail::get_child(node_tileset, node_tile, "tile"))
@@ -813,6 +810,7 @@ namespace ice
 
         alloc.destroy(tile_collision_info);
 
+        [[maybe_unused]]
         ice::u32 const tile_collision_count = tile_collisions - tilemap_info.tile_collisions;
         ICE_ASSERT(tile_collision_count <= tilemap_info.tile_collision_count, "");
     }

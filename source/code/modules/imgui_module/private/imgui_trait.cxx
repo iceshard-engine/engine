@@ -493,8 +493,8 @@ namespace ice::devui
         io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
         io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
         io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
-        io.DisplaySize.x = _display_size.x;
-        io.DisplaySize.y = _display_size.y;
+        io.DisplaySize.x = (ice::f32) _display_size.x;
+        io.DisplaySize.y = (ice::f32) _display_size.y;
 
         io.KeyMap[ImGuiKey_Tab] = (uint32_t)ice::input::KeyboardKey::Tab;
         io.KeyMap[ImGuiKey_LeftArrow] = (uint32_t)ice::input::KeyboardKey::Left;

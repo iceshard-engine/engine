@@ -88,7 +88,6 @@ namespace ice::win32
         {
             return _handle != nullptr;
         }
-        return false;
     }
 
     template<typename HandleType>
