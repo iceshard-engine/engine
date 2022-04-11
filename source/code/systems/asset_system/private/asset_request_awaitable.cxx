@@ -15,10 +15,12 @@ namespace ice
     ) noexcept
         : _next{ nullptr }
         , _prev{ nullptr }
-        , _asset_shelve{ shelve }
         , _asset_name{ asset_name }
+        , _asset_shelve{ shelve }
         , _asset_entry{ entry }
         , _requested_state{ requested_state }
+        , _result_data{ }
+        , _coroutine{ nullptr }
     {
     }
 

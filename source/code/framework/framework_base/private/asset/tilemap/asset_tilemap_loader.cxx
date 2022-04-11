@@ -1,7 +1,7 @@
 #include "asset_tilemap.hxx"
 
 #include <ice/game_tilemap.hxx>
-#include <ice/memory/pointer_arithmetic.hxx>>
+#include <ice/memory/pointer_arithmetic.hxx>
 #include <ice/asset_storage.hxx>
 
 namespace ice

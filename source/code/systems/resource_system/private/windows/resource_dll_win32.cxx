@@ -2,6 +2,7 @@
 #include <ice/resource_meta.hxx>
 #include <ice/resource_flags.hxx>
 
+#if ISP_WINDOWS
 #include "resource_utils_win32.hxx"
 
 namespace ice
@@ -69,3 +70,5 @@ namespace ice
     }
 
 } // namespace ice
+
+#endif

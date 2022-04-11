@@ -123,21 +123,6 @@ void MyGame::on_app_startup(ice::Engine& engine, ice::gfx::GfxRunner& gfx_runner
 
     ice::EngineDevUI& devui = engine.developer_ui();
 
-
-    auto const fn = [](ice::AssetStorage& storage, ice::Utf8String map) noexcept -> ice::Task<>
-    {
-        ice::Asset result = co_await storage.request(ice::AssetType_TileMap, map, ice::AssetState::Loaded);
-        if (result.state != ice::AssetState::Loaded)
-        {
-            co_return;
-        }
-
-        ICE_LOG(
-            ice::LogSeverity::Debug, ice::LogTag::Game,
-            "Loaded successful TMX map."
-        );
-    };
-
     _trait_physics = ice::create_trait_physics(_allocator);
     _trait_tilemap = ice::create_tilemap_trait(_allocator, *_trait_physics);
     _trait_tilemap->load_tilemap(u8"cotm/test_level_2/tiled/0002_Level_1");

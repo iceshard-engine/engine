@@ -16,12 +16,12 @@ namespace ice
     ) noexcept -> T
     {
         T result;
-        auto const task_wrapper = [&result](ice::Task<T> awaited_task) noexcept -> ice::Task<>
+        auto const task_wrapper = [](T& result, ice::Task<T> awaited_task) noexcept -> ice::Task<>
         {
             result = co_await awaited_task;
         };
 
-        ice::sync_wait(task_wrapper(ice::move(task)));
+        ice::sync_wait(task_wrapper(result, ice::move(task)));
         return result;
     }
 

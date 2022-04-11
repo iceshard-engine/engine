@@ -4,8 +4,8 @@
 
 #define STB_IMAGE_IMPLEMENTATION
 #if ISP_COMPILER_GCC
-#   pragma GCC diagnostic warning "-Wunused-but-set-variable"
-#   pragma GCC diagnostic warning "-Wsign-compare"
+#   pragma GCC diagnostic ignored "-Wunused-but-set-variable"
+#   pragma GCC diagnostic ignored "-Wsign-compare"
 #   include "asset_image_external/stb_image.hxx"
 #   pragma GCC diagnostic pop
 #else

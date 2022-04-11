@@ -57,8 +57,6 @@ auto game_main(ice::Allocator& alloc, ice::ResourceTracker& resources) -> ice::i
 
         game_framework->load_modules();
 
-        ice::URI const config_file = game_framework->config_uri();
-
         ice::UniquePtr<ice::AssetTypeArchive> asset_types = ice::create_asset_type_archive(engine_alloc);
         ice::load_asset_type_definitions(asset_alloc, *module_register, *asset_types);
 

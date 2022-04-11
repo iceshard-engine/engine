@@ -288,8 +288,6 @@ namespace ice
                 operation.render_cache = render_cache;
                 operation.tile_render_size = tilemap_render->tilesize;
 
-                ice::gfx::GfxDevice& gfx_device = runner.graphics_device();
-
                 portal.execute(ice::detail::task_update_tilemap_images(runner, _resource_set_layouts[1], operation));
             }
         }

@@ -11,15 +11,6 @@ namespace ice
     struct Fn;
 
 
-    //! \brief Returns a Fn object for the given function.
-    template<typename R, typename... Args>
-    auto bind_fn(R(*fn)(Args...) noexcept) noexcept -> ice::Fn<R(Args...) noexcept>;
-
-    //! \brief Returns a Fn object for the given function and userdata.
-    template<typename R, typename... Args>
-    auto bind_fn(R(*fn)(ice::FnUserdata, Args...) noexcept, void* userdata) noexcept -> ice::Fn<R(ice::FnUserdata, Args...) noexcept>;
-
-
     //! \brief Function pointer WITHOUT any attached userdata.
     template<typename R, typename... Args>
     struct Fn<R(Args...) noexcept>
@@ -28,14 +19,25 @@ namespace ice
 
         Type* _function;
 
-        bool is_set() const noexcept
+        constexpr bool is_set() const noexcept
         {
             return _function != nullptr;
         }
 
-        auto operator()(Args... args) const noexcept -> R
+        constexpr auto operator()(Args... args) const noexcept -> R
         {
             return _function(std::forward<Args>(args)...);
+        }
+
+        Fn(Fn&&) noexcept = default;
+        Fn(Fn const&) noexcept = default;
+
+        auto operator=(Fn&&) noexcept -> Fn& = default;
+        auto operator=(Fn const&) noexcept -> Fn& = default;
+
+        Fn(Type* fn = nullptr) noexcept
+            : _function{ fn }
+        {
         }
     };
 
@@ -48,32 +50,27 @@ namespace ice
         Type* _function;
         ice::FnUserdata _userdata;
 
-        bool is_set() const noexcept
+        constexpr bool is_set() const noexcept
         {
             return _function != nullptr;
         }
 
-        auto operator()(Args... args) const noexcept -> R
+        constexpr auto operator()(Args... args) const noexcept -> R
         {
             return _function(_userdata.value, std::forward<Args>(args)...);
         }
+
+        Fn(Fn&&) noexcept = default;
+        Fn(Fn const&) noexcept = default;
+
+        auto operator=(Fn&&) noexcept -> Fn& = default;
+        auto operator=(Fn const&) noexcept -> Fn& = default;
+
+        Fn(Type* fn = nullptr, void* userdata = nullptr) noexcept
+            : _function{ fn }
+            , _userdata{ userdata }
+        {
+        }
     };
-
-    template<typename R, typename... Args>
-    auto bind_fn(R(*fn)(Args...) noexcept) noexcept -> ice::Fn<R(Args...) noexcept>
-    {
-        return ice::Fn<R(Args...) noexcept>{
-            ._function = fn
-        };
-    }
-
-    template<typename R, typename... Args>
-    auto bind_fn(R(*fn)(ice::FnUserdata, Args...) noexcept, void* userdata) noexcept -> ice::Fn<R(ice::FnUserdata, Args...) noexcept>
-    {
-        return ice::Fn<R(ice::FnUserdata, Args...) noexcept>{
-            ._function = fn,
-            ._userdata = userdata
-        };
-    }
 
 } // namespace ice
