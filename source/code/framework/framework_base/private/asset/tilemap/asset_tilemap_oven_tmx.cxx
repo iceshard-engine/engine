@@ -19,6 +19,8 @@
 #define TILED_LOG(severity, format, ...) \
     ICE_LOG(severity, LogTag_TiledOven, format, ##__VA_ARGS__)
 
+//! A proper fix for Linux builds is required.
+//! [issue #91]
 #if ISP_WINDOWS
 
 namespace ice
@@ -1106,4 +1108,4 @@ namespace ice
 
 } // namespace ice
 
-#endif
+#endif // #if ISP_WINDOWS
