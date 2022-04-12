@@ -4,6 +4,6 @@
 namespace ice::math
 {
 
-    static constexpr f32 const_pi = 3.14159265358979323846;
+    static constexpr ice::f32 const_pi = 3.14159265358979323846f;
 
 } // namespace ice::math

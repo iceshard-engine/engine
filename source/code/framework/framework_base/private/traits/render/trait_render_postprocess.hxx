@@ -6,8 +6,6 @@
 namespace ice
 {
 
-    class AssetSystem;
-
     class IceWorldTrait_RenderPostProcess : public ice::gfx::GfxTrait, public ice::gfx::GfxContextStage
     {
     public:

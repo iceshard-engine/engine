@@ -5,6 +5,8 @@
 namespace ice
 {
 
+    using c8utf = char8_t;
+
     using f32 = std::float_t;
     using f64 = std::double_t;
 
@@ -19,43 +21,6 @@ namespace ice
     using u64 = std::uint64_t;
 
     using uptr = std::uintptr_t;
-
-    //template<typename T = void>
-    //struct ptr
-    //{
-    //    T* val;
-
-    //    constexpr auto operator*() noexcept -> T&
-    //    {
-    //        return *val;
-    //    }
-
-    //    constexpr auto operator*() const noexcept -> T const&
-    //    {
-    //        return *val;
-    //    }
-
-    //    constexpr auto operator->() noexcept -> T*
-    //    {
-    //        return val;
-    //    }
-
-    //    constexpr auto operator->() const noexcept -> T const*
-    //    {
-    //        return val;
-    //    }
-
-    //    constexpr auto operator T*() const noexcept
-    //    {
-    //        return val;
-    //    }
-    //};
-
-    //template<typename T>
-    //constexpr auto num_max() noexcept -> T
-    //{
-    //    return std::numeric_limits<T>::max();
-    //}
 
     constexpr ice::f32 const f32_max = std::numeric_limits<ice::f32>::max();
     constexpr ice::f64 const f64_max = std::numeric_limits<ice::f64>::max();

@@ -29,6 +29,10 @@ namespace ice::detail::murmur3_hash
         uint64_t h[2];
     };
 
+    constexpr auto cexpr_murmur3_x86_32(std::u8string_view key, uint32_t seed) noexcept -> mm3_x86_h32;
+    constexpr auto cexpr_murmur3_x86_128(std::u8string_view key, uint32_t seed) noexcept -> mm3_x86_h128;
+    constexpr auto cexpr_murmur3_x64_128(std::u8string_view key, uint32_t seed) noexcept -> mm3_x64_h128;
+
     constexpr auto cexpr_murmur3_x86_32(std::string_view key, uint32_t seed) noexcept -> mm3_x86_h32;
     constexpr auto cexpr_murmur3_x86_128(std::string_view key, uint32_t seed) noexcept -> mm3_x86_h128;
     constexpr auto cexpr_murmur3_x64_128(std::string_view key, uint32_t seed) noexcept -> mm3_x64_h128;
@@ -46,7 +50,8 @@ namespace ice::detail::murmur3_hash
             return (x << r) | (x >> (64 - r));
         }
 
-        constexpr auto cexpr_block_x32(char const* data) noexcept -> uint32_t
+        template<typename Char>
+        constexpr auto cexpr_block_x32(Char const* data) noexcept -> uint32_t
         {
             uint32_t result = 0;
             result |= static_cast<uint8_t const>(data[3]);
@@ -59,7 +64,8 @@ namespace ice::detail::murmur3_hash
             return result;
         }
 
-        constexpr auto cexpr_block_x64(char const* data) noexcept -> uint64_t
+        template<typename Char>
+        constexpr auto cexpr_block_x64(Char const* data) noexcept -> uint64_t
         {
             uint64_t result = 0;
             result |= static_cast<uint8_t const>(data[7]);
@@ -107,10 +113,11 @@ namespace ice::detail::murmur3_hash
 
         //-----------------------------------------------------------------------------
 
-        constexpr auto cexpr_murmur3_x86_32(std::string_view key, uint32_t seed) noexcept -> mm3_x86_h32
+        template<typename Char>
+        constexpr auto cexpr_murmur3_x86_32(std::basic_string_view<Char> key, uint32_t seed) noexcept -> mm3_x86_h32
         {
-            char const* string_data = key.data();
-            uint32_t const string_length = key.length();
+            Char const* string_data = key.data();
+            uint32_t const string_length = static_cast<uint32_t>(key.length());
 
             uint32_t const block_byte_size = 4u;
             uint32_t const block_num = string_length / block_byte_size;
@@ -122,7 +129,7 @@ namespace ice::detail::murmur3_hash
             uint32_t const const_2 = 0x1b873593;
             uint32_t hash_r1 = seed;
 
-            char const* blocks_end = string_data + static_cast<uintptr_t>(block_num) * block_byte_size;
+            Char const* blocks_end = string_data + static_cast<uintptr_t>(block_num) * block_byte_size;
 
             for (size_t idx = block_num; idx > 0; --idx)
             {
@@ -138,7 +145,7 @@ namespace ice::detail::murmur3_hash
             //----------
             // tail
 
-            char const* tail = blocks_end;
+            Char const* tail = blocks_end;
 
             uint32_t k1 = 0;
 
@@ -169,10 +176,11 @@ namespace ice::detail::murmur3_hash
 
         //-----------------------------------------------------------------------------
 
-        constexpr auto cexpr_murmur3_x86_128(std::string_view key, uint32_t seed) noexcept -> mm3_x86_h128
+        template<typename Char>
+        constexpr auto cexpr_murmur3_x86_128(std::basic_string_view<Char> key, uint32_t seed) noexcept -> mm3_x86_h128
         {
-            char const* string_data = key.data();
-            uint32_t const string_length = key.length();
+            Char const* string_data = key.data();
+            uint32_t const string_length = static_cast<uint32_t>(key.length());
 
             uint32_t const block_byte_size = 16u;
             uint32_t const block_num = string_length / block_byte_size;
@@ -190,7 +198,7 @@ namespace ice::detail::murmur3_hash
             uint32_t const const_3 = 0x38b34ae5;
             uint32_t const const_4 = 0xa1e38b93;
 
-            char const* blocks_end = string_data + static_cast<uintptr_t>(block_num) * block_byte_size;
+            Char const* blocks_end = string_data + static_cast<uintptr_t>(block_num) * block_byte_size;
 
             for (size_t idx = block_num; idx > 0; --idx)
             {
@@ -227,7 +235,7 @@ namespace ice::detail::murmur3_hash
             //----------
             // tail
 
-            char const* tail = blocks_end;
+            Char const* tail = blocks_end;
 
             uint32_t k1 = 0;
             uint32_t k2 = 0;
@@ -310,9 +318,10 @@ namespace ice::detail::murmur3_hash
 
         //-----------------------------------------------------------------------------
 
-        constexpr auto cexpr_murmur3_x64_128(std::string_view key, uint32_t seed) noexcept -> mm3_x64_h128
+        template<typename Char>
+        constexpr auto cexpr_murmur3_x64_128(std::basic_string_view<Char> key, uint32_t seed) noexcept -> mm3_x64_h128
         {
-            char const* string_data = key.data();
+            Char const* string_data = key.data();
             uint64_t const string_length = key.length();
 
             uint64_t const block_byte_size = 16u;
@@ -327,7 +336,7 @@ namespace ice::detail::murmur3_hash
             uint64_t const const_1 = 0x87c37b91114253d5llu;
             uint64_t const const_2 = 0x4cf5ad432745937fllu;
 
-            char const* blocks_beg = string_data;
+            Char const* blocks_beg = string_data;
 
             for (uint32_t idx = 0; idx < block_num; ++idx)
             {
@@ -350,7 +359,7 @@ namespace ice::detail::murmur3_hash
             //----------
             // tail
 
-            char const* tail = blocks_beg + block_num * block_byte_size;
+            Char const* tail = blocks_beg + block_num * block_byte_size;
 
             uint64_t k1 = 0;
             uint64_t k2 = 0;
@@ -413,19 +422,34 @@ namespace ice::detail::murmur3_hash
 
     } // namespace detail
 
+    constexpr auto cexpr_murmur3_x86_32(std::u8string_view key, uint32_t seed) noexcept -> mm3_x86_h32
+    {
+        return detail::cexpr_murmur3_x86_32<char8_t>(key, seed);
+    }
+
+    constexpr auto cexpr_murmur3_x86_128(std::u8string_view key, uint32_t seed) noexcept -> mm3_x86_h128
+    {
+        return detail::cexpr_murmur3_x86_128<char8_t>(key, seed);
+    }
+
+    constexpr auto cexpr_murmur3_x64_128(std::u8string_view key, uint32_t seed) noexcept -> mm3_x64_h128
+    {
+        return detail::cexpr_murmur3_x64_128<char8_t>(key, seed);
+    }
+
     constexpr auto cexpr_murmur3_x86_32(std::string_view key, uint32_t seed) noexcept -> mm3_x86_h32
     {
-        return detail::cexpr_murmur3_x86_32(key, seed);
+        return detail::cexpr_murmur3_x86_32<char>(key, seed);
     }
 
     constexpr auto cexpr_murmur3_x86_128(std::string_view key, uint32_t seed) noexcept -> mm3_x86_h128
     {
-        return detail::cexpr_murmur3_x86_128(key, seed);
+        return detail::cexpr_murmur3_x86_128<char>(key, seed);
     }
 
     constexpr auto cexpr_murmur3_x64_128(std::string_view key, uint32_t seed) noexcept -> mm3_x64_h128
     {
-        return detail::cexpr_murmur3_x64_128(key, seed);
+        return detail::cexpr_murmur3_x64_128<char>(key, seed);
     }
 
 } // namespace ice::detail::murmur3_hash

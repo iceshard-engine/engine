@@ -49,9 +49,9 @@ SCENARIO("ice :: resource :: Metadata")
 
             CHECK(ice::pod::array::empty(meta._meta_entries._data) == false);
 
-            ice::String meta_name;
-            CHECK(ice::meta_read_string(meta, "name"_sid, meta_name));
-            CHECK(meta_name == "foo");
+            ice::Utf8String meta_name;
+            CHECK(ice::meta_read_utf8(meta, "name"_sid, meta_name));
+            CHECK(meta_name == u8"foo");
 
             ice::f32 meta_height;
             CHECK(ice::meta_read_float(meta, "details.height"_sid, meta_height));
@@ -64,11 +64,11 @@ SCENARIO("ice :: resource :: Metadata")
             CHECK(meta_numbers[1] == 2);
             CHECK(meta_numbers[2] == 3);
 
-            ice::pod::Array<ice::String> meta_stringz{ alloc };
-            CHECK(ice::meta_read_string_array(meta, "details.stringz"_sid, meta_stringz));
+            ice::pod::Array<ice::Utf8String> meta_stringz{ alloc };
+            CHECK(ice::meta_read_utf8_array(meta, "details.stringz"_sid, meta_stringz));
             CHECK(ice::pod::array::size(meta_stringz) == 4);
-            CHECK(meta_stringz[0] == "The");
-            CHECK(meta_stringz[2] == "brown");
+            CHECK(meta_stringz[0] == u8"The");
+            CHECK(meta_stringz[2] == u8"brown");
 
             THEN("we can store it in a buffer")
             {
@@ -79,26 +79,26 @@ SCENARIO("ice :: resource :: Metadata")
                 {
                     ice::Metadata const_meta = ice::meta_load(stored_meta);
 
-                    ice::String meta_name;
-                    CHECK(ice::meta_read_string(const_meta, "name"_sid, meta_name));
-                    CHECK(meta_name == "foo");
+                    ice::Utf8String meta_name_2;
+                    CHECK(ice::meta_read_utf8(const_meta, "name"_sid, meta_name_2));
+                    CHECK(meta_name_2 == u8"foo");
 
-                    ice::f32 meta_height;
-                    CHECK(ice::meta_read_float(const_meta, "details.height"_sid, meta_height));
-                    CHECK(std::abs(meta_height - 3.14) < 0.00001);
+                    ice::f32 meta_height_2;
+                    CHECK(ice::meta_read_float(const_meta, "details.height"_sid, meta_height_2));
+                    CHECK(std::abs(meta_height_2 - 3.14) < 0.00001);
 
-                    ice::pod::Array<ice::i32> meta_numbers{ alloc };
-                    CHECK(ice::meta_read_int32_array(const_meta, "details.numbers"_sid, meta_numbers));
-                    CHECK(ice::pod::array::size(meta_numbers) == 3);
-                    CHECK(meta_numbers[0] == 1);
-                    CHECK(meta_numbers[1] == 2);
-                    CHECK(meta_numbers[2] == 3);
+                    ice::pod::Array<ice::i32> meta_numbers_2{ alloc };
+                    CHECK(ice::meta_read_int32_array(const_meta, "details.numbers"_sid, meta_numbers_2));
+                    CHECK(ice::pod::array::size(meta_numbers_2) == 3);
+                    CHECK(meta_numbers_2[0] == 1);
+                    CHECK(meta_numbers_2[1] == 2);
+                    CHECK(meta_numbers_2[2] == 3);
 
-                    ice::pod::Array<ice::String> meta_stringz{ alloc };
-                    CHECK(ice::meta_read_string_array(const_meta, "details.stringz"_sid, meta_stringz));
-                    CHECK(ice::pod::array::size(meta_stringz) == 4);
-                    CHECK(meta_stringz[0] == "The");
-                    CHECK(meta_stringz[2] == "brown");
+                    ice::pod::Array<ice::Utf8String> meta_stringz_2{ alloc };
+                    CHECK(ice::meta_read_utf8_array(const_meta, "details.stringz"_sid, meta_stringz_2));
+                    CHECK(ice::pod::array::size(meta_stringz_2) == 4);
+                    CHECK(meta_stringz_2[0] == u8"The");
+                    CHECK(meta_stringz_2[2] == u8"brown");
                 }
             }
         }

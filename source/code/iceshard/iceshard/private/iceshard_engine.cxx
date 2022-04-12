@@ -29,12 +29,12 @@ namespace ice
 
     IceshardEngine::IceshardEngine(
         ice::Allocator& alloc,
-        ice::AssetSystem& asset_system,
+        ice::AssetStorage& asset_storage,
         ice::EngineDevUI* devui
     ) noexcept
         : ice::Engine{ }
         , _allocator{ alloc, "engine" }
-        , _asset_system{ asset_system }
+        , _asset_storage{ asset_storage }
         , _entity_index{ _allocator, 100'000, 500'000 }
         , _world_manager{ _allocator }
         , _devui{ devui == nullptr ? &Global_NoopDevUI : devui }
@@ -102,9 +102,9 @@ namespace ice
         return _entity_index;
     }
 
-    auto IceshardEngine::asset_system() noexcept -> ice::AssetSystem&
+    auto IceshardEngine::asset_storage() noexcept -> ice::AssetStorage&
     {
-        return _asset_system;
+        return _asset_storage;
     }
 
     auto IceshardEngine::world_manager() noexcept -> ice::WorldManager&
@@ -119,12 +119,12 @@ namespace ice
 
     auto create_engine_fn(
         ice::Allocator& alloc,
-        ice::AssetSystem& asset_system,
+        ice::AssetStorage& asset_storage,
         ice::ModuleRegister& registry,
         ice::EngineDevUI* devui
     ) noexcept -> ice::Engine*
     {
-        return alloc.make<IceshardEngine>(alloc, asset_system, devui);
+        return alloc.make<IceshardEngine>(alloc, asset_storage, devui);
     }
 
     auto destroy_engine_fn(ice::Allocator& alloc, ice::Engine* engine) noexcept

@@ -3,6 +3,7 @@
 #include <ice/stringid.hxx>
 #include <ice/buffer.hxx>
 #include <ice/pod/array.hxx>
+#include <ice/resource_types.hxx>
 
 namespace ice
 {
@@ -47,6 +48,12 @@ namespace ice
         ice::String& result
     ) noexcept -> bool;
 
+    auto meta_read_utf8(
+        ice::Metadata const& meta,
+        ice::StringID_Arg key,
+        ice::Utf8String& result
+    ) noexcept -> bool;
+
     auto meta_read_bool_array(
         ice::Metadata const& meta,
         ice::StringID_Arg key,
@@ -59,6 +66,12 @@ namespace ice
         ice::pod::Array<ice::i32>& results
     ) noexcept -> bool;
 
+    auto meta_read_flags_array(
+        ice::Metadata const& meta,
+        ice::StringID_Arg key,
+        ice::pod::Array<ice::ResourceFlags>& results
+    ) noexcept -> bool;
+
     auto meta_read_float_array(
         ice::Metadata const& meta,
         ice::StringID_Arg key,
@@ -69,6 +82,12 @@ namespace ice
         ice::Metadata const& meta,
         ice::StringID_Arg key,
         ice::pod::Array<ice::String>& result
+    ) noexcept -> bool;
+
+    auto meta_read_utf8_array(
+        ice::Metadata const& meta,
+        ice::StringID_Arg key,
+        ice::pod::Array<ice::Utf8String>& result
     ) noexcept -> bool;
 
 
@@ -96,6 +115,12 @@ namespace ice
         ice::String value
     ) noexcept;
 
+    void meta_set_utf8(
+        ice::MutableMetadata& meta,
+        ice::StringID_Arg key,
+        ice::Utf8String value
+    ) noexcept;
+
     void meta_set_bool_array(
         ice::MutableMetadata& meta,
         ice::StringID_Arg key,
@@ -120,6 +145,12 @@ namespace ice
         ice::Span<ice::String const> values
     ) noexcept;
 
+    void meta_set_utf8_array(
+        ice::MutableMetadata& meta,
+        ice::StringID_Arg key,
+        ice::Span<ice::Utf8String const> values
+    ) noexcept;
+
 
     namespace detail
     {
@@ -131,6 +162,7 @@ namespace ice
             Integer,
             Float,
             String,
+            StringUTF8,
             Buffer,
         };
 
@@ -187,5 +219,9 @@ namespace ice
         ice::pod::Hash<detail::MetadataEntry> _meta_entries;
         ice::Data _additional_data;
     };
+
+
+    static constexpr ice::String Constant_FileHeader_MetadataFile = "ISMF";
+    static constexpr ice::String Constant_FileHeader_ResourceFile = "ISRF";
 
 } // namespace ice

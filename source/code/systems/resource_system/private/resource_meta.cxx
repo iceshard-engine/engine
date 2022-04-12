@@ -16,10 +16,9 @@ namespace ice
     namespace detail
     {
 
-        constexpr ice::String internal_metadata_header{ "ISAD" };
-        constexpr ice::Data internal_metadata_header_data{
-            .location = ice::string::data(internal_metadata_header),
-            .size = ice::string::size(internal_metadata_header),
+        constexpr ice::Data Constant_FileHeaderData_MetadataFile{
+            .location = ice::string::data(Constant_FileHeader_MetadataFile),
+            .size = ice::string::size(Constant_FileHeader_MetadataFile),
             .alignment = 1
         };
 
@@ -87,7 +86,7 @@ namespace ice
 
                 for (auto const& value : arr)
                 {
-                    if (value.IsInt())
+                    if (value.IsFloat())
                     {
                         ice::pod::array::push_back(final_values, value.GetFloat());
                     }
@@ -95,20 +94,35 @@ namespace ice
 
                 ice::meta_set_float_array(meta, key, ice::Span<ice::f32>{ final_values });
             }
+            else if (arr[0].IsDouble())
+            {
+                ice::pod::Array<ice::f32> final_values{ alloc };
+                ice::pod::array::reserve(final_values, count);
+
+                for (auto const& value : arr)
+                {
+                    if (value.IsDouble())
+                    {
+                        ice::pod::array::push_back(final_values, static_cast<ice::f32>(value.GetDouble()));
+                    }
+                }
+
+                ice::meta_set_float_array(meta, key, ice::Span<ice::f32>{ final_values });
+            }
             else if (arr[0].IsString())
             {
-                ice::pod::Array<ice::String> final_values{ alloc };
+                ice::pod::Array<ice::Utf8String> final_values{ alloc };
                 ice::pod::array::reserve(final_values, count);
 
                 for (auto const& value : arr)
                 {
                     if (value.IsString())
                     {
-                        ice::pod::array::push_back(final_values, value.GetString());
+                        ice::pod::array::push_back(final_values, reinterpret_cast<char8_t const*>(value.GetString()));
                     }
                 }
 
-                ice::meta_set_string_array(meta, key, ice::Span<ice::String>{ final_values });
+                ice::meta_set_utf8_array(meta, key, ice::Span<ice::Utf8String>{ final_values });
             }
             else
             {
@@ -155,9 +169,13 @@ namespace ice
                     {
                         ice::meta_set_float(meta, ice::stringid(field_key), entry.value.GetFloat());
                     }
+                    else if (entry.value.IsDouble())
+                    {
+                        ice::meta_set_float(meta, ice::stringid(field_key), static_cast<ice::f32>(entry.value.GetDouble()));
+                    }
                     else if (entry.value.IsString())
                     {
-                        ice::meta_set_string(meta, ice::stringid(field_key), entry.value.GetString());
+                        ice::meta_set_utf8(meta, ice::stringid(field_key), reinterpret_cast<char8_t const*>(entry.value.GetString()));
                     }
                     else
                     {
@@ -311,6 +329,25 @@ namespace ice
         return valid;
     }
 
+    auto meta_read_utf8(
+        ice::Metadata const& meta,
+        ice::StringID_Arg key,
+        ice::Utf8String& result
+    ) noexcept -> bool
+    {
+        detail::MetadataEntry entry;
+        bool const valid = detail::get_entry(meta, key, detail::MetadataEntryType::StringUTF8, entry);
+
+        if (valid && entry.data_count == 0)
+        {
+            char8_t const* string_beg = reinterpret_cast<char8_t const*>(meta._additional_data.location) + entry.value_buffer.offset;
+            result = ice::Utf8String{ string_beg, entry.value_buffer.size };
+        }
+
+        return valid;
+    }
+
+
     auto meta_read_bool_array(
         ice::Metadata const& meta,
         ice::StringID_Arg key,
@@ -344,6 +381,26 @@ namespace ice
                 ice::memory::ptr_add(meta._additional_data.location, entry.value_buffer.offset)
             );
             ice::pod::array::push_back(results, ice::Span<ice::i32 const>{ array_beg, entry.value_buffer.size });
+        }
+
+        return valid;
+    }
+
+    auto meta_read_flags_array(
+        ice::Metadata const& meta,
+        ice::StringID_Arg key,
+        ice::pod::Array<ice::ResourceFlags>& results
+    ) noexcept -> bool
+    {
+        detail::MetadataEntry entry;
+        bool const valid = detail::get_entry(meta, key, detail::MetadataEntryType::Integer, entry);
+
+        if (valid && entry.data_count != 0)
+        {
+            ice::ResourceFlags const* array_beg = reinterpret_cast<ice::ResourceFlags const*>(
+                ice::memory::ptr_add(meta._additional_data.location, entry.value_buffer.offset)
+            );
+            ice::pod::array::push_back(results, ice::Span<ice::ResourceFlags const>{ array_beg, entry.value_buffer.size });
         }
 
         return valid;
@@ -389,6 +446,32 @@ namespace ice
             {
                 char const* string_beg = reinterpret_cast<char const*>(meta._additional_data.location) + string_buffer.offset;
                 ice::pod::array::push_back(results, ice::String{ string_beg, string_buffer.size });
+            }
+        }
+
+        return valid;
+    }
+
+    auto meta_read_utf8_array(
+        ice::Metadata const& meta,
+        ice::StringID_Arg key,
+        ice::pod::Array<ice::Utf8String>& results
+    ) noexcept -> bool
+    {
+        detail::MetadataEntry entry;
+        bool const valid = detail::get_entry(meta, key, detail::MetadataEntryType::StringUTF8, entry);
+
+        if (valid && entry.data_count != 0)
+        {
+            detail::MetadataEntryBuffer const* array_beg = reinterpret_cast<detail::MetadataEntryBuffer const*>(
+                ice::memory::ptr_add(meta._additional_data.location, entry.value_buffer.offset)
+            );
+            ice::Span<detail::MetadataEntryBuffer const> array_entries{ array_beg, entry.value_buffer.size };
+
+            for (detail::MetadataEntryBuffer const& string_buffer : array_entries)
+            {
+                char8_t const* string_beg = reinterpret_cast<char8_t const*>(meta._additional_data.location) + string_buffer.offset;
+                ice::pod::array::push_back(results, ice::Utf8String{ string_beg, string_buffer.size });
             }
         }
 
@@ -476,6 +559,37 @@ namespace ice
             }
         );
     }
+
+    void meta_set_utf8(
+        ice::MutableMetadata& meta,
+        ice::StringID_Arg key,
+        ice::Utf8String value
+    ) noexcept
+    {
+        void const* str_dest = ice::buffer::append(
+            meta._additional_data,
+            ice::data_view(ice::string::data(value), ice::string::size(value))
+        );
+
+        ice::u32 const str_offset = ice::memory::ptr_distance(
+            ice::buffer::data(meta._additional_data),
+            str_dest
+        );
+
+        ice::pod::hash::set(
+            meta._meta_entries,
+            ice::hash(key.hash_value),
+            detail::MetadataEntry{
+                .data_type = detail::MetadataEntryType::StringUTF8,
+                .data_count = 0,
+                .value_buffer = {
+                    .offset = static_cast<ice::u16>(str_offset),
+                    .size = static_cast<ice::u16>(ice::string::size(value))
+                },
+            }
+        );
+    }
+
 
     void meta_set_bool_array(
         ice::MutableMetadata& meta,
@@ -639,6 +753,70 @@ namespace ice
         }
     }
 
+    void meta_set_utf8_array(
+        ice::MutableMetadata& meta,
+        ice::StringID_Arg key,
+        ice::Span<ice::Utf8String const> values
+    ) noexcept
+    {
+        if (values.empty() == false)
+        {
+
+            ice::u32 required_capacity = 0;
+            required_capacity += ice::buffer::size(meta._additional_data);
+            required_capacity += sizeof(detail::MetadataEntryBuffer) * values.size() + alignof(detail::MetadataEntryBuffer);
+            for (ice::Utf8String value : values)
+            {
+                required_capacity += ice::string::size(value) + 1;
+            }
+
+            ice::buffer::reserve(meta._additional_data, required_capacity);
+
+            void* array_dest = ice::buffer::append(
+                meta._additional_data,
+                nullptr,
+                sizeof(detail::MetadataEntryBuffer) * values.size(),
+                alignof(detail::MetadataEntryBuffer)
+            );
+
+            ice::u32 const array_offset = ice::memory::ptr_distance(
+                ice::buffer::data(meta._additional_data),
+                array_dest
+            );
+
+            auto* entries = reinterpret_cast<detail::MetadataEntryBuffer*>(array_dest);
+
+            for (ice::Utf8String value : values)
+            {
+                void const* str_dest = ice::buffer::append(
+                    meta._additional_data,
+                    ice::data_view(ice::string::data(value), ice::string::size(value))
+                );
+
+                entries->size = ice::string::size(value);
+                entries->offset = ice::memory::ptr_distance(
+                    ice::buffer::data(meta._additional_data),
+                    str_dest
+                );
+                entries += 1;
+            }
+
+            ice::pod::hash::set(
+                meta._meta_entries,
+                ice::hash(key.hash_value),
+                detail::MetadataEntry{
+                    .data_type = detail::MetadataEntryType::StringUTF8,
+                    .data_count = static_cast<ice::u16>(values.size()),
+                    .value_buffer = {
+                        .offset = static_cast<ice::u16>(array_offset),
+                        .size = static_cast<ice::u16>(values.size())
+                    },
+                }
+            );
+        }
+    }
+
+
     void meta_deserialize(ice::Data data, ice::MutableMetadata& meta) noexcept
     {
         char const* it = reinterpret_cast<char const*>(data.location);
@@ -646,7 +824,7 @@ namespace ice
         {
             ice::String const loaded_header{ it, 4 };
 
-            if (loaded_header == detail::internal_metadata_header)
+            if (loaded_header == ice::Constant_FileHeader_MetadataFile)
             {
                 detail::deserialize_binary_meta(ice::Data{ it + 4, data.size - 4, data.alignment }, meta);
             }
@@ -673,7 +851,7 @@ namespace ice
 
         {
             ice::buffer::set_capacity_aligned(buffer, static_metadata_size, 8);
-            ice::buffer::append(buffer, detail::internal_metadata_header_data);
+            ice::buffer::append(buffer, detail::Constant_FileHeaderData_MetadataFile);
             ice::buffer::append(buffer, &hash_count, sizeof(hash_count), 1);
             ice::buffer::append(buffer, &value_count, sizeof(value_count), 1);
 
@@ -723,7 +901,7 @@ namespace ice
         char const* it = reinterpret_cast<char const*>(data.location);
 
         ice::String const head{ it, 4 };
-        ICE_ASSERT(ice::string::equals(head, ice::String{ "ISAD" }), "Invalid IceShard meta header!");
+        ICE_ASSERT(ice::string::equals(head, ice::Constant_FileHeader_MetadataFile), "Invalid IceShard meta header!");
         it += 4;
 
         ice::u32 const hash_count = *reinterpret_cast<ice::u32 const*>(it + 0);

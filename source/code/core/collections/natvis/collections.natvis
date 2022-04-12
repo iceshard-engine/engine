@@ -29,11 +29,13 @@
 
   <!-- Native Visualization for the ice::pod::Hash::Entry type -->
   <Type Name="ice::pod::Hash&lt;*&gt;::Entry">
+    <DisplayString IncludeView="ValueOnly">{value}</DisplayString>
     <DisplayString>Hash::Entry {{ key={key,X}, value={value} }} : {"$T1",sb}</DisplayString>
     <Expand>
-      <Item Name="[key]">key,X</Item>
-      <Item Name="[next]" Condition="next != 0xffffffff">next</Item>
-      <Item Name="[value]">value</Item>
+      <Item ExcludeView="ValueOnly" Name="[key]">key,X</Item>
+      <Item ExcludeView="ValueOnly" Name="[next]" Condition="next != 0xffffffff">next</Item>
+      <Item ExcludeView="ValueOnly" Name="[value]">value</Item>
+      <ExpandedItem IncludeView="ValueOnly">value</ExpandedItem>
     </Expand>
   </Type>
 

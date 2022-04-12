@@ -44,7 +44,7 @@ namespace ice::trait
 
     private:
         ice::Engine& _engine;
-        ice::AssetSystem& _asset_system;
+        ice::AssetStorage& _asset_system;
         ice::UniquePtr<RenderCache> _render_cache;
 
         bool _debug_pl = false;

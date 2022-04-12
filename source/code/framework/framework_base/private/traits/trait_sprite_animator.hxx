@@ -11,7 +11,7 @@
 namespace ice
 {
 
-    class AssetSystem;
+    class AssetStorage;
 
     struct TraitAnimatorAnimationInfo
     {
@@ -56,7 +56,7 @@ namespace ice
         using SpriteQuery = ice::ecs::QueryDefinition<ice::Animation const&, ice::Sprite const&>;
         using AnimQuery = ice::ecs::QueryDefinition<ice::Animation const&, ice::AnimationState&, ice::SpriteTile&>;
 
-        ice::AssetSystem* _assets;
+        ice::AssetStorage* _assets;
         ice::pod::Hash<ice::TraitAnimatorAnimationInfo> _anim_infos;
     };
 

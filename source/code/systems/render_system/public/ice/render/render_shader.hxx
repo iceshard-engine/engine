@@ -1,6 +1,7 @@
 #pragma once
 #include <ice/data.hxx>
 #include <ice/span.hxx>
+#include <ice/asset_type.hxx>
 
 namespace ice::render
 {
@@ -57,5 +58,7 @@ namespace ice::render
         ice::u32 right_value = static_cast<ice::u32>(right);
         return static_cast<ShaderStageFlags>(left_value | right_value);
     }
+
+    static constexpr ice::AssetType AssetType_Shader = ice::make_asset_type(u8"ice/render_system/shader");
 
 } // namespace ice::render

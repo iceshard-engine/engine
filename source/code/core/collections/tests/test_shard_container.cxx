@@ -101,11 +101,11 @@ SCENARIO("ice :: shard :: ShardContainer")
             constexpr ice::i32 test_i32_payload_value1 = 0x103232;
             constexpr ice::i32 test_i32_payload_value2 = -0x103232;
             constexpr ice::u32 test_u32_payload_value1 = 0x103232;
-            constexpr ice::u32 test_u32_payload_value2 = -0x103232;
+            constexpr ice::u32 test_u32_payload_value2 = ~0x103232u;
             constexpr ice::i64 test_i64_payload_value1 = 0x7f000000'000000ff;
             constexpr ice::i64 test_i64_payload_value2 = 0xff000000'000000ff;
-            constexpr ice::vec2f test_vec2f_payload_value1 = { 0.16, -0.32 };
-            constexpr ice::vec2f test_vec2f_payload_value2 = { 0.32, -0.16 };
+            constexpr ice::vec2f test_vec2f_payload_value1 = { 0.16f, -0.32f };
+            constexpr ice::vec2f test_vec2f_payload_value2 = { 0.32f, -0.16f };
 
             static constexpr ice::Shard test_shard_3 = "shard_3"_shard;
             static constexpr ice::Shard test_shard_4 = "shard_4"_shard;

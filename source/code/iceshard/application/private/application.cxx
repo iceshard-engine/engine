@@ -1,4 +1,4 @@
-#include <ice/application.hxx>
+﻿#include <ice/application.hxx>
 #include <ice/os/windows.hxx>
 #include <ice/app_info.hxx>
 
@@ -9,8 +9,8 @@
 #include <ice/string.hxx>
 #include <ice/heap_string.hxx>
 
-#include <ice/resource_system.hxx>
-#include <ice/resource_index.hxx>
+#include <ice/resource_provider.hxx>
+#include <ice/resource_tracker.hxx>
 
 #include <ice/app_info.hxx>
 #include <ice/log.hxx>
@@ -28,49 +28,33 @@ int main(int, char**)
         ice::memory::ProxyAllocator filesystem_allocator{ main_allocator, "resource-filesystem" };
         ice::memory::ProxyAllocator dynlib_allocator{ main_allocator, "resource-dynlib" };
 
-        ice::UniquePtr<ice::ResourceSystem> resource_system = ice::create_resource_system(main_allocator);
+        ice::HeapString<char8_t> working_dir{ main_allocator };
+        ice::working_directory(working_dir);
 
-        {
-            ice::HeapString<> working_dir{ main_allocator };
-            ice::working_directory(working_dir);
+        ice::HeapString<char8_t> app_location{ main_allocator };
+        ice::app_location(app_location);
 
-            ice::HeapString<> app_location{ main_allocator };
-            ice::app_location(app_location);
+        // TODO: allow to set working dir via arguments.
+        // NOTE: this change is temporary so we don't change anything that might have been depending that we are in the 'build' directory.
+        ice::string::resize(working_dir, ice::string::size(working_dir) - (ice::size("build") - 1));
+        ice::string::push_back(working_dir, u8"source\\data\\");
+        ice::UniquePtr<ice::ResourceProvider> filesys_provider = ice::create_resource_provider(filesystem_allocator, working_dir);
 
-            // #todo logger
-            // fmt::print("Initializing filesystem module at: {}\n", working_dir);
+        // TODO: allow to set dynlib dir via arguments.
+        // NOTE: this change is temporary so we don't change anything that might have been depending that we are in the 'build' directory.
+        ice::string::resize(app_location, ice::string::size(app_location) - (ice::size("test\\test.exe") - 1));
+        ice::UniquePtr<ice::ResourceProvider> dynlib_provider = ice::create_resource_provider_dlls(dynlib_allocator, app_location);
 
-            ice::pod::Array<ice::StringID> schemes{ ice::memory::default_scratch_allocator() };
-            ice::pod::array::push_back(schemes, ice::scheme_file);
-            ice::pod::array::push_back(schemes, ice::scheme_directory);
+        ice::UniquePtr<ice::ResourceTracker> resource_tracker = ice::create_resource_tracker(main_allocator, { .create_loader_thread = true });
 
-            resource_system->register_index(
-                schemes,
-                ice::create_filesystem_index(filesystem_allocator, working_dir)
-            );
+        resource_tracker->attach_provider(filesys_provider.get());
+        resource_tracker->attach_provider(dynlib_provider.get());
 
-            ice::pod::array::clear(schemes);
-            ice::pod::array::push_back(schemes, ice::scheme_dynlib);
-
-            resource_system->register_index(
-                schemes,
-                ice::create_dynlib_index(dynlib_allocator, app_location)
-            );
-        }
-
-        using ice::operator""_uri;
-
-        [[maybe_unused]]
-        ice::u32 const mounted_modules = resource_system->mount("dynlib://./.."_uri);
-
-        ICE_LOG(
-            ice::LogSeverity::Info, ice::LogTag::Game,
-            "The game successfully mounted {} modules from the filesystem...",
-            mounted_modules
-        );
+        // Refresh all providers
+        resource_tracker->refresh_providers();
 
         ice::memory::ProxyAllocator game_alloc{ main_allocator, "game" };
-        app_result = game_main(game_alloc, *resource_system);
+        app_result = game_main(game_alloc, *resource_tracker);
     }
 
     ice::memory::shutdown();

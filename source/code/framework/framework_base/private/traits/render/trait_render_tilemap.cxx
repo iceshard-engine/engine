@@ -6,6 +6,7 @@
 #include <ice/engine.hxx>
 #include <ice/engine_frame.hxx>
 #include <ice/engine_runner.hxx>
+#include <ice/task_sync_wait.hxx>
 #include <ice/world/world_portal.hxx>
 
 #include <ice/gfx/gfx_device.hxx>
@@ -21,7 +22,7 @@
 #include <ice/render/render_pass.hxx>
 
 #include <ice/resource_meta.hxx>
-#include <ice/asset_system.hxx>
+#include <ice/asset_storage.hxx>
 #include <ice/asset.hxx>
 
 #include <ice/profiler.hxx>
@@ -52,32 +53,160 @@ namespace ice
             ice::vec2f tile_render_size;
 
             ice::u32 image_count;
-            ice::Data image_data[4];
+            ice::render::Image image_handle[4];
             ice::Metadata image_metadata[4];
         };
 
-        auto load_tilemap_shader(ice::AssetSystem& assets, ice::StringID name) noexcept -> ice::Data
+        auto load_tilemap_shader(ice::AssetStorage& assets, ice::Utf8String name) noexcept -> ice::Task<ice::Data>
         {
-            Data result;
-            Asset const shader_asset = assets.request(ice::AssetType::Shader, name);
-            if (shader_asset != Asset::Invalid)
-            {
-                Data temp;
-                if (ice::asset_data(shader_asset, temp) == AssetStatus::Loaded)
-                {
-                    result = *reinterpret_cast<ice::Data const*>(temp.location);
-                }
-            }
-
-            return result;
+            ice::Asset const asset = co_await assets.request(ice::render::AssetType_Shader, name, ice::AssetState::Baked);
+            ICE_ASSERT(asset.state == AssetState::Baked, "Shader not available!");
+            co_return asset.data;
         }
 
-        auto task_load_resource_material(
-            ice::gfx::GfxFrame& gfx_frame,
-            ice::gfx::GfxDevice& gfx_device,
-            ice::render::ResourceSetLayout layout,
-            TileMap_LoadImageOperation const& operation
-        ) noexcept -> ice::Task<>;
+        auto task_update_tilemap_images(
+            ice::EngineRunner& runner,
+            ice::render::ResourceSetLayout resourceset_layout,
+            TileMap_LoadImageOperation operation
+        ) noexcept -> ice::Task<>
+        {
+            ice::TileMap const& tilemap = *operation.tilemap;
+            ice::IceTileMap_RenderCache& cache = *operation.render_cache;
+
+            ice::vec2u image_extent[4];
+            ice::detail::TileSet_ShaderData_Properties properties[4];
+
+            for (ice::u32 idx = 0; idx < tilemap.tileset_count; ++idx)
+            {
+                ice::Utf8String const asset_name = tilemap.tilesets[idx].asset;
+
+                Asset image_data = co_await runner.asset_storage().request(ice::render::AssetType_Texture2D, asset_name, AssetState::Loaded);
+                ICE_ASSERT(image_data.state == AssetState::Loaded, "Unexpected asset state!");
+                ice::render::ImageInfo const* image_info = reinterpret_cast<ice::render::ImageInfo const*>(image_data.data.location);
+
+                ice::Metadata const& metadata = image_data.metadata();
+
+                ice::i32 tile_width;
+                ice::i32 tile_height;
+                bool meta_valid = true;
+                meta_valid &= meta_read_int32(metadata, "tileset.tile.width"_sid, tile_width);
+                meta_valid &= meta_read_int32(metadata, "tileset.tile.height"_sid, tile_height);
+
+                if (meta_valid == false)
+                {
+                    ICE_LOG(
+                        ice::LogSeverity::Error, ice::LogTag::Engine,
+                        "The asset {} does not provide `tile` specific metadata!",
+                        /*ice::stringid_hint(material_name)*/ "<unsupported_string_value>"
+                    );
+                    co_return;
+                }
+
+                image_extent[idx] = { image_info->width, image_info->height };
+
+                ice::vec2f const tileset_size = { ice::f32(image_info->width), ice::f32(image_info->height) };
+                ice::vec2f const tile_size = { ice::f32(tile_width), ice::f32(tile_height) };
+
+                properties[idx].tile_size = operation.tile_render_size;
+                properties[idx].tile_scale = { tile_size.x / tileset_size.x, tile_size.y / tileset_size.y };
+
+                ice::Asset const asset = co_await runner.asset_storage().request(ice::render::AssetType_Texture2D, asset_name, AssetState::Runtime);
+                ICE_ASSERT(asset.state == AssetState::Runtime, "Unexpected asset state!");
+
+                cache.tileset_images[idx] = *reinterpret_cast<ice::render::Image const*>(asset.data.location);
+                cache.image_count += 1;
+            }
+
+            co_await runner.schedule_next_frame();
+            co_await runner.graphics_frame().frame_begin();
+
+            ice::gfx::GfxDevice& gfx_device = runner.graphics_device();
+            ice::render::RenderDevice& device = gfx_device.device();
+
+            ice::render::ResourceSet final_resourceset;
+            device.create_resourcesets({ &resourceset_layout, 1 }, { &final_resourceset, 1 });
+
+            ice::u32 buffer_update_count = 0;
+            ice::render::BufferUpdateInfo buffer_updates[4]{ };
+
+            for (ice::u32 idx = 0; idx < cache.image_count; ++idx)
+            {
+                cache.tileset_properties[idx] = device.create_buffer(ice::render::BufferType::Uniform, sizeof(TileSet_ShaderData_Properties));
+
+                buffer_updates[buffer_update_count] = ice::render::BufferUpdateInfo
+                {
+                    .buffer = cache.tileset_properties[idx],
+                    .data = ice::data_view(properties[idx])
+                };
+
+                buffer_update_count += 1;
+            }
+
+            device.update_buffers({ buffer_updates, buffer_update_count });
+
+            ice::u32 resource_update_count = 0;
+            ice::render::ResourceUpdateInfo resource_updates[8]{ };
+
+            for (ice::u32 idx = 0; idx < 4; ++idx)
+            {
+                ice::render::Image image = cache.tileset_images[idx];
+                if (idx >= cache.image_count)
+                {
+                    image = cache.tileset_images[cache.image_count - 1];
+                }
+
+                resource_updates[resource_update_count] = ice::render::ResourceUpdateInfo
+                {
+                    .image = image
+                };
+                resource_update_count += 1;
+            }
+
+            for (ice::u32 idx = 0; idx < 4; ++idx)
+            {
+                ice::render::Buffer buffer = cache.tileset_properties[idx];
+                if (idx >= cache.image_count)
+                {
+                    buffer = cache.tileset_properties[cache.image_count - 1];
+                }
+
+                resource_updates[resource_update_count] = ice::render::ResourceUpdateInfo
+                {
+                    .uniform_buffer = {
+                        .buffer = buffer,
+                        .offset = 0,
+                        .size = sizeof(TileSet_ShaderData_Properties)
+                    }
+                };
+                resource_update_count += 1;
+            }
+
+            ice::render::ResourceSetUpdateInfo set_updates[]{
+                ice::render::ResourceSetUpdateInfo
+                {
+                    .resource_set = final_resourceset,
+                    .resource_type = ice::render::ResourceType::SampledImage,
+                    .binding_index = 3,
+                    .array_element = 0,
+                    .resources = { resource_updates + 0, 4 },
+                },
+                ice::render::ResourceSetUpdateInfo
+                {
+                    .resource_set = final_resourceset,
+                    .resource_type = ice::render::ResourceType::UniformBuffer,
+                    .binding_index = 4,
+                    .array_element = 0,
+                    .resources = { resource_updates + 4, 4 },
+                }
+            };
+
+            device.update_resourceset(set_updates);
+
+            co_await runner.graphics_frame().frame_end();
+
+            cache.tileset_resourceset[0] = final_resourceset;
+            co_return;
+        }
 
     } // namespace detail
 
@@ -98,9 +227,9 @@ namespace ice
         ice::WorldPortal& portal
     ) noexcept
     {
-        _asset_system = ice::addressof(engine.asset_system());
-        _shader_data[0] = detail::load_tilemap_shader(*_asset_system, Tilemap_VtxShader);
-        _shader_data[1] = detail::load_tilemap_shader(*_asset_system, Tilemap_PixShader);
+        _asset_system = ice::addressof(engine.asset_storage());
+        _shader_data[0] = ice::sync_wait(detail::load_tilemap_shader(*_asset_system, Tilemap_VtxShader));
+        _shader_data[1] = ice::sync_wait(detail::load_tilemap_shader(*_asset_system, Tilemap_PixShader));
     }
 
     void IceWorldTrait_RenderTilemap::on_deactivate(
@@ -134,10 +263,13 @@ namespace ice
 
             if (render_cache != nullptr)
             {
-                detail::TileMap_DrawOperation* operation = frame.create_named_object<detail::TileMap_DrawOperation>("tilemap_render.draw_operation"_sid);
-                operation->tilemap = tilemap;
-                operation->render_info = tilemap_render;
-                operation->render_cache = render_cache;
+                if (render_cache->tileset_resourceset[0] != ice::render::ResourceSet::Invalid)
+                {
+                    detail::TileMap_DrawOperation* operation = frame.create_named_object<detail::TileMap_DrawOperation>("tilemap_render.draw_operation"_sid);
+                    operation->tilemap = tilemap;
+                    operation->render_info = tilemap_render;
+                    operation->render_cache = render_cache;
+                }
             }
             else
             {
@@ -156,34 +288,7 @@ namespace ice
                 operation.render_cache = render_cache;
                 operation.tile_render_size = tilemap_render->tilesize;
 
-                for (ice::u32 idx = 0; idx < tilemap->tileset_count; ++idx)
-                {
-                    if (tilemap->tilesets[idx].asset != Asset::Invalid)
-                    {
-                        Metadata& tileset_meta = operation.image_metadata[operation.image_count];
-                        if (asset_metadata(tilemap->tilesets[idx].asset, tileset_meta) != AssetStatus::Loaded)
-                        {
-                            continue;
-                        }
-
-                        ice::i32 tileset_type = -1;
-
-                        bool const meta_valid = meta_read_int32(tileset_meta, "tileset.type"_sid, tileset_type);
-                        if (meta_valid == false || tileset_type != 0)
-                        {
-                            continue;
-                        }
-
-                        if (asset_data(tilemap->tilesets[idx].asset, operation.image_data[operation.image_count]) != AssetStatus::Loaded)
-                        {
-                            continue;
-                        }
-
-                        operation.image_count += 1;
-                    }
-                }
-
-                frame.create_named_object<detail::TileMap_LoadImageOperation>("tilemap_render.load_operation"_sid, operation);
+                portal.execute(ice::detail::task_update_tilemap_images(runner, _resource_set_layouts[1], operation));
             }
         }
     }
@@ -414,7 +519,6 @@ namespace ice
             device.destroy_resourcesets(render_cache.tileset_resourceset);
             for (ice::u32 idx = 0; idx < render_cache.image_count; ++idx)
             {
-                device.destroy_image(render_cache.tileset_images[idx]);
                 device.destroy_buffer(render_cache.tileset_properties[idx]);
             }
         }
@@ -452,31 +556,22 @@ namespace ice
             }
         }
 
-        ice::detail::TileMap_LoadImageOperation const* const load_operation = engine_frame.named_object<ice::detail::TileMap_LoadImageOperation>(
-            "tilemap_render.load_operation"_sid
+        ice::detail::TileMap_DrawOperation const* const draw_operation = engine_frame.named_object<ice::detail::TileMap_DrawOperation>(
+            "tilemap_render.draw_operation"_sid
         );
 
-        if (load_operation != nullptr && load_operation->image_count > 0)
+        if (draw_operation != nullptr)
         {
-            co_await ice::detail::task_load_resource_material(gfx_frame, gfx_device, _resource_set_layouts[1], *load_operation);
-        }
-        else
-        {
-            ice::detail::TileMap_DrawOperation const* const draw_operation = engine_frame.named_object<ice::detail::TileMap_DrawOperation>(
-                "tilemap_render.draw_operation"_sid
-            );
-
-            if (draw_operation != nullptr)
+            if (draw_operation->tilemap != _last_tilemap)
             {
-                if (draw_operation->tilemap != _last_tilemap)
-                {
-                    _last_tilemap = draw_operation->tilemap;
-                    update_resource_tilemap(gfx_device, *draw_operation->render_info);
-                }
-
-                gfx_frame.set_stage_slot(_stage_name, this);
+                _last_tilemap = draw_operation->tilemap;
+                update_resource_tilemap(gfx_device, *draw_operation->render_info);
             }
+
+            gfx_frame.set_stage_slot(_stage_name, this);
         }
+
+        co_return;
     }
 
     void IceWorldTrait_RenderTilemap::record_commands(
@@ -633,224 +728,5 @@ namespace ice
 
         device.update_resourceset(set_updates);
     }
-
-    auto detail::task_load_resource_material(
-        ice::gfx::GfxFrame& gfx_frame,
-        ice::gfx::GfxDevice& gfx_device,
-        ice::render::ResourceSetLayout resourceset_layout,
-        TileMap_LoadImageOperation const& operation
-    ) noexcept -> ice::Task<>
-    {
-        using namespace ice::render;
-
-        ice::u32 const image_count = operation.image_count;
-        operation.render_cache->image_count = image_count;
-
-        ice::vec2u image_extent[4];
-        ice::render::Buffer image_data_buffer[4];
-        ice::detail::TileSet_ShaderData_Properties properties[4];
-
-        for (ice::u32 idx = 0; idx < image_count; ++idx)
-        {
-
-            ice::i32 tile_width;
-            ice::i32 tile_height;
-
-            bool meta_valid = true;
-            meta_valid &= meta_read_int32(operation.image_metadata[idx], "tileset.tile.width"_sid, tile_width);
-            meta_valid &= meta_read_int32(operation.image_metadata[idx], "tileset.tile.height"_sid, tile_height);
-
-            ICE_ASSERT(
-                meta_valid == true,
-                "The tileset asset does not provide `tile` specific metadata!"
-            );
-
-            ImageInfo const* image_data = reinterpret_cast<ImageInfo const*>(operation.image_data[idx].location);
-            image_extent[idx] = { image_data->width, image_data->height };
-
-            ice::vec2f const tileset_size = { ice::f32(image_data->width), ice::f32(image_data->height) };
-            ice::vec2f const tile_size = { ice::f32(tile_width), ice::f32(tile_height) };
-
-            properties[idx].tile_size = operation.tile_render_size;
-            properties[idx].tile_scale = { tile_size.x / tileset_size.x, tile_size.y / tileset_size.y };
-        }
-
-        co_await gfx_frame.frame_begin();
-
-        RenderDevice& device = gfx_device.device();
-
-        device.create_resourcesets({ &resourceset_layout, 1 }, operation.render_cache->tileset_resourceset);
-
-        ice::u32 buffer_update_count = 0;
-        ice::render::BufferUpdateInfo buffer_updates[8]{ };
-
-        for (ice::u32 idx = 0; idx < image_count; ++idx)
-        {
-            ImageInfo const* image_data = reinterpret_cast<ImageInfo const*>(operation.image_data[idx].location);
-            ice::u32 const image_data_size = image_data->width * image_data->height * 4;
-
-            operation.render_cache->tileset_images[idx] = device.create_image(*image_data, { });
-            operation.render_cache->tileset_properties[idx] = device.create_buffer(BufferType::Uniform, sizeof(TileSet_ShaderData_Properties));
-            image_data_buffer[idx] = device.create_buffer(ice::render::BufferType::Transfer, image_data_size);
-
-            buffer_updates[buffer_update_count] = ice::render::BufferUpdateInfo
-            {
-                .buffer = operation.render_cache->tileset_properties[idx],
-                .data = ice::data_view(properties[idx])
-            };
-            buffer_updates[buffer_update_count + 1] = ice::render::BufferUpdateInfo
-            {
-                .buffer = image_data_buffer[idx],
-                .data = {
-                    .location = image_data->data,
-                    .size = image_data_size,
-                    .alignment = 4
-                }
-            };
-
-            buffer_update_count += 2;
-        }
-
-        device.update_buffers({ buffer_updates, buffer_update_count });
-
-        ice::u32 resource_update_count = 0;
-        ResourceUpdateInfo resource_updates[8]{ };
-
-        for (ice::u32 idx = 0; idx < 4; ++idx)
-        {
-            Image image = operation.render_cache->tileset_images[idx];
-            if (idx >= image_count)
-            {
-                image = operation.render_cache->tileset_images[image_count - 1];
-            }
-
-            resource_updates[resource_update_count] = ResourceUpdateInfo
-            {
-                .image = image
-            };
-            resource_update_count += 1;
-        }
-
-        for (ice::u32 idx = 0; idx < 4; ++idx)
-        {
-            ice::render::Buffer buffer = operation.render_cache->tileset_properties[idx];
-            if (idx >= image_count)
-            {
-                buffer = operation.render_cache->tileset_properties[image_count - 1];
-            }
-
-            resource_updates[resource_update_count] = ResourceUpdateInfo
-            {
-                .uniform_buffer = {
-                    .buffer = buffer,
-                    .offset = 0,
-                    .size = sizeof(TileSet_ShaderData_Properties)
-                }
-            };
-            resource_update_count += 1;
-        }
-
-        ResourceSetUpdateInfo set_updates[]{
-            ResourceSetUpdateInfo
-            {
-                .resource_set = operation.render_cache->tileset_resourceset[0],
-                .resource_type = ResourceType::SampledImage,
-                .binding_index = 3,
-                .array_element = 0,
-                .resources = { resource_updates + 0, 4 },
-            },
-            ResourceSetUpdateInfo
-            {
-                .resource_set = operation.render_cache->tileset_resourceset[0],
-                .resource_type = ResourceType::UniformBuffer,
-                .binding_index = 4,
-                .array_element = 0,
-                .resources = { resource_updates + 4, 4 },
-            }
-        };
-
-        device.update_resourceset(set_updates);
-
-        struct : public ice::gfx::GfxFrameStage
-        {
-            void record_commands(
-                ice::EngineFrame const& frame,
-                ice::render::CommandBuffer cmds,
-                ice::render::RenderCommands& api
-            ) const noexcept override
-            {
-                ImageBarrier barriers[4]{ };
-
-                for (ice::u32 idx = 0; idx < image_count; ++idx)
-                {
-                    barriers[idx].image = image[idx];
-                    barriers[idx].source_layout = ImageLayout::Undefined;
-                    barriers[idx].destination_layout = ImageLayout::TransferDstOptimal;
-                    barriers[idx].source_access = AccessFlags::None;
-                    barriers[idx].destination_access = AccessFlags::TransferWrite;
-                }
-
-                api.pipeline_image_barrier(
-                    cmds,
-                    PipelineStage::TopOfPipe,
-                    PipelineStage::Transfer,
-                    { barriers, image_count }
-                );
-
-                for (ice::u32 idx = 0; idx < image_count; ++idx)
-                {
-                    api.update_texture_v2(
-                        cmds,
-                        image[idx],
-                        image_data[idx],
-                        image_size[idx]
-                    );
-                }
-
-                for (ice::u32 idx = 0; idx < image_count; ++idx)
-                {
-                    barriers[idx].image = image[idx];
-                    barriers[idx].source_layout = ImageLayout::TransferDstOptimal;
-                    barriers[idx].destination_layout = ImageLayout::ShaderReadOnly;
-                    barriers[idx].source_access = AccessFlags::TransferWrite;
-                    barriers[idx].destination_access = AccessFlags::ShaderRead;
-                }
-
-                api.pipeline_image_barrier(
-                    cmds,
-                    PipelineStage::Transfer,
-                    PipelineStage::FramentShader,
-                    { barriers, image_count }
-                );
-            }
-
-            ice::u32 image_count;
-            ice::render::Image* image;
-            ice::render::Buffer* image_data;
-            ice::vec2u* image_size;
-        } frame_stage;
-
-        frame_stage.image_count = image_count;
-        frame_stage.image = operation.render_cache->tileset_images;
-        frame_stage.image_data = image_data_buffer;
-        frame_stage.image_size = image_extent;
-
-        // Await command recording stage
-        //  Here we have access to a command buffer where we can record commands.
-        //  These commands will be later executed on the graphics thread.
-        co_await gfx_frame.frame_commands(&frame_stage);
-
-        // Await end of graphics frame.
-        //  Here we know that all commands have been executed
-        //  and temporary objects can be destroyed.
-        co_await gfx_frame.frame_end();
-
-        for (ice::u32 idx = 0; idx < image_count; ++idx)
-        {
-            device.destroy_buffer(image_data_buffer[idx]);
-        }
-        co_return;
-    }
-
 
 } // namespace ice

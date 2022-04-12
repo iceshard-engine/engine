@@ -1,6 +1,7 @@
 #pragma once
 #include <ice/base.hxx>
 #include <ice/hash.hxx>
+#include <string_view>
 
 namespace ice
 {
@@ -11,7 +12,7 @@ namespace ice
         // #TODO: Move ths to a proper 'settings' file at some point
         static constexpr bool use_stringid_debug_implementation = ice::build::is_debug || ice::build::is_develop;
 
-        enum class StringID_Hash : uint64_t
+        enum class StringID_Hash : ice::u64
         {
             Invalid = 0x0
         };
@@ -34,12 +35,25 @@ namespace ice
 
             StringID_Hash hash_value;
 
-            char hash_origin[24];
+            union
+            {
+                char hash_runtime_origin_hint[24];
+
+                struct
+                {
+                    const char* hash_consteval_origin;
+                    char has_consteval_value;
+                };
+            };
         };
 
+        static_assert(sizeof(StringID<true>) == 32);
 
         template<bool DebugImpl = false>
         constexpr auto stringid(std::string_view value) noexcept -> StringID<DebugImpl>;
+
+        template<bool DebugImpl = false>
+        constexpr auto stringid(std::u8string_view value) noexcept -> StringID<DebugImpl>;
 
         template<>
         constexpr auto stringid<false>(std::string_view value) noexcept -> StringID<false>;
@@ -109,7 +123,6 @@ namespace ice
 
     static constexpr StringID stringid_invalid = StringID{ StringID_Hash{ 0 } };
 
-
     template<>
     constexpr auto hash(StringID_Arg value) noexcept -> uint64_t;
 
@@ -129,12 +142,26 @@ namespace ice
     namespace detail::stringid_type_v2
     {
 
+        template<bool DebugImpl>
+        constexpr auto stringid(std::u8string_view value) noexcept -> StringID<DebugImpl>
+        {
+            ice::detail::murmur2_hash::mm2_x64_64 const hash_result = ice::detail::murmur2_hash::cexpr_murmur2_x64_64(value, 0xDA864239);
+
+            return StringID<DebugImpl> {
+                .hash_value = StringID_Hash{
+                    hash_result.h[0]
+                },
+            };
+        }
+
         template<>
         constexpr auto stringid<false>(std::string_view value) noexcept -> StringID<false>
         {
+            ice::detail::murmur2_hash::mm2_x64_64 const hash_result = ice::detail::murmur2_hash::cexpr_murmur2_x64_64(value, 0xDA864239);
+
             return StringID<false> {
                 .hash_value = StringID_Hash{
-                    ice::detail::murmur2_hash::cexpr_murmur2_x64_64(value, 0xDA864239).h[0]
+                    hash_result.h[0]
                 },
             };
         }
@@ -142,31 +169,48 @@ namespace ice
         template<>
         constexpr auto stringid<true>(std::string_view value) noexcept -> StringID<true>
         {
+            ice::detail::murmur2_hash::mm2_x64_64 const hash_result = ice::detail::murmur2_hash::cexpr_murmur2_x64_64(value, 0xDA864239);
+
             StringID<true> result{
                 .hash_value = StringID_Hash{
-                    ice::detail::murmur2_hash::cexpr_murmur2_x64_64(value, 0xDA864239).h[0]
+                    hash_result.h[0]
                 },
             };
 
-            int32_t const cstr_size = static_cast<int32_t>(value.size());
-            int32_t const origin_size = static_cast<int32_t>(std::size(result.hash_origin));
-
-            int32_t const copy_count = std::min(origin_size, cstr_size);
-            int32_t const copy_offset = std::max(0, cstr_size - copy_count);
-
-            int64_t i = 0;
-            for (auto& v : result.hash_origin)
+            if (std::is_constant_evaluated())
             {
-                if (i < copy_count)
-                {
-                    v = value[copy_offset + i];
-                }
-                i++;
+                result.hash_consteval_origin = value.data();
+                result.has_consteval_value = ~char{ 0 };
             }
-
-            if (copy_offset > 0)
+            else
             {
-                result.hash_origin[0] = '~';
+                ice::i32 const cstr_size = static_cast<ice::i32>(value.size());
+                ice::i32 const origin_size = static_cast<ice::i32>(std::size(result.hash_runtime_origin_hint));
+
+                ice::i32 const copy_count = std::min(origin_size, cstr_size);
+                ice::i32 const copy_offset = std::max(0, cstr_size - copy_count);
+
+
+
+                ice::i32 i = 0;
+                for (auto& v : result.hash_runtime_origin_hint)
+                {
+                    if (i < copy_count)
+                    {
+                        v = value[copy_offset + i];
+                    }
+                    else
+                    {
+                        v = char{};
+                    }
+
+                    i += 1;
+                }
+
+                if (copy_offset > 0)
+                {
+                    result.hash_runtime_origin_hint[0] = '~';
+                }
             }
 
             return result;
@@ -179,7 +223,24 @@ namespace ice
 
         constexpr auto origin_value(StringID<true> const& value) noexcept -> std::string_view
         {
-            return value.hash_origin;
+            if (std::is_constant_evaluated())
+            {
+                return value.hash_consteval_origin;
+            }
+            else if (value.has_consteval_value == ~char{ 0 })
+            {
+                return value.hash_consteval_origin;
+            }
+            else
+            {
+                ice::u32 length = 24;
+                while (value.hash_runtime_origin_hint[length-1] == 0)
+                {
+                    length -= 1;
+                }
+
+                return std::string_view{ value.hash_runtime_origin_hint, length };
+            }
         }
 
         template<bool DebugImpl>
@@ -228,6 +289,11 @@ namespace ice
         return ice::detail::stringid_type_v2::stringid<ice::detail::stringid_type_v2::use_stringid_debug_implementation>(value);
     }
 
+    constexpr auto stringid(std::u8string_view value) noexcept -> ice::StringID
+    {
+        return ice::detail::stringid_type_v2::stringid<ice::detail::stringid_type_v2::use_stringid_debug_implementation>(value);
+    }
+
     constexpr auto stringid_hint(StringID_Arg value) noexcept -> std::string_view
     {
         return ice::detail::stringid_type_v2::origin_value(value);
@@ -258,40 +324,14 @@ namespace ice
         return stringid({ cstr, length }).hash_value;
     }
 
-} // namespace ice
+    constexpr auto operator""_sid(const char8_t* cstr, size_t length) noexcept -> ice::StringID
+    {
+        return stringid({ cstr, length });
+    }
 
-//
-//using core::operator""_sid;
-//using core::operator""_sid_hash;
-//
-//template<bool debug_fields>
-//struct fmt::formatter<core::cexpr::stringid_base_type<debug_fields>>
-//{
-//    using stringid_arg_type = typename core::cexpr::stringid_defined_types<debug_fields>::stringid_arg_type;
-//
-//    template<typename ParseContext>
-//    constexpr auto parse(ParseContext& ctx)
-//    {
-//        return ctx.begin();
-//    }
-//
-//    template<typename FormatContext>
-//    constexpr auto format(stringid_arg_type value, FormatContext& ctx)
-//    {
-//        if (value == core::stringid_invalid)
-//        {
-//            return fmt::format_to(ctx.out(), "[sid:<invalid>]");
-//        }
-//        else
-//        {
-//            if constexpr (debug_fields == false)
-//            {
-//                return fmt::format_to(ctx.out(), "[sid:{:16x}]", core::hash(value));
-//            }
-//            else
-//            {
-//                return fmt::format_to(ctx.out(), "[sid:{:16x}]'{}'", core::hash(value), value.hash_origin);
-//            }
-//        }
-//    }
-//};
+    constexpr auto operator""_sid_hash(const char8_t* cstr, size_t length) noexcept -> ice::StringID_Hash
+    {
+        return stringid({ cstr, length }).hash_value;
+    }
+
+} // namespace ice

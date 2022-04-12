@@ -24,7 +24,7 @@ using ice::operator""_uri;
 class MyGame : public ice::WorldTrait
 {
 public:
-    static constexpr ice::URI ConfigFile = "file://../source/data/config.json"_uri;
+    static constexpr ice::URI ConfigFile = ice::URI{ ice::scheme_file, u8"config.json" };
     static constexpr ice::StringID GraphicsWorldName = "game.render_world"_sid;
 
     MyGame(ice::Allocator& alloc, ice::Clock const& clock) noexcept;
@@ -54,6 +54,7 @@ public:
 
     ice::UniquePtr<ice::gfx::GfxDynamicPass> _game_gfx_pass;
     ice::UniquePtr<ice::gfx::GfxTrait> _trait_render_gfx{ ice::make_unique_null<ice::gfx::GfxTrait>() };
+    ice::UniquePtr<ice::gfx::GfxTrait> _trait_render_texture_loader{ ice::make_unique_null<ice::gfx::GfxTrait>() };
     ice::UniquePtr<ice::gfx::GfxTrait> _trait_render_clear{ ice::make_unique_null<ice::gfx::GfxTrait>() };
     ice::UniquePtr<ice::gfx::GfxTrait> _trait_render_finish{ ice::make_unique_null<ice::gfx::GfxTrait>() };
     ice::UniquePtr<ice::gfx::GfxTrait> _trait_render_postprocess{ ice::make_unique_null<ice::gfx::GfxTrait>() };

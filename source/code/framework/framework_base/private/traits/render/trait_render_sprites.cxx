@@ -23,7 +23,9 @@
 #include <ice/render/render_pass.hxx>
 
 #include <ice/resource_meta.hxx>
-#include <ice/asset_system.hxx>
+#include <ice/asset_storage.hxx>
+#include <ice/asset.hxx>
+#include <ice/task_sync_wait.hxx>
 
 #include <ice/profiler.hxx>
 #include <ice/hash.hxx>
@@ -37,20 +39,11 @@ namespace ice
         using SpriteQuery = ice::ecs::QueryDefinition<ice::Transform2DStatic const*, ice::Transform2DDynamic const*, ice::Sprite const&, ice::SpriteTile const*>;
         static constexpr ice::StringID SpriteQueryId = "ice.trait.sprite-query"_sid;
 
-        auto load_sprite_shader(ice::AssetSystem& assets, ice::StringID name) noexcept -> ice::Data
+        auto load_sprites_shader(ice::AssetStorage& assets, ice::Utf8String name) noexcept -> ice::Task<ice::Data>
         {
-            Data result;
-            Asset const shader_asset = assets.request(ice::AssetType::Shader, name);
-            if (shader_asset != Asset::Invalid)
-            {
-                Data temp;
-                if (ice::asset_data(shader_asset, temp) == AssetStatus::Loaded)
-                {
-                    result = *reinterpret_cast<ice::Data const*>(temp.location);
-                }
-            }
-
-            return result;
+            ice::Asset const asset = co_await assets.request(ice::render::AssetType_Shader, name, ice::AssetState::Baked);
+            ICE_ASSERT(asset.state == AssetState::Baked, "Shader not available!");
+            co_return asset.data;
         }
 
         struct SpriteInstanceInfo
@@ -288,10 +281,10 @@ namespace ice
         ice::WorldPortal& portal
     ) noexcept
     {
-        _asset_system = ice::addressof(engine.asset_system());
+        _asset_system = ice::addressof(engine.asset_storage());
 
-        _shader_data[0] = ice::detail::load_sprite_shader(*_asset_system, "/shaders/game2d/sprite-vtx"_sid);
-        _shader_data[1] = ice::detail::load_sprite_shader(*_asset_system, "/shaders/game2d/sprite-pix"_sid);
+        _shader_data[0] = ice::sync_wait(ice::detail::load_sprites_shader(*_asset_system, u8"shaders/game2d/sprite-vtx"));
+        _shader_data[1] = ice::sync_wait(ice::detail::load_sprites_shader(*_asset_system, u8"shaders/game2d/sprite-pix"));
 
         portal.storage().create_named_object<detail::SpriteQuery::Query>(
             detail::SpriteQueryId,
@@ -341,7 +334,7 @@ namespace ice
                     return;
                 }
 
-                ice::u64 const material_hash = ice::hash(sprite.material);
+                ice::u64 const material_hash = ice::hash(stringid(sprite.material));
 
                 if (ice::pod::hash::has(_sprite_materials, material_hash))
                 {
@@ -352,7 +345,7 @@ namespace ice
                     {
                         ice::pod::hash::set(instance_info_idx, material_hash, info_idx);
 
-                        instance_info.materialid = ice::stringid_hash(sprite.material);
+                        instance_info.materialid = ice::stringid_hash(ice::stringid(sprite.material));
                         instance_info.instance_offset = std::numeric_limits<ice::u32>::max();
                         instance_info.instance_count = 0;
                         next_instance_idx += 1;
@@ -376,7 +369,7 @@ namespace ice
             query,
             [&](ice::Transform2DStatic const* xform, ice::Transform2DDynamic const* dyn_xform, ice::Sprite const& sprite, ice::SpriteTile const* sprite_tile) noexcept
             {
-                ice::u64 const material_hash = ice::hash(sprite.material);
+                ice::u64 const material_hash = ice::hash(ice::stringid(sprite.material));
                 if (ice::pod::hash::has(instance_info_idx, material_hash) == false)
                 {
                     return;
@@ -386,7 +379,6 @@ namespace ice
                 if (sprite_tile != nullptr)
                 {
                     tile = { ice::i32(sprite_tile->material_tile.x), ice::i32(sprite_tile->material_tile.y) };
-                    //tile = { ice::u32(sprite_tile->material_tile.x), ice::u32(sprite_tile->material_tile.y) };
                 }
 
                 ice::u32 const info_idx = ice::pod::hash::get(instance_info_idx, material_hash, std::numeric_limits<ice::u32>::max());
@@ -553,54 +545,52 @@ namespace ice
         using namespace ice::render;
         RenderDevice& device = gfx_device.device();
 
-        device.destroy_image(sprite_data.material[0]);
         device.destroy_buffer(sprite_data.material_tileinfo[0]);
         device.destroy_resourcesets(sprite_data.sprite_resource);
     }
 
     auto IceWorldTrait_RenderSprites::task_load_resource_material(
-        ice::StringID_Arg material_name,
+        ice::Utf8String material_name,
         ice::EngineRunner& runner,
         ice::gfx::GfxDevice& gfx_device
     ) noexcept -> ice::Task<>
     {
         using namespace ice::render;
 
-        if (ice::pod::hash::has(_sprite_materials, ice::hash(material_name)))
+        if (ice::pod::hash::has(_sprite_materials, ice::hash(ice::stringid(material_name))))
         {
             co_return;
         }
 
-        Asset image_asset = _asset_system->request(AssetType::Texture, material_name);
+        // Set a dummy value so we can check for it and skip loading the same asset more than once.
+        ice::pod::hash::set(_sprite_materials, ice::hash(ice::stringid(material_name)), { });
 
-        Data image_asset_data;
-        Metadata image_metadata;
-        if (asset_data(image_asset, image_asset_data) != AssetStatus::Loaded)
-        {
-            co_return;
-        }
+        Asset image_data = co_await runner.asset_storage().request(ice::render::AssetType_Texture2D, material_name, AssetState::Loaded);
+        ICE_ASSERT(image_data.state == AssetState::Loaded, "Unexpected asset state!");
 
-        if (asset_metadata(image_asset, image_metadata) != AssetStatus::Loaded)
-        {
-            co_return;
-        }
+        ice::Metadata const& metadata = image_data.metadata();
+
+        ImageInfo const* image_info = reinterpret_cast<ImageInfo const*>(image_data.data.location);
 
         ice::i32 tile_width;
         ice::i32 tile_height;
 
         bool meta_valid = true;
-        meta_valid &= meta_read_int32(image_metadata, "tileset.tile.width"_sid, tile_width);
-        meta_valid &= meta_read_int32(image_metadata, "tileset.tile.height"_sid, tile_height);
+        meta_valid &= meta_read_int32(metadata, "tileset.tile.width"_sid, tile_width);
+        meta_valid &= meta_read_int32(metadata, "tileset.tile.height"_sid, tile_height);
 
         if (meta_valid == false)
         {
             ICE_LOG(
                 ice::LogSeverity::Error, ice::LogTag::Engine,
                 "The asset {} does not provide `tile` specific metadata!",
-                ice::stringid_hint(material_name)
+                /*ice::stringid_hint(material_name)*/ "<unsupported_string_value>"
             );
             co_return;
         }
+
+        Asset image_handle = co_await runner.asset_storage().request(ice::render::AssetType_Texture2D, material_name, AssetState::Runtime);
+        ICE_ASSERT(image_handle.state == AssetState::Runtime, "Unexpected asset state!");
 
         ice::u64 const tile_mesh_id = (static_cast<ice::u64>(tile_width) << 32) | tile_height;
         bool const has_vertex_offsets = ice::pod::hash::has(_vertex_offsets, tile_mesh_id) == false;
@@ -616,18 +606,12 @@ namespace ice
             ice::pod::hash::set(_vertex_offsets, tile_mesh_id, vertex_offset);
         }
 
-        // Set a dummy value so we can check for it and skip loading the same asset more than once.
-        ice::pod::hash::set(_sprite_materials, ice::hash(material_name), { });
-
-        ImageInfo const* image_data = reinterpret_cast<ImageInfo const*>(image_asset_data.location);
-        ice::u32 const image_data_size = image_data->width * image_data->height * 4;
-
         ice::detail::RenderData_Sprite sprite_data{ };
         sprite_data.shape_offset = vertex_offset;
         sprite_data.shape_vertices = 4;
         sprite_data.material_scale = ice::vec2f{
-            ice::f32(tile_width) / ice::f32(image_data->width),
-            ice::f32(tile_height) / ice::f32(image_data->height),
+            ice::f32(tile_width) / ice::f32(image_info->width),
+            ice::f32(tile_height) / ice::f32(image_info->height),
         };
 
         ice::gfx::GfxFrame& gfx_frame = runner.graphics_frame();
@@ -637,32 +621,19 @@ namespace ice
         co_await gfx_frame.frame_begin();
 
         RenderDevice& device = gfx_device.device();
-        ice::render::Buffer const data_buffer = device.create_buffer(
-            ice::render::BufferType::Transfer,
-            image_data_size
-        );
 
-        sprite_data.material[0] = device.create_image(*image_data, { });
+        sprite_data.material[0] = *reinterpret_cast<ice::render::Image const*>(image_handle.data.location);
         sprite_data.material_tileinfo[0] = device.create_buffer(BufferType::Uniform, sizeof(sprite_data.material_scale));
         device.create_resourcesets({ _resource_set_layouts + 1, 1 }, sprite_data.sprite_resource);
 
-        ice::u32 update_count = 2;
-        ice::render::BufferUpdateInfo updates[3]{
+        ice::u32 update_count = 1;
+        ice::render::BufferUpdateInfo updates[2]{
             ice::render::BufferUpdateInfo
             {
                 .buffer = sprite_data.material_tileinfo[0],
                 .data = {
                     .location = ice::addressof(sprite_data.material_scale),
                     .size = sizeof(sprite_data.material_scale),
-                    .alignment = 4
-                }
-            },
-            ice::render::BufferUpdateInfo
-            {
-                .buffer = data_buffer,
-                .data = {
-                    .location = image_data->data,
-                    .size = image_data_size,
                     .alignment = 4
                 }
             }
@@ -675,54 +646,18 @@ namespace ice
             vertices[2] = { ice::f32(tile_width) * 1, 0.f, 1.f, 1.f };
             vertices[3] = { ice::f32(tile_width) * 1, ice::f32(tile_height) * 1, 1.f, 0.f };
 
-            updates[2].buffer = _vertex_buffer;
-            updates[2].data = ice::data_view(vertices);
-            updates[2].offset = vertex_offset * sizeof(ice::vec4f);
+            updates[1].buffer = _vertex_buffer;
+            updates[1].data = ice::data_view(vertices);
+            updates[1].offset = vertex_offset * sizeof(ice::vec4f);
             update_count += 1;
         }
 
         device.update_buffers({ updates, update_count });
 
-        struct : public ice::gfx::GfxFrameStage
-        {
-            void record_commands(
-                ice::EngineFrame const& frame,
-                ice::render::CommandBuffer cmds,
-                ice::render::RenderCommands& api
-            ) const noexcept override
-            {
-                api.update_texture(
-                    cmds,
-                    image,
-                    image_data,
-                    image_size
-                );
-            }
-
-            ice::render::Image image;
-            ice::render::Buffer image_data;
-            ice::vec2u image_size;
-        } frame_stage;
-
-        frame_stage.image = sprite_data.material[0];
-        frame_stage.image_data = data_buffer;
-        frame_stage.image_size = { image_data->width, image_data->height };
-
-        // Await command recording stage
-        //  Here we have access to a command buffer where we can record commands.
-        //  These commands will be later executed on the graphics thread.
-        co_await gfx_frame.frame_commands(&frame_stage);
-
-        // Await end of graphics frame.
-        //  Here we know that all commands have been executed
-        //  and temporary objects can be destroyed.
-        co_await gfx_frame.frame_end();
-        device.destroy_buffer(data_buffer);
-
         co_await runner.schedule_next_frame();
 
         runner.execute_task(
-            task_update_resource_material(runner, gfx_device, material_name, sprite_data),
+            task_update_resource_material(runner, gfx_device, ice::stringid(material_name), sprite_data),
             EngineContext::EngineRunner
         );
         co_return;

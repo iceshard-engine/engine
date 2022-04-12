@@ -1,5 +1,5 @@
 #pragma once
-#include <ice/span.hxx>
+#include <ice/base.hxx>
 
 namespace ice
 {
@@ -37,26 +37,6 @@ namespace ice
         return Data{
             .location = &object,
             .size = sizeof(T) * Size,
-            .alignment = alignment,
-        };
-    }
-
-    template<typename T>
-    constexpr auto data_view(ice::Span<T> span, ice::u32 alignment = alignof(T)) noexcept -> ice::Data
-    {
-        return Data{
-            .location = span.data(),
-            .size = static_cast<ice::u32>(span.size_bytes()),
-            .alignment = alignment,
-        };
-    }
-
-    template<typename T>
-    constexpr auto data_view(ice::Span<T const> span, ice::u32 alignment = alignof(T)) noexcept -> ice::Data
-    {
-        return Data{
-            .location = span.data(),
-            .size = static_cast<ice::u32>(span.size_bytes()),
             .alignment = alignment,
         };
     }

@@ -23,53 +23,41 @@
     </Expand>
   </Type>
 
-  <Type Name="resource::URN">
-    <DisplayString>URN</DisplayString>
+  <Type Name="ice::MutableMetadata">
+    <DisplayString>Metadata [mutable, entries: {_meta_entries._data._size}, extra_data: {_additional_data._size} bytes]</DisplayString>
     <Expand>
-      <Item Condition="name.hash_value != 0" Name="[name]">name.hash_value,h</Item>
-      <Item Condition="name.hash_value == 0" Name="[name]">"invalid",sb</Item>
+      <ArrayItems >
+        <Size>_meta_entries._data._size</Size>
+        <ValuePointer>_meta_entries._data._data,view(ValueOnly)</ValuePointer>
+      </ArrayItems>
     </Expand>
   </Type>
 
-  <Type Name="resource::ResourceSystem">
-    <DisplayString>ResourceSystem {{ modules={_modules.size()}, resources={_named_resources._data._size} }}</DisplayString>
+  <Type Name="ice::detail::MetadataEntry">
+    <DisplayString Condition="data_count == 0 &amp;&amp; data_type == 1">MetaValue [{data_type,en} = {value_int,b}]</DisplayString>
+    <DisplayString Condition="data_count == 0 &amp;&amp; data_type == 2">MetaValue [{data_type,en} = {value_int}]</DisplayString>
+    <DisplayString Condition="data_count == 0 &amp;&amp; data_type == 3">MetaValue [{data_type,en} = {value_float}]</DisplayString>
+    <DisplayString Condition="data_count == 0">MetaValue [{data_type,en}]</DisplayString>
+    <DisplayString Condition="data_count != 0">MetaArray [{data_type,en}, size: {data_count}]</DisplayString>
     <Expand>
-      <Item Name="[allocator]">_allocator</Item>
-      <Item Name="[modules]">_modules</Item>
-      <Item Name="[scheme_handlers]">_scheme_handlers</Item>
-      <Item Name="[resources_internal]">_internal_resources</Item>
-      <Item Name="[resources_named]">_named_resources</Item>
-      <Item Name="[resources_named_output]">_named_output_resources</Item>
+      <Item Name="[type]">data_type</Item>
+      <Item Name="[value]" Condition="data_count == 0 &amp;&amp; data_type == 1">value_int,b</Item>
+      <Item Name="[value]" Condition="data_count == 0 &amp;&amp; data_type == 2">value_int</Item>
+      <Item Name="[value]" Condition="data_count == 0 &amp;&amp; data_type == 3">value_float</Item>
+      <Item Name="[offset]" Condition="data_count != 0 || data_type &gt;= 4">value_buffer.offset</Item>
+      <Item Name="[size]" Condition="data_count != 0 || data_type &gt;= 4">value_buffer.size</Item>
     </Expand>
   </Type>
 
-  <Type Name="resource::detail::FileResource">
-    <DisplayString Condition="_data._data == nullptr">FileResource{{ {_native_path._data,sb} }}</DisplayString>
-    <DisplayString Condition="_data._data != nullptr">FileResource{{ {_native_path._data,sb}, loaded }}</DisplayString>
+  <Type Name="ice::Resource_LooseFilesWin32">
+    <DisplayString Condition="_data_files._size == 1">Resource [metadata: {_metadata._meta_entries._data._size}, loose file] "{_origin_name,s8b}"</DisplayString>
+    <DisplayString Condition="_data_files._size &gt; 1">Resource [metadata: {_metadata._meta_entries._data._size}, loose files: {_data_files._size}] "{_origin_name,s8b}"</DisplayString>
     <Expand>
-      <Item Name="[path]">_path</Item>
-      <Item Name="[identifier]">_uri</Item>
-      <Item Name="[native_path]">_native_path</Item>
-      <Item Name="[data]" Condition="_data._data != nullptr">_data</Item>
-      <Item Name="[data]" Condition="_data._data == nullptr">"not loaded",sb</Item>
-    </Expand>
-  </Type>
-
-  <Type Name="resource::detail::DynamicLibraryResource">
-    <DisplayString>DynamicLibraryResource</DisplayString>
-    <Expand>
-    </Expand>
-  </Type>
-
-  <Type Name="resource::Resource">
-    <DisplayString>Resource</DisplayString>
-    <Expand>
-    </Expand>
-  </Type>
-
-  <Type Name="resource::OutputResource">
-    <DisplayString>OutputResource</DisplayString>
-    <Expand>
+      <Item Name="[name]">_origin_name,s8</Item>
+      <Item Name="[origin]">_origin_path._data,s8</Item>
+      <Item Name="[metadata]">_metadata</Item>
+      <Item Name="[files]">_data_files</Item>
+      <Item Name="[flags]">_data_files_flags</Item>
     </Expand>
   </Type>
 

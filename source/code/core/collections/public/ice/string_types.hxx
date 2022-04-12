@@ -10,6 +10,13 @@ namespace ice
 
     using String = BasicString<char>;
 
+    using Utf8String = BasicString<char8_t>;
+    using AsciiString = BasicString<char>;
+
+#if ISP_WINDOWS
+    using WString = BasicString<wchar_t>;
+#endif
+
     template<typename CharType = char>
     struct HeapString
     {
@@ -78,5 +85,10 @@ namespace ice
     };
 
     static constexpr uint32_t string_npos = std::numeric_limits<uint32_t>::max();
+
+    static constexpr auto operator""_str(char8_t const* str, std::size_t size) noexcept
+    {
+        return ice::Utf8String{ str, size };
+    }
 
 } // namespace ice

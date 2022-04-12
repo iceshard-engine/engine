@@ -1,55 +1,48 @@
 #pragma once
+#include <coroutine>
 #include <ice/data.hxx>
 #include <ice/stringid.hxx>
+#include <ice/resource_meta.hxx>
 
 namespace ice
 {
 
     struct Metadata;
+    struct AssetHandle;
 
-    enum class Asset : ice::u64;
-    enum class AssetType : ice::u32;
-    enum class AssetStatus : ice::u32;
-
-    auto asset_name(ice::Asset asset) noexcept -> ice::StringID;
-    auto asset_status(ice::Asset asset) noexcept -> ice::AssetStatus;
-    auto asset_data(ice::Asset asset, ice::Data& out_data) noexcept -> ice::AssetStatus;
-    auto asset_metadata(ice::Asset asset, ice::Metadata& out_metadata) noexcept -> ice::AssetStatus;
-
-
-    enum class Asset : ice::u64
+    enum class AssetState : ice::u32
     {
-        Invalid = 0x0
-    };
+        //! \brief The asset could not be accessed.
+        //! \detail Either an error occured or the asset does not exist.
+        Invalid,
 
-    enum class AssetType : ice::u32
-    {
-        Invalid = 0x0,
-        Config,
-        Mesh,
-        Shape2D,
-        Shader,
-        Texture,
+        //! \brief The asset data state is not known and needs another pass to the Asset Type Resolver.
+        Unknown,
 
-        Level,
-        TileMap,
+        //! \brief The asset data is represented in raw format of the source file.
+        //! \detail This means that you might get raw jpg or png image data.
+        Raw,
 
-        Reserved = 0x00ff'ffff,
-        Unresolved = 0xffff'ffff,
-    };
-
-    enum class AssetStatus : ice::u32
-    {
-        Invalid = 0x0,
-        Available_Raw,
-        Available,
-        Requested,
-        Baking,
+        //! \brief The asset data is baked into a specific engine representation.
+        //! \detail Please take a look at the data representation for the asset you are trying to access.
         Baked,
-        Loading,
+
+        //! \brief The asset is loaded and pointers are patched using a specific engine representation.
+        //! \detail Please take a look at the data representation for the asset you are trying to access.
         Loaded,
-        Unused,
-        Unloading,
+
+        //! \brief The asset is loaded into a system and only contains a runtime handle.
+        //! \detail This is particullary useful if you want to have a single system to manage specific assets, for example a texture loader.
+        Runtime,
+    };
+
+    struct Asset
+    {
+        ice::AssetHandle* handle;
+        ice::AssetState state;
+        ice::Data data;
+
+        auto metadata() const noexcept -> ice::Metadata const&;
     };
 
 } // namespace ice

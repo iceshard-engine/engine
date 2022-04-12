@@ -19,17 +19,19 @@
 #include <ice/gfx/gfx_frame.hxx>
 #include <ice/gfx/gfx_pass.hxx>
 #include <ice/gfx/gfx_runner.hxx>
+#include <ice/render/render_image.hxx>
 #include <ice/render/render_swapchain.hxx>
 
 #include <ice/input/input_event.hxx>
 #include <ice/input/input_keyboard.hxx>
 #include <ice/input/input_tracker.hxx>
 
+#include <ice/task_sync_wait.hxx>
 #include <ice/task_thread_pool.hxx>
 #include <ice/module_register.hxx>
-#include <ice/resource_system.hxx>
-#include <ice/asset_system.hxx>
-#include <ice/asset_pipeline.hxx>
+#include <ice/resource_tracker.hxx>
+#include <ice/resource_provider.hxx>
+#include <ice/asset_storage.hxx>
 #include <ice/resource.hxx>
 #include <ice/assert.hxx>
 #include <ice/shard.hxx>
@@ -56,26 +58,26 @@ MyGame::MyGame(ice::Allocator& alloc, ice::Clock const& clock) noexcept
 void MyGame::on_load_modules(ice::GameServices& sercies) noexcept
 {
     ice::ModuleRegister& mod = sercies.module_registry();
-    ice::ResourceSystem& res = sercies.resource_system();
+    ice::ResourceTracker& res = sercies.resource_system();
 
-    ice::Resource* const pipelines_module = res.request("res://iceshard_pipelines.dll"_uri);
-    ice::Resource* const engine_module = res.request("res://iceshard.dll"_uri);
-    ice::Resource* const vulkan_module = res.request("res://vulkan_renderer.dll"_uri);
-    ice::Resource* const imgui_module = res.request("res://imgui_module.dll"_uri);
+    ice::ResourceHandle* const pipelines_module = res.find_resource(u8"urn:iceshard_pipelines.dll"_uri);
+    ice::ResourceHandle* const engine_module = res.find_resource(u8"urn:iceshard.dll"_uri);
+    ice::ResourceHandle* const vulkan_module = res.find_resource(u8"urn:vulkan_renderer.dll"_uri);
+    ice::ResourceHandle* const imgui_module = res.find_resource(u8"urn:imgui_module.dll"_uri);
 
     ICE_ASSERT(pipelines_module != nullptr, "Missing `iceshard_pipelines.dll` module!");
     ICE_ASSERT(engine_module != nullptr, "Missing `iceshard.dll` module!");
     ICE_ASSERT(vulkan_module != nullptr, "Missing `vulkan_renderer.dll` module!");
 
-    mod.load_module(_allocator, pipelines_module->location().path);
-    mod.load_module(_allocator, engine_module->location().path);
-    mod.load_module(_allocator, vulkan_module->location().path);
+    mod.load_module(_allocator, ice::resource_origin(pipelines_module));
+    mod.load_module(_allocator, ice::resource_origin(engine_module));
+    mod.load_module(_allocator, ice::resource_origin(vulkan_module));
 
     ice::register_asset_modules(_allocator, mod);
 
     if (imgui_module != nullptr)
     {
-        mod.load_module(_allocator, imgui_module->location().path);
+        mod.load_module(_allocator, ice::resource_origin(imgui_module));
     }
 }
 
@@ -99,7 +101,7 @@ void MyGame::on_app_startup(ice::Engine& engine, ice::gfx::GfxRunner& gfx_runner
         {
             [[maybe_unused]]
             auto a1 = archetype_index.register_archetype(ice::ecs::static_validation::Validation_Archetype_1);
-            
+
             [[maybe_unused]]
             auto a2 = archetype_index.register_archetype(ice::ecs::static_validation::Validation_Archetype_2);
 
@@ -121,21 +123,14 @@ void MyGame::on_app_startup(ice::Engine& engine, ice::gfx::GfxRunner& gfx_runner
 
     ice::EngineDevUI& devui = engine.developer_ui();
 
-    ice::Asset test_tilemap = engine.asset_system().request(ice::AssetType::TileMap, "/cotm/test_level_2/tiled/0002_Level_1"_sid);
-    ICE_ASSERT(test_tilemap != ice::Asset::Invalid, "");
-
-    ice::Data tilemap_data;
-    ice::asset_data(test_tilemap, tilemap_data);
-
-    ice::TileMap const* tilemap = reinterpret_cast<ice::TileMap const*>(tilemap_data.location);
-
     _trait_physics = ice::create_trait_physics(_allocator);
     _trait_tilemap = ice::create_tilemap_trait(_allocator, *_trait_physics);
-    _trait_tilemap->load_tilemap(*tilemap);
+    _trait_tilemap->load_tilemap(u8"cotm/test_level_2/tiled/0002_Level_1");
 
     _trait_animator = ice::create_trait_animator(_allocator);
     _trait_actor = ice::create_trait_actor(_allocator);
     _trait_render_gfx = ice::create_trait_render_gfx(_allocator);
+    _trait_render_texture_loader = ice::create_trait_render_texture_loader(_allocator);
     _trait_render_clear = ice::create_trait_render_clear(_allocator, "ice.gfx.stage.clear"_sid);
     _trait_render_finish = ice::create_trait_render_finish(_allocator, "ice.gfx.stage.finish"_sid);
     _trait_render_postprocess = ice::create_trait_render_postprocess(_allocator, "ice.gfx.stage.postprocess"_sid);
@@ -146,6 +141,7 @@ void MyGame::on_app_startup(ice::Engine& engine, ice::gfx::GfxRunner& gfx_runner
 
     gfx_runner.add_trait("ice.render_camera"_sid, _trait_render_camera.get());
     gfx_runner.add_trait("ice.render_gfx"_sid, _trait_render_gfx.get());
+    gfx_runner.add_trait("ice.render_texture_loader"_sid, _trait_render_texture_loader.get());
     gfx_runner.add_trait("ice.render_clear"_sid, _trait_render_clear.get());
     gfx_runner.add_trait("ice.render_postprocess"_sid, _trait_render_postprocess.get());
     gfx_runner.add_trait("ice.render_finish"_sid, _trait_render_finish.get());
@@ -293,6 +289,7 @@ void MyGame::on_app_shutdown(ice::Engine& engine) noexcept
     _trait_render_sprites = nullptr;
     _trait_render_finish = nullptr;
     _trait_render_clear = nullptr;
+    _trait_render_texture_loader = nullptr;
     _trait_render_gfx = nullptr;
     _trait_actor = nullptr;
     _trait_animator = nullptr;
@@ -346,7 +343,7 @@ void MyGame::on_game_begin(ice::EngineRunner& runner) noexcept
         ice::Transform2DDynamic{ .position = { 48.f * 2, 448.f, -1.f }, .scale = { 1.f, 0.f } },
         ice::PhysicsBody{ .shape = ice::PhysicsShape::Capsule, .dimensions = { 16.f, 32.f }, .trait_data = nullptr },
         ice::PhysicsVelocity{ .velocity = { 0.1f, 0.f } },
-        ice::Sprite{ .material = "/cotm/cotm_hero"_sid },
+        ice::Sprite{ .material = u8"cotm/cotm_hero" },
         ice::SpriteTile{ .material_tile = { 0, 0 } }
     );
 

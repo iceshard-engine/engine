@@ -59,6 +59,8 @@ namespace ice
 
         auto thread_pool() noexcept -> ice::TaskThreadPool& override;
 
+        auto asset_storage() noexcept -> ice::AssetStorage& override;
+
         auto graphics_device() noexcept -> ice::gfx::GfxDevice& override;
         auto graphics_frame() noexcept -> ice::gfx::GfxFrame& override;
 

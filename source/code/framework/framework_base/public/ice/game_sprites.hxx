@@ -8,7 +8,7 @@ namespace ice
     {
         static constexpr ice::StringID Identifier = "ice.component.sprite"_sid;
 
-        ice::StringID material;
+        ice::Utf8String material;
     };
 
     struct SpriteTile

@@ -8,13 +8,13 @@
 namespace ice
 {
 
-    static constexpr ice::StringID Tilemap_VtxShader = "/shaders/game2d/tiled-vtx"_sid;
-    static constexpr ice::StringID Tilemap_PixShader = "/shaders/game2d/tiled-pix"_sid;
+    class AssetStorage;
+
+    static constexpr ice::Utf8String Tilemap_VtxShader = u8"shaders/game2d/tiled-vtx";
+    static constexpr ice::Utf8String Tilemap_PixShader = u8"shaders/game2d/tiled-pix";
 
     struct Tile;
     struct TileMap;
-
-    class AssetSystem;
 
     struct IceTileLayer_RenderInfo
     {
@@ -33,6 +33,7 @@ namespace ice
     {
         ice::u32 image_count;
         ice::render::Image tileset_images[4];
+        // TODO: Add image asset tracking
         ice::render::Buffer tileset_properties[4];
         ice::render::ResourceSet tileset_resourceset[1];
     };
@@ -99,7 +100,7 @@ namespace ice
     private:
         ice::Allocator& _allocator;
         ice::StringID _stage_name;
-        ice::AssetSystem* _asset_system;
+        ice::AssetStorage* _asset_system;
         ice::Data _shader_data[2];
 
         ice::render::ResourceSetLayout _resource_set_layouts[2]{ };

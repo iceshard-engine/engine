@@ -15,7 +15,7 @@ namespace ice
 
         virtual bool load_module(
             ice::Allocator& alloc,
-            ice::String path
+            ice::Utf8String path
         ) noexcept = 0;
 
         virtual bool load_module(

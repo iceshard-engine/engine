@@ -192,12 +192,6 @@ namespace ice
     }
 
     template<typename CharType>
-    inline HeapString<CharType>::operator ice::BasicString<CharType>() const noexcept
-    {
-        return { _data, _size };
-    }
-
-    template<typename CharType>
     inline auto operator==(HeapString<CharType> const& left, CharType const* right) noexcept
     {
         return ice::string::equals(left.operator ice::String(), ice::BasicString<CharType>{ right });
@@ -213,6 +207,24 @@ namespace ice
     inline auto operator==(BasicString<CharType> left, ice::HeapString<CharType> const& right) noexcept
     {
         return ice::string::equals(left.operator ice::String(), right.operator ice::String());
+    }
+
+    template<typename CharType>
+    inline auto HeapString<CharType>::operator[](uint32_t index) noexcept -> CharType&
+    {
+        return _data[index];
+    }
+
+    template<typename CharType>
+    inline auto HeapString<CharType>::operator[](uint32_t index) const noexcept -> CharType const&
+    {
+        return _data[index];
+    }
+
+    template<typename CharType>
+    inline HeapString<CharType>::operator ice::BasicString<CharType>() const noexcept
+    {
+        return { _data, _size };
     }
 
     namespace string
@@ -272,7 +284,7 @@ namespace ice
         template<typename CharType>
         inline void resize(ice::HeapString<CharType>& str, uint32_t new_size) noexcept
         {
-            if (new_size > str._capacity - 1)
+            if ((new_size + 1) > str._capacity)
             {
                 ice::string::grow(str, new_size + 1);
             }
@@ -328,7 +340,7 @@ namespace ice
                     ice::string::grow(str, new_size + 1);
                 }
 
-                ice::memcpy(ice::string::end(str), ice::string::data(other), ice::string::size(other));
+                ice::memcpy(ice::string::end(str), ice::string::data(other), ice::string::size(other) * sizeof(CharType));
                 str._size = new_size;
                 str._data[str._size] = 0;
             }
@@ -445,7 +457,7 @@ namespace ice
         template<typename CharType>
         inline auto substr(ice::HeapString<CharType> const& str, uint32_t pos, uint32_t len) noexcept -> ice::BasicString<CharType>
         {
-            return ice::string::substr(str.operator ice::String(), pos, len);
+            return ice::string::substr(ice::BasicString<CharType>{ str }, pos, len);
         }
 
         template<typename CharType>

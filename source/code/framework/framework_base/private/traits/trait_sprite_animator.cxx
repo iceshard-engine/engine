@@ -6,6 +6,8 @@
 #include <ice/world/world_portal.hxx>
 #include <ice/ecs/ecs_entity_storage.hxx>
 
+#include <ice/render/render_image.hxx>
+
 #include <ice/engine.hxx>
 #include <ice/engine_runner.hxx>
 #include <ice/engine_frame.hxx>
@@ -13,7 +15,8 @@
 #include <ice/stack_string.hxx>
 #include <ice/data_storage.hxx>
 #include <ice/resource_meta.hxx>
-#include <ice/asset_system.hxx>
+#include <ice/task_sync_wait.hxx>
+#include <ice/asset_storage.hxx>
 #include <ice/asset.hxx>
 
 namespace ice
@@ -43,7 +46,7 @@ namespace ice
         ice::WorldPortal& portal
     ) noexcept
     {
-        _assets = ice::addressof(engine.asset_system());
+        _assets = ice::addressof(engine.asset_storage());
 
         portal.storage().create_named_object<SpriteQuery::Query>("ice.query.animator_sprites"_sid, portal.entity_storage().create_query(portal.allocator(), SpriteQuery{}));
         portal.storage().create_named_object<AnimQuery::Query>("ice.query.animator"_sid, portal.entity_storage().create_query(portal.allocator(), AnimQuery{}));
@@ -71,20 +74,16 @@ namespace ice
             sprite_query,
             [&](ice::Animation const& anim, ice::Sprite const& sprite) noexcept
             {
-                Asset sprite_asset = _assets->request(AssetType::Texture, sprite.material);
-                Metadata asset_meta;
-                if (asset_metadata(sprite_asset, asset_meta) == AssetStatus::Invalid)
+                Asset sprite_asset = ice::sync_wait(_assets->request(ice::render::AssetType_Texture2D, sprite.material, AssetState::Baked));
+                Metadata asset_meta = sprite_asset.metadata();
+
+                ice::pod::Array<ice::Utf8String> anim_names{ frame.allocator() };
+                if (meta_read_utf8_array(asset_meta, "animation.names"_sid, anim_names) == false)
                 {
                     return;
                 }
 
-                ice::pod::Array<ice::String> anim_names{ frame.allocator() };
-                if (meta_read_string_array(asset_meta, "animation.names"_sid, anim_names) == false)
-                {
-                    return;
-                }
-
-                for (ice::String const& name : anim_names)
+                for (ice::Utf8String const& name : anim_names)
                 {
                     ice::StringID nameid = ice::stringid(name);
 
@@ -93,9 +92,9 @@ namespace ice
                         return;
                     }
 
-                    ice::StackString<64> meta_key{ "animation." };
+                    ice::StackString<64, char8_t> meta_key{ u8"animation." };
                     ice::string::push_back(meta_key, name);
-                    ice::string::push_back(meta_key, '.');
+                    ice::string::push_back(meta_key, u8'.');
                     ice::u32 const base_key_size = ice::string::size(meta_key);
 
                     ice::i32 frame_count;
@@ -104,19 +103,19 @@ namespace ice
 
                     // Frame count
                     bool success = true;
-                    ice::string::push_back(meta_key, "frame_count");
+                    ice::string::push_back(meta_key, u8"frame_count");
                     success &= ice::meta_read_int32(asset_meta, ice::stringid(meta_key), frame_count);
 
                     ice::string::resize(meta_key, base_key_size);
-                    ice::string::push_back(meta_key, "frame_step");
+                    ice::string::push_back(meta_key, u8"frame_step");
                     ice::meta_read_int32(asset_meta, ice::stringid(meta_key), frame_step);
 
                     ice::string::resize(meta_key, base_key_size);
-                    ice::string::push_back(meta_key, "frame_initial_x");
+                    ice::string::push_back(meta_key, u8"frame_initial_x");
                     success &= ice::meta_read_int32(asset_meta, ice::stringid(meta_key), frame_initial[0]);
 
                     ice::string::resize(meta_key, base_key_size);
-                    ice::string::push_back(meta_key, "frame_initial_y");
+                    ice::string::push_back(meta_key, u8"frame_initial_y");
                     success &= ice::meta_read_int32(asset_meta, ice::stringid(meta_key), frame_initial[1]);
 
                     if (success == false)

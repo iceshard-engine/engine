@@ -15,9 +15,9 @@
 #include <ice/devui/devui_module.hxx>
 #include <ice/devui/devui_system.hxx>
 
-#include <ice/resource_query.hxx>
-#include <ice/resource_system.hxx>
-#include <ice/asset_system.hxx>
+#include <ice/resource_tracker.hxx>
+#include <ice/asset_type_archive.hxx>
+#include <ice/asset_storage.hxx>
 #include <ice/asset_module.hxx>
 
 #include <ice/log_module.hxx>
@@ -27,7 +27,7 @@
 #include <ice/memory/memory_globals.hxx>
 #include <ice/memory/proxy_allocator.hxx>
 
-auto game_main(ice::Allocator& alloc, ice::ResourceSystem& resources) -> ice::i32
+auto game_main(ice::Allocator& alloc, ice::ResourceTracker& resources) -> ice::i32
 {
     using ice::operator""_uri;
     using ice::operator""_sid;
@@ -57,46 +57,17 @@ auto game_main(ice::Allocator& alloc, ice::ResourceSystem& resources) -> ice::i3
 
         game_framework->load_modules();
 
-        // Mount the current working directory
-        //  This allows to automatically detect any `config.json` file stored with the executable.
-        resources.mount("dir://."_uri);
+        ice::UniquePtr<ice::AssetTypeArchive> asset_types = ice::create_asset_type_archive(engine_alloc);
+        ice::load_asset_type_definitions(asset_alloc, *module_register, *asset_types);
 
-        ice::URI const config_file = game_framework->config_uri();
-        ice::u32 const mounted_files = resources.mount(config_file);
-        ICE_ASSERT(
-            mounted_files >= 1,
-            "Missing config file for URI: {}",
-            config_file.path
-        );
-
-        ice::UniquePtr<ice::AssetSystem> asset_system = ice::make_unique_null<ice::AssetSystem>();
-
-        {
-            ice::ResourceQuery resource_query;
-            resources.query_changes(resource_query);
-            resources.mount("file://mount.isr"_uri);
-
-            ice::Resource* const mount_file = resources.request("urn://mount.isr"_uri);
-            if (mount_file != nullptr)
-            {
-                ICE_LOG(ice::LogSeverity::Info, ice::LogTag::Game, "Custom mount file found: {}\n", mount_file->location().path);
-            }
-
-            resources.query_changes(resource_query);
-            resources.mount("dir://../source/data"_uri);
-            resources.query_changes(resource_query);
-
-            asset_system = ice::create_asset_system(asset_alloc, resources);
-            ice::load_asset_pipeline_modules(asset_alloc, *module_register, *asset_system);
-            asset_system->bind_resources(resource_query.objects);
-        }
+        ice::UniquePtr<ice::AssetStorage> asset_storage = ice::create_asset_storage(asset_alloc, resources, ice::move(asset_types));
 
         ice::UniquePtr<ice::devui::DevUISystem> engine_devui = ice::make_unique_null<ice::devui::DevUISystem>();
         if (ice::build::is_debug || ice::build::is_develop)
         {
             engine_devui = ice::devui::create_devui_system(engine_alloc, *module_register);
         }
-        ice::UniquePtr<ice::Engine> engine = ice::create_engine(engine_alloc, *asset_system, *module_register, engine_devui.get());
+        ice::UniquePtr<ice::Engine> engine = ice::create_engine(engine_alloc, *asset_storage, *module_register, engine_devui.get());
         ice::UniquePtr<ice::render::RenderDriver> render_driver = ice::render::create_render_driver(alloc, *module_register);
 
         if (engine != nullptr && render_driver != nullptr)
@@ -159,7 +130,7 @@ auto game_main(ice::Allocator& alloc, ice::ResourceSystem& resources) -> ice::i3
 
         framework_alloc.destroy(game_framework);
 
-        asset_system = nullptr;
+        asset_storage = nullptr;
         module_register = nullptr;
     }
 

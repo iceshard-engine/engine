@@ -10,7 +10,7 @@ namespace ice
     class Engine;
     class EngineRunner;
 
-    class ResourceSystem;
+    class ResourceTracker;
     class ModuleRegister;
 
     namespace gfx { class GfxRunner; }
@@ -18,7 +18,7 @@ namespace ice
     struct GameServices
     {
         virtual ~GameServices() noexcept = default;
-        virtual auto resource_system() noexcept -> ice::ResourceSystem& = 0;
+        virtual auto resource_system() noexcept -> ice::ResourceTracker& = 0;
         virtual auto module_registry() noexcept -> ice::ModuleRegister& = 0;
     };
 
@@ -27,7 +27,7 @@ namespace ice
     public:
         GameFramework(
             ice::Allocator& alloc,
-            ice::ResourceSystem& resource_system,
+            ice::ResourceTracker& resource_system,
             ice::ModuleRegister& module_register
         ) noexcept;
 
@@ -44,7 +44,7 @@ namespace ice
         void game_begin(ice::EngineRunner& runner) noexcept;
         void game_end() noexcept;
 
-        auto resource_system() noexcept -> ice::ResourceSystem& final;
+        auto resource_system() noexcept -> ice::ResourceTracker& final;
         auto module_registry() noexcept -> ice::ModuleRegister& final;
 
         auto create_app(
@@ -63,7 +63,7 @@ namespace ice
         ice::SystemClock _system_clock;
 
     private:
-        ice::ResourceSystem& _resource_system;
+        ice::ResourceTracker& _resource_system;
         ice::ModuleRegister& _module_register;
 
         ice::Engine* _current_engine;
@@ -113,10 +113,10 @@ namespace ice
     public:
         Game(
             ice::Allocator& alloc,
-            ice::ResourceSystem& resource_system,
+            ice::ResourceTracker& resource_tracker,
             ice::ModuleRegister& module_register
         ) noexcept
-            : GameFramework{ alloc, resource_system, module_register }
+            : GameFramework{ alloc, resource_tracker, module_register }
             , _game{ alloc, _system_clock }
         { }
 
@@ -129,7 +129,7 @@ namespace ice
             }
             else
             {
-                return "urn://config.json"_uri;
+                return ice::URI{ ice::scheme_file, u8"config.json" };
             }
         }
 
@@ -176,7 +176,7 @@ namespace ice
 
     auto create_game_object(
         ice::Allocator& alloc,
-        ice::ResourceSystem& resource_system,
+        ice::ResourceTracker& resource_tracker,
         ice::ModuleRegister& module_register
     ) noexcept -> ice::GameFramework*;
 
@@ -184,10 +184,10 @@ namespace ice
 
 #define ICE_REGISTER_GAMEAPP(Type) \
     auto ice::create_game_object( \
-    ice::Allocator& alloc, \
-    ice::ResourceSystem& resource_system, \
-    ice::ModuleRegister& module_register \
+        ice::Allocator& alloc, \
+        ice::ResourceTracker& resource_tracker, \
+        ice::ModuleRegister& module_register \
     ) noexcept -> ice::GameFramework * \
     { \
-        return alloc.make<ice::Game<Type>>(alloc, resource_system, module_register); \
+        return alloc.make<ice::Game<Type>>(alloc, resource_tracker, module_register); \
     }

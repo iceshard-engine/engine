@@ -12,7 +12,7 @@
 namespace ice
 {
 
-    class AssetSystem;
+    class AssetStorage;
 
     struct RenderQueueDefinition
     {
@@ -43,7 +43,7 @@ namespace ice
 
         virtual auto entity_index() noexcept -> ice::ecs::EntityIndex& = 0;
 
-        virtual auto asset_system() noexcept -> ice::AssetSystem& = 0;
+        virtual auto asset_storage() noexcept -> ice::AssetStorage& = 0;
 
         virtual auto world_manager() noexcept -> ice::WorldManager& = 0;
 

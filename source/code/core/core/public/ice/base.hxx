@@ -39,3 +39,18 @@ namespace ice
     using clean_type = clear_type_t<T>;
 
 } // namespace ice
+
+//! \brief This macro is required for a bug apprearing in the MSVC compile when generating optimized code with /O2
+//!     It code affected is generally tied to coroutine functions / methods and seems to only occur when working with loops.
+//!     A workaround for this problem is to separate the logic of such a coroutine into a separate function and mark it as 'noinline'
+//!     Once the bug is fixed this macro should be removed.
+//!
+//! GitHub Issue: #108
+#define ISATTR_NOINLINE
+
+#if ISP_WINDOWS
+
+#undef ISATTR_NOINLINE
+#define ISATTR_NOINLINE __declspec(noinline)
+
+#endif // #if ISP_WINDOWS

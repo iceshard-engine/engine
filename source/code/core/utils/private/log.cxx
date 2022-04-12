@@ -97,7 +97,7 @@ namespace ice::detail
 
         if (LogState::minimal_header_length < format_result.size)
         {
-            LogState::minimal_header_length = format_result.size;
+            LogState::minimal_header_length = static_cast<ice::u32>(format_result.size);
         }
 
         fmt::string_view log_header{ &header_buffer_raw[0], format_result.size };
@@ -135,7 +135,7 @@ namespace ice::detail
         final_buffer.push_back('\0');
 
 #if ISP_WINDOWS
-        OutputDebugString(final_buffer.data());
+        OutputDebugStringA(final_buffer.data());
 #endif
     }
 
@@ -148,6 +148,7 @@ namespace ice::detail
     ) noexcept
     {
         fmt::vprint(message, ice::move(args));
+        fmt::print("\n");
     }
 
 } // namespace ice::detail

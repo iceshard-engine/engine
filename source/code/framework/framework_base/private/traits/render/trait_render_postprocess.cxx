@@ -7,14 +7,16 @@
 #include <ice/render/render_resource.hxx>
 #include <ice/render/render_pipeline.hxx>
 #include <ice/render/render_buffer.hxx>
+#include <ice/render/render_shader.hxx>
 #include <ice/render/render_image.hxx>
 
 #include <ice/gfx/gfx_resource_tracker.hxx>
 #include <ice/gfx/gfx_stage.hxx>
 #include <ice/gfx/gfx_frame.hxx>
 #include <ice/gfx/gfx_pass.hxx>
+#include <ice/task_sync_wait.hxx>
 
-#include <ice/asset_system.hxx>
+#include <ice/asset_storage.hxx>
 #include <ice/profiler.hxx>
 
 namespace ice
@@ -23,20 +25,11 @@ namespace ice
     namespace detail
     {
 
-        auto load_postprocess_shader(ice::AssetSystem& assets, ice::StringID_Arg name) noexcept -> ice::Data
+        auto load_postprocess_shader(ice::AssetStorage& assets, ice::Utf8String name) noexcept -> ice::Task<ice::Data>
         {
-            Data result;
-            Asset const shader_asset = assets.request(ice::AssetType::Shader, name);
-            if (shader_asset != Asset::Invalid)
-            {
-                Data temp;
-                if (ice::asset_data(shader_asset, temp) == AssetStatus::Loaded)
-                {
-                    result = *reinterpret_cast<ice::Data const*>(temp.location);
-                }
-            }
-
-            return result;
+            ice::Asset const asset = co_await assets.request(ice::render::AssetType_Shader, name, ice::AssetState::Baked);
+            ICE_ASSERT(asset.state == AssetState::Baked, "Shader not available!");
+            co_return asset.data;
         }
 
     } // namespace detail
@@ -208,10 +201,10 @@ namespace ice
         ice::WorldPortal& portal
     ) noexcept
     {
-        ice::AssetSystem& asset_system = engine.asset_system();
+        ice::AssetStorage& asset_system = engine.asset_storage();
 
-        _shader_data[0] = ice::detail::load_postprocess_shader(asset_system, "/shaders/debug/pp-vert"_sid);
-        _shader_data[1] = ice::detail::load_postprocess_shader(asset_system, "/shaders/debug/pp-frag"_sid);
+        _shader_data[0] = ice::sync_wait(ice::detail::load_postprocess_shader(asset_system, u8"shaders/debug/pp-vert"));
+        _shader_data[1] = ice::sync_wait(ice::detail::load_postprocess_shader(asset_system, u8"shaders/debug/pp-frag"));
     }
 
     void IceWorldTrait_RenderPostProcess::record_commands(

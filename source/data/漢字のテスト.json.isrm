@@ -1,0 +1,12 @@
+{
+  "resource": {
+    "bools": [ true, false, true, false ],
+    "integers": [ 2, 4, 8, 42, 42069 ],
+    "floats": [ 3.14, 33.39, -0.11 ],
+    "strings": [ "日本語をはなします。", "I can speek english.", "Mówię po polsku.", "Ich spreche Französisch, aber nicht wirklich." ]
+  },
+  "asset": {
+    "type": "Config",
+    "name": "config"
+  }
+}

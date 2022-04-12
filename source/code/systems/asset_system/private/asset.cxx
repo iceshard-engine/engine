@@ -1,59 +1,20 @@
-#include "asset_internal.hxx"
-#include <ice/data.hxx>
+#include <ice/asset.hxx>
+#include <ice/resource.hxx>
+
+#include "asset_entry.hxx"
 
 namespace ice
 {
 
-    auto asset_name(ice::Asset asset) noexcept -> ice::StringID
+    auto Asset::metadata() const noexcept -> ice::Metadata const&
     {
-        if (asset == Asset::Invalid)
+        if (handle == nullptr)
         {
-            return ice::stringid_invalid;
+            static ice::Metadata empty_metadata{ };
+            return empty_metadata;
         }
 
-        detail::AssetObject const* const object = reinterpret_cast<detail::AssetObject*>(asset);
-        return object->name;
-    }
-
-    auto asset_status(ice::Asset asset) noexcept -> ice::AssetStatus
-    {
-        if (asset == Asset::Invalid)
-        {
-            return AssetStatus::Invalid;
-        }
-
-        detail::AssetObject* const object = reinterpret_cast<detail::AssetObject*>(asset);
-        return object->status;
-    }
-
-    auto asset_data(ice::Asset asset, ice::Data& out_data) noexcept -> ice::AssetStatus
-    {
-        if (asset == Asset::Invalid)
-        {
-            return AssetStatus::Invalid;
-        }
-
-        detail::AssetObject const* const object = reinterpret_cast<detail::AssetObject*>(asset);
-        if (object->status == AssetStatus::Loaded)
-        {
-            out_data = object->data;
-        }
-        return object->status;
-    }
-
-    auto asset_metadata(ice::Asset asset, ice::Metadata& out_metadata) noexcept -> ice::AssetStatus
-    {
-        if (asset == Asset::Invalid)
-        {
-            return AssetStatus::Invalid;
-        }
-
-        detail::AssetObject const* const object = reinterpret_cast<detail::AssetObject*>(asset);
-        if (object->status != AssetStatus::Invalid)
-        {
-            out_metadata = object->metadata;
-        }
-        return object->status;
+        return reinterpret_cast<ice::AssetEntry const*>(handle)->resource->metadata();
     }
 
 } // namespace ice
