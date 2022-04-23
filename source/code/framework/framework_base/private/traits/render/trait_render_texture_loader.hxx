@@ -9,6 +9,7 @@ namespace ice
 {
 
     class AssetRequest;
+    struct AssetHandle;
 
     class IceWorldTrait_RenderTextureLoader : public ice::gfx::GfxTrait
     {
@@ -45,8 +46,22 @@ namespace ice
             ice::EngineRunner& runner
         ) noexcept -> ice::Task<>;
 
+        auto unload_image(
+            ice::u32 image_idx,
+            ice::u64 image_hash,
+            ice::EngineRunner& runner
+        ) noexcept -> ice::Task<>;
+
     private:
-        ice::pod::Hash<ice::render::Image> _loaded_images;
+        ice::pod::Array<ice::render::Image> _images;
+
+        struct Entry
+        {
+            ice::AssetHandle const* asset_handle;
+            ice::u32 image_index;
+        };
+
+        ice::pod::Hash<Entry> _tracked_images;
     };
 
 } // namespace ice

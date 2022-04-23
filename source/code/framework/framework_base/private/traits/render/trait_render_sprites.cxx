@@ -42,7 +42,7 @@ namespace ice
         auto load_sprites_shader(ice::AssetStorage& assets, ice::Utf8String name) noexcept -> ice::Task<ice::Data>
         {
             ice::Asset const asset = co_await assets.request(ice::render::AssetType_Shader, name, ice::AssetState::Baked);
-            ICE_ASSERT(asset.state == AssetState::Baked, "Shader not available!");
+            ICE_ASSERT(asset_check(asset, AssetState::Baked), "Shader not available!");
             co_return asset.data;
         }
 
@@ -566,9 +566,9 @@ namespace ice
         ice::pod::hash::set(_sprite_materials, ice::hash(ice::stringid(material_name)), { });
 
         Asset image_data = co_await runner.asset_storage().request(ice::render::AssetType_Texture2D, material_name, AssetState::Loaded);
-        ICE_ASSERT(image_data.state == AssetState::Loaded, "Unexpected asset state!");
+        ICE_ASSERT(asset_check(image_data, AssetState::Loaded), "Shader not available!");
 
-        ice::Metadata const& metadata = image_data.metadata();
+        ice::Metadata const& metadata = ice::asset_metadata(image_data);
 
         ImageInfo const* image_info = reinterpret_cast<ImageInfo const*>(image_data.data.location);
 
@@ -590,7 +590,7 @@ namespace ice
         }
 
         Asset image_handle = co_await runner.asset_storage().request(ice::render::AssetType_Texture2D, material_name, AssetState::Runtime);
-        ICE_ASSERT(image_handle.state == AssetState::Runtime, "Unexpected asset state!");
+        ICE_ASSERT(asset_check(image_handle, AssetState::Runtime), "Shader not available!");
 
         ice::u64 const tile_mesh_id = (static_cast<ice::u64>(tile_width) << 32) | tile_height;
         bool const has_vertex_offsets = ice::pod::hash::has(_vertex_offsets, tile_mesh_id) == false;

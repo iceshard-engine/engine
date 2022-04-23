@@ -31,10 +31,10 @@ namespace ice
 
         virtual auto allocate(ice::u32 size) const noexcept -> ice::Memory = 0;
 
-        virtual void resolve(
+        virtual auto resolve(
             ice::AssetRequest::Result result,
             ice::Memory memory
-        ) noexcept = 0;
+        ) noexcept -> ice::AssetHandle const* = 0;
     };
 
 } // namespace ice

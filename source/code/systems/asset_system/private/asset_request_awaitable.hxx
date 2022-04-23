@@ -16,7 +16,7 @@ namespace ice
         AssetRequestAwaitable(
             ice::StringID_Arg asset_name,
             ice::AssetShelve& shelve,
-            ice::AssetEntry const* entry,
+            ice::AssetEntry* entry,
             ice::AssetState requested_state
         ) noexcept;
 
@@ -30,10 +30,10 @@ namespace ice
 
         auto allocate(ice::u32 size) const noexcept -> ice::Memory override;
 
-        void resolve(
+        auto resolve(
             ice::AssetRequest::Result result,
             ice::Memory memory
-        ) noexcept override;
+        ) noexcept -> ice::AssetHandle const* override;
 
         bool await_ready() const noexcept { return false; }
         void await_suspend(std::coroutine_handle<void> coro) noexcept;
@@ -42,10 +42,12 @@ namespace ice
         AssetRequestAwaitable* _next;
         AssetRequestAwaitable* _prev;
 
+        std::atomic<AssetRequestAwaitable*> _chained;
+
     private:
         ice::StringID const _asset_name;
         ice::AssetShelve& _asset_shelve;
-        ice::AssetEntry const* _asset_entry;
+        ice::AssetEntry* _asset_entry;
         ice::AssetState _requested_state;
         ice::Memory _result_data;
 

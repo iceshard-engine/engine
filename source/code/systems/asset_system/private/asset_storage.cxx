@@ -171,7 +171,7 @@ namespace ice
     ) noexcept -> ice::Task<ice::Asset>
     {
         ice::StringID const nameid = ice::stringid(name);
-        ice::Asset result{ .state = AssetState::Invalid };
+        ice::Asset result{ };
 
         ice::AssetShelve* shelve = ice::pod::hash::get(_asset_shevles, type.identifier, nullptr);
         if (shelve != nullptr)
@@ -204,18 +204,23 @@ namespace ice
 
                 if (asset_entry == nullptr)
                 {
-                    asset_entry = shelve->store(
-                        nameid,
-                        resource,
-                        load_result.resource,
-                        state,
-                        load_result.data
-                    );
+                    asset_entry = shelve->select(nameid);
+                    if (asset_entry == nullptr)
+                    {
+                        asset_entry = shelve->store(
+                            nameid,
+                            resource,
+                            load_result.resource,
+                            state,
+                            load_result.data
+                        );
+                    }
 
                     asset_entry->state = state;
                 }
                 else if (asset_entry->state == AssetState::Unknown)
                 {
+                    asset_entry->data = load_result.data;
                     asset_entry->state = state;
                 }
             }
@@ -242,7 +247,6 @@ namespace ice
                     if (asset_entry->state == AssetState::Raw || asset_entry->data_baked.location == nullptr)
                     {
                         result.data = asset_entry->data;
-                        result.state = requested_state;
                     }
                     break;
                 }
@@ -255,19 +259,16 @@ namespace ice
                     {
                         result.data = asset_entry->data;
                     }
-                    result.state = requested_state;
                     break;
                 }
                 case AssetState::Loaded:
                 {
                     result.data = asset_entry->data_loaded;
-                    result.state = requested_state;
                     break;
                 }
                 case AssetState::Runtime:
                 {
                     result.data = asset_entry->data_runtime;
-                    result.state = requested_state;
                     break;
                 }
                 }
@@ -346,7 +347,6 @@ namespace ice
                 if (requested_state == asset_entry->state)
                 {
                     result.data = result_data;
-                    result.state = result_data.location != nullptr ? requested_state : AssetState::Invalid;
                     result.handle = result_data.location != nullptr ? asset_entry : nullptr;
                 }
             }

@@ -83,7 +83,7 @@ namespace ice
     ) noexcept -> ice::Task<>
     {
         ice::Asset result = co_await runner.asset_storage().request(ice::AssetType_TileMap, tilemap_name, AssetState::Loaded);
-        if (result.state != AssetState::Loaded)
+        if (asset_check(result, AssetState::Loaded) == false)
         {
             ICE_LOG(
                 ice::LogSeverity::Error, ice::LogTag::Game,

@@ -22,6 +22,22 @@
 namespace ice
 {
 
+    namespace detail
+    {
+
+        struct ReleaseOnExit
+        {
+            ice::Asset asset;
+            ice::AssetStorage& storage;
+
+            inline ~ReleaseOnExit() noexcept
+            {
+                ice::sync_wait(storage.release(asset));
+            }
+        };
+
+    } // namespace detail
+
     IceWorldTrait_SpriteAnimator::IceWorldTrait_SpriteAnimator(
         ice::Allocator& alloc
     ) noexcept
@@ -74,10 +90,12 @@ namespace ice
             sprite_query,
             [&](ice::Animation const& anim, ice::Sprite const& sprite) noexcept
             {
-                Asset sprite_asset = ice::sync_wait(_assets->request(ice::render::AssetType_Texture2D, sprite.material, AssetState::Baked));
-                Metadata asset_meta = sprite_asset.metadata();
+                ice::Asset sprite_asset = ice::sync_wait(_assets->request(ice::render::AssetType_Texture2D, sprite.material, AssetState::Baked));
+                ice::Metadata asset_meta = ice::asset_metadata(sprite_asset);
+                ice::detail::ReleaseOnExit release_asset{ sprite_asset, *_assets };
 
-                ice::pod::Array<ice::Utf8String> anim_names{ frame.allocator() };
+
+                ice::pod::Array<ice::Utf8String> anim_names{ portal.allocator() };
                 if (meta_read_utf8_array(asset_meta, "animation.names"_sid, anim_names) == false)
                 {
                     return;

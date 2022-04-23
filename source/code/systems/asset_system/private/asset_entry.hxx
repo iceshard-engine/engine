@@ -6,6 +6,7 @@ namespace ice
 {
 
     class Resource_v2;
+    class AssetRequestAwaitable;
 
     struct ResourceHandle;
 
@@ -22,6 +23,8 @@ namespace ice
         ice::Memory data_baked;
         ice::Memory data_loaded;
         ice::Memory data_runtime;
+
+        ice::AssetRequestAwaitable* request_awaitable;
     };
 
 } // namespace ice

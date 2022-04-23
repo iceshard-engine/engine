@@ -39,10 +39,15 @@ namespace ice
     struct Asset
     {
         ice::AssetHandle* handle;
-        ice::AssetState state;
         ice::Data data;
-
-        auto metadata() const noexcept -> ice::Metadata const&;
     };
+
+    bool asset_check(ice::Asset const& asset, ice::AssetState expected_state) noexcept;
+
+    auto asset_metadata(ice::Asset const& asset) noexcept -> ice::Metadata const&;
+    auto asset_metadata(ice::AssetHandle const* handle) noexcept -> ice::Metadata const&;
+
+    auto asset_state(ice::Asset const& asset) noexcept -> ice::AssetState;
+    auto asset_state(ice::AssetHandle const* handle) noexcept -> ice::AssetState;
 
 } // namespace ice

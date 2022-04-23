@@ -60,7 +60,7 @@ namespace ice
         auto load_tilemap_shader(ice::AssetStorage& assets, ice::Utf8String name) noexcept -> ice::Task<ice::Data>
         {
             ice::Asset const asset = co_await assets.request(ice::render::AssetType_Shader, name, ice::AssetState::Baked);
-            ICE_ASSERT(asset.state == AssetState::Baked, "Shader not available!");
+            ICE_ASSERT(asset_check(asset, AssetState::Baked), "Shader not available!");
             co_return asset.data;
         }
 
@@ -81,10 +81,10 @@ namespace ice
                 ice::Utf8String const asset_name = tilemap.tilesets[idx].asset;
 
                 Asset image_data = co_await runner.asset_storage().request(ice::render::AssetType_Texture2D, asset_name, AssetState::Loaded);
-                ICE_ASSERT(image_data.state == AssetState::Loaded, "Unexpected asset state!");
+                ICE_ASSERT(asset_check(image_data, AssetState::Loaded), "Shader not available!");
                 ice::render::ImageInfo const* image_info = reinterpret_cast<ice::render::ImageInfo const*>(image_data.data.location);
 
-                ice::Metadata const& metadata = image_data.metadata();
+                ice::Metadata const& metadata = ice::asset_metadata(image_data);
 
                 ice::i32 tile_width;
                 ice::i32 tile_height;
@@ -111,7 +111,7 @@ namespace ice
                 properties[idx].tile_scale = { tile_size.x / tileset_size.x, tile_size.y / tileset_size.y };
 
                 ice::Asset const asset = co_await runner.asset_storage().request(ice::render::AssetType_Texture2D, asset_name, AssetState::Runtime);
-                ICE_ASSERT(asset.state == AssetState::Runtime, "Unexpected asset state!");
+                ICE_ASSERT(asset_check(asset, AssetState::Runtime), "Shader not available!");
 
                 cache.tileset_images[idx] = *reinterpret_cast<ice::render::Image const*>(asset.data.location);
                 cache.image_count += 1;

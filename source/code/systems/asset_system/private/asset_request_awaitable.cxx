@@ -10,11 +10,12 @@ namespace ice
     AssetRequestAwaitable::AssetRequestAwaitable(
         ice::StringID_Arg asset_name,
         ice::AssetShelve& shelve,
-        ice::AssetEntry const* entry,
+        ice::AssetEntry* entry,
         ice::AssetState requested_state
     ) noexcept
         : _next{ nullptr }
         , _prev{ nullptr }
+        , _chained{ nullptr }
         , _asset_name{ asset_name }
         , _asset_shelve{ shelve }
         , _asset_entry{ entry }
@@ -22,6 +23,22 @@ namespace ice
         , _result_data{ }
         , _coroutine{ nullptr }
     {
+        // TODO: Might require atomic exchange to always work properly
+        if (entry->request_awaitable == nullptr)
+        {
+            entry->request_awaitable = this;
+        }
+        else
+        {
+            // TODO: Might require atomic exchange to always work properly
+            ice::AssetRequestAwaitable* last_request = entry->request_awaitable;
+            while (last_request->_chained != nullptr)
+            {
+                last_request = last_request->_chained;
+            }
+
+            last_request->_chained = this;
+        }
     }
 
     auto AssetRequestAwaitable::state() const noexcept -> ice::AssetState
@@ -64,11 +81,13 @@ namespace ice
         };
     }
 
-    void AssetRequestAwaitable::resolve(
+    auto AssetRequestAwaitable::resolve(
         ice::AssetRequest::Result result,
         ice::Memory memory
-    ) noexcept
+    ) noexcept -> ice::AssetHandle const*
     {
+        ice::AssetHandle const* asset_handle = nullptr;
+
         if (result != AssetRequest::Result::Success)
         {
             _asset_shelve.asset_allocator().deallocate(memory.location);
@@ -77,15 +96,41 @@ namespace ice
         else
         {
             _result_data = memory;
+            asset_handle = _asset_entry;
         }
 
-        _coroutine.resume();
+        // After the coroutine finishes the request awaitable might be already dead.
+        //  So we need to store some variables in local scope.
+        ice::Memory result_data = _result_data;
+        ice::AssetRequestAwaitable* chained = _chained;
+
+        if (_asset_entry->request_awaitable == this)
+        {
+            _asset_entry->request_awaitable = nullptr;
+        }
+
+        _coroutine.resume(); // Introducing, dead 'this' pointer!
+
+        while (chained != nullptr)
+        {
+            auto coro = chained->_coroutine;
+            chained->_result_data = result_data;
+            chained = chained->_chained;
+            coro.resume(); // same death applies here
+        }
+
+        return asset_handle;
     }
 
     void AssetRequestAwaitable::await_suspend(std::coroutine_handle<void> coro) noexcept
     {
         _coroutine = coro;
-        _asset_shelve.append_request(this, _requested_state);
+
+        if (_asset_entry->request_awaitable == this)
+        {
+            // Only append the top most request to the shelve.
+            _asset_shelve.append_request(this, _requested_state);
+        }
     }
 
     auto AssetRequestAwaitable::await_resume() const noexcept -> ice::Memory

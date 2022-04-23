@@ -28,7 +28,7 @@ namespace ice
         auto load_postprocess_shader(ice::AssetStorage& assets, ice::Utf8String name) noexcept -> ice::Task<ice::Data>
         {
             ice::Asset const asset = co_await assets.request(ice::render::AssetType_Shader, name, ice::AssetState::Baked);
-            ICE_ASSERT(asset.state == AssetState::Baked, "Shader not available!");
+            ICE_ASSERT(asset_check(asset, AssetState::Baked), "Shader not available!");
             co_return asset.data;
         }
 

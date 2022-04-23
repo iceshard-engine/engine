@@ -28,7 +28,7 @@
             'engine'
             // 'engine_debug'
             'application'
-            'framework_2d'
+            'framework_base'
         }
     ]
 ]
