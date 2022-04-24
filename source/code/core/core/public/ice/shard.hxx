@@ -156,6 +156,12 @@ namespace ice
         template<>
         constexpr ice::PayloadID Constant_ShardPayloadID<ice::detail::stringid_type_v2::StringID_Hash> = ice::payload_id("ice::StringID_Hash");
 
+        template<>
+        constexpr ice::PayloadID Constant_ShardPayloadID<ice::c8utf const*> = ice::payload_id("ice::c8utf const*");
+
+        template<>
+        constexpr ice::PayloadID Constant_ShardPayloadID<std::u8string_view const*> = ice::payload_id("std::u8string_view const*");
+
     } // namespace detail
 
     constexpr auto shard_create(ice::ShardID shard_id) noexcept -> ice::Shard
@@ -179,83 +185,51 @@ namespace ice
         };
     }
 
-    template<typename T>
+    template<typename T> requires(ice::detail::Constant_ShardPayloadID<T> != PayloadID::NotSet)
     constexpr auto shard_create(std::string_view sv, T payload) noexcept -> ice::Shard
     {
         static_assert(sizeof(T) <= sizeof(ice::Shard::payload), "The given payload is bigger than a shard can have attached.");
-        static_assert(ice::detail::Constant_ShardPayloadID<T> != PayloadID::NotSet, "The given type cannot be used to attach a shard payload.");
-        if constexpr (std::is_pointer_v<T> == false)
+
+        struct alignas(std::max(sizeof(ice::Payload), alignof(ice::Payload))) PayloadBitCastHelper
         {
-            return {
-                .name = ice::shard_name(sv),
-                .payload_id = ice::detail::Constant_ShardPayloadID<T>,
-                .payload = static_cast<ice::Payload>(payload)
-            };
-        }
-        else
-        {
-            return {
-                .name = ice::shard_name(sv),
-                .payload_id = ice::detail::Constant_ShardPayloadID<T>,
-                .payload = *reinterpret_cast<ice::Payload const*>(ice::addressof(payload))
-            };
-        }
+            T value;
+        } temp{ payload };
+
+        return {
+            .name = ice::shard_name(sv),
+            .payload_id = ice::detail::Constant_ShardPayloadID<T>,
+            .payload = std::bit_cast<ice::Payload>(temp)
+        };
     }
 
-    template<typename T>
+    template<typename T> requires(ice::detail::Constant_ShardPayloadID<T> != PayloadID::NotSet)
     constexpr auto shard_create(ice::Shard shard, T payload) noexcept -> ice::Shard
     {
         static_assert(sizeof(T) <= sizeof(ice::Shard::payload), "The given payload is bigger than a shard can have attached.");
-        static_assert(ice::detail::Constant_ShardPayloadID<T> != PayloadID::NotSet, "The given type cannot be used to attach a shard payload.");
-        if constexpr (std::is_pointer_v<T> == false && std::is_class_v<T> == false)
+
+        struct alignas(std::max(sizeof(ice::Payload), alignof(ice::Payload))) PayloadBitCastHelper
         {
-            return {
-                .name = shard.name,
-                .payload_id = ice::detail::Constant_ShardPayloadID<T>,
-                .payload = static_cast<ice::Payload>(payload)
-            };
-        }
-        else
-        {
-            return {
-                .name = shard.name,
-                .payload_id = ice::detail::Constant_ShardPayloadID<T>,
-                .payload = *reinterpret_cast<ice::Payload const*>(ice::addressof(payload))
-            };
-        }
+            T value;
+        } temp{ payload };
+
+        return {
+            .name = shard.name,
+            .payload_id = ice::detail::Constant_ShardPayloadID<T>,
+            .payload = std::bit_cast<ice::Payload>(temp)
+        };
     }
 
-    template<typename T> requires (std::is_pointer_v<T> == false && std::is_class_v<T> == false)
+    template<typename T> requires (ice::detail::Constant_ShardPayloadID<T> != PayloadID::NotSet)
     constexpr bool shard_inspect(ice::Shard shard, T& value) noexcept
     {
-        static_assert(ice::detail::Constant_ShardPayloadID<T> != PayloadID::NotSet, "The given type cannot be used to inspect a shard object.");
         if (ice::detail::Constant_ShardPayloadID<T> == shard.payload_id)
         {
-            value = static_cast<T>(shard.payload);
-            return true;
-        }
-        return false;
-    }
+            struct alignas(std::max(sizeof(ice::Payload), alignof(ice::Payload))) PayloadBitCastHelper
+            {
+                T value;
+            } temp{ std::bit_cast<PayloadBitCastHelper>(shard.payload) };
 
-    template<typename T> requires (std::is_pointer_v<T> == false && std::is_class_v<T>)
-    constexpr bool shard_inspect(ice::Shard shard, T& value) noexcept
-    {
-        static_assert(ice::detail::Constant_ShardPayloadID<T> != PayloadID::NotSet, "The given type cannot be used to inspect a shard object.");
-        if (ice::detail::Constant_ShardPayloadID<T> == shard.payload_id)
-        {
-            value = *reinterpret_cast<T const*>(ice::addressof(shard.payload));
-            return true;
-        }
-        return false;
-    }
-
-    template<typename T>
-    inline bool shard_inspect(ice::Shard shard, T*& value) noexcept
-    {
-        static_assert(ice::detail::Constant_ShardPayloadID<T*> != PayloadID::NotSet, "The given type cannot be used to inspect a shard object.");
-        if (ice::detail::Constant_ShardPayloadID<T*> == shard.payload_id)
-        {
-            value = reinterpret_cast<T*>(static_cast<uptr>(shard.payload));
+            value = temp.value;
             return true;
         }
         return false;

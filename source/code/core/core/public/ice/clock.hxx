@@ -6,92 +6,107 @@ namespace ice
 
     struct Clock
     {
-        int64_t previous_timestamp;
-        int64_t latest_timestamp;
+        ice::i64 previous_timestamp;
+        ice::i64 latest_timestamp;
     };
 
-    struct SystemClock : Clock { };
-
-    struct CustomClock : Clock
+    struct SystemClock : ice::Clock
     {
-        Clock const* base_clock;
-        float modifier;
+    };
+
+    struct CustomClock : ice::Clock
+    {
+        ice::Clock const* base_clock;
+        ice::f32 modifier;
     };
 
     struct Timer
     {
-        Clock const* clock;
-        int64_t step;
-        int64_t last_tick_timestamp;
+        ice::Clock const* clock;
+        ice::i64 step;
+        ice::i64 last_tick_timestamp;
     };
 
     struct Timeline
     {
-        Clock const* clock;
-        int64_t initial_timestap;
+        ice::Clock const* clock;
+        ice::i64 initial_timestap;
     };
 
     struct Stopwatch
     {
-        Clock const* clock;
+        ice::Clock const* clock;
 
-        int64_t initial_timestamp;
-        int64_t final_timestamp;
+        ice::i64 initial_timestamp;
+        ice::i64 final_timestamp;
     };
 
     namespace clock
     {
 
-        auto clock_frequency() noexcept -> float;
+        auto clock_frequency() noexcept -> ice::f32;
 
-        auto create_clock() noexcept -> SystemClock;
+        auto create_clock() noexcept -> ice::SystemClock;
 
-        auto create_clock(Clock const& clock, float modifier) noexcept -> CustomClock;
+        auto create_clock(
+            ice::Clock const& clock,
+            ice::f32 modifier
+        ) noexcept -> ice::CustomClock;
 
-        void update(SystemClock& c) noexcept;
+        void update(ice::SystemClock& clock) noexcept;
 
-        void update(CustomClock& c) noexcept;
+        void update(ice::CustomClock& clock) noexcept;
 
-        void update_max_delta(CustomClock& c, float max_elapsed_seconds);
+        void update_max_delta(
+            ice::CustomClock& clock,
+            ice::f32 max_elapsed_seconds
+        ) noexcept;
 
-        auto elapsed(Clock const& c) noexcept -> float;
+        auto elapsed(ice::Clock const& clock) noexcept -> ice::f32;
 
     } // namespace clock
 
     namespace timer
     {
 
-        auto create_timer(Clock const& clock, float step_seconds) noexcept -> Timer;
+        auto create_timer(
+            ice::Clock const& clock,
+            ice::f32 step_seconds
+        ) noexcept -> ice::Timer;
 
-        auto create_timer(Clock const& clock, float step_seconds, int64_t initial_timestamp) noexcept -> Timer;
+        auto create_timer(
+            ice::Clock const& clock,
+            ice::f32 step_seconds,
+            ice::i64 initial_timestamp
+        ) noexcept -> ice::Timer;
 
-        bool update(Timer& timer) noexcept;
+        bool update(ice::Timer& timer) noexcept;
 
-        bool update_by_step(Timer& timer) noexcept;
+        bool update_by_step(ice::Timer& timer) noexcept;
 
-        auto elapsed(Timer const& timer) noexcept -> float;
+        auto elapsed(ice::Timer const& timer) noexcept -> ice::f32;
 
-        auto alpha(Timer const& timer) noexcept -> float;
+        auto alpha(ice::Timer const& timer) noexcept -> ice::f32;
 
     } // namespace timer
 
     namespace timeline
     {
 
-        auto create_timeline(Clock const& clock) noexcept -> Timeline;
+        auto create_timeline(ice::Clock const& clock) noexcept -> ice::Timeline;
 
-        auto elapsed(Timeline const& timeline) noexcept -> float;
+        auto elapsed(ice::Timeline const& timeline) noexcept -> ice::f32;
 
     } // namespace timeline
 
     namespace stopwatch
     {
 
-        auto create_stopwatch(Clock const& clock) noexcept -> Stopwatch;
+        auto create_stopwatch(ice::Clock const& clock) noexcept -> ice::Stopwatch;
 
-        void start(Stopwatch& stopwatch) noexcept;
+        void start(ice::Stopwatch& stopwatch) noexcept;
 
-        void stop(Stopwatch& stopwatch) noexcept;
+        void stop(ice::Stopwatch& stopwatch) noexcept;
 
     } // namespace stopwatch
 
