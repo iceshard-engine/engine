@@ -40,7 +40,8 @@ namespace ice
         ice::Allocator& alloc,
         ice::World const& world,
         ice::WorldTrait* trait,
-        ice::ecs::EntityStorage& entity_storage
+        ice::ecs::EntityStorage& entity_storage,
+        bool is_owning
     ) noexcept
         : _allocator{ alloc }
         , _world{ world }
@@ -49,6 +50,7 @@ namespace ice
         , _entity_storage{ entity_storage }
         , _wait_event_allocator{ _allocator, 512 }
         , _trait_tasks{ _allocator }
+        , _is_owning{ is_owning }
     {
         ice::pod::array::reserve(_trait_tasks, 20);
     }

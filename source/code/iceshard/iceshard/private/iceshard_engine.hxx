@@ -11,14 +11,16 @@ namespace ice
 {
 
     class EngineDevUI;
+    class WorldTraitArchive;
+
+    struct EngineCreateInfo;
 
     class IceshardEngine final : public ice::Engine
     {
     public:
         IceshardEngine(
             ice::Allocator& alloc,
-            ice::AssetStorage& asset_system,
-            ice::EngineDevUI* devui
+            ice::EngineCreateInfo const& create_info
         ) noexcept;
         ~IceshardEngine() noexcept override;
 
@@ -49,6 +51,8 @@ namespace ice
     private:
         ice::memory::ProxyAllocator _allocator;
         ice::AssetStorage& _asset_storage;
+        ice::WorldTraitArchive const& _trait_archive;
+
         ice::ecs::EntityIndex _entity_index;
         ice::IceshardWorldManager _world_manager;
         ice::EngineDevUI* const _devui;

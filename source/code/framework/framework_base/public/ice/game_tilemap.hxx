@@ -1,5 +1,6 @@
 #pragma once
 #include <ice/span.hxx>
+#include <ice/shard.hxx>
 #include <ice/stringid.hxx>
 #include <ice/unique_ptr.hxx>
 #include <ice/world/world_trait.hxx>
@@ -7,6 +8,8 @@
 
 namespace ice
 {
+
+    static constexpr ice::Shard Shard_LoadTileMap = "ice/action/load-tilemap"_shard;
 
     static constexpr ice::AssetType AssetType_TileMap = ice::make_asset_type(u8"ice/framework/tile-map");
 

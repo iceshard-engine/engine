@@ -62,10 +62,6 @@ public:
     ice::UniquePtr<ice::gfx::GfxTrait> _trait_render_tilemap{ ice::make_unique_null<ice::gfx::GfxTrait>() };
     ice::UniquePtr<ice::gfx::GfxTrait> _trait_render_debug{ ice::make_unique_null<ice::gfx::GfxTrait>() };
     ice::UniquePtr<ice::gfx::GfxTrait> _trait_render_camera{ ice::make_unique_null<ice::gfx::GfxTrait>() };
-    ice::UniquePtr<ice::WorldTrait> _trait_actor{ ice::make_unique_null<ice::WorldTrait>() };
-    ice::UniquePtr<ice::WorldTrait> _trait_animator{ ice::make_unique_null<ice::WorldTrait>() };
-    ice::UniquePtr<ice::WorldTrait_Physics2D> _trait_physics{ ice::make_unique_null<ice::WorldTrait_Physics2D>() };
-    ice::UniquePtr<ice::WorldTrait_TileMap> _trait_tilemap{ ice::make_unique_null<ice::WorldTrait_TileMap>() };
 
     ice::UniquePtr<ice::action::ActionTriggerDatabase> _action_triggers{ ice::make_unique_null<ice::action::ActionTriggerDatabase>() };
     ice::UniquePtr<ice::action::ActionSystem> _action_system{ ice::make_unique_null<ice::action::ActionSystem>() };

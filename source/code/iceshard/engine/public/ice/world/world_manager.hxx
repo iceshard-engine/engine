@@ -1,5 +1,6 @@
 #pragma once
 #include <ice/stringid.hxx>
+#include <ice/world/world_assembly.hxx>
 #include <ice/ecs/ecs_entity_storage.hxx>
 
 namespace ice
@@ -7,12 +8,13 @@ namespace ice
 
     class World;
 
-    class WorldManager
+    class WorldManager : public ice::WorldAssembly
     {
     public:
+        using WorldAssembly::create_world;
+
         virtual auto create_world(
-            ice::StringID_Arg name,
-            ice::ecs::EntityStorage* entity_storage
+            ice::WorldTemplate const& world_template
         ) noexcept -> World* = 0;
 
         virtual auto find_world(

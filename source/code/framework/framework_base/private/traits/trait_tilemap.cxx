@@ -4,6 +4,7 @@
 #include <ice/engine_frame.hxx>
 #include <ice/engine_runner.hxx>
 #include <ice/world/world_portal.hxx>
+#include <ice/world/world_trait_description.hxx>
 #include <ice/task_thread_pool.hxx>
 #include <ice/asset_storage.hxx>
 
@@ -179,10 +180,10 @@ namespace ice
     {
         IPT_ZONE_SCOPED_NAMED("[Trait] TileMap :: Update");
 
-        if (_requested_tilemap.empty() == false)
+        std::u8string_view const* name;
+        if (ice::shards::inspect_first(runner.previous_frame().shards(), ice::Shard_LoadTileMap, name))
         {
-            portal.execute(load_tilemap_task(_requested_tilemap, runner));
-            _requested_tilemap = u8"";
+            portal.execute(load_tilemap_task(*name, runner));
         }
 
         if (ice::pod::array::any(_tilemaps))
@@ -206,6 +207,17 @@ namespace ice
     ) noexcept -> ice::UniquePtr<ice::WorldTrait_TileMap>
     {
         return ice::make_unique<ice::WorldTrait_TileMap, ice::IceWorldTrait_TileMap>(alloc, alloc, trait_physics);
+    }
+
+    auto trait_factory_tilemap(
+        ice::Allocator& alloc,
+        ice::WorldTraitTracker const& trait_tracker
+    ) noexcept -> ice::WorldTrait*
+    {
+        ice::WorldTrait_Physics2D* phx_trait = static_cast<ice::WorldTrait_Physics2D*>(
+            trait_tracker.find_trait("ice.base-framework.trait-physics-box2d"_sid)
+        );
+        return alloc.make<IceWorldTrait_TileMap>(alloc, *phx_trait);
     }
 
 } // namespace ice

@@ -58,4 +58,11 @@ namespace ice
         ice::pod::Array<ice::TileMapInstance> _tilemaps;
     };
 
+    class WorldTraitTracker;
+
+    auto trait_factory_tilemap(
+        ice::Allocator& alloc,
+        ice::WorldTraitTracker const& trait_tracker
+    ) noexcept -> ice::WorldTrait*;
+
 } // namespace ice
