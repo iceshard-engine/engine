@@ -552,7 +552,7 @@ namespace ice
             detail::MetadataEntry{
                 .data_type = detail::MetadataEntryType::String,
                 .data_count = 0,
-                .value_buffer = {
+                .value_buffer = detail::MetadataEntryBuffer{
                     .offset = static_cast<ice::u16>(str_offset),
                     .size = static_cast<ice::u16>(ice::string::size(value))
                 },
@@ -582,7 +582,7 @@ namespace ice
             detail::MetadataEntry{
                 .data_type = detail::MetadataEntryType::StringUTF8,
                 .data_count = 0,
-                .value_buffer = {
+                .value_buffer = detail::MetadataEntryBuffer{
                     .offset = static_cast<ice::u16>(str_offset),
                     .size = static_cast<ice::u16>(ice::string::size(value))
                 },
@@ -615,7 +615,7 @@ namespace ice
                 detail::MetadataEntry{
                     .data_type = detail::MetadataEntryType::Boolean,
                     .data_count = static_cast<ice::u16>(values.size()),
-                    .value_buffer = {
+                    .value_buffer = detail::MetadataEntryBuffer{
                         .offset = static_cast<ice::u16>(array_offset),
                         .size = static_cast<ice::u16>(values.size())
                     },
@@ -648,7 +648,7 @@ namespace ice
                 detail::MetadataEntry{
                     .data_type = detail::MetadataEntryType::Integer,
                     .data_count = static_cast<ice::u16>(values.size()),
-                    .value_buffer = {
+                    .value_buffer = detail::MetadataEntryBuffer{
                         .offset = static_cast<ice::u16>(array_offset),
                         .size = static_cast<ice::u16>(values.size())
                     },
@@ -681,7 +681,7 @@ namespace ice
                 detail::MetadataEntry{
                     .data_type = detail::MetadataEntryType::Float,
                     .data_count = static_cast<ice::u16>(values.size()),
-                    .value_buffer = {
+                    .value_buffer = detail::MetadataEntryBuffer{
                         .offset = static_cast<ice::u16>(array_offset),
                         .size = static_cast<ice::u16>(values.size())
                     },
@@ -744,7 +744,7 @@ namespace ice
                 detail::MetadataEntry{
                     .data_type = detail::MetadataEntryType::String,
                     .data_count = static_cast<ice::u16>(values.size()),
-                    .value_buffer = {
+                    .value_buffer = detail::MetadataEntryBuffer{
                         .offset = static_cast<ice::u16>(array_offset),
                         .size = static_cast<ice::u16>(values.size())
                     },
@@ -807,7 +807,7 @@ namespace ice
                 detail::MetadataEntry{
                     .data_type = detail::MetadataEntryType::StringUTF8,
                     .data_count = static_cast<ice::u16>(values.size()),
-                    .value_buffer = {
+                    .value_buffer = detail::MetadataEntryBuffer{
                         .offset = static_cast<ice::u16>(array_offset),
                         .size = static_cast<ice::u16>(values.size())
                     },

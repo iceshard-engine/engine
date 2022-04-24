@@ -172,7 +172,7 @@ namespace ice
 
                 resource_updates[resource_update_count] = ice::render::ResourceUpdateInfo
                 {
-                    .uniform_buffer = {
+                    .uniform_buffer = ice::render::ResourceBufferInfo{
                         .buffer = buffer,
                         .offset = 0,
                         .size = sizeof(TileSet_ShaderData_Properties)
@@ -679,7 +679,7 @@ namespace ice
         ResourceUpdateInfo res_updates[]{
             ResourceUpdateInfo
             {
-                .uniform_buffer = {
+                .uniform_buffer = ResourceBufferInfo{
                     .buffer = _render_camera_buffer,
                     .offset = 0,
                     .size = sizeof(ice::TraitCameraRenderData)
@@ -687,7 +687,7 @@ namespace ice
             },
             ResourceUpdateInfo
             {
-                .uniform_buffer = {
+                .uniform_buffer = ResourceBufferInfo{
                     .buffer = _tile_flip_buffer,
                     .offset = 0,
                     .size = sizeof(ice::vec2f) * 32

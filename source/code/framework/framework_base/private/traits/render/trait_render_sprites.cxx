@@ -483,7 +483,7 @@ namespace ice
         ResourceUpdateInfo res_updates[]{
             ResourceUpdateInfo
             {
-                .uniform_buffer = {
+                .uniform_buffer = ResourceBufferInfo{
                     .buffer = _render_camera_buffer,
                     .offset = 0,
                     .size = sizeof(ice::TraitCameraRenderData)
@@ -683,7 +683,7 @@ namespace ice
             },
             ResourceUpdateInfo
             {
-                .uniform_buffer = {
+                .uniform_buffer = ResourceBufferInfo{
                     .buffer = sprite_data.material_tileinfo[0],
                     .offset = 0,
                     .size = sizeof(sprite_data.material_scale)

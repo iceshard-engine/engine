@@ -42,7 +42,7 @@ namespace ice
         AssetRequestAwaitable* _next;
         AssetRequestAwaitable* _prev;
 
-        std::atomic<AssetRequestAwaitable*> _chained;
+        AssetRequestAwaitable* _chained;
 
     private:
         ice::StringID const _asset_name;

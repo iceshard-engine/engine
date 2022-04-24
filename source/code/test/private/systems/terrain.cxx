@@ -94,8 +94,7 @@ namespace ice::trait
                 ResourceUpdateInfo{.sampler = _terrain_sampler },
                 ResourceUpdateInfo
                 {
-                    .uniform_buffer =
-                    {
+                    .uniform_buffer = ResourceBufferInfo{
                         .buffer = _camera_buffer,
                         .offset = 0,
                         .size = sizeof(ice::gfx::GfxCameraUniform),
@@ -103,8 +102,7 @@ namespace ice::trait
                 },
                 ResourceUpdateInfo
                 {
-                    .uniform_buffer =
-                    {
+                    .uniform_buffer = ResourceBufferInfo{
                         .buffer = _terrain_settings_buffer,
                         .offset = 0,
                         .size = sizeof(TerrainSettings),

@@ -236,7 +236,7 @@ namespace ice
                 ResourceUpdateInfo res_updates[]{
                     ResourceUpdateInfo
                     {
-                        .uniform_buffer = {
+                        .uniform_buffer = ResourceBufferInfo{
                             .buffer = _render_camera_buffer,
                             .offset = 0,
                             .size = sizeof(ice::TraitCameraRenderData)
