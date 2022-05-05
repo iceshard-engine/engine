@@ -33,6 +33,4 @@ namespace ice
         ice::vec2f near_far;
     };
 
-    class WorldTrait;
-
 } // namespace ice

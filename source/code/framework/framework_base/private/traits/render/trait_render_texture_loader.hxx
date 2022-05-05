@@ -64,4 +64,11 @@ namespace ice
         ice::pod::Hash<Entry> _tracked_images;
     };
 
+
+    class WorldTraitArchive;
+
+    void register_trait_render_texture_loader(
+        ice::WorldTraitArchive& archive
+    ) noexcept;
+
 } // namespace ice

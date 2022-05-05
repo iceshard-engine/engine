@@ -2,6 +2,7 @@
 
 #include <ice/engine_runner.hxx>
 #include <ice/world/world_portal.hxx>
+#include <ice/world/world_trait_archive.hxx>
 
 #include <ice/gfx/gfx_device.hxx>
 #include <ice/gfx/gfx_resource_tracker.hxx>
@@ -14,11 +15,6 @@
 
 namespace ice
 {
-
-    IceWorldTrait_RenderClear::IceWorldTrait_RenderClear(ice::StringID_Arg stage_name) noexcept
-        : _stage_name{ stage_name }
-    {
-    }
 
     void IceWorldTrait_RenderClear::gfx_setup(
         ice::gfx::GfxFrame& gfx_frame,
@@ -52,7 +48,7 @@ namespace ice
             gfx_setup(gfx_frame, gfx_device);
         }
 
-        gfx_frame.set_stage_slot(_stage_name, this);
+        gfx_frame.set_stage_slot(ice::Constant_GfxStage_Clear, this);
     }
 
     void IceWorldTrait_RenderClear::record_commands(
@@ -89,6 +85,24 @@ namespace ice
         api.set_scissor(cmds, scissor_and_viewport);
         api.set_viewport(cmds, scissor_and_viewport);
         api.next_subpass(cmds, ice::render::SubPassContents::Inline);
+    }
+
+    void register_trait_render_clear(
+        ice::WorldTraitArchive& archive
+    ) noexcept
+    {
+        static constexpr ice::StringID trait_dependencies[]{
+            Constant_TraitName_RenderBase,
+        };
+
+        archive.register_trait(
+            ice::Constant_TraitName_RenderClear,
+            ice::WorldTraitDescription
+            {
+                .factory = ice::detail::generic_trait_factory<IceWorldTrait_RenderClear>,
+                .required_dependencies = trait_dependencies
+            }
+        );
     }
 
 } // namespace ice

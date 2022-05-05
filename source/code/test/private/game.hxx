@@ -25,12 +25,13 @@ class MyGame : public ice::WorldTrait
 {
 public:
     static constexpr ice::URI ConfigFile = ice::URI{ ice::scheme_file, u8"config.json" };
-    static constexpr ice::StringID GraphicsWorldName = "game.render_world"_sid;
 
     MyGame(ice::Allocator& alloc, ice::Clock const& clock) noexcept;
 
+    auto graphics_world_template() const noexcept -> ice::WorldTemplate const&;
+
     void on_load_modules(ice::GameServices& sercies) noexcept;
-    void on_app_startup(ice::Engine& engine, ice::gfx::GfxRunner& gfx_runner) noexcept;
+    void on_app_startup(ice::Engine& engine) noexcept;
     void on_app_shutdown(ice::Engine& engine) noexcept;
 
     void on_game_begin(ice::EngineRunner& runner) noexcept;
@@ -53,22 +54,12 @@ public:
     ice::UniquePtr<ice::ecs::EntityStorage> _ecs_storage;
 
     ice::UniquePtr<ice::gfx::GfxDynamicPass> _game_gfx_pass;
-    ice::UniquePtr<ice::gfx::GfxTrait> _trait_render_gfx{ ice::make_unique_null<ice::gfx::GfxTrait>() };
-    ice::UniquePtr<ice::gfx::GfxTrait> _trait_render_texture_loader{ ice::make_unique_null<ice::gfx::GfxTrait>() };
-    ice::UniquePtr<ice::gfx::GfxTrait> _trait_render_clear{ ice::make_unique_null<ice::gfx::GfxTrait>() };
-    ice::UniquePtr<ice::gfx::GfxTrait> _trait_render_finish{ ice::make_unique_null<ice::gfx::GfxTrait>() };
-    ice::UniquePtr<ice::gfx::GfxTrait> _trait_render_postprocess{ ice::make_unique_null<ice::gfx::GfxTrait>() };
-    ice::UniquePtr<ice::gfx::GfxTrait> _trait_render_sprites{ ice::make_unique_null<ice::gfx::GfxTrait>() };
-    ice::UniquePtr<ice::gfx::GfxTrait> _trait_render_tilemap{ ice::make_unique_null<ice::gfx::GfxTrait>() };
-    ice::UniquePtr<ice::gfx::GfxTrait> _trait_render_debug{ ice::make_unique_null<ice::gfx::GfxTrait>() };
-    ice::UniquePtr<ice::gfx::GfxTrait> _trait_render_camera{ ice::make_unique_null<ice::gfx::GfxTrait>() };
 
     ice::UniquePtr<ice::action::ActionTriggerDatabase> _action_triggers{ ice::make_unique_null<ice::action::ActionTriggerDatabase>() };
     ice::UniquePtr<ice::action::ActionSystem> _action_system{ ice::make_unique_null<ice::action::ActionSystem>() };
 
     bool _active = false;
     ice::World* _test_world;
-    ice::World* _render_world;
 };
 
 ICE_REGISTER_GAMEAPP(MyGame);

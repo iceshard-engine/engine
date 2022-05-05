@@ -11,47 +11,52 @@ namespace ice
     static constexpr ice::Shard Shard_SetDefaultCamera = "action/camera/set-default"_shard;
     static constexpr ice::Shard Shard_DebugDrawCommand = "action/debug-render/draw_command"_shard;
 
-    auto create_trait_camera(
-        ice::Allocator& alloc
-    ) noexcept -> ice::UniquePtr<ice::gfx::GfxTrait>;
 
-    auto create_trait_render_gfx(
-        ice::Allocator& alloc
-    ) noexcept -> ice::UniquePtr<ice::gfx::GfxTrait>;
+    static constexpr ice::StringID Constant_TraitName_RenderBase
+        = "ice.base-framework.trait-render-base"_sid;
 
-    auto create_trait_render_texture_loader(
-        ice::Allocator& alloc
-    ) noexcept -> ice::UniquePtr<ice::gfx::GfxTrait>;
+    static constexpr ice::StringID Constant_TraitName_RenderClear
+        = "ice.base-framework.trait-render-clear"_sid;
 
-    auto create_trait_render_clear(
-        ice::Allocator& alloc,
-        ice::StringID_Arg stage_name
-    ) noexcept -> ice::UniquePtr<ice::gfx::GfxTrait>;
+    static constexpr ice::StringID Constant_TraitName_RenderPostprocess
+        = "ice.base-framework.trait-render-postprocess"_sid;
 
-    auto create_trait_render_postprocess(
-        ice::Allocator& alloc,
-        ice::StringID_Arg stage_name
-    ) noexcept -> ice::UniquePtr<ice::gfx::GfxTrait>;
+    static constexpr ice::StringID Constant_TraitName_RenderFinish
+        = "ice.base-framework.trait-render-finish"_sid;
 
-    auto create_trait_render_finish(
-        ice::Allocator& alloc,
-        ice::StringID_Arg stage_name
-    ) noexcept -> ice::UniquePtr<ice::gfx::GfxTrait>;
+    static constexpr ice::StringID Constant_TraitName_RenderCamera
+        = "ice.base-framework.trait-render-camera"_sid;
 
-    auto create_trait_render_sprites(
-        ice::Allocator& alloc,
-        ice::StringID_Arg stage_name
-    ) noexcept -> ice::UniquePtr<ice::gfx::GfxTrait>;
+    static constexpr ice::StringID Constant_TraitName_RenderTextureLoader
+        = "ice.base-framework.trait-render-texture-loader"_sid;
 
-    auto create_trait_render_tilemap(
-        ice::Allocator& alloc,
-        ice::StringID_Arg stage_name
-    ) noexcept -> ice::UniquePtr<ice::gfx::GfxTrait>;
+    static constexpr ice::StringID Constant_TraitName_RenderDebug
+        = "ice.base-framework.trait-render-debug"_sid;
 
-    auto create_trait_render_debug(
-        ice::Allocator& alloc,
-        ice::StringID_Arg stage_name
-    ) noexcept -> ice::UniquePtr<ice::gfx::GfxTrait>;
+    static constexpr ice::StringID Constant_TraitName_RenderTilemap
+        = "ice.base-framework.trait-render-tilemap"_sid;
+
+    static constexpr ice::StringID Constant_TraitName_RenderSprites
+        = "ice.base-framework.trait-render-sprites"_sid;
+
+
+    static constexpr ice::StringID Constant_GfxStage_Clear
+        = "ice.base-framework.gfx-stage-clear"_sid;
+
+    static constexpr ice::StringID Constant_GfxStage_Postprocess
+        = "ice.base-framework.gfx-stage-postprocess"_sid;
+
+    static constexpr ice::StringID Constant_GfxStage_Finish
+        = "ice.base-framework.gfx-stage-finish"_sid;
+
+    static constexpr ice::StringID Constant_GfxStage_DrawSprites
+        = "ice.base-framework.gfx-stage-draw-sprites"_sid;
+
+    static constexpr ice::StringID Constant_GfxStage_DrawTilemap
+        = "ice.base-framework.gfx-stage-draw-tilemap"_sid;
+
+    static constexpr ice::StringID Constant_GfxStage_DrawDebug
+        = "ice.base-framework.gfx-stage-draw-debug"_sid;
 
     struct DebugDrawCommand
     {

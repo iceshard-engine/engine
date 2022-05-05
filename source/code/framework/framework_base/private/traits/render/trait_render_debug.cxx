@@ -4,6 +4,7 @@
 #include <ice/game_render_traits.hxx>
 #include <ice/task_sync_wait.hxx>
 #include <ice/engine.hxx>
+#include <ice/world/world_trait_archive.hxx>
 
 #include <ice/gfx/gfx_device.hxx>
 #include <ice/gfx/gfx_frame.hxx>
@@ -38,13 +39,6 @@ namespace ice
         }
 
     } // namespace detail
-
-    IceWorldTrait_RenderDebug::IceWorldTrait_RenderDebug(
-        ice::StringID_Arg stage_name
-    ) noexcept
-        : _stage_name{ stage_name }
-    {
-    }
 
     void IceWorldTrait_RenderDebug::on_activate(
         ice::Engine& engine,
@@ -259,7 +253,7 @@ namespace ice
             }
         }
 
-        gfx_frame.set_stage_slot(_stage_name, this);
+        gfx_frame.set_stage_slot(ice::Constant_GfxStage_DrawDebug, this);
     }
 
     void IceWorldTrait_RenderDebug::record_commands(
@@ -294,6 +288,24 @@ namespace ice
 
                     vertex_offset += command.vertex_count;
                 }
+            }
+        );
+    }
+
+    void register_trait_render_debug(
+        ice::WorldTraitArchive& archive
+    ) noexcept
+    {
+        static constexpr ice::StringID trait_dependencies[]{
+            Constant_TraitName_RenderPostprocess,
+        };
+
+        archive.register_trait(
+            ice::Constant_TraitName_RenderDebug,
+            ice::WorldTraitDescription
+            {
+                .factory = ice::detail::generic_trait_factory<IceWorldTrait_RenderDebug>,
+                .required_dependencies = trait_dependencies
             }
         );
     }

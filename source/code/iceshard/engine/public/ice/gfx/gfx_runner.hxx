@@ -16,18 +16,8 @@ namespace ice::gfx
     public:
         virtual ~GfxRunner() noexcept = default;
 
-        virtual void add_trait(
-            ice::StringID_Arg name,
-            ice::gfx::GfxTrait* trait
-        ) noexcept = 0;
-
-        virtual auto graphics_world_name() noexcept -> ice::StringID = 0;
-        virtual void set_graphics_world(
-            ice::StringID_Arg world_name
-        ) noexcept = 0;
-
-        virtual void prepare_world(ice::World* world) noexcept = 0;
-        virtual void cleanup_world(ice::World* world) noexcept = 0;
+        virtual auto aquire_world() noexcept -> ice::World* = 0;
+        virtual void release_world(ice::World* world) noexcept = 0;
 
         virtual void set_event(ice::ManualResetEvent* event) noexcept = 0;
 

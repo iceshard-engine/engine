@@ -6,6 +6,7 @@
 #include <ice/engine.hxx>
 #include <ice/engine_runner.hxx>
 #include <ice/world/world_portal.hxx>
+#include <ice/world/world_trait_archive.hxx>
 #include <ice/ecs/ecs_query.hxx>
 #include <ice/ecs/ecs_entity_storage.hxx>
 
@@ -64,11 +65,9 @@ namespace ice
     } // namespace detail
 
     IceWorldTrait_RenderSprites::IceWorldTrait_RenderSprites(
-        ice::Allocator& alloc,
-        ice::StringID_Arg stage_name
+        ice::Allocator& alloc
     ) noexcept
-        : _stage_name{ stage_name }
-        , _sprite_materials{ alloc }
+        : _sprite_materials{ alloc }
         , _vertex_offsets{ alloc }
     {
     }
@@ -271,7 +270,7 @@ namespace ice
             ice::Span<detail::SpriteInstance> const* instances = engine_frame.named_object<ice::Span<detail::SpriteInstance>>("ice.sprite.instances_span"_sid);
             update_resource_data(gfx_device, *instances);
 
-            gfx_frame.set_stage_slot(_stage_name, this);
+            gfx_frame.set_stage_slot(ice::Constant_GfxStage_DrawSprites, this);
         }
     }
 
@@ -716,6 +715,24 @@ namespace ice
 
         ice::pod::hash::set(_sprite_materials, ice::hash(material_name), sprite_data);
         co_return;
+    }
+
+    void register_trait_render_sprites(
+        ice::WorldTraitArchive& archive
+    ) noexcept
+    {
+        static constexpr ice::StringID trait_dependencies[]{
+            Constant_TraitName_RenderClear,
+        };
+
+        archive.register_trait(
+            ice::Constant_TraitName_RenderSprites,
+            ice::WorldTraitDescription
+            {
+                .factory = ice::detail::generic_trait_factory<IceWorldTrait_RenderSprites>,
+                .required_dependencies = trait_dependencies
+            }
+        );
     }
 
 } // namespace ice

@@ -48,7 +48,7 @@ namespace ice
         ice::WorldTemplate const& world_template
     ) const noexcept -> ice::World*
     {
-        ice::IceshardWorld* world = alloc.make<ice::IceshardWorld>(_allocator, world_template.entity_storage);
+        ice::IceshardWorld* world = alloc.make<ice::IceshardWorld>(alloc, world_template.entity_storage);
         ice::TemporaryWorldTraitTracker const trait_tracker{ *world };
 
         for (ice::StringID_Arg trait_name : world_template.traits)
@@ -77,13 +77,24 @@ namespace ice
             ice::stringid_hint(world_template.name)
         );
 
-        IceshardWorld* const world = static_cast<ice::IceshardWorld*>(create_world(_allocator, world_template));
-        ice::pod::hash::set(
-            _worlds,
-            name_hash,
-            world
+        bool const valid_trait_list = _trait_archive.validate_trait_list(world_template.traits);
+        ICE_ASSERT(
+            valid_trait_list,
+            "World template trait list breaks dependency requirements!"
         );
-        return world;
+
+        if (valid_trait_list)
+        {
+            IceshardWorld* world = static_cast<ice::IceshardWorld*>(create_world(_allocator, world_template));
+            ice::pod::hash::set(
+                _worlds,
+                name_hash,
+                world
+            );
+            return world;
+        }
+
+        return nullptr;
     }
 
     auto IceshardWorldManager::find_world(

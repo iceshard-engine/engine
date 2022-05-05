@@ -57,7 +57,7 @@ namespace ice
             ice::EngineRunner& runner
         ) noexcept;
 
-        auto traits() noexcept -> ice::pod::Array<ice::WorldTrait*>&;
+        auto traits() noexcept -> ice::Span<ice::WorldTrait*>;
 
     private:
         ice::Allocator& _allocator;

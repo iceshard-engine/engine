@@ -109,15 +109,9 @@ namespace ice
         );
 
         _gfx_runner->set_event(&_mre_graphics_frame);
-        _gfx_world = static_cast<ice::IceshardWorld*>(_world_manager.find_world(_gfx_runner->graphics_world_name()));
-        ICE_ASSERT(
-            _gfx_world != nullptr,
-            "The request Graphics Runner world {} does not exist.",
-            ice::stringid_hint(_gfx_runner->graphics_world_name())
-        );
+        _gfx_world = static_cast<ice::IceshardWorld*>(_gfx_runner->aquire_world());
 
         _world_tracker.set_managed_world(_gfx_world);
-        _gfx_runner->prepare_world(_gfx_world);
         _gfx_world->activate(_engine, *this);
 
         ice::pod::array::reserve(_runner_tasks, 10);
@@ -397,7 +391,7 @@ namespace ice
             _mre_graphics_frame.wait();
 
             _gfx_world->deactivate(_engine, *this);
-            _gfx_runner->cleanup_world(_gfx_world);
+            _gfx_runner->release_world(_gfx_world);
             _world_tracker.unset_manager_world(_gfx_world);
 
             _gfx_world = nullptr;
@@ -410,15 +404,8 @@ namespace ice
             _gfx_runner = ice::move(gfx_runner);
             _gfx_runner->set_event(&_mre_graphics_frame);
 
-            _gfx_world = static_cast<ice::IceshardWorld*>(_world_manager.find_world(_gfx_runner->graphics_world_name()));
-            ICE_ASSERT(
-                _gfx_world != nullptr,
-                "The request Graphics Runner world {} does not exist in World Manager.",
-                ice::stringid_hint(_gfx_runner->graphics_world_name())
-            );
-
+            _gfx_world = static_cast<ice::IceshardWorld*>(_gfx_runner->aquire_world());
             _world_tracker.set_managed_world(_gfx_world);
-            _gfx_runner->prepare_world(_gfx_world);
             _gfx_world->activate(_engine, *this);
         }
     }

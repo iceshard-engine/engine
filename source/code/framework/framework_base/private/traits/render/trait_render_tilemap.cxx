@@ -8,6 +8,7 @@
 #include <ice/engine_runner.hxx>
 #include <ice/task_sync_wait.hxx>
 #include <ice/world/world_portal.hxx>
+#include <ice/world/world_trait_archive.hxx>
 
 #include <ice/gfx/gfx_device.hxx>
 #include <ice/gfx/gfx_frame.hxx>
@@ -211,11 +212,9 @@ namespace ice
     } // namespace detail
 
     IceWorldTrait_RenderTilemap::IceWorldTrait_RenderTilemap(
-        ice::Allocator& alloc,
-        ice::StringID_Arg stage_name
+        ice::Allocator& alloc
     ) noexcept
         : _allocator{ alloc }
-        , _stage_name{ stage_name }
         , _render_cache{ _allocator }
     {
         ice::pod::hash::reserve(_render_cache, 10);
@@ -568,7 +567,7 @@ namespace ice
                 update_resource_tilemap(gfx_device, *draw_operation->render_info);
             }
 
-            gfx_frame.set_stage_slot(_stage_name, this);
+            gfx_frame.set_stage_slot(ice::Constant_GfxStage_DrawTilemap, this);
         }
 
         co_return;
@@ -727,6 +726,24 @@ namespace ice
         };
 
         device.update_resourceset(set_updates);
+    }
+
+    void register_trait_render_tilemap(
+        ice::WorldTraitArchive& archive
+    ) noexcept
+    {
+        static constexpr ice::StringID trait_dependencies[]{
+            Constant_TraitName_RenderClear,
+        };
+
+        archive.register_trait(
+            ice::Constant_TraitName_RenderTilemap,
+            ice::WorldTraitDescription
+            {
+                .factory = ice::detail::generic_trait_factory<IceWorldTrait_RenderTilemap>,
+                .required_dependencies = trait_dependencies
+            }
+        );
     }
 
 } // namespace ice

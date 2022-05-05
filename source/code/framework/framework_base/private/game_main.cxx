@@ -120,16 +120,17 @@ auto game_main(ice::Allocator& alloc, ice::ResourceTracker& resources) -> ice::i
                 }
             };
 
+            game_framework->startup(*engine);
+
             ice::UniquePtr<ice::gfx::GfxRunner> gfx_runner = engine->create_graphics_runner(
                 *render_driver,
                 *render_surface,
+                game_framework->graphics_world_template(),
                 queues
             );
 
             if (gfx_runner != nullptr)
             {
-                gfx_runner->set_graphics_world(game_framework->graphics_world_name());
-                game_framework->startup(*engine, *gfx_runner);
 
                 ice::UniquePtr<ice::platform::App> platform_app = game_framework->create_app(ice::move(gfx_runner));
                 if (platform_app != nullptr)
@@ -137,8 +138,9 @@ auto game_main(ice::Allocator& alloc, ice::ResourceTracker& resources) -> ice::i
                     main_result = ice::platform::create_app_container(app_alloc, ice::move(platform_app))->run();
                 }
 
-                game_framework->shutdown(*engine);
             }
+
+            game_framework->shutdown(*engine);
 
             render_driver->destroy_surface(render_surface);
             app_window = nullptr;

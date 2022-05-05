@@ -38,4 +38,11 @@ namespace ice
         ice::render::Image _default_attachment_color;
     };
 
+
+    class WorldTraitArchive;
+
+    void register_trait_render_gfx(
+        ice::WorldTraitArchive& archive
+    ) noexcept;
+
 } // namespace ice

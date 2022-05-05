@@ -63,9 +63,14 @@ namespace ice
     auto IceshardEngine::create_graphics_runner(
         ice::render::RenderDriver& render_driver,
         ice::render::RenderSurface& render_surface,
+        ice::WorldTemplate const& render_world_template,
         ice::Span<ice::RenderQueueDefinition const> render_queues
     ) noexcept -> ice::UniquePtr<ice::gfx::GfxRunner>
     {
+        ice::IceshardWorld* world = static_cast<ice::IceshardWorld*>(
+            _world_manager.create_world(_allocator, render_world_template)
+        );
+
         ice::UniquePtr<ice::gfx::IceGfxDevice> gfx_device = ice::gfx::create_graphics_device(
             _allocator,
             render_driver,
@@ -79,7 +84,7 @@ namespace ice
                 _allocator,
                 _allocator,
                 ice::move(gfx_device),
-                ice::make_unique_null<ice::gfx::IceGfxWorld>()
+                world
             );
         }
         else

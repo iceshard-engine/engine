@@ -4,7 +4,7 @@
 #include <ice/engine_frame.hxx>
 #include <ice/engine_runner.hxx>
 #include <ice/world/world_portal.hxx>
-#include <ice/world/world_trait_description.hxx>
+#include <ice/world/world_trait_archive.hxx>
 #include <ice/task_thread_pool.hxx>
 #include <ice/asset_storage.hxx>
 
@@ -201,23 +201,31 @@ namespace ice
         }
     }
 
-    auto create_tilemap_trait(
-        ice::Allocator& alloc,
-        ice::WorldTrait_Physics2D& trait_physics
-    ) noexcept -> ice::UniquePtr<ice::WorldTrait_TileMap>
-    {
-        return ice::make_unique<ice::WorldTrait_TileMap, ice::IceWorldTrait_TileMap>(alloc, alloc, trait_physics);
-    }
-
-    auto trait_factory_tilemap(
+    auto trait_tilemap_factory(
         ice::Allocator& alloc,
         ice::WorldTraitTracker const& trait_tracker
     ) noexcept -> ice::WorldTrait*
     {
         ice::WorldTrait_Physics2D* phx_trait = static_cast<ice::WorldTrait_Physics2D*>(
-            trait_tracker.find_trait("ice.base-framework.trait-physics-box2d"_sid)
+            trait_tracker.find_trait(ice::Constant_TraitName_PhysicsBox2D)
         );
         return alloc.make<IceWorldTrait_TileMap>(alloc, *phx_trait);
+    }
+
+    void register_trait_tilemap(ice::WorldTraitArchive& archive) noexcept
+    {
+        static constexpr ice::StringID trait_dependencies[]{
+            ice::Constant_TraitName_PhysicsBox2D
+        };
+
+        archive.register_trait(
+            ice::Constant_TraitName_Tilemap,
+            ice::WorldTraitDescription
+            {
+                .factory = trait_tilemap_factory,
+                .required_dependencies = trait_dependencies
+            }
+        );
     }
 
 } // namespace ice

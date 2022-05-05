@@ -9,8 +9,6 @@ namespace ice
     class IceWorldTrait_RenderDebug : public ice::gfx::GfxTrait, public ice::gfx::GfxContextStage
     {
     public:
-        IceWorldTrait_RenderDebug(ice::StringID_Arg stage_name) noexcept;
-
         void on_activate(
             ice::Engine& engine,
             ice::EngineRunner& runner,
@@ -41,8 +39,6 @@ namespace ice
         ) const noexcept override;
 
     private:
-        ice::StringID const _stage_name;
-
         ice::render::ResourceSetLayout _resource_layout;
         ice::render::ResourceSet _resource_set;
         ice::render::PipelineLayout _layout;
@@ -57,5 +53,12 @@ namespace ice
         ice::render::Shader _shaders[2];
         ice::Data _shader_data[2];
     };
+
+
+    class WorldTraitArchive;
+
+    void register_trait_render_debug(
+        ice::WorldTraitArchive& archive
+    ) noexcept;
 
 } // namespace ice

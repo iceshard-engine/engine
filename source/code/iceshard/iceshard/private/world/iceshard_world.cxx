@@ -184,10 +184,13 @@ namespace ice
         ice::EngineRunner& runner
     ) noexcept
     {
-        for (auto& entry : _portals)
+        ice::Span<ice::pod::Hash<ice::IceshardWorldPortal*>::Entry> portals = _portals._data;
+        ice::u32 const size = ice::size(portals);
+
+        for (ice::i32 idx = size - 1; idx >= 0; --idx)
         {
-            entry.value->trait()->on_deactivate(
-                engine, runner, *entry.value
+            portals[idx].value->trait()->on_deactivate(
+                engine, runner, *portals[idx].value
             );
         }
     }
@@ -215,7 +218,7 @@ namespace ice
         }
     }
 
-    auto IceshardWorld::traits() noexcept -> ice::pod::Array<ice::WorldTrait*>&
+    auto IceshardWorld::traits() noexcept -> ice::Span<ice::WorldTrait*>
     {
         return _traits;
     }

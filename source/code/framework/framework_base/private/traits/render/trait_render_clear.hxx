@@ -9,8 +9,6 @@ namespace ice
     class IceWorldTrait_RenderClear : public ice::gfx::GfxTrait, public ice::gfx::GfxContextStage
     {
     public:
-        IceWorldTrait_RenderClear(ice::StringID_Arg stage_name) noexcept;
-
         void gfx_setup(
             ice::gfx::GfxFrame& gfx_frame,
             ice::gfx::GfxDevice& gfx_device
@@ -30,10 +28,16 @@ namespace ice
         ) const noexcept override;
 
     private:
-        ice::StringID const _stage_name;
         ice::render::RenderSwapchain const* _default_swapchain;
         ice::render::Renderpass _default_renderpass;
         ice::render::Framebuffer _default_framebuffers[2];
     };
+
+
+    class WorldTraitArchive;
+
+    void register_trait_render_clear(
+        ice::WorldTraitArchive& archive
+    ) noexcept;
 
 } // namespace ice

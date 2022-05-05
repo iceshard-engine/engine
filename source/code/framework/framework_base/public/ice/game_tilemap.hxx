@@ -13,6 +13,9 @@ namespace ice
 
     static constexpr ice::AssetType AssetType_TileMap = ice::make_asset_type(u8"ice/framework/tile-map");
 
+    static constexpr ice::StringID Constant_TraitName_Tilemap
+        = "ice.base-framework.trait-tilemap"_sid;
+
     enum class TileSetID : ice::u32
     {
         Invalid = 0xffff'ffff
@@ -74,11 +77,6 @@ namespace ice
     public:
         virtual void load_tilemap(ice::Utf8String tilemap) noexcept = 0;
     };
-
-    auto create_tilemap_trait(
-        ice::Allocator& alloc,
-        ice::WorldTrait_Physics2D& trait_physics
-    ) noexcept -> ice::UniquePtr<ice::WorldTrait_TileMap>;
 
     class ModuleRegister;
     void register_asset_modules(

@@ -13,6 +13,8 @@ namespace ice
     class ResourceTracker;
     class ModuleRegister;
 
+    struct WorldTemplate;
+
     namespace gfx { class GfxRunner; }
 
     struct GameServices
@@ -34,11 +36,12 @@ namespace ice
         virtual ~GameFramework() noexcept override;
 
         virtual auto config_uri() const noexcept -> ice::URI = 0;
-        virtual auto graphics_world_name() const noexcept -> ice::StringID = 0;
 
         virtual void load_modules() noexcept = 0;
 
-        void startup(ice::Engine& engine, ice::gfx::GfxRunner& gfx_runner) noexcept;
+        virtual auto graphics_world_template() const noexcept -> ice::WorldTemplate const& = 0;
+
+        void startup(ice::Engine& engine) noexcept;
         void shutdown(ice::Engine& engine) noexcept;
 
         void game_begin(ice::EngineRunner& runner) noexcept;
@@ -52,7 +55,7 @@ namespace ice
         ) noexcept -> ice::UniquePtr<ice::platform::App>;
 
     protected:
-        virtual void on_app_startup_internal(ice::Engine& engine, ice::gfx::GfxRunner& gfx_runner) noexcept = 0;
+        virtual void on_app_startup_internal(ice::Engine& engine) noexcept = 0;
         virtual void on_app_shutdown_internal(ice::Engine& engine) noexcept = 0;
 
         virtual void on_game_begin_internal(ice::EngineRunner& runner) noexcept = 0;
@@ -74,8 +77,8 @@ namespace ice
         { T::ConfigFile } -> std::convertible_to<ice::URI const&>;
     };
     template<typename T>
-    concept HasGraphicsWorldNameMember = requires (T t) {
-        { T::GraphicsWorldName } -> std::convertible_to<ice::StringID const&>;
+    concept HasGraphicsWorldTemplateMethod = requires (T t) {
+        { &T::graphics_world_template } -> std::convertible_to<auto (T::*)() const noexcept -> ice::WorldTemplate const&>;
     };
     template<typename T>
     concept HasLoadModulesMethod = requires (T t) {
@@ -133,16 +136,9 @@ namespace ice
             }
         }
 
-        auto graphics_world_name() const noexcept -> ice::StringID final
+        auto graphics_world_template() const noexcept -> ice::WorldTemplate const& final
         {
-            if constexpr (HasGraphicsWorldNameMember<T>)
-            {
-                return T::GraphicsWorldName;
-            }
-            else
-            {
-                return "default.graphics-world"_sid;
-            }
+            return _game.graphics_world_template();
         }
 
         void load_modules() noexcept
@@ -150,9 +146,9 @@ namespace ice
             _game.on_load_modules(static_cast<GameServices&>(*this));
         }
 
-        void on_app_startup_internal(ice::Engine& engine, ice::gfx::GfxRunner& gfx_runner) noexcept final
+        void on_app_startup_internal(ice::Engine& engine) noexcept final
         {
-            _game.on_app_startup(engine, gfx_runner);
+            _game.on_app_startup(engine);
         }
 
         void on_app_shutdown_internal(ice::Engine& engine) noexcept final
@@ -183,6 +179,7 @@ namespace ice
 } // namespace ice
 
 #define ICE_REGISTER_GAMEAPP(Type) \
+    static_assert(ice::HasGraphicsWorldTemplateMethod<Type>, #Type " is missing `graphics_world_template` method implementation."); \
     auto ice::create_game_object( \
         ice::Allocator& alloc, \
         ice::ResourceTracker& resource_tracker, \

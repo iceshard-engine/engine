@@ -32,6 +32,7 @@ namespace ice
         auto create_graphics_runner(
             ice::render::RenderDriver& render_driver,
             ice::render::RenderSurface& render_surface,
+            ice::WorldTemplate const& render_world_template,
             ice::Span<ice::RenderQueueDefinition const> render_queues
         ) noexcept -> ice::UniquePtr<ice::gfx::GfxRunner> override;
 
