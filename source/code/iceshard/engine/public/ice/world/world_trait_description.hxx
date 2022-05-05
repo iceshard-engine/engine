@@ -10,13 +10,14 @@ namespace ice
     class WorldTrait;
     class WorldTraitTracker;
 
-    using WorldTraitFactory = auto(ice::Allocator&, ice::WorldTraitTracker const&) noexcept -> ice::WorldTrait*;
+    using WorldTraitFactory = auto(void*, ice::Allocator&, ice::WorldTraitTracker const&) noexcept -> ice::WorldTrait*;
 
     struct WorldTraitDescription
     {
         ice::WorldTraitFactory* factory;
         ice::Span<ice::StringID const> required_dependencies;
         ice::Span<ice::StringID const> optional_dependencies;
+        void* factory_userdata = nullptr;
     };
 
     class WorldTraitTracker
@@ -33,7 +34,11 @@ namespace ice
     {
 
         template<typename TraitType>
-        inline auto generic_trait_factory(ice::Allocator& alloc, ice::WorldTraitTracker const&) noexcept -> ice::WorldTrait*
+        inline auto generic_trait_factory(
+            [[maybe_unused]] void* userdata,
+            ice::Allocator& alloc,
+            ice::WorldTraitTracker const&
+        ) noexcept -> ice::WorldTrait*
         {
             static_assert(
                 std::is_constructible_v<TraitType> ^ std::is_constructible_v<TraitType, ice::Allocator&>,

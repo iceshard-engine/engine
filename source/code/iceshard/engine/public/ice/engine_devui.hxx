@@ -4,6 +4,12 @@
 namespace ice
 {
 
+    static constexpr ice::StringID Constant_TraitName_DevUI
+        = "ice.iceshard-engine.trait-devui"_sid;
+
+    static constexpr ice::StringID Constant_GfxStage_DevUI
+        = "ice.iceshard-engine.gfx-stage-devui"_sid;
+
     namespace devui
     {
 
@@ -21,14 +27,11 @@ namespace ice
     public:
         virtual ~EngineDevUI() noexcept = default;
 
-        virtual auto world_trait() noexcept -> ice::devui::DevUITrait* = 0;
-
         virtual void register_widget(ice::devui::DevUIWidget* widget) noexcept = 0;
         virtual void unregister_widget(ice::devui::DevUIWidget* widget) noexcept = 0;
 
     public:
         virtual void internal_set_key(devui::DevUIExecutionKey) noexcept = 0;
-        //virtual void internal_prepared_widgets(devui::DevUIExecutionKey) noexcept = 0;
         virtual void internal_build_widgets(
             ice::EngineFrame& frame,
             ice::devui::DevUIExecutionKey

@@ -58,7 +58,7 @@ namespace ice
             {
                 world->add_owning_trait(
                     trait_name,
-                    description->factory(alloc, trait_tracker)
+                    description->factory(description->factory_userdata, alloc, trait_tracker)
                 );
             }
         }

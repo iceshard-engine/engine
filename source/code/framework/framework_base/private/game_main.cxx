@@ -79,6 +79,7 @@ auto game_main(ice::Allocator& alloc, ice::ResourceTracker& resources) -> ice::i
         if (ice::build::is_debug || ice::build::is_develop)
         {
             engine_devui = ice::devui::create_devui_system(engine_alloc, *module_register);
+            engine_devui->register_trait(*trait_archive);
         }
 
         ice::EngineCreateInfo const create_info{

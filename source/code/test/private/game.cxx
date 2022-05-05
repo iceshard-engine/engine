@@ -59,26 +59,53 @@ MyGame::MyGame(ice::Allocator& alloc, ice::Clock const& clock) noexcept
 
 auto MyGame::graphics_world_template() const noexcept -> ice::WorldTemplate const&
 {
-    static ice::StringID constexpr graphics_traits[]{
-        ice::Constant_TraitName_RenderCamera,
-        ice::Constant_TraitName_RenderBase,
-        ice::Constant_TraitName_RenderTextureLoader,
-        ice::Constant_TraitName_RenderClear,
-        ice::Constant_TraitName_RenderSprites,
-        ice::Constant_TraitName_RenderTilemap,
-        ice::Constant_TraitName_RenderPostprocess,
-        ice::Constant_TraitName_RenderDebug,
-        ice::Constant_TraitName_RenderFinish,
-    };
-
-    static ice::WorldTemplate const graphics_world_template
+    if constexpr (ice::build::is_debug || ice::build::is_develop)
     {
-        .name = "ice.framework-base.default-graphics-world-template"_sid,
-        .traits = graphics_traits,
-        .entity_storage = _ecs_storage.get(),
-    };
+        static ice::StringID constexpr graphics_traits[]{
+            ice::Constant_TraitName_RenderCamera,
+            ice::Constant_TraitName_RenderBase,
+            ice::Constant_TraitName_RenderTextureLoader,
+            ice::Constant_TraitName_RenderClear,
+            ice::Constant_TraitName_RenderSprites,
+            ice::Constant_TraitName_RenderTilemap,
+            ice::Constant_TraitName_RenderPostprocess,
+            ice::Constant_TraitName_RenderDebug,
+            ice::Constant_TraitName_DevUI,
+            ice::Constant_TraitName_RenderFinish,
+        };
 
-    return graphics_world_template;
+        static ice::WorldTemplate const graphics_world_template
+        {
+            .name = "ice.framework-base.default-graphics-world-template"_sid,
+            .traits = graphics_traits,
+            .entity_storage = _ecs_storage.get(),
+        };
+
+        return graphics_world_template;
+    }
+    else
+    {
+        static ice::StringID constexpr graphics_traits[]{
+            ice::Constant_TraitName_RenderCamera,
+            ice::Constant_TraitName_RenderBase,
+            ice::Constant_TraitName_RenderTextureLoader,
+            ice::Constant_TraitName_RenderClear,
+            ice::Constant_TraitName_RenderSprites,
+            ice::Constant_TraitName_RenderTilemap,
+            ice::Constant_TraitName_RenderPostprocess,
+            ice::Constant_TraitName_RenderDebug,
+            ice::Constant_TraitName_RenderFinish,
+        };
+
+        static ice::WorldTemplate const graphics_world_template
+        {
+            .name = "ice.framework-base.default-graphics-world-template"_sid,
+            .traits = graphics_traits,
+            .entity_storage = _ecs_storage.get(),
+        };
+
+        return graphics_world_template;
+    }
 }
 
 void MyGame::on_load_modules(ice::GameServices& sercies) noexcept
@@ -155,15 +182,15 @@ void MyGame::on_app_startup(ice::Engine& engine) noexcept
     _game_gfx_pass->add_stage(ice::Constant_GfxStage_Postprocess, ice::Constant_GfxStage_DrawSprites);
     _game_gfx_pass->add_stage(ice::Constant_GfxStage_DrawDebug, ice::Constant_GfxStage_Postprocess);
 
-    //if (devui.world_trait() != nullptr)
-    //{
-    //    _game_gfx_pass->add_stage(devui.world_trait()->gfx_stage_name(), "ice.gfx.stage.postprocess"_sid);
-    //    _game_gfx_pass->add_stage("ice.gfx.stage.finish"_sid, devui.world_trait()->gfx_stage_name());
-    //}
-    //else
-    //{
+    if constexpr (ice::build::is_debug || ice::build::is_develop)
+    {
+        _game_gfx_pass->add_stage(ice::Constant_GfxStage_DevUI, ice::Constant_GfxStage_Postprocess, ice::Constant_GfxStage_DrawDebug);
+        _game_gfx_pass->add_stage(ice::Constant_GfxStage_Finish, ice::Constant_GfxStage_Postprocess, ice::Constant_GfxStage_DevUI);
+    }
+    else
+    {
         _game_gfx_pass->add_stage(ice::Constant_GfxStage_Finish, ice::Constant_GfxStage_Postprocess);
-    //}
+    }
 
     // Initialize archetypes
     {
@@ -178,7 +205,7 @@ void MyGame::on_app_startup(ice::Engine& engine) noexcept
 
     ice::WorldManager& world_manager = engine.world_manager();
 
-    ice::StringID constexpr world_traits[]{
+    ice::StringID const world_traits[]{
         ice::Constant_TraitName_PhysicsBox2D,
         ice::Constant_TraitName_Tilemap,
         ice::Constant_TraitName_SpriteAnimator,

@@ -531,6 +531,7 @@ namespace ice
     {
         using namespace ice::render;
 
+        auto const tailcall_bug_workaround = [&]() noexcept
         {
             IPT_ZONE_SCOPED_NAMED("[GfxTrait] TileMap :: Update Camera");
 
@@ -545,7 +546,7 @@ namespace ice
                 ice::render::Buffer const camera_buffer = ice::gfx::find_resource<ice::render::Buffer>(
                     gfx_device.resource_tracker(),
                     _render_camera
-                );
+                    );
 
                 if (_render_camera_buffer != camera_buffer && camera_buffer != ice::render::Buffer::Invalid)
                 {
@@ -553,7 +554,9 @@ namespace ice
                     update_resource_camera(gfx_device);
                 }
             }
-        }
+        };
+
+        tailcall_bug_workaround();
 
         ice::detail::TileMap_DrawOperation const* const draw_operation = engine_frame.named_object<ice::detail::TileMap_DrawOperation>(
             "tilemap_render.draw_operation"_sid

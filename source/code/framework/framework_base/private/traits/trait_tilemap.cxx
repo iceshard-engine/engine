@@ -202,6 +202,7 @@ namespace ice
     }
 
     auto trait_tilemap_factory(
+        [[maybe_unused]] void* userdata,
         ice::Allocator& alloc,
         ice::WorldTraitTracker const& trait_tracker
     ) noexcept -> ice::WorldTrait*

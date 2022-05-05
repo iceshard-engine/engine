@@ -17,8 +17,6 @@ namespace ice::devui
         ImGuiTrait(ice::Allocator& alloc) noexcept;
         ~ImGuiTrait() noexcept override;
 
-        auto gfx_stage_name() const noexcept -> ice::StringID override;
-
         void gfx_setup(
             ice::gfx::GfxFrame& gfx_frame,
             ice::gfx::GfxDevice& gfx_device
