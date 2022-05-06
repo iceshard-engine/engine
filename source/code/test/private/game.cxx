@@ -174,8 +174,6 @@ void MyGame::on_app_startup(ice::Engine& engine) noexcept
         entity_index.destroy_many(entities);
     }
 
-    ice::EngineDevUI& devui = engine.developer_ui();
-
     _game_gfx_pass->add_stage(ice::Constant_GfxStage_Clear);
     _game_gfx_pass->add_stage(ice::Constant_GfxStage_DrawTilemap, ice::Constant_GfxStage_Clear);
     _game_gfx_pass->add_stage(ice::Constant_GfxStage_DrawSprites, ice::Constant_GfxStage_DrawTilemap, ice::Constant_GfxStage_Clear);

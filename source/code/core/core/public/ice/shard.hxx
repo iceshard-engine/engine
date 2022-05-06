@@ -190,15 +190,27 @@ namespace ice
     {
         static_assert(sizeof(T) <= sizeof(ice::Shard::payload), "The given payload is bigger than a shard can have attached.");
 
-        struct alignas(std::max(sizeof(ice::Payload), alignof(ice::Payload))) PayloadBitCastHelper
+        if constexpr (sizeof(T) == sizeof(ice::Shard::payload))
         {
-            T value;
-        } temp{ payload };
+            return {
+                .name = ice::shard_name(sv),
+                .payload_id = ice::detail::Constant_ShardPayloadID<T>,
+                .payload = std::bit_cast<ice::Payload>(payload)
+            };
+        }
+        else
+        {
+            struct PayloadBitCastHelper
+            {
+                T value;
+                char bytes[sizeof(ice::Shard::payload) - sizeof(T)];
+            } temp{ .value = payload, .bytes = { } };
 
-        return {
-            .name = ice::shard_name(sv),
-            .payload_id = ice::detail::Constant_ShardPayloadID<T>,
-            .payload = std::bit_cast<ice::Payload>(temp)
+            return {
+                .name = ice::shard_name(sv),
+                .payload_id = ice::detail::Constant_ShardPayloadID<T>,
+                .payload = std::bit_cast<ice::Payload>(temp)
+            };
         };
     }
 
@@ -207,16 +219,28 @@ namespace ice
     {
         static_assert(sizeof(T) <= sizeof(ice::Shard::payload), "The given payload is bigger than a shard can have attached.");
 
-        struct alignas(std::max(sizeof(ice::Payload), alignof(ice::Payload))) PayloadBitCastHelper
+        if constexpr (sizeof(T) == sizeof(ice::Shard::payload))
         {
-            T value;
-        } temp{ payload };
+            return {
+                .name = shard.name,
+                .payload_id = ice::detail::Constant_ShardPayloadID<T>,
+                .payload = std::bit_cast<ice::Payload>(payload)
+            };
+        }
+        else
+        {
+            struct PayloadBitCastHelper
+            {
+                T value;
+                char bytes[sizeof(ice::Shard::payload) - sizeof(T)];
+            } temp{ .value = payload, .bytes = { } };
 
-        return {
-            .name = shard.name,
-            .payload_id = ice::detail::Constant_ShardPayloadID<T>,
-            .payload = std::bit_cast<ice::Payload>(temp)
-        };
+            return {
+                .name = shard.name,
+                .payload_id = ice::detail::Constant_ShardPayloadID<T>,
+                .payload = std::bit_cast<ice::Payload>(temp)
+            };
+        }
     }
 
     template<typename T> requires (ice::detail::Constant_ShardPayloadID<T> != PayloadID::NotSet)
@@ -224,12 +248,20 @@ namespace ice
     {
         if (ice::detail::Constant_ShardPayloadID<T> == shard.payload_id)
         {
-            struct alignas(std::max(sizeof(ice::Payload), alignof(ice::Payload))) PayloadBitCastHelper
+            if constexpr (sizeof(T) == sizeof(ice::Shard::payload))
             {
-                T value;
-            } temp{ std::bit_cast<PayloadBitCastHelper>(shard.payload) };
+                value = std::bit_cast<T>(shard.payload);
+            }
+            else
+            {
+                struct PayloadBitCastHelper
+                {
+                    T value;
+                    char bytes[sizeof(ice::Shard::payload) - sizeof(T)];
+                } temp{ std::bit_cast<PayloadBitCastHelper>(shard.payload) };
 
-            value = temp.value;
+                value = temp.value;
+            }
             return true;
         }
         return false;

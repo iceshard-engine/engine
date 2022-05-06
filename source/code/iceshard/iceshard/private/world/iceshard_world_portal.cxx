@@ -46,11 +46,11 @@ namespace ice
         : _allocator{ alloc }
         , _world{ world }
         , _trait{ trait }
+        , _is_owning{ is_owning }
         , _storage{ _allocator }
         , _entity_storage{ entity_storage }
         , _wait_event_allocator{ _allocator, 512 }
         , _trait_tasks{ _allocator }
-        , _is_owning{ is_owning }
     {
         ice::pod::array::reserve(_trait_tasks, 20);
     }
