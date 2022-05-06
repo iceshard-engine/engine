@@ -5,6 +5,7 @@
 
 #include <ice/task_thread.hxx>
 #include <ice/world/world.hxx>
+#include <ice/world/world_assembly.hxx>
 
 #include <ice/pod/hash.hxx>
 #include <ice/memory/proxy_allocator.hxx>
@@ -12,6 +13,8 @@
 
 #include "iceshard_gfx_runner_trait.hxx"
 #include "iceshard_gfx_context.hxx"
+
+#include "../world/iceshard_world.hxx"
 
 namespace ice::gfx
 {
@@ -32,22 +35,12 @@ namespace ice::gfx
         IceGfxRunner(
             ice::Allocator& alloc,
             ice::UniquePtr<ice::gfx::IceGfxDevice> device,
-            ice::UniquePtr<ice::gfx::IceGfxWorld> world
+            ice::IceshardWorld* graphics_world
         ) noexcept;
         ~IceGfxRunner() noexcept override;
 
-        void add_trait(
-            ice::StringID_Arg name,
-            ice::gfx::GfxTrait* trait
-        ) noexcept override;
-
-        auto graphics_world_name() noexcept -> ice::StringID override;
-        void set_graphics_world(
-            ice::StringID_Arg world_name
-        ) noexcept override;
-
-        void prepare_world(ice::World* world) noexcept override;
-        void cleanup_world(ice::World* world) noexcept override;
+        auto aquire_world() noexcept -> ice::World* override;
+        void release_world(ice::World* world) noexcept override;
 
         void set_event(ice::ManualResetEvent* event) noexcept override;
 
@@ -95,9 +88,7 @@ namespace ice::gfx
 
         ice::UniquePtr<ice::gfx::IceGfxFrame> _current_frame;
 
-        ice::StringID _gfx_world_name;
-        ice::pod::Array<ice::gfx::IceGfxTraitEntry> _traits;
-
+        ice::IceshardWorld* _graphics_world[2];
         ice::gfx::IceGfxRunnerTrait _runner_trait;
         ice::pod::Hash<ice::gfx::IceGfxContext*> _contexts;
 

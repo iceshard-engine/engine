@@ -30,8 +30,7 @@ namespace ice
     {
     public:
         IceWorldTrait_RenderSprites(
-            ice::Allocator& alloc,
-            ice::StringID_Arg stage_name
+            ice::Allocator& alloc
         ) noexcept;
 
         void gfx_setup(
@@ -104,7 +103,6 @@ namespace ice
         ) noexcept -> ice::Task<>;
 
     private:
-        ice::StringID const _stage_name;
         ice::AssetStorage* _asset_system = nullptr;
         ice::pod::Hash<ice::detail::RenderData_Sprite> _sprite_materials;
 
@@ -127,5 +125,12 @@ namespace ice
         ice::StringID _render_camera;
         ice::render::Buffer _render_camera_buffer{ };
     };
+
+
+    class WorldTraitArchive;
+
+    void register_trait_render_sprites(
+        ice::WorldTraitArchive& archive
+    ) noexcept;
 
 } // namespace ice

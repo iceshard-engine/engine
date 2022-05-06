@@ -25,14 +25,27 @@ namespace ice::devui
             sys.set_alloc_tree_widget(tracked_alloc.make<ImGui_AllocatorTreeWidget>(*top_alloc));
         }
 
+        auto create_imgui_trait(
+            void* userdata,
+            ice::Allocator& alloc,
+            ice::WorldTraitTracker const& tracker
+        ) noexcept -> ice::WorldTrait*
+        {
+            ice::devui::ImGuiSystem* system = reinterpret_cast<ImGuiSystem*>(userdata);
+            ice::devui::ImGuiTrait* trait = alloc.make<ice::devui::ImGuiTrait>(alloc);
+            system->set_trait(trait);
+            return trait;
+        }
+
     } // namespace detail
 
     ImGuiSystem::ImGuiSystem(ice::Allocator& alloc) noexcept
         : _allocator{ alloc }
         , _execution_key{ }
-        , _render_trait{ alloc }
+        , _render_trait{ nullptr }
         , _widget_alloc_tree{ nullptr }
         , _widgets{ alloc }
+        , _inactive_widgets{ alloc }
     {
         ice::pod::array::reserve(_widgets, 100);
         detail::create_alloc_tree_widget(*this, _allocator);
@@ -43,19 +56,60 @@ namespace ice::devui
         _allocator.destroy(_widget_alloc_tree);
     }
 
-    auto ImGuiSystem::world_trait() noexcept -> ice::devui::DevUITrait*
+    void ImGuiSystem::set_trait(ice::devui::ImGuiTrait* trait) noexcept
     {
-        return &_render_trait;
+        ICE_ASSERT(
+            _render_trait == nullptr
+            || trait == nullptr,
+            "Setting ImGui trait failed!"
+        );
+        _render_trait = trait;
+
+        if (_render_trait != nullptr)
+        {
+            _widgets = ice::move(_inactive_widgets);
+
+            for (ice::devui::DevUIWidget* widget : _widgets)
+            {
+                widget->on_prepare(_render_trait->imgui_context());
+            }
+        }
+    }
+
+    void ImGuiSystem::register_trait(
+		ice::WorldTraitArchive& archive
+    ) noexcept
+    {
+        archive.register_trait(
+            ice::Constant_TraitName_DevUI,
+            ice::WorldTraitDescription
+            {
+                .factory = ice::devui::detail::create_imgui_trait,
+                .factory_userdata = this,
+            }
+        );
     }
 
     void ImGuiSystem::register_widget(ice::devui::DevUIWidget* widget) noexcept
     {
-        widget->on_prepare(_render_trait.imgui_context());
-        ice::pod::array::push_back(_widgets, widget);
+        if (_render_trait != nullptr)
+        {
+            widget->on_prepare(_render_trait->imgui_context());
+            ice::pod::array::push_back(_widgets, widget);
+        }
+        else
+        {
+            ice::pod::array::push_back(_inactive_widgets, widget);
+        }
     }
 
     void ImGuiSystem::unregister_widget(ice::devui::DevUIWidget* widget) noexcept
     {
+        if (_render_trait == nullptr)
+        {
+            return;
+        }
+
         ice::u32 const count = ice::pod::array::size(_widgets);
         if (count == 0)
         {
@@ -95,7 +149,17 @@ namespace ice::devui
         ice::devui::DevUIExecutionKey execution_key
     ) noexcept
     {
-        if (_render_trait.start_frame())
+        ICE_ASSERT(
+            _execution_key == execution_key,
+            "Method 'internal_build_widgets' was executed from an invalid context!"
+        );
+
+        if (_render_trait == nullptr)
+        {
+            return;
+        }
+
+        if (_render_trait->start_frame())
         {
             ImGui::ShowDemoWindow();
 
@@ -104,11 +168,7 @@ namespace ice::devui
                 widget->on_draw();
             }
         }
-        _render_trait.end_frame(frame);
-        ICE_ASSERT(
-            _execution_key == execution_key,
-            "Method 'internal_build_widgets' was executed from an invalid context!"
-        );
+        _render_trait->end_frame(frame);
     }
 
 } // namespace ice::devui

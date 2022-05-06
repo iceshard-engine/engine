@@ -9,13 +9,18 @@ namespace ice
     {
     public:
         IceshardWorldManager(
-            ice::Allocator& alloc
+            ice::Allocator& alloc,
+            ice::WorldTraitArchive const& trait_archive
         ) noexcept;
         ~IceshardWorldManager() noexcept override;
 
         auto create_world(
-            ice::StringID_Arg name,
-            ice::ecs::EntityStorage* entity_storage
+            ice::Allocator& alloc,
+            ice::WorldTemplate const& world_template
+        ) const noexcept -> ice::World* override;
+
+        auto create_world(
+            ice::WorldTemplate const& world_template
         ) noexcept -> World* override;
 
         auto find_world(
@@ -30,6 +35,7 @@ namespace ice
 
     private:
         ice::Allocator& _allocator;
+        ice::WorldTraitArchive const& _trait_archive;
         ice::pod::Hash<ice::IceshardWorld*> _worlds;
     };
 

@@ -10,12 +10,19 @@ namespace ice
 
     class Engine;
     class EngineDevUI;
+    class WorldTraitArchive;
+
+    struct EngineCreateInfo
+    {
+        ice::AssetStorage& asset_storage;
+        ice::WorldTraitArchive const& trait_archive;
+        ice::EngineDevUI* devui;
+    };
 
     auto create_engine(
         ice::Allocator& alloc,
-        ice::AssetStorage& asset_storage,
         ice::ModuleRegister& registry,
-        ice::EngineDevUI* devui = nullptr
+        ice::EngineCreateInfo const& create_info
     ) noexcept -> ice::UniquePtr<ice::Engine>;
 
     namespace detail::engine::v1
@@ -23,9 +30,8 @@ namespace ice
 
         using CreateFn = auto (
             ice::Allocator&,
-            ice::AssetStorage&,
             ice::ModuleRegister&,
-            ice::EngineDevUI*
+            ice::EngineCreateInfo const&
         ) noexcept -> ice::Engine*;
 
         using DestroyFn = void (ice::Allocator& alloc, ice::Engine*) noexcept;

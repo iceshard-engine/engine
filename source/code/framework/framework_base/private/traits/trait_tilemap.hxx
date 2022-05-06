@@ -58,4 +58,10 @@ namespace ice
         ice::pod::Array<ice::TileMapInstance> _tilemaps;
     };
 
+    class WorldTraitArchive;
+
+    void register_trait_tilemap(
+        ice::WorldTraitArchive& archive
+    ) noexcept;
+
 } // namespace ice

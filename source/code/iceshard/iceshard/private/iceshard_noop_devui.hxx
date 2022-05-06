@@ -8,8 +8,6 @@ namespace ice
     class IceshardNoopDevUI : public ice::EngineDevUI
     {
     public:
-        inline auto world_trait() noexcept -> ice::devui::DevUITrait* override { return nullptr; }
-
         inline void register_widget(ice::devui::DevUIWidget* /*widget*/) noexcept override { }
         inline void unregister_widget(ice::devui::DevUIWidget* /*widget*/) noexcept override { }
 

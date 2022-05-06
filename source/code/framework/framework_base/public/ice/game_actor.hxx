@@ -6,9 +6,11 @@
 namespace ice
 {
 
+    static constexpr ice::StringID Constant_TraitName_Actor
+        = "ice.base-framework.trait-actor"_sid;
+
     enum class ActorType : ice::u32
     {
-        Static,
         Player,
     };
 
@@ -18,11 +20,5 @@ namespace ice
 
         ice::ActorType type;
     };
-
-    class WorldTrait;
-
-    auto create_trait_actor(
-        ice::Allocator& alloc
-    ) noexcept -> ice::UniquePtr<ice::WorldTrait>;
 
 } // namespace ice

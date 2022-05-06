@@ -7,13 +7,14 @@
 namespace ice::devui
 {
 
-    class ImGuiSystem : public ice::devui::DevUISystem
+    class ImGuiSystem final : public ice::devui::DevUISystem
     {
     public:
         ImGuiSystem(ice::Allocator& alloc) noexcept;
         ~ImGuiSystem() noexcept override;
 
-        auto world_trait() noexcept -> ice::devui::DevUITrait* override;
+        void register_trait(ice::WorldTraitArchive& archive) noexcept override;
+        void set_trait(ice::devui::ImGuiTrait* trait) noexcept;
 
         void register_widget(ice::devui::DevUIWidget* widget) noexcept override;
         void unregister_widget(ice::devui::DevUIWidget* widget) noexcept override;
@@ -29,10 +30,11 @@ namespace ice::devui
     private:
         ice::Allocator& _allocator;
         ice::devui::DevUIExecutionKey _execution_key;
-        ice::devui::ImGuiTrait _render_trait;
+        ice::devui::ImGuiTrait* _render_trait;
         ice::devui::ImGui_AllocatorTreeWidget* _widget_alloc_tree;
 
         ice::pod::Array<ice::devui::DevUIWidget*> _widgets;
+        ice::pod::Array<ice::devui::DevUIWidget*> _inactive_widgets;
     };
 
 } // namespace ice::devui

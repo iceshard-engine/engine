@@ -8,6 +8,7 @@
 #include <ice/engine_runner.hxx>
 #include <ice/task_sync_wait.hxx>
 #include <ice/world/world_portal.hxx>
+#include <ice/world/world_trait_archive.hxx>
 
 #include <ice/gfx/gfx_device.hxx>
 #include <ice/gfx/gfx_frame.hxx>
@@ -211,11 +212,9 @@ namespace ice
     } // namespace detail
 
     IceWorldTrait_RenderTilemap::IceWorldTrait_RenderTilemap(
-        ice::Allocator& alloc,
-        ice::StringID_Arg stage_name
+        ice::Allocator& alloc
     ) noexcept
         : _allocator{ alloc }
-        , _stage_name{ stage_name }
         , _render_cache{ _allocator }
     {
         ice::pod::hash::reserve(_render_cache, 10);
@@ -532,6 +531,7 @@ namespace ice
     {
         using namespace ice::render;
 
+        auto const tailcall_bug_workaround = [&]() noexcept
         {
             IPT_ZONE_SCOPED_NAMED("[GfxTrait] TileMap :: Update Camera");
 
@@ -546,7 +546,7 @@ namespace ice
                 ice::render::Buffer const camera_buffer = ice::gfx::find_resource<ice::render::Buffer>(
                     gfx_device.resource_tracker(),
                     _render_camera
-                );
+                    );
 
                 if (_render_camera_buffer != camera_buffer && camera_buffer != ice::render::Buffer::Invalid)
                 {
@@ -554,7 +554,9 @@ namespace ice
                     update_resource_camera(gfx_device);
                 }
             }
-        }
+        };
+
+        tailcall_bug_workaround();
 
         ice::detail::TileMap_DrawOperation const* const draw_operation = engine_frame.named_object<ice::detail::TileMap_DrawOperation>(
             "tilemap_render.draw_operation"_sid
@@ -568,7 +570,7 @@ namespace ice
                 update_resource_tilemap(gfx_device, *draw_operation->render_info);
             }
 
-            gfx_frame.set_stage_slot(_stage_name, this);
+            gfx_frame.set_stage_slot(ice::Constant_GfxStage_DrawTilemap, this);
         }
 
         co_return;
@@ -727,6 +729,24 @@ namespace ice
         };
 
         device.update_resourceset(set_updates);
+    }
+
+    void register_trait_render_tilemap(
+        ice::WorldTraitArchive& archive
+    ) noexcept
+    {
+        static constexpr ice::StringID trait_dependencies[]{
+            Constant_TraitName_RenderClear,
+        };
+
+        archive.register_trait(
+            ice::Constant_TraitName_RenderTilemap,
+            ice::WorldTraitDescription
+            {
+                .factory = ice::detail::generic_trait_factory<IceWorldTrait_RenderTilemap>,
+                .required_dependencies = trait_dependencies
+            }
+        );
     }
 
 } // namespace ice

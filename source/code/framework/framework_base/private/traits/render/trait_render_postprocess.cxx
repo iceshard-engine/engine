@@ -1,6 +1,7 @@
 #include "trait_render_postprocess.hxx"
 
 #include <ice/engine.hxx>
+#include <ice/world/world_trait_archive.hxx>
 
 #include <ice/render/render_device.hxx>
 #include <ice/render/render_pass.hxx>
@@ -33,11 +34,6 @@ namespace ice
         }
 
     } // namespace detail
-
-    IceWorldTrait_RenderPostProcess::IceWorldTrait_RenderPostProcess(ice::StringID_Arg stage_name) noexcept
-        : _stage_name{ stage_name }
-    {
-    }
 
     void IceWorldTrait_RenderPostProcess::gfx_setup(
         ice::gfx::GfxFrame& gfx_frame,
@@ -192,7 +188,7 @@ namespace ice
             gfx_setup(gfx_frame, gfx_device);
         }
 
-        gfx_frame.set_stage_slot(_stage_name, this);
+        gfx_frame.set_stage_slot(ice::Constant_GfxStage_Postprocess, this);
     }
 
     void IceWorldTrait_RenderPostProcess::on_activate(
@@ -255,6 +251,24 @@ namespace ice
         };
 
         device.update_resourceset(set_updates);
+    }
+
+    void register_trait_render_postprocess(
+        ice::WorldTraitArchive& archive
+    ) noexcept
+    {
+        static constexpr ice::StringID trait_dependencies[]{
+            Constant_TraitName_RenderClear,
+        };
+
+        archive.register_trait(
+            ice::Constant_TraitName_RenderPostprocess,
+            ice::WorldTraitDescription
+            {
+                .factory = ice::detail::generic_trait_factory<IceWorldTrait_RenderPostProcess>,
+                .required_dependencies = trait_dependencies
+            }
+        );
     }
 
 } // namespace ice

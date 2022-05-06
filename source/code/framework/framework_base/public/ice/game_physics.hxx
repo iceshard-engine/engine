@@ -6,6 +6,9 @@
 namespace ice
 {
 
+    static constexpr ice::StringID Constant_TraitName_PhysicsBox2D
+        = "ice.base-framework.trait-physics-box2d"_sid;
+
     static constexpr ice::f32 Constant_PixelsInMeter = 64.f;
 
     enum class PhysicsID : ice::u64
@@ -55,9 +58,5 @@ namespace ice
             ice::PhysicsID physics_id
         ) noexcept = 0;
     };
-
-    auto create_trait_physics(
-        ice::Allocator& alloc
-    ) noexcept -> ice::UniquePtr<ice::WorldTrait_Physics2D>;
 
 } // namespace ice

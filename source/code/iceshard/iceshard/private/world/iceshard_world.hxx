@@ -30,9 +30,18 @@ namespace ice
             ice::WorldTrait* trait
         ) noexcept override;
 
+        void add_owning_trait(
+            ice::StringID_Arg name,
+            ice::WorldTrait* trait
+        ) noexcept;
+
         void remove_trait(
             ice::StringID_Arg name
         ) noexcept override;
+
+        auto find_trait(
+            ice::StringID_Arg name
+        ) const noexcept -> ice::WorldTrait*;
 
         void activate(
             ice::Engine& engine,
@@ -48,7 +57,7 @@ namespace ice
             ice::EngineRunner& runner
         ) noexcept;
 
-        auto traits() noexcept -> ice::pod::Array<ice::WorldTrait*>&;
+        auto traits() noexcept -> ice::Span<ice::WorldTrait*>;
 
     private:
         ice::Allocator& _allocator;

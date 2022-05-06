@@ -25,10 +25,21 @@ namespace ice
 
     IceshardWorld::~IceshardWorld() noexcept
     {
-        ICE_ASSERT(
-            ice::pod::array::empty(_portals._data),
-            "Not all traits where removed from this World before destruction!"
-        );
+        for (auto const& entry : _portals)
+        {
+            ice::IceshardWorldPortal* portal = entry.value;
+
+            ICE_ASSERT(
+                portal->is_owning() == true,
+                "Not all external traits where removed from this World before destruction!"
+            );
+
+            if (portal->is_owning())
+            {
+                _allocator.destroy(portal->trait());
+                _allocator.destroy(portal);
+            }
+        }
     }
 
     auto IceshardWorld::allocator() noexcept -> ice::Allocator&
@@ -77,7 +88,38 @@ namespace ice
                 _allocator,
                 *this,
                 trait,
-                *_entity_storage
+                *_entity_storage,
+                false
+            )
+        );
+    }
+
+    void IceshardWorld::add_owning_trait(
+        ice::StringID_Arg name,
+        ice::WorldTrait* trait
+    ) noexcept
+    {
+        ice::u64 const name_hash = ice::hash(name);
+        ICE_ASSERT(
+            ice::pod::hash::has(_portals, name_hash) == false,
+            "World already contains a trait of name {}",
+            ice::stringid_hint(name)
+        );
+
+        ice::pod::array::push_back(
+            _traits,
+            trait
+        );
+
+        ice::pod::hash::set(
+            _portals,
+            name_hash,
+            _allocator.make<IceshardWorldPortal>(
+                _allocator,
+                *this,
+                trait,
+                *_entity_storage,
+                true
             )
         );
     }
@@ -114,6 +156,16 @@ namespace ice
         _allocator.destroy(portal);
     }
 
+    auto IceshardWorld::find_trait(
+		ice::StringID_Arg name
+    ) const noexcept -> ice::WorldTrait*
+    {
+        ice::u64 const name_hash = ice::hash(name);
+
+        ice::IceshardWorldPortal* const portal = ice::pod::hash::get(_portals, name_hash, nullptr);
+        return portal == nullptr ? nullptr : portal->trait();
+    }
+
     void IceshardWorld::activate(
         ice::Engine& engine,
         ice::EngineRunner& runner
@@ -132,10 +184,13 @@ namespace ice
         ice::EngineRunner& runner
     ) noexcept
     {
-        for (auto& entry : _portals)
+        ice::Span<ice::pod::Hash<ice::IceshardWorldPortal*>::Entry> portals = _portals._data;
+        ice::u32 const size = ice::size(portals);
+
+        for (ice::i32 idx = size - 1; idx >= 0; --idx)
         {
-            entry.value->trait()->on_deactivate(
-                engine, runner, *entry.value
+            portals[idx].value->trait()->on_deactivate(
+                engine, runner, *portals[idx].value
             );
         }
     }
@@ -163,7 +218,7 @@ namespace ice
         }
     }
 
-    auto IceshardWorld::traits() noexcept -> ice::pod::Array<ice::WorldTrait*>&
+    auto IceshardWorld::traits() noexcept -> ice::Span<ice::WorldTrait*>
     {
         return _traits;
     }

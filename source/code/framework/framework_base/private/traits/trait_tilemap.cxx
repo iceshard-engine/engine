@@ -4,6 +4,7 @@
 #include <ice/engine_frame.hxx>
 #include <ice/engine_runner.hxx>
 #include <ice/world/world_portal.hxx>
+#include <ice/world/world_trait_archive.hxx>
 #include <ice/task_thread_pool.hxx>
 #include <ice/asset_storage.hxx>
 
@@ -179,10 +180,10 @@ namespace ice
     {
         IPT_ZONE_SCOPED_NAMED("[Trait] TileMap :: Update");
 
-        if (_requested_tilemap.empty() == false)
+        std::u8string_view const* name;
+        if (ice::shards::inspect_first(runner.previous_frame().shards(), ice::Shard_LoadTileMap, name))
         {
-            portal.execute(load_tilemap_task(_requested_tilemap, runner));
-            _requested_tilemap = u8"";
+            portal.execute(load_tilemap_task(*name, runner));
         }
 
         if (ice::pod::array::any(_tilemaps))
@@ -200,12 +201,32 @@ namespace ice
         }
     }
 
-    auto create_tilemap_trait(
+    auto trait_tilemap_factory(
+        [[maybe_unused]] void* userdata,
         ice::Allocator& alloc,
-        ice::WorldTrait_Physics2D& trait_physics
-    ) noexcept -> ice::UniquePtr<ice::WorldTrait_TileMap>
+        ice::WorldTraitTracker const& trait_tracker
+    ) noexcept -> ice::WorldTrait*
     {
-        return ice::make_unique<ice::WorldTrait_TileMap, ice::IceWorldTrait_TileMap>(alloc, alloc, trait_physics);
+        ice::WorldTrait_Physics2D* phx_trait = static_cast<ice::WorldTrait_Physics2D*>(
+            trait_tracker.find_trait(ice::Constant_TraitName_PhysicsBox2D)
+        );
+        return alloc.make<IceWorldTrait_TileMap>(alloc, *phx_trait);
+    }
+
+    void register_trait_tilemap(ice::WorldTraitArchive& archive) noexcept
+    {
+        static constexpr ice::StringID trait_dependencies[]{
+            ice::Constant_TraitName_PhysicsBox2D
+        };
+
+        archive.register_trait(
+            ice::Constant_TraitName_Tilemap,
+            ice::WorldTraitDescription
+            {
+                .factory = trait_tilemap_factory,
+                .required_dependencies = trait_dependencies
+            }
+        );
     }
 
 } // namespace ice

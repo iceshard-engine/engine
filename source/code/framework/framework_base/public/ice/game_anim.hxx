@@ -6,6 +6,9 @@
 namespace ice
 {
 
+    static constexpr ice::StringID Constant_TraitName_SpriteAnimator
+        = "ice.base-framework.trait-sprite-animator"_sid;
+
     struct Animation
     {
         static constexpr ice::StringID Identifier = "ice.component.animation"_sid;
@@ -22,11 +25,5 @@ namespace ice
         ice::i64 timestamp;
         ice::vec2u frame;
     };
-
-    class WorldTrait;
-
-    auto create_trait_animator(
-        ice::Allocator& alloc
-    ) noexcept -> ice::UniquePtr<ice::WorldTrait>;
 
 } // namespace ice

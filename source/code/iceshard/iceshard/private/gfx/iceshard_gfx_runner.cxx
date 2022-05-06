@@ -29,7 +29,7 @@ namespace ice::gfx
     IceGfxRunner::IceGfxRunner(
         ice::Allocator& alloc,
         ice::UniquePtr<ice::gfx::IceGfxDevice> device,
-        ice::UniquePtr<ice::gfx::IceGfxWorld> world
+        ice::IceshardWorld* graphics_world
     ) noexcept
         : _allocator{ alloc, "gfx-runner"}
         , _thread{ ice::create_task_thread(_allocator) }
@@ -40,8 +40,7 @@ namespace ice::gfx
         }
         , _next_free_allocator{ 0 }
         , _current_frame{ ice::make_unique_null<ice::gfx::IceGfxFrame>() }
-        , _gfx_world_name{ "default"_sid }
-        , _traits{ _allocator }
+        , _graphics_world{ graphics_world }
         , _runner_trait{ *this }
         , _contexts{ _allocator }
         , _mre_internal{ true }
@@ -57,8 +56,6 @@ namespace ice::gfx
         {
             fence_ptr = _device->device().create_fence();
         }
-
-        add_trait("ice.gfx.runner"_sid, &_runner_trait);
     }
 
     IceGfxRunner::~IceGfxRunner() noexcept
@@ -87,47 +84,23 @@ namespace ice::gfx
 
         // Destroy the frame safely.
         _current_frame = nullptr;
+
+        _allocator.backing_allocator().destroy(_graphics_world[0]);
     }
 
-    void IceGfxRunner::add_trait(ice::StringID_Arg name, ice::gfx::GfxTrait* trait) noexcept
+    auto IceGfxRunner::aquire_world() noexcept -> ice::World*
     {
-        ice::pod::array::push_back(_traits, { name, trait });
+        ICE_ASSERT(_graphics_world[0] != nullptr, "Trying to aquire a second world object!");
+        _graphics_world[0]->add_trait("ice.iceshard-internal.trait-gfx-runner"_sid, &_runner_trait);
+        _graphics_world[1] = ice::exchange(_graphics_world[0], nullptr);
+        return _graphics_world[1];
     }
 
-    void IceGfxRunner::set_graphics_world(ice::StringID_Arg world_name) noexcept
+    void IceGfxRunner::release_world(ice::World* world) noexcept
     {
-        _gfx_world_name = world_name;
-    }
-
-    void IceGfxRunner::prepare_world(ice::World* world) noexcept
-    {
-        ICE_ASSERT(
-            world->state_hint() == WorldState::Managed,
-            "A GfxRunner can only prepare a managed world."
-        );
-
-        for (ice::gfx::IceGfxTraitEntry const& entry : _traits)
-        {
-            world->add_trait(entry.name, entry.trait);
-        }
-    }
-
-    void IceGfxRunner::cleanup_world(ice::World* world) noexcept
-    {
-        ICE_ASSERT(
-            world->state_hint() == WorldState::Managed,
-            "A GfxRunner can only cleanup a managed world."
-        );
-
-        for (ice::gfx::IceGfxTraitEntry const& entry : _traits)
-        {
-            world->remove_trait(entry.name);
-        }
-    }
-
-    auto IceGfxRunner::graphics_world_name() noexcept -> ice::StringID
-    {
-        return _gfx_world_name;
+        ICE_ASSERT(_graphics_world[1] == world, "Trying to release a second world object!");
+        _graphics_world[1]->remove_trait("ice.iceshard-internal.trait-gfx-runner"_sid);
+        _graphics_world[0] = ice::exchange(_graphics_world[1], nullptr);
     }
 
     void IceGfxRunner::set_event(ice::ManualResetEvent* mre_event) noexcept
@@ -222,17 +195,21 @@ namespace ice::gfx
 
     void IceGfxRunner::setup_gfx_traits() noexcept
     {
-        for (ice::gfx::IceGfxTraitEntry const& entry : _traits)
+        for (ice::WorldTrait* trait : _graphics_world[1]->traits())
         {
-            entry.trait->gfx_setup(*_current_frame, *_device);
+            static_cast<ice::gfx::GfxTrait*>(trait)->gfx_setup(*_current_frame, *_device);
         }
     }
 
     void IceGfxRunner::cleanup_gfx_traits() noexcept
     {
-        for (ice::gfx::IceGfxTraitEntry const& entry : _traits)
+        ice::Span<ice::WorldTrait*> const traits = _graphics_world[1]->traits();
+        ice::u32 const trait_count = ice::size(traits);
+
+        for (ice::i32 idx = trait_count - 1; idx >= 0; --idx)
         {
-            entry.trait->gfx_cleanup(*_current_frame, *_device);
+            ice::gfx::GfxTrait* const trait = static_cast<ice::gfx::GfxTrait*>(traits[idx]);
+            trait->gfx_cleanup(*_current_frame, *_device);
         }
     }
 
@@ -264,9 +241,9 @@ namespace ice::gfx
         }
 
         // Gather tasks forom all traits.
-        for (ice::gfx::IceGfxTraitEntry const& entry : _traits)
+        for (ice::WorldTrait* trait : _graphics_world[1]->traits())
         {
-            frame->add_task(entry.trait->task_gfx_update(engine_frame, *frame, *_device));
+            frame->add_task(static_cast<ice::gfx::GfxTrait*>(trait)->task_gfx_update(engine_frame, *frame, *_device));
         }
 
         ice::IceshardTaskExecutor frame_tasks = frame->create_task_executor();

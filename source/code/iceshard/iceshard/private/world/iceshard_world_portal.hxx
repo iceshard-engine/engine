@@ -17,10 +17,13 @@ namespace ice
             ice::Allocator& alloc,
             ice::World const& world,
             ice::WorldTrait* trait,
-            ice::ecs::EntityStorage& entity_storage
+            ice::ecs::EntityStorage& entity_storage,
+            bool is_owning
         ) noexcept;
 
         ~IceshardWorldPortal() noexcept override;
+
+        bool is_owning() const noexcept { return _is_owning; }
 
         auto world() const noexcept -> ice::World const& override;
         auto trait() noexcept -> ice::WorldTrait*;
@@ -38,6 +41,7 @@ namespace ice
         ice::Allocator& _allocator;
         ice::World const& _world;
         ice::WorldTrait* _trait;
+        bool const _is_owning;
 
         ice::HashedDataStorage _storage;
         ice::ecs::EntityStorage& _entity_storage;

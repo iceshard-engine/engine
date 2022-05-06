@@ -8,6 +8,7 @@
 #include <ice/platform_event.hxx>
 
 #include <ice/engine_runner.hxx>
+#include <ice/world/world_trait_archive.hxx>
 
 #include <ice/render/render_device.hxx>
 #include <ice/render/render_framebuffer.hxx>
@@ -219,6 +220,16 @@ namespace ice
             gfx_cleanup(gfx_frame, gfx_device);
             gfx_setup(gfx_frame, gfx_device);
         }
+    }
+
+    void register_trait_render_gfx(
+        ice::WorldTraitArchive& archive
+    ) noexcept
+    {
+        ice::register_trait_default<IceWorldTrait_RenderGfx>(
+            archive,
+            ice::Constant_TraitName_RenderBase
+        );
     }
 
 } // namespace ice

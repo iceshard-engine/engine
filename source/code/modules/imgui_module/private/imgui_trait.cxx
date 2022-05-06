@@ -2,6 +2,8 @@
 
 #include <ice/engine.hxx>
 #include <ice/engine_runner.hxx>
+#include <ice/engine_devui.hxx>
+
 #include <ice/gfx/gfx_frame.hxx>
 #include <ice/gfx/gfx_context.hxx>
 #include <ice/gfx/gfx_resource_tracker.hxx>
@@ -59,11 +61,6 @@ namespace ice::devui
     ImGuiTrait::~ImGuiTrait() noexcept
     {
         ImGui::DestroyContext();
-    }
-
-    auto ImGuiTrait::gfx_stage_name() const noexcept -> ice::StringID
-    {
-        return "ice.devui.imgui-render"_sid;
     }
 
     void ImGuiTrait::gfx_setup(
@@ -477,7 +474,7 @@ namespace ice::devui
             device.update_buffers({ buffer_updates, buffer_update_count });
         }
 
-        gfx_frame.set_stage_slot(gfx_stage_name(), this);
+        gfx_frame.set_stage_slot(ice::Constant_GfxStage_DevUI, this);
     }
 
     void ImGuiTrait::on_activate(

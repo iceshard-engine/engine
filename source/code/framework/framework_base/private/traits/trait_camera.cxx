@@ -243,11 +243,4 @@ namespace ice
         co_return;
     }
 
-    auto create_trait_camera(
-        ice::Allocator& alloc
-    ) noexcept -> ice::UniquePtr<ice::gfx::GfxTrait>
-    {
-        return ice::make_unique<ice::gfx::GfxTrait, ice::IceWorldTrait_RenderCamera>(alloc, alloc);
-    }
-
 } // namespace ice

@@ -1,8 +1,10 @@
 #include <ice/game_framework.hxx>
+#include <ice/game_render_traits.hxx>
 
 #include <ice/engine.hxx>
 #include <ice/engine_runner.hxx>
 #include <ice/gfx/gfx_runner.hxx>
+#include <ice/world/world_assembly.hxx>
 
 #include <ice/input/input_tracker.hxx>
 #include <ice/assert.hxx>
@@ -118,10 +120,10 @@ namespace ice
         );
     }
 
-    void GameFramework::startup(ice::Engine& engine, ice::gfx::GfxRunner& gfx_runner) noexcept
+    void GameFramework::startup(ice::Engine& engine) noexcept
     {
         _current_engine = &engine;
-        this->on_app_startup_internal(engine, gfx_runner);
+        this->on_app_startup_internal(engine);
     }
 
     void GameFramework::shutdown(ice::Engine& engine) noexcept

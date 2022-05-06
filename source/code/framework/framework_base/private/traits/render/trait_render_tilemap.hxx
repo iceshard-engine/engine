@@ -42,8 +42,7 @@ namespace ice
     {
     public:
         IceWorldTrait_RenderTilemap(
-            ice::Allocator& alloc,
-            ice::StringID_Arg stage_name
+            ice::Allocator& alloc
         ) noexcept;
 
         void on_activate(
@@ -99,7 +98,6 @@ namespace ice
 
     private:
         ice::Allocator& _allocator;
-        ice::StringID _stage_name;
         ice::AssetStorage* _asset_system;
         ice::Data _shader_data[2];
 
@@ -121,5 +119,12 @@ namespace ice
         ice::TileMap const* _last_tilemap = nullptr;
         ice::pod::Hash<ice::IceTileMap_RenderCache*> _render_cache;
     };
+
+
+    class WorldTraitArchive;
+
+    void register_trait_render_tilemap(
+        ice::WorldTraitArchive& archive
+    ) noexcept;
 
 } // namespace ice

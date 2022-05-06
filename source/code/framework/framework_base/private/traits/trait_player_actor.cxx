@@ -2,7 +2,9 @@
 #include <ice/game_anim.hxx>
 
 #include <ice/engine_frame.hxx>
+#include <ice/engine_runner.hxx>
 #include <ice/world/world_portal.hxx>
+#include <ice/action/action.hxx>
 #include <ice/ecs/ecs_entity_storage.hxx>
 
 #include <ice/input/input_device.hxx>
@@ -45,16 +47,25 @@ namespace ice
         Query::Query& query = *portal.storage().named_object<Query::Query>("ice.query.player_actors"_sid);
 
         ice::vec2f movement;
+        ice::StringID_Hash action_hash = ice::stringid_hash(ice::stringid_invalid);
+        if (ice::shards::inspect_first(runner.previous_frame().shards(), ice::action::Shard_ActionEventSuccess, action_hash))
+        {
+            if (action_hash == "jump-action"_sid_hash)
+            {
+                movement.y += 2.f;
+            }
+        }
+
         for (ice::input::InputEvent const& input : frame.input_events())
         {
             switch (input.identifier)
             {
-            case input_identifier(DeviceType::Keyboard, KeyboardKey::KeyW):
-                movement.y += 2.f;
-                break;
-            case input_identifier(DeviceType::Keyboard, KeyboardKey::KeyS):
-                movement.y -= 2.f;
-                break;
+            //case input_identifier(DeviceType::Keyboard, KeyboardKey::KeyW):
+            //    movement.y += 2.f;
+            //    break;
+            //case input_identifier(DeviceType::Keyboard, KeyboardKey::KeyS):
+            //    movement.y -= 2.f;
+            //    break;
             case input_identifier(DeviceType::Keyboard, KeyboardKey::KeyA):
                 movement.x -= 2.f;
                 break;

@@ -8,8 +8,6 @@ namespace ice
     class IceWorldTrait_RenderFinish : public ice::gfx::GfxTrait, public ice::gfx::GfxContextStage
     {
     public:
-        IceWorldTrait_RenderFinish(ice::StringID_Arg stage_name) noexcept;
-
         void gfx_update(
             ice::EngineFrame const& engine_frame,
             ice::gfx::GfxFrame& gfx_frame,
@@ -22,9 +20,13 @@ namespace ice
             ice::render::CommandBuffer command_buffer,
             ice::render::RenderCommands& render_commands
         ) const noexcept override;
-
-    private:
-        ice::StringID const _stage_name;
     };
+
+
+    class WorldTraitArchive;
+
+    void register_trait_render_finish(
+        ice::WorldTraitArchive& archive
+    ) noexcept;
 
 } // namespace ice

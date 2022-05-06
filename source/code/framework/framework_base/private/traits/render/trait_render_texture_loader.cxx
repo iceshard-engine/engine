@@ -3,6 +3,7 @@
 #include <ice/engine_runner.hxx>
 #include <ice/task_thread_pool.hxx>
 #include <ice/world/world_portal.hxx>
+#include <ice/world/world_trait_archive.hxx>
 
 #include <ice/gfx/gfx_device.hxx>
 #include <ice/gfx/gfx_resource_tracker.hxx>
@@ -311,5 +312,23 @@ namespace ice
     //frame_stage.image = operation.render_cache->tileset_images;
     //frame_stage.image_data = image_data_buffer;
     //frame_stage.image_size = image_extent;
+
+    void register_trait_render_texture_loader(
+        ice::WorldTraitArchive& archive
+    ) noexcept
+    {
+        static constexpr ice::StringID trait_dependencies[]{
+            Constant_TraitName_RenderBase,
+        };
+
+        archive.register_trait(
+            ice::Constant_TraitName_RenderTextureLoader,
+            ice::WorldTraitDescription
+            {
+                .factory = ice::detail::generic_trait_factory<IceWorldTrait_RenderTextureLoader>,
+                .required_dependencies = trait_dependencies
+            }
+        );
+    }
 
 } // namespace ice

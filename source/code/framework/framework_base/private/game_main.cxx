@@ -1,4 +1,6 @@
 #include <ice/game_framework.hxx>
+#include <ice/game_module.hxx>
+
 #include <ice/module_register.hxx>
 #include <ice/application.hxx>
 
@@ -11,6 +13,8 @@
 #include <ice/render/render_module.hxx>
 #include <ice/engine.hxx>
 #include <ice/engine_module.hxx>
+#include <ice/world/world_trait_archive.hxx>
+#include <ice/world/world_trait_module.hxx>
 
 #include <ice/devui/devui_module.hxx>
 #include <ice/devui/devui_system.hxx>
@@ -43,6 +47,12 @@ auto game_main(ice::Allocator& alloc, ice::ResourceTracker& resources) -> ice::i
         ice::unload_log_module
     );
 
+    module_register->load_module(
+        module_alloc,
+        ice::load_game_module,
+        ice::unload_game_module
+    );
+
     {
         ice::memory::ProxyAllocator framework_alloc{ alloc, "game-framework-alloc" };
         ice::memory::ProxyAllocator asset_alloc{ alloc, "asset-alloc" };
@@ -57,6 +67,9 @@ auto game_main(ice::Allocator& alloc, ice::ResourceTracker& resources) -> ice::i
 
         game_framework->load_modules();
 
+        ice::UniquePtr<ice::WorldTraitArchive> trait_archive = ice::create_world_trait_archive(engine_alloc);
+        ice::load_trait_descriptions(engine_alloc, *module_register, *trait_archive);
+
         ice::UniquePtr<ice::AssetTypeArchive> asset_types = ice::create_asset_type_archive(engine_alloc);
         ice::load_asset_type_definitions(asset_alloc, *module_register, *asset_types);
 
@@ -66,8 +79,16 @@ auto game_main(ice::Allocator& alloc, ice::ResourceTracker& resources) -> ice::i
         if (ice::build::is_debug || ice::build::is_develop)
         {
             engine_devui = ice::devui::create_devui_system(engine_alloc, *module_register);
+            engine_devui->register_trait(*trait_archive);
         }
-        ice::UniquePtr<ice::Engine> engine = ice::create_engine(engine_alloc, *asset_storage, *module_register, engine_devui.get());
+
+        ice::EngineCreateInfo const create_info{
+            .asset_storage = *asset_storage,
+            .trait_archive = *trait_archive,
+            .devui = engine_devui.get()
+        };
+
+        ice::UniquePtr<ice::Engine> engine = ice::create_engine(engine_alloc, *module_register, create_info);
         ice::UniquePtr<ice::render::RenderDriver> render_driver = ice::render::create_render_driver(alloc, *module_register);
 
         if (engine != nullptr && render_driver != nullptr)
@@ -100,16 +121,17 @@ auto game_main(ice::Allocator& alloc, ice::ResourceTracker& resources) -> ice::i
                 }
             };
 
+            game_framework->startup(*engine);
+
             ice::UniquePtr<ice::gfx::GfxRunner> gfx_runner = engine->create_graphics_runner(
                 *render_driver,
                 *render_surface,
+                game_framework->graphics_world_template(),
                 queues
             );
 
             if (gfx_runner != nullptr)
             {
-                gfx_runner->set_graphics_world(game_framework->graphics_world_name());
-                game_framework->startup(*engine, *gfx_runner);
 
                 ice::UniquePtr<ice::platform::App> platform_app = game_framework->create_app(ice::move(gfx_runner));
                 if (platform_app != nullptr)
@@ -117,8 +139,9 @@ auto game_main(ice::Allocator& alloc, ice::ResourceTracker& resources) -> ice::i
                     main_result = ice::platform::create_app_container(app_alloc, ice::move(platform_app))->run();
                 }
 
-                game_framework->shutdown(*engine);
             }
+
+            game_framework->shutdown(*engine);
 
             render_driver->destroy_surface(render_surface);
             app_window = nullptr;

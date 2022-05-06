@@ -2,6 +2,7 @@
 
 #include <ice/engine_runner.hxx>
 #include <ice/world/world_portal.hxx>
+#include <ice/world/world_trait_archive.hxx>
 
 #include <ice/gfx/gfx_device.hxx>
 #include <ice/gfx/gfx_resource_tracker.hxx>
@@ -13,18 +14,13 @@
 namespace ice
 {
 
-    IceWorldTrait_RenderFinish::IceWorldTrait_RenderFinish(ice::StringID_Arg stage_name) noexcept
-        : _stage_name{ stage_name }
-    {
-    }
-
     void IceWorldTrait_RenderFinish::gfx_update(
         ice::EngineFrame const& engine_frame,
         ice::gfx::GfxFrame& gfx_frame,
         ice::gfx::GfxDevice& gfx_device
     ) noexcept
     {
-        gfx_frame.set_stage_slot(_stage_name, this);
+        gfx_frame.set_stage_slot(ice::Constant_GfxStage_Finish, this);
     }
 
     void IceWorldTrait_RenderFinish::record_commands(
@@ -35,6 +31,24 @@ namespace ice
     ) const noexcept
     {
         api.end_renderpass(cmds);
+    }
+
+    void register_trait_render_finish(
+        ice::WorldTraitArchive& archive
+    ) noexcept
+    {
+        static constexpr ice::StringID trait_dependencies[]{
+            Constant_TraitName_RenderPostprocess,
+        };
+
+        archive.register_trait(
+            ice::Constant_TraitName_RenderFinish,
+            ice::WorldTraitDescription
+            {
+                .factory = ice::detail::generic_trait_factory<IceWorldTrait_RenderFinish>,
+                .required_dependencies = trait_dependencies
+            }
+        );
     }
 
 } // namespace ice

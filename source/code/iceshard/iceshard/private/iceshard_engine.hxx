@@ -11,14 +11,16 @@ namespace ice
 {
 
     class EngineDevUI;
+    class WorldTraitArchive;
+
+    struct EngineCreateInfo;
 
     class IceshardEngine final : public ice::Engine
     {
     public:
         IceshardEngine(
             ice::Allocator& alloc,
-            ice::AssetStorage& asset_system,
-            ice::EngineDevUI* devui
+            ice::EngineCreateInfo const& create_info
         ) noexcept;
         ~IceshardEngine() noexcept override;
 
@@ -30,6 +32,7 @@ namespace ice
         auto create_graphics_runner(
             ice::render::RenderDriver& render_driver,
             ice::render::RenderSurface& render_surface,
+            ice::WorldTemplate const& render_world_template,
             ice::Span<ice::RenderQueueDefinition const> render_queues
         ) noexcept -> ice::UniquePtr<ice::gfx::GfxRunner> override;
 
@@ -49,6 +52,8 @@ namespace ice
     private:
         ice::memory::ProxyAllocator _allocator;
         ice::AssetStorage& _asset_storage;
+        ice::WorldTraitArchive const& _trait_archive;
+
         ice::ecs::EntityIndex _entity_index;
         ice::IceshardWorldManager _world_manager;
         ice::EngineDevUI* const _devui;

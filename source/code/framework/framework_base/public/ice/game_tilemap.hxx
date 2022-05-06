@@ -1,5 +1,6 @@
 #pragma once
 #include <ice/span.hxx>
+#include <ice/shard.hxx>
 #include <ice/stringid.hxx>
 #include <ice/unique_ptr.hxx>
 #include <ice/world/world_trait.hxx>
@@ -8,7 +9,12 @@
 namespace ice
 {
 
+    static constexpr ice::Shard Shard_LoadTileMap = "ice/action/load-tilemap"_shard;
+
     static constexpr ice::AssetType AssetType_TileMap = ice::make_asset_type(u8"ice/framework/tile-map");
+
+    static constexpr ice::StringID Constant_TraitName_Tilemap
+        = "ice.base-framework.trait-tilemap"_sid;
 
     enum class TileSetID : ice::u32
     {
@@ -71,11 +77,6 @@ namespace ice
     public:
         virtual void load_tilemap(ice::Utf8String tilemap) noexcept = 0;
     };
-
-    auto create_tilemap_trait(
-        ice::Allocator& alloc,
-        ice::WorldTrait_Physics2D& trait_physics
-    ) noexcept -> ice::UniquePtr<ice::WorldTrait_TileMap>;
 
     class ModuleRegister;
     void register_asset_modules(
