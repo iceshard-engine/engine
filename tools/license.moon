@@ -102,7 +102,6 @@ class LicenseCommand extends Command
                 for { dep, conanfile, license_file } in *license_files
                     conaninfo = @extract_recipe_info conanfile
                     readme\write "\n## #{dep.name}\n"
-                    readme\write "---\n"
                     readme\write "#{conaninfo.description or dep.description}\n"
 
                     license_info = conaninfo.license or 'not found'
