@@ -1,0 +1,15 @@
+{
+    "rapidxml": {
+        "upstream": "http://rapidxml.sourceforge.net/",
+        "license": "MIT (User picked)"
+    },
+    "rapidjson": {
+        "upstream": "https://github.com/Tencent/rapidjson"
+    },
+    "box2d": {
+        "license": "MIT"
+    },
+    "imgui": {
+        "license": "MIT"
+    }
+}

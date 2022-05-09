@@ -16,21 +16,21 @@ A modern, C++-native, header-only, test framework for unit-tests, TDD and BDD.
 Box2D is a 2D physics engine for games.
 - **upstream:** https://github.com/erincatto/box2d
 - **version:** 2.4.1
-- **license:** https://github.com/erincatto/box2d/blob/master/LICENSE
+- **license:** MIT
 
 ## rapidjson
 ---
 A fast JSON parser/generator for C++ with both SAX/DOM style API
-- **upstream:** https://github.com/conan-io/conan-center-index
+- **upstream:** https://github.com/Tencent/rapidjson
 - **version:** 1.1.0
 - **license:** MIT
 
 ## rapidxml
 ---
 RapidXml is an attempt to create the fastest XML parser possible.
-- **upstream:** https://github.com/conan-io/conan-center-index
+- **upstream:** http://rapidxml.sourceforge.net/
 - **version:** 1.13
-- **license:** not found
+- **license:** MIT (User picked)
 
 ## Assimp
 ---
@@ -44,7 +44,7 @@ Conan package for Assmip
 Dear ImGui: Bloat-free Immediate Mode Graphical User interface for C++ with minimal dependencies
 - **upstream:** https://github.com/ocornut/imgui
 - **version:** 1.85
-- **license:** https://github.com/ocornut/imgui/blob/master/LICENSE.txt
+- **license:** MIT
 
 ## msdfgen
 ---

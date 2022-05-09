@@ -13,21 +13,26 @@ class LicenseCommand extends Command
             name: '--clean'
     }
 
-    @license_files = {
-        'license': true
-        'license.md': true
-        'license.txt': true
-        'copyright': true
-    }
-
     prepare: (args, project) =>
         @current_dir = os.cwd!
 
+        @details = {}
+        if details_file = io.open "thirdparty\\details.json"
+            @details = Json\decode details_file\read '*a'
+            details_file\close!
+
     search_for_license_files: (dir) =>
+        license_files = {
+            'license': true
+            'license.md': true
+            'license.txt': true
+            'copyright': true
+        }
+
         for candidate_file, mode in os.listdir dir, 'mode'
             continue if mode ~= 'file'
 
-            if @@license_files[candidate_file\lower!] ~= nil
+            if license_files[candidate_file\lower!] ~= nil
                 return "#{dir}\\#{candidate_file}"
 
     extract_recipe_info: (conanfile) =>
@@ -99,9 +104,16 @@ class LicenseCommand extends Command
                     readme\write "\n## #{dep.name}\n"
                     readme\write "---\n"
                     readme\write "#{conaninfo.description or dep.description}\n"
-                    readme\write "- **upstream:** #{conaninfo.url or conaninfo.homepage}\n"
+
+                    license_info = conaninfo.license or 'not found'
+                    upsteam_info = conaninfo.url or conaninfo.homepage
+                    if @details[dep.name]
+                        license_info = @details[dep.name].license or license_info
+                        upsteam_info = @details[dep.name].upstream or upsteam_info
+
+                    readme\write "- **upstream:** #{upsteam_info}\n" if upsteam_info
                     readme\write "- **version:** #{conaninfo.version or dep.version}\n"
-                    readme\write "- **license:** #{conaninfo.license or 'not found'}\n"
+                    readme\write "- **license:** #{license_info}\n"
 
                 readme\close!
 
