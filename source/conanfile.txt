@@ -21,3 +21,4 @@ box2d:undefined_user_symbols=True
 
 [generators]
 fastbuild
+json
