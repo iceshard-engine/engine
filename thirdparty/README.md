@@ -40,6 +40,12 @@ Conan package for Assmip
 - **version:** 5.0.1
 - **license:** BSD 3-Clause
 
+## sdl2
+Conan recipe for the SDL2 library.
+- **upstream:** https://www.libsdl.org/index.php
+- **version:** 2.0.22
+- **license:** Zlib
+
 ## imgui
 Dear ImGui: Bloat-free Immediate Mode Graphical User interface for C++ with minimal dependencies
 - **upstream:** https://github.com/ocornut/imgui

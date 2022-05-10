@@ -7,7 +7,7 @@ tracy/0.8.0@iceshard/stable
 rapidjson/1.1.0
 rapidxml/1.13
 Assimp/5.0.1@iceshard/stable
-sdl2/2.0.14@iceshard/stable
+sdl2/2.0.22@iceshard/stable
 imgui/1.85@iceshard/stable
 
 [build_requires]

@@ -28,6 +28,7 @@ class LicenseCommand extends Command
             'license.md': true
             'license.txt': true
             'license.rst': true
+            'copying.txt': true
             'copyright': true
         }
 
