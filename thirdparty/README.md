@@ -4,6 +4,12 @@ A file generated from all in-used conan dependencies.
 Listed alphabetically with general information about each third party dependency.
 For exact copies of eache license please follow the upstream link to look into [LICENSES.txt](LICENSES.txt).
 
+## fmt
+{{fmt}} is an open-source formatting library providing a fast and safe alternative to C stdio and C++ iostreams.
+- **upstream:** https://fmt.dev/latest/index.html
+- **version:** 7.0.3
+- **license:** MIT
+
 ## catch2
 A modern, C++-native, header-only, test framework for unit-tests, TDD and BDD.
 - **upstream:** https://github.com/catchorg/Catch2

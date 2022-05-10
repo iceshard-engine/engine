@@ -6,7 +6,8 @@ class LicenseCommand extends Command
     @arguments {
         option 'gen_3rdparty',
             name: '--gen-3rdparty'
-            default: '3rdparty/readme.md'
+            default: 'thirdparty/readme.md'
+            defmode: 'arg'
         flag 'check',
             name: '--check'
         flag 'clean',
@@ -26,6 +27,7 @@ class LicenseCommand extends Command
             'license': true
             'license.md': true
             'license.txt': true
+            'license.rst': true
             'copyright': true
         }
 
@@ -79,42 +81,44 @@ class LicenseCommand extends Command
 
             file\close!
 
-        if args.gen_3rdparty and license_files and #license_files > 0
-            os.mkdir "#{@current_dir}\\thirdparty"
+        if license_files and #license_files > 0
 
-            if licenses = io.open "#{@current_dir}\\thirdparty\\LICENSES.txt", "wb+"
-                for { dep, _, license_file } in *license_files
-                    licenses\write "\n-------------------- START '#{dep.name\lower!}' --------------------\n"
-                    if license_file_handle = io.open license_file, "rb+"
-                        for line in license_file_handle\lines!
-                            licenses\write "    #{line}\n"
-                        license_file_handle\close!
-                    licenses\write "-------------------- END '#{dep.name\lower!}' --------------------\n\n"
-                licenses\close!
+            if args.gen_3rdparty
+                os.mkdir "#{@current_dir}\\thirdparty"
 
-            if readme = io.open "#{@current_dir}\\thirdparty\\README.md", "wb+"
+                if licenses = io.open "#{@current_dir}\\thirdparty\\LICENSES.txt", "wb+"
+                    for { dep, _, license_file } in *license_files
+                        licenses\write "\n-------------------- START '#{dep.name\lower!}' --------------------\n"
+                        if license_file_handle = io.open license_file, "rb+"
+                            for line in license_file_handle\lines!
+                                licenses\write "    #{line}\n"
+                            license_file_handle\close!
+                        licenses\write "-------------------- END '#{dep.name\lower!}' --------------------\n\n"
+                    licenses\close!
 
-                readme\write "# Third Party Libraries\n\n"
-                readme\write "A file generated from all in-used conan dependencies.\n"
-                readme\write "Listed alphabetically with general information about each third party dependency.\n"
-                readme\write "For exact copies of eache license please follow the upstream link to look into [LICENSES.txt](LICENSES.txt).\n"
+                if readme = io.open "#{@current_dir}\\thirdparty\\README.md", "wb+"
 
-                for { dep, conanfile, license_file } in *license_files
-                    conaninfo = @extract_recipe_info conanfile
-                    readme\write "\n## #{dep.name}\n"
-                    readme\write "#{conaninfo.description or dep.description}\n"
+                    readme\write "# Third Party Libraries\n\n"
+                    readme\write "A file generated from all in-used conan dependencies.\n"
+                    readme\write "Listed alphabetically with general information about each third party dependency.\n"
+                    readme\write "For exact copies of eache license please follow the upstream link to look into [LICENSES.txt](LICENSES.txt).\n"
 
-                    license_info = conaninfo.license or 'not found'
-                    upsteam_info = conaninfo.url or conaninfo.homepage
-                    if @details[dep.name]
-                        license_info = @details[dep.name].license or license_info
-                        upsteam_info = @details[dep.name].upstream or upsteam_info
+                    for { dep, conanfile, license_file } in *license_files
+                        conaninfo = @extract_recipe_info conanfile
+                        readme\write "\n## #{dep.name}\n"
+                        readme\write "#{conaninfo.description or dep.description}\n"
 
-                    readme\write "- **upstream:** #{upsteam_info}\n" if upsteam_info
-                    readme\write "- **version:** #{conaninfo.version or dep.version}\n"
-                    readme\write "- **license:** #{license_info}\n"
+                        license_info = conaninfo.license or 'not found'
+                        upsteam_info = conaninfo.url or conaninfo.homepage
+                        if @details[dep.name]
+                            license_info = @details[dep.name].license or license_info
+                            upsteam_info = @details[dep.name].upstream or upsteam_info
 
-                readme\close!
+                        readme\write "- **upstream:** #{upsteam_info}\n" if upsteam_info
+                        readme\write "- **version:** #{conaninfo.version or dep.version}\n"
+                        readme\write "- **license:** #{license_info}\n"
+
+                    readme\close!
 
         true
 
