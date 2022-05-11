@@ -10,6 +10,9 @@ Assimp/5.0.1@iceshard/stable
 sdl2/2.0.22@iceshard/stable
 imgui/1.85@iceshard/stable
 
+freetype/2.12.1@iceshard/stable
+msdfgen/1.9.2@iceshard/stable
+
 [build_requires]
 fastbuild-generator/0.2.0@iceshard/stable
 
