@@ -5,7 +5,7 @@
       {
         "use_start_cmd": true,
         "working_dir": "./build/",
-        "executable": "./build/bin/x64/Windows-Debug-msvc-x64-v142/test/test.exe",
+        "executable": "./build/bin/x64/Windows-Debug-msvc-x64-v143/test/test.exe",
         "options": []
       }
     ],
@@ -13,7 +13,7 @@
       {
         "use_start_cmd": true,
         "working_dir": "./build/",
-        "executable": "./build/bin/x64/Windows-Release-msvc-x64-v142/test/test.exe",
+        "executable": "./build/bin/x64/Windows-Develop-msvc-x64-v143/test/test.exe",
         "options": []
       }
     ],
