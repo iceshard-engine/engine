@@ -110,7 +110,7 @@ It is however possible to ask for a separate repository that will and provide ne
 
 The engine is licensed under the [MIT License](LICENSE).
 
-Additionally all used third party libraries are mentioned in the [thirdparty/README.md](thirdparty/README.md).
+Additionally, all used third party libraries are mentioned in the [thirdparty/README.md](thirdparty/README.md).
 Their licenses are available for lookup in [thirdparty/LICENSES.txt](thirdparty/LICENSES.txt)
 
 
