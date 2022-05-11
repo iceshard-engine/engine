@@ -63,3 +63,11 @@ A Massively Spiffy Yet Delicately Unobtrusive Compression Library (Also Free, No
 - **upstream:** https://github.com/iceshard-engine/conan-zlib
 - **version:** 1.2.11
 - **license:** Zlib
+
+## freetype
+FreeType is a freely available software library to render fonts.
+
+> Portions of this software are copyright © 2022 The FreeType Project (www.freetype.org). All rights reserved.
+- **upstream:** https://github.com/freetype/freetype
+- **version:** 2.12.1
+- **license:** Freetype

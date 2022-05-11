@@ -22,8 +22,8 @@ class LicenseCommand extends Command
             @details = Json\decode details_file\read '*a'
             details_file\close!
 
-    search_for_license_files: (dir) =>
-        license_files = {
+    search_for_license_files: (out_license_files, rootpath, dir) =>
+        known_license_files = {
             'license': true
             'license.md': true
             'license.txt': true
@@ -32,11 +32,15 @@ class LicenseCommand extends Command
             'copyright': true
         }
 
-        for candidate_file, mode in os.listdir dir, 'mode'
+        for candidate_file, mode in os.listdir "#{rootpath}/#{dir}", 'mode'
             continue if mode ~= 'file'
 
-            if license_files[candidate_file\lower!] ~= nil
-                return "#{dir}\\#{candidate_file}"
+            if dir == "."
+                if known_license_files[candidate_file\lower!] ~= nil
+                    table.insert out_license_files, "#{rootpath}\\#{candidate_file}"
+            else
+                table.insert out_license_files, "#{rootpath}\\#{dir}\\#{candidate_file}"
+
 
     extract_recipe_info: (conanfile) =>
         allowed_fields = {
@@ -65,18 +69,32 @@ class LicenseCommand extends Command
 
                 for dependency in *buildinfo.dependencies
 
-                    license_file = nil
+                    found_license_files = { }
                     for subdir in *{ ".", "LICENSE", "COPYRIGHT", "LICENSES" }
-                        if license_file = @search_for_license_files "#{dependency.rootpath}\\#{subdir}"
-                            break
+                        @search_for_license_files found_license_files, dependency.rootpath, subdir
 
                     -- Gather license files
-                    if license_file != nil
+                    if #found_license_files > 0
+                        selected_license = nil
+
+                        if #found_license_files > 1
+
+                            if @details[dependency.name] and @details[dependency.name].license_file
+                                for license_file in *found_license_files
+                                    if license_file\lower!\match @details[dependency.name].license_file\lower!
+                                        selected_license = license_file
+
+                            if selected_license == nil and args.check
+                                print "Packge '#{dependency.name}' contains more than one license file."
+                                print "> Please select the desired license file in 'thirdparty/details.json'."
+                                continue
+
                         table.insert license_files, {
                             dependency,
                             "#{dependency.rootpath}\\..\\..\\export\\conanfile.py",
-                            license_file
+                            selected_license or found_license_files[1]
                         }
+
                     else if args.check
                         print "Packge '#{dependency.name}' is missing license file..."
 
@@ -107,14 +125,16 @@ class LicenseCommand extends Command
                     for { dep, conanfile, license_file } in *license_files
                         conaninfo = @extract_recipe_info conanfile
                         readme\write "\n## #{dep.name}\n"
-                        readme\write "#{conaninfo.description or dep.description}\n"
 
                         license_info = conaninfo.license or 'not found'
                         upsteam_info = conaninfo.url or conaninfo.homepage
+                        description_info = conaninfo.description or dep.description
                         if @details[dep.name]
+                            description_info = @details[dep.name].description or description_info
                             license_info = @details[dep.name].license or license_info
                             upsteam_info = @details[dep.name].upstream or upsteam_info
 
+                        readme\write "#{description_info}\n"
                         readme\write "- **upstream:** #{upsteam_info}\n" if upsteam_info
                         readme\write "- **version:** #{conaninfo.version or dep.version}\n"
                         readme\write "- **license:** #{license_info}\n"
