@@ -6,6 +6,7 @@ import VStudioCommand from require 'ice.commands.vstudio'
 import RunCommand from require 'tools.run'
 import NatvisCommand from require 'tools.natvis'
 import CodeStyleCommand from require 'tools.codestyle'
+import LicenseCommand from require 'tools.license'
 
 class IceShard extends Application
     @name: 'IceShard'
@@ -17,6 +18,7 @@ class IceShard extends Application
         'run': RunCommand
         'natvis': NatvisCommand
         'codestyle': CodeStyleCommand
+        'license': LicenseCommand
     }
 
     -- Plain call to the application

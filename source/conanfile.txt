@@ -2,12 +2,12 @@
 fmt/7.0.3@iceshard/stable
 catch2/2.13.9@iceshard/stable
 box2d/2.4.1@iceshard/stable
-tracy/0.8.0@iceshard/stable
+tracy/0.8.1@iceshard/stable
 
 rapidjson/1.1.0
 rapidxml/1.13
 Assimp/5.0.1@iceshard/stable
-sdl2/2.0.14@iceshard/stable
+sdl2/2.0.22@iceshard/stable
 imgui/1.85@iceshard/stable
 
 [build_requires]
@@ -21,3 +21,4 @@ box2d:undefined_user_symbols=True
 
 [generators]
 fastbuild
+json

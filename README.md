@@ -1,25 +1,30 @@
 # IceShard
 
-The project is a game engine with heavy focus on finding the best solution for a given problem, by using different design approaches.
+A small game engine project with the sole purpose to learn, improve and invent.
+Focusing on the best solution for a given problem while not trying to solve everything.
+
 More info about the development approach can be found in our [wiki](https://github.com/iceshard-engine/engine/wiki).
 
 ## Features
 
-Current list of features:
-* Allocator oriented memory access.
-    * Only `placement new` operators used.
-* Support for **Tracy** profiler.
-* Device inputs and events.
-* Resource and asset access.
-    * Runtime building of some assets.
+Current list of advertisement points:
+* Allocator based architecture.
+* Support for basic input devices.
+* Almost all APIs designed with 'RAII' principle at the core.
+    * _Exceptions are some debug tools and utilities._
+* Simple resource and asset systems.
+* Data-oriented ECS implementation.
 * Abstracted API for rendering.
-    * With a working implementation for Vulkan.
-* An extensive engine API.
-    * Heavily data-oriented ECS implementation.
-    * **World** design with user **Traits** as extension points.
-    * Graphics layer build on top of the Render API and world traits.
-    * Fully removable DevUI API.
-* ...
+    * _With a working implementation for Vulkan._
+* Multi-threaded logic and graphics frames using C++ coroutines.
+
+Thid party tools and features:
+* Support for **Tracy** profiler.
+* Optional DevUI API based on **ImGui**. _(ex. disabled in Release builds)_
+* Simple 2D Physics implemented with **Box2D**
+* Loading of common file formats supported with **RapidXML**, **RapidJSON** and **Assimp**.
+* Logging using the **fmt** library.
+* Unit tests written in the **Catch2** framework.
 
 ## Building the engine
 
@@ -33,8 +38,8 @@ To build this engine you will need the following tools and SDKs installed:
    * Required: Visual Studio 2019 _(16.10 or later)_
    * Required: Windows Kit (10.0.19041.0 or later)
    * Required: Vulkan SDK _(1.2.170.0 or later)_
-* **Linux:** _(Under heavy development)_
-   * Tested On: 
+* **Linux:** _(Compilation Only)_
+   * Tested On:
       * Manjarno Linux (KDE Plasma) (Kernel 5.15.6-2-MANJARNO x64)
       * GitHub Runner: Ubuntu-Latest
    * Required: GCC-11 C++ compiler or later
@@ -77,7 +82,7 @@ You can further specify the target you want to build by using the `-t --target` 
 
 This command allows to generate project files for Visual Studio.
 
-    ./ice.bat vstudio
+    ice vstudio
 
 ---
 #### The `run` command
@@ -85,10 +90,10 @@ This command allows to generate project files for Visual Studio.
 This command allows to execute pre-defined lists of other commands or tools in order. These execution `scenarios` are stored in the `scenarios.json` file and currently provide a quick way to run the test application and to build shaders on the Windows platform.
 
     :: Build all shaders into Vulkan SPIR-V
-    ./ice.bat run -s shaders
+    ice run -s shaders
 
     :: Run the default-built test application executable (all-x64-Develop)
-    ./ice.bat run
+    ice run
 
 
 ## Contributing
@@ -101,13 +106,16 @@ Additionally, some contributions might also require additional changes if the im
 It is however possible to ask for a separate repository that will and provide new features via modules API. This would only require to follow the aforementioned coding style.
 
 
-## License
+## Copyright Information
 
-The engine is licensed under [BSD 3-Clause Clear License](https://github.com/iceshard-engine/engine/blob/master/LICENSE).
+The engine is licensed under the [MIT License](LICENSE).
+
+Additionally, all used third party libraries are mentioned in the [thirdparty/README.md](thirdparty/README.md).
+Their licenses are available for lookup in [thirdparty/LICENSES.txt](thirdparty/LICENSES.txt)
+
 
 ## Acknowledgements
 
-This project was heavily influenced by several articles, but mostly by the BitSquid development blog.
+This project was heavily inspired by several articles, but mostly by the BitSquid development blog.
 
-Additionally, some parts of the engine were based on the **BitSquid Foundation Library** which was discussed here:
-https://bitsquid.blogspot.com/2012/11/bitsquid-foundation-library.html
+Additionally, some parts of the engine were initially based on the **BitSquid Foundation Library** which was discussed here: https://bitsquid.blogspot.com/2012/11/bitsquid-foundation-library.html.
