@@ -22,6 +22,12 @@ Box2D is a 2D physics engine for games.
 - **version:** 2.4.1
 - **license:** MIT
 
+## tracy
+A real time, nanosecond resolution, remote telemetry, hybrid frame and sampling profiler for games and other applications.
+- **upstream:** https://github.com/wolfpld/tracy
+- **version:** 0.8.1
+- **license:** BSD-3-Clause
+
 ## rapidjson
 A fast JSON parser/generator for C++ with both SAX/DOM style API
 - **upstream:** https://github.com/Tencent/rapidjson
