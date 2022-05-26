@@ -18,6 +18,7 @@
 #include "traits/render/trait_render_debug.hxx"
 
 #include "traits/render/trait_render_tilemap.hxx"
+#include "traits/render/trait_render_glyphs.hxx"
 
 namespace ice
 {
@@ -32,6 +33,7 @@ namespace ice
         register_trait_render_finish(archive);
         register_trait_render_sprites(archive);
         register_trait_render_texture_loader(archive);
+        register_trait_render_glyphs(archive);
         register_trait_render_debug(archive);
         register_trait_render_tilemap(archive);
 

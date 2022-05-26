@@ -58,10 +58,10 @@ Dear ImGui: Bloat-free Immediate Mode Graphical User interface for C++ with mini
 - **version:** 1.85
 - **license:** MIT
 
-## msdfgen
-Multi-channel signed distance field generator.
-- **upstream:** https://github.com/Chlumsky/msdfgen
-- **version:** 1.9.2
+## msdf_atlas_gen
+MSDF font atlas generator.
+- **upstream:** https://github.com/Chlumsky/msdf-atlas-gen
+- **version:** 1.2.2
 - **license:** MIT
 
 ## zlib
@@ -69,6 +69,12 @@ A Massively Spiffy Yet Delicately Unobtrusive Compression Library (Also Free, No
 - **upstream:** https://github.com/iceshard-engine/conan-zlib
 - **version:** 1.2.11
 - **license:** Zlib
+
+## msdfgen
+Multi-channel signed distance field generator.
+- **upstream:** https://github.com/Chlumsky/msdfgen
+- **version:** 1.9.2
+- **license:** MIT
 
 ## freetype
 FreeType is a freely available software library to render fonts.

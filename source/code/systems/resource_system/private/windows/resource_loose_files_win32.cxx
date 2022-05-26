@@ -62,6 +62,9 @@ namespace ice
             }
             else
             {
+                // Bug catcher assert
+                ICE_ASSERT(file_size_remaining - loaded_size < 4'294'000'000, "Catching errors!"); // original: 4294'944'248
+
                 file_size_remaining -= loaded_size;
                 file_offset += loaded_size; // 4 KiB
             }

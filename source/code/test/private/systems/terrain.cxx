@@ -414,26 +414,26 @@ namespace ice::trait
         using namespace ice::gfx;
         using namespace ice::render;
 
-        GfxDevice& gfx_device = runner.graphics_device();
-        RenderDevice& render_device = gfx_device.device();
+        //GfxDevice& gfx_device = runner.graphics_device();
+        //RenderDevice& render_device = gfx_device.device();
 
-        render_device.destroy_resourcesets({ &_render_cache->_terrain_resources, 1 });
+        //render_device.destroy_resourcesets({ &_render_cache->_terrain_resources, 1 });
 
-        render_device.destroy_image(_render_cache->_terrain_heightmap);
-        render_device.destroy_sampler(_render_cache->_terrain_sampler);
+        //render_device.destroy_image(_render_cache->_terrain_heightmap);
+        //render_device.destroy_sampler(_render_cache->_terrain_sampler);
 
-        render_device.destroy_buffer(_render_cache->_terrain_mesh_vertices);
-        render_device.destroy_buffer(_render_cache->_terrain_mesh_indices);
-        render_device.destroy_buffer(_render_cache->_terrain_settings_buffer);
+        //render_device.destroy_buffer(_render_cache->_terrain_mesh_vertices);
+        //render_device.destroy_buffer(_render_cache->_terrain_mesh_indices);
+        //render_device.destroy_buffer(_render_cache->_terrain_settings_buffer);
 
-        render_device.destroy_pipeline(_render_cache->_terrain_pipeline[0]);
-        render_device.destroy_pipeline(_render_cache->_terrain_pipeline[1]);
+        //render_device.destroy_pipeline(_render_cache->_terrain_pipeline[0]);
+        //render_device.destroy_pipeline(_render_cache->_terrain_pipeline[1]);
 
-        render_device.destroy_shader(_render_cache->_terrain_shaders[0]);
-        render_device.destroy_shader(_render_cache->_terrain_shaders[1]);
-        render_device.destroy_shader(_render_cache->_terrain_shaders[2]);
-        render_device.destroy_shader(_render_cache->_terrain_shaders[3]);
-        render_device.destroy_shader(_render_cache->_terrain_shaders[4]);
+        //render_device.destroy_shader(_render_cache->_terrain_shaders[0]);
+        //render_device.destroy_shader(_render_cache->_terrain_shaders[1]);
+        //render_device.destroy_shader(_render_cache->_terrain_shaders[2]);
+        //render_device.destroy_shader(_render_cache->_terrain_shaders[3]);
+        //render_device.destroy_shader(_render_cache->_terrain_shaders[4]);
 
         //render_device.destroy_pipeline_layout(_render_cache->_terrain_pipeline_layout);
         //render_device.destroy_resourceset_layout(_render_cache->_terrain_resource_layout);

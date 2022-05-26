@@ -10,6 +10,9 @@
     [
         .Modules = {
             'Assimp'
+            'freetype'
+            'msdfgen'
+            'msdf_atlas_gen'
         }
         .Uses = {
             'utils'

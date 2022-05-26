@@ -1,4 +1,4 @@
-#include "game.hxx"
+﻿#include "game.hxx"
 
 #include <ice/game_actor.hxx>
 #include <ice/game_anim.hxx>
@@ -22,6 +22,7 @@
 #include <ice/gfx/gfx_frame.hxx>
 #include <ice/gfx/gfx_pass.hxx>
 #include <ice/gfx/gfx_runner.hxx>
+#include <ice/gfx/gfx_font.hxx>
 #include <ice/render/render_image.hxx>
 #include <ice/render/render_swapchain.hxx>
 
@@ -68,6 +69,7 @@ auto MyGame::graphics_world_template() const noexcept -> ice::WorldTemplate cons
             ice::Constant_TraitName_RenderClear,
             ice::Constant_TraitName_RenderSprites,
             ice::Constant_TraitName_RenderTilemap,
+            ice::Constant_TraitName_RenderGlyphs,
             ice::Constant_TraitName_RenderPostprocess,
             ice::Constant_TraitName_RenderDebug,
             ice::Constant_TraitName_DevUI,
@@ -92,6 +94,7 @@ auto MyGame::graphics_world_template() const noexcept -> ice::WorldTemplate cons
             ice::Constant_TraitName_RenderClear,
             ice::Constant_TraitName_RenderSprites,
             ice::Constant_TraitName_RenderTilemap,
+            ice::Constant_TraitName_RenderGlyphs,
             ice::Constant_TraitName_RenderPostprocess,
             ice::Constant_TraitName_RenderDebug,
             ice::Constant_TraitName_RenderFinish,
@@ -178,7 +181,8 @@ void MyGame::on_app_startup(ice::Engine& engine) noexcept
     _game_gfx_pass->add_stage(ice::Constant_GfxStage_DrawTilemap, ice::Constant_GfxStage_Clear);
     _game_gfx_pass->add_stage(ice::Constant_GfxStage_DrawSprites, ice::Constant_GfxStage_DrawTilemap, ice::Constant_GfxStage_Clear);
     _game_gfx_pass->add_stage(ice::Constant_GfxStage_Postprocess, ice::Constant_GfxStage_DrawSprites);
-    _game_gfx_pass->add_stage(ice::Constant_GfxStage_DrawDebug, ice::Constant_GfxStage_Postprocess);
+    _game_gfx_pass->add_stage(ice::Constant_GfxStage_DrawGlyphs, ice::Constant_GfxStage_Postprocess);
+    _game_gfx_pass->add_stage(ice::Constant_GfxStage_DrawDebug, ice::Constant_GfxStage_DrawGlyphs);
 
     if constexpr (ice::build::is_debug || ice::build::is_develop)
     {
@@ -380,6 +384,14 @@ void MyGame::on_update(ice::EngineFrame& frame, ice::EngineRunner& runner, ice::
     using ice::operator""_sid_hash;
 
     runner.graphics_frame().enqueue_pass("default"_sid, "game.render"_sid, _game_gfx_pass.get());
+
+    static ice::DrawTextCommand const draw_text{
+        .position = { 90, 90 },
+        .text = u8"Hello, 日本!",
+        .font = u8"yumin",
+    };
+
+    ice::shards::push_back(frame.shards(), ice::Shard_DrawTextCommand | &draw_text);
 
     bool was_active = _active;
     for (ice::input::InputEvent const& event : frame.input_events())

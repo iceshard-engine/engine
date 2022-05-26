@@ -5,6 +5,7 @@
 //#include "mesh_pipeline/mesh_pipeline.hxx"
 #include "asset_image.hxx"
 #include "asset_shader.hxx"
+#include "asset_font.hxx"
 
 namespace ice
 {
@@ -13,6 +14,7 @@ namespace ice
     {
         asset_type_shader_definition(asset_type_archive);
         asset_type_image_definition(asset_type_archive);
+        asset_type_font_definition(asset_type_archive);
     }
 
     bool asset_type_definitions_api(
