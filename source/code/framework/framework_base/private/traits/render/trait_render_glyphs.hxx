@@ -6,6 +6,12 @@
 namespace ice
 {
 
+    struct TextRenderInfo
+    {
+        ice::u32 vertice_count;
+        ice::render::ResourceSet resource_set;
+    };
+
     class IceWorldTrait_RenderGlyphs : public ice::gfx::GfxTrait, public ice::gfx::GfxContextStage
     {
     public:
@@ -55,8 +61,7 @@ namespace ice
     private:
         void build_glyph_vertices(
             ice::gfx::GfxFont const* font,
-            ice::Utf8String text,
-            ice::vec2f position,
+            ice::DrawTextCommand const& draw_info,
             ice::vec4f* posuv_vertices,
             ice::u32& posuv_offset
         ) noexcept;
@@ -87,8 +92,6 @@ namespace ice
 
         ice::pod::Hash<FontEntry> _fonts;
 
-        ice::u32 _vertex_count;
-        ice::Memory _vertex_data;
         ice::render::Buffer _vertex_buffer;
 
         ice::Data _shader_data[4];

@@ -83,25 +83,13 @@ namespace ice
 
             ice::vec<4,ice::f64> l;
             glyph_geometry.getQuadPlaneBounds(l.x, l.y, l.z, l.w);
-            if (glyph_geometry.isWhitespace())
-            {
-                int f = 0;
-                f = 1;
-            }
-
-            static constexpr ice::f32 font_size = 12;
-
-            l.x *= font_size;
-            l.y *= font_size;
-            l.z *= font_size;
-            l.w *= font_size;
 
             GfxGlyph& gfx_glyph = gfx_glyphs[glyph_idx];
             gfx_glyph.atlas_x = static_cast<ice::f32>(x) / atlas_width;
             gfx_glyph.atlas_y = static_cast<ice::f32>(y) / atlas_height;
             gfx_glyph.atlas_w = static_cast<ice::f32>(w) / atlas_width;
             gfx_glyph.atlas_h = static_cast<ice::f32>(h) / atlas_height;
-            gfx_glyph.advance = static_cast<ice::f32>(glyph_geometry.getAdvance()) * font_size;
+            gfx_glyph.advance = static_cast<ice::f32>(glyph_geometry.getAdvance());
             gfx_glyph.offset.x = static_cast<ice::f32>(l.x);
             gfx_glyph.offset.y = static_cast<ice::f32>(l.y);
             gfx_glyph.size.x = static_cast<ice::f32>(l.z - l.x);

@@ -68,6 +68,7 @@ namespace ice
         ice::vec2u position;
         ice::Utf8String text;
         ice::Utf8String font;
+        ice::u32 font_size = 16;
     };
 
     struct DebugDrawCommand

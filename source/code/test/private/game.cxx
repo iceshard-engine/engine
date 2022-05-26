@@ -387,11 +387,20 @@ void MyGame::on_update(ice::EngineFrame& frame, ice::EngineRunner& runner, ice::
 
     static ice::DrawTextCommand const draw_text{
         .position = { 90, 90 },
-        .text = u8"Hello, 日本!",
+        .text = u8"Hello, World!",
+        .font = u8"calibri",
+        .font_size = 20,
+    };
+
+    static ice::DrawTextCommand const draw_text2{
+        .position = { 90, 140 },
+        .text = u8"わたし Daniel!",
         .font = u8"yumin",
+        .font_size = 14,
     };
 
     ice::shards::push_back(frame.shards(), ice::Shard_DrawTextCommand | &draw_text);
+    ice::shards::push_back(frame.shards(), ice::Shard_DrawTextCommand | &draw_text2);
 
     bool was_active = _active;
     for (ice::input::InputEvent const& event : frame.input_events())
