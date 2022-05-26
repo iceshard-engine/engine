@@ -178,6 +178,29 @@ namespace ice
         return object_ptr;
     }
 
+    auto IceshardMemoryFrame::allocate_named_array(
+        ice::StringID_Arg name,
+        ice::u32 element_size,
+        ice::u32 alignment,
+        ice::u32 count
+    ) noexcept -> void*
+    {
+        ice::u64 const name_hash = ice::hash(name);
+        ICE_ASSERT(
+            ice::pod::hash::has(_named_objects, name_hash) == false,
+            "An object with this name `{}` already exists in this frame!",
+            ice::stringid_hint(name)
+        );
+
+        // TODO: To be refactored with the planned introduction of a proper 'size' type.
+        ICE_ASSERT(alignment >= sizeof(ice::u32), "Cannot store array size in fron of the array!");
+
+        void* object_ptr = _data_allocator.allocate(alignment + element_size * count, alignment);
+        *reinterpret_cast<ice::u32*>(object_ptr) = count;
+        ice::pod::hash::set(_named_objects, name_hash, object_ptr);
+        return object_ptr;
+    }
+
     void IceshardMemoryFrame::release_named_data(ice::StringID_Arg name) noexcept
     {
         ice::u64 const name_hash = ice::hash(name);
