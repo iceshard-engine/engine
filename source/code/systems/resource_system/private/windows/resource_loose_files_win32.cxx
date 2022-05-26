@@ -32,10 +32,13 @@ namespace ice
 
             co_await scheduler;
 
+            ice::u32 constexpr max_bytes_to_read = 1024u * 32u;
+            ice::u32 const bytes_to_read = ice::min(file_size_remaining, max_bytes_to_read);
+
             BOOL const read_result = ReadFileEx(
                 file,
                 ice::memory::ptr_add(data.location, file_offset),
-                ice::min(file_size_remaining, 1024u * 32u),
+                bytes_to_read,
                 &overlapped,
                 internal_overlapped_completion_routine
             );
@@ -60,13 +63,17 @@ namespace ice
                     ICE_LOG(ice::LogSeverity::Error, ice::LogTag::Core, "WAIT_IO_COMPLETION");
                 }
             }
-            else
+            else if (loaded_size != 0)
             {
-                // Bug catcher assert
-                ICE_ASSERT(file_size_remaining - loaded_size < 4'294'000'000, "Catching errors!"); // original: 4294'944'248
+                ICE_ASSERT(
+                    loaded_size == bytes_to_read
+                    || loaded_size == max_bytes_to_read,
+                    "Loaded unexpected number of bytes during read operation! [got: {}, expected: {} or {}]",
+                    loaded_size, bytes_to_read, max_bytes_to_read
+                );
 
-                file_size_remaining -= loaded_size;
-                file_offset += loaded_size; // 4 KiB
+                file_size_remaining -= bytes_to_read;
+                file_offset += bytes_to_read; // 4 KiB
             }
         }
 
