@@ -1,0 +1,15 @@
+#pragma once
+#include <ice/ui_types.hxx>
+#include <ice/asset_type.hxx>
+#include <ice/asset_type_archive.hxx>
+
+namespace ice::ui
+{
+
+    static constexpr ice::AssetType AssetType_UIPage = ice::make_asset_type(u8"ice/ui_system/page");
+
+    void register_ui_asset(
+        ice::AssetTypeArchive& type_archive
+    ) noexcept;
+
+} // namespace ice::ui

@@ -1,0 +1,19 @@
+.Project =
+[
+    .Name = 'ui_system'
+    .Kind = .Kind_StaticLib
+    .Group = 'Systems'
+
+    .BaseDir = '$WorkspaceCodeDir$/systems/ui_system'
+
+    .Public =
+    [
+        .Uses = {
+            'render_system'
+            'asset_system'
+            'input_system'
+            'modules'
+        }
+    ]
+]
+.Projects + .Project
