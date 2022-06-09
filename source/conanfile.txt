@@ -6,6 +6,7 @@ tracy/0.8.1@iceshard/stable
 
 rapidjson/1.1.0
 rapidxml/1.13
+rapidxml_ns/1.13.2@iceshard/stable
 Assimp/5.0.1@iceshard/stable
 sdl2/2.0.22@iceshard/stable
 imgui/1.85@iceshard/stable

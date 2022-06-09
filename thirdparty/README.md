@@ -40,6 +40,12 @@ RapidXml is an attempt to create the fastest XML parser possible.
 - **version:** 1.13
 - **license:** MIT (User picked)
 
+## rapidxml_ns
+RapidXML NS library - RapidXML with added XML namespaces support.
+- **upstream:** https://github.com/svgpp/rapidxml_ns
+- **version:** 1.13.2
+- **license:** MIT (User picked)
+
 ## Assimp
 Conan package for Assmip
 - **upstream:** https://github.com/jacmoe/conan-assimp
