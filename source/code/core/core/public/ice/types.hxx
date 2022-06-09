@@ -22,6 +22,9 @@ namespace ice
 
     using uptr = std::uintptr_t;
 
+    using usize = ice::u64;
+    using isize = ice::i64;
+
     constexpr ice::f32 const f32_max = std::numeric_limits<ice::f32>::max();
     constexpr ice::f64 const f64_max = std::numeric_limits<ice::f64>::max();
 
