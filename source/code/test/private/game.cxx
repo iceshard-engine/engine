@@ -1,4 +1,4 @@
-﻿#include "game.hxx"
+#include "game.hxx"
 
 #include <ice/game_actor.hxx>
 #include <ice/game_anim.hxx>
@@ -392,14 +392,24 @@ void MyGame::on_update(ice::EngineFrame& frame, ice::EngineRunner& runner, ice::
         .font_size = 20,
     };
 
-    //static ice::DrawTextCommand const draw_text2{
-    //    .position = { 90, 140 },
-    //    .text = u8"わたし Daniel!",
-    //    .font = u8"yumin",
-    //    .font_size = 14,
-    //};
+    static ice::DrawTextCommand const draw_text2{
+        .position = { 90, 140 },
+        .text = u8"わたし Daniel!",
+        .font = u8"yumin",
+        .font_size = 14,
+    };
 
-    ice::shards::push_back(frame.shards(), ice::Shard_DrawTextCommand | &draw_text);
+    // Just to make testing more nice, skip this command on the first frame, so it doesn't block loading of the tilemap.
+    //  TODO: Make the tilemap loaded async, so it will not wait for other unrelated assets to be loaded.
+    static int i = 0;
+    if (i != 0)
+    {
+        ice::shards::push_back(frame.shards(), ice::Shard_DrawTextCommand | &draw_text);
+        ice::shards::push_back(frame.shards(), ice::Shard_DrawTextCommand | &draw_text2);
+    }
+
+    i = 1;
+
     //ice::shards::push_back(frame.shards(), ice::Shard_DrawTextCommand | &draw_text2);
 
     bool was_active = _active;
