@@ -91,7 +91,14 @@ namespace ice::gfx
         bool has_all = true;
         for (ice::StringID_Hash stage_id : stage_order)
         {
-            has_all &= ice::pod::hash::has(_context_stages, ice::hash(stage_id));
+            bool const has_stage = ice::pod::hash::has(_context_stages, ice::hash(stage_id));
+            ICE_LOG_IF(
+                has_stage == false,
+                ice::LogSeverity::Debug, ice::LogTag::Engine,
+                "Missing stage with ID: {}",
+                stage_id
+            );
+            has_all &= has_stage;
         }
 
         if (has_all)

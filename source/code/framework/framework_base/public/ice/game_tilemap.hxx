@@ -9,7 +9,7 @@
 namespace ice
 {
 
-    static constexpr ice::Shard Shard_LoadTileMap = "ice/action/load-tilemap"_shard;
+    static constexpr ice::Shard Shard_LoadTileMap = "action/tilemap/load"_shard;
 
     static constexpr ice::AssetType AssetType_TileMap = ice::make_asset_type(u8"ice/framework/tile-map");
 

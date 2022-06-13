@@ -337,6 +337,13 @@ namespace ice::gfx
                 submit_entries[submit_count].fence = _fences[submit_count + 1];
                 submit_count += 1;
             }
+            else
+            {
+                ICE_LOG(
+                    ice::LogSeverity::Error, ice::LogTag::Engine,
+                    "Failed to gather all required stage objects for the given graphics pass!"
+                );
+            }
         }
 
         if (transfer_queue != nullptr)

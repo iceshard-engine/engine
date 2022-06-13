@@ -40,3 +40,20 @@ namespace ice::detail
             ); \
         } \
     } while(false)
+
+#define ICE_LOG_IF(enable_condition, severity, tag, format, ...) \
+    do{ \
+        if constexpr(severity <= ice::lowest_compiled_log_severity) \
+        { \
+            if (bool(enable_condition) == true) \
+            { \
+                ice::detail::log( \
+                    severity, \
+                    ice::detail::get_tag(tag), \
+                    format, \
+                    fmt::make_format_args(__VA_ARGS__), \
+                    ice::detail::LogLocation{ .file = __FILE__, .line = __LINE__ } \
+                ); \
+            } \
+        } \
+    } while(false)
