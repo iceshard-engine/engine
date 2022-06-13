@@ -1,9 +1,10 @@
-#include "game.hxx"
+﻿#include "game.hxx"
 
 #include <ice/game_actor.hxx>
 #include <ice/game_anim.hxx>
 #include <ice/game_physics.hxx>
 #include <ice/game_tilemap.hxx>
+#include <ice/game_ui.hxx>
 
 #include <ice/engine.hxx>
 #include <ice/engine_runner.hxx>
@@ -39,6 +40,9 @@
 #include <ice/resource.hxx>
 #include <ice/assert.hxx>
 #include <ice/shard.hxx>
+
+#include <ice/ui_asset.hxx>
+#include <ice/ui_data.hxx>
 
 #include <ice/ecs/ecs_archetype_index.hxx>
 #include <ice/ecs/ecs_entity_index.hxx>
@@ -212,6 +216,7 @@ void MyGame::on_app_startup(ice::Engine& engine) noexcept
         ice::Constant_TraitName_Tilemap,
         ice::Constant_TraitName_SpriteAnimator,
         ice::Constant_TraitName_Actor,
+        ice::Constant_TraitName_GameUI,
     };
 
     ice::WorldTemplate const world_template{
@@ -367,7 +372,10 @@ void MyGame::on_game_begin(ice::EngineRunner& runner) noexcept
 
     ice::Shard shards[]{
         ice::Shard_WorldActivate | _test_world,
-        ice::Shard_LoadTileMap | tilemap_asset
+        ice::Shard_LoadTileMap | tilemap_asset,
+        ice::Shard_GameUI_Load | u8"ui/test",
+        ice::Shard_GameUI_Load | u8"ui/test2",
+        ice::Shard_GameUI_Load | u8"ui/test3",
     };
     ice::shards::push_back(
         runner.current_frame().shards(),

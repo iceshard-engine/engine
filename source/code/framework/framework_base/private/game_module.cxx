@@ -6,6 +6,7 @@
 #include "traits/trait_camera.hxx"
 #include "traits/trait_sprite_animator.hxx"
 #include "traits/trait_player_actor.hxx"
+#include "traits/trait_game_ui.hxx"
 #include "traits/physics/trait_box2d.hxx"
 
 #include "traits/render/trait_render_gfx.hxx"
@@ -38,6 +39,7 @@ namespace ice
         register_trait_render_tilemap(archive);
 
         register_trait_default<IceWorldTrait_PlayerActor>(archive, ice::Constant_TraitName_Actor);
+        register_trait_default<IceWorldTrait_GameUI>(archive, ice::Constant_TraitName_GameUI);
         register_trait_default<IceWorldTrait_PhysicsBox2D>(archive, ice::Constant_TraitName_PhysicsBox2D);
         register_trait_default<IceWorldTrait_RenderCamera>(archive, ice::Constant_TraitName_RenderCamera);
         register_trait_default<IceWorldTrait_SpriteAnimator>(archive, ice::Constant_TraitName_SpriteAnimator);
