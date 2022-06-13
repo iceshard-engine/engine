@@ -1,5 +1,6 @@
 #include "trait_render_glyphs.hxx"
 #include <ice/asset_storage.hxx>
+#include <ice/task_thread_pool.hxx>
 #include <ice/task_sync_wait.hxx>
 
 #include <ice/shard.hxx>
@@ -380,6 +381,11 @@ namespace ice
         ice::u32 current_vert_count = 0;
         for (ice::TextRenderInfo const& text_info : commands)
         {
+            if (text_info.vertice_count == 0)
+            {
+                continue;
+            }
+
             if (current_set != text_info.resource_set)
             {
                 if (current_vert_count > 0)
@@ -542,16 +548,6 @@ namespace ice
     ) noexcept -> ice::Task<>
     {
         ice::u64 const font_hash = ice::hash(font_name);
-        ice::Asset const asset = co_await runner.asset_storage().request(ice::gfx::AssetType_Font, font_name, ice::AssetState::Loaded);
-
-        // Early return if we failed.
-        if (ice::asset_check(asset, AssetState::Loaded) == false)
-        {
-            co_return;
-        }
-        ice::gfx::GfxFont const* font = reinterpret_cast<ice::gfx::GfxFont const*>(asset.data.location);
-
-        co_await runner.schedule_current_frame();
 
         if (ice::pod::hash::has(_fonts, font_hash))
         {
@@ -563,6 +559,19 @@ namespace ice
             font_hash,
             FontEntry{ .font = nullptr }
         );
+
+        co_await runner.thread_pool();
+
+        ice::Asset const asset = co_await runner.asset_storage().request(ice::gfx::AssetType_Font, font_name, ice::AssetState::Loaded);
+
+        // Early return if we failed.
+        if (ice::asset_check(asset, AssetState::Loaded) == false)
+        {
+            co_return;
+        }
+        ice::gfx::GfxFont const* font = reinterpret_cast<ice::gfx::GfxFont const*>(asset.data.location);
+
+        co_await runner.schedule_current_frame();
 
         ice::Data const font_atlas_data{
             .location = ice::memory::ptr_add(font->data_ptr, font->atlases[0].image_data_offset),
