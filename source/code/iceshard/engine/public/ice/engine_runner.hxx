@@ -52,6 +52,8 @@ namespace ice
 
         virtual auto clock() const noexcept -> ice::Clock const& = 0;
 
+        virtual auto entity_index() const noexcept -> ice::ecs::EntityIndex& = 0;
+
         [[deprecated]]
         virtual auto platform_events() noexcept -> ice::Span<ice::platform::Event const> = 0;
 

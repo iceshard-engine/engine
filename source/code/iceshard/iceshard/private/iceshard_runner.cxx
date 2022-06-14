@@ -141,6 +141,11 @@ namespace ice
         return _clock;
     }
 
+    auto IceshardEngineRunner::entity_index() const noexcept -> ice::ecs::EntityIndex&
+    {
+        return _engine.entity_index();
+    }
+
     auto IceshardEngineRunner::platform_events() noexcept -> ice::Span<ice::platform::Event const>
     {
         return _events;

@@ -2,6 +2,7 @@
 #include <ice/span.hxx>
 #include <ice/stringid.hxx>
 #include <ice/allocator.hxx>
+#include <ice/ecs/ecs_types.hxx>
 
 namespace ice
 {
@@ -17,6 +18,7 @@ namespace ice
         ice::WorldTraitFactory* factory;
         ice::Span<ice::StringID const> required_dependencies;
         ice::Span<ice::StringID const> optional_dependencies;
+        ice::Span<ice::ecs::ArchetypeInfo const> defined_archetypes;
         void* factory_userdata = nullptr;
     };
 

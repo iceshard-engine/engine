@@ -1,4 +1,5 @@
 #include <ice/world/world_trait_archive.hxx>
+#include <ice/ecs/ecs_archetype_index.hxx>
 #include <ice/pod/hash.hxx>
 #include <ice/assert.hxx>
 
@@ -18,6 +19,10 @@ namespace ice
         auto find_trait(
             ice::StringID_Arg name
         ) const noexcept -> ice::WorldTraitDescription const* override;
+
+        void register_archetypes(
+            ice::ecs::ArchetypeIndex& archetype_index
+        ) const noexcept override;
 
         bool validate_trait_list(
             ice::Span<ice::StringID const> traits
@@ -62,6 +67,20 @@ namespace ice
         static ice::WorldTraitDescription invalid{ .factory = nullptr };
         ice::WorldTraitDescription const& description = ice::pod::hash::get(_trait_descriptions, name_hash, invalid);
         return description.factory == nullptr ? nullptr : &description;
+    }
+
+    void SimpleWorldTraitArchive::register_archetypes(
+        ice::ecs::ArchetypeIndex& archetype_index
+    ) const noexcept
+    {
+        for (auto const& entry : _trait_descriptions)
+        {
+            ice::WorldTraitDescription const& trait_desc = entry.value;
+            for (ice::ecs::ArchetypeInfo const& arch_info : trait_desc.defined_archetypes)
+            {
+                archetype_index.register_archetype(arch_info);
+            }
+        }
     }
 
     bool SimpleWorldTraitArchive::validate_trait_list(

@@ -29,6 +29,8 @@ namespace ice::ecs
         std::array<ice::u32, Const_ComponentCount> component_alignments;
 
         inline constexpr ArchetypeDefinition() noexcept;
+
+        inline constexpr operator ice::ecs::Archetype() const noexcept;
     };
 
 
@@ -159,6 +161,12 @@ namespace ice::ecs
         }
 
         identifier = ice::ecs::detail::make_archetype_identifier(component_identifiers);
+    }
+
+    template<ice::ecs::Component... Components>
+    inline constexpr ArchetypeDefinition<Components...>::operator ice::ecs::Archetype() const noexcept
+    {
+        return identifier;
     }
 
     template<ice::ecs::Component... Components>

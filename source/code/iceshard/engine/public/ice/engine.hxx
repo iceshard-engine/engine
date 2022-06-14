@@ -12,8 +12,10 @@
 namespace ice
 {
 
-    class AssetStorage;
     struct WorldTemplate;
+
+    class AssetStorage;
+    class WorldTraitArchive;
 
     struct RenderQueueDefinition
     {
@@ -48,6 +50,8 @@ namespace ice
         virtual auto asset_storage() noexcept -> ice::AssetStorage& = 0;
 
         virtual auto world_manager() noexcept -> ice::WorldManager& = 0;
+
+        virtual auto world_trait_archive() const noexcept -> ice::WorldTraitArchive const& = 0;
 
         virtual auto developer_ui() noexcept -> ice::EngineDevUI& = 0;
     };

@@ -15,7 +15,8 @@ namespace ice::ecs
         EntityTracker(
             ice::Allocator& alloc
         ) noexcept;
-        ~EntityTracker() noexcept;
+
+        ~EntityTracker() noexcept = default;
 
         auto find_handle(ice::ecs::Entity entity) const noexcept -> ice::ecs::EntityHandle;
         auto find_handle(ice::StringID name) const noexcept -> ice::ecs::EntityHandle;
