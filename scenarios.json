@@ -122,6 +122,16 @@
         "working_dir": "./source/data/shaders/terrain",
         "executable": "%VULKAN_SDK%/Bin/glslc.exe",
         "options": [ "--target-env=vulkan", "-fshader-stage=frag", "-o", "terrain-frag.spv", "terrain-hm-frag.glsl" ]
+      },
+      {
+        "working_dir": "./source/data/shaders/ui",
+        "executable": "%VULKAN_SDK%/Bin/glslc.exe",
+        "options": [ "--target-env=vulkan", "-fshader-stage=vert", "-o", "ui-vert.spv", "ui-vert.glsl" ]
+      },
+      {
+        "working_dir": "./source/data/shaders/ui",
+        "executable": "%VULKAN_SDK%/Bin/glslc.exe",
+        "options": [ "--target-env=vulkan", "-fshader-stage=frag", "-o", "ui-frag.spv", "ui-frag.glsl" ]
       }
     ],
     "hlsl": [
