@@ -32,12 +32,12 @@
     </ui:attrib>
   </ui:attribs>
 
-  <ui:page>
-    <ui:container>
-      <ui:label size="200,20" margin="4,4,4,4" padding="1,2,3,2"  text="Hello World!"></ui:label>
-      <ui:label size="auto,auto" margin="4,4,4,4" padding="1,2,3,2"  text="Hello World!"></ui:label>
-      <ui:label size="*,*" margin="4,4,4,4" padding="1,2,3,2"  text="Hello World!"></ui:label>
-      <ui:label size="300,10" margin="4,4,4,4" padding="1,2,3,2"  text="Hello World!"></ui:label>
+  <ui:page position="600,100">
+    <ui:container type="vertical">
+      <ui:button position="0,0" size="200,30" margin="4,4,4,4" padding="1,2,3,2" text="Start"></ui:button>
+      <ui:button position="0,40" size="200,30" margin="4,4,4,4" padding="1,2,3,2" text="Settings"></ui:button>
+      <ui:button position="0,80" size="200,30" margin="4,4,4,4" padding="1,2,3,2" text="Credits"></ui:button>
+      <ui:button position="0,120" size="200,30" margin="4,4,4,4" padding="1,2,3,2" text="Exit"></ui:button>
     </ui:container>
   </ui:page>
 
