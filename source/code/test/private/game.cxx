@@ -73,6 +73,7 @@ auto MyGame::graphics_world_template() const noexcept -> ice::WorldTemplate cons
             ice::Constant_TraitName_RenderClear,
             ice::Constant_TraitName_RenderSprites,
             ice::Constant_TraitName_RenderTilemap,
+            ice::Constant_TraitName_RenderUI,
             ice::Constant_TraitName_RenderGlyphs,
             ice::Constant_TraitName_RenderPostprocess,
             ice::Constant_TraitName_RenderDebug,
@@ -98,6 +99,7 @@ auto MyGame::graphics_world_template() const noexcept -> ice::WorldTemplate cons
             ice::Constant_TraitName_RenderClear,
             ice::Constant_TraitName_RenderSprites,
             ice::Constant_TraitName_RenderTilemap,
+            ice::Constant_TraitName_RenderUI,
             ice::Constant_TraitName_RenderGlyphs,
             ice::Constant_TraitName_RenderPostprocess,
             ice::Constant_TraitName_RenderDebug,
@@ -185,7 +187,8 @@ void MyGame::on_app_startup(ice::Engine& engine) noexcept
     _game_gfx_pass->add_stage(ice::Constant_GfxStage_DrawTilemap, ice::Constant_GfxStage_Clear);
     _game_gfx_pass->add_stage(ice::Constant_GfxStage_DrawSprites, ice::Constant_GfxStage_DrawTilemap, ice::Constant_GfxStage_Clear);
     _game_gfx_pass->add_stage(ice::Constant_GfxStage_Postprocess, ice::Constant_GfxStage_DrawSprites);
-    _game_gfx_pass->add_stage(ice::Constant_GfxStage_DrawGlyphs, ice::Constant_GfxStage_Postprocess);
+    _game_gfx_pass->add_stage(ice::Constant_GfxStage_DrawUI, ice::Constant_GfxStage_Postprocess);
+    _game_gfx_pass->add_stage(ice::Constant_GfxStage_DrawGlyphs, ice::Constant_GfxStage_DrawUI);
     _game_gfx_pass->add_stage(ice::Constant_GfxStage_DrawDebug, ice::Constant_GfxStage_DrawGlyphs);
 
     if constexpr (ice::build::is_debug || ice::build::is_develop)
@@ -200,6 +203,8 @@ void MyGame::on_app_startup(ice::Engine& engine) noexcept
 
     // Initialize archetypes
     {
+        engine.world_trait_archive().register_archetypes(_ecs_archetypes);
+
         _ecs_archetypes.register_archetype(ice::ecs::Constant_ArchetypeDefinition<ice::Camera, ice::CameraOrtho>);
         _ecs_archetypes.register_archetype(ice::ecs::Constant_ArchetypeDefinition<ice::Camera, ice::CameraPerspective>);
         _ecs_archetypes.register_archetype(ice::ecs::Constant_ArchetypeDefinition<ice::Transform2DStatic, ice::Sprite>);
@@ -374,8 +379,6 @@ void MyGame::on_game_begin(ice::EngineRunner& runner) noexcept
         ice::Shard_WorldActivate | _test_world,
         ice::Shard_LoadTileMap | tilemap_asset,
         ice::Shard_GameUI_Load | u8"ui/test",
-        ice::Shard_GameUI_Load | u8"ui/test2",
-        ice::Shard_GameUI_Load | u8"ui/test3",
     };
     ice::shards::push_back(
         runner.current_frame().shards(),
@@ -393,32 +396,14 @@ void MyGame::on_update(ice::EngineFrame& frame, ice::EngineRunner& runner, ice::
 
     runner.graphics_frame().enqueue_pass("default"_sid, "game.render"_sid, _game_gfx_pass.get());
 
-    static ice::DrawTextCommand const draw_text{
-        .position = { 90, 90 },
-        .text = u8"Hello, World!",
-        .font = u8"calibri",
-        .font_size = 20,
-    };
-
-    static ice::DrawTextCommand const draw_text2{
-        .position = { 90, 140 },
-        .text = u8"わたし Daniel!",
-        .font = u8"yumin",
-        .font_size = 14,
-    };
-
-    // Just to make testing more nice, skip this command on the first frame, so it doesn't block loading of the tilemap.
-    //  TODO: Make the tilemap loaded async, so it will not wait for other unrelated assets to be loaded.
-    static int i = 0;
-    if (i != 0)
-    {
-        ice::shards::push_back(frame.shards(), ice::Shard_DrawTextCommand | &draw_text);
-        ice::shards::push_back(frame.shards(), ice::Shard_DrawTextCommand | &draw_text2);
-    }
-
-    i = 1;
-
-    //ice::shards::push_back(frame.shards(), ice::Shard_DrawTextCommand | &draw_text2);
+    ice::shards::inspect_each<ice::c8utf const*>(
+        runner.previous_frame().shards(),
+        ice::Shard_GameUI_Loaded,
+        [&frame](ice::c8utf const* page_name) noexcept
+        {
+            ice::shards::push_back(frame.shards(), ice::Shard_GameUI_Show | page_name);
+        }
+    );
 
     bool was_active = _active;
     for (ice::input::InputEvent const& event : frame.input_events())

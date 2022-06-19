@@ -1,6 +1,7 @@
 #pragma once
 #include <ice/game_ui.hxx>
 #include <ice/ecs/ecs_types.hxx>
+#include <ice/ecs/ecs_entity_tracker.hxx>
 #include <ice/world/world_trait.hxx>
 #include <ice/pod/hash.hxx>
 #include <ice/ui_data.hxx>
@@ -66,8 +67,16 @@ namespace ice
         };
 
         ice::Allocator& _allocator;
+        ice::ecs::EntityTracker _entity_tracker;
+
         ice::pod::Hash<PageInfo> _pages_info;
         ice::pod::Hash<Page> _pages;
+
+        ice::Utf8String _visible_page;
     };
+
+    void register_trait_gameui(
+        ice::WorldTraitArchive& trait_archive
+    ) noexcept;
 
 } // namespace ice

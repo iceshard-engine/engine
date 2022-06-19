@@ -12,6 +12,8 @@ namespace ice::ui
         ice::Span<ice::ui::Position const> positions;
         ice::Span<ice::ui::RectOffset const> margins;
         ice::Span<ice::ui::RectOffset const> paddings;
+        ice::Span<ice::ui::ButtonInfo const> data_buttons;
+        void const* additional_data;
     };
 
 } // namespace ice::ui

@@ -1,6 +1,7 @@
 #include <ice/ui_asset.hxx>
 #include <ice/ui_data.hxx>
 #include <ice/ui_element_info.hxx>
+#include <ice/ui_button.hxx>
 
 #include <ice/assert.hxx>
 #include <ice/log.hxx>
@@ -27,11 +28,12 @@ namespace ice::ui
         ice::ui::ElementFlags margin_flags;
         ice::ui::ElementFlags padding_flags;
 
-        ice::u8 type;
+        ice::ui::ElementType type;
         void* type_data;
     };
 
     void compile_ui(
+        ice::Allocator& alloc,
         rapidxml_ns::xml_document<char>& doc,
         ice::pod::Array<ice::ui::RawElement>& raw_elements
     ) noexcept;
@@ -43,17 +45,36 @@ namespace ice::ui
     {
         ice::u32 const element_count = ice::size(raw_elements);
 
+        ice::u8 type_info_counts[256]{ };
+        ice::usize additional_data_size = 0;
+        for (RawElement const& element : raw_elements)
+        {
+            type_info_counts[static_cast<ice::u32>(element.type)] += 1;
+            if (element.type == ElementType::Button)
+            {
+                additional_data_size += reinterpret_cast<RawButtonInfo const*>(element.type_data)->text.size();
+            }
+        }
+
+        auto const type_count = [&type_info_counts](ElementType type) noexcept -> ice::u32
+        {
+            return type_info_counts[static_cast<ice::u32>(type)];
+        };
+
         ice::usize byte_size = sizeof(ice::ui::UIData);
         byte_size += element_count * sizeof(ice::ui::ElementInfo);
         byte_size += element_count * sizeof(ice::ui::Size);
         byte_size += element_count * sizeof(ice::ui::Position);
         byte_size += element_count * sizeof(ice::ui::RectOffset) * 2;
+        byte_size += type_count(ElementType::Button) * sizeof(ice::ui::ButtonInfo) + alignof(ice::ui::ButtonInfo);
+        byte_size += additional_data_size;
 
         ice::Memory const result{
             .location = alloc.allocate((ice::u32) byte_size, 16),
             .size = (ice::u32)byte_size,
             .alignment = 16
         };
+        void const* const data_end = ice::memory::ptr_add(result.location, result.size);
 
         static auto store_span_info = [base_ptr = result.location](auto& span_value) noexcept
         {
@@ -76,38 +97,78 @@ namespace ice::ui
             RectOffset* margins = reinterpret_cast<RectOffset*>(positions + element_count);
             RectOffset* paddings = reinterpret_cast<RectOffset*>(margins + element_count);
 
+            ButtonInfo* button_info = reinterpret_cast<ButtonInfo*>(
+                ice::memory::ptr_align_forward(
+                    paddings + element_count,
+                    alignof(ButtonInfo)
+                )
+            );
+
+            void* additional_data = button_info + type_count(ElementType::Button);
+
+            ice::usize additional_data_offset = 0;
+
             isui->elements = { elements, element_count };
             isui->sizes = { sizes, element_count };
             isui->positions = { positions, element_count };
             isui->margins = { margins, element_count };
             isui->paddings = { paddings, element_count };
+            isui->data_buttons = { button_info, type_count(ElementType::Button) };
+            isui->additional_data = additional_data;
             //isui->data_label = { };
             //isui->data_button = { };
+
+            ice::u8 type_data_index[256]{ };
 
             ice::u16 idx = 0;
             for (RawElement const& element : raw_elements)
             {
+                u8& data_idx = type_data_index[static_cast<ice::u32>(element.type)];
+
                 elements[idx].parent = element.parent;
                 elements[idx].size_i = idx | static_cast<ice::u16>((static_cast<ice::u32>(element.size_flags) >> 0) << 12);
                 elements[idx].pos_i = idx | static_cast<ice::u16>((static_cast<ice::u32>(element.position_flags) >> 4) << 12);
                 elements[idx].mar_i = idx | static_cast<ice::u16>((static_cast<ice::u32>(element.margin_flags) >> 8) << 12);
                 elements[idx].pad_i = idx | static_cast<ice::u16>((static_cast<ice::u32>(element.padding_flags) >> 8) << 12);
                 elements[idx].type = static_cast<ice::ui::ElementType>(element.type);
-                elements[idx].type_data_i = 0;
+                elements[idx].type_data_i = data_idx;
 
                 sizes[idx] = element.size;
                 positions[idx] = element.position;
                 margins[idx] = element.margin;
                 paddings[idx] = element.padding;
 
+                if (element.type == ElementType::Button)
+                {
+                    RawButtonInfo const* const raw_button_info = reinterpret_cast<RawButtonInfo const*>(element.type_data);
+                    ice::memcpy(additional_data, raw_button_info->text.data(), raw_button_info->text.size());
+
+                    button_info[data_idx].text_offset = additional_data_offset;
+                    button_info[data_idx].text_size = raw_button_info->text.size();
+
+                    additional_data = ice::memory::ptr_add(additional_data, raw_button_info->text.size());
+                    additional_data_offset += raw_button_info->text.size();
+                }
+
+                data_idx += 1;
                 idx += 1;
             }
+
+            ICE_ASSERT(
+                additional_data <= data_end,
+                "Moved past the allocated data buffer!"
+            );
 
             store_span_info(isui->elements);
             store_span_info(isui->sizes);
             store_span_info(isui->positions);
             store_span_info(isui->margins);
             store_span_info(isui->paddings);
+            store_span_info(isui->data_buttons);
+
+            isui->additional_data = reinterpret_cast<void*>(
+                static_cast<ice::uptr>(ice::memory::ptr_distance(isui, isui->additional_data))
+            );
         }
 
         return result;
@@ -135,7 +196,7 @@ namespace ice::ui
             rapidxml_ns::xml_document<char>* doc = alloc.make<rapidxml_ns::xml_document<char>>();
             doc->parse<rapidxml_ns::parse_default>(reinterpret_cast<char*>(data_copy));
 
-            compile_ui(*doc, elements/*, alloc*/);
+            compile_ui(alloc, *doc, elements);
 
             for (ice::ui::RawElement const& element : elements)
             {
@@ -193,6 +254,8 @@ namespace ice::ui
         restore_span_value(result_data->positions);
         restore_span_value(result_data->margins);
         restore_span_value(result_data->paddings);
+        restore_span_value(result_data->data_buttons);
+        result_data->additional_data = ice::memory::ptr_add(uidata, reinterpret_cast<ice::uptr>(uidata->additional_data));
 
         out_memory.location = result_data;
         out_memory.size = sizeof(ice::ui::UIData);
@@ -328,40 +391,47 @@ namespace ice::ui
     }
 
     void compile_element_type(
-        rapidxml_ns::xml_node<char> const* element,
+        ice::Allocator& alloc,
+        rapidxml_ns::xml_node<char> const* xml_element,
         ice::ui::RawElement& info
     ) noexcept
     {
-        info.type = 0;
+        info.type = ElementType::Page;
         info.type_data = nullptr;
 
-        //if (strcmp(xml_element->local_name(), "button") == 0)
-        //{
-        //    ice::ui::ButtonData* data = new (malloc(sizeof(ice::ui::ButtonData))) ice::ui::ButtonData{ };
+        if (strcmp(xml_element->local_name(), "button") == 0)
+        {
+            ice::ui::RawButtonInfo* button_info = reinterpret_cast<ice::ui::RawButtonInfo*>(alloc.allocate(sizeof(RawButtonInfo)));
 
-        //    if (auto const* entity = xml_element->first_node_ns(ns_ice.data(), ns_ice.size(), "entity", 6); entity != nullptr)
-        //    {
-        //        if (auto const* entity_name = entity->first_attribute("name"); entity_name != nullptr)
-        //        {
-        //            data->entity_name = std::u8string_view{
-        //                reinterpret_cast<ice::utf8 const*>(entity_name->value()),
-        //                entity_name->value_size()
-        //            };
-        //        }
-        //    }
+            //rapidxml_ns::xml_node<char> const* xml_entity = xml_element->first_node_ns(
+            //    Constant_ISUINamespaceIceShard.data(),
+            //    Constant_ISUINamespaceIceShard.size(),
+            //    "entity",
+            //    6
+            //);
+            //if (xml_entity != nullptr)
+            //{
+            //    if (auto const* entity_name = xml_entity->first_attribute("name"); entity_name != nullptr)
+            //    {
+            //        button_info->entity_name = std::u8string_view{
+            //            reinterpret_cast<ice::c8utf const*>(entity_name->value()),
+            //            entity_name->value_size()
+            //        };
+            //    }
+            //}
 
-        //    if (auto const* attr = xml_element->first_attribute("text"))
-        //    {
-        //        data->text = std::u8string_view{ reinterpret_cast<ice::utf8 const*>(attr->value()), attr->value_size() };
-        //    }
-        //    else if (auto const* xml_node = xml_element->first_node("text"))
-        //    {
-        //        data->text = std::u8string_view{ reinterpret_cast<ice::utf8 const*>(xml_node->value()), xml_node->value_size() };
-        //    }
+            if (auto const* attr = xml_element->first_attribute("text"))
+            {
+                button_info->text = std::u8string_view{ reinterpret_cast<ice::c8utf const*>(attr->value()), attr->value_size() };
+            }
+            else if (auto const* xml_node = xml_element->first_node("text"))
+            {
+                button_info->text = std::u8string_view{ reinterpret_cast<ice::c8utf const*>(xml_node->value()), xml_node->value_size() };
+            }
 
-        //    info.type_data = data;
-        //    info.type = 2;
-        //}
+            info.type_data = button_info;
+            info.type = ice::ui::ElementType::Button;
+        }
         //else if (strcmp(xml_element->local_name(), "label") == 0)
         //{
         //    ice::ui::LabelData* data = new (malloc(sizeof(ice::ui::LabelData))) ice::ui::LabelData{ };
@@ -381,6 +451,7 @@ namespace ice::ui
     }
 
     void compile_element_attribs(
+        ice::Allocator& alloc,
         rapidxml_ns::xml_node<char> const* element,
         ice::ui::RawElement& info
     ) noexcept
@@ -455,10 +526,11 @@ namespace ice::ui
             );
         }
 
-        compile_element_type(element, info);
+        compile_element_type(alloc, element, info);
     }
 
     void compile_element(
+        ice::Allocator& alloc,
         rapidxml_ns::xml_node<char> const* xml_element,
         ice::u16 parent_idx,
         ice::pod::Array<RawElement>& elements
@@ -474,6 +546,7 @@ namespace ice::ui
         );
 
         compile_element_attribs(
+            alloc,
             xml_element,
             elements[element_index]
         );
@@ -485,7 +558,7 @@ namespace ice::ui
 
         while (xml_child != nullptr)
         {
-            compile_element(xml_child, element_index, elements);
+            compile_element(alloc, xml_child, element_index, elements);
             xml_child = xml_child->next_sibling_ns(
                 Constant_ISUINamespaceUI.data(),
                 Constant_ISUINamespaceUI.size()
@@ -494,6 +567,7 @@ namespace ice::ui
     }
 
     void compile_page(
+        ice::Allocator& alloc,
         rapidxml_ns::xml_node<char> const* page,
         ice::pod::Array<RawElement>& elements
     ) noexcept
@@ -504,10 +578,11 @@ namespace ice::ui
         //    "Page has more element's than allowed!"
         //);
 
-        compile_element(page, 0, elements);
+        compile_element(alloc, page, 0, elements);
     }
 
     void compile_ui(
+        ice::Allocator& alloc,
         rapidxml_ns::xml_document<char>& doc,
         ice::pod::Array<ice::ui::RawElement>& raw_elements
     ) noexcept
@@ -527,7 +602,7 @@ namespace ice::ui
 
         if (xml_node != nullptr)
         {
-            compile_page(xml_node, raw_elements);
+            compile_page(alloc, xml_node, raw_elements);
         }
 
     }

@@ -39,6 +39,9 @@ namespace ice
     static constexpr ice::StringID Constant_TraitName_RenderSprites
         = "ice.base-framework.trait-render-sprites"_sid;
 
+    static constexpr ice::StringID Constant_TraitName_RenderUI
+        = "ice.base-framework.trait-render-ui"_sid;
+
     static constexpr ice::StringID Constant_TraitName_RenderGlyphs
         = "ice.base-framework.trait-render-glyphs"_sid;
 
@@ -56,6 +59,9 @@ namespace ice
 
     static constexpr ice::StringID Constant_GfxStage_DrawSprites
         = "ice.base-framework.gfx-stage-draw-sprites"_sid;
+
+    static constexpr ice::StringID Constant_GfxStage_DrawUI
+        = "ice.base-framework.gfx-stage-draw-ui"_sid;
 
     static constexpr ice::StringID Constant_GfxStage_DrawGlyphs
         = "ice.base-framework.gfx-stage-draw-glyphs"_sid;

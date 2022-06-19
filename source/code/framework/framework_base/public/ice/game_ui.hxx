@@ -13,9 +13,13 @@ namespace ice
         = "action/ui/load`ice::c8utf const*"_shard;
 
     static constexpr ice::Shard Shard_GameUI_Show
-        = "action/ui/show`ice::ecs::Entity"_shard;
+        = "action/ui/show`ice::c8utf const*"_shard;
 
     static constexpr ice::Shard Shard_GameUI_Hide
-        = "action/ui/hide`ice::ecs::Entity"_shard;
+        = "action/ui/hide`ice::c8utf const*"_shard;
+
+
+    static constexpr ice::Shard Shard_GameUI_Loaded
+        = "event/ui/loaded`ice::c8utf const*"_shard;
 
 } // namespace ice

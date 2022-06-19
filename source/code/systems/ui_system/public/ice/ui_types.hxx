@@ -6,6 +6,7 @@ namespace ice::ui
 
     struct ElementInfo;
     struct ElementDrawData;
+    struct ButtonInfo;
 
     enum class ElementFlags : ice::u16;
     enum class ElementType : ice::u8;

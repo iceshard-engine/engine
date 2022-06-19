@@ -20,6 +20,7 @@
 
 #include "traits/render/trait_render_tilemap.hxx"
 #include "traits/render/trait_render_glyphs.hxx"
+#include "traits/render/trait_render_ui.hxx"
 
 namespace ice
 {
@@ -34,15 +35,16 @@ namespace ice
         register_trait_render_finish(archive);
         register_trait_render_sprites(archive);
         register_trait_render_texture_loader(archive);
+        register_trait_render_ui(archive);
         register_trait_render_glyphs(archive);
         register_trait_render_debug(archive);
         register_trait_render_tilemap(archive);
 
         register_trait_default<IceWorldTrait_PlayerActor>(archive, ice::Constant_TraitName_Actor);
-        register_trait_default<IceWorldTrait_GameUI>(archive, ice::Constant_TraitName_GameUI);
         register_trait_default<IceWorldTrait_PhysicsBox2D>(archive, ice::Constant_TraitName_PhysicsBox2D);
         register_trait_default<IceWorldTrait_RenderCamera>(archive, ice::Constant_TraitName_RenderCamera);
         register_trait_default<IceWorldTrait_SpriteAnimator>(archive, ice::Constant_TraitName_SpriteAnimator);
+        register_trait_gameui(archive);
         register_trait_tilemap(archive);
         return true;
     }
