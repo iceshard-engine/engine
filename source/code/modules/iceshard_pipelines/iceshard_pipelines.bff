@@ -13,12 +13,14 @@
             'freetype'
             'msdfgen'
             'msdf_atlas_gen'
+            'rapidxml_ns'
         }
         .Uses = {
             'utils'
             'modules'
             'asset_system'
             'render_system'
+            'ui_system'
             'engine'
         }
     ]

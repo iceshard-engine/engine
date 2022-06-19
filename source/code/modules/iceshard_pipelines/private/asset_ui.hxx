@@ -3,9 +3,11 @@
 #include <ice/asset_type.hxx>
 #include <ice/asset_type_archive.hxx>
 
-namespace ice::ui
+namespace ice
 {
 
-    static constexpr ice::AssetType AssetType_UIPage = ice::make_asset_type(u8"ice/ui_system/page");
+    void asset_type_ui_definition(
+        ice::AssetTypeArchive& type_archive
+    ) noexcept;
 
 } // namespace ice::ui

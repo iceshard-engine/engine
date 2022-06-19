@@ -9,8 +9,10 @@
 #include <rapidxml_ns/rapidxml_ns.hpp>
 #undef assert
 
-namespace ice::ui
+namespace ice
 {
+
+    using ice::ui::ElementType;
 
     static constexpr ice::String Constant_ISUINamespaceUI = "https://www.iceshard.net/docs/engine/v1_alpha/isui/ui/";
     static constexpr ice::String Constant_ISUINamespaceIceShard = "https://www.iceshard.net/docs/engine/v1_alpha/isui/iceshard/";
@@ -32,15 +34,20 @@ namespace ice::ui
         void* type_data;
     };
 
+    struct RawButtonInfo
+    {
+        ice::Utf8String text;
+    };
+
     void compile_ui(
         ice::Allocator& alloc,
         rapidxml_ns::xml_document<char>& doc,
-        ice::pod::Array<ice::ui::RawElement>& raw_elements
+        ice::pod::Array<ice::RawElement>& raw_elements
     ) noexcept;
 
     auto build_binary_representation(
         ice::Allocator& alloc,
-        ice::Span<ice::ui::RawElement> raw_elements
+        ice::Span<ice::RawElement> raw_elements
     ) noexcept -> ice::Memory
     {
         ice::u32 const element_count = ice::size(raw_elements);
@@ -70,7 +77,7 @@ namespace ice::ui
         byte_size += additional_data_size;
 
         ice::Memory const result{
-            .location = alloc.allocate((ice::u32) byte_size, 16),
+            .location = alloc.allocate((ice::u32)byte_size, 16),
             .size = (ice::u32)byte_size,
             .alignment = 16
         };
@@ -102,7 +109,7 @@ namespace ice::ui
                     paddings + element_count,
                     alignof(ButtonInfo)
                 )
-            );
+                );
 
             void* additional_data = button_info + type_count(ElementType::Button);
 
@@ -190,7 +197,7 @@ namespace ice::ui
         *reinterpret_cast<char*>(ice::memory::ptr_add(data_copy, data.size)) = '\0';
 
         {
-            ice::pod::Array<ice::ui::RawElement> elements{ alloc };
+            ice::pod::Array<ice::RawElement> elements{ alloc };
             ice::pod::array::reserve(elements, 50);
 
             rapidxml_ns::xml_document<char>* doc = alloc.make<rapidxml_ns::xml_document<char>>();
@@ -198,7 +205,7 @@ namespace ice::ui
 
             compile_ui(alloc, *doc, elements);
 
-            for (ice::ui::RawElement const& element : elements)
+            for (ice::RawElement const& element : elements)
             {
                 ICE_LOG(ice::LogSeverity::Debug, ice::LogTag::Engine, "type: {}", (int)element.type);
                 ICE_LOG(ice::LogSeverity::Debug, ice::LogTag::Engine, "- [w: {}, h: {}] size", (int)element.size.width, (int)element.size.height);
@@ -209,7 +216,7 @@ namespace ice::ui
 
             out_memory = build_binary_representation(alloc, elements);
 
-            for (ice::ui::RawElement const& element : elements)
+            for (ice::RawElement const& element : elements)
             {
                 alloc.deallocate(element.type_data);
             }
@@ -264,7 +271,7 @@ namespace ice::ui
         return true;
     }
 
-    void register_ui_asset(ice::AssetTypeArchive& type_archive) noexcept
+    void asset_type_ui_definition(ice::AssetTypeArchive& type_archive) noexcept
     {
         static ice::Utf8String asset_extensions[]{
             u8".isui"
@@ -393,7 +400,7 @@ namespace ice::ui
     void compile_element_type(
         ice::Allocator& alloc,
         rapidxml_ns::xml_node<char> const* xml_element,
-        ice::ui::RawElement& info
+        ice::RawElement& info
     ) noexcept
     {
         info.type = ElementType::Page;
@@ -401,7 +408,7 @@ namespace ice::ui
 
         if (strcmp(xml_element->local_name(), "button") == 0)
         {
-            ice::ui::RawButtonInfo* button_info = reinterpret_cast<ice::ui::RawButtonInfo*>(alloc.allocate(sizeof(RawButtonInfo)));
+            ice::RawButtonInfo* button_info = reinterpret_cast<ice::RawButtonInfo*>(alloc.allocate(sizeof(RawButtonInfo)));
 
             //rapidxml_ns::xml_node<char> const* xml_entity = xml_element->first_node_ns(
             //    Constant_ISUINamespaceIceShard.data(),
@@ -453,7 +460,7 @@ namespace ice::ui
     void compile_element_attribs(
         ice::Allocator& alloc,
         rapidxml_ns::xml_node<char> const* element,
-        ice::ui::RawElement& info
+        ice::RawElement& info
     ) noexcept
     {
         using ice::ui::ElementFlags;
@@ -538,11 +545,11 @@ namespace ice::ui
     {
         ice::u16 const element_index = static_cast<ice::u16>(
             ice::pod::array::size(elements)
-        );
+            );
 
         ice::pod::array::push_back(
             elements,
-            ice::ui::RawElement{ .parent = parent_idx }
+            ice::RawElement{ .parent = parent_idx }
         );
 
         compile_element_attribs(
@@ -584,7 +591,7 @@ namespace ice::ui
     void compile_ui(
         ice::Allocator& alloc,
         rapidxml_ns::xml_document<char>& doc,
-        ice::pod::Array<ice::ui::RawElement>& raw_elements
+        ice::pod::Array<ice::RawElement>& raw_elements
     ) noexcept
     {
         rapidxml_ns::xml_node<char> const* root = doc.first_node("isui");

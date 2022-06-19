@@ -6,13 +6,6 @@
 
     .BaseDir = '$WorkspaceCodeDir$/systems/ui_system'
 
-    .Private =
-    [
-        .Modules = {
-            'rapidxml_ns'
-        }
-    ]
-
     .Public =
     [
         .Uses = {
