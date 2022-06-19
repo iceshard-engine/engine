@@ -4,9 +4,16 @@
 namespace ice::ui
 {
 
+    struct UIData;
+    struct PageInfo;
     struct ElementInfo;
-    struct ElementDrawData;
     struct ButtonInfo;
+
+    struct Page;
+    struct Element;
+    struct Button;
+
+    struct ElementDrawData;
 
     enum class ElementFlags : ice::u16;
     enum class ElementType : ice::u8;
@@ -38,5 +45,30 @@ namespace ice::ui
         ice::f32 right;
         ice::f32 bottom;
     };
+
+    constexpr auto rect_size(ice::ui::Rect rect) noexcept -> ice::ui::Size
+    {
+        return { rect.right - rect.left, rect.bottom - rect.top };
+    }
+
+    constexpr auto rect_position(ice::ui::Rect rect) noexcept -> ice::ui::Position
+    {
+        return { rect.left, rect.top };
+    }
+
+    constexpr auto operator-(ice::ui::RectOffset offset) noexcept -> ice::ui::RectOffset
+    {
+        return { -offset.left, -offset.top, -offset.right, -offset.bottom };
+    }
+
+    constexpr auto operator+(ice::ui::Rect rect, ice::ui::RectOffset offset) noexcept -> ice::ui::Rect
+    {
+        return { rect.left + offset.left, rect.top + offset.top, rect.right + offset.right, rect.bottom + offset.bottom };
+    }
+
+    constexpr auto operator-(ice::ui::Rect rect, ice::ui::RectOffset offset) noexcept -> ice::ui::Rect
+    {
+        return { rect.left - offset.left, rect.top - offset.top, rect.right - offset.right, rect.bottom - offset.bottom };
+    }
 
 } // namespace ice::ui

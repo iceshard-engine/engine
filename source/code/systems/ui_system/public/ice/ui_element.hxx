@@ -13,11 +13,32 @@ namespace ice::ui
         ice::ui::Rect bbox;
         ice::ui::Rect hitbox;
         ice::ui::DrawData draw_data;
-        ice::ui::Position draw_offset;
 
         bool center_vertical : 1;
         bool center_horizontal : 1;
     };
 
+    enum class UpdateStage : ice::u8
+    {
+        ExplicitSize,
+        AutoSize,
+        StretchSize,
+        Position,
+    };
+
+    auto element_update(
+        ice::ui::UpdateStage stage,
+        ice::ui::UIData const& data,
+        ice::ui::Element const& parent,
+        ice::ui::ElementInfo const& info,
+        ice::ui::Element& out_element
+    ) noexcept;
+
+    static constexpr ice::ui::UpdateStage Constant_UpdateStageOrder[]{
+        UpdateStage::ExplicitSize,
+        UpdateStage::AutoSize,
+        UpdateStage::StretchSize,
+        UpdateStage::Position
+    };
 
 } // namespace ice::ui

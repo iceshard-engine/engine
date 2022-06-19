@@ -10,6 +10,20 @@
 namespace ice
 {
 
+    struct UIRuntimeElement
+    {
+        ice::ui::ElementInfo const* info;
+        ice::vec2f position;
+        ice::vec2f size;
+    };
+
+    struct UIRuntimePage
+    {
+        ice::u64 info_hash;
+        ice::ecs::EntityHandle current_handle;
+    };
+
+
     class IceWorldTrait_GameUI final : public ice::WorldTrait
     {
     public:

@@ -5,6 +5,14 @@
 namespace ice::ui
 {
 
+    struct UIFont
+    {
+        // ice::font::FontInfo const* font;
+        // ice::u32 size;
+        // bool is_bold;
+        // bool is_italic;
+    };
+
     struct UIData
     {
         ice::Span<ice::ui::ElementInfo const> elements;

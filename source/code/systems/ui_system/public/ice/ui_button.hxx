@@ -10,4 +10,9 @@ namespace ice::ui
         ice::u32 text_size;
     };
 
+    struct Button
+    {
+
+    };
+
 } // namespace ice::ui
