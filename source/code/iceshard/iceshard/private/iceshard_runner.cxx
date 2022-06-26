@@ -172,7 +172,8 @@ namespace ice
                     ice::Shard_InputEventButton | input_event
                 );
             }
-            else if (input_event.value_type == ice::input::InputValueType::Axis)
+            else if (input_event.value_type == ice::input::InputValueType::AxisInt
+                || input_event.value_type == ice::input::InputValueType::AxisFloat)
             {
                 ice::shards::push_back(
                     shards,

@@ -23,7 +23,6 @@
 #include <ice/gfx/gfx_frame.hxx>
 #include <ice/gfx/gfx_pass.hxx>
 #include <ice/gfx/gfx_runner.hxx>
-#include <ice/gfx/gfx_font.hxx>
 #include <ice/render/render_image.hxx>
 #include <ice/render/render_swapchain.hxx>
 
@@ -378,7 +377,6 @@ void MyGame::on_game_begin(ice::EngineRunner& runner) noexcept
     ice::Shard shards[]{
         ice::Shard_WorldActivate | _test_world,
         ice::Shard_LoadTileMap | tilemap_asset,
-        ice::Shard_GameUI_Load | u8"ui/test",
     };
     ice::shards::push_back(
         runner.current_frame().shards(),
@@ -404,6 +402,13 @@ void MyGame::on_update(ice::EngineFrame& frame, ice::EngineRunner& runner, ice::
             ice::shards::push_back(frame.shards(), ice::Shard_GameUI_Show | page_name);
         }
     );
+
+    if (frame.index() == 2)
+    {
+        ice::shards::push_back(frame.shards(),
+            ice::Shard_GameUI_Load | u8"ui/test"
+        );
+    }
 
     bool was_active = _active;
     for (ice::input::InputEvent const& event : frame.input_events())
