@@ -134,22 +134,26 @@ namespace ice::input
 
         event.identifier = input_identifier(DeviceType::Mouse, MouseInput::PositionX);
         event.value.axis.value_i32 = _position[0];
+        event.value_type = InputValueType::AxisInt;
         ice::pod::array::push_back(events_out, event);
 
         event.identifier = input_identifier(DeviceType::Mouse, MouseInput::PositionY);
         event.value.axis.value_i32 = _position[1];
+        event.value_type = InputValueType::AxisInt;
         ice::pod::array::push_back(events_out, event);
 
         if (_position_relative[0] != 0)
         {
             event.identifier = input_identifier(DeviceType::Mouse, MouseInput::PositionXRelative);
             event.value.axis.value_i32 = _position_relative[0];
+            event.value_type = InputValueType::AxisInt;
             ice::pod::array::push_back(events_out, event);
         }
         if (_position_relative[1] != 0)
         {
             event.identifier = input_identifier(DeviceType::Mouse, MouseInput::PositionYRelative);
             event.value.axis.value_i32 = _position_relative[1];
+            event.value_type = InputValueType::AxisInt;
             ice::pod::array::push_back(events_out, event);
         }
 

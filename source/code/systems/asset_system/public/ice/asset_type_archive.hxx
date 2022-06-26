@@ -1,5 +1,6 @@
 #pragma once
 #include <ice/span.hxx>
+#include <ice/task.hxx>
 #include <ice/asset_type.hxx>
 #include <ice/resource_meta.hxx>
 #include <ice/resource_types.hxx>
@@ -17,9 +18,36 @@ namespace ice
     {
         ice::Span<ice::Utf8String const> resource_extensions;
 
-        ice::Fn<auto(ice::FnUserdata, ice::AssetTypeDefinition const&, ice::Metadata const&, ice::URI const&) noexcept -> ice::AssetState> fn_asset_state;
-        ice::Fn<bool(ice::FnUserdata, ice::Allocator&, ice::ResourceTracker const&, ice::Resource_v2 const&, ice::Data, ice::Memory&) noexcept> fn_asset_oven;
-        ice::Fn<bool(ice::FnUserdata, ice::Allocator&, ice::AssetStorage&, ice::Metadata const&, ice::Data, ice::Memory&) noexcept> fn_asset_loader;
+        ice::Fn<
+            auto(
+                ice::FnUserdata,
+                ice::AssetTypeDefinition const&,
+                ice::Metadata const&,
+                ice::URI const&
+            ) noexcept -> ice::AssetState
+        > fn_asset_state;
+
+        ice::Fn<
+            ice::Task<bool>(
+                ice::FnUserdata,
+                ice::Allocator&,
+                ice::ResourceTracker const&,
+                ice::Resource_v2 const&,
+                ice::Data,
+                ice::Memory&
+            ) noexcept
+        > fn_asset_oven;
+
+        ice::Fn<
+            ice::Task<bool>(
+                ice::FnUserdata,
+                ice::Allocator&,
+                ice::AssetStorage&,
+                ice::Metadata const&,
+                ice::Data,
+                ice::Memory&
+            ) noexcept
+        > fn_asset_loader;
     };
 
     class AssetTypeArchive

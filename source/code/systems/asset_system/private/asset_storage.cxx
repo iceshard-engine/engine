@@ -54,35 +54,35 @@ namespace ice
             return resource;
         }
 
-        bool bake_asset(
+        auto bake_asset(
             ice::Allocator& alloc,
             ice::AssetTypeDefinition const& definition,
             ice::ResourceTracker& resource_tracker,
             ice::AssetEntry const* asset_entry,
             ice::Memory& result
-        ) noexcept
+        ) noexcept -> ice::Task<bool>
         {
             if (definition.fn_asset_oven.is_set())
             {
-                return definition.fn_asset_oven(alloc, resource_tracker, *asset_entry->resource, asset_entry->data, result);
+                co_return co_await definition.fn_asset_oven(alloc, resource_tracker, *asset_entry->resource, asset_entry->data, result);
             }
-            return false;
+            co_return false;
         }
 
-        bool load_asset(
+        auto load_asset(
             ice::Allocator& alloc,
             ice::AssetTypeDefinition const& definition,
             ice::AssetStorage& asset_storage,
             ice::Metadata const& asset_metadata,
             ice::Data baked_data,
             ice::Memory& result
-        ) noexcept
+        ) noexcept -> ice::Task<bool>
         {
             if (definition.fn_asset_loader.is_set())
             {
-                return definition.fn_asset_loader(alloc, asset_storage, asset_metadata, baked_data, result);
+                co_return co_await definition.fn_asset_loader(alloc, asset_storage, asset_metadata, baked_data, result);
             }
-            return false;
+            co_return false;
         }
 
     } // namespace detail
@@ -282,7 +282,7 @@ namespace ice
                 if (asset_entry->state == AssetState::Raw)
                 {
                     ice::Memory baked_memory;
-                    bool const bake_success = ice::detail::bake_asset(
+                    bool const bake_success = co_await ice::detail::bake_asset(
                         asset_alloc,
                         shelve->definition,
                         _resource_tracker,
@@ -305,7 +305,7 @@ namespace ice
                 if (requested_state != AssetState::Baked && asset_entry->state == AssetState::Baked)
                 {
                     ice::Memory loaded_memory;
-                    bool const load_success = ice::detail::load_asset(
+                    bool const load_success = co_await ice::detail::load_asset(
                         asset_alloc,
                         shelve->definition,
                         *this,

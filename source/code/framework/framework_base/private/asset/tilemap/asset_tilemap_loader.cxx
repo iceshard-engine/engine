@@ -8,14 +8,14 @@ namespace ice
 {
 
 
-    bool asset_tilemap_loader(
+    auto asset_tilemap_loader(
         void*,
         ice::Allocator& alloc,
         ice::AssetStorage& asset_storage,
         ice::Metadata const& meta,
         ice::Data data,
         ice::Memory& out_data
-    ) noexcept
+    ) noexcept -> ice::Task<bool>
     {
         ice::TileMap const* const asset_tilemap = reinterpret_cast<ice::TileMap const*>(data.location);
 
@@ -70,7 +70,7 @@ namespace ice
         out_data.location = tilemap;
         out_data.size = sizeof(ice::TileMap);
         out_data.alignment = alignof(ice::TileMap);
-        return true;
+        co_return true;
     }
 
 } // namespace ice

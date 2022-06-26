@@ -16,14 +16,14 @@
 namespace ice
 {
 
-    bool asset_image_oven(
+    auto asset_image_oven(
         void*,
         ice::Allocator& alloc,
         ice::ResourceTracker const&,
         ice::Resource_v2 const& resource,
         ice::Data data,
         ice::Memory& memory
-    ) noexcept
+    ) noexcept -> ice::Task<bool>
     {
         using ice::render::ImageInfo;
 
@@ -75,30 +75,37 @@ namespace ice
             stbi_image_free(image_buffer);
         }
 
-        return width != 0 && height != 0;
+        co_return width != 0 && height != 0;
     }
 
-    bool asset_image_loader(void*, ice::Allocator& alloc, ice::AssetStorage&, ice::Metadata const& meta, ice::Data data, ice::Memory& out_data) noexcept
+    auto asset_image_loader(
+        void*,
+        ice::Allocator& alloc,
+        ice::AssetStorage&,
+        ice::Metadata const& meta,
+        ice::Data data,
+        ice::Memory& out_data
+    ) noexcept -> ice::Task<bool>
     {
-            using ice::render::ImageInfo;
+        using ice::render::ImageInfo;
 
-            out_data.size = sizeof(ImageInfo);
-            out_data.alignment = alignof(ImageInfo);
-            out_data.location = alloc.allocate(out_data.size, out_data.alignment);
+        out_data.size = sizeof(ImageInfo);
+        out_data.alignment = alignof(ImageInfo);
+        out_data.location = alloc.allocate(out_data.size, out_data.alignment);
 
-            ImageInfo const& image_data = *reinterpret_cast<ImageInfo const*>(data.location);
-            ImageInfo* image = reinterpret_cast<ImageInfo*>(out_data.location);
-            image->type = image_data.type;
-            image->usage = image_data.usage;
-            image->format = image_data.format;
-            image->width = image_data.width;
-            image->height = image_data.height;
-            image->data = ice::memory::ptr_add(
-                data.location,
-                static_cast<ice::u32>(reinterpret_cast<ice::uptr>(image_data.data))
-            );
+        ImageInfo const& image_data = *reinterpret_cast<ImageInfo const*>(data.location);
+        ImageInfo* image = reinterpret_cast<ImageInfo*>(out_data.location);
+        image->type = image_data.type;
+        image->usage = image_data.usage;
+        image->format = image_data.format;
+        image->width = image_data.width;
+        image->height = image_data.height;
+        image->data = ice::memory::ptr_add(
+            data.location,
+            static_cast<ice::u32>(reinterpret_cast<ice::uptr>(image_data.data))
+        );
 
-            return true;
+        co_return true;
     }
 
     void asset_type_image_definition(ice::AssetTypeArchive& asset_type_archive) noexcept

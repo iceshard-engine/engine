@@ -16,14 +16,14 @@ namespace ice
         return AssetState::Baked;
     }
 
-    bool asset_shader_loader(
+    auto asset_shader_loader(
         void*,
         ice::Allocator& alloc,
         ice::AssetStorage&,
         ice::Metadata const& meta,
         ice::Data data,
         ice::Memory& out_data
-    ) noexcept
+    ) noexcept -> ice::Task<bool>
     {
         out_data.size = sizeof(Data);
         out_data.alignment = alignof(Data);
@@ -33,7 +33,7 @@ namespace ice
         shader_data->location = data.location;
         shader_data->size = data.size;
         shader_data->alignment = data.alignment;
-        return true;
+        co_return true;
     }
 
     void asset_type_shader_definition(ice::AssetTypeArchive& asset_type_archive) noexcept

@@ -29,7 +29,8 @@ namespace ice::input
         None,
         Button,
         Trigger,
-        Axis,
+        AxisInt,
+        AxisFloat,
     };
 
 

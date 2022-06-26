@@ -158,7 +158,7 @@ SCENARIO("ice :: resource :: Metadata")
             CHECK(ice::pod::array::size(meta_string_arr) == 3);
         }
 
-        WHEN("it is empty");
+        WHEN("it is empty")
         {
             THEN("reading simple values fails")
             {

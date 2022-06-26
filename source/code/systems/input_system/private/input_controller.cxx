@@ -164,6 +164,7 @@ namespace ice::input
                 reset = false;
                 event.identifier = input_identifier(DeviceType::Controller, input);
                 event.value.axis.value_f32 = value;
+                event.value_type = InputValueType::AxisFloat;
                 ice::pod::array::push_back(events_out, event);
             }
             else if (reset == false)
@@ -171,6 +172,7 @@ namespace ice::input
                 reset = true;
                 event.identifier = input_identifier(DeviceType::Controller, input);
                 event.value.axis.value_f32 = 0.0f;
+                event.value_type = InputValueType::AxisFloat;
                 ice::pod::array::push_back(events_out, event);
             }
         };
