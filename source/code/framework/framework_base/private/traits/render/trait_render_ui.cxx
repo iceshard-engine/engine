@@ -78,6 +78,11 @@ namespace ice
 
         for (auto const& entry : _render_data)
         {
+            if (entry.value->is_ready == false)
+            {
+                return;
+            }
+
             ice::RenderUIData const* const data = entry.value;
 
             api.bind_resource_set(cmds, _pipeline_layout, data->resourceset_uniform, 0);
@@ -293,6 +298,7 @@ namespace ice
                 };
 
                 render_device.update_resourceset(resourceset_updates);
+                data->is_ready = true;
             }
 
 
@@ -360,6 +366,7 @@ namespace ice
                     data->buffer_vertices = ice::render::Buffer::Invalid;
                     data->buffer_colors = ice::render::Buffer::Invalid;
                     data->resourceset_uniform = ice::render::ResourceSet::Invalid;
+                    data->is_ready = false;
 
                     portal.execute(
                         create_render_data(portal.allocator(), runner, *render_request, *data)
@@ -376,20 +383,26 @@ namespace ice
 
         for (auto const& entry : _render_data)
         {
-            ice::RenderUIData const* const data = entry.value;
-            ice::ui::UIData const* const uidata = data->uidata;
-            ice::u64 id = data->id;
+            if (entry.value->is_ready == false)
+            {
+                continue;
+            }
+
+            ice::ui::UIData const* const uidata = entry.value->uidata;
+            ice::u64 id = entry.value->id;
 
             ice::u32 idx = 0;
             for (ice::ui::ElementInfo const& element : uidata->elements)
             {
+                ice::ui::Element const& element_layout = entry.value->element_layouts[idx];
+
                 if (element.type == ui::ElementType::Button)
                 {
-                    ice::ui::ButtonInfo const& button_info = uidata->data_buttons[idx];
+                    ice::ui::ButtonInfo const& button_info = uidata->data_buttons[element.type_data_i];
 
-                    ice::DrawTextCommand* draw_text = frame.create_named_object<ice::DrawTextCommand>(ice::StringID{ ice::StringID_Hash{ id + idx } });
+                    ice::DrawTextCommand* draw_text = frame.create_named_object<ice::DrawTextCommand>(ice::StringID{ ice::StringID_Hash{ id + element.type_data_i } });
                     draw_text->font = u8"calibri";
-                    draw_text->font_size = 14;
+                    draw_text->font_size = uidata->fonts[0].size;
                     draw_text->text = ice::Utf8String{
                         reinterpret_cast<ice::c8utf const*>(
                             ice::memory::ptr_add(uidata->additional_data, button_info.text_offset)
@@ -397,21 +410,24 @@ namespace ice
                         button_info.text_size
                     };
 
-                    ice::ui::Position page_pos = uidata->positions[0];
-                    ice::ui::Position pos = uidata->positions[element.pos_i];
-                    ice::ui::Size size = uidata->sizes[element.size_i];
+                    //ice::ui::Position page_pos = uidata->positions[0];
+                    ice::ui::Position pos = ice::ui::rect_position(element_layout.contentbox); // uidata->positions[element.pos_i];
+                    //pos.x += entry.value->uniform.position.x;
+                    //pos.y += entry.value->uniform.position.y;
+
+                    ice::ui::Size size = ice::ui::rect_size(element_layout.contentbox); // uidata->sizes[element.size_i];
                     draw_text->position = ice::vec2u{
-                        (ice::u32)(pos.x + page_pos.x),
-                        (ice::u32)(pos.y + page_pos.y + size.height)
+                        (ice::u32)(pos.x),
+                        (ice::u32)(pos.y + size.height)
                     };
 
                     ice::shards::push_back(
                         frame.shards(),
                         ice::Shard_DrawTextCommand | (ice::DrawTextCommand const*)draw_text
                     );
-
-                    idx += 1;
                 }
+
+                idx += 1;
             }
         }
     }
@@ -426,10 +442,13 @@ namespace ice
         ice::usize size_vertice_data = 0;
         ice::usize size_vertice_color = 0;
 
+        constexpr ice::u32 debug_bounding_box = 0;
+        constexpr ice::u32 debug_content_box = 0;
+
         for (ice::ui::ElementInfo const& element : ui_request.data->elements)
         {
-            size_vertice_data += sizeof(ice::vec2f) * 4 * (element.type == ui::ElementType::Button);
-            size_vertice_color += sizeof(ice::vec4f) * 4 * (element.type == ui::ElementType::Button);
+            size_vertice_data += sizeof(ice::vec2f) * (debug_bounding_box + 4 + debug_content_box) * (element.type == ui::ElementType::Button);
+            size_vertice_color += sizeof(ice::vec4f) * (debug_bounding_box + 4 + debug_content_box) * (element.type == ui::ElementType::Button);
         }
 
         ice::vec2f* vertice_data = reinterpret_cast<ice::vec2f*>(alloc.allocate(size_vertice_data));
@@ -437,9 +456,11 @@ namespace ice
 
         co_await runner.thread_pool();
 
-        render_data.uniform.position = ui_request.position;
+        render_data.element_layouts = ui_request.data_layouts;
+        render_data.uniform.position = {}; // ui_request.position;
         render_data.uniform.scale = ice::vec2f{ 1.f };
 
+        ice::u32 idx = 0;
         ice::u32 vertice_offset = 0;
         for (ice::ui::ElementInfo const& element : ui_request.data->elements)
         {
@@ -448,26 +469,82 @@ namespace ice
 
             if (element.type == ui::ElementType::Button)
             {
-                colors[0] = colors[1] = colors[2] = colors[3] = ice::vec4f{ 0.2f, 0.6f, 0.8f, 0.7f };
+                if constexpr (debug_bounding_box == 4)
+                {
+                    colors[0 + 0] = colors[1 + 0] = colors[2 + 0] = colors[3 + 0] = ice::vec4f{ 0.8f, 0.8f, 0.8f, 0.2f };
+                }
 
-                ice::ui::Position const& pos = ui_request.data->positions[element.pos_i];
-                ice::ui::Size const& size = ui_request.data->sizes[element.size_i];
+                colors[0 + debug_bounding_box] =
+                    colors[1 + debug_bounding_box] =
+                    colors[2 + debug_bounding_box] =
+                    colors[3 + debug_bounding_box] =
+                    ice::vec4f{ 0.2f, 0.6f, 0.8f, 0.7f };
+
+                if constexpr (debug_content_box == 4)
+                {
+                    colors[0 + debug_bounding_box + debug_content_box] =
+                        colors[1 + debug_bounding_box + debug_content_box] =
+                        colors[2 + debug_bounding_box + debug_content_box] =
+                        colors[3 + debug_bounding_box + debug_content_box] =
+                        ice::vec4f{ 0.9f, 0.2f, 0.2f, 0.3f };
+                }
+
+                ice::ui::Position const bpos = ice::ui::rect_position(ui_request.data_layouts[idx].bbox);
+                ice::ui::Size const bsize = ice::ui::rect_size(ui_request.data_layouts[idx].bbox);
+
+                ice::ui::Position const pos = ice::ui::rect_position(ui_request.data_layouts[idx].hitbox);
+                ice::ui::Size const size = ice::ui::rect_size(ui_request.data_layouts[idx].hitbox);
+
+                ice::ui::Position const cpos = ice::ui::rect_position(ui_request.data_layouts[idx].contentbox);
+                ice::ui::Size const csize = ice::ui::rect_size(ui_request.data_layouts[idx].contentbox);
+
 
                 // [0   2]
                 // [1   3]
-                vertices[0].x = pos.x;
-                vertices[0].y = pos.y;
-                vertices[1].x = pos.x;
-                vertices[1].y = pos.y + size.height;
-                vertices[2].x = pos.x + size.width;
-                vertices[2].y = pos.y;
-                vertices[3].x = pos.x + size.width;
-                vertices[3].y = pos.y + size.height;
 
-                //
+                if constexpr (debug_bounding_box == 4)
+                {
+                    vertices[0 + 0].x = bpos.x;
+                    vertices[0 + 0].y = bpos.y;
+                    vertices[1 + 0].x = bpos.x;
+                    vertices[1 + 0].y = bpos.y + bsize.height;
+                    vertices[2 + 0].x = bpos.x + bsize.width;
+                    vertices[2 + 0].y = bpos.y;
+                    vertices[3 + 0].x = bpos.x + bsize.width;
+                    vertices[3 + 0].y = bpos.y + bsize.height;
+                    vertice_offset += 4;
+                }
+
+                // [0   2]
+                // [1   3]
+                vertices[0 + debug_bounding_box].x = pos.x;
+                vertices[0 + debug_bounding_box].y = pos.y;
+                vertices[1 + debug_bounding_box].x = pos.x;
+                vertices[1 + debug_bounding_box].y = pos.y + size.height;
+                vertices[2 + debug_bounding_box].x = pos.x + size.width;
+                vertices[2 + debug_bounding_box].y = pos.y;
+                vertices[3 + debug_bounding_box].x = pos.x + size.width;
+                vertices[3 + debug_bounding_box].y = pos.y + size.height;
                 vertice_offset += 4;
+
+                // [0   2]
+                // [1   3]
+
+                if constexpr (debug_content_box == 4)
+                {
+                    vertices[0 + debug_bounding_box + debug_content_box].x = cpos.x;
+                    vertices[0 + debug_bounding_box + debug_content_box].y = cpos.y;
+                    vertices[1 + debug_bounding_box + debug_content_box].x = cpos.x;
+                    vertices[1 + debug_bounding_box + debug_content_box].y = cpos.y + csize.height;
+                    vertices[2 + debug_bounding_box + debug_content_box].x = cpos.x + csize.width;
+                    vertices[2 + debug_bounding_box + debug_content_box].y = cpos.y;
+                    vertices[3 + debug_bounding_box + debug_content_box].x = cpos.x + csize.width;
+                    vertices[3 + debug_bounding_box + debug_content_box].y = cpos.y + csize.height;
+                    vertice_offset += 4;
+                }
             }
 
+            idx += 1;
         }
 
         co_await runner.schedule_next_frame();

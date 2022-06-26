@@ -70,6 +70,7 @@ namespace ice
         {
             ice::Utf8String name;
             ice::ui::UIData const* data;
+            ice::Span<ice::ui::Element> elements;
 
             ice::AssetHandle* asset_handle;
         };
@@ -87,6 +88,9 @@ namespace ice
         ice::pod::Hash<Page> _pages;
 
         ice::Utf8String _visible_page;
+
+        ice::vec2f _size_fb;
+        ice::vec2f _pos_mouse;
     };
 
     void register_trait_gameui(

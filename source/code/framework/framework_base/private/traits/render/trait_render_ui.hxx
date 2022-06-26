@@ -16,6 +16,7 @@ namespace ice
         ice::u64 id;
         ice::vec2f position;
         ice::ui::UIData const* data;
+        ice::ui::Element const* data_layouts;
     };
 
     struct RenderUIData
@@ -40,6 +41,10 @@ namespace ice
         ice::Span<ice::vec2f> vertices;
         ice::Span<ice::vec4f> colors;
         ice::Span<ice::vec2f> uvs;
+
+        bool is_ready;
+
+        ice::ui::Element const* element_layouts;
     };
 
     struct RenderUICommand
@@ -123,4 +128,4 @@ namespace ice
 } // namespace ice
 
 template<>
-static constexpr ice::PayloadID ice::detail::Constant_ShardPayloadID<ice::RenderUIRequest const*> = ice::payload_id("ice::RenderUIRequest const*");
+constexpr ice::PayloadID ice::detail::Constant_ShardPayloadID<ice::RenderUIRequest const*> = ice::payload_id("ice::RenderUIRequest const*");
