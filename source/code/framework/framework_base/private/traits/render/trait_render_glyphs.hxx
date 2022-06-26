@@ -1,7 +1,7 @@
 #pragma once
 #include <ice/gfx/gfx_trait.hxx>
 #include <ice/gfx/gfx_stage.hxx>
-#include <ice/gfx/gfx_font.hxx>
+#include <ice/font.hxx>
 
 namespace ice
 {
@@ -60,7 +60,7 @@ namespace ice
 
     private:
         void build_glyph_vertices(
-            ice::gfx::GfxFont const* font,
+            ice::Font const* font,
             ice::DrawTextCommand const& draw_info,
             ice::vec4f* posuv_vertices,
             ice::u32& posuv_offset
@@ -72,7 +72,7 @@ namespace ice
         ) noexcept -> ice::Task<>;
 
         auto load_font_atlas(
-            ice::gfx::GfxFontAtlas const& atlas,
+            ice::FontAtlas const& atlas,
             ice::Data image_data,
             ice::EngineRunner& runner,
             ice::render::Image& out_image,
@@ -87,7 +87,7 @@ namespace ice
             ice::AssetHandle* asset;
             ice::render::Image image;
             ice::render::ResourceSet resource_set;
-            ice::gfx::GfxFont const* font;
+            ice::Font const* font;
         };
 
         ice::pod::Hash<FontEntry> _fonts;

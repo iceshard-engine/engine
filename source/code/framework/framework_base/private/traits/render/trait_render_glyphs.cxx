@@ -2,6 +2,7 @@
 #include <ice/asset_storage.hxx>
 #include <ice/task_thread_pool.hxx>
 #include <ice/task_sync_wait.hxx>
+#include <ice/font_utils.hxx>
 
 #include <ice/shard.hxx>
 #include <ice/shard_container.hxx>
@@ -23,7 +24,6 @@
 #include <ice/render/render_pass.hxx>
 
 #include <ice/gfx/gfx_frame.hxx>
-#include <ice/gfx/gfx_font.hxx>
 #include <ice/gfx/gfx_device.hxx>
 #include <ice/gfx/gfx_resource_tracker.hxx>
 
@@ -410,61 +410,8 @@ namespace ice
         }
     }
 
-    constexpr auto utf8_to_utf32(
-        ice::c8utf const* it,
-        ice::u32& count
-    ) noexcept -> ice::u32
-    {
-        constexpr ice::u32 utf8_1byte_mask = 0b1000'0000;
-        constexpr ice::u32 utf8_2byte_mask = 0b1110'0000;
-        constexpr ice::u32 utf8_3byte_mask = 0b1111'0000;
-        constexpr ice::u32 utf8_4byte_mask = 0b1111'1000;
-        constexpr ice::u32 utf8_vbyte_mask = 0b0011'1111;
-        constexpr ice::u32 utf8_1byte_count = 0;
-        constexpr ice::u32 utf8_2byte_count = 0b1100'0000;
-        constexpr ice::u32 utf8_3byte_count = 0b1110'0000;
-        constexpr ice::u32 utf8_4byte_count = 0b1111'0000;
-
-        if ((*it & utf8_1byte_mask) == utf8_1byte_count)
-        {
-            count = 1;
-            return it[0];
-        }
-        if ((*it & utf8_2byte_mask) == utf8_2byte_count)
-        {
-            count = 2;
-            ice::u32 codepoint = (it[0] & ~utf8_2byte_mask);
-            codepoint <<= 6;
-            codepoint |= (it[1] & utf8_vbyte_mask);
-            return codepoint;
-        }
-        if ((*it & utf8_3byte_mask) == utf8_3byte_count)
-        {
-            count = 3;
-            ice::u32 codepoint = (it[0] & ~utf8_3byte_mask);
-            codepoint <<= 6;
-            codepoint |= (it[1] & utf8_vbyte_mask);
-            codepoint <<= 6;
-            codepoint |= (it[2] & utf8_vbyte_mask);
-            return codepoint;
-        }
-        if ((*it & utf8_4byte_mask) == utf8_4byte_count)
-        {
-            count = 4;
-            ice::u32 codepoint = (it[0] & ~utf8_4byte_mask);
-            codepoint <<= 6;
-            codepoint |= (it[1] & utf8_vbyte_mask);
-            codepoint <<= 6;
-            codepoint |= (it[2] & utf8_vbyte_mask);
-            codepoint <<= 6;
-            codepoint |= (it[3] & utf8_vbyte_mask);
-            return codepoint;
-        }
-        return 0;
-    }
-
     void IceWorldTrait_RenderGlyphs::build_glyph_vertices(
-        ice::gfx::GfxFont const* font,
+        ice::Font const* font,
         ice::DrawTextCommand const& draw_info,
         ice::vec4f* posuv_vertices,
         ice::u32& posuv_offset
@@ -481,11 +428,11 @@ namespace ice
         while (it < end)
         {
             ice::u32 advance = 0;
-            ice::u32 codepoint = utf8_to_utf32(it, advance);
+            ice::u32 const codepoint = ice::text_get_codepoint(it, advance);
 
             it += advance;
 
-            for (ice::gfx::GfxGlyph const& glyph : font->glyphs)
+            for (ice::Glyph const& glyph : font->glyphs)
             {
                 if (glyph.codepoint == codepoint)
                 {
@@ -562,14 +509,14 @@ namespace ice
 
         co_await runner.thread_pool();
 
-        ice::Asset const asset = co_await runner.asset_storage().request(ice::gfx::AssetType_Font, font_name, ice::AssetState::Loaded);
+        ice::Asset const asset = co_await runner.asset_storage().request(ice::AssetType_Font, font_name, ice::AssetState::Loaded);
 
         // Early return if we failed.
         if (ice::asset_check(asset, AssetState::Loaded) == false)
         {
             co_return;
         }
-        ice::gfx::GfxFont const* font = reinterpret_cast<ice::gfx::GfxFont const*>(asset.data.location);
+        ice::Font const* font = reinterpret_cast<ice::Font const*>(asset.data.location);
 
         co_await runner.schedule_current_frame();
 
@@ -599,7 +546,7 @@ namespace ice
     }
 
     auto IceWorldTrait_RenderGlyphs::load_font_atlas(
-        ice::gfx::GfxFontAtlas const& atlas,
+        ice::FontAtlas const& atlas,
         ice::Data image_data,
         ice::EngineRunner& runner,
         ice::render::Image& out_image,
