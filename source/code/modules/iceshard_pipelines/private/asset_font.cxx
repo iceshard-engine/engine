@@ -5,7 +5,7 @@
 #include <ice/resource_meta.hxx>
 #include <ice/resource_tracker.hxx>
 #include <ice/task_sync_wait.hxx>
-#include <ice/gfx/gfx_font.hxx>
+#include <ice/font.hxx>
 
 #include <msdf-atlas-gen/msdf-atlas-gen.h>
 
@@ -19,39 +19,39 @@ namespace ice
         msdfgen::BitmapConstRef<msdfgen::byte, 4> const& bitmap
     ) noexcept -> ice::Memory
     {
-        using ice::gfx::GfxFont;
-        using ice::gfx::GfxFontAtlas;
-        using ice::gfx::GfxGlyphRange;
-        using ice::gfx::GfxGlyph;
+        using ice::Font;
+        using ice::FontAtlas;
+        using ice::GlyphRange;
+        using ice::Glyph;
 
-        static_assert(alignof(GfxFont) == 8);
-        static_assert(alignof(GfxFontAtlas) == 4);
-        static_assert(alignof(GfxGlyphRange) == 4);
+        static_assert(alignof(Font) == 8);
+        static_assert(alignof(FontAtlas) == 4);
+        static_assert(alignof(GlyphRange) == 4);
 
-        ice::u32 size = sizeof(GfxFont) + sizeof(GfxFontAtlas) + sizeof(GfxGlyphRange) + 8 /* for alignment */;
-        size += sizeof(GfxGlyph) * glyphs.size();
+        ice::u32 size = sizeof(Font) + sizeof(FontAtlas) + sizeof(GlyphRange) + 8 /* for alignment */;
+        size += sizeof(Glyph) * glyphs.size();
         size += bitmap.width * bitmap.height * 4;
 
         void* data = alloc.allocate(size, 8);
 
-        GfxFont* gfx_font = reinterpret_cast<GfxFont*>(data);
-        GfxFontAtlas* gfx_atlas = reinterpret_cast<GfxFontAtlas*>(
-            ice::memory::ptr_align_forward(gfx_font + 1, alignof(GfxFontAtlas))
+        Font* gfx_font = reinterpret_cast<Font*>(data);
+        FontAtlas* gfx_atlas = reinterpret_cast<FontAtlas*>(
+            ice::memory::ptr_align_forward(gfx_font + 1, alignof(FontAtlas))
         ); // TODO: Multi-atlas support
-        GfxGlyphRange* gfx_glyph_range = reinterpret_cast<GfxGlyphRange*>(
-            ice::memory::ptr_align_forward(gfx_atlas + 1, alignof(GfxGlyphRange))
+        GlyphRange* gfx_glyph_range = reinterpret_cast<GlyphRange*>(
+            ice::memory::ptr_align_forward(gfx_atlas + 1, alignof(GlyphRange))
         ); // TODO: Multi-atlas support
-        GfxGlyph* gfx_glyphs = reinterpret_cast<GfxGlyph*>(gfx_glyph_range + 1); // TODO: Multi range support
-        void* atlas_bitmap = gfx_glyphs + glyphs.size();
+        Glyph* font_glyphs = reinterpret_cast<Glyph*>(gfx_glyph_range + 1); // TODO: Multi range support
+        void* atlas_bitmap = font_glyphs + glyphs.size();
 
         void const* end_ptr = ice::memory::ptr_add(atlas_bitmap, bitmap.width * bitmap.height * 4);
         ICE_ASSERT(end_ptr <= ice::memory::ptr_add(data, size), "Insufficient memory!");
 
         gfx_font->atlases = { gfx_atlas, 1 };
         gfx_font->ranges = { gfx_glyph_range, 1 };
-        gfx_font->glyphs = { gfx_glyphs, glyphs.size() };
+        gfx_font->glyphs = { font_glyphs, glyphs.size() };
 
-        gfx_glyph_range->type = ice::gfx::GfxGlyphRangeType::Explicit;
+        gfx_glyph_range->type = ice::GlyphRangeType::Explicit;
         gfx_glyph_range->glyph_count = glyphs.size();
         gfx_glyph_range->glyph_index = 0;
         gfx_glyph_range->glyph_atlas = 0;
@@ -61,7 +61,7 @@ namespace ice
         gfx_atlas->image_data_size = bitmap.width * bitmap.height * 4;
 
         ice::u32* offset = reinterpret_cast<ice::u32*>(std::addressof(gfx_font->glyphs));
-        offset[0] = ice::memory::ptr_distance(data, gfx_glyphs);
+        offset[0] = ice::memory::ptr_distance(data, font_glyphs);
         offset[1] = static_cast<ice::u32>(glyphs.size());
 
         offset = reinterpret_cast<ice::u32*>(std::addressof(gfx_font->ranges));
@@ -84,7 +84,7 @@ namespace ice
             ice::vec<4,ice::f64> l;
             glyph_geometry.getQuadPlaneBounds(l.x, l.y, l.z, l.w);
 
-            GfxGlyph& gfx_glyph = gfx_glyphs[glyph_idx];
+            Glyph& gfx_glyph = font_glyphs[glyph_idx];
             gfx_glyph.atlas_x = static_cast<ice::f32>(x) / atlas_width;
             gfx_glyph.atlas_y = static_cast<ice::f32>(y) / atlas_height;
             gfx_glyph.atlas_w = static_cast<ice::f32>(w) / atlas_width;
@@ -103,14 +103,14 @@ namespace ice
         return { .location = data, .size = size, .alignment = 8 };
     }
 
-    bool asset_font_oven(
+    auto asset_font_oven(
         void*,
         ice::Allocator& alloc,
         ice::ResourceTracker const& tracker,
         ice::Resource_v2 const& resource,
         ice::Data data,
         ice::Memory& memory
-    ) noexcept
+    ) noexcept -> ice::Task<bool>
     {
         bool result = true;
 
@@ -189,35 +189,33 @@ namespace ice
             }
             msdfgen::deinitializeFreetype(freetype);
         }
-        return result;
+        co_return result;
     }
 
-    bool asset_font_loader(
+    auto asset_font_loader(
         void*,
         ice::Allocator& alloc,
         ice::AssetStorage& storage,
         ice::Metadata const& meta,
         ice::Data data,
         ice::Memory& out_data
-    ) noexcept
+    ) noexcept -> ice::Task<bool>
     {
-        using ice::render::ImageInfo;
-
-        out_data.size = sizeof(ice::gfx::GfxFont);
-        out_data.alignment = alignof(ice::gfx::GfxFont);
+        out_data.size = sizeof(ice::Font);
+        out_data.alignment = alignof(ice::Font);
         out_data.location = alloc.allocate(out_data.size, out_data.alignment);
 
-        ice::gfx::GfxFont* font = reinterpret_cast<ice::gfx::GfxFont*>(out_data.location);
-        ice::gfx::GfxFont const* raw_font = reinterpret_cast<ice::gfx::GfxFont const*>(data.location);
+        ice::Font* font = reinterpret_cast<ice::Font*>(out_data.location);
+        ice::Font const* raw_font = reinterpret_cast<ice::Font const*>(data.location);
         font->data_ptr = raw_font;
 
         ice::u32 const* offsets = reinterpret_cast<ice::u32 const*>(ice::addressof(raw_font->atlases));
-        font->atlases = { reinterpret_cast<ice::gfx::GfxFontAtlas const*>(ice::memory::ptr_add(raw_font, offsets[0])), offsets[1] };
+        font->atlases = { reinterpret_cast<ice::FontAtlas const*>(ice::memory::ptr_add(raw_font, offsets[0])), offsets[1] };
         offsets = reinterpret_cast<ice::u32 const*>(ice::addressof(raw_font->ranges));
-        font->ranges = { reinterpret_cast<ice::gfx::GfxGlyphRange const*>(ice::memory::ptr_add(raw_font, offsets[0])), offsets[1] };
+        font->ranges = { reinterpret_cast<ice::GlyphRange const*>(ice::memory::ptr_add(raw_font, offsets[0])), offsets[1] };
         offsets = reinterpret_cast<ice::u32 const*>(ice::addressof(raw_font->glyphs));
-        font->glyphs = { reinterpret_cast<ice::gfx::GfxGlyph const*>(ice::memory::ptr_add(raw_font, offsets[0])), offsets[1] };
-        return true;
+        font->glyphs = { reinterpret_cast<ice::Glyph const*>(ice::memory::ptr_add(raw_font, offsets[0])), offsets[1] };
+        co_return true;
     }
 
     void asset_type_font_definition(ice::AssetTypeArchive& asset_type_archive) noexcept
@@ -230,7 +228,7 @@ namespace ice
             .fn_asset_loader = asset_font_loader
         };
 
-        asset_type_archive.register_type(ice::gfx::AssetType_Font, type_definition);
+        asset_type_archive.register_type(ice::AssetType_Font, type_definition);
     }
 
 } // namespace ice
