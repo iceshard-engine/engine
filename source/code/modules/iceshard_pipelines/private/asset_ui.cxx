@@ -3,6 +3,8 @@
 #include <ice/ui_element_info.hxx>
 #include <ice/ui_button.hxx>
 
+#include <ice/task_sync_wait.hxx>
+#include <ice/asset_storage.hxx>
 #include <ice/assert.hxx>
 #include <ice/log.hxx>
 
@@ -109,7 +111,7 @@ namespace ice
                     paddings + element_count,
                     alignof(ButtonInfo)
                 )
-                );
+            );
 
             void* additional_data = button_info + type_count(ElementType::Button);
 
@@ -181,14 +183,14 @@ namespace ice
         return result;
     }
 
-    bool bake_isui_asset(
+    auto bake_isui_asset(
         void*,
         ice::Allocator& alloc,
         ice::ResourceTracker const&,
         ice::Resource_v2 const& resource,
         ice::Data data,
         ice::Memory& out_memory
-    ) noexcept
+    ) noexcept -> ice::Task<bool>
     {
         // RapidXML requires writable data for in-situ parsing.
         void* data_copy = alloc.allocate(data.size, data.alignment);
@@ -225,20 +227,41 @@ namespace ice
         }
 
         alloc.deallocate(data_copy);
-        return true;
+        co_return true;
     }
 
-    bool load_isui_asset(
+    auto load_isui_asset(
         void*,
         ice::Allocator& alloc,
-        ice::AssetStorage&,
+        ice::AssetStorage& storage,
         ice::Metadata const& metadata,
         ice::Data data,
         ice::Memory& out_memory
-    ) noexcept
+    ) noexcept -> ice::Task<bool>
     {
-        ice::ui::UIData const* uidata = reinterpret_cast<ice::ui::UIData const*>(data.location);
-        ice::ui::UIData* result_data = alloc.make<ice::ui::UIData>(*uidata);
+        ice::Asset default_font_asset = co_await storage.request(ice::AssetType_Font, u8"calibri", ice::AssetState::Loaded);
+        if (ice::asset_check(default_font_asset, AssetState::Loaded) == false)
+        {
+            ICE_LOG(
+                ice::LogSeverity::Error, ice::LogTag::Engine,
+                "Couldn't load UI asset due to missing fonts!"
+            );
+            co_return false;
+        }
+
+        ice::Font const* font = reinterpret_cast<ice::Font const*>(default_font_asset.data.location);
+        ice::ui::UIData const* ui_data = reinterpret_cast<ice::ui::UIData const*>(data.location);
+
+        void* load_result_data = alloc.allocate(sizeof(ice::ui::UIData) + sizeof(ice::ui::UIFont) * 1 + alignof(ice::ui::UIFont));
+        ice::ui::UIData* const ui_result = reinterpret_cast<ice::ui::UIData*>(load_result_data);
+        ice::ui::UIFont* const ui_result_fonts = reinterpret_cast<ice::ui::UIFont*>(
+            ice::memory::ptr_align_forward(ui_result + 1, alignof(ice::ui::UIFont))
+        );
+
+        ice::memcpy(ui_result, ui_data, sizeof(ice::ui::UIData));
+
+        ui_result_fonts[0].font = font;
+        ui_result_fonts[0].size = 16;
 
         static auto restore_span_value = [base_ptr = data.location](auto& span_value) noexcept
         {
@@ -256,19 +279,19 @@ namespace ice
             };
         };
 
-        restore_span_value(result_data->elements);
-        restore_span_value(result_data->sizes);
-        restore_span_value(result_data->positions);
-        restore_span_value(result_data->margins);
-        restore_span_value(result_data->paddings);
-        restore_span_value(result_data->data_buttons);
-        result_data->additional_data = ice::memory::ptr_add(uidata, reinterpret_cast<ice::uptr>(uidata->additional_data));
+        ui_result->fonts = ice::Span<ice::ui::UIFont const>{ ui_result_fonts, 1 };
+        restore_span_value(ui_result->elements);
+        restore_span_value(ui_result->sizes);
+        restore_span_value(ui_result->positions);
+        restore_span_value(ui_result->margins);
+        restore_span_value(ui_result->paddings);
+        restore_span_value(ui_result->data_buttons);
+        ui_result->additional_data = ice::memory::ptr_add(ui_data, reinterpret_cast<ice::uptr>(ui_data->additional_data));
 
-        out_memory.location = result_data;
+        out_memory.location = load_result_data;
         out_memory.size = sizeof(ice::ui::UIData);
         out_memory.alignment = alignof(ice::ui::UIData);
-
-        return true;
+        co_return true;
     }
 
     void asset_type_ui_definition(ice::AssetTypeArchive& type_archive) noexcept
@@ -299,34 +322,31 @@ namespace ice
         auto const* const separator = std::find_if(it, end, [](char c) noexcept { return c == ','; });
         if (separator)
         {
-            [[maybe_unused]]
             auto const res_w = std::from_chars(it, separator, size.width);
-
-            [[maybe_unused]]
             auto const res_h = std::from_chars(separator + 1, end, size.height);
 
-            //if (res_w; res_w.ec != std::errc{})
-            //{
-            //    if (strncmp(res_w.ptr, "auto", 4) == 0)
-            //    {
-            //        out_flags = out_flags | ElementFlags::Size_AutoWidth;
-            //    }
-            //    else if (strncmp(res_w.ptr, "*", 1) == 0)
-            //    {
-            //        out_flags = out_flags | ElementFlags::Size_StretchWidth;
-            //    }
-            //}
-            //if (res_h; res_h.ec != std::errc{})
-            //{
-            //    if (strncmp(res_h.ptr, "auto", 4) == 0)
-            //    {
-            //        out_flags = out_flags | ElementFlags::Size_AutoHeight;
-            //    }
-            //    else if (strncmp(res_h.ptr, "*", 1) == 0)
-            //    {
-            //        out_flags = out_flags | ElementFlags::Size_StretchHeight;
-            //    }
-            //}
+            if (res_w; res_w.ec != std::errc{})
+            {
+                if (strncmp(res_w.ptr, "auto", 4) == 0)
+                {
+                    out_flags = out_flags | ElementFlags::Size_AutoWidth;
+                }
+                else if (strncmp(res_w.ptr, "*", 1) == 0)
+                {
+                    out_flags = out_flags | ElementFlags::Size_StretchWidth;
+                }
+            }
+            if (res_h; res_h.ec != std::errc{})
+            {
+                if (strncmp(res_h.ptr, "auto", 4) == 0)
+                {
+                    out_flags = out_flags | ElementFlags::Size_AutoHeight;
+                }
+                else if (strncmp(res_h.ptr, "*", 1) == 0)
+                {
+                    out_flags = out_flags | ElementFlags::Size_StretchHeight;
+                }
+            }
         }
     }
 
@@ -337,12 +357,39 @@ namespace ice
         ice::ui::Position& pos
     ) noexcept
     {
+        using ice::ui::ElementFlags;
         auto const* const separator = std::find_if(it, end, [](char c) noexcept { return c == ','; });
 
         if (separator)
         {
-            std::from_chars(it, separator, pos.x);
-            std::from_chars(separator + 1, end, pos.y);
+            auto const res_x = std::from_chars(it, separator, pos.x);
+            auto const res_y = std::from_chars(separator + 1, end, pos.y);
+
+            if (res_x; res_x.ec != std::errc{})
+            {
+                if (strncmp(res_x.ptr, "auto", 4) == 0)
+                {
+                    out_flags = out_flags | ElementFlags::Position_AutoX;
+                }
+            }
+            else if (pos.x < 0)
+            {
+                out_flags = out_flags | ElementFlags::Position_AnchorRight;
+                pos.x *= -1.f;
+            }
+
+            if (res_y; res_y.ec != std::errc{})
+            {
+                if (strncmp(res_y.ptr, "auto", 4) == 0)
+                {
+                    out_flags = out_flags | ElementFlags::Position_AutoY;
+                }
+            }
+            else if (pos.y < 0)
+            {
+                out_flags = out_flags | ElementFlags::Position_AnchorBottom;
+                pos.y *= -1.f;
+            }
         }
     }
 
@@ -406,7 +453,15 @@ namespace ice
         info.type = ElementType::Page;
         info.type_data = nullptr;
 
-        if (strcmp(xml_element->local_name(), "button") == 0)
+        if (strcmp(xml_element->local_name(), "container") == 0)
+        {
+            rapidxml_ns::xml_attribute<char> const* const attrib = xml_element->first_attribute("type");
+            if (attrib != nullptr && strcmp(attrib->value(), "vertical") == 0)
+            {
+                info.type = ElementType::VListBox;
+            }
+        }
+        else if (strcmp(xml_element->local_name(), "button") == 0)
         {
             ice::RawButtonInfo* button_info = reinterpret_cast<ice::RawButtonInfo*>(alloc.allocate(sizeof(RawButtonInfo)));
 
@@ -464,6 +519,7 @@ namespace ice
     ) noexcept
     {
         using ice::ui::ElementFlags;
+        compile_element_type(alloc, element, info);
 
         if (auto const* attr_size = element->first_attribute("size"); attr_size != nullptr)
         {
@@ -474,10 +530,14 @@ namespace ice
                 info.size
             );
         }
-        //else
-        //{
-        //    info.size_flags = ElementFlags::Size_AutoWidth | ElementFlags::Size_AutoHeight;
-        //}
+        else if (info.type == ElementType::Page)
+        {
+            info.size_flags = ElementFlags::Size_StretchWidth | ElementFlags::Size_StretchHeight;
+        }
+        else if (info.type == ElementType::VListBox)
+        {
+            info.size_flags = ElementFlags::Size_AutoWidth | ElementFlags::Size_AutoHeight;
+        }
 
         if (auto const* attr_pos = element->first_attribute("position"); attr_pos != nullptr)
         {
@@ -532,8 +592,6 @@ namespace ice
                 info.padding
             );
         }
-
-        compile_element_type(alloc, element, info);
     }
 
     void compile_element(

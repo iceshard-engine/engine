@@ -63,12 +63,18 @@ namespace ice::ui
 
     constexpr auto operator+(ice::ui::Rect rect, ice::ui::RectOffset offset) noexcept -> ice::ui::Rect
     {
-        return { rect.left + offset.left, rect.top + offset.top, rect.right + offset.right, rect.bottom + offset.bottom };
+        return { rect.left - offset.left, rect.top - offset.top, rect.right + offset.right, rect.bottom + offset.bottom };
     }
 
     constexpr auto operator-(ice::ui::Rect rect, ice::ui::RectOffset offset) noexcept -> ice::ui::Rect
     {
-        return { rect.left - offset.left, rect.top - offset.top, rect.right - offset.right, rect.bottom - offset.bottom };
+        return { rect.left + offset.left, rect.top + offset.top, rect.right - offset.right, rect.bottom - offset.bottom };
     }
+
+    static constexpr Rect t{ 10, 10, 210, 40 };
+    static constexpr RectOffset o1{ 2, 2, 2, 2 };
+
+    static constexpr Rect r1 = t - o1;
+    static constexpr Rect r2 = t + o1;
 
 } // namespace ice::ui

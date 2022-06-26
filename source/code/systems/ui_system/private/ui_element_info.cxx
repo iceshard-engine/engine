@@ -22,7 +22,7 @@ namespace ice::ui
             ice::size(uidata.sizes)
         );
 
-        out_flags = static_cast<ice::ui::ElementFlags>(flag_values << 0);
+        out_flags = out_flags | static_cast<ice::ui::ElementFlags>(flag_values << 0);
         out_size = uidata.sizes[index];
     }
 
@@ -43,7 +43,7 @@ namespace ice::ui
             ice::size(uidata.positions)
         );
 
-        out_flags = static_cast<ice::ui::ElementFlags>(flag_values << 4);
+        out_flags = out_flags | static_cast<ice::ui::ElementFlags>(flag_values << 4);
         out_position = uidata.positions[index];
     }
 
@@ -64,7 +64,7 @@ namespace ice::ui
             ice::size(uidata.margins)
         );
 
-        out_flags = static_cast<ice::ui::ElementFlags>(flag_values << 8);
+        out_flags = out_flags | static_cast<ice::ui::ElementFlags>(flag_values << 8);
         out_rect_offset = uidata.margins[index];
     }
 
@@ -85,7 +85,7 @@ namespace ice::ui
             ice::size(uidata.paddings)
         );
 
-        out_flags = static_cast<ice::ui::ElementFlags>(flag_values << 8);
+        out_flags = out_flags | static_cast<ice::ui::ElementFlags>(flag_values << 8);
         out_rect_offset = uidata.paddings[index];
     }
 

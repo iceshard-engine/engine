@@ -12,10 +12,12 @@ namespace ice::ui
 
         ice::ui::Rect bbox;
         ice::ui::Rect hitbox;
+        ice::ui::Rect contentbox;
         ice::ui::DrawData draw_data;
+        ice::ui::ElementFlags flags;
 
-        bool center_vertical : 1;
-        bool center_horizontal : 1;
+        ice::ui::Element* child;
+        ice::ui::Element* sibling;
     };
 
     enum class UpdateStage : ice::u8
@@ -26,13 +28,19 @@ namespace ice::ui
         Position,
     };
 
+    enum class UpdateResult : ice::u8
+    {
+        Unresolved,
+        Resolved,
+    };
+
     auto element_update(
         ice::ui::UpdateStage stage,
         ice::ui::UIData const& data,
         ice::ui::Element const& parent,
         ice::ui::ElementInfo const& info,
         ice::ui::Element& out_element
-    ) noexcept;
+    ) noexcept -> ice::ui::UpdateResult;
 
     static constexpr ice::ui::UpdateStage Constant_UpdateStageOrder[]{
         UpdateStage::ExplicitSize,

@@ -7,7 +7,7 @@ namespace ice::ui
     enum class ElementType : ice::u8
     {
         Page,
-        ListBox,
+        VListBox,
         Button,
         Label,
         Custom0,
@@ -66,15 +66,17 @@ namespace ice::ui
         Size_StretchWidth = 0x0000'0002,
         Size_StretchHeight = 0x0000'0001,
 
-        Position_AnchorLeft = 0x0000'0080,
-        Position_AnchorRight = 0x0000'0040,
-        Position_AnchorTop = 0x0000'0020,
-        Position_AnchorBottom = 0x0000'0010,
+        Position_AutoX = 0x0000'00080,
+        Position_AutoY = 0x0000'00040,
+        Position_AnchorLeft = 0x0000'0800,
+        Position_AnchorRight = 0x0000'0400,
+        Position_AnchorTop = 0x0000'0200,
+        Position_AnchorBottom = 0x0000'0100,
 
-        Offset_AutoLeft = 0x0000'0800,
-        Offset_AutoTop = 0x0000'0400,
-        Offset_AutoRight = 0x0000'0200,
-        Offset_AutoBottom = 0x0000'0100,
+        Offset_AutoLeft = 0x0000'8000,
+        Offset_AutoTop = 0x0000'4000,
+        Offset_AutoRight = 0x0000'2000,
+        Offset_AutoBottom = 0x0000'1000,
     };
 
     constexpr auto operator|(
@@ -103,6 +105,14 @@ namespace ice::ui
     ) noexcept
     {
         return (searched_value & searched_flags) == searched_flags;
+    }
+
+    constexpr bool any(
+        ice::ui::ElementFlags searched_value,
+        ice::ui::ElementFlags searched_flags
+    ) noexcept
+    {
+        return (searched_value & searched_flags) != ice::ui::ElementFlags::None;
     }
 
 } // namespace ice::ui

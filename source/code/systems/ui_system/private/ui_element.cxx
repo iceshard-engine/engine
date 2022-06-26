@@ -1,5 +1,8 @@
 #include <ice/ui_element.hxx>
+#include <ice/ui_button.hxx>
 #include <ice/ui_data.hxx>
+#include <ice/font_utils.hxx>
+#include <ice/memory/pointer_arithmetic.hxx>
 #include <ice/assert.hxx>
 
 namespace ice::ui
@@ -36,33 +39,51 @@ namespace ice::ui
         return bbox;
     }
 
-    auto make_hitbox(
-        ice::ui::Rect bbox,
-        ice::ui::RectOffset margin
-    ) noexcept -> ice::ui::Rect
-    {
-        return move_box(bbox - margin, to_vec2({ margin.left, margin.top }));
-    }
+    //auto make_hitbox(
+    //    ice::ui::Rect bbox,
+    //    ice::ui::RectOffset margin
+    //) noexcept -> ice::ui::Rect
+    //{
+    //    return move_box(bbox - margin, to_vec2({ margin.left, margin.top }));
+    //}
+
+    //auto make_contentbox(
+    //    ice::ui::Rect hitbox,
+    //    ice::ui::RectOffset padding
+    //) noexcept -> ice::ui::Rect
+    //{
+    //    return move_box(hitbox - padding, to_vec2({ padding.left, padding.top }));
+    //}
 
     auto element_update_size_explicit(
         ice::ui::UIData const& data,
         ice::ui::Element const& parent,
         ice::ui::ElementInfo const& info,
         ice::ui::Element& out_element
-    ) noexcept
+    ) noexcept -> ice::ui::UpdateResult
     {
         Size size;
         Position position;
         RectOffset margin;
         RectOffset padding;
-        ElementFlags flags;
+        ElementFlags flags = ElementFlags::None;
 
         read_size(data, info, size, flags);
         read_margin(data, info, margin, flags);
         read_padding(data, info, padding, flags);
 
         out_element.bbox = make_bbox(size, margin, padding);
-        out_element.hitbox = make_hitbox(out_element.bbox, margin);
+        out_element.hitbox = out_element.bbox - margin;// make_hitbox(out_element.bbox, margin);
+        out_element.contentbox = out_element.hitbox - padding;
+        out_element.flags = flags;
+
+        return any(
+            flags,
+            ElementFlags::Size_AutoWidth
+            | ElementFlags::Size_AutoHeight
+            | ElementFlags::Size_StretchWidth
+            | ElementFlags::Size_StretchHeight
+        ) ? UpdateResult::Unresolved : UpdateResult::Resolved;
     }
 
     auto element_update_size_auto(
@@ -70,32 +91,72 @@ namespace ice::ui
         ice::ui::Element const& parent,
         ice::ui::ElementInfo const& info,
         ice::ui::Element& out_element
-    ) noexcept
+    ) noexcept -> ice::ui::UpdateResult
     {
         Size size;
         RectOffset margin;
         RectOffset padding;
-        ElementFlags flags;
+        ElementFlags flags = ElementFlags::None;
 
         read_size(data, info, size, flags);
         read_margin(data, info, margin, flags);
         read_padding(data, info, padding, flags);
 
-        if (contains(flags, ElementFlags::Size_AutoWidth))
+        ice::vec2f bounds{ 0.f };
+        if (info.type == ElementType::Button)
         {
-            // TOOD: Calculate width depending on element type
-            ICE_ASSERT(false, "");
-            size.width = 0;
+            ice::ui::ButtonInfo const& button_info = data.data_buttons[info.type_data_i];
+            ice::Utf8String const text{
+                reinterpret_cast<ice::c8utf const*>(ice::memory::ptr_add(data.additional_data, button_info.text_offset)),
+                button_info.text_size
+            };
+
+            ice::ui::UIFont const& font = data.fonts[0];
+            bounds = ice::font_text_bounds(*font.font, text);
+
+            if (any(flags, ElementFlags::Size_AutoWidth | ElementFlags::Size_StretchWidth))
+            {
+                size.width = bounds.x * font.size;
+            }
+            if (any(flags, ElementFlags::Size_AutoHeight | ElementFlags::Size_StretchHeight))
+            {
+                size.height = bounds.y * font.size;
+            }
         }
-        if (contains(flags, ElementFlags::Size_AutoHeight))
+        else if (info.type == ElementType::VListBox)
         {
-            // TOOD: Calculate height depending on element type
-            ICE_ASSERT(false, "");
-            size.height = 0;
+            Element* child = out_element.child;
+            while (child != nullptr)
+            {
+                Size const child_size = rect_size(child->bbox);
+                ElementFlags const child_flags = child->flags;
+
+                if (any(flags, ElementFlags::Size_AutoWidth | ElementFlags::Size_StretchWidth))
+                {
+                    size.width = ice::max(size.width, child_size.width);
+                }
+                if (any(flags, ElementFlags::Size_AutoHeight | ElementFlags::Size_StretchHeight))
+                {
+                    size.height += child_size.height;
+                }
+
+                child = child->sibling;
+            }
+        }
+        else
+        {
+            size = ice::ui::rect_size(out_element.contentbox);
         }
 
         out_element.bbox = make_bbox(size, margin, padding);
-        out_element.hitbox = make_hitbox(out_element.bbox, margin);
+        out_element.hitbox = out_element.bbox - margin;// make_hitbox(out_element.bbox, margin);
+        out_element.contentbox = out_element.hitbox - padding;
+
+        return any(
+            flags,
+            ElementFlags::Size_StretchWidth
+            | ElementFlags::Size_StretchHeight
+        ) ? UpdateResult::Unresolved : UpdateResult::Resolved;
     }
 
     auto element_update_size_stretch(
@@ -103,32 +164,40 @@ namespace ice::ui
         ice::ui::Element const& parent,
         ice::ui::ElementInfo const& info,
         ice::ui::Element& out_element
-    ) noexcept
+    ) noexcept -> ice::ui::UpdateResult
     {
         Size size;
         RectOffset margin;
         RectOffset padding;
-        ElementFlags flags;
+        ElementFlags flags = ElementFlags::None;
 
         read_size(data, info, size, flags);
+        if (any(flags, ElementFlags::Size_StretchWidth | ElementFlags::Size_StretchHeight) == false)
+        {
+            ICE_ASSERT(false, "Hmmm?!");
+            return UpdateResult::Resolved;
+        }
+
         read_margin(data, info, margin, flags);
         read_padding(data, info, padding, flags);
 
-        // We use the hitbox, as we cannot outgrow the 'margin' value of the parent element.
-        ice::ui::Size const parent_size = rect_size(parent.hitbox);
-        ice::ui::Size const available_size = rect_size(make_bbox(size, -margin, -padding));
+        size = ice::ui::rect_size(out_element.contentbox);
 
+        // We use the hitbox, as we cannot outgrow the 'margin' value of the parent element.
+        ice::ui::Size const parent_size = rect_size(parent.contentbox);
         if (contains(flags, ElementFlags::Size_StretchWidth))
         {
-            size.width = available_size.width;
+            size.width = parent_size.width - (padding.left + padding.right);
         }
         if (contains(flags, ElementFlags::Size_StretchHeight))
         {
-            size.height = available_size.height;
+            size.height = parent_size.height - (padding.top + padding.bottom);
         }
 
         out_element.bbox = make_bbox(size, margin, padding);
-        out_element.hitbox = make_hitbox(out_element.bbox, margin);
+        out_element.hitbox = out_element.bbox - margin;// make_hitbox(out_element.bbox, margin);
+        out_element.contentbox = out_element.hitbox - padding;
+        return UpdateResult::Resolved;
     }
 
     auto element_update_position(
@@ -136,22 +205,75 @@ namespace ice::ui
         ice::ui::Element const& parent,
         ice::ui::ElementInfo const& info,
         ice::ui::Element& out_element
-    ) noexcept
+    ) noexcept -> ice::ui::UpdateResult
     {
         Position position;
-        RectOffset margin;
-        RectOffset padding;
-        ElementFlags flags;
+        ElementFlags current_flags = out_element.flags;
+        read_position(data, info, position, current_flags);
 
-        read_position(data, info, position, flags);
 
         // We use the hitbox, as we should start at the 'padded' location of the parent element.
-        ice::ui::Position const parent_pos = rect_position(parent.hitbox);
+        Size const parent_size = rect_size(parent.hitbox);
+        Size const size = ice::ui::rect_size(out_element.contentbox);
+        Position offset = rect_position(parent.hitbox);
 
-        // TODO: Take into consideration anhor flags
+        // If we are a child of a parent VListBox we are already updated
+        if (parent.definition->type == ElementType::VListBox)
+        {
+            return UpdateResult::Resolved;
+        }
 
-        out_element.bbox = move_box(out_element.bbox, to_vec2(parent_pos));
-        out_element.hitbox = move_box(out_element.hitbox, to_vec2(parent_pos));
+        if (contains(current_flags, ElementFlags::Position_AnchorRight))
+        {
+            ICE_ASSERT(
+                contains(current_flags, ElementFlags::Position_AnchorRight) == false,
+                "Cannot anchor on both left and right!"
+            );
+
+            offset.x += parent_size.width - (position.x + size.width);
+        }
+        else
+        {
+            offset.x += position.x;
+        }
+
+        if (contains(current_flags, ElementFlags::Position_AnchorBottom))
+        {
+            ICE_ASSERT(
+                contains(current_flags, ElementFlags::Position_AnchorTop) == false,
+                "Cannot anchor on both left and right!"
+            );
+
+            offset.y += parent_size.height - (position.y + size.height);
+        }
+        else
+        {
+            offset.y += position.y;
+        }
+
+        if (info.type == ElementType::VListBox)
+        {
+            ice::u32 offset_vertical = 0;
+
+            Element* child = out_element.child;
+            while (child != nullptr)
+            {
+                Size const child_size = rect_size(child->bbox);
+                Position const child_offset = { offset.x, offset.y + offset_vertical };
+
+                child->bbox = move_box(child->bbox, to_vec2(child_offset));
+                child->hitbox = move_box(child->hitbox, to_vec2(child_offset));
+                child->contentbox = move_box(child->contentbox, to_vec2(child_offset));
+                offset_vertical += child_size.height + 0.5;
+
+                child = child->sibling;
+            }
+        }
+
+        out_element.bbox = move_box(out_element.bbox, to_vec2(offset));
+        out_element.hitbox = move_box(out_element.hitbox, to_vec2(offset));
+        out_element.contentbox = move_box(out_element.contentbox, to_vec2(offset));
+        return UpdateResult::Resolved;
     }
 
     auto element_update(
@@ -160,20 +282,24 @@ namespace ice::ui
         ice::ui::Element const& parent,
         ice::ui::ElementInfo const& info,
         ice::ui::Element& out_element
-    ) noexcept
+    ) noexcept -> ice::ui::UpdateResult
     {
         //ElementType const parent_type = data.elements[info.parent].type;
         if (stage == UpdateStage::ExplicitSize)
         {
-            element_update_size_explicit(data, parent, info, out_element);
+            return element_update_size_explicit(data, parent, info, out_element);
         }
         else if (stage == UpdateStage::AutoSize)
         {
-            element_update_size_auto(data, parent, info, out_element);
+            return element_update_size_auto(data, parent, info, out_element);
         }
         else if (stage == UpdateStage::StretchSize)
         {
-            element_update_size_stretch(data, parent, info, out_element);
+            return element_update_size_stretch(data, parent, info, out_element);
+        }
+        else if (stage == UpdateStage::Position)
+        {
+            return element_update_position(data, parent, info, out_element);
         }
     }
 

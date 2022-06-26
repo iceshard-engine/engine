@@ -12,6 +12,7 @@
             'render_system'
             'asset_system'
             'input_system'
+            'font_system'
             'modules'
         }
     ]
