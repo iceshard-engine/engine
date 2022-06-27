@@ -24,6 +24,8 @@ namespace ice::platform
         virtual void update(
             ice::pod::Array<ice::platform::Event> const& events
         ) noexcept = 0;
+
+        virtual bool requested_exit() const noexcept = 0;
     };
 
     class Container

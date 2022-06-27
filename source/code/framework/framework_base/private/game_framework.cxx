@@ -48,6 +48,11 @@ namespace ice
             _runner->next_frame(events);
         }
 
+        bool requested_exit() const noexcept override
+        {
+            return ice::shards::contains(_runner->previous_frame().shards(), "action/game/exit"_shard);
+        }
+
     private:
         ice::GameFramework& _framework;
         ice::SystemClock& _clock;

@@ -393,6 +393,8 @@ namespace ice::platform
             _app->handle_inputs(device_events);
             _app->update(events);
 
+            _request_quit |= _app->requested_exit();
+
             device_events.clear();
             ice::pod::array::clear(events);
         }
