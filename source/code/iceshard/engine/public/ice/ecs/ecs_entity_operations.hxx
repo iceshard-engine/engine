@@ -5,6 +5,7 @@
 #include <ice/shard_container.hxx>
 #include <ice/ecs/ecs_entity.hxx>
 #include <ice/ecs/ecs_archetype.hxx>
+#include <ice/memory/pointer_arithmetic.hxx>
 
 namespace ice::ecs
 {

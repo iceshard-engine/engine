@@ -25,6 +25,8 @@
 #include <ice/render/render_swapchain.hxx>
 
 #include <ice/input/input_event.hxx>
+#include <ice/input/input_mouse.hxx>
+
 #include <ice/platform_event.hxx>
 #include <ice/stack_string.hxx>
 #include <ice/shard_container.hxx>
@@ -71,13 +73,13 @@ namespace ice
     {
         static constexpr ice::StringID Identifier = "ice.component.ui-button"_sid;
 
-        ice::ShardName onclick_shard_name;
+        ice::ui::Action const* action_on_click;
     };
 
     static constexpr ice::ecs::ArchetypeDefinition<ice::UIPage> Constant_Archetype_UIPage{ };
     static constexpr ice::ecs::ArchetypeDefinition<ice::UIElement, ice::UIButton> Constant_Archetype_UIButton{ };
 
-    using Query_UIElements = ice::ecs::QueryDefinition<ice::UIElement const&>;
+    using Query_UIElements = ice::ecs::QueryDefinition<ice::UIElement const&, ice::UIButton const&>;
 
     static constexpr ice::ecs::ArchetypeInfo Constant_UIArchetypes[]{
         Constant_Archetype_UIPage,
@@ -140,7 +142,6 @@ namespace ice
         if (ice::shards::inspect_first(frame.shards(), ice::Shard_InputEventAxis, ievent))
         {
             _pos_mouse = ice::vec2f(ievent[0].value.axis.value_i32, ievent[1].value.axis.value_i32);
-            //ICE_LOG(ice::LogSeverity::Debug, ice::LogTag::Engine, "({}, {})", _pos_mouse.x, _pos_mouse.y);
         }
 
         ice::pod::Array<ice::c8utf const*> page_names{ frame.allocator() };
@@ -155,14 +156,14 @@ namespace ice
         }
 
         ice::vec2f const pos_in_fb = {
-            _pos_mouse.x/* / (_size_fb.y * 0.5f) - 1.f*/,
-            _pos_mouse.y/* / (_size_fb.y * 0.5f) - 1.f*/\
+            _pos_mouse.x,
+            _pos_mouse.y
         };
 
         Query_UIElements::Query& query = *portal.storage().named_object<Query_UIElements::Query>("ice.query.ui-elements"_sid);
         ice::ecs::query::for_each_entity(
             query,
-            [&, this](ice::UIElement const& element) noexcept
+            [&, this](ice::UIElement const& element, UIButton const& button) noexcept
             {
                 if (ice::pod::hash::has(_pages_info, element.page_hash))
                 {
@@ -175,7 +176,31 @@ namespace ice
                         && elem.hitbox.top <= pos_in_fb.y
                         && elem.hitbox.bottom >= pos_in_fb.y)
                     {
-                        ICE_LOG(ice::LogSeverity::Debug, ice::LogTag::Engine, "INSIDE!");
+                        bool left_click = false;
+                        ice::shards::inspect_each<ice::input::InputEvent>(
+                            frame.shards(),
+                            ice::Shard_InputEventButton,
+                            [&, this](ice::input::InputEvent const& iev)
+                            {
+                                auto constexpr mouse_left_button = ice::input::input_identifier(
+                                    ice::input::DeviceType::Mouse,
+                                    ice::input::MouseInput::ButtonLeft
+                                );
+
+                                left_click |= (iev.identifier == mouse_left_button) && iev.value.button.state.clicked;
+                            }
+                        );
+
+                        if (left_click && button.action_on_click != nullptr)
+                        {
+                            ice::ui::Action const& action = *button.action_on_click;
+
+                            ice::ui::ShardInfo const shard_info = page_info.data->ui_shards[action.type_i];
+                            ice::ShardID const shardid = ice::shard_id(shard_info.shard_name, ice::detail::Constant_ShardPayloadID<ice::ecs::Entity>);
+
+                            ice::shards::push_back(frame.shards(), ice::shard_create(shardid) | ice::ecs::Entity{});
+                            ICE_LOG(ice::LogSeverity::Debug, ice::LogTag::Engine, "Clicked!");
+                        }
                     }
 
                 }
@@ -279,108 +304,45 @@ namespace ice
             count_interactive_element
         );
 
+        ice::Span<ice::UIElement> out_elements;
+        ice::Span<ice::UIButton> out_buttons;
+
         if (ui_entities_created && count_interactive_element > 0)
         {
-            static ice::ecs::ArchetypeDefinition<ice::UIElement, ice::UIButton> constexpr TempArchetype;
-
-            constexpr ice::StaticArray<ice::u32, 2> const idx_map = ice::ecs::detail::argument_idx_map<ice::UIElement, ice::UIButton>(
-                TempArchetype.component_identifiers
+            ice::ecs::queue_set_archetype_with_data(
+                runner.current_frame().entity_operations(),
+                element_entities,
+                ice::Constant_Archetype_UIButton,
+                out_elements,
+                out_buttons
             );
 
-            constexpr ice::ecs::EntityOperations::ComponentInfo const temp_component_info{
-                .names = ice::make_span(TempArchetype.component_identifiers).subspan(1),
-                .sizes = ice::make_span(TempArchetype.component_sizes).subspan(1),
-                .offsets = ice::make_span(TempArchetype.component_alignments).subspan(1)
-            };
-
-            ice::UIElement* ui_elements = nullptr;
-            ice::UIButton* ui_buttons = nullptr;
-
-            {
-                ice::u32 const entity_count = ice::size(element_entities);
-                ice::usize additional_data_size = sizeof(ice::ecs::EntityHandle) * entity_count;
-
-                // Data for storing component info
-                additional_data_size += sizeof(ice::ecs::EntityOperations::ComponentInfo);
-                additional_data_size += temp_component_info.names.size_bytes();
-                additional_data_size += temp_component_info.sizes.size_bytes();
-                additional_data_size += temp_component_info.offsets.size_bytes();
-                additional_data_size += alignof(ice::UIElement) + sizeof(ice::UIElement) * count_interactive_element;
-                additional_data_size += alignof(ice::UIButton) + sizeof(ice::UIButton) * count_interactive_element;
-
-                void* operation_data = nullptr;
-                ice::ecs::EntityOperation* operation = runner.current_frame().entity_operations().new_storage_operation(
-                    additional_data_size,
-                    operation_data
-                );
-
-                // Set entity handles
-                ice::ecs::EntityHandle* entities_ptr = reinterpret_cast<ice::ecs::EntityHandle*>(operation_data);
-                operation_data = entities_ptr + entity_count;
-
-                for (ice::u32 idx = 0; idx < entity_count; ++idx)
-                {
-                    entities_ptr[idx] = detail::make_empty_entity_handle(element_entities[idx]);
-                }
-
-                // Set component info object
-                ice::StringID* names_ptr = reinterpret_cast<ice::StringID*>(operation_data);
-                ice::memcpy(names_ptr, temp_component_info.names.data(), temp_component_info.names.size_bytes());
-                operation_data = ice::memory::ptr_add(operation_data, temp_component_info.names.size_bytes());
-
-                ice::u32* sizes_ptr = reinterpret_cast<ice::u32*>(operation_data);
-                ice::memcpy(sizes_ptr, temp_component_info.sizes.data(), temp_component_info.sizes.size_bytes());
-                operation_data = ice::memory::ptr_add(operation_data, temp_component_info.sizes.size_bytes());
-
-                ice::u32* offsets_ptr = reinterpret_cast<ice::u32*>(operation_data);
-                ice::memcpy(offsets_ptr, temp_component_info.offsets.data(), temp_component_info.offsets.size_bytes());
-                operation_data = ice::memory::ptr_add(operation_data, temp_component_info.offsets.size_bytes());
-
-                ice::ecs::EntityOperations::ComponentInfo* component_info_ptr = reinterpret_cast<ice::ecs::EntityOperations::ComponentInfo*>(
-                    operation_data
-                );
-                operation_data = component_info_ptr + 1;
-
-                ice::u32 const component_count = ice::size(temp_component_info.names);
-                component_info_ptr->names = ice::Span<ice::StringID const>{ names_ptr, component_count };
-                component_info_ptr->sizes = ice::Span<ice::u32 const>{ sizes_ptr, component_count };
-                component_info_ptr->offsets = ice::Span<ice::u32 const>{ offsets_ptr, component_count };
-
-                // Copy over component data
-                void const* const data_beg = operation_data;
-
-                ui_elements = reinterpret_cast<ice::UIElement*>(
-                    ice::memory::ptr_align_forward(operation_data, alignof(ice::UIElement))
-                );
-                ui_buttons = reinterpret_cast<ice::UIButton*>(
-                    ice::memory::ptr_align_forward(ui_elements + component_count, alignof(ice::UIButton))
-                );
-
-                // Save the offset
-                offsets_ptr[idx_map[0] - 1] = ice::memory::ptr_distance(data_beg, ui_elements);
-                offsets_ptr[idx_map[1] - 1] = ice::memory::ptr_distance(data_beg, ui_buttons);
-
-                operation->archetype = TempArchetype;
-                operation->entities = entities_ptr;
-                operation->entity_count = entity_count;
-                operation->notify_entity_changes = false;
-                operation->component_data = component_info_ptr;
-                operation->component_data_size = ice::memory::ptr_distance(component_info_ptr, ui_buttons + component_count);
-            }
-
-            ice::u32 idx = 0;
+            ice::u32 idx_button = 0;
             ice::u8 idx_element = 0;
 
             for (ice::ui::ElementInfo const& element_data : page_data->elements)
             {
-                ice::UIElement& element = ui_elements[idx];
+                ice::UIElement& element = out_elements[idx_button];
 
                 if (element_data.type == ElementType::Button)
                 {
+                    out_buttons[idx_button].action_on_click = nullptr;
+
+                    using ice::ui::ActionType;
+                    using ice::ui::ActionData;
+                    using ice::ui::Property;
+
+                    ice::ui::ButtonInfo const& button_info = page_data->data_buttons[element_data.type_data_i];
+                    if (button_info.action_on_click_i != ice::u16{0xffff})
+                    {
+                        ice::ui::Action const& action_on_click = page_data->ui_actions[button_info.action_on_click_i];
+                        out_buttons[idx_button].action_on_click = &action_on_click;
+                    }
+
                     //element.page_entity = page_entity;
                     element.page_hash = page_hash;
                     element.element_idx = idx_element;
-                    idx += 1;
+                    idx_button += 1;
                 }
 
                 idx_element += 1;

@@ -1,7 +1,6 @@
 #pragma once
-#include <ice/ui_types.hxx>
-#include <ice/asset_type.hxx>
 #include <ice/asset_type_archive.hxx>
+#include "ip_ui_oven.hxx"
 
 namespace ice
 {

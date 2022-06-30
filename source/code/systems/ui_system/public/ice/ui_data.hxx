@@ -1,5 +1,7 @@
 #pragma once
 #include <ice/ui_types.hxx>
+#include <ice/ui_shard.hxx>
+#include <ice/ui_action.hxx>
 #include <ice/font.hxx>
 
 namespace ice::ui
@@ -22,6 +24,9 @@ namespace ice::ui
         ice::Span<ice::ui::RectOffset const> margins;
         ice::Span<ice::ui::RectOffset const> paddings;
         ice::Span<ice::ui::ButtonInfo const> data_buttons;
+
+        ice::Span<ice::ui::ShardInfo const> ui_shards;
+        ice::Span<ice::ui::Action const> ui_actions;
         void const* additional_data;
     };
 

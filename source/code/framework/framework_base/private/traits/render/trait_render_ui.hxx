@@ -2,6 +2,7 @@
 #include <ice/render/render_declarations.hxx>
 #include <ice/world/world_trait_archive.hxx>
 #include <ice/gfx/gfx_trait.hxx>
+#include <ice/gfx/gfx_stage.hxx>
 #include <ice/pod/hash.hxx>
 #include <ice/ui_data.hxx>
 #include <ice/shard.hxx>

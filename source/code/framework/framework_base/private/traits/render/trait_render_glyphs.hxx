@@ -1,6 +1,8 @@
 #pragma once
 #include <ice/gfx/gfx_trait.hxx>
 #include <ice/gfx/gfx_stage.hxx>
+#include <ice/game_render_traits.hxx>
+#include <ice/asset.hxx>
 #include <ice/font.hxx>
 
 namespace ice

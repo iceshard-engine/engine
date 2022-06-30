@@ -6,7 +6,7 @@
 #include "asset_font.hxx"
 #include "asset_image.hxx"
 #include "asset_shader.hxx"
-#include "asset_ui.hxx"
+#include "pipeline_ui/ip_ui_asset.hxx"
 
 namespace ice
 {

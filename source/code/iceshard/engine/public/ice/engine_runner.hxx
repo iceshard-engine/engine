@@ -6,6 +6,7 @@
 #include <ice/gfx/gfx_operations.hxx>
 #include <ice/task_operations.hxx>
 #include <ice/engine_task_operations.hxx>
+#include <ice/ecs/ecs_entity_index.hxx>
 #include <ice/platform_event.hxx>
 
 namespace ice

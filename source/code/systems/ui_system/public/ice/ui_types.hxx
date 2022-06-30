@@ -12,6 +12,7 @@ namespace ice::ui
     struct Page;
     struct Element;
     struct Button;
+    struct Action;
 
     struct ElementDrawData;
 
