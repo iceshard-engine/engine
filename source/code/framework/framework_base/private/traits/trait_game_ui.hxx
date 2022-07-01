@@ -6,6 +6,7 @@
 #include <ice/world/world_trait_archive.hxx>
 #include <ice/pod/hash.hxx>
 #include <ice/ui_data.hxx>
+#include <ice/ui_element_draw.hxx>
 #include <ice/asset.hxx>
 
 namespace ice
@@ -51,11 +52,19 @@ namespace ice
         ) noexcept override;
 
     private:
+        struct PageInfo;
+
         auto load_ui(
             ice::Allocator& alloc,
             ice::EngineFrame& frame,
             ice::EngineRunner& runner,
             ice::Utf8String name
+        ) noexcept -> ice::Task<>;
+
+        auto update_ui(
+            ice::EngineFrame& frame,
+            ice::EngineRunner& runner,
+            PageInfo const& info
         ) noexcept -> ice::Task<>;
 
         auto show_ui(
@@ -72,6 +81,8 @@ namespace ice
             ice::Utf8String name;
             ice::ui::UIData const* data;
             ice::Span<ice::ui::Element> elements;
+
+            ice::ui::DrawData draw_data;
 
             ice::AssetHandle* asset_handle;
         };

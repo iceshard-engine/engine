@@ -38,6 +38,9 @@
 namespace ice
 {
 
+    constexpr ice::u32 Constant_DebugBoundingBox = 0;
+    constexpr ice::u32 Constant_DebugContentBox = 0;
+
     namespace detail
     {
 
@@ -74,6 +77,7 @@ namespace ice
         static constexpr ice::StringID Identifier = "ice.component.ui-button"_sid;
 
         ice::ui::Action const* action_on_click;
+        ice::ui::Action const* action_text;
     };
 
     static constexpr ice::ecs::ArchetypeDefinition<ice::UIPage> Constant_Archetype_UIPage{ };
@@ -120,6 +124,8 @@ namespace ice
 
         for (auto const& entry : _pages_info)
         {
+            portal.allocator().deallocate(entry.value.draw_data.vertices.data());
+            portal.allocator().deallocate(entry.value.draw_data.colors.data());
             portal.allocator().deallocate(entry.value.elements.data());
         }
     }
@@ -130,12 +136,38 @@ namespace ice
         ice::WorldPortal& portal
     ) noexcept
     {
+        static PageInfo invalid_page{ .data = nullptr };
+
         _entity_tracker.refresh_handles(runner.previous_frame().shards());
+
+        ice::u64 const visible_page_hash = ice::hash(_visible_page);
+        PageInfo const& visible_page_info = ice::pod::hash::get(
+            _pages_info,
+            visible_page_hash,
+            invalid_page
+        );
 
         ice::vec2i size;
         if (ice::shards::inspect_last(frame.shards(), ice::platform::Shard_WindowSizeChanged, size))
         {
             _size_fb = ice::vec2f(size.x, size.y);
+
+            if (visible_page_info.data != nullptr)
+            {
+                portal.execute(
+                    [this](ice::EngineFrame& frame, ice::EngineRunner& runner, PageInfo const& page_info) noexcept -> ice::Task<>
+                    {
+                        co_await update_ui(frame, runner, page_info);
+
+                        ice::EngineFrame& last_frame = co_await runner.schedule_next_frame();
+
+                        ice::shards::push_back(
+                            last_frame.shards(),
+                            ice::Shard_GameUI_Updated | page_info.name.data()
+                        );
+                    }(frame, runner, visible_page_info)
+                );
+            }
         }
 
         ice::input::InputEvent ievent[2];
@@ -170,39 +202,55 @@ namespace ice
                     static PageInfo invalid_page{ .data = nullptr };
                     PageInfo const& page_info = ice::pod::hash::get(_pages_info, element.page_hash, invalid_page);
 
-                    ice::ui::Element const& elem = page_info.elements[element.element_idx];
-                    if (elem.hitbox.left <= pos_in_fb.x
-                        && elem.hitbox.right >= pos_in_fb.x
-                        && elem.hitbox.top <= pos_in_fb.y
-                        && elem.hitbox.bottom >= pos_in_fb.y)
+                    if (page_info.data != nullptr)
                     {
-                        bool left_click = false;
-                        ice::shards::inspect_each<ice::input::InputEvent>(
-                            frame.shards(),
-                            ice::Shard_InputEventButton,
-                            [&, this](ice::input::InputEvent const& iev)
-                            {
-                                auto constexpr mouse_left_button = ice::input::input_identifier(
-                                    ice::input::DeviceType::Mouse,
-                                    ice::input::MouseInput::ButtonLeft
-                                );
+                        //if (button.action_text != nullptr)
+                        //{
+                        //    ice::ui::Action const& action = *button.action_on_click;
+                        //    ice::ui::ShardInfo const shard_info = page_info.data->ui_shards[action.type_i];
+                        //    ice::ShardID const shardid = ice::shard_id(shard_info.shard_name, ice::detail::Constant_ShardPayloadID<ice::c8utf const*>);
 
-                                left_click |= (iev.identifier == mouse_left_button) && iev.value.button.state.clicked;
-                            }
-                        );
+                        //    ice::Shard const shard = ice::shards::find_last_of(runner.previous_frame().shards(), ice::shard_create(shardid));
 
-                        if (left_click && button.action_on_click != nullptr)
+                        //    ice::c8utf const* text = nullptr;
+                        //    if (ice::shard_inspect(shard, text))
+                        //    {
+                        //    }
+                        //}
+
+                        ice::ui::Element const& elem = page_info.elements[element.element_idx];
+                        if (elem.hitbox.left <= pos_in_fb.x
+                            && elem.hitbox.right >= pos_in_fb.x
+                            && elem.hitbox.top <= pos_in_fb.y
+                            && elem.hitbox.bottom >= pos_in_fb.y)
                         {
-                            ice::ui::Action const& action = *button.action_on_click;
+                            bool left_click = false;
+                            ice::shards::inspect_each<ice::input::InputEvent>(
+                                frame.shards(),
+                                ice::Shard_InputEventButton,
+                                [&, this](ice::input::InputEvent const& iev)
+                                {
+                                    auto constexpr mouse_left_button = ice::input::input_identifier(
+                                        ice::input::DeviceType::Mouse,
+                                        ice::input::MouseInput::ButtonLeft
+                                    );
 
-                            ice::ui::ShardInfo const shard_info = page_info.data->ui_shards[action.type_i];
-                            ice::ShardID const shardid = ice::shard_id(shard_info.shard_name, ice::detail::Constant_ShardPayloadID<ice::ecs::Entity>);
+                                    left_click |= (iev.identifier == mouse_left_button) && iev.value.button.state.clicked;
+                                }
+                            );
 
-                            ice::shards::push_back(frame.shards(), ice::shard_create(shardid) | ice::ecs::Entity{});
-                            ICE_LOG(ice::LogSeverity::Debug, ice::LogTag::Engine, "Clicked!");
+                            if (left_click && button.action_on_click != nullptr)
+                            {
+                                ice::ui::Action const& action = *button.action_on_click;
+
+                                ice::ui::ShardInfo const shard_info = page_info.data->ui_shards[action.type_i];
+                                ice::ShardID const shardid = ice::shard_id(shard_info.shard_name, ice::detail::Constant_ShardPayloadID<ice::ecs::Entity>);
+
+                                ice::shards::push_back(frame.shards(), ice::shard_create(shardid) | ice::ecs::Entity{});
+                                ICE_LOG(ice::LogSeverity::Debug, ice::LogTag::Engine, "Clicked!");
+                            }
                         }
                     }
-
                 }
             }
         );
@@ -216,7 +264,6 @@ namespace ice
 
                 if (ice::pod::hash::has(_pages_info, page_hash))
                 {
-                    static PageInfo invalid_page{ .data = nullptr };
                     PageInfo const& page_info = ice::pod::hash::get(_pages_info, page_hash, invalid_page);
 
                     if (page_info.data != nullptr)
@@ -224,8 +271,8 @@ namespace ice
                         ice::RenderUIRequest* request = frame.create_named_object<ice::RenderUIRequest>(ice::stringid(page_name));
                         request->id = page_hash;
                         request->position = ice::vec2f{ page_info.data->positions[0].x, page_info.data->positions[0].y };
-                        request->data = page_info.data;
-                        request->data_layouts = page_info.elements.data();
+                        request->draw_data = &page_info.draw_data;
+                        request->update_only = false;
 
                         ice::shards::push_back(frame.shards(), ice::Shard_RenderUIData | (ice::RenderUIRequest const*) request);
                         _visible_page = page_name;
@@ -235,6 +282,82 @@ namespace ice
                 page_name = nullptr;
             }
         );
+
+        ice::shards::inspect_each<ice::c8utf const*>(
+            runner.previous_frame().shards(),
+            ice::Shard_GameUI_Updated,
+            [&, this](ice::c8utf const* page_name)
+            {
+                ice::u64 const page_hash = ice::hash(page_name);
+
+                if (ice::pod::hash::has(_pages_info, page_hash))
+                {
+                    PageInfo const& page_info = ice::pod::hash::get(_pages_info, page_hash, invalid_page);
+
+                    if (page_info.data != nullptr && _visible_page == page_name)
+                    {
+                        ice::RenderUIRequest* request = frame.create_named_object<ice::RenderUIRequest>(ice::stringid(page_name));
+                        request->id = page_hash;
+                        request->position = ice::vec2f{ page_info.data->positions[0].x, page_info.data->positions[0].y };
+                        request->draw_data = &page_info.draw_data;
+                        request->update_only = true;
+
+                        ice::shards::push_back(frame.shards(), ice::Shard_RenderUIData | (ice::RenderUIRequest const*)request);
+                    }
+                }
+
+                page_name = nullptr;
+            }
+        );
+
+        {
+            if (visible_page_info.data != nullptr)
+            {
+                ice::ui::UIData const* const uidata = visible_page_info.data;
+
+                ice::u32 idx = 0;
+                for (ice::ui::ElementInfo const& element : uidata->elements)
+                {
+                    ice::ui::Element const& element_layout = visible_page_info.elements[idx];
+
+                    if (element.type == ui::ElementType::Button)
+                    {
+                        ice::ui::ButtonInfo const& button_info = uidata->data_buttons[element.type_data_i];
+
+                        ice::DrawTextCommand* draw_text = frame.create_named_object<ice::DrawTextCommand>(
+                            ice::StringID{ ice::StringID_Hash{ visible_page_hash + element.type_data_i } }
+                        );
+
+                        draw_text->font = u8"calibri";
+                        draw_text->font_size = uidata->fonts[0].size;
+                        draw_text->text = ice::Utf8String{
+                            reinterpret_cast<ice::c8utf const*>(
+                                ice::memory::ptr_add(uidata->additional_data, button_info.text_offset)
+                            ),
+                            button_info.text_size
+                        };
+
+                        //ice::ui::Position page_pos = uidata->positions[0];
+                        ice::ui::Position pos = ice::ui::rect_position(element_layout.contentbox); // uidata->positions[element.pos_i];
+                        //pos.x += entry.value->uniform.position.x;
+                        //pos.y += entry.value->uniform.position.y;
+
+                        ice::ui::Size size = ice::ui::rect_size(element_layout.contentbox); // uidata->sizes[element.size_i];
+                        draw_text->position = ice::vec2u{
+                            (ice::u32)(pos.x),
+                            (ice::u32)(pos.y + size.height)
+                        };
+
+                        ice::shards::push_back(
+                            frame.shards(),
+                            ice::Shard_DrawTextCommand | (ice::DrawTextCommand const*)draw_text
+                        );
+                    }
+
+                    idx += 1;
+                }
+            }
+        }
     }
 
     auto IceWorldTrait_GameUI::load_ui(
@@ -327,16 +450,22 @@ namespace ice
                 if (element_data.type == ElementType::Button)
                 {
                     out_buttons[idx_button].action_on_click = nullptr;
+                    out_buttons[idx_button].action_text = nullptr;
 
                     using ice::ui::ActionType;
                     using ice::ui::ActionData;
                     using ice::ui::Property;
 
                     ice::ui::ButtonInfo const& button_info = page_data->data_buttons[element_data.type_data_i];
-                    if (button_info.action_on_click_i != ice::u16{0xffff})
+                    if (button_info.action_on_click_i != ice::u16{ 0xffff })
                     {
                         ice::ui::Action const& action_on_click = page_data->ui_actions[button_info.action_on_click_i];
                         out_buttons[idx_button].action_on_click = &action_on_click;
+                    }
+                    if (button_info.action_text_i != ice::u16{ 0xffff })
+                    {
+                        ice::ui::Action const& action_text = page_data->ui_actions[button_info.action_text_i];
+                        out_buttons[idx_button].action_text = &action_text;
                     }
 
                     //element.page_entity = page_entity;
@@ -359,24 +488,24 @@ namespace ice
             ice::ui::Element* element_layouts = reinterpret_cast<ice::ui::Element*>(element_layout_data);
             ice::memset(element_layouts, 0, sizeof(ice::ui::Element) * count_elements);
 
-            using ice::ui::UpdateStage;
-            using ice::ui::UpdateResult;
-            using ice::ui::ElementFlags;
+            ice::u32 size_vertice_data = 0;
+            ice::u32 size_vertice_color = 0;
 
-            ice::pod::Array<ice::ui::UpdateResult> results{ new_frame.allocator() };
-            ice::pod::array::resize(results, count_elements);
-
-            auto const contains_unresolved = [&]() noexcept
+            for (ice::u32 idx = 0; idx < count_elements; ++idx)
             {
-                for (UpdateResult result : results)
+                ice::ui::ElementInfo const& element_info = page_data->elements[idx];
+
+                if (element_info.type == ui::ElementType::Button)
                 {
-                    if (result == UpdateResult::Unresolved)
-                    {
-                        return true;
-                    }
+                    size_vertice_data += sizeof(ice::vec2f) * (Constant_DebugBoundingBox + 4 + Constant_DebugContentBox);
+                    size_vertice_color += sizeof(ice::vec4f) * (Constant_DebugBoundingBox + 4 + Constant_DebugContentBox);
                 }
-                return false;
-            };
+            }
+
+            ice::vec2f* vertice_data = reinterpret_cast<ice::vec2f*>(alloc.allocate(size_vertice_data));
+            ice::vec4f* vertice_color = reinterpret_cast<ice::vec4f*>(alloc.allocate(size_vertice_color));
+            ice::vec2f* vertice_data_it = vertice_data;
+            ice::vec4f* vertice_color_it = vertice_color;
 
             // Calculate explicit sizes
             for (ice::u32 idx = 0; idx < count_elements; ++idx)
@@ -384,6 +513,16 @@ namespace ice
                 ice::ui::ElementInfo const& current_element_data = page_data->elements[idx];
                 ice::ui::Element& current_element = element_layouts[idx];
                 ice::ui::Element& parent_element = element_layouts[current_element_data.parent];
+
+                if (current_element_data.type == ui::ElementType::Button)
+                {
+                    current_element.draw_data.vertice_count = (Constant_DebugBoundingBox + 4 + Constant_DebugContentBox);
+                    current_element.draw_data.vertices = { vertice_data_it, current_element.draw_data.vertice_count };
+                    current_element.draw_data.colors = { vertice_color_it, current_element.draw_data.vertice_count };
+
+                    vertice_data_it += current_element.draw_data.vertice_count;
+                    vertice_color_it += current_element.draw_data.vertice_count;
+                }
 
                 if (parent_element.child == nullptr)
                 {
@@ -403,105 +542,234 @@ namespace ice
                 }
 
                 current_element.definition = &current_element_data;
+            }
 
-                results[idx] = ice::ui::element_update(
-                    UpdateStage::ExplicitSize,
-                    *page_data,
-                    parent_element,
-                    current_element_data,
-                    current_element
+            PageInfo const page_info{
+                .name = name,
+                .data = page_data,
+                .elements = { element_layouts, count_elements },
+                .draw_data = {
+                    .vertices = { vertice_data, (size_vertice_data / sizeof(ice::vec2f)) },
+                    .colors = { vertice_color, (size_vertice_data / sizeof(ice::vec2f)) },
+                    .vertice_count = { (size_vertice_data / sizeof(ice::vec2f)) },
+                },
+                .asset_handle = page_asset.handle,
+            };
+
+            co_await update_ui(new_frame, runner, page_info);
+
+            {
+                ice::EngineFrame& last_frame = co_await runner.schedule_next_frame();
+
+                ice::shards::push_back(
+                    last_frame.shards(),
+                    ice::Shard_GameUI_Loaded | name.data()
+                );
+
+                ice::pod::hash::set(
+                    _pages_info,
+                    page_hash,
+                    page_info
+                );
+
+                ice::ecs::queue_set_archetype_with_data(
+                    runner.current_frame().entity_operations(),
+                    page_entity,
+                    ice::Constant_Archetype_UIPage,
+                    ice::UIPage{ .page_hash = page_hash }
                 );
             }
+        }
+    }
 
-            // Calculate auto sizes (childs to parents)
-            if (contains_unresolved())
+    auto IceWorldTrait_GameUI::update_ui(
+        ice::EngineFrame& frame,
+        ice::EngineRunner& runner,
+        PageInfo const& page_info
+    ) noexcept -> ice::Task<>
+    {
+        using ice::ui::UpdateStage;
+        using ice::ui::UpdateResult;
+        using ice::ui::ElementFlags;
+
+        ice::u32 const count_elements = ice::size(page_info.data->elements);
+
+        ice::pod::Array<ice::ui::UpdateResult> results{ frame.allocator() };
+        ice::pod::array::resize(results, count_elements);
+
+        co_await runner.thread_pool();
+
+        auto const contains_unresolved = [&]() noexcept
+        {
+            for (UpdateResult result : results)
             {
-                for (ice::i32 idx = count_elements - 1; idx >= 0; --idx)
+                if (result == UpdateResult::Unresolved)
                 {
-                    ice::ui::ElementInfo const& current_element_data = page_data->elements[idx];
-                    ice::ui::Element& current_element = element_layouts[idx];
-                    ice::ui::Element& parent_element = element_layouts[current_element_data.parent];
-
-                    if (results[idx] != UpdateResult::Resolved)
-                    {
-                        results[idx] = ice::ui::element_update(
-                            UpdateStage::AutoSize,
-                            *page_data,
-                            parent_element,
-                            current_element_data,
-                            current_element
-                        );
-                    }
+                    return true;
                 }
             }
+            return false;
+        };
 
-            // Calculate stretch sizes (childs to siblings)
-            if (contains_unresolved())
+        for (ice::u32 idx = 0; idx < count_elements; ++idx)
+        {
+            ice::ui::ElementInfo const& current_element_data = page_info.data->elements[idx];
+            ice::ui::Element& current_element = page_info.elements[idx];
+            ice::ui::Element& parent_element = page_info.elements[current_element_data.parent];
+
+            results[idx] = ice::ui::element_update(
+                UpdateStage::ExplicitSize,
+                *page_info.data,
+                parent_element,
+                current_element_data,
+                current_element
+            );
+        }
+
+        // Calculate auto sizes (childs to parents)
+        if (contains_unresolved())
+        {
+            for (ice::i32 idx = count_elements - 1; idx >= 0; --idx)
             {
-                for (ice::i32 idx = count_elements - 1; idx >= 0; --idx)
+                ice::ui::ElementInfo const& current_element_data = page_info.data->elements[idx];
+                ice::ui::Element& current_element = page_info.elements[idx];
+                ice::ui::Element& parent_element = page_info.elements[current_element_data.parent];
+
+                if (results[idx] != UpdateResult::Resolved)
                 {
-                    if (results[idx] == UpdateResult::Resolved)
-                    {
-                        continue;
-                    }
-
-                    ice::ui::ElementInfo const& current_element_data = page_data->elements[idx];
-                    ice::ui::Element& current_element = element_layouts[idx];
-                    ice::ui::Element& parent_element = element_layouts[current_element_data.parent];
-
                     results[idx] = ice::ui::element_update(
-                        UpdateStage::StretchSize,
-                        *page_data,
+                        UpdateStage::AutoSize,
+                        *page_info.data,
                         parent_element,
                         current_element_data,
                         current_element
                     );
                 }
             }
+        }
 
-            // Calculate positions and some remaining sizes
-            for (ice::u32 idx = 0; idx < count_elements; ++idx)
+        // Calculate stretch sizes (childs to siblings)
+        if (contains_unresolved())
+        {
+            for (ice::i32 idx = count_elements - 1; idx >= 0; --idx)
             {
-                ice::ui::ElementInfo const& current_element_data = page_data->elements[idx];
+                if (results[idx] == UpdateResult::Resolved)
+                {
+                    continue;
+                }
 
-                ice::ui::element_update(
-                    UpdateStage::Position,
-                    *page_data,
-                    element_layouts[current_element_data.parent],
+                ice::ui::ElementInfo const& current_element_data = page_info.data->elements[idx];
+                ice::ui::Element& current_element = page_info.elements[idx];
+                ice::ui::Element& parent_element = page_info.elements[current_element_data.parent];
+
+                results[idx] = ice::ui::element_update(
+                    UpdateStage::StretchSize,
+                    *page_info.data,
+                    parent_element,
                     current_element_data,
-                    element_layouts[idx]
+                    current_element
                 );
             }
+        }
 
-            ICE_ASSERT(
-                contains_unresolved() == false,
-                "UI sizes should be fully resolved!"
+        // Calculate positions and some remaining sizes
+        for (ice::u32 idx = 0; idx < count_elements; ++idx)
+        {
+            ice::ui::ElementInfo const& current_element_data = page_info.data->elements[idx];
+            ice::ui::Element& current_element = page_info.elements[idx];
+            ice::ui::Element& parent_element = page_info.elements[current_element_data.parent];
+
+            ice::ui::element_update(
+                UpdateStage::Position,
+                *page_info.data,
+                parent_element,
+                current_element_data,
+                current_element
             );
+        }
 
-            PageInfo const page_info{
-                .name = name,
-                .data = page_data,
-                .elements = { element_layouts, count_elements },
-                .asset_handle = page_asset.handle,
-            };
+        ICE_ASSERT(
+            contains_unresolved() == false,
+            "UI sizes should be fully resolved!"
+        );
 
-            ice::shards::push_back(
-                new_frame.shards(),
-                ice::Shard_GameUI_Loaded | name.data()
-            );
+        for (ice::ui::Element const& element : page_info.elements)
+        {
+            if (element.definition->type == ui::ElementType::Button)
+            {
+                ice::vec2f* vertices = element.draw_data.vertices.data();
+                ice::vec4f* colors = element.draw_data.colors.data();
 
-            ice::pod::hash::set(
-                _pages_info,
-                page_hash,
-                page_info
-            );
+                if constexpr (Constant_DebugBoundingBox == 4)
+                {
+                    colors[0 + 0] = colors[1 + 0] = colors[2 + 0] = colors[3 + 0] = ice::vec4f{ 0.8f, 0.8f, 0.8f, 0.2f };
+                }
 
-            ice::ecs::queue_set_archetype_with_data(
-                runner.current_frame().entity_operations(),
-                page_entity,
-                ice::Constant_Archetype_UIPage,
-                ice::UIPage{ .page_hash = page_hash }
-            );
+                colors[0 + Constant_DebugBoundingBox] =
+                    colors[1 + Constant_DebugBoundingBox] =
+                    colors[2 + Constant_DebugBoundingBox] =
+                    colors[3 + Constant_DebugBoundingBox] =
+                    ice::vec4f{ 0.2f, 0.6f, 0.8f, 0.7f };
+
+                if constexpr (Constant_DebugContentBox == 4)
+                {
+                    colors[0 + Constant_DebugBoundingBox + Constant_DebugContentBox] =
+                        colors[1 + Constant_DebugBoundingBox + Constant_DebugContentBox] =
+                        colors[2 + Constant_DebugBoundingBox + Constant_DebugContentBox] =
+                        colors[3 + Constant_DebugBoundingBox + Constant_DebugContentBox] =
+                        ice::vec4f{ 0.9f, 0.2f, 0.2f, 0.3f };
+                }
+
+                ice::ui::Position const bpos = ice::ui::rect_position(element.bbox);
+                ice::ui::Size const bsize = ice::ui::rect_size(element.bbox);
+
+                ice::ui::Position const pos = ice::ui::rect_position(element.hitbox);
+                ice::ui::Size const size = ice::ui::rect_size(element.hitbox);
+
+                ice::ui::Position const cpos = ice::ui::rect_position(element.contentbox);
+                ice::ui::Size const csize = ice::ui::rect_size(element.contentbox);
+
+                // [0   2]
+                // [1   3]
+
+                if constexpr (Constant_DebugBoundingBox == 4)
+                {
+                    vertices[0 + 0].x = bpos.x;
+                    vertices[0 + 0].y = bpos.y;
+                    vertices[1 + 0].x = bpos.x;
+                    vertices[1 + 0].y = bpos.y + bsize.height;
+                    vertices[2 + 0].x = bpos.x + bsize.width;
+                    vertices[2 + 0].y = bpos.y;
+                    vertices[3 + 0].x = bpos.x + bsize.width;
+                    vertices[3 + 0].y = bpos.y + bsize.height;
+                }
+
+                // [0   2]
+                // [1   3]
+                vertices[0 + Constant_DebugBoundingBox].x = pos.x;
+                vertices[0 + Constant_DebugBoundingBox].y = pos.y;
+                vertices[1 + Constant_DebugBoundingBox].x = pos.x;
+                vertices[1 + Constant_DebugBoundingBox].y = pos.y + size.height;
+                vertices[2 + Constant_DebugBoundingBox].x = pos.x + size.width;
+                vertices[2 + Constant_DebugBoundingBox].y = pos.y;
+                vertices[3 + Constant_DebugBoundingBox].x = pos.x + size.width;
+                vertices[3 + Constant_DebugBoundingBox].y = pos.y + size.height;
+
+                // [0   2]
+                // [1   3]
+
+                if constexpr (Constant_DebugContentBox == 4)
+                {
+                    vertices[0 + Constant_DebugBoundingBox + Constant_DebugContentBox].x = cpos.x;
+                    vertices[0 + Constant_DebugBoundingBox + Constant_DebugContentBox].y = cpos.y;
+                    vertices[1 + Constant_DebugBoundingBox + Constant_DebugContentBox].x = cpos.x;
+                    vertices[1 + Constant_DebugBoundingBox + Constant_DebugContentBox].y = cpos.y + csize.height;
+                    vertices[2 + Constant_DebugBoundingBox + Constant_DebugContentBox].x = cpos.x + csize.width;
+                    vertices[2 + Constant_DebugBoundingBox + Constant_DebugContentBox].y = cpos.y;
+                    vertices[3 + Constant_DebugBoundingBox + Constant_DebugContentBox].x = cpos.x + csize.width;
+                    vertices[3 + Constant_DebugBoundingBox + Constant_DebugContentBox].y = cpos.y + csize.height;
+                }
+            }
         }
     }
 

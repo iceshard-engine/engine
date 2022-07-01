@@ -5,6 +5,7 @@
 #include <ice/gfx/gfx_stage.hxx>
 #include <ice/pod/hash.hxx>
 #include <ice/ui_data.hxx>
+#include <ice/ui_element_draw.hxx>
 #include <ice/shard.hxx>
 
 namespace ice
@@ -16,14 +17,15 @@ namespace ice
     {
         ice::u64 id;
         ice::vec2f position;
-        ice::ui::UIData const* data;
-        ice::ui::Element const* data_layouts;
+        ice::ui::DrawData const* draw_data;
+
+        bool update_only;
     };
 
     struct RenderUIData
     {
         ice::u64 id;
-        ice::ui::UIData const* uidata;
+        //ice::ui::UIData const* uidata;
 
         struct Uniform
         {
@@ -39,13 +41,9 @@ namespace ice
 
         ice::render::ResourceSet resourceset_uniform;
 
-        ice::Span<ice::vec2f> vertices;
-        ice::Span<ice::vec4f> colors;
-        ice::Span<ice::vec2f> uvs;
+        ice::ui::DrawData const* draw_data;
 
-        bool is_ready;
-
-        ice::ui::Element const* element_layouts;
+        bool is_dirty;
     };
 
     struct RenderUICommand
