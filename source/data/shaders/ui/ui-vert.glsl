@@ -18,5 +18,6 @@ void main()
 {
     // out_uv = in_uv;
     out_color = in_color;
-    gl_Position = vec4(in_pos * pc.scale * ui.scale + pc.translate + ui.position * pc.scale, 0, 1);
+    gl_Position = vec4(in_pos * pc.scale + pc.translate, 0, 1);
+    // gl_Position = vec4(in_pos * pc.scale * ui.scale + pc.translate + ui.position * pc.scale, 0, 1);
 }

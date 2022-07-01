@@ -7,14 +7,15 @@
 
   <ice:shards>
     <ice:shard name="game_exit" action="action/game/exit" />
+    <ice:shard name="runtime_text" action="event/ui/set_runtime_text" />
   </ice:shards>
 
   <ui:page position="600,100">
     <ui:container type="vertical">
-      <ui:button size="*,auto" padding="6,6,12,6" margin="0,0,0,0" text="Start"></ui:button>
-      <ui:button size="*,auto" padding="6,6,12,6" margin="0,10,0,0" text="Settings"></ui:button>
-      <ui:button size="*,auto" padding="6,6,12,6" margin="0,10,0,0" text="Credits"></ui:button>
-      <ui:button size="*,auto" padding="6,6,12,6" margin="0,10,0,0" text="Exit"
+      <ui:button size="*,auto" padding="6" margin="0,0,0,0" text="Start"></ui:button>
+      <ui:button size="*,auto" padding="6" margin="0,10,0,0" text="Settings"></ui:button>
+      <ui:button size="*,auto" padding="6" margin="0,10,0,0" text="Credits"></ui:button>
+      <ui:button size="*,auto" padding="6" margin="0,10,0,0" text="Exit"
         on_click="{Shard game_exit, value={Property entity}}">
       </ui:button>
     </ui:container>

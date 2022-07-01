@@ -344,6 +344,12 @@ namespace ice
         {
             portal.execute(load_font(runner, font_name));
         }
+
+        ice::vec2i window_size{ };
+        if (ice::shards::inspect_last(frame.shards(), ice::platform::Shard_WindowSizeChanged, window_size))
+        {
+            _framebuffer_size = ice::vec2f{ (ice::f32)window_size.x, (ice::f32)window_size.y };
+        }
     }
 
     void IceWorldTrait_RenderGlyphs::record_commands(

@@ -1,0 +1,30 @@
+context Shader
+
+def Camera = struct [
+    view : mtx4f
+    projection : mtx4f
+]
+
+ctx
+{
+    [in=0]
+    let in_vertex : vec3f
+
+    [in=1]
+    let in_color : vec4f
+
+    [out=0]
+    let out_color : vec4f
+
+    [constant]
+    let camera : Camera
+}
+
+fn VertexMain() : VertexShader
+{
+    out_color = in_color
+
+    let pos : vec4f = camera.projection * camera.view * vec4f(in_vertex, 1)
+
+    VertexMain = vec4f(pos.xy, 0, 1)
+}
