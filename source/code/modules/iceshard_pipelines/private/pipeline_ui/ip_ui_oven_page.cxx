@@ -1,5 +1,6 @@
 #include "ip_ui_oven_page.hxx"
 #include "ip_ui_oven_elements.hxx"
+#include "ip_ui_oven_utils.hxx"
 
 namespace ice
 {
@@ -10,32 +11,37 @@ namespace ice
         ice::pod::Array<ice::RawShard>& shards
     ) noexcept
     {
-        rapidxml_ns::xml_node<char> const* xml_child = xml_node->first_node_ns(
-            Constant_ISUINamespaceIceShard.data(),
-            Constant_ISUINamespaceIceShard.size()
+        rapidxml_ns::xml_node<char> const* xml_child = ice::xml_first_node(
+            xml_node,
+            Constant_ISUINamespaceIceShard,
+            {}
         );
 
         while (xml_child != nullptr)
         {
-            rapidxml_ns::xml_attribute<char> const* const attr_name = xml_child->first_attribute("name");
-            rapidxml_ns::xml_attribute<char> const* const attr_action = xml_child->first_attribute("action");
+            rapidxml_ns::xml_attribute<char> const* const uiref = ice::xml_first_attrib(
+                xml_child,
+                ice::Constant_UIAttribute_ShardReference
+            );
 
-            if (attr_name && attr_action)
+            rapidxml_ns::xml_attribute<char> const* const attr_name = ice::xml_first_attrib(
+                xml_child,
+                ice::Constant_UIAttribute_ShardName
+            );
+
+            if (uiref && attr_name)
             {
                 ice::pod::array::push_back(
                     shards,
                     ice::RawShard
                     {
-                        .ui_name = ice::Utf8String{ (ice::c8utf const*)attr_name->value(), attr_name->value_size() },
-                        .shard_name = ice::shard_name({ attr_action->value(), attr_action->value_size() })
+                        .ui_name = ice::xml_value(uiref),
+                        .shard_name = ice::shard_name({ attr_name->value(), attr_name->value_size() })
                     }
                 );
             }
 
-            xml_child = xml_child->next_sibling_ns(
-                Constant_ISUINamespaceIceShard.data(),
-                Constant_ISUINamespaceIceShard.size()
-            );
+            xml_child = ice::xml_next_sibling(xml_child, Constant_ISUINamespaceIceShard);
         }
     }
 

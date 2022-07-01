@@ -4,9 +4,191 @@
 
 #include <ice/ui_button.hxx>
 #include <ice/ui_element_info.hxx>
+#include <ice/assert.hxx>
 
 namespace ice
 {
+
+    bool trim(
+        ice::Utf8String& inout_str,
+        ice::c8utf character
+    ) noexcept
+    {
+        ice::usize const left_bracket = inout_str.find_first_not_of(character);
+        ice::usize const right_bracket = inout_str.find_last_not_of(character);
+        if (left_bracket == ice::String::npos && right_bracket == ice::String::npos)
+        {
+            return false;
+        }
+
+        inout_str = inout_str.substr(left_bracket, (right_bracket - left_bracket));
+        return true;
+    }
+
+    bool remove_brackets(
+        ice::Utf8String& inout_str
+    ) noexcept
+    {
+        ice::usize const left_bracket = inout_str.find_first_of('{');
+        ice::usize const right_bracket = inout_str.find_last_of('}');
+        if (left_bracket == ice::String::npos || right_bracket == ice::String::npos)
+        {
+            return false;
+        }
+
+        inout_str = inout_str.substr(left_bracket + 1, (right_bracket - left_bracket) - 1);
+        return true;
+    }
+
+    bool parse_action_type(
+        ice::Utf8String& inout_str,
+        ice::RawAction& out_action
+    ) noexcept
+    {
+        ice::usize const type_end = inout_str.find_first_of(u8' ');
+
+        bool result = false;
+        if (type_end != ice::String::npos)
+        {
+            ice::Utf8String const action_type = inout_str.substr(0, type_end);
+            if (action_type == RawAction::Constant_ActionType_Shard)
+            {
+                out_action.action_type = ice::ui::ActionType::Shard;
+            }
+            else if (action_type == RawAction::Constant_ActionType_UIShow)
+            {
+                out_action.action_type = ice::ui::ActionType::UIShow;
+            }
+
+            // Result.
+            result = out_action.action_type != ice::ui::ActionType::None;
+            if (result)
+            {
+                inout_str = inout_str.substr(type_end + 1);
+
+                ice::usize const action_value_end = inout_str.find_first_of(u8",} ");
+                out_action.action_value = inout_str.substr(0, action_value_end);
+                result = out_action.action_value.empty() == false;
+
+                // Move to the next expected token.
+                inout_str = inout_str.substr(action_value_end + 1);
+            }
+        }
+        return result;
+    }
+
+    bool parse_action_data(
+        ice::Utf8String& inout_str,
+        ice::RawAction& out_action
+    ) noexcept
+    {
+        out_action.data_type = ice::ui::ActionData::None;
+        out_action.data_source = {};
+
+        bool result = true;
+        ice::usize const data_start = inout_str.find_first_of('=');
+        if (data_start != ice::String::npos)
+        {
+            ice::usize const data_arg_start = inout_str.find_last_of(u8" ,", data_start);
+            ice::Utf8String const data_arg = inout_str.substr(data_arg_start + 1, (data_start - data_arg_start) - 1);
+
+            inout_str = inout_str.substr(data_start + 1);
+            if (remove_brackets(inout_str))
+            {
+                ice::usize const type_end = inout_str.find_first_of(u8' ');
+                ice::Utf8String const data_type = inout_str.substr(0, type_end);
+
+                if (out_action.action_type == ice::ui::ActionType::Shard
+                    && data_arg == RawAction::Constant_ActionShard_DataArgument)
+                {
+                    if (data_type == RawAction::Constant_ActionDataType_Property)
+                    {
+                        out_action.data_type = ice::ui::ActionData::ValueProperty;
+                        out_action.data_source = inout_str.substr(type_end + 1);
+                    }
+                }
+                else if (out_action.action_type == ice::ui::ActionType::UIShow
+                    && data_arg == RawAction::Constant_ActionUIShow_DataArgument)
+                {
+                    if (data_type == RawAction::Constant_ActionDataType_UIPage)
+                    {
+                        out_action.data_type = ice::ui::ActionData::ValueUIPage;
+                        out_action.data_source = inout_str.substr(type_end + 1);
+                    }
+                }
+
+                result = out_action.data_type != ice::ui::ActionData::None;
+            }
+        }
+        return result;
+    }
+
+    bool parse_action(
+        ice::Utf8String action_definition,
+        ice::RawAction& out_action
+    ) noexcept
+    {
+        if (ice::remove_brackets(action_definition) == false)
+        {
+            return false;
+        }
+
+        bool result = true;
+        if (result = ice::parse_action_type(action_definition, out_action); result)
+        {
+            result = ice::parse_action_data(action_definition, out_action);
+        }
+        return result;
+    }
+
+    void parse_element_type_button(
+        rapidxml_ns::xml_node<char> const* xml_element,
+        ice::Allocator& alloc,
+        ice::RawElement& info
+    ) noexcept
+    {
+        ice::RawButtonInfo* button_info = alloc.make<RawButtonInfo>();
+
+        rapidxml_ns::xml_attribute<char> const* attribute = xml_element->first_attribute();
+        while (attribute != nullptr)
+        {
+            ice::String const attrib_name = ice::xml_name(attribute);
+
+            if (attrib_name == ice::Constant_UIAttribute_Text)
+            {
+                button_info->text = ice::xml_value(attribute);
+                if (ice::parse_action(button_info->text, button_info->action_text))
+                {
+                    button_info->text = {};
+                }
+            }
+            else if (attrib_name == ice::Constant_UIAttribute_OnClick)
+            {
+                ice::Utf8String const action_value = ice::xml_value(attribute);
+                bool const action_parse_result = parse_action(
+                    action_value,
+                    button_info->action_on_click
+                );
+
+                ICE_ASSERT(
+                    action_parse_result != false,
+                    "Failed to parse action value '{}'",
+                    ice::String{ attribute->value(), attribute->value_size() }
+                );
+            }
+
+            attribute = attribute->next_attribute();
+        }
+
+        if (auto const* xml_node = xml_element->first_node("text"))
+        {
+            button_info->text = std::u8string_view{ reinterpret_cast<ice::c8utf const*>(xml_node->value()), xml_node->value_size() };
+        }
+
+        info.type_data = button_info;
+        info.type = ice::ui::ElementType::Button;
+    }
+
 
     void compile_element_type(
         ice::Allocator& alloc,
@@ -27,71 +209,7 @@ namespace ice
         }
         else if (strcmp(xml_element->local_name(), "button") == 0)
         {
-            ice::RawButtonInfo* button_info = reinterpret_cast<ice::RawButtonInfo*>(alloc.allocate(sizeof(RawButtonInfo)));
-
-            rapidxml_ns::xml_attribute<char> const* attribute = xml_element->first_attribute();
-            while (attribute != nullptr)
-            {
-                button_info->action_on_click.type_id = ice::ui::ActionType::None;
-
-                if (strcmp(attribute->name(), "text") == 0)
-                {
-                    button_info->text = std::u8string_view{ reinterpret_cast<ice::c8utf const*>(attribute->value()), attribute->value_size() };
-                }
-                else if (strcmp(attribute->name(), "on_click") == 0)
-                {
-                    ice::Utf8String on_click_action{ (ice::c8utf const*)attribute->value(), attribute->value_size() };
-                    on_click_action = on_click_action.substr(1, on_click_action.size() - 2);
-
-                    ice::Utf8String const action_type = on_click_action.substr(0, on_click_action.find_first_of(u8' '));
-                    ice::usize const action_type_offset = action_type.length() + 1;
-                    ice::usize const action_type_end = on_click_action.find_first_of(u8",}", action_type_offset);
-                    ice::Utf8String const type_value = on_click_action.substr(
-                        action_type_offset,
-                        action_type_end - action_type_offset
-                    );
-
-                    button_info->action_on_click.type_id = action_type == u8"Shard"
-                        ? ice::ui::ActionType::Shard
-                        : ice::ui::ActionType::UIShow;
-                    button_info->action_on_click.action_id = type_value;
-
-                    if (on_click_action[action_type_end] == ',')
-                    {
-                        on_click_action = on_click_action.substr(action_type_end + 1);
-                        if (on_click_action.starts_with(u8' '))
-                        {
-                            on_click_action.remove_prefix(on_click_action.find_first_not_of(u8' '));
-                        }
-
-                        ice::Utf8String const argument_name = on_click_action.substr(0, on_click_action.find_first_of(u8'='));
-                        if (argument_name == u8"value" && action_type == u8"Shard")
-                        {
-                            on_click_action = on_click_action.substr(on_click_action.find_first_of('{') + 1);
-                            on_click_action.remove_suffix(1);
-
-                            ice::usize const split_offset = on_click_action.find_first_of(u8' ');
-                            ice::Utf8String const value_type = on_click_action.substr(0, split_offset);
-                            ice::Utf8String const value_source = on_click_action.substr(split_offset + 1);
-
-                            button_info->action_on_click.type_value = value_type == u8"Property"
-                                ? ice::ui::ActionData::ValueProperty
-                                : ice::ui::ActionData::ValueUIPage;
-                            button_info->action_on_click.action_value = value_source;
-                        }
-                    }
-                }
-
-                attribute = attribute->next_attribute();
-            }
-
-            if (auto const* xml_node = xml_element->first_node("text"))
-            {
-                button_info->text = std::u8string_view{ reinterpret_cast<ice::c8utf const*>(xml_node->value()), xml_node->value_size() };
-            }
-
-            info.type_data = button_info;
-            info.type = ice::ui::ElementType::Button;
+            parse_element_type_button(xml_element, alloc, info);
         }
     }
 

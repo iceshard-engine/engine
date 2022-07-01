@@ -7,6 +7,16 @@
 namespace ice
 {
 
+    static constexpr ice::String Constant_UIElementGroup_Resources = "resources";
+    static constexpr ice::String Constant_UIElementGroup_Shards = "shards";
+
+    static constexpr ice::String Constant_UIElement_Resource = "resource";
+    static constexpr ice::String Constant_UIElement_Shard = "shard";
+    static constexpr ice::String Constant_UIElement_Page = "page";
+
+    static constexpr ice::String Constant_UIAttribute_ShardReference = "name";
+    static constexpr ice::String Constant_UIAttribute_ShardName = "action";
+
     struct RawElement
     {
         ice::u16 parent;
