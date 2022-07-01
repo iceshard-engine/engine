@@ -1,124 +1,257 @@
 #include "ip_ui_oven_utils.hxx"
 #include <ice/ui_element_info.hxx>
+#include <ice/assert.hxx>
 
 namespace ice
 {
+
     void parse_element_size(char const* it, char const* end, ice::ui::ElementFlags& out_flags, ice::ui::Size& size) noexcept
     {
         using ice::ui::ElementFlags;
 
-        auto const* const separator = std::find_if(it, end, [](char c) noexcept { return c == ','; });
-        if (separator)
-        {
-            auto const res_w = std::from_chars(it, separator, size.width);
-            auto const res_h = std::from_chars(separator + 1, end, size.height);
+        ice::String attr_size{ it, end };
+        ice::usize const separator = attr_size.find_first_of(',');
 
-            if (res_w; res_w.ec != std::errc{})
+        bool valid_values = true;
+        if (separator != ice::String::npos)
+        {
+            ice::String left = attr_size.substr(0, separator);
+            ice::String right = attr_size.substr(separator + 1);
+
+            if (ice::from_chars(left, left, size.width) == false)
             {
-                if (strncmp(res_w.ptr, "auto", 4) == 0)
+                if (left == ice::Constant_UIAttributeKeyword_Auto)
                 {
                     out_flags = out_flags | ElementFlags::Size_AutoWidth;
                 }
-                else if (strncmp(res_w.ptr, "*", 1) == 0)
+                else if (left == ice::Constant_UIAttributeKeyword_Stretch)
                 {
                     out_flags = out_flags | ElementFlags::Size_StretchWidth;
                 }
+                else
+                {
+                    valid_values = false;
+                }
             }
-            if (res_h; res_h.ec != std::errc{})
+            if (ice::from_chars(right, right, size.width) == false)
             {
-                if (strncmp(res_h.ptr, "auto", 4) == 0)
+                if (right == ice::Constant_UIAttributeKeyword_Auto)
                 {
                     out_flags = out_flags | ElementFlags::Size_AutoHeight;
                 }
-                else if (strncmp(res_h.ptr, "*", 1) == 0)
+                else if (right == ice::Constant_UIAttributeKeyword_Stretch)
                 {
                     out_flags = out_flags | ElementFlags::Size_StretchHeight;
                 }
+                else
+                {
+                    valid_values = false;
+                }
             }
         }
+        else if (ice::from_chars(attr_size, attr_size, size.width))
+        {
+            size.height = size.width;
+        }
+        else if (attr_size == ice::Constant_UIAttributeKeyword_Auto)
+        {
+            out_flags = out_flags | ElementFlags::Size_AutoWidth | ElementFlags::Size_AutoHeight;
+        }
+        else if (attr_size == ice::Constant_UIAttributeKeyword_Stretch)
+        {
+            out_flags = out_flags | ElementFlags::Size_StretchWidth | ElementFlags::Size_StretchHeight;
+        }
+        else
+        {
+            valid_values = false;
+        }
+
+        ICE_ASSERT(
+            valid_values || attr_size.empty(),
+            "Invalid value in 'size' attribute! Valid values are: {}, {}, <float>.",
+            ice::Constant_UIAttributeKeyword_Auto,
+            ice::Constant_UIAttributeKeyword_Stretch
+        );
     }
 
     void parse_element_pos(char const* it, char const* end, ice::ui::ElementFlags& out_flags, ice::ui::Position& pos) noexcept
     {
         using ice::ui::ElementFlags;
-        auto const* const separator = std::find_if(it, end, [](char c) noexcept { return c == ','; });
 
-        if (separator)
+        ice::String attr_position{ it, end };
+        ice::usize const separator = attr_position.find_first_of(',');
+
+        bool valid_values = true;
+        if (separator != ice::String::npos)
         {
-            auto const res_x = std::from_chars(it, separator, pos.x);
-            auto const res_y = std::from_chars(separator + 1, end, pos.y);
+            ice::String left = attr_position.substr(0, separator);
+            ice::String right = attr_position.substr(separator + 1);
 
-            if (res_x; res_x.ec != std::errc{})
+            if (ice::from_chars(left, left, pos.x) == false)
             {
-                if (strncmp(res_x.ptr, "auto", 4) == 0)
+                if (left == ice::Constant_UIAttributeKeyword_Auto)
                 {
                     out_flags = out_flags | ElementFlags::Position_AutoX;
                 }
+                else
+                {
+                    valid_values = false;
+                }
             }
-            else if (pos.x < 0)
+            if (ice::from_chars(right, right, pos.y) == false)
             {
-                out_flags = out_flags | ElementFlags::Position_AnchorRight;
-                pos.x *= -1.f;
-            }
-
-            if (res_y; res_y.ec != std::errc{})
-            {
-                if (strncmp(res_y.ptr, "auto", 4) == 0)
+                if (right == ice::Constant_UIAttributeKeyword_Auto)
                 {
                     out_flags = out_flags | ElementFlags::Position_AutoY;
                 }
-            }
-            else if (pos.y < 0)
-            {
-                out_flags = out_flags | ElementFlags::Position_AnchorBottom;
-                pos.y *= -1.f;
+                else
+                {
+                    valid_values = false;
+                }
             }
         }
+        else if (ice::from_chars(attr_position, attr_position, pos.x))
+        {
+            pos.y = pos.x;
+        }
+        else if (attr_position == ice::Constant_UIAttributeKeyword_Auto)
+        {
+            out_flags = out_flags | ElementFlags::Position_AutoX | ElementFlags::Position_AutoY;
+        }
+        else
+        {
+            valid_values = false;
+        }
+
+        ICE_ASSERT(
+            valid_values || attr_position.empty(),
+            "Invalid value in 'position' attribute! Valid values are: {}, <float>.",
+            ice::Constant_UIAttributeKeyword_Auto
+        );
     }
 
     void parse_element_offset(char const* it, char const* end, ice::ui::ElementFlags& out_flags, ice::ui::RectOffset& offset) noexcept
     {
         using ice::ui::ElementFlags;
 
-        char const* const sep1 = std::find_if(it, end, [](char c) noexcept { return c == ','; });
-        char const* const sep2 = std::find_if(sep1 + 1, end, [](char c) noexcept { return c == ','; });
-        char const* const sep3 = std::find_if(sep2 + 1, end, [](char c) noexcept { return c == ','; });
+        ice::String attr_offset{ it, end };
+        ice::usize const sep1 = attr_offset.find_first_of(',', 0);
+        ice::usize const sep2 = attr_offset.find_first_of(',', sep1 + 1);
+        ice::usize const sep3 = attr_offset.find_first_of(',', sep2 + 1);
 
-        if (sep1 && sep2 && sep3)
+        bool valid_values = true;
+        if (sep3 != ice::String::npos && sep2 != ice::String::npos && sep1 != ice::string_npos)
         {
-            auto const res_l = std::from_chars(it, sep1, offset.left);
-            auto const res_t = std::from_chars(sep1 + 1, sep2, offset.top);
-            auto const res_r = std::from_chars(sep2 + 1, sep3, offset.right);
-            auto const res_b = std::from_chars(sep3 + 1, end, offset.bottom);
+            ice::String first = attr_offset.substr(0, sep1);
+            ice::String second = attr_offset.substr(sep1 + 1, (sep2 - sep1) - 1);
+            ice::String third = attr_offset.substr(sep2 + 1, (sep3 - sep2) - 1);
+            ice::String fourth = attr_offset.substr(sep3 + 1);
 
-            //if (res_l; res_l.ec != std::errc{})
-            //{
-            //    if (strncmp(res_l.ptr, "auto", 4) == 0)
-            //    {
-            //        out_flags = out_flags | ElementFlags::Offset_AutoLeft;
-            //    }
-            //}
-            //if (res_t; res_t.ec != std::errc{})
-            //{
-            //    if (strncmp(res_t.ptr, "auto", 4) == 0)
-            //    {
-            //        out_flags = out_flags | ElementFlags::Offset_AutoTop;
-            //    }
-            //}
-            //if (res_r; res_r.ec != std::errc{})
-            //{
-            //    if (strncmp(res_r.ptr, "auto", 4) == 0)
-            //    {
-            //        out_flags = out_flags | ElementFlags::Offset_AutoRight;
-            //    }
-            //}
-            //if (res_b; res_b.ec != std::errc{})
-            //{
-            //    if (strncmp(res_b.ptr, "auto", 4) == 0)
-            //    {
-            //        out_flags = out_flags | ElementFlags::Offset_AutoBottom;
-            //    }
-            //}
+            if (ice::from_chars(first, first, offset.left) == false)
+            {
+                if (first == ice::Constant_UIAttributeKeyword_Auto)
+                {
+                    out_flags = out_flags | ElementFlags::Offset_AutoLeft;
+                }
+                else
+                {
+                    valid_values = false;
+                }
+            }
+            if (ice::from_chars(second, second, offset.top) == false)
+            {
+                if (second == ice::Constant_UIAttributeKeyword_Auto)
+                {
+                    out_flags = out_flags | ElementFlags::Offset_AutoTop;
+                }
+                else
+                {
+                    valid_values = false;
+                }
+            }
+            if (ice::from_chars(third, third, offset.right) == false)
+            {
+                if (third == ice::Constant_UIAttributeKeyword_Auto)
+                {
+                    out_flags = out_flags | ElementFlags::Offset_AutoRight;
+                }
+                else
+                {
+                    valid_values = false;
+                }
+            }
+            if (ice::from_chars(fourth, fourth, offset.bottom) == false)
+            {
+                if (fourth == ice::Constant_UIAttributeKeyword_Auto)
+                {
+                    out_flags = out_flags | ElementFlags::Offset_AutoBottom;
+                }
+                else
+                {
+                    valid_values = false;
+                }
+            }
         }
+        else if (sep1 != ice::String::npos)
+        {
+            ice::String first = attr_offset.substr(0, sep1);
+            ice::String second = attr_offset.substr(sep1 + 1);
+
+            if (ice::from_chars(first, first, offset.left) == false)
+            {
+                if (first == ice::Constant_UIAttributeKeyword_Auto)
+                {
+                    out_flags = out_flags | ElementFlags::Offset_AutoLeft | ElementFlags::Offset_AutoRight;
+                }
+                else
+                {
+                    valid_values = false;
+                }
+            }
+            else
+            {
+                offset.right = offset.left;
+            }
+
+            if (ice::from_chars(second, second, offset.top) == false)
+            {
+                if (second == ice::Constant_UIAttributeKeyword_Auto)
+                {
+                    out_flags = out_flags | ElementFlags::Offset_AutoTop | ElementFlags::Offset_AutoBottom;
+                }
+                else
+                {
+                    valid_values = false;
+                }
+            }
+            else
+            {
+                offset.bottom = offset.top;
+            }
+        }
+        else if (ice::from_chars(attr_offset, attr_offset, offset.left))
+        {
+            offset.top = offset.left;
+            offset.right = offset.left;
+            offset.bottom = offset.left;
+        }
+        else if (attr_offset == ice::Constant_UIAttributeKeyword_Auto)
+        {
+            out_flags = out_flags
+                | ElementFlags::Offset_AutoLeft
+                | ElementFlags::Offset_AutoRight
+                | ElementFlags::Offset_AutoTop
+                | ElementFlags::Offset_AutoBottom;
+        }
+        else
+        {
+            valid_values = false;
+        }
+
+        ICE_ASSERT(
+            valid_values || attr_offset.empty(),
+            "Invalid value in 'padding' / 'margin' attribute! Valid values are: {}, <float>.",
+            ice::Constant_UIAttributeKeyword_Auto
+        );
     }
 } // namespace ice

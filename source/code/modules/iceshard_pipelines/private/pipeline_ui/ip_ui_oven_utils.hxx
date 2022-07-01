@@ -4,6 +4,14 @@
 namespace ice
 {
 
+    static constexpr ice::String Constant_UIAttribute_Size = "size";
+    static constexpr ice::String Constant_UIAttribute_Position = "position";
+    static constexpr ice::String Constant_UIAttribute_Margin = "margin";
+    static constexpr ice::String Constant_UIAttribute_Padding = "padding";
+
+    static constexpr ice::String Constant_UIAttributeKeyword_Auto = "auto";
+    static constexpr ice::String Constant_UIAttributeKeyword_Stretch = "*";
+
     void parse_element_size(
         char const* it,
         char const* end,
