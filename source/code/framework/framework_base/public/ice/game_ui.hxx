@@ -22,4 +22,7 @@ namespace ice
     static constexpr ice::Shard Shard_GameUI_Loaded
         = "event/ui/loaded`ice::c8utf const*"_shard;
 
+    static constexpr ice::Shard Shard_GameUI_Updated
+        = "event/ui/updated`ice::c8utf const*"_shard;
+
 } // namespace ice
