@@ -5,6 +5,86 @@
 namespace ice
 {
 
+    auto xml_first_node(
+        rapidxml_ns::xml_node<char> const* parent,
+        ice::String node_ns,
+        ice::String name
+    ) noexcept -> rapidxml_ns::xml_node<char> const*
+    {
+        if (name.empty())
+        {
+            return parent->first_node_ns(
+                node_ns.data(),
+                node_ns.size()
+            );
+        }
+        else
+        {
+            return parent->first_node_ns(
+                node_ns.data(),
+                node_ns.size(),
+                name.data(),
+                name.size()
+            );
+        }
+    }
+
+    auto xml_next_sibling(
+        rapidxml_ns::xml_node<char> const* parent,
+        ice::String node_ns,
+        ice::String name
+    ) noexcept -> rapidxml_ns::xml_node<char> const*
+    {
+        if (name.empty())
+        {
+            return parent->next_sibling_ns(
+                node_ns.data(),
+                node_ns.size()
+            );
+        }
+        else
+        {
+            return parent->next_sibling_ns(
+                node_ns.data(),
+                node_ns.size(),
+                name.data(),
+                name.size()
+            );
+        }
+    }
+
+    auto xml_first_attrib(
+        rapidxml_ns::xml_node<char> const* node,
+        ice::String name
+    ) noexcept -> rapidxml_ns::xml_attribute<char> const*
+    {
+        return node->first_attribute(
+            name.data(),
+            name.size()
+        );
+    }
+
+    auto xml_name(
+        rapidxml_ns::xml_attribute<char> const* attrib
+    ) noexcept -> ice::String
+    {
+        return { attrib->name(), attrib->name_size() };
+    }
+
+    auto xml_value(
+        rapidxml_ns::xml_node<char> const* node
+    ) noexcept -> ice::Utf8String
+    {
+        return { reinterpret_cast<ice::c8utf const*>(node->value()), node->value_size() };
+    }
+
+    auto xml_value(
+        rapidxml_ns::xml_attribute<char> const* attrib
+    ) noexcept -> ice::Utf8String
+    {
+        return { reinterpret_cast<ice::c8utf const*>(attrib->value()), attrib->value_size() };
+    }
+
     void parse_element_size(char const* it, char const* end, ice::ui::ElementFlags& out_flags, ice::ui::Size& size) noexcept
     {
         using ice::ui::ElementFlags;
