@@ -39,22 +39,20 @@ namespace ice
                 RawButtonInfo const* button_data = reinterpret_cast<RawButtonInfo const*>(element.type_data);
                 additional_data_size += button_data->text.size();
 
-                if (button_data->action_on_click.type_id != ice::ui::ActionType::None)
+                if (button_data->action_on_click.action_type != ice::ui::ActionType::None)
                 {
                     count_actions += 1;
-                    //additional_data_size += button_data->action_on_click.action_id.size();
-
-                    //if (button_data->action_on_click.type_id != ice::ui::ActionType::Shard)
-                    //{
-                    //    additional_data_size += button_data->action_on_click.action_value.size() + 1;
-                    //}
+                }
+                if (button_data->action_text.action_type != ice::ui::ActionType::None)
+                {
+                    count_actions += 1;
                 }
             }
         }
 
         //for (ice::RawShard const& shard : raw_shards)
         //{
-        //    additional_data_size += button_data->action_on_click.action_value.size() + 1;
+        //    additional_data_size += button_data->action_on_click.data_source.size() + 1;
         //}
 
         auto const type_count = [&type_info_counts](ElementType type) noexcept -> ice::u32
@@ -154,25 +152,26 @@ namespace ice
                     button_info[data_idx].text_offset = additional_data_offset;
                     button_info[data_idx].text_size = raw_button_info->text.size();
                     button_info[data_idx].action_on_click_i = ~ice::u16{};
+                    button_info[data_idx].action_text_i = ~ice::u16{};
 
                     additional_data = ice::memory::ptr_add(additional_data, raw_button_info->text.size());
                     additional_data_offset += raw_button_info->text.size();
 
-                    if (raw_button_info->action_on_click.type_id != ActionType::None)
+                    if (raw_button_info->action_on_click.action_type != ActionType::None)
                     {
                         button_info[data_idx].action_on_click_i = idx_action;
 
                         ice::ui::Action& action = actions[idx_action];
-                        action.type = raw_button_info->action_on_click.type_id;
+                        action.type = raw_button_info->action_on_click.action_type;
                         action.type_i = 0;
-                        action.type_data = raw_button_info->action_on_click.type_value;
+                        action.type_data = raw_button_info->action_on_click.data_type;
                         action.type_data_i = 0;
 
                         if (action.type == ActionType::Shard)
                         {
                             for (ice::u16 idx_shard = 0; idx_shard < count_shards; ++idx_shard)
                             {
-                                if (raw_shards[idx_shard].ui_name == raw_button_info->action_on_click.action_id)
+                                if (raw_shards[idx_shard].ui_name == raw_button_info->action_on_click.action_value)
                                 {
                                     action.type_i = idx_shard;
                                     break;
@@ -181,22 +180,35 @@ namespace ice
 
                             action.type_data = ActionData::ValueProperty;
 
-                            if (raw_button_info->action_on_click.action_value == u8"entity")
+                            if (raw_button_info->action_on_click.data_source == u8"entity")
                             {
                                 action.type_data_i = static_cast<ice::u16>(Property::Entity);
                             }
+                        }
 
-                            //ice::memcpy(
-                            //    additional_data,
-                            //    raw_button_info->action_on_click.action_value.data(),
-                            //    raw_button_info->action_on_click.action_value.size()
-                            //);
+                        idx_action += 1;
+                    }
 
-                            //additional_data = ice::memory::ptr_add(
-                            //    additional_data,
-                            //    raw_button_info->action_on_click.action_value.size()
-                            //);
-                            //additional_data_offset += raw_button_info->action_on_click.action_value.size();
+                    if (raw_button_info->action_text.action_type != ActionType::None)
+                    {
+                        button_info[data_idx].action_text_i = idx_action;
+
+                        ice::ui::Action& action = actions[idx_action];
+                        action.type = raw_button_info->action_text.action_type;
+                        action.type_i = 0;
+                        action.type_data = raw_button_info->action_text.data_type;
+                        action.type_data_i = 0;
+
+                        if (action.type == ActionType::Shard)
+                        {
+                            for (ice::u16 idx_shard = 0; idx_shard < count_shards; ++idx_shard)
+                            {
+                                if (raw_shards[idx_shard].ui_name == raw_button_info->action_text.action_value)
+                                {
+                                    action.type_i = idx_shard;
+                                    break;
+                                }
+                            }
                         }
 
                         idx_action += 1;
