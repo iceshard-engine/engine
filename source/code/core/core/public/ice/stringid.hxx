@@ -234,7 +234,7 @@ namespace ice
             else
             {
                 ice::u32 length = 24;
-                while (value.hash_runtime_origin_hint[length-1] == 0)
+                while (length > 0 && value.hash_runtime_origin_hint[length-1] == 0)
                 {
                     length -= 1;
                 }
