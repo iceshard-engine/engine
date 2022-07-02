@@ -62,6 +62,14 @@ namespace ice
         ) noexcept -> ice::Task<>;
 
         auto update_ui(
+            ice::Allocator& alloc,
+            ice::EngineFrame& frame,
+            ice::EngineRunner& runner,
+            PageInfo const& info
+        ) noexcept -> ice::Task<>;
+
+        auto update_page(
+            ice::Allocator& alloc,
             ice::EngineFrame& frame,
             ice::EngineRunner& runner,
             PageInfo const& info
@@ -81,6 +89,7 @@ namespace ice
             ice::Utf8String name;
             ice::ui::UIData const* data;
             ice::Span<ice::ui::Element> elements;
+            ice::Span<ice::ui::UIResourceData> resources;
 
             ice::ui::DrawData draw_data;
 

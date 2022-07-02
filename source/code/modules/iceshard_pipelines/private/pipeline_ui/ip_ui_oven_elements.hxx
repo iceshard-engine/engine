@@ -16,10 +16,13 @@ namespace ice
     {
         static constexpr ice::Utf8String Constant_ActionType_Shard = u8"Shard";
         static constexpr ice::Utf8String Constant_ActionType_UIShow = u8"UIShow";
+        static constexpr ice::Utf8String Constant_ActionType_Resource = u8"Resource";
 
+        static constexpr ice::Utf8String Constant_ActionDataType_Resource = u8"Resource";
         static constexpr ice::Utf8String Constant_ActionDataType_Property = u8"Property";
         static constexpr ice::Utf8String Constant_ActionDataType_UIPage = u8"UIPage";
 
+        static constexpr ice::Utf8String Constant_ActionResource_DataArgument = u8"source";
         static constexpr ice::Utf8String Constant_ActionShard_DataArgument = u8"value";
         static constexpr ice::Utf8String Constant_ActionUIShow_DataArgument = u8"ui";
 

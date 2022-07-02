@@ -34,6 +34,7 @@
 #include <ice/task_thread_pool.hxx>
 #include <ice/pod/array.hxx>
 #include <ice/asset_storage.hxx>
+#include <ice/profiler.hxx>
 
 namespace ice
 {
@@ -127,6 +128,7 @@ namespace ice
             portal.allocator().deallocate(entry.value.draw_data.vertices.data());
             portal.allocator().deallocate(entry.value.draw_data.colors.data());
             portal.allocator().deallocate(entry.value.elements.data());
+            portal.allocator().deallocate(entry.value.resources.data());
         }
     }
 
@@ -151,23 +153,7 @@ namespace ice
         if (ice::shards::inspect_last(frame.shards(), ice::platform::Shard_WindowSizeChanged, size))
         {
             _size_fb = ice::vec2f(size.x, size.y);
-
-            if (visible_page_info.data != nullptr)
-            {
-                portal.execute(
-                    [this](ice::EngineFrame& frame, ice::EngineRunner& runner, PageInfo const& page_info) noexcept -> ice::Task<>
-                    {
-                        co_await update_ui(frame, runner, page_info);
-
-                        ice::EngineFrame& last_frame = co_await runner.schedule_next_frame();
-
-                        ice::shards::push_back(
-                            last_frame.shards(),
-                            ice::Shard_GameUI_Updated | page_info.name.data()
-                        );
-                    }(frame, runner, visible_page_info)
-                );
-            }
+            portal.execute(update_page(portal.allocator(), frame, runner, visible_page_info));
         }
 
         ice::input::InputEvent ievent[2];
@@ -204,19 +190,43 @@ namespace ice
 
                     if (page_info.data != nullptr)
                     {
-                        //if (button.action_text != nullptr)
-                        //{
-                        //    ice::ui::Action const& action = *button.action_on_click;
-                        //    ice::ui::ShardInfo const shard_info = page_info.data->ui_shards[action.type_i];
-                        //    ice::ShardID const shardid = ice::shard_id(shard_info.shard_name, ice::detail::Constant_ShardPayloadID<ice::c8utf const*>);
+                        if (button.action_text != nullptr && button.action_text->type == ice::ui::ActionType::Shard)
+                        {
+                            ice::ui::Action const& action = *button.action_text;
+                            ice::ui::ShardInfo const shard_info = page_info.data->ui_shards[action.type_i];
+                            ice::ShardID const shardid = ice::shard_id(shard_info.shard_name, ice::detail::Constant_ShardPayloadID<ice::c8utf const*>);
 
-                        //    ice::Shard const shard = ice::shards::find_last_of(runner.previous_frame().shards(), ice::shard_create(shardid));
+                            ice::c8utf const* text = nullptr;
+                            if (ice::shards::inspect_last<ice::c8utf const*>(runner.previous_frame().shards(), ice::shard_create(shardid), text))
+                            {
+                                if (action.type_data == ice::ui::ActionData::ValueResource)
+                                {
+                                    ice::ui::UIResourceData const& res_data = page_info.resources[action.type_data_i];
+                                    ice::ui::ResourceInfo const res_info = res_data.info;
 
-                        //    ice::c8utf const* text = nullptr;
-                        //    if (ice::shard_inspect(shard, text))
-                        //    {
-                        //    }
-                        //}
+                                    if (res_info.type == ice::ui::ResourceType::Utf8String)
+                                    {
+                                        ice::Utf8String* str = reinterpret_cast<ice::Utf8String*>(res_data.location);
+                                        if (*str != text)
+                                        {
+                                            if (res_info.type_data != 0)
+                                            {
+                                                ice::usize const len = strlen((char*)text);
+                                                void* data_ptr = str + 1;
+                                                ice::memcpy(data_ptr, text, len);
+                                                *str = { (ice::c8utf const*)data_ptr, len };
+                                            }
+                                            else
+                                            {
+                                                *str = { text };
+                                            }
+
+                                            portal.execute(update_page(portal.allocator(), frame, runner, page_info));
+                                        }
+                                    }
+                                }
+                            }
+                        }
 
                         ice::ui::Element const& elem = page_info.elements[element.element_idx];
                         if (elem.hitbox.left <= pos_in_fb.x
@@ -294,6 +304,11 @@ namespace ice
                 {
                     PageInfo const& page_info = ice::pod::hash::get(_pages_info, page_hash, invalid_page);
 
+                    if (frame.named_data(ice::stringid(page_name)) != nullptr)
+                    {
+                        return;
+                    }
+
                     if (page_info.data != nullptr && _visible_page == page_name)
                     {
                         ice::RenderUIRequest* request = frame.create_named_object<ice::RenderUIRequest>(ice::stringid(page_name));
@@ -330,12 +345,7 @@ namespace ice
 
                         draw_text->font = u8"calibri";
                         draw_text->font_size = uidata->fonts[0].size;
-                        draw_text->text = ice::Utf8String{
-                            reinterpret_cast<ice::c8utf const*>(
-                                ice::memory::ptr_add(uidata->additional_data, button_info.text_offset)
-                            ),
-                            button_info.text_size
-                        };
+                        draw_text->text = ice::ui::button_get_text(*uidata, button_info, visible_page_info.resources);
 
                         //ice::ui::Position page_pos = uidata->positions[0];
                         ice::ui::Position pos = ice::ui::rect_position(element_layout.contentbox); // uidata->positions[element.pos_i];
@@ -488,6 +498,41 @@ namespace ice
             ice::ui::Element* element_layouts = reinterpret_cast<ice::ui::Element*>(element_layout_data);
             ice::memset(element_layouts, 0, sizeof(ice::ui::Element) * count_elements);
 
+            ice::u32 const count_resources = ice::size(page_data->ui_resources);
+            ice::u32 size_resource_data = sizeof(ice::ui::UIResourceData) * count_resources;
+
+            for (ice::ui::ResourceInfo const& res_info : page_data->ui_resources)
+            {
+                if (res_info.type == ice::ui::ResourceType::Utf8String)
+                {
+                    // Number of bytes to store the data.
+                    size_resource_data += sizeof(ice::Utf8String) + alignof(ice::Utf8String);
+                    size_resource_data += res_info.type_data + 1;
+                }
+            }
+
+            void* resource_data = alloc.allocate(size_resource_data);
+            ice::ui::UIResourceData* resources = reinterpret_cast<ice::ui::UIResourceData*>(resource_data);
+            ice::memset(resources, 0, size_resource_data);
+
+            void* resource_additional_data = resources + count_resources;
+
+            for (ice::u32 idx = 0; idx < count_resources; ++idx)
+            {
+                ice::ui::ResourceInfo const& res_info = page_data->ui_resources[idx];
+                resources[idx].info = res_info;
+
+                if (res_info.type == ice::ui::ResourceType::Utf8String)
+                {
+                    resources[idx].location = ice::memory::ptr_align_forward(resource_additional_data, alignof(ice::Utf8String));
+                    ice::Utf8String* str_ptr = reinterpret_cast<ice::Utf8String*>(resources[idx].location);
+                    *str_ptr = { reinterpret_cast<ice::c8utf*>(str_ptr + 1), 0 };
+
+                    resource_additional_data = ice::memory::ptr_add(str_ptr + 1, res_info.type_data + 1);
+
+                }
+            }
+
             ice::u32 size_vertice_data = 0;
             ice::u32 size_vertice_color = 0;
 
@@ -548,6 +593,7 @@ namespace ice
                 .name = name,
                 .data = page_data,
                 .elements = { element_layouts, count_elements },
+                .resources = { resources, count_resources },
                 .draw_data = {
                     .vertices = { vertice_data, (size_vertice_data / sizeof(ice::vec2f)) },
                     .colors = { vertice_color, (size_vertice_data / sizeof(ice::vec2f)) },
@@ -556,7 +602,7 @@ namespace ice
                 .asset_handle = page_asset.handle,
             };
 
-            co_await update_ui(new_frame, runner, page_info);
+            co_await update_ui(alloc, new_frame, runner, page_info);
 
             {
                 ice::EngineFrame& last_frame = co_await runner.schedule_next_frame();
@@ -583,6 +629,7 @@ namespace ice
     }
 
     auto IceWorldTrait_GameUI::update_ui(
+        ice::Allocator& alloc,
         ice::EngineFrame& frame,
         ice::EngineRunner& runner,
         PageInfo const& page_info
@@ -594,10 +641,12 @@ namespace ice
 
         ice::u32 const count_elements = ice::size(page_info.data->elements);
 
-        ice::pod::Array<ice::ui::UpdateResult> results{ frame.allocator() };
+        ice::pod::Array<ice::ui::UpdateResult> results{ alloc };
         ice::pod::array::resize(results, count_elements);
 
         co_await runner.thread_pool();
+
+        IPT_ZONE_SCOPED;
 
         auto const contains_unresolved = [&]() noexcept
         {
@@ -622,7 +671,8 @@ namespace ice
                 *page_info.data,
                 parent_element,
                 current_element_data,
-                current_element
+                current_element,
+                page_info.resources
             );
         }
 
@@ -642,7 +692,8 @@ namespace ice
                         *page_info.data,
                         parent_element,
                         current_element_data,
-                        current_element
+                        current_element,
+                        page_info.resources
                     );
                 }
             }
@@ -667,7 +718,8 @@ namespace ice
                     *page_info.data,
                     parent_element,
                     current_element_data,
-                    current_element
+                    current_element,
+                    page_info.resources
                 );
             }
         }
@@ -684,7 +736,8 @@ namespace ice
                 *page_info.data,
                 parent_element,
                 current_element_data,
-                current_element
+                current_element,
+                page_info.resources
             );
         }
 
@@ -771,6 +824,23 @@ namespace ice
                 }
             }
         }
+    }
+
+    auto IceWorldTrait_GameUI::update_page(
+        ice::Allocator& alloc,
+        ice::EngineFrame& frame,
+        ice::EngineRunner& runner,
+        PageInfo const& info
+    ) noexcept -> ice::Task<>
+    {
+        co_await update_ui(alloc, frame, runner, info);
+
+        ice::EngineFrame& last_frame = co_await runner.schedule_next_frame();
+
+        ice::shards::push_back(
+            last_frame.shards(),
+            ice::Shard_GameUI_Updated | info.name.data()
+        );
     }
 
     void register_trait_gameui(ice::WorldTraitArchive& trait_archive) noexcept

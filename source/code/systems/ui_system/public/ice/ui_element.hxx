@@ -39,7 +39,8 @@ namespace ice::ui
         ice::ui::UIData const& data,
         ice::ui::Element const& parent,
         ice::ui::ElementInfo const& info,
-        ice::ui::Element& out_element
+        ice::ui::Element& out_element,
+        ice::Span<ice::ui::UIResourceData const> resources
     ) noexcept -> ice::ui::UpdateResult;
 
     static constexpr ice::ui::UpdateStage Constant_UpdateStageOrder[]{

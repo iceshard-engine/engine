@@ -2,7 +2,9 @@
     xmlns:ice="https://www.iceshard.net/docs/engine/v1_alpha/isui/iceshard/">
 
   <ui:resources>
-    <ui:resource type="font" default="true" asset="calibri"/>
+    <!-- <ui:resource type="font" name="default" /> -->
+    <ui:resource type="string:short" name="dynamic_text2" />
+    <ui:resource type="string:short" name="dynamic_text" />
   </ui:resources>
 
   <ice:shards>
@@ -12,12 +14,10 @@
 
   <ui:page position="600,100">
     <ui:container type="vertical">
-      <ui:button size="*,auto" padding="6" margin="0,0,0,0" text="Start"></ui:button>
-      <ui:button size="*,auto" padding="6" margin="0,10,0,0" text="Settings"></ui:button>
-      <ui:button size="*,auto" padding="6" margin="0,10,0,0" text="Credits"></ui:button>
-      <ui:button size="*,auto" padding="6" margin="0,10,0,0" text="Exit"
-        on_click="{Shard game_exit, value={Property entity}}">
-      </ui:button>
+      <ui:button size="*,auto" padding="6" margin="0,0,0,0" text="Start" />
+      <ui:button size="*,auto" padding="6" margin="0,10,0,0" text="{Shard runtime_text, source={Resource dynamic_text}}" />
+      <ui:button size="*,auto" padding="6" margin="0,10,0,0" text="Credits" />
+      <ui:button size="*,auto" padding="6" margin="0,10,0,0" text="Exit" on_click="{Shard game_exit}" />
     </ui:container>
   </ui:page>
 

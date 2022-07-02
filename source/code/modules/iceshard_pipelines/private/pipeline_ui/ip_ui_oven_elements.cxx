@@ -59,6 +59,10 @@ namespace ice
             {
                 out_action.action_type = ice::ui::ActionType::UIShow;
             }
+            else if (action_type == RawAction::Constant_ActionType_Resource)
+            {
+                out_action.action_type = ice::ui::ActionType::Data;
+            }
 
             // Result.
             result = out_action.action_type != ice::ui::ActionType::None;
@@ -99,9 +103,16 @@ namespace ice
                 ice::Utf8String const data_type = inout_str.substr(0, type_end);
 
                 if (out_action.action_type == ice::ui::ActionType::Shard
-                    && data_arg == RawAction::Constant_ActionShard_DataArgument)
+                    && (data_arg == RawAction::Constant_ActionShard_DataArgument
+                        || data_arg == RawAction::Constant_ActionResource_DataArgument)
+                    )
                 {
-                    if (data_type == RawAction::Constant_ActionDataType_Property)
+                    if (data_type == RawAction::Constant_ActionDataType_Resource)
+                    {
+                        out_action.data_type = ice::ui::ActionData::ValueResource;
+                        out_action.data_source = inout_str.substr(type_end + 1);
+                    }
+                    else if (data_type == RawAction::Constant_ActionDataType_Property)
                     {
                         out_action.data_type = ice::ui::ActionData::ValueProperty;
                         out_action.data_source = inout_str.substr(type_end + 1);

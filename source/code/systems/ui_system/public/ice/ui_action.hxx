@@ -7,6 +7,7 @@ namespace ice::ui
     enum class ActionType : ice::u16
     {
         None,
+        Data,
         Shard,
         UIShow,
     };
@@ -14,6 +15,7 @@ namespace ice::ui
     enum class ActionData : ice::u16
     {
         None,
+        ValueResource,
         ValueProperty,
         ValueUIPage,
     };

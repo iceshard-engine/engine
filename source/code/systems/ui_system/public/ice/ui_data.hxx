@@ -7,6 +7,18 @@
 namespace ice::ui
 {
 
+    enum class ResourceType : ice::u32
+    {
+        None,
+        Utf8String,
+    };
+
+    struct ResourceInfo
+    {
+        ice::ui::ResourceType type;
+        ice::u32 type_data;
+    };
+
     struct UIFont
     {
         ice::Font const* font;
@@ -27,7 +39,14 @@ namespace ice::ui
 
         ice::Span<ice::ui::ShardInfo const> ui_shards;
         ice::Span<ice::ui::Action const> ui_actions;
+        ice::Span<ice::ui::ResourceInfo const> ui_resources;
         void const* additional_data;
+    };
+
+    struct UIResourceData
+    {
+        ice::ui::ResourceInfo info;
+        void* location;
     };
 
 } // namespace ice::ui

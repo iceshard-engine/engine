@@ -90,7 +90,8 @@ namespace ice::ui
         ice::ui::UIData const& data,
         ice::ui::Element const& parent,
         ice::ui::ElementInfo const& info,
-        ice::ui::Element& out_element
+        ice::ui::Element& out_element,
+        ice::Span<ice::ui::UIResourceData const> resources
     ) noexcept -> ice::ui::UpdateResult
     {
         Size size;
@@ -105,11 +106,9 @@ namespace ice::ui
         ice::vec2f bounds{ 0.f };
         if (info.type == ElementType::Button)
         {
-            ice::ui::ButtonInfo const& button_info = data.data_buttons[info.type_data_i];
-            ice::Utf8String const text{
-                reinterpret_cast<ice::c8utf const*>(ice::memory::ptr_add(data.additional_data, button_info.text_offset)),
-                button_info.text_size
-            };
+            ButtonInfo const& button_info = data.data_buttons[info.type_data_i];
+
+            ice::Utf8String  const text = ice::ui::button_get_text(data, button_info, resources);
 
             ice::ui::UIFont const& font = data.fonts[0];
             bounds = ice::font_text_bounds(*font.font, text);
@@ -281,7 +280,8 @@ namespace ice::ui
         ice::ui::UIData const& data,
         ice::ui::Element const& parent,
         ice::ui::ElementInfo const& info,
-        ice::ui::Element& out_element
+        ice::ui::Element& out_element,
+        ice::Span<ice::ui::UIResourceData const> resources
     ) noexcept -> ice::ui::UpdateResult
     {
         //ElementType const parent_type = data.elements[info.parent].type;
@@ -291,7 +291,7 @@ namespace ice::ui
         }
         else if (stage == UpdateStage::AutoSize)
         {
-            return element_update_size_auto(data, parent, info, out_element);
+            return element_update_size_auto(data, parent, info, out_element, resources);
         }
         else if (stage == UpdateStage::StretchSize)
         {

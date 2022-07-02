@@ -21,13 +21,15 @@ namespace ice
     auto build_binary_representation(
         ice::Allocator& alloc,
         ice::Span<ice::RawElement> raw_elements,
+        ice::Span<ice::RawResource> raw_resources,
         ice::Span<ice::RawShard> raw_shards
     ) noexcept -> ice::Memory
     {
         ice::u32 const element_count = ice::size(raw_elements);
 
         ice::u32 count_actions = 0;
-        ice::u32 count_shards = ice::size(raw_shards);
+        ice::u32 const count_resources = ice::size(raw_resources);
+        ice::u32 const count_shards = ice::size(raw_shards);
 
         ice::u8 type_info_counts[256]{ };
         ice::usize additional_data_size = 0;
@@ -65,8 +67,9 @@ namespace ice
         byte_size += element_count * sizeof(ice::ui::Size);
         byte_size += element_count * sizeof(ice::ui::Position);
         byte_size += element_count * sizeof(ice::ui::RectOffset) * 2;
-        byte_size += count_actions * sizeof(ice::ui::Action);
+        byte_size += count_resources * sizeof(ice::ui::ResourceInfo);
         byte_size += count_shards * sizeof(ice::ui::ShardInfo); // + alignof(ice::ui::ShardInfo);
+        byte_size += count_actions * sizeof(ice::ui::Action);
         byte_size += type_count(ElementType::Button) * sizeof(ice::ui::ButtonInfo) + alignof(ice::ui::ButtonInfo);
         byte_size += additional_data_size;
 
@@ -97,7 +100,8 @@ namespace ice
             Position* positions = reinterpret_cast<Position*>(sizes + element_count);
             RectOffset* margins = reinterpret_cast<RectOffset*>(positions + element_count);
             RectOffset* paddings = reinterpret_cast<RectOffset*>(margins + element_count);
-            ShardInfo* shards = reinterpret_cast<ShardInfo*>(paddings + element_count);
+            ResourceInfo* resources = reinterpret_cast<ResourceInfo*>(paddings + element_count);
+            ShardInfo* shards = reinterpret_cast<ShardInfo*>(resources + count_resources);
             Action* actions = reinterpret_cast<Action*>(shards + count_shards);
 
             ButtonInfo* button_info = reinterpret_cast<ButtonInfo*>(
@@ -119,9 +123,38 @@ namespace ice
             isui->ui_shards = { shards, count_shards };
             isui->ui_actions = { actions, count_actions };
             isui->data_buttons = { button_info, type_count(ElementType::Button) };
+            isui->ui_resources = { resources, count_resources };
             isui->additional_data = additional_data;
             //isui->data_label = { };
             //isui->data_button = { };
+
+            auto const find_shard_idx = [&raw_shards](ice::Utf8String resource_name) noexcept -> ice::u16
+            {
+                ice::u16 idx = 0;
+                ice::u16 const count = ice::size(raw_shards);
+                for (; idx < count; ++idx)
+                {
+                    if (raw_shards[idx].ui_name == resource_name)
+                    {
+                        break;
+                    }
+                }
+                return idx == count ? ice::u16{ 0 } : idx;
+            };
+
+            auto const find_resource_idx = [&raw_resources](ice::Utf8String resource_name) noexcept -> ice::u16
+            {
+                ice::u16 idx = 0;
+                ice::u16 const count = ice::size(raw_resources);
+                for (; idx < count; ++idx)
+                {
+                    if (raw_resources[idx].ui_name == resource_name)
+                    {
+                        break;
+                    }
+                }
+                return idx == count ? ice::u16{0xffff} : idx;
+            };
 
             ice::u8 type_data_index[256]{ };
 
@@ -201,14 +234,12 @@ namespace ice
 
                         if (action.type == ActionType::Shard)
                         {
-                            for (ice::u16 idx_shard = 0; idx_shard < count_shards; ++idx_shard)
-                            {
-                                if (raw_shards[idx_shard].ui_name == raw_button_info->action_text.action_value)
-                                {
-                                    action.type_i = idx_shard;
-                                    break;
-                                }
-                            }
+                            action.type_i = find_shard_idx(raw_button_info->action_text.action_value);
+                            action.type_data_i = find_resource_idx(raw_button_info->action_text.data_source);
+                        }
+                        else if (action.type == ActionType::Data)
+                        {
+                            action.type_data_i = find_resource_idx(raw_button_info->action_text.action_value);
                         }
 
                         idx_action += 1;
@@ -217,6 +248,14 @@ namespace ice
 
                 data_idx += 1;
                 idx += 1;
+            }
+
+            ice::u32 idx_res = 0;
+            for (ice::RawResource const& resource : raw_resources)
+            {
+                resources[idx_res].type = resource.type;
+                resources[idx_res].type_data = resource.type_data;
+                idx_res += 1;
             }
 
             ice::u32 idx_shard = 0;
@@ -236,6 +275,7 @@ namespace ice
             store_span_info(isui->positions);
             store_span_info(isui->margins);
             store_span_info(isui->paddings);
+            store_span_info(isui->ui_resources);
             store_span_info(isui->ui_shards);
             store_span_info(isui->ui_actions);
             store_span_info(isui->data_buttons);
@@ -268,15 +308,19 @@ namespace ice
             ice::pod::array::reserve(uishards, 25);
             ice::pod::array::push_back(uishards, RawShard{ });
 
+            ice::pod::Array<ice::RawResource> uires{ alloc };
+            ice::pod::array::reserve(uires, 25);
+            //ice::pod::array::push_back(uires, RawShard{ });
+
             ice::pod::Array<ice::RawElement> elements{ alloc };
             ice::pod::array::reserve(elements, 50);
 
             rapidxml_ns::xml_document<char>* doc = alloc.make<rapidxml_ns::xml_document<char>>();
             doc->parse<rapidxml_ns::parse_default>(reinterpret_cast<char*>(data_copy));
 
-            compile_ui(alloc, *doc, elements, uishards);
+            compile_ui(alloc, *doc, elements, uires, uishards);
 
-            out_memory = build_binary_representation(alloc, elements, uishards);
+            out_memory = build_binary_representation(alloc, elements, uires, uishards);
 
             for (ice::RawElement const& element : elements)
             {
@@ -345,6 +389,7 @@ namespace ice
         restore_span_value(ui_result->positions);
         restore_span_value(ui_result->margins);
         restore_span_value(ui_result->paddings);
+        restore_span_value(ui_result->ui_resources);
         restore_span_value(ui_result->ui_shards);
         restore_span_value(ui_result->ui_actions);
         restore_span_value(ui_result->data_buttons);

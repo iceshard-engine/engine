@@ -1,9 +1,67 @@
 #include "ip_ui_oven_page.hxx"
 #include "ip_ui_oven_elements.hxx"
 #include "ip_ui_oven_utils.hxx"
+#include <ice/ui_data.hxx>
 
 namespace ice
 {
+
+    void compile_resources(
+        ice::Allocator& alloc,
+        rapidxml_ns::xml_node<char> const* xml_node,
+        ice::pod::Array<ice::RawResource>& shards
+    ) noexcept
+    {
+        using ice::ui::ResourceType;
+
+        rapidxml_ns::xml_node<char> const* xml_child = ice::xml_first_node(
+            xml_node,
+            Constant_ISUINamespaceUI,
+            {}
+        );
+
+        while (xml_child != nullptr)
+        {
+            rapidxml_ns::xml_attribute<char> const* const uiref = ice::xml_first_attrib(
+                xml_child,
+                ice::Constant_UIAttribute_ResourceName
+            );
+
+            rapidxml_ns::xml_attribute<char> const* const attr_type = ice::xml_first_attrib(
+                xml_child,
+                ice::Constant_UIAttribute_ResourceType
+            );
+
+            ice::Utf8String const type_str = ice::xml_value(attr_type);
+
+            ice::u32 type_data = 0;
+            ice::ui::ResourceType type = ResourceType::None;
+            if (type_str == Constant_UIResourceType_Text)
+            {
+                type = ResourceType::Utf8String;
+            }
+            if (type_str == Constant_UIResourceType_StringShort)
+            {
+                type = ResourceType::Utf8String;
+                type_data = 64;
+            }
+
+            if (uiref && type != ResourceType::None)
+            {
+                ice::pod::array::push_back(
+                    shards,
+                    ice::RawResource
+                    {
+                        .ui_name = ice::xml_value(uiref),
+                        .type = type,
+                        .type_data = type_data,
+                    }
+                );
+            }
+
+            xml_child = ice::xml_next_sibling(xml_child, Constant_ISUINamespaceUI);
+        }
+    }
 
     void compile_shards(
         ice::Allocator& alloc,

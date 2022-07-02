@@ -5,16 +5,17 @@ namespace ice::ui
 {
 
     struct UIData;
+    struct UIResourceData;
+
     struct PageInfo;
     struct ElementInfo;
     struct ButtonInfo;
+    struct ResourceInfo;
 
     struct Page;
     struct Element;
     struct Button;
     struct Action;
-
-    struct ElementDrawData;
 
     enum class ElementFlags : ice::u16;
     enum class ElementType : ice::u8;
@@ -71,11 +72,5 @@ namespace ice::ui
     {
         return { rect.left + offset.left, rect.top + offset.top, rect.right - offset.right, rect.bottom - offset.bottom };
     }
-
-    static constexpr Rect t{ 10, 10, 210, 40 };
-    static constexpr RectOffset o1{ 2, 2, 2, 2 };
-
-    static constexpr Rect r1 = t - o1;
-    static constexpr Rect r2 = t + o1;
 
 } // namespace ice::ui

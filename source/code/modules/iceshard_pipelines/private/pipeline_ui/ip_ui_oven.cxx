@@ -1,6 +1,7 @@
 #include "ip_ui_oven.hxx"
 #include "ip_ui_oven_page.hxx"
 #include "ip_ui_oven_elements.hxx"
+#include "ip_ui_oven_utils.hxx"
 
 namespace ice
 {
@@ -9,6 +10,7 @@ namespace ice
         ice::Allocator& alloc,
         rapidxml_ns::xml_document<char>& doc,
         ice::pod::Array<ice::RawElement>& raw_elements,
+        ice::pod::Array<ice::RawResource>& ui_resources,
         ice::pod::Array<ice::RawShard>& ui_shards
     ) noexcept
     {
@@ -18,23 +20,30 @@ namespace ice
             return;
         }
 
-        rapidxml_ns::xml_node<char> const* xml_node_shards = root->first_node_ns(
-            Constant_ISUINamespaceIceShard.data(),
-            Constant_ISUINamespaceIceShard.size(),
-            "shards",
-            6
+        rapidxml_ns::xml_node<char> const* xml_node_resources = xml_first_node(
+            root,
+            Constant_ISUINamespaceUI,
+            ice::Constant_UIElementGroup_Resources
         );
+        if (xml_node_resources != nullptr)
+        {
+            compile_resources(alloc, xml_node_resources, ui_resources);
+        }
 
+        rapidxml_ns::xml_node<char> const* xml_node_shards = xml_first_node(
+            root,
+            ice::Constant_ISUINamespaceIceShard,
+            ice::Constant_UIElementGroup_Shards
+        );
         if (xml_node_shards != nullptr)
         {
             compile_shards(alloc, xml_node_shards, ui_shards);
         }
 
-        rapidxml_ns::xml_node<char> const* xml_node = root->first_node_ns(
-            Constant_ISUINamespaceUI.data(),
-            Constant_ISUINamespaceUI.size(),
-            "page",
-            4
+        rapidxml_ns::xml_node<char> const* xml_node = xml_first_node(
+            root,
+            ice::Constant_ISUINamespaceUI,
+            ice::Constant_UIElement_Page
         );
 
         if (xml_node != nullptr)
