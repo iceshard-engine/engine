@@ -32,11 +32,11 @@ namespace ice
         : ice::EngineFrame{ }
         , _index{ detail::global_frame_counter }
         , _allocator{ alloc }
-        , _inputs_allocator{ _allocator, detail::InputsAllocatorCapacity }
-        , _request_allocator{ _allocator, detail::RequestAllocatorCapacity }
-        , _tasks_allocator{ _allocator, detail::TaskAllocatorCapacity }
-        , _storage_allocator{ _allocator, detail::StorageAllocatorCapacity }
-        , _data_allocator{ _allocator, detail::DataAllocatorCapacity }
+        , _inputs_allocator{ _allocator, detail::InputsAllocatorCapacity, "inputs" }
+        , _request_allocator{ _allocator, detail::RequestAllocatorCapacity, "request" }
+        , _tasks_allocator{ _allocator, detail::TaskAllocatorCapacity, "tasks" }
+        , _storage_allocator{ _allocator, detail::StorageAllocatorCapacity, "storage" }
+        , _data_allocator{ _allocator, detail::DataAllocatorCapacity, "data" }
         , _input_events{ _inputs_allocator }
         , _shards{ _request_allocator }
         , _entity_operations{ _data_allocator } // #todo change the allocator?
