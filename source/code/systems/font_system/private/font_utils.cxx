@@ -100,7 +100,8 @@ namespace ice
 
         result.x -= last_advance_offset;
 
-        ICE_LOG(
+        ICE_LOG_IF(
+            total_glyphs != out_glyph_count,
             ice::LogSeverity::Warning, ice::LogTag::Engine,
             "The given font couldn't resolve all glyphs in the given text '{}'. Missing {} glyphs.",
             ice::String{ reinterpret_cast<const char*>(ice::string::data(text)), ice::string::size(text) },
@@ -116,7 +117,7 @@ namespace ice
     ) noexcept -> ice::vec2f
     {
         [[maybe_unused]]
-        ice::u32 unused;
+        ice::u32 unused = 0;
         return font_text_bounds(font, text, unused);
     }
 
