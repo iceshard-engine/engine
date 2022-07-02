@@ -78,7 +78,7 @@ namespace ice
 
         for (auto const& entry : _render_data)
         {
-            if (entry.value->is_dirty == true)
+            if (entry.value->resourceset_uniform == ice::render::ResourceSet::Invalid)
             {
                 return;
             }
