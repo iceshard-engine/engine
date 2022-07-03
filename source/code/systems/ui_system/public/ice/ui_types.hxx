@@ -17,8 +17,10 @@ namespace ice::ui
     struct Button;
     struct Action;
 
+    enum class ResourceType : ice::u32;
     enum class ElementFlags : ice::u16;
     enum class ElementType : ice::u8;
+
 
     struct Size
     {

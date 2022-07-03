@@ -4,20 +4,21 @@
 namespace ice::ui
 {
 
+    enum class DataSource : ice::u16
+    {
+        None,
+        Value,
+        ValueResource,
+        ValueProperty,
+        ValueUIPage,
+    };
+
     enum class ActionType : ice::u16
     {
         None,
         Data,
         Shard,
         UIShow,
-    };
-
-    enum class ActionData : ice::u16
-    {
-        None,
-        ValueResource,
-        ValueProperty,
-        ValueUIPage,
     };
 
     enum class Property : ice::u16
@@ -31,7 +32,7 @@ namespace ice::ui
         ice::ui::ActionType type;
         ice::u16 type_i;
 
-        ice::ui::ActionData type_data;
+        ice::ui::DataSource type_data;
         ice::u16 type_data_i;
     };
 

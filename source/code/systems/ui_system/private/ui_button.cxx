@@ -16,7 +16,7 @@ namespace ice::ui
         if (button_info.action_text_i != ice::u16{ 0xffff })
         {
             Action const& action = data.ui_actions[button_info.action_text_i];
-            if (action.type == ActionType::Shard && action.type_data == ActionData::ValueResource)
+            if (action.type == ActionType::Shard && action.type_data == DataSource::ValueResource)
             {
                 UIResourceData const& data = resources[action.type_data_i];
                 if (data.info.type == ResourceType::Utf8String)
@@ -41,6 +41,25 @@ namespace ice::ui
             };
         }
         return text;
+    }
+
+    auto button_get_font(
+        ice::ui::UIData const& data,
+        ice::ui::ButtonInfo const& button_info,
+        ice::Span<ice::ui::UIResourceData const> resources
+    ) noexcept -> ice::Font const*
+    {
+        ice::Font const* result = nullptr;
+        if (button_info.font_i != ice::u16{ 0xff'ff })
+        {
+            ice::ui::FontInfo const& font_info = data.fonts[button_info.font_i];
+            UIResourceData const& res_data = resources[font_info.resource_i];
+            if (res_data.info.type == ResourceType::Font)
+            {
+                result = *reinterpret_cast<ice::Font const**>(res_data.location);
+            }
+        }
+        return result;
     }
 
 } // namespace ice::ui

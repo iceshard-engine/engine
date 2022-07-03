@@ -7,7 +7,7 @@ namespace ice::ui
 
     struct ShardInfo
     {
-        ice::ShardName shard_name;
+        ice::ShardID shardid;
     };
 
 } // namespace ice::ui

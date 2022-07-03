@@ -110,16 +110,17 @@ namespace ice::ui
 
             ice::Utf8String  const text = ice::ui::button_get_text(data, button_info, resources);
 
-            ice::ui::UIFont const& font = data.fonts[0];
-            bounds = ice::font_text_bounds(*font.font, text);
+            ice::ui::FontInfo const& font_info = data.fonts[button_info.font_i];
+            ice::Font const* font = ice::ui::button_get_font(data, button_info, resources);
+            bounds = ice::font_text_bounds(*font, text);
 
             if (any(flags, ElementFlags::Size_AutoWidth | ElementFlags::Size_StretchWidth))
             {
-                size.width = bounds.x * font.size;
+                size.width = bounds.x * font_info.font_size;
             }
             if (any(flags, ElementFlags::Size_AutoHeight | ElementFlags::Size_StretchHeight))
             {
-                size.height = bounds.y * font.size;
+                size.height = bounds.y * font_info.font_size;
             }
         }
         else if (info.type == ElementType::VListBox)

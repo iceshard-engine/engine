@@ -10,26 +10,28 @@ namespace ice::ui
     enum class ResourceType : ice::u32
     {
         None,
+        Font,
         Utf8String,
     };
 
     struct ResourceInfo
     {
+        ice::detail::stringid_type_v2::StringID<true> id;
         ice::ui::ResourceType type;
         ice::u32 type_data;
     };
 
-    struct UIFont
+    struct FontInfo
     {
-        ice::Font const* font;
-        ice::u32 size;
-        // bool is_bold;
-        // bool is_italic;
+        ice::usize font_name_offset;
+        ice::u32 font_name_size;
+        ice::u16 font_size;
+
+        ice::u16 resource_i;
     };
 
     struct UIData
     {
-        ice::Span<ice::ui::UIFont const> fonts;
         ice::Span<ice::ui::ElementInfo const> elements;
         ice::Span<ice::ui::Size const> sizes;
         ice::Span<ice::ui::Position const> positions;
@@ -37,6 +39,7 @@ namespace ice::ui
         ice::Span<ice::ui::RectOffset const> paddings;
         ice::Span<ice::ui::ButtonInfo const> data_buttons;
 
+        ice::Span<ice::ui::FontInfo const> fonts;
         ice::Span<ice::ui::ShardInfo const> ui_shards;
         ice::Span<ice::ui::Action const> ui_actions;
         ice::Span<ice::ui::ResourceInfo const> ui_resources;
