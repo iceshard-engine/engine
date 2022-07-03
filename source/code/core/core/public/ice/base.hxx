@@ -38,6 +38,12 @@ namespace ice
     template<typename T>
     using clean_type = clear_type_t<T>;
 
+    template<typename T>
+    constexpr auto to_const(T* value) noexcept -> T const*
+    {
+        return const_cast<T const*>(value);
+    }
+
 } // namespace ice
 
 //! \brief This macro is required for a bug apprearing in the MSVC compile when generating optimized code with /O2
