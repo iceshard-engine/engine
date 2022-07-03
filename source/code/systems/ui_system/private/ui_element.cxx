@@ -151,6 +151,7 @@ namespace ice::ui
         out_element.bbox = make_bbox(size, margin, padding);
         out_element.hitbox = out_element.bbox - margin;// make_hitbox(out_element.bbox, margin);
         out_element.contentbox = out_element.hitbox - padding;
+        out_element.flags = out_element.flags & ~(ElementFlags::Size_AutoWidth | ElementFlags::Size_AutoHeight);
 
         return any(
             flags,
@@ -170,6 +171,11 @@ namespace ice::ui
         RectOffset margin;
         RectOffset padding;
         ElementFlags flags = ElementFlags::None;
+
+        if (any(parent.flags, ElementFlags::Size_StretchWidth | ElementFlags::Size_StretchHeight))
+        {
+            return UpdateResult::Unresolved;
+        }
 
         read_size(data, info, size, flags);
         if (any(flags, ElementFlags::Size_StretchWidth | ElementFlags::Size_StretchHeight) == false)
@@ -197,6 +203,7 @@ namespace ice::ui
         out_element.bbox = make_bbox(size, margin, padding);
         out_element.hitbox = out_element.bbox - margin;// make_hitbox(out_element.bbox, margin);
         out_element.contentbox = out_element.hitbox - padding;
+        out_element.flags = out_element.flags & ~(ElementFlags::Size_StretchWidth | ElementFlags::Size_StretchHeight);
         return UpdateResult::Resolved;
     }
 
@@ -214,7 +221,7 @@ namespace ice::ui
 
         // We use the hitbox, as we should start at the 'padded' location of the parent element.
         Size const parent_size = rect_size(parent.hitbox);
-        Size const size = ice::ui::rect_size(out_element.contentbox);
+        Size const size = rect_size(out_element.contentbox); // TOOD: Check if this should not be the hitbox.
         Position offset = rect_position(parent.hitbox);
 
         // If we are a child of a parent VListBox we are already updated
@@ -223,7 +230,15 @@ namespace ice::ui
             return UpdateResult::Resolved;
         }
 
-        if (contains(current_flags, ElementFlags::Position_AnchorRight))
+        // Margin auto on left + right will center the page.
+        if (contains(current_flags, ElementFlags::Offset_AutoLeft | ElementFlags::Offset_AutoRight))
+        {
+            Size const hitbox_size = rect_size(out_element.hitbox);
+            ice::u32 const available_margin_width = ((parent_size.width - hitbox_size.width) / 2.f + 0.5f);
+
+            offset.x = static_cast<ice::f32>(available_margin_width);
+        }
+        else if (contains(current_flags, ElementFlags::Position_AnchorRight))
         {
             ICE_ASSERT(
                 contains(current_flags, ElementFlags::Position_AnchorRight) == false,
@@ -237,7 +252,14 @@ namespace ice::ui
             offset.x += position.x;
         }
 
-        if (contains(current_flags, ElementFlags::Position_AnchorBottom))
+        if (contains(current_flags, ElementFlags::Offset_AutoTop | ElementFlags::Offset_AutoBottom))
+        {
+            Size const hitbox_size = rect_size(out_element.hitbox);
+            ice::u32 const available_margin_height = ((parent_size.height - hitbox_size.height) / 2.f + 0.5f);
+
+            offset.y = static_cast<ice::f32>(available_margin_height);
+        }
+        else if (contains(current_flags, ElementFlags::Position_AnchorBottom))
         {
             ICE_ASSERT(
                 contains(current_flags, ElementFlags::Position_AnchorTop) == false,

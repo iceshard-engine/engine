@@ -64,7 +64,7 @@ namespace ice::ui
             ice::size(uidata.margins)
         );
 
-        out_flags = out_flags | static_cast<ice::ui::ElementFlags>(flag_values << 8);
+        out_flags = out_flags | static_cast<ice::ui::ElementFlags>(flag_values << 12);
         out_rect_offset = uidata.margins[index];
     }
 
@@ -85,7 +85,7 @@ namespace ice::ui
             ice::size(uidata.paddings)
         );
 
-        out_flags = out_flags | static_cast<ice::ui::ElementFlags>(flag_values << 8);
+        out_flags = out_flags | static_cast<ice::ui::ElementFlags>(flag_values << 12);
         out_rect_offset = uidata.paddings[index];
     }
 

@@ -61,22 +61,22 @@ namespace ice::ui
     {
         None = 0x0,
 
-        Size_AutoWidth = 0x0000'0008,
-        Size_AutoHeight = 0x0000'0004,
-        Size_StretchWidth = 0x0000'0002,
-        Size_StretchHeight = 0x0000'0001,
+        Size_AutoWidth = 0x0001,
+        Size_AutoHeight = 0x0002,
+        Size_StretchWidth = 0x0004,
+        Size_StretchHeight = 0x0008,
 
-        Position_AutoX = 0x0000'00080,
-        Position_AutoY = 0x0000'00040,
-        Position_AnchorLeft = 0x0000'0800,
-        Position_AnchorRight = 0x0000'0400,
-        Position_AnchorTop = 0x0000'0200,
-        Position_AnchorBottom = 0x0000'0100,
+        Position_AutoX = 0x00010,
+        Position_AutoY = 0x00020,
+        Position_AnchorLeft = 0x0100,
+        Position_AnchorRight = 0x0200,
+        Position_AnchorTop = 0x0400,
+        Position_AnchorBottom = 0x0800,
 
-        Offset_AutoLeft = 0x0000'8000,
-        Offset_AutoTop = 0x0000'4000,
-        Offset_AutoRight = 0x0000'2000,
-        Offset_AutoBottom = 0x0000'1000,
+        Offset_AutoLeft = 0x1000,
+        Offset_AutoTop = 0x2000,
+        Offset_AutoRight = 0x4000,
+        Offset_AutoBottom = 0x8000,
     };
 
     constexpr auto operator|(
@@ -92,11 +92,29 @@ namespace ice::ui
     constexpr auto operator&(
         ice::ui::ElementFlags left,
         ice::ui::ElementFlags right
-    ) noexcept -> ice::ui::ElementFlags
+        ) noexcept -> ice::ui::ElementFlags
     {
         ice::u32 const left_value = static_cast<ice::u32>(left);
         ice::u32 const right_value = static_cast<ice::u32>(right);
         return static_cast<ice::ui::ElementFlags>(left_value & right_value);
+    }
+
+    constexpr auto operator~(
+        ice::ui::ElementFlags flags
+    ) noexcept -> ice::ui::ElementFlags
+    {
+        ElementFlags constexpr AllValidFlags = ElementFlags::None
+            | ElementFlags::Size_AutoWidth | ElementFlags::Size_AutoHeight
+            | ElementFlags::Size_StretchWidth | ElementFlags::Size_StretchHeight
+            | ElementFlags::Position_AutoX | ElementFlags::Position_AutoY
+            | ElementFlags::Position_AnchorLeft | ElementFlags::Position_AnchorRight
+            | ElementFlags::Position_AnchorTop | ElementFlags::Position_AnchorBottom
+            | ElementFlags::Offset_AutoLeft | ElementFlags::Offset_AutoRight
+            | ElementFlags::Offset_AutoTop | ElementFlags::Offset_AutoBottom;
+
+        ice::u32 const flags_value = static_cast<ice::u32>(flags);
+        ice::u32 const all_value = static_cast<ice::u32>(AllValidFlags);
+        return static_cast<ice::ui::ElementFlags>(all_value ^ flags_value);
     }
 
     constexpr bool contains(
