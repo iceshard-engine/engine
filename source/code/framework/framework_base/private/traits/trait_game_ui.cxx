@@ -139,6 +139,7 @@ namespace ice
     ) noexcept
     {
         static PageInfo invalid_page{ .data = nullptr };
+        bool visible_page_dirty = false;
 
         _entity_tracker.refresh_handles(runner.previous_frame().shards());
 
@@ -156,6 +157,7 @@ namespace ice
                 if (ice::shard_inspect(shard, size))
                 {
                     _size_fb = ice::vec2f(size.x, size.y);
+                    visible_page_dirty = true;
                 }
             }
             else if (shard == Shard_GameUI_Load)
@@ -296,7 +298,6 @@ namespace ice
         {
             if (visible_page_info.data != nullptr)
             {
-                bool is_dirty = false;
                 for (ice::UpdateUIResource const* resupdate : resource_updates)
                 {
                     for (ice::ui::UIResourceData& data : visible_page_info.resources)
@@ -306,7 +307,7 @@ namespace ice
                             if (resupdate->resource_type == ice::ui::ResourceType::Utf8String)
                             {
                                 ice::Utf8String const* new_str = reinterpret_cast<ice::Utf8String const*>(resupdate->resource_data);
-                                is_dirty = true;
+                                visible_page_dirty = true;
 
                                 if (data.info.type_data == 0)
                                 {
@@ -323,12 +324,12 @@ namespace ice
                         }
                     }
                 }
-
-                if (is_dirty)
-                {
-                    portal.execute(update_page(portal.allocator(), frame, runner, visible_page_info));
-                }
             }
+        }
+
+        if (visible_page_dirty)
+        {
+            portal.execute(update_page(portal.allocator(), frame, runner, visible_page_info));
         }
 
         {
@@ -717,6 +718,16 @@ namespace ice
             );
         }
 
+        page_info.elements[0].flags = ElementFlags::None;
+        page_info.elements[0].contentbox = ice::ui::Rect{
+            .left = 0,
+            .top = 0,
+            .right = _size_fb.x,
+            .bottom = _size_fb.y
+        };
+        page_info.elements[0].hitbox = page_info.elements[0].contentbox;
+        page_info.elements[0].bbox = page_info.elements[0].hitbox;
+
         // Calculate auto sizes (childs to parents)
         if (contains_unresolved())
         {
@@ -741,7 +752,7 @@ namespace ice
         }
 
         // Calculate stretch sizes (childs to siblings)
-        if (contains_unresolved())
+        while (contains_unresolved())
         {
             for (ice::i32 idx = count_elements - 1; idx >= 0; --idx)
             {

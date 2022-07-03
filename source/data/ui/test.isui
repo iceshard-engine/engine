@@ -2,7 +2,7 @@
     xmlns:ice="https://www.iceshard.net/docs/engine/v1_alpha/isui/iceshard/">
 
   <ui:resources>
-    <ui:resource type="font" name="default" size="15" font="calibri" />
+    <ui:resource type="font" name="default" size="15" font="comic" />
     <ui:resource type="text" name="text_start" />
     <ui:resource type="text" name="text_settings" />
     <ui:resource type="text" name="text_credits" />
@@ -13,8 +13,8 @@
     <ice:shard name="game_exit" action="action/game/exit" />
   </ice:shards>
 
-  <ui:page position="600,100">
-    <ui:container type="vertical">
+  <ui:page>
+    <ui:container size="300,auto" margin="auto" type="vertical">
       <ui:button size="*,auto" padding="6" margin="0,0,0,0" text="{Resource text_start}" />
       <ui:button size="*,auto" padding="6" margin="0,10,0,0" text="{Resource text_settings}" />
       <ui:button size="*,auto" padding="6" margin="0,10,0,0" text="{Resource text_credits}" />
