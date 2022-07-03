@@ -394,11 +394,33 @@ void MyGame::on_update(ice::EngineFrame& frame, ice::EngineRunner& runner, ice::
 
     runner.graphics_frame().enqueue_pass("default"_sid, "game.render"_sid, _game_gfx_pass.get());
 
+    static constexpr ice::Utf8String temp_ui_ids[]{
+        u8"text_start",
+        u8"text_settings",
+        u8"text_credits",
+        u8"text_exit",
+    };
+    static constexpr ice::Utf8String temp_ui_strings[]{
+        u8"Start",
+        u8"Settings",
+        u8"Credits",
+        u8"Exit",
+    };
+
     ice::shards::inspect_each<ice::c8utf const*>(
         runner.previous_frame().shards(),
         ice::Shard_GameUI_Loaded,
         [&frame](ice::c8utf const* page_name) noexcept
         {
+            for (ice::u32 idx = 0; idx < ice::size(temp_ui_strings); ++idx)
+            {
+                ice::Utf8String* str = frame.create_named_object<ice::Utf8String>(ice::stringid(temp_ui_strings[idx]), temp_ui_strings[idx]);
+                ice::UpdateUIResource* ures = frame.create_named_object<ice::UpdateUIResource>(ice::stringid(temp_ui_ids[idx]));
+                ures->resource_data = ice::to_const(str);
+                ures->resource_id = ice::stringid(temp_ui_ids[idx]);
+                ures->resource_type = ice::ui::ResourceType::Utf8String;
+                ice::shards::push_back(frame.shards(), ice::Shard_GameUI_UpdateResource | ice::to_const(ures));
+            }
             ice::shards::push_back(frame.shards(), ice::Shard_GameUI_Show | page_name);
         }
     );

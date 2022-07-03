@@ -2,22 +2,23 @@
     xmlns:ice="https://www.iceshard.net/docs/engine/v1_alpha/isui/iceshard/">
 
   <ui:resources>
-    <!-- <ui:resource type="font" name="default" /> -->
-    <ui:resource type="string:short" name="dynamic_text2" />
-    <ui:resource type="string:short" name="dynamic_text" />
+    <ui:resource type="font" name="default" size="15" font="calibri" />
+    <ui:resource type="text" name="text_start" />
+    <ui:resource type="text" name="text_settings" />
+    <ui:resource type="text" name="text_credits" />
+    <ui:resource type="text" name="text_exit" />
   </ui:resources>
 
   <ice:shards>
     <ice:shard name="game_exit" action="action/game/exit" />
-    <ice:shard name="runtime_text" action="event/ui/set_runtime_text" />
   </ice:shards>
 
   <ui:page position="600,100">
     <ui:container type="vertical">
-      <ui:button size="*,auto" padding="6" margin="0,0,0,0" text="Start" />
-      <ui:button size="*,auto" padding="6" margin="0,10,0,0" text="{Shard runtime_text, source={Resource dynamic_text}}" />
-      <ui:button size="*,auto" padding="6" margin="0,10,0,0" text="Credits" />
-      <ui:button size="*,auto" padding="6" margin="0,10,0,0" text="Exit" on_click="{Shard game_exit}" />
+      <ui:button size="*,auto" padding="6" margin="0,0,0,0" text="{Resource text_start}" />
+      <ui:button size="*,auto" padding="6" margin="0,10,0,0" text="{Resource text_settings}" />
+      <ui:button size="*,auto" padding="6" margin="0,10,0,0" text="{Resource text_credits}" />
+      <ui:button size="*,auto" padding="6" margin="0,10,0,0" text="{Resource text_exit}" on_click="{Shard game_exit}" />
     </ui:container>
   </ui:page>
 
