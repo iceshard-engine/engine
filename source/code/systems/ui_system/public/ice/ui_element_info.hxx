@@ -92,7 +92,7 @@ namespace ice::ui
     constexpr auto operator&(
         ice::ui::ElementFlags left,
         ice::ui::ElementFlags right
-        ) noexcept -> ice::ui::ElementFlags
+    ) noexcept -> ice::ui::ElementFlags
     {
         ice::u32 const left_value = static_cast<ice::u32>(left);
         ice::u32 const right_value = static_cast<ice::u32>(right);

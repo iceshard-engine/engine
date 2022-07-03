@@ -39,22 +39,6 @@ namespace ice::ui
         return bbox;
     }
 
-    //auto make_hitbox(
-    //    ice::ui::Rect bbox,
-    //    ice::ui::RectOffset margin
-    //) noexcept -> ice::ui::Rect
-    //{
-    //    return move_box(bbox - margin, to_vec2({ margin.left, margin.top }));
-    //}
-
-    //auto make_contentbox(
-    //    ice::ui::Rect hitbox,
-    //    ice::ui::RectOffset padding
-    //) noexcept -> ice::ui::Rect
-    //{
-    //    return move_box(hitbox - padding, to_vec2({ padding.left, padding.top }));
-    //}
-
     auto element_update_size_explicit(
         ice::ui::UIData const& data,
         ice::ui::Element const& parent,
@@ -73,7 +57,7 @@ namespace ice::ui
         read_padding(data, info, padding, flags);
 
         out_element.bbox = make_bbox(size, margin, padding);
-        out_element.hitbox = out_element.bbox - margin;// make_hitbox(out_element.bbox, margin);
+        out_element.hitbox = out_element.bbox - margin;
         out_element.contentbox = out_element.hitbox - padding;
         out_element.flags = flags;
 
@@ -149,7 +133,7 @@ namespace ice::ui
         }
 
         out_element.bbox = make_bbox(size, margin, padding);
-        out_element.hitbox = out_element.bbox - margin;// make_hitbox(out_element.bbox, margin);
+        out_element.hitbox = out_element.bbox - margin;
         out_element.contentbox = out_element.hitbox - padding;
         out_element.flags = out_element.flags & ~(ElementFlags::Size_AutoWidth | ElementFlags::Size_AutoHeight);
 
@@ -201,7 +185,7 @@ namespace ice::ui
         }
 
         out_element.bbox = make_bbox(size, margin, padding);
-        out_element.hitbox = out_element.bbox - margin;// make_hitbox(out_element.bbox, margin);
+        out_element.hitbox = out_element.bbox - margin;
         out_element.contentbox = out_element.hitbox - padding;
         out_element.flags = out_element.flags & ~(ElementFlags::Size_StretchWidth | ElementFlags::Size_StretchHeight);
         return UpdateResult::Resolved;
@@ -307,7 +291,6 @@ namespace ice::ui
         ice::Span<ice::ui::UIResourceData const> resources
     ) noexcept -> ice::ui::UpdateResult
     {
-        //ElementType const parent_type = data.elements[info.parent].type;
         if (stage == UpdateStage::ExplicitSize)
         {
             return element_update_size_explicit(data, parent, info, out_element);

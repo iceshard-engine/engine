@@ -62,11 +62,6 @@ namespace ice
             }
         }
 
-        //for (ice::RawShard const& shard : raw_shards)
-        //{
-        //    additional_data_size += button_data->action_on_click.data_source.size() + 1;
-        //}
-
         auto const type_count = [&type_info_counts](ElementType type) noexcept -> ice::u32
         {
             return type_info_counts[static_cast<ice::u32>(type)];
@@ -138,8 +133,6 @@ namespace ice
             isui->ui_actions = { actions, count_actions };
             isui->ui_resources = { resources, count_resources };
             isui->additional_data = additional_data;
-            //isui->data_label = { };
-            //isui->data_button = { };
 
             auto const find_font_idx = [&raw_resources](ice::Utf8String font_name) noexcept -> ice::u16
             {
@@ -362,7 +355,6 @@ namespace ice
 
             ice::pod::Array<ice::RawResource> uires{ alloc };
             ice::pod::array::reserve(uires, 25);
-            //ice::pod::array::push_back(uires, RawShard{ });
 
             ice::pod::Array<ice::RawElement> elements{ alloc };
             ice::pod::array::reserve(elements, 50);

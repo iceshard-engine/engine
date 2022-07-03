@@ -238,25 +238,27 @@ namespace ice::ecs
         }
 
         // We store the given span pointers so update them easily...
-        //void* const data_pointers[component_count]{ };
         void* const span_pointers[]{
             std::addressof(component_spans)...
         };
 
-        using ComponentTypeTuple = std::tuple<Components...>;
-        auto const update_span_helper = [&]/*<std::size_t Idx>*/(void* span_raw_ptr, void*& data_ptr, auto* null_ptr, ice::u32 offset_idx) noexcept
+        auto const update_span_helper = [&]<typename ComponentType>(
+            void* span_raw_ptr,
+            void*& data_ptr,
+            ComponentType*,
+            ice::u32 offset_idx
+        ) noexcept
         {
-            using ComponentType = std::remove_pointer_t<decltype(null_ptr)>;// std::tuple_element_t<Idx, ComponentTypeTuple>;
             using SpanType = ice::Span<ComponentType>;
 
             data_ptr = ice::memory::ptr_align_forward(data_ptr, alignof(ComponentType));
-            offsets_ptr[offset_idx/*ComponentIdxMap[Idx] - 1*/] = ice::memory::ptr_distance(
+            offsets_ptr[offset_idx] = ice::memory::ptr_distance(
                 operation_data,
                 data_ptr
             );
 
             // Update the span object...
-            SpanType* span_ptr = reinterpret_cast<SpanType*>(span_raw_ptr);// span_pointers[Idx]);
+            SpanType* span_ptr = reinterpret_cast<SpanType*>(span_raw_ptr);
             *span_ptr = SpanType{ reinterpret_cast<ComponentType*>(data_ptr), entity_count };
 
             // Move to the next data location...
@@ -264,16 +266,18 @@ namespace ice::ecs
             return true;
         };
 
+        using ComponentTypeTuple = std::tuple<Components...>;
         auto const update_spans_helper = [&]<std::size_t... Idx>(std::index_sequence<Idx...> seq) noexcept
         {
             void* operation_data_copy = operation_data;
 
-            //using ComponentType = ;
             bool temp[]{
+                // [dpenkala: 04/07/2022] We are casting here a nullptr to a type,
+                //  so we can use the type in the first helper lambda.
                 update_span_helper(
                     span_pointers[Idx],
                     operation_data_copy,
-                    (std::tuple_element_t<Idx, ComponentTypeTuple>*)nullptr,
+                    reinterpret_cast<std::tuple_element_t<Idx, ComponentTypeTuple>*>(nullptr),
                     ComponentIdxMap[Idx] - 1
                 )...
             };

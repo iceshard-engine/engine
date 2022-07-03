@@ -192,7 +192,7 @@ namespace ice
             ice::stringid_hint(name)
         );
 
-        // TODO: To be refactored with the planned introduction of a proper 'size' type.
+        // [GH#129] To be refactored with the planned introduction of a proper 'size' type.
         ICE_ASSERT(alignment >= sizeof(ice::u32), "Cannot store array size in fron of the array!");
 
         void* object_ptr = _data_allocator.allocate(alignment + element_size * count, alignment);

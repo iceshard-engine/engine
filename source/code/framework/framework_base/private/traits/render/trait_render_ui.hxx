@@ -25,8 +25,6 @@ namespace ice
     struct RenderUIData
     {
         ice::u64 id;
-        //ice::ui::UIData const* uidata;
-
         struct Uniform
         {
             ice::vec2f position;
@@ -101,14 +99,6 @@ namespace ice
         ) noexcept override;
 
     private:
-        auto create_render_data(
-            ice::Allocator& alloc,
-            ice::EngineRunner& runner,
-            ice::RenderUIRequest const& ui_request,
-            ice::RenderUIData& render_data
-        ) noexcept -> ice::Task<>;
-
-    private:
         ice::Data _shader_data[2];
         ice::render::Shader _shaders[2];
         ice::render::ShaderStageFlags _shader_stages[2];
@@ -116,7 +106,6 @@ namespace ice
         ice::render::Pipeline _pipeline;
 
         ice::render::ResourceSetLayout _resource_set_layout[1];
-        //ice::render::ResourceSet _resource_set[1];
 
         ice::vec2f _display_size;
         ice::pod::Hash<RenderUIData*> _render_data;

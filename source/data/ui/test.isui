@@ -14,7 +14,7 @@
   </ice:shards>
 
   <ui:page>
-    <ui:container size="300,auto" margin="auto" type="vertical">
+    <ui:container size="300,600" margin="auto" type="vertical">
       <ui:button size="*,auto" padding="6" margin="0,0,0,0" text="{Resource text_start}" />
       <ui:button size="*,auto" padding="6" margin="0,10,0,0" text="{Resource text_settings}" />
       <ui:button size="*,auto" padding="6" margin="0,10,0,0" text="{Resource text_credits}" />

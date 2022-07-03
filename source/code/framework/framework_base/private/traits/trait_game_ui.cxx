@@ -68,7 +68,6 @@ namespace ice
     {
         static constexpr ice::StringID Identifier = "ice.component.ui-element"_sid;
 
-        //ice::ecs::Entity page_entity;
         ice::u64 page_hash;
         ice::u8 element_idx;
     };
@@ -78,7 +77,6 @@ namespace ice
         static constexpr ice::StringID Identifier = "ice.component.ui-button"_sid;
 
         ice::ui::Action const* action_on_click;
-        ice::ui::Action const* action_text;
     };
 
     static constexpr ice::ecs::ArchetypeDefinition<ice::UIPage> Constant_Archetype_UIPage{ };
@@ -475,7 +473,6 @@ namespace ice
                 if (element_data.type == ElementType::Button)
                 {
                     out_buttons[idx_button].action_on_click = nullptr;
-                    out_buttons[idx_button].action_text = nullptr;
 
                     using ice::ui::ActionType;
                     using ice::ui::DataSource;
@@ -486,11 +483,6 @@ namespace ice
                     {
                         ice::ui::Action const& action_on_click = page_data->ui_actions[button_info.action_on_click_i];
                         out_buttons[idx_button].action_on_click = &action_on_click;
-                    }
-                    if (button_info.action_text_i != ice::u16{ 0xffff })
-                    {
-                        ice::ui::Action const& action_text = page_data->ui_actions[button_info.action_text_i];
-                        out_buttons[idx_button].action_text = &action_text;
                     }
 
                     //element.page_entity = page_entity;
@@ -548,7 +540,7 @@ namespace ice
                 {
                     resources[idx].location = ice::memory::ptr_align_forward(resource_additional_data, alignof(ice::Utf8String));
                     ice::Utf8String* str_ptr = reinterpret_cast<ice::Utf8String*>(resources[idx].location);
-                    *str_ptr = { reinterpret_cast<ice::c8utf*>(str_ptr + 1), 4 };
+                    *str_ptr = { reinterpret_cast<ice::c8utf*>(str_ptr + 1), 0 };
 
                     resource_additional_data = ice::memory::ptr_add(str_ptr + 1, res_info.type_data + 1);
 

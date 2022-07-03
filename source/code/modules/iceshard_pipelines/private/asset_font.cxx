@@ -114,14 +114,6 @@ namespace ice
     {
         bool result = true;
 
-        //ice::Utf8String atlas_definition_file;
-        //ice::meta_read_utf8(resource.metadata(), u8"font.atlas_definition"_sid, atlas_definition_file);
-
-        //ice::ResourceHandle* handle = tracker.find_resource(resource.uri(), resource.flags());
-        //ice::ResourceHandle* atlas_handle = tracker.find_resource_relative(ice::URI{ ice::scheme_file, atlas_definition_file }, handle);
-
-        //ice::ResourceResult altas_resource = ice::sync_wait()
-
         msdfgen::FreetypeHandle* const freetype = msdfgen::initializeFreetype();
         if (freetype != nullptr)
         {

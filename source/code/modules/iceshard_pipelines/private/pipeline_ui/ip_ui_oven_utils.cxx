@@ -113,7 +113,7 @@ namespace ice
                     valid_values = false;
                 }
             }
-            if (ice::from_chars(right, right, size.width) == false)
+            if (ice::from_chars(right, right, size.height) == false)
             {
                 if (right == ice::Constant_UIAttributeKeyword_Auto)
                 {

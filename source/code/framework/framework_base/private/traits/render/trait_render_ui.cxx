@@ -361,11 +361,10 @@ namespace ice
                     data->buffer_vertices = ice::render::Buffer::Invalid;
                     data->buffer_colors = ice::render::Buffer::Invalid;
                     data->resourceset_uniform = ice::render::ResourceSet::Invalid;
+                    data->uniform.position = {}; // ui_request.position;
+                    data->uniform.scale = ice::vec2f{ 1.f };
+                    data->draw_data = render_request->draw_data;
                     data->is_dirty = true;
-
-                    portal.execute(
-                        create_render_data(portal.allocator(), runner, *render_request, *data)
-                    );
                 }
                 else
                 {
@@ -380,24 +379,6 @@ namespace ice
         {
             _display_size = ice::vec2f{ (ice::f32)window_size.x, (ice::f32)window_size.y };
         }
-    }
-
-    auto IceWorldTrait_RenderUI::create_render_data(
-        ice::Allocator& alloc,
-        ice::EngineRunner& runner,
-        ice::RenderUIRequest const& ui_request,
-        ice::RenderUIData& render_data
-    ) noexcept -> ice::Task<>
-    {
-        //co_await runner.thread_pool();
-
-        render_data.uniform.position = {}; // ui_request.position;
-        render_data.uniform.scale = ice::vec2f{ 1.f };
-
-        //co_await runner.schedule_next_frame();
-
-        render_data.draw_data = ui_request.draw_data;
-        co_return;
     }
 
     void register_trait_render_ui(ice::WorldTraitArchive& archive) noexcept
