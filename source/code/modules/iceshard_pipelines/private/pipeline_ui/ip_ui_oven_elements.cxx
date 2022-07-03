@@ -21,7 +21,7 @@ namespace ice
             return false;
         }
 
-        inout_str = inout_str.substr(left_bracket, (right_bracket - left_bracket));
+        inout_str = inout_str.substr(left_bracket, (right_bracket - left_bracket) + 1);
         return true;
     }
 
@@ -81,13 +81,53 @@ namespace ice
         return result;
     }
 
+    bool parse_data_reference(
+        ice::Utf8String str,
+        ice::RawData& out_action
+    ) noexcept
+    {
+        out_action.data_type = ice::ui::DataSource::None;
+        out_action.data_source = {};
+
+        bool result = false;
+        if (remove_brackets(str))
+        {
+            ice::usize const type_end = str.find_first_of(u8' ');
+            ice::Utf8String const data_type = str.substr(0, type_end);
+
+            if (data_type == RawAction::Constant_ActionDataType_Resource)
+            {
+                out_action.data_type = ice::ui::DataSource::ValueResource;
+                out_action.data_source = str.substr(type_end + 1);
+            }
+            else if (data_type == RawAction::Constant_ActionDataType_Property)
+            {
+                out_action.data_type = ice::ui::DataSource::ValueProperty;
+                out_action.data_source = str.substr(type_end + 1);
+            }
+            else if (data_type == RawAction::Constant_ActionDataType_UIPage)
+            {
+                out_action.data_type = ice::ui::DataSource::ValueUIPage;
+                out_action.data_source = str.substr(type_end + 1);
+            }
+
+            result = out_action.data_type != ice::ui::DataSource::None;
+            if (result)
+            {
+                ice::trim(out_action.data_source, ' ');
+            }
+        }
+
+        return result;
+    }
+
     bool parse_action_data(
         ice::Utf8String& inout_str,
         ice::RawAction& out_action
     ) noexcept
     {
-        out_action.data_type = ice::ui::ActionData::None;
-        out_action.data_source = {};
+        out_action.data.data_type = ice::ui::DataSource::None;
+        out_action.data.data_source = {};
 
         bool result = true;
         ice::usize const data_start = inout_str.find_first_of('=');
@@ -99,36 +139,37 @@ namespace ice
             inout_str = inout_str.substr(data_start + 1);
             if (remove_brackets(inout_str))
             {
-                ice::usize const type_end = inout_str.find_first_of(u8' ');
-                ice::Utf8String const data_type = inout_str.substr(0, type_end);
+                ICE_ASSERT(false, "TODO!");
+                //ice::usize const type_end = str.find_first_of(u8' ');
+                //ice::Utf8String const data_type = str.substr(0, type_end);
 
-                if (out_action.action_type == ice::ui::ActionType::Shard
-                    && (data_arg == RawAction::Constant_ActionShard_DataArgument
-                        || data_arg == RawAction::Constant_ActionResource_DataArgument)
-                    )
-                {
-                    if (data_type == RawAction::Constant_ActionDataType_Resource)
-                    {
-                        out_action.data_type = ice::ui::ActionData::ValueResource;
-                        out_action.data_source = inout_str.substr(type_end + 1);
-                    }
-                    else if (data_type == RawAction::Constant_ActionDataType_Property)
-                    {
-                        out_action.data_type = ice::ui::ActionData::ValueProperty;
-                        out_action.data_source = inout_str.substr(type_end + 1);
-                    }
-                }
-                else if (out_action.action_type == ice::ui::ActionType::UIShow
-                    && data_arg == RawAction::Constant_ActionUIShow_DataArgument)
-                {
-                    if (data_type == RawAction::Constant_ActionDataType_UIPage)
-                    {
-                        out_action.data_type = ice::ui::ActionData::ValueUIPage;
-                        out_action.data_source = inout_str.substr(type_end + 1);
-                    }
-                }
+                //if (out_action.action_type == ice::ui::ActionType::Shard
+                //    && (data_arg == RawAction::Constant_ActionShard_DataArgument)
+                //        /*|| data_arg == RawAction::Constant_ActionResource_DataArgument)*/
+                //    )
+                //{
+                //    if (data_type == RawAction::Constant_ActionDataType_Resource)
+                //    {
+                //        out_action.data_type = ice::ui::DataSource::ValueResource;
+                //        out_action.data_source = str.substr(type_end + 1);
+                //    }
+                //    else if (data_type == RawAction::Constant_ActionDataType_Property)
+                //    {
+                //        out_action.data_type = ice::ui::DataSource::ValueProperty;
+                //        out_action.data_source = str.substr(type_end + 1);
+                //    }
+                //}
+                //else if (out_action.action_type == ice::ui::ActionType::UIShow
+                //    && data_arg == RawAction::Constant_ActionUIShow_DataArgument)
+                //{
+                //    if (data_type == RawAction::Constant_ActionDataType_UIPage)
+                //    {
+                //        out_action.data_type = ice::ui::DataSource::ValueUIPage;
+                //        out_action.data_source = str.substr(type_end + 1);
+                //    }
+                //}
 
-                result = out_action.data_type != ice::ui::ActionData::None;
+                //result = out_action.data_type != ice::ui::DataSource::None;
             }
         }
         return result;
@@ -159,6 +200,8 @@ namespace ice
     ) noexcept
     {
         ice::RawButtonInfo* button_info = alloc.make<RawButtonInfo>();
+        button_info->font.data_type = ice::ui::DataSource::Value;
+        button_info->font.data_source = u8"default";
 
         rapidxml_ns::xml_attribute<char> const* attribute = xml_element->first_attribute();
         while (attribute != nullptr)
@@ -171,6 +214,15 @@ namespace ice
                 if (ice::parse_action(button_info->text, button_info->action_text))
                 {
                     button_info->text = {};
+                }
+            }
+            else if (attrib_name == ice::Constant_UIAttribute_Font)
+            {
+                ice::Utf8String data_ref = ice::xml_value(attribute);
+                if (ice::parse_data_reference(data_ref, button_info->font) == false)
+                {
+                    button_info->font.data_type = ice::ui::DataSource::Value;
+                    button_info->font.data_source = data_ref;
                 }
             }
             else if (attrib_name == ice::Constant_UIAttribute_OnClick)

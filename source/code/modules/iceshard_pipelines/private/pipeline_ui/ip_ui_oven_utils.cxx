@@ -82,7 +82,7 @@ namespace ice
         rapidxml_ns::xml_attribute<char> const* attrib
     ) noexcept -> ice::Utf8String
     {
-        return { reinterpret_cast<ice::c8utf const*>(attrib->value()), attrib->value_size() };
+        return attrib == nullptr ? u8"" : ice::Utf8String{ reinterpret_cast<ice::c8utf const*>(attrib->value()), attrib->value_size() };
     }
 
     void parse_element_size(char const* it, char const* end, ice::ui::ElementFlags& out_flags, ice::ui::Size& size) noexcept

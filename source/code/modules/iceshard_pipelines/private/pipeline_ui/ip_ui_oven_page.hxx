@@ -17,12 +17,15 @@ namespace ice
 
     static constexpr ice::String Constant_UIAttribute_ResourceType = "type";
     static constexpr ice::String Constant_UIAttribute_ResourceName = "name";
+    static constexpr ice::String Constant_UIAttribute_ResourceFontSize = "size";
+    static constexpr ice::String Constant_UIAttribute_ResourceFontName = "font";
 
     static constexpr ice::String Constant_UIAttribute_ShardReference = "name";
     static constexpr ice::String Constant_UIAttribute_ShardName = "action";
 
+    static constexpr ice::Utf8String Constant_UIResourceType_Font = u8"font";
     static constexpr ice::Utf8String Constant_UIResourceType_Text = u8"text";
-    static constexpr ice::Utf8String Constant_UIResourceType_StringShort = u8"string:short";
+    static constexpr ice::Utf8String Constant_UIResourceType_String = u8"string";
 
     struct RawElement
     {
@@ -45,7 +48,19 @@ namespace ice
     {
         ice::Utf8String ui_name;
         ice::ui::ResourceType type;
-        ice::u32 type_data;
+
+        struct FontData
+        {
+            ice::Utf8String font_name;
+            ice::u16 font_size;
+            ice::u16 font_default : 1;
+        };
+
+        union
+        {
+            ice::u32 type_data;
+            FontData font_data;
+        };
     };
 
     struct RawShard
@@ -57,7 +72,7 @@ namespace ice
     void compile_resources(
         ice::Allocator& alloc,
         rapidxml_ns::xml_node<char> const* xml_node,
-        ice::pod::Array<ice::RawResource>& shards
+        ice::pod::Array<ice::RawResource>& resources
     ) noexcept;
 
     void compile_shards(

@@ -10,7 +10,14 @@ namespace ice
     static constexpr ice::String Constant_UIElement_Button = "button";
 
     static constexpr ice::String Constant_UIAttribute_Text = "text";
+    static constexpr ice::String Constant_UIAttribute_Font = "font";
     static constexpr ice::String Constant_UIAttribute_OnClick = "on_click";
+
+    struct RawData
+    {
+        ice::ui::DataSource data_type;
+        ice::Utf8String data_source;
+    };
 
     struct RawAction
     {
@@ -22,19 +29,18 @@ namespace ice
         static constexpr ice::Utf8String Constant_ActionDataType_Property = u8"Property";
         static constexpr ice::Utf8String Constant_ActionDataType_UIPage = u8"UIPage";
 
-        static constexpr ice::Utf8String Constant_ActionResource_DataArgument = u8"source";
         static constexpr ice::Utf8String Constant_ActionShard_DataArgument = u8"value";
         static constexpr ice::Utf8String Constant_ActionUIShow_DataArgument = u8"ui";
 
         ice::ui::ActionType action_type;
-        ice::ui::ActionData data_type;
         ice::Utf8String action_value;
-        ice::Utf8String data_source;
+        ice::RawData data;
     };
 
     struct RawButtonInfo
     {
         ice::Utf8String text;
+        ice::RawData font;
         ice::RawAction action_text;
         ice::RawAction action_on_click;
     };
