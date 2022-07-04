@@ -6,7 +6,7 @@
 namespace ice
 {
 
-    void compile_ui(
+    void parse_ui_file(
         ice::Allocator& alloc,
         rapidxml_ns::xml_document<char>& doc,
         ice::pod::Array<ice::RawElement>& raw_elements,
@@ -27,7 +27,7 @@ namespace ice
         );
         if (xml_node_resources != nullptr)
         {
-            compile_resources(alloc, xml_node_resources, ui_resources);
+            parse_resources(alloc, xml_node_resources, ui_resources);
         }
 
         rapidxml_ns::xml_node<char> const* xml_node_shards = xml_first_node(
@@ -37,7 +37,7 @@ namespace ice
         );
         if (xml_node_shards != nullptr)
         {
-            compile_shards(alloc, xml_node_shards, ui_shards);
+            parse_shards(alloc, xml_node_shards, ui_shards);
         }
 
         rapidxml_ns::xml_node<char> const* xml_node = xml_first_node(
@@ -48,7 +48,7 @@ namespace ice
 
         if (xml_node != nullptr)
         {
-            compile_page(alloc, xml_node, raw_elements);
+            parse_page_element(alloc, xml_node, raw_elements);
         }
 
     }

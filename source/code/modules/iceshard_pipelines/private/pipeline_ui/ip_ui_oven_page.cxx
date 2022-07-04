@@ -1,13 +1,13 @@
 #include "ip_ui_oven_page.hxx"
 #include "ip_ui_oven_elements.hxx"
 #include "ip_ui_oven_utils.hxx"
-#include <ice/ui_data.hxx>
+#include <ice/ui_resource.hxx>
 #include <ice/assert.hxx>
 
 namespace ice
 {
 
-    void compile_resources(
+    void parse_resources(
         ice::Allocator& alloc,
         rapidxml_ns::xml_node<char> const* xml_node,
         ice::pod::Array<ice::RawResource>& shards
@@ -93,7 +93,7 @@ namespace ice
         }
     }
 
-    void compile_shards(
+    void parse_shards(
         ice::Allocator& alloc,
         rapidxml_ns::xml_node<char> const* xml_node,
         ice::pod::Array<ice::RawShard>& shards
@@ -133,9 +133,54 @@ namespace ice
         }
     }
 
-    void compile_page(ice::Allocator& alloc, rapidxml_ns::xml_node<char> const* page, ice::pod::Array<RawElement>& elements) noexcept
+    void parse_child_element(
+        ice::Allocator& alloc,
+        rapidxml_ns::xml_node<char> const* xml_element,
+        ice::u16 parent_idx,
+        ice::pod::Array<RawElement>& elements
+    ) noexcept
     {
-        compile_element(alloc, page, 0, elements);
+        ice::u16 const element_index = static_cast<ice::u16>(
+            ice::pod::array::size(elements)
+        );
+
+        ice::pod::array::push_back(
+            elements,
+            ice::RawElement{ .parent = parent_idx }
+        );
+
+        parse_element_attribs(
+            alloc,
+            xml_element,
+            elements[element_index]
+        );
+
+        parse_element_details(
+            alloc,
+            xml_element,
+            elements[element_index]
+        );
+
+        rapidxml_ns::xml_node<char> const* xml_child = ice::xml_first_node(
+            xml_element,
+            ice::Constant_ISUINamespaceUI
+        );
+
+        while (xml_child != nullptr)
+        {
+            parse_child_element(alloc, xml_child, element_index, elements);
+
+            xml_child = ice::xml_next_sibling(xml_child, ice::Constant_ISUINamespaceUI);
+        }
+    }
+
+    void parse_page_element(
+        ice::Allocator& alloc,
+        rapidxml_ns::xml_node<char> const* xml_page,
+        ice::pod::Array<RawElement>& elements
+    ) noexcept
+    {
+        parse_child_element(alloc, xml_page, 0, elements);
     }
 
 } // namespace ice

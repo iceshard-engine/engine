@@ -64,6 +64,24 @@ namespace ice
         );
     }
 
+    auto xml_next_attrib(
+        rapidxml_ns::xml_attribute<char> const* attrib,
+        ice::String name
+    ) noexcept -> rapidxml_ns::xml_attribute<char> const*
+    {
+        return attrib->next_attribute(
+            name.data(),
+            name.size()
+        );
+    }
+
+    auto xml_name(
+        rapidxml_ns::xml_node<char> const* node
+    ) noexcept -> ice::String
+    {
+        return { node->local_name(), node->local_name_size() };
+    }
+
     auto xml_name(
         rapidxml_ns::xml_attribute<char> const* attrib
     ) noexcept -> ice::String

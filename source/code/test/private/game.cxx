@@ -41,7 +41,7 @@
 #include <ice/shard.hxx>
 
 #include <ice/ui_asset.hxx>
-#include <ice/ui_data.hxx>
+#include <ice/ui_resource.hxx>
 
 #include <ice/ecs/ecs_archetype_index.hxx>
 #include <ice/ecs/ecs_entity_index.hxx>

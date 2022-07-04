@@ -18,7 +18,7 @@ namespace ice
     static constexpr ice::String Constant_ISUINamespaceUI = "https://www.iceshard.net/docs/engine/v1_alpha/isui/ui/";
     static constexpr ice::String Constant_ISUINamespaceIceShard = "https://www.iceshard.net/docs/engine/v1_alpha/isui/iceshard/";
 
-    void compile_ui(
+    void parse_ui_file(
         ice::Allocator& alloc,
         rapidxml_ns::xml_document<char>& doc,
         ice::pod::Array<ice::RawElement>& raw_elements,

@@ -1,17 +1,11 @@
 #pragma once
 #include <ice/ui_types.hxx>
+#include <ice/ui_data_ref.hxx>
+#include <ice/string.hxx>
+#include <ice/span.hxx>
 
 namespace ice::ui
 {
-
-    enum class DataSource : ice::u16
-    {
-        None,
-        Value,
-        ValueResource,
-        ValueProperty,
-        ValueUIPage,
-    };
 
     enum class ActionType : ice::u16
     {
@@ -21,19 +15,14 @@ namespace ice::ui
         UIShow,
     };
 
-    enum class Property : ice::u16
-    {
-        None,
-        Entity,
-    };
-
-    struct Action
+    struct ActionInfo
     {
         ice::ui::ActionType type;
         ice::u16 type_i;
 
-        ice::ui::DataSource type_data;
-        ice::u16 type_data_i;
+        ice::ui::DataRef data;
     };
+
+    static_assert(sizeof(ActionInfo) == 8);
 
 } // namespace ice::ui

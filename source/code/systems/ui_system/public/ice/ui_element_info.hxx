@@ -7,10 +7,11 @@ namespace ice::ui
     enum class ElementType : ice::u8
     {
         Page,
-        VListBox,
-        Button,
+        LayoutV,
+        LayoutH,
         Label,
-        Custom0,
+        Button,
+        Custom0 = 128,
     };
 
     struct ElementInfo
@@ -56,25 +57,25 @@ namespace ice::ui
 
 
     void read_size(
-        ice::ui::UIData const& uidata,
+        ice::ui::PageInfo const& uidata,
         ice::ui::ElementInfo const& info,
         ice::ui::Size& out_size
     ) noexcept;
 
     void read_position(
-        ice::ui::UIData const& uidata,
+        ice::ui::PageInfo const& uidata,
         ice::ui::ElementInfo const& info,
         ice::ui::Position& out_position
     ) noexcept;
 
     void read_margin(
-        ice::ui::UIData const& uidata,
+        ice::ui::PageInfo const& uidata,
         ice::ui::ElementInfo const& info,
         ice::ui::RectOffset& out_rect_offset
     ) noexcept;
 
     void read_padding(
-        ice::ui::UIData const& uidata,
+        ice::ui::PageInfo const& uidata,
         ice::ui::ElementInfo const& info,
         ice::ui::RectOffset& out_rect_offset
     ) noexcept;

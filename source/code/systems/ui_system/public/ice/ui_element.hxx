@@ -36,7 +36,7 @@ namespace ice::ui
 
     auto element_update(
         ice::ui::UpdateStage stage,
-        ice::ui::UIData const& data,
+        ice::ui::PageInfo const& data,
         ice::ui::Element const& parent,
         ice::ui::ElementInfo const& info,
         ice::ui::Element& out_element,

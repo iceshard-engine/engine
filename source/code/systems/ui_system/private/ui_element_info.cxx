@@ -1,18 +1,17 @@
 #include <ice/ui_element_info.hxx>
-#include <ice/ui_data.hxx>
+#include <ice/ui_page.hxx>
 #include <ice/assert.hxx>
 
 namespace ice::ui
 {
 
     void read_size(
-        ice::ui::UIData const& uidata,
+        ice::ui::PageInfo const& uidata,
         ice::ui::ElementInfo const& info,
         ice::ui::Size& out_size
     ) noexcept
     {
         ice::u16 const index = info.size_i & 0x0fff;
-        ice::u32 const flag_values = (info.size_i & 0xf000) >> 12;
 
         ICE_ASSERT(
             index < ice::size(uidata.sizes),
@@ -25,13 +24,12 @@ namespace ice::ui
     }
 
     void read_position(
-        ice::ui::UIData const& uidata,
+        ice::ui::PageInfo const& uidata,
         ice::ui::ElementInfo const& info,
         ice::ui::Position& out_position
     ) noexcept
     {
         ice::u16 const index = info.pos_i & 0x0fff;
-        ice::u32 const flag_values = (info.pos_i & 0xf000) >> 12;
 
         ICE_ASSERT(
             index < ice::size(uidata.positions),
@@ -44,13 +42,12 @@ namespace ice::ui
     }
 
     void read_margin(
-        ice::ui::UIData const& uidata,
+        ice::ui::PageInfo const& uidata,
         ice::ui::ElementInfo const& info,
         ice::ui::RectOffset& out_rect_offset
     ) noexcept
     {
         ice::u16 const index = info.mar_i & 0x0fff;
-        ice::u32 const flag_values = (info.mar_i & 0xf000) >> 12;
 
         ICE_ASSERT(
             index < ice::size(uidata.margins),
@@ -63,13 +60,12 @@ namespace ice::ui
     }
 
     void read_padding(
-        ice::ui::UIData const& uidata,
+        ice::ui::PageInfo const& uidata,
         ice::ui::ElementInfo const& info,
         ice::ui::RectOffset& out_rect_offset
     ) noexcept
     {
         ice::u16 const index = info.mar_i & 0x0fff;
-        ice::u32 const flag_values = (info.mar_i & 0xf000) >> 12;
 
         ICE_ASSERT(
             index < ice::size(uidata.paddings),

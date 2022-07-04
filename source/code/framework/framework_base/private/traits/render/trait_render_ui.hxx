@@ -4,7 +4,6 @@
 #include <ice/gfx/gfx_trait.hxx>
 #include <ice/gfx/gfx_stage.hxx>
 #include <ice/pod/hash.hxx>
-#include <ice/ui_data.hxx>
 #include <ice/ui_element_draw.hxx>
 #include <ice/shard.hxx>
 

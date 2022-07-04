@@ -1,6 +1,9 @@
 #include <ice/ui_element.hxx>
 #include <ice/ui_button.hxx>
-#include <ice/ui_data.hxx>
+#include <ice/ui_label.hxx>
+#include <ice/ui_data_utils.hxx>
+#include <ice/ui_font.hxx>
+
 #include <ice/font_utils.hxx>
 #include <ice/memory/pointer_arithmetic.hxx>
 #include <ice/assert.hxx>
@@ -40,14 +43,13 @@ namespace ice::ui
     }
 
     auto element_update_size_explicit(
-        ice::ui::UIData const& data,
+        ice::ui::PageInfo const& data,
         ice::ui::Element const& parent,
         ice::ui::ElementInfo const& info,
         ice::ui::Element& out_element
     ) noexcept -> ice::ui::UpdateResult
     {
         Size size;
-        Position position;
         RectOffset margin;
         RectOffset padding;
         ElementFlags flags = info.flags;
@@ -71,7 +73,7 @@ namespace ice::ui
     }
 
     auto element_update_size_auto(
-        ice::ui::UIData const& data,
+        ice::ui::PageInfo const& data,
         ice::ui::Element const& parent,
         ice::ui::ElementInfo const& info,
         ice::ui::Element& out_element,
@@ -91,10 +93,11 @@ namespace ice::ui
         {
             ButtonInfo const& button_info = data.data_buttons[info.type_data_i];
 
-            ice::Utf8String  const text = ice::ui::button_get_text(data, button_info, resources);
+            ice::Utf8String const text = ice::ui::element_get_text(data, button_info, resources);
 
-            ice::ui::FontInfo const& font_info = data.fonts[button_info.font_i];
-            ice::Font const* font = ice::ui::button_get_font(data, button_info, resources);
+            ice::ui::FontInfo const& font_info = data.fonts[button_info.font.source_i];
+            ice::Font const* const font = ice::ui::element_get_font(data, button_info, resources);
+
             bounds = ice::font_text_bounds(*font, text);
 
             if (any(out_element.flags, ElementFlags::Size_AutoWidth | ElementFlags::Size_StretchWidth))
@@ -106,13 +109,32 @@ namespace ice::ui
                 size.height = bounds.y * font_info.font_size;
             }
         }
-        else if (info.type == ElementType::VListBox)
+        else if (info.type == ElementType::Label)
+        {
+            LabelInfo const& label_info = data.data_labels[info.type_data_i];
+
+            ice::Utf8String const text = ice::ui::element_get_text(data, label_info, resources);
+
+            ice::ui::FontInfo const& font_info = data.fonts[label_info.font.source_i];
+            ice::Font const* const font = ice::ui::element_get_font(data, label_info, resources);
+
+            bounds = ice::font_text_bounds(*font, text);
+
+            if (any(out_element.flags, ElementFlags::Size_AutoWidth | ElementFlags::Size_StretchWidth))
+            {
+                size.width = bounds.x * font_info.font_size;
+            }
+            if (any(out_element.flags, ElementFlags::Size_AutoHeight | ElementFlags::Size_StretchHeight))
+            {
+                size.height = bounds.y * font_info.font_size;
+            }
+        }
+        else if (info.type == ElementType::LayoutV)
         {
             Element* child = out_element.child;
             while (child != nullptr)
             {
                 Size const child_size = rect_size(child->bbox);
-                ElementFlags const child_flags = child->flags;
 
                 if (any(out_element.flags, ElementFlags::Size_AutoWidth | ElementFlags::Size_StretchWidth))
                 {
@@ -144,7 +166,7 @@ namespace ice::ui
     }
 
     auto element_update_size_stretch(
-        ice::ui::UIData const& data,
+        ice::ui::PageInfo const& data,
         ice::ui::Element const& parent,
         ice::ui::ElementInfo const& info,
         ice::ui::Element& out_element
@@ -190,7 +212,7 @@ namespace ice::ui
     }
 
     auto element_update_position(
-        ice::ui::UIData const& data,
+        ice::ui::PageInfo const& data,
         ice::ui::Element const& parent,
         ice::ui::ElementInfo const& info,
         ice::ui::Element& out_element
@@ -205,7 +227,7 @@ namespace ice::ui
         Position offset = rect_position(parent.hitbox);
 
         // If we are a child of a parent VListBox we are already updated
-        if (parent.definition->type == ElementType::VListBox)
+        if (parent.definition->type == ElementType::LayoutV)
         {
             return UpdateResult::Resolved;
         }
@@ -214,7 +236,7 @@ namespace ice::ui
         if (contains(out_element.flags, ElementFlags::Offset_AutoLeft | ElementFlags::Offset_AutoRight))
         {
             Size const hitbox_size = rect_size(out_element.hitbox);
-            ice::u32 const available_margin_width = ((parent_size.width - hitbox_size.width) / 2.f + 0.5f);
+            ice::u32 const available_margin_width = static_cast<ice::u32>((parent_size.width - hitbox_size.width) / 2.f + 0.5f);
 
             offset.x = static_cast<ice::f32>(available_margin_width);
         }
@@ -233,9 +255,9 @@ namespace ice::ui
             if (contains(out_element.flags, ElementFlags::Position_PercentageX))
             {
                 Size const bbox_size = rect_size(out_element.bbox);
-                ice::u32 const available_width = ((parent_size.width - bbox_size.width) + 0.5f);
+                ice::u32 const available_width = static_cast<ice::u32>((parent_size.width - bbox_size.width) + 0.5f);
 
-                x_pos *= 0.01 * available_width;
+                x_pos *= 0.01f * static_cast<ice::f32>(available_width);
             }
 
             offset.x += x_pos;
@@ -244,7 +266,7 @@ namespace ice::ui
         if (contains(out_element.flags, ElementFlags::Offset_AutoTop | ElementFlags::Offset_AutoBottom))
         {
             Size const hitbox_size = rect_size(out_element.hitbox);
-            ice::u32 const available_margin_height = ((parent_size.height - hitbox_size.height) / 2.f + 0.5f);
+            ice::u32 const available_margin_height = static_cast<ice::u32>((parent_size.height - hitbox_size.height) / 2.f + 0.5f);
 
             offset.y = static_cast<ice::f32>(available_margin_height);
         }
@@ -263,15 +285,15 @@ namespace ice::ui
             if (contains(out_element.flags, ElementFlags::Position_PercentageY))
             {
                 Size const bbox_size = rect_size(out_element.bbox);
-                ice::u32 const available_height = ((parent_size.height - bbox_size.height) + 0.5f);
+                ice::u32 const available_height = static_cast<ice::u32>((parent_size.height - bbox_size.height) + 0.5f);
 
-                y_pos *= 0.01 * available_height;
+                y_pos *= 0.01f * static_cast<ice::f32>(available_height);
             }
 
             offset.y += y_pos;
         }
 
-        if (info.type == ElementType::VListBox)
+        if (info.type == ElementType::LayoutV)
         {
             ice::u32 offset_vertical = 0;
 
@@ -284,7 +306,7 @@ namespace ice::ui
                 child->bbox = move_box(child->bbox, to_vec2(child_offset));
                 child->hitbox = move_box(child->hitbox, to_vec2(child_offset));
                 child->contentbox = move_box(child->contentbox, to_vec2(child_offset));
-                offset_vertical += child_size.height + 0.5;
+                offset_vertical += static_cast<ice::u32>(child_size.height + 0.5f);
 
                 child = child->sibling;
             }
@@ -298,7 +320,7 @@ namespace ice::ui
 
     auto element_update(
         ice::ui::UpdateStage stage,
-        ice::ui::UIData const& data,
+        ice::ui::PageInfo const& data,
         ice::ui::Element const& parent,
         ice::ui::ElementInfo const& info,
         ice::ui::Element& out_element,

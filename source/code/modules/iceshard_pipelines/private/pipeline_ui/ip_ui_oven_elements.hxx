@@ -6,7 +6,7 @@
 namespace ice
 {
 
-    static constexpr ice::String Constant_UIElement_Container = "container";
+    static constexpr ice::String Constant_UIElement_Label = "label";
     static constexpr ice::String Constant_UIElement_Button = "button";
 
     static constexpr ice::String Constant_UIAttribute_Text = "text";
@@ -27,10 +27,6 @@ namespace ice
 
         static constexpr ice::Utf8String Constant_ActionDataType_Resource = u8"Resource";
         static constexpr ice::Utf8String Constant_ActionDataType_Property = u8"Property";
-        static constexpr ice::Utf8String Constant_ActionDataType_UIPage = u8"UIPage";
-
-        static constexpr ice::Utf8String Constant_ActionShard_DataArgument = u8"value";
-        static constexpr ice::Utf8String Constant_ActionUIShow_DataArgument = u8"ui";
 
         ice::ui::ActionType action_type;
         ice::Utf8String action_value;
@@ -39,17 +35,27 @@ namespace ice
 
     struct RawButtonInfo
     {
-        ice::Utf8String text;
+        ice::RawData text;
         ice::RawData font;
-        ice::RawAction action_text;
         ice::RawAction action_on_click;
     };
 
-    void compile_element(
+    struct RawLabelInfo
+    {
+        ice::RawData text;
+        ice::RawData font;
+    };
+
+    void parse_element_attribs(
+        ice::Allocator& alloc,
+        rapidxml_ns::xml_node<char> const* element,
+        ice::RawElement& info
+    ) noexcept;
+
+    void parse_element_details(
         ice::Allocator& alloc,
         rapidxml_ns::xml_node<char> const* xml_element,
-        ice::u16 parent_idx,
-        ice::pod::Array<RawElement>& elements
+        ice::RawElement& info
     ) noexcept;
 
 } // namespace ice

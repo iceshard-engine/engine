@@ -1,4 +1,5 @@
 #include "ip_ui_oven_elements.hxx"
+#include "ip_ui_oven_containers.hxx"
 #include "ip_ui_oven_page.hxx"
 #include "ip_ui_oven_utils.hxx"
 
@@ -81,15 +82,14 @@ namespace ice
         return result;
     }
 
-    bool parse_data_reference(
+    void parse_data_reference(
         ice::Utf8String str,
         ice::RawData& out_action
     ) noexcept
     {
-        out_action.data_type = ice::ui::DataSource::None;
-        out_action.data_source = {};
+        out_action.data_type = ice::ui::DataSource::ValueConstant;
+        out_action.data_source = str;
 
-        bool result = false;
         if (remove_brackets(str))
         {
             ice::usize const type_end = str.find_first_of(u8' ');
@@ -105,20 +105,8 @@ namespace ice
                 out_action.data_type = ice::ui::DataSource::ValueProperty;
                 out_action.data_source = str.substr(type_end + 1);
             }
-            else if (data_type == RawAction::Constant_ActionDataType_UIPage)
-            {
-                out_action.data_type = ice::ui::DataSource::ValueUIPage;
-                out_action.data_source = str.substr(type_end + 1);
-            }
-
-            result = out_action.data_type != ice::ui::DataSource::None;
-            if (result)
-            {
-                ice::trim(out_action.data_source, ' ');
-            }
+            ice::trim(out_action.data_source, ' ');
         }
-
-        return result;
     }
 
     bool parse_action_data(
@@ -193,14 +181,14 @@ namespace ice
         return result;
     }
 
-    void parse_element_type_button(
+    void parse_label_element(
         rapidxml_ns::xml_node<char> const* xml_element,
         ice::Allocator& alloc,
         ice::RawElement& info
     ) noexcept
     {
-        ice::RawButtonInfo* button_info = alloc.make<RawButtonInfo>();
-        button_info->font.data_type = ice::ui::DataSource::Value;
+        ice::RawLabelInfo* button_info = alloc.make<RawLabelInfo>();
+        button_info->font.data_type = ice::ui::DataSource::ValueResource;
         button_info->font.data_source = u8"default";
 
         rapidxml_ns::xml_attribute<char> const* attribute = xml_element->first_attribute();
@@ -210,20 +198,47 @@ namespace ice
 
             if (attrib_name == ice::Constant_UIAttribute_Text)
             {
-                button_info->text = ice::xml_value(attribute);
-                if (ice::parse_action(button_info->text, button_info->action_text))
-                {
-                    button_info->text = {};
-                }
+                ice::parse_data_reference(ice::xml_value(attribute), button_info->text);
             }
             else if (attrib_name == ice::Constant_UIAttribute_Font)
             {
-                ice::Utf8String data_ref = ice::xml_value(attribute);
-                if (ice::parse_data_reference(data_ref, button_info->font) == false)
-                {
-                    button_info->font.data_type = ice::ui::DataSource::Value;
-                    button_info->font.data_source = data_ref;
-                }
+                ice::parse_data_reference(ice::xml_value(attribute), button_info->font);
+            }
+
+            attribute = attribute->next_attribute();
+        }
+
+        if (auto const* xml_node = xml_element->first_node("text"))
+        {
+            ice::parse_data_reference(ice::xml_value(xml_node), button_info->text);
+        }
+
+        info.type_data = button_info;
+        info.type = ice::ui::ElementType::Label;
+    }
+
+    void parse_button_element(
+        rapidxml_ns::xml_node<char> const* xml_element,
+        ice::Allocator& alloc,
+        ice::RawElement& info
+    ) noexcept
+    {
+        ice::RawButtonInfo* button_info = alloc.make<RawButtonInfo>();
+        button_info->font.data_type = ice::ui::DataSource::ValueResource;
+        button_info->font.data_source = u8"default";
+
+        rapidxml_ns::xml_attribute<char> const* attribute = xml_element->first_attribute();
+        while (attribute != nullptr)
+        {
+            ice::String const attrib_name = ice::xml_name(attribute);
+
+            if (attrib_name == ice::Constant_UIAttribute_Text)
+            {
+                ice::parse_data_reference(ice::xml_value(attribute), button_info->text);
+            }
+            else if (attrib_name == ice::Constant_UIAttribute_Font)
+            {
+                ice::parse_data_reference(ice::xml_value(attribute), button_info->font);
             }
             else if (attrib_name == ice::Constant_UIAttribute_OnClick)
             {
@@ -245,15 +260,73 @@ namespace ice
 
         if (auto const* xml_node = xml_element->first_node("text"))
         {
-            button_info->text = std::u8string_view{ reinterpret_cast<ice::c8utf const*>(xml_node->value()), xml_node->value_size() };
+            ice::parse_data_reference(ice::xml_value(xml_node), button_info->text);
         }
 
         info.type_data = button_info;
         info.type = ice::ui::ElementType::Button;
     }
 
+    void parse_element_attribs(
+        ice::Allocator& alloc,
+        rapidxml_ns::xml_node<char> const* element,
+        ice::RawElement& info
+    ) noexcept
+    {
+        using ice::ui::ElementFlags;
 
-    void compile_element_type(
+        // Setup defaults
+        if (info.type == ElementType::LayoutV)
+        {
+            info.flags = info.flags | ElementFlags::Size_AutoWidth | ElementFlags::Size_AutoHeight;
+        }
+
+        rapidxml_ns::xml_attribute<char> const* attrib = ice::xml_first_attrib(element, { });
+        while (attrib != nullptr)
+        {
+            ice::String const attrib_name = ice::xml_name(attrib);
+            if (attrib_name == ice::Constant_UIAttribute_Size)
+            {
+                parse_element_size(
+                    attrib->value(),
+                    attrib->value() + attrib->value_size(),
+                    info.flags,
+                    info.size
+                );
+            }
+            else if (attrib_name == ice::Constant_UIAttribute_Position)
+            {
+                parse_element_pos(
+                    attrib->value(),
+                    attrib->value() + attrib->value_size(),
+                    info.flags,
+                    info.position
+                );
+            }
+            else if (attrib_name == ice::Constant_UIAttribute_Margin)
+            {
+                parse_element_offset(
+                    attrib->value(),
+                    attrib->value() + attrib->value_size(),
+                    info.flags,
+                    info.margin
+                );
+            }
+            else if (attrib_name == ice::Constant_UIAttribute_Padding)
+            {
+                parse_element_offset(
+                    attrib->value(),
+                    attrib->value() + attrib->value_size(),
+                    info.flags,
+                    info.padding
+                );
+            }
+
+            attrib = ice::xml_next_attrib(attrib, {});
+        }
+    }
+
+    void parse_element_details(
         ice::Allocator& alloc,
         rapidxml_ns::xml_node<char> const* xml_element,
         ice::RawElement& info
@@ -262,132 +335,19 @@ namespace ice
         info.type = ElementType::Page;
         info.type_data = nullptr;
 
-        if (strcmp(xml_element->local_name(), "container") == 0)
+        ice::String const element_name = ice::xml_name(xml_element);
+
+        if (element_name == ice::Constant_UIElement_Label)
         {
-            rapidxml_ns::xml_attribute<char> const* const attrib = xml_element->first_attribute("type");
-            if (attrib != nullptr && strcmp(attrib->value(), "vertical") == 0)
-            {
-                info.type = ElementType::VListBox;
-            }
+            parse_label_element(xml_element, alloc, info);
         }
-        else if (strcmp(xml_element->local_name(), "button") == 0)
+        else if (element_name == ice::Constant_UIElement_Button)
         {
-            parse_element_type_button(xml_element, alloc, info);
+            parse_button_element(xml_element, alloc, info);
         }
-    }
-
-    void compile_element_attribs(
-        ice::Allocator& alloc,
-        rapidxml_ns::xml_node<char> const* element,
-        ice::RawElement& info
-    ) noexcept
-    {
-        using ice::ui::ElementFlags;
-        compile_element_type(alloc, element, info);
-
-        if (auto const* attr_size = element->first_attribute("size"); attr_size != nullptr)
+        else if (element_name == ice::Constant_UIElement_Layout)
         {
-            parse_element_size(
-                attr_size->value(),
-                attr_size->value() + attr_size->value_size(),
-                info.flags,
-                info.size
-            );
-        }
-        else if (info.type == ElementType::VListBox)
-        {
-            info.flags = info.flags | ElementFlags::Size_AutoWidth | ElementFlags::Size_AutoHeight;
-        }
-
-        if (auto const* attr_pos = element->first_attribute("position"); attr_pos != nullptr)
-        {
-            parse_element_pos(
-                attr_pos->value(),
-                attr_pos->value() + attr_pos->value_size(),
-                info.flags,
-                info.position
-            );
-        }
-
-        //if (auto const* attr_anchor = xml_element->first_attribute("anchor"); attr_anchor != nullptr)
-        //{
-        //    if (strcmp(attr_anchor->value(), "left") == 0)
-        //    {
-        //        info.position_flags = info.position_flags | ElementFlags::Position_AnchorLeft;
-        //    }
-        //    else if (strcmp(attr_anchor->value(), "top") == 0)
-        //    {
-        //        info.position_flags = info.position_flags | ElementFlags::Position_AnchorTop;
-        //    }
-        //    else if (strcmp(attr_anchor->value(), "right") == 0)
-        //    {
-        //        info.position_flags = info.position_flags | ElementFlags::Position_AnchorRight;
-        //    }
-        //    else if (strcmp(attr_anchor->value(), "bottom") == 0)
-        //    {
-        //        info.position_flags = info.position_flags | ElementFlags::Position_AnchorBottom;
-        //    }
-        //}
-        //else
-        //{
-        //    info.position_flags = info.position_flags | ElementFlags::Position_AnchorLeft;
-        //}
-
-        if (auto const* attr_marg = element->first_attribute("margin"); attr_marg != nullptr)
-        {
-            parse_element_offset(
-                attr_marg->value(),
-                attr_marg->value() + attr_marg->value_size(),
-                info.flags,
-                info.margin
-            );
-        }
-
-        if (auto const* attr_padd = element->first_attribute("padding"); attr_padd != nullptr)
-        {
-            parse_element_offset(
-                attr_padd->value(),
-                attr_padd->value() + attr_padd->value_size(),
-                info.flags,
-                info.padding
-            );
-        }
-    }
-
-    void compile_element(
-        ice::Allocator& alloc,
-        rapidxml_ns::xml_node<char> const* xml_element,
-        ice::u16 parent_idx,
-        ice::pod::Array<RawElement>& elements
-    ) noexcept
-    {
-        ice::u16 const element_index = static_cast<ice::u16>(
-            ice::pod::array::size(elements)
-            );
-
-        ice::pod::array::push_back(
-            elements,
-            ice::RawElement{ .parent = parent_idx }
-        );
-
-        compile_element_attribs(
-            alloc,
-            xml_element,
-            elements[element_index]
-        );
-
-        rapidxml_ns::xml_node<char> const* xml_child = xml_element->first_node_ns(
-            Constant_ISUINamespaceUI.data(),
-            Constant_ISUINamespaceUI.size()
-        );
-
-        while (xml_child != nullptr)
-        {
-            compile_element(alloc, xml_child, element_index, elements);
-            xml_child = xml_child->next_sibling_ns(
-                Constant_ISUINamespaceUI.data(),
-                Constant_ISUINamespaceUI.size()
-            );
+            parse_layout_element(xml_element, alloc, info);
         }
     }
 

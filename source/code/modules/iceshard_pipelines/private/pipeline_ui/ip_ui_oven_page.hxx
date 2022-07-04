@@ -1,7 +1,6 @@
 #pragma once
 #include <ice/shard.hxx>
 #include <ice/pod/array.hxx>
-#include <ice/ui_data.hxx>
 
 #include "ip_ui_oven.hxx"
 
@@ -65,21 +64,21 @@ namespace ice
         ice::ShardName shard_name;
     };
 
-    void compile_resources(
+    void parse_resources(
         ice::Allocator& alloc,
         rapidxml_ns::xml_node<char> const* xml_node,
         ice::pod::Array<ice::RawResource>& resources
     ) noexcept;
 
-    void compile_shards(
+    void parse_shards(
         ice::Allocator& alloc,
         rapidxml_ns::xml_node<char> const* xml_node,
         ice::pod::Array<ice::RawShard>& shards
     ) noexcept;
 
-    void compile_page(
+    void parse_page_element(
         ice::Allocator& alloc,
-        rapidxml_ns::xml_node<char> const* page,
+        rapidxml_ns::xml_node<char> const* xml_page,
         ice::pod::Array<RawElement>& elements
     ) noexcept;
 

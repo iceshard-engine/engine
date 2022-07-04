@@ -4,23 +4,29 @@
 namespace ice::ui
 {
 
-    struct UIData;
+    struct PageInfo;
     struct UIResourceData;
 
     struct PageInfo;
+    struct FontInfo;
     struct ElementInfo;
+    struct LayoutInfo;
     struct ButtonInfo;
+    struct LabelInfo;
+    struct ConstantInfo;
     struct ResourceInfo;
+    struct ActionInfo;
+    struct ShardInfo;
 
     struct Page;
     struct Element;
+    struct Layout;
     struct Button;
-    struct Action;
+    struct Label;
 
     enum class ResourceType : ice::u32;
     enum class ElementFlags : ice::u32;
     enum class ElementType : ice::u8;
-
 
     struct Size
     {

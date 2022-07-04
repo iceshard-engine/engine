@@ -7,6 +7,12 @@
 #include <ice/ui_element.hxx>
 #include <ice/ui_element_info.hxx>
 #include <ice/ui_button.hxx>
+#include <ice/ui_label.hxx>
+#include <ice/ui_action.hxx>
+#include <ice/ui_shard.hxx>
+#include <ice/ui_resource.hxx>
+#include <ice/ui_font.hxx>
+#include <ice/ui_data_utils.hxx>
 
 #include <ice/engine.hxx>
 #include <ice/engine_frame.hxx>
@@ -76,7 +82,7 @@ namespace ice
     {
         static constexpr ice::StringID Identifier = "ice.component.ui-button"_sid;
 
-        ice::ui::Action const* action_on_click;
+        ice::ui::ActionInfo const* action_on_click;
     };
 
     static constexpr ice::ecs::ArchetypeDefinition<ice::UIPage> Constant_Archetype_UIPage{ };
@@ -211,7 +217,7 @@ namespace ice
 
                             if (left_click && button.action_on_click != nullptr)
                             {
-                                ice::ui::Action const& action = *button.action_on_click;
+                                ice::ui::ActionInfo const& action = *button.action_on_click;
 
                                 ice::ui::ShardInfo const shard_info = page_info.data->ui_shards[action.type_i];
 
@@ -333,29 +339,44 @@ namespace ice
         {
             if (visible_page_info.data != nullptr)
             {
-                ice::ui::UIData const* const uidata = visible_page_info.data;
+                ice::ui::PageInfo const* const uidata = visible_page_info.data;
 
                 ice::u32 idx = 0;
                 for (ice::ui::ElementInfo const& element : uidata->elements)
                 {
                     ice::ui::Element const& element_layout = visible_page_info.elements[idx];
 
-                    if (element.type == ui::ElementType::Button)
+                    if (element.type == ui::ElementType::Button || element.type == ui::ElementType::Label)
                     {
-                        ice::ui::ButtonInfo const& button_info = uidata->data_buttons[element.type_data_i];
-                        ice::ui::FontInfo const& font_info = uidata->fonts[button_info.font_i];
+                        ice::Utf8String text;
+                        ice::ui::FontInfo const* font_info;
+
+                        ice::u32 type_idx = element.type_data_i;
+                        if (element.type == ui::ElementType::Button)
+                        {
+                            ice::ui::ButtonInfo const& button_info = uidata->data_buttons[element.type_data_i];
+                            font_info = &uidata->fonts[button_info.font.source_i];
+                            text = ice::ui::element_get_text(*uidata, button_info, visible_page_info.resources);
+                        }
+                        else if (element.type == ui::ElementType::Label)
+                        {
+                            ice::ui::LabelInfo const& label_info = uidata->data_labels[element.type_data_i];
+                            font_info = &uidata->fonts[label_info.font.source_i];
+                            text = ice::ui::element_get_text(*uidata, label_info, visible_page_info.resources);
+                            type_idx += 256;
+                        }
 
                         ice::DrawTextCommand* draw_text = frame.create_named_object<ice::DrawTextCommand>(
-                            ice::StringID{ ice::StringID_Hash{ visible_page_hash + element.type_data_i } }
+                            ice::StringID{ ice::StringID_Hash{ visible_page_hash + type_idx } }
                         );
                         ice::Utf8String const font_name{
-                            reinterpret_cast<ice::c8utf const*>(ice::memory::ptr_add(uidata->additional_data, font_info.font_name_offset)),
-                            font_info.font_name_size
+                            reinterpret_cast<ice::c8utf const*>(ice::memory::ptr_add(uidata->additional_data, font_info->font_name_offset)),
+                            font_info->font_name_size
                         };
 
                         draw_text->font = font_name;
-                        draw_text->font_size = font_info.font_size;
-                        draw_text->text = ice::ui::button_get_text(*uidata, button_info, visible_page_info.resources);
+                        draw_text->font_size = font_info->font_size;
+                        draw_text->text = text;
 
                         ice::ui::Position pos = ice::ui::rect_position(element_layout.contentbox); // uidata->positions[element.pos_i];
                         ice::ui::Size size = ice::ui::rect_size(element_layout.contentbox); // uidata->sizes[element.size_i];
@@ -407,7 +428,7 @@ namespace ice
             co_return;
         }
 
-        ice::ui::UIData const* const page_data = reinterpret_cast<ice::ui::UIData const*>(page_asset.data.location);
+        ice::ui::PageInfo const* const page_data = reinterpret_cast<ice::ui::PageInfo const*>(page_asset.data.location);
         for (ice::ui::FontInfo const& font_info : page_data->fonts)
         {
             ice::Utf8String const font_name{
@@ -476,12 +497,11 @@ namespace ice
 
                     using ice::ui::ActionType;
                     using ice::ui::DataSource;
-                    using ice::ui::Property;
 
                     ice::ui::ButtonInfo const& button_info = page_data->data_buttons[element_data.type_data_i];
                     if (button_info.action_on_click_i != ice::u16{ 0xffff })
                     {
-                        ice::ui::Action const& action_on_click = page_data->ui_actions[button_info.action_on_click_i];
+                        ice::ui::ActionInfo const& action_on_click = page_data->ui_actions[button_info.action_on_click_i];
                         out_buttons[idx_button].action_on_click = &action_on_click;
                     }
 
@@ -574,7 +594,7 @@ namespace ice
             {
                 ice::ui::ElementInfo const& element_info = page_data->elements[idx];
 
-                if (element_info.type == ui::ElementType::Button)
+                if (element_info.type == ui::ElementType::Button || element_info.type == ui::ElementType::Label)
                 {
                     size_vertice_data += sizeof(ice::vec2f) * (Constant_DebugBoundingBox + 4 + Constant_DebugContentBox);
                     size_vertice_color += sizeof(ice::vec4f) * (Constant_DebugBoundingBox + 4 + Constant_DebugContentBox);
@@ -593,7 +613,7 @@ namespace ice
                 ice::ui::Element& current_element = element_layouts[idx];
                 ice::ui::Element& parent_element = element_layouts[current_element_data.parent];
 
-                if (current_element_data.type == ui::ElementType::Button)
+                if (current_element_data.type == ui::ElementType::Button || current_element_data.type == ui::ElementType::Label)
                 {
                     current_element.draw_data.vertice_count = (Constant_DebugBoundingBox + 4 + Constant_DebugContentBox);
                     current_element.draw_data.vertices = { vertice_data_it, current_element.draw_data.vertice_count };
@@ -792,7 +812,7 @@ namespace ice
 
         for (ice::ui::Element const& element : page_info.elements)
         {
-            if (element.definition->type == ui::ElementType::Button)
+            if (element.definition->type == ui::ElementType::Button || element.definition->type == ui::ElementType::Label)
             {
                 ice::vec2f* vertices = element.draw_data.vertices.data();
                 ice::vec4f* colors = element.draw_data.colors.data();

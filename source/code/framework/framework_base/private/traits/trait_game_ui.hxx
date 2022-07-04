@@ -5,7 +5,6 @@
 #include <ice/world/world_trait.hxx>
 #include <ice/world/world_trait_archive.hxx>
 #include <ice/pod/hash.hxx>
-#include <ice/ui_data.hxx>
 #include <ice/ui_element_draw.hxx>
 #include <ice/asset.hxx>
 
@@ -87,7 +86,7 @@ namespace ice
         struct PageInfo
         {
             ice::Utf8String name;
-            ice::ui::UIData const* data;
+            ice::ui::PageInfo const* data;
             ice::Span<ice::ui::Element> elements;
             ice::Span<ice::ui::UIResourceData> resources;
 

@@ -14,12 +14,13 @@
   </ice:shards>
 
   <ui:page>
-    <ui:container size="300,auto" position="auto,20%" margin="auto,0" type="vertical">
-      <ui:button size="*,auto" padding="6" margin="0,0,0,0" text="{Resource text_start}" />
-      <ui:button size="*,auto" padding="6" margin="0,10,0,0" text="{Resource text_settings}" />
-      <ui:button size="*,auto" padding="6" margin="0,10,0,0" text="{Resource text_credits}" />
-      <ui:button size="*,auto" padding="6" margin="0,10,0,0" text="{Resource text_exit}" on_click="{Shard game_exit}" />
-    </ui:container>
+    <ui:layout size="300,auto" position="auto,20%" margin="auto,0" direction="vertical">
+      <ui:label size="*,auto" padding="6" margin="0,0,0,10" text="Menu" />
+      <ui:button size="*,auto" padding="6" margin="0,5" text="{Resource text_start}" />
+      <ui:button size="*,auto" padding="6" margin="0,5" text="{Resource text_settings}" />
+      <ui:button size="*,auto" padding="6" margin="0,5" text="{Resource text_credits}" />
+      <ui:button size="*,auto" padding="6" margin="0,5" text="{Resource text_exit}" on_click="{Shard game_exit}" />
+    </ui:layout>
   </ui:page>
 
 </isui>
