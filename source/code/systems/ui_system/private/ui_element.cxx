@@ -223,7 +223,7 @@ namespace ice::ui
 
         // We use the hitbox, as we should start at the 'padded' location of the parent element.
         Size const parent_size = rect_size(parent.hitbox);
-        Size const size = rect_size(out_element.contentbox); // TOOD: Check if this should not be the hitbox.
+        //Size const size = rect_size(out_element.contentbox);
         Position offset = rect_position(parent.hitbox);
 
         // If we are a child of a parent VListBox we are already updated
