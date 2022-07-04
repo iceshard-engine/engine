@@ -240,15 +240,15 @@ namespace ice::ui
 
             offset.x = static_cast<ice::f32>(available_margin_width);
         }
-        else if (contains(out_element.flags, ElementFlags::Position_AnchorRight))
-        {
-            ICE_ASSERT(
-                contains(out_element.flags, ElementFlags::Position_AnchorRight) == false,
-                "Cannot anchor on both left and right!"
-            );
+        //else if (contains(out_element.flags, ElementFlags::Position_AnchorRight))
+        //{
+        //    ICE_ASSERT(
+        //        contains(out_element.flags, ElementFlags::Position_AnchorRight) == false,
+        //        "Cannot anchor on both left and right!"
+        //    );
 
-            offset.x += parent_size.width - (position.x + size.width);
-        }
+        //    offset.x += parent_size.width - (position.x + size.width);
+        //}
         else
         {
             ice::f32 x_pos = position.x;
@@ -270,15 +270,15 @@ namespace ice::ui
 
             offset.y = static_cast<ice::f32>(available_margin_height);
         }
-        else if (contains(out_element.flags, ElementFlags::Position_AnchorBottom))
-        {
-            ICE_ASSERT(
-                contains(out_element.flags, ElementFlags::Position_AnchorTop) == false,
-                "Cannot anchor on both left and right!"
-            );
+        //else if (contains(out_element.flags, ElementFlags::Position_AnchorBottom))
+        //{
+        //    ICE_ASSERT(
+        //        contains(out_element.flags, ElementFlags::Position_AnchorTop) == false,
+        //        "Cannot anchor on both left and right!"
+        //    );
 
-            offset.y += parent_size.height - (position.y + size.height);
-        }
+        //    offset.y += parent_size.height - (position.y + size.height);
+        //}
         else
         {
             ice::f32 y_pos = position.y;
