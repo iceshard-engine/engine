@@ -290,17 +290,13 @@ namespace ice
             parse_element_size(
                 attr_size->value(),
                 attr_size->value() + attr_size->value_size(),
-                info.size_flags,
+                info.flags,
                 info.size
             );
         }
-        else if (info.type == ElementType::Page)
-        {
-            info.size_flags = ElementFlags::Size_StretchWidth | ElementFlags::Size_StretchHeight;
-        }
         else if (info.type == ElementType::VListBox)
         {
-            info.size_flags = ElementFlags::Size_AutoWidth | ElementFlags::Size_AutoHeight;
+            info.flags = info.flags | ElementFlags::Size_AutoWidth | ElementFlags::Size_AutoHeight;
         }
 
         if (auto const* attr_pos = element->first_attribute("position"); attr_pos != nullptr)
@@ -308,7 +304,7 @@ namespace ice
             parse_element_pos(
                 attr_pos->value(),
                 attr_pos->value() + attr_pos->value_size(),
-                info.position_flags,
+                info.flags,
                 info.position
             );
         }
@@ -342,7 +338,7 @@ namespace ice
             parse_element_offset(
                 attr_marg->value(),
                 attr_marg->value() + attr_marg->value_size(),
-                info.margin_flags,
+                info.flags,
                 info.margin
             );
         }
@@ -352,7 +348,7 @@ namespace ice
             parse_element_offset(
                 attr_padd->value(),
                 attr_padd->value() + attr_padd->value_size(),
-                info.padding_flags,
+                info.flags,
                 info.padding
             );
         }

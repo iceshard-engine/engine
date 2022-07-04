@@ -190,10 +190,11 @@ namespace ice
                 u8& data_idx = type_data_index[static_cast<ice::u32>(element.type)];
 
                 elements[idx].parent = element.parent;
-                elements[idx].size_i = idx | static_cast<ice::u16>((static_cast<ice::u32>(element.size_flags) >> 0) << 12);
-                elements[idx].pos_i = idx | static_cast<ice::u16>((static_cast<ice::u32>(element.position_flags) >> 4) << 12);
-                elements[idx].mar_i = idx | static_cast<ice::u16>((static_cast<ice::u32>(element.margin_flags) >> 12) << 12);
-                elements[idx].pad_i = idx | static_cast<ice::u16>((static_cast<ice::u32>(element.padding_flags) >> 12) << 12);
+                elements[idx].size_i = idx;
+                elements[idx].pos_i = idx;
+                elements[idx].mar_i = idx;
+                elements[idx].pad_i = idx;
+                elements[idx].flags = element.flags;
                 elements[idx].type = static_cast<ice::ui::ElementType>(element.type);
                 elements[idx].type_data_i = data_idx;
 

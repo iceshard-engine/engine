@@ -18,7 +18,7 @@ namespace ice::ui
     struct Action;
 
     enum class ResourceType : ice::u32;
-    enum class ElementFlags : ice::u16;
+    enum class ElementFlags : ice::u32;
     enum class ElementType : ice::u8;
 
 

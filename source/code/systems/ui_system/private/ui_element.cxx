@@ -50,11 +50,11 @@ namespace ice::ui
         Position position;
         RectOffset margin;
         RectOffset padding;
-        ElementFlags flags = ElementFlags::None;
+        ElementFlags flags = info.flags;
 
-        read_size(data, info, size, flags);
-        read_margin(data, info, margin, flags);
-        read_padding(data, info, padding, flags);
+        read_size(data, info, size);
+        read_margin(data, info, margin);
+        read_padding(data, info, padding);
 
         out_element.bbox = make_bbox(size, margin, padding);
         out_element.hitbox = out_element.bbox - margin;
@@ -81,11 +81,10 @@ namespace ice::ui
         Size size;
         RectOffset margin;
         RectOffset padding;
-        ElementFlags flags = ElementFlags::None;
 
-        read_size(data, info, size, flags);
-        read_margin(data, info, margin, flags);
-        read_padding(data, info, padding, flags);
+        read_size(data, info, size);
+        read_margin(data, info, margin);
+        read_padding(data, info, padding);
 
         ice::vec2f bounds{ 0.f };
         if (info.type == ElementType::Button)
@@ -98,11 +97,11 @@ namespace ice::ui
             ice::Font const* font = ice::ui::button_get_font(data, button_info, resources);
             bounds = ice::font_text_bounds(*font, text);
 
-            if (any(flags, ElementFlags::Size_AutoWidth | ElementFlags::Size_StretchWidth))
+            if (any(out_element.flags, ElementFlags::Size_AutoWidth | ElementFlags::Size_StretchWidth))
             {
                 size.width = bounds.x * font_info.font_size;
             }
-            if (any(flags, ElementFlags::Size_AutoHeight | ElementFlags::Size_StretchHeight))
+            if (any(out_element.flags, ElementFlags::Size_AutoHeight | ElementFlags::Size_StretchHeight))
             {
                 size.height = bounds.y * font_info.font_size;
             }
@@ -115,11 +114,11 @@ namespace ice::ui
                 Size const child_size = rect_size(child->bbox);
                 ElementFlags const child_flags = child->flags;
 
-                if (any(flags, ElementFlags::Size_AutoWidth | ElementFlags::Size_StretchWidth))
+                if (any(out_element.flags, ElementFlags::Size_AutoWidth | ElementFlags::Size_StretchWidth))
                 {
                     size.width = ice::max(size.width, child_size.width);
                 }
-                if (any(flags, ElementFlags::Size_AutoHeight | ElementFlags::Size_StretchHeight))
+                if (any(out_element.flags, ElementFlags::Size_AutoHeight | ElementFlags::Size_StretchHeight))
                 {
                     size.height += child_size.height;
                 }
@@ -138,7 +137,7 @@ namespace ice::ui
         out_element.flags = out_element.flags & ~(ElementFlags::Size_AutoWidth | ElementFlags::Size_AutoHeight);
 
         return any(
-            flags,
+            out_element.flags,
             ElementFlags::Size_StretchWidth
             | ElementFlags::Size_StretchHeight
         ) ? UpdateResult::Unresolved : UpdateResult::Resolved;
@@ -154,32 +153,31 @@ namespace ice::ui
         Size size;
         RectOffset margin;
         RectOffset padding;
-        ElementFlags flags = ElementFlags::None;
 
         if (any(parent.flags, ElementFlags::Size_StretchWidth | ElementFlags::Size_StretchHeight))
         {
             return UpdateResult::Unresolved;
         }
 
-        read_size(data, info, size, flags);
-        if (any(flags, ElementFlags::Size_StretchWidth | ElementFlags::Size_StretchHeight) == false)
+        if (any(out_element.flags, ElementFlags::Size_StretchWidth | ElementFlags::Size_StretchHeight) == false)
         {
             ICE_ASSERT(false, "Hmmm?!");
             return UpdateResult::Resolved;
         }
 
-        read_margin(data, info, margin, flags);
-        read_padding(data, info, padding, flags);
+        read_size(data, info, size);
+        read_margin(data, info, margin);
+        read_padding(data, info, padding);
 
         size = ice::ui::rect_size(out_element.contentbox);
 
         // We use the hitbox, as we cannot outgrow the 'margin' value of the parent element.
         ice::ui::Size const parent_size = rect_size(parent.contentbox);
-        if (contains(flags, ElementFlags::Size_StretchWidth))
+        if (contains(out_element.flags, ElementFlags::Size_StretchWidth))
         {
             size.width = parent_size.width - (padding.left + padding.right);
         }
-        if (contains(flags, ElementFlags::Size_StretchHeight))
+        if (contains(out_element.flags, ElementFlags::Size_StretchHeight))
         {
             size.height = parent_size.height - (padding.top + padding.bottom);
         }
@@ -199,9 +197,7 @@ namespace ice::ui
     ) noexcept -> ice::ui::UpdateResult
     {
         Position position;
-        ElementFlags current_flags = out_element.flags;
-        read_position(data, info, position, current_flags);
-
+        read_position(data, info, position);
 
         // We use the hitbox, as we should start at the 'padded' location of the parent element.
         Size const parent_size = rect_size(parent.hitbox);
@@ -215,17 +211,17 @@ namespace ice::ui
         }
 
         // Margin auto on left + right will center the page.
-        if (contains(current_flags, ElementFlags::Offset_AutoLeft | ElementFlags::Offset_AutoRight))
+        if (contains(out_element.flags, ElementFlags::Offset_AutoLeft | ElementFlags::Offset_AutoRight))
         {
             Size const hitbox_size = rect_size(out_element.hitbox);
             ice::u32 const available_margin_width = ((parent_size.width - hitbox_size.width) / 2.f + 0.5f);
 
             offset.x = static_cast<ice::f32>(available_margin_width);
         }
-        else if (contains(current_flags, ElementFlags::Position_AnchorRight))
+        else if (contains(out_element.flags, ElementFlags::Position_AnchorRight))
         {
             ICE_ASSERT(
-                contains(current_flags, ElementFlags::Position_AnchorRight) == false,
+                contains(out_element.flags, ElementFlags::Position_AnchorRight) == false,
                 "Cannot anchor on both left and right!"
             );
 
@@ -233,20 +229,29 @@ namespace ice::ui
         }
         else
         {
-            offset.x += position.x;
+            ice::f32 x_pos = position.x;
+            if (contains(out_element.flags, ElementFlags::Position_PercentageX))
+            {
+                Size const bbox_size = rect_size(out_element.bbox);
+                ice::u32 const available_width = ((parent_size.width - bbox_size.width) + 0.5f);
+
+                x_pos *= 0.01 * available_width;
+            }
+
+            offset.x += x_pos;
         }
 
-        if (contains(current_flags, ElementFlags::Offset_AutoTop | ElementFlags::Offset_AutoBottom))
+        if (contains(out_element.flags, ElementFlags::Offset_AutoTop | ElementFlags::Offset_AutoBottom))
         {
             Size const hitbox_size = rect_size(out_element.hitbox);
             ice::u32 const available_margin_height = ((parent_size.height - hitbox_size.height) / 2.f + 0.5f);
 
             offset.y = static_cast<ice::f32>(available_margin_height);
         }
-        else if (contains(current_flags, ElementFlags::Position_AnchorBottom))
+        else if (contains(out_element.flags, ElementFlags::Position_AnchorBottom))
         {
             ICE_ASSERT(
-                contains(current_flags, ElementFlags::Position_AnchorTop) == false,
+                contains(out_element.flags, ElementFlags::Position_AnchorTop) == false,
                 "Cannot anchor on both left and right!"
             );
 
@@ -254,7 +259,16 @@ namespace ice::ui
         }
         else
         {
-            offset.y += position.y;
+            ice::f32 y_pos = position.y;
+            if (contains(out_element.flags, ElementFlags::Position_PercentageY))
+            {
+                Size const bbox_size = rect_size(out_element.bbox);
+                ice::u32 const available_height = ((parent_size.height - bbox_size.height) + 0.5f);
+
+                y_pos *= 0.01 * available_height;
+            }
+
+            offset.y += y_pos;
         }
 
         if (info.type == ElementType::VListBox)

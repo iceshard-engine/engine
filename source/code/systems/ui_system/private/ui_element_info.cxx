@@ -8,8 +8,7 @@ namespace ice::ui
     void read_size(
         ice::ui::UIData const& uidata,
         ice::ui::ElementInfo const& info,
-        ice::ui::Size& out_size,
-        ice::ui::ElementFlags& out_flags
+        ice::ui::Size& out_size
     ) noexcept
     {
         ice::u16 const index = info.size_i & 0x0fff;
@@ -22,15 +21,13 @@ namespace ice::ui
             ice::size(uidata.sizes)
         );
 
-        out_flags = out_flags | static_cast<ice::ui::ElementFlags>(flag_values << 0);
         out_size = uidata.sizes[index];
     }
 
     void read_position(
         ice::ui::UIData const& uidata,
         ice::ui::ElementInfo const& info,
-        ice::ui::Position& out_position,
-        ice::ui::ElementFlags& out_flags
+        ice::ui::Position& out_position
     ) noexcept
     {
         ice::u16 const index = info.pos_i & 0x0fff;
@@ -43,15 +40,13 @@ namespace ice::ui
             ice::size(uidata.positions)
         );
 
-        out_flags = out_flags | static_cast<ice::ui::ElementFlags>(flag_values << 4);
         out_position = uidata.positions[index];
     }
 
     void read_margin(
         ice::ui::UIData const& uidata,
         ice::ui::ElementInfo const& info,
-        ice::ui::RectOffset& out_rect_offset,
-        ice::ui::ElementFlags& out_flags
+        ice::ui::RectOffset& out_rect_offset
     ) noexcept
     {
         ice::u16 const index = info.mar_i & 0x0fff;
@@ -64,15 +59,13 @@ namespace ice::ui
             ice::size(uidata.margins)
         );
 
-        out_flags = out_flags | static_cast<ice::ui::ElementFlags>(flag_values << 12);
         out_rect_offset = uidata.margins[index];
     }
 
     void read_padding(
         ice::ui::UIData const& uidata,
         ice::ui::ElementInfo const& info,
-        ice::ui::RectOffset& out_rect_offset,
-        ice::ui::ElementFlags& out_flags
+        ice::ui::RectOffset& out_rect_offset
     ) noexcept
     {
         ice::u16 const index = info.mar_i & 0x0fff;
@@ -85,7 +78,6 @@ namespace ice::ui
             ice::size(uidata.paddings)
         );
 
-        out_flags = out_flags | static_cast<ice::ui::ElementFlags>(flag_values << 12);
         out_rect_offset = uidata.paddings[index];
     }
 

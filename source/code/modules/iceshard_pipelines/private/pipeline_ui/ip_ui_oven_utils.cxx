@@ -178,6 +178,10 @@ namespace ice
                     valid_values = false;
                 }
             }
+            else if (left == "%")
+            {
+                out_flags = out_flags | ElementFlags::Position_PercentageX;
+            }
             if (ice::from_chars(right, right, pos.y) == false)
             {
                 if (right == ice::Constant_UIAttributeKeyword_Auto)
@@ -188,6 +192,10 @@ namespace ice
                 {
                     valid_values = false;
                 }
+            }
+            else if (right == "%")
+            {
+                out_flags = out_flags | ElementFlags::Position_PercentageY;
             }
         }
         else if (ice::from_chars(attr_position, attr_position, pos.x))

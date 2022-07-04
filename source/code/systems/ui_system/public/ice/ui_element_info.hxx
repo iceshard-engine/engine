@@ -15,49 +15,22 @@ namespace ice::ui
 
     struct ElementInfo
     {
-        // first 4 bits (four bits of locking)
         ice::u16 parent;
 
-        // 12bits == 4095 possible elements
-        ice::u16 size_i; // first four bits == auto + stretch values
-        ice::u16 pos_i; // first four bits == auto + {???} values
-        ice::u16 mar_i; // first four bits == auto values
-        ice::u16 pad_i; // first four bits == auto values
+        ice::u16 size_i;
+        ice::u16 pos_i;
+        ice::u16 mar_i;
+        ice::u16 pad_i;
 
         ice::ui::ElementType type;
         ice::u8 type_data_i;
+
+        ice::ui::ElementFlags flags;
     };
 
-    void read_size(
-        ice::ui::UIData const& uidata,
-        ice::ui::ElementInfo const& info,
-        ice::ui::Size& out_size,
-        ice::ui::ElementFlags& out_flags
-    ) noexcept;
+    static_assert(sizeof(ElementInfo) == 16);
 
-    void read_position(
-        ice::ui::UIData const& uidata,
-        ice::ui::ElementInfo const& info,
-        ice::ui::Position& out_position,
-        ice::ui::ElementFlags& out_flags
-    ) noexcept;
-
-    void read_margin(
-        ice::ui::UIData const& uidata,
-        ice::ui::ElementInfo const& info,
-        ice::ui::RectOffset& out_rect_offset,
-        ice::ui::ElementFlags& out_flags
-    ) noexcept;
-
-    void read_padding(
-        ice::ui::UIData const& uidata,
-        ice::ui::ElementInfo const& info,
-        ice::ui::RectOffset& out_rect_offset,
-        ice::ui::ElementFlags& out_flags
-    ) noexcept;
-
-
-    enum class ElementFlags : ice::u16
+    enum class ElementFlags : ice::u32
     {
         None = 0x0,
 
@@ -66,8 +39,10 @@ namespace ice::ui
         Size_StretchWidth = 0x0004,
         Size_StretchHeight = 0x0008,
 
-        Position_AutoX = 0x00010,
-        Position_AutoY = 0x00020,
+        Position_AutoX = 0x0010,
+        Position_AutoY = 0x0020,
+        Position_PercentageX = 0x0040,
+        Position_PercentageY = 0x0080,
         Position_AnchorLeft = 0x0100,
         Position_AnchorRight = 0x0200,
         Position_AnchorTop = 0x0400,
@@ -78,6 +53,32 @@ namespace ice::ui
         Offset_AutoRight = 0x4000,
         Offset_AutoBottom = 0x8000,
     };
+
+
+    void read_size(
+        ice::ui::UIData const& uidata,
+        ice::ui::ElementInfo const& info,
+        ice::ui::Size& out_size
+    ) noexcept;
+
+    void read_position(
+        ice::ui::UIData const& uidata,
+        ice::ui::ElementInfo const& info,
+        ice::ui::Position& out_position
+    ) noexcept;
+
+    void read_margin(
+        ice::ui::UIData const& uidata,
+        ice::ui::ElementInfo const& info,
+        ice::ui::RectOffset& out_rect_offset
+    ) noexcept;
+
+    void read_padding(
+        ice::ui::UIData const& uidata,
+        ice::ui::ElementInfo const& info,
+        ice::ui::RectOffset& out_rect_offset
+    ) noexcept;
+
 
     constexpr auto operator|(
         ice::ui::ElementFlags left,
@@ -107,6 +108,7 @@ namespace ice::ui
             | ElementFlags::Size_AutoWidth | ElementFlags::Size_AutoHeight
             | ElementFlags::Size_StretchWidth | ElementFlags::Size_StretchHeight
             | ElementFlags::Position_AutoX | ElementFlags::Position_AutoY
+            | ElementFlags::Position_PercentageX | ElementFlags::Position_PercentageY
             | ElementFlags::Position_AnchorLeft | ElementFlags::Position_AnchorRight
             | ElementFlags::Position_AnchorTop | ElementFlags::Position_AnchorBottom
             | ElementFlags::Offset_AutoLeft | ElementFlags::Offset_AutoRight

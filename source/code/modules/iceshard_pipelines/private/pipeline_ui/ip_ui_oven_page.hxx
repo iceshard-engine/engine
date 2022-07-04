@@ -35,11 +35,7 @@ namespace ice
         ice::ui::RectOffset margin;
         ice::ui::RectOffset padding;
 
-        ice::ui::ElementFlags size_flags;
-        ice::ui::ElementFlags position_flags;
-        ice::ui::ElementFlags margin_flags;
-        ice::ui::ElementFlags padding_flags;
-
+        ice::ui::ElementFlags flags;
         ice::ui::ElementType type;
         void* type_data;
     };
