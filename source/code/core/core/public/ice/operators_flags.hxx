@@ -79,7 +79,7 @@ namespace ice
     template<ice::FlagType T>
     constexpr bool has_any(T searched_value, T searched_flags) noexcept
     {
-        return (searched_value & searched_flags) == T::None;
+        return (searched_value & searched_flags) != T::None;
     }
 
 } // namespace ice
