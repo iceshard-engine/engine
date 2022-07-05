@@ -2,7 +2,7 @@
 #include <ice/types.hxx>
 #include <type_traits>
 
-inline namespace ice
+namespace ice
 {
 
     template<typename T>
@@ -68,6 +68,18 @@ inline namespace ice
         {
             return static_cast<T>(~left_value);
         }
+    }
+
+    template<ice::FlagType T>
+    constexpr bool all(T searched_value, T searched_flags) noexcept
+    {
+        return (searched_value & searched_flags) == searched_flags;
+    }
+
+    template<ice::FlagType T>
+    constexpr bool any(T searched_value, T searched_flags) noexcept
+    {
+        return (searched_value & searched_flags) == T::None;
     }
 
 } // namespace ice
