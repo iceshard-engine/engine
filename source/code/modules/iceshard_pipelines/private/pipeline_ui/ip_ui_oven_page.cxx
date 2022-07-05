@@ -7,6 +7,75 @@
 namespace ice
 {
 
+    void parse_style_entry(
+        rapidxml_ns::xml_node<char> const* xml_node,
+        ice::RawStyle& style
+    ) noexcept
+    {
+        ice::String const node_name = ice::xml_name(xml_node);
+        if (node_name == "background")
+        {
+            rapidxml_ns::xml_attribute<char> const* attrib = ice::xml_first_attrib(xml_node, {});
+            while (attrib)
+            {
+                ice::String const attrib_name = ice::xml_name(attrib);
+
+                if (attrib_name == "color")
+                {
+                    style.flags |= ice::ui::StyleFlags::BackgroundColor;
+                    ice::parse_element_color(xml_value_noutf8(attrib), style.background.color);
+                }
+
+                attrib = ice::xml_next_attrib(attrib, {});
+            }
+        }
+    }
+
+
+    void parse_styles(
+        ice::Allocator& alloc,
+        rapidxml_ns::xml_node<char> const* xml_node,
+        ice::pod::Array<ice::RawStyle>& styles
+    ) noexcept
+    {
+        rapidxml_ns::xml_node<char> const* xml_child = ice::xml_first_node(
+            xml_node,
+            ice::Constant_ISUINamespaceUI,
+            ice::Constant_UIElement_Style
+        );
+
+        while (xml_child != nullptr)
+        {
+            rapidxml_ns::xml_attribute<char> const* const attr_name = ice::xml_first_attrib(
+                xml_child,
+                ice::Constant_UIAttribute_StyleName
+            );
+            if (attr_name)
+            {
+                ice::RawStyle style{ };
+                style.name = ice::xml_value(attr_name);
+                style.target_element = ice::xml_value(
+                    ice::xml_first_attrib(xml_child, ice::Constant_UIAttribute_StyleTarget)
+                );
+
+                rapidxml_ns::xml_node<char> const* xml_prop = ice::xml_first_node(xml_child);
+                while(xml_prop != nullptr)
+                {
+                    parse_style_entry(xml_prop, style);
+                    xml_prop = ice::xml_next_sibling(xml_prop);
+                }
+
+                ice::pod::array::push_back(styles, style);
+            }
+
+            xml_child = ice::xml_next_sibling(
+                xml_child,
+                ice::Constant_ISUINamespaceIceShard,
+                ice::Constant_UIElement_Style
+            );
+        }
+    }
+
     void parse_resources(
         ice::Allocator& alloc,
         rapidxml_ns::xml_node<char> const* xml_node,
@@ -17,8 +86,8 @@ namespace ice
 
         rapidxml_ns::xml_node<char> const* xml_child = ice::xml_first_node(
             xml_node,
-            Constant_ISUINamespaceUI,
-            {}
+            ice::Constant_ISUINamespaceUI,
+            ice::Constant_UIElement_Resource
         );
 
         while (xml_child != nullptr)
@@ -75,6 +144,10 @@ namespace ice
                     }
                 }
             }
+            else if (type_str == Constant_UIResourceType_Texture)
+            {
+                res.type = ResourceType::Texture;
+            }
 
             ICE_ASSERT(
                 res.type != ResourceType::None,
@@ -89,7 +162,11 @@ namespace ice
                 );
             }
 
-            xml_child = ice::xml_next_sibling(xml_child, Constant_ISUINamespaceUI);
+            xml_child = ice::xml_next_sibling(
+                xml_child,
+                ice::Constant_ISUINamespaceUI,
+                ice::Constant_UIElement_Resource
+            );
         }
     }
 
@@ -101,20 +178,20 @@ namespace ice
     {
         rapidxml_ns::xml_node<char> const* xml_child = ice::xml_first_node(
             xml_node,
-            Constant_ISUINamespaceIceShard,
-            {}
+            ice::Constant_ISUINamespaceIceShard,
+            ice::Constant_UIElement_Shard
         );
 
         while (xml_child != nullptr)
         {
             rapidxml_ns::xml_attribute<char> const* const uiref = ice::xml_first_attrib(
                 xml_child,
-                ice::Constant_UIAttribute_ShardReference
+                ice::Constant_UIAttribute_ShardName
             );
 
             rapidxml_ns::xml_attribute<char> const* const attr_name = ice::xml_first_attrib(
                 xml_child,
-                ice::Constant_UIAttribute_ShardName
+                ice::Constant_UIAttribute_ShardAction
             );
 
             if (uiref && attr_name)
@@ -129,7 +206,11 @@ namespace ice
                 );
             }
 
-            xml_child = ice::xml_next_sibling(xml_child, Constant_ISUINamespaceIceShard);
+            xml_child = ice::xml_next_sibling(
+                xml_child,
+                ice::Constant_ISUINamespaceIceShard,
+                ice::Constant_UIElement_Shard
+            );
         }
     }
 

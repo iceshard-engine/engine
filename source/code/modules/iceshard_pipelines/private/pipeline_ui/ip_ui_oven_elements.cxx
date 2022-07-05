@@ -288,8 +288,7 @@ namespace ice
             if (attrib_name == ice::Constant_UIAttribute_Size)
             {
                 parse_element_size(
-                    attrib->value(),
-                    attrib->value() + attrib->value_size(),
+                    ice::xml_value_noutf8(attrib),
                     info.flags,
                     info.size
                 );
@@ -297,8 +296,7 @@ namespace ice
             else if (attrib_name == ice::Constant_UIAttribute_Position)
             {
                 parse_element_pos(
-                    attrib->value(),
-                    attrib->value() + attrib->value_size(),
+                    ice::xml_value_noutf8(attrib),
                     info.flags,
                     info.position
                 );
@@ -306,8 +304,7 @@ namespace ice
             else if (attrib_name == ice::Constant_UIAttribute_Margin)
             {
                 parse_element_offset(
-                    attrib->value(),
-                    attrib->value() + attrib->value_size(),
+                    ice::xml_value_noutf8(attrib),
                     info.flags,
                     info.margin
                 );
@@ -315,8 +312,7 @@ namespace ice
             else if (attrib_name == ice::Constant_UIAttribute_Padding)
             {
                 parse_element_offset(
-                    attrib->value(),
-                    attrib->value() + attrib->value_size(),
+                    ice::xml_value_noutf8(attrib),
                     info.flags,
                     info.padding
                 );

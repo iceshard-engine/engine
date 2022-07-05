@@ -14,13 +14,13 @@ namespace ice
 
     auto xml_first_node(
         rapidxml_ns::xml_node<char> const* parent,
-        ice::String node_ns,
+        ice::String node_ns = { },
         ice::String name = { }
     ) noexcept -> rapidxml_ns::xml_node<char> const*;
 
     auto xml_next_sibling(
         rapidxml_ns::xml_node<char> const* parent,
-        ice::String node_ns,
+        ice::String node_ns = { },
         ice::String name = { }
     ) noexcept -> rapidxml_ns::xml_node<char> const*;
 
@@ -50,25 +50,31 @@ namespace ice
         rapidxml_ns::xml_attribute<char> const* attrib
     ) noexcept -> ice::Utf8String;
 
+    auto xml_value_noutf8(
+        rapidxml_ns::xml_attribute<char> const* attrib
+    ) noexcept -> ice::String;
+
     void parse_element_size(
-        char const* it,
-        char const* end,
+        ice::String value,
         ice::ui::ElementFlags& out_flags,
-        ice::ui::Size& size
+        ice::ui::Size& out_size
     ) noexcept;
 
     void parse_element_pos(
-        char const* it,
-        char const* end,
+        ice::String value,
         ice::ui::ElementFlags& out_flags,
-        ice::ui::Position& pos
+        ice::ui::Position& out_pos
     ) noexcept;
 
     void parse_element_offset(
-        char const* it,
-        char const* end,
+        ice::String value,
         ice::ui::ElementFlags& out_flags,
-        ice::ui::RectOffset& offset
+        ice::ui::RectOffset& out_offset
+    ) noexcept;
+
+    void parse_element_color(
+        ice::String value,
+        ice::ui::StyleColor& out_color
     ) noexcept;
 
 } // namespace ice

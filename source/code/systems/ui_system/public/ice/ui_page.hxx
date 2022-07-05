@@ -15,6 +15,7 @@ namespace ice::ui
         ice::Span<ice::ui::RectOffset const> paddings;
 
         ice::Span<ice::ui::FontInfo const> fonts;
+        ice::Span<ice::ui::StyleInfo const> styles;
         ice::Span<ice::ui::ShardInfo const> ui_shards;
         ice::Span<ice::ui::ActionInfo const> ui_actions;
         ice::Span<ice::ui::ConstantInfo const> ui_constants;

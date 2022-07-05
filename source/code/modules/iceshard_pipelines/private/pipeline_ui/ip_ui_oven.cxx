@@ -9,48 +9,48 @@ namespace ice
     void parse_ui_file(
         ice::Allocator& alloc,
         rapidxml_ns::xml_document<char>& doc,
-        ice::pod::Array<ice::RawElement>& raw_elements,
-        ice::pod::Array<ice::RawResource>& ui_resources,
-        ice::pod::Array<ice::RawShard>& ui_shards
+        ice::pod::Array<ice::RawElement>& out_elements,
+        ice::pod::Array<ice::RawResource>& out_resources,
+        ice::pod::Array<ice::RawShard>& out_shards,
+        ice::pod::Array<ice::RawStyle>& out_styles
     ) noexcept
     {
-        rapidxml_ns::xml_node<char> const* root = doc.first_node("isui");
+        rapidxml_ns::xml_node<char> const* root = ice::xml_first_node(&doc, {}, ice::Constant_UIElement_Root);
         if (root == nullptr)
         {
             return;
         }
 
-        rapidxml_ns::xml_node<char> const* xml_node_resources = xml_first_node(
-            root,
-            Constant_ISUINamespaceUI,
-            ice::Constant_UIElementGroup_Resources
-        );
-        if (xml_node_resources != nullptr)
+        rapidxml_ns::xml_node<char> const* xml_child = ice::xml_first_node(root, ice::Constant_ISUINamespaceUI);
+        while (xml_child)
         {
-            parse_resources(alloc, xml_node_resources, ui_resources);
+            ice::String const node_name = ice::xml_name(xml_child);
+            if (node_name == ice::Constant_UIElementGroup_Resources)
+            {
+                parse_resources(alloc, xml_child, out_resources);
+            }
+            else if (node_name == ice::Constant_UIElementGroup_Styles)
+            {
+                parse_styles(alloc, xml_child, out_styles);
+            }
+            else if (node_name == ice::Constant_UIElement_Page)
+            {
+                parse_page_element(alloc, xml_child, out_elements);
+            }
+
+            xml_child = ice::xml_next_sibling(xml_child, ice::Constant_ISUINamespaceUI);
         }
 
-        rapidxml_ns::xml_node<char> const* xml_node_shards = xml_first_node(
+        // Special case for shards.
+        rapidxml_ns::xml_node<char> const* xml_shards = ice::xml_first_node(
             root,
             ice::Constant_ISUINamespaceIceShard,
             ice::Constant_UIElementGroup_Shards
         );
-        if (xml_node_shards != nullptr)
+        if (xml_shards != nullptr)
         {
-            parse_shards(alloc, xml_node_shards, ui_shards);
+            parse_shards(alloc, xml_shards, out_shards);
         }
-
-        rapidxml_ns::xml_node<char> const* xml_node = xml_first_node(
-            root,
-            ice::Constant_ISUINamespaceUI,
-            ice::Constant_UIElement_Page
-        );
-
-        if (xml_node != nullptr)
-        {
-            parse_page_element(alloc, xml_node, raw_elements);
-        }
-
     }
 
 } // namespace ice

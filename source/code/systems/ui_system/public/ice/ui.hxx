@@ -9,5 +9,4 @@
 namespace ice::ui
 {
 
-
 } // namespace ice::ui

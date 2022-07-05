@@ -9,6 +9,7 @@ namespace ice::ui
         None,
         Font,
         Utf8String,
+        Texture,
     };
 
     struct ResourceInfo

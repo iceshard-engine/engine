@@ -63,7 +63,7 @@ namespace ice::ui
         out_element.contentbox = out_element.hitbox - padding;
         out_element.flags = flags;
 
-        return any(
+        return has_any(
             flags,
             ElementFlags::Size_AutoWidth
             | ElementFlags::Size_AutoHeight
@@ -100,11 +100,11 @@ namespace ice::ui
 
             bounds = ice::font_text_bounds(*font, text);
 
-            if (any(out_element.flags, ElementFlags::Size_AutoWidth | ElementFlags::Size_StretchWidth))
+            if (has_any(out_element.flags, ElementFlags::Size_AutoWidth | ElementFlags::Size_StretchWidth))
             {
                 size.width = bounds.x * font_info.font_size;
             }
-            if (any(out_element.flags, ElementFlags::Size_AutoHeight | ElementFlags::Size_StretchHeight))
+            if (has_any(out_element.flags, ElementFlags::Size_AutoHeight | ElementFlags::Size_StretchHeight))
             {
                 size.height = bounds.y * font_info.font_size;
             }
@@ -120,11 +120,11 @@ namespace ice::ui
 
             bounds = ice::font_text_bounds(*font, text);
 
-            if (any(out_element.flags, ElementFlags::Size_AutoWidth | ElementFlags::Size_StretchWidth))
+            if (has_any(out_element.flags, ElementFlags::Size_AutoWidth | ElementFlags::Size_StretchWidth))
             {
                 size.width = bounds.x * font_info.font_size;
             }
-            if (any(out_element.flags, ElementFlags::Size_AutoHeight | ElementFlags::Size_StretchHeight))
+            if (has_any(out_element.flags, ElementFlags::Size_AutoHeight | ElementFlags::Size_StretchHeight))
             {
                 size.height = bounds.y * font_info.font_size;
             }
@@ -136,11 +136,11 @@ namespace ice::ui
             {
                 Size const child_size = rect_size(child->bbox);
 
-                if (any(out_element.flags, ElementFlags::Size_AutoWidth | ElementFlags::Size_StretchWidth))
+                if (has_any(out_element.flags, ElementFlags::Size_AutoWidth | ElementFlags::Size_StretchWidth))
                 {
                     size.width = ice::max(size.width, child_size.width);
                 }
-                if (any(out_element.flags, ElementFlags::Size_AutoHeight | ElementFlags::Size_StretchHeight))
+                if (has_any(out_element.flags, ElementFlags::Size_AutoHeight | ElementFlags::Size_StretchHeight))
                 {
                     size.height += child_size.height;
                 }
@@ -158,7 +158,7 @@ namespace ice::ui
         out_element.contentbox = out_element.hitbox - padding;
         out_element.flags = out_element.flags & ~(ElementFlags::Size_AutoWidth | ElementFlags::Size_AutoHeight);
 
-        return any(
+        return has_any(
             out_element.flags,
             ElementFlags::Size_StretchWidth
             | ElementFlags::Size_StretchHeight
@@ -176,12 +176,12 @@ namespace ice::ui
         RectOffset margin;
         RectOffset padding;
 
-        if (any(parent.flags, ElementFlags::Size_StretchWidth | ElementFlags::Size_StretchHeight))
+        if (has_any(parent.flags, ElementFlags::Size_StretchWidth | ElementFlags::Size_StretchHeight))
         {
             return UpdateResult::Unresolved;
         }
 
-        if (any(out_element.flags, ElementFlags::Size_StretchWidth | ElementFlags::Size_StretchHeight) == false)
+        if (has_any(out_element.flags, ElementFlags::Size_StretchWidth | ElementFlags::Size_StretchHeight) == false)
         {
             ICE_ASSERT(false, "Hmmm?!");
             return UpdateResult::Resolved;
@@ -195,11 +195,11 @@ namespace ice::ui
 
         // We use the hitbox, as we cannot outgrow the 'margin' value of the parent element.
         ice::ui::Size const parent_size = rect_size(parent.contentbox);
-        if (contains(out_element.flags, ElementFlags::Size_StretchWidth))
+        if (has_all(out_element.flags, ElementFlags::Size_StretchWidth))
         {
             size.width = parent_size.width - (padding.left + padding.right);
         }
-        if (contains(out_element.flags, ElementFlags::Size_StretchHeight))
+        if (has_all(out_element.flags, ElementFlags::Size_StretchHeight))
         {
             size.height = parent_size.height - (padding.top + padding.bottom);
         }
@@ -233,7 +233,7 @@ namespace ice::ui
         }
 
         // Margin auto on left + right will center the page.
-        if (contains(out_element.flags, ElementFlags::Offset_AutoLeft | ElementFlags::Offset_AutoRight))
+        if (has_all(out_element.flags, ElementFlags::Offset_AutoLeft | ElementFlags::Offset_AutoRight))
         {
             Size const hitbox_size = rect_size(out_element.hitbox);
             ice::u32 const available_margin_width = static_cast<ice::u32>((parent_size.width - hitbox_size.width) / 2.f + 0.5f);
@@ -252,7 +252,7 @@ namespace ice::ui
         else
         {
             ice::f32 x_pos = position.x;
-            if (contains(out_element.flags, ElementFlags::Position_PercentageX))
+            if (has_all(out_element.flags, ElementFlags::Position_PercentageX))
             {
                 Size const bbox_size = rect_size(out_element.bbox);
                 ice::u32 const available_width = static_cast<ice::u32>((parent_size.width - bbox_size.width) + 0.5f);
@@ -263,7 +263,7 @@ namespace ice::ui
             offset.x += x_pos;
         }
 
-        if (contains(out_element.flags, ElementFlags::Offset_AutoTop | ElementFlags::Offset_AutoBottom))
+        if (has_all(out_element.flags, ElementFlags::Offset_AutoTop | ElementFlags::Offset_AutoBottom))
         {
             Size const hitbox_size = rect_size(out_element.hitbox);
             ice::u32 const available_margin_height = static_cast<ice::u32>((parent_size.height - hitbox_size.height) / 2.f + 0.5f);
@@ -282,7 +282,7 @@ namespace ice::ui
         else
         {
             ice::f32 y_pos = position.y;
-            if (contains(out_element.flags, ElementFlags::Position_PercentageY))
+            if (has_all(out_element.flags, ElementFlags::Position_PercentageY))
             {
                 Size const bbox_size = rect_size(out_element.bbox);
                 ice::u32 const available_height = static_cast<ice::u32>((parent_size.height - bbox_size.height) + 0.5f);
@@ -343,6 +343,7 @@ namespace ice::ui
         {
             return element_update_position(data, parent, info, out_element);
         }
+        return  UpdateResult::Resolved;
     }
 
 } // namespace ice

@@ -17,12 +17,15 @@ namespace ice::ui
     struct ResourceInfo;
     struct ActionInfo;
     struct ShardInfo;
+    struct StyleInfo;
 
     struct Page;
     struct Element;
     struct Layout;
     struct Button;
     struct Label;
+
+    struct StyleColor;
 
     enum class ResourceType : ice::u32;
     enum class ElementFlags : ice::u32;
