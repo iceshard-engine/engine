@@ -1,4 +1,5 @@
 #pragma once
+#include <ice/operators_flags.hxx>
 #include <ice/build/build.hxx>
 #include <ice/math.hxx>
 
