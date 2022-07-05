@@ -67,13 +67,6 @@ namespace ice::render
         ice::render::AccessFlags destination_access;
     };
 
-    constexpr auto operator|(ImageUsageFlags left, ImageUsageFlags right) noexcept -> ImageUsageFlags
-    {
-        ice::u32 left_value = static_cast<ice::u32>(left);
-        ice::u32 right_value = static_cast<ice::u32>(right);
-        return static_cast<ImageUsageFlags>(left_value | right_value);
-    }
-
     enum class Sampler : ice::uptr
     {
         Invalid

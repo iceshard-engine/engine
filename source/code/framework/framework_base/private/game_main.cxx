@@ -110,6 +110,8 @@ auto game_main(ice::Allocator& alloc, ice::ResourceTracker& resources) -> ice::i
 
             ice::render::RenderSurface* render_surface = render_driver->create_surface(surface_info);
 
+            using ice::operator|;
+
             ice::RenderQueueDefinition queues[]{
                 ice::RenderQueueDefinition {
                     .name = "default"_sid,
