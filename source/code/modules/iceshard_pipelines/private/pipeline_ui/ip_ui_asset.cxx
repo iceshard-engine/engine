@@ -466,8 +466,9 @@ namespace ice
                 idx_res += 1;
             }
 
-            additional_data_offset = (additional_data_offset | 0x3) + 1;
-            additional_data = ice::memory::ptr_align_forward(additional_data, 4);
+            void* aligned_ptr = ice::memory::ptr_align_forward(additional_data, 4);
+            additional_data_offset += ice::memory::ptr_distance(additional_data, aligned_ptr);
+            additional_data = aligned_ptr;
 
             ice::u32 idx_style = 0;
             for (ice::RawStyle const& style : raw_info.styles)
