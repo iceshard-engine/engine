@@ -6,6 +6,7 @@ namespace ice::ui
 
     enum class ElementType : ice::u8
     {
+        Any,
         Page,
         LayoutV,
         LayoutH,
@@ -57,6 +58,14 @@ namespace ice::ui
             | Position_PercentageX | Position_PercentageY
             | Offset_AutoLeft | Offset_AutoRight
             | Offset_AutoTop | Offset_AutoBottom
+    };
+
+    enum class ElementState : ice::u8
+    {
+        None = 0x00,
+        Hoover = 0x01,
+
+        Any = 0xff,
     };
 
 

@@ -143,7 +143,7 @@ namespace ice
     ) noexcept
     {
         static PageInfo invalid_page{ .data = nullptr };
-        bool visible_page_dirty = false;
+        ice::u32 visible_page_dirty = 0;
 
         _entity_tracker.refresh_handles(runner.previous_frame().shards());
 
@@ -161,7 +161,7 @@ namespace ice
                 if (ice::shard_inspect(shard, size))
                 {
                     _size_fb = ice::vec2f(size.x, size.y);
-                    visible_page_dirty = true;
+                    visible_page_dirty = 2;
                 }
             }
             else if (shard == Shard_GameUI_Load)
@@ -194,12 +194,18 @@ namespace ice
                     if (page_info.data != nullptr)
                     {
 
-                        ice::ui::Element const& elem = page_info.elements[element.element_idx];
+                        ice::ui::Element& elem = page_info.elements[element.element_idx];
+                        visible_page_dirty = ice::max(ice::u32(elem.state != ice::ui::ElementState::None), visible_page_dirty);
+                        elem.state = ice::ui::ElementState::None;
+
                         if (elem.hitbox.left <= pos_in_fb.x
                             && elem.hitbox.right >= pos_in_fb.x
                             && elem.hitbox.top <= pos_in_fb.y
                             && elem.hitbox.bottom >= pos_in_fb.y)
                         {
+                            visible_page_dirty = ice::max(ice::u32(elem.state != ice::ui::ElementState::Hoover), visible_page_dirty);
+                            elem.state = ui::ElementState::Hoover;
+
                             bool left_click = false;
                             ice::shards::inspect_each<ice::input::InputEvent>(
                                 frame.shards(),
@@ -249,7 +255,7 @@ namespace ice
                         request->draw_data = &page_info.draw_data;
                         request->update_only = false;
 
-                        ice::shards::push_back(frame.shards(), ice::Shard_RenderUIData | (ice::RenderUIRequest const*) request);
+                        ice::shards::push_back(frame.shards(), ice::Shard_RenderUIData | (ice::RenderUIRequest const*)request);
                         _visible_page = page_name;
                     }
                 }
@@ -311,7 +317,7 @@ namespace ice
                             if (resupdate->resource_type == ice::ui::ResourceType::Utf8String)
                             {
                                 ice::Utf8String const* new_str = reinterpret_cast<ice::Utf8String const*>(resupdate->resource_data);
-                                visible_page_dirty = true;
+                                visible_page_dirty = 2;
 
                                 if (data.info.type_data == 0)
                                 {
@@ -331,9 +337,16 @@ namespace ice
             }
         }
 
-        if (visible_page_dirty)
+        if (visible_page_info.data != nullptr)
         {
-            portal.execute(update_page(portal.allocator(), frame, runner, visible_page_info));
+            if (visible_page_dirty == 2)
+            {
+                portal.execute(update_page(portal.allocator(), frame, runner, visible_page_info));
+            }
+            else if (visible_page_dirty == 1)
+            {
+                portal.execute(update_page_style(frame, visible_page_info));
+            }
         }
 
         {
@@ -593,8 +606,7 @@ namespace ice
             for (ice::u32 idx = 0; idx < count_elements; ++idx)
             {
                 ice::ui::ElementInfo const& element_info = page_data->elements[idx];
-
-                if (element_info.type == ui::ElementType::Button || element_info.type == ui::ElementType::Label)
+                if (element_info.style_i != 0)
                 {
                     size_vertice_data += sizeof(ice::vec2f) * (Constant_DebugBoundingBox + 4 + Constant_DebugContentBox);
                     size_vertice_color += sizeof(ice::vec4f) * (Constant_DebugBoundingBox + 4 + Constant_DebugContentBox);
@@ -613,7 +625,7 @@ namespace ice
                 ice::ui::Element& current_element = element_layouts[idx];
                 ice::ui::Element& parent_element = element_layouts[current_element_data.parent];
 
-                if (current_element_data.type == ui::ElementType::Button || current_element_data.type == ui::ElementType::Label)
+                if (current_element_data.style_i != 0)
                 {
                     current_element.draw_data.vertice_count = (Constant_DebugBoundingBox + 4 + Constant_DebugContentBox);
                     current_element.draw_data.vertices = { vertice_data_it, current_element.draw_data.vertice_count };
@@ -810,9 +822,35 @@ namespace ice
             "UI sizes should be fully resolved!"
         );
 
+        co_await update_page_style(frame, page_info);
+    }
+
+    auto IceWorldTrait_GameUI::update_page(
+        ice::Allocator& alloc,
+        ice::EngineFrame& frame,
+        ice::EngineRunner& runner,
+        PageInfo const& info
+    ) noexcept -> ice::Task<>
+    {
+        co_await update_ui(alloc, frame, runner, info);
+
+        ice::EngineFrame& last_frame = co_await runner.schedule_next_frame();
+
+        ice::shards::push_back(
+            last_frame.shards(),
+            ice::Shard_GameUI_Updated | info.name.data()
+        );
+    }
+
+    auto IceWorldTrait_GameUI::update_page_style(
+        ice::EngineFrame& frame,
+        PageInfo const& page_info
+    ) noexcept -> ice::Task<>
+    {
         for (ice::ui::Element const& element : page_info.elements)
         {
-            if (element.definition->type == ui::ElementType::Button || element.definition->type == ui::ElementType::Label)
+            ice::ui::StyleColor const* color_data = nullptr;
+            if (ice::ui::element_get_style(*page_info.data, element, ui::StyleFlags::TargetBackground, color_data))
             {
                 ice::vec2f* vertices = element.draw_data.vertices.data();
                 ice::vec4f* colors = element.draw_data.colors.data();
@@ -826,7 +864,7 @@ namespace ice
                     colors[1 + Constant_DebugBoundingBox] =
                     colors[2 + Constant_DebugBoundingBox] =
                     colors[3 + Constant_DebugBoundingBox] =
-                    ice::vec4f{ 0.2f, 0.6f, 0.8f, 0.7f };
+                    ice::vec4f{ color_data->red, color_data->green, color_data->blue, color_data->alpha };
 
                 if constexpr (Constant_DebugContentBox == 4)
                 {
@@ -888,23 +926,13 @@ namespace ice
                 }
             }
         }
-    }
-
-    auto IceWorldTrait_GameUI::update_page(
-        ice::Allocator& alloc,
-        ice::EngineFrame& frame,
-        ice::EngineRunner& runner,
-        PageInfo const& info
-    ) noexcept -> ice::Task<>
-    {
-        co_await update_ui(alloc, frame, runner, info);
-
-        ice::EngineFrame& last_frame = co_await runner.schedule_next_frame();
 
         ice::shards::push_back(
-            last_frame.shards(),
-            ice::Shard_GameUI_Updated | info.name.data()
+            frame.shards(),
+            ice::Shard_GameUI_Updated | page_info.name.data()
         );
+
+        co_return;
     }
 
     void register_trait_gameui(ice::WorldTraitArchive& trait_archive) noexcept

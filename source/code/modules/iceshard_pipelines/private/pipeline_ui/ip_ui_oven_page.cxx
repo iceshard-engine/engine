@@ -1,7 +1,9 @@
 #include "ip_ui_oven_page.hxx"
+#include "ip_ui_oven_containers.hxx"
 #include "ip_ui_oven_elements.hxx"
 #include "ip_ui_oven_utils.hxx"
 #include <ice/ui_resource.hxx>
+#include <ice/ui_element_info.hxx>
 #include <ice/assert.hxx>
 
 namespace ice
@@ -13,17 +15,23 @@ namespace ice
     ) noexcept
     {
         ice::String const node_name = ice::xml_name(xml_node);
-        if (node_name == "background")
+        if (node_name == ice::Constant_UIElement_StyleBackgroud)
         {
             rapidxml_ns::xml_attribute<char> const* attrib = ice::xml_first_attrib(xml_node, {});
             while (attrib)
             {
                 ice::String const attrib_name = ice::xml_name(attrib);
 
-                if (attrib_name == "color")
+                if (attrib_name == ice::Constant_UIAttribute_StyleColor)
                 {
                     style.flags |= ice::ui::StyleFlags::BackgroundColor;
                     ice::parse_element_color(xml_value_noutf8(attrib), style.background.color);
+                }
+                else if (attrib_name == ice::Constant_UIAttribute_StyleTransparency)
+                {
+                    style.flags |= ice::ui::StyleFlags::BackgroundColor;
+                    ice::Utf8String val = ice::xml_value(attrib);
+                    ice::from_chars(val, val, style.background.color.alpha);
                 }
 
                 attrib = ice::xml_next_attrib(attrib, {});
@@ -31,6 +39,44 @@ namespace ice
         }
     }
 
+    auto parse_element_states(ice::String element_state) noexcept -> ice::ui::ElementState
+    {
+        using ice::ui::ElementState;
+
+        ElementState result = ElementState::None;
+        if (element_state.empty())
+        {
+            result |= ElementState::Any;
+        }
+        else
+        {
+            if (element_state == "hoover")
+            {
+                result |= ElementState::Hoover;
+            }
+
+            ICE_ASSERT(result != ElementState::None, "Invalid value for 'state' attribute in 'style' element.");
+        }
+        return result;
+    }
+
+    auto parse_element_type(ice::String element_name) noexcept -> ice::ui::ElementType
+    {
+        using ice::ui::ElementType;
+        if (element_name == ice::Constant_UIElement_Page)
+        {
+            return ElementType::Page;
+        }
+        else if (element_name == ice::Constant_UIElement_Button)
+        {
+            return ElementType::Button;
+        }
+        else if (element_name == ice::Constant_UIElement_Label)
+        {
+            return ElementType::Label;
+        }
+        return ElementType::Any;
+    }
 
     void parse_styles(
         ice::Allocator& alloc,
@@ -54,9 +100,17 @@ namespace ice
             {
                 ice::RawStyle style{ };
                 style.name = ice::xml_value(attr_name);
-                style.target_element = ice::xml_value(
+                style.target_element = ice::ui::ElementType::Any;
+
+                ice::String const target_element = ice::xml_value_noutf8(
                     ice::xml_first_attrib(xml_child, ice::Constant_UIAttribute_StyleTarget)
                 );
+                style.target_element = parse_element_type(target_element);
+
+                ice::String const target_state = ice::xml_value_noutf8(
+                    ice::xml_first_attrib(xml_child, ice::Constant_UIAttribute_StyleTargetState)
+                );
+                style.target_element_states = parse_element_states(target_state);
 
                 rapidxml_ns::xml_node<char> const* xml_prop = ice::xml_first_node(xml_child);
                 while(xml_prop != nullptr)
@@ -70,7 +124,7 @@ namespace ice
 
             xml_child = ice::xml_next_sibling(
                 xml_child,
-                ice::Constant_ISUINamespaceIceShard,
+                ice::Constant_ISUINamespaceUI,
                 ice::Constant_UIElement_Style
             );
         }

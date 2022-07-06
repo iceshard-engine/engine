@@ -17,6 +17,8 @@ namespace ice
     static constexpr ice::String Constant_UIElement_Style = "style";
     static constexpr ice::String Constant_UIElement_Page = "page";
 
+    static constexpr ice::String Constant_UIElement_StyleBackgroud = "background";
+
     static constexpr ice::String Constant_UIAttribute_ResourceType = "type";
     static constexpr ice::String Constant_UIAttribute_ResourceName = "name";
     static constexpr ice::String Constant_UIAttribute_ResourceFontSize = "size";
@@ -29,6 +31,7 @@ namespace ice
     static constexpr ice::String Constant_UIAttribute_StyleTarget = "target";
     static constexpr ice::String Constant_UIAttribute_StyleColor = "color";
     static constexpr ice::String Constant_UIAttribute_StyleTransparency = "alpha";
+    static constexpr ice::String Constant_UIAttribute_StyleTargetState = "state";
 
     static constexpr ice::Utf8String Constant_UIResourceType_Font = u8"font";
     static constexpr ice::Utf8String Constant_UIResourceType_Text = u8"text";
@@ -38,6 +41,7 @@ namespace ice
     struct RawElement
     {
         ice::u16 parent;
+        ice::Utf8String style;
         ice::ui::Size size;
         ice::ui::Position position;
         ice::ui::RectOffset margin;
@@ -51,7 +55,8 @@ namespace ice
     struct RawStyle
     {
         ice::Utf8String name;
-        ice::Utf8String target_element;
+        ice::ui::ElementType target_element;
+        ice::ui::ElementState target_element_states;
 
         ice::ui::StyleFlags flags;
 

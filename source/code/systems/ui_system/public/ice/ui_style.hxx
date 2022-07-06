@@ -1,5 +1,6 @@
 #pragma once
 #include <ice/base.hxx>
+#include <ice/ui_types.hxx>
 #include <ice/ui_data_ref.hxx>
 
 namespace ice::ui
@@ -11,8 +12,14 @@ namespace ice::ui
 
         BackgroundColor = 0x0000'0001,
         BackgroundTexture = 0x0000'0002,
+
         ForegroundColor = 0x0000'0010,
         ForegroundTexture = 0x0000'0020,
+
+        TargetBackground = BackgroundColor | BackgroundTexture,
+        TargetForeground = ForegroundColor | ForegroundTexture,
+
+        All = TargetBackground | TargetForeground
     };
 
     struct StyleColor
@@ -32,6 +39,7 @@ namespace ice::ui
 
     struct StyleInfo
     {
+        ice::ui::ElementState target_state;
         ice::ui::StyleFlags flags;
         ice::ui::DataRef data_bg;
         ice::ui::DataRef data_fg;

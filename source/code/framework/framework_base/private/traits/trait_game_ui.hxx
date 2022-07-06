@@ -74,6 +74,11 @@ namespace ice
             PageInfo const& info
         ) noexcept -> ice::Task<>;
 
+        auto update_page_style(
+            ice::EngineFrame& frame,
+            PageInfo const& info
+        ) noexcept -> ice::Task<>;
+
         auto show_ui(
             ice::ecs::EntityHandle ui_entity
         ) noexcept -> ice::Task<>;

@@ -15,6 +15,7 @@ namespace ice::ui
         ice::ui::Rect contentbox;
         ice::ui::DrawData draw_data;
         ice::ui::ElementFlags flags;
+        ice::ui::ElementState state;
 
         ice::ui::Element* child;
         ice::ui::Element* sibling;

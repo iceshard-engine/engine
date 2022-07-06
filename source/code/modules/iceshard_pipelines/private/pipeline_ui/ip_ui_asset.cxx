@@ -77,8 +77,8 @@ namespace ice
                 }
                 if (button_data->text.data_type == ice::ui::DataSource::ValueConstant)
                 {
-                    additional_data_size += button_data->text.data_source.size();
                     count_constants += 1;
+                    additional_data_size += button_data->text.data_source.size();
                 }
             }
             else if (element.type == ElementType::Label)
@@ -86,8 +86,8 @@ namespace ice
                 RawLabelInfo const* label_data = reinterpret_cast<RawLabelInfo const*>(element.type_data);
                 if (label_data->text.data_type == ice::ui::DataSource::ValueConstant)
                 {
-                    additional_data_size += label_data->text.data_source.size();
                     count_constants += 1;
+                    additional_data_size += label_data->text.data_source.size();
                 }
             }
         }
@@ -98,6 +98,15 @@ namespace ice
             {
                 count_fonts += 1;
                 additional_data_size += resource.font_data.font_name.size();
+            }
+        }
+
+        for (ice::RawStyle const& style : raw_info.styles)
+        {
+            if (has_any(style.flags, ice::ui::StyleFlags::BackgroundColor))
+            {
+                count_constants += 1;
+                additional_data_size += sizeof(ice::ui::StyleColor);
             }
         }
 
@@ -190,6 +199,7 @@ namespace ice
 
             constants.data_storage = ice::memory::ptr_add(constants.data_storage, text_size);
             constants.data_storage_offset += text_size;
+            constants.idx += 1;
         }
         else if (out_ref.source == DataSource::ValueResource)
         {
@@ -210,6 +220,7 @@ namespace ice
         };
 
         void const* const data_end = ice::memory::ptr_add(result.location, result.size);
+
         static auto store_span_info = [base_ptr = result.location](auto& span_value) noexcept
         {
             void* span_address = std::addressof(span_value);
@@ -342,6 +353,33 @@ namespace ice
                 margins[idx] = element.margin;
                 paddings[idx] = element.padding;
 
+                // Find the style attached
+                {
+                    ice::u16 idx_by_name = 1;
+                    ice::u16 idx_by_target = 0;
+                    for (; idx_by_name < ui_sizes.count_styles; ++idx_by_name)
+                    {
+                        if (raw_info.styles[idx_by_name].target_element_states != ice::ui::ElementState::Any)
+                        {
+                            continue;
+                        }
+                        if (raw_info.styles[idx_by_name].name == element.style)
+                        {
+                            break;
+                        }
+                        if (raw_info.styles[idx_by_name].target_element == element.type)
+                        {
+                            idx_by_target = idx_by_name;
+                        }
+                    }
+
+                    if (idx_by_name == ui_sizes.count_styles)
+                    {
+                        idx_by_name = idx_by_target;
+                    }
+                    elements[idx].style_i = idx_by_name;
+                }
+
                 if (element.type == ElementType::Label)
                 {
                     RawLabelInfo const* const raw_label_info = reinterpret_cast<RawLabelInfo const*>(element.type_data);
@@ -428,6 +466,34 @@ namespace ice
                 idx_res += 1;
             }
 
+            additional_data_offset = (additional_data_offset | 0x3) + 1;
+            additional_data = ice::memory::ptr_align_forward(additional_data, 4);
+
+            ice::u32 idx_style = 0;
+            for (ice::RawStyle const& style : raw_info.styles)
+            {
+                styles[idx_style] = StyleInfo{ .target_state = ElementState::Any, .flags = style.flags };
+
+                if (has_any(style.flags, StyleFlags::BackgroundColor))
+                {
+                    styles[idx_style].target_state = style.target_element_states;
+                    styles[idx_style].data_bg.source = DataSource::ValueConstant;
+                    styles[idx_style].data_bg.source_i = constants_ref.idx;
+
+                    ice::ui::ConstantInfo& constant_ref = constants_ref.data[constants_ref.idx];
+                    constant_ref.offset = additional_data_offset;
+                    constant_ref.size = sizeof(ice::ui::StyleColor);
+
+                    ice::memcpy(additional_data, ice::addressof(style.background.color), constant_ref.size);
+
+                    additional_data = ice::memory::ptr_add(additional_data, constant_ref.size);
+                    additional_data_offset += constant_ref.size;
+                    constants_ref.idx += 1;
+                }
+
+                idx_style += 1;
+            }
+
             ice::u32 idx_shard = 0;
             for (ice::RawShard const& shard : raw_info.shards)
             {
@@ -449,6 +515,7 @@ namespace ice
             store_span_info(isui->styles);
             store_span_info(isui->ui_shards);
             store_span_info(isui->ui_actions);
+            store_span_info(isui->ui_constants);
             store_span_info(isui->ui_resources);
             store_span_info(isui->data_labels);
             store_span_info(isui->data_buttons);
@@ -486,6 +553,7 @@ namespace ice
 
             ice::pod::Array<ice::RawStyle> styles{ alloc };
             ice::pod::array::reserve(styles, 25);
+            ice::pod::array::push_back(styles, RawStyle{ .flags = ice::ui::StyleFlags::None });
 
             ice::pod::Array<ice::RawElement> elements{ alloc };
             ice::pod::array::reserve(elements, 50);
@@ -559,9 +627,10 @@ namespace ice
         restore_span_value(ui_result->paddings);
         restore_span_value(ui_result->fonts);
         restore_span_value(ui_result->styles);
-        restore_span_value(ui_result->ui_resources);
         restore_span_value(ui_result->ui_shards);
         restore_span_value(ui_result->ui_actions);
+        restore_span_value(ui_result->ui_constants);
+        restore_span_value(ui_result->ui_resources);
         restore_span_value(ui_result->data_labels);
         restore_span_value(ui_result->data_buttons);
         ui_result->additional_data = ice::memory::ptr_add(ui_data, reinterpret_cast<ice::uptr>(ui_data->additional_data));

@@ -227,71 +227,75 @@ namespace ice::ui
         Position offset = rect_position(parent.hitbox);
 
         // If we are a child of a parent VListBox we are already updated
-        if (parent.definition->type == ElementType::LayoutV)
+        if (parent.definition->type != ElementType::LayoutV && parent.definition->type != ElementType::LayoutH)
         {
-            return UpdateResult::Resolved;
-        }
-
-        // Margin auto on left + right will center the page.
-        if (has_all(out_element.flags, ElementFlags::Offset_AutoLeft | ElementFlags::Offset_AutoRight))
-        {
-            Size const hitbox_size = rect_size(out_element.hitbox);
-            ice::u32 const available_margin_width = static_cast<ice::u32>((parent_size.width - hitbox_size.width) / 2.f + 0.5f);
-
-            offset.x = static_cast<ice::f32>(available_margin_width);
-        }
-        //else if (contains(out_element.flags, ElementFlags::Position_AnchorRight))
-        //{
-        //    ICE_ASSERT(
-        //        contains(out_element.flags, ElementFlags::Position_AnchorRight) == false,
-        //        "Cannot anchor on both left and right!"
-        //    );
-
-        //    offset.x += parent_size.width - (position.x + size.width);
-        //}
-        else
-        {
-            ice::f32 x_pos = position.x;
-            if (has_all(out_element.flags, ElementFlags::Position_PercentageX))
+            // Margin auto on left + right will center the page.
+            if (has_all(out_element.flags, ElementFlags::Offset_AutoLeft | ElementFlags::Offset_AutoRight))
             {
-                Size const bbox_size = rect_size(out_element.bbox);
-                ice::u32 const available_width = static_cast<ice::u32>((parent_size.width - bbox_size.width) + 0.5f);
+                Size const hitbox_size = rect_size(out_element.hitbox);
+                ice::u32 const available_margin_width = static_cast<ice::u32>((parent_size.width - hitbox_size.width) / 2.f + 0.5f);
 
-                x_pos *= 0.01f * static_cast<ice::f32>(available_width);
+                offset.x = static_cast<ice::f32>(available_margin_width);
+            }
+            //else if (contains(out_element.flags, ElementFlags::Position_AnchorRight))
+            //{
+            //    ICE_ASSERT(
+            //        contains(out_element.flags, ElementFlags::Position_AnchorRight) == false,
+            //        "Cannot anchor on both left and right!"
+            //    );
+
+            //    offset.x += parent_size.width - (position.x + size.width);
+            //}
+            else
+            {
+                ice::f32 x_pos = position.x;
+                if (has_all(out_element.flags, ElementFlags::Position_PercentageX))
+                {
+                    Size const bbox_size = rect_size(out_element.bbox);
+                    ice::u32 const available_width = static_cast<ice::u32>((parent_size.width - bbox_size.width) + 0.5f);
+
+                    x_pos *= 0.01f * static_cast<ice::f32>(available_width);
+                }
+
+                offset.x += x_pos;
             }
 
-            offset.x += x_pos;
-        }
-
-        if (has_all(out_element.flags, ElementFlags::Offset_AutoTop | ElementFlags::Offset_AutoBottom))
-        {
-            Size const hitbox_size = rect_size(out_element.hitbox);
-            ice::u32 const available_margin_height = static_cast<ice::u32>((parent_size.height - hitbox_size.height) / 2.f + 0.5f);
-
-            offset.y = static_cast<ice::f32>(available_margin_height);
-        }
-        //else if (contains(out_element.flags, ElementFlags::Position_AnchorBottom))
-        //{
-        //    ICE_ASSERT(
-        //        contains(out_element.flags, ElementFlags::Position_AnchorTop) == false,
-        //        "Cannot anchor on both left and right!"
-        //    );
-
-        //    offset.y += parent_size.height - (position.y + size.height);
-        //}
-        else
-        {
-            ice::f32 y_pos = position.y;
-            if (has_all(out_element.flags, ElementFlags::Position_PercentageY))
+            if (has_all(out_element.flags, ElementFlags::Offset_AutoTop | ElementFlags::Offset_AutoBottom))
             {
-                Size const bbox_size = rect_size(out_element.bbox);
-                ice::u32 const available_height = static_cast<ice::u32>((parent_size.height - bbox_size.height) + 0.5f);
+                Size const hitbox_size = rect_size(out_element.hitbox);
+                ice::u32 const available_margin_height = static_cast<ice::u32>((parent_size.height - hitbox_size.height) / 2.f + 0.5f);
 
-                y_pos *= 0.01f * static_cast<ice::f32>(available_height);
+                offset.y = static_cast<ice::f32>(available_margin_height);
+            }
+            //else if (contains(out_element.flags, ElementFlags::Position_AnchorBottom))
+            //{
+            //    ICE_ASSERT(
+            //        contains(out_element.flags, ElementFlags::Position_AnchorTop) == false,
+            //        "Cannot anchor on both left and right!"
+            //    );
+
+            //    offset.y += parent_size.height - (position.y + size.height);
+            //}
+            else
+            {
+                ice::f32 y_pos = position.y;
+                if (has_all(out_element.flags, ElementFlags::Position_PercentageY))
+                {
+                    Size const bbox_size = rect_size(out_element.bbox);
+                    ice::u32 const available_height = static_cast<ice::u32>((parent_size.height - bbox_size.height) + 0.5f);
+
+                    y_pos *= 0.01f * static_cast<ice::f32>(available_height);
+                }
+
+                offset.y += y_pos;
             }
 
-            offset.y += y_pos;
+            out_element.bbox = move_box(out_element.bbox, to_vec2(offset));
+            out_element.hitbox = move_box(out_element.hitbox, to_vec2(offset));
+            out_element.contentbox = move_box(out_element.contentbox, to_vec2(offset));
         }
+
+        offset = rect_position(out_element.contentbox);
 
         if (info.type == ElementType::LayoutV)
         {
@@ -311,10 +315,24 @@ namespace ice::ui
                 child = child->sibling;
             }
         }
+        else if (info.type == ElementType::LayoutH)
+        {
+            ice::u32 offset_horizontal = 0;
 
-        out_element.bbox = move_box(out_element.bbox, to_vec2(offset));
-        out_element.hitbox = move_box(out_element.hitbox, to_vec2(offset));
-        out_element.contentbox = move_box(out_element.contentbox, to_vec2(offset));
+            Element* child = out_element.child;
+            while (child != nullptr)
+            {
+                Size const child_size = rect_size(child->bbox);
+                Position const child_offset = { offset.x + offset_horizontal, offset.y };
+
+                child->bbox = move_box(child->bbox, to_vec2(child_offset));
+                child->hitbox = move_box(child->hitbox, to_vec2(child_offset));
+                child->contentbox = move_box(child->contentbox, to_vec2(child_offset));
+                offset_horizontal += static_cast<ice::u32>(child_size.width + 0.5f);
+
+                child = child->sibling;
+            }
+        }
         return UpdateResult::Resolved;
     }
 

@@ -317,6 +317,10 @@ namespace ice
                     info.padding
                 );
             }
+            else if (attrib_name == ice::Constant_UIAttribute_Style)
+            {
+                info.style = ice::xml_value(attrib);
+            }
 
             attrib = ice::xml_next_attrib(attrib, {});
         }

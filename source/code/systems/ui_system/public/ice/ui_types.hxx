@@ -30,6 +30,7 @@ namespace ice::ui
     enum class ResourceType : ice::u32;
     enum class ElementFlags : ice::u32;
     enum class ElementType : ice::u8;
+    enum class ElementState : ice::u8;
 
     struct Size
     {
