@@ -60,6 +60,9 @@ public:
 
     bool _active = false;
     ice::World* _test_world;
+
+    ice::c8utf const* _menu = nullptr;
+    bool _menu_visible = false;
 };
 
 ICE_REGISTER_GAMEAPP(MyGame);

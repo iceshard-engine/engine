@@ -33,7 +33,8 @@ namespace ice
 
     struct UpdateUIResource
     {
-        ice::StringID resource_id;
+        ice::c8utf const* page;
+        ice::StringID resource;
         ice::ui::ResourceType resource_type;
         void const* resource_data;
     };

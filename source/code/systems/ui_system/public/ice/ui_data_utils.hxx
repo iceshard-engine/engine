@@ -6,6 +6,7 @@
 
 #include <ice/memory/pointer_arithmetic.hxx>
 #include <ice/assert.hxx>
+#include <ice/font.hxx>
 #include <ice/span.hxx>
 
 namespace ice::ui

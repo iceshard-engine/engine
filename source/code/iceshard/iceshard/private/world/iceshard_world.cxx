@@ -157,7 +157,7 @@ namespace ice
     }
 
     auto IceshardWorld::find_trait(
-		ice::StringID_Arg name
+        ice::StringID_Arg name
     ) const noexcept -> ice::WorldTrait*
     {
         ice::u64 const name_hash = ice::hash(name);

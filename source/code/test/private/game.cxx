@@ -410,18 +410,19 @@ void MyGame::on_update(ice::EngineFrame& frame, ice::EngineRunner& runner, ice::
     ice::shards::inspect_each<ice::c8utf const*>(
         runner.previous_frame().shards(),
         ice::Shard_GameUI_Loaded,
-        [&frame](ice::c8utf const* page_name) noexcept
+        [&frame, this](ice::c8utf const* page_name) noexcept
         {
             for (ice::u32 idx = 0; idx < ice::size(temp_ui_strings); ++idx)
             {
                 ice::Utf8String* str = frame.create_named_object<ice::Utf8String>(ice::stringid(temp_ui_strings[idx]), temp_ui_strings[idx]);
                 ice::UpdateUIResource* ures = frame.create_named_object<ice::UpdateUIResource>(ice::stringid(temp_ui_ids[idx]));
+                ures->page = page_name;
                 ures->resource_data = ice::to_const(str);
-                ures->resource_id = ice::stringid(temp_ui_ids[idx]);
+                ures->resource = ice::stringid(temp_ui_ids[idx]);
                 ures->resource_type = ice::ui::ResourceType::Utf8String;
                 ice::shards::push_back(frame.shards(), ice::Shard_GameUI_UpdateResource | ice::to_const(ures));
             }
-            ice::shards::push_back(frame.shards(), ice::Shard_GameUI_Show | page_name);
+            _menu = page_name;
         }
     );
 
@@ -435,6 +436,21 @@ void MyGame::on_update(ice::EngineFrame& frame, ice::EngineRunner& runner, ice::
     bool was_active = _active;
     for (ice::input::InputEvent const& event : frame.input_events())
     {
+        if (ice::input::input_identifier(ice::input::DeviceType::Keyboard, ice::input::KeyboardKey::Escape) == event.identifier)
+        {
+            if (_menu != nullptr && (event.value.button.state.clicked || event.value.button.state.repeat > 0))
+            {
+                if (_menu_visible)
+                {
+                    ice::shards::push_back(frame.shards(), ice::Shard_GameUI_Hide | _menu);
+                }
+                else
+                {
+                    ice::shards::push_back(frame.shards(), ice::Shard_GameUI_Show | _menu);
+                }
+                _menu_visible = !_menu_visible;
+            }
+        }
         if (ice::input::input_identifier(ice::input::DeviceType::Keyboard, ice::input::KeyboardKey::KeyP) == event.identifier)
         {
             if (event.value.button.state.clicked)

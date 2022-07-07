@@ -6,8 +6,10 @@
 #include "traits/trait_camera.hxx"
 #include "traits/trait_sprite_animator.hxx"
 #include "traits/trait_player_actor.hxx"
-#include "traits/trait_game_ui.hxx"
 #include "traits/physics/trait_box2d.hxx"
+
+#include "traits/ui/game_ui_trait.hxx"
+#include "traits/ui/render_ui_trait.hxx"
 
 #include "traits/render/trait_render_gfx.hxx"
 #include "traits/render/trait_render_clear.hxx"
@@ -20,7 +22,6 @@
 
 #include "traits/render/trait_render_tilemap.hxx"
 #include "traits/render/trait_render_glyphs.hxx"
-#include "traits/render/trait_render_ui.hxx"
 
 namespace ice
 {

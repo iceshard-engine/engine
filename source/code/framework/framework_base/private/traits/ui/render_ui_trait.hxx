@@ -12,13 +12,22 @@ namespace ice
 
     static constexpr ice::Shard Shard_RenderUIData = "action/render/ui`ice::RenderUIRequest const*"_shard;
 
+    enum class RenderUIRequestType
+    {
+        CreateOrUpdate,
+        UpdateAndShow,
+        UpdateAndHide,
+        Disable,
+        Enable,
+        Destroy,
+    };
+
     struct RenderUIRequest
     {
         ice::u64 id;
         ice::vec2f position;
         ice::ui::DrawData const* draw_data;
-
-        bool update_only;
+        ice::RenderUIRequestType type;
     };
 
     struct RenderUIData
@@ -41,6 +50,7 @@ namespace ice
         ice::ui::DrawData const* draw_data;
 
         bool is_dirty;
+        bool is_enabled;
     };
 
     struct RenderUICommand

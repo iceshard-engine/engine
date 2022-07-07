@@ -35,11 +35,11 @@ namespace ice
     namespace detail
     {
 
-        auto load_font_shader(ice::AssetStorage& assets, ice::Utf8String name) noexcept -> ice::Task<ice::Data>
+        auto load_font_shader(ice::AssetStorage& assets, ice::Data& data, ice::Utf8String name) noexcept -> ice::Task<>
         {
             ice::Asset const asset = co_await assets.request(ice::render::AssetType_Shader, name, ice::AssetState::Baked);
             ICE_ASSERT(asset_check(asset, AssetState::Baked), "Shader not available!");
-            co_return asset.data;
+            data = asset.data;
         }
 
     } // namespace detail
@@ -255,10 +255,22 @@ namespace ice
     {
         ice::AssetStorage& storage = runner.asset_storage();
 
-        _shader_data[0] = ice::sync_wait(ice::detail::load_font_shader(storage, u8"shaders/debug/font-vert"));
-        _shader_data[1] = ice::sync_wait(ice::detail::load_font_shader(storage, u8"shaders/debug/font-frag"));
-        _shader_data[2] = ice::sync_wait(ice::detail::load_font_shader(storage, u8"shaders/debug/font-debug-vert"));
-        _shader_data[3] = ice::sync_wait(ice::detail::load_font_shader(storage, u8"shaders/debug/font-debug-frag"));
+        runner.execute_task(
+            ice::detail::load_font_shader(storage, _shader_data[0], u8"shaders/debug/font-vert"),
+            EngineContext::LogicFrame
+        );
+        runner.execute_task(
+            ice::detail::load_font_shader(storage, _shader_data[1], u8"shaders/debug/font-frag"),
+            EngineContext::LogicFrame
+        );
+        runner.execute_task(
+            ice::detail::load_font_shader(storage, _shader_data[2], u8"shaders/debug/font-debug-vert"),
+            EngineContext::LogicFrame
+        );
+        runner.execute_task(
+            ice::detail::load_font_shader(storage, _shader_data[3], u8"shaders/debug/font-debug-frag"),
+            EngineContext::LogicFrame
+        );
     }
 
     void IceWorldTrait_RenderGlyphs::on_deactivate(
@@ -284,12 +296,12 @@ namespace ice
         ice::pod::Array<ice::Utf8String> load_fonts{ frame.allocator() };
         ice::pod::array::reserve(load_fonts, 10);
 
-        ice::u32 const text_draws = ice::shards::count(frame.shards(), ice::Shard_DrawTextCommand);
+        ice::u32 const text_draws = ice::shards::count(runner.previous_frame().shards(), ice::Shard_DrawTextCommand);
         ice::Span<ice::TextRenderInfo> text_infos = frame.create_named_span<ice::TextRenderInfo>("ice.glyph-render.text-infos"_sid, text_draws);
 
         ice::u32 draw_vertices = 0;
         ice::shards::inspect_each<ice::DrawTextCommand const*>(
-            frame.shards(),
+            runner.previous_frame().shards(),
             ice::Shard_DrawTextCommand,
             [&draw_vertices, &load_fonts, this](ice::DrawTextCommand const* payload) noexcept
             {
@@ -313,7 +325,7 @@ namespace ice
         ice::u32 vert_count = 0;
 
         ice::shards::inspect_each<ice::DrawTextCommand const*>(
-            frame.shards(),
+            runner.previous_frame().shards(),
             ice::Shard_DrawTextCommand,
             [&, this](ice::DrawTextCommand const* payload) noexcept
             {

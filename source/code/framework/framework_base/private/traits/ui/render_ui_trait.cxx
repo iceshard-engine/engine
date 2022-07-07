@@ -1,4 +1,4 @@
-#include "trait_render_ui.hxx"
+#include "render_ui_trait.hxx"
 #include <ice/ui_element.hxx>
 #include <ice/ui_button.hxx>
 #include <ice/game_render_traits.hxx>
@@ -80,7 +80,12 @@ namespace ice
         {
             if (entry.value->resourceset_uniform == ice::render::ResourceSet::Invalid)
             {
-                return;
+                continue;
+            }
+
+            if (entry.value->is_enabled == false)
+            {
+                continue;
             }
 
             ice::RenderUIData const* const data = entry.value;
@@ -112,7 +117,7 @@ namespace ice
         Renderpass renderpass = ice::gfx::find_resource<Renderpass>(
             gfx_device.resource_tracker(),
             "ice.gfx.renderpass.default"_sid
-        );
+            );
 
         _shader_stages[0] = ShaderStageFlags::VertexStage;
         _shader_stages[1] = ShaderStageFlags::FragmentStage;
@@ -346,13 +351,18 @@ namespace ice
     ) noexcept
     {
         ice::shards::inspect_each<ice::RenderUIRequest const*>(
-            frame.shards(),
+            runner.previous_frame().shards(),
             ice::Shard_RenderUIData,
             [&, this](ice::RenderUIRequest const* render_request)
             {
                 ice::RenderUIData* data = ice::pod::hash::get(_render_data, render_request->id, nullptr);
                 if (data == nullptr)
                 {
+                    ICE_ASSERT(
+                        render_request->type == RenderUIRequestType::CreateOrUpdate,
+                        "Invalid request! First request is required to be: 'CreateOrUpdate'"
+                    );
+
                     ice::RenderUIData* data = portal.allocator().make<ice::RenderUIData>();
                     ice::pod::hash::set(_render_data, render_request->id, data);
 
@@ -366,10 +376,33 @@ namespace ice
                     data->draw_data = render_request->draw_data;
                     data->is_dirty = true;
                 }
-                else
+                else if (data != nullptr)
                 {
-                    data->draw_data = render_request->draw_data;
-                    data->is_dirty = true;
+                    if (render_request->type == RenderUIRequestType::CreateOrUpdate)
+                    {
+                        data->draw_data = render_request->draw_data;
+                        data->is_dirty = true;
+                    }
+                    else if (render_request->type == RenderUIRequestType::UpdateAndShow)
+                    {
+                        data->draw_data = render_request->draw_data;
+                        data->is_dirty = true;
+                        data->is_enabled = true;
+                    }
+                    else if (render_request->type == RenderUIRequestType::UpdateAndHide)
+                    {
+                        data->draw_data = render_request->draw_data;
+                        data->is_dirty = true;
+                        data->is_enabled = false;
+                    }
+                    else if (render_request->type == RenderUIRequestType::Disable)
+                    {
+                        data->is_enabled = false;
+                    }
+                    else if (render_request->type == RenderUIRequestType::Enable)
+                    {
+                        data->is_enabled = true;
+                    }
                 }
             }
         );

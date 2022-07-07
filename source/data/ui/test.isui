@@ -37,9 +37,9 @@
     <ui:layout size="auto" position="auto,20%" padding="2" margin="auto,0" direction="vertical" style="style_light">
       <ui:layout size="300,auto" position="0" direction="vertical" style="style_dark">
         <ui:label size="*,auto" padding="6" margin="0,0,0,10" text="Menu" style="style_header" />
-        <ui:button size="*,auto" padding="6" margin="0,5" text="{Resource text_start}" />
+        <!-- <ui:button size="*,auto" padding="6" margin="0,5" text="{Resource text_start}" />
         <ui:button size="*,auto" padding="6" margin="0,5" text="{Resource text_settings}" />
-        <ui:button size="*,auto" padding="6" margin="0,5" text="{Resource text_credits}" />
+        <ui:button size="*,auto" padding="6" margin="0,5" text="{Resource text_credits}" /> -->
         <ui:button size="*,auto" padding="6" margin="0,5,0,0" text="{Resource text_exit}" on_click="{Shard game_exit}" />
       </ui:layout>
     </ui:layout>

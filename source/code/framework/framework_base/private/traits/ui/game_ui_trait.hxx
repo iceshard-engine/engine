@@ -7,23 +7,12 @@
 #include <ice/pod/hash.hxx>
 #include <ice/ui_element_draw.hxx>
 #include <ice/asset.hxx>
+#include "render_ui_trait.hxx"
 
 namespace ice
 {
 
-    struct UIRuntimeElement
-    {
-        ice::ui::ElementInfo const* info;
-        ice::vec2f position;
-        ice::vec2f size;
-    };
-
-    struct UIRuntimePage
-    {
-        ice::u64 info_hash;
-        ice::ecs::EntityHandle current_handle;
-    };
-
+    class GameUI_Page;
 
     class IceWorldTrait_GameUI final : public ice::WorldTrait
     {
@@ -55,7 +44,6 @@ namespace ice
 
         auto load_ui(
             ice::Allocator& alloc,
-            ice::EngineFrame& frame,
             ice::EngineRunner& runner,
             ice::Utf8String name
         ) noexcept -> ice::Task<>;
@@ -64,18 +52,6 @@ namespace ice
             ice::Allocator& alloc,
             ice::EngineFrame& frame,
             ice::EngineRunner& runner,
-            PageInfo const& info
-        ) noexcept -> ice::Task<>;
-
-        auto update_page(
-            ice::Allocator& alloc,
-            ice::EngineFrame& frame,
-            ice::EngineRunner& runner,
-            PageInfo const& info
-        ) noexcept -> ice::Task<>;
-
-        auto update_page_style(
-            ice::EngineFrame& frame,
             PageInfo const& info
         ) noexcept -> ice::Task<>;
 
@@ -88,33 +64,15 @@ namespace ice
         ) noexcept -> ice::Task<>;
 
     private:
-        struct PageInfo
-        {
-            ice::Utf8String name;
-            ice::ui::PageInfo const* data;
-            ice::Span<ice::ui::Element> elements;
-            ice::Span<ice::ui::UIResourceData> resources;
-
-            ice::ui::DrawData draw_data;
-
-            ice::AssetHandle* asset_handle;
-        };
-
-        struct Page
-        {
-            ice::u64 info_hash;
-            ice::ecs::EntityHandle current_handle;
-        };
 
         ice::Allocator& _allocator;
         ice::ecs::EntityTracker _entity_tracker;
 
-        ice::pod::Hash<PageInfo> _pages_info;
-        ice::pod::Hash<Page> _pages;
+        ice::pod::Hash<GameUI_Page*> _pages;
 
         ice::Utf8String _visible_page;
 
-        ice::vec2f _size_fb;
+        ice::vec2u _swapchain_size;
         ice::vec2f _pos_mouse;
     };
 
