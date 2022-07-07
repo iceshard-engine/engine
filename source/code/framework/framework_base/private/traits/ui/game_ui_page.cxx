@@ -320,6 +320,12 @@ namespace ice
         _current_flags &= ~Flags::ActionHide;
     }
 
+    void GameUI_Page::resize(ice::vec2u canvas_size) noexcept
+    {
+        _current_canvas_size = ice::vec2f(canvas_size.x, canvas_size.y);
+        _current_flags |= Flags::StateDirtyLayout | Flags::StateDirtyStyle;
+    }
+
     void GameUI_Page::close() noexcept
     {
         _current_flags |= Flags::ActionHide;

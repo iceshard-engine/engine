@@ -154,8 +154,7 @@ namespace ice
                     _swapchain_size = ice::vec2u(size.x, size.y);
                     for (auto const& entry : _pages)
                     {
-                        entry.value->open(_swapchain_size);
-                        entry.value->set_dirty_layout();
+                        entry.value->resize(_swapchain_size);
                     }
                 }
             }
@@ -186,7 +185,6 @@ namespace ice
                 {
                     ice::ui::PageInfo const& page_info = page->info();
                     ice::ui::Element const& elem = page->element(element.element_idx);
-                    page->set_element_state(elem, ElementState::None);
 
                     if (elem.hitbox.left <= pos_in_fb.x
                         && elem.hitbox.right >= pos_in_fb.x
@@ -213,12 +211,15 @@ namespace ice
                         if (left_click && button.action_on_click != nullptr)
                         {
                             ice::ui::ActionInfo const& action = *button.action_on_click;
-
                             ice::ui::ShardInfo const shard_info = page_info.ui_shards[action.type_i];
 
                             ice::shards::push_back(frame.shards(), ice::shard_create(shard_info.shardid) | ice::ecs::Entity{});
                             ICE_LOG(ice::LogSeverity::Debug, ice::LogTag::Engine, "Clicked!");
                         }
+                    }
+                    else
+                    {
+                        page->set_element_state(elem, ElementState::None);
                     }
                 }
             }

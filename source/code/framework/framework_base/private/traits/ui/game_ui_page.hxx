@@ -35,13 +35,15 @@ namespace ice
 
         auto element(ice::u16 idx) const noexcept -> ice::ui::Element const&;
 
-        void open(
-            ice::vec2u canvas_size
-        ) noexcept;
+        void open(ice::vec2u canvas_size) noexcept;
 
         void open_inside(
             ice::GameUI_Page const* parent_page,
             ice::ui::Element const* parent_element
+        ) noexcept;
+
+        void resize(
+            ice::vec2u canvas_size
         ) noexcept;
 
         void close() noexcept;
