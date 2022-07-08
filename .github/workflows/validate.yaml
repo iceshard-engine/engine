@@ -77,7 +77,7 @@ jobs:
     if: ${{ contains(needs.setup_workflow.outputs.tags, 'parallel') == false }}
     uses: iceshard-engine/engine/.github/workflows/cw_build_single.yaml@master
     with:
-      host: ubuntu-latest
+      host: ubuntu-22.04
       configs: ${{ needs.setup_workflow.outputs.build_configs }}
       platform: 'linux'
       architecture: x64
@@ -87,7 +87,7 @@ jobs:
   #   - Can be triggered using the [parallel] tag in a commit message body.
 
   call_build_parallel_windows:
-    name: 'Build (Windows)'
+    name: 'Build (Windows), Parallel'
     needs: setup_workflow
     if: ${{ contains(needs.setup_workflow.outputs.tags, 'parallel') == true }}
     uses: iceshard-engine/engine/.github/workflows/cw_build_parallel.yaml@master
@@ -98,12 +98,12 @@ jobs:
       architecture: x64
 
   call_build_parallel_linux:
-    name: 'Build (Linux)'
+    name: 'Build (Linux), Parallel'
     needs: setup_workflow
     if: ${{ contains(needs.setup_workflow.outputs.tags, 'parallel') == true }}
     uses: iceshard-engine/engine/.github/workflows/cw_build_parallel.yaml@master
     with:
-      host: ubuntu-latest
+      host: ubuntu-22.04
       configs: ${{ needs.setup_workflow.outputs.build_configs }}
       platform: 'linux'
       architecture: x64
