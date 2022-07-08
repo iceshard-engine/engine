@@ -277,7 +277,7 @@ namespace ice::ecs
                 update_span_helper(
                     span_pointers[Idx],
                     operation_data_copy,
-                    reinterpret_cast<std::tuple_element_t<Idx, ComponentTypeTuple>*>(nullptr),
+                    reinterpret_cast<std::tuple_element_t<Idx, ComponentTypeTuple>*>(0),
                     ComponentIdxMap[Idx] - 1
                 )...
             };

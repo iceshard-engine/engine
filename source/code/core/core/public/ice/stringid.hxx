@@ -301,6 +301,23 @@ namespace ice
             return StringID<DebugImpl>::has_debug_fields;
         }
 
+        // TODO: We would like a more flexible approach.
+        constexpr bool operator==(
+            typename TypePicker<false>::StringID_Arg left,
+            typename TypePicker<true>::StringID_Arg right
+        ) noexcept
+        {
+            return left.hash_value == right.hash_value;
+        }
+
+        // TODO: We would like a more flexible approach.
+        constexpr bool operator!=(
+            typename TypePicker<false>::StringID_Arg left,
+            typename TypePicker<true>::StringID_Arg right
+        ) noexcept
+        {
+            return !(left == right);
+        }
 
         constexpr bool operator==(
             typename TypePicker<true>::StringID_Arg left,

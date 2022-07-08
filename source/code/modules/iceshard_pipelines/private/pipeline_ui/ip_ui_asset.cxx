@@ -316,20 +316,6 @@ namespace ice
                 return idx == count ? ice::u16{ 0 } : idx;
             };
 
-            auto const find_resource_idx = [&raw_info](ice::Utf8String resource_name) noexcept -> ice::u16
-            {
-                ice::u16 idx = 0;
-                ice::u16 const count = ice::size(raw_info.resources);
-                for (; idx < count; ++idx)
-                {
-                    if (raw_info.resources[idx].ui_name == resource_name)
-                    {
-                        break;
-                    }
-                }
-                return idx == count ? ice::u16{0xffff} : idx;
-            };
-
             ice::u8 type_data_index[256]{ };
 
             ice::u16 idx = 0;
@@ -599,7 +585,6 @@ namespace ice
             co_return false;
         }
 
-        ice::Font const* font = reinterpret_cast<ice::Font const*>(default_font_asset.data.location);
         ice::ui::PageInfo const* ui_data = reinterpret_cast<ice::ui::PageInfo const*>(data.location);
 
         ice::ui::PageInfo* const ui_result = alloc.make<ice::ui::PageInfo>();

@@ -3,6 +3,7 @@
 #include <ice/ui_element_info.hxx>
 #include <ice/ui_element_draw.hxx>
 #include <ice/ui_element.hxx>
+#include <ice/ui_resource.hxx>
 
 #include <ice/asset.hxx>
 #include <ice/font.hxx>
