@@ -7,7 +7,7 @@ tracy/0.8.1@iceshard/stable
 rapidjson/1.1.0
 rapidxml/1.13
 rapidxml_ns/1.13.2@iceshard/stable
-Assimp/5.0.1@iceshard/stable
+assimp/5.1.3@iceshard/stable
 sdl2/2.0.22@iceshard/stable
 imgui/1.85@iceshard/stable
 
@@ -16,12 +16,12 @@ msdfgen/1.9.2@iceshard/stable
 msdf_atlas_gen/1.2.2@iceshard/stable
 
 [build_requires]
-fastbuild-generator/0.2.0@iceshard/stable
+fastbuild-generator/0.3.0@iceshard/stable
 
 [options]
 imgui:docking_branch=True
 sdl2:shared=True
-Assimp:shared=True
+assimp:shared=True
 box2d:undefined_user_symbols=True
 
 [generators]

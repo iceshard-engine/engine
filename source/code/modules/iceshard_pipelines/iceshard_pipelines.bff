@@ -9,7 +9,7 @@
     .Private =
     [
         .Modules = {
-            'Assimp'
+            'assimp'
             'freetype'
             'msdfgen'
             'msdf_atlas_gen'
