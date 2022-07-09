@@ -262,7 +262,12 @@ namespace ice
                 {
                     ResourceUpdateInfo
                     {
-                        .uniform_buffer = data->buffer_uniform
+                        .uniform_buffer = ResourceBufferInfo
+                        {
+                            .buffer = data->buffer_uniform,
+                            .offset = 0,
+                            .size = 0
+                        }
                     }
                 };
 
