@@ -36,7 +36,7 @@ jobs:
         conan config install https://github.com/iceshard-engine/conan-config.git
 
     - name: Install tools (GCC 12)
-      if: ${{ startsWith(inputs.host, 'ubuntu') && inputs.conan_profile == 'gcc-12.0-linux-x86_64' }}
+      if: ${{ startsWith(inputs.host, 'ubuntu') }}
       run: |
         sudo add-apt-repository ppa:ubuntu-toolchain-r/test
         sudo apt install -y gcc-12 g++-12 libstdc++6
