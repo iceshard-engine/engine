@@ -122,6 +122,8 @@ namespace ice
         if (data_start != ice::String::npos)
         {
             ice::usize const data_arg_start = inout_str.find_last_of(u8" ,", data_start);
+
+            [[maybe_unused]]
             ice::Utf8String const data_arg = inout_str.substr(data_arg_start + 1, (data_start - data_arg_start) - 1);
 
             inout_str = inout_str.substr(data_start + 1);

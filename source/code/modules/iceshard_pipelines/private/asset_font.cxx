@@ -132,6 +132,7 @@ namespace ice
                 charset.add((uint32_t)U"し"[0]);
                 geometry.loadCharset(font, 2.0f, charset);
 
+                [[maybe_unused]]
                 msdfgen::FontMetrics const& metrics = geometry.getMetrics();
 
                 // Apply MSDF edge coloring

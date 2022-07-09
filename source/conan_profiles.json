@@ -23,7 +23,7 @@
         }
     },
     "linux": {
-        "default": "gcc_11",
+        "default": "gcc_12",
         "clang_10": {
             "build_types": [
                 "Debug",
@@ -65,6 +65,17 @@
             "compiler": {
                 "name": "gcc",
                 "version": "11",
+                "libcxx": "libstdc++"
+            }
+        },
+        "gcc_12": {
+            "build_types": [
+                "Debug",
+                "Release"
+            ],
+            "compiler": {
+                "name": "gcc",
+                "version": "12",
                 "libcxx": "libstdc++"
             }
         }

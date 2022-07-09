@@ -95,7 +95,9 @@ namespace ice
                 {
                     expected_initial_task = _head.load(std::memory_order_acquire);
                     spin_count -= 1;
+#if ISP_WINDOWS
                     _mm_pause();
+#endif
                 }
 
                 if (expected_initial_task != nullptr)
@@ -126,8 +128,10 @@ namespace ice
                 }
                 else
                 {
+#if ISP_WINDOWS
                     // TODO: Remove the sleep once we get to the point of not killing the CPU looping here as crazy.
                     Sleep(1);
+#endif
                 }
             }
         }
