@@ -46,10 +46,10 @@ RapidXML NS library - RapidXML with added XML namespaces support.
 - **version:** 1.13.2
 - **license:** MIT (User picked)
 
-## Assimp
-Conan package for Assmip
+## assimp
+Open-Asset-Importer-Library that loads 40+ 3D-file-formats into one unified and clean data structure.
 - **upstream:** https://github.com/jacmoe/conan-assimp
-- **version:** 5.0.1
+- **version:** 5.2.4
 - **license:** BSD 3-Clause
 
 ## sdl2
