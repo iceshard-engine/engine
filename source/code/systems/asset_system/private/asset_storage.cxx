@@ -12,6 +12,8 @@
 #include "asset_shelve.hxx"
 #include "asset_request_awaitable.hxx"
 
+#include <mutex>
+
 namespace ice
 {
     namespace detail
@@ -54,35 +56,35 @@ namespace ice
             return resource;
         }
 
-        bool bake_asset(
+        auto bake_asset(
             ice::Allocator& alloc,
             ice::AssetTypeDefinition const& definition,
             ice::ResourceTracker& resource_tracker,
             ice::AssetEntry const* asset_entry,
             ice::Memory& result
-        ) noexcept
+        ) noexcept -> ice::Task<bool>
         {
             if (definition.fn_asset_oven.is_set())
             {
-                return definition.fn_asset_oven(alloc, resource_tracker, *asset_entry->resource, asset_entry->data, result);
+                co_return co_await definition.fn_asset_oven(alloc, resource_tracker, *asset_entry->resource, asset_entry->data, result);
             }
-            return false;
+            co_return false;
         }
 
-        bool load_asset(
+        auto load_asset(
             ice::Allocator& alloc,
             ice::AssetTypeDefinition const& definition,
             ice::AssetStorage& asset_storage,
             ice::Metadata const& asset_metadata,
             ice::Data baked_data,
             ice::Memory& result
-        ) noexcept
+        ) noexcept -> ice::Task<bool>
         {
             if (definition.fn_asset_loader.is_set())
             {
-                return definition.fn_asset_loader(alloc, asset_storage, asset_metadata, baked_data, result);
+                co_return co_await definition.fn_asset_loader(alloc, asset_storage, asset_metadata, baked_data, result);
             }
-            return false;
+            co_return false;
         }
 
     } // namespace detail
@@ -193,6 +195,8 @@ namespace ice
                 );
             }
 
+            // TODO: Because of this call we needed to introduce a std::mutex for now, but we will redesign this in the next free sprint.
+            //    We can end here on two different threads (the Resource thread or the calling thread) [gh#135]
             ice::ResourceResult const load_result = co_await _resource_tracker.load_resource(resource);
             if (load_result.resource_status == ResourceStatus::Loaded)
             {
@@ -204,6 +208,10 @@ namespace ice
 
                 if (asset_entry == nullptr)
                 {
+                    // TODO: We needed to introduce a lock here so we properly select + store asset entry objects here. [gh#135]
+                    static std::mutex mtx{ };
+                    std::lock_guard lk{ mtx };
+
                     asset_entry = shelve->select(nameid);
                     if (asset_entry == nullptr)
                     {
@@ -216,7 +224,7 @@ namespace ice
                         );
                     }
 
-                    asset_entry->state = state;
+                    // asset_entry->state = state;
                 }
                 else if (asset_entry->state == AssetState::Unknown)
                 {
@@ -279,51 +287,67 @@ namespace ice
             {
                 ice::Data result_data;
 
+                // TODO: The below objects where required to be introduced due to rare data races on various calling / resource threads.
+                static std::recursive_mutex mtx_asset_logic{ }; // [gh#135]
+
                 if (asset_entry->state == AssetState::Raw)
                 {
-                    ice::Memory baked_memory;
-                    bool const bake_success = ice::detail::bake_asset(
-                        asset_alloc,
-                        shelve->definition,
-                        _resource_tracker,
-                        asset_entry,
-                        baked_memory
-                    );
+                    while (!mtx_asset_logic.try_lock()) {} // [gh#135]
 
-                    if (bake_success == false)
+                    if (asset_entry->state == AssetState::Raw)
                     {
-                        baked_memory = co_await AssetRequestAwaitable{ nameid, *shelve, asset_entry, AssetState::Baked };
+                        ice::Memory baked_memory;
+                        bool const bake_success = co_await ice::detail::bake_asset(
+                            asset_alloc,
+                            shelve->definition,
+                            _resource_tracker,
+                            asset_entry,
+                            baked_memory
+                        );
+
+                        if (bake_success == false)
+                        {
+                            baked_memory = co_await AssetRequestAwaitable{ nameid, *shelve, asset_entry, AssetState::Baked };
+                        }
+
+                        asset_alloc.deallocate(asset_entry->data_baked.location);
+                        asset_entry->data_baked = baked_memory;
+                        asset_entry->state = AssetState::Baked;
+
+                        result_data = asset_entry->data_baked;
                     }
 
-                    asset_alloc.deallocate(asset_entry->data_baked.location);
-                    asset_entry->data_baked = baked_memory;
-                    asset_entry->state = AssetState::Baked;
-
-                    result_data = asset_entry->data_baked;
+                    mtx_asset_logic.unlock(); // [gh#135]
                 }
 
                 if (requested_state != AssetState::Baked && asset_entry->state == AssetState::Baked)
                 {
-                    ice::Memory loaded_memory;
-                    bool const load_success = ice::detail::load_asset(
-                        asset_alloc,
-                        shelve->definition,
-                        *this,
-                        asset_entry->resource->metadata(),
-                        asset_entry->data_baked,
-                        loaded_memory
-                    );
-
-                    if (load_success == false)
+                    while (!mtx_asset_logic.try_lock()) {} // [gh#135]
+                    if (asset_entry->state == AssetState::Baked)
                     {
-                        loaded_memory = co_await AssetRequestAwaitable{ nameid, *shelve, asset_entry, AssetState::Loaded };
+                        ice::Memory loaded_memory;
+                        bool const load_success = co_await ice::detail::load_asset(
+                            asset_alloc,
+                            shelve->definition,
+                            *this,
+                            asset_entry->resource->metadata(),
+                            asset_entry->data_baked,
+                            loaded_memory
+                        );
+
+                        if (load_success == false)
+                        {
+                            loaded_memory = co_await AssetRequestAwaitable{ nameid, *shelve, asset_entry, AssetState::Loaded };
+                        }
+
+                        asset_alloc.deallocate(asset_entry->data_loaded.location);
+                        asset_entry->data_loaded = loaded_memory;
+                        asset_entry->state = AssetState::Loaded;
+
+                        result_data = asset_entry->data_loaded;
                     }
 
-                    asset_alloc.deallocate(asset_entry->data_loaded.location);
-                    asset_entry->data_loaded = loaded_memory;
-                    asset_entry->state = AssetState::Loaded;
-
-                    result_data = asset_entry->data_loaded;
+                    mtx_asset_logic.unlock(); // [gh#135]
                 }
 
                 if (requested_state == AssetState::Runtime)

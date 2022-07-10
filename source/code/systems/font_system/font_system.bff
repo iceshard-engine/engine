@@ -1,0 +1,16 @@
+.Project =
+[
+    .Name = 'font_system'
+    .Kind = .Kind_StaticLib
+    .Group = 'Systems'
+
+    .BaseDir = '$WorkspaceCodeDir$/systems/font_system'
+
+    .Public =
+    [
+        .Uses = {
+            'asset_system'
+        }
+    ]
+]
+.Projects + .Project

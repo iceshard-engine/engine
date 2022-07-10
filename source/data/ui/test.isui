@@ -1,0 +1,48 @@
+<isui xmlns:ui="https://www.iceshard.net/docs/engine/v1_alpha/isui/ui/"
+    xmlns:ice="https://www.iceshard.net/docs/engine/v1_alpha/isui/iceshard/">
+
+  <ui:resources>
+    <ui:resource type="font" name="default" size="15" font="calibri" />
+    <ui:resource type="text" name="text_start" />
+    <ui:resource type="text" name="text_settings" />
+    <ui:resource type="text" name="text_credits" />
+    <ui:resource type="text" name="text_exit" />
+    <ui:resource type="texture" name="ui_concept_button" asset="ui/textures/concept_button" />
+  </ui:resources>
+
+  <ui:styles>
+    <ui:style name="style_light">
+      <background color="0.7" alpha="0.7" />
+    </ui:style>
+    <ui:style name="style_dark">
+      <background color="0.3" alpha="1.0" />
+    </ui:style>
+    <ui:style name="style_header">
+      <background color="0.4,0.1,0.1" alpha="1.0" />
+    </ui:style>
+
+    <ui:style name="style_button_default" target="button">
+      <background color="0.4" alpha="1.0" />
+    </ui:style>
+    <ui:style name="style_button_hoover" target="button" state="hoover">
+      <background color="0.6" alpha="1.0" />
+    </ui:style>
+  </ui:styles>
+
+  <ice:shards>
+    <ice:shard name="game_exit" action="action/game/exit" />
+  </ice:shards>
+
+  <ui:page>
+    <ui:layout size="auto" position="auto,20%" padding="2" margin="auto,0" direction="vertical" style="style_light">
+      <ui:layout size="300,auto" position="0" direction="vertical" style="style_dark">
+        <ui:label size="*,auto" padding="6" margin="0,0,0,10" text="Menu" style="style_header" />
+        <!-- <ui:button size="*,auto" padding="6" margin="0,5" text="{Resource text_start}" />
+        <ui:button size="*,auto" padding="6" margin="0,5" text="{Resource text_settings}" />
+        <ui:button size="*,auto" padding="6" margin="0,5" text="{Resource text_credits}" /> -->
+        <ui:button size="*,auto" padding="6" margin="0,5,0,0" text="{Resource text_exit}" on_click="{Shard game_exit}" />
+      </ui:layout>
+    </ui:layout>
+  </ui:page>
+
+</isui>

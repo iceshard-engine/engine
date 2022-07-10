@@ -27,6 +27,7 @@
             'engine'
             'devui'
             'application'
+            'ui_system'
         }
     ]
 

@@ -77,7 +77,7 @@ namespace ice::devui
     }
 
     void ImGuiSystem::register_trait(
-		ice::WorldTraitArchive& archive
+        ice::WorldTraitArchive& archive
     ) noexcept
     {
         archive.register_trait(

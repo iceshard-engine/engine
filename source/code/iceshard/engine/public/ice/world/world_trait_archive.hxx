@@ -1,6 +1,7 @@
 #pragma once
 #include <ice/stringid.hxx>
 #include <ice/unique_ptr.hxx>
+#include <ice/ecs/ecs_types.hxx>
 #include <ice/world/world_trait_description.hxx>
 
 namespace ice
@@ -19,6 +20,10 @@ namespace ice
         virtual auto find_trait(
             ice::StringID_Arg name
         ) const noexcept -> ice::WorldTraitDescription const* = 0;
+
+        virtual void register_archetypes(
+            ice::ecs::ArchetypeIndex& archetype_index
+        ) const noexcept = 0;
 
         virtual bool validate_trait_list(
             ice::Span<ice::StringID const> traits

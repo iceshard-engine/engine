@@ -51,6 +51,26 @@
       {
         "working_dir": "./source/data/shaders/debug",
         "executable": "%VULKAN_SDK%/Bin/glslc.exe",
+        "options": [ "--target-env=vulkan", "-fshader-stage=vert", "-o", "font-vert.spv", "font-vert.glsl" ]
+      },
+      {
+        "working_dir": "./source/data/shaders/debug",
+        "executable": "%VULKAN_SDK%/Bin/glslc.exe",
+        "options": [ "--target-env=vulkan", "-fshader-stage=frag", "-o", "font-frag.spv", "font-frag.glsl" ]
+      },
+      {
+        "working_dir": "./source/data/shaders/debug",
+        "executable": "%VULKAN_SDK%/Bin/glslc.exe",
+        "options": [ "--target-env=vulkan", "-fshader-stage=vert", "-o", "font-debug-vert.spv", "font-debug-vert.glsl" ]
+      },
+      {
+        "working_dir": "./source/data/shaders/debug",
+        "executable": "%VULKAN_SDK%/Bin/glslc.exe",
+        "options": [ "--target-env=vulkan", "-fshader-stage=frag", "-o", "font-debug-frag.spv", "font-debug-frag.glsl" ]
+      },
+      {
+        "working_dir": "./source/data/shaders/debug",
+        "executable": "%VULKAN_SDK%/Bin/glslc.exe",
         "options": [ "--target-env=vulkan", "-fshader-stage=vert", "-o", "debug-vert.spv", "debug-vert.glsl" ]
       },
       {
@@ -102,6 +122,16 @@
         "working_dir": "./source/data/shaders/terrain",
         "executable": "%VULKAN_SDK%/Bin/glslc.exe",
         "options": [ "--target-env=vulkan", "-fshader-stage=frag", "-o", "terrain-frag.spv", "terrain-hm-frag.glsl" ]
+      },
+      {
+        "working_dir": "./source/data/shaders/ui",
+        "executable": "%VULKAN_SDK%/Bin/glslc.exe",
+        "options": [ "--target-env=vulkan", "-fshader-stage=vert", "-o", "ui-vert.spv", "ui-vert.glsl" ]
+      },
+      {
+        "working_dir": "./source/data/shaders/ui",
+        "executable": "%VULKAN_SDK%/Bin/glslc.exe",
+        "options": [ "--target-env=vulkan", "-fshader-stage=frag", "-o", "ui-frag.spv", "ui-frag.glsl" ]
       }
     ],
     "hlsl": [

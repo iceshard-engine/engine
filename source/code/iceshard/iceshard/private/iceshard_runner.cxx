@@ -141,6 +141,11 @@ namespace ice
         return _clock;
     }
 
+    auto IceshardEngineRunner::entity_index() const noexcept -> ice::ecs::EntityIndex&
+    {
+        return _engine.entity_index();
+    }
+
     auto IceshardEngineRunner::platform_events() noexcept -> ice::Span<ice::platform::Event const>
     {
         return _events;
@@ -167,7 +172,8 @@ namespace ice
                     ice::Shard_InputEventButton | input_event
                 );
             }
-            else if (input_event.value_type == ice::input::InputValueType::Axis)
+            else if (input_event.value_type == ice::input::InputValueType::AxisInt
+                || input_event.value_type == ice::input::InputValueType::AxisFloat)
             {
                 ice::shards::push_back(
                     shards,

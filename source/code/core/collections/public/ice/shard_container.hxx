@@ -67,6 +67,9 @@ namespace ice
         template<typename T>
         inline bool inspect_first(ice::ShardContainer const& container, ice::Shard shard, T& payload) noexcept;
 
+        template<typename T, ice::usize Size>
+        inline bool inspect_first(ice::ShardContainer const& container, ice::Shard shard_type, T(&payload)[Size]) noexcept;
+
         template<typename T>
         inline bool inspect_last(ice::ShardContainer const& container, ice::Shard shard, T& payload) noexcept;
 
@@ -298,6 +301,30 @@ namespace ice
         {
             ice::Shard const shard = ice::shards::find_first_of(container, shard_type);
             return ice::shard_inspect(shard, payload);
+        }
+
+        template<typename T, ice::usize Size>
+        inline bool inspect_first(ice::ShardContainer const& container, ice::Shard shard_type, T(&payload)[Size]) noexcept
+        {
+            auto it = ice::pod::array::begin(container._data);
+            auto const end = ice::pod::array::end(container._data);
+
+            ice::usize idx = 0;
+            while (it != end && idx < Size)
+            {
+                if ((*it) == shard_type)
+                {
+                    ice::shard_inspect(*it, payload[idx]);
+                    it += 1;
+                    idx += 1;
+                }
+                else
+                {
+                    it += 1;
+                }
+            }
+
+            return idx == Size;
         }
 
         template<typename T>

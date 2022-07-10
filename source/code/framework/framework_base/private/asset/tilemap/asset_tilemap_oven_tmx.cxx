@@ -817,14 +817,14 @@ namespace ice
         ICE_ASSERT(tile_collision_count <= tilemap_info.tile_collision_count, "");
     }
 
-    bool asset_tilemap_oven_tmx(
+    auto asset_tilemap_oven_tmx(
         void* userdata,
         ice::Allocator& asset_alloc,
         ice::ResourceTracker const& resource_tracker,
         ice::Resource_v2 const& resource,
         ice::Data resource_data,
         ice::Memory& out_data
-    ) noexcept
+    ) noexcept -> ice::Task<bool>
     {
         Metadata const& resource_meta = resource.metadata();
 
@@ -1006,7 +1006,7 @@ namespace ice
 
         asset_alloc.destroy(doc);
         asset_alloc.deallocate(resource_copy);
-        return result;
+        co_return result;
     }
 
     bool detail::get_child(rapidxml::xml_node<> const* parent_node, rapidxml::xml_node<> const*& out_node, char const* name) noexcept

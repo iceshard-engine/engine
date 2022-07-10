@@ -8,6 +8,9 @@
 #include "traits/trait_player_actor.hxx"
 #include "traits/physics/trait_box2d.hxx"
 
+#include "traits/ui/game_ui_trait.hxx"
+#include "traits/ui/render_ui_trait.hxx"
+
 #include "traits/render/trait_render_gfx.hxx"
 #include "traits/render/trait_render_clear.hxx"
 #include "traits/render/trait_render_postprocess.hxx"
@@ -18,6 +21,7 @@
 #include "traits/render/trait_render_debug.hxx"
 
 #include "traits/render/trait_render_tilemap.hxx"
+#include "traits/render/trait_render_glyphs.hxx"
 
 namespace ice
 {
@@ -32,6 +36,8 @@ namespace ice
         register_trait_render_finish(archive);
         register_trait_render_sprites(archive);
         register_trait_render_texture_loader(archive);
+        register_trait_render_ui(archive);
+        register_trait_render_glyphs(archive);
         register_trait_render_debug(archive);
         register_trait_render_tilemap(archive);
 
@@ -39,6 +45,7 @@ namespace ice
         register_trait_default<IceWorldTrait_PhysicsBox2D>(archive, ice::Constant_TraitName_PhysicsBox2D);
         register_trait_default<IceWorldTrait_RenderCamera>(archive, ice::Constant_TraitName_RenderCamera);
         register_trait_default<IceWorldTrait_SpriteAnimator>(archive, ice::Constant_TraitName_SpriteAnimator);
+        register_trait_gameui(archive);
         register_trait_tilemap(archive);
         return true;
     }

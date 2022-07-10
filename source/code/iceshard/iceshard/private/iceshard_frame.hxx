@@ -55,6 +55,13 @@ namespace ice
             ice::u32 alignment
         ) noexcept -> void* override;
 
+        auto allocate_named_array(
+            ice::StringID_Arg name,
+            ice::u32 element_size,
+            ice::u32 alignment,
+            ice::u32 count
+        ) noexcept -> void* override;
+
         void release_named_data(
             ice::StringID_Arg name
         ) noexcept override;

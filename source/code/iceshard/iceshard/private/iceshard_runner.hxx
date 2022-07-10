@@ -49,6 +49,8 @@ namespace ice
 
         auto clock() const noexcept -> ice::Clock const& override;
 
+        auto entity_index() const noexcept -> ice::ecs::EntityIndex& override;
+
         [[deprecated]]
         auto platform_events() noexcept -> ice::Span<ice::platform::Event const> override;
 

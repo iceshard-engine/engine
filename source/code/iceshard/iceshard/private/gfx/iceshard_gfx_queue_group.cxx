@@ -62,7 +62,7 @@ namespace ice::gfx
         ice::gfx::IceGfxQueue*& out_queue
     ) noexcept
     {
-        if (flags == ice::render::QueueFlags::Invalid)
+        if (flags == ice::render::QueueFlags::None)
         {
             return false;
         }

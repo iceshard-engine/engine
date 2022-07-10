@@ -52,13 +52,6 @@ namespace ice::render
         ice::Span<ice::render::ShaderInputAttribute const> attributes;
     };
 
-    constexpr auto operator|(ShaderStageFlags left, ShaderStageFlags right) noexcept -> ShaderStageFlags
-    {
-        ice::u32 left_value = static_cast<ice::u32>(left);
-        ice::u32 right_value = static_cast<ice::u32>(right);
-        return static_cast<ShaderStageFlags>(left_value | right_value);
-    }
-
     static constexpr ice::AssetType AssetType_Shader = ice::make_asset_type(u8"ice/render_system/shader");
 
 } // namespace ice::render

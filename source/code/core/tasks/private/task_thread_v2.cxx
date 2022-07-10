@@ -89,6 +89,17 @@ namespace ice
             while (_stop_requested == false)
             {
                 ice::TaskOperation_v2* expected_initial_task = _head.load(std::memory_order_acquire);
+
+                ice::u32 spin_count = 128;
+                while (expected_initial_task == nullptr && spin_count > 0)
+                {
+                    expected_initial_task = _head.load(std::memory_order_acquire);
+                    spin_count -= 1;
+#if ISP_WINDOWS
+                    _mm_pause();
+#endif
+                }
+
                 if (expected_initial_task != nullptr)
                 {
                     while (
@@ -114,6 +125,13 @@ namespace ice
                         coro_task.resume();
                         expected_initial_task = next_op;
                     }
+                }
+                else
+                {
+#if ISP_WINDOWS
+                    // TODO: Remove the sleep once we get to the point of not killing the CPU looping here as crazy.
+                    Sleep(1);
+#endif
                 }
             }
         }

@@ -11,6 +11,10 @@ namespace ice
         Loaded = 0x00'04,
         Loading = 0x01'00,
         Unloading = 0x02'00,
+
+        // Enabled flag operators using the 'FlagType' concept.
+        None = Invalid,
+        All = Invalid | Available | Loaded | Loading | Unloading,
     };
 
 } // namespace ice

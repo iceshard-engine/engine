@@ -6,6 +6,7 @@
 #include <ice/gfx/gfx_operations.hxx>
 #include <ice/task_operations.hxx>
 #include <ice/engine_task_operations.hxx>
+#include <ice/ecs/ecs_entity_index.hxx>
 #include <ice/platform_event.hxx>
 
 namespace ice
@@ -51,6 +52,8 @@ namespace ice
         virtual ~EngineRunner() noexcept = default;
 
         virtual auto clock() const noexcept -> ice::Clock const& = 0;
+
+        virtual auto entity_index() const noexcept -> ice::ecs::EntityIndex& = 0;
 
         [[deprecated]]
         virtual auto platform_events() noexcept -> ice::Span<ice::platform::Event const> = 0;

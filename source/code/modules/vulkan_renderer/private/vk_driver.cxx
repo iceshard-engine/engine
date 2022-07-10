@@ -150,7 +150,7 @@ namespace ice::render::vk
         ice::pod::array::reserve(queue_info, queue_count);
         for (VkQueueFamilyProperties const& queue_family_props : _vk_queue_family_properties)
         {
-            QueueFlags flags = QueueFlags::Invalid;
+            QueueFlags flags = QueueFlags::None;
 
             if (queue_family_props.queueFlags & VK_QUEUE_GRAPHICS_BIT)
             {

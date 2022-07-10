@@ -19,7 +19,7 @@
 
         .Modules = {
             'imgui'
-            'Assimp'
+            'assimp'
         }
         .Uses = {
             'utils'

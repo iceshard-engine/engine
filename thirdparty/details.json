@@ -1,20 +1,23 @@
 {
-    "rapidxml": {
-        "upstream": "http://rapidxml.sourceforge.net/",
-        "license": "MIT (User picked)"
-    },
-    "rapidjson": {
-        "upstream": "https://github.com/Tencent/rapidjson"
-    },
-    "freetype": {
-        "license_file": "FTL.TXT",
-        "license": "Freetype",
-        "description": "FreeType is a freely available software library to render fonts.\n\n> Portions of this software are copyright © 2022 The FreeType Project (www.freetype.org). All rights reserved."
-    },
-    "box2d": {
-        "license": "MIT"
-    },
-    "imgui": {
-        "license": "MIT"
-    }
+  "rapidxml": {
+    "upstream": "http://rapidxml.sourceforge.net/",
+    "license": "MIT (User picked)"
+  },
+  "rapidxml_ns": {
+    "license": "MIT (User picked)"
+  },
+  "rapidjson": {
+    "upstream": "https://github.com/Tencent/rapidjson"
+  },
+  "freetype": {
+    "license_file": "FTL.TXT",
+    "license": "Freetype",
+    "description": "FreeType is a freely available software library to render fonts.\n\n> Portions of this software are copyright © 2022 The FreeType Project (www.freetype.org). All rights reserved."
+  },
+  "box2d": {
+    "license": "MIT"
+  },
+  "imgui": {
+    "license": "MIT"
+  }
 }

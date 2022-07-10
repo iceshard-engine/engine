@@ -12,7 +12,7 @@ namespace ice::render
 
     enum class QueueFlags : ice::u32
     {
-        Invalid = 0x0,
+        None = 0x0,
         Graphics = 0x1,
         Compute = 0x2,
         Transfer = 0x4,
@@ -58,19 +58,5 @@ namespace ice::render
     protected:
         virtual ~RenderQueue() noexcept = default;
     };
-
-    constexpr auto operator|(QueueFlags left, QueueFlags right) noexcept -> QueueFlags
-    {
-        ice::u32 const left_val = static_cast<ice::u32>(left);
-        ice::u32 const right_val = static_cast<ice::u32>(right);
-        return static_cast<QueueFlags>(left_val | right_val);
-    }
-
-    constexpr auto operator&(QueueFlags left, QueueFlags right) noexcept -> QueueFlags
-    {
-        ice::u32 const left_val = static_cast<ice::u32>(left);
-        ice::u32 const right_val = static_cast<ice::u32>(right);
-        return static_cast<QueueFlags>(left_val & right_val);
-    }
 
 } // namespace ice

@@ -24,32 +24,6 @@ namespace ice
         Mask_Quality = 0x0000'000F,
     };
 
-    static constexpr auto operator|(ice::ResourceFlags left, ice::ResourceFlags right) noexcept -> ice::ResourceFlags
-    {
-        ice::u32 const left_value = static_cast<ice::u32>(left);
-        ice::u32 const right_value = static_cast<ice::u32>(left);
-        return static_cast<ice::ResourceFlags>(left_value | right_value);
-    }
-
-    static constexpr auto operator|=(ice::ResourceFlags& left, ice::ResourceFlags right) noexcept -> ice::ResourceFlags&
-    {
-        left = left | right;
-        return left;
-    }
-
-    static constexpr auto operator&(ice::ResourceFlags left, ice::ResourceFlags right) noexcept -> ice::ResourceFlags
-    {
-        ice::u32 const left_value = static_cast<ice::u32>(left);
-        ice::u32 const right_value = static_cast<ice::u32>(left);
-        return static_cast<ice::ResourceFlags>(left_value & right_value);
-    }
-
-    static constexpr auto operator&=(ice::ResourceFlags& left, ice::ResourceFlags right) noexcept -> ice::ResourceFlags&
-    {
-        left = left & right;
-        return left;
-    }
-
     static inline auto default_resource_flags_compare_function(
         ice::ResourceFlags expected,
         ice::ResourceFlags current,

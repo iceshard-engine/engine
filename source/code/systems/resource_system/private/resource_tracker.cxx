@@ -328,10 +328,10 @@ namespace ice
 
                     std::atomic_thread_fence(std::memory_order::release);
                 }
-                else if (ice::has_flag(handle->status, ice::ResourceStatus::Loading))
+                else if (ice::has_all(handle->status, ice::ResourceStatus::Loading))
                 {
                     // Move the the I/O thread to wait for completion
-                    while (ice::has_flag(handle->status, ice::ResourceStatus::Loading))
+                    while (ice::has_all(handle->status, ice::ResourceStatus::Loading))
                     {
                         co_await *_thread;
                     }
@@ -393,7 +393,7 @@ namespace ice
                 std::atomic_thread_fence(std::memory_order::acquire);
 
                 ICE_ASSERT(
-                    ice::has_flag(handle->status, ice::ResourceStatus::Loading) == false,
+                    ice::has_all(handle->status, ice::ResourceStatus::Loading) == false,
                     "Trying to unload resource during loading!"
                 );
 

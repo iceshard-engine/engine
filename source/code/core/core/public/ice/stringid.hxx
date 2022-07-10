@@ -61,6 +61,8 @@ namespace ice
         template<>
         constexpr auto stringid<true>(std::string_view value) noexcept -> StringID<true>;
 
+        template<>
+        constexpr auto stringid<true>(std::u8string_view value) noexcept -> StringID<true>;
 
         constexpr auto origin_value(StringID<false> const&) noexcept -> std::string_view;
 
@@ -216,6 +218,56 @@ namespace ice
             return result;
         }
 
+        template<>
+        constexpr auto stringid<true>(std::u8string_view value) noexcept -> StringID<true>
+        {
+            ice::detail::murmur2_hash::mm2_x64_64 const hash_result = ice::detail::murmur2_hash::cexpr_murmur2_x64_64(value, 0xDA864239);
+
+            StringID<true> result{
+                .hash_value = StringID_Hash{
+                    hash_result.h[0]
+                },
+            };
+
+            if (std::is_constant_evaluated())
+            {
+                result.hash_consteval_origin = "utf8-not-supported";// value.data();
+                result.has_consteval_value = ~char{ 0 };
+            }
+            else
+            {
+                ice::i32 const cstr_size = static_cast<ice::i32>(value.size());
+                ice::i32 const origin_size = static_cast<ice::i32>(std::size(result.hash_runtime_origin_hint));
+
+                ice::i32 const copy_count = std::min(origin_size, cstr_size);
+                ice::i32 const copy_offset = std::max(0, cstr_size - copy_count);
+
+
+
+                ice::i32 i = 0;
+                for (auto& v : result.hash_runtime_origin_hint)
+                {
+                    if (i < copy_count)
+                    {
+                        v = static_cast<char>(value[copy_offset + i]);
+                    }
+                    else
+                    {
+                        v = char{};
+                    }
+
+                    i += 1;
+                }
+
+                if (copy_offset > 0)
+                {
+                    result.hash_runtime_origin_hint[0] = '~';
+                }
+            }
+
+            return result;
+        }
+
         constexpr auto origin_value(StringID<false> const&) noexcept -> std::string_view
         {
             return {};
@@ -234,7 +286,7 @@ namespace ice
             else
             {
                 ice::u32 length = 24;
-                while (value.hash_runtime_origin_hint[length-1] == 0)
+                while (length > 0 && value.hash_runtime_origin_hint[length-1] == 0)
                 {
                     length -= 1;
                 }
@@ -249,6 +301,23 @@ namespace ice
             return StringID<DebugImpl>::has_debug_fields;
         }
 
+        // TODO: We would like a more flexible approach.
+        constexpr bool operator==(
+            typename TypePicker<false>::StringID_Arg left,
+            typename TypePicker<true>::StringID_Arg right
+        ) noexcept
+        {
+            return left.hash_value == right.hash_value;
+        }
+
+        // TODO: We would like a more flexible approach.
+        constexpr bool operator!=(
+            typename TypePicker<false>::StringID_Arg left,
+            typename TypePicker<true>::StringID_Arg right
+        ) noexcept
+        {
+            return !(left == right);
+        }
 
         constexpr bool operator==(
             typename TypePicker<true>::StringID_Arg left,

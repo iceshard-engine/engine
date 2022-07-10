@@ -117,6 +117,11 @@ namespace ice
         return _world_manager;
     }
 
+    auto IceshardEngine::world_trait_archive() const noexcept -> ice::WorldTraitArchive const&
+    {
+        return _trait_archive;
+    }
+
     auto IceshardEngine::developer_ui() noexcept -> ice::EngineDevUI&
     {
         return *_devui;

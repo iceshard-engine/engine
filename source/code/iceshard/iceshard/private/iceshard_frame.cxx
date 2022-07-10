@@ -32,11 +32,11 @@ namespace ice
         : ice::EngineFrame{ }
         , _index{ detail::global_frame_counter }
         , _allocator{ alloc }
-        , _inputs_allocator{ _allocator, detail::InputsAllocatorCapacity }
-        , _request_allocator{ _allocator, detail::RequestAllocatorCapacity }
-        , _tasks_allocator{ _allocator, detail::TaskAllocatorCapacity }
-        , _storage_allocator{ _allocator, detail::StorageAllocatorCapacity }
-        , _data_allocator{ _allocator, detail::DataAllocatorCapacity }
+        , _inputs_allocator{ _allocator, detail::InputsAllocatorCapacity, "inputs" }
+        , _request_allocator{ _allocator, detail::RequestAllocatorCapacity, "request" }
+        , _tasks_allocator{ _allocator, detail::TaskAllocatorCapacity, "tasks" }
+        , _storage_allocator{ _allocator, detail::StorageAllocatorCapacity, "storage" }
+        , _data_allocator{ _allocator, detail::DataAllocatorCapacity, "data" }
         , _input_events{ _inputs_allocator }
         , _shards{ _request_allocator }
         , _entity_operations{ _data_allocator } // #todo change the allocator?
@@ -174,6 +174,29 @@ namespace ice
         );
 
         void* object_ptr = _data_allocator.allocate(size, alignment);
+        ice::pod::hash::set(_named_objects, name_hash, object_ptr);
+        return object_ptr;
+    }
+
+    auto IceshardMemoryFrame::allocate_named_array(
+        ice::StringID_Arg name,
+        ice::u32 element_size,
+        ice::u32 alignment,
+        ice::u32 count
+    ) noexcept -> void*
+    {
+        ice::u64 const name_hash = ice::hash(name);
+        ICE_ASSERT(
+            ice::pod::hash::has(_named_objects, name_hash) == false,
+            "An object with this name `{}` already exists in this frame!",
+            ice::stringid_hint(name)
+        );
+
+        // [GH#129] To be refactored with the planned introduction of a proper 'size' type.
+        ICE_ASSERT(alignment >= sizeof(ice::u32), "Cannot store array size in fron of the array!");
+
+        void* object_ptr = _data_allocator.allocate(alignment + element_size * count, alignment);
+        *reinterpret_cast<ice::u32*>(object_ptr) = count;
         ice::pod::hash::set(_named_objects, name_hash, object_ptr);
         return object_ptr;
     }

@@ -1,9 +1,10 @@
-#include "game.hxx"
+﻿#include "game.hxx"
 
 #include <ice/game_actor.hxx>
 #include <ice/game_anim.hxx>
 #include <ice/game_physics.hxx>
 #include <ice/game_tilemap.hxx>
+#include <ice/game_ui.hxx>
 
 #include <ice/engine.hxx>
 #include <ice/engine_runner.hxx>
@@ -39,6 +40,9 @@
 #include <ice/assert.hxx>
 #include <ice/shard.hxx>
 
+#include <ice/ui_asset.hxx>
+#include <ice/ui_resource.hxx>
+
 #include <ice/ecs/ecs_archetype_index.hxx>
 #include <ice/ecs/ecs_entity_index.hxx>
 #include <ice/ecs/ecs_entity_storage.hxx>
@@ -68,6 +72,8 @@ auto MyGame::graphics_world_template() const noexcept -> ice::WorldTemplate cons
             ice::Constant_TraitName_RenderClear,
             ice::Constant_TraitName_RenderSprites,
             ice::Constant_TraitName_RenderTilemap,
+            ice::Constant_TraitName_RenderUI,
+            ice::Constant_TraitName_RenderGlyphs,
             ice::Constant_TraitName_RenderPostprocess,
             ice::Constant_TraitName_RenderDebug,
             ice::Constant_TraitName_DevUI,
@@ -92,6 +98,8 @@ auto MyGame::graphics_world_template() const noexcept -> ice::WorldTemplate cons
             ice::Constant_TraitName_RenderClear,
             ice::Constant_TraitName_RenderSprites,
             ice::Constant_TraitName_RenderTilemap,
+            ice::Constant_TraitName_RenderUI,
+            ice::Constant_TraitName_RenderGlyphs,
             ice::Constant_TraitName_RenderPostprocess,
             ice::Constant_TraitName_RenderDebug,
             ice::Constant_TraitName_RenderFinish,
@@ -178,7 +186,9 @@ void MyGame::on_app_startup(ice::Engine& engine) noexcept
     _game_gfx_pass->add_stage(ice::Constant_GfxStage_DrawTilemap, ice::Constant_GfxStage_Clear);
     _game_gfx_pass->add_stage(ice::Constant_GfxStage_DrawSprites, ice::Constant_GfxStage_DrawTilemap, ice::Constant_GfxStage_Clear);
     _game_gfx_pass->add_stage(ice::Constant_GfxStage_Postprocess, ice::Constant_GfxStage_DrawSprites);
-    _game_gfx_pass->add_stage(ice::Constant_GfxStage_DrawDebug, ice::Constant_GfxStage_Postprocess);
+    _game_gfx_pass->add_stage(ice::Constant_GfxStage_DrawUI, ice::Constant_GfxStage_Postprocess);
+    _game_gfx_pass->add_stage(ice::Constant_GfxStage_DrawGlyphs, ice::Constant_GfxStage_DrawUI);
+    _game_gfx_pass->add_stage(ice::Constant_GfxStage_DrawDebug, ice::Constant_GfxStage_DrawGlyphs);
 
     if constexpr (ice::build::is_debug || ice::build::is_develop)
     {
@@ -192,6 +202,8 @@ void MyGame::on_app_startup(ice::Engine& engine) noexcept
 
     // Initialize archetypes
     {
+        engine.world_trait_archive().register_archetypes(_ecs_archetypes);
+
         _ecs_archetypes.register_archetype(ice::ecs::Constant_ArchetypeDefinition<ice::Camera, ice::CameraOrtho>);
         _ecs_archetypes.register_archetype(ice::ecs::Constant_ArchetypeDefinition<ice::Camera, ice::CameraPerspective>);
         _ecs_archetypes.register_archetype(ice::ecs::Constant_ArchetypeDefinition<ice::Transform2DStatic, ice::Sprite>);
@@ -208,6 +220,7 @@ void MyGame::on_app_startup(ice::Engine& engine) noexcept
         ice::Constant_TraitName_Tilemap,
         ice::Constant_TraitName_SpriteAnimator,
         ice::Constant_TraitName_Actor,
+        ice::Constant_TraitName_GameUI,
     };
 
     ice::WorldTemplate const world_template{
@@ -363,7 +376,7 @@ void MyGame::on_game_begin(ice::EngineRunner& runner) noexcept
 
     ice::Shard shards[]{
         ice::Shard_WorldActivate | _test_world,
-        ice::Shard_LoadTileMap | tilemap_asset
+        ice::Shard_LoadTileMap | tilemap_asset,
     };
     ice::shards::push_back(
         runner.current_frame().shards(),
@@ -381,9 +394,63 @@ void MyGame::on_update(ice::EngineFrame& frame, ice::EngineRunner& runner, ice::
 
     runner.graphics_frame().enqueue_pass("default"_sid, "game.render"_sid, _game_gfx_pass.get());
 
+    static constexpr ice::Utf8String temp_ui_ids[]{
+        u8"text_start",
+        u8"text_settings",
+        u8"text_credits",
+        u8"text_exit",
+    };
+    static constexpr ice::Utf8String temp_ui_strings[]{
+        u8"Start",
+        u8"Settings",
+        u8"Credits",
+        u8"Exit",
+    };
+
+    ice::shards::inspect_each<ice::c8utf const*>(
+        runner.previous_frame().shards(),
+        ice::Shard_GameUI_Loaded,
+        [&frame, this](ice::c8utf const* page_name) noexcept
+        {
+            for (ice::u32 idx = 0; idx < ice::size(temp_ui_strings); ++idx)
+            {
+                ice::Utf8String* str = frame.create_named_object<ice::Utf8String>(ice::stringid(temp_ui_strings[idx]), temp_ui_strings[idx]);
+                ice::UpdateUIResource* ures = frame.create_named_object<ice::UpdateUIResource>(ice::stringid(temp_ui_ids[idx]));
+                ures->page = page_name;
+                ures->resource_data = ice::to_const(str);
+                ures->resource = ice::stringid(temp_ui_ids[idx]);
+                ures->resource_type = ice::ui::ResourceType::Utf8String;
+                ice::shards::push_back(frame.shards(), ice::Shard_GameUI_UpdateResource | ice::to_const(ures));
+            }
+            _menu = page_name;
+        }
+    );
+
+    if (frame.index() == 2)
+    {
+        ice::shards::push_back(frame.shards(),
+            ice::Shard_GameUI_Load | u8"ui/test"
+        );
+    }
+
     bool was_active = _active;
     for (ice::input::InputEvent const& event : frame.input_events())
     {
+        if (ice::input::input_identifier(ice::input::DeviceType::Keyboard, ice::input::KeyboardKey::Escape) == event.identifier)
+        {
+            if (_menu != nullptr && (event.value.button.state.clicked || event.value.button.state.repeat > 0))
+            {
+                if (_menu_visible)
+                {
+                    ice::shards::push_back(frame.shards(), ice::Shard_GameUI_Hide | _menu);
+                }
+                else
+                {
+                    ice::shards::push_back(frame.shards(), ice::Shard_GameUI_Show | _menu);
+                }
+                _menu_visible = !_menu_visible;
+            }
+        }
         if (ice::input::input_identifier(ice::input::DeviceType::Keyboard, ice::input::KeyboardKey::KeyP) == event.identifier)
         {
             if (event.value.button.state.clicked)

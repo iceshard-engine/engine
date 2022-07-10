@@ -29,7 +29,8 @@ namespace ice::input
         None,
         Button,
         Trigger,
-        Axis,
+        AxisInt,
+        AxisFloat,
     };
 
 
@@ -77,9 +78,9 @@ namespace ice::input
         ice::input::InputID identifier;
         ice::input::DeviceHandle device;
 
-        bool reserved : 5;
+        bool reserved : 4;
         bool initial_event : 1;
-        ice::input::InputValueType value_type : 2;
+        ice::input::InputValueType value_type : 3;
 
         ice::input::InputValue value;
     };

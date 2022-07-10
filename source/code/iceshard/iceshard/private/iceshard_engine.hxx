@@ -47,6 +47,8 @@ namespace ice
 
         auto world_manager() noexcept -> ice::WorldManager& override;
 
+        auto world_trait_archive() const noexcept -> ice::WorldTraitArchive const& override;
+
         auto developer_ui() noexcept -> ice::EngineDevUI& override;
 
     private:

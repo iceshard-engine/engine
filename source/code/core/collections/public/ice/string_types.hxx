@@ -91,4 +91,33 @@ namespace ice
         return ice::Utf8String{ str, size };
     }
 
+    template<typename T>
+    bool from_chars(ice::String str, ice::String& out_remaining, T& out_value) noexcept
+    {
+#if ISP_WINDOWS
+        std::from_chars_result const result = std::from_chars(str.data(), str.data() + str.size(), out_value);
+        out_remaining = { result.ptr, str.data() + str.size() };
+        return result.ec == std::errc{};
+#else
+        return false;
+#endif
+    }
+
+    template<typename T>
+    bool from_chars(ice::Utf8String str, ice::Utf8String& out_remaining, T& out_value) noexcept
+    {
+#if ISP_WINDOWS
+        char const* data_ptr = reinterpret_cast<char const*>(str.data());
+
+        std::from_chars_result const result = std::from_chars(data_ptr, data_ptr + str.size(), out_value);
+        out_remaining = {
+            reinterpret_cast<ice::c8utf const*>(result.ptr),
+            reinterpret_cast<ice::c8utf const*>(data_ptr + str.size())
+        };
+        return result.ec == std::errc{};
+#else
+        return false;
+#endif
+    }
+
 } // namespace ice

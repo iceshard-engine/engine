@@ -18,7 +18,7 @@ class LicenseCommand extends Command
         @current_dir = os.cwd!
 
         @details = {}
-        if details_file = io.open "thirdparty\\details.json"
+        if details_file = io.open "thirdparty/details.json"
             @details = Json\decode details_file\read '*a'
             details_file\close!
 
@@ -28,18 +28,20 @@ class LicenseCommand extends Command
             'license.md': true
             'license.txt': true
             'license.rst': true
-            'copying.txt': true
             'copyright': true
+            'copyright.txt': true
         }
 
-        for candidate_file, mode in os.listdir "#{rootpath}/#{dir}", 'mode'
-            continue if mode ~= 'file'
+        if os.isdir "#{rootpath}/#{dir}"
+            for candidate_file, mode in os.listdir "#{rootpath}/#{dir}", 'mode'
+                continue if mode ~= 'file'
 
-            if dir == "."
-                if known_license_files[candidate_file\lower!] ~= nil
-                    table.insert out_license_files, "#{rootpath}\\#{candidate_file}"
-            else
-                table.insert out_license_files, "#{rootpath}\\#{dir}\\#{candidate_file}"
+                if dir == "."
+                    if known_license_files[candidate_file\lower!] ~= nil
+                        table.insert out_license_files, "#{rootpath}/#{candidate_file}"
+                else
+                    table.insert out_license_files, "#{rootpath}/#{dir}/#{candidate_file}"
+
 
 
     extract_recipe_info: (conanfile) =>
@@ -70,7 +72,7 @@ class LicenseCommand extends Command
                 for dependency in *buildinfo.dependencies
 
                     found_license_files = { }
-                    for subdir in *{ ".", "LICENSE", "COPYRIGHT", "LICENSES" }
+                    for subdir in *{ ".", "LICENSE", "COPYRIGHT", "LICENSES", "licenses" }
                         @search_for_license_files found_license_files, dependency.rootpath, subdir
 
                     -- Gather license files
@@ -91,7 +93,7 @@ class LicenseCommand extends Command
 
                         table.insert license_files, {
                             dependency,
-                            "#{dependency.rootpath}\\..\\..\\export\\conanfile.py",
+                            "#{dependency.rootpath}/../../export/conanfile.py",
                             selected_license or found_license_files[1]
                         }
 
@@ -105,7 +107,7 @@ class LicenseCommand extends Command
             if args.gen_3rdparty
                 os.mkdir "#{@current_dir}\\thirdparty"
 
-                if licenses = io.open "#{@current_dir}\\thirdparty\\LICENSES.txt", "wb+"
+                if licenses = io.open "#{@current_dir}/thirdparty/LICENSES.txt", "wb+"
                     for { dep, _, license_file } in *license_files
                         licenses\write "\n-------------------- START '#{dep.name\lower!}' --------------------\n"
                         if license_file_handle = io.open license_file, "rb+"
@@ -115,7 +117,7 @@ class LicenseCommand extends Command
                         licenses\write "-------------------- END '#{dep.name\lower!}' --------------------\n\n"
                     licenses\close!
 
-                if readme = io.open "#{@current_dir}\\thirdparty\\README.md", "wb+"
+                if readme = io.open "#{@current_dir}/thirdparty/README.md", "wb+"
 
                     readme\write "# Third Party Libraries\n\n"
                     readme\write "A file generated from all in-used conan dependencies.\n"
