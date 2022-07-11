@@ -19,6 +19,11 @@ on:
         description: The architecture we want to build for.
         required: true
         type: string
+      cache_revision:
+        description: The revision of the worker cache.
+        required: true
+        default: v4
+        type: string
 
 jobs:
   build_configurations:
@@ -50,14 +55,18 @@ jobs:
         cache-name: cache-conan-packages
       with:
         path: ~/.conan
-        key: ${{ runner.os }}-build-v3-${{ env.cache-name }}-${{ hashFiles('**/conanfile.txt', '**/conan_profiles.json') }}
+        key: ${{ runner.os }}-build-${{ cache_revision }}-${{ env.cache-name }}-${{ hashFiles('**/conanfile.txt', '**/conan_profiles.json') }}
         restore-keys: |
-          ${{ runner.os }}-build-v3-${{ env.cache-name }}-
+          ${{ runner.os }}-build-${{ cache_revision }}-${{ env.cache-name }}-
 
-    - name: Build targets
+    - name: Initialize workspace
       shell: pwsh
       run: |
         .\tools\gh_ice.ps1 init
+        
+    - name: Build targets
+      shell: pwsh
+      run: |
         .\tools\gh_ice.ps1 build -t all-${{ inputs.architecture }}-${{ matrix.config }}
 
     # - name: Run tests
