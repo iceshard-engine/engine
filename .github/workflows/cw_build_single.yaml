@@ -56,13 +56,17 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-build-${{ cache_revision }}-${{ env.cache-name }}-
 
+    - name: Initialize workspace
+      shell: pwsh
+      run: |
+        .\tools\gh_ice.ps1 init
+
     - name: Build targets
       shell: pwsh
       run: |
         $BuildTargets = "${{ join(fromJSON(inputs.configs), '","') }}" | ForEach-Object { "-t all-${{ inputs.architecture }}-$_" }
         $BuildTargetsStr = $BuildTargets -join " "
 
-        .\tools\gh_ice.ps1 init
         .\tools\gh_ice.ps1 build $BuildTargetsStr
 
     # - name: Run tests
