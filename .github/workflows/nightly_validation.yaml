@@ -24,7 +24,7 @@ jobs:
     name: 'Build (Linux)'
     uses: iceshard-engine/engine/.github/workflows/cw_build_single.yaml@master
     with:
-      host: ubuntu-latest
+      host: ubuntu-22.04
       configs: '["Develop"]'
       platform: 'linux'
       architecture: x64
