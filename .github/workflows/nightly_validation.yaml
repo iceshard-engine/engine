@@ -18,6 +18,7 @@ jobs:
       configs: '["Develop"]'
       platform: 'windows'
       architecture: x64
+      cache_revision: v4
 
   call_build_single_linux:
     name: 'Build (Linux)'
@@ -27,3 +28,4 @@ jobs:
       configs: '["Develop"]'
       platform: 'linux'
       architecture: x64
+      cache_revision: v4
