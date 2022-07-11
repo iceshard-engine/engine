@@ -70,6 +70,7 @@ jobs:
       configs: ${{ needs.setup_workflow.outputs.build_configs }}
       platform: 'windows'
       architecture: x64
+      cache_revision: v4
 
   call_build_single_linux:
     name: 'Build (Linux)'
@@ -81,6 +82,7 @@ jobs:
       configs: ${{ needs.setup_workflow.outputs.build_configs }}
       platform: 'linux'
       architecture: x64
+      cache_revision: v4
 
   ## Build using a separate job for each configuration
   #   - Should be used when it's necessary to check every configuration build process on clean workspaces.
@@ -96,6 +98,7 @@ jobs:
       configs: ${{ needs.setup_workflow.outputs.build_configs }}
       platform: 'windows'
       architecture: x64
+      cache_revision: v4
 
   call_build_parallel_linux:
     name: 'Build (Linux), Parallel'
@@ -107,3 +110,4 @@ jobs:
       configs: ${{ needs.setup_workflow.outputs.build_configs }}
       platform: 'linux'
       architecture: x64
+      cache_revision: v4
