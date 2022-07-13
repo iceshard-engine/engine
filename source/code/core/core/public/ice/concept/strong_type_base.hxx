@@ -19,6 +19,15 @@ namespace ice
         concept HasAliasTypeTag = std::is_same_v<typename T::TypeTag, ExpectedTag>;
 
         template<typename Type>
+        struct ExtractMemberType { };
+
+        template<typename Owner, typename ValueType>
+        struct ExtractMemberType<ValueType Owner::*>
+        {
+            using Type = ValueType;
+        };
+
+        template<typename Type>
         struct ExtractTemplateType { };
 
         template<template <typename> typename TType, typename ExtractedType>

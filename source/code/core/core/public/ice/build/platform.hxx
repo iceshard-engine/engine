@@ -97,6 +97,14 @@ namespace ice::build
     };
 
 
+#if INTPTR_MAX == INT64_MAX
+#define ISP_ARCH_BITS 64
+#elif INTPTR_MAX == INT32_MAX
+#define ISP_ARCH_BITS 32
+#else
+#error Unknown pointer size or missing size macros!
+#endif
+
 #if defined(_WIN64)
 #   define ISP_UNIX 0
 #   define ISP_WINDOWS 1
