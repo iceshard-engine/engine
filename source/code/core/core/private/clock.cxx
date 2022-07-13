@@ -2,6 +2,8 @@
 #include <ice/os/windows.hxx>
 #include <ice/os/unix.hxx>
 
+#include <ice/stringid.hxx>
+
 namespace ice
 {
 
@@ -99,7 +101,7 @@ namespace ice
             ice::i64 const max_delta_ticks = static_cast<ice::i64>((max_elapsed_seconds / clock.modifier) * clock_frequency());
             ice::i64 const base_clock_delta_ticks = clock.base_clock->latest_timestamp - clock.base_clock->previous_timestamp;
             clock.previous_timestamp = clock.latest_timestamp;
-            clock.latest_timestamp += std::min(base_clock_delta_ticks, max_delta_ticks) * clock.modifier;
+            clock.latest_timestamp += static_cast<ice::i64>(std::min(base_clock_delta_ticks, max_delta_ticks) * clock.modifier);
         }
 
         auto elapsed(ice::Clock const& clock) noexcept -> ice::f32

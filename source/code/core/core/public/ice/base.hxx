@@ -1,11 +1,13 @@
 #pragma once
-#include <ice/operators_flags.hxx>
+#include <ice/types.hxx>
+#include <ice/constants.hxx>
+#include <ice/workarounds.hxx>
 #include <ice/build/build.hxx>
-#include <ice/math.hxx>
+#include <ice/config.hxx>
+#include <ice/hash.hxx>
 
-#include <type_traits>
-#include <cstring>
-#include <utility>
+#include <ice/concept/enum_flags.hxx>
+#include <ice/concept/strong_type_value.hxx>
 
 namespace ice
 {
@@ -46,18 +48,3 @@ namespace ice
     }
 
 } // namespace ice
-
-//! \brief This macro is required for a bug apprearing in the MSVC compile when generating optimized code with /O2
-//!     It code affected is generally tied to coroutine functions / methods and seems to only occur when working with loops.
-//!     A workaround for this problem is to separate the logic of such a coroutine into a separate function and mark it as 'noinline'
-//!     Once the bug is fixed this macro should be removed.
-//!
-//! GitHub Issue: #108
-#define ISATTR_NOINLINE
-
-#if ISP_WINDOWS
-
-#undef ISATTR_NOINLINE
-#define ISATTR_NOINLINE __declspec(noinline)
-
-#endif // #if ISP_WINDOWS

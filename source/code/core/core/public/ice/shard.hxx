@@ -1,256 +1,185 @@
 #pragma once
 #include <ice/base.hxx>
-#include <ice/hash.hxx>
-#include <string_view>
 
 namespace ice
 {
 
-    enum class ShardName : ice::u32;
-    enum class PayloadID : ice::u32;
-    enum class Payload : ice::u64;
-    enum class ShardID : ice::u64;
+    //! \brief Small value object able to pass up to 8 bytes of data accross the engine.
+    //!
+    //! \detail A single shard is always 16 bytes in size.
+    //!   The first 4 bytes represent the name <em>(ice::ShardID)</em> and the next four the typeid <em>(ice::ShardPayloadID)</em> of the carried data.
+    //!   Because this object is designed to only pass small values it's mostly used to carry pointers to constant objects living in a frame.
+    //!
+    //! \remark This object can also seen as small 'event' type that carries data. It's also used as such in various places.
+    struct Shard;
 
-    struct Shard
-    {
-        ice::ShardName name;
-        ice::PayloadID payload_id;
-        ice::Payload payload;
-    };
+    //! \brief Represents the name of a ice::Shard. Created from a utf8 string value.
+    struct ShardID;
 
+    //! \brief Represents the typeid of a ice::Shard. Created from a utf8 string value.
+    struct ShardPayloadID;
 
-    constexpr auto shard_name(std::string_view name) noexcept -> ice::ShardName;
+    //! \brief Returns the ice::ShardID value of a shard.
+    //! \note It's better to use this function, instead of accessing the Shard::id member directly to avoid breaking changes.
+    constexpr auto shardid(ice::Shard shard) noexcept -> ice::ShardID;
 
-    constexpr auto payload_id(std::string_view name) noexcept -> ice::PayloadID;
+    //! \brief Creates a ice::ShardID value from a utf8 string.
+    //!
+    //! \detail The passed value can contain the name and typeid.
+    //!   To do so the names need to be separated by a '`' <em>(backquote)</em> character. For example.: `my-shard`ice::u32`
+    //!
+    //! \note Even if you create a ice::ShardID with a typeid that is not enabled, it will not allow you to create a shard with such a value.
+    constexpr auto shardid(std::u8string_view definition) noexcept -> ice::ShardID;
 
-    constexpr auto shard_id(std::string_view sv) noexcept -> ice::ShardID;
+    //! \brief Creates a ice::Shard value from ice::ShardID. Clears the payload ID from the created shard.
+    constexpr auto shard(ice::ShardID id) noexcept -> ice::Shard;
 
-    constexpr auto shard_id(ice::ShardName name, ice::PayloadID payload_id) noexcept -> ice::ShardID;
-
-    constexpr auto shard_id(ice::Shard shard) noexcept -> ice::ShardID;
-
-
-    constexpr auto shard_create(ice::ShardID shard_id) noexcept -> ice::Shard;
-
-    constexpr auto shard_create(std::string_view sv) noexcept -> ice::Shard;
-
+    //! \brief Creates a ice::Shard value from a utf8 string and the given value.
+    //!
+    //! \detail The function returns the final shard if both the definition and the typeid of the given value match.
+    //!   Otherwise the shard fails to create.
+    //!
+    //! \param[in] definition Follows the same rules described in ice::shardid(std::u8_string_view).
+    //! \param[in] value A value with a type enabled for sharding with ice::Constant_ShardPayloadID.
     template<typename T>
-    constexpr auto shard_create(std::string_view sv, T value) noexcept -> ice::Shard;
+    constexpr auto shard(std::u8string_view definition, T value);
 
+    //! \brief Creates a ice::Shard value from ice::ShardID and the given value.
+    //!
+    //! \detail The function returns the final shard if both the shardid and the typeid of the given value match.
+    //!   Otherwise the shard fails to create.
+    //!
+    //! \param[in] id ShardID used to create the shard.
+    //! \param[in] value A value with a type enabled for sharding with ice::Constant_ShardPayloadID.
     template<typename T>
-    constexpr auto shard_create(ice::Shard sv, T value) noexcept -> ice::Shard;
+    constexpr auto shard(ice::ShardID id, T payload) noexcept -> ice::Shard;
 
+    //! \brief Tries to read the value from the given shard.
+    //!
+    //! \param[out] payload A reference where the payload should be stored.
+    //! \returns false If the types are not matching, or there is no payload value in the shard.
     template<typename T>
-    constexpr bool shard_inspect(ice::Shard shard, T& value) noexcept;
+    constexpr bool shard_inspect(ice::Shard shard, T& payload) noexcept;
 
+    //! \brief Reads the value from the given shard or returns the fallback value.
+    //!
+    //! \returns The payload value or the fallback value.
     template<typename T>
-    inline auto shard_shatter(ice::Shard shard) noexcept -> T;
+    constexpr auto shard_shatter(ice::Shard shard, T fallback) noexcept -> T;
 
-    constexpr auto shard_transform(ice::Shard old_shard, ice::Shard new_shard) noexcept -> ice::Shard;
-
-
-    enum class ShardName : ice::u32
-    {
-        Invalid = 0x0
-    };
-
-    enum class PayloadID : ice::u32
-    {
-        NotSet = 0x0
-    };
-
-    enum class Payload : ice::u64
-    {
-        Empty = 0x0
-    };
-
-    enum class ShardID : ice::u64
-    {
-        Invalid = 0x0
-    };
-
-    static constexpr ice::ShardID ShardID_Invalid = ShardID::Invalid;
-
-    static constexpr ice::Shard Shard_Invalid{ ShardName::Invalid, PayloadID::NotSet, Payload::Empty };
+    constexpr auto operator""_shard(ice::utf8 const* str, size_t size) noexcept -> ice::Shard;
+    constexpr auto operator""_shardid(ice::utf8 const* str, size_t size) noexcept -> ice::ShardID;
 
 
-    constexpr auto shard_name(std::string_view name) noexcept -> ice::ShardName
-    {
-        return ShardName{ ice::hash32(name) };
-    }
-
-    constexpr auto payload_id(std::string_view name) noexcept -> ice::PayloadID
-    {
-        return PayloadID{ ice::hash32(name) };
-    }
-
-    constexpr auto shard_id(std::string_view sv) noexcept -> ice::ShardID
-    {
-        size_t const payload_id_pos = sv.find_first_of('`');
-        if (payload_id_pos == std::string_view::npos)
-        {
-            return ice::shard_id(ice::shard_name(sv), PayloadID::NotSet);
-        }
-        else
-        {
-            return ice::shard_id(
-                ice::shard_name(sv.substr(0, payload_id_pos)),
-                ice::payload_id(sv.substr(payload_id_pos + 1))
-            );
-        }
-    }
-
-    constexpr auto shard_id(ice::ShardName name, ice::PayloadID payload_id) noexcept -> ice::ShardID
-    {
-        ice::u64 id_value = static_cast<ice::u32>(name);
-        id_value <<= 32;
-        id_value |= static_cast<ice::u32>(payload_id);
-        return static_cast<ice::ShardID>(id_value);
-    }
-
-    constexpr auto shard_id(ice::Shard shard) noexcept -> ice::ShardID
-    {
-        return shard_id(shard.name, shard.payload_id);
-    }
-
-    namespace detail::stringid_type_v2
-    {
-
-        enum class StringID_Hash : uint64_t;
-
-    } // namespace detail::stringid_type_v2
+    // IMPLEMENTATION DETAILS
 
     namespace detail
     {
 
-        template<typename T>
-        constexpr ice::PayloadID Constant_ShardPayloadID = PayloadID::NotSet;
+        struct ShardName
+        {
+            using TypeTag = ice::StrongValue;
 
-        template<>
-        constexpr ice::PayloadID Constant_ShardPayloadID<ice::i32> = ice::payload_id("ice::i32");
+            ice::u32 value;
+        };
 
-        template<>
-        constexpr ice::PayloadID Constant_ShardPayloadID<ice::u32> = ice::payload_id("ice::u32");
+        struct ShardPayload
+        {
+            using TypeTag = ice::StrongValue;
 
-        template<>
-        constexpr ice::PayloadID Constant_ShardPayloadID<ice::f32> = ice::payload_id("ice::f32");
-
-        template<>
-        constexpr ice::PayloadID Constant_ShardPayloadID<ice::i64> = ice::payload_id("ice::i64");
-
-        template<>
-        constexpr ice::PayloadID Constant_ShardPayloadID<ice::u64> = ice::payload_id("ice::u64");
-
-        template<>
-        constexpr ice::PayloadID Constant_ShardPayloadID<ice::f64> = ice::payload_id("ice::f64");
-
-        template<>
-        constexpr ice::PayloadID Constant_ShardPayloadID<ice::math::vec2i> = ice::payload_id("ice::math::vec2i");
-
-        template<>
-        constexpr ice::PayloadID Constant_ShardPayloadID<ice::math::vec2u> = ice::payload_id("ice::math::vec2u");
-
-        template<>
-        constexpr ice::PayloadID Constant_ShardPayloadID<ice::math::vec2f> = ice::payload_id("ice::math::vec2f");
-
-        template<>
-        constexpr ice::PayloadID Constant_ShardPayloadID<ice::detail::stringid_type_v2::StringID_Hash> = ice::payload_id("ice::StringID_Hash");
-
-        template<>
-        constexpr ice::PayloadID Constant_ShardPayloadID<ice::c8utf const*> = ice::payload_id("ice::c8utf const*");
-
-        template<>
-        constexpr ice::PayloadID Constant_ShardPayloadID<std::u8string_view const*> = ice::payload_id("std::u8string_view const*");
+            ice::u64 value;
+        };
 
     } // namespace detail
 
-    constexpr auto shard_create(ice::ShardID shard_id) noexcept -> ice::Shard
+    struct ShardPayloadID
     {
-        ice::u64 const id_value = static_cast<ice::u64>(shard_id);
-        ice::PayloadID const payload_id = ice::PayloadID{ id_value & 0x00000000'ffffffff };
-        ice::ShardName const shard_name = ice::ShardName{ (id_value & 0xffffffff'00000000) >> 32 };
-        return ice::Shard{
-            .name = shard_name,
-            .payload_id = payload_id,
-            .payload = Payload::Empty,
-        };
+        using TypeTag = ice::StrongValue;
+
+        ice::u32 value;
+    };
+
+    struct ShardID
+    {
+        ice::detail::ShardName name;
+        ice::ShardPayloadID payload;
+    };
+
+    struct Shard
+    {
+        ice::ShardID id;
+        ice::detail::ShardPayload payload;
+    };
+
+    constexpr auto shard_payloadid(std::u8string_view sv)  noexcept -> ice::ShardPayloadID
+    {
+        namespace mm3 = ice::detail::murmur3_hash;
+
+        mm3::mm3_x86_h32 const hash = mm3::cexpr_murmur3_x86_32(
+            sv, ice::config::ShardPayloadID_DefaultSeed
+        );
+        return ice::ShardPayloadID{ hash.h[0] };
     }
 
-    constexpr auto shard_create(std::string_view sv) noexcept -> ice::Shard
+    constexpr auto shardid(std::u8string_view sv) noexcept -> ice::ShardID
     {
-        return ice::Shard{
-            .name = ice::shard_name(sv),
-            .payload_id = PayloadID::NotSet,
-            .payload = Payload::Empty,
-        };
-    }
+        namespace mm3 = ice::detail::murmur3_hash;
 
-    template<typename T> requires(ice::detail::Constant_ShardPayloadID<T> != PayloadID::NotSet)
-    constexpr auto shard_create(std::string_view sv, T payload) noexcept -> ice::Shard
-    {
-        static_assert(sizeof(T) <= sizeof(ice::Shard::payload), "The given payload is bigger than a shard can have attached.");
-
-        if constexpr (sizeof(T) == sizeof(ice::Shard::payload))
+        size_t const payload_id_pos = sv.find_first_of('`');
+        if (payload_id_pos == std::string_view::npos)
         {
-            return {
-                .name = ice::shard_name(sv),
-                .payload_id = ice::detail::Constant_ShardPayloadID<T>,
-                .payload = std::bit_cast<ice::Payload>(payload)
+            mm3::mm3_x86_h32 const hash = mm3::cexpr_murmur3_x86_32(sv, ice::config::ShardName_DefaultSeed);
+
+            return ice::ShardID{
+                .name = { hash.h[0] },
+                .payload = { }
             };
         }
         else
         {
-            struct PayloadBitCastHelper
-            {
-                T value;
-                char bytes[sizeof(ice::Shard::payload) - sizeof(T)];
-            } temp{ .value = payload, .bytes = { } };
+            mm3::mm3_x86_h32 const name_hash = mm3::cexpr_murmur3_x86_32(
+                sv.substr(0, payload_id_pos),
+                ice::config::ShardName_DefaultSeed
+            );
 
-            return {
-                .name = ice::shard_name(sv),
-                .payload_id = ice::detail::Constant_ShardPayloadID<T>,
-                .payload = std::bit_cast<ice::Payload>(temp)
-            };
-        };
-    }
-
-    template<typename T> requires(ice::detail::Constant_ShardPayloadID<T> != PayloadID::NotSet)
-    constexpr auto shard_create(ice::Shard shard, T payload) noexcept -> ice::Shard
-    {
-        static_assert(sizeof(T) <= sizeof(ice::Shard::payload), "The given payload is bigger than a shard can have attached.");
-
-        if constexpr (sizeof(T) == sizeof(ice::Shard::payload))
-        {
-            return {
-                .name = shard.name,
-                .payload_id = ice::detail::Constant_ShardPayloadID<T>,
-                .payload = std::bit_cast<ice::Payload>(payload)
-            };
-        }
-        else
-        {
-            struct PayloadBitCastHelper
-            {
-                T value;
-                char bytes[sizeof(ice::Shard::payload) - sizeof(T)];
-            } temp{ .value = payload, .bytes = { } };
-
-            return {
-                .name = shard.name,
-                .payload_id = ice::detail::Constant_ShardPayloadID<T>,
-                .payload = std::bit_cast<ice::Payload>(temp)
+            return ice::ShardID{
+                .name = { name_hash.h[0] },
+                .payload = shard_payloadid(sv.substr(payload_id_pos + 1))
             };
         }
     }
 
-    template<typename T> requires (ice::detail::Constant_ShardPayloadID<T> != PayloadID::NotSet)
-    constexpr bool shard_inspect(ice::Shard shard, T& value) noexcept
+    constexpr auto shardid(ice::Shard shard) noexcept -> ice::ShardID
     {
-        if (ice::detail::Constant_ShardPayloadID<T> == shard.payload_id)
+        return shard.id;
+    }
+
+    constexpr auto operator""_shardid(ice::utf8 const* str, size_t size) noexcept -> ice::ShardID
+    {
+        return ice::shardid({ str, size });
+    }
+
+    constexpr static ice::ShardPayloadID ShardPayloadID_NotSet = { 0 };
+
+    template<typename T>
+    concept AllowedAsShardPayloadID = std::is_pod_v<T> && sizeof(T) <= 8;
+
+    template<typename T> requires AllowedAsShardPayloadID<T>
+    constexpr static ice::ShardPayloadID Constant_ShardPayloadID = ice::ShardPayloadID_NotSet;
+
+    template<typename T>
+    concept HasShardPayloadID = Constant_ShardPayloadID<T> != ice::ShardPayloadID_NotSet;
+
+
+    namespace detail
+    {
+
+        template<typename T> requires HasShardPayloadID<T>
+        constexpr auto shard_payload(T payload) noexcept -> ice::detail::ShardPayload
         {
             if constexpr (sizeof(T) == sizeof(ice::Shard::payload))
             {
-                value = std::bit_cast<T>(shard.payload);
+                return std::bit_cast<ShardPayload>(payload);
             }
             else
             {
@@ -258,103 +187,163 @@ namespace ice
                 {
                     T value;
                     char bytes[sizeof(ice::Shard::payload) - sizeof(T)];
-                } temp{ std::bit_cast<PayloadBitCastHelper>(shard.payload) };
+                } temp{ .value = payload, .bytes = { } };
 
-                value = temp.value;
+                return std::bit_cast<ShardPayload>(temp);
             }
+        }
+
+        template<typename T> requires HasShardPayloadID<T>
+        constexpr auto shard_value(ShardPayload payload) noexcept -> T
+        {
+            if constexpr (sizeof(T) == sizeof(ice::Shard::payload))
+            {
+                return std::bit_cast<T>(payload);
+            }
+            else
+            {
+                struct PayloadBitCastHelper
+                {
+                    T value;
+                    char bytes[sizeof(ice::Shard::payload) - sizeof(T)];
+                } temp{ std::bit_cast<PayloadBitCastHelper>(payload) };
+
+                return temp.value;
+            }
+        }
+
+    } // namespace detail
+
+    // SHARD CREATION
+
+    constexpr auto shard(ice::ShardID id) noexcept -> ice::Shard
+    {
+        return ice::Shard{ .id = { id.name } };
+    }
+
+    template<typename T> requires ice::HasShardPayloadID<T>
+    constexpr auto shard(std::u8string_view definition, T value) noexcept -> ice::Shard
+    {
+        ice::Shard result{ };
+        ice::ShardID const id = ice::shardid(definition);
+        if (id.payload == ice::Constant_ShardPayloadID<T> || id.payload == ice::ShardPayloadID_NotSet)
+        {
+            result.id = id;
+            result.id.payload = ice::Constant_ShardPayloadID<T>;
+            result.payload = ice::detail::shard_payload(value);
+        }
+        return result;
+    }
+
+    template<typename T> requires ice::HasShardPayloadID<T>
+    constexpr auto shard(ice::ShardID id, T value) noexcept -> ice::Shard
+    {
+        ice::Shard result{ };
+        if (id.payload == ice::Constant_ShardPayloadID<T> || id.payload == ice::ShardPayloadID_NotSet)
+        {
+            result.id = id;
+            result.id.payload = ice::Constant_ShardPayloadID<T>;
+            result.payload = ice::detail::shard_payload(value);
+        }
+        return result;
+    }
+
+    constexpr auto operator""_shard(ice::utf8 const* str, size_t size) noexcept -> ice::Shard
+    {
+        return ice::shard(ice::shardid({ str, size }));
+    }
+
+    template<typename T> requires ice::HasShardPayloadID<T>
+    constexpr auto operator|(ice::Shard shard, T payload) noexcept -> ice::Shard
+    {
+        return ice::shard(shard.id, payload);
+    }
+
+    constexpr auto operator==(ice::ShardID left, ice::ShardID right) noexcept -> bool
+    {
+        if (left.name == right.name)
+        {
+            return left.payload == ice::ShardPayloadID_NotSet
+                || right.payload == ice::ShardPayloadID_NotSet
+                || right.payload == left.payload;
+        }
+        return false;
+    }
+
+    constexpr auto operator==(ice::Shard left, ice::Shard right) noexcept -> bool
+    {
+        return left.id == right.id;
+    }
+
+    constexpr auto operator==(ice::Shard left, ice::ShardID right) noexcept -> bool
+    {
+        return left.id == right;
+    }
+
+    // SHARD INSPECTION
+
+    template<typename T> requires ice::HasShardPayloadID<T>
+    constexpr bool shard_inspect(ice::Shard shard, T& value) noexcept
+    {
+        if (ice::Constant_ShardPayloadID<T> == shard.id.payload)
+        {
+            value = ice::detail::shard_value(shard.payload);
             return true;
         }
         return false;
     }
 
-    template<typename T>
-    inline auto shard_shatter(ice::Shard shard) noexcept -> T
+    template<typename T> requires ice::HasShardPayloadID<T>
+    constexpr auto shard_shatter(ice::Shard shard, T fallback) noexcept -> T
     {
-        static_assert(ice::detail::Constant_ShardPayloadID<T> != PayloadID::NotSet, "The given type cannot be used to shatter a shard object.");
-        return *reinterpret_cast<T const*>(ice::addressof(shard.payload));
-    }
-
-    constexpr auto shard_transform(ice::Shard source_shard, ice::Shard destination_shard) noexcept -> ice::Shard
-    {
-        return {
-            .name = destination_shard.name,
-            .payload_id = source_shard.payload_id,
-            .payload = source_shard.payload
-        };
-    }
-
-
-    constexpr auto operator""_shardid(const char* str, size_t size) noexcept
-    {
-        return ice::shard_id({ str, size });
-    }
-
-    constexpr auto operator""_shard(const char* str, size_t size) noexcept
-    {
-        return ice::shard_create(ice::shard_id({ str, size }));
-    }
-
-    constexpr auto operator""_shard_name(const char* str, size_t size) noexcept
-    {
-        return ice::shard_create(ice::shard_id({ str, size })).name;
-    }
-
-
-    template<typename T>
-    constexpr auto operator|(ice::Shard shard, T payload) noexcept -> ice::Shard
-    {
-        return ice::shard_create(shard, payload);
-    }
-
-    template<typename T>
-    constexpr auto operator|(ice::Shard shard, T* payload) noexcept -> ice::Shard
-    {
-        return ice::shard_create(shard, payload);
-    }
-
-    constexpr auto operator>>(ice::Shard left, ice::ShardID right) noexcept -> ice::Shard
-    {
-        return ice::shard_transform(left, ice::shard_create(right));
-    }
-
-    constexpr auto operator>>(ice::Shard left, ice::Shard right) noexcept -> ice::Shard
-    {
-        return ice::shard_transform(left, right);
-    }
-
-    constexpr auto operator==(ice::Shard left, ice::Shard right) noexcept -> bool
-    {
-        if (left.name == right.name)
+        if (ice::Constant_ShardPayloadID<T> == shard.id.payload)
         {
-            return left.payload_id == PayloadID::NotSet || right.payload_id == PayloadID::NotSet || right.payload_id == left.payload_id;
+            return ice::detail::shard_value(shard.payload);
         }
-        return false;
+        return fallback;
     }
 
-    constexpr auto operator==(ice::Shard left, ice::ShardID right) noexcept -> bool
-    {
-        return left == ice::shard_create(right);
-    }
+    // COMMON PAYLOAD TYPES
 
-    constexpr auto operator!=(ice::Shard left, ice::Shard right) noexcept -> bool
-    {
-        return !(left == right);
-    }
+    template<>
+    constexpr ice::ShardPayloadID Constant_ShardPayloadID<ice::i32> = ice::shard_payloadid(u8"ice::i32");
+
+    template<>
+    constexpr ice::ShardPayloadID Constant_ShardPayloadID<ice::u32> = ice::shard_payloadid(u8"ice::u32");
+
+    template<>
+    constexpr ice::ShardPayloadID Constant_ShardPayloadID<ice::f32> = ice::shard_payloadid(u8"ice::f32");
+
+    template<>
+    constexpr ice::ShardPayloadID Constant_ShardPayloadID<ice::i64> = ice::shard_payloadid(u8"ice::i64");
+
+    template<>
+    constexpr ice::ShardPayloadID Constant_ShardPayloadID<ice::u64> = ice::shard_payloadid(u8"ice::u64");
+
+    template<>
+    constexpr ice::ShardPayloadID Constant_ShardPayloadID<ice::f64> = ice::shard_payloadid(u8"ice::f64");
+
+    template<>
+    constexpr ice::ShardPayloadID Constant_ShardPayloadID<ice::utf8 const*> = ice::shard_payloadid(u8"ice::utf8 const*");
+
+    template<>
+    constexpr ice::ShardPayloadID Constant_ShardPayloadID<std::u8string_view const*> = ice::shard_payloadid(u8"std::u8string_view const*");
+
 
 
     namespace _validate
     {
 
-        static constexpr ice::Shard shard_without_payload = "test/shard"_shard;
-        static constexpr ice::Shard shard_with_payload_u32 = "test/shard"_shard | ice::u32{ 42 };
-        static constexpr ice::Shard shard_with_payload_i32 = "test/shard"_shard | ice::i32{ 42 };
+        static constexpr ice::Shard shard_without_payload = u8"test/shard"_shard;
+        static constexpr ice::Shard shard_with_payload_u32 = u8"test/shard"_shard | ice::u32{ 42 };
+        static constexpr ice::Shard shard_with_payload_i32 = u8"test/shard"_shard | ice::i32{ 42 };
 
-        static constexpr ice::Shard shard2_without_payload = "test/shard2"_shard;
-        static constexpr ice::Shard shard2_with_payload_u32 = "test/shard2"_shard | ice::u32{ 42 };
-        static constexpr ice::Shard shard2_with_payload_i32 = "test/shard2"_shard | ice::i32{ 42 };
+        static constexpr ice::Shard shard2_without_payload = u8"test/shard2"_shard;
+        static constexpr ice::Shard shard2_with_payload_u32 = u8"test/shard2"_shard | ice::u32{ 42 };
+        static constexpr ice::Shard shard2_with_payload_i32 = u8"test/shard2"_shard | ice::i32{ 42 };
 
-        static constexpr ice::ShardID shardid_test_1 = "test/shard`ice::u32"_shardid;
-        static constexpr ice::ShardID shardid_test_1_from_shard = ice::shard_id(shard_with_payload_u32);
+        static constexpr ice::ShardID shardid_test_1 = u8"test/shard`ice::u32"_shardid;
+        static constexpr ice::ShardID shardid_test_1_from_shard = ice::shardid(shard_with_payload_u32);
 
         static_assert(shardid_test_1 == shardid_test_1_from_shard, "ShardID creation is not valid!");
 
@@ -378,5 +367,6 @@ namespace ice
         static_assert(shard2_with_payload_i32 != shard_with_payload_u32, "Assert: Different Shards with different payloads are not equal.");
 
     } // namespace detail
+
 
 } // namespace ice

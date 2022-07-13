@@ -1,22 +1,24 @@
 #pragma once
+#include <ice/types.hxx>
 #include <string_view>
 
 namespace ice::build
 {
 
-    enum class System : uint32_t
+    enum class System : ice::u8
     {
         UWP,
         Windows,
         Unix
     };
 
-    enum class Architecture : uint32_t
+    enum class Architecture : ice::u8
     {
-        x64
+        x86,
+        x86_x64,
     };
 
-    enum class Compiler : uint32_t
+    enum class Compiler : ice::u8
     {
         MSVC,
         Clang,
@@ -31,7 +33,6 @@ namespace ice::build
         Architecture architecture;
         Compiler compiler;
     };
-
 
     constexpr bool operator==(Platform const& left, System right) noexcept;
     constexpr bool operator!=(Platform const& left, System right) noexcept;
@@ -51,38 +52,39 @@ namespace ice::build
     constexpr auto to_string(Compiler type) noexcept -> std::string_view;
     constexpr auto to_string(Platform const& type) noexcept -> std::string_view;
 
+
     static constexpr Platform platform_uwp_x64_msvc = {
         .name = "uwp-x64-msvc",
         .system = System::UWP,
-        .architecture = Architecture::x64,
+        .architecture = Architecture::x86_x64,
         .compiler = Compiler::MSVC
     };
 
     static constexpr Platform platform_windows_x64_msvc = {
         .name = "windows-x64-msvc",
         .system = System::Windows,
-        .architecture = Architecture::x64,
+        .architecture = Architecture::x86_x64,
         .compiler = Compiler::MSVC
     };
 
     static constexpr Platform platform_windows_x64_clang = {
         .name = "windows-x64-clang",
         .system = System::Windows,
-        .architecture = Architecture::x64,
+        .architecture = Architecture::x86_x64,
         .compiler = Compiler::Clang
     };
 
     static constexpr Platform platform_unix_x64_clang = {
         .name = "unix-x64-clang",
         .system = System::Unix,
-        .architecture = Architecture::x64,
+        .architecture = Architecture::x86_x64,
         .compiler = Compiler::Clang
     };
 
     static constexpr Platform platform_unix_x64_gcc = {
         .name = "unix-x64-gcc",
         .system = System::Unix,
-        .architecture = Architecture::x64,
+        .architecture = Architecture::x86_x64,
         .compiler = Compiler::GCC
     };
 
@@ -200,7 +202,9 @@ namespace ice::build
     {
         switch (arch)
         {
-        case Architecture::x64:
+        case Architecture::x86:
+            return "x86";
+        case Architecture::x86_x64:
             return "x64";
         default:
             return "<invalid>";

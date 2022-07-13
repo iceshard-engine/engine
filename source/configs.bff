@@ -45,8 +45,7 @@
         '/wd4201' // warning C4201: nonstandard extension used: nameless struct/union
         '/wd4100' // warning C4100: '...': unreferenced formal parameter
         '/wd4063' // warning C4063: case '...' is not a valid value for switch of enum '...'
-        // '/we4267' // warning C4267: 'initializing': conversion from '...' to '...', possible loss of data
-        // '/WX'
+        '/we4267' // warning C4267: 'initializing': conversion from '...' to '...', possible loss of data
     }
     .Defines = {
         'UNICODE'
@@ -153,6 +152,8 @@
     .BuildOptions = {
         ' /Od'
         ' /MDd'
+        ' /WX'
+        ' /wd4996'
     }
 ]
 
@@ -164,6 +165,7 @@
     .BuildOptions = {
         ' /O1'
         ' /MD'
+        ' /WX'
     }
 ]
 
@@ -175,6 +177,7 @@
     .BuildOptions = {
         ' /O2'
         ' /MD'
+        ' /WX'
     }
 ]
 

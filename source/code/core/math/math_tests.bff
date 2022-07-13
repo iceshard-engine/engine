@@ -1,0 +1,31 @@
+.Project =
+[
+    .Name = 'math_tests'
+    .Kind = .Kind_ConsoleApp
+    .Group = 'Tests'
+    .Tags = { 'UnitTests' }
+
+    .BaseDir = '$WorkspaceCodeDir$/core/math'
+
+    .InputPaths = {
+        'tests'
+    }
+    .VStudioPaths = .InputPaths
+
+    .Private =
+    [
+        .Uses = {
+            'math'
+        }
+
+        .Modules = {
+            'catch2'
+        }
+    ]
+
+    .UnitTests =
+    [
+        .Enabled = true
+    ]
+]
+.Projects + .Project

@@ -32,7 +32,7 @@
  */
 
 #pragma once
-#include <cinttypes>
+#include <ice/types.hxx>
 #include <string_view>
 
 namespace ice::detail::murmur2_hash
@@ -40,74 +40,70 @@ namespace ice::detail::murmur2_hash
 
     struct mm2_x64_64
     {
-        uint64_t h[1];
+        ice::u64 h[1];
     };
 
-    constexpr auto cexpr_murmur2_x64_64(std::string_view key, uint64_t seed) noexcept -> mm2_x64_64;
-    constexpr auto cexpr_murmur2_x64_64(std::u8string_view key, uint64_t seed) noexcept -> mm2_x64_64;
+    constexpr auto cexpr_murmur2_x64_64(std::u8string_view key, ice::u64 seed) noexcept -> mm2_x64_64;
 
-    namespace detail
+    constexpr auto [[deprecated]] cexpr_murmur2_x64_64(std::string_view key, ice::u64 seed) noexcept -> mm2_x64_64;
+
+    // Murmur hash constants
+    constexpr ice::u64 m = 0xc6a4a7935bd1e995;
+    constexpr ice::u32 r = 47;
+
+    constexpr auto crotate(ice::u64 a) noexcept -> ice::u64
     {
+        return a ^ (a >> r);
+    }
 
-        // Murmur hash constants
-        constexpr uint64_t m = 0xc6a4a7935bd1e995;
-        constexpr int r = 47;
-
-        constexpr uint64_t crotate(uint64_t a) noexcept
-        {
-            return a ^ (a >> r);
-        }
-
-        template<typename CharType>
-        constexpr uint64_t cfinalize_h(const CharType* data, size_t key, uint64_t h) noexcept
-        {
-            return (key != 0) ? cfinalize_h(data, key - 1, (h ^ (uint64_t(data[key - 1]) << (8 * (key - 1))))) : h* m;
-        }
-
-        template<typename CharType>
-        constexpr uint64_t cfinalize(const CharType* data, size_t len, uint64_t h) noexcept
-        {
-            return (len & 7) ? crotate(crotate(cfinalize_h<CharType>(data, len & 7, h)) * m)
-                : crotate(crotate(h) * m);
-        }
-
-        // reinterpret cast is illegal (static is fine) so we have to manually load 64 bit chuncks of string instead
-        // of casting char* to uint64_t*
-        //
-        // TODO - this only works on little endian machines .... fuuuu
-        template<typename CharType>
-        constexpr uint64_t cblock(const CharType* data, size_t offset = 0) noexcept
-        {
-            return (offset == 7) ? uint64_t(data[offset]) << (8 * offset)
-                : (uint64_t(data[offset]) << (8 * offset)) | cblock<CharType>(data, offset + 1);
-        }
-
-        // Mixing function for the hash function
-        template<typename CharType>
-        constexpr uint64_t cmix_h(const CharType* data, uint64_t h, size_t offset) noexcept
-        {
-            return (h ^ (crotate(cblock<CharType>(data + offset) * m) * m)) * m;
-        }
-
-        // Control function for the mixing
-        template<typename CharType>
-        constexpr uint64_t cmix(const CharType* data, size_t len, uint64_t h, size_t offset = 0) noexcept
-        {
-            return (offset == (len & ~size_t(7))) ? cfinalize<CharType>(data + offset, len, h)
-                : cmix<CharType>(data, len, cmix_h<CharType>(data, h, offset), offset + 8);
-        }
-
-    } // namespace detail
-
-    constexpr auto cexpr_murmur2_x64_64(std::string_view key, uint64_t seed) noexcept -> mm2_x64_64
+    template<typename CharType>
+    constexpr auto cfinalize_h(CharType const* data, size_t key, ice::u64 h) noexcept -> ice::u64
     {
-        uint64_t const h = detail::cmix<char>(key.data(), key.length(), seed ^ (key.length() * detail::m));
+        return (key != 0) ? cfinalize_h(data, key - 1, (h ^ (ice::u64(data[key - 1]) << (8 * (key - 1))))) : h* m;
+    }
+
+    template<typename CharType>
+    constexpr auto cfinalize(CharType const* data, size_t len, ice::u64 h) noexcept -> ice::u64
+    {
+        return (len & 7) ? crotate(crotate(cfinalize_h<CharType>(data, len & 7, h)) * m)
+            : crotate(crotate(h) * m);
+    }
+
+    // reinterpret cast is illegal (static is fine) so we have to manually load 64 bit chuncks of string instead
+    // of casting char* to ice::u64*
+    //
+    // TODO - this only works on little endian machines .... fuuuu
+    template<typename CharType>
+    constexpr auto cblock(CharType const* data, size_t offset = 0) noexcept -> ice::u64
+    {
+        return (offset == 7) ? ice::u64(data[offset]) << (8 * offset)
+            : (ice::u64(data[offset]) << (8 * offset)) | cblock<CharType>(data, offset + 1);
+    }
+
+    // Mixing function for the hash function
+    template<typename CharType>
+    constexpr auto cmix_h(CharType const* data, ice::u64 h, size_t offset) noexcept -> ice::u64
+    {
+        return (h ^ (crotate(cblock<CharType>(data + offset) * m) * m)) * m;
+    }
+
+    // Control function for the mixing
+    template<typename CharType>
+    constexpr auto cmix(CharType const* data, size_t len, ice::u64 h, size_t offset = 0) noexcept -> ice::u64
+    {
+        return (offset == (len & ~size_t(7))) ? cfinalize<CharType>(data + offset, len, h)
+            : cmix<CharType>(data, len, cmix_h<CharType>(data, h, offset), offset + 8);
+    }
+
+    constexpr auto cexpr_murmur2_x64_64(std::string_view key, ice::u64 seed) noexcept -> mm2_x64_64
+    {
+        ice::u64 const h = cmix<char>(key.data(), key.length(), seed ^ (key.length() * m));
         return mm2_x64_64{ .h = { h } };
     }
 
-    constexpr auto cexpr_murmur2_x64_64(std::u8string_view key, uint64_t seed) noexcept -> mm2_x64_64
+    constexpr auto cexpr_murmur2_x64_64(std::u8string_view key, ice::u64 seed) noexcept -> mm2_x64_64
     {
-        uint64_t const h = detail::cmix<char8_t>(key.data(), key.length(), seed ^ (key.length() * detail::m));
+        ice::u64 const h = cmix<ice::utf8>(key.data(), key.length(), seed ^ (key.length() * m));
         return mm2_x64_64{ .h = { h } };
     }
 

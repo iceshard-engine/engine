@@ -5,10 +5,10 @@
 uint32_t constexpr test_seed_1 = 0xD00D00;
 uint32_t constexpr test_seed_2 = 0xDAADAA;
 
-std::string_view constexpr test_string_empty = "";
-std::string_view constexpr test_string_short = "Fox";
-std::string_view constexpr test_string_medium = "The quick brown fox.";
-std::string_view constexpr test_string_large = "The quick brown fox jumps over the lazy dog.";
+std::u8string_view constexpr test_string_empty = u8"";
+std::u8string_view constexpr test_string_short = u8"Fox";
+std::u8string_view constexpr test_string_medium = u8"The quick brown fox.";
+std::u8string_view constexpr test_string_large = u8"The quick brown fox jumps over the lazy dog.";
 
 TEST_CASE("hash :: murmur2 :: 64bit", "[hash]")
 {

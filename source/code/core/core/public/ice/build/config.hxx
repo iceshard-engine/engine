@@ -1,17 +1,17 @@
 #pragma once
+#include <ice/types.hxx>
 #include <string_view>
 
 namespace ice::build
 {
 
-    enum class Configuration : uint32_t
+    enum class Configuration : ice::u8
     {
         Debug,
         Develop,
         Profile,
         Release,
     };
-
 
     constexpr auto to_string(Configuration type) noexcept -> std::string_view;
 

@@ -82,4 +82,10 @@ namespace ice
         return (searched_value & searched_flags) != T::None;
     }
 
+    template<ice::FlagType T>
+    constexpr bool has_none(T searched_value, T searched_flags) noexcept
+    {
+        return (searched_value & searched_flags) == T::None;
+    }
+
 } // namespace ice
