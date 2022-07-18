@@ -25,6 +25,8 @@ ice_initialize() {
     cd build/tools
     conan install ../../tools --build=missing --profile $conan_profile
     cd ../..
+
+    exit 0
 }
 
 # Ensure the build dir exists
