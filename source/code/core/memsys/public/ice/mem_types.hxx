@@ -42,7 +42,7 @@ namespace ice
         b_1024 = 1024,
         b_2048 = 2048,
 
-        b_default = b_16,
+        b_default = ice::build::is_x64 ? b_16 : b_8,
     };
 
     struct meminfo

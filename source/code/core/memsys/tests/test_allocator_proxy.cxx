@@ -1,74 +1,90 @@
 #include <catch2/catch.hpp>
-#include <ice/memory/memory_globals.hxx>
-#include <ice/memory/proxy_allocator.hxx>
-#include <ice/memory/stack_allocator.hxx>
+#include <ice/mem_allocator_host.hxx>
+#include <ice/mem_allocator_proxy.hxx>
+#include "test_utils.hxx"
 
-TEST_CASE("memory :: proxy allocator", "[allocators]")
+SCENARIO("memsys 'ice/mem_allocator_proxy.hxx'", "[allocators]")
 {
-    ice::memory::init();
+    using namespace ice;
 
-    ice::Allocator& backing_alloc = ice::memory::default_allocator();
-    uint32_t const initial_backing_total = backing_alloc.total_allocated();
+    ice::HostAllocator host_alloc{ };
+    ice::ProxyAllocator proxy_alloc{ host_alloc, u8"test_proxy" };
 
-    SECTION("initialization does not allocate anything in the backing allocator")
+    GIVEN("a proxy allocator...")
     {
-        ice::memory::ProxyAllocator proxy_alloc{ backing_alloc, "proxy" };
-
-        CHECK(initial_backing_total == backing_alloc.total_allocated());
-    }
-
-    GIVEN("an allocation of 120 bytes")
-    {
-        ice::memory::ProxyAllocator proxy_alloc{ backing_alloc, "proxy" };
-
-        void* test_ptr = proxy_alloc.allocate(120);
-
-        THEN("we track the total allocation")
+        if constexpr (ice::ProxyAllocator::HasDebugInformation)
         {
-            CHECK(proxy_alloc.total_allocated() == 120);
-        }
+            // If test builds fail then this means that HasDebugInfomation is no longer in sync with the debug implementation of BaseAllocator<true>.
 
-        THEN("we deallocate all memory properly")
-        {
-            proxy_alloc.deallocate(test_ptr);
-            test_ptr = nullptr;
-
-            CHECK(backing_alloc.total_allocated() == initial_backing_total);
-        }
-
-        THEN("we dont have an overhead due to the proxy")
-        {
-            uint32_t const backing_total_by_proxy = backing_alloc.total_allocated();
-            proxy_alloc.deallocate(test_ptr);
-
-            test_ptr = backing_alloc.allocate(120);
-            uint32_t const backing_total_immediate = backing_alloc.total_allocated();
-
-            backing_alloc.deallocate(test_ptr);
-            test_ptr = nullptr;
-
-            CHECK(backing_total_by_proxy == backing_total_immediate);
-        }
-
-        GIVEN("the backing allocator tracks memory")
-        {
-            void* test_ptr2 = backing_alloc.allocate(4);
-            REQUIRE(backing_alloc.allocated_size(test_ptr2) == 4);
-
-            THEN("The proxy allocator also tracks memory")
+            GIVEN("we have debug information...")
             {
-                uint32_t const allocation_size = proxy_alloc.allocated_size(test_ptr);
-                CHECK(allocation_size == 120);
+                ice::AllocatorDebugInfo const& dbg_info = proxy_alloc.debug_info();
+
+                CHECK(dbg_info.parent_allocator() == &host_alloc);
+                CHECK(host_alloc.child_allocators() == &proxy_alloc);
+
+                CHECK(proxy_alloc.child_allocators() == nullptr);
+                CHECK(proxy_alloc.next_sibling() == nullptr);
+
+                CHECK(dbg_info.allocation_count() == 0);
+                CHECK(dbg_info.total_allocated() == 0_B);
+            }
+        }
+
+        THEN("we can allocate memory...")
+        {
+            ice::alloc_result alloc_res = proxy_alloc.allocate(12_B);
+
+            CHECK(alloc_res.size == 12_B);
+            CHECK(alloc_res.alignment == ice::ualign::b_default);
+            CHECK(alloc_res.result != nullptr);
+
+            AND_THEN("we can do it a second time")
+            {
+                ice::alloc_result alloc_res2 = proxy_alloc.allocate({ 1_KiB, ice::ualign::b_128 });
+
+                CHECK(alloc_res2.size == 1_KiB);
+                CHECK(alloc_res2.alignment == ice::ualign::b_128);
+                CHECK(alloc_res2.result != nullptr);
+
+                if constexpr (ice::HostAllocator::HasDebugInformation)
+                {
+                    CHECK(proxy_alloc.allocation_count() == 2);
+                    CHECK(proxy_alloc.total_allocated() == 1_KiB + 12_B);
+                }
+
+                proxy_alloc.deallocate(alloc_res2);
             }
 
-            backing_alloc.deallocate(test_ptr2);
+            if constexpr (ice::HostAllocator::HasDebugInformation)
+            {
+                CHECK(proxy_alloc.allocation_count() == 1);
+                CHECK(proxy_alloc.total_allocated() == 12_B);
+            }
+
+            proxy_alloc.deallocate(alloc_res);
+
+            if constexpr (ice::HostAllocator::HasDebugInformation)
+            {
+                CHECK(proxy_alloc.allocation_count() == 0);
+                CHECK(proxy_alloc.total_allocated() == 0_B);
+            }
         }
 
-        if (test_ptr != nullptr)
+        THEN("allocating on the proxy parent does not affect the proxy")
         {
-            proxy_alloc.deallocate(test_ptr);
+            ice::alloc_result res = host_alloc.allocate(1_KiB);
+
+            if constexpr (ice::HostAllocator::HasDebugInformation)
+            {
+                CHECK(proxy_alloc.allocation_count() == 0);
+                CHECK(proxy_alloc.total_allocated() == 0_B);
+
+                CHECK(host_alloc.allocation_count() == 1);
+                CHECK(host_alloc.total_allocated() == 1_KiB);
+            }
+
+            host_alloc.deallocate(res);
         }
     }
-
-    ice::memory::shutdown();
 }

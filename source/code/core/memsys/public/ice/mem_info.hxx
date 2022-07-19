@@ -1,5 +1,5 @@
 #pragma once
-#include <ice/mem_types.hxx>
+#include <ice/mem_utils.hxx>
 
 namespace ice
 {
@@ -32,7 +32,8 @@ namespace ice
     constexpr auto operator+=(ice::meminfo& left, ice::meminfo right) noexcept -> ice::usize::base_type
     {
         // Align first
-        left.size.value += (-left.size.value) & (static_cast<std::underlying_type_t<ice::ualign>>(right.alignment) - 1);
+        ice::align_result const res = ice::align_to(left.size, right.alignment);
+        left.size = res.value;
 
         ice::usize::base_type const result = left.size.value;
         left.alignment = right.alignment;

@@ -26,11 +26,14 @@ namespace ice
     };
 
     auto alloc(ice::usize request) noexcept -> ice::alloc_result;
-    auto release(ice::usize request) noexcept -> ice::alloc_result;
+    void release(ice::alloc_result alloc_result) noexcept;
 
     auto alloc_aligned(ice::alloc_request request) noexcept -> ice::alloc_result;
-    auto release_aligned(ice::alloc_request request) noexcept -> ice::alloc_result;
+    void release_aligned(ice::alloc_result alloc_result) noexcept;
 
+    // Additional overloads
+    void release(void* pointer) noexcept;
+    void release_aligned(void* pointer, ice::ualign alignment) noexcept;
 
     constexpr alloc_request::alloc_request(ice::usize size, ice::ualign alignment) noexcept
         : size{ size }
