@@ -36,6 +36,20 @@ namespace ice
             return do_deallocate(result);
         }
 
+        template<typename T, typename... Args>
+        auto create(Args&&... args) noexcept -> T*
+        {
+            ice::alloc_result const mem = allocate(ice::size_of<T>);
+            return new (mem.result) T{ ice::forward<Args>(args)... };
+        }
+
+        template<typename T>
+        void destroy(T* object) noexcept
+        {
+            object->~T();
+            return deallocate({ object, ice::size_of<T>, ice::align_of<T> });
+        }
+
         auto allocation_count() const noexcept -> ice::u32
         {
             return CountNotTracked;
@@ -132,6 +146,20 @@ namespace ice
 
         auto allocate(ice::alloc_request request) noexcept -> ice::alloc_result;
         void deallocate(ice::alloc_result result) noexcept;
+
+        template<typename T, typename... Args>
+        auto create(Args&&... args) noexcept -> T*
+        {
+            ice::alloc_result const mem = allocate(ice::size_of<T>);
+            return new (mem.result) T{ ice::forward<Args>(args)... };
+        }
+
+        template<typename T>
+        void destroy(T* object) noexcept
+        {
+            object->~T();
+            return deallocate({ object, ice::size_of<T>, ice::align_of<T> });
+        }
 
         using AllocatorDebugInfo::allocation_count;
         using AllocatorDebugInfo::total_allocated;

@@ -35,4 +35,14 @@ namespace ice
         return result;
     }
 
+    inline auto ptr_add(void* ptr, ice::usize offset) noexcept -> void*
+    {
+        return reinterpret_cast<char*>(ptr) + offset.value;
+    }
+
+    inline auto ptr_add(void const* ptr, ice::usize offset) noexcept -> void const*
+    {
+        return reinterpret_cast<char const*>(ptr) + offset.value;
+    }
+
 } // namespace ice

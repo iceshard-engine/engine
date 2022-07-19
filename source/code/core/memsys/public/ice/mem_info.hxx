@@ -29,7 +29,7 @@ namespace ice
     //! \param[in] right The description of memory we want to append to the total size.
     //!
     //! \returns The offset at which the described memory would be located in a single memory block.
-    constexpr auto operator+=(ice::meminfo& left, ice::meminfo right) noexcept -> ice::usize::base_type
+    constexpr auto operator+=(ice::meminfo& left, ice::meminfo right) noexcept -> ice::usize
     {
         // Align first
         ice::align_result const res = ice::align_to(left.size, right.alignment);
@@ -38,7 +38,7 @@ namespace ice
         ice::usize::base_type const result = left.size.value;
         left.alignment = right.alignment;
         left.size += right.size;
-        return result;
+        return { result };
     }
 
 } // namespace ice
