@@ -1,7 +1,6 @@
 # IceShard
 
-A small game engine project with the sole purpose to learn, improve and invent.
-Focusing on the best solution for a given problem while not trying to solve everything.
+> IceShard is a small game engine project for the sole purpose of learning, improving, and inventing. The engine focuses on solving the most significant problem rather than trying to achieve everything.
 
 More info about the development approach can be found in our [wiki](https://github.com/iceshard-engine/engine/wiki).
 
@@ -98,13 +97,7 @@ This command allows to execute pre-defined lists of other commands or tools in o
 
 ## Contributing
 
-Contributions are welcome, however they need to follow the
-[Coding Style](https://github.com/iceshard-engine/coding-style) of the engine and pass the review process.
-
-Additionally, some contributions might also require additional changes if the implementation does not follow the design principles of this project.
-
-It is however possible to ask for a separate repository that will and provide new features via modules API. This would only require to follow the aforementioned coding style.
-
+Contributions are welcome, however following our [Coding Style](https://github.com/iceshard-engine/coding-style) is mandatory. The contributions will be reviewed and might be required additional changes to meet the design principles of this project. Creating a separate repository and integrating them to this repository as modules API would also work.
 
 ## Copyright Information
 
