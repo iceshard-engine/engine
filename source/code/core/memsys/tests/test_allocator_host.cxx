@@ -21,7 +21,7 @@ SCENARIO("memsys 'ice/mem_allocator_host.hxx'", "[allocators]")
                 CHECK(dbg_info.location().line() == 9);
 
                 CHECK(dbg_info.allocation_count() == 0);
-                CHECK(dbg_info.total_allocated() == 0_B);
+                CHECK(dbg_info.allocation_size_inuse() == 0_B);
             }
         }
 
@@ -44,7 +44,7 @@ SCENARIO("memsys 'ice/mem_allocator_host.hxx'", "[allocators]")
                 if constexpr (ice::HostAllocator::HasDebugInformation)
                 {
                     CHECK(host_allocator.allocation_count() == 2);
-                    CHECK(host_allocator.total_allocated() == 1_KiB + 12_B);
+                    CHECK(host_allocator.allocation_size_inuse() == 1_KiB + 12_B);
                 }
 
                 host_allocator.deallocate(alloc_res2);
@@ -53,7 +53,7 @@ SCENARIO("memsys 'ice/mem_allocator_host.hxx'", "[allocators]")
             if constexpr (ice::HostAllocator::HasDebugInformation)
             {
                 CHECK(host_allocator.allocation_count() == 1);
-                CHECK(host_allocator.total_allocated() == 12_B);
+                CHECK(host_allocator.allocation_size_inuse() == 12_B);
             }
 
             host_allocator.deallocate(alloc_res);
@@ -61,7 +61,7 @@ SCENARIO("memsys 'ice/mem_allocator_host.hxx'", "[allocators]")
             if constexpr (ice::HostAllocator::HasDebugInformation)
             {
                 CHECK(host_allocator.allocation_count() == 0);
-                CHECK(host_allocator.total_allocated() == 0_B);
+                CHECK(host_allocator.allocation_size_inuse() == 0_B);
             }
         }
     }

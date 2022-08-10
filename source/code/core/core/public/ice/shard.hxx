@@ -111,6 +111,8 @@ namespace ice
         ice::detail::ShardPayload payload;
     };
 
+    static constexpr ice::Shard Shard_Invalid{ .id = { }, .payload = { } };
+
     constexpr auto shard_payloadid(std::u8string_view sv)  noexcept -> ice::ShardPayloadID
     {
         namespace mm3 = ice::detail::murmur3_hash;
@@ -287,7 +289,7 @@ namespace ice
     {
         if (ice::Constant_ShardPayloadID<T> == shard.id.payload)
         {
-            value = ice::detail::shard_value(shard.payload);
+            value = ice::detail::shard_value<T>(shard.payload);
             return true;
         }
         return false;

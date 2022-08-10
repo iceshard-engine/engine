@@ -20,14 +20,14 @@ SCENARIO("memsys 'ice/mem_allocator_proxy.hxx'", "[allocators]")
             {
                 ice::AllocatorDebugInfo const& dbg_info = proxy_alloc.debug_info();
 
-                CHECK(dbg_info.parent_allocator() == &host_alloc);
-                CHECK(host_alloc.child_allocators() == &proxy_alloc);
+                CHECK(dbg_info.parent_allocator() == &host_alloc.debug_info());
+                CHECK(host_alloc.debug_info().child_allocator() == &proxy_alloc.debug_info());
 
-                CHECK(proxy_alloc.child_allocators() == nullptr);
-                CHECK(proxy_alloc.next_sibling() == nullptr);
+                CHECK(proxy_alloc.debug_info().child_allocator() == nullptr);
+                CHECK(proxy_alloc.debug_info().next_sibling() == nullptr);
 
                 CHECK(dbg_info.allocation_count() == 0);
-                CHECK(dbg_info.total_allocated() == 0_B);
+                CHECK(dbg_info.allocation_size_inuse() == 0_B);
             }
         }
 
@@ -50,7 +50,7 @@ SCENARIO("memsys 'ice/mem_allocator_proxy.hxx'", "[allocators]")
                 if constexpr (ice::HostAllocator::HasDebugInformation)
                 {
                     CHECK(proxy_alloc.allocation_count() == 2);
-                    CHECK(proxy_alloc.total_allocated() == 1_KiB + 12_B);
+                    CHECK(proxy_alloc.allocation_size_inuse() == 1_KiB + 12_B);
                 }
 
                 proxy_alloc.deallocate(alloc_res2);
@@ -59,7 +59,7 @@ SCENARIO("memsys 'ice/mem_allocator_proxy.hxx'", "[allocators]")
             if constexpr (ice::HostAllocator::HasDebugInformation)
             {
                 CHECK(proxy_alloc.allocation_count() == 1);
-                CHECK(proxy_alloc.total_allocated() == 12_B);
+                CHECK(proxy_alloc.allocation_size_inuse() == 12_B);
             }
 
             proxy_alloc.deallocate(alloc_res);
@@ -67,7 +67,7 @@ SCENARIO("memsys 'ice/mem_allocator_proxy.hxx'", "[allocators]")
             if constexpr (ice::HostAllocator::HasDebugInformation)
             {
                 CHECK(proxy_alloc.allocation_count() == 0);
-                CHECK(proxy_alloc.total_allocated() == 0_B);
+                CHECK(proxy_alloc.allocation_size_inuse() == 0_B);
             }
         }
 
@@ -78,10 +78,10 @@ SCENARIO("memsys 'ice/mem_allocator_proxy.hxx'", "[allocators]")
             if constexpr (ice::HostAllocator::HasDebugInformation)
             {
                 CHECK(proxy_alloc.allocation_count() == 0);
-                CHECK(proxy_alloc.total_allocated() == 0_B);
+                CHECK(proxy_alloc.allocation_size_inuse() == 0_B);
 
                 CHECK(host_alloc.allocation_count() == 1);
-                CHECK(host_alloc.total_allocated() == 1_KiB);
+                CHECK(host_alloc.allocation_size_inuse() == 1_KiB);
             }
 
             host_alloc.deallocate(res);

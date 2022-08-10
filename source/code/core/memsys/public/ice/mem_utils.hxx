@@ -24,7 +24,7 @@ namespace ice
         if constexpr (std::is_pointer_v<T>)
         {
             ice::uptr const ptr_value = reinterpret_cast<ice::uptr>(result.value);
-            result.padding = T{ (ice::uptr{0} - ptr_value) & align_mask };
+            result.padding = { (ice::uptr{0} - ptr_value) & align_mask };
             result.value = reinterpret_cast<T>(ptr_value + result.padding.value);
         }
         else
@@ -43,6 +43,11 @@ namespace ice
     inline auto ptr_add(void const* ptr, ice::usize offset) noexcept -> void const*
     {
         return reinterpret_cast<char const*>(ptr) + offset.value;
+    }
+
+    inline auto ptr_distance(void const* ptr_from, void const* ptr_to) noexcept -> ice::isize
+    {
+        return { reinterpret_cast<char const*>(ptr_to) - reinterpret_cast<char const*>(ptr_from) };
     }
 
 } // namespace ice

@@ -55,14 +55,19 @@ namespace ice
             return CountNotTracked;
         }
 
-        auto total_allocated() const noexcept -> ice::usize
+        auto allocation_total_count() const noexcept -> ice::u32
+        {
+            return CountNotTracked;
+        }
+
+        auto allocation_size_inuse() const noexcept -> ice::usize
         {
             return SizeNotTracked;
         }
 
-        virtual auto allocated_size(void* ptr) const noexcept -> ice::usize
+        virtual auto allocation_size(void* ptr) const noexcept -> ice::usize
         {
-            return ice::AllocatorBase<false>::SizeNotTracked;
+            return SizeNotTracked;
         }
 
         //! \brief Gives access to debug information for an allocator.
@@ -106,14 +111,19 @@ namespace ice
             return _alloc_count.load(std::memory_order_relaxed);
         }
 
-        auto total_allocated() const noexcept -> ice::usize
+        auto allocation_total_count() const noexcept -> ice::u32
         {
-            return { _alloc_total_size.load(std::memory_order_relaxed) };
+            return _alloc_total_count.load(std::memory_order_relaxed);
+        }
+
+        auto allocation_size_inuse() const noexcept -> ice::usize
+        {
+            return { _alloc_inuse.load(std::memory_order_relaxed) };
         }
 
         void track_child(ice::AllocatorDebugInfo* child_allocator) noexcept;
         auto parent_allocator() const noexcept -> ice::AllocatorDebugInfo const*;
-        auto child_allocators() const noexcept -> ice::AllocatorDebugInfo const*;
+        auto child_allocator() const noexcept -> ice::AllocatorDebugInfo const*;
         auto next_sibling() const noexcept -> ice::AllocatorDebugInfo const*;
 
     protected:
@@ -129,8 +139,10 @@ namespace ice
         ice::AllocatorDebugInfo* _next_sibling = nullptr;
         ice::AllocatorDebugInfo* _prev_sibling = nullptr;
 
-        std::atomic<ice::usize::base_type> _alloc_total_size;
+        std::atomic<ice::usize::base_type> _alloc_inuse;
         std::atomic<ice::u32> _alloc_count;
+
+        std::atomic<ice::u32> _alloc_total_count;
     };
 
     template<>
@@ -162,9 +174,10 @@ namespace ice
         }
 
         using AllocatorDebugInfo::allocation_count;
-        using AllocatorDebugInfo::total_allocated;
+        using AllocatorDebugInfo::allocation_total_count;
+        using AllocatorDebugInfo::allocation_size_inuse;
 
-        virtual auto allocated_size(void* ptr) const noexcept -> ice::usize
+        virtual auto allocation_size(void* ptr) const noexcept -> ice::usize
         {
             return ice::AllocatorBase<false>::SizeNotTracked;
         }

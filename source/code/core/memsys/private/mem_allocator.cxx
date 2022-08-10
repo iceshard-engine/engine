@@ -42,7 +42,7 @@ namespace ice
         return _parent;
     }
 
-    auto AllocatorDebugInfo::child_allocators() const noexcept -> ice::AllocatorDebugInfo const*
+    auto AllocatorDebugInfo::child_allocator() const noexcept -> ice::AllocatorDebugInfo const*
     {
         return _children;
     }
@@ -54,13 +54,14 @@ namespace ice
 
     void AllocatorDebugInfo::dbg_size_add(ice::usize size) noexcept
     {
-        _alloc_total_size.fetch_add(size.value, std::memory_order_relaxed);
+        _alloc_inuse.fetch_add(size.value, std::memory_order_relaxed);
         _alloc_count.fetch_add(size != 0_B, std::memory_order_relaxed);
+        _alloc_total_count.fetch_add(size != 0_B, std::memory_order_relaxed);
     }
 
     void AllocatorDebugInfo::dbg_size_sub(ice::usize size) noexcept
     {
-        _alloc_total_size.fetch_sub(size.value, std::memory_order_relaxed);
+        _alloc_inuse.fetch_sub(size.value, std::memory_order_relaxed);
         _alloc_count.fetch_sub(size != 0_B, std::memory_order_relaxed);
     }
 
@@ -99,7 +100,7 @@ namespace ice
 
     AllocatorBase<true>::~AllocatorBase() noexcept
     {
-        assert(total_allocated() == 0_B);
+        assert(allocation_size_inuse() == 0_B);
         assert(allocation_count() == 0);
     }
 

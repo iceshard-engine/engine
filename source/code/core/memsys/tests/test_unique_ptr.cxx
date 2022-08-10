@@ -49,14 +49,14 @@ SCENARIO("memsys 'ice/mem_unique_ptr.hxx'", "[unique_ptr]")
                 if constexpr (ice::HostAllocator::HasDebugInformation)
                 {
                     CHECK(host_alloc.allocation_count() == 1);
-                    CHECK(host_alloc.total_allocated() == ice::size_of<UniquePtr_TestPOD>);
+                    CHECK(host_alloc.allocation_size_inuse() == ice::size_of<UniquePtr_TestPOD>);
                 }
             }
 
             if constexpr (ice::HostAllocator::HasDebugInformation)
             {
                 CHECK(host_alloc.allocation_count() == 1);
-                CHECK(host_alloc.total_allocated() == ice::size_of<UniquePtr_TestPOD>);
+                CHECK(host_alloc.allocation_size_inuse() == ice::size_of<UniquePtr_TestPOD>);
             }
 
             WHEN("reseting it removes the object...")
@@ -66,7 +66,7 @@ SCENARIO("memsys 'ice/mem_unique_ptr.hxx'", "[unique_ptr]")
                 if constexpr (ice::HostAllocator::HasDebugInformation)
                 {
                     CHECK(host_alloc.allocation_count() == 0);
-                    CHECK(host_alloc.total_allocated() == 0_B);
+                    CHECK(host_alloc.allocation_size_inuse() == 0_B);
                 }
 
                 THEN("we can assing it a new_value")
@@ -98,7 +98,7 @@ SCENARIO("memsys 'ice/mem_unique_ptr.hxx'", "[unique_ptr]")
         if constexpr (ice::HostAllocator::HasDebugInformation)
         {
             CHECK(host_alloc.allocation_count() == 3);
-            CHECK(host_alloc.total_allocated() == ice::size_of<UniquePtr_TestObject> * 3);
+            CHECK(host_alloc.allocation_size_inuse() == ice::size_of<UniquePtr_TestObject> * 3);
         }
 
         WHEN("we move pointers[2] to pointers[1]...")
@@ -112,7 +112,7 @@ SCENARIO("memsys 'ice/mem_unique_ptr.hxx'", "[unique_ptr]")
                 if constexpr (ice::HostAllocator::HasDebugInformation)
                 {
                     CHECK(host_alloc.allocation_count() == 2);
-                    CHECK(host_alloc.total_allocated() == ice::size_of<UniquePtr_TestObject> * 2);
+                    CHECK(host_alloc.allocation_size_inuse() == ice::size_of<UniquePtr_TestObject> * 2);
                 }
 
                 AND_THEN("pointers[2] is empty")
@@ -131,7 +131,7 @@ SCENARIO("memsys 'ice/mem_unique_ptr.hxx'", "[unique_ptr]")
             if constexpr (ice::HostAllocator::HasDebugInformation)
             {
                 CHECK(host_alloc.allocation_count() == 2);
-                CHECK(host_alloc.total_allocated() == ice::size_of<UniquePtr_TestObject> * 2);
+                CHECK(host_alloc.allocation_size_inuse() == ice::size_of<UniquePtr_TestObject> * 2);
             }
 
             AND_THEN("pointers[0] is empty")
@@ -149,7 +149,7 @@ SCENARIO("memsys 'ice/mem_unique_ptr.hxx'", "[unique_ptr]")
                 if constexpr (ice::HostAllocator::HasDebugInformation)
                 {
                     CHECK(host_alloc.allocation_count() == 2);
-                    CHECK(host_alloc.total_allocated() == ice::size_of<UniquePtr_TestObject> * 2);
+                    CHECK(host_alloc.allocation_size_inuse() == ice::size_of<UniquePtr_TestObject> * 2);
                 }
             }
         }
@@ -160,6 +160,6 @@ SCENARIO("memsys 'ice/mem_unique_ptr.hxx'", "[unique_ptr]")
     if constexpr (ice::HostAllocator::HasDebugInformation)
     {
         CHECK(host_alloc.allocation_count() == 0);
-        CHECK(host_alloc.total_allocated() == 0_B);
+        CHECK(host_alloc.allocation_size_inuse() == 0_B);
     }
 }

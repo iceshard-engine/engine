@@ -59,6 +59,11 @@ namespace ice
 #endif
     }
 
+    auto memcpy(void* dest, void const* source, ice::usize size) noexcept -> void*
+    {
+        return std::memcpy(dest, source, size.value);
+    }
+
     // Additional overloads
     void release(void* pointer) noexcept
     {

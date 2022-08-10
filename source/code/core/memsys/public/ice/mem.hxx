@@ -31,6 +31,8 @@ namespace ice
     auto alloc_aligned(ice::alloc_request request) noexcept -> ice::alloc_result;
     void release_aligned(ice::alloc_result alloc_result) noexcept;
 
+    auto memcpy(void* dest, void const* source, ice::usize size) noexcept -> void*;
+
     // Additional overloads
     void release(void* pointer) noexcept;
     void release_aligned(void* pointer, ice::ualign alignment) noexcept;
