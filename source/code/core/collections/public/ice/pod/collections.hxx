@@ -1,6 +1,6 @@
 #pragma once
 #include <ice/span.hxx>
-#include <ice/allocator.hxx>
+#include <ice/mem_allocator.hxx>
 
 namespace ice::pod
 {

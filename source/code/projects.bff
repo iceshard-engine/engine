@@ -2,8 +2,9 @@
 
 // Include all known project description files
 #include "core/core/core.bff"
-// #include "core/memsys/memsys.bff"
-// #include "core/collections/collections.bff"
+#include "core/math/math.bff"
+#include "core/memsys/memsys.bff"
+#include "core/collections/collections.bff"
 // #include "core/modules/modules.bff"
 // #include "core/utils/utils.bff"
 // #include "core/tasks/tasks.bff"
@@ -31,8 +32,9 @@
 
 // #include "test/test.bff"
 
-// #include "core/core/core_tests.bff"
-// #include "core/memsys/memsys_tests.bff"
-// #include "core/collections/collections_tests.bff"
+#include "core/core/core_tests.bff"
+#include "core/math/math_tests.bff"
+#include "core/memsys/memsys_tests.bff"
+#include "core/collections/collections_tests.bff"
 
 // #include "systems/resource_system/resource_system_tests.bff"

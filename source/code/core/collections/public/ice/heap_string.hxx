@@ -150,7 +150,7 @@ namespace ice
     template<typename CharType>
     inline HeapString<CharType>::~HeapString() noexcept
     {
-        _allocator->deallocate(_data);
+        _allocator->deallocate({ .result = _data, .size = ice::size_of<CharType> *_capacity, .alignment = ice::align_of<CharType> });
     }
 
     template<typename CharType>
@@ -243,18 +243,18 @@ namespace ice
             value_type* new_buffer = nullptr;
             if (new_capacity > 0)
             {
-                void* new_data = str._allocator->allocate(sizeof(value_type) * new_capacity);
+                ice::AllocResult new_data = str._allocator->allocate(ice::size_of<value_type> * new_capacity);
 
                 if (str._size > 0)
                 {
                     int32_t const copy_size = ice::min(str._size + 1, new_capacity);
-                    ice::memcpy(new_data, str._data, sizeof(value_type) * copy_size);
+                    ice::memcpy(new_data.result, str._data, sizeof(value_type) * copy_size);
                 }
 
-                new_buffer = reinterpret_cast<value_type*>(new_data);
+                new_buffer = reinterpret_cast<value_type*>(new_data.result);
             }
 
-            str._allocator->deallocate(str._data);
+            str._allocator->deallocate({ .result = str._data, .size = ice::size_of<CharType> * str._capacity, .alignment = ice::align_of<CharType> });
             str._data = new_buffer;
             str._size = ice::min(new_capacity, str._size);
             str._capacity = new_capacity;

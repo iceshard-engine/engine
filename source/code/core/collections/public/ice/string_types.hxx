@@ -1,5 +1,5 @@
 #pragma once
-#include <ice/allocator.hxx>
+#include <ice/mem_allocator.hxx>
 #include <string_view>
 
 namespace ice
@@ -111,8 +111,8 @@ namespace ice
 
         std::from_chars_result const result = std::from_chars(data_ptr, data_ptr + str.size(), out_value);
         out_remaining = {
-            reinterpret_cast<ice::c8utf const*>(result.ptr),
-            reinterpret_cast<ice::c8utf const*>(data_ptr + str.size())
+            reinterpret_cast<ice::utf8 const*>(result.ptr),
+            reinterpret_cast<ice::utf8 const*>(data_ptr + str.size())
         };
         return result.ec == std::errc{};
 #else
