@@ -80,14 +80,14 @@ namespace ice
     {
     }
 
-    auto AllocatorBase<true>::allocate(ice::alloc_request request) noexcept -> ice::alloc_result
+    auto AllocatorBase<true>::allocate(ice::AllocRequest request) noexcept -> ice::AllocResult
     {
-        ice::alloc_result result = do_allocate(request);
+        ice::AllocResult result = do_allocate(request);
         dbg_size_add(result.size);
         return result;
     }
 
-    void AllocatorBase<true>::deallocate(ice::alloc_result result) noexcept
+    void AllocatorBase<true>::deallocate(ice::Memory result) noexcept
     {
         dbg_size_sub(result.size);
         do_deallocate(result);

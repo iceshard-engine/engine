@@ -1,5 +1,6 @@
 #pragma once
 #include <ice/mem_types.hxx>
+#include <type_traits>
 
 namespace ice
 {

@@ -18,8 +18,8 @@ namespace ice
         ) noexcept;
 
     private:
-        inline auto do_allocate(ice::alloc_request request) noexcept -> ice::alloc_result override;
-        inline void do_deallocate(ice::alloc_result result) noexcept override;
+        inline auto do_allocate(ice::AllocRequest request) noexcept -> ice::AllocResult override;
+        inline void do_deallocate(ice::Memory result) noexcept override;
 
     private:
         ice::Allocator& _parent;
@@ -44,12 +44,12 @@ namespace ice
     {
     }
 
-    inline auto ProxyAllocator::do_allocate(ice::alloc_request request) noexcept -> ice::alloc_result
+    inline auto ProxyAllocator::do_allocate(ice::AllocRequest request) noexcept -> ice::AllocResult
     {
         return _parent.allocate(request);
     }
 
-    inline void ProxyAllocator::do_deallocate(ice::alloc_result result) noexcept
+    inline void ProxyAllocator::do_deallocate(ice::Memory result) noexcept
     {
         _parent.deallocate(result);
     }

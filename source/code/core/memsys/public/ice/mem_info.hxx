@@ -14,7 +14,7 @@ namespace ice
     constexpr ice::meminfo meminfo_of = { ice::size_of<T>, ice::align_of<T> };
 
     //! \brief Multypling ice::meminfo by a scalar changes the size but keeps the alignment.
-    constexpr auto operator*(ice::meminfo info, ice::u32 count) noexcept -> ice::meminfo
+    constexpr auto operator*(ice::meminfo info, ice::ucount count) noexcept -> ice::meminfo
     {
         return ice::meminfo{ .size = ice::usize{ info.size.value * count }, .alignment = info.alignment };
     }

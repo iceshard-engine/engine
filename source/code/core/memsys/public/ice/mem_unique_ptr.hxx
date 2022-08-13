@@ -158,7 +158,7 @@ namespace ice
         Args&&... args
     ) noexcept -> ice::UniquePtr<T>
     {
-        ice::alloc_result const mem = alloc.allocate(ice::meminfo_of<T>);
+        ice::AllocResult const mem = alloc.allocate(ice::meminfo_of<T>);
 
         T* const object = new (mem.result) T{ ice::forward<Args>(args)... };
         return ice::UniquePtr<T>{ &alloc, object };
@@ -176,7 +176,7 @@ namespace ice
         ice::meminfo total_memory = ice::meminfo_of<T>;
         ice::usize const udi_offset = total_memory += ice::meminfo_of<DeleterInfo>;
 
-        ice::alloc_result const mem = alloc.allocate(total_memory);
+        ice::AllocResult const mem = alloc.allocate(total_memory);
 
         T* const object = new (mem.result) T{ std::forward<Args>(args)... };
         DeleterInfo* const deleter_info = new (ice::ptr_add(mem.result, udi_offset)) DeleterInfo{ &alloc, fn_deleter };

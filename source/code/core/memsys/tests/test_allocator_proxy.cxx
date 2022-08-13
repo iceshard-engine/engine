@@ -33,7 +33,7 @@ SCENARIO("memsys 'ice/mem_allocator_proxy.hxx'", "[allocators]")
 
         THEN("we can allocate memory...")
         {
-            ice::alloc_result alloc_res = proxy_alloc.allocate(12_B);
+            ice::AllocResult alloc_res = proxy_alloc.allocate(12_B);
 
             CHECK(alloc_res.size == 12_B);
             CHECK(alloc_res.alignment == ice::ualign::b_default);
@@ -41,7 +41,7 @@ SCENARIO("memsys 'ice/mem_allocator_proxy.hxx'", "[allocators]")
 
             AND_THEN("we can do it a second time")
             {
-                ice::alloc_result alloc_res2 = proxy_alloc.allocate({ 1_KiB, ice::ualign::b_128 });
+                ice::AllocResult alloc_res2 = proxy_alloc.allocate({ 1_KiB, ice::ualign::b_128 });
 
                 CHECK(alloc_res2.size == 1_KiB);
                 CHECK(alloc_res2.alignment == ice::ualign::b_128);
@@ -73,7 +73,7 @@ SCENARIO("memsys 'ice/mem_allocator_proxy.hxx'", "[allocators]")
 
         THEN("allocating on the proxy parent does not affect the proxy")
         {
-            ice::alloc_result res = host_alloc.allocate(1_KiB);
+            ice::AllocResult res = host_alloc.allocate(1_KiB);
 
             if constexpr (ice::HostAllocator::HasDebugInformation)
             {

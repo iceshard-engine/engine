@@ -13,15 +13,15 @@ namespace ice
 
     protected:
         auto do_allocate(
-            [[maybe_unused]] ice::alloc_request request
-        ) noexcept -> ice::alloc_result
+            [[maybe_unused]] ice::AllocRequest request
+        ) noexcept -> ice::AllocResult override
         {
             return { .result = nullptr, .size = 0, .alignment = ice::ualign::invalid };
         }
 
         void do_deallocate(
-            [[maybe_unused]] ice::alloc_result result
-        ) noexcept
+            [[maybe_unused]] ice::Memory result
+        ) noexcept override
         {
         }
     };

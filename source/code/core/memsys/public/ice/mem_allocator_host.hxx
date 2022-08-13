@@ -9,8 +9,8 @@ namespace ice
         HostAllocator(std::source_location = std::source_location::current()) noexcept;
 
     protected:
-        auto do_allocate(ice::alloc_request request) noexcept -> ice::alloc_result override;
-        void do_deallocate(ice::alloc_result result) noexcept override;
+        auto do_allocate(ice::AllocRequest request) noexcept -> ice::AllocResult override;
+        void do_deallocate(ice::Memory result) noexcept override;
     };
 
 } // namespace ice

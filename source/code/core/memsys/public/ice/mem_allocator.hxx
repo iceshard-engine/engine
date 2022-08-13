@@ -26,12 +26,12 @@ namespace ice
         AllocatorBase(std::source_location const&, AllocatorBase&) noexcept { }
         AllocatorBase(std::source_location const&, AllocatorBase&, std::u8string_view) noexcept { }
 
-        auto allocate(ice::alloc_request request) noexcept -> ice::alloc_result
+        auto allocate(ice::AllocRequest request) noexcept -> ice::AllocResult
         {
             return do_allocate(request);
         }
 
-        void deallocate(ice::alloc_result result) noexcept
+        void deallocate(ice::Memory result) noexcept
         {
             return do_deallocate(result);
         }
@@ -39,7 +39,7 @@ namespace ice
         template<typename T, typename... Args>
         auto create(Args&&... args) noexcept -> T*
         {
-            ice::alloc_result const mem = allocate(ice::size_of<T>);
+            ice::AllocResult const mem = allocate(ice::size_of<T>);
             return new (mem.result) T{ ice::forward<Args>(args)... };
         }
 
@@ -78,8 +78,8 @@ namespace ice
     protected:
         virtual ~AllocatorBase() noexcept = default;
 
-        virtual auto do_allocate(ice::alloc_request request) noexcept -> ice::alloc_result = 0;
-        virtual void do_deallocate(ice::alloc_result result) noexcept = 0;
+        virtual auto do_allocate(ice::AllocRequest request) noexcept -> ice::AllocResult = 0;
+        virtual void do_deallocate(ice::Memory result) noexcept = 0;
     };
 
     class AllocatorDebugInfo
@@ -156,13 +156,13 @@ namespace ice
         AllocatorBase(std::source_location const& src_loc, AllocatorBase& parent) noexcept;
         AllocatorBase(std::source_location const& src_loc, AllocatorBase& parent, std::u8string_view name) noexcept;
 
-        auto allocate(ice::alloc_request request) noexcept -> ice::alloc_result;
-        void deallocate(ice::alloc_result result) noexcept;
+        auto allocate(ice::AllocRequest request) noexcept -> ice::AllocResult;
+        void deallocate(ice::Memory result) noexcept;
 
         template<typename T, typename... Args>
         auto create(Args&&... args) noexcept -> T*
         {
-            ice::alloc_result const mem = allocate(ice::size_of<T>);
+            ice::AllocResult const mem = allocate(ice::size_of<T>);
             return new (mem.result) T{ ice::forward<Args>(args)... };
         }
 
@@ -188,8 +188,8 @@ namespace ice
     protected:
         virtual ~AllocatorBase() noexcept;
 
-        virtual auto do_allocate(ice::alloc_request request) noexcept -> ice::alloc_result = 0;
-        virtual void do_deallocate(ice::alloc_result result) noexcept = 0;
+        virtual auto do_allocate(ice::AllocRequest request) noexcept -> ice::AllocResult = 0;
+        virtual void do_deallocate(ice::Memory result) noexcept = 0;
     };
 
 } // namespace ice

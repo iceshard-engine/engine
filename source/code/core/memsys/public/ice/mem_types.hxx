@@ -51,6 +51,9 @@ namespace ice
         ice::ualign alignment = ice::ualign::b_default;
     };
 
+    struct Data;
+    struct Memory;
+
     // MEMORY SIZE LITERALS
 
     constexpr auto operator""_B(unsigned long long v) noexcept -> ice::usize

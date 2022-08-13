@@ -27,7 +27,7 @@ SCENARIO("memsys 'ice/mem_allocator_host.hxx'", "[allocators]")
 
         THEN("we can allocate memory...")
         {
-            ice::alloc_result alloc_res = host_allocator.allocate(12_B);
+            ice::AllocResult alloc_res = host_allocator.allocate(12_B);
 
             CHECK(alloc_res.size == 12_B);
             CHECK(alloc_res.alignment == ice::ualign::b_default);
@@ -35,7 +35,7 @@ SCENARIO("memsys 'ice/mem_allocator_host.hxx'", "[allocators]")
 
             AND_THEN("we can do it a second time")
             {
-                ice::alloc_result alloc_res2 = host_allocator.allocate({ 1_KiB, ice::ualign::b_128 });
+                ice::AllocResult alloc_res2 = host_allocator.allocate({ 1_KiB, ice::ualign::b_128 });
 
                 CHECK(alloc_res2.size == 1_KiB);
                 CHECK(alloc_res2.alignment == ice::ualign::b_128);
