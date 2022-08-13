@@ -24,14 +24,8 @@ namespace ice
     using std::memset;
     using std::addressof;
 
-    template<typename T>
-    constexpr auto size(T const& cont) noexcept -> decltype(cont._size)
-    {
-        return cont._size;
-    }
-
     template<typename T, ice::u32 Size>
-    constexpr auto size(T const (&)[Size]) noexcept -> ice::u32
+    constexpr auto count(T const (&)[Size]) noexcept -> ice::u32
     {
         return Size;
     }
