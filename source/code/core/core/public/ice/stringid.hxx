@@ -35,12 +35,12 @@ namespace ice
         };
 
 
-        using StringID_DebugNameHint = ice::utf8[24];
+        using StringID_DebugNameHint = char[24];
 
         struct StringID_DebugNameValue
         {
-            ice::utf8 const* value;
-            ice::utf8 consteval_flag;
+            char const* value;
+            char consteval_flag;
         };
 
         union StringID_DebugInfo
@@ -55,6 +55,8 @@ namespace ice
         struct StringID_Tag;
 
     } // namespace detail::stringid_type_v3
+
+    using detail::stringid_type_v3::StringID_Hash;
 
 
     template<>
@@ -74,6 +76,8 @@ namespace ice
         detail::stringid_type_v3::StringID_DebugInfo debug_info;
     };
 
+    static constexpr ice::StringID StringID_Invalid{ .value = StringID_Hash{ } };
+
 
     constexpr auto stringid(std::u8string_view value) noexcept
     {
@@ -86,7 +90,7 @@ namespace ice
             {
                 return BaseStringID<true> {
                     .value = { .value = hash_result.h[0] },
-                        .debug_info = { .name_value = { value.data(), ice::utf8('\xff')} }
+                    .debug_info = { .name_value = { (char const*) value.data(), char('\xff')} }
                 };
             }
             else
@@ -132,12 +136,12 @@ namespace ice
         }
     }
 
-    constexpr auto stringid_hint(BaseStringID<false> val) noexcept -> std::u8string_view
+    constexpr auto stringid_hint(BaseStringID<false> val) noexcept -> std::string_view
     {
         return { };
     }
 
-    constexpr auto stringid_hint(BaseStringID<true> const& val) noexcept -> std::u8string_view
+    constexpr auto stringid_hint(BaseStringID<true> const& val) noexcept -> std::string_view
     {
         if (std::is_constant_evaluated())
         {
@@ -160,6 +164,16 @@ namespace ice
     constexpr auto stringid_hash(BaseStringID<HasDebugInfo> val) noexcept -> detail::stringid_type_v3::StringID_Hash
     {
         return val.value;
+    }
+
+    constexpr auto hash(ice::StringID_Hash sid_hash) noexcept -> ice::u64
+    {
+        return sid_hash.value;
+    }
+
+    constexpr auto hash(ice::StringID_Arg value) noexcept -> ice::u64
+    {
+        return hash(stringid_hash(value));
     }
 
 } // namespace ice

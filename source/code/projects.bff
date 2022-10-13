@@ -5,7 +5,7 @@
 #include "core/math/math.bff"
 #include "core/memsys/memsys.bff"
 #include "core/collections/collections.bff"
-// #include "core/modules/modules.bff"
+#include "core/modules/modules.bff"
 // #include "core/utils/utils.bff"
 // #include "core/tasks/tasks.bff"
 

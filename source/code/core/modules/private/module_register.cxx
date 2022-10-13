@@ -1,9 +1,9 @@
 #include <ice/module_register.hxx>
 #include <ice/module.hxx>
-#include <ice/pod/hash.hxx>
+#include <ice/container/array.hxx>
+#include <ice/container/hashmap.hxx>
+#include <ice/string/heap_string.hxx>
 #include <ice/os/windows.hxx>
-#include <ice/collections.hxx>
-#include <ice/heap_string.hxx>
 
 namespace ice
 {
@@ -30,14 +30,14 @@ namespace ice
 #if ISP_WINDOWS
 
     bool utf8_to_wide_append_module(
-        ice::Utf8String path,
-        ice::HeapString<wchar_t>& out_str
+        ice::String path,
+        ice::HeapString<ice::wchar>& out_str
     ) noexcept
     {
         ice::i32 const required_size = MultiByteToWideChar(
             CP_UTF8,
             0,
-            reinterpret_cast<char const*>(ice::string::data(path)),
+            reinterpret_cast<char const*>(ice::string::begin(path)),
             static_cast<ice::i32>(ice::string::size(path)),
             NULL,
             0
@@ -53,7 +53,7 @@ namespace ice
             ice::i32 const chars_written = MultiByteToWideChar(
                 CP_UTF8,
                 0,
-                (const char*)ice::string::data(path),
+                (const char*)ice::string::begin(path),
                 static_cast<ice::i32>(ice::string::size(path)),
                 ice::string::begin(out_str) + current_size,
                 ice::string::size(out_str) - current_size
@@ -71,7 +71,7 @@ namespace ice
 
         bool load_module(
             ice::Allocator& alloc,
-            ice::Utf8String path
+            ice::String path
         ) noexcept override;
 
         bool load_module(
@@ -89,7 +89,7 @@ namespace ice
         bool find_module_apis(
             ice::StringID_Arg api_name,
             ice::u32 version,
-            ice::pod::Array<void*>& api_ptrs_out
+            ice::Array<void*>& api_ptrs_out
         ) const noexcept override;
 
         bool register_module(
@@ -98,8 +98,8 @@ namespace ice
 
     private:
         ice::Allocator& _allocator;
-        ice::pod::Hash<Win32ModuleEntry> _modules;
-        ice::Vector<ice::win32::SHHModule> _module_handles;
+        ice::HashMap<Win32ModuleEntry> _modules;
+        ice::Array<HMODULE> _module_handles;
     };
 
     Win32ModuleRegister::Win32ModuleRegister(ice::Allocator& alloc) noexcept
@@ -110,27 +110,25 @@ namespace ice
 
     Win32ModuleRegister::~Win32ModuleRegister() noexcept
     {
-        for (auto const& entry : _modules)
+        for (Win32ModuleEntry const& entry : ice::hashmap::values(_modules))
         {
-            entry.value.unload_proc(
-                entry.value.module_allocator
-            );
+            entry.unload_proc(entry.module_allocator);
         }
     }
 
     bool Win32ModuleRegister::load_module(
         ice::Allocator& alloc,
-        ice::Utf8String path
+        ice::String path
     ) noexcept
     {
-        ice::HeapString<wchar_t> wide_path{ _allocator };
+        ice::HeapString<ice::wchar> wide_path{ _allocator };
         if (utf8_to_wide_append_module(path, wide_path))
         {
-            win32::SHHModule module_handle{ LoadLibraryExW(ice::string::data(wide_path), NULL, NULL) };
+            HMODULE module_handle{ LoadLibraryExW(ice::string::begin(wide_path), NULL, NULL) };
             if (module_handle)
             {
-                void* const load_proc = GetProcAddress(module_handle.native(), "ice_module_load");
-                void* const unload_proc = GetProcAddress(module_handle.native(), "ice_module_unload");
+                void* const load_proc = GetProcAddress(module_handle, "ice_module_load");
+                void* const unload_proc = GetProcAddress(module_handle, "ice_module_unload");
 
                 if (load_proc != nullptr && unload_proc != nullptr)
                 {
@@ -140,7 +138,7 @@ namespace ice
                         reinterpret_cast<ice::ModuleProcUnload*>(unload_proc)
                     );
 
-                    _module_handles.push_back(ice::move(module_handle));
+                    ice::array::push_back(_module_handles, module_handle);
                 }
             }
             return module_handle;
@@ -191,11 +189,11 @@ namespace ice
 
         bool api_found = false;
 
-        auto* it = ice::pod::multi_hash::find_first(_modules, ice::hash(api_name));
+        auto it = ice::multi_hashmap::find_first(_modules, ice::hash(api_name));
         while (it != nullptr && api_found == false)
         {
-            api_found = it->value.lookup_api(ice::stringid_hash(api_name), version, api_ptr);
-            it = ice::pod::multi_hash::find_next(_modules, it);
+            api_found = it.value().lookup_api(ice::stringid_hash(api_name), version, api_ptr);
+            it = ice::multi_hashmap::find_next(_modules, it);
         }
 
         return api_found;
@@ -204,20 +202,20 @@ namespace ice
     bool Win32ModuleRegister::find_module_apis(
         ice::StringID_Arg api_name,
         ice::u32 version,
-        ice::pod::Array<void*>& api_ptrs_out
+        ice::Array<void*>& api_ptrs_out
     ) const noexcept
     {
-        auto* it = ice::pod::multi_hash::find_first(_modules, ice::hash(api_name));
+        auto it = ice::multi_hashmap::find_first(_modules, ice::hash(api_name));
         while (it != nullptr)
         {
             void* api_ptr;
-            if (it->value.lookup_api(ice::stringid_hash(api_name), version, &api_ptr))
+            if (it.value().lookup_api(ice::stringid_hash(api_name), version, &api_ptr))
             {
-                ice::pod::array::push_back(api_ptrs_out, api_ptr);
+                ice::array::push_back(api_ptrs_out, api_ptr);
             }
-            it = ice::pod::multi_hash::find_next(_modules, it);
+            it = ice::multi_hashmap::find_next(_modules, it);
         }
-        return ice::pod::array::any(api_ptrs_out);
+        return ice::array::any(api_ptrs_out);
     }
 
     bool Win32ModuleRegister::register_module(
@@ -225,7 +223,7 @@ namespace ice
     ) noexcept
     {
         ice::u64 const name_hash = ice::hash(entry.name);
-        ice::pod::multi_hash::insert(_modules, name_hash, entry);
+        ice::multi_hashmap::insert(_modules, name_hash, entry);
         return true;
     }
 
@@ -245,7 +243,7 @@ namespace ice
         ice::ModuleProcGetAPI* api_lookup_proc
     ) noexcept
     {
-        if (api_name != ice::stringid_hash(ice::stringid_invalid) && api_lookup_proc != nullptr)
+        if (api_name != ice::stringid_hash(ice::StringID_Invalid) && api_lookup_proc != nullptr)
         {
             ctx->current_module.name = api_name;
             ctx->current_module.lookup_api = api_lookup_proc;
@@ -256,7 +254,7 @@ namespace ice
 
     auto create_default_module_register(ice::Allocator& alloc) noexcept -> ice::UniquePtr<ModuleRegister>
     {
-        return ice::make_unique<ModuleRegister, Win32ModuleRegister>(alloc, alloc);
+        return ice::make_unique<Win32ModuleRegister>(alloc, alloc);
     }
 
 #else
