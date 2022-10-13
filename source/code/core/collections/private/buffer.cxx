@@ -194,7 +194,7 @@
 //                ice::buffer::grow(buffer, required_capacity);
 //            }
 //
-//            ice::align_result const alignres = ice::align_to(
+//            ice::AlignResult const alignres = ice::align_to(
 //                ice::ptr_add(buffer._data, buffer._size),
 //                data.alignment
 //            );

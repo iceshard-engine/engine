@@ -31,7 +31,7 @@ SCENARIO("memsys 'ice/mem_allocator_host.hxx'", "[allocators]")
 
             CHECK(alloc_res.size == 12_B);
             CHECK(alloc_res.alignment == ice::ualign::b_default);
-            CHECK(alloc_res.result != nullptr);
+            CHECK(alloc_res.memory != nullptr);
 
             AND_THEN("we can do it a second time")
             {
@@ -39,7 +39,7 @@ SCENARIO("memsys 'ice/mem_allocator_host.hxx'", "[allocators]")
 
                 CHECK(alloc_res2.size == 1_KiB);
                 CHECK(alloc_res2.alignment == ice::ualign::b_128);
-                CHECK(alloc_res2.result != nullptr);
+                CHECK(alloc_res2.memory != nullptr);
 
                 if constexpr (ice::HostAllocator::HasDebugInformation)
                 {

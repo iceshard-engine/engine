@@ -10,33 +10,32 @@ namespace ice
     {
 #if ISP_WINDOWS || ISP_UNIX
         return ice::AllocResult{
-            .result = malloc(request.value),
+            .memory = malloc(request.value),
             .size = request,
             .alignment = ice::build::is_x64 ? ice::ualign::b_16 : ice::ualign::b_8,
         };
 #else
-        assert(false);
+        ICE_ASSERT_CORE(false);
         return nullptr;
 #endif
     }
 
-    void release(ice::Memory memory) noexcept
+    void release(void* pointer) noexcept
     {
 #if ISP_WINDOWS || ISP_UNIX
-        assert(memory.alignment == (ice::build::is_x64 ? ice::ualign::b_16 : ice::ualign::b_8));
-        free(memory.location);
+        free(pointer);
 #else
-        assert(false);
+        ICE_ASSERT_CORE(false);
 #endif
     }
 
-    auto alloc_aligned(ice::AllocRequest request) noexcept -> ice::AllocResult
+    auto alloc_aligned(ice::usize size, ice::ualign alignment) noexcept -> ice::AllocResult
     {
 #if ISP_WINDOWS
         return ice::AllocResult{
-            .result = _aligned_malloc(request.size.value, static_cast<ice::u32>(request.alignment)),
-            .size = request.size,
-            .alignment = request.alignment,
+            .memory = _aligned_malloc(size.value, static_cast<ice::u32>(alignment)),
+            .size = size,
+            .alignment = alignment,
         };
 #elif ISP_UNIX
         return ice::AllocResult{
@@ -45,19 +44,19 @@ namespace ice
             .alignment = request.alignment,
         };
 #else
-        assert(false);
+        ICE_ASSERT_CORE(false);
         return nullptr;
 #endif
     }
 
-    void release_aligned(ice::Memory memory) noexcept
+    void release_aligned(void* pointer, ice::ualign alignment) noexcept
     {
 #if ISP_WINDOWS
-        _aligned_free(memory.location);
+        _aligned_free(pointer);
 #elif ISP_UNIX
         free(AllocResult.result);
 #else
-        assert(false);
+        ICE_ASSERT_CORE(false);
         return nullptr;
 #endif
     }
@@ -69,7 +68,8 @@ namespace ice
 
     auto memcpy(ice::Memory memory, ice::Data data) noexcept -> ice::Memory
     {
-        // Assert: (alignment)
+        ICE_ASSERT_CORE(memory.alignment >= data.alignment);
+
         ice::usize const copy_size = ice::usize{ ice::min(memory.size.value, data.size.value) };
         void* const result = ice::memcpy(memory.location, data.location, copy_size);
 
@@ -78,21 +78,6 @@ namespace ice
             .size = ice::usize{ memory.size.value - copy_size.value },
             .alignment = ice::ualign::b_1,
         };
-    }
-
-    // Additional overloads
-    void release(void* pointer) noexcept
-    {
-        release(
-            ice::AllocResult{ .result = pointer, .alignment = ice::ualign::b_default }
-        );
-    }
-
-    void release_aligned(void* pointer, ice::ualign alignment) noexcept
-    {
-        release_aligned(
-            ice::AllocResult{ .result = pointer, .alignment = alignment }
-        );
     }
 
 } // namespace ice

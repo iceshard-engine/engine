@@ -16,7 +16,7 @@ namespace ice
             [[maybe_unused]] ice::AllocRequest request
         ) noexcept -> ice::AllocResult override
         {
-            return { .result = nullptr, .size = 0, .alignment = ice::ualign::invalid };
+            return { .memory = nullptr, .size = 0, .alignment = ice::ualign::invalid };
         }
 
         void do_deallocate(

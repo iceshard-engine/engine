@@ -178,7 +178,7 @@ namespace ice
                     ice::memcpy(new_buffer, ice::string::data_view(str));
                 }
 
-                new_data = reinterpret_cast<ValueType*>(new_buffer.result);
+                new_data = reinterpret_cast<ValueType*>(new_buffer.memory);
             }
 
             str._allocator->deallocate(ice::string::memory(str));

@@ -276,7 +276,7 @@ namespace ice
                         ice::queue::detail::copy_memory_to_new_location(new_buffer, queue);
                     }
                 }
-                new_data = reinterpret_cast<Type*>(new_buffer.result);
+                new_data = reinterpret_cast<Type*>(new_buffer.memory);
             }
 
             queue._allocator->deallocate(ice::queue::memory(queue));

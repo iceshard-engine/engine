@@ -83,17 +83,17 @@ namespace ice
     inline auto StackAllocator<Capacity>::do_allocate(ice::AllocRequest request) noexcept -> ice::AllocResult
     {
         ice::AllocResult result{
-            .result = nullptr,
+            .memory = nullptr,
             .size = 0_B,
             .alignment = ice::ualign::invalid
         };
 
-        ice::align_result<ice::usize> const aligned_usage = ice::align_to(_static_usage, request.alignment);
+        ice::AlignResult<ice::usize> const aligned_usage = ice::align_to(_static_usage, request.alignment);
         if ((aligned_usage.value + request.size) <= Capacity)
         {
             _static_usage = aligned_usage.value + request.size;
 
-            result.result = ice::ptr_add(_static_buffer, aligned_usage.value);
+            result.memory = ice::ptr_add(_static_buffer, aligned_usage.value);
             result.size = request.size;
             result.alignment = request.alignment;
         }

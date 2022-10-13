@@ -16,37 +16,27 @@ namespace ice
         constexpr AllocRequest(ice::meminfo memory_info) noexcept;
 
         template<typename T> requires (std::is_pointer_v<T> == false)
-        constexpr AllocRequest(ice::align_result<T> align_result) noexcept;
+        constexpr AllocRequest(ice::AlignResult<T> align_result) noexcept;
     };
 
     struct AllocResult
     {
-        void* result;
+        void* memory;
         ice::usize size;
         ice::ualign alignment;
 
-        constexpr operator ice::Memory() const noexcept
-        {
-            return ice::Memory{
-                .location = result,
-                .size = size,
-                .alignment = alignment
-            };
-        }
+        constexpr operator ice::Memory() const noexcept;
     };
 
-    auto alloc(ice::usize request) noexcept -> ice::AllocResult;
-    void release(ice::Memory memory) noexcept;
+    auto alloc(ice::usize size) noexcept -> ice::AllocResult;
+    void release(void* pointer) noexcept;
 
-    auto alloc_aligned(ice::AllocRequest request) noexcept -> ice::AllocResult;
-    void release_aligned(ice::Memory memory) noexcept;
+    auto alloc_aligned(ice::usize size, ice::ualign alignment) noexcept -> ice::AllocResult;
+    void release_aligned(void* pointer, ice::ualign alignment) noexcept;
 
     auto memcpy(void* dest, void const* source, ice::usize size) noexcept -> void*;
     auto memcpy(ice::Memory memory, ice::Data data) noexcept -> ice::Memory;
 
-    // Additional overloads
-    void release(void* pointer) noexcept;
-    void release_aligned(void* pointer, ice::ualign alignment) noexcept;
 
     constexpr AllocRequest::AllocRequest(ice::usize size, ice::ualign alignment) noexcept
         : size{ size }
@@ -60,9 +50,18 @@ namespace ice
     }
 
     template<typename T> requires (std::is_pointer_v<T> == false)
-    constexpr AllocRequest::AllocRequest(ice::align_result<T> align_result) noexcept
+    constexpr AllocRequest::AllocRequest(ice::AlignResult<T> align_result) noexcept
         : AllocRequest{ align_result.value, align_result.alignment }
     {
+    }
+
+    constexpr AllocResult::operator ice::Memory() const noexcept
+    {
+        return ice::Memory{
+            .location = memory,
+            .size = size,
+            .alignment = alignment
+        };
     }
 
 } // namespace ice

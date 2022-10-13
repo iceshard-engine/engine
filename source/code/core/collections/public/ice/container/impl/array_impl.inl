@@ -205,7 +205,7 @@ namespace ice
                         ice::memcpy(new_buffer, ice::array::data_view(arr));
                     }
                 }
-                new_data = reinterpret_cast<Type*>(new_buffer.result);
+                new_data = reinterpret_cast<Type*>(new_buffer.memory);
             }
 
             arr._allocator->deallocate(ice::array::memory(arr));

@@ -10,12 +10,12 @@ namespace ice
 
     auto HostAllocator::do_allocate(ice::AllocRequest request) noexcept -> ice::AllocResult
     {
-        return ice::alloc_aligned(request);
+        return ice::alloc_aligned(request.size, request.alignment);
     }
 
     void HostAllocator::do_deallocate(ice::Memory result) noexcept
     {
-        ice::release_aligned(result);
+        ice::release_aligned(result.location, result.alignment);
     }
 
 } // namespace ice

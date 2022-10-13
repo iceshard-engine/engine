@@ -32,7 +32,7 @@ namespace ice
     constexpr auto operator+=(ice::meminfo& left, ice::meminfo right) noexcept -> ice::usize
     {
         // Align first
-        ice::align_result const res = ice::align_to(left.size, right.alignment);
+        ice::AlignResult const res = ice::align_to(left.size, right.alignment);
         left.size = res.value;
 
         ice::usize const result = left.size;

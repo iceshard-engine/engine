@@ -1,6 +1,7 @@
 #include <ice/assert.hxx>
-#include <ice/memory/memory_globals.hxx>
+#include <ice/string/string.hxx>
 #include <ice/os/windows.hxx>
+#include <ice/mem_allocator_host.hxx>
 
 #include "log_internal.hxx"
 #include "log_buffer.hxx"
@@ -14,6 +15,10 @@
 
 namespace ice::detail
 {
+
+    static constexpr ice::String LogFormat_AssertLineHeader = "{:%T} [ASRT] ASSERT";
+    static constexpr ice::String LogFormat_AssertCondition = "{}({}) : {} > Assertion failed! `{}`\n";
+    static constexpr ice::String LogFormat_AssertMessage = "{}({}) : {} | ";
 
     void assert(
         ice::String condition,
@@ -41,7 +46,7 @@ namespace ice::detail
         fmt::format_to_n_result format_result = fmt::format_to_n(
             header_buffer_raw,
             128,
-            "{:%T} [ASRT] ASSERT",
+            fmt_string(LogFormat_AssertLineHeader),
             fmt::localtime(std::time(nullptr))
         );
 
@@ -52,11 +57,12 @@ namespace ice::detail
 
         fmt::string_view log_header{ &header_buffer_raw[0], format_result.size };
 
-        detail::LogMessageBuffer final_buffer{ ice::memory::default_allocator(), 3000 };
+        static ice::HostAllocator host_alloc{};
+        detail::LogMessageBuffer final_buffer{ host_alloc, 3_KiB };
 
         fmt::vformat_to(
             final_buffer,
-            "{}({}) : {} > Assertion failed! `{}`\n",
+            fmt_string(LogFormat_AssertCondition),
             fmt::make_format_args(
                 location.file,
                 location.line,
@@ -67,7 +73,7 @@ namespace ice::detail
 
         fmt::vformat_to(
             final_buffer,
-            "{}({}) : {} | ",
+            fmt_string(LogFormat_AssertMessage),
             fmt::make_format_args(
                 location.file,
                 location.line,
@@ -77,7 +83,7 @@ namespace ice::detail
 
         fmt::vformat_to(
             final_buffer,
-            message,
+            fmt_string(message),
             ice::move(args)
         );
 
@@ -87,7 +93,7 @@ namespace ice::detail
             final_buffer.push_back('\n');
         }
 
-        fmt::print(stderr, make_string(final_buffer.begin(), final_buffer.end()));
+        fmt::print(stderr, fmt_string(final_buffer.begin(), final_buffer.end()));
 
         final_buffer.push_back('\0');
 
@@ -105,7 +111,7 @@ namespace ice::detail
     {
         fmt::vprint(
             stderr,
-            message,
+            fmt_string(message),
             ice::move(args)
         );
     }

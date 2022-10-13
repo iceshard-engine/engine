@@ -160,7 +160,7 @@ namespace ice
     {
         ice::AllocResult const mem = alloc.allocate(ice::meminfo_of<T>);
 
-        T* const object = new (mem.result) T{ ice::forward<Args>(args)... };
+        T* const object = new (mem.memory) T{ ice::forward<Args>(args)... };
         return ice::UniquePtr<T>{ &alloc, object };
     }
 

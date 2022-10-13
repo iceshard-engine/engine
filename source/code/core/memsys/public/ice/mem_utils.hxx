@@ -6,7 +6,7 @@ namespace ice
 {
 
     template<typename T> requires std::is_pointer_v<T> || std::is_same_v<T, ice::usize>
-    struct align_result
+    struct AlignResult
     {
         T value;
         ice::usize padding;
@@ -14,9 +14,9 @@ namespace ice
     };
 
     template<typename T> requires std::is_pointer_v<T> || std::is_same_v<T, ice::usize>
-    constexpr auto align_to(T value, ice::ualign alignment) noexcept -> ice::align_result<T>
+    constexpr auto align_to(T value, ice::ualign alignment) noexcept -> ice::AlignResult<T>
     {
-        ice::align_result<T> result{
+        ice::AlignResult<T> result{
             .value = value,
             .alignment = alignment
         };

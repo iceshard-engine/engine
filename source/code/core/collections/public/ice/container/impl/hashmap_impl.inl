@@ -423,9 +423,9 @@ namespace ice
                 ice::usize const offset_values = alloc_info += ice::meminfo_of<Type> * new_capacity_values;
 
                 ice::AllocResult const new_data = map._allocator->allocate(alloc_info);
-                new_hashes_ptr = reinterpret_cast<ice::ucount*>(new_data.result);
-                new_entries_ptr = reinterpret_cast<Entry*>(ice::ptr_add(new_data.result, offset_entries));
-                new_value_ptr = reinterpret_cast<Type*>(ice::ptr_add(new_data.result, offset_values));
+                new_hashes_ptr = reinterpret_cast<ice::ucount*>(new_data.memory);
+                new_entries_ptr = reinterpret_cast<Entry*>(ice::ptr_add(new_data.memory, offset_entries));
+                new_value_ptr = reinterpret_cast<Type*>(ice::ptr_add(new_data.memory, offset_values));
 
                 // Prepare hashes memory
                 // TODO: memset?

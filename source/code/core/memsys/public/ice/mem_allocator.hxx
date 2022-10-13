@@ -163,7 +163,7 @@ namespace ice
         auto create(Args&&... args) noexcept -> T*
         {
             ice::AllocResult const mem = allocate(ice::size_of<T>);
-            return new (mem.result) T{ ice::forward<Args>(args)... };
+            return new (mem.memory) T{ ice::forward<Args>(args)... };
         }
 
         template<typename T>
