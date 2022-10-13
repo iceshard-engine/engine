@@ -125,4 +125,14 @@ namespace ice
         return { left.value % static_cast<ice::isize::base_type>(right) };
     }
 
+    constexpr auto operator<=>(ice::usize left, ice::isize right) noexcept
+    {
+        return static_cast<ice::isize::base_type>(left.value) <=> right.value;
+    }
+
+    constexpr auto operator<=>(ice::isize left, ice::usize right) noexcept
+    {
+        return left.value <=> static_cast<ice::isize::base_type>(right.value);
+    }
+
 } // namespace ice

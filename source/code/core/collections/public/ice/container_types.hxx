@@ -170,4 +170,34 @@ namespace ice
             requires std::copy_constructible<Type>;
     };
 
+
+    //! \brief A view into data created by a hashmap object.
+    //!
+    //! \note No modification of data is allowed through this type.
+    //! \note Because this is only a view into a hashmap there is no difference in 'logic' so it's unused.
+    template<typename Type, ice::CollectionLogic = ice::CollectionLogic::PlainOldData>
+    struct HashMapView
+    {
+        using Entry = typename ice::HashMap<Type>::Entry;
+        using ValueType = Type;
+
+        ice::ucount _capacity;
+        ice::ucount _count;
+
+        ice::ucount const* _hashes;
+        Entry const* _entries;
+        Type const* _data;
+    };
+
+    //! \brief A concept used to enable access to read-only operations for all compatible types.
+    template<typename Type>
+    concept HashMapReadAccess = requires(Type t) {
+        { typename Type::Entry() } -> std::convertible_to<typename Type::Entry>;
+        { t._capacity } -> std::convertible_to<ice::ucount>;
+        { t._count } -> std::convertible_to<ice::ucount>;
+        { t._hashes } -> std::convertible_to<ice::ucount const*>;
+        { t._entries } -> std::convertible_to<typename Type::Entry const*>;
+        { t._data } -> std::convertible_to<typename Type::ValueType const*>;
+    };
+
 } // namespace ice

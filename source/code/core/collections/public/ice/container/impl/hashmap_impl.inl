@@ -631,8 +631,8 @@ namespace ice
         }
 
 
-        template<typename Type, ice::CollectionLogic Logic>
-        inline bool full(ice::HashMap<Type, Logic> const& map) noexcept
+        template<typename HashMapType> requires HashMapReadAccess<HashMapType>
+        inline bool full(HashMapType const& map) noexcept
         {
             ice::ucount const max_count = ice::ucount(map._capacity * ice::hashmap::detail::Constant_HashMapMaxFill);
             ICE_ASSERT_CORE(max_count >= map._count);
@@ -640,20 +640,20 @@ namespace ice
             return max_count == map._count;
         }
 
-        template<typename Type, ice::CollectionLogic Logic>
-        inline bool empty(ice::HashMap<Type, Logic> const& map) noexcept
+        template<typename HashMapType> requires HashMapReadAccess<HashMapType>
+        inline bool empty(HashMapType const& map) noexcept
         {
             return map._count == 0;
         }
 
-        template<typename Type, ice::CollectionLogic Logic>
-        inline bool has(ice::HashMap<Type, Logic> const& map, ice::u64 key) noexcept
+        template<typename HashMapType> requires HashMapReadAccess<HashMapType>
+        inline bool has(HashMapType const& map, ice::u64 key) noexcept
         {
             return ice::hashmap::detail::find_or_fail(map, key) != ice::hashmap::detail::Constant_EndOfList;
         }
 
-        template<typename Type, ice::CollectionLogic Logic>
-        inline auto get(ice::HashMap<Type, Logic> const& map, ice::u64 key, Type const& fallback_value) noexcept -> Type const&
+        template<typename HashMapType> requires HashMapReadAccess<HashMapType>
+        inline auto get(HashMapType const& map, ice::u64 key, typename HashMapType::ValueType const& fallback_value) noexcept -> typename HashMapType::ValueType const&
         {
             ice::ucount const index = ice::hashmap::detail::find_or_fail(map, key);
             return index == ice::hashmap::detail::Constant_EndOfList
@@ -661,8 +661,8 @@ namespace ice
                 : map._data[index];
         }
 
-        template<typename Type, ice::CollectionLogic Logic>
-        inline auto get(ice::HashMap<Type*, Logic> const& map, ice::u64 key, std::nullptr_t) noexcept -> Type*
+        template<typename HashMapType> requires HashMapReadAccess<HashMapType>
+        inline auto get(HashMapType const& map, ice::u64 key, std::nullptr_t) noexcept -> typename HashMapType::ValueType
         {
             ice::ucount const index = ice::hashmap::detail::find_or_fail(map, key);
             return index == ice::hashmap::detail::Constant_EndOfList
@@ -670,8 +670,8 @@ namespace ice
                 : map._data[index];
         }
 
-        template<typename Type, ice::CollectionLogic Logic>
-        inline auto try_get(ice::HashMap<Type, Logic> const& map, ice::u64 key) noexcept -> Type const*
+        template<typename HashMapType> requires HashMapReadAccess<HashMapType>
+        inline auto try_get(HashMapType const& map, ice::u64 key) noexcept -> typename HashMapType::ValueType const*
         {
             ice::ucount const index = ice::hashmap::detail::find_or_fail(map, key);
             return index == ice::hashmap::detail::Constant_EndOfList
@@ -691,14 +691,14 @@ namespace ice
             return { map._entries + map._count, map._data + map._count };
         }
 
-        template<typename Type, ice::CollectionLogic Logic>
-        inline auto values(ice::HashMap<Type, Logic> const& map) noexcept -> ice::Span<Type const>
+        template<typename HashMapType> requires HashMapReadAccess<HashMapType>
+        inline auto values(HashMapType const& map) noexcept -> ice::Span<typename HashMapType::ValueType const>
         {
             return ice::Span{ map._data, map._count };
         }
 
-        template<typename Type, ice::CollectionLogic Logic>
-        inline auto entries(ice::HashMap<Type, Logic> const& map) noexcept -> ice::Span<typename ice::HashMap<Type, Logic>::Entry const>
+        template<typename HashMapType> requires HashMapReadAccess<HashMapType>
+        inline auto entries(HashMapType const& map) noexcept -> ice::Span<typename HashMapType::Entry const>
         {
             return ice::Span{ map._entries, map._count };
         }

@@ -1,5 +1,5 @@
 #pragma once
-#include <ice/data.hxx>
+#include <ice/mem_data.hxx>
 #include <ice/string_types.hxx>
 #include <ice/resource_types.hxx>
 
@@ -16,8 +16,8 @@ namespace ice
         virtual auto uri() const noexcept -> ice::URI const& = 0;
         virtual auto flags() const noexcept -> ice::ResourceFlags = 0;
 
-        virtual auto name() const noexcept -> ice::Utf8String = 0;
-        virtual auto origin() const noexcept -> ice::Utf8String = 0;
+        virtual auto name() const noexcept -> ice::String = 0;
+        virtual auto origin() const noexcept -> ice::String = 0;
 
         virtual auto metadata() const noexcept -> ice::Metadata const& = 0;
     };
