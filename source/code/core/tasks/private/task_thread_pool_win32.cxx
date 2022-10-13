@@ -79,7 +79,7 @@ namespace ice
         ice::u32 thread_count
     ) noexcept -> ice::UniquePtr<ice::TaskThreadPool>
     {
-        return ice::make_unique<ice::TaskThreadPool, ice::IceTaskThreadPool>(alloc, thread_count);
+        return ice::make_unique<ice::IceTaskThreadPool>(alloc, thread_count);
     }
 
 } // namespace ice

@@ -105,7 +105,7 @@ namespace ice::detail
         fmt::string_view const log_header{ &header_buffer_raw[0], format_result.size };
 
         detail::log_buffer_alloc.reset();
-        detail::LogMessageBuffer final_buffer{ detail::log_buffer_alloc, 2_KiB };
+        detail::LogMessageBuffer final_buffer{ detail::log_buffer_alloc, 2000 };
 
         fmt::vformat_to(
             final_buffer,

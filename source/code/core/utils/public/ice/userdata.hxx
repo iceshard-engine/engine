@@ -6,7 +6,7 @@ namespace ice
 {
 
     template<bool IsValidated = false>
-    struct UserdataBase
+    struct [[deprecated("Don't use for the time beeing!")]] UserdataBase
     {
         void* _pointer;
 
@@ -42,7 +42,7 @@ namespace ice
     };
 
     template<>
-    struct UserdataBase<true>
+    struct [[deprecated("Don't use for the time beeing!")]] UserdataBase<true>
     {
         void* _pointer;
 

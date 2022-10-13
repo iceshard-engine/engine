@@ -2,7 +2,7 @@
 #include <ice/task.hxx>
 #include <ice/task_operations.hxx>
 #include <ice/task_scheduler.hxx>
-#include <ice/unique_ptr.hxx>
+#include <ice/mem_unique_ptr.hxx>
 
 namespace ice
 {

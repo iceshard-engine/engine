@@ -159,6 +159,13 @@ namespace ice
         auto allocate(ice::AllocRequest request) noexcept -> ice::AllocResult;
         void deallocate(ice::Memory result) noexcept;
 
+        template<typename T>
+            requires std::is_pod_v<T>
+        auto allocate(ice::u64 count = 1) noexcept -> T*
+        {
+            return reinterpret_cast<T*>(allocate(AllocRequest{ ice::meminfo_of<T> * count }).memory);
+        }
+
         template<typename T, typename... Args>
         auto create(Args&&... args) noexcept -> T*
         {

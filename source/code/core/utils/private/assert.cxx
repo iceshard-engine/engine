@@ -58,7 +58,7 @@ namespace ice::detail
         fmt::string_view log_header{ &header_buffer_raw[0], format_result.size };
 
         static ice::HostAllocator host_alloc{};
-        detail::LogMessageBuffer final_buffer{ host_alloc, 3_KiB };
+        detail::LogMessageBuffer final_buffer{ host_alloc, 3000 };
 
         fmt::vformat_to(
             final_buffer,

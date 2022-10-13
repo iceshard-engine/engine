@@ -1,6 +1,6 @@
 #pragma once
 #include <ice/base.hxx>
-#include <ice/string.hxx>
+#include <ice/string_types.hxx>
 #include <ice/assert.hxx>
 #include <coroutine>
 

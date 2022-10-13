@@ -53,8 +53,8 @@ namespace ice
         , _task_lists{ nullptr, nullptr }
         , _mutable_task_list{ nullptr }
     {
-        _task_lists[0] = _allocator.make<ice::TaskList>(_allocator);
-        _task_lists[1] = _allocator.make<ice::TaskList>(_allocator);
+        _task_lists[0] = _allocator.create<ice::TaskList>(_allocator);
+        _task_lists[1] = _allocator.create<ice::TaskList>(_allocator);
         _mutable_task_list = _task_lists[0];
     }
 
@@ -118,7 +118,7 @@ namespace ice
         // Copy all task to the target list
         target_list = *expected_list;
         // Clear the current "read-only" list and finish profit.
-        ice::pod::array::clear(*expected_list);
+        ice::array::clear(*expected_list);
     }
 
 } // namespace ice

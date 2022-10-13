@@ -3,7 +3,7 @@
 #include <ice/stringid.hxx>
 
 template<bool DebugImpl>
-struct fmt::formatter<ice::detail::stringid_type_v2::StringID<DebugImpl>>
+struct fmt::formatter<ice::BaseStringID<DebugImpl>>
 {
     template<typename ParseContext>
     constexpr auto parse(ParseContext& ctx)
@@ -14,7 +14,7 @@ struct fmt::formatter<ice::detail::stringid_type_v2::StringID<DebugImpl>>
     template<typename FormatContext>
     constexpr auto format(ice::StringID_Arg value, FormatContext& ctx)
     {
-        if (value == ice::stringid_invalid)
+        if (value == ice::StringID_Invalid)
         {
             return fmt::format_to(ctx.out(), "[sid:<invalid>]");
         }

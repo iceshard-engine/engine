@@ -1,6 +1,6 @@
 #pragma once
 #include <ice/hash.hxx>
-#include <ice/string.hxx>
+#include <ice/string_types.hxx>
 
 namespace ice
 {

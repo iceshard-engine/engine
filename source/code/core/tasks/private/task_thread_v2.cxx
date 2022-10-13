@@ -2,7 +2,7 @@
 #include <ice/task_list.hxx>
 #include <ice/task.hxx>
 #include <ice/os/windows.hxx>
-#include <ice/memory/stack_allocator.hxx>
+#include <ice/mem_allocator_stack.hxx>
 #include <thread>
 
 #include "internal_task.hxx"
@@ -145,7 +145,7 @@ namespace ice
 
     auto create_task_thread_v2(ice::Allocator& alloc) noexcept -> ice::UniquePtr<TaskThread_v2>
     {
-        return ice::make_unique<TaskThread_v2, SimpleTaskThread_v2>(alloc, alloc);
+        return ice::make_unique<ice::SimpleTaskThread_v2>(alloc, alloc);
     }
 
 } // namespace ice

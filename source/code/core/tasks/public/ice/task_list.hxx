@@ -1,12 +1,12 @@
 #pragma once
-#include <ice/pod/array.hxx>
+#include <ice/container/array.hxx>
 #include <coroutine>
 #include <atomic>
 
 namespace ice
 {
 
-    using TaskList = ice::pod::Array<std::coroutine_handle<>>;
+    using TaskList = ice::Array<std::coroutine_handle<>, ice::CollectionLogic::Complex>;
 
     class ScopedTaskList final
     {

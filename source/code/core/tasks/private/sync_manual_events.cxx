@@ -39,9 +39,10 @@ namespace ice
 #if ISP_WINDOWS
                 ::Sleep(1);
 #else
-        ICE_ASSERT(false, "Synchronization not implemented for this platform!");
+                ICE_ASSERT(false, "Synchronization not implemented for this platform!");
 #endif
             }
+
 #if ISP_WINDOWS
             wait_successful = ::WaitOnAddress(
                 ice::addressof(_internal_value),

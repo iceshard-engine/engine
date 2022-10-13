@@ -12,61 +12,63 @@ namespace ice
 
     HashedDataStorage::~HashedDataStorage() noexcept
     {
-        for (auto const& entry : _named_data)
+        for (ice::AllocResult const& entry : ice::hashmap::values(_named_data))
         {
-            _allocator.deallocate(entry.value);
+            _allocator.deallocate(entry);
         }
     }
 
     auto HashedDataStorage::named_data(ice::StringID_Arg name) noexcept -> void*
     {
-        return ice::pod::hash::get(_named_data, ice::hash(name), nullptr);
+        return ice::hashmap::get(_named_data, ice::hash(name), AllocResult{ });
     }
 
     auto HashedDataStorage::named_data(ice::StringID_Arg name) const noexcept -> void const*
     {
-        return ice::pod::hash::get(_named_data, ice::hash(name), nullptr);
+        return ice::hashmap::get(_named_data, ice::hash(name), AllocResult{ });
     }
 
     auto HashedDataStorage::allocate_named_data(
         ice::StringID_Arg name,
-        ice::u32 size,
-        ice::u32 alignment
+        ice::meminfo type_meminfo
     ) noexcept -> void*
     {
         ice::u64 const name_hash = ice::hash(name);
         ICE_ASSERT(
-            ice::pod::hash::has(_named_data, name_hash) == false,
+            ice::hashmap::has(_named_data, name_hash) == false,
             "An object with this name `{}` already exists in this frame!",
             ice::stringid_hint(name)
         );
 
-        void* object_ptr = _allocator.allocate(size, alignment);
-        ice::pod::hash::set(_named_data, name_hash, object_ptr);
-        return object_ptr;
+        ice::AllocResult const alloc_result = _allocator.allocate(type_meminfo);
+        ice::hashmap::set(_named_data, name_hash, alloc_result);
+        return alloc_result;
     }
 
     auto HashedDataStorage::allocate_named_array(
         ice::StringID_Arg name,
-        ice::u32 element_size,
-        ice::u32 alignment,
-        ice::u32 count
+        ice::meminfo type_meminfo,
+        ice::ucount count
     ) noexcept -> void*
     {
         ice::u64 const name_hash = ice::hash(name);
         ICE_ASSERT(
-            ice::pod::hash::has(_named_data, name_hash) == false,
+            ice::hashmap::has(_named_data, name_hash) == false,
             "An object with this name `{}` already exists in this frame!",
             ice::stringid_hint(name)
         );
 
-        // TODO: To be refactored with the planned introduction of a proper 'size' type.
-        ICE_ASSERT(alignment >= sizeof(ice::u32), "Cannot store array size in fron of the array!");
+        ice::meminfo array_meminfo = ice::meminfo_of<ice::ucount> * 2;
+        ice::usize const offset = array_meminfo += type_meminfo * count;
 
-        void* object_ptr = _allocator.allocate(alignment + element_size * count, alignment);
-        *reinterpret_cast<ice::u32*>(object_ptr) = count;
-        ice::pod::hash::set(_named_data, name_hash, object_ptr);
-        return object_ptr;
+        ice::AllocResult const object_ptr = _allocator.allocate(array_meminfo);
+        ice::hashmap::set(_named_data, name_hash, object_ptr);
+
+        // We work on memory that starts with the 'ucount' value followed by the array starting location.
+        ice::ucount* array_info = reinterpret_cast<ice::ucount*>(object_ptr.memory);
+        array_info[0] = count;
+        array_info[1] = ice::ucount(offset.value); // data offset (it's safe to assume it's small)
+        return array_info;
     }
 
     void HashedDataStorage::release_named_data(
@@ -75,14 +77,14 @@ namespace ice
     {
         ice::u64 const name_hash = ice::hash(name);
         ICE_ASSERT(
-            ice::pod::hash::has(_named_data, name_hash) == true,
+            ice::hashmap::has(_named_data, name_hash) == true,
             "An object with this name `{}` already exists in this frame!",
             ice::stringid_hint(name)
         );
 
-        void* data = ice::pod::hash::get(_named_data, name_hash, nullptr);
-        _allocator.deallocate(data);
-        ice::pod::hash::remove(_named_data, name_hash);
+        ice::AllocResult const object_ptr = ice::hashmap::get(_named_data, name_hash, AllocResult{ });
+        _allocator.deallocate(object_ptr);
+        ice::hashmap::remove(_named_data, name_hash);
     }
 
 
