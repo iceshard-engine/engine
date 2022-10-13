@@ -1,212 +1,219 @@
-#include <ice/memory/pointer_arithmetic.hxx>
+#include <ice/mem_utils.hxx>
+#include <ice/string/string.hxx>
+#include <ice/string/heap_string.hxx>
 
 #include "path_utils.hxx"
 
 namespace ice::path
 {
 
-    bool is_absolute(ice::Utf8String path) noexcept
+    namespace detail
     {
-        if constexpr (ice::build::is_windows)
+
+        template<typename CharType> static constexpr ice::BasicString<CharType> Separators_Dot;
+        template<typename CharType> static constexpr ice::BasicString<CharType> Separators_Drive;
+        template<typename CharType> static constexpr ice::BasicString<CharType> Separators_Directory;
+
+        template<> constexpr ice::BasicString<char> Separators_Dot<char> = ".";
+        template<> constexpr ice::BasicString<char> Separators_Drive<char> = ":";
+        template<> constexpr ice::BasicString<char> Separators_Directory<char> = "\\/";
+        template<> constexpr ice::BasicString<ice::wchar> Separators_Dot<ice::wchar> = L".";
+        template<> constexpr ice::BasicString<ice::wchar> Separators_Drive<ice::wchar> = L":";
+        template<> constexpr ice::BasicString<ice::wchar> Separators_Directory<ice::wchar> = L"\\/";
+
+        template<typename CharType>
+        bool is_absolute(ice::BasicString<CharType> path) noexcept
         {
-            if (path.size() >= 3)
+            if constexpr (ice::build::is_windows)
             {
-                return path[1] == ':' && ice::string::find_first_of(separators_directory, path[2]) != ice::string_npos;
-            }
-            return false;
-        }
-        else
-        {
-            return false;
-        }
-    }
-
-    auto extension(ice::String str) noexcept -> ice::String
-    {
-        auto const separator_pos = ice::string::find_last_of(str, separators_extension);
-        return ice::string::substr(str, separator_pos == ice::string_npos ? ice::string::size(str) : separator_pos);
-    }
-
-    auto filename(ice::Utf8String str) noexcept -> ice::Utf8String
-    {
-        auto const separator_pos = ice::string::find_last_of(str, separators_directory);
-        return ice::string::substr(str, separator_pos == ice::string_npos ? 0 : separator_pos + 1);
-    }
-
-    auto directory(ice::Utf8String str) noexcept -> ice::Utf8String
-    {
-        auto const separator_pos = ice::string::find_last_of(str, separators_directory);
-        return ice::string::substr(str, separator_pos == ice::string_npos ? ice::string::size(str) : 0, separator_pos);
-    }
-
-    auto normalize(ice::HeapString<char8_t>& path) noexcept -> ice::Utf8String
-    {
-        char8_t* it = ice::string::begin(path);
-        char8_t const* const beg = ice::string::begin(path);
-        //char* reminder = nullptr;
-        char8_t const* const end = ice::string::end(path);
-
-        while (it != end)
-        {
-            if (*it == u8'\\')
-            {
-                *it = u8'/';
-            }
-
-            it += 1;
-        }
-
-        it = ice::string::begin(path);
-
-        ice::u32 const begin = ice::string::find_first_of(path, u8':');
-        if (begin != ice::string_npos)
-        {
-            it += begin + 1;
-        }
-
-        char8_t* copy_to = it;
-        while (it != end)
-        {
-            if (*it == u8'.' && *(it + 1) == u8'.')
-            {
-                copy_to -= 1; // move to the previous slash '/'
-                copy_to -= (copy_to != beg); // Move past the shash if we are not at the path begining
-
-                while (*copy_to != u8'/' && copy_to != beg)
+                if (ice::string::size(path) >= 3)
                 {
-                    copy_to -= 1;
+                    return path[1] == Separators_Drive<CharType>[0] && ice::string::find_first_of(Separators_Directory<CharType>, path[2]) != ice::String_NPos;
+                }
+                return false;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        template<typename CharType>
+        auto extension(ice::BasicString<CharType> str) noexcept -> ice::BasicString<CharType>
+        {
+            auto const separator_pos = ice::string::find_last_of(str, Separators_Dot<CharType>);
+            return ice::string::substr(str, separator_pos == ice::String_NPos ? ice::string::size(str) : separator_pos);
+        }
+
+        template<typename CharType>
+        auto filename(ice::BasicString<CharType> str) noexcept -> ice::BasicString<CharType>
+        {
+            auto const separator_pos = ice::string::find_last_of(str, Separators_Directory<CharType>);
+            return ice::string::substr(str, separator_pos == ice::String_NPos ? 0 : separator_pos + 1);
+        }
+
+        template<typename CharType>
+        auto directory(ice::BasicString<CharType> str) noexcept -> ice::BasicString<CharType>
+        {
+            auto const separator_pos = ice::string::find_last_of(str, Separators_Directory<CharType>);
+            return ice::string::substr(str, separator_pos == ice::String_NPos ? ice::string::size(str) : 0, separator_pos);
+        }
+
+        template<typename CharType>
+        auto join(ice::HeapString<CharType>& left, ice::BasicString<CharType> right) noexcept -> ice::BasicString<CharType>
+        {
+            // This one was taken from MS's std::filesystem implementation.
+            if (is_absolute(right))
+            {
+                left = right;
+                return left;
+            }
+
+            if (auto last_char = ice::string::back(left); last_char != Separators_Directory<CharType>[1]/* && last_char != Separators_Dot<CharType>[0]*/)
+            {
+                if (last_char == Separators_Directory<CharType>[0])
+                {
+                    ice::string::pop_back(left);
+                }
+                ice::string::push_back(left, Separators_Directory<CharType>[1]);
+            }
+
+            if (right != Separators_Dot<CharType>)
+            {
+                ice::string::push_back(left, right);
+            }
+
+            return left;
+        }
+
+        template<typename CharType>
+        auto normalize(ice::HeapString<CharType>& path) noexcept -> ice::BasicString<CharType>
+        {
+            CharType* it = ice::string::begin(path);
+            CharType const* const beg = ice::string::begin(path);
+            CharType const* const end = ice::string::end(path);
+
+            while (it != end)
+            {
+                if (*it == Separators_Directory<CharType>[0])
+                {
+                    *it = Separators_Directory<CharType>[1];
                 }
 
-                it += 2; // Move past the two dots
+                it += 1;
             }
 
-            if (copy_to != it)
+            it = ice::string::begin(path);
+
+            ice::ucount const begin = ice::string::find_first_of(path, Separators_Drive<CharType>);
+            if (begin != ice::String_NPos)
             {
-                *copy_to = *it;
+                it += begin + 1;
             }
 
-            it += 1;
-            copy_to += 1;
-        }
-
-        ice::string::resize(path, ice::memory::ptr_distance(ice::string::begin(path), copy_to));
-
-        return path;
-    }
-
-    auto join(ice::HeapString<char8_t>& left, ice::Utf8String right) noexcept -> ice::Utf8String
-    {
-        // This one was taken from MS's std::filesystem implementation.
-        if (is_absolute(right))
-        {
-            return left.operator=(right);
-        }
-
-        if (auto last_char = ice::string::back(left); last_char != u8'/' && last_char != u8'.')
-        {
-            if (last_char == u8'\\')
+            CharType* copy_to = it;
+            while (it != end)
             {
-                ice::string::pop_back(left);
+                if (*it == Separators_Dot<CharType>[0] && *(it + 1) == Separators_Dot<CharType>[0])
+                {
+                    copy_to -= 1; // move to the previous slash '/'
+                    copy_to -= (copy_to != beg); // Move past the shash if we are not at the path begining
+
+                    while (*copy_to != Separators_Directory<CharType>[1] && copy_to != beg)
+                    {
+                        copy_to -= 1;
+                    }
+
+                    it += 2; // Move past the two dots
+                }
+
+                if (copy_to != it)
+                {
+                    *copy_to = *it;
+                }
+
+                it += 1;
+                copy_to += 1;
             }
-            ice::string::push_back(left, u8'/');
+
+            ice::string::resize(
+                path,
+                ice::ucount(
+                    ice::ptr_distance(ice::string::begin(path), copy_to).value
+                )
+            );
+            return path;
         }
 
-        if (right != u8".")
+        template<typename CharType>
+        auto replace_filename(ice::HeapString<CharType>& str, ice::BasicString<CharType> name) noexcept -> ice::BasicString<CharType>
         {
-            ice::string::push_back(left, right);
-        }
+            auto const separator_pos = ice::string::find_last_of(str, Separators_Directory<CharType>);
+            if (separator_pos != ice::String_NPos)
+            {
+                ice::string::resize(str, separator_pos + 1);
+            }
+            else
+            {
+                ice::string::clear(str);
+            }
 
-        return left;
-    }
-
-    auto replace_filename(ice::HeapString<char8_t>& str, ice::Utf8String name) noexcept -> ice::Utf8String
-    {
-        auto const separator_pos = ice::string::find_last_of(str, separators_directory);
-        if (separator_pos != ice::string_npos)
-        {
-            ice::string::resize(str, separator_pos + 1);
-        }
-        else
-        {
-            ice::string::clear(str);
-        }
-
-        if (!ice::string::empty(name))
-        {
             ice::string::push_back(str, name);
+            return str;
         }
 
-        return str;
-    }
-
-    auto replace_extension(ice::HeapString<>& str, ice::String extension) noexcept -> ice::String
-    {
-        auto const separator_pos = ice::string::find_last_of(str, separators_extension);
-        if (separator_pos != ice::string_npos)
+        template<typename CharType>
+        auto replace_extension(ice::HeapString<CharType>& str, ice::BasicString<CharType> extension) noexcept -> ice::BasicString<CharType>
         {
-            ice::string::resize(str, separator_pos + 1);
-        }
-
-        if (ice::string::empty(extension) == false)
-        {
-            if (ice::string::front(extension) != '.')
+            auto const separator_pos = ice::string::find_last_of(str, Separators_Dot<CharType>[0]);
+            if (separator_pos != ice::String_NPos)
             {
-                ice::string::push_back(str, '.');
+                ice::string::resize(str, separator_pos + 1);
             }
-            ice::string::push_back(str, extension);
+
+            if (ice::string::empty(extension) == false)
+            {
+                if (ice::string::front(extension) != Separators_Dot<CharType>[0])
+                {
+                    ice::string::push_back(str, Separators_Dot<CharType>[0]);
+                }
+                ice::string::push_back(str, extension);
+            }
+            return str;
         }
 
-        return str;
-    }
+    } // namespace detail
+
+    bool is_absolute(ice::String path) noexcept { return detail::is_absolute(path); }
+
+    auto extension(ice::String path) noexcept -> ice::String { return detail::extension(path); }
+    auto filename(ice::String path) noexcept -> ice::String { return detail::filename(path); }
+    auto directory(ice::String path) noexcept -> ice::String { return detail::directory(path); }
+
+    auto join(ice::HeapString<>& left, ice::String right) noexcept -> ice::String { return detail::join(left, right); }
+    auto normalize(ice::HeapString<>& path) noexcept -> ice::String { return detail::normalize(path); }
+
+    auto replace_filename(ice::HeapString<>& path, ice::String filename) noexcept -> ice::String { return detail::replace_filename(path, filename); }
+    auto replace_extension(ice::HeapString<>& path, ice::String extension) noexcept -> ice::String { return detail::replace_extension(path, extension); }
 
 #if ISP_WINDOWS
 
-    bool is_absolute(ice::WString path) noexcept
+    namespace win32
     {
-        if constexpr (ice::build::is_windows)
-        {
-            if (path.size() >= 3)
-            {
-                return path[1] == L':' && ice::string::find_first_of(Constant_DirectorySeparators, path[2]) != ice::string_npos;
-            }
-            return false;
-        }
-        else
-        {
-            return false;
-        }
-    }
 
-    auto directory(ice::WString path) noexcept -> ice::WString
-    {
-        auto const separator_pos = ice::string::find_last_of(path, Constant_DirectorySeparators);
-        return ice::string::substr(path, separator_pos == ice::string_npos ? ice::string::size(path) : 0, separator_pos);
-    }
+        bool is_absolute(ice::WString path) noexcept { return detail::is_absolute(path); }
 
-    auto join(ice::HeapString<wchar_t>& left, ice::WString right) noexcept -> ice::WString
-    {
-        // This one was taken from MS's std::filesystem implementation.
-        if (is_absolute(right))
-        {
-            return left.operator=(right);
-        }
+        auto extension(ice::WString path) noexcept -> ice::WString { return detail::extension(path); }
+        auto filename(ice::WString path) noexcept -> ice::WString { return detail::filename(path); }
+        auto directory(ice::WString path) noexcept -> ice::WString { return detail::directory(path); }
 
-        if (auto last_char = ice::string::back(left); last_char != '/' && last_char != '.')
-        {
-            if (last_char == '\\')
-            {
-                ice::string::pop_back(left);
-            }
-            ice::string::push_back(left, L'/');
-        }
+        auto join(ice::HeapString<ice::wchar>& left, ice::WString right) noexcept -> ice::WString { return detail::join(left, right); }
+        auto normalize(ice::HeapString<ice::wchar>& path) noexcept -> ice::WString { return detail::normalize(path); }
 
-        if (right != L".")
-        {
-            ice::string::push_back(left, right);
-        }
+        auto replace_filename(ice::HeapString<ice::wchar>& path, ice::WString filename) noexcept -> ice::WString { return detail::replace_filename(path, filename); }
+        auto replace_extension(ice::HeapString<ice::wchar>& path, ice::WString extension) noexcept -> ice::WString { return detail::replace_extension(path, extension); }
 
-        return left;
-    }
+    } // namespace win32
 
 #endif
 
