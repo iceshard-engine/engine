@@ -558,9 +558,9 @@ namespace ice
             ice::hashmap::detail::rehash(map, (map._count / ice::hashmap::detail::Constant_HashMapMaxFill) + 1);
         }
 
-        template<typename Type, ice::CollectionLogic Logic>
-            requires std::copy_constructible<Type>
-        inline void set(ice::HashMap<Type, Logic>& map, ice::u64 key, Type const& value) noexcept
+        template<typename Type, ice::CollectionLogic Logic, typename Value>
+            requires std::copy_constructible<Type> && std::convertible_to<Value, Type>
+        inline void set(ice::HashMap<Type, Logic>& map, ice::u64 key, Value const& value) noexcept
         {
             if (ice::hashmap::full(map))
             {
@@ -615,7 +615,7 @@ namespace ice
                         .size = ice::size_of<Type>,
                         .alignment = ice::align_of<Type>
                     },
-                    ice::move<Type>(value)
+                    ice::forward<Type>(value)
                 );
             }
             else
@@ -845,111 +845,5 @@ namespace ice
         }
 
     } // namespace multi_hash
-
-    //namespace detail::hash
-    //{
-
-    //    static constexpr float Constant_MaxLoadFactor = 0.7f;
-
-    //    static constexpr uint32_t Constant_EndOfList = 0xffffffffu;
-
-    //    struct FindResult
-    //    {
-    //        uint32_t hash_i;
-    //        uint32_t data_prev;
-    //        uint32_t data_i;
-    //    };
-
-    //    template<typename T>
-    //    inline auto add_entry(ice::pod::HashMap<T>& hsh, uint64_t key) noexcept -> uint32_t
-    //    {
-    //        typename ice::pod::HashMap<T>::Entry entry{
-    //            .key = key,
-    //            .next = Constant_EndOfList,
-    //        };
-
-    //        uint32_t ei = ice::pod::array::size(hsh._data);
-    //        ice::pod::array::push_back(hsh._data, entry);
-    //        return ei;
-    //    }
-
-    //    template<typename T>
-    //    inline void rehash(ice::pod::HashMap<T>& hsh, uint32_t new_size) noexcept
-    //    {
-    //        ice::pod::HashMap<T> nh{ *hsh._hash._allocator };
-    //        ice::pod::array::resize(nh._hash, new_size);
-    //        ice::pod::array::reserve(nh._data, static_cast<ice::u32>(ice::pod::array::size(nh._hash) * (Constant_MaxLoadFactor + 0.05f)));
-    //        for (uint32_t i = 0; i < new_size; ++i)
-    //        {
-    //            nh._hash[i] = Constant_EndOfList;
-    //        }
-
-    //        for (uint32_t i = 0; i < ice::pod::array::size(hsh._data); ++i)
-    //        {
-    //            typename HashMap<T>::Entry const& entry = hsh._data[i];
-    //            ice::pod::multi_hash::insert(nh, entry.key, entry.value);
-    //        }
-
-    //        hsh = ice::move(nh);
-    //    }
-
-    //    template<typename T>
-    //    inline bool full(ice::pod::HashMap<T> const& hsh) noexcept
-    //    {
-    //        return ice::pod::array::size(hsh._data) >= ice::pod::array::size(hsh._hash) * Constant_MaxLoadFactor;
-    //    }
-
-    //    template<typename T>
-    //    inline void grow(ice::pod::HashMap<T>& h) noexcept
-    //    {
-    //        uint32_t const new_size = ice::pod::array::size(h._data) * 2 + 10;
-    //        detail::hash::rehash(h, new_size);
-    //    }
-
-    //} // namespace ice::pod::detail::hash
-
-    //namespace hash
-    //{
-
-    //    template<typename T>
-    //    inline void reserve(ice::pod::HashMap<T>& hsh, uint32_t size) noexcept
-    //    {
-    //        detail::hash::rehash(hsh, size);
-    //    }
-
-    //    template<typename T>
-    //    inline void clear(HashMap<T>& hsh) noexcept
-    //    {
-    //        ice::pod::array::clear(hsh._data);
-    //        ice::pod::array::clear(hsh._hash);
-    //    }
-
-    //    template<typename T>
-    //    inline void remove(ice::pod::HashMap<T>& hsh, uint64_t key) noexcept
-    //    {
-    //        detail::hash::find_and_erase(hsh, key);
-    //    }
-
-
-    //    template<typename T>
-    //    inline auto get(ice::pod::HashMap<T*> const& hsh, uint64_t key, std::nullptr_t) noexcept -> T*
-    //    {
-    //        uint32_t const index = detail::hash::find_or_fail(hsh, key);
-    //        return index == detail::hash::Constant_EndOfList ? nullptr : hsh._data[index].value;
-    //    }
-
-    //    template<typename T>
-    //    inline auto begin(ice::pod::HashMap<T> const& hsh) noexcept -> typename ice::pod::HashMap<T>::ConstIterator
-    //    {
-    //        return ice::pod::array::begin(hsh._data);
-    //    }
-
-    //    template<typename T>
-    //    inline auto end(ice::pod::HashMap<T> const& hsh) noexcept -> typename ice::pod::HashMap<T>::ConstIterator
-    //    {
-    //        return ice::pod::array::end(hsh._data);
-    //    }
-
-    //} // namespace hash
 
 } // namespace ice

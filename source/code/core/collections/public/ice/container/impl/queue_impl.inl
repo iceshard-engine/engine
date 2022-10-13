@@ -378,7 +378,7 @@ namespace ice
             {
                 ice::mem_move_construct_at<Type>(
                     Memory{ .location = queue._data + item_idx, .size = ice::size_of<Type>, .alignment = ice::align_of<Type> },
-                    ice::move(item)
+                    ice::forward<Type>(item)
                 );
             }
             else
@@ -389,9 +389,9 @@ namespace ice
             queue._count += 1;
         }
 
-        template<typename Type, ice::CollectionLogic Logic>
-            requires std::copy_constructible<Type>
-        inline void push_back(ice::Queue<Type, Logic>& queue, Type const& item) noexcept
+        template<typename Type, ice::CollectionLogic Logic, typename Value>
+            requires std::copy_constructible<Type> && std::convertible_to<Value, Type>
+        inline void push_back(ice::Queue<Type, Logic>& queue, Value const& item) noexcept
         {
             if (queue._count == queue._capacity)
             {
@@ -528,7 +528,7 @@ namespace ice
             {
                 ice::mem_move_construct_at<Type>(
                     Memory{ .location = queue._data + queue._offset, .size = ice::size_of<Type>, .alignment = ice::align_of<Type> },
-                    ice::move(item)
+                    ice::forward<Type>(item)
                 );
             }
             else
@@ -539,9 +539,9 @@ namespace ice
             queue._count += 1;
         }
 
-        template<typename Type, ice::CollectionLogic Logic>
-            requires std::copy_constructible<Type>
-        inline void push_front(ice::Queue<Type, Logic>& queue, Type const& item) noexcept
+        template<typename Type, ice::CollectionLogic Logic, typename Value>
+            requires std::copy_constructible<Type> && std::convertible_to<Value, Type>
+        inline void push_front(ice::Queue<Type, Logic>& queue, Value const& item) noexcept
         {
             if (queue._count == queue._capacity)
             {
@@ -558,12 +558,12 @@ namespace ice
             {
                 ice::mem_copy_construct_at<Type>(
                     Memory{ .location = queue._data + item_idx, .size = ice::size_of<Type>, .alignment = ice::align_of<Type> },
-                    ice::move(item)
+                    item
                 );
             }
             else
             {
-                queue._data[item_idx] = Type{ item };
+                queue._data[item_idx] = item;
             }
 
             queue._count += 1;

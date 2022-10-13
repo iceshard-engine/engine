@@ -1,5 +1,6 @@
 #pragma once
 #include <ice/container_types.hxx>
+#include <ice/container/array.hxx>
 #include <ice/mem_initializers.hxx>
 
 namespace ice
@@ -17,9 +18,9 @@ namespace ice
         template<typename Type, ice::CollectionLogic Logic>
         inline void shrink(ice::HashMap<Type, Logic>& map) noexcept;
 
-        template<typename Type, ice::CollectionLogic Logic>
-            requires std::copy_constructible<Type>
-        inline void set(ice::HashMap<Type, Logic>& map, ice::u64 key, Type const& value) noexcept;
+        template<typename Type, ice::CollectionLogic Logic, typename Value = Type>
+            requires std::copy_constructible<Type> && std::convertible_to<Value, Type>
+        inline void set(ice::HashMap<Type, Logic>& map, ice::u64 key, Value const& value) noexcept;
 
         template<typename Type, ice::CollectionLogic Logic>
             requires std::move_constructible<Type>

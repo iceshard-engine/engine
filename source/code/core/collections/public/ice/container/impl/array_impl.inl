@@ -297,7 +297,7 @@ namespace ice
             {
                 ice::mem_move_construct_at<Type>(
                     Memory{ .location = arr._data + arr._count, .size = ice::size_of<Type>, .alignment = ice::align_of<Type> },
-                    ice::move(item)
+                    ice::forward<Type>(item)
                 );
             }
             else
@@ -308,9 +308,9 @@ namespace ice
             arr._count += 1;
         }
 
-        template<typename Type, ice::CollectionLogic Logic>
-            requires std::copy_constructible<Type>
-        inline void push_back(ice::Array<Type, Logic>& arr, Type const& item) noexcept
+        template<typename Type, ice::CollectionLogic Logic, typename Value>
+            requires std::copy_constructible<Type> && std::convertible_to<Value, Type>
+        inline void push_back(ice::Array<Type, Logic>& arr, Value const& item) noexcept
         {
             if (arr._count == arr._capacity)
             {
