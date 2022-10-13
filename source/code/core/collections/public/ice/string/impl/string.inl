@@ -126,6 +126,11 @@ namespace ice
         return !(*this == other);
     }
 
+    template<typename CharType>
+    constexpr BasicString<CharType>::operator std::basic_string_view<CharType>() const noexcept
+    {
+        return { _data, _size };
+    }
 
     namespace string
     {

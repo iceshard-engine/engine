@@ -36,6 +36,8 @@ namespace ice
 
         constexpr bool operator==(BasicString other) const noexcept;
         constexpr bool operator!=(BasicString other) const noexcept;
+
+        constexpr operator std::basic_string_view<CharType>() const noexcept;
     };
 
     //! \brief Constant string type.
@@ -114,5 +116,20 @@ namespace ice
 
         constexpr operator ice::BasicString<CharType>() const noexcept;
     };
+
+} // namespace ice
+
+namespace ice
+{
+
+    constexpr auto hash(ice::String value) noexcept -> ice::u64
+    {
+        return ice::hash(std::string_view{ value });
+    }
+
+    constexpr auto hash32(ice::String value) noexcept -> ice::u32
+    {
+        return ice::hash32(std::string_view{ value });
+    }
 
 } // namespace ice
