@@ -61,7 +61,7 @@ namespace ice::detail
         detail::LogMessageBuffer final_buffer{ host_alloc, 3000 };
 
         fmt::vformat_to(
-            final_buffer,
+            std::back_inserter(final_buffer),
             fmt_string(LogFormat_AssertCondition),
             fmt::make_format_args(
                 location.file,
@@ -72,7 +72,7 @@ namespace ice::detail
         );
 
         fmt::vformat_to(
-            final_buffer,
+            std::back_inserter(final_buffer),
             fmt_string(LogFormat_AssertMessage),
             fmt::make_format_args(
                 location.file,
@@ -82,7 +82,7 @@ namespace ice::detail
         );
 
         fmt::vformat_to(
-            final_buffer,
+            std::back_inserter(final_buffer),
             fmt_string(message),
             ice::move(args)
         );
@@ -93,7 +93,7 @@ namespace ice::detail
             final_buffer.push_back('\n');
         }
 
-        fmt::print(stderr, fmt_string(final_buffer.begin(), final_buffer.end()));
+        fmt::print(stderr, "{}", fmt_string(final_buffer.begin(), final_buffer.end()));
 
         final_buffer.push_back('\0');
 

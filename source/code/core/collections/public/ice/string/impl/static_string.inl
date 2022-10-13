@@ -306,63 +306,25 @@ namespace ice
         template<ice::ucount Capacity, typename CharType>
         constexpr auto find_first_of(ice::StaticString<Capacity, CharType> const& str, CharType character_value) noexcept -> ice::ucount
         {
-            auto const* it = ice::string::begin(str);
-            auto const* const end = ice::string::end(str);
-
-            while (it != end && *it != character_value)
-            {
-                it += 1;
-            }
-
-            return it == end ? ice::String_NPos : end - it;
+            return ice::string::find_first_of(ice::BasicString<CharType>{ str }, character_value);
         }
 
         template<ice::ucount Capacity, typename CharType>
         constexpr auto find_first_of(ice::StaticString<Capacity, CharType> const& str, ice::BasicString<CharType> character_values) noexcept -> ice::ucount
         {
-            auto const* it = ice::string::begin(str);
-            auto const* const it_end = ice::string::end(str);
-
-            while (it != it_end && ice::string::find_first_of(character_values, *it) == ice::String_NPos)
-            {
-                it += 1;
-            }
-
-            return it == it_end ? ice::String_NPos : it_end - it;
+            return ice::string::find_first_of(ice::BasicString<CharType>{ str }, character_values);
         }
 
         template<ice::ucount Capacity, typename CharType>
         constexpr auto find_last_of(ice::StaticString<Capacity, CharType> const& str, CharType character_value) noexcept -> ice::ucount
         {
-            auto const* it = ice::string::rbegin(str);
-            auto const* const end = ice::string::rend(str);
-
-            while (it != end && *it != character_value)
-            {
-                it += 1;
-            }
-
-            return it == end ? ice::String_NPos : end - it;
+            return ice::string::find_last_of(ice::BasicString<CharType>{ str }, character_value);
         }
 
         template<ice::ucount Capacity, typename CharType>
         constexpr auto find_last_of(ice::StaticString<Capacity, CharType> const& str, ice::BasicString<CharType> character_values) noexcept -> ice::ucount
         {
-            auto const* it = ice::string::rbegin(str);
-            auto const* const it_end = ice::string::rend(str);
-
-            while (it != it_end && ice::string::find_first_of(character_values, *it) == ice::String_NPos)
-            {
-                it += 1;
-            }
-
-            return it == it_end ? ice::String_NPos : it_end - it;
-        }
-
-        template<ice::ucount Capacity, typename CharType>
-        constexpr bool equals(ice::StaticString<Capacity, CharType> const& left, ice::StaticString<Capacity, CharType> const& right) noexcept
-        {
-            return ice::string::equals(ice::BasicString<CharType>{ left }, ice::BasicString<CharType>{ right });
+            return ice::string::find_last_of(ice::BasicString<CharType>{ str }, character_values);
         }
 
 

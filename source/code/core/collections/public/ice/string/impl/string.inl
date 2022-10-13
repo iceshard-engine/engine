@@ -216,6 +216,7 @@ namespace ice
         constexpr auto find_first_of(ice::BasicString<CharType> str, CharType character_value) noexcept -> ice::ucount
         {
             auto const* it = ice::string::begin(str);
+            auto const* const beg = it;
             auto const* const end = ice::string::end(str);
 
             while (it != end && *it != character_value)
@@ -223,13 +224,14 @@ namespace ice
                 it += 1;
             }
 
-            return it == end ? ice::String_NPos : end - it;
+            return it == end ? ice::String_NPos : ice::ucount(it - beg);
         }
 
         template<typename CharType>
         constexpr auto find_first_of(ice::BasicString<CharType> str, ice::BasicString<CharType> character_values) noexcept -> ice::ucount
         {
             auto const* it = ice::string::begin(str);
+            auto const* const beg = it;
             auto const* const it_end = ice::string::end(str);
 
             while (it != it_end && ice::string::find_first_of(character_values, *it) == ice::String_NPos)
@@ -237,35 +239,35 @@ namespace ice
                 it += 1;
             }
 
-            return it == it_end ? ice::String_NPos : it_end - it;
+            return it == it_end ? ice::String_NPos : ice::ucount(beg - it);
         }
 
         template<typename CharType>
         constexpr auto find_last_of(ice::BasicString<CharType> str, CharType character_value) noexcept -> ice::ucount
         {
-            auto const* it = ice::string::rbegin(str);
-            auto const* const end = ice::string::rend(str);
+            auto it = ice::string::rbegin(str);
+            auto const end = ice::string::rend(str);
 
             while (it != end && *it != character_value)
             {
                 it += 1;
             }
 
-            return it == end ? ice::String_NPos : end - it;
+            return it == end ? ice::String_NPos : ice::ucount(end - it);
         }
 
         template<typename CharType>
         constexpr auto find_last_of(ice::BasicString<CharType> str, ice::BasicString<CharType> character_values) noexcept -> ice::ucount
         {
-            auto const* it = ice::string::rbegin(str);
-            auto const* const it_end = ice::string::rend(str);
+            auto it = ice::string::rbegin(str);
+            auto const it_end = ice::string::rend(str);
 
             while (it != it_end && ice::string::find_first_of(character_values, *it) == ice::String_NPos)
             {
                 it += 1;
             }
 
-            return it == it_end ? ice::String_NPos : it_end - it;
+            return it == it_end ? ice::String_NPos : ice::ucount(it_end - it);
         }
 
 

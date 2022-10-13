@@ -79,10 +79,10 @@ namespace ice::string
     inline auto back(ice::HeapString<CharType> const& str) noexcept -> typename ice::HeapString<CharType>::ValueType;
 
     template<typename CharType>
-    inline auto substr(ice::HeapString<CharType> const& str, ice::ucount pos, ice::ucount len = ice::string_npos) noexcept -> ice::BasicString<CharType>;
+    inline auto substr(ice::HeapString<CharType> const& str, ice::ucount pos, ice::ucount len = ice::String_NPos) noexcept -> ice::BasicString<CharType>;
 
     template<typename CharType>
-    inline auto substr_clone(ice::HeapString<CharType> const& str, ice::ucount pos, ice::ucount len = ice::string_npos) noexcept -> ice::HeapString<CharType>;
+    inline auto substr_clone(ice::HeapString<CharType> const& str, ice::ucount pos, ice::ucount len = ice::String_NPos) noexcept -> ice::HeapString<CharType>;
 
     template<typename CharType>
     inline auto find_first_of(ice::HeapString<CharType> const& str, CharType character_value) noexcept -> ice::ucount;

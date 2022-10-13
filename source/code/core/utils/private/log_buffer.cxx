@@ -24,7 +24,7 @@ namespace ice::detail
         );
     }
 
-    void LogMessageBuffer::grow(ice::u64 min_size) noexcept
+    void LogMessageBuffer::grow(size_t min_size) noexcept
     {
         ice::u64 const old_capacity = { this->capacity() };
         ice::u64 const new_capacity = ice::max(old_capacity + old_capacity / 2, min_size);

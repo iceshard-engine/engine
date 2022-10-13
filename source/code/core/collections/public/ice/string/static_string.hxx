@@ -93,9 +93,6 @@ namespace ice::string
     template<ice::ucount Capacity, typename CharType>
     constexpr auto find_last_of(ice::StaticString<Capacity, CharType> const& str, ice::BasicString<CharType> character_values) noexcept -> ice::ucount;
 
-    template<ice::ucount Capacity, typename CharType>
-    constexpr bool equals(ice::StaticString<Capacity, CharType> const& left, ice::StaticString<Capacity, CharType> const& right) noexcept;
-
 
     template<ice::ucount Capacity, typename CharType>
     constexpr auto data_view(ice::StaticString<Capacity, CharType> const& str) noexcept -> ice::Data;

@@ -3,6 +3,7 @@
 #include <ice/task.hxx>
 #include <ice/os/windows.hxx>
 #include <ice/mem_allocator_stack.hxx>
+#include <functional>
 #include <thread>
 
 #include "internal_task.hxx"

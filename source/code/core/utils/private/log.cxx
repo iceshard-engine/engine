@@ -108,13 +108,13 @@ namespace ice::detail
         detail::LogMessageBuffer final_buffer{ detail::log_buffer_alloc, 2000 };
 
         fmt::vformat_to(
-            final_buffer,
+            std::back_inserter(final_buffer),
             fmt_string(LogFormat_LogLine),
             fmt::make_format_args(log_header, LogState::minimal_header_length)
         );
 
         fmt::vformat_to(
-            final_buffer,
+            std::back_inserter(final_buffer),
             fmt_string(message),
             ice::move(args)
         );
@@ -127,11 +127,11 @@ namespace ice::detail
 
         if (severity == LogSeverity::Critical || severity == LogSeverity::Error)
         {
-            fmt::print(stderr, fmt_string(final_buffer.begin(), final_buffer.end()));
+            fmt::print(stderr, "{}", fmt_string(final_buffer.begin(), final_buffer.end()));
         }
         else
         {
-            fmt::print(stdout, fmt_string(final_buffer.begin(), final_buffer.end()));
+            fmt::print(stdout, "{}", fmt_string(final_buffer.begin(), final_buffer.end()));
         }
 
         final_buffer.push_back('\0');

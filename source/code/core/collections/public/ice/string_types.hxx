@@ -1,6 +1,5 @@
 #pragma once
 #include <ice/mem_allocator.hxx>
-//#include <string_view>
 
 namespace ice
 {
@@ -42,6 +41,7 @@ namespace ice
 
     //! \brief Constant string type.
     using String = ice::BasicString<char>;
+    using WString = ice::BasicString<ice::wchar>;
 
     //! \brief A heap allocated string object.
     //!

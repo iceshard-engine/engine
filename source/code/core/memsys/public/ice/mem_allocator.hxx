@@ -174,6 +174,7 @@ namespace ice
         }
 
         template<typename T>
+            requires (std::is_const_v<T> == false)
         void destroy(T* object) noexcept
         {
             object->~T();

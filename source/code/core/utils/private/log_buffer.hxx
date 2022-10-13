@@ -6,13 +6,13 @@
 namespace ice::detail
 {
 
-    class LogMessageBuffer final : public fmt::detail::buffer<char>
+    class LogMessageBuffer final : public fmt::v9::detail::buffer<char>
     {
     public:
         LogMessageBuffer(ice::Allocator& alloc, ice::ucount initial_allocation) noexcept;
-        ~LogMessageBuffer() noexcept override;
+        ~LogMessageBuffer() noexcept;
 
-        void grow(ice::u64 size) noexcept override;
+        void grow(size_t size) noexcept override;
 
     private:
         ice::Allocator& _allocator;

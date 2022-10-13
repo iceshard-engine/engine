@@ -75,7 +75,14 @@ namespace ice::detail
 
     extern AssertFn* assert_fn;
 
-    auto fmt_string(ice::String str) noexcept -> fmt::string_view;
-    auto fmt_string(char const* begin, char const* end) noexcept -> fmt::string_view;
+    constexpr auto fmt_string(char const* begin, char const* end) noexcept -> fmt::string_view
+    {
+        return fmt::string_view{ begin, static_cast<ice::u64>(end - begin) };
+    }
+
+    constexpr auto fmt_string(ice::String str) noexcept -> fmt::string_view
+    {
+        return fmt_string(str._data, str._data + str._size);
+    }
 
 } // namespace ice::detail

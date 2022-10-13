@@ -44,8 +44,6 @@ namespace ice
         template<typename U> requires std::is_base_of_v<T, U>
         inline auto operator=(UniquePtr<U>&& other) noexcept -> UniquePtr&;
 
-        inline void reset() noexcept;
-
         bool operator==(std::nullptr_t) const noexcept { return _ptr == nullptr; }
 
         auto operator->() noexcept -> T* { return _ptr; }
@@ -53,6 +51,9 @@ namespace ice
 
         auto operator*() noexcept -> T& { return *_ptr; }
         auto operator*() const noexcept -> T const& { return *_ptr; }
+
+        inline auto get() noexcept -> T* { return _ptr; }
+        inline void reset() noexcept;
 
         Allocator* _alloc;
         T* _ptr;
