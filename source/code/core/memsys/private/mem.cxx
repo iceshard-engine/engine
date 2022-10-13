@@ -50,10 +50,10 @@ namespace ice
 #endif
     }
 
-    void release_aligned(ice::Memory AllocResult) noexcept
+    void release_aligned(ice::Memory memory) noexcept
     {
 #if ISP_WINDOWS
-        _aligned_free(AllocResult.location);
+        _aligned_free(memory.location);
 #elif ISP_UNIX
         free(AllocResult.result);
 #else
@@ -67,15 +67,15 @@ namespace ice
         return std::memcpy(dest, source, size.value);
     }
 
-    auto memcpy(ice::Memory AllocResult, ice::Data data) noexcept -> ice::Memory
+    auto memcpy(ice::Memory memory, ice::Data data) noexcept -> ice::Memory
     {
         // Assert: (alignment)
-        ice::usize const copy_size = ice::usize{ ice::min(AllocResult.size.value, data.size.value) };
-        void* const result = ice::memcpy(AllocResult.location, data.location, copy_size);
+        ice::usize const copy_size = ice::usize{ ice::min(memory.size.value, data.size.value) };
+        void* const result = ice::memcpy(memory.location, data.location, copy_size);
 
         return Memory{
             .location = result,
-            .size = ice::usize{ AllocResult.size.value - copy_size.value },
+            .size = ice::usize{ memory.size.value - copy_size.value },
             .alignment = ice::ualign::b_1,
         };
     }

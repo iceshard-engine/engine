@@ -2,31 +2,12 @@
 #include <ice/container/array.hxx>
 #include <ice/mem_allocator_host.hxx>
 #include <ice/mem_allocator_null.hxx>
+#include "util_tracking_object.hxx"
 
-SCENARIO("collections 'ice/container/array.hxx'", "[collection, array, complex]")
+SCENARIO("collections 'ice/container/array.hxx'", "[collection][array][complex]")
 {
-    struct ComplexType
-    {
-        ice::u32 value;
-
-        ice::u32 ctor = 0;
-        ice::u32 ctor_copy = 0;
-        ice::u32 ctor_move = 0;
-        ice::u32 op_copy = 0;
-        ice::u32 op_move = 0;
-        ice::u32* dtor = nullptr;
-
-        ComplexType(ice::u32 value = 0) noexcept : value{ value }, ctor { 1 } { };
-        ComplexType(ComplexType&& other) noexcept : value{ ice::exchange(other.value, 0) }, ctor_move{ 1 } { };
-        ComplexType(ComplexType const& other) noexcept : value{ other.value }, ctor_copy{ 1 } { };
-        ~ComplexType() noexcept { if (dtor) *dtor += 1; };
-
-        auto operator=(ComplexType&& other) noexcept -> ComplexType& { value = ice::exchange(other.value, 0); op_move += 1; return *this; };
-        auto operator=(ComplexType const& other) noexcept -> ComplexType& { value = other.value; op_copy += 1; return *this; };
-    };
-
     ice::HostAllocator alloc;
-    ice::Array objects = ice::Array<ComplexType, ice::CollectionLogic::Complex>{ alloc };
+    ice::Array objects = ice::Array<Test_TrackingObject, ice::CollectionLogic::Complex>{ alloc };
 
     GIVEN("an empty Array object")
     {
@@ -40,23 +21,21 @@ SCENARIO("collections 'ice/container/array.hxx'", "[collection, array, complex]"
 
         WHEN("adding a new object")
         {
-            ice::array::push_back(objects, ComplexType{ });
+            ice::array::push_back(objects, Test_TrackingObject{ });
 
             REQUIRE(ice::array::capacity(objects) >= 1);
             REQUIRE(ice::array::count(objects) == 1);
 
             THEN("constructors are called")
             {
-                ComplexType& obj = ice::array::front(objects);
+                Test_TrackingObject& obj = ice::array::front(objects);
 
-                CHECK(obj.ctor_move == 1);
-                CHECK((obj.ctor + obj.ctor_copy) == 0);
-                CHECK((obj.op_copy + obj.op_move) == 0);
+                CHECK(obj == Test_ObjectEvents{ .test_ctor_move = 1 });
 
                 AND_WHEN("we remove the object the destructor is called")
                 {
-                    ice::u32 dtor_val = 0;
-                    obj.dtor = &dtor_val;
+                    ice::ucount dtor_val = 0;
+                    obj.data.test_dtor = &dtor_val;
                     ice::array::pop_back(objects, 1);
 
                     CHECK(dtor_val == 1);
@@ -65,9 +44,9 @@ SCENARIO("collections 'ice/container/array.hxx'", "[collection, array, complex]"
 
             AND_WHEN("resizing the array")
             {
-                ComplexType& obj = ice::array::front(objects);
+                Test_TrackingObject& obj = ice::array::front(objects);
                 ice::u32 dtor_val = 0;
-                obj.dtor = &dtor_val;
+                obj.data.test_dtor = &dtor_val;
 
                 ice::array::resize(objects, 10);
 
@@ -81,20 +60,11 @@ SCENARIO("collections 'ice/container/array.hxx'", "[collection, array, complex]"
 
                 THEN("constructors are called")
                 {
-                    ComplexType& obj_front = ice::array::front(objects);
-                    ComplexType& obj_back = ice::array::back(objects);
+                    Test_TrackingObject& obj_front = ice::array::front(objects);
+                    Test_TrackingObject& obj_back = ice::array::back(objects);
 
-                    CHECK(obj_front.ctor == 0);
-                    CHECK(obj_front.ctor_move == 1);
-                    CHECK(obj_front.ctor_copy == 0);
-                    CHECK(obj_front.op_copy == 0);
-                    CHECK(obj_front.op_move == 0);
-
-                    CHECK(obj_back.ctor == 1);
-                    CHECK(obj_back.ctor_move == 0);
-                    CHECK(obj_back.ctor_copy == 0);
-                    CHECK(obj_back.op_copy == 0);
-                    CHECK(obj_back.op_move == 0);
+                    CHECK(obj_front == Test_ObjectEvents{ .test_ctor_move = 1 });
+                    CHECK(obj_back == Test_ObjectEvents{ .test_ctor = 1 });
                 }
 
                 AND_THEN("we can copy and push back the same elements")
@@ -109,10 +79,10 @@ SCENARIO("collections 'ice/container/array.hxx'", "[collection, array, complex]"
 
                     ice::u32 copied_objects = 0;
                     ice::u32 moved_objects = 0;
-                    for (ComplexType const& object : objects)
+                    for (Test_TrackingObject const& object : objects)
                     {
-                        moved_objects += object.ctor_move;
-                        copied_objects += object.ctor_copy;
+                        moved_objects += object.data.test_ctor_move != 0;
+                        copied_objects += object.data.test_ctor_copy != 0;
                     }
                     CHECK(moved_objects == 10);
                     CHECK(copied_objects == 10);
@@ -120,9 +90,9 @@ SCENARIO("collections 'ice/container/array.hxx'", "[collection, array, complex]"
                     AND_THEN("clearning it will destroy all objects")
                     {
                         dtor_val = 0;
-                        for (ComplexType& object : objects)
+                        for (Test_TrackingObject& object : objects)
                         {
-                            object.dtor = &dtor_val;
+                            object.data.test_dtor = &dtor_val;
                         }
 
                         ice::array::clear(objects);
@@ -138,10 +108,18 @@ SCENARIO("collections 'ice/container/array.hxx'", "[collection, array, complex]"
                 THEN("moving the array will not affect the objects")
                 {
                     dtor_val = 0;
-                    for (ComplexType& object : objects)
+                    for (Test_TrackingObject& object : objects)
                     {
-                        object.dtor = &dtor_val;
+                        object.data.test_dtor = &dtor_val;
                     }
+
+                    Test_ObjectEvents total_events{ };
+                    for (Test_TrackingObject const& object : objects)
+                    {
+                        object.gather_ctors(total_events);
+                    }
+
+                    CHECK(total_events == Test_ObjectEvents{ .test_ctor = 9, .test_ctor_move = 1 });
 
                     ice::Array moved_objects = ice::move(objects);
                     CHECK(dtor_val == 0);
@@ -151,20 +129,20 @@ SCENARIO("collections 'ice/container/array.hxx'", "[collection, array, complex]"
                     CHECK(ice::array::any(objects) == false);
                     CHECK(ice::array::count(objects) == 0);
 
-                    for (ComplexType const& object : moved_objects)
+                    total_events = Test_ObjectEvents{ };
+                    for (Test_TrackingObject const& object : moved_objects)
                     {
-                        CHECK((object.ctor + object.ctor_move) == 1);
-                        CHECK(object.ctor_copy == 0);
-                        CHECK(object.op_copy == 0);
-                        CHECK(object.op_move == 0);
+                        object.gather_ctors(total_events);
                     }
+
+                    CHECK(total_events == Test_ObjectEvents{ .test_ctor = 9, .test_ctor_move = 1 });
                 }
             }
         }
     }
 }
 
-SCENARIO("collections 'ice/container/array.hxx' (POD)", "[collection, array, pod]")
+SCENARIO("collections 'ice/container/array.hxx' (POD)", "[collection][array][pod]")
 {
     static constexpr ice::i32 test_value_1 = 0x12021;
     static constexpr ice::i32 test_value_2 = 0x23032;

@@ -1,123 +1,118 @@
 #pragma once
 #include <ice/mem_allocator.hxx>
-#include <string_view>
+//#include <string_view>
 
 namespace ice
 {
 
-    template<typename CharType>
-    using BasicString = std::basic_string_view<CharType>;
+    //! \brief Null position used by string iterator types.
+    static constexpr ice::ucount String_NPos = ice::ucount_max;
 
-    using String = BasicString<char>;
+    //! \brief Constant string type.
+    template<typename CharType = char>
+    struct BasicString
+    {
+        using ValueType = CharType const;
+        using ConstIterator = CharType const*;
+        using ConstReverseIterator = std::reverse_iterator<CharType const*>;
 
-    using Utf8String = BasicString<char8_t>;
-    using AsciiString = BasicString<char>;
+        ice::ucount _size;
+        CharType const* _data;
 
-#if ISP_WINDOWS
-    using WString = BasicString<wchar_t>;
-#endif
+        constexpr BasicString() noexcept;
+        constexpr BasicString(BasicString&& other) noexcept;
+        constexpr BasicString(BasicString const& other) noexcept;
 
+        constexpr BasicString(CharType const* str_ptr) noexcept;
+        constexpr BasicString(CharType const* str_beg, CharType const* str_end) noexcept;
+        constexpr BasicString(CharType const* str_ptr, ice::ucount size) noexcept;
+        template<ice::ucount Size>
+        constexpr BasicString(CharType const(&str_arr)[Size]) noexcept;
+
+        constexpr auto operator=(BasicString&& other) noexcept -> BasicString&;
+        constexpr auto operator=(BasicString const& other) noexcept -> BasicString&;
+
+        constexpr auto operator[](ice::ucount index) const noexcept -> CharType const&;
+
+        constexpr bool operator==(BasicString other) const noexcept;
+        constexpr bool operator!=(BasicString other) const noexcept;
+    };
+
+    //! \brief Constant string type.
+    using String = ice::BasicString<char>;
+
+    //! \brief A heap allocated string object.
+    //!
+    //! \note Depending on the use case an allocator not related to system heap may be provided.
+    //!   This is still a valid use case.
     template<typename CharType = char>
     struct HeapString
     {
-        using value_type = CharType;
-        using iterator = value_type*;
-        using reverse_iterator = std::reverse_iterator<value_type*>;
-        using const_iterator = value_type const*;
-        using const_reverse_iterator = std::reverse_iterator<value_type const*>;
-
-        explicit HeapString(ice::Allocator& allocator) noexcept;
-        HeapString(ice::Allocator& allocator, ice::BasicString<CharType> string) noexcept;
-        ~HeapString() noexcept;
-
-        HeapString(HeapString&& other) noexcept;
-        HeapString(HeapString const& other) noexcept;
-
-        auto operator=(HeapString&& other) noexcept -> HeapString&;
-        auto operator=(HeapString const& other) noexcept -> HeapString&;
-
-        auto operator=(ice::BasicString<CharType> str) noexcept -> HeapString&;
-
-        auto operator[](uint32_t index) noexcept -> CharType&;
-        auto operator[](uint32_t index) const noexcept -> CharType const&;
-
-        operator ice::BasicString<CharType>() const noexcept;
+        using ValueType = CharType;
+        using Iterator = CharType*;
+        using ReverseIterator = std::reverse_iterator<CharType*>;
+        using ConstIterator = CharType const*;
+        using ConstReverseIterator = std::reverse_iterator<CharType const*>;
 
         ice::Allocator* _allocator;
+        ice::ucount _capacity;
+        ice::ucount _size;
+        CharType* _data;
 
-        uint32_t _size{ 0 };
-        uint32_t _capacity{ 0 };
-        value_type* _data{ nullptr };
+        inline explicit HeapString(ice::Allocator& allocator) noexcept;
+        inline HeapString(ice::Allocator& allocator, ice::BasicString<CharType> string) noexcept;
+        inline ~HeapString() noexcept;
+
+        inline HeapString(HeapString&& other) noexcept;
+        inline HeapString(HeapString const& other) noexcept;
+
+        inline auto operator=(HeapString&& other) noexcept -> HeapString&;
+        inline auto operator=(HeapString const& other) noexcept -> HeapString&;
+        inline auto operator=(ice::BasicString<CharType> str) noexcept -> HeapString&;
+
+        inline auto operator[](ice::ucount index) noexcept -> CharType&;
+        inline auto operator[](ice::ucount index) const noexcept -> CharType const&;
+
+        inline operator ice::BasicString<CharType>() const noexcept;
     };
 
-    template<uint32_t Size = 16, typename CharType = char>
-    struct StackString
+    //! \brief A static capacity string object.
+    //!
+    //! \note Because the capacity is static some string operations are not implemented or may behave differently.
+    //!   For example, assining a string of length 20 to a static static string of capacity 12, will drop the last 8 characers.
+    template<ice::ucount Capacity = 12, typename CharType = char>
+    struct StaticString
     {
-        using value_type = CharType;
-        using iterator = value_type*;
-        using reverse_iterator = std::reverse_iterator<value_type*>;
-        using const_iterator = value_type const*;
-        using const_reverse_iterator = std::reverse_iterator<value_type const*>;
+        using ValueType = CharType;
+        using Iterator = CharType*;
+        using ReverSeIterator = std::reverse_iterator<CharType*>;
+        using ConstIterator = CharType const*;
+        using ConstReverseIterator = std::reverse_iterator<CharType const*>;
 
-        static constexpr uint32_t Constant_Capacity = Size;
+        static constexpr ice::ucount Constant_Capacity = Capacity;
 
-        StackString() noexcept = default;
-        template<uint32_t ArraySize>
-        StackString(CharType (&char_array)[ArraySize]) noexcept;
-        StackString(ice::BasicString<CharType> str) noexcept;
-        ~StackString() noexcept = default;
+        ice::ucount _size;
+        CharType _data[Constant_Capacity];
 
-        template<uint32_t OtherSize>
-        StackString(StackString<OtherSize, CharType> const& other) noexcept;
+        constexpr StaticString() noexcept;
+        constexpr ~StaticString() noexcept = default;
 
-        template<uint32_t OtherSize>
-        auto operator=(StackString<OtherSize, CharType> const& other) noexcept -> StackString&;
+        constexpr StaticString(ice::BasicString<CharType> str) noexcept;
 
-        auto operator=(ice::BasicString<CharType> str) noexcept -> StackString&;
+        template<ice::ucount ArraySize>
+        constexpr StaticString(CharType const (&str_arr)[ArraySize]) noexcept;
 
-        auto operator[](uint32_t i) noexcept -> CharType&;
-        auto operator[](uint32_t i) const noexcept -> CharType const&;
+        template<ice::ucount OtherCapacity>
+        constexpr StaticString(ice::StaticString<OtherCapacity, CharType> const& other) noexcept;
 
-        operator ice::BasicString<CharType>() const noexcept;
+        template<ice::ucount OtherCapacity>
+        constexpr auto operator=(ice::StaticString<OtherCapacity, CharType> const& other) noexcept -> StaticString&;
+        constexpr auto operator=(ice::BasicString<CharType> str) noexcept -> StaticString&;
 
-        uint32_t _size{ 0 };
-        CharType _data[Constant_Capacity]{ '\0' };
+        constexpr auto operator[](ice::ucount idx) noexcept -> CharType&;
+        constexpr auto operator[](ice::ucount idx) const noexcept -> CharType const&;
+
+        constexpr operator ice::BasicString<CharType>() const noexcept;
     };
-
-    static constexpr uint32_t string_npos = std::numeric_limits<uint32_t>::max();
-
-    static constexpr auto operator""_str(char8_t const* str, std::size_t size) noexcept
-    {
-        return ice::Utf8String{ str, size };
-    }
-
-    template<typename T>
-    bool from_chars(ice::String str, ice::String& out_remaining, T& out_value) noexcept
-    {
-#if ISP_WINDOWS
-        std::from_chars_result const result = std::from_chars(str.data(), str.data() + str.size(), out_value);
-        out_remaining = { result.ptr, str.data() + str.size() };
-        return result.ec == std::errc{};
-#else
-        return false;
-#endif
-    }
-
-    template<typename T>
-    bool from_chars(ice::Utf8String str, ice::Utf8String& out_remaining, T& out_value) noexcept
-    {
-#if ISP_WINDOWS
-        char const* data_ptr = reinterpret_cast<char const*>(str.data());
-
-        std::from_chars_result const result = std::from_chars(data_ptr, data_ptr + str.size(), out_value);
-        out_remaining = {
-            reinterpret_cast<ice::utf8 const*>(result.ptr),
-            reinterpret_cast<ice::utf8 const*>(data_ptr + str.size())
-        };
-        return result.ec == std::errc{};
-#else
-        return false;
-#endif
-    }
 
 } // namespace ice

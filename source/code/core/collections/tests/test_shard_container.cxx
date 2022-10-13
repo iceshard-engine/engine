@@ -3,7 +3,7 @@
 #include <ice/shard.hxx>
 #include <ice/shard_container.hxx>
 
-SCENARIO("collections 'ice/shard_container.hxx'", "[shard, collection]")
+SCENARIO("collections 'ice/shard_container.hxx'", "[shard][collection]")
 {
     using ice::operator""_shard;
 

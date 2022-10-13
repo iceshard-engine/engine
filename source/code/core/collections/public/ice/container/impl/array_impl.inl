@@ -1,4 +1,3 @@
-#include <ice/mem_initializers.hxx>
 
 namespace ice
 {
@@ -12,7 +11,7 @@ namespace ice
     { }
 
     template<typename Type, ice::CollectionLogic Logic>
-    inline Array<Type, Logic>::Array(ice::Array<Type, Logic>&& other) noexcept
+    inline Array<Type, Logic>::Array(Array&& other) noexcept
         : _allocator{ other._allocator }
         , _capacity{ ice::exchange(other._capacity, 0) }
         , _count{ ice::exchange(other._count, 0) }
@@ -21,7 +20,7 @@ namespace ice
     }
 
     template<typename Type, ice::CollectionLogic Logic>
-    inline Array<Type, Logic>::Array(ice::Array<Type, Logic> const& other) noexcept
+    inline Array<Type, Logic>::Array(Array const& other) noexcept
         requires std::copy_constructible<Type>
         : _allocator{ other._allocator }
         , _capacity{ 0 }
@@ -96,7 +95,7 @@ namespace ice
     }
 
     template<typename Type, ice::CollectionLogic Logic>
-    inline auto Array<Type, Logic>::operator=(ice::Array<Type, Logic>&& other) noexcept -> ice::Array<Type, Logic>&
+    inline auto Array<Type, Logic>::operator=(Array&& other) noexcept -> Array&
     {
         if (this != &other)
         {
@@ -111,7 +110,7 @@ namespace ice
     }
 
     template<typename Type, ice::CollectionLogic Logic>
-    inline auto Array<Type, Logic>::operator=(ice::Array<Type, Logic> const& other) noexcept -> ice::Array<Type, Logic>&
+    inline auto Array<Type, Logic>::operator=(Array const& other) noexcept -> Array&
         requires std::copy_constructible<Type>
     {
         if (this != &other)
@@ -299,7 +298,7 @@ namespace ice
                 ice::mem_move_construct_at<Type>(
                     Memory{ .location = arr._data + arr._count, .size = ice::size_of<Type>, .alignment = ice::align_of<Type> },
                     ice::move(item)
-                    );
+                );
             }
             else
             {
@@ -371,11 +370,11 @@ namespace ice
         }
 
         template<typename Type, ice::CollectionLogic Logic>
-        inline void pop_back(ice::Array<Type, Logic>& arr, ice::ucount count) noexcept
+        inline void pop_back(ice::Array<Type, Logic>& arr, ice::ucount count /*= 1*/) noexcept
         {
             if constexpr (Logic == CollectionLogic::Complex)
             {
-                ice::mem_destruct_at(arr._data + (arr._count - 1));
+                ice::mem_destruct_n_at(arr._data + (arr._count - count), count);
             }
 
             if (arr._count > count)
@@ -509,7 +508,7 @@ namespace ice
         {
             return ice::Data{
                 .location = arr._data,
-                .size = ice::size_of<Type> *arr._count,
+                .size = ice::size_of<Type> * arr._count,
                 .alignment = ice::align_of<Type>
             };
         }
@@ -519,7 +518,7 @@ namespace ice
         {
             return ice::Memory{
                 .location = arr._data,
-                .size = ice::size_of<Type> *arr._capacity,
+                .size = ice::size_of<Type> * arr._capacity,
                 .alignment = ice::align_of<Type>
             };
         }

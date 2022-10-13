@@ -82,6 +82,8 @@ namespace ice
 
     auto AllocatorBase<true>::allocate(ice::AllocRequest request) noexcept -> ice::AllocResult
     {
+        ICE_ASSERT_CORE(request.size != 0_B);
+
         ice::AllocResult result = do_allocate(request);
         dbg_size_add(result.size);
         return result;
@@ -89,6 +91,8 @@ namespace ice
 
     void AllocatorBase<true>::deallocate(ice::Memory result) noexcept
     {
+        ICE_ASSERT_CORE(((result.location == nullptr) ^ (result.size == 0_B)) == false);
+
         dbg_size_sub(result.size);
         do_deallocate(result);
     }
@@ -100,8 +104,8 @@ namespace ice
 
     AllocatorBase<true>::~AllocatorBase() noexcept
     {
-        assert(allocation_size_inuse() == 0_B);
-        assert(allocation_count() == 0);
+        ICE_ASSERT_CORE(allocation_size_inuse() == 0_B);
+        ICE_ASSERT_CORE(allocation_count() == 0);
     }
 
 } // namespace ice

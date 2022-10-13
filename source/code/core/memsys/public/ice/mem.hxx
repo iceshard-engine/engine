@@ -36,13 +36,13 @@ namespace ice
     };
 
     auto alloc(ice::usize request) noexcept -> ice::AllocResult;
-    void release(ice::Memory AllocResult) noexcept;
+    void release(ice::Memory memory) noexcept;
 
     auto alloc_aligned(ice::AllocRequest request) noexcept -> ice::AllocResult;
-    void release_aligned(ice::Memory AllocResult) noexcept;
+    void release_aligned(ice::Memory memory) noexcept;
 
     auto memcpy(void* dest, void const* source, ice::usize size) noexcept -> void*;
-    auto memcpy(ice::Memory AllocResult, ice::Data data) noexcept -> ice::Memory;
+    auto memcpy(ice::Memory memory, ice::Data data) noexcept -> ice::Memory;
 
     // Additional overloads
     void release(void* pointer) noexcept;

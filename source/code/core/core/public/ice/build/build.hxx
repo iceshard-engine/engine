@@ -1,6 +1,7 @@
 #pragma once
 #include <ice/build/config.hxx>
 #include <ice/build/platform.hxx>
+#include <ice/build/validate.hxx>
 
 namespace ice::build
 {

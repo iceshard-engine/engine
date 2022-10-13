@@ -1,5 +1,6 @@
 #pragma once
-#include <ice/collections.hxx>
+#include <ice/container_types.hxx>
+#include <ice/mem_initializers.hxx>
 
 namespace ice::array
 {

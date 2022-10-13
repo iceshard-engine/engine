@@ -5,7 +5,7 @@
 namespace ice
 {
 
-    using utf8 = char8_t;
+    using utf8 = char8_t; // might need to be changed to unisgned char later.
     using utf16 = char16_t;
     using utf32 = char32_t;
     using wchar = wchar_t;

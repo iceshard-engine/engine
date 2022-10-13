@@ -4,6 +4,7 @@
 #include <ice/constants.hxx>
 #include <ice/workarounds.hxx>
 #include <ice/build/build.hxx>
+#include <ice/assert_core.hxx>
 #include <ice/config.hxx>
 #include <ice/hash.hxx>
 

@@ -35,10 +35,13 @@ namespace ice
         ice::align_result const res = ice::align_to(left.size, right.alignment);
         left.size = res.value;
 
-        ice::usize::base_type const result = left.size.value;
-        left.alignment = right.alignment;
+        ice::usize const result = left.size;
+        // The following line is commented out on purpose.
+        //   We need to keep the original alignment so any allocation made
+        //   will mimic all the added meminfo values and respect their offsets.
+        // left.alignment = right.alignment; // DON'T SET THIS
         left.size += right.size;
-        return { result };
+        return result;
     }
 
 } // namespace ice

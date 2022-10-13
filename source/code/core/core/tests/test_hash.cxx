@@ -39,7 +39,7 @@ TEST_CASE("core 'ice/hash/murmur2.hxx' (64bit)", "[hash]")
     }
 }
 
-TEST_CASE("core 'ice/hash/murmur3.hxx' (32bit)", "[hash, 32bit_hash]")
+TEST_CASE("core 'ice/hash/murmur3.hxx' (32bit)", "[hash][32bit_hash]")
 {
     namespace mm3h = ice::detail::murmur3_hash;
 
@@ -68,7 +68,7 @@ TEST_CASE("core 'ice/hash/murmur3.hxx' (32bit)", "[hash, 32bit_hash]")
     }
 }
 
-TEST_CASE("core 'ice/hash/murmur3.hxx' (128bit)", "[hash, 128bit_hash]")
+TEST_CASE("core 'ice/hash/murmur3.hxx' (128bit)", "[hash][128bit_hash]")
 {
     namespace mm3h = ice::detail::murmur3_hash;
 
