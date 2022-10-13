@@ -8,7 +8,7 @@ SCENARIO("memsys 'ice/mem_allocator_proxy.hxx'", "[allocators]")
     using namespace ice;
 
     ice::HostAllocator host_alloc{ };
-    ice::ProxyAllocator proxy_alloc{ host_alloc, u8"test_proxy" };
+    ice::ProxyAllocator proxy_alloc{ host_alloc, "test_proxy" };
 
     GIVEN("a proxy allocator...")
     {

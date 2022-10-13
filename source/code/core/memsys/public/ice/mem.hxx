@@ -25,7 +25,7 @@ namespace ice
         ice::usize size;
         ice::ualign alignment;
 
-        constexpr operator ice::Memory() noexcept
+        constexpr operator ice::Memory() const noexcept
         {
             return ice::Memory{
                 .location = result,

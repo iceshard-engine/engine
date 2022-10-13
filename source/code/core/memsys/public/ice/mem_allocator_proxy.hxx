@@ -13,7 +13,7 @@ namespace ice
 
         inline ProxyAllocator(
             ice::Allocator& parent,
-            std::u8string_view name,
+            std::string_view name,
             std::source_location = std::source_location::current()
         ) noexcept;
 
@@ -36,7 +36,7 @@ namespace ice
 
     inline ProxyAllocator::ProxyAllocator(
         ice::Allocator& parent,
-        std::u8string_view name,
+        std::string_view name,
         std::source_location src_loc
     ) noexcept
         : ice::Allocator{ src_loc, parent, name }

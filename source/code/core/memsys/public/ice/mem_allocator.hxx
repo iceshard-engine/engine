@@ -87,12 +87,12 @@ namespace ice
     public:
         AllocatorDebugInfo(
             std::source_location src_loc,
-            std::u8string_view name
+            std::string_view name
         ) noexcept;
 
         AllocatorDebugInfo(
             std::source_location const& src_loc,
-            std::u8string_view name,
+            std::string_view name,
             ice::AllocatorDebugInfo& parent
         ) noexcept;
 
@@ -101,7 +101,7 @@ namespace ice
             return _source_location;
         }
 
-        auto name() const noexcept -> std::u8string_view
+        auto name() const noexcept -> std::string_view
         {
             return _name;
         }
@@ -132,7 +132,7 @@ namespace ice
 
     protected:
         std::source_location const _source_location;
-        std::u8string_view const _name;
+        std::string_view const _name;
 
         ice::AllocatorDebugInfo* const _parent;
         ice::AllocatorDebugInfo* _children = nullptr;
@@ -154,7 +154,7 @@ namespace ice
 
         AllocatorBase(std::source_location const& src_loc) noexcept;
         AllocatorBase(std::source_location const& src_loc, AllocatorBase& parent) noexcept;
-        AllocatorBase(std::source_location const& src_loc, AllocatorBase& parent, std::u8string_view name) noexcept;
+        AllocatorBase(std::source_location const& src_loc, AllocatorBase& parent, std::string_view name) noexcept;
 
         auto allocate(ice::AllocRequest request) noexcept -> ice::AllocResult;
         void deallocate(ice::Memory result) noexcept;

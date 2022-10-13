@@ -79,7 +79,7 @@ namespace ice
     static constexpr ice::StringID StringID_Invalid{ .value = StringID_Hash{ } };
 
 
-    constexpr auto stringid(std::u8string_view value) noexcept
+    constexpr auto stringid(std::string_view value) noexcept
     {
         using namespace ice::detail::murmur2_hash;
         mm2_x64_64 const hash_result = cexpr_murmur2_x64_64(value, ice::config::StringID_DefaultSeed);
@@ -90,7 +90,7 @@ namespace ice
             {
                 return BaseStringID<true> {
                     .value = { .value = hash_result.h[0] },
-                    .debug_info = { .name_value = { (char const*) value.data(), char('\xff')} }
+                    .debug_info = { .name_value = { value.data(), char('\xff')} }
                 };
             }
             else
@@ -174,6 +174,17 @@ namespace ice
     constexpr auto hash(ice::StringID_Arg value) noexcept -> ice::u64
     {
         return hash(stringid_hash(value));
+    }
+
+
+    constexpr auto operator""_sid(char const* str, size_t len) noexcept
+    {
+        return ice::stringid({ str, len });
+    }
+
+    constexpr auto operator""_sid_hash(char const* str, size_t len) noexcept
+    {
+        return ice::stringid_hash(ice::stringid({ str, len }));
     }
 
 } // namespace ice

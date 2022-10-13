@@ -9,7 +9,7 @@ SCENARIO("collections 'ice/container/queue.hxx'", "[collection][queue][complex]"
     namespace queue = ice::queue;
 
     ice::HostAllocator host_alloc{ };
-    ice::ProxyAllocator alloc{ host_alloc, u8"queue_test" };
+    ice::ProxyAllocator alloc{ host_alloc, "queue_test" };
     ice::Queue<Test_TrackingObject, ice::CollectionLogic::Complex> test_queue{ alloc };
 
     CHECK(queue::count(test_queue) == 0);
@@ -128,7 +128,7 @@ SCENARIO("collections 'ice/container/queue.hxx' (POD)", "[collection][queue][pod
     namespace queue = ice::queue;
 
     ice::HostAllocator host_alloc{ };
-    ice::ProxyAllocator alloc{ host_alloc, u8"queue_test" };
+    ice::ProxyAllocator alloc{ host_alloc, "queue_test" };
     ice::Queue<ice::i32> test_queue{ alloc };
 
     CHECK(queue::count(test_queue) == 0);
