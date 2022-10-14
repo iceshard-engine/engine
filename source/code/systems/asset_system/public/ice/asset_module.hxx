@@ -1,6 +1,6 @@
 #pragma once
-#include <ice/allocator.hxx>
-#include <ice/unique_ptr.hxx>
+#include <ice/mem_allocator.hxx>
+#include <ice/mem_unique_ptr.hxx>
 #include <ice/stringid.hxx>
 
 namespace ice

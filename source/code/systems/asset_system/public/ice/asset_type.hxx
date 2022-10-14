@@ -1,6 +1,5 @@
 #pragma once
-#include <ice/allocator.hxx>
-#include <ice/base.hxx>
+#include <ice/mem_allocator.hxx>
 #include <ice/stringid.hxx>
 #include <ice/string_types.hxx>
 #include <ice/resource_flags.hxx>
@@ -27,17 +26,17 @@ namespace ice
             using ArgType = const AssetType&;
 
             ice::u64 identifier;
-            ice::Utf8String name;
+            ice::String name;
         };
 
-        constexpr auto make_asset_type(ice::Utf8String name) noexcept
+        constexpr auto make_asset_type(ice::String name) noexcept
         {
             ice::detail::murmur2_hash::mm2_x64_64 const result =
                 ice::detail::murmur2_hash::cexpr_murmur2_x64_64(name, 0xAA44EELL);
 
             if constexpr (Constant_UseAssetTypeDebugDefinition)
             {
-                return ice::detail::AssetType<true>
+                return ice::detail::AssetType<Constant_UseAssetTypeDebugDefinition>
                 {
                     .identifier = result.h[0],
                     .name = name
@@ -45,7 +44,7 @@ namespace ice
             }
             else
             {
-                return ice::detail::AssetType<false>{
+                return ice::detail::AssetType<Constant_UseAssetTypeDebugDefinition>{
                     .identifier = result.h[0]
                 };
             }
@@ -63,17 +62,17 @@ namespace ice
     using AssetType = ice::detail::AssetTypePicker::AssetType_Type;
     using AssetType_Arg = ice::detail::AssetTypePicker::AssetType_Arg;
 
-    constexpr auto make_asset_type(ice::Utf8String name) noexcept -> ice::AssetType
+    constexpr auto make_asset_type(ice::String name) noexcept -> ice::AssetType
     {
         return ice::detail::make_asset_type(name);
     }
 
-    constexpr auto asset_type_hint(ice::detail::AssetType<false>) noexcept -> ice::Utf8String
+    constexpr auto asset_type_hint(ice::detail::AssetType<false>) noexcept -> ice::String
     {
-        return u8"<no_debug_info_available>";
+        return "<no_debug_info_available>";
     }
 
-    constexpr auto asset_type_hint(ice::detail::AssetType<true> const& type) noexcept -> ice::Utf8String
+    constexpr auto asset_type_hint(ice::detail::AssetType<true> const& type) noexcept -> ice::String
     {
         return type.name;
     }

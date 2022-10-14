@@ -4,8 +4,8 @@
 #include <ice/resource_tracker.hxx>
 #include <ice/resource_meta.hxx>
 #include <ice/resource.hxx>
-#include <ice/pod/hash.hxx>
-#include <ice/stack_string.hxx>
+#include <ice/container/hashmap.hxx>
+#include <ice/string/static_string.hxx>
 #include <ice/uri.hxx>
 
 #include "asset_entry.hxx"
@@ -33,23 +33,23 @@ namespace ice
         auto find_resource(
             ice::AssetTypeDefinition const& definition,
             ice::ResourceTracker& resource_tracker,
-            ice::Utf8String name
+            ice::String name
         ) noexcept -> ice::ResourceHandle*
         {
-            ice::StackString<64, ice::c8utf> temp_name{ name };
+            ice::StaticString<64> temp_name{ name };
 
             ice::ResourceHandle* resource = nullptr;
 
             ice::u32 ext_idx = 0;
-            ice::u32 const ext_count = ice::size(definition.resource_extensions);
+            ice::u32 const ext_count = ice::count(definition.resource_extensions);
             ice::u32 const temp_name_len = ice::size(temp_name);
             while (resource == nullptr && ext_idx < ext_count)
             {
-                ice::Utf8String const extension = definition.resource_extensions[ext_idx++];
+                ice::String const extension = definition.resource_extensions[ext_idx++];
                 ice::string::resize(temp_name, temp_name_len);
                 ice::string::push_back(temp_name, extension);
 
-                ice::URI const uri{ scheme_urn, temp_name };
+                ice::URI const uri{ Scheme_URN, temp_name };
                 resource = resource_tracker.find_resource(uri, ice::ResourceFlags::None);
             }
 
@@ -64,9 +64,9 @@ namespace ice
             ice::Memory& result
         ) noexcept -> ice::Task<bool>
         {
-            if (definition.fn_asset_oven.is_set())
+            if (definition.fn_asset_oven)
             {
-                co_return co_await definition.fn_asset_oven(alloc, resource_tracker, *asset_entry->resource, asset_entry->data, result);
+                co_return co_await definition.fn_asset_oven(definition.ud_asset_oven, alloc, resource_tracker, *asset_entry->resource, asset_entry->data, result);
             }
             co_return false;
         }
@@ -80,9 +80,9 @@ namespace ice
             ice::Memory& result
         ) noexcept -> ice::Task<bool>
         {
-            if (definition.fn_asset_loader.is_set())
+            if (definition.fn_asset_loader)
             {
-                co_return co_await definition.fn_asset_loader(alloc, asset_storage, asset_metadata, baked_data, result);
+                co_return co_await definition.fn_asset_loader(definition.ud_asset_loader, alloc, asset_storage, asset_metadata, baked_data, result);
             }
             co_return false;
         }
@@ -103,7 +103,7 @@ namespace ice
 
         auto request(
             ice::AssetType type,
-            ice::Utf8String name,
+            ice::String name,
             ice::AssetState requested_state
         ) noexcept -> ice::Task<ice::Asset> override;
 
@@ -113,7 +113,7 @@ namespace ice
         ) noexcept -> ice::AssetRequest*
         {
             ice::AssetRequest* result = nullptr;
-            ice::AssetShelve* shelve = ice::pod::hash::get(_asset_shevles, type.identifier, nullptr);
+            ice::AssetShelve* shelve = ice::hashmap::get(_asset_shevles, type.identifier, nullptr);
             if (shelve != nullptr)
             {
                 result = shelve->aquire_request(requested_state);
@@ -129,7 +129,7 @@ namespace ice
         ice::Allocator& _allocator;
         ice::ResourceTracker& _resource_tracker;
         ice::UniquePtr<ice::AssetTypeArchive> _asset_archive;
-        ice::pod::Hash<ice::AssetShelve*> _asset_shevles;
+        ice::HashMap<ice::AssetShelve*> _asset_shevles;
     };
 
     DefaultAssetStorage::DefaultAssetStorage(
@@ -143,14 +143,14 @@ namespace ice
         , _asset_shevles{ _allocator }
     {
         ice::Span<ice::AssetType const> types = _asset_archive->asset_types();
-        ice::pod::hash::reserve(_asset_shevles, static_cast<ice::u32>(ice::size(types) / ice::pod::detail::hash::Constant_MaxLoadFactor) + 1);
+        ice::hashmap::reserve(_asset_shevles, ice::count(types));
 
         for (ice::AssetType_Arg type : types)
         {
-            ice::pod::hash::set(
+            ice::hashmap::set(
                 _asset_shevles,
                 type.identifier,
-                _allocator.make<AssetShelve>(
+                _allocator.create<AssetShelve>(
                     _allocator,
                     _asset_archive->find_definition(type)
                 )
@@ -160,22 +160,22 @@ namespace ice
 
     DefaultAssetStorage::~DefaultAssetStorage() noexcept
     {
-        for (auto const& entry : _asset_shevles)
+        for (ice::AssetShelve* entry : _asset_shevles)
         {
-            _allocator.destroy(entry.value);
+            _allocator.destroy(entry);
         }
     }
 
     auto DefaultAssetStorage::request(
         ice::AssetType type,
-        ice::Utf8String name,
+        ice::String name,
         ice::AssetState requested_state
     ) noexcept -> ice::Task<ice::Asset>
     {
         ice::StringID const nameid = ice::stringid(name);
         ice::Asset result{ };
 
-        ice::AssetShelve* shelve = ice::pod::hash::get(_asset_shevles, type.identifier, nullptr);
+        ice::AssetShelve* shelve = ice::hashmap::get(_asset_shevles, type.identifier, nullptr);
         if (shelve != nullptr)
         {
             ice::Allocator& asset_alloc = shelve->asset_allocator();
@@ -201,6 +201,7 @@ namespace ice
             if (load_result.resource_status == ResourceStatus::Loaded)
             {
                 ice::AssetState const state = shelve->definition.fn_asset_state(
+                    shelve->definition.ud_asset_state,
                     shelve->definition,
                     load_result.resource->metadata(),
                     load_result.resource->uri()
@@ -260,7 +261,7 @@ namespace ice
                 }
                 case AssetState::Baked:
                 {
-                    result.data = asset_entry->data_baked;
+                    result.data = ice::data_view(asset_entry->data_baked);
 
                     // If it was not baked, then it's pre-baked.
                     if (result.data.location == nullptr)
@@ -271,12 +272,12 @@ namespace ice
                 }
                 case AssetState::Loaded:
                 {
-                    result.data = asset_entry->data_loaded;
+                    result.data = ice::data_view(asset_entry->data_loaded);
                     break;
                 }
                 case AssetState::Runtime:
                 {
-                    result.data = asset_entry->data_runtime;
+                    result.data = ice::data_view(asset_entry->data_runtime);
                     break;
                 }
                 }
@@ -285,7 +286,7 @@ namespace ice
             }
             else
             {
-                ice::Data result_data;
+                ice::Data result_data{ };
 
                 // TODO: The below objects where required to be introduced due to rare data races on various calling / resource threads.
                 static std::recursive_mutex mtx_asset_logic{ }; // [gh#135]
@@ -310,11 +311,11 @@ namespace ice
                             baked_memory = co_await AssetRequestAwaitable{ nameid, *shelve, asset_entry, AssetState::Baked };
                         }
 
-                        asset_alloc.deallocate(asset_entry->data_baked.location);
+                        asset_alloc.deallocate(asset_entry->data_baked);
                         asset_entry->data_baked = baked_memory;
                         asset_entry->state = AssetState::Baked;
 
-                        result_data = asset_entry->data_baked;
+                        result_data = ice::data_view(asset_entry->data_baked);
                     }
 
                     mtx_asset_logic.unlock(); // [gh#135]
@@ -331,7 +332,7 @@ namespace ice
                             shelve->definition,
                             *this,
                             asset_entry->resource->metadata(),
-                            asset_entry->data_baked,
+                            ice::data_view(asset_entry->data_baked),
                             loaded_memory
                         );
 
@@ -340,11 +341,11 @@ namespace ice
                             loaded_memory = co_await AssetRequestAwaitable{ nameid, *shelve, asset_entry, AssetState::Loaded };
                         }
 
-                        asset_alloc.deallocate(asset_entry->data_loaded.location);
+                        asset_alloc.deallocate(asset_entry->data_loaded);
                         asset_entry->data_loaded = loaded_memory;
                         asset_entry->state = AssetState::Loaded;
 
-                        result_data = asset_entry->data_loaded;
+                        result_data = ice::data_view(asset_entry->data_loaded);
                     }
 
                     mtx_asset_logic.unlock(); // [gh#135]
@@ -359,12 +360,12 @@ namespace ice
                         {
                             asset_entry->state = AssetState::Runtime;
                             asset_entry->data_runtime = runtime_data;
-                            result_data = runtime_data;
+                            result_data = ice::data_view(runtime_data);
                         }
                     }
                     else
                     {
-                        result_data = asset_entry->data_runtime;
+                        result_data = ice::data_view(asset_entry->data_runtime);
                     }
                 }
 
@@ -400,7 +401,7 @@ namespace ice
         ice::UniquePtr<ice::AssetTypeArchive> asset_archive
     ) noexcept -> ice::UniquePtr<ice::AssetStorage>
     {
-        return ice::make_unique<ice::AssetStorage, ice::DefaultAssetStorage>(
+        return ice::make_unique<ice::DefaultAssetStorage>(
             alloc,
             alloc,
             resource_tracker,

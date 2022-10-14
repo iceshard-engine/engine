@@ -1,6 +1,6 @@
 #pragma once
 #include <ice/asset_request.hxx>
-#include <ice/memory.hxx>
+#include <ice/mem_memory.hxx>
 #include <coroutine>
 
 namespace ice
@@ -28,7 +28,7 @@ namespace ice
         auto resource() const noexcept -> ice::Resource_v2 const& override;
         auto asset_definition() const noexcept -> ice::AssetTypeDefinition const& override;
 
-        auto allocate(ice::u32 size) const noexcept -> ice::Memory override;
+        auto allocate(ice::usize size) const noexcept -> ice::Memory override;
 
         auto resolve(
             ice::AssetRequest::Result result,

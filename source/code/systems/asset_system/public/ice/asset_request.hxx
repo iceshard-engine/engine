@@ -1,6 +1,5 @@
 #pragma once
-#include <ice/base.hxx>
-#include <ice/memory.hxx>
+#include <ice/mem.hxx>
 #include <ice/asset.hxx>
 #include <ice/asset_type.hxx>
 
@@ -29,7 +28,7 @@ namespace ice
         virtual auto resource() const noexcept -> ice::Resource_v2 const& = 0;
         virtual auto asset_definition() const noexcept -> ice::AssetTypeDefinition const& = 0;
 
-        virtual auto allocate(ice::u32 size) const noexcept -> ice::Memory = 0;
+        virtual auto allocate(ice::usize size) const noexcept -> ice::Memory = 0;
 
         virtual auto resolve(
             ice::AssetRequest::Result result,

@@ -1,6 +1,6 @@
 #include <ice/asset_type_archive.hxx>
 #include <ice/asset.hxx>
-#include <ice/pod/hash.hxx>
+#include <ice/container/hashmap.hxx>
 #include <ice/assert.hxx>
 
 namespace ice
@@ -15,7 +15,7 @@ namespace ice
 
     struct InternalAssetType
     {
-        ice::AssetType type = ice::make_asset_type(u8"<unknown>");
+        ice::AssetType type = ice::make_asset_type("<unknown>");
         ice::AssetTypeDefinition definition{ };
     };
 
@@ -36,8 +36,8 @@ namespace ice
         ) const noexcept -> ice::AssetTypeDefinition const& override;
 
     private:
-        ice::pod::Array<ice::AssetType> _types;
-        ice::pod::Hash<ice::InternalAssetType> _definitions;
+        ice::Array<ice::AssetType, CollectionLogic::Complex> _types;
+        ice::HashMap<ice::InternalAssetType, CollectionLogic::Complex> _definitions;
     };
 
     SimpleAssetTypeArchive::SimpleAssetTypeArchive(ice::Allocator& alloc) noexcept
@@ -57,7 +57,7 @@ namespace ice
     ) noexcept
     {
         ice::u64 const type_hash = type.identifier;
-        bool const type_not_defined = ice::pod::hash::has(_definitions, type_hash) == false;
+        bool const type_not_defined = ice::hashmap::has(_definitions, type_hash) == false;
 
         ICE_ASSERT(
             type_not_defined == true,
@@ -69,13 +69,13 @@ namespace ice
 
         if (type_not_defined)
         {
-            if (type_definition.fn_asset_state.is_set() == false)
+            if (type_definition.fn_asset_state == nullptr)
             {
-                type_definition.fn_asset_state._function = default_asset_state;
+                type_definition.fn_asset_state = default_asset_state;
             }
 
-            ice::pod::array::push_back(_types, type);
-            ice::pod::hash::set(
+            ice::array::push_back(_types, type);
+            ice::hashmap::set(
                 _definitions,
                 type_hash,
                 InternalAssetType{
@@ -93,7 +93,7 @@ namespace ice
     {
         static ice::InternalAssetType empty_type{};
 
-        ice::InternalAssetType const& internal_type = ice::pod::hash::get(_definitions, type.identifier, empty_type);
+        ice::InternalAssetType const& internal_type = ice::hashmap::get(_definitions, type.identifier, empty_type);
         return internal_type.definition;
     }
 
@@ -101,7 +101,7 @@ namespace ice
         ice::Allocator& alloc
     ) noexcept -> ice::UniquePtr<ice::AssetTypeArchive>
     {
-        return ice::make_unique<ice::AssetTypeArchive, ice::SimpleAssetTypeArchive>(alloc, alloc);
+        return ice::make_unique<ice::SimpleAssetTypeArchive>(alloc, alloc);
     }
 
 } // namespace ice

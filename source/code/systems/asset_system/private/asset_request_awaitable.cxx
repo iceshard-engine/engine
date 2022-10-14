@@ -53,9 +53,9 @@ namespace ice
         case AssetState::Baked:
             return _asset_entry->data;
         case AssetState::Loaded:
-            return _asset_entry->data_baked.location != nullptr ? _asset_entry->data_baked : _asset_entry->data;
+            return _asset_entry->data_baked.location != nullptr ? ice::data_view(_asset_entry->data_baked) : _asset_entry->data;
         case AssetState::Runtime:
-            return _asset_entry->data_loaded;
+            return ice::data_view(_asset_entry->data_loaded);
         default:
             ICE_ASSERT(false, "Required request data not available!");
         }
@@ -72,13 +72,9 @@ namespace ice
         return _asset_shelve.definition;
     }
 
-    auto AssetRequestAwaitable::allocate(ice::u32 size) const noexcept -> ice::Memory
+    auto AssetRequestAwaitable::allocate(ice::usize size) const noexcept -> ice::Memory
     {
-        return ice::Memory{
-            .location = _asset_shelve.asset_allocator().allocate(size, 8),
-            .size = size,
-            .alignment = 8
-        };
+        return _asset_shelve.asset_allocator().allocate({ size, ice::ualign::b_default });
     }
 
     auto AssetRequestAwaitable::resolve(
@@ -90,7 +86,7 @@ namespace ice
 
         if (result != AssetRequest::Result::Success)
         {
-            _asset_shelve.asset_allocator().deallocate(memory.location);
+            _asset_shelve.asset_allocator().deallocate(memory);
             _result_data = { };
         }
         else

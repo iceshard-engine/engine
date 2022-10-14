@@ -1,6 +1,5 @@
 #pragma once
-#include <coroutine>
-#include <ice/data.hxx>
+#include <ice/mem_data.hxx>
 #include <ice/stringid.hxx>
 #include <ice/resource_meta.hxx>
 

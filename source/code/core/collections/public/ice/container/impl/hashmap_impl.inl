@@ -530,10 +530,13 @@ namespace ice
     namespace hashmap
     {
 
+        //! \brief Allocates enough space in the hash map to hold the given amount of values.
+        //!
+        //! \note Keep in mind, the number of valies a hashmap can store is lower than it's total capacity.
         template<typename Type, ice::CollectionLogic Logic>
-        inline void reserve(ice::HashMap<Type, Logic>& map, ice::ucount new_capacity) noexcept
+        inline void reserve(ice::HashMap<Type, Logic>& map, ice::ucount new_count) noexcept
         {
-            ice::hashmap::detail::rehash(map, new_capacity);
+            ice::hashmap::detail::rehash(map, ice::hashmap::detail::calc_storage_capacity(new_count));
         }
 
         template<typename Type, ice::CollectionLogic Logic>
