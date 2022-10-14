@@ -2,7 +2,7 @@
 #include "input_state_helpers.hxx"
 
 #include <ice/input/input_mouse.hxx>
-#include <ice/pod/array.hxx>
+#include <ice/container/array.hxx>
 
 namespace ice::input
 {
@@ -32,12 +32,12 @@ namespace ice::input
         ) noexcept override;
 
         void on_publish(
-            ice::pod::Array<ice::input::InputEvent>& events_out
+            ice::Array<ice::input::InputEvent>& events_out
         ) noexcept override;
 
     private:
         ice::input::DeviceHandle _device;
-        ice::pod::Array<detail::ControlState> _controls;
+        ice::Array<detail::ControlState> _controls;
 
         ice::i32 _position[2]{ 0, 0 };
         ice::i32 _position_relative[2]{ 0, 0 };
@@ -51,7 +51,7 @@ namespace ice::input
         : _device{ device }
         , _controls{ alloc }
     {
-        ice::pod::array::resize(_controls, mouse_button_num + 5);
+        ice::array::resize(_controls, mouse_button_num + 5);
         for (detail::ControlState& control : _controls)
         {
             control.id = InputID::Invalid;
@@ -106,7 +106,7 @@ namespace ice::input
         if (input != InputID::Invalid)
         {
             ice::i32 const control_index = input_identifier_value(input);
-            // #todo assert control_index < ice::pod::array::size(_controls)
+            // #todo assert control_index < ice::array::size(_controls)
 
             detail::ControlState control = _controls[control_index];
             control.id = input;
@@ -125,7 +125,7 @@ namespace ice::input
     }
 
     void MouseDevice::on_publish(
-        ice::pod::Array<ice::input::InputEvent>& events_out
+        ice::Array<ice::input::InputEvent>& events_out
     ) noexcept
     {
         InputEvent event{
@@ -135,40 +135,40 @@ namespace ice::input
         event.identifier = input_identifier(DeviceType::Mouse, MouseInput::PositionX);
         event.value.axis.value_i32 = _position[0];
         event.value_type = InputValueType::AxisInt;
-        ice::pod::array::push_back(events_out, event);
+        ice::array::push_back(events_out, event);
 
         event.identifier = input_identifier(DeviceType::Mouse, MouseInput::PositionY);
         event.value.axis.value_i32 = _position[1];
         event.value_type = InputValueType::AxisInt;
-        ice::pod::array::push_back(events_out, event);
+        ice::array::push_back(events_out, event);
 
         if (_position_relative[0] != 0)
         {
             event.identifier = input_identifier(DeviceType::Mouse, MouseInput::PositionXRelative);
             event.value.axis.value_i32 = _position_relative[0];
             event.value_type = InputValueType::AxisInt;
-            ice::pod::array::push_back(events_out, event);
+            ice::array::push_back(events_out, event);
         }
         if (_position_relative[1] != 0)
         {
             event.identifier = input_identifier(DeviceType::Mouse, MouseInput::PositionYRelative);
             event.value.axis.value_i32 = _position_relative[1];
             event.value_type = InputValueType::AxisInt;
-            ice::pod::array::push_back(events_out, event);
+            ice::array::push_back(events_out, event);
         }
 
         if (_wheel != 0)
         {
             event.identifier = input_identifier(DeviceType::Mouse, MouseInput::Wheel);
             event.value.axis.value_i32 = _wheel;
-            ice::pod::array::push_back(events_out, event);
+            ice::array::push_back(events_out, event);
         }
 
         for (detail::ControlState& control : _controls)
         {
             if (detail::prepared_input_event(control, event))
             {
-                ice::pod::array::push_back(events_out, event);
+                ice::array::push_back(events_out, event);
             }
         }
     }
@@ -178,7 +178,7 @@ namespace ice::input
         ice::input::DeviceHandle device
     ) noexcept -> ice::input::InputDevice*
     {
-        return alloc.make<MouseDevice>(alloc, device);
+        return alloc.create<MouseDevice>(alloc, device);
     }
 
 } // namespace ice::input

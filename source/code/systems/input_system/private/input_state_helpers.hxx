@@ -1,8 +1,8 @@
 #pragma once
-#include <ice/data.hxx>
-#include <ice/span.hxx>
+#include <ice/mem_data.hxx>
 #include <ice/input/input_event.hxx>
 #include <ice/input/device_event.hxx>
+#include <ice/span.hxx>
 
 namespace ice::input::detail
 {

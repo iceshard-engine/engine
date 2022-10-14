@@ -2,7 +2,7 @@
 #include "input_state_helpers.hxx"
 
 #include <ice/input/input_controller.hxx>
-#include <ice/pod/array.hxx>
+#include <ice/container/array.hxx>
 
 namespace ice::input
 {
@@ -32,12 +32,12 @@ namespace ice::input
         ) noexcept override;
 
         void on_publish(
-            ice::pod::Array<ice::input::InputEvent>& events_out
+            ice::Array<ice::input::InputEvent>& events_out
         ) noexcept override;
 
     private:
         ice::input::DeviceHandle _device;
-        ice::pod::Array<detail::ControlState> _controls;
+        ice::Array<detail::ControlState> _controls;
 
         ice::f32 _left_axis[2]{ 0, 0 };
         ice::f32 _right_axis[2]{ 0, 0 };
@@ -53,7 +53,7 @@ namespace ice::input
         : _device{ device }
         , _controls{ alloc }
     {
-        ice::pod::array::resize(_controls, controller_button_num + 5);
+        ice::array::resize(_controls, controller_button_num + 5);
     }
 
     void ControllerDevice::on_tick(ice::Timer const& timer) noexcept
@@ -150,7 +150,7 @@ namespace ice::input
     }
 
     void ControllerDevice::on_publish(
-        ice::pod::Array<ice::input::InputEvent>& events_out
+        ice::Array<ice::input::InputEvent>& events_out
     ) noexcept
     {
         InputEvent event{
@@ -165,7 +165,7 @@ namespace ice::input
                 event.identifier = input_identifier(DeviceType::Controller, input);
                 event.value.axis.value_f32 = value;
                 event.value_type = InputValueType::AxisFloat;
-                ice::pod::array::push_back(events_out, event);
+                ice::array::push_back(events_out, event);
             }
             else if (reset == false)
             {
@@ -173,7 +173,7 @@ namespace ice::input
                 event.identifier = input_identifier(DeviceType::Controller, input);
                 event.value.axis.value_f32 = 0.0f;
                 event.value_type = InputValueType::AxisFloat;
-                ice::pod::array::push_back(events_out, event);
+                ice::array::push_back(events_out, event);
             }
         };
 
@@ -188,7 +188,7 @@ namespace ice::input
         {
             if (detail::prepared_input_event(control, event))
             {
-                ice::pod::array::push_back(events_out, event);
+                ice::array::push_back(events_out, event);
             }
         }
     }
@@ -198,7 +198,7 @@ namespace ice::input
         ice::input::DeviceHandle device
     ) noexcept -> ice::input::InputDevice*
     {
-        return alloc.make<ControllerDevice>(alloc, device);
+        return alloc.create<ControllerDevice>(alloc, device);
     }
 
 } // ice::input

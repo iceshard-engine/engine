@@ -1,7 +1,7 @@
 #pragma once
-#include <ice/data.hxx>
+#include <ice/mem_data.hxx>
 #include <ice/clock.hxx>
-#include <ice/pod/array.hxx>
+#include <ice/container/array.hxx>
 #include <ice/input/device_event.hxx>
 #include <ice/input/input_event.hxx>
 
@@ -25,7 +25,7 @@ namespace ice::input
         ) noexcept = 0;
 
         virtual void on_publish(
-            ice::pod::Array<ice::input::InputEvent>& events_out
+            ice::Array<ice::input::InputEvent>& events_out
         ) noexcept = 0;
     };
 

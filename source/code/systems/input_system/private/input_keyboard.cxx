@@ -2,7 +2,7 @@
 #include "input_state_helpers.hxx"
 
 #include <ice/input/input_keyboard.hxx>
-#include <ice/pod/array.hxx>
+#include <ice/container/array.hxx>
 
 namespace ice::input
 {
@@ -33,12 +33,12 @@ namespace ice::input
         ) noexcept override;
 
         void on_publish(
-            ice::pod::Array<ice::input::InputEvent>& events_out
+            ice::Array<ice::input::InputEvent>& events_out
         ) noexcept override;
 
     private:
         ice::input::DeviceHandle _device;
-        ice::pod::Array<detail::ControlState> _controls;
+        ice::Array<detail::ControlState> _controls;
     };
 
     namespace detail
@@ -85,7 +85,7 @@ namespace ice::input
         , _device{ device }
         , _controls{ alloc }
     {
-        ice::pod::array::resize(_controls, keyboard_key_num + keyboard_mod_num + 10);
+        ice::array::resize(_controls, keyboard_key_num + keyboard_mod_num + 10);
         for (detail::ControlState& control : _controls)
         {
             control.id = InputID::Invalid;
@@ -158,7 +158,7 @@ namespace ice::input
     }
 
     void KeyboardDevice::on_publish(
-        ice::pod::Array<ice::input::InputEvent>& events_out
+        ice::Array<ice::input::InputEvent>& events_out
     ) noexcept
     {
         ice::input::InputEvent event{
@@ -169,7 +169,7 @@ namespace ice::input
         {
             if (detail::prepared_input_event(control, event))
             {
-                ice::pod::array::push_back(events_out, event);
+                ice::array::push_back(events_out, event);
             }
         }
     }
@@ -179,7 +179,7 @@ namespace ice::input
         ice::input::DeviceHandle device
     ) noexcept -> ice::input::InputDevice*
     {
-        return alloc.make<KeyboardDevice>(alloc, device);
+        return alloc.create<KeyboardDevice>(alloc, device);
     }
 
 } // namespace ice::input

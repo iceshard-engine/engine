@@ -7,8 +7,8 @@ SCENARIO("collections 'ice/shard_container.hxx'", "[shard][collection]")
 {
     using ice::operator""_shard;
 
-    static constexpr ice::Shard test_shard_1 = u8"shard_1"_shard;
-    static constexpr ice::Shard test_shard_2 = u8"shard_2"_shard;
+    static constexpr ice::Shard test_shard_1 = "shard_1"_shard;
+    static constexpr ice::Shard test_shard_2 = "shard_2"_shard;
 
     ice::HostAllocator alloc{ };
     ice::ShardContainer test_container{ alloc };
@@ -105,8 +105,8 @@ SCENARIO("collections 'ice/shard_container.hxx'", "[shard][collection]")
             constexpr ice::i64 test_i64_payload_value1 = 0x7f000000'000000ff;
             constexpr ice::i64 test_i64_payload_value2 = 0xff000000'000000ff;
 
-            static constexpr ice::Shard test_shard_3 = u8"shard_3"_shard;
-            static constexpr ice::Shard test_shard_4 = u8"shard_4"_shard;
+            static constexpr ice::Shard test_shard_3 = "shard_3"_shard;
+            static constexpr ice::Shard test_shard_4 = "shard_4"_shard;
 
             ice::shards::push_back(test_container, test_shard_1 | test_i32_payload_value1);
             ice::shards::push_back(test_container, test_shard_1 | test_u32_payload_value1);

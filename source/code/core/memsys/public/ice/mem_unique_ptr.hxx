@@ -15,7 +15,7 @@ namespace ice
 
 
     template<typename T>
-    using UniquePtrCustomDeleter = void(ice::Allocator*, T*) noexcept;
+    using UniquePtrCustomDeleter = void(T*) noexcept;
 
     template<typename T, typename... Args>
     inline auto make_unique(
@@ -34,7 +34,7 @@ namespace ice
         inline ~UniquePtr() noexcept;
 
         inline explicit UniquePtr(ice::Allocator* alloc, T* ptr) noexcept;
-        inline explicit UniquePtr(UserDeleterInfo* info, T* ptr) noexcept;
+        inline explicit UniquePtr(ice::UniquePtrCustomDeleter<T>* deleter_fn, T* ptr) noexcept;
 
         inline UniquePtr(UniquePtr&& other) noexcept;
         template<typename U> requires std::is_base_of_v<T, U>
@@ -62,7 +62,7 @@ namespace ice
     template<typename T>
     struct UniquePtr<T>::UserDeleterInfo
     {
-        ice::Allocator* alloc;
+        //ice::Allocator* alloc;
         ice::UniquePtrCustomDeleter<T>* fn_deleter;
     };
 
@@ -85,8 +85,8 @@ namespace ice
     { }
 
     template<typename T>
-    inline UniquePtr<T>::UniquePtr(UserDeleterInfo* info, T* ptr) noexcept
-        : _alloc{ reinterpret_cast<ice::Allocator*>(reinterpret_cast<ice::uptr>(info) | 0x1) }
+    inline UniquePtr<T>::UniquePtr(ice::UniquePtrCustomDeleter<T>* deleter_fn, T* ptr) noexcept
+        : _alloc{ reinterpret_cast<ice::Allocator*>(std::bit_cast<ice::uptr>(deleter_fn) | 0x1) }
         , _ptr{ ptr }
     { }
 
@@ -138,18 +138,20 @@ namespace ice
         }
 
         // If we don't have a 'special' case
-        if ((reinterpret_cast<ice::uptr>(_alloc) & 0x1) == 0x0)
+        if ((std::bit_cast<ice::uptr>(_alloc) & 0x1) == 0x0)
         {
             _alloc->destroy(_ptr);
         }
         else
         {
-            UserDeleterInfo const* deleter_info = reinterpret_cast<UserDeleterInfo const*>(
-                reinterpret_cast<ice::uptr>(_alloc) & ~0x1
+            ice::UniquePtrCustomDeleter<T>* fn_deleter = reinterpret_cast<ice::UniquePtrCustomDeleter<T>*>(
+                std::bit_cast<ice::uptr>(_alloc) & ~0x1
             );
-            deleter_info->fn_deleter(deleter_info->alloc, _ptr);
+
+            fn_deleter(_ptr);
         }
 
+        _alloc = nullptr;
         _ptr = nullptr;
     }
 
@@ -165,24 +167,33 @@ namespace ice
         return ice::UniquePtr<T>{ &alloc, object };
     }
 
+    //template<typename T, typename... Args>
+    //inline auto make_unique(
+    //    ice::Allocator& alloc,
+    //    ice::UniquePtrCustomDeleter<T>* fn_deleter,
+    //    Args&&... args
+    //) noexcept -> ice::UniquePtr<T>
+    //{
+    //    using DeleterInfo = typename ice::UniquePtr<T>::UserDeleterInfo;
+
+    //    ice::meminfo total_memory = ice::meminfo_of<T>;
+    //    ice::usize const udi_offset = total_memory += ice::meminfo_of<DeleterInfo>;
+
+    //    ice::AllocResult const mem = alloc.allocate(total_memory);
+
+    //    T* const object = new (mem.memory) T{ std::forward<Args>(args)... };
+    //    DeleterInfo* const deleter_info = new (ice::ptr_add(mem.memory, udi_offset)) DeleterInfo{ &alloc, fn_deleter };
+
+    //    return ice::UniquePtr<T>{ deleter_info, object };
+    //}
+
     template<typename T, typename... Args>
     inline auto make_unique(
-        ice::Allocator& alloc,
         ice::UniquePtrCustomDeleter<T>* fn_deleter,
-        Args&&... args
+        T* instanced_object
     ) noexcept -> ice::UniquePtr<T>
     {
-        using DeleterInfo = typename ice::UniquePtr<T>::UserDeleterInfo;
-
-        ice::meminfo total_memory = ice::meminfo_of<T>;
-        ice::usize const udi_offset = total_memory += ice::meminfo_of<DeleterInfo>;
-
-        ice::AllocResult const mem = alloc.allocate(total_memory);
-
-        T* const object = new (mem.result) T{ std::forward<Args>(args)... };
-        DeleterInfo* const deleter_info = new (ice::ptr_add(mem.result, udi_offset)) DeleterInfo{ &alloc, fn_deleter };
-
-        return ice::UniquePtr<T>{ deleter_info, object };
+        return ice::UniquePtr<T>{ fn_deleter, instanced_object };
     }
 
 } // namespace ice

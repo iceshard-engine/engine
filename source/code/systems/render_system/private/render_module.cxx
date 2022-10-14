@@ -13,10 +13,9 @@ namespace ice::render
         if (registry.find_module_api("ice.render-api"_sid, 1, reinterpret_cast<void**>(&render_api)))
         {
             ice::render::RenderDriver* driver = render_api->create_driver_fn(alloc);
-            return ice::UniquePtr<ice::render::RenderDriver>{ driver, { alloc, render_api->destroy_driver_fn } };
+            return ice::make_unique(render_api->destroy_driver_fn, driver);
         }
-
-        return ice::make_unique_null<ice::render::RenderDriver>();
+        return { };
     }
 
 } // namespace ice::render
