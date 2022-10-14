@@ -1,7 +1,7 @@
 #pragma once
 #include <ice/mem_allocator.hxx>
 #include <ice/stringid.hxx>
-#include <ice/string_types.hxx>
+#include <ice/string/string.hxx>
 #include <ice/resource_flags.hxx>
 
 namespace ice

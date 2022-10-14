@@ -13,7 +13,7 @@
 #include "systems/asset_system/asset_system.bff"
 #include "systems/render_system/render_system.bff"
 #include "systems/input_system/input_system.bff"
-// #include "systems/font_system/font_system.bff"
+#include "systems/font_system/font_system.bff"
 // #include "systems/ui_system/ui_system.bff"
 
 // #include "platforms/platform/platform.bff"

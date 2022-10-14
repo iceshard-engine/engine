@@ -1,5 +1,6 @@
 #pragma once
-#include <ice/string.hxx>
+#include <ice/math.hxx>
+#include <ice/string/string.hxx>
 
 namespace ice
 {
@@ -8,17 +9,17 @@ namespace ice
 
     auto font_text_bounds(
         ice::Font const& font,
-        ice::Utf8String text,
+        ice::String text,
         ice::u32& out_glyph_count
     ) noexcept -> ice::vec2f;
 
     auto font_text_bounds(
         ice::Font const& font,
-        ice::Utf8String text
+        ice::String text
     ) noexcept -> ice::vec2f;
 
     auto text_get_codepoint(
-        ice::c8utf const* data,
+        char const* data,
         ice::u32& out_bytes
     ) noexcept -> ice::u32;
 

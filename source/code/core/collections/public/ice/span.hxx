@@ -68,16 +68,28 @@ namespace ice
         constexpr auto subspan(ice::Span<Type> span, ice::ucount from_idx, ice::ucount count = ice::ucount_max) noexcept -> ice::Span<Type>;
 
         template<typename Type>
-        constexpr auto begin(ice::Span<Type>& span) noexcept -> typename ice::Span<Type>::Iterator;
+        constexpr auto begin(ice::Span<Type> span) noexcept -> typename ice::Span<Type>::Iterator;
 
         template<typename Type>
-        constexpr auto end(ice::Span<Type>& span) noexcept -> typename ice::Span<Type>::Iterator;
+        constexpr auto end(ice::Span<Type> span) noexcept -> typename ice::Span<Type>::Iterator;
 
         template<typename Type>
-        constexpr auto rbegin(ice::Span<Type>& span) noexcept -> typename ice::Span<Type>::ReverseIterator;
+        constexpr auto rbegin(ice::Span<Type> span) noexcept -> typename ice::Span<Type>::ReverseIterator;
 
         template<typename Type>
-        constexpr auto rend(ice::Span<Type>& span) noexcept -> typename ice::Span<Type>::ReverseIterator;
+        constexpr auto rend(ice::Span<Type> span) noexcept -> typename ice::Span<Type>::ReverseIterator;
+
+        template<typename Type>
+        constexpr auto begin(ice::Span<Type const> span) noexcept -> typename ice::Span<Type const>::ConstIterator;
+
+        template<typename Type>
+        constexpr auto end(ice::Span<Type const> span) noexcept -> typename ice::Span<Type const>::ConstIterator;
+
+        template<typename Type>
+        constexpr auto rbegin(ice::Span<Type const> span) noexcept -> typename ice::Span<Type const>::ConstReverseIterator;
+
+        template<typename Type>
+        constexpr auto rend(ice::Span<Type const> span) noexcept -> typename ice::Span<Type const>::ConstReverseIterator;
 
     } // namespace span
 
@@ -225,25 +237,49 @@ namespace ice
         }
 
         template<typename Type>
-        constexpr auto begin(ice::Span<Type>& span) noexcept -> typename ice::Span<Type>::Iterator
+        constexpr auto begin(ice::Span<Type> span) noexcept -> typename ice::Span<Type>::Iterator
         {
             return span._data;
         }
 
         template<typename Type>
-        constexpr auto end(ice::Span<Type>& span) noexcept -> typename ice::Span<Type>::Iterator
+        constexpr auto end(ice::Span<Type> span) noexcept -> typename ice::Span<Type>::Iterator
         {
             return span._data + span._count;
         }
 
         template<typename Type>
-        constexpr auto rbegin(ice::Span<Type>& span) noexcept -> typename ice::Span<Type>::ReverseIterator
+        constexpr auto rbegin(ice::Span<Type> span) noexcept -> typename ice::Span<Type>::ReverseIterator
         {
             return { span._data + span._count };
         }
 
         template<typename Type>
-        constexpr auto rend(ice::Span<Type>& span) noexcept -> typename ice::Span<Type>::ReverseIterator
+        constexpr auto rend(ice::Span<Type> span) noexcept -> typename ice::Span<Type>::ReverseIterator
+        {
+            return { span._data };
+        }
+
+        template<typename Type>
+        constexpr auto begin(ice::Span<Type const> span) noexcept -> typename ice::Span<Type const>::ConstIterator
+        {
+            return span._data;
+        }
+
+        template<typename Type>
+        constexpr auto end(ice::Span<Type const> span) noexcept -> typename ice::Span<Type const>::ConstIterator
+        {
+            return span._data + span._count;
+        }
+
+        template<typename Type>
+        constexpr auto rbegin(ice::Span<Type const> span) noexcept -> typename ice::Span<Type const>::ConstReverseIterator
+        {
+            return { span._data + span._count };
+        }
+
+        template<typename Type>
+        constexpr auto rend(ice::Span<Type const> span) noexcept -> typename ice::Span<Type const>::ConstReverseIterator
         {
             return { span._data };
         }

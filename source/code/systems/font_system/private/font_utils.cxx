@@ -1,5 +1,6 @@
 #include <ice/font_utils.hxx>
 #include <ice/math/common.hxx>
+#include <ice/span.hxx>
 #include <ice/font.hxx>
 #include <ice/log.hxx>
 
@@ -10,7 +11,7 @@ namespace ice
     {
 
         constexpr auto consume_next_character(
-            ice::c8utf const* it,
+            char const* it,
             ice::u32& out_bytes
         ) noexcept -> ice::u32
         {
@@ -66,12 +67,12 @@ namespace ice
 
     auto font_text_bounds(
         ice::Font const& font,
-        ice::Utf8String text,
+        ice::String text,
         ice::u32& out_glyph_count
     ) noexcept -> ice::vec2f
     {
-        ice::c8utf const* text_it = ice::string::data(text);
-        ice::c8utf const* const text_end = ice::string::data(text) + ice::string::size(text);
+        char const* text_it = ice::string::begin(text);
+        char const* const text_end = ice::string::end(text);
 
         ice::f32 last_advance_offset = 0.f;
 
@@ -104,7 +105,7 @@ namespace ice
             total_glyphs != out_glyph_count,
             ice::LogSeverity::Warning, ice::LogTag::Engine,
             "The given font couldn't resolve all glyphs in the given text '{}'. Missing {} glyphs.",
-            ice::String{ reinterpret_cast<const char*>(ice::string::data(text)), ice::string::size(text) },
+            text,
             total_glyphs
         );
 
@@ -113,7 +114,7 @@ namespace ice
 
     auto font_text_bounds(
         ice::Font const& font,
-        ice::Utf8String text
+        ice::String text
     ) noexcept -> ice::vec2f
     {
         [[maybe_unused]]
@@ -121,7 +122,7 @@ namespace ice
         return font_text_bounds(font, text, unused);
     }
 
-    auto text_get_codepoint(ice::c8utf const* data, ice::u32& out_bytes) noexcept -> ice::u32
+    auto text_get_codepoint(char const* data, ice::u32& out_bytes) noexcept -> ice::u32
     {
         return detail::consume_next_character(data, out_bytes);
     }
