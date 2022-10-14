@@ -1,6 +1,5 @@
 #pragma once
 #include <ice/ui_types.hxx>
-#include <ice/allocator.hxx>
 #include <ice/span.hxx>
 
 namespace ice::ui

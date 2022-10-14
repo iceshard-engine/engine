@@ -4,7 +4,6 @@
 #include <ice/ui_resource.hxx>
 #include <ice/ui_style.hxx>
 
-#include <ice/memory/pointer_arithmetic.hxx>
 #include <ice/assert.hxx>
 #include <ice/font.hxx>
 #include <ice/span.hxx>
@@ -16,14 +15,14 @@ namespace ice::ui
         ice::ui::PageInfo const& data,
         ice::ui::ElementWithText auto const& element,
         ice::Span<ice::ui::UIResourceData const> resources
-    ) noexcept -> ice::Utf8String
+    ) noexcept -> ice::String
     {
-        ice::Utf8String text{ };
+        ice::String text{ };
         if (element.text.source == DataSource::ValueConstant)
         {
             ice::ui::ConstantInfo const& constant = data.ui_constants[element.text.source_i];
             text = {
-                reinterpret_cast<ice::c8utf const*>(ice::memory::ptr_add(data.additional_data, constant.offset)),
+                reinterpret_cast<char const*>(ice::ptr_add(data.additional_data, { constant.offset })),
                 constant.size
             };
         }
@@ -32,7 +31,7 @@ namespace ice::ui
             ice::ui::UIResourceData const& resource = resources[element.text.source_i];
             if (resource.info.type == ResourceType::Utf8String)
             {
-                text = *reinterpret_cast<ice::Utf8String const*>(resource.location);
+                text = *reinterpret_cast<ice::String const*>(resource.location);
             }
         }
         return text;
@@ -82,7 +81,7 @@ namespace ice::ui
             ICE_ASSERT(matched_style->data_bg.source == DataSource::ValueConstant, "Colors cannot be defined outside of constants for now!");
             ice::ui::ConstantInfo const& constant_loc = data.ui_constants[matched_style->data_bg.source_i];
 
-            void const* color_data = ice::memory::ptr_add(data.additional_data, constant_loc.offset);
+            void const* color_data = ice::ptr_add(data.additional_data, { constant_loc.offset });
             out_color = reinterpret_cast<ice::ui::StyleColor const*>(color_data);
         }
         return found;
