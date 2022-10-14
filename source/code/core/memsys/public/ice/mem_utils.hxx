@@ -1,5 +1,6 @@
 #pragma once
 #include <ice/mem_info.hxx>
+#include <ice/mem_memory.hxx>
 #include <type_traits>
 
 namespace ice
@@ -15,9 +16,20 @@ namespace ice
         return reinterpret_cast<char const*>(ptr) + offset.value;
     }
 
-    inline auto ptr_distance(void const* ptr_from, void const* ptr_to) noexcept -> ice::isize
+    inline auto ptr_add(ice::Memory mem, ice::usize offset) noexcept -> ice::Memory
     {
-        return { reinterpret_cast<char const*>(ptr_to) - reinterpret_cast<char const*>(ptr_from) };
+        ICE_ASSERT_CORE(mem.size >= offset);
+        return Memory{
+            .location = ice::ptr_add(mem.location, offset),
+            .size = { mem.size.value - offset.value },
+            .alignment = mem.alignment
+        };
+    }
+
+    inline auto ptr_distance(void const* ptr_from, void const* ptr_to) noexcept -> ice::usize
+    {
+        ICE_ASSERT_CORE(ptr_from <= ptr_to);
+        return { ice::usize::base_type(reinterpret_cast<char const*>(ptr_to) - reinterpret_cast<char const*>(ptr_from)) };
     }
 
     constexpr auto mem_max_capacity(ice::usize element_size, ice::usize memory_space) noexcept -> ice::ucount

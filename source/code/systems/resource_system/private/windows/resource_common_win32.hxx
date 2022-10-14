@@ -1,6 +1,5 @@
 #pragma once
 #include <ice/task.hxx>
-#include <ice/memory.hxx>
 #include <ice/resource.hxx>
 
 #if ISP_WINDOWS
@@ -15,7 +14,7 @@ namespace ice
     public:
         virtual auto load_data_for_flags(
             ice::Allocator& alloc,
-            ice::u32 flags,
+            ice::ResourceFlags flags,
             ice::TaskScheduler_v2& scheduler
         ) const noexcept -> ice::Task<ice::Memory> = 0;
     };

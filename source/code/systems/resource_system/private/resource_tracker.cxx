@@ -1,9 +1,10 @@
 #include <ice/resource_tracker.hxx>
 #include <ice/resource_provider.hxx>
 #include <ice/resource.hxx>
-#include <ice/collections.hxx>
 #include <ice/uri.hxx>
-#include <ice/pod/hash.hxx>
+
+#include <ice/string/string.hxx>
+#include <ice/container/hashmap.hxx>
 #include <ice/task.hxx>
 #include <ice/task_thread.hxx>
 #include <ice/task_scheduler.hxx>
@@ -26,12 +27,12 @@ namespace ice
         ice::u32 usecount;
     };
 
-    auto resource_origin(ice::ResourceHandle const* handle) noexcept -> ice::Utf8String
+    auto resource_origin(ice::ResourceHandle const* handle) noexcept -> ice::String
     {
         return handle->resource->origin();
     }
 
-    auto resource_path(ice::ResourceHandle const* handle) noexcept -> ice::Utf8String
+    auto resource_path(ice::ResourceHandle const* handle) noexcept -> ice::String
     {
         return handle->resource->name();
     }
@@ -48,7 +49,7 @@ namespace ice
             , _data_allocator{ _allocator }
             , _providers{ _allocator }
             , _tracked_handles{ _allocator }
-            , _thread{ ice::make_unique_null<ice::TaskThread_v2>()}
+            , _thread{ }
             , _scheduler{ this }
             , _compare_fn{ create_info.compare_fn }
         {
@@ -66,16 +67,16 @@ namespace ice
             {
                 _thread->stop();
                 _thread->join();
-                _thread = nullptr;
+                _thread.reset();
             }
 
-            for (auto const& entry : _tracked_handles)
+            for (ResourceHandle* const entry : _tracked_handles)
             {
-                entry.value->usecount -= 1;
-                if (entry.value->usecount == 0)
+                entry->usecount -= 1;
+                if (entry->usecount == 0)
                 {
-                    _data_allocator.deallocate(entry.value->data.location);
-                    _handle_allocator.destroy(entry.value);
+                    _data_allocator.deallocate(entry->data);
+                    _handle_allocator.destroy(entry);
                 }
             }
         }
@@ -84,18 +85,18 @@ namespace ice
         {
             ICE_ASSERT(provider != nullptr, "Trying to attach a nullptr as provider.");
 
-            ice::pod::Array<ice::Resource_v2 const*> temp_resources{ _allocator };
+            ice::Array<ice::Resource_v2 const*> temp_resources{ _allocator };
 
             ice::u64 const hash_value = ice::hash(provider->schemeid());
 
-            bool has_provider = ice::pod::hash::has(_providers, hash_value);
+            bool has_provider = ice::hashmap::has(_providers, hash_value);
             if (has_provider == false)
             {
                 ice::ResourceProviderResult const refresh_result = ice::sync_wait(provider->refresh());
                 if (refresh_result != ice::ResourceProviderResult::Failure)
                 {
                     has_provider = true;
-                    ice::pod::hash::set(
+                    ice::hashmap::set(
                         _providers,
                         hash_value,
                         provider
@@ -104,7 +105,7 @@ namespace ice
                     provider->query_resources(temp_resources);
                     for (ice::Resource_v2 const* resource : temp_resources)
                     {
-                        ice::ResourceHandle* handle = _handle_allocator.make<ice::ResourceHandle>(
+                        ice::ResourceHandle* handle = _handle_allocator.create<ice::ResourceHandle>(
                             ice::ResourceHandle{
                                 .provider = provider,
                                 .resource = resource,
@@ -114,7 +115,7 @@ namespace ice
                             }
                         );
 
-                        ice::pod::multi_hash::insert(
+                        ice::multi_hashmap::insert(
                             _tracked_handles,
                             ice::hash(resource->name()),
                             handle
@@ -127,16 +128,14 @@ namespace ice
 
         bool detach_provider(ice::ResourceProvider* provider) noexcept override
         {
-            ice::pod::hash::remove(_providers, ice::hash_from_ptr(provider));
+            ice::hashmap::remove(_providers, ice::hash_from_ptr(provider));
             return true;
         }
 
         void refresh_providers() noexcept override
         {
-            for (auto const& entry : _providers)
+            for (ice::ResourceProvider* provider : _providers)
             {
-                ice::ResourceProvider* provider = entry.value;
-
                 ice::ResourceProviderResult const result = ice::sync_wait(provider->refresh());
                 if (result == ice::ResourceProviderResult::Failure)
                 {
@@ -156,9 +155,9 @@ namespace ice
             ice::ResourceHandle* result = nullptr;
 
             // TODO: Pass non urn values to a provider associated with a that scheme.
-            if (uri.scheme != ice::scheme_urn.hash_value)
+            if (uri.scheme != ice::stringid_hash(ice::Scheme_URN))
             {
-                ice::ResourceProvider* const provider = ice::pod::hash::get(_providers, ice::hash(uri.scheme), nullptr);
+                ice::ResourceProvider* const provider = ice::hashmap::get(_providers, ice::hash(uri.scheme), nullptr);
                 if (provider != nullptr)
                 {
                     ice::Resource_v2 const* found_resource = provider->find_resource(uri);
@@ -166,18 +165,18 @@ namespace ice
                     {
                         ice::u64 const hash = ice::hash(found_resource->name());
 
-                        auto it = ice::pod::multi_hash::find_first(_tracked_handles, hash);
+                        auto it = ice::multi_hashmap::find_first(_tracked_handles, hash);
                         if (it != nullptr)
                         {
                             // We try to find the best matching flags, so if they are equal we got a jackpot.
                             while (it != nullptr && result == nullptr)
                             {
-                                if (it->value->resource->flags() == found_resource->flags())
+                                if (it.value()->resource->flags() == found_resource->flags())
                                 {
-                                    result = it->value;
+                                    result = it.value();
                                 }
 
-                                it = ice::pod::multi_hash::find_next(_tracked_handles, it);
+                                it = ice::multi_hashmap::find_next(_tracked_handles, it);
                             }
                         }
                     }
@@ -188,29 +187,29 @@ namespace ice
 
             ice::u64 const hash = ice::hash(uri.path);
 
-            auto it = ice::pod::multi_hash::find_first(_tracked_handles, hash);
+            auto it = ice::multi_hashmap::find_first(_tracked_handles, hash);
             if (it != nullptr)
             {
                 // TODO: Revisit how flags are compared and how resources should be selected when no flags are given but sub-resources have flags like: Quality_Highest.
-                ice::ResourceHandle* const default_resource = it->value;
+                ice::ResourceHandle* const default_resource = it.value();
                 ice::ResourceHandle* selected_resource = default_resource;
 
                 ice::u32 priority = 0;
-                ice::ResourceFlags selected_flags = it->value->resource->flags();
+                ice::ResourceFlags selected_flags = it.value()->resource->flags();
 
                 // We try to find the best matching flags, so if they are equal we got a jackpot.
                 while (it != nullptr && selected_flags != flags)
                 {
-                    ice::Resource_v2 const* res = it->value->resource;
+                    ice::Resource_v2 const* res = it.value()->resource;
 
                     if (ice::u32 const new_priority = _compare_fn(flags, res->flags(), selected_flags); priority < new_priority)
                     {
                         priority = new_priority;
                         selected_flags = res->flags();
-                        selected_resource = it->value;
+                        selected_resource = it.value();
                     }
 
-                    it = ice::pod::multi_hash::find_next(_tracked_handles, it);
+                    it = ice::multi_hashmap::find_next(_tracked_handles, it);
                 }
 
                 if (selected_resource != nullptr && selected_resource->resource != nullptr)
@@ -262,7 +261,7 @@ namespace ice
             ICE_ASSERT(handle != nullptr, "Trying to set resource from invalid handle!");
             ice::u64 const hash = ice::hash(uri.path);
 
-            ice::ResourceHandle* const replaced_handle = ice::pod::hash::get(_tracked_handles, hash, nullptr);
+            ice::ResourceHandle* const replaced_handle = ice::hashmap::get(_tracked_handles, hash, nullptr);
             ICE_ASSERT(replaced_handle != handle, "Cannot replace a resource with it's own value.");
             ICE_ASSERT(replaced_handle == nullptr || replaced_handle->refcount == 0, "Cannot replace a resource that is still in use!");
 
@@ -271,7 +270,7 @@ namespace ice
                 handle->usecount += 1;
 
                 // Set the new handle to that resource name hash.
-                ice::pod::hash::set(
+                ice::hashmap::set(
                     _tracked_handles,
                     hash,
                     handle
@@ -284,7 +283,7 @@ namespace ice
                     {
                         if (replaced_handle->status == ice::ResourceStatus::Loaded)
                         {
-                            _data_allocator.deallocate(replaced_handle->data.location);
+                            _data_allocator.deallocate(replaced_handle->data);
                         }
                         _handle_allocator.destroy(replaced_handle);
                     }
@@ -355,7 +354,7 @@ namespace ice
             co_return ice::ResourceResult{
                 .resource_status = ice::ResourceStatus::Loaded,
                 .resource = handle->resource,
-                .data = handle->data,
+                .data = ice::data_view(handle->data),
             };
         }
 
@@ -399,7 +398,7 @@ namespace ice
 
                 if (handle->status == ice::ResourceStatus::Loaded)
                 {
-                    _data_allocator.deallocate(handle->data.location);
+                    _data_allocator.deallocate(handle->data);
                     handle->data = { };
                     handle->status = ice::ResourceStatus::Available;
 
@@ -436,8 +435,8 @@ namespace ice
         ice::Allocator& _handle_allocator;
         ice::Allocator& _data_allocator;
 
-        ice::pod::Hash<ice::ResourceProvider*> _providers;
-        ice::pod::Hash<ice::ResourceHandle*> _tracked_handles;
+        ice::HashMap<ice::ResourceProvider*> _providers;
+        ice::HashMap<ice::ResourceHandle*> _tracked_handles;
 
         ice::UniquePtr<ice::TaskThread_v2> _thread;
         ice::TaskScheduler_v2* _scheduler;
@@ -456,7 +455,7 @@ namespace ice
             "Trying to create resource system without flags compare function!"
         );
 
-        return ice::make_unique<ice::ResourceTracker, ice::ResourceTracker_Impl>(alloc, alloc, create_info);
+        return ice::make_unique<ice::ResourceTracker_Impl>(alloc, alloc, create_info);
     }
 
 } // namespace ice

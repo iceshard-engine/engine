@@ -14,8 +14,8 @@ namespace ice
         template<typename Type, ice::CollectionLogic Logic>
         inline bool can_store_count(ice::HashMap<Type, Logic> const& map, ice::ucount expected_count) noexcept;
 
-        template<typename Type, ice::CollectionLogic Logic>
-        inline auto find(ice::HashMap<Type, Logic> const& map, ice::u64 key) noexcept -> FindResult;
+        template<typename HashMapType> requires HashMapReadAccess<HashMapType>
+        inline auto find(HashMapType const& map, ice::u64 key) noexcept -> FindResult;
 
         template<typename Type, ice::CollectionLogic Logic>
         inline auto make(ice::HashMap<Type, Logic>& map, ice::u64 key) noexcept -> ice::ucount;
@@ -23,8 +23,8 @@ namespace ice
         template<typename Type, ice::CollectionLogic Logic>
         inline void erase(ice::HashMap<Type, Logic>& map, FindResult const fr) noexcept;
 
-        template<typename Type, ice::CollectionLogic Logic>
-        inline auto find_or_fail(ice::HashMap<Type, Logic> const& map, ice::u64 key) noexcept -> ice::ucount;
+        template<typename HashMapType> requires HashMapReadAccess<HashMapType>
+        inline auto find_or_fail(HashMapType const& map, ice::u64 key) noexcept -> ice::ucount;
 
         template<typename Type, ice::CollectionLogic Logic>
         inline auto find_or_make(ice::HashMap<Type, Logic>& map, ice::u64 key) noexcept -> ice::ucount;
@@ -60,7 +60,7 @@ namespace ice
     template<typename Type, ice::CollectionLogic Logic>
     inline HashMap<Type, Logic>::HashMap(HashMap&& other) noexcept
         : _allocator{ other._allocator }
-        , _capacity{ ice::exchange(other._capacity_hash, 0) }
+        , _capacity{ ice::exchange(other._capacity, 0) }
         , _count{ ice::exchange(other._count, 0) }
         , _hashes{ ice::exchange(other._hashes, nullptr) }
         , _entries{ ice::exchange(other._entries, nullptr) }
@@ -146,7 +146,7 @@ namespace ice
             _entries = std::exchange(other._entries, nullptr);
             _data = std::exchange(other._data, nullptr);
         }
-        return this;
+        return *this;
     }
 
     template<typename Type, ice::CollectionLogic Logic>
@@ -223,7 +223,7 @@ namespace ice
 
         constexpr auto calc_storage_capacity(ice::ucount max_count) noexcept -> ice::ucount
         {
-            return ice::ucount(max_count * Constant_HashMapMaxFill + 0.99f /* magic */);
+            return ice::ucount(max_count / Constant_HashMapMaxFill + 0.99f /* magic */);
         }
 
         template<typename Type, ice::CollectionLogic Logic>
@@ -233,8 +233,8 @@ namespace ice
             return max_ucount >= expected_count;
         }
 
-        template<typename Type, ice::CollectionLogic Logic>
-        inline auto find(ice::HashMap<Type, Logic> const& map, ice::u64 key) noexcept -> FindResult
+        template<typename HashMapType> requires HashMapReadAccess<HashMapType>
+        inline auto find(HashMapType const& map, ice::u64 key) noexcept -> FindResult
         {
             FindResult fr{
                 .hash_i = key % map._capacity,
@@ -358,8 +358,8 @@ namespace ice
             }
         }
 
-        template<typename Type, ice::CollectionLogic Logic>
-        inline auto find_or_fail(ice::HashMap<Type, Logic> const& map, ice::u64 key) noexcept -> ice::ucount
+        template<typename HashMapType> requires HashMapReadAccess<HashMapType>
+        inline auto find_or_fail(HashMapType const& map, ice::u64 key) noexcept -> ice::ucount
         {
             return ice::hashmap::detail::find(map, key).entry_i;
         }
@@ -555,7 +555,7 @@ namespace ice
         template<typename Type, ice::CollectionLogic Logic>
         inline void shrink(ice::HashMap<Type, Logic>& map) noexcept
         {
-            ice::hashmap::detail::rehash(map, (map._count / ice::hashmap::detail::Constant_HashMapMaxFill) + 1);
+            ice::hashmap::detail::rehash(map, ice::hashmap::detail::calc_storage_capacity(map._count));
         }
 
         template<typename Type, ice::CollectionLogic Logic, typename Value>

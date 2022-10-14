@@ -65,7 +65,7 @@ namespace ice
         constexpr auto tail(ice::Span<Type> span, ice::ucount from_idx) noexcept -> ice::Span<Type>;
 
         template<typename Type>
-        constexpr auto subspan(ice::Span<Type> span, ice::ucount from_idx, ice::ucount count) noexcept -> ice::Span<Type>;
+        constexpr auto subspan(ice::Span<Type> span, ice::ucount from_idx, ice::ucount count = ice::ucount_max) noexcept -> ice::Span<Type>;
 
         template<typename Type>
         constexpr auto begin(ice::Span<Type>& span) noexcept -> typename ice::Span<Type>::Iterator;

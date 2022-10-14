@@ -1,25 +1,25 @@
 #pragma once
-#include <ice/allocator.hxx>
+#include <ice/mem_allocator.hxx>
 #include <ice/string_types.hxx>
-#include <ice/buffer.hxx>
+//#include <ice/buffer.hxx>
 #include <ice/os/windows.hxx>
 
 #include "../path_utils.hxx"
 
 #if ISP_WINDOWS
 
-namespace ice
+namespace ice::win32
 {
 
     bool utf8_to_wide_append(
-        ice::Utf8String path,
-        ice::HeapString<wchar_t>& out_str
+        ice::String path,
+        ice::HeapString<ice::wchar>& out_str
     ) noexcept;
 
     auto utf8_to_wide(
         ice::Allocator& alloc,
-        ice::Utf8String path
-    ) noexcept -> ice::HeapString<wchar_t>;
+        ice::String path
+    ) noexcept -> ice::HeapString<ice::wchar>;
 
     auto wide_to_utf8_size(
         ice::WString path
@@ -27,17 +27,18 @@ namespace ice
 
     bool wide_to_utf8(
         ice::WString path,
-        ice::HeapString<char8_t>& out_str
+        ice::HeapString<>& out_str
     ) noexcept;
 
-    auto win32_open_file(
+    auto native_open_file(
         ice::WString path,
         int flags
-    ) noexcept -> ice::win32::SHHandle;
+    ) noexcept -> ice::win32::FileHandle;
 
-    bool win32_load_file(
-        ice::win32::SHHandle const& handle,
-        ice::Buffer& out_buffer
+    bool native_load_file(
+        ice::win32::FileHandle const& handle,
+        ice::Allocator& alloc,
+        ice::Memory& out_data
     ) noexcept;
 
 } // namespace ice

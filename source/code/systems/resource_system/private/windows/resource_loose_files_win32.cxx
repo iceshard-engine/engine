@@ -1,7 +1,9 @@
 #include "resource_loose_files_win32.hxx"
-#include <ice/memory/stack_allocator.hxx>
+#include <ice/mem_allocator_stack.hxx>
+#include <ice/container_types.hxx>
+#include <ice/container/array.hxx>
+#include <ice/string/heap_string.hxx>
 #include <ice/task_scheduler.hxx>
-#include <ice/collections.hxx>
 #include <ice/assert.hxx>
 
 #include "resource_utils_win32.hxx"
@@ -20,25 +22,26 @@ namespace ice
         ICE_LOG(ice::LogSeverity::Debug, ice::LogTag::System, "internal_overlapped_completion_routine()!");
     }
 
-    auto internal_overlapped_file_load(HANDLE file, Memory& data, ice::TaskScheduler_v2& scheduler) noexcept -> ice::Task<bool>
+    auto internal_overlapped_file_load(HANDLE file, ice::Memory const& data, ice::TaskScheduler_v2& scheduler) noexcept -> ice::Task<bool>
     {
         OVERLAPPED overlapped{ };
 
-        ice::u32 file_offset = 0;
-        ice::u32 file_size_remaining = data.size;
-        while (file_size_remaining > 0)
+        ice::usize file_offset = 0_B;
+        ice::usize file_size_remaining = data.size;
+        while (file_size_remaining > 0_B)
         {
-            overlapped.Offset = file_offset;
+            overlapped.OffsetHigh = ice::ucount(file_offset.value >> 32);
+            overlapped.Offset = ice::ucount(file_offset.value & 0x0000'0000'ffff'ffff);
 
             co_await scheduler;
 
-            ice::u32 constexpr max_bytes_to_read = 1024u * 32u;
-            ice::u32 const bytes_to_read = ice::min(file_size_remaining, max_bytes_to_read);
+            ice::usize constexpr max_bytes_to_read = 1024_B * 32_B;
+            ice::usize const bytes_to_read = ice::min(file_size_remaining, max_bytes_to_read);
 
             BOOL const read_result = ReadFileEx(
                 file,
-                ice::memory::ptr_add(data.location, file_offset),
-                bytes_to_read,
+                ice::ptr_add(data.location, file_offset),
+                ice::ucount(bytes_to_read.value),
                 &overlapped,
                 internal_overlapped_completion_routine
             );
@@ -66,26 +69,26 @@ namespace ice
             else if (loaded_size != 0)
             {
                 ICE_ASSERT(
-                    loaded_size == bytes_to_read
-                    || loaded_size == max_bytes_to_read,
+                    loaded_size == bytes_to_read.value
+                    || loaded_size == max_bytes_to_read.value,
                     "Loaded unexpected number of bytes during read operation! [got: {}, expected: {} or {}]",
                     loaded_size, bytes_to_read, max_bytes_to_read
                 );
 
-                file_size_remaining -= bytes_to_read;
+                file_size_remaining.value -= bytes_to_read.value;
                 file_offset += bytes_to_read; // 4 KiB
             }
         }
 
-        ICE_ASSERT(file_size_remaining == 0, "Error!");
-        co_return file_size_remaining == 0;
+        ICE_ASSERT(file_size_remaining == 0_B, "Error!");
+        co_return file_size_remaining == 0_B;
     }
 
     Resource_LooseFilesWin32::Resource_LooseFilesWin32(
         ice::MutableMetadata metadata,
-        ice::HeapString<char8_t> origin_path,
-        ice::Utf8String origin_name,
-        ice::Utf8String uri_path
+        ice::HeapString<> origin_path,
+        ice::String origin_name,
+        ice::String uri_path
     ) noexcept
         : ice::Resource_Win32{ }
         , _mutable_metadata{ ice::move(metadata) }
@@ -93,7 +96,7 @@ namespace ice
         , _origin_path{ ice::move(origin_path) }
         , _origin_name{ origin_name }
         , _uri_path{ uri_path }
-        , _uri{ ice::scheme_file, uri_path }
+        , _uri{ ice::Scheme_File, uri_path }
     {
     }
 
@@ -111,12 +114,12 @@ namespace ice
         return ice::ResourceFlags::None;
     }
 
-    auto Resource_LooseFilesWin32::name() const noexcept -> ice::Utf8String
+    auto Resource_LooseFilesWin32::name() const noexcept -> ice::String
     {
         return _origin_name;
     }
 
-    auto Resource_LooseFilesWin32::origin() const noexcept -> ice::Utf8String
+    auto Resource_LooseFilesWin32::origin() const noexcept -> ice::String
     {
         return _origin_path;
     }
@@ -128,20 +131,23 @@ namespace ice
 
     auto Resource_LooseFilesWin32::load_data_for_flags(
         ice::Allocator& alloc,
-        ice::u32 flags,
+        ice::ResourceFlags flags,
         ice::TaskScheduler_v2& scheduler
     ) const noexcept -> ice::Task<ice::Memory>
     {
         ice::HeapString<wchar_t> file_location_wide{ alloc };
-        ice::utf8_to_wide_append(_origin_path, file_location_wide);
+        ice::win32::utf8_to_wide_append(_origin_path, file_location_wide);
 
         ice::Memory result{
             .location = nullptr,
-            .size = 0,
-            .alignment = 0,
+            .size = 0_B,
+            .alignment = ice::ualign::invalid,
         };
 
-        ice::win32::SHHandle const file_handle = ice::win32_open_file(file_location_wide, FILE_FLAG_OVERLAPPED);
+        ice::win32::FileHandle const file_handle = ice::win32::native_open_file(
+            file_location_wide,
+            FILE_FLAG_OVERLAPPED
+        );
         if (file_handle)
         {
             LARGE_INTEGER file_size;
@@ -150,17 +156,9 @@ namespace ice
                 co_return result;
             }
 
-            ice::u32 const casted_file_size = static_cast<ice::u32>(file_size.QuadPart);
-
-            // #TODO: Implement a `ice::size` type that will be used for memory only.
-            ICE_ASSERT(casted_file_size == file_size.QuadPart, "Unsupported file size of over 4GB!");
-
-            ice::Memory data{
-                .location = alloc.allocate(casted_file_size),
-                .size = casted_file_size,
-                .alignment = 4
-            };
-
+            ice::Memory const data = alloc.allocate(
+                AllocRequest{ { ice::usize::base_type(file_size.QuadPart) }, ice::ualign::b_default }
+            );
 
             bool const success = co_await internal_overlapped_file_load(file_handle.native(), data, scheduler);
             if (success)
@@ -169,7 +167,7 @@ namespace ice
             }
             else
             {
-                alloc.deallocate(data.location);
+                alloc.deallocate(data);
             }
 
         }
@@ -179,7 +177,7 @@ namespace ice
 
     Resource_LooseFilesWin32::ExtraResource::ExtraResource(
         ice::Resource_LooseFilesWin32& parent,
-        ice::HeapString<char8_t> origin_path,
+        ice::HeapString<> origin_path,
         ice::ResourceFlags flags
     ) noexcept
         : _parent{ parent }
@@ -198,12 +196,12 @@ namespace ice
         return _flags;
     }
 
-    auto Resource_LooseFilesWin32::ExtraResource::name() const noexcept -> ice::Utf8String
+    auto Resource_LooseFilesWin32::ExtraResource::name() const noexcept -> ice::String
     {
         return _parent.name();
     }
 
-    auto Resource_LooseFilesWin32::ExtraResource::origin() const noexcept -> ice::Utf8String
+    auto Resource_LooseFilesWin32::ExtraResource::origin() const noexcept -> ice::String
     {
         return _origin_path;
     }
@@ -215,20 +213,23 @@ namespace ice
 
     auto Resource_LooseFilesWin32::ExtraResource::load_data_for_flags(
         ice::Allocator& alloc,
-        ice::u32 flags,
+        ice::ResourceFlags flags,
         ice::TaskScheduler_v2& scheduler
     ) const noexcept -> ice::Task<ice::Memory>
     {
         ice::HeapString<wchar_t> file_location_wide{ alloc };
-        ice::utf8_to_wide_append(_origin_path, file_location_wide);
+        ice::win32::utf8_to_wide_append(_origin_path, file_location_wide);
 
         ice::Memory result{
             .location = nullptr,
-            .size = 0,
-            .alignment = 0,
+            .size = 0_B,
+            .alignment = ice::ualign::invalid,
         };
 
-        ice::win32::SHHandle const file_handle = ice::win32_open_file(file_location_wide, FILE_FLAG_OVERLAPPED);
+        ice::win32::FileHandle const file_handle = ice::win32::native_open_file(
+            file_location_wide,
+            FILE_FLAG_OVERLAPPED
+        );
         if (file_handle)
         {
             LARGE_INTEGER file_size;
@@ -237,17 +238,9 @@ namespace ice
                 co_return result;
             }
 
-            ice::u32 const casted_file_size = static_cast<ice::u32>(file_size.QuadPart);
-
-            // #TODO: Implement a `ice::size` type that will be used for memory only.
-            ICE_ASSERT(casted_file_size == file_size.QuadPart, "Unsupported file size of over 4GB!");
-
-            ice::Memory data{
-                .location = alloc.allocate(casted_file_size),
-                .size = casted_file_size,
-                .alignment = 4
-            };
-
+            ice::Memory const data = alloc.allocate(
+                AllocRequest{ { ice::usize::base_type(file_size.QuadPart) }, ice::ualign::b_default }
+            );
 
             bool const success = co_await internal_overlapped_file_load(file_handle.native(), data, scheduler);
             if (success)
@@ -256,9 +249,8 @@ namespace ice
             }
             else
             {
-                alloc.deallocate(data.location);
+                alloc.deallocate(data);
             }
-
         }
 
         co_return result;
@@ -270,20 +262,19 @@ namespace ice
         ice::WString uri_base_path,
         ice::WString meta_file,
         ice::WString data_file,
-        ice::pod::Array<ice::Resource_Win32*>& out_resources
+        ice::Array<ice::Resource_Win32*>& out_resources
     ) noexcept
     {
-        ice::win32::SHHandle meta_handle = win32_open_file(meta_file, FILE_ATTRIBUTE_NORMAL);
-        ice::win32::SHHandle data_handle = win32_open_file(data_file, FILE_ATTRIBUTE_NORMAL);
+        ice::win32::FileHandle meta_handle = ice::win32::native_open_file(meta_file, FILE_ATTRIBUTE_NORMAL);
+        ice::win32::FileHandle data_handle = ice::win32::native_open_file(data_file, FILE_ATTRIBUTE_NORMAL);
 
         if (meta_handle && data_handle)
         {
-            ice::Buffer meta_file_data{ alloc };
-
-            if (win32_load_file(meta_handle, meta_file_data) && ice::buffer::size(meta_file_data) > ice::string::size(Constant_FileHeader_MetadataFile))
+            ice::Memory metafile_data;
+            if (ice::win32::native_load_file(meta_handle, alloc, metafile_data) && (metafile_data.size.value > ice::string::size(Constant_FileHeader_MetadataFile)))
             {
                 ice::String const file_header{
-                    reinterpret_cast<char const*>(ice::buffer::data(meta_file_data)),
+                    reinterpret_cast<char const*>(metafile_data.location),
                     ice::string::size(Constant_FileHeader_MetadataFile)
                 };
 
@@ -295,26 +286,26 @@ namespace ice
                 // We create the main resource in a different scope so we dont accidentaly use data from there
                 ice::Resource_LooseFilesWin32* main_resource;
                 {
-                    ice::HeapString<char8_t> utf8_file_path{ alloc };
-                    wide_to_utf8(data_file, utf8_file_path);
+                    ice::HeapString<> utf8_file_path{ alloc };
+                    ice::win32::wide_to_utf8(data_file, utf8_file_path);
                     ice::path::normalize(utf8_file_path);
 
-                    ice::Utf8String utf8_origin_name = ice::string::substr(utf8_file_path, wide_to_utf8_size(base_path));
-                    ice::Utf8String utf8_uri_path = ice::string::substr(utf8_file_path, wide_to_utf8_size(uri_base_path));
+                    ice::String utf8_origin_name = ice::string::substr(utf8_file_path, ice::win32::wide_to_utf8_size(base_path));
+                    ice::String utf8_uri_path = ice::string::substr(utf8_file_path, ice::win32::wide_to_utf8_size(uri_base_path));
 
                     // We have a loose resource files which contain metadata associated data.
                     // We need now to read the metadata and check if there are more file associated and if all are available.
                     ice::MutableMetadata mutable_meta{ alloc };
-                    ice::meta_deserialize(meta_file_data, mutable_meta);
+                    ice::meta_deserialize(data_view(metafile_data), mutable_meta);
 
-                    main_resource = alloc.make<ice::Resource_LooseFilesWin32>(
+                    main_resource = alloc.create<ice::Resource_LooseFilesWin32>(
                         ice::move(mutable_meta),
                         ice::move(utf8_file_path), // we move so the pointer 'origin_name' calculated from 'utf8_file_path' is still valid!
                         utf8_origin_name,
                         utf8_uri_path
                     );
 
-                    ice::pod::array::push_back(out_resources, main_resource);
+                    ice::array::push_back(out_resources, main_resource);
                 }
 
                 // We can access the metadata now again.
@@ -327,18 +318,18 @@ namespace ice
                     "If a resource defines extra files, it's only allowed to do so by providing 'unique flags' and co-related 'relative paths'."
                 );
 
-                ice::pod::Array<ice::Utf8String> paths{ alloc };
-                ice::pod::array::reserve(paths, 4);
+                ice::Array<ice::String, CollectionLogic::Complex> paths{ alloc };
+                ice::array::reserve(paths, 4);
 
-                ice::pod::Array<ice::ResourceFlags> flags{ alloc };
-                ice::pod::array::reserve(flags, 4);
+                ice::Array<ice::ResourceFlags> flags{ alloc };
+                ice::array::reserve(flags, 4);
 
                 if (has_paths && has_flags)
                 {
-                    ice::meta_read_utf8_array(metadata, "resource.extra_files.paths"_sid, paths);
+                    ice::meta_read_string_array(metadata, "resource.extra_files.paths"_sid, paths);
                     ice::meta_read_flags_array(metadata, "resource.extra_files.flags"_sid, flags);
 
-                    ice::HeapString<char8_t> utf8_file_path{ alloc };
+                    ice::HeapString<> utf8_file_path{ alloc };
 
                     // Lets take a bet that we can use at least 20 more characters before growing!
                     ice::u32 const expected_extra_path_size = ice::string::size(meta_file) + 16;
@@ -348,13 +339,13 @@ namespace ice
                     ice::HeapString<wchar_t> full_path{ alloc };
                     ice::string::reserve(full_path, ice::string::capacity(utf8_file_path));
 
-                    full_path = ice::path::directory(meta_file);
+                    full_path = ice::path::win32::directory(meta_file);
                     ice::string::push_back(full_path, L'/');
 
                     // Remember the size so we can quickly resize.
                     ice::u32 const base_dir_size = ice::string::size(full_path);
 
-                    for (ice::u32 idx = 0; idx < ice::pod::array::size(paths); ++idx)
+                    for (ice::u32 idx = 0; idx < ice::array::count(paths); ++idx)
                     {
                         ICE_ASSERT(
                             flags[idx] != ice::ResourceFlags::None,
@@ -362,22 +353,22 @@ namespace ice
                         );
 
                         ice::string::resize(full_path, base_dir_size);
-                        utf8_to_wide_append(paths[idx], full_path);
+                        ice::win32::utf8_to_wide_append(paths[idx], full_path);
 
-                        ice::win32::SHHandle extra_handle = win32_open_file(full_path, FILE_ATTRIBUTE_NORMAL);
+                        ice::win32::FileHandle extra_handle = ice::win32::native_open_file(full_path, FILE_ATTRIBUTE_NORMAL);
                         if (extra_handle)
                         {
                             // We know the file can be opened so we save it as a extra resource.
-                            wide_to_utf8(full_path, utf8_file_path);
+                            ice::win32::wide_to_utf8(full_path, utf8_file_path);
                             ice::path::normalize(utf8_file_path);
 
-                            ice::Resource_LooseFilesWin32::ExtraResource* const extra_resource = alloc.make<ice::Resource_LooseFilesWin32::ExtraResource>(
+                            ice::Resource_LooseFilesWin32::ExtraResource* const extra_resource = alloc.create<ice::Resource_LooseFilesWin32::ExtraResource>(
                                 *main_resource,
                                 ice::move(utf8_file_path),
                                 flags[idx]
                             );
 
-                            ice::pod::array::push_back(out_resources, extra_resource);
+                            ice::array::push_back(out_resources, extra_resource);
                         }
                     }
                 }

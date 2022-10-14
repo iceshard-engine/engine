@@ -9,12 +9,12 @@ namespace ice
 {
 
     Resource_DllsWin32::Resource_DllsWin32(
-        ice::HeapString<char8_t> origin_path,
-        ice::Utf8String origin_name
+        ice::HeapString<> origin_path,
+        ice::String origin_name
     ) noexcept
         : _origin_path{ ice::move(origin_path) }
         , _origin_name{ origin_name }
-        , _uri{ ice::scheme_dynlib, _origin_name }
+        , _uri{ ice::Scheme_Dynlib, _origin_name }
     {
     }
 
@@ -28,12 +28,12 @@ namespace ice
         return ice::ResourceFlags::None;
     }
 
-    auto Resource_DllsWin32::name() const noexcept -> ice::Utf8String
+    auto Resource_DllsWin32::name() const noexcept -> ice::String
     {
         return _origin_name;
     }
 
-    auto Resource_DllsWin32::origin() const noexcept -> ice::Utf8String
+    auto Resource_DllsWin32::origin() const noexcept -> ice::String
     {
         return _origin_path;
     }
@@ -52,16 +52,19 @@ namespace ice
     {
         ice::Resource_v2* result = nullptr;
 
-        DWORD const file_attribs = GetFileAttributesW(ice::string::data(dll_path));
+        DWORD const file_attribs = GetFileAttributesW(ice::string::begin(dll_path));
         if (file_attribs != INVALID_FILE_ATTRIBUTES)
         {
-            ice::HeapString<char8_t> utf8_data_file_path{ alloc };
-            wide_to_utf8(dll_path, utf8_data_file_path);
+            ice::HeapString<> data_file_path{ alloc };
+            win32::wide_to_utf8(dll_path, data_file_path);
 
-            ice::Utf8String utf8_origin_name = ice::string::substr(utf8_data_file_path, ice::string::find_last_of(dll_path, L'/') + 1);
+            ice::String utf8_origin_name = ice::string::substr(
+                data_file_path,
+                ice::string::find_last_of(dll_path, L'/') + 1
+            );
 
-            result = alloc.make<ice::Resource_DllsWin32>(
-                ice::move(utf8_data_file_path),
+            result = alloc.create<ice::Resource_DllsWin32>(
+                ice::move(data_file_path),
                 utf8_origin_name
             );
         }

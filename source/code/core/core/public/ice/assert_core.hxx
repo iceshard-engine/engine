@@ -5,10 +5,9 @@
 #include <cassert>
 #undef assert
 
-// TODO: Move to different header
 #if ISP_WINDOWS
 
-#define ICE_PREPROC_ARG(a) a
+#define ICE_PREPROC_ARG(arg) arg
 
 //#define ICE_ASSERT_CORE(expression, message) \
 //    (void)( \

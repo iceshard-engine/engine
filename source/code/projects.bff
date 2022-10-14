@@ -9,7 +9,7 @@
 #include "core/utils/utils.bff"
 #include "core/tasks/tasks.bff"
 
-// #include "systems/resource_system/resource_system.bff"
+#include "systems/resource_system/resource_system.bff"
 // #include "systems/asset_system/asset_system.bff"
 // #include "systems/render_system/render_system.bff"
 // #include "systems/input_system/input_system.bff"

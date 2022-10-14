@@ -79,7 +79,7 @@ namespace ice
         virtual ~AllocatorBase() noexcept = default;
 
         virtual auto do_allocate(ice::AllocRequest request) noexcept -> ice::AllocResult = 0;
-        virtual void do_deallocate(ice::Memory result) noexcept = 0;
+        virtual void do_deallocate(ice::Memory memory) noexcept = 0;
     };
 
     class AllocatorDebugInfo
@@ -197,7 +197,7 @@ namespace ice
         virtual ~AllocatorBase() noexcept;
 
         virtual auto do_allocate(ice::AllocRequest request) noexcept -> ice::AllocResult = 0;
-        virtual void do_deallocate(ice::Memory result) noexcept = 0;
+        virtual void do_deallocate(ice::Memory memory) noexcept = 0;
     };
 
 } // namespace ice

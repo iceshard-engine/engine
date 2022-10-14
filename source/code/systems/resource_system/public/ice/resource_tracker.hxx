@@ -1,12 +1,12 @@
 #pragma once
 #include <ice/shard.hxx>
-#include <ice/data.hxx>
-#include <ice/task.hxx>
-#include <ice/pod/array.hxx>
-#include <ice/unique_ptr.hxx>
+#include <ice/mem_data.hxx>
+#include <ice/mem_unique_ptr.hxx>
+#include <ice/container_types.hxx>
 #include <ice/resource_types.hxx>
 #include <ice/resource_flags.hxx>
 #include <ice/resource_status.hxx>
+#include <ice/task.hxx>
 
 namespace ice
 {
@@ -64,9 +64,9 @@ namespace ice
         ) noexcept -> ice::Task<ice::ResourceResult> = 0;
     };
 
-    auto resource_origin(ice::ResourceHandle const* handle) noexcept -> ice::Utf8String;
+    auto resource_origin(ice::ResourceHandle const* handle) noexcept -> ice::String;
 
-    auto resource_path(ice::ResourceHandle const* handle) noexcept -> ice::Utf8String;
+    auto resource_path(ice::ResourceHandle const* handle) noexcept -> ice::String;
 
     auto create_resource_tracker(
         ice::Allocator& alloc,

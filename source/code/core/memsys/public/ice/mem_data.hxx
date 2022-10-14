@@ -12,8 +12,17 @@ namespace ice
         ice::ualign alignment;
     };
 
+    constexpr auto data_view(Memory memory) noexcept
+    {
+        return Data{
+            .location = memory.location,
+            .size = memory.size,
+            .alignment = memory.alignment
+        };
+    }
+
     template<typename Type>
-    auto data_view(Type const& var) noexcept
+    inline auto data_view(Type const& var) noexcept
     {
         return Data{
             .location = std::addressof(var),
@@ -23,7 +32,7 @@ namespace ice
     }
 
     template<typename Type, ice::usize::base_type Size>
-    auto data_view(Type const(&var)[Size]) noexcept
+    constexpr auto data_view(Type const(&var)[Size]) noexcept
     {
         return Data{
             .location = std::addressof(var),

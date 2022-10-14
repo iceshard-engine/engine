@@ -10,93 +10,125 @@
 namespace ice::win32
 {
 
-    //template<typename HandleType>
-    //class SafeHandle
-    //{
-    //    static constexpr bool Constant_IsHandleSupported = false
-    //        || std::is_same_v<HandleType, HANDLE>
-    //        || std::is_same_v<HandleType, HMODULE>;
+    enum class HandleType : ice::u8
+    {
+        FileHandle,
+        DllHandle,
+    };
 
-    //    static_assert(Constant_IsHandleSupported, "The given handle type is not supported by ice::win32::SafeHandle!");
+    template<HandleType HType>
+    struct Handle;
 
-    //public:
-    //    ~SafeHandle() noexcept;
-    //    SafeHandle(HandleType native_handle) noexcept;
-    //    SafeHandle(SafeHandle&& other) noexcept;
-    //    SafeHandle(SafeHandle const&) = delete;
+    using FileHandle = Handle<HandleType::FileHandle>;
+    using DllHandle = Handle<HandleType::DllHandle>;
 
-    //    auto operator=(SafeHandle&& other) noexcept -> SafeHandle&;
-    //    auto operator=(SafeHandle const& other) noexcept -> SafeHandle& = delete;
-    //    operator bool() const noexcept;
+    template<HandleType HType>
+    struct Win32NativeTypeDesciptor{ };
 
-    //    auto native() const noexcept -> HandleType;
+    template<>
+    struct Win32NativeTypeDesciptor<HandleType::FileHandle>
+    {
+        using NativeType = HANDLE;
 
-    //private:
-    //    HandleType _handle;
-    //};
+        static constexpr NativeType NullValue = INVALID_HANDLE_VALUE;
 
-    //template<typename HandleType>
-    //inline SafeHandle<HandleType>::~SafeHandle() noexcept
-    //{
-    //    if constexpr (std::is_same_v<HandleType, HANDLE>)
-    //    {
-    //        if (_handle != nullptr && _handle != INVALID_HANDLE_VALUE)
-    //        {
-    //            CloseHandle(_handle);
-    //        }
-    //    }
-    //    else if constexpr (std::is_same_v<HandleType, HMODULE>)
-    //    {
-    //        if (_handle != nullptr)
-    //        {
-    //            FreeLibrary(_handle);
-    //        }
-    //    }
-    //}
+        static bool is_valid(NativeType handle) noexcept
+        {
+            return handle != nullptr && handle != INVALID_HANDLE_VALUE;
+        }
 
-    //template<typename HandleType>
-    //inline SafeHandle<HandleType>::SafeHandle(HandleType native_handle) noexcept
-    //    : _handle{ native_handle }
-    //{
-    //}
+        static bool close(NativeType handle) noexcept
+        {
+            return CloseHandle(handle) != 0;
+        }
+    };
 
-    //template<typename HandleType>
-    //inline SafeHandle<HandleType>::SafeHandle(SafeHandle&& other) noexcept
-    //    : _handle{ ice::exchange(other._handle, nullptr) }
-    //{
-    //}
+    template<>
+    struct Win32NativeTypeDesciptor<HandleType::DllHandle>
+    {
+        using NativeType = HMODULE;
 
-    //template<typename HandleType>
-    //inline auto SafeHandle<HandleType>::operator=(SafeHandle&& other) noexcept -> SafeHandle&
-    //{
-    //    if (this == &other)
-    //    {
-    //        _handle = ice::exchange(other._handle, nullptr);
-    //    }
-    //    return *this;
-    //}
+        static constexpr NativeType NullValue = nullptr;
 
-    //template<typename HandleType>
-    //inline SafeHandle<HandleType>::operator bool() const noexcept
-    //{
-    //    if constexpr (std::is_same_v<HandleType, HANDLE>)
-    //    {
-    //        return _handle != nullptr && _handle != INVALID_HANDLE_VALUE;
-    //    }
-    //    else if constexpr (std::is_same_v<HandleType, HMODULE>)
-    //    {
-    //        return _handle != nullptr;
-    //    }
-    //}
+        static bool is_valid(NativeType handle) noexcept
+        {
+            return handle != nullptr;
+        }
 
-    //template<typename HandleType>
-    //inline auto SafeHandle<HandleType>::native() const noexcept -> HandleType
-    //{
-    //    return _handle;
-    //}
+        static bool close(NativeType handle) noexcept
+        {
+            return FreeLibrary(handle) != 0;
+        }
+    };
 
-    //using SHHandle = SafeHandle<HANDLE>;
-    //using SHHModule = SafeHandle<HMODULE>;
+    template<HandleType HType>
+    struct Handle
+    {
+        using HandleInfo = Win32NativeTypeDesciptor<HType>;
+        using NativeType = typename HandleInfo::NativeType;
+
+        Handle() noexcept;
+        Handle(NativeType value) noexcept;
+        Handle(Handle&& other) noexcept;
+        Handle(Handle const& other) noexcept = delete;
+        ~Handle() noexcept;
+
+        auto operator=(Handle&& other) noexcept -> Handle&;
+        auto operator=(Handle const& other) noexcept -> Handle& = delete;
+
+        operator bool() const noexcept { return HandleInfo::is_valid(_handle); }
+
+        auto native() const noexcept -> NativeType { return _handle; }
+        bool close() const noexcept;
+
+    private:
+        NativeType _handle;
+    };
+
+
+    template<HandleType HType>
+    Handle<HType>::Handle() noexcept
+        : _handle{ HandleInfo::NullValue }
+    {
+    }
+
+    template<HandleType HType>
+    Handle<HType>::Handle(NativeType value) noexcept
+        : _handle{ value }
+    {
+    }
+
+    template<HandleType HType>
+    Handle<HType>::Handle(Handle&& other) noexcept
+        : _handle{ ice::exchange(other._handle, HandleInfo::NullValue) }
+    {
+    }
+
+    template<HandleType HType>
+    Handle<HType>::~Handle() noexcept
+    {
+        close();
+    }
+
+    template<HandleType HType>
+    auto Handle<HType>::operator=(Handle&& other) noexcept -> Handle&
+    {
+        if (this != &other)
+        {
+            _handle = ice::exchange(other._handle, HandleInfo::NullValue);
+        }
+        return *this;
+    }
+
+    template<HandleType HType>
+    bool Handle<HType>::close() const noexcept
+    {
+        if (*this)
+        {
+            return HandleInfo::close(_handle);
+        }
+        return false;
+    }
 
 } // namespace ice::win32
 

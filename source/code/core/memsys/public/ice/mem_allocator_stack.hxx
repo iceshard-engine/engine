@@ -20,24 +20,24 @@ namespace ice
         ) noexcept;
 
         inline StackAllocator(
-            ice::Allocator& parent,
+            ice::Allocator& backing_allocator,
             std::source_location = std::source_location::current()
         ) noexcept;
 
         inline StackAllocator(
-            ice::Allocator& parent,
+            ice::Allocator& backing_allocator,
             std::string_view name,
             std::source_location = std::source_location::current()
         ) noexcept;
 
         inline void reset() noexcept;
 
-    private:
+    protected:
         inline auto do_allocate(ice::AllocRequest request) noexcept -> ice::AllocResult override;
-        inline void do_deallocate(ice::Memory result) noexcept override;
+        inline void do_deallocate(ice::Memory memory) noexcept override;
 
     private:
-        ice::Allocator* _parent;
+        ice::Allocator* _backing_alloc;
 
         ice::usize _static_usage;
         char _static_buffer[Constant_InternalCapacity.value];
@@ -48,28 +48,28 @@ namespace ice
         std::source_location src_loc
     ) noexcept
         : ice::Allocator{ src_loc }
-        , _parent{ nullptr}
+        , _backing_alloc{ nullptr}
     {
     }
 
     template<ice::usize Capacity>
     inline StackAllocator<Capacity>::StackAllocator(
-        ice::Allocator& parent,
+        ice::Allocator& backing_allocator,
         std::source_location src_loc
     ) noexcept
-        : ice::Allocator{ src_loc, parent }
-        , _parent{ &parent }
+        : ice::Allocator{ src_loc, backing_allocator }
+        , _backing_alloc{ &backing_allocator }
     {
     }
 
     template<ice::usize Capacity>
     inline StackAllocator<Capacity>::StackAllocator(
-        ice::Allocator& parent,
+        ice::Allocator& backing_allocator,
         std::string_view name,
         std::source_location src_loc
     ) noexcept
-        : ice::Allocator{ src_loc, parent, name }
-        , _parent{ &parent }
+        : ice::Allocator{ src_loc, backing_allocator, name }
+        , _backing_alloc{ &backing_allocator }
     {
     }
 
@@ -97,23 +97,23 @@ namespace ice
             result.size = request.size;
             result.alignment = request.alignment;
         }
-        else if (_parent != nullptr)
+        else if (_backing_alloc != nullptr)
         {
-            result = _parent->allocate(request);
+            result = _backing_alloc->allocate(request);
         }
         return result;
     }
 
     template<ice::usize Capacity>
-    inline void StackAllocator<Capacity>::do_deallocate(ice::Memory result) noexcept
+    inline void StackAllocator<Capacity>::do_deallocate(ice::Memory memory) noexcept
     {
-        if ((_static_buffer + 0) <= result.location && ice::ptr_add(_static_buffer, _static_usage) > result.location)
+        if ((_static_buffer + 0) <= memory.location && ice::ptr_add(_static_buffer, _static_usage) > memory.location)
         {
             ICE_ASSERT_CORE(true); // nothing to do here
         }
-        else if (_parent != nullptr)
+        else if (_backing_alloc != nullptr)
         {
-            _parent->deallocate(result);
+            _backing_alloc->deallocate(memory);
         }
     }
 
