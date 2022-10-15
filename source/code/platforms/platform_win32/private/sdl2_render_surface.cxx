@@ -1,5 +1,5 @@
 #include "sdl2_render_surface.hxx"
-#include <ice/stack_string.hxx>
+#include <ice/string/static_string.hxx>
 #include <ice/assert.hxx>
 
 #include <SDL_syswm.h>
@@ -20,15 +20,15 @@ namespace ice::platform
         SDL_InitSubSystem(SDL_INIT_VIDEO);
 
         ice::i32 creation_flags = SDL_WINDOW_ALLOW_HIGHDPI | SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE;
-        ice::StackString<64> window_title;
+        ice::StaticString<64> window_title;
         if (_render_driver == RenderDriverAPI::Vulkan)
         {
-            window_title = "Iceshard 0.1-Alpha : Win32, SDL2, Vulkan";
+            window_title = ice::String{ "Iceshard 0.1-Alpha : Win32, SDL2, Vulkan" };
             creation_flags |= SDL_WINDOW_VULKAN;
         }
         if (_render_driver == RenderDriverAPI::OpenGL)
         {
-            window_title = "Iceshard 0.1-Alpha : Win32, SDL2, OpenGL";
+            window_title = ice::String{ "Iceshard 0.1-Alpha : Win32, SDL2, OpenGL" };
             creation_flags |= SDL_WINDOW_OPENGL;
         }
 
@@ -75,7 +75,7 @@ namespace ice::platform
         ice::render::RenderDriverAPI driver_api
     ) noexcept -> ice::UniquePtr<ice::platform::WindowSurface>
     {
-        return ice::make_unique<WindowSurface, SDL2_WindowSurface>(alloc, alloc, driver_api);
+        return ice::make_unique<SDL2_WindowSurface>(alloc, alloc, driver_api);
     }
 
 } // namespace ice::platform

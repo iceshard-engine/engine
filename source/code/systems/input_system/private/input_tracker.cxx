@@ -21,7 +21,7 @@ namespace ice::input
         ) noexcept override;
 
         void process_device_queue(
-            ice::input::DeviceQueue const& event_queue,
+            ice::input::DeviceEventQueue const& event_queue,
             ice::Array<ice::input::InputEvent>& input_events_out
         ) noexcept override;
 
@@ -70,7 +70,7 @@ namespace ice::input
     }
 
     void SimpleInputTracker::process_device_queue(
-        ice::input::DeviceQueue const& event_queue,
+        ice::input::DeviceEventQueue const& event_queue,
         ice::Array<ice::input::InputEvent>& input_events_out
     ) noexcept
     {
@@ -82,47 +82,47 @@ namespace ice::input
             }
         }
 
-        ICE_ASSERT_CORE(false); // TODO: Event queue needs a solid refactor...
-        //for (auto[event, data] : event_queue)
-        //{
-        //    ice::u64 const device_hash = ice::hash(event.device);
+        for (ice::input::DeviceEvent event : event_queue._events)
+        {
+            ice::u64 const device_hash = ice::hash(event.device);
 
-        //    if (event.message == DeviceMessage::DeviceConnected)
-        //    {
-        //        // #todo assert device already tracked
+            if (event.message == DeviceMessage::DeviceConnected)
+            {
+                ICE_ASSERT_CORE(ice::hashmap::get(_devices, device_hash, nullptr) == nullptr);
 
-        //        Device const device = ice::input::make_device(event.device);
-        //        DeviceFactory* const factory_func = ice::hashmap::get(
-        //            _factories,
-        //            ice::hash(device.type),
-        //            nullptr
-        //        );
+                Device const device = ice::input::make_device(event.device);
+                DeviceFactory* const factory_func = ice::hashmap::get(
+                    _factories,
+                    ice::hash(device.type),
+                    nullptr
+                );
 
-        //        if (factory_func != nullptr)
-        //        {
-        //            InputDevice* const device_state = factory_func(_allocator, event.device);
-        //            // #todo assert not null
+                if (factory_func != nullptr)
+                {
+                    InputDevice* const device_state = factory_func(_allocator, event.device);
+                    ICE_ASSERT_CORE(device_state != nullptr);
 
-        //            ice::hashmap::set(_devices, device_hash, device_state);
-        //            // #todo log device connected
-        //        }
-        //    }
-        //    else if (event.message == DeviceMessage::DeviceDisconnected)
-        //    {
-        //        // #todo assert device NOT tracked
-        //        _allocator.destroy(
-        //            ice::hashmap::get(_devices, device_hash, nullptr)
-        //        );
+                    ice::hashmap::set(_devices, device_hash, device_state);
+                    // #todo log device connected (shard?)
+                }
+            }
+            else if (event.message == DeviceMessage::DeviceDisconnected)
+            {
+                ICE_ASSERT_CORE(ice::hashmap::get(_devices, device_hash, nullptr) != nullptr);
 
-        //        ice::hashmap::remove(_devices, device_hash);
-        //        // #todo log device disconnected
-        //    }
-        //    else if (ice::hashmap::has(_devices, device_hash))
-        //    {
-        //        InputDevice* const device = ice::hashmap::get(_devices, device_hash, nullptr);
-        //        device->on_event(event, data);
-        //    }
-        //}
+                _allocator.destroy(
+                    ice::hashmap::get(_devices, device_hash, nullptr)
+                );
+
+                ice::hashmap::remove(_devices, device_hash);
+                // #todo log device disconnected (shard?)
+            }
+            else if (ice::hashmap::has(_devices, device_hash))
+            {
+                InputDevice* const device = ice::hashmap::get(_devices, device_hash, nullptr);
+                device->on_event(event);
+            }
+        }
 
         for (InputDevice* device : _devices)
         {

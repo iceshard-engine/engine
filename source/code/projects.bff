@@ -16,8 +16,8 @@
 #include "systems/font_system/font_system.bff"
 #include "systems/ui_system/ui_system.bff"
 
-// #include "platforms/platform/platform.bff"
-// #include "platforms/platform_win32/platform_win32.bff"
+#include "platforms/platform/platform.bff"
+#include "platforms/platform_win32/platform_win32.bff"
 
 // #include "iceshard/application/application.bff"
 // #include "iceshard/engine/engine.bff"

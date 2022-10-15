@@ -29,7 +29,7 @@ namespace ice
     //!   To do so the names need to be separated by a '`' <em>(backquote)</em> character. For example.: `my-shard`ice::u32`
     //!
     //! \note Even if you create a ice::ShardID with a typeid that is not enabled, it will not allow you to create a shard with such a value.
-    constexpr auto shardid(std::u8string_view definition) noexcept -> ice::ShardID;
+    constexpr auto shardid(std::string_view definition) noexcept -> ice::ShardID;
 
     //! \brief Creates a ice::Shard value from ice::ShardID. Clears the payload ID from the created shard.
     constexpr auto shard(ice::ShardID id) noexcept -> ice::Shard;
@@ -42,7 +42,7 @@ namespace ice
     //! \param[in] definition Follows the same rules described in ice::shardid(std::u8_string_view).
     //! \param[in] value A value with a type enabled for sharding with ice::Constant_ShardPayloadID.
     template<typename T>
-    constexpr auto shard(std::u8string_view definition, T value);
+    constexpr auto shard(std::string_view definition, T value);
 
     //! \brief Creates a ice::Shard value from ice::ShardID and the given value.
     //!
@@ -164,7 +164,7 @@ namespace ice
     constexpr static ice::ShardPayloadID ShardPayloadID_NotSet = { 0 };
 
     template<typename T>
-    concept AllowedAsShardPayloadID = std::is_pod_v<T> && sizeof(T) <= 8;
+    concept AllowedAsShardPayloadID = std::is_trivially_copyable_v<T> && sizeof(T) <= 8;
 
     template<typename T> requires AllowedAsShardPayloadID<T>
     constexpr static ice::ShardPayloadID Constant_ShardPayloadID = ice::ShardPayloadID_NotSet;
@@ -220,14 +220,20 @@ namespace ice
 
     constexpr auto shard(ice::ShardID id) noexcept -> ice::Shard
     {
-        return ice::Shard{ .id = { id.name } };
+        return ice::Shard{ .id = id };
     }
 
     template<typename T> requires ice::HasShardPayloadID<T>
-    constexpr auto shard(std::u8string_view definition, T value) noexcept -> ice::Shard
+    constexpr auto shard(std::string_view definition, T value) noexcept -> ice::Shard
     {
         ice::Shard result{ };
         ice::ShardID const id = ice::shardid(definition);
+
+        if (std::is_constant_evaluated() == false)
+        {
+            ICE_ASSERT_CORE(id.payload == ice::Constant_ShardPayloadID<T> || id.payload == ice::ShardPayloadID_NotSet);
+        }
+
         if (id.payload == ice::Constant_ShardPayloadID<T> || id.payload == ice::ShardPayloadID_NotSet)
         {
             result.id = id;
@@ -326,10 +332,10 @@ namespace ice
     constexpr ice::ShardPayloadID Constant_ShardPayloadID<ice::f64> = ice::shard_payloadid("ice::f64");
 
     template<>
-    constexpr ice::ShardPayloadID Constant_ShardPayloadID<ice::utf8 const*> = ice::shard_payloadid("ice::utf8 const*");
+    constexpr ice::ShardPayloadID Constant_ShardPayloadID<char const*> = ice::shard_payloadid("ice::char const*");
 
     template<>
-    constexpr ice::ShardPayloadID Constant_ShardPayloadID<std::u8string_view const*> = ice::shard_payloadid("std::u8string_view const*");
+    constexpr ice::ShardPayloadID Constant_ShardPayloadID<std::string_view const*> = ice::shard_payloadid("std::u8string_view const*");
 
 
 

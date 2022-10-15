@@ -22,18 +22,9 @@ namespace ice::input
             return _device;
         }
 
-        void on_tick(
-            ice::Timer const& timer
-        ) noexcept override;
-
-        void on_event(
-            ice::input::DeviceEvent event,
-            ice::Data payload
-        ) noexcept override;
-
-        void on_publish(
-            ice::Array<ice::input::InputEvent>& events_out
-        ) noexcept override;
+        void on_tick(ice::Timer const& timer) noexcept override;
+        void on_event(ice::input::DeviceEvent event) noexcept override;
+        void on_publish(ice::Array<ice::input::InputEvent>& events_out) noexcept override;
 
     private:
         ice::input::DeviceHandle _device;
@@ -80,8 +71,7 @@ namespace ice::input
     }
 
     void ControllerDevice::on_event(
-        ice::input::DeviceEvent event,
-        ice::Data payload
+        ice::input::DeviceEvent event
     ) noexcept
     {
         InputID input = InputID::Invalid;
@@ -90,39 +80,25 @@ namespace ice::input
         {
         case DeviceMessage::GamepadButtonDown:
         case DeviceMessage::GamepadButtonUp:
-            input = input_identifier(DeviceType::Controller, detail::read_one<ControllerInput>(event, payload));
+            input = input_identifier(DeviceType::Controller, detail::event_data<ControllerInput>(event));
             break;
         case DeviceMessage::GamepadTriggerLeft:
-            _triggers[0] = detail::read_one<ice::f32>(event, payload);
+            _triggers[0] = detail::event_data<ice::f32>(event);
             return;
         case DeviceMessage::GamepadTriggerRight:
-            _triggers[1] = detail::read_one<ice::f32>(event, payload);
+            _triggers[1] = detail::event_data<ice::f32>(event);
             return;
-        case DeviceMessage::GamepadAxisLeft:
-        {
-            ice::Span<ice::f32 const> const axis_value = detail::read<ice::f32>(event, payload);
-            _left_axis[0] = axis_value[0];
-            _left_axis[1] = axis_value[1];
-            return;
-        }
         case DeviceMessage::GamepadAxisLeftX:
-            _left_axis[0] = detail::read_one<ice::f32>(event, payload);
+            _left_axis[0] = detail::event_data<ice::f32>(event);
             return;
         case DeviceMessage::GamepadAxisLeftY:
-            _left_axis[1] = detail::read_one<ice::f32>(event, payload);
+            _left_axis[1] = detail::event_data<ice::f32>(event);
             return;
-        case DeviceMessage::GamepadAxisRight:
-        {
-            ice::Span<ice::f32 const> const axis_value = detail::read<ice::f32>(event, payload);
-            _right_axis[0] = axis_value[0];
-            _right_axis[1] = axis_value[1];
-            return;
-        }
         case DeviceMessage::GamepadAxisRightX:
-            _right_axis[0] = detail::read_one<ice::f32>(event, payload);
+            _right_axis[0] = detail::event_data<ice::f32>(event);
             return;
         case DeviceMessage::GamepadAxisRightY:
-            _right_axis[1] = detail::read_one<ice::f32>(event, payload);
+            _right_axis[1] = detail::event_data<ice::f32>(event);
             return;
         default:
             return;
@@ -130,8 +106,8 @@ namespace ice::input
 
         if (input != InputID::Invalid)
         {
-            ice::i32 const control_index = input_identifier_value(input);
-            // #todo assert control_index < ice::pod::array::size(_controls)
+            ice::ucount const control_index = input_identifier_value(input);
+            ICE_ASSERT_CORE(control_index < ice::array::count(_controls));
 
             detail::ControlState control = _controls[control_index];
             control.id = input;
@@ -149,9 +125,7 @@ namespace ice::input
         }
     }
 
-    void ControllerDevice::on_publish(
-        ice::Array<ice::input::InputEvent>& events_out
-    ) noexcept
+    void ControllerDevice::on_publish(ice::Array<ice::input::InputEvent>& events_out) noexcept
     {
         InputEvent event{
             .device = _device

@@ -10,100 +10,69 @@ namespace ice::input
 
         DeviceConnected,
         DeviceDisconnected,
-        MousePosition,
+
+        MousePositionX,
+        MousePositionY,
         MouseButtonDown,
         MouseButtonUp,
         MouseWheel,
+
         KeyboardButtonDown,
         KeyboardButtonUp,
         KeyboardModifierDown,
         KeyboardModifierUp,
+
         GamepadButtonDown,
         GamepadButtonUp,
         GamepadTriggerLeft,
         GamepadTriggerRight,
-        GamepadAxisLeft,
         GamepadAxisLeftX,
         GamepadAxisLeftY,
-        GamepadAxisRight,
         GamepadAxisRightX,
         GamepadAxisRightY,
 
         Reserved
     };
 
-    struct DeviceEventPayload
+    enum class DevicePayloadType : ice::u8
     {
-        ice::u8 type;
-        ice::u8 size : 4;
-        ice::u8 count : 4;
+        Invalid,
+        Int8,
+        Int16,
+        Int32,
+        Float32,
+    };
+
+    union DeviceEventData
+    {
+        ice::i8 val_i8;
+        ice::i16 val_i16;
+        ice::i32 val_i32;
+        ice::f32 val_f32;
     };
 
     struct DeviceEvent
     {
         ice::input::DeviceHandle device;
         ice::input::DeviceMessage message;
-        ice::input::DeviceEventPayload payload;
+        ice::input::DevicePayloadType payload_type;
+        ice::input::DeviceEventData payload_data;
     };
 
-    static_assert(sizeof(DeviceEvent) == 4, "Unexpected size for 'DeviceEvent' type");
+    static_assert(
+        ice::size_of<DeviceEvent> == 8_B,
+        "Unexpected size for 'DeviceEvent' type"
+    );
 
-
-
-    namespace detail
-    {
-
-        template<typename T>
-        constexpr DeviceEventPayload payload_info{ };
-
-        template<>
-        constexpr DeviceEventPayload payload_info<bool>
-        {
-            .type = 0x1,
-            .size = 1,
-            .count = 0
-        };
-
-        template<>
-        constexpr DeviceEventPayload payload_info<ice::i8>
-        {
-            .type = 0x2,
-            .size = 1,
-            .count = 0
-        };
-
-        template<>
-        constexpr DeviceEventPayload payload_info<ice::i16>
-        {
-            .type = 0x3,
-            .size = 2,
-            .count = 0
-        };
-
-        template<>
-        constexpr DeviceEventPayload payload_info<ice::u16>
-        {
-            .type = 0x4,
-            .size = 2,
-            .count = 0
-        };
-
-        template<>
-        constexpr DeviceEventPayload payload_info<ice::i32>
-        {
-            .type = 0x5,
-            .size = 4,
-            .count = 0
-        };
-
-        template<>
-        constexpr DeviceEventPayload payload_info<ice::f32>
-        {
-            .type = 0x6,
-            .size = 4,
-            .count = 0
-        };
-
-    } // namespace detail
+    template<typename>
+    constexpr DevicePayloadType Constant_PayloadType = DevicePayloadType::Invalid;
+    template<>
+    constexpr DevicePayloadType Constant_PayloadType<ice::i8> = DevicePayloadType::Int8;
+    template<>
+    constexpr DevicePayloadType Constant_PayloadType<ice::i16> = DevicePayloadType::Int16;
+    template<>
+    constexpr DevicePayloadType Constant_PayloadType<ice::i32> = DevicePayloadType::Int32;
+    template<>
+    constexpr DevicePayloadType Constant_PayloadType<ice::f32> = DevicePayloadType::Float32;
 
 } // ice::input

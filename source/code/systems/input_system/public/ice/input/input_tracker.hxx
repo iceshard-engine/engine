@@ -1,6 +1,6 @@
 #pragma once
 #include <ice/mem_unique_ptr.hxx>
-#include <ice/input/device_queue.hxx>
+#include <ice/input/device_event_queue.hxx>
 #include <ice/input/input_event.hxx>
 #include <ice/input/input_device.hxx>
 
@@ -26,7 +26,7 @@ namespace ice::input
         ) noexcept = 0;
 
         virtual void process_device_queue(
-            ice::input::DeviceQueue const& event_queue,
+            ice::input::DeviceEventQueue const& event_queue,
             ice::Array<ice::input::InputEvent>& input_events_out
         ) noexcept = 0;
 

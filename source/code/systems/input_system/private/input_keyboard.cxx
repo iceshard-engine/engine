@@ -23,18 +23,9 @@ namespace ice::input
             return _device;
         }
 
-        void on_tick(
-            ice::Timer const& timer
-        ) noexcept override;
-
-        void on_event(
-            ice::input::DeviceEvent event,
-            ice::Data payload
-        ) noexcept override;
-
-        void on_publish(
-            ice::Array<ice::input::InputEvent>& events_out
-        ) noexcept override;
+        void on_tick(ice::Timer const& timer) noexcept override;
+        void on_event(ice::input::DeviceEvent event) noexcept override;
+        void on_publish(ice::Array<ice::input::InputEvent>& events_out) noexcept override;
 
     private:
         ice::input::DeviceHandle _device;
@@ -102,10 +93,7 @@ namespace ice::input
         }
     }
 
-    void KeyboardDevice::on_event(
-        ice::input::DeviceEvent event,
-        ice::Data payload
-    ) noexcept
+    void KeyboardDevice::on_event(ice::input::DeviceEvent event) noexcept
     {
         InputID input = InputID::Invalid;
 
@@ -115,7 +103,7 @@ namespace ice::input
         case DeviceMessage::KeyboardButtonUp:
             input = input_identifier(
                 DeviceType::Keyboard,
-                detail::read_one<KeyboardKey>(event, payload),
+                detail::event_data<KeyboardKey>(event),
                 key_identifier_base_value
             );
             break;
@@ -123,7 +111,7 @@ namespace ice::input
         case DeviceMessage::KeyboardModifierUp:
             input = input_identifier(
                 DeviceType::Keyboard,
-                detail::read_one<KeyboardMod>(event, payload),
+                detail::event_data<KeyboardMod>(event),
                 mod_identifier_base_value
             );
             break;
@@ -131,8 +119,8 @@ namespace ice::input
             break;
         }
 
-        ice::u32 const control_index = detail::input_control_index(input);
-        // #todo assert control_index < ice::pod::array::size(_controls)
+        ice::ucount const control_index = detail::input_control_index(input);
+        ICE_ASSERT_CORE(control_index < ice::array::count(_controls));
 
         detail::ControlState control = _controls[control_index];
         control.id = input;
@@ -157,9 +145,7 @@ namespace ice::input
         _controls[control_index] = control;
     }
 
-    void KeyboardDevice::on_publish(
-        ice::Array<ice::input::InputEvent>& events_out
-    ) noexcept
+    void KeyboardDevice::on_publish(ice::Array<ice::input::InputEvent>& events_out) noexcept
     {
         ice::input::InputEvent event{
             .device = _device,

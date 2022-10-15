@@ -1,11 +1,12 @@
 #include "sdl2_app_container.hxx"
 #include "sdl2_render_surface.hxx"
-#include <ice/assert.hxx>
-#include <ice/pod/array.hxx>
+
+#include <ice/container/array.hxx>
 #include <ice/platform_event.hxx>
 #include <ice/input/input_mouse.hxx>
 #include <ice/input/input_keyboard.hxx>
-#include <ice/input/device_queue.hxx>
+#include <ice/input/device_event_queue.hxx>
+#include <ice/assert.hxx>
 #include <ice/log.hxx>
 
 #include <SDL.h>
@@ -169,7 +170,7 @@ namespace ice::platform
 
 
         void mouse_input_events(
-            ice::input::DeviceQueue& input_queue,
+            ice::input::DeviceEventQueue& input_queue,
             SDL_Event const& sdl_event
         ) noexcept
         {
@@ -192,88 +193,89 @@ namespace ice::platform
 
                 if (pos[0] != 0 || pos[1] != 0)
                 {
-                    input_queue.push(
-                        make_device_handle(DeviceType::Mouse, DeviceIndex(sdl_event.motion.which)),
-                        DeviceMessage::MousePosition,
-                        pos[0], pos[1]
-                    );
+                    //input_queue.push(
+                    //    make_device_handle(DeviceType::Mouse, DeviceIndex(sdl_event.motion.which)),
+                    //    DeviceMessage::MousePosition,
+                    //    pos[0], pos[1]
+                    //);
                 }
             }
             else if (sdl_event.type == SDL_MOUSEBUTTONDOWN)
             {
-                input_queue.push(
-                    make_device_handle(DeviceType::Mouse, DeviceIndex(sdl_event.motion.which)),
-                    DeviceMessage::MouseButtonDown,
-                    map_sdl_mouse_button(sdl_event.button.button)
-                );
+                //input_queue.push(
+                //    make_device_handle(DeviceType::Mouse, DeviceIndex(sdl_event.motion.which)),
+                //    DeviceMessage::MouseButtonDown,
+                //    map_sdl_mouse_button(sdl_event.button.button)
+                //);
             }
             else if (sdl_event.type == SDL_MOUSEBUTTONUP)
             {
-                input_queue.push(
-                    make_device_handle(DeviceType::Mouse, DeviceIndex(sdl_event.motion.which)),
-                    DeviceMessage::MouseButtonUp,
-                    map_sdl_mouse_button(sdl_event.button.button)
-                );
+                //input_queue.push(
+                //    make_device_handle(DeviceType::Mouse, DeviceIndex(sdl_event.motion.which)),
+                //    DeviceMessage::MouseButtonUp,
+                //    map_sdl_mouse_button(sdl_event.button.button)
+                //);
             }
             else if (sdl_event.type == SDL_MOUSEWHEEL)
             {
-                input_queue.push(
-                    make_device_handle(DeviceType::Mouse, DeviceIndex(sdl_event.motion.which)),
-                    DeviceMessage::MouseWheel,
-                    sdl_event.wheel.y
-                );
+                //input_queue.push(
+                //    make_device_handle(DeviceType::Mouse, DeviceIndex(sdl_event.motion.which)),
+                //    DeviceMessage::MouseWheel,
+                //    sdl_event.wheel.y
+                //);
             }
         }
 
         void keyboard_input_events(
-            ice::input::DeviceQueue& input_queue,
+            ice::input::DeviceEventQueue& input_queue,
             SDL_Event const& sdl_event
         ) noexcept
         {
             using namespace ice::input;
+            [[maybe_unused]]
             DeviceHandle const device = make_device_handle(DeviceType::Keyboard, DeviceIndex{ 0 });
 
             KeyboardKey const key = map_sdl_key_scancode(sdl_event.key.keysym.scancode);
             if (key != KeyboardKey::Unknown)
             {
-                if (sdl_event.key.type == SDL_KEYDOWN)
-                {
-                    input_queue.push(
-                        device,
-                        DeviceMessage::KeyboardButtonDown,
-                        key
-                    );
-                }
-                else if (sdl_event.key.type == SDL_KEYUP)
-                {
-                    input_queue.push(
-                        device,
-                        DeviceMessage::KeyboardButtonUp,
-                        key
-                    );
-                }
+                //if (sdl_event.key.type == SDL_KEYDOWN)
+                //{
+                //    input_queue.push(
+                //        device,
+                //        DeviceMessage::KeyboardButtonDown,
+                //        key
+                //    );
+                //}
+                //else if (sdl_event.key.type == SDL_KEYUP)
+                //{
+                //    input_queue.push(
+                //        device,
+                //        DeviceMessage::KeyboardButtonUp,
+                //        key
+                //    );
+                //}
             }
             else
             {
                 KeyboardMod const mod = map_sdl_mod_scancode(sdl_event.key.keysym.scancode);
                 if (mod != KeyboardMod::None)
                 {
-                    if (sdl_event.key.type == SDL_KEYDOWN)
-                    {
-                        input_queue.push(
-                            device,
-                            DeviceMessage::KeyboardModifierDown,
-                            mod
-                        );
-                    }
-                    else if (sdl_event.key.type == SDL_KEYUP)
-                    {
-                        input_queue.push(
-                            device,
-                            DeviceMessage::KeyboardModifierUp,
-                            mod
-                        );
-                    }
+                    //if (sdl_event.key.type == SDL_KEYDOWN)
+                    //{
+                    //    input_queue.push(
+                    //        device,
+                    //        DeviceMessage::KeyboardModifierDown,
+                    //        mod
+                    //    );
+                    //}
+                    //else if (sdl_event.key.type == SDL_KEYUP)
+                    //{
+                    //    input_queue.push(
+                    //        device,
+                    //        DeviceMessage::KeyboardModifierUp,
+                    //        mod
+                    //    );
+                    //}
                 }
             }
         }
@@ -302,17 +304,17 @@ namespace ice::platform
     {
         using namespace ice::input;
 
-        ice::input::DeviceQueue device_events{ _allocator };
-        ice::pod::Array<ice::platform::Event> events{ _allocator };
+        ice::input::DeviceEventQueue device_events{ _allocator };
+        ice::ShardContainer events{ _allocator };
 
-        device_events.push(
-            make_device_handle(DeviceType::Mouse, DeviceIndex{ 0 }),
-            DeviceMessage::DeviceConnected
-        );
-        device_events.push(
-            make_device_handle(DeviceType::Keyboard, DeviceIndex{ 0 }),
-            DeviceMessage::DeviceConnected
-        );
+        //device_events.push(
+        //    make_device_handle(DeviceType::Mouse, DeviceIndex{ 0 }),
+        //    DeviceMessage::DeviceConnected
+        //);
+        //device_events.push(
+        //    make_device_handle(DeviceType::Keyboard, DeviceIndex{ 0 }),
+        //    DeviceMessage::DeviceConnected
+        //);
 
         // [issue #33]
         static char text_buffer[32];
@@ -325,13 +327,7 @@ namespace ice::platform
                 switch (current_event.type)
                 {
                 case SDL_QUIT:
-                    ice::pod::array::push_back(
-                        events,
-                        Event{
-                            .type = EventType::AppQuit,
-                            .data = { }
-                        }
-                    );
+                    ice::shards::push_back(events, ice::platform::Shard_AppQuit);
 
                     device_events.push(
                         make_device_handle(DeviceType::Keyboard, DeviceIndex(0)),
@@ -350,16 +346,10 @@ namespace ice::platform
                     {
                     //case SDL_WINDOWEVENT_SIZE_CHANGED:
                     case SDL_WINDOWEVENT_RESIZED:
-                        ice::pod::array::push_back(
+                        ice::shards::push_back(
                             events,
-                            Event{
-                                .type = EventType::WindowSizeChanged,
-                                .data = {
-                                    .window = {
-                                        .size = { current_event.window.data1, current_event.window.data2 }
-                                    }
-                                }
-                            }
+                            ice::platform::Shard_WindowResized
+                            | ice::vec2u(current_event.window.data1, current_event.window.data2)
                         );
                         break;
                     }
@@ -378,14 +368,9 @@ namespace ice::platform
                 // [issue #33]
                 case SDL_TEXTINPUT:
                     ice::memcpy(text_buffer, current_event.text.text, 32);
-                    ice::pod::array::push_back(
+                    ice::shards::push_back(
                         events,
-                        Event{
-                            .type = EventType::InputText,
-                            .data = {
-                                .input = { .text = ice::String(text_buffer) }
-                            }
-                        }
+                        ice::platform::Shard_InputText | (char const*) text_buffer
                     );
                 }
             }
@@ -396,7 +381,7 @@ namespace ice::platform
             _request_quit |= _app->requested_exit();
 
             device_events.clear();
-            ice::pod::array::clear(events);
+            ice::shards::clear(events);
         }
 
         return 0;
@@ -407,10 +392,10 @@ namespace ice::platform
         ice::UniquePtr<ice::platform::App> app
     ) noexcept -> ice::UniquePtr<ice::platform::Container>
     {
-        ice::UniquePtr<Container> result = ice::make_unique_null<Container>();
+        ice::UniquePtr<Container> result{ };
         if (app != nullptr)
         {
-            result = ice::make_unique<Container, SDL2_Container>(alloc, alloc, ice::move(app));
+            result = ice::make_unique<SDL2_Container>(alloc, alloc, ice::move(app));
         }
         return result;
     }

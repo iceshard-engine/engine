@@ -9,6 +9,7 @@
 #include <ice/math/translate.hxx>
 #include <ice/math/scale.hxx>
 #include <ice/math/rotate.hxx>
+#include <ice/shard.hxx>
 
 namespace ice
 {
@@ -16,5 +17,8 @@ namespace ice
     using namespace math;
 
     using std::abs;
+
+    template<>
+    constexpr ShardPayloadID Constant_ShardPayloadID<ice::vec2u> = ice::shard_payloadid("ice::vec2u");
 
 } // namespace ice

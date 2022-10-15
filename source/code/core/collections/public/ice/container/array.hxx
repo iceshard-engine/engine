@@ -35,7 +35,7 @@ namespace ice::array
     inline void push_back(ice::Array<Type, Logic>& arr, Type&& item) noexcept;
 
     template<typename Type, ice::CollectionLogic Logic, typename Value = Type>
-        requires std::copy_constructible<Type>&& std::convertible_to<Value, Type>
+        requires std::copy_constructible<Type> && std::convertible_to<Value, Type>
     inline void push_back(ice::Array<Type, Logic>& arr, Value const& item) noexcept;
 
     template<typename Type, ice::CollectionLogic Logic>

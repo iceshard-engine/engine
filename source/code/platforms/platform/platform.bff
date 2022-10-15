@@ -8,6 +8,7 @@
     .Public =
     [
         .Uses = {
+            'math'
             'input_system'
             'render_system'
             'modules'

@@ -22,18 +22,9 @@ namespace ice::input
             return _device;
         }
 
-        void on_tick(
-            ice::Timer const& timer
-        ) noexcept override;
-
-        void on_event(
-            ice::input::DeviceEvent event,
-            ice::Data payload
-        ) noexcept override;
-
-        void on_publish(
-            ice::Array<ice::input::InputEvent>& events_out
-        ) noexcept override;
+        void on_tick(ice::Timer const& timer) noexcept override;
+        void on_event(ice::input::DeviceEvent event) noexcept override;
+        void on_publish(ice::Array<ice::input::InputEvent>& events_out) noexcept override;
 
     private:
         ice::input::DeviceHandle _device;
@@ -72,10 +63,7 @@ namespace ice::input
         }
     }
 
-    void MouseDevice::on_event(
-        ice::input::DeviceEvent event,
-        ice::Data payload
-    ) noexcept
+    void MouseDevice::on_event(ice::input::DeviceEvent event) noexcept
     {
         InputID input = InputID::Invalid;
 
@@ -83,21 +71,18 @@ namespace ice::input
         {
         case DeviceMessage::MouseButtonDown:
         case DeviceMessage::MouseButtonUp:
-            input = input_identifier(DeviceType::Mouse, detail::read_one<MouseInput>(event, payload));
+            input = input_identifier(DeviceType::Mouse, detail::event_data<MouseInput>(event));
             break;
-        case DeviceMessage::MousePosition:
-        {
-            ice::Span<ice::i32 const> const pos = detail::read<ice::i32>(event, payload);
-
-            _position_relative[0] = pos[0] - _position[0];
-            _position_relative[1] = pos[1] - _position[1];
-
-            _position[0] = pos[0];
-            _position[1] = pos[1];
-            return;
-        }
+        case DeviceMessage::MousePositionX:
+            _position_relative[0] = detail::event_data<ice::i32>(event) - _position[0];
+            _position[0] = detail::event_data<ice::i32>(event);
+            break;
+        case DeviceMessage::MousePositionY:
+            _position_relative[1] = detail::event_data<ice::i32>(event) - _position[1];
+            _position[1] = detail::event_data<ice::i32>(event);
+            break;
         case DeviceMessage::MouseWheel:
-            _wheel = detail::read_one<ice::i32>(event, payload);
+            _wheel = detail::event_data<ice::i32>(event);
             return;
         default:
             return;
@@ -105,8 +90,8 @@ namespace ice::input
 
         if (input != InputID::Invalid)
         {
-            ice::i32 const control_index = input_identifier_value(input);
-            // #todo assert control_index < ice::array::size(_controls)
+            ice::u32 const control_index = input_identifier_value(input);
+            ICE_ASSERT_CORE(control_index < ice::array::count(_controls));
 
             detail::ControlState control = _controls[control_index];
             control.id = input;
@@ -124,9 +109,7 @@ namespace ice::input
         }
     }
 
-    void MouseDevice::on_publish(
-        ice::Array<ice::input::InputEvent>& events_out
-    ) noexcept
+    void MouseDevice::on_publish(ice::Array<ice::input::InputEvent>& events_out) noexcept
     {
         InputEvent event{
             .device = _device

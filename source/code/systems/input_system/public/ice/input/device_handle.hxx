@@ -7,10 +7,9 @@ namespace ice::input
     struct Device;
 
     enum class DeviceIndex : ice::u8;
-
     enum class DeviceType : ice::u8;
-
     enum class DeviceHandle : ice::u8;
+
 
     inline auto make_device_handle(
         ice::input::DeviceType type,
@@ -24,7 +23,6 @@ namespace ice::input
     inline auto make_device(
         ice::input::DeviceHandle handle
     ) noexcept -> ice::input::Device;
-
 
 
     enum class DeviceIndex : ice::u8 { };

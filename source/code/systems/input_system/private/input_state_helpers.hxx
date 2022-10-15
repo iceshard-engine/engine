@@ -3,6 +3,7 @@
 #include <ice/input/input_event.hxx>
 #include <ice/input/device_event.hxx>
 #include <ice/span.hxx>
+#include <ice/assert_core.hxx>
 
 namespace ice::input::detail
 {
@@ -28,46 +29,33 @@ namespace ice::input::detail
 
 
     template<typename T>
-    auto read_internal(
-        ice::input::DeviceEvent event,
-        ice::Data data
-    ) noexcept -> ice::Span<T const>
+    auto event_data(ice::input::DeviceEvent event) noexcept -> T
     {
-        static constexpr ice::input::DeviceEventPayload payload = ice::input::detail::payload_info<T>;
-        static_assert(payload.type != 0x0, "Input data type is not declared");
-        static_assert(payload.size != 0x0, "Input data type has invalid size == 0");
-        static_assert(payload.count == 0x0, "Input data type has invalid default count != 0");
+        static_assert(ice::input::Constant_PayloadType<T> != ice::input::DevicePayloadType::Invalid);
+        ICE_ASSERT_CORE(ice::input::Constant_PayloadType<T> == event.payload_type);
 
-        //IS_ASSERT(message.input_data.type == data_info.type, "Message data type does not match requested data type!");
-        // #todo data is of invalid type
-
-        T const* data_ptr = reinterpret_cast<T const*>(data.location);
-        return { data_ptr, event.payload.count };
+        if constexpr (std::is_same_v<T, ice::i8>)
+        {
+            return event.payload_data.val_i8;
+        }
+        else if constexpr (std::is_same_v<T, ice::i16>)
+        {
+            return event.payload_data.val_i16;
+        }
+        else if constexpr (std::is_same_v<T, ice::i32>)
+        {
+            return event.payload_data.val_i32;
+        }
+        else if constexpr (std::is_same_v<T, ice::f32>)
+        {
+            return event.payload_data.val_f32;
+        }
     }
 
-    template<typename T>
-    auto read(
-        ice::input::DeviceEvent event,
-        ice::Data payload
-    ) noexcept
+    template<typename T> requires std::is_enum_v<T>
+    auto event_data(ice::input::DeviceEvent event) noexcept -> T
     {
-        return read_internal<T>(event, payload);
-    }
-
-    template<typename T>
-    auto read_one(
-        ice::input::DeviceEvent event,
-        ice::Data payload
-    ) noexcept
-    {
-        if constexpr (std::is_enum_v<T>)
-        {
-            return T{ read<std::underlying_type_t<T>>(event, payload)[0] };
-        }
-        else
-        {
-            return read<T>(event, payload)[0];
-        }
+        return static_cast<T>(event_data<std::underlying_type_t<T>>(event));
     }
 
 } // namespace ice::input::detail
