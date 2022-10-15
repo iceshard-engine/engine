@@ -2,7 +2,7 @@
 #include <ice/engine.hxx>
 #include <ice/asset_storage.hxx>
 #include <ice/input/input_types.hxx>
-#include <ice/memory/proxy_allocator.hxx>
+#include <ice/mem_allocator_proxy.hxx>
 #include <ice/ecs/ecs_entity_index.hxx>
 
 #include "world/iceshard_world_manager.hxx"
@@ -42,17 +42,15 @@ namespace ice
         ) noexcept override;
 
         auto entity_index() noexcept -> ice::ecs::EntityIndex& override;
-
         auto asset_storage() noexcept -> ice::AssetStorage& override;
-
         auto world_manager() noexcept -> ice::WorldManager& override;
-
         auto world_trait_archive() const noexcept -> ice::WorldTraitArchive const& override;
-
         auto developer_ui() noexcept -> ice::EngineDevUI& override;
 
+        auto backing_allocator() noexcept -> ice::Allocator& { return _allocator.backing_allocator(); }
+
     private:
-        ice::memory::ProxyAllocator _allocator;
+        ice::ProxyAllocator _allocator;
         ice::AssetStorage& _asset_storage;
         ice::WorldTraitArchive const& _trait_archive;
 

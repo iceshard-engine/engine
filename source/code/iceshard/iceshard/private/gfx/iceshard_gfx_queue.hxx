@@ -1,6 +1,6 @@
 #pragma once
-#include <ice/allocator.hxx>
-#include <ice/pod/array.hxx>
+#include <ice/mem_allocator.hxx>
+#include <ice/container/array.hxx>
 #include <ice/engine_frame.hxx>
 #include <ice/render/render_queue.hxx>
 #include <ice/gfx/gfx_queue.hxx>
@@ -50,8 +50,8 @@ namespace ice::gfx
         ice::u32 _queue_pool_index;
 
         ice::u32 _cmd_buffers_used[2]{ };
-        ice::pod::Array<ice::render::CommandBuffer> _primary;
-        ice::pod::Array<ice::render::CommandBuffer> _secondary;
+        ice::Array<ice::render::CommandBuffer> _primary;
+        ice::Array<ice::render::CommandBuffer> _secondary;
     };
 
 } // namespace ice

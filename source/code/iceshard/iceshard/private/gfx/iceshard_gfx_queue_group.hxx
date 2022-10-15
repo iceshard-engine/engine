@@ -1,8 +1,8 @@
 #pragma once
-#include <ice/allocator.hxx>
+#include <ice/mem_allocator.hxx>
 #include <ice/render/render_queue.hxx>
 #include <ice/gfx/gfx_queue.hxx>
-#include <ice/pod/hash.hxx>
+#include <ice/container/hashmap.hxx>
 
 namespace ice::gfx
 {
@@ -35,7 +35,7 @@ namespace ice::gfx
 
         void reset_all() noexcept;
 
-        void query_queues(ice::pod::Array<ice::StringID_Hash>& out_names) noexcept;
+        void query_queues(ice::Array<ice::StringID_Hash>& out_names) noexcept;
 
         template<typename Fn>
         void for_each(Fn&& fn) noexcept
@@ -47,7 +47,7 @@ namespace ice::gfx
         }
 
         void get_render_queues(
-            ice::pod::Array<ice::render::RenderQueue*>& queues_out
+            ice::Array<ice::render::RenderQueue*>& queues_out
         ) noexcept;
 
         bool get_presenting_queue(
@@ -56,7 +56,7 @@ namespace ice::gfx
 
     private:
         ice::Allocator& _allocator;
-        ice::pod::Hash<ice::gfx::IceGfxQueue*> _gfx_queues;
+        ice::HashMap<ice::gfx::IceGfxQueue*> _gfx_queues;
     };
 
 } // namespace ice

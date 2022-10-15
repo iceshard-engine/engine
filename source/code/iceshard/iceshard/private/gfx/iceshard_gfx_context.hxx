@@ -1,7 +1,7 @@
 #pragma once
 #include <ice/gfx/gfx_context.hxx>
 #include <ice/gfx/gfx_stage.hxx>
-#include <ice/collections.hxx>
+#include <ice/container_types.hxx>
 
 namespace ice::gfx
 {
@@ -42,7 +42,7 @@ namespace ice::gfx
 
     private:
         //ice::gfx::GfxPass const& _gfx_pass;
-        ice::pod::Array<ice::gfx::IceGfxContextStage> _cached_stages;
+        ice::Array<ice::gfx::IceGfxContextStage> _cached_stages;
     };
 
 } // namespace ice::gfx

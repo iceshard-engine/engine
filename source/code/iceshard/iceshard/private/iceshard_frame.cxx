@@ -3,8 +3,7 @@
 #include <ice/engine_shards.hxx>
 #include <ice/task_sync_wait.hxx>
 #include <ice/sync_manual_events.hxx>
-#include <ice/memory/pointer_arithmetic.hxx>
-#include <ice/pod/hash.hxx>
+#include <ice/container/hashmap.hxx>
 #include <ice/assert.hxx>
 
 namespace ice
@@ -13,44 +12,39 @@ namespace ice
     namespace detail
     {
 
-        static constexpr ice::u32 KiB = 1024;
-        static constexpr ice::u32 MiB = 1024 * KiB;
-
-        static constexpr ice::u32 InputsAllocatorCapacity = 1 * MiB;
-        static constexpr ice::u32 RequestAllocatorCapacity = 1 * MiB;
-        static constexpr ice::u32 TaskAllocatorCapacity = 1 * MiB;
-        static constexpr ice::u32 StorageAllocatorCapacity = 1 * MiB;
-        static constexpr ice::u32 DataAllocatorCapacity = 16 * MiB;
+        static constexpr ice::usize InputsAllocatorCapacity = ice::size_of<ice::input::InputEvent> * 128;
+        static constexpr ice::usize RequestAllocatorCapacity = ice::size_of<ice::Shard> * 256;
+        static constexpr ice::usize TaskAllocatorCapacity = ice::size_of<ice::Task<>> * 1024;
+        static constexpr ice::usize StorageAllocatorCapacity = 8_MiB;
+        static constexpr ice::usize DataAllocatorCapacity = 8_MiB;
 
         static ice::u32 global_frame_counter = 0;
 
     } // namespace detail
 
     IceshardMemoryFrame::IceshardMemoryFrame(
-        ice::memory::ScratchAllocator& alloc
+        ice::RingAllocator& alloc
     ) noexcept
         : ice::EngineFrame{ }
         , _index{ detail::global_frame_counter }
         , _allocator{ alloc }
-        , _inputs_allocator{ _allocator, detail::InputsAllocatorCapacity, "inputs" }
-        , _request_allocator{ _allocator, detail::RequestAllocatorCapacity, "request" }
-        , _tasks_allocator{ _allocator, detail::TaskAllocatorCapacity, "tasks" }
-        , _storage_allocator{ _allocator, detail::StorageAllocatorCapacity, "storage" }
-        , _data_allocator{ _allocator, detail::DataAllocatorCapacity, "data" }
+        , _inputs_allocator{ _allocator, "inputs", { detail::InputsAllocatorCapacity } }
+        , _shards_allocator{ _allocator, "shards", { detail::RequestAllocatorCapacity } }
+        , _tasks_allocator{ _allocator, "tasks", { detail::TaskAllocatorCapacity } }
+        , _storage_allocator{ _allocator, "storage", { detail::StorageAllocatorCapacity } }
+        , _data_allocator{ _allocator, "data", { detail::DataAllocatorCapacity } }
         , _input_events{ _inputs_allocator }
-        , _shards{ _request_allocator }
+        , _shards{ _shards_allocator }
         , _entity_operations{ _data_allocator } // #todo change the allocator?
-        , _named_objects{ _storage_allocator }
+        , _data_storage{ _storage_allocator }
         , _frame_tasks{ _tasks_allocator }
-        , _task_executor{ _allocator, ice::Vector<ice::Task<void>>{ _allocator } }
+        , _task_executor{ _allocator, IceshardTaskExecutor::TaskList{ _allocator } }
     {
         detail::global_frame_counter += 1;
 
-        ice::pod::array::reserve(_input_events, (detail::InputsAllocatorCapacity / sizeof(ice::input::InputEvent)) - 10);
-        ice::pod::hash::reserve(_named_objects, (detail::StorageAllocatorCapacity / (sizeof(ice::pod::Hash<ice::uptr>::Entry) + sizeof(ice::u32))) - 10);
-        ice::shards::reserve(_shards, (detail::RequestAllocatorCapacity / sizeof(ice::Shard)) - 10);
-
-        _frame_tasks.reserve((detail::TaskAllocatorCapacity - 1024) / sizeof(ice::Task<void>));
+        ice::array::reserve(_input_events, ice::mem_max_capacity<ice::input::InputEvent>(detail::InputsAllocatorCapacity));
+        ice::shards::reserve(_shards, ice::mem_max_capacity<ice::Shard>(detail::RequestAllocatorCapacity));
+        ice::array::reserve(_frame_tasks, ice::mem_max_capacity<ice::Task<>>(detail::TaskAllocatorCapacity));
 
         ice::shards::push_back(_shards, ice::Shard_FrameTick | _index);
     }
@@ -72,11 +66,6 @@ namespace ice
         }
 
         _task_executor.wait_ready();
-
-        for (auto const& entry : _named_objects)
-        {
-            _data_allocator.deallocate(entry.value);
-        }
     }
 
     auto IceshardMemoryFrame::index() const noexcept -> ice::u32
@@ -89,17 +78,7 @@ namespace ice
         return _data_allocator;
     }
 
-    auto IceshardMemoryFrame::memory_consumption() noexcept -> ice::u32
-    {
-        return sizeof(IceshardMemoryFrame)
-            + _inputs_allocator.total_allocated()
-            + _request_allocator.total_allocated()
-            + _tasks_allocator.total_allocated()
-            + _storage_allocator.total_allocated()
-            + _data_allocator.total_allocated();
-    }
-
-    auto IceshardMemoryFrame::input_events() noexcept -> ice::pod::Array<ice::input::InputEvent>&
+    auto IceshardMemoryFrame::input_events() noexcept -> ice::Array<ice::input::InputEvent>&
     {
         return _input_events;
     }
@@ -112,7 +91,7 @@ namespace ice
     void IceshardMemoryFrame::execute_task(ice::Task<void> task) noexcept
     {
         // Adds a task to be executed later during the frame update.
-        _frame_tasks.push_back(ice::move(task));
+        ice::array::push_back(_frame_tasks, ice::move(task));
     }
 
     void IceshardMemoryFrame::start_all() noexcept
@@ -146,73 +125,9 @@ namespace ice
         return _entity_operations;
     }
 
-    auto IceshardMemoryFrame::named_data(
-        ice::StringID_Arg name
-    ) noexcept -> void*
+    auto IceshardMemoryFrame::storage() noexcept -> ice::DataStorage&
     {
-        return ice::pod::hash::get(_named_objects, ice::hash(name), nullptr);
-    }
-
-    auto IceshardMemoryFrame::named_data(
-        ice::StringID_Arg name
-    ) const noexcept -> void const*
-    {
-        return ice::pod::hash::get(_named_objects, ice::hash(name), nullptr);
-    }
-
-    auto IceshardMemoryFrame::allocate_named_data(
-        ice::StringID_Arg name,
-        ice::u32 size,
-        ice::u32 alignment
-    ) noexcept -> void*
-    {
-        ice::u64 const name_hash = ice::hash(name);
-        ICE_ASSERT(
-            ice::pod::hash::has(_named_objects, name_hash) == false,
-            "An object with this name `{}` already exists in this frame!",
-            ice::stringid_hint(name)
-        );
-
-        void* object_ptr = _data_allocator.allocate(size, alignment);
-        ice::pod::hash::set(_named_objects, name_hash, object_ptr);
-        return object_ptr;
-    }
-
-    auto IceshardMemoryFrame::allocate_named_array(
-        ice::StringID_Arg name,
-        ice::u32 element_size,
-        ice::u32 alignment,
-        ice::u32 count
-    ) noexcept -> void*
-    {
-        ice::u64 const name_hash = ice::hash(name);
-        ICE_ASSERT(
-            ice::pod::hash::has(_named_objects, name_hash) == false,
-            "An object with this name `{}` already exists in this frame!",
-            ice::stringid_hint(name)
-        );
-
-        // [GH#129] To be refactored with the planned introduction of a proper 'size' type.
-        ICE_ASSERT(alignment >= sizeof(ice::u32), "Cannot store array size in fron of the array!");
-
-        void* object_ptr = _data_allocator.allocate(alignment + element_size * count, alignment);
-        *reinterpret_cast<ice::u32*>(object_ptr) = count;
-        ice::pod::hash::set(_named_objects, name_hash, object_ptr);
-        return object_ptr;
-    }
-
-    void IceshardMemoryFrame::release_named_data(ice::StringID_Arg name) noexcept
-    {
-        ice::u64 const name_hash = ice::hash(name);
-        ICE_ASSERT(
-            ice::pod::hash::has(_named_objects, name_hash) == true,
-            "An object with this name `{}` already exists in this frame!",
-            ice::stringid_hint(name)
-        );
-
-        void* data = ice::pod::hash::get<void*>(_named_objects, name_hash, nullptr);
-        _allocator.deallocate(data);
-        ice::pod::hash::set<void*>(_named_objects, name_hash, nullptr);
+        return _data_storage;
     }
 
     auto IceshardMemoryFrame::schedule_frame_end() noexcept -> ice::FrameEndOperation

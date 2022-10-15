@@ -1,12 +1,12 @@
 #include "iceshard_gfx_frame.hxx"
 #include "iceshard_gfx_queue.hxx"
-#include <ice/pod/hash.hxx>
+#include <ice/container/hashmap.hxx>
 #include <ice/render/render_swapchain.hxx>
 #include <ice/task.hxx>
 #include <ice/task_list.hxx>
 #include <ice/assert.hxx>
 
-#include <ice/memory/stack_allocator.hxx>
+#include <ice/mem_allocator_stack.hxx>
 
 #include "../iceshard_task_executor.hxx"
 
@@ -52,7 +52,7 @@ namespace ice::gfx
 
     void IceGfxFrame::add_task(ice::Task<> task) noexcept
     {
-        _tasks.push_back(ice::move(task));
+        ice::array::push_back(_tasks, ice::move(task));
     }
 
     void IceGfxFrame::set_stage_slot(
@@ -60,7 +60,7 @@ namespace ice::gfx
         ice::gfx::GfxContextStage const* stage
     ) noexcept
     {
-        ice::pod::hash::set(
+        ice::hashmap::set(
             _context_stages,
             ice::hash(stage_name),
             stage
@@ -73,7 +73,7 @@ namespace ice::gfx
         ice::gfx::GfxPass const* pass
     ) noexcept
     {
-        ice::pod::array::push_back(
+        ice::array::push_back(
             _passes,
             IceGfxPassEntry{
                 .queue_name = queue_name,
@@ -91,7 +91,7 @@ namespace ice::gfx
         bool has_all = true;
         for (ice::StringID_Hash stage_id : stage_order)
         {
-            bool const has_stage = ice::pod::hash::has(_context_stages, ice::hash(stage_id));
+            bool const has_stage = ice::hashmap::has(_context_stages, ice::hash(stage_id));
             ICE_LOG_IF(
                 has_stage == false,
                 ice::LogSeverity::Debug, ice::LogTag::Engine,
@@ -103,12 +103,12 @@ namespace ice::gfx
 
         if (has_all)
         {
-            ICE_ASSERT(ice::size(stage_order) == ice::size(out_stages), "Cannot query stages into output span. Sizes differ!");
+            ICE_ASSERT(ice::count(stage_order) == ice::count(out_stages), "Cannot query stages into output span. Sizes differ!");
 
             ice::u32 idx = 0;
             for (ice::StringID_Hash stage_id : stage_order)
             {
-                ice::gfx::GfxContextStage const* stage = ice::pod::hash::get(
+                ice::gfx::GfxContextStage const* stage = ice::hashmap::get(
                     _context_stages,
                     ice::hash(stage_id),
                     nullptr

@@ -64,8 +64,8 @@ namespace ice
         ice::ecs::EntityStorage* _entity_storage;
         ice::WorldState _state;
 
-        ice::pod::Array<ice::WorldTrait*> _traits;
-        ice::pod::Hash<ice::IceshardWorldPortal*> _portals;
+        ice::Array<ice::WorldTrait*> _traits;
+        ice::HashMap<ice::IceshardWorldPortal*> _portals;
     };
 
 } // namespace ice

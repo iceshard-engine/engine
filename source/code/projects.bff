@@ -21,8 +21,8 @@
 
 #include "iceshard/application/application.bff"
 #include "iceshard/engine/engine.bff"
-// #include "iceshard/devui/devui.bff"
-// #include "iceshard/iceshard/iceshard.bff"
+#include "iceshard/devui/devui.bff"
+#include "iceshard/iceshard/iceshard.bff"
 
 // #include "modules/imgui_module/imgui_module.bff"
 // #include "modules/iceshard_pipelines/iceshard_pipelines.bff"

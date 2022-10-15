@@ -2,7 +2,7 @@
 
 #include <ice/gfx/gfx_stage.hxx>
 #include <ice/gfx/gfx_pass.hxx>
-#include <ice/memory/stack_allocator.hxx>
+#include <ice/mem_allocator_stack.hxx>
 
 namespace ice::gfx
 {
@@ -26,7 +26,7 @@ namespace ice::gfx
         , _primary{ alloc }
         , _secondary{ alloc }
     {
-        ice::pod::array::resize(_primary, 1);
+        ice::array::resize(_primary, 1);
         _render_queue->allocate_buffers(
             _queue_pool_index,
             ice::render::CommandBufferType::Primary,
@@ -69,18 +69,18 @@ namespace ice::gfx
         using ice::render::CommandBuffer;
         using ice::render::CommandBufferType;
 
-        ice::pod::Array<CommandBuffer>& cmds = (type == CommandBufferType::Primary) ? _primary : _secondary;
+        ice::Array<CommandBuffer>& cmds = (type == CommandBufferType::Primary) ? _primary : _secondary;
         ice::u32& used = _cmd_buffers_used[static_cast<ice::u32>(type)];
-        ice::u32 const available = ice::pod::array::size(cmds) - used;
-        ice::u32 const required = ice::size(out_buffers);
+        ice::u32 const available = ice::array::count(cmds) - used;
+        ice::u32 const required = ice::count(out_buffers);
 
         if (available < required)
         {
-            ice::pod::array::resize(cmds, used + required);
-            _render_queue->allocate_buffers(_queue_pool_index, type, ice::pod::array::span(cmds, used));
+            ice::array::resize(cmds, used + required);
+            _render_queue->allocate_buffers(_queue_pool_index, type, ice::array::slice(cmds, used));
         }
 
-        auto from = ice::pod::array::span(cmds, used);
+        auto from = ice::array::slice(cmds, used);
 
         for (ice::u32 idx = 0; idx < required; ++idx)
         {

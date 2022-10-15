@@ -3,8 +3,8 @@
 #include <ice/gfx/gfx_device.hxx>
 #include <ice/render/render_device.hxx>
 #include <ice/render/render_driver.hxx>
-#include <ice/unique_ptr.hxx>
-#include <ice/pod/array.hxx>
+#include <ice/mem_unique_ptr.hxx>
+#include <ice/container/array.hxx>
 
 #include "iceshard_gfx_resource_tracker.hxx"
 
@@ -21,7 +21,7 @@ namespace ice::gfx
             ice::render::RenderDriver& driver,
             ice::render::RenderSurface& render_surface,
             ice::render::RenderDevice* render_device,
-            ice::pod::Array<ice::gfx::IceGfxQueueGroup*> graphics_passes
+            ice::Array<ice::gfx::IceGfxQueueGroup*> graphics_passes
         ) noexcept;
         ~IceGfxDevice() noexcept override;
 
@@ -46,7 +46,7 @@ namespace ice::gfx
 
         ice::render::RenderSwapchain* _render_swapchain;
 
-        ice::pod::Array<ice::gfx::IceGfxQueueGroup*> _graphics_queues;
+        ice::Array<ice::gfx::IceGfxQueueGroup*> _graphics_queues;
         ice::gfx::IceGfxResourceTracker _resource_tracker;
     };
 

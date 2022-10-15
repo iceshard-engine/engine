@@ -1,6 +1,6 @@
 #pragma once
 #include <ice/task.hxx>
-#include <ice/collections.hxx>
+#include <ice/container_types.hxx>
 
 namespace ice
 {
@@ -10,9 +10,11 @@ namespace ice
     class IceshardTaskExecutor
     {
     public:
+        using TaskList = ice::Array<ice::Task<void>, ice::ContainerLogic::Complex>;
+
         IceshardTaskExecutor(
             ice::Allocator& alloc,
-            ice::Vector<ice::Task<void>> tasks
+            TaskList tasks
         ) noexcept;
 
         IceshardTaskExecutor(IceshardTaskExecutor&& other) noexcept;
@@ -28,10 +30,10 @@ namespace ice
 
     private:
         ice::Allocator& _allocator;
-        ice::u32 _task_count;
-        ice::Vector<ice::Task<>> _tasks;
+        ice::ucount _task_count;
+        ice::Array<ice::Task<>, ice::ContainerLogic::Complex> _tasks;
 
-        void* _reset_events_memory;
+        ice::Memory _reset_events_memory;
         ice::ManualResetEvent* _reset_events;
     };
 

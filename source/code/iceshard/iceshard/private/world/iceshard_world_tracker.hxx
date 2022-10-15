@@ -46,7 +46,7 @@ namespace ice
             ice::WorldState current_state;
         };
 
-        ice::pod::Hash<Entry> _worlds;
+        ice::HashMap<Entry> _worlds;
     };
 
 } // namespace ice

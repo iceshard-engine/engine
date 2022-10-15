@@ -1,5 +1,5 @@
 #pragma once
-#include <ice/pod/hash.hxx>
+#include <ice/container/hashmap.hxx>
 #include <ice/gfx/gfx_resource_tracker.hxx>
 
 namespace ice::gfx
@@ -25,7 +25,7 @@ namespace ice::gfx
         ) noexcept -> ice::gfx::GfxResource override;
 
     private:
-        ice::pod::Hash<ice::gfx::GfxResource> _resources;
+        ice::HashMap<ice::gfx::GfxResource> _resources;
     };
 
 } // namespace ice::gfx

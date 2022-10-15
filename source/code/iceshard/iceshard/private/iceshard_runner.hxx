@@ -15,10 +15,10 @@
 #include <ice/render/render_framebuffer.hxx>
 #include <ice/render/render_pass.hxx>
 
-#include <ice/memory/proxy_allocator.hxx>
-#include <ice/memory/scratch_allocator.hxx>
-#include <ice/memory/forward_allocator.hxx>
-#include <ice/unique_ptr.hxx>
+#include <ice/mem_allocator_ring.hxx>
+#include <ice/mem_allocator_proxy.hxx>
+#include <ice/mem_allocator_forward.hxx>
+#include <ice/mem_unique_ptr.hxx>
 
 #include "world/iceshard_world_tracker.hxx"
 #include <ice/gfx/gfx_runner.hxx>
@@ -51,12 +51,9 @@ namespace ice
 
         auto entity_index() const noexcept -> ice::ecs::EntityIndex& override;
 
-        [[deprecated]]
-        auto platform_events() noexcept -> ice::Span<ice::platform::Event const> override;
-
         auto input_tracker() noexcept -> ice::input::InputTracker& override;
         void process_device_queue(
-            ice::input::DeviceQueue const& device_queue
+            ice::input::DeviceEventQueue const& device_queue
         ) noexcept override;
 
         auto thread_pool() noexcept -> ice::TaskThreadPool& override;
@@ -69,9 +66,7 @@ namespace ice
         auto previous_frame() const noexcept -> ice::EngineFrame const& override;
         auto current_frame() const noexcept -> ice::EngineFrame const& override;
         auto current_frame() noexcept -> ice::EngineFrame& override;
-        void next_frame(
-            ice::Span<ice::platform::Event const> events
-        ) noexcept override;
+        void next_frame(ice::ShardContainer const& shards) noexcept override;
 
         void set_graphics_runner(
             ice::UniquePtr<ice::gfx::GfxRunner> gfx_runner
@@ -100,7 +95,7 @@ namespace ice
         ) noexcept override;
 
     private:
-        ice::memory::ProxyAllocator _allocator;
+        ice::ProxyAllocator _allocator;
         ice::SystemClock _clock;
 
         ice::IceshardEngine& _engine;
@@ -111,8 +106,8 @@ namespace ice
 
         ice::UniquePtr<ice::TaskThreadPool> _thread_pool;
 
-        ice::memory::ProxyAllocator _frame_allocator;
-        ice::memory::ScratchAllocator _frame_data_allocator[2];
+        ice::ProxyAllocator _frame_allocator;
+        ice::RingAllocator _frame_data_allocator[2];
         ice::u32 _next_free_allocator;
 
         ice::UniquePtr<ice::IceshardMemoryFrame> _previous_frame;
@@ -121,7 +116,6 @@ namespace ice
         ice::IceshardWorldManager& _world_manager;
         ice::IceshardWorldTracker _world_tracker;
 
-        ice::Span<ice::platform::Event const> _events;
         ice::UniquePtr<ice::input::InputTracker> _input_tracker;
 
         ice::ManualResetEvent _mre_frame_logic = true;
@@ -132,7 +126,7 @@ namespace ice
             ice::ManualResetEvent* event;
             std::coroutine_handle<> coroutine;
         };
-        ice::pod::Array<TraitTask> _runner_tasks;
+        ice::Array<TraitTask> _runner_tasks;
 
         std::atomic<ice::CurrentFrameOperationData*> _current_op_head;
         std::atomic<ice::NextFrameOperationData*> _next_op_head;

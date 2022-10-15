@@ -49,10 +49,10 @@ namespace ice
         , _is_owning{ is_owning }
         , _storage{ _allocator }
         , _entity_storage{ entity_storage }
-        , _wait_event_allocator{ _allocator, 512 }
+        , _wait_event_allocator{ _allocator, { 512_B } }
         , _trait_tasks{ _allocator }
     {
-        ice::pod::array::reserve(_trait_tasks, 20);
+        ice::array::reserve(_trait_tasks, 20);
     }
 
     IceshardWorldPortal::~IceshardWorldPortal() noexcept
@@ -91,14 +91,14 @@ namespace ice
 
     void IceshardWorldPortal::execute(ice::Task<void> task) noexcept
     {
-        ice::ManualResetEvent* wait_event = _wait_event_allocator.make<ManualResetEvent>();
+        ice::ManualResetEvent* wait_event = _wait_event_allocator.create<ManualResetEvent>();
         detail::WorldTraitTask trait_task = [](ice::Task<void> task, ice::ManualResetEvent* event) noexcept -> detail::WorldTraitTask
         {
             co_await task;
             event->set();
         }(ice::move(task), wait_event);
 
-        ice::pod::array::push_back(
+        ice::array::push_back(
             _trait_tasks,
             TraitTask{
                 .event = wait_event,
@@ -109,7 +109,7 @@ namespace ice
 
     void IceshardWorldPortal::remove_finished_tasks() noexcept
     {
-        ice::pod::Array<TraitTask> running_tasks{ _allocator };
+        ice::Array<TraitTask> running_tasks{ _allocator };
 
         for (TraitTask const& trait_task : _trait_tasks)
         {
@@ -120,7 +120,7 @@ namespace ice
             }
             else
             {
-                ice::pod::array::push_back(running_tasks, trait_task);
+                ice::array::push_back(running_tasks, trait_task);
             }
         }
 
