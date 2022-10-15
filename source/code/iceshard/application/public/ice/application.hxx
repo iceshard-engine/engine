@@ -1,5 +1,5 @@
 #pragma once
-#include <ice/allocator.hxx>
+#include <ice/mem_allocator.hxx>
 #include <ice/resource_tracker.hxx>
 
 extern ice::i32 game_main(

@@ -19,7 +19,7 @@
 #include "platforms/platform/platform.bff"
 #include "platforms/platform_win32/platform_win32.bff"
 
-// #include "iceshard/application/application.bff"
+#include "iceshard/application/application.bff"
 // #include "iceshard/engine/engine.bff"
 // #include "iceshard/devui/devui.bff"
 // #include "iceshard/iceshard/iceshard.bff"
