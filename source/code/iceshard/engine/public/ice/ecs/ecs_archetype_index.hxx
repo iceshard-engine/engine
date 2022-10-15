@@ -1,8 +1,9 @@
 #pragma once
-#include <ice/allocator.hxx>
+#include <ice/mem_allocator.hxx>
 #include <ice/ecs/ecs_archetype.hxx>
 #include <ice/ecs/ecs_data_block_pool.hxx>
 #include <ice/ecs/ecs_query_details.hxx>
+#include <ice/container_types.hxx>
 #include <ice/span.hxx>
 
 namespace ice::ecs
@@ -28,7 +29,7 @@ namespace ice::ecs
 
         void find_archetypes(
             ice::Span<ice::ecs::detail::QueryTypeInfo const> query_info,
-            ice::pod::Array<ice::ecs::Archetype>& out_archetypes
+            ice::Array<ice::ecs::Archetype>& out_archetypes
         ) const noexcept;
 
         void fetch_archetype_instance_infos(
@@ -56,10 +57,10 @@ namespace ice::ecs
         ice::Allocator& _allocator;
         ice::ecs::DataBlockPool _default_block_pool;
 
-        ice::pod::Hash<ice::u32> _archetype_index;
+        ice::HashMap<ice::u32> _archetype_index;
 
         struct ArchetypeDataHeader;
-        ice::pod::Array<ArchetypeDataHeader*> _archetype_data;
+        ice::Array<ArchetypeDataHeader*> _archetype_data;
     };
 
 } // namespace ice::ecs

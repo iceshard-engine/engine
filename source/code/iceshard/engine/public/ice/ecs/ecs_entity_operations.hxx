@@ -1,11 +1,8 @@
 #pragma once
-#include <ice/data.hxx>
-#include <ice/allocator.hxx>
-#include <ice/pod/array.hxx>
+#include <ice/container/array.hxx>
 #include <ice/shard_container.hxx>
 #include <ice/ecs/ecs_entity.hxx>
 #include <ice/ecs/ecs_archetype.hxx>
-#include <ice/memory/pointer_arithmetic.hxx>
 
 namespace ice::ecs
 {
@@ -40,7 +37,7 @@ namespace ice::ecs
         auto new_storage_operation() noexcept -> ice::ecs::EntityOperation*;
 
         auto new_storage_operation(
-            ice::u32 required_data_size,
+            ice::meminfo required_data_size,
             void*& out_operation_data_ptr
         ) noexcept -> ice::ecs::EntityOperation*;
 
@@ -133,10 +130,10 @@ namespace ice::ecs
         );
 
         constexpr ice::ecs::EntityOperations::ComponentInfo const component_info{
-            .names = ice::make_span(pseudo_archetype_definition.component_identifiers).subspan(1),
-            .sizes = ice::make_span(pseudo_archetype_definition.component_sizes).subspan(1),
+            .names = ice::Span{ pseudo_archetype_definition.component_identifiers }.subspan(1),
+            .sizes = ice::Span{ pseudo_archetype_definition.component_sizes }.subspan(1),
             // We can store alignments here instead of offsets.
-            .offsets = ice::make_span(pseudo_archetype_definition.component_alignments).subspan(1)
+            .offsets = ice::Span{ pseudo_archetype_definition.component_alignments }.subspan(1)
         };
 
         ice::Data const component_data_array_unsorted[]{
@@ -174,20 +171,20 @@ namespace ice::ecs
         );
 
         static ice::ecs::EntityOperations::ComponentInfo constexpr ComponentsInfo{
-            .names = ice::make_span(HelperArchetype.component_identifiers).subspan(1),
-            .sizes = ice::make_span(HelperArchetype.component_sizes).subspan(1),
-            .offsets = ice::make_span(HelperArchetype.component_alignments).subspan(1)
+            .names = ice::Span{ HelperArchetype.component_identifiers }.subspan(1),
+            .sizes = ice::Span{ HelperArchetype.component_sizes }.subspan(1),
+            .offsets = ice::Span{ HelperArchetype.component_alignments }.subspan(1)
         };
 
-        ice::u32 const entity_count = ice::size(entities);
-        ice::u32 constexpr component_count = sizeof...(Components);
+        ice::ucount const entity_count = ice::count(entities);
+        ice::ucount constexpr component_count = sizeof...(Components);
         ice::usize additional_data_size = sizeof(ice::ecs::EntityHandle) * entity_count;
 
         // Data for storing component info
-        additional_data_size += sizeof(ice::ecs::EntityOperations::ComponentInfo);
-        additional_data_size += ComponentsInfo.names.size_bytes();
-        additional_data_size += ComponentsInfo.sizes.size_bytes();
-        additional_data_size += ComponentsInfo.offsets.size_bytes();
+        additional_data_size += ice::size_of<ice::ecs::EntityOperations::ComponentInfo>;
+        additional_data_size += ice::span::size_bytes(ComponentsInfo.names);
+        additional_data_size += ice::span::size_bytes(ComponentsInfo.sizes);
+        additional_data_size += ice::span::size_bytes(ComponentsInfo.offsets);
 
         // Use folded expression to calculate all the size for the components...
         additional_data_size += ((alignof(Components) + sizeof(Components) * entity_count) + ...);
@@ -251,18 +248,15 @@ namespace ice::ecs
         {
             using SpanType = ice::Span<ComponentType>;
 
-            data_ptr = ice::memory::ptr_align_forward(data_ptr, alignof(ComponentType));
-            offsets_ptr[offset_idx] = ice::memory::ptr_distance(
-                operation_data,
-                data_ptr
-            );
+            data_ptr = ice::align_to(data_ptr, ice::align_of<ComponentType>).value;
+            offsets_ptr[offset_idx] = ice::ptr_distance(operation_data, data_ptr);
 
             // Update the span object...
             SpanType* span_ptr = reinterpret_cast<SpanType*>(span_raw_ptr);
             *span_ptr = SpanType{ reinterpret_cast<ComponentType*>(data_ptr), entity_count };
 
             // Move to the next data location...
-            data_ptr = ice::memory::ptr_add(data_ptr, span_ptr->size_bytes());
+            data_ptr = ice::ptr_add(data_ptr, ice::span::size_bytes(*span_ptr));
             return true;
         };
 
@@ -290,7 +284,7 @@ namespace ice::ecs
         operation->entity_count = entity_count;
         operation->notify_entity_changes = false;
         operation->component_data = component_info_ptr;
-        operation->component_data_size = ice::memory::ptr_distance(component_info_ptr, component_info_ptr);// ui_buttons + component_count);
+        operation->component_data_size = ice::ptr_distance(component_info_ptr, component_info_ptr);
     }
 
 } // namespace ice::ecs

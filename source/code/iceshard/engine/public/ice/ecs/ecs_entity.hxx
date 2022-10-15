@@ -1,6 +1,7 @@
 #pragma once
 #include <ice/base.hxx>
 #include <ice/shard.hxx>
+#include <ice/log_formatters.hxx>
 
 namespace ice::ecs
 {
@@ -78,7 +79,49 @@ namespace ice::ecs
 } // namespace ice::ecs
 
 template<>
-constexpr ice::PayloadID ice::detail::Constant_ShardPayloadID<ice::ecs::Entity> = ice::payload_id("ice::ecs::Entity");
+constexpr ice::ShardPayloadID ice::Constant_ShardPayloadID<ice::ecs::Entity> = ice::shard_payloadid("ice::ecs::Entity");
 
 template<>
-constexpr ice::PayloadID ice::detail::Constant_ShardPayloadID<ice::ecs::EntityHandle> = ice::payload_id("ice::ecs::EntityHandle");
+constexpr ice::ShardPayloadID ice::Constant_ShardPayloadID<ice::ecs::EntityHandle> = ice::shard_payloadid("ice::ecs::EntityHandle");
+
+template<>
+struct fmt::formatter<ice::ecs::Entity>
+{
+    template<typename ParseContext>
+    constexpr auto parse(ParseContext& ctx)
+    {
+        return ctx.begin();
+    }
+
+    template<typename FormatContext>
+    constexpr auto format(ice::ecs::Entity entity, FormatContext& ctx)
+    {
+        return fmt::format_to(ctx.out(), "<{}>", static_cast<std::underlying_type_t<ice::ecs::Entity>>(entity));
+    }
+};
+
+template<>
+struct fmt::formatter<ice::ecs::EntityHandle>
+{
+    template<typename ParseContext>
+    constexpr auto parse(ParseContext& ctx)
+    {
+        return ctx.begin();
+    }
+
+    template<typename FormatContext>
+    constexpr auto format(ice::ecs::EntityHandle handle, FormatContext& ctx)
+    {
+        ice::ecs::EntityHandleInfo const handle_info = ice::ecs::entity_handle_info(handle);
+        ice::ecs::EntitySlotInfo const slot_info = ice::ecs::entity_slot_info(handle_info.slot);
+
+        return fmt::format_to(
+            ctx.out(),
+            "<{}/{}>@<{}.{}>",
+            slot_info.archetype,
+            static_cast<std::underlying_type_t<ice::ecs::Entity>>(handle_info.entity),
+            slot_info.block,
+            slot_info.index
+        );
+    }
+};

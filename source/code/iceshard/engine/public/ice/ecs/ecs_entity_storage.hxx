@@ -1,5 +1,4 @@
 #pragma once
-#include <ice/allocator.hxx>
 #include <ice/shard_container.hxx>
 #include <ice/ecs/ecs_entity.hxx>
 #include <ice/ecs/ecs_archetype.hxx>
@@ -31,16 +30,16 @@ namespace ice::ecs
     protected:
         void query_internal(
             ice::Span<ice::ecs::detail::QueryTypeInfo const> query_info,
-            ice::pod::Array<ice::ecs::ArchetypeInstanceInfo const*>& out_instance_infos,
-            ice::pod::Array<ice::ecs::DataBlock const*>& out_data_blocks
+            ice::Array<ice::ecs::ArchetypeInstanceInfo const*>& out_instance_infos,
+            ice::Array<ice::ecs::DataBlock const*>& out_data_blocks
         ) const noexcept override;
 
     private:
         ice::Allocator& _allocator;
         ice::ecs::ArchetypeIndex const& _archetype_index;
 
-        ice::pod::Array<ice::ecs::DataBlock> _head_blocks;
-        ice::pod::Array<ice::ecs::DataBlock*> _data_blocks;
+        ice::Array<ice::ecs::DataBlock> _head_blocks;
+        ice::Array<ice::ecs::DataBlock*> _data_blocks;
     };
 
 } // namespace ice::ecs

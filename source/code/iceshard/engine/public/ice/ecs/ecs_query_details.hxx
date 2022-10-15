@@ -1,7 +1,7 @@
 #pragma once
 #include <ice/ecs/ecs_entity.hxx>
 #include <ice/ecs/ecs_component.hxx>
-#include <ice/static_array.hxx>
+#include <ice/container_types.hxx>
 
 namespace ice::ecs::detail
 {

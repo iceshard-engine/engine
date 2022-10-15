@@ -1,6 +1,5 @@
 #pragma once
-#include <ice/allocator.hxx>
-#include <ice/pod/array.hxx>
+#include <ice/container/array.hxx>
 #include <ice/ecs/ecs_query.hxx>
 
 namespace ice::ecs
@@ -32,8 +31,8 @@ namespace ice::ecs
     protected:
         virtual void query_internal(
             ice::Span<ice::ecs::detail::QueryTypeInfo const> query_info,
-            ice::pod::Array<ice::ecs::ArchetypeInstanceInfo const*>& out_instance_infos,
-            ice::pod::Array<ice::ecs::DataBlock const*>& out_data_blocks
+            ice::Array<ice::ecs::ArchetypeInstanceInfo const*>& out_instance_infos,
+            ice::Array<ice::ecs::DataBlock const*>& out_data_blocks
         ) const noexcept = 0;
     };
 
@@ -55,8 +54,8 @@ namespace ice::ecs
 
         static constexpr Definition definition{ };
 
-        ice::pod::Array<ice::ecs::ArchetypeInstanceInfo const*> instance_infos{ alloc };
-        ice::pod::Array<ice::ecs::DataBlock const*> data_blocks{ alloc };
+        ice::Array<ice::ecs::ArchetypeInstanceInfo const*> instance_infos{ alloc };
+        ice::Array<ice::ecs::DataBlock const*> data_blocks{ alloc };
 
         // Run the internal query to access all data that is not available here.
         this->query_internal(
@@ -65,14 +64,14 @@ namespace ice::ecs
             data_blocks
         );
 
-        ice::pod::Array<ice::StaticArray<ice::u32, definition.component_count>> argument_idx_map{ alloc };
+        ice::Array<ice::StaticArray<ice::u32, definition.component_count>> argument_idx_map{ alloc };
 
-        ice::u32 const archetype_count = ice::size(instance_infos);
-        ice::pod::array::reserve(argument_idx_map, archetype_count);
+        ice::u32 const archetype_count = ice::count(instance_infos);
+        ice::array::reserve(argument_idx_map, archetype_count);
 
         for (ice::ecs::ArchetypeInstanceInfo const* instance : instance_infos)
         {
-            ice::pod::array::push_back(argument_idx_map, ice::ecs::detail::argument_idx_map<Types...>(*instance));
+            ice::array::push_back(argument_idx_map, ice::ecs::detail::argument_idx_map<Types...>(*instance));
         }
 
         return Query{

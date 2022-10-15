@@ -1,6 +1,6 @@
 #pragma once
 #include <ice/stringid.hxx>
-#include <ice/unique_ptr.hxx>
+#include <ice/mem_unique_ptr.hxx>
 #include <ice/ecs/ecs_types.hxx>
 #include <ice/world/world_trait_description.hxx>
 

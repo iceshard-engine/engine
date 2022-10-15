@@ -1,7 +1,7 @@
 #pragma once
 #include <ice/span.hxx>
 #include <ice/stringid.hxx>
-#include <ice/allocator.hxx>
+#include <ice/mem_allocator.hxx>
 #include <ice/ecs/ecs_types.hxx>
 
 namespace ice
@@ -49,11 +49,11 @@ namespace ice
 
             if constexpr (std::is_constructible_v<TraitType>)
             {
-                return alloc.make<TraitType>();
+                return alloc.create<TraitType>();
             }
             else
             {
-                return alloc.make<TraitType>(alloc);
+                return alloc.create<TraitType>(alloc);
             }
         };
 

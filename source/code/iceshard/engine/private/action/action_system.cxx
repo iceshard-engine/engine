@@ -3,9 +3,8 @@
 #include <ice/action/action_system.hxx>
 #include <ice/engine_frame.hxx>
 
-#include <ice/memory/pointer_arithmetic.hxx>
-#include <ice/memory/scratch_allocator.hxx>
-#include <ice/pod/array.hxx>
+#include <ice/mem_allocator.hxx>
+#include <ice/container/array.hxx>
 #include <ice/clock.hxx>
 
 namespace ice::action
@@ -28,6 +27,7 @@ namespace ice::action
 
     struct ActionInstance
     {
+        ice::Memory mem;
         ice::StringID name;
 
         ice::u32 stage_count;
@@ -53,7 +53,7 @@ namespace ice::action
         bool has_all_triggers = true;
         for (ice::u32 idx = 0; idx < action.trigger_count; ++idx)
         {
-            has_all_triggers &= triggers.get_trigger(action.triggers[idx].name).trigger_shardid != ice::ShardID_Invalid;
+            has_all_triggers &= triggers.get_trigger(action.triggers[idx].name).trigger_shardid != ice::Shard_Invalid.id;
         }
 
         if (has_all_triggers == false)
@@ -61,22 +61,17 @@ namespace ice::action
             return nullptr;
         }
 
-        ice::u32 instance_byte_size = sizeof(ActionInstance);
-        instance_byte_size += action.stage_count * sizeof(ActionStage) + alignof(ActionStage);
-        //instance_byte_size += action.trigger_count * sizeof(ActionTrigger) + alignof(ActionTrigger);
-        instance_byte_size += action.trigger_count * sizeof(ActionTriggerInstance) + alignof(ActionTriggerInstance);
+        ice::meminfo action_meminfo = ice::meminfo_of<ActionInstance>;
+        ice::usize const stages_offset = action_meminfo += ice::meminfo_of<ActionStage> * action.stage_count;
+        ice::usize const triggers_offset = action_meminfo += ice::meminfo_of<ActionTriggerInstance> * action.trigger_count;
 
-        ActionInstance* action_instance = reinterpret_cast<ActionInstance*>(alloc.allocate(instance_byte_size, alignof(ActionInstance)));
-        ActionStage* stages = reinterpret_cast<ActionStage*>(
-            ice::memory::ptr_align_forward(action_instance + 1, alignof(ActionStage))
-        );
-        //ActionTrigger* triggers = reinterpret_cast<ActionTrigger*>(
-        //    ice::memory::ptr_align_forward(stages + action.stage_count, alignof(ActionTrigger))
-        //);
-        ActionTriggerInstance* trigger_instances = reinterpret_cast<ActionTriggerInstance*>(
-            ice::memory::ptr_align_forward(stages + action.stage_count, alignof(ActionTriggerInstance))
-        );
+        ice::AllocResult const result = alloc.allocate(action_meminfo);
 
+        ActionInstance* action_instance = reinterpret_cast<ActionInstance*>(result.memory);
+        ActionStage* stages = reinterpret_cast<ActionStage*>(ice::ptr_add(result.memory, stages_offset));
+        ActionTriggerInstance* trigger_instances = reinterpret_cast<ActionTriggerInstance*>(ice::ptr_add(result.memory, triggers_offset));
+
+        action_instance->mem = result;
         action_instance->name = action.name;
 
         action_instance->stage_count = action.stage_count;
@@ -127,10 +122,10 @@ namespace ice::action
 
     private:
         ice::Allocator& _allocator;
-        ice::memory::ScratchAllocator _step_shards_alloc;
+        ice::Allocator& _step_shards_alloc; // TODO
         ice::Clock const& _clock;
         ice::action::ActionTriggerDatabase& _trigger_database;
-        ice::pod::Array<ice::action::ActionInstance*> _actions;
+        ice::Array<ice::action::ActionInstance*> _actions;
 
     };
 
@@ -140,7 +135,7 @@ namespace ice::action
         ice::action::ActionTriggerDatabase& trigger_database
     ) noexcept
         : _allocator{ alloc }
-        , _step_shards_alloc{ alloc, 70 * sizeof(ice::Shard) }
+        , _step_shards_alloc{ alloc } //, 70 * sizeof(ice::Shard) }
         , _clock{ clock }
         , _trigger_database{ trigger_database }
         , _actions{ alloc }
@@ -151,7 +146,7 @@ namespace ice::action
     {
         for (ActionInstance* action : _actions)
         {
-            _allocator.destroy(action);
+            _allocator.deallocate(action->mem);
         }
     }
 
@@ -164,7 +159,7 @@ namespace ice::action
         if (instance != nullptr)
         {
             instance->stage_timeline = ice::timeline::create_timeline(_clock);
-            ice::pod::array::push_back(
+            ice::array::push_back(
                 _actions,
                 instance
             );
@@ -215,9 +210,9 @@ namespace ice::action
                 ice::shards::push_back(new_shards, ice::action::Shard_ActionEventReset | action_name);
 
                 current_stage = stages + action->current_stage_idx;
-                if (current_stage->stage_shardid != ice::ShardID_Invalid)
+                if (current_stage->stage_shardid != ice::Shard_Invalid.id)
                 {
-                    ice::shards::push_back(new_shards, ice::shard_create(current_stage->stage_shardid) | action_name);
+                    ice::shards::push_back(new_shards, ice::shard(current_stage->stage_shardid) | action_name);
                 }
             }
         }
@@ -278,9 +273,9 @@ namespace ice::action
                                 failure_trigger = triggers + current_stage->failure_trigger_offset + action->current_failure_trigger_idx;
                                 success_trigger = triggers + current_stage->success_trigger_offset + action->current_success_trigger_idx;
 
-                                if (current_stage->stage_shardid != ice::ShardID_Invalid)
+                                if (current_stage->stage_shardid != ice::Shard_Invalid.id)
                                 {
-                                    ice::shards::push_back(new_shards, ice::shard_create(current_stage->stage_shardid) | ice::stringid_hash(action->name));
+                                    ice::shards::push_back(new_shards, ice::shard(current_stage->stage_shardid) | ice::stringid_hash(action->name));
                                 }
                             }
                         }
@@ -305,7 +300,7 @@ namespace ice::action
             }
         }
 
-        ice::shards::push_back(shards, new_shards);
+        ice::shards::push_back(shards, new_shards._data);
     }
 
     auto create_action_system(
@@ -314,7 +309,7 @@ namespace ice::action
         ice::action::ActionTriggerDatabase& triggers
     ) noexcept -> ice::UniquePtr<ice::action::ActionSystem>
     {
-        return ice::make_unique<ice::action::ActionSystem, ice::action::SimpleActionSystem>(alloc, alloc, clock, triggers);
+        return ice::make_unique<ice::action::SimpleActionSystem>(alloc, alloc, clock, triggers);
     }
 
 } // namespace ice::action

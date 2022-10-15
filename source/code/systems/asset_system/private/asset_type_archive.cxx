@@ -36,8 +36,8 @@ namespace ice
         ) const noexcept -> ice::AssetTypeDefinition const& override;
 
     private:
-        ice::Array<ice::AssetType, CollectionLogic::Complex> _types;
-        ice::HashMap<ice::InternalAssetType, CollectionLogic::Complex> _definitions;
+        ice::Array<ice::AssetType> _types;
+        ice::HashMap<ice::InternalAssetType> _definitions;
     };
 
     SimpleAssetTypeArchive::SimpleAssetTypeArchive(ice::Allocator& alloc) noexcept

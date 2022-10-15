@@ -1,6 +1,5 @@
 #pragma once
-#include <ice/allocator.hxx>
-#include <ice/unique_ptr.hxx>
+#include <ice/mem_unique_ptr.hxx>
 #include <ice/module_register.hxx>
 
 namespace ice
@@ -34,7 +33,7 @@ namespace ice
             ice::EngineCreateInfo const&
         ) noexcept -> ice::Engine*;
 
-        using DestroyFn = void (ice::Allocator& alloc, ice::Engine*) noexcept;
+        using DestroyFn = void (ice::Engine*) noexcept;
 
         struct EngineAPI
         {

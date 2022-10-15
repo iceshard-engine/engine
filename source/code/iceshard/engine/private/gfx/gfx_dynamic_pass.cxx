@@ -9,18 +9,18 @@ namespace ice::gfx
         , _entries{ _allocator }
         , _dependencies{ _allocator }
     {
-        ice::pod::array::reserve(_entries, 10);
-        ice::pod::array::reserve(_dependencies, 25);
+        ice::array::reserve(_entries, 10);
+        ice::array::reserve(_dependencies, 25);
     }
 
     auto GfxDynamicPassStageGroup::stage_count() const noexcept -> ice::u32
     {
-        return ice::pod::array::size(_entries);
+        return ice::array::count(_entries);
     }
 
     bool GfxDynamicPassStageGroup::has_work() const noexcept
     {
-        return ice::pod::array::empty(_entries) == false;
+        return ice::array::empty(_entries) == false;
     }
 
     bool GfxDynamicPassStageGroup::contains_any(
@@ -45,7 +45,7 @@ namespace ice::gfx
         bool found = false;
         for (Entry const& entry : _entries)
         {
-            ice::Span<StringID const> entry_deps{ ice::pod::array::begin(_dependencies) + entry.dependency_offset, entry.dependency_count };
+            ice::Span<StringID const> entry_deps{ ice::array::begin(_dependencies) + entry.dependency_offset, entry.dependency_count };
 
             for (ice::StringID const& dependency : entry_deps)
             {
@@ -60,31 +60,31 @@ namespace ice::gfx
         ice::Span<ice::StringID const> dependencies
     ) noexcept
     {
-        ice::pod::array::push_back(
+        ice::array::push_back(
             _entries,
             Entry{
                 .name = name,
-                .dependency_offset = ice::size(_dependencies),
-                .dependency_count = ice::size(dependencies)
+                .dependency_offset = ice::count(_dependencies),
+                .dependency_count = ice::count(dependencies)
             }
         );
 
-        ice::pod::array::push_back(_dependencies, dependencies);
+        ice::array::push_back(_dependencies, dependencies);
     }
 
     void GfxDynamicPassStageGroup::clear() noexcept
     {
-        ice::pod::array::clear(_entries);
-        ice::pod::array::clear(_dependencies);
+        ice::array::clear(_entries);
+        ice::array::clear(_dependencies);
     }
 
     void GfxDynamicPassStageGroup::query_stage_order(
-        ice::pod::Array<ice::StringID_Hash>& stage_order_out
+        ice::Array<ice::StringID_Hash>& stage_order_out
     ) const noexcept
     {
         for (Entry const& entry : _entries)
         {
-            ice::pod::array::push_back(stage_order_out, ice::stringid_hash(entry.name));
+            ice::array::push_back(stage_order_out, ice::stringid_hash(entry.name));
         }
     }
 
@@ -93,11 +93,11 @@ namespace ice::gfx
         , _stages{ _allocator }
         , _free_stages{ _allocator }
     {
-        ice::pod::array::reserve(_stages, 5);
-        ice::pod::array::reserve(_free_stages, 5);
-        ice::pod::array::push_back(
+        ice::array::reserve(_stages, 5);
+        ice::array::reserve(_free_stages, 5);
+        ice::array::push_back(
             _stages,
-            _allocator.make<GfxDynamicPassStageGroup>(_allocator)
+            _allocator.create<GfxDynamicPassStageGroup>(_allocator)
         );
     }
 
@@ -143,22 +143,22 @@ namespace ice::gfx
         auto get_free_stage = [this]() noexcept
         {
             GfxDynamicPassStageGroup* free_batch = nullptr;
-            if (ice::pod::array::any(_free_stages))
+            if (ice::array::any(_free_stages))
             {
-                free_batch = ice::pod::array::back(_free_stages);
+                free_batch = ice::array::back(_free_stages);
                 free_batch->clear();
-                ice::pod::array::pop_back(_free_stages);
+                ice::array::pop_back(_free_stages);
             }
             else
             {
-                free_batch = _allocator.make<GfxDynamicPassStageGroup>(_allocator);
+                free_batch = _allocator.create<GfxDynamicPassStageGroup>(_allocator);
             }
             return free_batch;
         };
 
         {
-            auto candidate_batch = ice::pod::array::rbegin(_stages);
-            auto const end_batch = ice::pod::array::rend(_stages);
+            auto candidate_batch = ice::array::rbegin(_stages);
+            auto const end_batch = ice::array::rend(_stages);
 
             while (candidate_batch != end_batch)
             {
@@ -177,14 +177,14 @@ namespace ice::gfx
         if (target_stage == nullptr)
         {
             target_stage = get_free_stage();
-            ice::pod::array::push_back(_stages, target_stage);
+            ice::array::push_back(_stages, target_stage);
         }
 
         if (target_stage->has_dependency(stage_name))
         {
             GfxDynamicPassStageGroup* new_target_stage = get_free_stage();
 
-            ice::u32 const batch_count = ice::size(_stages);
+            ice::u32 const batch_count = ice::count(_stages);
             ice::u32 target_batch_idx = 0;
             while (_stages[target_batch_idx] != target_stage)
             {
@@ -192,7 +192,7 @@ namespace ice::gfx
             }
 
             // Add an empty dummy entry
-            ice::pod::array::push_back(_stages, nullptr);
+            ice::array::push_back(_stages, nullptr);
 
             // Move everything down by one
             for (ice::u32 idx = batch_count; idx > target_batch_idx; --idx)
@@ -210,17 +210,17 @@ namespace ice::gfx
     void IceGfxDynamicPass::clear() noexcept
     {
         // Copy all pointers so we dont need to re-allocate the array after a while
-        ice::pod::array::push_back(_free_stages, _stages);
+        ice::array::push_back(_free_stages, _stages);
 
         // Clear the stage batches array so it's empty but the underlying memory is not freed
-        ice::pod::array::clear(_stages);
+        ice::array::clear(_stages);
     }
 
     void IceGfxDynamicPass::query_stage_order(
-        ice::pod::Array<ice::StringID_Hash>& stage_order_out
+        ice::Array<ice::StringID_Hash>& stage_order_out
     ) const noexcept
     {
-        bool valid_pass = ice::pod::array::any(_stages);
+        bool valid_pass = ice::array::any(_stages);
         if (valid_pass == false)
         {
             return;
