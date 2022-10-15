@@ -1,6 +1,7 @@
 #pragma once
 #include <ice/base.hxx>
 #include <ice/mem_data.hxx>
+#include <ice/container_logic.hxx>
 
 namespace ice
 {
@@ -19,16 +20,16 @@ namespace ice
         Type* _data;
 
         constexpr Span() noexcept;
-        constexpr Span(ice::Span<Type>&& other) noexcept;
-        constexpr Span(ice::Span<Type> const& other) noexcept;
+        constexpr Span(ice::Span<Type>&& other) noexcept = default;
+        constexpr Span(ice::Span<Type> const& other) noexcept = default;
         constexpr Span(Type* location, ice::ucount count) noexcept;
         constexpr Span(Type* from, Type* to) noexcept;
 
         template<ice::ucount Size>
         constexpr Span(Type(&location)[Size]) noexcept;
 
-        constexpr auto operator=(ice::Span<Type>&& other) noexcept -> ice::Span<Type>&;
-        constexpr auto operator=(ice::Span<Type> const& other) noexcept -> ice::Span<Type>&;
+        constexpr auto operator=(ice::Span<Type>&& other) noexcept -> ice::Span<Type>& = default;
+        constexpr auto operator=(ice::Span<Type> const& other) noexcept -> ice::Span<Type>& = default;
 
         constexpr auto operator[](ice::ucount idx) const noexcept -> Type&;
         constexpr operator ice::Span<Type const>() const noexcept { return { _data, _count }; }
@@ -101,20 +102,6 @@ namespace ice
     }
 
     template<typename Type>
-    constexpr Span<Type>::Span(ice::Span<Type>&& other) noexcept
-        : _count{ ice::exchange(other._count, 0) }
-        , _data{ ice::exchange(other._data, nullptr) }
-    {
-    }
-
-    template<typename Type>
-    constexpr Span<Type>::Span(ice::Span<Type> const& other) noexcept
-        : _count{ other._count }
-        , _data{ other._data }
-    {
-    }
-
-    template<typename Type>
     constexpr Span<Type>::Span(Type* location, ice::ucount count) noexcept
         : _count{ count }
         , _data{ location }
@@ -134,28 +121,6 @@ namespace ice
         : _count{ Size }
         , _data{ location }
     {
-    }
-
-    template<typename Type>
-    constexpr auto Span<Type/*, Extent*/>::operator=(ice::Span<Type>&& other) noexcept -> ice::Span<Type>&
-    {
-        if (this != &other)
-        {
-            _count = ice::exchange(other._count, 0);
-            _data = ice::exchange(other._data, nullptr);
-        }
-        return *this;
-    }
-
-    template<typename Type>
-    constexpr auto Span<Type>::operator=(ice::Span<Type> const& other) noexcept -> ice::Span<Type>&
-    {
-        if (this != &other)
-        {
-            _count = other._count;
-            _data = other._data;
-        }
-        return *this;
     }
 
     template<typename Type>
@@ -291,5 +256,8 @@ namespace ice
 
     using ice::span::begin;
     using ice::span::end;
+
+
+    static_assert(ice::TrivialContainerLogicAllowed<ice::Span<ice::u32>>);
 
 } // namespace ice

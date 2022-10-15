@@ -1,6 +1,7 @@
 #pragma once
 #include <ice/mem_data.hxx>
 #include <ice/mem_allocator.hxx>
+#include <ice/container_logic.hxx>
 
 namespace ice
 {
@@ -20,8 +21,8 @@ namespace ice
         CharType const* _data;
 
         constexpr BasicString() noexcept;
-        constexpr BasicString(BasicString&& other) noexcept;
-        constexpr BasicString(BasicString const& other) noexcept;
+        constexpr BasicString(BasicString&& other) noexcept = default;
+        constexpr BasicString(BasicString const& other) noexcept = default;
 
         constexpr BasicString(CharType const* str_ptr) noexcept;
         constexpr BasicString(CharType const* str_beg, CharType const* str_end) noexcept;
@@ -29,8 +30,8 @@ namespace ice
         template<ice::ucount Size>
         constexpr BasicString(CharType const(&str_arr)[Size]) noexcept;
 
-        constexpr auto operator=(BasicString&& other) noexcept -> BasicString&;
-        constexpr auto operator=(BasicString const& other) noexcept -> BasicString&;
+        constexpr auto operator=(BasicString&& other) noexcept -> BasicString& = default;
+        constexpr auto operator=(BasicString const& other) noexcept -> BasicString& = default;
 
         constexpr auto operator[](ice::ucount index) const noexcept -> CharType const&;
 
@@ -117,6 +118,10 @@ namespace ice
 
         constexpr operator ice::BasicString<CharType>() const noexcept;
     };
+
+
+    static_assert(ice::TrivialContainerLogicAllowed<ice::String>);
+    static_assert(ice::TrivialContainerLogicAllowed<ice::WString>);
 
 } // namespace ice
 

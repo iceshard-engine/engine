@@ -1,5 +1,6 @@
 #pragma once
 #include <ice/base.hxx>
+#include <ice/stringid.hxx>
 
 namespace ice
 {
@@ -247,6 +248,12 @@ namespace ice
     constexpr auto shard(ice::ShardID id, T value) noexcept -> ice::Shard
     {
         ice::Shard result{ };
+
+        if (std::is_constant_evaluated() == false)
+        {
+            ICE_ASSERT_CORE(id.payload == ice::Constant_ShardPayloadID<T> || id.payload == ice::ShardPayloadID_NotSet);
+        }
+
         if (id.payload == ice::Constant_ShardPayloadID<T> || id.payload == ice::ShardPayloadID_NotSet)
         {
             result.id = id;
@@ -306,7 +313,7 @@ namespace ice
     {
         if (ice::Constant_ShardPayloadID<T> == shard.id.payload)
         {
-            return ice::detail::shard_value(shard.payload);
+            return ice::detail::shard_value<T>(shard.payload);
         }
         return fallback;
     }
@@ -335,7 +342,10 @@ namespace ice
     constexpr ice::ShardPayloadID Constant_ShardPayloadID<char const*> = ice::shard_payloadid("ice::char const*");
 
     template<>
-    constexpr ice::ShardPayloadID Constant_ShardPayloadID<std::string_view const*> = ice::shard_payloadid("std::u8string_view const*");
+    constexpr ice::ShardPayloadID Constant_ShardPayloadID<std::string_view const*> = ice::shard_payloadid("std::string_view const*");
+
+    template<>
+    constexpr ice::ShardPayloadID Constant_ShardPayloadID<ice::StringID_Hash> = ice::shard_payloadid("ice::StringID_Hash");
 
 
 

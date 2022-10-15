@@ -318,7 +318,7 @@ namespace ice
                     "If a resource defines extra files, it's only allowed to do so by providing 'unique flags' and co-related 'relative paths'."
                 );
 
-                ice::Array<ice::String, CollectionLogic::Complex> paths{ alloc };
+                ice::Array<ice::String> paths{ alloc };
                 ice::array::reserve(paths, 4);
 
                 ice::Array<ice::ResourceFlags> flags{ alloc };

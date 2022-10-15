@@ -1,5 +1,6 @@
 #pragma once
 #include <ice/base.hxx>
+#include <ice/math.hxx>
 
 namespace ice::render
 {

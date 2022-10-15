@@ -4,6 +4,7 @@
 #include <ice/mem_allocator.hxx>
 #include <ice/container/array.hxx>
 #include <ice/render/render_declarations.hxx>
+#include <ice/render/render_queue.hxx>
 
 namespace ice::render
 {

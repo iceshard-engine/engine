@@ -57,7 +57,7 @@ namespace ice
 
         inline auto find_last_of(ice::ShardContainer const& container, ice::Shard expected_shard, ice::u32 offset = ~0) noexcept -> ice::Shard;
 
-        template<typename T, ice::CollectionLogic Logic>
+        template<typename T, ice::ContainerLogic Logic>
         inline auto inspect_all(ice::ShardContainer const& container, ice::Shard shard_type, ice::Array<T, Logic>& payloads) noexcept -> ice::u32;
 
         template<typename T, typename Fn>

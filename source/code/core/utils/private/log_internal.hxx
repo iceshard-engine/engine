@@ -26,7 +26,7 @@ namespace ice::detail
         ice::Allocator& _allocator;
 
         ice::HeapString<> _empty_tag;
-        ice::HashMap<ice::HeapString<>, ice::CollectionLogic::Complex> _tags;
+        ice::HashMap<ice::HeapString<>, ice::ContainerLogic::Complex> _tags;
     };
 
     extern LogState* internal_log_state;

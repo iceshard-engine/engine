@@ -85,7 +85,7 @@ namespace ice
             "Provided number of reset events does not match the number of tasks!"
         );
 
-        ice::Array<ice::detail::InternalTask, ice::CollectionLogic::Complex> internal_tasks{ alloc };
+        ice::Array<ice::detail::InternalTask, ice::ContainerLogic::Complex> internal_tasks{ alloc };
         ice::array::reserve(internal_tasks, task_count);
 
         for (ice::u32 idx = 0; idx < task_count; ++idx)

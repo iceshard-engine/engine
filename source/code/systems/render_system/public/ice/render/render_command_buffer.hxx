@@ -1,6 +1,6 @@
 #pragma once
 #include <ice/span.hxx>
-#include <ice/data.hxx>
+#include <ice/mem_data.hxx>
 #include <ice/render/render_declarations.hxx>
 
 namespace ice::render

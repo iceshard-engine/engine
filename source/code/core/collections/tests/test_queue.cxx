@@ -10,7 +10,7 @@ SCENARIO("collections 'ice/container/queue.hxx'", "[collection][queue][complex]"
 
     ice::HostAllocator host_alloc{ };
     ice::ProxyAllocator alloc{ host_alloc, "queue_test" };
-    ice::Queue<Test_TrackingObject, ice::CollectionLogic::Complex> test_queue{ alloc };
+    ice::Queue<Test_TrackingObject, ice::ContainerLogic::Complex> test_queue{ alloc };
 
     CHECK(queue::count(test_queue) == 0);
 

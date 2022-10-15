@@ -114,7 +114,7 @@ namespace ice
             }
             else if (arr[0].IsString())
             {
-                ice::Array<ice::String, CollectionLogic::Complex> final_values{ alloc };
+                ice::Array<ice::String, ContainerLogic::Complex> final_values{ alloc };
                 ice::array::reserve(final_values, count);
 
                 for (auto const& value : arr)
@@ -394,7 +394,7 @@ namespace ice
     auto meta_read_string_array(
         ice::Metadata const& meta,
         ice::StringID_Arg key,
-        ice::Array<ice::String, CollectionLogic::Complex>& results
+        ice::Array<ice::String, ContainerLogic::Complex>& results
     ) noexcept -> bool
     {
         detail::MetadataEntry entry;

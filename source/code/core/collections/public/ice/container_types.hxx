@@ -1,21 +1,11 @@
 #pragma once
 #include <ice/mem_allocator.hxx>
+#include <ice/container_logic.hxx>
 #include <ice/span.hxx>
+#include <array>
 
 namespace ice
 {
-
-    //! \brief The logic implemented by a collectiont type when working with data. (Copying, Moving, Removing, etc.)
-    //! \note The picked logic will affect performance, but may also impose restrictions.
-    enum class CollectionLogic
-    {
-        //! \brief The collection only handles plain old data and is allowed to memcopy values.
-        //! \pre The type stored in the collection satisfies `std::is_pod`
-        PlainOldData,
-
-        //! \brief The collection handles complex data types and properly implements copy and move semantics.
-        Complex,
-    };
 
     //! \brief A simple contaier storing items in contignous memory.
     //!
@@ -23,12 +13,12 @@ namespace ice
     //!
     //! \tparam Logic The logic used during memory operations for the given type.
     //!   This value is set by the user to enforce expected behavior for stored types.
-    template<typename Type, ice::CollectionLogic Logic = CollectionLogic::PlainOldData>
+    template<typename Type, ice::ContainerLogic Logic = ice::Constant_DefaultContainerLogic<Type>>
     struct Array
     {
         static_assert(
-            Logic != CollectionLogic::PlainOldData || std::is_pod_v<Type>,
-            "Collection element type is not 'PlainOldData'!"
+            Logic == ContainerLogic::Complex || ice::TrivialContainerLogicAllowed<Type>,
+            "Collection element type is not allowed with 'Trivial' logic!"
         );
 
         using ValueType = Type;
@@ -71,12 +61,12 @@ namespace ice
     //!
     //! \tparam Logic The logic used during memory operations for the given type.
     //!   This value is set by the user to enforce expected behavior for stored types.
-    template<typename Type, ice::CollectionLogic Logic = CollectionLogic::PlainOldData>
+    template<typename Type, ice::ContainerLogic Logic = ContainerLogic::Trivial>
     struct Queue
     {
         static_assert(
-            Logic != CollectionLogic::PlainOldData || std::is_pod_v<Type>,
-            "Collection element type is not 'PlainOldData'!"
+            Logic == ContainerLogic::Complex || ice::TrivialContainerLogicAllowed<Type>,
+            "Collection element type is not allowed with 'Trivial' logic!"
         );
 
         using ValueType = Type;
@@ -108,12 +98,12 @@ namespace ice
     //!
     //! \tparam Logic The logic used during memory operations for the given type.
     //!   This value is set by the user to enforce expected behavior for stored types.
-    template<typename Type, ice::CollectionLogic Logic = CollectionLogic::PlainOldData>
+    template<typename Type, ice::ContainerLogic Logic = ContainerLogic::Trivial>
     struct HashMap
     {
         static_assert(
-            Logic != CollectionLogic::PlainOldData || std::is_pod_v<Type>,
-            "Collection element type is not 'PlainOldData'!"
+            Logic == ContainerLogic::Complex || ice::TrivialContainerLogicAllowed<Type>,
+            "Collection element type is not allowed with 'Trivial' logic!"
         );
 
         using ValueType = Type;
@@ -175,7 +165,7 @@ namespace ice
     //!
     //! \note No modification of data is allowed through this type.
     //! \note Because this is only a view into a hashmap there is no difference in 'logic' so it's unused.
-    template<typename Type, ice::CollectionLogic = ice::CollectionLogic::PlainOldData>
+    template<typename Type, ice::ContainerLogic = ice::ContainerLogic::Trivial>
     struct HashMapView
     {
         using Entry = typename ice::HashMap<Type>::Entry;
@@ -199,5 +189,10 @@ namespace ice
         { t._entries } -> std::convertible_to<typename Type::Entry const*>;
         { t._data } -> std::convertible_to<typename Type::ValueType const*>;
     };
+
+
+    // TODO: Introduce our own type and create proper concepts for function access.
+    template<typename T, ice::u32 Size>
+    using StaticArray = std::array<T, Size>;
 
 } // namespace ice

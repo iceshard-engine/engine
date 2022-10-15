@@ -6,7 +6,7 @@
 namespace ice
 {
 
-    using TaskList = ice::Array<std::coroutine_handle<>, ice::CollectionLogic::Complex>;
+    using TaskList = ice::Array<std::coroutine_handle<>>;
 
     class ScopedTaskList final
     {

@@ -116,7 +116,7 @@ namespace ice
     inline auto DataStorage::create_named_span(ice::StringID_Arg name, ice::ucount count) noexcept -> ice::Span<T>
     {
         ice::ucount* span_info = reinterpret_cast<ice::ucount*>(
-            allocate_named_array(name, ice::meminfo_of<T>, size)
+            allocate_named_array(name, ice::meminfo_of<T>, count)
         );
 
         return ice::Span<T>{

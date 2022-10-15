@@ -11,42 +11,42 @@ namespace ice
 
         constexpr auto calc_storage_capacity(ice::ucount max_count) noexcept -> ice::ucount;
 
-        template<typename Type, ice::CollectionLogic Logic>
+        template<typename Type, ice::ContainerLogic Logic>
         inline bool can_store_count(ice::HashMap<Type, Logic> const& map, ice::ucount expected_count) noexcept;
 
         template<typename HashMapType> requires HashMapReadAccess<HashMapType>
         inline auto find(HashMapType const& map, ice::u64 key) noexcept -> FindResult;
 
-        template<typename Type, ice::CollectionLogic Logic>
+        template<typename Type, ice::ContainerLogic Logic>
         inline auto make(ice::HashMap<Type, Logic>& map, ice::u64 key) noexcept -> ice::ucount;
 
-        template<typename Type, ice::CollectionLogic Logic>
+        template<typename Type, ice::ContainerLogic Logic>
         inline void erase(ice::HashMap<Type, Logic>& map, FindResult const fr) noexcept;
 
         template<typename HashMapType> requires HashMapReadAccess<HashMapType>
         inline auto find_or_fail(HashMapType const& map, ice::u64 key) noexcept -> ice::ucount;
 
-        template<typename Type, ice::CollectionLogic Logic>
+        template<typename Type, ice::ContainerLogic Logic>
         inline auto find_or_make(ice::HashMap<Type, Logic>& map, ice::u64 key) noexcept -> ice::ucount;
 
-        template<typename Type, ice::CollectionLogic Logic>
+        template<typename Type, ice::ContainerLogic Logic>
         inline void find_and_erase(ice::HashMap<Type, Logic>& map, ice::u64 key) noexcept;
 
-        template<typename Type, ice::CollectionLogic Logic>
+        template<typename Type, ice::ContainerLogic Logic>
         inline void rehash(ice::HashMap<Type, Logic>& map, ice::ucount new_capacity) noexcept;
 
-        template<typename Type, ice::CollectionLogic Logic>
+        template<typename Type, ice::ContainerLogic Logic>
         inline auto find(ice::HashMap<Type, Logic>& map, typename ice::HashMap<Type, Logic>::ConstIterator it) noexcept -> FindResult;
 
-        template<typename Type, ice::CollectionLogic Logic>
+        template<typename Type, ice::ContainerLogic Logic>
         inline void grow(ice::HashMap<Type, Logic>& map) noexcept;
 
-        template<typename Type, ice::CollectionLogic Logic>
+        template<typename Type, ice::ContainerLogic Logic>
         inline void clear_and_dealloc(ice::HashMap<Type, Logic>& map) noexcept;
 
     } // namespace hashmap::detail
 
-    template<typename Type, ice::CollectionLogic Logic>
+    template<typename Type, ice::ContainerLogic Logic>
     inline HashMap<Type, Logic>::HashMap(ice::Allocator& alloc) noexcept
         : _allocator{ &alloc }
         , _capacity{ 0 }
@@ -57,7 +57,7 @@ namespace ice
     {
     }
 
-    template<typename Type, ice::CollectionLogic Logic>
+    template<typename Type, ice::ContainerLogic Logic>
     inline HashMap<Type, Logic>::HashMap(HashMap&& other) noexcept
         : _allocator{ other._allocator }
         , _capacity{ ice::exchange(other._capacity, 0) }
@@ -68,7 +68,7 @@ namespace ice
     {
     }
 
-    template<typename Type, ice::CollectionLogic Logic>
+    template<typename Type, ice::ContainerLogic Logic>
     inline HashMap<Type, Logic>::HashMap(HashMap const& other) noexcept
         requires std::copy_constructible<Type>
         : _allocator{ other._allocator }
@@ -91,7 +91,7 @@ namespace ice
             );
 
             // If the value is a complex type, properly move construct it in the new location + destroy in the old one.
-            if constexpr (Logic == CollectionLogic::Complex)
+            if constexpr (Logic == ContainerLogic::Complex)
             {
                 ice::mem_copy_construct_n_at(
                     Memory{
@@ -126,13 +126,13 @@ namespace ice
         }
     }
 
-    template<typename Type, ice::CollectionLogic Logic>
+    template<typename Type, ice::ContainerLogic Logic>
     inline HashMap<Type, Logic>::~HashMap() noexcept
     {
         ice::hashmap::detail::clear_and_dealloc(*this);
     }
 
-    template<typename Type, ice::CollectionLogic Logic>
+    template<typename Type, ice::ContainerLogic Logic>
     inline auto HashMap<Type, Logic>::operator=(HashMap&& other) noexcept -> HashMap&
     {
         if (this != &other)
@@ -149,7 +149,7 @@ namespace ice
         return *this;
     }
 
-    template<typename Type, ice::CollectionLogic Logic>
+    template<typename Type, ice::ContainerLogic Logic>
     inline auto HashMap<Type, Logic>::operator=(HashMap const& other) noexcept -> HashMap&
         requires std::copy_constructible<Type>
     {
@@ -172,7 +172,7 @@ namespace ice
             );
 
             // If the value is a complex type, properly move construct it in the new location + destroy in the old one.
-            if constexpr (Logic == CollectionLogic::Complex)
+            if constexpr (Logic == ContainerLogic::Complex)
             {
                 ice::mem_copy_construct_n_at(
                     Memory{
@@ -226,7 +226,7 @@ namespace ice
             return ice::ucount(max_count / Constant_HashMapMaxFill + 0.99f /* magic */);
         }
 
-        template<typename Type, ice::CollectionLogic Logic>
+        template<typename Type, ice::ContainerLogic Logic>
         inline bool can_store_count(ice::HashMap<Type, Logic> const& map, ice::ucount expected_count) noexcept
         {
             ice::ucount const max_ucount = ice::ucount(map._capacity * Constant_HashMapMaxFill);
@@ -262,7 +262,7 @@ namespace ice
             return fr;
         }
 
-        template<typename Type, ice::CollectionLogic Logic>
+        template<typename Type, ice::ContainerLogic Logic>
         inline auto make(ice::HashMap<Type, Logic>& map, ice::u64 key) noexcept -> ice::ucount
         {
             FindResult const fr = ice::hashmap::detail::find(map, key);
@@ -285,7 +285,7 @@ namespace ice
             return index;
         }
 
-        template<typename Type, ice::CollectionLogic Logic>
+        template<typename Type, ice::ContainerLogic Logic>
         inline void erase(ice::HashMap<Type, Logic>& map, FindResult const fr) noexcept
         {
             using Entry = typename ice::HashMap<Type, Logic>::Entry;
@@ -301,7 +301,7 @@ namespace ice
             }
 
             // Destroy the object...
-            if constexpr (Logic == CollectionLogic::Complex)
+            if constexpr (Logic == ContainerLogic::Complex)
             {
                 ice::mem_destruct_at(map._data + fr.entry_i);
             }
@@ -312,7 +312,7 @@ namespace ice
                 return;
             }
 
-            if constexpr (Logic == CollectionLogic::Complex)
+            if constexpr (Logic == ContainerLogic::Complex)
             {
                 // Move construct the last object to the now empty location...
                 ice::mem_move_construct_at(
@@ -364,7 +364,7 @@ namespace ice
             return ice::hashmap::detail::find(map, key).entry_i;
         }
 
-        template<typename Type, ice::CollectionLogic Logic>
+        template<typename Type, ice::ContainerLogic Logic>
         inline auto find_or_make(ice::HashMap<Type, Logic>& map, ice::u64 key) noexcept -> ice::ucount
         {
             FindResult const fr = ice::hashmap::detail::find(map, key);
@@ -393,7 +393,7 @@ namespace ice
             return index;
         }
 
-        template<typename Type, ice::CollectionLogic Logic>
+        template<typename Type, ice::ContainerLogic Logic>
         inline void find_and_erase(ice::HashMap<Type, Logic>& map, ice::u64 key) noexcept
         {
             FindResult const fr = ice::hashmap::detail::find(map, key);
@@ -403,7 +403,7 @@ namespace ice
             }
         }
 
-        template<typename Type, ice::CollectionLogic Logic>
+        template<typename Type, ice::ContainerLogic Logic>
         inline void rehash(ice::HashMap<Type, Logic>& map, ice::ucount new_capacity) noexcept
         {
             using Entry = typename ice::HashMap<Type, Logic>::Entry;
@@ -446,7 +446,7 @@ namespace ice
                     );
 
                     // If the value is a complex type, properly move construct it in the new location + destroy in the old one.
-                    if constexpr (Logic == CollectionLogic::Complex)
+                    if constexpr (Logic == ContainerLogic::Complex)
                     {
                         ice::mem_move_construct_n_at(
                             Memory{ .location = new_value_ptr, .size = ice::size_of<Type> * map._count, .alignment = ice::align_of<Type> },
@@ -482,7 +482,7 @@ namespace ice
             map._data = new_value_ptr;
         }
 
-        template<typename Type, ice::CollectionLogic Logic>
+        template<typename Type, ice::ContainerLogic Logic>
         inline auto find(ice::HashMap<Type, Logic>& map, typename ice::HashMap<Type, Logic>::ConstIterator it) noexcept -> FindResult
         {
             FindResult fr{
@@ -512,13 +512,13 @@ namespace ice
             return fr;
         }
 
-        template<typename Type, ice::CollectionLogic Logic>
+        template<typename Type, ice::ContainerLogic Logic>
         inline void grow(ice::HashMap<Type, Logic>& map) noexcept
         {
             ice::hashmap::detail::rehash(map, map._capacity * 2 + 8);
         }
 
-        template<typename Type, ice::CollectionLogic Logic>
+        template<typename Type, ice::ContainerLogic Logic>
         inline void clear_and_dealloc(ice::HashMap<Type, Logic>& map) noexcept
         {
             ice::hashmap::clear(map);
@@ -533,16 +533,16 @@ namespace ice
         //! \brief Allocates enough space in the hash map to hold the given amount of values.
         //!
         //! \note Keep in mind, the number of valies a hashmap can store is lower than it's total capacity.
-        template<typename Type, ice::CollectionLogic Logic>
+        template<typename Type, ice::ContainerLogic Logic>
         inline void reserve(ice::HashMap<Type, Logic>& map, ice::ucount new_count) noexcept
         {
             ice::hashmap::detail::rehash(map, ice::hashmap::detail::calc_storage_capacity(new_count));
         }
 
-        template<typename Type, ice::CollectionLogic Logic>
+        template<typename Type, ice::ContainerLogic Logic>
         inline void clear(ice::HashMap<Type, Logic>& map) noexcept
         {
-            if constexpr (Logic == CollectionLogic::Complex)
+            if constexpr (Logic == ContainerLogic::Complex)
             {
                 ice::mem_destruct_n_at(map._data, map._count);
             }
@@ -555,13 +555,13 @@ namespace ice
             }
         }
 
-        template<typename Type, ice::CollectionLogic Logic>
+        template<typename Type, ice::ContainerLogic Logic>
         inline void shrink(ice::HashMap<Type, Logic>& map) noexcept
         {
             ice::hashmap::detail::rehash(map, ice::hashmap::detail::calc_storage_capacity(map._count));
         }
 
-        template<typename Type, ice::CollectionLogic Logic, typename Value>
+        template<typename Type, ice::ContainerLogic Logic, typename Value>
             requires std::copy_constructible<Type> && std::convertible_to<Value, Type>
         inline void set(ice::HashMap<Type, Logic>& map, ice::u64 key, Value const& value) noexcept
         {
@@ -571,7 +571,7 @@ namespace ice
             }
 
             ice::ucount const index = ice::hashmap::detail::find_or_make(map, key);
-            if constexpr (Logic == CollectionLogic::Complex)
+            if constexpr (Logic == ContainerLogic::Complex)
             {
                 // If the index is below the current map._count we need to destroy the previous value.
                 if ((index + 1) < map._count)
@@ -594,7 +594,7 @@ namespace ice
             }
         }
 
-        template<typename Type, ice::CollectionLogic Logic>
+        template<typename Type, ice::ContainerLogic Logic>
             requires std::move_constructible<Type>
         inline void set(ice::HashMap<Type, Logic>& map, ice::u64 key, Type&& value) noexcept
         {
@@ -604,7 +604,7 @@ namespace ice
             }
 
             ice::ucount const index = ice::hashmap::detail::find_or_make(map, key);
-            if constexpr (Logic == CollectionLogic::Complex)
+            if constexpr (Logic == ContainerLogic::Complex)
             {
                 // If the index is below the current map._count we need to destroy the previous value.
                 if ((index + 1) < map._count)
@@ -627,7 +627,7 @@ namespace ice
             }
         }
 
-        template<typename Type, ice::CollectionLogic Logic>
+        template<typename Type, ice::ContainerLogic Logic>
         inline void remove(ice::HashMap<Type, Logic>& map, ice::u64 key) noexcept
         {
             ice::hashmap::detail::find_and_erase(map, key);
@@ -682,13 +682,13 @@ namespace ice
                 : map._data + index;
         }
 
-        template<typename Type, ice::CollectionLogic Logic>
+        template<typename Type, ice::ContainerLogic Logic>
         inline auto begin(ice::HashMap<Type, Logic> const& map) noexcept -> typename ice::HashMap<Type, Logic>::ConstIterator
         {
             return { map._entries, map._data };
         }
 
-        template<typename Type, ice::CollectionLogic Logic>
+        template<typename Type, ice::ContainerLogic Logic>
         inline auto end(ice::HashMap<Type, Logic> const& map) noexcept -> typename ice::HashMap<Type, Logic>::ConstIterator
         {
             return { map._entries + map._count, map._data + map._count };
@@ -707,7 +707,7 @@ namespace ice
         }
 
 
-        template<typename Type, ice::CollectionLogic Logic>
+        template<typename Type, ice::ContainerLogic Logic>
         inline auto memory(ice::HashMap<Type, Logic>& map) noexcept -> ice::Memory
         {
             ice::ucount const capacity_values = ice::ucount(map._capacity * ice::hashmap::detail::Constant_HashMapMaxFill);
@@ -729,7 +729,7 @@ namespace ice
     namespace multi_hashmap
     {
 
-        template<typename Type, ice::CollectionLogic Logic>
+        template<typename Type, ice::ContainerLogic Logic>
         inline void insert(ice::HashMap<Type, Logic>& map, ice::u64 key, Type const& value) noexcept
         {
             if (ice::hashmap::full(map))
@@ -738,7 +738,7 @@ namespace ice
             }
 
             ice::ucount const index = ice::hashmap::detail::make(map, key);
-            if constexpr (Logic == CollectionLogic::Complex)
+            if constexpr (Logic == ContainerLogic::Complex)
             {
                 // If the index is below the current map._count we need to destroy the previous value.
                 if ((index + 1) < map._count)
@@ -761,7 +761,7 @@ namespace ice
             }
         }
 
-        template<typename Type, ice::CollectionLogic Logic>
+        template<typename Type, ice::ContainerLogic Logic>
         inline void remove(ice::HashMap<Type, Logic>& map, typename ice::HashMap<Type, Logic>::ConstIterator it) noexcept
         {
             ice::hashmap::detail::FindResult const fr = ice::hashmap::detail::find(map, it);
@@ -771,7 +771,7 @@ namespace ice
             }
         }
 
-        template<typename Type, ice::CollectionLogic Logic>
+        template<typename Type, ice::ContainerLogic Logic>
         inline void remove_all(ice::HashMap<Type, Logic>& map, ice::u64 key) noexcept
         {
             while (ice::hashmap::has(map, key))
@@ -780,7 +780,7 @@ namespace ice
             }
         }
 
-        template<typename Type, ice::CollectionLogic Logic>
+        template<typename Type, ice::ContainerLogic Logic>
         inline auto count(ice::HashMap<Type, Logic> const& map, ice::u64 key) noexcept -> ice::ucount
         {
             using ConstIterator = typename ice::HashMap<Type, Logic>::ConstIterator;
@@ -795,7 +795,7 @@ namespace ice
             return result;
         }
 
-        template<typename Type, ice::CollectionLogic Logic>
+        template<typename Type, ice::ContainerLogic Logic>
         inline void get(ice::HashMap<Type, Logic> const& map, ice::u64 key, ice::Array<Type, Logic>& items) noexcept
         {
             using ConstIterator = typename ice::HashMap<Type, Logic>::ConstIterator;
@@ -808,7 +808,7 @@ namespace ice
             }
         }
 
-        template<typename Type, ice::CollectionLogic Logic>
+        template<typename Type, ice::ContainerLogic Logic>
         inline auto find_first(ice::HashMap<Type, Logic> const& map, ice::u64 key) noexcept -> typename ice::HashMap<Type, Logic>::ConstIterator
         {
             using ConstIterator = typename ice::HashMap<Type, Logic>::ConstIterator;
@@ -824,7 +824,7 @@ namespace ice
             }
         }
 
-        template<typename Type, ice::CollectionLogic Logic>
+        template<typename Type, ice::ContainerLogic Logic>
         inline auto find_next(
             ice::HashMap<Type, Logic> const& map,
             typename ice::HashMap<Type, Logic>::ConstIterator it

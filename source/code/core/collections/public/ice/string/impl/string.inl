@@ -32,20 +32,6 @@ namespace ice
     }
 
     template<typename CharType>
-    constexpr BasicString<CharType>::BasicString(BasicString&& other) noexcept
-        : _data{ ice::exchange(other._data, nullptr) }
-        , _size{ ice::exchange(other._size, 0) }
-    {
-    }
-
-    template<typename CharType>
-    constexpr BasicString<CharType>::BasicString(BasicString const& other) noexcept
-        : _data{ other._data }
-        , _size{ other._size }
-    {
-    }
-
-    template<typename CharType>
     constexpr BasicString<CharType>::BasicString(CharType const* str_ptr) noexcept
         : BasicString{ str_ptr, ice::string::detail::strptr_size(str_ptr) }
     {
@@ -70,28 +56,6 @@ namespace ice
         : _data{ str_arr }
         , _size{ Size }
     {
-    }
-
-    template<typename CharType>
-    constexpr auto BasicString<CharType>::operator=(BasicString&& other) noexcept -> BasicString&
-    {
-        if (this != &other)
-        {
-            _data = ice::exchange(other._data, nullptr);
-            _size = ice::exchange(other._size, 0);
-        }
-        return *this;
-    }
-
-    template<typename CharType>
-    constexpr auto BasicString<CharType>::operator=(BasicString const& other) noexcept -> BasicString&
-    {
-        if (this != &other)
-        {
-            _data = other._data;
-            _size = other._size;
-        }
-        return *this;
     }
 
     template<typename CharType>
