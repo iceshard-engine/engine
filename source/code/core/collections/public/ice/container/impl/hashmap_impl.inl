@@ -633,6 +633,12 @@ namespace ice
             ice::hashmap::detail::find_and_erase(map, key);
         }
 
+        template<typename Type, ice::ContainerLogic Logic>
+        inline auto values(ice::HashMap<Type, Logic>& map) noexcept -> ice::Span<Type>
+        {
+            return ice::Span{ map._data, map._count };
+        }
+
 
         template<typename HashMapType> requires HashMapReadAccess<HashMapType>
         inline bool full(HashMapType const& map) noexcept

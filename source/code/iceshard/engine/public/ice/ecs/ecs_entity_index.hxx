@@ -1,7 +1,7 @@
 #pragma once
 #include <ice/span.hxx>
-#include <ice/container_types.hxx>
 #include <ice/ecs/ecs_entity.hxx>
+#include <ice/container/queue.hxx>
 #include <atomic>
 
 namespace ice::ecs

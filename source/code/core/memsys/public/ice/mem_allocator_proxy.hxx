@@ -17,6 +17,8 @@ namespace ice
             std::source_location = std::source_location::current()
         ) noexcept;
 
+        auto backing_allocator() noexcept -> ice::Allocator&;
+
     protected:
         inline auto do_allocate(ice::AllocRequest request) noexcept -> ice::AllocResult override;
         inline void do_deallocate(ice::Memory memory) noexcept override;
@@ -26,22 +28,27 @@ namespace ice
     };
 
     inline ProxyAllocator::ProxyAllocator(
-        ice::Allocator& backing_alloc,
+        ice::Allocator& backing_allocator,
         std::source_location src_loc
     ) noexcept
-        : ice::Allocator{ src_loc, backing_alloc }
-        , _backing_alloc{ backing_alloc }
+        : ice::Allocator{ src_loc, backing_allocator }
+        , _backing_alloc{ backing_allocator }
     {
     }
 
     inline ProxyAllocator::ProxyAllocator(
-        ice::Allocator& backing_alloc,
+        ice::Allocator& backing_allocator,
         std::string_view name,
         std::source_location src_loc
     ) noexcept
-        : ice::Allocator{ src_loc, backing_alloc, name }
-        , _backing_alloc{ backing_alloc }
+        : ice::Allocator{ src_loc, backing_allocator, name }
+        , _backing_alloc{ backing_allocator }
     {
+    }
+
+    auto ProxyAllocator::backing_allocator() noexcept -> ice::Allocator&
+    {
+        return _backing_alloc;
     }
 
     inline auto ProxyAllocator::do_allocate(ice::AllocRequest request) noexcept -> ice::AllocResult

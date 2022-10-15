@@ -734,7 +734,7 @@ namespace ice
         char const* it = reinterpret_cast<char const*>(data.location);
 
         ice::String const head{ it, 4 };
-        ICE_ASSERT(ice::string::equals(head, ice::Constant_FileHeader_MetadataFile), "Invalid IceShard meta header!");
+        ICE_ASSERT(head == ice::Constant_FileHeader_MetadataFile, "Invalid IceShard meta header!");
         it += 4;
 
         ice::u32 const hash_count = *reinterpret_cast<ice::u32 const*>(it + 0);

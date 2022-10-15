@@ -51,9 +51,6 @@ namespace ice::string
     template<typename CharType>
     constexpr auto find_last_of(ice::BasicString<CharType> str, ice::BasicString<CharType> character_values) noexcept -> ice::ucount;
 
-    template<typename CharType>
-    constexpr bool equals(ice::BasicString<CharType> left, ice::BasicString<CharType> right) noexcept;
-
 
     template<typename CharType>
     constexpr auto data_view(ice::BasicString<CharType> str) noexcept -> typename ice::Data;

@@ -18,8 +18,15 @@ namespace ice::input
             ice::input::DeviceMessage message
         ) noexcept;
 
-        template<typename T>
-            requires (ice::input::Constant_PayloadType<T> != ice::input::DevicePayloadType::Invalid)
+        template<typename T, DevicePayloadType PayloadType = ice::input::Constant_PayloadType<T>>
+            requires (PayloadType != ice::input::DevicePayloadType::Invalid) && (std::is_enum_v<T> == false)
+        inline void push(
+            ice::input::DeviceHandle device,
+            ice::input::DeviceMessage message,
+            T payload_value
+        ) noexcept;
+
+        template<typename T> requires std::is_enum_v<T>
         inline void push(
             ice::input::DeviceHandle device,
             ice::input::DeviceMessage message,
@@ -59,23 +66,48 @@ namespace ice::input
         );
     }
 
-    template<typename T>
-        requires (ice::input::Constant_PayloadType<T> != ice::input::DevicePayloadType::Invalid)
+    template<typename T, DevicePayloadType PayloadType>
+        requires (PayloadType != ice::input::DevicePayloadType::Invalid) && (std::is_enum_v<T> == false)
     inline void DeviceEventQueue::push(
         ice::input::DeviceHandle device,
         ice::input::DeviceMessage message,
         T payload_value
     ) noexcept
     {
-        ice::array::push_back(
-            _events,
-            DeviceEvent{
-                .device = device,
-                .message = message,
-                .payload_type = ice::input::Constant_PayloadType<T>,
-                .payload_data = { payload_value }
-            }
-        );
+        DeviceEvent event{
+            .device = device,
+            .message = message,
+            .payload_type = PayloadType,
+        };
+
+        if constexpr (std::is_same_v<T, ice::i8>)
+        {
+            event.payload_data.val_i8 = payload_value;
+        }
+        else if constexpr (std::is_same_v<T, ice::i16>)
+        {
+            event.payload_data.val_i16 = payload_value;
+        }
+        else if constexpr (std::is_same_v<T, ice::i32>)
+        {
+            event.payload_data.val_i32 = payload_value;
+        }
+        else if constexpr (std::is_same_v<T, ice::f32>)
+        {
+            event.payload_data.val_f32 = payload_value;
+        }
+
+        ice::array::push_back(_events, event);
+    }
+
+    template<typename T> requires std::is_enum_v<T>
+    inline void push(
+        ice::input::DeviceHandle device,
+        ice::input::DeviceMessage message,
+        T payload_value
+    ) noexcept
+    {
+        push<T, DevicePayloadType::Enum>(device, message, std::underlying_type_t<T>(payload_value));
     }
 
 } // ice::input

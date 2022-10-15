@@ -111,7 +111,7 @@ namespace ice::win32
     }
 
 
-    auto win32_open_file(
+    auto native_open_file(
         ice::WString path, int flags
     ) noexcept -> ice::win32::FileHandle
     {
@@ -127,7 +127,7 @@ namespace ice::win32
         return handle;
     }
 
-    bool win32_load_file(
+    bool native_load_file(
         ice::win32::FileHandle const& handle,
         ice::Allocator& alloc,
         ice::Memory& out_data

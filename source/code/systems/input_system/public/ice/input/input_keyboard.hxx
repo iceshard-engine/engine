@@ -190,7 +190,7 @@ namespace ice::input
         ice::input::KeyboardMod flag
     ) noexcept
     {
-        return (static_cast<std::underlying_type_t<KeyboardMod>>(value) & static_cast<std::underlying_type_t<KeyboardMod>>(flag)) != 0;
+        return (value & flag) != KeyboardMod::None;
     }
 
 } // ice::input

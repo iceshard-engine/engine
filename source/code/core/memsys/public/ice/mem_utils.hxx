@@ -6,6 +6,20 @@
 namespace ice
 {
 
+    inline auto ptr_add(void* ptr, ice::usize offset) noexcept -> void*;
+    inline auto ptr_add(void const* ptr, ice::usize offset) noexcept -> void const*;
+    inline auto ptr_add(ice::Memory mem, ice::usize offset) noexcept -> ice::Memory;
+
+    inline auto ptr_sub(void* ptr, ice::usize offset) noexcept -> void*;
+    inline auto ptr_sub(void const* ptr, ice::usize offset) noexcept -> void const*;
+
+    inline auto ptr_distance(void const* ptr_from, void const* ptr_to) noexcept -> ice::usize;
+
+    constexpr auto mem_max_capacity(ice::usize element_size, ice::usize memory_space) noexcept -> ice::ucount;
+    template<typename T>
+    constexpr auto mem_max_capacity(ice::usize memory_space) noexcept -> ice::ucount;
+
+
     inline auto ptr_add(void* ptr, ice::usize offset) noexcept -> void*
     {
         return reinterpret_cast<char*>(ptr) + offset.value;
@@ -14,6 +28,16 @@ namespace ice
     inline auto ptr_add(void const* ptr, ice::usize offset) noexcept -> void const*
     {
         return reinterpret_cast<char const*>(ptr) + offset.value;
+    }
+
+    inline auto ptr_sub(void* ptr, ice::usize offset) noexcept -> void*
+    {
+        return reinterpret_cast<char*>(ptr) - offset.value;
+    }
+
+    inline auto ptr_sub(void const* ptr, ice::usize offset) noexcept -> void const*
+    {
+        return reinterpret_cast<char const*>(ptr) - offset.value;
     }
 
     inline auto ptr_add(ice::Memory mem, ice::usize offset) noexcept -> ice::Memory

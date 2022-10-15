@@ -43,6 +43,7 @@ namespace ice
         inline auto operator=(UniquePtr&& other) noexcept -> UniquePtr&;
         template<typename U> requires std::is_base_of_v<T, U>
         inline auto operator=(UniquePtr<U>&& other) noexcept -> UniquePtr&;
+        inline auto operator=(std::nullptr_t) noexcept -> UniquePtr&;
 
         bool operator==(std::nullptr_t) const noexcept { return _ptr == nullptr; }
 
@@ -126,6 +127,13 @@ namespace ice
 
         _alloc = std::exchange(other._alloc, nullptr);
         _ptr = std::exchange(other._ptr, nullptr);
+        return *this;
+    }
+
+    template<typename T>
+    inline auto UniquePtr<T>::operator=(std::nullptr_t) noexcept -> UniquePtr&
+    {
+        reset();
         return *this;
     }
 

@@ -28,11 +28,11 @@ namespace ice::input::detail
     ) noexcept;
 
 
-    template<typename T>
+    template<typename T, DevicePayloadType PayloadType = ice::input::Constant_PayloadType<T>>
     auto event_data(ice::input::DeviceEvent event) noexcept -> T
     {
-        static_assert(ice::input::Constant_PayloadType<T> != ice::input::DevicePayloadType::Invalid);
-        ICE_ASSERT_CORE(ice::input::Constant_PayloadType<T> == event.payload_type);
+        static_assert(PayloadType != ice::input::DevicePayloadType::Invalid);
+        ICE_ASSERT_CORE(PayloadType == event.payload_type);
 
         if constexpr (std::is_same_v<T, ice::i8>)
         {
@@ -55,7 +55,7 @@ namespace ice::input::detail
     template<typename T> requires std::is_enum_v<T>
     auto event_data(ice::input::DeviceEvent event) noexcept -> T
     {
-        return static_cast<T>(event_data<std::underlying_type_t<T>>(event));
+        return static_cast<T>(event_data<std::underlying_type_t<T>, DevicePayloadType::Enum>(event));
     }
 
 } // namespace ice::input::detail

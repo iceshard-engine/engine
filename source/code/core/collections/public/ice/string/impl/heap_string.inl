@@ -423,12 +423,6 @@ namespace ice
             return ice::string::find_last_of(ice::BasicString<CharType>{ str }, character_values);
         }
 
-        template<typename CharType>
-        inline bool equals(ice::HeapString<CharType> const& left, ice::HeapString<CharType> const& right) noexcept
-        {
-            return ice::string::equals(ice::BasicString<CharType>{ left }, ice::BasicString<CharType>{ right });
-        }
-
 
         template<typename CharType>
         inline auto data_view(ice::HeapString<CharType> const& str) noexcept -> ice::Data

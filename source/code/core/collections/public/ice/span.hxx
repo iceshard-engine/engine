@@ -12,7 +12,7 @@ namespace ice
     {
         using ValueType = Type;
         using Iterator = Type*;
-        using ReverSeIterator = std::reverse_iterator<Type*>;
+        using ReverseIterator = std::reverse_iterator<Type*>;
         using ConstIterator = Type const*;
         using ConstReverseIterator = std::reverse_iterator<Type const*>;
 
@@ -216,13 +216,13 @@ namespace ice
         template<typename Type>
         constexpr auto rbegin(ice::Span<Type> span) noexcept -> typename ice::Span<Type>::ReverseIterator
         {
-            return { span._data + span._count };
+            return typename ice::Span<Type>::ReverseIterator{ span._data + span._count };
         }
 
         template<typename Type>
         constexpr auto rend(ice::Span<Type> span) noexcept -> typename ice::Span<Type>::ReverseIterator
         {
-            return { span._data };
+            return typename ice::Span<Type>::ReverseIterator{ span._data };
         }
 
         template<typename Type>
@@ -240,13 +240,13 @@ namespace ice
         template<typename Type>
         constexpr auto rbegin(ice::Span<Type const> span) noexcept -> typename ice::Span<Type const>::ConstReverseIterator
         {
-            return { span._data + span._count };
+            return typename ice::Span<Type const>::ConstReverseIterator{ span._data + span._count };
         }
 
         template<typename Type>
         constexpr auto rend(ice::Span<Type const> span) noexcept -> typename ice::Span<Type const>::ConstReverseIterator
         {
-            return { span._data };
+            return typename ice::Span<Type const>::ConstReverseIterator{ span._data };
         }
 
     } // namespace span

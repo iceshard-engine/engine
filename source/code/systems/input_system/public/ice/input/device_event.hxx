@@ -41,6 +41,7 @@ namespace ice::input
         Int16,
         Int32,
         Float32,
+        Enum,
     };
 
     union DeviceEventData
@@ -74,5 +75,7 @@ namespace ice::input
     constexpr DevicePayloadType Constant_PayloadType<ice::i32> = DevicePayloadType::Int32;
     template<>
     constexpr DevicePayloadType Constant_PayloadType<ice::f32> = DevicePayloadType::Float32;
+    template<typename T> requires std::is_enum_v<T>
+    constexpr DevicePayloadType Constant_PayloadType<T> = DevicePayloadType::Enum;
 
 } // ice::input

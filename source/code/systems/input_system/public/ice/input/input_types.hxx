@@ -4,10 +4,9 @@
 namespace ice::input
 {
 
-    class DeviceQueue;
+    struct DeviceEventQueue;
+    struct InputEvent;
 
     class InputTracker;
-
-    struct InputEvent;
 
 } // namespace ice::input
