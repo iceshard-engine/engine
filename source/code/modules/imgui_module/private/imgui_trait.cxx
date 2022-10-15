@@ -38,7 +38,7 @@ namespace ice::devui
             ImVec4 clip_rect;
         };
 
-        auto load_imgui_shader(ice::AssetStorage& assets, ice::Utf8String name) noexcept -> ice::Task<ice::Data>
+        auto load_imgui_shader(ice::AssetStorage& assets, ice::String name) noexcept -> ice::Task<ice::Data>
         {
             ice::Asset const asset = co_await assets.request(ice::render::AssetType_Shader, name, ice::AssetState::Baked);
             ICE_ASSERT(asset_check(asset, AssetState::Baked), "Shader not available!");
@@ -52,8 +52,8 @@ namespace ice::devui
         , _index_buffers{ alloc }
         , _vertex_buffers{ alloc }
     {
-        ice::pod::array::reserve(_index_buffers, 10);
-        ice::pod::array::reserve(_vertex_buffers, 10);
+        ice::array::reserve(_index_buffers, 10);
+        ice::array::reserve(_vertex_buffers, 10);
 
         _imgui_context = ImGui::CreateContext();
     }
@@ -238,19 +238,19 @@ namespace ice::devui
 
         _pipeline = device.create_pipeline(pipeline_info);
 
-        ice::pod::array::push_back(
+        ice::array::push_back(
             _index_buffers,
             device.create_buffer(BufferType::Index, 1024 * 1024 * 4)
         );
-        ice::pod::array::push_back(
+        ice::array::push_back(
             _index_buffers,
             device.create_buffer(BufferType::Index, 1024 * 1024 * 4)
         );
-        ice::pod::array::push_back(
+        ice::array::push_back(
             _vertex_buffers,
             device.create_buffer(BufferType::Vertex, 1024 * 1024 * 4)
         );
-        ice::pod::array::push_back(
+        ice::array::push_back(
             _vertex_buffers,
             device.create_buffer(BufferType::Vertex, 1024 * 1024 * 4)
         );
@@ -276,7 +276,7 @@ namespace ice::devui
                     {
                         .location = image_info.data,
                         .size = image_data_size,
-                        .alignment = 4
+                        .alignment = ice::ualign::b_4
                     }
                 }
             };
@@ -443,13 +443,13 @@ namespace ice::devui
             BufferUpdateInfo& vtx_info = buffer_updates[buffer_update_count];
             vtx_info.buffer = _vertex_buffers[0];
             vtx_info.offset = vtx_buffer_offset * sizeof(ImDrawVert);
-            vtx_info.data = ice::data_view(cmd_list->VtxBuffer.Data, cmd_list->VtxBuffer.Size * sizeof(ImDrawVert), alignof(ImDrawVert));
+            vtx_info.data = ice::Data{ cmd_list->VtxBuffer.Data, ice::size_of<ImDrawVert> * cmd_list->VtxBuffer.Size, ice::align_of<ImDrawVert> };
             vtx_buffer_offset += cmd_list->VtxBuffer.Size;
 
             BufferUpdateInfo& idx_info = buffer_updates[buffer_update_count + 1];
             idx_info.buffer = _index_buffers[0];
             idx_info.offset = idx_buffer_offset * sizeof(ImDrawIdx);
-            idx_info.data = ice::data_view(cmd_list->IdxBuffer.Data, cmd_list->IdxBuffer.Size * sizeof(ImDrawIdx), alignof(ImDrawIdx));
+            idx_info.data = ice::Data{ cmd_list->IdxBuffer.Data, ice::size_of<ImDrawIdx> * cmd_list->IdxBuffer.Size, ice::align_of<ImDrawIdx> };
             idx_buffer_offset += cmd_list->IdxBuffer.Size;
 
             buffer_update_count += 2;
@@ -516,8 +516,8 @@ namespace ice::devui
         io.KeyMap[ImGuiKey_Y] = (uint32_t)ice::input::KeyboardKey::KeyY;
         io.KeyMap[ImGuiKey_Z] = (uint32_t)ice::input::KeyboardKey::KeyZ;
 
-        _shader_data[0] = ice::sync_wait(detail::load_imgui_shader(engine.asset_storage(), u8"shaders/debug/imgui-vert"));
-        _shader_data[1] = ice::sync_wait(detail::load_imgui_shader(engine.asset_storage(), u8"shaders/debug/imgui-frag"));
+        _shader_data[0] = ice::sync_wait(detail::load_imgui_shader(engine.asset_storage(), "shaders/debug/imgui-vert"));
+        _shader_data[1] = ice::sync_wait(detail::load_imgui_shader(engine.asset_storage(), "shaders/debug/imgui-frag"));
     }
 
     void ImGuiTrait::on_update(
@@ -534,19 +534,17 @@ namespace ice::devui
         auto& io = ImGui::GetIO();
 
         ice::vec2i window_size{ };
-        if (ice::shards::inspect_last(frame.shards(), ice::platform::Shard_WindowSizeChanged, window_size))
+        if (ice::shards::inspect_last(frame.shards(), ice::platform::Shard_WindowResized, window_size))
         {
             _display_size = { (ice::u32)window_size.x, (ice::u32)window_size.y };
-            io.DisplaySize.x = _display_size.x;
-            io.DisplaySize.y = _display_size.y;
+            io.DisplaySize.x = (ice::f32)_display_size.x;
+            io.DisplaySize.y = (ice::f32)_display_size.y;
         }
 
-        for (ice::platform::Event const& event : runner.platform_events())
+        char const* input_text;
+        if (ice::shards::inspect_last(frame.shards(), ice::platform::Shard_InputText, input_text))
         {
-            if (event.type == ice::platform::EventType::InputText)
-            {
-                io.AddInputCharactersUTF8(event.data.input.text.data());
-            }
+            io.AddInputCharactersUTF8(input_text);
         }
 
         for (InputEvent const& event : frame.input_events())
@@ -567,13 +565,13 @@ namespace ice::devui
                     io.MouseDown[2] = event.value.button.state.pressed;
                     break;
                 case MouseInput::PositionX:
-                    io.MousePos.x = event.value.axis.value_i32;
+                    io.MousePos.x = (ice::f32) event.value.axis.value_i32;
                     break;
                 case MouseInput::PositionY:
-                    io.MousePos.y = event.value.axis.value_i32;
+                    io.MousePos.y = (ice::f32) event.value.axis.value_i32;
                     break;
                 case MouseInput::Wheel:
-                    io.MouseWheel = event.value.axis.value_i32;
+                    io.MouseWheel = (ice::f32) event.value.axis.value_i32;
                     break;
                 }
             }
@@ -623,7 +621,7 @@ namespace ice::devui
             return;
         }
 
-        ice::Span<detail::DrawCommand> const* cmds_span = frame.named_object<ice::Span<detail::DrawCommand>>("ice.devui.imgui_draw_commands_span"_sid);
+        ice::Span<detail::DrawCommand> const* cmds_span = frame.storage().named_object<ice::Span<detail::DrawCommand>>("ice.devui.imgui_draw_commands_span"_sid);
         if (cmds_span == nullptr)
         {
             return;
@@ -732,8 +730,8 @@ namespace ice::devui
                 cmd_count += cmd_list->CmdBuffer.Size;
             }
 
-            ice::Span<detail::DrawCommand> cmds_span = frame.create_named_span<detail::DrawCommand>("ice.devui.imgui_draw_commands"_sid, cmd_count);
-            frame.create_named_object<ice::Span<detail::DrawCommand>>("ice.devui.imgui_draw_commands_span"_sid, cmds_span);
+            ice::Span<detail::DrawCommand> cmds_span = frame.storage().create_named_span<detail::DrawCommand>("ice.devui.imgui_draw_commands"_sid, cmd_count);
+            frame.storage().create_named_object<ice::Span<detail::DrawCommand>>("ice.devui.imgui_draw_commands_span"_sid, cmds_span);
 
             build_internal_command_list(frame);
         }
@@ -752,7 +750,7 @@ namespace ice::devui
             return;
         }
 
-        ice::Span<detail::DrawCommand>* cmds_span = frame.named_object<ice::Span<detail::DrawCommand>>("ice.devui.imgui_draw_commands_span"_sid);
+        ice::Span<detail::DrawCommand>* cmds_span = frame.storage().named_object<ice::Span<detail::DrawCommand>>("ice.devui.imgui_draw_commands_span"_sid);
         if (cmds_span != nullptr)
         {
             using ice::render::Image;

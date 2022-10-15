@@ -130,6 +130,11 @@ namespace ice
         return _data_storage;
     }
 
+    auto IceshardMemoryFrame::storage() const noexcept -> ice::DataStorage const&
+    {
+        return _data_storage;
+    }
+
     auto IceshardMemoryFrame::schedule_frame_end() noexcept -> ice::FrameEndOperation
     {
         return { *this };

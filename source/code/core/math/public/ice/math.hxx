@@ -20,5 +20,7 @@ namespace ice
 
     template<>
     constexpr ShardPayloadID Constant_ShardPayloadID<ice::vec2u> = ice::shard_payloadid("ice::vec2u");
+    template<>
+    constexpr ShardPayloadID Constant_ShardPayloadID<ice::vec2i> = ice::shard_payloadid("ice::vec2i");
 
 } // namespace ice

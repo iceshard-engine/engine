@@ -19,18 +19,18 @@ namespace ice
         auto named_object(ice::StringID_Arg name) const noexcept -> T const*;
 
         template<typename T>
-            requires std::is_pod_v<T>
+            requires ice::TrivialContainerLogicAllowed<T>
         auto named_span(ice::StringID_Arg name) noexcept -> ice::Span<T>;
 
         template<typename T>
-            requires std::is_pod_v<T>
+            requires ice::TrivialContainerLogicAllowed<T>
         auto named_span(ice::StringID_Arg name) const noexcept -> ice::Span<T const>;
 
         template<typename T, typename... Args>
         auto create_named_object(ice::StringID_Arg name, Args&&... args) noexcept -> T*;
 
         template<typename T>
-            requires std::is_pod_v<T>
+            requires ice::TrivialContainerLogicAllowed<T>
         auto create_named_span(ice::StringID_Arg name, ice::ucount count) noexcept -> ice::Span<T>;
 
         template<typename T>
@@ -68,7 +68,7 @@ namespace ice
     }
 
     template<typename T>
-        requires std::is_pod_v<T>
+        requires ice::TrivialContainerLogicAllowed<T>
     inline auto DataStorage::named_span(ice::StringID_Arg name) noexcept -> ice::Span<T>
     {
         // We assume we used 'created_named_span' this the span size is at head of the data.
@@ -81,7 +81,7 @@ namespace ice
     }
 
     template<typename T>
-        requires std::is_pod_v<T>
+        requires ice::TrivialContainerLogicAllowed<T>
     inline auto DataStorage::named_span(ice::StringID_Arg name) const noexcept -> ice::Span<T const>
     {
         // We assume we used 'created_named_span' this the span size is at head of the data.
@@ -112,17 +112,28 @@ namespace ice
     }
 
     template<typename T>
-        requires std::is_pod_v<T>
+        requires ice::TrivialContainerLogicAllowed<T>
     inline auto DataStorage::create_named_span(ice::StringID_Arg name, ice::ucount count) noexcept -> ice::Span<T>
     {
         ice::ucount* span_info = reinterpret_cast<ice::ucount*>(
             allocate_named_array(name, ice::meminfo_of<T>, count)
         );
 
-        return ice::Span<T>{
-            reinterpret_cast<T*>(ice::ptr_add(span_info, span_info[1])),
+        ice::Span<T> result{
+            reinterpret_cast<T*>(ice::ptr_add(span_info, { span_info[1] })),
             span_info[0]
         };
+
+        // We initialize the objects if needed
+        if constexpr (std::is_trivially_constructible_v<T> == false)
+        {
+            ice::mem_construct_n_at<T>(
+                ice::Memory{ .location = result._data, .size = ice::span::size_bytes(result), .alignment = ice::align_of<T> },
+                ice::span::count(result)
+            );
+        }
+
+        return result;
     }
 
     class HashedDataStorage final : public ice::DataStorage

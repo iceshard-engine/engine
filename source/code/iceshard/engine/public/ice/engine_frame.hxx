@@ -41,6 +41,7 @@ namespace ice
         virtual auto entity_operations() const noexcept -> ice::ecs::EntityOperations const& = 0;
 
         virtual auto storage() noexcept -> ice::DataStorage& = 0;
+        virtual auto storage() const noexcept -> ice::DataStorage const& = 0;
 
         virtual auto schedule_frame_end() noexcept -> ice::FrameEndOperation = 0;
 

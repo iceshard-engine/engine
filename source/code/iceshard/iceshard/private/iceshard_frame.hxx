@@ -41,6 +41,7 @@ namespace ice
         auto entity_operations() const noexcept -> ice::ecs::EntityOperations const& override;
 
         auto storage() noexcept -> ice::DataStorage& override;
+        auto storage() const noexcept -> ice::DataStorage const& override;
 
         auto schedule_frame_end() noexcept -> ice::FrameEndOperation override;
 
