@@ -20,12 +20,12 @@ namespace ice
 
     auto HashedDataStorage::named_data(ice::StringID_Arg name) noexcept -> void*
     {
-        return ice::hashmap::get(_named_data, ice::hash(name), AllocResult{ });
+        return ice::hashmap::get(_named_data, ice::hash(name), AllocResult{ }).memory;
     }
 
     auto HashedDataStorage::named_data(ice::StringID_Arg name) const noexcept -> void const*
     {
-        return ice::hashmap::get(_named_data, ice::hash(name), AllocResult{ });
+        return ice::hashmap::get(_named_data, ice::hash(name), AllocResult{ }).memory;
     }
 
     auto HashedDataStorage::allocate_named_data(
@@ -42,7 +42,7 @@ namespace ice
 
         ice::AllocResult const alloc_result = _allocator.allocate(type_meminfo);
         ice::hashmap::set(_named_data, name_hash, alloc_result);
-        return alloc_result;
+        return alloc_result.memory;
     }
 
     auto HashedDataStorage::allocate_named_array(

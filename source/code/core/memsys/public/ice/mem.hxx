@@ -25,7 +25,6 @@ namespace ice
         ice::usize size;
         ice::ualign alignment;
 
-        constexpr operator void*() const noexcept;
         constexpr operator ice::Memory() const noexcept;
     };
 
@@ -54,11 +53,6 @@ namespace ice
     constexpr AllocRequest::AllocRequest(ice::AlignResult<T> align_result) noexcept
         : AllocRequest{ align_result.value, align_result.alignment }
     {
-    }
-
-    constexpr AllocResult::operator void*() const noexcept
-    {
-        return memory;
     }
 
     constexpr AllocResult::operator ice::Memory() const noexcept

@@ -43,7 +43,7 @@ namespace ice::ecs
 
         if (free_block == nullptr)
         {
-            void* block_data = _allocator.allocate({ Constant_DefaultBlockSize, ice::align_of<DataBlock> });
+            void* block_data = _allocator.allocate({ Constant_DefaultBlockSize, ice::align_of<DataBlock> }).memory;
             free_block = reinterpret_cast<DataBlock*>(block_data);
             free_block->block_data_size = provided_block_size();
             free_block->block_data = free_block + 1;

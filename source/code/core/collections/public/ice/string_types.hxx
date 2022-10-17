@@ -41,9 +41,12 @@ namespace ice
         constexpr operator std::basic_string_view<CharType>() const noexcept;
     };
 
+    constexpr auto operator""_str(char const* buffer, size_t size) noexcept -> ice::BasicString<char>;
+
     //! \brief Constant string type.
     using String = ice::BasicString<char>;
     using WString = ice::BasicString<ice::wchar>;
+
 
     //! \brief A heap allocated string object.
     //!

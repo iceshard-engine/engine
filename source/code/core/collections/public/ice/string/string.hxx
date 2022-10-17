@@ -19,6 +19,9 @@ namespace ice::string
     constexpr bool empty(ice::BasicString<CharType> str) noexcept;
 
     template<typename CharType>
+    constexpr bool any(ice::BasicString<CharType> str) noexcept;
+
+    template<typename CharType>
     constexpr auto begin(ice::BasicString<CharType> a) noexcept -> typename ice::BasicString<CharType>::ConstIterator;
 
     template<typename CharType>
@@ -40,16 +43,63 @@ namespace ice::string
     constexpr auto substr(ice::BasicString<CharType> str, ice::ucount pos, ice::ucount len = ice::String_NPos) noexcept -> ice::BasicString<CharType>;
 
     template<typename CharType>
-    constexpr auto find_first_of(ice::BasicString<CharType> str, CharType character_value) noexcept -> ice::ucount;
+    constexpr auto starts_with(ice::BasicString<CharType> str, ice::BasicString<CharType> prefix) noexcept;
 
     template<typename CharType>
-    constexpr auto find_first_of(ice::BasicString<CharType> str, ice::BasicString<CharType> character_values) noexcept -> ice::ucount;
+    constexpr auto find_first_of(
+        ice::BasicString<CharType> str,
+        CharType character_value,
+        ice::ucount start_idx = 0
+    ) noexcept -> ice::ucount;
 
     template<typename CharType>
-    constexpr auto find_last_of(ice::BasicString<CharType> str, CharType character_value) noexcept -> ice::ucount;
+    constexpr auto find_first_of(
+        ice::BasicString<CharType> str,
+        ice::BasicString<CharType> character_values,
+        ice::ucount start_idx = 0
+    ) noexcept -> ice::ucount;
 
     template<typename CharType>
-    constexpr auto find_last_of(ice::BasicString<CharType> str, ice::BasicString<CharType> character_values) noexcept -> ice::ucount;
+    constexpr auto find_last_of(
+        ice::BasicString<CharType> str,
+        CharType character_value,
+        ice::ucount start_idx = 0
+    ) noexcept -> ice::ucount;
+
+    template<typename CharType>
+    constexpr auto find_last_of(
+        ice::BasicString<CharType> str,
+        ice::BasicString<CharType> character_values,
+        ice::ucount start_idx = 0
+    ) noexcept -> ice::ucount;
+
+    template<typename CharType>
+    constexpr auto find_first_not_of(
+        ice::BasicString<CharType> str,
+        CharType character_value,
+        ice::ucount start_idx = 0
+    ) noexcept -> ice::ucount;
+
+    template<typename CharType>
+    constexpr auto find_first_not_of(
+        ice::BasicString<CharType> str,
+        ice::BasicString<CharType> character_values,
+        ice::ucount start_idx = 0
+    ) noexcept -> ice::ucount;
+
+    template<typename CharType>
+    constexpr auto find_last_not_of(
+        ice::BasicString<CharType> str,
+        CharType character_value,
+        ice::ucount start_idx = 0
+    ) noexcept -> ice::ucount;
+
+    template<typename CharType>
+    constexpr auto find_last_not_of(
+        ice::BasicString<CharType> str,
+        ice::BasicString<CharType> character_values,
+        ice::ucount start_idx = 0
+    ) noexcept -> ice::ucount;
 
 
     template<typename CharType>

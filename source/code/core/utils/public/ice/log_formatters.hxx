@@ -2,6 +2,7 @@
 #include <fmt/format.h>
 #include <ice/stringid.hxx>
 #include <ice/mem_types.hxx>
+#include <ice/result_codes.hxx>
 
 template<>
 struct fmt::formatter<ice::StringID_Hash>
@@ -69,5 +70,40 @@ struct fmt::formatter<ice::usize>
     constexpr auto format(ice::usize value, FormatContext& ctx)
     {
         return fmt::format_to(ctx.out(), "{}B", value.value);
+    }
+};
+
+template<bool DebugInfo>
+struct fmt::formatter<ice::ResultCode<DebugInfo>>
+{
+    template<typename ParseContext>
+    constexpr auto parse(ParseContext& ctx)
+    {
+        return ctx.begin();
+    }
+
+    static constexpr std::string_view SeverityVal[]{
+        "OK", // Success
+        "INF",
+        "WAR",
+        "ERR"
+    };
+
+    template<typename FormatContext>
+    constexpr auto format(ice::ResultCode<DebugInfo> value, FormatContext& ctx)
+    {
+        if (value == ice::Res::Success)
+        {
+            return fmt::format_to(ctx.out(), "OK");
+        }
+
+        if constexpr (DebugInfo == true)
+        {
+            return fmt::format_to(ctx.out(), "{}({} '{}')", SeverityVal[value.value.severity], value.value.id, value.description);
+        }
+        else
+        {
+            return fmt::format_to(ctx.out(), "{}({})", SeverityVal[value.value.severity], value.value.id);
+        }
     }
 };

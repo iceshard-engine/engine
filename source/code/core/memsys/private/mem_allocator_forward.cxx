@@ -186,7 +186,7 @@ namespace ice
     bool ForwardAllocator::MemoryBucket::try_alloc_space(MemoryBucket const& bucket, ice::AllocResult& result) noexcept
     {
         result.memory = ice::align_to(bucket._free, result.alignment).value;
-        return ice::ptr_distance(result, bucket._end) >= result.size;
+        return ice::ptr_distance(result.memory, bucket._end) >= result.size;
     }
 
     auto ForwardAllocator::MemoryBucket::alloc_bucket(
