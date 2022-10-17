@@ -25,9 +25,7 @@ namespace ice
         ice::Memory& out_data
     ) noexcept -> ice::Task<bool>
     {
-        out_data.size = sizeof(Data);
-        out_data.alignment = alignof(Data);
-        out_data.location = alloc.allocate(out_data.size, out_data.alignment);
+        out_data = alloc.allocate(ice::meminfo_of<Data>);
 
         Data* shader_data = reinterpret_cast<Data*>(out_data.location);
         shader_data->location = data.location;
@@ -38,7 +36,7 @@ namespace ice
 
     void asset_type_shader_definition(ice::AssetTypeArchive& asset_type_archive) noexcept
     {
-        static ice::Utf8String extensions[]{ u8".spv" };
+        static ice::String extensions[]{ ".spv" };
 
         static ice::AssetTypeDefinition type_definition{
             .resource_extensions = extensions,

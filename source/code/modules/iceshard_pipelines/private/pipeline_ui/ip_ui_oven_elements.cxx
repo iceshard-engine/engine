@@ -10,48 +10,43 @@
 namespace ice
 {
 
-    bool trim(
-        ice::Utf8String& inout_str,
-        ice::c8utf character
-    ) noexcept
+    bool trim(ice::String& inout_str, char character) noexcept
     {
-        ice::usize const left_bracket = inout_str.find_first_not_of(character);
-        ice::usize const right_bracket = inout_str.find_last_not_of(character);
-        if (left_bracket == ice::String::npos && right_bracket == ice::String::npos)
+        ice::ucount const left_bracket = ice::string::find_first_not_of(inout_str, character);
+        ice::ucount const right_bracket = ice::string::find_last_not_of(inout_str, character);
+        if (left_bracket == ice::String_NPos && right_bracket == ice::String_NPos)
         {
             return false;
         }
 
-        inout_str = inout_str.substr(left_bracket, (right_bracket - left_bracket) + 1);
+        inout_str = ice::string::substr(inout_str, left_bracket, (right_bracket - left_bracket) + 1);
         return true;
     }
 
-    bool remove_brackets(
-        ice::Utf8String& inout_str
-    ) noexcept
+    bool remove_brackets(ice::String& inout_str) noexcept
     {
-        ice::usize const left_bracket = inout_str.find_first_of('{');
-        ice::usize const right_bracket = inout_str.find_last_of('}');
-        if (left_bracket == ice::String::npos || right_bracket == ice::String::npos)
+        ice::ucount const left_bracket = ice::string::find_first_of(inout_str, '{');
+        ice::ucount const right_bracket = ice::string::find_last_of(inout_str, '}');
+        if (left_bracket == ice::String_NPos || right_bracket == ice::String_NPos)
         {
             return false;
         }
 
-        inout_str = inout_str.substr(left_bracket + 1, (right_bracket - left_bracket) - 1);
+        inout_str = ice::string::substr(inout_str, left_bracket + 1, (right_bracket - left_bracket) - 1);
         return true;
     }
 
     bool parse_action_type(
-        ice::Utf8String& inout_str,
+        ice::String& inout_str,
         ice::RawAction& out_action
     ) noexcept
     {
-        ice::usize const type_end = inout_str.find_first_of(u8' ');
+        ice::ucount const type_end = ice::string::find_first_of(inout_str, ' ');
 
         bool result = false;
-        if (type_end != ice::String::npos)
+        if (type_end != ice::String_NPos)
         {
-            ice::Utf8String const action_type = inout_str.substr(0, type_end);
+            ice::String const action_type = ice::string::substr(inout_str, 0, type_end);
             if (action_type == RawAction::Constant_ActionType_Shard)
             {
                 out_action.action_type = ice::ui::ActionType::Shard;
@@ -69,67 +64,61 @@ namespace ice
             result = out_action.action_type != ice::ui::ActionType::None;
             if (result)
             {
-                inout_str = inout_str.substr(type_end + 1);
+                inout_str = ice::string::substr(inout_str, type_end + 1);
 
-                ice::usize const action_value_end = inout_str.find_first_of(u8",} ");
-                out_action.action_value = inout_str.substr(0, action_value_end);
-                result = out_action.action_value.empty() == false;
+                ice::ucount const action_value_end = ice::string::find_first_of(inout_str, ",} "_str);
+                out_action.action_value = ice::string::substr(inout_str, 0, action_value_end);
+                result = ice::string::empty(out_action.action_value) == false;
 
                 // Move to the next expected token.
-                inout_str = inout_str.substr(action_value_end + 1);
+                inout_str = ice::string::substr(inout_str, action_value_end + 1);
             }
         }
         return result;
     }
 
-    void parse_data_reference(
-        ice::Utf8String str,
-        ice::RawData& out_action
-    ) noexcept
+    void parse_data_reference(ice::String str, ice::RawData& out_action) noexcept
     {
         out_action.data_type = ice::ui::DataSource::ValueConstant;
         out_action.data_source = str;
 
         if (remove_brackets(str))
         {
-            ice::usize const type_end = str.find_first_of(u8' ');
-            ice::Utf8String const data_type = str.substr(0, type_end);
+            ice::ucount const type_end = ice::string::find_first_of(str, ' ');
+            ice::String const data_type = ice::string::substr(str, 0, type_end);
 
             if (data_type == RawAction::Constant_ActionDataType_Resource)
             {
                 out_action.data_type = ice::ui::DataSource::ValueResource;
-                out_action.data_source = str.substr(type_end + 1);
+                out_action.data_source = ice::string::substr(str, type_end + 1);
             }
             else if (data_type == RawAction::Constant_ActionDataType_Property)
             {
                 out_action.data_type = ice::ui::DataSource::ValueProperty;
-                out_action.data_source = str.substr(type_end + 1);
+                out_action.data_source = ice::string::substr(str, type_end + 1);
             }
             ice::trim(out_action.data_source, ' ');
         }
     }
 
-    bool parse_action_data(
-        ice::Utf8String& inout_str,
-        ice::RawAction& out_action
-    ) noexcept
+    bool parse_action_data(ice::String& inout_str, ice::RawAction& out_action) noexcept
     {
         out_action.data.data_type = ice::ui::DataSource::None;
         out_action.data.data_source = {};
 
         bool result = true;
-        ice::usize const data_start = inout_str.find_first_of('=');
-        if (data_start != ice::String::npos)
+        ice::ucount const data_start = ice::string::find_first_of(inout_str, '=');
+        if (data_start != ice::String_NPos)
         {
-            ice::usize const data_arg_start = inout_str.find_last_of(u8" ,", data_start);
+            ice::ucount const data_arg_start = ice::string::find_last_of(inout_str, " ,"_str, data_start);
 
             [[maybe_unused]]
-            ice::Utf8String const data_arg = inout_str.substr(data_arg_start + 1, (data_start - data_arg_start) - 1);
+            ice::String const data_arg = ice::string::substr(inout_str, data_arg_start + 1, (data_start - data_arg_start) - 1);
 
-            inout_str = inout_str.substr(data_start + 1);
+            inout_str = ice::string::substr(inout_str, data_start + 1);
             if (remove_brackets(inout_str))
             {
-                ICE_ASSERT(false, "TODO!");
+                ICE_ASSERT(false, "TODO!"); // Was here before memsys refactor. Needs a ticket!
                 //ice::usize const type_end = str.find_first_of(u8' ');
                 //ice::Utf8String const data_type = str.substr(0, type_end);
 
@@ -166,7 +155,7 @@ namespace ice
     }
 
     bool parse_action(
-        ice::Utf8String action_definition,
+        ice::String action_definition,
         ice::RawAction& out_action
     ) noexcept
     {
@@ -189,9 +178,9 @@ namespace ice
         ice::RawElement& info
     ) noexcept
     {
-        ice::RawLabelInfo* button_info = alloc.make<RawLabelInfo>();
+        ice::RawLabelInfo* button_info = alloc.create<RawLabelInfo>();
         button_info->font.data_type = ice::ui::DataSource::ValueResource;
-        button_info->font.data_source = u8"default";
+        button_info->font.data_source = "default";
 
         rapidxml_ns::xml_attribute<char> const* attribute = xml_element->first_attribute();
         while (attribute != nullptr)
@@ -215,7 +204,11 @@ namespace ice
             ice::parse_data_reference(ice::xml_value(xml_node), button_info->text);
         }
 
-        info.type_data = button_info;
+        info.type_data = {
+            .location = button_info,
+            .size = ice::size_of<RawLabelInfo>,
+            .alignment = ice::align_of<RawLabelInfo>
+        };
         info.type = ice::ui::ElementType::Label;
     }
 
@@ -225,9 +218,9 @@ namespace ice
         ice::RawElement& info
     ) noexcept
     {
-        ice::RawButtonInfo* button_info = alloc.make<RawButtonInfo>();
+        ice::RawButtonInfo* button_info = alloc.create<RawButtonInfo>();
         button_info->font.data_type = ice::ui::DataSource::ValueResource;
-        button_info->font.data_source = u8"default";
+        button_info->font.data_source = "default";
 
         rapidxml_ns::xml_attribute<char> const* attribute = xml_element->first_attribute();
         while (attribute != nullptr)
@@ -244,7 +237,7 @@ namespace ice
             }
             else if (attrib_name == ice::Constant_UIAttribute_OnClick)
             {
-                ice::Utf8String const action_value = ice::xml_value(attribute);
+                ice::String const action_value = ice::xml_value(attribute);
                 bool const action_parse_result = parse_action(
                     action_value,
                     button_info->action_on_click
@@ -253,7 +246,7 @@ namespace ice
                 ICE_ASSERT(
                     action_parse_result != false,
                     "Failed to parse action value '{}'",
-                    ice::String{ attribute->value(), attribute->value_size() }
+                    ice::String{ attribute->value(), ice::ucount(attribute->value_size()) }
                 );
             }
 
@@ -265,7 +258,11 @@ namespace ice
             ice::parse_data_reference(ice::xml_value(xml_node), button_info->text);
         }
 
-        info.type_data = button_info;
+        info.type_data = {
+            .location = button_info,
+            .size = ice::size_of<RawButtonInfo>,
+            .alignment = ice::align_of<RawButtonInfo>
+        };
         info.type = ice::ui::ElementType::Button;
     }
 
@@ -335,7 +332,7 @@ namespace ice
     ) noexcept
     {
         info.type = ElementType::Page;
-        info.type_data = nullptr;
+        info.type_data = { };
 
         ice::String const element_name = ice::xml_name(xml_element);
 

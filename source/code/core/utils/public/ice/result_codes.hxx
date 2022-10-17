@@ -31,26 +31,17 @@ namespace ice
             ice::u32 id : 24;
         };
 
-        constexpr auto operator==(ice::detail::ResultValue left, ice::detail::ResultValue right) noexcept
-        {
-            return left.severity == right.severity && left.id == right.id;
-        }
-
-        constexpr auto operator==(ice::detail::ResultValue left, ice::ResultSeverity right) noexcept
-        {
-            return left.severity == static_cast<std::underlying_type_t<ice::ResultSeverity>>(right);
-        }
-
         struct ResultCode_Tag;
 
     } // namespace detail
 
+
     template<bool DebugInfo>
     struct ResultCode
     {
-        using TypeTag = ice::TaggedStrongValue<ice::detail::ResultCode_Tag>;
-
         ice::detail::ResultValue value;
+
+        constexpr operator bool() const noexcept;
 
         static constexpr auto create(ice::ResultSeverity sev, std::string_view desc)
         {
@@ -67,10 +58,10 @@ namespace ice
     template<>
     struct ResultCode<true>
     {
-        using TypeTag = ice::TaggedStrongValue<ice::detail::ResultCode_Tag>;
-
         ice::detail::ResultValue value;
         char const* description;
+
+        inline constexpr operator bool() const noexcept;
 
         static constexpr auto create(ice::ResultSeverity sev, std::string_view desc)
         {
@@ -85,8 +76,8 @@ namespace ice
         }
     };
 
-    using ResCode = ResultCode<ice::build::is_debug || ice::build::is_develop>;
 
+    using ResCode = ResultCode<ice::build::is_debug || ice::build::is_develop>;
 
     struct Res
     {
@@ -98,5 +89,32 @@ namespace ice
         static constexpr ice::ResCode E_InvalidArgument = ResCode::create(ResultSeverity::Error, "InvalidArgument");
         static constexpr ice::ResCode E_ValueOutOfRange = ResCode::create(ResultSeverity::Error, "ValueOutOfRange");
     };
+
+
+    constexpr auto operator==(ice::detail::ResultValue left, ice::detail::ResultValue right) noexcept
+    {
+        return left.severity == right.severity && left.id == right.id;
+    }
+
+    constexpr auto operator==(ice::detail::ResultValue left, ice::ResultSeverity right) noexcept
+    {
+        return left.severity == static_cast<std::underlying_type_t<ice::ResultSeverity>>(right);
+    }
+
+    constexpr bool operator==(ice::ResCode left, ice::ResCode right) noexcept
+    {
+        return left.value == right.value;
+    }
+
+    template<bool DebugInfo>
+    inline constexpr ice::ResultCode<DebugInfo>::operator bool() const noexcept
+    {
+        return this->value == Res::Success.value;
+    }
+
+    inline constexpr ice::ResultCode<true>::operator bool() const noexcept
+    {
+        return this->value == Res::Success.value;
+    }
 
 } // namespace ice

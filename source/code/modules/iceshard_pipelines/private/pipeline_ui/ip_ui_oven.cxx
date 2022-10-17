@@ -9,10 +9,10 @@ namespace ice
     void parse_ui_file(
         ice::Allocator& alloc,
         rapidxml_ns::xml_document<char>& doc,
-        ice::pod::Array<ice::RawElement>& out_elements,
-        ice::pod::Array<ice::RawResource>& out_resources,
-        ice::pod::Array<ice::RawShard>& out_shards,
-        ice::pod::Array<ice::RawStyle>& out_styles
+        ice::Array<ice::RawElement>& out_elements,
+        ice::Array<ice::RawResource>& out_resources,
+        ice::Array<ice::RawShard>& out_shards,
+        ice::Array<ice::RawStyle>& out_styles
     ) noexcept
     {
         rapidxml_ns::xml_node<char> const* root = ice::xml_first_node(&doc, {}, ice::Constant_UIElement_Root);

@@ -8,8 +8,8 @@ namespace ice
     static constexpr ice::String Constant_UIElement_Layout = "layout";
     static constexpr ice::String Constant_UIAttribute_LayoutType = "direction";
 
-    static constexpr ice::Utf8String Constant_UIAttributeKeyword_Vertical = u8"vertical";
-    static constexpr ice::Utf8String Constant_UIAttributeKeyword_Horizontal = u8"horizontal";
+    static constexpr ice::String Constant_UIAttributeKeyword_Vertical = "vertical";
+    static constexpr ice::String Constant_UIAttributeKeyword_Horizontal = "horizontal";
 
     struct RawLayoutInfo
     {

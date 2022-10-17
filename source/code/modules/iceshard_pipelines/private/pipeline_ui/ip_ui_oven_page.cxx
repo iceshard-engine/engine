@@ -4,6 +4,7 @@
 #include "ip_ui_oven_utils.hxx"
 #include <ice/ui_resource.hxx>
 #include <ice/ui_element_info.hxx>
+#include <ice/string_utils.hxx>
 #include <ice/assert.hxx>
 
 namespace ice
@@ -30,8 +31,7 @@ namespace ice
                 else if (attrib_name == ice::Constant_UIAttribute_StyleTransparency)
                 {
                     style.flags |= ice::ui::StyleFlags::BackgroundColor;
-                    ice::Utf8String val = ice::xml_value(attrib);
-                    ice::from_chars(val, val, style.background.color.alpha);
+                    ice::from_chars(ice::xml_value(attrib), style.background.color.alpha);
                 }
 
                 attrib = ice::xml_next_attrib(attrib, {});
@@ -44,7 +44,7 @@ namespace ice
         using ice::ui::ElementState;
 
         ElementState result = ElementState::None;
-        if (element_state.empty())
+        if (ice::string::empty(element_state))
         {
             result |= ElementState::Any;
         }
@@ -81,7 +81,7 @@ namespace ice
     void parse_styles(
         ice::Allocator& alloc,
         rapidxml_ns::xml_node<char> const* xml_node,
-        ice::pod::Array<ice::RawStyle>& styles
+        ice::Array<ice::RawStyle>& styles
     ) noexcept
     {
         rapidxml_ns::xml_node<char> const* xml_child = ice::xml_first_node(
@@ -119,7 +119,7 @@ namespace ice
                     xml_prop = ice::xml_next_sibling(xml_prop);
                 }
 
-                ice::pod::array::push_back(styles, style);
+                ice::array::push_back(styles, style);
             }
 
             xml_child = ice::xml_next_sibling(
@@ -133,7 +133,7 @@ namespace ice
     void parse_resources(
         ice::Allocator& alloc,
         rapidxml_ns::xml_node<char> const* xml_node,
-        ice::pod::Array<ice::RawResource>& shards
+        ice::Array<ice::RawResource>& shards
     ) noexcept
     {
         using ice::ui::ResourceType;
@@ -156,7 +156,7 @@ namespace ice
                 ice::Constant_UIAttribute_ResourceType
             );
 
-            ice::Utf8String const type_str = ice::xml_value(attr_type);
+            ice::String const type_str = ice::xml_value(attr_type);
 
             ice::RawResource res{ .type = ResourceType::None };
             res.ui_name = ice::xml_value(uiref);
@@ -174,25 +174,24 @@ namespace ice
                     ice::Constant_UIAttribute_ResourceFontSize
                 );
 
-                ice::Utf8String font_size_str = ice::xml_value(fontsize_attr);
-                if (ice::from_chars(font_size_str, font_size_str, res.font_data.font_size))
+                if (ice::from_chars(ice::xml_value(fontsize_attr), res.font_data.font_size))
                 {
                     res.type = ResourceType::Font;
-                    res.font_data.font_default = res.ui_name == u8"default";
+                    res.font_data.font_default = res.ui_name == "default";
                 }
             }
             else if (type_str == Constant_UIResourceType_Text)
             {
                 res.type = ResourceType::Utf8String;
             }
-            else if (type_str.starts_with(Constant_UIResourceType_String))
+            else if (ice::string::starts_with(type_str, Constant_UIResourceType_String))
             {
-                ice::usize const arrval_beg = type_str.find_first_of('[');
-                ice::usize const arrval_end = type_str.find_last_of(']');
+                ice::ucount const arrval_beg = ice::string::find_first_of(type_str, '[');
+                ice::ucount const arrval_end = ice::string::find_last_of(type_str, ']');
                 if (arrval_beg < arrval_end)
                 {
-                    ice::Utf8String arrval_str = type_str.substr(arrval_beg + 1, (arrval_end - arrval_beg) - 1);
-                    if (ice::from_chars(arrval_str, arrval_str, res.type_data))
+                    ice::String arrval_str = ice::string::substr(type_str, arrval_beg + 1, (arrval_end - arrval_beg) - 1);
+                    if (ice::from_chars(arrval_str, res.type_data))
                     {
                         res.type = ResourceType::Utf8String;
                     }
@@ -210,7 +209,7 @@ namespace ice
 
             if (uiref && res.type != ResourceType::None)
             {
-                ice::pod::array::push_back(
+                ice::array::push_back(
                     shards,
                     res
                 );
@@ -227,7 +226,7 @@ namespace ice
     void parse_shards(
         ice::Allocator& alloc,
         rapidxml_ns::xml_node<char> const* xml_node,
-        ice::pod::Array<ice::RawShard>& shards
+        ice::Array<ice::RawShard>& shards
     ) noexcept
     {
         rapidxml_ns::xml_node<char> const* xml_child = ice::xml_first_node(
@@ -250,12 +249,12 @@ namespace ice
 
             if (uiref && attr_name)
             {
-                ice::pod::array::push_back(
+                ice::array::push_back(
                     shards,
                     ice::RawShard
                     {
                         .ui_name = ice::xml_value(uiref),
-                        .shard_name = ice::shard_name({ attr_name->value(), attr_name->value_size() })
+                        .shard_name = ice::shardid(ice::String{ attr_name->value(), ice::ucount(attr_name->value_size()) })
                     }
                 );
             }
@@ -272,14 +271,14 @@ namespace ice
         ice::Allocator& alloc,
         rapidxml_ns::xml_node<char> const* xml_element,
         ice::u16 parent_idx,
-        ice::pod::Array<RawElement>& elements
+        ice::Array<RawElement>& elements
     ) noexcept
     {
         ice::u16 const element_index = static_cast<ice::u16>(
-            ice::pod::array::size(elements)
+            ice::array::count(elements)
         );
 
-        ice::pod::array::push_back(
+        ice::array::push_back(
             elements,
             ice::RawElement{ .parent = parent_idx }
         );
@@ -312,7 +311,7 @@ namespace ice
     void parse_page_element(
         ice::Allocator& alloc,
         rapidxml_ns::xml_node<char> const* xml_page,
-        ice::pod::Array<RawElement>& elements
+        ice::Array<RawElement>& elements
     ) noexcept
     {
         parse_child_element(alloc, xml_page, 0, elements);

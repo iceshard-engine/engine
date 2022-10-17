@@ -16,7 +16,7 @@ namespace ice
     {
         rapidxml_ns::xml_attribute<char> const* type_attrib = ice::xml_first_attrib(xml_element, ice::Constant_UIAttribute_LayoutType);
 
-        ice::Utf8String const attrib_value = ice::xml_value(type_attrib);
+        ice::String const attrib_value = ice::xml_value(type_attrib);
         if (attrib_value == ice::Constant_UIAttributeKeyword_Vertical)
         {
             info.type = ice::ui::ElementType::LayoutV;

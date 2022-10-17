@@ -72,4 +72,13 @@ namespace ice
         };
     }
 
+    template<typename T>
+        requires (std::is_integral_v<T> || std::is_floating_point_v<T>)
+    auto from_chars(ice::String str, ice::String& out_str, T& out_value) noexcept -> ice::ResCode
+    {
+        ice::FromCharsResult<ice::String> const result = ice::from_chars(str, out_value);
+        out_str = result.remaining;
+        return result.ec;
+    }
+
 } // namespace ice

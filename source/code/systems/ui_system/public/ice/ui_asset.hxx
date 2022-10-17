@@ -6,6 +6,6 @@
 namespace ice::ui
 {
 
-    static constexpr ice::AssetType AssetType_UIPage = ice::make_asset_type(u8"ice/ui_system/page");
+    static constexpr ice::AssetType AssetType_UIPage = ice::make_asset_type("ice/ui_system/page");
 
 } // namespace ice::ui

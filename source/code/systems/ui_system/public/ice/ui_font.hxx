@@ -6,7 +6,7 @@ namespace ice::ui
 
     struct FontInfo
     {
-        ice::usize font_name_offset;
+        ice::u32 font_name_offset;
         ice::u32 font_name_size;
         ice::u16 font_size;
 

@@ -7,7 +7,11 @@
 #include <ice/task_sync_wait.hxx>
 #include <ice/font.hxx>
 
+#pragma warning(push)
+#pragma warning(disable : 4458)
+#pragma warning(disable : 4505)
 #include <msdf-atlas-gen/msdf-atlas-gen.h>
+#pragma warning(pop)
 
 
 namespace ice
@@ -24,53 +28,54 @@ namespace ice
         using ice::GlyphRange;
         using ice::Glyph;
 
-        static_assert(alignof(Font) == 8);
-        static_assert(alignof(FontAtlas) == 4);
-        static_assert(alignof(GlyphRange) == 4);
+        static_assert(ice::align_of<Font> == ice::ualign::b_8);
+        static_assert(ice::align_of<FontAtlas> == ice::ualign::b_4);
+        static_assert(ice::align_of<GlyphRange> == ice::ualign::b_4);
 
-        ice::u32 size = sizeof(Font) + sizeof(FontAtlas) + sizeof(GlyphRange) + 8 /* for alignment */;
-        size += sizeof(Glyph) * glyphs.size();
-        size += bitmap.width * bitmap.height * 4;
+        ice::meminfo font_meminfo = ice::meminfo_of<Font>;
+        ice::usize const offset_atlas = font_meminfo += ice::meminfo_of<FontAtlas>;
+        ice::usize const offset_glyphrange = font_meminfo += ice::meminfo_of<GlyphRange>;
+        ice::usize const offset_glyphs = font_meminfo += ice::meminfo_of<Glyph> * glyphs.size();
+        ice::usize const offset_bitmap = font_meminfo += ice::meminfo_of<msdfgen::byte> * bitmap.width * bitmap.height * 4;
 
-        void* data = alloc.allocate(size, 8);
+        ice::Memory font_mem = alloc.allocate(font_meminfo);
 
-        Font* gfx_font = reinterpret_cast<Font*>(data);
-        FontAtlas* gfx_atlas = reinterpret_cast<FontAtlas*>(
-            ice::memory::ptr_align_forward(gfx_font + 1, alignof(FontAtlas))
-        ); // TODO: Multi-atlas support
-        GlyphRange* gfx_glyph_range = reinterpret_cast<GlyphRange*>(
-            ice::memory::ptr_align_forward(gfx_atlas + 1, alignof(GlyphRange))
-        ); // TODO: Multi-atlas support
-        Glyph* font_glyphs = reinterpret_cast<Glyph*>(gfx_glyph_range + 1); // TODO: Multi range support
-        void* atlas_bitmap = font_glyphs + glyphs.size();
+        Font* gfx_font = reinterpret_cast<Font*>(font_mem.location);
+        // TODO: Multi-atlas support
+        FontAtlas* gfx_atlas = reinterpret_cast<FontAtlas*>(ice::ptr_add(font_mem.location, offset_atlas));
+        // TODO: Multi range support
+        GlyphRange* gfx_glyph_range = reinterpret_cast<GlyphRange*>(ice::ptr_add(font_mem.location, offset_glyphrange));
+        Glyph* font_glyphs = reinterpret_cast<Glyph*>(ice::ptr_add(font_mem.location, offset_glyphs));
+        void* atlas_bitmap = ice::ptr_add(font_mem.location, offset_bitmap);
 
-        void const* end_ptr = ice::memory::ptr_add(atlas_bitmap, bitmap.width * bitmap.height * 4);
-        ICE_ASSERT(end_ptr <= ice::memory::ptr_add(data, size), "Insufficient memory!");
+        void const* end_ptr = ice::ptr_add(atlas_bitmap, ice::size_of<msdfgen::byte> * bitmap.width * bitmap.height * 4);
+        ICE_ASSERT(end_ptr == ice::ptr_add(font_mem.location, font_meminfo.size), "Insufficient memory!");
 
         gfx_font->atlases = { gfx_atlas, 1 };
         gfx_font->ranges = { gfx_glyph_range, 1 };
-        gfx_font->glyphs = { font_glyphs, glyphs.size() };
+        gfx_font->glyphs = { font_glyphs, ice::ucount(glyphs.size()) };
 
         gfx_glyph_range->type = ice::GlyphRangeType::Explicit;
-        gfx_glyph_range->glyph_count = glyphs.size();
+        gfx_glyph_range->glyph_count = ice::ucount(glyphs.size());
         gfx_glyph_range->glyph_index = 0;
         gfx_glyph_range->glyph_atlas = 0;
 
         gfx_atlas->image_size = ice::vec2u(bitmap.width, bitmap.height);
-        gfx_atlas->image_data_offset = ice::memory::ptr_distance(data, atlas_bitmap);
+        gfx_atlas->image_data_offset = ice::u32(offset_bitmap.value);
         gfx_atlas->image_data_size = bitmap.width * bitmap.height * 4;
 
-        ice::u32* offset = reinterpret_cast<ice::u32*>(std::addressof(gfx_font->glyphs));
-        offset[0] = ice::memory::ptr_distance(data, font_glyphs);
-        offset[1] = static_cast<ice::u32>(glyphs.size());
+
+        ice::u32* offset = reinterpret_cast<ice::u32*>(std::addressof(gfx_font->atlases));
+        offset[0] = ice::u32(offset_atlas.value);
+        offset[1] = 1;
 
         offset = reinterpret_cast<ice::u32*>(std::addressof(gfx_font->ranges));
-        offset[0] = ice::memory::ptr_distance(data, gfx_glyph_range);
+        offset[0] = ice::u32(offset_glyphrange.value);
         offset[1] = 1;
 
-        offset = reinterpret_cast<ice::u32*>(std::addressof(gfx_font->atlases));
-        offset[0] = ice::memory::ptr_distance(data, gfx_atlas);
-        offset[1] = 1;
+        offset = reinterpret_cast<ice::u32*>(std::addressof(gfx_font->glyphs));
+        offset[0] = ice::u32(offset_glyphs.value);
+        offset[1] = static_cast<ice::u32>(glyphs.size());
 
         ice::f32 const atlas_width = static_cast<ice::f32>(bitmap.width);
         ice::f32 const atlas_height = static_cast<ice::f32>(bitmap.height);
@@ -100,7 +105,7 @@ namespace ice
         }
 
         ice::memcpy(atlas_bitmap, bitmap.pixels, gfx_atlas->image_data_size);
-        return { .location = data, .size = size, .alignment = 8 };
+        return font_mem;
     }
 
     auto asset_font_oven(
@@ -117,7 +122,7 @@ namespace ice
         msdfgen::FreetypeHandle* const freetype = msdfgen::initializeFreetype();
         if (freetype != nullptr)
         {
-            msdfgen::FontHandle* const font = msdfgen::loadFontData(freetype, static_cast<msdfgen::byte const*>(data.location), data.size);
+            msdfgen::FontHandle* const font = msdfgen::loadFontData(freetype, static_cast<msdfgen::byte const*>(data.location), int(data.size.value));
             if (font != nullptr)
             {
                 std::vector<msdf_atlas::GlyphGeometry> glyphs;
@@ -147,7 +152,7 @@ namespace ice
                 atlas_packer.setMinimumScale(32.0);
                 atlas_packer.setPixelRange(2.0);
                 atlas_packer.setMiterLimit(1.0);
-                atlas_packer.pack(glyphs.data(), glyphs.size());
+                atlas_packer.pack(glyphs.data(), int(glyphs.size()));
 
                 ice::i32 width, height;
                 atlas_packer.getDimensions(width, height);
@@ -168,7 +173,7 @@ namespace ice
                 msdf_atlas::GeneratorAttributes attribs;
                 bitmapGenerator.setAttributes(attribs);
                 bitmapGenerator.setThreadCount(2);
-                bitmapGenerator.generate(glyphs.data(), glyphs.size());
+                bitmapGenerator.generate(glyphs.data(), int(glyphs.size()));
 
                 memory = ice::create_engine_object(
                     alloc,
@@ -194,26 +199,24 @@ namespace ice
         ice::Memory& out_data
     ) noexcept -> ice::Task<bool>
     {
-        out_data.size = sizeof(ice::Font);
-        out_data.alignment = alignof(ice::Font);
-        out_data.location = alloc.allocate(out_data.size, out_data.alignment);
+        out_data = alloc.allocate(ice::meminfo_of<ice::Font>);
 
         ice::Font* font = reinterpret_cast<ice::Font*>(out_data.location);
         ice::Font const* raw_font = reinterpret_cast<ice::Font const*>(data.location);
         font->data_ptr = raw_font;
 
         ice::u32 const* offsets = reinterpret_cast<ice::u32 const*>(ice::addressof(raw_font->atlases));
-        font->atlases = { reinterpret_cast<ice::FontAtlas const*>(ice::memory::ptr_add(raw_font, offsets[0])), offsets[1] };
+        font->atlases = { reinterpret_cast<ice::FontAtlas const*>(ice::ptr_add(raw_font, { offsets[0] })), offsets[1] };
         offsets = reinterpret_cast<ice::u32 const*>(ice::addressof(raw_font->ranges));
-        font->ranges = { reinterpret_cast<ice::GlyphRange const*>(ice::memory::ptr_add(raw_font, offsets[0])), offsets[1] };
+        font->ranges = { reinterpret_cast<ice::GlyphRange const*>(ice::ptr_add(raw_font, { offsets[0] })), offsets[1] };
         offsets = reinterpret_cast<ice::u32 const*>(ice::addressof(raw_font->glyphs));
-        font->glyphs = { reinterpret_cast<ice::Glyph const*>(ice::memory::ptr_add(raw_font, offsets[0])), offsets[1] };
+        font->glyphs = { reinterpret_cast<ice::Glyph const*>(ice::ptr_add(raw_font, { offsets[0] })), offsets[1] };
         co_return true;
     }
 
     void asset_type_font_definition(ice::AssetTypeArchive& asset_type_archive) noexcept
     {
-        static ice::Utf8String extensions[]{ u8".ttf" };
+        static ice::String extensions[]{ ".ttf" };
 
         static ice::AssetTypeDefinition type_definition{
             .resource_extensions = extensions,
