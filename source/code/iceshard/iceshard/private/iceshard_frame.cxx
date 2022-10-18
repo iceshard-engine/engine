@@ -12,7 +12,7 @@ namespace ice
     namespace detail
     {
 
-        static constexpr ice::usize InputsAllocatorCapacity = ice::size_of<ice::input::InputEvent> * 128;
+        static constexpr ice::usize InputsAllocatorCapacity = ice::size_of<ice::input::InputEvent> * 512;
         static constexpr ice::usize RequestAllocatorCapacity = ice::size_of<ice::Shard> * 256;
         static constexpr ice::usize TaskAllocatorCapacity = ice::size_of<ice::Task<>> * 1024;
         static constexpr ice::usize StorageAllocatorCapacity = 8_MiB;
@@ -42,9 +42,9 @@ namespace ice
     {
         detail::global_frame_counter += 1;
 
-        ice::array::reserve(_input_events, ice::mem_max_capacity<ice::input::InputEvent>(detail::InputsAllocatorCapacity));
-        ice::shards::reserve(_shards, ice::mem_max_capacity<ice::Shard>(detail::RequestAllocatorCapacity));
-        ice::array::reserve(_frame_tasks, ice::mem_max_capacity<ice::Task<>>(detail::TaskAllocatorCapacity));
+        ice::array::reserve(_input_events, ice::mem_max_capacity<ice::input::InputEvent>(detail::InputsAllocatorCapacity) - 4);
+        ice::shards::reserve(_shards, ice::mem_max_capacity<ice::Shard>(detail::RequestAllocatorCapacity) - 4);
+        ice::array::reserve(_frame_tasks, ice::mem_max_capacity<ice::Task<>>(detail::TaskAllocatorCapacity) - 4);
 
         ice::shards::push_back(_shards, ice::Shard_FrameTick | _index);
     }

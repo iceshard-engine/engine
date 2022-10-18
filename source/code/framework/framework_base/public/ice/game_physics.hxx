@@ -17,7 +17,7 @@ namespace ice
     };
 
     enum class PhysicsShape : ice::u32
-    {
+    { 
         Box,
         Capsule,
     };

@@ -153,13 +153,15 @@ namespace ice::ecs
         EntityOperationData* data_it = _data_nodes;
         while (data_it != nullptr)
         {
+            EntityOperationData* next = data_it->next;
             _allocator.deallocate(
                 ice::Memory{
-                    .location = ice::exchange(data_it, data_it->next),
+                    .location = data_it,
                     .size = data_it->allocated_size,
                     .alignment = ice::align_of<ice::ecs::EntityOperations::EntityOperationData>
                 }
             );
+            data_it = next;
         }
     }
 
@@ -208,10 +210,10 @@ namespace ice::ecs
             data_it = next;
         }
 
-        _root = detail::allocate_operation_nodes(_allocator, 16);
-        _operations = _root;
-        _free_operations = _operations->next;
-        _operations->next = nullptr;
+        _data_nodes = detail::allocate_data_node(_allocator, 16_KiB, nullptr);
+        _operations = detail::allocate_operation_nodes(_allocator, 16);
+        _free_operations = ice::exchange(_operations->next, nullptr);
+        _root = _operations;
     }
 
     void EntityOperations::grow(ice::u32 count) noexcept
@@ -246,8 +248,7 @@ namespace ice::ecs
         }
 
         EntityOperation* free_operation = _free_operations;
-        _free_operations = free_operation->next;
-        free_operation->next = nullptr;
+        _free_operations = ice::exchange(free_operation->next, nullptr);
 
         _operations->next = free_operation;
         _operations = free_operation;

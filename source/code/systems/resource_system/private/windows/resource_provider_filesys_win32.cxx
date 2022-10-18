@@ -130,7 +130,7 @@ namespace ice
                 temp_path_alloc.reset();
 
                 ice::HeapString<ice::wchar> meta_file{ temp_path_alloc, file };
-                ice::HeapString<ice::wchar> data_file{ temp_path_alloc, ice::string::substr(file, 0, ice::string::find_last_of(file, L'.') - 1) };
+                ice::HeapString<ice::wchar> data_file{ temp_path_alloc, ice::string::substr(file, 0, ice::string::find_last_of(file, L'.')) };
 
                 ice::array::clear(resources);
 

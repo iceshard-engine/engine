@@ -88,6 +88,11 @@ namespace ice
         , _free{ nullptr }
         , _allocate{ nullptr }
     {
+        _begin = _backing_alloc.allocate({ params.ring_buffer_size, ice::ualign::b_default }).memory;
+        _end = ptr_add(_begin, params.ring_buffer_size);
+
+        _allocate = _begin;
+        _free = _begin;
     }
 
     RingAllocator::RingAllocator(
@@ -104,6 +109,11 @@ namespace ice
         , _free{ nullptr }
         , _allocate{ nullptr }
     {
+        _begin = _backing_alloc.allocate({ params.ring_buffer_size, ice::ualign::b_default }).memory;
+        _end = ptr_add(_begin, params.ring_buffer_size);
+
+        _allocate = _begin;
+        _free = _begin;
     }
 
     RingAllocator::~RingAllocator() noexcept
@@ -114,9 +124,10 @@ namespace ice
 
     auto RingAllocator::do_allocate(ice::AllocRequest request) noexcept -> ice::AllocResult
     {
-        if (request.alignment < ice::ualign::b_4)
+        request.alignment = ice::max(request.alignment, request.alignment);
+        if (request.size + ice::size_of<mem::AllocationHeader> > _params.ring_buffer_size)
         {
-            request.alignment = ice::ualign::b_4;
+            return _backing_alloc.allocate(request);
         }
 
         void* candidate_pointer = _allocate;
@@ -128,7 +139,7 @@ namespace ice
         if (alloc_data_end >= _end)
         {
             // First we need to check if we even can write into the header!
-            if (ice::ptr_distance(alloc_header, _end) >= ice::size_of<mem::AllocationHeader>)
+            if (ice::ptr_offset(alloc_header, _end) >= ice::size_of<mem::AllocationHeader>)
             {
                 // Save the amount of bytes we are ignoring.
                 alloc_header->allocated_size = {

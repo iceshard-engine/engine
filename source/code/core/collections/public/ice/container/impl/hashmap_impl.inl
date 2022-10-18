@@ -269,7 +269,7 @@ namespace ice
             FindResult fr = ice::hashmap::detail::find(map, key);
             if (fr.hash_i == Constant_EndOfList)
             {
-                fr.hash_i = key & map._capacity;
+                fr.hash_i = key % map._capacity;
             }
 
             // The count is now the new index.
