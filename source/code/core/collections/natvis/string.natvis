@@ -14,8 +14,8 @@
   </Type>
 
   <!-- Native Visualization for the core::StackString<> type -->
-  <Type Name="ice::StackString&lt;*,*&gt;">
-    <DisplayString>StackString&lt;{"$T1",sb}&gt; {{ { _data,s } }}</DisplayString>
+  <Type Name="ice::StaticString&lt;*,*&gt;">
+    <DisplayString>StaticString&lt;{"$T1",sb}&gt; {{ { _data,s } }}</DisplayString>
     <StringView>_data,s</StringView>
     <Expand>
       <Item Name="[size]">_size</Item>
@@ -25,7 +25,7 @@
   </Type>
 
   <!-- Native Visualization for the core::StringView<> type -->
-  <Type Name="ice::String&lt;*&gt;">
+  <Type Name="ice::BasicString&lt;*&gt;">
     <DisplayString>String {{ { _data,[_size] } }}</DisplayString>
     <StringView>_data,[_size]</StringView>
     <Expand>
