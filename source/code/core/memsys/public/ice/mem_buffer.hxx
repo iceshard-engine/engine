@@ -42,7 +42,7 @@ namespace ice
             ice::Memory new_data{ };
             if (new_capacity > 0_B)
             {
-                new_data = buffer.alloc->allocate({ new_capacity, buffer.memory.alignment });
+                new_data = buffer.alloc->allocate({ new_capacity, ice::ualign::b_default });
                 ice::memcpy(new_data, ice::data_view(buffer.memory));
             }
 
@@ -60,7 +60,7 @@ namespace ice
         inline auto append_reserve(ice::Buffer& buffer, ice::meminfo meminfo) noexcept -> ice::Memory
         {
             ice::usize const req_capacity = ice::buffer::required_capacity(buffer, meminfo);
-            if (req_capacity == ice::buffer::capacity(buffer))
+            if (req_capacity >= ice::buffer::capacity(buffer))
             {
                 ice::buffer::grow(buffer, req_capacity);
             }

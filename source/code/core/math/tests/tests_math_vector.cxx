@@ -6,7 +6,7 @@ static ice::f32 constexpr test_value_2 = -2.22f;
 static ice::f32 constexpr test_value_3 = 15.999f;
 static ice::f32 constexpr test_value_4 = 1.f;
 
-TEST_CASE("Vec1 :: f32", "[math]")
+TEST_CASE("math 'ice/math.hxx'", "[math]")
 {
     SECTION("Type traits")
     {

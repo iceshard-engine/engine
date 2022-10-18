@@ -71,13 +71,8 @@ namespace ice
         ICE_ASSERT_CORE(memory.alignment >= data.alignment);
 
         ice::usize const copy_size = ice::usize{ ice::min(memory.size.value, data.size.value) };
-        void* const result = ice::memcpy(memory.location, data.location, copy_size);
-
-        return Memory{
-            .location = result,
-            .size = ice::usize{ memory.size.value - copy_size.value },
-            .alignment = ice::ualign::b_1,
-        };
+        ice::memcpy(memory.location, data.location, copy_size);
+        return memory;
     }
 
 } // namespace ice

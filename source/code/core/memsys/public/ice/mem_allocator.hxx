@@ -33,6 +33,7 @@ namespace ice
 
         void deallocate(ice::Memory result) noexcept
         {
+            if (result.location == nullptr) return;
             return do_deallocate(result);
         }
 

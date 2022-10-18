@@ -92,7 +92,7 @@ namespace ice
     void AllocatorBase<true>::deallocate(ice::Memory result) noexcept
     {
         ICE_ASSERT_CORE(((result.location == nullptr) ^ (result.size == 0_B)) == false);
-
+        if (result.location == nullptr) return;
         dbg_size_sub(result.size);
         do_deallocate(result);
     }

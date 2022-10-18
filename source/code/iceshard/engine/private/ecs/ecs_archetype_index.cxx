@@ -190,10 +190,12 @@ namespace ice::ecs
 
             // Copy the size and alignment.
             component_sizes = reinterpret_cast<ice::u32 const*>(mem_component_data.location);
-            mem_component_data = ice::memcpy(mem_component_data, ice::span::data_view(archetype_info.component_sizes));
+            ice::memcpy(mem_component_data, ice::span::data_view(archetype_info.component_sizes));
+            mem_component_data = ice::ptr_add(mem_component_data, ice::span::size_bytes(archetype_info.component_sizes));
 
             component_alignments = reinterpret_cast<ice::u32 const*>(mem_component_data.location);
-            mem_component_data = ice::memcpy(mem_component_data, ice::span::data_view(archetype_info.component_alignments));
+            ice::memcpy(mem_component_data, ice::span::data_view(archetype_info.component_alignments));
+            mem_component_data = ice::ptr_add(mem_component_data, ice::span::size_bytes(archetype_info.component_alignments));
 
             // Save location to store calculated offsets
             component_offsets = reinterpret_cast<ice::u32*>(mem_component_data.location);

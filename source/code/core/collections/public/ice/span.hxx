@@ -2,6 +2,7 @@
 #include <ice/base.hxx>
 #include <ice/mem_data.hxx>
 #include <ice/container_logic.hxx>
+#include <array> // TODO: Introduce our own static array object.
 
 namespace ice
 {
@@ -37,6 +38,12 @@ namespace ice
 
     namespace span
     {
+
+        template<typename Type>
+        constexpr bool empty(ice::Span<Type> span) noexcept;
+
+        template<typename Type>
+        constexpr bool any(ice::Span<Type> span) noexcept;
 
         template<typename Type>
         constexpr auto data(ice::Span<Type> span) noexcept -> Type*;
@@ -92,6 +99,10 @@ namespace ice
         template<typename Type>
         constexpr auto rend(ice::Span<Type const> span) noexcept -> typename ice::Span<Type const>::ConstReverseIterator;
 
+
+        template<typename Type, size_t Size>
+        constexpr auto from_std(std::array<Type, Size> const& std_array) noexcept -> ice::Span<Type>;
+
     } // namespace span
 
     template<typename Type>
@@ -132,6 +143,18 @@ namespace ice
 
     namespace span
     {
+
+        template<typename Type>
+        constexpr bool empty(ice::Span<Type> span) noexcept
+        {
+            return span._count == 0;
+        }
+
+        template<typename Type>
+        constexpr bool any(ice::Span<Type> span) noexcept
+        {
+            return span._count != 0;
+        }
 
         template<typename Type>
         constexpr auto data(ice::Span<Type> span) noexcept -> Type*
@@ -247,6 +270,19 @@ namespace ice
         constexpr auto rend(ice::Span<Type const> span) noexcept -> typename ice::Span<Type const>::ConstReverseIterator
         {
             return typename ice::Span<Type const>::ConstReverseIterator{ span._data };
+        }
+
+
+        template<typename Type, size_t Size>
+        constexpr auto from_std(std::array<Type, Size> const& std_array) noexcept -> ice::Span<Type>
+        {
+            return ice::Span<Type>{ std_array.data(), ice::ucount(std_array.size()) };
+        }
+
+        template<typename Type, size_t Size>
+        constexpr auto from_std_const(std::array<Type, Size> const& std_array) noexcept -> ice::Span<Type const>
+        {
+            return ice::Span<Type const>{ std_array.data(), ice::ucount(std_array.size()) };
         }
 
     } // namespace span

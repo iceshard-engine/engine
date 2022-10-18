@@ -175,7 +175,7 @@ namespace ice
         MutableMetadata(ice::Allocator& alloc) noexcept;
         MutableMetadata(MutableMetadata&& other) noexcept;
         MutableMetadata(MutableMetadata const& other) noexcept = delete;
-        ~MutableMetadata() noexcept = default;
+        ~MutableMetadata() noexcept;
 
         auto operator=(MutableMetadata&&) noexcept -> MutableMetadata&;
         auto operator=(MutableMetadata const&) noexcept -> MutableMetadata& = delete;

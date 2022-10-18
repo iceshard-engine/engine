@@ -264,8 +264,8 @@ namespace ice
             return result;
         }
 
-        template<typename T>
-        inline auto inspect_all(ice::ShardContainer const& container, ice::Shard shard_type, ice::Array<T>& payloads) noexcept -> ice::u32
+        template<typename T, ice::ContainerLogic Logic>
+        inline auto inspect_all(ice::ShardContainer const& container, ice::Shard shard_type, ice::Array<T, Logic>& payloads) noexcept -> ice::u32
         {
             T payload;
             ice::u32 count = 0;

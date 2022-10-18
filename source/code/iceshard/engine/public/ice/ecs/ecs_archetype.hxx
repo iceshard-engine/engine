@@ -160,7 +160,7 @@ namespace ice::ecs
             component_alignments[idx] = sorted_components[idx - 1].alignment;
         }
 
-        identifier = ice::ecs::detail::make_archetype_identifier({ component_identifiers.data(), ice::ucount(component_identifiers.size()) });
+        identifier = ice::ecs::detail::make_archetype_identifier(ice::span::from_std_const(component_identifiers));
     }
 
     template<ice::ecs::Component... Components>
@@ -174,9 +174,9 @@ namespace ice::ecs
         ice::ecs::ArchetypeDefinition<Components...> const& archetype_info
     ) noexcept
         : identifier{ archetype_info.identifier }
-        , component_identifiers{ archetype_info.component_identifiers }
-        , component_sizes{ archetype_info.component_sizes }
-        , component_alignments{ archetype_info.component_alignments }
+        , component_identifiers{ ice::span::from_std_const(archetype_info.component_identifiers) }
+        , component_sizes{ ice::span::from_std_const(archetype_info.component_sizes) }
+        , component_alignments{ ice::span::from_std_const(archetype_info.component_alignments) }
     {
     }
 

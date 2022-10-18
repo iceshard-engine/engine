@@ -167,27 +167,27 @@ namespace ice::ecs
         static ice::ecs::ArchetypeDefinition<Components...> constexpr HelperArchetype;
 
         static ice::StaticArray<ice::u32, sizeof...(Components)> constexpr ComponentIdxMap = ice::ecs::detail::argument_idx_map<Components...>(
-            HelperArchetype.component_identifiers
+            ice::span::from_std_const(HelperArchetype.component_identifiers)
         );
 
         static ice::ecs::EntityOperations::ComponentInfo constexpr ComponentsInfo{
-            .names = ice::Span{ HelperArchetype.component_identifiers }.subspan(1),
-            .sizes = ice::Span{ HelperArchetype.component_sizes }.subspan(1),
-            .offsets = ice::Span{ HelperArchetype.component_alignments }.subspan(1)
+            .names = ice::span::subspan(ice::span::from_std_const(HelperArchetype.component_identifiers), 1),
+            .sizes = ice::span::subspan(ice::span::from_std_const(HelperArchetype.component_sizes), 1),
+            .offsets = ice::span::subspan(ice::span::from_std_const(HelperArchetype.component_alignments), 1)
         };
 
         ice::ucount const entity_count = ice::count(entities);
         ice::ucount constexpr component_count = sizeof...(Components);
-        ice::usize additional_data_size = sizeof(ice::ecs::EntityHandle) * entity_count;
+        ice::meminfo additional_data_size = ice::meminfo_of<ice::ecs::EntityHandle> * entity_count;
 
         // Data for storing component info
-        additional_data_size += ice::size_of<ice::ecs::EntityOperations::ComponentInfo>;
-        additional_data_size += ice::span::size_bytes(ComponentsInfo.names);
-        additional_data_size += ice::span::size_bytes(ComponentsInfo.sizes);
-        additional_data_size += ice::span::size_bytes(ComponentsInfo.offsets);
+        additional_data_size.size += ice::size_of<ice::ecs::EntityOperations::ComponentInfo>;
+        additional_data_size.size += ice::span::size_bytes(ComponentsInfo.names);
+        additional_data_size.size += ice::span::size_bytes(ComponentsInfo.sizes);
+        additional_data_size.size += ice::span::size_bytes(ComponentsInfo.offsets);
 
         // Use folded expression to calculate all the size for the components...
-        additional_data_size += ((alignof(Components) + sizeof(Components) * entity_count) + ...);
+        additional_data_size.size += ((ice::usize{ alignof(Components) } + ice::size_of<Components> * entity_count) + ...);
 
         void* operation_data = nullptr;
         ice::ecs::EntityOperation* operation = entity_operations.new_storage_operation(
@@ -213,10 +213,10 @@ namespace ice::ecs
 
         // Set component info object
         ice::StringID* names_ptr = reinterpret_cast<ice::StringID*>(entities_ptr + entity_count);
-        ice::memcpy(names_ptr, ComponentsInfo.names.data(), ComponentsInfo.names.size_bytes());
+        ice::memcpy(names_ptr, ice::span::data(ComponentsInfo.names), ice::span::size_bytes(ComponentsInfo.names));
 
         ice::u32* sizes_ptr = reinterpret_cast<ice::u32*>(names_ptr + component_count);
-        ice::memcpy(sizes_ptr, ComponentsInfo.sizes.data(), ComponentsInfo.sizes.size_bytes());
+        ice::memcpy(sizes_ptr, ice::span::data(ComponentsInfo.sizes), ice::span::size_bytes(ComponentsInfo.sizes));
 
         ice::u32* offsets_ptr = reinterpret_cast<ice::u32*>(sizes_ptr + component_count);
 
@@ -249,7 +249,7 @@ namespace ice::ecs
             using SpanType = ice::Span<ComponentType>;
 
             data_ptr = ice::align_to(data_ptr, ice::align_of<ComponentType>).value;
-            offsets_ptr[offset_idx] = ice::ptr_distance(operation_data, data_ptr);
+            offsets_ptr[offset_idx] = ice::u32(ice::ptr_distance(operation_data, data_ptr).value);
 
             // Update the span object...
             SpanType* span_ptr = reinterpret_cast<SpanType*>(span_raw_ptr);
@@ -284,7 +284,7 @@ namespace ice::ecs
         operation->entity_count = entity_count;
         operation->notify_entity_changes = false;
         operation->component_data = component_info_ptr;
-        operation->component_data_size = ice::ptr_distance(component_info_ptr, component_info_ptr);
+        operation->component_data_size = ice::ucount(ice::ptr_distance(component_info_ptr, component_info_ptr).value);
     }
 
 } // namespace ice::ecs

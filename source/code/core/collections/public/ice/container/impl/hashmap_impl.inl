@@ -237,7 +237,7 @@ namespace ice
         inline auto find(HashMapType const& map, ice::u64 key) noexcept -> FindResult
         {
             FindResult fr{
-                .hash_i = key % map._capacity,
+                .hash_i = Constant_EndOfList,
                 .entry_prev = Constant_EndOfList,
                 .entry_i = Constant_EndOfList,
             };
@@ -247,6 +247,7 @@ namespace ice
                 return fr;
             }
 
+            fr.hash_i = key % map._capacity;
             fr.entry_i = map._hashes[fr.hash_i];
 
             while (fr.entry_i != Constant_EndOfList)
@@ -265,7 +266,11 @@ namespace ice
         template<typename Type, ice::ContainerLogic Logic>
         inline auto make(ice::HashMap<Type, Logic>& map, ice::u64 key) noexcept -> ice::ucount
         {
-            FindResult const fr = ice::hashmap::detail::find(map, key);
+            FindResult fr = ice::hashmap::detail::find(map, key);
+            if (fr.hash_i == Constant_EndOfList)
+            {
+                fr.hash_i = key & map._capacity;
+            }
 
             // The count is now the new index.
             ice::ucount const index = map._count;
@@ -367,12 +372,17 @@ namespace ice
         template<typename Type, ice::ContainerLogic Logic>
         inline auto find_or_make(ice::HashMap<Type, Logic>& map, ice::u64 key) noexcept -> ice::ucount
         {
-            FindResult const fr = ice::hashmap::detail::find(map, key);
+            FindResult fr = ice::hashmap::detail::find(map, key);
 
             // If entry index is not valid we still might have a previous element on the same hash index.
             if (fr.entry_i != Constant_EndOfList)
             {
                 return fr.entry_i;
+            }
+
+            if (fr.hash_i == Constant_EndOfList)
+            {
+                fr.hash_i = key % map._capacity;
             }
 
             // The count is now the new index.

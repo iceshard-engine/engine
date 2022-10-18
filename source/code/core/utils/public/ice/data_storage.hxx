@@ -75,7 +75,7 @@ namespace ice
         ice::ucount* span_info = reinterpret_cast<ice::ucount*>(named_data(name));
 
         return ice::Span<T>{
-            reinterpret_cast<T*>(ice::ptr_add(span_info, span_info[1])),
+            reinterpret_cast<T*>(ice::ptr_add(span_info, { span_info[1] })),
             span_info[0]
         };
     }
@@ -87,8 +87,8 @@ namespace ice
         // We assume we used 'created_named_span' this the span size is at head of the data.
         ice::ucount const* span_info = reinterpret_cast<ice::ucount const*>(named_data(name));
 
-        return ice::Span<T>{
-            reinterpret_cast<T*>(ice::ptr_add(span_info, span_info[1])),
+        return ice::Span<T const>{
+            reinterpret_cast<T const*>(ice::ptr_add(span_info, { span_info[1] })),
             span_info[0]
         };
     }

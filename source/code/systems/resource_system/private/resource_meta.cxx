@@ -114,7 +114,7 @@ namespace ice
             }
             else if (arr[0].IsString())
             {
-                ice::Array<ice::String, ContainerLogic::Complex> final_values{ alloc };
+                ice::Array<ice::String> final_values{ alloc };
                 ice::array::reserve(final_values, count);
 
                 for (auto const& value : arr)
@@ -325,7 +325,7 @@ namespace ice
         if (valid && entry.data_count != 0)
         {
             bool const* array_beg = reinterpret_cast<bool const*>(meta._additional_data.location) + entry.value_buffer.offset;
-            ice::array::push_back(results, ice::Span<bool const>{ array_beg, entry.value_buffer.size });
+            ice::array::push_back(results, ice::Span<bool const>{ array_beg, entry.data_count });
         }
 
         return valid;
@@ -345,7 +345,7 @@ namespace ice
             ice::i32 const* array_beg = reinterpret_cast<ice::i32 const*>(
                 ice::ptr_add(meta._additional_data.location, { entry.value_buffer.offset })
             );
-            ice::array::push_back(results, ice::Span<ice::i32 const>{ array_beg, entry.value_buffer.size });
+            ice::array::push_back(results, ice::Span<ice::i32 const>{ array_beg, entry.data_count });
         }
 
         return valid;
@@ -365,7 +365,7 @@ namespace ice
             ice::ResourceFlags const* array_beg = reinterpret_cast<ice::ResourceFlags const*>(
                 ice::ptr_add(meta._additional_data.location, { entry.value_buffer.offset })
             );
-            ice::array::push_back(results, ice::Span<ice::ResourceFlags const>{ array_beg, entry.value_buffer.size });
+            ice::array::push_back(results, ice::Span<ice::ResourceFlags const>{ array_beg, entry.data_count });
         }
 
         return valid;
@@ -385,7 +385,7 @@ namespace ice
             ice::f32 const* array_beg = reinterpret_cast<ice::f32 const*>(
                 ice::ptr_add(meta._additional_data.location, { entry.value_buffer.offset })
             );
-            ice::array::push_back(results, ice::Span<ice::f32 const>{ array_beg, entry.value_buffer.size });
+            ice::array::push_back(results, ice::Span<ice::f32 const>{ array_beg, entry.data_count });
         }
 
         return valid;
@@ -477,7 +477,7 @@ namespace ice
     {
         ice::Memory const mem = ice::buffer::append_reserve(
             meta._additional_data,
-            { ice::string::size(value), ice::ualign::b_4 }
+            { ice::string::size(value) + 1, ice::ualign::b_4 }
         );
 
         ice::memcpy(mem, ice::string::data_view(value));
@@ -494,7 +494,7 @@ namespace ice
                 .data_count = 0,
                 .value_buffer = detail::MetadataEntryBuffer{
                     .offset = static_cast<ice::u16>(str_offset.value),
-                    .size = static_cast<ice::u16>(mem.size.value)
+                    .size = static_cast<ice::u16>(ice::string::size(value))
                 },
             }
         );
@@ -620,7 +620,7 @@ namespace ice
             }
 
             ice::Memory const mem = ice::buffer::append_reserve(meta._additional_data, meta_info);
-            ice::usize const offset = ice::ptr_distance(
+            ice::usize const entries_offset = ice::ptr_distance(
                 ice::buffer::memory_pointer(meta._additional_data),
                 mem.location
             );
@@ -640,9 +640,10 @@ namespace ice
                 );
 
                 entries[idx].size = (ice::u16) ice::string::size(value);
-                entries[idx].offset = (ice::u16) strs_offset.value;
+                entries[idx].offset = (ice::u16) (entries_offset + strs_offset).value;
 
                 strs_offset += { ice::string::size(value) + 1 };
+                idx += 1;
             }
 
             ice::hashmap::set(
@@ -652,7 +653,7 @@ namespace ice
                     .data_type = detail::MetadataEntryType::String,
                     .data_count = static_cast<ice::u16>(ice::span::count(values)),
                     .value_buffer = detail::MetadataEntryBuffer{
-                        .offset = static_cast<ice::u16>(offset.value),
+                        .offset = static_cast<ice::u16>(entries_offset.value),
                         .size = static_cast<ice::u16>(mem.size.value)
                     },
                 }
@@ -716,7 +717,12 @@ namespace ice
             ice::memcpy(ice::ptr_add(mem, hashes_offset), { meta._meta_entries._hashes, ice::size_of<ice::u32> * hash_count, ice::align_of<ice::u32> });
             ice::memcpy(ice::ptr_add(mem, entries_offset), { meta._meta_entries._entries, ice::size_of<HashEntry> * value_count, ice::align_of<HashEntry> });
             ice::memcpy(ice::ptr_add(mem, values_offset), { meta._meta_entries._data, ice::size_of<HashValue> * value_count, ice::align_of<HashValue> });
-            ice::memcpy(ice::ptr_add(mem, data_offset), meta._additional_data);
+
+            // TODO: Create a ptr-add that also updates alignment?
+            ice::AlignResult<void*> res = ice::align_to(ice::ptr_add(mem.location, data_offset), meta._additional_data.alignment);
+            mem.alignment = res.alignment;
+            mem.location = res.value;
+            ice::memcpy(mem, meta._additional_data);
         }
     }
 
@@ -814,10 +820,17 @@ namespace ice
         , _additional_data{ ice::move(other._additional_data) }
     { }
 
+    MutableMetadata::~MutableMetadata() noexcept
+    {
+        ice::buffer::set_capacity(_additional_data, 0_B);
+    }
+
     auto MutableMetadata::operator=(MutableMetadata&& other) noexcept -> MutableMetadata&
     {
         if (this != &other)
         {
+            ice::buffer::set_capacity(_additional_data, 0_B);
+
             _meta_entries = ice::move(other._meta_entries);
             _additional_data = ice::move(other._additional_data);
         }

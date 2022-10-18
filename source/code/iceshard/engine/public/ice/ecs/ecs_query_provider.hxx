@@ -59,7 +59,7 @@ namespace ice::ecs
 
         // Run the internal query to access all data that is not available here.
         this->query_internal(
-            definition.requirements,
+            ice::span::from_std_const(definition.requirements),
             instance_infos,
             data_blocks
         );
