@@ -51,7 +51,7 @@ struct fmt::formatter<ice::BaseStringID<DebugImpl>>
             }
             else
             {
-                return fmt::format_to(ctx.out(), "[sid:{:16x}]'{}'", ice::stringid_hash(value), ice::stringid_hint(value));
+                return fmt::format_to(ctx.out(), "[sid:{:16x}]'{}'", ice::stringid_hash(value).value, ice::stringid_hint(value));
             }
         }
     }

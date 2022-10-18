@@ -172,7 +172,7 @@ namespace ice::ecs
         ArchetypeDataHeader* const data_header = reinterpret_cast<ArchetypeDataHeader*>(result.location);
 
         ice::Memory mem_component_data = ice::ptr_add(result, offset_ids);
-        ice::Memory mem_component_data_end = ice::ptr_add(mem_component_data, header_meminfo.size);
+        ice::Memory mem_component_data_end = ice::ptr_add(result, header_meminfo.size);
 
         // Helper variables to access all component related values
         ice::StringID const* component_identifiers = nullptr;

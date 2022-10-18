@@ -2,7 +2,7 @@
 #include <ice/engine.hxx>
 #include <ice/world/world_trait.hxx>
 #include <ice/gfx/gfx_stage.hxx>
-#include <ice/unique_ptr.hxx>
+#include <ice/mem_unique_ptr.hxx>
 
 namespace ice::trait
 {

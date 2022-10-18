@@ -41,9 +41,11 @@ namespace ice
         {
             ice::string::set_capacity(*this, other._size);
 
+            // TODO: We need actually very, VERY good tests for string manipulations...
             ice::memcpy(
-                ice::string::memory(*this),
-                ice::string::data_view(other)
+                ice::string::end(*this),
+                ice::string::begin(other),
+                ice::size_of<CharType> *ice::string::size(other)
             );
 
             _size = other._size;
@@ -88,7 +90,7 @@ namespace ice
                 );
             }
 
-            _size= other._size;
+            _size = other._size;
             _data[_size] = CharType{ };
         }
         return *this;
@@ -215,7 +217,7 @@ namespace ice
         template<typename CharType>
         inline void resize(ice::HeapString<CharType>& str, ice::ucount new_size) noexcept
         {
-            if (new_size > (str._capacity - 1))
+            if (new_size > 0 && new_size >= str._capacity)
             {
                 ice::string::set_capacity(str, new_size + 1);
             }
@@ -276,8 +278,9 @@ namespace ice
                 }
 
                 ice::memcpy(
-                    ice::string::memory(str),
-                    ice::string::data_view(other)
+                    ice::string::end(str),
+                    ice::string::begin(other),
+                    ice::size_of<CharType> * ice::string::size(other)
                 );
                 str._size = new_size;
                 str._data[str._size] = 0;
@@ -429,7 +432,7 @@ namespace ice
         {
             return ice::Data{
                 .location = str._data,
-                .size = str._size,
+                .size = ice::size_of<CharType> * str._size,
                 .alignment = ice::align_of<CharType>
             };
         }
@@ -439,7 +442,7 @@ namespace ice
         {
             return ice::Memory{
                 .location = str._data,
-                .size = str._capacity,
+                .size = ice::size_of<CharType> * str._capacity ,
                 .alignment = ice::align_of<CharType>
             };
         }

@@ -197,13 +197,15 @@ namespace ice::ecs
         EntityOperationData* data_it = _data_nodes;
         while (data_it != nullptr)
         {
+            EntityOperationData* next = data_it->next;
             _allocator.deallocate(
                 ice::Memory{
-                    .location = ice::exchange(data_it, data_it->next),
+                    .location = data_it,
                     .size = data_it->allocated_size,
                     .alignment = ice::align_of<ice::ecs::EntityOperations::EntityOperationData>
                 }
             );
+            data_it = next;
         }
 
         _root = detail::allocate_operation_nodes(_allocator, 16);

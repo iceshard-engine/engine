@@ -126,18 +126,18 @@ namespace ice::ecs
         constexpr ice::ecs::ArchetypeDefinition<Components...> const& pseudo_archetype_definition = ice::ecs::Constant_ArchetypeDefinition<Components...>;
 
         constexpr ice::StaticArray<ice::u32, sizeof...(Components)> const idx_map = ice::ecs::detail::argument_idx_map<Components...>(
-            pseudo_archetype_definition.component_identifiers
+            ice::span::from_std_const(pseudo_archetype_definition.component_identifiers)
         );
 
         constexpr ice::ecs::EntityOperations::ComponentInfo const component_info{
-            .names = ice::Span{ pseudo_archetype_definition.component_identifiers }.subspan(1),
-            .sizes = ice::Span{ pseudo_archetype_definition.component_sizes }.subspan(1),
+            .names = ice::span::subspan(ice::span::from_std_const(pseudo_archetype_definition.component_identifiers), 1),
+            .sizes = ice::span::subspan(ice::span::from_std_const(pseudo_archetype_definition.component_sizes), 1),
             // We can store alignments here instead of offsets.
-            .offsets = ice::Span{ pseudo_archetype_definition.component_alignments }.subspan(1)
+            .offsets = ice::span::subspan(ice::span::from_std_const(pseudo_archetype_definition.component_alignments), 1)
         };
 
         ice::Data const component_data_array_unsorted[]{
-            ice::Data{ ice::addressof(components), sizeof(Components), alignof(Components) }...
+            ice::Data{ ice::addressof(components), ice::size_of<Components>, ice::align_of<Components> }...
         };
 
         ice::StaticArray<ice::Data, sizeof...(Components)> data_array;
@@ -151,7 +151,7 @@ namespace ice::ecs
             ice::Span<ice::ecs::Entity const>{ &entity, 1 },
             archetype,
             component_info,
-            data_array,
+            ice::span::from_std(data_array),
             true
         );
     }

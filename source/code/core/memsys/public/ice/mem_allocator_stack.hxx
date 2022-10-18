@@ -48,7 +48,8 @@ namespace ice
         std::source_location src_loc
     ) noexcept
         : ice::Allocator{ src_loc }
-        , _backing_alloc{ nullptr}
+        , _backing_alloc{ nullptr }
+        , _static_usage{ 0_B }
     {
     }
 
@@ -59,6 +60,7 @@ namespace ice
     ) noexcept
         : ice::Allocator{ src_loc, backing_allocator }
         , _backing_alloc{ &backing_allocator }
+        , _static_usage{ 0_B }
     {
     }
 
@@ -70,6 +72,7 @@ namespace ice
     ) noexcept
         : ice::Allocator{ src_loc, backing_allocator, name }
         , _backing_alloc{ &backing_allocator }
+        , _static_usage{ 0_B }
     {
     }
 

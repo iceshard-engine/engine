@@ -61,7 +61,8 @@ namespace ice
 
                     do
                     {
-                        ice::WString const file_name = file_data.cFileName;
+                        // TODO: Decide how to work with string static arrays.
+                        ice::WString const file_name = (ice::wchar const*)file_data.cFileName;
 
                         if (file_data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
                         {
@@ -96,7 +97,8 @@ namespace ice
 
                 do
                 {
-                    ice::WString const file_name = file_data.cFileName;
+                    // TODO: Decide how to work with string static arrays.
+                    ice::WString const file_name = (ice::wchar const*)file_data.cFileName;
 
                     if ((file_data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0)
                     {
@@ -128,7 +130,7 @@ namespace ice
                 temp_path_alloc.reset();
 
                 ice::HeapString<ice::wchar> meta_file{ temp_path_alloc, file };
-                ice::HeapString<ice::wchar> data_file{ temp_path_alloc, ice::string::substr(file, 0, ice::string::find_last_of(file, L'.')) };
+                ice::HeapString<ice::wchar> data_file{ temp_path_alloc, ice::string::substr(file, 0, ice::string::find_last_of(file, L'.') - 1) };
 
                 ice::array::clear(resources);
 

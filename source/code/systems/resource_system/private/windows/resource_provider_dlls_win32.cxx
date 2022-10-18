@@ -66,7 +66,8 @@ namespace ice
 
                     do
                     {
-                        ice::WString const file_name = file_data.cFileName;
+                        // TODO: Decide how to work with string static arrays.
+                        ice::WString const file_name = (ice::wchar const*)file_data.cFileName;
 
                         if (file_data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
                         {
@@ -101,7 +102,8 @@ namespace ice
 
                 do
                 {
-                    ice::WString const file_name = file_data.cFileName;
+                    // TODO: Decide how to work with string static arrays.
+                    ice::WString const file_name = (ice::wchar const*)file_data.cFileName;
 
                     if ((file_data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0)
                     {

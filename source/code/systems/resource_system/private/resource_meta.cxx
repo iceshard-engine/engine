@@ -3,6 +3,7 @@
 #include <ice/mem_allocator_forward.hxx>
 #include <ice/mem_allocator_host.hxx>
 #include <ice/stringid.hxx>
+#include <ice/log_formatters.hxx>
 #include <ice/assert.hxx>
 
 #pragma warning(push)
@@ -129,7 +130,7 @@ namespace ice
             }
             else
             {
-                ICE_ASSERT(false, "Unknown value type in resource meta!");
+                ICE_ASSERT(false, "Unknown value type in resource meta, key: {}", key);
             }
         }
 
@@ -817,7 +818,7 @@ namespace ice
 
     MutableMetadata::MutableMetadata(MutableMetadata&& other) noexcept
         : _meta_entries{ ice::move(other._meta_entries) }
-        , _additional_data{ ice::move(other._additional_data) }
+        , _additional_data{ ice::exchange(other._additional_data, {}) }
     { }
 
     MutableMetadata::~MutableMetadata() noexcept

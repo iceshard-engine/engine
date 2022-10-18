@@ -17,7 +17,7 @@ namespace ice
             std::source_location = std::source_location::current()
         ) noexcept;
 
-        auto backing_allocator() noexcept -> ice::Allocator&;
+        inline auto backing_allocator() noexcept -> ice::Allocator&;
 
     protected:
         inline auto do_allocate(ice::AllocRequest request) noexcept -> ice::AllocResult override;
@@ -46,7 +46,7 @@ namespace ice
     {
     }
 
-    auto ProxyAllocator::backing_allocator() noexcept -> ice::Allocator&
+    inline auto ProxyAllocator::backing_allocator() noexcept -> ice::Allocator&
     {
         return _backing_alloc;
     }

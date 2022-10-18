@@ -186,5 +186,5 @@ namespace ice
         ice::ModuleRegister& module_register \
     ) noexcept -> ice::GameFramework * \
     { \
-        return alloc.make<ice::Game<Type>>(alloc, resource_tracker, module_register); \
+        return alloc.create<ice::Game<Type>>(alloc, resource_tracker, module_register); \
     }

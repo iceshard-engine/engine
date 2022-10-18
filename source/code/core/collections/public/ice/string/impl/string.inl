@@ -253,7 +253,7 @@ namespace ice
                 it += 1;
             }
 
-            return it == it_end ? ice::String_NPos : ice::ucount(it_end - it);
+            return it == it_end ? ice::String_NPos : ice::ucount(it_end - it) - 1;
         }
 
         template<typename CharType>
@@ -277,7 +277,7 @@ namespace ice
                 it += 1;
             }
 
-            return it == it_end ? ice::String_NPos : ice::ucount(it_end - it);
+            return it == it_end ? ice::String_NPos : ice::ucount(it_end - it) - 1;
         }
 
         template<typename CharType>
@@ -310,7 +310,7 @@ namespace ice
             auto const* const beg = it;
             auto const* const it_end = ice::string::end(str);
 
-            while (it < it_end && ice::string::find_first_of(character_values, *it) == ice::String_NPos)
+            while (it < it_end && ice::string::find_first_of(character_values, *it) != ice::String_NPos)
             {
                 it += 1;
             }
@@ -339,7 +339,7 @@ namespace ice
                 it += 1;
             }
 
-            return it == end ? ice::String_NPos : ice::ucount(end - it);
+            return it == end ? ice::String_NPos : ice::ucount(end - it) - 1;
         }
 
         template<typename CharType>
@@ -358,12 +358,12 @@ namespace ice
                 start_idx -= 1;
             }
 
-            while (it != it_end && ice::string::find_first_of(character_values, *it) == ice::String_NPos)
+            while (it != it_end && ice::string::find_first_of(character_values, *it) != ice::String_NPos)
             {
                 it += 1;
             }
 
-            return it == it_end ? ice::String_NPos : ice::ucount(it_end - it);
+            return it == it_end ? ice::String_NPos : ice::ucount(it_end - it) - 1;
         }
 
 
@@ -372,7 +372,7 @@ namespace ice
         {
             return ice::Data{
                 .location = str._data,
-                .size = str._size,
+                .size = ice::size_of<CharType> * str._size,
                 .alignment = ice::align_of<CharType>
             };
         }

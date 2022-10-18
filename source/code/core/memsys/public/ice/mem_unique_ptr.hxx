@@ -53,7 +53,7 @@ namespace ice
         auto operator*() noexcept -> T& { return *_ptr; }
         auto operator*() const noexcept -> T const& { return *_ptr; }
 
-        inline auto get() noexcept -> T* { return _ptr; }
+        inline auto get() const noexcept -> T* { return _ptr; }
         inline void reset() noexcept;
 
         Allocator* _alloc;

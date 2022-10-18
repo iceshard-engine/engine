@@ -7,6 +7,7 @@
 #include <ice/world/world_trait_archive.hxx>
 #include <ice/task_thread_pool.hxx>
 #include <ice/asset_storage.hxx>
+#include <ice/shard_payloads.hxx>
 
 #include <ice/profiler.hxx>
 

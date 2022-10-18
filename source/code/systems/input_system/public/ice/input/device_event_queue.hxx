@@ -101,13 +101,13 @@ namespace ice::input
     }
 
     template<typename T> requires std::is_enum_v<T>
-    inline void push(
+    inline void DeviceEventQueue::push(
         ice::input::DeviceHandle device,
         ice::input::DeviceMessage message,
         T payload_value
     ) noexcept
     {
-        push<T, DevicePayloadType::Enum>(device, message, std::underlying_type_t<T>(payload_value));
+        this->push<std::underlying_type_t<T>, DevicePayloadType::Enum>(device, message, std::underlying_type_t<T>(payload_value));
     }
 
 } // ice::input

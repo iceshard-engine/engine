@@ -70,6 +70,8 @@ namespace ice::render::vk
 
         void vk_iceshard_free(void* userdata, void* memory) noexcept
         {
+            if (memory == nullptr) return;
+
             VulkanAllocator* const allocator = reinterpret_cast<VulkanAllocator*>(userdata);
 
             detail::AllocationHeader* const header = detail::header(memory);

@@ -30,7 +30,7 @@
 
 #include "framework/framework_base/framework_base.bff"
 
-// #include "test/test.bff"
+#include "test/test.bff"
 
 #include "core/core/core_tests.bff"
 #include "core/math/math_tests.bff"

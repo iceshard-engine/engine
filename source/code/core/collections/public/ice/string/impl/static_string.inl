@@ -172,7 +172,7 @@ namespace ice
                     ice::memcpy(
                         ice::string::end(str),
                         ice::string::begin(other),
-                        copy_size
+                        ice::size_of<CharType> * copy_size
                     );
                     str._size = new_size;
                     str._data[str._size] = 0;
@@ -333,7 +333,7 @@ namespace ice
         {
             return ice::Data{
                 .location = str._data,
-                .size = str._size,
+                .size = ice::size_of<CharType> * str._size,
                 .alignment = ice::align_of<CharType>
             };
         }
@@ -343,7 +343,7 @@ namespace ice
         {
             return ice::Memory{
                 .location = str._data,
-                .size = Capacity,
+                .size = ice::size_of<CharType> * Capacity,
                 .alignment = ice::align_of<CharType>
             };
         }

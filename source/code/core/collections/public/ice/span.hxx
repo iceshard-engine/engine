@@ -274,7 +274,7 @@ namespace ice
 
 
         template<typename Type, size_t Size>
-        constexpr auto from_std(std::array<Type, Size> const& std_array) noexcept -> ice::Span<Type>
+        constexpr auto from_std(std::array<Type, Size>& std_array) noexcept -> ice::Span<Type>
         {
             return ice::Span<Type>{ std_array.data(), ice::ucount(std_array.size()) };
         }
