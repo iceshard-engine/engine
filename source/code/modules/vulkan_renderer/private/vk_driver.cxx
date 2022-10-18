@@ -4,7 +4,7 @@
 #include "vk_include.hxx"
 #include "vk_utility.hxx"
 
-#include <ice/pod/array.hxx>
+#include <ice/container/array.hxx>
 #include <ice/assert.hxx>
 
 
@@ -29,7 +29,7 @@ namespace ice::render::vk
         , _vk_physical_device{ vk_nullptr }
         , _vk_queue_family_properties{ _allocator }
     {
-        ice::pod::Array<VkPhysicalDevice> physical_devices{ _allocator };
+        ice::Array<VkPhysicalDevice> physical_devices{ _allocator };
         if (enumerate_objects(physical_devices, vkEnumeratePhysicalDevices, vk_instance))
         {
             VK_LOG(ice::LogSeverity::Warning, "Found more than one device! Picking first discrete GPU from list!\n");
@@ -64,7 +64,7 @@ namespace ice::render::vk
 
         if (enumerate_objects(_vk_queue_family_properties, vkGetPhysicalDeviceQueueFamilyProperties, _vk_physical_device))
         {
-            VK_LOG(ice::LogSeverity::Debug, "Device has {} queue families", size(_vk_queue_family_properties));
+            VK_LOG(ice::LogSeverity::Debug, "Device has {} queue families", count(_vk_queue_family_properties));
         }
     }
 
@@ -99,14 +99,16 @@ namespace ice::render::vk
         for (VkQueueFamilyProperties const& queue_family_props : _vk_queue_family_properties)
         {
             VkBool32 supports_presenting;
-            VkResult api_result = vkGetPhysicalDeviceSurfaceSupportKHR(
+
+            [[maybe_unused]]
+            VkResult ph_api_result = vkGetPhysicalDeviceSurfaceSupportKHR(
                 _vk_physical_device,
                 family_index,
                 vulkan_surface,
                 &supports_presenting
             );
             ICE_ASSERT(
-                api_result == VkResult::VK_SUCCESS,
+                ph_api_result == VkResult::VK_SUCCESS,
                 "Couldn't query information if family {} (index) supports presenting!",
                 family_index
             );
@@ -126,7 +128,7 @@ namespace ice::render::vk
             family_index += 1;
         }
 
-        return _vk_alloc->make<VulkanRenderSurface>(_vk_instance, vulkan_surface);
+        return _vk_alloc->create<VulkanRenderSurface>(_vk_instance, vulkan_surface);
     }
 
     void VulkanRenderDriver::destroy_surface(
@@ -137,7 +139,7 @@ namespace ice::render::vk
     }
 
     void VulkanRenderDriver::query_queue_infos(
-        ice::pod::Array<ice::render::QueueFamilyInfo>& queue_info
+        ice::Array<ice::render::QueueFamilyInfo>& queue_info
     ) noexcept
     {
         ice::u32 queue_count = 0;
@@ -147,7 +149,7 @@ namespace ice::render::vk
         }
 
         ice::u32 queue_index = 0;
-        ice::pod::array::reserve(queue_info, queue_count);
+        ice::array::reserve(queue_info, queue_count);
         for (VkQueueFamilyProperties const& queue_family_props : _vk_queue_family_properties)
         {
             QueueFlags flags = QueueFlags::None;
@@ -164,12 +166,12 @@ namespace ice::render::vk
             {
                 flags = flags | QueueFlags::Transfer;
             }
-            if (queue_index == _vk_presentation_queue_family_index)
+            if (queue_index == ice::u32(_vk_presentation_queue_family_index))
             {
                 flags = flags | QueueFlags::Present;
             }
 
-            ice::pod::array::push_back(
+            ice::array::push_back(
                 queue_info,
                 QueueFamilyInfo{
                     .id = QueueID{ queue_index },
@@ -183,7 +185,7 @@ namespace ice::render::vk
     }
 
     auto VulkanRenderDriver::create_device(
-        ice::Span<ice::render::QueueInfo const> queue_info
+        ice::Span<ice::render::QueueInfo const> queue_infos
     ) noexcept -> ice::render::RenderDevice*
     {
         static ice::f32 queue_priorities[] = {
@@ -193,10 +195,10 @@ namespace ice::render::vk
             0.0, 0.0, 0.0, 0.0,
         };
 
-        ice::pod::Array<VkDeviceQueueCreateInfo> queue_create_infos{ _allocator };
-        ice::pod::array::reserve(queue_create_infos, 3);
+        ice::Array<VkDeviceQueueCreateInfo> queue_create_infos{ _allocator };
+        ice::array::reserve(queue_create_infos, 3);
 
-        for (QueueInfo const& queue_info : queue_info)
+        for (QueueInfo const& queue_info : queue_infos)
         {
             ice::u32 const family_index = static_cast<ice::u32>(queue_info.id);
 
@@ -205,7 +207,7 @@ namespace ice::render::vk
             queue_create_info.queueCount = queue_info.count;
             queue_create_info.pQueuePriorities = queue_priorities;
 
-            ice::pod::array::push_back(queue_create_infos, queue_create_info);
+            ice::array::push_back(queue_create_infos, queue_create_info);
         }
 
         char const* const extension_names[] = {
@@ -222,10 +224,10 @@ namespace ice::render::vk
 
         VkDeviceCreateInfo device_create_info{ .sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO };
         device_create_info.pEnabledFeatures = &enabled_device_features;
-        device_create_info.enabledExtensionCount = ice::size(extension_names);
+        device_create_info.enabledExtensionCount = ice::count(extension_names);
         device_create_info.ppEnabledExtensionNames = &extension_names[0];
-        device_create_info.pQueueCreateInfos = ice::pod::array::begin(queue_create_infos);
-        device_create_info.queueCreateInfoCount = ice::pod::array::size(queue_create_infos);
+        device_create_info.pQueueCreateInfos = ice::array::begin(queue_create_infos);
+        device_create_info.queueCreateInfoCount = ice::array::count(queue_create_infos);
 
         VkDevice vk_device;
         VkResult result = vkCreateDevice(
@@ -240,7 +242,7 @@ namespace ice::render::vk
             "Couldn't create logical device"
         );
 
-        return _allocator.make<VulkanRenderDevice>(
+        return _allocator.create<VulkanRenderDevice>(
             _allocator,
             vk_device,
             _vk_physical_device,

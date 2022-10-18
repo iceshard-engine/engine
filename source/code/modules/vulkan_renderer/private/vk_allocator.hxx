@@ -1,8 +1,8 @@
 #pragma once
 #include "vk_include.hxx"
-#include <ice/allocator.hxx>
-#include <ice/memory/proxy_allocator.hxx>
-#include <ice/map.hxx>
+#include <ice/mem_allocator.hxx>
+#include <ice/mem_allocator_proxy.hxx>
+#include <ice/container/hashmap.hxx>
 
 namespace ice::render::vk
 {
@@ -11,24 +11,21 @@ namespace ice::render::vk
     class VulkanAllocator final : public ice::Allocator
     {
     public:
-        VulkanAllocator(ice::Allocator& backing_allocator) noexcept;
+        VulkanAllocator(
+            ice::Allocator& backing_allocator,
+            std::source_location = std::source_location::current()
+        ) noexcept;
         ~VulkanAllocator() noexcept override;
-
-        auto allocate(uint32_t size, uint32_t align = Constant_DefaultAlignment) noexcept -> void* override;
-
-        auto reallocate(void* ptr, uint32_t size, uint32_t align = Constant_DefaultAlignment) noexcept -> void*;
-
-        void deallocate(void* ptr) noexcept override;
-
-        auto allocated_size(void* ptr) const noexcept -> uint32_t override;
-
-        auto total_allocated() const noexcept -> uint32_t override;
 
         auto vulkan_callbacks() const noexcept -> VkAllocationCallbacks const*;
 
+    public:
+        auto do_allocate(ice::AllocRequest req) noexcept -> ice::AllocResult override;
+        auto do_reallocate(void* mem, ice::AllocRequest req) noexcept -> ice::AllocResult;
+        void do_deallocate(ice::Memory mem) noexcept override;
+
     private:
-        ice::memory::ProxyAllocator _backing_allocator;
-        //ice::Map<void*, ice::u32> _allocation_tracker;
+        ice::Allocator& _backing_allocator;
         ice::u32 _total_allocated{ 0 };
 
         VkAllocationCallbacks _vulkan_callbacks;

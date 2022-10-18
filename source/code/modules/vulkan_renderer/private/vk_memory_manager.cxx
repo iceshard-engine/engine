@@ -1,6 +1,5 @@
 #include "vk_memory_manager.hxx"
 #include "vk_utility.hxx"
-#include <ice/memory/pointer_arithmetic.hxx>
 #include <ice/assert.hxx>
 
 namespace ice::render::vk
@@ -28,7 +27,7 @@ namespace ice::render::vk
             vkGetImageMemoryRequirements(vk_device, vk_image, &memory_requirements);
 
             ice::i32 memory_index = -1;
-            for (ice::i32 i = 0; i < memory_properties.memoryTypeCount; ++i)
+            for (ice::i32 i = 0; i < ice::i32(memory_properties.memoryTypeCount); ++i)
             {
                 if ((memory_requirements.memoryTypeBits & 0x1) == 0x1)
                 {
@@ -42,8 +41,8 @@ namespace ice::render::vk
                 memory_requirements.memoryTypeBits >>= 1;
             }
 
-            out_requirements.size = memory_requirements.size;
-            out_requirements.alignment = memory_requirements.alignment;
+            out_requirements.size = ice::u32(memory_requirements.size);
+            out_requirements.alignment = ice::u32(memory_requirements.alignment);
             out_requirements.memory_index = memory_index;
 
             ICE_ASSERT(
@@ -64,7 +63,7 @@ namespace ice::render::vk
             vkGetBufferMemoryRequirements(vk_device, vk_buffer, &memory_requirements);
 
             ice::i32 memory_index = -1;
-            for (ice::i32 i = 0; i < memory_properties.memoryTypeCount; ++i)
+            for (ice::i32 i = 0; i < ice::i32(memory_properties.memoryTypeCount); ++i)
             {
                 if ((memory_requirements.memoryTypeBits & 0x1) == 0x1)
                 {
@@ -78,8 +77,8 @@ namespace ice::render::vk
                 memory_requirements.memoryTypeBits >>= 1;
             }
 
-            out_requirements.size = memory_requirements.size;
-            out_requirements.alignment = memory_requirements.alignment;
+            out_requirements.size = ice::u32(memory_requirements.size);
+            out_requirements.alignment = ice::u32(memory_requirements.alignment);
             out_requirements.memory_index = memory_index;
 
             ICE_ASSERT(
@@ -94,19 +93,19 @@ namespace ice::render::vk
             VkDevice device,
             VulkanMemoryRequirements const& requirements,
             ice::render::vk::AllocationBlockInfo const* info,
-            ice::memory::ForwardAllocator& block_alloc,
-            ice::memory::ForwardAllocator& entry_alloc,
-            ice::pod::Hash<AllocationBlock*>& blocks
+            ice::ForwardAllocator& block_alloc,
+            ice::ForwardAllocator& entry_alloc,
+            ice::HashMap<AllocationBlock*>& blocks
         ) noexcept
         {
             bool found_free_block = false;
 
-            auto* it = ice::pod::multi_hash::find_first(blocks, requirements.memory_index);
+            auto it = ice::multi_hashmap::find_first(blocks, requirements.memory_index);
             while (it != nullptr && found_free_block == false)
             {
-                if (it->value->info == info)
+                if (it.value()->info == info)
                 {
-                    AllocationEntry* entry = it->value->free;
+                    AllocationEntry* entry = it.value()->free;
                     while (entry != nullptr && found_free_block == false)
                     {
                         ice::u32 available_size = entry->size;
@@ -120,7 +119,7 @@ namespace ice::render::vk
                     }
                 }
 
-                it = ice::pod::multi_hash::find_next(blocks, it);
+                it = ice::multi_hashmap::find_next(blocks, it);
             }
 
             if (found_free_block == false)
@@ -143,12 +142,12 @@ namespace ice::render::vk
                     "Couldn't allocate memory for image object!"
                 );
 
-                AllocationEntry* entry = entry_alloc.make<AllocationEntry>();
+                AllocationEntry* entry = entry_alloc.create<AllocationEntry>();
                 entry->next = nullptr;
                 entry->offset = 0;
-                entry->size = alloc_info.allocationSize;
+                entry->size = ice::u32(alloc_info.allocationSize);
 
-                AllocationBlock* block = block_alloc.make<AllocationBlock>();
+                AllocationBlock* block = block_alloc.create<AllocationBlock>();
                 block->memory_type_index = static_cast<ice::i16>(requirements.memory_index);
                 block->block_identifier = global_block_identifier++;
                 block->info = info;
@@ -156,7 +155,7 @@ namespace ice::render::vk
                 block->used = nullptr;
                 block->memory_handle = memory_handle;
 
-                ice::pod::multi_hash::insert(
+                ice::multi_hashmap::insert(
                     blocks,
                     requirements.memory_index,
                     block
@@ -167,16 +166,16 @@ namespace ice::render::vk
         void select_block_and_entry(
             VulkanMemoryRequirements const& requirements,
             ice::render::vk::AllocationBlockInfo const* info,
-            ice::memory::ForwardAllocator& entry_alloc,
-            ice::pod::Hash<AllocationBlock*>& blocks,
+            ice::ForwardAllocator& entry_alloc,
+            ice::HashMap<AllocationBlock*>& blocks,
             ice::render::vk::AllocationBlock*& selected_block_out,
             ice::render::vk::AllocationEntry*& selected_entry_out
         ) noexcept
         {
-            auto* it = ice::pod::multi_hash::find_first(blocks, requirements.memory_index);
+            auto it = ice::multi_hashmap::find_first(blocks, requirements.memory_index);
             while (it != nullptr && selected_block_out == nullptr)
             {
-                AllocationBlock* candidate_block = it->value;
+                AllocationBlock* candidate_block = *it;
                 if (candidate_block->info == info)
                 {
                     // Find a suiting entry from the free list
@@ -227,7 +226,7 @@ namespace ice::render::vk
                         ice::u32 const remaining_size = candidate_entry->size - final_size;
                         if (remaining_size > 0 && remaining_size >= info->allocation_min)
                         {
-                            AllocationEntry* free_entry = entry_alloc.make<AllocationEntry>();
+                            AllocationEntry* free_entry = entry_alloc.create<AllocationEntry>();
                             free_entry->next = nullptr;
                             free_entry->offset = candidate_entry->offset + final_size;
                             free_entry->size = remaining_size;
@@ -248,7 +247,7 @@ namespace ice::render::vk
                         selected_entry_out = candidate_entry;
                     }
                 }
-                it = ice::pod::multi_hash::find_next(blocks, it);
+                it = ice::multi_hashmap::find_next(blocks, it);
             }
 
             ICE_ASSERT(
@@ -280,9 +279,9 @@ namespace ice::render::vk
         VkPhysicalDeviceMemoryProperties const& memory_properties
     ) noexcept
         : _allocator{ alloc }
-        , _map_allocator{ _allocator, 1024 * 1024 * 2 }
-        , _block_allocator{ _allocator, sizeof(AllocationBlock) * 8 }
-        , _entry_allocator{ _allocator, sizeof(AllocationEntry) * 32 }
+        , _map_allocator{ _allocator, { 2_MiB } }
+        , _block_allocator{ _allocator, { ice::size_of<AllocationBlock> * 8 } }
+        , _entry_allocator{ _allocator, { ice::size_of<AllocationEntry> * 32 } }
         , _blocks{ _allocator }
         , _vk_device{ device }
         , _vk_physical_device_memory_properties{ memory_properties }
@@ -291,9 +290,8 @@ namespace ice::render::vk
 
     VulkanMemoryManager::~VulkanMemoryManager() noexcept
     {
-        for (auto block_entry : _blocks)
+        for (AllocationBlock* block : _blocks)
         {
-            AllocationBlock* const block = block_entry.value;
             ICE_ASSERT(
                 block->used == nullptr,
                 "Graphics device memory was not properly released!"
@@ -485,10 +483,10 @@ namespace ice::render::vk
         AllocationEntry* parent_entry = nullptr;
         AllocationEntry* selected_entry = nullptr;
 
-        auto* it = ice::pod::multi_hash::find_first(_blocks, memory_type_index);
+        auto it = ice::multi_hashmap::find_first(_blocks, memory_type_index);
         while (it != nullptr && selected_block == nullptr)
         {
-            AllocationBlock* candidate_block = it->value;
+            AllocationBlock* candidate_block = *it;
             if (candidate_block->block_identifier == block_identifier)
             {
                 selected_block = candidate_block;
@@ -501,7 +499,7 @@ namespace ice::render::vk
                 break;
             }
 
-            it = ice::pod::multi_hash::find_next(_blocks, it);
+            it = ice::multi_hashmap::find_next(_blocks, it);
         }
 
         ICE_ASSERT(
@@ -529,7 +527,7 @@ namespace ice::render::vk
     ) noexcept
     {
         ICE_ASSERT(
-            ice::size(handles) == ice::size(out_data),
+            ice::count(handles) == ice::count(out_data),
             "Missmatched handle and out_data span size!"
         );
 
@@ -543,12 +541,12 @@ namespace ice::render::vk
         // [issue #49]: This part of the code is generally run on a graphics thread. Because of this we need to have a dedicated memory pool / allocator. So it won't interfer with
         //  other allocations done in the mean time on any other thrads.
         //  We should probably slowly invest some time into thread safe allocators.
-        ice::pod::Array<DeviceMappingEntry> vk_mapping_entries{ _map_allocator };
-        ice::pod::array::reserve(vk_mapping_entries, ice::size(handles));
+        ice::Array<DeviceMappingEntry> vk_mapping_entries{ _map_allocator };
+        ice::array::reserve(vk_mapping_entries, ice::count(handles));
 
         auto push_back_unique_and_update = [](auto& array_, VkDeviceMemory vk_memory, VkDeviceSize offset, VkDeviceSize size) noexcept
         {
-            ice::u32 const array_size = ice::pod::array::size(array_);
+            ice::u32 const array_size = ice::array::count(array_);
             for (ice::u32 idx = 0; idx < array_size; ++idx)
             {
                 if (array_[idx].device_memory == vk_memory)
@@ -556,13 +554,13 @@ namespace ice::render::vk
                     DeviceMappingEntry& entry = array_[idx];
                     if (entry.offset > offset)
                     {
-                        ice::u32 const total_size = (entry.offset - offset) + entry.size;
+                        ice::u64 const total_size = (entry.offset - offset) + entry.size;
                         entry.size = total_size;
                         entry.offset = offset;
                     }
                     else
                     {
-                        ice::u32 const size_diff = (offset - entry.offset) + size;
+                        ice::u64 const size_diff = (offset - entry.offset) + size;
                         if (size_diff > entry.size)
                         {
                             //VK_LOG(
@@ -577,7 +575,7 @@ namespace ice::render::vk
                 }
             }
 
-            ice::pod::array::push_back(
+            ice::array::push_back(
                 array_,
                 DeviceMappingEntry{
                     .device_memory = vk_memory,
@@ -616,7 +614,7 @@ namespace ice::render::vk
                 "Mapping memory block failed!"
             );
 
-            ice::u32 const handle_count = ice::size(handles);
+            ice::u32 const handle_count = ice::count(handles);
             for (ice::u32 idx = 0; idx < handle_count; ++idx)
             {
                 AllocationBlock* block = nullptr;
@@ -625,9 +623,9 @@ namespace ice::render::vk
 
                 if (block->memory_handle == mapping_entry.device_memory)
                 {
-                    out_data[idx].location = ice::memory::ptr_add(block_ptr, entry->offset - mapping_entry.offset);
-                    out_data[idx].size = entry->size;
-                    out_data[idx].alignment = 0;
+                    out_data[idx].location = ice::ptr_add(block_ptr, { entry->offset - mapping_entry.offset });
+                    out_data[idx].size = { entry->size };
+                    out_data[idx].alignment = ice::ualign::invalid;
                 }
             }
         }
@@ -640,13 +638,13 @@ namespace ice::render::vk
         // [issue #49]: This part of the code is generally run on a graphics thread. Because of this we need to have a dedicated memory pool / allocator. So it won't interfer with
         //  other allocations done in the mean time on any other thrads.
         //  We should probably slowly invest some time into thread safe allocators.
-        ice::pod::Array<VkDeviceMemory> vk_unmapped_entries{ _map_allocator };
-        ice::pod::array::reserve(vk_unmapped_entries, ice::size(handles));
+        ice::Array<VkDeviceMemory> vk_unmapped_entries{ _map_allocator };
+        ice::array::reserve(vk_unmapped_entries, ice::count(handles));
 
         auto unmap_unique = [&](auto& array_, VkDeviceMemory vk_memory) noexcept
         {
             bool found = false;
-            ice::u32 const array_size = ice::pod::array::size(array_);
+            ice::u32 const array_size = ice::array::count(array_);
             for (ice::u32 idx = 0; idx < array_size && !found; ++idx)
             {
                 if (array_[idx] == vk_memory)
@@ -662,7 +660,7 @@ namespace ice::render::vk
                     vk_memory
                 );
 
-                ice::pod::array::push_back(
+                ice::array::push_back(
                     array_,
                     vk_memory
                 );
@@ -699,10 +697,10 @@ namespace ice::render::vk
         AllocationEntry* parent_entry = nullptr;
         AllocationEntry* selected_entry = nullptr;
 
-        auto* it = ice::pod::multi_hash::find_first(_blocks, memory_type_index);
+        auto it = ice::multi_hashmap::find_first(_blocks, memory_type_index);
         while (it != nullptr && selected_block == nullptr)
         {
-            AllocationBlock* candidate_block = it->value;
+            AllocationBlock* candidate_block = *it;
             if (candidate_block->block_identifier == block_identifier)
             {
                 selected_block = candidate_block;
@@ -715,7 +713,7 @@ namespace ice::render::vk
                 break;
             }
 
-            it = ice::pod::multi_hash::find_next(_blocks, it);
+            it = ice::multi_hashmap::find_next(_blocks, it);
         }
 
         ICE_ASSERT(

@@ -1,9 +1,8 @@
 #pragma once
-#include <ice/string.hxx>
-#include <ice/pod/hash.hxx>
-#include <ice/memory.hxx>
-#include <ice/memory/scratch_allocator.hxx>
-#include <ice/memory/forward_allocator.hxx>
+#include <ice/string/string.hxx>
+#include <ice/container/hashmap.hxx>
+#include <ice/mem_allocator_ring.hxx>
+#include <ice/mem_allocator_forward.hxx>
 #include "vk_include.hxx"
 
 namespace ice::render::vk
@@ -142,10 +141,10 @@ namespace ice::render::vk
 
     private:
         ice::Allocator& _allocator;
-        ice::memory::ScratchAllocator _map_allocator;
-        ice::memory::ForwardAllocator _block_allocator;
-        ice::memory::ForwardAllocator _entry_allocator;
-        ice::pod::Hash<AllocationBlock*> _blocks;
+        ice::RingAllocator _map_allocator;
+        ice::ForwardAllocator _block_allocator;
+        ice::ForwardAllocator _entry_allocator;
+        ice::HashMap<AllocationBlock*> _blocks;
 
         VkDevice _vk_device;
         VkPhysicalDeviceMemoryProperties const& _vk_physical_device_memory_properties;

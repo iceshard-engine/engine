@@ -26,7 +26,7 @@
 
 #include "modules/imgui_module/imgui_module.bff"
 #include "modules/iceshard_pipelines/iceshard_pipelines.bff"
-// #include "modules/vulkan_renderer/vulkan_renderer.bff"
+#include "modules/vulkan_renderer/vulkan_renderer.bff"
 
 // #include "framework/framework_base/framework_base.bff"
 

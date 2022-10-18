@@ -59,7 +59,7 @@ namespace ice::render::vk
             color_image_view.subresourceRange.layerCount = 1;
 
             VkImageView vk_image_view;
-            VkResult result = vkCreateImageView(_vk_device, &color_image_view, nullptr, &vk_image_view);
+            result = vkCreateImageView(_vk_device, &color_image_view, nullptr, &vk_image_view);
             ICE_ASSERT(
                 result == VkResult::VK_SUCCESS,
                 "Couldn't create view for swapchain image!"

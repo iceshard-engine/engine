@@ -1,8 +1,8 @@
 #pragma once
 #include <ice/render/render_driver.hxx>
-#include <ice/memory/proxy_allocator.hxx>
-#include <ice/unique_ptr.hxx>
-#include <ice/pod/array.hxx>
+#include <ice/mem_allocator_proxy.hxx>
+#include <ice/mem_unique_ptr.hxx>
+#include <ice/container/array.hxx>
 #include "vk_allocator.hxx"
 #include "vk_memory_manager.hxx"
 
@@ -31,7 +31,7 @@ namespace ice::render::vk
 
         [[deprecated]]
         void query_queue_infos(
-            ice::pod::Array<ice::render::QueueFamilyInfo>& queue_info
+            ice::Array<ice::render::QueueFamilyInfo>& queue_info
         ) noexcept override;
 
         auto create_device(
@@ -42,15 +42,17 @@ namespace ice::render::vk
             ice::render::RenderDevice* device
         ) noexcept override;
 
+        auto allocator() noexcept -> ice::Allocator& { return _allocator.backing_allocator(); }
+
     private:
-        ice::memory::ProxyAllocator _allocator;
+        ice::ProxyAllocator _allocator;
         ice::UniquePtr<VulkanAllocator> _vk_alloc;
 
         // Vulkan mative handles
         VkInstance _vk_instance;
         VkPhysicalDevice _vk_physical_device;
         VkPhysicalDeviceMemoryProperties _vk_physical_device_memory_properties;
-        ice::pod::Array<VkQueueFamilyProperties> _vk_queue_family_properties;
+        ice::Array<VkQueueFamilyProperties> _vk_queue_family_properties;
 
         // TODO: This value should not be stored here, as it might change for each created surface!
         ice::i32 _vk_presentation_queue_family_index = -1;
