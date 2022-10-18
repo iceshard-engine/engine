@@ -58,7 +58,7 @@ namespace ice
             ice::Metadata image_metadata[4];
         };
 
-        auto load_tilemap_shader(ice::AssetStorage& assets, ice::Utf8String name) noexcept -> ice::Task<ice::Data>
+        auto load_tilemap_shader(ice::AssetStorage& assets, ice::String name) noexcept -> ice::Task<ice::Data>
         {
             ice::Asset const asset = co_await assets.request(ice::render::AssetType_Shader, name, ice::AssetState::Baked);
             ICE_ASSERT(asset_check(asset, AssetState::Baked), "Shader not available!");
@@ -79,7 +79,7 @@ namespace ice
 
             for (ice::u32 idx = 0; idx < tilemap.tileset_count; ++idx)
             {
-                ice::Utf8String const asset_name = tilemap.tilesets[idx].asset;
+                ice::String const asset_name = tilemap.tilesets[idx].asset;
 
                 Asset image_data = co_await runner.asset_storage().request(ice::render::AssetType_Texture2D, asset_name, AssetState::Loaded);
                 ICE_ASSERT(asset_check(image_data, AssetState::Loaded), "Shader not available!");
@@ -217,7 +217,7 @@ namespace ice
         : _allocator{ alloc }
         , _render_cache{ _allocator }
     {
-        ice::pod::hash::reserve(_render_cache, 10);
+        ice::hashmap::reserve(_render_cache, 10);
     }
 
     void IceWorldTrait_RenderTilemap::on_activate(
@@ -237,11 +237,11 @@ namespace ice
         ice::WorldPortal& portal
     ) noexcept
     {
-        for (auto const& entry : _render_cache)
+        for (IceTileMap_RenderCache* cache_ptr : _render_cache)
         {
-            portal.allocator().destroy(entry.value);
+            portal.allocator().destroy(cache_ptr);
         }
-        ice::pod::hash::clear(_render_cache);
+        ice::hashmap::clear(_render_cache);
 
         _asset_system = nullptr;
     }
@@ -254,17 +254,17 @@ namespace ice
     {
         IPT_ZONE_SCOPED_NAMED("[GfxTrait] TileMap :: Update");
 
-        ice::IceTileMap_RenderInfo const* tilemap_render = frame.named_object<ice::IceTileMap_RenderInfo>("tilemap.render-info"_sid);
+        ice::IceTileMap_RenderInfo const* tilemap_render = frame.storage().named_object<ice::IceTileMap_RenderInfo>("tilemap.render-info"_sid);
         if (tilemap_render != nullptr)
         {
             ice::TileMap const* tilemap = tilemap_render->tilemap;
-            ice::IceTileMap_RenderCache* render_cache = ice::pod::hash::get(_render_cache, ice::hash_from_ptr(tilemap), nullptr);
+            ice::IceTileMap_RenderCache* render_cache = ice::hashmap::get(_render_cache, ice::hash_from_ptr(tilemap), nullptr);
 
             if (render_cache != nullptr)
             {
                 if (render_cache->tileset_resourceset[0] != ice::render::ResourceSet::Invalid)
                 {
-                    detail::TileMap_DrawOperation* operation = frame.create_named_object<detail::TileMap_DrawOperation>("tilemap_render.draw_operation"_sid);
+                    detail::TileMap_DrawOperation* operation = frame.storage().create_named_object<detail::TileMap_DrawOperation>("tilemap_render.draw_operation"_sid);
                     operation->tilemap = tilemap;
                     operation->render_info = tilemap_render;
                     operation->render_cache = render_cache;
@@ -273,10 +273,10 @@ namespace ice
             else
             {
 
-                render_cache = portal.allocator().make<ice::IceTileMap_RenderCache>();
+                render_cache = portal.allocator().create<ice::IceTileMap_RenderCache>();
                 render_cache->tileset_resourceset[0] = ice::render::ResourceSet::Invalid;
 
-                ice::pod::hash::set(
+                ice::hashmap::set(
                     _render_cache,
                     ice::hash_from_ptr(tilemap),
                     render_cache
@@ -511,14 +511,12 @@ namespace ice
         device.destroy_resourceset_layout(_resource_set_layouts[1]);
         device.destroy_resourceset_layout(_resource_set_layouts[0]);
 
-        for (auto const& entry : _render_cache)
+        for (ice::IceTileMap_RenderCache const* render_cache : _render_cache)
         {
-            ice::IceTileMap_RenderCache const& render_cache = *entry.value;
-
-            device.destroy_resourcesets(render_cache.tileset_resourceset);
-            for (ice::u32 idx = 0; idx < render_cache.image_count; ++idx)
+            device.destroy_resourcesets(render_cache->tileset_resourceset);
+            for (ice::u32 idx = 0; idx < render_cache->image_count; ++idx)
             {
-                device.destroy_buffer(render_cache.tileset_properties[idx]);
+                device.destroy_buffer(render_cache->tileset_properties[idx]);
             }
         }
     }
@@ -535,13 +533,13 @@ namespace ice
         {
             IPT_ZONE_SCOPED_NAMED("[GfxTrait] TileMap :: Update Camera");
 
-            ice::StringID_Hash camera_name = ice::StringID_Hash::Invalid;
+            ice::StringID_Hash camera_name = ice::StringID_Invalid.value;
             if (ice::shards::inspect_last(engine_frame.shards(), ice::Shard_SetDefaultCamera, camera_name))
             {
                 _render_camera = ice::StringID{ camera_name };
             }
 
-            if (camera_name != ice::stringid_hash(ice::stringid_invalid))
+            if (camera_name != ice::stringid_hash(ice::StringID_Invalid))
             {
                 ice::render::Buffer const camera_buffer = ice::gfx::find_resource<ice::render::Buffer>(
                     gfx_device.resource_tracker(),
@@ -558,7 +556,7 @@ namespace ice
 
         tailcall_bug_workaround();
 
-        ice::detail::TileMap_DrawOperation const* const draw_operation = engine_frame.named_object<ice::detail::TileMap_DrawOperation>(
+        ice::detail::TileMap_DrawOperation const* const draw_operation = engine_frame.storage().named_object<ice::detail::TileMap_DrawOperation>(
             "tilemap_render.draw_operation"_sid
         );
 
@@ -585,7 +583,7 @@ namespace ice
     {
         IPT_ZONE_SCOPED_NAMED("[GfxTrait] TileMap :: Record commands");
 
-        detail::TileMap_DrawOperation const* const draw_operation = engine_frame.named_object<detail::TileMap_DrawOperation>(
+        detail::TileMap_DrawOperation const* const draw_operation = engine_frame.storage().named_object<detail::TileMap_DrawOperation>(
             "tilemap_render.draw_operation"_sid
         );
 
@@ -606,7 +604,7 @@ namespace ice
         {
             if (layer.visible)
             {
-                ice::u32 const instance_count = ice::size(layer.tiles);
+                ice::u32 const instance_count = ice::count(layer.tiles);
 
                 api.draw(
                     cmds,
@@ -657,7 +655,7 @@ namespace ice
             {
                 ice::u32 const instance_byte_offset = sizeof(Tile) * instance_offset;
 
-                instance_offset += ice::size(layer.tiles);
+                instance_offset += ice::count(layer.tiles);
                 updates[update_count] = ice::render::BufferUpdateInfo
                 {
                     .buffer = _instance_buffer,

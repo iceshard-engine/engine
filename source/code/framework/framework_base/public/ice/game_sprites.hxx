@@ -1,5 +1,6 @@
 #pragma once
 #include <ice/stringid.hxx>
+#include <ice/string_types.hxx>
 
 namespace ice
 {
@@ -8,7 +9,7 @@ namespace ice
     {
         static constexpr ice::StringID Identifier = "ice.component.sprite"_sid;
 
-        ice::Utf8String material;
+        ice::String material;
     };
 
     struct SpriteTile

@@ -26,7 +26,7 @@ namespace ice
     namespace detail
     {
 
-        auto load_postprocess_shader(ice::AssetStorage& assets, ice::Utf8String name) noexcept -> ice::Task<ice::Data>
+        auto load_postprocess_shader(ice::AssetStorage& assets, ice::String name) noexcept -> ice::Task<ice::Data>
         {
             ice::Asset const asset = co_await assets.request(ice::render::AssetType_Shader, name, ice::AssetState::Baked);
             ICE_ASSERT(asset_check(asset, AssetState::Baked), "Shader not available!");
@@ -182,7 +182,7 @@ namespace ice
     {
         IPT_ZONE_SCOPED_NAMED("[Trait] PostProcess :: Update");
 
-        if (ice::shards::contains(engine_frame.shards(), ice::platform::Shard_WindowSizeChanged))
+        if (ice::shards::contains(engine_frame.shards(), ice::platform::Shard_WindowResized))
         {
             gfx_cleanup(gfx_frame, gfx_device);
             gfx_setup(gfx_frame, gfx_device);
@@ -199,8 +199,8 @@ namespace ice
     {
         ice::AssetStorage& asset_system = engine.asset_storage();
 
-        _shader_data[0] = ice::sync_wait(ice::detail::load_postprocess_shader(asset_system, u8"shaders/debug/pp-vert"));
-        _shader_data[1] = ice::sync_wait(ice::detail::load_postprocess_shader(asset_system, u8"shaders/debug/pp-frag"));
+        _shader_data[0] = ice::sync_wait(ice::detail::load_postprocess_shader(asset_system, "shaders/debug/pp-vert"));
+        _shader_data[1] = ice::sync_wait(ice::detail::load_postprocess_shader(asset_system, "shaders/debug/pp-frag"));
     }
 
     void IceWorldTrait_RenderPostProcess::record_commands(

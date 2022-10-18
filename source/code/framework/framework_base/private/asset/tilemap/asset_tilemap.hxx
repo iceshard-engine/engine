@@ -1,4 +1,5 @@
 #pragma once
+#include <ice/math.hxx>
 #include <ice/task.hxx>
 #include <ice/resource.hxx>
 #include <ice/resource_meta.hxx>

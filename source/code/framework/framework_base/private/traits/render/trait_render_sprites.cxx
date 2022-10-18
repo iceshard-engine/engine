@@ -40,7 +40,7 @@ namespace ice
         using SpriteQuery = ice::ecs::QueryDefinition<ice::Transform2DStatic const*, ice::Transform2DDynamic const*, ice::Sprite const&, ice::SpriteTile const*>;
         static constexpr ice::StringID SpriteQueryId = "ice.trait.sprite-query"_sid;
 
-        auto load_sprites_shader(ice::AssetStorage& assets, ice::Utf8String name) noexcept -> ice::Task<ice::Data>
+        auto load_sprites_shader(ice::AssetStorage& assets, ice::String name) noexcept -> ice::Task<ice::Data>
         {
             ice::Asset const asset = co_await assets.request(ice::render::AssetType_Shader, name, ice::AssetState::Baked);
             ICE_ASSERT(asset_check(asset, AssetState::Baked), "Shader not available!");
@@ -221,9 +221,9 @@ namespace ice
         using namespace ice::gfx;
         using namespace ice::render;
 
-        for (auto const& entry : _sprite_materials)
+        for (ice::detail::RenderData_Sprite const& entry : _sprite_materials)
         {
-            destroy_resource_material(gfx_device, entry.value);
+            destroy_resource_material(gfx_device, entry);
         }
 
         RenderDevice& device = gfx_device.device();
@@ -245,13 +245,13 @@ namespace ice
         ice::gfx::GfxDevice& gfx_device
     ) noexcept
     {
-        ice::StringID_Hash camera_name = ice::StringID_Hash::Invalid;
+        ice::StringID_Hash camera_name = ice::StringID_Invalid.value;
         if (ice::shards::inspect_last(engine_frame.shards(), ice::Shard_SetDefaultCamera, camera_name))
         {
             _render_camera = ice::StringID{ camera_name };
         }
 
-        if (camera_name != ice::stringid_hash(ice::stringid_invalid))
+        if (camera_name != ice::stringid_hash(ice::StringID_Invalid))
         {
             ice::render::Buffer const camera_buffer = ice::gfx::find_resource<ice::render::Buffer>(
                 gfx_device.resource_tracker(),
@@ -267,7 +267,7 @@ namespace ice
 
         if (_render_camera_buffer != ice::render::Buffer::Invalid)
         {
-            ice::Span<detail::SpriteInstance> const* instances = engine_frame.named_object<ice::Span<detail::SpriteInstance>>("ice.sprite.instances_span"_sid);
+            ice::Span<detail::SpriteInstance> const* instances = engine_frame.storage().named_object<ice::Span<detail::SpriteInstance>>("ice.sprite.instances_span"_sid);
             update_resource_data(gfx_device, *instances);
 
             gfx_frame.set_stage_slot(ice::Constant_GfxStage_DrawSprites, this);
@@ -282,8 +282,8 @@ namespace ice
     {
         _asset_system = ice::addressof(engine.asset_storage());
 
-        _shader_data[0] = ice::sync_wait(ice::detail::load_sprites_shader(*_asset_system, u8"shaders/game2d/sprite-vtx"));
-        _shader_data[1] = ice::sync_wait(ice::detail::load_sprites_shader(*_asset_system, u8"shaders/game2d/sprite-pix"));
+        _shader_data[0] = ice::sync_wait(ice::detail::load_sprites_shader(*_asset_system, "shaders/game2d/sprite-vtx"));
+        _shader_data[1] = ice::sync_wait(ice::detail::load_sprites_shader(*_asset_system, "shaders/game2d/sprite-pix"));
 
         portal.storage().create_named_object<detail::SpriteQuery::Query>(
             detail::SpriteQueryId,
@@ -313,10 +313,10 @@ namespace ice
         detail::SpriteQuery::Query const& query = *portal.storage().named_object<detail::SpriteQuery::Query>(detail::SpriteQueryId);
 
         ice::u32 next_instance_idx = 0;
-        ice::pod::Hash<ice::u32> instance_info_idx{ frame.allocator() };
-        ice::pod::hash::reserve(instance_info_idx, 64);
+        ice::HashMap<ice::u32> instance_info_idx{ frame.allocator() };
+        ice::hashmap::reserve(instance_info_idx, 64);
 
-        ice::Span<detail::SpriteInstanceInfo> instance_infos = frame.create_named_span<detail::SpriteInstanceInfo>("ice.sprite.instance_infos"_sid, 64);
+        ice::Span<detail::SpriteInstanceInfo> instance_infos = frame.storage().create_named_span<detail::SpriteInstanceInfo>("ice.sprite.instance_infos"_sid, 64);
 
         ice::u32 valid_entity_count = 0;
         ice::ecs::query::for_each_entity(
@@ -335,14 +335,14 @@ namespace ice
 
                 ice::u64 const material_hash = ice::hash(stringid(sprite.material));
 
-                if (ice::pod::hash::has(_sprite_materials, material_hash))
+                if (ice::hashmap::has(_sprite_materials, material_hash))
                 {
-                    ice::u32 const info_idx = ice::pod::hash::get(instance_info_idx, material_hash, next_instance_idx);
+                    ice::u32 const info_idx = ice::hashmap::get(instance_info_idx, material_hash, next_instance_idx);
                     detail::SpriteInstanceInfo& instance_info = instance_infos[info_idx];
 
                     if (info_idx == next_instance_idx)
                     {
-                        ice::pod::hash::set(instance_info_idx, material_hash, info_idx);
+                        ice::hashmap::set(instance_info_idx, material_hash, info_idx);
 
                         instance_info.materialid = ice::stringid_hash(ice::stringid(sprite.material));
                         instance_info.instance_offset = std::numeric_limits<ice::u32>::max();
@@ -356,20 +356,23 @@ namespace ice
             }
         );
 
-        frame.create_named_object<ice::Span<detail::SpriteInstanceInfo>>("ice.sprite.instance_infos_span"_sid, instance_infos.subspan(0, next_instance_idx));
+        frame.storage().create_named_object<ice::Span<detail::SpriteInstanceInfo>>(
+            "ice.sprite.instance_infos_span"_sid,
+            ice::span::subspan(instance_infos, 0, next_instance_idx)
+        );
 
 
         ice::u32 current_instance_offset = 0;
-        ice::Span<detail::SpriteInstance> instances = frame.create_named_span<detail::SpriteInstance>("ice.sprite.instances"_sid, valid_entity_count);
+        ice::Span<detail::SpriteInstance> instances = frame.storage().create_named_span<detail::SpriteInstance>("ice.sprite.instances"_sid, valid_entity_count);
 
-        frame.create_named_object<ice::Span<detail::SpriteInstance>>("ice.sprite.instances_span"_sid, instances);
+        frame.storage().create_named_object<ice::Span<detail::SpriteInstance>>("ice.sprite.instances_span"_sid, instances);
 
         ice::ecs::query::for_each_entity(
             query,
             [&](ice::Transform2DStatic const* xform, ice::Transform2DDynamic const* dyn_xform, ice::Sprite const& sprite, ice::SpriteTile const* sprite_tile) noexcept
             {
                 ice::u64 const material_hash = ice::hash(ice::stringid(sprite.material));
-                if (ice::pod::hash::has(instance_info_idx, material_hash) == false)
+                if (ice::hashmap::has(instance_info_idx, material_hash) == false)
                 {
                     return;
                 }
@@ -380,7 +383,7 @@ namespace ice
                     tile = { ice::i32(sprite_tile->material_tile.x), ice::i32(sprite_tile->material_tile.y) };
                 }
 
-                ice::u32 const info_idx = ice::pod::hash::get(instance_info_idx, material_hash, std::numeric_limits<ice::u32>::max());
+                ice::u32 const info_idx = ice::hashmap::get(instance_info_idx, material_hash, std::numeric_limits<ice::u32>::max());
 
                 detail::SpriteInstanceInfo& instance_info = instance_infos[info_idx];
                 if (instance_info.instance_offset == std::numeric_limits<ice::u32>::max())
@@ -418,7 +421,7 @@ namespace ice
             [&](ice::Transform2DStatic const*, ice::Transform2DDynamic const*, ice::Sprite const& sprite, ice::SpriteTile const* sprite_tile) noexcept
             {
                 ice::u64 const material_hash = ice::hash(sprite.material);
-                if (ice::pod::hash::has(_sprite_materials, material_hash) == false)
+                if (ice::hashmap::has(_sprite_materials, material_hash) == false)
                 {
                     runner.execute_task(
                         task_load_resource_material(sprite.material, runner, runner.graphics_device()),
@@ -438,7 +441,7 @@ namespace ice
     {
         IPT_ZONE_SCOPED_NAMED("[Trait] Sprites :: Graphics Commands");
 
-        ice::Span<detail::SpriteInstanceInfo> const* const instances = frame.named_object<ice::Span<detail::SpriteInstanceInfo>>("ice.sprite.instance_infos_span"_sid);
+        ice::Span<detail::SpriteInstanceInfo> const* const instances = frame.storage().named_object<ice::Span<detail::SpriteInstanceInfo>>("ice.sprite.instance_infos_span"_sid);
         if (instances != nullptr)
         {
             api.bind_pipeline(cmds, _pipeline);
@@ -449,7 +452,7 @@ namespace ice
             for (detail::SpriteInstanceInfo const& instance : *instances)
             {
                 static detail::RenderData_Sprite no_data{ .material = { ice::render::Image::Invalid } };
-                detail::RenderData_Sprite const& sprite_render_data = ice::pod::hash::get(_sprite_materials, ice::hash(instance.materialid), no_data);
+                detail::RenderData_Sprite const& sprite_render_data = ice::hashmap::get(_sprite_materials, ice::hash(instance.materialid), no_data);
                 if (sprite_render_data.material[0] == ice::render::Image::Invalid)
                 {
                     continue;
@@ -549,20 +552,20 @@ namespace ice
     }
 
     auto IceWorldTrait_RenderSprites::task_load_resource_material(
-        ice::Utf8String material_name,
+        ice::String material_name,
         ice::EngineRunner& runner,
         ice::gfx::GfxDevice& gfx_device
     ) noexcept -> ice::Task<>
     {
         using namespace ice::render;
 
-        if (ice::pod::hash::has(_sprite_materials, ice::hash(ice::stringid(material_name))))
+        if (ice::hashmap::has(_sprite_materials, ice::hash(ice::stringid(material_name))))
         {
             co_return;
         }
 
         // Set a dummy value so we can check for it and skip loading the same asset more than once.
-        ice::pod::hash::set(_sprite_materials, ice::hash(ice::stringid(material_name)), { });
+        ice::hashmap::set(_sprite_materials, ice::hash(ice::stringid(material_name)), { });
 
         Asset image_data = co_await runner.asset_storage().request(ice::render::AssetType_Texture2D, material_name, AssetState::Loaded);
         ICE_ASSERT(asset_check(image_data, AssetState::Loaded), "Shader not available!");
@@ -592,17 +595,17 @@ namespace ice
         ICE_ASSERT(asset_check(image_handle, AssetState::Runtime), "Shader not available!");
 
         ice::u64 const tile_mesh_id = (static_cast<ice::u64>(tile_width) << 32) | tile_height;
-        bool const has_vertex_offsets = ice::pod::hash::has(_vertex_offsets, tile_mesh_id) == false;
+        bool const has_vertex_offsets = ice::hashmap::has(_vertex_offsets, tile_mesh_id) == false;
 
-        ice::u32 const vertex_offset = ice::pod::hash::get(
+        ice::u32 const vertex_offset = ice::hashmap::get(
             _vertex_offsets,
             tile_mesh_id,
-            ice::pod::array::size(_vertex_offsets._data) * 4
+            _vertex_offsets._count * 4
         );
 
         if (has_vertex_offsets == false)
         {
-            ice::pod::hash::set(_vertex_offsets, tile_mesh_id, vertex_offset);
+            ice::hashmap::set(_vertex_offsets, tile_mesh_id, vertex_offset);
         }
 
         ice::detail::RenderData_Sprite sprite_data{ };
@@ -633,7 +636,7 @@ namespace ice
                 .data = {
                     .location = ice::addressof(sprite_data.material_scale),
                     .size = sizeof(sprite_data.material_scale),
-                    .alignment = 4
+                    .alignment = ice::ualign::b_4
                 }
             }
         };
@@ -713,7 +716,7 @@ namespace ice
 
         co_await runner.schedule_next_frame();
 
-        ice::pod::hash::set(_sprite_materials, ice::hash(material_name), sprite_data);
+        ice::hashmap::set(_sprite_materials, ice::hash(material_name), sprite_data);
         co_return;
     }
 

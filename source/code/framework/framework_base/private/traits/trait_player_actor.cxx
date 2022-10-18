@@ -47,7 +47,7 @@ namespace ice
         Query::Query& query = *portal.storage().named_object<Query::Query>("ice.query.player_actors"_sid);
 
         ice::vec2f movement;
-        ice::StringID_Hash action_hash = ice::stringid_hash(ice::stringid_invalid);
+        ice::StringID_Hash action_hash = ice::stringid_hash(ice::StringID_Invalid);
         if (ice::shards::inspect_first(runner.previous_frame().shards(), ice::action::Shard_ActionEventSuccess, action_hash))
         {
             if (action_hash == "jump-action"_sid_hash)
@@ -111,7 +111,7 @@ namespace ice
         ice::Allocator& alloc
     ) noexcept -> ice::UniquePtr<ice::WorldTrait>
     {
-        return ice::make_unique<ice::WorldTrait, ice::IceWorldTrait_PlayerActor>(alloc);
+        return ice::make_unique<ice::IceWorldTrait_PlayerActor>(alloc);
     }
 
 } // namespace ice

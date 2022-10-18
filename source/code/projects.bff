@@ -28,7 +28,7 @@
 #include "modules/iceshard_pipelines/iceshard_pipelines.bff"
 #include "modules/vulkan_renderer/vulkan_renderer.bff"
 
-// #include "framework/framework_base/framework_base.bff"
+#include "framework/framework_base/framework_base.bff"
 
 // #include "test/test.bff"
 
@@ -37,4 +37,4 @@
 #include "core/memsys/memsys_tests.bff"
 #include "core/collections/collections_tests.bff"
 
-// #include "systems/resource_system/resource_system_tests.bff"
+#include "systems/resource_system/resource_system_tests.bff"

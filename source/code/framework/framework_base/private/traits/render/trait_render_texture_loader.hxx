@@ -3,7 +3,7 @@
 #include <ice/render/render_declarations.hxx>
 #include <ice/gfx/gfx_device.hxx>
 
-#include <ice/pod/hash.hxx>
+#include <ice/container/hashmap.hxx>
 
 namespace ice
 {
@@ -53,15 +53,16 @@ namespace ice
         ) noexcept -> ice::Task<>;
 
     private:
-        ice::pod::Array<ice::render::Image> _images;
+        ice::Array<ice::render::Image> _images;
 
         struct Entry
         {
             ice::AssetHandle const* asset_handle;
+            ice::u64 image_hash;
             ice::u32 image_index;
         };
 
-        ice::pod::Hash<Entry> _tracked_images;
+        ice::HashMap<Entry> _tracked_images;
     };
 
 

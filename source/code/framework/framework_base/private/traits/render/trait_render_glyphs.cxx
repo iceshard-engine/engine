@@ -35,7 +35,7 @@ namespace ice
     namespace detail
     {
 
-        auto load_font_shader(ice::AssetStorage& assets, ice::Data& data, ice::Utf8String name) noexcept -> ice::Task<>
+        auto load_font_shader(ice::AssetStorage& assets, ice::Data& data, ice::String name) noexcept -> ice::Task<>
         {
             ice::Asset const asset = co_await assets.request(ice::render::AssetType_Shader, name, ice::AssetState::Baked);
             ICE_ASSERT(asset_check(asset, AssetState::Baked), "Shader not available!");
@@ -56,7 +56,7 @@ namespace ice
     ) noexcept
     {
         ice::vec2u const extent = gfx_device.swapchain().extent();
-        _framebuffer_size = ice::vec2f(extent.x, extent.y);
+        _framebuffer_size = { ice::f32(extent.x), ice::f32(extent.y) };
 
         using namespace ice::gfx;
         using namespace ice::render;
@@ -201,14 +201,14 @@ namespace ice
     {
         using namespace ice::render;
 
-        ice::Span<ice::vec4f const> vertice_array = engine_frame.named_span<ice::vec4f>("ice.glyph-render.vertices"_sid);
-        if (vertice_array.empty() == false)
+        ice::Span<ice::vec4f const> vertice_array = engine_frame.storage().named_span<ice::vec4f>("ice.glyph-render.vertices"_sid);
+        if (ice::span::any(vertice_array))
         {
             BufferUpdateInfo const update_info[]
             {
                 BufferUpdateInfo{
                     .buffer = _vertex_buffer,
-                    .data = { vertice_array.data(), (ice::u32) vertice_array.size_bytes(), alignof(ice::vec4f) },
+                    .data = { ice::span::data(vertice_array), ice::span::size_bytes(vertice_array), ice::align_of<ice::vec4f> },
                     .offset = 0
                 }
             };
@@ -227,10 +227,10 @@ namespace ice
         using namespace ice::render;
         RenderDevice& device = gfx_device.device();
 
-        for (auto const& entry : _fonts)
+        for (FontEntry const& font : _fonts)
         {
-            device.destroy_resourcesets({ &entry.value.resource_set, 1 });
-            device.destroy_image(entry.value.image);
+            device.destroy_resourcesets({ &font.resource_set, 1 });
+            device.destroy_image(font.image);
         }
 
         device.destroy_buffer(_vertex_buffer);
@@ -256,19 +256,19 @@ namespace ice
         ice::AssetStorage& storage = runner.asset_storage();
 
         runner.execute_task(
-            ice::detail::load_font_shader(storage, _shader_data[0], u8"shaders/debug/font-vert"),
+            ice::detail::load_font_shader(storage, _shader_data[0], "shaders/debug/font-vert"),
             EngineContext::LogicFrame
         );
         runner.execute_task(
-            ice::detail::load_font_shader(storage, _shader_data[1], u8"shaders/debug/font-frag"),
+            ice::detail::load_font_shader(storage, _shader_data[1], "shaders/debug/font-frag"),
             EngineContext::LogicFrame
         );
         runner.execute_task(
-            ice::detail::load_font_shader(storage, _shader_data[2], u8"shaders/debug/font-debug-vert"),
+            ice::detail::load_font_shader(storage, _shader_data[2], "shaders/debug/font-debug-vert"),
             EngineContext::LogicFrame
         );
         runner.execute_task(
-            ice::detail::load_font_shader(storage, _shader_data[3], u8"shaders/debug/font-debug-frag"),
+            ice::detail::load_font_shader(storage, _shader_data[3], "shaders/debug/font-debug-frag"),
             EngineContext::LogicFrame
         );
     }
@@ -279,9 +279,9 @@ namespace ice
         ice::WorldPortal& portal
     ) noexcept
     {
-        for (auto const& entry : _fonts)
+        for (FontEntry const& font : _fonts)
         {
-            runner.asset_storage().release({ entry.value.asset });
+            runner.asset_storage().release({ font.asset });
         }
     }
 
@@ -293,11 +293,11 @@ namespace ice
     {
         IPT_ZONE_SCOPED_NAMED("[Trait] RenderGlyphs :: update");
 
-        ice::pod::Array<ice::Utf8String> load_fonts{ frame.allocator() };
-        ice::pod::array::reserve(load_fonts, 10);
+        ice::Array<ice::String> load_fonts{ frame.allocator() };
+        ice::array::reserve(load_fonts, 10);
 
         ice::u32 const text_draws = ice::shards::count(runner.previous_frame().shards(), ice::Shard_DrawTextCommand);
-        ice::Span<ice::TextRenderInfo> text_infos = frame.create_named_span<ice::TextRenderInfo>("ice.glyph-render.text-infos"_sid, text_draws);
+        ice::Span<ice::TextRenderInfo> text_infos = frame.storage().create_named_span<ice::TextRenderInfo>("ice.glyph-render.text-infos"_sid, text_draws);
 
         ice::u32 draw_vertices = 0;
         ice::shards::inspect_each<ice::DrawTextCommand const*>(
@@ -307,9 +307,9 @@ namespace ice
             {
                 ice::u64 const font_hash = ice::hash(payload->font);
 
-                if (ice::pod::hash::has(_fonts, font_hash) == false)
+                if (ice::hashmap::has(_fonts, font_hash) == false)
                 {
-                    ice::pod::array::push_back(load_fonts, payload->font);
+                    ice::array::push_back(load_fonts, payload->font);
                 }
                 else
                 {
@@ -319,7 +319,7 @@ namespace ice
             }
         );
 
-        ice::vec4f* vertice_array = frame.create_named_span<ice::vec4f>("ice.glyph-render.vertices"_sid, draw_vertices).data();
+        ice::vec4f* vertice_array = ice::span::data(frame.storage().create_named_span<ice::vec4f>("ice.glyph-render.vertices"_sid, draw_vertices));
 
         ice::u32 cmd_idx = 0;
         ice::u32 vert_count = 0;
@@ -334,7 +334,7 @@ namespace ice
                 render_info.vertice_count = 0;
 
                 static FontEntry const dummy_entry{ .font = nullptr };
-                FontEntry const& entry = ice::pod::hash::get(_fonts, font_hash, dummy_entry);
+                FontEntry const& entry = ice::hashmap::get(_fonts, font_hash, dummy_entry);
 
                 if (entry.font != nullptr)
                 {
@@ -352,13 +352,13 @@ namespace ice
             }
         );
 
-        for (ice::Utf8String const font_name : load_fonts)
+        for (ice::String const font_name : load_fonts)
         {
             portal.execute(load_font(runner, font_name));
         }
 
         ice::vec2i window_size{ };
-        if (ice::shards::inspect_last(frame.shards(), ice::platform::Shard_WindowSizeChanged, window_size))
+        if (ice::shards::inspect_last(frame.shards(), ice::platform::Shard_WindowResized, window_size))
         {
             _framebuffer_size = ice::vec2f{ (ice::f32)window_size.x, (ice::f32)window_size.y };
         }
@@ -374,8 +374,8 @@ namespace ice
         IPT_ZONE_SCOPED_NAMED("[Trait] RenderGlyphs :: record commands");
 
         using namespace ice::render;
-        ice::Span<ice::TextRenderInfo const> commands = frame.named_span<ice::TextRenderInfo>("ice.glyph-render.text-infos"_sid);
-        if (commands.empty())
+        ice::Span<ice::TextRenderInfo const> commands = frame.storage().named_span<ice::TextRenderInfo>("ice.glyph-render.text-infos"_sid);
+        if (ice::span::count(commands) == 0)
         {
             return;
         }
@@ -437,8 +437,8 @@ namespace ice
     {
         IPT_ZONE_SCOPED_NAMED("[Trait] RenderGlyphs :: build vertices");
 
-        ice::c8utf const* it = draw_info.text.data();
-        ice::c8utf const* const end = draw_info.text.data() + draw_info.text.size();
+        char const* it = ice::string::begin(draw_info.text);
+        char const* const end = ice::string::end(draw_info.text);
 
         ice::u32 font_size = draw_info.font_size;
         ice::vec2u position = draw_info.position;
@@ -498,7 +498,7 @@ namespace ice
                         posuv_offset += 6;
                     }
 
-                    position.x += glyph.advance * draw_info.font_size;
+                    position.x += ice::u32(glyph.advance * draw_info.font_size);
                     break;
                 }
             }
@@ -509,17 +509,17 @@ namespace ice
 
     auto IceWorldTrait_RenderGlyphs::load_font(
         ice::EngineRunner& runner,
-        ice::Utf8String font_name
+        ice::String font_name
     ) noexcept -> ice::Task<>
     {
         ice::u64 const font_hash = ice::hash(font_name);
 
-        if (ice::pod::hash::has(_fonts, font_hash))
+        if (ice::hashmap::has(_fonts, font_hash))
         {
             co_return;
         }
 
-        ice::pod::hash::set(
+        ice::hashmap::set(
             _fonts,
             font_hash,
             FontEntry{ .font = nullptr }
@@ -539,9 +539,9 @@ namespace ice
         co_await runner.schedule_current_frame();
 
         ice::Data const font_atlas_data{
-            .location = ice::memory::ptr_add(font->data_ptr, font->atlases[0].image_data_offset),
+            .location = ice::ptr_add(font->data_ptr, { font->atlases[0].image_data_offset }),
             .size = font->atlases[0].image_data_size,
-            .alignment = 4
+            .alignment = ice::ualign::b_4
         };
 
         ice::render::Image image = ice::render::Image::Invalid;
@@ -550,7 +550,7 @@ namespace ice
 
         co_await runner.schedule_next_frame();
 
-        ice::pod::hash::set(
+        ice::hashmap::set(
             _fonts,
             font_hash,
             FontEntry{
@@ -589,7 +589,7 @@ namespace ice
 
         ice::render::Buffer const data_buffer = device.create_buffer(
             ice::render::BufferType::Transfer,
-            image_data.size
+            ice::u32(image_data.size.value)
         );
 
         out_image = device.create_image(image_info, { });
@@ -603,7 +603,7 @@ namespace ice
             }
         };
 
-        device.update_buffers({ updates, ice::size(updates) });
+        device.update_buffers({ updates, ice::count(updates) });
 
         struct : public ice::gfx::GfxFrameStage
         {

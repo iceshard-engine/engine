@@ -23,12 +23,12 @@ namespace ice
         GameUI_Page(
             ice::Allocator& alloc,
             ice::Asset page_asset,
-            ice::Utf8String page_asset_name
+            ice::String page_asset_name
         ) noexcept;
 
         ~GameUI_Page() noexcept;
 
-        auto name() const noexcept -> ice::Utf8String;
+        auto name() const noexcept -> ice::String;
         auto name_hash() const noexcept -> ice::u64;
 
         auto info() const noexcept -> ice::ui::PageInfo const&;
@@ -51,7 +51,7 @@ namespace ice
 
         bool set_resource(
             ice::u32 resource_idx,
-            ice::Utf8String string
+            ice::String string
         ) noexcept;
 
         bool set_resource(
@@ -117,7 +117,7 @@ namespace ice
     private:
         ice::Allocator& _allocator;
         ice::Asset const _asset;
-        ice::Utf8String const _asset_name;
+        ice::String const _asset_name;
         ice::ui::PageInfo const* _page;
 
         ice::Memory _page_memory;

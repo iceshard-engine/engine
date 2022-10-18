@@ -106,7 +106,7 @@ namespace ice
         _engine = ice::addressof(engine);
 
         b2Vec2 gravity{ 0.f, -10.f };
-        _world = portal.allocator().make<b2World>(gravity, static_cast<ice::Allocator*>(ice::addressof(portal.allocator())));
+        _world = portal.allocator().create<b2World>(gravity, static_cast<ice::Allocator*>(ice::addressof(portal.allocator())));
 
         b2BodyDef body_def{ };
         body_def.position.Set(0, -0.5f);
@@ -122,7 +122,7 @@ namespace ice
         portal.storage().create_named_object<DynamicQuery::Query>("ice.query.physics_bodies"_sid, portal.entity_storage().create_query(portal.allocator(), DynamicQuery{}));
         portal.storage().create_named_object<PhysicsQuery::Query>("ice.query.physics_data"_sid, portal.entity_storage().create_query(portal.allocator(), PhysicsQuery{}));
 
-        _devui = portal.allocator().make<ice::DevUI_Box2D>(*_world);
+        _devui = portal.allocator().create<ice::DevUI_Box2D>(*_world);
         engine.developer_ui().register_widget(_devui);
     }
 
@@ -291,11 +291,9 @@ namespace ice
         _devui->on_frame(frame);
     }
 
-    auto create_trait_physics(
-        ice::Allocator& alloc
-    ) noexcept -> ice::UniquePtr<ice::WorldTrait_Physics2D>
+    auto create_trait_physics(ice::Allocator& alloc) noexcept -> ice::UniquePtr<ice::WorldTrait_Physics2D>
     {
-        return ice::make_unique<ice::WorldTrait_Physics2D, ice::IceWorldTrait_PhysicsBox2D>(alloc);
+        return ice::make_unique<ice::IceWorldTrait_PhysicsBox2D>(alloc);
     }
 
 } // namespace ice

@@ -32,7 +32,7 @@ namespace ice
     namespace detail
     {
 
-        auto load_ui_shader(ice::AssetStorage& assets, ice::Data& data, ice::Utf8String name) noexcept -> ice::Task<>
+        auto load_ui_shader(ice::AssetStorage& assets, ice::Data& data, ice::String name) noexcept -> ice::Task<>
         {
             ice::Asset const asset = co_await assets.request(ice::render::AssetType_Shader, name, ice::AssetState::Baked);
 
@@ -51,7 +51,7 @@ namespace ice
     ) noexcept
         : _render_data{ alloc }
     {
-        ice::pod::hash::reserve(_render_data, 10);
+        ice::hashmap::reserve(_render_data, 10);
     }
 
     void IceWorldTrait_RenderUI::record_commands(
@@ -76,25 +76,23 @@ namespace ice
         api.push_constant(cmds, _pipeline_layout, ShaderStageFlags::VertexStage, ice::data_view(scale), 0);
         api.push_constant(cmds, _pipeline_layout, ShaderStageFlags::VertexStage, ice::data_view(translate), sizeof(scale));
 
-        for (auto const& entry : _render_data)
+        for (ice::RenderUIData const* const data : _render_data)
         {
-            if (entry.value->resourceset_uniform == ice::render::ResourceSet::Invalid)
+            if (data->resourceset_uniform == ice::render::ResourceSet::Invalid)
             {
                 continue;
             }
 
-            if (entry.value->is_enabled == false)
+            if (data->is_enabled == false)
             {
                 continue;
             }
-
-            ice::RenderUIData const* const data = entry.value;
 
             api.bind_resource_set(cmds, _pipeline_layout, data->resourceset_uniform, 0);
             api.bind_vertex_buffer(cmds, data->buffer_vertices, 0);
             api.bind_vertex_buffer(cmds, data->buffer_colors, 1);
 
-            ice::u32 const instance_count = data->draw_data->vertices.size() / 4;
+            ice::u32 const instance_count = ice::count(data->draw_data->vertices) / 4;
             ice::u32 instance_idx = 0;
 
             while (instance_idx < instance_count)
@@ -218,9 +216,8 @@ namespace ice
         using namespace ice::render;
         RenderDevice& device = gfx_device.device();
 
-        for (auto const& entry : _render_data)
+        for (ice::RenderUIData* const data : _render_data)
         {
-            ice::RenderUIData* const data = entry.value;
             if (data->resourceset_uniform != ResourceSet::Invalid)
             {
                 device.destroy_resourcesets({ &data->resourceset_uniform, 1 });
@@ -247,14 +244,13 @@ namespace ice
 
         RenderDevice& render_device = gfx_device.device();
 
-        for (auto const& entry : _render_data)
+        for (RenderUIData* data : _render_data)
         {
-            ice::RenderUIData* const data = entry.value;
             if (data->resourceset_uniform == ResourceSet::Invalid)
             {
                 data->buffer_uniform = render_device.create_buffer(BufferType::Uniform, sizeof(ice::RenderUIData::Uniform));
-                data->buffer_vertices = render_device.create_buffer(BufferType::Vertex, data->draw_data->vertices.size_bytes());
-                data->buffer_colors = render_device.create_buffer(BufferType::Vertex, data->draw_data->colors.size_bytes());
+                data->buffer_vertices = render_device.create_buffer(BufferType::Vertex, ice::ucount(ice::span::size_bytes(data->draw_data->vertices).value));
+                data->buffer_colors = render_device.create_buffer(BufferType::Vertex, ice::ucount(ice::span::size_bytes(data->draw_data->colors).value));
 
                 render_device.create_resourcesets(_resource_set_layout, { &data->resourceset_uniform, 1 });
 
@@ -325,11 +321,11 @@ namespace ice
     ) noexcept
     {
         runner.execute_task(
-            detail::load_ui_shader(engine.asset_storage(), _shader_data[0], u8"shaders/ui/ui-vert"),
+            detail::load_ui_shader(engine.asset_storage(), _shader_data[0], "shaders/ui/ui-vert"),
             EngineContext::LogicFrame
         );
         runner.execute_task(
-            detail::load_ui_shader(engine.asset_storage(), _shader_data[1], u8"shaders/ui/ui-frag"),
+            detail::load_ui_shader(engine.asset_storage(), _shader_data[1], "shaders/ui/ui-frag"),
             EngineContext::LogicFrame
         );
 
@@ -343,9 +339,9 @@ namespace ice
         ice::WorldPortal& portal
     ) noexcept
     {
-        for (auto const& entry : _render_data)
+        for (RenderUIData* rdata : _render_data)
         {
-            portal.allocator().deallocate(entry.value);
+            portal.allocator().destroy(rdata);
         }
     }
 
@@ -360,7 +356,7 @@ namespace ice
             ice::Shard_RenderUIData,
             [&, this](ice::RenderUIRequest const* render_request)
             {
-                ice::RenderUIData* data = ice::pod::hash::get(_render_data, render_request->id, nullptr);
+                ice::RenderUIData* data = ice::hashmap::get(_render_data, render_request->id, nullptr);
                 if (data == nullptr)
                 {
                     ICE_ASSERT(
@@ -368,8 +364,8 @@ namespace ice
                         "Invalid request! First request is required to be: 'CreateOrUpdate'"
                     );
 
-                    ice::RenderUIData* data = portal.allocator().make<ice::RenderUIData>();
-                    ice::pod::hash::set(_render_data, render_request->id, data);
+                    data = portal.allocator().create<ice::RenderUIData>();
+                    ice::hashmap::set(_render_data, render_request->id, data);
 
                     data->id = render_request->id;
                     data->buffer_uniform = ice::render::Buffer::Invalid;
@@ -413,7 +409,7 @@ namespace ice
         );
 
         ice::vec2i window_size{ };
-        if (ice::shards::inspect_last(frame.shards(), ice::platform::Shard_WindowSizeChanged, window_size))
+        if (ice::shards::inspect_last(frame.shards(), ice::platform::Shard_WindowResized, window_size))
         {
             _display_size = ice::vec2f{ (ice::f32)window_size.x, (ice::f32)window_size.y };
         }

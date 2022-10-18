@@ -73,31 +73,31 @@ namespace ice
         ice::WorldPortal& portal
     ) noexcept
     {
-        ice::pod::Array<ice::u64> remove_entries{ frame.allocator() };
-        ice::pod::array::reserve(remove_entries, 10);
+        ice::Array<ice::u64> remove_entries{ frame.allocator() };
+        ice::array::reserve(remove_entries, 10);
 
-        for (auto const& entry : _tracked_images)
+        for (Entry const& entry : _tracked_images)
         {
-            if (ice::asset_state(entry.value.asset_handle) == AssetState::Unknown)
+            if (ice::asset_state(entry.asset_handle) == AssetState::Unknown)
             {
                 portal.execute(
                     unload_image(
-                        entry.value.image_index,
-                        entry.key,
+                        entry.image_index,
+                        entry.image_hash,
                         runner
                     )
                 );
 
-                ice::pod::array::push_back(
+                ice::array::push_back(
                     remove_entries,
-                    entry.key
+                    entry.image_hash
                 );
             }
         }
 
         for (ice::u64 key : remove_entries)
         {
-            ice::pod::hash::remove(_tracked_images, key);
+            ice::hashmap::remove(_tracked_images, key);
         }
 
 
@@ -133,13 +133,13 @@ namespace ice
         ice::StringID const image_name = ice::stringid(request->resource().uri().path);
         ice::u64 const image_hash = ice::hash(image_name);
 
-        if (ice::pod::hash::has(_tracked_images, image_hash))
+        if (ice::hashmap::has(_tracked_images, image_hash))
         {
             request->resolve(AssetRequest::Result::Skipped, { });
             co_return;
         }
 
-        ice::Memory image_handle_data = request->allocate(sizeof(ice::render::Image));
+        ice::Memory image_handle_data = request->allocate(ice::size_of<ice::render::Image>);
         ice::render::Image& image_handle = *reinterpret_cast<ice::render::Image*>(image_handle_data.location);
 
         co_await gfx_frame.frame_begin();
@@ -158,12 +158,12 @@ namespace ice
                 .data = {
                     .location = image_info->data,
                     .size = image_data_size,
-                    .alignment = 4
+                    .alignment = ice::ualign::b_4
                 }
             }
         };
 
-        device.update_buffers({ updates, ice::size(updates) });
+        device.update_buffers({ updates, ice::count(updates) });
 
         struct : public ice::gfx::GfxFrameStage
         {
@@ -208,15 +208,15 @@ namespace ice
 
         co_await runner.schedule_next_frame();
 
-        ice::u32 const idx = ice::pod::array::size(_images);
-        ice::pod::array::push_back(_images, image_handle);
+        ice::u32 const idx = ice::array::count(_images);
+        ice::array::push_back(_images, image_handle);
 
         ICE_ASSERT(
-            ice::pod::hash::has(_tracked_images, image_hash) == false,
+            ice::hashmap::has(_tracked_images, image_hash) == false,
             "Hash map already contains entry for the given image!"
         );
 
-        ice::pod::hash::set(_tracked_images, image_hash, Entry{ asset_handle, idx });
+        ice::hashmap::set(_tracked_images, image_hash, Entry{ asset_handle, image_hash, idx });
         co_return;
     }
 
@@ -240,11 +240,11 @@ namespace ice
 
         co_await runner.schedule_next_frame();
 
-        if (ice::pod::array::empty(_images) == false)
+        if (ice::array::empty(_images) == false)
         {
-            _images[image_idx] = ice::pod::array::back(_images);
+            _images[image_idx] = ice::array::back(_images);
         }
-        ice::pod::array::pop_back(_images);
+        ice::array::pop_back(_images);
 
         co_return;
     }

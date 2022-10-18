@@ -33,7 +33,7 @@ namespace ice
 
     struct UpdateUIResource
     {
-        ice::c8utf const* page;
+        char const* page;
         ice::StringID resource;
         ice::ui::ResourceType resource_type;
         void const* resource_data;
@@ -42,4 +42,4 @@ namespace ice
 } // namespace ice
 
 template<>
-constexpr ice::PayloadID ice::detail::Constant_ShardPayloadID<ice::UpdateUIResource const*> = ice::payload_id("ice::UpdateUIResource const*");
+constexpr ice::ShardPayloadID ice::Constant_ShardPayloadID<ice::UpdateUIResource const*> = ice::shard_payloadid("ice::UpdateUIResource const*");

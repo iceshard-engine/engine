@@ -3,15 +3,15 @@
 #include <ice/render/render_declarations.hxx>
 
 #include <ice/resource_meta.hxx>
-#include <ice/data.hxx>
+#include <ice/mem_data.hxx>
 
 namespace ice
 {
 
     class AssetStorage;
 
-    static constexpr ice::Utf8String Tilemap_VtxShader = u8"shaders/game2d/tiled-vtx";
-    static constexpr ice::Utf8String Tilemap_PixShader = u8"shaders/game2d/tiled-pix";
+    static constexpr ice::String Tilemap_VtxShader = "shaders/game2d/tiled-vtx";
+    static constexpr ice::String Tilemap_PixShader = "shaders/game2d/tiled-pix";
 
     struct Tile;
     struct TileMap;
@@ -117,7 +117,7 @@ namespace ice
         ice::render::Buffer _instance_buffer;
 
         ice::TileMap const* _last_tilemap = nullptr;
-        ice::pod::Hash<ice::IceTileMap_RenderCache*> _render_cache;
+        ice::HashMap<ice::IceTileMap_RenderCache*> _render_cache;
     };
 
 

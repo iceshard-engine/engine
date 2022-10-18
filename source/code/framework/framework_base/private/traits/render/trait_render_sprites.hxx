@@ -1,7 +1,7 @@
 #pragma once
 #include <ice/game_render_traits.hxx>
 #include <ice/render/render_declarations.hxx>
-#include <ice/data.hxx>
+#include <ice/mem_data.hxx>
 
 namespace ice
 {
@@ -90,7 +90,7 @@ namespace ice
         ) noexcept;
 
         auto task_load_resource_material(
-            ice::Utf8String material_name,
+            ice::String material_name,
             ice::EngineRunner& runner,
             ice::gfx::GfxDevice& gfx_device
         ) noexcept -> ice::Task<>;
@@ -104,7 +104,7 @@ namespace ice
 
     private:
         ice::AssetStorage* _asset_system = nullptr;
-        ice::pod::Hash<ice::detail::RenderData_Sprite> _sprite_materials;
+        ice::HashMap<ice::detail::RenderData_Sprite> _sprite_materials;
 
         ice::render::ResourceSetLayout _resource_set_layouts[2]{ };
         ice::render::ResourceSet _resource_sets[1];
@@ -118,7 +118,7 @@ namespace ice
         ice::render::Image _textures[2];
 
         ice::render::Buffer _vertex_buffer;
-        ice::pod::Hash<ice::u32> _vertex_offsets;
+        ice::HashMap<ice::u32> _vertex_offsets;
 
         ice::render::Buffer _instance_buffer;
 

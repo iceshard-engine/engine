@@ -2,7 +2,7 @@
 #include <ice/gfx/gfx_trait.hxx>
 #include <ice/game_camera.hxx>
 #include <ice/render/render_declarations.hxx>
-#include <ice/pod/array.hxx>
+#include <ice/container/array.hxx>
 
 namespace ice
 {
@@ -66,7 +66,7 @@ namespace ice
         ) noexcept -> ice::Task<>;
 
     private:
-        ice::pod::Array<ice::render::Buffer> _camera_buffers;
+        ice::Array<ice::render::Buffer> _camera_buffers;
     };
 
 } // namespace ice

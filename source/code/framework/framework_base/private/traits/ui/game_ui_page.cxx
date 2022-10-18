@@ -15,7 +15,7 @@
 #include <ice/ui_label.hxx>
 #include <ice/ui_font.hxx>
 
-#include <ice/memory/stack_allocator.hxx>
+#include <ice/mem_allocator_stack.hxx>
 #include <ice/task_thread_pool.hxx>
 #include <ice/profiler.hxx>
 #include <ice/font.hxx>
@@ -30,13 +30,14 @@ namespace ice
             ice::ui::ElementInfo const& element_info,
             ice::u32& count_verts_position,
             ice::u32& count_verts_color
-        ) noexcept -> ice::usize
+        ) noexcept -> ice::meminfo
         {
-            ice::usize result = sizeof(ice::ui::Element) + sizeof(ice::GameUI_ElementState);
+            ice::meminfo result = ice::meminfo_of<ice::ui::Element>;
+            result += ice::meminfo_of<ice::GameUI_ElementState>;
             if (element_info.style_i != 0)
             {
-                result += sizeof(ice::vec2f) * 4; // positions
-                result += sizeof(ice::vec4f) * 4; // colors
+                result += ice::meminfo_of<ice::vec2f> * 4; // positions
+                result += ice::meminfo_of<ice::vec4f> * 4; // colors
                 count_verts_position += 4;
                 count_verts_color += 4;
             }
@@ -45,17 +46,17 @@ namespace ice
 
         auto resource_required_memory_size(
             ice::ui::ResourceInfo const& resource_info
-        ) noexcept -> ice::usize
+        ) noexcept -> ice::meminfo
         {
-            ice::usize result = sizeof(ice::ui::UIResourceData);
+            ice::meminfo result = ice::meminfo_of<ice::ui::UIResourceData>;
             if (resource_info.type == ice::ui::ResourceType::Utf8String)
             {
-                result += alignof(ice::Utf8String) + sizeof(ice::Utf8String);
-                result += resource_info.type_data + 1; // We are not concerned about 1 byte overhead.
+                result += ice::meminfo_of<ice::String>;
+                result += ice::meminfo{ resource_info.type_data + 1, ice::ualign::b_4 }; // We are not concerned about 1 byte overhead.
             }
             else if (resource_info.type == ice::ui::ResourceType::Font)
             {
-                result += alignof(ice::Font const*) + sizeof(ice::Font const*);
+                result += ice::meminfo_of<ice::Font const*>;
             }
             return result;
         }
@@ -64,9 +65,9 @@ namespace ice
             ice::ui::PageInfo const& page_info,
             ice::u32& count_verts_position,
             ice::u32& count_verts_color
-        ) noexcept -> ice::usize
+        ) noexcept -> ice::meminfo
         {
-            ice::usize result = alignof(ice::Font const*);
+            ice::meminfo result = ice::meminfo_of<ice::Font const*>;
             for (ice::ui::ElementInfo const& element_info : page_info.elements)
             {
                 result += element_required_memory_size(element_info, count_verts_position, count_verts_color);
@@ -81,29 +82,28 @@ namespace ice
         auto debug_required_memory_size(
             ice::ui::PageInfo const& page_info,
             ice::u32& count_verts
-        ) noexcept -> ice::usize
+        ) noexcept -> ice::meminfo
         {
-            ice::usize result = 0;
+            ice::meminfo result{ };
             if constexpr (ice::build::is_release == false)
             {
                 // Allocate enough space to draw debug boxes (bbox, hitbox, contentbox)
-                ice::usize const count_vertices_box = 4;
-                ice::usize const count_vertices_boxes = count_vertices_box * 3;
-                ice::usize const count_vertices_elements = count_vertices_boxes * ice::size(page_info.elements);
+                ice::ucount const count_vertices_box = 4;
+                ice::ucount const count_vertices_boxes = count_vertices_box * 3;
+                ice::ucount const count_vertices_elements = count_vertices_boxes * ice::count(page_info.elements);
                 count_verts += count_vertices_elements;
 
-                ice::usize const size_vertices_elements = count_vertices_elements * sizeof(ice::vec2f);
-                result += size_vertices_elements;
+                result = ice::meminfo_of<ice::vec2f> * count_vertices_elements;
             }
             return result;
         }
 
         auto resource_set_value(
             ice::ui::UIResourceData& resource,
-            ice::Utf8String str
+            ice::String str
         ) noexcept
         {
-            ice::Utf8String* str_ptr = reinterpret_cast<ice::Utf8String*>(resource.location);
+            ice::String* str_ptr = reinterpret_cast<ice::String*>(resource.location);
 
             ice::u32 const new_str_size = ice::min(ice::string::size(str), resource.info.type_data);
             if (new_str_size == 0)
@@ -115,7 +115,7 @@ namespace ice
                 char* str_data = reinterpret_cast<char*>(str_ptr + 1);
                 ice::memcpy(
                     str_data,
-                    ice::string::data(str),
+                    ice::string::begin(str),
                     new_str_size
                 );
                 str_data[new_str_size] = '\0';
@@ -137,7 +137,7 @@ namespace ice
     GameUI_Page::GameUI_Page(
         ice::Allocator& alloc,
         ice::Asset page_asset,
-        ice::Utf8String page_asset_name
+        ice::String page_asset_name
     ) noexcept
         : _allocator{ alloc }
         , _asset{ page_asset }
@@ -154,23 +154,23 @@ namespace ice
         , _current_flags{ }
     {
         ice::u32 count_verts_debug = 0;
-        ice::usize const debug_data_size = ice::detail::debug_required_memory_size(*_page, count_verts_debug);
+        ice::meminfo const debug_data_size = ice::detail::debug_required_memory_size(*_page, count_verts_debug);
 
         ice::u32 count_verts_position = 0;
         ice::u32 count_verts_color = 0;
 
-        _page_memory.size = ice::detail::page_required_memory_size(*_page, count_verts_position, count_verts_color);
-        _page_memory.alignment = 16;
-        _page_memory.location = _allocator.allocate(_page_memory.size + debug_data_size, _page_memory.alignment);
+        ice::meminfo mi_page = ice::detail::page_required_memory_size(*_page, count_verts_position, count_verts_color);
+        ice::usize off_debugdata = mi_page += debug_data_size;
 
-        ice::memset(_page_memory.location, 0, _page_memory.size);
+        _page_memory = _allocator.allocate(mi_page);
+        ice::memset(_page_memory.location, 0, _page_memory.size.value);
 
-        ice::u32 const count_elements = ice::size(_page->elements);
-        ice::u32 const count_resources = ice::size(_page->ui_resources);
+        ice::u32 const count_elements = ice::count(_page->elements);
+        ice::u32 const count_resources = ice::count(_page->ui_resources);
 
         ice::GameUI_ElementState* states_ptr = reinterpret_cast<ice::GameUI_ElementState*>(_page_memory.location);
         ice::ui::Element* const elements_ptr = reinterpret_cast<ice::ui::Element*>(
-            ice::memory::ptr_align_forward(states_ptr + count_elements, alignof(ice::ui::Element))
+            ice::align_to(states_ptr + count_elements, ice::align_of<ice::ui::Element>).value
         );
         static_assert(alignof(ice::ui::UIResourceData) == alignof(ice::ui::Element));
         ice::ui::UIResourceData* const resources_ptr = reinterpret_cast<ice::ui::UIResourceData*>(elements_ptr + count_elements);
@@ -231,34 +231,34 @@ namespace ice
         }
 
         // Update resource infos
-        for (ice::u32 idx = 0; idx < count_resources; ++idx)
+        for (idx = 0; idx < count_resources; ++idx)
         {
             ice::ui::UIResourceData& resource = _resources[idx];
             resource.info = _page->ui_resources[idx];
 
             if (resource.info.type == ice::ui::ResourceType::Utf8String)
             {
-                resource.location = ice::memory::ptr_align_forward(
+                resource.location = ice::align_to(
                     additional_data_ptr,
-                    alignof(ice::Utf8String)
-                );
+                    ice::align_of<ice::String>
+                ).value;
 
-                additional_data_ptr = ice::memory::ptr_add(
+                additional_data_ptr = ice::ptr_add(
                     resource.location,
-                    sizeof(ice::Utf8String) + resource.info.type_data + 1
+                    ice::size_of<ice::String> + ice::usize{ resource.info.type_data + 1 }
                 );
 
-                ice::detail::resource_set_value(resource, u8"");
+                ice::detail::resource_set_value(resource, "");
             }
             else if (resource.info.type == ice::ui::ResourceType::Font)
             {
-                resource.location = ice::memory::ptr_align_forward(
+                resource.location = ice::align_to(
                     additional_data_ptr,
-                    alignof(ice::Font const*)
-                );
-                additional_data_ptr = ice::memory::ptr_add(
+                    ice::align_of<ice::Font const*>
+                ).value;
+                additional_data_ptr = ice::ptr_add(
                     resource.location,
-                    sizeof(ice::Font const*)
+                    ice::size_of<ice::Font const*>
                 );
             }
         }
@@ -266,17 +266,17 @@ namespace ice
         // TODO:
         if constexpr (ice::build::is_release == false)
         {
-            void* debug_data = ice::memory::ptr_add(_page_memory.location, _page_memory.size);
+            void* debug_data = ice::ptr_add(_page_memory.location, _page_memory.size);
             ICE_ASSERT(additional_data_ptr <= debug_data, "Debug data starts at runtime memory location!");
         }
     }
 
     GameUI_Page::~GameUI_Page() noexcept
     {
-        _allocator.deallocate(_page_memory.location);
+        _allocator.deallocate(_page_memory);
     }
 
-    auto GameUI_Page::name() const noexcept -> ice::Utf8String
+    auto GameUI_Page::name() const noexcept -> ice::String
     {
         return _asset_name;
     }
@@ -293,13 +293,13 @@ namespace ice
 
     auto GameUI_Page::element(ice::u16 idx) const noexcept -> ice::ui::Element const&
     {
-        ICE_ASSERT(idx <= ice::size(_elements), "Out of bounds");
+        ICE_ASSERT(idx <= ice::count(_elements), "Out of bounds");
         return _elements[idx];
     }
 
     void GameUI_Page::open(ice::vec2u canvas_size) noexcept
     {
-        _current_canvas_size = ice::vec2f(canvas_size.x, canvas_size.y);
+        _current_canvas_size = { ice::f32(canvas_size.x), ice::f32(canvas_size.y) };
         _current_flags |= Flags::ActionShow | Flags::StateDirtyLayout | Flags::StateDirtyStyle;
         _current_flags &= ~Flags::ActionHide;
     }
@@ -322,7 +322,7 @@ namespace ice
 
     void GameUI_Page::resize(ice::vec2u canvas_size) noexcept
     {
-        _current_canvas_size = ice::vec2f(canvas_size.x, canvas_size.y);
+        _current_canvas_size = { ice::f32(canvas_size.x), ice::f32(canvas_size.y) };
         _current_flags |= Flags::StateDirtyLayout | Flags::StateDirtyStyle;
     }
 
@@ -334,11 +334,11 @@ namespace ice
 
     bool GameUI_Page::set_resource(
         ice::u32 resource_idx,
-        ice::Utf8String string
+        ice::String string
     ) noexcept
     {
         using ice::ui::ResourceType;
-        if (resource_idx >= ice::size(_resources))
+        if (resource_idx >= ice::count(_resources))
         {
             return false;
         }
@@ -355,7 +355,7 @@ namespace ice
     ) noexcept
     {
         using ice::ui::ResourceType;
-        if (resource_idx >= ice::size(_resources))
+        if (resource_idx >= ice::count(_resources))
         {
             return false;
         }
@@ -381,8 +381,8 @@ namespace ice
         ice::ui::ElementState state
     ) noexcept
     {
-        ice::u16 const idx = &element - _elements.data();
-        ICE_ASSERT(idx < ice::size(_elements), "Out of bounds!");
+        ice::u16 const idx = ice::u16(&element - ice::span::data(_elements));
+        ICE_ASSERT(idx < ice::count(_elements), "Out of bounds!");
         if (_elements[idx].state != state)
         {
             set_dirty_style();
@@ -431,7 +431,7 @@ namespace ice
             }
 
             ice::ui::Position const pos = ice::ui::rect_position(_elements[0].bbox);
-            ice::RenderUIRequest const* const request = frame.create_named_object<ice::RenderUIRequest>(
+            ice::RenderUIRequest const* const request = frame.storage().create_named_object<ice::RenderUIRequest>(
                 ice::stringid(_asset_name),
                 ice::RenderUIRequest
                 {
@@ -450,7 +450,7 @@ namespace ice
         {
             if (has_all(_current_flags, Flags::ActionHide))
             {
-                ice::RenderUIRequest const* const request = frame.create_named_object<ice::RenderUIRequest>(
+                ice::RenderUIRequest const* const request = frame.storage().create_named_object<ice::RenderUIRequest>(
                     ice::stringid(_asset_name),
                     ice::RenderUIRequest
                     {
@@ -469,7 +469,7 @@ namespace ice
         }
         else if (has_all(_current_flags, Flags::ActionShow))
         {
-            ice::RenderUIRequest const* const request = frame.create_named_object<ice::RenderUIRequest>(
+            ice::RenderUIRequest const* const request = frame.storage().create_named_object<ice::RenderUIRequest>(
                 ice::stringid(_asset_name),
                 ice::RenderUIRequest
                 {
@@ -506,7 +506,7 @@ namespace ice
         };
 
         IPT_ZONE_SCOPED;
-        ice::u32 const count_elements = ice::size(_page->elements);
+        ice::u32 const count_elements = ice::count(_page->elements);
 
         for (ice::u32 idx = 0; idx < count_elements; ++idx)
         {
@@ -625,8 +625,8 @@ namespace ice
             ice::ui::StyleColor const* color_data = nullptr;
             if (ice::ui::element_get_style(*_page, element, StyleFlags::TargetBackground, color_data))
             {
-                ice::vec2f* vertices = element.draw_data.vertices.data();
-                ice::vec4f* colors = element.draw_data.colors.data();
+                ice::vec2f* vertices = ice::span::data(element.draw_data.vertices);
+                ice::vec4f* colors = ice::span::data(element.draw_data.colors);
 
                 // Colors
                 ice::vec4f const style_color = ice::vec4f{
@@ -661,9 +661,9 @@ namespace ice
     auto GameUI_Page::update_resources(ice::EngineFrame const& frame) noexcept -> ice::Task<>
     {
         using ice::ui::ResourceType;
-        ice::memory::StackAllocator_512 alloc;
+        ice::StackAllocator<512_B> alloc;
 
-        ice::pod::Array<ice::UpdateUIResource const*> resource_updates{ alloc };
+        ice::Array<ice::UpdateUIResource const*> resource_updates{ alloc };
         if (ice::shards::inspect_all(frame.shards(), ice::Shard_GameUI_UpdateResource, resource_updates))
         {
             for (ice::UpdateUIResource const* resupdate : resource_updates)
@@ -675,7 +675,7 @@ namespace ice
                     {
                         this->set_resource(
                             resupdate->resource,
-                            *reinterpret_cast<ice::Utf8String const*>(resupdate->resource_data)
+                            *reinterpret_cast<ice::String const*>(resupdate->resource_data)
                         );
                     }
                     else if (resupdate->resource_type == ResourceType::Font)
@@ -700,7 +700,7 @@ namespace ice
         {
             ice::ui::ElementInfo const& element_info = *element.definition;
             ice::ui::FontInfo const* font_info = nullptr;
-            ice::Utf8String text;
+            ice::String text;
 
             ice::u32 type_idx = element_info.type_data_i + idx++;
             if (element_info.type == ui::ElementType::Button)
@@ -719,11 +719,11 @@ namespace ice
 
             if (font_info != nullptr)
             {
-                ice::DrawTextCommand* draw_text = frame.create_named_object<ice::DrawTextCommand>(
+                ice::DrawTextCommand* draw_text = frame.storage().create_named_object<ice::DrawTextCommand>(
                     ice::StringID{ ice::StringID_Hash{ name_hash() + type_idx } }
                 );
-                ice::Utf8String const font_name{
-                    reinterpret_cast<ice::c8utf const*>(ice::memory::ptr_add(_page->additional_data, font_info->font_name_offset)),
+                ice::String const font_name{
+                    reinterpret_cast<char const*>(ice::ptr_add(_page->additional_data, { font_info->font_name_offset })),
                     font_info->font_name_size
                 };
 

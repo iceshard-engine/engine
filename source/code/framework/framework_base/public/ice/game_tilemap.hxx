@@ -2,7 +2,7 @@
 #include <ice/span.hxx>
 #include <ice/shard.hxx>
 #include <ice/stringid.hxx>
-#include <ice/unique_ptr.hxx>
+#include <ice/mem_unique_ptr.hxx>
 #include <ice/world/world_trait.hxx>
 #include <ice/asset_type.hxx>
 
@@ -11,7 +11,7 @@ namespace ice
 
     static constexpr ice::Shard Shard_LoadTileMap = "action/tilemap/load"_shard;
 
-    static constexpr ice::AssetType AssetType_TileMap = ice::make_asset_type(u8"ice/framework/tile-map");
+    static constexpr ice::AssetType AssetType_TileMap = ice::make_asset_type("ice/framework/tile-map");
 
     static constexpr ice::StringID Constant_TraitName_Tilemap
         = "ice.base-framework.trait-tilemap"_sid;
@@ -49,7 +49,7 @@ namespace ice
 
     struct TileSet
     {
-        ice::Utf8String asset;
+        ice::String asset;
         ice::vec2f element_size;
     };
 
@@ -75,7 +75,7 @@ namespace ice
     class WorldTrait_TileMap : public ice::WorldTrait
     {
     public:
-        virtual void load_tilemap(ice::Utf8String tilemap) noexcept = 0;
+        virtual void load_tilemap(ice::String tilemap) noexcept = 0;
     };
 
     class ModuleRegister;

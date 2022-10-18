@@ -87,8 +87,8 @@ namespace ice
         ice::gfx::GfxDevice& gfx_device
     ) noexcept
     {
-        ice::Span<ice::TraitCameraData const> const& cameras = *engine_frame.named_object<ice::Span<ice::TraitCameraData const>>("ice.cameras.span"_sid);
-        ice::u32 const camera_count = ice::size(cameras);
+        ice::Span<ice::TraitCameraData const> const& cameras = *engine_frame.storage().named_object<ice::Span<ice::TraitCameraData const>>("ice.cameras.span"_sid);
+        ice::u32 const camera_count = ice::count(cameras);
 
         ice::render::RenderDevice& device = gfx_device.device();
 
@@ -157,7 +157,7 @@ namespace ice
         detail::QueryCamera::Query const* const camera_query = detail::get_camera_query(portal);
 
         ice::u32 const camera_count = ice::ecs::query::entity_count(*camera_query);
-        ice::Span<ice::TraitCameraData> camera_span = frame.create_named_span<ice::TraitCameraData>("ice.cameras"_sid, camera_count);
+        ice::Span<ice::TraitCameraData> camera_span = frame.storage().create_named_span<ice::TraitCameraData>("ice.cameras"_sid, camera_count);
 
 
 
@@ -169,7 +169,7 @@ namespace ice
             *camera_query,
             [&, this](ice::ecs::EntityHandle entity, ice::Camera const& cam, ice::CameraOrtho const* ortho, ice::CameraPerspective const* persp) noexcept
             {
-                if (cam.name == ice::stringid_invalid)
+                if (cam.name == ice::StringID_Invalid)
                 {
                     return;
                 }
@@ -232,14 +232,14 @@ namespace ice
         // TODO: Requires a thread-safe allocator implementation if we want to skip a revisit on the frame thread.
         co_await runner.schedule_current_frame();
 
-        ice::u32 const current_buffer_count = ice::pod::array::size(_camera_buffers);
+        ice::u32 const current_buffer_count = ice::array::count(_camera_buffers);
         ice::u32 const required_buffer_count = cam_idx;
         for (ice::u32 idx = current_buffer_count; idx < required_buffer_count; ++idx)
         {
-            ice::pod::array::push_back(_camera_buffers, ice::render::Buffer::Invalid);
+            ice::array::push_back(_camera_buffers, ice::render::Buffer::Invalid);
         }
 
-        frame.create_named_object<ice::Span<ice::TraitCameraData>>("ice.cameras.span"_sid, camera_span.subspan(0, cam_idx));
+        frame.storage().create_named_object<ice::Span<ice::TraitCameraData>>("ice.cameras.span"_sid, ice::span::subspan(camera_span, cam_idx));
         co_return;
     }
 
