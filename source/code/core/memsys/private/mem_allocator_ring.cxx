@@ -165,18 +165,16 @@ namespace ice
         return { .memory = alloc_data, .size = request.size, .alignment = request.alignment };
     }
 
-    void RingAllocator::do_deallocate(ice::Memory memory) noexcept
+    void RingAllocator::do_deallocate(void* pointer) noexcept
     {
-        ICE_ASSERT_CORE(memory.location != nullptr);
-
-        if (is_backed(memory.location))
+        if (is_backed(pointer))
         {
-            _backing_alloc.deallocate(memory);
+            _backing_alloc.deallocate(pointer);
             return;
         }
 
         // Get the associated allocation header
-        mem::AllocationHeader* alloc_header = mem::header(memory.location);
+        mem::AllocationHeader* alloc_header = mem::header(pointer);
 
         ICE_ASSERT_CORE((alloc_header->allocated_size.value & detail::Constant_FreeMemoryBit) == 0);
         alloc_header->allocated_size.value = alloc_header->allocated_size.value | detail::Constant_FreeMemoryBit;

@@ -210,7 +210,7 @@ namespace ice
                 it += 1;
             }
 
-            return it >= end ? ice::String_NPos : ice::ucount(it - beg);
+            return it >= end ? ice::String_NPos : start_idx + ice::ucount(it - beg);
         }
 
         template<typename CharType>
@@ -229,7 +229,7 @@ namespace ice
                 it += 1;
             }
 
-            return it >= it_end ? ice::String_NPos : ice::ucount(beg - it);
+            return it >= it_end ? ice::String_NPos : start_idx + ice::ucount(beg - it);
         }
 
         template<typename CharType>
@@ -296,7 +296,7 @@ namespace ice
                 it += 1;
             }
 
-            return it >= end ? ice::String_NPos : ice::ucount(it - beg);
+            return it >= end ? ice::String_NPos : start_idx + ice::ucount(it - beg);
         }
 
         template<typename CharType>
@@ -315,7 +315,7 @@ namespace ice
                 it += 1;
             }
 
-            return it >= it_end ? ice::String_NPos : ice::ucount(beg - it);
+            return it >= it_end ? ice::String_NPos : start_idx + ice::ucount(beg - it);
         }
 
         template<typename CharType>

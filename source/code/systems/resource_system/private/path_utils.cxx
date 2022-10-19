@@ -75,7 +75,10 @@ namespace ice::path
                 {
                     ice::string::pop_back(left);
                 }
-                ice::string::push_back(left, Separators_Directory<CharType>[1]);
+                if (ice::string::front(right) != Separators_Directory<CharType>[1] && ice::string::front(right) != Separators_Directory<CharType>[0])
+                {
+                    ice::string::push_back(left, Separators_Directory<CharType>[1]);
+                }
             }
 
             if (right != Separators_Dot<CharType>)

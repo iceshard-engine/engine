@@ -98,7 +98,7 @@ namespace ice
                     ICE_LOG(
                         ice::LogSeverity::Error, ice::LogTag::Engine,
                         "The asset {} does not provide `tile` specific metadata!",
-                        /*ice::stringid_hint(material_name)*/ "<unsupported_string_value>"
+                        asset_name
                     );
                     co_return;
                 }

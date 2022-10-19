@@ -12,18 +12,12 @@ namespace ice
         { }
 
     protected:
-        auto do_allocate(
-            [[maybe_unused]] ice::AllocRequest request
-        ) noexcept -> ice::AllocResult override
+        auto do_allocate(ice::AllocRequest) noexcept -> ice::AllocResult override
         {
-            return { .memory = nullptr, .size = 0, .alignment = ice::ualign::invalid };
+            return { nullptr, 0_B, ice::ualign::invalid };
         }
 
-        void do_deallocate(
-            [[maybe_unused]] ice::Memory result
-        ) noexcept override
-        {
-        }
+        void do_deallocate(void*) noexcept override { }
     };
 
 } // namespace ice

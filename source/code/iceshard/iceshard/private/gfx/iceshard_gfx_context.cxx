@@ -10,7 +10,8 @@ namespace ice::gfx
         ice::Allocator& alloc,
         ice::gfx::GfxPass const& gfx_pass
     ) noexcept
-        : _cached_stages{ alloc }
+        : _alloc{ alloc }
+        , _cached_stages{ alloc }
     {
         ice::array::resize(_cached_stages, gfx_pass.stage_count());
         for (IceGfxContextStage& stage_entry : _cached_stages)

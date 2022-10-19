@@ -34,7 +34,7 @@ namespace ice
         struct MemoryBucket;
 
         auto do_allocate(ice::AllocRequest request) noexcept -> ice::AllocResult override;
-        void do_deallocate(ice::Memory memory) noexcept override;
+        void do_deallocate(void* pointer) noexcept override;
 
         bool is_locked(void* ptr) const noexcept;
         bool is_backed(void* ptr) const noexcept;

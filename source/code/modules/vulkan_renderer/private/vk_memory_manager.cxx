@@ -280,8 +280,8 @@ namespace ice::render::vk
     ) noexcept
         : _allocator{ alloc }
         , _map_allocator{ _allocator, { 2_MiB } }
-        , _block_allocator{ _allocator, { ice::size_of<AllocationBlock> * 8 } }
-        , _entry_allocator{ _allocator, { ice::size_of<AllocationEntry> * 32 } }
+        , _block_allocator{ _allocator, { ice::size_of<AllocationBlock> * 16 } }
+        , _entry_allocator{ _allocator, { ice::size_of<AllocationEntry> * 64 } }
         , _blocks{ _allocator }
         , _vk_device{ device }
         , _vk_physical_device_memory_properties{ memory_properties }
@@ -298,8 +298,13 @@ namespace ice::render::vk
             );
 
             vkFreeMemory(_vk_device, block->memory_handle, nullptr);
-        }
 
+            while (block->free != nullptr)
+            {
+                _entry_allocator.destroy(ice::exchange(block->free, block->free->next));
+            }
+            _block_allocator.destroy(block);
+        }
     }
 
     auto VulkanMemoryManager::allocate(

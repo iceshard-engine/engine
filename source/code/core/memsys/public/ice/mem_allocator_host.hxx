@@ -10,7 +10,7 @@ namespace ice
 
     protected:
         auto do_allocate(ice::AllocRequest request) noexcept -> ice::AllocResult override;
-        void do_deallocate(ice::Memory result) noexcept override;
+        void do_deallocate(void* pointer) noexcept override;
     };
 
 } // namespace ice

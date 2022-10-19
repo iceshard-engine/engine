@@ -13,9 +13,9 @@ namespace ice
         return ice::alloc_aligned(request.size, request.alignment);
     }
 
-    void HostAllocator::do_deallocate(ice::Memory result) noexcept
+    void HostAllocator::do_deallocate(void* pointer) noexcept
     {
-        ice::release_aligned(result.location, result.alignment);
+        ice::release_aligned(pointer);
     }
 
 } // namespace ice

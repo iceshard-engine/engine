@@ -58,6 +58,7 @@ namespace ice
 
         Allocator* _alloc;
         T* _ptr;
+        void* _deleter;
     };
 
     template<typename T>
@@ -83,18 +84,21 @@ namespace ice
     inline UniquePtr<T>::UniquePtr(ice::Allocator* alloc, T* ptr) noexcept
         : _alloc{ alloc }
         , _ptr{ ptr }
+        , _deleter{ nullptr }
     { }
 
     template<typename T>
     inline UniquePtr<T>::UniquePtr(ice::UniquePtrCustomDeleter<T>* deleter_fn, T* ptr) noexcept
-        : _alloc{ reinterpret_cast<ice::Allocator*>(std::bit_cast<ice::uptr>(deleter_fn) | 0x1) }
+        : _alloc{ nullptr }
         , _ptr{ ptr }
+        , _deleter{ deleter_fn }
     { }
 
     template<typename T>
     inline UniquePtr<T>::UniquePtr(UniquePtr&& other) noexcept
         : _alloc{ std::exchange(other._alloc, nullptr) }
         , _ptr{ std::exchange(other._ptr, nullptr) }
+        , _deleter{ std::exchange(other._deleter, nullptr) }
     {
     }
 
@@ -103,6 +107,7 @@ namespace ice
     inline UniquePtr<T>::UniquePtr(UniquePtr<U>&& other) noexcept
         : _alloc{ std::exchange(other._alloc, nullptr) }
         , _ptr{ std::exchange(other._ptr, nullptr) }
+        , _deleter{ std::exchange(other._deleter, nullptr) }
     {
     }
 
@@ -115,6 +120,7 @@ namespace ice
 
             _alloc = std::exchange(other._alloc, nullptr);
             _ptr = std::exchange(other._ptr, nullptr);
+            _deleter = std::exchange(other._deleter, nullptr);
         }
         return *this;
     }
@@ -127,6 +133,7 @@ namespace ice
 
         _alloc = std::exchange(other._alloc, nullptr);
         _ptr = std::exchange(other._ptr, nullptr);
+        _deleter = std::exchange(other._deleter, nullptr);
         return *this;
     }
 
@@ -146,21 +153,21 @@ namespace ice
         }
 
         // If we don't have a 'special' case
-        if ((std::bit_cast<ice::uptr>(_alloc) & 0x1) == 0x0)
+        if (_alloc != nullptr)
         {
+            ICE_ASSERT_CORE(_deleter == nullptr); // TODO: Implement various deleters
             _alloc->destroy(_ptr);
         }
         else
         {
-            ice::UniquePtrCustomDeleter<T>* fn_deleter = reinterpret_cast<ice::UniquePtrCustomDeleter<T>*>(
-                std::bit_cast<ice::uptr>(_alloc) & ~0x1
-            );
-
+            ICE_ASSERT_CORE(_deleter != nullptr); // TODO: Implement various deleters
+            ice::UniquePtrCustomDeleter<T>* fn_deleter = std::bit_cast<ice::UniquePtrCustomDeleter<T>*>(_deleter);
             fn_deleter(_ptr);
         }
 
         _alloc = nullptr;
         _ptr = nullptr;
+        _deleter = nullptr;
     }
 
     template<typename T, typename... Args>
@@ -169,10 +176,7 @@ namespace ice
         Args&&... args
     ) noexcept -> ice::UniquePtr<T>
     {
-        ice::AllocResult const mem = alloc.allocate(ice::meminfo_of<T>);
-
-        T* const object = new (mem.memory) T{ ice::forward<Args>(args)... };
-        return ice::UniquePtr<T>{ &alloc, object };
+        return ice::UniquePtr<T>{ &alloc, alloc.create<T>(ice::forward<Args>(args)...) };
     }
 
     //template<typename T, typename... Args>

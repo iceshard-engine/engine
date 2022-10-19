@@ -4,7 +4,7 @@
 namespace ice
 {
 
-    struct ProxyAllocator final : ice::Allocator
+    struct ProxyAllocator final : public ice::Allocator
     {
         inline ProxyAllocator(
             ice::Allocator& backing_allocator,
@@ -21,7 +21,7 @@ namespace ice
 
     protected:
         inline auto do_allocate(ice::AllocRequest request) noexcept -> ice::AllocResult override;
-        inline void do_deallocate(ice::Memory memory) noexcept override;
+        inline void do_deallocate(void* pointer) noexcept override;
 
     private:
         ice::Allocator& _backing_alloc;
@@ -56,9 +56,9 @@ namespace ice
         return _backing_alloc.allocate(request);
     }
 
-    inline void ProxyAllocator::do_deallocate(ice::Memory memory) noexcept
+    inline void ProxyAllocator::do_deallocate(void* pointer) noexcept
     {
-        _backing_alloc.deallocate(memory);
+        _backing_alloc.deallocate(pointer);
     }
 
 } // namespace ice

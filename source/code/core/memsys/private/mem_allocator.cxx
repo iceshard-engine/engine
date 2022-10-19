@@ -1,8 +1,37 @@
 #include <ice/mem_allocator.hxx>
 #include <assert.h>
+#include <unordered_map>
+#include <mutex>
 
 namespace ice
 {
+
+    struct AllocInfo
+    {
+        ice::usize size;
+    };
+
+    struct AllocatorDebugInfo::Internal
+    {
+        std::mutex mtx;
+        std::unordered_map<void*, AllocInfo> allocs;
+        std::atomic<ice::u64> _allocated_inuse;
+
+        void insert(ice::AllocResult const& result) noexcept
+        {
+            std::lock_guard<std::mutex> lk{ mtx };
+            allocs.emplace(result.memory, result.size);
+
+            _allocated_inuse.fetch_add(result.size.value, std::memory_order_relaxed);
+        }
+
+        void remove(void* pointer) noexcept
+        {
+            std::lock_guard<std::mutex> lk{ mtx };
+            _allocated_inuse.fetch_sub(allocs.at(pointer).size.value, std::memory_order_relaxed);
+            allocs.erase(pointer);
+        }
+    };
 
     AllocatorDebugInfo::AllocatorDebugInfo(
         std::source_location src_loc,
@@ -11,6 +40,12 @@ namespace ice
         : _source_location{ src_loc }
         , _name{ name }
         , _parent{ nullptr }
+        , _children{ nullptr }
+        , _next_sibling{ nullptr }
+        , _prev_sibling{ nullptr }
+        , _alloc_count{ 0 }
+        , _alloc_total_count{ 0 }
+        , _internal{ new Internal{} }
     {
     }
 
@@ -22,8 +57,28 @@ namespace ice
         : _source_location{ src_loc }
         , _name{ name }
         , _parent{ &parent }
+        , _children{ nullptr }
+        , _next_sibling{ nullptr }
+        , _prev_sibling{ nullptr }
+        , _alloc_count{ 0 }
+        , _alloc_total_count{ 0 }
+        , _internal{ new Internal{} }
     {
         _parent->track_child(this);
+    }
+
+    AllocatorDebugInfo::~AllocatorDebugInfo() noexcept
+    {
+        if (_parent)
+        {
+            _parent->remove_child(this);
+        }
+        delete _internal;
+    }
+
+    auto AllocatorDebugInfo::allocation_size_inuse() const noexcept -> ice::usize
+    {
+        return { _internal->_allocated_inuse };
     }
 
     void AllocatorDebugInfo::track_child(ice::AllocatorDebugInfo* child_allocator) noexcept
@@ -35,6 +90,22 @@ namespace ice
         }
         _children = child_allocator;
         _children->_prev_sibling = nullptr;
+    }
+
+    void AllocatorDebugInfo::remove_child(ice::AllocatorDebugInfo* child_allocator) noexcept
+    {
+        if (child_allocator->_prev_sibling == nullptr)
+        {
+            _children = child_allocator->_next_sibling;
+            if (_children)
+            {
+                _children->_prev_sibling = nullptr;
+            }
+        }
+        else
+        {
+            child_allocator->_prev_sibling->_next_sibling = child_allocator->_next_sibling;
+        }
     }
 
     auto AllocatorDebugInfo::parent_allocator() const noexcept -> ice::AllocatorDebugInfo const*
@@ -52,21 +123,19 @@ namespace ice
         return _next_sibling;
     }
 
-    void AllocatorDebugInfo::dbg_size_add(ice::usize size) noexcept
+    void AllocatorDebugInfo::dbg_count_add() noexcept
     {
-        _alloc_inuse.fetch_add(size.value, std::memory_order_relaxed);
-        _alloc_count.fetch_add(size != 0_B, std::memory_order_relaxed);
-        _alloc_total_count.fetch_add(size != 0_B, std::memory_order_relaxed);
+        _alloc_count.fetch_add(1, std::memory_order_relaxed);
+        _alloc_total_count.fetch_add(1, std::memory_order_relaxed);
     }
 
-    void AllocatorDebugInfo::dbg_size_sub(ice::usize size) noexcept
+    void AllocatorDebugInfo::dbg_count_sub() noexcept
     {
-        _alloc_inuse.fetch_sub(size.value, std::memory_order_relaxed);
-        _alloc_count.fetch_sub(size != 0_B, std::memory_order_relaxed);
+        _alloc_count.fetch_sub(1, std::memory_order_relaxed);
     }
 
     AllocatorBase<true>::AllocatorBase(std::source_location const& src_loc) noexcept
-        : AllocatorDebugInfo{ src_loc,src_loc.function_name() }
+        : AllocatorDebugInfo{ src_loc, src_loc.function_name() }
     {
     }
 
@@ -83,18 +152,20 @@ namespace ice
     auto AllocatorBase<true>::allocate(ice::AllocRequest request) noexcept -> ice::AllocResult
     {
         ICE_ASSERT_CORE(request.size != 0_B);
-
         ice::AllocResult result = do_allocate(request);
-        dbg_size_add(result.size);
+
+        _internal->insert(result);
+        dbg_count_add();
         return result;
     }
 
-    void AllocatorBase<true>::deallocate(ice::Memory result) noexcept
+    void AllocatorBase<true>::deallocate(void* pointer) noexcept
     {
-        ICE_ASSERT_CORE(((result.location == nullptr) ^ (result.size == 0_B)) == false);
-        if (result.location == nullptr) return;
-        dbg_size_sub(result.size);
-        do_deallocate(result);
+        if (pointer == nullptr) return;
+
+        _internal->remove(pointer);
+        dbg_count_sub();
+        do_deallocate(pointer);
     }
 
     auto AllocatorBase<true>::debug_info() const noexcept -> ice::AllocatorDebugInfo const&
@@ -104,7 +175,6 @@ namespace ice
 
     AllocatorBase<true>::~AllocatorBase() noexcept
     {
-        ICE_ASSERT_CORE(allocation_size_inuse() == 0_B);
         ICE_ASSERT_CORE(allocation_count() == 0);
     }
 

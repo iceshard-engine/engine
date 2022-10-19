@@ -32,7 +32,7 @@ namespace ice
     void release(void* pointer) noexcept;
 
     auto alloc_aligned(ice::usize size, ice::ualign alignment) noexcept -> ice::AllocResult;
-    void release_aligned(void* pointer, ice::ualign alignment) noexcept;
+    void release_aligned(void* pointer) noexcept;
 
     auto memcpy(void* dest, void const* source, ice::usize size) noexcept -> void*;
     auto memcpy(ice::Memory memory, ice::Data data) noexcept -> ice::Memory;

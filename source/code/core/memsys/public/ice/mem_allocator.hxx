@@ -33,22 +33,27 @@ namespace ice
 
         void deallocate(ice::Memory result) noexcept
         {
-            if (result.location == nullptr) return;
-            return do_deallocate(result);
+            return deallocate(result.location);
+        }
+
+        void deallocate(void* pointer) noexcept
+        {
+            if (pointer == nullptr) return;
+            return do_deallocate(pointer);
         }
 
         template<typename T, typename... Args>
         auto create(Args&&... args) noexcept -> T*
         {
-            ice::AllocResult const mem = allocate(ice::size_of<T>);
-            return new (mem.result) T{ ice::forward<Args>(args)... };
+            ice::AllocResult const mem = allocate(ice::meminfo_of<T>);
+            return new (mem.memory) T{ ice::forward<Args>(args)... };
         }
 
         template<typename T>
         void destroy(T* object) noexcept
         {
             object->~T();
-            return deallocate({ object, ice::size_of<T>, ice::align_of<T> });
+            return deallocate(object);
         }
 
         auto allocation_count() const noexcept -> ice::u32
@@ -80,7 +85,7 @@ namespace ice
         virtual ~AllocatorBase() noexcept = default;
 
         virtual auto do_allocate(ice::AllocRequest request) noexcept -> ice::AllocResult = 0;
-        virtual void do_deallocate(ice::Memory memory) noexcept = 0;
+        virtual void do_deallocate(void* pointer) noexcept = 0;
     };
 
     class AllocatorDebugInfo
@@ -96,6 +101,8 @@ namespace ice
             std::string_view name,
             ice::AllocatorDebugInfo& parent
         ) noexcept;
+
+        ~AllocatorDebugInfo() noexcept;
 
         auto location() const noexcept -> std::source_location
         {
@@ -117,33 +124,33 @@ namespace ice
             return _alloc_total_count.load(std::memory_order_relaxed);
         }
 
-        auto allocation_size_inuse() const noexcept -> ice::usize
-        {
-            return { _alloc_inuse.load(std::memory_order_relaxed) };
-        }
+        auto allocation_size_inuse() const noexcept -> ice::usize;
 
         void track_child(ice::AllocatorDebugInfo* child_allocator) noexcept;
+        void remove_child(ice::AllocatorDebugInfo* child_allocator) noexcept;
+
         auto parent_allocator() const noexcept -> ice::AllocatorDebugInfo const*;
         auto child_allocator() const noexcept -> ice::AllocatorDebugInfo const*;
         auto next_sibling() const noexcept -> ice::AllocatorDebugInfo const*;
 
     protected:
-        void dbg_size_add(ice::usize size) noexcept;
-        void dbg_size_sub(ice::usize size) noexcept;
+        void dbg_count_add() noexcept;
+        void dbg_count_sub() noexcept;
 
     protected:
         std::source_location const _source_location;
         std::string_view const _name;
 
         ice::AllocatorDebugInfo* const _parent;
-        ice::AllocatorDebugInfo* _children = nullptr;
-        ice::AllocatorDebugInfo* _next_sibling = nullptr;
-        ice::AllocatorDebugInfo* _prev_sibling = nullptr;
+        ice::AllocatorDebugInfo* _children;
+        ice::AllocatorDebugInfo* _next_sibling;
+        ice::AllocatorDebugInfo* _prev_sibling;
 
-        std::atomic<ice::usize::base_type> _alloc_inuse;
         std::atomic<ice::u32> _alloc_count;
-
         std::atomic<ice::u32> _alloc_total_count;
+
+        struct Internal;
+        Internal* _internal;
     };
 
     template<>
@@ -158,10 +165,15 @@ namespace ice
         AllocatorBase(std::source_location const& src_loc, AllocatorBase& parent, std::string_view name) noexcept;
 
         auto allocate(ice::AllocRequest request) noexcept -> ice::AllocResult;
-        void deallocate(ice::Memory result) noexcept;
+        void deallocate(ice::Memory memory) noexcept
+        {
+            if (memory.location == nullptr) return;
+            return deallocate(memory.location);
+        }
 
-        template<typename T>
-            requires std::is_pod_v<T>
+        void deallocate(void* pointer) noexcept;
+
+        template<typename T> requires std::is_pod_v<T>
         auto allocate(ice::u64 count = 1) noexcept -> T*
         {
             return reinterpret_cast<T*>(allocate(AllocRequest{ ice::meminfo_of<T> * count }).memory);
@@ -170,16 +182,15 @@ namespace ice
         template<typename T, typename... Args>
         auto create(Args&&... args) noexcept -> T*
         {
-            ice::AllocResult const mem = allocate(ice::size_of<T>);
+            ice::AllocResult const mem = allocate(ice::meminfo_of<T>);
             return new (mem.memory) T{ ice::forward<Args>(args)... };
         }
 
-        template<typename T>
-            requires (std::is_const_v<T> == false)
+        template<typename T> requires (std::is_const_v<T> == false)
         void destroy(T* object) noexcept
         {
             object->~T();
-            return deallocate({ object, ice::size_of<T>, ice::align_of<T> });
+            return deallocate(object);
         }
 
         using AllocatorDebugInfo::allocation_count;
@@ -198,7 +209,7 @@ namespace ice
         virtual ~AllocatorBase() noexcept;
 
         virtual auto do_allocate(ice::AllocRequest request) noexcept -> ice::AllocResult = 0;
-        virtual void do_deallocate(ice::Memory memory) noexcept = 0;
+        virtual void do_deallocate(void* pointer) noexcept = 0;
     };
 
 } // namespace ice

@@ -39,6 +39,7 @@
 #include <ice/resource.hxx>
 #include <ice/assert.hxx>
 #include <ice/shard.hxx>
+#include <ice/shard_payloads.hxx>
 
 #include <ice/ui_asset.hxx>
 #include <ice/ui_resource.hxx>
@@ -369,7 +370,7 @@ void MyGame::on_game_begin(ice::EngineRunner& runner) noexcept
         ice::SpriteTile{ .material_tile = { 0, 0 } }
     );
 
-    std::string_view const* tilemap_asset = runner.current_frame().storage().create_named_object<std::string_view>(
+    ice::String const* tilemap_asset = runner.current_frame().storage().create_named_object<ice::String>(
         "tilemap_asset_name"_sid,
         "cotm/test_level_2/tiled/0002_Level_1"
     );

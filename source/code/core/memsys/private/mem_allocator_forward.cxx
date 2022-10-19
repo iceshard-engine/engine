@@ -10,11 +10,11 @@ namespace ice
         void* _end;
 
         // Only used for tracking of deallocations, do not use to calculate pointers!
-        ice::usize _inuse;
+        ice::ucount _alloc_count;
 
         MemoryBucket* _next;
 
-        static bool try_dealloc_space(MemoryBucket const& bucket, ice::Memory memory) noexcept;
+        static bool try_dealloc_space(MemoryBucket const& bucket, void* pointer) noexcept;
         static bool try_alloc_space(MemoryBucket const& bucket, ice::AllocResult& result) noexcept;
 
         static auto alloc_bucket(
@@ -59,7 +59,7 @@ namespace ice
     {
         while (_buckets != nullptr)
         {
-            ICE_ASSERT_CORE(_buckets->_inuse == 0_B);
+            ICE_ASSERT_CORE(_buckets->_alloc_count == 0);
             MemoryBucket* next = _buckets->_next;
 
             _backing_alloc.deallocate(
@@ -84,7 +84,7 @@ namespace ice
             MemoryBucket* next = _buckets->_next;
             if (skipped_bucket_count == _params.min_bucket_count)
             {
-                if (_buckets->_inuse == 0_B)
+                if (_buckets->_alloc_count == 0)
                 {
                     _backing_alloc.deallocate(
                         Memory{
@@ -102,7 +102,7 @@ namespace ice
             else
             {
                 // Reset the free pointer in empty blocks.
-                if (_buckets->_inuse == 0_B)
+                if (_buckets->_alloc_count == 0)
                 {
                     _buckets->_free = _buckets->_beg;
                 }
@@ -136,7 +136,7 @@ namespace ice
                 buckets = MemoryBucket::alloc_bucket(_backing_alloc, _params);
                 ICE_ASSERT_CORE(ice::ptr_distance(buckets->_beg, buckets->_end) >= request.size);
 
-                // Get the memory location and update the free ptr.
+                // Get the pointer location and update the free ptr.
                 MemoryBucket::try_alloc_space(*buckets, result);
 
                 // Save the new bucket at the list start
@@ -144,10 +144,10 @@ namespace ice
             }
 
             // Update the bucket info.
-            buckets->_free = ice::ptr_add(buckets->_free, result.size);
+            buckets->_free = ice::ptr_add(result.memory, result.size);
 
             // We only store the requested size values.
-            buckets->_inuse += result.size;
+            buckets->_alloc_count += 1;
             return result;
         }
         else // Fall back to the parent allocator
@@ -156,31 +156,27 @@ namespace ice
         }
     }
 
-    void ForwardAllocator::do_deallocate(ice::Memory memory) noexcept
+    void ForwardAllocator::do_deallocate(void* pointer) noexcept
     {
-        // Check if this allocator could be responsible for this memory.
-        if (memory.size < (_params.bucket_size - ice::size_of<MemoryBucket>))
+        MemoryBucket* buckets = _buckets;
+        while (buckets != nullptr && MemoryBucket::try_dealloc_space(*buckets, pointer) == false)
         {
-            MemoryBucket* buckets = _buckets;
-            while (buckets != nullptr && MemoryBucket::try_dealloc_space(*buckets, memory) == false)
-            {
-                buckets = buckets->_next;
-            }
+            buckets = buckets->_next;
+        }
 
-            ICE_ASSERT_CORE(buckets != nullptr);
-
-            // We only store the requested size values.
-            buckets->_inuse = { buckets->_inuse.value - memory.size.value };
+        if (buckets != nullptr)
+        {
+            buckets->_alloc_count -= 1;
         }
         else
         {
-            _backing_alloc.deallocate(memory);
+            _backing_alloc.deallocate(pointer);
         }
     }
 
-    bool ForwardAllocator::MemoryBucket::try_dealloc_space(MemoryBucket const& bucket, ice::Memory memory) noexcept
+    bool ForwardAllocator::MemoryBucket::try_dealloc_space(MemoryBucket const& bucket, void* pointer) noexcept
     {
-        return bucket._beg <= memory.location && bucket._free > memory.location;
+        return bucket._beg <= pointer && bucket._free > pointer;
     }
 
     bool ForwardAllocator::MemoryBucket::try_alloc_space(MemoryBucket const& bucket, ice::AllocResult& result) noexcept
@@ -201,7 +197,7 @@ namespace ice
         new_bucket->_beg = new_bucket + 1;
         new_bucket->_end = ice::ptr_add(new_bucket, alloc_result.size);
         new_bucket->_free = new_bucket->_beg;
-        new_bucket->_inuse = 0_B;
+        new_bucket->_alloc_count = 0;
         new_bucket->_next = nullptr;
         return new_bucket;
     }

@@ -49,7 +49,7 @@ namespace ice
 #endif
     }
 
-    void release_aligned(void* pointer, ice::ualign alignment) noexcept
+    void release_aligned(void* pointer) noexcept
     {
 #if ISP_WINDOWS
         _aligned_free(pointer);

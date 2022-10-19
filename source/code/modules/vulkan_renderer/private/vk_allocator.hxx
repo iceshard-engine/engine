@@ -22,7 +22,7 @@ namespace ice::render::vk
     public:
         auto do_allocate(ice::AllocRequest req) noexcept -> ice::AllocResult override;
         auto do_reallocate(void* mem, ice::AllocRequest req) noexcept -> ice::AllocResult;
-        void do_deallocate(ice::Memory mem) noexcept override;
+        void do_deallocate(void* mem) noexcept override;
 
     private:
         ice::Allocator& _backing_allocator;

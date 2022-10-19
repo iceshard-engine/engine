@@ -37,7 +37,7 @@ namespace ice
         struct MemoryBucket;
 
         auto do_allocate(ice::AllocRequest request) noexcept -> ice::AllocResult override;
-        void do_deallocate(ice::Memory memory) noexcept override;
+        void do_deallocate(void* pointer) noexcept override;
 
     private:
         ice::Allocator& _backing_alloc;

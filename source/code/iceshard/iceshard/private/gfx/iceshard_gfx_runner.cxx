@@ -62,10 +62,12 @@ namespace ice::gfx
     {
         _mre_selected->wait();
 
-        // Wait for the current GfxFrame to send final tasks
-        ice::IceshardTaskExecutor frame_tasks = _current_frame->create_task_executor();
-        frame_tasks.start_all();
-        frame_tasks.wait_ready();
+        {
+            // Wait for the current GfxFrame to send final tasks
+            ice::IceshardTaskExecutor frame_tasks = _current_frame->create_task_executor();
+            frame_tasks.start_all();
+            frame_tasks.wait_ready();
+        }
 
         // Now stop the thread and wait for everything to finish.
         _thread->stop();

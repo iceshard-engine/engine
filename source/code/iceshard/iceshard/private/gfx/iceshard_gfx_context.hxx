@@ -2,6 +2,7 @@
 #include <ice/gfx/gfx_context.hxx>
 #include <ice/gfx/gfx_stage.hxx>
 #include <ice/container_types.hxx>
+#include <ice/mem_allocator_proxy.hxx>
 
 namespace ice::gfx
 {
@@ -42,6 +43,7 @@ namespace ice::gfx
 
     private:
         //ice::gfx::GfxPass const& _gfx_pass;
+        ice::ProxyAllocator _alloc;
         ice::Array<ice::gfx::IceGfxContextStage> _cached_stages;
     };
 

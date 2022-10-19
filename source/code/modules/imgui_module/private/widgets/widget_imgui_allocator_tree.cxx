@@ -65,6 +65,9 @@ namespace ice::devui
                 ImGui::NextColumn();
                 build_info_column(allocator);
                 ImGui::NextColumn(); // We start from the first column again
+
+                ImGui::Text("%s | %s(%u)", allocator.location().function_name(), allocator.location().file_name(), allocator.location().line());
+                ImGui::NextColumn();
             }
             else
             {
@@ -73,6 +76,10 @@ namespace ice::devui
                 build_info_column(allocator);
 
                 ImGui::NextColumn(); // We start from the first column again
+
+                ImGui::Text("%s | %s(%u)", allocator.location().function_name(), allocator.location().file_name(), allocator.location().line());
+                ImGui::NextColumn();
+
                 if (show_childs)
                 {
                     while (child_alloc != nullptr)
@@ -123,13 +130,15 @@ namespace ice::devui
     {
         if (ImGui::Begin("Allocator tree", &_open))
         {
-            ImGui::Columns(3, "allocator_tree_table", true);
+            ImGui::Columns(4, "allocator_tree_table", true);
 
             ImGui::Text("Allocator name");
             ImGui::NextColumn();
             ImGui::Text("Allocation count");
             ImGui::NextColumn();
             ImGui::Text("Allocated bytes");
+            ImGui::NextColumn();
+            ImGui::Text("Function | file(line)");
             ImGui::NextColumn();
 
             ImGui::Separator();

@@ -122,7 +122,14 @@ namespace ice::ecs
     {
         for (ArchetypeDataHeader* header : ice::array::slice(_archetype_data, 1))
         {
-            _allocator.destroy(header);
+            ice::usize size = ArchetypeDataHeader::calculate_meminfo(header->archetype_info);
+            _allocator.deallocate(
+                Memory{
+                    .location = header,
+                    .size = size,
+                    .alignment = ice::align_of<ArchetypeDataHeader>
+                }
+            );
         }
     }
 

@@ -297,6 +297,7 @@ namespace ice
                     // We need now to read the metadata and check if there are more file associated and if all are available.
                     ice::MutableMetadata mutable_meta{ alloc };
                     ice::meta_deserialize(data_view(metafile_data), mutable_meta);
+                    alloc.deallocate(metafile_data);
 
                     main_resource = alloc.create<ice::Resource_LooseFilesWin32>(
                         ice::move(mutable_meta),

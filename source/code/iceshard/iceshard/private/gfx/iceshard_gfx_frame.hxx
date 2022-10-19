@@ -77,7 +77,7 @@ namespace ice::gfx
         ) noexcept override;
 
     private:
-        ice::Allocator& _allocator;
+        ice::ProxyAllocator _allocator;
         ice::Array<ice::Task<>, ice::ContainerLogic::Complex> _tasks;
         ice::Array<ice::gfx::IceGfxPassEntry> _passes;
 

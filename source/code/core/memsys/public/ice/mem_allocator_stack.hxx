@@ -34,7 +34,7 @@ namespace ice
 
     protected:
         inline auto do_allocate(ice::AllocRequest request) noexcept -> ice::AllocResult override;
-        inline void do_deallocate(ice::Memory memory) noexcept override;
+        inline void do_deallocate(void* memory) noexcept override;
 
     private:
         ice::Allocator* _backing_alloc;
@@ -108,15 +108,15 @@ namespace ice
     }
 
     template<ice::usize Capacity>
-    inline void StackAllocator<Capacity>::do_deallocate(ice::Memory memory) noexcept
+    inline void StackAllocator<Capacity>::do_deallocate(void* pointer) noexcept
     {
-        if ((_static_buffer + 0) <= memory.location && ice::ptr_add(_static_buffer, _static_usage) > memory.location)
+        if ((_static_buffer + 0) <= pointer && ice::ptr_add(_static_buffer, _static_usage) > pointer)
         {
             ICE_ASSERT_CORE(true); // nothing to do here
         }
         else if (_backing_alloc != nullptr)
         {
-            _backing_alloc->deallocate(memory);
+            _backing_alloc->deallocate(pointer);
         }
     }
 

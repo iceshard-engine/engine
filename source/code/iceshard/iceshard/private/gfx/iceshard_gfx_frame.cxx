@@ -129,7 +129,7 @@ namespace ice::gfx
 
     auto IceGfxFrame::create_task_executor() noexcept -> ice::IceshardTaskExecutor
     {
-        return ice::IceshardTaskExecutor{ _allocator, ice::move(_tasks) };
+        return ice::IceshardTaskExecutor{ _allocator.backing_allocator(), ice::move(_tasks)};
     }
 
     void IceGfxFrame::on_frame_begin() noexcept
