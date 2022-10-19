@@ -339,7 +339,7 @@ namespace ice
     constexpr ice::ShardPayloadID Constant_ShardPayloadID<ice::f64> = ice::shard_payloadid("ice::f64");
 
     template<>
-    constexpr ice::ShardPayloadID Constant_ShardPayloadID<char const*> = ice::shard_payloadid("ice::char const*");
+    constexpr ice::ShardPayloadID Constant_ShardPayloadID<char const*> = ice::shard_payloadid("char const*");
 
     template<>
     constexpr ice::ShardPayloadID Constant_ShardPayloadID<std::string_view const*> = ice::shard_payloadid("std::string_view const*");

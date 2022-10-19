@@ -364,11 +364,17 @@ namespace ice::render::vk
         }
 
         // Bind the memory to the image handle
-        VkResult api_result = vkBindImageMemory(
+        VkBindImageMemoryInfo bind_info{
+            .sType = VK_STRUCTURE_TYPE_BIND_IMAGE_MEMORY_INFO,
+            .pNext = nullptr,
+            .image = image,
+            .memory = selected_block->memory_handle,
+            .memoryOffset = selected_entry->offset,
+        };
+
+        VkResult api_result = vkBindImageMemory2(
             _vk_device,
-            image,
-            selected_block->memory_handle,
-            memory_offset
+            1, &bind_info
         );
         ICE_ASSERT(
             api_result == VkResult::VK_SUCCESS,

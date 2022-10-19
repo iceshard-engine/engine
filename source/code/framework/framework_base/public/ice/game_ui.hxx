@@ -12,23 +12,23 @@ namespace ice
 
 
     static constexpr ice::Shard Shard_GameUI_Load
-        = "action/ui/load`ice::c8utf const*"_shard;
+        = "action/ui/load`char const*"_shard;
 
     static constexpr ice::Shard Shard_GameUI_Show
-        = "action/ui/show`ice::c8utf const*"_shard;
+        = "action/ui/show`char const*"_shard;
 
     static constexpr ice::Shard Shard_GameUI_Hide
-        = "action/ui/hide`ice::c8utf const*"_shard;
+        = "action/ui/hide`char const*"_shard;
 
     static constexpr ice::Shard Shard_GameUI_UpdateResource
         = "action/ui/update_resource"_shard;
 
 
     static constexpr ice::Shard Shard_GameUI_Loaded
-        = "event/ui/loaded`ice::c8utf const*"_shard;
+        = "event/ui/loaded`char const*"_shard;
 
     static constexpr ice::Shard Shard_GameUI_Updated
-        = "event/ui/updated`ice::c8utf const*"_shard;
+        = "event/ui/updated`char const*"_shard;
 
 
     struct UpdateUIResource

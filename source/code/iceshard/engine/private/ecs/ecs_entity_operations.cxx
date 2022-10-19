@@ -363,7 +363,7 @@ namespace ice::ecs
         // Set component info object
         ice::StringID* names_ptr = reinterpret_cast<ice::StringID*>(handle_loc);
         ice::memcpy(names_ptr, ice::span::data(component_info.names), ice::span::size_bytes(component_info.names));
-        handle_loc = ice::ptr_add(handle_loc, ice::span::size_bytes(component_info.sizes));
+        handle_loc = ice::ptr_add(handle_loc, ice::span::size_bytes(component_info.names));
 
         ice::u32* sizes_ptr = reinterpret_cast<ice::u32*>(handle_loc);
         ice::memcpy(sizes_ptr, ice::span::data(component_info.sizes), ice::span::size_bytes(component_info.sizes));
@@ -371,7 +371,7 @@ namespace ice::ecs
 
         ice::u32* offsets_ptr = reinterpret_cast<ice::u32*>(handle_loc);
         ice::memcpy(offsets_ptr, ice::span::data(component_info.offsets), ice::span::size_bytes(component_info.offsets));
-        handle_loc = ice::ptr_add(handle_loc, ice::span::size_bytes(component_info.sizes));
+        handle_loc = ice::ptr_add(handle_loc, ice::span::size_bytes(component_info.offsets));
 
         ice::ecs::EntityOperations::ComponentInfo* component_info_ptr = reinterpret_cast<ice::ecs::EntityOperations::ComponentInfo*>(handle_loc);
         handle_loc = component_info_ptr + 1;

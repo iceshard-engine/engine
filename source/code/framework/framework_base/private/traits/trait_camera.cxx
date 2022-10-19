@@ -239,7 +239,7 @@ namespace ice
             ice::array::push_back(_camera_buffers, ice::render::Buffer::Invalid);
         }
 
-        frame.storage().create_named_object<ice::Span<ice::TraitCameraData>>("ice.cameras.span"_sid, ice::span::subspan(camera_span, cam_idx));
+        frame.storage().create_named_object<ice::Span<ice::TraitCameraData>>("ice.cameras.span"_sid, ice::span::head(camera_span, cam_idx));
         co_return;
     }
 

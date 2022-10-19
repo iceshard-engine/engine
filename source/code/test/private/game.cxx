@@ -483,7 +483,14 @@ void MyGame::on_update(ice::EngineFrame& frame, ice::EngineRunner& runner, ice::
         }
     }
 
-    ice::Shard const player_entity_created = ice::shards::find_last_of(frame.shards(), ice::ecs::Shard_EntityCreated);
+    ice::ecs::EntityHandle eh;
+    ice::Shard const player_entity_created = ice::shards::find_first_of(runner.previous_frame().shards(), ice::ecs::Shard_EntityCreated);
+
+    if (ice::shard_inspect(player_entity_created, eh))
+    {
+        ICE_ASSERT(ice::ecs::entity_handle_info(eh).entity == ice::ecs::Entity{}, "{}", eh);
+        ICE_LOG(ice::LogSeverity::Debug, ice::LogTag::Game, "{}", eh);
+    }
 
     if (player_entity_created != ice::Shard_Invalid)
     {
