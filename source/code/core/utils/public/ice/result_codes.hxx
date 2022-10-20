@@ -85,7 +85,7 @@ namespace ice
         static constexpr ice::ResultSeverity Warning = ResultSeverity::Warning;
         static constexpr ice::ResultSeverity Error = ResultSeverity::Error;
 
-        static constexpr ice::ResCode Success = { .value = { .severity = 0, .id = 1 }, .description = "Success" };
+        static constexpr ice::ResCode Success = { .value = { .severity = 0, .id = 1 } };
         static constexpr ice::ResCode E_InvalidArgument = ResCode::create(ResultSeverity::Error, "InvalidArgument");
         static constexpr ice::ResCode E_ValueOutOfRange = ResCode::create(ResultSeverity::Error, "ValueOutOfRange");
     };

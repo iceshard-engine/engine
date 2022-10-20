@@ -36,7 +36,7 @@ namespace ice
 
             if constexpr (Constant_UseAssetTypeDebugDefinition)
             {
-                return ice::detail::AssetType<Constant_UseAssetTypeDebugDefinition>
+                return ice::detail::AssetType<true>
                 {
                     .identifier = result.h[0],
                     .name = name
@@ -44,7 +44,7 @@ namespace ice
             }
             else
             {
-                return ice::detail::AssetType<Constant_UseAssetTypeDebugDefinition>{
+                return ice::detail::AssetType<false>{
                     .identifier = result.h[0]
                 };
             }

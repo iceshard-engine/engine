@@ -65,6 +65,8 @@ namespace ice
         using TypeTag = ice::TaggedStrongValue<ice::detail::stringid_type_v3::StringID_Tag>;
 
         detail::stringid_type_v3::StringID_Hash value;
+
+        constexpr operator ice::BaseStringID<true>() const noexcept;
     };
 
     template<>
@@ -74,6 +76,8 @@ namespace ice
 
         detail::stringid_type_v3::StringID_Hash value;
         detail::stringid_type_v3::StringID_DebugInfo debug_info;
+
+        constexpr operator ice::BaseStringID<false>() const noexcept;
     };
 
     static constexpr ice::StringID StringID_Invalid{ .value = StringID_Hash{ } };
@@ -186,5 +190,16 @@ namespace ice
     {
         return ice::stringid_hash(ice::stringid({ str, len }));
     }
+
+    constexpr BaseStringID<true>::operator ice::BaseStringID<false>() const noexcept
+    {
+        return { .value = value };
+    }
+
+    constexpr BaseStringID<false>::operator ice::BaseStringID<true>() const noexcept
+    {
+        return { .value = value };
+    }
+
 
 } // namespace ice

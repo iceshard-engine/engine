@@ -24,22 +24,28 @@ namespace ice
 
         AllocatorBase(std::source_location const&) noexcept { }
         AllocatorBase(std::source_location const&, AllocatorBase&) noexcept { }
-        AllocatorBase(std::source_location const&, AllocatorBase&, std::u8string_view) noexcept { }
+        AllocatorBase(std::source_location const&, AllocatorBase&, std::string_view) noexcept { }
 
         auto allocate(ice::AllocRequest request) noexcept -> ice::AllocResult
         {
             return do_allocate(request);
         }
 
-        void deallocate(ice::Memory result) noexcept
+        template<typename T> requires std::is_trivial_v<T>
+        auto allocate(ice::u64 count = 1) noexcept -> T*
         {
-            return deallocate(result.location);
+            return reinterpret_cast<T*>(allocate(AllocRequest{ ice::meminfo_of<T> *count }).memory);
         }
 
         void deallocate(void* pointer) noexcept
         {
             if (pointer == nullptr) return;
             return do_deallocate(pointer);
+        }
+
+        void deallocate(ice::Memory result) noexcept
+        {
+            return deallocate(result.location);
         }
 
         template<typename T, typename... Args>
@@ -165,18 +171,17 @@ namespace ice
         AllocatorBase(std::source_location const& src_loc, AllocatorBase& parent, std::string_view name) noexcept;
 
         auto allocate(ice::AllocRequest request) noexcept -> ice::AllocResult;
+        template<typename T> requires std::is_trivial_v<T>
+        auto allocate(ice::u64 count = 1) noexcept -> T*
+        {
+            return reinterpret_cast<T*>(allocate(AllocRequest{ ice::meminfo_of<T> *count }).memory);
+        }
+
+        void deallocate(void* pointer) noexcept;
         void deallocate(ice::Memory memory) noexcept
         {
             if (memory.location == nullptr) return;
             return deallocate(memory.location);
-        }
-
-        void deallocate(void* pointer) noexcept;
-
-        template<typename T> requires std::is_pod_v<T>
-        auto allocate(ice::u64 count = 1) noexcept -> T*
-        {
-            return reinterpret_cast<T*>(allocate(AllocRequest{ ice::meminfo_of<T> * count }).memory);
         }
 
         template<typename T, typename... Args>
