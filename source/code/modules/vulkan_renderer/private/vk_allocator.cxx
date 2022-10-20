@@ -7,7 +7,7 @@ namespace ice::render::vk
 
         struct AllocationHeader
         {
-            ice::usize requested_size;
+            ice::u32 requested_size;
             ice::ualign requested_alignment;
         };
 
@@ -44,7 +44,7 @@ namespace ice::render::vk
         // \brief Stores the size in the header and pads with HEADER_PAD_VALUE up to the data pointer.
         inline void fill(AllocationHeader* header, void* data_pointer, ice::usize requested_size, ice::ualign requested_alignment) noexcept
         {
-            header->requested_size = requested_size;
+            header->requested_size = ice::u32(requested_size.value);
             header->requested_alignment = requested_alignment;
 
             ice::u32* header_pointer = reinterpret_cast<ice::u32*>(header + 1);
@@ -70,6 +70,7 @@ namespace ice::render::vk
         void vk_iceshard_free(void* userdata, void* pointer) noexcept
         {
             if (pointer == nullptr) return;
+
             VulkanAllocator* const allocator = reinterpret_cast<VulkanAllocator*>(userdata);
             allocator->deallocate(pointer);
         }
@@ -150,7 +151,7 @@ namespace ice::render::vk
                 {
                     // If we got a valid allocation, copy the data to the new pointer
                     // and release the old one afterwards.
-                    memcpy(new_res.memory, pointer, ice::min(header->requested_size, req.size));
+                    memcpy(new_res.memory, pointer, ice::min(ice::usize{ header->requested_size }, req.size));
 
                     // Release the old pointer
                     this->deallocate(pointer);

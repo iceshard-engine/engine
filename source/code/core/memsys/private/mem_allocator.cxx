@@ -73,6 +73,7 @@ namespace ice
         {
             _parent->remove_child(this);
         }
+
         delete _internal;
     }
 

@@ -7,12 +7,11 @@
 #include <ice/task_sync_wait.hxx>
 #include <ice/font.hxx>
 
-#pragma warning(push)
-#pragma warning(disable : 4458)
-#pragma warning(disable : 4505)
+ISC_WARNING_PUSH
+ISCW_DECLARATION_HIDES_CLASS_MEMBER(ISCW_OP_DISABLE)
+ISCW_UNREFERENCED_INTERNAL_FUNCTION_REMOVED(ISCW_OP_DISABLE)
 #include <msdf-atlas-gen/msdf-atlas-gen.h>
-#pragma warning(pop)
-
+ISC_WARNING_POP
 
 namespace ice
 {

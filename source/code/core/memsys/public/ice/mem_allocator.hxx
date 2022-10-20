@@ -102,7 +102,7 @@ namespace ice
             ice::AllocatorDebugInfo& parent
         ) noexcept;
 
-        ~AllocatorDebugInfo() noexcept;
+        virtual ~AllocatorDebugInfo() noexcept;
 
         auto location() const noexcept -> std::source_location
         {

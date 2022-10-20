@@ -6,11 +6,11 @@
 #include <ice/log_formatters.hxx>
 #include <ice/assert.hxx>
 
-#pragma warning(push)
-#pragma warning(disable : 5054)
+ISC_WARNING_PUSH
+ISCW_OPERATOR_DEPRECATED_BETWEEN_UNRELATED_ENUMERATIONS(ISCW_OP_DISABLE)
 #include <rapidjson/document.h>
 #undef assert
-#pragma warning(push)
+ISC_WARNING_POP
 
 namespace ice
 {
