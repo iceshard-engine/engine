@@ -34,8 +34,6 @@ namespace ice
 
         inline void push_back(ice::ShardContainer& container, ice::Span<ice::Shard const> values) noexcept;
 
-        inline void transform_all(ice::ShardContainer& container, ice::Shard source_shard, ice::Shard destination_shard) noexcept;
-
         inline void remove_all_of(ice::ShardContainer& container, ice::Shard value) noexcept;
 
         inline auto begin(ice::ShardContainer& container) noexcept -> ice::ShardContainer::Iterator;
@@ -142,17 +140,6 @@ namespace ice
         {
             ice::array::push_back(container._data, values);
         }
-
-        //inline void transform_all(ice::ShardContainer& container, ice::Shard source_shard, ice::Shard destination_shard) noexcept
-        //{
-        //    for (ice::Shard& shard : container._data)
-        //    {
-        //        if (shard == source_shard)
-        //        {
-        //            shard = ice::shard_transform(shard, destination_shard);
-        //        }
-        //    }
-        //}
 
         inline void remove_all_of(ice::ShardContainer& container, ice::Shard value) noexcept
         {
