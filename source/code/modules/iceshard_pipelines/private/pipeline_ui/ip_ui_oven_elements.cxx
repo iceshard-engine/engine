@@ -120,7 +120,7 @@ namespace ice
             {
                 ICE_ASSERT(false, "TODO!"); // Was here before memsys refactor. Needs a ticket!
                 //ice::usize const type_end = str.find_first_of(u8' ');
-                //ice::Utf8String const data_type = str.substr(0, type_end);
+                //ice::String const data_type = str.substr(0, type_end);
 
                 //if (out_action.action_type == ice::ui::ActionType::Shard
                 //    && (data_arg == RawAction::Constant_ActionShard_DataArgument)

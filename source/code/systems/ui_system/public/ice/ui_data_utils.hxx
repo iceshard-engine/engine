@@ -29,7 +29,7 @@ namespace ice::ui
         else if (element.text.source == DataSource::ValueResource)
         {
             ice::ui::UIResourceData const& resource = resources[element.text.source_i];
-            if (resource.info.type == ResourceType::Utf8String)
+            if (resource.info.type == ResourceType::String)
             {
                 text = *reinterpret_cast<ice::String const*>(resource.location);
             }

@@ -49,7 +49,7 @@ namespace ice
         ) noexcept -> ice::meminfo
         {
             ice::meminfo result = ice::meminfo_of<ice::ui::UIResourceData>;
-            if (resource_info.type == ice::ui::ResourceType::Utf8String)
+            if (resource_info.type == ice::ui::ResourceType::String)
             {
                 result += ice::meminfo_of<ice::String>;
                 result += ice::meminfo{ resource_info.type_data + 1, ice::ualign::b_4 }; // We are not concerned about 1 byte overhead.
@@ -236,7 +236,7 @@ namespace ice
             ice::ui::UIResourceData& resource = _resources[idx];
             resource.info = _page->ui_resources[idx];
 
-            if (resource.info.type == ice::ui::ResourceType::Utf8String)
+            if (resource.info.type == ice::ui::ResourceType::String)
             {
                 resource.location = ice::align_to(
                     additional_data_ptr,
@@ -344,7 +344,7 @@ namespace ice
         }
 
         ice::ui::UIResourceData& resource = _resources[resource_idx];
-        ICE_ASSERT(resource.info.type == ResourceType::Utf8String, "Trying to set incompatible value to resource!");
+        ICE_ASSERT(resource.info.type == ResourceType::String, "Trying to set incompatible value to resource!");
         ice::detail::resource_set_value(resource, string);
         return true;
     }
@@ -397,16 +397,16 @@ namespace ice
         if (has_any(_current_flags, Flags::StateDirtyStyle | Flags::StateDirtyLayout))
         {
             co_await runner.thread_pool();
-        }
 
-        if (has_all(_current_flags, Flags::StateDirtyLayout))
-        {
-            co_await update_layout();
-        }
+            if (has_all(_current_flags, Flags::StateDirtyLayout))
+            {
+                co_await update_layout();
+            }
 
-        if (has_all(_current_flags, Flags::StateDirtyStyle))
-        {
-            co_await update_style();
+            if (has_all(_current_flags, Flags::StateDirtyStyle))
+            {
+                co_await update_style();
+            }
         }
 
         co_await runner.schedule_current_frame();
@@ -671,7 +671,7 @@ namespace ice
                 ice::u64 const name_hash = ice::hash(resupdate->page);
                 if (this->name_hash() == name_hash)
                 {
-                    if (resupdate->resource_type == ResourceType::Utf8String)
+                    if (resupdate->resource_type == ResourceType::String)
                     {
                         this->set_resource(
                             resupdate->resource,
@@ -695,6 +695,13 @@ namespace ice
 
     auto GameUI_Page::draw_text(ice::EngineFrame& frame) noexcept -> ice::Task<>
     {
+        if (frame.storage().named_object<ice::GameUI_Page*>(stringid(name())) != nullptr)
+        {
+            co_return;
+        }
+
+        frame.storage().create_named_object<ice::GameUI_Page*>(stringid(name()), this);
+
         ice::u32 idx = 0;
         for (ice::ui::Element const& element : _elements)
         {

@@ -89,7 +89,7 @@ namespace ice
     static constexpr ice::ecs::ArchetypeDefinition<ice::UIPage> Constant_Archetype_UIPage{ };
     static constexpr ice::ecs::ArchetypeDefinition<ice::UIElement, ice::UIButton> Constant_Archetype_UIButton{ };
 
-    using Query_UIElements = ice::ecs::QueryDefinition<ice::UIElement const&, ice::UIButton const&>;
+    using Query_UIElements = ice::ecs::QueryDefinition<ice::ecs::EntityHandle, ice::UIElement const&, ice::UIButton const&>;
 
     static constexpr ice::ecs::ArchetypeInfo Constant_UIArchetypes[]{
         Constant_Archetype_UIPage,
@@ -176,7 +176,7 @@ namespace ice
         Query_UIElements::Query& query = *portal.storage().named_object<Query_UIElements::Query>("ice.query.ui-elements"_sid);
         ice::ecs::query::for_each_entity(
             query,
-            [&, this](ice::UIElement const& element, UIButton const& button) noexcept
+            [&, this](ice::ecs::EntityHandle entity, ice::UIElement const& element, UIButton const& button) noexcept
             {
                 using ice::ui::ElementState;
 
@@ -213,7 +213,7 @@ namespace ice
                             ice::ui::ActionInfo const& action = *button.action_on_click;
                             ice::ui::ShardInfo const shard_info = page_info.ui_shards[action.type_i];
 
-                            ice::shards::push_back(frame.shards(), ice::shard(shard_info.shardid) | ice::ecs::Entity{});
+                            ice::shards::push_back(frame.shards(), ice::shard(shard_info.shardid) | entity);
                             ICE_LOG(ice::LogSeverity::Debug, ice::LogTag::Engine, "Clicked!");
                         }
                     }

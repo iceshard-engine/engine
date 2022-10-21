@@ -28,36 +28,36 @@ namespace ice
             if ((*it & utf8_1byte_mask) == utf8_1byte_count)
             {
                 out_bytes = 1;
-                return it[0];
+                return ice::u8(it[0]);
             }
             if ((*it & utf8_2byte_mask) == utf8_2byte_count)
             {
                 out_bytes = 2;
-                ice::u32 codepoint = (it[0] & ~utf8_2byte_mask);
+                ice::u32 codepoint = ice::u8(it[0] & ~utf8_2byte_mask);
                 codepoint <<= 6;
-                codepoint |= (it[1] & utf8_vbyte_mask);
+                codepoint |= ice::u8(it[1] & utf8_vbyte_mask);
                 return codepoint;
             }
             if ((*it & utf8_3byte_mask) == utf8_3byte_count)
             {
                 out_bytes = 3;
-                ice::u32 codepoint = (it[0] & ~utf8_3byte_mask);
+                ice::u32 codepoint = ice::u8(it[0] & ~utf8_3byte_mask);
                 codepoint <<= 6;
-                codepoint |= (it[1] & utf8_vbyte_mask);
+                codepoint |= ice::u8(it[1] & utf8_vbyte_mask);
                 codepoint <<= 6;
-                codepoint |= (it[2] & utf8_vbyte_mask);
+                codepoint |= ice::u8(it[2] & utf8_vbyte_mask);
                 return codepoint;
             }
             if ((*it & utf8_4byte_mask) == utf8_4byte_count)
             {
                 out_bytes = 4;
-                ice::u32 codepoint = (it[0] & ~utf8_4byte_mask);
+                ice::u32 codepoint = ice::u8(it[0] & ~utf8_4byte_mask);
                 codepoint <<= 6;
-                codepoint |= (it[1] & utf8_vbyte_mask);
+                codepoint |= ice::u8(it[1] & utf8_vbyte_mask);
                 codepoint <<= 6;
-                codepoint |= (it[2] & utf8_vbyte_mask);
+                codepoint |= ice::u8(it[2] & utf8_vbyte_mask);
                 codepoint <<= 6;
-                codepoint |= (it[3] & utf8_vbyte_mask);
+                codepoint |= ice::u8(it[3] & utf8_vbyte_mask);
                 return codepoint;
             }
             return 0;

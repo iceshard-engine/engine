@@ -8,7 +8,7 @@ namespace ice::ui
     {
         None,
         Font,
-        Utf8String,
+        String,
         Texture,
     };
 

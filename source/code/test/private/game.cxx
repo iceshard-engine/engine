@@ -420,7 +420,7 @@ void MyGame::on_update(ice::EngineFrame& frame, ice::EngineRunner& runner, ice::
                 ures->page = page_name;
                 ures->resource_data = ice::to_const(str);
                 ures->resource = ice::stringid(temp_ui_ids[idx]);
-                ures->resource_type = ice::ui::ResourceType::Utf8String;
+                ures->resource_type = ice::ui::ResourceType::String;
                 ice::shards::push_back(frame.shards(), ice::Shard_GameUI_UpdateResource | ice::to_const(ures));
             }
             _menu = page_name;

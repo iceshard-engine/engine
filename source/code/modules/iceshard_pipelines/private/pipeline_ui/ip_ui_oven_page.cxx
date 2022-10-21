@@ -182,7 +182,7 @@ namespace ice
             }
             else if (type_str == Constant_UIResourceType_Text)
             {
-                res.type = ResourceType::Utf8String;
+                res.type = ResourceType::String;
             }
             else if (ice::string::starts_with(type_str, Constant_UIResourceType_String))
             {
@@ -193,7 +193,7 @@ namespace ice
                     ice::String arrval_str = ice::string::substr(type_str, arrval_beg + 1, (arrval_end - arrval_beg) - 1);
                     if (ice::from_chars(arrval_str, res.type_data))
                     {
-                        res.type = ResourceType::Utf8String;
+                        res.type = ResourceType::String;
                     }
                 }
             }

@@ -475,8 +475,8 @@ namespace ice
             ice::u32 idx_shard = 0;
             for (ice::RawShard const& shard : raw_info.shards)
             {
-                shards[idx_shard].shardid = shard.shard_name;;
-                shards[idx_shard].shardid.payload = ice::Constant_ShardPayloadID<int>;
+                shards[idx_shard].shardid = shard.shard_name;
+                shards[idx_shard].shardid.payload = { };
                 idx_shard += 1;
             }
 
