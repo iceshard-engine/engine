@@ -91,7 +91,7 @@ namespace ice
     inline UniquePtr<T>::UniquePtr(ice::UniquePtrCustomDeleter<T>* deleter_fn, T* ptr) noexcept
         : _alloc{ nullptr }
         , _ptr{ ptr }
-        , _deleter{ deleter_fn }
+        , _deleter{ reinterpret_cast<void*>(deleter_fn) }
     { }
 
     template<typename T>

@@ -13,5 +13,7 @@
     )
 
 #else
-#error "Invalid!"
+
+#define ICE_ASSERT_CORE(expression)
+
 #endif

@@ -85,8 +85,8 @@ namespace ice
         , _params{ params }
         , _begin{ nullptr }
         , _end{ nullptr }
-        , _free{ nullptr }
         , _allocate{ nullptr }
+        , _free{ nullptr }
     {
         _begin = _backing_alloc.allocate({ params.ring_buffer_size, ice::ualign::b_default }).memory;
         _end = ptr_add(_begin, params.ring_buffer_size);
@@ -106,8 +106,8 @@ namespace ice
         , _params{ params }
         , _begin{ nullptr }
         , _end{ nullptr }
-        , _free{ nullptr }
         , _allocate{ nullptr }
+        , _free{ nullptr }
     {
         _begin = _backing_alloc.allocate({ params.ring_buffer_size, ice::ualign::b_default }).memory;
         _end = ptr_add(_begin, params.ring_buffer_size);

@@ -11,6 +11,10 @@
 #include <ice/concept/enum_flags.hxx>
 #include <ice/concept/strong_type_value.hxx>
 
+#include <cstring>
+#include <utility>
+#include <bit>
+
 namespace ice
 {
 

@@ -252,7 +252,7 @@ namespace ice
     // #TODO: https://github.com/iceshard-engine/engine/issues/89
     auto create_default_module_register(ice::Allocator& alloc) noexcept -> ice::UniquePtr<ModuleRegister>
     {
-        return ice::make_unique_null<ModuleRegister>();
+        return { };
     }
 
 #endif // #if ISP_WINDOWS

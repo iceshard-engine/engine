@@ -98,20 +98,20 @@ namespace ice
             {
                 return BaseStringID<true> {
                     .value = { .value = hash_result.h[0] },
-                    .debug_info = { .name_value = { value.data(), char('\xff')} }
+                    .debug_info = { .name_value = { value.data(), char('\xff') } }
                 };
             }
             else
             {
                 BaseStringID<true> result{
-                    .value = {.value = hash_result.h[0] },
+                    .value = { .value = hash_result.h[0] },
                 };
 
                 size_t const cstr_size = value.size();
                 size_t const origin_size = std::size(result.debug_info.name_hint);
 
                 size_t const copy_count = std::min(origin_size, cstr_size);
-                size_t const copy_offset = std::max(0ull, cstr_size - copy_count);
+                size_t const copy_offset = std::max(size_t{ 0 }, cstr_size - copy_count);
 
 
                 ice::i32 i = 0;
