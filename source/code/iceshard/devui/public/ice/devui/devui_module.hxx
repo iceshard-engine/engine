@@ -1,5 +1,5 @@
 #pragma once
-#include <ice/allocator.hxx>
+#include <ice/mem_allocator.hxx>
 #include <ice/module_register.hxx>
 
 namespace ice::devui
@@ -16,7 +16,7 @@ namespace ice::devui
     {
 
         using CreateFn = auto (ice::Allocator&) noexcept -> ice::devui::DevUISystem*;
-        using DestroyFn = void (ice::Allocator&, ice::devui::DevUISystem*) noexcept;
+        using DestroyFn = void (ice::devui::DevUISystem*) noexcept;
 
         struct DevUI_API
         {

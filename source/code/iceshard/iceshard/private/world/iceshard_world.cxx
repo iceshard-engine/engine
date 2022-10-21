@@ -3,7 +3,7 @@
 #include <ice/engine_runner.hxx>
 #include <ice/engine_frame.hxx>
 #include <ice/engine_shards.hxx>
-#include <ice/pod/hash.hxx>
+#include <ice/container/hashmap.hxx>
 #include <ice/assert.hxx>
 
 #include "iceshard_world_portal.hxx"
@@ -25,10 +25,8 @@ namespace ice
 
     IceshardWorld::~IceshardWorld() noexcept
     {
-        for (auto const& entry : _portals)
+        for (ice::IceshardWorldPortal* portal : _portals)
         {
-            ice::IceshardWorldPortal* portal = entry.value;
-
             ICE_ASSERT(
                 portal->is_owning() == true,
                 "Not all external traits where removed from this World before destruction!"
@@ -71,20 +69,20 @@ namespace ice
     {
         ice::u64 const name_hash = ice::hash(name);
         ICE_ASSERT(
-            ice::pod::hash::has(_portals, name_hash) == false,
+            ice::hashmap::has(_portals, name_hash) == false,
             "World already contains a trait of name {}",
             ice::stringid_hint(name)
         );
 
-        ice::pod::array::push_back(
+        ice::array::push_back(
             _traits,
             trait
         );
 
-        ice::pod::hash::set(
+        ice::hashmap::set(
             _portals,
             name_hash,
-            _allocator.make<IceshardWorldPortal>(
+            _allocator.create<IceshardWorldPortal>(
                 _allocator,
                 *this,
                 trait,
@@ -101,20 +99,20 @@ namespace ice
     {
         ice::u64 const name_hash = ice::hash(name);
         ICE_ASSERT(
-            ice::pod::hash::has(_portals, name_hash) == false,
+            ice::hashmap::has(_portals, name_hash) == false,
             "World already contains a trait of name {}",
             ice::stringid_hint(name)
         );
 
-        ice::pod::array::push_back(
+        ice::array::push_back(
             _traits,
             trait
         );
 
-        ice::pod::hash::set(
+        ice::hashmap::set(
             _portals,
             name_hash,
-            _allocator.make<IceshardWorldPortal>(
+            _allocator.create<IceshardWorldPortal>(
                 _allocator,
                 *this,
                 trait,
@@ -130,25 +128,25 @@ namespace ice
     {
         ice::u64 const name_hash = ice::hash(name);
         ICE_ASSERT(
-            ice::pod::hash::has(_portals, name_hash) == true,
+            ice::hashmap::has(_portals, name_hash) == true,
             "World does not contain a trait with name {}",
             ice::stringid_hint(name)
         );
 
-        ice::IceshardWorldPortal* const portal = ice::pod::hash::get(_portals, name_hash, nullptr);
+        ice::IceshardWorldPortal* const portal = ice::hashmap::get(_portals, name_hash, nullptr);
 
-        auto* it = ice::pod::array::begin(_traits);
-        auto* const end = ice::pod::array::end(_traits);
+        auto* it = ice::array::begin(_traits);
+        auto* const end = ice::array::end(_traits);
         while (it != end && (*it) != portal->trait())
         {
             it += 1;
         }
 
         ICE_ASSERT(it != end, "Couldnt find location of the world trait to be removed!");
-        *it = ice::pod::array::back(_traits);
-        ice::pod::array::pop_back(_traits);
+        *it = ice::array::back(_traits);
+        ice::array::pop_back(_traits);
 
-        ice::pod::hash::remove(
+        ice::hashmap::remove(
             _portals,
             ice::hash(name_hash)
         );
@@ -162,7 +160,7 @@ namespace ice
     {
         ice::u64 const name_hash = ice::hash(name);
 
-        ice::IceshardWorldPortal* const portal = ice::pod::hash::get(_portals, name_hash, nullptr);
+        ice::IceshardWorldPortal* const portal = ice::hashmap::get(_portals, name_hash, nullptr);
         return portal == nullptr ? nullptr : portal->trait();
     }
 
@@ -171,10 +169,10 @@ namespace ice
         ice::EngineRunner& runner
     ) noexcept
     {
-        for (auto& entry : _portals)
+        for (ice::IceshardWorldPortal* portal : _portals)
         {
-            entry.value->trait()->on_activate(
-                engine, runner, *entry.value
+            portal->trait()->on_activate(
+                engine, runner, *portal
             );
         }
     }
@@ -184,14 +182,16 @@ namespace ice
         ice::EngineRunner& runner
     ) noexcept
     {
-        ice::Span<ice::pod::Hash<ice::IceshardWorldPortal*>::Entry> portals = _portals._data;
-        ice::u32 const size = ice::size(portals);
+        ice::Span<ice::IceshardWorldPortal*> portals = ice::hashmap::values(_portals);
+        auto it = ice::span::rbegin(portals);
+        auto const end = ice::span::rend(portals);
 
-        for (ice::i32 idx = size - 1; idx >= 0; --idx)
+        while (it != end)
         {
-            portals[idx].value->trait()->on_deactivate(
-                engine, runner, *portals[idx].value
+            (*it)->trait()->on_deactivate(
+                engine, runner, *(*it)
             );
+            it += 1;
         }
     }
 
@@ -207,13 +207,13 @@ namespace ice
             current_frame.shards()
         );
 
-        for (auto& entry : _portals)
+        for (ice::IceshardWorldPortal* portal : _portals)
         {
-            entry.value->remove_finished_tasks();
-            entry.value->trait()->on_update(
+            portal->remove_finished_tasks();
+            portal->trait()->on_update(
                 runner.current_frame(),
                 runner,
-                *entry.value
+                *portal
             );
         }
     }

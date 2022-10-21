@@ -3,7 +3,7 @@
 
 #include <ice/input/input_event.hxx>
 #include <ice/input/input_controller.hxx>
-#include <ice/pod/hash.hxx>
+#include <ice/container/hashmap.hxx>
 
 namespace ice::action
 {
@@ -95,7 +95,7 @@ namespace ice::action
         ) const noexcept -> ice::action::ActionTriggerDefinition override;
 
     private:
-        ice::pod::Hash<ice::action::ActionTriggerDefinition> _triggers;
+        ice::HashMap<ice::action::ActionTriggerDefinition> _triggers;
     };
 
     SimpleTriggerDatabase::SimpleTriggerDatabase(ice::Allocator& alloc) noexcept
@@ -105,19 +105,19 @@ namespace ice::action
 
     void SimpleTriggerDatabase::add_trigger(ice::StringID_Arg name, ice::action::ActionTriggerDefinition trigger_info) noexcept
     {
-        ice::pod::hash::set(_triggers, ice::hash(name), trigger_info);
+        ice::hashmap::set(_triggers, ice::hash(name), trigger_info);
     }
 
     auto SimpleTriggerDatabase::get_trigger(ice::StringID_Arg name) const noexcept -> ice::action::ActionTriggerDefinition
     {
-        return ice::pod::hash::get(_triggers, ice::hash(name), ActionTriggerDefinition{ ice::ShardID_Invalid });
+        return ice::hashmap::get(_triggers, ice::hash(name), ActionTriggerDefinition{ ice::Shard_Invalid.id });
     }
 
     auto create_trigger_database(
         ice::Allocator& alloc
     ) noexcept -> ice::UniquePtr<ice::action::ActionTriggerDatabase>
     {
-        return ice::make_unique<ActionTriggerDatabase, SimpleTriggerDatabase>(alloc, alloc);
+        return ice::make_unique<SimpleTriggerDatabase>(alloc, alloc);
     }
 
     void setup_common_triggers(
@@ -127,21 +127,21 @@ namespace ice::action
         database.add_trigger(
             "trigger.success"_sid,
             ActionTriggerDefinition{
-                .trigger_shardid = ice::shard_id(ice::Shard_FrameTick),
+                .trigger_shardid = ice::shardid(ice::Shard_FrameTick),
                 .trigger_handler = detail::trigger_success
             }
         );
         database.add_trigger(
             "trigger.failure"_sid,
             ActionTriggerDefinition{
-                .trigger_shardid = ice::shard_id(ice::Shard_FrameTick),
+                .trigger_shardid = ice::shardid(ice::Shard_FrameTick),
                 .trigger_handler = detail::trigger_failure
             }
         );
         database.add_trigger(
             "trigger.elapsed-time"_sid,
             ActionTriggerDefinition{
-                .trigger_shardid = ice::shard_id(ice::Shard_FrameTick),
+                .trigger_shardid = ice::shardid(ice::Shard_FrameTick),
                 .trigger_handler = detail::trigger_time_elapsed
             }
         );
@@ -162,21 +162,21 @@ namespace ice::action
         database.add_trigger(
             "trigger.action-input-button"_sid,
             ActionTriggerDefinition{
-                .trigger_shardid = ice::shard_id(ice::Shard_InputEventButton),
+                .trigger_shardid = ice::shardid(ice::Shard_InputEventButton),
                 .trigger_handler = detail::trigger_input_button
             }
         );
         database.add_trigger(
             "trigger.action-input-axis-above"_sid,
             ActionTriggerDefinition{
-                .trigger_shardid = ice::shard_id(ice::Shard_InputEventAxis),
+                .trigger_shardid = ice::shardid(ice::Shard_InputEventAxis),
                 .trigger_handler = detail::trigger_input_axis_above
             }
         );
         database.add_trigger(
             "trigger.action-input-axis-below"_sid,
             ActionTriggerDefinition{
-                .trigger_shardid = ice::shard_id(ice::Shard_InputEventAxis),
+                .trigger_shardid = ice::shardid(ice::Shard_InputEventAxis),
                 .trigger_handler = detail::trigger_input_axis_below
             }
         );

@@ -1,8 +1,8 @@
 #pragma once
-#include <ice/unique_ptr.hxx>
-#include <ice/string.hxx>
+#include <ice/mem_unique_ptr.hxx>
+#include <ice/string_types.hxx>
 #include <ice/stringid.hxx>
-#include <ice/pod/collections.hxx>
+#include <ice/container_types.hxx>
 #include <ice/module.hxx>
 
 namespace ice
@@ -15,7 +15,7 @@ namespace ice
 
         virtual bool load_module(
             ice::Allocator& alloc,
-            ice::Utf8String path
+            ice::String path
         ) noexcept = 0;
 
         virtual bool load_module(
@@ -33,7 +33,7 @@ namespace ice
         virtual bool find_module_apis(
             ice::StringID_Arg api_name,
             ice::u32 version,
-            ice::pod::Array<void*>& api_ptrs_out
+            ice::Array<void*>& api_ptrs_out
         ) const noexcept = 0;
     };
 

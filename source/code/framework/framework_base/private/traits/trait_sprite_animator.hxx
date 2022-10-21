@@ -1,5 +1,5 @@
 #pragma once
-#include <ice/pod/hash.hxx>
+#include <ice/container/hashmap.hxx>
 #include <ice/world/world_trait.hxx>
 #include <ice/game_anim.hxx>
 #include <ice/game_sprites.hxx>
@@ -57,7 +57,7 @@ namespace ice
         using AnimQuery = ice::ecs::QueryDefinition<ice::Animation const&, ice::AnimationState&, ice::SpriteTile&>;
 
         ice::AssetStorage* _assets;
-        ice::pod::Hash<ice::TraitAnimatorAnimationInfo> _anim_infos;
+        ice::HashMap<ice::TraitAnimatorAnimationInfo> _anim_infos;
     };
 
 } // namespace ice

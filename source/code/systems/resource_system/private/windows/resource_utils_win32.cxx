@@ -1,24 +1,23 @@
 #include "resource_utils_win32.hxx"
-#include <ice/memory/stack_allocator.hxx>
-#include <ice/heap_string.hxx>
-#include <ice/string.hxx>
+#include <ice/mem_allocator_stack.hxx>
+#include <ice/string/heap_string.hxx>
 #include <ice/assert.hxx>
 
 #if ISP_WINDOWS
 
-namespace ice
+namespace ice::win32
 {
 
     bool utf8_to_wide_append(
-        ice::Utf8String path,
+        ice::String path,
         ice::HeapString<wchar_t>& out_str
     ) noexcept
     {
         ice::i32 const required_size = MultiByteToWideChar(
             CP_UTF8,
             0,
-            reinterpret_cast<char const*>(ice::string::data(path)),
-            static_cast<ice::i32>(ice::string::size(path)),
+            ice::string::begin(path),
+            ice::string::size(path),
             NULL,
             0
         );
@@ -32,8 +31,8 @@ namespace ice
             ice::i32 const chars_written = MultiByteToWideChar(
                 CP_UTF8,
                 0,
-                (const char*)ice::string::data(path),
-                static_cast<ice::i32>(ice::string::size(path)),
+                ice::string::begin(path),
+                ice::string::size(path),
                 ice::string::begin(out_str) + current_size,
                 ice::string::size(out_str) - current_size
             );
@@ -51,7 +50,7 @@ namespace ice
 
     auto utf8_to_wide(
         ice::Allocator& alloc,
-        ice::Utf8String path
+        ice::String path
     ) noexcept -> ice::HeapString<wchar_t>
     {
         ice::HeapString<wchar_t> result{ alloc };
@@ -67,8 +66,8 @@ namespace ice
         ice::i32 const required_size = WideCharToMultiByte(
             CP_UTF8,
             0,
-            ice::string::data(path),
-            static_cast<ice::i32>(ice::string::size(path)),
+            ice::string::begin(path),
+            ice::string::size(path),
             NULL,
             0,
             NULL,
@@ -79,7 +78,7 @@ namespace ice
 
     bool wide_to_utf8(
         ice::WString path,
-        ice::HeapString<char8_t>& out_str
+        ice::HeapString<>& out_str
     ) noexcept
     {
         ice::i32 const required_size = wide_to_utf8_size(path);
@@ -92,9 +91,9 @@ namespace ice
             ice::i32 const chars_written = WideCharToMultiByte(
                 CP_UTF8,
                 0,
-                ice::string::data(path),
-                static_cast<ice::i32>(ice::string::size(path)),
-                (char*)ice::string::begin(out_str) + current_size,
+                ice::string::begin(path),
+                ice::string::size(path),
+                ice::string::begin(out_str) + current_size,
                 ice::string::size(out_str) - current_size,
                 NULL,
                 NULL
@@ -112,12 +111,12 @@ namespace ice
     }
 
 
-    auto win32_open_file(
+    auto native_open_file(
         ice::WString path, int flags
-    ) noexcept -> ice::win32::SHHandle
+    ) noexcept -> ice::win32::FileHandle
     {
-        ice::win32::SHHandle handle = CreateFile(
-            ice::string::data(path),
+        ice::win32::FileHandle handle = CreateFile(
+            ice::string::begin(path),
             GENERIC_READ,
             FILE_SHARE_READ | FILE_SHARE_WRITE, // FILE_SHARE_*
             NULL, // SECURITY ATTRIBS
@@ -128,43 +127,45 @@ namespace ice
         return handle;
     }
 
-    bool win32_load_file(
-        ice::win32::SHHandle const& handle,
-        ice::Buffer& out_buffer
+    bool native_load_file(
+        ice::win32::FileHandle const& handle,
+        ice::Allocator& alloc,
+        ice::Memory& out_data
     ) noexcept
     {
-        ice::memory::StackAllocator_4096 kib4_alloc;
-        ice::Memory memory_chunk = {
-            .location = kib4_alloc.allocate(kib4_alloc.Constant_BufferSize),
-            .size = kib4_alloc.Constant_BufferSize,
-            .alignment = 1 // Characters are not aligned to any particular number
-        };
-
         BOOL result = FALSE;
-        DWORD characters_read = 0;
-        do
+        LARGE_INTEGER li;
+        if (GetFileSizeEx(handle.native(), &li) != 0)
         {
-            result = ReadFile(
-                handle.native(),
-                memory_chunk.location,
-                memory_chunk.size,
-                &characters_read,
-                nullptr
-            );
+            out_data = alloc.allocate({ { ice::usize::base_type(li.QuadPart) }, ice::ualign::b_default });
 
-            if (characters_read > 0)
+            DWORD characters_read = 0;
+            do
             {
-                ice::buffer::append(
-                    out_buffer,
-                    memory_chunk.location,
-                    characters_read,
-                    memory_chunk.alignment
+                DWORD const characters_to_read = (DWORD)out_data.size.value;
+                ICE_ASSERT(
+                    characters_to_read == out_data.size.value,
+                    "File is larger than this function can handle! For now... [file size: {}]",
+                    out_data.size
                 );
-            }
 
-        } while (characters_read == 0 && result != FALSE);
+                result = ReadFile(
+                    handle.native(),
+                    out_data.location,
+                    (DWORD)out_data.size.value,
+                    &characters_read,
+                    nullptr
+                );
 
-        kib4_alloc.deallocate(memory_chunk.location);
+                ICE_ASSERT(
+                    characters_read == characters_to_read,
+                    "Read different amount of characters to what was expected. [expected: {}, read: {}]",
+                    characters_to_read,
+                    characters_read
+                );
+
+            } while (characters_read == 0 && result != FALSE);
+        }
         return result != FALSE;
     }
 

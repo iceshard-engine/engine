@@ -1,6 +1,7 @@
 #pragma once
-#include <ice/string.hxx>
-#include <ice/pod/array.hxx>
+#include "ip_ui_oven_types.hxx"
+#include <ice/string/string.hxx>
+#include <ice/container/array.hxx>
 #include <ice/ui_types.hxx>
 
 #include <rapidxml_ns/rapidxml_ns.hpp>
@@ -24,10 +25,10 @@ namespace ice
     void parse_ui_file(
         ice::Allocator& alloc,
         rapidxml_ns::xml_document<char>& doc,
-        ice::pod::Array<ice::RawElement>& raw_elements,
-        ice::pod::Array<ice::RawResource>& ui_resources,
-        ice::pod::Array<ice::RawShard>& raw_shards,
-        ice::pod::Array<ice::RawStyle>& raw_styles
+        ice::Array<ice::RawElement>& raw_elements,
+        ice::Array<ice::RawResource>& ui_resources,
+        ice::Array<ice::RawShard>& raw_shards,
+        ice::Array<ice::RawStyle>& raw_styles
     ) noexcept;
 
 } // namespace ice

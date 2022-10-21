@@ -1,5 +1,5 @@
 #pragma once
-#include <ice/allocator.hxx>
+#include <ice/mem_allocator.hxx>
 #include <ice/platform_app.hxx>
 #include <ice/clock.hxx>
 #include <ice/uri.hxx>
@@ -132,7 +132,7 @@ namespace ice
             }
             else
             {
-                return ice::URI{ ice::scheme_file, u8"config.json" };
+                return "file://config.json"_uri;
             }
         }
 
@@ -186,5 +186,5 @@ namespace ice
         ice::ModuleRegister& module_register \
     ) noexcept -> ice::GameFramework * \
     { \
-        return alloc.make<ice::Game<Type>>(alloc, resource_tracker, module_register); \
+        return alloc.create<ice::Game<Type>>(alloc, resource_tracker, module_register); \
     }

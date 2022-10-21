@@ -1,7 +1,7 @@
 #include "imgui_system.hxx"
 #include <ice/devui/devui_module.hxx>
 
-#include <ice/allocator.hxx>
+#include <ice/mem_allocator.hxx>
 #include <ice/module_register.hxx>
 #include <ice/log_module.hxx>
 
@@ -10,12 +10,13 @@ namespace ice::devui
 
     auto create_imgui_devui(ice::Allocator& alloc) noexcept -> ice::devui::DevUISystem*
     {
-        return alloc.make<ImGuiSystem>(alloc);
+        return alloc.create<ImGuiSystem>(alloc);
     }
 
-    auto destroy_imgui_devui(ice::Allocator& alloc, ice::devui::DevUISystem* system) noexcept
+    auto destroy_imgui_devui(ice::devui::DevUISystem* system) noexcept
     {
-        alloc.destroy(static_cast<ImGuiSystem*>(system));
+        ice::Allocator& alloc = static_cast<ImGuiSystem*>(system)->allocator();
+        alloc.destroy(system);
     }
 
     bool iceshard_mesh_pipeline_api(
@@ -71,6 +72,6 @@ extern "C"
     {
         return true;
     }
-#endif 
+#endif
 
 } // extern "C"

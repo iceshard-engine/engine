@@ -1,5 +1,5 @@
 #pragma once
-#include <ice/string.hxx>
+#include <ice/string_types.hxx>
 #include <ice/log_severity.hxx>
 #include <ice/log_tag.hxx>
 #include <ice/log_formatters.hxx>
@@ -24,7 +24,7 @@ namespace ice::detail
 } // namespace ice::detail
 
 #if defined ICE_LOG
-#error "Found existing definition of 'ICE_LOG'!"
+#error "Found existing definition of 'ICE_LOG'! Please do not redefine this macro!"
 #endif
 
 #define ICE_LOG(severity, tag, format, ...) \

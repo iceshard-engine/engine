@@ -4,7 +4,7 @@
 #include <ice/ecs/ecs_entity_tracker.hxx>
 #include <ice/world/world_trait.hxx>
 #include <ice/world/world_trait_archive.hxx>
-#include <ice/pod/hash.hxx>
+#include <ice/container/hashmap.hxx>
 #include <ice/ui_element_draw.hxx>
 #include <ice/asset.hxx>
 #include "render_ui_trait.hxx"
@@ -45,7 +45,7 @@ namespace ice
         auto load_ui(
             ice::Allocator& alloc,
             ice::EngineRunner& runner,
-            ice::Utf8String name
+            ice::String name
         ) noexcept -> ice::Task<>;
 
         auto update_ui(
@@ -68,9 +68,9 @@ namespace ice
         ice::Allocator& _allocator;
         ice::ecs::EntityTracker _entity_tracker;
 
-        ice::pod::Hash<GameUI_Page*> _pages;
+        ice::HashMap<GameUI_Page*> _pages;
 
-        ice::Utf8String _visible_page;
+        ice::String _visible_page;
 
         ice::vec2u _swapchain_size;
         ice::vec2f _pos_mouse;

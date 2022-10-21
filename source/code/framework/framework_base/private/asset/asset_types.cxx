@@ -1,7 +1,7 @@
 #include "tilemap/asset_tilemap.hxx"
 
 #include <ice/game_tilemap.hxx>
-#include <ice/unique_ptr.hxx>
+#include <ice/mem_unique_ptr.hxx>
 #include <ice/asset_module.hxx>
 #include <ice/asset_type_archive.hxx>
 #include <ice/module_register.hxx>
@@ -15,7 +15,7 @@ namespace ice
     {
         using ice::detail::asset_system::v1::Constant_APIName_AssetTypeArchive;
 
-        static ice::Utf8String extensions[]{ u8".tmx" };
+        static ice::String extensions[]{ ".tmx" };
 
         static ice::AssetTypeDefinition type_definition{
             .resource_extensions = extensions,

@@ -2,7 +2,8 @@
 #include <ice/task_list.hxx>
 #include <ice/task.hxx>
 #include <ice/os/windows.hxx>
-#include <ice/memory/stack_allocator.hxx>
+#include <ice/mem_allocator_stack.hxx>
+#include <functional>
 #include <thread>
 
 #include "internal_task.hxx"
@@ -38,10 +39,12 @@ namespace ice
             join();
 
             // Destroy any tasks that are still waiting for processing
-            ice::memory::StackAllocator_1024 thread_alloc{ };
+            static constexpr ice::usize InternalBufferSize = 1_KiB;
+
+            ice::StackAllocator<InternalBufferSize> thread_alloc{ };
             ice::TaskList thread_tasks{ thread_alloc };
 
-            ice::pod::array::reserve(thread_tasks, thread_alloc.Constant_BufferSize / sizeof(std::coroutine_handle<>) - 1);
+            ice::array::reserve(thread_tasks, ice::mem_max_capacity<std::coroutine_handle<>>(InternalBufferSize));
             _task_lists.swap_and_aquire_tasks(thread_tasks);
 
             ice::detail::ScheduleOperationData* expected_initial_task = _head.load(std::memory_order_acquire);
@@ -113,7 +116,7 @@ namespace ice
             ice::ScopedTaskList scoped_list = _task_lists.aquire_list();
             ice::TaskList& task_list = scoped_list;
 
-            ice::pod::array::push_back(
+            ice::array::push_back(
                 task_list,
                 detail::create_internal_task(ice::move(task)).move_and_reset()
             );
@@ -122,10 +125,12 @@ namespace ice
     protected:
         void thread_routine() noexcept
         {
-            ice::memory::StackAllocator_1024 thread_alloc{ };
+            static constexpr ice::usize InternalBufferSize = 1_KiB;
+
+            ice::StackAllocator<InternalBufferSize> thread_alloc{ };
             ice::TaskList thread_tasks{ thread_alloc };
 
-            ice::pod::array::reserve(thread_tasks, thread_alloc.Constant_BufferSize / sizeof(std::coroutine_handle<>) - 1);
+            ice::array::reserve(thread_tasks, ice::mem_max_capacity<std::coroutine_handle<>>(InternalBufferSize));
 
             while (_stop_requested == false)
             {
@@ -147,7 +152,7 @@ namespace ice
                     }
                 }
 
-                if (ice::pod::array::any(thread_tasks) || expected_initial_task != nullptr)
+                if (ice::array::any(thread_tasks) || expected_initial_task != nullptr)
                 {
                     while (expected_initial_task != nullptr)
                     {
@@ -183,7 +188,7 @@ namespace ice
 
     auto create_task_thread(ice::Allocator& alloc) noexcept -> ice::UniquePtr<TaskThread>
     {
-        return ice::make_unique<TaskThread, SimpleTaskThread>(alloc, alloc);
+        return ice::make_unique<SimpleTaskThread>(alloc, alloc);
     }
 
 } // namespace ice

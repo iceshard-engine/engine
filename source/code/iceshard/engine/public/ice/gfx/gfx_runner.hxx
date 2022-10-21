@@ -1,6 +1,6 @@
 #pragma once
 #include <ice/stringid.hxx>
-#include <ice/pod/array.hxx>
+#include <ice/container/array.hxx>
 #include <ice/sync_manual_events.hxx>
 #include <ice/engine_types.hxx>
 

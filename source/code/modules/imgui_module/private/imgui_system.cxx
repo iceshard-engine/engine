@@ -10,19 +10,18 @@ namespace ice::devui
     namespace detail
     {
 
-        void create_alloc_tree_widget(ice::devui::ImGuiSystem& /*sys*/, ice::BaseAllocator& /*base_alloc*/) noexcept
+        void create_alloc_tree_widget(ice::devui::ImGuiSystem& sys, ice::Allocator& tracked_alloc) noexcept
         {
-        }
-
-        void create_alloc_tree_widget(ice::devui::ImGuiSystem& sys, ice::TrackedAllocator& tracked_alloc) noexcept
-        {
-            ice::TrackedAllocator const* top_alloc = &tracked_alloc;
-            while (top_alloc->parent_allocator() != nullptr)
+            if constexpr (ice::Allocator::HasDebugInformation)
             {
-                top_alloc = top_alloc->parent_allocator();
-            }
+                ice::AllocatorDebugInfo const* top_alloc = &tracked_alloc.debug_info();
+                while (top_alloc->parent_allocator() != nullptr)
+                {
+                    top_alloc = top_alloc->parent_allocator();
+                }
 
-            sys.set_alloc_tree_widget(tracked_alloc.make<ImGui_AllocatorTreeWidget>(*top_alloc));
+                sys.set_alloc_tree_widget(tracked_alloc.create<ImGui_AllocatorTreeWidget>(*top_alloc));
+            }
         }
 
         auto create_imgui_trait(
@@ -32,7 +31,7 @@ namespace ice::devui
         ) noexcept -> ice::WorldTrait*
         {
             ice::devui::ImGuiSystem* system = reinterpret_cast<ImGuiSystem*>(userdata);
-            ice::devui::ImGuiTrait* trait = alloc.make<ice::devui::ImGuiTrait>(alloc);
+            ice::devui::ImGuiTrait* trait = alloc.create<ice::devui::ImGuiTrait>(alloc);
             system->set_trait(trait);
             return trait;
         }
@@ -47,7 +46,7 @@ namespace ice::devui
         , _widgets{ alloc }
         , _inactive_widgets{ alloc }
     {
-        ice::pod::array::reserve(_widgets, 100);
+        ice::array::reserve(_widgets, 100);
         detail::create_alloc_tree_widget(*this, _allocator);
     }
 
@@ -95,11 +94,11 @@ namespace ice::devui
         if (_render_trait != nullptr)
         {
             widget->on_prepare(_render_trait->imgui_context());
-            ice::pod::array::push_back(_widgets, widget);
+            ice::array::push_back(_widgets, widget);
         }
         else
         {
-            ice::pod::array::push_back(_inactive_widgets, widget);
+            ice::array::push_back(_inactive_widgets, widget);
         }
     }
 
@@ -110,7 +109,7 @@ namespace ice::devui
             return;
         }
 
-        ice::u32 const count = ice::pod::array::size(_widgets);
+        ice::u32 const count = ice::array::count(_widgets);
         if (count == 0)
         {
             return;
@@ -130,7 +129,7 @@ namespace ice::devui
             _widgets[idx] = _widgets[count - 1];
         }
 
-        ice::pod::array::pop_back(_widgets);
+        ice::array::pop_back(_widgets);
     }
 
     void ImGuiSystem::set_alloc_tree_widget(ice::devui::ImGui_AllocatorTreeWidget* widget) noexcept

@@ -9,7 +9,7 @@ namespace ice::render::vk
     VulkanQueue::VulkanQueue(
         VkQueue vk_queue,
         VkDevice vk_device,
-        ice::pod::Array<VkCommandPool> vk_cmd_pools
+        ice::Array<VkCommandPool> vk_cmd_pools
     ) noexcept
         : _vk_queue{ vk_queue }
         , _vk_device{ vk_device }
@@ -38,13 +38,13 @@ namespace ice::render::vk
         ice::Span<ice::render::CommandBuffer> buffers
     ) noexcept
     {
-        CommandBuffer* buffers_ptr = buffers.data();
+        CommandBuffer* buffers_ptr = ice::span::begin(buffers);
         VkCommandBuffer* vk_buffers = reinterpret_cast<VkCommandBuffer*>(buffers_ptr);
 
         VkCommandBufferAllocateInfo alloc_info{ VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO };
         alloc_info.level = type == CommandBufferType::Primary ? VK_COMMAND_BUFFER_LEVEL_PRIMARY : VK_COMMAND_BUFFER_LEVEL_SECONDARY;
         alloc_info.commandPool = _vk_cmd_pools[pool_index];
-        alloc_info.commandBufferCount = static_cast<ice::u32>(buffers.size());
+        alloc_info.commandBufferCount = ice::count(buffers);
 
         VkResult result = vkAllocateCommandBuffers(
             _vk_device,
@@ -74,14 +74,14 @@ namespace ice::render::vk
         ice::render::RenderFence const* fence
     ) noexcept
     {
-        CommandBuffer const* buffers_ptr = buffers.data();
+        CommandBuffer const* buffers_ptr = ice::span::begin(buffers);
         VkCommandBuffer const* vk_buffers = reinterpret_cast<VkCommandBuffer const*>(buffers_ptr);
 
         VkSubmitInfo submit_info{ VK_STRUCTURE_TYPE_SUBMIT_INFO };
         submit_info.waitSemaphoreCount = 0;
         submit_info.pWaitSemaphores = nullptr;
         submit_info.pWaitDstStageMask = nullptr;
-        submit_info.commandBufferCount = static_cast<ice::u32>(buffers.size());
+        submit_info.commandBufferCount = ice::count(buffers);
         submit_info.pCommandBuffers = vk_buffers;
         submit_info.signalSemaphoreCount = 0;
         submit_info.pSignalSemaphores = nullptr;

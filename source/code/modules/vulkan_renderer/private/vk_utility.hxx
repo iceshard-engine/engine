@@ -1,5 +1,5 @@
 #pragma once
-#include <ice/pod/array.hxx>
+#include <ice/container/array.hxx>
 #include <ice/log_tag.hxx>
 #include <ice/log.hxx>
 
@@ -35,7 +35,7 @@ namespace ice::render::vk
     constexpr ice::LogTagDefinition log_tag = ice::create_log_tag(ice::LogTag::Module, "Vulkan");
 
     template<typename T, typename Fn, typename... Args>
-    bool enumerate_objects(ice::pod::Array<T>& objects_out, Fn&& fn, Args&&... args) noexcept;
+    bool enumerate_objects(ice::Array<T>& objects_out, Fn&& fn, Args&&... args) noexcept;
 
     inline auto native_enum_value(ImageType type) noexcept -> VkImageType;
 
@@ -73,7 +73,7 @@ namespace ice::render::vk
 
 
     template<typename T, typename Fn, typename... Args>
-    bool enumerate_objects(ice::pod::Array<T>& objects_out, Fn&& fn, Args&&... args) noexcept
+    bool enumerate_objects(ice::Array<T>& objects_out, Fn&& fn, Args&&... args) noexcept
     {
         using result_type = decltype(fn(args..., nullptr, nullptr));
 
@@ -83,8 +83,8 @@ namespace ice::render::vk
             fn(args..., &obj_count, nullptr);
             if (obj_count > 0)
             {
-                ice::pod::array::resize(objects_out, obj_count);
-                fn(args..., &obj_count, ice::pod::array::begin(objects_out));
+                ice::array::resize(objects_out, obj_count);
+                fn(args..., &obj_count, ice::array::begin(objects_out));
             }
             return true;
         }
@@ -94,9 +94,9 @@ namespace ice::render::vk
             VkResult result = fn(args..., &obj_count, nullptr);
             if (result == VkResult::VK_SUCCESS && obj_count > 0)
             {
-                ice::pod::array::resize(objects_out, obj_count);
+                ice::array::resize(objects_out, obj_count);
 
-                result = fn(args..., &obj_count, ice::pod::array::begin(objects_out));
+                result = fn(args..., &obj_count, ice::array::begin(objects_out));
             }
             return result == VK_SUCCESS;
         }

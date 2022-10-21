@@ -31,12 +31,12 @@ namespace ice
             ice::StringID_Arg name
         ) noexcept override;
 
-        auto worlds() const noexcept -> ice::pod::Hash<ice::IceshardWorld*> const&;
+        auto worlds() const noexcept -> ice::Span<ice::IceshardWorld* const>;
 
     private:
         ice::Allocator& _allocator;
         ice::WorldTraitArchive const& _trait_archive;
-        ice::pod::Hash<ice::IceshardWorld*> _worlds;
+        ice::HashMap<ice::IceshardWorld*> _worlds;
     };
 
 } // namespace ice

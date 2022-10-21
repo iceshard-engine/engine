@@ -1,9 +1,10 @@
 #pragma once
-#include <ice/stringid.hxx>
-#include <ice/allocator.hxx>
 #include <ice/span.hxx>
-#include <ice/pod/array.hxx>
+#include <ice/stringid.hxx>
+#include <ice/mem_allocator.hxx>
+#include <ice/container/array.hxx>
 #include <ice/render/render_declarations.hxx>
+#include <ice/render/render_queue.hxx>
 
 namespace ice::render
 {
@@ -34,7 +35,7 @@ namespace ice::render
         ) noexcept = 0;
 
         virtual void query_queue_infos(
-            ice::pod::Array<ice::render::QueueFamilyInfo>& queue_info
+            ice::Array<ice::render::QueueFamilyInfo>& queue_info
         ) noexcept = 0;
 
         virtual auto create_device(

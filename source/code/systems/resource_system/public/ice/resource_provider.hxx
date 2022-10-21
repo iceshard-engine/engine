@@ -1,10 +1,9 @@
 #pragma once
-#include <ice/memory.hxx>
-#include <ice/task.hxx>
-#include <ice/userdata.hxx>
-#include <ice/unique_ptr.hxx>
-#include <ice/pod/array.hxx>
+#include <ice/mem_memory.hxx>
+#include <ice/mem_unique_ptr.hxx>
+#include <ice/container_types.hxx>
 #include <ice/resource_types.hxx>
+#include <ice/task.hxx>
 
 namespace ice
 {
@@ -26,7 +25,7 @@ namespace ice
         virtual auto schemeid() const noexcept -> ice::StringID = 0;
 
         virtual auto query_resources(
-            ice::pod::Array<ice::Resource_v2 const*>& out_changes
+            ice::Array<ice::Resource_v2 const*>& out_changes
         ) const noexcept -> ice::u32 = 0;
 
         virtual auto refresh() noexcept -> ice::Task<ice::ResourceProviderResult> = 0;
@@ -60,12 +59,12 @@ namespace ice
 
     auto create_resource_provider(
         ice::Allocator& alloc,
-        ice::Utf8String path
+        ice::String path
     ) noexcept -> ice::UniquePtr<ice::ResourceProvider>;
 
     auto create_resource_provider_dlls(
         ice::Allocator& alloc,
-        ice::Utf8String path
+        ice::String path
     ) noexcept -> ice::UniquePtr<ice::ResourceProvider>;
 
 } // namespace ice

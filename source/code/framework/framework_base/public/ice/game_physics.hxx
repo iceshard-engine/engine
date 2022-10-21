@@ -1,6 +1,6 @@
 #pragma once
 #include <ice/stringid.hxx>
-#include <ice/unique_ptr.hxx>
+#include <ice/mem_unique_ptr.hxx>
 #include <ice/world/world_trait.hxx>
 
 namespace ice
@@ -17,7 +17,7 @@ namespace ice
     };
 
     enum class PhysicsShape : ice::u32
-    {
+    { 
         Box,
         Capsule,
     };

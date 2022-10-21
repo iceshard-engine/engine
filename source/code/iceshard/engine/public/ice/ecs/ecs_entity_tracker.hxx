@@ -1,7 +1,6 @@
 #pragma once
-#include <ice/allocator.hxx>
 #include <ice/stringid.hxx>
-#include <ice/pod/collections.hxx>
+#include <ice/container_types.hxx>
 #include <ice/shard_container.hxx>
 
 #include <ice/ecs/ecs_entity.hxx>
@@ -23,7 +22,7 @@ namespace ice::ecs
 
         void track_entity(
             ice::ecs::Entity entity,
-            ice::StringID name = ice::stringid_invalid
+            ice::StringID name = ice::StringID_Invalid
         ) noexcept;
 
         void forget_entity(ice::ecs::Entity entity) noexcept;
@@ -33,8 +32,8 @@ namespace ice::ecs
 
     private:
         ice::Allocator& _allocator;
-        ice::pod::Hash<ice::ecs::EntityHandle> _tracked_entities;
-        ice::pod::Hash<ice::ecs::Entity> _named_entities;
+        ice::HashMap<ice::ecs::EntityHandle> _tracked_entities;
+        ice::HashMap<ice::ecs::Entity> _named_entities;
     };
 
 } // namespace ice::ecs

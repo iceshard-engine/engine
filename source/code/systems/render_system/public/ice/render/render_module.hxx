@@ -1,5 +1,5 @@
 #pragma once
-#include <ice/unique_ptr.hxx>
+#include <ice/mem_unique_ptr.hxx>
 #include <ice/module_register.hxx>
 
 namespace ice::render
@@ -11,7 +11,7 @@ namespace ice::render
     {
 
         using CreateFn = auto (ice::Allocator&) noexcept -> ice::render::RenderDriver*;
-        using DestroyFn = void (ice::Allocator&, ice::render::RenderDriver*) noexcept;
+        using DestroyFn = void (ice::render::RenderDriver*) noexcept;
 
         struct RenderAPI
         {

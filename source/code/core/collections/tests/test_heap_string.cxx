@@ -1,12 +1,13 @@
 #include <catch2/catch.hpp>
-#include <ice/heap_string.hxx>
-#include <ice/memory/memory_globals.hxx>
+#include <ice/string/string.hxx>
+#include <ice/string/heap_string.hxx>
+#include <ice/mem_allocator_host.hxx>
 
 SCENARIO("ice :: HeapString")
 {
     static constexpr ice::String test_string_value{ "test_string" };
 
-    auto& alloc = ice::memory::default_allocator();
+    ice::HostAllocator alloc{};
 
     GIVEN("A an empty String value")
     {
@@ -16,7 +17,6 @@ SCENARIO("ice :: HeapString")
         ice::string::reserve(test_string, 10);
 
         CHECK(ice::string::size(test_string) == 0);
-        CHECK(ice::string::length(test_string) == 0);
         CHECK(ice::string::capacity(test_string) == 10);
         CHECK(ice::string::empty(test_string) == true);
 
@@ -24,12 +24,10 @@ SCENARIO("ice :: HeapString")
         {
             test_string = test_string_value;
 
-            uint32_t const saved_size = ice::string::size(test_string);
-            uint32_t const saved_length = ice::string::length(test_string);
-            uint32_t const saved_capacity = ice::string::capacity(test_string);
+            ice::ucount const saved_size = ice::string::size(test_string);
+            ice::ucount const saved_capacity = ice::string::capacity(test_string);
 
             CHECK(ice::string::size(test_string) == ice::string::size(test_string_value));
-            CHECK(ice::string::length(test_string) == ice::string::length(test_string_value));
             CHECK(ice::string::empty(test_string) == false);
 
             WHEN("Clearing the string")
@@ -37,7 +35,6 @@ SCENARIO("ice :: HeapString")
                 ice::string::clear(test_string);
 
                 CHECK(ice::string::size(test_string) == 0);
-                CHECK(ice::string::length(test_string) == 0);
                 CHECK(ice::string::capacity(test_string) == saved_capacity);
                 CHECK(ice::string::empty(test_string) == true);
 
@@ -51,7 +48,6 @@ SCENARIO("ice :: HeapString")
                     ice::string::resize(test_string, 0);
 
                     CHECK(ice::string::size(test_string) == 0);
-                    CHECK(ice::string::length(test_string) == 0);
                     CHECK(ice::string::capacity(test_string) == saved_capacity);
                     CHECK(ice::string::empty(test_string) == true);
 
@@ -63,7 +59,6 @@ SCENARIO("ice :: HeapString")
                     ice::string::resize(test_string, 4);
 
                     CHECK(ice::string::size(test_string) == 4);
-                    CHECK(ice::string::length(test_string) == 4);
                     CHECK(ice::string::capacity(test_string) == saved_capacity);
                     CHECK(ice::string::empty(test_string) == false);
 
@@ -75,11 +70,10 @@ SCENARIO("ice :: HeapString")
                     ice::string::resize(test_string, 100);
 
                     CHECK(ice::string::size(test_string) == 100);
-                    CHECK(ice::string::length(test_string) == 11);
                     CHECK(ice::string::capacity(test_string) > saved_capacity);
                     CHECK(ice::string::empty(test_string) == false);
 
-                    REQUIRE(ice::string::substr(test_string, 0, saved_length) == test_string_value);
+                    REQUIRE(ice::string::substr(test_string, 0, saved_size) == test_string_value);
                 }
             }
 
@@ -90,7 +84,6 @@ SCENARIO("ice :: HeapString")
                     ice::string::grow(test_string);
 
                     CHECK(ice::string::size(test_string) == saved_size);
-                    CHECK(ice::string::length(test_string) == saved_length);
                     CHECK(ice::string::capacity(test_string) > saved_capacity);
                     CHECK(ice::string::empty(test_string) == false);
 
@@ -102,7 +95,6 @@ SCENARIO("ice :: HeapString")
                     ice::string::grow(test_string, 100);
 
                     CHECK(ice::string::size(test_string) == saved_size);
-                    CHECK(ice::string::length(test_string) == saved_length);
                     CHECK(ice::string::capacity(test_string) >= 100);
                     CHECK(ice::string::empty(test_string) == false);
 
@@ -117,7 +109,6 @@ SCENARIO("ice :: HeapString")
                     ice::string::set_capacity(test_string, 0);
 
                     CHECK(ice::string::size(test_string) == 0);
-                    CHECK(ice::string::length(test_string) == 0);
                     CHECK(ice::string::capacity(test_string) == 0);
                     CHECK(ice::string::empty(test_string) == true);
 
@@ -128,8 +119,7 @@ SCENARIO("ice :: HeapString")
                 {
                     ice::string::set_capacity(test_string, 2);
 
-                    CHECK(ice::string::size(test_string) == 2);
-                    CHECK(ice::string::length(test_string) == 2);
+                    CHECK(ice::string::size(test_string) == 1);
                     CHECK(ice::string::capacity(test_string) == 2);
                     CHECK(ice::string::empty(test_string) == false);
 
@@ -142,7 +132,6 @@ SCENARIO("ice :: HeapString")
                     ice::string::set_capacity(test_string, 100);
 
                     CHECK(ice::string::size(test_string) == saved_size);
-                    CHECK(ice::string::length(test_string) == saved_length);
                     CHECK(ice::string::capacity(test_string) == 100);
                     CHECK(ice::string::empty(test_string) == false);
 
@@ -157,7 +146,6 @@ SCENARIO("ice :: HeapString")
                     ice::string::reserve(test_string, 0);
 
                     CHECK(ice::string::size(test_string) == saved_size);
-                    CHECK(ice::string::length(test_string) == saved_length);
                     CHECK(ice::string::capacity(test_string) == saved_capacity);
                     CHECK(ice::string::empty(test_string) == false);
 
@@ -169,7 +157,6 @@ SCENARIO("ice :: HeapString")
                     ice::string::reserve(test_string, 2);
 
                     CHECK(ice::string::size(test_string) == saved_size);
-                    CHECK(ice::string::length(test_string) == saved_length);
                     CHECK(ice::string::capacity(test_string) == saved_capacity);
                     CHECK(ice::string::empty(test_string) == false);
 
@@ -181,7 +168,6 @@ SCENARIO("ice :: HeapString")
                     ice::string::reserve(test_string, 100);
 
                     CHECK(ice::string::size(test_string) == saved_size);
-                    CHECK(ice::string::length(test_string) == saved_length);
                     CHECK(ice::string::capacity(test_string) >= 100);
                     CHECK(ice::string::empty(test_string) == false);
 
@@ -194,7 +180,6 @@ SCENARIO("ice :: HeapString")
                 ice::string::shrink(test_string);
 
                 CHECK(ice::string::size(test_string) == saved_size);
-                CHECK(ice::string::length(test_string) == saved_length);
                 CHECK(ice::string::capacity(test_string) <= saved_capacity);
                 CHECK(ice::string::capacity(test_string) == 12);
                 CHECK(ice::string::empty(test_string) == false);
@@ -212,7 +197,6 @@ SCENARIO("ice :: HeapString")
                 ice::string::push_back(test_string, 'a');
 
                 CHECK(ice::string::size(test_string) == 1);
-                CHECK(ice::string::length(test_string) == 1);
                 CHECK(ice::string::capacity(test_string) == saved_capacity);
                 CHECK(ice::string::empty(test_string) == false);
             }
@@ -222,7 +206,6 @@ SCENARIO("ice :: HeapString")
                 ice::string::push_back(test_string, "string");
 
                 CHECK(ice::string::size(test_string) == 6);
-                CHECK(ice::string::length(test_string) == 6);
                 CHECK(ice::string::capacity(test_string) == saved_capacity);
                 CHECK(ice::string::empty(test_string) == false);
             }
@@ -240,7 +223,6 @@ SCENARIO("ice :: HeapString")
             THEN("Resizing the string and appending itself")
             {
                 CHECK(ice::string::size(test_string) == 200);
-                CHECK(ice::string::length(test_string) == 200);
                 CHECK(ice::string::capacity(test_string) >= 201);
                 CHECK(ice::string::empty(test_string) == false);
             }
@@ -276,14 +258,14 @@ SCENARIO("ice :: HeapString")
             auto it = ice::string::begin(str);
             auto const it_end = ice::string::end(str);
 
-            uint32_t character_count = 0;
+            ice::ucount character_count = 0;
             while (it != it_end)
             {
                 it += 1;
                 character_count += 1;
             }
 
-            CHECK(character_count == ice::string::length(test_string_value));
+            CHECK(character_count == ice::string::size(test_string_value));
         }
 
         THEN("we can reverse iterate over it")
@@ -291,14 +273,14 @@ SCENARIO("ice :: HeapString")
             auto it = ice::string::rbegin(str);
             auto const it_end = ice::string::rend(str);
 
-            uint32_t character_count = 0;
+            ice::ucount character_count = 0;
             while (it != it_end)
             {
                 it += 1;
                 character_count += 1;
             }
 
-            CHECK(character_count == ice::string::length(test_string_value));
+            CHECK(character_count == ice::string::size(test_string_value));
         }
     }
 }

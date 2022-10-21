@@ -1,6 +1,8 @@
 #pragma once
 #include <ice/build/config.hxx>
 #include <ice/build/platform.hxx>
+#include <ice/build/validate.hxx>
+#include <ice/build/warnings.hxx>
 
 namespace ice::build
 {
@@ -18,7 +20,7 @@ namespace ice::build
 
     static constexpr bool is_unix = current_platform == System::Unix;
 
-    static constexpr bool is_x64 = current_platform == Architecture::x64;
+    static constexpr bool is_x64 = current_platform == Architecture::x86_x64;
 
 
     static constexpr bool is_msvc = current_platform == Compiler::MSVC;

@@ -1,6 +1,6 @@
 #include <ice/app_info.hxx>
-#include <ice/heap_string.hxx>
-#include <ice/stack_string.hxx>
+#include <ice/string/heap_string.hxx>
+#include <ice/string/static_string.hxx>
 #include <ice/os/windows.hxx>
 #include <ice/os/unix.hxx>
 #include <ice/assert.hxx>
@@ -10,12 +10,13 @@ namespace ice
 
 #if ISP_WINDOWS
 
-    void wide_to_utf8(ice::WString path, ice::HeapString<char8_t>& out_str) noexcept
+    // TODO: Create a single location for platform utils.
+    void wide_to_utf8(ice::WString path, ice::HeapString<>& out_str) noexcept
     {
         ice::i32 const required_size = WideCharToMultiByte(
             CP_UTF8,
             0,
-            ice::string::data(path),
+            ice::string::begin(path),
             static_cast<ice::i32>(ice::string::size(path)),
             NULL,
             0,
@@ -32,7 +33,7 @@ namespace ice
             ice::i32 const chars_written = WideCharToMultiByte(
                 CP_UTF8,
                 0,
-                ice::string::data(path),
+                ice::string::begin(path),
                 static_cast<ice::i32>(ice::string::size(path)),
                 (char*)ice::string::begin(out_str) + current_size,
                 ice::string::size(out_str) - current_size,
@@ -49,18 +50,18 @@ namespace ice
         }
     }
 
-    void app_location(ice::HeapString<char8_t>& out) noexcept
+    void app_location(ice::HeapString<>& out) noexcept
     {
-        ice::StackString<256, wchar_t> temp{ L"" };
+        ice::StaticString<256, ice::wchar> temp{ L"" };
         DWORD const path_size = GetModuleFileNameW(NULL, ice::string::begin(temp), ice::string::capacity(temp));
         ice::string::resize(temp, path_size);
 
         wide_to_utf8(temp, out);
     }
 
-    void working_directory(ice::HeapString<char8_t>& out) noexcept
+    void working_directory(ice::HeapString<>& out) noexcept
     {
-        ice::StackString<256, wchar_t> temp{ L"" };
+        ice::StaticString<256, ice::wchar> temp{ L"" };
         DWORD const path_size = GetCurrentDirectoryW(ice::string::capacity(temp), ice::string::begin(temp));
         ice::string::resize(temp, path_size);
 

@@ -54,7 +54,7 @@ namespace ice
 
     void load_log_module(ice::Allocator* alloc, ice::ModuleNegotiatorContext* ctx, ice::ModuleNegotiator* api) noexcept
     {
-        detail::internal_log_state = alloc->make<detail::LogState>(*alloc);
+        detail::internal_log_state = alloc->create<detail::LogState>(*alloc);
         detail::LogAPI const current_api{ };
         *current_api.log_fn = ice::detail::default_log_fn;
         *current_api.reg_log_tag_fn = ice::detail::default_register_tag_fn;

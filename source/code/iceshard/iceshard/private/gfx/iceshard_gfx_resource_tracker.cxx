@@ -20,7 +20,7 @@ namespace ice::gfx
         //    ice::stringid_hint(name)
         //);
 
-        ice::pod::hash::set(
+        ice::hashmap::set(
             _resources,
             ice::hash(name),
             resource
@@ -32,7 +32,7 @@ namespace ice::gfx
         ice::gfx::GfxResource::Type type
     ) noexcept -> ice::gfx::GfxResource
     {
-        GfxResource const result = ice::pod::hash::get(
+        GfxResource const result = ice::hashmap::get(
             _resources,
             ice::hash(name),
             GfxResource{ .type = GfxResource::Type::Invalid }

@@ -1,15 +1,27 @@
 <?xml version="1.0" encoding="utf-8"?>
 <AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
 
-  <!-- Native Visualization for the ice::pod::Array type -->
-  <Type Name="ice::pod::Array&lt;*&gt;">
-    <DisplayString Condition="_size == 0">Array {{ empty }}</DisplayString>
-    <DisplayString>Array {{ size={ _size }, capacity={ _capacity } }}</DisplayString>
+  <Type Name="ice::Span&lt;*&gt;">
+    <DisplayString Condition="_count == 0">Span {{ empty }}</DisplayString>
+    <DisplayString>Span {{ count={ _count } }}</DisplayString>
     <Expand>
-      <Item Name="[size]">_size</Item>
+      <Item Name="[count]">_count</Item>
+      <ArrayItems>
+        <Size>_count</Size>
+        <ValuePointer>_data</ValuePointer>
+      </ArrayItems>
+    </Expand>
+  </Type>
+
+  <!-- Native Visualization for the ice::Array type -->
+  <Type Name="ice::Array&lt;*,*&gt;">
+    <DisplayString Condition="_count == 0">Array {{ empty }}</DisplayString>
+    <DisplayString>Array {{ count={ _count }, capacity={ _capacity } }}</DisplayString>
+    <Expand>
+      <Item Name="[count]">_count</Item>
       <Item Name="[capacity]">_capacity</Item>
       <ArrayItems>
-        <Size>_size</Size>
+        <Size>_count</Size>
         <ValuePointer>_data</ValuePointer>
       </ArrayItems>
     </Expand>
@@ -28,7 +40,7 @@
   </Type>
 
   <!-- Native Visualization for the ice::pod::Hash::Entry type -->
-  <Type Name="ice::pod::Hash&lt;*&gt;::Entry">
+  <Type Name="ice::HashMap&lt;*,*&gt;::Entry">
     <DisplayString IncludeView="ValueOnly">{value}</DisplayString>
     <DisplayString>Hash::Entry {{ key={key,X}, value={value} }} : {"$T1",sb}</DisplayString>
     <Expand>
@@ -40,17 +52,34 @@
   </Type>
 
   <!-- Native Visualization for the ice::pod::Hash type -->
-  <Type Name="ice::pod::Hash&lt;*&gt;">
-    <DisplayString>Hash {{ size={_data._size}, capacity={_hash._size}, load_factor={(float)_data._size/(float)_hash._size,g} }}</DisplayString>
+  <Type Name="ice::HashMap&lt;*,*&gt;">
+    <DisplayString>Hash {{ count={_count}, capacity={_capacity}, load_factor={(float)_count/(float)_capacity,g} }}</DisplayString>
     <Expand>
-      <Item Name="[size]">_data._size</Item>
-      <Item Name="[capacity]">_hash._size</Item>
+      <Item Name="[size]">_count</Item>
+      <Item Name="[capacity]">_capacity</Item>
       <Synthetic Name="[items]">
-        <DisplayString>load_factor {{ {(float)_data._size/(float)_hash._size,g} }}</DisplayString>
+        <DisplayString>load_factor {{ {(float)_count/(float)_capacity,g} }}</DisplayString>
         <Expand>
           <ArrayItems>
-            <Size>_data._size</Size>
-            <ValuePointer>_data._data</ValuePointer>
+            <Size>_count</Size>
+            <ValuePointer>_data</ValuePointer>
+          </ArrayItems>
+        </Expand>
+      </Synthetic>
+    </Expand>
+  </Type>
+
+  <Type Name="ice::HashMapView&lt;*,*&gt;">
+    <DisplayString>Hash {{ count={_count}, capacity={_capacity}, load_factor={(float)_count/(float)_capacity,g} }}</DisplayString>
+    <Expand>
+      <Item Name="[size]">_count</Item>
+      <Item Name="[capacity]">_capacity</Item>
+      <Synthetic Name="[items]">
+        <DisplayString>load_factor {{ {(float)_count/(float)_capacity,g} }}</DisplayString>
+        <Expand>
+          <ArrayItems>
+            <Size>_count</Size>
+            <ValuePointer>_data</ValuePointer>
           </ArrayItems>
         </Expand>
       </Synthetic>

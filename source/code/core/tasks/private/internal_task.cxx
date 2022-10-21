@@ -2,8 +2,7 @@
 #include <ice/task.hxx>
 #include <ice/task_sync_wait.hxx>
 
-#include <ice/collections.hxx>
-#include <ice/memory/memory_globals.hxx>
+#include <ice/container/array.hxx>
 #include <ice/assert.hxx>
 
 #include "internal_task.hxx"
@@ -79,15 +78,15 @@ namespace ice
         ice::Span<ice::ManualResetEvent> reset_events
     ) noexcept
     {
-        ice::u32 const task_count = ice::size(tasks);
+        ice::u32 const task_count = ice::count(tasks);
 
         ICE_ASSERT(
-            task_count == ice::size(reset_events),
+            task_count == ice::count(reset_events),
             "Provided number of reset events does not match the number of tasks!"
         );
 
-        ice::Vector<ice::detail::InternalTask> internal_tasks{ alloc };
-        internal_tasks.reserve(task_count);
+        ice::Array<ice::detail::InternalTask, ice::ContainerLogic::Complex> internal_tasks{ alloc };
+        ice::array::reserve(internal_tasks, task_count);
 
         for (ice::u32 idx = 0; idx < task_count; ++idx)
         {
@@ -97,7 +96,10 @@ namespace ice
             );
 
             internal_task.resume();
-            internal_tasks.push_back(ice::move(internal_task));
+            ice::array::push_back(
+                internal_tasks,
+                ice::move(internal_task)
+            );
         }
 
         for (ice::u32 idx = 0; idx < task_count; ++idx)

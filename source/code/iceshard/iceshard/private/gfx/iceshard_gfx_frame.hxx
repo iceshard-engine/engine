@@ -6,9 +6,8 @@
 #include <ice/render/render_device.hxx>
 #include <ice/engine_frame.hxx>
 
-
-#include <ice/memory/proxy_allocator.hxx>
-#include <ice/collections.hxx>
+#include <ice/mem_allocator_proxy.hxx>
+#include <ice/container_types.hxx>
 #include <ice/task.hxx>
 #include <ice/task_list.hxx>
 
@@ -78,12 +77,12 @@ namespace ice::gfx
         ) noexcept override;
 
     private:
-        ice::Allocator& _allocator;
-        ice::Vector<ice::Task<>> _tasks;
-        ice::pod::Array<ice::gfx::IceGfxPassEntry> _passes;
+        ice::ProxyAllocator _allocator;
+        ice::Array<ice::Task<>, ice::ContainerLogic::Complex> _tasks;
+        ice::Array<ice::gfx::IceGfxPassEntry> _passes;
 
-        ice::pod::Hash<ice::gfx::GfxFrameStage const*> _frame_stages;
-        ice::pod::Hash<ice::gfx::GfxContextStage const*> _context_stages;
+        ice::HashMap<ice::gfx::GfxFrameStage const*> _frame_stages;
+        ice::HashMap<ice::gfx::GfxContextStage const*> _context_stages;
 
         std::atomic<ice::gfx::GfxAwaitBeginFrameData*> _operations_frame_begin = nullptr;
         std::atomic<ice::gfx::GfxAwaitExecuteStageData*> _operations_stage_execute = nullptr;

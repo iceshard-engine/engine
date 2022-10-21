@@ -4,7 +4,7 @@
 namespace ice::input
 {
 
-    enum class ControllerInput : ice::u16
+    enum class ControllerInput : ice::i16
     {
         Unknown = 0x0,
 

@@ -4,8 +4,7 @@
 #include <ice/asset_type.hxx>
 #include <ice/resource_meta.hxx>
 #include <ice/resource_types.hxx>
-#include <ice/unique_ptr.hxx>
-#include <ice/func.hxx>
+#include <ice/mem_unique_ptr.hxx>
 
 namespace ice
 {
@@ -16,38 +15,36 @@ namespace ice
 
     struct AssetTypeDefinition
     {
-        ice::Span<ice::Utf8String const> resource_extensions;
+        ice::Span<ice::String const> resource_extensions;
 
-        ice::Fn<
-            auto(
-                ice::FnUserdata,
-                ice::AssetTypeDefinition const&,
-                ice::Metadata const&,
-                ice::URI const&
-            ) noexcept -> ice::AssetState
-        > fn_asset_state;
+        auto(*fn_asset_state)(
+            void*,
+            ice::AssetTypeDefinition const&,
+            ice::Metadata const&,
+            ice::URI const&
+        ) noexcept -> ice::AssetState;
 
-        ice::Fn<
-            ice::Task<bool>(
-                ice::FnUserdata,
-                ice::Allocator&,
-                ice::ResourceTracker const&,
-                ice::Resource_v2 const&,
-                ice::Data,
-                ice::Memory&
-            ) noexcept
-        > fn_asset_oven;
+        ice::Task<bool>(*fn_asset_oven)(
+            void*,
+            ice::Allocator&,
+            ice::ResourceTracker const&,
+            ice::Resource_v2 const&,
+            ice::Data,
+            ice::Memory&
+        ) noexcept;
 
-        ice::Fn<
-            ice::Task<bool>(
-                ice::FnUserdata,
-                ice::Allocator&,
-                ice::AssetStorage&,
-                ice::Metadata const&,
-                ice::Data,
-                ice::Memory&
-            ) noexcept
-        > fn_asset_loader;
+        ice::Task<bool>(*fn_asset_loader)(
+            void*,
+            ice::Allocator&,
+            ice::AssetStorage&,
+            ice::Metadata const&,
+            ice::Data,
+            ice::Memory&
+        ) noexcept;
+
+        void* ud_asset_state;
+        void* ud_asset_oven;
+        void* ud_asset_loader;
     };
 
     class AssetTypeArchive

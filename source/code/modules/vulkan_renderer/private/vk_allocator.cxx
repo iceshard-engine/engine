@@ -1,5 +1,4 @@
 #include "vk_allocator.hxx"
-#include <ice/memory/pointer_arithmetic.hxx>
 
 namespace ice::render::vk
 {
@@ -9,7 +8,7 @@ namespace ice::render::vk
         struct AllocationHeader
         {
             ice::u32 requested_size;
-            ice::u32 requested_alignment;
+            ice::ualign requested_alignment;
         };
 
         //! \brief If we need to align the memory allocation we pad the header with this
@@ -22,9 +21,9 @@ namespace ice::render::vk
         //!
         //! \param [in] header The allocation header.
         //! \param [in] align The alignment of the allocation.
-        inline void* data_pointer(AllocationHeader* const header, ice::u32 alignment) noexcept
+        inline void* data_pointer(AllocationHeader* const header, ice::ualign alignment) noexcept
         {
-            return ice::memory::ptr_align_forward(header + 1, alignment);
+            return ice::align_to(header + 1, alignment).value;
         }
 
         //! \brief Returns the allocation header from the given data pointer.
@@ -39,13 +38,13 @@ namespace ice::render::vk
             }
 
             // Return the pointer subtracted by the size of the allocation header.
-            return reinterpret_cast<AllocationHeader*>(ice::memory::ptr_sub(temp_pointer, sizeof(AllocationHeader)));
+            return reinterpret_cast<AllocationHeader*>(ice::ptr_sub(temp_pointer, ice::size_of<AllocationHeader>));
         }
 
         // \brief Stores the size in the header and pads with HEADER_PAD_VALUE up to the data pointer.
-        inline void fill(AllocationHeader* header, void* data_pointer, ice::u32 requested_size, ice::u32 requested_alignment) noexcept
+        inline void fill(AllocationHeader* header, void* data_pointer, ice::usize requested_size, ice::ualign requested_alignment) noexcept
         {
-            header->requested_size = requested_size;
+            header->requested_size = ice::u32(requested_size.value);
             header->requested_alignment = requested_alignment;
 
             ice::u32* header_pointer = reinterpret_cast<ice::u32*>(header + 1);
@@ -59,19 +58,21 @@ namespace ice::render::vk
         auto vk_iceshard_allocate(void* userdata, size_t size, size_t alignment, VkSystemAllocationScope /*scope*/) noexcept -> void*
         {
             VulkanAllocator* const allocator = reinterpret_cast<VulkanAllocator*>(userdata);
-            return allocator->allocate(static_cast<ice::u32>(size), static_cast<ice::u32>(alignment));
+            return allocator->allocate({ { size }, static_cast<ice::ualign>(alignment) }).memory;
         }
 
         auto vk_iceshard_reallocate(void* userdata, void* original, size_t size, size_t alignment, VkSystemAllocationScope /*scope*/) noexcept -> void*
         {
             VulkanAllocator* const allocator = reinterpret_cast<VulkanAllocator*>(userdata);
-            return allocator->reallocate(original, static_cast<ice::u32>(size), static_cast<ice::u32>(alignment));
+            return allocator->do_reallocate(original, { { size }, static_cast<ice::ualign>(alignment) }).memory;
         }
 
-        void vk_iceshard_free(void* userdata, void* memory) noexcept
+        void vk_iceshard_free(void* userdata, void* pointer) noexcept
         {
+            if (pointer == nullptr) return;
+
             VulkanAllocator* const allocator = reinterpret_cast<VulkanAllocator*>(userdata);
-            allocator->deallocate(memory);
+            allocator->deallocate(pointer);
         }
 
         //void vk_iceshard_internal_allocate_event(void* userdata, size_t size, VkInternalAllocationType type, VkSystemAllocationScope scope) noexcept
@@ -86,10 +87,12 @@ namespace ice::render::vk
 
     } // namespace detail
 
-    VulkanAllocator::VulkanAllocator(ice::Allocator& backing_allocator) noexcept
-        : ice::Allocator{ backing_allocator }
-        , _backing_allocator{ backing_allocator, "vk-alloc" }
-        //, _allocation_tracker{ _backing_allocator }
+    VulkanAllocator::VulkanAllocator(
+        ice::Allocator& backing_allocator,
+        std::source_location src_loc
+    ) noexcept
+        : ice::Allocator{ src_loc, backing_allocator, "vulkan-alloc" }
+        , _backing_allocator{ backing_allocator }
     {
         _vulkan_callbacks.pUserData = this;
         _vulkan_callbacks.pfnAllocation = detail::vk_iceshard_allocate;
@@ -99,66 +102,60 @@ namespace ice::render::vk
         _vulkan_callbacks.pfnInternalFree = nullptr;
     }
 
-    VulkanAllocator::~VulkanAllocator() noexcept
-    {
-        // #todo assert
-        //IS_ASSERT(_total_allocated == 0, "Unreleased memory from the Vulkan renderer.");
-    }
+    VulkanAllocator::~VulkanAllocator() noexcept = default;
 
-    auto VulkanAllocator::allocate(ice::u32 size, ice::u32 align) noexcept -> void*
+    auto VulkanAllocator::do_allocate(ice::AllocRequest request) noexcept -> ice::AllocResult
     {
-        ice::u32 const total_size = static_cast<ice::u32>(sizeof(detail::AllocationHeader)) + size + align;
+        ice::meminfo subreq = ice::meminfo_of<detail::AllocationHeader>;
+        ice::usize const offset_data = subreq += ice::meminfo{ request.size, request.alignment };
 
         // We use the alignment of the allocation_header so we don't waste data on the backing allocator, we already accounted for the alignment.
-        void* result = _backing_allocator.allocate(total_size, static_cast<ice::u32>(alignof(detail::AllocationHeader)));
+        ice::AllocResult const result = _backing_allocator.allocate(subreq);
 
-        //_allocation_tracker[result] += 1;
-
-        detail::AllocationHeader* header = reinterpret_cast<detail::AllocationHeader*>(result);
-        void* data_pointer = detail::data_pointer(header, align);
-        // #todo assert
-        //IS_ASSERT(reinterpret_cast<uintptr_t>(data_pointer) % align == 0, "Invalid data pointer allignment for Vulkan allocation!");
+        detail::AllocationHeader* header = reinterpret_cast<detail::AllocationHeader*>(result.memory);
+        void* data_pointer = ice::ptr_add(result.memory, offset_data);
 
         // We fill gaps between the header and the data pointer so we can later find the header easily.
-        detail::fill(header, data_pointer, size, align);
+        detail::fill(header, data_pointer, request.size, request.alignment);
 
-        // Update the total allocated size.
-        _total_allocated += header->requested_size;
-
-        return data_pointer;
+        return AllocResult{
+            .memory = data_pointer,
+            .size = request.size,
+            .alignment = request.alignment
+        };
     }
 
     //! \brief #todo
-    auto VulkanAllocator::reallocate(void* ptr, ice::u32 size, ice::u32 align) noexcept -> void*
+    auto VulkanAllocator::do_reallocate(void* pointer, ice::AllocRequest req) noexcept -> ice::AllocResult
     {
         // We will return a nullptr when deallocating, as there was not indication what to return during deallocations.
-        void* result = nullptr;
-        if (size == 0)
+        ice::AllocResult result{ };
+        if (req.size == 0_B)
         {
-            this->deallocate(ptr);
+            this->deallocate(pointer);
         }
         else
         {
-            if (ptr == nullptr)
+            if (pointer == nullptr)
             {
-                result = this->allocate(size, align);
+                result = this->allocate(req);
             }
             else // original != nullptr
             {
-                detail::AllocationHeader* header = detail::header(ptr);
+                detail::AllocationHeader* header = detail::header(pointer);
 
                 // Create a new allocation with the exact same alignment.
                 // This requirement can be found on the following website (26.08.2019)
                 // https://www.khronos.org/registry/vulkan/specs/1.1-extensions/man/html/PFN_vkReallocationFunction.html
-                if (auto* new_ptr = this->allocate(size, header->requested_alignment))
+                if (ice::AllocResult new_res = this->allocate({ req.size, header->requested_alignment }); new_res.memory != nullptr)
                 {
                     // If we got a valid allocation, copy the data to the new pointer
                     // and release the old one afterwards.
-                    memcpy(new_ptr, ptr, ice::min(header->requested_size, size));
+                    memcpy(new_res.memory, pointer, ice::min(ice::usize{ header->requested_size }, req.size));
 
                     // Release the old pointer
-                    this->deallocate(ptr);
-                    result = new_ptr;
+                    this->deallocate(pointer);
+                    result = new_res;
                 }
             }
         }
@@ -166,40 +163,15 @@ namespace ice::render::vk
     }
 
     //! \copydoc allocator::deallocate(void*) noexcept
-    void VulkanAllocator::deallocate(void* ptr) noexcept
+    void VulkanAllocator::do_deallocate(void* pointer) noexcept
     {
-        if (ptr != nullptr)
-        {
-            detail::AllocationHeader* header = detail::header(ptr);
-            _total_allocated -= header->requested_size;
-
-            //_allocation_tracker[header] -= 1;
-
-            // We need to pass the header pointer because this pointer was returned by the backing allocator.
-            _backing_allocator.deallocate(header);
-        }
-    }
-
-    //! \copydoc allocator::allocated_size(void*) noexcept
-    auto VulkanAllocator::allocated_size(void* ptr) const noexcept -> ice::u32
-    {
-        ice::u32 result = 0;
-        if (ptr != nullptr)
-        {
-            result = detail::header(ptr)->requested_size;
-        }
-        return result;
+        // We need to pass the header pointer because this pointer was returned by the backing allocator.
+        _backing_allocator.deallocate(detail::header(pointer));
     }
 
     auto VulkanAllocator::vulkan_callbacks() const noexcept -> VkAllocationCallbacks const*
     {
         return &_vulkan_callbacks;
-    }
-
-    //! \copydoc allocator::total_allocated() noexcept
-    auto VulkanAllocator::total_allocated() const noexcept -> ice::u32
-    {
-        return _total_allocated;
     }
 
 } // namespace ice::render::vk

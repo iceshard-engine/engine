@@ -1,5 +1,6 @@
 #pragma once
 #include "ip_ui_oven.hxx"
+#include "ip_ui_oven_types.hxx"
 
 namespace ice
 {
@@ -45,11 +46,11 @@ namespace ice
 
     auto xml_value(
         rapidxml_ns::xml_node<char> const* node
-    ) noexcept -> ice::Utf8String;
+    ) noexcept -> ice::String;
 
     auto xml_value(
         rapidxml_ns::xml_attribute<char> const* attrib
-    ) noexcept -> ice::Utf8String;
+    ) noexcept -> ice::String;
 
     auto xml_value_noutf8(
         rapidxml_ns::xml_attribute<char> const* attrib

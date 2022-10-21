@@ -2,7 +2,7 @@
 #include <ice/task.hxx>
 #include <ice/asset.hxx>
 #include <ice/asset_type.hxx>
-#include <ice/unique_ptr.hxx>
+#include <ice/mem_unique_ptr.hxx>
 
 namespace ice
 {
@@ -18,7 +18,7 @@ namespace ice
 
         virtual auto request(
             ice::AssetType type,
-            ice::Utf8String name,
+            ice::String name,
             ice::AssetState requested_state
         ) noexcept -> ice::Task<ice::Asset> = 0;
 

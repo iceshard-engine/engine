@@ -1,8 +1,8 @@
 #pragma once
 #include <ice/render/render_device.hxx>
-#include <ice/memory/scratch_allocator.hxx>
-#include <ice/pod/array.hxx>
-#include <ice/unique_ptr.hxx>
+#include <ice/container/array.hxx>
+#include <ice/mem_allocator_ring.hxx>
+#include <ice/mem_unique_ptr.hxx>
 
 #include "vk_include.hxx"
 #include "vk_memory_manager.hxx"
@@ -269,7 +269,7 @@ namespace ice::render::vk
 
     private:
         ice::Allocator& _allocator;
-        ice::memory::ScratchAllocator _gfx_thread_alloc;
+        ice::RingAllocator _gfx_thread_alloc;
 
         VkDevice _vk_device;
         VkPhysicalDevice _vk_physical_device;
@@ -277,7 +277,7 @@ namespace ice::render::vk
 
         ice::UniquePtr<VulkanMemoryManager> _vk_memory_manager;
 
-        ice::pod::Array<VulkanQueue*> _vk_queues;
+        ice::Array<VulkanQueue*> _vk_queues;
         VulkanRenderCommands _vk_render_commands;
     };
 

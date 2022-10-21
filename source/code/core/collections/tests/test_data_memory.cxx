@@ -1,16 +1,19 @@
 #include <catch2/catch.hpp>
-#include <ice/data.hxx>
+#include <ice/mem_info.hxx>
+#include <ice/mem_data.hxx>
 #include <ice/span.hxx>
 
 SCENARIO("ice :: Data")
 {
+    using ice::operator""_B;
+
     ice::Data data{ };
 
     WHEN("Empty")
     {
         CHECK(data.location == nullptr);
-        CHECK(data.size == 0);
-        CHECK(data.alignment == 0);
+        CHECK(data.size == 0_B);
+        CHECK(data.alignment == ice::ualign::invalid);
     }
 
     WHEN("Creating a view to a regular value")
@@ -20,8 +23,8 @@ SCENARIO("ice :: Data")
         data = ice::data_view(value);
 
         CHECK(data.location == &value);
-        CHECK(data.size == sizeof(ice::u64));
-        CHECK(data.alignment == alignof(ice::u64));
+        CHECK(data.size == ice::size_of<ice::u64>);
+        CHECK(data.alignment == ice::align_of<ice::u64>);
     }
 
     WHEN("Creating a view to a span")
@@ -38,12 +41,12 @@ SCENARIO("ice :: Data")
             0x42069,
         };
 
-        ice::Span<ice::u64 const> values_span = ice::make_span(values);
+        ice::Span<ice::u64 const> values_span = values;
 
         data = ice::data_view(values_span);
 
-        CHECK(data.location == values_span.data());
-        CHECK(data.size == values_span.size_bytes());
-        CHECK(data.alignment == alignof(ice::u64));
+        CHECK(data.location == ice::span::data(values_span));
+        CHECK(data.size == ice::span::size_bytes(values_span));
+        CHECK(data.alignment == ice::span::alignment(values_span));
     }
 }

@@ -7,8 +7,8 @@ namespace ice::input
     enum class InputID : ice::u16;
     enum class DeviceType : ice::u8;
 
-    enum class KeyboardKey : ice::u16;
-    enum class KeyboardMod : ice::u16;
+    enum class KeyboardKey : ice::i16;
+    enum class KeyboardMod : ice::i16;
 
 
     inline constexpr bool has_flag(
@@ -21,7 +21,7 @@ namespace ice::input
     constexpr static ice::u16 mod_identifier_base_value = 256;
 
 
-    enum class KeyboardKey : ice::u16
+    enum class KeyboardKey : ice::i16
     {
         Unknown,
 
@@ -157,7 +157,7 @@ namespace ice::input
         Reserved,
     };
 
-    enum class KeyboardMod : ice::u16
+    enum class KeyboardMod : ice::i16
     {
         None = 0x0000,
 
@@ -190,7 +190,7 @@ namespace ice::input
         ice::input::KeyboardMod flag
     ) noexcept
     {
-        return (static_cast<std::underlying_type_t<KeyboardMod>>(value) & static_cast<std::underlying_type_t<KeyboardMod>>(flag)) != 0;
+        return (value & flag) != KeyboardMod::None;
     }
 
 } // ice::input

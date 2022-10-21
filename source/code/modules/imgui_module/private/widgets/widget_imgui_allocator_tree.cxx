@@ -1,8 +1,6 @@
 #include "widget_imgui_allocator_tree.hxx"
-#include <ice/string.hxx>
-
+#include <ice/string/string.hxx>
 #include <imgui/imgui.h>
-#undef assert
 
 namespace ice::devui
 {
@@ -10,12 +8,12 @@ namespace ice::devui
     namespace detail
     {
 
-        void build_info_column(ice::TrackedAllocator const& allocator) noexcept
+        void build_info_column(ice::AllocatorDebugInfo const& allocator) noexcept
         {
-            ice::u32 const current_total_allocation = allocator.total_allocated();
-            ice::u32 const current_total_count = allocator.allocation_count();
+            ice::usize const current_total_allocation = allocator.allocation_size_inuse();
+            ice::ucount const current_total_count = allocator.allocation_total_count();
 
-            if (current_total_count == Allocator::Constant_SizeNotTracked)
+            if (current_total_count == Allocator::CountNotTracked)
             {
                 ImGui::Text("<not tracked>");
             }
@@ -26,37 +24,37 @@ namespace ice::devui
 
             ImGui::NextColumn();
 
-            if (current_total_allocation == Allocator::Constant_SizeNotTracked)
+            if (current_total_allocation == Allocator::SizeNotTracked)
             {
                 ImGui::Text("<not tracked>");
             }
             else
             {
-                bool const shows_mibs = current_total_allocation > (1024 * 1024);
-                bool const shows_kibs = current_total_allocation > (1024);
+                bool const shows_mibs = current_total_allocation > 1_MiB;
+                bool const shows_kibs = current_total_allocation > 1_KiB;
 
                 if (shows_mibs)
                 {
-                    ice::u32 const mibs = current_total_allocation / (1024 * 1024);
-                    ice::u32 const kibs = (current_total_allocation / 1024) - (mibs * 1024);
-                    ImGui::Text("%d MiB %d KiB (%d bytes)", mibs, kibs, current_total_allocation);
+                    ice::usize const mibs = current_total_allocation / 1_MiB;
+                    ice::isize const kibs = (current_total_allocation / 1_KiB) - (mibs * 1_KiB);
+                    ImGui::Text("%lu MiB %lu KiB (%lu bytes)", mibs.value, kibs.value, current_total_allocation.value);
                 }
                 else if (shows_kibs)
                 {
-                    ImGui::Text("%d KiB (%d bytes)", (current_total_allocation / 1024), current_total_allocation);
+                    ImGui::Text("%lu KiB (%lu bytes)", (current_total_allocation / 1_KiB).value, current_total_allocation.value);
                 }
                 else
                 {
-                    ImGui::Text("%d", current_total_allocation);
+                    ImGui::Text("%lu", current_total_allocation.value);
                 }
             }
         }
 
-        void build_tree_view(ice::TrackedAllocator const& allocator) noexcept
+        void build_tree_view(ice::AllocatorDebugInfo const& allocator) noexcept
         {
-            ice::TrackedAllocator const* child_alloc = allocator.child_allocators();
-            ice::String alloc_name = allocator.name();
-            if (ice::string::empty(alloc_name))
+            ice::AllocatorDebugInfo const* child_alloc = allocator.child_allocator();
+            std::string_view alloc_name = allocator.name();
+            if (alloc_name.empty())
             {
                 alloc_name = "<unnamed_allocator>";
             }
@@ -67,6 +65,9 @@ namespace ice::devui
                 ImGui::NextColumn();
                 build_info_column(allocator);
                 ImGui::NextColumn(); // We start from the first column again
+
+                ImGui::Text("%s | %s(%u)", allocator.location().function_name(), allocator.location().file_name(), allocator.location().line());
+                ImGui::NextColumn();
             }
             else
             {
@@ -75,6 +76,10 @@ namespace ice::devui
                 build_info_column(allocator);
 
                 ImGui::NextColumn(); // We start from the first column again
+
+                ImGui::Text("%s | %s(%u)", allocator.location().function_name(), allocator.location().file_name(), allocator.location().line());
+                ImGui::NextColumn();
+
                 if (show_childs)
                 {
                     while (child_alloc != nullptr)
@@ -115,7 +120,7 @@ namespace ice::devui
     } // namespace detail
 
     ImGui_AllocatorTreeWidget::ImGui_AllocatorTreeWidget(
-        ice::TrackedAllocator const& alloc
+        ice::AllocatorDebugInfo const& alloc
     ) noexcept
         : _root_tracked_allocator{ alloc }
     {
@@ -125,13 +130,15 @@ namespace ice::devui
     {
         if (ImGui::Begin("Allocator tree", &_open))
         {
-            ImGui::Columns(3, "allocator_tree_table", true);
+            ImGui::Columns(4, "allocator_tree_table", true);
 
             ImGui::Text("Allocator name");
             ImGui::NextColumn();
             ImGui::Text("Allocation count");
             ImGui::NextColumn();
             ImGui::Text("Allocated bytes");
+            ImGui::NextColumn();
+            ImGui::Text("Function | file(line)");
             ImGui::NextColumn();
 
             ImGui::Separator();

@@ -19,12 +19,12 @@ namespace ice
     {
 
         template<typename K, typename V, typename Pred>
-        inline auto qsort_partition(ice::Span<K> keys, ice::Span<V>& values, Pred&& pred, i32 left, i32 right) noexcept -> i32
+        inline auto qsort_partition(ice::Span<K> keys, ice::Span<V>& values, Pred&& pred, ice::i32 left, ice::i32 right) noexcept -> ice::i32
         {
             K* pivot = &keys[right];
 
-            i32 i = left - 1;
-            i32 j = left;
+            ice::i32 i = left - 1;
+            ice::i32 j = left;
 
             while (j < right)
             {
@@ -46,11 +46,11 @@ namespace ice
         //!     http://www.algolist.net/Algorithms/Sorting/Quicksort
         //!     https://www.geeksforgeeks.org/quicksort-tail-call-optimization-reducing-worst-case-space-log-n/
         template<typename K, typename V, typename Pred>
-        inline void qsort(ice::Span<K> keys, ice::Span<V> values, Pred&& pred, i32 left, i32 right) noexcept
+        inline void qsort(ice::Span<K> keys, ice::Span<V> values, Pred&& pred, ice::i32 left, ice::i32 right) noexcept
         {
             while (left < right)
             {
-                i32 pi = qsort_partition(keys, values, ice::forward<Pred>(pred), left, right);
+                ice::i32 const pi = qsort_partition(keys, values, ice::forward<Pred>(pred), left, right);
 
                 ice::detail::qsort(keys, values, ice::forward<Pred>(pred), left, pi - 1);
 
@@ -75,8 +75,8 @@ namespace ice
     template<typename K, typename V, typename Pred>
     inline void sort(ice::Span<K> keys, ice::Span<V> values, Pred&& pred) noexcept
     {
-        i32 first_index = 0;
-        i32 last_index = keys.size() - 1;
+        ice::i32 const first_index = 0;
+        ice::i32 const last_index = keys.size() - 1;
 
         ice::detail::qsort(keys, values, std::forward<Pred>(pred), first_index, last_index);
     }

@@ -1,9 +1,9 @@
 #include <ice/resource_provider.hxx>
 #include <ice/task_scheduler.hxx>
-#include <ice/memory/stack_allocator.hxx>
 #include <ice/os/windows.hxx>
-#include <ice/heap_string.hxx>
-#include <ice/pod/hash.hxx>
+#include <ice/mem_allocator_stack.hxx>
+#include <ice/container/hashmap.hxx>
+#include <ice/string/heap_string.hxx>
 
 #include "resource_loose_files_win32.hxx"
 #include "resource_utils_win32.hxx"
@@ -18,26 +18,26 @@ namespace ice
     public:
         ResourceProvider_Win32Filesystem(
             ice::Allocator& alloc,
-            ice::Utf8String path
+            ice::String path
         ) noexcept
             : _allocator{ alloc }
             , _base_path{ _allocator }
             , _resources{ _allocator }
         {
-            ice::utf8_to_wide_append(path, _base_path);
+            ice::win32::utf8_to_wide_append(path, _base_path);
         }
 
         ~ResourceProvider_Win32Filesystem() noexcept override
         {
-            for (auto const& res_entry : _resources)
+            for (Resource_v2* res_entry : _resources)
             {
-                _allocator.destroy(res_entry.value);
+                _allocator.destroy(res_entry);
             }
         }
 
         auto schemeid() const noexcept -> ice::StringID override
         {
-            return ice::scheme_file;
+            return ice::Scheme_File;
         }
 
         template<typename Fn>
@@ -50,7 +50,7 @@ namespace ice
 
                 WIN32_FIND_DATA file_data;
                 HANDLE const handle = FindFirstFileW(
-                    ice::string::data(directory_path),
+                    ice::string::begin(directory_path),
                     &file_data
                 );
 
@@ -61,7 +61,8 @@ namespace ice
 
                     do
                     {
-                        ice::WString const file_name = file_data.cFileName;
+                        // TODO: Decide how to work with string static arrays.
+                        ice::WString const file_name = (ice::wchar const*)file_data.cFileName;
 
                         if (file_data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
                         {
@@ -70,7 +71,7 @@ namespace ice
                                 continue;
                             }
 
-                            ice::path::join(directory_path, file_name);
+                            ice::path::win32::join(directory_path, file_name);
                             ice::string::push_back(directory_path, L'/');
                             traverse_directory(directory_path, callback);
                             ice::string::resize(directory_path, directory_path_size);
@@ -85,22 +86,23 @@ namespace ice
 
             WIN32_FIND_DATA file_data;
             HANDLE const handle = FindFirstFileW(
-                ice::string::data(directory_path),
+                ice::string::begin(directory_path),
                 &file_data
             );
 
-            ice::string::pop_back(directory_path, ice::size(L"*.isrm") - 1); // remove the '*' from the string
+            ice::string::pop_back(directory_path, ice::count(L"*.isrm") - 1); // remove the '*' from the string
 
             if (handle != INVALID_HANDLE_VALUE)
             {
 
                 do
                 {
-                    ice::WString const file_name = file_data.cFileName;
+                    // TODO: Decide how to work with string static arrays.
+                    ice::WString const file_name = (ice::wchar const*)file_data.cFileName;
 
                     if ((file_data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0)
                     {
-                        ice::path::join(directory_path, file_name);
+                        ice::path::win32::join(directory_path, file_name);
                         callback(directory_path);
                         ice::string::resize(directory_path, directory_path_size);
                     }
@@ -112,25 +114,25 @@ namespace ice
         // GitHub Issue: #108
         void ISATTR_NOINLINE initial_traverse() noexcept
         {
-            ice::HeapString<wchar_t> dir_tracker = _base_path;
+            ice::HeapString<ice::wchar> dir_tracker = _base_path;
             ice::string::reserve(dir_tracker, 512);
-            ice::path::join(dir_tracker, L"."); // Ensure we end with a '/' character
+            ice::path::win32::join(dir_tracker, L"."); // Ensure we end with a '/' character
 
-            ice::WString uri_base_path = ice::path::directory(ice::path::directory(dir_tracker));
+            ice::WString uri_base_path = ice::path::win32::directory(ice::path::win32::directory(dir_tracker));
 
-            ice::pod::Array<ice::Resource_Win32*> resources{ _allocator };
-            ice::pod::array::reserve(resources, 10);
+            ice::Array<ice::Resource_Win32*> resources{ _allocator };
+            ice::array::reserve(resources, 10);
 
             // An allocator for temporary paths, 1024 bytes should suffice for 2x256 wchar_t long paths
-            ice::memory::StackAllocator_1024 temp_path_alloc;
+            ice::StackAllocator_1024 temp_path_alloc;
             auto fncb = [&](ice::WString file) noexcept
             {
-                temp_path_alloc.clear();
+                temp_path_alloc.reset();
 
-                ice::HeapString<wchar_t> meta_file{ temp_path_alloc, file };
-                ice::HeapString<wchar_t> data_file{ temp_path_alloc, ice::string::substr(file, 0, ice::string::find_last_of(file, L'.')) };
+                ice::HeapString<ice::wchar> meta_file{ temp_path_alloc, file };
+                ice::HeapString<ice::wchar> data_file{ temp_path_alloc, ice::string::substr(file, 0, ice::string::find_last_of(file, L'.')) };
 
-                ice::pod::array::clear(resources);
+                ice::array::clear(resources);
 
                 create_resources_from_loose_files(
                     _allocator,
@@ -145,11 +147,11 @@ namespace ice
                 {
                     ice::u64 const hash = ice::hash(resource->origin());
                     ICE_ASSERT(
-                        ice::pod::hash::has(_resources, hash) == false,
+                        ice::hashmap::has(_resources, hash) == false,
                         "A resource cannot be a explicit resource AND part of another resource."
                     );
 
-                    ice::pod::hash::set(
+                    ice::hashmap::set(
                         _resources,
                         hash,
                         resource
@@ -161,19 +163,19 @@ namespace ice
         }
 
         auto query_resources(
-            ice::pod::Array<ice::Resource_v2 const*>& out_changes
+            ice::Array<ice::Resource_v2 const*>& out_changes
         ) const noexcept -> ice::u32 override
         {
-            for (auto const& entry : _resources)
+            for (Resource_v2 const* entry : _resources)
             {
-                ice::pod::array::push_back(out_changes, entry.value);
+                ice::array::push_back(out_changes, entry);
             }
             return 0;
         }
 
         auto refresh() noexcept -> ice::Task<ice::ResourceProviderResult> override
         {
-            if (ice::pod::hash::empty(_resources))
+            if (ice::hashmap::empty(_resources))
             {
                 initial_traverse();
             }
@@ -192,17 +194,17 @@ namespace ice
 
             ice::u32 const origin_size = ice::string::size(uri.path);
 
-            ice::HeapString<char8_t> predicted_path{ _allocator, };
+            ice::HeapString<> predicted_path{ _allocator, };
             ice::string::reserve(predicted_path, origin_size + ice::string::size(_base_path));
 
-            ice::wide_to_utf8(_base_path, predicted_path);
-            ice::path::join(predicted_path, u8".."); // Remove one directory (because it's the common value of the base path and the uri path)
+            ice::win32::wide_to_utf8(_base_path, predicted_path);
+            ice::path::join(predicted_path, ".."); // Remove one directory (because it's the common value of the base path and the uri path)
             ice::path::join(predicted_path, uri.path);
             ice::path::normalize(predicted_path);
 
-            ice::u64 const resource_hash = ice::hash(ice::Utf8String{ predicted_path });
+            ice::u64 const resource_hash = ice::hash(ice::String{ predicted_path });
 
-            ice::Resource_Win32 const* found_resource = ice::pod::hash::get(_resources, resource_hash, nullptr);
+            ice::Resource_Win32 const* found_resource = ice::hashmap::get(_resources, resource_hash, nullptr);
             if (found_resource != nullptr)
             {
                 return found_resource;
@@ -220,7 +222,7 @@ namespace ice
         ) noexcept -> ice::Task<ice::Memory> override
         {
             ice::Resource_Win32 const* const win_res = static_cast<ice::Resource_Win32 const*>(resource);
-            co_return co_await win_res->load_data_for_flags(alloc, 0, scheduler);
+            co_return co_await win_res->load_data_for_flags(alloc, ResourceFlags::None, scheduler);
         }
 
         auto release_resource(
@@ -231,10 +233,10 @@ namespace ice
             ice::Resource_Win32 const* const win_res = static_cast<ice::Resource_Win32 const*>(resource);
             ice::u64 const hash = ice::hash(win_res->name());
 
-            ice::Resource_Win32* win_res_mut = ice::pod::hash::get(_resources, hash, nullptr);
+            ice::Resource_Win32* win_res_mut = ice::hashmap::get(_resources, hash, nullptr);
             ICE_ASSERT(win_res == win_res_mut, "Trying to delete resource with similar name but object pointers differ!");
 
-            ice::pod::hash::remove(
+            ice::hashmap::remove(
                 _resources,
                 hash
             );
@@ -250,7 +252,7 @@ namespace ice
         {
             ice::u32 const origin_size = ice::string::size(root_resource->origin());
 
-            ice::HeapString<char8_t> predicted_path{ _allocator, };
+            ice::HeapString<> predicted_path{ _allocator, };
             ice::string::reserve(predicted_path, origin_size + ice::string::size(relative_uri.path));
 
             predicted_path = ice::string::substr(
@@ -262,9 +264,9 @@ namespace ice
             ice::path::join(predicted_path, relative_uri.path);
             ice::path::normalize(predicted_path);
 
-            ice::u64 const resource_hash = ice::hash(ice::Utf8String{ predicted_path });
+            ice::u64 const resource_hash = ice::hash(ice::String{ predicted_path });
 
-            ice::Resource_Win32 const* found_resource = ice::pod::hash::get(_resources, resource_hash, nullptr);
+            ice::Resource_Win32 const* found_resource = ice::hashmap::get(_resources, resource_hash, nullptr);
             if (found_resource != nullptr)
             {
                 return found_resource;
@@ -279,15 +281,15 @@ namespace ice
         ice::Allocator& _allocator;
         ice::HeapString<wchar_t> _base_path;
 
-        ice::pod::Hash<ice::Resource_Win32*> _resources;
+        ice::HashMap<ice::Resource_Win32*> _resources;
     };
 
     auto create_resource_provider(
         ice::Allocator& alloc,
-        ice::Utf8String path
+        ice::String path
     ) noexcept -> ice::UniquePtr<ice::ResourceProvider>
     {
-        return ice::make_unique<ice::ResourceProvider, ice::ResourceProvider_Win32Filesystem>(alloc, alloc, path);
+        return ice::make_unique<ice::ResourceProvider_Win32Filesystem>(alloc, alloc, path);
     }
 
 } // namespace ice

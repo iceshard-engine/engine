@@ -1,8 +1,7 @@
 #pragma once
 #include <ice/stringid.hxx>
-#include <ice/allocator.hxx>
-#include <ice/memory/pointer_arithmetic.hxx>
-#include <ice/pod/hash.hxx>
+#include <ice/mem_allocator.hxx>
+#include <ice/container/hashmap.hxx>
 #include <ice/span.hxx>
 
 namespace ice
@@ -13,127 +12,96 @@ namespace ice
     public:
         virtual ~DataStorage() noexcept = default;
 
-        virtual auto named_data(
-            ice::StringID_Arg name
-        ) noexcept -> void* = 0;
+        template<typename T>
+        auto named_object(ice::StringID_Arg name) noexcept -> T*;
 
-        virtual auto named_data(
-            ice::StringID_Arg name
-        ) const noexcept -> void const* = 0;
+        template<typename T>
+        auto named_object(ice::StringID_Arg name) const noexcept -> T const*;
 
+        template<typename T>
+            requires ice::TrivialContainerLogicAllowed<T>
+        auto named_span(ice::StringID_Arg name) noexcept -> ice::Span<T>;
+
+        template<typename T>
+            requires ice::TrivialContainerLogicAllowed<T>
+        auto named_span(ice::StringID_Arg name) const noexcept -> ice::Span<T const>;
+
+        template<typename T, typename... Args>
+        auto create_named_object(ice::StringID_Arg name, Args&&... args) noexcept -> T*;
+
+        template<typename T>
+            requires ice::TrivialContainerLogicAllowed<T>
+        auto create_named_span(ice::StringID_Arg name, ice::ucount count) noexcept -> ice::Span<T>;
+
+        template<typename T>
+        void destroy_named_object(ice::StringID_Arg name) noexcept;
+
+    protected:
         virtual auto allocate_named_data(
             ice::StringID_Arg name,
-            ice::u32 size,
-            ice::u32 alignment
+            ice::meminfo type_meminfo
         ) noexcept -> void* = 0;
 
         virtual auto allocate_named_array(
             ice::StringID_Arg name,
-            ice::u32 element_size,
-            ice::u32 alignment,
-            ice::u32 count
+            ice::meminfo type_meminfo,
+            ice::ucount count
         ) noexcept -> void* = 0;
 
-        virtual void release_named_data(
-            ice::StringID_Arg name
-        ) noexcept = 0;
+        virtual auto named_data(ice::StringID_Arg name) noexcept -> void* = 0;
 
-        template<typename T>
-        auto named_object(
-            ice::StringID_Arg name
-        ) noexcept -> T*;
+        virtual auto named_data(ice::StringID_Arg name) const noexcept -> void const* = 0;
 
-        template<typename T>
-        auto named_object(
-            ice::StringID_Arg name
-        ) const noexcept -> T const*;
-
-        template<typename T>
-        auto named_span(
-            ice::StringID_Arg name
-        ) noexcept -> ice::Span<T>;
-
-        template<typename T>
-        auto named_span(
-            ice::StringID_Arg name
-        ) const noexcept -> ice::Span<T const>;
-
-        template<typename T, typename... Args>
-        auto create_named_object(
-            ice::StringID_Arg name,
-            Args&&... args
-        ) noexcept -> T*;
-
-        template<typename T>
-        void destroy_named_object(
-            ice::StringID_Arg name
-        ) noexcept;
-
-        template<typename T>
-        auto create_named_span(
-            ice::StringID_Arg name,
-            ice::u32 size
-        ) noexcept -> ice::Span<T>;
+        virtual void release_named_data(ice::StringID_Arg name) noexcept = 0;
     };
 
     template<typename T>
-    inline auto DataStorage::named_object(
-        ice::StringID_Arg name
-    ) noexcept -> T*
+    inline auto DataStorage::named_object(ice::StringID_Arg name) noexcept -> T*
     {
         return reinterpret_cast<T*>(named_data(name));
     }
 
     template<typename T>
-    inline auto DataStorage::named_object(
-        ice::StringID_Arg name
-    ) const noexcept -> T const*
+    inline auto DataStorage::named_object(ice::StringID_Arg name) const noexcept -> T const*
     {
         return reinterpret_cast<T const*>(named_data(name));
     }
 
     template<typename T>
-    inline auto DataStorage::named_span(
-        ice::StringID_Arg name
-    ) noexcept -> ice::Span<T>
+        requires ice::TrivialContainerLogicAllowed<T>
+    inline auto DataStorage::named_span(ice::StringID_Arg name) noexcept -> ice::Span<T>
     {
         // We assume we used 'created_named_span' this the span size is at head of the data.
-        void* span_data = named_data(name);
+        ice::ucount* span_info = reinterpret_cast<ice::ucount*>(named_data(name));
 
         return ice::Span<T>{
-            reinterpret_cast<T*>(ice::memory::ptr_add(span_data, alignof(T))),
-            *reinterpret_cast<ice::u32*>(span_data)
+            reinterpret_cast<T*>(ice::ptr_add(span_info, { span_info[1] })),
+            span_info[0]
         };
     }
 
     template<typename T>
-    inline auto DataStorage::named_span(
-        ice::StringID_Arg name
-    ) const noexcept -> ice::Span<T const>
+        requires ice::TrivialContainerLogicAllowed<T>
+    inline auto DataStorage::named_span(ice::StringID_Arg name) const noexcept -> ice::Span<T const>
     {
         // We assume we used 'created_named_span' this the span size is at head of the data.
-        void const* span_data = named_data(name);
+        ice::ucount const* span_info = reinterpret_cast<ice::ucount const*>(named_data(name));
 
         return ice::Span<T const>{
-            reinterpret_cast<T const*>(ice::memory::ptr_add(span_data, alignof(T))),
-            *reinterpret_cast<ice::u32 const*>(span_data)
+            reinterpret_cast<T const*>(ice::ptr_add(span_info, { span_info[1] })),
+            span_info[0]
         };
     }
 
     template<typename T, typename... Args>
-    inline auto DataStorage::create_named_object(
-        ice::StringID_Arg name,
-        Args&&... args
-    ) noexcept -> T*
+    inline auto DataStorage::create_named_object(ice::StringID_Arg name, Args&&... args) noexcept -> T*
     {
-        void* const allocated_data = allocate_named_data(name, sizeof(T), alignof(T));
+        void* const allocated_data = allocate_named_data(name, ice::meminfo_of<T>);
         return new (allocated_data) T{ ice::forward<Args>(args)... };
     }
 
     template<typename T>
-    inline void DataStorage::destroy_named_object(
-        ice::StringID_Arg name
-    ) noexcept
+    inline void DataStorage::destroy_named_object(ice::StringID_Arg name) noexcept
     {
         T* const obj = named_object<T>(name);
         if (obj != nullptr)
@@ -144,11 +112,28 @@ namespace ice
     }
 
     template<typename T>
-    inline auto DataStorage::create_named_span(ice::StringID_Arg name, ice::u32 size) noexcept -> ice::Span<T>
+        requires ice::TrivialContainerLogicAllowed<T>
+    inline auto DataStorage::create_named_span(ice::StringID_Arg name, ice::ucount count) noexcept -> ice::Span<T>
     {
-        // We are responsible to access the actual item data after a full 'alingment' ptr add.
-        void* const allocated_data = allocate_named_array(name, sizeof(T), alignof(T), size);
-        return ice::Span<T>{ reinterpret_cast<T*>(ice::memory::ptr_add(allocated_data, alignof(T))), size };
+        ice::ucount* span_info = reinterpret_cast<ice::ucount*>(
+            allocate_named_array(name, ice::meminfo_of<T>, count)
+        );
+
+        ice::Span<T> result{
+            reinterpret_cast<T*>(ice::ptr_add(span_info, { span_info[1] })),
+            span_info[0]
+        };
+
+        // We initialize the objects if needed
+        if constexpr (std::is_trivially_constructible_v<T> == false)
+        {
+            ice::mem_construct_n_at<T>(
+                ice::Memory{ .location = result._data, .size = ice::span::size_bytes(result), .alignment = ice::align_of<T> },
+                ice::span::count(result)
+            );
+        }
+
+        return result;
     }
 
     class HashedDataStorage final : public ice::DataStorage
@@ -157,6 +142,7 @@ namespace ice
         HashedDataStorage(ice::Allocator& alloc) noexcept;
         ~HashedDataStorage() noexcept override;
 
+    protected:
         auto named_data(
             ice::StringID_Arg name
         ) noexcept -> void* override;
@@ -167,15 +153,13 @@ namespace ice
 
         auto allocate_named_data(
             ice::StringID_Arg name,
-            ice::u32 size,
-            ice::u32 alignment
+            ice::meminfo type_meminfo
         ) noexcept -> void* override;
 
         auto allocate_named_array(
             ice::StringID_Arg name,
-            ice::u32 element_size,
-            ice::u32 alignment,
-            ice::u32 count
+            ice::meminfo type_meminfo,
+            ice::ucount count
         ) noexcept -> void* override;
 
         void release_named_data(
@@ -184,7 +168,7 @@ namespace ice
 
     private:
         ice::Allocator& _allocator;
-        ice::pod::Hash<void*> _named_data;
+        ice::HashMap<ice::AllocResult> _named_data;
     };
 
 } // namespace ice

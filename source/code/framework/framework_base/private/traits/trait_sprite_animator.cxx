@@ -12,7 +12,7 @@
 #include <ice/engine_runner.hxx>
 #include <ice/engine_frame.hxx>
 
-#include <ice/stack_string.hxx>
+#include <ice/string/static_string.hxx>
 #include <ice/data_storage.hxx>
 #include <ice/resource_meta.hxx>
 #include <ice/task_sync_wait.hxx>
@@ -43,7 +43,7 @@ namespace ice
     ) noexcept
         : _anim_infos{ alloc }
     {
-        ice::pod::hash::reserve(_anim_infos, 100);
+        ice::hashmap::reserve(_anim_infos, 100);
     }
 
     IceWorldTrait_SpriteAnimator::~IceWorldTrait_SpriteAnimator() noexcept
@@ -95,24 +95,24 @@ namespace ice
                 ice::detail::ReleaseOnExit release_asset{ sprite_asset, *_assets };
 
 
-                ice::pod::Array<ice::Utf8String> anim_names{ portal.allocator() };
-                if (meta_read_utf8_array(asset_meta, "animation.names"_sid, anim_names) == false)
+                ice::Array<ice::String> anim_names{ portal.allocator() };
+                if (meta_read_string_array(asset_meta, "animation.names"_sid, anim_names) == false)
                 {
                     return;
                 }
 
-                for (ice::Utf8String const& name : anim_names)
+                for (ice::String const& name : anim_names)
                 {
                     ice::StringID nameid = ice::stringid(name);
 
-                    if (ice::pod::hash::has(_anim_infos, ice::hash(nameid)) == true)
+                    if (ice::hashmap::has(_anim_infos, ice::hash(nameid)) == true)
                     {
                         return;
                     }
 
-                    ice::StackString<64, char8_t> meta_key{ u8"animation." };
+                    ice::StaticString<64> meta_key{ "animation." };
                     ice::string::push_back(meta_key, name);
-                    ice::string::push_back(meta_key, u8'.');
+                    ice::string::push_back(meta_key, '.');
                     ice::u32 const base_key_size = ice::string::size(meta_key);
 
                     ice::i32 frame_count;
@@ -121,19 +121,19 @@ namespace ice
 
                     // Frame count
                     bool success = true;
-                    ice::string::push_back(meta_key, u8"frame_count");
+                    ice::string::push_back(meta_key, "frame_count");
                     success &= ice::meta_read_int32(asset_meta, ice::stringid(meta_key), frame_count);
 
                     ice::string::resize(meta_key, base_key_size);
-                    ice::string::push_back(meta_key, u8"frame_step");
+                    ice::string::push_back(meta_key, "frame_step");
                     ice::meta_read_int32(asset_meta, ice::stringid(meta_key), frame_step);
 
                     ice::string::resize(meta_key, base_key_size);
-                    ice::string::push_back(meta_key, u8"frame_initial_x");
+                    ice::string::push_back(meta_key, "frame_initial_x");
                     success &= ice::meta_read_int32(asset_meta, ice::stringid(meta_key), frame_initial[0]);
 
                     ice::string::resize(meta_key, base_key_size);
-                    ice::string::push_back(meta_key, u8"frame_initial_y");
+                    ice::string::push_back(meta_key, "frame_initial_y");
                     success &= ice::meta_read_int32(asset_meta, ice::stringid(meta_key), frame_initial[1]);
 
                     if (success == false)
@@ -148,7 +148,7 @@ namespace ice
                         .frame_step = frame_step
                     };
 
-                    ice::pod::hash::set(_anim_infos, ice::hash(anim_info.name), anim_info);
+                    ice::hashmap::set(_anim_infos, ice::hash(anim_info.name), anim_info);
                 }
             }
         );
@@ -162,10 +162,10 @@ namespace ice
                 Timer anim_timer = ice::timer::create_timer(runner.clock(), anim.speed, state.timestamp);
                 if (ice::timer::update(anim_timer))
                 {
-                    static ice::TraitAnimatorAnimationInfo null_info{ .name = ice::StringID_Hash::Invalid };
-                    ice::TraitAnimatorAnimationInfo const& anim_info = ice::pod::hash::get(_anim_infos, ice::hash(anim.animation), null_info);
+                    static ice::TraitAnimatorAnimationInfo null_info{ .name = ice::StringID_Invalid };
+                    ice::TraitAnimatorAnimationInfo const& anim_info = ice::hashmap::get(_anim_infos, ice::hash(anim.animation), null_info);
 
-                    if (anim_info.name == ice::StringID_Hash::Invalid)
+                    if (anim_info.name == ice::StringID_Invalid)
                     {
                         return;
                     }

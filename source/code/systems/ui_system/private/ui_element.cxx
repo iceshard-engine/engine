@@ -5,7 +5,6 @@
 #include <ice/ui_font.hxx>
 
 #include <ice/font_utils.hxx>
-#include <ice/memory/pointer_arithmetic.hxx>
 #include <ice/assert.hxx>
 
 namespace ice::ui
@@ -93,7 +92,7 @@ namespace ice::ui
         {
             ButtonInfo const& button_info = data.data_buttons[info.type_data_i];
 
-            ice::Utf8String const text = ice::ui::element_get_text(data, button_info, resources);
+            ice::String const text = ice::ui::element_get_text(data, button_info, resources);
 
             ice::ui::FontInfo const& font_info = data.fonts[button_info.font.source_i];
             ice::Font const* const font = ice::ui::element_get_font(data, button_info, resources);
@@ -113,7 +112,7 @@ namespace ice::ui
         {
             LabelInfo const& label_info = data.data_labels[info.type_data_i];
 
-            ice::Utf8String const text = ice::ui::element_get_text(data, label_info, resources);
+            ice::String const text = ice::ui::element_get_text(data, label_info, resources);
 
             ice::ui::FontInfo const& font_info = data.fonts[label_info.font.source_i];
             ice::Font const* const font = ice::ui::element_get_font(data, label_info, resources);

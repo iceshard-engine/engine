@@ -1,6 +1,7 @@
 #pragma once
 #include <ice/ui_types.hxx>
 #include <ice/span.hxx>
+#include <ice/math.hxx>
 
 namespace ice::ui
 {

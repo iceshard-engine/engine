@@ -3,7 +3,7 @@
 #include <ice/world/world_trait_archive.hxx>
 #include <ice/gfx/gfx_trait.hxx>
 #include <ice/gfx/gfx_stage.hxx>
-#include <ice/pod/hash.hxx>
+#include <ice/container/hashmap.hxx>
 #include <ice/ui_element_draw.hxx>
 #include <ice/shard.hxx>
 
@@ -117,7 +117,7 @@ namespace ice
         ice::render::ResourceSetLayout _resource_set_layout[1];
 
         ice::vec2f _display_size;
-        ice::pod::Hash<RenderUIData*> _render_data;
+        ice::HashMap<RenderUIData*> _render_data;
     };
 
     void register_trait_render_ui(ice::WorldTraitArchive& archive) noexcept;
@@ -125,4 +125,4 @@ namespace ice
 } // namespace ice
 
 template<>
-constexpr ice::PayloadID ice::detail::Constant_ShardPayloadID<ice::RenderUIRequest const*> = ice::payload_id("ice::RenderUIRequest const*");
+constexpr ice::ShardPayloadID ice::Constant_ShardPayloadID<ice::RenderUIRequest const*> = ice::shard_payloadid("ice::RenderUIRequest const*");

@@ -2,7 +2,7 @@
 #include <ice/stringid.hxx>
 #include <ice/ecs/ecs_component.hxx>
 #include <ice/ecs/ecs_detail.hxx>
-#include <ice/static_array.hxx>
+#include <ice/container_types.hxx>
 #include <ice/span.hxx>
 
 namespace ice::ecs
@@ -160,7 +160,7 @@ namespace ice::ecs
             component_alignments[idx] = sorted_components[idx - 1].alignment;
         }
 
-        identifier = ice::ecs::detail::make_archetype_identifier(component_identifiers);
+        identifier = ice::ecs::detail::make_archetype_identifier(ice::span::from_std_const(component_identifiers));
     }
 
     template<ice::ecs::Component... Components>
@@ -174,9 +174,9 @@ namespace ice::ecs
         ice::ecs::ArchetypeDefinition<Components...> const& archetype_info
     ) noexcept
         : identifier{ archetype_info.identifier }
-        , component_identifiers{ archetype_info.component_identifiers }
-        , component_sizes{ archetype_info.component_sizes }
-        , component_alignments{ archetype_info.component_alignments }
+        , component_identifiers{ ice::span::from_std_const(archetype_info.component_identifiers) }
+        , component_sizes{ ice::span::from_std_const(archetype_info.component_sizes) }
+        , component_alignments{ ice::span::from_std_const(archetype_info.component_alignments) }
     {
     }
 
@@ -188,15 +188,15 @@ namespace ice::ecs
         {
             static constexpr ice::StringID Identifier = ice::StringID{ ice::StringID_Hash{ 0x10 } };
 
-            ice::vec2f pos;
+            ice::f32 pos[2];
         };
 
         struct ValidationComponent_0x20
         {
             static constexpr ice::StringID Identifier = ice::StringID{ ice::StringID_Hash{ 0x20 } };
 
-            ice::vec2f vel;
-            ice::vec2f angVel;
+            ice::f32 vel[2];
+            ice::f32 angVel;
         };
 
         static constexpr auto Validation_Archetype_1 = ice::ecs::Constant_ArchetypeDefinition<ValidationComponent_0x10, ValidationComponent_0x20>;

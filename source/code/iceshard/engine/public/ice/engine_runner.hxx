@@ -12,6 +12,8 @@
 namespace ice
 {
 
+    struct ShardContainer;
+
     class AssetStorage;
     class TaskThreadPool;
 
@@ -55,12 +57,9 @@ namespace ice
 
         virtual auto entity_index() const noexcept -> ice::ecs::EntityIndex& = 0;
 
-        [[deprecated]]
-        virtual auto platform_events() noexcept -> ice::Span<ice::platform::Event const> = 0;
-
         virtual auto input_tracker() noexcept -> ice::input::InputTracker& = 0;
         virtual void process_device_queue(
-            ice::input::DeviceQueue const& device_queue
+            ice::input::DeviceEventQueue const& device_queue
         ) noexcept = 0;
 
         virtual auto thread_pool() noexcept -> ice::TaskThreadPool& = 0;
@@ -76,9 +75,7 @@ namespace ice
         virtual auto previous_frame() const noexcept -> ice::EngineFrame const& = 0;
         virtual auto current_frame() const noexcept -> ice::EngineFrame const& = 0;
         virtual auto current_frame() noexcept -> ice::EngineFrame& = 0;
-        virtual void next_frame(
-            ice::Span<ice::platform::Event const> events
-        ) noexcept = 0;
+        virtual void next_frame(ice::ShardContainer const& shards) noexcept = 0;
 
         virtual void execute_task(ice::Task<> task, ice::EngineContext context) noexcept = 0;
 

@@ -27,6 +27,8 @@ namespace ice::render
         ice::u32 count;
     };
 
+    static_assert(ice::TrivialContainerLogicAllowed<QueueFamilyInfo>);
+
     struct QueueInfo
     {
         ice::render::QueueID id;

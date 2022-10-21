@@ -8,7 +8,7 @@
 // non-native version will be less than optimal.
 
 #pragma once
-#include <cinttypes>
+#include <ice/types.hxx>
 #include <string_view>
 
 namespace ice::detail::murmur3_hash
@@ -16,80 +16,80 @@ namespace ice::detail::murmur3_hash
 
     struct mm3_x86_h32
     {
-        uint32_t h[1];
+        ice::u32 h[1];
     };
 
     struct mm3_x86_h128
     {
-        uint32_t h[4];
+        ice::u32 h[4];
     };
 
     struct mm3_x64_h128
     {
-        uint64_t h[2];
+        ice::u64 h[2];
     };
 
-    constexpr auto cexpr_murmur3_x86_32(std::u8string_view key, uint32_t seed) noexcept -> mm3_x86_h32;
-    constexpr auto cexpr_murmur3_x86_128(std::u8string_view key, uint32_t seed) noexcept -> mm3_x86_h128;
-    constexpr auto cexpr_murmur3_x64_128(std::u8string_view key, uint32_t seed) noexcept -> mm3_x64_h128;
+    constexpr auto cexpr_murmur3_x86_32(std::u8string_view key, ice::u32 seed) noexcept -> mm3_x86_h32;
+    constexpr auto cexpr_murmur3_x86_128(std::u8string_view key, ice::u32 seed) noexcept -> mm3_x86_h128;
+    constexpr auto cexpr_murmur3_x64_128(std::u8string_view key, ice::u32 seed) noexcept -> mm3_x64_h128;
 
-    constexpr auto cexpr_murmur3_x86_32(std::string_view key, uint32_t seed) noexcept -> mm3_x86_h32;
-    constexpr auto cexpr_murmur3_x86_128(std::string_view key, uint32_t seed) noexcept -> mm3_x86_h128;
-    constexpr auto cexpr_murmur3_x64_128(std::string_view key, uint32_t seed) noexcept -> mm3_x64_h128;
+    constexpr auto cexpr_murmur3_x86_32(std::string_view key, ice::u32 seed) noexcept -> mm3_x86_h32;
+    constexpr auto cexpr_murmur3_x86_128(std::string_view key, ice::u32 seed) noexcept -> mm3_x86_h128;
+    constexpr auto cexpr_murmur3_x64_128(std::string_view key, ice::u32 seed) noexcept -> mm3_x64_h128;
 
     namespace detail
     {
 
-        constexpr uint32_t cexpr_rotl32(uint32_t x, int8_t r) noexcept
+        constexpr auto cexpr_rotl32(ice::u32 x, ice::i8 r) noexcept -> ice::u32
         {
             return (x << r) | (x >> (32 - r));
         }
 
-        constexpr uint64_t cexpr_rotl64(uint64_t x, int8_t r) noexcept
+        constexpr auto cexpr_rotl64(ice::u64 x, ice::i8 r) noexcept -> ice::u64
         {
             return (x << r) | (x >> (64 - r));
         }
 
         template<typename Char>
-        constexpr auto cexpr_block_x32(Char const* data) noexcept -> uint32_t
+        constexpr auto cexpr_block_x32(Char const* data) noexcept -> ice::u32
         {
-            uint32_t result = 0;
-            result |= static_cast<uint8_t const>(data[3]);
+            ice::u32 result = 0;
+            result |= static_cast<ice::u8 const>(data[3]);
             result <<= 8;
-            result |= static_cast<uint8_t const>(data[2]);
+            result |= static_cast<ice::u8 const>(data[2]);
             result <<= 8;
-            result |= static_cast<uint8_t const>(data[1]);
+            result |= static_cast<ice::u8 const>(data[1]);
             result <<= 8;
-            result |= static_cast<uint8_t const>(data[0]);
+            result |= static_cast<ice::u8 const>(data[0]);
             return result;
         }
 
         template<typename Char>
-        constexpr auto cexpr_block_x64(Char const* data) noexcept -> uint64_t
+        constexpr auto cexpr_block_x64(Char const* data) noexcept -> ice::u64
         {
-            uint64_t result = 0;
-            result |= static_cast<uint8_t const>(data[7]);
+            ice::u64 result = 0;
+            result |= static_cast<ice::u8 const>(data[7]);
             result <<= 8;
-            result |= static_cast<uint8_t const>(data[6]);
+            result |= static_cast<ice::u8 const>(data[6]);
             result <<= 8;
-            result |= static_cast<uint8_t const>(data[5]);
+            result |= static_cast<ice::u8 const>(data[5]);
             result <<= 8;
-            result |= static_cast<uint8_t const>(data[4]);
+            result |= static_cast<ice::u8 const>(data[4]);
             result <<= 8;
-            result |= static_cast<uint8_t const>(data[3]);
+            result |= static_cast<ice::u8 const>(data[3]);
             result <<= 8;
-            result |= static_cast<uint8_t const>(data[2]);
+            result |= static_cast<ice::u8 const>(data[2]);
             result <<= 8;
-            result |= static_cast<uint8_t const>(data[1]);
+            result |= static_cast<ice::u8 const>(data[1]);
             result <<= 8;
-            result |= static_cast<uint8_t const>(data[0]);
+            result |= static_cast<ice::u8 const>(data[0]);
             return result;
         }
 
         //-----------------------------------------------------------------------------
         // Finalization mix - force all bits of a hash block to avalanche
 
-        constexpr uint32_t cexpr_fmix32(uint32_t h) noexcept
+        constexpr auto cexpr_fmix32(ice::u32 h) noexcept -> ice::u32
         {
             h ^= h >> 16;
             h *= 0x85ebca6b;
@@ -101,7 +101,7 @@ namespace ice::detail::murmur3_hash
 
         //----------
 
-        constexpr uint64_t cexpr_fmix64(uint64_t k) noexcept
+        constexpr ice::u64 cexpr_fmix64(ice::u64 k) noexcept
         {
             k ^= k >> 33;
             k *= 0xFF51AFD7ED558CCDllu;
@@ -114,26 +114,26 @@ namespace ice::detail::murmur3_hash
         //-----------------------------------------------------------------------------
 
         template<typename Char>
-        constexpr auto cexpr_murmur3_x86_32(std::basic_string_view<Char> key, uint32_t seed) noexcept -> mm3_x86_h32
+        constexpr auto cexpr_murmur3_x86_32(std::basic_string_view<Char> key, ice::u32 seed) noexcept -> mm3_x86_h32
         {
             Char const* string_data = key.data();
-            uint32_t const string_length = static_cast<uint32_t>(key.length());
+            ice::u32 const string_length = static_cast<ice::u32>(key.length());
 
-            uint32_t const block_byte_size = 4u;
-            uint32_t const block_num = string_length / block_byte_size;
+            ice::u32 const block_byte_size = 4u;
+            ice::u32 const block_num = string_length / block_byte_size;
 
             //----------
             // body
 
-            uint32_t const const_1 = 0xcc9e2d51;
-            uint32_t const const_2 = 0x1b873593;
-            uint32_t hash_r1 = seed;
+            ice::u32 const const_1 = 0xcc9e2d51;
+            ice::u32 const const_2 = 0x1b873593;
+            ice::u32 hash_r1 = seed;
 
-            Char const* blocks_end = string_data + static_cast<uintptr_t>(block_num) * block_byte_size;
+            Char const* blocks_end = string_data + static_cast<ice::uptr>(block_num) * block_byte_size;
 
             for (size_t idx = block_num; idx > 0; --idx)
             {
-                uint32_t k1 = cexpr_block_x32(blocks_end - (idx * block_byte_size));
+                ice::u32 k1 = cexpr_block_x32(blocks_end - (idx * block_byte_size));
 
                 k1 = cexpr_rotl32(k1 * const_1, 15) * const_2;
 
@@ -147,18 +147,18 @@ namespace ice::detail::murmur3_hash
 
             Char const* tail = blocks_end;
 
-            uint32_t k1 = 0;
+            ice::u32 k1 = 0;
 
             switch (string_length & 3)
             {
             case 3:
-                k1 ^= static_cast<uint8_t const>(tail[2]) << 16;
+                k1 ^= static_cast<ice::u8 const>(tail[2]) << 16;
                 [[fallthrough]];
             case 2:
-                k1 ^= static_cast<uint8_t const>(tail[1]) << 8;
+                k1 ^= static_cast<ice::u8 const>(tail[1]) << 8;
                 [[fallthrough]];
             case 1:
-                k1 ^= static_cast<uint8_t const>(tail[0]);
+                k1 ^= static_cast<ice::u8 const>(tail[0]);
             };
 
             k1 = cexpr_rotl32(k1 * const_1, 15) * const_2;
@@ -167,7 +167,7 @@ namespace ice::detail::murmur3_hash
             //----------
             // finalization
 
-            hash_r1 ^= static_cast<uint32_t>(string_length);
+            hash_r1 ^= static_cast<ice::u32>(string_length);
 
             hash_r1 = cexpr_fmix32(hash_r1);
 
@@ -177,35 +177,35 @@ namespace ice::detail::murmur3_hash
         //-----------------------------------------------------------------------------
 
         template<typename Char>
-        constexpr auto cexpr_murmur3_x86_128(std::basic_string_view<Char> key, uint32_t seed) noexcept -> mm3_x86_h128
+        constexpr auto cexpr_murmur3_x86_128(std::basic_string_view<Char> key, ice::u32 seed) noexcept -> mm3_x86_h128
         {
             Char const* string_data = key.data();
-            uint32_t const string_length = static_cast<uint32_t>(key.length());
+            ice::u32 const string_length = static_cast<ice::u32>(key.length());
 
-            uint32_t const block_byte_size = 16u;
-            uint32_t const block_num = string_length / block_byte_size;
+            ice::u32 const block_byte_size = 16u;
+            ice::u32 const block_num = string_length / block_byte_size;
 
             //----------
             // body
 
-            uint32_t hash_r1 = seed;
-            uint32_t hash_r2 = seed;
-            uint32_t hash_r3 = seed;
-            uint32_t hash_r4 = seed;
+            ice::u32 hash_r1 = seed;
+            ice::u32 hash_r2 = seed;
+            ice::u32 hash_r3 = seed;
+            ice::u32 hash_r4 = seed;
 
-            uint32_t const const_1 = 0x239b961b;
-            uint32_t const const_2 = 0xab0e9789;
-            uint32_t const const_3 = 0x38b34ae5;
-            uint32_t const const_4 = 0xa1e38b93;
+            ice::u32 const const_1 = 0x239b961b;
+            ice::u32 const const_2 = 0xab0e9789;
+            ice::u32 const const_3 = 0x38b34ae5;
+            ice::u32 const const_4 = 0xa1e38b93;
 
-            Char const* blocks_end = string_data + static_cast<uintptr_t>(block_num) * block_byte_size;
+            Char const* blocks_end = string_data + static_cast<ice::uptr>(block_num) * block_byte_size;
 
             for (size_t idx = block_num; idx > 0; --idx)
             {
-                uint32_t k1 = cexpr_block_x32(blocks_end - (idx * block_byte_size - 0));
-                uint32_t k2 = cexpr_block_x32(blocks_end - (idx * block_byte_size - 4));
-                uint32_t k3 = cexpr_block_x32(blocks_end - (idx * block_byte_size - 8));
-                uint32_t k4 = cexpr_block_x32(blocks_end - (idx * block_byte_size - 12));
+                ice::u32 k1 = cexpr_block_x32(blocks_end - (idx * block_byte_size - 0));
+                ice::u32 k2 = cexpr_block_x32(blocks_end - (idx * block_byte_size - 4));
+                ice::u32 k3 = cexpr_block_x32(blocks_end - (idx * block_byte_size - 8));
+                ice::u32 k4 = cexpr_block_x32(blocks_end - (idx * block_byte_size - 12));
 
                 k1 = cexpr_rotl32(k1 * const_1, 15) * const_2;
                 hash_r1 ^= k1;
@@ -237,51 +237,51 @@ namespace ice::detail::murmur3_hash
 
             Char const* tail = blocks_end;
 
-            uint32_t k1 = 0;
-            uint32_t k2 = 0;
-            uint32_t k3 = 0;
-            uint32_t k4 = 0;
+            ice::u32 k1 = 0;
+            ice::u32 k2 = 0;
+            ice::u32 k3 = 0;
+            ice::u32 k4 = 0;
 
             switch (string_length & 15)
             {
-            case 15: k4 ^= static_cast<uint8_t const>(tail[14]) << 16;
+            case 15: k4 ^= static_cast<ice::u8 const>(tail[14]) << 16;
                 [[fallthrough]];
-            case 14: k4 ^= static_cast<uint8_t const>(tail[13]) << 8;
+            case 14: k4 ^= static_cast<ice::u8 const>(tail[13]) << 8;
                 [[fallthrough]];
-            case 13: k4 ^= static_cast<uint8_t const>(tail[12]) << 0;
+            case 13: k4 ^= static_cast<ice::u8 const>(tail[12]) << 0;
                 k4 = cexpr_rotl32(k4 * const_4, 18) * const_1;
                 hash_r4 ^= k4;
                 [[fallthrough]];
 
-            case 12: k3 ^= static_cast<uint8_t const>(tail[11]) << 24;
+            case 12: k3 ^= static_cast<ice::u8 const>(tail[11]) << 24;
                 [[fallthrough]];
-            case 11: k3 ^= static_cast<uint8_t const>(tail[10]) << 16;
+            case 11: k3 ^= static_cast<ice::u8 const>(tail[10]) << 16;
                 [[fallthrough]];
-            case 10: k3 ^= static_cast<uint8_t const>(tail[9]) << 8;
+            case 10: k3 ^= static_cast<ice::u8 const>(tail[9]) << 8;
                 [[fallthrough]];
-            case  9: k3 ^= static_cast<uint8_t const>(tail[8]) << 0;
+            case  9: k3 ^= static_cast<ice::u8 const>(tail[8]) << 0;
                 k3 = cexpr_rotl32(k3 * const_3, 17) * const_4;
                 hash_r3 ^= k3;
                 [[fallthrough]];
 
-            case  8: k2 ^= static_cast<uint8_t const>(tail[7]) << 24;
+            case  8: k2 ^= static_cast<ice::u8 const>(tail[7]) << 24;
                 [[fallthrough]];
-            case  7: k2 ^= static_cast<uint8_t const>(tail[6]) << 16;
+            case  7: k2 ^= static_cast<ice::u8 const>(tail[6]) << 16;
                 [[fallthrough]];
-            case  6: k2 ^= static_cast<uint8_t const>(tail[5]) << 8;
+            case  6: k2 ^= static_cast<ice::u8 const>(tail[5]) << 8;
                 [[fallthrough]];
-            case  5: k2 ^= static_cast<uint8_t const>(tail[4]) << 0;
+            case  5: k2 ^= static_cast<ice::u8 const>(tail[4]) << 0;
                 k2 = cexpr_rotl32(k2 * const_2, 16) * const_3;
                 hash_r2 ^= k2;
                 [[fallthrough]];
 
-            case  4: k1 ^= static_cast<uint8_t const>(tail[3]) << 24;
+            case  4: k1 ^= static_cast<ice::u8 const>(tail[3]) << 24;
                 [[fallthrough]];
-            case  3: k1 ^= static_cast<uint8_t const>(tail[2]) << 16;
+            case  3: k1 ^= static_cast<ice::u8 const>(tail[2]) << 16;
                 [[fallthrough]];
-            case  2: k1 ^= static_cast<uint8_t const>(tail[1]) << 8;
+            case  2: k1 ^= static_cast<ice::u8 const>(tail[1]) << 8;
                 [[fallthrough]];
-            case  1: k1 ^= static_cast<uint8_t const>(tail[0]) << 0;
+            case  1: k1 ^= static_cast<ice::u8 const>(tail[0]) << 0;
                 k1 = cexpr_rotl32(k1 * const_1, 15) * const_2;
                 hash_r1 ^= k1;
             };
@@ -319,29 +319,29 @@ namespace ice::detail::murmur3_hash
         //-----------------------------------------------------------------------------
 
         template<typename Char>
-        constexpr auto cexpr_murmur3_x64_128(std::basic_string_view<Char> key, uint32_t seed) noexcept -> mm3_x64_h128
+        constexpr auto cexpr_murmur3_x64_128(std::basic_string_view<Char> key, ice::u32 seed) noexcept -> mm3_x64_h128
         {
             Char const* string_data = key.data();
-            uint64_t const string_length = key.length();
+            ice::u64 const string_length = key.length();
 
-            uint64_t const block_byte_size = 16u;
-            uint64_t const block_num = string_length / block_byte_size;
+            ice::u64 const block_byte_size = 16u;
+            ice::u64 const block_num = string_length / block_byte_size;
 
             //----------
             // body
 
-            uint64_t hash_r1 = seed;
-            uint64_t hash_r2 = seed;
+            ice::u64 hash_r1 = seed;
+            ice::u64 hash_r2 = seed;
 
-            uint64_t const const_1 = 0x87c37b91114253d5llu;
-            uint64_t const const_2 = 0x4cf5ad432745937fllu;
+            ice::u64 const const_1 = 0x87c37b91114253d5llu;
+            ice::u64 const const_2 = 0x4cf5ad432745937fllu;
 
             Char const* blocks_beg = string_data;
 
-            for (uint32_t idx = 0; idx < block_num; ++idx)
+            for (ice::u32 idx = 0; idx < block_num; ++idx)
             {
-                uint64_t k1 = cexpr_block_x64(blocks_beg + (idx * block_byte_size + 0));
-                uint64_t k2 = cexpr_block_x64(blocks_beg + (idx * block_byte_size + 8));
+                ice::u64 k1 = cexpr_block_x64(blocks_beg + (idx * block_byte_size + 0));
+                ice::u64 k2 = cexpr_block_x64(blocks_beg + (idx * block_byte_size + 8));
 
                 k1 = cexpr_rotl64(k1 * const_1, 31) * const_2;
                 hash_r1 ^= k1;
@@ -361,43 +361,43 @@ namespace ice::detail::murmur3_hash
 
             Char const* tail = blocks_beg + block_num * block_byte_size;
 
-            uint64_t k1 = 0;
-            uint64_t k2 = 0;
+            ice::u64 k1 = 0;
+            ice::u64 k2 = 0;
 
             switch (string_length & 15)
             {
-            case 15: k2 ^= static_cast<uint64_t const>(static_cast<uint8_t const>(tail[14])) << 48;
+            case 15: k2 ^= static_cast<ice::u64 const>(static_cast<ice::u8 const>(tail[14])) << 48;
                 [[fallthrough]];
-            case 14: k2 ^= static_cast<uint64_t const>(static_cast<uint8_t const>(tail[13])) << 40;
+            case 14: k2 ^= static_cast<ice::u64 const>(static_cast<ice::u8 const>(tail[13])) << 40;
                 [[fallthrough]];
-            case 13: k2 ^= static_cast<uint64_t const>(static_cast<uint8_t const>(tail[12])) << 32;
+            case 13: k2 ^= static_cast<ice::u64 const>(static_cast<ice::u8 const>(tail[12])) << 32;
                 [[fallthrough]];
-            case 12: k2 ^= static_cast<uint64_t const>(static_cast<uint8_t const>(tail[11])) << 24;
+            case 12: k2 ^= static_cast<ice::u64 const>(static_cast<ice::u8 const>(tail[11])) << 24;
                 [[fallthrough]];
-            case 11: k2 ^= static_cast<uint64_t const>(static_cast<uint8_t const>(tail[10])) << 16;
+            case 11: k2 ^= static_cast<ice::u64 const>(static_cast<ice::u8 const>(tail[10])) << 16;
                 [[fallthrough]];
-            case 10: k2 ^= static_cast<uint64_t const>(static_cast<uint8_t const>(tail[9])) << 8;
+            case 10: k2 ^= static_cast<ice::u64 const>(static_cast<ice::u8 const>(tail[9])) << 8;
                 [[fallthrough]];
-            case  9: k2 ^= static_cast<uint64_t const>(static_cast<uint8_t const>(tail[8])) << 0;
+            case  9: k2 ^= static_cast<ice::u64 const>(static_cast<ice::u8 const>(tail[8])) << 0;
                 k2 = cexpr_rotl64(k2 * const_2, 33) * const_1;
                 hash_r2 ^= k2;
                 [[fallthrough]];
 
-            case  8: k1 ^= static_cast<uint64_t const>(static_cast<uint8_t const>(tail[7])) << 56;
+            case  8: k1 ^= static_cast<ice::u64 const>(static_cast<ice::u8 const>(tail[7])) << 56;
                 [[fallthrough]];
-            case  7: k1 ^= static_cast<uint64_t const>(static_cast<uint8_t const>(tail[6])) << 48;
+            case  7: k1 ^= static_cast<ice::u64 const>(static_cast<ice::u8 const>(tail[6])) << 48;
                 [[fallthrough]];
-            case  6: k1 ^= static_cast<uint64_t const>(static_cast<uint8_t const>(tail[5])) << 40;
+            case  6: k1 ^= static_cast<ice::u64 const>(static_cast<ice::u8 const>(tail[5])) << 40;
                 [[fallthrough]];
-            case  5: k1 ^= static_cast<uint64_t const>(static_cast<uint8_t const>(tail[4])) << 32;
+            case  5: k1 ^= static_cast<ice::u64 const>(static_cast<ice::u8 const>(tail[4])) << 32;
                 [[fallthrough]];
-            case  4: k1 ^= static_cast<uint64_t const>(static_cast<uint8_t const>(tail[3])) << 24;
+            case  4: k1 ^= static_cast<ice::u64 const>(static_cast<ice::u8 const>(tail[3])) << 24;
                 [[fallthrough]];
-            case  3: k1 ^= static_cast<uint64_t const>(static_cast<uint8_t const>(tail[2])) << 16;
+            case  3: k1 ^= static_cast<ice::u64 const>(static_cast<ice::u8 const>(tail[2])) << 16;
                 [[fallthrough]];
-            case  2: k1 ^= static_cast<uint64_t const>(static_cast<uint8_t const>(tail[1])) << 8;
+            case  2: k1 ^= static_cast<ice::u64 const>(static_cast<ice::u8 const>(tail[1])) << 8;
                 [[fallthrough]];
-            case  1: k1 ^= static_cast<uint64_t const>(static_cast<uint8_t const>(tail[0])) << 0;
+            case  1: k1 ^= static_cast<ice::u64 const>(static_cast<ice::u8 const>(tail[0])) << 0;
                 k1 = cexpr_rotl64(k1 * const_1, 31) * const_2;
                 hash_r1 ^= k1;
             };
@@ -422,32 +422,32 @@ namespace ice::detail::murmur3_hash
 
     } // namespace detail
 
-    constexpr auto cexpr_murmur3_x86_32(std::u8string_view key, uint32_t seed) noexcept -> mm3_x86_h32
+    constexpr auto cexpr_murmur3_x86_32(std::u8string_view key, ice::u32 seed) noexcept -> mm3_x86_h32
     {
-        return detail::cexpr_murmur3_x86_32<char8_t>(key, seed);
+        return detail::cexpr_murmur3_x86_32<ice::utf8>(key, seed);
     }
 
-    constexpr auto cexpr_murmur3_x86_128(std::u8string_view key, uint32_t seed) noexcept -> mm3_x86_h128
+    constexpr auto cexpr_murmur3_x86_128(std::u8string_view key, ice::u32 seed) noexcept -> mm3_x86_h128
     {
-        return detail::cexpr_murmur3_x86_128<char8_t>(key, seed);
+        return detail::cexpr_murmur3_x86_128<ice::utf8>(key, seed);
     }
 
-    constexpr auto cexpr_murmur3_x64_128(std::u8string_view key, uint32_t seed) noexcept -> mm3_x64_h128
+    constexpr auto cexpr_murmur3_x64_128(std::u8string_view key, ice::u32 seed) noexcept -> mm3_x64_h128
     {
-        return detail::cexpr_murmur3_x64_128<char8_t>(key, seed);
+        return detail::cexpr_murmur3_x64_128<ice::utf8>(key, seed);
     }
 
-    constexpr auto cexpr_murmur3_x86_32(std::string_view key, uint32_t seed) noexcept -> mm3_x86_h32
+    constexpr auto cexpr_murmur3_x86_32(std::string_view key, ice::u32 seed) noexcept -> mm3_x86_h32
     {
         return detail::cexpr_murmur3_x86_32<char>(key, seed);
     }
 
-    constexpr auto cexpr_murmur3_x86_128(std::string_view key, uint32_t seed) noexcept -> mm3_x86_h128
+    constexpr auto cexpr_murmur3_x86_128(std::string_view key, ice::u32 seed) noexcept -> mm3_x86_h128
     {
         return detail::cexpr_murmur3_x86_128<char>(key, seed);
     }
 
-    constexpr auto cexpr_murmur3_x64_128(std::string_view key, uint32_t seed) noexcept -> mm3_x64_h128
+    constexpr auto cexpr_murmur3_x64_128(std::string_view key, ice::u32 seed) noexcept -> mm3_x64_h128
     {
         return detail::cexpr_murmur3_x64_128<char>(key, seed);
     }

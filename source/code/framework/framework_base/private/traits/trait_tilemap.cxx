@@ -7,6 +7,7 @@
 #include <ice/world/world_trait_archive.hxx>
 #include <ice/task_thread_pool.hxx>
 #include <ice/asset_storage.hxx>
+#include <ice/shard_payloads.hxx>
 
 #include <ice/profiler.hxx>
 
@@ -24,19 +25,19 @@ namespace ice
         ) noexcept -> ice::Task<>
         {
             ice::u32 const layer_count = tilemap.layer_count;
-            ice::pod::Array<ice::Span<ice::Tile>> layer_tiles{ frame.allocator() };
+            ice::Array<ice::Span<ice::Tile>> layer_tiles{ frame.allocator() };
 
             {
                 IPT_ZONE_SCOPED_NAMED("[Trait] TileMap :: Prepare render memory");
 
-                ice::pod::array::resize(layer_tiles, layer_count);
+                ice::array::resize(layer_tiles, layer_count);
 
                 for (ice::u32 idx = 0; idx < layer_count; ++idx)
                 {
                     ice::TileLayer const& layer = tilemap.layers[idx];
                     ice::IceTileLayer_RenderInfo& layer_render_info = render_info.layers[idx];
 
-                    layer_tiles[idx] = frame.create_named_span<ice::Tile>(layer.name, layer.tile_count);
+                    layer_tiles[idx] = frame.storage().create_named_span<ice::Tile>(layer.name, layer.tile_count);
                     layer_render_info.tiles = layer_tiles[idx];
                     layer_render_info.visible = true;
                 }
@@ -52,7 +53,7 @@ namespace ice
                     ice::TileLayer const& layer = tilemap.layers[idx];
                     ice::Tile const* tiles = tilemap.tiles + layer.tile_offset;
 
-                    ice::memcpy(layer_tiles[idx].data(), tiles, layer.tile_count * sizeof(ice::Tile));
+                    ice::memcpy(ice::begin(layer_tiles[idx]), tiles, layer.tile_count * sizeof(ice::Tile));
                 }
             }
         }
@@ -70,7 +71,7 @@ namespace ice
     }
 
     void IceWorldTrait_TileMap::load_tilemap(
-        ice::Utf8String tilemap
+        ice::String tilemap
     ) noexcept
     {
         IPT_ZONE_SCOPED_NAMED("[Trait] TileMap :: Load Tilemap");
@@ -79,7 +80,7 @@ namespace ice
     }
 
     auto IceWorldTrait_TileMap::load_tilemap_task(
-        ice::Utf8String tilemap_name,
+        ice::String tilemap_name,
         ice::EngineRunner& runner
     ) noexcept -> ice::Task<>
     {
@@ -95,9 +96,7 @@ namespace ice
 
         ice::TileMap const* tilemap_ptr = reinterpret_cast<ice::TileMap const*>(result.data.location);
         ice::TileMapInstance tilemap_info{ .tilemap = tilemap_ptr };
-        tilemap_info.physics_ids = reinterpret_cast<ice::PhysicsID*>(
-            _allocator.allocate(sizeof(ice::PhysicsID) * tilemap_ptr->map_collision_count)
-        );
+        tilemap_info.physics_ids = _allocator.allocate<ice::PhysicsID>(tilemap_ptr->map_collision_count);
 
         co_await runner.schedule_next_frame();
 
@@ -143,7 +142,7 @@ namespace ice
             }
         }
 
-        ice::pod::array::push_back(_tilemaps, tilemap_info);
+        ice::array::push_back(_tilemaps, tilemap_info);
 
         ICE_ASSERT((physics_ids - tilemap_info.physics_ids) <= tilemap.map_collision_count, "Invalid number of collision objects created!");
     }
@@ -166,10 +165,16 @@ namespace ice
 
         for (ice::TileMapInstance const& instance : _tilemaps)
         {
-            _allocator.deallocate(instance.physics_ids);
+            _allocator.deallocate(
+                {
+                    .location = instance.physics_ids,
+                    .size = ice::size_of<PhysicsID> * instance.tilemap->map_collision_count,
+                    .alignment = align_of<PhysicsID>
+                }
+            );
         }
 
-        ice::pod::array::clear(_tilemaps);
+        ice::array::clear(_tilemaps);
     }
 
     void IceWorldTrait_TileMap::on_update(
@@ -180,17 +185,17 @@ namespace ice
     {
         IPT_ZONE_SCOPED_NAMED("[Trait] TileMap :: Update");
 
-        std::u8string_view const* name;
+        ice::String const* name;
         if (ice::shards::inspect_first(runner.previous_frame().shards(), ice::Shard_LoadTileMap, name))
         {
             portal.execute(load_tilemap_task(*name, runner));
         }
 
-        if (ice::pod::array::any(_tilemaps))
+        if (ice::array::any(_tilemaps))
         {
             ice::TileMapInstance& tilemap_info = _tilemaps[0];
 
-            ice::IceTileMap_RenderInfo* render_info = frame.create_named_object<ice::IceTileMap_RenderInfo>("tilemap.render-info"_sid);
+            ice::IceTileMap_RenderInfo* render_info = frame.storage().create_named_object<ice::IceTileMap_RenderInfo>("tilemap.render-info"_sid);
             render_info->tilemap = tilemap_info.tilemap;
             render_info->tilesize = tilemap_info.tilemap->tile_size;
 
@@ -210,7 +215,7 @@ namespace ice
         ice::WorldTrait_Physics2D* phx_trait = static_cast<ice::WorldTrait_Physics2D*>(
             trait_tracker.find_trait(ice::Constant_TraitName_PhysicsBox2D)
         );
-        return alloc.make<IceWorldTrait_TileMap>(alloc, *phx_trait);
+        return alloc.create<IceWorldTrait_TileMap>(alloc, *phx_trait);
     }
 
     void register_trait_tilemap(ice::WorldTraitArchive& archive) noexcept

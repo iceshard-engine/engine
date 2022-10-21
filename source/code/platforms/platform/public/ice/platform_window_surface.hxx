@@ -1,8 +1,8 @@
 #pragma once
-#include <ice/unique_ptr.hxx>
-#include <ice/math/vector.hxx>
+#include <ice/mem_unique_ptr.hxx>
 #include <ice/render/render_driver.hxx>
 #include <ice/render/render_surface.hxx>
+#include <ice/math.hxx>
 
 namespace ice::platform
 {

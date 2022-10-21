@@ -14,10 +14,10 @@ namespace ice::ui
         ice::u16 const index = info.size_i & 0x0fff;
 
         ICE_ASSERT(
-            index < ice::size(uidata.sizes),
+            index < ice::count(uidata.sizes),
             "Trying to read 'size' value for element index outside of the given data. [ idx:{} | range:0 .. {}]",
             info.size_i,
-            ice::size(uidata.sizes)
+            ice::count(uidata.sizes)
         );
 
         out_size = uidata.sizes[index];
@@ -32,10 +32,10 @@ namespace ice::ui
         ice::u16 const index = info.pos_i & 0x0fff;
 
         ICE_ASSERT(
-            index < ice::size(uidata.positions),
+            index < ice::count(uidata.positions),
             "Trying to read 'position' value for element index outside of the given data. [ idx:{} | range:0 .. {}]",
             info.pos_i,
-            ice::size(uidata.positions)
+            ice::count(uidata.positions)
         );
 
         out_position = uidata.positions[index];
@@ -50,10 +50,10 @@ namespace ice::ui
         ice::u16 const index = info.mar_i & 0x0fff;
 
         ICE_ASSERT(
-            index < ice::size(uidata.margins),
+            index < ice::count(uidata.margins),
             "Trying to read 'margin' value for element index outside of the given data. [ idx:{} | range:0 .. {}]",
             info.mar_i,
-            ice::size(uidata.margins)
+            ice::count(uidata.margins)
         );
 
         out_rect_offset = uidata.margins[index];
@@ -68,10 +68,10 @@ namespace ice::ui
         ice::u16 const index = info.mar_i & 0x0fff;
 
         ICE_ASSERT(
-            index < ice::size(uidata.paddings),
+            index < ice::count(uidata.paddings),
             "Trying to read 'padding' value for element index outside of the given data. [ idx:{} | range:0 .. {}]",
             info.pad_i,
-            ice::size(uidata.paddings)
+            ice::count(uidata.paddings)
         );
 
         out_rect_offset = uidata.paddings[index];

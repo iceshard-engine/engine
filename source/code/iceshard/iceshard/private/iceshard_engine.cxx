@@ -5,8 +5,8 @@
 #include <ice/engine_runner.hxx>
 #include <ice/engine_frame.hxx>
 
-#include <ice/memory/proxy_allocator.hxx>
-#include <ice/memory/scratch_allocator.hxx>
+#include <ice/mem_allocator_proxy.hxx>
+#include <ice/mem_allocator_ring.hxx>
 
 #include <ice/module.hxx>
 #include <ice/log_module.hxx>
@@ -50,7 +50,7 @@ namespace ice
         ice::UniquePtr<ice::gfx::GfxRunner> graphics_runner
     ) noexcept -> ice::UniquePtr<ice::EngineRunner>
     {
-        return ice::make_unique<EngineRunner, IceshardEngineRunner>(
+        return ice::make_unique<IceshardEngineRunner>(
             _allocator,
             _allocator,
             *this,
@@ -80,7 +80,7 @@ namespace ice
 
         if (gfx_device != nullptr)
         {
-            return ice::make_unique<ice::gfx::GfxRunner, ice::gfx::IceGfxRunner>(
+            return ice::make_unique<ice::gfx::IceGfxRunner>(
                 _allocator,
                 _allocator,
                 ice::move(gfx_device),
@@ -89,7 +89,7 @@ namespace ice
         }
         else
         {
-            return ice::make_unique_null<ice::gfx::GfxRunner>();
+            return {};
         }
     }
 
@@ -133,11 +133,12 @@ namespace ice
         ice::EngineCreateInfo const& create_info
     ) noexcept -> ice::Engine*
     {
-        return alloc.make<IceshardEngine>(alloc, create_info);
+        return alloc.create<IceshardEngine>(alloc, create_info);
     }
 
-    auto destroy_engine_fn(ice::Allocator& alloc, ice::Engine* engine) noexcept
+    auto destroy_engine_fn(ice::Engine* engine) noexcept
     {
+        ice::Allocator& alloc = static_cast<IceshardEngine*>(engine)->backing_allocator();
         alloc.destroy(engine);
     }
 

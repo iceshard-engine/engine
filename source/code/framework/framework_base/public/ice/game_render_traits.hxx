@@ -1,6 +1,6 @@
 #pragma once
 #include <ice/stringid.hxx>
-#include <ice/unique_ptr.hxx>
+#include <ice/mem_unique_ptr.hxx>
 #include <ice/world/world_trait.hxx>
 #include <ice/gfx/gfx_stage.hxx>
 #include <ice/gfx/gfx_trait.hxx>
@@ -72,8 +72,8 @@ namespace ice
     struct DrawTextCommand
     {
         ice::vec2u position;
-        ice::Utf8String text;
-        ice::Utf8String font;
+        ice::String text;
+        ice::String font;
         ice::u32 font_size = 16;
     };
 
@@ -93,7 +93,7 @@ namespace ice
 } // namespace ice
 
 template<>
-constexpr ice::PayloadID ice::detail::Constant_ShardPayloadID<ice::DebugDrawCommandList const*> = ice::payload_id("ice::DebugDrawCommandList const*");
+constexpr ice::ShardPayloadID ice::Constant_ShardPayloadID<ice::DebugDrawCommandList const*> = ice::shard_payloadid("ice::DebugDrawCommandList const*");
 
 template<>
-constexpr ice::PayloadID ice::detail::Constant_ShardPayloadID<ice::DrawTextCommand const*> = ice::payload_id("ice::DrawTextCommand const*");
+constexpr ice::ShardPayloadID ice::Constant_ShardPayloadID<ice::DrawTextCommand const*> = ice::shard_payloadid("ice::DrawTextCommand const*");

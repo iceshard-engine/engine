@@ -1,7 +1,7 @@
 #include <ice/resource_provider.hxx>
-#include <ice/memory/stack_allocator.hxx>
-#include <ice/pod/hash.hxx>
-#include <ice/heap_string.hxx>
+#include <ice/mem_allocator_stack.hxx>
+#include <ice/container/hashmap.hxx>
+#include <ice/string/heap_string.hxx>
 
 #include "resource_dll_win32.hxx"
 #include "resource_utils_win32.hxx"
@@ -16,16 +16,16 @@ namespace ice
     public:
         ResourceProvider_Win32Dlls(
             ice::Allocator& alloc,
-            ice::Utf8String path
+            ice::String path
         ) noexcept
             : _allocator{ alloc }
             , _base_path{ _allocator }
             , _resources{ _allocator }
         {
-            ice::utf8_to_wide_append(path, _base_path);
+            ice::win32::utf8_to_wide_append(path, _base_path);
 
             ice::u32 at = ice::string::find_first_of(_base_path, L'\\');
-            while (at != ice::string_npos)
+            while (at != ice::String_NPos)
             {
                 _base_path[at] = L'/';
                 at = ice::string::find_first_of(_base_path, L'\\');
@@ -34,15 +34,15 @@ namespace ice
 
         ~ResourceProvider_Win32Dlls() noexcept override
         {
-            for (auto const& res_entry : _resources)
+            for (Resource_v2* res_entry : _resources)
             {
-                _allocator.destroy(res_entry.value);
+                _allocator.destroy(res_entry);
             }
         }
 
         auto schemeid() const noexcept -> ice::StringID override
         {
-            return ice::scheme_dynlib;
+            return ice::Scheme_Dynlib;
         }
 
         template<typename Fn>
@@ -55,7 +55,7 @@ namespace ice
 
                 WIN32_FIND_DATA file_data;
                 HANDLE const handle = FindFirstFileW(
-                    ice::string::data(directory_path),
+                    ice::string::begin(directory_path),
                     &file_data
                 );
 
@@ -66,7 +66,8 @@ namespace ice
 
                     do
                     {
-                        ice::WString const file_name = file_data.cFileName;
+                        // TODO: Decide how to work with string static arrays.
+                        ice::WString const file_name = (ice::wchar const*)file_data.cFileName;
 
                         if (file_data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
                         {
@@ -75,7 +76,7 @@ namespace ice
                                 continue;
                             }
 
-                            ice::path::join(directory_path, file_name);
+                            ice::path::win32::join(directory_path, file_name);
                             ice::string::push_back(directory_path, L'/');
                             traverse_directory(directory_path, callback);
                             ice::string::resize(directory_path, directory_path_size);
@@ -90,7 +91,7 @@ namespace ice
 
             WIN32_FIND_DATA file_data;
             HANDLE const handle = FindFirstFileW(
-                ice::string::data(directory_path),
+                ice::string::begin(directory_path),
                 &file_data
             );
 
@@ -101,11 +102,12 @@ namespace ice
 
                 do
                 {
-                    ice::WString const file_name = file_data.cFileName;
+                    // TODO: Decide how to work with string static arrays.
+                    ice::WString const file_name = (ice::wchar const*)file_data.cFileName;
 
                     if ((file_data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0)
                     {
-                        ice::path::join(directory_path, file_name);
+                        ice::path::win32::join(directory_path, file_name);
                         callback(directory_path);
                         ice::string::resize(directory_path, directory_path_size);
                     }
@@ -117,17 +119,17 @@ namespace ice
         // GitHub Issue: #108
         void ISATTR_NOINLINE initial_traverse() noexcept
         {
-            ice::HeapString<wchar_t> dir_tracker = _base_path;
-            ice::path::join(dir_tracker, L"."); // Ensure we end with a '/' character
+            ice::HeapString<ice::wchar> dir_tracker = _base_path;
+            ice::path::win32::join(dir_tracker, L"."); // Ensure we end with a '/' character
 
             // An allocator for temporary paths, 1024 bytes should suffice for 2x256 wchar_t long paths
-            ice::memory::StackAllocator_1024 temp_path_alloc;
+            ice::StackAllocator_1024 temp_path_alloc;
 
             auto fncb = [&](ice::WString file) noexcept
             {
-                temp_path_alloc.clear();
+                temp_path_alloc.reset();
 
-                ice::HeapString<wchar_t> file_path{ temp_path_alloc, file };
+                ice::HeapString<ice::wchar> file_path{ temp_path_alloc, file };
                 ice::Resource_v2* const resource = create_resource_from_dll_path(
                     _allocator,
                     file_path
@@ -135,7 +137,7 @@ namespace ice
 
                 if (resource != nullptr)
                 {
-                    ice::pod::hash::set(
+                    ice::hashmap::set(
                         _resources,
                         ice::hash(resource->name()),
                         resource
@@ -147,19 +149,19 @@ namespace ice
         }
 
         auto query_resources(
-            ice::pod::Array<ice::Resource_v2 const*>& out_changes
+            ice::Array<ice::Resource_v2 const*>& out_changes
         ) const noexcept -> ice::u32 override
         {
-            for (auto const& entry : _resources)
+            for (Resource_v2 const* entry : _resources)
             {
-                ice::pod::array::push_back(out_changes, entry.value);
+                ice::array::push_back(out_changes, entry);
             }
             return 0;
         }
 
         auto refresh() noexcept -> ice::Task<ice::ResourceProviderResult> override
         {
-            if (ice::pod::hash::empty(_resources))
+            if (ice::hashmap::empty(_resources))
             {
                 initial_traverse();
             }
@@ -188,17 +190,17 @@ namespace ice
 
     private:
         ice::Allocator& _allocator;
-        ice::HeapString<wchar_t> _base_path;
+        ice::HeapString<ice::wchar> _base_path;
 
-        ice::pod::Hash<ice::Resource_v2*> _resources;
+        ice::HashMap<ice::Resource_v2*> _resources;
     };
 
     auto create_resource_provider_dlls(
         ice::Allocator& alloc,
-        ice::Utf8String path
+        ice::String path
     ) noexcept -> ice::UniquePtr<ice::ResourceProvider>
     {
-        return ice::make_unique<ice::ResourceProvider, ice::ResourceProvider_Win32Dlls>(alloc, alloc, path);
+        return ice::make_unique<ice::ResourceProvider_Win32Dlls>(alloc, alloc, path);
     }
 
 } // namespace ice

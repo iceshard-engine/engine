@@ -82,8 +82,8 @@ namespace ice::devui
         ice::render::Shader _shaders[2];
         ice::Data _shader_data[2];
 
-        ice::pod::Array<ice::render::Buffer> _index_buffers;
-        ice::pod::Array<ice::render::Buffer> _vertex_buffers;
+        ice::Array<ice::render::Buffer> _index_buffers;
+        ice::Array<ice::render::Buffer> _vertex_buffers;
     };
 
 } // namespace ice::devui

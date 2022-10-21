@@ -84,12 +84,12 @@ namespace ice
         , _thread_pool{ ice::create_simple_threadpool(_allocator, 6) }
         , _frame_allocator{ _allocator, "frame-allocator" }
         , _frame_data_allocator{
-            ice::memory::ScratchAllocator{ _frame_allocator, detail::FrameAllocatorCapacity, "frame-alloc-1" },
-            ice::memory::ScratchAllocator{ _frame_allocator, detail::FrameAllocatorCapacity, "frame-alloc-2" }
+            ice::RingAllocator{ _frame_allocator, "frame-alloc-1", { detail::FrameAllocatorCapacity } },
+            ice::RingAllocator{ _frame_allocator, "frame-alloc-2", { detail::FrameAllocatorCapacity } }
         }
         , _next_free_allocator{ 0 }
-        , _previous_frame{ ice::make_unique_null<ice::IceshardMemoryFrame>() }
-        , _current_frame{ ice::make_unique_null<ice::IceshardMemoryFrame>() }
+        , _previous_frame{  }
+        , _current_frame{ }
         , _world_manager{ world_manager }
         , _world_tracker{ _allocator }
         , _input_tracker{ ice::move(input_tracker) }
@@ -114,7 +114,7 @@ namespace ice
         _world_tracker.set_managed_world(_gfx_world);
         _gfx_world->activate(_engine, *this);
 
-        ice::pod::array::reserve(_runner_tasks, 10);
+        ice::array::reserve(_runner_tasks, 10);
     }
 
     IceshardEngineRunner::~IceshardEngineRunner() noexcept
@@ -127,7 +127,7 @@ namespace ice
 
         _mre_frame_logic.wait();
 
-        set_graphics_runner(ice::make_unique_null<ice::gfx::GfxRunner>());
+        set_graphics_runner({ });
 
         deactivate_worlds();
 
@@ -146,18 +146,13 @@ namespace ice
         return _engine.entity_index();
     }
 
-    auto IceshardEngineRunner::platform_events() noexcept -> ice::Span<ice::platform::Event const>
-    {
-        return _events;
-    }
-
     auto IceshardEngineRunner::input_tracker() noexcept -> ice::input::InputTracker&
     {
         return *_input_tracker;
     }
 
     void IceshardEngineRunner::process_device_queue(
-        ice::input::DeviceQueue const& device_queue
+        ice::input::DeviceEventQueue const& device_queue
     ) noexcept
     {
         _input_tracker->process_device_queue(device_queue, _current_frame->input_events());
@@ -223,18 +218,10 @@ namespace ice
         IPT_FRAME_MARK;
         IPT_ZONE_SCOPED_NAMED("Logic Frame");
 
-        for (ice::platform::Event const& ev : _events)
+        // Wait for graphics to finish before changing framebuffers
+        if (ice::shards::contains(_current_frame->shards(), ice::platform::Shard_WindowResized))
         {
-            if (ev.type == ice::platform::EventType::WindowSizeChanged)
-            {
-                // Force wait for the graphics frame to finish!
-                _mre_graphics_frame.wait();
-
-                ice::shards::push_back(
-                    _current_frame->shards(),
-                    ice::platform::Shard_WindowSizeChanged | ev.data.window.size
-                );
-            }
+            _mre_graphics_frame.wait();
         }
 
         // Handle requests for the next frame
@@ -242,9 +229,9 @@ namespace ice
         {
             ice::World* world;
 
-            switch (shard.name)
+            switch (shard.id.name.value)
             {
-            case ice::Shard_WorldActivate.name:
+            case ice::Shard_WorldActivate.id.name.value:
             {
                 if (ice::shard_inspect(shard, world))
                 {
@@ -252,7 +239,7 @@ namespace ice
                 }
                 break;
             }
-            case ice::Shard_WorldDeactivate.name:
+            case ice::Shard_WorldDeactivate.id.name.value:
             {
                 if (ice::shard_inspect(shard, world))
                 {
@@ -346,14 +333,13 @@ namespace ice
         _current_frame->wait_ready();
     }
 
-    void IceshardEngineRunner::next_frame(
-        ice::Span<ice::platform::Event const> events
-    ) noexcept
+    void IceshardEngineRunner::next_frame(ice::ShardContainer const& shards) noexcept
     {
         IPT_ZONE_SCOPED_NAMED("Runner - Next Frame");
         _mre_frame_logic.reset();
 
-        _events = events;
+        ice::shards::push_back(_current_frame->shards(), shards._data);
+
         ice::sync_manual_wait(logic_frame_task(), _mre_frame_logic);
         _mre_frame_logic.wait();
 
@@ -370,9 +356,7 @@ namespace ice
 
         _gfx_runner->draw_frame(*_previous_frame);
 
-        [[maybe_unused]]
-        bool const discarded_memory = _frame_data_allocator[_next_free_allocator].reset_and_discard();
-        ICE_ASSERT(discarded_memory == false, "Memory was discarded during frame allocator reset!");
+        _frame_data_allocator[_next_free_allocator].reset();
 
         ice::clock::update(_clock);
 
@@ -383,7 +367,7 @@ namespace ice
 
         // We need to update the allocator index
         _next_free_allocator += 1;
-        _next_free_allocator %= ice::size(_frame_data_allocator);
+        _next_free_allocator %= ice::count(_frame_data_allocator);
 
         remove_finished_tasks();
     }
@@ -422,14 +406,14 @@ namespace ice
         {
         case ice::EngineContext::EngineRunner:
         {
-            ice::ManualResetEvent* wait_event = _allocator.make<ManualResetEvent>();
+            ice::ManualResetEvent* wait_event = _allocator.create<ManualResetEvent>();
             detail::RunnerTask trait_task = [](ice::Task<void> task, ice::ManualResetEvent* event) noexcept -> detail::RunnerTask
             {
                 co_await task;
                 event->set();
             }(ice::move(task), wait_event);
 
-            ice::pod::array::push_back(
+            ice::array::push_back(
                 _runner_tasks,
                 TraitTask{
                     .event = wait_event,
@@ -449,7 +433,7 @@ namespace ice
 
     void IceshardEngineRunner::remove_finished_tasks() noexcept
     {
-        ice::pod::Array<TraitTask> running_tasks{ _allocator };
+        ice::Array<TraitTask> running_tasks{ _allocator };
 
         for (TraitTask const& trait_task : _runner_tasks)
         {
@@ -460,7 +444,7 @@ namespace ice
             }
             else
             {
-                ice::pod::array::push_back(running_tasks, trait_task);
+                ice::array::push_back(running_tasks, trait_task);
             }
         }
 
@@ -519,17 +503,17 @@ namespace ice
 
     void IceshardEngineRunner::activate_worlds() noexcept
     {
-        for (auto const& entry : _world_manager.worlds())
+        for (IceshardWorld* world : _world_manager.worlds())
         {
-            _world_tracker.activate_world(_engine, *this, entry.value);
+            _world_tracker.activate_world(_engine, *this, world);
         }
     }
 
     void IceshardEngineRunner::deactivate_worlds() noexcept
     {
-        for (auto const& entry : _world_manager.worlds())
+        for (IceshardWorld* world : _world_manager.worlds())
         {
-            _world_tracker.deactivate_world(_engine, *this, entry.value);
+            _world_tracker.deactivate_world(_engine, *this, world);
         }
     }
 

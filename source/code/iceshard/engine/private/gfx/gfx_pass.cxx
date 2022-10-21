@@ -24,14 +24,14 @@ namespace ice::gfx
         ice::gfx::GfxPassInfo const& pass_description
     ) noexcept -> ice::UniquePtr<ice::gfx::GfxPass>
     {
-        return ice::make_unique_null<ice::gfx::GfxPass>();
+        return { };
     }
 
     auto create_dynamic_pass(
         ice::Allocator& allocator
     ) noexcept -> ice::UniquePtr<ice::gfx::GfxDynamicPass>
     {
-        return ice::make_unique<ice::gfx::GfxDynamicPass, ice::gfx::IceGfxDynamicPass>(allocator, allocator);
+        return ice::make_unique<ice::gfx::IceGfxDynamicPass>(allocator, allocator);
     }
 
 } // namespace ice::gfx

@@ -26,7 +26,7 @@ namespace ice
         ice::WorldPortal& portal
     ) noexcept
     {
-        frame.create_named_object<ice::render::Renderpass>("ice.gfx.renderpass"_sid, _default_renderpass);
+        frame.storage().create_named_object<ice::render::Renderpass>("ice.gfx.renderpass"_sid, _default_renderpass);
     }
 
     void IceWorldTrait_RenderGfx::gfx_setup(
@@ -213,7 +213,7 @@ namespace ice
         ice::gfx::GfxDevice& gfx_device
     ) noexcept
     {
-        if (ice::shards::contains(engine_frame.shards(), ice::platform::Shard_WindowSizeChanged))
+        if (ice::shards::contains(engine_frame.shards(), ice::platform::Shard_WindowResized))
         {
             gfx_device.recreate_swapchain();
 

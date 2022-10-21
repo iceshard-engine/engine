@@ -1,6 +1,5 @@
 #include "mesh_loader.hxx"
 #include <ice/gfx/gfx_model.hxx>
-#include <ice/memory/pointer_arithmetic.hxx>
 
 namespace ice
 {

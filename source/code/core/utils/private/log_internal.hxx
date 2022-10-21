@@ -1,6 +1,6 @@
 #pragma once
-#include <ice/map.hxx>
-#include <ice/heap_string.hxx>
+#include <ice/string_types.hxx>
+#include <ice/container_types.hxx>
 #include <ice/log_tag.hxx>
 #include <ice/log_severity.hxx>
 #include <ice/log.hxx>
@@ -26,7 +26,7 @@ namespace ice::detail
         ice::Allocator& _allocator;
 
         ice::HeapString<> _empty_tag;
-        ice::Map<ice::LogTag, ice::HeapString<>> _tags;
+        ice::HashMap<ice::HeapString<>, ice::ContainerLogic::Complex> _tags;
     };
 
     extern LogState* internal_log_state;
@@ -75,6 +75,14 @@ namespace ice::detail
 
     extern AssertFn* assert_fn;
 
-    auto make_string(char const* begin, char const* end) noexcept -> ice::String;
+    constexpr auto fmt_string(char const* begin, char const* end) noexcept -> fmt::string_view
+    {
+        return fmt::string_view{ begin, static_cast<ice::u64>(end - begin) };
+    }
+
+    constexpr auto fmt_string(ice::String str) noexcept -> fmt::string_view
+    {
+        return fmt_string(str._data, str._data + str._size);
+    }
 
 } // namespace ice::detail

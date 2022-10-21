@@ -27,14 +27,16 @@ namespace ice::devui
             ice::devui::DevUIExecutionKey execution_key
         ) noexcept override;
 
+        auto allocator() noexcept -> ice::Allocator& { return _allocator; }
+
     private:
         ice::Allocator& _allocator;
         ice::devui::DevUIExecutionKey _execution_key;
         ice::devui::ImGuiTrait* _render_trait;
         ice::devui::ImGui_AllocatorTreeWidget* _widget_alloc_tree;
 
-        ice::pod::Array<ice::devui::DevUIWidget*> _widgets;
-        ice::pod::Array<ice::devui::DevUIWidget*> _inactive_widgets;
+        ice::Array<ice::devui::DevUIWidget*> _widgets;
+        ice::Array<ice::devui::DevUIWidget*> _inactive_widgets;
     };
 
 } // namespace ice::devui

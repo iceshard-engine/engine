@@ -1,6 +1,6 @@
 #include "iceshard_world_tracker.hxx"
 #include <ice/world/world_trait.hxx>
-#include <ice/pod/hash.hxx>
+#include <ice/container/hashmap.hxx>
 
 namespace ice
 {
@@ -9,7 +9,7 @@ namespace ice
         : _allocator{ alloc }
         , _worlds{ _allocator }
     {
-        ice::pod::hash::reserve(_worlds, 20);
+        ice::hashmap::reserve(_worlds, 20);
     }
 
     IceshardWorldTracker::~IceshardWorldTracker() noexcept
@@ -20,14 +20,14 @@ namespace ice
         ice::IceshardWorld* world
     ) noexcept
     {
-        Entry entry = ice::pod::hash::get(
+        Entry entry = ice::hashmap::get(
             _worlds,
             ice::hash_from_ptr(world),
             Entry{ .world = world, .current_state = WorldState::Managed }
         );
 
         entry.current_state = WorldState::Managed;
-        ice::pod::hash::set(_worlds, ice::hash_from_ptr(world), entry);
+        ice::hashmap::set(_worlds, ice::hash_from_ptr(world), entry);
 
         world->set_state(entry.current_state);
     }
@@ -36,7 +36,7 @@ namespace ice
         ice::IceshardWorld* world
     ) noexcept
     {
-        Entry entry = ice::pod::hash::get(
+        Entry entry = ice::hashmap::get(
             _worlds,
             ice::hash_from_ptr(world),
             Entry{ .world = world, .current_state = WorldState::Idle }
@@ -44,7 +44,7 @@ namespace ice
 
         if (entry.current_state == WorldState::Managed)
         {
-            ice::pod::hash::remove(_worlds, ice::hash_from_ptr(world));
+            ice::hashmap::remove(_worlds, ice::hash_from_ptr(world));
 
             world->set_state(WorldState::Idle);
         }
@@ -56,7 +56,7 @@ namespace ice
         ice::IceshardWorld* world
     ) noexcept
     {
-        Entry entry = ice::pod::hash::get(
+        Entry entry = ice::hashmap::get(
             _worlds,
             ice::hash_from_ptr(world),
             Entry{ .world = world, .current_state = WorldState::Idle }
@@ -69,7 +69,7 @@ namespace ice
             world->set_state(entry.current_state);
         }
 
-        ice::pod::hash::set(_worlds, ice::hash_from_ptr(world), entry);
+        ice::hashmap::set(_worlds, ice::hash_from_ptr(world), entry);
     }
 
     void IceshardWorldTracker::deactivate_world(
@@ -78,7 +78,7 @@ namespace ice
         ice::IceshardWorld* world
     ) noexcept
     {
-        Entry entry = ice::pod::hash::get(
+        Entry entry = ice::hashmap::get(
             _worlds,
             ice::hash_from_ptr(world),
             Entry{ .world = world, .current_state = WorldState::Idle }
@@ -87,7 +87,7 @@ namespace ice
         if (entry.current_state == WorldState::Active)
         {
             entry.world->deactivate(engine, runner);
-            ice::pod::hash::remove(_worlds, ice::hash_from_ptr(world));
+            ice::hashmap::remove(_worlds, ice::hash_from_ptr(world));
             world->set_state(WorldState::Idle);
         }
     }
@@ -96,11 +96,11 @@ namespace ice
         ice::EngineRunner& runner
     ) noexcept
     {
-        for (auto const& entry : _worlds)
+        for (Entry const& entry : _worlds)
         {
-            if (entry.value.current_state == WorldState::Active)
+            if (entry.current_state == WorldState::Active)
             {
-                entry.value.world->update(runner);
+                entry.world->update(runner);
             }
         }
     }

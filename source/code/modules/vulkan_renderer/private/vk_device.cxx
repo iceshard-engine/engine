@@ -8,7 +8,6 @@
 #include "vk_fence.hxx"
 
 #include <ice/assert.hxx>
-#include <ice/memory/pointer_arithmetic.hxx>
 
 namespace ice::render::vk
 {
@@ -30,7 +29,7 @@ namespace ice::render::vk
         VkPhysicalDeviceMemoryProperties const& memory_properties
     ) noexcept
         : _allocator{ alloc }
-        , _gfx_thread_alloc{ _allocator, 1024 * 1024 * 2 }
+        , _gfx_thread_alloc{ _allocator, { 2_MiB } }
         , _vk_device{ vk_device }
         , _vk_physical_device{ vk_physical_device }
         , _vk_memory_manager{ ice::make_unique<VulkanMemoryManager>(_allocator, _allocator, _vk_device, memory_properties) }
@@ -54,7 +53,7 @@ namespace ice::render::vk
         VkDescriptorPoolCreateInfo pool_info{ VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO };
         pool_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
         pool_info.maxSets = 1000;
-        pool_info.poolSizeCount = ice::size(pool_sizes);
+        pool_info.poolSizeCount = ice::count(pool_sizes);
         pool_info.pPoolSizes = pool_sizes;
 
         VkResult result = vkCreateDescriptorPool(
@@ -88,7 +87,7 @@ namespace ice::render::vk
         ICE_ASSERT(surface != nullptr, "Cannot create swapchain for nullptr surface!");
         VulkanRenderSurface const* const vk_surface = static_cast<VulkanRenderSurface*>(surface);
 
-        ice::pod::Array<VkSurfaceFormatKHR> surface_formats{ _allocator };
+        ice::Array<VkSurfaceFormatKHR> surface_formats{ _allocator };
         ice::render::vk::enumerate_objects(
             surface_formats,
             vkGetPhysicalDeviceSurfaceFormatsKHR,
@@ -97,7 +96,7 @@ namespace ice::render::vk
         );
 
         ICE_ASSERT(
-            ice::pod::array::empty(surface_formats) == false,
+            ice::array::empty(surface_formats) == false,
             "No supported image formats found for given surface!"
         );
 
@@ -113,7 +112,7 @@ namespace ice::render::vk
             "Failed to query surface capabilities!"
         );
 
-        VkSurfaceFormatKHR surface_format = ice::pod::array::front(surface_formats);
+        VkSurfaceFormatKHR surface_format = ice::array::front(surface_formats);
 
         VkSwapchainCreateInfoKHR swapchain_info{ VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR };
         swapchain_info.surface = vk_surface->handle();
@@ -123,7 +122,7 @@ namespace ice::render::vk
         swapchain_info.imageArrayLayers = 1;
         swapchain_info.oldSwapchain = VK_NULL_HANDLE;
         swapchain_info.clipped = false; // Clipped for android only?
-        swapchain_info.presentMode = VK_PRESENT_MODE_FIFO_KHR;// VK_PRESENT_MODE_MAILBOX_KHR;
+        swapchain_info.presentMode = VK_PRESENT_MODE_FIFO_KHR; // VK_PRESENT_MODE_MAILBOX_KHR;
         swapchain_info.imageColorSpace = surface_format.colorSpace;
         swapchain_info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
         swapchain_info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
@@ -140,7 +139,7 @@ namespace ice::render::vk
         }
 
         // Find a supported composite alpha mode - one of these is guaranteed to be set
-        VkCompositeAlphaFlagBitsKHR composite_alpha = VkCompositeAlphaFlagBitsKHR::VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+        //VkCompositeAlphaFlagBitsKHR composite_alpha = VkCompositeAlphaFlagBitsKHR::VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
         VkCompositeAlphaFlagBitsKHR composite_alpha_flags[4] = {
             VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR,
             VK_COMPOSITE_ALPHA_PRE_MULTIPLIED_BIT_KHR,
@@ -180,7 +179,7 @@ namespace ice::render::vk
             "Couldn't create swapchain!"
         );
 
-        return _allocator.make<VulkanSwapchain>(
+        return _allocator.create<VulkanSwapchain>(
             vk_swapchain,
             surface_format.format,
             swapchain_info.imageExtent,
@@ -195,16 +194,16 @@ namespace ice::render::vk
 
     auto VulkanRenderDevice::create_renderpass(ice::render::RenderpassInfo const& info) noexcept -> ice::render::Renderpass
     {
-        ice::pod::Array<VkAttachmentDescription> attachments{ _allocator };
-        ice::pod::array::reserve(attachments, static_cast<ice::u32>(info.attachments.size()));
+        ice::Array<VkAttachmentDescription> attachments{ _allocator };
+        ice::array::reserve(attachments, ice::count(info.attachments));
 
-        ice::pod::Array<VkSubpassDescription> subpass_list{ _allocator };
-        ice::pod::array::reserve(subpass_list, static_cast<ice::u32>(info.subpasses.size()));
+        ice::Array<VkSubpassDescription> subpass_list{ _allocator };
+        ice::array::reserve(subpass_list, ice::count(info.subpasses));
 
-        ice::pod::Array<VkSubpassDependency> dependencies { _allocator };
-        ice::pod::array::reserve(dependencies, static_cast<ice::u32>(info.dependencies.size()));
+        ice::Array<VkSubpassDependency> dependencies { _allocator };
+        ice::array::reserve(dependencies, ice::count(info.dependencies));
 
-        ice::pod::Array<VkAttachmentReference> attachment_references{ _allocator };
+        ice::Array<VkAttachmentReference> attachment_references{ _allocator };
 
 
         for (RenderAttachment const& attachment_info : info.attachments)
@@ -228,29 +227,29 @@ namespace ice::render::vk
             attachment.initialLayout = native_enum_value(attachment_info.initial_layout);;
             attachment.finalLayout = native_enum_value(attachment_info.final_layout);
 
-            ice::pod::array::push_back(attachments, attachment);
+            ice::array::push_back(attachments, attachment);
         }
 
         ice::u64 reference_count = 0;
         for (RenderSubPass const& subpass_info : info.subpasses)
         {
-            reference_count += subpass_info.color_attachments.size()
-                + subpass_info.input_attachments.size()
+            reference_count += ice::count(subpass_info.color_attachments)
+                + ice::count(subpass_info.input_attachments)
                 + 1;
 
         }
-        ice::pod::array::reserve(attachment_references, static_cast<ice::u32>(reference_count));
+        ice::array::reserve(attachment_references, static_cast<ice::u32>(reference_count));
 
         auto store_references = [&attachment_references](ice::Span<AttachmentReference const> references) noexcept -> ice::u32
         {
-            ice::u32 ref_index = ice::pod::array::size(attachment_references);
+            ice::u32 ref_index = ice::count(attachment_references);
             for (AttachmentReference const& attachment_ref : references)
             {
                 VkAttachmentReference reference{ }; // VK_STRUCTURE_TYPE_ATTACHMENT_REFERENCE_2 };
                 reference.attachment = attachment_ref.attachment_index;
                 reference.layout = native_enum_value(attachment_ref.layout);
 
-                ice::pod::array::push_back(attachment_references, reference);
+                ice::array::push_back(attachment_references, reference);
             }
             return ref_index;
         };
@@ -262,12 +261,12 @@ namespace ice::render::vk
 
             VkSubpassDescription subpass{ }; // VK_STRUCTURE_TYPE_SUBPASS_DESCRIPTION_2 };
             subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-            subpass.inputAttachmentCount = static_cast<ice::u32>(subpass_info.input_attachments.size());
+            subpass.inputAttachmentCount = ice::count(subpass_info.input_attachments);
             if (subpass.inputAttachmentCount > 0)
             {
                 subpass.pInputAttachments = std::addressof(attachment_references[input_ref_idx]);
             }
-            subpass.colorAttachmentCount = static_cast<ice::u32>(subpass_info.color_attachments.size());
+            subpass.colorAttachmentCount = ice::count(subpass_info.color_attachments);
             if (subpass.colorAttachmentCount > 0)
             {
                 subpass.pColorAttachments = std::addressof(attachment_references[color_ref_idx]);
@@ -278,7 +277,7 @@ namespace ice::render::vk
                 subpass.pDepthStencilAttachment = std::addressof(attachment_references[depth_ref_idx]);
             }
 
-            ice::pod::array::push_back(subpass_list, subpass);
+            ice::array::push_back(subpass_list, subpass);
         }
 
         for (SubpassDependency const& dependency_info : info.dependencies)
@@ -292,16 +291,16 @@ namespace ice::render::vk
             dependency.dstAccessMask = native_enum_value(dependency_info.destination_access);
             dependency.dependencyFlags = VkDependencyFlagBits::VK_DEPENDENCY_BY_REGION_BIT;
 
-            ice::pod::array::push_back(dependencies, dependency);
+            ice::array::push_back(dependencies, dependency);
         }
 
         VkRenderPassCreateInfo renderpass_info{ VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO };
-        renderpass_info.attachmentCount = ice::pod::array::size(attachments);
-        renderpass_info.pAttachments = ice::pod::array::begin(attachments);
-        renderpass_info.subpassCount = ice::pod::array::size(subpass_list);
-        renderpass_info.pSubpasses = ice::pod::array::begin(subpass_list);
-        renderpass_info.dependencyCount = ice::pod::array::size(dependencies);
-        renderpass_info.pDependencies = ice::pod::array::begin(dependencies);
+        renderpass_info.attachmentCount = ice::array::count(attachments);
+        renderpass_info.pAttachments = ice::array::begin(attachments);
+        renderpass_info.subpassCount = ice::array::count(subpass_list);
+        renderpass_info.pSubpasses = ice::array::begin(subpass_list);
+        renderpass_info.dependencyCount = ice::array::count(dependencies);
+        renderpass_info.pDependencies = ice::array::begin(dependencies);
 
         VkRenderPass renderpass;
         VkResult result = vkCreateRenderPass(_vk_device, &renderpass_info, nullptr, &renderpass);
@@ -326,12 +325,12 @@ namespace ice::render::vk
         ice::Span<ice::render::ResourceSetLayoutBinding const> bindings
     ) noexcept -> ice::render::ResourceSetLayout
     {
-        ice::pod::Array<VkDescriptorSetLayoutBinding> vk_bindings{ _allocator };
-        ice::pod::array::reserve(vk_bindings, ice::size(bindings));
+        ice::Array<VkDescriptorSetLayoutBinding> vk_bindings{ _allocator };
+        ice::array::reserve(vk_bindings, ice::count(bindings));
 
         for (ResourceSetLayoutBinding const& binding : bindings)
         {
-            ice::pod::array::push_back(
+            ice::array::push_back(
                 vk_bindings,
                 VkDescriptorSetLayoutBinding{
                     .binding = binding.binding_index,
@@ -344,8 +343,8 @@ namespace ice::render::vk
         }
 
         VkDescriptorSetLayoutCreateInfo layout_info{ VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO };
-        layout_info.bindingCount = ice::size(bindings);
-        layout_info.pBindings = ice::pod::begin(vk_bindings);
+        layout_info.bindingCount = ice::count(bindings);
+        layout_info.pBindings = ice::begin(vk_bindings);
 
         VkDescriptorSetLayout vk_descriptor_set_layout = vk_nullptr;
         VkResult result = vkCreateDescriptorSetLayout(
@@ -386,26 +385,26 @@ namespace ice::render::vk
         );
 
         ICE_ASSERT(
-            ice::size(resource_set_layouts) == ice::size(resource_sets_out),
+            ice::count(resource_set_layouts) == ice::count(resource_sets_out),
             "The output span size does not match the size of provided layouts span."
         );
 
-        //ice::pod::array::resize(resource_sets_out, ice::size(resource_set_layouts));
+        //ice::array::resize(resource_sets_out, ice::size(resource_set_layouts));
 
         VkDescriptorSetAllocateInfo descriptorset_info{ VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO };
         descriptorset_info.descriptorPool = _vk_descriptor_pool;
-        descriptorset_info.descriptorSetCount = ice::size(resource_set_layouts);
-        descriptorset_info.pSetLayouts = reinterpret_cast<VkDescriptorSetLayout const*>(resource_set_layouts.data());
+        descriptorset_info.descriptorSetCount = ice::count(resource_set_layouts);
+        descriptorset_info.pSetLayouts = reinterpret_cast<VkDescriptorSetLayout const*>(&resource_set_layouts[0]);
 
         VkResult result = vkAllocateDescriptorSets(
             _vk_device,
             &descriptorset_info,
-            reinterpret_cast<VkDescriptorSet*>(resource_sets_out.data())
+            reinterpret_cast<VkDescriptorSet*>(&resource_sets_out[0])
         );
         ICE_ASSERT(
             result == VkResult::VK_SUCCESS,
             "Couldn't allocate new {} descriptor sets.",
-            ice::size(resource_set_layouts)
+            ice::count(resource_set_layouts)
         );
         return true;
     }
@@ -417,13 +416,13 @@ namespace ice::render::vk
         VkResult result = vkFreeDescriptorSets(
             _vk_device,
             _vk_descriptor_pool,
-            ice::size(resource_sets),
-            reinterpret_cast<VkDescriptorSet const*>(resource_sets.data())
+            ice::count(resource_sets),
+            reinterpret_cast<VkDescriptorSet const*>(&resource_sets[0])
         );
         ICE_ASSERT(
             result == VkResult::VK_SUCCESS,
             "Failed to free given {} descriptor sets.",
-            ice::size(resource_sets)
+            ice::count(resource_sets)
         );
     }
 
@@ -431,11 +430,11 @@ namespace ice::render::vk
         ice::Span<ice::render::ResourceSetUpdateInfo const> update_infos
     ) noexcept
     {
-        ice::pod::Array<VkWriteDescriptorSet> vk_writes{ _allocator };
-        ice::pod::array::reserve(vk_writes, ice::size(update_infos));
+        ice::Array<VkWriteDescriptorSet> vk_writes{ _allocator };
+        ice::array::reserve(vk_writes, ice::count(update_infos));
 
-        ice::pod::Array<VkDescriptorImageInfo> write_image_info{ _allocator };
-        ice::pod::Array<VkDescriptorBufferInfo> write_buffer_info{ _allocator };
+        ice::Array<VkDescriptorImageInfo> write_image_info{ _allocator };
+        ice::Array<VkDescriptorBufferInfo> write_buffer_info{ _allocator };
 
         for (ResourceSetUpdateInfo const& update_info : update_infos)
         {
@@ -443,12 +442,12 @@ namespace ice::render::vk
             descriptor_set_write.dstBinding = update_info.binding_index;
             descriptor_set_write.dstArrayElement = update_info.array_element;
             descriptor_set_write.dstSet = native_handle(update_info.resource_set);
-            descriptor_set_write.descriptorCount = ice::size(update_info.resources);
+            descriptor_set_write.descriptorCount = ice::count(update_info.resources);
             descriptor_set_write.descriptorType = native_enum_value(update_info.resource_type);
 
             if (update_info.resource_type == ResourceType::SampledImage || update_info.resource_type == ResourceType::InputAttachment)
             {
-                ice::u32 const image_info_index = ice::pod::array::size(write_image_info);
+                ice::u32 const image_info_index = ice::array::count(write_image_info);
 
                 for (ResourceUpdateInfo const& resource_info : update_info.resources)
                 {
@@ -461,7 +460,7 @@ namespace ice::render::vk
                     image_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
                     image_info.imageView = image_ptr->vk_image_view;
 
-                    ice::pod::array::push_back(write_image_info, image_info);
+                    ice::array::push_back(write_image_info, image_info);
                 }
 
                 descriptor_set_write.pImageInfo = ice::addressof(write_image_info[image_info_index]);
@@ -469,7 +468,7 @@ namespace ice::render::vk
 
             if (update_info.resource_type == ResourceType::Sampler)
             {
-                ice::u32 const image_info_index = ice::pod::array::size(write_image_info);
+                ice::u32 const image_info_index = ice::array::count(write_image_info);
 
                 for (ResourceUpdateInfo const& resource_info : update_info.resources)
                 {
@@ -478,7 +477,7 @@ namespace ice::render::vk
                     VkDescriptorImageInfo sampler_info;
                     sampler_info.sampler = vk_sampler;
 
-                    ice::pod::array::push_back(write_image_info, sampler_info);
+                    ice::array::push_back(write_image_info, sampler_info);
                 }
 
                 descriptor_set_write.pImageInfo = ice::addressof(write_image_info[image_info_index]);
@@ -486,7 +485,7 @@ namespace ice::render::vk
 
             if (update_info.resource_type == ResourceType::UniformBuffer)
             {
-                ice::u32 const buffer_info_index = ice::pod::array::size(write_buffer_info);
+                ice::u32 const buffer_info_index = ice::array::count(write_buffer_info);
 
                 for (ResourceUpdateInfo const& resource_info : update_info.resources)
                 {
@@ -499,19 +498,19 @@ namespace ice::render::vk
                     buffer_info.offset = resource_info.uniform_buffer.offset;
                     buffer_info.range = resource_info.uniform_buffer.size;
 
-                    ice::pod::array::push_back(write_buffer_info, buffer_info);
+                    ice::array::push_back(write_buffer_info, buffer_info);
                 }
 
                 descriptor_set_write.pBufferInfo = ice::addressof(write_buffer_info[buffer_info_index]);
             }
 
-            ice::pod::array::push_back(vk_writes, descriptor_set_write);
+            ice::array::push_back(vk_writes, descriptor_set_write);
         }
 
         vkUpdateDescriptorSets(
             _vk_device,
-            ice::size(vk_writes),
-            ice::pod::begin(vk_writes),
+            ice::count(vk_writes),
+            ice::begin(vk_writes),
             0, nullptr
         );
     }
@@ -520,15 +519,15 @@ namespace ice::render::vk
         ice::render::PipelineLayoutInfo const& info
     ) noexcept -> ice::render::PipelineLayout
     {
-        ice::pod::Array<VkPushConstantRange> vk_push_constants{ _allocator };
-        ice::pod::array::reserve(vk_push_constants, ice::size(info.push_constants));
+        ice::Array<VkPushConstantRange> vk_push_constants{ _allocator };
+        ice::array::reserve(vk_push_constants, ice::count(info.push_constants));
 
-        ice::pod::Array<VkDescriptorSetLayout> vk_descriptorset_layouts{ _allocator };
-        ice::pod::array::reserve(vk_descriptorset_layouts, ice::size(info.resource_layouts));
+        ice::Array<VkDescriptorSetLayout> vk_descriptorset_layouts{ _allocator };
+        ice::array::reserve(vk_descriptorset_layouts, ice::count(info.resource_layouts));
 
         for (PipelinePushConstant const& push_constant : info.push_constants)
         {
-            ice::pod::array::push_back(
+            ice::array::push_back(
                 vk_push_constants,
                 VkPushConstantRange{
                     .stageFlags = native_enum_flags(push_constant.shader_stage_flags),
@@ -540,17 +539,17 @@ namespace ice::render::vk
 
         for (ResourceSetLayout layout : info.resource_layouts)
         {
-            ice::pod::array::push_back(
+            ice::array::push_back(
                 vk_descriptorset_layouts,
                 native_handle(layout)
             );
         }
 
         VkPipelineLayoutCreateInfo pipeline_info{ VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO };
-        pipeline_info.pushConstantRangeCount = ice::size(info.push_constants);
-        pipeline_info.pPushConstantRanges = ice::pod::begin(vk_push_constants);
-        pipeline_info.setLayoutCount = ice::size(info.resource_layouts);
-        pipeline_info.pSetLayouts = ice::pod::begin(vk_descriptorset_layouts);
+        pipeline_info.pushConstantRangeCount = ice::count(info.push_constants);
+        pipeline_info.pPushConstantRanges = ice::begin(vk_push_constants);
+        pipeline_info.setLayoutCount = ice::count(info.resource_layouts);
+        pipeline_info.pSetLayouts = ice::begin(vk_descriptorset_layouts);
 
         VkPipelineLayout pipeline_layout = vk_nullptr;
         VkResult result = vkCreatePipelineLayout(
@@ -583,7 +582,7 @@ namespace ice::render::vk
     ) noexcept -> ice::render::Shader
     {
         VkShaderModuleCreateInfo shader_info{ VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO };
-        shader_info.codeSize = info.shader_data.size;
+        shader_info.codeSize = info.shader_data.size.value;
         shader_info.pCode = reinterpret_cast<ice::u32 const*>(info.shader_data.location);
 
         VkShaderModule vk_shader;
@@ -617,7 +616,7 @@ namespace ice::render::vk
     ) noexcept -> ice::render::Pipeline
     {
         VkPipelineShaderStageCreateInfo shader_stages[10];
-        ice::u32 const stage_count = ice::size(info.shaders_stages);
+        ice::u32 const stage_count = ice::count(info.shaders_stages);
 
         uint32_t stage_idx = 0;
         for (; stage_idx < stage_count; ++stage_idx)
@@ -638,13 +637,13 @@ namespace ice::render::vk
 
         VkPipelineDynamicStateCreateInfo dynamic_state{ VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO };
         dynamic_state.pDynamicStates = dynamic_states;
-        dynamic_state.dynamicStateCount = ice::size(dynamic_states);
+        dynamic_state.dynamicStateCount = ice::count(dynamic_states);
 
-        ice::pod::Array<VkVertexInputBindingDescription> vertex_input_bindings{ _allocator };
-        ice::pod::Array<VkVertexInputAttributeDescription> vertex_input_attributes{ _allocator };
+        ice::Array<VkVertexInputBindingDescription> vertex_input_bindings{ _allocator };
+        ice::Array<VkVertexInputAttributeDescription> vertex_input_attributes{ _allocator };
 
-        ice::pod::array::reserve(vertex_input_bindings, ice::size(info.shader_bindings));
-        ice::pod::array::reserve(vertex_input_attributes, ice::size(info.shader_bindings) * 4);
+        ice::array::reserve(vertex_input_bindings, ice::count(info.shader_bindings));
+        ice::array::reserve(vertex_input_attributes, ice::count(info.shader_bindings) * 4);
 
         for (ice::render::ShaderInputBinding const& binding : info.shader_bindings)
         {
@@ -652,7 +651,7 @@ namespace ice::render::vk
             vk_binding.binding = binding.binding;
             vk_binding.stride = binding.stride;
             vk_binding.inputRate = static_cast<VkVertexInputRate>(binding.instanced);
-            ice::pod::array::push_back(vertex_input_bindings, vk_binding);
+            ice::array::push_back(vertex_input_bindings, vk_binding);
 
             for (ice::render::ShaderInputAttribute const& attrib : binding.attributes)
             {
@@ -661,15 +660,15 @@ namespace ice::render::vk
                 vk_attrib.location = attrib.location;
                 vk_attrib.offset = attrib.offset;
                 vk_attrib.binding = binding.binding;
-                ice::pod::array::push_back(vertex_input_attributes, vk_attrib);
+                ice::array::push_back(vertex_input_attributes, vk_attrib);
             }
         }
 
         VkPipelineVertexInputStateCreateInfo vertex_input{ VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO };
-        vertex_input.vertexBindingDescriptionCount = ice::pod::array::size(vertex_input_bindings);
-        vertex_input.pVertexBindingDescriptions = ice::pod::array::begin(vertex_input_bindings);
-        vertex_input.vertexAttributeDescriptionCount = ice::pod::array::size(vertex_input_attributes);
-        vertex_input.pVertexAttributeDescriptions = ice::pod::array::begin(vertex_input_attributes);
+        vertex_input.vertexBindingDescriptionCount = ice::array::count(vertex_input_bindings);
+        vertex_input.pVertexBindingDescriptions = ice::array::begin(vertex_input_bindings);
+        vertex_input.vertexAttributeDescriptionCount = ice::array::count(vertex_input_attributes);
+        vertex_input.pVertexAttributeDescriptions = ice::array::begin(vertex_input_attributes);
 
         VkPipelineInputAssemblyStateCreateInfo input_assembly{ VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO };
         input_assembly.primitiveRestartEnable = VK_FALSE;
@@ -682,7 +681,7 @@ namespace ice::render::vk
         case CullMode::Disabled:
             rasterization.cullMode = VK_CULL_MODE_NONE;
             // [issue #34] Needs to be properly available in the creation API.
-            if (ice::size(info.shaders_stages) == 5)
+            if (ice::count(info.shaders_stages) == 5)
             {
                 rasterization.polygonMode = VK_POLYGON_MODE_LINE;
             }
@@ -824,6 +823,8 @@ namespace ice::render::vk
         buffer_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
         VkBuffer vk_buffer = vk_nullptr;
+
+        [[maybe_unused]]
         VkResult result = vkCreateBuffer(
             _vk_device,
             &buffer_info,
@@ -839,7 +840,7 @@ namespace ice::render::vk
             memory_info
         );
 
-        VulkanBuffer* buffer_ptr = _allocator.make<VulkanBuffer>(vk_buffer, memory_handle);
+        VulkanBuffer* buffer_ptr = _allocator.create<VulkanBuffer>(vk_buffer, memory_handle);
         return static_cast<Buffer>(reinterpret_cast<ice::uptr>(buffer_ptr));
     }
 
@@ -861,18 +862,18 @@ namespace ice::render::vk
         ice::Span<ice::render::BufferUpdateInfo const> update_infos
     ) noexcept
     {
-        ice::u32 const update_count = ice::size(update_infos);
+        ice::u32 const update_count = ice::count(update_infos);
 
         // [issue #49]: This part of the code is generally run on a graphics thread. Because of this we need to have a dedicated memory pool / allocator. So it won't interfer with
         //  other allocations done in the mean time on any other thrads.
         //  We should probably slowly invest some time into thread safe allocators.
-        ice::pod::Array<AllocationHandle> allocation_handles{ _gfx_thread_alloc };
-        ice::pod::array::reserve(allocation_handles, update_count);
+        ice::Array<AllocationHandle> allocation_handles{ _gfx_thread_alloc };
+        ice::array::reserve(allocation_handles, update_count);
 
         for (BufferUpdateInfo const& update_info : update_infos)
         {
             VulkanBuffer* const buffer_ptr = reinterpret_cast<VulkanBuffer*>(static_cast<ice::uptr>(update_info.buffer));
-            ice::pod::array::push_back(
+            ice::array::push_back(
                 allocation_handles,
                 buffer_ptr->vk_alloc_handle
             );
@@ -881,8 +882,8 @@ namespace ice::render::vk
         // [issue #49]: This part of the code is generally run on a graphics thread. Because of this we need to have a dedicated memory pool / allocator. So it won't interfer with
         //  other allocations done in the mean time on any other thrads.
         //  We should probably slowly invest some time into thread safe allocators.
-        ice::pod::Array<ice::Memory> data_blocks{ _gfx_thread_alloc };
-        ice::pod::array::resize(data_blocks, update_count);
+        ice::Array<ice::Memory> data_blocks{ _gfx_thread_alloc };
+        ice::array::resize(data_blocks, update_count);
 
         _vk_memory_manager->map_memory(
             allocation_handles,
@@ -900,7 +901,7 @@ namespace ice::render::vk
             );
 
             ice::memcpy(
-                ice::memory::ptr_add(target.location, update_info.offset),
+                ice::ptr_add(target.location, { update_info.offset }),
                 update_info.data.location,
                 update_info.data.size
             );
@@ -919,19 +920,19 @@ namespace ice::render::vk
     {
         VkRenderPass vk_renderpass = reinterpret_cast<VkRenderPass>(static_cast<ice::uptr>(renderpass));
 
-        ice::pod::Array<VkImageView> vk_images{ _allocator };
-        ice::pod::array::reserve(vk_images, static_cast<ice::u32>(images.size()));
+        ice::Array<VkImageView> vk_images{ _allocator };
+        ice::array::reserve(vk_images, ice::count(images));
 
         for (Image image : images)
         {
             VulkanImage* const image_ptr = reinterpret_cast<VulkanImage*>(static_cast<ice::uptr>(image));
-            ice::pod::array::push_back(vk_images, image_ptr->vk_image_view);
+            ice::array::push_back(vk_images, image_ptr->vk_image_view);
         }
 
         VkFramebufferCreateInfo fb_info{ VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO };
         fb_info.renderPass = vk_renderpass;
-        fb_info.attachmentCount = ice::pod::array::size(vk_images);
-        fb_info.pAttachments = ice::pod::array::begin(vk_images);
+        fb_info.attachmentCount = ice::array::count(vk_images);
+        fb_info.pAttachments = ice::array::begin(vk_images);
         fb_info.width = extent.x;
         fb_info.height = extent.y;
         fb_info.layers = 1;
@@ -1028,7 +1029,7 @@ namespace ice::render::vk
             "Coudln't create image view!"
         );
 
-        VulkanImage* const image_ptr = _allocator.make<VulkanImage>(vk_image, vk_image_view, memory_handle);
+        VulkanImage* const image_ptr = _allocator.create<VulkanImage>(vk_image, vk_image_view, memory_handle);
         return static_cast<Image>(reinterpret_cast<ice::uptr>(image_ptr));
     }
 
@@ -1052,8 +1053,8 @@ namespace ice::render::vk
         VkQueue queue = vk_nullptr;
         vkGetDeviceQueue(_vk_device, queue_family_index, queue_index, &queue);
 
-        ice::pod::Array<VkCommandPool> cmd_pools{ _allocator };
-        ice::pod::array::reserve(cmd_pools, command_pools);
+        ice::Array<VkCommandPool> cmd_pools{ _allocator };
+        ice::array::reserve(cmd_pools, command_pools);
 
         for (ice::u32 idx = 0; idx < command_pools; ++idx)
         {
@@ -1068,10 +1069,10 @@ namespace ice::render::vk
                 "Failed to create command pool for device!"
             );
 
-            ice::pod::array::push_back(cmd_pools, vk_cmd_pool);
+            ice::array::push_back(cmd_pools, vk_cmd_pool);
         }
 
-        return _allocator.make<VulkanQueue>(queue, _vk_device, ice::move(cmd_pools));
+        return _allocator.create<VulkanQueue>(queue, _vk_device, ice::move(cmd_pools));
     }
 
     void VulkanRenderDevice::destroy_queue(ice::render::RenderQueue* queue) const noexcept
@@ -1090,7 +1091,7 @@ namespace ice::render::vk
             "Failed to create fence for device!"
         );
 
-        return _allocator.make<VulkanFence>(_vk_device, fence);
+        return _allocator.create<VulkanFence>(_vk_device, fence);
     }
 
     void VulkanRenderDevice::destroy_fence(ice::render::RenderFence* fence) noexcept
@@ -1631,7 +1632,7 @@ namespace ice::render::vk
             native_handle(pipeline),
             native_enum_flags(shader_stages),
             offset,
-            data.size,
+            ice::u32(data.size.value),
             data.location
         );
     }

@@ -39,6 +39,7 @@
 #include <ice/resource.hxx>
 #include <ice/assert.hxx>
 #include <ice/shard.hxx>
+#include <ice/shard_payloads.hxx>
 
 #include <ice/ui_asset.hxx>
 #include <ice/ui_resource.hxx>
@@ -55,7 +56,7 @@ MyGame::MyGame(ice::Allocator& alloc, ice::Clock const& clock) noexcept
     , _current_engine{ nullptr }
     , _ecs_archetypes{ _allocator }
     , _ecs_block_pool{ _allocator }
-    , _ecs_storage{ ice::make_unique_null<ice::ecs::EntityStorage>() }
+    , _ecs_storage{ }
     , _game_gfx_pass{ ice::gfx::create_dynamic_pass(_allocator) }
     , _test_world{ nullptr }
 {
@@ -121,10 +122,10 @@ void MyGame::on_load_modules(ice::GameServices& sercies) noexcept
     ice::ModuleRegister& mod = sercies.module_registry();
     ice::ResourceTracker& res = sercies.resource_system();
 
-    ice::ResourceHandle* const pipelines_module = res.find_resource(u8"urn:iceshard_pipelines.dll"_uri);
-    ice::ResourceHandle* const engine_module = res.find_resource(u8"urn:iceshard.dll"_uri);
-    ice::ResourceHandle* const vulkan_module = res.find_resource(u8"urn:vulkan_renderer.dll"_uri);
-    ice::ResourceHandle* const imgui_module = res.find_resource(u8"urn:imgui_module.dll"_uri);
+    ice::ResourceHandle* const pipelines_module = res.find_resource("urn:iceshard_pipelines.dll"_uri);
+    ice::ResourceHandle* const engine_module = res.find_resource("urn:iceshard.dll"_uri);
+    ice::ResourceHandle* const vulkan_module = res.find_resource("urn:vulkan_renderer.dll"_uri);
+    ice::ResourceHandle* const imgui_module = res.find_resource("urn:imgui_module.dll"_uri);
 
     ICE_ASSERT(pipelines_module != nullptr, "Missing `iceshard_pipelines.dll` module!");
     ICE_ASSERT(engine_module != nullptr, "Missing `iceshard.dll` module!");
@@ -174,7 +175,7 @@ void MyGame::on_app_startup(ice::Engine& engine) noexcept
                 entity_storage.execute_operations(entity_operations, shards);
                 entity_operations.clear();
 
-                ice::ecs::queue_remove_entity(entity_operations, ice::shard_shatter<ice::ecs::EntityHandle>(shards._data[3]));
+                ice::ecs::queue_remove_entity(entity_operations, ice::shard_shatter<ice::ecs::EntityHandle>(shards._data[3], ice::ecs::EntityHandle::Invalid));
                 ice::ecs::queue_set_archetype(entity_operations, entities[3], a1);
                 entity_storage.execute_operations(entity_operations, shards);
             }
@@ -225,7 +226,7 @@ void MyGame::on_app_startup(ice::Engine& engine) noexcept
 
     ice::WorldTemplate const world_template{
         .name = "game.test_world"_sid,
-        .traits = ice::make_span(world_traits),
+        .traits = ice::Span{ world_traits },
         .entity_storage = _ecs_storage.get(),
     };
 
@@ -365,13 +366,13 @@ void MyGame::on_game_begin(ice::EngineRunner& runner) noexcept
         ice::Transform2DDynamic{ .position = { 48.f * 2, 448.f, -1.f }, .scale = { 1.f, 0.f } },
         ice::PhysicsBody{ .shape = ice::PhysicsShape::Capsule, .dimensions = { 16.f, 32.f }, .trait_data = nullptr },
         ice::PhysicsVelocity{ .velocity = { 0.1f, 0.f } },
-        ice::Sprite{ .material = u8"cotm/cotm_hero" },
+        ice::Sprite{ .material = "cotm/cotm_hero" },
         ice::SpriteTile{ .material_tile = { 0, 0 } }
     );
 
-    std::u8string_view const* tilemap_asset = runner.current_frame().create_named_object<std::u8string_view>(
+    ice::String const* tilemap_asset = runner.current_frame().storage().create_named_object<ice::String>(
         "tilemap_asset_name"_sid,
-        u8"cotm/test_level_2/tiled/0002_Level_1"
+        "cotm/test_level_2/tiled/0002_Level_1"
     );
 
     ice::Shard shards[]{
@@ -394,32 +395,32 @@ void MyGame::on_update(ice::EngineFrame& frame, ice::EngineRunner& runner, ice::
 
     runner.graphics_frame().enqueue_pass("default"_sid, "game.render"_sid, _game_gfx_pass.get());
 
-    static constexpr ice::Utf8String temp_ui_ids[]{
-        u8"text_start",
-        u8"text_settings",
-        u8"text_credits",
-        u8"text_exit",
+    static constexpr ice::String temp_ui_ids[]{
+        "text_start",
+        "text_settings",
+        "text_credits",
+        "text_exit",
     };
-    static constexpr ice::Utf8String temp_ui_strings[]{
-        u8"Start",
-        u8"Settings",
-        u8"Credits",
-        u8"Exit",
+    static constexpr ice::String temp_ui_strings[]{
+        "Start",
+        "Settings",
+        "Credits",
+        "Exit",
     };
 
-    ice::shards::inspect_each<ice::c8utf const*>(
+    ice::shards::inspect_each<char const*>(
         runner.previous_frame().shards(),
         ice::Shard_GameUI_Loaded,
-        [&frame, this](ice::c8utf const* page_name) noexcept
+        [&frame, this](char const* page_name) noexcept
         {
-            for (ice::u32 idx = 0; idx < ice::size(temp_ui_strings); ++idx)
+            for (ice::u32 idx = 0; idx < ice::count(temp_ui_strings); ++idx)
             {
-                ice::Utf8String* str = frame.create_named_object<ice::Utf8String>(ice::stringid(temp_ui_strings[idx]), temp_ui_strings[idx]);
-                ice::UpdateUIResource* ures = frame.create_named_object<ice::UpdateUIResource>(ice::stringid(temp_ui_ids[idx]));
+                ice::String* str = frame.storage().create_named_object<ice::String>(ice::stringid(temp_ui_strings[idx]), temp_ui_strings[idx]);
+                ice::UpdateUIResource* ures = frame.storage().create_named_object<ice::UpdateUIResource>(ice::stringid(temp_ui_ids[idx]));
                 ures->page = page_name;
                 ures->resource_data = ice::to_const(str);
                 ures->resource = ice::stringid(temp_ui_ids[idx]);
-                ures->resource_type = ice::ui::ResourceType::Utf8String;
+                ures->resource_type = ice::ui::ResourceType::String;
                 ice::shards::push_back(frame.shards(), ice::Shard_GameUI_UpdateResource | ice::to_const(ures));
             }
             _menu = page_name;
@@ -429,7 +430,7 @@ void MyGame::on_update(ice::EngineFrame& frame, ice::EngineRunner& runner, ice::
     if (frame.index() == 2)
     {
         ice::shards::push_back(frame.shards(),
-            ice::Shard_GameUI_Load | u8"ui/test"
+            ice::Shard_GameUI_Load | "ui/test"
         );
     }
 
@@ -483,7 +484,14 @@ void MyGame::on_update(ice::EngineFrame& frame, ice::EngineRunner& runner, ice::
         }
     }
 
-    ice::Shard const player_entity_created = ice::shards::find_last_of(frame.shards(), ice::ecs::Shard_EntityCreated);
+    ice::ecs::EntityHandle eh;
+    ice::Shard const player_entity_created = ice::shards::find_first_of(runner.previous_frame().shards(), ice::ecs::Shard_EntityCreated);
+
+    if (ice::shard_inspect(player_entity_created, eh))
+    {
+        ICE_ASSERT(ice::ecs::entity_handle_info(eh).entity == ice::ecs::Entity{}, "{}", eh);
+        ICE_LOG(ice::LogSeverity::Debug, ice::LogTag::Game, "{}", eh);
+    }
 
     if (player_entity_created != ice::Shard_Invalid)
     {

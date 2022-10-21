@@ -15,8 +15,8 @@ namespace ice
     {
     public:
         Resource_DllsWin32(
-            ice::HeapString<char8_t> origin_path,
-            ice::Utf8String origin_name
+            ice::HeapString<> origin_path,
+            ice::String origin_name
         ) noexcept;
 
         ~Resource_DllsWin32() noexcept override = default;
@@ -24,14 +24,14 @@ namespace ice
         auto uri() const noexcept -> ice::URI const& override;
         auto flags() const noexcept -> ice::ResourceFlags override;
 
-        auto name() const noexcept -> ice::Utf8String override;
-        auto origin() const noexcept -> ice::Utf8String override;
+        auto name() const noexcept -> ice::String override;
+        auto origin() const noexcept -> ice::String override;
 
         auto metadata() const noexcept -> ice::Metadata const& override;
 
     private:
-        ice::HeapString<char8_t> _origin_path;
-        ice::Utf8String _origin_name;
+        ice::HeapString<> _origin_path;
+        ice::String _origin_name;
 
         ice::URI _uri;
     };

@@ -1,5 +1,5 @@
 #pragma once
-#include <ice/pod/array.hxx>
+#include <ice/container/array.hxx>
 #include <ice/gfx/gfx_pass.hxx>
 
 namespace ice::gfx
@@ -27,7 +27,7 @@ namespace ice::gfx
         void clear() noexcept;
 
         void query_stage_order(
-            ice::pod::Array<ice::StringID_Hash>& stage_order_out
+            ice::Array<ice::StringID_Hash>& stage_order_out
         ) const noexcept;
 
     private:
@@ -40,8 +40,8 @@ namespace ice::gfx
             ice::u32 dependency_count = 0;
         };
 
-        ice::pod::Array<Entry> _entries;
-        ice::pod::Array<ice::StringID> _dependencies;
+        ice::Array<Entry> _entries;
+        ice::Array<ice::StringID> _dependencies;
     };
 
     class IceGfxDynamicPass final : public GfxDynamicPass
@@ -63,12 +63,12 @@ namespace ice::gfx
 
         void clear() noexcept override;
 
-        void query_stage_order(ice::pod::Array<ice::StringID_Hash>& stage_order_out) const noexcept;
+        void query_stage_order(ice::Array<ice::StringID_Hash>& stage_order_out) const noexcept;
 
     private:
         ice::Allocator& _allocator;
-        ice::pod::Array<ice::gfx::GfxDynamicPassStageGroup*> _stages;
-        ice::pod::Array<ice::gfx::GfxDynamicPassStageGroup*> _free_stages;
+        ice::Array<ice::gfx::GfxDynamicPassStageGroup*> _stages;
+        ice::Array<ice::gfx::GfxDynamicPassStageGroup*> _free_stages;
     };
 
 } // namespace ice::gfx

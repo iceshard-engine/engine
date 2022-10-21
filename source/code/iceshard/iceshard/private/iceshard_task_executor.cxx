@@ -1,17 +1,17 @@
 #include "iceshard_task_executor.hxx"
-#include <ice/memory/pointer_arithmetic.hxx>
 #include <ice/task_sync_wait.hxx>
 #include <ice/sync_manual_events.hxx>
+#include <ice/container/array.hxx>
 
 namespace ice
 {
 
     IceshardTaskExecutor::IceshardTaskExecutor(
         ice::Allocator& alloc,
-        ice::Vector<ice::Task<void>> tasks
+        IceshardTaskExecutor::TaskList tasks
     ) noexcept
         : _allocator{ alloc }
-        , _task_count{ static_cast<ice::u32>(tasks.size()) }
+        , _task_count{ ice::count(tasks) }
         , _tasks{ ice::move(tasks) }
         , _reset_events_memory{ nullptr }
         , _reset_events{ nullptr }
@@ -22,11 +22,10 @@ namespace ice
             //  any object containing a std::atomic<T> member.
             //  This issue exists for both the standard vector version and the Iceshard version, `ice::Vector`.
             //  Because of this we allocate enough memory, constructor and pass the needed array of ManualResetEvents manualy.
-            _reset_events_memory = _allocator.allocate(_task_count * sizeof(ManualResetEvent) + 8);
-            void* aligned_ptr = ice::memory::ptr_align_forward(_reset_events_memory, alignof(ManualResetEvent));
+            _reset_events_memory = _allocator.allocate(ice::meminfo_of<ManualResetEvent> * _task_count);
 
             // Call for each event the default constructor.
-            _reset_events = reinterpret_cast<ManualResetEvent*>(aligned_ptr);
+            _reset_events = reinterpret_cast<ManualResetEvent*>(_reset_events_memory.location);
             for (ice::u32 idx = 0; idx < _task_count; ++idx)
             {
                 new (reinterpret_cast<void*>(_reset_events + idx)) ManualResetEvent{ };
@@ -38,7 +37,7 @@ namespace ice
         : _allocator{ other._allocator }
         , _task_count{ other._task_count }
         , _tasks{ ice::move(other._tasks) }
-        , _reset_events_memory{ ice::exchange(other._reset_events_memory, nullptr) }
+        , _reset_events_memory{ ice::exchange(other._reset_events_memory, { }) }
         , _reset_events{ ice::exchange(other._reset_events, nullptr) }
     {
     }
@@ -46,14 +45,14 @@ namespace ice
     auto IceshardTaskExecutor::operator=(IceshardTaskExecutor&& other) noexcept -> IceshardTaskExecutor&
     {
         ICE_ASSERT(
-            _allocator == other._allocator,
+            &_allocator == &other._allocator,
             "Allocator mismatch!"
         );
 
         _task_count = other._task_count;
         _tasks = ice::move(other._tasks);
 
-        if (_reset_events_memory != nullptr)
+        if (_reset_events_memory.location != nullptr)
         {
             wait_ready();
 
@@ -67,14 +66,14 @@ namespace ice
             _allocator.deallocate(_reset_events_memory);
         }
 
-        _reset_events_memory = ice::exchange(other._reset_events_memory, nullptr);
+        _reset_events_memory = ice::exchange(other._reset_events_memory, { });
         _reset_events = ice::exchange(other._reset_events, nullptr);
         return *this;
     }
 
     IceshardTaskExecutor::~IceshardTaskExecutor() noexcept
     {
-        if (_reset_events_memory != nullptr)
+        if (_reset_events_memory.location != nullptr)
         {
             wait_ready();
 
@@ -101,23 +100,14 @@ namespace ice
 
     void IceshardTaskExecutor::wait_ready() noexcept
     {
-        if (_tasks.empty() == false)
+        if (ice::array::any(_tasks))
         {
             for (ice::u32 idx = 0; idx < _task_count; ++idx)
             {
                 _reset_events[idx].wait();
             }
 
-            // [issue #35] Wait for all frame tasks to finish.
-            //  Currently the `sync_wait_all` calls the .wait() method on all events.
-            //  We should probably re-think the whole API.
-            //ice::sync_wait_all(
-            //    _allocator,
-            //    _tasks,
-            //    { _reset_events, _task_count }
-            //);
-
-            _tasks.clear();
+            ice::array::clear(_tasks);
         }
     }
 

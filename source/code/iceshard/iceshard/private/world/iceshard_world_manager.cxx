@@ -1,6 +1,6 @@
 #include "iceshard_world_manager.hxx"
 #include <ice/world/world_trait.hxx>
-#include <ice/pod/hash.hxx>
+#include <ice/container/hashmap.hxx>
 #include <ice/assert.hxx>
 
 namespace ice
@@ -37,9 +37,9 @@ namespace ice
 
     IceshardWorldManager::~IceshardWorldManager() noexcept
     {
-        for (auto const& entry : _worlds)
+        for (IceshardWorld* world : _worlds)
         {
-            _allocator.destroy(entry.value);
+            _allocator.destroy(world);
         }
     }
 
@@ -48,7 +48,7 @@ namespace ice
         ice::WorldTemplate const& world_template
     ) const noexcept -> ice::World*
     {
-        ice::IceshardWorld* world = alloc.make<ice::IceshardWorld>(alloc, world_template.entity_storage);
+        ice::IceshardWorld* world = alloc.create<ice::IceshardWorld>(alloc, world_template.entity_storage);
         ice::TemporaryWorldTraitTracker const trait_tracker{ *world };
 
         for (ice::StringID_Arg trait_name : world_template.traits)
@@ -72,7 +72,7 @@ namespace ice
     {
         ice::u64 const name_hash = ice::hash(world_template.name);
         ICE_ASSERT(
-            ice::pod::hash::has(_worlds, name_hash) == false,
+            ice::hashmap::has(_worlds, name_hash) == false,
             "A World with name {} already exists!",
             ice::stringid_hint(world_template.name)
         );
@@ -86,7 +86,7 @@ namespace ice
         if (valid_trait_list)
         {
             IceshardWorld* world = static_cast<ice::IceshardWorld*>(create_world(_allocator, world_template));
-            ice::pod::hash::set(
+            ice::hashmap::set(
                 _worlds,
                 name_hash,
                 world
@@ -102,7 +102,7 @@ namespace ice
     ) noexcept -> World*
     {
         ice::u64 const name_hash = ice::hash(name);
-        return ice::pod::hash::get(_worlds, name_hash, nullptr);
+        return ice::hashmap::get(_worlds, name_hash, nullptr);
     }
 
     void IceshardWorldManager::destroy_world(
@@ -110,18 +110,18 @@ namespace ice
     ) noexcept
     {
         ice::u64 const name_hash = ice::hash(name);
-        ice::IceshardWorld* const world = ice::pod::hash::get(_worlds, name_hash, nullptr);
+        ice::IceshardWorld* const world = ice::hashmap::get(_worlds, name_hash, nullptr);
 
         if (world != nullptr)
         {
             _allocator.destroy(world);
-            ice::pod::hash::remove(_worlds, name_hash);
+            ice::hashmap::remove(_worlds, name_hash);
         }
     }
 
-    auto IceshardWorldManager::worlds() const noexcept -> ice::pod::Hash<ice::IceshardWorld*> const&
+    auto IceshardWorldManager::worlds() const noexcept -> ice::Span<ice::IceshardWorld* const>
     {
-        return _worlds;
+        return ice::hashmap::values(_worlds);
     }
 
 } // namespace ice

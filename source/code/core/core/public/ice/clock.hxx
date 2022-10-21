@@ -1,19 +1,38 @@
 #pragma once
-#include <ice/base.hxx>
+#include <ice/types.hxx>
 
 namespace ice
 {
 
+    //! \brief Simple object representing a clock by using two timestamps.
+    //!
+    //! This type should be used usualy as a const reference <em>(Clock const &)</em> pointing to a system or custom clock object.
+    //!
+    //! \see ice::SystemClock for how to access current time values.
+    //! \see ice::CustomClock for how to create custom speed clocks.
     struct Clock
     {
         ice::i64 previous_timestamp;
         ice::i64 latest_timestamp;
     };
 
-    struct SystemClock : ice::Clock
-    {
-    };
+    //! \brief A system clock provides access to the actual time on the running system.
+    //!
+    //! Updating a system clock will always result in the latest timestamp value available in the Clock::latest_timestamp member.
+    //!   This moves the previous Clock::latest_timestamp value to the Clock::previous_timestamp member.
+    struct SystemClock : ice::Clock { };
 
+    //! \brief A custom clock allows to control the "speed" of calculated time.
+    //!
+    //! This works by calculating the update values from the parent clock.
+    //!   The parents current time difference is taken, and a modifier is applied.
+    //!   The result of this operation is the stored under the inherited Clock::latest_timestamp member.
+    //!   This moves the previous Clock::latest_timestamp value to the Clock::previous_timestamp member.
+    //!
+    //! \pre A Custom clock is only valid if the CustomClock::base_clock member is \b not-null.
+    //! \remark The user is allowed to set the modifier to 0.0f or negative values, reversing time. <em>(whoaaaa...)</em>
+    //!
+    //! \note To have consistent time changes, udpate child clocks the exact same number of times like their parents.
     struct CustomClock : ice::Clock
     {
         ice::Clock const* base_clock;
@@ -110,5 +129,4 @@ namespace ice
 
     } // namespace stopwatch
 
-
-} // namespace core
+} // namespace ice

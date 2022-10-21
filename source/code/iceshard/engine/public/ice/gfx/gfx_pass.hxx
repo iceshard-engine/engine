@@ -1,9 +1,9 @@
 #pragma once
 #include <ice/stringid.hxx>
-#include <ice/unique_ptr.hxx>
+#include <ice/mem_unique_ptr.hxx>
 #include <ice/render/render_declarations.hxx>
 #include <ice/render/render_command_buffer.hxx>
-#include <ice/pod/array.hxx>
+#include <ice/container/array.hxx>
 
 #include <ice/gfx/gfx_stage.hxx>
 
@@ -41,7 +41,7 @@ namespace ice::gfx
         virtual auto stage_count() const noexcept -> ice::u32 = 0;
 
         virtual void query_stage_order(
-            ice::pod::Array<ice::StringID_Hash>& stage_order_out
+            ice::Array<ice::StringID_Hash>& stage_order_out
         ) const noexcept = 0;
     };
 

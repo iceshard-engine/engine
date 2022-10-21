@@ -31,7 +31,7 @@ namespace ice
             ice::vec4f color;
         };
 
-        auto load_debug_shader(ice::AssetStorage& assets, ice::Utf8String name) noexcept -> ice::Task<ice::Data>
+        auto load_debug_shader(ice::AssetStorage& assets, ice::String name) noexcept -> ice::Task<ice::Data>
         {
             ice::Asset const asset = co_await assets.request(ice::render::AssetType_Shader, name, ice::AssetState::Baked);
             ICE_ASSERT(asset_check(asset, AssetState::Baked), "Shader not available!");
@@ -48,8 +48,8 @@ namespace ice
     {
         ice::AssetStorage& asset_system = engine.asset_storage();
 
-        _shader_data[0] = ice::sync_wait(ice::detail::load_debug_shader(asset_system, u8"shaders/debug/debug-vert"));
-        _shader_data[1] = ice::sync_wait(ice::detail::load_debug_shader(asset_system, u8"shaders/debug/debug-frag"));
+        _shader_data[0] = ice::sync_wait(ice::detail::load_debug_shader(asset_system, "shaders/debug/debug-vert"));
+        _shader_data[1] = ice::sync_wait(ice::detail::load_debug_shader(asset_system, "shaders/debug/debug-frag"));
     }
 
     void IceWorldTrait_RenderDebug::gfx_setup(
@@ -180,8 +180,8 @@ namespace ice
                 ice::Span<ice::DebugDrawCommand const> commands{ draw_list->list, draw_list->list_size };
                 for (ice::DebugDrawCommand const& command : commands)
                 {
-                    Data vertex_data = ice::data_view(command.vertex_list, command.vertex_count * sizeof(ice::vec3f));
-                    Data color_data = ice::data_view(command.vertex_color_list, command.vertex_count * sizeof(ice::vec1u));
+                    Data vertex_data = ice::Data{ command.vertex_list, command.vertex_count * sizeof(ice::vec3f) };
+                    Data color_data = ice::Data{ command.vertex_color_list, command.vertex_count * sizeof(ice::vec1u) };
 
                     ice::render::BufferUpdateInfo updates[2]{
                         ice::render::BufferUpdateInfo
@@ -198,21 +198,21 @@ namespace ice
                         }
                     };
 
-                    buffer_offset += vertex_data.size;
-                    color_buffer_offset += color_data.size;
+                    buffer_offset += ice::u32(vertex_data.size.value);
+                    color_buffer_offset += ice::u32(color_data.size.value);
 
                     gfx_device.device().update_buffers(updates);
                 }
             }
         );
 
-        ice::StringID_Hash camera_name = ice::StringID_Hash::Invalid;
+        ice::StringID_Hash camera_name = ice::StringID_Invalid;
         if (ice::shards::inspect_last(engine_frame.shards(), ice::Shard_SetDefaultCamera, camera_name))
         {
             _render_camera = ice::StringID{ camera_name };
         }
 
-        if (camera_name != ice::stringid_hash(ice::stringid_invalid))
+        if (camera_name != ice::StringID_Invalid)
         {
             ice::render::Buffer const camera_buffer = ice::gfx::find_resource<ice::render::Buffer>(
                 gfx_device.resource_tracker(),

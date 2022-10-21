@@ -1,5 +1,5 @@
 #pragma once
-#include <ice/allocator.hxx>
+#include <ice/mem_allocator.hxx>
 #include <ice/ecs/ecs_types.hxx>
 
 namespace ice

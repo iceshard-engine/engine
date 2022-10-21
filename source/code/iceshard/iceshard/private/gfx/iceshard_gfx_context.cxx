@@ -10,9 +10,10 @@ namespace ice::gfx
         ice::Allocator& alloc,
         ice::gfx::GfxPass const& gfx_pass
     ) noexcept
-        : _cached_stages{ alloc }
+        : _alloc{ alloc }
+        , _cached_stages{ alloc }
     {
-        ice::pod::array::resize(_cached_stages, gfx_pass.stage_count());
+        ice::array::resize(_cached_stages, gfx_pass.stage_count());
         for (IceGfxContextStage& stage_entry : _cached_stages)
         {
             stage_entry = { };
@@ -24,9 +25,9 @@ namespace ice::gfx
         ice::gfx::GfxDevice& device
     ) noexcept
     {
-        ice::u32 const stage_count = ice::size(stages);
+        ice::u32 const stage_count = ice::count(stages);
         ICE_ASSERT(
-            stage_count == ice::pod::array::size(_cached_stages),
+            stage_count == ice::array::count(_cached_stages),
             "Currently a GfxContext can only updated with the exact same number of stages it was created for."
         );
 

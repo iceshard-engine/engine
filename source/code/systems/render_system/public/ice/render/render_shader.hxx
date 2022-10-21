@@ -1,5 +1,5 @@
 #pragma once
-#include <ice/data.hxx>
+#include <ice/mem_data.hxx>
 #include <ice/span.hxx>
 #include <ice/asset_type.hxx>
 
@@ -52,6 +52,6 @@ namespace ice::render
         ice::Span<ice::render::ShaderInputAttribute const> attributes;
     };
 
-    static constexpr ice::AssetType AssetType_Shader = ice::make_asset_type(u8"ice/render_system/shader");
+    static constexpr ice::AssetType AssetType_Shader = ice::make_asset_type("ice/render_system/shader");
 
 } // namespace ice::render

@@ -1,7 +1,7 @@
 #pragma once
 #include <ice/span.hxx>
 #include <ice/stringid.hxx>
-#include <ice/unique_ptr.hxx>
+#include <ice/mem_unique_ptr.hxx>
 #include <ice/engine_types.hxx>
 #include <ice/ecs/ecs_types.hxx>
 

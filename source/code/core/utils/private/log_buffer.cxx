@@ -3,44 +3,48 @@
 namespace ice::detail
 {
 
-    LogMessageBuffer::LogMessageBuffer(ice::Allocator& alloc, ice::u32 initial_allocation) noexcept
+    LogMessageBuffer::LogMessageBuffer(ice::Allocator& alloc, ice::ucount initial_allocation) noexcept
         : fmt::detail::buffer<char>{ }
         , _allocator{ alloc }
     {
         this->set(
-            reinterpret_cast<char*>(_allocator.allocate(initial_allocation)),
+            _allocator.allocate<char>(initial_allocation),
             initial_allocation
         );
     }
 
     LogMessageBuffer::~LogMessageBuffer() noexcept
     {
-        void* data = this->data();
-        _allocator.deallocate(data);
+        _allocator.deallocate(
+            Memory{
+                .location = this->data(),
+                .size = { this->capacity() },
+                .alignment = align_of<char>
+            }
+        );
     }
 
-    void LogMessageBuffer::grow(uint64_t size) noexcept
+    void LogMessageBuffer::grow(size_t min_size) noexcept
     {
-        size_t old_capacity = this->capacity();
-        size_t new_capacity = old_capacity + old_capacity / 2;
+        ice::u64 const old_capacity = { this->capacity() };
+        ice::u64 const new_capacity = ice::max(old_capacity + old_capacity / 2, min_size);
 
-        if (size > new_capacity)
-        {
-            new_capacity = size;
-        }
+        void* const old_data = this->data();
+        char* const new_data = _allocator.allocate<char>(new_capacity);
 
-        void* old_data = this->data();
-        char* new_data = reinterpret_cast<char*>(_allocator.allocate(static_cast<ice::u32>(new_capacity)));
-
-        // The following code doesn't throw, so the raw pointer above doesn't leak.
         ice::memcpy(new_data, old_data, old_capacity);
-
         this->set(new_data, new_capacity);
 
         // deallocate must not throw according to the standard, but even if it does,
         // the buffer already uses the new storage and will deallocate it in
         // destructor.
-        _allocator.deallocate(old_data);
+        _allocator.deallocate(
+            Memory{
+                .location = old_data,
+                .size = { old_capacity },
+                .alignment = align_of<char>
+            }
+        );
     }
 
 } // namespace ice::detail

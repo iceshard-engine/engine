@@ -1,6 +1,6 @@
 #pragma once
 #include <ice/asset.hxx>
-#include <ice/memory.hxx>
+#include <ice/mem_memory.hxx>
 
 namespace ice
 {

@@ -1,5 +1,5 @@
 #pragma once
-#include <ice/allocator.hxx>
+#include <ice/mem_allocator.hxx>
 #include <ice/asset_type_archive.hxx>
 #include <atomic>
 
@@ -51,7 +51,7 @@ namespace ice
 
     private:
         ice::Allocator& _allocator;
-        ice::pod::Hash<ice::AssetEntry*> _asset_resources;
+        ice::HashMap<ice::AssetEntry*> _asset_resources;
 
         std::atomic<ice::AssetRequestAwaitable*> _new_requests[3];
         std::atomic<ice::AssetRequestAwaitable*> _reversed_requests[3];

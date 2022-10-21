@@ -2,8 +2,7 @@
 #include <ice/ecs/ecs_archetype.hxx>
 #include <ice/ecs/ecs_data_block.hxx>
 #include <ice/ecs/ecs_query_details.hxx>
-#include <ice/memory/pointer_arithmetic.hxx>
-#include <ice/pod/array.hxx>
+#include <ice/container/array.hxx>
 #include <ice/span.hxx>
 
 namespace ice::ecs
@@ -72,10 +71,10 @@ namespace ice::ecs
     {
         static constexpr Definition Constant_Definition{ };
 
-        ice::pod::Array<ice::ecs::ArchetypeInstanceInfo const*> const archetype_instances;
-        ice::pod::Array<ice::ecs::DataBlock const*> const archetype_data_blocks;
+        ice::Array<ice::ecs::ArchetypeInstanceInfo const*> const archetype_instances;
+        ice::Array<ice::ecs::DataBlock const*> const archetype_data_blocks;
 
-        ice::pod::Array<ice::StaticArray<ice::u32, Constant_Definition.component_count>> const archetype_argument_idx_map;
+        ice::Array<ice::StaticArray<ice::u32, Constant_Definition.component_count>> const archetype_argument_idx_map;
     };
 
 
@@ -122,7 +121,7 @@ namespace ice::ecs
 
             void* helper_pointer_array[query_definition.component_count]{ nullptr };
 
-            ice::u32 const arch_count = ice::size(query.archetype_instances);
+            ice::u32 const arch_count = ice::count(query.archetype_instances);
             for (ice::u32 arch_idx = 0; arch_idx < arch_count; ++arch_idx)
             {
                 ice::ecs::ArchetypeInstanceInfo const* arch = query.archetype_instances[arch_idx];
@@ -141,9 +140,9 @@ namespace ice::ecs
                         {
                             ice::u32 const cmp_idx = argument_idx_map[arg_idx];
 
-                            helper_pointer_array[arg_idx] = ice::memory::ptr_add(
+                            helper_pointer_array[arg_idx] = ice::ptr_add(
                                 block->block_data,
-                                arch->component_offsets[cmp_idx]
+                                { arch->component_offsets[cmp_idx] }
                             );
                         }
                     }
@@ -167,7 +166,7 @@ namespace ice::ecs
 
             void* helper_pointer_array[query_definition.component_count]{ nullptr };
 
-            ice::u32 const arch_count = ice::size(query.archetype_instances);
+            ice::u32 const arch_count = ice::count(query.archetype_instances);
             for (ice::u32 arch_idx = 0; arch_idx < arch_count; ++arch_idx)
             {
                 ice::ecs::ArchetypeInstanceInfo const* arch = query.archetype_instances[arch_idx];
@@ -186,9 +185,9 @@ namespace ice::ecs
                         {
                             ice::u32 const cmp_idx = argument_idx_map[arg_idx];
 
-                            helper_pointer_array[arg_idx] = ice::memory::ptr_add(
+                            helper_pointer_array[arg_idx] = ice::ptr_add(
                                 block->block_data,
-                                arch->component_offsets[cmp_idx]
+                                { arch->component_offsets[cmp_idx] }
                             );
                         }
                     }

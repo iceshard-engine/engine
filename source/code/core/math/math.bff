@@ -1,0 +1,16 @@
+.Project =
+[
+    .Name = 'math'
+    .Kind = .Kind_HeaderOnly
+    .Group = 'Core'
+
+    .BaseDir = '$WorkspaceCodeDir$/core/math'
+
+    .Public =
+    [
+        .Uses = {
+            'core'
+        }
+    ]
+]
+.Projects + .Project

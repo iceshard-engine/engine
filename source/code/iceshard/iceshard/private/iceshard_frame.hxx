@@ -5,9 +5,9 @@
 #include <ice/input/input_event.hxx>
 #include <ice/task.hxx>
 
-#include <ice/memory/scratch_allocator.hxx>
-#include <ice/collections.hxx>
-#include <ice/pod/array.hxx>
+#include <ice/mem_allocator_ring.hxx>
+#include <ice/container_types.hxx>
+#include <ice/container/array.hxx>
 #include <atomic>
 
 #include "iceshard_task_executor.hxx"
@@ -19,16 +19,15 @@ namespace ice
     {
     public:
         IceshardMemoryFrame(
-            ice::memory::ScratchAllocator& alloc
+            ice::RingAllocator& alloc
         ) noexcept;
         ~IceshardMemoryFrame() noexcept override;
 
         auto index() const noexcept -> ice::u32 override;
 
         auto allocator() noexcept -> ice::Allocator& override;
-        auto memory_consumption() noexcept -> ice::u32 override;
 
-        auto input_events() noexcept -> ice::pod::Array<ice::input::InputEvent>&;
+        auto input_events() noexcept -> ice::Array<ice::input::InputEvent>&;
         auto input_events() const noexcept -> ice::Span<ice::input::InputEvent const> override;
 
         void execute_task(ice::Task<void> task) noexcept;
@@ -41,30 +40,8 @@ namespace ice
         auto entity_operations() noexcept -> ice::ecs::EntityOperations& override;
         auto entity_operations() const noexcept -> ice::ecs::EntityOperations const& override;
 
-        auto named_data(
-            ice::StringID_Arg name
-        ) noexcept -> void* override;
-
-        auto named_data(
-            ice::StringID_Arg name
-        ) const noexcept -> void const* override;
-
-        auto allocate_named_data(
-            ice::StringID_Arg name,
-            ice::u32 size,
-            ice::u32 alignment
-        ) noexcept -> void* override;
-
-        auto allocate_named_array(
-            ice::StringID_Arg name,
-            ice::u32 element_size,
-            ice::u32 alignment,
-            ice::u32 count
-        ) noexcept -> void* override;
-
-        void release_named_data(
-            ice::StringID_Arg name
-        ) noexcept override;
+        auto storage() noexcept -> ice::DataStorage& override;
+        auto storage() const noexcept -> ice::DataStorage const& override;
 
         auto schedule_frame_end() noexcept -> ice::FrameEndOperation override;
 
@@ -79,19 +56,19 @@ namespace ice
 
     private:
         ice::u32 const _index;
-        ice::memory::ScratchAllocator& _allocator;
-        ice::memory::ScratchAllocator _inputs_allocator;
-        ice::memory::ScratchAllocator _request_allocator;
-        ice::memory::ScratchAllocator _tasks_allocator;
-        ice::memory::ScratchAllocator _storage_allocator;
-        ice::memory::ScratchAllocator _data_allocator;
+        ice::RingAllocator& _allocator;
+        ice::RingAllocator _inputs_allocator;
+        ice::RingAllocator _shards_allocator;
+        ice::RingAllocator _tasks_allocator;
+        ice::RingAllocator _storage_allocator;
+        ice::RingAllocator _data_allocator;
 
-        ice::pod::Array<ice::input::InputEvent> _input_events;
+        ice::Array<ice::input::InputEvent> _input_events;
         ice::ShardContainer _shards;
         ice::ecs::EntityOperations _entity_operations;
-        ice::pod::Hash<void*> _named_objects;
+        ice::HashedDataStorage _data_storage;
 
-        ice::Vector<ice::Task<>> _frame_tasks;
+        ice::Array<ice::Task<>, ice::ContainerLogic::Complex> _frame_tasks;
         ice::IceshardTaskExecutor _task_executor;
 
         std::atomic<ice::ecs::ScheduledQueryData*> _query_operation;

@@ -35,11 +35,11 @@
 #include <ice/input/input_mouse.hxx>
 
 #include <ice/platform_event.hxx>
-#include <ice/stack_string.hxx>
+#include <ice/string/static_string.hxx>
+#include <ice/container/array.hxx>
 #include <ice/shard_container.hxx>
 #include <ice/task_scheduler.hxx>
 #include <ice/task_thread_pool.hxx>
-#include <ice/pod/array.hxx>
 #include <ice/asset_storage.hxx>
 #include <ice/profiler.hxx>
 
@@ -89,7 +89,7 @@ namespace ice
     static constexpr ice::ecs::ArchetypeDefinition<ice::UIPage> Constant_Archetype_UIPage{ };
     static constexpr ice::ecs::ArchetypeDefinition<ice::UIElement, ice::UIButton> Constant_Archetype_UIButton{ };
 
-    using Query_UIElements = ice::ecs::QueryDefinition<ice::UIElement const&, ice::UIButton const&>;
+    using Query_UIElements = ice::ecs::QueryDefinition<ice::ecs::EntityHandle, ice::UIElement const&, ice::UIButton const&>;
 
     static constexpr ice::ecs::ArchetypeInfo Constant_UIArchetypes[]{
         Constant_Archetype_UIPage,
@@ -126,9 +126,9 @@ namespace ice
     {
         portal.storage().destroy_named_object<Query_UIElements::Query>("ice.query.ui-elements"_sid);
 
-        for (auto const& entry : _pages)
+        for (GameUI_Page* page : _pages)
         {
-            portal.allocator().destroy(entry.value);
+            portal.allocator().destroy(page);
         }
     }
 
@@ -141,26 +141,26 @@ namespace ice
         ice::input::InputEvent ievent[2];
         if (ice::shards::inspect_first(frame.shards(), ice::Shard_InputEventAxis, ievent))
         {
-            _pos_mouse = ice::vec2f(ievent[0].value.axis.value_i32, ievent[1].value.axis.value_i32);
+            _pos_mouse = { ice::f32(ievent[0].value.axis.value_i32), ice::f32(ievent[1].value.axis.value_i32) };
         }
 
         for (ice::Shard shard : runner.previous_frame().shards())
         {
-            if (shard == ice::platform::Shard_WindowSizeChanged)
+            if (shard == ice::platform::Shard_WindowResized)
             {
                 ice::vec2i size;
                 if (ice::shard_inspect(shard, size))
                 {
                     _swapchain_size = ice::vec2u(size.x, size.y);
-                    for (auto const& entry : _pages)
+                    for (GameUI_Page* page : _pages)
                     {
-                        entry.value->resize(_swapchain_size);
+                        page->resize(_swapchain_size);
                     }
                 }
             }
             else if (shard == Shard_GameUI_Load)
             {
-                ice::c8utf const* page_name;
+                char const* page_name;
                 if (ice::shard_inspect(shard, page_name))
                 {
                     portal.execute(load_ui(portal.allocator(), runner, page_name));
@@ -176,11 +176,11 @@ namespace ice
         Query_UIElements::Query& query = *portal.storage().named_object<Query_UIElements::Query>("ice.query.ui-elements"_sid);
         ice::ecs::query::for_each_entity(
             query,
-            [&, this](ice::UIElement const& element, UIButton const& button) noexcept
+            [&, this](ice::ecs::EntityHandle entity, ice::UIElement const& element, UIButton const& button) noexcept
             {
                 using ice::ui::ElementState;
 
-                GameUI_Page* const page = ice::pod::hash::get(_pages, element.page_hash, nullptr);
+                GameUI_Page* const page = ice::hashmap::get(_pages, element.page_hash, nullptr);
                 if (page != nullptr && page->visible())
                 {
                     ice::ui::PageInfo const& page_info = page->info();
@@ -213,7 +213,7 @@ namespace ice
                             ice::ui::ActionInfo const& action = *button.action_on_click;
                             ice::ui::ShardInfo const shard_info = page_info.ui_shards[action.type_i];
 
-                            ice::shards::push_back(frame.shards(), ice::shard_create(shard_info.shardid) | ice::ecs::Entity{});
+                            ice::shards::push_back(frame.shards(), ice::shard(shard_info.shardid) | entity);
                             ICE_LOG(ice::LogSeverity::Debug, ice::LogTag::Engine, "Clicked!");
                         }
                     }
@@ -225,13 +225,13 @@ namespace ice
             }
         );
 
-        ice::shards::inspect_each<ice::c8utf const*>(
+        ice::shards::inspect_each<char const*>(
             runner.previous_frame().shards(),
             ice::Shard_GameUI_Show,
-            [&, this](ice::c8utf const* page_name)
+            [&, this](char const* page_name)
             {
                 ice::u64 const page_hash = ice::hash(page_name);
-                ice::GameUI_Page* const page = ice::pod::hash::get(_pages, page_hash, nullptr);
+                ice::GameUI_Page* const page = ice::hashmap::get(_pages, page_hash, nullptr);
                 if (page != nullptr)
                 {
                     page->open(_swapchain_size);
@@ -239,13 +239,13 @@ namespace ice
             }
         );
 
-        ice::shards::inspect_each<ice::c8utf const*>(
+        ice::shards::inspect_each<char const*>(
             runner.previous_frame().shards(),
             ice::Shard_GameUI_Hide,
-            [&, this](ice::c8utf const* page_name)
+            [&, this](char const* page_name)
             {
                 ice::u64 const page_hash = ice::hash(page_name);
-                ice::GameUI_Page* const page = ice::pod::hash::get(_pages, page_hash, nullptr);
+                ice::GameUI_Page* const page = ice::hashmap::get(_pages, page_hash, nullptr);
                 if (page != nullptr)
                 {
                     page->close();
@@ -253,11 +253,11 @@ namespace ice
             }
         );
 
-        for (auto const& entry : _pages)
+        for (GameUI_Page* page : _pages)
         {
-            if (entry.value)
+            if (page)
             {
-                portal.execute(entry.value->update(runner));
+                portal.execute(page->update(runner));
             }
         }
     }
@@ -265,11 +265,11 @@ namespace ice
     auto IceWorldTrait_GameUI::load_ui(
         ice::Allocator& alloc,
         ice::EngineRunner& runner,
-        ice::Utf8String name
+        ice::String name
     ) noexcept -> ice::Task<>
     {
         ice::u64 const page_hash = ice::hash(name);
-        if (ice::pod::hash::has(_pages, page_hash))
+        if (ice::hashmap::has(_pages, page_hash))
         {
             co_return;
         }
@@ -284,20 +284,20 @@ namespace ice
             ICE_LOG(
                 ice::LogSeverity::Warning, ice::LogTag::Game,
                 "UI Page with name {} couldn't be loaded.",
-                ice::String{ (char const*)name.data(), name.size() }
+                name
             );
             co_return;
         }
 
         ice::GameUI_Page* page = nullptr;
-        ice::pod::hash::set(_pages, page_hash, page);
-        page = alloc.make<ice::GameUI_Page>(alloc, page_asset, name);;
+        ice::hashmap::set(_pages, page_hash, page);
+        page = alloc.create<ice::GameUI_Page>(alloc, page_asset, name);;
 
         ice::ui::PageInfo const& page_info = page->info();
         for (ice::ui::FontInfo const& font_info : page_info.fonts)
         {
-            ice::Utf8String const font_name{
-                reinterpret_cast<ice::c8utf const*>(ice::memory::ptr_add(page_info.additional_data, font_info.font_name_offset)),
+            ice::String const font_name{
+                reinterpret_cast<char const*>(ice::ptr_add(page_info.additional_data, { font_info.font_name_offset })),
                 font_info.font_name_size
             };
 
@@ -324,8 +324,8 @@ namespace ice
         // Create components for interactive entities.
         if (count_interactive_element > 0)
         {
-            ice::pod::Array<ice::ecs::Entity> element_entities{ frame.allocator() };
-            ice::pod::array::resize(element_entities, count_interactive_element);
+            ice::Array<ice::ecs::Entity> element_entities{ frame.allocator() };
+            ice::array::resize(element_entities, count_interactive_element);
 
             // Create the entities
             bool const ui_entities_created = runner.entity_index().create_many(element_entities);
@@ -384,8 +384,8 @@ namespace ice
         // Move to a separate font handler?
         for (ice::ui::FontInfo const& font_info : page_info.fonts)
         {
-            ice::Utf8String const font_name{
-                reinterpret_cast<ice::c8utf const*>(ice::memory::ptr_add(page_info.additional_data, font_info.font_name_offset)),
+            ice::String const font_name{
+                reinterpret_cast<char const*>(ice::ptr_add(page_info.additional_data, { font_info.font_name_offset })),
                 font_info.font_name_size
             };
 
@@ -398,10 +398,10 @@ namespace ice
 
         ice::shards::push_back(
             frame.shards(),
-            ice::Shard_GameUI_Loaded | name.data()
+            ice::Shard_GameUI_Loaded | ice::begin(name)
         );
 
-        ice::pod::hash::set(_pages, page_hash, page);
+        ice::hashmap::set(_pages, page_hash, page);
     }
 
     void register_trait_gameui(ice::WorldTraitArchive& trait_archive) noexcept

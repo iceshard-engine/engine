@@ -70,7 +70,7 @@ namespace ice
 
         auto load_font(
             ice::EngineRunner& runner,
-            ice::Utf8String font_name
+            ice::String font_name
         ) noexcept -> ice::Task<>;
 
         auto load_font_atlas(
@@ -92,7 +92,7 @@ namespace ice
             ice::Font const* font;
         };
 
-        ice::pod::Hash<FontEntry> _fonts;
+        ice::HashMap<FontEntry> _fonts;
 
         ice::render::Buffer _vertex_buffer;
 

@@ -3,7 +3,7 @@
 #include <ice/sync_manual_events.hxx>
 #include <ice/data_storage.hxx>
 #include <ice/world/world_portal.hxx>
-#include <ice/memory/scratch_allocator.hxx>
+#include <ice/mem_allocator_ring.hxx>
 
 namespace ice
 {
@@ -46,14 +46,14 @@ namespace ice
         ice::HashedDataStorage _storage;
         ice::ecs::EntityStorage& _entity_storage;
 
-        ice::memory::ScratchAllocator _wait_event_allocator;
+        ice::RingAllocator _wait_event_allocator;
 
         struct TraitTask
         {
             ice::ManualResetEvent* event;
             std::coroutine_handle<> coroutine;
         };
-        ice::pod::Array<TraitTask> _trait_tasks;
+        ice::Array<TraitTask> _trait_tasks;
     };
 
 } // namespace ice

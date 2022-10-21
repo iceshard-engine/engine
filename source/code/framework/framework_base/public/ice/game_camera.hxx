@@ -1,7 +1,7 @@
 #pragma once
 #include <ice/math.hxx>
 #include <ice/stringid.hxx>
-#include <ice/unique_ptr.hxx>
+#include <ice/mem_unique_ptr.hxx>
 
 namespace ice
 {

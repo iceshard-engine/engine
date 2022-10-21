@@ -5,7 +5,7 @@
 #include "iceshard_gfx_queue.hxx"
 
 #include <ice/render/render_fence.hxx>
-#include <ice/memory/stack_allocator.hxx>
+#include <ice/mem_allocator_stack.hxx>
 #include <ice/task_sync_wait.hxx>
 #include <ice/profiler.hxx>
 
@@ -35,18 +35,18 @@ namespace ice::gfx
         , _thread{ ice::create_task_thread(_allocator) }
         , _device{ ice::move(device) }
         , _frame_allocator{
-            { _allocator, Constant_GfxFrameAllocatorCapacity },
-            { _allocator, Constant_GfxFrameAllocatorCapacity }
+            { _allocator, { Constant_GfxFrameAllocatorCapacity } },
+            { _allocator, { Constant_GfxFrameAllocatorCapacity } }
         }
         , _next_free_allocator{ 0 }
-        , _current_frame{ ice::make_unique_null<ice::gfx::IceGfxFrame>() }
+        , _current_frame{ }
         , _graphics_world{ graphics_world }
         , _runner_trait{ *this }
         , _contexts{ _allocator }
         , _mre_internal{ true }
         , _mre_selected{ &_mre_internal }
     {
-        ice::pod::hash::reserve(_contexts, 10);
+        ice::hashmap::reserve(_contexts, 10);
 
         _current_frame = ice::make_unique<ice::gfx::IceGfxFrame>(
             _allocator, _frame_allocator[1]
@@ -62,19 +62,21 @@ namespace ice::gfx
     {
         _mre_selected->wait();
 
-        // Wait for the current GfxFrame to send final tasks
-        ice::IceshardTaskExecutor frame_tasks = _current_frame->create_task_executor();
-        frame_tasks.start_all();
-        frame_tasks.wait_ready();
+        {
+            // Wait for the current GfxFrame to send final tasks
+            ice::IceshardTaskExecutor frame_tasks = _current_frame->create_task_executor();
+            frame_tasks.start_all();
+            frame_tasks.wait_ready();
+        }
 
         // Now stop the thread and wait for everything to finish.
         _thread->stop();
         _thread->join();
         _thread = nullptr;
 
-        for (auto const& entry : _contexts)
+        for (IceGfxContext* context : _contexts)
         {
-            _allocator.destroy(entry.value);
+            _allocator.destroy(context);
         }
 
         for (ice::render::RenderFence*& fence_ptr : _fences)
@@ -125,9 +127,7 @@ namespace ice::gfx
         _mre_selected->reset();
         ice::sync_manual_wait(task_frame(engine_frame, ice::move(_current_frame)), *_mre_selected);
 
-        [[maybe_unused]]
-        bool const discarded_memory = _frame_allocator[_next_free_allocator].reset_and_discard();
-        ICE_ASSERT(discarded_memory == false, "Memory was discarded during frame allocator reset!");
+        _frame_allocator[_next_free_allocator].reset();
 
         _current_frame = ice::make_unique<ice::gfx::IceGfxFrame>(
             _allocator,
@@ -136,7 +136,7 @@ namespace ice::gfx
 
         // We need to update the allocator index
         _next_free_allocator += 1;
-        _next_free_allocator %= ice::size(_frame_allocator);
+        _next_free_allocator %= ice::count(_frame_allocator);
     }
 
     void IceGfxRunner::setup_traits() noexcept
@@ -187,9 +187,9 @@ namespace ice::gfx
 
     void IceGfxRunner::cleanup_gfx_contexts() noexcept
     {
-        for (auto const& entry : _contexts)
+        for (IceGfxContext* context : _contexts)
         {
-            entry.value->clear_context(*_device);
+            context->clear_context(*_device);
         }
     }
 
@@ -204,7 +204,7 @@ namespace ice::gfx
     void IceGfxRunner::cleanup_gfx_traits() noexcept
     {
         ice::Span<ice::WorldTrait*> const traits = _graphics_world[1]->traits();
-        ice::u32 const trait_count = ice::size(traits);
+        ice::u32 const trait_count = ice::count(traits);
 
         for (ice::i32 idx = trait_count - 1; idx >= 0; --idx)
         {
@@ -220,21 +220,21 @@ namespace ice::gfx
     {
         using ice::render::QueueFlags;
 
-        ice::memory::StackAllocator<2048> initial_alloc;
-        ice::memory::ScratchAllocator alloc{ initial_alloc, 256 };
-        ice::memory::ScratchAllocator temp_alloc{ initial_alloc, 1536 };
+        ice::StackAllocator<2_KiB> initial_alloc;
+        ice::RingAllocator alloc{ initial_alloc, { 256_B } };
+        ice::RingAllocator temp_alloc{ initial_alloc, { 256_B * 6 } };
 
         IPT_FRAME_MARK_NAMED("Graphics Frame");
 
         ice::Span<ice::gfx::IceGfxPassEntry const> pass_list = frame->enqueued_passes();
-        ice::u32 const pass_count = ice::size(pass_list);
+        ice::u32 const pass_count = ice::count(pass_list);
 
-        ice::pod::Array<ice::gfx::IceGfxContext*> frame_contexts{ alloc };
-        ice::pod::array::reserve(frame_contexts, pass_count);
+        ice::Array<ice::gfx::IceGfxContext*> frame_contexts{ alloc };
+        ice::array::reserve(frame_contexts, pass_count);
 
         for (ice::gfx::IceGfxPassEntry const& gfx_pass : pass_list)
         {
-            ice::pod::array::push_back(
+            ice::array::push_back(
                 frame_contexts,
                 get_or_create_context(gfx_pass.pass_name, *gfx_pass.pass)
             );
@@ -301,17 +301,17 @@ namespace ice::gfx
                 continue;
             }
 
-            ice::pod::Array<ice::StringID_Hash> stage_order{ temp_alloc };
+            ice::Array<ice::StringID_Hash> stage_order{ temp_alloc };
             gfx_pass.pass->query_stage_order(stage_order);
 
-            ice::pod::Array<ice::gfx::GfxContextStage const*> context_stages{ temp_alloc };
-            ice::pod::array::resize(context_stages, ice::size(stage_order));
+            ice::Array<ice::gfx::GfxContextStage const*> context_stages{ temp_alloc };
+            ice::array::resize(context_stages, ice::count(stage_order));
 
             if (frame->query_queue_stages(stage_order, context_stages))
             {
                 // TODO: Lets do this better in the next stage.
                 ICE_ASSERT(
-                    submit_count < ice::size(submit_entries),
+                    submit_count < ice::count(submit_entries),
                     "Moved past maximum number of submits in this implementation."
                 );
 
@@ -374,12 +374,12 @@ namespace ice::gfx
         ice::gfx::GfxPass const& gfx_pass
     ) noexcept -> ice::gfx::IceGfxContext*
     {
-        ice::gfx::IceGfxContext* result = ice::pod::hash::get(_contexts, ice::hash(context_name), nullptr);
+        ice::gfx::IceGfxContext* result = ice::hashmap::get(_contexts, ice::hash(context_name), nullptr);
 
         if (result == nullptr)
         {
-            result = _allocator.make<ice::gfx::IceGfxContext>(_allocator, gfx_pass);
-            ice::pod::hash::set(_contexts, ice::hash(context_name), result);
+            result = _allocator.create<ice::gfx::IceGfxContext>(_allocator, gfx_pass);
+            ice::hashmap::set(_contexts, ice::hash(context_name), result);
         }
 
         return result;

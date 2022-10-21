@@ -7,9 +7,9 @@
 #include <ice/world/world.hxx>
 #include <ice/world/world_assembly.hxx>
 
-#include <ice/pod/hash.hxx>
-#include <ice/memory/proxy_allocator.hxx>
-#include <ice/memory/scratch_allocator.hxx>
+#include <ice/container/hashmap.hxx>
+#include <ice/mem_allocator_proxy.hxx>
+#include <ice/mem_allocator_ring.hxx>
 
 #include "iceshard_gfx_runner_trait.hxx"
 #include "iceshard_gfx_context.hxx"
@@ -77,20 +77,20 @@ namespace ice::gfx
         ) noexcept -> ice::gfx::IceGfxContext*;
 
     private:
-        ice::memory::ProxyAllocator _allocator;
+        ice::ProxyAllocator _allocator;
         ice::UniquePtr<ice::TaskThread> _thread;
         ice::UniquePtr<ice::gfx::IceGfxDevice> _device;
 
         ice::render::RenderFence* _fences[4];
 
-        ice::memory::ScratchAllocator _frame_allocator[2];
+        ice::RingAllocator _frame_allocator[2];
         ice::u32 _next_free_allocator;
 
         ice::UniquePtr<ice::gfx::IceGfxFrame> _current_frame;
 
         ice::IceshardWorld* _graphics_world[2];
         ice::gfx::IceGfxRunnerTrait _runner_trait;
-        ice::pod::Hash<ice::gfx::IceGfxContext*> _contexts;
+        ice::HashMap<ice::gfx::IceGfxContext*> _contexts;
 
         ice::ManualResetEvent _mre_internal;
         ice::ManualResetEvent* _mre_selected;

@@ -1,6 +1,7 @@
 #pragma once
+#include <ice/math.hxx>
 #include <ice/shard.hxx>
-#include <ice/pod/array.hxx>
+#include <ice/container/array.hxx>
 #include <ice/ui_style.hxx>
 
 #include "ip_ui_oven.hxx"
@@ -33,93 +34,33 @@ namespace ice
     static constexpr ice::String Constant_UIAttribute_StyleTransparency = "alpha";
     static constexpr ice::String Constant_UIAttribute_StyleTargetState = "state";
 
-    static constexpr ice::Utf8String Constant_UIResourceType_Font = u8"font";
-    static constexpr ice::Utf8String Constant_UIResourceType_Text = u8"text";
-    static constexpr ice::Utf8String Constant_UIResourceType_String = u8"string";
-    static constexpr ice::Utf8String Constant_UIResourceType_Texture = u8"texture";
-
-    struct RawElement
-    {
-        ice::u16 parent;
-        ice::Utf8String style;
-        ice::ui::Size size;
-        ice::ui::Position position;
-        ice::ui::RectOffset margin;
-        ice::ui::RectOffset padding;
-
-        ice::ui::ElementFlags flags;
-        ice::ui::ElementType type;
-        void* type_data;
-    };
-
-    struct RawStyle
-    {
-        ice::Utf8String name;
-        ice::ui::ElementType target_element;
-        ice::ui::ElementState target_element_states;
-
-        ice::ui::StyleFlags flags;
-
-        union StyleData
-        {
-            struct
-            {
-                ice::Utf8String name;
-                ice::vec2f uvs[4];
-            } texture;
-            ice::ui::StyleColor color;
-        };
-
-        StyleData background;
-    };
-
-    struct RawResource
-    {
-        ice::Utf8String ui_name;
-        ice::ui::ResourceType type;
-
-        struct FontData
-        {
-            ice::Utf8String font_name;
-            ice::u16 font_size;
-            ice::u16 font_default : 1;
-        };
-
-        union
-        {
-            ice::u32 type_data;
-            FontData font_data;
-        };
-    };
-
-    struct RawShard
-    {
-        ice::Utf8String ui_name;
-        ice::ShardName shard_name;
-    };
+    static constexpr ice::String Constant_UIResourceType_Font = "font";
+    static constexpr ice::String Constant_UIResourceType_Text = "text";
+    static constexpr ice::String Constant_UIResourceType_String = "string";
+    static constexpr ice::String Constant_UIResourceType_Texture = "texture";
 
     void parse_styles(
         ice::Allocator& alloc,
         rapidxml_ns::xml_node<char> const* xml_node,
-        ice::pod::Array<ice::RawStyle>& styles
+        ice::Array<ice::RawStyle>& styles
     ) noexcept;
 
     void parse_resources(
         ice::Allocator& alloc,
         rapidxml_ns::xml_node<char> const* xml_node,
-        ice::pod::Array<ice::RawResource>& resources
+        ice::Array<ice::RawResource>& resources
     ) noexcept;
 
     void parse_shards(
         ice::Allocator& alloc,
         rapidxml_ns::xml_node<char> const* xml_node,
-        ice::pod::Array<ice::RawShard>& shards
+        ice::Array<ice::RawShard>& shards
     ) noexcept;
 
     void parse_page_element(
         ice::Allocator& alloc,
         rapidxml_ns::xml_node<char> const* xml_page,
-        ice::pod::Array<RawElement>& elements
+        ice::Array<RawElement>& elements
     ) noexcept;
 
 } // namespace ice

@@ -10,7 +10,8 @@
 
 #include <ice/asset_storage.hxx>
 
-#include <ice/stack_string.hxx>
+#include <ice/string/static_string.hxx>
+#include <ice/string_utils.hxx>
 #include <ice/log.hxx>
 
 #include <rapidxml/rapidxml.hpp>
@@ -55,7 +56,7 @@ namespace ice
             ice::u16 gid;
             ice::u16 columns;
             ice::vec2f element_size;
-            ice::Utf8String image;
+            ice::String image;
 
             ice::u32 tile_collision_object_count;
             ice::u32 tile_object_vertex_count;
@@ -121,7 +122,7 @@ namespace ice
         bool attrib_value<ice::String>(rapidxml::xml_attribute<> const* attrib, ice::String& out_value) noexcept;
 
         template<>
-        bool attrib_value<ice::Utf8String>(rapidxml::xml_attribute<> const* attrib, ice::Utf8String& out_value) noexcept;
+        bool attrib_value<ice::String>(rapidxml::xml_attribute<> const* attrib, ice::String& out_value) noexcept;
 
         template<>
         bool attrib_value<ice::u32>(rapidxml::xml_attribute<> const* attrib, ice::u32& out_value) noexcept;
@@ -141,14 +142,14 @@ namespace ice
         Fn&& tileid_callback
     ) noexcept
     {
-        ice::String csv_data{ node_data->value(), node_data->value_size() };
+        ice::String csv_data{ node_data->value(), ice::ucount(node_data->value_size()) };
 
         ice::u32 beg = 0;
-        ice::u32 end = csv_data.find_first_of(',');
-        while (end != ice::string_npos)
+        ice::u32 end = ice::string::find_first_of(csv_data, ',');
+        while (end != ice::String_NPos)
         {
-            char const* val_beg = csv_data.data() + beg;
-            char const* val_end = csv_data.data() + end;
+            char const* val_beg = ice::string::begin(csv_data) + beg;
+            char const* val_end = ice::string::begin(csv_data) + end;
 
             while (std::isdigit(*val_beg) == false && val_beg != val_end)
             {
@@ -162,12 +163,12 @@ namespace ice
             }
 
             beg = end + 1;
-            end = csv_data.find_first_of(',', beg);
+            end = ice::string::find_first_of(csv_data, ',', beg);
         }
 
         {
-            char const* val_beg = csv_data.data() + beg;
-            char const* val_end = csv_data.data() + node_data->value_size();
+            char const* val_beg = ice::string::begin(csv_data) + beg;
+            char const* val_end = ice::string::begin(csv_data) + node_data->value_size();
 
             while (std::isdigit(*val_beg) == false && val_beg != val_end)
             {
@@ -188,14 +189,14 @@ namespace ice
         Fn&& point_callback
     ) noexcept
     {
-        char const* const data = points.data();
+        char const* const data = ice::string::begin(points);
 
         ice::u32 beg = 0;
-        ice::u32 end = points.find_first_of(' ');
-        while (end != ice::string_npos)
+        ice::u32 end = ice::string::find_first_of(points, ' ');
+        while (end != ice::String_NPos)
         {
             char const* val_beg = data + beg;
-            char const* val_delim = data + points.find_first_of(',', beg);
+            char const* val_delim = data + ice::string::find_first_of(points, ',', beg);
             char const* val_end = data + end;
 
             while (std::isdigit(*val_beg) == false && val_beg != val_end)
@@ -213,13 +214,13 @@ namespace ice
             }
 
             beg = end + 1;
-            end = points.find_first_of(' ', beg);
+            end = ice::string::find_first_of(points, ' ', beg);
         }
 
         {
             char const* val_beg = data + beg;
-            char const* val_delim = data + points.find_first_of(',', beg);
-            char const* val_end = data + points.size();
+            char const* val_delim = data + ice::string::find_first_of(points, ',', beg);
+            char const* val_end = data + ice::string::size(points);
 
             while (std::isdigit(*val_beg) == false && val_beg != val_end)
             {
@@ -292,7 +293,7 @@ namespace ice
             return false;
         }
 
-        ice::Utf8String image_source;
+        ice::String image_source;
         detail::attrib_value(attrib, image_source);
         tilemap_info.tileset_info[tileset_idx].image = image_source;
 
@@ -760,8 +761,15 @@ namespace ice
         ice::vec2f* object_vertices = tilemap_info.object_vertices;
         ice::TileCollision* tile_collisions = tilemap_info.tile_collisions;
 
+        ice::Memory alloc_result = alloc.allocate(
+            AllocRequest{
+                ice::size_of<ice::detail::TileCollisionInfo> * tilemap_info.tile_collision_count,
+                ice::align_of<ice::detail::TileCollisionInfo>
+            }
+        );
+
         ice::detail::TileCollisionInfo* tile_collision_info = reinterpret_cast<ice::detail::TileCollisionInfo*>(
-            alloc.allocate(sizeof(ice::detail::TileCollisionInfo) * tilemap_info.tile_collision_count, alignof(ice::detail::TileCollisionInfo))
+            alloc_result.location
         );
 
         rapidxml::xml_node<> const* node_child;
@@ -810,10 +818,10 @@ namespace ice
             detail::next_sibling(node_child, node_child);
         }
 
-        alloc.destroy(tile_collision_info);
+        alloc.deallocate(alloc_result);
 
         [[maybe_unused]]
-        ice::u32 const tile_collision_count = tile_collisions - tilemap_info.tile_collisions;
+        ice::u32 const tile_collision_count = ice::u32(tile_collisions - tilemap_info.tile_collisions);
         ICE_ASSERT(tile_collision_count <= tilemap_info.tile_collision_count, "");
     }
 
@@ -826,21 +834,19 @@ namespace ice
         ice::Memory& out_data
     ) noexcept -> ice::Task<bool>
     {
-        Metadata const& resource_meta = resource.metadata();
+        ice::Memory resource_copy = asset_alloc.allocate({ resource_data.size + 1_B, resource_data.alignment });
+        ice::memcpy(resource_copy, resource_data);
 
-        void* resource_copy = asset_alloc.allocate(resource_data.size + 1, resource_data.alignment);
-        ice::memcpy(resource_copy, resource_data.location, resource_data.size);
-
-        char* const raw_doc = reinterpret_cast<char*>(resource_copy);
-        raw_doc[resource_data.size] = '\0';
+        char* const raw_doc = reinterpret_cast<char*>(resource_copy.location);
+        raw_doc[resource_data.size.value] = '\0';
 
         bool result = false;
 
-        rapidxml::xml_document<>* doc = asset_alloc.make<rapidxml::xml_document<>>();
+        rapidxml::xml_document<>* doc = asset_alloc.create<rapidxml::xml_document<>>();
         doc->parse<0>(raw_doc);
         if (doc->first_node() != nullptr)
         {
-            ice::TileMapInfo* tilemap_info_ptr = asset_alloc.make<ice::TileMapInfo>();
+            ice::TileMapInfo* tilemap_info_ptr = asset_alloc.create<ice::TileMapInfo>();
             ice::TileMapInfo& tilemap_info = *tilemap_info_ptr;
 
             if (gather_tilemap_info(doc->first_node(), tilemap_info))
@@ -855,7 +861,7 @@ namespace ice
                 {
                     ice::ResourceHandle* const self = resource_tracker.find_resource(resource.uri());
                     ice::ResourceHandle* const image_res = resource_tracker.find_resource_relative(
-                        ice::URI{ ice::scheme_file,  tilemap_info.tileset_info[idx].image },
+                        ice::URI{ ice::Scheme_File,  tilemap_info.tileset_info[idx].image },
                         self
                     );
 
@@ -865,9 +871,9 @@ namespace ice
                         break;
                     }
 
-                    ice::Utf8String origin = ice::resource_path(image_res);
-                    ice::Utf8String name = origin.substr(0, origin.find_last_of('.'));
-                    total_tileset_assets_size += name.size() + 1;
+                    ice::String origin = ice::resource_path(image_res);
+                    ice::String name = ice::string::substr(origin, 0, ice::string::find_last_of(origin, '.'));
+                    total_tileset_assets_size += ice::string::size(name) + 1;
                 }
 
                 total_tilemap_bytes += total_tileset_assets_size;
@@ -884,17 +890,15 @@ namespace ice
                 static_assert(alignof(ice::TileCollision) == 4 && sizeof(ice::TileCollision) % 4 == 0);
                 static_assert(alignof(ice::vec2f) == 4 && sizeof(ice::vec2f) % 4 == 0);
 
-                void* tilemap_data = asset_alloc.allocate(total_tilemap_bytes);
+                out_data = asset_alloc.allocate({ { total_tilemap_bytes }, ice::align_of<TileMap> });
 
-                ice::TileMap* tilemap = reinterpret_cast<ice::TileMap*>(tilemap_data);
+                ice::TileMap* tilemap = reinterpret_cast<ice::TileMap*>(out_data.location);
                 ice::TileSet* tilesets = reinterpret_cast<ice::TileSet*>(
-                    ice::memory::ptr_align_forward(tilemap + 1, alignof(ice::TileSet))
+                    ice::align_to(tilemap + 1, ice::align_of<ice::TileSet>).value
                 );
-                ice::c8utf* tileset_assets = reinterpret_cast<ice::c8utf*>(
-                    ice::memory::ptr_align_forward(tilesets + tilemap_info.tileset_count, 1)
-                );
+                char* tileset_assets = reinterpret_cast<char*>(tilesets + tilemap_info.tileset_count);
                 ice::TileLayer* layers = reinterpret_cast<ice::TileLayer*>(
-                    ice::memory::ptr_align_forward(tileset_assets + total_tileset_assets_size, alignof(ice::TileLayer))
+                    ice::align_to(tileset_assets + total_tileset_assets_size, ice::align_of<ice::TileLayer>).value
                 );
                 ice::Tile* tiles = reinterpret_cast<ice::Tile*>(layers + tilemap_info.layer_count);
                 ice::TileObject* objects = reinterpret_cast<ice::TileObject*>(tiles + tilemap_info.tile_count);
@@ -908,7 +912,7 @@ namespace ice
                 {
                     ice::ResourceHandle* const self = resource_tracker.find_resource(resource.uri());
                     ice::ResourceHandle* const image_res = resource_tracker.find_resource_relative(
-                        ice::URI{ ice::scheme_file,  tilemap_info.tileset_info[idx].image },
+                        ice::URI{ ice::Scheme_File,  tilemap_info.tileset_info[idx].image },
                         self
                     );
 
@@ -918,10 +922,10 @@ namespace ice
                         break;
                     }
 
-                    ice::Utf8String origin = ice::resource_path(image_res);
-                    ice::Utf8String name = origin.substr(0, origin.find_last_of('.'));
-                    ice::c8utf const* tileset_asset_str = name.data();
-                    ice::u32 const tileset_asset_len = name.size();
+                    ice::String origin = ice::resource_path(image_res);
+                    ice::String name = ice::string::substr(origin, 0, ice::string::find_last_of(origin, '.'));
+                    char const* tileset_asset_str = ice::string::begin(name);
+                    ice::u32 const tileset_asset_len = ice::string::size(name);
 
                     ice::memcpy(
                         tileset_assets,
@@ -931,7 +935,7 @@ namespace ice
 
                     tilesets[idx].element_size = tilemap_info.tileset_info[idx].element_size;
 
-                    ice::u32* asset_loc = reinterpret_cast<ice::u32*>(&tilesets[idx].asset);// = ice::Utf8String{ tileset_assets, tileset_asset_len };
+                    ice::u32* asset_loc = reinterpret_cast<ice::u32*>(&tilesets[idx].asset);// = ice::String{ tileset_assets, tileset_asset_len };
                     asset_loc[0] = asset_str_offset;
                     asset_loc[1] = tileset_asset_len;
 
@@ -942,7 +946,7 @@ namespace ice
                 if (result == true)
                 {
                     ICE_ASSERT(
-                        ice::memory::ptr_distance(tilemap_data, tiles + tilemap_info.tile_count) <= total_tilemap_bytes,
+                        ice::ptr_distance(out_data.location, tiles + tilemap_info.tile_count).value <= total_tilemap_bytes,
                         "Allocation was to small for the gathered tilemap data."
                     );
 
@@ -971,33 +975,28 @@ namespace ice
                     bake_tilemap_asset(asset_alloc, doc->first_node(), tilemap_info);
 
                     // Change pointers into offset values
-                    tilemap->tilesets = reinterpret_cast<ice::TileSet*>(
-                        static_cast<ice::uptr>(ice::memory::ptr_distance(tilemap_data, tilesets))
+                    tilemap->tilesets = std::bit_cast<ice::TileSet*>(
+                        ice::ptr_distance(out_data.location, tilesets)
                     );
-                    tilemap->layers = reinterpret_cast<ice::TileLayer*>(
-                        static_cast<ice::uptr>(ice::memory::ptr_distance(tilemap_data, layers))
+                    tilemap->layers = std::bit_cast<ice::TileLayer*>(
+                        ice::ptr_distance(out_data.location, layers)
                     );
-                    tilemap->tiles = reinterpret_cast<ice::Tile*>(
-                        static_cast<ice::uptr>(ice::memory::ptr_distance(tilemap_data, tiles))
+                    tilemap->tiles = std::bit_cast<ice::Tile*>(
+                        ice::ptr_distance(out_data.location, tiles)
                     );
-                    tilemap->objects = reinterpret_cast<ice::TileObject*>(
-                        static_cast<ice::uptr>(ice::memory::ptr_distance(tilemap_data, objects))
+                    tilemap->objects = std::bit_cast<ice::TileObject*>(
+                        ice::ptr_distance(out_data.location, objects)
                     );
-                    tilemap->tile_collisions = reinterpret_cast<ice::TileCollision*>(
-                        static_cast<ice::uptr>(ice::memory::ptr_distance(tilemap_data, tile_collisions))
+                    tilemap->tile_collisions = std::bit_cast<ice::TileCollision*>(
+                        ice::ptr_distance(out_data.location, tile_collisions)
                     );
-                    tilemap->object_vertices = reinterpret_cast<ice::vec2f*>(
-                        static_cast<ice::uptr>(ice::memory::ptr_distance(tilemap_data, object_vertices))
+                    tilemap->object_vertices = std::bit_cast<ice::vec2f*>(
+                        ice::ptr_distance(out_data.location, object_vertices)
                     );
-
-                    // Update the output Memory object.
-                    out_data.location = tilemap_data;
-                    out_data.size = total_tilemap_bytes;
-                    out_data.alignment = alignof(ice::TileMap);
                 }
                 else
                 {
-                    asset_alloc.deallocate(tilemap_data);
+                    asset_alloc.deallocate(out_data);
                 }
             }
 
@@ -1053,7 +1052,7 @@ namespace ice
     {
         if (node != nullptr)
         {
-            return ice::String{ node->name(), node->name_size() };
+            return ice::String{ node->name(), ice::ucount(node->name_size()) };
         }
         return { };
     }
@@ -1063,18 +1062,7 @@ namespace ice
     {
         if (attrib != nullptr)
         {
-            out_value = ice::String{ attrib->value(), attrib->value_size() };
-            return true;
-        }
-        return false;
-    }
-
-    template<>
-    bool detail::attrib_value<ice::Utf8String>(rapidxml::xml_attribute<> const* attrib, ice::Utf8String& out_value) noexcept
-    {
-        if (attrib != nullptr)
-        {
-            out_value = ice::Utf8String{ (char8_t*) attrib->value(), attrib->value_size() };
+            out_value = ice::String{ attrib->value(), ice::ucount(attrib->value_size()) };
             return true;
         }
         return false;
@@ -1088,7 +1076,7 @@ namespace ice
             char const* const val_beg = attrib->value();
             char const* const val_end = val_beg + attrib->value_size();
 
-            return std::from_chars(val_beg, val_end, out_value).ptr == val_end;
+            return ice::from_chars(val_beg, val_end, out_value).remaining == val_end;
         }
         return false;
     }
@@ -1101,7 +1089,7 @@ namespace ice
             char const* const val_beg = attrib->value();
             char const* const val_end = val_beg + attrib->value_size();
 
-            return std::from_chars(val_beg, val_end, out_value).ptr == val_end;
+            return ice::from_chars(val_beg, val_end, out_value).remaining == val_end;
         }
         return false;
     }

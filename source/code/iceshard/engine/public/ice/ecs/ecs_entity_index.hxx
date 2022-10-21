@@ -1,7 +1,7 @@
 #pragma once
 #include <ice/span.hxx>
-#include <ice/pod/collections.hxx>
 #include <ice/ecs/ecs_entity.hxx>
+#include <ice/container/queue.hxx>
 #include <atomic>
 
 namespace ice::ecs
@@ -37,8 +37,8 @@ namespace ice::ecs
         ice::Allocator& _allocator;
         ice::u32 const _max_entity_count;
 
-        ice::pod::Queue<ice::u32> _free_indices;
-        ice::pod::Array<ice::u8> _generation;
+        ice::Queue<ice::u32> _free_indices;
+        ice::Array<ice::u8> _generation;
     };
 
 } // namespace ice::ecs

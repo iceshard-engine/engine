@@ -1,7 +1,7 @@
 #include "asset_shelve.hxx"
 #include "asset_request_awaitable.hxx"
 
-#include <ice/pod/hash.hxx>
+#include <ice/container/hashmap.hxx>
 #include <ice/assert.hxx>
 
 namespace ice
@@ -16,18 +16,17 @@ namespace ice
         , _allocator{ alloc }
         , _asset_resources{ alloc }
     {
-        ice::pod::hash::reserve(_asset_resources, 25);
+        ice::hashmap::reserve(_asset_resources, 25);
     }
 
     AssetShelve::~AssetShelve() noexcept
     {
-        for (auto const& entry : _asset_resources)
+        for (ice::AssetEntry* entry : _asset_resources)
         {
-            ice::AssetEntry* asset = entry.value;
-            _allocator.deallocate(asset->data_baked.location);
-            _allocator.deallocate(asset->data_loaded.location);
-            _allocator.deallocate(asset->data_runtime.location);
-            _allocator.destroy(asset);
+            _allocator.deallocate(entry->data_baked);
+            _allocator.deallocate(entry->data_loaded);
+            _allocator.deallocate(entry->data_runtime);
+            _allocator.destroy(entry);
         }
     }
 
@@ -40,7 +39,7 @@ namespace ice
         ice::StringID_Arg name
     ) noexcept -> ice::AssetEntry*
     {
-        return ice::pod::hash::get(_asset_resources, ice::hash(name), nullptr);
+        return ice::hashmap::get(_asset_resources, ice::hash(name), nullptr);
     }
 
     auto AssetShelve::select(
@@ -50,7 +49,7 @@ namespace ice
         ice::u64 const name_hash = ice::hash(name);
 
         static ice::AssetEntry invalid_resource{ .state = AssetState::Invalid };
-        return ice::pod::hash::get(_asset_resources, name_hash, &invalid_resource);
+        return ice::hashmap::get(_asset_resources, name_hash, &invalid_resource);
     }
 
     auto AssetShelve::store(
@@ -62,10 +61,10 @@ namespace ice
     ) noexcept -> ice::AssetEntry*
     {
         ice::u64 const name_hash = ice::hash(name);
-        ice::pod::hash::set(
+        ice::hashmap::set(
             _asset_resources,
             name_hash,
-            _allocator.make<ice::AssetEntry>(
+            _allocator.create<ice::AssetEntry>(
                 ice::AssetEntry
                 {
                     .resource_handle = resource_handle,

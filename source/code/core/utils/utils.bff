@@ -12,6 +12,8 @@
             'fmt'
         }
         .Uses = {
+            'math'
+            'collections'
             'modules'
         }
     ]

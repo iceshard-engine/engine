@@ -1,8 +1,8 @@
 #pragma once
 //#include <ice/task_scheduler.hxx>
 #include <ice/task_operations.hxx>
-#include <ice/unique_ptr.hxx>
-#include <ice/allocator.hxx>
+#include <ice/mem_unique_ptr.hxx>
+#include <ice/mem_allocator.hxx>
 #include <ice/task.hxx>
 
 namespace ice

@@ -4,7 +4,7 @@
 namespace ice::input
 {
 
-    enum class MouseInput : ice::u16
+    enum class MouseInput : ice::i16
     {
         Unknown,
 

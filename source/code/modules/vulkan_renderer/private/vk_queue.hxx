@@ -1,6 +1,6 @@
 #pragma once
 #include <ice/render/render_queue.hxx>
-#include <ice/pod/array.hxx>
+#include <ice/container/array.hxx>
 #include "vk_swapchain.hxx"
 #include "vk_include.hxx"
 
@@ -13,7 +13,7 @@ namespace ice::render::vk
         VulkanQueue(
             VkQueue vk_queue,
             VkDevice vk_device,
-            ice::pod::Array<VkCommandPool> vk_cmd_pools
+            ice::Array<VkCommandPool> vk_cmd_pools
         ) noexcept;
         ~VulkanQueue() noexcept override;
 
@@ -41,7 +41,7 @@ namespace ice::render::vk
         VkDevice _vk_device;
         VkFence _vk_submit_fence;
 
-        ice::pod::Array<VkCommandPool> _vk_cmd_pools;
+        ice::Array<VkCommandPool> _vk_cmd_pools;
     };
 
 } // namespace ice::render::vk

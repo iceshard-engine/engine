@@ -8,13 +8,13 @@ namespace ice::ui
     {
         None,
         Font,
-        Utf8String,
+        String,
         Texture,
     };
 
     struct ResourceInfo
     {
-        ice::detail::stringid_type_v2::StringID<true> id;
+        ice::BaseStringID<true> id;
         ice::ui::ResourceType type;
         ice::u32 type_data;
     };

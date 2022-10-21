@@ -1,6 +1,6 @@
 #include <ice/ecs/ecs_entity_index.hxx>
-#include <ice/pod/array.hxx>
-#include <ice/pod/queue.hxx>
+#include <ice/container/array.hxx>
+#include <ice/container/queue.hxx>
 #include <ice/assert.hxx>
 
 namespace ice::ecs
@@ -54,7 +54,7 @@ namespace ice::ecs
             _max_entity_count
         );
 
-        ice::pod::array::reserve(_generation, estimated_entity_count);
+        ice::array::reserve(_generation, estimated_entity_count);
 
         // #todo: decide if we need this
         //[[maybe_unused]]
@@ -64,7 +64,7 @@ namespace ice::ecs
 
     auto EntityIndex::count() const noexcept -> ice::u32
     {
-        return ice::pod::array::size(_generation) - ice::pod::queue::size(_free_indices);
+        return ice::array::count(_generation) - ice::queue::count(_free_indices);
     }
 
     bool EntityIndex::is_alive(ice::ecs::Entity entity) const noexcept
@@ -79,15 +79,15 @@ namespace ice::ecs
     {
         ice::u32 index = 0;
 
-        if (ice::pod::queue::size(_free_indices) >= ice::ecs::Constant_MinimumFreeIndicesBeforeReuse)
+        if (ice::queue::count(_free_indices) >= ice::ecs::Constant_MinimumFreeIndicesBeforeReuse)
         {
-            index = ice::pod::queue::front(_free_indices);
-            ice::pod::queue::pop_front(_free_indices);
+            index = ice::queue::front(_free_indices);
+            ice::queue::pop_front(_free_indices);
         }
         else
         {
-            index = ice::pod::array::size(_generation);
-            ice::pod::array::push_back(_generation, ice::u8{ 0 });
+            index = ice::array::count(_generation);
+            ice::array::push_back(_generation, ice::u8{ 0 });
         }
 
         return ice::ecs::detail::make_entity(index, _generation[index]);
@@ -96,17 +96,17 @@ namespace ice::ecs
     bool EntityIndex::create_many(ice::Span<ice::ecs::Entity> out_entities) noexcept
     {
         // #todo: For now when creating entities in bulk. We skip the check of _free_indices.
-        ice::u32 index = ice::pod::array::size(_generation);
-        ice::u32 const final_index = index + ice::size(out_entities);
+        ice::u32 index = ice::array::count(_generation);
+        ice::u32 const final_index = index + ice::count(out_entities);
 
         ICE_ASSERT(
             final_index < _max_entity_count,
             "Moved past the maximum allowed number of entities!"
         );
 
-        ice::pod::array::resize(_generation, final_index);
+        ice::array::resize(_generation, final_index);
 
-        auto out_it = out_entities.begin();
+        auto out_it = ice::span::begin(out_entities);
         while (index < final_index)
         {
             _generation[index] = ice::u8{ 0 };
@@ -126,7 +126,7 @@ namespace ice::ecs
         EntityInfo const info = ice::ecs::detail::entity_info(entity);
         _generation[info.index] += 1;
 
-        ice::pod::queue::push_back(_free_indices, info.index);
+        ice::queue::push_back(_free_indices, info.index);
     }
 
     void EntityIndex::destroy_many(ice::Span<ice::ecs::Entity> entities) noexcept

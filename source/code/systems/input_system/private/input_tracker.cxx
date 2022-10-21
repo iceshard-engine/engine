@@ -1,5 +1,6 @@
 #include <ice/input/input_tracker.hxx>
-#include <ice/pod/hash.hxx>
+#include <ice/container/hashmap.hxx>
+#include <ice/assert_core.hxx>
 #include "input_devices.hxx"
 
 namespace ice::input
@@ -20,20 +21,20 @@ namespace ice::input
         ) noexcept override;
 
         void process_device_queue(
-            ice::input::DeviceQueue const& event_queue,
-            ice::pod::Array<ice::input::InputEvent>& input_events_out
+            ice::input::DeviceEventQueue const& event_queue,
+            ice::Array<ice::input::InputEvent>& input_events_out
         ) noexcept override;
 
         void query_tracked_devices(
-            ice::pod::Array<ice::input::DeviceHandle>& devices_out
+            ice::Array<ice::input::DeviceHandle>& devices_out
         ) const noexcept override;
 
     private:
         ice::Allocator& _allocator;
         ice::Timer _timer;
 
-        ice::pod::Hash<DeviceFactory*> _factories;
-        ice::pod::Hash<InputDevice*> _devices;
+        ice::HashMap<DeviceFactory*> _factories;
+        ice::HashMap<InputDevice*> _devices;
     };
 
     SimpleInputTracker::SimpleInputTracker(
@@ -50,9 +51,9 @@ namespace ice::input
 
     SimpleInputTracker::~SimpleInputTracker() noexcept
     {
-        for (auto const& entry : _devices)
+        for (InputDevice* entry : _devices)
         {
-            _allocator.destroy(entry.value);
+            _allocator.destroy(entry);
         }
     }
 
@@ -62,35 +63,35 @@ namespace ice::input
     ) noexcept
     {
         // #todo handle duplicate type case
-        if (ice::pod::hash::has(_factories, ice::hash(type)) == false)
+        if (ice::hashmap::has(_factories, ice::hash(type)) == false)
         {
-            ice::pod::hash::set(_factories, ice::hash(type), device_factory);
+            ice::hashmap::set(_factories, ice::hash(type), device_factory);
         }
     }
 
     void SimpleInputTracker::process_device_queue(
-        ice::input::DeviceQueue const& event_queue,
-        ice::pod::Array<ice::input::InputEvent>& input_events_out
+        ice::input::DeviceEventQueue const& event_queue,
+        ice::Array<ice::input::InputEvent>& input_events_out
     ) noexcept
     {
         if (ice::timer::update(_timer))
         {
-            for (auto const& device : _devices)
+            for (InputDevice* device : _devices)
             {
-                device.value->on_tick(_timer);
+                device->on_tick(_timer);
             }
         }
 
-        for (auto[event, data] : event_queue)
+        for (ice::input::DeviceEvent event : event_queue._events)
         {
             ice::u64 const device_hash = ice::hash(event.device);
 
             if (event.message == DeviceMessage::DeviceConnected)
             {
-                // #todo assert device already tracked
+                ICE_ASSERT_CORE(ice::hashmap::get(_devices, device_hash, nullptr) == nullptr);
 
                 Device const device = ice::input::make_device(event.device);
-                DeviceFactory* const factory_func = ice::pod::hash::get<DeviceFactory*>(
+                DeviceFactory* const factory_func = ice::hashmap::get(
                     _factories,
                     ice::hash(device.type),
                     nullptr
@@ -99,42 +100,43 @@ namespace ice::input
                 if (factory_func != nullptr)
                 {
                     InputDevice* const device_state = factory_func(_allocator, event.device);
-                    // #todo assert not null
+                    ICE_ASSERT_CORE(device_state != nullptr);
 
-                    ice::pod::hash::set(_devices, device_hash, device_state);
-                    // #todo log device connected
+                    ice::hashmap::set(_devices, device_hash, device_state);
+                    // #todo log device connected (shard?)
                 }
             }
             else if (event.message == DeviceMessage::DeviceDisconnected)
             {
-                // #todo assert device NOT tracked
+                ICE_ASSERT_CORE(ice::hashmap::get(_devices, device_hash, nullptr) != nullptr);
+
                 _allocator.destroy(
-                    ice::pod::hash::get(_devices, device_hash, nullptr)
+                    ice::hashmap::get(_devices, device_hash, nullptr)
                 );
 
-                ice::pod::hash::remove(_devices, device_hash);
-                // #todo log device disconnected
+                ice::hashmap::remove(_devices, device_hash);
+                // #todo log device disconnected (shard?)
             }
-            else if (ice::pod::hash::has(_devices, device_hash))
+            else if (ice::hashmap::has(_devices, device_hash))
             {
-                InputDevice* const device = ice::pod::hash::get(_devices, device_hash, nullptr);
-                device->on_event(event, data);
+                InputDevice* const device = ice::hashmap::get(_devices, device_hash, nullptr);
+                device->on_event(event);
             }
         }
 
-        for (auto const& device : _devices)
+        for (InputDevice* device : _devices)
         {
-            device.value->on_publish(input_events_out);
+            device->on_publish(input_events_out);
         }
     }
 
     void SimpleInputTracker::query_tracked_devices(
-        ice::pod::Array<ice::input::DeviceHandle>& devices_out
+        ice::Array<ice::input::DeviceHandle>& devices_out
     ) const noexcept
     {
-        for (auto const& device : _devices)
+        for (InputDevice* device : _devices)
         {
-            ice::pod::array::push_back(devices_out, device.value->handle());
+            ice::array::push_back(devices_out, device->handle());
         }
     }
 
@@ -143,7 +145,7 @@ namespace ice::input
         ice::Clock const& input_clock
     ) noexcept -> ice::UniquePtr<ice::input::InputTracker>
     {
-        return ice::make_unique<ice::input::InputTracker, ice::input::SimpleInputTracker>(alloc, alloc, input_clock);
+        return ice::make_unique<ice::input::SimpleInputTracker>(alloc, alloc, input_clock);
     }
 
     auto default_device_factory_func(

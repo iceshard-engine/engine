@@ -1,201 +1,120 @@
 #pragma once
 #include <ice/base.hxx>
-#include <ice/hash.hxx>
-#include <string_view>
 
 namespace ice
 {
 
-    namespace detail::stringid_type_v2
+    //! \brief Hashed representation of a \ref ice::String value.
+    template<bool DebugFields>
+    struct BaseStringID;
+
+    //! \copy ice::BaseStringID.
+    using StringID = BaseStringID<
+        ice::config::StringID_DebugInfoEnabled
+    >;
+
+    //! \brief Argument type used to pass \ref ice::StringID values to functions.
+    //!
+    //! \note This allows the engine to control how \ref ice::StringID values are passed in the engine.
+    //!     When \ref ice::config::StringID_DebugInfoEnabled is \b false values are passed by values.
+    using StringID_Arg = std::conditional_t<
+        ice::config::StringID_DebugInfoEnabled,
+        StringID const&,
+        StringID
+    >;
+
+    namespace detail::stringid_type_v3
     {
 
-        // #TODO: Move ths to a proper 'settings' file at some point
-        static constexpr bool use_stringid_debug_implementation = ice::build::is_debug || ice::build::is_develop;
-
-        enum class StringID_Hash : ice::u64
+        //! \brief Internal hash type representing the hashed string value.
+        struct StringID_Hash
         {
-            Invalid = 0x0
+            using TypeTag = ice::StrongValue;
+
+            ice::u64 value;
         };
 
-        template<bool DebugImpl>
-        struct StringID;
 
-        template<>
-        struct StringID<false>
+        using StringID_DebugNameHint = char[24];
+
+        struct StringID_DebugNameValue
         {
-            static constexpr bool has_debug_fields = false;
-
-            StringID_Hash hash_value;
+            char const* value;
+            char consteval_flag;
         };
 
-        template<>
-        struct StringID<true>
+        union StringID_DebugInfo
         {
-            static constexpr bool has_debug_fields = true;
-
-            StringID_Hash hash_value;
-
-            union
-            {
-                char hash_runtime_origin_hint[24];
-
-                struct
-                {
-                    const char* hash_consteval_origin;
-                    char has_consteval_value;
-                };
-            };
+            StringID_DebugNameHint name_hint;
+            StringID_DebugNameValue name_value;
         };
 
-        static_assert(sizeof(StringID<true>) == 32);
+        //! \brief Tag type used to define \ref ice::BaseStringID as a \ref ice::TaggedStrongValue.
+        //!
+        //! \note This allows us to use common operators for \ref ice::BaseStringID<false> and \ref ice::BaseStringID<true> interchangeably.
+        struct StringID_Tag;
 
-        template<bool DebugImpl = false>
-        constexpr auto stringid(std::string_view value) noexcept -> StringID<DebugImpl>;
+    } // namespace detail::stringid_type_v3
 
-        template<bool DebugImpl = false>
-        constexpr auto stringid(std::u8string_view value) noexcept -> StringID<DebugImpl>;
+    using detail::stringid_type_v3::StringID_Hash;
 
-        template<>
-        constexpr auto stringid<false>(std::string_view value) noexcept -> StringID<false>;
-
-        template<>
-        constexpr auto stringid<true>(std::string_view value) noexcept -> StringID<true>;
-
-        template<>
-        constexpr auto stringid<true>(std::u8string_view value) noexcept -> StringID<true>;
-
-        constexpr auto origin_value(StringID<false> const&) noexcept -> std::string_view;
-
-        constexpr auto origin_value(StringID<true> const&) noexcept -> std::string_view;
-
-        template<bool DebugImpl>
-        constexpr bool has_debug_fields(StringID<DebugImpl> const&) noexcept;
-
-
-        template<bool DebugImpl>
-        struct TypePicker
-        {
-            using StringID_Type = StringID<DebugImpl>;
-
-            using StringID_Arg = StringID_Type;
-
-            using StringID_Hash_Type = StringID_Hash;
-        };
-
-        template<>
-        struct TypePicker<true>
-        {
-            using StringID_Type = StringID<true>;
-
-            using StringID_Arg = StringID_Type const&;
-
-            using StringID_Hash_Type = StringID_Hash;
-        };
-
-        constexpr bool operator==(
-            typename TypePicker<true>::StringID_Arg left,
-            typename TypePicker<true>::StringID_Arg right
-        ) noexcept;
-
-        constexpr bool operator!=(
-            typename TypePicker<true>::StringID_Arg left,
-            typename TypePicker<true>::StringID_Arg right
-        ) noexcept;
-
-        constexpr bool operator==(
-            typename TypePicker<false>::StringID_Arg left,
-            typename TypePicker<false>::StringID_Arg right
-        ) noexcept;
-
-        constexpr bool operator!=(
-            typename TypePicker<false>::StringID_Arg left,
-            typename TypePicker<false>::StringID_Arg right
-        ) noexcept;
-
-        using StringID_Types = TypePicker<use_stringid_debug_implementation>;
-
-    } // namespace detail::stringid_type_v2
-
-
-    using StringID = detail::stringid_type_v2::StringID_Types::StringID_Type;
-
-    using StringID_Arg = detail::stringid_type_v2::StringID_Types::StringID_Arg;
-
-    using StringID_Hash = detail::stringid_type_v2::StringID_Types::StringID_Hash_Type;
-
-    static constexpr StringID stringid_invalid = StringID{ StringID_Hash{ 0 } };
 
     template<>
-    constexpr auto hash(StringID_Arg value) noexcept -> uint64_t;
-
-    constexpr auto stringid(std::string_view value) noexcept -> ice::StringID;
-
-    constexpr auto stringid_hint(StringID_Arg value) noexcept -> std::string_view;
-
-    constexpr auto stringid_hash(StringID_Arg value) noexcept -> ice::StringID_Hash;
-
-    constexpr auto stringid_hash(StringID_Hash value) noexcept -> ice::StringID_Hash;
-
-    constexpr auto operator""_sid(const char* cstr, size_t length) noexcept -> ice::StringID;
-
-    constexpr auto operator""_sid_hash(const char* cstr, size_t length) noexcept -> ice::StringID_Hash;
-
-
-    namespace detail::stringid_type_v2
+    struct BaseStringID<false>
     {
+        using TypeTag = ice::TaggedStrongValue<ice::detail::stringid_type_v3::StringID_Tag>;
 
-        template<bool DebugImpl>
-        constexpr auto stringid(std::u8string_view value) noexcept -> StringID<DebugImpl>
+        detail::stringid_type_v3::StringID_Hash value;
+
+        constexpr operator ice::StringID_Hash() const noexcept;
+        constexpr operator ice::BaseStringID<true>() const noexcept;
+        constexpr bool operator==(ice::StringID_Hash strid_hash) const noexcept;
+    };
+
+    template<>
+    struct BaseStringID<true>
+    {
+        using TypeTag = ice::TaggedStrongValue<ice::detail::stringid_type_v3::StringID_Tag>;
+
+        detail::stringid_type_v3::StringID_Hash value;
+        detail::stringid_type_v3::StringID_DebugInfo debug_info;
+
+        constexpr operator ice::StringID_Hash() const noexcept;
+        constexpr operator ice::BaseStringID<false>() const noexcept;
+        constexpr bool operator==(ice::StringID_Hash strid_hash) const noexcept;
+    };
+
+    static constexpr ice::StringID StringID_Invalid{ .value = StringID_Hash{ } };
+
+    constexpr auto stringid(std::string_view value) noexcept
+    {
+        using namespace ice::detail::murmur2_hash;
+        mm2_x64_64 const hash_result = cexpr_murmur2_x64_64(value, ice::config::StringID_DefaultSeed);
+
+        if constexpr (ice::config::StringID_DebugInfoEnabled)
         {
-            ice::detail::murmur2_hash::mm2_x64_64 const hash_result = ice::detail::murmur2_hash::cexpr_murmur2_x64_64(value, 0xDA864239);
-
-            return StringID<DebugImpl> {
-                .hash_value = StringID_Hash{
-                    hash_result.h[0]
-                },
-            };
-        }
-
-        template<>
-        constexpr auto stringid<false>(std::string_view value) noexcept -> StringID<false>
-        {
-            ice::detail::murmur2_hash::mm2_x64_64 const hash_result = ice::detail::murmur2_hash::cexpr_murmur2_x64_64(value, 0xDA864239);
-
-            return StringID<false> {
-                .hash_value = StringID_Hash{
-                    hash_result.h[0]
-                },
-            };
-        }
-
-        template<>
-        constexpr auto stringid<true>(std::string_view value) noexcept -> StringID<true>
-        {
-            ice::detail::murmur2_hash::mm2_x64_64 const hash_result = ice::detail::murmur2_hash::cexpr_murmur2_x64_64(value, 0xDA864239);
-
-            StringID<true> result{
-                .hash_value = StringID_Hash{
-                    hash_result.h[0]
-                },
-            };
-
             if (std::is_constant_evaluated())
             {
-                result.hash_consteval_origin = value.data();
-                result.has_consteval_value = ~char{ 0 };
+                return BaseStringID<true> {
+                    .value = { .value = hash_result.h[0] },
+                    .debug_info = { .name_value = { value.data(), char('\xff') } }
+                };
             }
             else
             {
-                ice::i32 const cstr_size = static_cast<ice::i32>(value.size());
-                ice::i32 const origin_size = static_cast<ice::i32>(std::size(result.hash_runtime_origin_hint));
+                BaseStringID<true> result{
+                    .value = { .value = hash_result.h[0] },
+                };
 
-                ice::i32 const copy_count = std::min(origin_size, cstr_size);
-                ice::i32 const copy_offset = std::max(0, cstr_size - copy_count);
+                size_t const cstr_size = value.size();
+                size_t const origin_size = std::size(result.debug_info.name_hint);
 
+                size_t const copy_count = std::min(origin_size, cstr_size);
+                size_t const copy_offset = std::max(size_t{ 0 }, cstr_size - copy_count);
 
 
                 ice::i32 i = 0;
-                for (auto& v : result.hash_runtime_origin_hint)
+                for (auto& v : result.debug_info.name_hint)
                 {
                     if (i < copy_count)
                     {
@@ -211,196 +130,103 @@ namespace ice
 
                 if (copy_offset > 0)
                 {
-                    result.hash_runtime_origin_hint[0] = '~';
+                    result.debug_info.name_hint[0] = '~';
                 }
+                return result;
             }
-
-            return result;
         }
-
-        template<>
-        constexpr auto stringid<true>(std::u8string_view value) noexcept -> StringID<true>
+        else
         {
-            ice::detail::murmur2_hash::mm2_x64_64 const hash_result = ice::detail::murmur2_hash::cexpr_murmur2_x64_64(value, 0xDA864239);
-
-            StringID<true> result{
-                .hash_value = StringID_Hash{
-                    hash_result.h[0]
-                },
+            return BaseStringID<false> {
+                .value = { .value = hash_result.h[0] }
             };
+        }
+    }
 
-            if (std::is_constant_evaluated())
+    constexpr auto stringid(const char* string, size_t size) noexcept
+    {
+        return stringid(std::string_view{ string, size });
+    }
+
+    constexpr auto stringid_hint(ice::BaseStringID<false> val) noexcept -> std::string_view
+    {
+        return { };
+    }
+
+    constexpr auto stringid_hint(ice::BaseStringID<true> const& val) noexcept -> std::string_view
+    {
+        if (std::is_constant_evaluated())
+        {
+            return val.debug_info.name_value.value;
+        }
+        else
+        {
+            if (val.debug_info.name_value.consteval_flag == ice::utf8('\xff'))
             {
-                result.hash_consteval_origin = "utf8-not-supported";// value.data();
-                result.has_consteval_value = ~char{ 0 };
+                return val.debug_info.name_value.value;
             }
             else
             {
-                ice::i32 const cstr_size = static_cast<ice::i32>(value.size());
-                ice::i32 const origin_size = static_cast<ice::i32>(std::size(result.hash_runtime_origin_hint));
-
-                ice::i32 const copy_count = std::min(origin_size, cstr_size);
-                ice::i32 const copy_offset = std::max(0, cstr_size - copy_count);
-
-
-
-                ice::i32 i = 0;
-                for (auto& v : result.hash_runtime_origin_hint)
-                {
-                    if (i < copy_count)
-                    {
-                        v = static_cast<char>(value[copy_offset + i]);
-                    }
-                    else
-                    {
-                        v = char{};
-                    }
-
-                    i += 1;
-                }
-
-                if (copy_offset > 0)
-                {
-                    result.hash_runtime_origin_hint[0] = '~';
-                }
-            }
-
-            return result;
-        }
-
-        constexpr auto origin_value(StringID<false> const&) noexcept -> std::string_view
-        {
-            return {};
-        }
-
-        constexpr auto origin_value(StringID<true> const& value) noexcept -> std::string_view
-        {
-            if (std::is_constant_evaluated())
-            {
-                return value.hash_consteval_origin;
-            }
-            else if (value.has_consteval_value == ~char{ 0 })
-            {
-                return value.hash_consteval_origin;
-            }
-            else
-            {
-                ice::u32 length = 24;
-                while (length > 0 && value.hash_runtime_origin_hint[length-1] == 0)
-                {
-                    length -= 1;
-                }
-
-                return std::string_view{ value.hash_runtime_origin_hint, length };
+                return val.debug_info.name_hint;
             }
         }
-
-        template<bool DebugImpl>
-        constexpr bool has_debug_fields(StringID<DebugImpl> const&) noexcept
-        {
-            return StringID<DebugImpl>::has_debug_fields;
-        }
-
-        // TODO: We would like a more flexible approach.
-        constexpr bool operator==(
-            typename TypePicker<false>::StringID_Arg left,
-            typename TypePicker<true>::StringID_Arg right
-        ) noexcept
-        {
-            return left.hash_value == right.hash_value;
-        }
-
-        // TODO: We would like a more flexible approach.
-        constexpr bool operator!=(
-            typename TypePicker<false>::StringID_Arg left,
-            typename TypePicker<true>::StringID_Arg right
-        ) noexcept
-        {
-            return !(left == right);
-        }
-
-        constexpr bool operator==(
-            typename TypePicker<true>::StringID_Arg left,
-            typename TypePicker<true>::StringID_Arg right
-        ) noexcept
-        {
-            return left.hash_value == right.hash_value;
-        }
-
-        constexpr bool operator!=(
-            typename TypePicker<true>::StringID_Arg left,
-            typename TypePicker<true>::StringID_Arg right
-        ) noexcept
-        {
-            return !(left == right);
-        }
-
-        constexpr bool operator==(
-            typename TypePicker<false>::StringID_Arg left,
-            typename TypePicker<false>::StringID_Arg right
-        ) noexcept
-        {
-            return left.hash_value == right.hash_value;
-        }
-
-        constexpr bool operator!=(
-            typename TypePicker<false>::StringID_Arg left,
-            typename TypePicker<false>::StringID_Arg right
-        ) noexcept
-        {
-            return !(left == right);
-        }
-
-    } // namespace detail::stringid_type_v2
-
-    constexpr auto stringid(std::string_view value) noexcept -> ice::StringID
-    {
-        return ice::detail::stringid_type_v2::stringid<ice::detail::stringid_type_v2::use_stringid_debug_implementation>(value);
     }
 
-    constexpr auto stringid(std::u8string_view value) noexcept -> ice::StringID
+    template<bool HasDebugInfo>
+    constexpr auto stringid_hash(ice::BaseStringID<HasDebugInfo> val) noexcept -> ice::detail::stringid_type_v3::StringID_Hash
     {
-        return ice::detail::stringid_type_v2::stringid<ice::detail::stringid_type_v2::use_stringid_debug_implementation>(value);
+        return val.value;
     }
 
-    constexpr auto stringid_hint(StringID_Arg value) noexcept -> std::string_view
+    constexpr auto hash(ice::StringID_Hash sid_hash) noexcept -> ice::u64
     {
-        return ice::detail::stringid_type_v2::origin_value(value);
+        return sid_hash.value;
     }
 
-    constexpr auto stringid_hash(StringID_Hash value) noexcept -> ice::StringID_Hash
+    constexpr auto hash(ice::StringID_Arg value) noexcept -> ice::u64
+    {
+        return hash(stringid_hash(value));
+    }
+
+
+    constexpr auto operator""_sid(char const* str, size_t len) noexcept
+    {
+        return ice::stringid(str, len);
+    }
+
+    constexpr auto operator""_sid_hash(char const* str, size_t len) noexcept
+    {
+        return ice::stringid_hash(ice::stringid(str, len));
+    }
+
+    constexpr BaseStringID<false>::operator ice::StringID_Hash() const noexcept
     {
         return value;
     }
 
-    constexpr auto stringid_hash(StringID_Arg value) noexcept -> ice::StringID_Hash
+    constexpr BaseStringID<false>::operator ice::BaseStringID<true>() const noexcept
     {
-        return value.hash_value;
+        return { .value = value };
     }
 
-    constexpr auto hash(StringID_Arg value) noexcept -> uint64_t
+    constexpr bool BaseStringID<false>::operator==(ice::StringID_Hash strid_hash) const noexcept
     {
-        return static_cast<uint64_t>(value.hash_value);
+        return value == strid_hash;
     }
 
-    constexpr auto operator""_sid(const char* cstr, size_t length) noexcept -> ice::StringID
+    constexpr BaseStringID<true>::operator ice::StringID_Hash() const noexcept
     {
-        return stringid({ cstr, length });
+        return value;
     }
 
-    constexpr auto operator""_sid_hash(const char* cstr, size_t length) noexcept -> ice::StringID_Hash
+    constexpr BaseStringID<true>::operator ice::BaseStringID<false>() const noexcept
     {
-        return stringid({ cstr, length }).hash_value;
+        return { .value = value };
     }
 
-    constexpr auto operator""_sid(const char8_t* cstr, size_t length) noexcept -> ice::StringID
+    constexpr bool BaseStringID<true>::operator==(ice::StringID_Hash strid_hash) const noexcept
     {
-        return stringid({ cstr, length });
-    }
-
-    constexpr auto operator""_sid_hash(const char8_t* cstr, size_t length) noexcept -> ice::StringID_Hash
-    {
-        return stringid({ cstr, length }).hash_value;
+        return value == strid_hash;
     }
 
 } // namespace ice

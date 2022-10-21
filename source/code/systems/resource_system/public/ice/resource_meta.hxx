@@ -1,9 +1,9 @@
 #pragma once
-#include <ice/string.hxx>
 #include <ice/stringid.hxx>
-#include <ice/buffer.hxx>
-#include <ice/pod/array.hxx>
+#include <ice/string/string.hxx>
+#include <ice/container_types.hxx>
 #include <ice/resource_types.hxx>
+#include <ice/mem_buffer.hxx>
 
 namespace ice
 {
@@ -17,7 +17,11 @@ namespace ice
 
     auto meta_load(ice::Data data) noexcept -> ice::Metadata;
 
-    void meta_store(ice::Metadata const& meta, ice::Buffer& buffer) noexcept;
+    void meta_save(
+        ice::Metadata const& meta,
+        ice::Allocator& alloc,
+        ice::Memory& out_data
+    ) noexcept;
 
     bool meta_has_entry(
         ice::Metadata const& meta,
@@ -48,46 +52,34 @@ namespace ice
         ice::String& result
     ) noexcept -> bool;
 
-    auto meta_read_utf8(
-        ice::Metadata const& meta,
-        ice::StringID_Arg key,
-        ice::Utf8String& result
-    ) noexcept -> bool;
-
     auto meta_read_bool_array(
         ice::Metadata const& meta,
         ice::StringID_Arg key,
-        ice::pod::Array<bool>& results
+        ice::Array<bool>& results
     ) noexcept -> bool;
 
     auto meta_read_int32_array(
         ice::Metadata const& meta,
         ice::StringID_Arg key,
-        ice::pod::Array<ice::i32>& results
+        ice::Array<ice::i32>& results
     ) noexcept -> bool;
 
     auto meta_read_flags_array(
         ice::Metadata const& meta,
         ice::StringID_Arg key,
-        ice::pod::Array<ice::ResourceFlags>& results
+        ice::Array<ice::ResourceFlags>& results
     ) noexcept -> bool;
 
     auto meta_read_float_array(
         ice::Metadata const& meta,
         ice::StringID_Arg key,
-        ice::pod::Array<ice::f32>& results
+        ice::Array<ice::f32>& results
     ) noexcept -> bool;
 
     auto meta_read_string_array(
         ice::Metadata const& meta,
         ice::StringID_Arg key,
-        ice::pod::Array<ice::String>& result
-    ) noexcept -> bool;
-
-    auto meta_read_utf8_array(
-        ice::Metadata const& meta,
-        ice::StringID_Arg key,
-        ice::pod::Array<ice::Utf8String>& result
+        ice::Array<ice::String, ContainerLogic::Complex>& result
     ) noexcept -> bool;
 
 
@@ -115,12 +107,6 @@ namespace ice
         ice::String value
     ) noexcept;
 
-    void meta_set_utf8(
-        ice::MutableMetadata& meta,
-        ice::StringID_Arg key,
-        ice::Utf8String value
-    ) noexcept;
-
     void meta_set_bool_array(
         ice::MutableMetadata& meta,
         ice::StringID_Arg key,
@@ -143,12 +129,6 @@ namespace ice
         ice::MutableMetadata& meta,
         ice::StringID_Arg key,
         ice::Span<ice::String const> values
-    ) noexcept;
-
-    void meta_set_utf8_array(
-        ice::MutableMetadata& meta,
-        ice::StringID_Arg key,
-        ice::Span<ice::Utf8String const> values
     ) noexcept;
 
 
@@ -195,14 +175,14 @@ namespace ice
         MutableMetadata(ice::Allocator& alloc) noexcept;
         MutableMetadata(MutableMetadata&& other) noexcept;
         MutableMetadata(MutableMetadata const& other) noexcept = delete;
-        ~MutableMetadata() noexcept = default;
+        ~MutableMetadata() noexcept;
 
         auto operator=(MutableMetadata&&) noexcept -> MutableMetadata&;
         auto operator=(MutableMetadata const&) noexcept -> MutableMetadata& = delete;
 
         operator Metadata() const noexcept;
 
-        ice::pod::Hash<detail::MetadataEntry> _meta_entries;
+        ice::HashMap<detail::MetadataEntry> _meta_entries;
         ice::Buffer _additional_data;
     };
 
@@ -216,7 +196,7 @@ namespace ice
         auto operator=(Metadata&& other) noexcept -> Metadata&;
         auto operator=(Metadata const& other) noexcept -> Metadata&;
 
-        ice::pod::Hash<detail::MetadataEntry> _meta_entries;
+        ice::HashMapView<detail::MetadataEntry> _meta_entries;
         ice::Data _additional_data;
     };
 

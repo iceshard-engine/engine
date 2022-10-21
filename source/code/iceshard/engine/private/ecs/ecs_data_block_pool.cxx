@@ -18,13 +18,19 @@ namespace ice::ecs
             auto* block_to_release = block;
             block = block->next;
 
-            _allocator.deallocate(block_to_release);
+            _allocator.deallocate(
+                Memory{
+                    .location = block_to_release,
+                    .size = Constant_DefaultBlockSize,
+                    .alignment = ice::align_of<DataBlock>
+                }
+            );
         }
     }
 
-    auto DataBlockPool::provided_block_size() const noexcept -> ice::u32
+    auto DataBlockPool::provided_block_size() const noexcept -> ice::usize
     {
-        return Constant_DefaultBlockSize - sizeof(DataBlock);
+        return { Constant_DefaultBlockSize.value - ice::size_of<DataBlock>.value };
     }
 
     auto DataBlockPool::request_block() noexcept -> ice::ecs::DataBlock*
@@ -37,9 +43,9 @@ namespace ice::ecs
 
         if (free_block == nullptr)
         {
-            void* block_data = _allocator.allocate(Constant_DefaultBlockSize, alignof(DataBlock));
+            void* block_data = _allocator.allocate({ Constant_DefaultBlockSize, ice::align_of<DataBlock> }).memory;
             free_block = reinterpret_cast<DataBlock*>(block_data);
-            free_block->block_data_size = Constant_DefaultBlockSize - sizeof(DataBlock);
+            free_block->block_data_size = provided_block_size();
             free_block->block_data = free_block + 1;
         }
 

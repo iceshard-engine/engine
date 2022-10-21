@@ -1,6 +1,6 @@
 #pragma once
 #include <ice/stringid.hxx>
-#include <ice/unique_ptr.hxx>
+#include <ice/mem_unique_ptr.hxx>
 #include <ice/shard_container.hxx>
 #include <ice/engine_types.hxx>
 #include <ice/clock.hxx>

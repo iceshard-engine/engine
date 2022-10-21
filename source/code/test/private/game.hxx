@@ -14,7 +14,7 @@
 #include <ice/world/world.hxx>
 #include <ice/gfx/gfx_pass.hxx>
 
-#include <ice/memory/proxy_allocator.hxx>
+#include <ice/mem_allocator_proxy.hxx>
 #include <ice/ecs/ecs_data_block.hxx>
 #include <ice/ecs/ecs_archetype_index.hxx>
 
@@ -24,7 +24,7 @@ using ice::operator""_uri;
 class MyGame : public ice::WorldTrait
 {
 public:
-    static constexpr ice::URI ConfigFile = ice::URI{ ice::scheme_file, u8"config.json" };
+    static constexpr ice::URI ConfigFile = "file://config.json"_uri;
 
     MyGame(ice::Allocator& alloc, ice::Clock const& clock) noexcept;
 
@@ -44,7 +44,7 @@ public:
     ) noexcept;
 
 public:
-    ice::memory::ProxyAllocator _allocator;
+    ice::ProxyAllocator _allocator;
     ice::Clock const& _clock;
 
     ice::Engine* _current_engine;
@@ -55,13 +55,13 @@ public:
 
     ice::UniquePtr<ice::gfx::GfxDynamicPass> _game_gfx_pass;
 
-    ice::UniquePtr<ice::action::ActionTriggerDatabase> _action_triggers{ ice::make_unique_null<ice::action::ActionTriggerDatabase>() };
-    ice::UniquePtr<ice::action::ActionSystem> _action_system{ ice::make_unique_null<ice::action::ActionSystem>() };
+    ice::UniquePtr<ice::action::ActionTriggerDatabase> _action_triggers{ };
+    ice::UniquePtr<ice::action::ActionSystem> _action_system{ };
 
     bool _active = false;
     ice::World* _test_world;
 
-    ice::c8utf const* _menu = nullptr;
+    char const* _menu = nullptr;
     bool _menu_visible = false;
 };
 

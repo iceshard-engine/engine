@@ -45,8 +45,9 @@
         '/wd4201' // warning C4201: nonstandard extension used: nameless struct/union
         '/wd4100' // warning C4100: '...': unreferenced formal parameter
         '/wd4063' // warning C4063: case '...' is not a valid value for switch of enum '...'
-        // '/we4267' // warning C4267: 'initializing': conversion from '...' to '...', possible loss of data
-        // '/WX'
+        '/wd4996' // warning C4996: '...': was declared deprecated
+        '/we4267' // warning C4267: 'initializing': conversion from '...' to '...', possible loss of data
+        '/utf-8'
     }
     .Defines = {
         'UNICODE'
@@ -105,6 +106,7 @@
     .Name = 'Config-Unix'
     .Requires = { 'Unix', 'UnitTests' }
     .BuildOptions = {
+        '-Wno-unused-but-set-variable'
         '-Wno-unused-variable'
         '-Wno-unused-value'
     }
@@ -153,6 +155,18 @@
     .BuildOptions = {
         ' /Od'
         ' /MDd'
+        ' /WX'
+        ' /wd4996'
+    }
+]
+
+.Config_Debug_GCC =
+[
+    .Name = 'Config-Debug-GCC'
+    .Requires = { 'Debug', 'Unix' }
+    .BuildOptions = {
+        '-Wno-deprecated-declarations'
+        '-Wno-subobject-linkage'
     }
 ]
 
@@ -164,6 +178,7 @@
     .BuildOptions = {
         ' /O1'
         ' /MD'
+        ' /WX'
     }
 ]
 
@@ -173,8 +188,10 @@
     .Requires = { 'Profile', 'MSVC' }
     .Defines = { }
     .BuildOptions = {
-        ' /O2'
+        ; ' /O2' ; Disabled due to issues with MSVC coroutine tall cail optimizations.
+        ' /O1'
         ' /MD'
+        ' /WX'
     }
 ]
 
@@ -184,7 +201,8 @@
     .Requires = { 'Release', 'MSVC' }
     .Defines = { }
     .BuildOptions = {
-        ' /O2'
+        ; ' /O2' ; Disabled due to issues with MSVC coroutine tall cail optimizations.
+        ' /O1'
         ' /MD'
     }
 ]
@@ -228,6 +246,7 @@
     .Config_GCC_Tests
     .Config_Debug
     .Config_Debug_MSVC
+    .Config_Debug_GCC
     .Config_Develop
     .Config_Develop_MSVC
     .Config_Profile

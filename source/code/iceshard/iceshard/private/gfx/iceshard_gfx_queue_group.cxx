@@ -1,6 +1,6 @@
 #include "iceshard_gfx_queue_group.hxx"
 #include "iceshard_gfx_queue.hxx"
-#include <ice/pod/hash.hxx>
+#include <ice/container/hashmap.hxx>
 #include <ice/assert.hxx>
 
 namespace ice::gfx
@@ -13,14 +13,14 @@ namespace ice::gfx
         : _allocator{ alloc }
         , _gfx_queues{ _allocator }
     {
-        ice::pod::hash::reserve(_gfx_queues, queue_count * 2);
+        ice::hashmap::reserve(_gfx_queues, queue_count * 2);
     }
 
     IceGfxQueueGroup::~IceGfxQueueGroup() noexcept
     {
-        for (auto const& entry : _gfx_queues)
+        for (IceGfxQueue* queue : _gfx_queues)
         {
-            _allocator.destroy(entry.value);
+            _allocator.destroy(queue);
         }
     }
 
@@ -34,12 +34,12 @@ namespace ice::gfx
     {
         ice::u64 const name_hash = ice::hash(name);
         ICE_ASSERT(
-            ice::pod::hash::has(_gfx_queues, name_hash) == false,
+            ice::hashmap::has(_gfx_queues, name_hash) == false,
             "Duplicate graphics queue encountered! [{}]",
             ice::stringid_hint(name)
         );
 
-        ice::gfx::IceGfxQueue* queue = _allocator.make<ice::gfx::IceGfxQueue>(
+        ice::gfx::IceGfxQueue* queue = _allocator.create<ice::gfx::IceGfxQueue>(
             _allocator,
             name,
             commands,
@@ -48,7 +48,7 @@ namespace ice::gfx
             pool_index
         );
 
-        ice::pod::hash::set(
+        ice::hashmap::set(
             _gfx_queues,
             name_hash,
             queue
@@ -67,11 +67,11 @@ namespace ice::gfx
             return false;
         }
 
-        for (auto const& entry : _gfx_queues)
+        for (IceGfxQueue* queue : _gfx_queues)
         {
-            if ((entry.value->queue_flags() & flags) == flags)
+            if ((queue->queue_flags() & flags) == flags)
             {
-                out_queue = entry.value;
+                out_queue = queue;
                 return true;
             }
         }
@@ -80,7 +80,7 @@ namespace ice::gfx
 
     auto IceGfxQueueGroup::get_queue(ice::StringID_Arg name) noexcept -> ice::gfx::IceGfxQueue*
     {
-        return ice::pod::hash::get(
+        return ice::hashmap::get(
             _gfx_queues,
             ice::hash(name),
             nullptr
@@ -89,22 +89,22 @@ namespace ice::gfx
 
     void IceGfxQueueGroup::reset_all() noexcept
     {
-        for (auto const& entry : _gfx_queues)
+        for (IceGfxQueue* queue : _gfx_queues)
         {
-            entry.value->reset();
+            queue->reset();
         }
     }
 
-    void IceGfxQueueGroup::query_queues(ice::pod::Array<ice::StringID_Hash>& out_names) noexcept
+    void IceGfxQueueGroup::query_queues(ice::Array<ice::StringID_Hash>& out_names) noexcept
     {
-        for (auto const& entry : _gfx_queues)
+        for (IceGfxQueue* queue : _gfx_queues)
         {
-            ice::pod::array::push_back(out_names, StringID_Hash{ entry.key });
+            ice::array::push_back(out_names, ice::stringid_hash(queue->name()));
         }
     }
 
     void IceGfxQueueGroup::get_render_queues(
-        ice::pod::Array<ice::render::RenderQueue*>& queues_out
+        ice::Array<ice::render::RenderQueue*>& queues_out
     ) noexcept
     {
         auto has_queue = [](auto const& array_, ice::render::RenderQueue const* const expected_queue) noexcept -> bool
@@ -117,14 +117,14 @@ namespace ice::gfx
             return has_queue;
         };
 
-        for (auto const& entry : _gfx_queues)
+        for (IceGfxQueue* queue : _gfx_queues)
         {
-            ice::render::RenderQueue* queue = entry.value->render_queue();
-            if (has_queue(queues_out, queue) == false)
+            ice::render::RenderQueue* render_queue = queue->render_queue();
+            if (has_queue(queues_out, render_queue) == false)
             {
-                ice::pod::array::push_back(
+                ice::array::push_back(
                     queues_out,
-                    queue
+                    render_queue
                 );
             }
         }
@@ -135,11 +135,11 @@ namespace ice::gfx
     ) noexcept
     {
         queue_out = nullptr;
-        for (auto const& entry : _gfx_queues)
+        for (IceGfxQueue* queue : _gfx_queues)
         {
-            if (entry.value->presenting())
+            if (queue->presenting())
             {
-                queue_out = entry.value->render_queue();
+                queue_out = queue->render_queue();
                 break;
             }
         }

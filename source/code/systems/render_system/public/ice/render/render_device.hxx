@@ -1,5 +1,5 @@
 #pragma once
-#include <ice/data.hxx>
+#include <ice/mem_data.hxx>
 #include <ice/span.hxx>
 #include <ice/render/render_declarations.hxx>
 

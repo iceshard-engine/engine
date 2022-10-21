@@ -1,12 +1,12 @@
 #pragma once
-#include <ice/allocator.hxx>
-#include <ice/pod/collections.hxx>
+#include <ice/mem_allocator.hxx>
+#include <ice/container_types.hxx>
 #include <ice/ecs/ecs_data_block.hxx>
 
 namespace ice::ecs
 {
 
-    static constexpr ice::u32 Constant_DefaultBlockSize = 32 * 1024;
+    static constexpr ice::usize Constant_DefaultBlockSize = 32_KiB;
 
     class DataBlockPool
     {
@@ -14,7 +14,7 @@ namespace ice::ecs
         DataBlockPool(ice::Allocator& alloc) noexcept;
         ~DataBlockPool() noexcept;
 
-        auto provided_block_size() const noexcept -> ice::u32;
+        auto provided_block_size() const noexcept -> ice::usize;
 
         auto request_block() noexcept -> ice::ecs::DataBlock*;
         void release_block(ice::ecs::DataBlock* block) noexcept;

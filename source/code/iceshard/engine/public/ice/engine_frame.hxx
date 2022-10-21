@@ -23,7 +23,7 @@ namespace ice
 
     using FrameEndOperation = ice::EngineTaskOperation<ice::EngineFrame, ice::FrameEndOperationData>;
 
-    class EngineFrame : public ice::DataStorage, public ice::ecs::QueryScheduler
+    class EngineFrame : public ice::ecs::QueryScheduler
     {
     public:
         virtual ~EngineFrame() noexcept = default;
@@ -31,7 +31,6 @@ namespace ice
         virtual auto index() const noexcept -> ice::u32 = 0;
 
         virtual auto allocator() noexcept -> ice::Allocator& = 0;
-        virtual auto memory_consumption() noexcept -> ice::u32 = 0;
 
         virtual auto input_events() const noexcept -> ice::Span<ice::input::InputEvent const> = 0;;
 
@@ -40,6 +39,9 @@ namespace ice
 
         virtual auto entity_operations() noexcept -> ice::ecs::EntityOperations& = 0;
         virtual auto entity_operations() const noexcept -> ice::ecs::EntityOperations const& = 0;
+
+        virtual auto storage() noexcept -> ice::DataStorage& = 0;
+        virtual auto storage() const noexcept -> ice::DataStorage const& = 0;
 
         virtual auto schedule_frame_end() noexcept -> ice::FrameEndOperation = 0;
 

@@ -1,6 +1,5 @@
 #pragma once
 #include <ice/base.hxx>
-#include <ice/collections.hxx>
 #include <atomic>
 
 namespace ice

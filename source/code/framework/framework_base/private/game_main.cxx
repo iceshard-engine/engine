@@ -28,8 +28,7 @@
 #include <ice/log.hxx>
 #include <ice/assert.hxx>
 
-#include <ice/memory/memory_globals.hxx>
-#include <ice/memory/proxy_allocator.hxx>
+#include <ice/mem_allocator_proxy.hxx>
 
 auto game_main(ice::Allocator& alloc, ice::ResourceTracker& resources) -> ice::i32
 {
@@ -38,7 +37,7 @@ auto game_main(ice::Allocator& alloc, ice::ResourceTracker& resources) -> ice::i
 
     ice::i32 main_result = 0;
 
-    ice::memory::ProxyAllocator module_alloc{ alloc, "module-alloc" };
+    ice::ProxyAllocator module_alloc{ alloc, "module-alloc" };
 
     ice::UniquePtr<ice::ModuleRegister> module_register = ice::create_default_module_register(module_alloc);
     module_register->load_module(
@@ -54,10 +53,10 @@ auto game_main(ice::Allocator& alloc, ice::ResourceTracker& resources) -> ice::i
     );
 
     {
-        ice::memory::ProxyAllocator framework_alloc{ alloc, "game-framework-alloc" };
-        ice::memory::ProxyAllocator asset_alloc{ alloc, "asset-alloc" };
-        ice::memory::ProxyAllocator engine_alloc{ alloc, "engine-alloc" };
-        ice::memory::ProxyAllocator app_alloc{ alloc, "app-alloc" };
+        ice::ProxyAllocator framework_alloc{ alloc, "game-framework-alloc" };
+        ice::ProxyAllocator asset_alloc{ alloc, "asset-alloc" };
+        ice::ProxyAllocator engine_alloc{ alloc, "engine-alloc" };
+        ice::ProxyAllocator app_alloc{ alloc, "app-alloc" };
 
         ice::GameFramework* game_framework = ice::create_game_object(
             framework_alloc,
@@ -75,7 +74,7 @@ auto game_main(ice::Allocator& alloc, ice::ResourceTracker& resources) -> ice::i
 
         ice::UniquePtr<ice::AssetStorage> asset_storage = ice::create_asset_storage(asset_alloc, resources, ice::move(asset_types));
 
-        ice::UniquePtr<ice::devui::DevUISystem> engine_devui = ice::make_unique_null<ice::devui::DevUISystem>();
+        ice::UniquePtr<ice::devui::DevUISystem> engine_devui{ };
         if (ice::build::is_debug || ice::build::is_develop)
         {
             engine_devui = ice::devui::create_devui_system(engine_alloc, *module_register);

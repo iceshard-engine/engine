@@ -3,7 +3,7 @@
 #include <ice/game_physics.hxx>
 #include <ice/game_tilemap.hxx>
 
-#include <ice/pod/array.hxx>
+#include <ice/container/array.hxx>
 
 namespace ice
 {
@@ -24,11 +24,11 @@ namespace ice
         ~IceWorldTrait_TileMap() noexcept = default;
 
         void load_tilemap(
-            ice::Utf8String tilemap
+            ice::String tilemap
         ) noexcept override;
 
         auto load_tilemap_task(
-            ice::Utf8String tilemap,
+            ice::String tilemap,
             ice::EngineRunner& runner
         ) noexcept -> ice::Task<>;
 
@@ -54,8 +54,8 @@ namespace ice
         ice::Allocator& _allocator;
         ice::WorldTrait_Physics2D& _physics;
 
-        ice::Utf8String _requested_tilemap;
-        ice::pod::Array<ice::TileMapInstance> _tilemaps;
+        ice::String _requested_tilemap;
+        ice::Array<ice::TileMapInstance> _tilemaps;
     };
 
     class WorldTraitArchive;

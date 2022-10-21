@@ -34,18 +34,16 @@ namespace ice
         }
 
         void handle_inputs(
-            ice::input::DeviceQueue const& device_events
+            ice::input::DeviceEventQueue const& device_events
         ) noexcept override
         {
             ice::clock::update(_clock);
             _runner->process_device_queue(device_events);
         }
 
-        void update(
-            ice::pod::Array<ice::platform::Event> const& events
-        ) noexcept override
+        void update(ice::ShardContainer const& shards) noexcept override
         {
-            _runner->next_frame(events);
+            _runner->next_frame(shards);
         }
 
         bool requested_exit() const noexcept override
@@ -90,7 +88,7 @@ namespace ice
         ice::UniquePtr<ice::gfx::GfxRunner> gfx_runner
     ) noexcept -> ice::UniquePtr<ice::platform::App>
     {
-        ice::UniquePtr<ice::platform::App> app_obj = ice::make_unique_null<platform::App>();
+        ice::UniquePtr<ice::platform::App> app_obj{ };
 
         // Create input tracker
         ice::UniquePtr<ice::input::InputTracker> input_tracker = ice::input::create_default_input_tracker(_allocator, _system_clock);
@@ -117,7 +115,7 @@ namespace ice
             return app_obj;
         }
 
-        return ice::make_unique<platform::App, GameFrameworkApp>(
+        return ice::make_unique<GameFrameworkApp>(
             _allocator,
             *this,
             _system_clock,

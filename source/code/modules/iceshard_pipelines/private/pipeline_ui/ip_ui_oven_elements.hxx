@@ -16,20 +16,20 @@ namespace ice
     struct RawData
     {
         ice::ui::DataSource data_type;
-        ice::Utf8String data_source;
+        ice::String data_source;
     };
 
     struct RawAction
     {
-        static constexpr ice::Utf8String Constant_ActionType_Shard = u8"Shard";
-        static constexpr ice::Utf8String Constant_ActionType_UIShow = u8"UIShow";
-        static constexpr ice::Utf8String Constant_ActionType_Resource = u8"Resource";
+        static constexpr ice::String Constant_ActionType_Shard = "Shard";
+        static constexpr ice::String Constant_ActionType_UIShow = "UIShow";
+        static constexpr ice::String Constant_ActionType_Resource = "Resource";
 
-        static constexpr ice::Utf8String Constant_ActionDataType_Resource = u8"Resource";
-        static constexpr ice::Utf8String Constant_ActionDataType_Property = u8"Property";
+        static constexpr ice::String Constant_ActionDataType_Resource = "Resource";
+        static constexpr ice::String Constant_ActionDataType_Property = "Property";
 
         ice::ui::ActionType action_type;
-        ice::Utf8String action_value;
+        ice::String action_value;
         ice::RawData data;
     };
 

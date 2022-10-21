@@ -113,6 +113,6 @@ namespace ice::render
         bool normalized_coordinates = true;
     };
 
-    static constexpr ice::AssetType AssetType_Texture2D = ice::make_asset_type(u8"ice/render_system/texture-2d");
+    static constexpr ice::AssetType AssetType_Texture2D = ice::make_asset_type("ice/render_system/texture-2d");
 
 } // namespace ice::render

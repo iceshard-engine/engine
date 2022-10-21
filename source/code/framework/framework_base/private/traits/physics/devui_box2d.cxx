@@ -139,22 +139,25 @@ namespace ice
                 return;
             }
 
-            ice::DebugDrawCommand* const commands = (ice::DebugDrawCommand*) frame.allocate_named_data(
-                "physics2d.debug-draw.commands"_sid,
-                recorder.draw_commands * sizeof(ice::DebugDrawCommand),
-                alignof(ice::DebugDrawCommand)
+            ice::DebugDrawCommand* const commands = ice::span::data(
+                frame.storage().create_named_span<ice::DebugDrawCommand>(
+                    "physics2d.debug-draw.commands"_sid,
+                    recorder.draw_commands
+                )
             );
 
-            ice::vec3f* const vertex_list = (ice::vec3f*)frame.allocate_named_data(
-                "physics2d.debug-draw.vertex-list"_sid,
-                recorder.draw_vertex_count * sizeof(ice::vec3f),
-                alignof(ice::vec3f)
+            ice::vec3f* const vertex_list = ice::span::data(
+                frame.storage().create_named_span<ice::vec3f>(
+                    "physics2d.debug-draw.vertex-list"_sid,
+                    recorder.draw_vertex_count
+                )
             );
 
-            ice::vec1u* const color_list = (ice::vec1u*)frame.allocate_named_data(
-                "physics2d.debug-draw.color-list"_sid,
-                recorder.draw_vertex_count * sizeof(ice::vec1u),
-                alignof(ice::vec1u)
+            ice::vec1u* const color_list = ice::span::data(
+                frame.storage().create_named_span<ice::vec1u>(
+                    "physics2d.debug-draw.color-list"_sid,
+                    recorder.draw_vertex_count
+                )
             );
 
             recorder.SetLists(commands, vertex_list, color_list);
@@ -162,7 +165,7 @@ namespace ice
             _world.DebugDraw();
             _world.SetDebugDraw(nullptr);
 
-            ice::DebugDrawCommandList const* const command_list = frame.create_named_object<ice::DebugDrawCommandList>(
+            ice::DebugDrawCommandList const* const command_list = frame.storage().create_named_object<ice::DebugDrawCommandList>(
                 "physics2d.debug-draw.command-list"_sid,
                 recorder.draw_commands,
                 commands
@@ -241,7 +244,7 @@ namespace ice
     void detail::DevUI_DebugDrawCommandRecorder::DrawCircle(b2Vec2 const& center, float radius, b2Color const& color) noexcept
     {
         ice::rad constexpr angle = ice::math::radians(ice::deg{ 15.f });
-        ice::u32 constexpr vertex_count = (360.f / 15.f);
+        ice::u32 constexpr vertex_count = ice::u32(360.f / 15.f);
 
         ice::mat2x2 const rotation_mtx{
             .v = {
@@ -296,7 +299,7 @@ namespace ice
                 as_debug_color({ 0.f, 0.f, 0.f, 0.f }),
             };
 
-            for (ice::u32 idx = 0; idx < ice::size(points); ++idx)
+            for (ice::u32 idx = 0; idx < ice::count(points); ++idx)
             {
                 *vertex = ice::vec3f{ points[idx].x, points[idx].y, 0.0f };
                 *vertex_color = colors[idx];
