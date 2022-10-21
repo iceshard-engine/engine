@@ -134,15 +134,21 @@ namespace ice
 
     constexpr auto hash(ice::String value) noexcept -> ice::u64
     {
-        return ice::hash(std::string_view{ value });
+        return ice::hash(std::string_view{ value._data, value._size });
     }
 
     constexpr auto hash32(ice::String value) noexcept -> ice::u32
     {
-        return ice::hash32(std::string_view{ value });
+        return ice::hash32(std::string_view{ value._data, value._size });
     }
 
     constexpr auto stringid(ice::String value) noexcept -> ice::StringID
+    {
+        return ice::stringid(value._data, value._size);
+    }
+
+    template<ice::ucount Capacity = 12>
+    constexpr auto stringid(ice::StaticString<Capacity, char> value) noexcept -> ice::StringID
     {
         return ice::stringid(value._data, value._size);
     }

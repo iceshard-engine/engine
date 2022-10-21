@@ -143,7 +143,7 @@ namespace ice
         }
     }
 
-    constexpr auto stringid(const char* string, ice::ucount size) noexcept
+    constexpr auto stringid(const char* string, size_t size) noexcept
     {
         return stringid(std::string_view{ string, size });
     }
@@ -191,12 +191,12 @@ namespace ice
 
     constexpr auto operator""_sid(char const* str, size_t len) noexcept
     {
-        return ice::stringid({ str, len });
+        return ice::stringid(str, len);
     }
 
     constexpr auto operator""_sid_hash(char const* str, size_t len) noexcept
     {
-        return ice::stringid_hash(ice::stringid({ str, len }));
+        return ice::stringid_hash(ice::stringid(str, len));
     }
 
     constexpr BaseStringID<false>::operator ice::StringID_Hash() const noexcept
