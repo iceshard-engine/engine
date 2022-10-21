@@ -162,10 +162,10 @@ namespace ice
                 Timer anim_timer = ice::timer::create_timer(runner.clock(), anim.speed, state.timestamp);
                 if (ice::timer::update(anim_timer))
                 {
-                    static ice::TraitAnimatorAnimationInfo null_info{ .name = ice::StringID_Invalid.value };
+                    static ice::TraitAnimatorAnimationInfo null_info{ .name = ice::StringID_Invalid };
                     ice::TraitAnimatorAnimationInfo const& anim_info = ice::hashmap::get(_anim_infos, ice::hash(anim.animation), null_info);
 
-                    if (anim_info.name == ice::StringID_Invalid.value)
+                    if (anim_info.name == ice::StringID_Invalid)
                     {
                         return;
                     }

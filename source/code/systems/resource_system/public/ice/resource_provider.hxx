@@ -3,7 +3,6 @@
 #include <ice/mem_unique_ptr.hxx>
 #include <ice/container_types.hxx>
 #include <ice/resource_types.hxx>
-#include <ice/userdata.hxx>
 #include <ice/task.hxx>
 
 namespace ice

@@ -327,6 +327,30 @@ namespace ice
             return ice::string::find_last_of(ice::BasicString<CharType>{ str }, character_values);
         }
 
+        template<ice::ucount Capacity, typename CharType>
+        constexpr auto find_first_not_of(ice::StaticString<Capacity, CharType> const& str, CharType character_value) noexcept -> ice::ucount
+        {
+            return ice::string::find_first_not_of(ice::BasicString<CharType>{ str }, character_value);
+        }
+
+        template<ice::ucount Capacity, typename CharType>
+        constexpr auto find_first_not_of(ice::StaticString<Capacity, CharType> const& str, ice::BasicString<CharType> character_values) noexcept -> ice::ucount
+        {
+            return ice::string::find_first_not_of(ice::BasicString<CharType>{ str }, character_values);
+        }
+
+        template<ice::ucount Capacity, typename CharType>
+        constexpr auto find_last_not_of(ice::StaticString<Capacity, CharType> const& str, CharType character_value) noexcept -> ice::ucount
+        {
+            return ice::string::find_last_not_of(ice::BasicString<CharType>{ str }, character_value);
+        }
+
+        template<ice::ucount Capacity, typename CharType>
+        constexpr auto find_last_not_of(ice::StaticString<Capacity, CharType> const& str, ice::BasicString<CharType> character_values) noexcept -> ice::ucount
+        {
+            return ice::string::find_last_not_of(ice::BasicString<CharType>{ str }, character_values);
+        }
+
 
         template<ice::ucount Capacity, typename CharType>
         constexpr auto data_view(ice::StaticString<Capacity, CharType> const& str) noexcept -> ice::Data

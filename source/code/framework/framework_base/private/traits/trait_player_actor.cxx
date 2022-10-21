@@ -47,7 +47,7 @@ namespace ice
         Query::Query& query = *portal.storage().named_object<Query::Query>("ice.query.player_actors"_sid);
 
         ice::vec2f movement;
-        ice::StringID_Hash action_hash = ice::stringid_hash(ice::StringID_Invalid);
+        ice::StringID_Hash action_hash = ice::StringID_Invalid;
         if (ice::shards::inspect_first(runner.previous_frame().shards(), ice::action::Shard_ActionEventSuccess, action_hash))
         {
             if (action_hash == "jump-action"_sid_hash)

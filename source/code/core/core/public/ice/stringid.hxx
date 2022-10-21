@@ -66,7 +66,9 @@ namespace ice
 
         detail::stringid_type_v3::StringID_Hash value;
 
+        constexpr operator ice::StringID_Hash() const noexcept;
         constexpr operator ice::BaseStringID<true>() const noexcept;
+        constexpr bool operator==(ice::StringID_Hash strid_hash) const noexcept;
     };
 
     template<>
@@ -77,7 +79,9 @@ namespace ice
         detail::stringid_type_v3::StringID_Hash value;
         detail::stringid_type_v3::StringID_DebugInfo debug_info;
 
+        constexpr operator ice::StringID_Hash() const noexcept;
         constexpr operator ice::BaseStringID<false>() const noexcept;
+        constexpr bool operator==(ice::StringID_Hash strid_hash) const noexcept;
     };
 
     static constexpr ice::StringID StringID_Invalid{ .value = StringID_Hash{ } };
@@ -191,9 +195,9 @@ namespace ice
         return ice::stringid_hash(ice::stringid({ str, len }));
     }
 
-    constexpr BaseStringID<true>::operator ice::BaseStringID<false>() const noexcept
+    constexpr BaseStringID<false>::operator ice::StringID_Hash() const noexcept
     {
-        return { .value = value };
+        return value;
     }
 
     constexpr BaseStringID<false>::operator ice::BaseStringID<true>() const noexcept
@@ -201,5 +205,24 @@ namespace ice
         return { .value = value };
     }
 
+    constexpr bool BaseStringID<false>::operator==(ice::StringID_Hash strid_hash) const noexcept
+    {
+        return value == strid_hash;
+    }
+
+    constexpr BaseStringID<true>::operator ice::StringID_Hash() const noexcept
+    {
+        return value;
+    }
+
+    constexpr BaseStringID<true>::operator ice::BaseStringID<false>() const noexcept
+    {
+        return { .value = value };
+    }
+
+    constexpr bool BaseStringID<true>::operator==(ice::StringID_Hash strid_hash) const noexcept
+    {
+        return value == strid_hash;
+    }
 
 } // namespace ice

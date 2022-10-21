@@ -349,12 +349,12 @@ namespace ice::platform
                 {
                     switch (current_event.window.event)
                     {
-                    //case SDL_WINDOWEVENT_SIZE_CHANGED:
+                    case SDL_WINDOWEVENT_SIZE_CHANGED:
                     case SDL_WINDOWEVENT_RESIZED:
                         ice::shards::push_back(
                             events,
                             ice::platform::Shard_WindowResized
-                            | ice::vec2u(current_event.window.data1, current_event.window.data2)
+                            | ice::vec2i(current_event.window.data1, current_event.window.data2)
                         );
                         break;
                     }

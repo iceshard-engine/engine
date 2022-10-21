@@ -245,13 +245,13 @@ namespace ice
         ice::gfx::GfxDevice& gfx_device
     ) noexcept
     {
-        ice::StringID_Hash camera_name = ice::StringID_Invalid.value;
+        ice::StringID_Hash camera_name = ice::StringID_Invalid;
         if (ice::shards::inspect_last(engine_frame.shards(), ice::Shard_SetDefaultCamera, camera_name))
         {
             _render_camera = ice::StringID{ camera_name };
         }
 
-        if (camera_name != ice::stringid_hash(ice::StringID_Invalid))
+        if (camera_name != ice::StringID_Invalid)
         {
             ice::render::Buffer const camera_buffer = ice::gfx::find_resource<ice::render::Buffer>(
                 gfx_device.resource_tracker(),

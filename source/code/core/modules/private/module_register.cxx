@@ -29,19 +29,9 @@ namespace ice
 
 #if ISP_WINDOWS
 
-    bool utf8_to_wide_append_module(
-        ice::String path,
-        ice::HeapString<ice::wchar>& out_str
-    ) noexcept
+    bool utf8_to_wide_append_module(ice::String path, ice::HeapString<ice::wchar>& out_str) noexcept
     {
-        ice::i32 const required_size = MultiByteToWideChar(
-            CP_UTF8,
-            0,
-            reinterpret_cast<char const*>(ice::string::begin(path)),
-            static_cast<ice::i32>(ice::string::size(path)),
-            NULL,
-            0
-        );
+        ice::i32 const required_size = MultiByteToWideChar(CP_UTF8, 0, ice::string::begin(path), ice::string::size(path), NULL,  0);
 
         if (required_size != 0)
         {
@@ -53,8 +43,8 @@ namespace ice
             ice::i32 const chars_written = MultiByteToWideChar(
                 CP_UTF8,
                 0,
-                (const char*)ice::string::begin(path),
-                static_cast<ice::i32>(ice::string::size(path)),
+                ice::string::begin(path),
+                ice::string::size(path),
                 ice::string::begin(out_str) + current_size,
                 ice::string::size(out_str) - current_size
             );

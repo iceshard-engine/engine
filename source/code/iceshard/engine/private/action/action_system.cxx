@@ -4,6 +4,7 @@
 #include <ice/engine_frame.hxx>
 
 #include <ice/mem_allocator.hxx>
+#include <ice/mem_allocator_ring.hxx>
 #include <ice/container/array.hxx>
 #include <ice/clock.hxx>
 
@@ -53,7 +54,7 @@ namespace ice::action
         bool has_all_triggers = true;
         for (ice::u32 idx = 0; idx < action.trigger_count; ++idx)
         {
-            has_all_triggers &= triggers.get_trigger(action.triggers[idx].name).trigger_shardid != ice::Shard_Invalid.id;
+            has_all_triggers &= triggers.get_trigger(action.triggers[idx].name).trigger_shardid != ice::Shard_Invalid;
         }
 
         if (has_all_triggers == false)
@@ -122,7 +123,7 @@ namespace ice::action
 
     private:
         ice::Allocator& _allocator;
-        ice::Allocator& _step_shards_alloc; // TODO
+        ice::RingAllocator _step_shards_alloc;
         ice::Clock const& _clock;
         ice::action::ActionTriggerDatabase& _trigger_database;
         ice::Array<ice::action::ActionInstance*> _actions;
@@ -135,7 +136,7 @@ namespace ice::action
         ice::action::ActionTriggerDatabase& trigger_database
     ) noexcept
         : _allocator{ alloc }
-        , _step_shards_alloc{ alloc } //, 70 * sizeof(ice::Shard) }
+        , _step_shards_alloc{ alloc, { .ring_buffer_size = ice::size_of<ice::Shard> * 128 } }
         , _clock{ clock }
         , _trigger_database{ trigger_database }
         , _actions{ alloc }
@@ -210,7 +211,7 @@ namespace ice::action
                 ice::shards::push_back(new_shards, ice::action::Shard_ActionEventReset | action_name);
 
                 current_stage = stages + action->current_stage_idx;
-                if (current_stage->stage_shardid != ice::Shard_Invalid.id)
+                if (current_stage->stage_shardid != ice::Shard_Invalid)
                 {
                     ice::shards::push_back(new_shards, ice::shard(current_stage->stage_shardid) | action_name);
                 }
@@ -273,7 +274,7 @@ namespace ice::action
                                 failure_trigger = triggers + current_stage->failure_trigger_offset + action->current_failure_trigger_idx;
                                 success_trigger = triggers + current_stage->success_trigger_offset + action->current_success_trigger_idx;
 
-                                if (current_stage->stage_shardid != ice::Shard_Invalid.id)
+                                if (current_stage->stage_shardid != ice::Shard_Invalid)
                                 {
                                     ice::shards::push_back(new_shards, ice::shard(current_stage->stage_shardid) | ice::stringid_hash(action->name));
                                 }

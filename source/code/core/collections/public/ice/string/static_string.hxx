@@ -93,6 +93,18 @@ namespace ice::string
     template<ice::ucount Capacity, typename CharType>
     constexpr auto find_last_of(ice::StaticString<Capacity, CharType> const& str, ice::BasicString<CharType> character_values) noexcept -> ice::ucount;
 
+    template<ice::ucount Capacity, typename CharType>
+    constexpr auto find_first_not_of(ice::StaticString<Capacity, CharType> const& str, CharType character_value) noexcept -> ice::ucount;
+
+    template<ice::ucount Capacity, typename CharType>
+    constexpr auto find_first_not_of(ice::StaticString<Capacity, CharType> const& str, ice::BasicString<CharType> character_values) noexcept -> ice::ucount;
+
+    template<ice::ucount Capacity, typename CharType>
+    constexpr auto find_last_not_of(ice::StaticString<Capacity, CharType> const& str, CharType character_value) noexcept -> ice::ucount;
+
+    template<ice::ucount Capacity, typename CharType>
+    constexpr auto find_last_not_of(ice::StaticString<Capacity, CharType> const& str, ice::BasicString<CharType> character_values) noexcept -> ice::ucount;
+
 
     template<ice::ucount Capacity, typename CharType>
     constexpr auto data_view(ice::StaticString<Capacity, CharType> const& str) noexcept -> ice::Data;
