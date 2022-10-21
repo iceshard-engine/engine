@@ -37,15 +37,15 @@ namespace ice::devui
                 {
                     ice::usize const mibs = current_total_allocation / 1_MiB;
                     ice::isize const kibs = (current_total_allocation / 1_KiB) - (mibs * 1_KiB);
-                    ImGui::Text("%d MiB %d KiB (%d bytes)", mibs, kibs, current_total_allocation);
+                    ImGui::Text("%lu MiB %lu KiB (%lu bytes)", mibs.value, kibs.value, current_total_allocation.value);
                 }
                 else if (shows_kibs)
                 {
-                    ImGui::Text("%d KiB (%d bytes)", (current_total_allocation / 1_KiB), current_total_allocation);
+                    ImGui::Text("%lu KiB (%lu bytes)", (current_total_allocation / 1_KiB).value, current_total_allocation.value);
                 }
                 else
                 {
-                    ImGui::Text("%d", current_total_allocation);
+                    ImGui::Text("%lu", current_total_allocation.value);
                 }
             }
         }

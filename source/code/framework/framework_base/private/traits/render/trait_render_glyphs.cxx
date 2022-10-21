@@ -540,7 +540,7 @@ namespace ice
 
         ice::Data const font_atlas_data{
             .location = ice::ptr_add(font->data_ptr, { font->atlases[0].image_data_offset }),
-            .size = font->atlases[0].image_data_size,
+            .size = { font->atlases[0].image_data_size },
             .alignment = ice::ualign::b_4
         };
 

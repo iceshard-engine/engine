@@ -106,6 +106,7 @@
     .Name = 'Config-Unix'
     .Requires = { 'Unix', 'UnitTests' }
     .BuildOptions = {
+        '-Wno-unused-but-set-variable'
         '-Wno-unused-variable'
         '-Wno-unused-value'
     }
@@ -156,6 +157,16 @@
         ' /MDd'
         ' /WX'
         ' /wd4996'
+    }
+]
+
+.Config_Debug_GCC =
+[
+    .Name = 'Config-Debug-GCC'
+    .Requires = { 'Debug', 'Unix' }
+    .BuildOptions = {
+        '-Wno-deprecated-declarations'
+        '-Wno-subobject-linkage'
     }
 ]
 
@@ -235,6 +246,7 @@
     .Config_GCC_Tests
     .Config_Debug
     .Config_Debug_MSVC
+    .Config_Debug_GCC
     .Config_Develop
     .Config_Develop_MSVC
     .Config_Profile

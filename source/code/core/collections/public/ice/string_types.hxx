@@ -2,6 +2,7 @@
 #include <ice/mem_data.hxx>
 #include <ice/mem_allocator.hxx>
 #include <ice/container_logic.hxx>
+#include <ice/stringid.hxx>
 
 namespace ice
 {
@@ -139,6 +140,11 @@ namespace ice
     constexpr auto hash32(ice::String value) noexcept -> ice::u32
     {
         return ice::hash32(std::string_view{ value });
+    }
+
+    constexpr auto stringid(ice::String value) noexcept -> ice::StringID
+    {
+        return ice::stringid(value._data, value._size);
     }
 
 } // namespace ice

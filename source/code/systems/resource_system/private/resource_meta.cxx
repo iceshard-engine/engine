@@ -20,7 +20,7 @@ namespace ice
 
         constexpr ice::Data Constant_FileHeaderData_MetadataFile{
             .location = ice::string::begin(Constant_FileHeader_MetadataFile),
-            .size = ice::string::size(Constant_FileHeader_MetadataFile),
+            .size = { ice::string::size(Constant_FileHeader_MetadataFile) },
             .alignment = ice::ualign::b_1
         };
 

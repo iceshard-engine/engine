@@ -24,10 +24,7 @@ SCENARIO("resource_system 'ice/resource_meta.hxx'", "[resource][metadata]")
     GIVEN("a empty json document")
     {
         constexpr ice::String test_empty_document = "{}";
-        constexpr ice::Data test_document_data{
-            .location = ice::string::begin(test_empty_document),
-            .size = ice::string::size(test_empty_document)
-        };
+        constexpr ice::Data test_document_data =  ice::string::data_view(test_empty_document);
 
         THEN("we can deserialize it into empty metadata")
         {
@@ -49,10 +46,7 @@ SCENARIO("resource_system 'ice/resource_meta.hxx'", "[resource][metadata]")
             }
         })__";
 
-        constexpr ice::Data test_document_data{
-            .location = ice::string::begin(test_empty_document),
-            .size = ice::string::size(test_empty_document)
-        };
+        constexpr ice::Data test_document_data = ice::string::data_view(test_empty_document);
 
         THEN("we can deserialize it into metadata")
         {

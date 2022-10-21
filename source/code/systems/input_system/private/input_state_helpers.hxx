@@ -29,6 +29,7 @@ namespace ice::input::detail
 
 
     template<typename T, DevicePayloadType PayloadType = ice::input::Constant_PayloadType<T>>
+        requires (std::is_enum_v<T> == false)
     auto event_data(ice::input::DeviceEvent event) noexcept -> T
     {
         static_assert(PayloadType != ice::input::DevicePayloadType::Invalid);

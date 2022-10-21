@@ -20,9 +20,9 @@
 
 #elif ISP_COMPILER_CLANG | ISP_COMPILER_GCC
 
-#   define ISC_WARNING_PUSH __pragma(warning(push))
-#   define ISC_WARNING_SET(op, warn_value) __pragma(warning(op : warn_value))
-#   define ISC_WARNING_POP __pragma(warning(pop))
+#   define ISC_WARNING_PUSH
+#   define ISC_WARNING_SET(op, warn_value)
+#   define ISC_WARNING_POP
 
 #   define ISCW_OP_DISABLE disable
 

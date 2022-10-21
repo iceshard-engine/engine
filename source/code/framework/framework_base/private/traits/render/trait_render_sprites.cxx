@@ -635,7 +635,7 @@ namespace ice
                 .buffer = sprite_data.material_tileinfo[0],
                 .data = {
                     .location = ice::addressof(sprite_data.material_scale),
-                    .size = sizeof(sprite_data.material_scale),
+                    .size = { sizeof(sprite_data.material_scale) },
                     .alignment = ice::ualign::b_4
                 }
             }

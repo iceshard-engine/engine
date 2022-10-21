@@ -86,7 +86,6 @@ namespace ice
 
     static constexpr ice::StringID StringID_Invalid{ .value = StringID_Hash{ } };
 
-
     constexpr auto stringid(std::string_view value) noexcept
     {
         using namespace ice::detail::murmur2_hash;
@@ -144,12 +143,17 @@ namespace ice
         }
     }
 
-    constexpr auto stringid_hint(BaseStringID<false> val) noexcept -> std::string_view
+    constexpr auto stringid(const char* string, ice::ucount size) noexcept
+    {
+        return stringid(std::string_view{ string, size });
+    }
+
+    constexpr auto stringid_hint(ice::BaseStringID<false> val) noexcept -> std::string_view
     {
         return { };
     }
 
-    constexpr auto stringid_hint(BaseStringID<true> const& val) noexcept -> std::string_view
+    constexpr auto stringid_hint(ice::BaseStringID<true> const& val) noexcept -> std::string_view
     {
         if (std::is_constant_evaluated())
         {
@@ -169,7 +173,7 @@ namespace ice
     }
 
     template<bool HasDebugInfo>
-    constexpr auto stringid_hash(BaseStringID<HasDebugInfo> val) noexcept -> detail::stringid_type_v3::StringID_Hash
+    constexpr auto stringid_hash(ice::BaseStringID<HasDebugInfo> val) noexcept -> ice::detail::stringid_type_v3::StringID_Hash
     {
         return val.value;
     }

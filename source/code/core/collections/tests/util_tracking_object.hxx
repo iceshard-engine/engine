@@ -1,5 +1,6 @@
 #pragma once
 #include <ice/base.hxx>
+#include <fmt/format.h>
 #include <catch2/catch.hpp>
 
 struct Test_ObjectEvents
@@ -47,7 +48,7 @@ namespace Catch
     {
         static std::string convert(Test_ObjectEvents const& value)
         {
-            return std::format(
+            return fmt::format(
                 "({}) (... {}) (const& {}) (&& {}) ~({}) =(const& {}) =(&& {})",
                 value.test_ctor,
                 value.test_ctor_def,

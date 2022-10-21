@@ -39,9 +39,9 @@ namespace ice
         };
 #elif ISP_UNIX
         return ice::AllocResult{
-            .result = aligned_alloc(static_cast<ice::u32>(request.alignment), request.size.value),
-            .size = request.size,
-            .alignment = request.alignment,
+            .memory = aligned_alloc(static_cast<ice::u32>(alignment), size.value),
+            .size = size,
+            .alignment = alignment
         };
 #else
         ICE_ASSERT_CORE(false);
@@ -54,7 +54,7 @@ namespace ice
 #if ISP_WINDOWS
         _aligned_free(pointer);
 #elif ISP_UNIX
-        free(AllocResult.result);
+        free(pointer);
 #else
         ICE_ASSERT_CORE(false);
         return nullptr;

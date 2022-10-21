@@ -157,7 +157,7 @@ namespace ice
                 .buffer = data_buffer,
                 .data = {
                     .location = image_info->data,
-                    .size = image_data_size,
+                    .size = { image_data_size },
                     .alignment = ice::ualign::b_4
                 }
             }

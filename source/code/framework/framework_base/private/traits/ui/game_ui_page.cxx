@@ -160,7 +160,7 @@ namespace ice
         ice::u32 count_verts_color = 0;
 
         ice::meminfo mi_page = ice::detail::page_required_memory_size(*_page, count_verts_position, count_verts_color);
-        ice::usize off_debugdata = mi_page += debug_data_size;
+        /*ice::usize const off_debugdata = */mi_page += debug_data_size;
 
         _page_memory = _allocator.allocate(mi_page);
         ice::memset(_page_memory.location, 0, _page_memory.size.value);
