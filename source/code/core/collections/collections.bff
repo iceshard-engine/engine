@@ -1,7 +1,7 @@
 .Project =
 [
     .Name = 'collections'
-    .Kind = .Kind_StaticLib
+    .Kind = .Kind_HeaderOnly
     .Group = 'Core'
 
     .BaseDir = '$WorkspaceCodeDir$/core/collections'
