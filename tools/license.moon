@@ -32,6 +32,7 @@ class LicenseCommand extends Command
             'copyright.txt': true
         }
 
+        found_license = false
         if os.isdir "#{rootpath}/#{dir}"
             for candidate_file, mode in os.listdir "#{rootpath}/#{dir}", 'mode'
                 continue if mode ~= 'file'
@@ -39,9 +40,11 @@ class LicenseCommand extends Command
                 if dir == "."
                     if known_license_files[candidate_file\lower!] ~= nil
                         table.insert out_license_files, "#{rootpath}/#{candidate_file}"
+                        found_license = true
                 else
                     table.insert out_license_files, "#{rootpath}/#{dir}/#{candidate_file}"
-
+                    found_license = true
+        found_license
 
 
     extract_recipe_info: (conanfile) =>
@@ -72,8 +75,9 @@ class LicenseCommand extends Command
                 for dependency in *buildinfo.dependencies
 
                     found_license_files = { }
-                    for subdir in *{ ".", "LICENSE", "COPYRIGHT", "LICENSES", "licenses" }
-                        @search_for_license_files found_license_files, dependency.rootpath, subdir
+                    for subdir in *{ ".", "LICENSE", "COPYRIGHT", "LICENSES" }
+                        if not @search_for_license_files found_license_files, dependency.rootpath, subdir
+                            @search_for_license_files found_license_files, dependency.rootpath, subdir\lower!
 
                     -- Gather license files
                     if #found_license_files > 0
@@ -89,6 +93,8 @@ class LicenseCommand extends Command
                             if selected_license == nil and args.check
                                 print "Packge '#{dependency.name}' contains more than one license file."
                                 print "> Please select the desired license file in 'thirdparty/details.json'."
+                                for license_file in *found_license_files
+                                    print "- #{license_file}"
                                 continue
 
                         table.insert license_files, {

@@ -7,7 +7,7 @@ For exact copies of eache license please follow the upstream link to look into [
 ## fmt
 {{fmt}} is an open-source formatting library providing a fast and safe alternative to C stdio and C++ iostreams.
 - **upstream:** https://fmt.dev/latest/index.html
-- **version:** 7.0.3
+- **version:** 9.0.0
 - **license:** MIT
 
 ## catch2
