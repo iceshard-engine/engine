@@ -13,22 +13,22 @@
   </Type>
 
   <Type Name="ice::IceshardEngineRunner">
-    <DisplayString>EngineRunner (Iceshard) {{ frame: {_current_frame._ptr->_index,d} }}</DisplayString>
+    <DisplayString>EngineRunner (Iceshard), frame index: {_current_frame._ptr->_index,d}</DisplayString>
     <Expand>
       <Item Name="[allocator]">_allocator</Item>
       <Item Name="[engine]">_engine</Item>
       <Item Name="[clock]">_clock</Item>
-      <Item Name="[frame_current]">*_current_frame._ptr</Item>
-      <Item Name="[frame_previous]">*_previous_frame._ptr</Item>
+      <Item Name="[frame_current]">_current_frame,view(Expanded)</Item>
+      <Item Name="[frame_previous]">_previous_frame,view(Expanded)</Item>
       <Item Name="[world_tracker]">_world_tracker</Item>
       <Item Name="[world_manager]">_world_manager</Item>
-      <Item Name="[gfx_world]">_gfx_world</Item>
-      <Item Name="[gfx_runner]">_gfx_runner</Item>
+      <Item Name="[gfx_world]" Condition="_gfx_world != nullptr">*_gfx_world</Item>
+      <Item Name="[gfx_runner]">_gfx_runner,view(Expanded)</Item>
     </Expand>
   </Type>
 
   <Type Name="ice::IceshardMemoryFrame">
-    <DisplayString>Frame ({_index,d})</DisplayString>
+    <DisplayString>Frame #{_index,d}</DisplayString>
     <Expand>
       <Item Name="[allocator]">_allocator</Item>
       <Item Name="[shards]">_shards</Item>
@@ -48,6 +48,50 @@
         </Expand>
       </Synthetic>
     </Expand>
+  </Type>
+
+  <!-- Worlds -->
+  <Type Name="ice::IceshardWorldTracker::Entry">
+    <DisplayString>Tracked {*world}, state: {current_state}</DisplayString>
+    <Expand>
+      <ExpandedItem>world</ExpandedItem>
+    </Expand>
+  </Type>
+
+  <Type Name="ice::IceshardWorldTracker">
+    <DisplayString>WorldTracker (Iceshard), tracked worlds:{_worlds._count}</DisplayString>
+    <Expand>
+      <Item Name="[allocator]">_allocator</Item>
+      <ExpandedItem>_worlds,view(Expanded)</ExpandedItem>
+    </Expand>
+  </Type>
+
+  <Type Name="ice::IceshardWorldManager">
+    <DisplayString>WorldManager (Iceshard), world count:{_worlds._count}</DisplayString>
+    <Expand>
+      <Item Name="[allocator]">_allocator</Item>
+      <ExpandedItem>_worlds,view(Expanded)</ExpandedItem>
+    </Expand>
+  </Type>
+
+  <Type Name="ice::IceshardWorldPortal">
+    <DisplayString>WorldPortal (Iceshard)</DisplayString>
+  </Type>
+
+  <Type Name="ice::IceshardWorld">
+    <DisplayString>World (Iceshard)</DisplayString>
+    <Expand>
+      <Item Name="[allocator]">_allocator</Item>
+      <Item Name="[entity_storage]">_entity_storage</Item>
+      <Item Name="[traits]">_traits</Item>
+      <Item Name="[portals]">_portals,view(Expanded)</Item>
+    </Expand>
+  </Type>
+
+  <!-- Gfx -->
+  <Type Name="ice::gfx::IceGfxRunner">
+    <DisplayString>GfxRunner (Iceshard)</DisplayString>
+    <Expand></Expand>
   </Type>
 
 </AutoVisualizer>

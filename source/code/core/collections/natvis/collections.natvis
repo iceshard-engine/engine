@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
 
+  <!-- Native Visualization for the ice::Span type -->
   <Type Name="ice::Span&lt;*&gt;">
     <DisplayString Condition="_count == 0">Span {{ empty }}</DisplayString>
     <DisplayString>Span {{ count={ _count } }}</DisplayString>
@@ -27,19 +28,21 @@
     </Expand>
   </Type>
 
-  <!-- Native Visualization for the ice::pod::Queue type -->
-  <Type Name="ice::pod::Queue&lt;*&gt;">
-    <DisplayString>Queue {{ size={ _size } }}</DisplayString>
+  <!-- Native Visualization for the ice::ShardContainer type -->
+  <Type Name="ice::ShardContainer">
+    <DisplayString Condition="_data._count == 0">ShardContainer {{ empty }}</DisplayString>
+    <DisplayString>ShardContainer {{ count={ _data._count }, capacity={ _data._capacity } }}</DisplayString>
     <Expand>
-      <Item Name="[size]">_size</Item>
-      <IndexListItems>
-        <Size>_size</Size>
-        <ValueNode>(_data._data[(_offset + $i) % _data._size])</ValueNode>
-      </IndexListItems>
+      <Item Name="[count]">_data._count</Item>
+      <Item Name="[capacity]">_data._capacity</Item>
+      <ArrayItems>
+        <Size>_data._count</Size>
+        <ValuePointer>_data._data</ValuePointer>
+      </ArrayItems>
     </Expand>
   </Type>
 
-  <!-- Native Visualization for the ice::pod::Hash::Entry type -->
+  <!-- Native Visualization for the ice::Hash::Entry type -->
   <Type Name="ice::HashMap&lt;*,*&gt;::Entry">
     <DisplayString IncludeView="ValueOnly">{value}</DisplayString>
     <DisplayString>Hash::Entry {{ key={key,X}, value={value} }} : {"$T1",sb}</DisplayString>
@@ -57,7 +60,7 @@
     <Expand>
       <Item Name="[size]">_count</Item>
       <Item Name="[capacity]">_capacity</Item>
-      <Synthetic Name="[items]">
+      <Synthetic Name="[items]" ExcludeView="Expanded">
         <DisplayString>load_factor {{ {(float)_count/(float)_capacity,g} }}</DisplayString>
         <Expand>
           <ArrayItems>
@@ -66,6 +69,10 @@
           </ArrayItems>
         </Expand>
       </Synthetic>
+      <IndexListItems IncludeView="Expanded">
+        <Size>_count</Size>
+        <ValueNode>_data[$i]</ValueNode>
+      </IndexListItems>
     </Expand>
   </Type>
 
@@ -74,7 +81,7 @@
     <Expand>
       <Item Name="[size]">_count</Item>
       <Item Name="[capacity]">_capacity</Item>
-      <Synthetic Name="[items]">
+      <Synthetic Name="[items]" ExcludeView="Expanded">
         <DisplayString>load_factor {{ {(float)_count/(float)_capacity,g} }}</DisplayString>
         <Expand>
           <ArrayItems>
@@ -83,6 +90,10 @@
           </ArrayItems>
         </Expand>
       </Synthetic>
+      <IndexListItems IncludeView="Expanded">
+        <Size>_count</Size>
+        <ValueNode>*_data[$i]</ValueNode>
+      </IndexListItems>
     </Expand>
   </Type>
 

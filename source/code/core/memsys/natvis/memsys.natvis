@@ -1,7 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
 <AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
 
-  <!-- Native Visualization for the allocator type -->
+  <!-- Native Visualization for the UniquePtr type -->
+  <Type Name="ice::UniquePtr&lt;*&gt;">
+    <DisplayString Condition="_ptr != nullptr">{*_ptr} - UniquePtr</DisplayString>
+    <DisplayString Condition="_ptr == nullptr">Null - UniquePtr</DisplayString>
+    <Expand>
+      <ExpandedItem Condition="_ptr != nullptr" IncludeView="Expanded">_ptr</ExpandedItem>
+      <Item Name="[value]" Condition="_ptr != nullptr" ExcludeView="Expanded">*_ptr</Item>
+      <Synthetic Name="[value]" Condition="_ptr == nullptr" ExcludeView="Expanded">
+        <DisplayString>null</DisplayString>
+      </Synthetic>
+      <Item Name="[allocator]" Condition="_alloc != nullptr" ExcludeView="Expanded">*_alloc</Item>
+      <Item Name="[deleter]" Condition="_deleter != nullptr" ExcludeView="Expanded">_deleter</Item>
+    </Expand>
+  </Type>
+
+  <!-- Native Visualization for the Allocator type -->
   <Type Name="ice::AllocatorBase&lt;0&gt;">
     <DisplayString>Allocator</DisplayString>
   </Type>
@@ -36,6 +51,35 @@
   <Type Name="ice::ProxyAllocator">
     <DisplayString Optional="true">ProxyAllocator ({_name,sb})</DisplayString>
     <DisplayString>ProxyAllocator</DisplayString>
+    <Expand>
+      <Item Name="[backing_allocator]">_backing_alloc</Item>
+      <Item Name="[dbg_name]">_name,s</Item>
+      <Item Name="[dbg_total_allocations]">_alloc_total_count,d</Item>
+      <Item Name="[dbg_current_allocations]">_alloc_count,d</Item>
+      <Item Name="[dbg_current_allocated_memory]">_internal->_allocated_inuse,d</Item>
+      <Synthetic Name="[dbg_location]">
+        <DisplayString>{_source_location,d}</DisplayString>
+        <Expand>
+          <Item Name="[file]">_source_location._File,sb</Item>
+          <Item Name="[line]">_source_location._Line,d</Item>
+          <Item Name="[function]">_source_location._Function,sb</Item>
+        </Expand>
+      </Synthetic>
+      <Synthetic Name="[dbg_allocator_tree]">
+        <DisplayString>parent: {_parent != nullptr}, children: {_children != nullptr}, siblings: {_next_sibling != nullptr || _prev_sibling != nullptr}</DisplayString>
+        <Expand>
+          <Item Condition="_parent != 0" Name="[parent]">_parent</Item>
+          <Item Condition="_children != 0" Name="[children]">_children</Item>
+          <Item Condition="_next_sibling != 0" Name="[sibling_prev]">_next_sibling</Item>
+          <Item Condition="_prev_sibling != 0" Name="[sibling_next]">_prev_sibling</Item>
+        </Expand>
+      </Synthetic>
+    </Expand>
+  </Type>
+
+  <Type Name="ice::RingAllocator">
+    <DisplayString Optional="true">RingAllocator ({_name,sb})</DisplayString>
+    <DisplayString>RingAllocator</DisplayString>
     <Expand>
       <Item Name="[backing_allocator]">_backing_alloc</Item>
       <Item Name="[dbg_name]">_name,s</Item>
