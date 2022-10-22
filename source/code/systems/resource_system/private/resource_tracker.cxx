@@ -30,6 +30,11 @@ namespace ice
         ice::u32 usecount;
     };
 
+    auto resource_uri(ice::ResourceHandle const* handle) noexcept -> ice::URI const&
+    {
+        return handle->resource->uri();
+    }
+
     auto resource_origin(ice::ResourceHandle const* handle) noexcept -> ice::String
     {
         return handle->resource->origin();
@@ -38,6 +43,11 @@ namespace ice
     auto resource_path(ice::ResourceHandle const* handle) noexcept -> ice::String
     {
         return handle->resource->name();
+    }
+
+    auto get_loose_resource(ice::ResourceHandle const* handle) noexcept -> ice::LooseResource const*
+    {
+        return handle->provider->access_loose_resource(handle->resource);
     }
 
     class ResourceTracker_Impl final : public ice::ResourceTracker, public ice::TaskScheduler_v2

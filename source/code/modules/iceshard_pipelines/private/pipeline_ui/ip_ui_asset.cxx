@@ -512,7 +512,7 @@ namespace ice
         void*,
         ice::Allocator& alloc,
         ice::ResourceTracker const&,
-        ice::Resource const& resource,
+        ice::LooseResource const& resource,
         ice::Data data,
         ice::Memory& out_memory
     ) noexcept -> ice::Task<bool>

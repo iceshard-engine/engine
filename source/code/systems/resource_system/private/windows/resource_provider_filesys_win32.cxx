@@ -123,9 +123,6 @@ namespace ice
 
             ice::WString uri_base_path = ice::path::win32::directory(ice::path::win32::directory(dir_tracker));
 
-            ice::Array<ice::Resource_Win32*> resources{ _allocator };
-            ice::array::reserve(resources, 10);
-
             // An allocator for temporary paths, 1024 bytes should suffice for 2x256 wchar_t long paths
             ice::StackAllocator_1024 temp_path_alloc;
             auto fncb = [&](ice::WString file) noexcept
@@ -135,30 +132,27 @@ namespace ice
                 ice::HeapString<ice::wchar> meta_file{ temp_path_alloc, file };
                 ice::HeapString<ice::wchar> data_file{ temp_path_alloc, ice::string::substr(file, 0, ice::string::find_last_of(file, L'.')) };
 
-                ice::array::clear(resources);
-
-                create_resources_from_loose_files(
+                ice::Resource_Win32* const resource = create_resources_from_loose_files(
                     _allocator,
                     _base_path,
                     uri_base_path,
                     meta_file,
-                    data_file,
-                    resources
+                    data_file
                 );
 
-                for (ice::Resource_Win32* resource : resources)
+                if (resource != nullptr)
                 {
-                    ice::u64 const hash = ice::hash(resource->origin());
-                    ICE_ASSERT(
-                        ice::hashmap::has(_resources, hash) == false,
-                        "A resource cannot be a explicit resource AND part of another resource."
-                    );
+                ice::u64 const hash = ice::hash(resource->origin());
+                ICE_ASSERT(
+                    ice::hashmap::has(_resources, hash) == false,
+                    "A resource cannot be a explicit resource AND part of another resource."
+                );
 
-                    ice::hashmap::set(
-                        _resources,
-                        hash,
-                        resource
-                    );
+                ice::hashmap::set(
+                    _resources,
+                    hash,
+                    resource
+                );
                 }
             };
 
@@ -216,6 +210,13 @@ namespace ice
             {
                 return nullptr;
             }
+        }
+
+        auto access_loose_resource(
+            ice::Resource const* resource
+        ) const noexcept -> ice::LooseResource const* override
+        {
+            return static_cast<ice::Resource_Win32 const*>(resource);
         }
 
         auto load_resource(

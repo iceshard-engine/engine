@@ -69,7 +69,10 @@ namespace ice
         {
             if (definition.fn_asset_oven)
             {
-                co_return co_await definition.fn_asset_oven(definition.ud_asset_oven, alloc, resource_tracker, *asset_entry->resource, asset_entry->data, result);
+                ice::LooseResource const* loose_resource = ice::get_loose_resource(asset_entry->resource_handle);
+                ICE_ASSERT(loose_resource != nullptr, "Baking non-loose resources should never happen!");
+
+                co_return co_await definition.fn_asset_oven(definition.ud_asset_oven, alloc, resource_tracker, *loose_resource, asset_entry->data, result);
             }
             co_return false;
         }

@@ -5,6 +5,7 @@
 #include <ice/mem_data.hxx>
 #include <ice/string_types.hxx>
 #include <ice/resource_types.hxx>
+#include <ice/task.hxx>
 
 namespace ice
 {
@@ -23,6 +24,15 @@ namespace ice
         virtual auto origin() const noexcept -> ice::String = 0;
 
         virtual auto metadata() const noexcept -> ice::Metadata const& = 0;
+    };
+
+    class LooseResource : public Resource
+    {
+    public:
+        virtual auto load_named_part(
+            ice::StringID_Arg part_name,
+            ice::Allocator& alloc
+        ) const noexcept -> ice::Task<ice::Memory> = 0;
     };
 
 } // ice::res_v2

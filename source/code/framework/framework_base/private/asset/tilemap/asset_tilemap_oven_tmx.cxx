@@ -832,7 +832,7 @@ namespace ice
         void* userdata,
         ice::Allocator& asset_alloc,
         ice::ResourceTracker const& resource_tracker,
-        ice::Resource const& resource,
+        ice::LooseResource const& resource,
         ice::Data resource_data,
         ice::Memory& out_data
     ) noexcept -> ice::Task<bool>
@@ -914,7 +914,7 @@ namespace ice
                 for (ice::u32 idx = 0; idx < tilemap_info.tileset_count; ++idx)
                 {
                     ice::ResourceHandle* const self = resource_tracker.find_resource(resource.uri());
-                    ice::ResourceHandle* const image_res = resource_tracker.find_resource_relative(
+                    ice::ResourceHandle* image_res = resource_tracker.find_resource_relative(
                         ice::URI{ ice::Scheme_File,  tilemap_info.tileset_info[idx].image },
                         self
                     );
@@ -924,6 +924,9 @@ namespace ice
                         result = false;
                         break;
                     }
+
+                    // We might want this to be automated. Loader or Oven? Probably should depend on the original URN of the resource
+                    image_res = resource_tracker.find_resource({ ice::Scheme_URN, ice::resource_path(image_res) });
 
                     ice::String origin = ice::resource_path(image_res);
                     ice::String name = ice::string::substr(origin, 0, ice::string::find_last_of(origin, '.'));

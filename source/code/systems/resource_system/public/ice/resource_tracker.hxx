@@ -67,9 +67,12 @@ namespace ice
         ) noexcept -> ice::Task<ice::ResourceResult> = 0;
     };
 
+    auto resource_uri(ice::ResourceHandle const* handle) noexcept -> ice::URI const&;
     auto resource_origin(ice::ResourceHandle const* handle) noexcept -> ice::String;
-
     auto resource_path(ice::ResourceHandle const* handle) noexcept -> ice::String;
+
+    // Might need to be moved somewhere else?
+    auto get_loose_resource(ice::ResourceHandle const* handle) noexcept -> ice::LooseResource const*;
 
     auto create_resource_tracker(
         ice::Allocator& alloc,

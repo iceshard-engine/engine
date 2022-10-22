@@ -9,6 +9,7 @@
 #include <ice/resource_tracker.hxx>
 #include <ice/task_sync_wait.hxx>
 #include <ice/font.hxx>
+#include <ice/font_utils.hxx>
 
 ISC_WARNING_PUSH
 ISCW_DECLARATION_HIDES_CLASS_MEMBER(ISCW_OP_DISABLE)
@@ -114,7 +115,7 @@ namespace ice
         void*,
         ice::Allocator& alloc,
         ice::ResourceTracker const& tracker,
-        ice::Resource const& resource,
+        ice::LooseResource const& resource,
         ice::Data data,
         ice::Memory& memory
     ) noexcept -> ice::Task<bool>
@@ -127,65 +128,81 @@ namespace ice
             msdfgen::FontHandle* const font = msdfgen::loadFontData(freetype, static_cast<msdfgen::byte const*>(data.location), int(data.size.value));
             if (font != nullptr)
             {
-                std::vector<msdf_atlas::GlyphGeometry> glyphs;
-                msdf_atlas::FontGeometry geometry{ &glyphs };
-
                 msdf_atlas::Charset charset = msdf_atlas::Charset::ASCII;
-                // TODO: Properly support bigger charsets.
-                charset.add((uint32_t)U"日"[0]);
-                charset.add((uint32_t)U"本"[0]);
-                charset.add((uint32_t)U"わ"[0]);
-                charset.add((uint32_t)U"た"[0]);
-                charset.add((uint32_t)U"し"[0]);
-                geometry.loadCharset(font, 2.0f, charset);
 
-                [[maybe_unused]]
-                msdfgen::FontMetrics const& metrics = geometry.getMetrics();
-
-                // Apply MSDF edge coloring
-                ice::f64 constexpr maxCornerAngle = 3.0;
-                for (msdf_atlas::GlyphGeometry& glyph_geometry : glyphs)
+                ice::Memory mem = co_await resource.load_named_part("charset"_sid, alloc);
+                if (mem.location != nullptr)
                 {
-                    glyph_geometry.edgeColoring(&msdfgen::edgeColoringInkTrap, maxCornerAngle, 0);
+                    charset = msdf_atlas::Charset{};
+                    char const* chars = reinterpret_cast<char const*>(mem.location);
+                    char const* const chars_end = chars + mem.size.value;
+
+                    while (chars < chars_end)
+                    {
+                        ice::u32 byte_count = 0;
+                        ice::u32 const codepoint = ice::text_get_codepoint(chars, byte_count);
+                        charset.add(codepoint);
+
+                        chars += byte_count;
+                    }
+
+                    alloc.deallocate(mem);
                 }
 
-                msdf_atlas::TightAtlasPacker atlas_packer;
-                atlas_packer.setDimensionsConstraint(msdf_atlas::TightAtlasPacker::DimensionsConstraint::SQUARE);
-                atlas_packer.setMinimumScale(32.0);
-                atlas_packer.setPixelRange(2.0);
-                atlas_packer.setMiterLimit(1.0);
-                atlas_packer.pack(glyphs.data(), int(glyphs.size()));
+                {
+                    std::vector<msdf_atlas::GlyphGeometry> glyphs;
+                    msdf_atlas::FontGeometry geometry{ &glyphs };
 
-                ice::i32 width, height;
-                atlas_packer.getDimensions(width, height);
+                    geometry.loadCharset(font, 2.0f, charset);
 
-                ice::i32 constexpr atlas_channels = 4;
+                    [[maybe_unused]]
+                    msdfgen::FontMetrics const& metrics = geometry.getMetrics();
 
-                using BitmapConstRef = msdfgen::BitmapConstRef<msdfgen::byte, atlas_channels>;
-                using BitmapStorage = msdf_atlas::BitmapAtlasStorage<msdf_atlas::byte, atlas_channels>;
-                using BitmapAtlasGenerator = msdf_atlas::ImmediateAtlasGenerator<
-                    float,
-                    atlas_channels,
-                    msdf_atlas::mtsdfGenerator,
-                    BitmapStorage
-                >;
+                    // Apply MSDF edge coloring
+                    ice::f64 constexpr maxCornerAngle = 3.0;
+                    for (msdf_atlas::GlyphGeometry& glyph_geometry : glyphs)
+                    {
+                        glyph_geometry.edgeColoring(&msdfgen::edgeColoringInkTrap, maxCornerAngle, 0);
+                    }
 
-                BitmapAtlasGenerator bitmapGenerator{ width, height };
+                    msdf_atlas::TightAtlasPacker atlas_packer;
+                    atlas_packer.setDimensionsConstraint(msdf_atlas::TightAtlasPacker::DimensionsConstraint::SQUARE);
+                    atlas_packer.setMinimumScale(32.0);
+                    atlas_packer.setPixelRange(2.0);
+                    atlas_packer.setMiterLimit(1.0);
+                    atlas_packer.pack(glyphs.data(), int(glyphs.size()));
 
-                msdf_atlas::GeneratorAttributes attribs;
-                bitmapGenerator.setAttributes(attribs);
-                bitmapGenerator.setThreadCount(2);
-                bitmapGenerator.generate(glyphs.data(), int(glyphs.size()));
+                    ice::i32 width, height;
+                    atlas_packer.getDimensions(width, height);
 
-                memory = ice::create_engine_object(
-                    alloc,
-                    glyphs,
-                    bitmapGenerator.atlasStorage()
-                );
+                    ice::i32 constexpr atlas_channels = 4;
 
-                BitmapConstRef bitmap_ref = bitmapGenerator.atlasStorage();
-                msdfgen::savePng(bitmap_ref, "test.png");
-                msdfgen::destroyFont(font);
+                    using BitmapConstRef = msdfgen::BitmapConstRef<msdfgen::byte, atlas_channels>;
+                    using BitmapStorage = msdf_atlas::BitmapAtlasStorage<msdf_atlas::byte, atlas_channels>;
+                    using BitmapAtlasGenerator = msdf_atlas::ImmediateAtlasGenerator<
+                        float,
+                        atlas_channels,
+                        msdf_atlas::mtsdfGenerator,
+                        BitmapStorage
+                    >;
+
+                    BitmapAtlasGenerator bitmapGenerator{ width, height };
+
+                    msdf_atlas::GeneratorAttributes attribs;
+                    bitmapGenerator.setAttributes(attribs);
+                    bitmapGenerator.setThreadCount(2);
+                    bitmapGenerator.generate(glyphs.data(), int(glyphs.size()));
+
+                    memory = ice::create_engine_object(
+                        alloc,
+                        glyphs,
+                        bitmapGenerator.atlasStorage()
+                    );
+
+                    BitmapConstRef bitmap_ref = bitmapGenerator.atlasStorage();
+                    msdfgen::savePng(bitmap_ref, "test.png");
+                    msdfgen::destroyFont(font);
+                }
             }
             msdfgen::deinitializeFreetype(freetype);
         }

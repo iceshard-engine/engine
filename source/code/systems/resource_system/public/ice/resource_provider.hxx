@@ -40,6 +40,13 @@ namespace ice
             return nullptr;
         }
 
+        virtual auto access_loose_resource(
+            ice::Resource const* resource
+        ) const noexcept -> ice::LooseResource const*
+        {
+            return nullptr;
+        }
+
         virtual auto load_resource(
             ice::Allocator& alloc,
             ice::Resource const* resource,
