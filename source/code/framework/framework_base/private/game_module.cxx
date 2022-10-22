@@ -1,3 +1,6 @@
+/// Copyright 2022 - 2022, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
 #include <ice/game_module.hxx>
 #include <ice/game_render_traits.hxx>
 #include <ice/world/world_trait_module.hxx>

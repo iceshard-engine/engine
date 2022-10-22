@@ -1,3 +1,6 @@
+/// Copyright 2022 - 2022, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
 #include "sdl2_app_container.hxx"
 #include "sdl2_render_surface.hxx"
 

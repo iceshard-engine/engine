@@ -1,3 +1,6 @@
+/// Copyright 2022 - 2022, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
 #include "vk_device.hxx"
 #include "vk_swapchain.hxx"
 #include "vk_render_surface.hxx"

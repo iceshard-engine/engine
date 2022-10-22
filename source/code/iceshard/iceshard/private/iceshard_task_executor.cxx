@@ -1,3 +1,6 @@
+/// Copyright 2022 - 2022, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
 #include "iceshard_task_executor.hxx"
 #include <ice/task_sync_wait.hxx>
 #include <ice/sync_manual_events.hxx>

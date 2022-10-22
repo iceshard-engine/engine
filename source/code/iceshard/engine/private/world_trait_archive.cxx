@@ -1,3 +1,6 @@
+/// Copyright 2022 - 2022, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
 #include <ice/world/world_trait_archive.hxx>
 #include <ice/ecs/ecs_archetype_index.hxx>
 #include <ice/container/hashmap.hxx>

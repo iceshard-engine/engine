@@ -1,3 +1,6 @@
+/// Copyright 2022 - 2022, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
 #include <catch2/catch.hpp>
 #include <ice/mem_allocator_host.hxx>
 #include "test_utils.hxx"
@@ -18,7 +21,7 @@ SCENARIO("memsys 'ice/mem_allocator_host.hxx'", "[allocators]")
             {
                 ice::AllocatorDebugInfo const& dbg_info = host_allocator.debug_info();
 
-                CHECK(dbg_info.location().line() == 9);
+                CHECK(dbg_info.location().line() == 12);
 
                 CHECK(dbg_info.allocation_count() == 0);
                 CHECK(dbg_info.allocation_size_inuse() == 0_B);

@@ -1,3 +1,6 @@
+/// Copyright 2022 - 2022, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
 #include "resource_dll_win32.hxx"
 #include <ice/resource_meta.hxx>
 #include <ice/resource_flags.hxx>

@@ -1,3 +1,6 @@
+/// Copyright 2022 - 2022, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
 #include "render_ui_trait.hxx"
 #include <ice/ui_element.hxx>
 #include <ice/ui_button.hxx>

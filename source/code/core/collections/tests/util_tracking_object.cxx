@@ -1,3 +1,6 @@
+/// Copyright 2022 - 2022, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
 #include "util_tracking_object.hxx"
 
 bool operator==(Test_ObjectEvents const& lhs, Test_ObjectEvents const& rhs) noexcept

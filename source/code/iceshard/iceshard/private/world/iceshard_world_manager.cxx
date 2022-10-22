@@ -1,3 +1,6 @@
+/// Copyright 2022 - 2022, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
 #include "iceshard_world_manager.hxx"
 #include <ice/world/world_trait.hxx>
 #include <ice/container/hashmap.hxx>

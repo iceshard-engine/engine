@@ -1,3 +1,6 @@
+/// Copyright 2022 - 2022, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
 #include "asset_image.hxx"
 #include <ice/render/render_image.hxx>
 
@@ -8,7 +11,7 @@
 #   include "asset_image_external/stb_image.hxx"
 #   pragma GCC diagnostic pop
 #else
-#   include "asset_image_external/stb_image.hxx"
+#   include "asset_image_external/stb_image.h"
 #endif
 #undef assert
 

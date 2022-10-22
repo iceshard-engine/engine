@@ -1,4 +1,7 @@
-﻿#include "asset_font.hxx"
+/// Copyright 2022 - 2022, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
+#include "asset_font.hxx"
 
 #include <ice/uri.hxx>
 #include <ice/resource.hxx>

@@ -1,3 +1,6 @@
+/// Copyright 2022 - 2022, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
 #include "input_state_helpers.hxx"
 #include <ice/input/input_tracker.hxx>
 

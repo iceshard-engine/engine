@@ -2,12 +2,18 @@
 <AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
     <Type Name="ice::Shard">
         <DisplayString Condition="name == 2824422235">Shard {{ action/camera/set-default }}</DisplayString>
-        <DisplayString Condition="name == 2878671717">Shard {{ action/entity/destroy }}</DisplayString>
+        <DisplayString Condition="name == 1066498641">Shard {{ action/render/draw-text }}</DisplayString>
         <DisplayString Condition="name == 2222547571">Shard {{ action/world/activate }}</DisplayString>
         <DisplayString Condition="name == 1865136619">Shard {{ action/world/deactivate }}</DisplayString>
         <DisplayString Condition="name == 2653397447">Shard {{ event/action/failed }}</DisplayString>
         <DisplayString Condition="name == 2071265310">Shard {{ event/action/reset }}</DisplayString>
         <DisplayString Condition="name == 126348260">Shard {{ event/action/success }}</DisplayString>
+        <DisplayString Condition="name == 2007019835">Shard {{ event/app/quit }}</DisplayString>
+        <DisplayString Condition="name == 2920960498">Shard {{ event/app/resumed }}</DisplayString>
+        <DisplayString Condition="name == 1470959752">Shard {{ event/app/resuming }}</DisplayString>
+        <DisplayString Condition="name == 3166668558">Shard {{ event/app/suspended }}</DisplayString>
+        <DisplayString Condition="name == 4082883258">Shard {{ event/app/suspending }}</DisplayString>
+        <DisplayString Condition="name == 8163941">Shard {{ event/app/terminated }}</DisplayString>
         <DisplayString Condition="name == 3574802084">Shard {{ event/ecs-v2/entity-archetype-changed }}</DisplayString>
         <DisplayString Condition="name == 2864770401">Shard {{ event/ecs-v2/entity-created }}</DisplayString>
         <DisplayString Condition="name == 3911866566">Shard {{ event/ecs-v2/entity-destroyed }}</DisplayString>
@@ -15,13 +21,11 @@
         <DisplayString Condition="name == 2744387612">Shard {{ event/frame/tick }}</DisplayString>
         <DisplayString Condition="name == 2408849273">Shard {{ event/input/axis }}</DisplayString>
         <DisplayString Condition="name == 3721564947">Shard {{ event/input/button }}</DisplayString>
-        <DisplayString Condition="name == 3371021896">Shard {{ event/window/size-changed }}</DisplayString>
         <DisplayString Condition="name == 647074787">Shard {{ test/shard }}</DisplayString>
         <DisplayString Condition="name == 517635588">Shard {{ test/shard2 }}</DisplayString>
         <DisplayString>Shard {{ {name,h}, unknown_name }}</DisplayString>
         <Expand>
             <Synthetic Name="[payload type]">
-                <DisplayString Condition="payload_id == 1622554074">ice::Entity</DisplayString>
                 <DisplayString Condition="payload_id == 1997334060">ice::StringID_Hash</DisplayString>
                 <DisplayString Condition="payload_id == 1506352867">ice::World*</DisplayString>
                 <DisplayString Condition="payload_id == 4041245270">ice::ecs::Entity</DisplayString>
@@ -31,15 +35,13 @@
                 <DisplayString Condition="payload_id == 2511786707">ice::i32</DisplayString>
                 <DisplayString Condition="payload_id == 1753932510">ice::i64</DisplayString>
                 <DisplayString Condition="payload_id == 470055387">ice::input::InputEvent</DisplayString>
-                <DisplayString Condition="payload_id == 3972990833">ice::math::vec2f</DisplayString>
-                <DisplayString Condition="payload_id == 983740932">ice::math::vec2i</DisplayString>
-                <DisplayString Condition="payload_id == 2445304050">ice::math::vec2u</DisplayString>
                 <DisplayString Condition="payload_id == 3725678933">ice::u32</DisplayString>
                 <DisplayString Condition="payload_id == 3035887879">ice::u64</DisplayString>
+                <DisplayString Condition="payload_id == 1468725825">ice::vec2i</DisplayString>
+                <DisplayString Condition="payload_id == 2354248200">ice::vec2u</DisplayString>
                 <DisplayString Condition="payload_id == 0">{payload_id}, type_not_set</DisplayString>
                 <DisplayString>{payload_id}, unknown_type</DisplayString>
             </Synthetic>
-            <Item Name="[payload]" Optional="true" Condition="payload_id == 1622554074">*(ice::Entity*)&amp;payload</Item>
             <Item Name="[payload]" Optional="true" Condition="payload_id == 1997334060">*(ice::StringID_Hash*)&amp;payload</Item>
             <Item Name="[payload]" Optional="true" Condition="payload_id == 1506352867">*(ice::World**)&amp;payload</Item>
             <Item Name="[payload]" Optional="true" Condition="payload_id == 4041245270">*(ice::ecs::Entity*)&amp;payload</Item>
@@ -49,11 +51,10 @@
             <Item Name="[payload]" Optional="true" Condition="payload_id == 2511786707">*(ice::i32*)&amp;payload</Item>
             <Item Name="[payload]" Optional="true" Condition="payload_id == 1753932510">*(ice::i64*)&amp;payload</Item>
             <Item Name="[payload]" Optional="true" Condition="payload_id == 470055387">*(ice::input::InputEvent*)&amp;payload</Item>
-            <Item Name="[payload]" Optional="true" Condition="payload_id == 3972990833">*(ice::math::vec2f*)&amp;payload</Item>
-            <Item Name="[payload]" Optional="true" Condition="payload_id == 983740932">*(ice::math::vec2i*)&amp;payload</Item>
-            <Item Name="[payload]" Optional="true" Condition="payload_id == 2445304050">*(ice::math::vec2u*)&amp;payload</Item>
             <Item Name="[payload]" Optional="true" Condition="payload_id == 3725678933">*(ice::u32*)&amp;payload</Item>
             <Item Name="[payload]" Optional="true" Condition="payload_id == 3035887879">*(ice::u64*)&amp;payload</Item>
+            <Item Name="[payload]" Optional="true" Condition="payload_id == 1468725825">*(ice::vec2i*)&amp;payload</Item>
+            <Item Name="[payload]" Optional="true" Condition="payload_id == 2354248200">*(ice::vec2u*)&amp;payload</Item>
         </Expand>
     </Type>
 </AutoVisualizer>

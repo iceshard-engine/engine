@@ -1,3 +1,6 @@
+/// Copyright 2022 - 2022, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
 #include "trait_render_glyphs.hxx"
 #include <ice/asset_storage.hxx>
 #include <ice/task_thread_pool.hxx>

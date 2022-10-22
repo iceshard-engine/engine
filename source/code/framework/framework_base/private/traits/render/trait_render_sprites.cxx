@@ -1,3 +1,6 @@
+/// Copyright 2022 - 2022, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
 #include "trait_render_sprites.hxx"
 #include "../trait_camera.hxx"
 #include <ice/game_entity.hxx>

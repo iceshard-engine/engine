@@ -1,3 +1,6 @@
+/// Copyright 2021 - 2022, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
 .Project =
 [
     .Name = 'imgui_module'

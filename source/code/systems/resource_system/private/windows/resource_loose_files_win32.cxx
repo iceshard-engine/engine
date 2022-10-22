@@ -1,3 +1,6 @@
+/// Copyright 2022 - 2022, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
 #include "resource_loose_files_win32.hxx"
 #include <ice/mem_allocator_stack.hxx>
 #include <ice/container_types.hxx>

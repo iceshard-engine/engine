@@ -1,3 +1,6 @@
+/// Copyright 2022 - 2022, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
 #include <ice/task_thread.hxx>
 #include <ice/task_list.hxx>
 #include <ice/task.hxx>

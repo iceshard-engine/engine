@@ -1,3 +1,6 @@
+/// Copyright 2022 - 2022, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
 //!
 //! The below code was taken from https://gist.github.com/Teknoman117/d4d952942b4314781432
 //! It is used by the stringid_t type to calculate the hash value from the given string at compile time.

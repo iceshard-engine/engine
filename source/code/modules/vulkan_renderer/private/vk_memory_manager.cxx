@@ -1,3 +1,6 @@
+/// Copyright 2022 - 2022, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
 #include "vk_memory_manager.hxx"
 #include "vk_utility.hxx"
 #include <ice/assert.hxx>

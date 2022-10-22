@@ -1,3 +1,6 @@
+/// Copyright 2022 - 2022, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
 #include "widget_imgui_allocator_tree.hxx"
 #include <ice/string/string.hxx>
 #include <imgui/imgui.h>
