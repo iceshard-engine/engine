@@ -25,7 +25,7 @@ class NatvisCommand extends Command
                     shard_names.shard[var] = val
                     continue
 
-                var, val = line\match 'Constant_ShardPayloadID<([%w_:%*]+)> = ice::payload_id%("([%w_:*]+)"%)'
+                var, val = line\match 'Constant_ShardPayloadID<([%w_:%*]+)> = ice::shard_payloadid%("([%w_:*]+)"%)'
                 if var or val
                     shard_names.payloadid[var] = val
 
