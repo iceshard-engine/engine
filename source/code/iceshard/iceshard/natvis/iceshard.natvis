@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
+
+  <Type Name="ice::IceshardEngine">
+    <DisplayString>Engine (Iceshard)</DisplayString>
+    <Expand>
+      <Item Name="[allocator]">_allocator</Item>
+      <Item Name="[assets]">_asset_storage</Item>
+      <Item Name="[world_traits]">_trait_archive</Item>
+      <Item Name="[world_manager]">_world_manager</Item>
+      <Item Name="[entity_index]">_entity_index</Item>
+    </Expand>
+  </Type>
+
+  <Type Name="ice::IceshardEngineRunner">
+    <DisplayString>EngineRunner (Iceshard) {{ frame: {_current_frame._ptr->_index,d} }}</DisplayString>
+    <Expand>
+      <Item Name="[allocator]">_allocator</Item>
+      <Item Name="[engine]">_engine</Item>
+      <Item Name="[clock]">_clock</Item>
+      <Item Name="[frame_current]">*_current_frame._ptr</Item>
+      <Item Name="[frame_previous]">*_previous_frame._ptr</Item>
+      <Item Name="[world_tracker]">_world_tracker</Item>
+      <Item Name="[world_manager]">_world_manager</Item>
+      <Item Name="[gfx_world]">_gfx_world</Item>
+      <Item Name="[gfx_runner]">_gfx_runner</Item>
+    </Expand>
+  </Type>
+
+  <Type Name="ice::IceshardMemoryFrame">
+    <DisplayString>Frame ({_index,d})</DisplayString>
+    <Expand>
+      <Item Name="[allocator]">_allocator</Item>
+      <Item Name="[shards]">_shards</Item>
+      <Item Name="[input_events]">_input_events</Item>
+      <Item Name="[data_storage]">_data_storage</Item>
+      <Item Name="[entity_queries]">_query_operation</Item>
+      <Item Name="[entity_operations]">_entity_operations</Item>
+      <Item Name="[frame_tasks]">_frame_tasks</Item>
+      <Synthetic Name="[sub_allocators]">
+        <DisplayString>smaller allocators</DisplayString>
+        <Expand>
+          <Item Name="[input_alloc]">_inputs_allocator</Item>
+          <Item Name="[shards_alloc]">_shards_allocator</Item>
+          <Item Name="[tasks_alloc]">_tasks_allocator</Item>
+          <Item Name="[storage_alloc]">_storage_allocator</Item>
+          <Item Name="[data_alloc]">_data_allocator</Item>
+        </Expand>
+      </Synthetic>
+    </Expand>
+  </Type>
+
+</AutoVisualizer>
