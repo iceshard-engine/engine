@@ -8,7 +8,7 @@
 #if ISP_COMPILER_GCC
 #   pragma GCC diagnostic ignored "-Wunused-but-set-variable"
 #   pragma GCC diagnostic ignored "-Wsign-compare"
-#   include "asset_image_external/stb_image.hxx"
+#   include "asset_image_external/stb_image.h"
 #   pragma GCC diagnostic pop
 #else
 #   include "asset_image_external/stb_image.h"
