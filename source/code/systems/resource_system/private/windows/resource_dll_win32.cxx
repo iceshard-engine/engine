@@ -51,9 +51,9 @@ namespace ice
     auto create_resource_from_dll_path(
         ice::Allocator& alloc,
         ice::WString dll_path
-    ) noexcept -> ice::Resource_v2*
+    ) noexcept -> ice::Resource*
     {
-        ice::Resource_v2* result = nullptr;
+        ice::Resource* result = nullptr;
 
         DWORD const file_attribs = GetFileAttributesW(ice::string::begin(dll_path));
         if (file_attribs != INVALID_FILE_ATTRIBUTES)

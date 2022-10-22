@@ -32,7 +32,7 @@ namespace ice
 
         ~ResourceProvider_Win32Filesystem() noexcept override
         {
-            for (Resource_v2* res_entry : _resources)
+            for (Resource* res_entry : _resources)
             {
                 _allocator.destroy(res_entry);
             }
@@ -166,10 +166,10 @@ namespace ice
         }
 
         auto query_resources(
-            ice::Array<ice::Resource_v2 const*>& out_changes
+            ice::Array<ice::Resource const*>& out_changes
         ) const noexcept -> ice::u32 override
         {
-            for (Resource_v2 const* entry : _resources)
+            for (Resource const* entry : _resources)
             {
                 ice::array::push_back(out_changes, entry);
             }
@@ -188,7 +188,7 @@ namespace ice
 
         auto find_resource(
             ice::URI const& uri
-        ) const noexcept -> ice::Resource_v2 const* override
+        ) const noexcept -> ice::Resource const* override
         {
             ICE_ASSERT(
                 uri.scheme == ice::stringid_hash(schemeid()),
@@ -220,7 +220,7 @@ namespace ice
 
         auto load_resource(
             ice::Allocator& alloc,
-            ice::Resource_v2 const* resource,
+            ice::Resource const* resource,
             ice::TaskScheduler_v2& scheduler
         ) noexcept -> ice::Task<ice::Memory> override
         {
@@ -229,7 +229,7 @@ namespace ice
         }
 
         auto release_resource(
-            ice::Resource_v2 const* resource,
+            ice::Resource const* resource,
             ice::TaskScheduler_v2& scheduler
         ) noexcept -> ice::Task<>
         {
@@ -250,8 +250,8 @@ namespace ice
 
         auto resolve_relative_resource(
             ice::URI const& relative_uri,
-            ice::Resource_v2 const* root_resource
-        ) const noexcept -> ice::Resource_v2 const* override
+            ice::Resource const* root_resource
+        ) const noexcept -> ice::Resource const* override
         {
             ice::u32 const origin_size = ice::string::size(root_resource->origin());
 

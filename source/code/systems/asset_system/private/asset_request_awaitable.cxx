@@ -65,7 +65,7 @@ namespace ice
         return { };
     }
 
-    auto AssetRequestAwaitable::resource() const noexcept -> ice::Resource_v2 const&
+    auto AssetRequestAwaitable::resource() const noexcept -> ice::Resource const&
     {
         return *_asset_entry->resource;
     }

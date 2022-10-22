@@ -28,7 +28,7 @@ namespace ice
         auto state() const noexcept -> ice::AssetState override;
         auto data() const noexcept -> ice::Data override;
 
-        auto resource() const noexcept -> ice::Resource_v2 const& override;
+        auto resource() const noexcept -> ice::Resource const& override;
         auto asset_definition() const noexcept -> ice::AssetTypeDefinition const& override;
 
         auto allocate(ice::usize size) const noexcept -> ice::Memory override;

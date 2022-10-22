@@ -12,7 +12,7 @@ namespace ice
 
     class TaskScheduler_v2;
 
-    class Resource_Win32 : public ice::Resource_v2
+    class Resource_Win32 : public ice::Resource
     {
     public:
         virtual auto load_data_for_flags(

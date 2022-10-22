@@ -22,7 +22,7 @@ namespace ice
         void*,
         ice::Allocator& alloc,
         ice::ResourceTracker const&,
-        ice::Resource_v2 const& resource,
+        ice::Resource const& resource,
         ice::Data data,
         ice::Memory& memory
     ) noexcept -> ice::Task<bool>

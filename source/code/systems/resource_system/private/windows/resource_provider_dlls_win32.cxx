@@ -37,7 +37,7 @@ namespace ice
 
         ~ResourceProvider_Win32Dlls() noexcept override
         {
-            for (Resource_v2* res_entry : _resources)
+            for (Resource* res_entry : _resources)
             {
                 _allocator.destroy(res_entry);
             }
@@ -133,7 +133,7 @@ namespace ice
                 temp_path_alloc.reset();
 
                 ice::HeapString<ice::wchar> file_path{ temp_path_alloc, file };
-                ice::Resource_v2* const resource = create_resource_from_dll_path(
+                ice::Resource* const resource = create_resource_from_dll_path(
                     _allocator,
                     file_path
                 );
@@ -152,10 +152,10 @@ namespace ice
         }
 
         auto query_resources(
-            ice::Array<ice::Resource_v2 const*>& out_changes
+            ice::Array<ice::Resource const*>& out_changes
         ) const noexcept -> ice::u32 override
         {
-            for (Resource_v2 const* entry : _resources)
+            for (Resource const* entry : _resources)
             {
                 ice::array::push_back(out_changes, entry);
             }
@@ -174,7 +174,7 @@ namespace ice
 
         auto load_resource(
             ice::Allocator& alloc,
-            ice::Resource_v2 const* resource,
+            ice::Resource const* resource,
             ice::TaskScheduler_v2& scheduler
         ) noexcept -> ice::Task<ice::Memory> override
         {
@@ -183,7 +183,7 @@ namespace ice
         }
 
         auto release_resource(
-            ice::Resource_v2 const* resource,
+            ice::Resource const* resource,
             ice::TaskScheduler_v2& scheduler
         ) noexcept -> ice::Task<>
         {
@@ -195,7 +195,7 @@ namespace ice
         ice::Allocator& _allocator;
         ice::HeapString<ice::wchar> _base_path;
 
-        ice::HashMap<ice::Resource_v2*> _resources;
+        ice::HashMap<ice::Resource*> _resources;
     };
 
     auto create_resource_provider_dlls(

@@ -11,10 +11,10 @@ namespace ice
 
     struct Metadata;
 
-    class Resource_v2
+    class Resource
     {
     public:
-        virtual ~Resource_v2() noexcept = default;
+        virtual ~Resource() noexcept = default;
 
         virtual auto uri() const noexcept -> ice::URI const& = 0;
         virtual auto flags() const noexcept -> ice::ResourceFlags = 0;

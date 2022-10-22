@@ -12,7 +12,7 @@ namespace ice
     struct ResourceHandle;
     struct ResourceTrackerCreateInfo;
 
-    class Resource_v2;
+    class Resource;
     class ResourceProvider;
     class ResourceTracker;
 

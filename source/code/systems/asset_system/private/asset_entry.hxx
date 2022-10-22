@@ -8,7 +8,7 @@
 namespace ice
 {
 
-    class Resource_v2;
+    class Resource;
     class AssetRequestAwaitable;
 
     struct ResourceHandle;
@@ -20,7 +20,7 @@ namespace ice
     struct AssetEntry : AssetHandle
     {
         ice::ResourceHandle* resource_handle;
-        ice::Resource_v2 const* resource;
+        ice::Resource const* resource;
         ice::AssetState state;
         ice::Data data;
         ice::Memory data_baked;

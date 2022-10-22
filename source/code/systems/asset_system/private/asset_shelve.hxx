@@ -36,7 +36,7 @@ namespace ice
         auto store(
             ice::StringID_Arg name,
             ice::ResourceHandle* resource_handle,
-            ice::Resource_v2 const* resource,
+            ice::Resource const* resource,
             ice::AssetState state,
             ice::Data data
         ) noexcept -> ice::AssetEntry*;

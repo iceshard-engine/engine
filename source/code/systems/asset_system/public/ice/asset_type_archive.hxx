@@ -31,7 +31,7 @@ namespace ice
             void*,
             ice::Allocator&,
             ice::ResourceTracker const&,
-            ice::Resource_v2 const&,
+            ice::Resource const&,
             ice::Data,
             ice::Memory&
         ) noexcept;

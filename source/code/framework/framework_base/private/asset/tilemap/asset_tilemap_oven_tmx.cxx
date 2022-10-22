@@ -832,7 +832,7 @@ namespace ice
         void* userdata,
         ice::Allocator& asset_alloc,
         ice::ResourceTracker const& resource_tracker,
-        ice::Resource_v2 const& resource,
+        ice::Resource const& resource,
         ice::Data resource_data,
         ice::Memory& out_data
     ) noexcept -> ice::Task<bool>
