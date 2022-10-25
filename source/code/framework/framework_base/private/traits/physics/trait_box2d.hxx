@@ -12,6 +12,8 @@
 #include "devui_box2d.hxx"
 #include "box2d.hxx"
 
+#include "chipmunk2d.hxx"
+
 namespace ice
 {
 
@@ -60,6 +62,8 @@ namespace ice
 
         ice::Engine* _engine = nullptr;
         b2World* _world = nullptr;
+
+        cpSpace* _global_space = nullptr;
 
         ice::DevUI_Box2D* _devui;
     };

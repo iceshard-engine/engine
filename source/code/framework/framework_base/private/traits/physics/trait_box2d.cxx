@@ -108,6 +108,11 @@ namespace ice
     {
         _engine = ice::addressof(engine);
 
+        _global_space = reinterpret_cast<cpSpace*>(
+            portal.allocator().allocate(ice::meminfo_of<cpSpace>).memory
+        );
+        cpSpaceInit(_global_space);
+
         b2Vec2 gravity{ 0.f, -10.f };
         _world = portal.allocator().create<b2World>(gravity, static_cast<ice::Allocator*>(ice::addressof(portal.allocator())));
 
@@ -135,6 +140,9 @@ namespace ice
         ice::WorldPortal& portal
     ) noexcept
     {
+        cpSpaceDestroy(_global_space);
+        portal.allocator().deallocate(_global_space);
+
         engine.developer_ui().unregister_widget(_devui);
         portal.allocator().destroy(_devui);
         _devui = nullptr;
