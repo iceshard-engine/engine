@@ -111,6 +111,9 @@ namespace ice
         _global_space = reinterpret_cast<cpSpace*>(
             portal.allocator().allocate(ice::meminfo_of<cpSpace>).memory
         );
+        // It seems that the documentation of Chipmunk, and I quote "It is not a requirement that the memory be zeroed." is kinda not true :p
+        memset(_global_space, 0, sizeof(cpSpace));
+        // Fails in debug if memory is not zeroed.
         cpSpaceInit(_global_space);
 
         b2Vec2 gravity{ 0.f, -10.f };
