@@ -3,10 +3,14 @@ import Application from require 'ice.application'
 import UpdateCommand from require 'ice.commands.update'
 import BuildCommand from require 'ice.commands.build'
 import VStudioCommand from require 'ice.commands.vstudio'
+import LicenseCommand from require 'ice.commands.license'
+
 import RunCommand from require 'tools.run'
 import NatvisCommand from require 'tools.natvis'
 import CodeStyleCommand from require 'tools.codestyle'
-import LicenseCommand from require 'tools.license'
+
+LicenseCommand.settings.authors = "Dandielo <dandielo@iceshard.net>"
+LicenseCommand.settings.license = "MIT"
 
 class IceShard extends Application
     @name: 'IceShard'
