@@ -898,13 +898,21 @@ namespace ice::render::vk
             BufferUpdateInfo const& update_info = update_infos[idx];
             Memory& target = data_blocks[idx];
 
+            VulkanBuffer* const buffer_ptr = reinterpret_cast<VulkanBuffer*>(static_cast<ice::uptr>(update_info.buffer));
+
+            // TODO: The memory manager requires a not-so-small overhaul to avoid alignment issues...
+            VkMemoryRequirements reqirements;
+            vkGetBufferMemoryRequirements(_vk_device, buffer_ptr->vk_buffer, &reqirements);
+
             ICE_ASSERT(
                 target.size >= update_info.data.size,
                 "Target memory buffer is smaller than provided size to copy!"
             );
 
+            ice::AlignResult<void*> aligned_ptr = ice::align_to(ice::ptr_add(target.location, { update_info.offset }), ice::ualign(reqirements.alignment));
+
             ice::memcpy(
-                ice::ptr_add(target.location, { update_info.offset }),
+                aligned_ptr.value,
                 update_info.data.location,
                 update_info.data.size
             );

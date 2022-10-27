@@ -221,7 +221,7 @@ namespace ice::render::vk
                         }
 
                         ice::u32 final_size = requirements.size;
-                        if (ice::u32 const remainder = final_size % requirements.alignment; remainder != 0)
+                        if (ice::u32 const remainder = candidate_entry->offset % requirements.alignment; remainder != 0)
                         {
                             final_size += requirements.alignment - remainder;
                         }

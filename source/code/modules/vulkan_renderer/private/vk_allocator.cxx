@@ -60,6 +60,8 @@ namespace ice::render::vk
 
         auto vk_iceshard_allocate(void* userdata, size_t size, size_t alignment, VkSystemAllocationScope /*scope*/) noexcept -> void*
         {
+            if (size == 0) return nullptr;
+
             VulkanAllocator* const allocator = reinterpret_cast<VulkanAllocator*>(userdata);
             return allocator->allocate({ { size }, static_cast<ice::ualign>(alignment) }).memory;
         }
