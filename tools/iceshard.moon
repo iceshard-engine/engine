@@ -27,7 +27,7 @@ class IceShard extends Application
 
     -- Plain call to the application
     execute: (args) =>
-        print "#{@@name} project tool - v0.1-alpha"
+        print "#{@@name} CLI - IBT/1.0.0"
         print ' For more options see the -h,--help output.'
 
 { :IceShard }
