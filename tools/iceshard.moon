@@ -25,9 +25,4 @@ class IceShard extends Application
         'license': LicenseCommand
     }
 
-    -- Plain call to the application
-    execute: (args) =>
-        print "#{@@name} CLI - IBT/1.0.0"
-        print ' For more options see the -h,--help output.'
-
 { :IceShard }
