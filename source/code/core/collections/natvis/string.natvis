@@ -26,11 +26,11 @@
 
   <!-- Native Visualization for the core::StringView<> type -->
   <Type Name="ice::BasicString&lt;*&gt;">
-    <DisplayString>String {{ { _data,[_size] } }}</DisplayString>
+    <DisplayString>String {{ { _data,[_size]s } }}</DisplayString>
     <StringView>_data,[_size]</StringView>
     <Expand>
       <Item Name="[size]">_size</Item>
-      <ExpandedItem>_data,[_size]</ExpandedItem>
+      <Item Name="[value]">_data,[_size]sb</Item>
     </Expand>
   </Type>
 

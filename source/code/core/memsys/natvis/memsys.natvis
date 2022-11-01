@@ -1,6 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
 
+  <Type Name="ice::usize">
+    <DisplayString IncludeView="raw">{value}</DisplayString>
+    <DisplayString ExcludeView="raw" Condition="value &gt;= 1024 * 1024">{value / (1024 * 1024)} MiB, {(value % (1024 * 1024)) / 1024} KiB, {value % 1024} B</DisplayString>
+    <DisplayString ExcludeView="raw" Condition="value &gt;= 1024">{value / 1024} KiB, {value % 1024} B</DisplayString>
+    <DisplayString ExcludeView="raw" Condition="value &lt; 1024">{value % 1024} B</DisplayString>
+  </Type>
+
+  <Type Name="ice::isize">
+    <DisplayString IncludeView="raw">{value}</DisplayString>
+    <DisplayString ExcludeView="raw" Condition="value &gt;= 1024 * 1024">{value / (1024 * 1024)} MiB, {(value % (1024 * 1024)) / 1024} KiB, {value % 1024} B</DisplayString>
+    <DisplayString ExcludeView="raw" Condition="value &gt;= 1024">{value / 1024} KiB, {value % 1024} B</DisplayString>
+  </Type>
+
   <!-- Native Visualization for the UniquePtr type -->
   <Type Name="ice::UniquePtr&lt;*&gt;">
     <DisplayString Condition="_ptr != nullptr">{*_ptr} - UniquePtr</DisplayString>
@@ -78,9 +91,10 @@
   </Type>
 
   <Type Name="ice::RingAllocator">
-    <DisplayString Optional="true">RingAllocator ({_name,sb})</DisplayString>
-    <DisplayString>RingAllocator</DisplayString>
+    <DisplayString Optional="true">RingAllocator ({_name,sb}) {{ {_params.ring_buffer_size} }}</DisplayString>
+    <DisplayString>RingAllocator {{ {_params.ring_buffer_size} }}</DisplayString>
     <Expand>
+      <Item Name="[buffer_size]">_params.ring_buffer_size</Item>
       <Item Name="[backing_allocator]">_backing_alloc</Item>
       <Item Name="[dbg_name]">_name,s</Item>
       <Item Name="[dbg_total_allocations]">_alloc_total_count,d</Item>

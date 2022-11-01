@@ -92,7 +92,7 @@
       </Synthetic>
       <IndexListItems IncludeView="Expanded">
         <Size>_count</Size>
-        <ValueNode>*_data[$i]</ValueNode>
+        <ValueNode>_data[$i]</ValueNode>
       </IndexListItems>
     </Expand>
   </Type>
