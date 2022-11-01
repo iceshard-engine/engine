@@ -81,7 +81,7 @@ namespace ice::gfx
 
     private:
         ice::ProxyAllocator _allocator;
-        ice::UniquePtr<ice::TaskThread> _thread;
+        ice::UniquePtr<ice::TaskThread_v2> _thread;
         ice::UniquePtr<ice::gfx::IceGfxDevice> _device;
 
         ice::render::RenderFence* _fences[4];

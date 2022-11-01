@@ -29,7 +29,7 @@ namespace ice
 
         bool validate_trait_list(
             ice::Span<ice::StringID const> traits
-        ) const noexcept;
+        ) const noexcept override;
 
     private:
         ice::Allocator& _allocator;

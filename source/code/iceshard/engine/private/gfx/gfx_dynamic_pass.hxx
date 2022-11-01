@@ -55,7 +55,7 @@ namespace ice::gfx
         ) noexcept;
         ~IceGfxDynamicPass() noexcept;
 
-        auto stage_count() const noexcept -> ice::u32;
+        auto stage_count() const noexcept -> ice::u32 override;
 
         bool has_work() const noexcept;
 
@@ -66,7 +66,7 @@ namespace ice::gfx
 
         void clear() noexcept override;
 
-        void query_stage_order(ice::Array<ice::StringID_Hash>& stage_order_out) const noexcept;
+        void query_stage_order(ice::Array<ice::StringID_Hash>& stage_order_out) const noexcept override;
 
     private:
         ice::Allocator& _allocator;

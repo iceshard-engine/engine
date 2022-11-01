@@ -435,7 +435,7 @@ namespace ice
                     fonts[idx_font].font_name_offset = additional_data_offset;
                     fonts[idx_font].font_name_size = ice::string::size(resource.font_data.font_name);
 
-                    ice::memcpy(additional_data, ice::string::begin(resource.font_data.font_name), { fonts[idx_font].font_name_size });
+                    ice::memcpy(additional_data, ice::string::begin(resource.font_data.font_name), fonts[idx_font].font_name_size);
 
                     additional_data = ice::ptr_add(additional_data, { fonts[idx_font].font_name_size });
                     additional_data_offset += fonts[idx_font].font_name_size;

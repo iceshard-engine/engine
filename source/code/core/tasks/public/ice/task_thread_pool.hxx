@@ -24,6 +24,8 @@ namespace ice
         ) noexcept = 0;
 
         inline auto schedule() noexcept -> ScheduleOperation;
+
+        inline auto operator co_await() noexcept { return schedule(); }
     };
 
     inline auto TaskThreadPool::schedule() noexcept -> ScheduleOperation

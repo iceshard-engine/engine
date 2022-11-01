@@ -116,7 +116,7 @@ namespace ice
         auto aquire_request(
             ice::AssetType type,
             ice::AssetState requested_state
-        ) noexcept -> ice::AssetRequest*
+        ) noexcept -> ice::AssetRequest* override
         {
             ice::AssetRequest* result = nullptr;
             ice::AssetShelve* shelve = ice::hashmap::get(_asset_shevles, type.identifier, nullptr);

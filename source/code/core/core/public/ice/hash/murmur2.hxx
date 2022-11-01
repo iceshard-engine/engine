@@ -48,7 +48,7 @@ namespace ice::detail::murmur2_hash
 
     constexpr auto cexpr_murmur2_x64_64(std::u8string_view key, ice::u64 seed) noexcept -> mm2_x64_64;
 
-    constexpr auto [[deprecated]] cexpr_murmur2_x64_64(std::string_view key, ice::u64 seed) noexcept -> mm2_x64_64;
+    constexpr auto cexpr_murmur2_x64_64(std::string_view key, ice::u64 seed) noexcept -> mm2_x64_64;
 
     // Murmur hash constants
     constexpr ice::u64 m = 0xc6a4a7935bd1e995;

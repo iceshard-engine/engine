@@ -6,10 +6,17 @@
 
 #define STB_IMAGE_IMPLEMENTATION
 #if ISP_COMPILER_GCC
+#   pragma GCC diagnostic push
 #   pragma GCC diagnostic ignored "-Wunused-but-set-variable"
 #   pragma GCC diagnostic ignored "-Wsign-compare"
 #   include "asset_image_external/stb_image.h"
 #   pragma GCC diagnostic pop
+#elif ISP_COMPILER_CLANG
+#   pragma clang diagnostic push
+#   pragma clang diagnostic ignored "-Wparentheses-equality"
+#   pragma clang diagnostic ignored "-Wunused-but-set-variable"
+#   include "asset_image_external/stb_image.h"
+#   pragma clang diagnostic pop
 #else
 #   include "asset_image_external/stb_image.h"
 #endif

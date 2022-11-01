@@ -70,7 +70,7 @@ namespace ice::ecs
     inline void ScheduledQueryOperation<Query>::await_suspend(std::coroutine_handle<> coro) noexcept
     {
         _data.coroutine = coro;
-        _scheduler.schedule_query_internal(_data);
+        // TODO: _scheduler.schedule_query_internal(_data);
     }
 
     template<typename Query>

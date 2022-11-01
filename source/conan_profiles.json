@@ -44,5 +44,20 @@
             "libcxx": "libstdc++"
         },
         "build_type": "Release"
+    },
+    {
+        "id": "Debug_Clang",
+        "name": "Linux-Clang",
+        "os": "Linux",
+        "arch": "x86_64",
+        "compiler": {
+            "name": "clang",
+            "version": "14",
+            "libcxx": "libstdc++"
+        },
+        "envs": {
+            "CXX": "/usr/bin/clang++"
+        },
+        "build_type": "Debug"
     }
 ]

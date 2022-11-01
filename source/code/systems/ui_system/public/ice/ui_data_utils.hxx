@@ -6,9 +6,9 @@
 #include <ice/ui_data_ref.hxx>
 #include <ice/ui_resource.hxx>
 #include <ice/ui_style.hxx>
+#include <ice/ui_font.hxx>
 
 #include <ice/assert.hxx>
-#include <ice/font.hxx>
 #include <ice/span.hxx>
 
 namespace ice::ui

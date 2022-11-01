@@ -23,7 +23,7 @@ namespace ice
         void insert(ice::AllocResult const& result) noexcept
         {
             std::lock_guard<std::mutex> lk{ mtx };
-            allocs.emplace(result.memory, result.size);
+            allocs.emplace(result.memory, AllocInfo{ result.size });
 
             _allocated_inuse.fetch_add(result.size.value, std::memory_order_relaxed);
         }

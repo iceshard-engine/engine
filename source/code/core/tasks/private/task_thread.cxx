@@ -79,12 +79,12 @@ namespace ice
             }
         }
 
-        void stop() noexcept
+        void stop() noexcept override
         {
             _stop_requested = true;
         }
 
-        void join() noexcept
+        void join() noexcept override
         {
             if (_thread.joinable())
             {

@@ -8,22 +8,22 @@
 namespace ice::ecs
 {
 
-    template<typename T, typename... Args>
-    struct QueryWork { };
+    // template<ice::ecs::QueryType First, ice::ecs::QueryType... Args>
+    // struct QueryWork;
 
-    template<ice::ecs::QueryType First, ice::ecs::QueryType... Args>
-    struct QueryWork<First, Args...>;
+    // template<ice::ecs::QueryType First, ice::ecs::QueryType... Args>
+    // struct QueryWork<First, Args...>;
 
     class QueryProvider
     {
     public:
         virtual ~QueryProvider() noexcept = default;
 
-        template<ice::ecs::QueryType... Args>
-        constexpr auto create_query_work(
-            ice::Allocator& alloc,
-            void (*function_ptr)(Args...)
-        ) const noexcept -> ice::ecs::QueryWork<Args...>;
+        // template<ice::ecs::QueryType... Args>
+        // constexpr auto create_query_work(
+        //     ice::Allocator& alloc,
+        //     void (*function_ptr)(Args...)
+        // ) const noexcept -> ice::ecs::QueryWork<Args...>;
 
         template<ice::ecs::QueryType... Types>
         auto create_query(
@@ -40,11 +40,11 @@ namespace ice::ecs
     };
 
 
-    template<ice::ecs::QueryType... Args>
-    constexpr auto QueryProvider::create_query_work(ice::Allocator& alloc, void (*function_ptr)(Args...)) const noexcept -> ice::ecs::QueryWork<Args...>
-    {
-        return { .query = create_query(alloc, ice::ecs::QueryDefinition<Args...>{}), .work_function = function_ptr };
-    }
+    // template<ice::ecs::QueryType... Args>
+    // constexpr auto QueryProvider::create_query_work(ice::Allocator& alloc, void (*function_ptr)(Args...)) const noexcept -> ice::ecs::QueryWork<Args...>
+    // {
+    //     return { .query = create_query(alloc, ice::ecs::QueryDefinition<Args...>{}), .work_function = function_ptr };
+    // }
 
     template<ice::ecs::QueryType... Types>
     auto QueryProvider::create_query(
@@ -85,28 +85,28 @@ namespace ice::ecs
     }
 
 
-    template<ice::ecs::QueryType First, ice::ecs::QueryType... Args>
-    struct QueryWork<First, Args...>
-    {
-        using QueryDefinition = ice::ecs::QueryDefinition<First, Args...>;
-        using QueryWorkFn = typename QueryDefinition::ForEachEntityFn;
-        using Query = typename QueryDefinition::Query;
+    // template<ice::ecs::QueryType First, ice::ecs::QueryType... Args>
+    // struct QueryWork<First, Args...>
+    // {
+    //     using QueryDefinition = ice::ecs::QueryDefinition<First, Args...>;
+    //     using QueryWorkFn = typename QueryDefinition::ForEachEntityFn;
+    //     using Query = typename QueryDefinition::Query;
 
-        static void execute(void const* self_ptr) noexcept;
+    //     static void execute(void const* self_ptr) noexcept;
 
-        Query const query;
-        QueryWorkFn* const work_function;
-    };
+    //     Query const query;
+    //     QueryWorkFn* const work_function;
+    // };
 
-    template<ice::ecs::QueryType First, ice::ecs::QueryType... Args>
-    void QueryWork<First, Args...>::execute(void const* self_ptr) noexcept
-    {
-        QueryWork<ice::u32, Args...> const* const self = reinterpret_cast<QueryWork<ice::u32, Args...> const*>(self_ptr);
+    // template<ice::ecs::QueryType First, ice::ecs::QueryType... Args>
+    // void QueryWork<First, Args...>::execute(void const* self_ptr) noexcept
+    // {
+    //     QueryWork<ice::u32, Args...> const* const self = reinterpret_cast<QueryWork<ice::u32, Args...> const*>(self_ptr);
 
-        ice::ecs::query::for_each_entity<QueryDefinition>(
-            self->query,
-            self->work_function
-        );
-    }
+    //     ice::ecs::query::for_each_entity<QueryDefinition>(
+    //         self->query,
+    //         self->work_function
+    //     );
+    // }
 
 } // namespace ice::ecs

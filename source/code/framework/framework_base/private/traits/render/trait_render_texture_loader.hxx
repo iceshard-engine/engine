@@ -35,7 +35,7 @@ namespace ice
         void gfx_cleanup(
             ice::gfx::GfxFrame& gfx_frame,
             ice::gfx::GfxDevice& gfx_device
-        ) noexcept;
+        ) noexcept override;
 
         void on_update(
             ice::EngineFrame& frame,

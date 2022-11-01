@@ -170,7 +170,7 @@ namespace ice
         ice::u32 cam_idx = 0;
         ice::ecs::query::for_each_entity(
             *camera_query,
-            [&, this](ice::ecs::EntityHandle entity, ice::Camera const& cam, ice::CameraOrtho const* ortho, ice::CameraPerspective const* persp) noexcept
+            [&](ice::ecs::EntityHandle entity, ice::Camera const& cam, ice::CameraOrtho const* ortho, ice::CameraPerspective const* persp) noexcept
             {
                 if (cam.name == ice::StringID_Invalid)
                 {

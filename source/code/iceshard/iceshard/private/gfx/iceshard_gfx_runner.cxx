@@ -35,7 +35,7 @@ namespace ice::gfx
         ice::IceshardWorld* graphics_world
     ) noexcept
         : _allocator{ alloc, "gfx-runner"}
-        , _thread{ ice::create_task_thread(_allocator) }
+        , _thread{ ice::create_task_thread_v2(_allocator) }
         , _device{ ice::move(device) }
         , _frame_allocator{
             { _allocator, { Constant_GfxFrameAllocatorCapacity } },
