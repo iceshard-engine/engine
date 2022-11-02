@@ -1,11 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
 
+  <!-- URI Type -->
   <Type Name="ice::URI">
     <DisplayString Condition="scheme.value == 0x0">URI {{ Invalid, path={path._data,sb} }}</DisplayString>
-    <DisplayString Condition="scheme.value == 0xB74F5545CE2CD578">URI {{ urn, path={path._data,sb} }}</DisplayString>
-    <DisplayString Condition="scheme.value == 0xF362BE341DC0B4E2">URI {{ file, path={path._data,sb} }}</DisplayString>
-    <DisplayString Condition="scheme.value == 0x0BB52B412BC0B2AA">URI {{ dynlib, path={path._data,sb} }}</DisplayString>
+    <DisplayString Condition="scheme.value == 0xB74F5545CE2CD578">URI {{ urn, path={path._data,s8b} }}</DisplayString>
+    <DisplayString Condition="scheme.value == 0xF362BE341DC0B4E2">URI {{ file, path={path._data,s8b} }}</DisplayString>
+    <DisplayString Condition="scheme.value == 0x0BB52B412BC0B2AA">URI {{ dynlib, path={path._data,s8b} }}</DisplayString>
 
     <Expand>
       <Synthetic Name="[scheme]">
@@ -20,6 +21,7 @@
     </Expand>
   </Type>
 
+  <!-- Metadata Types -->
   <Type Name="ice::detail::MetadataEntry">
     <DisplayString Condition="data_count == 0 &amp;&amp; data_type == 1">MetaValue [{data_type,en} = {value_int,b}]</DisplayString>
     <DisplayString Condition="data_count == 0 &amp;&amp; data_type == 2">MetaValue [{data_type,en} = {value_int}]</DisplayString>
@@ -52,16 +54,66 @@
     </Expand>
   </Type>
 
+  <!-- Resource Types -->
+  <Type Name="ice::ResourceTracker_Impl">
+    <DisplayString>ResourceTracker {{ providers={_providers._count}, resources={_tracked_handles._count} }}</DisplayString>
+    <Expand>
+      <Item Name="[allocator]">_allocator</Item>
+      <Item Name="[handle_allocator]">_handle_allocator</Item>
+      <Item Name="[data_allocator]">_data_allocator</Item>
+      <Item Name="[resource_providers]">_providers,view(Expanded)</Item>
+      <Item Name="[resource_handles]">_tracked_handles,view(Expanded)</Item>
+    </Expand>
+  </Type>
+
+  <Type Name="ice::ResourceHandle">
+    <DisplayString>ResourceHandle {{ {status,en}, ref/use={refcount}/{usecount}, resource={*resource,view(Path)} }}</DisplayString>
+    <Expand>
+      <Item Name="[status]">status</Item>
+      <Synthetic Name="[ref/use]">
+        <DisplayString>Ref = {refcount} | Use = {usecount}</DisplayString>
+      </Synthetic>
+      <Item Name="[provider]">provider</Item>
+      <ExpandedItem>*resource</ExpandedItem>
+    </Expand>
+  </Type>
+
+  <Type Name="ice::ResourceProvider_Win32Filesystem">
+    <DisplayString>ResourceProvider (win32-filesystem) {{ resources={_resources._count} }}</DisplayString>
+    <Expand>
+      <Item Name="[allocator]">_allocator</Item>
+      <Item Name="[base_path]">_base_path</Item>
+      <ExpandedItem>_resources,view(Expanded)</ExpandedItem>
+    </Expand>
+  </Type>
+
+  <Type Name="ice::ResourceProvider_Win32Dlls">
+    <DisplayString>ResourceProvider (win32-filesystem) {{ resources={_resources._count} }}</DisplayString>
+    <Expand>
+      <ExpandedItem>_resources,view(Expanded)</ExpandedItem>
+    </Expand>
+  </Type>
+
   <Type Name="ice::Resource_LooseFilesWin32">
-    <DisplayString>Resource (lose-files) {{ {_origin_name._data,sb} }}</DisplayString>
+    <DisplayString ExcludeView="Path">Resource (lose-files) {{ {_origin_name._data,s8b} }}</DisplayString>
+    <DisplayString IncludeView="Path">{_origin_name._data,s8}</DisplayString>
     <Expand>
       <Item Name="[metadata]">_metadata</Item>
       <Item Name="[metadata_mutable]">_mutable_metadata</Item>
-      <Item Name="[origin_path]">_origin_path,s8</Item>
-      <Item Name="[origin_name]">_origin_name,s8</Item>
-      <Item Name="[uri_path]">_uri_path,s8</Item>
+      <Item Name="[origin_path]">_origin_path</Item>
+      <Item Name="[origin_name]">_origin_name</Item>
+      <Item Name="[uri_path]">_uri_path</Item>
       <Item Name="[uri]">_uri</Item>
       <Item Name="[extra_resources]">_extra_resources,view(Expanded)</Item>
+    </Expand>
+  </Type>
+
+  <Type Name="ice::Resource_DllsWin32">
+    <DisplayString ExcludeView="Path">Resource (dynlib) {{ {_origin_name._data,s8b} }}</DisplayString>
+    <DisplayString IncludeView="Path">{_origin_name._data,s8}</DisplayString>
+    <Expand>
+      <Item Name="[origin_path]">_origin_path</Item>
+      <Item Name="[uri]">_uri</Item>
     </Expand>
   </Type>
 

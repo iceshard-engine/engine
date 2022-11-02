@@ -3,10 +3,20 @@
 
   <!-- Native Visualization for the core::String<> type -->
   <Type Name="ice::HeapString&lt;*&gt;">
-    <DisplayString>HeapString {{ { _data,s } }}</DisplayString>
-    <StringView>_data,s</StringView>
+    <DisplayString>HeapString {{ { _data,s8 } }}</DisplayString>
+    <StringView>_data,s8</StringView>
     <Expand>
-      <Item Name="[value]">_data,s</Item>
+      <Item Name="[value]">_data,s8b</Item>
+      <Item Name="[size]">_size</Item>
+      <Item Name="[capacity]">_capacity</Item>
+      <Item Name="[allocator]">_allocator</Item>
+    </Expand>
+  </Type>
+  <Type Name="ice::HeapString&lt;wchar_t&gt;">
+    <DisplayString>HeapString (wchar_t) {{ { _data,su } }}</DisplayString>
+    <StringView>_data,su</StringView>
+    <Expand>
+      <Item Name="[value]">_data,sub</Item>
       <Item Name="[size]">_size</Item>
       <Item Name="[capacity]">_capacity</Item>
       <Item Name="[allocator]">_allocator</Item>
@@ -15,22 +25,39 @@
 
   <!-- Native Visualization for the core::StackString<> type -->
   <Type Name="ice::StaticString&lt;*,*&gt;">
-    <DisplayString>StaticString&lt;{"$T1",sb}&gt; {{ { _data,s } }}</DisplayString>
-    <StringView>_data,s</StringView>
+    <DisplayString>StaticString&lt;{"$T1",sb}&gt; {{ { _data,s8 } }}</DisplayString>
+    <StringView>_data,s8</StringView>
     <Expand>
       <Item Name="[size]">_size</Item>
-      <Item Name="[value]">_data,s</Item>
+      <Item Name="[value]">_data,s8</Item>
+      <Item Name="[capacity]">$T1</Item>
+    </Expand>
+  </Type>
+  <Type Name="ice::StaticString&lt;*,wchar_t&gt;">
+    <DisplayString>StaticString&lt;{"$T1",sb}&gt; {{ { _data,su } }}</DisplayString>
+    <StringView>_data,su</StringView>
+    <Expand>
+      <Item Name="[size]">_size</Item>
+      <Item Name="[value]">_data,sub</Item>
       <Item Name="[capacity]">$T1</Item>
     </Expand>
   </Type>
 
   <!-- Native Visualization for the core::StringView<> type -->
   <Type Name="ice::BasicString&lt;*&gt;">
-    <DisplayString>String {{ { _data,[_size]s } }}</DisplayString>
+    <DisplayString>String {{ { _data,[_size]s8 } }}</DisplayString>
+    <StringView>_data,[_size]s8</StringView>
+    <Expand>
+      <Item Name="[size]">_size</Item>
+      <Item Name="[value]">_data,[_size]s8b</Item>
+    </Expand>
+  </Type>
+  <Type Name="ice::BasicString&lt;wchar_t&gt;">
+    <DisplayString>String {{ { _data,[_size]su } }}</DisplayString>
     <StringView>_data,[_size]</StringView>
     <Expand>
       <Item Name="[size]">_size</Item>
-      <Item Name="[value]">_data,[_size]sb</Item>
+      <Item Name="[value]">_data,[_size]sub</Item>
     </Expand>
   </Type>
 

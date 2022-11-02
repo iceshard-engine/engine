@@ -52,14 +52,14 @@
 
   <!-- Worlds -->
   <Type Name="ice::IceshardWorldTracker::Entry">
-    <DisplayString>Tracked {*world}, state: {current_state}</DisplayString>
+    <DisplayString>Tracked ({current_state,en}) {*world}</DisplayString>
     <Expand>
       <ExpandedItem>world</ExpandedItem>
     </Expand>
   </Type>
 
   <Type Name="ice::IceshardWorldTracker">
-    <DisplayString>WorldTracker (Iceshard), tracked worlds:{_worlds._count}</DisplayString>
+    <DisplayString>WorldTracker (Iceshard) {{ tracked={_worlds._count} }}</DisplayString>
     <Expand>
       <Item Name="[allocator]">_allocator</Item>
       <ExpandedItem>_worlds,view(Expanded)</ExpandedItem>
@@ -67,7 +67,7 @@
   </Type>
 
   <Type Name="ice::IceshardWorldManager">
-    <DisplayString>WorldManager (Iceshard), world count:{_worlds._count}</DisplayString>
+    <DisplayString>WorldManager (Iceshard) {{ worlds={_worlds._count} }}</DisplayString>
     <Expand>
       <Item Name="[allocator]">_allocator</Item>
       <ExpandedItem>_worlds,view(Expanded)</ExpandedItem>
@@ -79,7 +79,7 @@
   </Type>
 
   <Type Name="ice::IceshardWorld">
-    <DisplayString>World (Iceshard)</DisplayString>
+    <DisplayString>World (Iceshard) {{ traits={_traits._count} }}</DisplayString>
     <Expand>
       <Item Name="[allocator]">_allocator</Item>
       <Item Name="[entity_storage]">_entity_storage</Item>
