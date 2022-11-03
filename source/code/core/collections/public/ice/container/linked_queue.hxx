@@ -90,7 +90,8 @@ namespace ice
 namespace ice
 {
 
-    using ice::queue::count;
+    using ice::linked_queue::begin;
+    using ice::linked_queue::end;
 
 } // namespace ice
 
