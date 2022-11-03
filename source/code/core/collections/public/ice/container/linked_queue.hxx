@@ -3,6 +3,7 @@
 
 #pragma once
 #include <ice/container_concepts.hxx>
+#include <atomic>
 
 namespace ice
 {
@@ -13,6 +14,7 @@ namespace ice
     {
         using ValueType = NodeType;
 
+        // TODO: BENCHMARK, Then add enough space between the atomic values to avoid false sharing. BENCHMARK AGAIN!
         std::atomic<NodeType*> _head;
         std::atomic<NodeType*> _tail;
 
