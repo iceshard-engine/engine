@@ -55,6 +55,11 @@ namespace ice::devui
 
     ImGuiSystem::~ImGuiSystem() noexcept
     {
+        for (WidgetRuntimeInfo& info : _widgets)
+        {
+            _allocator.destroy(info.state);
+        }
+
         _allocator.destroy(_widget_alloc_tree);
     }
 
@@ -69,11 +74,15 @@ namespace ice::devui
 
         if (_render_trait != nullptr)
         {
-            _widgets = ice::move(_inactive_widgets);
-
-            for (ice::devui::DevUIWidget* widget : _widgets)
+            for (ice::devui::DevUIWidget* widget : _inactive_widgets)
             {
-                widget->on_prepare(_render_trait->imgui_context());
+                ice::array::push_back(_widgets, { .widget = widget, .state = _allocator.create<WidgetState>() });
+            }
+            ice::array::clear(_inactive_widgets);
+
+            for (WidgetRuntimeInfo& info : _widgets)
+            {
+                info.widget->on_prepare(_render_trait->imgui_context(), *info.state);
             }
         }
     }
@@ -96,8 +105,9 @@ namespace ice::devui
     {
         if (_render_trait != nullptr)
         {
-            widget->on_prepare(_render_trait->imgui_context());
-            ice::array::push_back(_widgets, widget);
+            WidgetState* state = _allocator.create<WidgetState>();
+            widget->on_prepare(_render_trait->imgui_context(), *state);
+            ice::array::push_back(_widgets, { .widget = widget, .state = state });
         }
         else
         {
@@ -121,16 +131,18 @@ namespace ice::devui
         ice::u32 idx = 0;
         for (; idx < count; ++idx)
         {
-            if (_widgets[idx] == widget)
+            if (_widgets[idx].widget == widget)
             {
                 break;
             }
         }
 
+        WidgetState* state = _widgets[idx].state;
         if (idx < (count - 1))
         {
             _widgets[idx] = _widgets[count - 1];
         }
+        _allocator.destroy(state);
 
         ice::array::pop_back(_widgets);
     }
@@ -161,13 +173,54 @@ namespace ice::devui
             return;
         }
 
+        ice::String categories[]{
+            "Tools",
+            "Uncategorized"
+        };
+
+        static bool show_demo = false;
+
         if (_render_trait->start_frame())
         {
-            ImGui::ShowDemoWindow();
-
-            for (ice::devui::DevUIWidget* widget : _widgets)
+            if (ImGui::BeginMainMenuBar())
             {
-                widget->on_draw();
+                for (ice::String category : categories)
+                {
+                    if (ImGui::BeginMenu(ice::string::begin(category)))
+                    {
+                        for (WidgetRuntimeInfo& info : _widgets)
+                        {
+                            WidgetState& state = *info.state;
+                            WidgetSettings const& settings = info.widget->settings();
+
+                            if (settings.menu_category == category && ice::string::any(settings.menu_text))
+                            {
+                                ImGui::MenuItem(ice::string::begin(settings.menu_text), nullptr, &state.is_visible);
+                            }
+                        }
+
+                        // Special case for ImGui Demo
+                        if (category == "Uncategorized")
+                        {
+                            ImGui::MenuItem("ImGui Demo Window", nullptr, &show_demo);
+                        }
+                        ImGui::EndMenu();
+                    }
+                }
+            }
+            ImGui::EndMainMenuBar();
+
+            if (show_demo)
+            {
+                ImGui::ShowDemoWindow(&show_demo);
+            }
+
+            for (WidgetRuntimeInfo& info : _widgets)
+            {
+                if (info.state->is_visible)
+                {
+                    info.widget->on_draw();
+                }
             }
         }
         _render_trait->end_frame(frame);
