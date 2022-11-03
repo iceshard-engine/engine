@@ -119,7 +119,7 @@ namespace ice
         ) noexcept -> ice::AssetRequest* override
         {
             ice::AssetRequest* result = nullptr;
-            ice::AssetShelve* shelve = ice::hashmap::get(_asset_shevles, type.identifier, nullptr);
+            ice::AssetShelve* shelve = ice::hashmap::get(_asset_shelves, type.identifier, nullptr);
             if (shelve != nullptr)
             {
                 result = shelve->aquire_request(requested_state);
@@ -135,7 +135,7 @@ namespace ice
         ice::Allocator& _allocator;
         ice::ResourceTracker& _resource_tracker;
         ice::UniquePtr<ice::AssetTypeArchive> _asset_archive;
-        ice::HashMap<ice::AssetShelve*> _asset_shevles;
+        ice::HashMap<ice::AssetShelve*> _asset_shelves;
     };
 
     DefaultAssetStorage::DefaultAssetStorage(
@@ -146,15 +146,15 @@ namespace ice
         : _allocator{ alloc }
         , _resource_tracker{ resource_tracker }
         , _asset_archive{ ice::move(asset_archive) }
-        , _asset_shevles{ _allocator }
+        , _asset_shelves{ _allocator }
     {
         ice::Span<ice::AssetType const> types = _asset_archive->asset_types();
-        ice::hashmap::reserve(_asset_shevles, ice::count(types));
+        ice::hashmap::reserve(_asset_shelves, ice::count(types));
 
         for (ice::AssetType_Arg type : types)
         {
             ice::hashmap::set(
-                _asset_shevles,
+                _asset_shelves,
                 type.identifier,
                 _allocator.create<AssetShelve>(
                     _allocator,
@@ -166,7 +166,7 @@ namespace ice
 
     DefaultAssetStorage::~DefaultAssetStorage() noexcept
     {
-        for (ice::AssetShelve* entry : _asset_shevles)
+        for (ice::AssetShelve* entry : _asset_shelves)
         {
             _allocator.destroy(entry);
         }
@@ -181,7 +181,7 @@ namespace ice
         ice::StringID const nameid = ice::stringid(name);
         ice::Asset result{ };
 
-        ice::AssetShelve* shelve = ice::hashmap::get(_asset_shevles, type.identifier, nullptr);
+        ice::AssetShelve* shelve = ice::hashmap::get(_asset_shelves, type.identifier, nullptr);
         if (shelve != nullptr)
         {
             ice::Allocator& asset_alloc = shelve->asset_allocator();

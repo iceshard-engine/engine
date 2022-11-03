@@ -51,6 +51,24 @@
   </Type>
 
   <!-- Worlds -->
+  <Type Name="ice::WorldTraitDescription">
+    <DisplayString>WorldTraitDescription (engine)</DisplayString>
+    <Expand>
+      <Item Name="[factory]">factory</Item>
+      <Item Name="[dependencies]">required_dependencies</Item>
+      <Item Name="[optional_dependencies]">optional_dependencies</Item>
+      <Item Name="[archetypes]">defined_archetypes</Item>
+    </Expand>
+  </Type>
+
+  <Type Name="ice::SimpleWorldTraitArchive">
+    <DisplayString>WorldTraitArchive (engine)</DisplayString>
+    <Expand>
+      <Item Name="[allocator]">_allocator</Item>
+      <ExpandedItem>_trait_descriptions,view(Expanded)</ExpandedItem>
+    </Expand>
+  </Type>
+
   <Type Name="ice::IceshardWorldTracker::Entry">
     <DisplayString>Tracked ({current_state,en}) {*world}</DisplayString>
     <Expand>
