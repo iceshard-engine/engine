@@ -909,10 +909,10 @@ namespace ice::render::vk
                 "Target memory buffer is smaller than provided size to copy!"
             );
 
-            ice::AlignResult<void*> aligned_ptr = ice::align_to(ice::ptr_add(target.location, { update_info.offset }), ice::ualign(reqirements.alignment));
+            void* target_ptr = ice::ptr_add(ice::align_to(target.location, ice::ualign(reqirements.alignment)).value, { update_info.offset });
 
             ice::memcpy(
-                aligned_ptr.value,
+                target_ptr,
                 update_info.data.location,
                 update_info.data.size
             );
