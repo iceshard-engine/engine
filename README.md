@@ -1,3 +1,6 @@
+> Development on the engine is going to be paused for the time beeing, due to lots of changes outside the webz.
+> Dandielo
+
 # IceShard
 
 A small game engine project with the sole purpose to learn, improve and invent.
