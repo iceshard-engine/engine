@@ -93,8 +93,8 @@ namespace ice
 
     DevUI_Box2D::DevUI_Box2D(b2World& box2d_world) noexcept
         : _world{ box2d_world }
-        , _debug_draw_flags{ 0 }
         , _state{ nullptr }
+        , _debug_draw_flags{ 0 }
     {
     }
 
