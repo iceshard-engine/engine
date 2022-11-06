@@ -1,3 +1,6 @@
+/// Copyright 2022 - 2022, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
 #include <ice/mem_allocator.hxx>
 #include <assert.h>
 #include <unordered_map>
@@ -20,7 +23,7 @@ namespace ice
         void insert(ice::AllocResult const& result) noexcept
         {
             std::lock_guard<std::mutex> lk{ mtx };
-            allocs.emplace(result.memory, result.size);
+            allocs.emplace(result.memory, AllocInfo{ result.size });
 
             _allocated_inuse.fetch_add(result.size.value, std::memory_order_relaxed);
         }

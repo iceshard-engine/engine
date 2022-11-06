@@ -1,3 +1,6 @@
+/// Copyright 2022 - 2022, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
 #include "widget_imgui_allocator_tree.hxx"
 #include <ice/string/string.hxx>
 #include <imgui/imgui.h>
@@ -64,10 +67,13 @@ namespace ice::devui
                 ImGui::Text("%s", alloc_name.data());
                 ImGui::NextColumn();
                 build_info_column(allocator);
-                ImGui::NextColumn(); // We start from the first column again
 
-                ImGui::Text("%s | %s(%u)", allocator.location().function_name(), allocator.location().file_name(), allocator.location().line());
                 ImGui::NextColumn();
+                ImGui::Text("%s", allocator.location().function_name());
+                ImGui::NextColumn();
+                ImGui::Text("%s(%u)", allocator.location().file_name(), allocator.location().line());
+
+                ImGui::NextColumn(); // We start from the first column again
             }
             else
             {
@@ -75,10 +81,12 @@ namespace ice::devui
                 ImGui::NextColumn();
                 build_info_column(allocator);
 
-                ImGui::NextColumn(); // We start from the first column again
-
-                ImGui::Text("%s | %s(%u)", allocator.location().function_name(), allocator.location().file_name(), allocator.location().line());
                 ImGui::NextColumn();
+                ImGui::Text("%s", allocator.location().function_name());
+                ImGui::NextColumn();
+                ImGui::Text("%s(%u)", allocator.location().file_name(), allocator.location().line());
+
+                ImGui::NextColumn(); // We start from the first column again
 
                 if (show_childs)
                 {
@@ -90,31 +98,6 @@ namespace ice::devui
                     ImGui::TreePop();
                 }
             }
-
-            //ImGui::NextColumn();
-            ////if (ImGui::TreeNode(&allocator, "Details"))
-            //{
-            //    //ImGui::TreePop();
-            //}
-
-            //if (child_alloc != nullptr)
-            //{
-            //    if (ImGui::TreeNode(&allocator, "Child allocators"))
-            //    {
-            //        while (child_alloc != nullptr)
-            //        {
-            //            build_tree_view(*child_alloc);
-            //            child_alloc = child_alloc->next_sibling();
-            //        }
-
-            //        ImGui::TreePop();
-            //    }
-            //}
-            //else
-            //{
-            //    // ImGui::Indent(ImGui::GetTreeNodeToLabelSpacing());
-            //    //ImGui::NewLine();
-            //}
         }
 
     } // namespace detail
@@ -126,11 +109,25 @@ namespace ice::devui
     {
     }
 
+    auto ImGui_AllocatorTreeWidget::settings() const noexcept -> ice::devui::WidgetSettings const&
+    {
+        static devui::WidgetSettings settings{
+            .menu_text = "Allocator Tree",
+            .menu_category = "Tools",
+        };
+        return settings;
+    }
+
+    void ImGui_AllocatorTreeWidget::on_prepare(void*, ice::devui::WidgetState& state) noexcept
+    {
+        _state = &state;
+    }
+
     void ice::devui::ImGui_AllocatorTreeWidget::on_draw() noexcept
     {
-        if (ImGui::Begin("Allocator tree", &_open))
+        if (ImGui::Begin("Allocator tree", &_state->is_visible))
         {
-            ImGui::Columns(4, "allocator_tree_table", true);
+            ImGui::Columns(5, "allocator_tree_table", true);
 
             ImGui::Text("Allocator name");
             ImGui::NextColumn();
@@ -138,7 +135,9 @@ namespace ice::devui
             ImGui::NextColumn();
             ImGui::Text("Allocated bytes");
             ImGui::NextColumn();
-            ImGui::Text("Function | file(line)");
+            ImGui::Text("Function");
+            ImGui::NextColumn();
+            ImGui::Text("File (line)");
             ImGui::NextColumn();
 
             ImGui::Separator();
@@ -146,29 +145,6 @@ namespace ice::devui
             detail::build_tree_view(_root_tracked_allocator);
         }
         ImGui::End();
-
-        //{
-        //    ICE_LOG(
-        //        ice::LogSeverity::Debug, ice::LogTag::Game,
-        //        "{}# Allocator `{}` total: {} [{:.3} MiB]",
-        //        offset,
-        //        ta->name(),
-        //        ta->total_allocated(),
-        //        ice::f32(ta->total_allocated()) / (1024.f * 1024.f)
-        //    );
-        //    if (ta->child_allocators())
-        //    {
-        //        ICE_LOG(
-        //            ice::LogSeverity::Debug, ice::LogTag::Game,
-        //            "{}> Sub-Allocators...",
-        //            offset
-        //        );
-        //        ice::string::push_back(offset, "| ");
-        //        list_allocator_allocations(offset, ta->child_allocators());
-        //        ice::string::pop_back(offset, 2);
-        //    }
-        //    ta = ta->next_sibling();
-        //}
     }
 
 } // namespace ice::devui

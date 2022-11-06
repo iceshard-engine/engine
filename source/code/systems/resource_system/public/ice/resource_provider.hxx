@@ -1,3 +1,6 @@
+/// Copyright 2022 - 2022, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
 #pragma once
 #include <ice/mem_memory.hxx>
 #include <ice/mem_unique_ptr.hxx>
@@ -25,33 +28,40 @@ namespace ice
         virtual auto schemeid() const noexcept -> ice::StringID = 0;
 
         virtual auto query_resources(
-            ice::Array<ice::Resource_v2 const*>& out_changes
+            ice::Array<ice::Resource const*>& out_changes
         ) const noexcept -> ice::u32 = 0;
 
         virtual auto refresh() noexcept -> ice::Task<ice::ResourceProviderResult> = 0;
 
         virtual auto find_resource(
             ice::URI const& uri
-        ) const noexcept -> ice::Resource_v2 const*
+        ) const noexcept -> ice::Resource const*
+        {
+            return nullptr;
+        }
+
+        virtual auto access_loose_resource(
+            ice::Resource const* resource
+        ) const noexcept -> ice::LooseResource const*
         {
             return nullptr;
         }
 
         virtual auto load_resource(
             ice::Allocator& alloc,
-            ice::Resource_v2 const* resource,
+            ice::Resource const* resource,
             ice::TaskScheduler_v2& scheduler
         ) noexcept -> ice::Task<ice::Memory> = 0;
 
         virtual auto release_resource(
-            ice::Resource_v2 const* resource,
+            ice::Resource const* resource,
             ice::TaskScheduler_v2& scheduler
         ) noexcept -> ice::Task<> = 0;
 
         virtual auto resolve_relative_resource(
             ice::URI const& relative_uri,
-            ice::Resource_v2 const* root_resource
-        ) const noexcept -> ice::Resource_v2 const*
+            ice::Resource const* root_resource
+        ) const noexcept -> ice::Resource const*
         {
             return nullptr;
         }

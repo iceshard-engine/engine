@@ -1,3 +1,6 @@
+/// Copyright 2022 - 2022, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
 #pragma once
 #include <ice/base.hxx>
 #include <coroutine>
@@ -84,13 +87,13 @@ namespace ice
 
     private:
         T& _target;
-        ice::detail::ScheduleOperationData _data;
+        ice::detail::ScheduleDelayedOperationData _data;
     };
 
     template<typename T>
     inline ScheduleDelayedOperation<T>::ScheduleDelayedOperation(T& target, ice::u32 target_time) noexcept
         : _target{ target }
-        , _data{ target_time }
+        , _data{ ._target_time = target_time }
     {
     }
 

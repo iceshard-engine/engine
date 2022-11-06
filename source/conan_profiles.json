@@ -1,83 +1,48 @@
-{
-    "windows": {
-        "default": "vs2022",
-        "vs2019": {
-            "build_types": [
-                "Debug",
-                "Release"
-            ],
-            "compiler": {
-                "name": "Visual Studio",
-                "version": "16"
-            }
+[
+    {
+        "id": "Debug",
+        "name": "Windows",
+        "os": "Windows",
+        "arch": "x86_64",
+        "compiler": {
+            "name": "Visual Studio",
+            "version": "17"
         },
-        "vs2022": {
-            "build_types": [
-                "Debug",
-                "Release"
-            ],
-            "compiler": {
-                "name": "Visual Studio",
-                "version": "17"
-            }
-        }
+        "build_type": "Debug"
     },
-    "linux": {
-        "default": "gcc_12",
-        "clang_10": {
-            "build_types": [
-                "Debug",
-                "Release"
-            ],
-            "compiler": {
-                "name": "clang",
-                "version": "10",
-                "libcxx": "libc++"
-            }
+    {
+        "id": "Release",
+        "name": "Windows",
+        "os": "Windows",
+        "arch": "x86_64",
+        "compiler": {
+            "name": "Visual Studio",
+            "version": "17"
         },
-        "clang_11": {
-            "build_types": [
-                "Debug",
-                "Release"
-            ],
-            "compiler": {
-                "name": "clang",
-                "version": "11",
-                "libcxx": "libc++"
-            }
+        "build_type": "Release"
+    },
+    {
+        "id": "Debug",
+        "name": "Linux-GCC",
+        "os": "Linux",
+        "arch": "x86_64",
+        "compiler": {
+            "name": "gcc",
+            "version": "12",
+            "libcxx": "libstdc++"
         },
-        "clang_12": {
-            "build_types": [
-                "Debug",
-                "Release"
-            ],
-            "compiler": {
-                "name": "clang",
-                "version": "12",
-                "libcxx": "libc++"
-            }
+        "build_type": "Debug"
+    },
+    {
+        "id": "Release",
+        "name": "Linux-GCC",
+        "os": "Linux",
+        "arch": "x86_64",
+        "compiler": {
+            "name": "gcc",
+            "version": "12",
+            "libcxx": "libstdc++"
         },
-        "gcc_11": {
-            "build_types": [
-                "Debug",
-                "Release"
-            ],
-            "compiler": {
-                "name": "gcc",
-                "version": "11",
-                "libcxx": "libstdc++"
-            }
-        },
-        "gcc_12": {
-            "build_types": [
-                "Debug",
-                "Release"
-            ],
-            "compiler": {
-                "name": "gcc",
-                "version": "12",
-                "libcxx": "libstdc++"
-            }
-        }
+        "build_type": "Release"
     }
-}
+]

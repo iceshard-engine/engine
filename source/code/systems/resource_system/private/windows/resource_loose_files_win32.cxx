@@ -1,7 +1,11 @@
+/// Copyright 2022 - 2022, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
 #include "resource_loose_files_win32.hxx"
 #include <ice/mem_allocator_stack.hxx>
 #include <ice/container_types.hxx>
 #include <ice/container/array.hxx>
+#include <ice/container/hashmap.hxx>
 #include <ice/string/heap_string.hxx>
 #include <ice/task_scheduler.hxx>
 #include <ice/assert.hxx>
@@ -85,6 +89,7 @@ namespace ice
     }
 
     Resource_LooseFilesWin32::Resource_LooseFilesWin32(
+        ice::Allocator& alloc,
         ice::MutableMetadata metadata,
         ice::HeapString<> origin_path,
         ice::String origin_name,
@@ -97,6 +102,7 @@ namespace ice
         , _origin_name{ origin_name }
         , _uri_path{ uri_path }
         , _uri{ ice::Scheme_File, uri_path }
+        , _extra_resources{ alloc }
     {
     }
 
@@ -127,6 +133,59 @@ namespace ice
     auto Resource_LooseFilesWin32::metadata() const noexcept -> ice::Metadata const&
     {
         return _metadata;
+    }
+
+    auto Resource_LooseFilesWin32::load_named_part(
+        ice::StringID_Arg name,
+        ice::Allocator& alloc
+    ) const noexcept -> ice::Task<Memory>
+    {
+        ice::Memory result{
+            .location = nullptr,
+            .size = 0_B,
+            .alignment = ice::ualign::invalid,
+        };
+
+        if (ice::hashmap::has(_extra_resources, ice::hash(name)))
+        {
+            ice::HeapString<> empty_str{ alloc };
+            ice::String path = ice::hashmap::get(_extra_resources, ice::hash(name), empty_str);
+
+            ice::HeapString<wchar_t> file_location_wide{ alloc };
+            ice::win32::utf8_to_wide_append(path, file_location_wide);
+
+            ice::win32::FileHandle const file_handle = ice::win32::native_open_file(
+                file_location_wide,
+                FILE_ATTRIBUTE_NORMAL
+            );
+            if (file_handle)
+            {
+                LARGE_INTEGER file_size;
+                if (GetFileSizeEx(file_handle.native(), &file_size) == 0)
+                {
+                    co_return result;
+                }
+
+                if (ice::win32::native_load_file(file_handle, alloc, result) == false)
+                {
+                    ICE_LOG(ice::LogSeverity::Error, ice::LogTag::System, "Failed to load resource part {}", name);
+                }
+            }
+        }
+        co_return result;
+    }
+
+    void Resource_LooseFilesWin32::add_named_part(
+        ice::StringID_Arg name,
+        ice::HeapString<> path
+    ) noexcept
+    {
+        ICE_ASSERT(
+            ice::hashmap::has(_extra_resources, ice::hash(name)) == false,
+            "Extra file with name {} already exists!", name
+        );
+
+        ice::hashmap::set(_extra_resources, ice::hash(name), ice::move(path));
     }
 
     auto Resource_LooseFilesWin32::load_data_for_flags(
@@ -256,15 +315,15 @@ namespace ice
         co_return result;
     }
 
-    void create_resources_from_loose_files(
+    auto create_resources_from_loose_files(
         ice::Allocator& alloc,
         ice::WString base_path,
         ice::WString uri_base_path,
         ice::WString meta_file,
-        ice::WString data_file,
-        ice::Array<ice::Resource_Win32*>& out_resources
-    ) noexcept
+        ice::WString data_file
+    ) noexcept -> ice::Resource_Win32*
     {
+        ice::Resource_LooseFilesWin32* main_resource = nullptr;
         ice::win32::FileHandle meta_handle = ice::win32::native_open_file(meta_file, FILE_ATTRIBUTE_NORMAL);
         ice::win32::FileHandle data_handle = ice::win32::native_open_file(data_file, FILE_ATTRIBUTE_NORMAL);
 
@@ -280,11 +339,10 @@ namespace ice
 
                 if (Constant_FileHeader_MetadataFile == file_header)
                 {
-                    return;
+                    return main_resource;
                 }
 
                 // We create the main resource in a different scope so we dont accidentaly use data from there
-                ice::Resource_LooseFilesWin32* main_resource;
                 {
                     ice::HeapString<> utf8_file_path{ alloc };
                     ice::win32::wide_to_utf8(data_file, utf8_file_path);
@@ -300,35 +358,34 @@ namespace ice
                     alloc.deallocate(metafile_data);
 
                     main_resource = alloc.create<ice::Resource_LooseFilesWin32>(
+                        alloc,
                         ice::move(mutable_meta),
                         ice::move(utf8_file_path), // we move so the pointer 'origin_name' calculated from 'utf8_file_path' is still valid!
                         utf8_origin_name,
                         utf8_uri_path
                     );
-
-                    ice::array::push_back(out_resources, main_resource);
                 }
 
                 // We can access the metadata now again.
                 ice::Metadata const& metadata = main_resource->metadata();
 
                 bool const has_paths = ice::meta_has_entry(metadata, "resource.extra_files.paths"_sid);
-                bool const has_flags = ice::meta_has_entry(metadata, "resource.extra_files.flags"_sid);
+                bool const has_names = ice::meta_has_entry(metadata, "resource.extra_files.names"_sid);
                 ICE_ASSERT(
-                    (has_paths ^ has_flags) == 0,
+                    (has_paths ^ has_names) == 0,
                     "If a resource defines extra files, it's only allowed to do so by providing 'unique flags' and co-related 'relative paths'."
                 );
 
                 ice::Array<ice::String> paths{ alloc };
                 ice::array::reserve(paths, 4);
 
-                ice::Array<ice::ResourceFlags> flags{ alloc };
-                ice::array::reserve(flags, 4);
+                ice::Array<ice::String> names{ alloc };
+                ice::array::reserve(names, 4);
 
-                if (has_paths && has_flags)
+                if (has_paths && has_names)
                 {
                     ice::meta_read_string_array(metadata, "resource.extra_files.paths"_sid, paths);
-                    ice::meta_read_flags_array(metadata, "resource.extra_files.flags"_sid, flags);
+                    ice::meta_read_string_array(metadata, "resource.extra_files.names"_sid, names);
 
                     ice::HeapString<> utf8_file_path{ alloc };
 
@@ -349,8 +406,8 @@ namespace ice
                     for (ice::u32 idx = 0; idx < ice::array::count(paths); ++idx)
                     {
                         ICE_ASSERT(
-                            flags[idx] != ice::ResourceFlags::None,
-                            "Extra files need to be declared with specific flags!"
+                            ice::string::any(names[idx]),
+                            "Extra files need to be declared with specific names!"
                         );
 
                         ice::string::resize(full_path, base_dir_size);
@@ -363,18 +420,14 @@ namespace ice
                             ice::win32::wide_to_utf8(full_path, utf8_file_path);
                             ice::path::normalize(utf8_file_path);
 
-                            ice::Resource_LooseFilesWin32::ExtraResource* const extra_resource = alloc.create<ice::Resource_LooseFilesWin32::ExtraResource>(
-                                *main_resource,
-                                ice::move(utf8_file_path),
-                                flags[idx]
-                            );
-
-                            ice::array::push_back(out_resources, extra_resource);
+                            main_resource->add_named_part(ice::stringid(names[idx]), ice::move(utf8_file_path));
                         }
                     }
                 }
             }
         }
+
+        return main_resource;
     }
 
 

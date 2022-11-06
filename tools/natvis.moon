@@ -5,7 +5,8 @@ import Json from require "ice.util.json"
 import loadstring from require "moonscript"
 
 py3_script = [[import mmh3; %s]]
-py3_hash = [[print('[\'%s\']: {}'.format(mmh3.hash('%s', signed=False, seed=0x428639DA)));]]
+py3_hash_shard = [[print('[\'%s\']: {}'.format(mmh3.hash('%s', signed=False, seed=0x77a23ab1)));]]
+py3_hash_payload = [[print('[\'%s\']: {}'.format(mmh3.hash('%s', signed=False, seed=0x3ab177a2)));]]
 
 class NatvisCommand extends Command
     @arguments {
@@ -19,13 +20,13 @@ class NatvisCommand extends Command
 
         if f = io.open path, "rb"
             for line in f\lines!
-                var, val = line\match 'static constexpr ice::Shard ([%w_:]+) = "([%w/-]+)"_shard'
+                var, val = line\match 'static constexpr ice::Shard ([%w_:]+) = "([%w/-]+)[%w_:*` ]*"_shard'
                 if var and val
                     print "Warning: Shard with this name '#{var}' already exists!" if shard_names.shard[var]
                     shard_names.shard[var] = val
                     continue
 
-                var, val = line\match 'Constant_ShardPayloadID<([%w_:%*]+)> = ice::payload_id%("([%w_:*]+)"%)'
+                var, val = line\match 'Constant_ShardPayloadID<([%w_:* ]+)> = ice::shard_payloadid%("([%w_:* ]+)"%)'
                 if var or val
                     shard_names.payloadid[var] = val
 
@@ -42,10 +43,10 @@ class NatvisCommand extends Command
         names = { shard: { }, payloadid: {} }
         @iterate_over_directory ".", names
 
-        generate_hashes = (names) ->
+        generate_hashes = (names, py3_hash_script) ->
             all_hashes = ""
             for name, value in pairs names
-                all_hashes ..= string.format(py3_hash, value, value)
+                all_hashes ..= string.format(py3_hash_script, value, value)
 
             cmd = 'python3 -c "' .. string.format(py3_script, all_hashes) .. '"'
             p = io.popen cmd, 'r'
@@ -64,22 +65,22 @@ class NatvisCommand extends Command
             table.sort sorted_list, (left, right) -> left.name < right.name
             return sorted_list
 
-        hashes = sort_results generate_hashes names.shard
-        payload_hashes = sort_results generate_hashes names.payloadid
+        hashes = sort_results generate_hashes names.shard, py3_hash_shard
+        payload_hashes = sort_results generate_hashes names.payloadid, py3_hash_payload
 
         if f = io.open "./core/core/natvis/shard_names.natvis", "wb+"
             f\write '<?xml version="1.0" encoding="utf-8"?>\n'
             f\write '<AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">\n'
             f\write '    <Type Name="ice::Shard">\n'
-            f\write '        <DisplayString Condition="name == ' .. hash .. '">Shard {{ ' .. name .. ' }}</DisplayString>\n' for { :name, :hash } in *hashes
-            f\write '        <DisplayString>Shard {{ {name,h}, unknown_name }}</DisplayString>\n'
+            f\write '        <DisplayString Condition="id.name.value == ' .. hash .. '">Shard {{ ' .. name .. ' }}</DisplayString>\n' for { :name, :hash } in *hashes
+            f\write '        <DisplayString>Shard {{ {id.name.value,h}, unknown_name }}</DisplayString>\n'
             f\write '        <Expand>\n'
             f\write '            <Synthetic Name="[payload type]">\n'
-            f\write '                <DisplayString Condition="payload_id == ' .. hash .. '">' .. name .. '</DisplayString>\n' for { :name, :hash } in *payload_hashes
-            f\write '                <DisplayString Condition="payload_id == 0">{payload_id}, type_not_set</DisplayString>\n'
-            f\write '                <DisplayString>{payload_id}, unknown_type</DisplayString>\n'
+            f\write '                <DisplayString Condition="id.payload.value == ' .. hash .. '">' .. name .. '</DisplayString>\n' for { :name, :hash } in *payload_hashes
+            f\write '                <DisplayString Condition="id.payload.value == 0">{id.payload.value}, type_not_set</DisplayString>\n'
+            f\write '                <DisplayString>{id.payload.value}, unknown_type</DisplayString>\n'
             f\write '            </Synthetic>\n'
-            f\write '            <Item Name="[payload]" Optional="true" Condition="payload_id == ' .. hash .. '">*(' .. name .. '*)&amp;payload</Item>\n' for { :name, :hash } in *payload_hashes
+            f\write '            <Item Name="[payload]" Optional="true" Condition="id.payload.value == ' .. hash .. '">*(' .. name .. '*)&amp;payload.value</Item>\n' for { :name, :hash } in *payload_hashes
             f\write '        </Expand>\n'
             f\write '    </Type>\n'
             f\write '</AutoVisualizer>\n'

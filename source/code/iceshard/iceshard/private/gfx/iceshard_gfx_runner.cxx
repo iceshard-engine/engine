@@ -1,3 +1,6 @@
+/// Copyright 2022 - 2022, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
 #include "iceshard_gfx_runner.hxx"
 #include "iceshard_gfx_frame.hxx"
 #include "iceshard_gfx_device.hxx"
@@ -32,7 +35,7 @@ namespace ice::gfx
         ice::IceshardWorld* graphics_world
     ) noexcept
         : _allocator{ alloc, "gfx-runner"}
-        , _thread{ ice::create_task_thread(_allocator) }
+        , _thread{ ice::create_task_thread_v2(_allocator) }
         , _device{ ice::move(device) }
         , _frame_allocator{
             { _allocator, { Constant_GfxFrameAllocatorCapacity } },

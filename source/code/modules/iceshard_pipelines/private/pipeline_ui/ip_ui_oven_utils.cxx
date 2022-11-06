@@ -1,3 +1,6 @@
+/// Copyright 2022 - 2022, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
 #include "ip_ui_oven_utils.hxx"
 #include <ice/ui_element_info.hxx>
 #include <ice/ui_style.hxx>

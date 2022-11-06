@@ -1,3 +1,6 @@
+/// Copyright 2022 - 2022, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
 #include <ice/font_utils.hxx>
 #include <ice/math/common.hxx>
 #include <ice/span.hxx>

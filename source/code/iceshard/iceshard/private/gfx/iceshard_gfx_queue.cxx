@@ -1,3 +1,6 @@
+/// Copyright 2022 - 2022, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
 #include "iceshard_gfx_queue.hxx"
 
 #include <ice/gfx/gfx_stage.hxx>

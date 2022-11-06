@@ -1,3 +1,6 @@
+/// Copyright 2022 - 2022, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
 #pragma once
 #include <ice/types.hxx>
 #include <ice/hash/murmur2.hxx>
@@ -16,10 +19,10 @@ namespace ice
     constexpr auto hash(ice::utf8 const* value) noexcept -> ice::u64;
 
     template<>
-    constexpr auto [[deprecated]] hash(std::string_view value) noexcept -> ice::u64;
+    constexpr auto hash(std::string_view value) noexcept -> ice::u64;
 
     template<>
-    constexpr auto [[deprecated]] hash(char const* value) noexcept -> ice::u64;
+    constexpr auto hash(char const* value) noexcept -> ice::u64;
 
 
 
@@ -33,10 +36,10 @@ namespace ice
     constexpr auto hash32(ice::utf8 const* value) noexcept -> ice::u32;
 
     template<>
-    constexpr auto [[deprecated]] hash32(std::string_view value) noexcept -> ice::u32;
+    constexpr auto hash32(std::string_view value) noexcept -> ice::u32;
 
     template<>
-    constexpr auto [[deprecated]] hash32(char const* value) noexcept -> ice::u32;
+    constexpr auto hash32(char const* value) noexcept -> ice::u32;
 
 
     template<typename T>

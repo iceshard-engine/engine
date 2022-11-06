@@ -1,3 +1,6 @@
+/// Copyright 2022 - 2022, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
 #include <ice/ui_asset.hxx>
 #include <ice/ui_page.hxx>
 #include <ice/ui_element_info.hxx>
@@ -432,7 +435,7 @@ namespace ice
                     fonts[idx_font].font_name_offset = additional_data_offset;
                     fonts[idx_font].font_name_size = ice::string::size(resource.font_data.font_name);
 
-                    ice::memcpy(additional_data, ice::string::begin(resource.font_data.font_name), { fonts[idx_font].font_name_size });
+                    ice::memcpy(additional_data, ice::string::begin(resource.font_data.font_name), fonts[idx_font].font_name_size);
 
                     additional_data = ice::ptr_add(additional_data, { fonts[idx_font].font_name_size });
                     additional_data_offset += fonts[idx_font].font_name_size;
@@ -509,7 +512,7 @@ namespace ice
         void*,
         ice::Allocator& alloc,
         ice::ResourceTracker const&,
-        ice::Resource_v2 const& resource,
+        ice::LooseResource const& resource,
         ice::Data data,
         ice::Memory& out_memory
     ) noexcept -> ice::Task<bool>

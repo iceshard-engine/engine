@@ -1,3 +1,6 @@
+/// Copyright 2022 - 2022, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
 #pragma once
 #include <ice/gfx/gfx_trait.hxx>
 #include <ice/gfx/gfx_stage.hxx>

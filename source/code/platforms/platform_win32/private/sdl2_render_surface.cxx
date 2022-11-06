@@ -1,3 +1,6 @@
+/// Copyright 2022 - 2022, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
 #include "sdl2_render_surface.hxx"
 #include <ice/string/static_string.hxx>
 #include <ice/assert.hxx>

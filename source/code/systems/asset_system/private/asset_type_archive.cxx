@@ -1,3 +1,6 @@
+/// Copyright 2022 - 2022, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
 #include <ice/asset_type_archive.hxx>
 #include <ice/asset.hxx>
 #include <ice/container/hashmap.hxx>
@@ -24,7 +27,7 @@ namespace ice
     public:
         SimpleAssetTypeArchive(ice::Allocator& alloc) noexcept;
 
-        auto asset_types() const noexcept -> ice::Span<ice::AssetType const>;
+        auto asset_types() const noexcept -> ice::Span<ice::AssetType const> override;
 
         bool register_type(
             ice::AssetType_Arg type,

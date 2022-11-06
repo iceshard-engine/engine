@@ -1,3 +1,6 @@
+/// Copyright 2022 - 2022, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
 #include <ice/world/world_trait_module.hxx>
 #include <ice/mem_allocator_stack.hxx>
 #include <ice/module_register.hxx>

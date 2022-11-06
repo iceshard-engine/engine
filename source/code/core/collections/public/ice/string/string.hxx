@@ -1,3 +1,6 @@
+/// Copyright 2022 - 2022, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
 #pragma once
 #include <ice/string_types.hxx>
 
@@ -12,7 +15,7 @@ namespace ice::string
 
     template<typename CharType>
         //requires std::is_same_v<CharType, ice::utf8> // TODO: utf-16, utf-32?
-    constexpr auto utf8_codepoints(ice::BasicString<CharType> str) noexcept -> ice::ucount;
+    constexpr auto utf8_codepoints(ice::BasicString<CharType> str) noexcept -> ice::ucount = delete;
 
 
     template<typename CharType>

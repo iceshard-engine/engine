@@ -1,3 +1,6 @@
+/// Copyright 2022 - 2022, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
 #pragma once
 #include <ice/shard.hxx>
 #include <ice/mem_data.hxx>
@@ -14,7 +17,7 @@ namespace ice
     struct ResourceResult
     {
         ice::ResourceStatus resource_status;
-        ice::Resource_v2 const* resource;
+        ice::Resource const* resource;
         ice::Data data;
     };
 
@@ -64,9 +67,12 @@ namespace ice
         ) noexcept -> ice::Task<ice::ResourceResult> = 0;
     };
 
+    auto resource_uri(ice::ResourceHandle const* handle) noexcept -> ice::URI const&;
     auto resource_origin(ice::ResourceHandle const* handle) noexcept -> ice::String;
-
     auto resource_path(ice::ResourceHandle const* handle) noexcept -> ice::String;
+
+    // Might need to be moved somewhere else?
+    auto get_loose_resource(ice::ResourceHandle const* handle) noexcept -> ice::LooseResource const*;
 
     auto create_resource_tracker(
         ice::Allocator& alloc,

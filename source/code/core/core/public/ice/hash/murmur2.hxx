@@ -1,3 +1,6 @@
+/// Copyright 2022 - 2022, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
 //!
 //! The below code was taken from https://gist.github.com/Teknoman117/d4d952942b4314781432
 //! It is used by the stringid_t type to calculate the hash value from the given string at compile time.
@@ -45,7 +48,7 @@ namespace ice::detail::murmur2_hash
 
     constexpr auto cexpr_murmur2_x64_64(std::u8string_view key, ice::u64 seed) noexcept -> mm2_x64_64;
 
-    constexpr auto [[deprecated]] cexpr_murmur2_x64_64(std::string_view key, ice::u64 seed) noexcept -> mm2_x64_64;
+    constexpr auto cexpr_murmur2_x64_64(std::string_view key, ice::u64 seed) noexcept -> mm2_x64_64;
 
     // Murmur hash constants
     constexpr ice::u64 m = 0xc6a4a7935bd1e995;

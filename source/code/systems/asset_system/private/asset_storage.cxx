@@ -1,3 +1,6 @@
+/// Copyright 2022 - 2022, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
 #pragma once
 #include <ice/asset_storage.hxx>
 #include <ice/asset_type_archive.hxx>
@@ -66,7 +69,10 @@ namespace ice
         {
             if (definition.fn_asset_oven)
             {
-                co_return co_await definition.fn_asset_oven(definition.ud_asset_oven, alloc, resource_tracker, *asset_entry->resource, asset_entry->data, result);
+                ice::LooseResource const* loose_resource = ice::get_loose_resource(asset_entry->resource_handle);
+                ICE_ASSERT(loose_resource != nullptr, "Baking non-loose resources should never happen!");
+
+                co_return co_await definition.fn_asset_oven(definition.ud_asset_oven, alloc, resource_tracker, *loose_resource, asset_entry->data, result);
             }
             co_return false;
         }
@@ -110,10 +116,10 @@ namespace ice
         auto aquire_request(
             ice::AssetType type,
             ice::AssetState requested_state
-        ) noexcept -> ice::AssetRequest*
+        ) noexcept -> ice::AssetRequest* override
         {
             ice::AssetRequest* result = nullptr;
-            ice::AssetShelve* shelve = ice::hashmap::get(_asset_shevles, type.identifier, nullptr);
+            ice::AssetShelve* shelve = ice::hashmap::get(_asset_shelves, type.identifier, nullptr);
             if (shelve != nullptr)
             {
                 result = shelve->aquire_request(requested_state);
@@ -129,7 +135,7 @@ namespace ice
         ice::Allocator& _allocator;
         ice::ResourceTracker& _resource_tracker;
         ice::UniquePtr<ice::AssetTypeArchive> _asset_archive;
-        ice::HashMap<ice::AssetShelve*> _asset_shevles;
+        ice::HashMap<ice::AssetShelve*> _asset_shelves;
     };
 
     DefaultAssetStorage::DefaultAssetStorage(
@@ -140,15 +146,15 @@ namespace ice
         : _allocator{ alloc }
         , _resource_tracker{ resource_tracker }
         , _asset_archive{ ice::move(asset_archive) }
-        , _asset_shevles{ _allocator }
+        , _asset_shelves{ _allocator }
     {
         ice::Span<ice::AssetType const> types = _asset_archive->asset_types();
-        ice::hashmap::reserve(_asset_shevles, ice::count(types));
+        ice::hashmap::reserve(_asset_shelves, ice::count(types));
 
         for (ice::AssetType_Arg type : types)
         {
             ice::hashmap::set(
-                _asset_shevles,
+                _asset_shelves,
                 type.identifier,
                 _allocator.create<AssetShelve>(
                     _allocator,
@@ -160,7 +166,7 @@ namespace ice
 
     DefaultAssetStorage::~DefaultAssetStorage() noexcept
     {
-        for (ice::AssetShelve* entry : _asset_shevles)
+        for (ice::AssetShelve* entry : _asset_shelves)
         {
             _allocator.destroy(entry);
         }
@@ -175,7 +181,7 @@ namespace ice
         ice::StringID const nameid = ice::stringid(name);
         ice::Asset result{ };
 
-        ice::AssetShelve* shelve = ice::hashmap::get(_asset_shevles, type.identifier, nullptr);
+        ice::AssetShelve* shelve = ice::hashmap::get(_asset_shelves, type.identifier, nullptr);
         if (shelve != nullptr)
         {
             ice::Allocator& asset_alloc = shelve->asset_allocator();

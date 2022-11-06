@@ -1,3 +1,6 @@
+/// Copyright 2022 - 2022, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
 #include "asset_request_awaitable.hxx"
 #include "asset_shelve.hxx"
 #include "asset_entry.hxx"
@@ -62,7 +65,7 @@ namespace ice
         return { };
     }
 
-    auto AssetRequestAwaitable::resource() const noexcept -> ice::Resource_v2 const&
+    auto AssetRequestAwaitable::resource() const noexcept -> ice::Resource const&
     {
         return *_asset_entry->resource;
     }

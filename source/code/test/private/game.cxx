@@ -1,4 +1,7 @@
-﻿#include "game.hxx"
+/// Copyright 2022 - 2022, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
+#include "game.hxx"
 
 #include <ice/game_actor.hxx>
 #include <ice/game_anim.hxx>
@@ -117,10 +120,17 @@ auto MyGame::graphics_world_template() const noexcept -> ice::WorldTemplate cons
     }
 }
 
-void MyGame::on_load_modules(ice::GameServices& sercies) noexcept
+void MyGame::on_load_modules(ice::GameServices& services) noexcept
 {
-    ice::ModuleRegister& mod = sercies.module_registry();
-    ice::ResourceTracker& res = sercies.resource_system();
+    ice::ModuleRegister& mod = services.module_registry();
+    ice::ResourceTracker& res = services.resource_system();
+
+    // Maybe we should move the location where we can do replacements?
+    {
+        [[maybe_unused]]
+        ice::ResourceHandle* tsa = res.find_resource("file:/data/cotm/tileset_a.png"_uri);
+        ice::sync_wait(res.set_resource("urn:cotm/tileset_ab.png"_uri, tsa));
+    }
 
     ice::ResourceHandle* const pipelines_module = res.find_resource("urn:iceshard_pipelines.dll"_uri);
     ice::ResourceHandle* const engine_module = res.find_resource("urn:iceshard.dll"_uri);

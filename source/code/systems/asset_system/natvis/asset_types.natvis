@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
+
+  <Type Name="ice::detail::AssetType&lt;*&gt;">
+    <DisplayString Optional="true">AssetType {{ {identifier,X}, {name._data,[name._size]s8} }}</DisplayString>
+  </Type>
+
+  <Type Name="ice::AssetTypeDefinition">
+    <DisplayString ExcludeView="Simple">AssetTypeDefinition {{ {resource_extensions[0]._data,s8}, extensions={resource_extensions._count}, has_oven={fn_asset_oven != nullptr,b} }}</DisplayString>
+    <DisplayString IncludeView="Simple">{resource_extensions[0]._data,s8}, extensions={resource_extensions._count}, has_oven={fn_asset_oven != nullptr,b}</DisplayString>
+  </Type>
+
+  <Type Name="ice::SimpleAssetTypeArchive">
+    <DisplayString>AssetTypeArchive {{ types={_types._count} }}</DisplayString>
+    <Expand>
+      <Item Name="[definitions]">_definitions,view(Expanded)</Item>
+      <ExpandedItem>_types,view(Expanded)</ExpandedItem>
+    </Expand>
+  </Type>
+
+
+  <Type Name="ice::AssetShelve">
+    <DisplayString>AssetShelve {{ resources={_asset_resources._count}, {definition,view(Simple)} }}</DisplayString>
+    <Expand>
+      <Item Name="[allocator]">_allocator</Item>
+      <Item Name="[definition]">definition</Item>
+      <Item Name="[resources]">_asset_resources</Item>
+      <Item Name="[requests (new)]">_new_requests</Item>
+      <Item Name="[requests (reversed)]">_reversed_requests</Item>
+    </Expand>
+  </Type>
+
+  <Type Name="ice::DefaultAssetStorage">
+    <DisplayString>AssetStorage {{ types={_asset_shelves._count} }}</DisplayString>
+    <Expand>
+      <Item Name="[allocator]">_allocator</Item>
+      <Item Name="[resources]">_resource_tracker</Item>
+      <Item Name="[asset_archive]">_asset_archive,view(Expanded)</Item>
+      <ExpandedItem>_asset_shelves,view(Expanded)</ExpandedItem>
+    </Expand>
+  </Type>
+
+</AutoVisualizer>

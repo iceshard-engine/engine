@@ -1,3 +1,6 @@
+/// Copyright 2022 - 2022, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
 #pragma once
 #include <ice/asset_request.hxx>
 #include <ice/mem_memory.hxx>
@@ -25,7 +28,7 @@ namespace ice
         auto state() const noexcept -> ice::AssetState override;
         auto data() const noexcept -> ice::Data override;
 
-        auto resource() const noexcept -> ice::Resource_v2 const& override;
+        auto resource() const noexcept -> ice::Resource const& override;
         auto asset_definition() const noexcept -> ice::AssetTypeDefinition const& override;
 
         auto allocate(ice::usize size) const noexcept -> ice::Memory override;

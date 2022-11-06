@@ -1,24 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
 
-  <Type Name="ice::detail::stringid_type_v2::StringID_Hash">
-    <DisplayString>ice::StringID_Hash</DisplayString>
-    <Expand>
-    </Expand>
+  <Type Name="ice::detail::stringid_type_v3::StringID_Hash">
+    <DisplayString ExcludeView="raw">StringID_Hash {{ {value,X} }}</DisplayString>
+    <DisplayString IncludeView="raw">{value,X}</DisplayString>
   </Type>
 
-  <Type Name="ice::detail::stringid_type_v2::StringID&lt;*&gt;">
-    <DisplayString Condition="hash_value == 0">StringID {{ invalid }}</DisplayString>
-    <DisplayString Optional="true">StringID {{ {hash_value,x} : {hash_origin,s} }}</DisplayString>
-    <DisplayString>StrID {{ {hash_value,x} }}</DisplayString>
-    <Expand>
-      <Item Name="[hash]" Condition="hash_value != 0" ExcludeView="simple">hash_value,x</Item>
-      <Synthetic Name="[hash]" Condition="hash_value == 0" ExcludeView="simple">
-        <DisplayString>invalid</DisplayString>
-      </Synthetic>
-      <Item Optional="true" Condition="hash_origin[0] != '~'" Name="[origin_hint]" ExcludeView="simple">hash_origin,s</Item>
-      <Item Optional="true" Condition="hash_origin[0] == '~'" Name="[origin_hint]" ExcludeView="simple">hash_origin,24s</Item>
-    </Expand>
+  <Type Name="ice::BaseStringID&lt;*&gt;">
+    <DisplayString Condition="value.value == 0">StringID {{ Invalid }}</DisplayString>
+    <DisplayString Optional="true">StringID {{ {value,view(raw)} }}</DisplayString>
+    <DisplayString>StringID {{ {value} }}</DisplayString>
   </Type>
 
 </AutoVisualizer>

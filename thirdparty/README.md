@@ -22,6 +22,12 @@ Box2D is a 2D physics engine for games.
 - **version:** 2.4.1
 - **license:** MIT
 
+## chipmunk2d
+A fast and lightweight 2D game physics library.
+- **upstream:** https://github.com/slembcke/Chipmunk2D
+- **version:** 7.0.3+
+- **license:** MIT
+
 ## tracy
 A real time, nanosecond resolution, remote telemetry, hybrid frame and sampling profiler for games and other applications.
 - **upstream:** https://github.com/wolfpld/tracy

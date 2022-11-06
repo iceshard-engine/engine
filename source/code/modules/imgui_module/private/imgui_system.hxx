@@ -1,3 +1,6 @@
+/// Copyright 2022 - 2022, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
 #pragma once
 #include <ice/devui/devui_system.hxx>
 
@@ -35,7 +38,13 @@ namespace ice::devui
         ice::devui::ImGuiTrait* _render_trait;
         ice::devui::ImGui_AllocatorTreeWidget* _widget_alloc_tree;
 
-        ice::Array<ice::devui::DevUIWidget*> _widgets;
+        struct WidgetRuntimeInfo
+        {
+            ice::devui::DevUIWidget* widget;
+            ice::devui::WidgetState* state;
+        };
+
+        ice::Array<WidgetRuntimeInfo> _widgets;
         ice::Array<ice::devui::DevUIWidget*> _inactive_widgets;
     };
 

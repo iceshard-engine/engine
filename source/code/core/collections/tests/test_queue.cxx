@@ -1,3 +1,6 @@
+/// Copyright 2022 - 2022, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
 #include <catch2/catch.hpp>
 #include <ice/mem_allocator_host.hxx>
 #include <ice/mem_allocator_proxy.hxx>

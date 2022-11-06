@@ -1,3 +1,6 @@
+/// Copyright 2022 - 2022, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
 #pragma once
 #include <ice/resource.hxx>
 #include <ice/os/windows.hxx>
@@ -11,7 +14,7 @@
 namespace ice
 {
 
-    class Resource_DllsWin32 final : public ice::Resource_v2
+    class Resource_DllsWin32 final : public ice::Resource
     {
     public:
         Resource_DllsWin32(
@@ -39,7 +42,7 @@ namespace ice
     auto create_resource_from_dll_path(
         ice::Allocator& alloc,
         ice::WString file_path
-    ) noexcept -> ice::Resource_v2*;
+    ) noexcept -> ice::Resource*;
 
 } // namespace ice
 

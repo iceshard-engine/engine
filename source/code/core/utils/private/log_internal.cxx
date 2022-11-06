@@ -1,3 +1,6 @@
+/// Copyright 2022 - 2022, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
 #include "log_internal.hxx"
 #include <ice/container/hashmap.hxx>
 #include <ice/string/heap_string.hxx>

@@ -1,3 +1,6 @@
+/// Copyright 2022 - 2022, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
 #pragma once
 #include <ice/span.hxx>
 #include <ice/task.hxx>
@@ -28,7 +31,7 @@ namespace ice
             void*,
             ice::Allocator&,
             ice::ResourceTracker const&,
-            ice::Resource_v2 const&,
+            ice::LooseResource const&,
             ice::Data,
             ice::Memory&
         ) noexcept;

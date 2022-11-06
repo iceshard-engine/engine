@@ -1,3 +1,6 @@
+/// Copyright 2022 - 2022, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
 #include "asset_shelve.hxx"
 #include "asset_request_awaitable.hxx"
 
@@ -55,7 +58,7 @@ namespace ice
     auto AssetShelve::store(
         ice::StringID_Arg name,
         ice::ResourceHandle* resource_handle,
-        ice::Resource_v2 const* resource,
+        ice::Resource const* resource,
         ice::AssetState state,
         ice::Data data
     ) noexcept -> ice::AssetEntry*

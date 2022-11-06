@@ -1,3 +1,6 @@
+/// Copyright 2022 - 2022, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
 #include "render_ui_trait.hxx"
 #include "game_ui_trait.hxx"
 #include "game_ui_page.hxx"
@@ -197,7 +200,7 @@ namespace ice
                         ice::shards::inspect_each<ice::input::InputEvent>(
                             frame.shards(),
                             ice::Shard_InputEventButton,
-                            [&, this](ice::input::InputEvent const& iev)
+                            [&left_click](ice::input::InputEvent const& iev)
                             {
                                 auto constexpr mouse_left_button = ice::input::input_identifier(
                                     ice::input::DeviceType::Mouse,

@@ -1,3 +1,6 @@
+/// Copyright 2022 - 2022, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
 #include "trait_render_debug.hxx"
 #include "../trait_camera.hxx"
 
@@ -175,7 +178,7 @@ namespace ice
         ice::shards::inspect_each<ice::DebugDrawCommandList const*>(
             engine_frame.shards(),
             ice::Shard_DebugDrawCommand,
-            [&, this](ice::DebugDrawCommandList const* draw_list) noexcept
+            [&](ice::DebugDrawCommandList const* draw_list) noexcept
             {
                 ice::Span<ice::DebugDrawCommand const> commands{ draw_list->list, draw_list->list_size };
                 for (ice::DebugDrawCommand const& command : commands)
@@ -271,7 +274,7 @@ namespace ice
         ice::shards::inspect_each<ice::DebugDrawCommandList const*>(
             engine_frame.shards(),
             ice::Shard_DebugDrawCommand,
-            [&, this](ice::DebugDrawCommandList const* draw_list) noexcept
+            [&](ice::DebugDrawCommandList const* draw_list) noexcept
             {
                 ice::u32 vertex_offset = 0;
 

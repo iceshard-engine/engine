@@ -1,3 +1,6 @@
+/// Copyright 2022 - 2022, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
 #include <ice/asset_module.hxx>
 #include <ice/log_module.hxx>
 #include <ice/module_register.hxx>

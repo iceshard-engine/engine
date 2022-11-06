@@ -1,3 +1,6 @@
+/// Copyright 2022 - 2022, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
 #include <ice/task_thread.hxx>
 #include <ice/task_list.hxx>
 #include <ice/task.hxx>
@@ -76,12 +79,12 @@ namespace ice
             }
         }
 
-        void stop() noexcept
+        void stop() noexcept override
         {
             _stop_requested = true;
         }
 
-        void join() noexcept
+        void join() noexcept override
         {
             if (_thread.joinable())
             {

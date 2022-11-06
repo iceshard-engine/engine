@@ -1,3 +1,6 @@
+/// Copyright 2022 - 2022, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
 #include <ice/resource_tracker.hxx>
 #include <ice/resource_provider.hxx>
 #include <ice/resource.hxx>
@@ -19,13 +22,18 @@ namespace ice
     struct ResourceHandle
     {
         ice::ResourceProvider* provider;
-        ice::Resource_v2 const* resource;
+        ice::Resource const* resource;
         ice::Memory data;
 
         ice::ResourceStatus status;
         ice::u32 refcount;
         ice::u32 usecount;
     };
+
+    auto resource_uri(ice::ResourceHandle const* handle) noexcept -> ice::URI const&
+    {
+        return handle->resource->uri();
+    }
 
     auto resource_origin(ice::ResourceHandle const* handle) noexcept -> ice::String
     {
@@ -35,6 +43,11 @@ namespace ice
     auto resource_path(ice::ResourceHandle const* handle) noexcept -> ice::String
     {
         return handle->resource->name();
+    }
+
+    auto get_loose_resource(ice::ResourceHandle const* handle) noexcept -> ice::LooseResource const*
+    {
+        return handle->provider->access_loose_resource(handle->resource);
     }
 
     class ResourceTracker_Impl final : public ice::ResourceTracker, public ice::TaskScheduler_v2
@@ -85,7 +98,7 @@ namespace ice
         {
             ICE_ASSERT(provider != nullptr, "Trying to attach a nullptr as provider.");
 
-            ice::Array<ice::Resource_v2 const*> temp_resources{ _allocator };
+            ice::Array<ice::Resource const*> temp_resources{ _allocator };
 
             ice::u64 const hash_value = ice::hash(provider->schemeid());
 
@@ -103,7 +116,7 @@ namespace ice
                     );
 
                     provider->query_resources(temp_resources);
-                    for (ice::Resource_v2 const* resource : temp_resources)
+                    for (ice::Resource const* resource : temp_resources)
                     {
                         ice::ResourceHandle* handle = _handle_allocator.create<ice::ResourceHandle>(
                             ice::ResourceHandle{
@@ -160,7 +173,7 @@ namespace ice
                 ice::ResourceProvider* const provider = ice::hashmap::get(_providers, ice::hash(uri.scheme), nullptr);
                 if (provider != nullptr)
                 {
-                    ice::Resource_v2 const* found_resource = provider->find_resource(uri);
+                    ice::Resource const* found_resource = provider->find_resource(uri);
                     if (found_resource != nullptr)
                     {
                         ice::u64 const hash = ice::hash(found_resource->name());
@@ -200,7 +213,7 @@ namespace ice
                 // We try to find the best matching flags, so if they are equal we got a jackpot.
                 while (it != nullptr && selected_flags != flags)
                 {
-                    ice::Resource_v2 const* res = it.value()->resource;
+                    ice::Resource const* res = it.value()->resource;
 
                     if (ice::u32 const new_priority = _compare_fn(flags, res->flags(), selected_flags); priority < new_priority)
                     {
@@ -234,7 +247,7 @@ namespace ice
             ICE_ASSERT(handle != nullptr, "Trying to set resource from invalid handle!");
 
             ice::ResourceHandle* result = nullptr;
-            ice::Resource_v2 const* resource = handle->provider->resolve_relative_resource(uri, handle->resource);
+            ice::Resource const* resource = handle->provider->resolve_relative_resource(uri, handle->resource);
             if (resource != nullptr)
             {
                 result = this->find_resource(resource->uri(), resource->flags());
@@ -414,7 +427,7 @@ namespace ice
         }
 
         //auto update_resource(
-        //    ice::Resource_v2 const* resource,
+        //    ice::Resource const* resource,
         //    ice::Metadata const* metadata,
         //    ice::Data data
         //) noexcept -> ice::Task<ice::ResourceResult> override

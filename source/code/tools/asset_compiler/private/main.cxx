@@ -1,3 +1,6 @@
+/// Copyright 2022 - 2022, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
 #include <core/memory.hxx>
 #include <core/platform/utility.hxx>
 #include <core/platform/windows.hxx>

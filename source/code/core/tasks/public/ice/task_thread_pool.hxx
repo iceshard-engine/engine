@@ -1,3 +1,6 @@
+/// Copyright 2022 - 2022, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
 #pragma once
 //#include <ice/task_scheduler.hxx>
 #include <ice/task_operations.hxx>
@@ -21,6 +24,8 @@ namespace ice
         ) noexcept = 0;
 
         inline auto schedule() noexcept -> ScheduleOperation;
+
+        inline auto operator co_await() noexcept { return schedule(); }
     };
 
     inline auto TaskThreadPool::schedule() noexcept -> ScheduleOperation

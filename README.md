@@ -7,20 +7,19 @@ More info about the development approach can be found in our [wiki](https://gith
 
 ## Features
 
-Current list of advertisement points:
-* Allocator based architecture.
+Current list of advertisement:
+* Dependency injection based architecture.
 * Support for basic input devices.
-* Almost all APIs designed with 'RAII' principle at the core.
-    * _Exceptions are some debug tools and utilities._
-* Simple resource and asset systems.
+* APIs designed with the 'RAII' principle.
+    * _Exceptions are debug tools and utilities._
+* Inovative resource and asset systems.
 * Data-oriented ECS implementation.
-* Abstracted API for rendering.
-    * _With a working implementation for Vulkan._
-* Multi-threaded logic and graphics frames using C++ coroutines.
+* Abstracted API for rendering. (Vulkan)
+* Multi-threaded logic and graphics using C++ coroutines.
 
 Thid party tools and features:
 * Support for **Tracy** profiler.
-* Optional DevUI API based on **ImGui**. _(ex. disabled in Release builds)_
+* Optional DevUI API based on **ImGui**. _(ex. disabled in Releaseand Profile builds)_
 * Simple 2D Physics implemented with **Box2D**
 * Loading of common file formats supported with **RapidXML**, **RapidJSON** and **Assimp**.
 * Logging using the **fmt** library.
@@ -35,16 +34,17 @@ To build this engine you will need the following tools and SDKs installed:
 * [Conan Package Manager](https://conan.io/) - Used to manage project dependencies.
    * This also requires python3 as a dependency.
 * **Windows:**
-   * Required: Visual Studio 2019 _(16.10 or later)_
+   * Required: Visual Studio 2022 _(17.4 or later)_
    * Required: Windows Kit (10.0.19041.0 or later)
    * Required: Vulkan SDK _(1.2.170.0 or later)_
 * **Linux:** _(Compilation Only)_
-   * Tested On:
+   * **compilation** tested On:
       * Manjarno Linux (KDE Plasma) (Kernel 5.15.6-2-MANJARNO x64)
-      * GitHub Runner: Ubuntu-Latest
-   * Required: GCC-11 C++ compiler or later
+      * GitHub Runner: Ubuntu-22.04
+   * Required: GCC-12 or Clang-14 or later
    * Required: standard library libstdc++ v6 or later
    * ~~Required: Vulkan SDK _(1.2.170.0 or later)_~~ - Not implemented yet.
+   * _(Linking steps are not enabled yet)_
 * **MacOS:**
    * No support
 
@@ -80,9 +80,9 @@ You can further specify the target you want to build by using the `-t --target` 
 ---
 #### The `vstudio` command
 
-This command allows to generate project files for Visual Studio.
+This command allows to generate project files for Visual Studio and open the solution.
 
-    ice vstudio
+    ice vstudio --start
 
 ---
 #### The `run` command

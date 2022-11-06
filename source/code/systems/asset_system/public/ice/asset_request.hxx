@@ -1,3 +1,6 @@
+/// Copyright 2022 - 2022, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
 #pragma once
 #include <ice/mem.hxx>
 #include <ice/asset.hxx>
@@ -6,7 +9,7 @@
 namespace ice
 {
 
-    class Resource_v2;
+    class Resource;
 
     struct AssetTypeDefinition;
 
@@ -25,7 +28,7 @@ namespace ice
         virtual auto state() const noexcept -> ice::AssetState = 0;
         virtual auto data() const noexcept -> ice::Data = 0;
 
-        virtual auto resource() const noexcept -> ice::Resource_v2 const& = 0;
+        virtual auto resource() const noexcept -> ice::Resource const& = 0;
         virtual auto asset_definition() const noexcept -> ice::AssetTypeDefinition const& = 0;
 
         virtual auto allocate(ice::usize size) const noexcept -> ice::Memory = 0;

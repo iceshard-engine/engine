@@ -1,3 +1,6 @@
+/// Copyright 2022 - 2022, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
 #include "trait_render_finish.hxx"
 
 #include <ice/engine_runner.hxx>

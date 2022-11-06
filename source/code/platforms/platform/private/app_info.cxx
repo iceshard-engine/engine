@@ -1,3 +1,6 @@
+/// Copyright 2022 - 2022, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
 #include <ice/app_info.hxx>
 #include <ice/string/heap_string.hxx>
 #include <ice/string/static_string.hxx>

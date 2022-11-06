@@ -1,3 +1,5 @@
+/// Copyright 2022 - 2022, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
 
 namespace ice
 {
@@ -497,8 +499,8 @@ namespace ice
         {
             FindResult fr{
                 .hash_i = Constant_EndOfList,
-                .data_prev = Constant_EndOfList,
-                .data_i = Constant_EndOfList,
+                .entry_prev = Constant_EndOfList,
+                .entry_i = Constant_EndOfList,
             };
 
             if (map._count == 0)

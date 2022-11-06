@@ -1,3 +1,6 @@
+/// Copyright 2022 - 2022, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
 #include <ice/resource_provider.hxx>
 #include <ice/task_scheduler.hxx>
 #include <ice/os/windows.hxx>
@@ -29,7 +32,7 @@ namespace ice
 
         ~ResourceProvider_Win32Filesystem() noexcept override
         {
-            for (Resource_v2* res_entry : _resources)
+            for (Resource* res_entry : _resources)
             {
                 _allocator.destroy(res_entry);
             }
@@ -120,9 +123,6 @@ namespace ice
 
             ice::WString uri_base_path = ice::path::win32::directory(ice::path::win32::directory(dir_tracker));
 
-            ice::Array<ice::Resource_Win32*> resources{ _allocator };
-            ice::array::reserve(resources, 10);
-
             // An allocator for temporary paths, 1024 bytes should suffice for 2x256 wchar_t long paths
             ice::StackAllocator_1024 temp_path_alloc;
             auto fncb = [&](ice::WString file) noexcept
@@ -132,30 +132,27 @@ namespace ice
                 ice::HeapString<ice::wchar> meta_file{ temp_path_alloc, file };
                 ice::HeapString<ice::wchar> data_file{ temp_path_alloc, ice::string::substr(file, 0, ice::string::find_last_of(file, L'.')) };
 
-                ice::array::clear(resources);
-
-                create_resources_from_loose_files(
+                ice::Resource_Win32* const resource = create_resources_from_loose_files(
                     _allocator,
                     _base_path,
                     uri_base_path,
                     meta_file,
-                    data_file,
-                    resources
+                    data_file
                 );
 
-                for (ice::Resource_Win32* resource : resources)
+                if (resource != nullptr)
                 {
-                    ice::u64 const hash = ice::hash(resource->origin());
-                    ICE_ASSERT(
-                        ice::hashmap::has(_resources, hash) == false,
-                        "A resource cannot be a explicit resource AND part of another resource."
-                    );
+                ice::u64 const hash = ice::hash(resource->origin());
+                ICE_ASSERT(
+                    ice::hashmap::has(_resources, hash) == false,
+                    "A resource cannot be a explicit resource AND part of another resource."
+                );
 
-                    ice::hashmap::set(
-                        _resources,
-                        hash,
-                        resource
-                    );
+                ice::hashmap::set(
+                    _resources,
+                    hash,
+                    resource
+                );
                 }
             };
 
@@ -163,10 +160,10 @@ namespace ice
         }
 
         auto query_resources(
-            ice::Array<ice::Resource_v2 const*>& out_changes
+            ice::Array<ice::Resource const*>& out_changes
         ) const noexcept -> ice::u32 override
         {
-            for (Resource_v2 const* entry : _resources)
+            for (Resource const* entry : _resources)
             {
                 ice::array::push_back(out_changes, entry);
             }
@@ -185,7 +182,7 @@ namespace ice
 
         auto find_resource(
             ice::URI const& uri
-        ) const noexcept -> ice::Resource_v2 const* override
+        ) const noexcept -> ice::Resource const* override
         {
             ICE_ASSERT(
                 uri.scheme == ice::stringid_hash(schemeid()),
@@ -215,9 +212,16 @@ namespace ice
             }
         }
 
+        auto access_loose_resource(
+            ice::Resource const* resource
+        ) const noexcept -> ice::LooseResource const* override
+        {
+            return static_cast<ice::Resource_Win32 const*>(resource);
+        }
+
         auto load_resource(
             ice::Allocator& alloc,
-            ice::Resource_v2 const* resource,
+            ice::Resource const* resource,
             ice::TaskScheduler_v2& scheduler
         ) noexcept -> ice::Task<ice::Memory> override
         {
@@ -226,7 +230,7 @@ namespace ice
         }
 
         auto release_resource(
-            ice::Resource_v2 const* resource,
+            ice::Resource const* resource,
             ice::TaskScheduler_v2& scheduler
         ) noexcept -> ice::Task<>
         {
@@ -247,8 +251,8 @@ namespace ice
 
         auto resolve_relative_resource(
             ice::URI const& relative_uri,
-            ice::Resource_v2 const* root_resource
-        ) const noexcept -> ice::Resource_v2 const* override
+            ice::Resource const* root_resource
+        ) const noexcept -> ice::Resource const* override
         {
             ice::u32 const origin_size = ice::string::size(root_resource->origin());
 

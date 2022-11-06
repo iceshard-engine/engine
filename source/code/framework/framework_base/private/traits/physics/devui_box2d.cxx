@@ -1,3 +1,6 @@
+/// Copyright 2022 - 2022, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
 #include "devui_box2d.hxx"
 
 #include <ice/engine_frame.hxx>
@@ -90,43 +93,40 @@ namespace ice
 
     DevUI_Box2D::DevUI_Box2D(b2World& box2d_world) noexcept
         : _world{ box2d_world }
+        , _state{ nullptr }
         , _debug_draw_flags{ 0 }
-        , _visible{ true }
     {
     }
 
-    void DevUI_Box2D::on_prepare(void* context) noexcept
+    auto DevUI_Box2D::settings() const noexcept -> ice::devui::WidgetSettings const&
+    {
+        static devui::WidgetSettings settings{
+            .menu_text = "Box2D (DebugDraw)",
+            .menu_category = "Tools",
+        };
+        return settings;
+    }
+
+    void DevUI_Box2D::on_prepare(void* context, ice::devui::WidgetState& state) noexcept
     {
         ImGui::SetCurrentContext(reinterpret_cast<ImGuiContext*>(context));
+        _state = &state;
     }
 
     void DevUI_Box2D::on_draw() noexcept
     {
-        if (ImGui::BeginMainMenuBar())
+        if (ImGui::Begin("Box2D (DebugDraw)", &_state->is_visible))
         {
-            if (ImGui::BeginMenu("Debug Windows"))
-            {
-                ImGui::MenuItem("Physics2D", nullptr, &_visible);
-                ImGui::EndMenu();
-            }
+            ImGui::CheckboxFlags("Draw Shapes", &_debug_draw_flags, b2Draw::e_shapeBit);
+            ImGui::CheckboxFlags("Draw Bounding Boxes", &_debug_draw_flags, b2Draw::e_aabbBit);
+            ImGui::CheckboxFlags("Draw Transforms", &_debug_draw_flags, b2Draw::e_centerOfMassBit);
         }
-        ImGui::EndMainMenuBar();
-
-        if (_visible)
-        {
-            if (ImGui::Begin("Physics2D (Box2D)", &_visible))
-            {
-                ImGui::CheckboxFlags("Draw Shapes", &_debug_draw_flags, b2Draw::e_shapeBit);
-                ImGui::CheckboxFlags("Draw Bounding Boxes", &_debug_draw_flags, b2Draw::e_aabbBit);
-                ImGui::CheckboxFlags("Draw Transforms", &_debug_draw_flags, b2Draw::e_centerOfMassBit);
-            }
-            ImGui::End();
-        }
+        ImGui::End();
     }
 
     void DevUI_Box2D::on_frame(ice::EngineFrame& frame) noexcept
     {
-        if (_visible && _debug_draw_flags != 0)
+        if (_state && _state->is_visible && _debug_draw_flags != 0)
         {
             detail::DevUI_DebugDrawCommandRecorder recorder{ _debug_draw_flags };
 

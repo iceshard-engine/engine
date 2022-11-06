@@ -1,3 +1,6 @@
+/// Copyright 2022 - 2022, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
 #include "vk_device.hxx"
 #include "vk_swapchain.hxx"
 #include "vk_render_surface.hxx"
@@ -895,13 +898,21 @@ namespace ice::render::vk
             BufferUpdateInfo const& update_info = update_infos[idx];
             Memory& target = data_blocks[idx];
 
+            VulkanBuffer* const buffer_ptr = reinterpret_cast<VulkanBuffer*>(static_cast<ice::uptr>(update_info.buffer));
+
+            // TODO: The memory manager requires a not-so-small overhaul to avoid alignment issues...
+            VkMemoryRequirements reqirements;
+            vkGetBufferMemoryRequirements(_vk_device, buffer_ptr->vk_buffer, &reqirements);
+
             ICE_ASSERT(
                 target.size >= update_info.data.size,
                 "Target memory buffer is smaller than provided size to copy!"
             );
 
+            void* target_ptr = ice::ptr_add(ice::align_to(target.location, ice::ualign(reqirements.alignment)).value, { update_info.offset });
+
             ice::memcpy(
-                ice::ptr_add(target.location, { update_info.offset }),
+                target_ptr,
                 update_info.data.location,
                 update_info.data.size
             );

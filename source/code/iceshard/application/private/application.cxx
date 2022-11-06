@@ -1,4 +1,7 @@
-﻿#include <ice/application.hxx>
+/// Copyright 2021 - 2022, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
+#include <ice/application.hxx>
 #include <ice/os/windows.hxx>
 #include <ice/app_info.hxx>
 

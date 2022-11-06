@@ -63,10 +63,31 @@
         '-Werror'
         // We use [[deprecated]] to keep track of some old API usage without the need to fix them asap.
         '-Wno-error=deprecated-declarations'
-        // This seems to be a compiler issue related to generated 'coroutine frame stages', probably needs investigation.
-        '-Wno-error=subobject-linkage'
         '-Wno-switch'
         '-std=c++20'
+    }
+]
+
+.Config_Unix_GCC =
+[
+    .Name = 'Config-Unix'
+    .Requires = { 'Unix', 'gcc' }
+    .BuildOptions = {
+        // This seems to be a compiler issue related to generated 'coroutine frame stages', probably needs investigation.
+        '-Wno-error=subobject-linkage'
+    }
+]
+
+.Config_Unix_Clang =
+[
+    .Name = 'Config-Unix'
+    .Requires = { 'Unix', 'clang' }
+    .BuildOptions = {
+        // Some warnigns disabled for now. To be fixed later.
+        '-Wno-unused-command-line-argument'
+        '-Wno-unused-private-field'
+        '-Wno-deprecated-declarations'
+        '-Wno-missing-braces'
     }
 ]
 
@@ -163,7 +184,7 @@
 .Config_Debug_GCC =
 [
     .Name = 'Config-Debug-GCC'
-    .Requires = { 'Debug', 'Unix' }
+    .Requires = { 'Debug', 'Unix', 'gcc' }
     .BuildOptions = {
         '-Wno-deprecated-declarations'
         '-Wno-subobject-linkage'
@@ -240,6 +261,8 @@
     .Config_MSVC_BinaryApp
     .Config_MSVC_BinaryApp2
     .Config_Unix
+    .Config_Unix_GCC
+    .Config_Unix_Clang
     .Config_Unix_BinaryDll
     .Config_Unix_BinaryApp
     .Config_Unix_BinaryApp2

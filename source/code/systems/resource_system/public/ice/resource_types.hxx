@@ -1,3 +1,6 @@
+/// Copyright 2022 - 2022, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
 #pragma once
 #include <ice/base.hxx>
 
@@ -9,9 +12,10 @@ namespace ice
     struct ResourceHandle;
     struct ResourceTrackerCreateInfo;
 
-    class Resource_v2;
+    class Resource;
     class ResourceProvider;
     class ResourceTracker;
+    class LooseResource;
 
     enum class ResourceFlags : ice::u32;
     enum class ResourceStatus : ice::u32;

@@ -1,3 +1,6 @@
+/// Copyright 2022 - 2022, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
 #pragma once
 #include <ice/game_entity.hxx>
 #include <ice/game_physics.hxx>
@@ -8,6 +11,8 @@
 
 #include "devui_box2d.hxx"
 #include "box2d.hxx"
+
+#include "chipmunk2d.hxx"
 
 namespace ice
 {
@@ -57,6 +62,8 @@ namespace ice
 
         ice::Engine* _engine = nullptr;
         b2World* _world = nullptr;
+
+        cpSpace* _global_space = nullptr;
 
         ice::DevUI_Box2D* _devui;
     };

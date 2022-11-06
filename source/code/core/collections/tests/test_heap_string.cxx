@@ -1,3 +1,6 @@
+/// Copyright 2022 - 2022, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
 #include <catch2/catch.hpp>
 #include <ice/string/string.hxx>
 #include <ice/string/heap_string.hxx>

@@ -1,3 +1,6 @@
+/// Copyright 2022 - 2022, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
 #pragma once
 #include <ice/gfx/gfx_runner.hxx>
 #include <ice/gfx/gfx_trait.hxx>
@@ -78,7 +81,7 @@ namespace ice::gfx
 
     private:
         ice::ProxyAllocator _allocator;
-        ice::UniquePtr<ice::TaskThread> _thread;
+        ice::UniquePtr<ice::TaskThread_v2> _thread;
         ice::UniquePtr<ice::gfx::IceGfxDevice> _device;
 
         ice::render::RenderFence* _fences[4];

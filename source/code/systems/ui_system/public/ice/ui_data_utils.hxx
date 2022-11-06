@@ -1,11 +1,14 @@
+/// Copyright 2022 - 2022, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
 #pragma once
 #include <ice/ui_page.hxx>
 #include <ice/ui_data_ref.hxx>
 #include <ice/ui_resource.hxx>
 #include <ice/ui_style.hxx>
+#include <ice/ui_font.hxx>
 
 #include <ice/assert.hxx>
-#include <ice/font.hxx>
 #include <ice/span.hxx>
 
 namespace ice::ui

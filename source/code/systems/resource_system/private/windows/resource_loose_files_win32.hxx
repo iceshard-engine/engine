@@ -1,10 +1,14 @@
+/// Copyright 2022 - 2022, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
 #pragma once
 #include <ice/resource.hxx>
 #include <ice/resource_meta.hxx>
 #include <ice/resource_flags.hxx>
-#include <ice/os/windows.hxx>
+#include <ice/mem_unique_ptr.hxx>
 #include <ice/container_types.hxx>
 #include <ice/string_types.hxx>
+#include <ice/os/windows.hxx>
 #include <ice/uri.hxx>
 
 #include "resource_common_win32.hxx"
@@ -18,6 +22,7 @@ namespace ice
     {
     public:
         Resource_LooseFilesWin32(
+            ice::Allocator& alloc,
             ice::MutableMetadata metadata,
             ice::HeapString<> origin_path,
             ice::String origin_name,
@@ -34,6 +39,16 @@ namespace ice
 
         auto metadata() const noexcept -> ice::Metadata const& override;
 
+        auto load_named_part(
+            ice::StringID_Arg part_name,
+            ice::Allocator& alloc
+        ) const noexcept -> ice::Task<Memory> override;
+
+        void add_named_part(
+            ice::StringID_Arg name,
+            ice::HeapString<> path
+        ) noexcept;
+
         auto load_data_for_flags(
             ice::Allocator& alloc,
             ice::ResourceFlags flags,
@@ -49,8 +64,9 @@ namespace ice
         ice::HeapString<> _origin_path;
         ice::String _origin_name;
         ice::String _uri_path;
-
         ice::URI _uri;
+
+        ice::HashMap<ice::HeapString<>, ContainerLogic::Complex> _extra_resources;
     };
 
     class Resource_LooseFilesWin32::ExtraResource final : public ice::Resource_Win32
@@ -83,14 +99,13 @@ namespace ice
         ice::ResourceFlags _flags;
     };
 
-    void create_resources_from_loose_files(
+    auto create_resources_from_loose_files(
         ice::Allocator& alloc,
         ice::WString base_path,
         ice::WString uri_base_path,
         ice::WString meta_file,
-        ice::WString data_file,
-        ice::Array<ice::Resource_Win32*>& out_resources
-    ) noexcept;
+        ice::WString data_file
+    ) noexcept -> ice::Resource_Win32*;
 
 } // namespace ice
 

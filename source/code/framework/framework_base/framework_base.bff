@@ -1,3 +1,6 @@
+/// Copyright 2022 - 2022, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
 .Project =
 [
     .Name = 'framework_base'
@@ -17,6 +20,7 @@
 
         .Modules = {
             'box2d'
+            'chipmunk2d'
             'rapidxml'
         }
 
