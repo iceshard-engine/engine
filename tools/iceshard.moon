@@ -2,8 +2,9 @@ import Application from require 'ice.application'
 
 import UpdateCommand from require 'ice.commands.update'
 import BuildCommand from require 'ice.commands.build'
-import VStudioCommand from require 'ice.commands.vstudio'
+import DevenvCommand from require 'ice.commands.devenv'
 import LicenseCommand from require 'ice.commands.license'
+import ScriptCommand from require 'ice.commands.script'
 
 import RunCommand from require 'tools.run'
 import NatvisCommand from require 'tools.natvis'
@@ -18,11 +19,12 @@ class IceShard extends Application
     @commands: {
         'build': BuildCommand
         'update': UpdateCommand
-        'vstudio': VStudioCommand
+        'devenv': DevenvCommand
         'run': RunCommand
         'natvis': NatvisCommand
         'codestyle': CodeStyleCommand
         'license': LicenseCommand
+        'script': ScriptCommand
     }
 
 { :IceShard }

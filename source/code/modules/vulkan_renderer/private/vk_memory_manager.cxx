@@ -26,13 +26,18 @@ namespace ice::render::vk
             VulkanMemoryRequirements& out_requirements
         ) noexcept
         {
-            VkMemoryRequirements memory_requirements{ };
-            vkGetImageMemoryRequirements(vk_device, vk_image, &memory_requirements);
+            VkImageMemoryRequirementsInfo2 const mem_requrements_info{
+                .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_REQUIREMENTS_INFO_2,
+                .image = vk_image
+            };
+
+            VkMemoryRequirements2 memory_requirements{ VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2 };
+            vkGetImageMemoryRequirements2(vk_device, &mem_requrements_info, &memory_requirements);
 
             ice::i32 memory_index = -1;
             for (ice::i32 i = 0; i < ice::i32(memory_properties.memoryTypeCount); ++i)
             {
-                if ((memory_requirements.memoryTypeBits & 0x1) == 0x1)
+                if ((memory_requirements.memoryRequirements.memoryTypeBits & 0x1) == 0x1)
                 {
                     // Type is available, does it match user properties?
                     if ((memory_properties.memoryTypes[i].propertyFlags & flags) == flags)
@@ -41,11 +46,11 @@ namespace ice::render::vk
                         break;
                     }
                 }
-                memory_requirements.memoryTypeBits >>= 1;
+                memory_requirements.memoryRequirements.memoryTypeBits >>= 1;
             }
 
-            out_requirements.size = ice::u32(memory_requirements.size);
-            out_requirements.alignment = ice::u32(memory_requirements.alignment);
+            out_requirements.size = ice::u32(memory_requirements.memoryRequirements.size);
+            out_requirements.alignment = ice::u32(memory_requirements.memoryRequirements.alignment);
             out_requirements.memory_index = memory_index;
 
             ICE_ASSERT(
@@ -133,9 +138,12 @@ namespace ice::render::vk
                 alloc_info.allocationSize = info->block_size == 0 ? requirements.size : info->block_size;
                 alloc_info.memoryTypeIndex = requirements.memory_index;
 
-                if (ice::u32 const remainder = alloc_info.allocationSize % requirements.alignment; remainder != 0)
+                if (info->block_size != 0)
                 {
-                    alloc_info.allocationSize += requirements.alignment - remainder;
+                    if (ice::u32 const remainder = alloc_info.allocationSize % requirements.alignment; remainder != 0)
+                    {
+                        alloc_info.allocationSize += requirements.alignment - remainder;
+                    }
                 }
 
                 VkDeviceMemory memory_handle;
@@ -377,7 +385,7 @@ namespace ice::render::vk
             .pNext = nullptr,
             .image = image,
             .memory = selected_block->memory_handle,
-            .memoryOffset = selected_entry->offset,
+            .memoryOffset = memory_offset,
         };
 
         VkResult api_result = vkBindImageMemory2(

@@ -34,7 +34,7 @@
 .Config_MSVC =
 [
     .Name = 'Config-MSVC'
-    .Requires = { 'MSVC' }
+    .Requires = { 'MSVC-Frontend' }
     .BuildOptions = {
         '/std:c++latest'
         '/wd4127' // conditional expression is constant'
@@ -71,7 +71,7 @@
 .Config_Unix_GCC =
 [
     .Name = 'Config-Unix'
-    .Requires = { 'Unix', 'gcc' }
+    .Requires = { 'Unix', 'GCC-Frontend' }
     .BuildOptions = {
         // This seems to be a compiler issue related to generated 'coroutine frame stages', probably needs investigation.
         '-Wno-error=subobject-linkage'
@@ -81,7 +81,7 @@
 .Config_Unix_Clang =
 [
     .Name = 'Config-Unix'
-    .Requires = { 'Unix', 'clang' }
+    .Requires = { 'Unix', 'CLANG-Frontend' }
     .BuildOptions = {
         // Some warnigns disabled for now. To be fixed later.
         '-Wno-unused-command-line-argument'
@@ -95,7 +95,7 @@
 .Config_Unix_BinaryBase =
 [
     .Name = 'Config-Unix-Binary'
-    .Requires = { 'Unix' }
+    .Requires = { 'Unix', 'GCC-Frontend' }
     .LinkOptions = {
         '-lc'
         '-lm'
@@ -144,17 +144,17 @@
 .Config_MSVC_BinaryDll =
 [
     Using( .Config_MSVC_BinaryBase )
-    .Requires = { 'MSVC', 'SharedLib' }
+    .Requires = { 'MSVC-Frontend', 'SharedLib' }
 ]
 .Config_MSVC_BinaryApp =
 [
     Using( .Config_MSVC_BinaryBase )
-    .Requires = { 'MSVC', 'WindowerApp' }
+    .Requires = { 'MSVC-Frontend', 'WindowerApp' }
 ]
 .Config_MSVC_BinaryApp2 =
 [
     Using( .Config_MSVC_BinaryBase )
-    .Requires = { 'MSVC', 'ConsoleApp' }
+    .Requires = { 'MSVC-Frontend', 'ConsoleApp' }
 ]
 
 .Config_Debug =
@@ -169,7 +169,7 @@
 .Config_Debug_MSVC =
 [
     .Name = 'Config-Debug-MSVC'
-    .Requires = { 'Debug', 'MSVC' }
+    .Requires = { 'Debug', 'MSVC-Frontend' }
     .Defines = {
         '_DEBUG'
     }
@@ -184,7 +184,7 @@
 .Config_Debug_GCC =
 [
     .Name = 'Config-Debug-GCC'
-    .Requires = { 'Debug', 'Unix', 'gcc' }
+    .Requires = { 'Debug', 'Unix', 'GCC-Frontend' }
     .BuildOptions = {
         '-Wno-deprecated-declarations'
         '-Wno-subobject-linkage'
@@ -194,7 +194,7 @@
 .Config_Develop_MSVC =
 [
     .Name = 'Config-Develop-MSVC'
-    .Requires = { 'Develop', 'MSVC' }
+    .Requires = { 'Develop', 'MSVC-Frontend' }
     .Defines = { }
     .BuildOptions = {
         ' /O1'
@@ -206,7 +206,7 @@
 .Config_Profile_MSVC =
 [
     .Name = 'Config-Profile-MSVC'
-    .Requires = { 'Profile', 'MSVC' }
+    .Requires = { 'Profile', 'MSVC-Frontend' }
     .Defines = { }
     .BuildOptions = {
         ; ' /O2' ; Disabled due to issues with MSVC coroutine tall cail optimizations.
@@ -219,7 +219,7 @@
 .Config_Release_MSVC =
 [
     .Name = 'Config-Release-MSVC'
-    .Requires = { 'Release', 'MSVC' }
+    .Requires = { 'Release', 'MSVC-Frontend' }
     .Defines = { }
     .BuildOptions = {
         ; ' /O2' ; Disabled due to issues with MSVC coroutine tall cail optimizations.

@@ -99,7 +99,7 @@ namespace ice
 
         ice::TileMap const* tilemap_ptr = reinterpret_cast<ice::TileMap const*>(result.data.location);
         ice::TileMapInstance tilemap_info{ .tilemap = tilemap_ptr };
-        tilemap_info.physics_ids = _allocator.allocate<ice::PhysicsID>(tilemap_ptr->map_collision_count);
+        tilemap_info.physics_ids = _allocator.allocate<ice::PhysicsID>(tilemap_ptr->map_collision_count + 1);
 
         co_await runner.schedule_next_frame();
 

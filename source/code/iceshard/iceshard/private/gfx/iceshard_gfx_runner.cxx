@@ -243,7 +243,7 @@ namespace ice::gfx
             );
         }
 
-        // Gather tasks forom all traits.
+        // Gather tasks from all traits.
         for (ice::WorldTrait* trait : _graphics_world[1]->traits())
         {
             frame->add_task(static_cast<ice::gfx::GfxTrait*>(trait)->task_gfx_update(engine_frame, *frame, *_device));

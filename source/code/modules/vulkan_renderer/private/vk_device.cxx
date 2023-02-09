@@ -120,7 +120,7 @@ namespace ice::render::vk
         VkSwapchainCreateInfoKHR swapchain_info{ VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR };
         swapchain_info.surface = vk_surface->handle();
         swapchain_info.imageFormat = surface_format.format;
-        swapchain_info.minImageCount = surface_capabilities.minImageCount;
+        swapchain_info.minImageCount = ice::max(surface_capabilities.minImageCount, 2u);
         swapchain_info.imageExtent = surface_capabilities.maxImageExtent;
         swapchain_info.imageArrayLayers = 1;
         swapchain_info.oldSwapchain = VK_NULL_HANDLE;
@@ -1586,7 +1586,7 @@ namespace ice::render::vk
 
         vkCmdPipelineBarrier(
             native_cb,
-            VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+            VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
             0,
             0, nullptr,
             0, nullptr,

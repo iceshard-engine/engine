@@ -658,7 +658,7 @@ namespace ice
                 api.pipeline_image_barrier(
                     cmds,
                     PipelineStage::Transfer,
-                    PipelineStage::FramentShader,
+                    PipelineStage::TopOfPipe,
                     { barriers, 1 }
                 );
             }
