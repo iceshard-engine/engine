@@ -1,5 +1,25 @@
 {
     "windows": {
-        "script_file": "ice.bat"
+        "project": {
+            "script_file": "ice.bat",
+            "fbuild": {
+                "vstudio_solution_file": "IceShard.sln"
+            }
+        }
+    },
+    "linux": {
+        "project": {
+            "script_file": "ice.sh",
+        }
+    },
+    "project": {
+        "output_dir": "build",
+        "source_dir": "source/code",
+        "fbuild": {
+            "config_file": "source/fbuild.bff"
+        },
+        "conan": {
+            "profiles_file": "source/conan_profiles.json"
+        }
     }
 }

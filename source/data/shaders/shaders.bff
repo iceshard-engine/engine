@@ -1,0 +1,36 @@
+/// Copyright 2022 - 2022, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
+.Project =
+[
+    .Name = 'data'
+    .Kind = .Kind_ObjectList
+    .Group = 'Data/Shaders'
+
+    .BaseDir = '$WorkspaceRoot$/source' // We should just use '/data'
+    .InputPaths = { 'data' } // And only input 'shaders'
+
+    .Requires = { 'GFX-Vulkan' }
+    .Tags = { 'ShaderPipeline' }
+]
+.Projects + .Project
+
+
+.Task_GenerateShaderISRM =
+[
+    .Step = 'Gen-ShaderMeta'
+    .Type = 'Compile'
+
+    .AllowUnityBuilds = false
+
+    .TaskRequires = { 'GFX-Vulkan' }
+
+    .TaskCompiler = 'ice-script-compiler'
+    .TaskCompilerFrontend = 'ISRM'
+
+    .TaskInputPattern = { '*.spv' }
+    .TaskConsumesPreviousOutputs = true
+
+    .CompilerOutputExtension = '.isrm'
+    .CompilerOutputKeepBaseExtension  = true
+]
