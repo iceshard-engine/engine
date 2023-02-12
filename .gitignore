@@ -8,9 +8,8 @@
 *.isr
 
 # Local data
-/source/data/kenney
-/source/data/cotm
 /source/data/temp
+/source/data/local
 
 # Temporary files to ignore
 compile_commands.json

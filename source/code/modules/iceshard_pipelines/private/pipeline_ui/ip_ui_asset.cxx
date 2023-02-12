@@ -568,7 +568,7 @@ namespace ice
         ice::Memory& out_memory
     ) noexcept -> ice::Task<bool>
     {
-        ice::Asset default_font_asset = co_await storage.request(ice::AssetType_Font, "calibri", ice::AssetState::Loaded);
+        ice::Asset default_font_asset = co_await storage.request(ice::AssetType_Font, "local/font/calibri", ice::AssetState::Loaded);
         if (ice::asset_check(default_font_asset, AssetState::Loaded) == false)
         {
             ICE_LOG(

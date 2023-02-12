@@ -72,6 +72,11 @@ namespace ice
         ice::String path
     ) noexcept -> ice::UniquePtr<ice::ResourceProvider>;
 
+    auto create_resource_provider(
+        ice::Allocator& alloc,
+        ice::Span<ice::String> paths
+    ) noexcept -> ice::UniquePtr<ice::ResourceProvider>;
+
     auto create_resource_provider_dlls(
         ice::Allocator& alloc,
         ice::String path

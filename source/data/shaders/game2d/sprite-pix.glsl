@@ -16,6 +16,6 @@ layout (std140, set = 1, binding = 3) uniform TilemapProps
 
 void main()
 {
-    out_color = texture(sampler2D(default_image, default_sampler), in_uv.st);
+    //out_color = texture(sampler2D(default_image, default_sampler), in_uv.st);
     out_color = texture(sampler2D(default_image, default_sampler), in_uv.st * vec2(tilemap_props.width_scale, tilemap_props.height_scale)).rgba;
 }

@@ -764,12 +764,16 @@ namespace ice
         ice::vec2f* object_vertices = tilemap_info.object_vertices;
         ice::TileCollision* tile_collisions = tilemap_info.tile_collisions;
 
-        ice::Memory alloc_result = alloc.allocate(
-            AllocRequest{
-                ice::size_of<ice::detail::TileCollisionInfo> * tilemap_info.tile_collision_count,
-                ice::align_of<ice::detail::TileCollisionInfo>
-            }
-        );
+        ice::AllocRequest const tile_memory_request{
+            ice::size_of<ice::detail::TileCollisionInfo> * tilemap_info.tile_collision_count,
+            ice::align_of<ice::detail::TileCollisionInfo>
+        };
+
+        ice::Memory alloc_result{ };
+        if (tile_memory_request.size > 0_B)
+        {
+            alloc.allocate(tile_memory_request);
+        }
 
         ice::detail::TileCollisionInfo* tile_collision_info = reinterpret_cast<ice::detail::TileCollisionInfo*>(
             alloc_result.location
@@ -914,7 +918,7 @@ namespace ice
                 for (ice::u32 idx = 0; idx < tilemap_info.tileset_count; ++idx)
                 {
                     ice::ResourceHandle* const self = resource_tracker.find_resource(resource.uri());
-                    ice::ResourceHandle* image_res = resource_tracker.find_resource_relative(
+                     ice::ResourceHandle* image_res = resource_tracker.find_resource_relative(
                         ice::URI{ ice::Scheme_File,  tilemap_info.tileset_info[idx].image },
                         self
                     );

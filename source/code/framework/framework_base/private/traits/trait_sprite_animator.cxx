@@ -94,9 +94,13 @@ namespace ice
             [&](ice::Animation const& anim, ice::Sprite const& sprite) noexcept
             {
                 ice::Asset sprite_asset = ice::sync_wait(_assets->request(ice::render::AssetType_Texture2D, sprite.material, AssetState::Baked));
+                if (!ice::asset_check(sprite_asset, AssetState::Baked))
+                {
+                    return;
+                }
+
                 ice::Metadata asset_meta = ice::asset_metadata(sprite_asset);
                 ice::detail::ReleaseOnExit release_asset{ sprite_asset, *_assets };
-
 
                 ice::Array<ice::String> anim_names{ portal.allocator() };
                 if (meta_read_string_array(asset_meta, "animation.names"_sid, anim_names) == false)

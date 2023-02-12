@@ -24,6 +24,7 @@ Settings
 }
 
 #include "code/projects.bff"
+#include "data/shaders/shaders.bff"
 
 .Unity_Pipeline_Windows_x64 =
 [
@@ -58,9 +59,20 @@ Settings
     .PipelineSteps = { 'Build' } // Linking still doesn't work
 ]
 
+.Vk_ShaderPipeline =
+[
+    Using( .Pipeline_VulkanShaders_13 )
+
+    .PipelineSteps + 'Gen-ShaderMeta'
+    .PipelineTasks + .Task_GenerateShaderISRM
+
+    .PipelineName = 'VkShaders'
+    .PipelineToolchain = 'vk-glslc-1-3'
+]
 
 ^BuildPipelines = {
     .Unity_Pipeline_Windows_x64
     .Unity_Pipeline_Linux_x64
     .Unity_Pipeline_Linux_x64_Clang
+    .Vk_ShaderPipeline
 }

@@ -31,6 +31,7 @@ int main(int, char**)
         ice::ProxyAllocator resource_allocator{ host_alloc, "resources" };
 
         ice::HeapString<> working_dir{ host_alloc };
+        ice::HeapString<> shader_dir{ host_alloc };
         ice::working_directory(working_dir);
 
         ice::HeapString<> app_location{ host_alloc };
@@ -39,8 +40,14 @@ int main(int, char**)
         // TODO: allow to set working dir via arguments.
         // NOTE: this change is temporary so we don't change anything that might have been depending that we are in the 'build' directory.
         ice::string::resize(working_dir, ice::string::size(working_dir) - (ice::count("build") - 1));
+        shader_dir = working_dir;
+
+        // TODO: We need to finally allow changing or adding resource paths before we start loading the game.
         ice::string::push_back(working_dir, "source\\data\\");
-        ice::UniquePtr<ice::ResourceProvider> filesys_provider = ice::create_resource_provider(filesystem_allocator, working_dir);
+        ice::string::push_back(shader_dir, "build\\obj\\VkShaders\\GFX-Vulkan-Unoptimized-vk-glslc-1-3\\data\\");
+
+        ice::String resource_paths[]{ working_dir, shader_dir };
+        ice::UniquePtr<ice::ResourceProvider> filesys_provider = ice::create_resource_provider(filesystem_allocator, resource_paths);
 
         // TODO: allow to set dynlib dir via arguments.
         // NOTE: this change is temporary so we don't change anything that might have been depending that we are in the 'build' directory.

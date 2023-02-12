@@ -21,12 +21,11 @@ namespace ice::render::vk
         app_info.applicationVersion = 1;
         app_info.pEngineName = "IceShard (alpha)";
         app_info.engineVersion = 1;
-        app_info.apiVersion = VK_API_VERSION_1_0;
+        app_info.apiVersion = VK_API_VERSION_1_3;
 
         const char* instanceExtensionNames[] = {
             VK_KHR_SURFACE_EXTENSION_NAME,
             VK_KHR_WIN32_SURFACE_EXTENSION_NAME,
-            VK_NV_EXTERNAL_MEMORY_CAPABILITIES_EXTENSION_NAME,
         };
 
         VkInstanceCreateInfo instance_create_info{ VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO };

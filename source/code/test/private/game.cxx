@@ -126,11 +126,11 @@ void MyGame::on_load_modules(ice::GameServices& services) noexcept
     ice::ResourceTracker& res = services.resource_system();
 
     // Maybe we should move the location where we can do replacements?
-    {
-        [[maybe_unused]]
-        ice::ResourceHandle* tsa = res.find_resource("file:/data/cotm/tileset_a.png"_uri);
-        ice::sync_wait(res.set_resource("urn:cotm/tileset_ab.png"_uri, tsa));
-    }
+    //{
+    //    [[maybe_unused]]
+    //    ice::ResourceHandle* tsa = res.find_resource("file:/data/cotm/tileset_a.png"_uri);
+    //    ice::sync_wait(res.set_resource("urn:cotm/tileset_ab.png"_uri, tsa));
+    //}
 
     ice::ResourceHandle* const pipelines_module = res.find_resource("urn:iceshard_pipelines.dll"_uri);
     ice::ResourceHandle* const engine_module = res.find_resource("urn:iceshard.dll"_uri);
@@ -264,7 +264,7 @@ void MyGame::on_app_startup(ice::Engine& engine) noexcept
             .success_trigger_count = 1,
             .failure_trigger_offset = 1,
             .failure_trigger_count = 0,
-            .reset_trigger_offset = 2
+            .reset_trigger_offset = 2 
         }
     };
 
@@ -376,13 +376,13 @@ void MyGame::on_game_begin(ice::EngineRunner& runner) noexcept
         ice::Transform2DDynamic{ .position = { 48.f * 2, 448.f, -1.f }, .scale = { 1.f, 0.f } },
         ice::PhysicsBody{ .shape = ice::PhysicsShape::Capsule, .dimensions = { 16.f, 32.f }, .trait_data = nullptr },
         ice::PhysicsVelocity{ .velocity = { 0.1f, 0.f } },
-        ice::Sprite{ .material = "cotm/cotm_hero" },
+        ice::Sprite{ .material = "local/cotm_hero" },
         ice::SpriteTile{ .material_tile = { 0, 0 } }
     );
 
     ice::String const* tilemap_asset = runner.current_frame().storage().create_named_object<ice::String>(
         "tilemap_asset_name"_sid,
-        "cotm/test_level_2/tiled/0002_Level_1"
+        "local/maps/level_0"
     );
 
     ice::Shard shards[]{

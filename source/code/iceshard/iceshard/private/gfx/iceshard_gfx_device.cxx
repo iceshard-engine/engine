@@ -147,12 +147,16 @@ namespace ice::gfx
     ) noexcept -> QueueID
     {
         QueueID queue_id = QueueID::Invalid;
+        QueueFlags queue_flags = QueueFlags::Transfer | QueueFlags::Compute | QueueFlags::Graphics | QueueFlags::Present;
         for (ice::render::QueueFamilyInfo const& queue_family : queue_family_infos)
         {
-            if ((queue_family.flags & DefaultQueueFlags) == DefaultQueueFlags)
+            if ((queue_family.flags & flags) == flags)
             {
-                queue_id = queue_family.id;
-                break;
+                if (queue_flags >= queue_family.flags)
+                {
+                    queue_id = queue_family.id;
+                    queue_flags = queue_family.flags;
+                }
             }
         }
 
