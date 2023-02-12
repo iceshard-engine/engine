@@ -264,7 +264,7 @@ void MyGame::on_app_startup(ice::Engine& engine) noexcept
             .success_trigger_count = 1,
             .failure_trigger_offset = 1,
             .failure_trigger_count = 0,
-            .reset_trigger_offset = 2
+            .reset_trigger_offset = 2 
         }
     };
 
@@ -371,12 +371,12 @@ void MyGame::on_game_begin(ice::EngineRunner& runner) noexcept
         runner.current_frame().entity_operations(),
         player_entity,
         player_arch,
-        ice::Animation{ .animation = "proto_idle"_sid_hash, .speed = 1.f / 60.f },
+        ice::Animation{ .animation = "cotm_idle"_sid_hash, .speed = 1.f / 60.f },
         ice::Actor{ .type = ice::ActorType::Player },
-        ice::Transform2DDynamic{ .position = { 48.f * 2, 448.f, -1.f }, .scale = { 1.f, 1.f } },
+        ice::Transform2DDynamic{ .position = { 48.f * 2, 448.f, -1.f }, .scale = { 1.f, 0.f } },
         ice::PhysicsBody{ .shape = ice::PhysicsShape::Capsule, .dimensions = { 16.f, 32.f }, .trait_data = nullptr },
         ice::PhysicsVelocity{ .velocity = { 0.1f, 0.f } },
-        ice::Sprite{ .material = "local/sprites/prototype/PrototypeHero" },
+        ice::Sprite{ .material = "local/cotm_hero" },
         ice::SpriteTile{ .material_tile = { 0, 0 } }
     );
 

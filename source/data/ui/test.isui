@@ -2,7 +2,7 @@
     xmlns:ice="https://www.iceshard.net/docs/engine/v1_alpha/isui/iceshard/">
 
   <ui:resources>
-    <ui:resource type="font" name="default" size="15" font="calibri" />
+    <ui:resource type="font" name="default" size="15" font="local/font/calibri" />
     <ui:resource type="text" name="text_start" />
     <ui:resource type="text" name="text_settings" />
     <ui:resource type="text" name="text_credits" />
