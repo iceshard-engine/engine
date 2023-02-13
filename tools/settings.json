@@ -21,5 +21,9 @@
         "conan": {
             "profiles_file": "source/conan_profiles.json"
         }
+    },
+    "license": {
+        "spdx": "MIT",
+        "authors": "Dandielo <dandielo@iceshard.net>"
     }
 }
