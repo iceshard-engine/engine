@@ -18,6 +18,9 @@ namespace ice
     template<typename K, typename V, typename Pred>
     inline void sort(ice::Span<K> keys, ice::Span<V> values, Pred&& pred) noexcept;
 
+    template<typename Node, typename Pred>
+    inline auto sort_linked_list(Node* left_list, ice::u32 size, Pred&& pred) noexcept -> Node*;
+
     namespace detail
     {
 
@@ -82,6 +85,60 @@ namespace ice
         ice::i32 const last_index = keys.size() - 1;
 
         ice::detail::qsort(keys, values, std::forward<Pred>(pred), first_index, last_index);
+    }
+
+    template<typename Node, typename Pred>
+    inline auto sort_linked_list(Node* left_list, ice::u32 size, Pred&& pred) noexcept -> Node*
+    {
+        Node* right_list = left_list;
+        if (size == 1)
+        {
+            left_list->next = nullptr;
+            return left_list;
+        }
+        else if (size == 2)
+        {
+            right_list = right_list->next;
+            right_list->next = nullptr;
+            left_list->next = nullptr;
+        }
+        else
+        {
+            uint32_t const half_size = size / 2;
+            for (uint32_t idx = half_size; idx > 0; --idx)
+            {
+                right_list = right_list->next;
+            }
+
+            Node* next = right_list->next;
+            right_list->next = nullptr;
+            right_list = next;
+
+            left_list = ice::sort_linked_list(left_list, half_size + 1, pred);
+            right_list = ice::sort_linked_list(right_list, size - (half_size + 1), pred);
+        }
+
+        Node result{ .next = left_list }; // Keep the head of the list
+        left_list = &result;
+        while (left_list->next != nullptr && right_list != nullptr)
+        {
+            Node* temp = left_list->next;
+            if (pred(*temp, *right_list) == false) // TRUE == IS OKAY, FALSE == NEEDS SWAP
+            {
+                // We swapped the whole lists...
+                left_list->next = right_list;
+                right_list = temp;
+            }
+
+            // We can advance the left list
+            left_list = left_list->next;
+        }
+
+        // Attach the rest of the right list
+        left_list->next = right_list;
+
+        // Return the 'next' element of the result.
+        return result.next;
     }
 
 } // namespace ice

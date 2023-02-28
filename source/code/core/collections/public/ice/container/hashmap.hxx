@@ -48,10 +48,16 @@ namespace ice
 
 
         template<typename HashMapType> requires HashMapReadAccess<HashMapType>
+        inline auto count(HashMapType const& map) noexcept -> ice::ucount;
+
+        template<typename HashMapType> requires HashMapReadAccess<HashMapType>
         inline bool full(HashMapType const& map) noexcept;
 
         template<typename HashMapType> requires HashMapReadAccess<HashMapType>
         inline bool empty(HashMapType const& map) noexcept;
+
+        template<typename HashMapType> requires HashMapReadAccess<HashMapType>
+        inline bool any(HashMapType const& map) noexcept;
 
         template<typename HashMapType> requires HashMapReadAccess<HashMapType>
         inline bool has(HashMapType const& map, ice::u64 key) noexcept;

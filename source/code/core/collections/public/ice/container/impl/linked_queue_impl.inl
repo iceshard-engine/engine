@@ -120,8 +120,8 @@ namespace ice
             return std::atomic_load_explicit(&queue._head, std::memory_order_relaxed) == nullptr;
         }
 
-        template<typename NodeType>
-        inline void push(ice::AtomicLinkedQueue<NodeType>& queue, NodeType* node) noexcept
+        template<typename NodeType, typename DerivedNodeType = NodeType>
+        inline void push(ice::AtomicLinkedQueue<NodeType>& queue, DerivedNodeType* node) noexcept
         {
             NodeType* const previous_tail = std::atomic_exchange_explicit(
                 &queue._tail, node, std::memory_order_relaxed
@@ -185,7 +185,7 @@ namespace ice
                     NodeType* previous = std::atomic_exchange_explicit(
                         &queue._head, result->next, std::memory_order_relaxed
                     );
-                    assert(previous == nullptr);
+                    ICE_ASSERT_CORE(previous == nullptr);
                 }
             }
             return result;

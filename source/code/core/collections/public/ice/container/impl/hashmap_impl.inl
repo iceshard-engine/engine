@@ -640,6 +640,15 @@ namespace ice
         }
 
         template<typename Type, ice::ContainerLogic Logic>
+        inline auto try_get(ice::HashMap<Type, Logic>& map, ice::u64 key) noexcept -> Type*
+        {
+            ice::ucount const index = ice::hashmap::detail::find_or_fail(map, key);
+            return index == ice::hashmap::detail::Constant_EndOfList
+                ? nullptr
+                : map._data + index;
+        }
+
+        template<typename Type, ice::ContainerLogic Logic>
         inline void remove(ice::HashMap<Type, Logic>& map, ice::u64 key) noexcept
         {
             ice::hashmap::detail::find_and_erase(map, key);
@@ -651,6 +660,13 @@ namespace ice
             return ice::Span{ map._data, map._count };
         }
 
+
+
+        template<typename HashMapType> requires HashMapReadAccess<HashMapType>
+        inline auto count(HashMapType const& map) noexcept -> ice::ucount
+        {
+            return map._count;
+        }
 
         template<typename HashMapType> requires HashMapReadAccess<HashMapType>
         inline bool full(HashMapType const& map) noexcept
@@ -665,6 +681,12 @@ namespace ice
         inline bool empty(HashMapType const& map) noexcept
         {
             return map._count == 0;
+        }
+
+        template<typename HashMapType> requires HashMapReadAccess<HashMapType>
+        inline bool any(HashMapType const& map) noexcept
+        {
+            return ice::hashmap::empty(map) == false;
         }
 
         template<typename HashMapType> requires HashMapReadAccess<HashMapType>
