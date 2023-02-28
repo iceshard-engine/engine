@@ -4,6 +4,7 @@
 #include "resource_dll_win32.hxx"
 #include <ice/resource_meta.hxx>
 #include <ice/resource_flags.hxx>
+#include <ice/string_utils.hxx>
 
 #if ISP_WINDOWS
 #include "resource_utils_win32.hxx"
@@ -59,7 +60,7 @@ namespace ice
         if (file_attribs != INVALID_FILE_ATTRIBUTES)
         {
             ice::HeapString<> data_file_path{ alloc };
-            win32::wide_to_utf8(dll_path, data_file_path);
+            wide_to_utf8_append(dll_path, data_file_path);
 
             ice::String utf8_origin_name = ice::string::substr(
                 data_file_path,

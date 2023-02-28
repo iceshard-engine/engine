@@ -3,6 +3,7 @@
 
 #pragma once
 #include <ice/string/string.hxx>
+#include <ice/string/heap_string.hxx>
 #include <ice/result_codes.hxx>
 #include <ice/math.hxx>
 #include <charconv>
@@ -10,6 +11,14 @@
 
 namespace ice
 {
+
+    auto utf8_to_wide_size(ice::String path) noexcept -> ice::u32;
+    bool utf8_to_wide_append(ice::String path, ice::HeapString<ice::wchar>& out_str) noexcept;
+    auto utf8_to_wide(ice::Allocator& alloc, ice::String path) noexcept -> ice::HeapString<ice::wchar>;
+
+    auto wide_to_utf8_size(ice::WString path) noexcept -> ice::u32;
+    bool wide_to_utf8_append(ice::WString path, ice::HeapString<>& out_str) noexcept;
+    auto wide_to_utf8(ice::Allocator& alloc, ice::WString path) noexcept -> ice::HeapString<>;
 
     template<typename StrType>
     struct FromCharsResult

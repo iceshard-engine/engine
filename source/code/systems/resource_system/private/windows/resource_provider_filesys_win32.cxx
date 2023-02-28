@@ -6,7 +6,7 @@
 #include <ice/os/windows.hxx>
 #include <ice/mem_allocator_stack.hxx>
 #include <ice/container/hashmap.hxx>
-#include <ice/string/heap_string.hxx>
+#include <ice/string_utils.hxx>
 
 #include "resource_loose_files_win32.hxx"
 #include "resource_utils_win32.hxx"
@@ -28,7 +28,7 @@ namespace ice
             , _resources{ _allocator }
         {
             ice::HeapString<wchar_t> base_path{ _allocator };
-            ice::win32::utf8_to_wide_append(path, base_path);
+            ice::utf8_to_wide_append(path, base_path);
             ice::array::push_back(_base_paths, ice::move(base_path));
         }
 
@@ -43,7 +43,7 @@ namespace ice
             ice::HeapString<wchar_t> base_path{ _allocator };
             for (ice::String path : paths)
             {
-                ice::win32::utf8_to_wide_append(path, base_path);
+                ice::utf8_to_wide_append(path, base_path);
                 ice::array::push_back(_base_paths, ice::move(base_path));
             }
         }
@@ -221,7 +221,7 @@ namespace ice
             {
                 ice::string::reserve(predicted_path, origin_size + ice::string::size(base_path));
 
-                ice::win32::wide_to_utf8(base_path, predicted_path);
+                ice::wide_to_utf8_append(base_path, predicted_path);
                 ice::path::join(predicted_path, ".."); // Remove one directory (because it's the common value of the base path and the uri path)
                 ice::path::join(predicted_path, uri.path);
                 ice::path::normalize(predicted_path);

@@ -4,7 +4,7 @@
 #include <ice/resource_provider.hxx>
 #include <ice/mem_allocator_stack.hxx>
 #include <ice/container/hashmap.hxx>
-#include <ice/string/heap_string.hxx>
+#include <ice/string_utils.hxx>
 
 #include "resource_dll_win32.hxx"
 #include "resource_utils_win32.hxx"
@@ -25,7 +25,7 @@ namespace ice
             , _base_path{ _allocator }
             , _resources{ _allocator }
         {
-            ice::win32::utf8_to_wide_append(path, _base_path);
+            ice::utf8_to_wide_append(path, _base_path);
 
             ice::u32 at = ice::string::find_first_of(_base_path, L'\\');
             while (at != ice::String_NPos)

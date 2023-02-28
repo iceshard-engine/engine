@@ -6,7 +6,7 @@
 #include <ice/container_types.hxx>
 #include <ice/container/array.hxx>
 #include <ice/container/hashmap.hxx>
-#include <ice/string/heap_string.hxx>
+#include <ice/string_utils.hxx>
 #include <ice/task_scheduler.hxx>
 #include <ice/assert.hxx>
 
@@ -152,7 +152,7 @@ namespace ice
             ice::String path = ice::hashmap::get(_extra_resources, ice::hash(name), empty_str);
 
             ice::HeapString<wchar_t> file_location_wide{ alloc };
-            ice::win32::utf8_to_wide_append(path, file_location_wide);
+            ice::utf8_to_wide_append(path, file_location_wide);
 
             ice::win32::FileHandle const file_handle = ice::win32::native_open_file(
                 file_location_wide,
@@ -195,7 +195,7 @@ namespace ice
     ) const noexcept -> ice::Task<ice::Memory>
     {
         ice::HeapString<wchar_t> file_location_wide{ alloc };
-        ice::win32::utf8_to_wide_append(_origin_path, file_location_wide);
+        ice::utf8_to_wide_append(_origin_path, file_location_wide);
 
         ice::Memory result{
             .location = nullptr,
@@ -277,7 +277,7 @@ namespace ice
     ) const noexcept -> ice::Task<ice::Memory>
     {
         ice::HeapString<wchar_t> file_location_wide{ alloc };
-        ice::win32::utf8_to_wide_append(_origin_path, file_location_wide);
+        ice::utf8_to_wide_append(_origin_path, file_location_wide);
 
         ice::Memory result{
             .location = nullptr,
@@ -345,11 +345,11 @@ namespace ice
                 // We create the main resource in a different scope so we dont accidentaly use data from there
                 {
                     ice::HeapString<> utf8_file_path{ alloc };
-                    ice::win32::wide_to_utf8(data_file, utf8_file_path);
+                    ice::wide_to_utf8_append(data_file, utf8_file_path);
                     ice::path::normalize(utf8_file_path);
 
-                    ice::String utf8_origin_name = ice::string::substr(utf8_file_path, ice::win32::wide_to_utf8_size(base_path));
-                    ice::String utf8_uri_path = ice::string::substr(utf8_file_path, ice::win32::wide_to_utf8_size(uri_base_path));
+                    ice::String utf8_origin_name = ice::string::substr(utf8_file_path, ice::wide_to_utf8_size(base_path));
+                    ice::String utf8_uri_path = ice::string::substr(utf8_file_path, ice::wide_to_utf8_size(uri_base_path));
 
                     // We have a loose resource files which contain metadata associated data.
                     // We need now to read the metadata and check if there are more file associated and if all are available.
@@ -411,13 +411,13 @@ namespace ice
                         );
 
                         ice::string::resize(full_path, base_dir_size);
-                        ice::win32::utf8_to_wide_append(paths[idx], full_path);
+                        ice::utf8_to_wide_append(paths[idx], full_path);
 
                         ice::win32::FileHandle extra_handle = ice::win32::native_open_file(full_path, FILE_ATTRIBUTE_NORMAL);
                         if (extra_handle)
                         {
                             // We know the file can be opened so we save it as a extra resource.
-                            ice::win32::wide_to_utf8(full_path, utf8_file_path);
+                            ice::wide_to_utf8_append(full_path, utf8_file_path);
                             ice::path::normalize(utf8_file_path);
 
                             main_resource->add_named_part(ice::stringid(names[idx]), ice::move(utf8_file_path));
