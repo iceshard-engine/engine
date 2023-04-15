@@ -5,7 +5,7 @@
         "os": "Windows",
         "arch": "x86_64",
         "compiler": {
-            "name": "Visual Studio",
+            "name": "msvc",
             "version": "17"
         },
         "build_type": "Debug"
@@ -16,7 +16,7 @@
         "os": "Windows",
         "arch": "x86_64",
         "compiler": {
-            "name": "Visual Studio",
+            "name": "msvc",
             "version": "17"
         },
         "build_type": "Release"
