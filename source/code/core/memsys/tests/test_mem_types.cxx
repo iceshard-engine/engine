@@ -1,7 +1,7 @@
 /// Copyright 2022 - 2022, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
-#include <catch2/catch.hpp>
+#include <catch2/catch_test_macros.hpp>
 #include <ice/mem_types.hxx>
 #include <ice/mem_utils.hxx>
 #include "test_utils.hxx"
