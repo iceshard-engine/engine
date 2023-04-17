@@ -164,7 +164,7 @@ namespace ice
         }
         else
         {
-            if (val.debug_info.name_value.consteval_flag == ice::utf8('\xff'))
+            if (val.debug_info.name_value.consteval_flag == char('\xff'))
             {
                 return val.debug_info.name_value.value;
             }
