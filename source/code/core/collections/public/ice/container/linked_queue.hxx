@@ -76,8 +76,8 @@ namespace ice
         template<typename NodeType>
         inline bool empty(ice::AtomicLinkedQueue<NodeType> const& queue) noexcept;
 
-        template<typename NodeType>
-        inline void push(ice::AtomicLinkedQueue<NodeType>& queue, NodeType* node) noexcept;
+        template<typename NodeType, typename DerivedNodeType = NodeType>
+        inline void push(ice::AtomicLinkedQueue<NodeType>& queue, DerivedNodeType* node) noexcept;
 
         template<typename NodeType>
         inline auto pop(ice::AtomicLinkedQueue<NodeType>& queue) noexcept -> NodeType*;
