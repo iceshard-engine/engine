@@ -6,9 +6,12 @@
 namespace ice
 {
 
+    using TaskThreadProcedure = auto(void* userdata, ice::TaskQueue_v3&) noexcept -> ice::u32;
+
     struct TaskThreadInfo
     {
         //! \brief Consume all tasks from the queue instead of just one from the front.
+        //!
         //! \note May yield better results in single-consumer multi-producer scenarios.
         //! \note Executes tasks using FIFO strategy, unless 'sort_by_priority' is set.
         bool exclusive_queue = false;
@@ -17,10 +20,20 @@ namespace ice
         bool sort_by_priority = false;
 
         //! \brief Custom stack size for the thread.
+        //!
         //! \note If the value is '0' it will use the default size.
         ice::usize stack_size = 0_B;
 
+        //! \brief Uses the custom provided procedure to run tasks instead of the built-in implementations.
+        //!
+        //! \note Note that both 'exclusive_queue' and 'sort_by_priority' are unused in such a case.
+        ice::TaskThreadProcedure* custom_procedure;
+
+        //! \brief User-data associated with the custom procedure (if set).
+        void* custom_procedure_userdata;
+
         //! \brief Sets the name of the thread.
+        //!
         //! \note May be ignored in some builds.
         ice::String debug_name;
     };

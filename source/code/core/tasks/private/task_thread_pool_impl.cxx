@@ -6,6 +6,25 @@
 namespace ice
 {
 
+    namespace detail
+    {
+
+        template<typename... Args>
+        void format_string(ice::StaticString<32>& out_string, ice::String format, Args&&... args) noexcept
+        {
+            char raw_buffer[32];
+            auto const result = fmt::vformat_to_n(
+                raw_buffer,
+                ice::count(raw_buffer),
+                fmt::string_view{format._data, format._size},
+                fmt::make_format_args(std::forward<Args>(args)...)
+            );
+
+            out_string = ice::String{ raw_buffer, (ice::ucount) result.size };
+        }
+
+    } // namespace detail
+
     TaskThreadPoolImplementation::TaskThreadPoolImplementation(
         ice::Allocator& alloc,
         ice::TaskQueue_v3& queue,
@@ -24,23 +43,16 @@ namespace ice
         ice::hashmap::reserve(_created_threads, info.thread_count);
         ice::hashmap::reserve(_user_threads, info.thread_count);
 
-        ice::StaticString<32> thread_name = "ice.thread ";
-        ice::ucount const thread_name_base_size = ice::string::size(thread_name);
-
         ice::TaskThreadInfo thread_info{
             .exclusive_queue = false,
             .sort_by_priority = false,
             .stack_size = 0_B // default
         };
 
+        ice::StaticString<32> thread_name;
         for (ice::u32 idx = 0; idx < _info.thread_count; ++idx)
         {
-            ice::string::resize(thread_name, thread_name_base_size);
-            if (idx >= 10)
-            {
-                ice::string::push_back(thread_name, static_cast<char>('0' + idx / 10));
-            }
-            ice::string::push_back(thread_name, static_cast<char>('0' + idx % 10));
+            detail::format_string(thread_name, info.debug_name_format, idx);
 
             thread_info.debug_name = thread_name;
             ice::array::push_back(
@@ -128,7 +140,7 @@ namespace ice
 
     auto TaskThreadPoolImplementation::attach_thread(
         ice::StringID name,
-        ice::TaskFlags accepting_flags,
+        //ice::TaskFlags accepting_flags,
         ice::UniquePtr<ice::TaskThread_v3> thread
     ) noexcept -> ice::TaskThread_v3&
     {

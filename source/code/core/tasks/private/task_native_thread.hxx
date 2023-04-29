@@ -46,8 +46,10 @@ namespace ice
 
         using RoutineFn = auto (ThreadRuntime::*)() noexcept -> ice::u32;
 
+        template<bool BusyWait>
         auto thread_procedure(RoutineFn routine) noexcept -> ice::u32;
 
+        auto custom_routine() noexcept -> ice::u32;
         auto shared_routine() noexcept -> ice::u32;
         auto exclusive_fifo_routine() noexcept -> ice::u32;
         auto exclusive_sorted_routine() noexcept -> ice::u32;

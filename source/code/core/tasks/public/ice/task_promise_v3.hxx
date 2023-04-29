@@ -11,18 +11,18 @@ namespace ice
     public:
         inline auto get_return_object() noexcept -> ice::Task_v3<Value>;
 
-        template<typename Other>
-            requires std::is_convertible_v<Other&&, Value>
+        template<typename Other = Value>
+            requires std::is_nothrow_move_assignable_v<Value> && std::is_nothrow_convertible_v<Other&&, Value>
         inline void return_value(Other&& value) noexcept
         {
-            static_assert(std::is_nothrow_move_assignable_v<Value, Value&&>, "We enforce noexcept everywhere.");
+            static_assert(std::is_nothrow_move_assignable_v<Value>, "We enforce noexcept everywhere.");
             _value = std::move(value);
         }
 
-        inline auto result() const noexcept -> Value const&
-        {
-            return _value;
-        }
+        //inline auto result() const noexcept -> Value const&
+        //{
+        //    return _value;
+        //}
 
         inline auto result() & noexcept -> Value&
         {

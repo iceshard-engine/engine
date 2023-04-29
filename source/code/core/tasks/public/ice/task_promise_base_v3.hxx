@@ -41,7 +41,12 @@ namespace ice
     template<typename Promise>
     inline auto TaskPromiseBase::FinalAwaitable::await_suspend(ice::coroutine_handle<Promise> coro) noexcept -> ice::coroutine_handle<>
     {
-        return coro.promise().continuation();
+        ice::coroutine_handle continuation = coro.promise().continuation();
+        if (continuation == nullptr)
+        {
+            continuation = std::noop_coroutine();
+        }
+        return continuation;
     }
 
     inline void TaskPromiseBase::FinalAwaitable::await_resume() const noexcept

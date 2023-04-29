@@ -24,15 +24,16 @@ namespace ice
         };
 
     public:
-        inline explicit Task_v3(ice::coroutine_handle<PromiseType> coro) noexcept;
-        inline Task_v3(Task_v3&& other) noexcept;
+        inline explicit Task_v3(
+            ice::coroutine_handle<PromiseType> coro = nullptr
+        ) noexcept;
         inline ~Task_v3() noexcept;
 
         inline Task_v3(Task_v3 const&) noexcept = delete;
         inline auto operator=(Task_v3 const&) noexcept = delete;
 
-        inline Task_v3(Task_v3&&) noexcept = default;
-        inline auto operator=(Task_v3&& other) noexcept -> Task_v3& = default;
+        inline Task_v3(Task_v3&&) noexcept;
+        inline auto operator=(Task_v3&& other) noexcept -> Task_v3&;
 
         inline auto is_ready() const noexcept;
         inline auto when_ready() noexcept;
@@ -71,11 +72,6 @@ namespace ice
     { }
 
     template<typename Result>
-    inline Task_v3<Result>::Task_v3(Task_v3&& other) noexcept
-        : _coroutine{ ice::exchange(other._coroutine, nullptr) }
-    { }
-
-    template<typename Result>
     inline Task_v3<Result>::~Task_v3() noexcept
     {
         if (_coroutine)
@@ -83,6 +79,11 @@ namespace ice
             _coroutine.destroy();
         }
     }
+
+    template<typename Result>
+    inline Task_v3<Result>::Task_v3(Task_v3&& other) noexcept
+        : _coroutine{ ice::exchange(other._coroutine, nullptr) }
+    { }
 
     template<typename Result>
     inline auto Task_v3<Result>::operator=(Task_v3&& other) noexcept -> Task_v3&
@@ -170,12 +171,18 @@ namespace ice
     template<typename Value>
     inline auto ice::TaskPromise<Value&>::get_return_object() noexcept -> ice::Task_v3<Value&>
     {
-        return ice::Task_v3<Value&>{ ice::coroutine_handle<ice::TaskPromise<Value&>>::from_promise(this) };
+        return ice::Task_v3<Value&>{ ice::coroutine_handle<ice::TaskPromise<Value&>>::from_promise(*this) };
     }
 
     auto ice::TaskPromise<void>::get_return_object() noexcept -> ice::Task_v3<void>
     {
-        return ice::Task_v3<void>{ ice::coroutine_handle<ice::TaskPromise<void>>::from_address(this) };
+        return ice::Task_v3<void>{ ice::coroutine_handle<ice::TaskPromise<void>>::from_promise(*this) };
     }
 
 } // namespace ice
+
+template<typename Result, typename... Args>
+struct std::coroutine_traits<ice::Task_v3<Result>, Args...>
+{
+    using promise_type = typename ice::Task_v3<Result>::PromiseType;
+};

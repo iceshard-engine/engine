@@ -78,27 +78,31 @@ namespace ice
         return _runtime._queue;
     }
 
+    template<bool BusyWait>
     auto ThreadRuntime::thread_procedure(RoutineFn routine) noexcept -> ice::u32
     {
         ice::u32 result = 0;
         ice::u32 busy_loop = thread_native::Constant_BusyLoopCount;
         while (_request != ThreadRequest::Destroy)
         {
-            if (ice::linked_queue::empty(_queue._awaitables))
+            if constexpr (BusyWait)
             {
-                if (busy_loop > 0)
+                if (ice::linked_queue::empty(_queue._awaitables))
                 {
-                    busy_loop -= 1;
+                    if (busy_loop > 0)
+                    {
+                        busy_loop -= 1;
+                    }
+                    else
+                    {
+                        SwitchToThread();
+                    }
+                    continue;
                 }
-                else
-                {
-                    SwitchToThread();
-                }
-                continue;
-            }
 
-            // Reset the busy loop value
-            busy_loop = thread_native::Constant_BusyLoopCount;
+                // Reset the busy loop value
+                busy_loop = thread_native::Constant_BusyLoopCount;
+            }
 
             // Run the selected routine
             result = (this->*routine)();
@@ -106,147 +110,92 @@ namespace ice
         return result;
     }
 
+    auto ThreadRuntime::custom_routine() noexcept -> ice::u32
+    {
+        return _info.custom_procedure(_info.custom_procedure_userdata, _queue);
+    }
+
     auto ThreadRuntime::shared_routine() noexcept -> ice::u32
     {
-        //ice::u32 busy_loop = thread_native::Constant_BusyLoopCount;
-        //while (_request != ThreadRequest::Destroy)
-        //{
-        //    if (ice::linked_queue::empty(_queue._awaitables))
-        //    {
-        //        if (busy_loop > 0)
-        //        {
-        //            busy_loop -= 1;
-        //        }
-        //        else
-        //        {
-        //            SwitchToThread();
-        //        }
-        //        continue;
-        //    }
+        // Get the task nodes and ensure we are can access all of them.
+        ice::TaskAwaitableBase_v3* const task = ice::linked_queue::pop(_queue._awaitables);
 
-        //    // Reset the busy loop value
-        //    busy_loop = thread_native::Constant_BusyLoopCount;
-
-            // Get the task nodes and ensure we are can access all of them.
-            ice::LinkedQueueRange<ice::TaskAwaitableBase_v3> tasks = ice::linked_queue::consume(_queue._awaitables);
-
-            // Execute all tasks
-            for (ice::TaskAwaitableBase_v3* task_node : tasks)
-            {
-                // Coroutines should never be destroyed from here.
-                task_node->_coro.resume();
-            }
-        //}
+        // Execute all tasks
+        if (task != nullptr)
+        {
+            // Coroutines should never be destroyed from here.
+            task->_coro.resume();
+        }
         return 0;
     }
 
     auto ThreadRuntime::exclusive_fifo_routine() noexcept -> ice::u32
     {
-        //ice::u32 busy_loop = thread_native::Constant_BusyLoopCount;
-        //while (_request != ThreadRequest::Destroy)
-        //{
-        //    if (ice::linked_queue::empty(_queue._awaitables))
-        //    {
-        //        if (busy_loop > 0)
-        //        {
-        //            busy_loop -= 1;
-        //        }
-        //        else
-        //        {
-        //            SwitchToThread();
-        //        }
-        //        continue;
-        //    }
+        // Get the task nodes and ensure we are can access all of them.
+        ice::LinkedQueueRange<ice::TaskAwaitableBase_v3> tasks = ice::linked_queue::consume(_queue._awaitables);
 
-        //    // Reset the busy loop value
-        //    busy_loop = thread_native::Constant_BusyLoopCount;
-
-            // Get the task nodes and ensure we are can access all of them.
-            ice::LinkedQueueRange<ice::TaskAwaitableBase_v3> tasks = ice::linked_queue::consume(_queue._awaitables);
-
-            // Execute all tasks
-            for (ice::TaskAwaitableBase_v3* task_node : tasks)
-            {
-                // Coroutines should never be destroyed from here.
-                task_node->_coro.resume();
-            }
-        //}
+        // Execute all tasks
+        for (ice::TaskAwaitableBase_v3* task_node : tasks)
+        {
+            // Coroutines should never be destroyed from here.
+            task_node->_coro.resume();
+        }
         return 0;
     }
 
     auto ThreadRuntime::exclusive_sorted_routine() noexcept -> ice::u32
     {
-        //ice::u32 busy_loop = thread_native::Constant_BusyLoopCount;
-        //while (_request != ThreadRequest::Destroy)
-        //{
-        //    if (ice::linked_queue::empty(_queue._awaitables))
-        //    {
-        //        if (busy_loop > 0)
-        //        {
-        //            busy_loop -= 1;
-        //        }
-        //        else
-        //        {
-        //            SwitchToThread();
-        //        }
-        //        continue;
-        //    }
+        // Get the task nodes and ensure we are can access all of them.
+        ice::LinkedQueueRange<ice::TaskAwaitableBase_v3> tasks = ice::linked_queue::consume(_queue._awaitables);
 
-        //    // Reset the busy loop value
-        //    busy_loop = thread_native::Constant_BusyLoopCount;
-
-            // Get the task nodes and ensure we are can access all of them.
-            ice::LinkedQueueRange<ice::TaskAwaitableBase_v3> tasks = ice::linked_queue::consume(_queue._awaitables);
-
-            ice::u32 count = 0;
-            ice::TaskAwaitableBase_v3* head = tasks._head;
-            while (head != tasks._tail)
+        ice::u32 count = 0;
+        ice::TaskAwaitableBase_v3* head = tasks._head;
+        while (head != tasks._tail)
+        {
+            // If we are not at 'tail' and encounter a nullptr, this means some thread did not write it's 'next' member yet.
+            while (head->next == nullptr)
             {
-                // If we are not at 'tail' and encounter a nullptr, this means some thread did not write it's 'next' member yet.
-                while (head->next == nullptr)
-                {
-                    SwitchToThread();
-                }
-
-                head = head->next;
-                count += 1;
+                SwitchToThread();
             }
 
-            auto constexpr predicate = [](ice::TaskAwaitableBase_v3& left, ice::TaskAwaitableBase_v3& right) noexcept -> bool
+            head = head->next;
+            count += 1;
+        }
+
+        auto constexpr predicate = [](ice::TaskAwaitableBase_v3& left, ice::TaskAwaitableBase_v3& right) noexcept -> bool
+        {
+            ice::TaskFlags left_flags{ };
+            ice::TaskFlags right_flags{ };
+
+            // TODO: Improve logic for this!
+            if (left._params.modifier == TaskAwaitableModifier_v3::PriorityFlags)
             {
-                ice::TaskFlags left_flags{ };
-                ice::TaskFlags right_flags{ };
-
-                // TODO: Improve logic for this!
-                if (left._params.modifier == TaskAwaitableModifier_v3::PriorityFlags)
-                {
-                    left_flags.value = left._params.task_flags.value & 0xf;
-                }
-                if (right._params.modifier == TaskAwaitableModifier_v3::PriorityFlags)
-                {
-                    right_flags.value = right._params.task_flags.value & 0xf;
-                }
-
-                return left_flags.value > right_flags.value;
-            };
-
-            // Sort the list
-            tasks._head = ice::sort_linked_list(tasks._head, count, predicate);
-
-            // Update the head and tail pointers.
-            tasks._tail = tasks._head;
-            while (tasks._tail->next != nullptr)
+                left_flags.value = left._params.task_flags.value & 0xf;
+            }
+            if (right._params.modifier == TaskAwaitableModifier_v3::PriorityFlags)
             {
-                tasks._tail = tasks._tail->next;
+                right_flags.value = right._params.task_flags.value & 0xf;
             }
 
-            // Execute all tasks
-            for (ice::TaskAwaitableBase_v3* task_node : tasks)
-            {
-                // Coroutines should never be destroyed from here.
-                task_node->_coro.resume();
-            }
-        //}
+            return left_flags.value > right_flags.value;
+        };
+
+        // Sort the list
+        tasks._head = ice::sort_linked_list(tasks._head, count, predicate);
+
+        // Update the head and tail pointers.
+        tasks._tail = tasks._head;
+        while (tasks._tail->next != nullptr)
+        {
+            tasks._tail = tasks._tail->next;
+        }
+
+        // Execute all tasks
+        for (ice::TaskAwaitableBase_v3* task_node : tasks)
+        {
+            // Coroutines should never be destroyed from here.
+            task_node->_coro.resume();
+        }
         return 0;
     }
 
@@ -258,6 +207,7 @@ namespace ice
         DWORD native_thread_routine(void* userdata)
         {
             ice::NativeTaskThread* const thread_obj = reinterpret_cast<ice::NativeTaskThread*>(userdata);
+            ice::TaskThreadInfo const& thread_info = thread_obj->info();
             ice::ThreadRuntime& runtime = thread_obj->runtime();
 
             ICE_ASSERT(
@@ -267,25 +217,28 @@ namespace ice
             runtime._state = ThreadState::Active;
             runtime._request = ThreadRequest::None;
 
-            // Runs either of the two routines for the thread.
             ice::u32 result;
-            if (thread_obj->info().exclusive_queue)
+
+            // Runs the custom user procedure.
+            if (thread_info.custom_procedure)
             {
-                if (thread_obj->info().sort_by_priority)
+                result = runtime.thread_procedure<false>(&ThreadRuntime::custom_routine);
+            }
+            // Runs either of the two routines for the thread.
+            else if (thread_info.exclusive_queue)
+            {
+                if (thread_info.sort_by_priority)
                 {
-                    result = runtime.thread_procedure(&ThreadRuntime::exclusive_sorted_routine);
-                    //result = runtime.exclusive_sorted_routine();
+                    result = runtime.thread_procedure<true>(&ThreadRuntime::exclusive_sorted_routine);
                 }
                 else
                 {
-                    result = runtime.thread_procedure(&ThreadRuntime::exclusive_fifo_routine);
-                    //result = runtime.exclusive_fifo_routine();
+                    result = runtime.thread_procedure<true>(&ThreadRuntime::exclusive_fifo_routine);
                 }
             }
             else
             {
-                result = runtime.thread_procedure(&ThreadRuntime::shared_routine);
-                //result = runtime.shared_routine();
+                result = runtime.thread_procedure<true>(&ThreadRuntime::shared_routine);
             }
 
             runtime._state = ThreadState::Destroyed;

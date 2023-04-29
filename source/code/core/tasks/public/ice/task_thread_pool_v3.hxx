@@ -13,18 +13,18 @@ namespace ice
         ice::ucount thread_count = 0;
 
         //! \brief If not set, creates a single queue for all task types.
-        ice::Span<ice::TaskFlags> queues = { };
+        //ice::Span<ice::TaskFlags> queues = { };
 
         //! \brief The queue that should be returned if flags didn't match any other queues.
         //!
         //! \note If '-1' no queue will be returned.
-        ice::icount missing_flags_queue = -1;
+        //ice::icount missing_flags_queue = -1;
 
         //! \brief Does the thread pool allow to attach additional threads.
         bool allow_attaching = true;
 
         //! \brief May be ignored in some builds.
-        ice::String debug_name_format;
+        ice::String debug_name_format = "ice.thread {}";
     };
 
     class TaskThreadPool_v3
@@ -58,7 +58,7 @@ namespace ice
         //! \note The attached threads lifetime is managed by the pool after attaching.
         virtual auto attach_thread(
             ice::StringID name,
-            ice::TaskFlags accepting_flags,
+            //ice::TaskFlags accepting_flags,
             ice::UniquePtr<ice::TaskThread_v3> thread
         ) noexcept -> ice::TaskThread_v3& = 0;
 

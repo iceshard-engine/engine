@@ -28,7 +28,7 @@ namespace ice
 
         auto attach_thread(
             ice::StringID name,
-            ice::TaskFlags accepting_flags,
+            //ice::TaskFlags accepting_flags,
             ice::UniquePtr<ice::TaskThread_v3> thread
         ) noexcept -> ice::TaskThread_v3& override;
 

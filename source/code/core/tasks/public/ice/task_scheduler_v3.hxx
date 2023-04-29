@@ -40,10 +40,19 @@ namespace ice
             , _queue{ queue }
         { }
 
+        bool await_ready() const noexcept
+        {
+            return false;
+        }
+
         auto await_suspend(ice::coroutine_handle<> coroutine) noexcept
         {
             _coro = coroutine;
             ice::linked_queue::push(_queue._awaitables, this);
+        }
+
+        void await_resume() const noexcept
+        {
         }
 
         ice::TaskQueue_v3& _queue;
@@ -61,7 +70,7 @@ namespace ice
             Awaitable(ice::TaskQueue_v3& queue) noexcept
                 : SchedulerAwaitable{
                     queue,
-                    { .modifier = TaskAwaitableModifier_v3::None }
+                    { .modifier = TaskAwaitableModifier_v3::Unused }
                 }
             { }
         };
@@ -102,7 +111,7 @@ namespace ice
                     queue,
                     {
                         .modifier = TaskAwaitableModifier_v3::DelayedExecution,
-                        .u32_delay = delay_ms
+                        .u32_value = delay_ms
                     }
                 }
             { }

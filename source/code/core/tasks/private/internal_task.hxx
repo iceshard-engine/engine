@@ -4,6 +4,7 @@
 #pragma once
 #include <ice/base.hxx>
 #include <ice/assert.hxx>
+#include <ice/task_promise_base_v3.hxx>
 #include <coroutine>
 
 namespace ice::detail
@@ -11,28 +12,13 @@ namespace ice::detail
 
     class InternalTask;
 
-    struct InternalPromiseType
+    struct InternalPromiseType : ice::TaskPromiseBase
     {
-        auto initial_suspend() noexcept
-        {
-            return std::suspend_always{};
-        }
-
-        auto final_suspend() noexcept
-        {
-            return std::suspend_always{};
-        }
-
         auto get_return_object() noexcept -> InternalTask;
 
-        void return_void() noexcept { }
+        void return_void() const noexcept { }
 
-        void unhandled_exception() noexcept
-        {
-            ICE_ASSERT(false, "Unhandled exception in Task object!");
-        }
-
-        void result() { }
+        void result() const noexcept { }
     };
 
     class InternalTask
