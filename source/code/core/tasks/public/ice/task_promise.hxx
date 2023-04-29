@@ -1,6 +1,6 @@
 #pragma once
 #include <ice/assert.hxx>
-#include <ice/task_promise_base_v3.hxx>
+#include <ice/task_promise_base.hxx>
 
 namespace ice
 {
@@ -9,7 +9,7 @@ namespace ice
     class TaskPromise final : public ice::TaskPromiseBase
     {
     public:
-        inline auto get_return_object() noexcept -> ice::Task_v3<Value>;
+        inline auto get_return_object() noexcept -> ice::Task<Value>;
 
         template<typename Other = Value>
             requires std::is_nothrow_move_assignable_v<Value> && std::is_nothrow_convertible_v<Other&&, Value>
@@ -42,7 +42,7 @@ namespace ice
     class TaskPromise<T&> : public ice::TaskPromiseBase
     {
     public:
-        inline auto get_return_object() noexcept -> ice::Task_v3<T&>;
+        inline auto get_return_object() noexcept -> ice::Task<T&>;
 
         void return_value(T& value) noexcept
         {
@@ -63,7 +63,7 @@ namespace ice
     class TaskPromise<void> : public ice::TaskPromiseBase
     {
     public:
-        inline auto get_return_object() noexcept -> ice::Task_v3<void>;
+        inline auto get_return_object() noexcept -> ice::Task<void>;
 
         void return_void() const noexcept { }
 

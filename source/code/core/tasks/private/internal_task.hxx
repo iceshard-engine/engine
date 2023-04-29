@@ -4,7 +4,7 @@
 #pragma once
 #include <ice/base.hxx>
 #include <ice/assert.hxx>
-#include <ice/task_promise_base_v3.hxx>
+#include <ice/task_promise_base.hxx>
 #include <coroutine>
 
 namespace ice::detail

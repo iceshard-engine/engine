@@ -1,5 +1,5 @@
 #include "task_native_thread.hxx"
-#include <ice/task_queue_v3.hxx>
+#include <ice/task_queue.hxx>
 #include <ice/os/windows.hxx>
 #include <ice/mem_allocator_stack.hxx>
 #include <ice/string_utils.hxx>
@@ -10,7 +10,7 @@ namespace ice
 {
 
     NativeTaskThread::NativeTaskThread(
-        ice::TaskQueue_v3& queue,
+        ice::TaskQueue& queue,
         ice::TaskThreadInfo const& info
     ) noexcept
         : _info{ info }
@@ -73,7 +73,7 @@ namespace ice
         return 0;
     }
 
-    auto NativeTaskThread::queue() noexcept -> ice::TaskQueue_v3&
+    auto NativeTaskThread::queue() noexcept -> ice::TaskQueue&
     {
         return _runtime._queue;
     }
@@ -118,7 +118,7 @@ namespace ice
     auto ThreadRuntime::shared_routine() noexcept -> ice::u32
     {
         // Get the task nodes and ensure we are can access all of them.
-        ice::TaskAwaitableBase_v3* const task = ice::linked_queue::pop(_queue._awaitables);
+        ice::TaskAwaitableBase* const task = ice::linked_queue::pop(_queue._awaitables);
 
         // Execute all tasks
         if (task != nullptr)
@@ -132,10 +132,10 @@ namespace ice
     auto ThreadRuntime::exclusive_fifo_routine() noexcept -> ice::u32
     {
         // Get the task nodes and ensure we are can access all of them.
-        ice::LinkedQueueRange<ice::TaskAwaitableBase_v3> tasks = ice::linked_queue::consume(_queue._awaitables);
+        ice::LinkedQueueRange<ice::TaskAwaitableBase> tasks = ice::linked_queue::consume(_queue._awaitables);
 
         // Execute all tasks
-        for (ice::TaskAwaitableBase_v3* task_node : tasks)
+        for (ice::TaskAwaitableBase* task_node : tasks)
         {
             // Coroutines should never be destroyed from here.
             task_node->_coro.resume();
@@ -146,10 +146,10 @@ namespace ice
     auto ThreadRuntime::exclusive_sorted_routine() noexcept -> ice::u32
     {
         // Get the task nodes and ensure we are can access all of them.
-        ice::LinkedQueueRange<ice::TaskAwaitableBase_v3> tasks = ice::linked_queue::consume(_queue._awaitables);
+        ice::LinkedQueueRange<ice::TaskAwaitableBase> tasks = ice::linked_queue::consume(_queue._awaitables);
 
         ice::u32 count = 0;
-        ice::TaskAwaitableBase_v3* head = tasks._head;
+        ice::TaskAwaitableBase* head = tasks._head;
         while (head != tasks._tail)
         {
             // If we are not at 'tail' and encounter a nullptr, this means some thread did not write it's 'next' member yet.
@@ -162,7 +162,7 @@ namespace ice
             count += 1;
         }
 
-        auto constexpr predicate = [](ice::TaskAwaitableBase_v3& left, ice::TaskAwaitableBase_v3& right) noexcept -> bool
+        auto constexpr predicate = [](ice::TaskAwaitableBase& left, ice::TaskAwaitableBase& right) noexcept -> bool
         {
             ice::TaskFlags left_flags{ };
             ice::TaskFlags right_flags{ };
@@ -191,7 +191,7 @@ namespace ice
         }
 
         // Execute all tasks
-        for (ice::TaskAwaitableBase_v3* task_node : tasks)
+        for (ice::TaskAwaitableBase* task_node : tasks)
         {
             // Coroutines should never be destroyed from here.
             task_node->_coro.resume();

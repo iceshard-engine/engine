@@ -27,7 +27,7 @@ namespace ice
 
     TaskThreadPoolImplementation::TaskThreadPoolImplementation(
         ice::Allocator& alloc,
-        ice::TaskQueue_v3& queue,
+        ice::TaskQueue& queue,
         ice::TaskThreadPoolInfo_v3 const& info
     ) noexcept
         : _allocator{ alloc }
@@ -89,7 +89,7 @@ namespace ice
         return 0; // TODO:
     }
 
-    auto TaskThreadPoolImplementation::create_thread(ice::StringID name) noexcept -> ice::TaskThread_v3&
+    auto TaskThreadPoolImplementation::create_thread(ice::StringID name) noexcept -> ice::TaskThread&
     {
         ICE_ASSERT(
             ice::hashmap::has(_created_threads, ice::hash(name)) == false,
@@ -118,7 +118,7 @@ namespace ice
         return **ice::hashmap::try_get(_created_threads, ice::hash(name));
     }
 
-    auto TaskThreadPoolImplementation::find_thread(ice::StringID name) noexcept -> ice::TaskThread_v3*
+    auto TaskThreadPoolImplementation::find_thread(ice::StringID name) noexcept -> ice::TaskThread*
     {
         if (auto const& unique_ptr = ice::hashmap::try_get(_created_threads, ice::hash(name)))
         {
@@ -141,8 +141,8 @@ namespace ice
     auto TaskThreadPoolImplementation::attach_thread(
         ice::StringID name,
         //ice::TaskFlags accepting_flags,
-        ice::UniquePtr<ice::TaskThread_v3> thread
-    ) noexcept -> ice::TaskThread_v3&
+        ice::UniquePtr<ice::TaskThread> thread
+    ) noexcept -> ice::TaskThread&
     {
         ice::u64 const name_hash = ice::hash(name);
         ICE_ASSERT(
@@ -162,10 +162,10 @@ namespace ice
 
     auto TaskThreadPoolImplementation::detach_thread(
         ice::StringID name
-    ) noexcept -> ice::UniquePtr<ice::TaskThread_v3>
+    ) noexcept -> ice::UniquePtr<ice::TaskThread>
     {
         ice::u64 const name_hash = ice::hash(name);
-        ice::UniquePtr<ice::TaskThread_v3> result;
+        ice::UniquePtr<ice::TaskThread> result;
         if (ice::hashmap::has(_user_threads, name_hash))
         {
             // Move the thread out of the map

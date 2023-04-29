@@ -1,4 +1,4 @@
-#include <ice/task_awaitable_v3.hxx>
+#include <ice/task_awaitable.hxx>
 
 namespace ice
 {

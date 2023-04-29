@@ -1,5 +1,5 @@
 #pragma once
-#include <ice/task_types_v3.hxx>
+#include <ice/task_types.hxx>
 #include <ice/mem_unique_ptr.hxx>
 #include <ice/string_types.hxx>
 #include <ice/span.hxx>
@@ -27,10 +27,10 @@ namespace ice
         ice::String debug_name_format = "ice.thread {}";
     };
 
-    class TaskThreadPool_v3
+    class TaskThreadPool
     {
     public:
-        virtual ~TaskThreadPool_v3() noexcept = default;
+        virtual ~TaskThreadPool() noexcept = default;
         virtual auto thread_count() const noexcept -> ice::ucount = 0;
         virtual auto managed_thread_count() const noexcept -> ice::ucount = 0;
         virtual auto estimated_task_count() const noexcept -> ice::ucount = 0;
@@ -38,12 +38,12 @@ namespace ice
         //! \brief Creates an additonal thread with the given name (ID).
         //!
         //! \note This allows you to go over the initial thread count.
-        virtual auto create_thread(ice::StringID name) noexcept -> ice::TaskThread_v3& = 0;
+        virtual auto create_thread(ice::StringID name) noexcept -> ice::TaskThread& = 0;
 
         //! \brief Finds a thread created or attached with the given name.
         //!
         //! \note Default created threads cannot be found using this function.
-        virtual auto find_thread(ice::StringID name) noexcept -> ice::TaskThread_v3* = 0;
+        virtual auto find_thread(ice::StringID name) noexcept -> ice::TaskThread* = 0;
 
         //! \brief Destroyes a previosuly created or attached thread with the given name.
         //!
@@ -59,15 +59,15 @@ namespace ice
         virtual auto attach_thread(
             ice::StringID name,
             //ice::TaskFlags accepting_flags,
-            ice::UniquePtr<ice::TaskThread_v3> thread
-        ) noexcept -> ice::TaskThread_v3& = 0;
+            ice::UniquePtr<ice::TaskThread> thread
+        ) noexcept -> ice::TaskThread& = 0;
 
         //! \brief Detaches a previously user created thread from the pool.
         //!
         //! \note This function does not detach created named threads.
         virtual auto detach_thread(
             ice::StringID name
-        ) noexcept -> ice::UniquePtr<ice::TaskThread_v3> = 0;
+        ) noexcept -> ice::UniquePtr<ice::TaskThread> = 0;
 
         ////! \brief Returns the default queue pusher for the given task flags.
         ////!
@@ -79,8 +79,8 @@ namespace ice
 
     auto create_thread_pool(
         ice::Allocator& alloc,
-        ice::TaskQueue_v3& queue,
+        ice::TaskQueue& queue,
         ice::TaskThreadPoolInfo_v3 const& threadpool_info
-    ) noexcept -> ice::UniquePtr<ice::TaskThreadPool_v3>;
+    ) noexcept -> ice::UniquePtr<ice::TaskThreadPool>;
 
 } // namespace ice

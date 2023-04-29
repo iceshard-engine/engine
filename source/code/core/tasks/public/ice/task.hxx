@@ -1,12 +1,12 @@
 #pragma once
-#include <ice/task_promise_v3.hxx>
+#include <ice/task_promise.hxx>
 #include <ice/container_concepts.hxx>
 
 namespace ice
 {
 
     template<typename Result>
-    class Task_v3 final
+    class Task final
     {
     public:
         using ValueType = Result;
@@ -24,16 +24,16 @@ namespace ice
         };
 
     public:
-        inline explicit Task_v3(
+        inline explicit Task(
             ice::coroutine_handle<PromiseType> coro = nullptr
         ) noexcept;
-        inline ~Task_v3() noexcept;
+        inline ~Task() noexcept;
 
-        inline Task_v3(Task_v3 const&) noexcept = delete;
-        inline auto operator=(Task_v3 const&) noexcept = delete;
+        inline Task(Task const&) noexcept = delete;
+        inline auto operator=(Task const&) noexcept = delete;
 
-        inline Task_v3(Task_v3&&) noexcept;
-        inline auto operator=(Task_v3&& other) noexcept -> Task_v3&;
+        inline Task(Task&&) noexcept;
+        inline auto operator=(Task&& other) noexcept -> Task&;
 
         inline auto is_ready() const noexcept;
         inline auto when_ready() noexcept;
@@ -52,13 +52,13 @@ namespace ice
     //{ }
 
     template<typename Result>
-    inline bool Task_v3<Result>::AwaitableBase::await_ready() const noexcept
+    inline bool Task<Result>::AwaitableBase::await_ready() const noexcept
     {
         return !_coroutine || _coroutine.done();
     }
 
     template<typename Result>
-    inline auto Task_v3<Result>::AwaitableBase::await_suspend(
+    inline auto Task<Result>::AwaitableBase::await_suspend(
         ice::coroutine_handle<> awaiting_coroutine
     ) const noexcept -> ice::coroutine_handle<>
     {
@@ -67,12 +67,12 @@ namespace ice
     }
 
     template<typename Result>
-    inline Task_v3<Result>::Task_v3(ice::coroutine_handle<PromiseType> coro) noexcept
+    inline Task<Result>::Task(ice::coroutine_handle<PromiseType> coro) noexcept
         : _coroutine{ coro }
     { }
 
     template<typename Result>
-    inline Task_v3<Result>::~Task_v3() noexcept
+    inline Task<Result>::~Task() noexcept
     {
         if (_coroutine)
         {
@@ -81,12 +81,12 @@ namespace ice
     }
 
     template<typename Result>
-    inline Task_v3<Result>::Task_v3(Task_v3&& other) noexcept
+    inline Task<Result>::Task(Task&& other) noexcept
         : _coroutine{ ice::exchange(other._coroutine, nullptr) }
     { }
 
     template<typename Result>
-    inline auto Task_v3<Result>::operator=(Task_v3&& other) noexcept -> Task_v3&
+    inline auto Task<Result>::operator=(Task&& other) noexcept -> Task&
     {
         if (this != &other)
         {
@@ -102,13 +102,13 @@ namespace ice
     }
 
     template<typename Result>
-    inline auto Task_v3<Result>::is_ready() const noexcept
+    inline auto Task<Result>::is_ready() const noexcept
     {
         return !_coroutine || _coroutine.done();
     }
 
     template<typename Result>
-    inline auto Task_v3<Result>::when_ready() noexcept
+    inline auto Task<Result>::when_ready() noexcept
     {
         struct TaskAwaitable : AwaitableBase
         {
@@ -119,7 +119,7 @@ namespace ice
     }
 
     template<typename Result>
-    inline auto Task_v3<Result>::operator co_await() & noexcept
+    inline auto Task<Result>::operator co_await() & noexcept
     {
         struct TaskAwaitable : AwaitableBase
         {
@@ -127,7 +127,7 @@ namespace ice
             {
                 ICE_ASSERT(
                     _coroutine.operator bool(),
-                    "Broken promise on coroutine Task_v3!"
+                    "Broken promise on coroutine Task!"
                 );
 
                 if constexpr (std::is_same_v<ValueType, void> == false)
@@ -141,7 +141,7 @@ namespace ice
     }
 
     template<typename Result>
-    inline auto Task_v3<Result>::operator co_await() && noexcept
+    inline auto Task<Result>::operator co_await() && noexcept
     {
         struct TaskAwaitable : AwaitableBase
         {
@@ -163,26 +163,26 @@ namespace ice
     }
 
     template<typename Value>
-    inline auto ice::TaskPromise<Value>::get_return_object() noexcept -> ice::Task_v3<Value>
+    inline auto ice::TaskPromise<Value>::get_return_object() noexcept -> ice::Task<Value>
     {
-        return ice::Task_v3<Value>{ ice::coroutine_handle<ice::TaskPromise<Value>>::from_promise(*this) };
+        return ice::Task<Value>{ ice::coroutine_handle<ice::TaskPromise<Value>>::from_promise(*this) };
     }
 
     template<typename Value>
-    inline auto ice::TaskPromise<Value&>::get_return_object() noexcept -> ice::Task_v3<Value&>
+    inline auto ice::TaskPromise<Value&>::get_return_object() noexcept -> ice::Task<Value&>
     {
-        return ice::Task_v3<Value&>{ ice::coroutine_handle<ice::TaskPromise<Value&>>::from_promise(*this) };
+        return ice::Task<Value&>{ ice::coroutine_handle<ice::TaskPromise<Value&>>::from_promise(*this) };
     }
 
-    auto ice::TaskPromise<void>::get_return_object() noexcept -> ice::Task_v3<void>
+    auto ice::TaskPromise<void>::get_return_object() noexcept -> ice::Task<void>
     {
-        return ice::Task_v3<void>{ ice::coroutine_handle<ice::TaskPromise<void>>::from_promise(*this) };
+        return ice::Task<void>{ ice::coroutine_handle<ice::TaskPromise<void>>::from_promise(*this) };
     }
 
 } // namespace ice
 
 template<typename Result, typename... Args>
-struct std::coroutine_traits<ice::Task_v3<Result>, Args...>
+struct std::coroutine_traits<ice::Task<Result>, Args...>
 {
-    using promise_type = typename ice::Task_v3<Result>::PromiseType;
+    using promise_type = typename ice::Task<Result>::PromiseType;
 };

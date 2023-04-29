@@ -32,7 +32,7 @@ namespace ice
         };
 
         auto create_internal_synced_task(
-            ice::Task_v3<void> task,
+            ice::Task<void> task,
             ice::ManualResetEvent* reset_event
         ) noexcept -> ice::detail::InternalTask
         {
@@ -45,7 +45,7 @@ namespace ice
     } // namespace detail
 
     void sync_wait(
-        ice::Task_v3<void> task
+        ice::Task<void> task
     ) noexcept
     {
         ManualResetEvent sync_event{ };
@@ -60,14 +60,14 @@ namespace ice
     }
 
     void sync_manual_wait(
-        ice::Task_v3<void> task,
+        ice::Task<void> task,
         ice::ManualResetEvent& reset_event
     ) noexcept
     {
-        [](ice::Task_v3<void> task, ice::ManualResetEvent* reset_event) noexcept -> detail::OneWaytask
+        [](ice::Task<void> task, ice::ManualResetEvent* reset_event) noexcept -> detail::OneWaytask
         {
             co_await task;
-            task = ice::Task_v3<>{ nullptr };
+            task = ice::Task<>{ nullptr };
             reset_event->set();
             co_return;
 
@@ -76,7 +76,7 @@ namespace ice
 
     void sync_wait_all(
         ice::Allocator& alloc,
-        ice::Span<ice::Task_v3<void>> tasks,
+        ice::Span<ice::Task<void>> tasks,
         ice::Span<ice::ManualResetEvent> reset_events
     ) noexcept
     {
@@ -130,7 +130,7 @@ namespace ice
     //    }();
     //}
 
-    auto sync_task(ice::Task_v3<void> task, ice::ManualResetEvent* reset_event) noexcept -> ice::Task_v3<>
+    auto sync_task(ice::Task<void> task, ice::ManualResetEvent* reset_event) noexcept -> ice::Task<>
     {
         ice::detail::InternalTask internal_task = detail::create_internal_synced_task(
             ice::move(task),

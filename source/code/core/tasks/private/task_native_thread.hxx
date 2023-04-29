@@ -1,6 +1,6 @@
 #pragma once
-#include <ice/task_thread_v3.hxx>
-#include <ice/task_awaitable_v3.hxx>
+#include <ice/task_thread.hxx>
+#include <ice/task_awaitable.hxx>
 #include <ice/container/linked_queue.hxx>
 
 namespace ice
@@ -40,7 +40,7 @@ namespace ice
     struct ThreadRuntime
     {
         ice::TaskThreadInfo const& _info;
-        ice::TaskQueue_v3& _queue;
+        ice::TaskQueue& _queue;
         ice::ThreadState _state = ThreadState::Invalid;
         ice::ThreadRequest _request = ThreadRequest::Destroy;
 
@@ -55,11 +55,11 @@ namespace ice
         auto exclusive_sorted_routine() noexcept -> ice::u32;
     };
 
-    class NativeTaskThread final : public ice::TaskThread_v3
+    class NativeTaskThread final : public ice::TaskThread
     {
     public:
         NativeTaskThread(
-            ice::TaskQueue_v3& queue,
+            ice::TaskQueue& queue,
             ice::TaskThreadInfo const& info
         ) noexcept;
 
@@ -73,7 +73,7 @@ namespace ice
         bool is_running() const noexcept override;
 
         auto estimated_task_count() const noexcept -> ice::ucount override;
-        auto queue() noexcept -> ice::TaskQueue_v3 & override;
+        auto queue() noexcept -> ice::TaskQueue & override;
 
     private:
         ice::TaskThreadInfo const _info;

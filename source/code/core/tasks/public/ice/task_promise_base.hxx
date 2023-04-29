@@ -1,5 +1,5 @@
 #pragma once
-#include <ice/task_types_v3.hxx>
+#include <ice/task_types.hxx>
 
 namespace ice
 {

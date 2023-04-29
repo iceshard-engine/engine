@@ -6,17 +6,16 @@ namespace ice
 {
 
     template<typename Value = void>
-    class Task_v3;
-    class TaskQueue_v3;
-    class TaskScheduler_v3;
-    class TaskAwaitable_v3;
+    class Task;
+    class TaskQueue;
+    class TaskScheduler;
 
-    class TaskThread_v3;
-    class TaskThreadPool_v3;
+    class TaskThread;
+    class TaskThreadPool;
 
     struct TaskFlags;
-    struct TaskAwaitableParams_v3;
-    struct TaskAwaitableBase_v3;
+    struct TaskAwaitableParams;
+    struct TaskAwaitableBase;
 
     // STD aliases
     template<typename Type = void>

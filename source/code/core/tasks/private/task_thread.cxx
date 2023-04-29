@@ -5,9 +5,9 @@ namespace ice
 
     auto create_thread(
         ice::Allocator& alloc,
-        ice::TaskQueue_v3& queue,
+        ice::TaskQueue& queue,
         ice::TaskThreadInfo const& thread_info
-    ) noexcept -> ice::UniquePtr<ice::TaskThread_v3>
+    ) noexcept -> ice::UniquePtr<ice::TaskThread>
     {
         ice::UniquePtr<ice::NativeTaskThread> thread = ice::make_unique<ice::NativeTaskThread>(
             alloc,

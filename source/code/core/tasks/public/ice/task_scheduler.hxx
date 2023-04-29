@@ -1,21 +1,21 @@
 #pragma once
-#include <ice/task_types_v3.hxx>
-#include <ice/task_awaitable_v3.hxx>
-#include <ice/task_queue_v3.hxx>
+#include <ice/task_types.hxx>
+#include <ice/task_awaitable.hxx>
+#include <ice/task_queue.hxx>
 
 namespace ice
 {
 
     template<typename Value>
-    auto schedule_on(ice::Task_v3<Value>&& task, ice::TaskScheduler_v3& scheduler) noexcept -> ice::Task_v3<Value>;
+    auto schedule_on(ice::Task<Value>&& task, ice::TaskScheduler& scheduler) noexcept -> ice::Task<Value>;
 
     template<typename Value>
-    auto resume_on(ice::Task_v3<Value>&& task, ice::TaskScheduler_v3& scheduler) noexcept -> ice::Task_v3<Value>;
+    auto resume_on(ice::Task<Value>&& task, ice::TaskScheduler& scheduler) noexcept -> ice::Task<Value>;
 
-    class TaskScheduler_v3
+    class TaskScheduler
     {
     public:
-        inline explicit TaskScheduler_v3(ice::TaskQueue_v3& queue) noexcept;
+        inline explicit TaskScheduler(ice::TaskQueue& queue) noexcept;
 
         inline auto schedule() noexcept;
         inline auto schedule(ice::TaskFlags flags) noexcept;
@@ -26,17 +26,17 @@ namespace ice
     private:
         struct SchedulerAwaitable;
 
-        ice::TaskQueue_v3& _queue;
+        ice::TaskQueue& _queue;
     };
 
 
-    struct TaskScheduler_v3::SchedulerAwaitable : TaskAwaitableBase_v3
+    struct TaskScheduler::SchedulerAwaitable : TaskAwaitableBase
     {
         SchedulerAwaitable(
-            ice::TaskQueue_v3& queue,
-            ice::TaskAwaitableParams_v3 params
+            ice::TaskQueue& queue,
+            ice::TaskAwaitableParams params
         ) noexcept
-            : TaskAwaitableBase_v3{ ._params = params }
+            : TaskAwaitableBase{ ._params = params }
             , _queue{ queue }
         { }
 
@@ -55,19 +55,19 @@ namespace ice
         {
         }
 
-        ice::TaskQueue_v3& _queue;
+        ice::TaskQueue& _queue;
     };
 
-    inline TaskScheduler_v3::TaskScheduler_v3(ice::TaskQueue_v3& queue) noexcept
+    inline TaskScheduler::TaskScheduler(ice::TaskQueue& queue) noexcept
         : _queue{ queue }
     {
     }
 
-    inline auto TaskScheduler_v3::schedule() noexcept
+    inline auto TaskScheduler::schedule() noexcept
     {
         struct Awaitable : SchedulerAwaitable
         {
-            Awaitable(ice::TaskQueue_v3& queue) noexcept
+            Awaitable(ice::TaskQueue& queue) noexcept
                 : SchedulerAwaitable{
                     queue,
                     { .modifier = TaskAwaitableModifier_v3::Unused }
@@ -78,12 +78,12 @@ namespace ice
         return Awaitable{ _queue };
     }
 
-    inline auto TaskScheduler_v3::schedule(ice::TaskFlags flags) noexcept
+    inline auto TaskScheduler::schedule(ice::TaskFlags flags) noexcept
     {
         struct Awaitable : SchedulerAwaitable
         {
             Awaitable(
-                ice::TaskQueue_v3& queue,
+                ice::TaskQueue& queue,
                 ice::TaskFlags flags
             ) noexcept
                 : SchedulerAwaitable{
@@ -99,12 +99,12 @@ namespace ice
         return Awaitable{ _queue, flags };
     }
 
-    inline auto TaskScheduler_v3::schedule_delayed(ice::u32 delay_ms) noexcept
+    inline auto TaskScheduler::schedule_delayed(ice::u32 delay_ms) noexcept
     {
         struct Awaitable : SchedulerAwaitable
         {
             Awaitable(
-                ice::TaskQueue_v3& queue,
+                ice::TaskQueue& queue,
                 ice::u32 delay_ms
             ) noexcept
                 : SchedulerAwaitable{
@@ -120,20 +120,20 @@ namespace ice
         return Awaitable{ _queue, delay_ms };
     }
 
-    inline auto TaskScheduler_v3::operator co_await() noexcept
+    inline auto TaskScheduler::operator co_await() noexcept
     {
         return schedule();
     }
 
     template<typename Value>
-    auto schedule_on(ice::Task_v3<Value>&& task, ice::TaskScheduler_v3& scheduler) noexcept -> ice::Task_v3<Value>
+    auto schedule_on(ice::Task<Value>&& task, ice::TaskScheduler& scheduler) noexcept -> ice::Task<Value>
     {
         co_await scheduler;
         co_return co_await std::move(task);
     }
 
     template<typename Value>
-    auto resume_on(ice::Task_v3<Value>&& task, ice::TaskScheduler_v3& scheduler) noexcept -> ice::Task_v3<Value>
+    auto resume_on(ice::Task<Value>&& task, ice::TaskScheduler& scheduler) noexcept -> ice::Task<Value>
     {
         Value value = co_await std::move(task);
         co_await scheduler;
