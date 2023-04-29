@@ -12,6 +12,8 @@
 #include <ice/string/string.hxx>
 #include <ice/string/heap_string.hxx>
 
+#include <ice/task_thread_pool.hxx>
+
 #include <ice/resource_provider.hxx>
 #include <ice/resource_tracker.hxx>
 
@@ -54,16 +56,38 @@ int main(int, char**)
         ice::string::resize(app_location, ice::string::size(app_location) - (ice::count("test\\test.exe") - 1));
         ice::UniquePtr<ice::ResourceProvider> dynlib_provider = ice::create_resource_provider_dlls(dynlib_allocator, app_location);
 
-        ice::UniquePtr<ice::ResourceTracker> resource_tracker = ice::create_resource_tracker(resource_allocator, { .create_loader_thread = true });
+        ice::TaskQueue thread_pool_queue;
+        ice::TaskScheduler thread_pool_scheduler{ thread_pool_queue };
+        ice::TaskThreadPoolInfo_v3 const thread_pool_create{
+            .thread_count = 4,
+            .allow_attaching = true,
+        };
+        ice::UniquePtr<ice::TaskThreadPool> thread_pool = ice::create_thread_pool(
+            host_alloc,
+            thread_pool_queue,
+            thread_pool_create
+        );
+
+        ice::ResourceTrackerCreateInfo const resource_tracker_create{
+            .predicted_resource_count = 10000,
+            .io_dedicated_threads = 1,
+            .flags_io_complete = ice::TaskFlags{ },
+            .flags_io_wait = ice::TaskFlags{ },
+        };
+        ice::UniquePtr<ice::ResourceTracker> resource_tracker = ice::create_resource_tracker(
+            resource_allocator,
+            thread_pool_scheduler,
+            resource_tracker_create
+        );
 
         resource_tracker->attach_provider(filesys_provider.get());
         resource_tracker->attach_provider(dynlib_provider.get());
 
         // Refresh all providers
-        resource_tracker->refresh_providers();
+        resource_tracker->sync_resources();
 
         ice::ProxyAllocator game_alloc{ host_alloc, "game" };
-        app_result = game_main(game_alloc, *resource_tracker);
+        app_result = game_main(game_alloc, thread_pool_scheduler, *resource_tracker);
     }
 
     return app_result;

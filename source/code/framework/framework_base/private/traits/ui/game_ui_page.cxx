@@ -19,7 +19,6 @@
 #include <ice/ui_font.hxx>
 
 #include <ice/mem_allocator_stack.hxx>
-#include <ice/task_thread_pool.hxx>
 #include <ice/profiler.hxx>
 #include <ice/font.hxx>
 
@@ -399,7 +398,7 @@ namespace ice
     {
         if (has_any(_current_flags, Flags::StateDirtyStyle | Flags::StateDirtyLayout))
         {
-            co_await runner.thread_pool();
+            co_await runner.task_scheduler();
 
             if (has_all(_current_flags, Flags::StateDirtyLayout))
             {

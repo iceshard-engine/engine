@@ -3,8 +3,8 @@
 
 #include "trait_render_glyphs.hxx"
 #include <ice/asset_storage.hxx>
-#include <ice/task_thread_pool.hxx>
 #include <ice/task_sync_wait.hxx>
+#include <ice/task.hxx>
 #include <ice/font_utils.hxx>
 
 #include <ice/shard.hxx>
@@ -40,9 +40,11 @@ namespace ice
 
         auto load_font_shader(ice::AssetStorage& assets, ice::Data& data, ice::String name) noexcept -> ice::Task<>
         {
-            ice::Asset const asset = co_await assets.request(ice::render::AssetType_Shader, name, ice::AssetState::Baked);
-            ICE_ASSERT(asset_check(asset, AssetState::Baked), "Shader not available!");
-            data = asset.data;
+            ice::Asset const asset = assets.bind(ice::render::AssetType_Shader, name, ice::AssetState::Baked);
+            if (asset_check(asset, AssetState::Baked) == false)
+            {
+                data = co_await assets.request(asset, AssetState::Baked);
+            }
         }
 
     } // namespace detail
@@ -528,15 +530,16 @@ namespace ice
             FontEntry{ .font = nullptr }
         );
 
-        co_await runner.thread_pool();
+        co_await runner.task_scheduler();
 
-        ice::Asset const asset = co_await runner.asset_storage().request(ice::AssetType_Font, font_name, ice::AssetState::Loaded);
+        ice::Asset asset = runner.asset_storage().bind(ice::AssetType_Font, font_name, ice::AssetState::Loaded);
+        asset.data = co_await runner.asset_storage().request(asset, ice::AssetState::Loaded);
 
         // Early return if we failed.
-        if (ice::asset_check(asset, AssetState::Loaded) == false)
-        {
-            co_return;
-        }
+        //if (ice::asset_check(asset, AssetState::Loaded) == false)
+        //{
+        //    co_return;
+        //}
         ice::Font const* font = reinterpret_cast<ice::Font const*>(asset.data.location);
 
         co_await runner.schedule_current_frame();

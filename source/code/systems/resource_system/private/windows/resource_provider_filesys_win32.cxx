@@ -2,12 +2,13 @@
 /// SPDX-License-Identifier: MIT
 
 #include <ice/resource_provider.hxx>
-#include <ice/task_scheduler.hxx>
 #include <ice/os/windows.hxx>
 #include <ice/mem_allocator_stack.hxx>
 #include <ice/container/hashmap.hxx>
 #include <ice/string_utils.hxx>
+#include <ice/task.hxx>
 
+#include "resource_asyncio_win32.hxx"
 #include "resource_loose_files_win32.hxx"
 #include "resource_utils_win32.hxx"
 
@@ -133,7 +134,7 @@ namespace ice
         }
 
         // GitHub Issue: #108
-        void ISATTR_NOINLINE initial_traverse() noexcept
+        void initial_traverse() noexcept
         {
             ice::StackAllocator_2048 path_alloc;
             for (ice::WString base_path : _base_paths)
@@ -204,6 +205,22 @@ namespace ice
             co_return ResourceProviderResult::Success;
         }
 
+        auto refresh(
+            ice::Array<ice::Resource const*>& out_changes
+        ) noexcept -> ice::ResourceProviderResult override
+        {
+            if (ice::hashmap::empty(_resources))
+            {
+                initial_traverse();
+
+                for (auto* resource : _resources)
+                {
+                    ice::array::push_back(out_changes, resource);
+                }
+            }
+            return ResourceProviderResult::Success;
+        }
+
         auto find_resource(
             ice::URI const& uri
         ) const noexcept -> ice::Resource const* override
@@ -247,31 +264,12 @@ namespace ice
         auto load_resource(
             ice::Allocator& alloc,
             ice::Resource const* resource,
-            ice::TaskScheduler_v2& scheduler
-        ) noexcept -> ice::Task<ice::Memory> override
+            ice::TaskScheduler& scheduler,
+            ice::NativeIO* nativeio
+        ) const noexcept -> ice::Task<ice::Memory> override
         {
             ice::Resource_Win32 const* const win_res = static_cast<ice::Resource_Win32 const*>(resource);
-            co_return co_await win_res->load_data_for_flags(alloc, ResourceFlags::None, scheduler);
-        }
-
-        auto release_resource(
-            ice::Resource const* resource,
-            ice::TaskScheduler_v2& scheduler
-        ) noexcept -> ice::Task<>
-        {
-            ice::Resource_Win32 const* const win_res = static_cast<ice::Resource_Win32 const*>(resource);
-            ice::u64 const hash = ice::hash(win_res->name());
-
-            ice::Resource_Win32* win_res_mut = ice::hashmap::get(_resources, hash, nullptr);
-            ICE_ASSERT(win_res == win_res_mut, "Trying to delete resource with similar name but object pointers differ!");
-
-            ice::hashmap::remove(
-                _resources,
-                hash
-            );
-
-            _allocator.destroy(win_res_mut);
-            co_return;
+            co_return co_await win_res->load_data(alloc, scheduler, nativeio);
         }
 
         auto resolve_relative_resource(

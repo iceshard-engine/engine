@@ -17,8 +17,8 @@ namespace ice::win32
     {
         ice::win32::FileHandle handle = CreateFile(
             ice::string::begin(path),
-            GENERIC_READ,
-            FILE_SHARE_READ | FILE_SHARE_WRITE, // FILE_SHARE_*
+            FILE_READ_DATA,
+            FILE_SHARE_READ, // FILE_SHARE_*
             NULL, // SECURITY ATTRIBS
             OPEN_EXISTING,
             flags,

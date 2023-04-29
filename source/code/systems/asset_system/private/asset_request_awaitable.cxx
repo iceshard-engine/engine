@@ -46,7 +46,7 @@ namespace ice
 
     auto AssetRequestAwaitable::state() const noexcept -> ice::AssetState
     {
-        return _asset_entry->state;
+        return _asset_entry->current_state;
     }
 
     auto AssetRequestAwaitable::data() const noexcept -> ice::Data

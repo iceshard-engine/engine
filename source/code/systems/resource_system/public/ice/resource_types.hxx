@@ -15,6 +15,7 @@ namespace ice
     class Resource;
     class ResourceProvider;
     class ResourceTracker;
+    class ResourceTracker;
     class LooseResource;
 
     enum class ResourceFlags : ice::u32;

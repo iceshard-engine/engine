@@ -23,6 +23,7 @@
 #include <ice/input/input_mouse.hxx>
 #include <ice/input/input_event.hxx>
 
+#include <ice/task.hxx>
 #include <ice/task_sync_wait.hxx>
 #include <ice/profiler.hxx>
 
@@ -43,9 +44,12 @@ namespace ice::devui
 
         auto load_imgui_shader(ice::AssetStorage& assets, ice::String name) noexcept -> ice::Task<ice::Data>
         {
-            ice::Asset const asset = co_await assets.request(ice::render::AssetType_Shader, name, ice::AssetState::Baked);
-            ICE_ASSERT(asset_check(asset, AssetState::Baked), "Shader not available!");
-            co_return asset.data;
+            ice::Asset const asset = assets.bind(ice::render::AssetType_Shader, name, AssetState::Baked);
+            if (asset_check(asset, AssetState::Baked))
+            {
+                co_return asset.data;
+            }
+            co_return co_await assets.request(asset, AssetState::Baked);
         }
 
     } // namespace detail

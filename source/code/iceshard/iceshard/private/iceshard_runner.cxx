@@ -74,6 +74,7 @@ namespace ice
         ice::Allocator& alloc,
         ice::IceshardEngine& engine,
         ice::IceshardWorldManager& world_manager,
+        ice::TaskScheduler& task_scheduler,
         ice::UniquePtr<ice::input::InputTracker> input_tracker,
         ice::UniquePtr<ice::gfx::GfxRunner> gfx_runner
     ) noexcept
@@ -84,7 +85,7 @@ namespace ice
         , _devui_key{ devui::execution_key_from_pointer(ice::addressof(_engine)) }
         , _gfx_world{ nullptr }
         , _gfx_runner{ ice::move(gfx_runner) }
-        , _thread_pool{ ice::create_simple_threadpool(_allocator, 6) }
+        , _task_scheduler{ task_scheduler }
         , _frame_allocator{ _allocator, "frame-allocator" }
         , _frame_data_allocator{
             ice::RingAllocator{ _frame_allocator, "frame-alloc-1", { detail::FrameAllocatorCapacity } },
@@ -134,7 +135,6 @@ namespace ice
 
         deactivate_worlds();
 
-        _thread_pool = nullptr;
         _current_frame = nullptr;
         _previous_frame = nullptr;
     }
@@ -181,9 +181,9 @@ namespace ice
         }
     }
 
-    auto IceshardEngineRunner::thread_pool() noexcept -> ice::TaskThreadPool&
+    auto IceshardEngineRunner::task_scheduler() noexcept -> ice::TaskScheduler&
     {
-        return *_thread_pool;
+        return _task_scheduler;
     }
 
     auto IceshardEngineRunner::asset_storage() noexcept -> ice::AssetStorage&
@@ -330,7 +330,7 @@ namespace ice
 
     auto IceshardEngineRunner::excute_frame_task() noexcept -> ice::Task<>
     {
-        co_await thread_pool();
+        co_await task_scheduler();
 
         IPT_ZONE_SCOPED_NAMED("Logic Frame - Wait for tasks");
         _current_frame->wait_ready();

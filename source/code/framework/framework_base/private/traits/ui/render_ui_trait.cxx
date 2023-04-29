@@ -10,7 +10,7 @@
 #include <ice/engine_frame.hxx>
 #include <ice/engine_runner.hxx>
 #include <ice/world/world_portal.hxx>
-#include <ice/task_thread_pool.hxx>
+#include <ice/task.hxx>
 
 #include <ice/gfx/gfx_device.hxx>
 #include <ice/gfx/gfx_frame.hxx>
@@ -37,13 +37,10 @@ namespace ice
 
         auto load_ui_shader(ice::AssetStorage& assets, ice::Data& data, ice::String name) noexcept -> ice::Task<>
         {
-            ice::Asset const asset = co_await assets.request(ice::render::AssetType_Shader, name, ice::AssetState::Baked);
-
-            bool const shader_loaded = asset_check(asset, AssetState::Baked);
-            ICE_ASSERT(shader_loaded, "Shader not available!");
-            if (shader_loaded)
+            ice::Asset const asset = assets.bind(ice::render::AssetType_Shader, name, ice::AssetState::Baked);
+            if (asset_check(asset, AssetState::Baked) == false)
             {
-                data = asset.data;
+                data = co_await assets.request(asset, AssetState::Baked);
             }
         }
 

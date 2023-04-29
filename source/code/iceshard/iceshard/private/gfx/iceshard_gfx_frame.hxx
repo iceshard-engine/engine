@@ -11,8 +11,6 @@
 
 #include <ice/mem_allocator_proxy.hxx>
 #include <ice/container_types.hxx>
-#include <ice/task.hxx>
-#include <ice/task_list.hxx>
 
 #include "../iceshard_task_executor.hxx"
 #include "iceshard_gfx_queue_group.hxx"

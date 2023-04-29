@@ -4,13 +4,15 @@
 #pragma once
 #include <ice/clock.hxx>
 #include <ice/stringid.hxx>
+#include <ice/task_types.hxx>
+#include <ice/task_scheduler.hxx>
+
 #include <ice/input/input_types.hxx>
 #include <ice/gfx/gfx_types.hxx>
-#include <ice/gfx/gfx_operations.hxx>
-#include <ice/task_operations.hxx>
 #include <ice/engine_task_operations.hxx>
 #include <ice/ecs/ecs_entity_index.hxx>
 #include <ice/platform_event.hxx>
+
 
 namespace ice
 {
@@ -65,7 +67,7 @@ namespace ice
             ice::input::DeviceEventQueue const& device_queue
         ) noexcept = 0;
 
-        virtual auto thread_pool() noexcept -> ice::TaskThreadPool& = 0;
+        virtual auto task_scheduler() noexcept -> ice::TaskScheduler & = 0;
 
         virtual auto asset_storage() noexcept -> ice::AssetStorage& = 0;
 

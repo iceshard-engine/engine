@@ -2,16 +2,18 @@
 /// SPDX-License-Identifier: MIT
 
 #pragma once
+#include <ice/stringid.hxx>
+#include <ice/string_types.hxx>
 #include <ice/mem_memory.hxx>
 #include <ice/mem_unique_ptr.hxx>
 #include <ice/container_types.hxx>
 #include <ice/resource_types.hxx>
-#include <ice/task.hxx>
+#include <ice/task_types.hxx>
 
 namespace ice
 {
 
-    class TaskScheduler_v2;
+    struct NativeIO;
 
     enum class ResourceProviderResult : ice::u32
     {
@@ -27,11 +29,17 @@ namespace ice
 
         virtual auto schemeid() const noexcept -> ice::StringID = 0;
 
+        [[deprecated("This API will be removed soon.")]]
         virtual auto query_resources(
             ice::Array<ice::Resource const*>& out_changes
         ) const noexcept -> ice::u32 = 0;
 
+        [[deprecated("This API will be removed soon.")]]
         virtual auto refresh() noexcept -> ice::Task<ice::ResourceProviderResult> = 0;
+
+        virtual auto refresh(
+            ice::Array<ice::Resource const*>& out_changes
+        ) noexcept -> ice::ResourceProviderResult = 0;
 
         virtual auto find_resource(
             ice::URI const& uri
@@ -50,13 +58,9 @@ namespace ice
         virtual auto load_resource(
             ice::Allocator& alloc,
             ice::Resource const* resource,
-            ice::TaskScheduler_v2& scheduler
-        ) noexcept -> ice::Task<ice::Memory> = 0;
-
-        virtual auto release_resource(
-            ice::Resource const* resource,
-            ice::TaskScheduler_v2& scheduler
-        ) noexcept -> ice::Task<> = 0;
+            ice::TaskScheduler& scheduler,
+            ice::NativeIO* nativeio
+        ) const noexcept -> ice::Task<ice::Memory> = 0;
 
         virtual auto resolve_relative_resource(
             ice::URI const& relative_uri,

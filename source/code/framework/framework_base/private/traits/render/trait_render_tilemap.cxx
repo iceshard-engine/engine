@@ -9,6 +9,7 @@
 #include <ice/engine.hxx>
 #include <ice/engine_frame.hxx>
 #include <ice/engine_runner.hxx>
+#include <ice/task.hxx>
 #include <ice/task_sync_wait.hxx>
 #include <ice/world/world_portal.hxx>
 #include <ice/world/world_trait_archive.hxx>
@@ -63,9 +64,12 @@ namespace ice
 
         auto load_tilemap_shader(ice::AssetStorage& assets, ice::String name) noexcept -> ice::Task<ice::Data>
         {
-            ice::Asset const asset = co_await assets.request(ice::render::AssetType_Shader, name, ice::AssetState::Baked);
-            ICE_ASSERT(asset_check(asset, AssetState::Baked), "Shader not available!");
-            co_return asset.data;
+            ice::Asset const asset = assets.bind(ice::render::AssetType_Shader, name, ice::AssetState::Baked);
+            if (asset_check(asset, AssetState::Baked))
+            {
+                co_return asset.data;
+            }
+            co_return co_await assets.request(asset, AssetState::Baked);
         }
 
         auto task_update_tilemap_images(
@@ -84,8 +88,9 @@ namespace ice
             {
                 ice::String const asset_name = tilemap.tilesets[idx].asset;
 
-                Asset image_data = co_await runner.asset_storage().request(ice::render::AssetType_Texture2D, asset_name, AssetState::Loaded);
-                ICE_ASSERT(asset_check(image_data, AssetState::Loaded), "Shader not available!");
+                Asset image_data = runner.asset_storage().bind(ice::render::AssetType_Texture2D, asset_name, AssetState::Loaded);
+                image_data.data = co_await runner.asset_storage().request(image_data, AssetState::Loaded);
+                //ICE_ASSERT(asset_check(image_data, AssetState::Loaded), "Shader not available!");
                 ice::render::ImageInfo const* image_info = reinterpret_cast<ice::render::ImageInfo const*>(image_data.data.location);
 
                 ice::Metadata const& metadata = ice::asset_metadata(image_data);
@@ -114,10 +119,11 @@ namespace ice
                 properties[idx].tile_size = operation.tile_render_size;
                 properties[idx].tile_scale = { tile_size.x / tileset_size.x, tile_size.y / tileset_size.y };
 
-                ice::Asset const asset = co_await runner.asset_storage().request(ice::render::AssetType_Texture2D, asset_name, AssetState::Runtime);
-                ICE_ASSERT(asset_check(asset, AssetState::Runtime), "Shader not available!");
+                //ice::Asset const asset = co_await runner.asset_storage().request(ice::render::AssetType_Texture2D, asset_name, AssetState::Runtime);
+                image_data.data = co_await runner.asset_storage().request(image_data, AssetState::Runtime);
+                //ICE_ASSERT(asset_check(asset, AssetState::Runtime), "Shader not available!");
 
-                cache.tileset_images[idx] = *reinterpret_cast<ice::render::Image const*>(asset.data.location);
+                cache.tileset_images[idx] = *reinterpret_cast<ice::render::Image const*>(image_data.data.location);
                 cache.image_count += 1;
             }
 

@@ -1,7 +1,7 @@
 /// Copyright 2022 - 2022, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
-#include "devui_box2d.hxx"
+#include "devui_chipmunk2d.hxx"
 
 #include <ice/engine_frame.hxx>
 #include <ice/game_render_traits.hxx>
@@ -15,29 +15,48 @@ namespace ice
     namespace detail
     {
 
-        inline auto as_debug_color(b2Color const& color, ice::f32 replace_a) noexcept -> ice::vec1u
+        inline auto as_debug_color(ice::vec4f const& color, ice::f32 replace_a) noexcept -> ice::vec1u
         {
-            ice::u32 const r = static_cast<ice::u8>(color.r * 255.f);
-            ice::u32 const g = static_cast<ice::u8>(color.g * 255.f) << 8;
-            ice::u32 const b = static_cast<ice::u8>(color.b * 255.f) << 16;
+            ice::u32 const r = static_cast<ice::u8>(color.x * 255.f);
+            ice::u32 const g = static_cast<ice::u8>(color.y * 255.f) << 8;
+            ice::u32 const b = static_cast<ice::u8>(color.z * 255.f) << 16;
             ice::u32 const a = static_cast<ice::u8>(replace_a * 255.f) << 24;
             return ice::vec1u{ r | g | b | a };
         }
 
-        inline auto as_debug_color(b2Color const& color) noexcept -> ice::vec1u
+        inline auto as_debug_color(ice::vec4f const& color) noexcept -> ice::vec1u
         {
-            return as_debug_color(color, color.a);
+            return as_debug_color(color, color.w);
         }
 
-        class DevUI_DebugDrawCommandRecorder : public b2Draw
+        class DevUI_DebugDrawCommandRecorder
         {
         public:
             DevUI_DebugDrawCommandRecorder(ice::u32 flags) noexcept
+                : _flags{ flags }
             {
-                SetFlags(flags);
             }
 
-            void SetLists(
+            static void on_draw_shape(cpBody* body, cpShape* shape, void* userdata)
+            {
+                DevUI_DebugDrawCommandRecorder* recorder = (DevUI_DebugDrawCommandRecorder*)userdata;
+
+                if (shape->klass->type == cpShapeType::CP_POLY_SHAPE)
+                {
+                    recorder->draw_polygon(shape);
+                }
+                else if (shape->klass->type == cpShapeType::CP_CIRCLE_SHAPE)
+                {
+                    recorder->draw_circle(shape);
+                }
+            }
+
+            static void on_draw(cpBody* body, void* userdata) noexcept
+            {
+                cpBodyEachShape(body, on_draw_shape, userdata);
+            }
+
+            void set_lists(
                 ice::DebugDrawCommand* command_list,
                 ice::vec3f* vertex_list,
                 ice::vec1u* color_list
@@ -54,31 +73,33 @@ namespace ice
             }
 
             /// Draw a closed polygon provided in CCW order.
-            void DrawPolygon(const b2Vec2* vertices, int32 vertexCount, const b2Color& color) noexcept override;
+            void draw_polygon(cpShape* shape) noexcept;
 
             /// Draw a solid closed polygon provided in CCW order.
-            void DrawSolidPolygon(const b2Vec2* vertices, int32 vertexCount, const b2Color& color) noexcept override;
+            void draw_solid_polygon(cpShape* shape) noexcept;
 
             /// Draw a circle.
-            void DrawCircle(const b2Vec2& center, float radius, const b2Color& color) noexcept override;
+            void draw_circle(cpShape* shape) noexcept;
 
             /// Draw a solid circle.
-            void DrawSolidCircle(const b2Vec2& center, float radius, const b2Vec2& axis, const b2Color& color) noexcept override;
+            void draw_solid_circle(cpShape* shape) noexcept;
 
             /// Draw a line segment.
-            void DrawSegment(const b2Vec2& p1, const b2Vec2& p2, const b2Color& color) override { }
+            void draw_segment(cpShape* shape) { }
 
             /// Draw a transform. Choose your own length scale.
             /// @param xf a transform.
-            void DrawTransform(const b2Transform& xf) override;
+            void draw_transform(const cpTransform& xf);
 
             /// Draw a point.
-            void DrawPoint(const b2Vec2& p, float size, const b2Color& color) override;
+            void draw_point(cpShape* shape);
 
             ice::u32 draw_commands = 0;
             ice::u32 draw_vertex_count = 0;
 
         private:
+            ice::u32 _flags;
+
             ice::vec3f* _vertex_list = nullptr;
             ice::vec1u* _color_list = nullptr;
 
@@ -91,14 +112,14 @@ namespace ice
         };
     }
 
-    DevUI_Box2D::DevUI_Box2D(b2World& box2d_world) noexcept
-        : _world{ box2d_world }
+    DevUI_Chipmunk2D::DevUI_Chipmunk2D(cpSpace& cp_space) noexcept
+        : _space{ cp_space }
         , _state{ nullptr }
         , _debug_draw_flags{ 0 }
     {
     }
 
-    auto DevUI_Box2D::settings() const noexcept -> ice::devui::WidgetSettings const&
+    auto DevUI_Chipmunk2D::settings() const noexcept -> ice::devui::WidgetSettings const&
     {
         static devui::WidgetSettings settings{
             .menu_text = "Box2D (DebugDraw)",
@@ -107,35 +128,33 @@ namespace ice
         return settings;
     }
 
-    void DevUI_Box2D::on_prepare(void* context, ice::devui::WidgetState& state) noexcept
+    void DevUI_Chipmunk2D::on_prepare(void* context, ice::devui::WidgetState& state) noexcept
     {
         ImGui::SetCurrentContext(reinterpret_cast<ImGuiContext*>(context));
         _state = &state;
     }
 
-    void DevUI_Box2D::on_draw() noexcept
+    void DevUI_Chipmunk2D::on_draw() noexcept
     {
         if (ImGui::Begin("Box2D (DebugDraw)", &_state->is_visible))
         {
-            ImGui::CheckboxFlags("Draw Shapes", &_debug_draw_flags, b2Draw::e_shapeBit);
-            ImGui::CheckboxFlags("Draw Bounding Boxes", &_debug_draw_flags, b2Draw::e_aabbBit);
-            ImGui::CheckboxFlags("Draw Transforms", &_debug_draw_flags, b2Draw::e_centerOfMassBit);
+            ImGui::CheckboxFlags("Draw Shapes", &_debug_draw_flags, 0x01);
+            ImGui::CheckboxFlags("Draw Bounding Boxes", &_debug_draw_flags, 0x02);
+            ImGui::CheckboxFlags("Draw Transforms", &_debug_draw_flags, 0x04);
         }
         ImGui::End();
     }
 
-    void DevUI_Box2D::on_frame(ice::EngineFrame& frame) noexcept
+    void DevUI_Chipmunk2D::on_frame(ice::EngineFrame& frame) noexcept
     {
         if (_state && _state->is_visible && _debug_draw_flags != 0)
         {
             detail::DevUI_DebugDrawCommandRecorder recorder{ _debug_draw_flags };
 
-            _world.SetDebugDraw(&recorder);
-            _world.DebugDraw();
+            cpSpaceEachBody(&_space, detail::DevUI_DebugDrawCommandRecorder::on_draw, &recorder);
 
             if (recorder.draw_commands == 0)
             {
-                _world.SetDebugDraw(nullptr);
                 return;
             }
 
@@ -160,10 +179,9 @@ namespace ice
                 )
             );
 
-            recorder.SetLists(commands, vertex_list, color_list);
+            recorder.set_lists(commands, vertex_list, color_list);
 
-            _world.DebugDraw();
-            _world.SetDebugDraw(nullptr);
+            cpSpaceEachBody(&_space, detail::DevUI_DebugDrawCommandRecorder::on_draw, &recorder);
 
             ice::DebugDrawCommandList const* const command_list = frame.storage().create_named_object<ice::DebugDrawCommandList>(
                 "physics2d.debug-draw.command-list"_sid,
@@ -180,14 +198,19 @@ namespace ice
 
     /// Draw a closed polygon provided in CCW order.
 
-    void detail::DevUI_DebugDrawCommandRecorder::DrawPolygon(b2Vec2 const* vertices, int32 vertex_count, b2Color const& color) noexcept
+    void detail::DevUI_DebugDrawCommandRecorder::draw_polygon(cpShape* shape) noexcept
     {
+        ice::vec4f constexpr color{ 0.9f, 0.2f, 0.2f, 1.0f };
+
         if (_command_list != nullptr)
         {
             ice::vec3f* vertex = _vertex_list + draw_vertex_count;
             ice::vec1u* vertex_color = _color_list + draw_vertex_count;
 
-            *vertex = ice::vec3f{ vertices[vertex_count - 1].x, vertices[vertex_count - 1].y, 0.f } *Constant_PixelsInMeter;
+            ice::i32 const vertex_count = cpPolyShapeGetCount(shape);
+            cpVect vert = cpPolyShapeGetVert(shape, vertex_count - 1);
+
+            *vertex = ice::vec3f{ (f32)vert.x, (f32)vert.y, 0.f } *Constant_PixelsInMeter;
             *vertex_color = as_debug_color(color, 0.f);
 
             vertex += 1;
@@ -195,14 +218,16 @@ namespace ice
 
             for (ice::i32 idx = 0; idx < vertex_count; ++idx)
             {
-                *vertex = ice::vec3f{ vertices[idx].x, vertices[idx].y, color.r } *Constant_PixelsInMeter;
+                vert = cpPolyShapeGetVert(shape, idx);
+                *vertex = ice::vec3f{ (f32)vert.x, (f32)vert.y, color.w } * Constant_PixelsInMeter;
                 *vertex_color = as_debug_color(color);
 
                 vertex += 1;
                 vertex_color += 1;
             }
 
-            *vertex = ice::vec3f{ vertices[0].x, vertices[0].y, 0.f } *Constant_PixelsInMeter;
+            vert = cpPolyShapeGetVert(shape, 0);
+            *vertex = ice::vec3f{ (f32)vert.x,(f32)vert.y, 0.f } * Constant_PixelsInMeter;
             *vertex_color = as_debug_color(color, 0.f);
 
             vertex += 1;
@@ -231,18 +256,21 @@ namespace ice
         }
 
         //draw_commands += 1;
-        draw_vertex_count += vertex_count + 2;
+        draw_vertex_count += cpPolyShapeGetCount(shape) + 2;
     }
 
     /// Draw a solid closed polygon provided in CCW order.
 
-    void detail::DevUI_DebugDrawCommandRecorder::DrawSolidPolygon(b2Vec2 const* vertices, int32 vertex_count, b2Color const& color) noexcept
+    void detail::DevUI_DebugDrawCommandRecorder::draw_solid_polygon(cpShape* shape) noexcept
     {
-        DrawPolygon(vertices, vertex_count, color);
+        draw_polygon(shape);
     }
 
-    void detail::DevUI_DebugDrawCommandRecorder::DrawCircle(b2Vec2 const& center, float radius, b2Color const& color) noexcept
+    void detail::DevUI_DebugDrawCommandRecorder::draw_circle(cpShape* shape) noexcept
     {
+        ice::f32 const radius = (f32)cpCircleShapeGetRadius(shape);
+        cpVect const center = cpCircleShapeGetOffset(shape);
+
         ice::rad constexpr angle = ice::math::radians(ice::deg{ 15.f });
         ice::u32 constexpr vertex_count = ice::u32(360.f / 15.f);
 
@@ -253,7 +281,7 @@ namespace ice
             }
         };
 
-        b2Vec2 vertices[vertex_count]{ };
+        cpVect vertices[vertex_count]{ };
 
         ice::vec2f point = { 0.f, radius };
         for (ice::u32 idx = 0; idx < vertex_count; ++idx)
@@ -263,91 +291,95 @@ namespace ice
             point = rotation_mtx * point;
         }
 
-        DrawPolygon(vertices, vertex_count, color);
+        //draw_polygon(vertices, vertex_count, color);
     }
 
-    void detail::DevUI_DebugDrawCommandRecorder::DrawSolidCircle(b2Vec2 const& center, float radius, b2Vec2 const& axis, b2Color const& color) noexcept
+    void detail::DevUI_DebugDrawCommandRecorder::draw_solid_circle(cpShape* shape) noexcept
     {
-        DrawCircle(center, radius, color);
+        draw_circle(shape);
     }
 
-    void detail::DevUI_DebugDrawCommandRecorder::DrawTransform(b2Transform const& xf)
+    void detail::DevUI_DebugDrawCommandRecorder::draw_transform(cpTransform const& xf)
     {
+        //if (_command_list != nullptr)
+        //{
+        //    ice::vec3f* vertex = _vertex_list + draw_vertex_count;
+        //    ice::vec1u* vertex_color = _color_list + draw_vertex_count;
+
+        //    ice::mat2x2 const rot{
+        //        .v = {
+        //            { xf.q.c, xf.q.s },
+        //            { -xf.q.s, xf.q.c }
+        //        }
+        //    };
+
+        //    ice::vec2f const p0 = ice::vec2f{ xf.p.x, xf.p.y } * Constant_PixelsInMeter;
+        //    ice::vec2f const py = ((rot * ice::vec2f{ 0.f, 0.25f }) + ice::vec2f{ xf.p.x, xf.p.y }) * Constant_PixelsInMeter;
+        //    ice::vec2f const px = ((rot * ice::vec2f{ 0.25f, 0.f }) + ice::vec2f{ xf.p.x, xf.p.y }) * Constant_PixelsInMeter;
+
+        //    ice::vec2f const points[]{ p0, py, p0, px, p0, p0 };
+        //    ice::vec1u const colors[]{
+        //        as_debug_color({ 0.f, 0.f, 0.f, 0.f }),
+        //        as_debug_color({ 0.f, 1.f, 0.f, 1.f }),
+        //        as_debug_color({ 0.f, 1.f, 0.f, 1.f }),
+        //        as_debug_color({ 1.f, 0.f, 0.f, 1.f }),
+        //        as_debug_color({ 1.f, 0.f, 0.f, 1.f }),
+        //        as_debug_color({ 0.f, 0.f, 0.f, 0.f }),
+        //    };
+
+        //    for (ice::u32 idx = 0; idx < ice::count(points); ++idx)
+        //    {
+        //        *vertex = ice::vec3f{ points[idx].x, points[idx].y, 0.0f };
+        //        *vertex_color = colors[idx];
+
+        //        vertex += 1;
+        //        vertex_color += 1;
+        //    }
+
+        //    if (_transform_draw_command == nullptr)
+        //    {
+        //        _transform_draw_command = _command_list + draw_commands;
+        //        *_transform_draw_command = DebugDrawCommand{
+        //            .vertex_count = 6,
+        //            .vertex_list = _vertex_list + draw_vertex_count,
+        //            .vertex_color_list = _color_list + draw_vertex_count,
+        //        };
+
+        //        draw_commands += 1;
+        //    }
+        //    else
+        //    {
+        //        _transform_draw_command->vertex_count += 6;
+        //    }
+        //}
+        //else
+        //{
+        //    draw_commands += available_transform_commands;
+        //    available_polygon_commands = 0;
+        //}
+
+        ////draw_commands += 1;
+        //draw_vertex_count += 6;
+    }
+
+    void detail::DevUI_DebugDrawCommandRecorder::draw_point(cpShape* shape)
+    {
+        ice::vec4f constexpr color{ 0.9f, 0.3f, 0.2f, 1.0f };
+
+        cpVect const p = cpBodyGetPosition(cpShapeGetBody(shape));
+
         if (_command_list != nullptr)
         {
             ice::vec3f* vertex = _vertex_list + draw_vertex_count;
             ice::vec1u* vertex_color = _color_list + draw_vertex_count;
 
-            ice::mat2x2 const rot{
-                .v = {
-                    { xf.q.c, xf.q.s },
-                    { -xf.q.s, xf.q.c }
-                }
-            };
-
-            ice::vec2f const p0 = ice::vec2f{ xf.p.x, xf.p.y } *Constant_PixelsInMeter;
-            ice::vec2f const py = ((rot * ice::vec2f{ 0.f, 0.25f }) + ice::vec2f{ xf.p.x, xf.p.y }) * Constant_PixelsInMeter;
-            ice::vec2f const px = ((rot * ice::vec2f{ 0.25f, 0.f }) + ice::vec2f{ xf.p.x, xf.p.y }) * Constant_PixelsInMeter;
-
-            ice::vec2f const points[]{ p0, py, p0, px, p0, p0 };
-            ice::vec1u const colors[]{
-                as_debug_color({ 0.f, 0.f, 0.f, 0.f }),
-                as_debug_color({ 0.f, 1.f, 0.f, 1.f }),
-                as_debug_color({ 0.f, 1.f, 0.f, 1.f }),
-                as_debug_color({ 1.f, 0.f, 0.f, 1.f }),
-                as_debug_color({ 1.f, 0.f, 0.f, 1.f }),
-                as_debug_color({ 0.f, 0.f, 0.f, 0.f }),
-            };
-
-            for (ice::u32 idx = 0; idx < ice::count(points); ++idx)
-            {
-                *vertex = ice::vec3f{ points[idx].x, points[idx].y, 0.0f };
-                *vertex_color = colors[idx];
-
-                vertex += 1;
-                vertex_color += 1;
-            }
-
-            if (_transform_draw_command == nullptr)
-            {
-                _transform_draw_command = _command_list + draw_commands;
-                *_transform_draw_command = DebugDrawCommand{
-                    .vertex_count = 6,
-                    .vertex_list = _vertex_list + draw_vertex_count,
-                    .vertex_color_list = _color_list + draw_vertex_count,
-                };
-
-                draw_commands += 1;
-            }
-            else
-            {
-                _transform_draw_command->vertex_count += 6;
-            }
-        }
-        else
-        {
-            draw_commands += available_transform_commands;
-            available_polygon_commands = 0;
-        }
-
-        //draw_commands += 1;
-        draw_vertex_count += 6;
-    }
-
-    void detail::DevUI_DebugDrawCommandRecorder::DrawPoint(b2Vec2 const& p, float size, b2Color const& color)
-    {
-        if (_command_list != nullptr)
-        {
-            ice::vec3f* vertex = _vertex_list + draw_vertex_count;
-            ice::vec1u* vertex_color = _color_list + draw_vertex_count;
-
-            *vertex = ice::vec3f{ p.x, p.y - 0.1f, 1.0f } * Constant_PixelsInMeter;
+            *vertex = ice::vec3f{ (f32)p.x, (f32)p.y - 0.1f, 1.0f } * Constant_PixelsInMeter;
             *vertex_color = as_debug_color(color);
 
             vertex += 1;
             vertex_color += 1;
 
-            *vertex = ice::vec3f{ p.x, p.y + 0.1f, 1.0f } * Constant_PixelsInMeter;
+            *vertex = ice::vec3f{ (f32) p.x, (f32)p.y + 0.1f, 1.0f } * Constant_PixelsInMeter;
             *vertex_color = as_debug_color(color);
 
             _command_list[draw_commands] = DebugDrawCommand{

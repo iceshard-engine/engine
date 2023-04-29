@@ -7,10 +7,14 @@
 #include "iceshard_gfx_world.hxx"
 #include "iceshard_gfx_queue.hxx"
 
+#include <ice/task_scheduler.hxx>
+#include <ice/task_thread.hxx>
+#include <ice/task_sync_wait.hxx>
+
 #include <ice/render/render_fence.hxx>
 #include <ice/mem_allocator_stack.hxx>
-#include <ice/task_sync_wait.hxx>
 #include <ice/profiler.hxx>
+#include <ice/string/string.hxx>
 
 namespace ice::gfx
 {
@@ -29,13 +33,21 @@ namespace ice::gfx
 
     static constexpr ice::u32 Constant_GfxFrameAllocatorCapacity = 16u * 1024u;
 
+    static constexpr ice::TaskThreadInfo Constant_GfxThreadInfo{
+        .exclusive_queue = true,
+        .sort_by_priority = false,
+        .debug_name = "ice.gfx"
+    };
+
     IceGfxRunner::IceGfxRunner(
         ice::Allocator& alloc,
         ice::UniquePtr<ice::gfx::IceGfxDevice> device,
         ice::IceshardWorld* graphics_world
     ) noexcept
         : _allocator{ alloc, "gfx-runner"}
-        , _thread{ ice::create_task_thread_v2(_allocator) }
+        , _task_queue{ }
+        , _task_scheduler{ _task_queue }
+        , _thread{ ice::create_thread(_allocator, _task_queue, Constant_GfxThreadInfo) }
         , _device{ ice::move(device) }
         , _frame_allocator{
             { _allocator, { Constant_GfxFrameAllocatorCapacity } },
@@ -73,9 +85,7 @@ namespace ice::gfx
         }
 
         // Now stop the thread and wait for everything to finish.
-        _thread->stop();
-        _thread->join();
-        _thread = nullptr;
+        _thread.reset();
 
         for (IceGfxContext* context : _contexts)
         {
@@ -170,7 +180,7 @@ namespace ice::gfx
 
     auto IceGfxRunner::task_cleanup_gfx_contexts() noexcept -> ice::Task<>
     {
-        co_await *_thread;
+        co_await _task_scheduler;
         cleanup_gfx_contexts();
         co_return;
     }
@@ -183,7 +193,7 @@ namespace ice::gfx
 
     auto IceGfxRunner::task_cleanup_gfx_traits() noexcept -> ice::Task<>
     {
-        co_await *_thread;
+        co_await _task_scheduler;
         cleanup_gfx_traits();
         co_return;
     }
@@ -252,7 +262,7 @@ namespace ice::gfx
         ice::IceshardTaskExecutor frame_tasks = frame->create_task_executor();
 
         // Await the graphics thread context
-        co_await *_thread;
+        co_await _task_scheduler;
 
         IPT_ZONE_SCOPED_NAMED("Graphis Frame");
 

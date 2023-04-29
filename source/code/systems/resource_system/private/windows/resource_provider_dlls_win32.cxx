@@ -172,23 +172,31 @@ namespace ice
             co_return ResourceProviderResult::Success;
         }
 
+        virtual auto refresh(
+            ice::Array<ice::Resource const*>& out_changes
+        ) noexcept -> ice::ResourceProviderResult
+        {
+            if (ice::hashmap::empty(_resources))
+            {
+                initial_traverse();
+
+                for (auto* resource : _resources)
+                {
+                    ice::array::push_back(out_changes, resource);
+                }
+            }
+            return ResourceProviderResult::Success;
+        }
+
         auto load_resource(
             ice::Allocator& alloc,
             ice::Resource const* resource,
-            ice::TaskScheduler_v2& scheduler
-        ) noexcept -> ice::Task<ice::Memory> override
+            ice::TaskScheduler& scheduler,
+            ice::NativeIO* nativeio
+        ) const noexcept -> ice::Task<ice::Memory>
         {
             // Cannot load DLL's in this way.
             co_return ice::Memory{ };
-        }
-
-        auto release_resource(
-            ice::Resource const* resource,
-            ice::TaskScheduler_v2& scheduler
-        ) noexcept -> ice::Task<>
-        {
-            // Cannot release DLL's in this way.
-            co_return;
         }
 
     private:

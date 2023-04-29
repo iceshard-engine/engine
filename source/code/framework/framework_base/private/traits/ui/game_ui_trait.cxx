@@ -41,10 +41,9 @@
 #include <ice/string/static_string.hxx>
 #include <ice/container/array.hxx>
 #include <ice/shard_container.hxx>
-#include <ice/task_scheduler.hxx>
-#include <ice/task_thread_pool.hxx>
 #include <ice/asset_storage.hxx>
 #include <ice/profiler.hxx>
+#include <ice/task.hxx>
 
 namespace ice
 {
@@ -277,20 +276,21 @@ namespace ice
             co_return;
         }
 
-        ice::Asset const page_asset = co_await runner.asset_storage().request(
+        ice::Asset page_asset = runner.asset_storage().bind(
             ice::ui::AssetType_UIPage,
             name,
             AssetState::Loaded
         );
-        if (ice::asset_check(page_asset, AssetState::Loaded) == false)
-        {
-            ICE_LOG(
-                ice::LogSeverity::Warning, ice::LogTag::Game,
-                "UI Page with name {} couldn't be loaded.",
-                name
-            );
-            co_return;
-        }
+        page_asset.data = co_await runner.asset_storage().request(page_asset, AssetState::Loaded);
+        //if (ice::asset_check(page_asset, AssetState::Loaded) == false)
+        //{
+        //    ICE_LOG(
+        //        ice::LogSeverity::Warning, ice::LogTag::Game,
+        //        "UI Page with name {} couldn't be loaded.",
+        //        name
+        //    );
+        //    co_return;
+        //}
 
         ice::GameUI_Page* page = nullptr;
         ice::hashmap::set(_pages, page_hash, page);
@@ -304,8 +304,9 @@ namespace ice
                 font_info.font_name_size
             };
 
-            co_await runner.thread_pool();
-            co_await runner.asset_storage().request(ice::AssetType_Font, font_name, AssetState::Loaded);
+            co_await runner.task_scheduler();
+            auto font_asset = runner.asset_storage().bind(ice::AssetType_Font, font_name, AssetState::Loaded);
+            co_await runner.asset_storage().request(font_asset, AssetState::Loaded);
         }
 
         co_await runner.schedule_current_frame();
@@ -392,7 +393,8 @@ namespace ice
                 font_info.font_name_size
             };
 
-            ice::Asset font_asset = co_await runner.asset_storage().request(ice::AssetType_Font, font_name, AssetState::Loaded);
+            ice::Asset font_asset = runner.asset_storage().bind(ice::AssetType_Font, font_name, AssetState::Loaded);
+            font_asset.data = co_await runner.asset_storage().request(font_asset, AssetState::Loaded);
             if (ice::asset_check(font_asset, ice::AssetState::Loaded))
             {
                 page->set_resource(font_info.resource_i, reinterpret_cast<ice::Font const*>(font_asset.data.location));

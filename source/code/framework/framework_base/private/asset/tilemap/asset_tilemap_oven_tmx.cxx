@@ -918,7 +918,7 @@ namespace ice
                 for (ice::u32 idx = 0; idx < tilemap_info.tileset_count; ++idx)
                 {
                     ice::ResourceHandle* const self = resource_tracker.find_resource(resource.uri());
-                     ice::ResourceHandle* image_res = resource_tracker.find_resource_relative(
+                    ice::ResourceHandle* image_res = resource_tracker.find_resource_relative(
                         ice::URI{ ice::Scheme_File,  tilemap_info.tileset_info[idx].image },
                         self
                     );

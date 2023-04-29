@@ -8,9 +8,6 @@
 namespace ice
 {
 
-    template<typename T>
-    class Task;
-
     class DataStorage;
     class World;
 

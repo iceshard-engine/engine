@@ -8,15 +8,13 @@
 #include <ice/shard_container.hxx>
 #include <ice/input/input_types.hxx>
 
+#include <ice/task.hxx>
 #include <ice/engine_task_operations.hxx>
 #include <ice/ecs/ecs_types.hxx>
 #include <ice/ecs/ecs_query_scheduler.hxx>
 
 namespace ice
 {
-
-    template<typename T>
-    class Task;
 
     class EngineFrame;
 

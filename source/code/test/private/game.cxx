@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2022, Dandielo <dandielo@iceshard.net>
+﻿/// Copyright 2022 - 2022, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "game.hxx"
@@ -34,7 +34,6 @@
 #include <ice/input/input_tracker.hxx>
 
 #include <ice/task_sync_wait.hxx>
-#include <ice/task_thread_pool.hxx>
 #include <ice/module_register.hxx>
 #include <ice/resource_tracker.hxx>
 #include <ice/resource_provider.hxx>
@@ -264,7 +263,7 @@ void MyGame::on_app_startup(ice::Engine& engine) noexcept
             .success_trigger_count = 1,
             .failure_trigger_offset = 1,
             .failure_trigger_count = 0,
-            .reset_trigger_offset = 2 
+            .reset_trigger_offset = 2
         }
     };
 

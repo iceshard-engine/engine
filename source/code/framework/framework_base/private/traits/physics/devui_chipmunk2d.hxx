@@ -4,17 +4,17 @@
 #pragma once
 #include <ice/devui/devui_widget.hxx>
 
-#include "trait_box2d.hxx"
-#include "box2d.hxx"
+#include "trait_chipmunk2d.hxx"
+#include "chipmunk2d.hxx"
 
 namespace ice
 {
 
-    class DevUI_Box2D : public ice::devui::DevUIWidget
+    class DevUI_Chipmunk2D : public ice::devui::DevUIWidget
     {
     public:
-        DevUI_Box2D(
-            b2World& box2d_world
+        DevUI_Chipmunk2D(
+            cpSpace& space
         ) noexcept;
 
         auto settings() const noexcept -> ice::devui::WidgetSettings const& override;
@@ -25,7 +25,7 @@ namespace ice
         void on_frame(ice::EngineFrame& frame) noexcept;
 
     private:
-        b2World& _world;
+        cpSpace& _space;
         ice::devui::WidgetState* _state;
         ice::u32 _debug_draw_flags;
     };

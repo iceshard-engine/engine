@@ -42,7 +42,7 @@ namespace ice
             return AssetState::Invalid;
         }
 
-        return reinterpret_cast<ice::AssetEntry const*>(handle)->state;
+        return reinterpret_cast<ice::AssetEntry const*>(handle)->current_state;
     }
 
 } // namespace ice

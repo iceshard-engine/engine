@@ -8,7 +8,7 @@
 #include <ice/engine_runner.hxx>
 #include <ice/world/world_portal.hxx>
 #include <ice/world/world_trait_archive.hxx>
-#include <ice/task_thread_pool.hxx>
+#include <ice/task.hxx>
 #include <ice/asset_storage.hxx>
 #include <ice/shard_payloads.hxx>
 
@@ -46,7 +46,7 @@ namespace ice
                 }
             }
 
-            co_await runner.thread_pool();
+            co_await runner.task_scheduler();
 
             {
                 IPT_ZONE_SCOPED_NAMED("[Trait] TileMap :: Prepare render data");
@@ -87,9 +87,13 @@ namespace ice
         ice::EngineRunner& runner
     ) noexcept -> ice::Task<>
     {
-        ice::Asset result = co_await runner.asset_storage().request(ice::AssetType_TileMap, tilemap_name, AssetState::Loaded);
-        if (asset_check(result, AssetState::Loaded) == false)
+        ice::Asset result = runner.asset_storage().bind(ice::AssetType_TileMap, tilemap_name, AssetState::Loaded);
+        result.data = co_await runner.asset_storage().request(result, AssetState::Loaded);
+        //if (asset_check(result, AssetState::Loaded) == false)
+        if (result.data.location == nullptr)
         {
+            //result.data = co_await runner.asset_storage().request(result, AssetState::Loaded);
+
             ICE_LOG(
                 ice::LogSeverity::Error, ice::LogTag::Game,
                 "Failed to load tilemap asset!"

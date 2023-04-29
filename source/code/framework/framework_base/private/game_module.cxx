@@ -9,7 +9,7 @@
 #include "traits/trait_camera.hxx"
 #include "traits/trait_sprite_animator.hxx"
 #include "traits/trait_player_actor.hxx"
-#include "traits/physics/trait_box2d.hxx"
+#include "traits/physics/trait_chipmunk2d.hxx"
 
 #include "traits/ui/game_ui_trait.hxx"
 #include "traits/ui/render_ui_trait.hxx"

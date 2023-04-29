@@ -5,29 +5,43 @@
 #include <ice/resource_provider.hxx>
 #include <ice/resource.hxx>
 #include <ice/uri.hxx>
+#include <ice/profiler.hxx>
 
 #include <ice/string/string.hxx>
 #include <ice/container/hashmap.hxx>
-#include <ice/task.hxx>
-#include <ice/task_thread.hxx>
-#include <ice/task_scheduler.hxx>
-#include <ice/task_sync_wait.hxx>
 #include <ice/log_tag.hxx>
+
+#include "resource_native_thread_io.hxx"
 
 namespace ice
 {
 
-    static constexpr ice::LogTagDefinition LogTag_ResourceSystem = ice::create_log_tag(ice::LogTag::System, "Resources");
-
     struct ResourceHandle
     {
-        ice::ResourceProvider* provider;
-        ice::Resource const* resource;
-        ice::Memory data;
+        ResourceHandle(
+            ice::Resource const* resource,
+            ice::ResourceProvider* provider
+        ) noexcept
+            : resource{ resource }
+            , provider{ provider }
+            , status{ ResourceStatus::Available }
+            , data{ }
+            , refcount{ 0 }
+        { }
 
+        ResourceHandle(ResourceHandle const& other) noexcept
+            : resource{ other.resource }
+            , provider{ other.provider }
+            , status{ other.status }
+            , data{ other.data }
+            , refcount{ other.refcount.load(std::memory_order_relaxed) }
+        { }
+
+        ice::Resource const* resource;
+        ice::ResourceProvider* provider;
         ice::ResourceStatus status;
-        ice::u32 refcount;
-        ice::u32 usecount;
+        ice::Memory data;
+        std::atomic<ice::u32> refcount;
     };
 
     auto resource_uri(ice::ResourceHandle const* handle) noexcept -> ice::URI const&
@@ -44,431 +58,445 @@ namespace ice
     {
         return handle->resource->name();
     }
-
+    // Might need to be moved somewhere else?
     auto get_loose_resource(ice::ResourceHandle const* handle) noexcept -> ice::LooseResource const*
     {
         return handle->provider->access_loose_resource(handle->resource);
     }
 
-    class ResourceTracker_Impl final : public ice::ResourceTracker, public ice::TaskScheduler_v2
+    static_assert(std::atomic<std::coroutine_handle<>>::is_always_lock_free);
+
+    class ResourceTrackerImplementation final : public ice::ResourceTracker
     {
     public:
-        ResourceTracker_Impl(
+        ResourceTrackerImplementation(
             ice::Allocator& alloc,
-            ice::ResourceTrackerCreateInfo const& create_info
-        ) noexcept
-            : _allocator{ alloc }
-            , _handle_allocator{ _allocator }
-            , _data_allocator{ _allocator }
-            , _providers{ _allocator }
-            , _tracked_handles{ _allocator }
-            , _thread{ }
-            , _scheduler{ this }
-            , _compare_fn{ create_info.compare_fn }
-        {
-            if (create_info.create_loader_thread)
-            {
-                _thread = ice::create_task_thread_v2(_allocator);
-                _scheduler = _thread.get();
-            }
-            ice::register_log_tag(LogTag_ResourceSystem);
-        }
+            ice::TaskScheduler& scheduler,
+            ice::ResourceTrackerCreateInfo const& info
+        ) noexcept;
 
-        ~ResourceTracker_Impl() noexcept
-        {
-            if (_thread != nullptr)
-            {
-                _thread->stop();
-                _thread->join();
-                _thread.reset();
-            }
+        ~ResourceTrackerImplementation() noexcept;
 
-            for (ResourceHandle* const entry : _tracked_handles)
-            {
-                entry->usecount -= 1;
-                if (entry->usecount == 0)
-                {
-                    _data_allocator.deallocate(entry->data);
-                    _handle_allocator.destroy(entry);
-                }
-            }
-        }
+        bool attach_provider(ice::ResourceProvider* provider) noexcept override;
 
-        bool attach_provider(ice::ResourceProvider* provider) noexcept override
-        {
-            ICE_ASSERT(provider != nullptr, "Trying to attach a nullptr as provider.");
-
-            ice::Array<ice::Resource const*> temp_resources{ _allocator };
-
-            ice::u64 const hash_value = ice::hash(provider->schemeid());
-
-            bool has_provider = ice::hashmap::has(_providers, hash_value);
-            if (has_provider == false)
-            {
-                ice::ResourceProviderResult const refresh_result = ice::sync_wait(provider->refresh());
-                if (refresh_result != ice::ResourceProviderResult::Failure)
-                {
-                    has_provider = true;
-                    ice::hashmap::set(
-                        _providers,
-                        hash_value,
-                        provider
-                    );
-
-                    provider->query_resources(temp_resources);
-                    for (ice::Resource const* resource : temp_resources)
-                    {
-                        ice::ResourceHandle* handle = _handle_allocator.create<ice::ResourceHandle>(
-                            ice::ResourceHandle{
-                                .provider = provider,
-                                .resource = resource,
-                                .status = ice::ResourceStatus::Available,
-                                .refcount = 0,
-                                .usecount = 1,
-                            }
-                        );
-
-                        ice::multi_hashmap::insert(
-                            _tracked_handles,
-                            ice::hash(resource->name()),
-                            handle
-                        );
-                    }
-                }
-            }
-            return has_provider;
-        }
-
-        bool detach_provider(ice::ResourceProvider* provider) noexcept override
-        {
-            ice::hashmap::remove(_providers, ice::hash_from_ptr(provider));
-            return true;
-        }
-
-        void refresh_providers() noexcept override
-        {
-            for (ice::ResourceProvider* provider : _providers)
-            {
-                ice::ResourceProviderResult const result = ice::sync_wait(provider->refresh());
-                if (result == ice::ResourceProviderResult::Failure)
-                {
-                    ICE_LOG(
-                        ice::LogSeverity::Error,
-                        ice::LogTag_ResourceSystem, "Failed to update resource provider!"
-                    );
-                }
-            }
-        }
+        void sync_resources() noexcept override;
 
         auto find_resource(
-            ice::URI const& uri,
+            ice::URI const& resoure_uri,
             ice::ResourceFlags flags = ice::ResourceFlags::None
-        ) const noexcept -> ice::ResourceHandle* override
-        {
-            ice::ResourceHandle* result = nullptr;
-
-            // TODO: Pass non urn values to a provider associated with a that scheme.
-            if (uri.scheme != ice::stringid_hash(ice::Scheme_URN))
-            {
-                ice::ResourceProvider* const provider = ice::hashmap::get(_providers, ice::hash(uri.scheme), nullptr);
-                if (provider != nullptr)
-                {
-                    ice::Resource const* found_resource = provider->find_resource(uri);
-                    if (found_resource != nullptr)
-                    {
-                        ice::u64 const hash = ice::hash(found_resource->name());
-
-                        auto it = ice::multi_hashmap::find_first(_tracked_handles, hash);
-                        if (it != nullptr)
-                        {
-                            // We try to find the best matching flags, so if they are equal we got a jackpot.
-                            while (it != nullptr && result == nullptr)
-                            {
-                                if (it.value()->resource->flags() == found_resource->flags())
-                                {
-                                    result = it.value();
-                                }
-
-                                it = ice::multi_hashmap::find_next(_tracked_handles, it);
-                            }
-                        }
-                    }
-                }
-
-                return result;
-            }
-
-            ice::u64 const hash = ice::hash(uri.path);
-
-            auto it = ice::multi_hashmap::find_first(_tracked_handles, hash);
-            if (it != nullptr)
-            {
-                // TODO: Revisit how flags are compared and how resources should be selected when no flags are given but sub-resources have flags like: Quality_Highest.
-                ice::ResourceHandle* const default_resource = it.value();
-                ice::ResourceHandle* selected_resource = default_resource;
-
-                ice::u32 priority = 0;
-                ice::ResourceFlags selected_flags = it.value()->resource->flags();
-
-                // We try to find the best matching flags, so if they are equal we got a jackpot.
-                while (it != nullptr && selected_flags != flags)
-                {
-                    ice::Resource const* res = it.value()->resource;
-
-                    if (ice::u32 const new_priority = _compare_fn(flags, res->flags(), selected_flags); priority < new_priority)
-                    {
-                        priority = new_priority;
-                        selected_flags = res->flags();
-                        selected_resource = it.value();
-                    }
-
-                    it = ice::multi_hashmap::find_next(_tracked_handles, it);
-                }
-
-                if (selected_resource != nullptr && selected_resource->resource != nullptr)
-                {
-                    ICE_ASSERT(
-                        selected_resource->provider != nullptr,
-                        "Resource handle is missing associated provider object!"
-                    );
-
-                    // Save the result.
-                    result = selected_resource;
-                }
-            }
-            return result;
-        }
+        ) const noexcept -> ice::ResourceHandle* override;
 
         auto find_resource_relative(
             ice::URI const& uri,
-            ice::ResourceHandle* handle
-        ) const noexcept -> ice::ResourceHandle* override
-        {
-            ICE_ASSERT(handle != nullptr, "Trying to set resource from invalid handle!");
+            ice::ResourceHandle* resource_handle
+        ) const noexcept -> ice::ResourceHandle* override;
 
-            ice::ResourceHandle* result = nullptr;
-            ice::Resource const* resource = handle->provider->resolve_relative_resource(uri, handle->resource);
-            if (resource != nullptr)
-            {
-                result = this->find_resource(resource->uri(), resource->flags());
-            }
-            return result;
-        }
-
-        //auto create_resource(
-        //    ice::URI const& uri,
-        //    ice::Metadata const& metadata,
-        //    ice::Data data
-        //) noexcept -> ice::Task<ice::ResourceResult> override
-        //{
-        //    co_return ice::ResourceResult{
-        //        .resource_status = ice::ResourceStatus::Invalid
-        //    };
-        //}
 
         auto set_resource(
             ice::URI const& uri,
-            ice::ResourceHandle* handle
-        ) noexcept -> ice::Task<ice::ResourceResult> override
-        {
-            ICE_ASSERT(handle != nullptr, "Trying to set resource from invalid handle!");
-            ice::u64 const hash = ice::hash(uri.path);
-
-            ice::ResourceHandle* const replaced_handle = ice::hashmap::get(_tracked_handles, hash, nullptr);
-            ICE_ASSERT(replaced_handle != handle, "Cannot replace a resource with it's own value.");
-            ICE_ASSERT(replaced_handle == nullptr || replaced_handle->refcount == 0, "Cannot replace a resource that is still in use!");
-
-            if (replaced_handle == nullptr || replaced_handle->refcount == 0)
-            {
-                handle->usecount += 1;
-
-                // Set the new handle to that resource name hash.
-                ice::hashmap::set(
-                    _tracked_handles,
-                    hash,
-                    handle
-                );
-
-                if (replaced_handle != nullptr)
-                {
-                    replaced_handle->usecount -= 1;
-                    if (replaced_handle->usecount == 0)
-                    {
-                        if (replaced_handle->status == ice::ResourceStatus::Loaded)
-                        {
-                            _data_allocator.deallocate(replaced_handle->data);
-                        }
-                        _handle_allocator.destroy(replaced_handle);
-                    }
-                }
-            }
-
-            co_return ice::ResourceResult{
-                .resource_status = handle->status,
-                .resource = handle->resource,
-                .data = { }
-            };
-        }
+            ice::ResourceHandle* resource_handle
+        ) noexcept -> ice::Task<ice::ResourceResult> override;
 
         auto load_resource(
-            ice::ResourceHandle* handle
-        ) noexcept -> ice::Task<ice::ResourceResult> override
-        {
-            ICE_ASSERT(handle != nullptr, "Trying to load resource from invalid handle!");
-
-            // Increase the refcount before doing anything.
-            //  We require the user to handle thread-safe access for this part of the method so we are fine to do so.
-            handle->refcount += 1;
-
-            while (handle->status != ice::ResourceStatus::Loaded)
-            {
-                if (handle->status == ice::ResourceStatus::Available) // || status == ice::ResourceStatus::Unloaded)
-                {
-                    handle->status |= ice::ResourceStatus::Loading; // Add the 'Loading' flag so we don't enter this function twice.
-                    handle->data = co_await handle->provider->load_resource(_data_allocator, handle->resource, *_scheduler);
-
-                    if (handle->data.location != nullptr)
-                    {
-                        // We are now on the I/O thread, so we need to ensure that we are now properly behaving.
-                        handle->status = ice::ResourceStatus::Loaded;
-                    }
-                    else
-                    {
-                        // A weird error occured the resource is not valid anymore!
-                        handle->status = ice::ResourceStatus::Available | ice::ResourceStatus::Invalid;
-                    }
-
-                    std::atomic_thread_fence(std::memory_order::release);
-                }
-                else if (ice::has_all(handle->status, ice::ResourceStatus::Loading))
-                {
-                    // Move the the I/O thread to wait for completion
-                    while (ice::has_all(handle->status, ice::ResourceStatus::Loading))
-                    {
-                        co_await *_thread;
-                    }
-                }
-                else
-                {
-                    // We force exit here when we got errors.
-                    break;
-                }
-            }
-
-            if (handle->status != ice::ResourceStatus::Loaded)
-            {
-                co_return ice::ResourceResult{
-                    .resource_status = handle->status,
-                    .resource = handle->resource,
-                    .data = { },
-                };
-            }
-
-            co_return ice::ResourceResult{
-                .resource_status = ice::ResourceStatus::Loaded,
-                .resource = handle->resource,
-                .data = ice::data_view(handle->data),
-            };
-        }
+            ice::ResourceHandle* resource_handle
+        ) noexcept -> ice::Task<ice::ResourceResult> override;
 
         auto release_resource(
-            ice::ResourceHandle* handle
-        ) noexcept -> ice::Task<ice::ResourceResult> override
-        {
-            ICE_ASSERT(handle != nullptr, "Trying to release resource from invalid handle!");
-
-            // Increase the refcount before doing anything.
-            //  We require the user to handle thread-safe access for this part of the method so we are fine to do so.
-            ICE_ASSERT(handle->refcount > 0, "Trying to release resource that is already in released state!");
-            handle->refcount -= 1;
-
-            co_return ice::ResourceResult{
-                .resource_status = handle->status,
-                .resource = handle->resource,
-                .data = { .size = handle->data.size },
-            };
-        }
+            ice::ResourceHandle* resource_handle
+        ) noexcept -> ice::Task<ice::ResourceResult> override;
 
         auto unload_resource(
-            ice::ResourceHandle* handle
-        ) noexcept -> ice::Task<ice::ResourceResult> override
-        {
-            ICE_ASSERT(handle != nullptr, "Trying to unload resource from invalid handle!");
+            ice::ResourceHandle* resource_handle
+        ) noexcept -> ice::Task<ice::ResourceResult> override;
 
-            // Increase the refcount before doing anything.
-            //  We require the user to handle thread-safe access for this part of the method so we are fine to do so.
-            ICE_ASSERT(handle->refcount > 0, "Trying to release resource that is already in released/unloaded state!");
-            handle->refcount -= 1;
+    protected:
+        auto find_resource_by_urn(
+            ice::URI const& resoure_uri,
+            ice::ResourceFlags flags
+        ) const noexcept -> ice::ResourceHandle*;
 
-            if (handle->refcount == 0)
-            {
-                std::atomic_thread_fence(std::memory_order::acquire);
+        auto find_resource_by_uri(
+            ice::URI const& resoure_uri,
+            ice::ResourceFlags flags
+        ) const noexcept -> ice::ResourceHandle*;
 
-                ICE_ASSERT(
-                    ice::has_all(handle->status, ice::ResourceStatus::Loading) == false,
-                    "Trying to unload resource during loading!"
-                );
-
-                if (handle->status == ice::ResourceStatus::Loaded)
-                {
-                    _data_allocator.deallocate(handle->data);
-                    handle->data = { };
-                    handle->status = ice::ResourceStatus::Available;
-
-                    std::atomic_thread_fence(std::memory_order::release);
-                }
-            }
-
-            co_return ice::ResourceResult{
-                .resource_status = handle->status,
-                .resource = handle->resource,
-                .data = {.size = handle->data.size },
-            };
-        }
-
-        //auto update_resource(
-        //    ice::Resource const* resource,
-        //    ice::Metadata const* metadata,
-        //    ice::Data data
-        //) noexcept -> ice::Task<ice::ResourceResult> override
-        //{
-        //    co_return ice::ResourceResult{
-        //        .resource_status = ice::ResourceStatus::Invalid
-        //    };
-        //}
-
-        // Default behavior, just resume immediately and make a waited read.
-        bool schedule(ice::TaskOperation_v2& operation) noexcept override
-        {
-            return false;
-        }
+        bool find_resource_and_provider(
+            ice::URI const& resource_uri,
+            ice::ResourceProvider const*& provider,
+            ice::Resource const*& resource
+        ) const noexcept;
 
     private:
         ice::Allocator& _allocator;
-        ice::Allocator& _handle_allocator;
-        ice::Allocator& _data_allocator;
+        ice::TaskScheduler& _scheduler;
+        ice::ResourceTrackerCreateInfo const& _info;
 
-        ice::HashMap<ice::ResourceProvider*> _providers;
-        ice::HashMap<ice::ResourceHandle*> _tracked_handles;
+        ice::TaskQueue _io_queue;
+        ice::UniquePtr<ice::NativeIO> _io_thread_data;
+        ice::UniquePtr<ice::TaskThread> _io_thread;
 
-        ice::UniquePtr<ice::TaskThread_v2> _thread;
-        ice::TaskScheduler_v2* _scheduler;
-
-        // User provided values.
-        ice::ResourceFlagsCompareFn* _compare_fn;
+        ice::Array<ice::ResourceHandle, ContainerLogic::Complex> _handles;
+        ice::HashMap<ice::ResourceHandle*> _resources;
+        ice::HashMap<ice::ResourceProvider*> _resource_providers;
     };
+
+    ResourceTrackerImplementation::ResourceTrackerImplementation(
+        ice::Allocator& alloc,
+        ice::TaskScheduler& scheduler,
+        ice::ResourceTrackerCreateInfo const& info
+    ) noexcept
+        : ResourceTracker{ }
+        , _allocator{ alloc }
+        , _scheduler{ scheduler }
+        , _info{ info }
+        , _io_queue{ }
+        , _io_thread_data{ }
+        , _io_thread{ }
+        , _handles{ _allocator }
+        , _resources{ _allocator }
+        , _resource_providers{ _allocator }
+    {
+        ICE_ASSERT(
+            _info.predicted_resource_count > 0,
+            "Invalid value ({}) provided for 'predicted_resource_count'. Value needs to be a positive integer."
+        );
+
+        ice::array::reserve(_handles, _info.predicted_resource_count);
+        ice::hashmap::reserve(_resources, _info.predicted_resource_count);
+        ice::hashmap::reserve(_resource_providers, 10);
+
+        if (_info.io_dedicated_threads > 0)
+        {
+            _io_thread_data = ice::create_nativeio_thread_data(_allocator, _info.io_dedicated_threads);
+
+            ice::TaskThreadInfo const io_thread_info{
+                //.exclusive_queue = true, // ignored
+                //.sort_by_priority = false, // ignored
+                .custom_procedure = (ice::TaskThreadProcedure*)ice::nativeio_thread_procedure,
+                .custom_procedure_userdata = _io_thread_data.get(),
+                .debug_name = "ice.resource_tracker",
+            };
+            _io_thread = ice::create_thread(_allocator, _io_queue, io_thread_info);
+        }
+    }
+
+    ResourceTrackerImplementation::~ResourceTrackerImplementation() noexcept
+    {
+        for (ice::ResourceHandle* handle : _resources)
+        {
+            if (handle->refcount.load(std::memory_order_relaxed) > 0)
+            {
+                //IPT_MESSAGE_C("Encountered unreleased resource object during resource tracker destruction.", 0xEE99AA);
+                _allocator.deallocate(handle->data);
+            }
+        }
+
+        // Close thr thread first then the thread data.
+        _io_thread.reset();
+        _io_thread_data.reset();
+    }
+
+    bool ResourceTrackerImplementation::attach_provider(ice::ResourceProvider* provider) noexcept
+    {
+        ice::multi_hashmap::insert(
+            _resource_providers,
+            ice::hash(provider->schemeid()),
+            provider
+        );
+        return true;
+    }
+
+    void ResourceTrackerImplementation::sync_resources() noexcept
+    {
+        _scheduler.schedule(_info.flags_io_complete);
+
+        ice::Array<ice::Resource const*> temp_resources{ _allocator };
+        for (ice::ResourceProvider* provider : _resource_providers)
+        {
+            ice::array::clear(temp_resources);
+
+            ice::ResourceProviderResult const refresh_result = provider->refresh(temp_resources);
+            if (refresh_result == ResourceProviderResult::Failure)
+            {
+                ICE_LOG(
+                    ice::LogSeverity::Warning, ice::LogTag::Engine,
+                    "Failed to refresh resource provider for scheme: {}",
+                    ice::stringid_hint(provider->schemeid())
+                );
+                continue;
+            }
+
+            ice::ucount const new_count = ice::hashmap::count(_resources) + ice::array::count(temp_resources);
+            ICE_ASSERT(
+                new_count <= _info.predicted_resource_count,
+                "Maximum resource capacity of {} entiries reached!",
+                _info.predicted_resource_count
+            );
+
+            // Store all resource handles
+            for (ice::Resource const* resource : temp_resources)
+            {
+                ice::array::push_back(
+                    _handles,
+                    ice::ResourceHandle {
+                        resource,
+                        provider
+                    }
+                );
+
+                ice::multi_hashmap::insert(
+                    _resources,
+                    ice::hash(resource->name()),
+                    ice::addressof(ice::array::back(_handles))
+                );
+            }
+        }
+    }
+
+    auto ResourceTrackerImplementation::find_resource(
+        ice::URI const& resource_uri,
+        ice::ResourceFlags flags
+    ) const noexcept -> ice::ResourceHandle*
+    {
+        if (resource_uri.scheme == ice::stringid_hash(ice::Scheme_URN))
+        {
+            return find_resource_by_urn(resource_uri, flags);
+        }
+        else
+        {
+            return find_resource_by_uri(resource_uri, flags);
+        }
+    }
+
+    auto ResourceTrackerImplementation::find_resource_relative(
+        ice::URI const& uri,
+        ice::ResourceHandle* handle
+    ) const noexcept -> ice::ResourceHandle*
+    {
+        ICE_ASSERT(handle != nullptr, "Trying to set resource from invalid handle!");
+
+        ice::ResourceHandle* result = nullptr;
+        ice::Resource const* resource = handle->provider->resolve_relative_resource(uri, handle->resource);
+        if (resource != nullptr)
+        {
+            result = this->find_resource(resource->uri(), resource->flags());
+        }
+        return result;
+    }
+
+    auto ResourceTrackerImplementation::set_resource(
+        ice::URI const& uri,
+        ice::ResourceHandle* resource_handle
+    ) noexcept -> ice::Task<ice::ResourceResult>
+    {
+        co_return { .resource_status = ResourceStatus::Invalid };
+    }
+
+    auto ResourceTrackerImplementation::load_resource(
+        ice::ResourceHandle* resource_handle
+    ) noexcept -> ice::Task<ice::ResourceResult>
+    {
+        ice::TaskScheduler io_scheduler{ _io_queue };
+
+        bool const load_task = resource_handle->refcount.fetch_add(1, std::memory_order_relaxed) == 0;
+        if (load_task)
+        {
+            resource_handle->status = ResourceStatus::Loading;
+
+            // TODO: Could be const?
+            ice::Memory result{ };
+            if (_info.io_dedicated_threads > 0)
+            {
+                result = co_await resource_handle->provider->load_resource(
+                    _allocator,
+                    resource_handle->resource,
+                    io_scheduler,
+                    _io_thread_data.get()
+                );
+            }
+            else
+            {
+                // TODO: Load using busy threads
+                co_await _scheduler.schedule(_info.flags_io_wait);
+            }
+
+            resource_handle->data = result;
+            resource_handle->status = result.location == nullptr ? ResourceStatus::Invalid : ResourceStatus::Loaded;
+        }
+        else
+        {
+            // Busy wait to make sure we don't run into a data race on two threads trying to load same resource at the same time.
+            while (resource_handle->status == ResourceStatus::Available)
+            {
+                co_await io_scheduler;
+            }
+
+            // Await the other thread to finish loading the data
+            while (resource_handle->status == ResourceStatus::Loading)
+            {
+                co_await io_scheduler;
+            }
+        }
+
+        co_await _scheduler.schedule(_info.flags_io_complete);
+
+        //TracyMessageLC(resource_handle->resource->name()._data, 0xee2222ff);
+
+        co_return ice::ResourceResult{
+            .resource_status = resource_handle->status,
+            .resource = resource_handle->resource,
+            .data = ice::data_view(resource_handle->data),
+        };
+    }
+
+    auto ResourceTrackerImplementation::release_resource(
+        ice::ResourceHandle* resource_handle
+    ) noexcept -> ice::Task<ice::ResourceResult>
+    {
+        ICE_ASSERT(resource_handle != nullptr, "Trying to release resource from invalid handle!");
+
+        // Increase the refcount before doing anything.
+        //  We require the user to handle thread-safe access for this part of the method so we are fine to do so.
+        ice::u32 const last_count = resource_handle->refcount.fetch_sub(1, std::memory_order_relaxed);
+        ICE_ASSERT(last_count > 0, "Trying to release resource that is already in released state!");
+
+        co_return ice::ResourceResult{
+            .resource_status = resource_handle->status,
+            .resource = resource_handle->resource,
+            .data = { .size = resource_handle->data.size },
+        };
+    }
+
+    auto ResourceTrackerImplementation::unload_resource(
+        ice::ResourceHandle* resource_handle
+    ) noexcept -> ice::Task<ice::ResourceResult>
+    {
+        ICE_ASSERT(resource_handle != nullptr, "Trying to unload resource from invalid handle!");
+
+        // Since we don't release data in the 'load_resource' method even if we would run into an unload/load situation
+        //  we need to save the data information here before we decrease the refcount.
+        //  Once decreased another request could already increase it and start loading new data and finish before
+        //  we have a chance get the pointer to be released. (might happen... probably will)
+        ice::Memory const data = resource_handle->data;
+        ice::ResourceStatus const last_status = resource_handle->status;
+        ice::u32 const last_refcount = resource_handle->refcount.load(std::memory_order_relaxed);
+
+        // Set the status to 'Available' is refcount == 1, don't decrease it yet
+        // As if something will increase it we will just wait on the other thread until we reverse this operation.
+        if (last_refcount == 1)
+        {
+            resource_handle->status = ResourceStatus::Available;
+        }
+
+        // Decrease the refcount before doing anything.
+        ice::u32 const last_count = resource_handle->refcount.fetch_sub(1, std::memory_order_relaxed);
+        ICE_ASSERT(last_count > 0, "Trying to release resource that is already in released/unloaded state!");
+
+        if (last_count == 1)
+        {
+            // We can now safely release the current saved memory pointer.
+            _allocator.deallocate(data.location);
+
+            // We don't update the internal state nor the data member, as these will be considered invalid since refcount == 0
+        }
+        // If the initial refcount == 1 we need to revert the status change...
+        else if (last_refcount == 1)
+        {
+            resource_handle->status = last_status;
+        }
+
+        co_return ice::ResourceResult{
+            .resource_status = resource_handle->status,
+            .resource = resource_handle->resource,
+            .data = { .size = resource_handle->data.size },
+        };
+    }
+
+    auto ResourceTrackerImplementation::find_resource_by_urn(
+        ice::URI const& resource_urn,
+        ice::ResourceFlags flags
+    ) const noexcept -> ice::ResourceHandle*
+    {
+        ICE_ASSERT(
+            resource_urn.scheme == ice::stringid_hash(Scheme_URN),
+            "Invalid URI object. Expected resource name got [{}]",
+            resource_urn.scheme
+        );
+
+        ice::ResourceHandle* result = nullptr;
+        ice::u64 const hash_resouce = ice::hash(resource_urn.path);
+
+        // Just grab the first for now
+        auto it = ice::multi_hashmap::find_first(_resources, hash_resouce);
+        if (it != nullptr)
+        {
+            result = it.value();
+        }
+        return result;
+    }
+
+    auto ResourceTrackerImplementation::find_resource_by_uri(
+        ice::URI const& resource_uri,
+        ice::ResourceFlags flags
+    ) const noexcept -> ice::ResourceHandle*
+    {
+        ice::ResourceHandle* handle = nullptr;
+        ice::Resource const* resource = nullptr;
+        ice::ResourceProvider const* provider = nullptr;
+
+        if (find_resource_and_provider(resource_uri, provider, resource) == false)
+        {
+            return nullptr;
+        }
+
+        ice::u64 const hash_resouce = ice::hash(resource->name());
+        auto it = ice::multi_hashmap::find_first(_resources, hash_resouce);
+        while (it != nullptr && handle == nullptr)
+        {
+            if ((*it)->resource == resource)
+            {
+                handle = *it;
+            }
+            else
+            {
+                it = ice::multi_hashmap::find_next(_resources, it);
+            }
+        }
+
+        return handle;
+    }
+
+    bool ResourceTrackerImplementation::find_resource_and_provider(
+        ice::URI const& resource_uri,
+        ice::ResourceProvider const*& provider,
+        ice::Resource const*& resource
+    ) const noexcept
+    {
+        ice::u64 const hash_scheme = ice::hash(resource_uri.scheme);
+
+        auto it = ice::multi_hashmap::find_first(_resource_providers, hash_scheme);
+        while (it != nullptr && provider == nullptr)
+        {
+            if (resource = (*it)->find_resource(resource_uri); resource != nullptr)
+            {
+                provider = *it;
+            }
+            else
+            {
+                it = ice::multi_hashmap::find_next(_resource_providers, it);
+            }
+        }
+
+        return provider != nullptr;
+    }
 
     auto create_resource_tracker(
         ice::Allocator& alloc,
+        ice::TaskScheduler& scheduler,
         ice::ResourceTrackerCreateInfo const& create_info
     ) noexcept -> ice::UniquePtr<ice::ResourceTracker>
     {
-        ICE_ASSERT(
-            create_info.compare_fn != nullptr,
-            "Trying to create resource system without flags compare function!"
-        );
-
-        return ice::make_unique<ice::ResourceTracker_Impl>(alloc, alloc, create_info);
+        return ice::make_unique<ice::ResourceTrackerImplementation>(alloc, alloc, scheduler, create_info);
     }
 
 } // namespace ice

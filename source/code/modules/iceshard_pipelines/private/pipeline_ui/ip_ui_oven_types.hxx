@@ -5,6 +5,7 @@
 #include "ip_ui_oven.hxx"
 #include <ice/math.hxx>
 #include <ice/ui_style.hxx>
+#include <ice/string_types.hxx>
 
 namespace ice
 {

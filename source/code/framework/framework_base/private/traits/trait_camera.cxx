@@ -23,7 +23,6 @@
 #include <ice/math/lookat.hxx>
 #include <ice/math/projection.hxx>
 
-#include <ice/task_thread_pool.hxx>
 #include <ice/assert.hxx>
 
 namespace ice
@@ -165,7 +164,7 @@ namespace ice
 
 
         // Await work to be executed on a worker thread
-        co_await runner.thread_pool();
+        co_await runner.task_scheduler();
 
         ice::u32 cam_idx = 0;
         ice::ecs::query::for_each_entity(

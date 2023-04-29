@@ -9,15 +9,13 @@
 #include <ice/world/world_trait.hxx>
 #include <ice/ecs/ecs_query.hxx>
 
-#include "devui_box2d.hxx"
-#include "box2d.hxx"
-
+#include "trait_chipmunk2d.hxx"
 #include "chipmunk2d.hxx"
 
 namespace ice
 {
 
-    class DevUI_Box2D;
+    class DevUI_Chipmunk2D;
 
     class IceWorldTrait_PhysicsBox2D : public ice::WorldTrait_Physics2D
     {
@@ -61,11 +59,10 @@ namespace ice
         using PhysicsQuery = ice::ecs::QueryDefinition<ice::ecs::EntityHandle, ice::PhysicsBody&, ice::PhysicsVelocity&>;
 
         ice::Engine* _engine = nullptr;
-        b2World* _world = nullptr;
 
         cpSpace* _global_space = nullptr;
 
-        ice::DevUI_Box2D* _devui;
+        ice::DevUI_Chipmunk2D* _devui;
     };
 
 } // namespace ice

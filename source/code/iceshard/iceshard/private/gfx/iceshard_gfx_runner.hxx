@@ -6,9 +6,11 @@
 #include <ice/gfx/gfx_trait.hxx>
 #include <ice/gfx/gfx_context.hxx>
 
-#include <ice/task_thread.hxx>
 #include <ice/world/world.hxx>
 #include <ice/world/world_assembly.hxx>
+#include <ice/task_scheduler.hxx>
+#include <ice/task_queue.hxx>
+#include <ice/task.hxx>
 
 #include <ice/container/hashmap.hxx>
 #include <ice/mem_allocator_proxy.hxx>
@@ -81,7 +83,10 @@ namespace ice::gfx
 
     private:
         ice::ProxyAllocator _allocator;
-        ice::UniquePtr<ice::TaskThread_v2> _thread;
+
+        ice::TaskQueue _task_queue;
+        ice::TaskScheduler _task_scheduler;
+        ice::UniquePtr<ice::TaskThread> _thread;
         ice::UniquePtr<ice::gfx::IceGfxDevice> _device;
 
         ice::render::RenderFence* _fences[4];

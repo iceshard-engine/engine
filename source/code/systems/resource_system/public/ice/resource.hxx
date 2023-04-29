@@ -35,4 +35,4 @@ namespace ice
         ) const noexcept -> ice::Task<ice::Memory> = 0;
     };
 
-} // ice::res_v2
+} // ice

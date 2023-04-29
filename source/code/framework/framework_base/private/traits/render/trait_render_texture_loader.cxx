@@ -4,7 +4,6 @@
 #include "trait_render_texture_loader.hxx"
 
 #include <ice/engine_runner.hxx>
-#include <ice/task_thread_pool.hxx>
 #include <ice/world/world_portal.hxx>
 #include <ice/world/world_trait_archive.hxx>
 
@@ -205,7 +204,7 @@ namespace ice
 
         device.destroy_buffer(data_buffer);
 
-        co_await runner.thread_pool();
+        co_await runner.task_scheduler();
 
         ice::AssetHandle const* asset_handle = request->resolve(AssetRequest::Result::Success, image_handle_data);
 

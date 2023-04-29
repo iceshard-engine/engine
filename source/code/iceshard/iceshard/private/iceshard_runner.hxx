@@ -5,9 +5,6 @@
 #include <ice/engine_runner.hxx>
 #include <ice/engine_devui.hxx>
 
-#include <ice/task.hxx>
-#include <ice/task_thread.hxx>
-#include <ice/task_thread_pool.hxx>
 #include <ice/sync_manual_events.hxx>
 
 #include <ice/input/input_types.hxx>
@@ -45,6 +42,7 @@ namespace ice
             ice::Allocator& alloc,
             ice::IceshardEngine& engine,
             ice::IceshardWorldManager& world_manager,
+            ice::TaskScheduler& task_scheduler,
             ice::UniquePtr<ice::input::InputTracker> input_tracker,
             ice::UniquePtr<ice::gfx::GfxRunner> gfx_runner
         ) noexcept;
@@ -59,7 +57,7 @@ namespace ice
             ice::input::DeviceEventQueue const& device_queue
         ) noexcept override;
 
-        auto thread_pool() noexcept -> ice::TaskThreadPool& override;
+        auto task_scheduler() noexcept -> ice::TaskScheduler& override;
 
         auto asset_storage() noexcept -> ice::AssetStorage& override;
 
@@ -107,7 +105,7 @@ namespace ice
         ice::IceshardWorld* _gfx_world;
         ice::UniquePtr<ice::gfx::GfxRunner> _gfx_runner;
 
-        ice::UniquePtr<ice::TaskThreadPool> _thread_pool;
+        ice::TaskScheduler& _task_scheduler;
 
         ice::ProxyAllocator _frame_allocator;
         ice::RingAllocator _frame_data_allocator[2];

@@ -3,12 +3,11 @@
 
 #pragma once
 #include <ice/stringid.hxx>
-#include <ice/task.hxx>
-#include <ice/task_operations.hxx>
 #include <ice/render/render_command_buffer.hxx>
 #include <ice/gfx/gfx_pass.hxx>
 #include <ice/gfx/gfx_stage.hxx>
 #include <ice/gfx/gfx_task_operation.hxx>
+#include <ice/task.hxx>
 
 namespace ice::gfx
 {

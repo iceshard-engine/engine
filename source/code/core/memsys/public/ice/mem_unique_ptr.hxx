@@ -158,8 +158,15 @@ namespace ice
         // If we don't have a 'special' case
         if (_alloc != nullptr)
         {
-            ICE_ASSERT_CORE(_deleter == nullptr); // TODO: Implement various deleters
-            _alloc->destroy(_ptr);
+            if constexpr (ice::is_type_complete<T>)
+            {
+                ICE_ASSERT_CORE(_deleter == nullptr); // TODO: Implement various deleters
+                _alloc->destroy(_ptr);
+            }
+            else
+            {
+                ICE_ASSERT_CORE(_deleter != nullptr); // MEMORY LEAK INBOUND! Cannot delete object of incomplete type!
+            }
         }
         else
         {

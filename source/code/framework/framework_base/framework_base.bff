@@ -19,7 +19,6 @@
         ]
 
         .Modules = {
-            'box2d'
             'chipmunk2d'
             'rapidxml'
         }

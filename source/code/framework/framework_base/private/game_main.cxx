@@ -33,7 +33,11 @@
 
 #include <ice/mem_allocator_proxy.hxx>
 
-auto game_main(ice::Allocator& alloc, ice::ResourceTracker& resources) -> ice::i32
+auto game_main(
+    ice::Allocator& alloc,
+    ice::TaskScheduler& scheduler,
+    ice::ResourceTracker& resources
+) -> ice::i32
 {
     using ice::operator""_uri;
     using ice::operator""_sid;
@@ -75,7 +79,12 @@ auto game_main(ice::Allocator& alloc, ice::ResourceTracker& resources) -> ice::i
         ice::UniquePtr<ice::AssetTypeArchive> asset_types = ice::create_asset_type_archive(engine_alloc);
         ice::load_asset_type_definitions(asset_alloc, *module_register, *asset_types);
 
-        ice::UniquePtr<ice::AssetStorage> asset_storage = ice::create_asset_storage(asset_alloc, resources, ice::move(asset_types));
+        ice::AssetStorageCreateInfo const asset_storage_info{
+            .resource_tracker = resources,
+            .task_scheduler = scheduler,
+            .task_flags = ice::TaskFlags{}
+        };
+        ice::UniquePtr<ice::AssetStorage> asset_storage = ice::create_asset_storage(asset_alloc, ice::move(asset_types), asset_storage_info);
 
         ice::UniquePtr<ice::devui::DevUISystem> engine_devui{ };
         if (ice::build::is_debug || ice::build::is_develop)
@@ -85,6 +94,7 @@ auto game_main(ice::Allocator& alloc, ice::ResourceTracker& resources) -> ice::i
         }
 
         ice::EngineCreateInfo const create_info{
+            .task_scheduler = scheduler,
             .asset_storage = *asset_storage,
             .trait_archive = *trait_archive,
             .devui = engine_devui.get()

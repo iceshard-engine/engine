@@ -27,7 +27,7 @@ namespace ice::ecs
 
     struct ScheduledQueryData
     {
-        std::coroutine_handle<> coroutine;
+        ice::coroutine_handle<> coroutine;
         ice::ecs::ScheduledQueryData* next;
         ice::Span<ice::ecs::detail::QueryTypeInfo const> requirements;
     };
@@ -67,7 +67,7 @@ namespace ice::ecs
     }
 
     template<typename Query>
-    inline void ScheduledQueryOperation<Query>::await_suspend(std::coroutine_handle<> coro) noexcept
+    inline void ScheduledQueryOperation<Query>::await_suspend(ice::coroutine_handle<> coro) noexcept
     {
         _data.coroutine = coro;
         // TODO: _scheduler.schedule_query_internal(_data);
