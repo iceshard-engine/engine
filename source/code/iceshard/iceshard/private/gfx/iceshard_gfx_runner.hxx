@@ -66,9 +66,9 @@ namespace ice::gfx
         auto task_cleanup_gfx_traits() noexcept -> ice::Task<>;
 
         // GitHub Issue: #108
-        ISATTR_NOINLINE void cleanup_gfx_contexts() noexcept;
-        ISATTR_NOINLINE void setup_gfx_traits() noexcept;
-        ISATTR_NOINLINE void cleanup_gfx_traits() noexcept;
+        void cleanup_gfx_contexts() noexcept;
+        void setup_gfx_traits() noexcept;
+        void cleanup_gfx_traits() noexcept;
 
     private:
         auto task_frame(

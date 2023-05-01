@@ -19,7 +19,7 @@
 #include <ice/gfx/gfx_frame.hxx>
 #include <ice/gfx/gfx_pass.hxx>
 #include <ice/task.hxx>
-#include <ice/task_sync_wait.hxx>
+#include <ice/task_utils.hxx>
 
 #include <ice/asset_storage.hxx>
 #include <ice/profiler.hxx>
@@ -206,8 +206,8 @@ namespace ice
     {
         ice::AssetStorage& asset_system = engine.asset_storage();
 
-        _shader_data[0] = ice::sync_wait(ice::detail::load_postprocess_shader(asset_system, "shaders/debug/pp-vert"));
-        _shader_data[1] = ice::sync_wait(ice::detail::load_postprocess_shader(asset_system, "shaders/debug/pp-frag"));
+        _shader_data[0] = ice::wait_for(ice::detail::load_postprocess_shader(asset_system, "shaders/debug/pp-vert"));
+        _shader_data[1] = ice::wait_for(ice::detail::load_postprocess_shader(asset_system, "shaders/debug/pp-frag"));
     }
 
     void IceWorldTrait_RenderPostProcess::record_commands(

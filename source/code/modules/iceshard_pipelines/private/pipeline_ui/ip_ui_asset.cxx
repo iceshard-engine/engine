@@ -13,7 +13,7 @@
 #include <ice/ui_style.hxx>
 
 #include <ice/shard.hxx>
-#include <ice/task_sync_wait.hxx>
+#include <ice/task_utils.hxx>
 #include <ice/asset_storage.hxx>
 #include <ice/assert.hxx>
 #include <ice/log.hxx>

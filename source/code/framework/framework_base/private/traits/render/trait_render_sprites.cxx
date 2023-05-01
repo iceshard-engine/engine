@@ -29,8 +29,8 @@
 #include <ice/resource_meta.hxx>
 #include <ice/asset_storage.hxx>
 #include <ice/asset.hxx>
-#include <ice/task_sync_wait.hxx>
 #include <ice/task.hxx>
+#include <ice/task_utils.hxx>
 
 #include <ice/profiler.hxx>
 #include <ice/hash.hxx>
@@ -289,8 +289,8 @@ namespace ice
     {
         _asset_system = ice::addressof(engine.asset_storage());
 
-        _shader_data[0] = ice::sync_wait(ice::detail::load_sprites_shader(*_asset_system, "shaders/game2d/sprite-vtx"));
-        _shader_data[1] = ice::sync_wait(ice::detail::load_sprites_shader(*_asset_system, "shaders/game2d/sprite-pix"));
+        _shader_data[0] = ice::wait_for(ice::detail::load_sprites_shader(*_asset_system, "shaders/game2d/sprite-vtx"));
+        _shader_data[1] = ice::wait_for(ice::detail::load_sprites_shader(*_asset_system, "shaders/game2d/sprite-pix"));
 
         portal.storage().create_named_object<detail::SpriteQuery::Query>(
             detail::SpriteQueryId,

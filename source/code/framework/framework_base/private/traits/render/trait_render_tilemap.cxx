@@ -10,7 +10,7 @@
 #include <ice/engine_frame.hxx>
 #include <ice/engine_runner.hxx>
 #include <ice/task.hxx>
-#include <ice/task_sync_wait.hxx>
+#include <ice/task_utils.hxx>
 #include <ice/world/world_portal.hxx>
 #include <ice/world/world_trait_archive.hxx>
 
@@ -236,8 +236,8 @@ namespace ice
     ) noexcept
     {
         _asset_system = ice::addressof(engine.asset_storage());
-        _shader_data[0] = ice::sync_wait(detail::load_tilemap_shader(*_asset_system, Tilemap_VtxShader));
-        _shader_data[1] = ice::sync_wait(detail::load_tilemap_shader(*_asset_system, Tilemap_PixShader));
+        _shader_data[0] = ice::wait_for(detail::load_tilemap_shader(*_asset_system, Tilemap_VtxShader));
+        _shader_data[1] = ice::wait_for(detail::load_tilemap_shader(*_asset_system, Tilemap_PixShader));
     }
 
     void IceWorldTrait_RenderTilemap::on_deactivate(

@@ -3,8 +3,8 @@
 
 #include "trait_render_glyphs.hxx"
 #include <ice/asset_storage.hxx>
-#include <ice/task_sync_wait.hxx>
 #include <ice/task.hxx>
+#include <ice/task_utils.hxx>
 #include <ice/font_utils.hxx>
 
 #include <ice/shard.hxx>

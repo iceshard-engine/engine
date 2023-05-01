@@ -33,7 +33,7 @@
 #include <ice/input/input_keyboard.hxx>
 #include <ice/input/input_tracker.hxx>
 
-#include <ice/task_sync_wait.hxx>
+#include <ice/task_utils.hxx>
 #include <ice/module_register.hxx>
 #include <ice/resource_tracker.hxx>
 #include <ice/resource_provider.hxx>
@@ -128,7 +128,7 @@ void MyGame::on_load_modules(ice::GameServices& services) noexcept
     //{
     //    [[maybe_unused]]
     //    ice::ResourceHandle* tsa = res.find_resource("file:/data/cotm/tileset_a.png"_uri);
-    //    ice::sync_wait(res.set_resource("urn:cotm/tileset_ab.png"_uri, tsa));
+    //    ice::wait_for(res.set_resource("urn:cotm/tileset_ab.png"_uri, tsa));
     //}
 
     ice::ResourceHandle* const pipelines_module = res.find_resource("urn:iceshard_pipelines.dll"_uri);

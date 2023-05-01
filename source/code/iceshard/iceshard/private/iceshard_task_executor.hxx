@@ -36,8 +36,10 @@ namespace ice
         ice::ucount _task_count;
         ice::Array<ice::Task<>, ice::ContainerLogic::Complex> _tasks;
 
-        ice::Memory _reset_events_memory;
-        ice::ManualResetEvent* _reset_events;
+        //ice::Memory _reset_events_memory;
+        ice::ManualResetSemaphore _sync_sem;
+
+        //ice::ManualResetEvent* _reset_events;
     };
 
 }

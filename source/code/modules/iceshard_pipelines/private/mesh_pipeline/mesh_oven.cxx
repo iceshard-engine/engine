@@ -7,7 +7,7 @@
 //#include <ice/resource.hxx>
 //#include <ice/resource_tracker.hxx>
 //#include <ice/resource_meta.hxx>
-//#include <ice/task_sync_wait.hxx>
+//#include <ice/task_wait_for.hxx>
 //#include <ice/memory.hxx>
 //#include <ice/data.hxx>
 //#include <ice/assert.hxx>
@@ -144,7 +144,7 @@
 //        Assimp::Importer importer;
 //        //importer.SetPropertyFloat(AI_CONFIG_PP_GSN_MAX_SMOOTHING_ANGLE, 80);
 //
-//        ice::ResourceResult const load_result = ice::sync_wait(resource_tracker.load_resource(&resource));
+//        ice::ResourceResult const load_result = ice::wait_for(resource_tracker.load_resource(&resource));
 //        if (load_result.resource_status != ice::ResourceStatus::Loaded)
 //        {
 //            return BakeResult::Failure_InvalidData;

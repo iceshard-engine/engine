@@ -9,7 +9,7 @@
 #include <ice/resource.hxx>
 #include <ice/resource_meta.hxx>
 #include <ice/resource_tracker.hxx>
-#include <ice/task_sync_wait.hxx>
+#include <ice/task_utils.hxx>
 
 #include <ice/asset_storage.hxx>
 

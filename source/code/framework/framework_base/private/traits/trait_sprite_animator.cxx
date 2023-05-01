@@ -18,7 +18,7 @@
 #include <ice/string/static_string.hxx>
 #include <ice/data_storage.hxx>
 #include <ice/resource_meta.hxx>
-#include <ice/task_sync_wait.hxx>
+#include <ice/task_utils.hxx>
 #include <ice/asset_storage.hxx>
 #include <ice/asset.hxx>
 
@@ -35,7 +35,7 @@ namespace ice
 
             inline ~ReleaseOnExit() noexcept
             {
-                ice::sync_wait(storage.release(asset));
+                ice::wait_for(storage.release(asset));
             }
         };
 
@@ -94,7 +94,7 @@ namespace ice
             [&](ice::Animation const& anim, ice::Sprite const& sprite) noexcept
             {
                 ice::Asset sprite_asset = _assets->bind(ice::render::AssetType_Texture2D, sprite.material, AssetState::Baked);
-                sprite_asset.data = ice::sync_wait(_assets->request(sprite_asset, AssetState::Baked));
+                sprite_asset.data = ice::wait_for(_assets->request(sprite_asset, AssetState::Baked));
                 if (!ice::asset_check(sprite_asset, AssetState::Baked))
                 {
                     return;

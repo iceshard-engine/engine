@@ -58,10 +58,7 @@ int main(int, char**)
 
         ice::TaskQueue thread_pool_queue;
         ice::TaskScheduler thread_pool_scheduler{ thread_pool_queue };
-        ice::TaskThreadPoolInfo_v3 const thread_pool_create{
-            .thread_count = 4,
-            .allow_attaching = true,
-        };
+        ice::TaskThreadPoolInfo_v3 const thread_pool_create{ .thread_count = 4 };
         ice::UniquePtr<ice::TaskThreadPool> thread_pool = ice::create_thread_pool(
             host_alloc,
             thread_pool_queue,

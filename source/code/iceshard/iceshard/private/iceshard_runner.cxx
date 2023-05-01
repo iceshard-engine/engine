@@ -15,7 +15,7 @@
 #include <ice/gfx/gfx_trait.hxx>
 #include <ice/gfx/gfx_queue.hxx>
 
-#include <ice/task_sync_wait.hxx>
+#include <ice/task_utils.hxx>
 #include <ice/input/input_tracker.hxx>
 #include <ice/assert.hxx>
 
@@ -305,7 +305,7 @@ namespace ice
         }
 
         ice::ManualResetEvent tasks_finished_event;
-        ice::sync_manual_wait(excute_frame_task(), tasks_finished_event);
+        ice::manual_wait_for(excute_frame_task(), tasks_finished_event);
 
         while (tasks_finished_event.is_set() == false)
         {
@@ -343,7 +343,7 @@ namespace ice
 
         ice::shards::push_back(_current_frame->shards(), shards._data);
 
-        ice::sync_manual_wait(logic_frame_task(), _mre_frame_logic);
+        ice::manual_wait_for(logic_frame_task(), _mre_frame_logic);
         _mre_frame_logic.wait();
 
         // Wait for the graphics runner to set this event, we know that it finished it's work.

@@ -6,9 +6,9 @@
 #include <ice/uri.hxx>
 #include <ice/resource.hxx>
 #include <ice/resource_meta.hxx>
-#include <ice/task_sync_wait.hxx>
 #include <ice/font.hxx>
 #include <ice/font_utils.hxx>
+#include <ice/task_utils.hxx>
 
 ISC_WARNING_PUSH
 ISCW_DECLARATION_HIDES_CLASS_MEMBER(ISCW_OP_DISABLE)

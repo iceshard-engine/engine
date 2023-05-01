@@ -12,17 +12,6 @@ namespace ice
         //! \brief The thread count of this thread pool.
         ice::ucount thread_count = 0;
 
-        //! \brief If not set, creates a single queue for all task types.
-        //ice::Span<ice::TaskFlags> queues = { };
-
-        //! \brief The queue that should be returned if flags didn't match any other queues.
-        //!
-        //! \note If '-1' no queue will be returned.
-        //ice::icount missing_flags_queue = -1;
-
-        //! \brief Does the thread pool allow to attach additional threads.
-        bool allow_attaching = true;
-
         //! \brief May be ignored in some builds.
         ice::String debug_name_format = "ice.thread {}";
     };
@@ -68,13 +57,6 @@ namespace ice
         virtual auto detach_thread(
             ice::StringID name
         ) noexcept -> ice::UniquePtr<ice::TaskThread> = 0;
-
-        ////! \brief Returns the default queue pusher for the given task flags.
-        ////!
-        ////! \note If no queues exists that can accept such flags it will return a nullptr.
-        //virtual auto queue_pusher(
-        //    ice::TaskFlags flags
-        //) const noexcept -> ice::TaskQueuePusher* = 0;
     };
 
     auto create_thread_pool(

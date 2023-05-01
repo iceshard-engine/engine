@@ -4,9 +4,9 @@
 #include "iceshard_frame.hxx"
 #include "iceshard_task_executor.hxx"
 #include <ice/engine_shards.hxx>
-#include <ice/task_sync_wait.hxx>
 #include <ice/sync_manual_events.hxx>
 #include <ice/container/hashmap.hxx>
+#include <ice/task_utils.hxx>
 #include <ice/assert.hxx>
 
 namespace ice

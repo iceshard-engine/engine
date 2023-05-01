@@ -24,7 +24,7 @@
 #include <ice/input/input_event.hxx>
 
 #include <ice/task.hxx>
-#include <ice/task_sync_wait.hxx>
+#include <ice/task_utils.hxx>
 #include <ice/profiler.hxx>
 
 namespace ice::devui
@@ -523,8 +523,8 @@ namespace ice::devui
         io.KeyMap[ImGuiKey_Y] = (uint32_t)ice::input::KeyboardKey::KeyY;
         io.KeyMap[ImGuiKey_Z] = (uint32_t)ice::input::KeyboardKey::KeyZ;
 
-        _shader_data[0] = ice::sync_wait(detail::load_imgui_shader(engine.asset_storage(), "shaders/debug/imgui-vert"));
-        _shader_data[1] = ice::sync_wait(detail::load_imgui_shader(engine.asset_storage(), "shaders/debug/imgui-frag"));
+        _shader_data[0] = ice::wait_for(detail::load_imgui_shader(engine.asset_storage(), "shaders/debug/imgui-vert"));
+        _shader_data[1] = ice::wait_for(detail::load_imgui_shader(engine.asset_storage(), "shaders/debug/imgui-frag"));
     }
 
     void ImGuiTrait::on_update(

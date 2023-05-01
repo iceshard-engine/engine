@@ -9,7 +9,7 @@
 
 #include <ice/task_scheduler.hxx>
 #include <ice/task_thread.hxx>
-#include <ice/task_sync_wait.hxx>
+#include <ice/task_utils.hxx>
 
 #include <ice/render/render_fence.hxx>
 #include <ice/mem_allocator_stack.hxx>
@@ -138,7 +138,7 @@ namespace ice::gfx
     {
         _mre_selected->wait();
         _mre_selected->reset();
-        ice::sync_manual_wait(task_frame(engine_frame, ice::move(_current_frame)), *_mre_selected);
+        ice::manual_wait_for(task_frame(engine_frame, ice::move(_current_frame)), *_mre_selected);
 
         _frame_allocator[_next_free_allocator].reset();
 
@@ -160,11 +160,11 @@ namespace ice::gfx
     void IceGfxRunner::cleanup_traits() noexcept
     {
         ice::ManualResetEvent _setup_event{ };
-        ice::sync_manual_wait(task_cleanup_gfx_contexts(), _setup_event);
+        ice::manual_wait_for(task_cleanup_gfx_contexts(), _setup_event);
         _setup_event.wait();
 
         _setup_event.reset();
-        ice::sync_manual_wait(task_cleanup_gfx_traits(), _setup_event);
+        ice::manual_wait_for(task_cleanup_gfx_traits(), _setup_event);
         _setup_event.wait();
     }
 

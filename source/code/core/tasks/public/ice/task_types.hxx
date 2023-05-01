@@ -17,6 +17,9 @@ namespace ice
     struct TaskAwaitableParams;
     struct TaskAwaitableBase;
 
+    class ManualResetEvent;
+    class ManualResetSemaphore;
+
     // STD aliases
     template<typename Type = void>
     using coroutine_handle = std::coroutine_handle<Type>;

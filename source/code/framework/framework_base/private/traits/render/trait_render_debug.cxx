@@ -6,7 +6,7 @@
 
 #include <ice/game_render_traits.hxx>
 #include <ice/task.hxx>
-#include <ice/task_sync_wait.hxx>
+#include <ice/task_utils.hxx>
 #include <ice/engine.hxx>
 #include <ice/world/world_trait_archive.hxx>
 
@@ -55,8 +55,8 @@ namespace ice
     {
         ice::AssetStorage& asset_system = engine.asset_storage();
 
-        _shader_data[0] = ice::sync_wait(ice::detail::load_debug_shader(asset_system, "shaders/debug/debug-vert"));
-        _shader_data[1] = ice::sync_wait(ice::detail::load_debug_shader(asset_system, "shaders/debug/debug-frag"));
+        _shader_data[0] = ice::wait_for(ice::detail::load_debug_shader(asset_system, "shaders/debug/debug-vert"));
+        _shader_data[1] = ice::wait_for(ice::detail::load_debug_shader(asset_system, "shaders/debug/debug-frag"));
     }
 
     void IceWorldTrait_RenderDebug::gfx_setup(
