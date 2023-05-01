@@ -6,12 +6,6 @@
 namespace ice
 {
 
-    template<typename Value>
-    auto schedule_on(ice::Task<Value>&& task, ice::TaskScheduler& scheduler) noexcept -> ice::Task<Value>;
-
-    template<typename Value>
-    auto resume_on(ice::Task<Value>&& task, ice::TaskScheduler& scheduler) noexcept -> ice::Task<Value>;
-
     class TaskScheduler
     {
     public:
@@ -123,21 +117,6 @@ namespace ice
     inline auto TaskScheduler::operator co_await() noexcept
     {
         return schedule();
-    }
-
-    template<typename Value>
-    auto schedule_on(ice::Task<Value>&& task, ice::TaskScheduler& scheduler) noexcept -> ice::Task<Value>
-    {
-        co_await scheduler;
-        co_return co_await std::move(task);
-    }
-
-    template<typename Value>
-    auto resume_on(ice::Task<Value>&& task, ice::TaskScheduler& scheduler) noexcept -> ice::Task<Value>
-    {
-        Value value = co_await std::move(task);
-        co_await scheduler;
-        co_return std::move(value);
     }
 
 } // namespace ice

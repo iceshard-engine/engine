@@ -1,10 +1,11 @@
-#include <ice/task_utils.hxx>
 #include <ice/task.hxx>
+#include <ice/task_utils.hxx>
+#include <ice/task_scheduler.hxx>
 #include <ice/sync_manual_events.hxx>
-#include "internal_task.hxx"
-
 #include <ice/mem_allocator_host.hxx>
 #include <ice/container/array.hxx>
+
+#include "internal_task.hxx"
 
 namespace ice
 {
@@ -39,6 +40,18 @@ namespace ice
             manual_reset_sem.set();
         }
 
+        auto detached_task_schedule(ice::Task<void> scheduled_task, ice::TaskScheduler& scheduler) noexcept -> DetachedTask
+        {
+            co_await scheduler;
+            co_await scheduled_task;
+        }
+
+        auto detached_task_resume(ice::Task<void> scheduled_task, ice::TaskScheduler& scheduler) noexcept -> DetachedTask
+        {
+            co_await scheduled_task;
+            co_await scheduler;
+        }
+
     } // namespace detail
 
     void wait_for(ice::Task<void> task) noexcept
@@ -65,6 +78,32 @@ namespace ice
         for (ice::Task<void>& task : tasks)
         {
             detail::detached_task(ice::move(task), manual_sem);
+        }
+    }
+
+    void schedule_task_on(ice::Task<void> task, ice::TaskScheduler& scheduler) noexcept
+    {
+        detail::detached_task_schedule(ice::move(task), scheduler);
+    }
+
+    void schedule_tasks_on(ice::Span<ice::Task<void>> tasks, ice::TaskScheduler& scheduler) noexcept
+    {
+        for (ice::Task<void>& task : tasks)
+        {
+            schedule_on(ice::move(task), scheduler);
+        }
+    }
+
+    void resume_task_on(ice::Task<void> task, ice::TaskScheduler& scheduler) noexcept
+    {
+        detail::detached_task_resume(ice::move(task), scheduler);
+    }
+
+    void resume_tasks_on(ice::Span<ice::Task<void>> tasks, ice::TaskScheduler& scheduler) noexcept
+    {
+        for (ice::Task<void>& task : tasks)
+        {
+            resume_on(ice::move(task), scheduler);
         }
     }
 
