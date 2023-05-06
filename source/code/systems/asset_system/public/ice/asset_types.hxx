@@ -10,5 +10,6 @@ namespace ice
     class AssetShelve;
     class AssetRequest;
     class AssetTypeArchive;
+    class AssetStorage;
 
 } // namespace ice

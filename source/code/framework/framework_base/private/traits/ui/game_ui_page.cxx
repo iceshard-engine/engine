@@ -139,12 +139,13 @@ namespace ice
     GameUI_Page::GameUI_Page(
         ice::Allocator& alloc,
         ice::Asset page_asset,
+        ice::Data page_data,
         ice::String page_asset_name
     ) noexcept
         : _allocator{ alloc }
-        , _asset{ page_asset }
+        , _asset{ ice::move(page_asset) }
         , _asset_name{ page_asset_name }
-        , _page{ reinterpret_cast<ice::ui::PageInfo const*>(_asset.data.location) }
+        , _page{ reinterpret_cast<ice::ui::PageInfo const*>(page_data.location) }
         , _page_memory{ }
         , _states{ }
         , _elements{ }

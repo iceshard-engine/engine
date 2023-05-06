@@ -36,7 +36,7 @@ namespace ice
         auto resolve(
             ice::AssetRequest::Result result,
             ice::Memory memory
-        ) noexcept -> ice::AssetHandle const* override;
+        ) noexcept -> ice::Asset override;
 
         bool await_ready() const noexcept { return false; }
         void await_suspend(std::coroutine_handle<void> coro) noexcept;

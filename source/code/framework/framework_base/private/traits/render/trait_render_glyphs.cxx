@@ -40,8 +40,8 @@ namespace ice
 
         auto load_font_shader(ice::AssetStorage& assets, ice::Data& data, ice::String name) noexcept -> ice::Task<>
         {
-            ice::Asset const asset = assets.bind(ice::render::AssetType_Shader, name, ice::AssetState::Baked);
-            if (asset_check(asset, AssetState::Baked) == false)
+            ice::Asset asset = assets.bind(ice::render::AssetType_Shader, name);
+            if (asset.available(AssetState::Baked) == false)
             {
                 data = co_await assets.request(asset, AssetState::Baked);
             }
@@ -259,6 +259,8 @@ namespace ice
     ) noexcept
     {
         ice::AssetStorage& storage = runner.asset_storage();
+
+
 
         runner.execute_task(
             ice::detail::load_font_shader(storage, _shader_data[0], "shaders/debug/font-vert"),
@@ -532,15 +534,15 @@ namespace ice
 
         co_await runner.task_scheduler();
 
-        ice::Asset asset = runner.asset_storage().bind(ice::AssetType_Font, font_name, ice::AssetState::Loaded);
-        asset.data = co_await runner.asset_storage().request(asset, ice::AssetState::Loaded);
+        ice::Asset asset = runner.asset_storage().bind(ice::AssetType_Font, font_name);
+        ice::Data asset_data = co_await asset[AssetState::Loaded];
 
         // Early return if we failed.
         //if (ice::asset_check(asset, AssetState::Loaded) == false)
         //{
         //    co_return;
         //}
-        ice::Font const* font = reinterpret_cast<ice::Font const*>(asset.data.location);
+        ice::Font const* font = reinterpret_cast<ice::Font const*>(asset_data.location);
 
         co_await runner.schedule_current_frame();
 
@@ -560,7 +562,7 @@ namespace ice
             _fonts,
             font_hash,
             FontEntry{
-                .asset = asset.handle,
+                .asset = ice::move(asset),
                 .image = image,
                 .resource_set = resource_set,
                 .font = font

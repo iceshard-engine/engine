@@ -60,12 +60,12 @@ namespace ice
 
         struct Entry
         {
-            ice::AssetHandle const* asset_handle;
+            ice::Asset asset;
             ice::u64 image_hash;
             ice::u32 image_index;
         };
 
-        ice::HashMap<Entry> _tracked_images;
+        ice::HashMap<Entry, ContainerLogic::Complex> _tracked_images;
     };
 
 

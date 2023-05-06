@@ -37,6 +37,7 @@ namespace ice
         std::atomic<ice::u8> load_awaiting;
         std::atomic<ice::u8> runtime_awaiting;
 
+        ice::AssetStorage* storage;
         ice::AssetShelve* shelve;
         ice::AssetState resource_state;
         ice::AssetState current_state;

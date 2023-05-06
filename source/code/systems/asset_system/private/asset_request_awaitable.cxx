@@ -83,9 +83,9 @@ namespace ice
     auto AssetRequestAwaitable::resolve(
         ice::AssetRequest::Result result,
         ice::Memory memory
-    ) noexcept -> ice::AssetHandle const*
+    ) noexcept -> ice::Asset
     {
-        ice::AssetHandle const* asset_handle = nullptr;
+        ice::Asset asset_handle{ };
 
         if (result != AssetRequest::Result::Success)
         {
@@ -95,7 +95,7 @@ namespace ice
         else
         {
             _result_data = memory;
-            asset_handle = _asset_entry;
+            asset_handle._handle = _asset_entry;
         }
 
         // After the coroutine finishes the request awaitable might be already dead.

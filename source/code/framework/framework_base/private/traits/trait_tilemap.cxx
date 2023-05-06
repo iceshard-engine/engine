@@ -87,13 +87,10 @@ namespace ice
         ice::EngineRunner& runner
     ) noexcept -> ice::Task<>
     {
-        ice::Asset result = runner.asset_storage().bind(ice::AssetType_TileMap, tilemap_name, AssetState::Loaded);
-        result.data = co_await runner.asset_storage().request(result, AssetState::Loaded);
-        //if (asset_check(result, AssetState::Loaded) == false)
-        if (result.data.location == nullptr)
+        ice::Asset result = runner.asset_storage().bind(ice::AssetType_TileMap, tilemap_name);
+        ice::Data map_data = co_await result[AssetState::Loaded];
+        if (map_data.location == nullptr)
         {
-            //result.data = co_await runner.asset_storage().request(result, AssetState::Loaded);
-
             ICE_LOG(
                 ice::LogSeverity::Error, ice::LogTag::Game,
                 "Failed to load tilemap asset!"
@@ -101,7 +98,7 @@ namespace ice
             co_return;
         }
 
-        ice::TileMap const* tilemap_ptr = reinterpret_cast<ice::TileMap const*>(result.data.location);
+        ice::TileMap const* tilemap_ptr = reinterpret_cast<ice::TileMap const*>(map_data.location);
         ice::TileMapInstance tilemap_info{ .tilemap = tilemap_ptr };
         tilemap_info.physics_ids = _allocator.allocate<ice::PhysicsID>(tilemap_ptr->map_collision_count + 1);
 

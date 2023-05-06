@@ -80,7 +80,7 @@ namespace ice
 
         for (Entry const& entry : _tracked_images)
         {
-            if (ice::asset_state(entry.asset_handle) == AssetState::Unknown)
+            if (!entry.asset.valid())
             {
                 portal.execute(
                     unload_image(
@@ -206,7 +206,7 @@ namespace ice
 
         co_await runner.task_scheduler();
 
-        ice::AssetHandle const* asset_handle = request->resolve(AssetRequest::Result::Success, image_handle_data);
+        ice::Asset asset_handle = request->resolve(AssetRequest::Result::Success, image_handle_data);
 
         co_await runner.schedule_next_frame();
 
@@ -218,7 +218,7 @@ namespace ice
             "Hash map already contains entry for the given image!"
         );
 
-        ice::hashmap::set(_tracked_images, image_hash, Entry{ asset_handle, image_hash, idx });
+        ice::hashmap::set(_tracked_images, image_hash, Entry{ ice::move(asset_handle), image_hash, idx });
         co_return;
     }
 

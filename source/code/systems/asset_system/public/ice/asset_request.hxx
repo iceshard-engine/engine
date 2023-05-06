@@ -36,7 +36,7 @@ namespace ice
         virtual auto resolve(
             ice::AssetRequest::Result result,
             ice::Memory memory
-        ) noexcept -> ice::AssetHandle const* = 0;
+        ) noexcept -> ice::Asset = 0;
     };
 
 } // namespace ice

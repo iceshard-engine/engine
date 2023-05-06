@@ -46,12 +46,8 @@ namespace ice
 
         auto load_sprites_shader(ice::AssetStorage& assets, ice::String name) noexcept -> ice::Task<ice::Data>
         {
-            ice::Asset const asset = assets.bind(ice::render::AssetType_Shader, name, AssetState::Baked);
-            if (asset_check(asset, AssetState::Baked))
-            {
-                co_return asset.data;
-            }
-            co_return co_await assets.request(asset, AssetState::Baked);
+            ice::Asset asset = assets.bind(ice::render::AssetType_Shader, name);
+            co_return co_await asset[AssetState::Baked];
         }
 
         struct SpriteInstanceInfo
@@ -574,13 +570,12 @@ namespace ice
         // Set a dummy value so we can check for it and skip loading the same asset more than once.
         ice::hashmap::set(_sprite_materials, ice::hash(ice::stringid(material_name)), { });
 
-        Asset image_data = runner.asset_storage().bind(ice::render::AssetType_Texture2D, material_name, AssetState::Loaded);
-        image_data.data = co_await runner.asset_storage().request(image_data, AssetState::Loaded);
+        Asset image_asset = runner.asset_storage().bind(ice::render::AssetType_Texture2D, material_name);
+        Data image_data = co_await image_asset[AssetState::Loaded];
         //ICE_ASSERT(asset_check(image_data, AssetState::Loaded), "Image not available!");
 
-        ice::Metadata const& metadata = ice::asset_metadata(image_data);
-
-        ImageInfo const* image_info = reinterpret_cast<ImageInfo const*>(image_data.data.location);
+        ice::Metadata const& metadata = image_asset.metadata();
+        ImageInfo const* image_info = reinterpret_cast<ImageInfo const*>(image_data.location);
 
         ice::i32 tile_width;
         ice::i32 tile_height;
@@ -599,9 +594,8 @@ namespace ice
             co_return;
         }
 
-        image_data.data = co_await runner.asset_storage().request(image_data, AssetState::Runtime);
-        //ICE_ASSERT(asset_check(image_data, AssetState::Runtime), "Image not available!");
-        ICE_ASSERT(image_data.data.location != nullptr, "Image not available!");
+        image_data = co_await image_asset[AssetState::Runtime];
+        ICE_ASSERT(image_data.location != nullptr, "Image not available!");
 
         ice::u64 const tile_mesh_id = (static_cast<ice::u64>(tile_width) << 32) | tile_height;
         bool const has_vertex_offsets = ice::hashmap::has(_vertex_offsets, tile_mesh_id) == false;
@@ -633,7 +627,7 @@ namespace ice
 
         RenderDevice& device = gfx_device.device();
 
-        sprite_data.material[0] = *reinterpret_cast<ice::render::Image const*>(image_data.data.location);
+        sprite_data.material[0] = *reinterpret_cast<ice::render::Image const*>(image_data.location);
         sprite_data.material_tileinfo[0] = device.create_buffer(BufferType::Uniform, sizeof(sprite_data.material_scale));
         device.create_resourcesets({ _resource_set_layouts + 1, 1 }, sprite_data.sprite_resource);
 

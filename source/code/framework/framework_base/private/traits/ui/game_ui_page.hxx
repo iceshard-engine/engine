@@ -26,6 +26,7 @@ namespace ice
         GameUI_Page(
             ice::Allocator& alloc,
             ice::Asset page_asset,
+            ice::Data page_data,
             ice::String page_asset_name
         ) noexcept;
 

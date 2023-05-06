@@ -30,7 +30,7 @@ namespace ice
 
         struct ReleaseOnExit
         {
-            ice::Asset asset;
+            ice::Asset const& asset;
             ice::AssetStorage& storage;
 
             inline ~ReleaseOnExit() noexcept
@@ -93,14 +93,14 @@ namespace ice
             sprite_query,
             [&](ice::Animation const& anim, ice::Sprite const& sprite) noexcept
             {
-                ice::Asset sprite_asset = _assets->bind(ice::render::AssetType_Texture2D, sprite.material, AssetState::Baked);
-                sprite_asset.data = ice::wait_for(_assets->request(sprite_asset, AssetState::Baked));
-                if (!ice::asset_check(sprite_asset, AssetState::Baked))
+                ice::Asset sprite_asset = _assets->bind(ice::render::AssetType_Texture2D, sprite.material);
+                ice::wait_for(sprite_asset[AssetState::Baked]);
+                if (!sprite_asset.available(AssetState::Baked))
                 {
                     return;
                 }
 
-                ice::Metadata asset_meta = ice::asset_metadata(sprite_asset);
+                ice::Metadata const& asset_meta = sprite_asset.metadata();
                 ice::detail::ReleaseOnExit release_asset{ sprite_asset, *_assets };
 
                 ice::Array<ice::String> anim_names{ portal.allocator() };

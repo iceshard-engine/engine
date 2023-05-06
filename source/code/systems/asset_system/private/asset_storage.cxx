@@ -169,11 +169,10 @@ namespace ice
 
         auto bind(
             ice::AssetType type,
-            ice::String name,
-            ice::AssetState requested_state
+            ice::String name
         ) noexcept -> ice::Asset
         {
-            Asset result{ nullptr };
+            Asset result{ };
             // CHECK: Always called from the same thread.
             // OR TODO: Think of how to make it MT + lock-free
 
@@ -181,22 +180,15 @@ namespace ice
             ice::AssetEntry* entry = nullptr;
             if (find_shelve_and_entry(type, name, shelve, entry))
             {
-                result.handle = entry;
+                result._handle = entry;
 
                 // We need to ensure the previous count was higher else the asset might be released already
                 ice::u32 const prev_count = entry->refcount.fetch_add(1, std::memory_order_relaxed);
-                if (prev_count > 0)
-                {
-                    if (entry->current_state >= requested_state)
-                    {
-                        result.data = entry->data_for_state(requested_state);
-                    }
-                }
-                // Since prevcount could have just been reduced lets wait for the other thread to set the 'current' state to 'Unknown'
-                else
+                if (prev_count == 0)
                 {
                     while (entry->current_state != AssetState::Unknown)
                     {
+                        // TODO: Add an sleep statement?
                         //IPT_MESSAGE_C("Asset waiting for 'Release' operation to finish.", 0xEE8866);
                     }
                 }
@@ -217,31 +209,28 @@ namespace ice
                         resource_handle
                     );
 
+                    // TODO: Move to the 'store' method as argument.
+                    entry->storage = this;
+
                     ice::u32 const prev_count = entry->refcount.fetch_add(1, std::memory_order_relaxed);
                     ICE_ASSERT(prev_count == 0, "Unexpected value!");
 
-                    result.handle = entry;
+                    result._handle = entry;
                 }
             }
             return result;
         }
 
-        auto rebind(
-            ice::Asset reference,
-            ice::String name,
-            ice::AssetState requested_state
-        ) noexcept -> ice::Task<ice::Asset>
-        {
-            co_return { };
-        }
-
         auto request(
-            ice::Asset asset,
+            ice::Asset const& asset,
             ice::AssetState requested_state
         ) noexcept -> ice::Task<ice::Data> override
         {
-            ICE_ASSERT(asset.handle != nullptr, "Invalid asset object");
-            ice::AssetEntry& entry = *static_cast<ice::AssetEntry*>(asset.handle);
+            ICE_ASSERT(asset._handle != nullptr, "Invalid asset object");
+
+            ice::AssetEntry& entry = *static_cast<ice::AssetEntry*>(asset._handle);
+            ICE_ASSERT(entry.storage == this, "Invalid asset provided for this storage!");
+
             ice::AssetShelve& shelve = *entry.shelve;
 
             ice::Data result{ };
@@ -486,7 +475,7 @@ namespace ice
         }
 
         auto release(
-            ice::Asset asset
+            ice::Asset const& asset
         ) noexcept -> ice::Task<> override;
 
     protected:
@@ -753,11 +742,12 @@ namespace ice
     //}
 
     auto DefaultAssetStorage::release(
-        ice::Asset asset
+        ice::Asset const& asset
     ) noexcept -> ice::Task<>
     {
-        ICE_ASSERT(asset.handle != nullptr, "Invalid asset object! No valid handle found!");
-        ice::AssetEntry* entry = static_cast<ice::AssetEntry*>(asset.handle);
+        ICE_ASSERT(asset._handle != nullptr, "Invalid asset object! No valid handle found!");
+        ice::AssetEntry* entry = static_cast<ice::AssetEntry*>(asset._handle);
+        ICE_ASSERT(entry->storage == this, "Invalid asset provided for this storage!");
 
         // We where the last ones to keep a reference.
         if (entry->refcount.fetch_sub(1, std::memory_order_relaxed) == 1)

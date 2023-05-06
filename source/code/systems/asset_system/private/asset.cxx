@@ -2,47 +2,70 @@
 /// SPDX-License-Identifier: MIT
 
 #include <ice/asset.hxx>
+#include <ice/asset_storage.hxx>
 #include <ice/resource.hxx>
+#include <ice/task_utils.hxx>
 
 #include "asset_entry.hxx"
 
 namespace ice
 {
 
-    bool asset_check(ice::Asset const& asset, ice::AssetState expected_state) noexcept
+    namespace detail
     {
-        return asset_state(asset) == expected_state;
-    }
 
-    auto asset_metadata(ice::Asset const& asset) noexcept -> ice::Metadata const&
-    {
-        return asset_metadata(asset.handle);
-    }
-
-    auto asset_metadata(ice::AssetHandle const* handle) noexcept -> ice::Metadata const&
-    {
-        if (handle == nullptr)
+        auto entry(ice::AssetHandle* handle) noexcept -> ice::AssetEntry&
         {
-            static ice::Metadata empty_metadata{ };
-            return empty_metadata;
+            return *static_cast<ice::AssetEntry*>(handle);
         }
 
-        return reinterpret_cast<ice::AssetEntry const*>(handle)->resource->metadata();
-    }
-
-    auto asset_state(ice::Asset const& asset) noexcept -> ice::AssetState
-    {
-        return asset_state(asset.handle);
-    }
-
-    auto asset_state(ice::AssetHandle const* handle) noexcept -> ice::AssetState
-    {
-        if (handle == nullptr)
+        auto storage(ice::AssetHandle* handle) noexcept -> ice::AssetStorage&
         {
-            return AssetState::Invalid;
+            return *static_cast<ice::AssetEntry*>(handle)->storage;
         }
 
-        return reinterpret_cast<ice::AssetEntry const*>(handle)->current_state;
+    } // namespace detail
+
+    Asset::~Asset() noexcept
+    {
+        // TODO: Fix loading of asses as this releases memory too early!
+        // ice::wait_for(detail::storage(_handle).release(*this));
+    }
+
+    bool Asset::valid() const noexcept
+    {
+        if (_handle != nullptr)
+        {
+            ice::AssetEntry const& entry = detail::entry(_handle);
+            return entry.current_state != AssetState::Invalid && entry.current_state != AssetState::Unknown;
+        }
+        return false;
+    }
+
+    auto Asset::metadata() const noexcept -> ice::Metadata const&
+    {
+        return detail::entry(_handle).resource->metadata();
+    }
+
+    bool Asset::available(ice::AssetState state) const noexcept
+    {
+        return detail::entry(_handle).data_for_state(state).location != nullptr;
+    }
+
+    auto Asset::preload(ice::AssetState state) noexcept -> ice::Task<bool>
+    {
+        ice::Data const result = co_await data(state);
+        co_return result.location != nullptr;
+    }
+
+    auto Asset::data(ice::AssetState state) noexcept -> ice::Task<ice::Data>
+    {
+        co_return co_await detail::storage(_handle).request(*this, state);
+    }
+
+    auto Asset::operator[](ice::AssetState state) noexcept -> ice::Task<ice::Data>
+    {
+        co_return co_await data(state);
     }
 
 } // namespace ice

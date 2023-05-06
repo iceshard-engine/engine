@@ -89,13 +89,13 @@ namespace ice
 
         struct FontEntry
         {
-            ice::AssetHandle* asset;
+            ice::Asset asset;
             ice::render::Image image;
             ice::render::ResourceSet resource_set;
             ice::Font const* font;
         };
 
-        ice::HashMap<FontEntry> _fonts;
+        ice::HashMap<FontEntry, ContainerLogic::Complex> _fonts;
 
         ice::render::Buffer _vertex_buffer;
 

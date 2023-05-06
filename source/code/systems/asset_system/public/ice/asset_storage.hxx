@@ -27,22 +27,13 @@ namespace ice
     public:
         virtual ~AssetStorage() = default;
 
-        //! \note This function is not thread-safe.
-        //! \todo RENAME
         virtual auto bind(
             ice::AssetType type,
-            ice::String name,
-            ice::AssetState requested_state
+            ice::String name
         ) noexcept -> ice::Asset = 0;
 
-        virtual auto rebind(
-            ice::Asset reference,
-            ice::String name,
-            ice::AssetState requested_state
-        ) noexcept -> ice::Task<ice::Asset> = 0;
-
         virtual auto request(
-            ice::Asset entry,
+            ice::Asset const& entry,
             ice::AssetState requested_state
         ) noexcept -> ice::Task<ice::Data> = 0;
 
@@ -52,7 +43,7 @@ namespace ice
         ) noexcept -> ice::AssetRequest* = 0;
 
         virtual auto release(
-            ice::Asset asset
+            ice::Asset const& asset
         ) noexcept -> ice::Task<> = 0;
     };
 
