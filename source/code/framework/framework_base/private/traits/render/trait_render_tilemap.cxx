@@ -534,32 +534,27 @@ namespace ice
     {
         using namespace ice::render;
 
-        auto const tailcall_bug_workaround = [&]() noexcept
+        IPT_ZONE_SCOPED_NAMED("[GfxTrait] TileMap :: Update Camera");
+
+        ice::StringID_Hash camera_name = ice::StringID_Invalid;
+        if (ice::shards::inspect_last(engine_frame.shards(), ice::Shard_SetDefaultCamera, camera_name))
         {
-            IPT_ZONE_SCOPED_NAMED("[GfxTrait] TileMap :: Update Camera");
+            _render_camera = ice::StringID{ camera_name };
+        }
 
-            ice::StringID_Hash camera_name = ice::StringID_Invalid;
-            if (ice::shards::inspect_last(engine_frame.shards(), ice::Shard_SetDefaultCamera, camera_name))
+        if (camera_name != ice::StringID_Invalid)
+        {
+            ice::render::Buffer const camera_buffer = ice::gfx::find_resource<ice::render::Buffer>(
+                gfx_device.resource_tracker(),
+                _render_camera
+            );
+
+            if (_render_camera_buffer != camera_buffer && camera_buffer != ice::render::Buffer::Invalid)
             {
-                _render_camera = ice::StringID{ camera_name };
+                _render_camera_buffer = camera_buffer;
+                update_resource_camera(gfx_device);
             }
-
-            if (camera_name != ice::StringID_Invalid)
-            {
-                ice::render::Buffer const camera_buffer = ice::gfx::find_resource<ice::render::Buffer>(
-                    gfx_device.resource_tracker(),
-                    _render_camera
-                    );
-
-                if (_render_camera_buffer != camera_buffer && camera_buffer != ice::render::Buffer::Invalid)
-                {
-                    _render_camera_buffer = camera_buffer;
-                    update_resource_camera(gfx_device);
-                }
-            }
-        };
-
-        tailcall_bug_workaround();
+        }
 
         ice::detail::TileMap_DrawOperation const* const draw_operation = engine_frame.storage().named_object<ice::detail::TileMap_DrawOperation>(
             "tilemap_render.draw_operation"_sid

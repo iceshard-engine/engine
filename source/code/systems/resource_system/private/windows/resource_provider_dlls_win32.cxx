@@ -120,7 +120,7 @@ namespace ice
         }
 
         // GitHub Issue: #108
-        void ISATTR_NOINLINE initial_traverse() noexcept
+        void initial_traverse() noexcept
         {
             ice::HeapString<ice::wchar> dir_tracker = _base_path;
             ice::path::win32::join(dir_tracker, L"."); // Ensure we end with a '/' character
