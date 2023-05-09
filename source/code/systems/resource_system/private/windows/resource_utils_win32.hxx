@@ -6,8 +6,7 @@
 #include <ice/string_types.hxx>
 //#include <ice/buffer.hxx>
 #include <ice/os/windows.hxx>
-
-#include "../path_utils.hxx"
+#include <ice/path_utils.hxx>
 
 #if ISP_WINDOWS
 

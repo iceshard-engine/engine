@@ -20,7 +20,6 @@ namespace ice::path
     auto replace_filename(ice::HeapString<>& path, ice::String filename) noexcept -> ice::String;
     auto replace_extension(ice::HeapString<>& path, ice::String extension) noexcept -> ice::String;
 
-
     namespace win32
     {
 

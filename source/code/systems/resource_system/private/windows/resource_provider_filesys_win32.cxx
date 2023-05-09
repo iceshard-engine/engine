@@ -236,6 +236,7 @@ namespace ice
             ice::HeapString<> predicted_path{ _allocator };
             for (ice::WString base_path : _base_paths)
             {
+                ice::string::resize(predicted_path, 0);
                 ice::string::reserve(predicted_path, origin_size + ice::string::size(base_path));
 
                 ice::wide_to_utf8_append(base_path, predicted_path);

@@ -65,6 +65,7 @@ namespace ice
 
     auto Asset::operator[](ice::AssetState state) noexcept -> ice::Task<ice::Data>
     {
+        ICE_ASSERT(_handle != nullptr, "Invalid Asset object!");
         co_return co_await data(state);
     }
 

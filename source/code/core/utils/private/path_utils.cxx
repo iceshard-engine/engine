@@ -4,8 +4,7 @@
 #include <ice/mem_utils.hxx>
 #include <ice/string/string.hxx>
 #include <ice/string/heap_string.hxx>
-
-#include "path_utils.hxx"
+#include <ice/path_utils.hxx>
 
 namespace ice::path
 {

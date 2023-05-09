@@ -129,7 +129,7 @@ namespace ice
     private:
         ice::Allocator& _allocator;
         ice::TaskScheduler& _scheduler;
-        ice::ResourceTrackerCreateInfo const& _info;
+        ice::ResourceTrackerCreateInfo _info;
 
         ice::TaskQueue _io_queue;
         ice::UniquePtr<ice::NativeIO> _io_thread_data;
@@ -322,6 +322,7 @@ namespace ice
 
             resource_handle->data = result;
             resource_handle->status = result.location == nullptr ? ResourceStatus::Invalid : ResourceStatus::Loaded;
+            ICE_ASSERT(resource_handle->status != ResourceStatus::Invalid, "Failed loading '{}' resource", ice::resource_origin(resource_handle));
         }
         else
         {
