@@ -59,7 +59,7 @@ MyGame::MyGame(ice::Allocator& alloc, ice::Clock const& clock) noexcept
     , _ecs_archetypes{ _allocator }
     , _ecs_block_pool{ _allocator }
     , _ecs_storage{ }
-    , _game_gfx_pass{ ice::gfx::create_dynamic_pass(_allocator) }
+    , _game_gfx_pass{ }
     , _test_world{ nullptr }
 {
 }
@@ -83,13 +83,14 @@ auto MyGame::graphics_world_template() const noexcept -> ice::WorldTemplate cons
             ice::Constant_TraitName_RenderFinish,
         };
 
-        static ice::WorldTemplate const graphics_world_template
+        static ice::WorldTemplate graphics_world_template
         {
             .name = "ice.framework-base.default-graphics-world-template"_sid,
             .traits = graphics_traits,
             .entity_storage = _ecs_storage.get(),
         };
 
+        graphics_world_template.entity_storage = _ecs_storage.get();
         return graphics_world_template;
     }
     else
@@ -108,13 +109,14 @@ auto MyGame::graphics_world_template() const noexcept -> ice::WorldTemplate cons
             ice::Constant_TraitName_RenderFinish,
         };
 
-        static ice::WorldTemplate const graphics_world_template
+        static ice::WorldTemplate graphics_world_template
         {
             .name = "ice.framework-base.default-graphics-world-template"_sid,
             .traits = graphics_traits,
             .entity_storage = _ecs_storage.get(),
         };
 
+        graphics_world_template.entity_storage = _ecs_storage.get();
         return graphics_world_template;
     }
 }
@@ -192,6 +194,7 @@ void MyGame::on_app_startup(ice::Engine& engine) noexcept
         entity_index.destroy_many(entities);
     }
 
+    _game_gfx_pass = ice::gfx::create_dynamic_pass(_allocator);
     _game_gfx_pass->add_stage(ice::Constant_GfxStage_Clear);
     _game_gfx_pass->add_stage(ice::Constant_GfxStage_DrawTilemap, ice::Constant_GfxStage_Clear);
     _game_gfx_pass->add_stage(ice::Constant_GfxStage_DrawSprites, ice::Constant_GfxStage_DrawTilemap, ice::Constant_GfxStage_Clear);
@@ -498,7 +501,7 @@ void MyGame::on_update(ice::EngineFrame& frame, ice::EngineRunner& runner, ice::
 
     if (ice::shard_inspect(player_entity_created, eh))
     {
-        ICE_ASSERT(ice::ecs::entity_handle_info(eh).entity == ice::ecs::Entity{}, "{}", eh);
+        //ICE_ASSERT(ice::ecs::entity_handle_info(eh).entity == ice::ecs::Entity{}, "{}", eh);
         ICE_LOG(ice::LogSeverity::Debug, ice::LogTag::Game, "{}", eh);
     }
 

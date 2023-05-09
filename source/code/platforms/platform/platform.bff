@@ -4,7 +4,7 @@
 .Project =
 [
     .Name = 'platform'
-    .Kind = .Kind_StaticLib
+    .Kind = .Kind_HeaderOnly
     .BaseDir = '$WorkspaceCodeDir$/platforms/platform'
     .Group = 'Platforms'
 

@@ -41,10 +41,7 @@ namespace ice
         auto load_font_shader(ice::AssetStorage& assets, ice::Data& data, ice::String name) noexcept -> ice::Task<>
         {
             ice::Asset asset = assets.bind(ice::render::AssetType_Shader, name);
-            if (asset.available(AssetState::Baked) == false)
-            {
-                data = co_await assets.request(asset, AssetState::Baked);
-            }
+            data = co_await assets.request(asset, AssetState::Baked);
         }
 
     } // namespace detail

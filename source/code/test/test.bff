@@ -29,8 +29,6 @@
             'tasks'
             'modules'
             'engine'
-            // 'engine_debug'
-            'application'
             'framework_base'
         }
     ]

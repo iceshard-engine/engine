@@ -38,10 +38,7 @@ namespace ice
         auto load_ui_shader(ice::AssetStorage& assets, ice::Data& data, ice::String name) noexcept -> ice::Task<>
         {
             ice::Asset const asset = assets.bind(ice::render::AssetType_Shader, name);
-            if (asset.available(AssetState::Baked) == false)
-            {
-                data = co_await assets.request(asset, AssetState::Baked);
-            }
+            data = co_await assets.request(asset, AssetState::Baked);
         }
 
     } // namespace detail
@@ -115,7 +112,7 @@ namespace ice
         Renderpass renderpass = ice::gfx::find_resource<Renderpass>(
             gfx_device.resource_tracker(),
             "ice.gfx.renderpass.default"_sid
-            );
+        );
 
         _shader_stages[0] = ShaderStageFlags::VertexStage;
         _shader_stages[1] = ShaderStageFlags::FragmentStage;

@@ -9,16 +9,13 @@
 namespace ice
 {
 
+    enum class ResultSeverity : ice::u8;
+
     template<bool DebugInfo>
     struct ResultCode;
 
-    enum class ResultSeverity : ice::u8
-    {
-        Success,
-        Info,
-        Warning,
-        Error
-    };
+    inline auto result_hint(ice::ResultCode<false> result_code) noexcept -> std::string_view;
+    inline auto result_hint(ice::ResultCode<true> result_code) noexcept -> std::string_view;
 
     namespace detail
     {
@@ -38,6 +35,13 @@ namespace ice
 
     } // namespace detail
 
+    enum class ResultSeverity : ice::u8
+    {
+        Success,
+        Info,
+        Warning,
+        Error
+    };
 
     template<bool DebugInfo>
     struct ResultCode
@@ -82,6 +86,16 @@ namespace ice
 
     using ResCode = ResultCode<ice::build::is_debug || ice::build::is_develop>;
 
+    struct Result
+    {
+        ice::ResCode result_code;
+
+        constexpr Result(ice::ResCode code) noexcept : result_code{ code } { }
+
+        constexpr operator bool() const noexcept;
+        constexpr operator ResCode() const noexcept;
+    };
+
     struct Res
     {
         static constexpr ice::ResultSeverity Info = ResultSeverity::Info;
@@ -96,7 +110,7 @@ namespace ice
 
     constexpr auto operator==(ice::detail::ResultValue left, ice::detail::ResultValue right) noexcept
     {
-        return left.severity == right.severity && left.id == right.id;
+        return (left.severity == right.severity) && (left.id == right.id || (left.id == 1 || right.id == 1));
     }
 
     constexpr auto operator==(ice::detail::ResultValue left, ice::ResultSeverity right) noexcept
@@ -118,6 +132,31 @@ namespace ice
     inline constexpr ice::ResultCode<true>::operator bool() const noexcept
     {
         return this->value == Res::Success.value;
+    }
+
+    inline constexpr ice::Result::operator bool() const noexcept
+    {
+        return this->result_code.value == Res::Success.value;
+    }
+
+    inline constexpr ice::Result::operator ResCode() const noexcept
+    {
+        return this->result_code;
+    }
+
+    constexpr auto operator==(ice::Result left, ice::ResultSeverity right) noexcept
+    {
+        return left.result_code.value.severity == static_cast<std::underlying_type_t<ice::ResultSeverity>>(right);
+    }
+
+    inline auto result_hint(ice::ResultCode<false> result_code) noexcept -> std::string_view
+    {
+        return { };
+    }
+
+    inline auto result_hint(ice::ResultCode<true> result_code) noexcept -> std::string_view
+    {
+        return { result_code.description };
     }
 
 } // namespace ice

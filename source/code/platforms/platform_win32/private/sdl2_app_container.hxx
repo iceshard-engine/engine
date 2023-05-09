@@ -17,11 +17,14 @@ namespace ice::platform
 
         ~SDL2_Container() noexcept override;
 
+        auto step() noexcept -> ice::u32 override;
         auto run() noexcept -> ice::i32 override;
 
     private:
         ice::Allocator& _allocator;
         ice::UniquePtr<ice::platform::App> _app;
+        ice::input::DeviceEventQueue _device_events;
+        ice::ShardContainer _events;
 
         bool _request_quit = false;
     };

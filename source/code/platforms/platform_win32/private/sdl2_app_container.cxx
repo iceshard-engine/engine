@@ -297,15 +297,95 @@ namespace ice::platform
         : Container{ }
         , _allocator{ alloc }
         , _app{ ice::move(app) }
+        , _device_events{ _allocator }
+        , _events{ _allocator }
     {
         [[maybe_unused]]
         bool const init_success = SDL_InitSubSystem(SDL_INIT_EVENTS) >= 0;
         ICE_ASSERT(init_success, "Initialization error for SDL2 'Events' subsystem.");
+
+        using namespace ice::input;
+        _device_events.push(
+            make_device_handle(DeviceType::Mouse, DeviceIndex{ 0 }),
+            DeviceMessage::DeviceConnected
+        );
+        _device_events.push(
+            make_device_handle(DeviceType::Keyboard, DeviceIndex{ 0 }),
+            DeviceMessage::DeviceConnected
+        );
     }
 
     SDL2_Container::~SDL2_Container() noexcept
     {
         SDL_QuitSubSystem(SDL_INIT_EVENTS);
+    }
+
+    auto SDL2_Container::step() noexcept -> ice::u32
+    {
+        using namespace ice::input;
+
+        static char text_buffer[32];
+
+        static SDL_Event current_event{ };
+        while (SDL_PollEvent(&current_event) != 0)
+        {
+            switch (current_event.type)
+            {
+            case SDL_QUIT:
+                ice::shards::push_back(_events, ice::platform::Shard_AppQuit);
+
+                _device_events.push(
+                    make_device_handle(DeviceType::Keyboard, DeviceIndex(0)),
+                    DeviceMessage::DeviceDisconnected
+                );
+                _device_events.push(
+                    make_device_handle(DeviceType::Mouse, DeviceIndex(0)),
+                    DeviceMessage::DeviceDisconnected
+                );
+
+                _request_quit = true;
+                break;
+            case SDL_WINDOWEVENT:
+            {
+                switch (current_event.window.event)
+                {
+                case SDL_WINDOWEVENT_SIZE_CHANGED:
+                case SDL_WINDOWEVENT_RESIZED:
+                    ice::shards::push_back(
+                        _events,
+                        ice::platform::Shard_WindowResized
+                        | ice::vec2i(current_event.window.data1, current_event.window.data2)
+                    );
+                    break;
+                }
+                break;
+            }
+            case SDL_MOUSEBUTTONUP:
+            case SDL_MOUSEBUTTONDOWN:
+            case SDL_MOUSEWHEEL:
+            case SDL_MOUSEMOTION:
+                detail::mouse_input_events(_device_events, current_event);
+                break;
+            case SDL_KEYDOWN:
+            case SDL_KEYUP:
+                detail::keyboard_input_events(_device_events, current_event);
+                break;
+                // [issue #33]
+            case SDL_TEXTINPUT:
+                ice::memcpy(text_buffer, current_event.text.text, 32);
+                ice::shards::push_back(
+                    _events,
+                    ice::platform::Shard_InputText | (char const*)text_buffer
+                );
+            }
+        }
+
+        _app->handle_inputs(_device_events);
+        _app->update(_events);
+
+        _device_events.clear();
+        ice::shards::clear(_events);
+        return ice::u32(_request_quit || _app->requested_exit());
     }
 
     auto SDL2_Container::run() noexcept -> ice::i32
@@ -314,15 +394,6 @@ namespace ice::platform
 
         ice::input::DeviceEventQueue device_events{ _allocator };
         ice::ShardContainer events{ _allocator };
-
-        device_events.push(
-            make_device_handle(DeviceType::Mouse, DeviceIndex{ 0 }),
-            DeviceMessage::DeviceConnected
-        );
-        device_events.push(
-            make_device_handle(DeviceType::Keyboard, DeviceIndex{ 0 }),
-            DeviceMessage::DeviceConnected
-        );
 
         // [issue #33]
         static char text_buffer[32];

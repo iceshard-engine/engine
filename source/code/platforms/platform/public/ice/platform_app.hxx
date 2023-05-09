@@ -25,6 +25,9 @@ namespace ice::platform
     public:
         virtual ~Container() noexcept = default;
 
+        virtual auto step() noexcept -> ice::u32 = 0;
+
+        [[deprecated("Executing the whole loop in a single call is discouraged! Call 'step' whenever you want an updated by yourself!")]]
         virtual auto run() noexcept -> ice::i32 = 0;
     };
 

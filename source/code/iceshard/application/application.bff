@@ -5,14 +5,16 @@
 [
     .Name = 'application'
     .Kind = .Kind_StaticLib
-    .Group = 'Engine'
+    .Group = 'Platforms'
 
     .BaseDir = '$WorkspaceCodeDir$/iceshard/application'
+
+    ; We don't allow unity builds so we can use 'StaticLib' linking behavior and only link undefined app methods.
+    .AllowUnityBuilds = false
 
     .Public =
     [
         .Uses = {
-            'platform'
             'resource_system'
         }
     ]
