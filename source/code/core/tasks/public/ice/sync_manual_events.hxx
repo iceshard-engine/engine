@@ -24,11 +24,11 @@ namespace ice
         std::atomic<ice::u8> _internal_value;
     };
 
-    class ManualResetSemaphore
+    class ManualResetBarrier
     {
     public:
-        ManualResetSemaphore(ice::u8 num_awaited = 0) noexcept;
-        ~ManualResetSemaphore() noexcept = default;
+        ManualResetBarrier(ice::u8 num_awaited = 0) noexcept;
+        ~ManualResetBarrier() noexcept = default;
 
         void set() noexcept;
         void reset(ice::u8 num_awaited) noexcept;

@@ -18,7 +18,7 @@ namespace ice
     struct TaskAwaitableBase;
 
     class ManualResetEvent;
-    class ManualResetSemaphore;
+    class ManualResetBarrier;
 
     // STD aliases
     template<typename Type = void>

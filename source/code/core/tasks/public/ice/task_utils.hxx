@@ -2,6 +2,7 @@
 /// SPDX-License-Identifier: MIT
 
 #pragma once
+#include <ice/task.hxx>
 #include <ice/task_types.hxx>
 #include <ice/task_scheduler.hxx>
 #include <ice/span.hxx>
@@ -17,7 +18,7 @@ namespace ice
     template<typename T>
     inline auto manual_wait_for(ice::Task<T> task, ice::ManualResetEvent& manual_event) noexcept -> T;
     void manual_wait_for(ice::Task<void> task, ice::ManualResetEvent& manual_event) noexcept;
-    void manual_wait_for_all(ice::Span<ice::Task<void>>, ice::ManualResetSemaphore& manual_event) noexcept;
+    void manual_wait_for_all(ice::Span<ice::Task<void>>, ice::ManualResetBarrier& manual_event) noexcept;
 
     template<typename Value>
     inline auto schedule_on(ice::Task<Value> task, ice::TaskScheduler& scheduler) noexcept -> ice::Task<Value>;

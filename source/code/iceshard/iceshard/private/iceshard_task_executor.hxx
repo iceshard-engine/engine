@@ -3,6 +3,7 @@
 
 #pragma once
 #include <ice/task.hxx>
+#include <ice/sync_manual_events.hxx>
 #include <ice/container_types.hxx>
 
 namespace ice
@@ -37,7 +38,7 @@ namespace ice
         ice::Array<ice::Task<>, ice::ContainerLogic::Complex> _tasks;
 
         //ice::Memory _reset_events_memory;
-        ice::ManualResetSemaphore _sync_sem;
+        ice::ManualResetBarrier _sync_sem;
 
         //ice::ManualResetEvent* _reset_events;
     };

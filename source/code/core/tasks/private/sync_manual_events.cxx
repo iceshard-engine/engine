@@ -65,12 +65,12 @@ namespace ice
         return _internal_value.load(std::memory_order_relaxed) == 1;
     }
 
-    ManualResetSemaphore::ManualResetSemaphore(ice::u8 num_awaited) noexcept
+    ManualResetBarrier::ManualResetBarrier(ice::u8 num_awaited) noexcept
         : _internal_value{ num_awaited }
     {
     }
 
-    void ManualResetSemaphore::set() noexcept
+    void ManualResetBarrier::set() noexcept
     {
         ice::u8 remaining = _internal_value.load(std::memory_order_relaxed);
         if (remaining != 0)
@@ -91,12 +91,12 @@ namespace ice
         }
     }
 
-    void ManualResetSemaphore::reset(ice::u8 num_awaited) noexcept
+    void ManualResetBarrier::reset(ice::u8 num_awaited) noexcept
     {
         _internal_value.store(num_awaited, std::memory_order_relaxed);
     }
 
-    void ManualResetSemaphore::wait() noexcept
+    void ManualResetBarrier::wait() noexcept
     {
         ice::u8 value = _internal_value.load(std::memory_order_acquire);
 
@@ -126,7 +126,7 @@ namespace ice
         }
     }
 
-    bool ManualResetSemaphore::is_set() const noexcept
+    bool ManualResetBarrier::is_set() const noexcept
     {
         return _internal_value.load(std::memory_order_relaxed) == 0;
     }

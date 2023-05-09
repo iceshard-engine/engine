@@ -63,7 +63,7 @@ namespace ice
 
     void wait_for_all(ice::Span<ice::Task<void>> tasks) noexcept
     {
-        ice::ManualResetSemaphore manual_sem;
+        ice::ManualResetBarrier manual_sem;
         manual_wait_for_all(tasks, manual_sem);
         manual_sem.wait();
     }
@@ -73,7 +73,7 @@ namespace ice
         detail::detached_task(ice::move(task), manual_event);
     }
 
-    void manual_wait_for_all(ice::Span<ice::Task<void>> tasks, ice::ManualResetSemaphore& manual_sem) noexcept
+    void manual_wait_for_all(ice::Span<ice::Task<void>> tasks, ice::ManualResetBarrier& manual_sem) noexcept
     {
         for (ice::Task<void>& task : tasks)
         {

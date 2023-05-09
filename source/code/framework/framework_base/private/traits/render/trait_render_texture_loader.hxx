@@ -2,6 +2,7 @@
 /// SPDX-License-Identifier: MIT
 
 #pragma once
+#include <ice/asset.hxx>
 #include <ice/game_render_traits.hxx>
 #include <ice/render/render_declarations.hxx>
 #include <ice/gfx/gfx_device.hxx>
