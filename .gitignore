@@ -10,6 +10,7 @@
 # Local data
 /source/data/temp
 /source/data/local
+/tools/scripts/generate_version.moon
 
 # Temporary files to ignore
 compile_commands.json

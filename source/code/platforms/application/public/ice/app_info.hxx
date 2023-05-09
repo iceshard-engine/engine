@@ -9,7 +9,8 @@ namespace ice::app
         ice::u16 major;
         ice::u16 minor;
         ice::u32 patch;
-        ice::u64 commit_sha256[4];
+        ice::u32 build;
+        ice::u64 commit[5];
     };
 
     auto version() noexcept -> ice::app::Version;
