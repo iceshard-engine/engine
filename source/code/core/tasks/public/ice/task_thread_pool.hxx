@@ -7,7 +7,7 @@
 namespace ice
 {
 
-    struct TaskThreadPoolInfo_v3
+    struct TaskThreadPoolCreateInfo
     {
         //! \brief The thread count of this thread pool.
         ice::ucount thread_count = 0;
@@ -62,7 +62,7 @@ namespace ice
     auto create_thread_pool(
         ice::Allocator& alloc,
         ice::TaskQueue& queue,
-        ice::TaskThreadPoolInfo_v3 const& threadpool_info
+        ice::TaskThreadPoolCreateInfo const& threadpool_info
     ) noexcept -> ice::UniquePtr<ice::TaskThreadPool>;
 
 } // namespace ice

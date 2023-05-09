@@ -14,7 +14,7 @@ namespace ice
         TaskThreadPoolImplementation(
             ice::Allocator& alloc,
             ice::TaskQueue& queue,
-            ice::TaskThreadPoolInfo_v3 const& info
+            ice::TaskThreadPoolCreateInfo const& info
         ) noexcept;
         ~TaskThreadPoolImplementation() noexcept override;
 
@@ -45,7 +45,7 @@ namespace ice
 
         ice::Allocator& _allocator;
         ice::TaskQueue& _queue;
-        ice::TaskThreadPoolInfo_v3 const _info;
+        ice::TaskThreadPoolCreateInfo const _info;
 
         ice::Array<PoolThread, ContainerLogic::Complex> _thread_pool;
         ice::Array<ice::UniquePtr<ice::NativeTaskThread>, ContainerLogic::Complex> _managed_threads;

@@ -28,7 +28,7 @@ namespace ice
     TaskThreadPoolImplementation::TaskThreadPoolImplementation(
         ice::Allocator& alloc,
         ice::TaskQueue& queue,
-        ice::TaskThreadPoolInfo_v3 const& info
+        ice::TaskThreadPoolCreateInfo const& info
     ) noexcept
         : _allocator{ alloc }
         , _queue{ queue }
