@@ -7,7 +7,7 @@
     .Kind = .Kind_StaticLib
     .Group = 'Platforms'
 
-    .BaseDir = '$WorkspaceCodeDir$/iceshard/application'
+    .BaseDir = '$WorkspaceCodeDir$/platforms/application'
 
     ; We don't allow unity builds so we can use 'StaticLib' linking behavior and only link undefined app methods.
     .AllowUnityBuilds = false
