@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2022, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "trait_render_sprites.hxx"
@@ -659,7 +659,7 @@ namespace ice
 
         device.update_buffers({ updates, update_count });
 
-        co_await runner.schedule_next_frame();
+        co_await runner.stage_next_frame();
 
         runner.execute_task(
             task_update_resource_material(runner, gfx_device, ice::stringid(material_name), sprite_data),
@@ -717,7 +717,7 @@ namespace ice
 
         device.update_resourceset(set_updates);
 
-        co_await runner.schedule_next_frame();
+        co_await runner.stage_next_frame();
 
         ice::hashmap::set(_sprite_materials, ice::hash(material_name), sprite_data);
         co_return;

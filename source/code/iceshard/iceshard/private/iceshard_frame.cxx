@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2022, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "iceshard_frame.hxx"
@@ -54,18 +54,13 @@ namespace ice
 
     IceshardMemoryFrame::~IceshardMemoryFrame() noexcept
     {
-        ice::FrameEndOperationData* operation_head = _frame_end_operation;
-        while (_frame_end_operation.compare_exchange_weak(operation_head, nullptr, std::memory_order::relaxed, std::memory_order::acquire) == false)
+        while (ice::linked_queue::any(_queue_frame_end._awaitables))
         {
-            continue;
-        }
-
-        ice::EngineTaskOperationBaseData* operation = operation_head;
-        while (operation != nullptr)
-        {
-            ice::EngineTaskOperationBaseData* next_operation = operation->next;
-            operation->coroutine.resume();
-            operation = next_operation;
+            for (ice::TaskAwaitableBase* awaitable : ice::linked_queue::consume(_queue_frame_end._awaitables))
+            {
+                awaitable->result.ptr = this;
+                awaitable->_coro.resume();
+            }
         }
 
         _task_executor.wait_ready();
@@ -138,44 +133,9 @@ namespace ice
         return _data_storage;
     }
 
-    auto IceshardMemoryFrame::schedule_frame_end() noexcept -> ice::FrameEndOperation
+    auto IceshardMemoryFrame::stage_end() noexcept -> ice::TaskStage<ice::EngineFrame>
     {
-        return { *this };
-    }
-
-    void IceshardMemoryFrame::schedule_internal(ice::FrameEndOperationData& operation) noexcept
-    {
-        ice::FrameEndOperationData* expected_head = _frame_end_operation.load(std::memory_order_acquire);
-
-        do
-        {
-            operation.next = expected_head;
-        }
-        while (
-            _frame_end_operation.compare_exchange_weak(
-                expected_head,
-                &operation,
-                std::memory_order_release,
-                std::memory_order_acquire
-            ) == false
-        );
-    }
-
-    void IceshardMemoryFrame::schedule_query_internal(ice::ecs::ScheduledQueryData& query_data) noexcept
-    {
-        ice::ecs::ScheduledQueryData* expected_head = _query_operation.load(std::memory_order_acquire);
-
-        do
-        {
-            query_data.next = expected_head;
-        } while (
-            _query_operation.compare_exchange_weak(
-                expected_head,
-                &query_data,
-                std::memory_order_release,
-                std::memory_order_acquire
-            ) == false
-        );
+        return { _queue_frame_end };
     }
 
 } // namespace ice

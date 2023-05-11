@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2022, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "trait_render_tilemap.hxx"
@@ -123,7 +123,7 @@ namespace ice
                 cache.image_count += 1;
             }
 
-            co_await runner.schedule_next_frame();
+            co_await runner.stage_next_frame();
             co_await runner.graphics_frame().frame_begin();
 
             ice::gfx::GfxDevice& gfx_device = runner.graphics_device();

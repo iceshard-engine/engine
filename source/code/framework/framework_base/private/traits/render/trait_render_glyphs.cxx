@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2022, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "trait_render_glyphs.hxx"
@@ -541,7 +541,7 @@ namespace ice
         //}
         ice::Font const* font = reinterpret_cast<ice::Font const*>(asset_data.location);
 
-        co_await runner.schedule_current_frame();
+        co_await runner.stage_current_frame();
 
         ice::Data const font_atlas_data{
             .location = ice::ptr_add(font->data_ptr, { font->atlases[0].image_data_offset }),
@@ -553,7 +553,7 @@ namespace ice
         ice::render::ResourceSet resource_set = ice::render::ResourceSet::Invalid;
         co_await load_font_atlas(font->atlases[0], font_atlas_data, runner, image, resource_set);
 
-        co_await runner.schedule_next_frame();
+        co_await runner.stage_next_frame();
 
         ice::hashmap::set(
             _fonts,

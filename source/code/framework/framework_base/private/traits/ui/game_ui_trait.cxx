@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2022, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "render_ui_trait.hxx"
@@ -305,9 +305,7 @@ namespace ice
             co_await runner.asset_storage().request(font_asset, AssetState::Loaded);
         }
 
-        co_await runner.schedule_current_frame();
-
-        ice::EngineFrame& frame = runner.current_frame();
+        ice::EngineFrame& frame = co_await runner.stage_current_frame();
 
         using ice::ui::ElementType;
 

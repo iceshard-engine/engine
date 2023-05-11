@@ -1,3 +1,6 @@
+/// Copyright 2023 - 2023, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
 #pragma once
 #include <ice/task_types.hxx>
 #include <ice/task_flags.hxx>
@@ -23,12 +26,17 @@ namespace ice
         };
     };
 
+    struct TaskAwaitableResult
+    {
+        void* ptr;
+    };
+
     struct TaskAwaitableBase
     {
         ice::TaskAwaitableParams const _params;
         ice::coroutine_handle<> _coro;
-
         ice::TaskAwaitableBase* next;
+        ice::TaskAwaitableResult result;
     };
 
 } // namespace ice

@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2022, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "trait_camera.hxx"
@@ -232,7 +232,7 @@ namespace ice
 
 
         // TODO: Requires a thread-safe allocator implementation if we want to skip a revisit on the frame thread.
-        co_await runner.schedule_current_frame();
+        co_await runner.stage_current_frame();
 
         ice::u32 const current_buffer_count = ice::array::count(_camera_buffers);
         ice::u32 const required_buffer_count = cam_idx;

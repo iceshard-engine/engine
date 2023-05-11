@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2022, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "game_ui_page.hxx"
@@ -412,9 +412,7 @@ namespace ice
             }
         }
 
-        co_await runner.schedule_current_frame();
-
-        ice::EngineFrame& frame = runner.current_frame();
+        ice::EngineFrame& frame = co_await runner.stage_current_frame();
 
         co_await update_resources(frame);
 

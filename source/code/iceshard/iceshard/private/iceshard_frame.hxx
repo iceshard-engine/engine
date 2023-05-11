@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2022, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -46,16 +46,7 @@ namespace ice
         auto storage() noexcept -> ice::DataStorage& override;
         auto storage() const noexcept -> ice::DataStorage const& override;
 
-        auto schedule_frame_end() noexcept -> ice::FrameEndOperation override;
-
-    protected:
-        void schedule_internal(
-            ice::FrameEndOperationData& operation
-        ) noexcept override;
-
-        void schedule_query_internal(
-            ice::ecs::ScheduledQueryData& query_data
-        ) noexcept override;
+        auto stage_end() noexcept -> ice::TaskStage<ice::EngineFrame> override;
 
     private:
         ice::u32 const _index;
@@ -74,8 +65,7 @@ namespace ice
         ice::Array<ice::Task<>, ice::ContainerLogic::Complex> _frame_tasks;
         ice::IceshardTaskExecutor _task_executor;
 
-        std::atomic<ice::ecs::ScheduledQueryData*> _query_operation;
-        std::atomic<ice::FrameEndOperationData*> _frame_end_operation;
+        ice::TaskQueue _queue_frame_end;
     };
 
 } // namespace ice

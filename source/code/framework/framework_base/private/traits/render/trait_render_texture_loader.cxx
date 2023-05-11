@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2022, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "trait_render_texture_loader.hxx"
@@ -208,7 +208,7 @@ namespace ice
 
         ice::Asset asset_handle = request->resolve(AssetRequest::Result::Success, image_handle_data);
 
-        co_await runner.schedule_next_frame();
+        co_await runner.stage_next_frame();
 
         ice::u32 const idx = ice::array::count(_images);
         ice::array::push_back(_images, image_handle);
@@ -240,7 +240,7 @@ namespace ice
 
         device.destroy_image(image);
 
-        co_await runner.schedule_next_frame();
+        co_await runner.stage_next_frame();
 
         if (ice::array::empty(_images) == false)
         {

@@ -1,3 +1,6 @@
+/// Copyright 2023 - 2023, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
 #pragma once
 #include <ice/task_types.hxx>
 #include <ice/task_awaitable.hxx>
@@ -5,6 +8,50 @@
 
 namespace ice
 {
+
+    template<typename StageObject = void>
+    struct TaskStageAwaitable
+    {
+        inline explicit TaskStageAwaitable(ice::TaskQueue& queue) noexcept
+            : _awaitable{ ._params{.modifier = TaskAwaitableModifier_v3::Unused} }
+            , _queue{ queue }
+        { }
+
+        inline bool await_ready() const noexcept
+        {
+            return false;
+        }
+
+        inline auto await_suspend(ice::coroutine_handle<> coroutine) noexcept
+        {
+            _awaitable._coro = coroutine;
+            ice::linked_queue::push(_queue._awaitables, &_awaitable);
+        }
+
+        inline auto await_resume() const noexcept -> StageObject& requires(std::is_same_v<StageObject, void> == false)
+        {
+            return *reinterpret_cast<StageObject*>(_awaitable.result.ptr);
+        }
+
+        inline void await_resume() const noexcept requires(std::is_same_v<StageObject, void>)
+        {
+        }
+
+        ice::TaskAwaitableBase _awaitable;
+        ice::TaskQueue& _queue;
+    };
+
+    template<typename StageResult = void>
+    struct TaskStage
+    {
+        ice::TaskQueue& _queue;
+    };
+
+    template<typename StageResult>
+    inline auto operator co_await(ice::TaskStage<StageResult>&& task_stage) noexcept -> ice::TaskStageAwaitable<StageResult>
+    {
+        return ice::TaskStageAwaitable<StageResult>{ task_stage._queue };
+    }
 
     class TaskScheduler
     {
@@ -23,14 +70,13 @@ namespace ice
         ice::TaskQueue& _queue;
     };
 
-
-    struct TaskScheduler::SchedulerAwaitable : TaskAwaitableBase
+    struct TaskScheduler::SchedulerAwaitable
     {
         SchedulerAwaitable(
             ice::TaskQueue& queue,
             ice::TaskAwaitableParams params
         ) noexcept
-            : TaskAwaitableBase{ ._params = params }
+            : _awaitable{ ._params = params }
             , _queue{ queue }
         { }
 
@@ -41,14 +87,15 @@ namespace ice
 
         auto await_suspend(ice::coroutine_handle<> coroutine) noexcept
         {
-            _coro = coroutine;
-            ice::linked_queue::push(_queue._awaitables, this);
+            _awaitable._coro = coroutine;
+            ice::linked_queue::push(_queue._awaitables, &_awaitable);
         }
 
         void await_resume() const noexcept
         {
         }
 
+        ice::TaskAwaitableBase _awaitable;
         ice::TaskQueue& _queue;
     };
 

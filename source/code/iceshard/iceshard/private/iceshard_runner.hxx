@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2022, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -79,21 +79,12 @@ namespace ice
         void execute_task(ice::Task<> task, ice::EngineContext context) noexcept override;
         void remove_finished_tasks() noexcept;
 
-        auto schedule_current_frame() noexcept -> ice::CurrentFrameOperation override;
-        auto schedule_next_frame() noexcept -> ice::NextFrameOperation override;
+        auto stage_current_frame() noexcept -> ice::TaskStage<ice::EngineFrame> override;
+        auto stage_next_frame() noexcept -> ice::TaskStage<ice::EngineFrame> override;
 
     protected:
         void activate_worlds() noexcept;
         void deactivate_worlds() noexcept;
-
-    private:
-        void schedule_internal(
-            ice::CurrentFrameOperationData& operation
-        ) noexcept override;
-
-        void schedule_internal(
-            ice::NextFrameOperationData& operation
-        ) noexcept override;
 
     private:
         ice::ProxyAllocator _allocator;
@@ -129,8 +120,8 @@ namespace ice
         };
         ice::Array<TraitTask> _runner_tasks;
 
-        std::atomic<ice::CurrentFrameOperationData*> _current_op_head;
-        std::atomic<ice::NextFrameOperationData*> _next_op_head;
+        ice::TaskQueue _queue_current_frame;
+        ice::TaskQueue _queue_next_frame;
     };
 
 } // namespace ice

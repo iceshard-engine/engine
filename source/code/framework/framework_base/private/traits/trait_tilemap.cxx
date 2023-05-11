@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2022, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "trait_tilemap.hxx"
@@ -102,7 +102,7 @@ namespace ice
         ice::TileMapInstance tilemap_info{ .tilemap = tilemap_ptr };
         tilemap_info.physics_ids = _allocator.allocate<ice::PhysicsID>(tilemap_ptr->map_collision_count + 1);
 
-        co_await runner.schedule_next_frame();
+        co_await runner.stage_next_frame();
 
         ice::TileMap const& tilemap = *tilemap_info.tilemap;
         ice::Span<ice::TileCollision const> tile_collisions = { tilemap.tile_collisions, tilemap.tile_collision_count };
