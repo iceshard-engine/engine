@@ -115,10 +115,7 @@ namespace ice
                 properties[idx].tile_size = operation.tile_render_size;
                 properties[idx].tile_scale = { tile_size.x / tileset_size.x, tile_size.y / tileset_size.y };
 
-                //ice::Asset const asset = co_await runner.asset_storage().request(ice::render::AssetType_Texture2D, asset_name, AssetState::Runtime);
                 image_data = co_await image_asset[AssetState::Runtime];
-                //ICE_ASSERT(asset_check(asset, AssetState::Runtime), "Shader not available!");
-
                 cache.tileset_images[idx] = *reinterpret_cast<ice::render::Image const*>(image_data.location);
                 cache.image_count += 1;
             }

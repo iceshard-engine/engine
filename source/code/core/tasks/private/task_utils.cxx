@@ -1,11 +1,12 @@
+/// Copyright 2023 - 2023, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
 #include <ice/task.hxx>
 #include <ice/task_utils.hxx>
 #include <ice/task_scheduler.hxx>
 #include <ice/sync_manual_events.hxx>
 #include <ice/mem_allocator_host.hxx>
 #include <ice/container/array.hxx>
-
-#include "internal_task.hxx"
 
 namespace ice
 {

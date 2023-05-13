@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2022, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include <ice/ui_asset.hxx>
@@ -570,16 +570,6 @@ namespace ice
     {
         ice::Asset default_font_asset = storage.bind(ice::AssetType_Font, "local/font/calibri");
         ice::Data asset_data = co_await default_font_asset[AssetState::Loaded];
-
-        //if (ice::asset_check(default_font_asset, AssetState::Loaded) == false)
-        //{
-        //    ICE_LOG(
-        //        ice::LogSeverity::Error, ice::LogTag::Engine,
-        //        "Couldn't load UI asset due to missing fonts!"
-        //    );
-        //    co_return false;
-        //}
-
         ice::ui::PageInfo const* ui_data = reinterpret_cast<ice::ui::PageInfo const*>(data.location);
 
         ice::ui::PageInfo* const ui_result = alloc.create<ice::ui::PageInfo>();

@@ -1,3 +1,6 @@
+/// Copyright 2023 - 2023, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
 #pragma once
 #include <ice/assert.hxx>
 #include <ice/task_promise_base.hxx>
@@ -18,11 +21,6 @@ namespace ice
             static_assert(std::is_nothrow_move_assignable_v<Value>, "We enforce noexcept everywhere.");
             _value = std::move(value);
         }
-
-        //inline auto result() const noexcept -> Value const&
-        //{
-        //    return _value;
-        //}
 
         inline auto result() & noexcept -> Value&
         {

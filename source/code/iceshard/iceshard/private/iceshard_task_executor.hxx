@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2022, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -36,11 +36,7 @@ namespace ice
         ice::Allocator& _allocator;
         ice::ucount _task_count;
         ice::Array<ice::Task<>, ice::ContainerLogic::Complex> _tasks;
-
-        //ice::Memory _reset_events_memory;
         ice::ManualResetBarrier _sync_sem;
-
-        //ice::ManualResetEvent* _reset_events;
     };
 
 }

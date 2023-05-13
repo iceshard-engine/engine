@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2022, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "asset_shelve.hxx"
@@ -27,11 +27,6 @@ namespace ice
     {
         for (ice::AssetEntry* entry : _asset_resources)
         {
-            //if (entry->refcount.load(std::memory_order_relaxed) > 0)
-            //{
-            //    IPT_MESSAGE_C("Encountered unreleased asset object during asset shelve destruction.", 0xEE99AA);
-            //}
-
             _allocator.deallocate(entry->data_baked);
             _allocator.deallocate(entry->data_loaded);
             _allocator.deallocate(entry->data_runtime);

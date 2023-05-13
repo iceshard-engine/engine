@@ -278,15 +278,6 @@ namespace ice
 
         ice::Asset page_asset = runner.asset_storage().bind(ice::ui::AssetType_UIPage, name);
         ice::Data page_data = co_await page_asset[AssetState::Loaded];
-        //if (ice::asset_check(page_asset, AssetState::Loaded) == false)
-        //{
-        //    ICE_LOG(
-        //        ice::LogSeverity::Warning, ice::LogTag::Game,
-        //        "UI Page with name {} couldn't be loaded.",
-        //        name
-        //    );
-        //    co_return;
-        //}
 
         ice::GameUI_Page* page = nullptr;
         ice::hashmap::set(_pages, page_hash, page);

@@ -1,3 +1,6 @@
+/// Copyright 2023 - 2023, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
 #pragma once
 #include <ice/task_promise.hxx>
 #include <ice/container_concepts.hxx>
@@ -44,12 +47,6 @@ namespace ice
     private:
         ice::coroutine_handle<PromiseType> _coroutine;
     };
-
-    //explicit AwaitableBase(
-    //    ice::coroutine_handle<PromiseType> coro
-    //) noexcept
-    //    : _coroutine{ coro }
-    //{ }
 
     template<typename Result>
     inline bool Task<Result>::AwaitableBase::await_ready() const noexcept

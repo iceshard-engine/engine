@@ -535,10 +535,6 @@ namespace ice
         ice::Data asset_data = co_await asset[AssetState::Loaded];
 
         // Early return if we failed.
-        //if (ice::asset_check(asset, AssetState::Loaded) == false)
-        //{
-        //    co_return;
-        //}
         ice::Font const* font = reinterpret_cast<ice::Font const*>(asset_data.location);
 
         co_await runner.stage_current_frame();
