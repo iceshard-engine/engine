@@ -1,3 +1,6 @@
+/// Copyright 2023 - 2023, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
 #include "task_thread_pool_impl.hxx"
 #include <ice/string/static_string.hxx>
 #include <ice/string/string.hxx>

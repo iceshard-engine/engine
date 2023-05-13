@@ -1,3 +1,6 @@
+/// Copyright 2023 - 2023, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
 #include "resource_native_thread_io.hxx"
 #include "windows/resource_asyncio_win32.hxx"
 #include <ice/task_queue.hxx>
