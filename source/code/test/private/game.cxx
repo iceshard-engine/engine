@@ -1,7 +1,4 @@
-/// Copyright 2023 - 2023, Dandielo <dandielo@iceshard.net>
-/// SPDX-License-Identifier: MIT
-
-﻿/// Copyright 2022 - 2022, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "game.hxx"
@@ -89,8 +86,8 @@ auto MyGame::graphics_world_template() const noexcept -> ice::WorldTemplate cons
         static ice::WorldTemplate graphics_world_template
         {
             .name = "ice.framework-base.default-graphics-world-template"_sid,
-            .traits = graphics_traits,
-            .entity_storage = _ecs_storage.get(),
+                .traits = graphics_traits,
+                .entity_storage = _ecs_storage.get(),
         };
 
         graphics_world_template.entity_storage = _ecs_storage.get();
@@ -115,8 +112,8 @@ auto MyGame::graphics_world_template() const noexcept -> ice::WorldTemplate cons
         static ice::WorldTemplate graphics_world_template
         {
             .name = "ice.framework-base.default-graphics-world-template"_sid,
-            .traits = graphics_traits,
-            .entity_storage = _ecs_storage.get(),
+                .traits = graphics_traits,
+                .entity_storage = _ecs_storage.get(),
         };
 
         graphics_world_template.entity_storage = _ecs_storage.get();
@@ -241,8 +238,8 @@ void MyGame::on_app_startup(ice::Engine& engine) noexcept
 
     ice::WorldTemplate const world_template{
         .name = "game.test_world"_sid,
-        .traits = ice::Span{ world_traits },
-        .entity_storage = _ecs_storage.get(),
+            .traits = ice::Span{ world_traits },
+            .entity_storage = _ecs_storage.get(),
     };
 
     _test_world = world_manager.create_world(world_template);
@@ -355,13 +352,13 @@ void MyGame::on_game_begin(ice::EngineRunner& runner) noexcept
 
     ice::Camera const camera{
         .name = "camera.default"_sid,
-        .position = { 0.f, 0.f, 0.f },
-        .front = { 0.f, 0.f, -1.f }
+            .position = { 0.f, 0.f, 0.f },
+            .front = { 0.f, 0.f, -1.f }
     };
     ice::CameraOrtho const orto_values{
-        .left_right = { 0.f, (ice::f32) extent.x / 2.f },
-        .bottom_top = { 0.f, (ice::f32) extent.y / 2.f },
-        .near_far = { 0.1f, 100.f }
+        .left_right = { 0.f, (ice::f32)extent.x / 2.f },
+            .bottom_top = { 0.f, (ice::f32)extent.y / 2.f },
+            .near_far = { 0.1f, 100.f }
     };
 
     ice::ecs::queue_set_archetype_with_data(
@@ -376,13 +373,13 @@ void MyGame::on_game_begin(ice::EngineRunner& runner) noexcept
         runner.current_frame().entity_operations(),
         player_entity,
         player_arch,
-        ice::Animation{ .animation = "cotm_idle"_sid_hash, .speed = 1.f / 60.f },
-        ice::Actor{ .type = ice::ActorType::Player },
-        ice::Transform2DDynamic{ .position = { 48.f * 2, 448.f, -1.f }, .scale = { 1.f, 0.f } },
-        ice::PhysicsBody{ .shape = ice::PhysicsShape::Capsule, .dimensions = { 16.f, 32.f }, .trait_data = nullptr },
-        ice::PhysicsVelocity{ .velocity = { 0.1f, 0.f } },
-        ice::Sprite{ .material = "local/cotm_hero" },
-        ice::SpriteTile{ .material_tile = { 0, 0 } }
+        ice::Animation{.animation = "cotm_idle"_sid_hash, .speed = 1.f / 60.f },
+        ice::Actor{.type = ice::ActorType::Player },
+        ice::Transform2DDynamic{.position = { 48.f * 2, 448.f, -1.f }, .scale = { 1.f, 0.f } },
+        ice::PhysicsBody{.shape = ice::PhysicsShape::Capsule, .dimensions = { 16.f, 32.f }, .trait_data = nullptr },
+        ice::PhysicsVelocity{.velocity = { 0.1f, 0.f } },
+        ice::Sprite{.material = "local/cotm_hero" },
+        ice::SpriteTile{.material_tile = { 0, 0 } }
     );
 
     ice::String const* tilemap_asset = runner.current_frame().storage().create_named_object<ice::String>(

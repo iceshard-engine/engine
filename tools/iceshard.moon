@@ -15,7 +15,7 @@ LicenseCommand.settings.authors = "Dandielo <dandielo@iceshard.net>"
 LicenseCommand.settings.license = "MIT"
 
 class IceShard extends Application
-    @name: 'IceShard'
+    @name: 'IceShard (v0.3.0)'
     @description: 'IceShard engine project tool.'
     @commands: {
         'build': BuildCommand
