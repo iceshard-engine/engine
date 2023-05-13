@@ -13,14 +13,8 @@ For exact copies of eache license please follow the upstream link to look into [
 ## catch2
 A modern, C++-native, header-only, test framework for unit-tests, TDD and BDD.
 - **upstream:** https://github.com/catchorg/Catch2
-- **version:** 2.13.9
+- **version:** 3.3.2
 - **license:** BSL-1.0 License
-
-## box2d
-Box2D is a 2D physics engine for games.
-- **upstream:** https://github.com/erincatto/box2d
-- **version:** 2.4.1
-- **license:** MIT
 
 ## chipmunk2d
 A fast and lightweight 2D game physics library.
@@ -31,7 +25,7 @@ A fast and lightweight 2D game physics library.
 ## tracy
 A real time, nanosecond resolution, remote telemetry, hybrid frame and sampling profiler for games and other applications.
 - **upstream:** https://github.com/wolfpld/tracy
-- **version:** 0.8.1
+- **version:** 0.9.1
 - **license:** BSD-3-Clause
 
 ## rapidjson
@@ -55,7 +49,7 @@ RapidXML NS library - RapidXML with added XML namespaces support.
 ## assimp
 Open-Asset-Importer-Library that loads 40+ 3D-file-formats into one unified and clean data structure.
 - **upstream:** https://github.com/jacmoe/conan-assimp
-- **version:** 5.2.4
+- **version:** 5.2.5
 - **license:** BSD 3-Clause
 
 ## sdl2
@@ -67,7 +61,7 @@ Conan recipe for the SDL2 library.
 ## imgui
 Dear ImGui: Bloat-free Immediate Mode Graphical User interface for C++ with minimal dependencies
 - **upstream:** https://github.com/ocornut/imgui
-- **version:** 1.85
+- **version:** 1.88
 - **license:** MIT
 
 ## msdf_atlas_gen
@@ -75,12 +69,6 @@ MSDF font atlas generator.
 - **upstream:** https://github.com/Chlumsky/msdf-atlas-gen
 - **version:** 1.2.2
 - **license:** MIT
-
-## zlib
-A Massively Spiffy Yet Delicately Unobtrusive Compression Library (Also Free, Not to Mention Unencumbered by Patents)
-- **upstream:** https://github.com/iceshard-engine/conan-zlib
-- **version:** 1.2.11
-- **license:** Zlib
 
 ## msdfgen
 Multi-channel signed distance field generator.

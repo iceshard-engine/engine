@@ -16,7 +16,7 @@ msdfgen/1.9.2@iceshard/stable
 msdf_atlas_gen/1.2.2@iceshard/stable
 
 [tool_requires]
-fastbuild-generator/0.4.0@iceshard/stable
+fastbuild-generator/0.4.1@iceshard/stable
 
 [options]
 imgui/*:docking_branch=True
