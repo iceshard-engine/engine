@@ -1,7 +1,8 @@
-/// Copyright 2022 - 2022, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
+#include <ice/math.hxx>
 #include <ice/stringid.hxx>
 #include <ice/ecs/ecs_component.hxx>
 #include <ice/ecs/ecs_entity.hxx>

@@ -1,0 +1,22 @@
+/// Copyright 2020 - 2023, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
+.Project =
+[
+    .Name = 'application'
+    .Kind = .Kind_StaticLib
+    .Group = 'Platforms'
+
+    .BaseDir = '$WorkspaceCodeDir$/platforms/application'
+
+    ; We don't allow unity builds so we can use 'StaticLib' linking behavior and only link undefined app methods.
+    .AllowUnityBuilds = false
+
+    .Public =
+    [
+        .Uses = {
+            'resource_system'
+        }
+    ]
+]
+.Projects + .Project

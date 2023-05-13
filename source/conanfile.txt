@@ -1,30 +1,27 @@
 [requires]
 fmt/9.0.0@iceshard/stable
-catch2/2.13.9@iceshard/stable
-box2d/2.4.1@iceshard/stable
+catch2/3.3.2@iceshard/stable
 chipmunk2d/7.0.3+@iceshard/stable
-tracy/0.8.1@iceshard/stable
+tracy/0.9.1@iceshard/stable
 
 rapidjson/1.1.0
 rapidxml/1.13
 rapidxml_ns/1.13.2@iceshard/stable
-assimp/5.2.4@iceshard/stable
+assimp/5.2.5@iceshard/stable
 sdl2/2.0.22@iceshard/stable
-imgui/1.85@iceshard/stable
+imgui/1.88@iceshard/stable
 
 freetype/2.12.1@iceshard/stable
 msdfgen/1.9.2@iceshard/stable
 msdf_atlas_gen/1.2.2@iceshard/stable
 
-[build_requires]
-fastbuild-generator/0.3.0@iceshard/stable
+[tool_requires]
+fastbuild-generator/0.4.1@iceshard/stable
 
 [options]
-imgui:docking_branch=True
-sdl2:shared=True
-assimp:shared=True
-box2d:undefined_user_symbols=True
+imgui/*:docking_branch=True
+sdl2/*:shared=True
+assimp/*:shared=True
 
 [generators]
-fastbuild
-json
+FastBuildDeps

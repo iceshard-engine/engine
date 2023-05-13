@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2022, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "iceshard_engine.hxx"
@@ -36,6 +36,7 @@ namespace ice
     ) noexcept
         : ice::Engine{ }
         , _allocator{ alloc, "engine" }
+        , _task_scheduler{ create_info.task_scheduler }
         , _asset_storage{ create_info.asset_storage }
         , _trait_archive{ create_info.trait_archive }
         , _entity_index{ _allocator, 100'000, 500'000 }
@@ -58,6 +59,7 @@ namespace ice
             _allocator,
             *this,
             _world_manager,
+            _task_scheduler,
             ice::move(input_tracker),
             ice::move(graphics_runner)
         );

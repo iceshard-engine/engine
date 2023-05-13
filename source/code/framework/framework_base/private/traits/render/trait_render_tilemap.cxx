@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2022, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "trait_render_tilemap.hxx"
@@ -9,7 +9,8 @@
 #include <ice/engine.hxx>
 #include <ice/engine_frame.hxx>
 #include <ice/engine_runner.hxx>
-#include <ice/task_sync_wait.hxx>
+#include <ice/task.hxx>
+#include <ice/task_utils.hxx>
 #include <ice/world/world_portal.hxx>
 #include <ice/world/world_trait_archive.hxx>
 
@@ -63,9 +64,8 @@ namespace ice
 
         auto load_tilemap_shader(ice::AssetStorage& assets, ice::String name) noexcept -> ice::Task<ice::Data>
         {
-            ice::Asset const asset = co_await assets.request(ice::render::AssetType_Shader, name, ice::AssetState::Baked);
-            ICE_ASSERT(asset_check(asset, AssetState::Baked), "Shader not available!");
-            co_return asset.data;
+            ice::Asset asset = assets.bind(ice::render::AssetType_Shader, name);
+            co_return co_await asset[AssetState::Baked];
         }
 
         auto task_update_tilemap_images(
@@ -84,11 +84,12 @@ namespace ice
             {
                 ice::String const asset_name = tilemap.tilesets[idx].asset;
 
-                Asset image_data = co_await runner.asset_storage().request(ice::render::AssetType_Texture2D, asset_name, AssetState::Loaded);
-                ICE_ASSERT(asset_check(image_data, AssetState::Loaded), "Shader not available!");
-                ice::render::ImageInfo const* image_info = reinterpret_cast<ice::render::ImageInfo const*>(image_data.data.location);
+                Asset image_asset = runner.asset_storage().bind(ice::render::AssetType_Texture2D, asset_name);
+                Data image_data = co_await image_asset[AssetState::Loaded];
+                //ICE_ASSERT(asset_check(image_data, AssetState::Loaded), "Shader not available!");
+                ice::render::ImageInfo const* image_info = reinterpret_cast<ice::render::ImageInfo const*>(image_data.location);
 
-                ice::Metadata const& metadata = ice::asset_metadata(image_data);
+                ice::Metadata const& metadata = image_asset.metadata();
 
                 ice::i32 tile_width;
                 ice::i32 tile_height;
@@ -114,14 +115,12 @@ namespace ice
                 properties[idx].tile_size = operation.tile_render_size;
                 properties[idx].tile_scale = { tile_size.x / tileset_size.x, tile_size.y / tileset_size.y };
 
-                ice::Asset const asset = co_await runner.asset_storage().request(ice::render::AssetType_Texture2D, asset_name, AssetState::Runtime);
-                ICE_ASSERT(asset_check(asset, AssetState::Runtime), "Shader not available!");
-
-                cache.tileset_images[idx] = *reinterpret_cast<ice::render::Image const*>(asset.data.location);
+                image_data = co_await image_asset[AssetState::Runtime];
+                cache.tileset_images[idx] = *reinterpret_cast<ice::render::Image const*>(image_data.location);
                 cache.image_count += 1;
             }
 
-            co_await runner.schedule_next_frame();
+            co_await runner.stage_next_frame();
             co_await runner.graphics_frame().frame_begin();
 
             ice::gfx::GfxDevice& gfx_device = runner.graphics_device();
@@ -230,8 +229,8 @@ namespace ice
     ) noexcept
     {
         _asset_system = ice::addressof(engine.asset_storage());
-        _shader_data[0] = ice::sync_wait(detail::load_tilemap_shader(*_asset_system, Tilemap_VtxShader));
-        _shader_data[1] = ice::sync_wait(detail::load_tilemap_shader(*_asset_system, Tilemap_PixShader));
+        _shader_data[0] = ice::wait_for(detail::load_tilemap_shader(*_asset_system, Tilemap_VtxShader));
+        _shader_data[1] = ice::wait_for(detail::load_tilemap_shader(*_asset_system, Tilemap_PixShader));
     }
 
     void IceWorldTrait_RenderTilemap::on_deactivate(
@@ -532,32 +531,27 @@ namespace ice
     {
         using namespace ice::render;
 
-        auto const tailcall_bug_workaround = [&]() noexcept
+        IPT_ZONE_SCOPED_NAMED("[GfxTrait] TileMap :: Update Camera");
+
+        ice::StringID_Hash camera_name = ice::StringID_Invalid;
+        if (ice::shards::inspect_last(engine_frame.shards(), ice::Shard_SetDefaultCamera, camera_name))
         {
-            IPT_ZONE_SCOPED_NAMED("[GfxTrait] TileMap :: Update Camera");
+            _render_camera = ice::StringID{ camera_name };
+        }
 
-            ice::StringID_Hash camera_name = ice::StringID_Invalid;
-            if (ice::shards::inspect_last(engine_frame.shards(), ice::Shard_SetDefaultCamera, camera_name))
+        if (camera_name != ice::StringID_Invalid)
+        {
+            ice::render::Buffer const camera_buffer = ice::gfx::find_resource<ice::render::Buffer>(
+                gfx_device.resource_tracker(),
+                _render_camera
+            );
+
+            if (_render_camera_buffer != camera_buffer && camera_buffer != ice::render::Buffer::Invalid)
             {
-                _render_camera = ice::StringID{ camera_name };
+                _render_camera_buffer = camera_buffer;
+                update_resource_camera(gfx_device);
             }
-
-            if (camera_name != ice::StringID_Invalid)
-            {
-                ice::render::Buffer const camera_buffer = ice::gfx::find_resource<ice::render::Buffer>(
-                    gfx_device.resource_tracker(),
-                    _render_camera
-                    );
-
-                if (_render_camera_buffer != camera_buffer && camera_buffer != ice::render::Buffer::Invalid)
-                {
-                    _render_camera_buffer = camera_buffer;
-                    update_resource_camera(gfx_device);
-                }
-            }
-        };
-
-        tailcall_bug_workaround();
+        }
 
         ice::detail::TileMap_DrawOperation const* const draw_operation = engine_frame.storage().named_object<ice::detail::TileMap_DrawOperation>(
             "tilemap_render.draw_operation"_sid

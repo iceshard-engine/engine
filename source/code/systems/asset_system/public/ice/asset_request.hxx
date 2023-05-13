@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2022, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -36,7 +36,7 @@ namespace ice
         virtual auto resolve(
             ice::AssetRequest::Result result,
             ice::Memory memory
-        ) noexcept -> ice::AssetHandle const* = 0;
+        ) noexcept -> ice::Asset = 0;
     };
 
 } // namespace ice

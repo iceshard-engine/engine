@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2022, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "imgui_trait.hxx"
@@ -23,7 +23,9 @@
 #include <ice/input/input_mouse.hxx>
 #include <ice/input/input_event.hxx>
 
-#include <ice/task_sync_wait.hxx>
+#include <ice/asset.hxx>
+#include <ice/task.hxx>
+#include <ice/task_utils.hxx>
 #include <ice/profiler.hxx>
 
 namespace ice::devui
@@ -43,9 +45,8 @@ namespace ice::devui
 
         auto load_imgui_shader(ice::AssetStorage& assets, ice::String name) noexcept -> ice::Task<ice::Data>
         {
-            ice::Asset const asset = co_await assets.request(ice::render::AssetType_Shader, name, ice::AssetState::Baked);
-            ICE_ASSERT(asset_check(asset, AssetState::Baked), "Shader not available!");
-            co_return asset.data;
+            ice::Asset asset = assets.bind(ice::render::AssetType_Shader, name);
+            co_return co_await asset[AssetState::Baked];
         }
 
     } // namespace detail
@@ -519,8 +520,8 @@ namespace ice::devui
         io.KeyMap[ImGuiKey_Y] = (uint32_t)ice::input::KeyboardKey::KeyY;
         io.KeyMap[ImGuiKey_Z] = (uint32_t)ice::input::KeyboardKey::KeyZ;
 
-        _shader_data[0] = ice::sync_wait(detail::load_imgui_shader(engine.asset_storage(), "shaders/debug/imgui-vert"));
-        _shader_data[1] = ice::sync_wait(detail::load_imgui_shader(engine.asset_storage(), "shaders/debug/imgui-frag"));
+        _shader_data[0] = ice::wait_for(detail::load_imgui_shader(engine.asset_storage(), "shaders/debug/imgui-vert"));
+        _shader_data[1] = ice::wait_for(detail::load_imgui_shader(engine.asset_storage(), "shaders/debug/imgui-frag"));
     }
 
     void ImGuiTrait::on_update(

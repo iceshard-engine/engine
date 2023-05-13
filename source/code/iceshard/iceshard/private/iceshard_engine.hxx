@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2022, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -7,6 +7,7 @@
 #include <ice/input/input_types.hxx>
 #include <ice/mem_allocator_proxy.hxx>
 #include <ice/ecs/ecs_entity_index.hxx>
+#include <ice/task_scheduler.hxx>
 
 #include "world/iceshard_world_manager.hxx"
 
@@ -54,6 +55,7 @@ namespace ice
 
     private:
         ice::ProxyAllocator _allocator;
+        ice::TaskScheduler _task_scheduler;
         ice::AssetStorage& _asset_storage;
         ice::WorldTraitArchive const& _trait_archive;
 

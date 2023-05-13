@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2022, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "iceshard_runner.hxx"
@@ -15,7 +15,7 @@
 #include <ice/gfx/gfx_trait.hxx>
 #include <ice/gfx/gfx_queue.hxx>
 
-#include <ice/task_sync_wait.hxx>
+#include <ice/task_utils.hxx>
 #include <ice/input/input_tracker.hxx>
 #include <ice/assert.hxx>
 
@@ -74,6 +74,7 @@ namespace ice
         ice::Allocator& alloc,
         ice::IceshardEngine& engine,
         ice::IceshardWorldManager& world_manager,
+        ice::TaskScheduler& task_scheduler,
         ice::UniquePtr<ice::input::InputTracker> input_tracker,
         ice::UniquePtr<ice::gfx::GfxRunner> gfx_runner
     ) noexcept
@@ -84,7 +85,7 @@ namespace ice
         , _devui_key{ devui::execution_key_from_pointer(ice::addressof(_engine)) }
         , _gfx_world{ nullptr }
         , _gfx_runner{ ice::move(gfx_runner) }
-        , _thread_pool{ ice::create_simple_threadpool(_allocator, 6) }
+        , _task_scheduler{ task_scheduler }
         , _frame_allocator{ _allocator, "frame-allocator" }
         , _frame_data_allocator{
             ice::RingAllocator{ _frame_allocator, "frame-alloc-1", { detail::FrameAllocatorCapacity } },
@@ -122,21 +123,20 @@ namespace ice
 
     IceshardEngineRunner::~IceshardEngineRunner() noexcept
     {
-        for (TraitTask& trait_task : _runner_tasks)
-        {
-            trait_task.coroutine.destroy();
-            _allocator.destroy(trait_task.event);
-        }
-
         _mre_frame_logic.wait();
 
         set_graphics_runner({ });
 
         deactivate_worlds();
 
-        _thread_pool = nullptr;
         _current_frame = nullptr;
         _previous_frame = nullptr;
+
+        for (TraitTask& trait_task : _runner_tasks)
+        {
+            trait_task.coroutine.destroy();
+            _allocator.destroy(trait_task.event);
+        }
     }
 
     auto IceshardEngineRunner::clock() const noexcept -> ice::Clock const&
@@ -181,9 +181,9 @@ namespace ice
         }
     }
 
-    auto IceshardEngineRunner::thread_pool() noexcept -> ice::TaskThreadPool&
+    auto IceshardEngineRunner::task_scheduler() noexcept -> ice::TaskScheduler&
     {
-        return *_thread_pool;
+        return _task_scheduler;
     }
 
     auto IceshardEngineRunner::asset_storage() noexcept -> ice::AssetStorage&
@@ -256,21 +256,10 @@ namespace ice
         }
 
         // Handle all tasks for this 'next' frame
+        for (ice::TaskAwaitableBase* awaitable : ice::linked_queue::consume(_queue_next_frame._awaitables))
         {
-            ice::NextFrameOperationData* operation_head = _next_op_head;
-            while (_next_op_head.compare_exchange_weak(operation_head, nullptr, std::memory_order::relaxed, std::memory_order::acquire) == false)
-            {
-                continue;
-            }
-
-            ice::NextFrameOperationData* operation = operation_head;
-            while (operation != nullptr)
-            {
-                ice::NextFrameOperationData* next_operation = operation->next;
-                operation->frame = _current_frame.get();
-                operation->coroutine.resume();
-                operation = next_operation;
-            }
+            awaitable->result.ptr = _current_frame.get();
+            awaitable->_coro.resume();
         }
 
         // #todo: We need to remove entity operations beein processed by each world!
@@ -305,22 +294,15 @@ namespace ice
         }
 
         ice::ManualResetEvent tasks_finished_event;
-        ice::sync_manual_wait(excute_frame_task(), tasks_finished_event);
+        ice::manual_wait_for(excute_frame_task(), tasks_finished_event);
 
         while (tasks_finished_event.is_set() == false)
         {
-            ice::CurrentFrameOperationData* operation_head = _current_op_head;
-            while (_current_op_head.compare_exchange_weak(operation_head, nullptr, std::memory_order::relaxed, std::memory_order::acquire) == false)
+            // Handle all tasks for this 'next' frame
+            for (ice::TaskAwaitableBase* awaitable : ice::linked_queue::consume(_queue_next_frame._awaitables))
             {
-                continue;
-            }
-
-            ice::EngineTaskOperationBaseData* operation = operation_head;
-            while (operation != nullptr)
-            {
-                ice::EngineTaskOperationBaseData* next_operation = operation->next;
-                operation->coroutine.resume();
-                operation = next_operation;
+                awaitable->result.ptr = _current_frame.get();
+                awaitable->_coro.resume();
             }
         }
 
@@ -330,7 +312,7 @@ namespace ice
 
     auto IceshardEngineRunner::excute_frame_task() noexcept -> ice::Task<>
     {
-        co_await thread_pool();
+        co_await task_scheduler();
 
         IPT_ZONE_SCOPED_NAMED("Logic Frame - Wait for tasks");
         _current_frame->wait_ready();
@@ -343,7 +325,7 @@ namespace ice
 
         ice::shards::push_back(_current_frame->shards(), shards._data);
 
-        ice::sync_manual_wait(logic_frame_task(), _mre_frame_logic);
+        ice::manual_wait_for(logic_frame_task(), _mre_frame_logic);
         _mre_frame_logic.wait();
 
         // Wait for the graphics runner to set this event, we know that it finished it's work.
@@ -454,54 +436,14 @@ namespace ice
         _runner_tasks = ice::move(running_tasks);
     }
 
-    auto IceshardEngineRunner::schedule_current_frame() noexcept -> ice::CurrentFrameOperation
+    auto IceshardEngineRunner::stage_current_frame() noexcept -> ice::TaskStage<ice::EngineFrame>
     {
-        return CurrentFrameOperation{ *this };
+        return { _queue_current_frame };
     }
 
-    auto IceshardEngineRunner::schedule_next_frame() noexcept -> ice::NextFrameOperation
+    auto IceshardEngineRunner::stage_next_frame() noexcept -> ice::TaskStage<ice::EngineFrame>
     {
-        return NextFrameOperation{ *this };
-    }
-
-    void IceshardEngineRunner::schedule_internal(
-        ice::CurrentFrameOperationData& operation
-    ) noexcept
-    {
-        ice::CurrentFrameOperationData* expected_head = _current_op_head.load(std::memory_order_acquire);
-
-        do
-        {
-            operation.next = expected_head;
-        }
-        while (
-            _current_op_head.compare_exchange_weak(
-                expected_head,
-                &operation,
-                std::memory_order_release,
-                std::memory_order_acquire
-            ) == false
-        );
-    }
-
-    void IceshardEngineRunner::schedule_internal(
-        ice::NextFrameOperationData& operation
-    ) noexcept
-    {
-        ice::NextFrameOperationData* expected_head = _next_op_head.load(std::memory_order_acquire);
-
-        do
-        {
-            operation.next = expected_head;
-        }
-        while (
-            _next_op_head.compare_exchange_weak(
-                expected_head,
-                &operation,
-                std::memory_order_release,
-                std::memory_order_acquire
-            ) == false
-        );
+        return { _queue_next_frame };
     }
 
     void IceshardEngineRunner::activate_worlds() noexcept

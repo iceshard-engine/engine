@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2022, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -164,7 +164,7 @@ namespace ice
         }
         else
         {
-            if (val.debug_info.name_value.consteval_flag == ice::utf8('\xff'))
+            if (val.debug_info.name_value.consteval_flag == char('\xff'))
             {
                 return val.debug_info.name_value.value;
             }

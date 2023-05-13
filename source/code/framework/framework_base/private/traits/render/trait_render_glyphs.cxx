@@ -1,10 +1,10 @@
-/// Copyright 2022 - 2022, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "trait_render_glyphs.hxx"
 #include <ice/asset_storage.hxx>
-#include <ice/task_thread_pool.hxx>
-#include <ice/task_sync_wait.hxx>
+#include <ice/task.hxx>
+#include <ice/task_utils.hxx>
 #include <ice/font_utils.hxx>
 
 #include <ice/shard.hxx>
@@ -40,9 +40,8 @@ namespace ice
 
         auto load_font_shader(ice::AssetStorage& assets, ice::Data& data, ice::String name) noexcept -> ice::Task<>
         {
-            ice::Asset const asset = co_await assets.request(ice::render::AssetType_Shader, name, ice::AssetState::Baked);
-            ICE_ASSERT(asset_check(asset, AssetState::Baked), "Shader not available!");
-            data = asset.data;
+            ice::Asset asset = assets.bind(ice::render::AssetType_Shader, name);
+            data = co_await assets.request(asset, AssetState::Baked);
         }
 
     } // namespace detail
@@ -257,6 +256,8 @@ namespace ice
     ) noexcept
     {
         ice::AssetStorage& storage = runner.asset_storage();
+
+
 
         runner.execute_task(
             ice::detail::load_font_shader(storage, _shader_data[0], "shaders/debug/font-vert"),
@@ -528,18 +529,15 @@ namespace ice
             FontEntry{ .font = nullptr }
         );
 
-        co_await runner.thread_pool();
+        co_await runner.task_scheduler();
 
-        ice::Asset const asset = co_await runner.asset_storage().request(ice::AssetType_Font, font_name, ice::AssetState::Loaded);
+        ice::Asset asset = runner.asset_storage().bind(ice::AssetType_Font, font_name);
+        ice::Data asset_data = co_await asset[AssetState::Loaded];
 
         // Early return if we failed.
-        if (ice::asset_check(asset, AssetState::Loaded) == false)
-        {
-            co_return;
-        }
-        ice::Font const* font = reinterpret_cast<ice::Font const*>(asset.data.location);
+        ice::Font const* font = reinterpret_cast<ice::Font const*>(asset_data.location);
 
-        co_await runner.schedule_current_frame();
+        co_await runner.stage_current_frame();
 
         ice::Data const font_atlas_data{
             .location = ice::ptr_add(font->data_ptr, { font->atlases[0].image_data_offset }),
@@ -551,13 +549,13 @@ namespace ice
         ice::render::ResourceSet resource_set = ice::render::ResourceSet::Invalid;
         co_await load_font_atlas(font->atlases[0], font_atlas_data, runner, image, resource_set);
 
-        co_await runner.schedule_next_frame();
+        co_await runner.stage_next_frame();
 
         ice::hashmap::set(
             _fonts,
             font_hash,
             FontEntry{
-                .asset = asset.handle,
+                .asset = ice::move(asset),
                 .image = image,
                 .resource_set = resource_set,
                 .font = font

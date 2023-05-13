@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2022, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -50,5 +50,11 @@ namespace ice
     {
         return const_cast<T const*>(value);
     }
+
+    template<typename T, typename = void>
+    constexpr bool is_type_complete = false;
+
+    template<typename T>
+    constexpr bool is_type_complete<T, std::void_t<decltype(sizeof(T))>> = true;
 
 } // namespace ice

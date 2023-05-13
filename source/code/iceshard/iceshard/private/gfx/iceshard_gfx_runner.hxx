@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2022, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -6,9 +6,11 @@
 #include <ice/gfx/gfx_trait.hxx>
 #include <ice/gfx/gfx_context.hxx>
 
-#include <ice/task_thread.hxx>
 #include <ice/world/world.hxx>
 #include <ice/world/world_assembly.hxx>
+#include <ice/task_scheduler.hxx>
+#include <ice/task_queue.hxx>
+#include <ice/task.hxx>
 
 #include <ice/container/hashmap.hxx>
 #include <ice/mem_allocator_proxy.hxx>
@@ -64,9 +66,9 @@ namespace ice::gfx
         auto task_cleanup_gfx_traits() noexcept -> ice::Task<>;
 
         // GitHub Issue: #108
-        ISATTR_NOINLINE void cleanup_gfx_contexts() noexcept;
-        ISATTR_NOINLINE void setup_gfx_traits() noexcept;
-        ISATTR_NOINLINE void cleanup_gfx_traits() noexcept;
+        void cleanup_gfx_contexts() noexcept;
+        void setup_gfx_traits() noexcept;
+        void cleanup_gfx_traits() noexcept;
 
     private:
         auto task_frame(
@@ -81,7 +83,10 @@ namespace ice::gfx
 
     private:
         ice::ProxyAllocator _allocator;
-        ice::UniquePtr<ice::TaskThread_v2> _thread;
+
+        ice::TaskQueue _task_queue;
+        ice::TaskScheduler _task_scheduler;
+        ice::UniquePtr<ice::TaskThread> _thread;
         ice::UniquePtr<ice::gfx::IceGfxDevice> _device;
 
         ice::render::RenderFence* _fences[4];

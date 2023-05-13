@@ -1,9 +1,10 @@
-/// Copyright 2022 - 2022, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
 #include <ice/mem_unique_ptr.hxx>
 #include <ice/module_register.hxx>
+#include <ice/task_types.hxx>
 
 namespace ice
 {
@@ -16,6 +17,7 @@ namespace ice
 
     struct EngineCreateInfo
     {
+        ice::TaskScheduler& task_scheduler;
         ice::AssetStorage& asset_storage;
         ice::WorldTraitArchive const& trait_archive;
         ice::EngineDevUI* devui;

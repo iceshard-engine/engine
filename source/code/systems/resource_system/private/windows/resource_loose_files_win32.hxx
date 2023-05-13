@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2022, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -49,10 +49,10 @@ namespace ice
             ice::HeapString<> path
         ) noexcept;
 
-        auto load_data_for_flags(
+        auto load_data(
             ice::Allocator& alloc,
-            ice::ResourceFlags flags,
-            ice::TaskScheduler_v2& scheduler
+            ice::TaskScheduler& scheduler,
+            ice::NativeIO* nativeio
         ) const noexcept -> ice::Task<ice::Memory> override;
 
         class ExtraResource;
@@ -86,10 +86,10 @@ namespace ice
 
         auto metadata() const noexcept -> ice::Metadata const& override;
 
-        auto load_data_for_flags(
+        auto load_data(
             ice::Allocator& alloc,
-            ice::ResourceFlags flags,
-            ice::TaskScheduler_v2& scheduler
+            ice::TaskScheduler& scheduler,
+            ice::NativeIO* nativeio
         ) const noexcept -> ice::Task<ice::Memory> override;
 
     private:

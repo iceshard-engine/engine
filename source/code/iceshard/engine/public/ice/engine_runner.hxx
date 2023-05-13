@@ -1,16 +1,17 @@
-/// Copyright 2022 - 2022, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
 #include <ice/clock.hxx>
 #include <ice/stringid.hxx>
+#include <ice/task_types.hxx>
+#include <ice/task_scheduler.hxx>
+
 #include <ice/input/input_types.hxx>
 #include <ice/gfx/gfx_types.hxx>
-#include <ice/gfx/gfx_operations.hxx>
-#include <ice/task_operations.hxx>
-#include <ice/engine_task_operations.hxx>
 #include <ice/ecs/ecs_entity_index.hxx>
 #include <ice/platform_event.hxx>
+
 
 namespace ice
 {
@@ -32,25 +33,6 @@ namespace ice
         GraphicsFrame [[deprecated]],
     };
 
-    struct CurrentFrameOperationData : ice::EngineTaskOperationBaseData { };
-
-    struct NextFrameOperationData
-    {
-        std::coroutine_handle<> coroutine = nullptr;
-        ice::NextFrameOperationData* next = nullptr;
-        ice::EngineFrame* frame;
-    };
-
-    using CurrentFrameOperation = ice::EngineTaskOperation<ice::EngineRunner, ice::CurrentFrameOperationData>;
-    class NextFrameOperation : public ice::EngineTaskOperation<ice::EngineRunner, ice::NextFrameOperationData>
-    {
-    public:
-        using EngineTaskOperation::EngineTaskOperation;
-
-        inline auto await_resume() const noexcept -> ice::EngineFrame& { return *_data.frame; }
-        inline auto await_suspend(std::coroutine_handle<> coro) noexcept;
-    };
-
     class EngineRunner
     {
     public:
@@ -65,7 +47,7 @@ namespace ice
             ice::input::DeviceEventQueue const& device_queue
         ) noexcept = 0;
 
-        virtual auto thread_pool() noexcept -> ice::TaskThreadPool& = 0;
+        virtual auto task_scheduler() noexcept -> ice::TaskScheduler & = 0;
 
         virtual auto asset_storage() noexcept -> ice::AssetStorage& = 0;
 
@@ -82,26 +64,8 @@ namespace ice
 
         virtual void execute_task(ice::Task<> task, ice::EngineContext context) noexcept = 0;
 
-        virtual auto schedule_current_frame() noexcept -> ice::CurrentFrameOperation = 0;
-        virtual auto schedule_next_frame() noexcept -> ice::NextFrameOperation = 0;
-
-    protected:
-        friend CurrentFrameOperation;
-        friend NextFrameOperation;
-
-        virtual void schedule_internal(
-            ice::CurrentFrameOperationData& operation
-        ) noexcept = 0;
-
-        virtual void schedule_internal(
-            ice::NextFrameOperationData& operation
-        ) noexcept = 0;
+        virtual auto stage_current_frame() noexcept -> ice::TaskStage<ice::EngineFrame> = 0;
+        virtual auto stage_next_frame() noexcept -> ice::TaskStage<ice::EngineFrame> = 0;
     };
-
-    inline auto NextFrameOperation::await_suspend(std::coroutine_handle<> coro) noexcept
-    {
-        _data.coroutine = coro;
-        _target.schedule_internal(_data);
-    }
 
 } // namespace ice

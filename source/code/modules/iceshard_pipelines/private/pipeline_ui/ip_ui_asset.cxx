@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2022, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include <ice/ui_asset.hxx>
@@ -13,7 +13,7 @@
 #include <ice/ui_style.hxx>
 
 #include <ice/shard.hxx>
-#include <ice/task_sync_wait.hxx>
+#include <ice/task_utils.hxx>
 #include <ice/asset_storage.hxx>
 #include <ice/assert.hxx>
 #include <ice/log.hxx>
@@ -568,16 +568,8 @@ namespace ice
         ice::Memory& out_memory
     ) noexcept -> ice::Task<bool>
     {
-        ice::Asset default_font_asset = co_await storage.request(ice::AssetType_Font, "local/font/calibri", ice::AssetState::Loaded);
-        if (ice::asset_check(default_font_asset, AssetState::Loaded) == false)
-        {
-            ICE_LOG(
-                ice::LogSeverity::Error, ice::LogTag::Engine,
-                "Couldn't load UI asset due to missing fonts!"
-            );
-            co_return false;
-        }
-
+        ice::Asset default_font_asset = storage.bind(ice::AssetType_Font, "local/font/calibri");
+        ice::Data asset_data = co_await default_font_asset[AssetState::Loaded];
         ice::ui::PageInfo const* ui_data = reinterpret_cast<ice::ui::PageInfo const*>(data.location);
 
         ice::ui::PageInfo* const ui_result = alloc.create<ice::ui::PageInfo>();

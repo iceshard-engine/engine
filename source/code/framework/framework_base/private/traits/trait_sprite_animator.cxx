@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2022, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "trait_sprite_animator.hxx"
@@ -18,7 +18,7 @@
 #include <ice/string/static_string.hxx>
 #include <ice/data_storage.hxx>
 #include <ice/resource_meta.hxx>
-#include <ice/task_sync_wait.hxx>
+#include <ice/task_utils.hxx>
 #include <ice/asset_storage.hxx>
 #include <ice/asset.hxx>
 
@@ -30,12 +30,12 @@ namespace ice
 
         struct ReleaseOnExit
         {
-            ice::Asset asset;
+            ice::Asset const& asset;
             ice::AssetStorage& storage;
 
             inline ~ReleaseOnExit() noexcept
             {
-                ice::sync_wait(storage.release(asset));
+                ice::wait_for(storage.release(asset));
             }
         };
 
@@ -93,13 +93,14 @@ namespace ice
             sprite_query,
             [&](ice::Animation const& anim, ice::Sprite const& sprite) noexcept
             {
-                ice::Asset sprite_asset = ice::sync_wait(_assets->request(ice::render::AssetType_Texture2D, sprite.material, AssetState::Baked));
-                if (!ice::asset_check(sprite_asset, AssetState::Baked))
+                ice::Asset sprite_asset = _assets->bind(ice::render::AssetType_Texture2D, sprite.material);
+                ice::wait_for(sprite_asset[AssetState::Baked]);
+                if (!sprite_asset.available(AssetState::Baked))
                 {
                     return;
                 }
 
-                ice::Metadata asset_meta = ice::asset_metadata(sprite_asset);
+                ice::Metadata const& asset_meta = sprite_asset.metadata();
                 ice::detail::ReleaseOnExit release_asset{ sprite_asset, *_assets };
 
                 ice::Array<ice::String> anim_names{ portal.allocator() };

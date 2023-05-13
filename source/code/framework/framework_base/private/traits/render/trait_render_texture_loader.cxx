@@ -1,10 +1,9 @@
-/// Copyright 2022 - 2022, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "trait_render_texture_loader.hxx"
 
 #include <ice/engine_runner.hxx>
-#include <ice/task_thread_pool.hxx>
 #include <ice/world/world_portal.hxx>
 #include <ice/world/world_trait_archive.hxx>
 
@@ -81,7 +80,7 @@ namespace ice
 
         for (Entry const& entry : _tracked_images)
         {
-            if (ice::asset_state(entry.asset_handle) == AssetState::Unknown)
+            if (!entry.asset.valid())
             {
                 portal.execute(
                     unload_image(
@@ -205,11 +204,11 @@ namespace ice
 
         device.destroy_buffer(data_buffer);
 
-        co_await runner.thread_pool();
+        co_await runner.task_scheduler();
 
-        ice::AssetHandle const* asset_handle = request->resolve(AssetRequest::Result::Success, image_handle_data);
+        ice::Asset asset_handle = request->resolve(AssetRequest::Result::Success, image_handle_data);
 
-        co_await runner.schedule_next_frame();
+        co_await runner.stage_next_frame();
 
         ice::u32 const idx = ice::array::count(_images);
         ice::array::push_back(_images, image_handle);
@@ -219,7 +218,7 @@ namespace ice
             "Hash map already contains entry for the given image!"
         );
 
-        ice::hashmap::set(_tracked_images, image_hash, Entry{ asset_handle, image_hash, idx });
+        ice::hashmap::set(_tracked_images, image_hash, Entry{ ice::move(asset_handle), image_hash, idx });
         co_return;
     }
 
@@ -241,7 +240,7 @@ namespace ice
 
         device.destroy_image(image);
 
-        co_await runner.schedule_next_frame();
+        co_await runner.stage_next_frame();
 
         if (ice::array::empty(_images) == false)
         {

@@ -1,13 +1,14 @@
-/// Copyright 2022 - 2022, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include <ice/resource_provider.hxx>
-#include <ice/task_scheduler.hxx>
 #include <ice/os/windows.hxx>
 #include <ice/mem_allocator_stack.hxx>
 #include <ice/container/hashmap.hxx>
-#include <ice/string/heap_string.hxx>
+#include <ice/string_utils.hxx>
+#include <ice/task.hxx>
 
+#include "resource_asyncio_win32.hxx"
 #include "resource_loose_files_win32.hxx"
 #include "resource_utils_win32.hxx"
 
@@ -28,7 +29,7 @@ namespace ice
             , _resources{ _allocator }
         {
             ice::HeapString<wchar_t> base_path{ _allocator };
-            ice::win32::utf8_to_wide_append(path, base_path);
+            ice::utf8_to_wide_append(path, base_path);
             ice::array::push_back(_base_paths, ice::move(base_path));
         }
 
@@ -43,7 +44,7 @@ namespace ice
             ice::HeapString<wchar_t> base_path{ _allocator };
             for (ice::String path : paths)
             {
-                ice::win32::utf8_to_wide_append(path, base_path);
+                ice::utf8_to_wide_append(path, base_path);
                 ice::array::push_back(_base_paths, ice::move(base_path));
             }
         }
@@ -133,7 +134,7 @@ namespace ice
         }
 
         // GitHub Issue: #108
-        void ISATTR_NOINLINE initial_traverse() noexcept
+        void initial_traverse() noexcept
         {
             ice::StackAllocator_2048 path_alloc;
             for (ice::WString base_path : _base_paths)
@@ -204,6 +205,22 @@ namespace ice
             co_return ResourceProviderResult::Success;
         }
 
+        auto refresh(
+            ice::Array<ice::Resource const*>& out_changes
+        ) noexcept -> ice::ResourceProviderResult override
+        {
+            if (ice::hashmap::empty(_resources))
+            {
+                initial_traverse();
+
+                for (auto* resource : _resources)
+                {
+                    ice::array::push_back(out_changes, resource);
+                }
+            }
+            return ResourceProviderResult::Success;
+        }
+
         auto find_resource(
             ice::URI const& uri
         ) const noexcept -> ice::Resource const* override
@@ -219,9 +236,10 @@ namespace ice
             ice::HeapString<> predicted_path{ _allocator };
             for (ice::WString base_path : _base_paths)
             {
+                ice::string::resize(predicted_path, 0);
                 ice::string::reserve(predicted_path, origin_size + ice::string::size(base_path));
 
-                ice::win32::wide_to_utf8(base_path, predicted_path);
+                ice::wide_to_utf8_append(base_path, predicted_path);
                 ice::path::join(predicted_path, ".."); // Remove one directory (because it's the common value of the base path and the uri path)
                 ice::path::join(predicted_path, uri.path);
                 ice::path::normalize(predicted_path);
@@ -247,31 +265,12 @@ namespace ice
         auto load_resource(
             ice::Allocator& alloc,
             ice::Resource const* resource,
-            ice::TaskScheduler_v2& scheduler
-        ) noexcept -> ice::Task<ice::Memory> override
+            ice::TaskScheduler& scheduler,
+            ice::NativeIO* nativeio
+        ) const noexcept -> ice::Task<ice::Memory> override
         {
             ice::Resource_Win32 const* const win_res = static_cast<ice::Resource_Win32 const*>(resource);
-            co_return co_await win_res->load_data_for_flags(alloc, ResourceFlags::None, scheduler);
-        }
-
-        auto release_resource(
-            ice::Resource const* resource,
-            ice::TaskScheduler_v2& scheduler
-        ) noexcept -> ice::Task<>
-        {
-            ice::Resource_Win32 const* const win_res = static_cast<ice::Resource_Win32 const*>(resource);
-            ice::u64 const hash = ice::hash(win_res->name());
-
-            ice::Resource_Win32* win_res_mut = ice::hashmap::get(_resources, hash, nullptr);
-            ICE_ASSERT(win_res == win_res_mut, "Trying to delete resource with similar name but object pointers differ!");
-
-            ice::hashmap::remove(
-                _resources,
-                hash
-            );
-
-            _allocator.destroy(win_res_mut);
-            co_return;
+            co_return co_await win_res->load_data(alloc, scheduler, nativeio);
         }
 
         auto resolve_relative_resource(

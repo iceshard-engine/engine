@@ -1,7 +1,8 @@
-/// Copyright 2022 - 2022, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
+#include <ice/string_types.hxx>
 
 namespace ice::devui
 {

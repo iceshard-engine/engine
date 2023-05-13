@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2022, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "trait_render_sprites.hxx"
@@ -29,7 +29,8 @@
 #include <ice/resource_meta.hxx>
 #include <ice/asset_storage.hxx>
 #include <ice/asset.hxx>
-#include <ice/task_sync_wait.hxx>
+#include <ice/task.hxx>
+#include <ice/task_utils.hxx>
 
 #include <ice/profiler.hxx>
 #include <ice/hash.hxx>
@@ -45,9 +46,8 @@ namespace ice
 
         auto load_sprites_shader(ice::AssetStorage& assets, ice::String name) noexcept -> ice::Task<ice::Data>
         {
-            ice::Asset const asset = co_await assets.request(ice::render::AssetType_Shader, name, ice::AssetState::Baked);
-            ICE_ASSERT(asset_check(asset, AssetState::Baked), "Shader not available!");
-            co_return asset.data;
+            ice::Asset asset = assets.bind(ice::render::AssetType_Shader, name);
+            co_return co_await asset[AssetState::Baked];
         }
 
         struct SpriteInstanceInfo
@@ -285,8 +285,8 @@ namespace ice
     {
         _asset_system = ice::addressof(engine.asset_storage());
 
-        _shader_data[0] = ice::sync_wait(ice::detail::load_sprites_shader(*_asset_system, "shaders/game2d/sprite-vtx"));
-        _shader_data[1] = ice::sync_wait(ice::detail::load_sprites_shader(*_asset_system, "shaders/game2d/sprite-pix"));
+        _shader_data[0] = ice::wait_for(ice::detail::load_sprites_shader(*_asset_system, "shaders/game2d/sprite-vtx"));
+        _shader_data[1] = ice::wait_for(ice::detail::load_sprites_shader(*_asset_system, "shaders/game2d/sprite-pix"));
 
         portal.storage().create_named_object<detail::SpriteQuery::Query>(
             detail::SpriteQueryId,
@@ -570,12 +570,12 @@ namespace ice
         // Set a dummy value so we can check for it and skip loading the same asset more than once.
         ice::hashmap::set(_sprite_materials, ice::hash(ice::stringid(material_name)), { });
 
-        Asset image_data = co_await runner.asset_storage().request(ice::render::AssetType_Texture2D, material_name, AssetState::Loaded);
-        ICE_ASSERT(asset_check(image_data, AssetState::Loaded), "Shader not available!");
+        Asset image_asset = runner.asset_storage().bind(ice::render::AssetType_Texture2D, material_name);
+        Data image_data = co_await image_asset[AssetState::Loaded];
+        //ICE_ASSERT(asset_check(image_data, AssetState::Loaded), "Image not available!");
 
-        ice::Metadata const& metadata = ice::asset_metadata(image_data);
-
-        ImageInfo const* image_info = reinterpret_cast<ImageInfo const*>(image_data.data.location);
+        ice::Metadata const& metadata = image_asset.metadata();
+        ImageInfo const* image_info = reinterpret_cast<ImageInfo const*>(image_data.location);
 
         ice::i32 tile_width;
         ice::i32 tile_height;
@@ -594,8 +594,8 @@ namespace ice
             co_return;
         }
 
-        Asset image_handle = co_await runner.asset_storage().request(ice::render::AssetType_Texture2D, material_name, AssetState::Runtime);
-        ICE_ASSERT(asset_check(image_handle, AssetState::Runtime), "Shader not available!");
+        image_data = co_await image_asset[AssetState::Runtime];
+        ICE_ASSERT(image_data.location != nullptr, "Image not available!");
 
         ice::u64 const tile_mesh_id = (static_cast<ice::u64>(tile_width) << 32) | tile_height;
         bool const has_vertex_offsets = ice::hashmap::has(_vertex_offsets, tile_mesh_id) == false;
@@ -627,7 +627,7 @@ namespace ice
 
         RenderDevice& device = gfx_device.device();
 
-        sprite_data.material[0] = *reinterpret_cast<ice::render::Image const*>(image_handle.data.location);
+        sprite_data.material[0] = *reinterpret_cast<ice::render::Image const*>(image_data.location);
         sprite_data.material_tileinfo[0] = device.create_buffer(BufferType::Uniform, sizeof(sprite_data.material_scale));
         device.create_resourcesets({ _resource_set_layouts + 1, 1 }, sprite_data.sprite_resource);
 
@@ -659,7 +659,7 @@ namespace ice
 
         device.update_buffers({ updates, update_count });
 
-        co_await runner.schedule_next_frame();
+        co_await runner.stage_next_frame();
 
         runner.execute_task(
             task_update_resource_material(runner, gfx_device, ice::stringid(material_name), sprite_data),
@@ -717,7 +717,7 @@ namespace ice
 
         device.update_resourceset(set_updates);
 
-        co_await runner.schedule_next_frame();
+        co_await runner.stage_next_frame();
 
         ice::hashmap::set(_sprite_materials, ice::hash(material_name), sprite_data);
         co_return;

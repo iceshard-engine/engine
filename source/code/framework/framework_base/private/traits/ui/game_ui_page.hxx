@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2022, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -26,6 +26,7 @@ namespace ice
         GameUI_Page(
             ice::Allocator& alloc,
             ice::Asset page_asset,
+            ice::Data page_data,
             ice::String page_asset_name
         ) noexcept;
 

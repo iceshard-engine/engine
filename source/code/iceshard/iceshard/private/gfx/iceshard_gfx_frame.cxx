@@ -1,12 +1,10 @@
-/// Copyright 2022 - 2022, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "iceshard_gfx_frame.hxx"
 #include "iceshard_gfx_queue.hxx"
 #include <ice/container/hashmap.hxx>
 #include <ice/render/render_swapchain.hxx>
-#include <ice/task.hxx>
-#include <ice/task_list.hxx>
 #include <ice/assert.hxx>
 
 #include <ice/mem_allocator_stack.hxx>
@@ -63,6 +61,7 @@ namespace ice::gfx
         ice::gfx::GfxContextStage const* stage
     ) noexcept
     {
+        //ICE_LOG(ice::LogSeverity::Debug, ice::LogTag::Engine, "Added stage: {}", stage_name);
         ice::hashmap::set(
             _context_stages,
             ice::hash(stage_name),

@@ -1,7 +1,8 @@
-/// Copyright 2022 - 2022, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
+#include <ice/math.hxx>
 #include <ice/stringid.hxx>
 #include <ice/mem_unique_ptr.hxx>
 #include <ice/world/world_trait.hxx>
@@ -20,7 +21,7 @@ namespace ice
     };
 
     enum class PhysicsShape : ice::u32
-    { 
+    {
         Box,
         Capsule,
     };

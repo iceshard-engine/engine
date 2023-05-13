@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2022, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -177,7 +177,7 @@ namespace ice
         ice::Allocator& alloc,
         ice::ResourceTracker& resource_tracker,
         ice::ModuleRegister& module_register
-    ) noexcept -> ice::GameFramework*;
+    ) noexcept -> ice::UniquePtr<ice::GameFramework>;
 
 } // namespace ice
 
@@ -187,7 +187,7 @@ namespace ice
         ice::Allocator& alloc, \
         ice::ResourceTracker& resource_tracker, \
         ice::ModuleRegister& module_register \
-    ) noexcept -> ice::GameFramework * \
+    ) noexcept -> ice::UniquePtr<ice::GameFramework> \
     { \
-        return alloc.create<ice::Game<Type>>(alloc, resource_tracker, module_register); \
+        return ice::make_unique<Game<Type>>(alloc, alloc, resource_tracker, module_register); \
     }

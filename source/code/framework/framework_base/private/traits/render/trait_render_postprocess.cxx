@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2022, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "trait_render_postprocess.hxx"
@@ -18,7 +18,8 @@
 #include <ice/gfx/gfx_stage.hxx>
 #include <ice/gfx/gfx_frame.hxx>
 #include <ice/gfx/gfx_pass.hxx>
-#include <ice/task_sync_wait.hxx>
+#include <ice/task.hxx>
+#include <ice/task_utils.hxx>
 
 #include <ice/asset_storage.hxx>
 #include <ice/profiler.hxx>
@@ -31,9 +32,8 @@ namespace ice
 
         auto load_postprocess_shader(ice::AssetStorage& assets, ice::String name) noexcept -> ice::Task<ice::Data>
         {
-            ice::Asset const asset = co_await assets.request(ice::render::AssetType_Shader, name, ice::AssetState::Baked);
-            ICE_ASSERT(asset_check(asset, AssetState::Baked), "Shader not available!");
-            co_return asset.data;
+            ice::Asset asset = assets.bind(ice::render::AssetType_Shader, name);
+            co_return co_await asset[AssetState::Baked];
         }
 
     } // namespace detail
@@ -202,8 +202,8 @@ namespace ice
     {
         ice::AssetStorage& asset_system = engine.asset_storage();
 
-        _shader_data[0] = ice::sync_wait(ice::detail::load_postprocess_shader(asset_system, "shaders/debug/pp-vert"));
-        _shader_data[1] = ice::sync_wait(ice::detail::load_postprocess_shader(asset_system, "shaders/debug/pp-frag"));
+        _shader_data[0] = ice::wait_for(ice::detail::load_postprocess_shader(asset_system, "shaders/debug/pp-vert"));
+        _shader_data[1] = ice::wait_for(ice::detail::load_postprocess_shader(asset_system, "shaders/debug/pp-frag"));
     }
 
     void IceWorldTrait_RenderPostProcess::record_commands(

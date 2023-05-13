@@ -1,10 +1,11 @@
-/// Copyright 2022 - 2022, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
 #include <ice/mem_data.hxx>
 #include <ice/stringid.hxx>
 #include <ice/resource_meta.hxx>
+#include <ice/asset_types.hxx>
 
 namespace ice
 {
@@ -40,16 +41,23 @@ namespace ice
 
     struct Asset
     {
-        ice::AssetHandle* handle;
-        ice::Data data;
+        ice::AssetHandle* _handle = nullptr;
+
+        Asset() noexcept = default;
+        ~Asset() noexcept;
+        Asset(Asset&& other) noexcept = default;
+        auto operator=(Asset&& other) noexcept -> ice::Asset& = default;
+
+        Asset(Asset const&) noexcept = delete;
+        auto operator=(Asset const&) noexcept -> ice::Asset& = delete;
+
+        bool valid() const noexcept;
+        auto metadata() const noexcept -> ice::Metadata const&;
+        bool available(ice::AssetState state) const noexcept;
+        auto preload(ice::AssetState state) noexcept -> ice::Task<bool>;
+        auto data(ice::AssetState state) noexcept -> ice::Task<ice::Data>;
+
+        auto operator[](ice::AssetState state) noexcept -> ice::Task<ice::Data>;
     };
-
-    bool asset_check(ice::Asset const& asset, ice::AssetState expected_state) noexcept;
-
-    auto asset_metadata(ice::Asset const& asset) noexcept -> ice::Metadata const&;
-    auto asset_metadata(ice::AssetHandle const* handle) noexcept -> ice::Metadata const&;
-
-    auto asset_state(ice::Asset const& asset) noexcept -> ice::AssetState;
-    auto asset_state(ice::AssetHandle const* handle) noexcept -> ice::AssetState;
 
 } // namespace ice

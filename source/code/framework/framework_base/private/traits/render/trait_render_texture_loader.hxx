@@ -1,7 +1,8 @@
-/// Copyright 2022 - 2022, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
+#include <ice/asset.hxx>
 #include <ice/game_render_traits.hxx>
 #include <ice/render/render_declarations.hxx>
 #include <ice/gfx/gfx_device.hxx>
@@ -60,12 +61,12 @@ namespace ice
 
         struct Entry
         {
-            ice::AssetHandle const* asset_handle;
+            ice::Asset asset;
             ice::u64 image_hash;
             ice::u32 image_index;
         };
 
-        ice::HashMap<Entry> _tracked_images;
+        ice::HashMap<Entry, ContainerLogic::Complex> _tracked_images;
     };
 
 

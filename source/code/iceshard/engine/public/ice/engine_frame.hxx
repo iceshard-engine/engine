@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2022, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -8,25 +8,14 @@
 #include <ice/shard_container.hxx>
 #include <ice/input/input_types.hxx>
 
-#include <ice/engine_task_operations.hxx>
+#include <ice/task.hxx>
+#include <ice/task_scheduler.hxx>
 #include <ice/ecs/ecs_types.hxx>
-#include <ice/ecs/ecs_query_scheduler.hxx>
 
 namespace ice
 {
 
-    template<typename T>
-    class Task;
-
-    class EngineFrame;
-
-    class EntityCommandBuffer;
-
-    struct FrameEndOperationData : ice::EngineTaskOperationBaseData { };
-
-    using FrameEndOperation = ice::EngineTaskOperation<ice::EngineFrame, ice::FrameEndOperationData>;
-
-    class EngineFrame : public ice::ecs::QueryScheduler
+    class EngineFrame
     {
     public:
         virtual ~EngineFrame() noexcept = default;
@@ -46,14 +35,7 @@ namespace ice
         virtual auto storage() noexcept -> ice::DataStorage& = 0;
         virtual auto storage() const noexcept -> ice::DataStorage const& = 0;
 
-        virtual auto schedule_frame_end() noexcept -> ice::FrameEndOperation = 0;
-
-    protected:
-        friend FrameEndOperation;
-
-        virtual void schedule_internal(
-            ice::FrameEndOperationData& operation
-        ) noexcept = 0;
+        virtual auto stage_end() noexcept -> ice::TaskStage<ice::EngineFrame> = 0;
     };
 
 } // namespace ice

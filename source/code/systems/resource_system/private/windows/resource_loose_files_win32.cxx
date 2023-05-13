@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2022, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "resource_loose_files_win32.hxx"
@@ -6,87 +6,77 @@
 #include <ice/container_types.hxx>
 #include <ice/container/array.hxx>
 #include <ice/container/hashmap.hxx>
-#include <ice/string/heap_string.hxx>
-#include <ice/task_scheduler.hxx>
+#include <ice/string_utils.hxx>
 #include <ice/assert.hxx>
+#include <ice/task.hxx>
+#include <ice/task_queue.hxx>
+#include <ice/profiler.hxx>
 
 #include "resource_utils_win32.hxx"
+#include "resource_asyncio_win32.hxx"
 
 #if ISP_WINDOWS
 
 namespace ice
 {
 
-    void internal_overlapped_completion_routine(
-        DWORD dwErrorCode,
-        DWORD dwNumberOfBytesTransfered,
-        LPOVERLAPPED lpOverlapped
-    ) noexcept
+    auto internal_overlapped_file_load(
+        ice::win32::FileHandle file,
+        ice::ucount filesize,
+        ice::NativeIO* nativeio,
+        ice::Memory data
+    ) noexcept -> ice::Task<bool>
     {
-        ICE_LOG(ice::LogSeverity::Debug, ice::LogTag::System, "internal_overlapped_completion_routine()!");
+        ice::AsyncIOData asyncio{ nativeio, ice::move(file), data, filesize };
+        AsyncIOData::Result read_result = co_await asyncio;
+        co_return read_result.success && read_result.bytes_read >= filesize;
     }
 
-    auto internal_overlapped_file_load(HANDLE file, ice::Memory const& data, ice::TaskScheduler_v2& scheduler) noexcept -> ice::Task<bool>
+    auto internal_file_load(
+        ice::Allocator& alloc,
+        ice::NativeIO* nativeio,
+        ice::String filepath
+    ) noexcept -> ice::Task<ice::Memory>
     {
-        OVERLAPPED overlapped{ };
+        ice::HeapString<wchar_t> file_location_wide{ alloc };
+        ice::utf8_to_wide_append(filepath, file_location_wide);
 
-        ice::usize file_offset = 0_B;
-        ice::usize file_size_remaining = data.size;
-        while (file_size_remaining > 0_B)
+        ice::Memory result{
+            .location = nullptr,
+            .size = 0_B,
+            .alignment = ice::ualign::invalid,
+        };
+
+        ice::win32::FileHandle file_handle = ice::win32::native_open_file(
+            file_location_wide,
+            FILE_FLAG_OVERLAPPED
+        );
+        if (file_handle)
         {
-            overlapped.OffsetHigh = ice::ucount(file_offset.value >> 32);
-            overlapped.Offset = ice::ucount(file_offset.value & 0x0000'0000'ffff'ffff);
+            LARGE_INTEGER file_size;
+            if (GetFileSizeEx(file_handle.native(), &file_size) == 0)
+            {
+                co_return result;
+            }
 
-            co_await scheduler;
-
-            ice::usize constexpr max_bytes_to_read = 1024_B * 32_B;
-            ice::usize const bytes_to_read = ice::min(file_size_remaining, max_bytes_to_read);
-
-            BOOL const read_result = ReadFileEx(
-                file,
-                ice::ptr_add(data.location, file_offset),
-                ice::ucount(bytes_to_read.value),
-                &overlapped,
-                internal_overlapped_completion_routine
+            ice::Memory const data = alloc.allocate(
+                AllocRequest{ { ice::usize::base_type(file_size.QuadPart) }, ice::ualign::b_default }
             );
 
-            if (read_result == FALSE)
+            bool const success = co_await internal_overlapped_file_load(ice::move(file_handle), (ice::ucount)file_size.QuadPart, nativeio, data);
+            if (success)
             {
-                break;
+                result = data;
             }
-
-            DWORD loaded_size;
-            BOOL const overlapped_result = GetOverlappedResultEx(file, &overlapped, &loaded_size, 0, TRUE);
-            if (overlapped_result == FALSE)
+            else
             {
-                DWORD const overlapped_error = GetLastError();
-                ICE_LOG(ice::LogSeverity::Error, ice::LogTag::Core, "{}", overlapped_error);
-                if (overlapped_error != WAIT_IO_COMPLETION)
-                {
-                    ICE_LOG(ice::LogSeverity::Error, ice::LogTag::Core, "Overlapped error: {}", overlapped_error);
-                }
-                else
-                {
-                    ICE_LOG(ice::LogSeverity::Error, ice::LogTag::Core, "WAIT_IO_COMPLETION");
-                }
-            }
-            else if (loaded_size != 0)
-            {
-                ICE_ASSERT(
-                    loaded_size == bytes_to_read.value
-                    || loaded_size == max_bytes_to_read.value,
-                    "Loaded unexpected number of bytes during read operation! [got: {}, expected: {} or {}]",
-                    loaded_size, bytes_to_read, max_bytes_to_read
-                );
-
-                file_size_remaining.value -= bytes_to_read.value;
-                file_offset += bytes_to_read; // 4 KiB
+                alloc.deallocate(data);
             }
         }
 
-        ICE_ASSERT(file_size_remaining == 0_B, "Error!");
-        co_return file_size_remaining == 0_B;
+        co_return result;
     }
+
 
     Resource_LooseFilesWin32::Resource_LooseFilesWin32(
         ice::Allocator& alloc,
@@ -152,7 +142,7 @@ namespace ice
             ice::String path = ice::hashmap::get(_extra_resources, ice::hash(name), empty_str);
 
             ice::HeapString<wchar_t> file_location_wide{ alloc };
-            ice::win32::utf8_to_wide_append(path, file_location_wide);
+            ice::utf8_to_wide_append(path, file_location_wide);
 
             ice::win32::FileHandle const file_handle = ice::win32::native_open_file(
                 file_location_wide,
@@ -188,50 +178,13 @@ namespace ice
         ice::hashmap::set(_extra_resources, ice::hash(name), ice::move(path));
     }
 
-    auto Resource_LooseFilesWin32::load_data_for_flags(
+    auto Resource_LooseFilesWin32::load_data(
         ice::Allocator& alloc,
-        ice::ResourceFlags flags,
-        ice::TaskScheduler_v2& scheduler
+        ice::TaskScheduler& scheduler,
+        ice::NativeIO* nativeio
     ) const noexcept -> ice::Task<ice::Memory>
     {
-        ice::HeapString<wchar_t> file_location_wide{ alloc };
-        ice::win32::utf8_to_wide_append(_origin_path, file_location_wide);
-
-        ice::Memory result{
-            .location = nullptr,
-            .size = 0_B,
-            .alignment = ice::ualign::invalid,
-        };
-
-        ice::win32::FileHandle const file_handle = ice::win32::native_open_file(
-            file_location_wide,
-            FILE_FLAG_OVERLAPPED
-        );
-        if (file_handle)
-        {
-            LARGE_INTEGER file_size;
-            if (GetFileSizeEx(file_handle.native(), &file_size) == 0)
-            {
-                co_return result;
-            }
-
-            ice::Memory const data = alloc.allocate(
-                AllocRequest{ { ice::usize::base_type(file_size.QuadPart) }, ice::ualign::b_default }
-            );
-
-            bool const success = co_await internal_overlapped_file_load(file_handle.native(), data, scheduler);
-            if (success)
-            {
-                result = data;
-            }
-            else
-            {
-                alloc.deallocate(data);
-            }
-
-        }
-
-        co_return result;
+        co_return co_await internal_file_load(alloc, nativeio, _origin_path);
     }
 
     Resource_LooseFilesWin32::ExtraResource::ExtraResource(
@@ -270,49 +223,13 @@ namespace ice
         return _parent.metadata();
     }
 
-    auto Resource_LooseFilesWin32::ExtraResource::load_data_for_flags(
+    auto Resource_LooseFilesWin32::ExtraResource::load_data(
         ice::Allocator& alloc,
-        ice::ResourceFlags flags,
-        ice::TaskScheduler_v2& scheduler
+        ice::TaskScheduler& scheduler,
+        ice::NativeIO* nativeio
     ) const noexcept -> ice::Task<ice::Memory>
     {
-        ice::HeapString<wchar_t> file_location_wide{ alloc };
-        ice::win32::utf8_to_wide_append(_origin_path, file_location_wide);
-
-        ice::Memory result{
-            .location = nullptr,
-            .size = 0_B,
-            .alignment = ice::ualign::invalid,
-        };
-
-        ice::win32::FileHandle const file_handle = ice::win32::native_open_file(
-            file_location_wide,
-            FILE_FLAG_OVERLAPPED
-        );
-        if (file_handle)
-        {
-            LARGE_INTEGER file_size;
-            if (GetFileSizeEx(file_handle.native(), &file_size) == 0)
-            {
-                co_return result;
-            }
-
-            ice::Memory const data = alloc.allocate(
-                AllocRequest{ { ice::usize::base_type(file_size.QuadPart) }, ice::ualign::b_default }
-            );
-
-            bool const success = co_await internal_overlapped_file_load(file_handle.native(), data, scheduler);
-            if (success)
-            {
-                result = data;
-            }
-            else
-            {
-                alloc.deallocate(data);
-            }
-        }
-
-        co_return result;
+        co_return co_await internal_file_load(alloc, nativeio, _origin_path);
     }
 
     auto create_resources_from_loose_files(
@@ -345,11 +262,11 @@ namespace ice
                 // We create the main resource in a different scope so we dont accidentaly use data from there
                 {
                     ice::HeapString<> utf8_file_path{ alloc };
-                    ice::win32::wide_to_utf8(data_file, utf8_file_path);
+                    ice::wide_to_utf8_append(data_file, utf8_file_path);
                     ice::path::normalize(utf8_file_path);
 
-                    ice::String utf8_origin_name = ice::string::substr(utf8_file_path, ice::win32::wide_to_utf8_size(base_path));
-                    ice::String utf8_uri_path = ice::string::substr(utf8_file_path, ice::win32::wide_to_utf8_size(uri_base_path));
+                    ice::String utf8_origin_name = ice::string::substr(utf8_file_path, ice::wide_to_utf8_size(base_path));
+                    ice::String utf8_uri_path = ice::string::substr(utf8_file_path, ice::wide_to_utf8_size(uri_base_path));
 
                     // We have a loose resource files which contain metadata associated data.
                     // We need now to read the metadata and check if there are more file associated and if all are available.
@@ -411,13 +328,13 @@ namespace ice
                         );
 
                         ice::string::resize(full_path, base_dir_size);
-                        ice::win32::utf8_to_wide_append(paths[idx], full_path);
+                        ice::utf8_to_wide_append(paths[idx], full_path);
 
                         ice::win32::FileHandle extra_handle = ice::win32::native_open_file(full_path, FILE_ATTRIBUTE_NORMAL);
                         if (extra_handle)
                         {
                             // We know the file can be opened so we save it as a extra resource.
-                            ice::win32::wide_to_utf8(full_path, utf8_file_path);
+                            ice::wide_to_utf8_append(full_path, utf8_file_path);
                             ice::path::normalize(utf8_file_path);
 
                             main_resource->add_named_part(ice::stringid(names[idx]), ice::move(utf8_file_path));

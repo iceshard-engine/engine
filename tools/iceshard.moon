@@ -5,6 +5,7 @@ import BuildCommand from require 'ice.commands.build'
 import DevenvCommand from require 'ice.commands.devenv'
 import LicenseCommand from require 'ice.commands.license'
 import ScriptCommand from require 'ice.commands.script'
+import ExecCommand from require 'ice.commands.exec'
 
 import RunCommand from require 'tools.run'
 import NatvisCommand from require 'tools.natvis'
@@ -20,7 +21,7 @@ class IceShard extends Application
         'build': BuildCommand
         'update': UpdateCommand
         'devenv': DevenvCommand
-        'run': RunCommand
+        'exec': ExecCommand
         'natvis': NatvisCommand
         'codestyle': CodeStyleCommand
         'license': LicenseCommand

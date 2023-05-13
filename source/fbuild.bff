@@ -31,7 +31,7 @@ Settings
     Using( .Pipeline_Windows_x64 )
 
     .PipelineToolchain = 'msvc-x64-v143'
-    .PipelineAllowUnityBuilds = true
+    .PipelineAllowUnityBuilds = false
 
     .PipelineVSInfo =
     [

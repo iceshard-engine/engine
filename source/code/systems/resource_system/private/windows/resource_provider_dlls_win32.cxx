@@ -1,10 +1,10 @@
-/// Copyright 2022 - 2022, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include <ice/resource_provider.hxx>
 #include <ice/mem_allocator_stack.hxx>
 #include <ice/container/hashmap.hxx>
-#include <ice/string/heap_string.hxx>
+#include <ice/string_utils.hxx>
 
 #include "resource_dll_win32.hxx"
 #include "resource_utils_win32.hxx"
@@ -25,7 +25,7 @@ namespace ice
             , _base_path{ _allocator }
             , _resources{ _allocator }
         {
-            ice::win32::utf8_to_wide_append(path, _base_path);
+            ice::utf8_to_wide_append(path, _base_path);
 
             ice::u32 at = ice::string::find_first_of(_base_path, L'\\');
             while (at != ice::String_NPos)
@@ -120,7 +120,7 @@ namespace ice
         }
 
         // GitHub Issue: #108
-        void ISATTR_NOINLINE initial_traverse() noexcept
+        void initial_traverse() noexcept
         {
             ice::HeapString<ice::wchar> dir_tracker = _base_path;
             ice::path::win32::join(dir_tracker, L"."); // Ensure we end with a '/' character
@@ -172,23 +172,31 @@ namespace ice
             co_return ResourceProviderResult::Success;
         }
 
+        virtual auto refresh(
+            ice::Array<ice::Resource const*>& out_changes
+        ) noexcept -> ice::ResourceProviderResult
+        {
+            if (ice::hashmap::empty(_resources))
+            {
+                initial_traverse();
+
+                for (auto* resource : _resources)
+                {
+                    ice::array::push_back(out_changes, resource);
+                }
+            }
+            return ResourceProviderResult::Success;
+        }
+
         auto load_resource(
             ice::Allocator& alloc,
             ice::Resource const* resource,
-            ice::TaskScheduler_v2& scheduler
-        ) noexcept -> ice::Task<ice::Memory> override
+            ice::TaskScheduler& scheduler,
+            ice::NativeIO* nativeio
+        ) const noexcept -> ice::Task<ice::Memory>
         {
             // Cannot load DLL's in this way.
             co_return ice::Memory{ };
-        }
-
-        auto release_resource(
-            ice::Resource const* resource,
-            ice::TaskScheduler_v2& scheduler
-        ) noexcept -> ice::Task<>
-        {
-            // Cannot release DLL's in this way.
-            co_return;
         }
 
     private:

@@ -1,4 +1,7 @@
-/// Copyright 2022 - 2022, Dandielo <dandielo@iceshard.net>
+/// Copyright 2023 - 2023, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
+﻿/// Copyright 2022 - 2022, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "game.hxx"
@@ -33,8 +36,7 @@
 #include <ice/input/input_keyboard.hxx>
 #include <ice/input/input_tracker.hxx>
 
-#include <ice/task_sync_wait.hxx>
-#include <ice/task_thread_pool.hxx>
+#include <ice/task_utils.hxx>
 #include <ice/module_register.hxx>
 #include <ice/resource_tracker.hxx>
 #include <ice/resource_provider.hxx>
@@ -60,7 +62,7 @@ MyGame::MyGame(ice::Allocator& alloc, ice::Clock const& clock) noexcept
     , _ecs_archetypes{ _allocator }
     , _ecs_block_pool{ _allocator }
     , _ecs_storage{ }
-    , _game_gfx_pass{ ice::gfx::create_dynamic_pass(_allocator) }
+    , _game_gfx_pass{ }
     , _test_world{ nullptr }
 {
 }
@@ -84,13 +86,14 @@ auto MyGame::graphics_world_template() const noexcept -> ice::WorldTemplate cons
             ice::Constant_TraitName_RenderFinish,
         };
 
-        static ice::WorldTemplate const graphics_world_template
+        static ice::WorldTemplate graphics_world_template
         {
             .name = "ice.framework-base.default-graphics-world-template"_sid,
             .traits = graphics_traits,
             .entity_storage = _ecs_storage.get(),
         };
 
+        graphics_world_template.entity_storage = _ecs_storage.get();
         return graphics_world_template;
     }
     else
@@ -109,13 +112,14 @@ auto MyGame::graphics_world_template() const noexcept -> ice::WorldTemplate cons
             ice::Constant_TraitName_RenderFinish,
         };
 
-        static ice::WorldTemplate const graphics_world_template
+        static ice::WorldTemplate graphics_world_template
         {
             .name = "ice.framework-base.default-graphics-world-template"_sid,
             .traits = graphics_traits,
             .entity_storage = _ecs_storage.get(),
         };
 
+        graphics_world_template.entity_storage = _ecs_storage.get();
         return graphics_world_template;
     }
 }
@@ -129,7 +133,7 @@ void MyGame::on_load_modules(ice::GameServices& services) noexcept
     //{
     //    [[maybe_unused]]
     //    ice::ResourceHandle* tsa = res.find_resource("file:/data/cotm/tileset_a.png"_uri);
-    //    ice::sync_wait(res.set_resource("urn:cotm/tileset_ab.png"_uri, tsa));
+    //    ice::wait_for(res.set_resource("urn:cotm/tileset_ab.png"_uri, tsa));
     //}
 
     ice::ResourceHandle* const pipelines_module = res.find_resource("urn:iceshard_pipelines.dll"_uri);
@@ -193,6 +197,7 @@ void MyGame::on_app_startup(ice::Engine& engine) noexcept
         entity_index.destroy_many(entities);
     }
 
+    _game_gfx_pass = ice::gfx::create_dynamic_pass(_allocator);
     _game_gfx_pass->add_stage(ice::Constant_GfxStage_Clear);
     _game_gfx_pass->add_stage(ice::Constant_GfxStage_DrawTilemap, ice::Constant_GfxStage_Clear);
     _game_gfx_pass->add_stage(ice::Constant_GfxStage_DrawSprites, ice::Constant_GfxStage_DrawTilemap, ice::Constant_GfxStage_Clear);
@@ -264,7 +269,7 @@ void MyGame::on_app_startup(ice::Engine& engine) noexcept
             .success_trigger_count = 1,
             .failure_trigger_offset = 1,
             .failure_trigger_count = 0,
-            .reset_trigger_offset = 2 
+            .reset_trigger_offset = 2
         }
     };
 
@@ -499,7 +504,7 @@ void MyGame::on_update(ice::EngineFrame& frame, ice::EngineRunner& runner, ice::
 
     if (ice::shard_inspect(player_entity_created, eh))
     {
-        ICE_ASSERT(ice::ecs::entity_handle_info(eh).entity == ice::ecs::Entity{}, "{}", eh);
+        //ICE_ASSERT(ice::ecs::entity_handle_info(eh).entity == ice::ecs::Entity{}, "{}", eh);
         ICE_LOG(ice::LogSeverity::Debug, ice::LogTag::Game, "{}", eh);
     }
 

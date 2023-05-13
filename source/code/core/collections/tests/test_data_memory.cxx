@@ -1,7 +1,7 @@
-/// Copyright 2022 - 2022, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
-#include <catch2/catch.hpp>
+#include <catch2/catch_test_macros.hpp>
 #include <ice/mem_info.hxx>
 #include <ice/mem_data.hxx>
 #include <ice/span.hxx>

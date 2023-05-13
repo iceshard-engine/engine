@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2022, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -35,10 +35,7 @@ namespace ice
 
         auto store(
             ice::StringID_Arg name,
-            ice::ResourceHandle* resource_handle,
-            ice::Resource const* resource,
-            ice::AssetState state,
-            ice::Data data
+            ice::ResourceHandle* resource_handle
         ) noexcept -> ice::AssetEntry*;
 
         void append_request(

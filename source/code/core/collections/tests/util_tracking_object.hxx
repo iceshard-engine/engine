@@ -1,10 +1,10 @@
-/// Copyright 2022 - 2022, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
 #include <ice/base.hxx>
 #include <fmt/format.h>
-#include <catch2/catch.hpp>
+#include <catch2/catch_test_macros.hpp>
 
 struct Test_ObjectEvents
 {

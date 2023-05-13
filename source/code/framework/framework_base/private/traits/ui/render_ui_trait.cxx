@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2022, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "render_ui_trait.hxx"
@@ -10,7 +10,7 @@
 #include <ice/engine_frame.hxx>
 #include <ice/engine_runner.hxx>
 #include <ice/world/world_portal.hxx>
-#include <ice/task_thread_pool.hxx>
+#include <ice/task.hxx>
 
 #include <ice/gfx/gfx_device.hxx>
 #include <ice/gfx/gfx_frame.hxx>
@@ -37,14 +37,8 @@ namespace ice
 
         auto load_ui_shader(ice::AssetStorage& assets, ice::Data& data, ice::String name) noexcept -> ice::Task<>
         {
-            ice::Asset const asset = co_await assets.request(ice::render::AssetType_Shader, name, ice::AssetState::Baked);
-
-            bool const shader_loaded = asset_check(asset, AssetState::Baked);
-            ICE_ASSERT(shader_loaded, "Shader not available!");
-            if (shader_loaded)
-            {
-                data = asset.data;
-            }
+            ice::Asset const asset = assets.bind(ice::render::AssetType_Shader, name);
+            data = co_await assets.request(asset, AssetState::Baked);
         }
 
     } // namespace detail
@@ -118,7 +112,7 @@ namespace ice
         Renderpass renderpass = ice::gfx::find_resource<Renderpass>(
             gfx_device.resource_tracker(),
             "ice.gfx.renderpass.default"_sid
-            );
+        );
 
         _shader_stages[0] = ShaderStageFlags::VertexStage;
         _shader_stages[1] = ShaderStageFlags::FragmentStage;

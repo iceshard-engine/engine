@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2022, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "asset_tilemap.hxx"
@@ -9,7 +9,7 @@
 #include <ice/resource.hxx>
 #include <ice/resource_meta.hxx>
 #include <ice/resource_tracker.hxx>
-#include <ice/task_sync_wait.hxx>
+#include <ice/task_utils.hxx>
 
 #include <ice/asset_storage.hxx>
 
@@ -918,7 +918,7 @@ namespace ice
                 for (ice::u32 idx = 0; idx < tilemap_info.tileset_count; ++idx)
                 {
                     ice::ResourceHandle* const self = resource_tracker.find_resource(resource.uri());
-                     ice::ResourceHandle* image_res = resource_tracker.find_resource_relative(
+                    ice::ResourceHandle* image_res = resource_tracker.find_resource_relative(
                         ice::URI{ ice::Scheme_File,  tilemap_info.tileset_info[idx].image },
                         self
                     );

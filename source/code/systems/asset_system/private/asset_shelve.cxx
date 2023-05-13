@@ -1,10 +1,11 @@
-/// Copyright 2022 - 2022, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "asset_shelve.hxx"
 #include "asset_request_awaitable.hxx"
 
 #include <ice/container/hashmap.hxx>
+#include <ice/profiler.hxx>
 #include <ice/assert.hxx>
 
 namespace ice
@@ -51,31 +52,20 @@ namespace ice
     {
         ice::u64 const name_hash = ice::hash(name);
 
-        static ice::AssetEntry invalid_resource{ .state = AssetState::Invalid };
+        static ice::AssetEntry invalid_resource{ };
         return ice::hashmap::get(_asset_resources, name_hash, &invalid_resource);
     }
 
     auto AssetShelve::store(
         ice::StringID_Arg name,
-        ice::ResourceHandle* resource_handle,
-        ice::Resource const* resource,
-        ice::AssetState state,
-        ice::Data data
+        ice::ResourceHandle* resource_handle
     ) noexcept -> ice::AssetEntry*
     {
         ice::u64 const name_hash = ice::hash(name);
         ice::hashmap::set(
             _asset_resources,
             name_hash,
-            _allocator.create<ice::AssetEntry>(
-                ice::AssetEntry
-                {
-                    .resource_handle = resource_handle,
-                    .resource = resource,
-                    .state = state,
-                    .data = data
-                }
-            )
+            _allocator.create<ice::AssetEntry>(resource_handle, this)
         );
 
         return select(name);

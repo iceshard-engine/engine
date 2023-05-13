@@ -1,7 +1,7 @@
-/// Copyright 2022 - 2022, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
-#include <catch2/catch.hpp>
+#include <catch2/catch_test_macros.hpp>
 #include <ice/math.hxx>
 
 static ice::f32 constexpr test_value_1 = 1.11f;

@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2022, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "game_ui_page.hxx"
@@ -19,7 +19,6 @@
 #include <ice/ui_font.hxx>
 
 #include <ice/mem_allocator_stack.hxx>
-#include <ice/task_thread_pool.hxx>
 #include <ice/profiler.hxx>
 #include <ice/font.hxx>
 
@@ -140,12 +139,13 @@ namespace ice
     GameUI_Page::GameUI_Page(
         ice::Allocator& alloc,
         ice::Asset page_asset,
+        ice::Data page_data,
         ice::String page_asset_name
     ) noexcept
         : _allocator{ alloc }
-        , _asset{ page_asset }
+        , _asset{ ice::move(page_asset) }
         , _asset_name{ page_asset_name }
-        , _page{ reinterpret_cast<ice::ui::PageInfo const*>(_asset.data.location) }
+        , _page{ reinterpret_cast<ice::ui::PageInfo const*>(page_data.location) }
         , _page_memory{ }
         , _states{ }
         , _elements{ }
@@ -399,7 +399,7 @@ namespace ice
     {
         if (has_any(_current_flags, Flags::StateDirtyStyle | Flags::StateDirtyLayout))
         {
-            co_await runner.thread_pool();
+            co_await runner.task_scheduler();
 
             if (has_all(_current_flags, Flags::StateDirtyLayout))
             {
@@ -412,9 +412,7 @@ namespace ice
             }
         }
 
-        co_await runner.schedule_current_frame();
-
-        ice::EngineFrame& frame = runner.current_frame();
+        ice::EngineFrame& frame = co_await runner.stage_current_frame();
 
         co_await update_resources(frame);
 

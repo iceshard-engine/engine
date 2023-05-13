@@ -1,11 +1,12 @@
-/// Copyright 2022 - 2022, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "trait_render_debug.hxx"
 #include "../trait_camera.hxx"
 
 #include <ice/game_render_traits.hxx>
-#include <ice/task_sync_wait.hxx>
+#include <ice/task.hxx>
+#include <ice/task_utils.hxx>
 #include <ice/engine.hxx>
 #include <ice/world/world_trait_archive.hxx>
 
@@ -36,9 +37,8 @@ namespace ice
 
         auto load_debug_shader(ice::AssetStorage& assets, ice::String name) noexcept -> ice::Task<ice::Data>
         {
-            ice::Asset const asset = co_await assets.request(ice::render::AssetType_Shader, name, ice::AssetState::Baked);
-            ICE_ASSERT(asset_check(asset, AssetState::Baked), "Shader not available!");
-            co_return asset.data;
+            ice::Asset asset = assets.bind(ice::render::AssetType_Shader, name);
+            co_return co_await asset[AssetState::Baked];
         }
 
     } // namespace detail
@@ -51,8 +51,8 @@ namespace ice
     {
         ice::AssetStorage& asset_system = engine.asset_storage();
 
-        _shader_data[0] = ice::sync_wait(ice::detail::load_debug_shader(asset_system, "shaders/debug/debug-vert"));
-        _shader_data[1] = ice::sync_wait(ice::detail::load_debug_shader(asset_system, "shaders/debug/debug-frag"));
+        _shader_data[0] = ice::wait_for(ice::detail::load_debug_shader(asset_system, "shaders/debug/debug-vert"));
+        _shader_data[1] = ice::wait_for(ice::detail::load_debug_shader(asset_system, "shaders/debug/debug-frag"));
     }
 
     void IceWorldTrait_RenderDebug::gfx_setup(
