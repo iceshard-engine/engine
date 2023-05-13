@@ -42,6 +42,7 @@ jobs:
         pip3 install wheel
         pip3 install conan
         conan config install https://github.com/iceshard-engine/conan-config.git
+        conan profile detect
 
     - name: Install tools (GCC 12)
       if: ${{ startsWith(inputs.host, 'ubuntu') }}
@@ -63,7 +64,7 @@ jobs:
       shell: pwsh
       run: |
         .\tools\gh_ice.ps1 init
-        
+
     - name: Build targets
       shell: pwsh
       run: |
