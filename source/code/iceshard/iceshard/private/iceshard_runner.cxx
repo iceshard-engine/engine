@@ -299,7 +299,7 @@ namespace ice
         while (tasks_finished_event.is_set() == false)
         {
             // Handle all tasks for this 'next' frame
-            for (ice::TaskAwaitableBase* awaitable : ice::linked_queue::consume(_queue_next_frame._awaitables))
+            for (ice::TaskAwaitableBase* awaitable : ice::linked_queue::consume(_queue_current_frame._awaitables))
             {
                 awaitable->result.ptr = _current_frame.get();
                 awaitable->_coro.resume();
