@@ -125,7 +125,7 @@ namespace ice::render::vk
         swapchain_info.imageArrayLayers = 1;
         swapchain_info.oldSwapchain = VK_NULL_HANDLE;
         swapchain_info.clipped = false; // Clipped for android only?
-        swapchain_info.presentMode = VK_PRESENT_MODE_FIFO_KHR; // VK_PRESENT_MODE_MAILBOX_KHR;
+        swapchain_info.presentMode = VK_PRESENT_MODE_IMMEDIATE_KHR;
         swapchain_info.imageColorSpace = surface_format.colorSpace;
         swapchain_info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
         swapchain_info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
@@ -1348,7 +1348,7 @@ namespace ice::render::vk
         ice::render::CommandBuffer cmds,
         ice::render::Renderpass renderpass,
         ice::render::Framebuffer framebuffer,
-        ice::Span<ice::vec4f> clear_values,
+        ice::Span<ice::vec4f const> clear_values,
         ice::vec2u extent
     ) noexcept
     {

@@ -45,7 +45,7 @@ namespace ice::render
             ice::render::CommandBuffer cmds,
             ice::render::Renderpass renderpass,
             ice::render::Framebuffer framebuffer,
-            ice::Span<ice::vec4f> clear_values,
+            ice::Span<ice::vec4f const> clear_values,
             ice::vec2u extent
         ) noexcept = 0;
 
