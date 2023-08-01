@@ -6,6 +6,7 @@
 #include <ice/task_types.hxx>
 #include <ice/task_scheduler.hxx>
 #include <ice/span.hxx>
+#include <ice/profiler.hxx>
 
 namespace ice
 {
@@ -18,7 +19,7 @@ namespace ice
     template<typename T>
     inline auto manual_wait_for(ice::Task<T> task, ice::ManualResetEvent& manual_event) noexcept -> T;
     void manual_wait_for(ice::Task<void> task, ice::ManualResetEvent& manual_event) noexcept;
-    void manual_wait_for_all(ice::Span<ice::Task<void>>, ice::ManualResetBarrier& manual_event) noexcept;
+    void manual_wait_for_all(ice::Span<ice::Task<void>>, ice::ManualResetBarrier& manual_barrier) noexcept;
 
     template<typename Value>
     inline auto schedule_on(ice::Task<Value> task, ice::TaskScheduler& scheduler) noexcept -> ice::Task<Value>;
@@ -39,7 +40,7 @@ namespace ice
         T result;
         auto const task_wrapper = [](ice::Task<T> awaited_task, T& value) noexcept -> ice::Task<void>
         {
-            value = co_await awaited_task;
+            value = ice::move(co_await awaited_task);
         };
         ice::wait_for(task_wrapper(ice::move(task), result));
         return result;

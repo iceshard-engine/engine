@@ -57,6 +57,7 @@ namespace ice
 
     void wait_for(ice::Task<void> task) noexcept
     {
+        IPT_ZONE_SCOPED;
         ice::ManualResetEvent ev;
         manual_wait_for(ice::move(task), ev);
         ev.wait();
@@ -64,6 +65,7 @@ namespace ice
 
     void wait_for_all(ice::Span<ice::Task<void>> tasks) noexcept
     {
+        IPT_ZONE_SCOPED;
         ice::ManualResetBarrier manual_sem;
         manual_wait_for_all(tasks, manual_sem);
         manual_sem.wait();
@@ -71,14 +73,16 @@ namespace ice
 
     void manual_wait_for(ice::Task<void> task, ice::ManualResetEvent& manual_event) noexcept
     {
+        IPT_ZONE_SCOPED;
         detail::detached_task(ice::move(task), manual_event);
     }
 
-    void manual_wait_for_all(ice::Span<ice::Task<void>> tasks, ice::ManualResetBarrier& manual_sem) noexcept
+    void manual_wait_for_all(ice::Span<ice::Task<void>> tasks, ice::ManualResetBarrier& manual_barrier) noexcept
     {
+        IPT_ZONE_SCOPED;
         for (ice::Task<void>& task : tasks)
         {
-            detail::detached_task(ice::move(task), manual_sem);
+            detail::detached_task(ice::move(task), manual_barrier);
         }
     }
 

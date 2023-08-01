@@ -19,7 +19,7 @@ namespace ice
         inline void return_value(Other&& value) noexcept
         {
             static_assert(std::is_nothrow_move_assignable_v<Value>, "We enforce noexcept everywhere.");
-            _value = std::move(value);
+            _value = std::forward<Other>(value);
         }
 
         inline auto result() & noexcept -> Value&

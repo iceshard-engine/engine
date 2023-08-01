@@ -50,11 +50,8 @@ namespace ice
 
         bool operator==(std::nullptr_t) const noexcept { return _ptr == nullptr; }
 
-        auto operator->() noexcept -> T* { return _ptr; }
-        auto operator->() const noexcept -> T const* { return _ptr; }
-
-        auto operator*() noexcept -> T& { return *_ptr; }
-        auto operator*() const noexcept -> T const& { return *_ptr; }
+        auto operator->() const noexcept -> T* { return _ptr; }
+        auto operator*() const noexcept -> T& { return *_ptr; }
 
         inline auto get() const noexcept -> T* { return _ptr; }
         inline void reset() noexcept;

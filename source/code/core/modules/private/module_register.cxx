@@ -7,6 +7,7 @@
 #include <ice/container/hashmap.hxx>
 #include <ice/string/heap_string.hxx>
 #include <ice/os/windows.hxx>
+#include <ice/profiler.hxx>
 
 namespace ice
 {
@@ -114,6 +115,9 @@ namespace ice
         ice::String path
     ) noexcept
     {
+        IPT_ZONE_SCOPED;
+        IPT_ZONE_TEXT_STR(path);
+
         ice::HeapString<ice::wchar> wide_path{ _allocator };
         if (utf8_to_wide_append_module(path, wide_path))
         {

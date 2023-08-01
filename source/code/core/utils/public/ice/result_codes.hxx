@@ -2,7 +2,7 @@
 /// SPDX-License-Identifier: MIT
 
 #pragma once
-#include <ice/hash.hxx>
+#include <ice/base.hxx>
 #include <ice/build/build.hxx>
 #include <ice/concept/strong_type_value.hxx>
 
@@ -103,6 +103,7 @@ namespace ice
         static constexpr ice::ResultSeverity Error = ResultSeverity::Error;
 
         static constexpr ice::ResCode Success = { .value = { .severity = 0, .id = 1 } };
+        static constexpr ice::ResCode E_NotImplemented = ResCode::create(ResultSeverity::Error, "Not Implemented");
         static constexpr ice::ResCode E_InvalidArgument = ResCode::create(ResultSeverity::Error, "Invalid Argument");
         static constexpr ice::ResCode E_ValueOutOfRange = ResCode::create(ResultSeverity::Error, "Value Out Of Range");
     };
