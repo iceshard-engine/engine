@@ -33,6 +33,13 @@ int main(int argc, char const** argv)
         ICE_LOG_IF(result == false, ice::LogSeverity::Error, ice::LogTag::Core, "{}\n", ice::result_hint(result));
         ICE_ASSERT_CORE(result == true);
 
+        // Before updating we need to resume first.
+        if (result == ice::app::S_ApplicationUpdate)
+        {
+            ICE_LOG(ice::LogSeverity::Warning, ice::LogTag::Core, "An application should always move to 'Resume' after finishing the 'Setup' stage!");
+            result = ice::app::S_ApplicationResume;
+        }
+
         // We can only call exit if we are in 'suspended' state.
         // Since initially we never resumed we start with 'true'
         bool suspended_before_exit = true;
