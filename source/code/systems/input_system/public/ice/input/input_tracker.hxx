@@ -28,8 +28,8 @@ namespace ice::input
             ice::input::DeviceFactory* device_factory
         ) noexcept = 0;
 
-        virtual void process_device_queue(
-            ice::input::DeviceEventQueue const& event_queue,
+        virtual void process_device_events(
+            ice::Span<ice::input::DeviceEvent const> events,
             ice::Array<ice::input::InputEvent>& input_events_out
         ) noexcept = 0;
 

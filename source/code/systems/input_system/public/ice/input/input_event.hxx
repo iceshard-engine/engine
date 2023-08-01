@@ -29,7 +29,7 @@ namespace ice::input
 
     enum class InputValueType : ice::u8
     {
-        None,
+        Invalid,
         Button,
         Trigger,
         AxisInt,

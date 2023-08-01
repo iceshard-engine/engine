@@ -23,8 +23,8 @@ namespace ice::input
             ice::input::DeviceFactory* device_factory
         ) noexcept override;
 
-        void process_device_queue(
-            ice::input::DeviceEventQueue const& event_queue,
+        void process_device_events(
+            ice::Span<ice::input::DeviceEvent const> events,
             ice::Array<ice::input::InputEvent>& input_events_out
         ) noexcept override;
 
@@ -72,8 +72,8 @@ namespace ice::input
         }
     }
 
-    void SimpleInputTracker::process_device_queue(
-        ice::input::DeviceEventQueue const& event_queue,
+    void SimpleInputTracker::process_device_events(
+        ice::Span<ice::input::DeviceEvent const> events,
         ice::Array<ice::input::InputEvent>& input_events_out
     ) noexcept
     {
@@ -85,7 +85,7 @@ namespace ice::input
             }
         }
 
-        for (ice::input::DeviceEvent event : event_queue._events)
+        for (ice::input::DeviceEvent event : events)
         {
             ice::u64 const device_hash = ice::hash(event.device);
 
