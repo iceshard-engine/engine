@@ -35,7 +35,7 @@ namespace ice
 
         ResourceProvider_Win32Filesystem(
             ice::Allocator& alloc,
-            ice::Span<ice::String> const& paths
+            ice::Span<ice::String const> const& paths
         ) noexcept
             : _allocator{ alloc }
             , _base_paths{ _allocator }
@@ -322,7 +322,7 @@ namespace ice
 
     auto create_resource_provider(
         ice::Allocator& alloc,
-        ice::Span<ice::String> paths
+        ice::Span<ice::String const> paths
     ) noexcept -> ice::UniquePtr<ice::ResourceProvider>
     {
         return ice::make_unique<ice::ResourceProvider_Win32Filesystem>(alloc, alloc, paths);

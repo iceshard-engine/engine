@@ -208,7 +208,7 @@ namespace ice
 
     void ResourceTrackerImplementation::sync_resources() noexcept
     {
-        _scheduler.schedule(_info.flags_io_complete);
+        IPT_ZONE_SCOPED;
 
         ice::Array<ice::Resource const*> temp_resources{ _allocator };
         for (ice::ResourceProvider* provider : _resource_providers)
