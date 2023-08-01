@@ -122,26 +122,26 @@ namespace ice
             Entry const* _entry;
             Type const* _value;
 
-            ConstIterator(std::nullptr_t) noexcept
+            constexpr ConstIterator(std::nullptr_t) noexcept
                 : _entry{ nullptr }
                 , _value{ nullptr }
             {
             }
 
-            ConstIterator(Entry const* entry, Type const* value) noexcept
+            constexpr ConstIterator(Entry const* entry, Type const* value) noexcept
                 : _entry{ entry }
                 , _value{ value }
             {
             }
 
-            auto key() const noexcept -> ice::u64& { return _entry->key; }
-            auto value() const noexcept -> Type const& { return *_value; }
+            constexpr auto key() const noexcept -> ice::u64& { return _entry->key; }
+            constexpr auto value() const noexcept -> Type const& { return *_value; }
 
-            auto operator==(ConstIterator const& other) const noexcept { return _entry == other._entry; }
-            auto operator!=(ConstIterator const& other) const noexcept { return !(*this == other); }
+            constexpr auto operator==(ConstIterator const& other) const noexcept { return _entry == other._entry; }
+            constexpr auto operator!=(ConstIterator const& other) const noexcept { return !(*this == other); }
 
-            void operator++() noexcept { _entry += 1; _value += 1; }
-            auto operator*() const noexcept -> Type const& { return value(); }
+            constexpr void operator++() noexcept { _entry += 1; _value += 1; }
+            constexpr auto operator*() const noexcept -> Type const& { return value(); }
         };
 
         ice::Allocator* _allocator;

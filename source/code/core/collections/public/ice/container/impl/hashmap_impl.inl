@@ -29,7 +29,7 @@ namespace ice
         inline auto find_or_fail(HashMapType const& map, ice::u64 key) noexcept -> ice::ucount;
 
         template<typename Type, ice::ContainerLogic Logic>
-        inline auto find_or_make(ice::HashMap<Type, Logic>& map, ice::u64 key) noexcept -> ice::ucount;
+        inline auto find_or_make(ice::HashMap<Type, Logic>& map, ice::u64 key, bool& found) noexcept -> ice::ucount;
 
         template<typename Type, ice::ContainerLogic Logic>
         inline void find_and_erase(ice::HashMap<Type, Logic>& map, ice::u64 key) noexcept;
@@ -372,13 +372,14 @@ namespace ice
         }
 
         template<typename Type, ice::ContainerLogic Logic>
-        inline auto find_or_make(ice::HashMap<Type, Logic>& map, ice::u64 key) noexcept -> ice::ucount
+        inline auto find_or_make(ice::HashMap<Type, Logic>& map, ice::u64 key, bool& found) noexcept -> ice::ucount
         {
             FindResult fr = ice::hashmap::detail::find(map, key);
 
             // If entry index is not valid we still might have a previous element on the same hash index.
             if (fr.entry_i != Constant_EndOfList)
             {
+                found = true;
                 return fr.entry_i;
             }
 
@@ -508,18 +509,18 @@ namespace ice
                 return fr;
             }
 
-            fr.hash_i = it->entry->key % map._capacity;
+            fr.hash_i = it._entry->key % map._capacity;
             fr.entry_i = map._hashes[fr.hash_i];
 
             while (fr.entry_i != Constant_EndOfList)
             {
-                if ((map._data + fr.entry_i) == it->entry)
+                if ((map._entries + fr.entry_i) == it._entry)
                 {
                     return fr;
                 }
 
                 fr.entry_prev = fr.entry_i;
-                fr.entry_i = map._data[fr.entry_i].next;
+                fr.entry_i = map._entries[fr.entry_i].next;
             }
             return fr;
         }
@@ -582,11 +583,12 @@ namespace ice
                 ice::hashmap::detail::grow(map);
             }
 
-            ice::ucount const index = ice::hashmap::detail::find_or_make(map, key);
+            bool found = false;
+            ice::ucount const index = ice::hashmap::detail::find_or_make(map, key, found);
             if constexpr (Logic == ContainerLogic::Complex)
             {
-                // If the index is below the current map._count we need to destroy the previous value.
-                if ((index + 1) < map._count)
+                // If the index was found we need to destroy the previous value.
+                if (found)
                 {
                     ice::mem_destruct_at(map._data + index);
                 }
@@ -606,20 +608,21 @@ namespace ice
             }
         }
 
-        template<typename Type, ice::ContainerLogic Logic>
-            requires std::move_constructible<Type>
-        inline void set(ice::HashMap<Type, Logic>& map, ice::u64 key, Type&& value) noexcept
+        template<typename Type, ice::ContainerLogic Logic, typename Value>
+            requires std::move_constructible<Type> && std::convertible_to<Value, Type>
+        inline void set(ice::HashMap<Type, Logic>& map, ice::u64 key, Value&& value) noexcept
         {
             if (ice::hashmap::full(map))
             {
                 ice::hashmap::detail::grow(map);
             }
 
-            ice::ucount const index = ice::hashmap::detail::find_or_make(map, key);
+            bool found = false;
+            ice::ucount const index = ice::hashmap::detail::find_or_make(map, key, found);
             if constexpr (Logic == ContainerLogic::Complex)
             {
-                // If the index is below the current map._count we need to destroy the previous value.
-                if ((index + 1) < map._count)
+                // If the index was found we need to destroy the previous value.
+                if (found)
                 {
                     ice::mem_destruct_at(map._data + index);
                 }
@@ -630,13 +633,27 @@ namespace ice
                         .size = ice::size_of<Type>,
                         .alignment = ice::align_of<Type>
                     },
-                    ice::forward<Type>(value)
+                    ice::forward<Value>(value)
                 );
             }
             else
             {
                 map._data[index] = value;
             }
+        }
+
+        template<typename Type, ice::ContainerLogic Logic, typename Value>
+            requires std::move_constructible<Type> && std::convertible_to<Value, Type>
+        inline auto get_or_set(ice::HashMap<Type, Logic>& map, ice::u64 key, Value&& value) noexcept -> Type&
+        {
+            if (ice::hashmap::has(map, key) == false)
+            {
+                ice::hashmap::set(map, key, ice::forward<Value>(value));
+            }
+
+            ice::ucount const index = ice::hashmap::detail::find_or_fail(map, key);
+            ICE_ASSERT_CORE(index != ice::hashmap::detail::Constant_EndOfList);
+            return *(map._data + index);
         }
 
         template<typename Type, ice::ContainerLogic Logic>

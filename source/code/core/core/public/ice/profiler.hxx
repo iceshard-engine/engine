@@ -4,13 +4,14 @@
 #pragma once
 #include <ice/types.hxx>
 
-#if ICE_PROFILE || ICE_DEVELOP
+#if ICE_PROFILE
 
     ISC_WARNING_PUSH
     ISCW_CHECK_OPERATOR_PRECEDENCE(ISCW_OP_DISABLE)
 #   define TRACY_ENABLE
 #   define TRACY_IMPORTS
 #   include <tracy/Tracy.hpp>
+#   include <tracy/TracyC.h>
 #   undef assert
     ISC_WARNING_POP
 
@@ -20,6 +21,9 @@
 #   define IPT_ZONE_SCOPED ZoneScoped
 #   define IPT_ZONE_SCOPED_NAMED(...) ZoneScopedN(__VA_ARGS__)
 
+#   define IPT_ZONE_TEXT( txt, size ) ZoneText( txt, size )
+#   define IPT_ZONE_TEXT_STR( str ) IPT_ZONE_TEXT( ice::string::begin(str), ice::string::size(str) )
+
 #else // #if ICE_PROFILE
 
 #   define IPT_FRAME_MARK
@@ -27,5 +31,8 @@
 
 #   define IPT_ZONE_SCOPED
 #   define IPT_ZONE_SCOPED_NAMED(...)
+
+#   define IPT_ZONE_TEXT( txt, size )
+#   define IPT_ZONE_TEXT_STR( str )
 
 #endif // #if ICE_PROFILE

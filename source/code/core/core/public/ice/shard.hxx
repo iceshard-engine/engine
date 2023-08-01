@@ -113,6 +113,11 @@ namespace ice
     {
         ice::ShardID id;
         ice::detail::ShardPayload payload;
+
+        constexpr operator ice::ShardID() const noexcept
+        {
+            return id;
+        }
     };
 
     static constexpr ice::Shard Shard_Invalid{ .id = { }, .payload = { } };
@@ -277,6 +282,12 @@ namespace ice
         return ice::shard(shard.id, payload);
     }
 
+    template<typename T> requires ice::HasShardPayloadID<T>
+    constexpr auto operator|(ice::ShardID shardid, T payload) noexcept -> ice::Shard
+    {
+        return ice::shard(shardid, payload);
+    }
+
     constexpr auto operator==(ice::ShardID left, ice::ShardID right) noexcept -> bool
     {
         if (left.name == right.name)
@@ -351,6 +362,15 @@ namespace ice
     constexpr ice::ShardPayloadID Constant_ShardPayloadID<ice::StringID_Hash> = ice::shard_payloadid("ice::StringID_Hash");
 
 
+    constexpr auto hash(ice::ShardID shardid) noexcept -> ice::u64
+    {
+        return ice::bit_cast<ice::u64>(shardid);
+    }
+
+    constexpr auto hash32(ice::ShardID shardid) noexcept -> ice::u32
+    {
+        return shardid.name.value ^ shardid.payload.value;
+    }
 
     namespace _validate
     {
