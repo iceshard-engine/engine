@@ -132,7 +132,7 @@ namespace ice
     template<typename T, typename Pred>
     inline void sort(ice::Span<T> span, Pred&& pred) noexcept
     {
-        std::sort(span.begin(), span.end(), ice::forward<Pred>(pred));
+        std::sort(ice::span::begin(span), ice::span::end(span), ice::forward<Pred>(pred));
     }
 
     template<typename K, typename V, typename Pred>
