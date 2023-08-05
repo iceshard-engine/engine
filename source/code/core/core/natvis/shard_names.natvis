@@ -48,8 +48,8 @@
                 <DisplayString Condition="id.payload.value == 4176694044">ice::input::InputEvent</DisplayString>
                 <DisplayString Condition="id.payload.value == 2740183039">ice::u32</DisplayString>
                 <DisplayString Condition="id.payload.value == 1788037810">ice::u64</DisplayString>
-                <DisplayString Condition="id.payload.value == 1568413339">ice::vec2i</DisplayString>
-                <DisplayString Condition="id.payload.value == 1490517694">ice::vec2u</DisplayString>
+                <DisplayString Condition="id.payload.value == 1568413339">ice::math::vec2i</DisplayString>
+                <DisplayString Condition="id.payload.value == 1490517694">ice::math::vec2u</DisplayString>
                 <DisplayString Condition="id.payload.value == 295941599">std::string_view const*</DisplayString>
                 <DisplayString Condition="id.payload.value == 0">{id.payload.value}, type_not_set</DisplayString>
                 <DisplayString>{id.payload.value}, unknown_type</DisplayString>
@@ -71,8 +71,8 @@
             <Item Name="[payload]" Optional="true" Condition="id.payload.value == 4176694044">*(ice::input::InputEvent*)&amp;payload.value</Item>
             <Item Name="[payload]" Optional="true" Condition="id.payload.value == 2740183039">*(ice::u32*)&amp;payload.value</Item>
             <Item Name="[payload]" Optional="true" Condition="id.payload.value == 1788037810">*(ice::u64*)&amp;payload.value</Item>
-            <Item Name="[payload]" Optional="true" Condition="id.payload.value == 1568413339">*(ice::vec2i*)&amp;payload.value</Item>
-            <Item Name="[payload]" Optional="true" Condition="id.payload.value == 1490517694">*(ice::vec2u*)&amp;payload.value</Item>
+            <Item Name="[payload]" Optional="true" Condition="id.payload.value == 1568413339">*(ice::math::vec2i*)&amp;payload.value</Item>
+            <Item Name="[payload]" Optional="true" Condition="id.payload.value == 1490517694">*(ice::math::vec2u*)&amp;payload.value</Item>
             <Item Name="[payload]" Optional="true" Condition="id.payload.value == 295941599">*(std::string_view const**)&amp;payload.value</Item>
         </Expand>
     </Type>

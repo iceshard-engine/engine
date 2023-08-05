@@ -11,21 +11,13 @@ namespace ice
     struct UniquePtr;
 
     template<typename T, typename... Args>
-    inline auto make_unique(
-        ice::Allocator& alloc,
-        Args&&... args
-    ) noexcept -> ice::UniquePtr<T>;
-
+    inline auto make_unique(ice::Allocator& alloc, Args&&... args) noexcept -> ice::UniquePtr<T>;
 
     template<typename T>
     using UniquePtrCustomDeleter = void(T*) noexcept;
 
-    template<typename T, typename... Args>
-    inline auto make_unique(
-        ice::Allocator& alloc,
-        ice::UniquePtrCustomDeleter<T>* fn_deleter,
-        Args&&... args
-    ) noexcept -> ice::UniquePtr<T>;
+    template<typename T>
+    inline auto make_unique(ice::UniquePtrCustomDeleter<T>* fn_deleter, T* instanced_object) noexcept -> ice::UniquePtr<T>;
 
 
     template<typename T>
@@ -178,39 +170,19 @@ namespace ice
     }
 
     template<typename T, typename... Args>
-    inline auto make_unique(
-        ice::Allocator& alloc,
-        Args&&... args
-    ) noexcept -> ice::UniquePtr<T>
+    concept MakeUniqueConstructorAvailable = requires(Args&&... args) {
+        { new T(std::forward<Args>(args)...) } -> std::convertible_to<T*>;
+    };
+
+    template<typename T, typename... Args>
+    inline auto make_unique(ice::Allocator& alloc, Args&&... args) noexcept -> ice::UniquePtr<T>
     {
+        static_assert(MakeUniqueConstructorAvailable<T, Args...>, "Can't call the constructor for the given type and arguments!");
         return ice::UniquePtr<T>{ &alloc, alloc.create<T>(ice::forward<Args>(args)...) };
     }
 
-    //template<typename T, typename... Args>
-    //inline auto make_unique(
-    //    ice::Allocator& alloc,
-    //    ice::UniquePtrCustomDeleter<T>* fn_deleter,
-    //    Args&&... args
-    //) noexcept -> ice::UniquePtr<T>
-    //{
-    //    using DeleterInfo = typename ice::UniquePtr<T>::UserDeleterInfo;
-
-    //    ice::meminfo total_memory = ice::meminfo_of<T>;
-    //    ice::usize const udi_offset = total_memory += ice::meminfo_of<DeleterInfo>;
-
-    //    ice::AllocResult const mem = alloc.allocate(total_memory);
-
-    //    T* const object = new (mem.memory) T{ std::forward<Args>(args)... };
-    //    DeleterInfo* const deleter_info = new (ice::ptr_add(mem.memory, udi_offset)) DeleterInfo{ &alloc, fn_deleter };
-
-    //    return ice::UniquePtr<T>{ deleter_info, object };
-    //}
-
-    template<typename T, typename... Args>
-    inline auto make_unique(
-        ice::UniquePtrCustomDeleter<T>* fn_deleter,
-        T* instanced_object
-    ) noexcept -> ice::UniquePtr<T>
+    template<typename T>
+    inline auto make_unique(ice::UniquePtrCustomDeleter<T>* fn_deleter, T* instanced_object) noexcept -> ice::UniquePtr<T>
     {
         return ice::UniquePtr<T>{ fn_deleter, instanced_object };
     }
