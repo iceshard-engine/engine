@@ -82,7 +82,7 @@ namespace ice
 
     auto AllocatorDebugInfo::allocation_size_inuse() const noexcept -> ice::usize
     {
-        return { _internal->_allocated_inuse };
+        return ice::usize(_internal->_allocated_inuse.load(std::memory_order_relaxed));
     }
 
     void AllocatorDebugInfo::track_child(ice::AllocatorDebugInfo* child_allocator) noexcept

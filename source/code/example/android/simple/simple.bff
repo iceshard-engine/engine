@@ -1,0 +1,36 @@
+/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
+.Project =
+[
+    .Name = 'simple'
+    .Kind = .Kind_SharedLib // Introduce just 'App' #implementation dependant
+    .Group = 'Tests'
+
+    .BaseDir = '$WorkspaceCodeDir$/example/android/simple'
+    .Requires = { 'SDK-Android' }
+
+    .Android =
+    [
+        .Namespace = 'net.example.simple'
+        .ApplicationID = 'net.iceshard.studios.sandstorm.game'
+
+        .TargetSDK = '31'
+        .MinSDK = '29'
+
+        .VersionCode = 142
+        .VersionName = '1.4.2'
+        .GradlePlugins = {
+            'id("com.android.application") version "8.0.0"'
+            'id("org.jetbrains.kotlin.android") version "1.8.20"'
+        }
+    ]
+
+    .Private =
+    [
+        .Uses = {
+            'core'
+        }
+    ]
+]
+.Projects + .Project

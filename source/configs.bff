@@ -30,7 +30,6 @@
     .Configuration_Release
 }
 
-
 .Config_MSVC =
 [
     .Name = 'Config-MSVC'
@@ -53,6 +52,30 @@
         'UNICODE'
     }
 ]
+
+.Config_Android =
+[
+    .Name = 'Config-Unix'
+    .Requires = { 'Android', 'CLANG-Frontend' }
+    .BuildOptions = {
+        '-Wall'
+        '-Werror'
+        // We use [[deprecated]] to keep track of some old API usage without the need to fix them asap.
+        '-Wno-error=deprecated-declarations'
+        '-Wno-switch'
+        '-std=c++2b'
+    }
+]
+
+.Config_Android_SharedLib =
+[
+    .Name = 'Config-Unix'
+    .Requires = { 'Android', 'CLANG-Frontend', 'SharedLib' }
+    .LinkOptions = {
+        '-static-libstdc++'
+    }
+]
+
 
 .Config_Unix =
 [
@@ -267,6 +290,8 @@
     .Config_Unix_BinaryApp
     .Config_Unix_BinaryApp2
     .Config_GCC_Tests
+    .Config_Android
+    .Config_Android_SharedLib
     .Config_Debug
     .Config_Debug_MSVC
     .Config_Debug_GCC
