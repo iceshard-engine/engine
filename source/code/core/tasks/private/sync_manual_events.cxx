@@ -18,8 +18,8 @@ namespace ice
     namespace detail
     {
 
-        constexpr ice::i32 Constant_WakeAllWaiters = INT_MAX;
-        constexpr ice::i32 Constant_WakeOneWaiter = INT_MAX;
+        constexpr inline ice::i32 Constant_WakeAllWaiters = INT_MAX;
+        // constexpr inline ice::i32 Constant_WakeOneWaiter = 1;
 
         auto futex_wait(ice::i32* user_address, ice::i32 value) noexcept -> ice::i32
         {
