@@ -9,13 +9,6 @@
 
     .BaseDir = '$WorkspaceCodeDir$/core/core'
 
-    .Public =
-    [
-        .Modules = {
-            'fmt'
-        }
-    ]
-
     ; We only profile the tracy module in the 'Profile' configuration.
     .TracyProfiler_Profile =
     [

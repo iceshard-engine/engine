@@ -6,6 +6,7 @@
 #include <ice/assert.hxx>
 #include <ice/stringid.hxx>
 #include "log_internal.hxx"
+#include "log_android.hxx"
 
 namespace ice
 {
@@ -59,9 +60,18 @@ namespace ice
     {
         detail::internal_log_state = alloc->create<detail::LogState>(*alloc);
         detail::LogAPI const current_api{ };
-        *current_api.log_fn = ice::detail::default_log_fn;
-        *current_api.reg_log_tag_fn = ice::detail::default_register_tag_fn;
-        *current_api.assert_fn = ice::detail::default_assert_fn;
+        if constexpr(ice::build::current_platform.system == ice::build::System::Android)
+        {
+            *current_api.log_fn = ice::detail::android::logcat_message;
+            *current_api.reg_log_tag_fn = ice::detail::default_register_tag_fn;
+            *current_api.assert_fn = ice::detail::android::logcat_assert;
+        }
+        else
+        {
+            *current_api.log_fn = ice::detail::default_log_fn;
+            *current_api.reg_log_tag_fn = ice::detail::default_register_tag_fn;
+            *current_api.assert_fn = ice::detail::default_assert_fn;
+        }
 
         api->fn_register_module(ctx, "ice.logger"_sid_hash, get_log_api);
     }

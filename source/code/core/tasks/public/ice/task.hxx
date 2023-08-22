@@ -123,7 +123,7 @@ namespace ice
             auto await_resume() const noexcept -> decltype(auto)
             {
                 ICE_ASSERT(
-                    _coroutine.operator bool(),
+                    this->_coroutine.operator bool(),
                     "Broken promise on coroutine Task!"
                 );
 

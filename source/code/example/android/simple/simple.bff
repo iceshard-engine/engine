@@ -10,6 +10,8 @@
     .BaseDir = '$WorkspaceCodeDir$/example/android/simple'
     .Requires = { 'SDK-Android' }
 
+    .CopyModules = true
+
     .Android =
     [
         .Namespace = 'net.example.simple'
@@ -29,7 +31,7 @@
     .Private =
     [
         .Uses = {
-            'core'
+            'tasks'
         }
     ]
 ]

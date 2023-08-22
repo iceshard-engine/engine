@@ -6,6 +6,10 @@
 
 #if ISP_UNIX
 
+#include <sys/time.h>
+#include <pthread.h>
+#include <unistd.h>
+#include <dlfcn.h>
 #pragma clang diagnostic ignored "-Wunknown-attributes"
 
 #endif

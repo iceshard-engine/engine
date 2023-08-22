@@ -88,4 +88,17 @@ namespace ice::detail
         return fmt_string(str._data, str._data + str._size);
     }
 
+    static constexpr ice::String severity_value[]{
+        "",
+        "CRIT",
+        "HIGH",
+
+        "ERRR",
+        "WARN",
+        "INFO",
+        "VERB",
+
+        "DEBG",
+    };
+
 } // namespace ice::detail

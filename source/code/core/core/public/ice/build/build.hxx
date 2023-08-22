@@ -23,8 +23,7 @@ namespace ice::build
 
     static constexpr bool is_unix = current_platform == System::Unix;
 
-    static constexpr bool is_x64 = current_platform == Architecture::x86_x64;
-
+    static constexpr bool is_x64 = current_platform == Architecture::x86_x64 || current_platform == Architecture::Arm64;
 
     static constexpr bool is_msvc = current_platform == Compiler::MSVC;
 

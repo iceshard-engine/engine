@@ -54,6 +54,7 @@ namespace ice
         constexpr auto operator=(Flags flags) noexcept -> TaskFlags&
         {
             value = static_cast<ice::TaskFlagBaseType>(flags);
+            return *this;
         }
 
         template<ice::TaskFlagType Flags>

@@ -5,7 +5,7 @@ FastBuildDeps
 fastbuild-generator/0.4.1@iceshard/stable
 
 [requires]
-fmt/9.0.0@iceshard/stable
+fmt/10.0.0@iceshard/stable
 tracy/0.9.1@iceshard/stable
 
 [requires-Windows-x64]

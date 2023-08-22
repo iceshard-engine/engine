@@ -12,7 +12,6 @@
 #include <fmt/format.h>
 #include <fmt/chrono.h>
 
-
 namespace ice::detail
 {
 
@@ -35,19 +34,6 @@ namespace ice::detail
             location
         );
     }
-
-    ice::String severity_value[]{
-        "",
-        "CRIT",
-        "HIGH",
-
-        "ERRR",
-        "WARN",
-        "INFO",
-        "VERB",
-
-        "DEBG",
-    };
 
     auto get_base_tag_name(ice::LogTag tag) noexcept -> ice::String
     {

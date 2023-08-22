@@ -16,7 +16,7 @@ afterEvaluate {
      */
     android.buildTypes.configureEach {
         val buildConfig = this.name.replaceFirstChar { it.titlecase() }
-        val buildPipeline = "Android${android.compileSdk}"
+        val buildPipeline = "Android$(CompileSDK)"
         val abiList = listOf(Pair("ARMv8", "arm64-v8a"))
 
         for (abi in abiList)
@@ -41,7 +41,7 @@ afterEvaluate {
 }
 
 android {
-    compileSdk = $(CompileSDK)
+    compileSdk = $(TargetSDK)
     // buildToolsVersion = "$ (AndroidBuildToolsVersion)"
 
     sourceSets {

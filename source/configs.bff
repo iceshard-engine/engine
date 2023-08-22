@@ -62,8 +62,13 @@
         '-Werror'
         // We use [[deprecated]] to keep track of some old API usage without the need to fix them asap.
         '-Wno-error=deprecated-declarations'
+        '-Wunguarded-availability'
+        '-Werror=unguarded-availability'
         '-Wno-switch'
         '-std=c++2b'
+    }
+    .Defines = {
+        '__ANDROID_UNAVAILABLE_SYMBOLS_ARE_WEAK__'
     }
 ]
 
@@ -73,6 +78,9 @@
     .Requires = { 'Android', 'CLANG-Frontend', 'SharedLib' }
     .LinkOptions = {
         '-static-libstdc++'
+    }
+    .Libs = {
+        'android'
     }
 ]
 

@@ -2,7 +2,7 @@
 /// SPDX-License-Identifier: MIT
 
 #pragma once
-#include <ice/string_types.hxx>
+#include <ice/string/string.hxx>
 #include <ice/log_severity.hxx>
 #include <ice/log_tag.hxx>
 #include <ice/log_formatters.hxx>
