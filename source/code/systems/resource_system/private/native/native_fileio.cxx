@@ -1,3 +1,6 @@
+/// Copyright 2023 - 2023, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
 #include "native_fileio.hxx"
 #include <ice/string/heap_string.hxx>
 #include <ice/mem_allocator_stack.hxx>

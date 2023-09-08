@@ -1,3 +1,6 @@
+/// Copyright 2023 - 2023, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
 #include "log_android.hxx"
 #include "log_internal.hxx"
 #include "log_buffer.hxx"

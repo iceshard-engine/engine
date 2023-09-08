@@ -1,3 +1,6 @@
+/// Copyright 2023 - 2023, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
 #include <jni.h>
 #include <EGL/egl.h>
 #include <GLES/gl.h>

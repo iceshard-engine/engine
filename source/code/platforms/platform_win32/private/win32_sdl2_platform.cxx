@@ -1,3 +1,6 @@
+/// Copyright 2023 - 2023, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
 #include "win32_sdl2_platform.hxx"
 #include "win32_sdl2_utils.hxx"
 
