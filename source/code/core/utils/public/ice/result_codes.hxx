@@ -68,7 +68,7 @@ namespace ice
         ice::detail::ResultValue value;
         char const* description;
 
-        inline constexpr operator bool() const noexcept;
+        constexpr inline operator bool() const noexcept;
 
         static constexpr auto create(ice::ResultSeverity sev, std::string_view desc)
         {
@@ -125,22 +125,22 @@ namespace ice
     }
 
     template<bool DebugInfo>
-    inline constexpr ice::ResultCode<DebugInfo>::operator bool() const noexcept
+    constexpr inline ice::ResultCode<DebugInfo>::operator bool() const noexcept
     {
         return this->value == Res::Success.value;
     }
 
-    inline constexpr ice::ResultCode<true>::operator bool() const noexcept
+    constexpr inline ice::ResultCode<true>::operator bool() const noexcept
     {
         return this->value == Res::Success.value;
     }
 
-    inline constexpr ice::Result::operator bool() const noexcept
+    constexpr inline ice::Result::operator bool() const noexcept
     {
         return this->result_code.value == Res::Success.value;
     }
 
-    inline constexpr ice::Result::operator ResCode() const noexcept
+    constexpr inline ice::Result::operator ResCode() const noexcept
     {
         return this->result_code;
     }

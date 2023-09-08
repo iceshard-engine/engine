@@ -6,9 +6,8 @@
 #include <ice/task_types.hxx>
 #include <ice/resource.hxx>
 
-#include "../resource_native_thread_io.hxx"
-
 #if ISP_WINDOWS
+#include "native/native_aio.hxx"
 
 namespace ice
 {
@@ -19,7 +18,7 @@ namespace ice
         virtual auto load_data(
             ice::Allocator& alloc,
             ice::TaskScheduler& scheduler,
-            ice::NativeIO* nativeio
+            ice::NativeAIO* nativeio
         ) const noexcept -> ice::Task<ice::Memory> = 0;
     };
 

@@ -22,9 +22,9 @@ namespace ice
     using std::abs;
 
     template<>
-    inline constexpr ShardPayloadID Constant_ShardPayloadID<ice::vec2u> = ice::shard_payloadid("ice::vec2u");
+    constexpr inline ShardPayloadID Constant_ShardPayloadID<ice::vec2u> = ice::shard_payloadid("ice::vec2u");
 
     template<>
-    inline constexpr ShardPayloadID Constant_ShardPayloadID<ice::vec2i> = ice::shard_payloadid("ice::vec2i");
+    constexpr inline ShardPayloadID Constant_ShardPayloadID<ice::vec2i> = ice::shard_payloadid("ice::vec2i");
 
 } // namespace ice

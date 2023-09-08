@@ -23,7 +23,7 @@ namespace ice
     auto internal_overlapped_file_load(
         ice::win32::FileHandle file,
         ice::ucount filesize,
-        ice::NativeIO* nativeio,
+        ice::NativeAIO* nativeio,
         ice::Memory data
     ) noexcept -> ice::Task<bool>
     {
@@ -34,7 +34,7 @@ namespace ice
 
     auto internal_file_load(
         ice::Allocator& alloc,
-        ice::NativeIO* nativeio,
+        ice::NativeAIO* nativeio,
         ice::String filepath
     ) noexcept -> ice::Task<ice::Memory>
     {
@@ -181,7 +181,7 @@ namespace ice
     auto Resource_LooseFilesWin32::load_data(
         ice::Allocator& alloc,
         ice::TaskScheduler& scheduler,
-        ice::NativeIO* nativeio
+        ice::NativeAIO* nativeio
     ) const noexcept -> ice::Task<ice::Memory>
     {
         co_return co_await internal_file_load(alloc, nativeio, _origin_path);
@@ -226,7 +226,7 @@ namespace ice
     auto Resource_LooseFilesWin32::ExtraResource::load_data(
         ice::Allocator& alloc,
         ice::TaskScheduler& scheduler,
-        ice::NativeIO* nativeio
+        ice::NativeAIO* nativeio
     ) const noexcept -> ice::Task<ice::Memory>
     {
         co_return co_await internal_file_load(alloc, nativeio, _origin_path);

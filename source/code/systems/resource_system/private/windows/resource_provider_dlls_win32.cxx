@@ -192,7 +192,7 @@ namespace ice
             ice::Allocator& alloc,
             ice::Resource const* resource,
             ice::TaskScheduler& scheduler,
-            ice::NativeIO* nativeio
+            ice::NativeAIO* nativeio
         ) const noexcept -> ice::Task<ice::Memory>
         {
             // Cannot load DLL's in this way.

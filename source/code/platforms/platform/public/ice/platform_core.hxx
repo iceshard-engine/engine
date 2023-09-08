@@ -15,6 +15,6 @@ namespace ice::platform
     };
 
     template<>
-    constexpr ice::platform::FeatureFlags Constant_FeatureFlags<ice::platform::Core> = FeatureFlags::Core;
+    constexpr inline ice::platform::FeatureFlags Constant_FeatureFlags<ice::platform::Core> = FeatureFlags::Core;
 
 } // namespace ice::platform

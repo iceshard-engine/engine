@@ -62,6 +62,10 @@
         '-Werror'
         // We use [[deprecated]] to keep track of some old API usage without the need to fix them asap.
         '-Wno-error=deprecated-declarations'
+        // Currently added to not fail on small issues
+        '-Wno-unused-private-field'
+        '-Wno-unused-const-variable'
+        // Android specific
         '-Wunguarded-availability'
         '-Werror=unguarded-availability'
         '-Wno-switch'

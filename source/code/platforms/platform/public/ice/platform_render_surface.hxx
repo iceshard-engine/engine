@@ -24,6 +24,6 @@ namespace ice::platform
     static constexpr ice::ResultCode E_RenderSurfaceAlreadyExisting = ice::ResCode::create(ice::ResultSeverity::Error, "Render Surface Already Existing");
 
     template<>
-    constexpr ice::platform::FeatureFlags Constant_FeatureFlags<ice::platform::RenderSurface> = FeatureFlags::RenderSurface;
+    constexpr inline ice::platform::FeatureFlags Constant_FeatureFlags<ice::platform::RenderSurface> = FeatureFlags::RenderSurface;
 
 } // namespace ice::platform

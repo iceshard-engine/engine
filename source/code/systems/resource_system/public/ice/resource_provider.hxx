@@ -13,7 +13,7 @@
 namespace ice
 {
 
-    struct NativeIO;
+    struct NativeAIO;
 
     enum class ResourceProviderResult : ice::u32
     {
@@ -59,7 +59,7 @@ namespace ice
             ice::Allocator& alloc,
             ice::Resource const* resource,
             ice::TaskScheduler& scheduler,
-            ice::NativeIO* nativeio
+            ice::NativeAIO* nativeio
         ) const noexcept -> ice::Task<ice::Memory> = 0;
 
         virtual auto resolve_relative_resource(

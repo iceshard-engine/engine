@@ -18,6 +18,6 @@ namespace ice
 
 
     template<>
-    constexpr ice::ShardPayloadID Constant_ShardPayloadID<ice::World*> = ice::shard_payloadid("ice::World*");
+    constexpr inline ice::ShardPayloadID Constant_ShardPayloadID<ice::World*> = ice::shard_payloadid("ice::World*");
 
 } // namespace ice

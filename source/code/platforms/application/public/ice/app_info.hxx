@@ -2,7 +2,7 @@
 /// SPDX-License-Identifier: MIT
 
 #pragma once
-#include <ice/string_types.hxx>
+#include <ice/string/string.hxx>
 
 namespace ice::app
 {

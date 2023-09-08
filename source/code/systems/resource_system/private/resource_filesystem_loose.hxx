@@ -1,27 +1,25 @@
+
 /// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
-#include <ice/resource.hxx>
 #include <ice/resource_meta.hxx>
 #include <ice/resource_flags.hxx>
 #include <ice/mem_unique_ptr.hxx>
 #include <ice/container_types.hxx>
-#include <ice/string_types.hxx>
-#include <ice/os/windows.hxx>
+#include <ice/string/heap_string.hxx>
 #include <ice/uri.hxx>
 
-#include "resource_common_win32.hxx"
-
-#if ISP_WINDOWS
+#include "resource_filesystem.hxx"
+#include "native/native_fileio.hxx"
 
 namespace ice
 {
 
-    class Resource_LooseFilesWin32 final : public ice::Resource_Win32
+    class LooseFilesResource final : public ice::FileSystemResource
     {
     public:
-        Resource_LooseFilesWin32(
+        LooseFilesResource(
             ice::Allocator& alloc,
             ice::MutableMetadata metadata,
             ice::HeapString<> origin_path,
@@ -29,7 +27,7 @@ namespace ice
             ice::String uri_path
         ) noexcept;
 
-        ~Resource_LooseFilesWin32() noexcept override;
+        ~LooseFilesResource() noexcept override;
 
         auto uri() const noexcept -> ice::URI const& override;
         auto flags() const noexcept -> ice::ResourceFlags override;
@@ -69,11 +67,11 @@ namespace ice
         ice::HashMap<ice::HeapString<>, ContainerLogic::Complex> _extra_resources;
     };
 
-    class Resource_LooseFilesWin32::ExtraResource final : public ice::Resource_Win32
+    class LooseFilesResource::ExtraResource final : public ice::FileSystemResource
     {
     public:
         ExtraResource(
-            ice::Resource_LooseFilesWin32& parent,
+            ice::LooseFilesResource& parent,
             ice::HeapString<> origin_path,
             ice::ResourceFlags flags
         ) noexcept;
@@ -92,8 +90,13 @@ namespace ice
             ice::NativeAIO* nativeio
         ) const noexcept -> ice::Task<ice::Memory> override;
 
+        auto load_named_part(
+            ice::StringID_Arg part_name,
+            ice::Allocator& alloc
+        ) const noexcept -> ice::Task<Memory> override { co_return {}; }
+
     private:
-        ice::Resource_LooseFilesWin32& _parent;
+        ice::LooseFilesResource& _parent;
 
         ice::HeapString<> _origin_path;
         ice::ResourceFlags _flags;
@@ -101,12 +104,10 @@ namespace ice
 
     auto create_resources_from_loose_files(
         ice::Allocator& alloc,
-        ice::WString base_path,
-        ice::WString uri_base_path,
-        ice::WString meta_file,
-        ice::WString data_file
-    ) noexcept -> ice::Resource_Win32*;
+        ice::native_fileio::FilePath base_path,
+        ice::native_fileio::FilePath uri_base_path,
+        ice::native_fileio::FilePath meta_file,
+        ice::native_fileio::FilePath data_file
+    ) noexcept -> ice::FileSystemResource*;
 
 } // namespace ice
-
-#endif // #if ISP_WINDOWS

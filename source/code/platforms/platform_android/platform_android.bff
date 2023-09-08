@@ -1,0 +1,23 @@
+/// Copyright 2023 - 2023, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
+.Project =
+[
+    .Name = 'platform_android'
+    .Kind = .Kind_ObjectList
+    .BaseDir = '$WorkspaceCodeDir$/platforms/platform_android'
+    .Group = 'Platforms'
+
+    .Requires = { 'SDK-Android' }
+
+    .Public =
+    [
+        .Uses = {
+            'application'
+            'platform'
+            'utils'
+            'tasks'
+        }
+    ]
+]
+.Projects + .Project

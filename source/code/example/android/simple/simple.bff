@@ -9,16 +9,17 @@
 
     .BaseDir = '$WorkspaceCodeDir$/example/android/simple'
     .Requires = { 'SDK-Android' }
+    .Tags = { 'Android-Gradle' }
 
     .CopyModules = true
 
     .Android =
     [
         .Namespace = 'net.example.simple'
-        .ApplicationID = 'net.iceshard.studios.sandstorm.game'
+        .ApplicationID = 'net.example.myapp'
 
         .TargetSDK = '31'
-        .MinSDK = '29'
+        // .MinSDK = '28' This comes from the Pipeline AndroidAPILevel value
 
         .VersionCode = 142
         .VersionName = '1.4.2'
@@ -30,8 +31,12 @@
 
     .Private =
     [
+        // Disable linking the Dynamic library with objects
+        // IceShard makes use of regular linking to provide default implementations implicitly.
+        .LinkerLinkObjects = false
+
         .Uses = {
-            'tasks'
+            'platform_android'
         }
     ]
 ]

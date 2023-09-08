@@ -266,7 +266,7 @@ namespace ice
             ice::Allocator& alloc,
             ice::Resource const* resource,
             ice::TaskScheduler& scheduler,
-            ice::NativeIO* nativeio
+            ice::NativeAIO* nativeio
         ) const noexcept -> ice::Task<ice::Memory> override
         {
             ice::Resource_Win32 const* const win_res = static_cast<ice::Resource_Win32 const*>(resource);

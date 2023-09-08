@@ -481,7 +481,7 @@ namespace ice
     {
         ice::Memory const mem = ice::buffer::append_reserve(
             meta._additional_data,
-            { ice::string::size(value) + 1, ice::ualign::b_4 }
+            { ice::usize{ ice::string::size(value) + 1 }, ice::ualign::b_4 }
         );
 
         ice::memcpy(mem, ice::string::data_view(value));
@@ -616,11 +616,11 @@ namespace ice
         if (ice::span::count(values) > 0)
         {
             ice::meminfo meta_info = ice::meminfo_of<detail::MetadataEntry> * ice::span::count(values);
-            ice::usize strs_offset = meta_info += ice::meminfo{ ice::string::size(values[0]) + 1, ice::ualign::b_1};
+            ice::usize strs_offset = meta_info += ice::meminfo{ice::usize{ ice::string::size(values[0]) + 1 }, ice::ualign::b_1};
 
             for (ice::String value : ice::span::subspan(values, 1))
             {
-                meta_info += ice::meminfo{ ice::string::size(value) + 1, ice::ualign::b_1 };
+                meta_info += ice::meminfo{ ice::usize{ ice::string::size(value) + 1 }, ice::ualign::b_1 };
             }
 
             ice::Memory const mem = ice::buffer::append_reserve(meta._additional_data, meta_info);
@@ -808,7 +808,7 @@ namespace ice
             result_meta._meta_entries._data = reinterpret_cast<HashValue const*>(value_it);
 
             void const* data_it = ice::ptr_add(data.location, { data_offset });
-            result_meta._additional_data = { data_it, data.size.value - data_offset };
+            result_meta._additional_data = { data_it, { data.size.value - data_offset } };
         }
 
         return result_meta;

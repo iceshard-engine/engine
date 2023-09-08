@@ -10,8 +10,9 @@
 #include <ice/string/string.hxx>
 #include <ice/container/hashmap.hxx>
 #include <ice/log_tag.hxx>
+#include <ice/log_formatters.hxx>
 
-#include "resource_native_thread_io.hxx"
+#include "native/native_aio.hxx"
 
 namespace ice
 {
@@ -132,7 +133,7 @@ namespace ice
         ice::ResourceTrackerCreateInfo _info;
 
         ice::TaskQueue _io_queue;
-        ice::UniquePtr<ice::NativeIO> _io_thread_data;
+        ice::UniquePtr<ice::NativeAIO> _io_thread_data;
         ice::UniquePtr<ice::TaskThread> _io_thread;
 
         ice::Array<ice::ResourceHandle, ContainerLogic::Complex> _handles;
@@ -167,7 +168,11 @@ namespace ice
 
         if (_info.io_dedicated_threads > 0)
         {
-            _io_thread_data = ice::create_nativeio_thread_data(_allocator, _info.io_dedicated_threads);
+            _io_thread_data = ice::create_nativeio_thread_data(
+                _allocator,
+                _scheduler,
+                _info.io_dedicated_threads
+            );
 
             ice::TaskThreadInfo const io_thread_info{
                 //.exclusive_queue = true, // ignored
@@ -322,7 +327,11 @@ namespace ice
 
             resource_handle->data = result;
             resource_handle->status = result.location == nullptr ? ResourceStatus::Invalid : ResourceStatus::Loaded;
-            ICE_ASSERT(resource_handle->status != ResourceStatus::Invalid, "Failed loading '{}' resource", ice::resource_origin(resource_handle));
+            ICE_ASSERT(
+                resource_handle->status != ResourceStatus::Invalid,
+                "Failed loading '{}' resource",
+                ice::resource_origin(resource_handle)
+            );
         }
         else
         {

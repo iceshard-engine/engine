@@ -6,6 +6,17 @@
 #include <ice/stringid.hxx>
 #include <ice/mem_types.hxx>
 #include <ice/result_codes.hxx>
+#include <ice/string_types.hxx>
+
+template<typename CharType>
+struct fmt::formatter<ice::BasicString<CharType>> : public fmt::formatter<std::basic_string_view<CharType>>
+{
+    template<typename FormatContext>
+    constexpr auto format(ice::BasicString<CharType> value, FormatContext& ctx)
+    {
+        return fmt::formatter<std::basic_string_view<CharType>>::format({ value._data, value._size }, ctx);
+    }
+};
 
 template<>
 struct fmt::formatter<ice::StringID_Hash>

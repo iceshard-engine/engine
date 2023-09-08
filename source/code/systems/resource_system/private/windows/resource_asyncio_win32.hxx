@@ -3,14 +3,15 @@
 
 #pragma once
 #include <ice/os/windows.hxx>
-#include <ice/task.hxx>
+#include <ice/os/unix.hxx>
 #include <ice/task_awaitable.hxx>
-#include "../resource_native_thread_io.hxx"
+#include <ice/task.hxx>
 
 namespace ice
 {
 
 #if ISP_WINDOWS
+#include "native/native_aio.hxx"
 
     struct AsyncIOData
     {
@@ -27,7 +28,7 @@ namespace ice
         } result{ false, 0 };
 
         AsyncIOData(
-            ice::NativeIO* nativeio,
+            ice::NativeAIO* nativeio,
             ice::win32::FileHandle file_handle,
             ice::Memory memory,
             ice::ucount size

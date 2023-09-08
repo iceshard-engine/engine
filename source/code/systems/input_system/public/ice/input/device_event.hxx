@@ -71,14 +71,14 @@ namespace ice::input
     template<typename>
     constexpr DevicePayloadType Constant_PayloadType = DevicePayloadType::Invalid;
     template<>
-    constexpr DevicePayloadType Constant_PayloadType<ice::i8> = DevicePayloadType::Int8;
+    constexpr inline DevicePayloadType Constant_PayloadType<ice::i8> = DevicePayloadType::Int8;
     template<>
-    constexpr DevicePayloadType Constant_PayloadType<ice::i16> = DevicePayloadType::Int16;
+    constexpr inline DevicePayloadType Constant_PayloadType<ice::i16> = DevicePayloadType::Int16;
     template<>
-    constexpr DevicePayloadType Constant_PayloadType<ice::i32> = DevicePayloadType::Int32;
+    constexpr inline DevicePayloadType Constant_PayloadType<ice::i32> = DevicePayloadType::Int32;
     template<>
-    constexpr DevicePayloadType Constant_PayloadType<ice::f32> = DevicePayloadType::Float32;
+    constexpr inline DevicePayloadType Constant_PayloadType<ice::f32> = DevicePayloadType::Float32;
     template<typename T> requires std::is_enum_v<T>
-    constexpr DevicePayloadType Constant_PayloadType<T> = DevicePayloadType::Enum;
+    constexpr inline DevicePayloadType Constant_PayloadType<T> = DevicePayloadType::Enum;
 
 } // ice::input

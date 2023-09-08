@@ -8,15 +8,16 @@
 namespace ice
 {
 
-    struct NativeIO;
+    struct NativeAIO;
 
     auto create_nativeio_thread_data(
         ice::Allocator& alloc,
+        ice::TaskScheduler& default_scheduler,
         ice::ucount hint_thread_count = 1
-    ) noexcept -> ice::UniquePtr<ice::NativeIO>;
+    ) noexcept -> ice::UniquePtr<ice::NativeAIO>;
 
-    auto nativeio_handle(ice::NativeIO* nativeio) noexcept -> void*;
+    auto nativeio_handle(ice::NativeAIO* nativeio) noexcept -> void*;
 
-    auto nativeio_thread_procedure(ice::NativeIO* nativeio, ice::TaskQueue& queue) noexcept -> ice::u32;
+    auto nativeio_thread_procedure(ice::NativeAIO* nativeio, ice::TaskQueue& queue) noexcept -> ice::u32;
 
 } // namespace ice

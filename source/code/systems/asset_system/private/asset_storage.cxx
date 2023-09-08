@@ -1,7 +1,6 @@
 /// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
-#pragma once
 #include <ice/asset_storage.hxx>
 #include <ice/asset_type_archive.hxx>
 #include <ice/resource_tracker.hxx>
@@ -170,7 +169,7 @@ namespace ice
         auto bind(
             ice::AssetType type,
             ice::String name
-        ) noexcept -> ice::Asset
+        ) noexcept -> ice::Asset override
         {
             Asset result{ };
             // CHECK: Always called from the same thread.
@@ -754,6 +753,7 @@ namespace ice
         {
             entry->current_state = AssetState::Unknown;
 
+            [[maybe_unused]]
             ice::ResourceResult const result = co_await _info.resource_tracker.unload_resource(entry->resource_handle);
             //if (ice::has_all(result.resource_status, ice::ResourceStatus::Available))
             //{
