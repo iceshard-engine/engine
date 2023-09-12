@@ -4,8 +4,8 @@ plugins {
 }
 
 android {
-    // For native apps the CompileSDK is the MinSDK
-    compileSdk = $(CompileSDK)
+    // Here we use TargetSDK to have possible access to newer APIs
+    compileSdk = $(TargetSDK)
     // buildToolsVersion = "$ (AndroidBuildToolsVersion)"
 
     namespace = "$(Namespace)"
