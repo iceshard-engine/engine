@@ -365,7 +365,7 @@ namespace ice
         }
 
         // return main_resource;
-        return nullptr;
+        return main_resource;
     }
 
 } // namespace ice

@@ -13,7 +13,7 @@ namespace ice::platform
     //! \note Depending on the specified flags some API's may be inaccessible, however specyfing always all features can also lead to unnecessary runtime costs.
     enum class FeatureFlags : ice::u32
     {
-        None = 0x0,
+        None = 0x00,
 
         //! \brief Platform layer with the most basic features, allowing to query system and input events, query a render surface.
         Core = 0x01,
@@ -26,6 +26,11 @@ namespace ice::platform
         //! \note Not all properties are accessible no all platforms. More on this can be read in the '<todo>' section.
         //! \todo This flag is for now only used as example of a missing platform feature.
         Vitals = 0x04,
+
+        //! \brief Represents various paths provided by the OS useful to initialize resources providers or write data to.
+        //!
+        //! \note For portability reasons it's suggested to always use paths availabe from this OS module.
+        Paths = 0x08,
 
         All = Core,
     };
@@ -100,5 +105,10 @@ namespace ice::platform
 
     //! \brief Error returned when the platform API is not available on the current device and/or platform.
     static constexpr ice::ResultCode E_PlatformFeatureNotAvailable = ice::ResCode::create(ice::ResultSeverity::Error, "Platform Feature Not Available");
+
+    //! \brief Error returned when accessing Android platform API's from an JNI library that is not a NativeActivity Application.
+    //!
+    //! \note This error is only returned on Android systems.
+    static constexpr ice::ResultCode E_PlatformAndroidNotANativeActivity = ice::ResCode::create(ice::ResultSeverity::Error, "The current Android JNI instsance is not a NativeActivity!");
 
 } // namespace ice::platform

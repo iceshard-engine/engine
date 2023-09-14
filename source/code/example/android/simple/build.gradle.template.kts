@@ -35,6 +35,11 @@ android {
          *   It's recommended to apply your own changes with additional 'getByName' clauses or replace this macro with the generated results.
          */
         $(ProjectCustomConfigurationTypes)
+
+        getByName("profile") {
+            // NOTE: Enabled by default for testing.
+            signingConfig = signingConfigs.getByName("debug")
+        }
     }
 
     sourceSets {

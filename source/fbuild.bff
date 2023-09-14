@@ -80,7 +80,7 @@ Settings
 [
     Using( .Piepline_Android_ARM64 )
 
-    .AndroidAPILevel = '28'
+    .AndroidAPILevel = '27'
 
     .PipelineName = 'Android$AndroidAPILevel$'
     .PipelineToolchain = 'ndk26-clang-17.0.0'

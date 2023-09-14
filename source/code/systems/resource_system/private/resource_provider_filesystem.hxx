@@ -9,6 +9,7 @@
 #include <ice/container/hashmap.hxx>
 #include <ice/string_utils.hxx>
 #include <ice/path_utils.hxx>
+#include <ice/mem_allocator_stack.hxx>
 
 #include "native/native_aio_tasks.hxx"
 #include "resource_filesystem_loose.hxx"
@@ -31,6 +32,7 @@ namespace ice
             for (ice::String path : paths)
             {
                 ice::native_fileio::path::from_string(path, base_path);
+                ice::path::normalize(base_path);
                 ice::array::push_back(_base_paths, base_path);
             }
         }
@@ -53,11 +55,15 @@ namespace ice
             ice::native_fileio::FilePath file_path
         ) noexcept
         {
+            ice::StackAllocator_1024 temp_alloc;
             ice::native_fileio::FilePath const uribase = ice::path::directory(base_path);
             ice::native_fileio::FilePath const metafile = file_path;
-            ice::native_fileio::FilePath const datafile = ice::string::substr(
-                metafile, 0, ice::string::find_last_of(metafile, '.')
-            );
+            ice::native_fileio::HeapFilePath const datafile{
+                temp_alloc,
+                ice::string::substr(
+                    metafile, 0, ice::string::find_last_of(metafile, '.')
+                )
+            };
 
             ice::FileSystemResource* const resource = create_resources_from_loose_files(
                 _allocator,
@@ -160,9 +166,15 @@ namespace ice
             {
                 ice::string::resize(predicted_path, 0);
                 ice::string::reserve(predicted_path, origin_size + ice::string::size(base_path));
-
                 ice::native_fileio::path::to_string(base_path, predicted_path);
-                ice::path::join(predicted_path, ".."); // Remove one directory (because it's the common value of the base path and the uri path)
+
+                // Remove one directory if neccessary, because it's may be the common value of the base path and the uri path.
+                // Note: This is because if a base path like 'dir/subdir' is provided the uri is created against 'dir/'
+                //  While a base path like 'dir/subdir/' will create uris against 'dir/subdir/'
+                if (ice::string::back(base_path) != '/')
+                {
+                    ice::path::join(predicted_path, "..");
+                }
                 ice::path::join(predicted_path, uri.path);
                 ice::path::normalize(predicted_path);
 

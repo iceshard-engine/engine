@@ -137,7 +137,7 @@ namespace ice::build
 #elif defined(__ANDROID__)
 #   define ISP_UNIX 1
 #   define ISP_WINDOWS 0
-#   define ISP_ANDROID 1
+#   define ISP_ANDROID __ANDROID_API__
 #   define ISP_COMPILER_MSVC 0
 #   define ISP_COMPILER_CLANG __clang_major__
 #   define ISP_COMPILER_GCC 0

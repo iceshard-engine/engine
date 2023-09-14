@@ -71,16 +71,18 @@ namespace ice::path
                 return left;
             }
 
-            if (auto last_char = ice::string::back(left); last_char != Separators_Directory<CharType>[1]/* && last_char != Separators_Dot<CharType>[0]*/)
+            if (auto last_char = ice::string::back(left); last_char != Separators_Directory<CharType>[1])
             {
                 if (last_char == Separators_Directory<CharType>[0])
                 {
                     ice::string::pop_back(left);
                 }
-                if (ice::string::front(right) != Separators_Directory<CharType>[1] && ice::string::front(right) != Separators_Directory<CharType>[0])
-                {
-                    ice::string::push_back(left, Separators_Directory<CharType>[1]);
-                }
+                ice::string::push_back(left, Separators_Directory<CharType>[1]);
+            }
+
+            if (ice::string::front(right) == Separators_Directory<CharType>[1] || ice::string::front(right) == Separators_Directory<CharType>[0])
+            {
+                right = ice::string::substr(right, ice::string::find_first_not_of(right, Separators_Directory<CharType>));
             }
 
             if (right != Separators_Dot<CharType>)

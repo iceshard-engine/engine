@@ -17,7 +17,7 @@ namespace ice
             ice::Allocator& alloc,
             ice::TaskScheduler& scheduler,
             ice::NativeAIO* nativeio
-        ) const noexcept -> ice::Task<ice::Memory>;
+        ) const noexcept -> ice::Task<ice::Memory> = 0;
     };
 
 } // namespace ice

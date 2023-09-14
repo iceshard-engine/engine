@@ -5,6 +5,7 @@
 #include <ice/string/heap_string.hxx>
 #include <ice/mem_allocator_stack.hxx>
 #include <ice/path_utils.hxx>
+#include <ice/profiler.hxx>
 
 #if ISP_UNIX
 #include <dirent.h>
@@ -26,7 +27,7 @@ namespace ice::native_fileio
         return stat(ice::string::begin(path), &file_stats) == 0 && file_stats.st_size > 0;
     }
 
-    auto file_open(
+    auto open_file(
         ice::native_fileio::FilePath path
     ) noexcept -> ice::native_fileio::File
     {
@@ -54,18 +55,19 @@ namespace ice::native_fileio
     }
 
     auto read_file(
-        ice::native_fileio::File file,
+        ice::native_fileio::File const& file,
         ice::usize requested_read_size,
         ice::Memory memory
     ) noexcept -> ice::usize
     {
+        IPT_ZONE_SCOPED;
         ICE_ASSERT_CORE(memory.size.value >= requested_read_size);
         ice::isize::base_type bytes_read = read(
             file.native(),
             memory.location,
             requested_read_size.value
         );
-        if (bytes_read >= 0 && bytes_read)
+        if (bytes_read < 0)
         {
             bytes_read = 0;
         }
@@ -88,7 +90,10 @@ namespace ice::native_fileio
             traverse_success = true;
 
             // Store for later information about the current state of dirpath
-            ice::string::push_back(dirpath, '/');
+            if (ice::string::back(dirpath) != '/')
+            {
+                ice::string::push_back(dirpath, '/');
+            }
             ice::ucount const size_dirpath = ice::string::size(dirpath);
 
             while(dirent const* const entry = readdir(directory))
@@ -110,7 +115,7 @@ namespace ice::native_fileio
                     : EntityType::File;
 
                 // Append the entry name to the path
-                ice::ucount const size_name{ ice::ucount(entry->d_off) - ice::ucount(offsetof(dirent, d_name)) };
+                ice::ucount const size_name{ ice::ucount(entry->d_reclen) - ice::ucount(offsetof(dirent, d_name)) };
                 ice::string::push_back(dirpath, ice::native_fileio::FilePath{ entry->d_name, size_name });
 
                 // Call the callback for the next entry encountered...

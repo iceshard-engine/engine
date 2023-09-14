@@ -155,7 +155,7 @@ namespace ice::platform
             return E_PlatformAlreadyInitialized;
         }
 
-        if (flags == FeatureFlags::None && !ice::has_all(available_features(), flags))
+        if (flags == FeatureFlags::None || !ice::has_all(available_features(), flags))
         {
             return Res::E_InvalidArgument;
         }

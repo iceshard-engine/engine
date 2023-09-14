@@ -52,7 +52,9 @@ namespace ice
             // Don't schedule when eof reached.
             // return check_file(file, FileState::EndOfFile) == false;
             // TODO: Eearly out if EOF reached.
-            return false;
+
+            // For small files it's better to not schedule the read on a separate thread.
+            return ice::usize{ read_size } <= 4_KiB;
         }
 
         void await_suspend(ice::coroutine_handle<> coro) noexcept

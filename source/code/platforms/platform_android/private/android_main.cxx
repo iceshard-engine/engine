@@ -2,7 +2,7 @@
 /// SPDX-License-Identifier: MIT
 
 #include <ice/mem_allocator_host.hxx>
-#include "android_platform.hxx"
+#include "android_platform_core.hxx"
 
 extern "C"
 {
@@ -16,7 +16,12 @@ void ANativeActivity_onCreate(
     using ice::platform::android::AndroidCore;
 
     static ice::HostAllocator host_alloc;
-    activity->instance = host_alloc.create<AndroidCore>(host_alloc, ice::Data{ saved_data, ice::usize{ saved_size } });
+    activity->instance = host_alloc.create<AndroidCore>(
+        host_alloc,
+        ice::Data{ saved_data, ice::usize{ saved_size } },
+        activity
+    );
+
 
     // Setup all callbacks
     activity->callbacks->onStart = AndroidCore::native_callback_on_start;

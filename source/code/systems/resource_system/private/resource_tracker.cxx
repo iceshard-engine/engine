@@ -179,7 +179,7 @@ namespace ice
                 //.sort_by_priority = false, // ignored
                 .custom_procedure = (ice::TaskThreadProcedure*)ice::nativeio_thread_procedure,
                 .custom_procedure_userdata = _io_thread_data.get(),
-                .debug_name = "ice.resource_tracker",
+                .debug_name = "ice.res_tracker",
             };
             _io_thread = ice::create_thread(_allocator, _io_queue, io_thread_info);
         }

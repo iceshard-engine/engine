@@ -2,7 +2,9 @@
 /// SPDX-License-Identifier: MIT
 
 #pragma once
+#include <ice/string/static_string.hxx>
 #include <ice/platform_core.hxx>
+#include <ice/platform_paths.hxx>
 #include <ice/module_register.hxx>
 #include <ice/task_queue.hxx>
 #include <ice/task_thread.hxx>
@@ -14,15 +16,25 @@
 namespace ice::platform::android
 {
 
-    class AndroidCore final : public ice::platform::Core
+    class AndroidCore final : public ice::platform::Core, public ice::platform::Paths
     {
     public:
-        AndroidCore(ice::Allocator& alloc, ice::Data saved_state) noexcept;
+        static AndroidCore* global_instance;
+
+        AndroidCore(
+            ice::Allocator& alloc,
+            ice::Data saved_state,
+            ANativeActivity* activity
+        ) noexcept;
 
         auto refresh_events() noexcept -> ice::Result override { return ice::Res::E_NotImplemented; }
 
         auto system_events() noexcept -> ice::ShardContainer const& override { return _shards; }
         auto input_events() noexcept -> ice::Span<ice::input::DeviceEvent const> override { return {}; }
+
+        auto internal_data() const noexcept -> ice::String override { return _app_internal_data; }
+        auto external_data() const noexcept -> ice::String override { return _app_external_data; }
+        auto save_data() const noexcept -> ice::String override { return _app_save_data; }
 
     public:
         static void native_callback_on_start(ANativeActivity* activity);
@@ -61,6 +73,10 @@ namespace ice::platform::android
 
         std::atomic_uint32_t _app_state;
         std::atomic<AInputQueue*> _app_queue;
+
+        ice::StaticString<256> _app_internal_data;
+        ice::StaticString<256> _app_external_data;
+        ice::StaticString<256> _app_save_data;
     };
 
 } // namespace ice

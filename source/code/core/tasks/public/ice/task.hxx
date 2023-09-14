@@ -129,7 +129,7 @@ namespace ice
 
                 if constexpr (std::is_same_v<ValueType, void> == false)
                 {
-                    return _coroutine.promise().result();
+                    return this->_coroutine.promise().result();
                 }
             }
         };

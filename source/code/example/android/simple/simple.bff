@@ -37,6 +37,7 @@
 
         .Uses = {
             'platform_android'
+            'resource_system'
         }
     ]
 ]

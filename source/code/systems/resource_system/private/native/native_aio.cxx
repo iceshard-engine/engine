@@ -122,7 +122,7 @@ namespace ice
 
         ice::TaskThreadPoolCreateInfo const tpci{
             .thread_count = ice::max(ice::min(hint_thread_count / 2u, 0u), 1u),
-            .debug_name_format = "ice.android.loader_thread {}",
+            .debug_name_format = "ice.loader {}",
         };
 
         native_io->nativeio_allocator = &alloc;

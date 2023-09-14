@@ -232,7 +232,7 @@ namespace ice
                 it += 1;
             }
 
-            return it >= it_end ? ice::String_NPos : start_idx + ice::ucount(beg - it);
+            return it >= it_end ? ice::String_NPos : start_idx + ice::ucount(it - beg);
         }
 
         template<typename CharType>
@@ -318,7 +318,7 @@ namespace ice
                 it += 1;
             }
 
-            return it >= it_end ? ice::String_NPos : start_idx + ice::ucount(beg - it);
+            return it >= it_end ? ice::String_NPos : start_idx + ice::ucount(it - beg);
         }
 
         template<typename CharType>
