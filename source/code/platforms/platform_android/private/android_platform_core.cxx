@@ -7,23 +7,33 @@
 #include <ice/log.hxx>
 #include <ice/assert.hxx>
 #include <ice/path_utils.hxx>
+#include <ice/string/heap_string.hxx>
 #include <thread>
+
+#include <ice/os/android.hxx>
 
 namespace ice::platform::android
 {
 
-//    static auto get_cache_data(ice::Allocator& alloc, jobject const& activity, JNIEnv* env) noexcept
-//    {
-////        ice::HeapString<> res{ alloc };
-////        jclass activity_class = env->GetObjectClass(activity);
-////        jmethodID activity_get_cache_path = env->GetMethodID(activity_class, "getCacheDir", "()Ljava/lang/String;");
-////        jstring result = (jstring) env->CallObjectMethod(activity, activity_get_cache_path);
-////        jchar const* result_chars = env->GetStringChars(result, nullptr);
-////        int x= 3;
-////        env->ReleaseStringChars(result, result_chars);
-////        env->DeleteLocalRef(result);
-////        return res;
-//    }
+    static auto get_cache_path(ice::Allocator& alloc, jobject const& activity, JNIEnv* env) noexcept
+    {
+        ice::HeapString<> res{ alloc };
+        jmethodID mid_getCacheDir;
+        jmethodID mid_getAbsPath;
+        {
+            ice::jni::JClass clazz{ env, env->GetObjectClass(activity) };
+            mid_getCacheDir = env->GetMethodID(clazz.native(), "getCacheDir", "()Ljava/io/File;");
+            clazz = jni::JClass{ env, env->FindClass("java/io/File") };
+            mid_getAbsPath = env->GetMethodID(clazz.native(), "getAbsolutePath", "()Ljava/lang/String;");
+        }
+
+        ice::jni::JObject path{ env, env->CallObjectMethod(activity, mid_getCacheDir) };
+        path = jni::JObject{ env, env->CallObjectMethod(path.native(), mid_getAbsPath) };
+        jsize const len = env->GetStringUTFLength((jstring)path.native());
+        ice::string::resize(res, static_cast<ice::ucount>(len));
+        env->GetStringUTFRegion((jstring)path.native(), 0, len, ice::string::begin(res));
+        return res;
+    }
 
     static auto core_instance(ANativeActivity* activity) noexcept
     {
@@ -55,7 +65,7 @@ namespace ice::platform::android
         , _main_queue{ }
         , _main_thread{ }
     {
-//        ice::HeapString<> cache_path = get_cache_data(alloc, activity->clazz, activity->env);
+        ice::HeapString<> cache_path = get_cache_path(alloc, activity->clazz, activity->env);
 
         _app_internal_data = activity->internalDataPath;
         _app_external_data = activity->externalDataPath;

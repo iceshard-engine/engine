@@ -23,12 +23,12 @@ struct ice::os::HandleDescriptor<ice::os::HandleType::File>
     //! \todo: Link to ref.
     static constexpr PlatformHandleType InvalidHandle = -1;
 
-    static bool is_valid(PlatformHandleType handle) noexcept
+    static bool is_valid(PlatformHandleType handle, void*) noexcept
     {
         return handle != InvalidHandle;
     }
 
-    static bool close(PlatformHandleType handle) noexcept
+    static bool close(PlatformHandleType handle, void*) noexcept
     {
         return ::close(handle) == 0;
     }
