@@ -145,9 +145,7 @@ namespace ice::path
 
             ice::string::resize(
                 path,
-                ice::ucount(
-                    ice::ptr_distance(ice::string::begin(path), copy_to).value
-                )
+                ice::ucount(copy_to - ice::string::begin(path))
             );
             return path;
         }
@@ -175,7 +173,7 @@ namespace ice::path
             auto const separator_pos = ice::string::find_last_of(str, Separators_Dot<CharType>[0]);
             if (separator_pos != ice::String_NPos)
             {
-                ice::string::resize(str, separator_pos + 1);
+                ice::string::resize(str, separator_pos);
             }
 
             if (ice::string::empty(extension) == false)
@@ -192,36 +190,23 @@ namespace ice::path
     } // namespace detail
 
     bool is_absolute(ice::String path) noexcept { return detail::is_absolute(path); }
-
+    auto length(ice::String path) noexcept -> ice::ucount { return ice::string::size(path); }
     auto extension(ice::String path) noexcept -> ice::String { return detail::extension(path); }
     auto filename(ice::String path) noexcept -> ice::String { return detail::filename(path); }
     auto directory(ice::String path) noexcept -> ice::String { return detail::directory(path); }
-
     auto join(ice::HeapString<>& left, ice::String right) noexcept -> ice::String { return detail::join(left, right); }
     auto normalize(ice::HeapString<>& path) noexcept -> ice::String { return detail::normalize(path); }
-
     auto replace_filename(ice::HeapString<>& path, ice::String filename) noexcept -> ice::String { return detail::replace_filename(path, filename); }
     auto replace_extension(ice::HeapString<>& path, ice::String extension) noexcept -> ice::String { return detail::replace_extension(path, extension); }
 
-#if ISP_WINDOWS
-
-    namespace win32
-    {
-
-        bool is_absolute(ice::WString path) noexcept { return detail::is_absolute(path); }
-
-        auto extension(ice::WString path) noexcept -> ice::WString { return detail::extension(path); }
-        auto filename(ice::WString path) noexcept -> ice::WString { return detail::filename(path); }
-        auto directory(ice::WString path) noexcept -> ice::WString { return detail::directory(path); }
-
-        auto join(ice::HeapString<ice::wchar>& left, ice::WString right) noexcept -> ice::WString { return detail::join(left, right); }
-        auto normalize(ice::HeapString<ice::wchar>& path) noexcept -> ice::WString { return detail::normalize(path); }
-
-        auto replace_filename(ice::HeapString<ice::wchar>& path, ice::WString filename) noexcept -> ice::WString { return detail::replace_filename(path, filename); }
-        auto replace_extension(ice::HeapString<ice::wchar>& path, ice::WString extension) noexcept -> ice::WString { return detail::replace_extension(path, extension); }
-
-    } // namespace win32
-
-#endif
+    bool is_absolute(ice::WString path) noexcept { return detail::is_absolute(path); }
+    auto length(ice::WString path) noexcept -> ice::ucount { return ice::string::size(path); }
+    auto extension(ice::WString path) noexcept -> ice::WString { return detail::extension(path); }
+    auto filename(ice::WString path) noexcept -> ice::WString { return detail::filename(path); }
+    auto directory(ice::WString path) noexcept -> ice::WString { return detail::directory(path); }
+    auto join(ice::HeapString<ice::wchar>& left, ice::WString right) noexcept -> ice::WString { return detail::join(left, right); }
+    auto normalize(ice::HeapString<ice::wchar>& path) noexcept -> ice::WString { return detail::normalize(path); }
+    auto replace_filename(ice::HeapString<ice::wchar>& path, ice::WString filename) noexcept -> ice::WString { return detail::replace_filename(path, filename); }
+    auto replace_extension(ice::HeapString<ice::wchar>& path, ice::WString extension) noexcept -> ice::WString { return detail::replace_extension(path, extension); }
 
 } // namespace ice::path

@@ -31,7 +31,7 @@ namespace ice
             ice::native_fileio::HeapFilePath base_path{ _allocator };
             for (ice::String path : paths)
             {
-                ice::native_fileio::path::from_string(path, base_path);
+                ice::native_fileio::path_from_string(path, base_path);
                 ice::path::normalize(base_path);
                 ice::array::push_back(_base_paths, base_path);
             }
@@ -58,12 +58,8 @@ namespace ice
             ice::StackAllocator_1024 temp_alloc;
             ice::native_fileio::FilePath const uribase = ice::path::directory(base_path);
             ice::native_fileio::FilePath const metafile = file_path;
-            ice::native_fileio::HeapFilePath const datafile{
-                temp_alloc,
-                ice::string::substr(
-                    metafile, 0, ice::string::find_last_of(metafile, '.')
-                )
-            };
+            ice::native_fileio::HeapFilePath datafile{ temp_alloc, file_path };
+            ice::path::replace_extension(datafile, ice::native_fileio::FilePath{});
 
             ice::FileSystemResource* const resource = create_resources_from_loose_files(
                 _allocator,
@@ -166,7 +162,7 @@ namespace ice
             {
                 ice::string::resize(predicted_path, 0);
                 ice::string::reserve(predicted_path, origin_size + ice::string::size(base_path));
-                ice::native_fileio::path::to_string(base_path, predicted_path);
+                ice::native_fileio::path_to_string(base_path, predicted_path);
 
                 // Remove one directory if neccessary, because it's may be the common value of the base path and the uri path.
                 // Note: This is because if a base path like 'dir/subdir' is provided the uri is created against 'dir/'

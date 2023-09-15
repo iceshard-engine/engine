@@ -38,7 +38,7 @@ namespace ice
         ) noexcept -> ice::Task<ice::Memory>
         {
             ice::native_fileio::HeapFilePath native_filepath{ alloc };
-            ice::native_fileio::path::from_string(filepath, native_filepath);
+            ice::native_fileio::path_from_string(filepath, native_filepath);
 
             ice::Memory result{
                 .location = nullptr,
@@ -71,7 +71,7 @@ namespace ice
         ) noexcept -> ice::Memory
         {
             ice::native_fileio::HeapFilePath native_filepath{ alloc };
-            ice::native_fileio::path::from_string(filepath, native_filepath);
+            ice::native_fileio::path_from_string(filepath, native_filepath);
 
             ice::Memory result{
                 .location = nullptr,
@@ -285,11 +285,13 @@ namespace ice
             // We create the main resource in a different scope so we dont accidentaly use data from there
             {
                 ice::HeapString<> utf8_file_path{ alloc };
-                ice::native_fileio::path::to_string(data_filepath, utf8_file_path);
+                ice::native_fileio::path_to_string(data_filepath, utf8_file_path);
                 ice::path::normalize(utf8_file_path);
 
-                ice::String utf8_origin_name = ice::string::substr(utf8_file_path, ice::native_fileio::path::length(base_path));
-                ice::String utf8_uri_path = ice::string::substr(utf8_file_path, ice::native_fileio::path::length(uri_base_path));
+                // TODO: Decide how to handle the basepath naming.
+                bool const remove_slash = utf8_file_path[ice::path::length(base_path)] == '/';
+                ice::String utf8_origin_name = ice::string::substr(utf8_file_path, ice::path::length(base_path) + remove_slash);
+                ice::String utf8_uri_path = ice::string::substr(utf8_file_path, ice::path::length(uri_base_path));
 
                 // We have a loose resource files which contain metadata associated data.
                 // We need now to read the metadata and check if there are more file associated and if all are available.
@@ -336,8 +338,7 @@ namespace ice
                 // Create a wide string to try and check for extra files existing.
                 ice::native_fileio::HeapFilePath full_path{ alloc };
                 ice::string::reserve(full_path, ice::string::capacity(utf8_file_path));
-
-                ice::native_fileio::path::from_string(ice::path::directory(meta_filepath), full_path);
+                full_path = meta_filepath;
 
                 // Remember the size so we can quickly resize.
                 ice::u32 const base_dir_size = ice::string::size(full_path);
@@ -351,11 +352,11 @@ namespace ice
 
                     // TODO:
                     ice::string::resize(full_path, base_dir_size);
-                    ice::native_fileio::path::join(full_path, paths[idx]);
+                    ice::native_fileio::path_join_string(full_path, paths[idx]);
                     if (ice::native_fileio::exists_file(full_path))
                     {
                         // We know the file can be opened so we save it as a extra resource.
-                        ice::native_fileio::path::to_string(full_path, utf8_file_path);
+                        ice::native_fileio::path_to_string(full_path, utf8_file_path);
                         ice::path::normalize(utf8_file_path);
 
                         main_resource->add_named_part(ice::stringid(names[idx]), ice::move(utf8_file_path));

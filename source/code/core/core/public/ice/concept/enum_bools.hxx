@@ -49,12 +49,12 @@ namespace ice
 
         enum class FailTest : ice::u8 { Off, On };
 
-        static_assert(FailTest::Off == false);
-        static_assert(FailTest::On == true);
-        static_assert(FailTest::Off != true);
-        static_assert(FailTest::On != false);
-        static_assert(!FailTest::Off == true);
-        static_assert(!FailTest::On == false);
+        static_assert(bool(FailTest::Off) == false);
+        static_assert(bool(FailTest::On) == true);
+        static_assert(bool(FailTest::Off) != true);
+        static_assert(bool(FailTest::On) != false);
+        static_assert(bool(!FailTest::Off) == true);
+        static_assert(bool(!FailTest::On) == false);
 
     } // namespace detail::internal::static_unit_tests
 

@@ -3,9 +3,11 @@
 
 #include "native_fileio.hxx"
 #include <ice/string/heap_string.hxx>
+#include <ice/string_utils.hxx>
 #include <ice/mem_allocator_stack.hxx>
 #include <ice/path_utils.hxx>
 #include <ice/profiler.hxx>
+#include <ice/os/windows.hxx>
 
 #if ISP_UNIX
 #include <dirent.h>
@@ -18,18 +20,226 @@ namespace ice::native_fileio
 {
 
 #if ISP_WINDOWS
-#elif ISP_UNIX
-    bool exists_file(
-        ice::native_fileio::FilePath path
+
+    inline auto translate_flags(ice::native_fileio::FileOpenFlags flags) noexcept -> DWORD
+    {
+        // For details see: https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-createfilew
+        DWORD result = FILE_ATTRIBUTE_NORMAL;
+        if (ice::has_any(flags, FileOpenFlags::Asynchronous))
+        {
+            result = FILE_FLAG_OVERLAPPED;
+        }
+        return result;
+    }
+
+    bool exists_file(ice::native_fileio::FilePath path) noexcept
+    {
+        DWORD const result = GetFileAttributesW(ice::string::begin(path));
+        return result == FILE_ATTRIBUTE_NORMAL || result == FILE_ATTRIBUTE_ARCHIVE;
+    }
+
+    auto open_file(
+        ice::native_fileio::FilePath path,
+        ice::native_fileio::FileOpenFlags flags /*= FileOpenFlags::ReadOnly*/
+    ) noexcept -> ice::native_fileio::File
+    {
+        ice::win32::FileHandle handle = CreateFileW(
+            ice::string::begin(path),
+            FILE_READ_DATA | FILE_READ_ATTRIBUTES,
+            FILE_SHARE_READ, // FILE_SHARE_*
+            NULL, // SECURITY ATTRIBS
+            OPEN_EXISTING,
+            translate_flags(flags),
+            NULL
+        );
+        return handle;
+    }
+
+    auto sizeof_file(ice::native_fileio::File const& file) noexcept -> ice::usize
+    {
+        LARGE_INTEGER result;
+        if (GetFileSizeEx(file.native(), &result) == 0)
+        {
+            result.QuadPart = 0;
+        }
+        return { static_cast<ice::usize::base_type>(result.QuadPart) };
+    }
+
+    auto read_file(
+        ice::native_fileio::File const& file,
+        ice::usize requested_read_size,
+        ice::Memory memory
+    ) noexcept -> ice::usize
+    {
+        IPT_ZONE_SCOPED;
+        ICE_ASSERT_CORE(memory.size >= requested_read_size);
+
+        ice::usize file_size = sizeof_file(file);
+        if (file_size != 0_B)
+        {
+            // memory = alloc.allocate({ file_size, ice::ualign::b_default });
+
+            BOOL result;
+            DWORD characters_read = 0;
+            do
+            {
+                DWORD const characters_to_read = (DWORD)memory.size.value;
+                ICE_ASSERT(
+                    characters_to_read == memory.size.value,
+                    "File is larger than this function can handle! For now... [file size: {}]",
+                    memory.size
+                );
+
+                result = ReadFile(
+                    file.native(),
+                    memory.location,
+                    (DWORD)memory.size.value,
+                    &characters_read,
+                    nullptr
+                );
+
+                ICE_ASSERT(
+                    characters_read == characters_to_read,
+                    "Read different amount of characters to what was expected. [expected: {}, read: {}]",
+                    characters_to_read,
+                    characters_read
+                );
+
+            } while (characters_read == 0 && result != FALSE);
+
+            if (result == FALSE)
+            {
+                file_size = 0_B;
+            }
+        }
+        return file_size;
+    }
+
+    bool traverse_directories_internal(
+        ice::native_fileio::FilePath basepath,
+        ice::native_fileio::HeapFilePath& dirpath,
+        ice::native_fileio::TraversePathCallback callback,
+        void* userdata
     ) noexcept
+    {
+        // Store for later information about the current state of dirpath
+        if (ice::string::back(dirpath) != L'/')
+        {
+            ice::string::push_back(dirpath, L'/');
+        }
+
+        ice::u32 const size_dirpath = ice::string::size(dirpath);
+        ice::string::push_back(dirpath, L'*');
+
+        WIN32_FIND_DATA direntry;
+        HANDLE const handle = FindFirstFileW(
+            ice::string::begin(dirpath),
+            &direntry
+        );
+        ice::string::pop_back(dirpath);
+
+        bool traverse_success = false;
+        if (handle != INVALID_HANDLE_VALUE)
+        {
+            traverse_success = true;
+            do
+            {
+                // We cast the value to a regular pointer so WString will use 'strlen' to get the final length.
+                if (direntry.cFileName[0] == '.' && (direntry.cFileName[1] == '.' || direntry.cFileName[1] == '\0'))
+                {
+                    continue;
+                }
+
+                ice::native_fileio::EntityType const type = (direntry.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0
+                    ? EntityType::Directory
+                    : EntityType::File;
+
+                // Append the entry name to the path
+                ice::native_fileio::FilePath const entry_name = (ice::wchar const*)direntry.cFileName;
+                ice::string::push_back(dirpath, entry_name);
+
+                // Call the callback for the next entry encountered...
+                ice::native_fileio::TraverseAction const action = callback(basepath, dirpath, type, userdata);
+                if (action == TraverseAction::Break)
+                {
+                    break;
+                }
+
+                // Enter the next directory recursively
+                if (type == EntityType::Directory && action != TraverseAction::SkipSubDir) // If is dir
+                {
+                    traverse_success = traverse_directories_internal(basepath, dirpath, callback, userdata);
+                    if (traverse_success == false)
+                    {
+                        break;
+                    }
+                }
+
+                // Rollback the directory string to the base value
+                ice::string::resize(dirpath, size_dirpath);
+
+            } while (FindNextFileW(handle, &direntry) != FALSE);
+            FindClose(handle);
+        }
+        return traverse_success;
+    }
+
+    bool traverse_directories(
+        ice::native_fileio::FilePath starting_dir,
+        ice::native_fileio::TraversePathCallback callback,
+        void* userdata
+    ) noexcept
+    {
+        ice::StackAllocator_1024 temp_alloc;
+        ice::native_fileio::HeapFilePath dirpath{ temp_alloc };
+        ice::string::reserve(dirpath, 256 * 2); // 512 bytes for paths
+        ice::string::push_back(dirpath, starting_dir);
+        return traverse_directories_internal(dirpath, dirpath, callback, userdata);
+    }
+
+    void path_from_string(
+        ice::String path_string,
+        ice::native_fileio::HeapFilePath& out_filepath
+    ) noexcept
+    {
+        ice::string::clear(out_filepath);
+        ice::utf8_to_wide_append(path_string, out_filepath);
+    }
+
+    void path_to_string(
+        ice::native_fileio::FilePath path,
+        ice::HeapString<>& out_string
+    ) noexcept
+    {
+        ice::string::clear(out_string);
+        ice::wide_to_utf8_append(path, out_string);
+    }
+
+    void path_join_string(
+        ice::native_fileio::HeapFilePath& path,
+        ice::String string
+    ) noexcept
+    {
+        // TODO: Think if maybe moving this to a different function is possible?
+        if (ice::string::back(path) != L'/' && ice::string::back(path) != L'\\')
+        {
+            if (ice::string::front(string) != '/' && ice::string::front(string) != '\\')
+            {
+                ice::string::push_back(path, L'/');
+            }
+        }
+        ice::utf8_to_wide_append(string, path);
+    }
+
+#elif ISP_UNIX
+
+    bool exists_file(ice::native_fileio::FilePath path) noexcept
     {
         struct stat file_stats;
         return stat(ice::string::begin(path), &file_stats) == 0 && file_stats.st_size > 0;
     }
 
-    auto open_file(
-        ice::native_fileio::FilePath path
-    ) noexcept -> ice::native_fileio::File
+    auto open_file(ice::native_fileio::FilePath path) noexcept -> ice::native_fileio::File
     {
         ice::native_fileio::File result;
         if constexpr (ice::build::current_platform == ice::build::System::Android)
@@ -45,9 +255,7 @@ namespace ice::native_fileio
         return result;
     }
 
-    auto sizeof_file(
-        ice::native_fileio::File const& file
-    ) noexcept -> ice::usize
+    auto sizeof_file(ice::native_fileio::File const& file) noexcept -> ice::usize
     {
         struct stat file_stats;
         fstat(file.native(), &file_stats);
@@ -153,12 +361,12 @@ namespace ice::native_fileio
     {
         ice::StackAllocator_1024 temp_alloc;
         ice::native_fileio::HeapFilePath dirpath{ temp_alloc };
-        ice::string::reserve(dirpath, 256 * 3); // 768 bytes for paths
+        ice::string::reserve(dirpath, 256 * 2); // 512 bytes for paths
         ice::string::push_back(dirpath, starting_dir);
         return traverse_directories_internal(dirpath, dirpath, callback, userdata);
     }
 
-    void path::from_string(
+    void path_from_string(
         ice::String path_string,
         ice::native_fileio::HeapFilePath& out_filepath
     ) noexcept
@@ -166,7 +374,7 @@ namespace ice::native_fileio
         out_filepath = path_string;
     }
 
-    void path::to_string(
+    void path_to_string(
         ice::native_fileio::FilePath path,
         ice::HeapString<>& out_string
     ) noexcept
@@ -174,7 +382,7 @@ namespace ice::native_fileio
         out_string = path;
     }
 
-    void path::join(
+    void path_join_string(
         ice::native_fileio::HeapFilePath& path,
         ice::String string
     ) noexcept
@@ -182,12 +390,6 @@ namespace ice::native_fileio
         ice::path::join(path, string);
     }
 
-    auto path::length(
-        ice::native_fileio::FilePath path
-    ) noexcept -> ice::ucount
-    {
-        return ice::string::size(path);
-    }
 #else
 #error Not Implemented
 #endif

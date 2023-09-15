@@ -5,6 +5,7 @@
 #include <ice/container/linked_queue.hxx>
 #include <ice/task_queue.hxx>
 #include <ice/task_thread_pool.hxx>
+#include <ice/os/windows.hxx>
 
 namespace ice
 {
@@ -29,6 +30,7 @@ namespace ice
 
     auto create_nativeio_thread_data(
         ice::Allocator& alloc,
+        ice::TaskScheduler& /*default_scheduler*/,
         ice::ucount hint_thread_count
     ) noexcept -> ice::UniquePtr<ice::NativeAIO>
     {

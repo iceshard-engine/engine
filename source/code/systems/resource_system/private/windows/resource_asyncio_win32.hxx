@@ -7,11 +7,12 @@
 #include <ice/task_awaitable.hxx>
 #include <ice/task.hxx>
 
+#include "../native/native_aio.hxx"
+
 namespace ice
 {
 
 #if ISP_WINDOWS
-#include "native/native_aio.hxx"
 
     struct AsyncIOData
     {

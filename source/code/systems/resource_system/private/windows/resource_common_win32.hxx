@@ -7,7 +7,7 @@
 #include <ice/resource.hxx>
 
 #if ISP_WINDOWS
-#include "native/native_aio.hxx"
+#include "../native/native_aio.hxx"
 
 namespace ice
 {

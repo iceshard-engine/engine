@@ -20,12 +20,25 @@ namespace ice::native_fileio
     using HeapFilePath = ice::HeapString<>;
 #endif
 
+    enum class FileOpenFlags : ice::u8
+    {
+        //! \brief Same as 'ReadOnly'
+        None,
+
+        //! \brief Opens the file for read-only operations.
+        ReadOnly = None,
+
+        //! \brief Opens the file for asynchronous read-only operations.
+        Asynchronous,
+    };
+
     bool exists_file(
         ice::native_fileio::FilePath path
     ) noexcept;
 
     auto open_file(
-        ice::native_fileio::FilePath path
+        ice::native_fileio::FilePath path,
+        ice::native_fileio::FileOpenFlags flags = FileOpenFlags::ReadOnly
     ) noexcept -> ice::native_fileio::File;
 
     auto sizeof_file(
@@ -54,28 +67,19 @@ namespace ice::native_fileio
         void* userdata
     ) noexcept;
 
-    namespace path
-    {
+    void path_from_string(
+        ice::String path_string,
+        ice::native_fileio::HeapFilePath& out_filepath
+    ) noexcept;
 
-        void from_string(
-            ice::String path_string,
-            ice::native_fileio::HeapFilePath& out_filepath
-        ) noexcept;
+    void path_to_string(
+        ice::native_fileio::FilePath path,
+        ice::HeapString<>& out_string
+    ) noexcept;
 
-        void to_string(
-            ice::native_fileio::FilePath path,
-            ice::HeapString<>& out_string
-        ) noexcept;
-
-        void join(
-            ice::native_fileio::HeapFilePath& path,
-            ice::String string
-        ) noexcept;
-
-        auto length(
-            ice::native_fileio::FilePath path
-        ) noexcept -> ice::ucount;
-
-    } // namespace path
+    void path_join_string(
+        ice::native_fileio::HeapFilePath& path,
+        ice::String string
+    ) noexcept;
 
 } // namespace ice::native_fileio
