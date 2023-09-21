@@ -46,7 +46,10 @@ namespace ice
                 .alignment = ice::ualign::invalid,
             };
 
-            ice::native_fileio::File handle = ice::native_fileio::open_file(native_filepath);
+            ice::native_fileio::File handle = ice::native_fileio::open_file(
+                native_filepath,
+                ice::native_fileio::FileOpenFlags::Asynchronous
+            );
             if (handle)
             {
                 ice::usize const filesize = ice::native_fileio::sizeof_file(handle);
@@ -195,7 +198,14 @@ namespace ice
         ice::NativeAIO* nativeio
     ) const noexcept -> ice::Task<ice::Memory>
     {
-        co_return co_await detail::async_file_load(alloc, nativeio, _origin_path);
+        if (nativeio != nullptr)
+        {
+            co_return co_await detail::async_file_load(alloc, nativeio, _origin_path);
+        }
+        else
+        {
+            co_return detail::sync_file_load(alloc, _origin_path);
+        }
     }
 
     LooseFilesResource::ExtraResource::ExtraResource(

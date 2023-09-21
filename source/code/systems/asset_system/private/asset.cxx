@@ -37,7 +37,7 @@ namespace ice
         if (_handle != nullptr)
         {
             ice::AssetEntry const& entry = detail::entry(_handle);
-            return entry.current_state != AssetState::Invalid && entry.current_state != AssetState::Unknown;
+            return entry.current_state != AssetState::Invalid && entry.resource_state != AssetState::Unknown;
         }
         return false;
     }

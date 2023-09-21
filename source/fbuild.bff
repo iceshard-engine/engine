@@ -89,6 +89,12 @@ Settings
     .PipelineSteps = { 'Build', 'Link' }
 
     .PipelineConanProfile = 'Android-Arm64'
+
+    // Disable explicitly (we dont want VS configs for Android for now)
+    .PipelineVSInfo =
+    [
+        .VSEnabled = false
+    ]
 ]
 
 

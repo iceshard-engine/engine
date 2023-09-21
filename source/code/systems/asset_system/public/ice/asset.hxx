@@ -22,6 +22,9 @@ namespace ice
         //! \brief The asset data state is not known and needs another pass to the Asset Type Resolver.
         Unknown,
 
+        //! \bried The resource handle associated exists, but the data was not requested not validated.
+        Exists,
+
         //! \brief The asset data is represented in raw format of the source file.
         //! \detail This means that you might get raw jpg or png image data.
         Raw,

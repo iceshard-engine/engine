@@ -210,6 +210,8 @@ namespace ice
 
                     // TODO: Move to the 'store' method as argument.
                     entry->storage = this;
+                    entry->current_state = AssetState::Unknown;
+                    entry->resource_state = AssetState::Exists;
 
                     ice::u32 const prev_count = entry->refcount.fetch_add(1, std::memory_order_relaxed);
                     ICE_ASSERT(prev_count == 0, "Unexpected value!");
@@ -426,7 +428,11 @@ namespace ice
                 // Set the resource data
                 entry.data = resource.data;
 
-                if (entry.resource_state == AssetState::Unknown)
+                ICE_ASSERT(
+                    entry.resource_state != AssetState::Unknown,
+                    "Trying to load asset for Unknown resource!"
+                );
+                if (entry.resource_state == AssetState::Exists)
                 {
                     //IPT_MESSAGE("Requesting resource");
 

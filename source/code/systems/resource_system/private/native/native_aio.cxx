@@ -2,6 +2,7 @@
 /// SPDX-License-Identifier: MIT
 
 #include "native_aio.hxx"
+#include "native_aio_tasks.hxx"
 #include <ice/container/linked_queue.hxx>
 #include <ice/task_queue.hxx>
 #include <ice/task_thread_pool.hxx>
@@ -46,7 +47,10 @@ namespace ice
             return {};
         }
 
-        NativeAIO* const native_io = alloc.create<NativeAIO>(ice::addressof(alloc), completion_port);
+        NativeAIO* const native_io = alloc.create<NativeAIO>(
+            ice::addressof(alloc),
+            completion_port
+        );
         return ice::make_unique<ice::NativeAIO>(destroy_nativeio, native_io);
     }
 
@@ -55,7 +59,10 @@ namespace ice
         return nativeio ? nativeio->completion_port : nullptr;
     }
 
-    auto nativeio_thread_procedure(NativeAIO* nativeio, ice::TaskQueue& queue) noexcept -> ice::u32
+    auto nativeio_thread_procedure(
+        ice::NativeAIO* nativeio,
+        ice::TaskQueue& queue
+    ) noexcept -> ice::u32
     {
         DWORD bytes;
         ULONG_PTR key = 0;
@@ -73,7 +80,7 @@ namespace ice
         last_error = 0;
         if (iocompleted)
         {
-            AsyncIOData* asyncio = asyncio_from_overlapped(overlapped);
+            AsyncIOData* const asyncio = asyncio_from_overlapped(overlapped);
             asyncio->result.success = true;
             asyncio->result.bytes_read = bytes;
             asyncio->coroutine.resume();
@@ -85,7 +92,9 @@ namespace ice
         else
         {
             ICE_ASSERT(key == 0, "Failed");
-            ice::TaskAwaitableBase* const awaitable = ice::linked_queue::pop(queue._awaitables);
+            ice::TaskAwaitableBase* const awaitable = ice::linked_queue::pop(
+                queue._awaitables
+            );
             if (awaitable != nullptr)
             {
                 awaitable->_coro.resume();
@@ -123,7 +132,7 @@ namespace ice
         NativeAIO* const native_io = alloc.create<NativeAIO>(ice::addressof(alloc));
 
         ice::TaskThreadPoolCreateInfo const tpci{
-            .thread_count = ice::max(ice::min(hint_thread_count / 2u, 0u), 1u),
+            .thread_count = ice::max(hint_thread_count / 2u, 1u),
             .debug_name_format = "ice.loader {}",
         };
 

@@ -14,10 +14,12 @@ namespace ice::native_fileio
     using File = ice::win32::FileHandle;
     using FilePath = ice::WString;
     using HeapFilePath = ice::HeapString<ice::wchar>;
+#   define ISP_PATH_LITERAL(val) L#val
 #elif ISP_UNIX
     using File = ice::unix_::FileHandle;
     using FilePath = ice::String;
     using HeapFilePath = ice::HeapString<>;
+#   define ISP_PATH_LITERAL(val) val
 #endif
 
     enum class FileOpenFlags : ice::u8

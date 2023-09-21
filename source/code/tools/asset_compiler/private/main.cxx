@@ -1,165 +1,117 @@
 /// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
-#include <core/memory.hxx>
-#include <core/platform/utility.hxx>
-#include <core/platform/windows.hxx>
-#include <resource/modules/filesystem_module.hxx>
-#include <resource/modules/dynlib_module.hxx>
-#include <asset_system/asset_system.hxx>
-#include <asset_system/asset_module.hxx>
+#include <ice/mem.hxx>
+#include <ice/mem_allocator_host.hxx>
+#include <ice/os/windows.hxx>
+#include <ice/resource_provider.hxx>
+#include <ice/resource_tracker.hxx>
+#include <ice/resource_meta.hxx>
+#include <ice/asset_storage.hxx>
+#include <ice/asset_type_archive.hxx>
+#include <ice/uri.hxx>
 
-#include <CLI/CLI.hpp>
+#include <ice/sync_manual_events.hxx>
+#include <ice/task_thread_pool.hxx>
+#include <ice/task_utils.hxx>
+
+static constexpr auto AssetType_Config = ice::make_asset_type("ice/core/config");
+
+auto assettype_config_state(
+    void*,
+    ice::AssetTypeDefinition const&,
+    ice::Metadata const&,
+    ice::URI const&
+) noexcept -> ice::AssetState
+{
+    return ice::AssetState::Baked;
+}
 
 int main(int argc, char** argv)
 {
-    if constexpr (core::build::is_release == false)
-    {
-        core::memory::globals::init_with_stats();
-    }
-    else
-    {
-        core::memory::globals::init();
-    }
+    if (argc < 2) return 1;
 
-    // The main allocator object
-    auto& main_allocator = core::memory::globals::default_allocator();
+    ice::HostAllocator alloc;
 
-    // Special proxy allocators for the game and internal systems.
-    core::memory::proxy_allocator filesystem_allocator{ "resource-filesystem", main_allocator };
-    core::memory::proxy_allocator dynlib_allocator{ "resource-dynlib", main_allocator };
+    // Since this process is going to be designed for 'single input -> single output'
+    //   scenarios, we won't create a thread-pool for the Task queue and instead
+    //   we will consume all tasks in the main thread.
+    ice::TaskQueue main_queue;
+    ice::TaskScheduler main_sched{ main_queue };
 
-    resource::ResourceSystem resource_system{ main_allocator };
+    // Becase we don't want to spawn any additional threads we setting
+    //  dedicated threads to '0'. Aiming to load resources on the main thread.
+    ice::ResourceTrackerCreateInfo rtinfo{
+        .predicted_resource_count = 1000,
+        .io_dedicated_threads = 0,
+        .flags_io_complete = ice::TaskFlags{},
+        .flags_io_wait = ice::TaskFlags{},
+    };
+    ice::UniquePtr<ice::ResourceTracker> tracker = ice::create_resource_tracker(
+        alloc, main_sched, rtinfo
+    );
 
-    {
-        auto working_dir = core::working_directory(main_allocator);
-        fmt::print("Initializing filesystem module at: {}\n", working_dir);
+    // The paths that will be searched for loose file resources.
+    // TODO: Create a "ExplicitFileProvider" which will provide the file resources that it was explicitly created with.
+    ice::String const storages[]{ ice::String{ argv[1] } };
+    ice::UniquePtr<ice::ResourceProvider> fsprov = ice::create_resource_provider(
+        alloc, storages
+    );
+    tracker->attach_provider(fsprov.get());
+    tracker->sync_resources();
 
-        core::pod::Array<core::stringid_type> schemes{ core::memory::globals::default_scratch_allocator() };
-        core::pod::array::push_back(schemes, resource::scheme_file);
-        core::pod::array::push_back(schemes, resource::scheme_directory);
-        resource_system.add_module(
-            core::memory::make_unique<resource::ResourceModule, resource::FileSystem>(
-                main_allocator, filesystem_allocator, working_dir
-            ),
-            schemes
-        );
+    // Find the resource that we want to have baked.
+    using namespace ice;
 
-        core::pod::array::clear(schemes);
-        core::pod::array::push_back(schemes, resource::scheme_dynlib);
-        resource_system.add_module(
-            core::memory::make_unique<resource::ResourceModule, resource::DynLibSystem>(main_allocator, dynlib_allocator),
-            schemes
-        );
-    }
-
-    // CLI data
-    CLI::App app{ };
-
-    std::string asset_name;
-    app.add_option("-a,--asset", asset_name, "The asset to compile.")
-        ->required();
-
-    core::Map<std::string, asset::AssetType> types{ main_allocator };
-    types.emplace("tex", asset::AssetType::Texture);
-    types.emplace("texture", asset::AssetType::Texture);
-    types.emplace("mesh", asset::AssetType::Mesh);
-
-    asset::AssetType asset_type;
-    app.add_option("-t,--type", asset_type, "The asset type.")
-        ->transform(CLI::Transformer(types))
-        ->required();
-
-    std::string mount_dir;
-    app.add_option("--mount", mount_dir, "The directory to be mounted, where the asset is located.")
-        ->default_val(".")
-        ->required();
-
-    std::vector<std::string> module_dirs;
-    app.add_option("--module-dir", module_dirs, "Location of Ice modules.")
-        ->default_val(".");
-
-    std::vector<std::string> modules;
-    app.add_option("-m,--module", modules, "File names of asset modules (ex. asset_module.dll).")
-        ->required();
-
-    CLI11_PARSE(app, argc, argv);
-
-    // Initial mount points
-    {
-        using resource::URI;
-        using resource::URN;
-
-        for (auto const& modules_path : module_dirs)
-        {
-            resource_system.mount(URI{ resource::scheme_dynlib, modules_path });
+    // TOOD: Inset Asset system here. And ask for the asset
+    //  instead of the resource, this will bake it and return the baked results we want.
+    ice::UniquePtr<ice::AssetTypeArchive> asset_types = ice::create_asset_type_archive(
+        alloc
+    );
+    ice::String const exts[]{ ".json" };
+    asset_types->register_type(
+        AssetType_Config,
+        AssetTypeDefinition{
+            .resource_extensions = exts,
+            .fn_asset_state = assettype_config_state,
         }
+    );
 
-        asset::AssetSystem asset_system{ main_allocator, resource_system };
-        core::Vector<core::memory::unique_pointer<iceshard::AssetModule>> loaded_modules{ main_allocator };
-        for (auto const& module_name : modules)
-        {
-            auto* const assimp_module_location = resource_system.find(URN{ module_name });
-            if (assimp_module_location != nullptr)
-            {
-                loaded_modules.emplace_back(
-                    iceshard::load_asset_module(
-                        main_allocator,
-                        assimp_module_location->location().path,
-                        asset_system
-                    )
-                );
-            }
+    ice::UniquePtr<ice::AssetStorage> assets = ice::create_asset_storage(
+        alloc,
+        ice::move(asset_types),
+        ice::AssetStorageCreateInfo{
+            .resource_tracker = *tracker,
+            .task_scheduler = main_sched,
+            .task_flags = ice::TaskFlags{},
         }
+    );
 
-        resource_system.flush_messages();
-        resource_system.mount(URI{ resource::scheme_directory, mount_dir });
+    ice::Asset asset = assets->bind(AssetType_Config, "config");
 
-        asset_system.update();
+    // Since we don't have any threading setup for the resource tracker, we need to
+    //  manually await the load task and keep the result.
+    ice::Data result;
+    ice::ManualResetEvent ev{ };
+    ice::manual_wait_for(asset.data(ice::AssetState::Baked), ev, result);
 
-        asset::AssetData data;
-        asset::AssetStatus status = asset_system.read(
-            asset::Asset{ asset_name.c_str(), asset_type },
-            data
-        );
-
-        if (status != asset::AssetStatus::Compiled)
+    // Once the task is scheduled we are now going to iterate over the queue untill
+    //  the event is signalled which means all required resources where loaded.
+    while (ev.is_set() == false)
+    {
+        for (auto* task : ice::linked_queue::consume(main_queue._awaitables))
         {
-            if (status != asset::AssetStatus::Available)
-            {
-                fmt::print(stderr, "Failed to compile asset {}", asset_name);
-            }
-            else
-            {
-                fmt::print(stderr, "Trying to re-compile asset {}, skiping...", asset_name);
-            }
-        }
-        else
-        {
-            fmt::print("Asset compiled {}", asset_name);
-
-            core::data_view header_magic;
-            header_magic._data = "ISRA";
-            header_magic._size = 4;
-
-            core::Buffer header_meta{ main_allocator };
-            resource::store_meta_view(data.metadata, header_meta);
-
-            uint32_t header_size = 4 + 4 + core::buffer::size(header_meta);
-            core::data_view header_size_data;
-            header_size_data._data = &header_size;
-            header_size_data._size = 4;
-
-            std::string asset_name_out = asset_name + ".isr";
-
-            resource::OutputResource* asset_out = resource_system.open(URI{ resource::scheme_file, asset_name_out });
-            asset_out->write(header_magic);
-            asset_out->write(header_size_data);
-            asset_out->write(header_meta);
-            asset_out->write(data.content);
-            asset_out->flush();
+            task->_coro.resume();
         }
     }
 
+    ICE_LOG(
+        ice::LogSeverity::Info,
+        ice::LogTag::Asset,
+        "Asset baked with final size: {}",
+        result.size
+    );
+
+    assets->release(asset);
     return 0;
 }

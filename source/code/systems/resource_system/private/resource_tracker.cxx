@@ -308,7 +308,6 @@ namespace ice
         {
             resource_handle->status = ResourceStatus::Loading;
 
-            // TODO: Could be const?
             ice::Memory result{ };
             if (_info.io_dedicated_threads > 0)
             {
@@ -321,8 +320,15 @@ namespace ice
             }
             else
             {
-                // TODO: Load using busy threads
+                // Load using provided scheduler. This allows us to load resources without using any multi threading at all if we wish to do so.
                 co_await _scheduler.schedule(_info.flags_io_wait);
+
+                result = co_await resource_handle->provider->load_resource(
+                    _allocator,
+                    resource_handle->resource,
+                    io_scheduler,
+                    nullptr /* If 'nullptr' it will load the resource synchronously */
+                );
             }
 
             resource_handle->data = result;

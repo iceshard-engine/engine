@@ -7,22 +7,20 @@
 #include <ice/string_types.hxx>
 #include <ice/uri.hxx>
 
-#include "resource_common_win32.hxx"
-
-#if ISP_WINDOWS
+#include "native/native_fileio.hxx"
 
 namespace ice
 {
 
-    class Resource_DllsWin32 final : public ice::Resource
+    class Resource_DynLib final : public ice::Resource
     {
     public:
-        Resource_DllsWin32(
+        Resource_DynLib(
             ice::HeapString<> origin_path,
             ice::String origin_name
         ) noexcept;
 
-        ~Resource_DllsWin32() noexcept override = default;
+        ~Resource_DynLib() noexcept override = default;
 
         auto uri() const noexcept -> ice::URI const& override;
         auto flags() const noexcept -> ice::ResourceFlags override;
@@ -39,11 +37,9 @@ namespace ice
         ice::URI _uri;
     };
 
-    auto create_resource_from_dll_path(
+    auto create_dynlib_resource_from_path(
         ice::Allocator& alloc,
-        ice::WString file_path
+        ice::native_fileio::FilePath file_path
     ) noexcept -> ice::Resource*;
 
 } // namespace ice
-
-#endif // #if ISP_WINDOWS

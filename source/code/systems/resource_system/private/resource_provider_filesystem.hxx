@@ -108,27 +108,6 @@ namespace ice
             }
         }
 
-        auto query_resources(
-            ice::Array<ice::Resource const*>& out_changes
-        ) const noexcept -> ice::u32 override
-        {
-            for (FileSystemResource const* entry : _resources)
-            {
-                ice::array::push_back(out_changes, entry);
-            }
-            return 0;
-        }
-
-        auto refresh() noexcept -> ice::Task<ice::ResourceProviderResult> override
-        {
-            if (ice::hashmap::empty(_resources))
-            {
-                initial_traverse();
-            }
-
-            co_return ResourceProviderResult::Success;
-        }
-
         auto refresh(
             ice::Array<ice::Resource const*>& out_changes
         ) noexcept -> ice::ResourceProviderResult override
@@ -198,7 +177,6 @@ namespace ice
             ice::NativeAIO* nativeio
         ) const noexcept -> ice::Task<ice::Memory> override
         {
-            ICE_ASSERT_CORE(false);
             ice::FileSystemResource const* const filesys_res = static_cast<ice::FileSystemResource const*>(resource);
             co_return co_await filesys_res->load_data(alloc, scheduler, nativeio);
         }
@@ -216,7 +194,9 @@ namespace ice
             predicted_path = ice::string::substr(
                 root_resource->origin(),
                 0,
-                origin_size - ice::string::size(ice::path::filename(root_resource->name()))
+                origin_size - ice::string::size(
+                    ice::path::filename(root_resource->name())
+                )
             );
 
             ice::path::join(predicted_path, relative_uri.path);

@@ -29,14 +29,6 @@ namespace ice
 
         virtual auto schemeid() const noexcept -> ice::StringID = 0;
 
-        [[deprecated("This API will be removed soon.")]]
-        virtual auto query_resources(
-            ice::Array<ice::Resource const*>& out_changes
-        ) const noexcept -> ice::u32 = 0;
-
-        [[deprecated("This API will be removed soon.")]]
-        virtual auto refresh() noexcept -> ice::Task<ice::ResourceProviderResult> = 0;
-
         virtual auto refresh(
             ice::Array<ice::Resource const*>& out_changes
         ) noexcept -> ice::ResourceProviderResult = 0;

@@ -18,6 +18,9 @@ namespace ice
 
     auto nativeio_handle(ice::NativeAIO* nativeio) noexcept -> void*;
 
-    auto nativeio_thread_procedure(ice::NativeAIO* nativeio, ice::TaskQueue& queue) noexcept -> ice::u32;
+    auto nativeio_thread_procedure(
+        ice::NativeAIO* nativeio,
+        ice::TaskQueue& queue
+    ) noexcept -> ice::u32;
 
 } // namespace ice

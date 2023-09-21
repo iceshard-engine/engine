@@ -27,6 +27,7 @@ msdf_atlas_gen/1.2.2@iceshard/stable
 tracy/*:shared=False
 tracy/*:manual_lifetime=False
 tracy/*:no_system_tracing=True
+tracy/*:no_sampling=True
 
 [options-Windows-MSVC]
 imgui/*:docking_branch=True
