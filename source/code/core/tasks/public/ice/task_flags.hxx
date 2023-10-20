@@ -42,10 +42,10 @@ namespace ice
     {
         ice::TaskFlagBaseType value = Constant_TaskFlagNormalPrioValue;
 
-        constexpr explicit TaskFlags() noexcept = default;
+        constexpr TaskFlags() noexcept = default;
 
         template<ice::TaskFlagType Flags>
-        constexpr explicit TaskFlags(Flags flags) noexcept
+        constexpr TaskFlags(Flags flags) noexcept
             : value{ static_cast<ice::TaskFlagBaseType>(flags) }
         {
         }
