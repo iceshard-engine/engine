@@ -11,7 +11,7 @@ namespace ice
     {
         struct FinalAwaitable
         {
-            inline bool await_ready() const noexcept;
+            constexpr bool await_ready() const noexcept { return false; }
 
             template<typename Promise>
             inline auto await_suspend(ice::coroutine_handle<Promise> coro) noexcept -> ice::coroutine_handle<>;
@@ -28,18 +28,12 @@ namespace ice
         inline auto continuation() const noexcept -> ice::coroutine_handle<>;
 
         inline void unhandled_exception() const noexcept;
-
     protected:
         inline TaskPromiseBase() noexcept = default;
 
     private:
         ice::coroutine_handle<> _continuation;
     };
-
-    inline bool TaskPromiseBase::FinalAwaitable::await_ready() const noexcept
-    {
-        return false;
-    }
 
     template<typename Promise>
     inline auto TaskPromiseBase::FinalAwaitable::await_suspend(ice::coroutine_handle<Promise> coro) noexcept -> ice::coroutine_handle<>
@@ -54,6 +48,8 @@ namespace ice
 
     inline void TaskPromiseBase::FinalAwaitable::await_resume() const noexcept
     {
+        // Should never be executed
+        ICE_ASSERT_CORE(false);
     }
 
     inline auto TaskPromiseBase::initial_suspend() const noexcept

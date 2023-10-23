@@ -38,7 +38,10 @@ namespace ice
         inline Task(Task&&) noexcept;
         inline auto operator=(Task&& other) noexcept -> Task&;
 
+        [[deprecated("Method not usable due to API design.")]]
         inline auto is_ready() const noexcept;
+
+        [[deprecated("Method not usable due to API design.")]]
         inline auto when_ready() noexcept;
 
         inline auto operator co_await() & noexcept;

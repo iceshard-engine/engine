@@ -9,7 +9,7 @@ namespace ice
 {
 
     template<typename Value>
-    class TaskPromise final : public ice::TaskPromiseBase
+    class TaskPromise : public ice::TaskPromiseBase
     {
     public:
         inline auto get_return_object() noexcept -> ice::Task<Value>;
@@ -42,12 +42,12 @@ namespace ice
     public:
         inline auto get_return_object() noexcept -> ice::Task<T&>;
 
-        void return_value(T& value) noexcept
+        inline void return_value(T& value) noexcept
         {
             _value = ice::addressof(value);
         }
 
-        auto result() const noexcept -> T&
+        inline auto result() const noexcept -> T&
         {
             ICE_ASSERT(_value != nullptr, "Trying to access result from unfinished task!");
             return *_value;
@@ -63,9 +63,9 @@ namespace ice
     public:
         inline auto get_return_object() noexcept -> ice::Task<void>;
 
-        void return_void() const noexcept { }
+        constexpr void return_void() const noexcept { }
 
-        void result() const noexcept { }
+        constexpr void result() const noexcept { }
     };
 
 } // namespace ice
