@@ -29,6 +29,12 @@ tracy/*:manual_lifetime=False
 tracy/*:no_system_tracing=True
 tracy/*:no_sampling=True
 
+[options-Android-x64]
+tracy/*:shared=False
+tracy/*:manual_lifetime=False
+tracy/*:no_system_tracing=True
+tracy/*:no_sampling=True
+
 [options-Windows-MSVC]
 imgui/*:docking_branch=True
 sdl2/*:shared=True

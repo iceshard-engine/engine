@@ -26,5 +26,16 @@ compiler=clang
 compiler.libcxx=c++_static
 compiler.version=16
 
+[settings-Android-x64]
+os=Android
+os.api_level=$(AndroidAPILevel)
+arch=x86_64
+compiler=clang
+compiler.libcxx=c++_static
+compiler.version=16
+
+[conf-Android-x64]
+tools.android:ndk_path=$(NDKPath)
+
 [conf-Android-Arm64]
 tools.android:ndk_path=$(NDKPath)

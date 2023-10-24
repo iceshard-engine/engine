@@ -27,16 +27,17 @@ namespace ice::platform::android
             ANativeActivity* activity
         ) noexcept;
 
+    public: // ice::platform::Core
         auto refresh_events() noexcept -> ice::Result override { return ice::Res::E_NotImplemented; }
-
         auto system_events() noexcept -> ice::ShardContainer const& override { return _shards; }
         auto input_events() noexcept -> ice::Span<ice::input::DeviceEvent const> override { return {}; }
 
+    public: // ice::platform::Paths
         auto internal_data() const noexcept -> ice::String override { return _app_internal_data; }
         auto external_data() const noexcept -> ice::String override { return _app_external_data; }
         auto save_data() const noexcept -> ice::String override { return _app_save_data; }
 
-    public:
+    public: // internal
         static void native_callback_on_start(ANativeActivity* activity);
         static void native_callback_on_resume(ANativeActivity* activity);
         static void native_callback_on_update(void* userdata);

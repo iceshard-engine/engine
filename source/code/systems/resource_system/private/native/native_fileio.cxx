@@ -233,19 +233,34 @@ namespace ice::native_fileio
 
 #elif ISP_UNIX
 
+    inline auto translate_flags(ice::native_fileio::FileOpenFlags flags) noexcept -> int
+    {
+        int result = O_RDONLY;
+#if 0 // TODO: Not supported yet
+        if (ice::has_any(flags, FileOpenFlags::Asynchronous))
+        {
+            result = O_ASYNC;
+        }
+#endif
+        return result;
+    }
+
     bool exists_file(ice::native_fileio::FilePath path) noexcept
     {
         struct stat file_stats;
         return stat(ice::string::begin(path), &file_stats) == 0 && file_stats.st_size > 0;
     }
 
-    auto open_file(ice::native_fileio::FilePath path) noexcept -> ice::native_fileio::File
+    auto open_file(
+        ice::native_fileio::FilePath path,
+        ice::native_fileio::FileOpenFlags flags /*= FileOpenFlags::ReadOnly*/
+    ) noexcept -> ice::native_fileio::File
     {
         ice::native_fileio::File result;
         if constexpr (ice::build::current_platform == ice::build::System::Android)
         {
             result = ice::native_fileio::File{
-                open(ice::string::begin(path), O_RDONLY)
+                open(ice::string::begin(path), translate_flags(flags))
             };
         }
         else

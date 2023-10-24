@@ -16,6 +16,13 @@ namespace ice::build
         Unix
     };
 
+    enum class ArchFamily : ice::u8
+    {
+        Unknown,
+        X86,
+        ARM,
+    };
+
     enum class Architecture : ice::u8
     {
         x86,
@@ -39,8 +46,14 @@ namespace ice::build
         Compiler compiler;
     };
 
+
+    constexpr auto arch_family(Architecture arch) noexcept -> ArchFamily;
+
     constexpr bool operator==(Platform const& left, System right) noexcept;
     constexpr bool operator!=(Platform const& left, System right) noexcept;
+
+    constexpr bool operator==(Platform const& left, ArchFamily right) noexcept;
+    constexpr bool operator!=(Platform const& left, ArchFamily right) noexcept;
 
     constexpr bool operator==(Platform const& left, Architecture right) noexcept;
     constexpr bool operator!=(Platform const& left, Architecture right) noexcept;
@@ -53,10 +66,10 @@ namespace ice::build
 
 
     constexpr auto to_string(System type) noexcept -> std::string_view;
+    constexpr auto to_string(ArchFamily type) noexcept -> std::string_view;
     constexpr auto to_string(Architecture type) noexcept -> std::string_view;
     constexpr auto to_string(Compiler type) noexcept -> std::string_view;
     constexpr auto to_string(Platform const& type) noexcept -> std::string_view;
-
 
     static constexpr Platform platform_uwp_x64_msvc = {
         .name = "uwp-x64-msvc",
@@ -86,6 +99,13 @@ namespace ice::build
         .compiler = Compiler::Clang
     };
 
+    static constexpr Platform platform_android_x64_clang = {
+        .name = "android-x64-clang",
+        .system = System::Android,
+        .architecture = Architecture::x86_x64,
+        .compiler = Compiler::Clang
+    };
+
     static constexpr Platform platform_unix_x64_clang = {
         .name = "unix-x64-clang",
         .system = System::Unix,
@@ -104,6 +124,8 @@ namespace ice::build
         platform_uwp_x64_msvc,
         platform_windows_x64_msvc,
         platform_windows_x64_clang,
+        platform_android_arm64_clang,
+        platform_android_x64_clang,
         platform_unix_x64_clang,
         platform_unix_x64_gcc,
     };
@@ -134,6 +156,8 @@ namespace ice::build
 
         static constexpr Platform current_platform = platform_windows_x64_msvc;
 #   endif
+#   define ISP_ARCHFAM_X86 1
+#   define ISP_ARCHFAM_ARM 0
 #elif defined(__ANDROID__)
 #   define ISP_UNIX 1
 #   define ISP_WINDOWS 0
@@ -142,7 +166,15 @@ namespace ice::build
 #   define ISP_COMPILER_CLANG __clang_major__
 #   define ISP_COMPILER_GCC 0
 
-    static constexpr Platform current_platform = platform_android_arm64_clang;
+#   if defined(__aarch64__) || defined(_M_ARM64)
+#       define ISP_ARCHFAM_X86 0
+#       define ISP_ARCHFAM_ARM 1
+        static constexpr Platform current_platform = platform_android_arm64_clang;
+#   else
+#       define ISP_ARCHFAM_X86 1
+#       define ISP_ARCHFAM_ARM 0
+        static constexpr Platform current_platform = platform_android_x64_clang;
+#   endif
 #elif __unix__ && !__clang__
 #   define ISP_UNIX 1
 #   define ISP_WINDOWS 0
@@ -150,6 +182,8 @@ namespace ice::build
 #   define ISP_COMPILER_MSVC 0
 #   define ISP_COMPILER_CLANG 0
 #   define ISP_COMPILER_GCC 1
+#   define ISP_ARCHFAM_X86 1
+#   define ISP_ARCHFAM_ARM 0
 
     static constexpr Platform current_platform = platform_unix_x64_gcc;
 #elif __unix__ && __clang__
@@ -159,6 +193,8 @@ namespace ice::build
 #   define ISP_COMPILER_MSVC 0
 #   define ISP_COMPILER_CLANG __clang_major__
 #   define ISP_COMPILER_GCC 0
+#   define ISP_ARCHFAM_X86 1
+#   define ISP_ARCHFAM_ARM 0
 
     static constexpr Platform current_platform = platform_unix_x64_clang;
 #else
@@ -168,9 +204,23 @@ namespace ice::build
 #   define ISP_COMPILER_MSVC 0
 #   define ISP_COMPILER_CLANG 0
 #   define ISP_COMPILER_GCC 0
+#   define ISP_ARCHFAM_X86 0
+#   define ISP_ARCHFAM_ARM 0
 
     static_assert(false, "Unknow platform!");
 #endif
+
+    constexpr auto arch_family(Architecture arch) noexcept -> ArchFamily
+    {
+        switch(arch)
+        {
+            using enum Architecture;
+            case x86:
+            case x86_x64: return ArchFamily::X86;
+            case Arm64: return ArchFamily::ARM;
+            default: return ArchFamily::Unknown;
+        }
+    }
 
     constexpr bool operator==(Platform const& left, System right) noexcept
     {
@@ -178,6 +228,16 @@ namespace ice::build
     }
 
     constexpr bool operator!=(Platform const& left, System right) noexcept
+    {
+        return !(left == right);
+    }
+
+    constexpr bool operator==(Platform const& left, ArchFamily right) noexcept
+    {
+        return arch_family(left.architecture) == right;
+    }
+
+    constexpr bool operator!=(Platform const& left, ArchFamily right) noexcept
     {
         return !(left == right);
     }
@@ -227,6 +287,19 @@ namespace ice::build
             return "android";
         case ice::build::System::Unix:
             return "unix";
+        default:
+            return "<invalid>";
+        }
+    }
+
+    constexpr auto to_string(ArchFamily family) noexcept -> std::string_view
+    {
+        switch (family)
+        {
+        case ArchFamily::X86:
+            return "X86";
+        case ArchFamily::ARM:
+            return "ARM";
         default:
             return "<invalid>";
         }

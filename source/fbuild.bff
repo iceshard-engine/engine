@@ -82,7 +82,7 @@ Settings
 
     .AndroidAPILevel = '27'
 
-    .PipelineName = 'Android$AndroidAPILevel$'
+    .PipelineName = 'Android$AndroidAPILevel$-ARMv8'
     .PipelineToolchain = 'ndk26-clang-17.0.0'
     .PipelineArchitecture = 'arm64'
     .PipelineAllowUnityBuilds = false
@@ -98,10 +98,32 @@ Settings
 ]
 
 
+.Unity_Pipeline_Android_x64 =
+[
+    Using( .Piepline_Android_ARM64 )
+
+    .AndroidAPILevel = '27'
+
+    .PipelineName = 'Android$AndroidAPILevel$-x64'
+    .PipelineToolchain = 'ndk26-clang-17.0.0'
+    .PipelineArchitecture = 'x86_64'
+    .PipelineAllowUnityBuilds = false
+    .PipelineSteps = { 'Build', 'Link' }
+
+    .PipelineConanProfile = 'Android-x64'
+
+    // Disable explicitly (we dont want VS configs for Android for now)
+    .PipelineVSInfo =
+    [
+        .VSEnabled = false
+    ]
+]
+
 ^BuildPipelines = {
     .Unity_Pipeline_Windows_x64
     .Unity_Pipeline_Linux_x64
     .Unity_Pipeline_Linux_x64_Clang
     .Unity_Pipeline_Android_ARM64
+    .Unity_Pipeline_Android_x64
     .Vk_ShaderPipeline
 }

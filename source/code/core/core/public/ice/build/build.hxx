@@ -25,10 +25,18 @@ namespace ice::build
 
     static constexpr bool is_x64 = current_platform == Architecture::x86_x64 || current_platform == Architecture::Arm64;
 
+    static constexpr bool is_arm = current_platform == ArchFamily::ARM;
+
     static constexpr bool is_msvc = current_platform == Compiler::MSVC;
 
     static constexpr bool is_clang = current_platform == Compiler::Clang;
 
     static constexpr bool is_gcc = current_platform == Compiler::GCC;
+
+
+    static_assert(
+        ISP_ARCH_BITS == (ice::build::is_x64 ? 64 : 32),
+        "Missmatch on predicted architecture bit-size and `is_x64` built-time constant."
+    );
 
 } // namespace ice::build
