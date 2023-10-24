@@ -1,3 +1,6 @@
+/// Copyright 2023 - 2023, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
 #include "android_platform_core.hxx"
 
 #include <ice/mem_allocator_host.hxx>
