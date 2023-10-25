@@ -27,6 +27,10 @@
 #include <ice/resource.hxx>
 #include <ice/uri.hxx>
 
+#include <ice/input/device_event_queue.hxx>
+#include <ice/input/input_tracker.hxx>
+#include <ice/input/input_touchscreen.hxx>
+
 #include <ice/platform_core.hxx>
 #include <ice/platform_paths.hxx>
 #include <ice/platform_event.hxx>
@@ -59,8 +63,14 @@ struct ice::app::State {
     ice::UniquePtr<ice::TaskThreadPool> tpool;
     ice::UniquePtr<ice::ResourceTracker> res;
     ice::UniquePtr<ice::ResourceProvider> res_fs;
+
 };
-struct ice::app::Runtime { ice::Allocator& alloc; };
+struct ice::app::Runtime {
+    ice::Allocator& alloc;
+    ice::SystemClock clock{ ice::clock::create_clock() };
+    ice::UniquePtr<ice::input::InputTracker> inputs;
+    ice::platform::Core* app_core;
+};
 
 template<typename T>
 void destroy_object(T* obj) noexcept
@@ -105,6 +115,18 @@ auto ice_setup(
     return ice::app::S_ApplicationResume;
 }
 
+auto ice_resume(
+    ice::app::Config const& config,
+    ice::app::State& state,
+    ice::app::Runtime& runtime
+) noexcept -> ice::Result
+{
+    runtime.inputs = ice::input::create_default_input_tracker(runtime.alloc, runtime.clock);
+    runtime.inputs->register_device_type(ice::input::DeviceType::TouchScreen, ice::input::get_default_device_factory());
+    ice::platform::query_api(runtime.app_core);
+    return ice::app::S_ApplicationUpdate;
+}
+
 auto ice_update(
     ice::app::Config const& config,
     ice::app::State const& state,
@@ -113,6 +135,29 @@ auto ice_update(
 {
     using ice::operator""_uri;
     IPT_ZONE_SCOPED;
+
+    ice::Array<ice::input::InputEvent> inputs{ runtime.alloc };
+    runtime.app_core->refresh_events();
+    runtime.inputs->process_device_events(runtime.app_core->input_events(), inputs);
+
+    ice::vec2i pos{-1};
+    for (ice::input::InputEvent ev : inputs)
+    {
+        if (ev.identifier == ice::input::input_identifier(ice::input::DeviceType::TouchScreen, ice::input::TouchInput::TouchPosX))
+        {
+            pos.x = ev.value.axis.value_i32;
+        }
+        if (ev.identifier == ice::input::input_identifier(ice::input::DeviceType::TouchScreen, ice::input::TouchInput::TouchPosY))
+        {
+            pos.y = ev.value.axis.value_i32;
+        }
+    }
+
+	if (pos.x > 0 && pos.y > 0)
+	{
+		ICE_LOG(ice::LogSeverity::Retail, ice::LogTag::Game, "Touch ({},{})", pos.x, pos.y);
+	}
+
 
     static bool once = true;
     if (once)
@@ -135,6 +180,16 @@ auto ice_update(
     }
 
     return ice::app::S_ApplicationUpdate;
+}
+
+auto ice_suspend(
+    ice::app::Config const& config,
+    ice::app::State& state,
+    ice::app::Runtime& runtime
+) noexcept -> ice::Result
+{
+    runtime.inputs.reset();
+    return ice::app::S_ApplicationResume;
 }
 
 auto ice_shutdown(

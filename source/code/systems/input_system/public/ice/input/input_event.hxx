@@ -5,6 +5,7 @@
 #include <ice/input/device_handle.hxx>
 #include <ice/shard.hxx>
 #include <ice/hash.hxx>
+#include <ice/math.hxx>
 
 namespace ice::input
 {

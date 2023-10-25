@@ -1,8 +1,9 @@
 /// Copyright 2023 - 2023, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
+#include "android_platform_core.hxx"
 
 #include <ice/mem_allocator_host.hxx>
-#include "android_platform_core.hxx"
+#include <android/log.h>
 
 extern "C"
 {
@@ -13,6 +14,16 @@ void ANativeActivity_onCreate(
     size_t saved_size
 )
 {
+    if constexpr (ice::build::is_release == false)
+    {
+        // System specific initializations
+        if (__builtin_available(android 30, *))
+        {
+            // Because we handle priorities by ourselfs, just use verbose logging as default
+            __android_log_set_minimum_priority(ANDROID_LOG_DEBUG);
+        }
+    }
+
     using ice::platform::android::AndroidCore;
 
     static ice::HostAllocator host_alloc;
@@ -21,7 +32,6 @@ void ANativeActivity_onCreate(
         ice::Data{ saved_data, ice::usize{ saved_size } },
         activity
     );
-
 
     // Setup all callbacks
     activity->callbacks->onStart = AndroidCore::native_callback_on_start;

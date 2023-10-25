@@ -3,6 +3,7 @@
 
 #pragma once
 #include <ice/input/device_handle.hxx>
+#include <ice/math.hxx>
 
 namespace ice::input
 {
@@ -34,6 +35,20 @@ namespace ice::input
         GamepadAxisRightX,
         GamepadAxisRightY,
 
+        TouchScreenSizeX,
+        TouchScreenSizeY,
+
+        TouchEvent,
+        TouchPosition,
+        TouchPositionX,
+        TouchPositionY,
+        TouchEnd,
+
+        TouchGestureStart,
+        TouchGestureNext,
+        TouchGestureTime, // Returned for each event coming from the OS
+        TouchGestureEnd,
+
         Reserved
     };
 
@@ -42,6 +57,7 @@ namespace ice::input
         Invalid,
         Int8,
         Int16,
+        Int16x2,
         Int32,
         Float32,
         Enum,
@@ -51,6 +67,7 @@ namespace ice::input
     {
         ice::i8 val_i8;
         ice::i16 val_i16;
+        ice::math::vec<2, ice::i16> val_i16x2;
         ice::i32 val_i32;
         ice::f32 val_f32;
     };
@@ -60,6 +77,7 @@ namespace ice::input
         ice::input::DeviceHandle device;
         ice::input::DeviceMessage message;
         ice::input::DevicePayloadType payload_type;
+        ice::u8 _reserved;
         ice::input::DeviceEventData payload_data;
     };
 
@@ -74,6 +92,8 @@ namespace ice::input
     constexpr inline DevicePayloadType Constant_PayloadType<ice::i8> = DevicePayloadType::Int8;
     template<>
     constexpr inline DevicePayloadType Constant_PayloadType<ice::i16> = DevicePayloadType::Int16;
+    template<>
+    constexpr inline DevicePayloadType Constant_PayloadType<ice::math::vec<2, ice::i16>> = DevicePayloadType::Int16x2;
     template<>
     constexpr inline DevicePayloadType Constant_PayloadType<ice::i32> = DevicePayloadType::Int32;
     template<>

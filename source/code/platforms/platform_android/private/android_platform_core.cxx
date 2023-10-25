@@ -15,6 +15,11 @@
 namespace ice::platform::android
 {
 
+    static constexpr auto Constant_TouchScreenDevice = ice::input::make_device_handle(
+        ice::input::DeviceType::TouchScreen,
+        ice::input::DeviceIndex{ 0 }
+    );
+
     static auto get_cache_path(ice::Allocator& alloc, jobject const& activity, JNIEnv* env) noexcept
     {
         ice::HeapString<> res{ alloc };
@@ -61,9 +66,11 @@ namespace ice::platform::android
         ANativeActivity* activity
     ) noexcept
         : _allocator{ alloc }
-        , _shards{ _allocator }
+        , _system_events{ _allocator }
+        , _input_events{ _allocator }
         , _main_queue{ }
         , _main_thread{ }
+        , _app_window{ nullptr }
     {
         ice::HeapString<> cache_path = get_cache_path(alloc, activity->clazz, activity->env);
 
@@ -85,6 +92,113 @@ namespace ice::platform::android
 
         ICE_ASSERT(global_instance == nullptr, "Only one instance of AndroidCore should ever be created!");
         global_instance = this;
+    }
+
+    auto AndroidCore::refresh_events() noexcept -> ice::Result
+    {
+        using namespace ice::input;
+        ice::shards::clear(_system_events);
+        _input_events.clear();
+
+        static bool first_refresh = true;
+        if (first_refresh)
+        {
+            first_refresh = false;
+            _input_events.push(
+                Constant_TouchScreenDevice,
+                DeviceMessage::DeviceConnected
+            );
+        }
+
+        // Query inputs if we have a queue available.
+        AInputQueue* const queue = _app_queue.exchange(nullptr, std::memory_order_relaxed);
+        if (queue != nullptr)
+        {
+            AInputEvent* event_ptr;
+            while(AInputQueue_getEvent(queue, &event_ptr) >= 0)
+            {
+                if (AInputQueue_preDispatchEvent(queue, event_ptr) != 0)
+                {
+                    continue;
+                }
+
+                ice::i32 const event_type = AInputEvent_getType(event_ptr);
+                switch (event_type)
+                {
+                case AINPUT_EVENT_TYPE_MOTION:
+                {
+                    ice::u32 const action_type = AMotionEvent_getAction(event_ptr);
+                    if ((action_type & AMOTION_EVENT_ACTION_DOWN) == AMOTION_EVENT_ACTION_DOWN)
+                    {
+                        IPT_MESSAGE("AndroidEvent::Motion::Down");
+                        ICE_LOG(ice::LogSeverity::Retail, ice::LogTag::Core, "AndroidEvent::Motion::Down");
+                        _input_events.push(
+                            Constant_TouchScreenDevice,
+                            DeviceMessage::TouchEvent,
+                            ice::i8(action_type & ~AMOTION_EVENT_ACTION_DOWN)
+                        );
+                        _input_events.push(
+                            Constant_TouchScreenDevice,
+                            DeviceMessage::TouchPosition,
+                            ice::math::vec<2, ice::i16>(
+                                ice::i16(AMotionEvent_getX(event_ptr, (action_type & ~AMOTION_EVENT_ACTION_DOWN))),
+                                ice::i16(AMotionEvent_getY(event_ptr, (action_type & ~AMOTION_EVENT_ACTION_DOWN)))
+                            )
+                        );
+                    }
+                    else if ((action_type & AMOTION_EVENT_ACTION_UP) == AMOTION_EVENT_ACTION_UP)
+                    {
+                        IPT_MESSAGE("AndroidEvent::Motion::Up");
+                        ICE_LOG(ice::LogSeverity::Retail, ice::LogTag::Core, "AndroidEvent::Up");
+                        _input_events.push(
+                            Constant_TouchScreenDevice,
+                            DeviceMessage::TouchEnd,
+                            ice::i8(action_type & ~AMOTION_EVENT_ACTION_DOWN)
+                        );
+                        _input_events.push(
+                            Constant_TouchScreenDevice,
+                            DeviceMessage::TouchPosition,
+                            ice::math::vec<2, ice::i16>(
+                                ice::i16(AMotionEvent_getX(event_ptr, (action_type & ~AMOTION_EVENT_ACTION_UP))),
+                                ice::i16(AMotionEvent_getY(event_ptr, (action_type & ~AMOTION_EVENT_ACTION_UP)))
+                            )
+                        );
+                    }
+                    else
+                    {
+                        IPT_MESSAGE("AndroidEvent::Motion::Unknown");
+                        ICE_LOG(ice::LogSeverity::Retail, ice::LogTag::Core, "AndroidEvent::Unknown");
+
+                    }
+                    break;
+                }
+                case AINPUT_EVENT_TYPE_KEY:
+                    IPT_MESSAGE("AndroidEvent::Key");
+                    ICE_LOG(ice::LogSeverity::Retail, ice::LogTag::Core, "AndroidEvent::Key");
+                    break;
+                case AINPUT_EVENT_TYPE_DRAG:
+                    IPT_MESSAGE("AndroidEvent::Drag");
+                    ICE_LOG(ice::LogSeverity::Retail, ice::LogTag::Core, "AndroidEvent::Drag");
+                    break;
+                case AINPUT_EVENT_TYPE_FOCUS:
+                    IPT_MESSAGE("AndroidEvent::Focus");
+                    ICE_LOG(ice::LogSeverity::Retail, ice::LogTag::Core, "AndroidEvent::Focus");
+                    break;
+                case AINPUT_EVENT_TYPE_TOUCH_MODE:
+                    IPT_MESSAGE("AndroidEvent::TouchMode");
+                    ICE_LOG(ice::LogSeverity::Retail, ice::LogTag::Core, "AndroidEvent::TouchMode");
+                    break;
+                default:
+                    break;
+                }
+
+                AInputQueue_finishEvent(queue, event_ptr, 1);
+            }
+
+            _app_queue.store(queue, std::memory_order_relaxed);
+        }
+
+        return ice::Res::Success;
     }
 
     void AndroidCore::native_callback_on_start(ANativeActivity* activity)
@@ -137,57 +251,13 @@ namespace ice::platform::android
 
         ice::platform::android::AndroidCore* core = core_instance(userdata);
 
-        // Query inputs if we have a queue available.
-        AInputQueue* const queue = core->_app_queue.exchange(nullptr, std::memory_order_relaxed);
-        if (queue != nullptr)
-        {
-            AInputEvent* event_ptr;
-            while(AInputQueue_getEvent(queue, &event_ptr) >= 0)
-            {
-                if (AInputQueue_preDispatchEvent(queue, event_ptr) != 0)
-                {
-                    continue;
-                }
-
-                ice::i32 const event_type = AInputEvent_getType(event_ptr);
-                switch (event_type)
-                {
-                case AINPUT_EVENT_TYPE_MOTION:
-                    IPT_MESSAGE("AndroidEvent::Motion");
-                    break;
-                case AINPUT_EVENT_TYPE_KEY:
-                    IPT_MESSAGE("AndroidEvent::Key");
-                    break;
-                case AINPUT_EVENT_TYPE_DRAG:
-                    IPT_MESSAGE("AndroidEvent::Drag");
-                    break;
-                case AINPUT_EVENT_TYPE_FOCUS:
-                    IPT_MESSAGE("AndroidEvent::Focus");
-                    break;
-                case AINPUT_EVENT_TYPE_TOUCH_MODE:
-                    IPT_MESSAGE("AndroidEvent::TouchMode");
-                    break;
-                default:
-                    break;
-                }
-
-                AInputQueue_finishEvent(queue, event_ptr, 0);
-            }
-
-            core->_app_queue.store(queue, std::memory_order_relaxed);
-        }
-
         ice::u32 allowed_state = 0;
         if (core->_app_state.compare_exchange_weak(allowed_state, 1) == false)
         {
             return;
         }
 
-        ice::app::Factories& app_factories = core->_factories;
-
-        core->_runtime = app_factories.factory_runtime(core->_allocator);
         ice_update(*core->_config, *core->_state, *core->_runtime);
-
         core->_app_state.store(0);
     }
 
@@ -243,8 +313,47 @@ namespace ice::platform::android
     }
 
     void AndroidCore::native_callback_on_focus_changed(ANativeActivity* activity, int has_focus) { }
-    void AndroidCore::native_window_on_created(ANativeActivity* activity, ANativeWindow* window) { }
-    void AndroidCore::native_window_on_destroyed(ANativeActivity* activity, ANativeWindow* window) { }
+
+    void AndroidCore::native_window_on_created(ANativeActivity* activity, ANativeWindow* window)
+    {
+        IPT_MESSAGE("Android::Window::Created");
+        ICE_LOG(ice::LogSeverity::Retail, ice::LogTag::Core, "Android::Window::Created");
+        ice::platform::android::AndroidCore* core = core_instance(activity);
+        core->_app_window = window;
+
+        ice::u32 allowed_state = 0;
+        while (core->_app_state.compare_exchange_weak(allowed_state, 1) == false)
+        {
+            allowed_state = 0;
+        }
+
+        if (core->_app_window)
+        {
+            using namespace ice::input;
+            core->_input_events.push(
+                Constant_TouchScreenDevice,
+                DeviceMessage::TouchScreenSizeX,
+                ice::f32(ANativeWindow_getWidth(core->_app_window))
+            );
+            core->_input_events.push(
+                Constant_TouchScreenDevice,
+                DeviceMessage::TouchScreenSizeY,
+                ice::f32(ANativeWindow_getHeight(core->_app_window))
+            );
+        }
+
+        core->_app_state.store(0);
+    }
+
+    void AndroidCore::native_window_on_destroyed(ANativeActivity* activity, ANativeWindow* window)
+    {
+        IPT_MESSAGE("Android::Window::Created");
+        ICE_LOG(ice::LogSeverity::Retail, ice::LogTag::Core, "Android::Window::Created");
+        ice::platform::android::AndroidCore* core = core_instance(activity);
+        ICE_ASSERT_CORE(core->_app_window == window);
+        core->_app_window = nullptr;
+    }
+
     void AndroidCore::native_window_on_redraw_needed(ANativeActivity* activity, ANativeWindow* window) { }
     void AndroidCore::native_window_on_resized(ANativeActivity* activity, ANativeWindow* window) { }
 

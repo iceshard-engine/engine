@@ -5,6 +5,7 @@
 #include <ice/string/static_string.hxx>
 #include <ice/platform_core.hxx>
 #include <ice/platform_paths.hxx>
+#include <ice/input/device_event_queue.hxx>
 #include <ice/module_register.hxx>
 #include <ice/task_queue.hxx>
 #include <ice/task_thread.hxx>
@@ -28,9 +29,9 @@ namespace ice::platform::android
         ) noexcept;
 
     public: // ice::platform::Core
-        auto refresh_events() noexcept -> ice::Result override { return ice::Res::E_NotImplemented; }
-        auto system_events() noexcept -> ice::ShardContainer const& override { return _shards; }
-        auto input_events() noexcept -> ice::Span<ice::input::DeviceEvent const> override { return {}; }
+        auto refresh_events() noexcept -> ice::Result override;
+        auto system_events() noexcept -> ice::ShardContainer const& override { return _system_events; }
+        auto input_events() noexcept -> ice::Span<ice::input::DeviceEvent const> override { return _input_events._events; }
 
     public: // ice::platform::Paths
         auto internal_data() const noexcept -> ice::String override { return _app_internal_data; }
@@ -67,13 +68,15 @@ namespace ice::platform::android
         ice::UniquePtr<ice::app::State> _state;
         ice::UniquePtr<ice::app::Runtime> _runtime;
 
-        ice::ShardContainer _shards;
+        ice::ShardContainer _system_events;
+        ice::input::DeviceEventQueue _input_events;
 
         ice::TaskQueue _main_queue;
         ice::UniquePtr<ice::TaskThread> _main_thread;
 
         std::atomic_uint32_t _app_state;
         std::atomic<AInputQueue*> _app_queue;
+        ANativeWindow* _app_window;
 
         ice::StaticString<256> _app_internal_data;
         ice::StaticString<256> _app_external_data;

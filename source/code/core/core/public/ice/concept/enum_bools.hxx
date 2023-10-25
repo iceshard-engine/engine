@@ -22,19 +22,19 @@ namespace ice
         static_cast<std::underlying_type_t<T>>(T::On) == 1;
     };
 
-    template<ice::BoolType T>
-    constexpr bool operator==(T left, bool right) noexcept
-    {
-        auto const left_value = static_cast<std::underlying_type_t<T>>(left);
-        return left_value == right;
-    }
+    // template<ice::BoolType T>
+    // constexpr bool operator==(T left, bool_t right) noexcept
+    // {
+    //     auto const left_value = static_cast<std::underlying_type_t<T>>(left);
+    //     return left_value == right;
+    // }
 
-    template<ice::BoolType T>
-    constexpr bool operator!=(T left, bool right) noexcept
-    {
-        auto const left_value = static_cast<std::underlying_type_t<T>>(left);
-        return left_value != right;
-    }
+    // template<ice::BoolType T>
+    // constexpr bool operator!=(T left, bool_t right) noexcept
+    // {
+    //     auto const left_value = static_cast<std::underlying_type_t<T>>(left);
+    //     return left_value != right;
+    // }
 
     template<ice::BoolType T>
     constexpr auto operator!(T left) noexcept -> T

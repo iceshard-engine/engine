@@ -165,6 +165,8 @@ namespace ice::input
             return create_keyboard_device(alloc, handle);
         case DeviceType::Controller:
             return create_controller_device(alloc, handle);
+        case DeviceType::TouchScreen:
+            return create_touchscreen_device(alloc, handle);
         default:
             return nullptr;
         }
