@@ -2,21 +2,28 @@
 /// SPDX-License-Identifier: MIT
 
 #include "android_platform_core.hxx"
+#include "android_input_motion.hxx"
+
 #include <ice/profiler.hxx>
 #include <ice/app.hxx>
 #include <ice/log.hxx>
 #include <ice/assert.hxx>
 #include <ice/path_utils.hxx>
 #include <ice/string/heap_string.hxx>
+#include <ice/os/android.hxx>
 #include <thread>
 
-#include <ice/os/android.hxx>
 
 namespace ice::platform::android
 {
 
     static constexpr auto Constant_TouchScreenDevice = ice::input::make_device_handle(
         ice::input::DeviceType::TouchScreen,
+        ice::input::DeviceIndex{ 0 }
+    );
+
+    static constexpr auto Constant_KeyboardDevice = ice::input::make_device_handle(
+        ice::input::DeviceType::Keyboard,
         ice::input::DeviceIndex{ 0 }
     );
 
@@ -68,6 +75,7 @@ namespace ice::platform::android
         : _allocator{ alloc }
         , _system_events{ _allocator }
         , _input_events{ _allocator }
+        , _new_screen_size{ 1.f, 1.f }
         , _main_queue{ }
         , _main_thread{ }
         , _app_window{ nullptr }
@@ -104,10 +112,15 @@ namespace ice::platform::android
         if (first_refresh)
         {
             first_refresh = false;
-            _input_events.push(
-                Constant_TouchScreenDevice,
-                DeviceMessage::DeviceConnected
-            );
+            _input_events.push(Constant_KeyboardDevice, DeviceMessage::DeviceConnected);
+            _input_events.push(Constant_TouchScreenDevice, DeviceMessage::DeviceConnected);
+        }
+
+        if (_new_screen_size.x > 0.f)
+        {
+            _input_events.push(Constant_TouchScreenDevice, DeviceMessage::TouchScreenSizeX, _new_screen_size.x);
+            _input_events.push(Constant_TouchScreenDevice, DeviceMessage::TouchScreenSizeY, _new_screen_size.y);
+            _new_screen_size = { 0.f, 0.f };
         }
 
         // Query inputs if we have a queue available.
@@ -122,54 +135,13 @@ namespace ice::platform::android
                     continue;
                 }
 
+                ice::ResCode result = ice::ResCode::create(ice::ResultSeverity::Warning, "Unknown");
                 ice::i32 const event_type = AInputEvent_getType(event_ptr);
                 switch (event_type)
                 {
                 case AINPUT_EVENT_TYPE_MOTION:
                 {
-                    ice::u32 const action_type = AMotionEvent_getAction(event_ptr);
-                    if ((action_type & AMOTION_EVENT_ACTION_DOWN) == AMOTION_EVENT_ACTION_DOWN)
-                    {
-                        IPT_MESSAGE("AndroidEvent::Motion::Down");
-                        ICE_LOG(ice::LogSeverity::Retail, ice::LogTag::Core, "AndroidEvent::Motion::Down");
-                        _input_events.push(
-                            Constant_TouchScreenDevice,
-                            DeviceMessage::TouchEvent,
-                            ice::i8(action_type & ~AMOTION_EVENT_ACTION_DOWN)
-                        );
-                        _input_events.push(
-                            Constant_TouchScreenDevice,
-                            DeviceMessage::TouchPosition,
-                            ice::math::vec<2, ice::i16>(
-                                ice::i16(AMotionEvent_getX(event_ptr, (action_type & ~AMOTION_EVENT_ACTION_DOWN))),
-                                ice::i16(AMotionEvent_getY(event_ptr, (action_type & ~AMOTION_EVENT_ACTION_DOWN)))
-                            )
-                        );
-                    }
-                    else if ((action_type & AMOTION_EVENT_ACTION_UP) == AMOTION_EVENT_ACTION_UP)
-                    {
-                        IPT_MESSAGE("AndroidEvent::Motion::Up");
-                        ICE_LOG(ice::LogSeverity::Retail, ice::LogTag::Core, "AndroidEvent::Up");
-                        _input_events.push(
-                            Constant_TouchScreenDevice,
-                            DeviceMessage::TouchEnd,
-                            ice::i8(action_type & ~AMOTION_EVENT_ACTION_DOWN)
-                        );
-                        _input_events.push(
-                            Constant_TouchScreenDevice,
-                            DeviceMessage::TouchPosition,
-                            ice::math::vec<2, ice::i16>(
-                                ice::i16(AMotionEvent_getX(event_ptr, (action_type & ~AMOTION_EVENT_ACTION_UP))),
-                                ice::i16(AMotionEvent_getY(event_ptr, (action_type & ~AMOTION_EVENT_ACTION_UP)))
-                            )
-                        );
-                    }
-                    else
-                    {
-                        IPT_MESSAGE("AndroidEvent::Motion::Unknown");
-                        ICE_LOG(ice::LogSeverity::Retail, ice::LogTag::Core, "AndroidEvent::Unknown");
-
-                    }
+                    result = ice::platform::android::handle_android_motion_event(event_ptr, _input_events);
                     break;
                 }
                 case AINPUT_EVENT_TYPE_KEY:
@@ -192,7 +164,11 @@ namespace ice::platform::android
                     break;
                 }
 
-                AInputQueue_finishEvent(queue, event_ptr, 1);
+                AInputQueue_finishEvent(queue, event_ptr, result == ice::Res::Success);
+                if (result != ice::Res::Success)
+                {
+                    ICE_LOG(LogSeverity::Retail, LogTag::Core, "Unhandled input event: {}", ice::result_hint(result));
+                }
             }
 
             _app_queue.store(queue, std::memory_order_relaxed);
@@ -320,29 +296,10 @@ namespace ice::platform::android
         ICE_LOG(ice::LogSeverity::Retail, ice::LogTag::Core, "Android::Window::Created");
         ice::platform::android::AndroidCore* core = core_instance(activity);
         core->_app_window = window;
-
-        ice::u32 allowed_state = 0;
-        while (core->_app_state.compare_exchange_weak(allowed_state, 1) == false)
-        {
-            allowed_state = 0;
-        }
-
-        if (core->_app_window)
-        {
-            using namespace ice::input;
-            core->_input_events.push(
-                Constant_TouchScreenDevice,
-                DeviceMessage::TouchScreenSizeX,
-                ice::f32(ANativeWindow_getWidth(core->_app_window))
-            );
-            core->_input_events.push(
-                Constant_TouchScreenDevice,
-                DeviceMessage::TouchScreenSizeY,
-                ice::f32(ANativeWindow_getHeight(core->_app_window))
-            );
-        }
-
-        core->_app_state.store(0);
+        core->_new_screen_size = {
+            ice::f32(ANativeWindow_getWidth(core->_app_window)),
+            ice::f32(ANativeWindow_getHeight(core->_app_window))
+        };
     }
 
     void AndroidCore::native_window_on_destroyed(ANativeActivity* activity, ANativeWindow* window)

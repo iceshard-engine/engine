@@ -70,6 +70,7 @@ namespace ice::platform::android
 
         ice::ShardContainer _system_events;
         ice::input::DeviceEventQueue _input_events;
+        ice::vec2f _new_screen_size;
 
         ice::TaskQueue _main_queue;
         ice::UniquePtr<ice::TaskThread> _main_thread;

@@ -136,28 +136,67 @@ auto ice_update(
     using ice::operator""_uri;
     IPT_ZONE_SCOPED;
 
+    ice::clock::update(runtime.clock);
+
     ice::Array<ice::input::InputEvent> inputs{ runtime.alloc };
     runtime.app_core->refresh_events();
     runtime.inputs->process_device_events(runtime.app_core->input_events(), inputs);
 
-    ice::vec2i pos{-1};
+    static ice::ucount pointer_count = 0;
+    ice::vec2f positions[6];
+
     for (ice::input::InputEvent ev : inputs)
     {
+        if (ev.identifier == ice::input::input_identifier(ice::input::DeviceType::TouchScreen, ice::input::TouchInput::TouchPointerCount))
+        {
+            pointer_count = ev.value.axis.value_i32;
+            ICE_LOG(ice::LogSeverity::Retail, ice::LogTag::Game, "Touch Points ({})", pointer_count);
+        }
         if (ev.identifier == ice::input::input_identifier(ice::input::DeviceType::TouchScreen, ice::input::TouchInput::TouchPosX))
         {
-            pos.x = ev.value.axis.value_i32;
+            positions[ice::u8(ice::input::make_device(ev.device).index)].x = ev.value.axis.value_f32;
         }
         if (ev.identifier == ice::input::input_identifier(ice::input::DeviceType::TouchScreen, ice::input::TouchInput::TouchPosY))
         {
-            pos.y = ev.value.axis.value_i32;
+            positions[ice::u8(ice::input::make_device(ev.device).index)].y = ev.value.axis.value_f32;
+        }
+        if (ev.identifier == ice::input::input_identifier(ice::input::DeviceType::TouchScreen, ice::input::TouchInput::VirtualButton))
+        {
+            if (ev.value.button.state.repeat ||
+                ev.value.button.state.clicked ||
+                ev.value.button.state.hold ||
+                ev.value.button.state.released)
+            ICE_LOG(
+                ice::LogSeverity::Retail, ice::LogTag::Game,
+                "Touch ({}) {}",
+                ice::u8(ice::input::make_device(ev.device).index),
+                ev.value.button.state.repeat ? "Repeat" :
+                ev.value.button.state.clicked ? "Clicked" :
+                ev.value.button.state.hold ? "Hold" :
+                ev.value.button.state.released ? "Released" :
+                "Pressed"
+            );
         }
     }
 
-	if (pos.x > 0 && pos.y > 0)
-	{
-		ICE_LOG(ice::LogSeverity::Retail, ice::LogTag::Game, "Touch ({},{})", pos.x, pos.y);
-	}
-
+    // for (ice::u32 idx = 0; idx < ice::min(pointer_count, 6u); ++idx)
+    if (pointer_count > 0)
+    {
+        static ice::Timer tt = ice::timer::create_timer(runtime.clock, 1.f);
+        if (ice::timer::update(tt))
+        {
+            ICE_LOG(
+                ice::LogSeverity::Retail, ice::LogTag::Game,
+                "Positions ({},{}) - ({},{}) - ({},{}) - ({},{}) - ({},{}) - ({},{})",
+                positions[0].x, positions[0].y,
+                positions[1].x, positions[1].y,
+                positions[2].x, positions[2].y,
+                positions[3].x, positions[3].y,
+                positions[4].x, positions[4].y,
+                positions[5].x, positions[5].y
+            );
+        }
+    }
 
     static bool once = true;
     if (once)

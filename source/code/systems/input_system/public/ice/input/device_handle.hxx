@@ -37,6 +37,7 @@ namespace ice::input
         Keyboard,
         Controller,
         TouchScreen,
+        TouchPointer = TouchScreen,
 
         Reserved = 0x10
     };

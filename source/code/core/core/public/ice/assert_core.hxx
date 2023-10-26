@@ -17,6 +17,8 @@
 
 #else
 
-#define ICE_ASSERT_CORE(expression)
+#define ICE_ASSERT_CORE(expression) ((expression) \
+    ? __assert_no_op \
+    : __assert2(__FILE__, __LINE__, __PRETTY_FUNCTION__, #expression))
 
 #endif

@@ -284,7 +284,7 @@ namespace ice::native_fileio
     ) noexcept -> ice::usize
     {
         IPT_ZONE_SCOPED;
-        ICE_ASSERT_CORE(memory.size.value >= requested_read_size);
+        ICE_ASSERT_CORE(memory.size >= requested_read_size);
         ice::isize::base_type bytes_read = read(
             file.native(),
             memory.location,

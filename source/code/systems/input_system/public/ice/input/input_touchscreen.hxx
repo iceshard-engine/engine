@@ -8,6 +8,9 @@
 namespace ice::input
 {
 
+    static constexpr ice::i32 Constant_TouchScreenClickThreshold = 35;
+    static constexpr ice::i32 Constant_TouchScreenHoldThreshold = 36;
+
     enum class TouchScreenGestureType : ice::u8
     {
         Simple, // Lines, curves (7x7)
@@ -57,6 +60,11 @@ namespace ice::input
     {
         Unknown,
 
+        // Virtual controls
+        VirtualButton,
+
+        // Touch pointer values
+        TouchPointerCount,
         TouchStart,
         TouchPosX,
         TouchPosY,
@@ -66,9 +74,7 @@ namespace ice::input
         GestureComplex,
         GestureDetailed,
 
-        VirtualButton,
-
-        VirtualLeftAxisX,
+        VirtualLeftAxisX = 0x01'00,
         VirtualLeftAxisY,
         VirtualRightAxisX,
         VirtualRightAxisY,

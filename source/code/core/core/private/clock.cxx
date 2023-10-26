@@ -4,8 +4,11 @@
 #include <ice/clock.hxx>
 #include <ice/os/windows.hxx>
 #include <ice/os/unix.hxx>
-
 #include <ice/stringid.hxx>
+
+#if ISP_UNIX
+#include <chrono>
+#endif
 
 namespace ice
 {
@@ -15,7 +18,7 @@ namespace ice
 
 #if ISP_WINDOWS
 
-        auto clock_frequency() noexcept -> ice::f32
+        auto clock_frequency() noexcept -> ice::u64
         {
             static ice::i64 cpu_frequency = []() noexcept
             {
@@ -25,7 +28,7 @@ namespace ice
                 return large_int.QuadPart;
             }();
 
-            return static_cast<ice::f32>(cpu_frequency);
+            return static_cast<ice::u64>(cpu_frequency);
         }
 
         auto create_clock() noexcept -> ice::SystemClock
@@ -60,15 +63,15 @@ namespace ice
 
 #elif ISP_UNIX
 
-
-        auto clock_frequency() noexcept -> ice::f32
+        auto clock_frequency() noexcept -> ice::u64
         {
-            return static_cast<ice::f32>(1.f);
+            return 1'000'000'000llu;
         }
 
         auto create_clock() noexcept -> ice::SystemClock
         {
-            return ice::SystemClock{ 0, 0 };
+            auto const now = std::chrono::high_resolution_clock::now().time_since_epoch().count();
+            return ice::SystemClock{ now, now };
         }
 
         auto create_clock(ice::Clock const& clock, ice::f32 modifier) noexcept -> ice::CustomClock
@@ -84,6 +87,9 @@ namespace ice
 
         void update([[maybe_unused]] ice::SystemClock& clock) noexcept
         {
+            auto const now = std::chrono::high_resolution_clock::now().time_since_epoch().count();
+            clock.previous_timestamp = clock.latest_timestamp;
+            clock.latest_timestamp = now;
         }
 
 #endif // ISP_WINDOWS
@@ -109,7 +115,9 @@ namespace ice
 
         auto elapsed(ice::Clock const& clock) noexcept -> ice::f32
         {
-            return static_cast<ice::f32>(clock.latest_timestamp - clock.previous_timestamp) / clock_frequency();
+            return ice::f32(
+                ice::f64(clock.latest_timestamp - clock.previous_timestamp) / f64(clock_frequency())
+            );
         }
 
     } // namespace clock

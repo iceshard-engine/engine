@@ -11,6 +11,14 @@
 namespace ice::input
 {
 
+    //! \brief Maximum number of pointers supported on a touchscreen device.
+    static constexpr ice::ucount Constant_MaxPointerCount = 6;
+
+    static constexpr ice::input::detail::ControlConfig Constant_TouchControlConfig {
+        .button_click_threshold = Constant_TouchScreenClickThreshold,
+        .button_hold_threshold = Constant_TouchScreenHoldThreshold
+    };
+
     class TouchScreenDevice : public InputDevice
     {
     public:
@@ -19,9 +27,20 @@ namespace ice::input
             ice::input::DeviceHandle device
         ) noexcept;
 
-        auto handle() const noexcept -> ice::input::DeviceHandle override
+        auto max_count() const noexcept -> ice::ucount override
         {
-            return _device;
+            return Constant_MaxPointerCount;
+        }
+
+        auto count() const noexcept -> ice::ucount override
+        {
+            return _pointer_count;
+        }
+
+        auto handle(ice::u32 index) const noexcept -> ice::input::DeviceHandle override
+        {
+            ICE_ASSERT_CORE(index >= 0 && index < Constant_MaxPointerCount);
+            return _pointers[index];
         }
 
         void on_tick(ice::Timer const& timer) noexcept override;
@@ -29,24 +48,36 @@ namespace ice::input
         void on_publish(ice::Array<ice::input::InputEvent>& events_out) noexcept override;
 
     private:
-        ice::input::DeviceHandle _device;
+        ice::ucount _pointer_count;
+        ice::input::DeviceHandle _pointers[Constant_MaxPointerCount];
+        ice::vec2f _positions[Constant_MaxPointerCount];
+
+
         ice::Array<detail::ControlState> _controls;
 
         ice::vec2f _screen_size;
         // Holds x, y and age in float ms passed.
-        ice::vec2f _screen_points[256]; // Support up to five "tentacles"...
+        // ice::vec2f _screen_points[256]; // Support up to five "tentacles"...
 
-        ice::vec2f _last_touch_pos[5];
+        bool _changed_pointer_count;
+        // ice::vec2f _last_touch_pos[5];
     };
 
     TouchScreenDevice::TouchScreenDevice(
         ice::Allocator& alloc,
         ice::input::DeviceHandle device
     ) noexcept
-        : _device{ device }
+        : _pointer_count{ 0 }
+        , _pointers{ }
         , _controls{ alloc }
+        , _changed_pointer_count{ false }
     {
-        ice::array::resize(_controls, 0);
+        for (auto& pointer : _pointers)
+        {
+            pointer = ice::input::DeviceHandle::Invalid;
+        }
+
+        ice::array::resize(_controls, Constant_MaxPointerCount + 1);
         for (detail::ControlState& control : _controls)
         {
             control.id = InputID::Invalid;
@@ -59,7 +90,7 @@ namespace ice::input
     {
         for (detail::ControlState& control : _controls)
         {
-            detail::handle_value_button_hold_and_repeat(control);
+            detail::handle_value_button_hold_and_repeat(control, Constant_TouchControlConfig);
         }
     }
 
@@ -67,7 +98,7 @@ namespace ice::input
     {
         InputID input = InputID::Invalid;
 
-        ice::u8 last_touch_id = 0;
+        ice::u8 const pointer_index = static_cast<ice::u8>(ice::input::make_device(event.device).index);
         switch (event.message)
         {
         case DeviceMessage::TouchScreenSizeX:
@@ -77,21 +108,25 @@ namespace ice::input
             _screen_size.y = event.payload_data.val_f32;
             break;
 
-        case DeviceMessage::TouchEvent:
-            last_touch_id = event.payload_data.val_i8;
-            break;
-        case DeviceMessage::TouchPosition:
-            _last_touch_pos[last_touch_id].x = event.payload_data.val_i16x2.x;
-            _last_touch_pos[last_touch_id].y = event.payload_data.val_i16x2.y;
-            break;
-        case DeviceMessage::TouchPositionX:
-            _last_touch_pos[last_touch_id].x = event.payload_data.val_f32;
-            break;
-        case DeviceMessage::TouchPositionY:
-            _last_touch_pos[last_touch_id].y = event.payload_data.val_f32;
+        case DeviceMessage::TouchStart:
+            _changed_pointer_count = true;
+            ICE_ASSERT_CORE(_pointers[pointer_index] == DeviceHandle::Invalid);
+            _pointers[pointer_index] = event.device;
+            _pointer_count += 1;
+            input = input_identifier(DeviceType::TouchPointer, TouchInput::VirtualButton);
             break;
         case DeviceMessage::TouchEnd:
-            ICE_ASSERT_CORE(last_touch_id == event.payload_data.val_i8);
+            _changed_pointer_count = true;
+            _pointer_count -= 1;
+            ICE_ASSERT_CORE(_pointers[pointer_index] != DeviceHandle::Invalid);
+            _pointers[pointer_index] = DeviceHandle::Invalid;
+            input = input_identifier(DeviceType::TouchPointer, TouchInput::VirtualButton);
+            break;
+        case DeviceMessage::TouchPositionX:
+            _positions[pointer_index].x = event.payload_data.val_f32;
+            break;
+        case DeviceMessage::TouchPositionY:
+            _positions[pointer_index].y = event.payload_data.val_f32;
             break;
         default:
             return;
@@ -99,19 +134,19 @@ namespace ice::input
 
         if (input != InputID::Invalid)
         {
-            ice::u32 const control_index = input_identifier_value(input);
+            ice::u32 const control_index = input_identifier_value(input) + pointer_index;
             ICE_ASSERT_CORE(control_index < ice::array::count(_controls));
 
             detail::ControlState control = _controls[control_index];
             control.id = input;
 
-            if (event.message == DeviceMessage::MouseButtonDown)
+            if (event.message == DeviceMessage::TouchStart)
             {
                 detail::handle_value_button_down(control);
             }
-            else if (event.message == DeviceMessage::MouseButtonUp)
+            else if (event.message == DeviceMessage::TouchEnd)
             {
-                detail::handle_value_button_up(control);
+                detail::handle_value_button_up(control, Constant_TouchControlConfig);
             }
 
             _controls[control_index] = control;
@@ -120,54 +155,46 @@ namespace ice::input
 
     void TouchScreenDevice::on_publish(ice::Array<ice::input::InputEvent>& events_out) noexcept
     {
-        InputEvent event{
-            .device = _device
-        };
+        InputEvent event{ };
 
-        event.identifier = input_identifier(DeviceType::TouchScreen, TouchInput::TouchPosX);
-        event.value.axis.value_i32 = ice::f32(_last_touch_pos[0].x);
-        event.value_type = InputValueType::AxisInt;
-        ice::array::push_back(events_out, event);
+        if (_changed_pointer_count)
+        {
+            _changed_pointer_count = false;
+            event.device = make_device_handle(DeviceType::TouchScreen, DeviceIndex{});
+            event.identifier = input_identifier(DeviceType::TouchScreen, TouchInput::TouchPointerCount);
+            event.value_type = InputValueType::AxisInt;
+            event.value.axis.value_i32 = _pointer_count;
+            ice::array::push_back(events_out, event);
+        }
 
-        event.identifier = input_identifier(DeviceType::TouchScreen, TouchInput::TouchPosY);
-        event.value.axis.value_i32 = ice::f32(_last_touch_pos[0].y);
-        event.value_type = InputValueType::AxisInt;
-        ice::array::push_back(events_out, event);
+        event.value_type = InputValueType::AxisFloat;
 
-        // event.identifier = input_identifier(DeviceType::Mouse, MouseInput::PositionY);
-        // event.value.axis.value_i32 = _position[1];
-        // event.value_type = InputValueType::AxisInt;
-        // ice::array::push_back(events_out, event);
+        ice::ucount remaining = _pointer_count;
+        for (ice::u32 idx = 0; idx < max_count() && remaining > 0; ++idx)
+        {
+            if (_pointers[idx] == DeviceHandle::Invalid) continue;
 
-        // if (_position_relative[0] != 0)
-        // {
-        //     event.identifier = input_identifier(DeviceType::Mouse, MouseInput::PositionXRelative);
-        //     event.value.axis.value_i32 = _position_relative[0];
-        //     event.value_type = InputValueType::AxisInt;
-        //     ice::array::push_back(events_out, event);
-        // }
-        // if (_position_relative[1] != 0)
-        // {
-        //     event.identifier = input_identifier(DeviceType::Mouse, MouseInput::PositionYRelative);
-        //     event.value.axis.value_i32 = _position_relative[1];
-        //     event.value_type = InputValueType::AxisInt;
-        //     ice::array::push_back(events_out, event);
-        // }
+            // ice::u32 const data_idx = ice::u8(make_device(_pointers[idx]).index);
+            event.device = _pointers[idx];
+            event.identifier = input_identifier(DeviceType::TouchScreen, TouchInput::TouchPosX);
+            event.value.axis.value_f32 = (_positions[idx].x / _screen_size.x) - 0.5f;
+            ice::array::push_back(events_out, event);
 
-        // if (_wheel != 0)
-        // {
-        //     event.identifier = input_identifier(DeviceType::Mouse, MouseInput::Wheel);
-        //     event.value.axis.value_i32 = _wheel;
-        //     ice::array::push_back(events_out, event);
-        // }
+            event.identifier = input_identifier(DeviceType::TouchScreen, TouchInput::TouchPosY);
+            event.value.axis.value_f32 = (_positions[idx].y / _screen_size.y) - 0.5f;
+            ice::array::push_back(events_out, event);
+            remaining -= 1;
+        }
 
-        // for (detail::ControlState& control : _controls)
-        // {
-        //     if (detail::prepared_input_event(control, event))
-        //     {
-        //         ice::array::push_back(events_out, event);
-        //     }
-        // }
+        ice::i32 control_index = -1;
+        for (detail::ControlState& control : _controls)
+        {
+            event.device = make_device_handle(DeviceType::TouchPointer, DeviceIndex(control_index++));
+            if (detail::prepared_input_event(control, event))
+            {
+                ice::array::push_back(events_out, event);
+            }
+        }
     }
 
     auto create_touchscreen_device(

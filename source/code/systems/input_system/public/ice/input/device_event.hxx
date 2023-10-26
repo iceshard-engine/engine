@@ -4,6 +4,7 @@
 #pragma once
 #include <ice/input/device_handle.hxx>
 #include <ice/math.hxx>
+#include <ice/mem.hxx>
 
 namespace ice::input
 {
@@ -38,8 +39,7 @@ namespace ice::input
         TouchScreenSizeX,
         TouchScreenSizeY,
 
-        TouchEvent,
-        TouchPosition,
+        TouchStart,
         TouchPositionX,
         TouchPositionY,
         TouchEnd,

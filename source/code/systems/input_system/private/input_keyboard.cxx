@@ -21,7 +21,7 @@ namespace ice::input
             ice::input::DeviceHandle device
         ) noexcept;
 
-        auto handle() const noexcept -> ice::input::DeviceHandle override
+        auto handle(ice::u32) const noexcept -> ice::input::DeviceHandle override
         {
             return _device;
         }
@@ -92,7 +92,7 @@ namespace ice::input
     {
         for (detail::ControlState& control : _controls)
         {
-            detail::handle_value_button_hold_and_repeat(control);
+            detail::handle_value_button_hold_and_repeat(control, detail::Constant_DefaultControlConfig);
         }
     }
 
@@ -134,7 +134,7 @@ namespace ice::input
         }
         else if (event.message == DeviceMessage::KeyboardButtonUp)
         {
-            detail::handle_value_button_up(control);
+            detail::handle_value_button_up(control, detail::Constant_DefaultControlConfig);
         }
         else if (event.message == DeviceMessage::KeyboardModifierDown)
         {
