@@ -19,6 +19,7 @@ namespace ice
     template<typename T> requires std::is_pointer_v<T> || std::is_same_v<T, ice::usize>
     constexpr auto align_to(T value, ice::ualign alignment) noexcept -> ice::AlignResult<T>
     {
+        ICE_ASSERT_CORE(alignment != ice::ualign::invalid);
         ice::AlignResult<T> result{
             .value = value,
             .alignment = alignment
