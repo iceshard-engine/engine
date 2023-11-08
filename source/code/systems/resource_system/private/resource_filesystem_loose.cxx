@@ -306,16 +306,19 @@ namespace ice
                 // We have a loose resource files which contain metadata associated data.
                 // We need now to read the metadata and check if there are more file associated and if all are available.
                 ice::MutableMetadata mutable_meta{ alloc };
-                ice::meta_deserialize(data_view(metafile_data), mutable_meta);
+                ice::Result const result = ice::meta_deserialize_from(mutable_meta, data_view(metafile_data));
                 alloc.deallocate(metafile_data);
 
-                main_resource = alloc.create<ice::LooseFilesResource>(
-                    alloc,
-                    ice::move(mutable_meta),
-                    ice::move(utf8_file_path), // we move so the pointer 'origin_name' calculated from 'utf8_file_path' is still valid!
-                    utf8_origin_name,
-                    utf8_uri_path
-                );
+                if (result == Res::Success)
+                {
+                    main_resource = alloc.create<ice::LooseFilesResource>(
+                        alloc,
+                        ice::move(mutable_meta),
+                        ice::move(utf8_file_path), // we move so the pointer 'origin_name' calculated from 'utf8_file_path' is still valid!
+                        utf8_origin_name,
+                        utf8_uri_path
+                    );
+                }
             }
 
             // We can access the metadata now again.
