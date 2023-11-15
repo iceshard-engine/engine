@@ -16,68 +16,36 @@ namespace ice
 
 #if ISP_WINDOWS
 
-    struct AsyncIOData
+    struct FileRequest
     {
         OVERLAPPED overlapped;
         ice::coroutine_handle<> coroutine;
-
-        ice::win32::FileHandle file;
         ice::Memory destination;
 
         struct Result
         {
-            bool success;
-            ice::ucount bytes_read;
-        } result{ false, 0 };
+            ice::usize bytes_read;
+        } result;
 
-        AsyncIOData(
-            ice::NativeAIO* nativeio,
-            ice::win32::FileHandle file_handle,
+        FileRequest(
             ice::Memory memory,
-            ice::ucount size
+            ice::usize size,
+            ice::usize read_offset
         ) noexcept
             : overlapped{ }
             , coroutine{ }
-            , file{ ice::move(file_handle) }
             , destination{ memory }
-            , result{ .bytes_read = size }
+            , result{ .bytes_read = memory.location == nullptr ? 0_B : size }
         {
-            result.success = CreateIoCompletionPort(
-                file.native(),
-                ice::nativeio_handle(nativeio),
-                0,
-                1
-            ) != NULL;
+            LARGE_INTEGER const offset{ .QuadPart = static_cast<ice::isize::base_type>(read_offset.value) };
+            overlapped.Offset = offset.LowPart;
+            overlapped.OffsetHigh = offset.HighPart;
         }
 
         bool await_ready() const noexcept
         {
-            return result.success == false;
-        }
-
-        void await_suspend(ice::coroutine_handle<> coro) noexcept
-        {
-            // Save the coroutine handle first
-            ice::ucount read_count = result.bytes_read;
-
-            result.success = false;
-            result.bytes_read = 0;
-            coroutine = coro;
-
-            BOOL const read_success = ReadFile(
-                file.native(),
-                ice::ptr_add(destination.location, 0_B),
-                read_count,
-                nullptr,
-                &overlapped
-            );
-
-            DWORD last_error = GetLastError();
-
-            ICE_ASSERT(
-                read_success == FALSE && (last_error == ERROR_IO_PENDING || last_error == ERROR_SUCCESS),
-                "Failed ASync read!"
-            );
+            // We reuse the .bytes_read multiple times
+            return result.bytes_read == 0_B;
         }
 
         [[nodiscard]]
@@ -87,39 +55,119 @@ namespace ice
         }
     };
 
-    auto asyncio_from_overlapped(
+    template<typename FileHandleType>
+    struct AsyncReadRequestBase : FileRequest
+    {
+        FileHandleType file;
+
+        AsyncReadRequestBase(
+            ice::NativeAIO* nativeio,
+            FileHandleType file_handle,
+            ice::Memory memory,
+            ice::usize size,
+            ice::usize read_offset = 0_B
+        ) noexcept
+            : FileRequest{ memory, size, read_offset }
+            , file{ ice::move(file_handle) }
+        {
+            ICE_ASSERT_CORE(size.value <= ice::u32_max);
+
+            // Make use of the Internal until we actually call the read operation, needs to be cleared!
+            overlapped.Internal = nativeio != nullptr;
+            if (nativeio != nullptr)
+            {
+                bool const port_created = CreateIoCompletionPort(
+                    file.native(),
+                    ice::nativeio_handle(nativeio),
+                    0,
+                    1
+                ) != NULL;
+
+                // If port creation failed, bytes `read == 0` => 'failure'
+                result.bytes_read *= ice::u32(port_created);
+            }
+        }
+
+        bool await_suspend(ice::coroutine_handle<> coro) noexcept
+        {
+            coroutine = coro;
+
+            bool const is_synchronous = ice::exchange(overlapped.Internal, 0) == 0;
+            if (is_synchronous)
+            {
+                overlapped.hEvent = CreateEvent(NULL, TRUE, TRUE, NULL);
+            }
+
+            BOOL read_result = ReadFile(
+                file.native(),
+                ice::ptr_add(destination.location, 0_B),
+                ice::u32(ice::exchange(result.bytes_read, 0_B).value),
+                nullptr,
+                &overlapped
+            );
+
+            if (is_synchronous && read_result == FALSE && GetLastError() == ERROR_IO_PENDING)
+            {
+                DWORD bytes_read = 0;
+                read_result = GetOverlappedResult(file.native(), &overlapped, &bytes_read, TRUE);
+                ICE_ASSERT_CORE(read_result != FALSE);
+                //DWORD const wait_result = WaitForSingleObject(overlapped.hEvent, INFINITE);
+                //ICE_ASSERT_CORE(wait_result == WAIT_OBJECT_0);
+
+                result.bytes_read = { bytes_read };
+                CloseHandle(overlapped.hEvent);
+            }
+            else
+            {
+                DWORD last_error = GetLastError();
+                ICE_ASSERT(
+                    read_result == FALSE && (last_error == ERROR_IO_PENDING || last_error == ERROR_SUCCESS),
+                    "Failed ASync read!"
+                );
+            }
+
+            // If async then the coroutine is scheduled to be resumed somewhere else
+            return is_synchronous == false;
+        }
+    };
+
+    using AsyncReadFile = AsyncReadRequestBase<ice::native_fileio::File>;
+    using AsyncReadFileRef = AsyncReadRequestBase<ice::native_fileio::File const&>;
+
+    auto request_from_overlapped(
         OVERLAPPED* overlapped
-    ) noexcept -> AsyncIOData*;
+    ) noexcept -> FileRequest*;
 
-#elif ISP_UNIX
+#elif ISP_ANDROID
 
-    struct AsyncIOData : public ice::TaskAwaitableBase
+    template<typename FileHandleType>
+    struct AsyncReadRequestBase : ice::TaskAwaitableBase
     {
         ice::NativeAIO* nativeio;
-        ice::native_fileio::File file;
+        FileHandleType file;
         ice::Memory destination;
-        ice::ucount read_size;
+        ice::usize read_offset;
 
         struct Result
         {
-            bool success;
-            ice::ucount bytes_read;
+            ice::usize bytes_read;
         };
 
-        AsyncIOData(
+        AsyncReadRequestBase(
             ice::NativeAIO* nativeio,
-            ice::native_fileio::File file_handle,
+            FileHandleType file_handle,
             ice::Memory memory,
-            ice::ucount size
+            ice::usize size,
+            ice::usize offset = 0_B
         ) noexcept
-            : TaskAwaitableBase{ ._params{ TaskAwaitableModifier_v3::Unused } }
+            : TaskAwaitableBase{ ._params{ TaskAwaitableModifier_v3::CustomValue, { ice::u32(size.value) } } }
             , nativeio{ nativeio }
             , file{ ice::move(file_handle) }
             , destination{ memory }
-            , read_size{ size }
+            // , read_size{ size }
         {
             ICE_ASSERT(
-                read_size <= memory.size.value,
+                _params.u32_value <= memory.size.value,
                 "Trying to read more than the buffer can store!"
             );
         }
@@ -130,8 +178,9 @@ namespace ice
             // return check_file(file, FileState::EndOfFile) == false;
             // TODO: Eearly out if EOF reached.
 
-            // For small files it's better to not schedule the read on a separate thread.
-            return ice::usize{ read_size } <= 4_KiB;
+            // If we got a synchronous read request (nativeio == nullptr) or the read amount
+            //   is small, it's better to not schedule the read on a separate thread.
+            return nativeio == nullptr || ice::usize{ _params.u32_value } <= 4_KiB;
         }
 
         void await_suspend(ice::coroutine_handle<> coro) noexcept
@@ -145,19 +194,22 @@ namespace ice
         [[nodiscard]]
         auto await_resume() const noexcept -> Result
         {
-            Result result{ .success = false, .bytes_read = 0 };
+            Result result{ .bytes_read = 0_B };
 
             // We are now resumed on the new thread, so here we can read the file blocking.
-            ice::usize const read_result = native_fileio::read_file(file, { read_size }, destination);
+            ice::usize const read_result = native_fileio::read_file(file, { _params.u32_value }, destination);
 
             ICE_ASSERT(read_result <= destination.size, "Read more bytes that requested!");
-            result.bytes_read = static_cast<ice::ucount>(read_result.value);
-            // TODO: Improve success check.
-            result.success = result.bytes_read > 0;// check_file(file, FileState::ReadError) == false;
+            result.bytes_read = read_result;
             return result;
         }
     };
 
+    using AsyncReadFile = AsyncReadRequestBase<ice::native_fileio::File>;
+    using AsyncReadFileRef = AsyncReadRequestBase<ice::native_fileio::File const&>;
+
+#else
+#error "NOT IMPLEMENTED"
 #endif
 
 } // namespace ice

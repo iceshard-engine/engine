@@ -110,7 +110,7 @@ auto ice_setup(
     state.res = ice::create_resource_tracker(alloc, state.global_sched, resinfo);
     ice::String const paths[]{ os_paths->external_data() };
     state.res_fs = ice::create_resource_provider(alloc, paths);
-    state.res->attach_provider(state.res_fs.get());
+    state.res->attach_provider(ice::move(state.res_fs));
     state.res->sync_resources();
     return ice::app::S_ApplicationResume;
 }

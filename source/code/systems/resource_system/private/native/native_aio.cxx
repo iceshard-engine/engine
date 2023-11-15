@@ -76,13 +76,10 @@ namespace ice
             10
         ) != FALSE;
 
-        DWORD last_error = GetLastError();
-        last_error = 0;
         if (iocompleted)
         {
-            AsyncIOData* const asyncio = asyncio_from_overlapped(overlapped);
-            asyncio->result.success = true;
-            asyncio->result.bytes_read = bytes;
+            FileRequest* const asyncio = request_from_overlapped(overlapped);
+            asyncio->result.bytes_read = { bytes };
             asyncio->coroutine.resume();
         }
         else if (overlapped != nullptr)

@@ -30,6 +30,9 @@ namespace ice::native_fileio
         //! \brief Opens the file for read-only operations.
         ReadOnly = None,
 
+        //! \brief Opens the file in exclusive mode.
+        Exclusive,
+
         //! \brief Opens the file for asynchronous read-only operations.
         Asynchronous,
     };
@@ -49,6 +52,13 @@ namespace ice::native_fileio
 
     auto read_file(
         ice::native_fileio::File const& file,
+        ice::usize requested_read_size,
+        ice::Memory memory
+    ) noexcept -> ice::usize;
+
+    auto read_file(
+        ice::native_fileio::File const& file,
+        ice::usize requested_read_offset,
         ice::usize requested_read_size,
         ice::Memory memory
     ) noexcept -> ice::usize;

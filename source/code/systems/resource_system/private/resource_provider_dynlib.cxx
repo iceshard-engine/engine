@@ -114,6 +114,12 @@ namespace ice
             return ResourceProviderResult::Success;
         }
 
+        void unload_resource(
+            ice::Allocator& alloc,
+            ice::Resource const* resource,
+            ice::Memory memory
+        ) noexcept override { }
+
         auto load_resource(
             ice::Allocator& alloc,
             ice::Resource const* resource,

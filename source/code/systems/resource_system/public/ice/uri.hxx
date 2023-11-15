@@ -11,6 +11,7 @@ namespace ice
     static constexpr ice::StringID Scheme_URN = "urn"_sid;
     static constexpr ice::StringID Scheme_File = "file"_sid;
     static constexpr ice::StringID Scheme_Dynlib = "dynlib"_sid;
+    static constexpr ice::StringID Scheme_HailStorm = "hsc"_sid;
 
     static constexpr ice::StringID Scheme_Invalid = "<invalid>"_sid;
 

@@ -86,16 +86,6 @@ namespace ice
 
     using ResCode = ResultCode<ice::build::is_debug || ice::build::is_develop>;
 
-    struct Result
-    {
-        ice::ResCode result_code;
-
-        constexpr Result(ice::ResCode code) noexcept : result_code{ code } { }
-
-        constexpr operator bool() const noexcept;
-        constexpr operator ResCode() const noexcept;
-    };
-
     struct Res
     {
         static constexpr ice::ResultSeverity Info = ResultSeverity::Info;
@@ -106,6 +96,17 @@ namespace ice
         static constexpr ice::ResCode E_NotImplemented = ResCode::create(ResultSeverity::Error, "Not Implemented");
         static constexpr ice::ResCode E_InvalidArgument = ResCode::create(ResultSeverity::Error, "Invalid Argument");
         static constexpr ice::ResCode E_ValueOutOfRange = ResCode::create(ResultSeverity::Error, "Value Out Of Range");
+    };
+
+    struct Result
+    {
+        ice::ResCode result_code;
+
+        constexpr Result() noexcept : Result{ Res::Success } { }
+        constexpr Result(ice::ResCode code) noexcept : result_code{ code } { }
+
+        constexpr operator bool() const noexcept;
+        constexpr operator ResCode() const noexcept;
     };
 
 

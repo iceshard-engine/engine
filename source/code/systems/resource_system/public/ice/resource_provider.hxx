@@ -47,6 +47,12 @@ namespace ice
             return nullptr;
         }
 
+        virtual void unload_resource(
+            ice::Allocator& alloc,
+            ice::Resource const* resource,
+            ice::Memory memory
+        ) noexcept = 0;
+
         virtual auto load_resource(
             ice::Allocator& alloc,
             ice::Resource const* resource,
@@ -76,6 +82,11 @@ namespace ice
     auto create_resource_provider_dlls(
         ice::Allocator& alloc,
         ice::String path
+    ) noexcept -> ice::UniquePtr<ice::ResourceProvider>;
+
+    auto create_resource_provider_hailstorm(
+        ice::Allocator& alloc,
+        ice::Span<ice::String const> paths
     ) noexcept -> ice::UniquePtr<ice::ResourceProvider>;
 
 } // namespace ice

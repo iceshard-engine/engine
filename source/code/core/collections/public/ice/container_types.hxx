@@ -134,7 +134,7 @@ namespace ice
             {
             }
 
-            constexpr auto key() const noexcept -> ice::u64& { return _entry->key; }
+            constexpr auto key() const noexcept -> ice::u64 const& { return _entry->key; }
             constexpr auto value() const noexcept -> Type const& { return *_value; }
 
             constexpr auto operator==(ConstIterator const& other) const noexcept { return _entry == other._entry; }

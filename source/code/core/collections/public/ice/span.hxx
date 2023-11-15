@@ -108,6 +108,26 @@ namespace ice
 
     } // namespace span
 
+    namespace data
+    {
+
+        template<typename T>
+            requires (std::is_trivially_copyable_v<T> && !std::is_pointer_v<T>)
+        inline auto read_span(ice::Data source, ice::ucount count, ice::Span<T const>& out_value) noexcept -> ice::Data
+        {
+            ICE_ASSERT_CORE(source.alignment >= ice::align_of<T>);
+            out_value._count = count;
+            out_value._data = reinterpret_cast<T const*>(source.location);
+
+            ice::usize const consumed_size = ice::size_of<T> *count;
+            source.location = ice::span::data(out_value) + count;
+            source.size = ice::usize::subtract(source.size, consumed_size);
+            source.alignment = ice::align_of<T>;
+            return source;
+        }
+
+    } // namespace data
+
     template<typename Type>
     constexpr Span<Type>::Span() noexcept
         : _count{ 0 }

@@ -7,11 +7,11 @@ namespace ice
 {
 
 #if ISP_WINDOWS
-    auto asyncio_from_overlapped(
+    auto request_from_overlapped(
         OVERLAPPED* overlapped
-    ) noexcept -> AsyncIOData*
+    ) noexcept -> FileRequest*
     {
-        return reinterpret_cast<AsyncIOData*>(overlapped);
+        return reinterpret_cast<FileRequest*>(overlapped);
     }
 #endif
 

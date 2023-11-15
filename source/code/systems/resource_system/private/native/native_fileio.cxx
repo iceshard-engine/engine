@@ -71,31 +71,43 @@ namespace ice::native_fileio
         ice::Memory memory
     ) noexcept -> ice::usize
     {
+        return read_file(file, 0_B, requested_read_size, memory);
+    }
+
+    auto read_file(
+        ice::native_fileio::File const& file,
+        ice::usize requested_read_offset,
+        ice::usize requested_read_size,
+        ice::Memory memory
+    ) noexcept -> ice::usize
+    {
         IPT_ZONE_SCOPED;
         ICE_ASSERT_CORE(memory.size >= requested_read_size);
 
-        ice::usize file_size = sizeof_file(file);
-        if (file_size != 0_B)
+        if (requested_read_size > 0_B)
         {
-            // memory = alloc.allocate({ file_size, ice::ualign::b_default });
-
             BOOL result;
             DWORD characters_read = 0;
             do
             {
-                DWORD const characters_to_read = (DWORD)memory.size.value;
+                DWORD const characters_to_read = (DWORD)requested_read_size.value;
                 ICE_ASSERT(
-                    characters_to_read == memory.size.value,
+                    characters_to_read == requested_read_size.value,
                     "File is larger than this function can handle! For now... [file size: {}]",
-                    memory.size
+                    requested_read_size
                 );
+
+                LARGE_INTEGER const offset{ .QuadPart = static_cast<ice::isize::base_type>(requested_read_offset.value) };
+                OVERLAPPED overlapped{};
+                overlapped.Offset = offset.LowPart;
+                overlapped.OffsetHigh = offset.HighPart;
 
                 result = ReadFile(
                     file.native(),
                     memory.location,
-                    (DWORD)memory.size.value,
+                    characters_to_read,
                     &characters_read,
-                    nullptr
+                    &overlapped
                 );
 
                 ICE_ASSERT(
@@ -106,13 +118,8 @@ namespace ice::native_fileio
                 );
 
             } while (characters_read == 0 && result != FALSE);
-
-            if (result == FALSE)
-            {
-                file_size = 0_B;
-            }
         }
-        return file_size;
+        return requested_read_size;
     }
 
     bool traverse_directories_internal(

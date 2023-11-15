@@ -170,6 +170,15 @@ namespace ice
             return static_cast<ice::FileSystemResource const*>(resource);
         }
 
+        void unload_resource(
+            ice::Allocator& alloc,
+            ice::Resource const* /*resource*/,
+            ice::Memory memory
+        ) noexcept override
+        {
+            alloc.deallocate(memory);
+        }
+
         auto load_resource(
             ice::Allocator& alloc,
             ice::Resource const* resource,

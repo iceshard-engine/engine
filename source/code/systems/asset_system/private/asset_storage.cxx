@@ -74,7 +74,7 @@ namespace ice
                         ice::linked_queue::push(awaiting_queue._awaitables, awaitable);
                     }
 
-                    // We don't need to finx any 'next' pointer here fortunately
+                    // We don't need to find any 'next' pointer here fortunately
                 }
 
                 ice::u32 const expected_awaiting_count = awaiting_count.exchange(0, std::memory_order_relaxed);
@@ -308,15 +308,19 @@ namespace ice
                 result = co_await request_asset_baked(entry, shelve);
                 ICE_ASSERT(result.location != nullptr, "We failed to access baked data!");
 
-                ice::Memory load_result;
-                bool const load_success = co_await ice::detail::load_asset(
-                    shelve.asset_allocator(),
-                    shelve.definition,
-                    *this,
-                    entry.resource->metadata(),
-                    result,
-                    load_result
-                );
+                bool load_success = false;
+                ice::Memory load_result{};
+                if (ice::Metadata res_metadata; co_await entry.resource->load_metadata(res_metadata))
+                {
+                    load_success = co_await ice::detail::load_asset(
+                        shelve.asset_allocator(),
+                        shelve.definition,
+                        *this,
+                        res_metadata,
+                        result,
+                        load_result
+                    );
+                }
 
                 // If we have failed, we try to push a load request.
                 // TODO: Needs to be reworked!
@@ -437,12 +441,18 @@ namespace ice
                     //IPT_MESSAGE("Requesting resource");
 
                     entry.resource = resource.resource;
-                    ice::AssetState const initial_state = shelve.definition.fn_asset_state(
-                        shelve.definition.ud_asset_state,
-                        shelve.definition,
-                        entry.resource->metadata(),
-                        entry.resource->uri()
-                    );
+                    ice::AssetState initial_state = AssetState::Invalid;
+                    if (ice::Metadata res_metadata; co_await entry.resource->load_metadata(res_metadata))
+                    {
+                        initial_state = shelve.definition.fn_asset_state(
+                            shelve.definition.ud_asset_state,
+                            shelve.definition,
+                            res_metadata,
+                            entry.resource->uri()
+                        );
+                    }
+
+                    ICE_ASSERT_CORE(initial_state != AssetState::Invalid);
 
                     // Save the data from the loaded resource tracker
                     entry.data = resource.data;

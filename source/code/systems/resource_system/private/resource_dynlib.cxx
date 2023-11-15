@@ -39,10 +39,11 @@ namespace ice
         return _origin_path;
     }
 
-    auto Resource_DynLib::metadata() const noexcept -> ice::Metadata const&
+    auto Resource_DynLib::load_metadata(ice::Metadata& out_metadata) const noexcept -> ice::Task<bool>
     {
         static ice::Metadata empty_meta;
-        return empty_meta;
+        out_metadata = empty_meta;
+        co_return true;
     }
 
     auto create_dynlib_resource_from_path(

@@ -7,6 +7,7 @@
 #include <ice/path_utils.hxx>
 #include <ice/container/hashmap.hxx>
 #include <ice/task.hxx>
+#include <ice/task_utils.hxx>
 
 namespace ice
 {
@@ -16,19 +17,19 @@ namespace ice
 
         auto async_file_read(
             ice::native_fileio::File file,
-            ice::ucount filesize,
+            ice::usize filesize,
             ice::NativeAIO* nativeio,
             ice::Memory data
         ) noexcept -> ice::Task<bool>
         {
-            ice::AsyncIOData asyncio{ nativeio, ice::move(file), data, filesize };
-            AsyncIOData::Result const read_result = co_await asyncio;
+            ice::AsyncReadFile asyncio{ nativeio, ice::move(file), data, filesize };
+            ice::AsyncReadFile::Result const read_result = co_await asyncio;
             ICE_ASSERT(
-                read_result.success && read_result.bytes_read >= filesize,
+                read_result.bytes_read == filesize,
                 "Failed to load file into memory, requested bytes: {}!",
                 filesize
             );
-            co_return read_result.success && read_result.bytes_read >= filesize;
+            co_return read_result.bytes_read == filesize;
         }
 
         auto async_file_load(
@@ -59,7 +60,7 @@ namespace ice
                 );
 
                 result = alloc.allocate(filesize);
-                bool const success = co_await async_file_read(ice::move(handle), ice::ucount(filesize.value), nativeio, result);
+                bool const success = co_await async_file_read(ice::move(handle), filesize, nativeio, result);
                 if (success == false)
                 {
                     alloc.deallocate(result);
@@ -155,9 +156,10 @@ namespace ice
         return _origin_path;
     }
 
-    auto LooseFilesResource::metadata() const noexcept -> ice::Metadata const&
+    auto LooseFilesResource::load_metadata(ice::Metadata& out_metadata) const noexcept -> ice::Task<bool>
     {
-        return _metadata;
+        out_metadata = _metadata;
+        co_return true;
     }
 
     auto LooseFilesResource::load_named_part(
@@ -239,9 +241,9 @@ namespace ice
         return _origin_path;
     }
 
-    auto LooseFilesResource::ExtraResource::metadata() const noexcept -> ice::Metadata const&
+    auto LooseFilesResource::ExtraResource::load_metadata(ice::Metadata& out_metadata) const noexcept -> ice::Task<bool>
     {
-        return _parent.metadata();
+        return _parent.load_metadata(out_metadata);
     }
 
     auto LooseFilesResource::ExtraResource::load_data(
@@ -322,7 +324,9 @@ namespace ice
             }
 
             // We can access the metadata now again.
-            ice::Metadata const& metadata = main_resource->metadata();
+            ice::Metadata metadata;
+            bool const success = ice::wait_for(main_resource->load_metadata(metadata));
+            ICE_ASSERT_CORE(success);
 
             bool const has_paths = ice::meta_has_entry(metadata, "resource.extra_files.paths"_sid);
             bool const has_names = ice::meta_has_entry(metadata, "resource.extra_files.names"_sid);

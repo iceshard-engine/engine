@@ -35,7 +35,7 @@ namespace ice
         auto name() const noexcept -> ice::String override;
         auto origin() const noexcept -> ice::String override;
 
-        auto metadata() const noexcept -> ice::Metadata const& override;
+        auto load_metadata(ice::Metadata& out_metadata) const noexcept -> ice::Task<bool> override;
 
         auto load_named_part(
             ice::StringID_Arg part_name,
@@ -82,7 +82,7 @@ namespace ice
         auto name() const noexcept -> ice::String override;
         auto origin() const noexcept -> ice::String override;
 
-        auto metadata() const noexcept -> ice::Metadata const& override;
+        auto load_metadata(ice::Metadata& out_metadata) const noexcept -> ice::Task<bool> override;
 
         auto load_data(
             ice::Allocator& alloc,

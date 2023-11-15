@@ -896,7 +896,7 @@ namespace ice
         result_meta._meta_entries._hashes = _meta_entries._hashes;
         result_meta._meta_entries._entries = _meta_entries._entries;
         result_meta._meta_entries._data = _meta_entries._data;
-        result_meta._additional_data = ice::data_view(_additional_data.memory);
+        result_meta._additional_data = ice::buffer::data_view(_additional_data);
         return result_meta;
     }
 

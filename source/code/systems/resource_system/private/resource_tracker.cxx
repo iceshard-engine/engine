@@ -11,6 +11,7 @@
 #include <ice/container/hashmap.hxx>
 #include <ice/log_tag.hxx>
 #include <ice/log_formatters.hxx>
+#include <ice/task_utils.hxx>
 
 #include "native/native_aio.hxx"
 
@@ -59,6 +60,16 @@ namespace ice
     {
         return handle->resource->name();
     }
+
+    auto resource_meta(ice::ResourceHandle const* handle, ice::Metadata& out_metadata) noexcept -> ice::Task<ice::Result>
+    {
+        if (co_await handle->resource->load_metadata(out_metadata))
+        {
+            co_return Res::Success;
+        }
+        co_return Res::E_InvalidArgument;
+    }
+
     // Might need to be moved somewhere else?
     auto get_loose_resource(ice::ResourceHandle const* handle) noexcept -> ice::LooseResource const*
     {
@@ -78,7 +89,9 @@ namespace ice
 
         ~ResourceTrackerImplementation() noexcept;
 
-        bool attach_provider(ice::ResourceProvider* provider) noexcept override;
+        auto attach_provider(
+            ice::UniquePtr<ice::ResourceProvider> provider
+        ) noexcept -> ice::ResourceProvider* override;
 
         void sync_resources() noexcept override;
 
@@ -138,7 +151,7 @@ namespace ice
 
         ice::Array<ice::ResourceHandle, ContainerLogic::Complex> _handles;
         ice::HashMap<ice::ResourceHandle*> _resources;
-        ice::HashMap<ice::ResourceProvider*> _resource_providers;
+        ice::HashMap<ice::UniquePtr<ice::ResourceProvider>, ContainerLogic::Complex> _resource_providers;
     };
 
     ResourceTrackerImplementation::ResourceTrackerImplementation(
@@ -191,8 +204,8 @@ namespace ice
         {
             if (handle->refcount.load(std::memory_order_relaxed) > 0)
             {
+                handle->provider->unload_resource(_allocator, handle->resource, handle->data);
                 //IPT_MESSAGE_C("Encountered unreleased resource object during resource tracker destruction.", 0xEE99AA);
-                _allocator.deallocate(handle->data);
             }
         }
 
@@ -201,14 +214,17 @@ namespace ice
         _io_thread_data.reset();
     }
 
-    bool ResourceTrackerImplementation::attach_provider(ice::ResourceProvider* provider) noexcept
+    auto ResourceTrackerImplementation::attach_provider(
+        ice::UniquePtr<ice::ResourceProvider> provider
+    ) noexcept -> ice::ResourceProvider*
     {
+        ice::ResourceProvider* const result = provider.get();
         ice::multi_hashmap::insert(
             _resource_providers,
             ice::hash(provider->schemeid()),
-            provider
+            ice::move(provider)
         );
-        return true;
+        return result;
     }
 
     void ResourceTrackerImplementation::sync_resources() noexcept
@@ -216,7 +232,7 @@ namespace ice
         IPT_ZONE_SCOPED;
 
         ice::Array<ice::Resource const*> temp_resources{ _allocator };
-        for (ice::ResourceProvider* provider : _resource_providers)
+        for (auto const& provider : _resource_providers)
         {
             ice::array::clear(temp_resources);
 
@@ -245,7 +261,7 @@ namespace ice
                     _handles,
                     ice::ResourceHandle {
                         resource,
-                        provider
+                        provider.get()
                     }
                 );
 
@@ -411,7 +427,9 @@ namespace ice
         if (last_count == 1)
         {
             // We can now safely release the current saved memory pointer.
-            _allocator.deallocate(data.location);
+            resource_handle->provider->unload_resource(
+                _allocator, resource_handle->resource, data
+            );
 
             // We don't update the internal state nor the data member, as these will be considered invalid since refcount == 0
         }
@@ -495,7 +513,7 @@ namespace ice
         {
             if (resource = (*it)->find_resource(resource_uri); resource != nullptr)
             {
-                provider = *it;
+                provider = (*it).get();
             }
             else
             {
