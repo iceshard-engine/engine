@@ -2,37 +2,43 @@
 /// SPDX-License-Identifier: MIT
 
 #pragma once
-#include <ice/result_codes.hxx>
 #include <ice/mem_allocator.hxx>
+#include <ice/result_codes.hxx>
+#include <ice/shard.hxx>
+#include <ice/span.hxx>
 
 namespace ice::platform
 {
 
     //! \brief Flags used to select specific platform features.
     //!
-    //! \note Depending on the specified flags some API's may be inaccessible, however specyfing always all features can also lead to unnecessary runtime costs.
+    //! \note Some API's may be restricted to specific platforms.
+    //! \note Some features might result in small performance costs, depending on the API implementation.
     enum class FeatureFlags : ice::u32
     {
-        None = 0x00,
+        None = 0x0,
 
-        //! \brief Platform layer with the most basic features, allowing to query system and input events, query a render surface.
-        Core = 0x01,
+        //! \brief Platform layer with the most basic features, allowing to query system and input events.
+        Core = 0x0001,
 
         //! \brief Represents the render surface layer. This allows to access the native drawable surface area.
-        RenderSurface = 0x02,
+        RenderSurface = 0x0002,
 
-        //! \brief Represents various values and states that can be accessed, including things like: battery, thermals, utilization.
-        //!
-        //! \note Not all properties are accessible no all platforms. More on this can be read in the '<todo>' section.
-        //! \todo This flag is for now only used as example of a missing platform feature.
-        Vitals = 0x04,
+        //! \brief Represents various device reported values and states. For example.: battery, temperature.
+        //! \note Some properties maybe only be available on specific platforms.
+        Vitals = 0x0004,
 
-        //! \brief Represents various paths provided by the OS useful to initialize resources providers or write data to.
-        //!
+        //! \brief Represents various storage locations provided by the OS.
+        //!   These paths should be used to initialize resources providers or write data to.
         //! \note For portability reasons it's suggested to always use paths availabe from this OS module.
-        Paths = 0x08,
+        StoragePaths = 0x0008,
 
-        All = Core,
+        //! \brief Access to command line arguments / execution parameters passed to the app.
+        ExecutionParams = 0x8000,
+
+        //! \note Used to properly handle the binary 'not (~)' operation.
+        //! \see ice::FlagType and ice::FlagTypeAll concepts for details.
+        All = Core | RenderSurface | Vitals | StoragePaths | ExecutionParams,
     };
 
     //! \brief API type to platform FeatureFlags value mapping. Allows for easier API queries.
@@ -47,7 +53,8 @@ namespace ice::platform
     //!
     //! \param flags [in] Feature flags selected for initialization.
     auto initialize(
-        ice::platform::FeatureFlags flags
+        ice::platform::FeatureFlags flags,
+        ice::Span<ice::Shard const> params = {}
     ) noexcept -> ice::Result;
 
     //! \brief Tries to initialize all selected feature API's.
@@ -55,8 +62,9 @@ namespace ice::platform
     //! \param flags [in] Feature flags selected for initialization.
     //! \param alloc [in] The allocator to be used for all internal allocation requests.
     auto initialize_with_allocator(
+        ice::Allocator& alloc,
         ice::platform::FeatureFlags flags,
-        ice::Allocator& alloc
+        ice::Span<ice::Shard const> params = {}
     ) noexcept -> ice::Result;
 
     //! \brief Queries the platform for the specific feature API pointer.
@@ -95,20 +103,26 @@ namespace ice::platform
     auto query_apis(ice::platform::FeatureFlags flags, void** out_api_ptrs) noexcept -> ice::Result;
 
     //! \brief Deletes all internal objects and invalidates all API pointers.
-    //!
-    //! \note After a call to this function using any other API other than \fn ice::platform::available_features or \fn ice::platform::initialize is undefined.
+    //! \note After a call to this function using any other API other than
+    //!   \fn ice::platform::available_features or \fn ice::platform::initialize is not allowed.
     void shutdown() noexcept;
 
 
     //! \brief Error returned when the platform API was already initialized.
-    static constexpr ice::ResultCode E_PlatformAlreadyInitialized = ice::ResCode::create(ice::ResultSeverity::Error, "Platform Already Initialized");
+    static constexpr ice::ResultCode E_PlatformAlreadyInitialized = ice::ResCode::create(
+        ice::ResultSeverity::Error, "Platform Already Initialized"
+    );
 
     //! \brief Error returned when the platform API is not available on the current device and/or platform.
-    static constexpr ice::ResultCode E_PlatformFeatureNotAvailable = ice::ResCode::create(ice::ResultSeverity::Error, "Platform Feature Not Available");
+    static constexpr ice::ResultCode E_PlatformFeatureNotAvailable = ice::ResCode::create(
+        ice::ResultSeverity::Error, "Platform Feature Not Available"
+    );
 
-    //! \brief Error returned when accessing Android platform API's from an JNI library that is not a NativeActivity Application.
-    //!
-    //! \note This error is only returned on Android systems.
-    static constexpr ice::ResultCode E_PlatformAndroidNotANativeActivity = ice::ResCode::create(ice::ResultSeverity::Error, "The current Android JNI instsance is not a NativeActivity!");
+    //! \brief Error returned when accessing Android platform API's from an JNI library
+    //!   that is not a NativeActivity Application.
+    //! \note This error is only returned on Android systems.s
+    static constexpr ice::ResultCode E_PlatformAndroidNotANativeActivity = ice::ResCode::create(
+        ice::ResultSeverity::Error, "The current Android JNI instsance is not a NativeActivity!"
+    );
 
 } // namespace ice::platform

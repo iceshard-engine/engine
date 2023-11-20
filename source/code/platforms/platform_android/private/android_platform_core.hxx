@@ -4,7 +4,7 @@
 #pragma once
 #include <ice/string/static_string.hxx>
 #include <ice/platform_core.hxx>
-#include <ice/platform_paths.hxx>
+#include <ice/platform_storage.hxx>
 #include <ice/input/device_event_queue.hxx>
 #include <ice/module_register.hxx>
 #include <ice/task_queue.hxx>
@@ -17,7 +17,7 @@
 namespace ice::platform::android
 {
 
-    class AndroidCore final : public ice::platform::Core, public ice::platform::Paths
+    class AndroidCore final : public ice::platform::Core, public ice::platform::StoragePaths
     {
     public:
         static AndroidCore* global_instance;
@@ -28,15 +28,15 @@ namespace ice::platform::android
             ANativeActivity* activity
         ) noexcept;
 
+    public: // ice::platform::StoragePaths
+        auto data_locations() const noexcept -> ice::Span<ice::String const> override;
+        auto save_location() const noexcept -> ice::String override { return _app_save_data; }
+        auto cache_location() const noexcept -> ice::String override { return _app_internal_data; }
+
     public: // ice::platform::Core
         auto refresh_events() noexcept -> ice::Result override;
         auto system_events() noexcept -> ice::ShardContainer const& override { return _system_events; }
         auto input_events() noexcept -> ice::Span<ice::input::DeviceEvent const> override { return _input_events._events; }
-
-    public: // ice::platform::Paths
-        auto internal_data() const noexcept -> ice::String override { return _app_internal_data; }
-        auto external_data() const noexcept -> ice::String override { return _app_external_data; }
-        auto save_data() const noexcept -> ice::String override { return _app_save_data; }
 
     public: // internal
         static void native_callback_on_start(ANativeActivity* activity);

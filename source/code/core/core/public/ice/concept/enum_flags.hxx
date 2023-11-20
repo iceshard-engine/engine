@@ -74,21 +74,21 @@ namespace ice
     }
 
     template<ice::FlagType T>
-    constexpr bool has_all(T searched_value, T searched_flags) noexcept
+    constexpr bool has_all(T value, T expected_flags) noexcept
     {
-        return (searched_value & searched_flags) == searched_flags;
+        return (value & expected_flags) == expected_flags;
     }
 
     template<ice::FlagType T>
-    constexpr bool has_any(T searched_value, T searched_flags) noexcept
+    constexpr bool has_any(T value, T expected_flags) noexcept
     {
-        return (searched_value & searched_flags) != T::None;
+        return (value & expected_flags) != T::None;
     }
 
     template<ice::FlagType T>
-    constexpr bool has_none(T searched_value, T searched_flags) noexcept
+    constexpr bool has_none(T value, T expected_flags) noexcept
     {
-        return (searched_value & searched_flags) == T::None;
+        return (value & expected_flags) == T::None;
     }
 
 } // namespace ice

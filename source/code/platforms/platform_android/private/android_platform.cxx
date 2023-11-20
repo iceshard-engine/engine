@@ -14,20 +14,22 @@ namespace ice::platform
 
     auto available_features() noexcept -> ice::platform::FeatureFlags
     {
-        return FeatureFlags::Core | FeatureFlags::Paths;
+        return FeatureFlags::Core | FeatureFlags::StoragePaths;
     }
 
     auto initialize(
-        ice::platform::FeatureFlags flags
+        ice::platform::FeatureFlags flags,
+        ice::Span<ice::Shard const> params
     ) noexcept -> ice::Result
     {
         static ice::HostAllocator host_alloc;
-        return initialize_with_allocator(flags, host_alloc);
+        return initialize_with_allocator(host_alloc, flags, params);
     }
 
     auto initialize_with_allocator(
+        ice::Allocator& alloc,
         ice::platform::FeatureFlags flags,
-        ice::Allocator& alloc
+        ice::Span<ice::Shard const> params
     ) noexcept -> ice::Result
     {
         IPT_ZONE_SCOPED;
@@ -61,8 +63,8 @@ namespace ice::platform
         case FeatureFlags::Core:
             out_api_ptr = static_cast<ice::platform::Core*>(instance_ptr);
             break;
-        case FeatureFlags::Paths:
-            out_api_ptr = static_cast<ice::platform::Paths*>(instance_ptr);
+        case FeatureFlags::StoragePaths:
+            out_api_ptr = static_cast<ice::platform::StoragePaths*>(instance_ptr);
             break;
         default:
             return Res::E_InvalidArgument;

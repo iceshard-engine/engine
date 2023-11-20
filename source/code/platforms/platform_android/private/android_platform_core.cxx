@@ -102,6 +102,15 @@ namespace ice::platform::android
         global_instance = this;
     }
 
+    auto AndroidCore::data_locations() const noexcept -> ice::Span<ice::String const>
+    {
+        static ice::String const paths[]{
+            _app_external_data,
+            _app_internal_data,
+        };
+        return paths;
+    }
+
     auto AndroidCore::refresh_events() noexcept -> ice::Result
     {
         using namespace ice::input;

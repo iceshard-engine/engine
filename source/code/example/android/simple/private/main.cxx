@@ -32,7 +32,7 @@
 #include <ice/input/input_touchscreen.hxx>
 
 #include <ice/platform_core.hxx>
-#include <ice/platform_paths.hxx>
+#include <ice/platform_storage.hxx>
 #include <ice/platform_event.hxx>
 
 #include <sys/types.h>
@@ -98,8 +98,8 @@ auto ice_setup(
     ice::app::State& state
 ) noexcept -> ice::Result
 {
-    ice::platform::Paths* os_paths;
-    ice::platform::query_api(os_paths);
+    ice::platform::StoragePaths* os_storage;
+    ice::platform::query_api(os_storage);
 
     ice::ResourceTrackerCreateInfo const resinfo{
         .predicted_resource_count = 1000,
@@ -108,8 +108,7 @@ auto ice_setup(
         .flags_io_wait = ice::TaskFlags{ },
     };
     state.res = ice::create_resource_tracker(alloc, state.global_sched, resinfo);
-    ice::String const paths[]{ os_paths->external_data() };
-    state.res_fs = ice::create_resource_provider(alloc, paths);
+    state.res_fs = ice::create_resource_provider(alloc, os_storage->data_locations());
     state.res->attach_provider(ice::move(state.res_fs));
     state.res->sync_resources();
     return ice::app::S_ApplicationResume;

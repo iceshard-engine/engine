@@ -24,6 +24,8 @@ namespace ice::platform::win32::sdl2
         auto system_events() noexcept -> ice::ShardContainer const& override { return _system_events; }
         auto input_events() noexcept -> ice::Span<ice::input::DeviceEvent const> override { return ice::array::slice(_input_events._events); }
 
+        auto allocator() noexcept -> ice::Allocator& { return _alloc.backing_allocator(); }
+
         ice::ProxyAllocator _alloc;
         ice::ShardContainer _system_events;
         ice::input::DeviceEventQueue _input_events;
