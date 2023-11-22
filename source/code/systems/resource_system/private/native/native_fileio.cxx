@@ -35,7 +35,7 @@ namespace ice::native_fileio
     bool exists_file(ice::native_fileio::FilePath path) noexcept
     {
         DWORD const result = GetFileAttributesW(ice::string::begin(path));
-        return result == FILE_ATTRIBUTE_NORMAL || result == FILE_ATTRIBUTE_ARCHIVE;
+        return result == FILE_ATTRIBUTE_NORMAL || (result & (FILE_ATTRIBUTE_ARCHIVE | FILE_ATTRIBUTE_READONLY)) != 0;
     }
 
     auto open_file(
@@ -151,11 +151,14 @@ namespace ice::native_fileio
             traverse_success = true;
             do
             {
+
                 // We cast the value to a regular pointer so WString will use 'strlen' to get the final length.
                 if (direntry.cFileName[0] == '.' && (direntry.cFileName[1] == '.' || direntry.cFileName[1] == '\0'))
                 {
                     continue;
                 }
+
+                IPT_MESSAGE("Next resource");
 
                 ice::native_fileio::EntityType const type = (direntry.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0
                     ? EntityType::Directory

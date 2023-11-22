@@ -189,22 +189,6 @@ namespace ice
             return parse_option(value, unused);
         }
 
-        inline auto remove_param_quotes(ice::String value) noexcept -> ice::String
-        {
-            ice::ucount const quote_start = ice::string::find_first_not_of(value, '"');
-            ice::ucount const quote_end = ice::string::find_last_not_of(value, '"') + 1;
-            ICE_ASSERT_CORE(((quote_start == ice::ucount_max) ^ (quote_end == ice::ucount_max)) == false);
-            if (quote_start != ice::ucount_max && quote_end != ice::ucount_max)
-            {
-                value = ice::string::substr(
-                    value,
-                    quote_start,
-                    quote_end - quote_start
-                );
-            }
-            return value;
-        }
-
         template<typename Fn>
         inline void for_each_option(ice::String value, Fn&& fn) noexcept
         {
@@ -300,9 +284,6 @@ namespace ice
                 return false;
             }
 
-            // Remove the quotes
-            raw_value = detail::remove_param_quotes(raw_value);
-
             // Validate the value
             bool is_valid = def.validator == nullptr || def.validator(params, def, raw_value);
             if (is_valid)
@@ -356,7 +337,7 @@ namespace ice
                     next_value = false;
 
                     // Remove the quotes
-                    ice::String const raw_value = detail::remove_param_quotes(params._values[idx]);
+                    ice::String const raw_value = params._values[idx];
                     if (def.validator == nullptr || def.validator(params, def, raw_value))
                     {
                         if constexpr (std::is_same_v<std::remove_reference_t<T>, ice::String>)

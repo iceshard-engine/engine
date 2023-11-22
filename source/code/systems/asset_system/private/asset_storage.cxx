@@ -34,7 +34,7 @@ namespace ice
                 ice::AtomicLinkedQueue<ice::TaskAwaitableBase> remaining_tasks;
 
                 // Process all awaiting tasks (load the raw_awaiting, every time, as it might got decreased)
-                ice::u32 processed = 1; // We start with '1' which is "US"
+                ice::u32 processed = 1; // We start with '1' which is "ourselfs"
                 while (processed < awaiting_count.load(std::memory_order_relaxed))
                 {
                     // Get all awaiting tasks

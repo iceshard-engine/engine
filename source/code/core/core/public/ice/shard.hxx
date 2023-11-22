@@ -335,6 +335,9 @@ namespace ice
     // COMMON PAYLOAD TYPES
 
     template<>
+    constexpr inline ice::ShardPayloadID Constant_ShardPayloadID<bool> = ice::shard_payloadid("bool");
+
+    template<>
     constexpr inline ice::ShardPayloadID Constant_ShardPayloadID<ice::i32> = ice::shard_payloadid("ice::i32");
 
     template<>
