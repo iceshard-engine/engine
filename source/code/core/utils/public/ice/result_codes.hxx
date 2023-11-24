@@ -14,6 +14,10 @@ namespace ice
     template<bool DebugInfo>
     struct ResultCode;
 
+    using ResCode = ResultCode<ice::build::is_debug || ice::build::is_develop>;
+
+    inline bool result_is_valid(ice::ResCode result_code) noexcept;
+
     inline auto result_hint(ice::ResultCode<false> result_code) noexcept -> std::string_view;
     inline auto result_hint(ice::ResultCode<true> result_code) noexcept -> std::string_view;
 
@@ -84,8 +88,6 @@ namespace ice
     };
 
 
-    using ResCode = ResultCode<ice::build::is_debug || ice::build::is_develop>;
-
     struct Res
     {
         static constexpr ice::ResultSeverity Info = ResultSeverity::Info;
@@ -149,6 +151,12 @@ namespace ice
     constexpr auto operator==(ice::Result left, ice::ResultSeverity right) noexcept
     {
         return left.result_code.value.severity == static_cast<std::underlying_type_t<ice::ResultSeverity>>(right);
+    }
+
+    inline bool result_is_valid(ice::ResCode result_code) noexcept
+    {
+        return result_code.value.severity == static_cast<std::underlying_type_t<ice::ResultSeverity>>(ResultSeverity::Success)
+            || result_code.value.severity == static_cast<std::underlying_type_t<ice::ResultSeverity>>(ResultSeverity::Warning);
     }
 
     inline auto result_hint(ice::ResultCode<false> result_code) noexcept -> std::string_view

@@ -112,6 +112,46 @@ namespace ice
             return result;
         }
 
+        bool load_metadata_file(
+            ice::Allocator& alloc,
+            ice::native_fileio::FilePath path,
+            ice::MutableMetadata& out_metadata
+        ) noexcept
+        {
+            ice::native_fileio::File meta_handle = ice::native_fileio::open_file(path);
+            if (meta_handle == false)
+            {
+                return false;
+            }
+
+            ice::usize const meta_size = ice::native_fileio::sizeof_file(meta_handle);
+            if (meta_size.value <= ice::string::size(Constant_FileHeader_MetadataFile))
+            {
+                return false;
+            }
+
+            ice::Memory metafile_data = alloc.allocate(meta_size);
+            if (ice::native_fileio::read_file(meta_handle, meta_size, metafile_data) == 0_B)
+            {
+                return false;
+            }
+
+            ice::String const file_header{
+                reinterpret_cast<char const*>(metafile_data.location),
+                ice::string::size(Constant_FileHeader_MetadataFile)
+            };
+
+            // Don't create resources from meta-files
+            if (Constant_FileHeader_MetadataFile == file_header)
+            {
+                return false;
+            }
+
+            ice::Result const result = ice::meta_deserialize_from(out_metadata, data_view(metafile_data));
+            alloc.deallocate(metafile_data);
+            return ice::result_is_valid(result);
+        }
+
     } // namespace detail
 
     LooseFilesResource::LooseFilesResource(
@@ -264,36 +304,11 @@ namespace ice
     ) noexcept -> ice::FileSystemResource*
     {
         ice::LooseFilesResource* main_resource = nullptr;
-        ice::native_fileio::File meta_handle = ice::native_fileio::open_file(meta_filepath);
-        bool const data_open = ice::native_fileio::exists_file(data_filepath);
+        bool const data_exists = ice::native_fileio::exists_file(data_filepath);
+        bool const meta_exists = ice::native_fileio::exists_file(meta_filepath);
 
-        if (meta_handle && data_open)
+        if (data_exists)
         {
-            ice::Memory metafile_data;
-            ice::usize const meta_size = ice::native_fileio::sizeof_file(meta_handle);
-            if (meta_size.value <= ice::string::size(Constant_FileHeader_MetadataFile))
-            {
-                return nullptr;
-            }
-
-            metafile_data = alloc.allocate(meta_size);
-            // TODO: Handle errors?
-            if (ice::native_fileio::read_file(meta_handle, meta_size, metafile_data) == 0_B)
-            {
-                return nullptr;
-            }
-
-            ice::String const file_header{
-                reinterpret_cast<char const*>(metafile_data.location),
-                ice::string::size(Constant_FileHeader_MetadataFile)
-            };
-
-            // Don't create resources from meta-files
-            if (Constant_FileHeader_MetadataFile == file_header)
-            {
-                return nullptr;
-            }
-
             // We create the main resource in a different scope so we dont accidentaly use data from there
             {
                 ice::HeapString<> utf8_file_path{ alloc };
@@ -308,19 +323,24 @@ namespace ice
                 // We have a loose resource files which contain metadata associated data.
                 // We need now to read the metadata and check if there are more file associated and if all are available.
                 ice::MutableMetadata mutable_meta{ alloc };
-                ice::Result const result = ice::meta_deserialize_from(mutable_meta, data_view(metafile_data));
-                alloc.deallocate(metafile_data);
-
-                if (result == Res::Success)
+                if (meta_exists)
                 {
-                    main_resource = alloc.create<ice::LooseFilesResource>(
-                        alloc,
-                        ice::move(mutable_meta),
-                        ice::move(utf8_file_path), // we move so the pointer 'origin_name' calculated from 'utf8_file_path' is still valid!
-                        utf8_origin_name,
-                        utf8_uri_path
+                    bool meta_load_success = ice::detail::load_metadata_file(alloc, meta_filepath, mutable_meta);
+                    ICE_LOG_IF(
+                        meta_load_success == false,
+                        LogSeverity::Warning, LogTag::Core,
+                        "Failed to load metadata file {}.isrm",
+                        (ice::String)utf8_file_path
                     );
                 }
+
+                main_resource = alloc.create<ice::LooseFilesResource>(
+                    alloc,
+                    ice::move(mutable_meta),
+                    ice::move(utf8_file_path), // we move so the pointer 'origin_name' calculated from 'utf8_file_path' is still valid!
+                    utf8_origin_name,
+                    utf8_uri_path
+                );
             }
 
             // We can access the metadata now again.

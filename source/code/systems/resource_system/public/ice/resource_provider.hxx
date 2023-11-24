@@ -29,6 +29,13 @@ namespace ice
 
         virtual auto schemeid() const noexcept -> ice::StringID = 0;
 
+        virtual auto collect(
+            ice::Array<ice::Resource const*>& out_changes
+        ) noexcept -> ice::ucount
+        {
+            return 0;
+        }
+
         virtual auto refresh(
             ice::Array<ice::Resource const*>& out_changes
         ) noexcept -> ice::ResourceProviderResult = 0;

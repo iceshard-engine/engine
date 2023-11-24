@@ -35,7 +35,9 @@ namespace ice::native_fileio
     bool exists_file(ice::native_fileio::FilePath path) noexcept
     {
         DWORD const result = GetFileAttributesW(ice::string::begin(path));
-        return result == FILE_ATTRIBUTE_NORMAL || (result & (FILE_ATTRIBUTE_ARCHIVE | FILE_ATTRIBUTE_READONLY)) != 0;
+        return result != INVALID_FILE_ATTRIBUTES
+            && (result == FILE_ATTRIBUTE_NORMAL
+                || (result & (FILE_ATTRIBUTE_ARCHIVE | FILE_ATTRIBUTE_READONLY)) != 0);
     }
 
     auto open_file(
@@ -43,6 +45,7 @@ namespace ice::native_fileio
         ice::native_fileio::FileOpenFlags flags /*= FileOpenFlags::ReadOnly*/
     ) noexcept -> ice::native_fileio::File
     {
+        IPT_ZONE_SCOPED;
         ice::win32::FileHandle handle = CreateFileW(
             ice::string::begin(path),
             FILE_READ_DATA | FILE_READ_ATTRIBUTES,
@@ -157,8 +160,6 @@ namespace ice::native_fileio
                 {
                     continue;
                 }
-
-                IPT_MESSAGE("Next resource");
 
                 ice::native_fileio::EntityType const type = (direntry.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0
                     ? EntityType::Directory

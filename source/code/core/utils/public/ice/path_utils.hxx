@@ -15,7 +15,7 @@ namespace ice::path
     //! \return The lenght of the path.
     auto length(ice::String path) noexcept -> ice::ucount;
 
-    //! \return The last extension part or empty string if no extension was found.
+    //! \return The last extension part (with the dot character) or empty string if no extension was found.
     auto extension(ice::String path) noexcept -> ice::String;
 
     //! \return The characters after the last directory separator character. (including the file extension)

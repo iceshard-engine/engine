@@ -55,11 +55,19 @@ namespace ice
             ice::native_fileio::FilePath file_path
         ) noexcept
         {
+            // Early out for metadata files.
+            if (ice::path::extension(file_path) == ISP_PATH_LITERAL(".isrm"))
+            {
+                return;
+            }
+
             ice::StackAllocator_1024 temp_alloc;
             ice::native_fileio::FilePath const uribase = ice::path::directory(base_path);
-            ice::native_fileio::FilePath const metafile = file_path;
-            ice::native_fileio::HeapFilePath datafile{ temp_alloc, file_path };
-            ice::path::replace_extension(datafile, ice::native_fileio::FilePath{});
+            ice::native_fileio::FilePath const datafile = file_path;
+            ice::native_fileio::HeapFilePath metafile{ temp_alloc };
+            ice::string::reserve(metafile, 512);
+            ice::string::push_back(metafile, file_path);
+            ice::string::push_back(metafile, ISP_PATH_LITERAL(".isrm"));
 
             ice::FileSystemResource* const resource = create_resources_from_loose_files(
                 _allocator,
@@ -106,6 +114,17 @@ namespace ice
             {
                 ice::native_fileio::traverse_directories(base_path, traverse_callback, this);
             }
+        }
+
+        auto collect(
+            ice::Array<ice::Resource const*>& out_changes
+        ) noexcept -> ice::ucount
+        {
+            for (auto* resource : _resources)
+            {
+                ice::array::push_back(out_changes, resource);
+            }
+            return ice::hashmap::count(_resources);
         }
 
         auto refresh(
