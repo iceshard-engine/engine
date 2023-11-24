@@ -76,7 +76,8 @@ namespace ice::hailstorm::v1
         ice::Span<ice::String const> res_paths,
         ice::Span<ice::Data const> res_data,
         ice::Span<ice::Metadata const> res_meta,
-        ice::Span<ice::u32 const> res_meta_map
+        ice::Span<ice::u32 const> res_meta_map,
+        ice::u64 const (&custom_values)[3]
     ) noexcept -> ice::Memory
     {
         ice::ucount const res_count = ice::count(res_paths);
@@ -271,6 +272,9 @@ namespace ice::hailstorm::v1
         header.header_size = offsets.paths_data;
         paths_info.offset = offsets.paths_data;
 
+        // Copy custom values into the final header.
+        ice::memcpy(header.app_custom_values, custom_values, sizeof(custom_values));
+
         // Place chunk offsets at their proper location.
         ice::usize chunk_offset = offsets.data;
         for (HailstormChunk& chunk : chunks)
@@ -393,7 +397,14 @@ namespace ice::hailstorm::v1
         ICE_ASSERT_CORE(count_ids == ice::count(data.data));
         ICE_ASSERT_CORE(count_ids == ice::count(data.metadata) || count_ids <= ice::count(data.metadata_mapping));
 
-        return write_cluster(params, data.paths, data.data, data.metadata, data.metadata_mapping);
+        return write_cluster(
+            params,
+            data.paths,
+            data.data,
+            data.metadata,
+            data.metadata_mapping,
+            data.custom_values
+        );
     }
 
 } // namespace ice::hailstorm::v1

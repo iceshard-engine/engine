@@ -72,11 +72,14 @@ namespace ice::hailstorm
 
             //! \brief Number of resources in this pack.
             ice::u16 count_resources;
+
+            //! \brief Custom values available for application specific values.
+            ice::u64 app_custom_values[3];
         };
 
         static_assert(sizeof(HailstormHeaderBase) == 16);
-        static_assert(sizeof(HailstormHeader) - sizeof(HailstormHeaderBase) == 24);
-        static_assert(sizeof(HailstormHeader) == 40);
+        static_assert(sizeof(HailstormHeader) - sizeof(HailstormHeaderBase) == 48);
+        static_assert(sizeof(HailstormHeader) == 64);
 
         //! \brief Hailstorm path information. Optional, might not contain actuall data.
         //! \version HSC0-0.0.1

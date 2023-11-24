@@ -59,6 +59,9 @@ namespace ice::hailstorm
             //! \brief A list of indices referencing one of the Metadata objects in the 'metadata' list.
             //! \note If provided, this list is required to be the size of 'ids'.
             ice::Span<ice::u32 const> metadata_mapping;
+
+            //! \brief Application custom values.
+            ice::u64 custom_values[3];
         };
 
         //! \brief Used to select chunks for resource metadata and data destinations.
