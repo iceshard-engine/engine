@@ -16,7 +16,8 @@ namespace ice
 
         struct LogAPI
         {
-            RegisterLogTagFn** reg_log_tag_fn = &ice::detail::register_log_tag_fn;
+            RegisterLogTagFn** reg_log_tag_fn = &ice::detail::fn_register_log_tag;
+            EnableLogTagFn** ena_log_tag_fn = &ice::detail::fn_enable_log_tag;
             LogFn** log_fn = &ice::detail::log_fn;
             AssertFn** assert_fn = &ice::detail::assert_fn;
         };
@@ -51,6 +52,7 @@ namespace ice
         {
             detail::LogAPI const current_api{ };
             *current_api.reg_log_tag_fn = *new_api->reg_log_tag_fn;
+            *current_api.ena_log_tag_fn = *new_api->ena_log_tag_fn;
             *current_api.log_fn = *new_api->log_fn;
             *current_api.assert_fn = *new_api->assert_fn;
         }
@@ -64,12 +66,14 @@ namespace ice
         {
             *current_api.log_fn = ice::detail::android::logcat_message;
             *current_api.reg_log_tag_fn = ice::detail::default_register_tag_fn;
+            *current_api.ena_log_tag_fn = ice::detail::default_enable_tag_fn;
             *current_api.assert_fn = ice::detail::android::logcat_assert;
         }
         else
         {
             *current_api.log_fn = ice::detail::default_log_fn;
             *current_api.reg_log_tag_fn = ice::detail::default_register_tag_fn;
+            *current_api.ena_log_tag_fn = ice::detail::default_enable_tag_fn;
             *current_api.assert_fn = ice::detail::default_assert_fn;
         }
 

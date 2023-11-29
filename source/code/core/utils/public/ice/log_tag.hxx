@@ -12,12 +12,13 @@ namespace ice
     {
         None = 0x0,
 
-        Core = 0x1ull << 32,
+        Core = 0x1ull << 0,
         System = Core << 1,
         Module = Core << 2,
         Engine = Core << 3,
         Asset = Core << 4,
         Game = Core << 5,
+        Tool = Core << 24,
     };
 
     struct LogTagDefinition
@@ -29,14 +30,21 @@ namespace ice
     constexpr auto create_log_tag(LogTag base_tag, ice::String name) noexcept -> LogTagDefinition
     {
         ice::u64 const name_hash = ice::hash32(name);
-        ice::u64 const tag_hash = ice::hash(base_tag);
+        ice::u64 const tag_hash = ice::hash(base_tag) << 32;
         return {
             .tag = static_cast<LogTag>(tag_hash | name_hash),
             .name = name
         };
     }
 
-    void register_log_tag(ice::LogTagDefinition tag_def) noexcept;
+    constexpr auto create_log_tag(LogTagDefinition const& base_tag_def, ice::String name) noexcept -> LogTagDefinition
+    {
+        return create_log_tag(base_tag_def.tag, name);
+    }
+
+    void log_tag_register(ice::LogTagDefinition tag_def) noexcept;
+
+    void log_tag_enable(ice::LogTag tag, bool enabled = true) noexcept;
 
     namespace detail
     {
