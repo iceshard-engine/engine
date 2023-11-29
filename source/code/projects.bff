@@ -16,28 +16,34 @@
 #include "systems/asset_system/asset_system.bff"
 #include "systems/render_system/render_system.bff"
 #include "systems/input_system/input_system.bff"
-#include "systems/font_system/font_system.bff"
-#include "systems/ui_system/ui_system.bff"
+// #include "systems/font_system/font_system.bff"
+// #include "systems/ui_system/ui_system.bff"
 
 #include "platforms/application/application.bff"
 #include "platforms/platform/platform.bff"
 #include "platforms/platform_win32/platform_win32.bff"
+#include "platforms/platform_android/platform_android.bff"
 
 #include "iceshard/engine/engine.bff"
-#include "iceshard/devui/devui.bff"
+// #include "iceshard/devui/devui.bff"
 #include "iceshard/iceshard/iceshard.bff"
 
-#include "modules/imgui_module/imgui_module.bff"
-#include "modules/iceshard_pipelines/iceshard_pipelines.bff"
-#include "modules/vulkan_renderer/vulkan_renderer.bff"
+// #include "modules/imgui_module/imgui_module.bff"
+// #include "modules/iceshard_pipelines/iceshard_pipelines.bff"
+// #include "modules/vulkan_renderer/vulkan_renderer.bff"
 
-#include "framework/framework_base/framework_base.bff"
+// #include "framework/framework_base/framework_base.bff"
 
-#include "test/test.bff"
+// #include "test/test.bff"
 
-#include "core/core/core_tests.bff"
-#include "core/math/math_tests.bff"
-#include "core/memsys/memsys_tests.bff"
-#include "core/collections/collections_tests.bff"
+// #include "core/core/core_tests.bff"
+// #include "core/math/math_tests.bff"
+// #include "core/memsys/memsys_tests.bff"
+// #include "core/collections/collections_tests.bff"
 
-#include "systems/resource_system/resource_system_tests.bff"
+// #include "systems/resource_system/resource_system_tests.bff"
+
+#include "example/android/simple/simple.bff"
+#include "tools/asset_compiler/asset_compiler.bff"
+#include "tools/hsc_packer/hsc_packer.bff"
+#include "tools/hsc_reader/hsc_reader.bff"

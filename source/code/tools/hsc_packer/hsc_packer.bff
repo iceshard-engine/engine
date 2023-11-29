@@ -1,14 +1,12 @@
-/// Copyright 2020 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2023 - 2023, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 .Project =
 [
-    .Name = 'asset_compiler'
+    .Name = 'hsc_packer'
     .Kind = .Kind_ConsoleApp
-    .BaseDir = '$WorkspaceCodeDir$/tools/asset_compiler'
+    .BaseDir = '$WorkspaceCodeDir$/tools/hsc_packer'
     .Group = 'Tools'
-
-    .CopyModules = true
 
     .Requires = {
         'Windows'
@@ -16,9 +14,8 @@
 
     .Private =
     [
-
         .Uses = {
-            'asset_system'
+            'resource_system'
         }
     ]
 ]
