@@ -11,7 +11,7 @@ namespace ice
 
         auto sync_offset_file_read(
             ice::Allocator& alloc,
-            ice::native_fileio::File const& handle,
+            ice::native_file::File const& handle,
             ice::usize offset,
             ice::usize size
         ) noexcept -> ice::Memory
@@ -24,7 +24,7 @@ namespace ice
 
             if (handle)
             {
-                ice::usize const filesize = ice::native_fileio::sizeof_file(handle);
+                ice::usize const filesize = ice::native_file::sizeof_file(handle);
                 ICE_ASSERT(
                     filesize.value < ice::ucount_max,
                     "Trying to load file larger than supported!"
@@ -32,7 +32,7 @@ namespace ice
 
                 result = alloc.allocate(filesize);
                 // TODO: Better error handling. Using "expected".
-                ice::usize const bytes_read = ice::native_fileio::read_file(
+                ice::usize const bytes_read = ice::native_file::read_file(
                     ice::move(handle),
                     offset,
                     filesize,
@@ -53,7 +53,7 @@ namespace ice
 
         auto async_offset_file_read(
             ice::NativeAIO* nativeio,
-            ice::native_fileio::File const& file,
+            ice::native_file::File const& file,
             ice::usize offset,
             ice::usize size
         ) noexcept -> ice::Task<ice::Memory>;

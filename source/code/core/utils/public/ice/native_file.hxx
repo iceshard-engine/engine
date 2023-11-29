@@ -1,13 +1,9 @@
-/// Copyright 2023 - 2023, Dandielo <dandielo@iceshard.net>
-/// SPDX-License-Identifier: MIT
-
 #pragma once
 #include <ice/os/unix.hxx>
 #include <ice/os/windows.hxx>
-#include <ice/task.hxx>
-#include <ice/string/string.hxx>
+#include <ice/path_utils.hxx>
 
-namespace ice::native_fileio
+namespace ice::native_file
 {
 
 #if ISP_WINDOWS
@@ -38,26 +34,26 @@ namespace ice::native_fileio
     };
 
     bool exists_file(
-        ice::native_fileio::FilePath path
+        ice::native_file::FilePath path
     ) noexcept;
 
     auto open_file(
-        ice::native_fileio::FilePath path,
-        ice::native_fileio::FileOpenFlags flags = FileOpenFlags::ReadOnly
-    ) noexcept -> ice::native_fileio::File;
+        ice::native_file::FilePath path,
+        ice::native_file::FileOpenFlags flags = FileOpenFlags::ReadOnly
+    ) noexcept -> ice::native_file::File;
 
     auto sizeof_file(
-        ice::native_fileio::File const& file
+        ice::native_file::File const& native_file
     ) noexcept -> ice::usize;
 
     auto read_file(
-        ice::native_fileio::File const& file,
+        ice::native_file::File const& native_file,
         ice::usize requested_read_size,
         ice::Memory memory
     ) noexcept -> ice::usize;
 
     auto read_file(
-        ice::native_fileio::File const& file,
+        ice::native_file::File const& native_file,
         ice::usize requested_read_offset,
         ice::usize requested_read_size,
         ice::Memory memory
@@ -67,31 +63,31 @@ namespace ice::native_fileio
     enum class EntityType : ice::u8 { File, Directory };
 
     using TraversePathCallback = auto(*)(
-        ice::native_fileio::FilePath,
-        ice::native_fileio::FilePath,
-        ice::native_fileio::EntityType,
+        ice::native_file::FilePath,
+        ice::native_file::FilePath,
+        ice::native_file::EntityType,
         void* userdata
-    ) noexcept -> ice::native_fileio::TraverseAction;
+    ) noexcept -> ice::native_file::TraverseAction;
 
     bool traverse_directories(
-        ice::native_fileio::FilePath starting_dir,
-        ice::native_fileio::TraversePathCallback callback,
+        ice::native_file::FilePath starting_dir,
+        ice::native_file::TraversePathCallback callback,
         void* userdata
     ) noexcept;
 
     void path_from_string(
         ice::String path_string,
-        ice::native_fileio::HeapFilePath& out_filepath
+        ice::native_file::HeapFilePath& out_filepath
     ) noexcept;
 
     void path_to_string(
-        ice::native_fileio::FilePath path,
+        ice::native_file::FilePath path,
         ice::HeapString<>& out_string
     ) noexcept;
 
     void path_join_string(
-        ice::native_fileio::HeapFilePath& path,
+        ice::native_file::HeapFilePath& path,
         ice::String string
     ) noexcept;
 
-} // namespace ice::native_fileio
+} // namespace ice::native_file

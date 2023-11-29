@@ -5,10 +5,9 @@
 #include <ice/mem_allocator_stack.hxx>
 #include <ice/container/hashmap.hxx>
 #include <ice/string/heap_string.hxx>
-#include <ice/path_utils.hxx>
+#include <ice/native_file.hxx>
 #include <ice/uri.hxx>
 
-#include "native/native_fileio.hxx"
 #include "resource_dynlib.hxx"
 
 namespace ice
@@ -25,7 +24,7 @@ namespace ice
             , _base_path{ _allocator }
             , _resources{ _allocator }
         {
-            ice::native_fileio::path_from_string(path, _base_path);
+            ice::native_file::path_from_string(path, _base_path);
             ice::path::normalize(_base_path);
         }
 
@@ -43,7 +42,7 @@ namespace ice
         }
 
         void on_library_file(
-            ice::native_fileio::FilePath file_path
+            ice::native_file::FilePath file_path
         ) noexcept
         {
             ice::Resource* const resource = create_dynlib_resource_from_path(
@@ -62,16 +61,16 @@ namespace ice
         }
 
         static auto traverse_callback(
-            ice::native_fileio::FilePath base_path,
-            ice::native_fileio::FilePath file_path,
-            ice::native_fileio::EntityType type,
+            ice::native_file::FilePath base_path,
+            ice::native_file::FilePath file_path,
+            ice::native_file::EntityType type,
             void* userdata
-        ) noexcept -> ice::native_fileio::TraverseAction
+        ) noexcept -> ice::native_file::TraverseAction
         {
             // We only want to list dll's in the apps main directory.
-            if (type == ice::native_fileio::EntityType::Directory)
+            if (type == ice::native_file::EntityType::Directory)
             {
-                return ice::native_fileio::TraverseAction::SkipSubDir;
+                return ice::native_file::TraverseAction::SkipSubDir;
             }
 
             ResourceProvider_DynLibs* const provider = reinterpret_cast<ResourceProvider_DynLibs*>(userdata);
@@ -89,13 +88,13 @@ namespace ice
                     provider->on_library_file(file_path);
                 }
             }
-            return ice::native_fileio::TraverseAction::Continue;
+            return ice::native_file::TraverseAction::Continue;
         }
 
         // GitHub Issue: #108
         void initial_traverse() noexcept
         {
-            ice::native_fileio::traverse_directories(_base_path, traverse_callback, this);
+            ice::native_file::traverse_directories(_base_path, traverse_callback, this);
         }
 
         auto refresh(
@@ -132,7 +131,7 @@ namespace ice
 
     private:
         ice::Allocator& _allocator;
-        ice::native_fileio::HeapFilePath _base_path;
+        ice::native_file::HeapFilePath _base_path;
 
         ice::HashMap<ice::Resource*> _resources;
     };

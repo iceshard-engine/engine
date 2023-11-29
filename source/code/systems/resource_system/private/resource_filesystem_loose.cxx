@@ -16,7 +16,7 @@ namespace ice
     {
 
         auto async_file_read(
-            ice::native_fileio::File file,
+            ice::native_file::File file,
             ice::usize filesize,
             ice::NativeAIO* nativeio,
             ice::Memory data
@@ -38,8 +38,8 @@ namespace ice
             ice::String filepath
         ) noexcept -> ice::Task<ice::Memory>
         {
-            ice::native_fileio::HeapFilePath native_filepath{ alloc };
-            ice::native_fileio::path_from_string(filepath, native_filepath);
+            ice::native_file::HeapFilePath native_filepath{ alloc };
+            ice::native_file::path_from_string(filepath, native_filepath);
 
             ice::Memory result{
                 .location = nullptr,
@@ -47,13 +47,13 @@ namespace ice
                 .alignment = ice::ualign::invalid,
             };
 
-            ice::native_fileio::File handle = ice::native_fileio::open_file(
+            ice::native_file::File handle = ice::native_file::open_file(
                 native_filepath,
-                ice::native_fileio::FileOpenFlags::Asynchronous
+                ice::native_file::FileOpenFlags::Asynchronous
             );
             if (handle)
             {
-                ice::usize const filesize = ice::native_fileio::sizeof_file(handle);
+                ice::usize const filesize = ice::native_file::sizeof_file(handle);
                 ICE_ASSERT(
                     filesize.value < ice::ucount_max,
                     "Trying to load file larger than supported!"
@@ -74,8 +74,8 @@ namespace ice
             ice::String filepath
         ) noexcept -> ice::Memory
         {
-            ice::native_fileio::HeapFilePath native_filepath{ alloc };
-            ice::native_fileio::path_from_string(filepath, native_filepath);
+            ice::native_file::HeapFilePath native_filepath{ alloc };
+            ice::native_file::path_from_string(filepath, native_filepath);
 
             ice::Memory result{
                 .location = nullptr,
@@ -83,10 +83,10 @@ namespace ice
                 .alignment = ice::ualign::invalid,
             };
 
-            ice::native_fileio::File handle = ice::native_fileio::open_file(native_filepath);
+            ice::native_file::File handle = ice::native_file::open_file(native_filepath);
             if (handle)
             {
-                ice::usize const filesize = ice::native_fileio::sizeof_file(handle);
+                ice::usize const filesize = ice::native_file::sizeof_file(handle);
                 ICE_ASSERT(
                     filesize.value < ice::ucount_max,
                     "Trying to load file larger than supported!"
@@ -94,7 +94,7 @@ namespace ice
 
                 result = alloc.allocate(filesize);
                 // TODO: Better error handling. Using "expected".
-                ice::usize const bytes_read = ice::native_fileio::read_file(
+                ice::usize const bytes_read = ice::native_file::read_file(
                     ice::move(handle),
                     filesize,
                     result
@@ -114,24 +114,24 @@ namespace ice
 
         bool load_metadata_file(
             ice::Allocator& alloc,
-            ice::native_fileio::FilePath path,
+            ice::native_file::FilePath path,
             ice::MutableMetadata& out_metadata
         ) noexcept
         {
-            ice::native_fileio::File meta_handle = ice::native_fileio::open_file(path);
+            ice::native_file::File meta_handle = ice::native_file::open_file(path);
             if (meta_handle == false)
             {
                 return false;
             }
 
-            ice::usize const meta_size = ice::native_fileio::sizeof_file(meta_handle);
+            ice::usize const meta_size = ice::native_file::sizeof_file(meta_handle);
             if (meta_size.value <= ice::string::size(Constant_FileHeader_MetadataFile))
             {
                 return false;
             }
 
             ice::Memory metafile_data = alloc.allocate(meta_size);
-            if (ice::native_fileio::read_file(meta_handle, meta_size, metafile_data) == 0_B)
+            if (ice::native_file::read_file(meta_handle, meta_size, metafile_data) == 0_B)
             {
                 return false;
             }
@@ -297,22 +297,22 @@ namespace ice
 
     auto create_resources_from_loose_files(
         ice::Allocator& alloc,
-        ice::native_fileio::FilePath base_path,
-        ice::native_fileio::FilePath uri_base_path,
-        ice::native_fileio::FilePath meta_filepath,
-        ice::native_fileio::FilePath data_filepath
+        ice::native_file::FilePath base_path,
+        ice::native_file::FilePath uri_base_path,
+        ice::native_file::FilePath meta_filepath,
+        ice::native_file::FilePath data_filepath
     ) noexcept -> ice::FileSystemResource*
     {
         ice::LooseFilesResource* main_resource = nullptr;
-        bool const data_exists = ice::native_fileio::exists_file(data_filepath);
-        bool const meta_exists = ice::native_fileio::exists_file(meta_filepath);
+        bool const data_exists = ice::native_file::exists_file(data_filepath);
+        bool const meta_exists = ice::native_file::exists_file(meta_filepath);
 
         if (data_exists)
         {
             // We create the main resource in a different scope so we dont accidentaly use data from there
             {
                 ice::HeapString<> utf8_file_path{ alloc };
-                ice::native_fileio::path_to_string(data_filepath, utf8_file_path);
+                ice::native_file::path_to_string(data_filepath, utf8_file_path);
                 ice::path::normalize(utf8_file_path);
 
                 // TODO: Decide how to handle the basepath naming.
@@ -373,7 +373,7 @@ namespace ice
                 ice::string::reserve(utf8_file_path, expected_extra_path_size);
 
                 // Create a wide string to try and check for extra files existing.
-                ice::native_fileio::HeapFilePath full_path{ alloc };
+                ice::native_file::HeapFilePath full_path{ alloc };
                 ice::string::reserve(full_path, ice::string::capacity(utf8_file_path));
                 full_path = meta_filepath;
 
@@ -389,11 +389,11 @@ namespace ice
 
                     // TODO:
                     ice::string::resize(full_path, base_dir_size);
-                    ice::native_fileio::path_join_string(full_path, paths[idx]);
-                    if (ice::native_fileio::exists_file(full_path))
+                    ice::native_file::path_join_string(full_path, paths[idx]);
+                    if (ice::native_file::exists_file(full_path))
                     {
                         // We know the file can be opened so we save it as a extra resource.
-                        ice::native_fileio::path_to_string(full_path, utf8_file_path);
+                        ice::native_file::path_to_string(full_path, utf8_file_path);
                         ice::path::normalize(utf8_file_path);
 
                         main_resource->add_named_part(ice::stringid(names[idx]), ice::move(utf8_file_path));

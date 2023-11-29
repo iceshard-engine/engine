@@ -184,6 +184,7 @@ namespace ice::hailstorm
         struct HailstormReadParams;
         struct HailstormWriteParams;
         struct HailstormWriteData;
+        struct HailstormAsyncWriteParams;
 
     } // namespace v1
 

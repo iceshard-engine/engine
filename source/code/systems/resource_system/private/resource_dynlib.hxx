@@ -4,10 +4,8 @@
 #pragma once
 #include <ice/resource.hxx>
 #include <ice/os/windows.hxx>
-#include <ice/string_types.hxx>
+#include <ice/native_file.hxx>
 #include <ice/uri.hxx>
-
-#include "native/native_fileio.hxx"
 
 namespace ice
 {
@@ -39,7 +37,7 @@ namespace ice
 
     auto create_dynlib_resource_from_path(
         ice::Allocator& alloc,
-        ice::native_fileio::FilePath file_path
+        ice::native_file::FilePath file_path
     ) noexcept -> ice::Resource*;
 
 } // namespace ice

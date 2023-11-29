@@ -4,11 +4,11 @@
 #pragma once
 #include <ice/os/unix.hxx>
 #include <ice/os/windows.hxx>
+#include <ice/native_file.hxx>
 #include <ice/task.hxx>
 #include <ice/task_queue.hxx>
 #include <ice/task_awaitable.hxx>
 #include <ice/container/linked_queue.hxx>
-#include "native_fileio.hxx"
 #include "native_aio.hxx"
 
 namespace ice
@@ -131,8 +131,8 @@ namespace ice
         }
     };
 
-    using AsyncReadFile = AsyncReadRequestBase<ice::native_fileio::File>;
-    using AsyncReadFileRef = AsyncReadRequestBase<ice::native_fileio::File const&>;
+    using AsyncReadFile = AsyncReadRequestBase<ice::native_file::File>;
+    using AsyncReadFileRef = AsyncReadRequestBase<ice::native_file::File const&>;
 
     auto request_from_overlapped(
         OVERLAPPED* overlapped
@@ -197,7 +197,7 @@ namespace ice
             Result result{ .bytes_read = 0_B };
 
             // We are now resumed on the new thread, so here we can read the file blocking.
-            ice::usize const read_result = native_fileio::read_file(file, { _params.u32_value }, destination);
+            ice::usize const read_result = native_file::read_file(file, { _params.u32_value }, destination);
 
             ICE_ASSERT(read_result <= destination.size, "Read more bytes that requested!");
             result.bytes_read = read_result;
@@ -205,8 +205,8 @@ namespace ice
         }
     };
 
-    using AsyncReadFile = AsyncReadRequestBase<ice::native_fileio::File>;
-    using AsyncReadFileRef = AsyncReadRequestBase<ice::native_fileio::File const&>;
+    using AsyncReadFile = AsyncReadRequestBase<ice::native_file::File>;
+    using AsyncReadFileRef = AsyncReadRequestBase<ice::native_file::File const&>;
 
 #else
 #error "NOT IMPLEMENTED"

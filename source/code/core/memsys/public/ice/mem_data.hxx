@@ -9,6 +9,11 @@
 namespace ice
 {
 
+    template<typename T>
+    concept HasDataRepresentation = requires(T t) {
+        { t.operator ice::Data() } -> std::convertible_to<ice::Data>;
+    };
+
     struct Data
     {
         void const* location;
@@ -28,11 +33,18 @@ namespace ice
     template<typename Type>
     inline auto data_view(Type const& var) noexcept
     {
-        return Data{
-            .location = std::addressof(var),
-            .size = ice::size_of<Type>,
-            .alignment = ice::align_of<Type>
-        };
+        if constexpr (HasDataRepresentation<Type>)
+        {
+            return (ice::Data) var;
+        }
+        else
+        {
+            return Data{
+                .location = std::addressof(var),
+                .size = ice::size_of<Type>,
+                .alignment = ice::align_of<Type>
+            };
+        }
     }
 
     template<typename Type, ice::usize::base_type Size>

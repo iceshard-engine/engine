@@ -48,15 +48,15 @@ namespace ice
 
     auto create_dynlib_resource_from_path(
         ice::Allocator& alloc,
-        ice::native_fileio::FilePath dll_path
+        ice::native_file::FilePath dll_path
     ) noexcept -> ice::Resource*
     {
         ice::Resource* result = nullptr;
 
-        if (ice::native_fileio::exists_file(dll_path))
+        if (ice::native_file::exists_file(dll_path))
         {
             ice::HeapString<> data_file_path{ alloc };
-            ice::native_fileio::path_to_string(dll_path, data_file_path);
+            ice::native_file::path_to_string(dll_path, data_file_path);
 
             // Need to get the string first before moving the HeapString path.
             ice::String const utf8_origin_name = ice::path::basename(data_file_path);

@@ -3,6 +3,7 @@
 /// SPDX-License-Identifier: MIT
 
 #pragma once
+#include <ice/native_file.hxx>
 #include <ice/resource_meta.hxx>
 #include <ice/resource_flags.hxx>
 #include <ice/mem_unique_ptr.hxx>
@@ -11,7 +12,6 @@
 #include <ice/uri.hxx>
 
 #include "resource_filesystem.hxx"
-#include "native/native_fileio.hxx"
 
 namespace ice
 {
@@ -104,10 +104,10 @@ namespace ice
 
     auto create_resources_from_loose_files(
         ice::Allocator& alloc,
-        ice::native_fileio::FilePath base_path,
-        ice::native_fileio::FilePath uri_base_path,
-        ice::native_fileio::FilePath meta_file,
-        ice::native_fileio::FilePath data_file
+        ice::native_file::FilePath base_path,
+        ice::native_file::FilePath uri_base_path,
+        ice::native_file::FilePath meta_file,
+        ice::native_file::FilePath data_file
     ) noexcept -> ice::FileSystemResource*;
 
 } // namespace ice

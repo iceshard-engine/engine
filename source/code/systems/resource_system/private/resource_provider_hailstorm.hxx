@@ -12,6 +12,7 @@
 #include <ice/task_queue.hxx>
 #include <ice/mem_allocator.hxx>
 #include <ice/mem_data.hxx>
+#include <ice/native_file.hxx>
 #include <ice/path_utils.hxx>
 #include <ice/sort.hxx>
 #include <ice/span.hxx>
@@ -99,7 +100,7 @@ namespace ice
     //     HailstormChunkLoader_AlwaysLoaded(
     //         ice::Allocator& alloc,
     //         ice::hailstorm::v1::HailstormChunk const& chunk,
-    //         ice::native_fileio::File const& file
+    //         ice::native_file::File const& file
     //     ) noexcept
     //         : HailstormChunkLoader{ alloc, chunk }
     //         , _file{ file }
@@ -107,7 +108,7 @@ namespace ice
     //     {
     //         // TODO: Move outside of the ctor, makes sure we can handle errors using a factory.
     //         _memory = _allocator.allocate({ _chunk.size, _chunk.align });
-    //         ice::usize const bytes_read = ice::native_fileio::read_file(
+    //         ice::usize const bytes_read = ice::native_file::read_file(
     //             _file, _chunk.offset, _chunk.size, _memory
     //         );
     //         ICE_ASSERT_CORE(bytes_read == _chunk.size);
@@ -119,7 +120,7 @@ namespace ice
     //     }
 
     // private:
-    //     ice::native_fileio::File const& _file;
+    //     ice::native_file::File const& _file;
     //     ice::Memory _memory;
     // };
 
@@ -129,7 +130,7 @@ namespace ice
         HailstormChunkLoader_Persistent(
             ice::Allocator& alloc,
             ice::hailstorm::v1::HailstormChunk const& chunk,
-            ice::native_fileio::File const& file
+            ice::native_file::File const& file
         ) noexcept
             : HailstormChunkLoader{ alloc, chunk }
             , _file{ file }
@@ -212,7 +213,7 @@ namespace ice
         }
 
     private:
-        ice::native_fileio::File const& _file;
+        ice::native_file::File const& _file;
         ice::TaskQueue _awaiting_tasks;
         std::atomic_int32_t _awaitcount;
         std::atomic_int32_t _refcount;
@@ -225,7 +226,7 @@ namespace ice
         HailstormChunkLoader_Regular(
             ice::Allocator& alloc,
             ice::hailstorm::v1::HailstormChunk const& chunk,
-            ice::native_fileio::File const& file
+            ice::native_file::File const& file
         ) noexcept
             : HailstormChunkLoader{ alloc, chunk }
             , _file{ file }
@@ -285,7 +286,7 @@ namespace ice
         }
 
     private:
-        ice::native_fileio::File const& _file;
+        ice::native_file::File const& _file;
         ice::HashMap<ice::u32> _offset_map;
         ice::Array<void*> _pointers;
     };
@@ -300,12 +301,14 @@ namespace ice
             : _allocator{ alloc }
             , _hspack_path{ _allocator }
             , _packname{ _allocator }
+            , _header_memory{ }
+            , _paths_memory{ }
             , _loaders{ _allocator }
             , _entries{ _allocator }
             , _entrymap{ _allocator }
         {
             ICE_ASSERT_CORE(ice::count(paths) == 1);
-            ice::native_fileio::path_from_string(paths[0], _hspack_path);
+            ice::native_file::path_from_string(paths[0], _hspack_path);
             _packname = ice::path::filename(paths[0]);
         }
 
@@ -333,15 +336,15 @@ namespace ice
         {
             if (_hspack_file == false)
             {
-                using native_fileio::FileOpenFlags;
-                _hspack_file = ice::native_fileio::open_file(
+                using native_file::FileOpenFlags;
+                _hspack_file = ice::native_file::open_file(
                     _hspack_path,
                     FileOpenFlags::Exclusive
                 );
 
                 using namespace ice::hailstorm;
                 HailstormHeaderBase base_header;
-                ice::native_fileio::read_file(
+                ice::native_file::read_file(
                     _hspack_file,
                     0_B,
                     ice::size_of<HailstormHeaderBase>,
@@ -349,7 +352,7 @@ namespace ice
                 );
 
                 _header_memory = _allocator.allocate({ base_header.header_size, ice::align_of<HailstormHeader> });
-                ice::native_fileio::read_file(
+                ice::native_file::read_file(
                     _hspack_file,
                     0_B,
                     _header_memory.size,
@@ -361,71 +364,43 @@ namespace ice
                     return ResourceProviderResult::Failure;
                 }
 
-                { // REBUILD PATHS START
+                ice::HeapString<> prefix{ _allocator };
+                ice::native_file::path_to_string(_hspack_path, prefix);
+                ice::string::push_back(prefix, "/");
 
-                    ice::usize const base_paths_size = ice::usize::subtract(
-                        _pack.header.offset_data, _pack.header.header_size
-                    );
-                    ice::usize const extended_size = { _pack.header.count_resources * (ice::string::size(_packname) + 1) };
-                    ice::usize const extended_paths_size = base_paths_size + extended_size;
+                ice::usize const size_extended_paths = ice::hailstorm::v1::prefixed_resource_paths_size(
+                    _pack.paths, ice::count(_pack.resources), prefix
+                );
 
-                    // We allocate enough memory to keep all original paths prefixed with the resource file name and a slash.
-                    _paths_memory = _allocator.allocate(extended_paths_size);
-                    ice::native_fileio::read_file(
-                        _hspack_file,
-                        _pack.header.header_size, // Here paths data start
-                        base_paths_size,
-                        _paths_memory
-                    );
+                // We allocate enough memory to keep all original paths prefixed with the resource file name and a slash.
+                _paths_memory = _allocator.allocate(size_extended_paths);
+                ice::native_file::read_file(
+                    _hspack_file,
+                    _pack.header.header_size, // Here paths data start
+                    _pack.paths.size,
+                    _paths_memory
+                );
 
-                    // We find the first non '0' character. The .hsc ensures the last few bytes in the pats chunk are zeros.
-                    char* const paths_start = reinterpret_cast<char*>(_paths_memory.location);
-                    char* paths_end = (paths_start + base_paths_size.value);
-                    char* ex_paths_end = paths_end + extended_size.value;
-                    while (paths_end[-1] == '\0')
-                    {
-                        paths_end -= 1;
-                        ex_paths_end -= 1;
-                    }
+                // Need to update the resources path_offset values
+                v1::HailstormResource* const resptr = reinterpret_cast<v1::HailstormResource*>(
+                    ice::ptr_add(
+                        _header_memory.location,
+                        ice::ptr_distance(_header_memory.location, _pack.resources._data)
+                    )
+                );
 
-                    // Need to update the resources path_offset values
-                    v1::HailstormResource* const resptr = reinterpret_cast<v1::HailstormResource*>(
-                        ice::ptr_add(
-                            _header_memory.location,
-                            ice::ptr_distance(_header_memory.location, _pack.resources._data)
-                        )
-                    );
+                bool const prefixing_success = v1::prefix_resource_paths(
+                    _pack.paths,
+                    { resptr, ice::count(_pack.resources) },
+                    _paths_memory,
+                    prefix
+                );
+                ICE_ASSERT_CORE(prefixing_success);
 
-                    // Iterate over each resource, update it's path (from last to first)
-                    ice::ucount const packname_count = ice::string::size(_packname);
-                    for (ice::u32 resIdx = _pack.header.count_resources; resIdx > 0; --resIdx)
-                    {
-                        v1::HailstormResource& res = resptr[resIdx - 1];
-                        *ex_paths_end = '\0';
-
-                        ex_paths_end -= res.path_size;
-                        ice::memcpy(ex_paths_end, paths_start + res.path_offset, res.path_size);
-
-                        ex_paths_end[-1] = '/';
-                        ex_paths_end -= 1 + packname_count;
-
-                        ice::memcpy(ex_paths_end, ice::string::begin(_packname), packname_count);
-
-                        // Update resource path information
-                        res.path_offset = ice::u32(ice::ptr_distance(paths_start, ex_paths_end).value);
-                        res.path_size += 1 + packname_count;
-                        ex_paths_end -= 1;
-                    }
-
-                    // Ensure we finished at the proper location
-                    ICE_ASSERT_CORE((ex_paths_end + 1) == paths_start);
-
-                    // Update the memory pointed to
-                    _pack.paths_data = ice::data_view(_paths_memory);
-                } // PATHS END
+                _pack.paths_data = ice::data_view(_paths_memory);
 
                 // Reopen as async
-                _hspack_file = ice::native_fileio::open_file(
+                _hspack_file = ice::native_file::open_file(
                     _hspack_path,
                     FileOpenFlags::Exclusive | FileOpenFlags::Asynchronous
                 );
@@ -549,8 +524,8 @@ namespace ice
 
     private:
         ice::Allocator& _allocator;
-        ice::native_fileio::HeapFilePath _hspack_path;
-        ice::native_fileio::File _hspack_file;
+        ice::native_file::HeapFilePath _hspack_path;
+        ice::native_file::File _hspack_file;
         ice::HeapString<> _packname;
 
         ice::Memory _header_memory;

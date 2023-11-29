@@ -4,9 +4,6 @@
 #include <ice/resource.hxx>
 #include <ice/uri.hxx>
 
-//#include "resource_provider_hailstorm.hxx"
-#include "native/native_fileio.hxx"
-
 namespace ice
 {
 

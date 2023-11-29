@@ -37,6 +37,57 @@ namespace ice::hailstorm
             ice::hailstorm::v1::HailstormWriteData const& data
         ) noexcept -> ice::Memory;
 
+        //! \brief Creates a new Hailstorm cluster based on the write params and provided resource information.
+        //!
+        //! \note This function requires the user to set all async functions to properly handle writing data.
+        //!   Additionally there are no guarantees that write requests are in order. Always use the offset to write
+        //!   data into it's expected location.
+        //! \note Because HS format is quite complex when it comes to writing the creation is handled internally,
+        //!   however chunk selection and data writing are defined using the HailstormAsyncWriteParams struct.
+        //!   This allows for the main routine to stay stable and handle all boilter plate regarding resource
+        //!   iterations, but flexible enough to have full control on how data is written.
+        //!
+        //! \pre All three lists describing resource information are of the same size.
+        //!
+        //! \param [in] params Write params containing logic and detailed information on how to create a final HS cluster.
+        //! \param [in] data A struct containg the data describing all resources to be stored in this cluster.
+        //!
+        //! \return Allocated memory ready to be written to a file. Returns an empty block if the operation fails.
+        bool write_cluster_async(
+            ice::hailstorm::v1::HailstormAsyncWriteParams const& params,
+            ice::hailstorm::v1::HailstormWriteData const& data
+        ) noexcept;
+
+        //! \brief Returns the total size necessary to store all path data with an prefix appended to each entry.
+        //! \param [in] paths_info Path information coming from a hailstorm header.
+        //! \param [in] resource_count Number of resources this prefix will be appended to.
+        //! \param [in] prefix The prefix to be appended to each path.
+        //! \return Size in bytes required for the path buffer to store all entries with the given prefix. \see prefix_resource_paths.
+        auto prefixed_resource_paths_size(
+            ice::hailstorm::v1::HailstormPaths const& paths_info,
+            ice::ucount resource_count,
+            ice::String prefix
+        ) noexcept -> ice::usize;
+
+        //! \brief Updates resource paths stored in memory with enough with a given prefix and updates the given resource list.
+        //! \note The memory needs to be big enoguh to store all paths with the appended prefix, \see prefixed_resource_paths_size.
+        //!
+        //! \warning The passed buffer is required to have paths data at the start.
+        //! \warning The operation will update the buffer contents and resource information.
+        //! \warning It's is REQUIRED that this function works on the entire resource list.
+        //!
+        //! \param [in] paths_info Path information coming from a hailstorm header.
+        //! \param [in] resources List of ALL resources that are part of the paths buffer.
+        //! \param [in] resources The memory block containing path data and additional space to contain all prefixed entries.
+        //! \param [in] prefix The prefix to be appended to each path.
+        //! \return 'true' If the update was successful and all data could be updated.
+        bool prefix_resource_paths(
+            ice::hailstorm::v1::HailstormPaths const& paths_info,
+            ice::Span<ice::hailstorm::v1::HailstormResource> resources,
+            ice::Memory paths_data,
+            ice::String prefix
+        ) noexcept;
+
         //! \brief The data to be provided when writing a hailstorm cluster.
         struct HailstormWriteData
         {
@@ -124,8 +175,8 @@ namespace ice::hailstorm
 
             //! \brief
             using ResouceWriteFn = auto(
-                ice::String path,
-                ice::Metadata const& resource_meta,
+                ice::u32 resource_index,
+                ice::hailstorm::v1::HailstormWriteData const& write_data,
                 ice::Memory memory,
                 void* userdata
             ) noexcept -> bool;
@@ -134,8 +185,7 @@ namespace ice::hailstorm
             ice::Allocator& temp_alloc;
 
             //! \brief Allocator object used to allocate the final memory for writing.
-            //! \todo Allow for streamed writing, might need to make this a pointer since this will probably require
-            //!   a callback approach.
+            //! \note Unused during if using asynchronous write.
             ice::Allocator& cluster_alloc;
 
             //! \brief List of initial chunks to be part of the cluster.
@@ -156,6 +206,46 @@ namespace ice::hailstorm
 
             //! \brief User provided value, can be anything, passed to function routines.
             void* userdata;
+        };
+
+        //! \brief A description of a async write operation for a Hailstorm cluster. Allows to partially control how
+        //!   the resulting hailstorm cluster looks.
+        //! \note This description is an extension of the regular write params description.
+        //! \note All async function calls need to be provided by the user.
+        struct HailstormAsyncWriteParams
+        {
+            HailstormWriteParams base_params;
+
+            using AsyncOpenFn = auto(
+                ice::usize final_cluster_size,
+                void* userdata
+            ) noexcept -> bool;
+
+            using AsyncWriteHeaderFn = auto(
+                ice::Data header_data,
+                ice::usize write_offset,
+                void* userdata
+            ) noexcept -> bool;
+
+            using AsyncWriteDataFn = auto(
+                ice::hailstorm::v1::HailstormWriteData const& write_data,
+                ice::u32 resource_index,
+                ice::usize write_offset,
+                void* userdata
+            ) noexcept -> bool;
+
+            using AsyncCloseFn = auto(
+                void* userdata
+            ) noexcept -> bool;
+
+            AsyncOpenFn* fn_async_open;
+            AsyncWriteHeaderFn* fn_async_write_header;
+            AsyncWriteDataFn* fn_async_write_metadata;
+            AsyncWriteDataFn* fn_async_write_resource;
+            AsyncCloseFn* fn_async_close;
+
+            //! \brief User provided value, can be anything, passed to function routines.
+            void* async_userdata;
         };
 
         //! \brief Default heuristic for creating chunks.
