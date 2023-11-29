@@ -8,6 +8,8 @@
     .BaseDir = '$WorkspaceCodeDir$/tools/hsc_reader'
     .Group = 'Tools'
 
+    .CopyModules = true
+
     .Requires = {
         'Windows'
     }

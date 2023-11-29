@@ -8,6 +8,8 @@
     .BaseDir = '$WorkspaceCodeDir$/tools/hsc_packer'
     .Group = 'Tools'
 
+    .CopyModules = true
+
     .Requires = {
         'Windows'
     }
