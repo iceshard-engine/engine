@@ -2,7 +2,6 @@
 #include <ice/container/hashmap.hxx>
 #include <ice/string/string.hxx>
 #include <ice/string_utils.hxx>
-#include <ice/shard.hxx>
 #include <ice/span.hxx>
 
 namespace ice
@@ -11,7 +10,11 @@ namespace ice
     //! \brief A list of pre-parsed, but unresolved, parameters.
     struct ParamList;
 
+    //! \brief Basic param information representing parts of a param definition.
+    struct ParamInfo;
+
     //! \brief Parameter definition used to find values in the param list.
+    template<typename T>
     struct ParamDefinition;
 
     //! \brief Flags used change parameter 'find' behavior.
@@ -21,43 +24,49 @@ namespace ice
     {
 
         //! \brief Clears all definitions and arguments form the given parameter list.
-        void clear(ice::ParamList& list) noexcept;
+        inline void clear(ice::ParamList& list) noexcept;
 
         //! \brief Clears all pushed arguments from the given parameter list.
         //! \note All defined params are still kept.
-        void clear_args(ice::ParamList& list) noexcept;
+        inline void clear_args(ice::ParamList& list) noexcept;
 
         //! \brief Define a parameter that could be used to construct 'help' output.
         //! \todo The definitions are currently unused.
-        void define(ice::ParamList& list, ice::ParamDefinition definition) noexcept;
+        inline void define(ice::ParamList& list, ice::ParamInfo const& definition) noexcept;
 
         //! \brief Pushes a new argument into the parameter list, the argument may be pushed with a value.
         //! \note This function does not validate pushed values.
-        bool push_arg(ice::ParamList& list, ice::String arg, ice::String value = "") noexcept;
+        inline bool push_arg(ice::ParamList& list, ice::String arg, ice::String value = "") noexcept;
 
         //! \brief Pushes all arguments into the parameter list.
         //! \note This function does not validate pushed values.
-        bool push_args(ice::ParamList& list, ice::Span<char const* const> args) noexcept;
-
+        inline bool push_args(ice::ParamList& list, ice::Span<char const* const> args) noexcept;
 
         //! \brief Return all defined parameters.
-        auto definitions(ice::ParamList const& list) noexcept -> ice::Span<ice::ParamDefinition const>;
+        inline auto definitions(ice::ParamList const& list) noexcept -> ice::Span<ice::ParamInfo const>;
+
+        //! \return 'true' If at least one parameter is found.
+        template<typename Value>
+        inline bool has_any(
+            ice::ParamList const& list,
+            ice::ParamDefinition<Value> const& def
+        ) noexcept;
 
         //! \brief Find the FIRST occurence of a parameter and return its value if present.
         //! \return 'true' If the parameter was found.
         template<typename Value>
-        bool find_first(
+        inline bool find_first(
             ice::ParamList const& list,
-            ice::ParamDefinition const& def,
+            ice::ParamDefinition<Value> const& def,
             Value& out_value
         ) noexcept;
 
         //! \brief Find the LAST occurence of a parameter and return its value if present.
         //! \return 'true' If the parameter was found.
         template<typename Value>
-        bool find_last(
+        inline bool find_last(
             ice::ParamList const& list,
-            ice::ParamDefinition const& def,
+            ice::ParamDefinition<Value> const& def,
             Value& out_value
         ) noexcept;
 
@@ -65,9 +74,9 @@ namespace ice
         //! \note This function collect parameters from both the 'long' and 'short' forms.
         //! \return 'true' If at least one parameter was found.
         template<typename Value>
-        bool find_all(
+        inline bool find_all(
             ice::ParamList const& list,
-            ice::ParamDefinition const& def,
+            ice::ParamDefinition<Value> const& def,
             ice::Array<Value>& out_values
         ) noexcept;
 
@@ -75,15 +84,16 @@ namespace ice
 
     using ParamValidateFn = bool(*)(
         ice::ParamList const& params,
-        ice::ParamDefinition const& def,
+        ice::ParamInfo const& info,
         ice::String value
     ) noexcept;
 
+    template<typename V>
     using ParamParseFn = auto(*)(
         ice::ParamList const& params,
-        ice::ParamDefinition const& def,
-        ice::String value,
-        ice::Shard& out_shard
+        ice::ParamInfo const& info,
+        ice::String raw_value,
+        V& out_value
     ) noexcept -> ice::ucount;
 
     enum class ParamFlags : ice::u8
@@ -95,6 +105,14 @@ namespace ice
         All = IsFlag | IsRequired,
     };
 
+    struct ParamInfo
+    {
+        ice::String name;
+        ice::String name_short;
+        ice::String description;
+    };
+
+    template<typename T>
     struct ParamDefinition
     {
         ice::String name;
@@ -102,9 +120,21 @@ namespace ice
         ice::String description = "";
 
         ice::ParamValidateFn validator = nullptr;
-        ice::ParamParseFn parser = nullptr;
+        ice::ParamParseFn<T> parser = nullptr;
         ice::ParamFlags flags = ParamFlags::None;
+
+        constexpr operator ParamInfo() const noexcept;
     };
+
+    template<typename T>
+    constexpr ParamDefinition<T>::operator ParamInfo() const noexcept
+    {
+        return {
+            .name = name,
+            .name_short = name_short,
+            .description = description
+        };
+    }
 
     struct ParamList
     {
@@ -117,11 +147,12 @@ namespace ice
         };
 
         ice::HashMap<ParamInfo> _params;
-        ice::Array<ice::ParamDefinition> _definitions;
+        ice::Array<ice::ParamInfo> _definitions;
         ice::Array<ice::String> _values;
 
-        ParamList(ice::Allocator& alloc) noexcept;
-        ParamList(ice::Allocator& alloc, ice::Span<char const* const> args) noexcept;
+        inline ParamList(ice::Allocator& alloc) noexcept;
+        inline ParamList(ice::Allocator& alloc, int argc, char const* const* argv) noexcept;
+        inline ParamList(ice::Allocator& alloc, ice::Span<char const* const> args) noexcept;
         ~ParamList() noexcept = default;
     };
 
@@ -129,6 +160,11 @@ namespace ice
         : _definitions{ alloc }
         , _values{ alloc }
         , _params{ alloc }
+    {
+    }
+
+    inline ParamList::ParamList(ice::Allocator& alloc, int argc, char const* const* argv) noexcept
+        : ParamList{ alloc, { argv, ice::ucount(argc) } }
     {
     }
 
@@ -147,7 +183,7 @@ namespace ice
 
         inline bool default_param_validator(
             ice::ParamList const& /*params*/,
-            ice::ParamDefinition const& /*def*/,
+            ice::ParamInfo const& /*def*/,
             ice::String value
         ) noexcept
         {
@@ -157,19 +193,30 @@ namespace ice
         template<typename T>
         inline auto default_param_parser(
             ice::ParamList const& /*params*/,
-            ice::ParamDefinition const& /*def*/,
+            ice::ParamInfo const& /*def*/,
             ice::String raw_value,
-            ice::Shard& out_value
+            T& out_value
         ) noexcept -> ice::ucount
         {
-            T value;
-            ice::FromCharsResult<ice::String> result = ice::from_chars(raw_value, value);
-            if (result)
+            if constexpr (std::is_same_v<T, ice::String>)
             {
-                out_value = "param"_shardid | value;
+                out_value = raw_value;
                 return 1;
             }
-            return 0;
+            else if constexpr (std::is_integral_v<T> && std::is_same_v<T, bool> == false)
+            {
+                T value;
+                ice::FromCharsResult<ice::String> result = ice::from_chars(raw_value, value);
+                if (result)
+                {
+                    out_value = value;
+                    return 1;
+                }
+            }
+            else
+            {
+                return 0;
+            }
         }
 
         inline bool parse_option(ice::String& value, bool& is_short) noexcept
@@ -213,9 +260,10 @@ namespace ice
             }
         }
 
+        template<typename T>
         inline auto get_paraminfo(
             ice::HashMap<ParamInfo> const& params,
-            ice::ParamDefinition const& def
+            ice::ParamDefinition<T> const& def
         ) noexcept -> ice::detail::ParamInfo
         {
             detail::ParamInfo combined_info{ .first_index = ice::u8_max };
@@ -244,7 +292,7 @@ namespace ice
         inline bool read_param(
             ice::ParamList const& params,
             ice::detail::ParamInfo info,
-            ice::ParamDefinition const& def,
+            ice::ParamDefinition<T> const& def,
             T& out_value,
             bool find_last
         ) noexcept
@@ -288,19 +336,11 @@ namespace ice
             bool is_valid = def.validator == nullptr || def.validator(params, def, raw_value);
             if (is_valid)
             {
-                ice::Shard shard;
-                if constexpr (std::is_same_v<std::remove_reference_t<T>, ice::String>)
-                {
-                    out_value = raw_value;
-                }
-                else
-                {
-                    ice::ParamParseFn fn_parser = def.parser == nullptr
-                        ? default_param_parser<T>
-                        : def.parser;
-                    fn_parser(params, def, raw_value, shard);
-                    is_valid = ice::shard_inspect(shard, out_value);
-                }
+                ice::ParamParseFn<T> fn_parser = def.parser == nullptr
+                    ? default_param_parser<T>
+                    : def.parser;
+
+                is_valid = fn_parser(params, def, raw_value, out_value) > 0;
             }
             return is_valid;
         }
@@ -309,7 +349,7 @@ namespace ice
         inline bool read_param(
             ice::ParamList const& params,
             ice::detail::ParamInfo info,
-            ice::ParamDefinition const& def,
+            ice::ParamDefinition<T> const& def,
             ice::Array<T>& out_values
         ) noexcept
         {
@@ -340,34 +380,20 @@ namespace ice
                     ice::String const raw_value = params._values[idx];
                     if (def.validator == nullptr || def.validator(params, def, raw_value))
                     {
-                        if constexpr (std::is_same_v<std::remove_reference_t<T>, ice::String>)
+                        ice::ParamParseFn<T> fn_parser = def.parser == nullptr
+                            ? default_param_parser<T>
+                            : def.parser;
+
+                        T temp_value{};
+                        ice::ucount const consumed = fn_parser(params, def, raw_value, temp_value);
+                        if (consumed == 0)
                         {
-                            ice::array::push_back(out_values, raw_value);
-                            added += 1;
+                            break;
                         }
-                        else
-                        {
-                            ice::ParamParseFn fn_parser = def.parser == nullptr
-                                ? default_param_parser<T>
-                                : def.parser;
 
-                            ice::Shard shard;
-                            ice::ucount const consumed = fn_parser(params, def, raw_value, shard);
-                            if (consumed == 0)
-                            {
-                                break;
-                            }
-
-                            T temp_val;
-                            if (ice::shard_inspect(shard, temp_val) == false)
-                            {
-                                break;
-                            }
-
-                            ice::array::push_back(out_values, temp_val);
-                            idx += consumed - 1;
-                            added += 1;
-                        }
+                        ice::array::push_back(out_values, ice::move(temp_value));
+                        idx += consumed - 1;
+                        added += 1;
                     }
                 }
                 idx += 1;
@@ -382,26 +408,24 @@ namespace ice
     namespace params
     {
 
-        void clear(ice::ParamList& list) noexcept
+        inline void clear(ice::ParamList& list) noexcept
         {
             ice::array::clear(list._definitions);
             ice::params::clear_args(list);
         }
 
-        void clear_args(ice::ParamList& list) noexcept
+        inline void clear_args(ice::ParamList& list) noexcept
         {
             ice::array::clear(list._values);
             ice::hashmap::clear(list._params);
         }
 
-        void define(ice::ParamList& list, ice::ParamDefinition definition) noexcept
+        inline void define(ice::ParamList& list, ice::ParamInfo const& definition) noexcept
         {
-            definition.validator = detail::default_param_validator;
-            definition.parser = nullptr;
             ice::array::push_back(list._definitions, definition);
         }
 
-        bool push_arg(ice::ParamList& list, ice::String arg, ice::String value) noexcept
+        inline bool push_arg(ice::ParamList& list, ice::String arg, ice::String value) noexcept
         {
             ice::u8 argidx = ice::u8(ice::array::count(list._values));
             ice::array::push_back(list._values, arg);
@@ -429,7 +453,7 @@ namespace ice
             return true;
         }
 
-        bool push_args(ice::ParamList& list, ice::Span<char const* const> args) noexcept
+        inline bool push_args(ice::ParamList& list, ice::Span<char const* const> args) noexcept
         {
             ice::array::grow(
                 list._values,
@@ -443,58 +467,93 @@ namespace ice
             return true;
         }
 
-
-        auto definitions(ice::ParamList const& list) noexcept -> ice::Span<ice::ParamDefinition const>
+        inline auto definitions(ice::ParamList const& list) noexcept -> ice::Span<ice::ParamInfo const>
         {
             return list._definitions;
         }
 
         template<typename Value>
-        bool find_first(
+        inline bool has_any(
             ice::ParamList const& list,
-            ice::ParamDefinition const& def,
+            ice::ParamDefinition<Value> const& def
+        ) noexcept
+        {
+            detail::ParamInfo const info = detail::get_paraminfo(list._params, def);
+            if (info.first_index == ice::u8_max)
+            {
+                return false;
+            }
+
+            ice::String raw_value = list._values[info.first_index];
+            if (detail::parse_option(raw_value))
+            {
+                ICE_ASSERT_CORE(raw_value == def.name || ice::string::find_first_of(raw_value, def.name_short) != ice::String_NPos);
+                return true;
+            }
+            return false;
+        }
+
+        template<typename Value>
+        inline bool find_first(
+            ice::ParamList const& list,
+            ice::ParamDefinition<Value> const& def,
             Value& out_value
         ) noexcept
         {
             detail::ParamInfo const info = detail::get_paraminfo(list._params, def);
+            if (info.first_index == ice::u8_max)
+            {
+                return false;
+            }
+
             ice::String raw_value = list._values[info.first_index];
             if (detail::parse_option(raw_value))
             {
-                ICE_ASSERT_CORE(raw_value == def.name || raw_value == def.name_short);
+                ICE_ASSERT_CORE(raw_value == def.name || ice::string::find_first_of(raw_value, def.name_short) != ice::String_NPos);
                 return detail::read_param(list, info, def, out_value, /* find last */ false);
             }
             return false;
         }
 
         template<typename Value>
-        bool find_last(
+        inline bool find_last(
             ice::ParamList const& list,
-            ice::ParamDefinition const& def,
+            ice::ParamDefinition<Value> const& def,
             Value& out_value
         ) noexcept
         {
             detail::ParamInfo const info = detail::get_paraminfo(list._params, def);
+            if (info.first_index == ice::u8_max)
+            {
+                return false;
+            }
+
             ice::String raw_value = list._values[info.first_index];
             if (detail::parse_option(raw_value))
             {
-                ICE_ASSERT_CORE(raw_value == def.name || raw_value == def.name_short);
+                ICE_ASSERT_CORE(raw_value == def.name || ice::string::find_first_of(raw_value, def.name_short) != ice::String_NPos);
                 return detail::read_param(list, info, def, out_value, /* find last */ true);
             }
             return false;
         }
 
         template<typename Value>
-        bool find_all(
+        inline bool find_all(
             ice::ParamList const& list,
-            ice::ParamDefinition const& def,
+            ice::ParamDefinition<Value> const& def,
             ice::Array<Value>& out_values
         ) noexcept
         {
             detail::ParamInfo const info = detail::get_paraminfo(list._params, def);
+            if (info.first_index == ice::u8_max)
+            {
+                return false;
+            }
+
             ice::String raw_value = list._values[info.first_index];
             if (detail::parse_option(raw_value))
             {
-                ICE_ASSERT_CORE(raw_value == def.name || raw_value == def.name_short);
+                ICE_ASSERT_CORE(raw_value == def.name || ice::string::find_first_of(raw_value, def.name_short) != ice::String_NPos);
                 return detail::read_param(list, info, def, out_values);
             }
             return false;
