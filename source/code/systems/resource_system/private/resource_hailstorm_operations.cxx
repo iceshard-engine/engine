@@ -50,12 +50,18 @@ namespace ice::hailstorm::v1
                 return ErrorHandler{ _params.fn_async_write_metadata(data, idx, offset, _params.async_userdata) };
             }
 
-            ~TrackedStream() noexcept
+            void close() noexcept
             {
                 if (_open)
                 {
                     _params.fn_async_close(_params.async_userdata);
+                    _open = false;
                 }
+            }
+
+            ~TrackedStream() noexcept
+            {
+                ICE_ASSERT_CORE(_open == false);
             }
 
             ice::hailstorm::v1::HailstormAsyncWriteParams const& _params;
@@ -789,6 +795,7 @@ namespace ice::hailstorm::v1
         // Write final memory information
         co_await stream.write_header(ice::data_view(temp_paths_mem), offsets.paths_data);
         co_await stream.write_header(ice::data_view(temp_resource_mem), offsets.resources);
+        stream.close();
         co_return;
     }
 

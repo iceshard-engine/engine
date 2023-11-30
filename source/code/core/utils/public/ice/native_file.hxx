@@ -21,16 +21,19 @@ namespace ice::native_file
     enum class FileOpenFlags : ice::u8
     {
         //! \brief Same as 'ReadOnly'
-        None,
+        None = 0b0000'0000,
 
-        //! \brief Opens the file for read-only operations.
-        ReadOnly = None,
+        //! \brief Opens the file for read operations.
+        Read = 0b0000'0000,
+
+        //! \brief Opens the file for write operations.
+        Write = 0b0000'0001,
 
         //! \brief Opens the file in exclusive mode.
-        Exclusive,
+        Exclusive = 0b0001'0000,
 
         //! \brief Opens the file for asynchronous read-only operations.
-        Asynchronous,
+        Asynchronous = 0b0010'0000,
     };
 
     bool exists_file(
@@ -39,7 +42,7 @@ namespace ice::native_file
 
     auto open_file(
         ice::native_file::FilePath path,
-        ice::native_file::FileOpenFlags flags = FileOpenFlags::ReadOnly
+        ice::native_file::FileOpenFlags flags = FileOpenFlags::Read
     ) noexcept -> ice::native_file::File;
 
     auto sizeof_file(

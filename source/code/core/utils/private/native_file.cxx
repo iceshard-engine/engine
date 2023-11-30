@@ -18,7 +18,51 @@ namespace ice::native_file
 
 #if ISP_WINDOWS
 
-    inline auto translate_flags(ice::native_file::FileOpenFlags flags) noexcept -> DWORD
+    inline auto translate_disposition(ice::native_file::FileOpenFlags flags) noexcept -> DWORD
+    {
+        // For details see: https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-createfilew
+        DWORD result = OPEN_EXISTING;
+        if (ice::has_any(flags, FileOpenFlags::Write))
+        {
+            result = CREATE_ALWAYS;
+        }
+        return result;
+    }
+
+    inline auto translate_mode(ice::native_file::FileOpenFlags flags) noexcept -> DWORD
+    {
+        // For details see: https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-createfilew
+        DWORD result = 0;
+        if (ice::has_none(flags, FileOpenFlags::Exclusive))
+        {
+            if (ice::has_any(flags, FileOpenFlags::Write))
+            {
+                result = FILE_SHARE_WRITE;
+            }
+            else
+            {
+                result = FILE_SHARE_READ;
+            }
+        }
+        return result;
+    }
+
+    inline auto translate_access(ice::native_file::FileOpenFlags flags) noexcept -> DWORD
+    {
+        // For details see: https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-createfilew
+        DWORD result = FILE_READ_ATTRIBUTES;
+        if (ice::has_any(flags, FileOpenFlags::Write))
+        {
+            result |= FILE_WRITE_DATA;
+        }
+        else
+        {
+            result |= FILE_READ_DATA;
+        }
+        return result;
+    }
+
+    inline auto translate_attribs(ice::native_file::FileOpenFlags flags) noexcept -> DWORD
     {
         // For details see: https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-createfilew
         DWORD result = FILE_ATTRIBUTE_NORMAL;
@@ -45,11 +89,11 @@ namespace ice::native_file
         IPT_ZONE_SCOPED;
         ice::win32::FileHandle handle = CreateFileW(
             ice::string::begin(path),
-            FILE_READ_DATA | FILE_READ_ATTRIBUTES,
-            FILE_SHARE_READ, // FILE_SHARE_*
+            translate_access(flags),
+            translate_mode(flags), // FILE_SHARE_*
             NULL, // SECURITY ATTRIBS
-            OPEN_EXISTING,
-            translate_flags(flags),
+            translate_disposition(flags),
+            translate_attribs(flags),
             NULL
         );
         return handle;
