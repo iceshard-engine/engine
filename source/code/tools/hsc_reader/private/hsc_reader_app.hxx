@@ -26,20 +26,18 @@ struct ParamRange
     ice::u32 start = 0;
     ice::u32 count = ice::u32_max;
 
-    static auto param_validate(ice::ParamList const&, ice::ParamInfo const&, ice::String value) noexcept
-    {
-        return ice::string::find_first_not_of(value, ice::String{ "0123456789," }) == ice::String_NPos;
-    }
+    static bool param_validate(
+        ice::ParamList const& list,
+        ice::ParamInfo const& info,
+        ice::String value
+    ) noexcept;
 
-    static auto param_parse(ice::ParamList const& list, ice::ParamInfo const& info, ice::String value, ParamRange& out_range) noexcept -> ice::u32
-    {
-        ice::from_chars(value, value, out_range.start);
-        if (ice::string::any(value))
-        {
-            ice::from_chars(ice::string::substr(value, 1), out_range.count);
-        }
-        return 1;
-    }
+    static auto param_parse(
+        ice::ParamList const& list,
+        ice::ParamInfo const& info,
+        ice::String value,
+        ParamRange& out_range
+    ) noexcept -> ice::u32;
 };
 
 static constexpr ice::ParamDefinition<ice::String> Param_File{
@@ -73,9 +71,39 @@ static constexpr ice::ParamDefinition<ParamRange> Param_InfoResources{
     .parser = ParamRange::param_parse,
 };
 
+static constexpr ice::ParamDefinition<bool> Param_InfoCustomValues{
+    .name = "show-custom-values",
+    .description = "Shows app custom values (if the format supports them).",
+    .flags = ice::ParamFlags::IsFlag,
+};
+
 static constexpr ice::ParamDefinition<bool> Param_InfoResourcePaths{
     .name = "paths",
     .name_short = "p",
     .description = "Shows resource path information.",
     .flags = ice::ParamFlags::IsFlag,
 };
+
+bool ParamRange::param_validate(
+    ice::ParamList const& list,
+    ice::ParamInfo const& info,
+    ice::String value
+) noexcept
+{
+    return ice::string::find_first_not_of(value, ice::String{ "0123456789," }) == ice::String_NPos;
+}
+
+auto ParamRange::param_parse(
+    ice::ParamList const& list,
+    ice::ParamInfo const& info,
+    ice::String value,
+    ParamRange& out_range
+) noexcept -> ice::u32
+{
+    ice::from_chars(value, value, out_range.start);
+    if (ice::string::any(value))
+    {
+        ice::from_chars(ice::string::substr(value, 1), out_range.count);
+    }
+    return 1;
+}

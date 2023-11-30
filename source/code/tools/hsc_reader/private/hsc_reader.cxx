@@ -52,7 +52,7 @@ int main(int argc, char** argv)
 
         if (result = hailstorm_validate_header(data.header); result == 0)
         {
-            hailstorm_print_headerinfo(data.header);
+            hailstorm_print_headerinfo(params, data.header);
 
             if (print_chunks || print_resources)
             {
@@ -67,7 +67,7 @@ int main(int argc, char** argv)
                     ParamRange range;
                     if (ice::params::find_first(params, Param_InfoChunks, range))
                     {
-                        hailstorm_print_chunkinfo(data, range);
+                        hailstorm_print_chunkinfo(params, data, range);
                     }
 
                     if (ice::params::find_first(params, Param_InfoResources, range))

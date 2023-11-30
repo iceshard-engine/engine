@@ -22,8 +22,10 @@ void hscr_initialize_tags(ice::ParamList const& params) noexcept
     for (auto const& tag : tags)
     {
         ice::log_tag_register(std::get<0>(tag));
-        auto def = hscr_flag_param(std::get<1>(tag));
-        ice::params::find_first(params, def, tag_enable);
+
+        // Check if the tag can be enabled.
+        ice::ParamDefinition<bool> temp_param = hscr_flag_param(std::get<1>(tag));
+        ice::params::find_first(params, temp_param, tag_enable);
         ice::log_tag_enable(std::get<0>(tag).tag, std::exchange(tag_enable, false));
     }
 }

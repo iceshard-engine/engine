@@ -73,7 +73,7 @@ namespace ice::hailstorm
             //! \brief Number of resources in this pack.
             ice::u16 count_resources;
 
-            //! \brief Custom values available for application specific values.
+            //! \brief Custom values available for application specific use.
             ice::u64 app_custom_values[3];
         };
 
@@ -130,8 +130,9 @@ namespace ice::hailstorm
             //! \note If data was also encrypted, this step is done AFTER decrypting the data.
             ice::u8 is_compressed : 1;
 
-            //! \brief Reserved for future use.
-            ice::u8 _reserved0[1];
+            //! \brief Custom value available for application specific use.
+            //! \note This field may reused by the format in the future.
+            ice::u8 app_custom_value;
 
             //! \brief Number of entries stored in this chunk. Can be used to optimize runtime allocations.
             ice::u16 count_entries;
