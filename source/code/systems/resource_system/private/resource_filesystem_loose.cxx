@@ -4,6 +4,7 @@
 #include "resource_filesystem_loose.hxx"
 #include "native/native_aio_tasks.hxx"
 
+#include <ice/mem_allocator_stack.hxx>
 #include <ice/path_utils.hxx>
 #include <ice/container/hashmap.hxx>
 #include <ice/task.hxx>
@@ -250,6 +251,14 @@ namespace ice
         }
     }
 
+    auto LooseFilesResource::size() const noexcept -> ice::usize
+    {
+        ice::StackAllocator_1024 alloc;
+        ice::native_file::HeapFilePath path{ alloc };
+        ice::native_file::path_from_string(_origin_path, path);
+        return ice::native_file::sizeof_file(path);
+    }
+
     LooseFilesResource::ExtraResource::ExtraResource(
         ice::LooseFilesResource& parent,
         ice::HeapString<> origin_path,
@@ -303,8 +312,9 @@ namespace ice
         ice::native_file::FilePath data_filepath
     ) noexcept -> ice::FileSystemResource*
     {
+        IPT_ZONE_SCOPED;
         ice::LooseFilesResource* main_resource = nullptr;
-        bool const data_exists = ice::native_file::exists_file(data_filepath);
+        bool const data_exists = true;// ice::native_file::exists_file(data_filepath);
         bool const meta_exists = ice::native_file::exists_file(meta_filepath);
 
         if (data_exists)
@@ -314,6 +324,7 @@ namespace ice
                 ice::HeapString<> utf8_file_path{ alloc };
                 ice::native_file::path_to_string(data_filepath, utf8_file_path);
                 ice::path::normalize(utf8_file_path);
+                IPT_ZONE_TEXT_STR(utf8_file_path);
 
                 // TODO: Decide how to handle the basepath naming.
                 bool const remove_slash = utf8_file_path[ice::path::length(base_path)] == '/';
@@ -325,6 +336,7 @@ namespace ice
                 ice::MutableMetadata mutable_meta{ alloc };
                 if (meta_exists)
                 {
+                    IPT_ZONE_SCOPED_NAMED("stage: read_metadata");
                     bool meta_load_success = ice::detail::load_metadata_file(alloc, meta_filepath, mutable_meta);
                     ICE_LOG_IF(
                         meta_load_success == false,
@@ -334,6 +346,7 @@ namespace ice
                     );
                 }
 
+                IPT_ZONE_SCOPED_NAMED("stage: create_resource");
                 main_resource = alloc.create<ice::LooseFilesResource>(
                     alloc,
                     ice::move(mutable_meta),
@@ -343,6 +356,7 @@ namespace ice
                 );
             }
 
+            IPT_ZONE_SCOPED_NAMED("stage: extra_files");
             // We can access the metadata now again.
             ice::Metadata metadata;
             bool const success = ice::wait_for(main_resource->load_metadata(metadata));

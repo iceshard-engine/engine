@@ -93,6 +93,20 @@ namespace ice
             }
         }
 
+        static auto traverse_count_files(
+            ice::native_file::FilePath base_path,
+            ice::native_file::FilePath path,
+            ice::native_file::EntityType type,
+            void* userdata
+        ) noexcept -> ice::native_file::TraverseAction
+        {
+            if (type == ice::native_file::EntityType::File)
+            {
+                *((ice::ucount*)userdata) += 1;
+            }
+            return ice::native_file::TraverseAction::Continue;
+        }
+
         static auto traverse_callback(
             ice::native_file::FilePath base_path,
             ice::native_file::FilePath path,
@@ -110,6 +124,16 @@ namespace ice
 
         void initial_traverse() noexcept
         {
+            ice::ucount count = 0;
+            {
+                IPT_ZONE_SCOPED_NAMED("Calc number of resources");
+                for (ice::native_file::FilePath base_path : _base_paths)
+                {
+                    ice::native_file::traverse_directories(base_path, traverse_count_files, &count);
+                }
+            }
+
+            ice::hashmap::reserve(_resources, count);
             for (ice::native_file::FilePath base_path : _base_paths)
             {
                 ice::native_file::traverse_directories(base_path, traverse_callback, this);

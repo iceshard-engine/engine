@@ -518,8 +518,6 @@ namespace ice::hailstorm::v1
         ice::array::resize(metatracker, ice::count(write_data.metadata_mapping));
         ice::array::memset(metatracker, ice::u8_max);
 
-        bool requires_data_writer_callback = false;
-
         // We go over all resources and create the list of final chunks.
         HailstormPaths paths_info{ .size = 8_B }; // If empty always contains eight '0' values.
         for (ice::ucount idx = 0; idx < res_count;)
@@ -534,9 +532,6 @@ namespace ice::hailstorm::v1
 
             ice::Metadata const& meta = write_data.metadata[metadata_idx];
             ice::Data data = write_data.data[idx];
-
-            // Check if even one data object is not provided.
-            requires_data_writer_callback |= data.location == nullptr;
 
             HailstormWriteChunkRef ref = params.fn_select_chunk(meta, data, chunks, params.userdata);
             ICE_ASSERT_CORE(ref.data_chunk < ice::count(chunks));
@@ -644,9 +639,6 @@ namespace ice::hailstorm::v1
             // Increase index at the end
             idx += 1;
         }
-
-        // Either we don't need the callback or we need to have it provided!
-        ICE_ASSERT_CORE(requires_data_writer_callback == false || params.fn_resource_write != nullptr);
 
         // Paths needs to be aligned to boundary of 8
         paths_info.size = ice::align_to(paths_info.size, ualign::b_8).value;

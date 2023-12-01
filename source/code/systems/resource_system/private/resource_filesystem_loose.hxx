@@ -53,6 +53,8 @@ namespace ice
             ice::NativeAIO* nativeio
         ) const noexcept -> ice::Task<ice::Memory> override;
 
+        auto size() const noexcept -> ice::usize override;
+
         class ExtraResource;
 
     private:

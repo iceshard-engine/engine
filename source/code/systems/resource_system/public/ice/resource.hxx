@@ -32,6 +32,8 @@ namespace ice
     class LooseResource : public Resource
     {
     public:
+        virtual auto size() const noexcept -> ice::usize = 0;
+
         virtual auto load_named_part(
             ice::StringID_Arg part_name,
             ice::Allocator& alloc
