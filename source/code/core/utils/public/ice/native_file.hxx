@@ -45,9 +45,8 @@ namespace ice::native_file
         ice::native_file::FileOpenFlags flags = FileOpenFlags::Read
     ) noexcept -> ice::native_file::File;
 
-    auto sizeof_file(
-        ice::native_file::File const& native_file
-    ) noexcept -> ice::usize;
+    auto sizeof_file(ice::native_file::File const& native_file) noexcept -> ice::usize;
+    auto sizeof_file(ice::native_file::FilePath path) noexcept -> ice::usize;
 
     auto read_file(
         ice::native_file::File const& native_file,

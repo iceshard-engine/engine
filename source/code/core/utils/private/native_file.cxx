@@ -75,6 +75,7 @@ namespace ice::native_file
 
     bool exists_file(ice::native_file::FilePath path) noexcept
     {
+        IPT_ZONE_SCOPED;
         DWORD const result = GetFileAttributesW(ice::string::begin(path));
         return result != INVALID_FILE_ATTRIBUTES
             && (result == FILE_ATTRIBUTE_NORMAL
@@ -107,6 +108,20 @@ namespace ice::native_file
             result.QuadPart = 0;
         }
         return { static_cast<ice::usize::base_type>(result.QuadPart) };
+    }
+
+    auto sizeof_file(ice::native_file::FilePath path) noexcept -> ice::usize
+    {
+        ice::win32::FileHandle handle = CreateFileW(
+            path._data,
+            FILE_READ_ATTRIBUTES,
+            FILE_SHARE_READ,
+            NULL,
+            OPEN_EXISTING,
+            FILE_ATTRIBUTE_NORMAL,
+            NULL
+        );
+        return sizeof_file(handle);
     }
 
     auto read_file(
