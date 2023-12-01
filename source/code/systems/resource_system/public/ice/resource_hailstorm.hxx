@@ -80,7 +80,9 @@ namespace ice::hailstorm
             //!   need to set this ID to the base pack that is beeing updated.
             ice::u32 pack_id;
 
-            //! \brief Integer value starting at '0' and increasing by one for each extension pack applied to a base pack.
+            //! \brief Integer value starting at '1' and increasing by one for each extension and patch pack applied to a base pack.
+            //! \note This value is always '0' for base packs. The pack order for patch and extension packs is independent.
+            //! \example After applying 1 extension pack and 4 patch packs, the next pack orders will be '2' and '5' respectively.
             ice::u32 pack_order;
 
             //! \brief Custom values available for application specific use.
