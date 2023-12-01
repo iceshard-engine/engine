@@ -364,6 +364,8 @@ namespace ice::hailstorm::v1
         header.magic = Constant_HailstormMagic;
         header.header_version = Constant_HailstormHeaderVersion;
         header.header_size = offsets.paths_data;
+        header.pack_id = 0; // TODO: Expose
+        header.pack_order = 0; // TODO: Expose
         paths_info.offset = offsets.paths_data;
 
         // Copy custom values into the final header.

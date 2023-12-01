@@ -58,6 +58,8 @@ namespace ice::hailstorm
             ice::u8 is_expansion : 1;
 
             //! \brief This is an patch pack and does only contain updated versions of existing resources.
+            //! \note Patch packs MAY not provide paths information, instead 'resource.path_offset' contains the resource
+            //!   index that it replaces. The 'resource.path_size' field is unused and the value is undefined.
             ice::u8 is_patch : 1;
 
             //! \brief The data stored in this pack is pre-baked and can be consumed directly by most engine systems.
@@ -73,8 +75,16 @@ namespace ice::hailstorm
             //! \brief Number of resources in this pack.
             ice::u16 count_resources;
 
+            //! \brief Unique pack identifier used for patch and extension packs.
+            //! \details The identifier should be unique of base packs, however patch and expansion packs
+            //!   need to set this ID to the base pack that is beeing updated.
+            ice::u32 pack_id;
+
+            //! \brief Integer value starting at '0' and increasing by one for each extension pack applied to a base pack.
+            ice::u32 pack_order;
+
             //! \brief Custom values available for application specific use.
-            ice::u64 app_custom_values[3];
+            ice::u64 app_custom_values[2];
         };
 
         static_assert(sizeof(HailstormHeaderBase) == 16);
@@ -111,7 +121,8 @@ namespace ice::hailstorm
             //!   ensures all resources data is stored at the proper alignment.
             ice::ualign align;
 
-            //! \brief The type of data stored in this chunk. One of: Metadata = 1, FileData = 2, Mixed = 3
+            //! \brief The type of data stored in this chunk. One of: AppSpecific/Undefined = 0, Metadata = 1, FileData = 2, Mixed = 3
+            //! \note When a chunk has 'AppSpecific' data, it's contents is undefined by the format.
             ice::u8 type : 2;
 
             //! \brief The preffered loading strategy. One of: Temporary = 0, Regular = 1, LoadIfPossible = 2, LoadAlways = 3
@@ -162,8 +173,20 @@ namespace ice::hailstorm
             //! \brief The size of the stored metadata.
             ice::u32 meta_size;
 
-            //! \brief The offset at which path information is stored. This value is relative to the HailsormPaths offset member.
-            ice::u32 path_offset;
+            union
+            {
+                //! \brief The offset at which path information is stored. This value is relative to the HailsormPaths offset member.
+                //! \warning Only valid on 'base' and 'extension' packs.
+                ice::u32 path_offset;
+
+                //! \brief An absolute resource index of the resource to be replaced.
+                //! \note When a patch pack is created it requires access to all base and extensions packs with 'pack_id' and 'pack_order'
+                //!   set properly to calculate this 'patch_resource_index' value.
+                //! \example If we have a pack (res_count = 30) with two extensions (res_count = 7), a patch to the second resource
+                //!   in the second extension pack would set 'patch_resource_index' to '38'. Indexing starts at '0' so '30 + 7 + 1'.
+                //! \warning Only valid on 'patch' packs.
+                ice::u32 patch_resource_index;
+            };
 
             //! \brief The size of the path.
             ice::u32 path_size;

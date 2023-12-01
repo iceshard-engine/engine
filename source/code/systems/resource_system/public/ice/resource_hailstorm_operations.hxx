@@ -112,7 +112,7 @@ namespace ice::hailstorm
             ice::Span<ice::u32 const> metadata_mapping;
 
             //! \brief Application custom values.
-            ice::u64 custom_values[3];
+            ice::u64 custom_values[2];
         };
 
         //! \brief Used to select chunks for resource metadata and data destinations.
