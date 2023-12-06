@@ -1,3 +1,6 @@
+/// Copyright 2023 - 2023, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
 #include <ice/resource_hailstorm_operations.hxx>
 #include <ice/container/array.hxx>
 #include <ice/sync_manual_events.hxx>

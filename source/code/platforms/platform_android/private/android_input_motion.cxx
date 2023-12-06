@@ -1,3 +1,6 @@
+/// Copyright 2023 - 2023, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
 #include "android_input_motion.hxx"
 #include <ice/profiler.hxx>
 #include <ice/log.hxx>
