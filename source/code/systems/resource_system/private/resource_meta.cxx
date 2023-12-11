@@ -398,7 +398,7 @@ namespace ice
     auto meta_read_string_array(
         ice::Metadata const& meta,
         ice::StringID_Arg key,
-        ice::Array<ice::String, ContainerLogic::Complex>& results
+        ice::Array<ice::String>& results
     ) noexcept -> bool
     {
         detail::MetadataEntry entry;

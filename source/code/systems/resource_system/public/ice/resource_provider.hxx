@@ -78,12 +78,8 @@ namespace ice
 
     auto create_resource_provider(
         ice::Allocator& alloc,
-        ice::String path
-    ) noexcept -> ice::UniquePtr<ice::ResourceProvider>;
-
-    auto create_resource_provider(
-        ice::Allocator& alloc,
-        ice::Span<ice::String const> paths
+        ice::Span<ice::String const> paths,
+        ice::TaskScheduler* scheduler = nullptr
     ) noexcept -> ice::UniquePtr<ice::ResourceProvider>;
 
     auto create_resource_provider_dlls(

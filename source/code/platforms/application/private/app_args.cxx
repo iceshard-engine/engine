@@ -5,7 +5,7 @@
 
 void ice_args(
     ice::Allocator& alloc,
-    ice::app::ArgumentsConfig& args
+    ice::ParamList& params
 ) noexcept
 {
 

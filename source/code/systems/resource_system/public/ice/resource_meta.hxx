@@ -121,7 +121,7 @@ namespace ice
     auto meta_read_string_array(
         ice::Metadata const& meta,
         ice::StringID_Arg key,
-        ice::Array<ice::String, ContainerLogic::Complex>& result
+        ice::Array<ice::String>& result
     ) noexcept -> bool;
 
 

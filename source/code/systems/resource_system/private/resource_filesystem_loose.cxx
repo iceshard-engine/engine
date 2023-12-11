@@ -60,11 +60,20 @@ namespace ice
                     "Trying to load file larger than supported!"
                 );
 
-                result = alloc.allocate(filesize);
-                bool const success = co_await async_file_read(ice::move(handle), filesize, nativeio, result);
-                if (success == false)
+                if (filesize > 0_B)
                 {
-                    alloc.deallocate(result);
+                    result = alloc.allocate(filesize);
+                    bool const success = co_await async_file_read(ice::move(handle), filesize, nativeio, result);
+                    if (success == false)
+                    {
+                        alloc.deallocate(result);
+                    }
+                }
+                else
+                {
+                    // Allocate 1 byte just to not return a nullptr.
+                    // TODO: Find a better way to handle this.
+                    result = alloc.allocate(1_B);
                 }
             }
             co_return result;

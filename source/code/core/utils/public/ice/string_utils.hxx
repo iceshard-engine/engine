@@ -4,6 +4,7 @@
 #pragma once
 #include <ice/string/string.hxx>
 #include <ice/string/heap_string.hxx>
+#include <ice/log_formatters.hxx>
 #include <ice/result_codes.hxx>
 #include <ice/math.hxx>
 #include <charconv>
@@ -92,5 +93,25 @@ namespace ice
         out_str = result.remaining;
         return result.ec;
     }
+
+
+    namespace string
+    {
+
+        template<typename... Args>
+        constexpr void push_format(
+            ice::HeapString<char>& str,
+            fmt::format_string<Args...> format,
+            Args&&... args
+        ) noexcept
+        {
+            ice::u32 const size = ice::u32(fmt::formatted_size(format, ice::forward<Args>(args)...));
+            ice::string::grow(str, ice::string::size(str) + size + 1);
+            fmt::format_to_n(ice::string::end(str), size, format, ice::forward<Args>(args)...);
+            str._size += size;
+            str._data[str._size] = '\0';
+        }
+
+    } // namespace string
 
 } // namespace ice

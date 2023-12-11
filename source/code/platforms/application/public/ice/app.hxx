@@ -5,17 +5,11 @@
 #include <ice/base.hxx>
 #include <ice/mem_unique_ptr.hxx>
 #include <ice/result_codes.hxx>
+#include <ice/param_list.hxx>
 #include <ice/span.hxx>
 
 namespace ice::app
 {
-
-    struct ArgumentsConfig { };
-    struct Arguments
-    {
-        ice::app::ArgumentsConfig const& config;
-        ice::Span<const char*> args;
-    };
 
     struct Config;
     struct State;
@@ -51,12 +45,12 @@ void ice_init(
 
 void ice_args(
     ice::Allocator& alloc,
-    ice::app::ArgumentsConfig& args
+    ice::ParamList& params
 ) noexcept;
 
 auto ice_setup(
     ice::Allocator& alloc,
-    ice::app::Arguments const& args,
+    ice::ParamList const& params,
     ice::app::Config& config,
     ice::app::State& state
 ) noexcept -> ice::Result;
@@ -81,7 +75,7 @@ auto ice_suspend(
 
 auto ice_shutdown(
     ice::Allocator& alloc,
-    ice::app::Arguments const& args,
+    ice::ParamList const& params,
     ice::app::Config const& config,
     ice::app::State& state
 ) noexcept -> ice::Result;

@@ -102,7 +102,7 @@ namespace ice
             ice::LinkedQueueRange<NodeType> const& queue_range
         ) noexcept -> typename ice::LinkedQueueRange<NodeType>::Iterator
         {
-            return { queue_range._head, queue_range._head->next, queue_range._tail };
+            return { queue_range._head, queue_range._head ? queue_range._head->next : nullptr, queue_range._tail };
         }
 
         template<typename NodeType>

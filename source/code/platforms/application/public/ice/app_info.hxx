@@ -2,7 +2,7 @@
 /// SPDX-License-Identifier: MIT
 
 #pragma once
-#include <ice/string/string.hxx>
+#include <ice/native_file.hxx>
 
 namespace ice::app
 {
@@ -20,7 +20,9 @@ namespace ice::app
     auto name() noexcept -> ice::String;
 
     auto location() noexcept -> ice::String;
+
     auto directory() noexcept -> ice::String;
+
     auto workingdir() noexcept -> ice::String;
 
 } // namespace ice::app
