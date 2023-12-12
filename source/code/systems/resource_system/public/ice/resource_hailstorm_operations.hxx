@@ -3,7 +3,6 @@
 
 #pragma once
 #include <ice/resource_hailstorm.hxx>
-#include <ice/resource_meta.hxx>
 
 namespace ice::hailstorm
 {
@@ -108,7 +107,7 @@ namespace ice::hailstorm
             //! \details This list may be smaller than the number of resources, if and only if, the 'metadata_mapping' is
             //!   provided and is equal to the number of written resources. This allows to store a single metadata entry
             //!   for multiple resources to reduce the total size of the file and runtime footprint.
-            ice::Span<ice::Metadata const> metadata;
+            ice::Span<ice::Data const> metadata;
 
             //! \brief A list of indices referencing one of the Metadata objects in the 'metadata' list.
             //! \note If provided, this list is required to be the size of 'ids'.
@@ -152,7 +151,7 @@ namespace ice::hailstorm
             //! \param [in] userdata Value passed by the user using the 'HailstormWriteParams' struct.
             //! \return Indices for the data and metadata pair given.
             using ChunkSelectFn = auto(
-                ice::Metadata const& resource_meta,
+                ice::Data resource_meta,
                 ice::Data resource_data,
                 ice::Span<ice::hailstorm::v1::HailstormChunk const> chunks,
                 void* userdata
@@ -170,7 +169,7 @@ namespace ice::hailstorm
             //! \param [in] userdata Value passed by the user using the 'HailstormWriteParams' struct.
             //! \return A chunk definition that will be used to start a new chunk in the cluster.
             using ChunkCreateFn = auto(
-                ice::Metadata const& resource_meta,
+                ice::Data resource_meta,
                 ice::Data resource_data,
                 ice::hailstorm::v1::HailstormChunk base_chunk,
                 void* userdata
@@ -255,7 +254,7 @@ namespace ice::hailstorm
         //! \note This function is suboptimal, it always returns Mixed chunk types with Regular persitance strategy.
         //!   Each chunk is at most 32_MiB big and files bigger than that will be stored in exclusive chunks.
         inline auto default_chunk_create_logic(
-            ice::Metadata const& resource_meta,
+            ice::Data resource_meta,
             ice::Data resource_data,
             ice::hailstorm::v1::HailstormChunk base_chunk_info,
             void* /*userdata*/
@@ -273,7 +272,7 @@ namespace ice::hailstorm
             }
 
             // Calculate chunk size (meta + data)
-            ice::meminfo chunk_meminfo = ice::meta_meminfo(resource_meta);
+            ice::meminfo chunk_meminfo = { resource_meta.size, resource_meta.alignment };
             chunk_meminfo += { resource_data.size, resource_data.alignment };
 
             // Base chunk should always be 32_MiB unless the resources requires more
