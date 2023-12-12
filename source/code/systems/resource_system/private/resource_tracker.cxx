@@ -254,7 +254,11 @@ namespace ice
                 _info.predicted_resource_count
             );
 
+            ice::hashmap::reserve(_resources, new_count);
+            ice::array::reserve(_handles, new_count);
+
             // Store all resource handles
+            IPT_ZONE_SCOPED_NAMED("create_hash_entries");
             for (ice::Resource const* resource : temp_resources)
             {
                 ice::array::push_back(

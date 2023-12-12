@@ -6,6 +6,7 @@
 #include <ice/mem_unique_ptr.hxx>
 #include <ice/module_register.hxx>
 #include <ice/log_module.hxx>
+#include <ice/tool_app.hxx>
 
 void hscp_initialize_tags(ice::ParamList const& params) noexcept
 {
@@ -22,17 +23,16 @@ bool hscp_param_validate_file(ice::ParamList const&, ice::ParamInfo const&, ice:
     return GetFileAttributesA(value._data) != INVALID_FILE_ATTRIBUTES;
 }
 
-static ice::UniquePtr<ice::ModuleRegister> global_modules;
-
-HSCPackerApp::HSCPackerApp(ice::Allocator& alloc, ice::ParamList const& params)
-    : _alloc{ alloc }
+auto hscp_process_directory(ice::Allocator& alloc, ice::String dir) noexcept -> ice::HeapString<>
 {
-    global_modules = ice::create_default_module_register(_alloc);
-    global_modules->load_module(_alloc, ice::load_log_module, ice::unload_log_module);
-    hscp_initialize_tags(params);
-}
+    ice::HeapString<> searched_utf8_path{ alloc, dir };
+    if (ice::path::is_absolute(dir) == false)
+    {
+        ice::string::clear(searched_utf8_path);
+        ice::wide_to_utf8_append(ice::tool::working_directory(), searched_utf8_path);
+        ice::string::push_back(searched_utf8_path, dir);
+    }
 
-HSCPackerApp::~HSCPackerApp()
-{
-    global_modules.reset();
+    ice::path::normalize(searched_utf8_path);
+    return searched_utf8_path;
 }

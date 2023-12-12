@@ -233,6 +233,9 @@ namespace ice
             ice::Array<ice::Resource const*>& out_changes
         ) noexcept -> ice::ucount override
         {
+            IPT_ZONE_SCOPED;
+
+            ice::array::reserve(out_changes, ice::array::count(out_changes) +  ice::hashmap::count(_resources));
             for (auto* resource : _resources)
             {
                 ice::array::push_back(out_changes, resource);
@@ -244,6 +247,7 @@ namespace ice
             ice::Array<ice::Resource const*>& out_changes
         ) noexcept -> ice::ResourceProviderResult override
         {
+            IPT_ZONE_SCOPED;
             if (ice::hashmap::empty(_resources))
             {
                 if (_scheduler == nullptr)

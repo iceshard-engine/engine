@@ -10,8 +10,6 @@
 
 using ice::LogSeverity;
 
-#define HSCP_ERROR_IF(condition, format, ...) ICE_LOG_IF(condition, LogSeverity::Error, LogTag_Main, format, __VA_ARGS__)
-
 struct HailstormAIOWriter
 {
     ice::native_file::FilePath _filepath{};
@@ -36,13 +34,13 @@ struct HailstormAIOWriter
 
     inline bool open_and_resize(ice::usize total_size) noexcept;
     inline bool write_header(ice::Data data, ice::usize offset) noexcept;
-    inline bool write_metadata(ice::Metadata idx, ice::usize offset) noexcept;
+    inline bool write_metadata(ice::Data data, ice::usize offset) noexcept;
     inline bool write_resource(ice::u32 idx, ice::usize offset) noexcept;
     inline bool close() noexcept;
 
 private:
     inline auto async_write_header(ice::Data data, ice::usize offset) noexcept -> ice::Task<>;
-    inline auto async_write_metadata(ice::Metadata idx, ice::usize offset) noexcept -> ice::Task<>;
+    inline auto async_write_metadata(ice::Data data, ice::usize offset) noexcept -> ice::Task<>;
     inline auto async_write_resource(ice::u32 idx, ice::usize offset) noexcept -> ice::Task<>;
 
     inline auto async_write(
@@ -186,6 +184,7 @@ inline bool hscp_write_hailstorm_file(
             .initial_chunks = initial_chunks,
             .estimated_chunk_count = 5,
             .fn_select_chunk = params.fn_chunk_selector,
+            .fn_create_chunk = params.fn_chunk_create,
             .userdata = params.ud_chunk_selector
         },
         .fn_async_open = (HailstormAsyncWriteParams::AsyncOpenFn*) stream_open,
@@ -201,8 +200,6 @@ inline bool hscp_write_hailstorm_file(
 
 inline bool HailstormAIOWriter::open_and_resize(ice::usize total_size) noexcept
 {
-    //ICE_ASSERT_CORE(ice::path::is_absolute(_filepath));
-
     using ice::operator|;
     using enum ice::native_file::FileOpenFlags;
     _file = ice::native_file::open_file(_filepath, Write | Exclusive | Asynchronous);
@@ -226,7 +223,7 @@ inline bool HailstormAIOWriter::write_header(
     return true;
 }
 
-inline bool HailstormAIOWriter::write_metadata(ice::Metadata meta, ice::usize offset) noexcept
+inline bool HailstormAIOWriter::write_metadata(ice::Data meta, ice::usize offset) noexcept
 {
     ice::schedule_task_on(async_write_metadata(meta, offset), _scheduler);
     return true;
@@ -271,29 +268,11 @@ inline auto HailstormAIOWriter::async_write_header(ice::Data data, ice::usize of
     _finished_writes.fetch_add(1, std::memory_order_relaxed);
 }
 
-inline auto HailstormAIOWriter::async_write_metadata(ice::Metadata meta, ice::usize offset) noexcept -> ice::Task<>
+inline auto HailstormAIOWriter::async_write_metadata(ice::Data data, ice::usize offset) noexcept -> ice::Task<>
 {
-    //ice::Metadata meta;
-    //ice::Result const load_result = co_await ice::resource_meta(_resources[idx], meta);
-    //HSCP_ERROR_IF(
-    //    !load_result,
-    //    "Failed to load resource metadata for '{}'",
-    //    ice::resource_path(_resources[idx])
-    //);
-    //if (load_result)
     _started_writes.fetch_add(1, std::memory_order_relaxed);
-    {
-        alignas(8) char temp_buffer[1024 * 4];
-        if (ice::usize stored = ice::meta_store(meta, { temp_buffer, sizeof(temp_buffer), ice::ualign::b_8 }); stored.value > 0)
-        {
-            bool const success = co_await async_write(offset, { temp_buffer, stored, ice::ualign::b_8 });
-            ICE_ASSERT(
-                success,
-                "Failed to write metadata."
-                //ice::resource_path(_resources[idx])
-            );
-        }
-    }
+    bool const success = co_await async_write(offset, data);
+    ICE_ASSERT(success, "Failed to write header data!");
     _finished_writes.fetch_add(1, std::memory_order_relaxed);
 }
 

@@ -1,39 +1,70 @@
 /// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
-#include <ice/container/array.hxx>
-#include <ice/container/hashmap.hxx>
-#include <ice/mem.hxx>
 #include <ice/mem_allocator_host.hxx>
-#include <ice/os/windows.hxx>
-#include <ice/native_file.hxx>
-#include <ice/param_list.hxx>
-#include <ice/path_utils.hxx>
 #include <ice/resource.hxx>
 #include <ice/resource_hailstorm.hxx>
 #include <ice/resource_hailstorm_operations.hxx>
 #include <ice/resource_meta.hxx>
 #include <ice/resource_provider.hxx>
 #include <ice/resource_tracker.hxx>
-#include <ice/sync_manual_events.hxx>
 #include <ice/task_thread_pool.hxx>
 #include <ice/task_utils.hxx>
+#include <ice/tool_app.hxx>
+#include <ice/sort.hxx>
 #include <ice/uri.hxx>
 
 #include "hsc_packer_app.hxx"
 #include "hsc_packer_aiostream.hxx"
 
-auto select_chunk_loose_resource(
-    ice::Metadata const& resource_meta,
+using ice::operator""_sid;
+using ice::hailstorm::v1::HailstormChunk;
+using ice::hailstorm::v1::HailstormWriteChunkRef;
+
+auto create_chunk_loose_resource(
+    ice::Data resource_meta,
     ice::Data resource_data,
-    ice::Span<ice::hailstorm::v1::HailstormChunk const> chunks,
+    HailstormChunk base_chunk,
     void* userdata
-) noexcept -> ice::hailstorm::v1::HailstormWriteChunkRef
+) noexcept -> HailstormChunk
 {
-    return ice::hailstorm::v1::HailstormWriteChunkRef{
-        .data_chunk = 0,
-        .meta_chunk = 1,
+    if (resource_data.size > base_chunk.size)
+    {
+        base_chunk.size = resource_data.size + ice::usize(ice::u64(base_chunk.align));
+    }
+    return base_chunk;
+}
+
+auto select_chunk_loose_resource(
+    ice::Data resource_meta,
+    ice::Data resource_data,
+    ice::Span<HailstormChunk const> chunks,
+    void* userdata
+) noexcept -> HailstormWriteChunkRef
+{
+    HailstormWriteChunkRef result{
+        .data_chunk = ice::u16_max,
+        .meta_chunk = ice::u16_max,
     };
+
+    auto const* const beg = ice::span::begin(chunks);
+    auto const* it = ice::span::end(chunks) - 1;
+    while (it >= beg && (result.data_chunk == ice::u16_max || result.meta_chunk == ice::u16_max))
+    {
+        if (it->type == 1 && result.meta_chunk == ice::u16_max)
+        {
+            result.meta_chunk = ice::u16(it - beg);
+        }
+        else if (it->type == 2 && result.data_chunk == ice::u16_max)
+        {
+            result.data_chunk = ice::u16(it - beg);
+        }
+
+        it -= 1;
+    }
+
+    ICE_ASSERT_CORE(result.data_chunk != ice::u16_max && result.meta_chunk != ice::u16_max);
+    return result;
 }
 
 auto read_resource_size(
@@ -50,123 +81,225 @@ auto read_resource_size(
     co_return;
 }
 
-int main2(int argc, char** argv)
+class TestApp final : public ice::tool::ToolApp<TestApp>
 {
-    using ice::operator""_uri;
-    using ice::operator""_sid;
-    using ice::operator""_MiB;
-
-    ice::HostAllocator alloc;
-    ice::ParamList params{ alloc, { argv, ice::u32(argc) } };
-    ice::Array<ice::String> input_dirs{ alloc };
-    if (ice::params::find_all(params, Param_Input, input_dirs) == false)
+public:
+    TestApp() noexcept
+        : _tqueue{ }
+        , _tsched{ _tqueue }
+        , _tpool{ }
+        , _includes{ _allocator }
+        , _output{ _allocator }
+        , _filter_extensions_heap{ _allocator }
+        , _filter_extensions{ _allocator }
     {
-        return 1;
+        _tpool = ice::create_thread_pool(_allocator, _tqueue, { .thread_count = 8 });
     }
 
-    ice::String output_file;
-    if (ice::params::find_first(params, Param_Output, output_file) == false)
+    ~TestApp() noexcept = default;
+
+    auto run(ice::ParamList const& params) noexcept -> ice::i32 override
     {
-        return 3;
-    }
-
-    // Since this process is going to be designed for 'single input -> single output'
-    //   scenarios, we won't create a thread-pool for the Task queue and instead
-    //   we will consume all tasks in the main thread.
-    ice::TaskQueue main_queue;
-    ice::TaskScheduler main_sched{ main_queue };
-
-    ice::TaskThreadPoolCreateInfo tpci{
-        .thread_count = 8,
-    };
-    ice::UniquePtr<ice::TaskThreadPool> tp = ice::create_thread_pool(alloc, main_queue, tpci);
-
-    // The paths that will be searched for loose file resources.
-    // TODO: Create a "ExplicitFileProvider" which will provide the file resources that it was explicitly created with.
-    ice::UniquePtr<ice::ResourceProvider> fsprov = ice::create_resource_provider(
-        alloc, input_dirs
-    );
-
-    // Becase we don't want to spawn any additional threads we setting
-    //  dedicated threads to '0'. Aiming to load resources on the main thread.
-    ice::ResourceTrackerCreateInfo rtinfo{
-        .predicted_resource_count = 1'000'000,
-        .io_dedicated_threads = 1,
-        .flags_io_complete = ice::TaskFlags{},
-        .flags_io_wait = ice::TaskFlags{},
-    };
-    ice::UniquePtr<ice::ResourceTracker> tracker = ice::create_resource_tracker(
-        alloc, main_sched, rtinfo
-    );
-
-    ice::ResourceProvider* provider = tracker->attach_provider(ice::move(fsprov));
-    tracker->sync_resources();
-
-    ice::Array<ice::Resource const*> resources{ alloc };
-    if (provider->collect(resources) == 0)
-    {
-        return 2;
-    }
-
-    ice::Array<ice::String> resource_paths{ alloc };
-    ice::Array<ice::Data> resource_data{ alloc };
-    ice::Array<ice::Metadata> resource_metas{ alloc };
-    ice::Array<ice::u32> resource_metamap{ alloc };
-    ice::Array<ice::ResourceHandle*> resource_handles{ alloc };
-
-    ice::array::resize(resource_data, ice::count(resources));
-    ice::array::resize(resource_paths, ice::count(resources));
-    ice::array::resize(resource_metamap, ice::count(resources));
-    ice::array::resize(resource_handles, ice::count(resources));
-
-    ice::MutableMetadata meta{ alloc };
-    ice::array::push_back(resource_metas, meta);
-
-    std::atomic_uint32_t res_count = 0;
-    ice::u32 res_idx = 0;
-    for (ice::Resource const* resource : resources)
-    {
-        if (ice::path::extension(resource->name()) == ".json")
+        ice::Array<ice::String> configs{ _allocator };
+        if (ice::params::find_all(params, Param_Config, configs))
         {
-            resource_paths[res_idx] = resource->name();
-            resource_metamap[res_idx] = 0;
-            resource_handles[res_idx] = tracker->find_resource(resource->uri());
+            for (ice::String config : configs)
+            {
+                ice::HeapString<> const config_path_utf8 = hscp_process_directory(_allocator, config);
+                ice::native_file::HeapFilePath config_path{ _allocator };
+                ice::native_file::path_from_string(config_path_utf8, config_path);
 
-            ice::schedule_task_on(
-                read_resource_size(resource_handles[res_idx], resource_data[res_idx], res_count),
-                main_sched
-            );
-            res_idx += 1;
+                HSCP_ERROR_IF(
+                    ice::native_file::exists_file(config_path) == false,
+                    "Config file '{}' does not exist, skipping...",
+                    ice::String{ config_path_utf8 }
+                );
+
+                using enum ice::native_file::FileOpenFlags;
+                ice::native_file::File file = ice::native_file::open_file(config_path, Read);
+                if (file)
+                {
+                    ice::usize const filesize = ice::native_file::sizeof_file(file);
+                    ice::Memory const filemem = _allocator.allocate(filesize);
+                    ice::native_file::read_file(file, filesize, filemem);
+
+                    ice::MutableMetadata config_meta{ _allocator };
+                    ice::Result const res = ice::meta_deserialize_from(config_meta, ice::data_view(filemem));
+
+                    ice::Array<ice::String> extensions{ _allocator };
+                    if (ice::meta_read_string_array(config_meta, "filter.extensions"_sid, extensions))
+                    {
+                        for (ice::String ext : extensions)
+                        {
+                            ice::array::push_back(_filter_extensions_heap, { _allocator, ext });
+                            ice::array::push_back(_filter_extensions, ice::array::back(_filter_extensions_heap));
+                        }
+                    }
+                    HSCP_ERROR_IF(
+                        res != ice::Res::Success,
+                        "Failed to parse config file '{}'...",
+                        ice::String{ config_path_utf8 }
+                    );
+
+                    _allocator.deallocate(filemem);
+                }
+            }
         }
+        else
+        {
+            HSCP_ERROR("No valid configuration files where provided.");
+            return 1;
+        }
+
+        ice::Array<ice::String> includes{ _allocator };
+        ice::params::find_all(params, Param_Include, includes);
+        if (ice::array::empty(includes))
+        {
+            HSCP_ERROR("No directories where provided to create the HailStorm package from.");
+            return 1;
+        }
+
+        // TODO: Only store paths that do actually exist.
+        for (ice::String& include : includes)
+        {
+            ice::array::push_back(_includes, hscp_process_directory(_allocator, include));
+            include = ice::array::back(_includes);
+        }
+
+        // Prepare the output file name.
+        ice::String output_file = "pack.hsc";
+        ice::params::find_first(params, Param_Output, output_file);
+        _output = hscp_process_directory(_allocator, output_file);
+
+        // The paths that will be searched for loose file resources.
+        ice::UniquePtr<ice::ResourceProvider> fsprov = ice::create_resource_provider(
+            _allocator, includes, &_tsched
+        );
+
+        // Spawning one dedicated IO thread for AIO support. Allows us to read resources MUCH faster.
+        ice::ResourceTrackerCreateInfo rtinfo{
+            .predicted_resource_count = 1'000'000,
+            .io_dedicated_threads = 1,
+            .flags_io_complete = ice::TaskFlags{},
+            .flags_io_wait = ice::TaskFlags{},
+        };
+        ice::UniquePtr<ice::ResourceTracker> tracker = ice::create_resource_tracker(
+            _allocator, _tsched, rtinfo
+        );
+
+        ice::ResourceProvider* provider = tracker->attach_provider(ice::move(fsprov));
+        tracker->sync_resources();
+
+        ice::Array<ice::Resource const*> resources{ _allocator };
+        if (provider->collect(resources) == 0)
+        {
+            HSCP_ERROR("No files where found in the included directories.");
+            return 1;
+        }
+
+        return create_package(*tracker, resources);
     }
 
-    // Once the task is scheduled we are now going to iterate over the queue untill
-    //  the event is signalled which means all required resources where loaded.
-    while (res_count.load(std::memory_order_relaxed) != res_idx)
+    auto create_package(
+        ice::ResourceTracker& tracker,
+        ice::Span<ice::Resource const* const> resources
+    ) noexcept -> ice::i32
     {
-        SleepEx(1, 0);
+        ice::Array<ice::Data> resource_data{ _allocator };
+        ice::Array<ice::Data> resource_metas{ _allocator };
+        ice::Array<ice::u32> resource_metamap{ _allocator };
+        ice::Array<ice::ResourceHandle*> resource_handles{ _allocator };
+        ice::Array<ice::String> resource_paths{ _allocator };
+
+        ice::array::resize(resource_data, ice::count(resources));
+        ice::array::resize(resource_metamap, ice::count(resources));
+        ice::array::resize(resource_handles, ice::count(resources));
+        ice::array::resize(resource_paths, ice::count(resources));
+
+        ice::MutableMetadata meta{ _allocator };
+        ice::Memory metamem = ice::meta_save(meta, _allocator);
+
+        ice::array::push_back(resource_metas, ice::data_view(metamem));
+
+        std::atomic_uint32_t res_count = 0;
+        ice::u32 res_idx = 0;
+        auto* const end = _filter_extensions._data + _filter_extensions._count;
+        for (ice::Resource const* resource : resources)
+        {
+            bool const found = std::find(
+                _filter_extensions._data,
+                end,
+                ice::path::extension(resource->name())
+                //[resource](auto const& v) noexcept { return v == ice::path::extension(resource->name()); }
+            ) != end;
+
+            if (found)
+            {
+                resource_paths[res_idx] = resource->name();
+                resource_metamap[res_idx] = 0;
+                resource_handles[res_idx] = tracker.find_resource(resource->uri());
+
+                ice::schedule_task_on(
+                    read_resource_size(resource_handles[res_idx], resource_data[res_idx], res_count),
+                    _tsched
+                );
+                res_idx += 1;
+            }
+        }
+
+        // Once the task is scheduled we are now going to iterate over the queue untill
+        //  the event is signalled which means all required resources where loaded.
+        while (res_count.load(std::memory_order_relaxed) != res_idx)
+        {
+            SleepEx(1, 0);
+        }
+
+        ice::array::resize(resource_paths, res_idx);
+        ice::array::resize(resource_data, res_idx);
+        ice::array::resize(resource_metamap, res_idx);
+
+        ice::hailstorm::v1::HailstormWriteData const hsdata{
+            .paths = resource_paths,
+            .data = resource_data,
+            .metadata = resource_metas,
+            .metadata_mapping = resource_metamap,
+            .custom_values = { 0, 1 }
+        };
+
+        ice::native_file::HeapFilePath output{ _allocator };
+        ice::native_file::path_from_string(_output, output);
+        HSCPWriteParams const write_params{
+            .filename = output,
+            .task_scheduler = _tsched,
+            .fn_chunk_selector = select_chunk_loose_resource,
+            .fn_chunk_create = create_chunk_loose_resource,
+        };
+        bool const success = hscp_write_hailstorm_file(_allocator, write_params, hsdata, tracker, resource_handles);
+
+        _allocator.deallocate(metamem);
+        return success ? 0 : 1;
     }
 
-    ice::array::resize(resource_paths, res_idx);
-    ice::array::resize(resource_data, res_idx);
-    ice::array::resize(resource_metamap, res_idx);
+    void setup(ice::ParamList& params) noexcept override
+    {
+        ice::log_tag_register(LogTag_Main);
+        ice::log_tag_register(LogTag_Details);
+        ice::params::define(params, Param_Include);
+        ice::params::define(params, Param_Output);
+        ice::params::define(params, Param_Config);
+        ice::params::define(params, Param_Verbose);
+    }
 
-    ice::hailstorm::v1::HailstormWriteData const hsdata{
-        .paths = resource_paths,
-        .data = resource_data,
-        .metadata = resource_metas,
-        .metadata_mapping = resource_metamap,
-        .custom_values = { 0, 1 }
-    };
+private:
+    ice::TaskQueue _tqueue;
+    ice::TaskScheduler _tsched;
+    ice::UniquePtr<ice::TaskThreadPool> _tpool;
 
-    ice::native_file::HeapFilePath filepath{ alloc };
-    ice::native_file::path_from_string(output_file, filepath);
+    // Params
+    ice::Array<ice::HeapString<>> _includes;
+    ice::HeapString<> _output;
 
-    HSCPWriteParams const write_params{
-        .filename = filepath,
-        .task_scheduler = main_sched,
-        .fn_chunk_selector = select_chunk_loose_resource,
-    };
-    bool const success = hscp_write_hailstorm_file(alloc, write_params, hsdata, *tracker, resource_handles);
-    return success ? 0 : 1;
-}
+    // Filters
+    ice::Array<ice::HeapString<>> _filter_extensions_heap;
+    ice::Array<ice::String> _filter_extensions;
+};

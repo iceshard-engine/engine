@@ -25,6 +25,7 @@ struct HSCPWriteParams
 
     //! \brief Hailstorm chunk selection logic.
     ice::hailstorm::v1::HailstormWriteParams::ChunkSelectFn* fn_chunk_selector;
+    ice::hailstorm::v1::HailstormWriteParams::ChunkCreateFn* fn_chunk_create;
 
     //! \brief Userdata passed to selector function.
     void* ud_chunk_selector;
