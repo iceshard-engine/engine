@@ -8,14 +8,7 @@
 #include <ice/string_utils.hxx>
 #include <ice/param_list.hxx>
 
-struct HSCReaderApp
-{
-    HSCReaderApp(ice::Allocator& alloc, ice::ParamList const& params);
-    ~HSCReaderApp();
-
-    ice::Allocator& _alloc;
-};
-
+void hscr_initialize_logging(ice::ParamList const& params) noexcept;
 bool hscr_param_validate_file(ice::ParamList const&, ice::ParamInfo const&, ice::String value) noexcept;
 
 static constexpr ice::LogTagDefinition LogTag_Main = ice::create_log_tag(ice::LogTag::None, "hsc-reader");

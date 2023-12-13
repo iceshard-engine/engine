@@ -12,7 +12,7 @@ auto hscr_flag_param(ice::ParamInfo const& info) noexcept
     return ice::ParamDefinition<bool>{ .name = info.name, .name_short = info.name_short, .flags = ice::ParamFlags::IsFlag };
 }
 
-void hscr_initialize_tags(ice::ParamList const& params) noexcept
+void hscr_initialize_logging(ice::ParamList const& params) noexcept
 {
     static const std::tuple<ice::LogTagDefinition const&, ice::ParamInfo> tags[]{
         { LogTag_Main, Param_InfoHeader },
@@ -36,20 +36,4 @@ void hscr_initialize_tags(ice::ParamList const& params) noexcept
 bool hscr_param_validate_file(ice::ParamList const&, ice::ParamInfo const&, ice::String value) noexcept
 {
     return GetFileAttributesA(value._data) != INVALID_FILE_ATTRIBUTES;
-}
-
-static ice::UniquePtr<ice::ModuleRegister> global_modules;
-
-HSCReaderApp::HSCReaderApp(ice::Allocator& alloc, ice::ParamList const& params)
-    : _alloc{ alloc }
-{
-    global_modules = ice::create_default_module_register(_alloc);
-    global_modules->load_module(_alloc, ice::load_log_module, ice::unload_log_module);
-
-    hscr_initialize_tags(params);
-}
-
-HSCReaderApp::~HSCReaderApp()
-{
-    global_modules.reset();
 }

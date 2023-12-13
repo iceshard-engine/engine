@@ -29,7 +29,7 @@ auto hscp_process_directory(ice::Allocator& alloc, ice::String dir) noexcept -> 
     if (ice::path::is_absolute(dir) == false)
     {
         ice::string::clear(searched_utf8_path);
-        ice::wide_to_utf8_append(ice::tool::working_directory(), searched_utf8_path);
+        ice::wide_to_utf8_append(ice::tool::path_current_directory(), searched_utf8_path);
         ice::string::push_back(searched_utf8_path, dir);
     }
 

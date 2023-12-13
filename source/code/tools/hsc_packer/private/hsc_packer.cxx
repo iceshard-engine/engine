@@ -81,10 +81,10 @@ auto read_resource_size(
     co_return;
 }
 
-class TestApp final : public ice::tool::ToolApp<TestApp>
+class HailStormPackerApp final : public ice::tool::ToolApp<HailStormPackerApp>
 {
 public:
-    TestApp() noexcept
+    HailStormPackerApp() noexcept
         : _tqueue{ }
         , _tsched{ _tqueue }
         , _tpool{ }
@@ -96,7 +96,7 @@ public:
         _tpool = ice::create_thread_pool(_allocator, _tqueue, { .thread_count = 8 });
     }
 
-    ~TestApp() noexcept = default;
+    ~HailStormPackerApp() noexcept = default;
 
     auto run(ice::ParamList const& params) noexcept -> ice::i32 override
     {
@@ -230,7 +230,6 @@ public:
                 _filter_extensions._data,
                 end,
                 ice::path::extension(resource->name())
-                //[resource](auto const& v) noexcept { return v == ice::path::extension(resource->name()); }
             ) != end;
 
             if (found)
