@@ -10,6 +10,7 @@
 #include <ice/assert.hxx>
 #include <ice/path_utils.hxx>
 #include <ice/string/heap_string.hxx>
+#include <ice/param_list.hxx>
 #include <ice/os/android.hxx>
 #include <thread>
 
@@ -196,10 +197,8 @@ namespace ice::platform::android
 
         ice_init(alloc, app_factories);
 
-        ice::app::ArgumentsConfig app_arguments_config{ };
-        ice_args(alloc, app_arguments_config);
-
-        ice::app::Arguments const app_arguments{ app_arguments_config, ice::Span<char const*>{ nullptr, (ice::ucount) 0 } };
+        ice::ParamList params{ alloc };
+        ice_args(alloc, params);
 
         core->_config = app_factories.factory_config(alloc);
         core->_state = app_factories.factory_state(alloc);
@@ -207,7 +206,7 @@ namespace ice::platform::android
         IPT_MESSAGE("Android::OnSetup");
         ICE_LOG(ice::LogSeverity::Retail, ice::LogTag::Core, "Android::OnSetup");
 
-        ice::Result result = ice_setup(alloc, app_arguments, *core->_config, *core->_state);
+        ice::Result result = ice_setup(alloc, params, *core->_config, *core->_state);
         ICE_LOG_IF(result == false, ice::LogSeverity::Error, ice::LogTag::Core, "{}", ice::result_hint(result));
         ICE_ASSERT_CORE(result == true);
     }
@@ -278,9 +277,8 @@ namespace ice::platform::android
 
         core->_runtime.reset();
 
-        ice::app::ArgumentsConfig args_config { };
-        ice::app::Arguments args{ args_config, {} };
-        ice_shutdown(core->_allocator, args, *core->_config, *core->_state);
+        ice::ParamList params{ core->_allocator };
+        ice_shutdown(core->_allocator, params, *core->_config, *core->_state);
 
         core->_state.reset();
         core->_config.reset();

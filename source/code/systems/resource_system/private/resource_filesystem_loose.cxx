@@ -313,6 +313,14 @@ namespace ice
         co_return co_await detail::async_file_load(alloc, nativeio, _origin_path);
     }
 
+    auto LooseFilesResource::ExtraResource::size() const noexcept -> ice::usize
+    {
+        ice::StackAllocator_1024 alloc;
+        ice::native_file::HeapFilePath path{ alloc };
+        ice::native_file::path_from_string(_origin_path, path);
+        return ice::native_file::sizeof_file(path);
+    }
+
     auto create_resources_from_loose_files(
         ice::Allocator& alloc,
         ice::native_file::FilePath base_path,

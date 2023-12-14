@@ -30,8 +30,8 @@ namespace ice
         ) noexcept
             : _allocator{ alloc }
             , _base_paths{ _allocator }
-            , _resources{ _allocator }
             , _scheduler{ scheduler }
+            , _resources{ _allocator }
         {
             ice::native_file::HeapFilePath base_path{ _allocator };
             for (ice::String path : paths)

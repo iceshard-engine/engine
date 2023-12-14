@@ -97,6 +97,8 @@ namespace ice
             ice::Allocator& alloc
         ) const noexcept -> ice::Task<Memory> override { co_return {}; }
 
+        auto size() const noexcept -> ice::usize override;
+
     private:
         ice::LooseFilesResource& _parent;
 

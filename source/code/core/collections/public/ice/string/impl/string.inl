@@ -33,13 +33,6 @@ namespace ice
     } // namespace string::detail
 
     template<typename CharType>
-    constexpr BasicString<CharType>::BasicString() noexcept
-        : _data{ nullptr }
-        , _size{ 0 }
-    {
-    }
-
-    template<typename CharType>
     constexpr BasicString<CharType>::BasicString(CharType const* str_ptr) noexcept
         : BasicString{ str_ptr, ice::string::detail::strptr_size(str_ptr) }
     {
