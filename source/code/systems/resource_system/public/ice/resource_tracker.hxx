@@ -99,7 +99,7 @@ namespace ice
     auto resource_uri(ice::ResourceHandle const* handle) noexcept -> ice::URI const&;
     auto resource_origin(ice::ResourceHandle const* handle) noexcept -> ice::String;
     auto resource_path(ice::ResourceHandle const* handle) noexcept -> ice::String;
-    auto resource_meta(ice::ResourceHandle const* handle, ice::Metadata& out_metadata) noexcept -> ice::Task<ice::Result>;
+    auto resource_meta(ice::ResourceHandle const* handle, ice::Data& out_metadata) noexcept -> ice::Task<ice::Result>;
     auto get_loose_resource(ice::ResourceHandle const* handle) noexcept -> ice::LooseResource const*;
 
     auto create_resource_tracker(
