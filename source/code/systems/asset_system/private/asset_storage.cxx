@@ -310,16 +310,20 @@ namespace ice
 
                 bool load_success = false;
                 ice::Memory load_result{};
-                if (ice::Metadata res_metadata; co_await entry.resource->load_metadata(res_metadata))
+                if (ice::Data metadata = co_await entry.resource->load_metadata(); metadata.location != nullptr)
                 {
-                    load_success = co_await ice::detail::load_asset(
-                        shelve.asset_allocator(),
-                        shelve.definition,
-                        *this,
-                        res_metadata,
-                        result,
-                        load_result
-                    );
+                    ice::MutableMetadata res_metadata{ _allocator };
+                    if (ice::Result res = ice::meta_deserialize_from(res_metadata, metadata); ice::result_is_valid(res))
+                    {
+                        load_success = co_await ice::detail::load_asset(
+                            shelve.asset_allocator(),
+                            shelve.definition,
+                            *this,
+                            res_metadata,
+                            result,
+                            load_result
+                        );
+                    }
                 }
 
                 // If we have failed, we try to push a load request.
@@ -442,14 +446,18 @@ namespace ice
 
                     entry.resource = resource.resource;
                     ice::AssetState initial_state = AssetState::Invalid;
-                    if (ice::Metadata res_metadata; co_await entry.resource->load_metadata(res_metadata))
+                    if (ice::Data metadata = co_await entry.resource->load_metadata(); metadata.location != nullptr)
                     {
-                        initial_state = shelve.definition.fn_asset_state(
-                            shelve.definition.ud_asset_state,
-                            shelve.definition,
-                            res_metadata,
-                            entry.resource->uri()
-                        );
+                        ice::MutableMetadata res_metadata{ _allocator };
+                        if (ice::Result res = ice::meta_deserialize_from(res_metadata, metadata); ice::result_is_valid(res))
+                        {
+                            initial_state = shelve.definition.fn_asset_state(
+                                shelve.definition.ud_asset_state,
+                                shelve.definition,
+                                res_metadata,
+                                entry.resource->uri()
+                            );
+                        }
                     }
 
                     ICE_ASSERT_CORE(initial_state != AssetState::Invalid);

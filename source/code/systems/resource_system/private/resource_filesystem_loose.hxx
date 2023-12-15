@@ -21,7 +21,7 @@ namespace ice
     public:
         LooseFilesResource(
             ice::Allocator& alloc,
-            ice::MutableMetadata metadata,
+            ice::Memory metadata,
             ice::HeapString<> origin_path,
             ice::String origin_name,
             ice::String uri_path
@@ -35,7 +35,7 @@ namespace ice
         auto name() const noexcept -> ice::String override;
         auto origin() const noexcept -> ice::String override;
 
-        auto load_metadata(ice::Metadata& out_metadata) const noexcept -> ice::Task<bool> override;
+        auto load_metadata() const noexcept -> ice::Task<ice::Data> override;
 
         auto load_named_part(
             ice::StringID_Arg part_name,
@@ -58,9 +58,8 @@ namespace ice
         class ExtraResource;
 
     private:
-        ice::MutableMetadata _mutable_metadata;
-        ice::Metadata _metadata;
-
+        ice::Allocator& _allocator;
+        ice::Memory _raw_metadata;
         ice::HeapString<> _origin_path;
         ice::String _origin_name;
         ice::String _uri_path;
@@ -84,7 +83,7 @@ namespace ice
         auto name() const noexcept -> ice::String override;
         auto origin() const noexcept -> ice::String override;
 
-        auto load_metadata(ice::Metadata& out_metadata) const noexcept -> ice::Task<bool> override;
+        auto load_metadata() const noexcept -> ice::Task<ice::Data> override;
 
         auto load_data(
             ice::Allocator& alloc,

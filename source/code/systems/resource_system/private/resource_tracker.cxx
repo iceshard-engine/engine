@@ -61,10 +61,12 @@ namespace ice
         return handle->resource->name();
     }
 
-    auto resource_meta(ice::ResourceHandle const* handle, ice::Metadata& out_metadata) noexcept -> ice::Task<ice::Result>
+    auto resource_meta(ice::ResourceHandle const* handle, ice::Data& out_metadata) noexcept -> ice::Task<ice::Result>
     {
-        if (co_await handle->resource->load_metadata(out_metadata))
+        ice::Data const data = co_await handle->resource->load_metadata();
+        if (data.location != nullptr)
         {
+            out_metadata = data;
             co_return Res::Success;
         }
         co_return Res::E_InvalidArgument;

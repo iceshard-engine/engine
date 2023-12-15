@@ -82,15 +82,9 @@ namespace ice
     {
     }
 
-    auto HailstormResourceMixed::load_metadata(ice::Metadata& out_view) const noexcept -> ice::Task<bool>
+    auto HailstormResourceMixed::load_metadata() const noexcept -> ice::Task<ice::Data>
     {
-        ice::Memory const mem = co_await _loader.request_slice(_handle.meta_offset, _handle.meta_size, nullptr);
-        if (mem.location != nullptr)
-        {
-            out_view = ice::meta_load(ice::data_view(mem));
-            co_return out_view._meta_entries._hashes != nullptr;
-        }
-        co_return false;
+        co_return ice::data_view(co_await _loader.request_slice(_handle.meta_offset, _handle.meta_size, nullptr));
     }
 
     HailstormResourceSplit::HailstormResourceSplit(
@@ -105,15 +99,9 @@ namespace ice
     {
     }
 
-    auto HailstormResourceSplit::load_metadata(ice::Metadata& out_view) const noexcept -> ice::Task<bool>
+    auto HailstormResourceSplit::load_metadata() const noexcept -> ice::Task<ice::Data>
     {
-        ice::Memory const mem = co_await _meta_loader.request_slice(_handle.meta_offset, _handle.meta_size, nullptr);
-        if (mem.location != nullptr)
-        {
-            out_view = ice::meta_load(ice::data_view(mem));
-            co_return out_view._meta_entries._hashes != nullptr;
-        }
-        co_return false;
+        co_return ice::data_view(co_await _meta_loader.request_slice(_handle.meta_offset, _handle.meta_size, nullptr));
     }
 
 } // namespace ice
