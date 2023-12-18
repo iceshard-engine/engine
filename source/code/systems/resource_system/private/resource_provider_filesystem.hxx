@@ -102,13 +102,25 @@ namespace ice
         struct TraverseResourceRequest
         {
             FileSystemResourceProvider& self;
-            ice::u32 remaining;
+            ice::native_file::FilePath base_path;
+            std::atomic_uint32_t& remaining;
             ice::TaskScheduler* worker_thread;
             ice::TaskScheduler* final_thread;
         };
 
+        auto traverse_async(
+            ice::native_file::HeapFilePath dir_path,
+            TraverseResourceRequest& request
+        ) noexcept -> ice::Task<>
+        {
+            IPT_ZONE_SCOPED;
+            ice::native_file::traverse_directories(dir_path, traverse_callback, &request);
+            request.remaining -= 1;
+            co_return;
+        }
+
         auto create_resource_from_file_async(
-            ice::native_file::HeapFilePath base_path,
+            ice::native_file::FilePath base_path,
             ice::native_file::HeapFilePath file_path,
             TraverseResourceRequest& request
         ) noexcept -> ice::Task<>
@@ -157,50 +169,52 @@ namespace ice
             request.remaining -= 1;
         }
 
-        static auto traverse_count_files(
-            ice::native_file::FilePath base_path,
-            ice::native_file::FilePath path,
-            ice::native_file::EntityType type,
-            void* userdata
-        ) noexcept -> ice::native_file::TraverseAction
-        {
-            if (type == ice::native_file::EntityType::File)
-            {
-                *((ice::ucount*)userdata) += 1;
-            }
-            return ice::native_file::TraverseAction::Continue;
-        }
-
         static auto traverse_callback(
-            ice::native_file::FilePath base_path,
+            ice::native_file::FilePath,
             ice::native_file::FilePath path,
             ice::native_file::EntityType type,
             void* userdata
         ) noexcept -> ice::native_file::TraverseAction
         {
+            TraverseResourceRequest* request = reinterpret_cast<TraverseResourceRequest*>(userdata);
             if (type == ice::native_file::EntityType::File)
             {
-                TraverseResourceRequest* request = reinterpret_cast<TraverseResourceRequest*>(userdata);
                 if (request->worker_thread != nullptr)
                 {
                     request->remaining += 1;
                     ice::Allocator& alloc = request->self._allocator;
                     ice::schedule_task_on(
-                        request->self.create_resource_from_file_async({ alloc, base_path }, { alloc, path }, *request),
+                        request->self.create_resource_from_file_async(request->base_path, { alloc, path }, *request),
                         *request->worker_thread
                     );
                 }
                 else
                 {
-                    request->self.create_resource_from_file(base_path, path);
+                    request->self.create_resource_from_file(request->base_path, path);
                 }
             }
+            else if (type == ice::native_file::EntityType::Directory && request->worker_thread != nullptr)
+            {
+                request->remaining += 1;
+
+                ice::Allocator& alloc = request->self._allocator;
+                ice::schedule_task_on(
+                    request->self.traverse_async({ alloc, path }, *request),
+                    *request->worker_thread
+                );
+
+                // Since we now run sub-directories as separate tasks, we skip them here
+                return ice::native_file::TraverseAction::SkipSubDir;
+            }
+
+            // Continue in synchronous scenario
             return ice::native_file::TraverseAction::Continue;
         }
 
         void initial_traverse() noexcept
         {
-            TraverseResourceRequest request{ *this, 0, nullptr, nullptr };
+            std::atomic_uint32_t remaining;
+            TraverseResourceRequest request{ *this,ISP_PATH_LITERAL(""), remaining, nullptr, nullptr };
             for (ice::native_file::FilePath base_path : _base_paths)
             {
                 ice::native_file::traverse_directories(base_path, traverse_callback, &request);
@@ -211,16 +225,23 @@ namespace ice
         {
             ice::TaskQueue local_queue{ };
             ice::TaskScheduler local_sched{ local_queue };
-            TraverseResourceRequest request{ *this, 0, _scheduler, &local_sched };
+
+            ice::Array<TraverseResourceRequest, ContainerLogic::Complex> requests{ _allocator };
+            ice::array::reserve(requests, ice::array::count(_base_paths));
+
+            std::atomic_uint32_t remaining = 0;
 
             // Traverse directories synchronously but create resources asynchronously.
             for (ice::native_file::FilePath base_path : _base_paths)
             {
-                ice::native_file::traverse_directories(base_path, traverse_callback, &request);
+                ice::array::push_back(requests, { *this, base_path, remaining, _scheduler, &local_sched });
+                ice::native_file::traverse_directories(
+                    base_path, traverse_callback, &ice::array::back(requests)
+                );
             }
 
             // Process all awaiting tasks
-            while (request.remaining > 0)
+            while (remaining > 0)
             {
                 for (ice::TaskAwaitableBase* awaitable : ice::linked_queue::consume(local_queue._awaitables))
                 {

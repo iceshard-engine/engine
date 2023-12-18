@@ -73,7 +73,7 @@ namespace ice
     template<typename NodeType> requires ice::LinkedListNode<NodeType>
     constexpr bool LinkedQueueRange<NodeType>::Iterator::operator==(Iterator other) const noexcept
     {
-        return (_tail == other._tail) /*&& (_next == other._next)*/ && (_current == other._current);
+        return (_tail == other._tail) && (_current == other._current);
     }
 
     template<typename NodeType> requires ice::LinkedListNode<NodeType>
