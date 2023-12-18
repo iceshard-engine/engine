@@ -1,6 +1,7 @@
 import Command, option from require "ice.command"
 import Exec from require "ice.tools.exec"
 import Json from require "ice.util.json"
+import Dir from require "ice.core.fs"
 
 import loadstring from require "moonscript"
 
@@ -21,6 +22,7 @@ class NatvisCommand extends Command
         if f = io.open path, "rb"
             for line in f\lines!
                 var, val = line\match 'static constexpr ice::Shard ([%w_:]+) = "([%w/-]+)[%w_:*` ]*"_shard'
+                var, val = line\match 'static constexpr ice::ShardID ([%w_:]+) = "([%w/-]+)[%w_:*` ]*"_shardid' unless var and val
                 if var and val
                     print "Warning: Shard with this name '#{var}' already exists!" if shard_names.shard[var]
                     shard_names.shard[var] = val
@@ -33,7 +35,7 @@ class NatvisCommand extends Command
             f\close!
 
     iterate_over_directory: (path, shard_names) =>
-        for name, mode in os.listdir path, 'mode'
+        for name, mode in (Dir\list path, 'mode')
             continue if name == '.' or name == '..'
 
             @iterate_over_directory "#{path}/#{name}", shard_names if mode == 'directory'

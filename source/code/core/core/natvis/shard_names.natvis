@@ -29,6 +29,7 @@
         <DisplayString Condition="id.name.value == 3683809292">Shard {{ event/gfx/startup }}</DisplayString>
         <DisplayString Condition="id.name.value == 2793650888">Shard {{ event/gfx/suspend }}</DisplayString>
         <DisplayString Condition="id.name.value == 4048089159">Shard {{ event/gfx/swapchain-reset }}</DisplayString>
+        <DisplayString Condition="id.name.value == 3612285283">Shard {{ event/input }}</DisplayString>
         <DisplayString Condition="id.name.value == 13715295">Shard {{ event/input/axis }}</DisplayString>
         <DisplayString Condition="id.name.value == 939510841">Shard {{ event/input/button }}</DisplayString>
         <DisplayString Condition="id.name.value == 51683530">Shard {{ event/input/text }}</DisplayString>
@@ -54,7 +55,6 @@
                 <DisplayString Condition="id.payload.value == 1107026406">ice::String const*</DisplayString>
                 <DisplayString Condition="id.payload.value == 2482378481">ice::StringID_Hash</DisplayString>
                 <DisplayString Condition="id.payload.value == 1866927059">ice::UpdateUIResource const*</DisplayString>
-                <DisplayString Condition="id.payload.value == 3433881272">ice::World*</DisplayString>
                 <DisplayString Condition="id.payload.value == 1007979527">ice::ecs::Entity</DisplayString>
                 <DisplayString Condition="id.payload.value == 1224035327">ice::ecs::EntityHandle</DisplayString>
                 <DisplayString Condition="id.payload.value == 2759705139">ice::f32</DisplayString>
@@ -80,7 +80,6 @@
             <Item Name="[payload]" Optional="true" Condition="id.payload.value == 1107026406">*(ice::String const**)&amp;payload.value</Item>
             <Item Name="[payload]" Optional="true" Condition="id.payload.value == 2482378481">*(ice::StringID_Hash*)&amp;payload.value</Item>
             <Item Name="[payload]" Optional="true" Condition="id.payload.value == 1866927059">*(ice::UpdateUIResource const**)&amp;payload.value</Item>
-            <Item Name="[payload]" Optional="true" Condition="id.payload.value == 3433881272">*(ice::World**)&amp;payload.value</Item>
             <Item Name="[payload]" Optional="true" Condition="id.payload.value == 1007979527">*(ice::ecs::Entity*)&amp;payload.value</Item>
             <Item Name="[payload]" Optional="true" Condition="id.payload.value == 1224035327">*(ice::ecs::EntityHandle*)&amp;payload.value</Item>
             <Item Name="[payload]" Optional="true" Condition="id.payload.value == 2759705139">*(ice::f32*)&amp;payload.value</Item>

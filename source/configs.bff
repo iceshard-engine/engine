@@ -209,8 +209,7 @@
     .Requires = { 'Profile', 'MSVC-Frontend' }
     .Defines = { }
     .BuildOptions = {
-        ; ' /O2' ; Disabled due to issues with MSVC coroutine tall cail optimizations.
-        ' /O1'
+        ' /O2'
         ' /MD'
         ' /WX'
     }
@@ -222,8 +221,7 @@
     .Requires = { 'Release', 'MSVC-Frontend' }
     .Defines = { }
     .BuildOptions = {
-        ; ' /O2' ; Disabled due to issues with MSVC coroutine tall cail optimizations.
-        ' /O1'
+        ' /O2'
         ' /MD'
     }
 ]
