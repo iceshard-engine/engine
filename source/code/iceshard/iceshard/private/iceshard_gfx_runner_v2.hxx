@@ -1,3 +1,6 @@
+/// Copyright 2023 - 2023, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
 #pragma once
 #include "gfx/iceshard_gfx_device.hxx"
 #include <ice/shard_container.hxx>

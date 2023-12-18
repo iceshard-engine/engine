@@ -1,3 +1,6 @@
+/// Copyright 2023 - 2023, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
 #include "ice_gfx_render_graph_runtime.hxx"
 #include "ice_gfx_object_storage.hxx"
 #include <ice/assert.hxx>
