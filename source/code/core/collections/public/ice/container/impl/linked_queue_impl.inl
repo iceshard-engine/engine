@@ -44,36 +44,36 @@ namespace ice
     template<typename NodeType> requires ice::LinkedListNode<NodeType>
     constexpr void LinkedQueueRange<NodeType>::Iterator::operator++() noexcept
     {
-        if (_next != nullptr)
+        if (_current != _tail)
         {
-            if (_next != _tail)
-            {
-                _current = _next;
+            ICE_ASSERT_CORE(_current != nullptr);
+            _current = _next;
 
-                // TODO: Might need to be removed in non atomic linked queues become a thing.
-                while (_next->next == nullptr)
+            if (_current != _tail)
+            {
+                // TODO: Could be removed in non atomic linked queues become a thing.
+                // NOTE: Because we know that the 'next->next' pointer might change value from a different thread,
+                //   it needs to be marked as volatile.
+                volatile NodeType* next = _next;
+                while (next->next == nullptr)
                 {
                     std::atomic_thread_fence(std::memory_order_acquire);
                 }
 
                 _next = _next->next;
             }
-            else
-            {
-                _current = std::exchange(_next, nullptr);
-            }
         }
         else
         {
+            ICE_ASSERT_CORE(_current == _tail);
             _current = nullptr;
-            _tail = nullptr;
         }
     }
 
     template<typename NodeType> requires ice::LinkedListNode<NodeType>
     constexpr bool LinkedQueueRange<NodeType>::Iterator::operator==(Iterator other) const noexcept
     {
-        return (_tail == other._tail) && (_current == other._current);
+        return (_tail == other._tail) /*&& (_next == other._next)*/ && (_current == other._current);
     }
 
     template<typename NodeType> requires ice::LinkedListNode<NodeType>
@@ -102,7 +102,26 @@ namespace ice
             ice::LinkedQueueRange<NodeType> const& queue_range
         ) noexcept -> typename ice::LinkedQueueRange<NodeType>::Iterator
         {
-            return { queue_range._head, queue_range._head ? queue_range._head->next : nullptr, queue_range._tail };
+            if (queue_range._head != nullptr)
+            {
+                if (queue_range._head == queue_range._tail)
+                {
+                    return { queue_range._head, nullptr, queue_range._tail };
+                }
+
+                // NOTE: Wait for the first 'next' pointer to be set from a different thread.
+                volatile NodeType* next = queue_range._head;
+                while (next->next == nullptr)
+                {
+                    std::atomic_thread_fence(std::memory_order_acquire);
+                }
+
+                return { queue_range._head, queue_range._head->next, queue_range._tail };
+            }
+            else
+            {
+                return end(queue_range);
+            }
         }
 
         template<typename NodeType>
@@ -110,7 +129,7 @@ namespace ice
             ice::LinkedQueueRange<NodeType> const& queue_range
         ) noexcept -> typename ice::LinkedQueueRange<NodeType>::Iterator
         {
-            return { nullptr, nullptr, nullptr };
+            return { nullptr, nullptr, queue_range._tail };
         }
 
 
@@ -212,6 +231,7 @@ namespace ice
                 result._tail = std::atomic_exchange_explicit(
                     &queue._tail, nullptr, std::memory_order_acquire
                 );
+                ICE_ASSERT_CORE(result._tail != nullptr);
             }
 
             return result;
