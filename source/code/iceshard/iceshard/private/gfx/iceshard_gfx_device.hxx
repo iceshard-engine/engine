@@ -3,6 +3,7 @@
 
 #pragma once
 #include <ice/engine.hxx>
+#include <ice/engine_types.hxx>
 #include <ice/gfx/gfx_device.hxx>
 #include <ice/render/render_device.hxx>
 #include <ice/render/render_driver.hxx>
@@ -35,11 +36,12 @@ namespace ice::gfx
 
         auto resource_tracker() noexcept -> ice::gfx::GfxResourceTracker& override;
 
-        auto next_frame() noexcept -> ice::u32;
+        auto next_frame() noexcept -> ice::u32 override;
 
-        auto queue_group(ice::u32 image_index) noexcept -> ice::gfx::IceGfxQueueGroup&;
+        auto queue_group(ice::u32 image_index) noexcept -> ice::gfx::v2::GfxQueueGroup_Temp& override;
+        auto queue_group_internal(ice::u32 image_index) noexcept -> ice::gfx::IceGfxQueueGroup&;
 
-        void present(ice::u32 image_index) noexcept;
+        void present(ice::u32 image_index) noexcept override;
 
     private:
         ice::Allocator& _allocator;
@@ -57,7 +59,7 @@ namespace ice::gfx
         ice::Allocator& alloc,
         ice::render::RenderDriver& render_driver,
         ice::render::RenderSurface& render_surface,
-        ice::Span<ice::RenderQueueDefinition const> render_queues
+        ice::Span<ice::gfx::v2::QueueDefinition const> render_queues
     ) noexcept -> ice::UniquePtr<ice::gfx::IceGfxDevice>;
 
 } // namespace ice::gfx

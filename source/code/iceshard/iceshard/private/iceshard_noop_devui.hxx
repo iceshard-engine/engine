@@ -20,14 +20,14 @@ namespace ice
         }
 
         inline void internal_build_widgets(
-            ice::EngineFrame& /*frame*/,
+            ice::v2::EngineFrame& /*frame*/,
             ice::devui::DevUIExecutionKey execution_key
         ) noexcept override
         {
-            ICE_ASSERT(
-                _expected_key == execution_key,
-                "Method 'internal_build_widgets' was executed from an invalid context!"
-            );
+            //ICE_ASSERT(
+            //    _expected_key == execution_key,
+            //    "Method 'internal_build_widgets' was executed from an invalid context!"
+            //);
         }
 
     private:

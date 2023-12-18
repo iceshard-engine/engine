@@ -27,6 +27,7 @@
 namespace ice
 {
 
+#if 0
     namespace detail
     {
 
@@ -312,5 +313,6 @@ namespace ice
             }
         );
     }
+#endif
 
 } // namespace ice

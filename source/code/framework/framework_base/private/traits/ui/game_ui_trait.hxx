@@ -17,6 +17,7 @@ namespace ice
 
     class GameUI_Page;
 
+#if 0
     class IceWorldTrait_GameUI final : public ice::WorldTrait
     {
     public:
@@ -82,5 +83,6 @@ namespace ice
     void register_trait_gameui(
         ice::WorldTraitArchive& trait_archive
     ) noexcept;
+#endif
 
 } // namespace ice

@@ -6,7 +6,6 @@
 
 #include <ice/engine_frame.hxx>
 #include <ice/engine_runner.hxx>
-#include <ice/world/world_portal.hxx>
 #include <ice/world/world_trait_archive.hxx>
 #include <ice/task.hxx>
 #include <ice/asset_storage.hxx>
@@ -17,6 +16,7 @@
 namespace ice
 {
 
+#if 0
     namespace detail
     {
 
@@ -237,5 +237,6 @@ namespace ice
             }
         );
     }
+#endif
 
 } // namespace ice

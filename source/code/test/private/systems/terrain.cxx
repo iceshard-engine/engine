@@ -30,6 +30,7 @@
 namespace ice::trait
 {
 
+#if 0
     struct TerrainSettings
     {
         ice::f32 level_inner;
@@ -525,5 +526,6 @@ namespace ice::trait
     //    render_commands.bind_index_buffer(cmds, _render_cache->_terrain_mesh_indices);
     //    render_commands.draw_indexed(cmds, 4, 1);
     //}
+#endif
 
 } // namespace ice::trait

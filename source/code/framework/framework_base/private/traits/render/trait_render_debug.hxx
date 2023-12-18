@@ -2,10 +2,10 @@
 /// SPDX-License-Identifier: MIT
 
 #pragma once
-#include <ice/gfx/gfx_trait.hxx>
 #include <ice/gfx/gfx_stage.hxx>
 #include <ice/mem_data.hxx>
 
+#if 0
 namespace ice
 {
 
@@ -65,3 +65,4 @@ namespace ice
     ) noexcept;
 
 } // namespace ice
+#endif

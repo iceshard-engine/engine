@@ -5,6 +5,7 @@
 #include <ice/devui/devui_render_trait.hxx>
 #include <ice/gfx/gfx_device.hxx>
 #include <ice/gfx/gfx_stage.hxx>
+#include <ice/gfx/gfx_runner.hxx>
 #include <ice/asset_storage.hxx>
 #include <ice/clock.hxx>
 
@@ -14,51 +15,34 @@
 namespace ice::devui
 {
 
-    class ImGuiTrait final : public ice::devui::DevUITrait, public ice::gfx::GfxContextStage
+    class ImGuiTrait final : public ice::devui::DevUITrait, public ice::gfx::v3::GfxStage
     {
     public:
         ImGuiTrait(ice::Allocator& alloc) noexcept;
         ~ImGuiTrait() noexcept override;
 
-        void gfx_setup(
-            ice::gfx::GfxFrame& gfx_frame,
-            ice::gfx::GfxDevice& gfx_device
-        ) noexcept override;
+        void gather_tasks(ice::TraitTaskLauncher& task_launcher) noexcept override;
 
-        void gfx_cleanup(
-            ice::gfx::GfxFrame& gfx_frame,
-            ice::gfx::GfxDevice& gfx_device
-        ) noexcept override;
+        auto activate(ice::EngineWorldUpdate const& world_update) noexcept -> ice::Task<> override;
+        auto deactivate(ice::EngineWorldUpdate const& world_update) noexcept -> ice::Task<> override;
 
-        void gfx_update(
-            ice::EngineFrame const& engine_frame,
-            ice::gfx::GfxFrame& gfx_frame,
-            ice::gfx::GfxDevice& gfx_device
-        ) noexcept override;
+        auto update(ice::EngineFrameUpdate const& update) noexcept -> ice::Task<>;
 
-        void on_activate(
-            ice::Engine& engine,
-            ice::EngineRunner& runner,
-            ice::WorldPortal& portal
-        ) noexcept override;
+        auto on_window_resized(ice::vec2i new_size) noexcept -> ice::Task<>;
 
-        void on_update(
-            ice::EngineFrame& frame,
-            ice::EngineRunner& runner,
-            ice::WorldPortal& portal
-        ) noexcept override;
-
-        void record_commands(
-            ice::gfx::GfxContext const& context,
+        void draw(
             ice::EngineFrame const& frame,
-            ice::render::CommandBuffer command_buffer,
-            ice::render::RenderCommands& render_commands
+            ice::render::CommandBuffer cmds,
+            ice::render::RenderCommands& api
         ) const noexcept override;
 
+    public: // Gfx State Events
+        auto gfx_start(ice::gfx::v2::GfxStateChange const& params) noexcept -> ice::Task<>;
+        auto gfx_shutdown(ice::gfx::v2::GfxStateChange const& params) noexcept -> ice::Task<>;
+        auto gfx_update(ice::gfx::v2::GfxFrameUpdate const& update) noexcept -> ice::Task<>;
+
         bool start_frame() noexcept;
-        void end_frame(
-            ice::EngineFrame& frame
-        ) noexcept;
+        void end_frame(ice::EngineFrame& frame) noexcept;
 
         auto imgui_context() const noexcept -> ImGuiContext*;
 

@@ -73,20 +73,23 @@ namespace ice::platform::win32::sdl2
                 break;
             case SDL_WINDOWEVENT:
             {
+                ice::vec2i const window_size{current_event.window.data1, current_event.window.data2};
+                ICE_LOG(LogSeverity::Debug, LogTag::Core, "Window event ID: {}", current_event.window.event);
+
                 switch (current_event.window.event)
                 {
                 case SDL_WINDOWEVENT_MINIMIZED:
                     ice::shards::push_back(_system_events, ice::platform::Shard_WindowMinimized);
                     break;
                 case SDL_WINDOWEVENT_RESTORED:
-                    ice::shards::push_back(_system_events, ice::platform::Shard_WindowRestored);
+                    ice::shards::push_back(_system_events, ice::platform::ShardID_WindowRestored | window_size);
+                    break;
+                case SDL_WINDOWEVENT_MAXIMIZED:
+                    ice::shards::push_back(_system_events, ice::platform::ShardID_WindowMaximized | window_size);
                     break;
                 case SDL_WINDOWEVENT_SIZE_CHANGED:
                 case SDL_WINDOWEVENT_RESIZED:
-                    ice::shards::push_back(
-                        _system_events,
-                        ice::platform::ShardID_WindowResized | ice::vec2i(current_event.window.data1, current_event.window.data2)
-                    );
+                    ice::shards::push_back(_system_events, ice::platform::ShardID_WindowResized | window_size);
                     break;
                 }
                 break;

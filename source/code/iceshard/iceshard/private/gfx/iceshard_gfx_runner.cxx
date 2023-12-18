@@ -19,6 +19,7 @@
 namespace ice::gfx
 {
 
+#if 0
     namespace detail
     {
 
@@ -271,7 +272,7 @@ namespace ice::gfx
         ice::u32 const image_index = _device->next_frame();
 
         // NOTE: We aquire the graphics queues for this frame index.
-        ice::gfx::IceGfxQueueGroup& queue_group = _device->queue_group(image_index);
+        ice::gfx::IceGfxQueueGroup& queue_group = _device->queue_group_internal(image_index);
         queue_group.reset_all();
         frame_tasks.start_all();
 
@@ -397,5 +398,6 @@ namespace ice::gfx
 
         return result;
     }
+#endif
 
 } // namespace ice::gfx

@@ -4,7 +4,6 @@
 #include "trait_render_texture_loader.hxx"
 
 #include <ice/engine_runner.hxx>
-#include <ice/world/world_portal.hxx>
 #include <ice/world/world_trait_archive.hxx>
 
 #include <ice/gfx/gfx_device.hxx>
@@ -24,6 +23,7 @@
 #include <ice/asset_request.hxx>
 #include <ice/profiler.hxx>
 
+#if 0
 namespace ice
 {
 
@@ -334,3 +334,4 @@ namespace ice
     }
 
 } // namespace ice
+#endif

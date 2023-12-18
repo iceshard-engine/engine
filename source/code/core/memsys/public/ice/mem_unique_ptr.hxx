@@ -177,7 +177,8 @@ namespace ice
     template<typename T, typename... Args>
     inline auto make_unique(ice::Allocator& alloc, Args&&... args) noexcept -> ice::UniquePtr<T>
     {
-        static_assert(MakeUniqueConstructorAvailable<T, Args...>, "Can't call the constructor for the given type and arguments!");
+        static_assert(std::is_abstract_v<T> == false, "Can't instantiate an abstract type!");
+        static_assert(MakeUniqueConstructorAvailable<T, decltype(ice::forward<Args>(args))...>, "Can't call the constructor for the given type and arguments!");
         return ice::UniquePtr<T>{ &alloc, alloc.create<T>(ice::forward<Args>(args)...) };
     }
 

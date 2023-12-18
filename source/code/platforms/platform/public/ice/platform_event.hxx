@@ -18,8 +18,9 @@ namespace ice::platform
     static constexpr ice::Shard Shard_AppResumed = "event/app/resumed"_shard;
 
     static constexpr ice::ShardID ShardID_WindowResized = "event/window/resized`ice::vec2i"_shardid;
+    static constexpr ice::ShardID ShardID_WindowMaximized = "event/window/maximized`ice::vec2i"_shardid;
+    static constexpr ice::ShardID ShardID_WindowRestored = "event/window/restored`ice::vec2i"_shard;
     static constexpr ice::Shard Shard_WindowMinimized = "event/window/minimized`void"_shard;
-    static constexpr ice::Shard Shard_WindowRestored = "event/window/restored`void"_shard;
     static constexpr ice::Shard Shard_InputText = "event/input/text`char const*"_shard;
 
 } // namespace ice::platform

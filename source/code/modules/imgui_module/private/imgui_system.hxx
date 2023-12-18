@@ -16,7 +16,7 @@ namespace ice::devui
         ImGuiSystem(ice::Allocator& alloc) noexcept;
         ~ImGuiSystem() noexcept override;
 
-        void register_trait(ice::WorldTraitArchive& archive) noexcept override;
+        void register_trait(ice::TraitArchive& archive) noexcept override;
         void set_trait(ice::devui::ImGuiTrait* trait) noexcept;
 
         void register_widget(ice::devui::DevUIWidget* widget) noexcept override;

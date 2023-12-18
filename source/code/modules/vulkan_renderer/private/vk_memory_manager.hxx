@@ -55,9 +55,9 @@ namespace ice::render::vk
             .name = "Large Image Memory"
         },
         AllocationBlockInfo{
-            .block_size = 1024 * 1024 * 16,
+            .block_size = 1024 * 1024 * 128,
             .allocation_min = 1024,
-            .allocation_max = 1024 * 1024 * 4,
+            .allocation_max = 1024 * 1024 * 64,
             .allocation_stride = 256,
             .name = "Buffer Memory"
         },

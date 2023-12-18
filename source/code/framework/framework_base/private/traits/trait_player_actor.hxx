@@ -13,6 +13,7 @@
 namespace ice
 {
 
+#if 0
     class IceWorldTrait_PlayerActor : public ice::WorldTrait
     {
     public:
@@ -37,5 +38,6 @@ namespace ice
     private:
         using Query = ice::ecs::QueryDefinition<ice::Actor const&, ice::PhysicsVelocity&, ice::Animation&, ice::Transform2DDynamic&>;
     };
+#endif
 
 } // namespace ice

@@ -9,6 +9,7 @@
 namespace ice
 {
 
+#if 0
     class IceWorldTrait_RenderPostProcess : public ice::gfx::GfxTrait, public ice::gfx::GfxContextStage
     {
     public:
@@ -66,5 +67,6 @@ namespace ice
     void register_trait_render_postprocess(
         ice::WorldTraitArchive& archive
     ) noexcept;
+#endif
 
 } // namespace ice

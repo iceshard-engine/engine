@@ -2,7 +2,7 @@
 /// SPDX-License-Identifier: MIT
 
 #pragma once
-#include <ice/mem.hxx>
+#include <ice/mem_info.hxx>
 #include <ice/mem_types.hxx>
 
 namespace ice
@@ -14,15 +14,6 @@ namespace ice
         ice::usize size;
         ice::ualign alignment;
     };
-
-    constexpr auto data_view(Memory memory) noexcept
-    {
-        return Data{
-            .location = memory.location,
-            .size = memory.size,
-            .alignment = memory.alignment
-        };
-    }
 
     template<typename Type>
     inline auto data_view(Type const& var) noexcept

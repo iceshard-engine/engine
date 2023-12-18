@@ -2,34 +2,49 @@
 /// SPDX-License-Identifier: MIT
 
 #pragma once
-#include <ice/stringid.hxx>
-#include <ice/world/world_assembly.hxx>
 #include <ice/ecs/ecs_entity_storage.hxx>
+#include <ice/world/world_assembly.hxx>
+#include <ice/engine_types.hxx>
+#include <ice/asset_types.hxx>
+#include <ice/stringid.hxx>
+#include <ice/clock.hxx>
 
 namespace ice
 {
 
-    class World;
-
-    class WorldManager : public ice::WorldAssembly
+    struct EngineWorldUpdate
     {
-    public:
-        using WorldAssembly::create_world;
+        ice::Clock const& clock;
+        ice::AssetStorage& assets;
+        ice::Engine& engine;
+        ice::EngineSchedulers thread;
+    };
 
-        virtual auto create_world(
-            ice::WorldTemplate const& world_template
-        ) noexcept -> World* = 0;
+    struct WorldUpdater
+    {
+        virtual ~WorldUpdater() noexcept = default;
 
-        virtual auto find_world(
-            ice::StringID_Arg name
-        ) noexcept -> World* = 0;
-
-        virtual void destroy_world(
-            ice::StringID_Arg world
+        virtual void update(
+            ice::EngineFrame& frame,
+            ice::EngineWorldUpdate const& world_update,
+            ice::Array<ice::Task<>, ContainerLogic::Complex>& out_tasks
         ) noexcept = 0;
 
-    protected:
-        virtual ~WorldManager() noexcept = default;
+        virtual void force_update(
+            ice::StringID_Arg world_name,
+            ice::Shard shard,
+            ice::Array<ice::Task<>, ContainerLogic::Complex>& out_tasks
+        ) noexcept = 0;
+
+        virtual void update(
+            ice::Shard shard,
+            ice::Array<ice::Task<>, ContainerLogic::Complex>& out_tasks
+        ) noexcept = 0;
+
+        virtual void update(
+            ice::ShardContainer const& shards,
+            ice::Array<ice::Task<>, ContainerLogic::Complex>& out_tasks
+        ) noexcept = 0;
     };
 
 } // namespace ice

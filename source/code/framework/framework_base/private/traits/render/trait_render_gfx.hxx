@@ -4,8 +4,8 @@
 #pragma once
 #include <ice/game_render_traits.hxx>
 #include <ice/render/render_declarations.hxx>
-#include <ice/gfx/gfx_trait.hxx>
 
+#if 0
 namespace ice
 {
 
@@ -49,3 +49,4 @@ namespace ice
     ) noexcept;
 
 } // namespace ice
+#endif

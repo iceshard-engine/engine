@@ -3,7 +3,6 @@
 
 #pragma once
 #include <ice/gfx/gfx_runner.hxx>
-#include <ice/gfx/gfx_trait.hxx>
 #include <ice/gfx/gfx_context.hxx>
 
 #include <ice/world/world.hxx>
@@ -19,8 +18,6 @@
 #include "iceshard_gfx_runner_trait.hxx"
 #include "iceshard_gfx_context.hxx"
 
-#include "../world/iceshard_world.hxx"
-
 namespace ice::gfx
 {
 
@@ -34,6 +31,7 @@ namespace ice::gfx
         ice::gfx::GfxTrait* trait;
     };
 
+#if 0
     class IceGfxRunner : public ice::gfx::GfxRunner
     {
     public:
@@ -103,5 +101,6 @@ namespace ice::gfx
         ice::ManualResetEvent _mre_internal;
         ice::ManualResetEvent* _mre_selected;
     };
+#endif
 
 } // namespace ice::gfx

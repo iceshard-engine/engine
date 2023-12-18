@@ -11,6 +11,7 @@
 namespace ice
 {
 
+#if 0
     class AssetStorage;
 
     static constexpr ice::String Tilemap_VtxShader = "shaders/game2d/tiled-vtx";
@@ -129,5 +130,6 @@ namespace ice
     void register_trait_render_tilemap(
         ice::WorldTraitArchive& archive
     ) noexcept;
+#endif
 
 } // namespace ice

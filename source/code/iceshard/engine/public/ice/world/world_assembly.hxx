@@ -18,17 +18,24 @@ namespace ice
         ice::StringID name;
         ice::Span<ice::StringID const> traits;
         ice::ecs::EntityStorage* entity_storage;
+        bool is_initially_active = true;
     };
 
-    class WorldAssembly
+    struct WorldAssembly
     {
-    public:
         virtual ~WorldAssembly() noexcept = default;
 
         virtual auto create_world(
-            ice::Allocator& alloc,
             ice::WorldTemplate const& world_template
-        ) const noexcept -> ice::World* = 0;
+        ) noexcept -> ice::World* = 0;
+
+        virtual auto find_world(
+            ice::StringID_Arg name
+        ) noexcept -> ice::World* = 0;
+
+        virtual void destroy_world(
+            ice::StringID_Arg name
+        ) noexcept = 0;
     };
 
 } // namespace ice

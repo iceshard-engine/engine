@@ -11,7 +11,6 @@
 #include <ice/engine_runner.hxx>
 #include <ice/task.hxx>
 #include <ice/task_utils.hxx>
-#include <ice/world/world_portal.hxx>
 #include <ice/world/world_trait_archive.hxx>
 
 #include <ice/gfx/gfx_device.hxx>
@@ -35,6 +34,7 @@
 namespace ice
 {
 
+#if 0
     namespace detail
     {
         struct TileSet_ShaderData_Properties
@@ -743,5 +743,6 @@ namespace ice
             }
         );
     }
+#endif
 
 } // namespace ice

@@ -12,25 +12,25 @@ namespace ice
     void load_trait_descriptions(
         ice::Allocator& alloc,
         ice::ModuleRegister const& registry,
-        ice::WorldTraitArchive& trait_archive
+        ice::TraitArchive& trait_archive
     ) noexcept;
 
-    namespace detail::world_traits::v1
+    namespace detail::world_traits
     {
 
         static constexpr ice::StringID Constant_APIName_WorldTraitsModule = "ice.world-traits-module"_sid;
 
-        using RegisterTraitsFn = bool(
-            ice::WorldTraitArchive&
+        using RegisterTraitsFn_v2 = bool(
+            ice::TraitArchive&
         ) noexcept;
 
         struct TraitsModuleAPI
         {
-            RegisterTraitsFn* register_traits_fn;
+            RegisterTraitsFn_v2* register_traits_fn;
         };
 
     } // namespace detail::engine::v1
 
-    using ice::detail::world_traits::v1::Constant_APIName_WorldTraitsModule;
+    using ice::detail::world_traits::Constant_APIName_WorldTraitsModule;
 
 } // namespace ice

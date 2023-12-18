@@ -2,11 +2,11 @@
 /// SPDX-License-Identifier: MIT
 
 #pragma once
-#include <ice/gfx/gfx_trait.hxx>
 
 namespace ice::gfx
 {
 
+#if 0
     class IceGfxRunner;
     class IceGfxRunnerTrait : public ice::gfx::GfxTrait
     {
@@ -38,5 +38,6 @@ namespace ice::gfx
     private:
         ice::gfx::IceGfxRunner& _runner;
     };
+#endif
 
 } // namespace ice::gfx

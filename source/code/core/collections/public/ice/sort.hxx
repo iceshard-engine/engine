@@ -9,6 +9,17 @@
 namespace ice
 {
 
+    template<typename Type, typename Fn>
+    inline auto accumulate_over(ice::Span<Type> objects, Fn&& fn) noexcept -> ice::ucount
+    {
+        ice::ucount result = 0;
+        for (Type const& object : objects)
+        {
+            result += ice::forward<Fn>(fn)(object);
+        }
+        return result;
+    }
+
     template<typename T, typename U = T> requires (std::convertible_to<T, U>)
     constexpr auto lower_bound(ice::Span<T> values, U const& value) noexcept -> ice::ucount;
 
@@ -26,6 +37,12 @@ namespace ice
 
     template<typename T, typename Comp, typename U = T> requires (std::convertible_to<T, U>)
     constexpr bool binary_search(ice::Span<T> values, U const& value, Comp&& comp, ice::ucount& out_index) noexcept;
+
+    template<typename T, typename U = T> requires (std::convertible_to<T, U>)
+    constexpr bool search(ice::Span<T> values, U const& value, ice::ucount& out_index) noexcept;
+
+    template<typename T, typename Comp, typename U = T> requires (std::convertible_to<T, U>)
+    constexpr bool search(ice::Span<T> values, U const& value, Comp&& comp, ice::ucount& out_index) noexcept;
 
     template<typename T>
     inline void sort(ice::Span<T> span) noexcept;
@@ -76,6 +93,26 @@ namespace ice
     {
         out_index = ice::lower_bound(values, predicate, ice::forward<Comp>(comp));
         return (ice::count(values) != out_index) && (values[out_index] == predicate);
+    }
+
+    template<typename T, typename U> requires (std::convertible_to<T, U>)
+    constexpr bool search(ice::Span<T> values, U const& value, ice::ucount& out_index) noexcept
+    {
+        return search(values, value, [](auto const& l, auto const& r) noexcept { return l == r; }, out_index);
+    }
+
+    template<typename T, typename Comp, typename U> requires (std::convertible_to<T, U>)
+    constexpr bool search(ice::Span<T> values, U const& value, Comp&& comp, ice::ucount& out_index) noexcept
+    {
+        for (ice::u32 idx = 0; idx < ice::span::count(values); ++idx)
+        {
+            if (ice::forward<Comp>(comp)(values[idx], value))
+            {
+                out_index = idx;
+                return true;
+            }
+        }
+        return false;
     }
 
     namespace detail

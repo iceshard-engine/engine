@@ -52,6 +52,11 @@ namespace ice::gfx
         return (_flags & QueueFlags::Present) == QueueFlags::Present;
     }
 
+    void IceGfxQueue::present(ice::render::RenderSwapchain* swapchain) const noexcept
+    {
+        _render_queue->present(swapchain);
+    }
+
     auto IceGfxQueue::render_queue() noexcept -> ice::render::RenderQueue*
     {
         return _render_queue;

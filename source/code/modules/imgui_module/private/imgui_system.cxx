@@ -27,15 +27,11 @@ namespace ice::devui
             }
         }
 
-        auto create_imgui_trait(
-            void* userdata,
-            ice::Allocator& alloc,
-            ice::WorldTraitTracker const& tracker
-        ) noexcept -> ice::WorldTrait*
+        auto create_imgui_trait_v2(ice::Allocator& alloc, void* userdata) noexcept -> ice::UniquePtr<ice::Trait>
         {
+            ice::UniquePtr<ice::devui::ImGuiTrait> trait = ice::make_unique<ice::devui::ImGuiTrait>(alloc, alloc);
             ice::devui::ImGuiSystem* system = reinterpret_cast<ImGuiSystem*>(userdata);
-            ice::devui::ImGuiTrait* trait = alloc.create<ice::devui::ImGuiTrait>(alloc);
-            system->set_trait(trait);
+            system->set_trait(trait.get());
             return trait;
         }
 
@@ -87,16 +83,18 @@ namespace ice::devui
         }
     }
 
-    void ImGuiSystem::register_trait(
-        ice::WorldTraitArchive& archive
-    ) noexcept
+    void ImGuiSystem::register_trait(ice::TraitArchive& archive) noexcept
     {
         archive.register_trait(
-            ice::Constant_TraitName_DevUI,
-            ice::WorldTraitDescription
+            ice::TraitDescriptor
             {
-                .factory = ice::devui::detail::create_imgui_trait,
-                .factory_userdata = this,
+                .name = ice::Constant_TraitName_DevUI,
+                .fn_factory = ice::devui::detail::create_imgui_trait_v2,
+                .fn_register = nullptr,
+                .fn_unregister = nullptr,
+                .required_dependencies = { },
+                .optional_dependencies = { },
+                .fn_factory_userdata = this,
             }
         );
     }
@@ -163,10 +161,10 @@ namespace ice::devui
         ice::devui::DevUIExecutionKey execution_key
     ) noexcept
     {
-        ICE_ASSERT(
-            _execution_key == execution_key,
-            "Method 'internal_build_widgets' was executed from an invalid context!"
-        );
+        //ICE_ASSERT(
+        //    _execution_key == execution_key,
+        //    "Method 'internal_build_widgets' was executed from an invalid context!"
+        //);
 
         if (_render_trait == nullptr)
         {

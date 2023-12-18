@@ -15,9 +15,7 @@
 #include "traits/ui/render_ui_trait.hxx"
 
 #include "traits/render/trait_render_gfx.hxx"
-#include "traits/render/trait_render_clear.hxx"
 #include "traits/render/trait_render_postprocess.hxx"
-#include "traits/render/trait_render_finish.hxx"
 
 #include "traits/render/trait_render_sprites.hxx"
 #include "traits/render/trait_render_texture_loader.hxx"
@@ -26,11 +24,12 @@
 #include "traits/render/trait_render_tilemap.hxx"
 #include "traits/render/trait_render_glyphs.hxx"
 
-namespace ice
+namespace ice::framework
 {
 
     static constexpr ice::StringID_Hash Constant_WorldTraitsAPI = ice::stringid_hash(ice::Constant_APIName_WorldTraitsModule);
 
+#if 0
     bool game_register_traits(ice::WorldTraitArchive& archive) noexcept
     {
         register_trait_render_gfx(archive);
@@ -67,21 +66,22 @@ namespace ice
 
         return false;
     }
+#endif
 
-    void load_game_module(
+    void load_framework_module(
         ice::Allocator* alloc,
         ice::ModuleNegotiatorContext* ctx,
         ice::ModuleNegotiator* api
     ) noexcept
     {
-        api->fn_register_module(ctx, Constant_WorldTraitsAPI, &get_module_api);
+        //api->fn_register_module(ctx, Constant_WorldTraitsAPI, &get_module_api);
     }
 
-    void unload_game_module(
+    void unload_framework_module(
         ice::Allocator* alloc
     ) noexcept
     {
 
     }
 
-} // namespace ice
+} // namespace ice::framework

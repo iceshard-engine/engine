@@ -24,6 +24,7 @@
 #include <ice/asset_storage.hxx>
 #include <ice/profiler.hxx>
 
+#if 0
 namespace ice
 {
 
@@ -185,7 +186,7 @@ namespace ice
     {
         IPT_ZONE_SCOPED_NAMED("[Trait] PostProcess :: Update");
 
-        if (ice::shards::contains(engine_frame.shards(), ice::platform::Shard_WindowResized))
+        if (ice::shards::contains(engine_frame.shards(), ice::platform::ShardID_WindowResized))
         {
             gfx_cleanup(gfx_frame, gfx_device);
             gfx_setup(gfx_frame, gfx_device);
@@ -275,3 +276,4 @@ namespace ice
     }
 
 } // namespace ice
+#endif

@@ -36,6 +36,7 @@ namespace ice
         constexpr auto operator=(ice::Span<Type> const& other) noexcept -> ice::Span<Type>& = default;
 
         constexpr auto operator[](ice::ucount idx) const noexcept -> Type&;
+        constexpr operator ice::Span<Type const>() noexcept { return { _data, _count }; }
         constexpr operator ice::Span<Type const>() const noexcept { return { _data, _count }; }
     };
 

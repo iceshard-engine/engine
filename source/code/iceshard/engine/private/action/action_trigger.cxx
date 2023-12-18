@@ -165,21 +165,21 @@ namespace ice::action
         database.add_trigger(
             "trigger.action-input-button"_sid,
             ActionTriggerDefinition{
-                .trigger_shardid = ice::shardid(ice::Shard_InputEventButton),
+                .trigger_shardid = ice::ShardID_InputEvent,
                 .trigger_handler = detail::trigger_input_button
             }
         );
         database.add_trigger(
             "trigger.action-input-axis-above"_sid,
             ActionTriggerDefinition{
-                .trigger_shardid = ice::shardid(ice::Shard_InputEventAxis),
+                .trigger_shardid = ShardID_InputEvent,
                 .trigger_handler = detail::trigger_input_axis_above
             }
         );
         database.add_trigger(
             "trigger.action-input-axis-below"_sid,
             ActionTriggerDefinition{
-                .trigger_shardid = ice::shardid(ice::Shard_InputEventAxis),
+                .trigger_shardid = ShardID_InputEvent,
                 .trigger_handler = detail::trigger_input_axis_below
             }
         );

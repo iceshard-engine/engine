@@ -15,6 +15,7 @@ namespace ice
     class AssetRequest;
     struct AssetHandle;
 
+#if 0
     class IceWorldTrait_RenderTextureLoader : public ice::gfx::GfxTrait
     {
     public:
@@ -75,5 +76,6 @@ namespace ice
     void register_trait_render_texture_loader(
         ice::WorldTraitArchive& archive
     ) noexcept;
+#endif
 
 } // namespace ice

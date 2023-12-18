@@ -10,6 +10,7 @@
 namespace ice::trait
 {
 
+#if 0
     class Terrain final : public ice::WorldTrait//, public ice::gfx::GfxStage
     {
     public:
@@ -52,5 +53,6 @@ namespace ice::trait
 
         bool _debug_pl = false;
     };
+#endif
 
 } // namespace ice::trait

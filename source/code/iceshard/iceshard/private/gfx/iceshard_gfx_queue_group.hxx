@@ -12,7 +12,7 @@ namespace ice::gfx
 
     class IceGfxQueue;
 
-    class IceGfxQueueGroup
+    class IceGfxQueueGroup : public ice::gfx::v2::GfxQueueGroup_Temp
     {
     public:
         IceGfxQueueGroup(
@@ -29,6 +29,8 @@ namespace ice::gfx
             ice::render::QueueFlags flags,
             ice::u32 pool_index
         ) noexcept -> ice::gfx::IceGfxQueue*;
+
+        bool get_queue(ice::render::QueueFlags flags, ice::gfx::GfxQueue*& out_queue) noexcept override;
 
         bool get_queue(ice::render::QueueFlags flags, ice::gfx::IceGfxQueue*& out_queue) noexcept;
         auto get_queue(ice::StringID_Arg name) noexcept -> ice::gfx::IceGfxQueue*;

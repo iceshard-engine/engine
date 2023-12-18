@@ -10,6 +10,7 @@
 namespace ice::gfx
 {
 
+#if 0
     IceGfxRunnerTrait::IceGfxRunnerTrait(ice::gfx::IceGfxRunner& runner) noexcept
         : _runner{ runner }
     {
@@ -46,5 +47,6 @@ namespace ice::gfx
     ) noexcept
     {
     }
+#endif
 
 } // namespace ice::gfx

@@ -8,6 +8,7 @@
 #include <ice/render/render_buffer.hxx>
 #include <ice/mem_allocator_stack.hxx>
 #include <ice/container/hashmap.hxx>
+#include <ice/gfx/gfx_runner.hxx>
 #include <ice/assert.hxx>
 
 #include "iceshard_gfx_queue_group.hxx"
@@ -136,9 +137,16 @@ namespace ice::gfx
         }
     }
 
-    auto IceGfxDevice::queue_group(ice::u32 image_index) noexcept -> ice::gfx::IceGfxQueueGroup&
+    auto IceGfxDevice::queue_group(ice::u32 image_index) noexcept -> ice::gfx::v2::GfxQueueGroup_Temp&
     {
-        return *_graphics_queues[image_index];
+        ICE_ASSERT_CORE(image_index == 0 || image_index == _render_swapchain->current_image_index());
+        return *_graphics_queues[_render_swapchain->current_image_index()];
+    }
+
+    auto IceGfxDevice::queue_group_internal(ice::u32 image_index) noexcept -> ice::gfx::IceGfxQueueGroup&
+    {
+        ICE_ASSERT_CORE(image_index == 0 || image_index == _render_swapchain->current_image_index());
+        return *_graphics_queues[_render_swapchain->current_image_index()];
     }
 
     auto detail::find_queue_id(
@@ -167,7 +175,7 @@ namespace ice::gfx
         ice::Allocator& alloc,
         ice::render::RenderDriver& render_driver,
         ice::render::RenderSurface& render_surface,
-        ice::Span<ice::RenderQueueDefinition const> render_queues
+        ice::Span<ice::gfx::v2::QueueDefinition const> render_queues
     ) noexcept -> ice::UniquePtr<ice::gfx::IceGfxDevice>
     {
         ice::Array<ice::render::QueueFamilyInfo> queue_families{ alloc };
@@ -195,7 +203,7 @@ namespace ice::gfx
         };
 
         ice::HashMap<ice::u32> queue_index_tracker{ alloc };
-        for (ice::RenderQueueDefinition const& pass_info : render_queues)
+        for (ice::gfx::v2::QueueDefinition const& pass_info : render_queues)
         {
             QueueID const pass_queue_id = detail::find_queue_id(queue_families, pass_info.flags);
             ICE_ASSERT(
@@ -259,7 +267,7 @@ namespace ice::gfx
                 );
             }
 
-            for (ice::RenderQueueDefinition const& pass_info : render_queues)
+            for (ice::gfx::v2::QueueDefinition const& pass_info : render_queues)
             {
                 QueueID const pass_queue_id = detail::find_queue_id(queue_families, pass_info.flags);
                 ice::u32 const pass_queue_index = ice::hashmap::get(

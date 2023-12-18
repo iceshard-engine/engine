@@ -17,6 +17,7 @@ namespace ice
 
     class DevUI_Chipmunk2D;
 
+#if 0
     class IceWorldTrait_PhysicsBox2D : public ice::WorldTrait_Physics2D
     {
     public:
@@ -64,5 +65,6 @@ namespace ice
 
         ice::DevUI_Chipmunk2D* _devui;
     };
+#endif
 
 } // namespace ice

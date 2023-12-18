@@ -4,39 +4,33 @@
 #pragma once
 #include <ice/data_storage.hxx>
 #include <ice/ecs/ecs_entity_storage.hxx>
+#include <ice/engine_types.hxx>
+#include <ice/span.hxx>
 
 namespace ice
 {
 
-    class WorldTrait;
-    class WorldPortal;
-
-    enum class WorldState
+    enum class WorldState : ice::u8
     {
         Idle,
         Active,
-        Managed,
+        Disabled,
     };
 
-    class World
+    struct WorldDefinition
     {
-    public:
-        virtual auto allocator() noexcept -> ice::Allocator& = 0;
-        virtual auto entity_storage() noexcept -> ice::ecs::EntityStorage& = 0;
+        ice::Span<ice::StringID> traits;
+    };
 
-        virtual auto state_hint() const noexcept -> ice::WorldState = 0;
-
-        virtual void add_trait(
-            ice::StringID_Arg name,
-            ice::WorldTrait* trait
-        ) noexcept = 0;
-
-        virtual void remove_trait(
-            ice::StringID_Arg name
-        ) noexcept = 0;
-
-    protected:
+    struct World
+    {
         virtual ~World() noexcept = default;
+
+        virtual auto trait(ice::StringID_Arg trait_identifier) noexcept -> ice::Trait* = 0;
+        virtual auto trait(ice::StringID_Arg trait_identifier) const noexcept -> ice::Trait const* = 0;
+
+        virtual auto trait_storage(ice::Trait* trait) noexcept -> ice::DataStorage* = 0;
+        virtual auto trait_storage(ice::Trait const* trait) const noexcept -> ice::DataStorage const* = 0;
     };
 
 } // namespace ice

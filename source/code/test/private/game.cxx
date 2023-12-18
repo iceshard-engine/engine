@@ -3,6 +3,218 @@
 
 #include "game.hxx"
 
+#include <ice/framework_module.hxx>
+
+#include <ice/engine.hxx>
+#include <ice/engine_frame.hxx>
+#include <ice/engine_runner.hxx>
+#include <ice/engine_shards.hxx>
+#include <ice/engine_devui.hxx>
+#include <ice/world/world.hxx>
+#include <ice/world/world_manager.hxx>
+#include <ice/world/world_trait_module.hxx>
+
+#include <ice/gfx/gfx_stage.hxx>
+#include <ice/gfx/gfx_runner.hxx>
+#include <ice/gfx/gfx_device.hxx>
+#include <ice/gfx/gfx_render_graph.hxx>
+#include <ice/gfx/ice_gfx_render_graph_v3.hxx>
+
+#include <ice/render/render_image.hxx>
+#include <ice/render/render_swapchain.hxx>
+
+#include <ice/resource_tracker.hxx>
+#include <ice/module_register.hxx>
+#include <ice/asset_types.hxx>
+#include <ice/profiler.hxx>
+#include <ice/uri.hxx>
+#include <ice/log.hxx>
+#include <thread>
+
+static constexpr LogTagDefinition LogGame = ice::create_log_tag(LogTag::Game, "TestGame");
+
+auto ice::framework::create_game(ice::Allocator& alloc) noexcept -> ice::UniquePtr<Game>
+{
+    return ice::make_unique<TestGame>(alloc, alloc);
+}
+
+struct TestTrait : public ice::Trait
+{
+    ice::Timer timer;
+
+    auto activate(ice::EngineWorldUpdate const& update) noexcept -> ice::Task<> override
+    {
+        timer = ice::timer::create_timer(update.clock, 1.0f);
+        co_return;
+    }
+
+    void gather_tasks(ice::TraitTaskLauncher& task_launcher) noexcept
+    {
+        task_launcher.bind<&TestTrait::logic>();
+        task_launcher.bind<&TestTrait::gfx>(ice::gfx::v2::ShardID_GfxFrameUpdate);
+    }
+
+    auto logic(ice::EngineFrameUpdate const& update) noexcept -> ice::Task<>
+    {
+        if (ice::timer::update(timer))
+        {
+            ICE_LOG(LogSeverity::Info, LogTag::Game, "TestTrait::logic");
+        }
+
+        co_await update.thread.tasks;
+        IPT_ZONE_SCOPED;
+        co_return;
+    }
+
+    auto gfx(ice::gfx::v2::GfxFrameUpdate const& update) noexcept -> ice::Task<>
+    {
+        IPT_ZONE_SCOPED;
+        co_return;
+    }
+};
+
+using ModuleProcLoad = void(ice::Allocator*, ice::ModuleNegotiatorContext*, ice::ModuleNegotiator*);
+using ModuleProcUnload = void(ice::Allocator*);
+using ModuleProcGetAPI = bool(ice::StringID_Hash, ice::u32, void**);
+
+namespace icetm = ice::detail::world_traits;
+
+auto test_factory(ice::Allocator& alloc, void*) noexcept -> UniquePtr<ice::Trait>
+{
+    return ice::make_unique<TestTrait>(alloc);
+}
+
+bool test_reg_traits(ice::TraitArchive& arch) noexcept
+{
+    arch.register_trait({ .name = "test"_sid, .fn_factory = test_factory });
+    return true;
+}
+
+bool test_getapi(ice::StringID_Hash name, ice::u32 ver, void** ptrs)
+{
+    if (name == icetm::Constant_APIName_WorldTraitsModule && ver == 2)
+    {
+        static icetm::TraitsModuleAPI module_api{
+            .register_traits_fn = test_reg_traits
+        };
+
+        *ptrs = &module_api;
+        return true;
+    }
+    return false;
+}
+
+void test_load(ice::Allocator*, ice::ModuleNegotiatorContext* ctx, ice::ModuleNegotiator* neg)
+{
+    neg->fn_register_module(ctx, icetm::Constant_APIName_WorldTraitsModule, &test_getapi);
+}
+
+void test_unload(ice::Allocator*)
+{
+}
+
+struct ModuleNegotiator
+{
+    bool (*fn_get_module_api)(ice::ModuleNegotiatorContext*, ice::StringID_Hash, ice::u32, void**) noexcept;
+    bool (*fn_register_module)(ice::ModuleNegotiatorContext*, ice::StringID_Hash, ice::ModuleProcGetAPI*) noexcept;
+};
+
+TestGame::TestGame(ice::Allocator& alloc) noexcept
+    : _allocator{ alloc }
+    , _first_time{ true }
+{
+}
+
+void TestGame::on_setup(ice::framework::State const& state) noexcept
+{
+    ICE_LOG(LogSeverity::Info, LogGame, "Hello, World!");
+
+    ice::ModuleRegister& mod = state.modules;
+    ice::ResourceTracker& res = state.resources;
+
+    ice::ResourceHandle* const pipelines_module = res.find_resource("urn:iceshard_pipelines.dll"_uri);
+    ice::ResourceHandle* const vulkan_module = res.find_resource("urn:vulkan_renderer.dll"_uri);
+    ice::ResourceHandle* const imgui_module = res.find_resource("urn:imgui_module.dll"_uri);
+
+    ICE_ASSERT(pipelines_module != nullptr, "Missing `iceshard_pipelines.dll` module!");
+    ICE_ASSERT(vulkan_module != nullptr, "Missing `vulkan_renderer.dll` module!");
+
+    mod.load_module(_allocator, ice::resource_origin(pipelines_module));
+    mod.load_module(_allocator, ice::resource_origin(vulkan_module));
+
+    ice::framework::register_assetype_modules(_allocator, mod);
+
+    if (imgui_module != nullptr)
+    {
+        mod.load_module(_allocator, ice::resource_origin(imgui_module));
+    }
+
+    mod.load_module(_allocator, test_load, test_unload);
+}
+
+void TestGame::on_shutdown(ice::framework::State const& state) noexcept
+{
+    ICE_LOG(LogSeverity::Info, LogGame, "Goodbye, World!");
+}
+
+void TestGame::on_resume(ice::Engine& engine) noexcept
+{
+    if (_first_time)
+    {
+        _first_time = false;
+
+        using ice::operator""_sid;
+
+        ice::StringID traits[]{
+            "test"_sid,
+            "test2"_sid,
+            ice::Constant_TraitName_DevUI
+        };
+
+        engine.worlds().create_world(
+            { .name = "world"_sid, .traits = traits, .is_initially_active = false }
+        );
+    }
+}
+
+void TestGame::on_update(ice::Engine& engine, ice::EngineFrame& frame) noexcept
+{
+    using namespace ice;
+
+    shards::push_back(frame.shards(), ShardID_WorldActivate | "world"_sid_hash);
+}
+
+void TestGame::on_suspend(ice::Engine& engine) noexcept
+{
+}
+
+auto TestGame::rendergraph(ice::gfx::GfxDevice& device) noexcept -> ice::UniquePtr<ice::gfx::v3::GfxGraphRuntime>
+{
+    using namespace ice::gfx::v2;
+    namespace v3 = ice::gfx::v3;
+    using ice::operator""_sid;
+
+    _graph = v3::create_graph(_allocator);
+    {
+        v3::GfxResource const c0 = _graph->get_resource("color"_sid, v3::GfxResourceType::RenderTarget);
+        v3::GfxResource const fb = _graph->get_framebuffer();
+
+        v3::GfxGraphStage const stages1[]{
+            {.name = "clear"_sid, .outputs = { &c0, 1 }},
+        };
+        v3::GfxGraphStage const stages2[]{
+            {.name = "copy"_sid, .inputs = { &c0, 1 }, .outputs = { &fb, 1 }}
+        };
+        v3::GfxGraphPass const pass1{ .name = "test1"_sid, .stages = stages1 };
+        v3::GfxGraphPass const pass2{ .name = "test2"_sid, .stages = stages2 };
+        _graph->add_pass(pass1);
+        _graph->add_pass(pass2);
+    }
+
+    return v3::create_graph_runtime(_allocator, device, *_graph);
+}
+
+#if 0
 #include <ice/game_actor.hxx>
 #include <ice/game_anim.hxx>
 #include <ice/game_physics.hxx>
@@ -50,6 +262,7 @@
 #include <ice/ecs/ecs_entity_index.hxx>
 #include <ice/ecs/ecs_entity_storage.hxx>
 #include <ice/ecs/ecs_entity_operations.hxx>
+
 
 
 MyGame::MyGame(ice::Allocator& alloc, ice::Clock const& clock) noexcept
@@ -534,3 +747,5 @@ void MyGame::on_update(ice::EngineFrame& frame, ice::EngineRunner& runner, ice::
         );
     }
 }
+#endif
+

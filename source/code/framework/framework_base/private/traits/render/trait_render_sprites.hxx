@@ -6,6 +6,7 @@
 #include <ice/render/render_declarations.hxx>
 #include <ice/mem_data.hxx>
 
+#if 0
 namespace ice
 {
 
@@ -137,3 +138,4 @@ namespace ice
     ) noexcept;
 
 } // namespace ice
+#endif

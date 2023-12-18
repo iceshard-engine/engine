@@ -20,6 +20,7 @@
 #include <ice/render/render_image.hxx>
 #include <ice/render/render_resource.hxx>
 
+#if 0
 namespace ice
 {
 
@@ -216,7 +217,7 @@ namespace ice
         ice::gfx::GfxDevice& gfx_device
     ) noexcept
     {
-        if (ice::shards::contains(engine_frame.shards(), ice::platform::Shard_WindowResized))
+        if (ice::shards::contains(engine_frame.shards(), ice::platform::ShardID_WindowResized))
         {
             gfx_device.recreate_swapchain();
 
@@ -236,3 +237,4 @@ namespace ice
     }
 
 } // namespace ice
+#endif

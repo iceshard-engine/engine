@@ -3,6 +3,7 @@
 
 #include "tilemap/asset_tilemap.hxx"
 
+#include <ice/framework_module.hxx>
 #include <ice/game_tilemap.hxx>
 #include <ice/mem_unique_ptr.hxx>
 #include <ice/asset_module.hxx>
@@ -71,12 +72,12 @@ namespace ice
     {
     }
 
-    void register_asset_modules(
-        ice::Allocator& alloc,
-        ice::ModuleRegister& registry
-    ) noexcept
-    {
-        registry.load_module(alloc, load_framework_asset_module, unload_framework_asset_module);
-    }
-
 } // namespace ice
+
+void ice::framework::register_assetype_modules(
+    ice::Allocator& alloc,
+    ice::ModuleRegister& registry
+) noexcept
+{
+    registry.load_module(alloc, load_framework_asset_module, unload_framework_asset_module);
+}

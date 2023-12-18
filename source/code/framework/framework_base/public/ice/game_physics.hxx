@@ -43,6 +43,7 @@ namespace ice
         ice::vec2f velocity;
     };
 
+#if 0
     class WorldTrait_Physics2D : public ice::WorldTrait
     {
     public:
@@ -62,5 +63,6 @@ namespace ice
             ice::PhysicsID physics_id
         ) noexcept = 0;
     };
+#endif
 
 } // namespace ice

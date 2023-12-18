@@ -113,7 +113,7 @@ namespace ice::render::vk
 
         VkResult result = vkQueuePresentKHR(_vk_queue, &present_info);
         ICE_ASSERT(
-            result == VK_SUCCESS,
+            result == VK_SUCCESS || result == VK_SUBOPTIMAL_KHR,
             "Failed to present framebuffer image!"
         );
     }

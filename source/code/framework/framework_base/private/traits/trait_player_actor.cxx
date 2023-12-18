@@ -6,7 +6,6 @@
 
 #include <ice/engine_frame.hxx>
 #include <ice/engine_runner.hxx>
-#include <ice/world/world_portal.hxx>
 #include <ice/action/action.hxx>
 #include <ice/ecs/ecs_entity_storage.hxx>
 
@@ -19,6 +18,7 @@
 namespace ice
 {
 
+#if 0
     void IceWorldTrait_PlayerActor::on_activate(
         ice::Engine& engine,
         ice::EngineRunner& runner,
@@ -116,5 +116,6 @@ namespace ice
     {
         return ice::make_unique<ice::IceWorldTrait_PlayerActor>(alloc);
     }
+#endif
 
 } // namespace ice

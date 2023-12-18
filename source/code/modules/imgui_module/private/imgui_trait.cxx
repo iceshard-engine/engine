@@ -6,10 +6,14 @@
 #include <ice/engine.hxx>
 #include <ice/engine_runner.hxx>
 #include <ice/engine_devui.hxx>
+#include <ice/engine_shards.hxx>
+#include <ice/world/world_manager.hxx>
 
 #include <ice/gfx/gfx_frame.hxx>
 #include <ice/gfx/gfx_context.hxx>
 #include <ice/gfx/gfx_resource_tracker.hxx>
+#include <ice/gfx/gfx_render_graph_runtime.hxx>
+#include <ice/gfx/gfx_object_storage.hxx>
 
 #include <ice/render/render_swapchain.hxx>
 #include <ice/render/render_pass.hxx>
@@ -67,15 +71,148 @@ namespace ice::devui
         ImGui::DestroyContext();
     }
 
-    void ImGuiTrait::gfx_setup(
-        ice::gfx::GfxFrame& gfx_frame,
-        ice::gfx::GfxDevice& gfx_device
-    ) noexcept
+    auto ImGuiTrait::activate(ice::EngineWorldUpdate const& update) noexcept -> ice::Task<>
+    {
+        _imgui_timer = ice::timer::create_timer(update.clock, 1.f / 60.f);
+
+        auto& io = ImGui::GetIO();
+        io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+        io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
+        io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+
+        io.KeyMap[ImGuiKey_Tab] = (uint32_t)ice::input::KeyboardKey::Tab;
+        io.KeyMap[ImGuiKey_LeftArrow] = (uint32_t)ice::input::KeyboardKey::Left;
+        io.KeyMap[ImGuiKey_RightArrow] = (uint32_t)ice::input::KeyboardKey::Right;
+        io.KeyMap[ImGuiKey_UpArrow] = (uint32_t)ice::input::KeyboardKey::Up;
+        io.KeyMap[ImGuiKey_DownArrow] = (uint32_t)ice::input::KeyboardKey::Down;
+        io.KeyMap[ImGuiKey_PageUp] = (uint32_t)ice::input::KeyboardKey::PageUp;
+        io.KeyMap[ImGuiKey_PageDown] = (uint32_t)ice::input::KeyboardKey::PageDown;
+        io.KeyMap[ImGuiKey_Home] = (uint32_t)ice::input::KeyboardKey::Home;
+        io.KeyMap[ImGuiKey_End] = (uint32_t)ice::input::KeyboardKey::End;
+        io.KeyMap[ImGuiKey_Insert] = (uint32_t)ice::input::KeyboardKey::Insert;
+        io.KeyMap[ImGuiKey_Delete] = (uint32_t)ice::input::KeyboardKey::Delete;
+        io.KeyMap[ImGuiKey_Backspace] = (uint32_t)ice::input::KeyboardKey::Backspace;
+        io.KeyMap[ImGuiKey_Space] = (uint32_t)ice::input::KeyboardKey::Space;
+        io.KeyMap[ImGuiKey_Enter] = (uint32_t)ice::input::KeyboardKey::Return;
+        io.KeyMap[ImGuiKey_Escape] = (uint32_t)ice::input::KeyboardKey::Escape;
+        io.KeyMap[ImGuiKey_KeyPadEnter] = 0;
+        io.KeyMap[ImGuiKey_A] = (uint32_t)ice::input::KeyboardKey::KeyA;
+        io.KeyMap[ImGuiKey_C] = (uint32_t)ice::input::KeyboardKey::KeyC;
+        io.KeyMap[ImGuiKey_V] = (uint32_t)ice::input::KeyboardKey::KeyV;
+        io.KeyMap[ImGuiKey_X] = (uint32_t)ice::input::KeyboardKey::KeyX;
+        io.KeyMap[ImGuiKey_Y] = (uint32_t)ice::input::KeyboardKey::KeyY;
+        io.KeyMap[ImGuiKey_Z] = (uint32_t)ice::input::KeyboardKey::KeyZ;
+
+        _shader_data[0] = co_await detail::load_imgui_shader(update.assets, "shaders/debug/imgui-vert");
+        _shader_data[1] = co_await detail::load_imgui_shader(update.assets, "shaders/debug/imgui-frag");
+        co_return;
+    }
+
+    auto ImGuiTrait::deactivate(ice::EngineWorldUpdate const& world_update) noexcept -> ice::Task<>
+    {
+        co_return;
+    }
+
+    void ImGuiTrait::gather_tasks(ice::TraitTaskLauncher& task_launcher) noexcept
+    {
+        task_launcher.bind<&ImGuiTrait::update>();
+        task_launcher.bind<&ImGuiTrait::gfx_start>(ice::gfx::v2::ShardID_GfxStartup);
+        task_launcher.bind<&ImGuiTrait::gfx_shutdown>(ice::gfx::v2::ShardID_GfxShutdown);
+        task_launcher.bind<&ImGuiTrait::gfx_update>(ice::gfx::v2::ShardID_GfxFrameUpdate);
+        task_launcher.bind<&ImGuiTrait::on_window_resized>(ice::platform::ShardID_WindowResized);
+    }
+
+    auto ImGuiTrait::update(ice::EngineFrameUpdate const& update) noexcept -> ice::Task<>
+    {
+        IPT_ZONE_SCOPED_NAMED("DevUI - ImGui input update");
+
+        using ice::input::InputEvent;
+        using ice::input::MouseInput;
+
+        auto& io = ImGui::GetIO();
+
+        ice::vec2i window_size{ };
+        if (ice::shards::inspect_last(update.frame.shards(), ice::platform::ShardID_WindowResized, window_size))
+        {
+            _display_size = { (ice::u32)window_size.x, (ice::u32)window_size.y };
+            io.DisplaySize.x = (ice::f32)_display_size.x;
+            io.DisplaySize.y = (ice::f32)_display_size.y;
+        }
+
+        char const* input_text;
+        if (ice::shards::inspect_last(update.frame.shards(), ice::platform::Shard_InputText.id, input_text))
+        {
+            io.AddInputCharactersUTF8(input_text);
+        }
+
+        ice::shards::inspect_each<ice::input::InputEvent>(
+            update.frame.shards(),
+            ice::ShardID_InputEvent,
+            [&](ice::input::InputEvent input) noexcept
+            {
+                if (ice::input::input_identifier_device(input.identifier) == ice::input::DeviceType::Mouse)
+                {
+                    MouseInput const input_source = MouseInput(ice::input::input_identifier_value(input.identifier));
+
+                    switch (input_source)
+                    {
+                    case MouseInput::ButtonLeft:
+                        io.MouseDown[0] = input.value.button.state.pressed;
+                        break;
+                    case MouseInput::ButtonRight:
+                        io.MouseDown[1] = input.value.button.state.pressed;
+                        break;
+                    case MouseInput::ButtonMiddle:
+                        io.MouseDown[2] = input.value.button.state.pressed;
+                        break;
+                    case MouseInput::PositionX:
+                        io.MousePos.x = (ice::f32)input.value.axis.value_i32;
+                        break;
+                    case MouseInput::PositionY:
+                        io.MousePos.y = (ice::f32)input.value.axis.value_i32;
+                        break;
+                    case MouseInput::Wheel:
+                        io.MouseWheel = (ice::f32)input.value.axis.value_i32;
+                        break;
+                    }
+                }
+                if (ice::input::input_identifier_device(input.identifier) == ice::input::DeviceType::Keyboard)
+                {
+                    using namespace ice::input;
+                    ice::u32 const input_source = ice::input::input_identifier_value(input.identifier);
+
+                    io.KeysDown[input_source] = input.value.button.state.pressed;
+
+                    InputID constexpr left_ctrl_key_mod = ice::input::input_identifier(DeviceType::Keyboard, KeyboardMod::CtrlLeft, mod_identifier_base_value);
+                    InputID constexpr right_ctrl_key_mod = ice::input::input_identifier(DeviceType::Keyboard, KeyboardMod::CtrlRight, mod_identifier_base_value);
+                    InputID constexpr left_shift_key_mod = ice::input::input_identifier(DeviceType::Keyboard, KeyboardMod::ShiftLeft, mod_identifier_base_value);
+                    InputID constexpr right_shift_key_mod = ice::input::input_identifier(DeviceType::Keyboard, KeyboardMod::ShiftRight, mod_identifier_base_value);
+
+                    if (input.identifier == left_ctrl_key_mod || input.identifier == right_ctrl_key_mod)
+                    {
+                        io.KeyCtrl = input.value.button.state.pressed;
+                    }
+                    if (input.identifier == left_shift_key_mod || input.identifier == right_shift_key_mod)
+                    {
+                        io.KeyShift = input.value.button.state.pressed;
+                    }
+                }
+
+            }
+        );
+        co_return;
+    }
+
+    auto ImGuiTrait::gfx_start(ice::gfx::v2::GfxStateChange const& params) noexcept -> ice::Task<>
     {
         using namespace ice::gfx;
         using namespace ice::render;
 
-        ice::render::Renderpass renderpass = ice::gfx::find_resource<Renderpass>(gfx_device.resource_tracker(), "ice.gfx.renderpass.default"_sid);
+        GfxDevice& gfx = params.device;
+        RenderDevice& device = params.device.device();
+
+        ice::vec2u const extent = gfx.swapchain().extent();
+        co_await on_window_resized(ice::vec2i(extent.x, extent.y));
 
         ImGuiIO& io = ImGui::GetIO();
 
@@ -83,7 +220,6 @@ namespace ice::devui
         ice::i32 font_texture_width, font_texture_height;
         io.Fonts->GetTexDataAsRGBA32(&pixels, &font_texture_width, &font_texture_height);
 
-        RenderDevice& device = gfx_device.device();
         // ice::u32 upload_size = font_texture_width * font_texture_height * 4 * sizeof(char);
         ice::render::ImageInfo font_info;
         font_info.type = ImageType::Image2D;
@@ -230,13 +366,13 @@ namespace ice::devui
 
         PipelineInfo pipeline_info{
             .layout = _pipeline_layout,
-            .renderpass = renderpass,
+            .renderpass = params.renderpass,
             .shaders = _shaders,
             .shaders_stages = _shader_stages,
             .shader_bindings = bindings,
             .cull_mode = CullMode::Disabled,
             .front_face = FrontFace::CounterClockWise,
-            .subpass_index = 2,
+            .subpass_index = 1,
             .depth_test = true
         };
 
@@ -244,28 +380,19 @@ namespace ice::devui
 
         ice::array::push_back(
             _index_buffers,
-            device.create_buffer(BufferType::Index, 1024 * 1024 * 4)
-        );
-        ice::array::push_back(
-            _index_buffers,
-            device.create_buffer(BufferType::Index, 1024 * 1024 * 4)
+            device.create_buffer(BufferType::Index, 1024 * 1024 * 64)
         );
         ice::array::push_back(
             _vertex_buffers,
-            device.create_buffer(BufferType::Vertex, 1024 * 1024 * 4)
-        );
-        ice::array::push_back(
-            _vertex_buffers,
-            device.create_buffer(BufferType::Vertex, 1024 * 1024 * 4)
+            device.create_buffer(BufferType::Vertex, 1024 * 1024 * 64)
         );
 
-        auto update_texture_task = [](GfxDevice& gfx_device, GfxFrame& gfx_frame, Image image, ImageInfo image_info) noexcept -> ice::Task<>
+        //auto update_texture_task = [](GfxDevice& gfx_device, GfxFrame& gfx_frame, Image image, ImageInfo image_info) noexcept -> ice::Task<>
         {
-            ice::u32 const image_data_size = image_info.width * image_info.height * 4;
+            ice::u32 const image_data_size = font_info.width * font_info.height * 4;
 
             // Currently we start the task on the graphics thread, so we can dont race for access to the render device.
             //  It is planned to create an awaiter for graphics thread access so we can schedule this at any point from any thread.
-            ice::render::RenderDevice& device = gfx_device.device();
             ice::render::Buffer const data_buffer = device.create_buffer(
                 ice::render::BufferType::Transfer,
                 image_data_size
@@ -278,7 +405,7 @@ namespace ice::devui
                     .buffer = data_buffer,
                     .data =
                     {
-                        .location = image_info.data,
+                        .location = font_info.data,
                         .size = { image_data_size },
                         .alignment = ice::ualign::b_4
                     }
@@ -287,58 +414,36 @@ namespace ice::devui
 
             device.update_buffers(updates);
 
-            struct : public ice::gfx::GfxFrameStage
-            {
-                void record_commands(
-                    ice::EngineFrame const& frame,
-                    ice::render::CommandBuffer cmds,
-                    ice::render::RenderCommands& api
-                ) const noexcept override
-                {
-                    api.update_texture(
-                        cmds,
-                        image,
-                        image_data,
-                        image_size
-                    );
-                }
+            ice::render::RenderCommands& api = device.get_commands();
+            ice::render::CommandBuffer const cmds = co_await params.frame_transfer;
 
-                ice::render::Image image;
-                ice::render::Buffer image_data;
-                ice::vec2u image_size;
-            } frame_stage;
+            api.update_texture(
+                cmds,
+                _font_texture,
+                data_buffer,
+                { font_info.width, font_info.height }
+            );
 
-            frame_stage.image = image;
-            frame_stage.image_data = data_buffer;
-            frame_stage.image_size = { image_info.width, image_info.height };
-
-            // Await command recording stage
-            //  Here we have access to a command buffer where we can record commands.
-            //  These commands will be later executed on the graphics thread.
-            co_await gfx_frame.frame_commands(&frame_stage);
-
-            // Await end of graphics frame.
-            //  Here we know that all commands have been executed
-            //  and temporary objects can be destroyed.
-            co_await gfx_frame.frame_end();
+            co_await params.frame_end;
 
             device.destroy_buffer(data_buffer);
-        };
+        }//;
 
-        gfx_frame.add_task(update_texture_task(gfx_device, gfx_frame, _font_texture, font_info));
+        //gfx_frame.add_task(update_texture_task(gfx_device, gfx_frame, _font_texture, font_info));
 
         _initialized = true;
+
+        co_return;
     }
 
-    void ImGuiTrait::gfx_cleanup(
-        ice::gfx::GfxFrame& gfx_frame,
-        ice::gfx::GfxDevice& gfx_device
-    ) noexcept
+    auto ImGuiTrait::gfx_shutdown(ice::gfx::v2::GfxStateChange const& params) noexcept -> ice::Task<>
     {
-        using namespace ice::gfx;
-        using namespace ice::render;
+        _initialized = false;
 
-        RenderDevice& device = gfx_device.device();
+        ice::render::RenderDevice& device = params.device.device();
+        device.destroy_shader(_shaders[0]);
+        device.destroy_shader(_shaders[1]);
+
         for (ice::render::Buffer buffer : _index_buffers)
         {
             device.destroy_buffer(buffer);
@@ -355,26 +460,26 @@ namespace ice::devui
         device.destroy_shader(_shaders[0]);
         device.destroy_resourcesets(_resources);
         device.destroy_resourceset_layout(_resource_layout);
+        co_return;
     }
 
-    void ImGuiTrait::gfx_update(
-        ice::EngineFrame const& engine_frame,
-        ice::gfx::GfxFrame& gfx_frame,
-        ice::gfx::GfxDevice& gfx_device
-    ) noexcept
+    auto ImGuiTrait::gfx_update(ice::gfx::v2::GfxFrameUpdate const& update) noexcept -> ice::Task<>
     {
-        IPT_ZONE_SCOPED_NAMED("DevUI - Gfx - ImGui update buffers.");
+        if (_initialized == false)
+        {
+            co_return;
+        }
 
-        using namespace ice::gfx;
         using namespace ice::render;
+        using namespace ice::gfx::v2;
 
         ImDrawData* draw_data = ImGui::GetDrawData();
         if (draw_data == nullptr)
         {
-            return;
+            co_return;
         }
 
-        RenderDevice& device = gfx_device.device();
+        RenderDevice& device = update.device.device();
 
         ice::u32 buffer_update_count = 0;
         BufferUpdateInfo buffer_updates[10]{ };
@@ -447,13 +552,13 @@ namespace ice::devui
             BufferUpdateInfo& vtx_info = buffer_updates[buffer_update_count];
             vtx_info.buffer = _vertex_buffers[0];
             vtx_info.offset = vtx_buffer_offset * sizeof(ImDrawVert);
-            vtx_info.data = ice::Data{ cmd_list->VtxBuffer.Data, ice::size_of<ImDrawVert> * cmd_list->VtxBuffer.Size, ice::align_of<ImDrawVert> };
+            vtx_info.data = ice::Data{ cmd_list->VtxBuffer.Data, ice::size_of<ImDrawVert> *cmd_list->VtxBuffer.Size, ice::align_of<ImDrawVert> };
             vtx_buffer_offset += cmd_list->VtxBuffer.Size;
 
             BufferUpdateInfo& idx_info = buffer_updates[buffer_update_count + 1];
             idx_info.buffer = _index_buffers[0];
             idx_info.offset = idx_buffer_offset * sizeof(ImDrawIdx);
-            idx_info.data = ice::Data{ cmd_list->IdxBuffer.Data, ice::size_of<ImDrawIdx> * cmd_list->IdxBuffer.Size, ice::align_of<ImDrawIdx> };
+            idx_info.data = ice::Data{ cmd_list->IdxBuffer.Data, ice::size_of<ImDrawIdx> *cmd_list->IdxBuffer.Size, ice::align_of<ImDrawIdx> };
             idx_buffer_offset += cmd_list->IdxBuffer.Size;
 
             buffer_update_count += 2;
@@ -478,134 +583,19 @@ namespace ice::devui
             device.update_buffers({ buffer_updates, buffer_update_count });
         }
 
-        gfx_frame.set_stage_slot(ice::Constant_GfxStage_DevUI, this);
+        update.stages.add_stage("copy"_sid, this);
     }
 
-    void ImGuiTrait::on_activate(
-        ice::Engine& engine,
-        ice::EngineRunner& runner,
-        ice::WorldPortal& portal
-    ) noexcept
+    auto ImGuiTrait::on_window_resized(ice::vec2i new_size) noexcept -> ice::Task<>
     {
-        _imgui_timer = ice::timer::create_timer(runner.clock(), 1.f / 60.f);
-        _display_size = runner.graphics_device().swapchain().extent();
-
         auto& io = ImGui::GetIO();
-        io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
-        io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
-        io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
-        io.DisplaySize.x = (ice::f32) _display_size.x;
-        io.DisplaySize.y = (ice::f32) _display_size.y;
-
-        io.KeyMap[ImGuiKey_Tab] = (uint32_t)ice::input::KeyboardKey::Tab;
-        io.KeyMap[ImGuiKey_LeftArrow] = (uint32_t)ice::input::KeyboardKey::Left;
-        io.KeyMap[ImGuiKey_RightArrow] = (uint32_t)ice::input::KeyboardKey::Right;
-        io.KeyMap[ImGuiKey_UpArrow] = (uint32_t)ice::input::KeyboardKey::Up;
-        io.KeyMap[ImGuiKey_DownArrow] = (uint32_t)ice::input::KeyboardKey::Down;
-        io.KeyMap[ImGuiKey_PageUp] = (uint32_t)ice::input::KeyboardKey::PageUp;
-        io.KeyMap[ImGuiKey_PageDown] = (uint32_t)ice::input::KeyboardKey::PageDown;
-        io.KeyMap[ImGuiKey_Home] = (uint32_t)ice::input::KeyboardKey::Home;
-        io.KeyMap[ImGuiKey_End] = (uint32_t)ice::input::KeyboardKey::End;
-        io.KeyMap[ImGuiKey_Insert] = (uint32_t)ice::input::KeyboardKey::Insert;
-        io.KeyMap[ImGuiKey_Delete] = (uint32_t)ice::input::KeyboardKey::Delete;
-        io.KeyMap[ImGuiKey_Backspace] = (uint32_t)ice::input::KeyboardKey::Backspace;
-        io.KeyMap[ImGuiKey_Space] = (uint32_t)ice::input::KeyboardKey::Space;
-        io.KeyMap[ImGuiKey_Enter] = (uint32_t)ice::input::KeyboardKey::Return;
-        io.KeyMap[ImGuiKey_Escape] = (uint32_t)ice::input::KeyboardKey::Escape;
-        io.KeyMap[ImGuiKey_KeyPadEnter] = 0;
-        io.KeyMap[ImGuiKey_A] = (uint32_t)ice::input::KeyboardKey::KeyA;
-        io.KeyMap[ImGuiKey_C] = (uint32_t)ice::input::KeyboardKey::KeyC;
-        io.KeyMap[ImGuiKey_V] = (uint32_t)ice::input::KeyboardKey::KeyV;
-        io.KeyMap[ImGuiKey_X] = (uint32_t)ice::input::KeyboardKey::KeyX;
-        io.KeyMap[ImGuiKey_Y] = (uint32_t)ice::input::KeyboardKey::KeyY;
-        io.KeyMap[ImGuiKey_Z] = (uint32_t)ice::input::KeyboardKey::KeyZ;
-
-        _shader_data[0] = ice::wait_for(detail::load_imgui_shader(engine.asset_storage(), "shaders/debug/imgui-vert"));
-        _shader_data[1] = ice::wait_for(detail::load_imgui_shader(engine.asset_storage(), "shaders/debug/imgui-frag"));
+        _display_size = ice::vec2u(new_size.x, new_size.y);
+        io.DisplaySize.x = (ice::f32)_display_size.x;
+        io.DisplaySize.y = (ice::f32)_display_size.y;
+        co_return;
     }
 
-    void ImGuiTrait::on_update(
-        ice::EngineFrame& frame,
-        ice::EngineRunner& runner,
-        ice::WorldPortal& portal
-    ) noexcept
-    {
-        IPT_ZONE_SCOPED_NAMED("DevUI - ImGui input update");
-
-        using ice::input::InputEvent;
-        using ice::input::MouseInput;
-
-        auto& io = ImGui::GetIO();
-
-        ice::vec2i window_size{ };
-        if (ice::shards::inspect_last(frame.shards(), ice::platform::Shard_WindowResized, window_size))
-        {
-            _display_size = { (ice::u32)window_size.x, (ice::u32)window_size.y };
-            io.DisplaySize.x = (ice::f32)_display_size.x;
-            io.DisplaySize.y = (ice::f32)_display_size.y;
-        }
-
-        char const* input_text;
-        if (ice::shards::inspect_last(frame.shards(), ice::platform::Shard_InputText, input_text))
-        {
-            io.AddInputCharactersUTF8(input_text);
-        }
-
-        for (InputEvent const& event : frame.input_events())
-        {
-            if (ice::input::input_identifier_device(event.identifier) == ice::input::DeviceType::Mouse)
-            {
-                MouseInput const input_source = MouseInput(ice::input::input_identifier_value(event.identifier));
-
-                switch (input_source)
-                {
-                case MouseInput::ButtonLeft:
-                    io.MouseDown[0] = event.value.button.state.pressed;
-                    break;
-                case MouseInput::ButtonRight:
-                    io.MouseDown[1] = event.value.button.state.pressed;
-                    break;
-                case MouseInput::ButtonMiddle:
-                    io.MouseDown[2] = event.value.button.state.pressed;
-                    break;
-                case MouseInput::PositionX:
-                    io.MousePos.x = (ice::f32) event.value.axis.value_i32;
-                    break;
-                case MouseInput::PositionY:
-                    io.MousePos.y = (ice::f32) event.value.axis.value_i32;
-                    break;
-                case MouseInput::Wheel:
-                    io.MouseWheel = (ice::f32) event.value.axis.value_i32;
-                    break;
-                }
-            }
-            if (ice::input::input_identifier_device(event.identifier) == ice::input::DeviceType::Keyboard)
-            {
-                using namespace ice::input;
-                ice::u32 const input_source = ice::input::input_identifier_value(event.identifier);
-
-                io.KeysDown[input_source] = event.value.button.state.pressed;
-
-                InputID constexpr left_ctrl_key_mod = ice::input::input_identifier(DeviceType::Keyboard, KeyboardMod::CtrlLeft, mod_identifier_base_value);
-                InputID constexpr right_ctrl_key_mod = ice::input::input_identifier(DeviceType::Keyboard, KeyboardMod::CtrlRight, mod_identifier_base_value);
-                InputID constexpr left_shift_key_mod = ice::input::input_identifier(DeviceType::Keyboard, KeyboardMod::ShiftLeft, mod_identifier_base_value);
-                InputID constexpr right_shift_key_mod = ice::input::input_identifier(DeviceType::Keyboard, KeyboardMod::ShiftRight, mod_identifier_base_value);
-
-                if (event.identifier == left_ctrl_key_mod || event.identifier == right_ctrl_key_mod)
-                {
-                    io.KeyCtrl = event.value.button.state.pressed;
-                }
-                if (event.identifier == left_shift_key_mod || event.identifier == right_shift_key_mod)
-                {
-                    io.KeyShift = event.value.button.state.pressed;
-                }
-            }
-
-        }
-    }
-
-    void ImGuiTrait::record_commands(
-        ice::gfx::GfxContext const& context,
+    void ImGuiTrait::draw(
         ice::EngineFrame const& frame,
         ice::render::CommandBuffer cmds,
         ice::render::RenderCommands& api
@@ -625,7 +615,14 @@ namespace ice::devui
             return;
         }
 
-        ice::Span<detail::DrawCommand> const* cmds_span = frame.storage().named_object<ice::Span<detail::DrawCommand>>("ice.devui.imgui_draw_commands_span"_sid);
+        void const* a;
+        frame.data().frame().get("a"_sid, a);
+
+        ice::u32 c = (ice::u32)(ice::uptr)a;
+
+        void const* span_loc;
+        frame.data().frame().get("ice.devui.imgui_draw_commands"_sid, span_loc);
+        detail::DrawCommand const* cmds_span = reinterpret_cast<detail::DrawCommand const*>(span_loc);// frame.storage().named_object<ice::Span<detail::DrawCommand>>("ice.devui.imgui_draw_commands_span"_sid);
         if (cmds_span == nullptr)
         {
             return;
@@ -651,7 +648,7 @@ namespace ice::devui
         api.set_viewport(cmds, viewport_rect);
         api.set_scissor(cmds, viewport_rect);
 
-        for (detail::DrawCommand const& cmd : *cmds_span)
+        for (detail::DrawCommand const& cmd : ice::Span<detail::DrawCommand const>{ cmds_span, c })
         {
             ImVec4 clip_rect = cmd.clip_rect;
             if (clip_rect.x < fb_width && clip_rect.y < fb_height && clip_rect.z >= 0.0f && clip_rect.w >= 0.0f)
@@ -685,6 +682,8 @@ namespace ice::devui
                 api.draw_indexed(cmds, cmd.index_count, 1, cmd.index_offset /*+ idx_buffer_offset*/, cmd.vertex_offset /*+ vtx_buffer_offset*/, 0);
             }
         }
+
+        delete[] cmds_span;
     }
 
     bool ImGuiTrait::start_frame() noexcept
@@ -707,9 +706,7 @@ namespace ice::devui
         return _next_frame;
     }
 
-    void ImGuiTrait::end_frame(
-        ice::EngineFrame& frame
-    ) noexcept
+    void ImGuiTrait::end_frame(ice::EngineFrame& frame) noexcept
     {
         // TODO: Make a proper 'init' guard
         if (_imgui_timer.clock == nullptr)
@@ -734,8 +731,12 @@ namespace ice::devui
                 cmd_count += cmd_list->CmdBuffer.Size;
             }
 
-            ice::Span<detail::DrawCommand> cmds_span = frame.storage().create_named_span<detail::DrawCommand>("ice.devui.imgui_draw_commands"_sid, cmd_count);
-            frame.storage().create_named_object<ice::Span<detail::DrawCommand>>("ice.devui.imgui_draw_commands_span"_sid, cmds_span);
+            //ice::Memory data = frame.allocator().allocate(ice::meminfo_of<detail::DrawCommand> * cmd_count);
+            frame.data().frame().set("a"_sid, (void*)(ice::uptr)cmd_count);
+            frame.data().frame().set("ice.devui.imgui_draw_commands"_sid,  new detail::DrawCommand[cmd_count]);
+
+            //ice::Span<detail::DrawCommand> cmds_span = frame.storage().create_named_span<detail::DrawCommand>("ice.devui.imgui_draw_commands"_sid, cmd_count);
+            //frame.storage().create_named_object<ice::Span<detail::DrawCommand>>("ice.devui.imgui_draw_commands_span"_sid, cmds_span);
 
             build_internal_command_list(frame);
         }
@@ -754,8 +755,12 @@ namespace ice::devui
             return;
         }
 
-        ice::Span<detail::DrawCommand>* cmds_span = frame.storage().named_object<ice::Span<detail::DrawCommand>>("ice.devui.imgui_draw_commands_span"_sid);
-        if (cmds_span != nullptr)
+        void* span_loc = nullptr;
+        frame.data().frame().get("ice.devui.imgui_draw_commands"_sid, span_loc);
+
+        //ice::Span<detail::DrawCommand> cmds_span = //frame.data().frame().named_object<ice::Span<detail::DrawCommand>>("ice.devui.imgui_draw_commands_span"_sid);
+        detail::DrawCommand* cmds = reinterpret_cast<detail::DrawCommand*>(span_loc);
+        if (cmds != nullptr)
         {
             using ice::render::Image;
             using ice::render::ResourceSet;
@@ -780,7 +785,7 @@ namespace ice::devui
                 for (int cmd_i = 0; cmd_i < cmd_list->CmdBuffer.Size; cmd_i++)
                 {
                     ImDrawCmd const* pcmd = &cmd_list->CmdBuffer[cmd_i];
-                    detail::DrawCommand& cmd = (*cmds_span)[command_idx];
+                    detail::DrawCommand& cmd = cmds[command_idx];
                     cmd.resource_set = ResourceSet::Invalid;
 
                     if (pcmd->TextureId != nullptr && pcmd->TextureId != last_texid)

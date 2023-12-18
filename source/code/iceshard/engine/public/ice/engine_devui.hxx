@@ -2,7 +2,7 @@
 /// SPDX-License-Identifier: MIT
 
 #pragma once
-#include <ice/base.hxx>
+#include <ice/engine_types.hxx>
 
 namespace ice
 {
@@ -23,8 +23,6 @@ namespace ice
 
     } // namespace devui
 
-    class EngineFrame;
-
     class EngineDevUI
     {
     public:
@@ -32,6 +30,8 @@ namespace ice
 
         virtual void register_widget(ice::devui::DevUIWidget* widget) noexcept = 0;
         virtual void unregister_widget(ice::devui::DevUIWidget* widget) noexcept = 0;
+
+        virtual void register_trait(ice::TraitArchive& archive) noexcept = 0;
 
     public:
         virtual void internal_set_key(devui::DevUIExecutionKey) noexcept = 0;

@@ -60,6 +60,14 @@ namespace ice::gfx
         return queue;
     }
 
+    bool IceGfxQueueGroup::get_queue(ice::render::QueueFlags flags, ice::gfx::GfxQueue*& out_queue) noexcept
+    {
+        ice::gfx::IceGfxQueue* ice_queue = nullptr;
+        bool const result = get_queue(flags, ice_queue);
+        out_queue = ice_queue;
+        return result;
+    }
+
     bool IceGfxQueueGroup::get_queue(
         ice::render::QueueFlags flags,
         ice::gfx::IceGfxQueue*& out_queue

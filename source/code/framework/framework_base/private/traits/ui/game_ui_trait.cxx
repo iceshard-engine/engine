@@ -22,7 +22,6 @@
 #include <ice/engine_frame.hxx>
 #include <ice/engine_runner.hxx>
 #include <ice/engine_shards.hxx>
-#include <ice/world/world_portal.hxx>
 #include <ice/world/world_trait_archive.hxx>
 
 #include <ice/ecs/ecs_entity_index.hxx>
@@ -45,6 +44,7 @@
 #include <ice/profiler.hxx>
 #include <ice/task.hxx>
 
+#if 0
 namespace ice
 {
 
@@ -141,14 +141,17 @@ namespace ice
     ) noexcept
     {
         ice::input::InputEvent ievent[2];
-        if (ice::shards::inspect_first(frame.shards(), ice::Shard_InputEventAxis, ievent))
+        if (ice::shards::inspect_first(frame.shards(), ice::ShardID_InputEvent, ievent))
         {
-            _pos_mouse = { ice::f32(ievent[0].value.axis.value_i32), ice::f32(ievent[1].value.axis.value_i32) };
+            if (ievent[0].value_type == ice::input::InputValueType::AxisInt)
+            {
+                _pos_mouse = { ice::f32(ievent[0].value.axis.value_i32), ice::f32(ievent[1].value.axis.value_i32) };
+            }
         }
 
         for (ice::Shard shard : runner.previous_frame().shards())
         {
-            if (shard == ice::platform::Shard_WindowResized)
+            if (shard == ice::platform::ShardID_WindowResized)
             {
                 ice::vec2i size;
                 if (ice::shard_inspect(shard, size))
@@ -198,8 +201,8 @@ namespace ice
                         bool left_click = false;
                         ice::shards::inspect_each<ice::input::InputEvent>(
                             frame.shards(),
-                            ice::Shard_InputEventButton,
-                            [&left_click](ice::input::InputEvent const& iev)
+                            ice::ShardID_InputEvent,
+                            [&left_click](ice::input::InputEvent iev)
                             {
                                 auto constexpr mouse_left_button = ice::input::input_identifier(
                                     ice::input::DeviceType::Mouse,
@@ -404,3 +407,4 @@ namespace ice
     }
 
 } // namespace ice
+#endif

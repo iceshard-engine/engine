@@ -11,6 +11,7 @@ namespace ice
 
     inline auto ptr_add(void* ptr, ice::usize offset) noexcept -> void*;
     inline auto ptr_add(void const* ptr, ice::usize offset) noexcept -> void const*;
+    inline auto ptr_add(ice::Data data, ice::usize offset) noexcept -> ice::Data;
     inline auto ptr_add(ice::Memory mem, ice::usize offset) noexcept -> ice::Memory;
 
     inline auto ptr_sub(void* ptr, ice::usize offset) noexcept -> void*;
@@ -25,22 +26,32 @@ namespace ice
 
     inline auto ptr_add(void* ptr, ice::usize offset) noexcept -> void*
     {
-        return reinterpret_cast<char*>(ptr) + offset.value;
+        return std::bit_cast<char*>(ptr) + offset.value;
     }
 
     inline auto ptr_add(void const* ptr, ice::usize offset) noexcept -> void const*
     {
-        return reinterpret_cast<char const*>(ptr) + offset.value;
+        return std::bit_cast<char const*>(ptr) + offset.value;
     }
 
     inline auto ptr_sub(void* ptr, ice::usize offset) noexcept -> void*
     {
-        return reinterpret_cast<char*>(ptr) - offset.value;
+        return std::bit_cast<char*>(ptr) - offset.value;
     }
 
     inline auto ptr_sub(void const* ptr, ice::usize offset) noexcept -> void const*
     {
-        return reinterpret_cast<char const*>(ptr) - offset.value;
+        return std::bit_cast<char const*>(ptr) - offset.value;
+    }
+
+    inline auto ptr_add(ice::Data data, ice::usize offset) noexcept -> ice::Data
+    {
+        ICE_ASSERT_CORE(data.size >= offset);
+        return Data{
+            .location = ice::ptr_add(data.location, offset),
+            .size = { data.size.value - offset.value },
+            .alignment = data.alignment
+        };
     }
 
     inline auto ptr_add(ice::Memory mem, ice::usize offset) noexcept -> ice::Memory

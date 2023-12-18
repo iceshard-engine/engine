@@ -4,7 +4,7 @@
 .Project =
 [
     .Name = 'framework_base'
-    .Kind = .Kind_ObjectList
+    .Kind = .Kind_StaticLib
     .Group = 'Framework'
 
     .BaseDir = '$WorkspaceCodeDir$/framework/framework_base'
@@ -34,6 +34,13 @@
         }
     ]
 
+    .Rule_IsolatedFrameworkObject =
+    [
+        .Private =
+        [
+            .UnityInputIsolatedFiles = 'private/framework.cxx'
+        ]
+    ]
     .Rule_Win32 =
     [
         .Public =
@@ -44,6 +51,7 @@
         ]
     ]
     .Rules = {
+        .Rule_IsolatedFrameworkObject
         .Rule_Win32
     }
 ]

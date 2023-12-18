@@ -2,6 +2,38 @@
 /// SPDX-License-Identifier: MIT
 
 #pragma once
+#include <ice/framework_app.hxx>
+#include <ice/world/world_trait.hxx>
+#include <ice/gfx/ice_gfx_render_graph_v3.hxx>
+
+using namespace ice;
+using namespace ice::framework;
+
+class TestGame : public Game
+{
+public:
+    TestGame(ice::Allocator& alloc) noexcept;
+
+    void on_setup(ice::framework::State const& state) noexcept override;
+    void on_shutdown(ice::framework::State const& state) noexcept override;
+
+    void on_resume(ice::Engine& engine) noexcept override;
+    void on_update(ice::Engine& engine, ice::EngineFrame& frame) noexcept override;
+    void on_suspend(ice::Engine& engine) noexcept override;
+
+    auto rendergraph(ice::gfx::GfxDevice& device) noexcept -> ice::UniquePtr<ice::gfx::v3::GfxGraphRuntime> override;
+
+private:
+    ice::Allocator& _allocator;
+
+    ice::UniquePtr<ice::gfx::v3::GfxGraph> _graph;
+    ice::UniquePtr<ice::gfx::v3::GfxGraphRuntime> _graph_runtime;
+
+    bool _first_time;
+};
+
+#if 0
+
 #include <ice/game_framework.hxx>
 #include <ice/game_render_traits.hxx>
 #include <ice/game_sprites.hxx>
@@ -69,3 +101,5 @@ public:
 };
 
 ICE_REGISTER_GAMEAPP(MyGame);
+
+#endif

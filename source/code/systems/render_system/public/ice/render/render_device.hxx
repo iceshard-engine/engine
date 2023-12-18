@@ -101,7 +101,7 @@ namespace ice::render
 
         virtual auto create_image(
             ice::render::ImageInfo const& image_info,
-            ice::Data data
+            ice::Data data = {}
         ) noexcept -> ice::render::Image = 0;
 
         virtual void destroy_image(

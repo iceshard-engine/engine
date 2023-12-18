@@ -9,7 +9,6 @@
 #include <ice/engine.hxx>
 #include <ice/engine_frame.hxx>
 #include <ice/engine_runner.hxx>
-#include <ice/world/world_portal.hxx>
 #include <ice/task.hxx>
 
 #include <ice/gfx/gfx_device.hxx>
@@ -29,6 +28,7 @@
 #include <ice/asset_storage.hxx>
 #include <ice/asset.hxx>
 
+#if 0
 namespace ice
 {
 
@@ -406,7 +406,7 @@ namespace ice
         );
 
         ice::vec2i window_size{ };
-        if (ice::shards::inspect_last(frame.shards(), ice::platform::Shard_WindowResized, window_size))
+        if (ice::shards::inspect_last(frame.shards(), ice::platform::ShardID_WindowResized, window_size))
         {
             _display_size = ice::vec2f{ (ice::f32)window_size.x, (ice::f32)window_size.y };
         }
@@ -429,3 +429,4 @@ namespace ice
     }
 
 } // namespace ice
+#endif

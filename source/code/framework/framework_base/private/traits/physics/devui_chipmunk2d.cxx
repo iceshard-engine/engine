@@ -12,6 +12,7 @@
 namespace ice
 {
 
+#if 0
     namespace detail
     {
 
@@ -392,5 +393,6 @@ namespace ice
         draw_commands += 1;
         draw_vertex_count += 2;
     }
+#endif
 
 } // namespace ice

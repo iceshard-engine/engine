@@ -3,6 +3,7 @@
 
 #pragma once
 #include <ice/mem_types.hxx>
+#include <ice/mem_data.hxx>
 
 namespace ice
 {
@@ -13,5 +14,14 @@ namespace ice
         ice::usize size;
         ice::ualign alignment;
     };
+
+    constexpr auto data_view(Memory memory) noexcept
+    {
+        return Data{
+            .location = memory.location,
+            .size = memory.size,
+            .alignment = memory.alignment
+        };
+    }
 
 } // namespace ice

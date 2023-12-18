@@ -12,7 +12,6 @@
 #include <ice/ecs/ecs_query.hxx>
 #include <ice/ecs/ecs_entity_storage.hxx>
 
-#include <ice/world/world_portal.hxx>
 #include <ice/gfx/gfx_device.hxx>
 #include <ice/gfx/gfx_resource_tracker.hxx>
 
@@ -28,6 +27,7 @@
 namespace ice
 {
 
+#if 0
     namespace detail
     {
 
@@ -244,5 +244,6 @@ namespace ice
         frame.storage().create_named_object<ice::Span<ice::TraitCameraData>>("ice.cameras.span"_sid, ice::span::head(camera_span, cam_idx));
         co_return;
     }
+#endif
 
 } // namespace ice
