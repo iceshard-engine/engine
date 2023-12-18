@@ -1,7 +1,7 @@
 /// Copyright 2023 - 2023, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
-#include "iceshard_world_v2.hxx"
+#include "iceshard_world.hxx"
 #include <ice/engine_frame.hxx>
 #include <ice/engine_shards.hxx>
 #include <ice/profiler.hxx>

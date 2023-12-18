@@ -1,10 +1,10 @@
 /// Copyright 2023 - 2023, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
-#include "iceshard_runner_v2.hxx"
-#include "iceshard_frame_v2.hxx"
-#include "iceshard_engine_v2.hxx"
-#include "iceshard_world_v2.hxx"
+#include "iceshard_runner.hxx"
+#include "iceshard_frame.hxx"
+#include "iceshard_engine.hxx"
+#include "iceshard_world.hxx"
 
 #include <ice/mem_allocator_stack.hxx>
 #include <ice/engine_module.hxx>

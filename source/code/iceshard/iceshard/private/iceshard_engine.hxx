@@ -7,7 +7,7 @@
 #include <ice/world/world_manager.hxx>
 #include <ice/ecs/ecs_entity_index.hxx>
 
-#include "iceshard_world_v2.hxx"
+#include "iceshard_world.hxx"
 
 namespace ice
 {

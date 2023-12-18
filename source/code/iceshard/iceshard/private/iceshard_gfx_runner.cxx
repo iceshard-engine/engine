@@ -1,7 +1,7 @@
 /// Copyright 2023 - 2023, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
-#include "iceshard_gfx_runner_v2.hxx"
+#include "iceshard_gfx_runner.hxx"
 #include "gfx/iceshard_gfx_device.hxx"
 #include <ice/gfx/gfx_stage.hxx>
 #include <ice/render/render_fence.hxx>
