@@ -19,8 +19,6 @@ namespace ice
         class DevUIWidget;
         class DevUITrait;
 
-        enum class DevUIExecutionKey : ice::u32;
-
     } // namespace devui
 
     class EngineDevUI
@@ -33,12 +31,7 @@ namespace ice
 
         virtual void register_trait(ice::TraitArchive& archive) noexcept = 0;
 
-    public:
-        virtual void internal_set_key(devui::DevUIExecutionKey) noexcept = 0;
-        virtual void internal_build_widgets(
-            ice::EngineFrame& frame,
-            ice::devui::DevUIExecutionKey
-        ) noexcept = 0;
+        virtual void render_builtin_widgets(ice::EngineFrame& frame) noexcept = 0;
     };
 
 } // namespace ice

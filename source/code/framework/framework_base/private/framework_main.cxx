@@ -497,7 +497,7 @@ auto ice_update(
     if (state.debug.devui != nullptr)
     {
         IPT_ZONE_SCOPED_NAMED("Runner Frame - Build Developer UI");
-        state.debug.devui->internal_build_widgets(*runtime.frame, {});
+        state.debug.devui->render_builtin_widgets(*runtime.frame);
     }
 
     if (was_minimized)

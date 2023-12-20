@@ -39,7 +39,6 @@ namespace ice::devui
 
     ImGuiSystem::ImGuiSystem(ice::Allocator& alloc) noexcept
         : _allocator{ alloc }
-        , _execution_key{ }
         , _render_trait{ nullptr }
         , _widget_alloc_tree{ nullptr }
         , _widgets{ alloc }
@@ -151,21 +150,8 @@ namespace ice::devui
         register_widget(_widget_alloc_tree);
     }
 
-    void ImGuiSystem::internal_set_key(ice::devui::DevUIExecutionKey new_execution_key) noexcept
+    void ImGuiSystem::render_builtin_widgets(ice::EngineFrame& frame) noexcept
     {
-        _execution_key = new_execution_key;
-    }
-
-    void ImGuiSystem::internal_build_widgets(
-        ice::EngineFrame& frame,
-        ice::devui::DevUIExecutionKey execution_key
-    ) noexcept
-    {
-        //ICE_ASSERT(
-        //    _execution_key == execution_key,
-        //    "Method 'internal_build_widgets' was executed from an invalid context!"
-        //);
-
         if (_render_trait == nullptr)
         {
             return;
