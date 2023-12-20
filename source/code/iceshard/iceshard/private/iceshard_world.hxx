@@ -144,4 +144,4 @@ namespace ice
         ice::HashMap<Entry, ice::ContainerLogic::Complex> _worlds;
     };
 
-} // namespace ice::v2
+} // namespace ice

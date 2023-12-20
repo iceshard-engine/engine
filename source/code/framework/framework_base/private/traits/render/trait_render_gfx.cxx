@@ -4,8 +4,6 @@
 #include "trait_render_gfx.hxx"
 
 #include <ice/gfx/gfx_device.hxx>
-#include <ice/gfx/gfx_frame.hxx>
-#include <ice/gfx/gfx_resource_tracker.hxx>
 #include <ice/gfx/gfx_stage.hxx>
 
 #include <ice/platform_event.hxx>

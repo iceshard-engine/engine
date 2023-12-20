@@ -4,7 +4,8 @@
 #pragma once
 #include <ice/framework_app.hxx>
 #include <ice/world/world_trait.hxx>
-#include <ice/gfx/ice_gfx_render_graph_v3.hxx>
+#include <ice/gfx/gfx_graph.hxx>
+#include <ice/gfx/gfx_graph_runtime.hxx>
 
 using namespace ice;
 using namespace ice::framework;
@@ -21,13 +22,13 @@ public:
     void on_update(ice::Engine& engine, ice::EngineFrame& frame) noexcept override;
     void on_suspend(ice::Engine& engine) noexcept override;
 
-    auto rendergraph(ice::gfx::GfxDevice& device) noexcept -> ice::UniquePtr<ice::gfx::v3::GfxGraphRuntime> override;
+    auto rendergraph(ice::gfx::GfxDevice& device) noexcept -> ice::UniquePtr<ice::gfx::GfxGraphRuntime> override;
 
 private:
     ice::Allocator& _allocator;
 
-    ice::UniquePtr<ice::gfx::v3::GfxGraph> _graph;
-    ice::UniquePtr<ice::gfx::v3::GfxGraphRuntime> _graph_runtime;
+    ice::UniquePtr<ice::gfx::GfxGraph> _graph;
+    ice::UniquePtr<ice::gfx::GfxGraphRuntime> _graph_runtime;
 
     bool _first_time;
 };

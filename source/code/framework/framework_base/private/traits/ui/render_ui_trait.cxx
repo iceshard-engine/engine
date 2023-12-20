@@ -12,8 +12,6 @@
 #include <ice/task.hxx>
 
 #include <ice/gfx/gfx_device.hxx>
-#include <ice/gfx/gfx_frame.hxx>
-#include <ice/gfx/gfx_resource_tracker.hxx>
 
 #include <ice/render/render_device.hxx>
 #include <ice/render/render_buffer.hxx>

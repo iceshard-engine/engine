@@ -11,12 +11,6 @@
 #include <ice/asset_storage.hxx>
 
 #include <ice/gfx/gfx_device.hxx>
-#include <ice/gfx/gfx_resource_tracker.hxx>
-#include <ice/gfx/gfx_model.hxx>
-#include <ice/gfx/gfx_subpass.hxx>
-#include <ice/gfx/gfx_camera.hxx>
-//#include <ice/gfx/gfx_task.hxx>
-#include <ice/gfx/gfx_frame.hxx>
 
 #include <ice/render/render_buffer.hxx>
 #include <ice/render/render_pipeline.hxx>

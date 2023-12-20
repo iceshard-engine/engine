@@ -2,14 +2,17 @@
 /// SPDX-License-Identifier: MIT
 
 #pragma once
-#include <ice/gfx/ice_gfx_render_graph_v3.hxx>
+#include <ice/gfx/gfx_graph.hxx>
+#include <ice/gfx/gfx_graph_runtime.hxx>
+#include <ice/gfx/gfx_stage.hxx>
+#include <ice/gfx/gfx_stage_registry.hxx>
 #include <ice/gfx/gfx_device.hxx>
 #include <ice/render/render_swapchain.hxx>
 #include <ice/container/hashmap.hxx>
 #include <ice/task_scheduler.hxx>
 #include <ice/mem_allocator_proxy.hxx>
 
-namespace ice::gfx::v3
+namespace ice::gfx
 {
 
     struct Snapshot
@@ -59,7 +62,7 @@ namespace ice::gfx::v3
     private:
         ice::HashMap<GfxGraphPass> _passes;
         ice::HashMap<GfxResource> _resources;
-        ice::u32 _resources_ids[ice::u8(ice::gfx::v3::GfxResourceType::DepthStencil) + 1];
+        ice::u32 _resources_ids[ice::u8(ice::gfx::GfxResourceType::DepthStencil) + 1];
     };
 
     enum class GraphStageType : ice::u8
@@ -146,4 +149,4 @@ namespace ice::gfx::v3
         IceshardGfxStages _stages;
     };
 
-} // namespace ice::gfx::v3
+} // namespace ice::gfx

@@ -14,10 +14,7 @@
 #include <ice/render/render_shader.hxx>
 #include <ice/render/render_image.hxx>
 
-#include <ice/gfx/gfx_resource_tracker.hxx>
 #include <ice/gfx/gfx_stage.hxx>
-#include <ice/gfx/gfx_frame.hxx>
-#include <ice/gfx/gfx_pass.hxx>
 #include <ice/task.hxx>
 #include <ice/task_utils.hxx>
 

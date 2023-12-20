@@ -7,13 +7,12 @@
 #include <ice/engine_runner.hxx>
 #include <ice/engine_devui.hxx>
 #include <ice/engine_shards.hxx>
+#include <ice/engine_frame.hxx>
 #include <ice/world/world_manager.hxx>
 
-#include <ice/gfx/gfx_frame.hxx>
-#include <ice/gfx/gfx_context.hxx>
-#include <ice/gfx/gfx_resource_tracker.hxx>
-#include <ice/gfx/gfx_render_graph_runtime.hxx>
+#include <ice/gfx/gfx_shards.hxx>
 #include <ice/gfx/gfx_object_storage.hxx>
+#include <ice/gfx/gfx_stage_registry.hxx>
 
 #include <ice/render/render_swapchain.hxx>
 #include <ice/render/render_pass.hxx>
@@ -116,9 +115,9 @@ namespace ice::devui
     void ImGuiTrait::gather_tasks(ice::TraitTaskLauncher& task_launcher) noexcept
     {
         task_launcher.bind<&ImGuiTrait::update>();
-        task_launcher.bind<&ImGuiTrait::gfx_start>(ice::gfx::v2::ShardID_GfxStartup);
-        task_launcher.bind<&ImGuiTrait::gfx_shutdown>(ice::gfx::v2::ShardID_GfxShutdown);
-        task_launcher.bind<&ImGuiTrait::gfx_update>(ice::gfx::v2::ShardID_GfxFrameUpdate);
+        task_launcher.bind<&ImGuiTrait::gfx_start>(ice::gfx::ShardID_GfxStartup);
+        task_launcher.bind<&ImGuiTrait::gfx_shutdown>(ice::gfx::ShardID_GfxShutdown);
+        task_launcher.bind<&ImGuiTrait::gfx_update>(ice::gfx::ShardID_GfxFrameUpdate);
         task_launcher.bind<&ImGuiTrait::on_window_resized>(ice::platform::ShardID_WindowResized);
     }
 
@@ -203,7 +202,7 @@ namespace ice::devui
         co_return;
     }
 
-    auto ImGuiTrait::gfx_start(ice::gfx::v2::GfxStateChange const& params) noexcept -> ice::Task<>
+    auto ImGuiTrait::gfx_start(ice::gfx::GfxStateChange const& params) noexcept -> ice::Task<>
     {
         using namespace ice::gfx;
         using namespace ice::render;
@@ -436,7 +435,7 @@ namespace ice::devui
         co_return;
     }
 
-    auto ImGuiTrait::gfx_shutdown(ice::gfx::v2::GfxStateChange const& params) noexcept -> ice::Task<>
+    auto ImGuiTrait::gfx_shutdown(ice::gfx::GfxStateChange const& params) noexcept -> ice::Task<>
     {
         _initialized = false;
 
@@ -463,7 +462,7 @@ namespace ice::devui
         co_return;
     }
 
-    auto ImGuiTrait::gfx_update(ice::gfx::v2::GfxFrameUpdate const& update) noexcept -> ice::Task<>
+    auto ImGuiTrait::gfx_update(ice::gfx::GfxFrameUpdate const& update) noexcept -> ice::Task<>
     {
         IPT_ZONE_SCOPED;
 
@@ -473,7 +472,6 @@ namespace ice::devui
         }
 
         using namespace ice::render;
-        using namespace ice::gfx::v2;
 
         ImDrawData* draw_data = ImGui::GetDrawData();
         if (draw_data == nullptr)

@@ -2,7 +2,6 @@
 /// SPDX-License-Identifier: MIT
 
 #include "mesh_loader.hxx"
-#include <ice/gfx/gfx_model.hxx>
 
 namespace ice
 {

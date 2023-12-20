@@ -218,7 +218,7 @@ namespace ice
 namespace ice
 {
 
-    auto create_engine_runner_v2_fn(
+    auto create_engine_runner_fn(
         ice::Allocator& alloc,
         ice::ModuleRegister& registry,
         ice::EngineRunnerCreateInfo const& create_info_arg
@@ -228,7 +228,7 @@ namespace ice
 
         if (create_info.concurrent_frame_count != 2)
         {
-            ICE_LOG(LogSeverity::Error, LogTag::Engine, "Runner.v2 only allows two concurent frames to be aquired!");
+            ICE_LOG(LogSeverity::Error, LogTag::Engine, "Runner only allows two concurent frames to be aquired!");
             return nullptr;
         }
 
@@ -240,7 +240,7 @@ namespace ice
         return alloc.create<ice::IceshardEngineRunner>(alloc, create_info);
     }
 
-    void destroy_engine_runner_v2_fn(ice::EngineRunner* runner) noexcept
+    void destroy_engine_runner_fn(ice::EngineRunner* runner) noexcept
     {
         static_cast<ice::IceshardEngineRunner*>(runner)->destroy();
     }

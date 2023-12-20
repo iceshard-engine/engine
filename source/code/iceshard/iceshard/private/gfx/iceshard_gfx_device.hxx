@@ -5,12 +5,11 @@
 #include <ice/engine.hxx>
 #include <ice/engine_types.hxx>
 #include <ice/gfx/gfx_device.hxx>
+#include <ice/gfx/gfx_runner.hxx>
 #include <ice/render/render_device.hxx>
 #include <ice/render/render_driver.hxx>
 #include <ice/mem_unique_ptr.hxx>
 #include <ice/container/array.hxx>
-
-#include "iceshard_gfx_resource_tracker.hxx"
 
 namespace ice::gfx
 {
@@ -34,8 +33,6 @@ namespace ice::gfx
 
         void recreate_swapchain() noexcept override;
 
-        auto resource_tracker() noexcept -> ice::gfx::GfxResourceTracker& override;
-
         auto next_frame() noexcept -> ice::u32 override;
 
         auto queue_group(ice::u32 image_index) noexcept -> ice::gfx::v2::GfxQueueGroup_Temp& override;
@@ -52,14 +49,13 @@ namespace ice::gfx
         ice::render::RenderSwapchain* _render_swapchain;
 
         ice::Array<ice::gfx::IceGfxQueueGroup*> _graphics_queues;
-        ice::gfx::IceGfxResourceTracker _resource_tracker;
     };
 
     auto create_graphics_device(
         ice::Allocator& alloc,
         ice::render::RenderDriver& render_driver,
         ice::render::RenderSurface& render_surface,
-        ice::Span<ice::gfx::v2::QueueDefinition const> render_queues
+        ice::Span<ice::gfx::QueueDefinition const> render_queues
     ) noexcept -> ice::UniquePtr<ice::gfx::IceGfxDevice>;
 
 } // namespace ice::gfx

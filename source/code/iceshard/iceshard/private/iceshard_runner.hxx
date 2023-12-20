@@ -131,4 +131,4 @@ namespace ice
         ice::ManualResetBarrier _barrier;
     };
 
-} // namespace ice::v2
+} // namespace ice

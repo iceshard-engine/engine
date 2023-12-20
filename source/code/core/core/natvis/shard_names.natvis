@@ -51,6 +51,7 @@
                 <DisplayString Condition="id.payload.value == 911661974">char const*</DisplayString>
                 <DisplayString Condition="id.payload.value == 2821725455">ice::DebugDrawCommandList const*</DisplayString>
                 <DisplayString Condition="id.payload.value == 599074004">ice::DrawTextCommand const*</DisplayString>
+                <DisplayString Condition="id.payload.value == 1204590043">ice::EngineFrameUpdate const*</DisplayString>
                 <DisplayString Condition="id.payload.value == 2049186712">ice::RenderUIRequest const*</DisplayString>
                 <DisplayString Condition="id.payload.value == 1107026406">ice::String const*</DisplayString>
                 <DisplayString Condition="id.payload.value == 2482378481">ice::StringID_Hash</DisplayString>
@@ -59,14 +60,13 @@
                 <DisplayString Condition="id.payload.value == 1224035327">ice::ecs::EntityHandle</DisplayString>
                 <DisplayString Condition="id.payload.value == 2759705139">ice::f32</DisplayString>
                 <DisplayString Condition="id.payload.value == 3318286190">ice::f64</DisplayString>
-                <DisplayString Condition="id.payload.value == 229388747">ice::gfx::v2::GfxFrameUpdate const*</DisplayString>
-                <DisplayString Condition="id.payload.value == 3202943207">ice::gfx::v2::GfxStateChange const*</DisplayString>
+                <DisplayString Condition="id.payload.value == 2336974670">ice::gfx::GfxFrameUpdate const*</DisplayString>
+                <DisplayString Condition="id.payload.value == 1993323835">ice::gfx::GfxStateChange const*</DisplayString>
                 <DisplayString Condition="id.payload.value == 885125057">ice::i32</DisplayString>
                 <DisplayString Condition="id.payload.value == 3904937373">ice::i64</DisplayString>
                 <DisplayString Condition="id.payload.value == 4176694044">ice::input::InputEvent</DisplayString>
                 <DisplayString Condition="id.payload.value == 2740183039">ice::u32</DisplayString>
                 <DisplayString Condition="id.payload.value == 1788037810">ice::u64</DisplayString>
-                <DisplayString Condition="id.payload.value == 2866534692">ice::v2::EngineFrameUpdate const*</DisplayString>
                 <DisplayString Condition="id.payload.value == 1568413339">ice::vec2i</DisplayString>
                 <DisplayString Condition="id.payload.value == 1490517694">ice::vec2u</DisplayString>
                 <DisplayString Condition="id.payload.value == 295941599">std::string_view const*</DisplayString>
@@ -76,6 +76,7 @@
             <Item Name="[payload]" Optional="true" Condition="id.payload.value == 911661974">*(char const**)&amp;payload.value</Item>
             <Item Name="[payload]" Optional="true" Condition="id.payload.value == 2821725455">*(ice::DebugDrawCommandList const**)&amp;payload.value</Item>
             <Item Name="[payload]" Optional="true" Condition="id.payload.value == 599074004">*(ice::DrawTextCommand const**)&amp;payload.value</Item>
+            <Item Name="[payload]" Optional="true" Condition="id.payload.value == 1204590043">*(ice::EngineFrameUpdate const**)&amp;payload.value</Item>
             <Item Name="[payload]" Optional="true" Condition="id.payload.value == 2049186712">*(ice::RenderUIRequest const**)&amp;payload.value</Item>
             <Item Name="[payload]" Optional="true" Condition="id.payload.value == 1107026406">*(ice::String const**)&amp;payload.value</Item>
             <Item Name="[payload]" Optional="true" Condition="id.payload.value == 2482378481">*(ice::StringID_Hash*)&amp;payload.value</Item>
@@ -84,14 +85,13 @@
             <Item Name="[payload]" Optional="true" Condition="id.payload.value == 1224035327">*(ice::ecs::EntityHandle*)&amp;payload.value</Item>
             <Item Name="[payload]" Optional="true" Condition="id.payload.value == 2759705139">*(ice::f32*)&amp;payload.value</Item>
             <Item Name="[payload]" Optional="true" Condition="id.payload.value == 3318286190">*(ice::f64*)&amp;payload.value</Item>
-            <Item Name="[payload]" Optional="true" Condition="id.payload.value == 229388747">*(ice::gfx::v2::GfxFrameUpdate const**)&amp;payload.value</Item>
-            <Item Name="[payload]" Optional="true" Condition="id.payload.value == 3202943207">*(ice::gfx::v2::GfxStateChange const**)&amp;payload.value</Item>
+            <Item Name="[payload]" Optional="true" Condition="id.payload.value == 2336974670">*(ice::gfx::GfxFrameUpdate const**)&amp;payload.value</Item>
+            <Item Name="[payload]" Optional="true" Condition="id.payload.value == 1993323835">*(ice::gfx::GfxStateChange const**)&amp;payload.value</Item>
             <Item Name="[payload]" Optional="true" Condition="id.payload.value == 885125057">*(ice::i32*)&amp;payload.value</Item>
             <Item Name="[payload]" Optional="true" Condition="id.payload.value == 3904937373">*(ice::i64*)&amp;payload.value</Item>
             <Item Name="[payload]" Optional="true" Condition="id.payload.value == 4176694044">*(ice::input::InputEvent*)&amp;payload.value</Item>
             <Item Name="[payload]" Optional="true" Condition="id.payload.value == 2740183039">*(ice::u32*)&amp;payload.value</Item>
             <Item Name="[payload]" Optional="true" Condition="id.payload.value == 1788037810">*(ice::u64*)&amp;payload.value</Item>
-            <Item Name="[payload]" Optional="true" Condition="id.payload.value == 2866534692">*(ice::v2::EngineFrameUpdate const**)&amp;payload.value</Item>
             <Item Name="[payload]" Optional="true" Condition="id.payload.value == 1568413339">*(ice::vec2i*)&amp;payload.value</Item>
             <Item Name="[payload]" Optional="true" Condition="id.payload.value == 1490517694">*(ice::vec2u*)&amp;payload.value</Item>
             <Item Name="[payload]" Optional="true" Condition="id.payload.value == 295941599">*(std::string_view const**)&amp;payload.value</Item>

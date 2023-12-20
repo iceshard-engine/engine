@@ -44,28 +44,23 @@ namespace ice
         _allocator.destroy(this);
     }
 
-} // namespace ice::v2
-
-namespace ice
-{
-
-    auto create_engine_runner_v2_fn(
+    auto create_engine_runner_fn(
         ice::Allocator& alloc,
         ice::ModuleRegister& registry,
         ice::EngineRunnerCreateInfo const& create_info_arg
     ) noexcept -> ice::EngineRunner*;
 
-    void destroy_engine_runner_v2_fn(ice::EngineRunner* runner) noexcept;
+    void destroy_engine_runner_fn(ice::EngineRunner* runner) noexcept;
 
-    auto create_gfx_runner_v2_fn(
+    auto create_gfx_runner_fn(
         ice::Allocator& alloc,
         ice::ModuleRegister& registry,
-        ice::gfx::v2::GfxRunnerCreateInfo const& create_info
-    ) noexcept -> ice::gfx::v2::GfxRunner*;
+        ice::gfx::GfxRunnerCreateInfo const& create_info
+    ) noexcept -> ice::gfx::GfxRunner*;
 
-    void destroy_gfx_runner_v2_fn(ice::gfx::v2::GfxRunner* runner) noexcept;
+    void destroy_gfx_runner_fn(ice::gfx::GfxRunner* runner) noexcept;
 
-    auto create_engine_v2_fn(
+    auto create_engine_fn(
         ice::Allocator& alloc,
         ice::ModuleRegister& registry,
         ice::EngineCreateInfo create_info
@@ -74,7 +69,7 @@ namespace ice
         return alloc.create<ice::IceshardEngine>(alloc, ice::move(create_info));
     }
 
-    void destroy_engine_v2_fn(ice::Engine* engine) noexcept
+    void destroy_engine_fn(ice::Engine* engine) noexcept
     {
         static_cast<ice::IceshardEngine*>(engine)->destroy();
     }
@@ -82,12 +77,12 @@ namespace ice
     bool iceshard_get_api_proc(ice::StringID_Hash api_name, ice::u32 version, void** args) noexcept
     {
         static detail::engine::EngineAPI current_api{
-            .create_engine_fn = ice::create_engine_v2_fn,
-            .destroy_engine_fn = ice::destroy_engine_v2_fn,
-            .create_engine_runner_fn = ice::create_engine_runner_v2_fn,
-            .destroy_engine_runner_fn = ice::destroy_engine_runner_v2_fn,
-            .create_gfx_runner_fn = ice::create_gfx_runner_v2_fn,
-            .destroy_gfx_runner_fn = ice::destroy_gfx_runner_v2_fn,
+            .create_engine_fn = ice::create_engine_fn,
+            .destroy_engine_fn = ice::destroy_engine_fn,
+            .create_engine_runner_fn = ice::create_engine_runner_fn,
+            .destroy_engine_runner_fn = ice::destroy_engine_runner_fn,
+            .create_gfx_runner_fn = ice::create_gfx_runner_fn,
+            .destroy_gfx_runner_fn = ice::destroy_gfx_runner_fn,
         };
 
         if (api_name == "iceshard.engine"_sid && version == 2)

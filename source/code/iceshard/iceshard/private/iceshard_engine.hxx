@@ -37,4 +37,4 @@ namespace ice
         ice::ecs::EntityIndex _entities;
     };
 
-} // namespace ice::v2
+} // namespace ice

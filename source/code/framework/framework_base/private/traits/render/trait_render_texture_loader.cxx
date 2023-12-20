@@ -7,8 +7,6 @@
 #include <ice/world/world_trait_archive.hxx>
 
 #include <ice/gfx/gfx_device.hxx>
-#include <ice/gfx/gfx_resource_tracker.hxx>
-#include <ice/gfx/gfx_frame.hxx>
 
 #include <ice/render/render_command_buffer.hxx>
 #include <ice/render/render_swapchain.hxx>

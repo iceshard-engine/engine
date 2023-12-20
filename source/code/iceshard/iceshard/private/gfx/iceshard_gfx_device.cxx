@@ -2,7 +2,6 @@
 /// SPDX-License-Identifier: MIT
 
 #include "iceshard_gfx_device.hxx"
-#include "iceshard_gfx_frame.hxx"
 #include <ice/render/render_surface.hxx>
 #include <ice/render/render_swapchain.hxx>
 #include <ice/render/render_buffer.hxx>
@@ -14,7 +13,6 @@
 
 #include "iceshard_gfx_queue_group.hxx"
 #include "iceshard_gfx_queue.hxx"
-#include "subpass/iceshard_gfx_subpass.hxx"
 
 namespace ice::gfx
 {
@@ -49,31 +47,12 @@ namespace ice::gfx
         , _render_device{ render_device }
         , _render_swapchain{ nullptr }
         , _graphics_queues{ ice::move(graphics_queues) }
-        , _resource_tracker{ _allocator }
     {
         _render_swapchain = _render_device->create_swapchain(&_render_surface);
-
-        track_resource(
-            _resource_tracker,
-            "temp.buffer.image_transfer"_sid,
-            _render_device->create_buffer(ice::render::BufferType::Transfer, 2048 * 2048 * 4 * sizeof(ice::u8))
-        );
-
-        create_subpass_resources_primitives(*_render_device, _resource_tracker);
-        create_subpass_resources_terrain(*_render_device, _resource_tracker);
-        create_subpass_resources_imgui(*_render_device, _resource_tracker);
     }
 
     IceGfxDevice::~IceGfxDevice() noexcept
     {
-        destroy_subpass_resources_imgui(*_render_device, _resource_tracker);
-        destroy_subpass_resources_terrain(*_render_device, _resource_tracker);
-        destroy_subpass_resources_primitives(*_render_device, _resource_tracker);
-
-        _render_device->destroy_buffer(
-            find_resource<ice::render::Buffer>(_resource_tracker, "temp.buffer.image_transfer"_sid)
-        );
-
         _render_device->destroy_swapchain(_render_swapchain);
 
         bool first = true;
@@ -111,11 +90,6 @@ namespace ice::gfx
         _render_device->wait_idle();
         _render_device->destroy_swapchain(_render_swapchain);
         _render_swapchain = _render_device->create_swapchain(&_render_surface);
-    }
-
-    auto IceGfxDevice::resource_tracker() noexcept -> ice::gfx::GfxResourceTracker&
-    {
-        return _resource_tracker;
     }
 
     auto IceGfxDevice::next_frame() noexcept -> ice::u32
@@ -177,7 +151,7 @@ namespace ice::gfx
         ice::Allocator& alloc,
         ice::render::RenderDriver& render_driver,
         ice::render::RenderSurface& render_surface,
-        ice::Span<ice::gfx::v2::QueueDefinition const> render_queues
+        ice::Span<ice::gfx::QueueDefinition const> render_queues
     ) noexcept -> ice::UniquePtr<ice::gfx::IceGfxDevice>
     {
         ice::Array<ice::render::QueueFamilyInfo> queue_families{ alloc };
@@ -205,7 +179,7 @@ namespace ice::gfx
         };
 
         ice::HashMap<ice::u32> queue_index_tracker{ alloc };
-        for (ice::gfx::v2::QueueDefinition const& pass_info : render_queues)
+        for (ice::gfx::QueueDefinition const& pass_info : render_queues)
         {
             QueueID const pass_queue_id = detail::find_queue_id(queue_families, pass_info.flags);
             ICE_ASSERT(
@@ -269,7 +243,7 @@ namespace ice::gfx
                 );
             }
 
-            for (ice::gfx::v2::QueueDefinition const& pass_info : render_queues)
+            for (ice::gfx::QueueDefinition const& pass_info : render_queues)
             {
                 QueueID const pass_queue_id = detail::find_queue_id(queue_families, pass_info.flags);
                 ice::u32 const pass_queue_index = ice::hashmap::get(

@@ -1,9 +1,10 @@
 /// Copyright 2023 - 2023, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
-#include "ice_gfx_render_graph_v3.hxx"
+#include "ice_gfx_graph.hxx"
 #include <ice/gfx/gfx_device.hxx>
 #include <ice/gfx/gfx_queue.hxx>
+
 #include <ice/render/render_swapchain.hxx>
 #include <ice/render/render_framebuffer.hxx>
 #include <ice/render/render_device.hxx>
@@ -19,7 +20,7 @@
 #include <ice/profiler.hxx>
 #include <chrono>
 
-namespace ice::gfx::v3
+namespace ice::gfx
 {
     auto gfx_resource_type_val(GfxResource res) noexcept
     {
@@ -838,4 +839,4 @@ namespace ice::gfx::v3
     }
 
 
-} // namespace ice::gfx::v3
+} // namespace ice::gfx

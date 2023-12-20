@@ -13,7 +13,6 @@
 #include <ice/ecs/ecs_entity_storage.hxx>
 
 #include <ice/gfx/gfx_device.hxx>
-#include <ice/gfx/gfx_resource_tracker.hxx>
 
 #include <ice/render/render_device.hxx>
 #include <ice/render/render_resource.hxx>

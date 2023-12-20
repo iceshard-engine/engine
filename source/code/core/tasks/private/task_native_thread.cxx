@@ -171,11 +171,11 @@ namespace ice
             ice::TaskFlags right_flags{ };
 
             // TODO: Improve logic for this!
-            if (left._params.modifier == TaskAwaitableModifier_v3::PriorityFlags)
+            if (left._params.modifier == TaskAwaitableModifier::PriorityFlags)
             {
                 left_flags.value = left._params.task_flags.value & 0xf;
             }
-            if (right._params.modifier == TaskAwaitableModifier_v3::PriorityFlags)
+            if (right._params.modifier == TaskAwaitableModifier::PriorityFlags)
             {
                 right_flags.value = right._params.task_flags.value & 0xf;
             }

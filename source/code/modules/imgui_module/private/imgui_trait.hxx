@@ -15,7 +15,7 @@
 namespace ice::devui
 {
 
-    class ImGuiTrait final : public ice::devui::DevUITrait, public ice::gfx::v3::GfxStage
+    class ImGuiTrait final : public ice::devui::DevUITrait, public ice::gfx::GfxStage
     {
     public:
         ImGuiTrait(ice::Allocator& alloc) noexcept;
@@ -37,9 +37,9 @@ namespace ice::devui
         ) const noexcept override;
 
     public: // Gfx State Events
-        auto gfx_start(ice::gfx::v2::GfxStateChange const& params) noexcept -> ice::Task<>;
-        auto gfx_shutdown(ice::gfx::v2::GfxStateChange const& params) noexcept -> ice::Task<>;
-        auto gfx_update(ice::gfx::v2::GfxFrameUpdate const& update) noexcept -> ice::Task<>;
+        auto gfx_start(ice::gfx::GfxStateChange const& params) noexcept -> ice::Task<>;
+        auto gfx_shutdown(ice::gfx::GfxStateChange const& params) noexcept -> ice::Task<>;
+        auto gfx_update(ice::gfx::GfxFrameUpdate const& update) noexcept -> ice::Task<>;
 
         bool start_frame() noexcept;
         void end_frame(ice::EngineFrame& frame) noexcept;

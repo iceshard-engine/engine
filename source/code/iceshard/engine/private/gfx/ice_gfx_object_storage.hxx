@@ -5,20 +5,20 @@
 #include <ice/gfx/gfx_object_storage.hxx>
 #include <ice/container/hashmap.hxx>
 
-namespace ice::gfx::v2
+namespace ice::gfx
 {
 
-    class SimpleGfxObjectStorage : public GfxObjectStorage
+    class SimpleGfxObjectStorage : public ice::gfx::GfxObjectStorage
     {
     public:
         SimpleGfxObjectStorage(ice::Allocator& alloc) noexcept;
 
-        bool set(ice::StringID_Arg name, ice::gfx::v2::GfxObject object) noexcept override;
-        auto get(ice::StringID_Arg name) const noexcept -> ice::gfx::v2::GfxObject override;
+        bool set(ice::StringID_Arg name, ice::gfx::GfxObject object) noexcept override;
+        auto get(ice::StringID_Arg name) const noexcept -> ice::gfx::GfxObject override;
         void destroy_all(ice::render::RenderDevice& device) noexcept;
 
     private:
-        ice::HashMap<ice::gfx::v2::GfxObject> _objects;
+        ice::HashMap<ice::gfx::GfxObject> _objects;
     };
 
-} // namespace ice::gfx::v2
+} // namespace ice::gfx

@@ -47,19 +47,19 @@ namespace ice
         return result;
     }
 
-    auto gfx::v2::create_gfx_runner(
+    auto create_gfx_runner(
         ice::Allocator& alloc,
         ice::ModuleRegister& registry,
-        ice::gfx::v2::GfxRunnerCreateInfo const& create_info
-    ) noexcept -> ice::UniquePtr<ice::gfx::v2::GfxRunner>
+        ice::gfx::GfxRunnerCreateInfo const& create_info
+    ) noexcept -> ice::UniquePtr<ice::gfx::GfxRunner>
     {
         IPT_ZONE_SCOPED;
-        ice::UniquePtr<ice::gfx::v2::GfxRunner> result{ };
+        ice::UniquePtr<ice::gfx::GfxRunner> result{ };
 
         ice::detail::engine::EngineAPI* engine_api;
         if (registry.find_module_api("iceshard.engine"_sid, 2, reinterpret_cast<void**>(&engine_api)))
         {
-            ice::gfx::v2::GfxRunner* engine = engine_api->create_gfx_runner_fn(alloc, registry, create_info);
+            ice::gfx::GfxRunner* engine = engine_api->create_gfx_runner_fn(alloc, registry, create_info);
             result = ice::make_unique(engine_api->destroy_gfx_runner_fn, engine);
         }
 

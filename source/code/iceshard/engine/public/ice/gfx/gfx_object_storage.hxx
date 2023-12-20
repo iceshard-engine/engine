@@ -5,7 +5,7 @@
 #include <ice/stringid.hxx>
 #include <ice/gfx/gfx_object.hxx>
 
-namespace ice::gfx::v2
+namespace ice::gfx
 {
 
     struct GfxObjectStorage
@@ -14,12 +14,12 @@ namespace ice::gfx::v2
 
         virtual bool set(
             ice::StringID_Arg name,
-            ice::gfx::v2::GfxObject object
+            ice::gfx::GfxObject object
         ) noexcept = 0;
 
         virtual auto get(
             ice::StringID_Arg name
-        ) const noexcept -> ice::gfx::v2::GfxObject = 0;
+        ) const noexcept -> ice::gfx::GfxObject = 0;
 
         template<typename RenderHandle>
         bool try_get(ice::StringID_Arg name, RenderHandle& out_handle) const noexcept;
@@ -66,4 +66,4 @@ namespace ice::gfx::v2
         ICE_ASSERT(success, "Failed to store render handle in storage with name: {}", name);
     }
 
-} // namespace ice::gfx::v2
+} // namespace ice::gfx

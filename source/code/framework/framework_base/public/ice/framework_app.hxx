@@ -7,6 +7,7 @@
 #include <ice/engine_types.hxx>
 #include <ice/resource_types.hxx>
 #include <ice/module_register.hxx>
+#include <ice/gfx/gfx_graph_runtime.hxx>
 
 namespace ice::framework
 {
@@ -37,7 +38,7 @@ namespace ice::framework
         virtual void on_update(ice::Engine& engine, ice::EngineFrame& frame) noexcept { }
         virtual void on_suspend(ice::Engine& engine) noexcept { }
 
-        virtual auto rendergraph(ice::gfx::GfxDevice& device) noexcept -> ice::UniquePtr<ice::gfx::v3::GfxGraphRuntime> { return {}; }
+        virtual auto rendergraph(ice::gfx::GfxDevice& device) noexcept -> ice::UniquePtr<ice::gfx::GfxGraphRuntime> { return {}; }
     };
 
     auto create_game(ice::Allocator& alloc) noexcept -> ice::UniquePtr<Game>;

@@ -42,7 +42,7 @@ namespace ice
                     // TODO: maybe a pop here would be better?
                     for (ice::TaskAwaitableBase* awaitable : ice::linked_queue::consume(awaiting_queue._awaitables))
                     {
-                        ICE_ASSERT(awaitable->_params.modifier == TaskAwaitableModifier_v3::CustomValue, "Unexpected modifier type!");
+                        ICE_ASSERT(awaitable->_params.modifier == TaskAwaitableModifier::CustomValue, "Unexpected modifier type!");
                         ice::AssetState const awaiting_state = static_cast<AssetState>(awaitable->_params.u32_value);
                         if (awaiting_state <= current_state)
                         {

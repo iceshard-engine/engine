@@ -5,7 +5,7 @@
 #include <ice/render/render_declarations.hxx>
 #include <ice/assert.hxx>
 
-namespace ice::gfx::v2
+namespace ice::gfx
 {
 
     enum class GfxObjectType : ice::u8
@@ -36,9 +36,9 @@ namespace ice::gfx::v2
 
     struct GfxObject
     {
-        ice::gfx::v2::GfxObjectType _type;
-        ice::gfx::v2::GfxObjectFlags _flags;
-        ice::gfx::v2::GfxObjectHandle _handle;
+        ice::gfx::GfxObjectType _type;
+        ice::gfx::GfxObjectFlags _flags;
+        ice::gfx::GfxObjectHandle _handle;
 
         inline bool valid() const noexcept;
 
@@ -131,4 +131,4 @@ namespace ice::gfx::v2
     template<>
     constexpr GfxObjectType Constant_GfxObjectType<ice::render::Buffer> = GfxObjectType::Buffer;
 
-} // namespace ice::gfx::v2
+} // namespace ice::gfx

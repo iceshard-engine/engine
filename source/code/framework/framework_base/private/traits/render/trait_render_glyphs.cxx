@@ -25,9 +25,7 @@
 #include <ice/render/render_resource.hxx>
 #include <ice/render/render_pass.hxx>
 
-#include <ice/gfx/gfx_frame.hxx>
 #include <ice/gfx/gfx_device.hxx>
-#include <ice/gfx/gfx_resource_tracker.hxx>
 
 #include <ice/game_render_traits.hxx>
 

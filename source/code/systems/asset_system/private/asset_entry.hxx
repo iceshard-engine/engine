@@ -109,7 +109,7 @@ namespace ice
         AssetStateRequest(AssetEntry& entry, ice::AssetState state) noexcept
             : TaskAwaitableBase{
                 ._params = {
-                    .modifier = TaskAwaitableModifier_v3::CustomValue,
+                    .modifier = TaskAwaitableModifier::CustomValue,
                     .u32_value = static_cast<ice::u32>(state)
                 }
             }

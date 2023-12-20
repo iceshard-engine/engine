@@ -17,8 +17,9 @@
 #include <ice/gfx/gfx_stage.hxx>
 #include <ice/gfx/gfx_runner.hxx>
 #include <ice/gfx/gfx_device.hxx>
-#include <ice/gfx/gfx_render_graph.hxx>
-#include <ice/gfx/ice_gfx_render_graph_v3.hxx>
+#include <ice/gfx/gfx_graph.hxx>
+#include <ice/gfx/gfx_graph_runtime.hxx>
+#include <ice/gfx/gfx_shards.hxx>
 
 #include <ice/render/render_image.hxx>
 #include <ice/render/render_swapchain.hxx>
@@ -51,7 +52,7 @@ struct TestTrait : public ice::Trait
     void gather_tasks(ice::TraitTaskLauncher& task_launcher) noexcept
     {
         task_launcher.bind<&TestTrait::logic>();
-        task_launcher.bind<&TestTrait::gfx>(ice::gfx::v2::ShardID_GfxFrameUpdate);
+        task_launcher.bind<&TestTrait::gfx>(ice::gfx::ShardID_GfxFrameUpdate);
     }
 
     auto logic(ice::EngineFrameUpdate const& update) noexcept -> ice::Task<>
@@ -66,7 +67,7 @@ struct TestTrait : public ice::Trait
         co_return;
     }
 
-    auto gfx(ice::gfx::v2::GfxFrameUpdate const& update) noexcept -> ice::Task<>
+    auto gfx(ice::gfx::GfxFrameUpdate const& update) noexcept -> ice::Task<>
     {
         IPT_ZONE_SCOPED;
         co_return;
@@ -188,30 +189,29 @@ void TestGame::on_suspend(ice::Engine& engine) noexcept
 {
 }
 
-auto TestGame::rendergraph(ice::gfx::GfxDevice& device) noexcept -> ice::UniquePtr<ice::gfx::v3::GfxGraphRuntime>
+auto TestGame::rendergraph(ice::gfx::GfxDevice& device) noexcept -> ice::UniquePtr<ice::gfx::GfxGraphRuntime>
 {
-    using namespace ice::gfx::v2;
-    namespace v3 = ice::gfx::v3;
     using ice::operator""_sid;
+    using namespace ice::gfx;
 
-    _graph = v3::create_graph(_allocator);
+    _graph = create_graph(_allocator);
     {
-        v3::GfxResource const c0 = _graph->get_resource("color"_sid, v3::GfxResourceType::RenderTarget);
-        v3::GfxResource const fb = _graph->get_framebuffer();
+        GfxResource const c0 = _graph->get_resource("color"_sid, GfxResourceType::RenderTarget);
+        GfxResource const fb = _graph->get_framebuffer();
 
-        v3::GfxGraphStage const stages1[]{
+        GfxGraphStage const stages1[]{
             {.name = "clear"_sid, .outputs = { &c0, 1 }},
         };
-        v3::GfxGraphStage const stages2[]{
+        GfxGraphStage const stages2[]{
             {.name = "copy"_sid, .inputs = { &c0, 1 }, .outputs = { &fb, 1 }}
         };
-        v3::GfxGraphPass const pass1{ .name = "test1"_sid, .stages = stages1 };
-        v3::GfxGraphPass const pass2{ .name = "test2"_sid, .stages = stages2 };
+        GfxGraphPass const pass1{ .name = "test1"_sid, .stages = stages1 };
+        GfxGraphPass const pass2{ .name = "test2"_sid, .stages = stages2 };
         _graph->add_pass(pass1);
         _graph->add_pass(pass2);
     }
 
-    return v3::create_graph_runtime(_allocator, device, *_graph);
+    return create_graph_runtime(_allocator, device, *_graph);
 }
 
 #if 0

@@ -17,8 +17,8 @@
 #include <ice/gfx/gfx_runner.hxx>
 #include <ice/gfx/gfx_queue.hxx>
 #include <ice/gfx/gfx_stage.hxx>
-#include <ice/gfx/gfx_render_graph.hxx>
-#include <ice/gfx/gfx_render_graph_runtime.hxx>
+#include <ice/gfx/gfx_graph.hxx>
+#include <ice/gfx/gfx_graph_runtime.hxx>
 
 #include <ice/render/render_module.hxx>
 #include <ice/engine.hxx>
@@ -50,6 +50,7 @@
 #include <ice/mem_allocator_proxy.hxx>
 #include <ice/task_thread_pool.hxx>
 #include <ice/task_utils.hxx>
+#include <ice/sync_manual_events.hxx>
 #include <ice/path_utils.hxx>
 #include <ice/string/heap_string.hxx>
 #include <ice/profiler.hxx>
@@ -183,9 +184,9 @@ struct ice::app::Runtime
 
     ice::UniquePtr<ice::EngineRunner> runner;
     ice::UniquePtr<ice::EngineFrame> frame;
-    ice::UniquePtr<ice::gfx::v2::GfxRunner> gfx_runner;
-    ice::UniquePtr<ice::gfx::v3::GfxGraph> gfx_rendergraph;
-    ice::UniquePtr<ice::gfx::v3::GfxGraphRuntime> gfx_rendergraph_runtime;
+    ice::UniquePtr<ice::gfx::GfxRunner> gfx_runner;
+    ice::UniquePtr<ice::gfx::GfxGraph> gfx_rendergraph;
+    ice::UniquePtr<ice::gfx::GfxGraphRuntime> gfx_rendergraph_runtime;
 
     ice::UniquePtr<ice::input::InputTracker> input_tracker;
     ice::Array<ice::input::InputEvent> input_events;
@@ -335,14 +336,6 @@ auto ice_setup(
     return ice::app::S_ApplicationResume;
 }
 
-auto create_rendergraph(ice::Allocator& alloc) noexcept
-{
-    using ice::operator""_sid;
-    using namespace ice::gfx::v2;
-
-    return ice::gfx::v2::create_rendergraph(alloc, ice::Span<GfxStageDefinition const>{});
-}
-
 auto ice_resume(
     ice::app::Config const& config,
     ice::app::State& state,
@@ -385,26 +378,26 @@ auto ice_resume(
 
         using ice::operator|;
         using ice::operator""_sid;
-        ice::gfx::v2::QueueDefinition queues[]{
-            ice::gfx::v2::QueueDefinition {
+        ice::gfx::QueueDefinition queues[]{
+            ice::gfx::QueueDefinition {
                 .name = "default"_sid,
                 .flags = ice::render::QueueFlags::Graphics | ice::render::QueueFlags::Present
             },
-            ice::gfx::v2::QueueDefinition {
+            ice::gfx::QueueDefinition {
                 .name = "transfer"_sid,
                 .flags = ice::render::QueueFlags::Transfer
             }
         };
 
         runtime.render_surface = state.renderer->create_surface(surface_info);
-        ice::gfx::v2::GfxRunnerCreateInfo const gfx_create_info{
+        ice::gfx::GfxRunnerCreateInfo const gfx_create_info{
             .engine = *state.engine,
             .driver = *state.renderer.get(),
             .surface = *runtime.render_surface,
             .render_queues = queues,
         };
 
-        runtime.gfx_runner = ice::gfx::v2::create_gfx_runner(state.engine_alloc, *state.modules, gfx_create_info);
+        runtime.gfx_runner = ice::create_gfx_runner(state.engine_alloc, *state.modules, gfx_create_info);
         runtime.input_tracker = ice::input::create_default_input_tracker(state.alloc, runtime.clock);
         runtime.input_tracker->register_device_type(ice::input::DeviceType::Mouse, ice::input::get_default_device_factory());
         runtime.input_tracker->register_device_type(ice::input::DeviceType::Keyboard, ice::input::get_default_device_factory());

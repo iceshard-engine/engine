@@ -12,4 +12,4 @@ namespace ice
     {
     }
 
-} // namespace ice::v2
+} // namespace ice

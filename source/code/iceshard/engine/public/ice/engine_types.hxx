@@ -36,42 +36,4 @@ namespace ice
 
     class EngineDevUI;
 
-    namespace gfx
-    {
-
-        class GfxDevice;
-        class IceGfxQueueGroup;
-
-        namespace v2
-        {
-
-            struct GfxStart;
-            struct GfxTransfer;
-            struct GfxExecute;
-            struct GfxEnd;
-
-            struct GfxStage;
-            struct GfxFrame;
-            struct GfxRunner;
-            struct GfxRenderGraph;
-            struct GfxRenderGraphRuntime;
-            struct GfxStageDefinition;
-            struct GfxObjectStorage;
-
-            // Not final if part of the API
-            struct GfxQueueGroup_Temp;
-            struct QueueDefinition;
-
-        } // namespace v2
-
-        namespace v3
-        {
-
-            struct GfxGraph;
-            struct GfxGraphRuntime;
-
-        } // namespace v3
-
-    } // namespace gfx
-
 } // namespace ice

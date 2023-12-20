@@ -38,4 +38,4 @@ namespace ice
         return ice::make_unique<ice::IceshardEngineFrame>(alloc, static_cast<ice::IceshardFrameData&>(frame_data));
     }
 
-} // namespace ice::v2
+} // namespace ice

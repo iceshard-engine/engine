@@ -2,16 +2,27 @@
 /// SPDX-License-Identifier: MIT
 
 #pragma once
-#include <ice/base.hxx>
+#include <ice/render/render_declarations.hxx>
+#include <ice/engine_types.hxx>
 
 namespace ice::gfx
 {
 
+    struct GfxDevice;
     struct GfxDeviceCreateInfo;
+    struct GfxRunner;
+    struct GfxRunnerCreateInfo;
+    struct GfxGraph;
+    struct GfxGraphRuntime;
+    struct GfxStage;
+    struct GfxStageRegistry;
 
-    class GfxDevice;
-    class GfxRunner;
-    class GfxFrame;
-    class GfxPass;
+    struct GfxStateChange;
+    struct GfxFrameUpdate;
+
+    namespace v2
+    {
+        struct GfxQueueGroup_Temp;
+    }
 
 } // namespace ice::gfx

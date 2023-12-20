@@ -4,7 +4,6 @@
 #include "iceshard_gfx_queue.hxx"
 
 #include <ice/gfx/gfx_stage.hxx>
-#include <ice/gfx/gfx_pass.hxx>
 #include <ice/mem_allocator_stack.hxx>
 
 namespace ice::gfx

@@ -5,15 +5,10 @@
 #include <ice/mem_unique_ptr.hxx>
 #include <ice/module_register.hxx>
 #include <ice/engine_types.hxx>
+#include <ice/gfx/gfx_types.hxx>
 
 namespace ice
 {
-
-    namespace gfx::v2
-    {
-        struct GfxRunnerCreateInfo;
-        struct GfxRunner;
-    }
 
     auto create_engine(
         ice::Allocator& alloc,
@@ -27,6 +22,11 @@ namespace ice
         ice::EngineRunnerCreateInfo const& create_info
     ) noexcept -> ice::UniquePtr<ice::EngineRunner>;
 
+    auto create_gfx_runner(
+        ice::Allocator& alloc,
+        ice::ModuleRegister& registry,
+        ice::gfx::GfxRunnerCreateInfo const& create_info
+    ) noexcept -> ice::UniquePtr<ice::gfx::GfxRunner>;
 
     namespace detail::engine
     {
@@ -46,12 +46,12 @@ namespace ice
         using CreateGfxRunnerFn = auto (
             ice::Allocator&,
             ice::ModuleRegister&,
-            ice::gfx::v2::GfxRunnerCreateInfo const&
-        ) noexcept -> ice::gfx::v2::GfxRunner*;
+            ice::gfx::GfxRunnerCreateInfo const&
+        ) noexcept -> ice::gfx::GfxRunner*;
 
         using DestroyFn = void(ice::Engine*) noexcept;
         using DestroyRunnerFn = void(ice::EngineRunner*) noexcept;
-        using DestroyGfxRunnerFn = void(ice::gfx::v2::GfxRunner*) noexcept;
+        using DestroyGfxRunnerFn = void(ice::gfx::GfxRunner*) noexcept;
 
         struct EngineAPI
         {

@@ -4,7 +4,7 @@
 #include "ice_gfx_object_storage.hxx"
 #include <ice/render/render_device.hxx>
 
-namespace ice::gfx::v2
+namespace ice::gfx
 {
 
     SimpleGfxObjectStorage::SimpleGfxObjectStorage(ice::Allocator& alloc) noexcept
@@ -13,7 +13,7 @@ namespace ice::gfx::v2
         ice::hashmap::reserve(_objects, 100);
     }
 
-    bool SimpleGfxObjectStorage::set(ice::StringID_Arg name, ice::gfx::v2::GfxObject object) noexcept
+    bool SimpleGfxObjectStorage::set(ice::StringID_Arg name, ice::gfx::GfxObject object) noexcept
     {
         ice::u64 const hashname = ice::hash(name);
         bool const has_object = ice::hashmap::has(_objects, hashname);
@@ -35,7 +35,7 @@ namespace ice::gfx::v2
         return true;
     }
 
-    auto SimpleGfxObjectStorage::get(ice::StringID_Arg name) const noexcept -> ice::gfx::v2::GfxObject
+    auto SimpleGfxObjectStorage::get(ice::StringID_Arg name) const noexcept -> ice::gfx::GfxObject
     {
         static GfxObject unknown_object{ GfxObjectType::Unknown, GfxObjectFlags::None, nullptr };
         return ice::hashmap::get(_objects, ice::hash(name), unknown_object);
@@ -75,4 +75,4 @@ namespace ice::gfx::v2
         ice::hashmap::clear(_objects);
     }
 
-} // namespace ice::gfx::v2
+} // namespace ice::gfx
