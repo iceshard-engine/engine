@@ -3,6 +3,8 @@
 
 #pragma once
 #include <ice/input/device_handle.hxx>
+#include <ice/math.hxx>
+#include <ice/mem.hxx>
 
 namespace ice::input
 {
@@ -34,6 +36,19 @@ namespace ice::input
         GamepadAxisRightX,
         GamepadAxisRightY,
 
+        TouchScreenSizeX,
+        TouchScreenSizeY,
+
+        TouchStart,
+        TouchPositionX,
+        TouchPositionY,
+        TouchEnd,
+
+        TouchGestureStart,
+        TouchGestureNext,
+        TouchGestureTime, // Returned for each event coming from the OS
+        TouchGestureEnd,
+
         Reserved
     };
 
@@ -42,6 +57,7 @@ namespace ice::input
         Invalid,
         Int8,
         Int16,
+        Int16x2,
         Int32,
         Float32,
         Enum,
@@ -51,6 +67,7 @@ namespace ice::input
     {
         ice::i8 val_i8;
         ice::i16 val_i16;
+        ice::math::vec<2, ice::i16> val_i16x2;
         ice::i32 val_i32;
         ice::f32 val_f32;
     };
@@ -60,6 +77,7 @@ namespace ice::input
         ice::input::DeviceHandle device;
         ice::input::DeviceMessage message;
         ice::input::DevicePayloadType payload_type;
+        ice::u8 _reserved;
         ice::input::DeviceEventData payload_data;
     };
 
@@ -71,14 +89,16 @@ namespace ice::input
     template<typename>
     constexpr DevicePayloadType Constant_PayloadType = DevicePayloadType::Invalid;
     template<>
-    constexpr DevicePayloadType Constant_PayloadType<ice::i8> = DevicePayloadType::Int8;
+    constexpr inline DevicePayloadType Constant_PayloadType<ice::i8> = DevicePayloadType::Int8;
     template<>
-    constexpr DevicePayloadType Constant_PayloadType<ice::i16> = DevicePayloadType::Int16;
+    constexpr inline DevicePayloadType Constant_PayloadType<ice::i16> = DevicePayloadType::Int16;
     template<>
-    constexpr DevicePayloadType Constant_PayloadType<ice::i32> = DevicePayloadType::Int32;
+    constexpr inline DevicePayloadType Constant_PayloadType<ice::math::vec<2, ice::i16>> = DevicePayloadType::Int16x2;
     template<>
-    constexpr DevicePayloadType Constant_PayloadType<ice::f32> = DevicePayloadType::Float32;
+    constexpr inline DevicePayloadType Constant_PayloadType<ice::i32> = DevicePayloadType::Int32;
+    template<>
+    constexpr inline DevicePayloadType Constant_PayloadType<ice::f32> = DevicePayloadType::Float32;
     template<typename T> requires std::is_enum_v<T>
-    constexpr DevicePayloadType Constant_PayloadType<T> = DevicePayloadType::Enum;
+    constexpr inline DevicePayloadType Constant_PayloadType<T> = DevicePayloadType::Enum;
 
 } // ice::input

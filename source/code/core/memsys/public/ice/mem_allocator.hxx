@@ -3,7 +3,7 @@
 
 #pragma once
 #include <ice/mem.hxx>
-#if ISP_COMPILER_CLANG
+#if ISP_COMPILER_CLANG && ISP_COMPILER_CLANG <= 16
 #include <experimental/source_location>
 namespace std { using std::experimental::source_location; }
 #else

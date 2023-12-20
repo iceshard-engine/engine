@@ -15,7 +15,8 @@
     .Public =
     [
         .Uses = {
-            'resource_system'
+            'collections'
+            'utils'
         }
     ]
 ]

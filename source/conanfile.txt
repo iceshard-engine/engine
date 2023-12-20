@@ -1,10 +1,18 @@
+[generators]
+FastBuildDeps
+
+[tool_requires]
+fastbuild-generator/0.4.1@iceshard/stable
+
 [requires]
-fmt/9.0.0@iceshard/stable
+fmt/10.0.0@iceshard/stable
+tracy/0.10.0@iceshard/stable
+rapidjson/1.1.0
+
+[requires-Windows-MSVC]
 catch2/3.3.2@iceshard/stable
 chipmunk2d/7.0.3+@iceshard/stable
-tracy/0.10.0@iceshard/stable
 
-rapidjson/1.1.0
 rapidxml/1.13
 rapidxml_ns/1.13.2@iceshard/stable
 assimp/5.2.5@iceshard/stable
@@ -15,13 +23,19 @@ freetype/2.12.1@iceshard/stable
 msdfgen/1.9.2@iceshard/stable
 msdf_atlas_gen/1.2.2@iceshard/stable
 
-[tool_requires]
-fastbuild-generator/0.4.1@iceshard/stable
+[options-Android-Arm64]
+tracy/*:shared=False
+tracy/*:manual_lifetime=False
+tracy/*:no_system_tracing=True
+tracy/*:no_sampling=True
 
-[options]
+[options-Android-x64]
+tracy/*:shared=False
+tracy/*:manual_lifetime=False
+tracy/*:no_system_tracing=True
+tracy/*:no_sampling=True
+
+[options-Windows-MSVC]
 imgui/*:docking_branch=True
 sdl2/*:shared=True
 assimp/*:shared=True
-
-[generators]
-FastBuildDeps

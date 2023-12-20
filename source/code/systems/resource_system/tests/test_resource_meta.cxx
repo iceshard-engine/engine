@@ -31,9 +31,7 @@ SCENARIO("resource_system 'ice/resource_meta.hxx'", "[resource][metadata]")
 
         THEN("we can deserialize it into empty metadata")
         {
-            ice::MutableMetadata meta{ alloc };
-            ice::meta_deserialize(test_document_data, meta);
-
+            ice::MutableMetadata meta = ice::meta_deserialize(alloc, test_document_data);
             REQUIRE(ice::hashmap::empty(meta._meta_entries));
         }
     }
@@ -53,8 +51,7 @@ SCENARIO("resource_system 'ice/resource_meta.hxx'", "[resource][metadata]")
 
         THEN("we can deserialize it into metadata")
         {
-            ice::MutableMetadata meta{ alloc };
-            ice::meta_deserialize(test_document_data, meta);
+            ice::MutableMetadata meta = ice::meta_deserialize(alloc, test_document_data);
 
             CHECK(ice::hashmap::empty(meta._meta_entries) == false);
 
@@ -81,8 +78,7 @@ SCENARIO("resource_system 'ice/resource_meta.hxx'", "[resource][metadata]")
 
             THEN("we can store it in a buffer")
             {
-                ice::Memory mem_meta;
-                ice::meta_save(meta, alloc, mem_meta);
+                ice::Memory mem_meta = ice::meta_save(meta, alloc);
 
                 THEN("we can load it again")
                 {

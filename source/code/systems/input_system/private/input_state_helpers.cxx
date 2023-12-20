@@ -25,14 +25,17 @@ namespace ice::input::detail
         button.state.pressed = true;
     }
 
-    void handle_value_button_hold_and_repeat(ControlState& value) noexcept
+    void handle_value_button_hold_and_repeat(
+        ControlState& value,
+        ControlConfig const& config
+    ) noexcept
     {
         auto& button = value.value.button;
 
         if (button.value_i32 != 0)
         {
             value.tick += 1;
-            if (value.tick > ice::input::default_button_event_treshold_hold)
+            if (value.tick > config.button_hold_threshold)
             {
                 if (button.state.pressed)
                 {
@@ -47,7 +50,7 @@ namespace ice::input::detail
                     button.value_i32 = 0;
                 }
             }
-            else if (value.tick > ice::input::default_button_event_treshold_repeat)
+            else if (value.tick > config.button_click_threshold)
             {
                 if (!button.state.pressed && (button.state.clicked || button.state.repeat > 0))
                 {
@@ -57,7 +60,10 @@ namespace ice::input::detail
         }
     }
 
-    void handle_value_button_up(ControlState& value) noexcept
+    void handle_value_button_up(
+        ControlState& value,
+        ControlConfig const& config
+    ) noexcept
     {
         auto& button = value.value.button;
 
@@ -65,7 +71,7 @@ namespace ice::input::detail
         {
             button.value_i32 = 0;
         }
-        else if (value.tick <= ice::input::default_button_event_treshold_repeat)
+        else if (value.tick <= config.button_click_threshold)
         {
             if (button.state.repeat > 0)
             {
@@ -83,7 +89,7 @@ namespace ice::input::detail
                 button.state.clicked = true;
             }
         }
-        else if (value.tick <= ice::input::default_button_event_treshold_hold)
+        else if (value.tick <= config.button_hold_threshold)
         {
             button.value_i32 = 0;
         }

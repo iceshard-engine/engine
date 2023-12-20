@@ -66,7 +66,7 @@ namespace ice
     namespace clock
     {
 
-        auto clock_frequency() noexcept -> ice::f32;
+        auto clock_frequency() noexcept -> ice::u64;
 
         auto create_clock() noexcept -> ice::SystemClock;
 

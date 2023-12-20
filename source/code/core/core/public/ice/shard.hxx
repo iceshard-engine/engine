@@ -335,31 +335,34 @@ namespace ice
     // COMMON PAYLOAD TYPES
 
     template<>
-    constexpr ice::ShardPayloadID Constant_ShardPayloadID<ice::i32> = ice::shard_payloadid("ice::i32");
+    constexpr inline ice::ShardPayloadID Constant_ShardPayloadID<bool> = ice::shard_payloadid("bool");
 
     template<>
-    constexpr ice::ShardPayloadID Constant_ShardPayloadID<ice::u32> = ice::shard_payloadid("ice::u32");
+    constexpr inline ice::ShardPayloadID Constant_ShardPayloadID<ice::i32> = ice::shard_payloadid("ice::i32");
 
     template<>
-    constexpr ice::ShardPayloadID Constant_ShardPayloadID<ice::f32> = ice::shard_payloadid("ice::f32");
+    constexpr inline ice::ShardPayloadID Constant_ShardPayloadID<ice::u32> = ice::shard_payloadid("ice::u32");
 
     template<>
-    constexpr ice::ShardPayloadID Constant_ShardPayloadID<ice::i64> = ice::shard_payloadid("ice::i64");
+    constexpr inline ice::ShardPayloadID Constant_ShardPayloadID<ice::f32> = ice::shard_payloadid("ice::f32");
 
     template<>
-    constexpr ice::ShardPayloadID Constant_ShardPayloadID<ice::u64> = ice::shard_payloadid("ice::u64");
+    constexpr inline ice::ShardPayloadID Constant_ShardPayloadID<ice::i64> = ice::shard_payloadid("ice::i64");
 
     template<>
-    constexpr ice::ShardPayloadID Constant_ShardPayloadID<ice::f64> = ice::shard_payloadid("ice::f64");
+    constexpr inline ice::ShardPayloadID Constant_ShardPayloadID<ice::u64> = ice::shard_payloadid("ice::u64");
 
     template<>
-    constexpr ice::ShardPayloadID Constant_ShardPayloadID<char const*> = ice::shard_payloadid("char const*");
+    constexpr inline ice::ShardPayloadID Constant_ShardPayloadID<ice::f64> = ice::shard_payloadid("ice::f64");
 
     template<>
-    constexpr ice::ShardPayloadID Constant_ShardPayloadID<std::string_view const*> = ice::shard_payloadid("std::string_view const*");
+    constexpr inline ice::ShardPayloadID Constant_ShardPayloadID<char const*> = ice::shard_payloadid("char const*");
 
     template<>
-    constexpr ice::ShardPayloadID Constant_ShardPayloadID<ice::StringID_Hash> = ice::shard_payloadid("ice::StringID_Hash");
+    constexpr inline ice::ShardPayloadID Constant_ShardPayloadID<std::string_view const*> = ice::shard_payloadid("std::string_view const*");
+
+    template<>
+    constexpr inline ice::ShardPayloadID Constant_ShardPayloadID<ice::StringID_Hash> = ice::shard_payloadid("ice::StringID_Hash");
 
 
     constexpr auto hash(ice::ShardID shardid) noexcept -> ice::u64

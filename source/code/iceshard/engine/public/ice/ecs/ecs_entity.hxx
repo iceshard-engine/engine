@@ -82,10 +82,10 @@ namespace ice::ecs
 } // namespace ice::ecs
 
 template<>
-constexpr ice::ShardPayloadID ice::Constant_ShardPayloadID<ice::ecs::Entity> = ice::shard_payloadid("ice::ecs::Entity");
+constexpr inline ice::ShardPayloadID ice::Constant_ShardPayloadID<ice::ecs::Entity> = ice::shard_payloadid("ice::ecs::Entity");
 
 template<>
-constexpr ice::ShardPayloadID ice::Constant_ShardPayloadID<ice::ecs::EntityHandle> = ice::shard_payloadid("ice::ecs::EntityHandle");
+constexpr inline ice::ShardPayloadID ice::Constant_ShardPayloadID<ice::ecs::EntityHandle> = ice::shard_payloadid("ice::ecs::EntityHandle");
 
 template<>
 struct fmt::formatter<ice::ecs::Entity>

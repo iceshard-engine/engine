@@ -79,7 +79,7 @@ extern "C"
     {
         using ice::operator""_sid_hash;
         ice::initialize_log_module(ctx, negotiator);
-        ice::register_log_tag(ice::render::vk::log_tag);
+        ice::log_tag_register(ice::render::vk::log_tag);
 
         negotiator->fn_register_module(ctx, "ice.render-api"_sid_hash, ice::render::vk::vulkan_driver_get_api_proc);
     }

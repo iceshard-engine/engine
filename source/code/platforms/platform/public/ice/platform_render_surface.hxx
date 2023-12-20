@@ -1,3 +1,6 @@
+/// Copyright 2023 - 2023, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
 #pragma once
 #include <ice/math.hxx>
 #include <ice/platform.hxx>
@@ -24,6 +27,6 @@ namespace ice::platform
     static constexpr ice::ResultCode E_RenderSurfaceAlreadyExisting = ice::ResCode::create(ice::ResultSeverity::Error, "Render Surface Already Existing");
 
     template<>
-    constexpr ice::platform::FeatureFlags Constant_FeatureFlags<ice::platform::RenderSurface> = FeatureFlags::RenderSurface;
+    constexpr inline ice::platform::FeatureFlags Constant_FeatureFlags<ice::platform::RenderSurface> = FeatureFlags::RenderSurface;
 
 } // namespace ice::platform

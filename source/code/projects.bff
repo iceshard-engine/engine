@@ -22,6 +22,7 @@
 #include "platforms/application/application.bff"
 #include "platforms/platform/platform.bff"
 #include "platforms/platform_win32/platform_win32.bff"
+#include "platforms/platform_android/platform_android.bff"
 
 #include "iceshard/engine/engine.bff"
 #include "iceshard/devui/devui.bff"
@@ -41,3 +42,8 @@
 #include "core/collections/collections_tests.bff"
 
 #include "systems/resource_system/resource_system_tests.bff"
+
+#include "example/android/simple/simple.bff"
+#include "tools/asset_compiler/asset_compiler.bff"
+#include "tools/hsc_packer/hsc_packer.bff"
+#include "tools/hsc_reader/hsc_reader.bff"

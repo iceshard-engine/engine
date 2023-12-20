@@ -17,4 +17,3 @@ namespace ice::app
     }
 
 } // namespace ice::app
-

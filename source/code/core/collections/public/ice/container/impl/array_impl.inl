@@ -524,6 +524,14 @@ namespace ice
             };
         }
 
+        template<typename Type>
+        inline auto memset(ice::Array<Type, ice::ContainerLogic::Trivial>& arr, ice::u8 value) noexcept -> ice::Memory
+        {
+            ice::Memory const mem = ice::array::memory(arr);
+            ice::memset(mem.location, value, mem.size.value);
+            return mem;
+        }
+
     } // namespace array
 
 } // namespace ice

@@ -38,7 +38,10 @@ namespace ice
         inline Task(Task&&) noexcept;
         inline auto operator=(Task&& other) noexcept -> Task&;
 
+        [[deprecated("Method not usable due to API design.")]]
         inline auto is_ready() const noexcept;
+
+        [[deprecated("Method not usable due to API design.")]]
         inline auto when_ready() noexcept;
 
         inline auto operator co_await() & noexcept;
@@ -123,13 +126,13 @@ namespace ice
             auto await_resume() const noexcept -> decltype(auto)
             {
                 ICE_ASSERT(
-                    _coroutine.operator bool(),
+                    this->_coroutine.operator bool(),
                     "Broken promise on coroutine Task!"
                 );
 
                 if constexpr (std::is_same_v<ValueType, void> == false)
                 {
-                    return _coroutine.promise().result();
+                    return this->_coroutine.promise().result();
                 }
             }
         };
@@ -145,13 +148,13 @@ namespace ice
             auto await_resume() const noexcept -> decltype(auto)
             {
                 ICE_ASSERT(
-                    _coroutine.operator bool(),
+                    this->_coroutine.operator bool(),
                     "Broken promise on coroutine Task!"
                 );
 
                 if constexpr (std::is_same_v<ValueType, void> == false)
                 {
-                    return ice::move(_coroutine.promise().result());
+                    return ice::move(this->_coroutine.promise().result());
                 }
             }
         };

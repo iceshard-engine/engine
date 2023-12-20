@@ -232,7 +232,10 @@ void ice_init(
 {
     IPT_ZONE_SCOPED;
 
-    ice::Result const res = ice::platform::initialize_with_allocator(ice::platform::FeatureFlags::Core, alloc);
+    ice::Result const res = ice::platform::initialize_with_allocator(
+        alloc,
+        ice::platform::FeatureFlags::Core
+    );
     ICE_ASSERT(res == ice::Res::Success, "Failed to initialize platform!");
 
     using ice::app::Config;
@@ -286,11 +289,11 @@ auto ice_setup(
     state.game->on_config(game_config);
 
     // Load resources
-    state.providers.filesys = ice::create_resource_provider(state.resources_alloc, game_config.resource_dirs);
-    state.providers.modules = ice::create_resource_provider_dlls(state.resources_alloc, game_config.module_dir);
+    auto filesys = ice::create_resource_provider(state.resources_alloc, game_config.resource_dirs);
+    auto modules = ice::create_resource_provider_dlls(state.resources_alloc, game_config.module_dir);
 
-    state.resources->attach_provider(state.providers.filesys.get());
-    state.resources->attach_provider(state.providers.modules.get());
+    state.resources->attach_provider(ice::move(filesys));
+    state.resources->attach_provider(ice::move(modules));
     state.resources->sync_resources();
 
     // Run game setup

@@ -1,3 +1,6 @@
+/// Copyright 2023 - 2023, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
 #pragma once
 #include <ice/platform.hxx>
 #include <ice/platform_core.hxx>
@@ -20,6 +23,8 @@ namespace ice::platform::win32::sdl2
 
         auto system_events() noexcept -> ice::ShardContainer const& override { return _system_events; }
         auto input_events() noexcept -> ice::Span<ice::input::DeviceEvent const> override { return ice::array::slice(_input_events._events); }
+
+        auto allocator() noexcept -> ice::Allocator& { return _alloc.backing_allocator(); }
 
         ice::ProxyAllocator _alloc;
         ice::ShardContainer _system_events;

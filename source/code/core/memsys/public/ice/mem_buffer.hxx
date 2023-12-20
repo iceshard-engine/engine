@@ -29,6 +29,7 @@ namespace ice
         inline auto space(ice::Buffer const& buffer) noexcept -> ice::usize;
         inline bool empty(ice::Buffer const& buffer) noexcept;
         inline bool has_space(ice::Buffer const& buffer, ice::meminfo meminfo) noexcept;
+        inline auto data_view(ice::Buffer const& buffer) noexcept -> ice::Data;
 
     } // namespace buffer
 
@@ -112,6 +113,15 @@ namespace ice
         inline auto memory_pointer(ice::Buffer const& buffer) noexcept
         {
             return buffer.memory.location;
+        }
+
+        inline auto data_view(ice::Buffer const& buffer) noexcept -> ice::Data
+        {
+            return ice::Data{
+                .location = buffer.memory.location,
+                .size = ice::buffer::size(buffer),
+                .alignment = buffer.memory.alignment,
+            };
         }
 
     } // namespace buffer

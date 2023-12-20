@@ -21,7 +21,11 @@ namespace ice
         bool is_set() const noexcept;
 
     private:
+#if ISP_WINDOWS
         std::atomic<ice::u8> _internal_value;
+#else
+        std::atomic<ice::i32> _internal_value;
+#endif
     };
 
     class ManualResetBarrier

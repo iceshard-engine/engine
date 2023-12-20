@@ -17,7 +17,7 @@ namespace ice
     void wait_for_all(ice::Span<ice::Task<void>> task) noexcept;
 
     template<typename T>
-    inline auto manual_wait_for(ice::Task<T> task, ice::ManualResetEvent& manual_event) noexcept -> T;
+    inline void manual_wait_for(ice::Task<T> task, ice::ManualResetEvent& manual_event, T& out_result) noexcept;
     void manual_wait_for(ice::Task<void> task, ice::ManualResetEvent& manual_event) noexcept;
     void manual_wait_for_all(ice::Span<ice::Task<void>>, ice::ManualResetBarrier& manual_barrier) noexcept;
 
@@ -47,15 +47,13 @@ namespace ice
     }
 
     template<typename T>
-    inline auto manual_wait_for(ice::Task<T> task, ice::ManualResetEvent& manual_event) noexcept -> T
+    inline void manual_wait_for(ice::Task<T> task, ice::ManualResetEvent& manual_event, T& out_result) noexcept
     {
-        T result;
         auto const task_wrapper = [](ice::Task<T> awaited_task, T& value) noexcept -> ice::Task<void>
         {
             value = co_await awaited_task;
         };
-        ice::manual_wait_for(task_wrapper(ice::move(task), result), manual_event);
-        return result;
+        ice::manual_wait_for(task_wrapper(ice::move(task), out_result), manual_event);
     }
 
     inline auto resume_on(ice::Task<void> task, ice::TaskScheduler& scheduler) noexcept -> ice::Task<void>

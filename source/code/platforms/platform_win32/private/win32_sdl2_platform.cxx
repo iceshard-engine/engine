@@ -3,6 +3,7 @@
 
 #include "win32_sdl2_platform.hxx"
 #include "win32_sdl2_utils.hxx"
+#include "win32_storage.hxx"
 
 #include <ice/platform_event.hxx>
 #include <ice/mem_allocator_host.hxx>
@@ -125,52 +126,56 @@ namespace ice::platform::win32::sdl2
 namespace ice::platform
 {
 
+    static win32::sdl2::Platform_Win32SDL2* core_feature;
+    static win32::Win32Storage* storage_feature;
+
     auto available_features() noexcept -> ice::platform::FeatureFlags
     {
-        return FeatureFlags::Core | FeatureFlags::RenderSurface;
+        return FeatureFlags::Core | FeatureFlags::RenderSurface | FeatureFlags::StoragePaths;
     }
 
     auto initialize(
-        ice::platform::FeatureFlags flags
+        ice::platform::FeatureFlags flags,
+        ice::Span<ice::Shard const> params
     ) noexcept -> ice::Result
     {
         static ice::HostAllocator host_alloc;
-        return initialize_with_allocator(flags, host_alloc);
-    }
-
-    auto instance_pointer() noexcept -> win32::sdl2::Platform_Win32SDL2*&
-    {
-        static win32::sdl2::Platform_Win32SDL2* instance = nullptr;
-        return instance;
+        return initialize_with_allocator(host_alloc, flags, params);
     }
 
     auto initialize_with_allocator(
+        ice::Allocator& alloc,
         ice::platform::FeatureFlags flags,
-        ice::Allocator& alloc
+        ice::Span<ice::Shard const> params
     ) noexcept -> ice::Result
     {
         IPT_ZONE_SCOPED;
 
         static alignas(alignof(win32::sdl2::Platform_Win32SDL2)) char instance_buffer[sizeof(win32::sdl2::Platform_Win32SDL2)];
 
-        if (instance_pointer() != nullptr)
+        if (core_feature != nullptr)
         {
             return E_PlatformAlreadyInitialized;
         }
 
-        if (flags == FeatureFlags::None && !ice::has_all(available_features(), flags))
+        if (flags == FeatureFlags::None || !ice::has_all(available_features(), flags))
         {
             return Res::E_InvalidArgument;
         }
 
+        if (ice::has_any(flags, FeatureFlags::StoragePaths))
+        {
+            storage_feature = alloc.create<win32::Win32Storage>(alloc, params);
+        }
+
         // Initialize the global platform instance. We don't use the allocator so we don't leak this pointer.
-        instance_pointer() = new (instance_buffer) win32::sdl2::Platform_Win32SDL2{ alloc };
+        core_feature = new (instance_buffer) win32::sdl2::Platform_Win32SDL2{ alloc };
         return Res::Success;
     }
 
     auto query_api(ice::platform::FeatureFlags flag, void*& out_api_ptr) noexcept -> ice::Result
     {
-        win32::sdl2::Platform_Win32SDL2* instance_ptr = instance_pointer();
+        win32::sdl2::Platform_Win32SDL2* instance_ptr = core_feature;
         ICE_ASSERT(instance_ptr != nullptr, "Platform not initialized!");
 
         if (ice::has_all(available_features(), flag) == false)
@@ -182,6 +187,9 @@ namespace ice::platform
         {
         case FeatureFlags::Core:
             out_api_ptr = static_cast<ice::platform::Core*>(instance_ptr);
+            break;
+        case FeatureFlags::StoragePaths:
+            out_api_ptr = storage_feature;
             break;
         case FeatureFlags::RenderSurface:
             out_api_ptr = static_cast<ice::platform::RenderSurface*>(ice::addressof(instance_ptr->_render_surface));
@@ -221,9 +229,14 @@ namespace ice::platform
     {
         IPT_ZONE_SCOPED;
 
-        win32::sdl2::Platform_Win32SDL2*& instance_ptr = instance_pointer();
+        win32::sdl2::Platform_Win32SDL2*& instance_ptr = core_feature;
         if (instance_ptr != nullptr)
         {
+            if (storage_feature != nullptr)
+            {
+                instance_ptr->allocator().destroy(storage_feature);
+            }
+
             instance_ptr->~Platform_Win32SDL2();
             instance_ptr = nullptr;
         }

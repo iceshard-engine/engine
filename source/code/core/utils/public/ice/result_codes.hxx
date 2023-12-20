@@ -14,6 +14,10 @@ namespace ice
     template<bool DebugInfo>
     struct ResultCode;
 
+    using ResCode = ResultCode<ice::build::is_debug || ice::build::is_develop>;
+
+    inline bool result_is_valid(ice::ResCode result_code) noexcept;
+
     inline auto result_hint(ice::ResultCode<false> result_code) noexcept -> std::string_view;
     inline auto result_hint(ice::ResultCode<true> result_code) noexcept -> std::string_view;
 
@@ -68,7 +72,7 @@ namespace ice
         ice::detail::ResultValue value;
         char const* description;
 
-        inline constexpr operator bool() const noexcept;
+        constexpr inline operator bool() const noexcept;
 
         static constexpr auto create(ice::ResultSeverity sev, std::string_view desc)
         {
@@ -84,18 +88,6 @@ namespace ice
     };
 
 
-    using ResCode = ResultCode<ice::build::is_debug || ice::build::is_develop>;
-
-    struct Result
-    {
-        ice::ResCode result_code;
-
-        constexpr Result(ice::ResCode code) noexcept : result_code{ code } { }
-
-        constexpr operator bool() const noexcept;
-        constexpr operator ResCode() const noexcept;
-    };
-
     struct Res
     {
         static constexpr ice::ResultSeverity Info = ResultSeverity::Info;
@@ -106,6 +98,17 @@ namespace ice
         static constexpr ice::ResCode E_NotImplemented = ResCode::create(ResultSeverity::Error, "Not Implemented");
         static constexpr ice::ResCode E_InvalidArgument = ResCode::create(ResultSeverity::Error, "Invalid Argument");
         static constexpr ice::ResCode E_ValueOutOfRange = ResCode::create(ResultSeverity::Error, "Value Out Of Range");
+    };
+
+    struct Result
+    {
+        ice::ResCode result_code;
+
+        constexpr Result() noexcept : Result{ Res::Success } { }
+        constexpr Result(ice::ResCode code) noexcept : result_code{ code } { }
+
+        constexpr operator bool() const noexcept;
+        constexpr operator ResCode() const noexcept;
     };
 
 
@@ -125,22 +128,22 @@ namespace ice
     }
 
     template<bool DebugInfo>
-    inline constexpr ice::ResultCode<DebugInfo>::operator bool() const noexcept
+    constexpr inline ice::ResultCode<DebugInfo>::operator bool() const noexcept
     {
         return this->value == Res::Success.value;
     }
 
-    inline constexpr ice::ResultCode<true>::operator bool() const noexcept
+    constexpr inline ice::ResultCode<true>::operator bool() const noexcept
     {
         return this->value == Res::Success.value;
     }
 
-    inline constexpr ice::Result::operator bool() const noexcept
+    constexpr inline ice::Result::operator bool() const noexcept
     {
         return this->result_code.value == Res::Success.value;
     }
 
-    inline constexpr ice::Result::operator ResCode() const noexcept
+    constexpr inline ice::Result::operator ResCode() const noexcept
     {
         return this->result_code;
     }
@@ -148,6 +151,12 @@ namespace ice
     constexpr auto operator==(ice::Result left, ice::ResultSeverity right) noexcept
     {
         return left.result_code.value.severity == static_cast<std::underlying_type_t<ice::ResultSeverity>>(right);
+    }
+
+    inline bool result_is_valid(ice::ResCode result_code) noexcept
+    {
+        return result_code.value.severity == static_cast<std::underlying_type_t<ice::ResultSeverity>>(ResultSeverity::Success)
+            || result_code.value.severity == static_cast<std::underlying_type_t<ice::ResultSeverity>>(ResultSeverity::Warning);
     }
 
     inline auto result_hint(ice::ResultCode<false> result_code) noexcept -> std::string_view

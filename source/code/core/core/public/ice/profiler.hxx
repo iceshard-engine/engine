@@ -16,13 +16,16 @@
     ISC_WARNING_POP
 
 #   define IPT_FRAME_MARK FrameMark
-#   define IPT_FRAME_MARK_NAMED(...) FrameMarkNamed(__VA_ARGS__)
+#   define IPT_FRAME_MARK_NAMED( ... ) FrameMarkNamed( __VA_ARGS__ )
 
 #   define IPT_ZONE_SCOPED ZoneScoped
-#   define IPT_ZONE_SCOPED_NAMED(...) ZoneScopedN(__VA_ARGS__)
+#   define IPT_ZONE_SCOPED_NAMED( ... ) ZoneScopedN( __VA_ARGS__ )
+#   define IPT_ZONE_NAME_STR( str ) ZoneName( ice::string::begin(str), ice::string::size(str) )
 
 #   define IPT_ZONE_TEXT( txt, size ) ZoneText( txt, size )
 #   define IPT_ZONE_TEXT_STR( str ) IPT_ZONE_TEXT( ice::string::begin(str), ice::string::size(str) )
+
+#   define IPT_MESSAGE( txt ) TracyMessage( txt, ice::count(txt) )
 
 #else // #if ICE_PROFILE
 
@@ -31,8 +34,11 @@
 
 #   define IPT_ZONE_SCOPED
 #   define IPT_ZONE_SCOPED_NAMED(...)
+#   define IPT_ZONE_NAME_STR( str )
 
 #   define IPT_ZONE_TEXT( txt, size )
 #   define IPT_ZONE_TEXT_STR( str )
+
+#   define IPT_MESSAGE( txt )
 
 #endif // #if ICE_PROFILE

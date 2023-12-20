@@ -40,6 +40,7 @@ namespace ice
         struct Iterator
         {
             NodeType* _current;
+            NodeType* _next;
             NodeType* _tail;
 
             constexpr auto operator*() const noexcept -> NodeType*;

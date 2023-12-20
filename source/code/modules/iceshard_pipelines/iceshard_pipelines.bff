@@ -9,6 +9,10 @@
 
     .BaseDir = '$WorkspaceCodeDir$/modules/iceshard_pipelines'
 
+    .Requires = {
+        'Windows'
+    }
+
     .Private =
     [
         .Modules = {

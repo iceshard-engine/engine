@@ -1,0 +1,24 @@
+/// Copyright 2023 - 2023, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
+.Project =
+[
+    .Name = 'hsc_packer'
+    .Kind = .Kind_ConsoleApp
+    .BaseDir = '$WorkspaceCodeDir$/tools/hsc_packer'
+    .Group = 'Tools'
+
+    .CopyModules = true
+
+    .Requires = {
+        'Windows'
+    }
+
+    .Private =
+    [
+        .Uses = {
+            'resource_system'
+        }
+    ]
+]
+.Projects + .Project

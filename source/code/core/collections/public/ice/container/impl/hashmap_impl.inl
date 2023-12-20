@@ -787,6 +787,39 @@ namespace ice
     {
 
         template<typename Type, ice::ContainerLogic Logic>
+            requires std::move_constructible<Type> && std::convertible_to<Type, Type>
+        inline void insert(ice::HashMap<Type, Logic>& map, ice::u64 key, Type&& value) noexcept
+        {
+            if (ice::hashmap::full(map))
+            {
+                ice::hashmap::detail::grow(map);
+            }
+
+            ice::ucount const index = ice::hashmap::detail::make(map, key);
+            if constexpr (Logic == ContainerLogic::Complex)
+            {
+                // If the index is below the current map._count we need to destroy the previous value.
+                if ((index + 1) < map._count)
+                {
+                    ice::mem_destruct_at(map._data + index);
+                }
+
+                ice::mem_move_construct_at(
+                    Memory{
+                        .location = map._data + index,
+                        .size = ice::size_of<Type>,
+                        .alignment = ice::align_of<Type>
+                    },
+                    ice::forward<Type>(value)
+                );
+            }
+            else
+            {
+                map._data[index] = value;
+            }
+        }
+
+        template<typename Type, ice::ContainerLogic Logic>
         inline void insert(ice::HashMap<Type, Logic>& map, ice::u64 key, Type const& value) noexcept
         {
             if (ice::hashmap::full(map))

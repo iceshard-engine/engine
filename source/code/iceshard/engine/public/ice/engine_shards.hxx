@@ -17,7 +17,4 @@ namespace ice
 
     static constexpr ice::ShardID ShardID_InputEvent = "event/input`ice::input::InputEvent"_shardid;
 
-    //static constexpr ice::Shard Shard_InputEventButton = "event/input/button`ice::input::InputEvent"_shard;
-    //static constexpr ice::Shard Shard_InputEventAxis = "event/input/axis`ice::input::InputEvent"_shard;
-
 } // namespace ice

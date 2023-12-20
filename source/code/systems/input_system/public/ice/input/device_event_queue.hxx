@@ -91,6 +91,10 @@ namespace ice::input
         {
             event.payload_data.val_i16 = payload_value;
         }
+        else if constexpr (std::is_same_v<T, ice::math::vec<2, i16>>)
+        {
+            event.payload_data.val_i16x2 = payload_value;
+        }
         else if constexpr (std::is_same_v<T, ice::i32>)
         {
             event.payload_data.val_i32 = payload_value;

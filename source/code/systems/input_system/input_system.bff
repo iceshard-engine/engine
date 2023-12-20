@@ -15,6 +15,7 @@
             'core'
             'memsys'
             'collections'
+            'math'
         }
     ]
 ]

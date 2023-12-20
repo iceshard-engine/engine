@@ -9,6 +9,9 @@
 #include <ice/math/vector.hxx>
 #include <ice/math/vector/vector_operations.hxx>
 #include <ice/math/vector/vector_operators.hxx>
+#include <ice/math/array.hxx>
+#include <ice/math/array/array_operations.hxx>
+#include <ice/math/array/array_operators.hxx>
 #include <ice/math/translate.hxx>
 #include <ice/math/scale.hxx>
 #include <ice/math/rotate.hxx>
@@ -22,8 +25,9 @@ namespace ice
     using std::abs;
 
     template<>
-    constexpr ShardPayloadID Constant_ShardPayloadID<ice::vec2u> = ice::shard_payloadid("ice::vec2u");
+    constexpr inline ShardPayloadID Constant_ShardPayloadID<ice::vec2u> = ice::shard_payloadid("ice::vec2u");
+
     template<>
-    constexpr ShardPayloadID Constant_ShardPayloadID<ice::vec2i> = ice::shard_payloadid("ice::vec2i");
+    constexpr inline ShardPayloadID Constant_ShardPayloadID<ice::vec2i> = ice::shard_payloadid("ice::vec2i");
 
 } // namespace ice

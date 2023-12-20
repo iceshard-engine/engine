@@ -23,12 +23,17 @@ namespace ice
         virtual auto name() const noexcept -> ice::String = 0;
         virtual auto origin() const noexcept -> ice::String = 0;
 
-        virtual auto metadata() const noexcept -> ice::Metadata const& = 0;
+        virtual auto load_metadata(ice::Metadata& out_view) const noexcept -> ice::Task<bool>
+        {
+            co_return false;
+        }
     };
 
     class LooseResource : public Resource
     {
     public:
+        virtual auto size() const noexcept -> ice::usize = 0;
+
         virtual auto load_named_part(
             ice::StringID_Arg part_name,
             ice::Allocator& alloc

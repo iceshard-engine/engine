@@ -82,7 +82,7 @@ namespace ice::win32
         operator bool() const noexcept { return HandleInfo::is_valid(_handle); }
 
         auto native() const noexcept -> NativeType { return _handle; }
-        bool close() const noexcept;
+        bool close() noexcept;
 
     private:
         NativeType _handle;
@@ -124,11 +124,11 @@ namespace ice::win32
     }
 
     template<HandleType HType>
-    bool Handle<HType>::close() const noexcept
+    bool Handle<HType>::close() noexcept
     {
         if (*this)
         {
-            return HandleInfo::close(_handle);
+            return HandleInfo::close(ice::exchange(_handle, HandleInfo::NullValue));
         }
         return false;
     }

@@ -106,6 +106,10 @@ namespace ice::input
                     ICE_ASSERT_CORE(device_state != nullptr);
 
                     ice::hashmap::set(_devices, device_hash, device_state);
+                    if (device_state->max_count() > 1)
+                    {
+                        ice::hashmap::set(_devices, ice::hash(device.type), device_state);
+                    }
                     // #todo log device connected (shard?)
                 }
             }
@@ -124,6 +128,18 @@ namespace ice::input
             {
                 InputDevice* const device = ice::hashmap::get(_devices, device_hash, nullptr);
                 device->on_event(event);
+            }
+            else
+            {
+                // Support multiple device handles in a single InputDevice
+                Device const device_info = ice::input::make_device(event.device);
+                InputDevice* const* const device_ptr = ice::hashmap::try_get(_devices, ice::hash(device_info.type));
+                if (device_ptr != nullptr)
+                {
+                    InputDevice* const device = *device_ptr;
+                    ICE_ASSERT_CORE(device->max_count() > 1);
+                    device->on_event(event);
+                }
             }
         }
 
@@ -165,6 +181,8 @@ namespace ice::input
             return create_keyboard_device(alloc, handle);
         case DeviceType::Controller:
             return create_controller_device(alloc, handle);
+        case DeviceType::TouchScreen:
+            return create_touchscreen_device(alloc, handle);
         default:
             return nullptr;
         }

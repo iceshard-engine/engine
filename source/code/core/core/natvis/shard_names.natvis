@@ -30,8 +30,6 @@
         <DisplayString Condition="id.name.value == 2793650888">Shard {{ event/gfx/suspend }}</DisplayString>
         <DisplayString Condition="id.name.value == 4048089159">Shard {{ event/gfx/swapchain-reset }}</DisplayString>
         <DisplayString Condition="id.name.value == 3612285283">Shard {{ event/input }}</DisplayString>
-        <DisplayString Condition="id.name.value == 13715295">Shard {{ event/input/axis }}</DisplayString>
-        <DisplayString Condition="id.name.value == 939510841">Shard {{ event/input/button }}</DisplayString>
         <DisplayString Condition="id.name.value == 51683530">Shard {{ event/input/text }}</DisplayString>
         <DisplayString Condition="id.name.value == 284300429">Shard {{ event/trait/activate }}</DisplayString>
         <DisplayString Condition="id.name.value == 1418161315">Shard {{ event/trait/deactivate }}</DisplayString>
@@ -43,11 +41,13 @@
         <DisplayString Condition="id.name.value == 1456081343">Shard {{ event/window/resized }}</DisplayString>
         <DisplayString Condition="id.name.value == 2607797338">Shard {{ event/world/activated }}</DisplayString>
         <DisplayString Condition="id.name.value == 1454439939">Shard {{ event/world/deactivated }}</DisplayString>
+        <DisplayString Condition="id.name.value == 2241781497">Shard {{ platform/storage/app }}</DisplayString>
         <DisplayString Condition="id.name.value == 2816689335">Shard {{ test/shard }}</DisplayString>
         <DisplayString Condition="id.name.value == 2173328416">Shard {{ test/shard2 }}</DisplayString>
         <DisplayString>Shard {{ {id.name.value,h}, unknown_name }}</DisplayString>
         <Expand>
             <Synthetic Name="[payload type]">
+                <DisplayString Condition="id.payload.value == 2843272952">bool</DisplayString>
                 <DisplayString Condition="id.payload.value == 911661974">char const*</DisplayString>
                 <DisplayString Condition="id.payload.value == 2821725455">ice::DebugDrawCommandList const*</DisplayString>
                 <DisplayString Condition="id.payload.value == 599074004">ice::DrawTextCommand const*</DisplayString>
@@ -73,6 +73,7 @@
                 <DisplayString Condition="id.payload.value == 0">{id.payload.value}, type_not_set</DisplayString>
                 <DisplayString>{id.payload.value}, unknown_type</DisplayString>
             </Synthetic>
+            <Item Name="[payload]" Optional="true" Condition="id.payload.value == 2843272952">*(bool*)&amp;payload.value</Item>
             <Item Name="[payload]" Optional="true" Condition="id.payload.value == 911661974">*(char const**)&amp;payload.value</Item>
             <Item Name="[payload]" Optional="true" Condition="id.payload.value == 2821725455">*(ice::DebugDrawCommandList const**)&amp;payload.value</Item>
             <Item Name="[payload]" Optional="true" Condition="id.payload.value == 599074004">*(ice::DrawTextCommand const**)&amp;payload.value</Item>
