@@ -87,11 +87,6 @@ namespace ice
         }
     }
 
-    //bool IceshardTasksLauncher::finished() noexcept
-    //{
-    //    return _barrier.is_set();
-    //}
-
     auto IceshardTasksLauncher::trait_launcher(ice::Trait* trait) noexcept -> ice::IceshardTraitTaskLauncher
     {
         return { trait, _handlers };

@@ -310,6 +310,7 @@ auto ice::gfx::v2::IceshardGfxRunner::draw_frame(
 
         if (has_work)
         {
+            IPT_ZONE_SCOPED_NAMED("gfx_transfer_commands");
             _present_fence->reset();
             queue->submit_command_buffers({ &transfer_buffer, 1 }, _present_fence);
 
@@ -390,6 +391,7 @@ void ice::gfx::v2::IceshardGfxRunner::execute_stages(
     ice::render::RenderCommands& render_api
 ) const noexcept
 {
+    IPT_ZONE_SCOPED;
     auto it = ice::multi_hashmap::find_first(_stages, ice::hash(name));
     while (it != nullptr)
     {

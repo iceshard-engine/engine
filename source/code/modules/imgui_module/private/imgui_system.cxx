@@ -27,7 +27,7 @@ namespace ice::devui
             }
         }
 
-        auto create_imgui_trait_v2(ice::Allocator& alloc, void* userdata) noexcept -> ice::UniquePtr<ice::Trait>
+        auto create_imgui_trait(ice::Allocator& alloc, void* userdata) noexcept -> ice::UniquePtr<ice::Trait>
         {
             ice::UniquePtr<ice::devui::ImGuiTrait> trait = ice::make_unique<ice::devui::ImGuiTrait>(alloc, alloc);
             ice::devui::ImGuiSystem* system = reinterpret_cast<ImGuiSystem*>(userdata);
@@ -89,7 +89,7 @@ namespace ice::devui
             ice::TraitDescriptor
             {
                 .name = ice::Constant_TraitName_DevUI,
-                .fn_factory = ice::devui::detail::create_imgui_trait_v2,
+                .fn_factory = ice::devui::detail::create_imgui_trait,
                 .fn_register = nullptr,
                 .fn_unregister = nullptr,
                 .required_dependencies = { },

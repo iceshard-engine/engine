@@ -20,13 +20,13 @@ namespace ice
 
         static constexpr ice::StringID Constant_APIName_WorldTraitsModule = "ice.world-traits-module"_sid;
 
-        using RegisterTraitsFn_v2 = bool(
+        using RegisterTraitsFn = bool(
             ice::TraitArchive&
         ) noexcept;
 
         struct TraitsModuleAPI
         {
-            RegisterTraitsFn_v2* register_traits_fn;
+            RegisterTraitsFn* register_traits_fn;
         };
 
     } // namespace detail::engine::v1

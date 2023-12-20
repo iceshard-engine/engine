@@ -51,9 +51,9 @@ namespace ice
         virtual void release_frame(ice::UniquePtr<ice::EngineFrame> frame) noexcept = 0;
     };
 
-    static constexpr ice::ShardID ShardID_FrameUpdate = "event/engine/frame-update`ice::v2::EngineFrameUpdate const*"_shardid;
+    static constexpr ice::ShardID ShardID_FrameUpdate = "event/engine/frame-update`ice::EngineFrameUpdate const*"_shardid;
 
 } // namespace ice
 
 template<>
-constexpr ice::ShardPayloadID ice::Constant_ShardPayloadID<ice::EngineFrameUpdate const*> = ice::shard_payloadid("ice::v2::EngineFrameUpdate const*");
+constexpr ice::ShardPayloadID ice::Constant_ShardPayloadID<ice::EngineFrameUpdate const*> = ice::shard_payloadid("ice::EngineFrameUpdate const*");

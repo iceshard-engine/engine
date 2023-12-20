@@ -418,6 +418,8 @@ namespace ice::gfx::v3
         ice::render::RenderFence& fence
     ) noexcept
     {
+        IPT_ZONE_SCOPED;
+
         ice::ucount const fb_idx = _device.next_frame();
         render::RenderDevice& device = _device.device();
 
@@ -430,6 +432,7 @@ namespace ice::gfx::v3
 
         if (execute_pass(frame, stage_registry, _framebuffers[fb_idx], device.get_commands(), command_buffer))
         {
+            IPT_ZONE_SCOPED_NAMED("gfx_draw_commands");
             queue->submit_command_buffers({ &command_buffer, 1 }, &fence);
             fence.wait(10'000'000);
             _device.present(_swapchain.current_image_index());
@@ -446,6 +449,7 @@ namespace ice::gfx::v3
         ice::render::CommandBuffer cmds
     ) noexcept
     {
+        IPT_ZONE_SCOPED;
         api.begin(cmds);
         bool first_skipped = false;
 
@@ -470,6 +474,7 @@ namespace ice::gfx::v3
             }
             else if (snapshot.event & Snapshot::EventEndPass)
             {
+                IPT_ZONE_SCOPED_NAMED("graph_execute_stages");
                 for (ice::StringID_Arg stage : ice::array::slice(_stages._stages, stage_idx, _stages._counts[pass_idx]))
                 {
                     stage_registry.execute_stages(frame, stage, cmds, api);

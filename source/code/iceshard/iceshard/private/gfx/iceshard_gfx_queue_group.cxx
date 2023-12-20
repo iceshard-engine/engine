@@ -4,6 +4,7 @@
 #include "iceshard_gfx_queue_group.hxx"
 #include "iceshard_gfx_queue.hxx"
 #include <ice/container/hashmap.hxx>
+#include <ice/profiler.hxx>
 #include <ice/assert.hxx>
 
 namespace ice::gfx
@@ -62,6 +63,7 @@ namespace ice::gfx
 
     bool IceGfxQueueGroup::get_queue(ice::render::QueueFlags flags, ice::gfx::GfxQueue*& out_queue) noexcept
     {
+        IPT_ZONE_SCOPED;
         ice::gfx::IceGfxQueue* ice_queue = nullptr;
         bool const result = get_queue(flags, ice_queue);
         out_queue = ice_queue;

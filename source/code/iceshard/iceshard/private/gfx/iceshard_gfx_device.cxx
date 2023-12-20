@@ -9,6 +9,7 @@
 #include <ice/mem_allocator_stack.hxx>
 #include <ice/container/hashmap.hxx>
 #include <ice/gfx/gfx_runner.hxx>
+#include <ice/profiler.hxx>
 #include <ice/assert.hxx>
 
 #include "iceshard_gfx_queue_group.hxx"
@@ -119,6 +120,7 @@ namespace ice::gfx
 
     auto IceGfxDevice::next_frame() noexcept -> ice::u32
     {
+        IPT_ZONE_SCOPED;
         return _render_swapchain->aquire_image();
     }
 
@@ -248,7 +250,7 @@ namespace ice::gfx
             }
         }
 
-        ice::u32 constexpr pass_group_count = 2;
+        ice::u32 constexpr pass_group_count = 5;
 
         ice::render::RenderDevice* const render_device = render_driver.create_device(queues);
         if (render_device != nullptr)

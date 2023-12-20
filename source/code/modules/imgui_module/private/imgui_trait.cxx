@@ -465,6 +465,8 @@ namespace ice::devui
 
     auto ImGuiTrait::gfx_update(ice::gfx::v2::GfxFrameUpdate const& update) noexcept -> ice::Task<>
     {
+        IPT_ZONE_SCOPED;
+
         if (_initialized == false)
         {
             co_return;

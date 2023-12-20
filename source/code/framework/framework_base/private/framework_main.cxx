@@ -292,7 +292,6 @@ auto ice_setup(
 
     // Run game setup
     ice::framework::State const framework_state{
-        //.engine = *state.v2.engine,
         .modules = *state.modules,
         .resources = *state.resources,
     };
