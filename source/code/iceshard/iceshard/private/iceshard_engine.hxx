@@ -33,7 +33,7 @@ namespace ice
         ice::Allocator& _allocator;
 
         ice::UniquePtr<ice::AssetStorage> _assets;
-		ice::IceshardWorldManager _worlds;
+        ice::IceshardWorldManager _worlds;
         ice::ecs::EntityIndex _entities;
     };
 

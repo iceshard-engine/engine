@@ -36,6 +36,11 @@ namespace ice
         virtual void destroy_world(
             ice::StringID_Arg name
         ) noexcept = 0;
+
+        virtual void query_worlds(
+            ice::Array<ice::StringID>& out_worlds,
+            bool only_active = true
+        ) const noexcept = 0;
     };
 
 } // namespace ice

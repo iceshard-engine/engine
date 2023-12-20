@@ -201,6 +201,8 @@ struct ice::app::Runtime
     ice::ManualResetEvent logic_wait;
     ice::ManualResetEvent gfx_wait;
 
+    bool is_starting = true;
+    bool is_exiting = false;
     bool render_enabled = true;
 
     Runtime(ice::Allocator& alloc) noexcept
@@ -343,26 +345,26 @@ auto ice_resume(
 ) noexcept -> ice::Result
 {
     IPT_ZONE_SCOPED;
-    ice::render::SurfaceInfo surface_info{ };
-    if (ice::platform::RenderSurface& surface = *state.platform.render_surface; surface.get_surface(surface_info) == false)
+    if (runtime.is_starting)
     {
-        ice::platform::RenderSurfaceParams const surface_params{
-            .driver = ice::render::RenderDriverAPI::Vulkan,
-            .dimensions = { 1600, 1080 },
-        };
-        ice::Result result = surface.create(surface_params);
-        ICE_ASSERT(
-            result == ice::Res::Success,
-            "Failed to create render surface [ driver={}, dimensions={}x{} ]",
-            ice::u32(surface_params.driver), surface_params.dimensions.x, surface_params.dimensions.y
-        );
+        ice::render::SurfaceInfo surface_info{ };
+        if (ice::platform::RenderSurface& surface = *state.platform.render_surface; surface.get_surface(surface_info) == false)
+        {
+            ice::platform::RenderSurfaceParams const surface_params{
+                .driver = ice::render::RenderDriverAPI::Vulkan,
+                .dimensions = { 1600, 1080 },
+            };
+            ice::Result result = surface.create(surface_params);
+            ICE_ASSERT(
+                result == ice::Res::Success,
+                "Failed to create render surface [ driver={}, dimensions={}x{} ]",
+                ice::u32(surface_params.driver), surface_params.dimensions.x, surface_params.dimensions.y
+            );
 
-        bool const valid_surface_info = surface.get_surface(surface_info);
-        ICE_ASSERT(valid_surface_info, "Failed to access surface info!");
-    }
+            bool const valid_surface_info = surface.get_surface(surface_info);
+            ICE_ASSERT(valid_surface_info, "Failed to access surface info!");
+        }
 
-    if (runtime.runner == nullptr)
-    {
         ice::EngineRunnerCreateInfo const runner_create_info{
             .engine = *state.engine,
             .schedulers = {
@@ -408,6 +410,8 @@ auto ice_resume(
 
     state.game->on_resume(*state.engine);
     runtime.gfx_runner->on_resume();
+
+    runtime.is_starting = false;
     return ice::app::S_ApplicationUpdate;
 }
 
@@ -441,6 +445,7 @@ auto ice_update(
         {
             runtime.gfx_wait.wait();
         }
+        runtime.is_exiting = true;
         return ice::app::S_ApplicationExit;
     }
 
@@ -524,16 +529,45 @@ auto ice_suspend(
     runtime.gfx_runner->on_suspend();
     state.game->on_suspend(*state.engine);
 
-    runtime.input_tracker.reset();
-    runtime.runner->release_frame(ice::move(runtime.frame));
+    if (runtime.is_exiting)
+    {
+        ice::shards::remove_all_of(runtime.frame->shards(), ice::ShardID_WorldActivate);
 
-    runtime.gfx_rendergraph_runtime.reset();
-    runtime.gfx_rendergraph.reset();
-    runtime.gfx_runner.reset();
-    state.renderer->destroy_surface(runtime.render_surface);
+        ice::Array<ice::StringID> worlds{ state.alloc };
+        state.engine->worlds().query_worlds(worlds);
+        for (ice::StringID_Arg world : worlds)
+        {
+            ice::shards::push_back(runtime.frame->shards(), ice::ShardID_WorldDeactivate | ice::stringid_hash(world));
+        }
 
-    runtime.runner.reset();
-    return ice::app::S_ApplicationExit;
+
+        ice::EngineWorldUpdate const update_info {
+            .clock = runtime.clock,
+            .assets = *state.assets,
+            .engine = *state.engine,
+            .thread = { state.thread_pool_scheduler, state.thread_pool_scheduler, state.thread_pool_scheduler, state.thread_pool_scheduler }
+        };
+
+        ice::Array<ice::Task<>, ice::ContainerLogic::Complex> tasks{ state.alloc };
+        state.engine->worlds_updater().update(*runtime.frame, update_info, tasks);
+        if (ice::array::any(tasks))
+        {
+            ice::wait_for_all(tasks);
+        }
+
+        runtime.input_tracker.reset();
+        runtime.runner->release_frame(ice::move(runtime.frame));
+
+        runtime.gfx_rendergraph_runtime.reset();
+        runtime.gfx_rendergraph.reset();
+        runtime.gfx_runner.reset();
+        state.renderer->destroy_surface(runtime.render_surface);
+
+        runtime.runner.reset();
+        return ice::app::S_ApplicationExit;
+    }
+
+    return ice::app::S_ApplicationResume;
 }
 
 auto ice_shutdown(

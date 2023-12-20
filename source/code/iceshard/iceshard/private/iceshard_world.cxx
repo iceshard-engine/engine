@@ -134,6 +134,21 @@ namespace ice
     {
     }
 
+    IceshardWorldManager::~IceshardWorldManager() noexcept
+    {
+        ice::ucount active_worlds = 0;
+        for (Entry const& entry : _worlds)
+        {
+            active_worlds += ice::ucount(entry.is_active);
+        }
+
+        ICE_ASSERT(
+            active_worlds == 0,
+            "WorlManager destroyed with {} worlds not deactivated!",
+            active_worlds
+        );
+    }
+
     auto IceshardWorldManager::create_world(
         ice::WorldTemplate const& world_template
     ) noexcept -> World*
@@ -164,6 +179,7 @@ namespace ice
         }
 
         Entry world_entry{
+            .name = world_template.name,
             .world = ice::make_unique<ice::IceshardWorld>(_allocator, _allocator, ice::move(world_traits)),
             .is_active = world_template.is_initially_active
         };
@@ -187,7 +203,28 @@ namespace ice
         ice::StringID_Arg name
     ) noexcept
     {
+        static Entry invalid_entry{};
+        ICE_ASSERT(
+            ice::hashmap::get(_worlds, ice::hash(name), invalid_entry).is_active == false,
+            "Trying to destroy active world: {}!",
+            name
+        );
+
         ice::hashmap::remove(_worlds, ice::hash(name));
+    }
+
+    void IceshardWorldManager::query_worlds(
+        ice::Array<ice::StringID>& out_worlds,
+        bool only_active
+    ) const noexcept
+    {
+        for (Entry const& entry : _worlds)
+        {
+            if (only_active == false || entry.is_active)
+            {
+                ice::array::push_back(out_worlds, entry.name);
+            }
+        }
     }
 
     void IceshardWorldManager::activate(

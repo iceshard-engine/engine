@@ -70,6 +70,15 @@ namespace ice::devui
         ImGui::DestroyContext();
     }
 
+    void ImGuiTrait::gather_tasks(ice::TraitTaskLauncher& task_launcher) noexcept
+    {
+        task_launcher.bind<&ImGuiTrait::update>();
+        task_launcher.bind<&ImGuiTrait::gfx_start>(ice::gfx::ShardID_GfxStartup);
+        task_launcher.bind<&ImGuiTrait::gfx_shutdown>(ice::gfx::ShardID_GfxShutdown);
+        task_launcher.bind<&ImGuiTrait::gfx_update>(ice::gfx::ShardID_GfxFrameUpdate);
+        task_launcher.bind<&ImGuiTrait::on_window_resized>(ice::platform::ShardID_WindowResized);
+    }
+
     auto ImGuiTrait::activate(ice::EngineWorldUpdate const& update) noexcept -> ice::Task<>
     {
         _imgui_timer = ice::timer::create_timer(update.clock, 1.f / 60.f);
@@ -110,15 +119,6 @@ namespace ice::devui
     auto ImGuiTrait::deactivate(ice::EngineWorldUpdate const& world_update) noexcept -> ice::Task<>
     {
         co_return;
-    }
-
-    void ImGuiTrait::gather_tasks(ice::TraitTaskLauncher& task_launcher) noexcept
-    {
-        task_launcher.bind<&ImGuiTrait::update>();
-        task_launcher.bind<&ImGuiTrait::gfx_start>(ice::gfx::ShardID_GfxStartup);
-        task_launcher.bind<&ImGuiTrait::gfx_shutdown>(ice::gfx::ShardID_GfxShutdown);
-        task_launcher.bind<&ImGuiTrait::gfx_update>(ice::gfx::ShardID_GfxFrameUpdate);
-        task_launcher.bind<&ImGuiTrait::on_window_resized>(ice::platform::ShardID_WindowResized);
     }
 
     auto ImGuiTrait::update(ice::EngineFrameUpdate const& update) noexcept -> ice::Task<>

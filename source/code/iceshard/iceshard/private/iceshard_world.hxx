@@ -87,10 +87,16 @@ namespace ice
             ice::Allocator& alloc,
             ice::UniquePtr<ice::TraitArchive> trait_archive
         ) noexcept;
+        ~IceshardWorldManager() noexcept;
 
         auto create_world(ice::WorldTemplate const& world_template) noexcept -> World* override;
         auto find_world(ice::StringID_Arg name) noexcept -> World* override;
         void destroy_world(ice::StringID_Arg name) noexcept override;
+
+        void query_worlds(
+            ice::Array<ice::StringID>& out_worlds,
+            bool only_active
+        ) const noexcept override;
 
         void activate(
             ice::StringID_Arg world_name,
@@ -137,6 +143,7 @@ namespace ice
 
         struct Entry
         {
+            ice::StringID name;
             ice::UniquePtr<ice::IceshardWorld> world;
             bool is_active;
         };
