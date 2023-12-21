@@ -55,7 +55,7 @@ namespace ice
             {
                 ICE_LOG(
                     LogSeverity::Warning, LogTag::Core,
-                    "Skipping duplicate dyn-liub resource: '{}'",
+                    "Skipping duplicate dyn-lib resource: '{}'",
                     resource->origin()
                 );
                 _allocator.destroy(resource);
