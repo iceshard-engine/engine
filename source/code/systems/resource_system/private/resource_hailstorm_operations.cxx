@@ -173,42 +173,19 @@ namespace ice::hailstorm::v1
         return hsmem;
     }
 
-    auto write_cluster_internal(
+    bool estimate_cluster_chunks(
         ice::hailstorm::v1::HailstormWriteParams const& params,
-        ice::hailstorm::v1::HailstormWriteData const& write_data
-    ) noexcept -> ice::Memory
+        ice::hailstorm::v1::HailstormWriteData const& write_data,
+        ice::Array<HailstormChunk>& chunks,
+        ice::Array<HailstormWriteChunkRef>& refs,
+        ice::Array<ice::usize>& sizes,
+        ice::Array<ice::u32>& metatracker,
+        HailstormPaths& paths_info,
+        ice::u32 res_count
+    ) noexcept
     {
-        ice::ucount const res_count = ice::count(write_data.paths);
-
-        ice::Array<HailstormChunk> chunks{ params.temp_alloc };
-        ice::array::reserve(chunks, params.estimated_chunk_count);
-        ice::array::push_back(chunks, params.initial_chunks);
-
-        if (ice::count(chunks) == 0)
-        {
-            HailstormChunk new_chunk{};
-            new_chunk = params.fn_create_chunk({}, {.alignment = ualign::b_8}, new_chunk, params.userdata);
-            ice::array::push_back(chunks, new_chunk);
-        }
-
-        // Keep an array for all final chunk references.
-        ice::Array<HailstormWriteChunkRef> refs{ params.temp_alloc };
-        ice::array::resize(refs, res_count);
-
-        // Sizes start with 0_B fill.
-        ice::Array<ice::usize> sizes{ params.temp_alloc };
-        ice::array::resize(sizes, ice::count(chunks));
-        ice::array::memset(sizes, 0);
-
-        // Metadata saved tracker.
-        ice::Array<ice::u32> metatracker{ params.temp_alloc };
-        ice::array::resize(metatracker, ice::count(write_data.metadata_mapping));
-        ice::array::memset(metatracker, ice::u8_max);
-
         bool requires_data_writer_callback = false;
 
-        // We go over all resources and create the list of final chunks.
-        HailstormPaths paths_info{ .size = 8_B }; // If empty always contains eight '0' values.
         for (ice::ucount idx = 0; idx < res_count;)
         {
             ice::u32 metadata_idx = idx;
@@ -219,7 +196,7 @@ namespace ice::hailstorm::v1
                 metadata_idx = write_data.metadata_mapping[idx];
             }
 
-            ice::Metadata const& meta = write_data.metadata[metadata_idx];
+            ice::Data meta = write_data.metadata[metadata_idx];
             ice::Data data = write_data.data[idx];
 
             // Check if even one data object is not provided.
@@ -240,7 +217,6 @@ namespace ice::hailstorm::v1
                 }
             }
 
-            ice::meminfo const metamem = ice::meta_meminfo(meta);
             ice::isize const data_remaining = (chunks[ref.data_chunk].size - sizes[ref.data_chunk])
                 - isize{ static_cast<ice::isize::base_type>(data.alignment) };
             ice::isize const meta_remaining = chunks[ref.meta_chunk].size - sizes[ref.meta_chunk] - 8_B;
@@ -248,20 +224,23 @@ namespace ice::hailstorm::v1
             // Check if we need to create a new chunk due to size restrictions.
             if (ref.data_chunk == ref.meta_chunk)
             {
-                ref.data_create |= (data_remaining - metamem.size) < data.size;
+                ref.data_create |= (data_remaining - meta.size) < data.size;
                 ref.meta_create = false; // We only want to create one chunk if both data and meta are the same.
             }
             else
             {
                 ref.data_create |= data_remaining < data.size;
-                ref.meta_create |= meta_remaining < metamem.size;
+                ref.meta_create |= meta_remaining < meta.size;
             }
 
             if (ref.data_create)
             {
-                HailstormChunk const new_chunk = params.fn_create_chunk(
+                HailstormChunk new_chunk = params.fn_create_chunk(
                     meta, data, chunks[ref.data_chunk], params.userdata
                 );
+                new_chunk.offset = 0_B;
+                new_chunk.size_origin = 0_B;
+                new_chunk.count_entries = 0;
 
                 // Either mixed or data only chunks
                 ICE_ASSERT_CORE(
@@ -271,6 +250,7 @@ namespace ice::hailstorm::v1
 
                 // Push the new chunk
                 ice::array::push_back(chunks, new_chunk);
+                ice::array::push_back(sizes, 0_B);
             }
 
             if (ref.meta_create)
@@ -319,7 +299,7 @@ namespace ice::hailstorm::v1
                     chunks[ref.meta_chunk].count_entries += 1;
                 }
 
-                sizes[ref.meta_chunk] = ice::align_to(sizes[ref.meta_chunk], ice::ualign::b_8).value + metamem.size;
+                sizes[ref.meta_chunk] = ice::align_to(sizes[ref.meta_chunk], ice::ualign::b_8).value + meta.size;
             }
             sizes[ref.data_chunk] = ice::align_to(sizes[ref.data_chunk], data.alignment).value + data.size;
 
@@ -331,6 +311,46 @@ namespace ice::hailstorm::v1
             // Increase index at the end
             idx += 1;
         }
+
+        return requires_data_writer_callback;
+    }
+
+    auto write_cluster_internal(
+        ice::hailstorm::v1::HailstormWriteParams const& params,
+        ice::hailstorm::v1::HailstormWriteData const& write_data
+    ) noexcept -> ice::Memory
+    {
+        ice::ucount const res_count = ice::count(write_data.paths);
+
+        ice::Array<HailstormChunk> chunks{ params.temp_alloc };
+        ice::array::reserve(chunks, params.estimated_chunk_count);
+        ice::array::push_back(chunks, params.initial_chunks);
+
+        if (ice::count(chunks) == 0)
+        {
+            HailstormChunk new_chunk{};
+            new_chunk = params.fn_create_chunk({}, {.alignment = ualign::b_8}, new_chunk, params.userdata);
+            ice::array::push_back(chunks, new_chunk);
+        }
+
+        // Keep an array for all final chunk references.
+        ice::Array<HailstormWriteChunkRef> refs{ params.temp_alloc };
+        ice::array::resize(refs, res_count);
+
+        // Sizes start with 0_B fill.
+        ice::Array<ice::usize> sizes{ params.temp_alloc };
+        ice::array::resize(sizes, ice::count(chunks));
+        ice::array::memset(sizes, 0);
+
+        // Metadata saved tracker.
+        ice::Array<ice::u32> metatracker{ params.temp_alloc };
+        ice::array::resize(metatracker, ice::count(write_data.metadata_mapping));
+        ice::array::memset(metatracker, ice::u8_max);
+
+        HailstormPaths paths_info{ .size = 8_B }; // If empty always contains eight '0' values.
+        bool const requires_data_writer_callback = estimate_cluster_chunks(
+            params, write_data, chunks, refs, sizes, metatracker, paths_info, res_count
+        );
 
         // Either we don't need the callback or we need to have it provided!
         ICE_ASSERT_CORE(requires_data_writer_callback == false || params.fn_resource_write != nullptr);
@@ -427,15 +447,29 @@ namespace ice::hailstorm::v1
             if (meta_map_idx == ice::u32_max)
             {
                 ice::usize& meta_chunk_used = sizes[res.meta_chunk];
-                ice::Memory const meta_mem = ice::ptr_add(final_memory, meta_chunk.offset + meta_chunk_used);
-                ice::usize const meta_size = ice::meta_store(write_data.metadata[meta_idx], meta_mem);
+                ice::Data const data = write_data.metadata[meta_idx];
 
                 // Store meta location
-                res.meta_size = ice::u32(meta_size.value);
+                res.meta_size = ice::u32(data.size.value);
                 res.meta_offset = ice::u32(meta_chunk_used.value);
 
-                // Need to update the 'used' variable after we wrote the metadata
-                meta_chunk_used = ice::align_to(meta_chunk_used + meta_size, meta_chunk.align).value;
+                // Ensure the data view has an alignment smaller or equal to the chunk alignment.
+                ICE_ASSERT_CORE(data.alignment <= meta_chunk.align);
+                ice::Memory const meta_mem = ice::ptr_add(final_memory, meta_chunk.offset + meta_chunk_used);
+
+                //// If data has a nullptr locations, call the write callback to access resource data.
+                //// This allows us to "stream" input data to the final buffer.
+                //// TODO: It would be also good to provide a way to stream final data to a file also.
+                //if (data.location == nullptr)
+                //{
+                //    params.fn_resource_write(idx, write_data, meta_mem, params.userdata);
+                //}
+                //else // We got the data so just copy it over
+                {
+                    ice::memcpy(meta_mem, data);
+                }
+
+                meta_chunk_used = ice::align_to(meta_chunk_used + data.size, meta_chunk.align).value;
             }
             else
             {
@@ -523,125 +557,10 @@ namespace ice::hailstorm::v1
 
         // We go over all resources and create the list of final chunks.
         HailstormPaths paths_info{ .size = 8_B }; // If empty always contains eight '0' values.
-        for (ice::ucount idx = 0; idx < res_count;)
-        {
-            ice::u32 metadata_idx = idx;
 
-            // If the metadata is shared, check for the already assigned chunk
-            if (ice::array::any(metatracker))
-            {
-                metadata_idx = write_data.metadata_mapping[idx];
-            }
-
-            ice::Metadata const& meta = write_data.metadata[metadata_idx];
-            ice::Data data = write_data.data[idx];
-
-            HailstormWriteChunkRef ref = params.fn_select_chunk(meta, data, chunks, params.userdata);
-            ICE_ASSERT_CORE(ref.data_chunk < ice::count(chunks));
-            ICE_ASSERT_CORE(ref.meta_chunk < ice::count(chunks));
-
-            // If the metadata is shared, check for the already assigned chunk
-            bool shared_meta = false;
-            if (ice::array::any(metatracker))
-            {
-                if (metatracker[metadata_idx] != u32_max)
-                {
-                    shared_meta = true;
-                    ref.meta_chunk = refs[metadata_idx].meta_chunk;
-                }
-            }
-
-            ice::meminfo const metamem = ice::meta_meminfo(meta);
-            ice::isize const data_remaining = (chunks[ref.data_chunk].size - sizes[ref.data_chunk])
-                - isize{ static_cast<ice::isize::base_type>(data.alignment) };
-            ice::isize const meta_remaining = chunks[ref.meta_chunk].size - sizes[ref.meta_chunk] - 8_B;
-
-            // Check if we need to create a new chunk due to size restrictions.
-            if (ref.data_chunk == ref.meta_chunk)
-            {
-                ref.data_create |= (data_remaining - metamem.size) < data.size;
-                ref.meta_create = false; // We only want to create one chunk if both data and meta are the same.
-            }
-            else
-            {
-                ref.data_create |= data_remaining < data.size;
-                ref.meta_create |= meta_remaining < metamem.size;
-            }
-
-            if (ref.data_create)
-            {
-                HailstormChunk const new_chunk = params.fn_create_chunk(
-                    meta, data, chunks[ref.data_chunk], params.userdata
-                );
-
-                // Either mixed or data only chunks
-                ICE_ASSERT_CORE(
-                    (ref.data_chunk == ref.meta_chunk && new_chunk.type == 3)
-                    || (new_chunk.type == 2)
-                );
-
-                // Push the new chunk
-                ice::array::push_back(chunks, new_chunk);
-            }
-
-            if (ref.meta_create)
-            {
-                ICE_ASSERT_CORE(shared_meta == false); // This should not happen?
-                HailstormChunk const new_chunk = params.fn_create_chunk(
-                    meta, data, chunks[ref.meta_chunk], params.userdata
-                );
-
-                // Meta only chunks
-                ICE_ASSERT_CORE(new_chunk.type == 1);
-
-                // Push the new chunk
-                ice::array::push_back(chunks, new_chunk);
-            }
-
-            // If chunks where created, re-do the selection
-            if (ref.data_create || ref.meta_create)
-            {
-                // We don't want to increase the index yet
-                continue;
-            }
-
-            // Only update the tracker once we are sure we have a final chunk selected
-            if (ice::array::any(metatracker))
-            {
-                if (metatracker[metadata_idx] == u32_max)
-                {
-                    metatracker[metadata_idx] = idx;
-                }
-            }
-
-            refs[idx] = ref;
-
-            ICE_ASSERT_CORE(chunks[ref.meta_chunk].type & 0x1);
-            ICE_ASSERT_CORE(chunks[ref.data_chunk].type & 0x2);
-
-            chunks[ref.data_chunk].count_entries += 1;
-
-            // Udpate the sizes array, however only update meta if it's not shared (not assigned to a chunk yet)
-            if (shared_meta == false)
-            {
-                // Add an entry to a meta chunk only if it's not duplicated and if it's not mixed
-                if (ref.data_chunk != ref.meta_chunk)
-                {
-                    chunks[ref.meta_chunk].count_entries += 1;
-                }
-
-                sizes[ref.meta_chunk] = ice::align_to(sizes[ref.meta_chunk], ice::ualign::b_8).value + metamem.size;
-            }
-            sizes[ref.data_chunk] = ice::align_to(sizes[ref.data_chunk], data.alignment).value + data.size;
-
-            // Calculate total size needed for all paths to be stored
-            ice::ucount const path_size = ice::string::size(write_data.paths[idx]);
-            ICE_ASSERT_CORE(path_size > 0);
-            paths_info.size += ice::usize{ path_size + 1 }; //ice::u8(path_size > 0)
-
-            // Increase index at the end
-            idx += 1;
-        }
+        estimate_cluster_chunks(
+            params, write_data, chunks, refs, sizes, metatracker, paths_info, res_count
+        );
 
         // Paths needs to be aligned to boundary of 8
         paths_info.size = ice::align_to(paths_info.size, ualign::b_8).value;
@@ -737,18 +656,18 @@ namespace ice::hailstorm::v1
             if (meta_map_idx == ice::u32_max)
             {
                 ice::usize& meta_chunk_used = sizes[res.meta_chunk];
+                ice::Data const data = write_data.data[idx];
+
+                // Store meta location
+                res.meta_size = ice::u32(data.size.value);
+                res.meta_offset = ice::u32(meta_chunk_used.value);
 
                 co_await stream.write_metadata(
                     write_data, meta_idx, meta_chunk.offset + meta_chunk_used
                 );
 
-                // Store meta location
-                ice::meminfo const meta_meminfo = ice::meta_meminfo(write_data.metadata[meta_idx]);
-                res.meta_size = ice::u32(meta_meminfo.size.value);
-                res.meta_offset = ice::u32(meta_chunk_used.value);
-
                 // Need to update the 'used' variable after we wrote the metadata
-                meta_chunk_used = ice::align_to(meta_chunk_used + meta_meminfo.size, meta_chunk.align).value;
+                meta_chunk_used = ice::align_to(meta_chunk_used + data.size, meta_chunk.align).value;
             }
             else
             {

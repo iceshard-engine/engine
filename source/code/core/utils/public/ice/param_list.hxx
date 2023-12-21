@@ -113,6 +113,7 @@ namespace ice
         ice::String name;
         ice::String name_short;
         ice::String description;
+        ice::ParamFlags flags;
     };
 
     template<typename T>
@@ -135,7 +136,8 @@ namespace ice
         return {
             .name = name,
             .name_short = name_short,
-            .description = description
+            .description = description,
+            .flags = flags
         };
     }
 

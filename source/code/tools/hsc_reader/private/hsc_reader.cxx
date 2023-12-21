@@ -1,91 +1,110 @@
 /// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
-
-#include <ice/container/array.hxx>
-#include <ice/log.hxx>
-#include <ice/log_module.hxx>
-#include <ice/mem.hxx>
-#include <ice/mem_allocator_host.hxx>
-#include <ice/module.hxx>
-#include <ice/module_register.hxx>
-#include <ice/os/windows.hxx>
-#include <ice/param_list.hxx>
+#include <ice/tool_app.hxx>
 #include <ice/resource_hailstorm.hxx>
 #include <ice/resource_hailstorm_operations.hxx>
+#include <ice/log_module.hxx>
 
 #include "hsc_reader_app.hxx"
 #include "hsc_reader_funcs.hxx"
 
-int main(int argc, char** argv)
+class HailStormReaderApp final : public ice::tool::ToolApp<HailStormReaderApp>
 {
-    ice::HostAllocator alloc;
-    ice::ParamList params{ alloc, { argv, ice::u32(argc) } };
-    HSCReaderApp app{ alloc, params };
+public:
+    HailStormReaderApp() noexcept
+        : ToolApp<HailStormReaderApp>{}
+        , _file_path{ _allocator }
+        , _file{}
+        , _data{}
+    { }
 
-    ice::String packfile;
-    if (ice::params::find_first(params, Param_File, packfile) == false)
+    void setup(ice::ParamList& params) noexcept override
     {
-        return 1;
+        _modules->load_module(_allocator, ice::load_log_module, ice::unload_log_module);
+        hscr_initialize_logging(params);
     }
 
-    bool print_chunks = ice::params::has_any(params, Param_InfoChunks);
-    bool print_resources = ice::params::has_any(params, Param_InfoResources);
-
-    HANDLE const file = CreateFileA(
-        packfile._data,
-        GENERIC_READ,
-        FILE_SHARE_READ,
-        NULL,
-        OPEN_EXISTING,
-        FILE_ATTRIBUTE_NORMAL,
-        NULL
-    );
-
-    int result = 0;
-    if (file != INVALID_HANDLE_VALUE)
+    auto run(ice::ParamList const& params) noexcept -> ice::i32 override
     {
-        ice::hailstorm::HailstormData data;
-
-        BOOL r = ReadFile(file, &data.header, sizeof(data.header), NULL, NULL);
-        ICE_ASSERT_CORE(r != FALSE);
-
-        if (result = hailstorm_validate_header(data.header); result == 0)
+        ice::String packfile;
+        if (ice::params::find_first(params, Param_File, packfile) == false)
         {
-            hailstorm_print_headerinfo(params, data.header);
+            return 1;
+        }
 
-            if (print_chunks || print_resources)
+        // Open the pack file
+        ice::native_file::path_from_string(packfile, _file_path);
+        if (packfile_validate(params) == false)
+        {
+            return 1;
+        }
+
+        bool const print_chunks = ice::params::has_any(params, Param_InfoChunks);
+        bool const print_resources = ice::params::has_any(params, Param_InfoResources);
+        if (print_chunks || print_resources)
+        {
+            packfile_print_info(params);
+        }
+        return 0;
+    }
+
+private:
+    bool packfile_validate(ice::ParamList const& params) noexcept
+    {
+        using namespace ice::hailstorm;
+
+        _file_path = ice::tool::path_make_absolute(_file_path);
+        if (_file = ice::native_file::open_file(_file_path); _file)
+        {
+            ice::usize const bytes_read = ice::native_file::read_file(
+                _file,
+                ice::size_of<HailstormHeader>,
+                { &_data.header, ice::size_of<HailstormHeader>, ice::align_of<HailstormHeader> }
+            );
+
+            if (hailstorm_validate_header(_data.header) == 0)
             {
-                ice::Memory header_mem = alloc.allocate(data.header.offset_data);
+                hailstorm_print_headerinfo(params, _data.header);
+                return true;
+            }
+        }
+        return false;
+    }
 
-                OVERLAPPED ov{};
-                r = ReadFile(file, header_mem.location, ice::u32(header_mem.size.value), NULL, &ov);
-                ICE_ASSERT_CORE(r != FALSE);
+    void packfile_print_info(ice::ParamList const& params) noexcept
+    {
+        using ice::operator""_B;
 
-                if (ice::hailstorm::v1::read_header(ice::data_view(header_mem), data) == ice::Res::Success)
-                {
-                    ParamRange range;
-                    if (ice::params::find_first(params, Param_InfoChunks, range))
-                    {
-                        hailstorm_print_chunkinfo(params, data, range);
-                    }
+        ice::Memory header_mem = _allocator.allocate(_data.header.offset_data);
+        ice::usize const bytes_read = ice::native_file::read_file(
+            _file, 0_B, header_mem.size, header_mem
+        );
 
-                    if (ice::params::find_first(params, Param_InfoResources, range))
-                    {
-                        hailstorm_print_resourceinfo(data, range);
-                    }
-                }
-                else
-                {
-                    result = 3;
-                }
+        if (bytes_read < header_mem.size)
+        {
+            return;
+        }
 
-                alloc.deallocate(header_mem);
+        if (ice::hailstorm::v1::read_header(ice::data_view(header_mem), _data) == ice::Res::Success)
+        {
+            ParamRange range;
+            if (ice::params::find_first(params, Param_InfoChunks, range))
+            {
+                hailstorm_print_chunkinfo(params, _data, range);
+            }
+
+            if (ice::params::find_first(params, Param_InfoResources, range))
+            {
+                hailstorm_print_resourceinfo(_data, range);
             }
         }
 
-        CloseHandle(file);
+        _allocator.deallocate(header_mem);
     }
 
-    return result;
-}
+private:
+    ice::native_file::HeapFilePath _file_path;
+    ice::native_file::File _file;
+    ice::hailstorm::HailstormData _data;
+};

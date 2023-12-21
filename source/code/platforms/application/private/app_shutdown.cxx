@@ -5,7 +5,7 @@
 
 auto ice_shutdown(
     ice::Allocator& alloc,
-    ice::app::Arguments const& args,
+    ice::ParamList const& params,
     ice::app::Config const& config,
     ice::app::State& state
 ) noexcept -> ice::Result

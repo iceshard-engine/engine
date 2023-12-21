@@ -18,6 +18,7 @@
     [
         .Uses = {
             'resource_system'
+            'tool_base'
         }
     ]
 ]

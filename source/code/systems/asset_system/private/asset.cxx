@@ -43,9 +43,9 @@ namespace ice
         return false;
     }
 
-    auto Asset::metadata(ice::Metadata& out_meta) const noexcept -> ice::Task<ice::Result>
+    auto Asset::metadata(ice::Data& out_metadata) const noexcept -> ice::Task<ice::Result>
     {
-        co_return co_await ice::resource_meta(detail::entry(_handle).resource_handle, out_meta);
+        co_return co_await ice::resource_meta(detail::entry(_handle).resource_handle, out_metadata);
     }
 
     bool Asset::available(ice::AssetState state) const noexcept

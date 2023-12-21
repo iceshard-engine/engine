@@ -93,7 +93,7 @@ void ice_init(
 
 auto ice_setup(
     ice::Allocator& alloc,
-    ice::app::Arguments const& args,
+    ice::ParamList const& params,
     ice::app::Config& config,
     ice::app::State& state
 ) noexcept -> ice::Result
@@ -232,7 +232,7 @@ auto ice_suspend(
 
 auto ice_shutdown(
     ice::Allocator& alloc,
-    ice::app::Arguments const& args,
+    ice::ParamList const& params,
     ice::app::Config const& config,
     ice::app::State& state
 ) noexcept -> ice::Result

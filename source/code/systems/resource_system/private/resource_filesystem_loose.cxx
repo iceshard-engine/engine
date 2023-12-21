@@ -60,11 +60,20 @@ namespace ice
                     "Trying to load file larger than supported!"
                 );
 
-                result = alloc.allocate(filesize);
-                bool const success = co_await async_file_read(ice::move(handle), filesize, nativeio, result);
-                if (success == false)
+                if (filesize > 0_B)
                 {
-                    alloc.deallocate(result);
+                    result = alloc.allocate(filesize);
+                    bool const success = co_await async_file_read(ice::move(handle), filesize, nativeio, result);
+                    if (success == false)
+                    {
+                        alloc.deallocate(result);
+                    }
+                }
+                else
+                {
+                    // Allocate 1 byte just to not return a nullptr.
+                    // TODO: Find a better way to handle this.
+                    result = alloc.allocate(1_B);
                 }
             }
             co_return result;
@@ -116,6 +125,7 @@ namespace ice
         bool load_metadata_file(
             ice::Allocator& alloc,
             ice::native_file::FilePath path,
+            ice::Memory& out_memory,
             ice::MutableMetadata& out_metadata
         ) noexcept
         {
@@ -132,39 +142,34 @@ namespace ice
             }
 
             ice::Memory metafile_data = alloc.allocate(meta_size);
-            if (ice::native_file::read_file(meta_handle, meta_size, metafile_data) == 0_B)
+            if (ice::native_file::read_file(meta_handle, meta_size, metafile_data) > 0_B)
             {
-                return false;
+                ice::Result const result = ice::meta_deserialize_from(out_metadata, data_view(metafile_data));
+                if (ice::result_is_valid(result))
+                {
+                    // return the memory, we won't release it
+                    out_memory = metafile_data;
+                    return true;
+                }
+
             }
 
-            ice::String const file_header{
-                reinterpret_cast<char const*>(metafile_data.location),
-                ice::string::size(Constant_FileHeader_MetadataFile)
-            };
-
-            // Don't create resources from meta-files
-            if (Constant_FileHeader_MetadataFile == file_header)
-            {
-                return false;
-            }
-
-            ice::Result const result = ice::meta_deserialize_from(out_metadata, data_view(metafile_data));
             alloc.deallocate(metafile_data);
-            return ice::result_is_valid(result);
+            return false;
         }
 
     } // namespace detail
 
     LooseFilesResource::LooseFilesResource(
         ice::Allocator& alloc,
-        ice::MutableMetadata metadata,
+        ice::Memory metadata,
         ice::HeapString<> origin_path,
         ice::String origin_name,
         ice::String uri_path
     ) noexcept
         : ice::FileSystemResource{ }
-        , _mutable_metadata{ ice::move(metadata) }
-        , _metadata{ _mutable_metadata }
+        , _allocator{ alloc }
+        , _raw_metadata{ metadata }
         , _origin_path{ ice::move(origin_path) }
         , _origin_name{ origin_name }
         , _uri_path{ uri_path }
@@ -197,10 +202,9 @@ namespace ice
         return _origin_path;
     }
 
-    auto LooseFilesResource::load_metadata(ice::Metadata& out_metadata) const noexcept -> ice::Task<bool>
+    auto LooseFilesResource::load_metadata() const noexcept -> ice::Task<ice::Data>
     {
-        out_metadata = _metadata;
-        co_return true;
+        co_return ice::data_view(_raw_metadata);
     }
 
     auto LooseFilesResource::load_named_part(
@@ -290,9 +294,9 @@ namespace ice
         return _origin_path;
     }
 
-    auto LooseFilesResource::ExtraResource::load_metadata(ice::Metadata& out_metadata) const noexcept -> ice::Task<bool>
+    auto LooseFilesResource::ExtraResource::load_metadata() const noexcept -> ice::Task<ice::Data>
     {
-        return _parent.load_metadata(out_metadata);
+        return _parent.load_metadata();
     }
 
     auto LooseFilesResource::ExtraResource::load_data(
@@ -302,6 +306,14 @@ namespace ice
     ) const noexcept -> ice::Task<ice::Memory>
     {
         co_return co_await detail::async_file_load(alloc, nativeio, _origin_path);
+    }
+
+    auto LooseFilesResource::ExtraResource::size() const noexcept -> ice::usize
+    {
+        ice::StackAllocator_1024 alloc;
+        ice::native_file::HeapFilePath path{ alloc };
+        ice::native_file::path_from_string(_origin_path, path);
+        return ice::native_file::sizeof_file(path);
     }
 
     auto create_resources_from_loose_files(
@@ -317,6 +329,7 @@ namespace ice
         bool const data_exists = true;// ice::native_file::exists_file(data_filepath);
         bool const meta_exists = ice::native_file::exists_file(meta_filepath);
 
+        ice::MutableMetadata mutable_meta{ alloc };
         if (data_exists)
         {
             // We create the main resource in a different scope so we dont accidentaly use data from there
@@ -333,11 +346,11 @@ namespace ice
 
                 // We have a loose resource files which contain metadata associated data.
                 // We need now to read the metadata and check if there are more file associated and if all are available.
-                ice::MutableMetadata mutable_meta{ alloc };
+                ice::Memory raw_metadata{};
                 if (meta_exists)
                 {
                     IPT_ZONE_SCOPED_NAMED("stage: read_metadata");
-                    bool meta_load_success = ice::detail::load_metadata_file(alloc, meta_filepath, mutable_meta);
+                    bool meta_load_success = ice::detail::load_metadata_file(alloc, meta_filepath, raw_metadata, mutable_meta);
                     ICE_LOG_IF(
                         meta_load_success == false,
                         LogSeverity::Warning, LogTag::Core,
@@ -349,7 +362,7 @@ namespace ice
                 IPT_ZONE_SCOPED_NAMED("stage: create_resource");
                 main_resource = alloc.create<ice::LooseFilesResource>(
                     alloc,
-                    ice::move(mutable_meta),
+                    raw_metadata,
                     ice::move(utf8_file_path), // we move so the pointer 'origin_name' calculated from 'utf8_file_path' is still valid!
                     utf8_origin_name,
                     utf8_uri_path
@@ -357,11 +370,7 @@ namespace ice
             }
 
             IPT_ZONE_SCOPED_NAMED("stage: extra_files");
-            // We can access the metadata now again.
-            ice::Metadata metadata;
-            bool const success = ice::wait_for(main_resource->load_metadata(metadata));
-            ICE_ASSERT_CORE(success);
-
+            ice::Metadata const metadata = mutable_meta;
             bool const has_paths = ice::meta_has_entry(metadata, "resource.extra_files.paths"_sid);
             bool const has_names = ice::meta_has_entry(metadata, "resource.extra_files.names"_sid);
             ICE_ASSERT(

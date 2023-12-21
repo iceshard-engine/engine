@@ -61,10 +61,12 @@ namespace ice
         return handle->resource->name();
     }
 
-    auto resource_meta(ice::ResourceHandle const* handle, ice::Metadata& out_metadata) noexcept -> ice::Task<ice::Result>
+    auto resource_meta(ice::ResourceHandle const* handle, ice::Data& out_metadata) noexcept -> ice::Task<ice::Result>
     {
-        if (co_await handle->resource->load_metadata(out_metadata))
+        ice::Data const data = co_await handle->resource->load_metadata();
+        if (data.location != nullptr)
         {
+            out_metadata = data;
             co_return Res::Success;
         }
         co_return Res::E_InvalidArgument;
@@ -254,7 +256,11 @@ namespace ice
                 _info.predicted_resource_count
             );
 
+            ice::hashmap::reserve(_resources, new_count);
+            ice::array::reserve(_handles, new_count);
+
             // Store all resource handles
+            IPT_ZONE_SCOPED_NAMED("create_hash_entries");
             for (ice::Resource const* resource : temp_resources)
             {
                 ice::array::push_back(

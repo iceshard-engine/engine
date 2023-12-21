@@ -4,6 +4,9 @@
 #pragma once
 #include <ice/uri.hxx>
 #include <ice/task.hxx>
+#include <ice/task_scheduler.hxx>
+#include <ice/task_awaitable.hxx>
+#include <ice/task_utils.hxx>
 #include <ice/resource.hxx>
 #include <ice/resource_provider.hxx>
 #include <ice/container/hashmap.hxx>
@@ -22,10 +25,12 @@ namespace ice
     public:
         FileSystemResourceProvider(
             ice::Allocator& alloc,
-            ice::Span<ice::String const> const& paths
+            ice::Span<ice::String const> const& paths,
+            ice::TaskScheduler* scheduler
         ) noexcept
             : _allocator{ alloc }
             , _base_paths{ _allocator }
+            , _scheduler{ scheduler }
             , _resources{ _allocator }
         {
             ice::native_file::HeapFilePath base_path{ _allocator };
@@ -79,6 +84,7 @@ namespace ice
 
             if (resource != nullptr)
             {
+
                 ice::u64 const hash = ice::hash(resource->origin());
                 ICE_ASSERT(
                     ice::hashmap::has(_resources, hash) == false,
@@ -93,50 +99,154 @@ namespace ice
             }
         }
 
-        static auto traverse_count_files(
-            ice::native_file::FilePath base_path,
-            ice::native_file::FilePath path,
-            ice::native_file::EntityType type,
-            void* userdata
-        ) noexcept -> ice::native_file::TraverseAction
+        struct TraverseResourceRequest
         {
-            if (type == ice::native_file::EntityType::File)
+            FileSystemResourceProvider& self;
+            ice::native_file::FilePath base_path;
+            std::atomic_uint32_t& remaining;
+            ice::TaskScheduler* worker_thread;
+            ice::TaskScheduler* final_thread;
+        };
+
+        auto traverse_async(
+            ice::native_file::HeapFilePath dir_path,
+            TraverseResourceRequest& request
+        ) noexcept -> ice::Task<>
+        {
+            IPT_ZONE_SCOPED;
+            ice::native_file::traverse_directories(dir_path, traverse_callback, &request);
+            request.remaining -= 1;
+            co_return;
+        }
+
+        auto create_resource_from_file_async(
+            ice::native_file::FilePath base_path,
+            ice::native_file::HeapFilePath file_path,
+            TraverseResourceRequest& request
+        ) noexcept -> ice::Task<>
+        {
+            // Early out for metadata files.
+            if (ice::path::extension(file_path) == ISP_PATH_LITERAL(".isrm"))
             {
-                *((ice::ucount*)userdata) += 1;
+                request.remaining -= 1;
+                co_return;
             }
-            return ice::native_file::TraverseAction::Continue;
+
+            ice::StackAllocator_1024 temp_alloc;
+            ice::native_file::FilePath const uribase = ice::path::directory(base_path);
+            ice::native_file::FilePath const datafile = file_path;
+            ice::native_file::HeapFilePath metafile{ temp_alloc };
+            ice::string::reserve(metafile, 512);
+            ice::string::push_back(metafile, file_path);
+            ice::string::push_back(metafile, ISP_PATH_LITERAL(".isrm"));
+
+            ice::FileSystemResource* const resource = create_resources_from_loose_files(
+                _allocator,
+                base_path,
+                uribase,
+                metafile,
+                datafile
+            );
+
+            co_await *request.final_thread;
+
+            if (resource != nullptr)
+            {
+
+                ice::u64 const hash = ice::hash(resource->origin());
+                ICE_ASSERT(
+                    ice::hashmap::has(_resources, hash) == false,
+                    "A resource cannot be a explicit resource AND part of another resource."
+                );
+
+                ice::hashmap::set(
+                    _resources,
+                    hash,
+                    resource
+                );
+            }
+
+            request.remaining -= 1;
         }
 
         static auto traverse_callback(
-            ice::native_file::FilePath base_path,
+            ice::native_file::FilePath,
             ice::native_file::FilePath path,
             ice::native_file::EntityType type,
             void* userdata
         ) noexcept -> ice::native_file::TraverseAction
         {
+            TraverseResourceRequest* request = reinterpret_cast<TraverseResourceRequest*>(userdata);
             if (type == ice::native_file::EntityType::File)
             {
-                FileSystemResourceProvider* self = reinterpret_cast<FileSystemResourceProvider*>(userdata);
-                self->create_resource_from_file(base_path, path);
+                if (request->worker_thread != nullptr)
+                {
+                    request->remaining += 1;
+                    ice::Allocator& alloc = request->self._allocator;
+                    ice::schedule_task_on(
+                        request->self.create_resource_from_file_async(request->base_path, { alloc, path }, *request),
+                        *request->worker_thread
+                    );
+                }
+                else
+                {
+                    request->self.create_resource_from_file(request->base_path, path);
+                }
             }
+            else if (type == ice::native_file::EntityType::Directory && request->worker_thread != nullptr)
+            {
+                request->remaining += 1;
+
+                ice::Allocator& alloc = request->self._allocator;
+                ice::schedule_task_on(
+                    request->self.traverse_async({ alloc, path }, *request),
+                    *request->worker_thread
+                );
+
+                // Since we now run sub-directories as separate tasks, we skip them here
+                return ice::native_file::TraverseAction::SkipSubDir;
+            }
+
+            // Continue in synchronous scenario
             return ice::native_file::TraverseAction::Continue;
         }
 
         void initial_traverse() noexcept
         {
-            ice::ucount count = 0;
-            {
-                IPT_ZONE_SCOPED_NAMED("Calc number of resources");
-                for (ice::native_file::FilePath base_path : _base_paths)
-                {
-                    ice::native_file::traverse_directories(base_path, traverse_count_files, &count);
-                }
-            }
-
-            ice::hashmap::reserve(_resources, count);
+            std::atomic_uint32_t remaining;
+            TraverseResourceRequest request{ *this,ISP_PATH_LITERAL(""), remaining, nullptr, nullptr };
             for (ice::native_file::FilePath base_path : _base_paths)
             {
-                ice::native_file::traverse_directories(base_path, traverse_callback, this);
+                ice::native_file::traverse_directories(base_path, traverse_callback, &request);
+            }
+        }
+
+        void initial_traverse_mt() noexcept
+        {
+            ice::TaskQueue local_queue{ };
+            ice::TaskScheduler local_sched{ local_queue };
+
+            ice::Array<TraverseResourceRequest, ContainerLogic::Complex> requests{ _allocator };
+            ice::array::reserve(requests, ice::array::count(_base_paths));
+
+            std::atomic_uint32_t remaining = 0;
+
+            // Traverse directories synchronously but create resources asynchronously.
+            for (ice::native_file::FilePath base_path : _base_paths)
+            {
+                ice::array::push_back(requests, { *this, base_path, remaining, _scheduler, &local_sched });
+                ice::native_file::traverse_directories(
+                    base_path, traverse_callback, &ice::array::back(requests)
+                );
+            }
+
+            // Process all awaiting tasks
+            while (remaining > 0)
+            {
+                for (ice::TaskAwaitableBase* awaitable : ice::linked_queue::consume(local_queue._awaitables))
+                {
+                    awaitable->_coro.resume();
+                }
             }
         }
 
@@ -144,6 +254,9 @@ namespace ice
             ice::Array<ice::Resource const*>& out_changes
         ) noexcept -> ice::ucount override
         {
+            IPT_ZONE_SCOPED;
+
+            ice::array::reserve(out_changes, ice::array::count(out_changes) +  ice::hashmap::count(_resources));
             for (auto* resource : _resources)
             {
                 ice::array::push_back(out_changes, resource);
@@ -155,9 +268,17 @@ namespace ice
             ice::Array<ice::Resource const*>& out_changes
         ) noexcept -> ice::ResourceProviderResult override
         {
+            IPT_ZONE_SCOPED;
             if (ice::hashmap::empty(_resources))
             {
-                initial_traverse();
+                if (_scheduler == nullptr)
+                {
+                    initial_traverse();
+                }
+                else // if (_scheduler != nullptr)
+                {
+                    initial_traverse_mt();
+                }
                 collect(out_changes);
             }
             return ResourceProviderResult::Success;
@@ -266,16 +387,18 @@ namespace ice
     protected:
         ice::Allocator& _allocator;
         ice::Array<ice::native_file::HeapFilePath, ice::ContainerLogic::Complex> _base_paths;
+        ice::TaskScheduler* _scheduler;
 
         ice::HashMap<ice::FileSystemResource*> _resources;
     };
 
     auto create_resource_provider(
         ice::Allocator& alloc,
-        ice::Span<ice::String const> paths
+        ice::Span<ice::String const> paths,
+        ice::TaskScheduler* scheduler
     ) noexcept -> ice::UniquePtr<ice::ResourceProvider>
     {
-        return ice::make_unique<ice::FileSystemResourceProvider>(alloc, alloc, paths);
+        return ice::make_unique<ice::FileSystemResourceProvider>(alloc, alloc, paths, scheduler);
     }
 
 } // namespace ice
