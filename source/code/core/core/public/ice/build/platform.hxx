@@ -145,7 +145,7 @@ namespace ice::build
 #   define ISP_ANDROID 0
 #   if defined(__clang__)
 #       define ISP_COMPILER_MSVC 0
-#       define ISP_COMPILER_CLANG 1
+#       define ISP_COMPILER_CLANG __clang_major__
 #       define ISP_COMPILER_GCC 0
 
         static constexpr Platform current_platform = platform_windows_x64_clang;
