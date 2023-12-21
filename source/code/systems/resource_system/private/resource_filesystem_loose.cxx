@@ -180,6 +180,7 @@ namespace ice
 
     LooseFilesResource::~LooseFilesResource() noexcept
     {
+        _allocator.deallocate(_raw_metadata);
     }
 
     auto LooseFilesResource::uri() const noexcept -> ice::URI const&

@@ -50,13 +50,19 @@ namespace ice
                 file_path
             );
 
-            if (resource != nullptr)
+            ice::u64 const resource_hash = ice::hash(resource->name());
+            if (ice::hashmap::has(_resources, resource_hash))
             {
-                ice::hashmap::set(
-                    _resources,
-                    ice::hash(resource->name()),
-                    resource
+                ICE_LOG(
+                    LogSeverity::Warning, LogTag::Core,
+                    "Skipping duplicate dyn-liub resource: '{}'",
+                    resource->origin()
                 );
+                _allocator.destroy(resource);
+            }
+            else
+            {
+                ice::hashmap::set(_resources, resource_hash, resource);
             }
         }
 

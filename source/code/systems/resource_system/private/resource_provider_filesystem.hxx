@@ -213,11 +213,17 @@ namespace ice
 
         void initial_traverse() noexcept
         {
-            std::atomic_uint32_t remaining;
-            TraverseResourceRequest request{ *this,ISP_PATH_LITERAL(""), remaining, nullptr, nullptr };
+            ice::Array<TraverseResourceRequest, ContainerLogic::Complex> requests{ _allocator };
+            ice::array::reserve(requests, ice::array::count(_base_paths));
+
+            [[maybe_unused]]
+            std::atomic_uint32_t remaining = 0;
             for (ice::native_file::FilePath base_path : _base_paths)
             {
-                ice::native_file::traverse_directories(base_path, traverse_callback, &request);
+                ice::array::push_back(requests, { *this, base_path, remaining, nullptr, nullptr });
+                ice::native_file::traverse_directories(
+                    base_path, traverse_callback, &ice::array::back(requests)
+                );
             }
         }
 

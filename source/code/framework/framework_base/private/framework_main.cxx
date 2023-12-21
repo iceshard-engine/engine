@@ -289,7 +289,11 @@ auto ice_setup(
     state.game->on_config(game_config);
 
     // Load resources
-    auto filesys = ice::create_resource_provider(state.resources_alloc, game_config.resource_dirs);
+    auto filesys = ice::create_resource_provider(
+        state.resources_alloc,
+        game_config.resource_dirs,
+        &state.thread_pool_scheduler
+    );
     auto modules = ice::create_resource_provider_dlls(state.resources_alloc, game_config.module_dir);
 
     state.resources->attach_provider(ice::move(filesys));
