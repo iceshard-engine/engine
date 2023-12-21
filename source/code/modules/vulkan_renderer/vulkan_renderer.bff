@@ -8,20 +8,13 @@
     .Group = 'Modules'
 
     .BaseDir = '$WorkspaceCodeDir$/modules/vulkan_renderer'
-
-    .Requires = {
-        'SDK-Vulkan'
-    }
+    .Requires = { 'SDK-Vulkan' }
 
     .Private =
     [
         .Uses = {
             'platform'
             'render_system'
-        }
-
-        .Defines = {
-            'VK_USE_PLATFORM_WIN32_KHR'
         }
     ]
 ]

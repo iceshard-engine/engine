@@ -11,6 +11,19 @@
 namespace ice::render::vk
 {
 
+#if ISP_WINDOWS
+    static constexpr char const* instanceExtensionNames[] = {
+        VK_KHR_SURFACE_EXTENSION_NAME,
+        VK_KHR_WIN32_SURFACE_EXTENSION_NAME,
+    };
+#elif ISP_ANDROID
+    static constexpr char const* instanceExtensionNames[] = {
+        VK_KHR_SURFACE_EXTENSION_NAME,
+        VK_KHR_ANDROID_SURFACE_EXTENSION_NAME,
+    };
+#endif
+
+
 
     auto create_vulkan_driver(ice::Allocator& alloc) noexcept -> ice::render::RenderDriver*
     {
@@ -22,12 +35,6 @@ namespace ice::render::vk
         app_info.pEngineName = "IceShard (alpha)";
         app_info.engineVersion = 1;
         app_info.apiVersion = VK_API_VERSION_1_3;
-
-        const char* instanceExtensionNames[] = {
-            VK_KHR_SURFACE_EXTENSION_NAME,
-            VK_KHR_WIN32_SURFACE_EXTENSION_NAME,
-        };
-
         VkInstanceCreateInfo instance_create_info{ VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO };
         instance_create_info.flags = 0;
         instance_create_info.pApplicationInfo = &app_info;
@@ -71,6 +78,7 @@ namespace ice::render::vk
 extern "C"
 {
 
+#if ISP_WINDOWS
     __declspec(dllexport) void ice_module_load(
         ice::Allocator* alloc,
         ice::ModuleNegotiatorContext* ctx,
@@ -89,5 +97,6 @@ extern "C"
     )
     {
     }
+#endif
 
 }

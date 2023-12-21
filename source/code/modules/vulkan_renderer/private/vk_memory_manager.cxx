@@ -716,7 +716,7 @@ namespace ice::render::vk
         ice::u32 const memory_offset = handle_helper.handle_low;
 
         AllocationBlock* selected_block = nullptr;
-        AllocationEntry* parent_entry = nullptr;
+        // AllocationEntry* parent_entry = nullptr;
         AllocationEntry* selected_entry = nullptr;
 
         auto it = ice::multi_hashmap::find_first(_blocks, memory_type_index);
@@ -729,7 +729,7 @@ namespace ice::render::vk
                 selected_entry = selected_block->used;
                 while (selected_entry->offset != memory_offset)
                 {
-                    parent_entry = selected_entry;
+                    // parent_entry = selected_entry;
                     selected_entry = selected_entry->next;
                 }
                 break;

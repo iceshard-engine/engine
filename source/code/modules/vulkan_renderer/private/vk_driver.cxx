@@ -81,6 +81,7 @@ namespace ice::render::vk
         return RenderDriverAPI::Vulkan;
     }
 
+#if ISP_WINDOWS
     auto VulkanRenderDriver::create_surface(
         ice::render::SurfaceInfo const& surface_info
     ) noexcept -> ice::render::RenderSurface*
@@ -133,6 +134,14 @@ namespace ice::render::vk
 
         return _vk_alloc->create<VulkanRenderSurface>(_vk_instance, vulkan_surface);
     }
+#elif ISP_ANDROID
+    auto VulkanRenderDriver::create_surface(
+        ice::render::SurfaceInfo const& surface_info
+    ) noexcept -> ice::render::RenderSurface*
+    {
+        return nullptr;
+    }
+#endif
 
     void VulkanRenderDriver::destroy_surface(
         ice::render::RenderSurface* surface
