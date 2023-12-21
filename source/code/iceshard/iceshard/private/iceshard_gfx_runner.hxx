@@ -7,6 +7,7 @@
 #include <ice/gfx/gfx_runner.hxx>
 #include <ice/gfx/gfx_graph_runtime.hxx>
 #include <ice/gfx/gfx_stage_registry.hxx>
+#include <ice/task_scheduler.hxx>
 #include <ice/task_thread.hxx>
 #include <ice/sync_manual_events.hxx>
 

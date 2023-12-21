@@ -2,7 +2,7 @@
 /// SPDX-License-Identifier: MIT
 
 #pragma once
-#include <ice/types.hxx>
+#include <ice/base.hxx>
 
 namespace ice::math
 {

@@ -56,4 +56,4 @@ namespace ice
 } // namespace ice
 
 template<>
-constexpr ice::ShardPayloadID ice::Constant_ShardPayloadID<ice::EngineFrameUpdate const*> = ice::shard_payloadid("ice::EngineFrameUpdate const*");
+inline constexpr ice::ShardPayloadID ice::Constant_ShardPayloadID<ice::EngineFrameUpdate const*> = ice::shard_payloadid("ice::EngineFrameUpdate const*");

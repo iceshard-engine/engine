@@ -249,7 +249,7 @@ void ice_init(
 
 void ice_args(
     ice::Allocator& alloc,
-    ice::app::ArgumentsConfig& arg_config
+    ice::ParamList& params
 ) noexcept
 {
     IPT_ZONE_SCOPED;
@@ -257,7 +257,7 @@ void ice_args(
 
 auto ice_setup(
     ice::Allocator& alloc,
-    ice::app::Arguments const& args,
+    ice::ParamList const& params,
     ice::app::Config& config,
     ice::app::State& state
 ) noexcept -> ice::Result
@@ -575,7 +575,7 @@ auto ice_suspend(
 
 auto ice_shutdown(
     ice::Allocator&,
-    ice::app::Arguments const&,
+    ice::ParamList const&,
     ice::app::Config const&,
     ice::app::State& state
 ) noexcept -> ice::Result

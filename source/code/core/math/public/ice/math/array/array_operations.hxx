@@ -51,7 +51,7 @@ namespace ice::math
         arr_t<Size, T> result;
         for (u32 i = 0; i < Size; ++i)
         {
-            result.v[i] = std::max(left.v[i], T{ right.v[i] });
+            result.v[i] = ice::max(left.v[i], T{ right.v[i] });
         }
         return result;
     }
@@ -62,7 +62,7 @@ namespace ice::math
         arr_t<Size, T> result;
         for (u32 i = 0; i < Size; ++i)
         {
-            result.v[i] = std::min(left.v[i], T{ right.v[i] });
+            result.v[i] = ice::min(left.v[i], T{ right.v[i] });
         }
         return result;
     }

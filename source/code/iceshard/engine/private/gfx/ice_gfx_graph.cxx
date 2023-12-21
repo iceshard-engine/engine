@@ -352,7 +352,6 @@ namespace ice::gfx
         , _allocator{ alloc }
         , _device{ device }
         , _swapchain{ swapchain }
-        , _renderpass{ renderpass }
         //, _framebuffers{ framebuffers }
         //, _framebuffers_count{ ice::u8(_framebuffers.framebuffers[2] == render::Framebuffer::Invalid ? 2 : 3) }
         //, _stages{ alloc }
@@ -361,6 +360,7 @@ namespace ice::gfx
         , _resources{ ice::move(resources) }
         , _framebuffer_images{ _allocator }
         , _framebuffers{ _allocator }
+        , _renderpass{ renderpass }
         , _clears{ _allocator }
         , _stages{ ice::move(stages) }
     {

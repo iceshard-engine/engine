@@ -3,6 +3,7 @@
 
 #pragma once
 #include <ice/engine_frame.hxx>
+#include <ice/ecs/ecs_entity_operations.hxx>
 #include "iceshard_runner.hxx"
 
 namespace ice
@@ -24,18 +25,18 @@ namespace ice
         auto shards() noexcept -> ice::ShardContainer& override { return _shards; }
         auto shards() const noexcept -> ice::ShardContainer const& override { return _shards; }
 
-        auto entity_operations() noexcept -> ice::ecs::EntityOperations& override { return *((ice::ecs::EntityOperations*)0); }
-        auto entity_operations() const noexcept -> ice::ecs::EntityOperations const& override { return *((ice::ecs::EntityOperations*)0); }
+        auto entity_operations() noexcept -> ice::ecs::EntityOperations& override { return _operations; }
+        auto entity_operations() const noexcept -> ice::ecs::EntityOperations const& override { return _operations; }
 
         ice::IceshardFrameData& _data;
         ice::ShardContainer _shards;
+        ice::ecs::EntityOperations _operations;
     };
 
     auto create_iceshard_frame(
-        ice::Allocator& alloc, ice::EngineFrameData& frame_data, ice::EngineFrameFactoryUserdata
-    ) noexcept -> ice::UniquePtr<ice::EngineFrame>
-    {
-        return ice::make_unique<ice::IceshardEngineFrame>(alloc, static_cast<ice::IceshardFrameData&>(frame_data));
-    }
+        ice::Allocator& alloc,
+        ice::EngineFrameData& frame_data,
+        ice::EngineFrameFactoryUserdata
+    ) noexcept -> ice::UniquePtr<ice::EngineFrame>;
 
 } // namespace ice

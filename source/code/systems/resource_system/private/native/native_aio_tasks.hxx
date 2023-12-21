@@ -160,7 +160,7 @@ namespace ice
             ice::usize size,
             ice::usize offset = 0_B
         ) noexcept
-            : TaskAwaitableBase{ ._params{ TaskAwaitableModifier_v3::CustomValue, { ice::u32(size.value) } } }
+            : TaskAwaitableBase{ ._params{ TaskAwaitableModifier::CustomValue, { ice::u32(size.value) } } }
             , nativeio{ nativeio }
             , file{ ice::move(file_handle) }
             , destination{ memory }

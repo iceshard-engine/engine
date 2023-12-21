@@ -38,7 +38,7 @@ namespace ice::gfx
 
         struct GfxQueueGroup_Temp
         {
-            ~GfxQueueGroup_Temp() noexcept = default;
+            virtual ~GfxQueueGroup_Temp() noexcept = default;
 
             virtual bool get_queue(
                 ice::render::QueueFlags flags,
