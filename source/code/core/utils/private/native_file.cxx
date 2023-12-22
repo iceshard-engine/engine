@@ -344,18 +344,36 @@ namespace ice::native_file
         return { static_cast<ice::usize::base_type>(file_stats.st_size) };
     }
 
+    auto sizeof_file(ice::native_file::FilePath path) noexcept -> ice::usize
+    {
+        struct stat file_stats;
+        stat(ice::string::begin(path), &file_stats);
+        return { static_cast<ice::usize::base_type>(file_stats.st_size) };
+    }
+
     auto read_file(
         ice::native_file::File const& native_file,
         ice::usize requested_read_size,
         ice::Memory memory
     ) noexcept -> ice::usize
     {
+        return read_file(native_file, 0_B, requested_read_size, memory);
+    }
+
+    auto read_file(
+        ice::native_file::File const& native_file,
+        ice::usize requested_read_offset,
+        ice::usize requested_read_size,
+        ice::Memory memory
+    ) noexcept -> ice::usize
+    {
         IPT_ZONE_SCOPED;
         ICE_ASSERT_CORE(memory.size >= requested_read_size);
-        ice::isize::base_type bytes_read = read(
+        ice::isize::base_type bytes_read = pread(
             native_file.native(),
             memory.location,
-            requested_read_size.value
+            requested_read_size.value,
+            requested_read_offset.value
         );
         if (bytes_read < 0)
         {

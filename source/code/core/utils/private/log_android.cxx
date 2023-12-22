@@ -14,14 +14,9 @@ namespace ice::detail::android
 
     static constexpr ice::String LogFormat_AssertCondition = "\nAssertion failed! `{}`";
 
-    auto get_base_tag_name(ice::LogTag tag) noexcept -> ice::String
+    auto get_tag_name(ice::LogTag tag) noexcept -> ice::String
     {
-        ice::u64 constexpr base_tag_mask = ~((1llu << 32) - 1);
-        ice::LogTag const base_tag = static_cast<LogTag>(
-            static_cast<ice::u64>(tag) & base_tag_mask
-        );
-
-        switch (base_tag)
+        switch (tag)
         {
         case LogTag::Core:
             return "IceShard::Core";
@@ -35,9 +30,20 @@ namespace ice::detail::android
             return "IceShard::Asset";
         case LogTag::Game:
             return "IceShard::Game";
-        default:
+        case LogTag::Tool:
+            return "IceShard::Tool";
+        case LogTag::None:
             return "";
+        default:
+            return detail::internal_log_state->tag_name(tag);
         }
+    }
+
+    auto get_base_tag_name(ice::LogTag tag) noexcept -> ice::String
+    {
+        ice::u64 const tag_value = ice::bit_cast<ice::u64>(tag);
+        ice::LogTag const tag_base = LogTag(tag_value >> 32);
+        return get_tag_name(tag_base);
     }
 
     constexpr auto logpriority_from_severity(ice::LogSeverity severity) noexcept -> android_LogPriority
@@ -122,7 +128,7 @@ namespace ice::detail::android
         __android_log_message msg{ .struct_size = sizeof(__android_log_message) };
         msg.buffer_id = bufferid_from_severity(severity);
         msg.priority = logpriority_from_severity(severity);
-        msg.tag = ice::string::begin(get_base_tag_name(tag));
+        msg.tag = ice::string::begin(get_tag_name(tag));
         msg.file = ice::string::begin(location.file);
         msg.line = location.line;
 
