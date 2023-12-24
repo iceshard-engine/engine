@@ -2,6 +2,9 @@
 /// SPDX-License-Identifier: MIT
 
 #include "ice_gfx_graph.hxx"
+#include "ice_gfx_graph_runtime.hxx"
+#include "ice_gfx_graph_snapshot.hxx"
+
 #include <ice/gfx/gfx_device.hxx>
 #include <ice/gfx/gfx_queue.hxx>
 
@@ -31,8 +34,6 @@ namespace ice::gfx
     {
         return static_cast<GfxResourceType>(gfx_resource_type_val(res));
     }
-
-    static constexpr GfxResource Const_ResourceFrameBuffer{ 0x8000'0000 };
 
     IceshardGfxGraph::IceshardGfxGraph(ice::Allocator& alloc) noexcept
         : _passes{ alloc }
@@ -79,7 +80,7 @@ namespace ice::gfx
         ice::render::RenderDevice& render_device,
         ice::render::RenderSwapchain const& swapchain,
         ice::Span<GfxResource> resources,
-        ice::Span<Snapshot const> snapshots,
+        ice::Span<GfxGraphSnapshot const> GfxGraphSnapshots,
         ice::u32 max_image_count
     ) noexcept -> ice::render::Renderpass
     {
@@ -92,7 +93,7 @@ namespace ice::gfx
         ice::Array<SubpassDependency> dependencies{ alloc };
 
         ice::array::reserve(attachments, ice::count(resources));
-        ice::array::reserve(references, ice::count(snapshots));
+        ice::array::reserve(references, ice::count(GfxGraphSnapshots));
 
         ice::array::push_back(
             attachments,
@@ -148,11 +149,11 @@ namespace ice::gfx
         ice::u32 counts[3]{};
         ice::u32 ref_subpass_idx = 0;
         ice::u32 subpass_idx = 0;
-        for (Snapshot const snapshot : snapshots)
+        for (GfxGraphSnapshot const GfxGraphSnapshot : GfxGraphSnapshots)
         {
             [[maybe_unused]]
-            ice::u32 const type_idx = gfx_resource_type_val(snapshot.resource);
-            if (snapshot.event & Snapshot::MaskPass)
+            ice::u32 const type_idx = gfx_resource_type_val(GfxGraphSnapshot.resource);
+            if (GfxGraphSnapshot.event & GfxSnapshotEvent::MaskPass)
             {
                 if (subpass_idx > 1)
                 {
@@ -169,7 +170,7 @@ namespace ice::gfx
                     counts[0] = counts[1] = counts[2] = 0;
                 }
 
-                if (snapshot.event & Snapshot::EventNextSubPass && subpass_idx > 1)
+                if (GfxGraphSnapshot.event & GfxSnapshotEvent::EventNextSubPass && subpass_idx > 1)
                 {
                     if (subpass_idx == 2)
                     {
@@ -204,10 +205,10 @@ namespace ice::gfx
             }
             else
             {
-                GfxResourceType const type = gfx_resource_type(snapshot.resource);
+                GfxResourceType const type = gfx_resource_type(GfxGraphSnapshot.resource);
 
                 ice::u32 idx = 0;
-                if (ice::binary_search(resources, snapshot.resource, [](GfxResource lhs, GfxResource rhs) noexcept { return (lhs.value & 0xffff) < (rhs.value & 0xffff); }, idx))
+                if (ice::binary_search(resources, GfxGraphSnapshot.resource, [](GfxResource lhs, GfxResource rhs) noexcept { return (lhs.value & 0xffff) < (rhs.value & 0xffff); }, idx))
                 {
                     if (type == GfxResourceType::DepthStencil)
                     {
@@ -220,7 +221,7 @@ namespace ice::gfx
                             }
                         );
                     }
-                    else if (snapshot.event & Snapshot::EventWriteRes)
+                    else if (GfxGraphSnapshot.event & GfxSnapshotEvent::EventWriteRes)
                     {
                         counts[1] += 1;
                         ice::array::push_back(
@@ -344,9 +345,9 @@ namespace ice::gfx
         ice::gfx::GfxDevice& device,
         ice::render::RenderSwapchain const& swapchain,
         ice::render::Renderpass renderpass,
-        ice::Array<Snapshot> snapshots,
+        ice::Array<GfxGraphSnapshot> GfxGraphSnapshots,
         ice::Array<GfxResource> resources,
-        IceshardGfxStages stages
+        ice::gfx::IceshardGfxGraphStages stages
     ) noexcept
         : GfxGraphRuntime{}
         , _allocator{ alloc }
@@ -356,7 +357,7 @@ namespace ice::gfx
         //, _framebuffers_count{ ice::u8(_framebuffers.framebuffers[2] == render::Framebuffer::Invalid ? 2 : 3) }
         //, _stages{ alloc }
         //, _fence{ }
-        , _snapshots{ ice::move(snapshots) }
+        , _snapshots{ ice::move(GfxGraphSnapshots) }
         , _resources{ ice::move(resources) }
         , _framebuffer_images{ _allocator }
         , _framebuffers{ _allocator }
@@ -456,13 +457,13 @@ namespace ice::gfx
 
         ice::u32 pass_idx = 0;
         ice::u32 stage_idx = 0;
-        for (Snapshot const& snapshot : _snapshots)
+        for (GfxGraphSnapshot const& GfxGraphSnapshot : _snapshots)
         {
-            if ((snapshot.event & Snapshot::EventBeginPass) == Snapshot::EventBeginPass)
+            if ((GfxGraphSnapshot.event & GfxSnapshotEvent::EventBeginPass) == GfxSnapshotEvent::EventBeginPass)
             {
                 api.begin_renderpass(cmds, _renderpass, framebuffer, _clears, _swapchain.extent());
             }
-            else if (snapshot.event & Snapshot::EventNextSubPass && ice::exchange(first_skipped, true))
+            else if (GfxGraphSnapshot.event & GfxSnapshotEvent::EventNextSubPass && ice::exchange(first_skipped, true))
             {
                 for (ice::StringID_Arg stage : ice::array::slice(_stages._stages, stage_idx, _stages._counts[pass_idx]))
                 {
@@ -473,7 +474,7 @@ namespace ice::gfx
                 stage_idx += _stages._counts[pass_idx];
                 pass_idx += 1;
             }
-            else if (snapshot.event & Snapshot::EventEndPass)
+            else if (GfxGraphSnapshot.event & GfxSnapshotEvent::EventEndPass)
             {
                 IPT_ZONE_SCOPED_NAMED("graph_execute_stages");
                 for (ice::StringID_Arg stage : ice::array::slice(_stages._stages, stage_idx, _stages._counts[pass_idx]))
@@ -546,16 +547,16 @@ namespace ice::gfx
     //    return true;
     //}
 
-    auto find_snapshot_event(ice::Span<Snapshot const> snapshots, GfxResource current) noexcept
+    auto find_GfxGraphSnapshot_event(ice::Span<GfxGraphSnapshot const> snapshots, GfxResource current) noexcept
     {
-        Snapshot::Event result = Snapshot::EventCreateRes;
+        GfxSnapshotEvent result = GfxSnapshotEvent::EventCreateRes;
 
         bool pass_boundary = false;
         for (ice::u32 idx = ice::count(snapshots) - 1; idx >= 0; --idx)
         {
-            Snapshot const prev = snapshots[idx];
+            GfxGraphSnapshot const prev = snapshots[idx];
 
-            if (prev.event == Snapshot::EventNextSubPass)
+            if (prev.event == GfxSnapshotEvent::EventNextSubPass)
             {
                 pass_boundary = true;
                 continue;
@@ -565,7 +566,7 @@ namespace ice::gfx
             {
                 if (pass_boundary)
                 {
-                    if ((prev.event & Snapshot::EventWriteRes) != 0)
+                    if ((prev.event & GfxSnapshotEvent::EventWriteRes) != 0)
                     {
                     }
                     else
@@ -580,263 +581,11 @@ namespace ice::gfx
         return result;
     }
 
-    bool postprocess_snapshots(
-        ice::Span<Snapshot> snapshots,
-        ice::Array<GraphBarrier>& out_barriers
-    ) noexcept
-    {
-        ice::u32 last_pass = 0;
-        for (ice::u32 idx = 0; idx < ice::count(snapshots); ++idx)
-        {
-            Snapshot& current = snapshots[idx];
-            if (current.event & (Snapshot::EventBeginPass | Snapshot::EventNextSubPass | Snapshot::EventEndPass))
-            {
-                last_pass = ice::u32(current.resource.value);
-                continue;
-            }
-
-            if (current.resource == Const_ResourceFrameBuffer)
-            {
-                continue;
-            }
-
-            Snapshot prev{}, next{};
-            for (Snapshot const prev_candidate : ice::span::subspan(snapshots, 0, idx))
-            {
-                if (current.resource == prev_candidate.resource)
-                {
-                    prev = prev_candidate;
-                }
-            }
-
-            for (Snapshot const next_candidate : ice::span::subspan(snapshots, idx + 1))
-            {
-                if (current.resource == next_candidate.resource)
-                {
-                    next = next_candidate;
-                }
-            }
-
-            if (prev.event == Snapshot::EventInvalid)
-            {
-                current.event = Snapshot::Event(current.event | Snapshot::EventCreateRes);
-            }
-            if (next.event == Snapshot::EventInvalid)
-            {
-                current.event = Snapshot::Event(current.event | Snapshot::EventDeleteRes);
-            }
-
-            ICE_ASSERT_CORE(prev.event != Snapshot::EventInvalid || next.event != Snapshot::EventInvalid);
-            if (prev.event != Snapshot::EventInvalid)
-            {
-                current.info = ice::array::count(out_barriers);
-
-                if (current.event & Snapshot::EventReadRes)
-                {
-                    ice::array::push_back(
-                        out_barriers,
-                        GraphBarrier{
-                            .pass_idx = last_pass,
-                            .source_layout = render::ImageLayout::Color,
-                            .destination_layout = render::ImageLayout::ShaderReadOnly,
-                            .source_access = render::AccessFlags::ColorAttachmentWrite,
-                            .destination_access = render::AccessFlags::ShaderRead,
-                        }
-                    );
-                }
-                else
-                {
-                    ice::array::push_back(
-                        out_barriers,
-                        GraphBarrier{
-                            .pass_idx = last_pass,
-                            .source_layout = render::ImageLayout::Undefined,
-                            .destination_layout = render::ImageLayout::Color,
-                            .source_access = render::AccessFlags::None,
-                            .destination_access = render::AccessFlags::ColorAttachmentWrite,
-                        }
-                    );
-                }
-            }
-        }
-        return true;
-    }
-
     auto create_graph(
         ice::Allocator& alloc
     ) noexcept -> ice::UniquePtr<GfxGraph>
     {
         return ice::make_unique<IceshardGfxGraph>(alloc, alloc);
     }
-
-    auto create_graph_runtime(
-        ice::Allocator& alloc,
-        GfxDevice& device,
-        GfxGraph const& base_definition,
-        GfxGraph const* dynamic_definition
-    ) noexcept -> ice::UniquePtr<GfxGraphRuntime>
-    {
-        // TODO:
-        ICE_ASSERT_CORE(dynamic_definition == nullptr);
-
-        using namespace ice::render;
-
-        ice::Array<Snapshot> snapshots{ alloc };
-        ice::Array<GfxResource> resources{ alloc };
-        ice::array::push_back(resources, base_definition.get_framebuffer());
-
-        ice::u32 pass_idx = 0;
-        ice::array::push_back(
-            snapshots,
-            Snapshot{
-                .subpass = 0,
-                .resource = { pass_idx++ },
-                .event = Snapshot::EventBeginPass,
-                .info = 0,
-            }
-        );
-
-        IceshardGfxStages stages{ alloc };
-        for (GfxGraphPass const& pass : base_definition.passes())
-        {
-            ice::array::push_back(
-                snapshots,
-                Snapshot{
-                    .subpass = pass_idx,
-                    .resource = { pass_idx },
-                    .event = Snapshot::EventNextSubPass,
-                    .info = 1,
-                }
-            );
-
-            for (GfxGraphStage const& stage : pass.stages)
-            {
-                ice::array::push_back(stages._stages, stage.name);
-
-                for (GfxResource res : stage.inputs)
-                {
-                    ice::array::push_back(
-                        snapshots,
-                        Snapshot{
-                            .subpass = pass_idx,
-                            .resource = res,
-                            .event = Snapshot::EventReadRes,
-                            .info = ice::u32_max,
-                        }
-                    );
-                }
-                for (GfxResource res : stage.outputs)
-                {
-                    ice::array::push_back(
-                        snapshots,
-                        Snapshot{
-                            .subpass = pass_idx,
-                            .resource = res,
-                            .event = Snapshot::EventWriteRes,
-                            .info = ice::u32_max,
-                        }
-                    );
-                }
-                for (GfxResource res : stage.depth_stencil)
-                {
-                    ice::array::push_back(
-                        snapshots,
-                        Snapshot{
-                            .subpass = pass_idx,
-                            .resource = res,
-                            .event = Snapshot::Event(Snapshot::EventReadRes | Snapshot::EventWriteRes),
-                            .info = ice::u32_max,
-                        }
-                    );
-                }
-            }
-
-            ice::array::push_back(stages._counts, ice::u8(ice::count(pass.stages)));
-            pass_idx += 1;
-        }
-
-        ice::array::push_back(
-            snapshots,
-            Snapshot{
-                .subpass = pass_idx,
-                .resource = { pass_idx },
-                .event = Snapshot::EventEndPass,
-                .info = 2,
-            }
-        );
-
-
-        ice::Array<GraphBarrier> barriers{ alloc };
-        postprocess_snapshots(snapshots, barriers);
-
-        ice::ucount max_images = 0;
-        ice::ucount current_images = 0;
-        ice::ucount removed_images = 0;
-        for (Snapshot const snapshot : snapshots)
-        {
-            if (snapshot.event & Snapshot::MaskPass)
-            {
-                max_images = ice::max(max_images, current_images);
-                current_images -= removed_images;
-
-                removed_images = 0;
-            }
-            else
-            {
-                bool const res_created = (snapshot.event & Snapshot::EventCreateRes) != 0;
-                if (res_created)
-                {
-                    ice::array::push_back(resources, snapshot.resource);
-                }
-
-                current_images += ice::u32(res_created);
-                removed_images += ice::u32((snapshot.event & Snapshot::EventDeleteRes) != 0);
-            }
-        }
-
-        ice::sort(
-            ice::array::slice(resources),
-            [](GfxResource lhs, GfxResource rhs) noexcept { return (lhs.value & 0xffff) < (rhs.value & 0xffff); }
-        );
-
-        //IceshardGfxGraphRuntime::Framebuffers frame_buffers = create_framebuffers(
-        //    alloc,
-        //    device.device(),
-        //    device.swapchain(),
-        //    resources,
-        //    snapshots,
-        //    max_images
-        //);
-        //if (frame_buffers.framebuffers[1] == Framebuffer::Invalid)
-        //{
-        //    return {};
-        //}
-
-        Renderpass renderpass = create_renderpass(
-            alloc,
-            device.device(),
-            device.swapchain(),
-            resources,
-            snapshots,
-            max_images
-        );
-
-        if (renderpass == Renderpass::Invalid)
-        {
-            return {};
-        }
-
-        return ice::make_unique<IceshardGfxGraphRuntime>(
-            alloc,
-            alloc,
-            device,
-            device.swapchain(),
-            renderpass,
-            ice::move(snapshots),
-            ice::move(resources),
-            ice::move(stages)
-        );
-    }
-
 
 } // namespace ice::gfx
