@@ -35,6 +35,12 @@ namespace ice::gfx
 
         virtual void on_suspend() noexcept { }
 
+        virtual void final_update(
+            ice::EngineFrame const& frame,
+            ice::gfx::GfxGraphRuntime& graph_runtime,
+            ice::Clock const& clock
+        ) noexcept = 0;
+
         virtual auto device() noexcept -> ice::gfx::GfxDevice& = 0;
     };
 

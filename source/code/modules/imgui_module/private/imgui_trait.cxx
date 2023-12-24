@@ -440,8 +440,6 @@ namespace ice::devui
         _initialized = false;
 
         ice::render::RenderDevice& device = params.device.device();
-        device.destroy_shader(_shaders[0]);
-        device.destroy_shader(_shaders[1]);
 
         for (ice::render::Buffer buffer : _index_buffers)
         {

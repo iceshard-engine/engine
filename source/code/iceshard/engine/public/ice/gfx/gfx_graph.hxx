@@ -3,25 +3,12 @@
 
 #pragma once
 #include <ice/gfx/gfx_types.hxx>
+#include <ice/gfx/gfx_graph_resource.hxx>
 #include <ice/mem_unique_ptr.hxx>
 #include <ice/span.hxx>
 
 namespace ice::gfx
 {
-
-    enum class GfxResourceType : uint8_t
-    {
-        Invalid = 0,
-        RenderTarget,
-        DepthStencil,
-    };
-
-    struct GfxResource
-    {
-        using TypeTag = ice::StrongValue;
-
-        ice::uptr value;
-    };
 
     struct GfxGraphStage
     {

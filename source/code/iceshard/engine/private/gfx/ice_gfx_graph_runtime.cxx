@@ -3,6 +3,7 @@
 
 #include <ice/gfx/gfx_device.hxx>
 #include <ice/render/render_swapchain.hxx>
+#include <ice/render/render_device.hxx>
 #include <ice/render/render_pass.hxx>
 #include <ice/container/array.hxx>
 #include <ice/sort.hxx>
@@ -90,6 +91,191 @@ namespace ice::gfx
             }
         }
         return true;
+    }
+
+    auto create_renderpass(
+        ice::Allocator& alloc,
+        ice::render::RenderDevice& render_device,
+        ice::render::RenderSwapchain const& swapchain,
+        ice::Span<GfxResource> resources,
+        ice::Span<GfxGraphSnapshot const> GfxGraphSnapshots,
+        ice::u32 max_image_count
+    ) noexcept -> ice::render::Renderpass
+    {
+        using namespace ice::render;
+        ICE_ASSERT_CORE(max_image_count <= 4);
+
+        ice::Array<RenderAttachment> attachments{ alloc };
+        ice::Array<AttachmentReference> references{ alloc };
+        ice::Array<RenderSubPass> subpasses{ alloc };
+        ice::Array<SubpassDependency> dependencies{ alloc };
+
+        ice::array::reserve(attachments, ice::count(resources));
+        ice::array::reserve(references, ice::count(GfxGraphSnapshots));
+
+        ice::array::push_back(
+            attachments,
+            RenderAttachment{
+                .format = swapchain.image_format(),
+                .final_layout = ImageLayout::Present,
+                .type = AttachmentType::SwapchainImage,
+                .operations = {
+                    AttachmentOperation::Load_Clear,
+                    AttachmentOperation::Store_Store
+                },
+            }
+        );
+
+        for (GfxResource const res : resources)
+        {
+            GfxResourceType const type = gfx_resource_type(res);
+            if (type == GfxResourceType::Invalid)
+            {
+
+            }
+            else if (type == GfxResourceType::RenderTarget)
+            {
+                ice::array::push_back(
+                    attachments,
+                    RenderAttachment{
+                        .format = swapchain.image_format(),
+                        .final_layout = ImageLayout::ShaderReadOnly,
+                        .type = AttachmentType::TextureImage,
+                        .operations = {
+                            AttachmentOperation::Load_Clear,
+                            AttachmentOperation::Store_DontCare,
+                        },
+                    }
+                );
+            }
+            else // if (type == GfxResourceType::DepthStencil)
+            {
+                ice::array::push_back(
+                    attachments,
+                    RenderAttachment{
+                        .format = ImageFormat::SFLOAT_D32_UINT_S8,
+                        .final_layout = ImageLayout::DepthStencil,
+                        .type = AttachmentType::DepthStencil,
+                        .operations = {
+                            AttachmentOperation::Load_Clear
+                        }
+                    }
+                );
+            }
+        }
+
+        ice::u32 counts[3]{};
+        ice::u32 ref_subpass_idx = 0;
+        ice::u32 subpass_idx = 0;
+        for (GfxGraphSnapshot const GfxGraphSnapshot : GfxGraphSnapshots)
+        {
+            [[maybe_unused]]
+            ice::u32 const type_idx = gfx_resource_type_val(GfxGraphSnapshot.resource);
+            if (GfxGraphSnapshot.event & GfxSnapshotEvent::MaskPass)
+            {
+                if (subpass_idx > 1)
+                {
+                    ice::array::push_back(
+                        subpasses,
+                        RenderSubPass{
+                            .input_attachments = ice::array::slice(references, ref_subpass_idx, counts[0]),
+                            .color_attachments = ice::array::slice(references, ref_subpass_idx + counts[0], counts[1]),
+                            .depth_stencil_attachment = counts[2] == 0 ? AttachmentReference{ } : references[ref_subpass_idx + counts[0] + counts[1]],
+                        }
+                    );
+
+                    ref_subpass_idx += counts[0] + counts[1] + counts[2];
+                    counts[0] = counts[1] = counts[2] = 0;
+                }
+
+                if (GfxGraphSnapshot.event & GfxSnapshotEvent::EventNextSubPass && subpass_idx > 1)
+                {
+                    if (subpass_idx == 2)
+                    {
+                        ice::array::push_back(
+                            dependencies,
+                            SubpassDependency{
+                                .source_subpass = subpass_idx - 2,
+                                .source_stage = PipelineStage::ColorAttachmentOutput,
+                                .source_access = AccessFlags::ColorAttachmentWrite,
+                                .destination_subpass = subpass_idx - 1,
+                                .destination_stage = PipelineStage::ColorAttachmentOutput,
+                                .destination_access = AccessFlags::ColorAttachmentWrite,
+                            }
+                        );
+                    }
+                    else
+                    {
+                        ice::array::push_back(
+                            dependencies,
+                            SubpassDependency{
+                                .source_subpass = subpass_idx - 2,
+                                .source_stage = PipelineStage::ColorAttachmentOutput,
+                                .source_access = AccessFlags::ColorAttachmentWrite,
+                                .destination_subpass = subpass_idx - 1,
+                                .destination_stage = PipelineStage::FramentShader,
+                                .destination_access = AccessFlags::InputAttachmentRead
+                            }
+                        );
+                    }
+                }
+                subpass_idx += 1;
+            }
+            else
+            {
+                GfxResourceType const type = gfx_resource_type(GfxGraphSnapshot.resource);
+
+                ice::u32 idx = 0;
+                if (ice::binary_search(resources, GfxGraphSnapshot.resource, [](GfxResource lhs, GfxResource rhs) noexcept { return (lhs.value & 0xffff) < (rhs.value & 0xffff); }, idx))
+                {
+                    if (type == GfxResourceType::DepthStencil)
+                    {
+                        counts[2] += 1;
+                        ice::array::push_back(
+                            references,
+                            AttachmentReference{
+                                .attachment_index = idx,
+                                .layout = ImageLayout::DepthStencil
+                            }
+                        );
+                    }
+                    else if (GfxGraphSnapshot.event & GfxSnapshotEvent::EventWriteRes)
+                    {
+                        counts[1] += 1;
+                        ice::array::push_back(
+                            references,
+                            AttachmentReference{
+                                .attachment_index = idx,
+                                .layout = ImageLayout::Color
+                            }
+                        );
+                    }
+                    else
+                    {
+                        counts[0] += 1;
+                        ice::array::push_back(
+                            references,
+                            AttachmentReference{
+                                .attachment_index = idx,
+                                .layout = ImageLayout::ShaderReadOnly
+                            }
+                        );
+                    }
+                }
+                else
+                {
+                    ICE_ASSERT_CORE(false);
+                }
+            }
+        }
+
+        RenderpassInfo renderpass_info{
+            .attachments = attachments,
+            .subpasses = subpasses,
+            .dependencies = dependencies,
+        };
+
+        return render_device.create_renderpass(renderpass_info);
     }
 
     auto create_graph_runtime(
@@ -221,19 +407,6 @@ namespace ice::gfx
             ice::array::slice(resources),
             [](GfxResource lhs, GfxResource rhs) noexcept { return (lhs.value & 0xffff) < (rhs.value & 0xffff); }
         );
-
-        //IceshardGfxGraphRuntime::Framebuffers frame_buffers = create_framebuffers(
-        //    alloc,
-        //    device.device(),
-        //    device.swapchain(),
-        //    resources,
-        //    snapshots,
-        //    max_images
-        //);
-        //if (frame_buffers.framebuffers[1] == Framebuffer::Invalid)
-        //{
-        //    return {};
-        //}
 
         Renderpass renderpass = create_renderpass(
             alloc,

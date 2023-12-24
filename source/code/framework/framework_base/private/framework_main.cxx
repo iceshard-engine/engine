@@ -562,6 +562,8 @@ auto ice_suspend(
             ice::wait_for_all(tasks);
         }
 
+        runtime.gfx_runner->final_update(*runtime.frame, *runtime.gfx_rendergraph_runtime, runtime.clock);
+
         runtime.input_tracker.reset();
         runtime.runner->release_frame(ice::move(runtime.frame));
 

@@ -55,6 +55,12 @@ namespace ice::gfx
 
         void on_suspend() noexcept override;
 
+        void final_update(
+            ice::EngineFrame const& frame,
+            ice::gfx::GfxGraphRuntime& graph_runtime,
+            ice::Clock const& clock
+        ) noexcept override;
+
         auto device() noexcept -> ice::gfx::GfxDevice& override;
 
         void destroy() noexcept;
