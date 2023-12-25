@@ -11,7 +11,7 @@
 #include <ice/engine_shards.hxx>
 #include <ice/engine_devui.hxx>
 #include <ice/world/world.hxx>
-#include <ice/world/world_manager.hxx>
+#include <ice/world/world_updater.hxx>
 #include <ice/world/world_trait_module.hxx>
 
 #include <ice/gfx/gfx_stage.hxx>
