@@ -276,7 +276,12 @@ namespace ice
         template<typename Type, ice::ContainerLogic Logic>
         inline void clear(ice::Array<Type, Logic>& arr) noexcept
         {
-            ice::array::resize(arr, 0);
+            if constexpr (Logic == ContainerLogic::Complex)
+            {
+                ice::mem_destruct_n_at(arr._data, arr._count);
+            }
+
+            arr._count = 0;
         }
 
         template<typename Type, ice::ContainerLogic Logic>
