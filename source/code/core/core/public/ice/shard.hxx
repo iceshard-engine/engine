@@ -414,3 +414,12 @@ namespace ice
 
 
 } // namespace ice
+
+template<>
+constexpr auto ice::value_or_default<ice::ShardID, ice::ShardID>(
+    ice::ShardID value,
+    ice::ShardID default_value
+) noexcept -> ice::ShardID
+{
+    return value != ice::Shard_Invalid.id ? value : default_value;
+}
