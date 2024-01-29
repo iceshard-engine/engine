@@ -65,7 +65,7 @@ namespace ice
 
     HailstormResource::HailstormResource(
         ice::URI const& uri,
-        ice::hailstorm::HailstormResource const& handle
+        hailstorm::HailstormResource const& handle
     ) noexcept
         : _handle{ handle }
         , _uri{ uri }
@@ -74,7 +74,7 @@ namespace ice
 
     HailstormResourceMixed::HailstormResourceMixed(
         ice::URI const& uri,
-        ice::hailstorm::HailstormResource const& handle,
+        hailstorm::HailstormResource const& handle,
         ice::HailstormChunkLoader& loader
     ) noexcept
         : HailstormResource{ uri, handle }
@@ -89,7 +89,7 @@ namespace ice
 
     HailstormResourceSplit::HailstormResourceSplit(
         ice::URI const& uri,
-        ice::hailstorm::HailstormResource const& handle,
+        hailstorm::HailstormResource const& handle,
         ice::HailstormChunkLoader& meta_loader,
         ice::HailstormChunkLoader& data_loader
     ) noexcept

@@ -31,6 +31,8 @@ namespace ice::platform::win32
         auto temp_location() const noexcept -> ice::String override { return _temp_location; }
         auto usercontent_location(UserContentType content_type) const noexcept -> ice::String override { return {}; }
 
+        auto dylibs_location() const noexcept -> ice::String override;
+
         [[deprecated]]
         auto internal_data() const noexcept -> ice::String { return {}; }
         [[deprecated]]

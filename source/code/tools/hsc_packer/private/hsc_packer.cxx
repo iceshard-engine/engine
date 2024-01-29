@@ -3,8 +3,6 @@
 
 #include <ice/mem_allocator_host.hxx>
 #include <ice/resource.hxx>
-#include <ice/resource_hailstorm.hxx>
-#include <ice/resource_hailstorm_operations.hxx>
 #include <ice/resource_meta.hxx>
 #include <ice/resource_provider.hxx>
 #include <ice/resource_tracker.hxx>
@@ -14,31 +12,33 @@
 #include <ice/sort.hxx>
 #include <ice/uri.hxx>
 
+#include <hailstorm/hailstorm_operations.hxx>
+
 #include "hsc_packer_app.hxx"
 #include "hsc_packer_aiostream.hxx"
 
 using ice::operator""_sid;
-using ice::hailstorm::v1::HailstormChunk;
-using ice::hailstorm::v1::HailstormWriteChunkRef;
+using hailstorm::v1::HailstormChunk;
+using hailstorm::v1::HailstormWriteChunkRef;
 
 auto create_chunk_loose_resource(
-    ice::Data resource_meta,
-    ice::Data resource_data,
+    hailstorm::Data resource_meta,
+    hailstorm::Data resource_data,
     HailstormChunk base_chunk,
     void* userdata
 ) noexcept -> HailstormChunk
 {
     if (resource_data.size > base_chunk.size)
     {
-        base_chunk.size = resource_data.size + ice::usize(ice::u64(base_chunk.align));
+        base_chunk.size = resource_data.size + base_chunk.align;
     }
     return base_chunk;
 }
 
 auto select_chunk_loose_resource(
-    ice::Data resource_meta,
-    ice::Data resource_data,
-    ice::Span<HailstormChunk const> chunks,
+    hailstorm::Data resource_meta,
+    hailstorm::Data resource_data,
+    std::span<HailstormChunk const> chunks,
     void* userdata
 ) noexcept -> HailstormWriteChunkRef
 {
@@ -47,20 +47,20 @@ auto select_chunk_loose_resource(
         .meta_chunk = ice::u16_max,
     };
 
-    auto const* const beg = ice::span::begin(chunks);
-    auto const* it = ice::span::end(chunks) - 1;
-    while (it >= beg && (result.data_chunk == ice::u16_max || result.meta_chunk == ice::u16_max))
+    auto it = chunks.rbegin();
+    auto const end = chunks.rend();
+    while (it != end && (result.data_chunk == ice::u16_max || result.meta_chunk == ice::u16_max))
     {
         if (it->type == 1 && result.meta_chunk == ice::u16_max)
         {
-            result.meta_chunk = ice::u16(it - beg);
+            result.meta_chunk = ice::u16(std::distance(it, end) - 1);
         }
         else if (it->type == 2 && result.data_chunk == ice::u16_max)
         {
-            result.data_chunk = ice::u16(it - beg);
+            result.data_chunk = ice::u16(std::distance(it, end) - 1);
         }
 
-        it -= 1;
+        it += 1;
     }
 
     ICE_ASSERT_CORE(result.data_chunk != ice::u16_max && result.meta_chunk != ice::u16_max);
@@ -69,16 +69,21 @@ auto select_chunk_loose_resource(
 
 auto read_resource_size(
     ice::ResourceHandle const* resource_handle,
-    ice::Data& out_data,
+    hailstorm::Data& out_data,
     std::atomic_uint32_t& out_processed
 ) noexcept -> ice::Task<>
 {
     ice::LooseResource const* const resource = ice::get_loose_resource(resource_handle);
-    out_data.size = resource->size();
-    out_data.alignment = ice::ualign::b_8;
+    out_data.size = resource->size().value;
+    out_data.align = 8;
     out_data.location = nullptr;
     out_processed.fetch_add(1, std::memory_order_relaxed);
     co_return;
+}
+
+inline auto hsdata_view(ice::Memory mem) noexcept -> hailstorm::Data
+{
+    return { mem.location, mem.size.value, (size_t)mem.alignment };
 }
 
 class HailStormPackerApp final : public ice::tool::ToolApp<HailStormPackerApp>
@@ -205,11 +210,11 @@ public:
         ice::Span<ice::Resource const* const> resources
     ) noexcept -> ice::i32
     {
-        ice::Array<ice::Data> resource_data{ _allocator };
-        ice::Array<ice::Data> resource_metas{ _allocator };
+        ice::Array<hailstorm::Data> resource_data{ _allocator };
+        ice::Array<hailstorm::Data> resource_metas{ _allocator };
         ice::Array<ice::u32> resource_metamap{ _allocator };
         ice::Array<ice::ResourceHandle*> resource_handles{ _allocator };
-        ice::Array<ice::String> resource_paths{ _allocator };
+        ice::Array<std::string_view> resource_paths{ _allocator };
 
         ice::array::resize(resource_data, ice::count(resources));
         ice::array::resize(resource_metamap, ice::count(resources));
@@ -219,7 +224,7 @@ public:
         ice::MutableMetadata meta{ _allocator };
         ice::Memory metamem = ice::meta_save(meta, _allocator);
 
-        ice::array::push_back(resource_metas, ice::data_view(metamem));
+        ice::array::push_back(resource_metas, hsdata_view(metamem));
 
         std::atomic_uint32_t res_count = 0;
         ice::u32 res_idx = 0;
@@ -257,7 +262,7 @@ public:
         ice::array::resize(resource_data, res_idx);
         ice::array::resize(resource_metamap, res_idx);
 
-        ice::hailstorm::v1::HailstormWriteData const hsdata{
+        hailstorm::v1::HailstormWriteData const hsdata{
             .paths = resource_paths,
             .data = resource_data,
             .metadata = resource_metas,

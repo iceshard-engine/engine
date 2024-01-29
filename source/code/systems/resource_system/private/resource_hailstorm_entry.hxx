@@ -2,7 +2,7 @@
 /// SPDX-License-Identifier: MIT
 
 #pragma once
-#include <ice/resource_hailstorm.hxx>
+#include <hailstorm/hailstorm.hxx>
 #include <ice/resource_meta.hxx>
 #include <ice/resource.hxx>
 #include <ice/uri.hxx>
@@ -17,7 +17,7 @@ namespace ice
     public:
         HailstormResource(
             ice::URI const& uri,
-            ice::hailstorm::HailstormResource const& handle
+            hailstorm::HailstormResource const& handle
         ) noexcept;
 
         virtual auto uri() const noexcept -> ice::URI const& override { return _uri; }
@@ -29,7 +29,7 @@ namespace ice
         }
         virtual auto origin() const noexcept -> ice::String override { return _uri.path; }
 
-        ice::hailstorm::HailstormResource const& _handle;
+        hailstorm::HailstormResource const& _handle;
 
     protected:
         ice::URI _uri;
@@ -40,7 +40,7 @@ namespace ice
     public:
         HailstormResourceMixed(
             ice::URI const& uri,
-            ice::hailstorm::HailstormResource const& handle,
+            hailstorm::HailstormResource const& handle,
             ice::HailstormChunkLoader& loader
         ) noexcept;
 
@@ -55,7 +55,7 @@ namespace ice
     public:
         HailstormResourceSplit(
             ice::URI const& uri,
-            ice::hailstorm::HailstormResource const& handle,
+            hailstorm::HailstormResource const& handle,
             ice::HailstormChunkLoader& meta_loader,
             ice::HailstormChunkLoader& data_loader
         ) noexcept;

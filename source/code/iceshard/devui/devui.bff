@@ -8,7 +8,6 @@
     .Group = 'Engine'
 
     .BaseDir = '$WorkspaceCodeDir$/iceshard/devui'
-    .Requires = { 'Windows' }
 
     .Public =
     [

@@ -10,6 +10,26 @@
 
 using ice::LogSeverity;
 
+struct HailstormAllocator final : hailstorm::Allocator
+{
+    HailstormAllocator(ice::Allocator& alloc) noexcept
+        : _backing{ alloc }
+    { }
+
+    auto allocate(size_t size) noexcept -> hailstorm::Memory override
+    {
+        ice::Memory const result = _backing.allocate(ice::usize{ size });
+        return { result.location, result.size.value, (size_t)result.alignment };
+    }
+
+    void deallocate(void* ptr) noexcept override
+    {
+        _backing.deallocate(ptr);
+    }
+
+    ice::Allocator& _backing;
+};
+
 struct HailstormAIOWriter
 {
     ice::native_file::FilePath _filepath{};
@@ -33,34 +53,34 @@ struct HailstormAIOWriter
     ~HailstormAIOWriter() noexcept = default;
 
     inline bool open_and_resize(ice::usize total_size) noexcept;
-    inline bool write_header(ice::Data data, ice::usize offset) noexcept;
-    inline bool write_metadata(ice::Data data, ice::usize offset) noexcept;
+    inline bool write_header(hailstorm::Data data, ice::usize offset) noexcept;
+    inline bool write_metadata(hailstorm::Data data, ice::usize offset) noexcept;
     inline bool write_resource(ice::u32 idx, ice::usize offset) noexcept;
     inline bool close() noexcept;
 
 private:
-    inline auto async_write_header(ice::Data data, ice::usize offset) noexcept -> ice::Task<>;
-    inline auto async_write_metadata(ice::Data data, ice::usize offset) noexcept -> ice::Task<>;
+    inline auto async_write_header(hailstorm::Data data, ice::usize offset) noexcept -> ice::Task<>;
+    inline auto async_write_metadata(hailstorm::Data data, ice::usize offset) noexcept -> ice::Task<>;
     inline auto async_write_resource(ice::u32 idx, ice::usize offset) noexcept -> ice::Task<>;
 
     inline auto async_write(
         ice::usize write_offset,
-        ice::Data data
+        hailstorm::Data data
     ) noexcept;
 };
 
-inline auto HailstormAIOWriter::async_write(ice::usize write_offset, ice::Data data) noexcept
+inline auto HailstormAIOWriter::async_write(ice::usize write_offset, hailstorm::Data data) noexcept
 {
     struct Awaitable : OverlappedCoroutine
     {
         ice::native_file::File& _file;
         ice::isize const _offset;
-        ice::Data const _data;
+        hailstorm::Data const _data;
 
         inline Awaitable(
             ice::native_file::File& file,
             ice::isize offset,
-            ice::Data data
+            hailstorm::Data data
         ) noexcept
             : _file{ file }
             , _offset{ offset }
@@ -70,7 +90,7 @@ inline auto HailstormAIOWriter::async_write(ice::usize write_offset, ice::Data d
         inline bool await_ready() const noexcept { return false; }
         inline bool await_suspend(std::coroutine_handle<> coro_handle) noexcept
         {
-            ICE_ASSERT_CORE(_data.size.value <= MAXDWORD);
+            ICE_ASSERT_CORE(_data.size <= MAXDWORD);
             IPT_ZONE_SCOPED_NAMED("AsyncStream::async_write");
 
             // Need to set the coroutine before calling Write, since we could already be finishing writing on a different thread
@@ -84,7 +104,7 @@ inline auto HailstormAIOWriter::async_write(ice::usize write_offset, ice::Data d
             BOOL const result = WriteFile(
                 _file.native(),
                 _data.location,
-                (DWORD)_data.size.value,
+                (DWORD)_data.size,
                 NULL,
                 &_overlapped
             );
@@ -116,7 +136,7 @@ auto stream_close(HailstormAIOWriter* writer) noexcept -> bool
 }
 
 auto stream_write_header(
-    ice::Data data,
+    hailstorm::Data data,
     ice::usize offset,
     HailstormAIOWriter* writer
 ) noexcept -> bool
@@ -125,7 +145,7 @@ auto stream_write_header(
 }
 
 auto stream_write_metadata(
-    ice::hailstorm::v1::HailstormWriteData const& write_data,
+    hailstorm::v1::HailstormWriteData const& write_data,
     ice::u32 idx,
     ice::usize offset,
     HailstormAIOWriter* writer
@@ -135,7 +155,7 @@ auto stream_write_metadata(
 }
 
 auto stream_write_resource(
-    ice::hailstorm::v1::HailstormWriteData const& write_data,
+    hailstorm::v1::HailstormWriteData const& write_data,
     ice::u32 idx,
     ice::usize offset,
     HailstormAIOWriter* writer
@@ -147,18 +167,18 @@ auto stream_write_resource(
 inline bool hscp_write_hailstorm_file(
     ice::Allocator& alloc,
     HSCPWriteParams const& params,
-    ice::hailstorm::v1::HailstormWriteData const& data,
+    hailstorm::v1::HailstormWriteData const& data,
     ice::ResourceTracker& tracker,
     ice::Span<ice::ResourceHandle*> resources
 ) noexcept
 {
     using ice::operator""_MiB;
-    using namespace ice::hailstorm::v1;
+    using namespace hailstorm::v1;
 
     HailstormChunk const initial_chunks[]{
         HailstormChunk{
-            .size = 16_MiB,
-            .align = ice::ualign::b_8,
+            .size = (16_MiB).value,
+            .align = 8,
             .type = 2,
             .persistance = 3,
             .is_encrypted = false,
@@ -166,8 +186,8 @@ inline bool hscp_write_hailstorm_file(
             .app_custom_value = 42,
         },
         HailstormChunk{
-            .size = 2_MiB,
-            .align = ice::ualign::b_8,
+            .size = (2_MiB).value,
+            .align = 8,
             .type = 1,
             .persistance = 3,
             .is_encrypted = false,
@@ -176,11 +196,12 @@ inline bool hscp_write_hailstorm_file(
         }
     };
 
+    HailstormAllocator hsalloc{ alloc };
     HailstormAIOWriter writer{ params.filename, {}, params.task_scheduler, tracker, resources };
     HailstormAsyncWriteParams const hsparams{
         .base_params = HailstormWriteParams{
-            .temp_alloc = alloc,
-            .cluster_alloc = alloc,
+            .temp_alloc = hsalloc,
+            .cluster_alloc = hsalloc,
             .initial_chunks = initial_chunks,
             .estimated_chunk_count = 5,
             .fn_select_chunk = params.fn_chunk_selector,
@@ -195,7 +216,7 @@ inline bool hscp_write_hailstorm_file(
         .async_userdata = &writer
     };
 
-    return ice::hailstorm::v1::write_cluster_async(hsparams, data);
+    return hailstorm::v1::write_cluster_async(hsparams, data);
 }
 
 inline bool HailstormAIOWriter::open_and_resize(ice::usize total_size) noexcept
@@ -215,7 +236,7 @@ inline bool HailstormAIOWriter::open_and_resize(ice::usize total_size) noexcept
 }
 
 inline bool HailstormAIOWriter::write_header(
-    ice::Data header_data,
+    hailstorm::Data header_data,
     ice::usize write_offset
 ) noexcept
 {
@@ -223,7 +244,7 @@ inline bool HailstormAIOWriter::write_header(
     return true;
 }
 
-inline bool HailstormAIOWriter::write_metadata(ice::Data meta, ice::usize offset) noexcept
+inline bool HailstormAIOWriter::write_metadata(hailstorm::Data meta, ice::usize offset) noexcept
 {
     ice::schedule_task_on(async_write_metadata(meta, offset), _scheduler);
     return true;
@@ -260,7 +281,7 @@ inline bool HailstormAIOWriter::close() noexcept
     return true;
 }
 
-inline auto HailstormAIOWriter::async_write_header(ice::Data data, ice::usize offset) noexcept -> ice::Task<>
+inline auto HailstormAIOWriter::async_write_header(hailstorm::Data data, ice::usize offset) noexcept -> ice::Task<>
 {
     _started_writes.fetch_add(1, std::memory_order_relaxed);
     bool const success = co_await async_write(offset, data);
@@ -268,12 +289,17 @@ inline auto HailstormAIOWriter::async_write_header(ice::Data data, ice::usize of
     _finished_writes.fetch_add(1, std::memory_order_relaxed);
 }
 
-inline auto HailstormAIOWriter::async_write_metadata(ice::Data data, ice::usize offset) noexcept -> ice::Task<>
+inline auto HailstormAIOWriter::async_write_metadata(hailstorm::Data data, ice::usize offset) noexcept -> ice::Task<>
 {
     _started_writes.fetch_add(1, std::memory_order_relaxed);
     bool const success = co_await async_write(offset, data);
     ICE_ASSERT(success, "Failed to write header data!");
     _finished_writes.fetch_add(1, std::memory_order_relaxed);
+}
+
+inline auto data_to_hsdata(ice::Data data) noexcept -> hailstorm::Data
+{
+    return { data.location, data.size.value, (size_t)data.alignment };
 }
 
 inline auto HailstormAIOWriter::async_write_resource(ice::u32 idx, ice::usize offset) noexcept -> ice::Task<>
@@ -282,7 +308,7 @@ inline auto HailstormAIOWriter::async_write_resource(ice::u32 idx, ice::usize of
     ice::ResourceResult const load_result = co_await _resource_tracker.load_resource(_resources[idx]);
     if (load_result.resource_status == ice::ResourceStatus::Loaded)
     {
-        bool const success = co_await async_write(offset, load_result.data);
+        bool const success = co_await async_write(offset, data_to_hsdata(load_result.data));
         ICE_ASSERT(
             success,
             "Failed to write resource data for '{}'!",

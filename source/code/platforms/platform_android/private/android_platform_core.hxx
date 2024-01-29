@@ -32,6 +32,7 @@ namespace ice::platform::android
         auto data_locations() const noexcept -> ice::Span<ice::String const> override;
         auto save_location() const noexcept -> ice::String override { return _app_save_data; }
         auto cache_location() const noexcept -> ice::String override { return _app_internal_data; }
+        auto dylibs_location() const noexcept -> ice::String override { return _app_modules; }
 
     public: // ice::platform::Core
         auto refresh_events() noexcept -> ice::Result override;
@@ -79,6 +80,7 @@ namespace ice::platform::android
         std::atomic<AInputQueue*> _app_queue;
         ANativeWindow* _app_window;
 
+        ice::StaticString<256> _app_modules;
         ice::StaticString<256> _app_internal_data;
         ice::StaticString<256> _app_external_data;
         ice::StaticString<256> _app_save_data;

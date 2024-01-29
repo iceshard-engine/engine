@@ -7,8 +7,6 @@
 #include <ice/container/hashmap.hxx>
 #include <ice/container/array.hxx>
 #include <ice/string/heap_string.hxx>
-#include <ice/resource_hailstorm.hxx>
-#include <ice/resource_hailstorm_operations.hxx>
 #include <ice/resource_provider.hxx>
 #include <ice/resource_meta.hxx>
 #include <ice/task_awaitable.hxx>
@@ -24,6 +22,7 @@
 #include "resource_hailstorm_entry.hxx"
 #include "native/native_aio_tasks.hxx"
 
+#include <hailstorm/hailstorm_operations.hxx>
 #include <atomic>
 
 namespace ice
@@ -69,7 +68,7 @@ namespace ice
     public:
         HailstormChunkLoader(
             ice::Allocator& alloc,
-            ice::hailstorm::v1::HailstormChunk const& chunk
+            hailstorm::v1::HailstormChunk const& chunk
         ) noexcept
             : _allocator{ alloc }
             , _chunk{ chunk }
@@ -94,7 +93,7 @@ namespace ice
 
     protected:
         ice::Allocator& _allocator;
-        ice::hailstorm::v1::HailstormChunk const& _chunk;
+        hailstorm::v1::HailstormChunk const& _chunk;
     };
 
     // class HailstormChunkLoader_AlwaysLoaded final : public HailstormChunkLoader
@@ -102,7 +101,7 @@ namespace ice
     // public:
     //     HailstormChunkLoader_AlwaysLoaded(
     //         ice::Allocator& alloc,
-    //         ice::hailstorm::v1::HailstormChunk const& chunk,
+    //         hailstorm::v1::HailstormChunk const& chunk,
     //         ice::native_file::File const& file
     //     ) noexcept
     //         : HailstormChunkLoader{ alloc, chunk }
@@ -132,7 +131,7 @@ namespace ice
     public:
         HailstormChunkLoader_Persistent(
             ice::Allocator& alloc,
-            ice::hailstorm::v1::HailstormChunk const& chunk,
+            hailstorm::v1::HailstormChunk const& chunk,
             ice::native_file::File const& file
         ) noexcept
             : HailstormChunkLoader{ alloc, chunk }
@@ -179,8 +178,8 @@ namespace ice
             // We might actually have the block still allocated even though all references where removed at some point.
             if (_memory.location == nullptr)
             {
-                ice::Memory const res_memory = _allocator.allocate({ _chunk.size_origin, _chunk.align });
-                ice::AsyncReadFileRef request{ nativeio, _file, res_memory, _chunk.size, _chunk.offset };
+                ice::Memory const res_memory = _allocator.allocate({ { _chunk.size_origin }, (ice::ualign) _chunk.align });
+                ice::AsyncReadFileRef request{ nativeio, _file, res_memory, { _chunk.size }, { _chunk.offset } };
                 ice::AsyncReadFileRef::Result result = co_await request;
 
                 // Clear memory if failed to load the file chunk
@@ -228,7 +227,7 @@ namespace ice
     public:
         HailstormChunkLoader_Regular(
             ice::Allocator& alloc,
-            ice::hailstorm::v1::HailstormChunk const& chunk,
+            hailstorm::v1::HailstormChunk const& chunk,
             ice::native_file::File const& file
         ) noexcept
             : HailstormChunkLoader{ alloc, chunk }
@@ -278,14 +277,14 @@ namespace ice
             if (_pointers[ptr_idx] == nullptr)
             {
                 // TODO: See if we could use large page allocations if files size < 1kib
-                ice::Memory const memory = _allocator.allocate({ { size }, _chunk.align });
+                ice::Memory const memory = _allocator.allocate({ { size }, (ice::ualign)_chunk.align });
                 ice::AsyncReadFileRef request{ nullptr, _file, memory, { size }, { offset } };
                 ice::AsyncReadFileRef::Result result = co_await request;
 
                 ICE_ASSERT_CORE(result.bytes_read == ice::usize{ size });
                 _pointers[ptr_idx] = memory.location;
             }
-            co_return{ _pointers[ptr_idx], { size }, _chunk.align };
+            co_return{ _pointers[ptr_idx], { size }, (ice::ualign)_chunk.align };
         }
 
     private:
@@ -345,7 +344,7 @@ namespace ice
                     FileOpenFlags::Exclusive
                 );
 
-                using namespace ice::hailstorm;
+                using namespace hailstorm;
                 HailstormHeaderBase base_header;
                 ice::native_file::read_file(
                     _hspack_file,
@@ -354,7 +353,7 @@ namespace ice
                     { &base_header, ice::size_of<HailstormHeaderBase>, ice::align_of<HailstormHeaderBase> }
                 );
 
-                _header_memory = _allocator.allocate({ base_header.header_size, ice::align_of<HailstormHeader> });
+                _header_memory = _allocator.allocate({ { base_header.header_size }, ice::align_of<v1::HailstormHeader> });
                 ice::native_file::read_file(
                     _hspack_file,
                     0_B,
@@ -362,7 +361,7 @@ namespace ice
                     _header_memory
                 );
 
-                if (v1::read_header(ice::data_view(_header_memory), _pack) != Res::Success)
+                if (v1::read_header({ _header_memory.location, _header_memory.size.value, (size_t) _header_memory.alignment }, _pack) != hailstorm::Result::Success)
                 {
                     return ResourceProviderResult::Failure;
                 }
@@ -371,16 +370,16 @@ namespace ice
                 ice::native_file::path_to_string(_hspack_path, prefix);
                 ice::string::push_back(prefix, "/");
 
-                ice::usize const size_extended_paths = ice::hailstorm::v1::prefixed_resource_paths_size(
-                    _pack.paths, ice::count(_pack.resources), prefix
+                ice::usize::base_type const size_extended_paths = hailstorm::v1::prefixed_resource_paths_size(
+                    _pack.paths, (ice::ucount)_pack.resources.size(), (ice::String) prefix
                 );
 
                 // We allocate enough memory to keep all original paths prefixed with the resource file name and a slash.
-                _paths_memory = _allocator.allocate(size_extended_paths);
+                _paths_memory = _allocator.allocate(ice::usize{ size_extended_paths });
                 ice::native_file::read_file(
                     _hspack_file,
-                    _pack.header.header_size, // Here paths data start
-                    _pack.paths.size,
+                    { _pack.header.header_size }, // Here paths data start
+                    { _pack.paths.size },
                     _paths_memory
                 );
 
@@ -388,19 +387,19 @@ namespace ice
                 v1::HailstormResource* const resptr = reinterpret_cast<v1::HailstormResource*>(
                     ice::ptr_add(
                         _header_memory.location,
-                        ice::ptr_distance(_header_memory.location, _pack.resources._data)
+                        ice::ptr_distance(_header_memory.location, _pack.resources.data())
                     )
                 );
 
                 bool const prefixing_success = v1::prefix_resource_paths(
                     _pack.paths,
-                    { resptr, ice::count(_pack.resources) },
-                    _paths_memory,
-                    prefix
+                    { resptr, (ice::ucount)_pack.resources.size() },
+                    { _paths_memory.location, _paths_memory.size.value, (size_t)_paths_memory.alignment },
+                    (ice::String) prefix
                 );
                 ICE_ASSERT_CORE(prefixing_success);
 
-                _pack.paths_data = ice::data_view(_paths_memory);
+                _pack.paths_data = { _paths_memory.location, _paths_memory.size.value, (size_t)_paths_memory.alignment };
 
                 // Reopen as async
                 _hspack_file = ice::native_file::open_file(
@@ -501,7 +500,7 @@ namespace ice
             ice::Memory /*memory*/
         ) noexcept override
         {
-            ice::hailstorm::HailstormResource const& hsres = static_cast<ice::HailstormResource const*>(resource)->_handle;
+            hailstorm::HailstormResource const& hsres = static_cast<ice::HailstormResource const*>(resource)->_handle;
             _loaders[hsres.chunk]->free_slice(hsres.offset, hsres.size);
             _loaders[hsres.meta_chunk]->free_slice(hsres.meta_offset, hsres.meta_size);
         }
@@ -513,7 +512,7 @@ namespace ice
             ice::NativeAIO* nativeio
         ) const noexcept -> ice::Task<ice::Memory> override
         {
-            ice::hailstorm::HailstormResource const& hsres = static_cast<ice::HailstormResource const*>(resource)->_handle;
+            hailstorm::HailstormResource const& hsres = static_cast<ice::HailstormResource const*>(resource)->_handle;
             co_return co_await _loaders[hsres.chunk]->request_slice(hsres.offset, hsres.size, nativeio);
         }
 
@@ -534,7 +533,7 @@ namespace ice
         ice::Memory _header_memory;
         ice::Memory _paths_memory;
 
-        ice::hailstorm::v1::HailstormData _pack;
+        hailstorm::v1::HailstormData _pack;
         ice::Array<ice::HailstormChunkLoader*> _loaders;
         ice::Array<ice::HailstormResource*> _entries;
         ice::HashMap<ice::u32> _entrymap;

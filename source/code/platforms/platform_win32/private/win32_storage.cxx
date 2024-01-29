@@ -97,6 +97,11 @@ namespace ice::platform::win32
         return paths;
     }
 
+    auto win32::Win32Storage::dylibs_location() const noexcept -> ice::String
+    {
+        return ice::path::directory(ice::app::location());
+    }
+
     void win32::Win32Storage::reload_paths(ice::String appname) noexcept
     {
         ice::string::clear(_save_location);

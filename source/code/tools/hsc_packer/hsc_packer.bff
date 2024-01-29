@@ -16,6 +16,10 @@
 
     .Private =
     [
+        .Modules = {
+            'hailstorm'
+        }
+
         .Uses = {
             'resource_system'
             'tool_base'

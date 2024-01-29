@@ -2,9 +2,9 @@
 /// SPDX-License-Identifier: MIT
 
 #pragma once
-#include <ice/resource_hailstorm.hxx>
-#include <ice/resource_hailstorm_operations.hxx>
 #include <ice/native_file.hxx>
+#include <hailstorm/hailstorm.hxx>
+#include <hailstorm/hailstorm_operations.hxx>
 
 using ice::operator""_MiB;
 
@@ -24,8 +24,8 @@ struct HSCPWriteParams
     ice::usize size_meta_chunk = 2_MiB;
 
     //! \brief Hailstorm chunk selection logic.
-    ice::hailstorm::v1::HailstormWriteParams::ChunkSelectFn* fn_chunk_selector;
-    ice::hailstorm::v1::HailstormWriteParams::ChunkCreateFn* fn_chunk_create;
+    hailstorm::v1::HailstormWriteParams::ChunkSelectFn* fn_chunk_selector;
+    hailstorm::v1::HailstormWriteParams::ChunkCreateFn* fn_chunk_create;
 
     //! \brief Userdata passed to selector function.
     void* ud_chunk_selector;
@@ -34,7 +34,7 @@ struct HSCPWriteParams
 bool hscp_write_hailstorm_file(
     ice::Allocator& alloc,
     HSCPWriteParams const& params,
-    ice::hailstorm::v1::HailstormWriteData const& data,
+    hailstorm::v1::HailstormWriteData const& data,
     ice::ResourceTracker& tracker,
     ice::Span<ice::ResourceHandle*> resources
 ) noexcept;

@@ -103,7 +103,7 @@ namespace ice::devui
         io.KeyMap[ImGuiKey_Space] = (uint32_t)ice::input::KeyboardKey::Space;
         io.KeyMap[ImGuiKey_Enter] = (uint32_t)ice::input::KeyboardKey::Return;
         io.KeyMap[ImGuiKey_Escape] = (uint32_t)ice::input::KeyboardKey::Escape;
-        io.KeyMap[ImGuiKey_KeyPadEnter] = 0;
+        io.KeyMap[ImGuiKey_KeypadEnter] = 0;
         io.KeyMap[ImGuiKey_A] = (uint32_t)ice::input::KeyboardKey::KeyA;
         io.KeyMap[ImGuiKey_C] = (uint32_t)ice::input::KeyboardKey::KeyC;
         io.KeyMap[ImGuiKey_V] = (uint32_t)ice::input::KeyboardKey::KeyV;

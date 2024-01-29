@@ -16,6 +16,10 @@
             'tasks'
             'utils'
         }
+
+        .Modules = {
+            'hailstorm'
+        }
     ]
 
     .Private =

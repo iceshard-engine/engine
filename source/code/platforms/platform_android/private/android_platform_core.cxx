@@ -48,6 +48,33 @@ namespace ice::platform::android
         return res;
     }
 
+    static auto get_jni_path(ice::Allocator& alloc, jobject const& activity, JNIEnv* env) noexcept
+    {
+        ice::HeapString<> res{ alloc };
+        jmethodID mid_getPackageName;
+        jmethodID mid_getPackageManager;
+        jmethodID mid_getApplicationInfo;
+        jfieldID fid_nativeLibraryDir;
+        {
+            ice::jni::JClass clazz{ env, env->GetObjectClass(activity) };
+            mid_getPackageName = env->GetMethodID(clazz.native(), "getPackageName", "()Ljava/lang/String;");
+            mid_getPackageManager = env->GetMethodID(clazz.native(), "getPackageManager", "()Landroid/content/pm/PackageManager;");
+            clazz = jni::JClass{ env, env->FindClass("android/content/pm/PackageManager") };
+            mid_getApplicationInfo = env->GetMethodID(clazz.native(), "getApplicationInfo", "(Ljava/lang/String;I)Landroid/content/pm/ApplicationInfo;");
+            clazz = jni::JClass{ env, env->FindClass("android/content/pm/ApplicationInfo") };
+            fid_nativeLibraryDir = env->GetFieldID(clazz.native(), "nativeLibraryDir", "Ljava/lang/String;");
+        }
+
+        ice::jni::JObject obj{ env, env->CallObjectMethod(activity, mid_getPackageManager) };
+        ice::jni::JObject pkgName{ env, env->CallObjectMethod(activity, mid_getPackageName) };
+        obj = jni::JObject{ env, env->CallObjectMethod(obj.native(), mid_getApplicationInfo, pkgName.native(), jint{ 0 }) };
+        obj = jni::JObject{ env, env->GetObjectField(obj.native(), fid_nativeLibraryDir) };
+        jsize const len = env->GetStringUTFLength((jstring)obj.native());
+        ice::string::resize(res, static_cast<ice::ucount>(len));
+        env->GetStringUTFRegion((jstring)obj.native(), 0, len, ice::string::begin(res));
+        return res;
+    }
+
     static auto core_instance(ANativeActivity* activity) noexcept
     {
         return reinterpret_cast<AndroidCore*>(activity->instance);
@@ -83,9 +110,11 @@ namespace ice::platform::android
     {
         ice::HeapString<> cache_path = get_cache_path(alloc, activity->clazz, activity->env);
 
+        _app_modules = get_jni_path(alloc, activity->clazz, activity->env);
         _app_internal_data = activity->internalDataPath;
         _app_external_data = activity->externalDataPath;
         _app_save_data = activity->externalDataPath;
+        ice::string::push_back(_app_modules, '/');
         ice::string::push_back(_app_internal_data, '/');
         ice::string::push_back(_app_external_data, '/');
         ice::string::push_back(_app_save_data, '/');
