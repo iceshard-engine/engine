@@ -23,7 +23,7 @@ namespace ice
 
         static ice::AssetTypeDefinition type_definition{
             .resource_extensions = extensions,
-            .fn_asset_oven = asset_tilemap_oven_tmx,
+            .fn_asset_oven = ice::build::is_windows ? asset_tilemap_oven_tmx : nullptr,
             .fn_asset_loader = asset_tilemap_loader
         };
 

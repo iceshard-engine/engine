@@ -26,7 +26,7 @@ namespace ice::platform
         virtual auto save_location() const noexcept -> ice::String = 0;
 
         //! \return Location for persistent generated data between game sessions.
-        //! \note May be cleared by the used manually.
+        //! \note May be cleared by the user manually.
         virtual auto cache_location() const noexcept -> ice::String = 0;
 
         //! \return Location for temporary generated data.
@@ -48,6 +48,11 @@ namespace ice::platform
         {
             return save_location();
         }
+
+        //! \brief This value should be used to access shared libraries to be loaded.
+        //! \note This location is unaffected by the AppName and is system dependent.
+        //! \return Single location with additional shared libraries to be loaded.
+        virtual auto dylibs_location() const noexcept -> ice::String = 0;
     };
 
     template<>
