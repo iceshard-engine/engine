@@ -195,6 +195,7 @@ namespace ice
             if (new_capacity > 0)
             {
                 ice::AllocResult new_buffer = arr._allocator->allocate(ice::meminfo_of<Type> * new_capacity);
+                ICE_ASSERT_CORE(new_buffer.memory != nullptr);
                 if (arr._count > 0)
                 {
                     if constexpr (Logic == ContainerLogic::Complex)
