@@ -12,6 +12,7 @@
 #include <ice/platform_core.hxx>
 #include <ice/platform_render_surface.hxx>
 #include <ice/platform_window_surface.hxx>
+#include <ice/platform_storage.hxx>
 
 #include <ice/gfx/gfx_device.hxx>
 #include <ice/gfx/gfx_runner.hxx>
@@ -56,7 +57,11 @@
 #include <ice/profiler.hxx>
 #include <ice/uri.hxx>
 
+#include <thread>
+
 #define USE_API_V1 0
+
+struct FrameworkLog : ice::Module<ice::LogModule> { };
 
 template<typename T>
 void destroy_object(T* obj) noexcept
@@ -68,24 +73,22 @@ struct ice::app::Config
 {
     Config(ice::Allocator& alloc) noexcept
         : alloc{ alloc }
-        , dirs{ alloc }
+        , dev_dirs{ alloc }
     { }
 
     ice::Allocator& alloc;
     ice::String app_name = "My App";
 
-    struct Directories
+    struct DeveloperDirectories
     {
-        Directories(ice::Allocator& alloc) noexcept
-            : modules{ }
-            , shaders{ alloc }
+        DeveloperDirectories(ice::Allocator& alloc) noexcept
+            : shaders{ alloc }
             , assets{ alloc }
         { }
 
-        ice::String modules;
         ice::HeapString<> shaders;
         ice::HeapString<> assets;
-    } dirs;
+    } dev_dirs;
 };
 
 struct ice::app::State
@@ -137,7 +140,7 @@ struct ice::app::State
         , thread_pool_scheduler{ thread_pool_queue }
         , thread_pool{ }
         , resources{ }
-        , modules{ ice::create_default_module_register(modules_alloc) }
+        , modules{ ice::create_default_module_register(modules_alloc, true) }
         , providers{ }
         , platform{ .core = nullptr }
     {
@@ -161,17 +164,6 @@ struct ice::app::State
             .flags_io_wait = ice::TaskFlags{ }
         };
         resources = ice::create_resource_tracker(resources_alloc, thread_pool_scheduler, resource_info);
-
-        modules->load_module(
-            modules_alloc,
-            ice::load_log_module,
-            ice::unload_log_module
-        );
-        modules->load_module(
-            modules_alloc,
-            ice::framework::load_framework_module,
-            ice::framework::unload_framework_module
-        );
     }
 };
 
@@ -231,10 +223,15 @@ void ice_init(
 ) noexcept
 {
     IPT_ZONE_SCOPED;
+    using ice::operator|;
 
+    ice::Shard const platform_params[]{
+        ice::platform::Shard_StorageAppName | "isdpapp"
+    };
     ice::Result const res = ice::platform::initialize_with_allocator(
         alloc,
-        ice::platform::FeatureFlags::Core
+        ice::platform::FeatureFlags::Core | ice::platform::FeatureFlags::StoragePaths,
+        platform_params
     );
     ICE_ASSERT(res == ice::Res::Success, "Failed to initialize platform!");
 
@@ -265,24 +262,40 @@ auto ice_setup(
     IPT_ZONE_SCOPED;
     using ice::operator""_uri;
 
-    ice::String location = ice::app::location();
-    ice::String workingdir = ice::app::workingdir();
+    ice::platform::StoragePaths* storage;
+    ice::platform::query_api(storage);
+    ICE_ASSERT_CORE(storage != nullptr);
 
-    config.dirs.modules = ice::path::directory(ice::app::directory());
-    config.dirs.shaders = ice::app::workingdir();
-    config.dirs.assets = ice::app::workingdir();
+    ice::String dylib_path;
+    ice::Array<ice::String> resource_paths{ alloc };
+    if constexpr (ice::build::is_release == false && ice::build::is_windows)
+    {
+        dylib_path = ice::path::directory(ice::app::directory());
+        config.dev_dirs.shaders = ice::app::workingdir();
+        config.dev_dirs.assets = ice::app::workingdir();
 
-    ice::path::join(config.dirs.shaders, "/obj/VkShaders/GFX-Vulkan-Unoptimized-vk-glslc-1-3/data");
-    ice::path::join(config.dirs.assets, "../source/data");
-    ice::path::normalize(config.dirs.shaders);
-    ice::path::normalize(config.dirs.assets);
-    ice::string::push_back(config.dirs.shaders, '/');
-    ice::string::push_back(config.dirs.assets, '/');
+        // Assumes the apps working-dir is in 'build' and no changes where done to shader compilation step
+        ice::path::join(config.dev_dirs.shaders, "/obj/VkShaders/GFX-Vulkan-Unoptimized-vk-glslc-1-3/data");
+        ice::path::join(config.dev_dirs.assets, "../source/data");
+        ice::path::normalize(config.dev_dirs.shaders);
+        ice::path::normalize(config.dev_dirs.assets);
+        ice::string::push_back(config.dev_dirs.shaders, '/');
+        ice::string::push_back(config.dev_dirs.assets, '/');
+        ice::array::push_back(resource_paths, config.dev_dirs.assets);
+        ice::array::push_back(resource_paths, config.dev_dirs.shaders);
+    }
+    else
+    {
+        dylib_path = storage->dylibs_location();
+        ice::array::push_back(resource_paths, storage->data_locations());
+    }
 
-    ice::String const resource_paths[]{ config.dirs.shaders, config.dirs.assets };
+    ice::array::push_back(resource_paths, storage->cache_location());
+    ice::array::push_back(resource_paths, storage->save_location());
+
     ice::framework::Config game_config{
-        .module_dir = config.dirs.modules,
-        .resource_dirs = { resource_paths }
+        .module_dir = dylib_path,
+        .resource_dirs = resource_paths
     };
 
     state.game = ice::framework::create_game(state.gamework_alloc);
@@ -294,7 +307,9 @@ auto ice_setup(
         game_config.resource_dirs,
         &state.thread_pool_scheduler
     );
-    auto modules = ice::create_resource_provider_dlls(state.resources_alloc, game_config.module_dir);
+    auto modules = ice::create_resource_provider_dlls(
+        state.resources_alloc, game_config.module_dir
+    );
 
     state.resources->attach_provider(ice::move(filesys));
     state.resources->attach_provider(ice::move(modules));
@@ -308,7 +323,20 @@ auto ice_setup(
     state.game->on_setup(framework_state);
 
     // Load everything to resume the game.
-    state.modules->load_module(state.modules_alloc, ice::resource_origin(state.resources->find_resource("urn:iceshard.dll"_uri)));
+    ice::String library_path = "iceshard";
+    if constexpr (ice::build::is_windows)
+    {
+        if constexpr (ice::build::is_release)
+        {
+            library_path = "iceshard.dll";
+        }
+        else
+        {
+            library_path = ice::resource_origin(state.resources->find_resource("urn:iceshard.dll"_uri));
+        }
+    }
+
+    state.modules->load_module(state.modules_alloc, library_path);
 
     ice::EngineCreateInfo engine_create_info{ };
     {
@@ -494,8 +522,8 @@ auto ice_update(
 
     if (runtime.render_enabled == false)
     {
-        // Throttle if no window!
-        _sleep(1);
+        using namespace std;
+        std::this_thread::sleep_for(1ms);
     }
 
     runtime.logic_wait.wait();

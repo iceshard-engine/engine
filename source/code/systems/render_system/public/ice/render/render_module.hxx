@@ -18,6 +18,9 @@ namespace ice::render
 
         struct RenderAPI
         {
+            static constexpr ice::StringID Constant_APIName = "ice.render-api"_sid;
+            static constexpr ice::u32 Constant_APIVersion = 1;
+
             CreateFn* create_driver_fn;
             DestroyFn* destroy_driver_fn;
         };

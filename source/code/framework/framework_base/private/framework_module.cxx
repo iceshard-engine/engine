@@ -27,8 +27,6 @@
 namespace ice::framework
 {
 
-    static constexpr ice::StringID_Hash Constant_WorldTraitsAPI = ice::stringid_hash(ice::Constant_APIName_WorldTraitsModule);
-
 #if 0
     bool game_register_traits(ice::WorldTraitArchive& archive) noexcept
     {
@@ -68,20 +66,18 @@ namespace ice::framework
     }
 #endif
 
-    void load_framework_module(
-        ice::Allocator* alloc,
-        ice::ModuleNegotiatorContext* ctx,
-        ice::ModuleNegotiator* api
+    bool FrameworkModule::on_load(
+        ice::Allocator& alloc,
+        ice::ModuleNegotiator const& negotiator
     ) noexcept
     {
-        //api->fn_register_module(ctx, Constant_WorldTraitsAPI, &get_module_api);
+        return true;
     }
 
-    void unload_framework_module(
-        ice::Allocator* alloc
+    void FrameworkModule::on_unload(
+        ice::Allocator& alloc
     ) noexcept
     {
-
     }
 
 } // namespace ice::framework

@@ -23,6 +23,9 @@ namespace ice::devui
 
         struct DevUI_API
         {
+            static constexpr ice::StringID Constant_APIName = "ice.devui_module"_sid;
+            static constexpr ice::u32 Constant_APIVersion = 1;
+
             CreateFn* create_system_fn;
             DestroyFn* destroy_system_fn;
         };

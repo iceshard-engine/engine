@@ -55,6 +55,9 @@ namespace ice
 
         struct EngineAPI
         {
+            static constexpr ice::StringID Constant_APIName = "iceshard.engine"_sid;
+            static constexpr ice::u32 Constant_APIVersion = 2;
+
             CreateFn* create_engine_fn;
             DestroyFn* destroy_engine_fn;
             CreateRunnerFn* create_engine_runner_fn;

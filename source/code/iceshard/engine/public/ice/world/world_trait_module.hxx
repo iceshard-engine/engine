@@ -18,19 +18,18 @@ namespace ice
     namespace detail::world_traits
     {
 
-        static constexpr ice::StringID Constant_APIName_WorldTraitsModule = "ice.world-traits-module"_sid;
-
         using RegisterTraitsFn = bool(
             ice::TraitArchive&
         ) noexcept;
 
         struct TraitsModuleAPI
         {
+            static constexpr ice::StringID Constant_APIName = "ice.world-traits-module"_sid;
+            static constexpr ice::u32 Constant_APIVersion = 1;
+
             RegisterTraitsFn* register_traits_fn;
         };
 
     } // namespace detail::engine::v1
-
-    using ice::detail::world_traits::Constant_APIName_WorldTraitsModule;
 
 } // namespace ice

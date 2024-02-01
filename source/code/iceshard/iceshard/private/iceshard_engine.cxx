@@ -74,9 +74,11 @@ namespace ice
         static_cast<ice::IceshardEngine*>(engine)->destroy();
     }
 
-    bool iceshard_get_api_proc(ice::StringID_Hash api_name, ice::u32 version, void** args) noexcept
+    using EngineAPI = ice::detail::engine::EngineAPI;
+
+    bool iceshard_get_api_proc(ice::StringID_Hash api_name, ice::u32 version, ice::ModuleAPI* api) noexcept
     {
-        static detail::engine::EngineAPI current_api{
+        static EngineAPI current_api{
             .create_engine_fn = ice::create_engine_fn,
             .destroy_engine_fn = ice::destroy_engine_fn,
             .create_engine_runner_fn = ice::create_engine_runner_fn,
@@ -85,38 +87,33 @@ namespace ice
             .destroy_gfx_runner_fn = ice::destroy_gfx_runner_fn,
         };
 
-        if (api_name == "iceshard.engine"_sid && version == 2)
+        if (api_name == EngineAPI::Constant_APIName && version == EngineAPI::Constant_APIVersion)
         {
-            *args = &current_api;
+            api->api_ptr = &current_api;
+            api->version = 2;
+            api->priority = 100;
             return true;
         }
         return false;
     }
 
+    void iceshard_get_api_proc(EngineAPI& api) noexcept
+    {
+        api.create_engine_fn = ice::create_engine_fn;
+        api.destroy_engine_fn = ice::destroy_engine_fn;
+        api.create_engine_runner_fn = ice::create_engine_runner_fn;
+        api.destroy_engine_runner_fn = ice::destroy_engine_runner_fn;
+        api.create_gfx_runner_fn = ice::create_gfx_runner_fn;
+        api.destroy_gfx_runner_fn = ice::destroy_gfx_runner_fn;
+    }
+
+    struct IceShardModule : ice::Module<IceShardModule>
+    {
+        static bool on_load(ice::Allocator& alloc, ice::ModuleNegotiator const& negotiator) noexcept
+        {
+            ice::LogModule::init(alloc, negotiator);
+            return negotiator.register_api(iceshard_get_api_proc);
+        }
+    };
+
 } // namespace ice
-
-extern "C"
-{
-
-    // #TODO: https://github.com/iceshard-engine/engine/issues/92
-#if ISP_WINDOWS
-    __declspec(dllexport) void ice_module_load(
-        ice::Allocator* alloc,
-        ice::ModuleNegotiatorContext* ctx,
-        ice::ModuleNegotiator* negotiator
-    )
-    {
-        using ice::operator""_sid_hash;
-        ice::initialize_log_module(ctx, negotiator);
-
-        negotiator->fn_register_module(ctx, "iceshard.engine"_sid_hash, ice::iceshard_get_api_proc);
-    }
-
-    __declspec(dllexport) void ice_module_unload(
-        ice::Allocator* alloc
-    )
-    {
-    }
-#endif
-
-}

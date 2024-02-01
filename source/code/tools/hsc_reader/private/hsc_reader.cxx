@@ -10,6 +10,8 @@
 #include "hsc_reader_app.hxx"
 #include "hsc_reader_funcs.hxx"
 
+struct HSReaderLog : ice::Module<ice::LogModule> { };
+
 class HailStormReaderApp final : public ice::tool::ToolApp<HailStormReaderApp>
 {
 public:
@@ -22,7 +24,6 @@ public:
 
     void setup(ice::ParamList& params) noexcept override
     {
-        _modules->load_module(_allocator, ice::load_log_module, ice::unload_log_module);
         hscr_initialize_logging(params);
     }
 

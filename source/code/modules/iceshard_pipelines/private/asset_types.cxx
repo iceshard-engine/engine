@@ -22,61 +22,18 @@ namespace ice
         asset_type_ui_definition(asset_type_archive);
     }
 
-    bool asset_type_definitions_api(
-        ice::StringID_Hash name,
-        ice::u32 version,
-        void** api_ptr
-    ) noexcept
+    struct IceShardPipelinesModule : ice::Module<IceShardPipelinesModule>
     {
-        using ice::detail::asset_system::v1::AssetTypeArchiveAPI;
-        using ice::detail::asset_system::v1::Constant_APIName_AssetTypeArchive;
-
-        static AssetTypeArchiveAPI asset_type_archive_api{
-            .register_types_fn = asset_type_definitions
-        };
-
-        if (name == ice::stringid_hash(Constant_APIName_AssetTypeArchive) && version == 1)
+        static void v1_archive_api(ice::detail::asset_system::v1::AssetTypeArchiveAPI& api) noexcept
         {
-            *api_ptr = &asset_type_archive_api;
-            return true;
+            api.register_types_fn = asset_type_definitions;
         }
-        return false;
-    }
 
-    bool ice_module_load(
-        ice::Allocator* alloc,
-        ice::ModuleNegotiatorContext* ctx,
-        ice::ModuleNegotiator* negotiator
-    ) noexcept
-    {
-        ice::initialize_log_module(ctx, negotiator);
-
-        using ice::detail::asset_system::v1::Constant_APIName_AssetTypeArchive;
-
-        negotiator->fn_register_module(ctx, ice::stringid_hash(Constant_APIName_AssetTypeArchive), ice::asset_type_definitions_api);
-        return true;
-    }
+        static bool on_load(ice::Allocator& alloc, ice::ModuleNegotiator const& negotiator) noexcept
+        {
+            ice::LogModule::init(alloc, negotiator);
+            return negotiator.register_api(v1_archive_api);
+        }
+    };
 
 } // namespace ice
-
-extern "C"
-{
-    // #TODO: https://github.com/iceshard-engine/engine/issues/92
-#if ISP_WINDOWS
-    __declspec(dllexport) void ice_module_load(
-        ice::Allocator* alloc,
-        ice::ModuleNegotiatorContext* ctx,
-        ice::ModuleNegotiator* negotiator
-    )
-    {
-        ice::ice_module_load(alloc, ctx, negotiator);
-    }
-
-    __declspec(dllexport) void ice_module_unload(
-        ice::Allocator* alloc
-    )
-    {
-    }
-#endif // #if ISP_WINDOWS
-
-} // extern "C"

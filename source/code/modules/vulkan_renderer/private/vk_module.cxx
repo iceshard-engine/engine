@@ -23,8 +23,6 @@ namespace ice::render::vk
     };
 #endif
 
-
-
     auto create_vulkan_driver(ice::Allocator& alloc) noexcept -> ice::render::RenderDriver*
     {
         ice::UniquePtr<VulkanAllocator> vk_alloc = ice::make_unique<VulkanAllocator>(alloc, alloc);
@@ -56,47 +54,20 @@ namespace ice::render::vk
         alloc.destroy(driver);
     }
 
-    bool vulkan_driver_get_api_proc(ice::StringID_Hash name, ice::u32 version, void** api_ptr) noexcept
+    struct VulkanModule : ice::Module<VulkanModule>
     {
-        static ice::render::detail::v1::RenderAPI driver_api{
-            .create_driver_fn = create_vulkan_driver,
-            .destroy_driver_fn = destroy_vulkan_driver,
-        };
-
-        if (name == "ice.render-api"_sid_hash)
+        static void v1_driver_api(ice::render::detail::v1::RenderAPI& api) noexcept
         {
-            *api_ptr = &driver_api;
-            return true;
+            api.create_driver_fn = create_vulkan_driver;
+            api.destroy_driver_fn = destroy_vulkan_driver;
         }
 
-        return false;
-    }
+        static bool on_load(ice::Allocator& alloc, ice::ModuleNegotiator const& negotiator) noexcept
+        {
+            ice::LogModule::init(alloc, negotiator);
+            ice::log_tag_register(log_tag);
+            return negotiator.register_api(v1_driver_api);
+        }
+    };
 
 } // ice::render::vk
-
-
-extern "C"
-{
-
-#if ISP_WINDOWS
-    __declspec(dllexport) void ice_module_load(
-        ice::Allocator* alloc,
-        ice::ModuleNegotiatorContext* ctx,
-        ice::ModuleNegotiator* negotiator
-    )
-    {
-        using ice::operator""_sid_hash;
-        ice::initialize_log_module(ctx, negotiator);
-        ice::log_tag_register(ice::render::vk::log_tag);
-
-        negotiator->fn_register_module(ctx, "ice.render-api"_sid_hash, ice::render::vk::vulkan_driver_get_api_proc);
-    }
-
-    __declspec(dllexport) void ice_module_unload(
-        ice::Allocator* alloc
-    )
-    {
-    }
-#endif
-
-}
