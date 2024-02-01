@@ -4,6 +4,7 @@
 #include <ice/game_module.hxx>
 #include <ice/game_render_traits.hxx>
 #include <ice/world/world_trait_module.hxx>
+#include <ice/framework_module.hxx>
 
 #include "traits/trait_tilemap.hxx"
 #include "traits/trait_camera.hxx"

@@ -1,7 +1,7 @@
 #pragma once
 #include <ice/mem_allocator.hxx>
+#include <ice/module_negotiator.hxx>
 #include <ice/module_concepts.hxx>
-#include <ice/module_info.hxx>
 
 namespace ice
 {
