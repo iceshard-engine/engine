@@ -88,15 +88,17 @@ namespace ice::native_file
     ) noexcept -> ice::native_file::File
     {
         IPT_ZONE_SCOPED;
-        ice::win32::FileHandle handle = CreateFileW(
-            ice::string::begin(path),
-            translate_access(flags),
-            translate_mode(flags), // FILE_SHARE_*
-            NULL, // SECURITY ATTRIBS
-            translate_disposition(flags),
-            translate_attribs(flags),
-            NULL
-        );
+        ice::win32::FileHandle handle{
+            CreateFileW(
+                ice::string::begin(path),
+                translate_access(flags),
+                translate_mode(flags), // FILE_SHARE_*
+                NULL, // SECURITY ATTRIBS
+                translate_disposition(flags),
+                translate_attribs(flags),
+                NULL
+            )
+        };
         return handle;
     }
 
@@ -112,15 +114,17 @@ namespace ice::native_file
 
     auto sizeof_file(ice::native_file::FilePath path) noexcept -> ice::usize
     {
-        ice::win32::FileHandle handle = CreateFileW(
-            path._data,
-            FILE_READ_ATTRIBUTES,
-            FILE_SHARE_READ,
-            NULL,
-            OPEN_EXISTING,
-            FILE_ATTRIBUTE_NORMAL,
-            NULL
-        );
+        ice::win32::FileHandle handle{
+            CreateFileW(
+                path._data,
+                FILE_READ_ATTRIBUTES,
+                FILE_SHARE_READ,
+                NULL,
+                OPEN_EXISTING,
+                FILE_ATTRIBUTE_NORMAL,
+                NULL
+            )
+        };
         return sizeof_file(handle);
     }
 

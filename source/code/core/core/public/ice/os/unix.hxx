@@ -34,11 +34,30 @@ struct ice::os::HandleDescriptor<ice::os::HandleType::File>
     }
 };
 
+template<>
+struct ice::os::HandleDescriptor<ice::os::HandleType::DynLib>
+{
+    using PlatformHandleType = void*;
+
+    static constexpr PlatformHandleType InvalidHandle = nullptr;
+
+    static bool is_valid(PlatformHandleType handle, void*) noexcept
+    {
+        return handle != InvalidHandle;
+    }
+
+    static bool close(PlatformHandleType handle, void*) noexcept
+    {
+        return dlclose(handle) == 0;
+    }
+};
+
 // Can't use 'unix' since it's a define
 namespace ice::unix_
 {
 
     using FileHandle = ice::os::Handle<ice::os::HandleType::File>;
+    using DynLibHandle = ice::os::Handle<ice::os::HandleType::DynLib>;
 
 } // namespace ice::unix
 

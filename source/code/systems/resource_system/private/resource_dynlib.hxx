@@ -5,6 +5,7 @@
 #include <ice/resource.hxx>
 #include <ice/os/windows.hxx>
 #include <ice/native_file.hxx>
+#include <ice/string/heap_string.hxx>
 #include <ice/uri.hxx>
 
 namespace ice
