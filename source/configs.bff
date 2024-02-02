@@ -76,20 +76,6 @@
     }
 ]
 
-.Config_Android_SharedLib =
-[
-    .Name = 'Config-Unix'
-    .Requires = { 'Android', 'CLANG-Frontend', 'SharedLib' }
-    .LinkOptions = {
-        '-static-libstdc++'
-    }
-    .Libs = {
-        'android'
-        'log'
-    }
-]
-
-
 .Config_Unix =
 [
     .Name = 'Config-Unix'
@@ -302,7 +288,6 @@
     .Config_Unix_BinaryApp2
     .Config_GCC_Tests
     .Config_Android
-    .Config_Android_SharedLib
     .Config_Debug
     .Config_Debug_MSVC
     .Config_Debug_GCC

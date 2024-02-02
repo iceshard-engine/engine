@@ -81,12 +81,13 @@ Settings
     Using( .Piepline_Android_ARM64 )
 
     .AndroidAPILevel = '27'
+    .AndroidStdLib = 'Shared'
 
     .PipelineName = 'Android$AndroidAPILevel$-ARMv8'
     .PipelineToolchain = 'ndk26-clang-17.0.0'
     .PipelineArchitecture = 'arm64'
     .PipelineAllowUnityBuilds = false
-    .PipelineSteps = { 'Build', 'Link' }
+    .PipelineSteps = { 'Build', 'Link', 'Deploy' }
 
     .PipelineConanProfile = 'Android-Arm64'
 
@@ -103,12 +104,13 @@ Settings
     Using( .Piepline_Android_ARM64 )
 
     .AndroidAPILevel = '27'
+    .AndroidStdLib = 'Shared'
 
     .PipelineName = 'Android$AndroidAPILevel$-x64'
     .PipelineToolchain = 'ndk26-clang-17.0.0'
     .PipelineArchitecture = 'x86_64'
     .PipelineAllowUnityBuilds = false
-    .PipelineSteps = { 'Build', 'Link' }
+    .PipelineSteps = { 'Build', 'Link', 'Deploy' }
 
     .PipelineConanProfile = 'Android-x64'
 

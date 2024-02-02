@@ -11,6 +11,7 @@
     .Requires = { 'SDK-Android' }
     .Tags = { 'Android-Gradle' }
 
+    .Deploy = true
     .CopyModules = true
 
     .Android =
@@ -23,6 +24,7 @@
 
         .VersionCode = 142
         .VersionName = '1.4.2'
+
         .GradlePlugins = {
             'id("com.android.application") version "8.0.0"'
             'id("org.jetbrains.kotlin.android") version "1.8.20"'
@@ -35,9 +37,14 @@
         // IceShard makes use of regular linking to provide default implementations implicitly.
         .LinkerLinkObjects = false
 
+        .DependsOn =
+        [
+            .Runtime = { 'vulkan_renderer' }
+        ]
+
         .Uses = {
+            'framework_base'
             'platform_android'
-            'resource_system'
         }
     ]
 ]
