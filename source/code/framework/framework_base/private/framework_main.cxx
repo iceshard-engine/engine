@@ -326,20 +326,8 @@ auto ice_setup(
     state.game->on_setup(framework_state);
 
     // Load everything to resume the game.
-    ice::String library_path = "iceshard";
-    if constexpr (ice::build::is_windows)
-    {
-        if constexpr (ice::build::is_release)
-        {
-            library_path = "iceshard.dll";
-        }
-        else
-        {
-            library_path = ice::resource_origin(state.resources->find_resource("urn:iceshard.dll"_uri));
-        }
-    }
-
-    state.modules->load_module(state.modules_alloc, library_path);
+    ice::HeapString<> engine_module = ice::resolve_dynlib_path(*state.resources, state.alloc, "iceshard");
+    state.modules->load_module(state.modules_alloc, engine_module);
 
     ice::EngineCreateInfo engine_create_info{ };
     {

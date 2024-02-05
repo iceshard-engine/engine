@@ -8,10 +8,12 @@
 #include <ice/profiler.hxx>
 
 #include <ice/string/string.hxx>
+#include <ice/string/heap_string.hxx>
 #include <ice/container/hashmap.hxx>
 #include <ice/log_tag.hxx>
 #include <ice/log_formatters.hxx>
 #include <ice/task_utils.hxx>
+#include <ice/path_utils.hxx>
 
 #include "native/native_aio.hxx"
 
@@ -537,6 +539,47 @@ namespace ice
     ) noexcept -> ice::UniquePtr<ice::ResourceTracker>
     {
         return ice::make_unique<ice::ResourceTrackerImplementation>(alloc, alloc, scheduler, create_info);
+    }
+
+    auto resolve_dynlib_path(
+        ice::ResourceTracker const& tracker,
+        ice::Allocator& alloc,
+        ice::String name
+    ) noexcept -> ice::HeapString<>
+    {
+        // Try to reslove the name of the library with a dynlib URI.
+        ice::URI const dynlib_uri{ ice::Scheme_Dynlib, name };
+        if (ice::ResourceHandle* res = tracker.find_resource(dynlib_uri); res != nullptr)
+        {
+            return { alloc, ice::resource_origin(res) };
+        }
+
+        // ... next with a URN with the expected library file name.
+        ice::HeapString<> result{ alloc, name };
+        if (ice::path::extension(name) == "") // Check that we have already a full file name.
+        {
+            if constexpr (ice::build::is_windows)
+            {
+                ice::string::push_back(result, ".dll");
+            }
+            else
+            {
+                // On unix we expect the library to be prepended with 'lib' and appended with '.so'
+                ice::string::clear(result);
+                ice::string::push_back(result, "lib");
+                ice::string::push_back(result, name);
+                ice::string::push_back(result, ".so");
+            }
+        }
+
+        ice::URI const urn_uri{ ice::Scheme_URN, name };
+        if (ice::ResourceHandle* res = tracker.find_resource(dynlib_uri); res != nullptr)
+        {
+            return { alloc, ice::resource_origin(res) };
+        }
+
+        // ... and finally return the unresolved file name.
+        return result;
     }
 
 } // namespace ice

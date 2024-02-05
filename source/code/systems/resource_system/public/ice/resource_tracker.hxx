@@ -108,4 +108,10 @@ namespace ice
         ice::ResourceTrackerCreateInfo const& create_info
     ) noexcept -> ice::UniquePtr<ice::ResourceTracker>;
 
+    auto resolve_dynlib_path(
+        ice::ResourceTracker const& tracker,
+        ice::Allocator& alloc,
+        ice::String name
+    ) noexcept -> ice::HeapString<>;
+
 } // namespace ice

@@ -115,20 +115,13 @@ void TestGame::on_setup(ice::framework::State const& state) noexcept
     ice::ModuleRegister& mod = state.modules;
     ice::ResourceTracker& res = state.resources;
 
-    ice::ResourceHandle* const pipelines_module = res.find_resource("urn:iceshard_pipelines.dll"_uri);
-    ice::ResourceHandle* const vulkan_module = res.find_resource("urn:vulkan_renderer.dll"_uri);
-    ice::ResourceHandle* const imgui_module = res.find_resource("urn:imgui_module.dll"_uri);
+    ice::HeapString<> pipelines_module = ice::resolve_dynlib_path(res, _allocator, "iceshard_pipelines");
+    ice::HeapString<> vulkan_module = ice::resolve_dynlib_path(res, _allocator, "vulkan_renderer");
+    ice::HeapString<> imgui_module = ice::resolve_dynlib_path(res, _allocator, "imgui_module");
 
-    ICE_ASSERT(pipelines_module != nullptr, "Missing `iceshard_pipelines.dll` module!");
-    ICE_ASSERT(vulkan_module != nullptr, "Missing `vulkan_renderer.dll` module!");
-
-    mod.load_module(_allocator, ice::resource_origin(pipelines_module));
-    mod.load_module(_allocator, ice::resource_origin(vulkan_module));
-
-    if (imgui_module != nullptr)
-    {
-        mod.load_module(_allocator, ice::resource_origin(imgui_module));
-    }
+    mod.load_module(_allocator, pipelines_module);
+    mod.load_module(_allocator, vulkan_module);
+    mod.load_module(_allocator, imgui_module);
 }
 
 void TestGame::on_shutdown(ice::framework::State const& state) noexcept
