@@ -114,6 +114,8 @@ namespace ice
             ice::LogModule::init(alloc, negotiator);
             return negotiator.register_api(iceshard_get_api_proc);
         }
+
+        IS_WORKAROUND_MODULE_INITIALIZATION(IceShardModule);
     };
 
 } // namespace ice

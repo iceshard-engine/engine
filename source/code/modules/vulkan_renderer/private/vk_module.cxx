@@ -68,6 +68,8 @@ namespace ice::render::vk
             ice::log_tag_register(log_tag);
             return negotiator.register_api(v1_driver_api);
         }
+
+        IS_WORKAROUND_MODULE_INITIALIZATION(VulkanModule);
     };
 
 } // ice::render::vk

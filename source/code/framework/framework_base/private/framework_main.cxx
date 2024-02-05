@@ -61,7 +61,10 @@
 
 #define USE_API_V1 0
 
-struct FrameworkLog : ice::Module<ice::LogModule> { };
+struct FrameworkLog : ice::Module<ice::LogModule>
+{
+    IS_WORKAROUND_MODULE_INITIALIZATION(FrameworkLog);
+};
 
 template<typename T>
 void destroy_object(T* obj) noexcept

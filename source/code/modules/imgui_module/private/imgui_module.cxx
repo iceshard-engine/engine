@@ -34,6 +34,8 @@ namespace ice::devui
             ice::LogModule::init(alloc, negotiator);
             return negotiator.register_api(v1_devui_system);
         }
+
+        IS_WORKAROUND_MODULE_INITIALIZATION(ImGuiModule);
     };
 
 } // namespace ice

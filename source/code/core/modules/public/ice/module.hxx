@@ -52,4 +52,12 @@ namespace ice
         static inline ModulesEntry const _module_info{ &internal_load, &internal_unload };
     };
 
+#if ISP_COMPILER_CLANG || ISP_COMPILER_GCC \
+    // We access 'module_info' here to force Clang and Gcc to initialize the 'static inline' variable.
+#   define IS_WORKAROUND_MODULE_INITIALIZATION(type) \
+        private: static inline ice::ModuleInfo const& _workaround_info_instance = type::module_info()
+#else
+#   define IS_WORKAROUND_MODULE_INITIALIZATION(type)
+#endif
+
 } // namespace ice

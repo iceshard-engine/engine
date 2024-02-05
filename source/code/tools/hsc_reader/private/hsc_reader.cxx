@@ -10,7 +10,10 @@
 #include "hsc_reader_app.hxx"
 #include "hsc_reader_funcs.hxx"
 
-struct HSReaderLog : ice::Module<ice::LogModule> { };
+struct HSReaderLog : ice::Module<ice::LogModule>
+{
+    IS_WORKAROUND_MODULE_INITIALIZATION(HSReaderLog);
+};
 
 class HailStormReaderApp final : public ice::tool::ToolApp<HailStormReaderApp>
 {

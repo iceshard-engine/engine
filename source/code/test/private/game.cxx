@@ -98,6 +98,8 @@ struct TestModule : ice::Module<TestModule>
     {
         return negotiator.register_api(v1_traits_api);
     }
+
+    IS_WORKAROUND_MODULE_INITIALIZATION(TestModule);
 };
 
 TestGame::TestGame(ice::Allocator& alloc) noexcept

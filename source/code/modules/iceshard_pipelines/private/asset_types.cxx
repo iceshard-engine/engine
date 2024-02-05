@@ -34,6 +34,8 @@ namespace ice
             ice::LogModule::init(alloc, negotiator);
             return negotiator.register_api(v1_archive_api);
         }
+
+        IS_WORKAROUND_MODULE_INITIALIZATION(IceShardPipelinesModule);
     };
 
 } // namespace ice
