@@ -113,22 +113,22 @@ namespace ice::gfx
 
 
     template<>
-    constexpr GfxObjectType Constant_GfxObjectType<ice::render::Renderpass> = GfxObjectType::Renderpass;
+    inline constexpr GfxObjectType Constant_GfxObjectType<ice::render::Renderpass> = GfxObjectType::Renderpass;
     template<>
-    constexpr GfxObjectType Constant_GfxObjectType<ice::render::Framebuffer> = GfxObjectType::Framebuffer;
+    inline constexpr GfxObjectType Constant_GfxObjectType<ice::render::Framebuffer> = GfxObjectType::Framebuffer;
     template<>
-    constexpr GfxObjectType Constant_GfxObjectType<ice::render::Pipeline> = GfxObjectType::Pipeline;
+    inline constexpr GfxObjectType Constant_GfxObjectType<ice::render::Pipeline> = GfxObjectType::Pipeline;
     template<>
-    constexpr GfxObjectType Constant_GfxObjectType<ice::render::PipelineLayout> = GfxObjectType::PipelineLayout;
+    inline constexpr GfxObjectType Constant_GfxObjectType<ice::render::PipelineLayout> = GfxObjectType::PipelineLayout;
     template<>
-    constexpr GfxObjectType Constant_GfxObjectType<ice::render::ResourceSet> = GfxObjectType::ResourceSet;
+    inline constexpr GfxObjectType Constant_GfxObjectType<ice::render::ResourceSet> = GfxObjectType::ResourceSet;
     template<>
-    constexpr GfxObjectType Constant_GfxObjectType<ice::render::ResourceSetLayout> = GfxObjectType::ResourceSetLayout;
+    inline constexpr GfxObjectType Constant_GfxObjectType<ice::render::ResourceSetLayout> = GfxObjectType::ResourceSetLayout;
     template<>
-    constexpr GfxObjectType Constant_GfxObjectType<ice::render::Shader> = GfxObjectType::Shader;
+    inline constexpr GfxObjectType Constant_GfxObjectType<ice::render::Shader> = GfxObjectType::Shader;
     template<>
-    constexpr GfxObjectType Constant_GfxObjectType<ice::render::Image> = GfxObjectType::Image;
+    inline constexpr GfxObjectType Constant_GfxObjectType<ice::render::Image> = GfxObjectType::Image;
     template<>
-    constexpr GfxObjectType Constant_GfxObjectType<ice::render::Buffer> = GfxObjectType::Buffer;
+    inline constexpr GfxObjectType Constant_GfxObjectType<ice::render::Buffer> = GfxObjectType::Buffer;
 
 } // namespace ice::gfx

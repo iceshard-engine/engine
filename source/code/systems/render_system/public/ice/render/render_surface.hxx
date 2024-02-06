@@ -17,6 +17,7 @@ namespace ice::render
     {
         Win32_Window,
         UWP_Window,
+        Android_NativeWindow
     };
 
     struct SurfaceInfo
@@ -39,6 +40,12 @@ namespace ice::render
             {
                 void* reserved[2];
             } wayland;
+
+            struct
+            {
+                void* native_window;
+                void* reserved[1];
+            } android;
         };
     };
 

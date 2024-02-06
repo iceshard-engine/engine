@@ -8,7 +8,6 @@
 #include <ice/profiler.hxx>
 
 #include <ice/string/string.hxx>
-#include <ice/string/heap_string.hxx>
 #include <ice/container/hashmap.hxx>
 #include <ice/log_tag.hxx>
 #include <ice/log_formatters.hxx>

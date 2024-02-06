@@ -3,6 +3,7 @@
 
 #pragma once
 #include <ice/math.hxx>
+#include <ice/string/string.hxx>
 #include <ice/platform.hxx>
 #include <ice/render/render_driver.hxx>
 

@@ -635,8 +635,8 @@ namespace ice::devui
 
         ResourceSet last_resource = _resources[0];
 
-        api.push_constant(cmds, _pipeline_layout, ShaderStageFlags::VertexStage, { scale, sizeof(scale) }, 0);
-        api.push_constant(cmds, _pipeline_layout, ShaderStageFlags::VertexStage, { translate, sizeof(translate) }, sizeof(scale));
+        api.push_constant(cmds, _pipeline_layout, ShaderStageFlags::VertexStage, { scale, { sizeof(scale) } }, 0);
+        api.push_constant(cmds, _pipeline_layout, ShaderStageFlags::VertexStage, { translate, { sizeof(translate) } }, sizeof(scale));
         api.bind_pipeline(cmds, _pipeline);
         api.bind_resource_set(cmds, _pipeline_layout, _resources[0], 0);
         api.bind_vertex_buffer(cmds, _vertex_buffers[0], 0);

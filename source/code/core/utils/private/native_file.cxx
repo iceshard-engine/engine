@@ -427,7 +427,7 @@ namespace ice::native_file
                     : EntityType::File;
 
                 // Append the entry name to the path
-                ice::ucount const size_name{ ice::ucount(entry->d_reclen) - ice::ucount(offsetof(dirent, d_name)) };
+                ice::ucount const size_name{ ice::ucount(entry->d_reclen) - ice::ucount(offsetof(dirent, d_name)) - 1 /* null character */ };
                 ice::string::push_back(dirpath, ice::native_file::FilePath{ entry->d_name, size_name });
 
                 // Call the callback for the next entry encountered...

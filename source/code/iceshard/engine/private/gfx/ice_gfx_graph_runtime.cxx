@@ -98,7 +98,7 @@ namespace ice::gfx
         ice::render::RenderDevice& render_device,
         ice::render::RenderSwapchain const& swapchain,
         ice::Span<GfxResource> resources,
-        ice::Span<GfxGraphSnapshot const> GfxGraphSnapshots,
+        ice::Span<GfxGraphSnapshot const> graph_snapshots,
         ice::u32 max_image_count
     ) noexcept -> ice::render::Renderpass
     {
@@ -111,7 +111,7 @@ namespace ice::gfx
         ice::Array<SubpassDependency> dependencies{ alloc };
 
         ice::array::reserve(attachments, ice::count(resources));
-        ice::array::reserve(references, ice::count(GfxGraphSnapshots));
+        ice::array::reserve(references, ice::count(graph_snapshots));
 
         ice::array::push_back(
             attachments,
@@ -167,11 +167,11 @@ namespace ice::gfx
         ice::u32 counts[3]{};
         ice::u32 ref_subpass_idx = 0;
         ice::u32 subpass_idx = 0;
-        for (GfxGraphSnapshot const GfxGraphSnapshot : GfxGraphSnapshots)
+        for (GfxGraphSnapshot const graph_snapshot : graph_snapshots)
         {
             [[maybe_unused]]
-            ice::u32 const type_idx = gfx_resource_type_val(GfxGraphSnapshot.resource);
-            if (GfxGraphSnapshot.event & GfxSnapshotEvent::MaskPass)
+            ice::u32 const type_idx = gfx_resource_type_val(graph_snapshot.resource);
+            if (graph_snapshot.event & GfxSnapshotEvent::MaskPass)
             {
                 if (subpass_idx > 1)
                 {
@@ -188,7 +188,7 @@ namespace ice::gfx
                     counts[0] = counts[1] = counts[2] = 0;
                 }
 
-                if (GfxGraphSnapshot.event & GfxSnapshotEvent::EventNextSubPass && subpass_idx > 1)
+                if (graph_snapshot.event & GfxSnapshotEvent::EventNextSubPass && subpass_idx > 1)
                 {
                     if (subpass_idx == 2)
                     {
@@ -223,10 +223,10 @@ namespace ice::gfx
             }
             else
             {
-                GfxResourceType const type = gfx_resource_type(GfxGraphSnapshot.resource);
+                GfxResourceType const type = gfx_resource_type(graph_snapshot.resource);
 
                 ice::u32 idx = 0;
-                if (ice::binary_search(resources, GfxGraphSnapshot.resource, [](GfxResource lhs, GfxResource rhs) noexcept { return (lhs.value & 0xffff) < (rhs.value & 0xffff); }, idx))
+                if (ice::binary_search(resources, graph_snapshot.resource, [](GfxResource lhs, GfxResource rhs) noexcept { return (lhs.value & 0xffff) < (rhs.value & 0xffff); }, idx))
                 {
                     if (type == GfxResourceType::DepthStencil)
                     {
@@ -239,7 +239,7 @@ namespace ice::gfx
                             }
                         );
                     }
-                    else if (GfxGraphSnapshot.event & GfxSnapshotEvent::EventWriteRes)
+                    else if (graph_snapshot.event & GfxSnapshotEvent::EventWriteRes)
                     {
                         counts[1] += 1;
                         ice::array::push_back(
