@@ -19,7 +19,7 @@
         .Namespace = 'net.example.simple'
         .ApplicationID = 'net.example.myapp'
 
-        .TargetSDK = '31'
+        .TargetSDK = '34'
         // .MinSDK = '28' This comes from the Pipeline AndroidAPILevel value
 
         .VersionCode = 142
@@ -39,7 +39,11 @@
 
         .DependsOn =
         [
-            .Runtime = { 'vulkan_renderer' }
+            .Runtime = {
+                'vulkan_renderer'
+                'iceshard_pipelines'
+                'imgui_module'
+            }
         ]
 
         .Uses = {
