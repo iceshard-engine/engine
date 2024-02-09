@@ -713,7 +713,7 @@ namespace ice
             ice::String const loaded_header{ it, 4 };
             if (loaded_header == ice::Constant_FileHeader_MetadataFile)
             {
-                detail::deserialize_binary_meta(ice::Data{ it + 4, { data.size.value - 4 }, data.alignment }, meta);
+                detail::deserialize_binary_meta(ice::Data{ it, { data.size.value }, data.alignment }, meta);
             }
             else
             {
