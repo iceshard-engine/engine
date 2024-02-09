@@ -47,6 +47,22 @@ namespace ice::render::vk
                     _vk_physical_device = physical_device;
                     break;
                 }
+
+                // Get any first integrated GPU if no discrete GPU was found.
+                if (physical_device_properties.deviceType == VkPhysicalDeviceType::VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU)
+                {
+                    _vk_physical_device = physical_device;
+                }
+
+                // For development we also allow virtual (emulated) GPUs if nothing else was selected
+                if constexpr (ice::build::is_release == false)
+                {
+                    if (physical_device_properties.deviceType == VkPhysicalDeviceType::VK_PHYSICAL_DEVICE_TYPE_VIRTUAL_GPU
+                        && _vk_physical_device == vk_nullptr)
+                    {
+                        _vk_physical_device = physical_device;
+                    }
+                }
             }
 
             vkGetPhysicalDeviceMemoryProperties(
@@ -139,7 +155,52 @@ namespace ice::render::vk
         ice::render::SurfaceInfo const& surface_info
     ) noexcept -> ice::render::RenderSurface*
     {
-        return nullptr;
+        ICE_ASSERT(
+            surface_info.type == ice::render::SurfaceType::Android_NativeWindow,
+            "Unsupported surface type provided, accepting 'Android_NativeWindow' surfaces only!"
+        );
+
+        VkAndroidSurfaceCreateInfoKHR surface_create_info{ VK_STRUCTURE_TYPE_ANDROID_SURFACE_CREATE_INFO_KHR };
+        surface_create_info.window = static_cast<ANativeWindow*>(surface_info.android.native_window);
+
+        VkSurfaceKHR vulkan_surface;
+        auto api_result = vkCreateAndroidSurfaceKHR(_vk_instance, &surface_create_info, nullptr, &vulkan_surface);
+        ICE_ASSERT(api_result == VkResult::VK_SUCCESS, "Failed to create Vulkan surface!");
+
+        ice::i32 family_index = 0;
+        for (VkQueueFamilyProperties const& queue_family_props : _vk_queue_family_properties)
+        {
+            VkBool32 supports_presenting;
+
+            [[maybe_unused]]
+            VkResult ph_api_result = vkGetPhysicalDeviceSurfaceSupportKHR(
+                _vk_physical_device,
+                family_index,
+                vulkan_surface,
+                &supports_presenting
+            );
+            ICE_ASSERT(
+                ph_api_result == VkResult::VK_SUCCESS,
+                "Couldn't query information if family {} (index) supports presenting!",
+                family_index
+            );
+
+            if (supports_presenting == VK_TRUE)
+            {
+                if (_vk_presentation_queue_family_index == -1)
+                {
+                    _vk_presentation_queue_family_index = family_index;
+                }
+                else if ((queue_family_props.queueFlags & VK_QUEUE_GRAPHICS_BIT) != 0)
+                {
+                    _vk_presentation_queue_family_index = family_index;
+                }
+            }
+
+            family_index += 1;
+        }
+
+        return _vk_alloc->create<VulkanRenderSurface>(_vk_instance, vulkan_surface);
     }
 #endif
 
