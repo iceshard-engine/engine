@@ -48,6 +48,11 @@ namespace ice::math
             : v{ { x, y } }
         { }
 
+        template<typename U> requires(std::convertible_to<U, T>)
+        constexpr explicit mat(mat<2, 1, U> other) noexcept
+            : v{ { static_cast<T>(other.x), static_cast<T>(other.y) } }
+        { }
+
         union
         {
             T v[count_columns][count_rows];
@@ -77,6 +82,11 @@ namespace ice::math
             : v{ { x, y, z } }
         { }
 
+        template<typename U> requires(std::convertible_to<U, T>)
+        constexpr explicit mat(mat<3, 1, U> other) noexcept
+            : v{ { static_cast<T>(other.x), static_cast<T>(other.y), static_cast<T>(other.z) } }
+        { }
+
         union
         {
             T v[count_columns][count_rows];
@@ -104,6 +114,11 @@ namespace ice::math
 
         constexpr mat(T x, T y, T z, T w) noexcept
             : v{ { x, y, z, w } }
+        { }
+
+        template<typename U> requires(std::convertible_to<U, T>)
+        constexpr explicit mat(mat<4, 1, U> other) noexcept
+            : v{ { static_cast<T>(other.x), static_cast<T>(other.y), static_cast<T>(other.z), static_cast<T>(other.w) } }
         { }
 
         union
