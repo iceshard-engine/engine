@@ -39,7 +39,7 @@ FreeType is a freely available software library to render fonts.
 ## hailstorm
 Custom package format for storing resources used by 'iceshard' game engine framework.
 - **upstream:** https://github.com/iceshard-engine/hailstorm
-- **version:** 0.1.1
+- **version:** 0.1.2
 - **license:** MIT
 
 ## imgui
@@ -89,3 +89,15 @@ A real time, nanosecond resolution, remote telemetry, hybrid frame and sampling 
 - **upstream:** https://github.com/wolfpld/tracy
 - **version:** 0.10.0
 - **license:** BSD-3-Clause
+
+## vulkan-headers
+Vulkan Header files.
+- **upstream:** https://github.com/conan-io/conan-center-index
+- **version:** 1.3.243.0
+- **license:** Apache-2.0
+
+## vulkan-memory-allocator
+Easy to integrate Vulkan memory allocation library.
+- **upstream:** https://github.com/conan-io/conan-center-index
+- **version:** 3.0.1
+- **license:** MIT

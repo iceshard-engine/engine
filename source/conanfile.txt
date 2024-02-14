@@ -2,13 +2,14 @@
 FastBuildDeps
 
 [tool_requires]
-fastbuild-generator/0.4.1@iceshard/stable
+fastbuild-generator/0.4.2@iceshard/stable
 
 [requires]
 fmt/10.0.0@iceshard/stable
 tracy/0.10.0@iceshard/stable
 imgui/1.90@iceshard/docking
 hailstorm/0.1.2@iceshard/stable
+vulkan-memory-allocator/3.0.1
 
 rapidxml/1.13
 rapidxml_ns/1.13.2@iceshard/stable
