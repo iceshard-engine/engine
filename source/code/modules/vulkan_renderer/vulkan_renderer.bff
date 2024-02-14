@@ -12,6 +12,9 @@
 
     .Private =
     [
+        .Modules = {
+            'vulkan_memory_allocator'
+        }
         .Uses = {
             'platform'
             'render_system'

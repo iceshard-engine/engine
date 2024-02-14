@@ -8,7 +8,6 @@
     .Group = 'Modules'
 
     .BaseDir = '$WorkspaceCodeDir$/modules/imgui_module'
-    .Requires = { 'Windows' }
 
     .Private =
     [

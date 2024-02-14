@@ -74,6 +74,9 @@
     .Defines = {
         '__ANDROID_UNAVAILABLE_SYMBOLS_ARE_WEAK__'
     }
+    .LinkLinkerOptions = {
+        '-llog'
+    }
 ]
 
 .Config_Unix =
@@ -231,9 +234,9 @@
     .Requires = { 'Profile', 'MSVC-Frontend' }
     .Defines = { }
     .BuildOptions = {
-        ' /O2'
-        ' /MD'
-        ' /WX'
+        '/O2'
+        '/MD'
+        '/WX'
     }
 ]
 
@@ -243,8 +246,8 @@
     .Requires = { 'Release', 'MSVC-Frontend' }
     .Defines = { }
     .BuildOptions = {
-        ' /O2'
-        ' /MD'
+        '/O2'
+        '/MD'
     }
 ]
 
@@ -275,6 +278,15 @@
     }
 ]
 
+.Config_Vulkan =
+[
+    .Name = 'Config-Vulkan'
+    .Requires = { 'GFX-Vulkan' }
+    .BuildOptions = {
+        '--target-env=vulkan1.3'
+    }
+]
+
 ^GlobalRules = {
     .Config_MSVC
     .Config_MSVC_BinaryDll
@@ -297,4 +309,5 @@
     .Config_Profile_MSVC
     .Config_Release
     .Config_Release_MSVC
+    .Config_Vulkan
 }
