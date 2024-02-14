@@ -446,19 +446,20 @@ namespace ice
 
                     entry.resource = resource.resource;
                     ice::AssetState initial_state = AssetState::Invalid;
+
+                    ice::MutableMetadata res_metadata{ _allocator };
                     if (ice::Data metadata = co_await entry.resource->load_metadata(); metadata.location != nullptr)
                     {
-                        ice::MutableMetadata res_metadata{ _allocator };
-                        if (ice::Result res = ice::meta_deserialize_from(res_metadata, metadata); ice::result_is_valid(res))
-                        {
-                            initial_state = shelve.definition.fn_asset_state(
-                                shelve.definition.ud_asset_state,
-                                shelve.definition,
-                                res_metadata,
-                                entry.resource->uri()
-                            );
-                        }
+                        ice::Result const res = ice::meta_deserialize_from(res_metadata, metadata);
+                        ICE_ASSERT_CORE(ice::result_is_valid(res));
                     }
+
+                    initial_state = shelve.definition.fn_asset_state(
+                        shelve.definition.ud_asset_state,
+                        shelve.definition,
+                        res_metadata,
+                        entry.resource->uri()
+                    );
 
                     ICE_ASSERT_CORE(initial_state != AssetState::Invalid);
 

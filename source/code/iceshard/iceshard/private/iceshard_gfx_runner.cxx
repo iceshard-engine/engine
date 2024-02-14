@@ -252,6 +252,7 @@ namespace ice::gfx
         );
 
         _barrier_state.reset(ice::u8(ice::array::count(tasks)));
+        if (_barrier_state.is_set() == false)
         {
             IPT_ZONE_SCOPED_NAMED("gfx_await_tasks");
             ice::manual_wait_for_all(tasks, _barrier_state);
@@ -315,6 +316,15 @@ namespace ice::gfx
             ice::manual_wait_for_all(tasks, _barrier);
         }
 
+        // TODO: Introduce another stage that ensures we are finished with CPU render.
+
+        _present_fence->reset();
+        if (graph_runtime.execute(frame, *this, *_present_fence))
+        {
+            _present_fence->wait(10'000'000);
+        }
+
+        // Run tasks that wait for the frame end
         while (_barrier.is_set() == false || _barrier_state.is_set() == false)
         {
             for (ice::TaskAwaitableBase* awaitable : ice::linked_queue::consume(_queue_end._awaitables))
@@ -326,13 +336,6 @@ namespace ice::gfx
         _barrier.wait();
         _barrier_state.wait();
 
-        // Execute all stages (currently done simply going over the render graph)
-        _present_fence->reset();
-
-        if (graph_runtime.execute(frame, *this, *_present_fence))
-        {
-            _present_fence->wait(10'000'000);
-        }
         co_return;
     }
 

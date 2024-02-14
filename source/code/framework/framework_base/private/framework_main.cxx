@@ -233,7 +233,9 @@ void ice_init(
     };
     ice::Result const res = ice::platform::initialize_with_allocator(
         alloc,
-        ice::platform::FeatureFlags::Core | ice::platform::FeatureFlags::StoragePaths,
+        ice::platform::FeatureFlags::Core
+        | ice::platform::FeatureFlags::StoragePaths
+        | ice::platform::FeatureFlags::RenderSurface,
         platform_params
     );
     ICE_ASSERT(res == ice::Res::Success, "Failed to initialize platform!");
@@ -404,6 +406,8 @@ auto ice_resume(
         runtime.frame = ice::wait_for(runtime.runner->aquire_frame());
         runtime.clock = ice::clock::create_clock();
 
+        runtime.render_surface = state.renderer->create_surface(surface_info);
+
         using ice::operator|;
         using ice::operator""_sid;
         ice::gfx::QueueDefinition queues[]{
@@ -417,7 +421,6 @@ auto ice_resume(
             }
         };
 
-        runtime.render_surface = state.renderer->create_surface(surface_info);
         ice::gfx::GfxRunnerCreateInfo const gfx_create_info{
             .engine = *state.engine,
             .driver = *state.renderer.get(),
