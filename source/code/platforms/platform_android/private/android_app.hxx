@@ -13,20 +13,27 @@
 #include <atomic>
 
 #include <android/native_activity.h>
+#include "android_render_surface.hxx"
+#include "android_app_core.hxx"
 
 namespace ice::platform::android
 {
 
-    class AndroidCore final : public ice::platform::Core, public ice::platform::StoragePaths
+    class AndroidApp final
+        : public ice::platform::Core
+        , public ice::platform::StoragePaths
+        , public ice::platform::android::AndroidAppCore
     {
     public:
-        static AndroidCore* global_instance;
+        static AndroidApp* global_instance;
 
-        AndroidCore(
+        AndroidApp(
             ice::Allocator& alloc,
             ice::Data saved_state,
             ANativeActivity* activity
         ) noexcept;
+
+        auto render_surface() noexcept -> ice::platform::RenderSurface* { return &_app_surface; }
 
     public: // ice::platform::StoragePaths
         auto data_locations() const noexcept -> ice::Span<ice::String const> override;
@@ -38,6 +45,14 @@ namespace ice::platform::android
         auto refresh_events() noexcept -> ice::Result override;
         auto system_events() noexcept -> ice::ShardContainer const& override { return _system_events; }
         auto input_events() noexcept -> ice::Span<ice::input::DeviceEvent const> override { return _input_events._events; }
+
+    public: // ice::platform::android::AndroidAppCore
+        void on_init() noexcept override;
+        void on_setup() noexcept override;
+        void on_resume() noexcept override;
+        void on_update() noexcept override;
+        void on_suspend() noexcept override;
+        void on_shutdown() noexcept override;
 
     public: // internal
         static void native_callback_on_start(ANativeActivity* activity);
@@ -59,12 +74,12 @@ namespace ice::platform::android
         static void native_callback_on_low_memory(ANativeActivity* activity);
         static void native_callback_on_configuration_changed(ANativeActivity* activity);
         static void native_callback_on_rect_changed(ANativeActivity* activity, ARect const* rect);
-        static void* native_callback_on_save_state(ANativeActivity* activity, size_t* out_size);
+        static auto native_callback_on_save_state(ANativeActivity* activity, size_t* out_size) -> void*;
 
     private:
-        ice::Allocator& _allocator;
         ice::app::Factories _factories;
 
+        ice::ParamList _params;
         ice::UniquePtr<ice::app::Config> _config;
         ice::UniquePtr<ice::app::State> _state;
         ice::UniquePtr<ice::app::Runtime> _runtime;
@@ -78,7 +93,7 @@ namespace ice::platform::android
 
         std::atomic_uint32_t _app_state;
         std::atomic<AInputQueue*> _app_queue;
-        ANativeWindow* _app_window;
+        AndroidRenderSurface _app_surface;
 
         ice::StaticString<256> _app_modules;
         ice::StaticString<256> _app_internal_data;

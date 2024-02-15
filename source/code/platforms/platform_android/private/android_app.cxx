@@ -1,7 +1,7 @@
 /// Copyright 2023 - 2023, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
-#include "android_platform_core.hxx"
+#include "android_app.hxx"
 #include "android_input_motion.hxx"
 
 #include <ice/profiler.hxx>
@@ -77,36 +77,38 @@ namespace ice::platform::android
 
     static auto core_instance(ANativeActivity* activity) noexcept
     {
-        return reinterpret_cast<AndroidCore*>(activity->instance);
+        return reinterpret_cast<AndroidApp*>(activity->instance);
     }
 
     static auto core_instance(void* userdata) noexcept
     {
-        return reinterpret_cast<AndroidCore*>(userdata);
+        return reinterpret_cast<AndroidApp*>(userdata);
     }
 
     static auto core_procedure(void* userdata, ice::TaskQueue& queue) noexcept -> ice::u32
     {
-        AndroidCore::native_callback_on_update(userdata);
+        AndroidApp::native_callback_on_update(userdata);
         using namespace std::chrono_literals;
         std::this_thread::sleep_for(1us);
         return 0;
     }
 
-    AndroidCore* AndroidCore::global_instance = nullptr;
+    AndroidApp* AndroidApp::global_instance = nullptr;
 
-    AndroidCore::AndroidCore(
+    AndroidApp::AndroidApp(
         ice::Allocator& alloc,
         ice::Data saved_state,
         ANativeActivity* activity
     ) noexcept
-        : _allocator{ alloc }
+        : AndroidAppCore{ alloc, activity }
+        , _factories{ }
+        , _params{ _allocator }
         , _system_events{ _allocator }
         , _input_events{ _allocator }
         , _new_screen_size{ 1.f, 1.f }
         , _main_queue{ }
         , _main_thread{ }
-        , _app_window{ nullptr }
+        , _app_surface{ }
     {
         ice::HeapString<> cache_path = get_cache_path(alloc, activity->clazz, activity->env);
 
@@ -119,7 +121,6 @@ namespace ice::platform::android
         ice::string::push_back(_app_external_data, '/');
         ice::string::push_back(_app_save_data, '/');
 
-        _app_state.store(2);
         ice::TaskThreadInfo const tinfo {
             .exclusive_queue = true,
             .custom_procedure = core_procedure,
@@ -128,11 +129,11 @@ namespace ice::platform::android
         };
         _main_thread = ice::create_thread(_allocator, _main_queue, tinfo);
 
-        ICE_ASSERT(global_instance == nullptr, "Only one instance of AndroidCore should ever be created!");
+        ICE_ASSERT(global_instance == nullptr, "Only one instance of AndroidApp should ever be created!");
         global_instance = this;
     }
 
-    auto AndroidCore::data_locations() const noexcept -> ice::Span<ice::String const>
+    auto AndroidApp::data_locations() const noexcept -> ice::Span<ice::String const>
     {
         static ice::String const paths[]{
             _app_external_data,
@@ -141,7 +142,7 @@ namespace ice::platform::android
         return paths;
     }
 
-    auto AndroidCore::refresh_events() noexcept -> ice::Result
+    auto AndroidApp::refresh_events() noexcept -> ice::Result
     {
         using namespace ice::input;
         ice::shards::clear(_system_events);
@@ -216,156 +217,154 @@ namespace ice::platform::android
         return ice::Res::Success;
     }
 
-    void AndroidCore::native_callback_on_start(ANativeActivity* activity)
+    void AndroidApp::on_init() noexcept
     {
         IPT_ZONE_SCOPED;
+        IPT_MESSAGE("Android::OnInit");
+        ICE_LOG(ice::LogSeverity::Retail, ice::LogTag::Core, "Android::OnInit");
 
-        ice::platform::android::AndroidCore* core = core_instance(activity);
-        ice::app::Factories& app_factories = core->_factories;
-        ice::Allocator& alloc = core->_allocator;
+        ice_init(_allocator, _factories);
+        ice_args(_allocator, _params);
 
-        ice_init(alloc, app_factories);
+        _config = _factories.factory_config(_allocator);
+        _state = _factories.factory_state(_allocator);
+        _runtime = _factories.factory_runtime(_allocator);
+    }
 
-        ice::ParamList params{ alloc };
-        ice_args(alloc, params);
-
-        core->_config = app_factories.factory_config(alloc);
-        core->_state = app_factories.factory_state(alloc);
-
+    void AndroidApp::on_setup() noexcept
+    {
+        IPT_ZONE_SCOPED;
         IPT_MESSAGE("Android::OnSetup");
         ICE_LOG(ice::LogSeverity::Retail, ice::LogTag::Core, "Android::OnSetup");
 
-        ice::Result result = ice_setup(alloc, params, *core->_config, *core->_state);
+        _new_screen_size = ice::vec2f{ _app_surface.get_dimensions() };
+
+        ice::Result result = ice_setup(_allocator, _params, *_config, *_state);
         ICE_LOG_IF(result == false, ice::LogSeverity::Error, ice::LogTag::Core, "{}", ice::result_hint(result));
         ICE_ASSERT_CORE(result == true);
     }
 
-    void AndroidCore::native_callback_on_resume(ANativeActivity* activity)
+    void AndroidApp::on_resume() noexcept
     {
         IPT_ZONE_SCOPED;
         IPT_MESSAGE("Android::OnResume");
         ICE_LOG(ice::LogSeverity::Retail, ice::LogTag::Core, "Android::OnResume");
 
-        ice::platform::android::AndroidCore* core = core_instance(activity);
-        ice::app::Factories& app_factories = core->_factories;
-
-        core->_runtime = app_factories.factory_runtime(core->_allocator);
-        ice_resume(*core->_config, *core->_state, *core->_runtime);
-
-        [[maybe_unused]]
-        ice::u32 const last_state = core->_app_state.exchange(0);
-        ICE_ASSERT_CORE(last_state == 2);
+        _app_surface.set_native_window(native_window());
+        ice_resume(*_config, *_state, *_runtime);
     }
 
-    void AndroidCore::native_callback_on_update(void* userdata)
+    void AndroidApp::on_update() noexcept
     {
-        IPT_FRAME_MARK;
         IPT_ZONE_SCOPED;
-
-        ice::platform::android::AndroidCore* core = core_instance(userdata);
-
-        ice::u32 allowed_state = 0;
-        if (core->_app_state.compare_exchange_weak(allowed_state, 1) == false)
-        {
-            return;
-        }
-
-        ice_update(*core->_config, *core->_state, *core->_runtime);
-        core->_app_state.store(0);
+        ice_update(*_config, *_state, *_runtime);
     }
 
-    void AndroidCore::native_callback_on_pause(ANativeActivity* activity)
+    void AndroidApp::on_suspend() noexcept
     {
         IPT_ZONE_SCOPED;
         IPT_MESSAGE("Android::OnSuspend");
         ICE_LOG(ice::LogSeverity::Retail, ice::LogTag::Core, "Android::OnSuspend");
 
-        ice::platform::android::AndroidCore* core = core_instance(activity);
-        ice::u32 expected_state = 0;
-        while(core->_app_state.compare_exchange_weak(expected_state, 2))
-        {
-            continue;
-        }
-
-        ice_suspend(*core->_config, *core->_state, *core->_runtime);
+        ice_suspend(*_config, *_state, *_runtime);
     }
 
-    void AndroidCore::native_callback_on_stop(ANativeActivity* activity)
+    void AndroidApp::on_shutdown() noexcept
     {
         IPT_ZONE_SCOPED;
         IPT_MESSAGE("Android::OnShutdown");
         ICE_LOG(ice::LogSeverity::Retail, ice::LogTag::Core, "Android::OnShutdown");
 
-        ice::platform::android::AndroidCore* core = core_instance(activity);
+        ice::ParamList params{ _allocator };
+        ice_shutdown(_allocator, params, *_config, *_state);
 
-        ice::u32 expected_state = 0;
-        while(core->_app_state.compare_exchange_weak(expected_state, 2))
-        {
-            continue;
-        }
-
-        core->_runtime.reset();
-
-        ice::ParamList params{ core->_allocator };
-        ice_shutdown(core->_allocator, params, *core->_config, *core->_state);
-
-        core->_state.reset();
-        core->_config.reset();
+        _runtime.reset();
+        _state.reset();
+        _config.reset();
     }
 
-    void AndroidCore::native_callback_on_destroy(ANativeActivity* activity)
+    void AndroidApp::native_callback_on_start(ANativeActivity* activity)
+    {
+        IPT_ZONE_SCOPED;
+        ice::platform::android::AndroidAppCore* app = core_instance(activity);
+        app->process_message(AndroidMessageType::OnInit);
+        app->process_message(AndroidMessageType::OnSetup);
+    }
+
+    void AndroidApp::native_callback_on_resume(ANativeActivity* activity)
+    {
+        IPT_ZONE_SCOPED;
+        ice::platform::android::AndroidAppCore* app = core_instance(activity);
+        app->push_message(AndroidMessageType::OnResume);
+    }
+
+    void AndroidApp::native_callback_on_update(void* userdata)
+    {
+        IPT_ZONE_SCOPED;
+        ice::platform::android::AndroidAppCore* app = core_instance(userdata);
+        app->process_pending_messages();
+    }
+
+    void AndroidApp::native_callback_on_pause(ANativeActivity* activity)
+    {
+        IPT_ZONE_SCOPED;
+        ice::platform::android::AndroidAppCore* app = core_instance(activity);
+        app->push_message(AndroidMessageType::OnSuspend);
+    }
+
+    void AndroidApp::native_callback_on_stop(ANativeActivity* activity)
+    {
+        IPT_ZONE_SCOPED;
+        ice::platform::android::AndroidAppCore* app = core_instance(activity);
+        app->process_message(AndroidMessageType::OnShutdown);
+    }
+
+    void AndroidApp::native_callback_on_destroy(ANativeActivity* activity)
     {
         IPT_ZONE_SCOPED;
         IPT_MESSAGE("Android::OnDestroy");
         ICE_LOG(ice::LogSeverity::Retail, ice::LogTag::Core, "Android::OnDestroy");
 
-        AndroidCore* core = core_instance(activity);
+        AndroidApp* core = core_instance(activity);
         ice::Allocator& alloc = core->_allocator;
         alloc.destroy(core);
     }
 
-    void AndroidCore::native_callback_on_focus_changed(ANativeActivity* activity, int has_focus) { }
+    void AndroidApp::native_callback_on_focus_changed(ANativeActivity* activity, int has_focus) { }
 
-    void AndroidCore::native_window_on_created(ANativeActivity* activity, ANativeWindow* window)
+    void AndroidApp::native_window_on_created(ANativeActivity* activity, ANativeWindow* window)
     {
-        IPT_MESSAGE("Android::Window::Created");
-        ICE_LOG(ice::LogSeverity::Retail, ice::LogTag::Core, "Android::Window::Created");
-        ice::platform::android::AndroidCore* core = core_instance(activity);
-        core->_app_window = window;
-        core->_new_screen_size = {
-            ice::f32(ANativeWindow_getWidth(core->_app_window)),
-            ice::f32(ANativeWindow_getHeight(core->_app_window))
-        };
+        IPT_ZONE_SCOPED;
+        ice::platform::android::AndroidAppCore* app = core_instance(activity);
+        app->process_message(AndroidMessageType::OnCreateWindow, window);
     }
 
-    void AndroidCore::native_window_on_destroyed(ANativeActivity* activity, ANativeWindow* window)
+    void AndroidApp::native_window_on_destroyed(ANativeActivity* activity, ANativeWindow* window)
     {
-        IPT_MESSAGE("Android::Window::Created");
-        ICE_LOG(ice::LogSeverity::Retail, ice::LogTag::Core, "Android::Window::Created");
-        ice::platform::android::AndroidCore* core = core_instance(activity);
-        ICE_ASSERT_CORE(core->_app_window == window);
-        core->_app_window = nullptr;
+        IPT_ZONE_SCOPED;
+        ice::platform::android::AndroidAppCore* app = core_instance(activity);
+        app->process_message(AndroidMessageType::OnDestroyWindow, window);
     }
 
-    void AndroidCore::native_window_on_redraw_needed(ANativeActivity* activity, ANativeWindow* window) { }
-    void AndroidCore::native_window_on_resized(ANativeActivity* activity, ANativeWindow* window) { }
+    void AndroidApp::native_window_on_redraw_needed(ANativeActivity* activity, ANativeWindow* window) { }
+    void AndroidApp::native_window_on_resized(ANativeActivity* activity, ANativeWindow* window) { }
 
-    void AndroidCore::native_inputqueue_on_created(ANativeActivity* activity, AInputQueue* inputs)
+    void AndroidApp::native_inputqueue_on_created(ANativeActivity* activity, AInputQueue* inputs)
     {
         IPT_MESSAGE("Android::InputQueue::Created");
-        ice::platform::android::AndroidCore* core = core_instance(activity);
+        ice::platform::android::AndroidApp* core = core_instance(activity);
         ICE_ASSERT(
             core->_app_queue == nullptr,
-            "The 'AndroidCore::_app_queue' has unexpected value! [expected:{}, found:{}]",
+            "The 'AndroidApp::_app_queue' has unexpected value! [expected:{}, found:{}]",
             fmt::ptr((void*)0), fmt::ptr(core->_app_queue.load(std::memory_order_relaxed))
         );
         core->_app_queue.store(inputs, std::memory_order_relaxed);
     }
 
-    void AndroidCore::native_inputqueue_on_destroyed(ANativeActivity* activity, AInputQueue* inputs)
+    void AndroidApp::native_inputqueue_on_destroyed(ANativeActivity* activity, AInputQueue* inputs)
     {
         IPT_MESSAGE("Android::InputQueue::Destroyed");
-        ice::platform::android::AndroidCore* core = core_instance(activity);
+        ice::platform::android::AndroidApp* core = core_instance(activity);
 
         AInputQueue* expected_queue = inputs;
         while(core->_app_queue.compare_exchange_weak(expected_queue, nullptr, std::memory_order_relaxed) == false)
@@ -376,15 +375,15 @@ namespace ice::platform::android
 
         // ICE_ASSERT(
         //     core->_app_queue == inputs,
-        //     "The 'AndroidCore::_app_queue' has unexpected value! [expected:{}, found:{}]",
+        //     "The 'AndroidApp::_app_queue' has unexpected value! [expected:{}, found:{}]",
         //     fmt::ptr(inputs), fmt::ptr(core->_app_queue.load(std::memory_order_relaxed))
         // );
         // core->_app_queue.store(nullptr, std::memory_order_relaxed);
     }
 
-    void AndroidCore::native_callback_on_low_memory(ANativeActivity* activity) { }
-    void AndroidCore::native_callback_on_configuration_changed(ANativeActivity* activity) { }
-    void AndroidCore::native_callback_on_rect_changed(ANativeActivity* activity, ARect const* rect) { }
-    void* AndroidCore::native_callback_on_save_state(ANativeActivity* activity, size_t* out_size) { *out_size = 0; return nullptr; }
+    void AndroidApp::native_callback_on_low_memory(ANativeActivity* activity) { }
+    void AndroidApp::native_callback_on_configuration_changed(ANativeActivity* activity) { }
+    void AndroidApp::native_callback_on_rect_changed(ANativeActivity* activity, ARect const* rect) { }
+    auto AndroidApp::native_callback_on_save_state(ANativeActivity* activity, size_t* out_size) -> void* { *out_size = 0; return nullptr; }
 
 } // namespace ice::platform::android

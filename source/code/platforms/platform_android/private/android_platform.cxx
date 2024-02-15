@@ -1,7 +1,7 @@
 /// Copyright 2023 - 2023, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
-#include "android_platform_core.hxx"
+#include "android_app.hxx"
 
 #include <ice/mem_allocator_host.hxx>
 #include <ice/profiler.hxx>
@@ -10,11 +10,11 @@
 namespace ice::platform
 {
 
-    using ice::platform::android::AndroidCore;
+    using ice::platform::android::AndroidApp;
 
     auto available_features() noexcept -> ice::platform::FeatureFlags
     {
-        return FeatureFlags::Core | FeatureFlags::StoragePaths;
+        return FeatureFlags::Core | FeatureFlags::StoragePaths | FeatureFlags::RenderSurface;
     }
 
     auto initialize(
@@ -35,7 +35,7 @@ namespace ice::platform
         IPT_ZONE_SCOPED;
 
         // Check that we have a JNI NativeActivity instance already created.
-        if (AndroidCore::global_instance == nullptr)
+        if (AndroidApp::global_instance == nullptr)
         {
             return E_PlatformAndroidNotANativeActivity;
         }
@@ -50,7 +50,7 @@ namespace ice::platform
 
     auto query_api(ice::platform::FeatureFlags flag, void*& out_api_ptr) noexcept -> ice::Result
     {
-        AndroidCore* instance_ptr = AndroidCore::global_instance;
+        AndroidApp* instance_ptr = AndroidApp::global_instance;
         ICE_ASSERT(instance_ptr != nullptr, "Platform not initialized!");
 
         if (ice::has_all(available_features(), flag) == false)
@@ -65,6 +65,9 @@ namespace ice::platform
             break;
         case FeatureFlags::StoragePaths:
             out_api_ptr = static_cast<ice::platform::StoragePaths*>(instance_ptr);
+            break;
+        case FeatureFlags::RenderSurface:
+            out_api_ptr = instance_ptr->render_surface();
             break;
         default:
             return Res::E_InvalidArgument;

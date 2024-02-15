@@ -1,6 +1,6 @@
 /// Copyright 2023 - 2023, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
-#include "android_platform_core.hxx"
+#include "android_app.hxx"
 
 #include <ice/mem_allocator_host.hxx>
 #include <android/log.h>
@@ -24,32 +24,32 @@ void ANativeActivity_onCreate(
         }
     }
 
-    using ice::platform::android::AndroidCore;
+    using ice::platform::android::AndroidApp;
 
     static ice::HostAllocator host_alloc;
-    activity->instance = host_alloc.create<AndroidCore>(
+    activity->instance = host_alloc.create<AndroidApp>(
         host_alloc,
         ice::Data{ saved_data, ice::usize{ saved_size } },
         activity
     );
 
     // Setup all callbacks
-    activity->callbacks->onStart = AndroidCore::native_callback_on_start;
-    activity->callbacks->onResume = AndroidCore::native_callback_on_resume;
-    activity->callbacks->onPause = AndroidCore::native_callback_on_pause;
-    activity->callbacks->onStop = AndroidCore::native_callback_on_stop;
-    activity->callbacks->onDestroy = AndroidCore::native_callback_on_destroy;
-    activity->callbacks->onWindowFocusChanged = AndroidCore::native_callback_on_focus_changed;
-    activity->callbacks->onInputQueueCreated = AndroidCore::native_inputqueue_on_created;
-    activity->callbacks->onInputQueueDestroyed = AndroidCore::native_inputqueue_on_destroyed;
-    activity->callbacks->onNativeWindowCreated = AndroidCore::native_window_on_created;
-    activity->callbacks->onNativeWindowDestroyed = AndroidCore::native_window_on_destroyed;
-    activity->callbacks->onNativeWindowRedrawNeeded = AndroidCore::native_window_on_redraw_needed;
-    activity->callbacks->onNativeWindowResized = AndroidCore::native_window_on_resized;
-    activity->callbacks->onLowMemory = AndroidCore::native_callback_on_low_memory;
-    activity->callbacks->onConfigurationChanged = AndroidCore::native_callback_on_configuration_changed;
-    activity->callbacks->onContentRectChanged = AndroidCore::native_callback_on_rect_changed;
-    activity->callbacks->onSaveInstanceState = AndroidCore::native_callback_on_save_state;
+    activity->callbacks->onStart = AndroidApp::native_callback_on_start;
+    activity->callbacks->onResume = AndroidApp::native_callback_on_resume;
+    activity->callbacks->onPause = AndroidApp::native_callback_on_pause;
+    activity->callbacks->onStop = AndroidApp::native_callback_on_stop;
+    activity->callbacks->onDestroy = AndroidApp::native_callback_on_destroy;
+    activity->callbacks->onWindowFocusChanged = AndroidApp::native_callback_on_focus_changed;
+    activity->callbacks->onInputQueueCreated = AndroidApp::native_inputqueue_on_created;
+    activity->callbacks->onInputQueueDestroyed = AndroidApp::native_inputqueue_on_destroyed;
+    activity->callbacks->onNativeWindowCreated = AndroidApp::native_window_on_created;
+    activity->callbacks->onNativeWindowDestroyed = AndroidApp::native_window_on_destroyed;
+    activity->callbacks->onNativeWindowRedrawNeeded = AndroidApp::native_window_on_redraw_needed;
+    activity->callbacks->onNativeWindowResized = AndroidApp::native_window_on_resized;
+    activity->callbacks->onLowMemory = AndroidApp::native_callback_on_low_memory;
+    activity->callbacks->onConfigurationChanged = AndroidApp::native_callback_on_configuration_changed;
+    activity->callbacks->onContentRectChanged = AndroidApp::native_callback_on_rect_changed;
+    activity->callbacks->onSaveInstanceState = AndroidApp::native_callback_on_save_state;
 }
 
 }
