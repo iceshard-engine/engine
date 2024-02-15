@@ -13,7 +13,7 @@
 #include <ice/task_utils.hxx>
 
 #include <ice/mem_allocator_stack.hxx>
-#include <ice/world/world_manager.hxx>
+#include <ice/world/world_updater.hxx>
 #include <ice/module_register.hxx>
 #include <ice/profiler.hxx>
 #include <ice/engine_shards.hxx>

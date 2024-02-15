@@ -8,7 +8,7 @@
 #include <ice/engine_devui.hxx>
 #include <ice/engine_shards.hxx>
 #include <ice/engine_frame.hxx>
-#include <ice/world/world_manager.hxx>
+#include <ice/world/world_updater.hxx>
 
 #include <ice/gfx/gfx_shards.hxx>
 #include <ice/gfx/gfx_object_storage.hxx>

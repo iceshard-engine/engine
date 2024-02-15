@@ -30,7 +30,7 @@
 #include <ice/world/world_trait_archive.hxx>
 #include <ice/world/world_trait_module.hxx>
 #include <ice/world/world_trait.hxx>
-#include <ice/world/world_manager.hxx>
+#include <ice/world/world_updater.hxx>
 
 #include <ice/devui/devui_module.hxx>
 #include <ice/devui/devui_system.hxx>

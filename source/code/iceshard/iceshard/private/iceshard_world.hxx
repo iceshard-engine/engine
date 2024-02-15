@@ -4,7 +4,7 @@
 #pragma once
 #include <ice/world/world.hxx>
 #include <ice/world/world_trait.hxx>
-#include <ice/world/world_manager.hxx>
+#include <ice/world/world_updater.hxx>
 #include <ice/world/world_trait_archive.hxx>
 #include <ice/container/array.hxx>
 #include <ice/engine_runner.hxx>

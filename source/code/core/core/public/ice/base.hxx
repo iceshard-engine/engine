@@ -42,6 +42,21 @@ namespace ice
         return Size;
     }
 
+    template<typename T, typename U = T> requires (std::convertible_to<U, T>)
+    constexpr auto value_or_default(T value, U default_value) noexcept -> T = delete;
+
+    template<typename T, typename U = T> requires (std::convertible_to<U*, T*>)
+    constexpr auto value_or_default(T* value, U* default_value) noexcept -> T*
+    {
+        return value != nullptr ? value : default_value;
+    }
+
+    template<typename T, typename U = T> requires (std::convertible_to<U, T> && std::is_arithmetic_v<T>)
+    constexpr auto value_or_default(T value, U&& default_value) noexcept -> T
+    {
+        return value != nullptr ? value : static_cast<T>(ice::forward<U>(default_value));
+    }
+
     template<typename T>
     using clear_type_t = std::remove_pointer_t<std::remove_reference_t<std::remove_cv_t<T>>>;
 

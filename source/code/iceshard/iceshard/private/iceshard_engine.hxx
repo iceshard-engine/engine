@@ -4,7 +4,7 @@
 #pragma once
 #include <ice/engine.hxx>
 #include <ice/asset_storage.hxx>
-#include <ice/world/world_manager.hxx>
+#include <ice/world/world_updater.hxx>
 #include <ice/ecs/ecs_entity_index.hxx>
 
 #include "iceshard_world.hxx"
