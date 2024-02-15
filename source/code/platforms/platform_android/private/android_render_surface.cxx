@@ -1,3 +1,6 @@
+/// Copyright 2024 - 2024, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
 #include "android_render_surface.hxx"
 #include <ice/render/render_surface.hxx>
 #include <ice/assert.hxx>

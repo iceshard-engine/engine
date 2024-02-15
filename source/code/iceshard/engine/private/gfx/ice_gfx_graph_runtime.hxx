@@ -1,3 +1,6 @@
+/// Copyright 2023 - 2024, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
 #pragma once
 #include <ice/gfx/gfx_graph_runtime.hxx>
 #include <ice/mem_allocator_proxy.hxx>
