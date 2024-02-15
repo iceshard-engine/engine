@@ -295,9 +295,6 @@ auto ice_setup(
         ice::array::push_back(resource_paths, storage->data_locations());
     }
 
-    ice::array::push_back(resource_paths, storage->cache_location());
-    ice::array::push_back(resource_paths, storage->save_location());
-
     ice::framework::Config game_config{
         .module_dir = dylib_path,
         .resource_dirs = resource_paths
@@ -319,6 +316,17 @@ auto ice_setup(
     state.resources->attach_provider(ice::move(filesys));
     state.resources->attach_provider(ice::move(modules));
     state.resources->sync_resources();
+
+    if constexpr (ice::build::current_platform == ice::build::System::Android)
+    {
+        auto shaders_pak = state.resources->find_resource("urn://shaders.hsc"_uri);
+        auto hailstorm = ice::create_resource_provider_hailstorm(
+            state.resources_alloc, ice::resource_origin(shaders_pak)
+        );
+
+        state.resources->attach_provider(ice::move(hailstorm));
+        state.resources->sync_resources();
+    }
 
     // Run game setup
     ice::framework::State const framework_state{
