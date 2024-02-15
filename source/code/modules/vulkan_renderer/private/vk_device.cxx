@@ -27,15 +27,16 @@ namespace ice::render::vk
 
     VulkanRenderDevice::VulkanRenderDevice(
         ice::Allocator& alloc,
+        VmaAllocator vma_allocator,
         VkDevice vk_device,
         VkPhysicalDevice vk_physical_device,
         VkPhysicalDeviceMemoryProperties const& memory_properties
     ) noexcept
         : _allocator{ alloc }
+        , _vma_allocator{ vma_allocator }
         , _gfx_thread_alloc{ _allocator, { 2_MiB } }
         , _vk_device{ vk_device }
         , _vk_physical_device{ vk_physical_device }
-        , _vk_memory_manager{ ice::make_unique<VulkanMemoryManager>(_allocator, _allocator, _vk_device, memory_properties) }
         , _vk_queues{ _allocator }
     {
         VkDescriptorPoolSize pool_sizes[] =
@@ -79,7 +80,7 @@ namespace ice::render::vk
             nullptr
         );
 
-        _vk_memory_manager = nullptr;
+        vmaDestroyAllocator(_vma_allocator);
         vkDestroyDevice(_vk_device, nullptr);
     }
 
@@ -121,11 +122,11 @@ namespace ice::render::vk
         swapchain_info.surface = vk_surface->handle();
         swapchain_info.imageFormat = surface_format.format;
         swapchain_info.minImageCount = ice::max(surface_capabilities.minImageCount, 2u);
-        swapchain_info.imageExtent = surface_capabilities.maxImageExtent;
+        swapchain_info.imageExtent = surface_capabilities.currentExtent;
         swapchain_info.imageArrayLayers = 1;
         swapchain_info.oldSwapchain = VK_NULL_HANDLE;
         swapchain_info.clipped = false; // Clipped for android only?
-        swapchain_info.presentMode = VK_PRESENT_MODE_IMMEDIATE_KHR;
+        swapchain_info.presentMode = VK_PRESENT_MODE_FIFO_KHR;
         swapchain_info.imageColorSpace = surface_format.colorSpace;
         swapchain_info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
         swapchain_info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
@@ -777,7 +778,7 @@ namespace ice::render::vk
         pipeline_info.pInputAssemblyState = &input_assembly;
         pipeline_info.pRasterizationState = &rasterization;
         pipeline_info.pColorBlendState = &blend_info;
-        pipeline_info.pTessellationState = &tesselation;
+        // pipeline_info.pTessellationState = &tesselation;
         pipeline_info.pMultisampleState = &multisample;
         pipeline_info.pDynamicState = &dynamic_state;
         pipeline_info.pViewportState = &viewport;
@@ -828,22 +829,17 @@ namespace ice::render::vk
         VkBuffer vk_buffer = vk_nullptr;
 
         [[maybe_unused]]
-        VkResult result = vkCreateBuffer(
-            _vk_device,
-            &buffer_info,
-            nullptr,
-            &vk_buffer
-        );
+        VmaAllocationCreateInfo vma_allocation_create_info{ };
+        vma_allocation_create_info.preferredFlags = VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+        vma_allocation_create_info.requiredFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
+        vma_allocation_create_info.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT;
+        vma_allocation_create_info.usage = VMA_MEMORY_USAGE_AUTO;
 
-        AllocationInfo memory_info;
-        AllocationHandle memory_handle = _vk_memory_manager->allocate(
-            vk_buffer,
-            VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
-            BufferType::Transfer == buffer_type ? AllocationType::TransferBuffer : AllocationType::Buffer,
-            memory_info
-        );
+        VmaAllocation vma_allocation;
+        VmaAllocationInfo vma_allocation_info;
+        vmaCreateBuffer(_vma_allocator, &buffer_info, &vma_allocation_create_info, &vk_buffer, &vma_allocation, &vma_allocation_info);
 
-        VulkanBuffer* buffer_ptr = _allocator.create<VulkanBuffer>(vk_buffer, memory_handle);
+        VulkanBuffer* buffer_ptr = _allocator.create<VulkanBuffer>(vk_buffer, vma_allocation);
         return static_cast<Buffer>(reinterpret_cast<ice::uptr>(buffer_ptr));
     }
 
@@ -852,12 +848,7 @@ namespace ice::render::vk
     ) noexcept
     {
         VulkanBuffer* const buffer_ptr = reinterpret_cast<VulkanBuffer*>(static_cast<ice::uptr>(buffer));
-        vkDestroyBuffer(
-            _vk_device,
-            buffer_ptr->vk_buffer,
-            nullptr
-        );
-        _vk_memory_manager->release(buffer_ptr->vk_alloc_handle);
+        vmaDestroyBuffer(_vma_allocator, buffer_ptr->vk_buffer, buffer_ptr->vma_allocation);
         _allocator.destroy(buffer_ptr);
     }
 
@@ -865,62 +856,41 @@ namespace ice::render::vk
         ice::Span<ice::render::BufferUpdateInfo const> update_infos
     ) noexcept
     {
-        ice::u32 const update_count = ice::count(update_infos);
+        ice::ucount const update_count = ice::count(update_infos);
 
-        // [issue #49]: This part of the code is generally run on a graphics thread. Because of this we need to have a dedicated memory pool / allocator. So it won't interfer with
-        //  other allocations done in the mean time on any other thrads.
-        //  We should probably slowly invest some time into thread safe allocators.
-        ice::Array<AllocationHandle> allocation_handles{ _gfx_thread_alloc };
-        ice::array::reserve(allocation_handles, update_count);
-
-        for (BufferUpdateInfo const& update_info : update_infos)
+        ice::ucount update_offset = 0;
+        while(update_offset < update_count)
         {
-            VulkanBuffer* const buffer_ptr = reinterpret_cast<VulkanBuffer*>(static_cast<ice::uptr>(update_info.buffer));
-            ice::array::push_back(
-                allocation_handles,
-                buffer_ptr->vk_alloc_handle
-            );
+            ice::ucount const current_update_count = ice::min(update_count - update_offset, 16u);
+
+            // We map up to 16 pointers at one time so VMA does not continously call vkMap and vkUnmap for each object entry.
+            void* data_pointers[16];
+            for (ice::u32 idx = 0; idx < current_update_count; ++idx)
+            {
+                VulkanBuffer* const buffer_ptr = reinterpret_cast<VulkanBuffer*>(static_cast<ice::uptr>(update_infos[update_offset + idx].buffer));
+                VkResult const result = vmaMapMemory(_vma_allocator, buffer_ptr->vma_allocation, &data_pointers[idx]);
+                ICE_ASSERT_CORE(result == VK_SUCCESS);
+            }
+
+            for (ice::u32 idx = 0; idx < current_update_count; ++idx)
+            {
+                BufferUpdateInfo const& update_info = update_infos[update_offset + idx];
+                ice::memcpy(
+                    ice::ptr_add(data_pointers[idx], { update_info.offset }),
+                    update_info.data.location,
+                    update_info.data.size
+                );
+            }
+
+            for (ice::u32 idx = 0; idx < current_update_count; ++idx)
+            {
+                VulkanBuffer* const buffer_ptr = reinterpret_cast<VulkanBuffer*>(static_cast<ice::uptr>(update_infos[update_offset + idx].buffer));
+                vmaUnmapMemory(_vma_allocator, buffer_ptr->vma_allocation);
+            }
+
+            // Move the offset by at maximum 16 entries
+            update_offset += current_update_count;
         }
-
-        // [issue #49]: This part of the code is generally run on a graphics thread. Because of this we need to have a dedicated memory pool / allocator. So it won't interfer with
-        //  other allocations done in the mean time on any other thrads.
-        //  We should probably slowly invest some time into thread safe allocators.
-        ice::Array<ice::Memory> data_blocks{ _gfx_thread_alloc };
-        ice::array::resize(data_blocks, update_count);
-
-        _vk_memory_manager->map_memory(
-            allocation_handles,
-            data_blocks
-        );
-
-        for (ice::u32 idx = 0; idx < update_count; ++idx)
-        {
-            BufferUpdateInfo const& update_info = update_infos[idx];
-            Memory& target = data_blocks[idx];
-
-            VulkanBuffer* const buffer_ptr = reinterpret_cast<VulkanBuffer*>(static_cast<ice::uptr>(update_info.buffer));
-
-            // TODO: The memory manager requires a not-so-small overhaul to avoid alignment issues...
-            VkMemoryRequirements reqirements;
-            vkGetBufferMemoryRequirements(_vk_device, buffer_ptr->vk_buffer, &reqirements);
-
-            ICE_ASSERT(
-                target.size >= update_info.data.size,
-                "Target memory buffer is smaller than provided size to copy!"
-            );
-
-            void* target_ptr = ice::ptr_add(ice::align_to(target.location, ice::ualign(reqirements.alignment)).value, { update_info.offset });
-
-            ice::memcpy(
-                target_ptr,
-                update_info.data.location,
-                update_info.data.size
-            );
-        }
-
-        _vk_memory_manager->unmap_memory(
-            allocation_handles
-        );
     }
 
     auto VulkanRenderDevice::create_framebuffer(
@@ -986,26 +956,31 @@ namespace ice::render::vk
         image_info.queueFamilyIndexCount = 0;
         image_info.pQueueFamilyIndices = nullptr;
         image_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+        // image_info.flags = VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;
 
+        bool const is_render_target = ice::has_any(
+            image.usage, ImageUsageFlags::ColorAttachment | ImageUsageFlags::DepthStencilAttachment
+        );
+
+        VmaAllocationCreateFlags flags = 0;
+        if (is_render_target)
+        {
+            flags = VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT;
+        }
+
+        VmaAllocationCreateInfo alloc_create_info{};
+        alloc_create_info.usage = VMA_MEMORY_USAGE_AUTO;
+        alloc_create_info.flags = flags;
+        alloc_create_info.priority = 1.0f;
+
+        VmaAllocationInfo allocation_info{};
+        VmaAllocation allocation{};
         VkImage vk_image;
-        VkResult result = vkCreateImage(_vk_device, &image_info, nullptr, &vk_image);
+        VkResult result = vmaCreateImage(_vma_allocator, &image_info, &alloc_create_info, &vk_image, &allocation, &allocation_info);
+
         ICE_ASSERT(
             result == VkResult::VK_SUCCESS,
             "Couldn't create image object!"
-        );
-
-        AllocationType alloc_type = AllocationType::Implicit;
-        if (has_flag(image.usage, ImageUsageFlags::ColorAttachment) || has_flag(image.usage, ImageUsageFlags::DepthStencilAttachment))
-        {
-            alloc_type = AllocationType::RenderTarget;
-        }
-
-        AllocationInfo memory_info;
-        AllocationHandle memory_handle = _vk_memory_manager->allocate(
-            vk_image,
-            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-            alloc_type,
-            memory_info
         );
 
         VkImageViewCreateInfo view_info{ VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO };
@@ -1040,7 +1015,7 @@ namespace ice::render::vk
             "Coudln't create image view!"
         );
 
-        VulkanImage* const image_ptr = _allocator.create<VulkanImage>(vk_image, vk_image_view, memory_handle);
+        VulkanImage* const image_ptr = _allocator.create<VulkanImage>(vk_image, vk_image_view, allocation);
         return static_cast<Image>(reinterpret_cast<ice::uptr>(image_ptr));
     }
 
@@ -1048,8 +1023,7 @@ namespace ice::render::vk
     {
         VulkanImage* const image_ptr = reinterpret_cast<VulkanImage*>(static_cast<ice::uptr>(image));
         vkDestroyImageView(_vk_device, image_ptr->vk_image_view, nullptr);
-        _vk_memory_manager->release(image_ptr->vk_alloc_handle);
-        vkDestroyImage(_vk_device, image_ptr->vk_image, nullptr);
+        vmaDestroyImage(_vma_allocator, image_ptr->vk_image, image_ptr->vma_allocation);
         _allocator.destroy(image_ptr);
     }
 
@@ -1223,10 +1197,11 @@ namespace ice::render::vk
     {
         VkCommandBufferBeginInfo begin_info{ VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO };
         begin_info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-        vkBeginCommandBuffer(
+        VkResult const result = vkBeginCommandBuffer(
             native_handle(cmds),
             &begin_info
         );
+        ICE_ASSERT_CORE(result == VK_SUCCESS);
     }
 
     void VulkanRenderCommands::begin_renderpass(

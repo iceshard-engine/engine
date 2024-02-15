@@ -70,7 +70,6 @@ namespace ice::render::vk
 
             _vk_images[idx].vk_image = vk_images[idx];
             _vk_images[idx].vk_image_view = vk_image_view;
-            _vk_images[idx].vk_alloc_handle = AllocationHandle::Invalid;
         }
 
 

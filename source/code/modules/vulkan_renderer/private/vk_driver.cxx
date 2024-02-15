@@ -24,13 +24,15 @@ namespace ice::render::vk
     VulkanRenderDriver::VulkanRenderDriver(
         ice::Allocator& alloc,
         ice::UniquePtr<VulkanAllocator> vk_alloc,
-        VkInstance vk_instance
+        VkInstance vk_instance,
+        ice::render::vk::Extension instance_extensions
     ) noexcept
         : _allocator{ alloc, "vk-driver" }
         , _vk_alloc{ ice::move(vk_alloc) }
         , _vk_instance{ vk_instance }
         , _vk_physical_device{ vk_nullptr }
         , _vk_queue_family_properties{ _allocator }
+        , _vk_instance_extensions{ instance_extensions }
     {
         ice::Array<VkPhysicalDevice> physical_devices{ _allocator };
         if (enumerate_objects(physical_devices, vkEnumeratePhysicalDevices, vk_instance))
@@ -283,9 +285,10 @@ namespace ice::render::vk
             ice::array::push_back(queue_create_infos, queue_create_info);
         }
 
-        char const* const extension_names[] = {
-            VK_KHR_SWAPCHAIN_EXTENSION_NAME
-        };
+        ice::ucount count_extensions = 0;
+        ice::Array<ExtensionName> extension_names{ _allocator };
+        Extension const device_extensions = extensions_gather_names(extension_names, count_extensions, _vk_physical_device);
+        ICE_ASSERT_CORE(ice::has_all(device_extensions, Extension::VkD_Swapchain));
 
         VkPhysicalDeviceFeatures available_device_features{ };
         vkGetPhysicalDeviceFeatures(_vk_physical_device, &available_device_features);
@@ -297,8 +300,8 @@ namespace ice::render::vk
 
         VkDeviceCreateInfo device_create_info{ .sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO };
         device_create_info.pEnabledFeatures = &enabled_device_features;
-        device_create_info.enabledExtensionCount = ice::count(extension_names);
-        device_create_info.ppEnabledExtensionNames = &extension_names[0];
+        device_create_info.enabledExtensionCount = count_extensions;
+        device_create_info.ppEnabledExtensionNames = ice::array::begin(extension_names);
         device_create_info.pQueueCreateInfos = ice::array::begin(queue_create_infos);
         device_create_info.queueCreateInfoCount = ice::array::count(queue_create_infos);
 
@@ -315,8 +318,25 @@ namespace ice::render::vk
             "Couldn't create logical device"
         );
 
+        VmaAllocatorCreateInfo allocator_create_info = {};
+        allocator_create_info.vulkanApiVersion = VK_API_VERSION_1_0;
+        allocator_create_info.flags = extension_create_native_flags(_vk_instance_extensions | device_extensions, ExtensionTarget::VmaExtension);
+        allocator_create_info.instance = _vk_instance;
+        allocator_create_info.physicalDevice = _vk_physical_device;
+        allocator_create_info.device = vk_device;
+        allocator_create_info.pAllocationCallbacks = _vk_alloc->vulkan_callbacks();
+
+        VmaVulkanFunctions vulkanFunctions = {};
+        vulkanFunctions.vkGetInstanceProcAddr = &vkGetInstanceProcAddr;
+        vulkanFunctions.vkGetDeviceProcAddr = &vkGetDeviceProcAddr;
+        allocator_create_info.pVulkanFunctions = &vulkanFunctions;
+
+        VmaAllocator vma_allocator;
+        vmaCreateAllocator(&allocator_create_info, &vma_allocator);
+
         return _allocator.create<VulkanRenderDevice>(
             _allocator,
+            vma_allocator,
             vk_device,
             _vk_physical_device,
             _vk_physical_device_memory_properties
