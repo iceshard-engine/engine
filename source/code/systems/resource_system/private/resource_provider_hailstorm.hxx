@@ -296,22 +296,17 @@ namespace ice
     class HailStormResourceProvider final : public ice::ResourceProvider
     {
     public:
-        HailStormResourceProvider(
-            ice::Allocator& alloc,
-            ice::Span<ice::String const> const& paths
-        ) noexcept
+        HailStormResourceProvider(ice::Allocator& alloc, ice::String path) noexcept
             : _allocator{ alloc }
             , _hspack_path{ _allocator }
-            , _packname{ _allocator }
+            , _packname{ _allocator, ice::path::filename(path) }
             , _header_memory{ }
             , _paths_memory{ }
             , _loaders{ _allocator }
             , _entries{ _allocator }
             , _entrymap{ _allocator }
         {
-            ICE_ASSERT_CORE(ice::count(paths) == 1);
-            ice::native_file::path_from_string(paths[0], _hspack_path);
-            _packname = ice::path::filename(paths[0]);
+            ice::native_file::path_from_string(path, _hspack_path);
         }
 
         ~HailStormResourceProvider() noexcept
@@ -366,12 +361,11 @@ namespace ice
                     return ResourceProviderResult::Failure;
                 }
 
-                ice::HeapString<> prefix{ _allocator };
-                ice::native_file::path_to_string(_hspack_path, prefix);
+                ice::HeapString<> prefix{ _allocator, _packname };
                 ice::string::push_back(prefix, "/");
 
                 ice::usize::base_type const size_extended_paths = hailstorm::v1::prefixed_resource_paths_size(
-                    _pack.paths, (ice::ucount)_pack.resources.size(), (ice::String) prefix
+                    _pack.paths, (ice::ucount)_pack.resources.size(), ice::String{ prefix }
                 );
 
                 // We allocate enough memory to keep all original paths prefixed with the resource file name and a slash.
@@ -395,7 +389,7 @@ namespace ice
                     _pack.paths,
                     { resptr, (ice::ucount)_pack.resources.size() },
                     { _paths_memory.location, _paths_memory.size.value, (size_t)_paths_memory.alignment },
-                    (ice::String) prefix
+                    ice::String{ prefix }
                 );
                 ICE_ASSERT_CORE(prefixing_success);
 

@@ -6,8 +6,8 @@
 
 auto ice::create_resource_provider_hailstorm(
     ice::Allocator& alloc,
-    ice::Span<ice::String const> paths
+    ice::String path
 ) noexcept -> ice::UniquePtr<ice::ResourceProvider>
 {
-    return ice::make_unique<ice::HailStormResourceProvider>(alloc, alloc, paths);
+    return ice::make_unique<ice::HailStormResourceProvider>(alloc, alloc, path);
 }

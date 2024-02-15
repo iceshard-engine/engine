@@ -89,7 +89,7 @@ namespace ice
 
     auto create_resource_provider_hailstorm(
         ice::Allocator& alloc,
-        ice::Span<ice::String const> paths
+        ice::String path
     ) noexcept -> ice::UniquePtr<ice::ResourceProvider>;
 
 } // namespace ice
