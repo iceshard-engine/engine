@@ -66,7 +66,7 @@ namespace ice
     void wait_for_all(ice::Span<ice::Task<void>> tasks) noexcept
     {
         IPT_ZONE_SCOPED;
-        ice::ManualResetBarrier manual_sem;
+        ice::ManualResetBarrier manual_sem{ ice::u8(ice::span::count(tasks)) };
         manual_wait_for_all(tasks, manual_sem);
         manual_sem.wait();
     }
