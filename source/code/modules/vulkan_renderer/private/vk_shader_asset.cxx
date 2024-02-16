@@ -11,6 +11,12 @@
 namespace ice::render::vk
 {
 
+    auto shader_resources() noexcept -> ice::Span<ice::String>
+    {
+        static ice::String supported_extensions[]{ ".glsl" };
+        return supported_extensions;
+    }
+
     auto compile_shader_source(
         ice::ResourceHandle* source,
         ice::ResourceTracker& tracker,
@@ -60,6 +66,7 @@ namespace ice::render::vk
 
     void VkShaderCompilerModule::v1_resource_compiler_api(ice::api::resource_compiler::v1::ResourceCompilerAPI& api) noexcept
     {
+        api.fn_supported_resources = shader_resources;
         api.fn_compile_source = compile_shader_source;
     }
 

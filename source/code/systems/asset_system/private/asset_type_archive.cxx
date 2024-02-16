@@ -4,6 +4,7 @@
 #include <ice/asset_type_archive.hxx>
 #include <ice/asset.hxx>
 #include <ice/container/hashmap.hxx>
+#include <ice/mem_allocator_stack.hxx>
 #include <ice/assert.hxx>
 
 namespace ice
@@ -86,9 +87,20 @@ namespace ice
             }
 
             ice::ResourceCompiler asset_compiler{};
-            if (compiler != nullptr)
+            if (compiler != nullptr && compiler->fn_supported_resources)
             {
-                asset_compiler = *compiler;
+                for (ice::String ext : compiler->fn_supported_resources())
+                {
+                    for (ice::String asset_ext : type_definition.resource_extensions)
+                    {
+                        // Only use the compiler if at least one extension is covered.
+                        if (ext == asset_ext)
+                        {
+                            asset_compiler = *compiler;
+                            break;
+                        }
+                    }
+                }
             }
 
             ice::array::push_back(_types, type);

@@ -15,6 +15,8 @@ namespace ice
     namespace api::resource_compiler::v1
     {
 
+        using FnSupportedResources = auto(*)() noexcept -> ice::Span<ice::String>;
+
         using FnCollectResourceSources = bool(*)(
             ice::ResourceHandle* resource_handle,
             ice::ResourceTracker& resource_tracker,
@@ -84,6 +86,7 @@ namespace ice
             static constexpr ice::StringID Constant_APIName = "ice.api.resource-compiler.v1"_sid;
             static constexpr ice::u32 Constant_APIVersion = 1;
 
+            FnSupportedResources fn_supported_resources = nullptr;
             FnCollectResourceSources fn_collect_sources = fn_collect_sources_default;
             FnCollectResourceDependencies fn_collect_dependencies = fn_collect_dependencies_default;
             FnValidateResourceSource fn_validate_source = fn_validate_source_default;
