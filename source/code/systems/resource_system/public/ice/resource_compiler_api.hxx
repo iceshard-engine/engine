@@ -1,48 +1,48 @@
 #pragma once
-#include <ice/stringid.hxx>
 #include <ice/resource_tracker.hxx>
-#include <ice/uri.hxx>
+#include <ice/stringid.hxx>
 #include <ice/task.hxx>
+#include <ice/uri.hxx>
 
 namespace ice
 {
 
-    struct AssetCompilerResult
+    struct ResourceCompilerResult
     {
         ice::Memory result;
     };
 
-    namespace api::asset_compiler::v1
+    namespace api::resource_compiler::v1
     {
 
-        using FnCollectAssetSources = bool(*)(
+        using FnCollectResourceSources = bool(*)(
             ice::ResourceHandle* resource_handle,
             ice::ResourceTracker& resource_tracker,
             ice::Array<ice::ResourceHandle*>& out_sources
         ) noexcept;
 
-        using FnCollectAssetDependencies = bool(*)(
+        using FnCollectResourceDependencies = bool(*)(
             ice::ResourceHandle* resource_handle,
             ice::ResourceTracker& resource_tracker,
             ice::Array<ice::URI>& out_dependencies
         ) noexcept;
 
-        using FnValidateAssetSource = auto(*)(
+        using FnValidateResourceSource = auto(*)(
             ice::ResourceHandle* resource_handle,
             ice::ResourceTracker& resource_tracker
         ) noexcept -> ice::Task<bool>;
 
-        using FnCompileAssetSource = auto(*)(
+        using FnCompileResourceSource = auto(*)(
             ice::ResourceHandle* resource_handle,
             ice::ResourceTracker& resource_tracker,
             ice::Span<ice::ResourceHandle* const> sources,
             ice::Span<ice::URI const> dependencies,
             ice::Allocator& result_alloc
-        ) noexcept -> ice::Task<ice::AssetCompilerResult>;
+        ) noexcept -> ice::Task<ice::ResourceCompilerResult>;
 
-        using FnFinalizeAsset = auto(*)(
+        using FnFinalizeResource = auto(*)(
             ice::ResourceHandle* resource_handle,
-            ice::Span<ice::AssetCompilerResult const> compiled_sources,
+            ice::Span<ice::ResourceCompilerResult const> compiled_sources,
             ice::Span<ice::URI const> dependencies,
             ice::Allocator& result_alloc
         ) noexcept -> ice::Memory;
@@ -70,27 +70,27 @@ namespace ice
             ice::Span<ice::ResourceHandle* const> sources,
             ice::Span<ice::URI const> dependencies,
             ice::Allocator& result_alloc
-        ) noexcept -> ice::Task<ice::AssetCompilerResult>;
+        ) noexcept -> ice::Task<ice::ResourceCompilerResult>;
 
         auto fn_finalize_default(
             ice::ResourceHandle* resource_handle,
-            ice::Span<ice::AssetCompilerResult const> compiled_sources,
+            ice::Span<ice::ResourceCompilerResult const> compiled_sources,
             ice::Span<ice::URI const> dependencies,
             ice::Allocator& result_alloc
         ) noexcept -> ice::Memory;
 
-        struct AssetCompilerAPI
+        struct ResourceCompilerAPI
         {
-            static constexpr ice::StringID Constant_APIName = "ice.api.asset-compiler.v1"_sid;
+            static constexpr ice::StringID Constant_APIName = "ice.api.resource-compiler.v1"_sid;
             static constexpr ice::u32 Constant_APIVersion = 1;
 
-            FnCollectAssetSources fn_collect_sources = fn_collect_sources_default;
-            FnCollectAssetDependencies fn_collect_dependencies = fn_collect_dependencies_default;
-            FnValidateAssetSource fn_validate_source = fn_validate_source_default;
-            FnCompileAssetSource fn_compile_source = fn_compile_source_default;
-            FnFinalizeAsset fn_finalize = fn_finalize_default;
+            FnCollectResourceSources fn_collect_sources = fn_collect_sources_default;
+            FnCollectResourceDependencies fn_collect_dependencies = fn_collect_dependencies_default;
+            FnValidateResourceSource fn_validate_source = fn_validate_source_default;
+            FnCompileResourceSource fn_compile_source = fn_compile_source_default;
+            FnFinalizeResource fn_finalize = fn_finalize_default;
         };
 
-    } // namespace api::asset_compiler::v1
+    } // namespace api::resource_compiler::v1
 
 } // namespace ice

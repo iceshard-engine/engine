@@ -121,7 +121,7 @@ namespace ice
 
         auto bake_asset(
             ice::Allocator& alloc,
-            ice::AssetCompiler const& compiler,
+            ice::ResourceCompiler const& compiler,
             ice::ResourceTracker& resource_tracker,
             ice::AssetEntry const* asset_entry,
             ice::Memory& result
@@ -147,7 +147,7 @@ namespace ice
             ice::array::reserve(tasks, ice::array::count(sources));
 
             static auto fn_validate = [](
-                ice::AssetCompiler const& compiler,
+                ice::ResourceCompiler const& compiler,
                 ice::ResourceHandle* source,
                 ice::ResourceTracker& tracker,
                 std::atomic_bool& out_result
@@ -176,17 +176,17 @@ namespace ice
                 co_return false;
             }
 
-            ice::Array<ice::AssetCompilerResult> compiled_sources{ alloc };
+            ice::Array<ice::ResourceCompilerResult> compiled_sources{ alloc };
             ice::array::resize(compiled_sources, ice::array::count(sources));
 
             static auto fn_compile = [](
-                ice::AssetCompiler const& compiler,
+                ice::ResourceCompiler const& compiler,
                 ice::ResourceHandle* source,
                 ice::ResourceTracker& tracker,
                 ice::Span<ice::ResourceHandle* const> sources,
                 ice::Span<ice::URI const> dependencies,
                 ice::Allocator& result_alloc,
-                ice::AssetCompilerResult& out_result
+                ice::ResourceCompilerResult& out_result
             ) noexcept -> ice::Task<>
             {
                 out_result = co_await compiler.fn_compile_source(
@@ -224,7 +224,7 @@ namespace ice
             result = compiler.fn_finalize(asset_entry->resource_handle, compiled_sources, dependencies, alloc);
 
             // Deallocate all compiled sources
-            for (ice::AssetCompilerResult const& compiled : compiled_sources)
+            for (ice::ResourceCompilerResult const& compiled : compiled_sources)
             {
                 alloc.deallocate(compiled.result);
             }
@@ -475,15 +475,25 @@ namespace ice
                     ICE_ASSERT(result.location != nullptr, "We failed to load any data from resource handle!");
 
                     ice::Memory result_memory{};
-                    bool const bake_success = shelve.compiler != nullptr && co_await ice::detail::bake_asset(
-                        shelve.asset_allocator(),
-                        *shelve.compiler,
-                        _info.resource_tracker,
-                        &entry,
-                        result_memory
-                    );
+                    if (shelve.compiler != nullptr)
+                    {
+                        bool const task_success = co_await ice::detail::bake_asset(
+                            shelve.asset_allocator(),
+                            *shelve.compiler,
+                            _info.resource_tracker,
+                            &entry,
+                            result_memory
+                        );
 
-                    if (bake_success)
+                        // If task was not successful release the memory if anything was allocated.
+                        if (task_success == false)
+                        {
+                            shelve.asset_allocator().deallocate(result_memory);
+                            result_memory = ice::Memory{};
+                        }
+                    }
+
+                    if (result_memory.location != nullptr)
                     {
                         // Release previous memory if existing
                         shelve.asset_allocator().deallocate(entry.data_baked);

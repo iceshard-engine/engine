@@ -17,7 +17,7 @@ namespace ice::render::vk
         ice::Span<ice::ResourceHandle* const>,
         ice::Span<ice::URI const>,
         ice::Allocator& alloc
-    ) noexcept -> ice::Task<ice::AssetCompilerResult>
+    ) noexcept -> ice::Task<ice::ResourceCompilerResult>
     {
         shaderc::CompileOptions compile_options{};
 
@@ -55,10 +55,10 @@ namespace ice::render::vk
         ice::usize const result_size = ice::size_of<ice::u32> * (spv_result.end() - spv_result.begin());
         ice::Memory const result_mem = alloc.allocate(result_size);
         ice::memcpy(result_mem.location, spv_result.begin(), result_size);
-        co_return AssetCompilerResult{ .result = result_mem };
+        co_return ResourceCompilerResult{ .result = result_mem };
     }
 
-    void VkShaderCompilerModule::v1_asset_compiler_api(ice::api::asset_compiler::v1::AssetCompilerAPI& api) noexcept
+    void VkShaderCompilerModule::v1_resource_compiler_api(ice::api::resource_compiler::v1::ResourceCompilerAPI& api) noexcept
     {
         api.fn_compile_source = compile_shader_source;
     }
@@ -106,10 +106,10 @@ namespace ice::render::vk
         };
 
         // Create the api object and pass it when registering the type
-        ice::api::asset_compiler::v1::AssetCompilerAPI api{};
-        VkShaderCompilerModule::v1_asset_compiler_api(api);
+        ice::api::resource_compiler::v1::ResourceCompilerAPI api{};
+        VkShaderCompilerModule::v1_resource_compiler_api(api);
 
-        ice::AssetCompiler const compiler{ api };
+        ice::ResourceCompiler const compiler{ api };
         asset_type_archive.register_type(ice::render::AssetType_Shader, type_definition, &compiler);
     }
 

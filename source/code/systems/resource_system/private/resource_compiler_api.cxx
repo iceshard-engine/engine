@@ -1,7 +1,6 @@
-#include <ice/asset_compiler.hxx>
-#include <ice/resource_tracker.hxx>
+#include <ice/resource_compiler_api.hxx>
 
-namespace ice::api::asset_compiler::v1
+namespace ice::api::resource_compiler::v1
 {
 
     bool fn_collect_sources_default(
@@ -36,7 +35,7 @@ namespace ice::api::asset_compiler::v1
         ice::Span<ice::ResourceHandle* const> sources,
         ice::Span<ice::URI const> dependencies,
         ice::Allocator& result_alloc
-    ) noexcept -> ice::Task<ice::AssetCompilerResult>
+    ) noexcept -> ice::Task<ice::ResourceCompilerResult>
     {
         ice::ResourceResult const res = co_await resource_tracker.load_resource(resource_handle);
         ice::Memory result = result_alloc.allocate(res.data.size);
@@ -44,18 +43,18 @@ namespace ice::api::asset_compiler::v1
         // We copy the data as-is in the default implementation.
         ice::memcpy(result, res.data);
 
-        co_return AssetCompilerResult{ .result = result };
+        co_return ResourceCompilerResult{ .result = result };
     }
 
     auto fn_finalize_default(
         ice::ResourceHandle* resource_handle,
-        ice::Span<ice::AssetCompilerResult const> compiled_sources,
+        ice::Span<ice::ResourceCompilerResult const> compiled_sources,
         ice::Span<ice::URI const> dependencies,
         ice::Allocator& result_alloc
     ) noexcept -> ice::Memory
     {
         ice::usize total_size = 0_B;
-        for (ice::AssetCompilerResult const& source : compiled_sources)
+        for (ice::ResourceCompilerResult const& source : compiled_sources)
         {
             total_size += source.result.size;
         }
@@ -63,7 +62,7 @@ namespace ice::api::asset_compiler::v1
         ice::Memory const result = result_alloc.allocate(total_size);
 
         ice::Memory copytarget = result;
-        for (ice::AssetCompilerResult const& source : compiled_sources)
+        for (ice::ResourceCompilerResult const& source : compiled_sources)
         {
             // We copy the data as-is in the default implementation.
             ice::memcpy(copytarget, ice::data_view(source.result));
@@ -73,4 +72,4 @@ namespace ice::api::asset_compiler::v1
         return result;
     }
 
-} // namespace ice::api::asset_compiler::v1
+} // namespace ice::api::resource_compiler::v1

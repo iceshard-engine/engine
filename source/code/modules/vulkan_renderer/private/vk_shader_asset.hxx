@@ -2,7 +2,7 @@
 #include <ice/os.hxx>
 #if ISP_WINDOWS
 #include <ice/module.hxx>
-#include <ice/asset_compiler_api.hxx>
+#include <ice/resource_compiler.hxx>
 #include <ice/asset_module.hxx>
 
 namespace ice::render::vk
@@ -10,11 +10,11 @@ namespace ice::render::vk
 
     struct VkShaderCompilerModule : ice::Module<VkShaderCompilerModule>
     {
-        static void v1_asset_compiler_api(ice::api::asset_compiler::v1::AssetCompilerAPI& api) noexcept;
+        static void v1_resource_compiler_api(ice::api::resource_compiler::v1::ResourceCompilerAPI& api) noexcept;
 
         static bool on_load(ice::Allocator& alloc, ice::ModuleNegotiator const& module_negotiator) noexcept
         {
-            return module_negotiator.register_api(v1_asset_compiler_api);
+            return module_negotiator.register_api(v1_resource_compiler_api);
         }
 
         IS_WORKAROUND_MODULE_INITIALIZATION(VkShaderCompilerModule);

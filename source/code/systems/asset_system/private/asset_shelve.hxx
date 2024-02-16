@@ -19,7 +19,7 @@ namespace ice
         AssetShelve(
             ice::Allocator& alloc,
             ice::AssetTypeDefinition const& definition,
-            ice::AssetCompiler const* compiler
+            ice::ResourceCompiler const* compiler
         ) noexcept;
 
         ~AssetShelve() noexcept;
@@ -49,7 +49,7 @@ namespace ice
         ) noexcept -> ice::AssetRequestAwaitable*;
 
         ice::AssetTypeDefinition const& definition;
-        ice::AssetCompiler const* compiler;
+        ice::ResourceCompiler const* compiler;
 
     private:
         ice::Allocator& _allocator;

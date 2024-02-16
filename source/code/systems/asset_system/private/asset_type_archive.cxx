@@ -20,7 +20,7 @@ namespace ice
     {
         ice::AssetType type = ice::make_asset_type("<unknown>");
         ice::AssetTypeDefinition definition{ };
-        ice::AssetCompiler compiler;
+        ice::ResourceCompiler compiler;
         bool has_compiler;
     };
 
@@ -37,12 +37,12 @@ namespace ice
 
         auto find_compiler(
             ice::AssetType_Arg type
-        ) const noexcept -> ice::AssetCompiler const* override;
+        ) const noexcept -> ice::ResourceCompiler const* override;
 
         bool register_type(
             ice::AssetType_Arg type,
             ice::AssetTypeDefinition type_definition,
-            ice::AssetCompiler const* compiler
+            ice::ResourceCompiler const* compiler
         ) noexcept override;
 
     private:
@@ -64,7 +64,7 @@ namespace ice
     bool SimpleAssetTypeArchive::register_type(
         ice::AssetType_Arg type,
         ice::AssetTypeDefinition type_definition,
-        ice::AssetCompiler const* compiler
+        ice::ResourceCompiler const* compiler
     ) noexcept
     {
         ice::u64 const type_hash = type.identifier;
@@ -85,7 +85,7 @@ namespace ice
                 type_definition.fn_asset_state = default_asset_state;
             }
 
-            ice::AssetCompiler asset_compiler{};
+            ice::ResourceCompiler asset_compiler{};
             if (compiler != nullptr)
             {
                 asset_compiler = *compiler;
@@ -118,7 +118,7 @@ namespace ice
 
     auto SimpleAssetTypeArchive::find_compiler(
         ice::AssetType_Arg type
-    ) const noexcept -> ice::AssetCompiler const*
+    ) const noexcept -> ice::ResourceCompiler const*
     {
         static ice::InternalAssetType empty_type{};
 

@@ -5,9 +5,9 @@
 #include <ice/span.hxx>
 #include <ice/task.hxx>
 #include <ice/asset_type.hxx>
-#include <ice/asset_compiler.hxx>
 #include <ice/resource_meta.hxx>
 #include <ice/resource_types.hxx>
+#include <ice/resource_compiler.hxx>
 #include <ice/mem_unique_ptr.hxx>
 
 namespace ice
@@ -64,12 +64,12 @@ namespace ice
 
         virtual auto find_compiler(
             ice::AssetType_Arg type
-        ) const noexcept -> ice::AssetCompiler const* = 0;
+        ) const noexcept -> ice::ResourceCompiler const* = 0;
 
         virtual bool register_type(
             ice::AssetType_Arg type,
             ice::AssetTypeDefinition type_definition,
-            ice::AssetCompiler const* compiler = nullptr
+            ice::ResourceCompiler const* compiler = nullptr
         ) noexcept = 0;
     };
 
