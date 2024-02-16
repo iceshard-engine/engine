@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2024, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -94,6 +94,23 @@ namespace ice
         return result.ec;
     }
 
+    inline auto from_chars(ice::String str, bool& out_value) noexcept -> ice::FromCharsResult<ice::String>
+    {
+        int temp_out = 0;
+        ice::FromCharsResult<ice::String> const result = from_chars(str, temp_out);
+        if (result.ec == ice::Res::Success)
+        {
+            out_value = bool(temp_out);
+        }
+        return result;
+    }
+
+    inline auto from_chars(ice::String str, ice::String& out_str, bool& out_value) noexcept -> ice::ResCode
+    {
+        ice::FromCharsResult<ice::String> const result = ice::from_chars(str, out_value);
+        out_str = result.remaining;
+        return result.ec;
+    }
 
     namespace string
     {
