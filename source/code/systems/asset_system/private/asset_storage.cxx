@@ -8,6 +8,7 @@
 #include <ice/resource.hxx>
 #include <ice/container/hashmap.hxx>
 #include <ice/string/static_string.hxx>
+#include <ice/task_utils.hxx>
 #include <ice/profiler.hxx>
 #include <ice/uri.hxx>
 
@@ -120,20 +121,116 @@ namespace ice
 
         auto bake_asset(
             ice::Allocator& alloc,
-            ice::AssetTypeDefinition const& definition,
+            ice::AssetCompiler const& compiler,
             ice::ResourceTracker& resource_tracker,
             ice::AssetEntry const* asset_entry,
             ice::Memory& result
         ) noexcept -> ice::Task<bool>
         {
-            if (definition.fn_asset_oven)
-            {
-                ice::LooseResource const* loose_resource = ice::get_loose_resource(asset_entry->resource_handle);
-                ICE_ASSERT(loose_resource != nullptr, "Baking non-loose resources should never happen!");
+            ice::Array<ice::ResourceHandle*> sources{ alloc };
+            ice::Array<ice::URI> dependencies{ alloc }; // Not used currently
 
-                co_return co_await definition.fn_asset_oven(definition.ud_asset_oven, alloc, resource_tracker, *loose_resource, asset_entry->data, result);
+            // Early return if sources or dependencies couldn't be collected
+            if (compiler.fn_collect_sources(asset_entry->resource_handle, resource_tracker, sources) == false
+                || compiler.fn_collect_dependencies(asset_entry->resource_handle, resource_tracker, dependencies) == false)
+            {
+                co_return false;
             }
-            co_return false;
+
+            // If empty we add our own handle to the list
+            if (ice::array::empty(sources))
+            {
+                ice::array::push_back(sources, asset_entry->resource_handle);
+            }
+
+            ice::Array<ice::Task<>> tasks{ alloc };
+            ice::array::reserve(tasks, ice::array::count(sources));
+
+            static auto fn_validate = [](
+                ice::AssetCompiler const& compiler,
+                ice::ResourceHandle* source,
+                ice::ResourceTracker& tracker,
+                std::atomic_bool& out_result
+            ) noexcept -> ice::Task<>
+            {
+                // If failed update the result.
+                if (co_await compiler.fn_validate_source(source, tracker) == false)
+                {
+                    out_result = false;
+                }
+            };
+
+            std::atomic_bool all_sources_valid = true;
+            for (ice::ResourceHandle* source : sources)
+            {
+                ice::array::push_back(tasks, fn_validate(compiler, source, resource_tracker, all_sources_valid));
+            }
+
+            // Wait for all tasks to finish
+            ice::wait_for_all(tasks);
+            ice::array::clear(tasks);
+
+            // Validation failed
+            if (all_sources_valid == false)
+            {
+                co_return false;
+            }
+
+            ice::Array<ice::AssetCompilerResult> compiled_sources{ alloc };
+            ice::array::resize(compiled_sources, ice::array::count(sources));
+
+            static auto fn_compile = [](
+                ice::AssetCompiler const& compiler,
+                ice::ResourceHandle* source,
+                ice::ResourceTracker& tracker,
+                ice::Span<ice::ResourceHandle* const> sources,
+                ice::Span<ice::URI const> dependencies,
+                ice::Allocator& result_alloc,
+                ice::AssetCompilerResult& out_result
+            ) noexcept -> ice::Task<>
+            {
+                out_result = co_await compiler.fn_compile_source(
+                    source,
+                    tracker,
+                    sources,
+                    dependencies,
+                    result_alloc
+                );
+            };
+
+            // Create all compilation tasks...
+            ice::u32 source_idx = 0;
+            for (ice::ResourceHandle* source : sources)
+            {
+                ice::array::push_back(
+                    tasks,
+                    fn_compile(
+                        compiler,
+                        source,
+                        resource_tracker,
+                        sources,
+                        dependencies,
+                        alloc,
+                        compiled_sources[source_idx]
+                    )
+                );
+                source_idx += 1;
+            }
+
+            // ... and wait for them to finish
+            ice::wait_for_all(tasks);
+
+            // Finalize the asset
+            result = compiler.fn_finalize(asset_entry->resource_handle, compiled_sources, dependencies, alloc);
+
+            // Deallocate all compiled sources
+            for (ice::AssetCompilerResult const& compiled : compiled_sources)
+            {
+                alloc.deallocate(compiled.result);
+            }
+
+            // We are good if we have data of positive size
+            co_return result.location != nullptr && result.size > 0_B;
         }
 
         auto load_asset(
@@ -377,10 +474,10 @@ namespace ice
                 {
                     ICE_ASSERT(result.location != nullptr, "We failed to load any data from resource handle!");
 
-                    ice::Memory result_memory;
-                    bool const bake_success = co_await ice::detail::bake_asset(
+                    ice::Memory result_memory{};
+                    bool const bake_success = shelve.compiler != nullptr && co_await ice::detail::bake_asset(
                         shelve.asset_allocator(),
-                        shelve.definition,
+                        *shelve.compiler,
                         _info.resource_tracker,
                         &entry,
                         result_memory
@@ -537,7 +634,8 @@ namespace ice
                 type.identifier,
                 _allocator.create<AssetShelve>(
                     _allocator,
-                    _asset_archive->find_definition(type)
+                    _asset_archive->find_definition(type),
+                    _asset_archive->find_compiler(type)
                 )
             );
         }

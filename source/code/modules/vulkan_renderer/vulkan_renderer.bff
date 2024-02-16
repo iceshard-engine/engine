@@ -20,5 +20,18 @@
             'render_system'
         }
     ]
+
+    .Win32_Libs =
+    [
+        .Name = 'Win32-Shader-Compiler'
+        .Requires = { 'SDK-Windows-10' }
+        .Public =
+        [
+            .Libs = {
+                'shaderc_shared'
+            }
+        ]
+    ]
+    .Rules = { .Win32_Libs }
 ]
 .Projects + .Project

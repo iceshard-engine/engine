@@ -20,6 +20,8 @@ namespace ice
     {
         ice::AssetType type = ice::make_asset_type("<unknown>");
         ice::AssetTypeDefinition definition{ };
+        ice::AssetCompiler compiler;
+        bool has_compiler;
     };
 
     class SimpleAssetTypeArchive final : public ice::AssetTypeArchive
@@ -29,14 +31,19 @@ namespace ice
 
         auto asset_types() const noexcept -> ice::Span<ice::AssetType const> override;
 
-        bool register_type(
-            ice::AssetType_Arg type,
-            ice::AssetTypeDefinition type_definition
-        ) noexcept override;
-
         auto find_definition(
             ice::AssetType_Arg type
         ) const noexcept -> ice::AssetTypeDefinition const& override;
+
+        auto find_compiler(
+            ice::AssetType_Arg type
+        ) const noexcept -> ice::AssetCompiler const* override;
+
+        bool register_type(
+            ice::AssetType_Arg type,
+            ice::AssetTypeDefinition type_definition,
+            ice::AssetCompiler const* compiler
+        ) noexcept override;
 
     private:
         ice::Array<ice::AssetType> _types;
@@ -56,7 +63,8 @@ namespace ice
 
     bool SimpleAssetTypeArchive::register_type(
         ice::AssetType_Arg type,
-        ice::AssetTypeDefinition type_definition
+        ice::AssetTypeDefinition type_definition,
+        ice::AssetCompiler const* compiler
     ) noexcept
     {
         ice::u64 const type_hash = type.identifier;
@@ -77,13 +85,21 @@ namespace ice
                 type_definition.fn_asset_state = default_asset_state;
             }
 
+            ice::AssetCompiler asset_compiler{};
+            if (compiler != nullptr)
+            {
+                asset_compiler = *compiler;
+            }
+
             ice::array::push_back(_types, type);
             ice::hashmap::set(
                 _definitions,
                 type_hash,
                 InternalAssetType{
                     .type = type,
-                    .definition = ice::move(type_definition)
+                    .definition = ice::move(type_definition),
+                    .compiler = asset_compiler,
+                    .has_compiler = compiler != nullptr
                 }
             );
         }
@@ -98,6 +114,16 @@ namespace ice
 
         ice::InternalAssetType const& internal_type = ice::hashmap::get(_definitions, type.identifier, empty_type);
         return internal_type.definition;
+    }
+
+    auto SimpleAssetTypeArchive::find_compiler(
+        ice::AssetType_Arg type
+    ) const noexcept -> ice::AssetCompiler const*
+    {
+        static ice::InternalAssetType empty_type{};
+
+        ice::InternalAssetType const& internal_type = ice::hashmap::get(_definitions, type.identifier, empty_type);
+        return internal_type.has_compiler ? &internal_type.compiler : nullptr;
     }
 
     auto create_asset_type_archive(

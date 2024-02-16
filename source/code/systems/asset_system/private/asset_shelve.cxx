@@ -11,12 +11,13 @@
 namespace ice
 {
 
-
     AssetShelve::AssetShelve(
         ice::Allocator& alloc,
-        ice::AssetTypeDefinition const& definition
+        ice::AssetTypeDefinition const& definition,
+        ice::AssetCompiler const* compiler
     ) noexcept
         : definition{ definition }
+        , compiler{ compiler }
         , _allocator{ alloc }
         , _asset_resources{ alloc }
     {

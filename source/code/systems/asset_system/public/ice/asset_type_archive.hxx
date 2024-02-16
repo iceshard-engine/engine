@@ -5,6 +5,7 @@
 #include <ice/span.hxx>
 #include <ice/task.hxx>
 #include <ice/asset_type.hxx>
+#include <ice/asset_compiler.hxx>
 #include <ice/resource_meta.hxx>
 #include <ice/resource_types.hxx>
 #include <ice/mem_unique_ptr.hxx>
@@ -27,14 +28,14 @@ namespace ice
             ice::URI const&
         ) noexcept -> ice::AssetState;
 
-        ice::Task<bool>(*fn_asset_oven)(
-            void*,
-            ice::Allocator&,
-            ice::ResourceTracker const&,
-            ice::LooseResource const&,
-            ice::Data,
-            ice::Memory&
-        ) noexcept;
+        // ice::Task<bool>(*fn_asset_oven)(
+        //     void*,
+        //     ice::Allocator&,
+        //     ice::ResourceTracker const&,
+        //     ice::LooseResource const&,
+        //     ice::Data,
+        //     ice::Memory&
+        // ) noexcept;
 
         ice::Task<bool>(*fn_asset_loader)(
             void*,
@@ -61,9 +62,14 @@ namespace ice
             ice::AssetType_Arg type
         ) const noexcept -> ice::AssetTypeDefinition const& = 0;
 
+        virtual auto find_compiler(
+            ice::AssetType_Arg type
+        ) const noexcept -> ice::AssetCompiler const* = 0;
+
         virtual bool register_type(
             ice::AssetType_Arg type,
-            ice::AssetTypeDefinition type_definition
+            ice::AssetTypeDefinition type_definition,
+            ice::AssetCompiler const* compiler = nullptr
         ) noexcept = 0;
     };
 
