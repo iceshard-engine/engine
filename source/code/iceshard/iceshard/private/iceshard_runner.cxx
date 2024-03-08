@@ -1,4 +1,4 @@
-/// Copyright 2023 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2023 - 2024, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "iceshard_runner.hxx"
@@ -22,7 +22,7 @@ namespace ice
     ) noexcept
         : _allocator{ alloc }
         , _engine{ create_info.engine }
-        , _schedulers{ .main = _main_scheduler, .io = create_info.schedulers.io, .tasks = create_info.schedulers.tasks, .long_tasks = create_info.schedulers.long_tasks, }
+        , _schedulers{ .main = _main_scheduler, .tasks = create_info.schedulers.tasks }
         , _frame_factory{ create_info.frame_factory }
         , _frame_factory_userdata{ create_info.frame_factory_userdata }
         , _frame_count{ create_info.concurrent_frame_count }
@@ -33,6 +33,7 @@ namespace ice
         , _main_queue{ }
         , _main_scheduler{ _main_queue }
         , _barrier{ }
+        , _runner_tasks{ _allocator, _schedulers.tasks }
     {
         ICE_ASSERT(
             _frame_factory == _frame_factory_userdata || _frame_factory != nullptr,
@@ -55,6 +56,8 @@ namespace ice
 
     IceshardEngineRunner::~IceshardEngineRunner() noexcept
     {
+        _runner_tasks.wait_all();
+
         ice::u32 deleted_frame_data = 0;
         ice::IceshardFrameData* frame_data = _frame_data_freelist.load(std::memory_order_relaxed);
         while (frame_data != nullptr)
@@ -114,7 +117,8 @@ namespace ice
                 .clock = clock,
                 .assets = _engine.assets(),
                 .engine = _engine,
-                .thread = _schedulers
+                .thread = _schedulers,
+                .long_tasks = _runner_tasks
             };
 
             updater.update(frame, world_update, tasks);
@@ -153,13 +157,17 @@ namespace ice
                 //.runner = *this,
                 .frame = frame,
                 .last_frame = prev_frame,
-                .thread = _schedulers
+                .thread = _schedulers,
+                .long_tasks = _runner_tasks
             };
 
             IPT_ZONE_SCOPED_NAMED("gather_tasks");
             updater.update(ice::ShardID_FrameUpdate | &frame_update, tasks);
             updater.update(frame.shards(), tasks);
         }
+
+        // Execute all long tasks
+        _runner_tasks.execute_all();
 
         ICE_ASSERT(
             ice::u8_max >= ice::array::count(tasks),

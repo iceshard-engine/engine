@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2024, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -20,9 +20,7 @@ namespace ice
     struct EngineSchedulers
     {
         ice::TaskScheduler& main;
-        ice::TaskScheduler& io;
         ice::TaskScheduler& tasks;
-        ice::TaskScheduler& long_tasks;
     };
 
     struct World;

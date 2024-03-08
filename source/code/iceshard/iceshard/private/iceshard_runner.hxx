@@ -1,4 +1,4 @@
-/// Copyright 2023 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2023 - 2024, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -6,6 +6,7 @@
 #include <ice/engine_frame.hxx>
 #include <ice/sync_manual_events.hxx>
 #include <ice/task.hxx>
+#include <ice/task_utils.hxx>
 
 namespace ice
 {
@@ -100,6 +101,73 @@ namespace ice
         }
     };
 
+    class IceshardEngineTaskContainer final : public ice::EngineTaskContainer
+    {
+    public:
+        IceshardEngineTaskContainer(
+            ice::Allocator& alloc,
+            ice::TaskScheduler& scheduler
+        ) noexcept
+            : _scheduler{ scheduler }
+            , _running_tasks{ 0 }
+            , _pending_tasks{ alloc }
+        {
+        }
+
+        ~IceshardEngineTaskContainer() noexcept
+        {
+            bool const has_running_tasks = _running_tasks.load(std::memory_order_relaxed) > 0;
+            // while(_running_tasks.load(std::memory_order_relaxed) > 0)
+            {
+                // TODO: Sleep for 500ms to allow tasks to finish?
+                // TODO: Add cancelation tokens
+            }
+
+            ICE_ASSERT_CORE(has_running_tasks == false);
+        }
+
+        void execute(ice::Task<> task) noexcept override
+        {
+            ice::array::push_back(_pending_tasks, ice::move(task));
+        }
+
+        auto execute_internal(ice::Task<> task) noexcept -> ice::Task<>
+        {
+            co_await task;
+            _running_tasks.fetch_sub(1, std::memory_order_relaxed);
+        }
+
+        void execute_all() noexcept
+        {
+            ice::ucount const num_tasks = ice::array::count(_pending_tasks);
+            _running_tasks.fetch_add(num_tasks, std::memory_order_relaxed);
+
+            for (ice::Task<>& pending_task : _pending_tasks)
+            {
+                // We schedule the task on the given scheduler.
+                ice::schedule_task_on(execute_internal(ice::move(pending_task)), _scheduler);
+            }
+            ice::array::clear(_pending_tasks);
+        }
+
+        void wait_all() noexcept
+        {
+            bool const has_running_tasks = _running_tasks.load(std::memory_order_relaxed) > 0;
+            // while(_running_tasks.load(std::memory_order_relaxed) > 0)
+            {
+                // TODO: Sleep for 500ms to allow tasks to finish?
+                // TODO: Add cancelation tokens
+            }
+
+            ICE_ASSERT_CORE(has_running_tasks == false);
+        }
+
+    private:
+        ice::TaskScheduler& _scheduler;
+        std::atomic_uint32_t _running_tasks;
+        ice::Array<ice::Task<>> _pending_tasks;
+    };
+
     class IceshardEngineRunner : public ice::EngineRunner
     {
     public:
@@ -129,6 +197,8 @@ namespace ice
         ice::TaskQueue _main_queue;
         ice::TaskScheduler _main_scheduler;
         ice::ManualResetBarrier _barrier;
+
+        ice::IceshardEngineTaskContainer _runner_tasks;
     };
 
 } // namespace ice

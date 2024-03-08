@@ -4,7 +4,7 @@
 #pragma once
 #include <ice/gfx/gfx_graph_runtime.hxx>
 #include <ice/mem_allocator_proxy.hxx>
-#include <ice/container_types.hxx>
+#include <ice/container/hashmap.hxx>
 
 #include "ice_gfx_graph_snapshot.hxx"
 
@@ -23,12 +23,47 @@ namespace ice::gfx
     struct IceshardGfxGraphStages
     {
         IceshardGfxGraphStages(ice::Allocator& alloc) noexcept
-            : _counts{ alloc }
+            : _ready{ 0 }
+            , _revision{ 0 }
+            , _counts{ alloc }
+            , _stage_names{ alloc }
             , _stages{ alloc }
         { }
 
+        IceshardGfxGraphStages(IceshardGfxGraphStages&& other) noexcept
+            : _ready{ 0 }
+            , _revision{ 0 }
+            , _counts{ ice::move(other._counts) }
+            , _stage_names{ ice::move(other._stage_names) }
+            , _stages{ ice::move(other._stages) }
+        {
+            ICE_ASSERT_CORE(other._ready == 0);
+            ICE_ASSERT_CORE(other._revision == 0);
+        }
+
+        std::atomic_uint32_t _ready;
+        ice::u32 _revision;
         ice::Array<ice::u8> _counts;
-        ice::Array<ice::StringID> _stages;
+        ice::Array<ice::StringID> _stage_names;
+
+        struct Entry
+        {
+            ice::gfx::GfxStage* stage;
+            ice::u32 revision = 0;
+            bool initialized = false;
+        };
+
+        ice::HashMap<Entry*> _stages;
+
+        template<typename Method, typename... Args>
+        void apply_stages(ice::StringID_Arg key, Method fn, Args&&... args) noexcept
+        {
+            Entry* const entry = ice::hashmap::get(_stages, ice::hash(key), nullptr);
+            if (entry != nullptr)
+            {
+                ((entry->stage)->*fn)(ice::forward<Args>(args)...);
+            }
+        }
     };
 
     class IceshardGfxGraphRuntime final : public ice::gfx::GfxGraphRuntime
@@ -47,16 +82,21 @@ namespace ice::gfx
 
         auto renderpass() const noexcept -> ice::render::Renderpass override;
 
+        bool prepare(
+            ice::gfx::GfxStages& stages,
+            ice::gfx::GfxStageRegistry const& stage_registry,
+            ice::Array<ice::Task<>>& out_tasks
+        ) noexcept override;
+
         bool execute(
             ice::EngineFrame const& frame,
-            GfxStageRegistry const& stage_registry,
             ice::render::RenderFence& fence
         ) noexcept override;
 
     private:
         bool execute_pass(
             ice::EngineFrame const& frame,
-            GfxStageRegistry const& stage_registry,
+            // GfxStageRegistry const& stage_registry,
             ice::render::Framebuffer framebuffer,
             ice::render::RenderCommands& api,
             ice::render::CommandBuffer cmds

@@ -140,7 +140,8 @@ void TestGame::on_resume(ice::Engine& engine) noexcept
         ice::StringID traits[]{
             "test"_sid,
             "test2"_sid,
-            ice::Constant_TraitName_DevUI
+            ice::Constant_TraitName_DevUI,
+            ice::TraitID_GfxShaderStorage
         };
 
         engine.worlds().create_world(

@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2024, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -23,6 +23,13 @@ namespace ice
         ice::Allocator&, ice::EngineFrameData&, EngineFrameFactoryUserdata
     ) noexcept -> ice::UniquePtr<ice::EngineFrame>;
 
+    struct EngineTaskContainer
+    {
+        virtual ~EngineTaskContainer() noexcept = default;
+
+        virtual void execute(ice::Task<> task) noexcept = 0;
+    };
+
     struct EngineFrameUpdate
     {
         ice::Clock const& clock;
@@ -30,6 +37,7 @@ namespace ice
         ice::EngineFrame& frame;
         ice::EngineFrame const& last_frame;
         ice::EngineSchedulers thread;
+        ice::EngineTaskContainer& long_tasks;
     };
 
     struct EngineRunnerCreateInfo
@@ -41,7 +49,6 @@ namespace ice
         ice::EngineFrameFactoryUserdata frame_factory_userdata;
         ice::EngineSchedulers schedulers;
     };
-
     struct EngineRunner
     {
         virtual ~EngineRunner() noexcept = default;

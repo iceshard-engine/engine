@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2024, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -12,12 +12,15 @@
 namespace ice
 {
 
+    struct EngineTaskContainer;
+
     struct EngineWorldUpdate
     {
         ice::Clock const& clock;
         ice::AssetStorage& assets;
         ice::Engine& engine;
         ice::EngineSchedulers thread;
+        ice::EngineTaskContainer& long_tasks;
     };
 
     struct WorldUpdater

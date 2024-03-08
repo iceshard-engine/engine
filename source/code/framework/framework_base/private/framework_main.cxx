@@ -405,9 +405,7 @@ auto ice_resume(
             .engine = *state.engine,
             .schedulers = {
                 .main = state.thread_pool_scheduler,
-                .io = state.thread_pool_scheduler,
                 .tasks = state.thread_pool_scheduler,
-                .long_tasks = state.thread_pool_scheduler,
             }
         };
         runtime.runner = ice::create_engine_runner(state.engine_alloc, *state.modules, runner_create_info);
@@ -582,7 +580,8 @@ auto ice_suspend(
             .clock = runtime.clock,
             .assets = *state.assets,
             .engine = *state.engine,
-            .thread = { state.thread_pool_scheduler, state.thread_pool_scheduler, state.thread_pool_scheduler, state.thread_pool_scheduler }
+            .thread = { state.thread_pool_scheduler, state.thread_pool_scheduler },
+            .long_tasks = *((ice::EngineTaskContainer*)0)
         };
 
         ice::Array<ice::Task<>, ice::ContainerLogic::Complex> tasks{ state.alloc };

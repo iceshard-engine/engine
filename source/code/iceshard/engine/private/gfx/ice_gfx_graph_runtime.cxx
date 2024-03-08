@@ -323,7 +323,7 @@ namespace ice::gfx
 
             for (GfxGraphStage const& stage : pass.stages)
             {
-                ice::array::push_back(stages._stages, stage.name);
+                ice::array::push_back(stages._stage_names, stage.name);
 
                 for (GfxResource res : stage.inputs)
                 {

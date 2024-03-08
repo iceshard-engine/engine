@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2024, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -148,5 +148,8 @@ namespace ice
     auto create_default_trait_archive(
         ice::Allocator& alloc
     ) noexcept -> ice::UniquePtr<ice::TraitArchive>;
+
+    static constexpr ice::StringID TraitID_GfxImageStorage = "trait.gfx-image-storage"_sid;
+    static constexpr ice::StringID TraitID_GfxShaderStorage = "trait.gfx-shader-storage"_sid;
 
 } // namespace ice
