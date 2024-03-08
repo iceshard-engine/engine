@@ -95,7 +95,7 @@ namespace ice
     {
         for (ice::Task<void>& task : tasks)
         {
-            schedule_on(ice::move(task), scheduler);
+            schedule_task_on(ice::move(task), scheduler);
         }
     }
 
@@ -108,7 +108,7 @@ namespace ice
     {
         for (ice::Task<void>& task : tasks)
         {
-            resume_on(ice::move(task), scheduler);
+            resume_task_on(ice::move(task), scheduler);
         }
     }
 
