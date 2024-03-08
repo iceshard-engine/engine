@@ -2,6 +2,7 @@
 /// SPDX-License-Identifier: MIT
 
 #pragma once
+#include "asset_entry.hxx"
 #include <ice/asset_request.hxx>
 #include <ice/mem_memory.hxx>
 #include <coroutine>
@@ -10,8 +11,6 @@ namespace ice
 {
 
     class AssetShelve;
-
-    struct AssetEntry;
 
     class AssetRequestAwaitable final : public ice::AssetRequest
     {
@@ -28,14 +27,14 @@ namespace ice
         auto state() const noexcept -> ice::AssetState override;
         auto data() const noexcept -> ice::Data override;
 
-        auto resource() const noexcept -> ice::Resource const& override;
+        auto asset_name() const noexcept -> ice::StringID_Arg override;
         auto asset_definition() const noexcept -> ice::AssetTypeDefinition const& override;
+        auto resource() const noexcept -> ice::Resource const& override;
 
         auto allocate(ice::usize size) const noexcept -> ice::Memory override;
 
         auto resolve(
-            ice::AssetRequest::Result result,
-            ice::Memory memory
+            ice::AssetResolveData resolve_data
         ) noexcept -> ice::Asset override;
 
         bool await_ready() const noexcept { return false; }

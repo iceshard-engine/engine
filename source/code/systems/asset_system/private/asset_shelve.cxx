@@ -4,6 +4,7 @@
 #include "asset_shelve.hxx"
 #include "asset_request_awaitable.hxx"
 
+#include <ice/string/heap_string.hxx>
 #include <ice/container/hashmap.hxx>
 #include <ice/profiler.hxx>
 #include <ice/assert.hxx>
@@ -62,12 +63,26 @@ namespace ice
         ice::ResourceHandle* resource_handle
     ) noexcept -> ice::AssetEntry*
     {
-        ice::u64 const name_hash = ice::hash(name);
-        ice::hashmap::set(
-            _asset_resources,
-            name_hash,
-            _allocator.create<ice::AssetEntry>(resource_handle, this)
-        );
+        if constexpr (ice::AssetEntry::HoldsDebugData)
+        {
+            ice::HeapString<> asset_name{ _allocator, ice::stringid_hint(name).data() };
+
+            ice::u64 const name_hash = ice::hash(name);
+            ice::hashmap::set(
+                _asset_resources,
+                name_hash,
+                _allocator.create<ice::AssetEntry>(ice::move(asset_name), resource_handle, this)
+            );
+        }
+        else
+        {
+            ice::u64 const name_hash = ice::hash(name);
+            ice::hashmap::set(
+                _asset_resources,
+                name_hash,
+                _allocator.create<ice::AssetEntry>(name, resource_handle, this)
+            );
+        }
 
         return select(name);
     }

@@ -65,14 +65,19 @@ namespace ice
         return { };
     }
 
-    auto AssetRequestAwaitable::resource() const noexcept -> ice::Resource const&
+    auto AssetRequestAwaitable::asset_name() const noexcept -> ice::StringID_Arg
     {
-        return *_asset_entry->resource;
+        return _asset_entry->assetid;
     }
 
     auto AssetRequestAwaitable::asset_definition() const noexcept -> ice::AssetTypeDefinition const&
     {
         return _asset_shelve.definition;
+    }
+
+    auto AssetRequestAwaitable::resource() const noexcept -> ice::Resource const&
+    {
+        return *_asset_entry->resource;
     }
 
     auto AssetRequestAwaitable::allocate(ice::usize size) const noexcept -> ice::Memory
@@ -81,20 +86,21 @@ namespace ice
     }
 
     auto AssetRequestAwaitable::resolve(
-        ice::AssetRequest::Result result,
-        ice::Memory memory
+        ice::AssetResolveData resolve_data
     ) noexcept -> ice::Asset
     {
         ice::Asset asset_handle{ };
 
-        if (result != AssetRequest::Result::Success)
+        if (resolve_data.result != AssetRequestResult::Success)
         {
-            _asset_shelve.asset_allocator().deallocate(memory);
+            _asset_shelve.asset_allocator().deallocate(resolve_data.memory);
             _result_data = { };
         }
         else
         {
-            _result_data = memory;
+            ICE_ASSERT_CORE(resolve_data.resolver != nullptr);
+            _asset_entry->request_resolver = resolve_data.resolver;
+            _result_data = resolve_data.memory;
             asset_handle._handle = _asset_entry;
         }
 
@@ -115,7 +121,7 @@ namespace ice
             auto coro = chained->_coroutine;
             chained->_result_data = result_data;
             chained = chained->_chained;
-            coro.resume(); // same death applies here
+            coro.resume(); // same "death" on 'this' applies here
         }
 
         return asset_handle;
