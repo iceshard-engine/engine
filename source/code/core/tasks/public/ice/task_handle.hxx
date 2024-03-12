@@ -3,6 +3,7 @@
 
 #pragma once
 #include <ice/task_info.hxx>
+#include <ice/task_promise.hxx>
 
 namespace ice
 {
@@ -42,7 +43,7 @@ namespace ice
 
         //! \return 'true' if the state value contains the 'Canceled' flag.
         //! \pre The handle needs to be assigned to a valid task.
-        bool is_cancelled() const noexcept { return _info->has_any(TaskState::Canceled); }
+        bool was_cancelled() const noexcept { return _info->has_any(TaskState::Canceled); }
 
         //! \return 'true' if the state value contains either 'Succeeded' or 'Failed' flags.
         //! \pre The handle needs to be assigned to a valid task.
@@ -137,4 +138,120 @@ namespace ice
         return success;
     }
 
+    template<typename Result, typename... Args>
+    struct TaskInfoPromise : public ice::TaskPromise<Result>
+    {
+        ice::TaskInfo* _info;
+
+        TaskInfoPromise() noexcept = default;
+
+        TaskInfoPromise(ice::TaskHandle& handle, Args const&...) noexcept
+        {
+            this->_info = new ice::TaskInfo{};
+            if (handle._info)
+            {
+                handle._info->release();
+            }
+            handle._info = this->_info->aquire();
+        }
+
+        template<typename Class>
+        TaskInfoPromise(Class const&, ice::TaskHandle& handle, Args const&...) noexcept
+        {
+            this->_info = new ice::TaskInfo{};
+            if (handle._info)
+            {
+                handle._info->release();
+            }
+            handle._info = this->_info->aquire();
+        }
+
+        ~TaskInfoPromise() noexcept
+        {
+            if (this->_info != nullptr)
+            {
+                if (this->_info->has_any(ice::TaskState::Canceled))
+                {
+                    this->_info->state.store(ice::TaskState::Canceled | ice::TaskState::Failed, std::memory_order_relaxed);
+                }
+                this->_info->release();
+            }
+        }
+
+        struct ExtendedFinalAwaitable : ice::TaskPromise<Result>::FinalAwaitable
+        {
+            template<typename Promise>
+            inline auto await_suspend(ice::coroutine_handle<Promise> coro) noexcept
+            {
+                ice::TaskInfo* const info = coro.promise()._info;
+                if (info != nullptr)
+                {
+                    if (info->has_any(ice::TaskState::Canceled))
+                    {
+                        info->state.store(ice::TaskState::Succeeded | ice::TaskState::Canceled);
+                    }
+                    else
+                    {
+                        info->state.store(ice::TaskState::Succeeded);
+                    }
+                }
+
+                return ice::TaskPromise<Result>::FinalAwaitable::await_suspend<Promise>(coro);
+            }
+        };
+
+        struct InitialAwaitable
+        {
+            ice::TaskInfo* _info;
+
+            constexpr bool await_ready() const noexcept { return false; }
+
+            constexpr void await_suspend(ice::coroutine_handle<>) const noexcept { }
+
+            inline void await_resume() const noexcept
+            {
+                if (this->_info != nullptr)
+                {
+                    ICE_ASSERT_CORE(this->_info->has_any(ice::TaskState::Canceled) == false);
+                    this->_info->state.store(ice::TaskState::Running);
+                }
+            }
+        };
+
+        inline auto initial_suspend() const noexcept
+        {
+            return InitialAwaitable{ this->_info };
+        }
+
+        inline auto final_suspend() const noexcept
+        {
+            return ExtendedFinalAwaitable{ };
+        }
+    };
+
+    struct TaskTokenBase
+    {
+        TaskTokenBase(ice::TaskHandle& handle) noexcept : _handle{ handle } { }
+        ~TaskTokenBase() noexcept = default;
+
+        inline operator ice::TaskHandle&() noexcept { return _handle; }
+
+        ice::TaskHandle& _handle;
+    };
+
+
 } // namespace ice
+
+// Free function traits
+template<typename Result, typename... Args>
+struct std::coroutine_traits<ice::Task<Result>, ice::TaskHandle&, Args...>
+{
+    using promise_type = ice::TaskInfoPromise<Result, Args...>;
+};
+
+// Member function traits
+template<typename Result, typename Class, typename... Args>
+struct std::coroutine_traits<ice::Task<Result>, Class, ice::TaskHandle&, Args...>
+{
+    using promise_type = ice::TaskInfoPromise<Result, Args...>;
+};

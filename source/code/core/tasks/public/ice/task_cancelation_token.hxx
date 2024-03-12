@@ -7,14 +7,16 @@
 namespace ice
 {
 
-    struct TaskCancelationToken
+    struct TaskCancelationToken : TaskTokenBase
     {
-        TaskCancelationToken(ice::TaskHandle& handle) noexcept : handle{ handle } { }
-        ~TaskCancelationToken() noexcept = default;
+        using TaskTokenBase::TaskTokenBase;
+
+        inline bool was_cancelled() const noexcept { _handle.was_cancelled(); }
 
         inline auto checkpoint() const noexcept;
 
-        ice::TaskHandle& handle;
+        template<typename Fn>
+        inline auto checkpoint(Fn&& on_cancel_cb) const noexcept;
     };
 
     inline auto TaskCancelationToken::checkpoint() const noexcept
@@ -27,102 +29,74 @@ namespace ice
             inline bool await_ready() const noexcept { return ice::has_none(state, TaskState::Canceled); }
 
             // If we where canceled destroy the coroutine to clean everything up and make the Task's coroutine handle object invalid.
-            inline void await_suspend(std::coroutine_handle<> coro) const noexcept
+            inline auto await_suspend(std::coroutine_handle<> coro) const noexcept -> ice::coroutine_handle<>
             {
-                // Destroy the coroutine here?
-                coro.destroy();
+                // Get the base promise type for all of our coroutines. (We assume the TaskPromiseBase is always the base type)
+                auto const promise_coro = ice::coroutine_handle<ice::TaskPromiseBase>::from_address(coro.address());
+
+                // If there is a continuation, resume into it
+                if (ice::coroutine_handle<> const continuation = promise_coro.promise().continuation(); continuation)
+                {
+                    return continuation;
+                }
+                return std::noop_coroutine();
             }
 
             constexpr void await_resume() const noexcept
             {
             }
 
-        } await{ handle.state() };
+        } await{ _handle.state() };
+        return await;
+    }
+
+    template<typename Fn>
+    inline auto TaskCancelationToken::checkpoint(Fn&& on_cancel_cb) const noexcept
+    {
+        struct Awaitable
+        {
+            ice::TaskState state;
+            Fn _fn;
+
+            // Skip checkpoint if the task was not canceled.
+            inline bool await_ready() const noexcept { return ice::has_none(state, TaskState::Canceled); }
+
+            // If we where canceled destroy the coroutine to clean everything up and make the Task's coroutine handle object invalid.
+            inline auto await_suspend(std::coroutine_handle<> coro) const noexcept -> ice::coroutine_handle<>
+            {
+                _fn(); // We already know we are cancelled, can be used to cleanup
+
+                // Get the base promise type for all of our coroutines. (We assume the TaskPromiseBase is always the base type)
+                auto const promise_coro = ice::coroutine_handle<ice::TaskPromiseBase>::from_address(coro.address());
+
+                // If there is a continuation, resume into it
+                if (ice::coroutine_handle<> const continuation = promise_coro.promise().continuation(); continuation)
+                {
+                    return continuation;
+                }
+                return std::noop_coroutine();
+            }
+
+            constexpr void await_resume() const noexcept
+            {
+            }
+
+        } await{ _handle.state(), ice::forward<Fn>(on_cancel_cb) };
         return await;
     }
 
 } // namespace ice
 
+// Free function traits
 template<typename Result, typename... Args>
 struct std::coroutine_traits<ice::Task<Result>, ice::TaskCancelationToken, Args...>
 {
-    struct ExtendedPromise : public ice::Task<Result>::PromiseType
-    {
-        ice::TaskInfo* _info;
+    using promise_type = ice::TaskInfoPromise<Result, Args...>;
+};
 
-        ExtendedPromise() noexcept = default;
-        ExtendedPromise(ice::TaskCancelationToken& token) noexcept
-        {
-            this->_info = new ice::TaskInfo{};
-            if (token.handle._info)
-            {
-                token.handle._info->release();
-            }
-            token.handle._info = this->_info->aquire();
-        }
-
-        ~ExtendedPromise() noexcept
-        {
-            if (this->_info != nullptr)
-            {
-                if (this->_info->has_any(ice::TaskState::Canceled))
-                {
-                    this->_info->state.store(ice::TaskState::Canceled | ice::TaskState::Failed, std::memory_order_relaxed);
-                }
-                this->_info->release();
-            }
-        }
-
-        struct ExtendedFinalAwaitable : ice::Task<Result>::PromiseType::FinalAwaitable
-        {
-            template<typename Promise>
-            inline auto await_suspend(ice::coroutine_handle<Promise> coro) noexcept
-            {
-                ice::TaskInfo* const info = coro.promise()._info;
-                if (info != nullptr)
-                {
-                    if (info->has_any(ice::TaskState::Canceled))
-                    {
-                        info->state.store(ice::TaskState::Succeeded | ice::TaskState::Canceled);
-                    }
-                    else
-                    {
-                        info->state.store(ice::TaskState::Succeeded);
-                    }
-                }
-
-                return ice::Task<Result>::PromiseType::FinalAwaitable::await_suspend<Promise>(coro);
-            }
-        };
-
-        struct InitialAwaitable
-        {
-            ice::TaskInfo* _info;
-
-            constexpr bool await_ready() const noexcept { return false; }
-
-            constexpr void await_suspend(ice::coroutine_handle<>) const noexcept { }
-
-            inline void await_resume() const noexcept
-            {
-                if (this->_info != nullptr)
-                {
-                    ICE_ASSERT_CORE(this->_info->has_any(ice::TaskState::Canceled) == false);
-                    this->_info->state.store(ice::TaskState::Running);
-                }
-            }
-        };
-
-        inline auto initial_suspend() const noexcept
-        {
-            return InitialAwaitable{ this->_info };
-        }
-
-        inline auto final_suspend() const noexcept
-        {
-            return ExtendedFinalAwaitable{ };
-        }
-    };
-
-    using promise_type = ExtendedPromise;
+// Member function traits
+template<typename Result, typename Class, typename... Args>
+struct std::coroutine_traits<ice::Task<Result>, Class, ice::TaskCancelationToken, Args...>
+{
+    using promise_type = ice::TaskInfoPromise<Result, Args...>;
 };
