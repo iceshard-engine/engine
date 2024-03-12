@@ -15,8 +15,6 @@ namespace ice::gfx
         ice::AssetStorage& assets;
         ice::gfx::GfxDevice& device;
         ice::render::Renderpass renderpass;
-        ice::TaskStage<ice::render::CommandBuffer> frame_transfer;
-        ice::TaskStage<> frame_end;
     };
 
     struct GfxFrameUpdate
@@ -26,6 +24,9 @@ namespace ice::gfx
         ice::EngineFrame const& frame;
         ice::gfx::GfxDevice& device;
         ice::gfx::GfxStageRegistry& stages;
+
+        ice::TaskStage<ice::render::CommandBuffer> frame_transfer;
+        ice::TaskStage<> frame_end;
     };
 
     static constexpr ice::ShardID ShardID_GfxStartup = "event/gfx/startup`ice::gfx::GfxStateChange const*"_shardid;

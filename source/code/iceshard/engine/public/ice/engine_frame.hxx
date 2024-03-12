@@ -5,36 +5,18 @@
 #include <ice/span.hxx>
 #include <ice/clock.hxx>
 #include <ice/stringid.hxx>
-#include <ice/data_storage.hxx>
 #include <ice/shard_container.hxx>
 #include <ice/input/input_types.hxx>
 
 #include <ice/task.hxx>
 #include <ice/task_scheduler.hxx>
-#include <ice/ecs/ecs_types.hxx>
+#include <ice/task_container.hxx>
 #include <ice/engine_types.hxx>
+#include <ice/engine_frame_data.hxx>
+#include <ice/ecs/ecs_types.hxx>
 
 namespace ice
 {
-
-    struct DataStorage
-    {
-        virtual bool set(ice::StringID name, void* value) noexcept = 0;
-        virtual bool get(ice::StringID name, void*& value) noexcept = 0;
-        virtual bool get(ice::StringID name, void const*& value) const noexcept = 0;
-    };
-
-    struct EngineFrameData
-    {
-        virtual ~EngineFrameData() noexcept = default;
-
-        virtual auto frame() noexcept -> ice::DataStorage& = 0;
-        virtual auto runtime() noexcept -> ice::DataStorage& = 0;
-
-        virtual auto frame() const noexcept -> ice::DataStorage const& = 0;
-        virtual auto runtime() const noexcept -> ice::DataStorage const& = 0;
-        virtual auto persistent() const noexcept -> ice::DataStorage const& = 0;
-    };
 
     struct EngineFrame
     {
@@ -51,6 +33,8 @@ namespace ice
 
         virtual auto entity_operations() noexcept -> ice::ecs::EntityOperations& = 0;
         virtual auto entity_operations() const noexcept -> ice::ecs::EntityOperations const& = 0;
+
+        virtual auto tasks_container() noexcept -> ice::TaskContainer& = 0;
     };
 
 } // namespace ice

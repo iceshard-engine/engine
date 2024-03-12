@@ -5,10 +5,16 @@
 #include <ice/data_storage.hxx>
 #include <ice/ecs/ecs_entity_storage.hxx>
 #include <ice/engine_types.hxx>
+#include <ice/engine_state.hxx>
 #include <ice/span.hxx>
 
 namespace ice
 {
+
+    static constexpr ice::EngineStateGraph StateGraph_WorldState = "world-state"_state_graph;
+    static constexpr ice::EngineState State_WorldCreated = StateGraph_WorldState | "created";
+    static constexpr ice::EngineState State_WorldActive = StateGraph_WorldState | "active";
+    static constexpr ice::EngineState State_WorldInactive = StateGraph_WorldState | "inactive";
 
     enum class WorldState : ice::u8
     {
@@ -17,6 +23,7 @@ namespace ice
         Disabled,
     };
 
+    struct WorldStateParams;
     struct WorldDefinition
     {
         ice::Span<ice::StringID> traits;
@@ -25,6 +32,9 @@ namespace ice
     struct World
     {
         virtual ~World() noexcept = default;
+
+        virtual auto activate(ice::WorldStateParams const& params) noexcept -> ice::Task<> = 0;
+        virtual auto deactivate(ice::WorldStateParams const& params) noexcept -> ice::Task<> = 0;
 
         virtual auto trait(ice::StringID_Arg trait_identifier) noexcept -> ice::Trait* = 0;
         virtual auto trait(ice::StringID_Arg trait_identifier) const noexcept -> ice::Trait const* = 0;

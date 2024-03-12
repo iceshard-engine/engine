@@ -21,10 +21,10 @@ namespace ice::devui
         ImGuiTrait(ice::Allocator& alloc) noexcept;
         ~ImGuiTrait() noexcept override;
 
-        void gather_tasks(ice::TraitTaskLauncher& task_launcher) noexcept override;
+        void gather_tasks(ice::TraitTaskRegistry& task_launcher) noexcept override;
 
-        auto activate(ice::EngineWorldUpdate const& world_update) noexcept -> ice::Task<> override;
-        auto deactivate(ice::EngineWorldUpdate const& world_update) noexcept -> ice::Task<> override;
+        auto activate(ice::WorldStateParams const& params) noexcept -> ice::Task<> override;
+        auto deactivate(ice::WorldStateParams const& params) noexcept -> ice::Task<> override;
 
         auto update(ice::EngineFrameUpdate const& update) noexcept -> ice::Task<>;
 
@@ -51,6 +51,7 @@ namespace ice::devui
 
     private:
         bool _initialized = false;
+        bool _font_texture_loaded = false;
         bool _next_frame = false;
 
         ImGuiContext* _imgui_context = nullptr;

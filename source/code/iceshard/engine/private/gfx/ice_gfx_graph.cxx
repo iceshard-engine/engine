@@ -180,7 +180,7 @@ namespace ice::gfx
 
     bool IceshardGfxGraphRuntime::execute(
         ice::EngineFrame const& frame,
-        GfxStageRegistry const& stage_registry,
+        ice::gfx::GfxStageRegistry const& stage_registry,
         ice::render::RenderFence& fence
     ) noexcept
     {

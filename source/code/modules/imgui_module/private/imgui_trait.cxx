@@ -70,7 +70,7 @@ namespace ice::devui
         ImGui::DestroyContext();
     }
 
-    void ImGuiTrait::gather_tasks(ice::TraitTaskLauncher& task_launcher) noexcept
+    void ImGuiTrait::gather_tasks(ice::TraitTaskRegistry& task_launcher) noexcept
     {
         task_launcher.bind<&ImGuiTrait::update>();
         task_launcher.bind<&ImGuiTrait::gfx_start>(ice::gfx::ShardID_GfxStartup);
@@ -79,9 +79,9 @@ namespace ice::devui
         task_launcher.bind<&ImGuiTrait::on_window_resized>(ice::platform::ShardID_WindowResized);
     }
 
-    auto ImGuiTrait::activate(ice::EngineWorldUpdate const& update) noexcept -> ice::Task<>
+    auto ImGuiTrait::activate(ice::WorldStateParams const& params) noexcept -> ice::Task<>
     {
-        _imgui_timer = ice::timer::create_timer(update.clock, 1.f / 60.f);
+        _imgui_timer = ice::timer::create_timer(params.clock, 1.f / 60.f);
 
         auto& io = ImGui::GetIO();
         io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
@@ -111,12 +111,12 @@ namespace ice::devui
         io.KeyMap[ImGuiKey_Y] = (uint32_t)ice::input::KeyboardKey::KeyY;
         io.KeyMap[ImGuiKey_Z] = (uint32_t)ice::input::KeyboardKey::KeyZ;
 
-        _shader_data[0] = co_await detail::load_imgui_shader(update.assets, "shaders/debug/imgui-vert");
-        _shader_data[1] = co_await detail::load_imgui_shader(update.assets, "shaders/debug/imgui-frag");
+        _shader_data[0] = co_await detail::load_imgui_shader(params.assets, "shaders/debug/imgui-vert");
+        _shader_data[1] = co_await detail::load_imgui_shader(params.assets, "shaders/debug/imgui-frag");
         co_return;
     }
 
-    auto ImGuiTrait::deactivate(ice::EngineWorldUpdate const& world_update) noexcept -> ice::Task<>
+    auto ImGuiTrait::deactivate(ice::WorldStateParams const& params) noexcept -> ice::Task<>
     {
         co_return;
     }
@@ -385,53 +385,6 @@ namespace ice::devui
             _vertex_buffers,
             device.create_buffer(BufferType::Vertex, 1024 * 1024 * 64)
         );
-
-        //auto update_texture_task = [](GfxDevice& gfx_device, GfxFrame& gfx_frame, Image image, ImageInfo image_info) noexcept -> ice::Task<>
-        {
-            ice::u32 const image_data_size = font_info.width * font_info.height * 4;
-
-            // Currently we start the task on the graphics thread, so we can dont race for access to the render device.
-            //  It is planned to create an awaiter for graphics thread access so we can schedule this at any point from any thread.
-            ice::render::Buffer const data_buffer = device.create_buffer(
-                ice::render::BufferType::Transfer,
-                image_data_size
-            );
-
-            ice::render::BufferUpdateInfo updates[]
-            {
-                ice::render::BufferUpdateInfo
-                {
-                    .buffer = data_buffer,
-                    .data =
-                    {
-                        .location = font_info.data,
-                        .size = { image_data_size },
-                        .alignment = ice::ualign::b_4
-                    }
-                }
-            };
-
-            device.update_buffers(updates);
-
-            ice::render::RenderCommands& api = device.get_commands();
-            ice::render::CommandBuffer const cmds = co_await params.frame_transfer;
-
-            api.update_texture(
-                cmds,
-                _font_texture,
-                data_buffer,
-                { font_info.width, font_info.height }
-            );
-
-            co_await params.frame_end;
-
-            device.destroy_buffer(data_buffer);
-        }//;
-
-        //gfx_frame.add_task(update_texture_task(gfx_device, gfx_frame, _font_texture, font_info));
-
-        _initialized = true;
-
         co_return;
     }
 
@@ -464,20 +417,70 @@ namespace ice::devui
     {
         IPT_ZONE_SCOPED;
 
+        using namespace ice::render;
+        RenderDevice& device = update.device.device();
+
+        if (_font_texture_loaded == false)
+        {
+            _font_texture_loaded = true;
+
+            ice::u8* pixels;
+            ice::i32 font_texture_width, font_texture_height;
+            ImGui::GetIO().Fonts->GetTexDataAsRGBA32(&pixels, &font_texture_width, &font_texture_height);
+
+            ice::u32 const image_data_size = font_texture_width * font_texture_height * 4;
+
+            // Currently we start the task on the graphics thread, so we can dont race for access to the render device.
+            //  It is planned to create an awaiter for graphics thread access so we can schedule this at any point from any thread.
+            ice::render::Buffer const data_buffer = device.create_buffer(
+                ice::render::BufferType::Transfer,
+                image_data_size
+            );
+
+            ice::render::BufferUpdateInfo updates[]
+            {
+                ice::render::BufferUpdateInfo
+                {
+                    .buffer = data_buffer,
+                    .data =
+                    {
+                        .location = pixels,
+                        .size = { image_data_size },
+                        .alignment = ice::ualign::b_4
+                    }
+                }
+            };
+
+            device.update_buffers(updates);
+
+            ice::render::RenderCommands& api = device.get_commands();
+            ice::render::CommandBuffer const cmds = co_await update.frame_transfer;
+
+            api.update_texture(
+                cmds,
+                _font_texture,
+                data_buffer,
+                { ice::u32(font_texture_width), ice::u32(font_texture_height) }
+            );
+
+            co_await update.frame_end;
+
+            device.destroy_buffer(data_buffer);
+
+            _initialized = true;
+            co_return;
+        }
+
         if (_initialized == false)
         {
             co_return;
         }
-
-        using namespace ice::render;
 
         ImDrawData* draw_data = ImGui::GetDrawData();
         if (draw_data == nullptr)
         {
             co_return;
         }
-
-        RenderDevice& device = update.device.device();
 
         ice::u32 buffer_update_count = 0;
         BufferUpdateInfo buffer_updates[10]{ };

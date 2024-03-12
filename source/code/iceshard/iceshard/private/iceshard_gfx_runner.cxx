@@ -2,12 +2,15 @@
 /// SPDX-License-Identifier: MIT
 
 #include "iceshard_gfx_runner.hxx"
+#include "iceshard_runner.hxx"
 #include "gfx/iceshard_gfx_device.hxx"
 #include <ice/gfx/gfx_stage.hxx>
 #include <ice/render/render_fence.hxx>
 #include <ice/render/render_pass.hxx>
 #include <ice/gfx/gfx_queue.hxx>
 #include <ice/gfx/gfx_graph_runtime.hxx>
+#include <ice/engine_state_tracker.hxx>
+#include <ice/engine_state_definition.hxx>
 
 #include <ice/task.hxx>
 #include <ice/task_utils.hxx>
@@ -56,19 +59,72 @@ namespace ice
 namespace ice::gfx
 {
 
-    void gather_and_execute_tasks(
-        ice::StringID_Hash world_name,
-        ice::WorldUpdater& updater,
-        ice::Shard shard,
-        ice::Array<ice::Task<>, ice::ContainerLogic::Complex>& out_tasks
-    ) noexcept
+    namespace detail
     {
-        updater.force_update({ world_name }, shard, out_tasks);
-        ICE_ASSERT(
-            ice::u8_max >= ice::array::count(out_tasks),
-            "Gathered more tasks than it's possible to track!"
-        );
-    }
+
+        static constexpr ice::EngineStateGraph StateGraph_GfxRuntime = "gfx-runtime"_state_graph;
+        static constexpr ice::EngineState State_GfxActive = StateGraph_GfxRuntime | "active";
+        static constexpr ice::EngineState State_GfxInactive = StateGraph_GfxRuntime | "inactive";
+
+        static constexpr ice::EngineStateTrigger StateTrigger_ActivateRuntime{
+            .when = ShardID_WorldRuntimeActivated, // TODO: Add na 'after' event
+            .from = State_GfxInactive,
+            .to = State_GfxActive,
+        };
+        static constexpr ice::EngineStateTrigger StateTrigger_DeactivateRuntime{
+            .before = State_WorldRuntimeInactive, // Parent state graph
+            .from = State_GfxActive,
+            .to = State_GfxInactive,
+        };
+
+        auto gfx_state_shards(void* userdata, ice::ShardContainer& out_shards) noexcept
+        {
+            ice::gfx::GfxStateChange const* params = reinterpret_cast<ice::gfx::GfxStateChange const*>(userdata);
+            ice::Shard const shards[]{
+                { ShardID_GfxStartup | params },
+                { ShardID_GfxShutdown | params },
+            };
+
+            ice::shards::push_back(out_shards, shards);
+        }
+
+        //auto register_gfx_activation_flow(void* userdata, ice::WorldStateTracker& world_states) noexcept -> ice::u8
+        //{
+        //    ice::u8 const world_activity_flow = world_states.flowid("world-activity"_sid);
+
+        //    ice::StackAllocator_1024 temp_alloc;
+        //    ice::Array<ice::WorldStateStage> stages{ temp_alloc };
+        //    ice::array::push_back(stages,
+        //        ice::WorldStateStage{
+        //            .trigger = ice::ShardID_WorldActivated,
+        //            .required_state = 0,
+        //            .resulting_state = 1,
+        //            .dependent_state = { .flow_value = 2, .flow_id = world_activity_flow },
+        //            .event_shard = ShardID_GfxStartup
+        //        }
+        //    );
+
+        //    ice::array::push_back(stages,
+        //        ice::WorldStateStage{
+        //            .trigger = ice::ShardID_WorldDeactivate,
+        //            .required_state = 1,
+        //            .resulting_state = 0,
+        //            .blocked_state = {.flow_value = 2, .flow_id = world_activity_flow },
+        //            .event_shard = ShardID_GfxShutdown
+        //        }
+        //    );
+
+        //    return world_states.register_flow(
+        //        {
+        //            .name = "gfx-activity"_sid,
+        //            .stages = stages,
+        //            .userdata = userdata,
+        //            .fn_shards = gfx_state_shards,
+        //        }
+        //    );
+        //}
+
+    } // namespace detail
 
     IceshardGfxRunner::IceshardGfxRunner(
         ice::Allocator& alloc,
@@ -78,8 +134,7 @@ namespace ice::gfx
         : _alloc{ alloc }
         , _engine{ create_info.engine }
         , _device{ ice::move(gfx_device) }
-        , _barrier{ }
-        , _barrier_state{ }
+        , _tasks_container{ _alloc }
         , _queue{ }
         , _queue_transfer{ }
         , _queue_end{ }
@@ -95,6 +150,13 @@ namespace ice::gfx
             .debug_name = "ice.gfx",
         };
         _thread = ice::create_thread(_alloc, _queue, info);
+
+        ice::EngineStateTrigger triggers[]{ detail::StateTrigger_ActivateRuntime, detail::StateTrigger_DeactivateRuntime };
+        _engine.states().register_graph(
+            { .initial = detail::State_GfxInactive, .commiter = this, .enable_subname_states = true },
+            triggers
+        );
+        //_flow_id = detail::register_gfx_activation_flow(_params_storage, _engine.worlds_states());
     }
 
     IceshardGfxRunner::~IceshardGfxRunner() noexcept
@@ -103,158 +165,60 @@ namespace ice::gfx
         _device->device().destroy_fence(_present_fence);
     }
 
-    void IceshardGfxRunner::on_resume() noexcept
-    {
-        //IPT_ZONE_SCOPED;
-
-        //GfxStateChange const gfx_state_change{
-        //    .assets = _engine.assets(),
-        //    .device = *_device,
-        //};
-
-        //// TODO: Allow to set the number of tasks during world creation.
-        //static ice::StackAllocator_2048 alloc{ };
-        //alloc.reset();
-
-        //ice::Array<ice::Task<>, ice::ContainerLogic::Complex> tasks{ alloc };
-        //ice::ucount constexpr max_capcity = ice::mem_max_capacity<ice::Task<>>(ice::StackAllocator_2048::Constant_InternalCapacity);
-        //ice::array::set_capacity(tasks, max_capcity);
-
-        //{
-        //    IPT_ZONE_SCOPED_NAMED("gfx_gather_tasks");
-        //    ice::WorldUpdater& updater = _engine.worlds_updater();
-        //    updater.update(ice::shard(ShardID_GfxStartup, &gfx_state_change), tasks);
-        //}
-        //ICE_ASSERT(
-        //    ice::u8_max >= ice::array::count(tasks),
-        //    "Gathered more tasks than it's possible to track!"
-        //);
-
-        //_barrier.reset(ice::u8(ice::array::count(tasks)));
-        //{
-        //    IPT_ZONE_SCOPED_NAMED("gfx_await_tasks");
-        //    ice::manual_wait_for_all(tasks, _barrier);
-
-        //    // Wait for tasks to finish.
-        //    _barrier.wait();
-        //}
-    }
-
-    void IceshardGfxRunner::update_states(
-        ice::ShardContainer const& shards,
-        GfxStateChange const& gfx_state,
-        ice::Array<ice::Task<>, ice::ContainerLogic::Complex>& out_tasks
-    ) noexcept
-    {
-        auto const update_state = [this, &gfx_state, &out_tasks](ice::StringID_Hash name, IceshardGfxWorldState state) noexcept
-            {
-                IceshardGfxWorldState old_state = ice::hashmap::get(
-                    _world_states, ice::hash(name), IceshardGfxWorldState::Ignored
-                );
-
-                if (state == IceshardGfxWorldState::Active)
-                {
-                    if (old_state == IceshardGfxWorldState::Ignored)
-                    {
-                        gather_and_execute_tasks(
-                            name, _engine.worlds_updater(), ShardID_GfxStartup | &gfx_state, out_tasks
-                        );
-                        old_state = IceshardGfxWorldState::Inactive;
-                    }
-
-                    if (old_state == IceshardGfxWorldState::Inactive)
-                    {
-                        gather_and_execute_tasks(
-                            name, _engine.worlds_updater(), ShardID_GfxResume | &gfx_state, out_tasks
-                        );
-                        ice::hashmap::set(_world_states, ice::hash(name), state);
-                    }
-                }
-                else if (state == IceshardGfxWorldState::Ignored)
-                {
-                    if (old_state == IceshardGfxWorldState::Active)
-                    {
-                        gather_and_execute_tasks(
-                            name, _engine.worlds_updater(), ShardID_GfxSuspend | &gfx_state, out_tasks
-                        );
-                        old_state = IceshardGfxWorldState::Inactive;
-                    }
-
-                    if (old_state == IceshardGfxWorldState::Inactive)
-                    {
-                        gather_and_execute_tasks(
-                            name, _engine.worlds_updater(), ShardID_GfxShutdown | &gfx_state, out_tasks
-                        );
-                        ice::hashmap::set(_world_states, ice::hash(name), state);
-                    }
-                }
-                else
-                {
-                    ICE_ASSERT_CORE(false);
-                }
-            };
-
-        for (ice::Shard shard : shards)
-        {
-            switch (shard.id.name.value)
-            {
-            case ice::ShardID_WorldActivated.name.value:
-                update_state(ice::shard_shatter<ice::StringID_Hash>(shard, ice::StringID_Invalid), IceshardGfxWorldState::Active);
-                break;
-            case ice::ShardID_WorldDeactivated.name.value:
-                update_state(ice::shard_shatter<ice::StringID_Hash>(shard, ice::StringID_Invalid), IceshardGfxWorldState::Ignored);
-                break;
-            default:
-                break;
-            }
-        }
-
-        return;
-    }
-
     auto IceshardGfxRunner::draw_frame(
-        ice::EngineFrame const& frame,
-        ice::gfx::GfxGraphRuntime& graph_runtime,
-        ice::Clock const& clock
+        ice::gfx::GfxOperationParams const& params
     ) noexcept -> ice::Task<>
     {
+        //// Initialize state for new worlds
+        //ice::shards::for_each(
+        //    params.frame.shards(),
+        //    ice::ShardID_WorldCreated,
+        //    [this](ice::Shard shard) noexcept
+        //    {
+        //        ice::StringID_Hash worldname;
+        //        if (ice::shard_inspect(shard, worldname))
+        //        {
+        //            _engine.states().initialize_subname_state(detail::StateGraph_GfxRuntime, { worldname });
+        //        }
+        //    }
+        //);
+
         co_await _scheduler;
 
         IPT_ZONE_SCOPED;
         IPT_FRAME_MARK_NAMED("Graphics");
 
         GfxFrameUpdate const gfx_update{
-            .clock = clock,
+            .clock = params.clock,
             .assets = _engine.assets(),
-            .frame = frame,
+            .frame = params.frame,
             .device = *_device,
             .stages = *this,
-        };
-
-        // We create once and always reset the object next time
-        static ice::StackAllocator_2048 alloc{ };
-        alloc.reset();
-        ice::Array<ice::Task<>, ice::ContainerLogic::Complex> tasks{ alloc };
-        // TODO: Allow to set the number of tasks during world creation.
-        ice::ucount constexpr max_capcity = ice::mem_max_capacity<ice::Task<>>(ice::StackAllocator_2048::Constant_InternalCapacity);
-        ice::array::set_capacity(tasks, max_capcity);
-
-        GfxStateChange const gfx_state{
-            .assets = _engine.assets(),
-            .device = *_device,
-            .renderpass = graph_runtime.renderpass(),
             .frame_transfer = { _queue_transfer },
             .frame_end = { _queue_end },
         };
 
-        update_states(
-            frame.shards(), gfx_state, tasks
-        );
+        {
+            ice::hashmap::clear(_stages);
 
-        _barrier_state.reset(ice::u8(ice::array::count(tasks)));
+            IPT_ZONE_SCOPED_NAMED("gfx_gather_tasks");
+            [[maybe_unused]]
+            ice::WorldUpdater& updater = _engine.worlds_updater();
+
+            ice::Shard const update_shard[]{ ice::shard(ShardID_GfxFrameUpdate, &gfx_update) };
+            updater.update(
+                _tasks_container,
+                {
+                    .request_shards = update_shard,
+                    .required_state = { .flow_value = 1, .flow_id = _flow_id }
+                }
+            );
+        }
+
+        ice::ucount const num_tasks = _tasks_container.execute_tasks();
+        if (num_tasks > 0)
         {
             IPT_ZONE_SCOPED_NAMED("gfx_await_tasks");
-            ice::manual_wait_for_all(tasks, _barrier_state);
 
             v2::GfxQueueGroup_Temp& group = _device->queue_group(0);
             ice::gfx::GfxQueue* queue;
@@ -266,22 +230,11 @@ namespace ice::gfx
             queue->request_command_buffers(render::CommandBufferType::Primary, { &transfer_buffer , 1 });
             _device->device().get_commands().begin(transfer_buffer);
 
-            bool has_work = false;
-            //while (_barrier.is_set() == false)
-            {
-                for (ice::TaskAwaitableBase* awaitable : ice::linked_queue::consume(_queue_transfer._awaitables))
-                {
-                    awaitable->result.ptr = &transfer_buffer;
-                    awaitable->_coro.resume();
-                    has_work = true;
-                }
-            }
+            // We only process one for this queue.
+            bool const has_work = _queue_transfer.process_all(&transfer_buffer) > 0;
 
             // TODO: Log how many tasks are still around
             _device->device().get_commands().end(transfer_buffer);
-
-            // Wait for tasks to finish.
-            //_barrier.wait();
 
             if (has_work)
             {
@@ -294,82 +247,46 @@ namespace ice::gfx
             }
         }
 
-
+        _tasks_container.execute_tasks();
+        while(_tasks_container.running_tasks() > 0)
         {
-            ice::hashmap::clear(_stages);
-
-            IPT_ZONE_SCOPED_NAMED("gfx_gather_tasks");
-            ice::WorldUpdater& updater = _engine.worlds_updater();
-
-            ice::array::clear(tasks);
-            updater.update(ice::shard(ShardID_GfxFrameUpdate, &gfx_update), tasks);
+            _queue_end.process_all();
         }
-        ICE_ASSERT(
-            ice::u8_max >= ice::array::count(tasks),
-            "Gathered more tasks than it's possible to track!"
-        );
-
-        _barrier.reset(ice::u8(ice::array::count(tasks)));
-        {
-            IPT_ZONE_SCOPED_NAMED("gfx_await_tasks");
-            ice::manual_wait_for_all(tasks, _barrier);
-        }
-
-        while (_barrier.is_set() == false || _barrier_state.is_set() == false)
-        {
-            for (ice::TaskAwaitableBase* awaitable : ice::linked_queue::consume(_queue_end._awaitables))
-            {
-                awaitable->_coro.resume();
-            }
-        }
-
-        _barrier.wait();
-        _barrier_state.wait();
 
         // Execute all stages (currently done simply going over the render graph)
         _present_fence->reset();
 
-        if (graph_runtime.execute(frame, *this, *_present_fence))
+        if (_rendergraph->execute(params.frame, *this, *_present_fence))
         {
             _present_fence->wait(10'000'000);
         }
         co_return;
     }
 
-    void IceshardGfxRunner::on_suspend() noexcept
-    {
-    }
 
-    void IceshardGfxRunner::final_update(
-        ice::EngineFrame const& frame,
-        ice::gfx::GfxGraphRuntime& graph_runtime,
-        ice::Clock const& clock
+    void IceshardGfxRunner::update_states(
+        ice::WorldStateTracker& state_tracker,
+        ice::gfx::GfxOperationParams const& params
     ) noexcept
     {
-        ice::TaskQueue queue;
-        GfxStateChange const gfx_state{
+        //ice::gfx::GfxStateChange const gfx_state{
+        //    .assets = _engine.assets(),
+        //    .device = *_device,
+        //    .renderpass = params.render_graph.renderpass(),
+        //};
+
+        new (_params_storage + 0) ice::gfx::GfxStateChange{
             .assets = _engine.assets(),
             .device = *_device,
-            .renderpass = graph_runtime.renderpass(),
-            .frame_transfer = { queue },
-            .frame_end = { queue },
+            .renderpass = _rendergraph->renderpass()
         };
 
-        // We create once and always reset the object next time
-        static ice::StackAllocator_2048 alloc{ };
-        alloc.reset();
-        ice::Array<ice::Task<>, ice::ContainerLogic::Complex> tasks{ alloc };
-        // TODO: Allow to set the number of tasks during world creation.
-        ice::ucount constexpr max_capcity = ice::mem_max_capacity<ice::Task<>>(ice::StackAllocator_2048::Constant_InternalCapacity);
-        ice::array::set_capacity(tasks, max_capcity);
+        //ice::Shard const shards[]{
+        //    { ShardID_GfxStartup | &gfx_state },
+        //    { ShardID_GfxShutdown | &gfx_state },
+        //};
 
-        update_states(
-            frame.shards(), gfx_state, tasks
-        );
-
-        ICE_ASSERT_CORE(ice::linked_queue::empty(queue._awaitables));
-
-        ice::wait_for_all(ice::array::slice(tasks));
+        //_engine.worlds_states().finalize_state_changes(shards);
     }
 
     auto IceshardGfxRunner::device() noexcept -> ice::gfx::GfxDevice&
@@ -404,6 +321,43 @@ namespace ice::gfx
             it.value()->draw(frame, cmds, render_api);
             it = ice::multi_hashmap::find_next(_stages, it);
         }
+    }
+
+    bool IceshardGfxRunner::commit(
+        ice::EngineStateTrigger const& trigger,
+        ice::Shard trigger_shard,
+        ice::ShardContainer& out_shards
+    ) noexcept
+    {
+        ice::gfx::GfxStateChange const params{
+            .assets = _engine.assets(),
+            .device = *_device,
+            .renderpass = _rendergraph->renderpass()
+        };
+
+        ice::StringID_Hash world_name;
+        if (ice::shard_inspect(trigger_shard, world_name) == false)
+        {
+            return false;
+        }
+
+        ice::Shard shards[1];
+        if (trigger.to == detail::State_GfxActive)
+        {
+            shards[0] = ice::shard(ice::gfx::ShardID_GfxStartup, &params);
+        }
+        else if (trigger.to == detail::State_GfxInactive)
+        {
+            shards[0] = ice::shard(ice::gfx::ShardID_GfxShutdown, &params);
+        }
+
+        ice::ScopedTaskContainer tasks{ _alloc };
+        ice::WorldUpdateParams update_params{
+            .request_shards = shards
+        };
+
+        _engine.worlds_updater().update(tasks, update_params);
+        return true;
     }
 
 } // namespace ice::gfx

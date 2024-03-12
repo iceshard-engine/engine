@@ -14,7 +14,8 @@ namespace ice
     ) noexcept
         : _allocator{ alloc }
         , _assets{ ice::move(create_info.assets) }
-        , _worlds{ _allocator, ice::move(create_info.traits) }
+        , _states{ ice::move(create_info.states) }
+        , _worlds{ _allocator, ice::move(create_info.traits), *_states }
         , _entities{ _allocator, 10'000 }
     {
     }
@@ -30,6 +31,11 @@ namespace ice
     }
 
     auto IceshardEngine::worlds_updater() noexcept -> ice::WorldUpdater&
+    {
+        return _worlds;
+    }
+
+    auto IceshardEngine::worlds_states() noexcept -> ice::WorldStateTracker&
     {
         return _worlds;
     }
