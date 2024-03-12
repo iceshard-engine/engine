@@ -61,6 +61,9 @@ namespace ice
         template<typename Fn>
         inline auto for_each(ice::ShardContainer const& container, ice::ShardID shard_type, Fn&& callback) noexcept -> ice::u32;
 
+        template<typename Fn, typename... Args>
+        inline auto for_each(ice::ShardContainer const& container, ice::ShardID shard_type, Fn&& callback, Args&&... args) noexcept -> ice::u32;
+
         template<typename T, ice::ContainerLogic Logic>
         inline auto inspect_all(ice::ShardContainer const& container, ice::ShardID shard_type, ice::Array<T, Logic>& payloads) noexcept -> ice::u32;
 
@@ -266,6 +269,20 @@ namespace ice
                 if (shard == shard_type)
                 {
                     ice::forward<Fn>(callback)(shard);
+                }
+            }
+            return count;
+        }
+
+        template<typename Fn, typename... Args>
+        inline auto for_each(ice::ShardContainer const& container, ice::ShardID shard_type, Fn&& callback, Args&&... args) noexcept -> ice::u32
+        {
+            ice::u32 count = 0;
+            for (ice::Shard const shard : container._data)
+            {
+                if (shard == shard_type)
+                {
+                    ice::forward<Fn>(callback)(shard, ice::forward<Args>(args)...);
                 }
             }
             return count;

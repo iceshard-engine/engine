@@ -146,7 +146,7 @@ namespace ice
 
             ICE_ASSERT(success, "We got more 'set' calls than expected!");
 
-            if (remaining == 0)
+            if (remaining == 1)
             {
 #if ISP_WINDOWS
                 ::WakeByAddressAll(ice::addressof(_internal_value));
@@ -213,6 +213,11 @@ namespace ice
     bool ManualResetBarrier::is_set() const noexcept
     {
         return _internal_value.load(std::memory_order_relaxed) == 0;
+    }
+
+    auto ManualResetBarrier::value() const noexcept -> ice::u8
+    {
+        return _internal_value.load(std::memory_order_relaxed);
     }
 
 } // namespace ice

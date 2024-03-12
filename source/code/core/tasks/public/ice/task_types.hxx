@@ -20,6 +20,9 @@ namespace ice
     struct TaskAwaitableParams;
     struct TaskAwaitableBase;
 
+    struct TaskContainer;
+    class ScopedTaskContainer;
+
     class ManualResetEvent;
     class ManualResetBarrier;
 

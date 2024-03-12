@@ -28,6 +28,20 @@
     </Expand>
   </Type>
 
+  <!-- Native Visualization for the ice::Array type -->
+  <Type Name="ice::Queue&lt;*,*&gt;">
+    <DisplayString Condition="_count == 0">Queue {{ empty }}</DisplayString>
+    <DisplayString>Queue {{ count={ _count }, capacity={ _capacity } }}</DisplayString>
+    <Expand>
+      <Item Name="[count]">_count</Item>
+      <Item Name="[capacity]">_capacity</Item>
+      <ArrayItems>
+        <Size>_count</Size>
+        <ValuePointer>_data</ValuePointer>
+      </ArrayItems>
+    </Expand>
+  </Type>
+
   <!-- Native Visualization for the ice::ShardContainer type -->
   <Type Name="ice::ShardContainer">
     <DisplayString Condition="_data._count == 0">ShardContainer {{ empty }}</DisplayString>

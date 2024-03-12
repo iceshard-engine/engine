@@ -378,6 +378,7 @@ namespace ice
         template<typename Type, ice::ContainerLogic Logic>
         inline void pop_back(ice::Array<Type, Logic>& arr, ice::ucount count /*= 1*/) noexcept
         {
+            count = ice::min(count, arr._count);
             if constexpr (Logic == ContainerLogic::Complex)
             {
                 ice::mem_destruct_n_at(arr._data + (arr._count - count), count);
