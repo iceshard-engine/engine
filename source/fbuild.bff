@@ -65,28 +65,18 @@ Settings
     .PipelineConanProfile = 'Linux-Clang'
 ]
 
-.Vk_ShaderPipeline =
-[
-    Using( .Pipeline_VulkanShaders_13 )
-
-    .PipelineSteps + 'Gen-ShaderMeta'
-    .PipelineTasks + .Task_GenerateShaderISRM
-
-    .PipelineName = 'VkShaders'
-    .PipelineToolchain = 'vk-glslc-1-3'
-]
-
 .Unity_Pipeline_Android_ARM64 =
 [
     Using( .Piepline_Android_ARM64 )
 
     .AndroidAPILevel = '27'
+    .AndroidStdLib = 'Shared'
 
     .PipelineName = 'Android$AndroidAPILevel$-ARMv8'
     .PipelineToolchain = 'ndk26-clang-17.0.0'
     .PipelineArchitecture = 'arm64'
     .PipelineAllowUnityBuilds = false
-    .PipelineSteps = { 'Build', 'Link' }
+    .PipelineSteps = { 'Build', 'Link', 'Deploy' }
 
     .PipelineConanProfile = 'Android-Arm64'
 
@@ -97,18 +87,18 @@ Settings
     ]
 ]
 
-
 .Unity_Pipeline_Android_x64 =
 [
     Using( .Piepline_Android_ARM64 )
 
     .AndroidAPILevel = '27'
+    .AndroidStdLib = 'Shared'
 
     .PipelineName = 'Android$AndroidAPILevel$-x64'
     .PipelineToolchain = 'ndk26-clang-17.0.0'
     .PipelineArchitecture = 'x86_64'
     .PipelineAllowUnityBuilds = false
-    .PipelineSteps = { 'Build', 'Link' }
+    .PipelineSteps = { 'Build', 'Link', 'Deploy' }
 
     .PipelineConanProfile = 'Android-x64'
 
@@ -117,6 +107,19 @@ Settings
     [
         .VSEnabled = false
     ]
+]
+
+.Vk_ShaderPipeline =
+[
+    Using( .Pipeline_VulkanShaders_13 )
+
+    ; .PipelineSteps + 'Gen-ShaderMeta'
+    ; .PipelineTasks + .Task_GenerateShaderISRM
+    .PipelineSteps + 'Package'
+    .PipelineTasks + .Task_CreateShaderPack
+
+    .PipelineName = 'VkShaders'
+    .PipelineToolchain = 'vk-glslc-1-3'
 ]
 
 ^BuildPipelines = {

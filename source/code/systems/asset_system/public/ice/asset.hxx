@@ -54,6 +54,7 @@ namespace ice
         Asset(Asset const&) noexcept = delete;
         auto operator=(Asset const&) noexcept -> ice::Asset& = delete;
 
+        auto name() const noexcept -> ice::StringID_Arg;
         bool valid() const noexcept;
         auto metadata(ice::Data& out_metadata) const noexcept -> ice::Task<ice::Result>;
         bool available(ice::AssetState state) const noexcept;

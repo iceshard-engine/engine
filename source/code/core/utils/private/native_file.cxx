@@ -1,4 +1,4 @@
-/// Copyright 2023 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2023 - 2024, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 #include <ice/native_file.hxx>
 #include <ice/string_utils.hxx>
@@ -88,15 +88,17 @@ namespace ice::native_file
     ) noexcept -> ice::native_file::File
     {
         IPT_ZONE_SCOPED;
-        ice::win32::FileHandle handle = CreateFileW(
-            ice::string::begin(path),
-            translate_access(flags),
-            translate_mode(flags), // FILE_SHARE_*
-            NULL, // SECURITY ATTRIBS
-            translate_disposition(flags),
-            translate_attribs(flags),
-            NULL
-        );
+        ice::win32::FileHandle handle{
+            CreateFileW(
+                ice::string::begin(path),
+                translate_access(flags),
+                translate_mode(flags), // FILE_SHARE_*
+                NULL, // SECURITY ATTRIBS
+                translate_disposition(flags),
+                translate_attribs(flags),
+                NULL
+            )
+        };
         return handle;
     }
 
@@ -112,15 +114,17 @@ namespace ice::native_file
 
     auto sizeof_file(ice::native_file::FilePath path) noexcept -> ice::usize
     {
-        ice::win32::FileHandle handle = CreateFileW(
-            path._data,
-            FILE_READ_ATTRIBUTES,
-            FILE_SHARE_READ,
-            NULL,
-            OPEN_EXISTING,
-            FILE_ATTRIBUTE_NORMAL,
-            NULL
-        );
+        ice::win32::FileHandle handle{
+            CreateFileW(
+                path._data,
+                FILE_READ_ATTRIBUTES,
+                FILE_SHARE_READ,
+                NULL,
+                OPEN_EXISTING,
+                FILE_ATTRIBUTE_NORMAL,
+                NULL
+            )
+        };
         return sizeof_file(handle);
     }
 
@@ -423,7 +427,7 @@ namespace ice::native_file
                     : EntityType::File;
 
                 // Append the entry name to the path
-                ice::ucount const size_name{ ice::ucount(entry->d_reclen) - ice::ucount(offsetof(dirent, d_name)) };
+                ice::ucount const size_name = ice::ucount(strlen(entry->d_name));
                 ice::string::push_back(dirpath, ice::native_file::FilePath{ entry->d_name, size_name });
 
                 // Call the callback for the next entry encountered...

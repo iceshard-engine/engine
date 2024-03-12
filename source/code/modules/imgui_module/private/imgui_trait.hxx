@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2024, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -15,7 +15,53 @@
 namespace ice::devui
 {
 
-    class ImGuiTrait final : public ice::devui::DevUITrait, public ice::gfx::GfxStage
+    class ImGuiGfxStage : public ice::gfx::GfxStage
+    {
+    public:
+        ImGuiGfxStage(
+            ice::Allocator& alloc,
+            ice::AssetStorage& assets
+        ) noexcept;
+
+    public: // Implementation of: ice::gfx::GfxStage
+        auto initialize(
+            ice::gfx::GfxDevice& gfx,
+            ice::gfx::GfxStages& stages,
+            ice::render::Renderpass renderpass
+        ) noexcept -> ice::Task<> override;
+
+        auto cleanup(
+            ice::gfx::GfxDevice& gfx
+        ) noexcept -> ice::Task<> override;
+
+        void update(
+            ice::gfx::GfxDevice& device
+        ) noexcept override;
+
+        void draw(
+            ice::EngineFrame const& frame,
+            ice::render::CommandBuffer cmds,
+            ice::render::RenderCommands& render_api
+        ) const noexcept override;
+
+    private:
+        ice::AssetStorage& _assets;
+
+        ice::render::ResourceSetLayout _resource_layout;
+        ice::render::ResourceSet _resources[20];
+        ice::render::PipelineLayout _pipeline_layout;
+        ice::render::Pipeline _pipeline;
+
+        ice::render::Sampler _sampler;
+        ice::render::Image _font_texture;
+        ice::render::ShaderStageFlags _shader_stages[2];
+        ice::render::Shader _shaders[2];
+
+        ice::Array<ice::render::Buffer> _index_buffers;
+        ice::Array<ice::render::Buffer> _vertex_buffers;
+    };
+
+    class ImGuiTrait final : public ice::devui::DevUITrait
     {
     public:
         ImGuiTrait(ice::Allocator& alloc) noexcept;
@@ -29,12 +75,6 @@ namespace ice::devui
         auto update(ice::EngineFrameUpdate const& update) noexcept -> ice::Task<>;
 
         auto on_window_resized(ice::vec2i new_size) noexcept -> ice::Task<>;
-
-        void draw(
-            ice::EngineFrame const& frame,
-            ice::render::CommandBuffer cmds,
-            ice::render::RenderCommands& api
-        ) const noexcept override;
 
     public: // Gfx State Events
         auto gfx_start(ice::gfx::GfxStateChange const& params) noexcept -> ice::Task<>;
@@ -50,28 +90,16 @@ namespace ice::devui
         void build_internal_command_list(ice::EngineFrame& frame) noexcept;
 
     private:
+        ice::Allocator& _allocator;
         bool _initialized = false;
         bool _font_texture_loaded = false;
         bool _next_frame = false;
 
         ImGuiContext* _imgui_context = nullptr;
+        ice::UniquePtr<ImGuiGfxStage> _imgui_gfx_stage;
 
         ice::vec2u _display_size;
         ice::Timer _imgui_timer;
-
-        ice::render::ResourceSetLayout _resource_layout;
-        ice::render::ResourceSet _resources[20];
-        ice::render::PipelineLayout _pipeline_layout;
-        ice::render::Pipeline _pipeline;
-
-        ice::render::Sampler _sampler;
-        ice::render::Image _font_texture;
-        ice::render::ShaderStageFlags _shader_stages[2];
-        ice::render::Shader _shaders[2];
-        ice::Data _shader_data[2];
-
-        ice::Array<ice::render::Buffer> _index_buffers;
-        ice::Array<ice::render::Buffer> _vertex_buffers;
     };
 
 } // namespace ice::devui

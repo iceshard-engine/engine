@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2024, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -24,70 +24,12 @@ namespace ice
         ice::Allocator&, ice::EngineFrameData&, EngineFrameFactoryUserdata
     ) noexcept -> ice::UniquePtr<ice::EngineFrame>;
 
-    struct WorldStateParams;
+    struct EngineTaskContainer
+    {
+        virtual ~EngineTaskContainer() noexcept = default;
 
-    //struct EngineTaskResult
-    //{
-    //    // TODO: if awaited resumes on last finished tasks thread
-    //    ice::Span<ice::Task<>> tasks;
-    //    ice::ManualResetBarrier barrier{ };
-
-    //    ~EngineTaskResult() noexcept
-    //    {
-    //        barrier.wait();
-    //    }
-
-    //    auto operator co_await() & noexcept
-    //    {
-    //        struct Result
-    //        {
-    //            ice::Span<ice::Task<>> tasks;
-    //            ice::ManualResetBarrier& barrier;
-
-    //            auto await_ready() const noexcept { return ice::count(tasks) == 0; }
-    //            void await_suspend(ice::coroutine_handle<>) noexcept
-    //            {
-    //                ice::manual_wait_for_all(tasks, barrier);
-    //            }
-    //            void await_resume() noexcept
-    //            {
-    //                // TODO: Change to is-set?
-    //                ICE_ASSERT_CORE(barrier.is_set());
-    //            }
-
-    //        } result{ tasks, barrier };
-    //        return result;
-    //    }
-
-    //    auto operator co_await() && noexcept
-    //    {
-    //        struct Result
-    //        {
-    //            ice::Span<ice::Task<>> tasks;
-    //            ice::ManualResetBarrier& barrier;
-
-    //            auto await_ready() const noexcept { return ice::count(tasks) == 0; }
-    //            void await_suspend(ice::coroutine_handle<>) const noexcept
-    //            {
-    //                // todo: Pass the current coro to a method, which will call it after everything is finished.
-    //                ice::manual_wait_for_all(tasks, barrier);
-    //            }
-    //            void await_resume() const noexcept
-    //            {
-    //                // TODO: Change to is-set?
-    //                ICE_ASSERT_CORE(barrier.is_set());
-    //            }
-
-    //        } result{ ice::move(tasks), barrier };
-    //        return result;
-    //    }
-    //};
-
-    //struct EngineTaskRequest
-    //{
-    //    virtual ~EngineTaskRequest() noexcept = default;
-    //    virtual auto gather_tasks(ice::Shard shard) noexcept -> ice::EngineTaskResult = 0;
-    //};
+        virtual void execute(ice::Task<> task) noexcept = 0;
+    };
 
     struct EngineFrameUpdate
     {
@@ -96,6 +38,7 @@ namespace ice
         ice::EngineFrame& frame;
         ice::EngineFrame const& last_frame;
         ice::EngineSchedulers thread;
+        ice::EngineTaskContainer& long_tasks;
     };
 
     struct EngineRunnerCreateInfo
@@ -107,7 +50,6 @@ namespace ice
         ice::EngineFrameFactoryUserdata frame_factory_userdata;
         ice::EngineSchedulers schedulers;
     };
-
     struct EngineRunner
     {
         virtual ~EngineRunner() noexcept = default;

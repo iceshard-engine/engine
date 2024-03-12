@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2024, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include <ice/devui/devui_module.hxx>
@@ -14,11 +14,11 @@ namespace ice::devui
     {
         ice::UniquePtr<DevUISystem> result{ };
 
-        ice::devui::detail::v1::DevUI_API* devui_api;
-        if (registry.find_module_api("ice.devui_module"_sid, 1, reinterpret_cast<void**>(&devui_api)))
+        ice::devui::detail::v1::DevUI_API devui_api;
+        if (registry.query_api(devui_api))
         {
-            ice::devui::DevUISystem* devui_system = devui_api->create_system_fn(alloc);
-            result = ice::UniquePtr<ice::devui::DevUISystem>{ devui_api->destroy_system_fn, devui_system };
+            ice::devui::DevUISystem* devui_system = devui_api.create_system_fn(alloc);
+            result = ice::UniquePtr<ice::devui::DevUISystem>{ devui_api.destroy_system_fn, devui_system };
         }
         return result;
     }

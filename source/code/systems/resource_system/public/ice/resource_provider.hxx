@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2024, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -89,7 +89,7 @@ namespace ice
 
     auto create_resource_provider_hailstorm(
         ice::Allocator& alloc,
-        ice::Span<ice::String const> paths
+        ice::String path
     ) noexcept -> ice::UniquePtr<ice::ResourceProvider>;
 
 } // namespace ice

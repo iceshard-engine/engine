@@ -1,4 +1,4 @@
-/// Copyright 2023 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2023 - 2024, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -33,10 +33,7 @@ namespace ice::gfx
         Active,
     };
 
-    struct IceshardGfxRunner
-        : public ice::gfx::GfxRunner
-        , public ice::gfx::GfxStageRegistry
-        , public ice::EngineStateCommitter
+    struct IceshardGfxRunner : public ice::gfx::GfxRunner
     {
         IceshardGfxRunner(
             ice::Allocator& alloc,
@@ -50,10 +47,7 @@ namespace ice::gfx
             _rendergraph = ice::move(rendergraph);
         }
 
-        void update_states(
-            ice::WorldStateTracker& state_tracker,
-            ice::gfx::GfxOperationParams const& params
-        ) noexcept override;
+        void update_states(ice::ShardContainer const& shards) noexcept;
 
         auto draw_frame(
             ice::gfx::GfxOperationParams const& params
@@ -62,23 +56,6 @@ namespace ice::gfx
         auto device() noexcept -> ice::gfx::GfxDevice& override;
 
         void destroy() noexcept;
-
-    public:
-        void add_stage(ice::StringID_Arg name, ice::gfx::GfxStage const* stage) noexcept override;
-
-        void execute_stages(
-            ice::EngineFrame const& frame,
-            ice::StringID_Arg name,
-            ice::render::CommandBuffer cmds,
-            ice::render::RenderCommands& render_api
-        ) const noexcept override;
-
-    public: // Impl: ice::EngineStateCommiter
-        bool commit(
-            ice::EngineStateTrigger const& trigger,
-            ice::Shard trigger_shard,
-            ice::ShardContainer& out_shards
-        ) noexcept override;
 
     private:
         ice::Allocator& _alloc;
@@ -92,7 +69,12 @@ namespace ice::gfx
         ice::UniquePtr<ice::TaskThread> _thread;
         ice::render::RenderFence* _present_fence;
 
-        ice::HashMap<ice::gfx::GfxStage const*> _stages;
+        ice::UniquePtr<ice::gfx::GfxStageRegistry> _stages;
+
+        // TODO: Replace with proper task completion tracker.
+        std::atomic_uint32_t _gfx_tasks;
+
+        // ice::HashMap<ice::gfx::GfxStage const*> _stages;
         ice::gfx::IceshardGfxRunnerState _state;
         ice::HashMap<ice::gfx::IceshardGfxWorldState> _world_states;
         ice::UniquePtr<ice::gfx::GfxGraphRuntime> _rendergraph;

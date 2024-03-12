@@ -36,7 +36,7 @@ namespace ice::path
             }
             else
             {
-                return false;
+                return ice::string::any(path) && ice::string::front(path) == Separators_Directory<CharType>[1];
             }
         }
 

@@ -33,6 +33,12 @@ namespace ice
         // ice::wait_for(detail::storage(_handle).release(*this));
     }
 
+    auto Asset::name() const noexcept -> ice::StringID_Arg
+    {
+        ice::AssetEntry const& entry = detail::entry(_handle);
+        return entry.assetid;
+    }
+
     bool Asset::valid() const noexcept
     {
         if (_handle != nullptr)

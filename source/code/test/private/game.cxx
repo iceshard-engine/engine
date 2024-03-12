@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2024, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "game.hxx"
@@ -146,10 +146,6 @@ struct TestTrait : public ice::Trait
     }
 };
 
-using ModuleProcLoad = void(ice::Allocator*, ice::ModuleNegotiatorContext*, ice::ModuleNegotiator*);
-using ModuleProcUnload = void(ice::Allocator*);
-using ModuleProcGetAPI = bool(ice::StringID_Hash, ice::u32, void**);
-
 namespace icetm = ice::detail::world_traits;
 
 auto act_factory(ice::Allocator& alloc, void*) noexcept -> UniquePtr<ice::Trait>
@@ -168,33 +164,19 @@ bool test_reg_traits(ice::TraitArchive& arch) noexcept
     return true;
 }
 
-bool test_getapi(ice::StringID_Hash name, ice::u32 ver, void** ptrs)
+struct TestModule : ice::Module<TestModule>
 {
-    if (name == icetm::Constant_APIName_WorldTraitsModule && ver == 2)
+    static void v1_traits_api(ice::detail::world_traits::TraitsModuleAPI& api) noexcept
     {
-        static icetm::TraitsModuleAPI module_api{
-            .register_traits_fn = test_reg_traits
-        };
-
-        *ptrs = &module_api;
-        return true;
+        api.register_traits_fn = test_reg_traits;
     }
-    return false;
-}
 
-void test_load(ice::Allocator*, ice::ModuleNegotiatorContext* ctx, ice::ModuleNegotiator* neg)
-{
-    neg->fn_register_module(ctx, icetm::Constant_APIName_WorldTraitsModule, &test_getapi);
-}
+    static bool on_load(ice::Allocator& alloc, ice::ModuleNegotiator const& negotiator) noexcept
+    {
+        return negotiator.register_api(v1_traits_api);
+    }
 
-void test_unload(ice::Allocator*)
-{
-}
-
-struct ModuleNegotiator
-{
-    bool (*fn_get_module_api)(ice::ModuleNegotiatorContext*, ice::StringID_Hash, ice::u32, void**) noexcept;
-    bool (*fn_register_module)(ice::ModuleNegotiatorContext*, ice::StringID_Hash, ice::ModuleProcGetAPI*) noexcept;
+    IS_WORKAROUND_MODULE_INITIALIZATION(TestModule);
 };
 
 TestGame::TestGame(ice::Allocator& alloc) noexcept
@@ -205,29 +187,18 @@ TestGame::TestGame(ice::Allocator& alloc) noexcept
 
 void TestGame::on_setup(ice::framework::State const& state) noexcept
 {
-    ICE_LOG(LogSeverity::Info, LogGame, "Hello, World!");
+    // ICE_LOG(LogSeverity::Info, LogGame, "Hello, World!");
 
     ice::ModuleRegister& mod = state.modules;
     ice::ResourceTracker& res = state.resources;
 
-    ice::ResourceHandle* const pipelines_module = res.find_resource("urn:iceshard_pipelines.dll"_uri);
-    ice::ResourceHandle* const vulkan_module = res.find_resource("urn:vulkan_renderer.dll"_uri);
-    ice::ResourceHandle* const imgui_module = res.find_resource("urn:imgui_module.dll"_uri);
+    ice::HeapString<> pipelines_module = ice::resolve_dynlib_path(res, _allocator, "iceshard_pipelines");
+    ice::HeapString<> vulkan_module = ice::resolve_dynlib_path(res, _allocator, "vulkan_renderer");
+    ice::HeapString<> imgui_module = ice::resolve_dynlib_path(res, _allocator, "imgui_module");
 
-    ICE_ASSERT(pipelines_module != nullptr, "Missing `iceshard_pipelines.dll` module!");
-    ICE_ASSERT(vulkan_module != nullptr, "Missing `vulkan_renderer.dll` module!");
-
-    mod.load_module(_allocator, ice::resource_origin(pipelines_module));
-    mod.load_module(_allocator, ice::resource_origin(vulkan_module));
-
-    ice::framework::register_assetype_modules(_allocator, mod);
-
-    if (imgui_module != nullptr)
-    {
-        mod.load_module(_allocator, ice::resource_origin(imgui_module));
-    }
-
-    mod.load_module(_allocator, test_load, test_unload);
+    mod.load_module(_allocator, pipelines_module);
+    mod.load_module(_allocator, vulkan_module);
+    mod.load_module(_allocator, imgui_module);
 }
 
 void TestGame::on_shutdown(ice::framework::State const& state) noexcept
@@ -246,7 +217,8 @@ void TestGame::on_resume(ice::Engine& engine) noexcept
         ice::StringID traits[]{
             "act"_sid,
             "test2"_sid,
-            ice::Constant_TraitName_DevUI
+            ice::Constant_TraitName_DevUI,
+            ice::TraitID_GfxShaderStorage
         };
         ice::StringID traits2[]{
             "test"_sid,
@@ -831,4 +803,3 @@ void MyGame::on_update(ice::EngineFrame& frame, ice::EngineRunner& runner, ice::
     }
 }
 #endif
-

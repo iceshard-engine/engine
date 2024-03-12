@@ -1,4 +1,4 @@
-/// Copyright 2021 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2021 - 2024, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 .Project =
@@ -8,7 +8,6 @@
     .Group = 'Modules'
 
     .BaseDir = '$WorkspaceCodeDir$/modules/imgui_module'
-    .Requires = { 'Windows' }
 
     .Private =
     [

@@ -1,0 +1,40 @@
+/// Copyright 2024 - 2024, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
+#pragma once
+#include <ice/module_types.hxx>
+#include <concepts>
+
+namespace ice::concepts
+{
+
+    template<typename T>
+    concept APIType = requires(T t)
+    {
+        { T::Constant_APIName } -> std::convertible_to<ice::StringID_Arg>;
+        { T::Constant_APIVersion } -> std::convertible_to<ice::u32>;
+    };
+
+    template<typename T>
+    concept APIExplicitPriority = requires(T t)
+    {
+        { T::Constant_APIPriority } -> std::convertible_to<ice::u32>;
+    };
+
+    template<typename T>
+    concept ModuleLoadable = requires(T t, ice::Allocator& alloc, ice::ModuleNegotiator const& negotiator)
+    {
+        { T::on_load(alloc, negotiator) } -> std::convertible_to<bool>;
+    };
+
+    template<typename T>
+    concept ModuleUnloadable = requires(T t, ice::Allocator& alloc)
+    {
+        { T::on_unload(alloc) } -> std::convertible_to<void>;
+    };
+
+    // Currently this can be seen as an alias.
+    template<typename T>
+    concept ModuleType = ModuleLoadable<T>;
+
+} // namespace ice::concept

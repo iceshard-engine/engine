@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2024, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -20,6 +20,12 @@ namespace ice::gfx
         ice::render::RenderDriver& driver;
         ice::render::RenderSurface& surface;
         ice::Span<ice::gfx::QueueDefinition const> render_queues;
+    };
+
+    struct GfxStages
+    {
+        ice::TaskStage<ice::render::CommandBuffer> frame_transfer;
+        ice::TaskStage<> frame_end;
     };
 
     struct GfxOperationParams

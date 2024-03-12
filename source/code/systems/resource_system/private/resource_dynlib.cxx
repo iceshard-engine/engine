@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2024, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "resource_dynlib.hxx"
@@ -15,7 +15,7 @@ namespace ice
     ) noexcept
         : _origin_path{ ice::move(origin_path) }
         , _origin_name{ origin_name }
-        , _uri{ ice::Scheme_Dynlib, _origin_name }
+        , _uri{ ice::Scheme_Dynlib, ice::path::basename(_origin_name) }
     {
     }
 

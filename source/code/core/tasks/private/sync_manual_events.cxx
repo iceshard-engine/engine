@@ -146,7 +146,7 @@ namespace ice
 
             ICE_ASSERT(success, "We got more 'set' calls than expected!");
 
-            if (remaining == 1)
+            if (success && remaining == 1)
             {
 #if ISP_WINDOWS
                 ::WakeByAddressAll(ice::addressof(_internal_value));

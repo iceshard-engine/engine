@@ -1,9 +1,9 @@
-/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2024, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
 #include "vk_include.hxx"
-#include "vk_memory_manager.hxx"
+#include "vk_memory_allocator.hxx"
 
 namespace ice::render::vk
 {
@@ -12,7 +12,7 @@ namespace ice::render::vk
     {
         VkImage vk_image;
         VkImageView vk_image_view;
-        AllocationHandle vk_alloc_handle;
+        VmaAllocation vma_allocation;
     };
 
 } // namespace ice::render::vk

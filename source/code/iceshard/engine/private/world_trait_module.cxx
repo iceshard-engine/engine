@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2024, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include <ice/world/world_trait.hxx>
@@ -18,16 +18,13 @@ namespace ice
     {
         using ice::detail::world_traits::TraitsModuleAPI;
 
-        ice::StackAllocator<ice::size_of<void*> * 20> static_alloc{};
-        ice::Array<void*> api_ptrs{ static_alloc };
-        ice::array::reserve(api_ptrs, 20);
-
-        if (registry.find_module_apis(Constant_APIName_WorldTraitsModule, 2, api_ptrs))
+        ice::StackAllocator<ice::size_of<TraitsModuleAPI> * 10> static_alloc{};
+        ice::Array<TraitsModuleAPI> api_ptrs{ static_alloc };
+        if (registry.query_apis(api_ptrs))
         {
-            for (void* api_ptr : api_ptrs)
+            for (TraitsModuleAPI const& api : api_ptrs)
             {
-                TraitsModuleAPI* module_api = reinterpret_cast<TraitsModuleAPI*>(api_ptr);
-                module_api->register_traits_fn(asset_type_archive);
+                api.register_traits_fn(asset_type_archive);
             }
         }
     }

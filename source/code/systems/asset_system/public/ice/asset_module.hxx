@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2024, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -21,18 +21,17 @@ namespace ice
     namespace detail::asset_system::v1
     {
 
-        static constexpr ice::StringID Constant_APIName_AssetTypeArchive = "ice.asset-type-archive"_sid;
-
         using RegisterTypesFn = void (ice::AssetTypeArchive&) noexcept;
 
         struct AssetTypeArchiveAPI
         {
+            static constexpr ice::StringID Constant_APIName = "ice.asset-type-archive"_sid;
+            static constexpr ice::u32 Constant_APIVersion = 1;
+
             RegisterTypesFn* register_types_fn;
             // TODO: Unregister or Reload function?
         };
 
     } // detail::engine::v1
-
-    using detail::asset_system::v1::Constant_APIName_AssetTypeArchive;
 
 } // namespace ice

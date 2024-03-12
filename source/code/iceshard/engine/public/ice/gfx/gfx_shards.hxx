@@ -1,4 +1,4 @@
-/// Copyright 2023 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2023 - 2024, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -14,7 +14,7 @@ namespace ice::gfx
     {
         ice::AssetStorage& assets;
         ice::gfx::GfxDevice& device;
-        ice::render::Renderpass renderpass;
+        ice::gfx::GfxStageRegistry& stages;
     };
 
     struct GfxFrameUpdate
@@ -23,10 +23,6 @@ namespace ice::gfx
         ice::AssetStorage& assets;
         ice::EngineFrame const& frame;
         ice::gfx::GfxDevice& device;
-        ice::gfx::GfxStageRegistry& stages;
-
-        ice::TaskStage<ice::render::CommandBuffer> frame_transfer;
-        ice::TaskStage<> frame_end;
     };
 
     static constexpr ice::ShardID ShardID_GfxStartup = "event/gfx/startup`ice::gfx::GfxStateChange const*"_shardid;

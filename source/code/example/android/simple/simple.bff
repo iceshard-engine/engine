@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2024, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 .Project =
@@ -11,6 +11,7 @@
     .Requires = { 'SDK-Android' }
     .Tags = { 'Android-Gradle' }
 
+    .Deploy = true
     .CopyModules = true
 
     .Android =
@@ -18,13 +19,14 @@
         .Namespace = 'net.example.simple'
         .ApplicationID = 'net.example.myapp'
 
-        .TargetSDK = '31'
+        .TargetSDK = '34'
         // .MinSDK = '28' This comes from the Pipeline AndroidAPILevel value
 
         .VersionCode = 142
         .VersionName = '1.4.2'
+
         .GradlePlugins = {
-            'id("com.android.application") version "8.0.0"'
+            'id("com.android.application") version "8.2.0"'
             'id("org.jetbrains.kotlin.android") version "1.8.20"'
         }
     ]
@@ -35,9 +37,18 @@
         // IceShard makes use of regular linking to provide default implementations implicitly.
         .LinkerLinkObjects = false
 
+        .DependsOn =
+        [
+            .Runtime = {
+                'vulkan_renderer'
+                'iceshard_pipelines'
+                'imgui_module'
+            }
+        ]
+
         .Uses = {
+            'framework_base'
             'platform_android'
-            'resource_system'
         }
     ]
 ]

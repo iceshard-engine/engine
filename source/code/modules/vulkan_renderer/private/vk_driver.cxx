@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2024, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "vk_driver.hxx"
@@ -24,13 +24,15 @@ namespace ice::render::vk
     VulkanRenderDriver::VulkanRenderDriver(
         ice::Allocator& alloc,
         ice::UniquePtr<VulkanAllocator> vk_alloc,
-        VkInstance vk_instance
+        VkInstance vk_instance,
+        ice::render::vk::Extension instance_extensions
     ) noexcept
         : _allocator{ alloc, "vk-driver" }
         , _vk_alloc{ ice::move(vk_alloc) }
         , _vk_instance{ vk_instance }
         , _vk_physical_device{ vk_nullptr }
         , _vk_queue_family_properties{ _allocator }
+        , _vk_instance_extensions{ instance_extensions }
     {
         ice::Array<VkPhysicalDevice> physical_devices{ _allocator };
         if (enumerate_objects(physical_devices, vkEnumeratePhysicalDevices, vk_instance))
@@ -46,6 +48,22 @@ namespace ice::render::vk
                 {
                     _vk_physical_device = physical_device;
                     break;
+                }
+
+                // Get any first integrated GPU if no discrete GPU was found.
+                if (physical_device_properties.deviceType == VkPhysicalDeviceType::VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU)
+                {
+                    _vk_physical_device = physical_device;
+                }
+
+                // For development we also allow virtual (emulated) GPUs if nothing else was selected
+                if constexpr (ice::build::is_release == false)
+                {
+                    if (physical_device_properties.deviceType == VkPhysicalDeviceType::VK_PHYSICAL_DEVICE_TYPE_VIRTUAL_GPU
+                        && _vk_physical_device == vk_nullptr)
+                    {
+                        _vk_physical_device = physical_device;
+                    }
                 }
             }
 
@@ -139,7 +157,52 @@ namespace ice::render::vk
         ice::render::SurfaceInfo const& surface_info
     ) noexcept -> ice::render::RenderSurface*
     {
-        return nullptr;
+        ICE_ASSERT(
+            surface_info.type == ice::render::SurfaceType::Android_NativeWindow,
+            "Unsupported surface type provided, accepting 'Android_NativeWindow' surfaces only!"
+        );
+
+        VkAndroidSurfaceCreateInfoKHR surface_create_info{ VK_STRUCTURE_TYPE_ANDROID_SURFACE_CREATE_INFO_KHR };
+        surface_create_info.window = static_cast<ANativeWindow*>(surface_info.android.native_window);
+
+        VkSurfaceKHR vulkan_surface;
+        auto api_result = vkCreateAndroidSurfaceKHR(_vk_instance, &surface_create_info, nullptr, &vulkan_surface);
+        ICE_ASSERT(api_result == VkResult::VK_SUCCESS, "Failed to create Vulkan surface!");
+
+        ice::i32 family_index = 0;
+        for (VkQueueFamilyProperties const& queue_family_props : _vk_queue_family_properties)
+        {
+            VkBool32 supports_presenting;
+
+            [[maybe_unused]]
+            VkResult ph_api_result = vkGetPhysicalDeviceSurfaceSupportKHR(
+                _vk_physical_device,
+                family_index,
+                vulkan_surface,
+                &supports_presenting
+            );
+            ICE_ASSERT(
+                ph_api_result == VkResult::VK_SUCCESS,
+                "Couldn't query information if family {} (index) supports presenting!",
+                family_index
+            );
+
+            if (supports_presenting == VK_TRUE)
+            {
+                if (_vk_presentation_queue_family_index == -1)
+                {
+                    _vk_presentation_queue_family_index = family_index;
+                }
+                else if ((queue_family_props.queueFlags & VK_QUEUE_GRAPHICS_BIT) != 0)
+                {
+                    _vk_presentation_queue_family_index = family_index;
+                }
+            }
+
+            family_index += 1;
+        }
+
+        return _vk_alloc->create<VulkanRenderSurface>(_vk_instance, vulkan_surface);
     }
 #endif
 
@@ -222,9 +285,10 @@ namespace ice::render::vk
             ice::array::push_back(queue_create_infos, queue_create_info);
         }
 
-        char const* const extension_names[] = {
-            VK_KHR_SWAPCHAIN_EXTENSION_NAME
-        };
+        ice::ucount count_extensions = 0;
+        ice::Array<ExtensionName> extension_names{ _allocator };
+        Extension const device_extensions = extensions_gather_names(extension_names, count_extensions, _vk_physical_device);
+        ICE_ASSERT_CORE(ice::has_all(device_extensions, Extension::VkD_Swapchain));
 
         VkPhysicalDeviceFeatures available_device_features{ };
         vkGetPhysicalDeviceFeatures(_vk_physical_device, &available_device_features);
@@ -236,8 +300,8 @@ namespace ice::render::vk
 
         VkDeviceCreateInfo device_create_info{ .sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO };
         device_create_info.pEnabledFeatures = &enabled_device_features;
-        device_create_info.enabledExtensionCount = ice::count(extension_names);
-        device_create_info.ppEnabledExtensionNames = &extension_names[0];
+        device_create_info.enabledExtensionCount = count_extensions;
+        device_create_info.ppEnabledExtensionNames = ice::array::begin(extension_names);
         device_create_info.pQueueCreateInfos = ice::array::begin(queue_create_infos);
         device_create_info.queueCreateInfoCount = ice::array::count(queue_create_infos);
 
@@ -254,8 +318,25 @@ namespace ice::render::vk
             "Couldn't create logical device"
         );
 
+        VmaAllocatorCreateInfo allocator_create_info = {};
+        allocator_create_info.vulkanApiVersion = VK_API_VERSION_1_0;
+        allocator_create_info.flags = extension_create_native_flags(_vk_instance_extensions | device_extensions, ExtensionTarget::VmaExtension);
+        allocator_create_info.instance = _vk_instance;
+        allocator_create_info.physicalDevice = _vk_physical_device;
+        allocator_create_info.device = vk_device;
+        allocator_create_info.pAllocationCallbacks = _vk_alloc->vulkan_callbacks();
+
+        VmaVulkanFunctions vulkanFunctions = {};
+        vulkanFunctions.vkGetInstanceProcAddr = &vkGetInstanceProcAddr;
+        vulkanFunctions.vkGetDeviceProcAddr = &vkGetDeviceProcAddr;
+        allocator_create_info.pVulkanFunctions = &vulkanFunctions;
+
+        VmaAllocator vma_allocator;
+        vmaCreateAllocator(&allocator_create_info, &vma_allocator);
+
         return _allocator.create<VulkanRenderDevice>(
             _allocator,
+            vma_allocator,
             vk_device,
             _vk_physical_device,
             _vk_physical_device_memory_properties

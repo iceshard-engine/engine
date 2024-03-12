@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2024, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include <ice/framework_app.hxx>
@@ -12,6 +12,7 @@
 #include <ice/platform_core.hxx>
 #include <ice/platform_render_surface.hxx>
 #include <ice/platform_window_surface.hxx>
+#include <ice/platform_storage.hxx>
 
 #include <ice/gfx/gfx_device.hxx>
 #include <ice/gfx/gfx_runner.hxx>
@@ -58,28 +59,41 @@
 #include <ice/profiler.hxx>
 #include <ice/uri.hxx>
 
+#include <thread>
+
+#define USE_API_V1 0
+
+struct FrameworkLog : ice::Module<ice::LogModule>
+{
+    IS_WORKAROUND_MODULE_INITIALIZATION(FrameworkLog);
+};
+
+template<typename T>
+void destroy_object(T* obj) noexcept
+{
+    obj->alloc.destroy(obj);
+}
+
 struct ice::app::Config
 {
     Config(ice::Allocator& alloc) noexcept
         : alloc{ alloc }
-        , dirs{ alloc }
+        , dev_dirs{ alloc }
     { }
 
     ice::Allocator& alloc;
     ice::String app_name = "Test App";
 
-    struct Directories
+    struct DeveloperDirectories
     {
-        Directories(ice::Allocator& alloc) noexcept
-            : modules{ }
-            , shaders{ alloc }
+        DeveloperDirectories(ice::Allocator& alloc) noexcept
+            : shaders{ alloc }
             , assets{ alloc }
         { }
 
-        ice::String modules;
         ice::HeapString<> shaders;
         ice::HeapString<> assets;
-    } dirs;
+    } dev_dirs;
 };
 
 struct ice::app::State
@@ -131,7 +145,7 @@ struct ice::app::State
         , thread_pool_queue{ }
         , thread_pool_scheduler{ thread_pool_queue }
         , resources{ }
-        , modules{ ice::create_default_module_register(modules_alloc) }
+        , modules{ ice::create_default_module_register(modules_alloc, true) }
         , providers{ }
         , platform{ .core = nullptr }
     {
@@ -155,17 +169,6 @@ struct ice::app::State
             .flags_io_wait = ice::TaskFlags{ }
         };
         resources = ice::create_resource_tracker(resources_alloc, thread_pool_scheduler, resource_info);
-
-        modules->load_module(
-            modules_alloc,
-            ice::load_log_module,
-            ice::unload_log_module
-        );
-        modules->load_module(
-            modules_alloc,
-            ice::framework::load_framework_module,
-            ice::framework::unload_framework_module
-        );
     }
 };
 
@@ -227,16 +230,20 @@ void ice_init(
     ice::app::Factories& factories
 ) noexcept
 {
+    IPT_ZONE_SCOPED;
     using ice::operator|;
     using ice::app::Factories;
     using ice::platform::FeatureFlags;
 
-    IPT_ZONE_SCOPED;
+    ice::Shard const platform_params[]{
+        ice::platform::Shard_StorageAppName | "IceShard"
+    };
     ice::Result const res = ice::platform::initialize_with_allocator(
         alloc,
         FeatureFlags::Core
-        | FeatureFlags::RenderSurface
         | FeatureFlags::StoragePaths
+        | FeatureFlags::RenderSurface,
+        platform_params
     );
     ICE_ASSERT(res == ice::Res::Success, "Failed to initialize platform!");
 
@@ -263,24 +270,37 @@ auto ice_setup(
     IPT_ZONE_SCOPED;
     using ice::operator""_uri;
 
-    ice::String location = ice::app::location();
-    ice::String workingdir = ice::app::workingdir();
+    ice::platform::StoragePaths* storage;
+    ice::platform::query_api(storage);
+    ICE_ASSERT_CORE(storage != nullptr);
 
-    config.dirs.modules = ice::path::directory(ice::app::directory());
-    config.dirs.shaders = ice::app::workingdir();
-    config.dirs.assets = ice::app::workingdir();
+    ice::String dylib_path;
+    ice::Array<ice::String> resource_paths{ alloc };
+    if constexpr (ice::build::is_release == false && ice::build::is_windows)
+    {
+        dylib_path = ice::path::directory(ice::app::directory());
+        config.dev_dirs.shaders = ice::app::workingdir();
+        config.dev_dirs.assets = ice::app::workingdir();
 
-    ice::path::join(config.dirs.shaders, "/obj/VkShaders/GFX-Vulkan-Unoptimized-vk-glslc-1-3/data");
-    ice::path::join(config.dirs.assets, "../source/data");
-    ice::path::normalize(config.dirs.shaders);
-    ice::path::normalize(config.dirs.assets);
-    ice::string::push_back(config.dirs.shaders, '/');
-    ice::string::push_back(config.dirs.assets, '/');
+        // Assumes the apps working-dir is in 'build' and no changes where done to shader compilation step
+        ice::path::join(config.dev_dirs.shaders, "/obj/VkShaders/GFX-Vulkan-Unoptimized-vk-glslc-1-3/data");
+        ice::path::join(config.dev_dirs.assets, "../source/data");
+        ice::path::normalize(config.dev_dirs.shaders);
+        ice::path::normalize(config.dev_dirs.assets);
+        ice::string::push_back(config.dev_dirs.shaders, '/');
+        ice::string::push_back(config.dev_dirs.assets, '/');
+        ice::array::push_back(resource_paths, config.dev_dirs.assets);
+        ice::array::push_back(resource_paths, config.dev_dirs.shaders);
+    }
+    else
+    {
+        dylib_path = storage->dylibs_location();
+        ice::array::push_back(resource_paths, storage->data_locations());
+    }
 
-    ice::String const resource_paths[]{ config.dirs.shaders, config.dirs.assets };
     ice::framework::Config game_config{
-        .module_dir = config.dirs.modules,
-        .resource_dirs = { resource_paths }
+        .module_dir = dylib_path,
+        .resource_dirs = resource_paths
     };
 
     state.game = ice::framework::create_game(state.gamework_alloc);
@@ -292,11 +312,24 @@ auto ice_setup(
         game_config.resource_dirs,
         &state.thread_pool_scheduler
     );
-    auto modules = ice::create_resource_provider_dlls(state.resources_alloc, game_config.module_dir);
+    auto modules = ice::create_resource_provider_dlls(
+        state.resources_alloc, game_config.module_dir
+    );
 
     state.resources->attach_provider(ice::move(filesys));
     state.resources->attach_provider(ice::move(modules));
     state.resources->sync_resources();
+
+    if constexpr (ice::build::current_platform == ice::build::System::Android)
+    {
+        auto shaders_pak = state.resources->find_resource("urn://shaders.hsc"_uri);
+        auto hailstorm = ice::create_resource_provider_hailstorm(
+            state.resources_alloc, ice::resource_origin(shaders_pak)
+        );
+
+        state.resources->attach_provider(ice::move(hailstorm));
+        state.resources->sync_resources();
+    }
 
     // Run game setup
     ice::framework::State const framework_state{
@@ -306,7 +339,8 @@ auto ice_setup(
     state.game->on_setup(framework_state);
 
     // Load everything to resume the game.
-    state.modules->load_module(state.modules_alloc, ice::resource_origin(state.resources->find_resource("urn:iceshard.dll"_uri)));
+    ice::HeapString<> engine_module = ice::resolve_dynlib_path(*state.resources, state.alloc, "iceshard");
+    state.modules->load_module(state.modules_alloc, engine_module);
 
     state.states = ice::create_state_tracker(state.alloc);
     ice::EngineCreateInfo engine_create_info{ .states = ice::move(state.states) };
@@ -373,9 +407,7 @@ auto ice_resume(
             runtime.alloc,
             ice::EngineSchedulers{
                 .main = runtime.thread_main_scheduler,
-                .io = state.thread_pool_scheduler,
                 .tasks = state.thread_pool_scheduler,
-                .long_tasks = state.thread_pool_scheduler,
             }
         );
 
@@ -391,6 +423,8 @@ auto ice_resume(
         );
         runtime.frame = ice::wait_for(runtime.runner->aquire_frame());
 
+        runtime.render_surface = state.renderer->create_surface(surface_info);
+
         using ice::operator|;
         using ice::operator""_sid;
         ice::gfx::QueueDefinition queues[]{
@@ -404,7 +438,6 @@ auto ice_resume(
             }
         };
 
-        runtime.render_surface = state.renderer->create_surface(surface_info);
         ice::gfx::GfxRunnerCreateInfo const gfx_create_info{
             .engine = *state.engine,
             .driver = *state.renderer.get(),
@@ -531,8 +564,8 @@ auto ice_update(
 
     if (runtime.render_enabled == false)
     {
-        // Throttle if no window!
-        _sleep(1);
+        using namespace std;
+        std::this_thread::sleep_for(1ms);
     }
 
     // Process all tasks pushed onto the main thread
@@ -613,7 +646,8 @@ auto ice_suspend(
                 .clock = runtime.clock,
                 .assets = *state.assets,
                 .engine = *state.engine,
-                .thread = { state.thread_pool_scheduler, state.thread_pool_scheduler, state.thread_pool_scheduler, state.thread_pool_scheduler }
+                .thread = { state.thread_pool_scheduler, state.thread_pool_scheduler },
+                .long_tasks = *((ice::EngineTaskContainer*)0)
             }
         );
 

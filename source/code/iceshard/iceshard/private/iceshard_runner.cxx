@@ -1,4 +1,4 @@
-/// Copyright 2023 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2023 - 2024, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "iceshard_runner.hxx"
@@ -138,6 +138,7 @@ namespace ice
         , _next_frame_index{ 0 }
         , _barrier{ }
         , _params_storage{ }
+        , _runner_tasks{ _allocator, _schedulers.tasks }
     {
         ICE_ASSERT(
             _frame_factory == _frame_factory_userdata || _frame_factory != nullptr,
@@ -171,6 +172,8 @@ namespace ice
 
     IceshardEngineRunner::~IceshardEngineRunner() noexcept
     {
+        _runner_tasks.wait_all();
+
         ice::u32 deleted_frame_data = 0;
         ice::IceshardFrameData* frame_data = _frame_data_freelist.load(std::memory_order_relaxed);
         while (frame_data != nullptr)
@@ -180,34 +183,6 @@ namespace ice
         }
 
         ICE_ASSERT(deleted_frame_data == _frame_count, "Failed to delete all frame data objects!");
-    }
-
-    void IceshardEngineRunner::update_states(
-        ice::WorldStateTracker& state_tracker,
-        ice::WorldStateParams const& update_params
-    ) noexcept
-    {
-        IPT_ZONE_SCOPED;
-
-        // Updates the params
-        new (_params_storage + 0) ice::WorldStateParams{ update_params };
-
-        //ice::Shard const shards[]{
-        //    { ice::ShardID_WorldCreated },
-        //    { ice::ShardID_WorldActivate | &update_params },
-        //    { ice::ShardID_WorldDeactivate | &update_params },
-        //    { ice::ShardID_WorldDestroyed },
-        //    { ice::ShardID_RegisterDevUI | update_params.devui },
-        //};
-
-        //// If no devui just reduce the list by one.
-        //ice::Span<ice::Shard const> shards_span{ shards };
-        //if (update_params.devui == nullptr)
-        //{
-        //    shards_span._count -= 1;
-        //}
-
-        //_engine.worlds_states().finalize_state_changes(shards);
     }
 
     auto IceshardEngineRunner::aquire_frame() noexcept -> ice::Task<ice::UniquePtr<ice::EngineFrame>>

@@ -1,4 +1,4 @@
-/// Copyright 2023 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2023 - 2024, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "ice_gfx_graph.hxx"
@@ -178,13 +178,112 @@ namespace ice::gfx
         return _renderpass;
     }
 
+    auto initialize_stage(ice::Task<> init_task, std::atomic_uint32_t& ready_count) noexcept -> ice::Task<>
+    {
+        co_await init_task;
+        ready_count.fetch_sub(1, std::memory_order_relaxed);
+    }
+
+    bool IceshardGfxGraphRuntime::prepare(
+        ice::gfx::GfxStages& stages,
+        ice::gfx::GfxStageRegistry const& stage_registry,
+        ice::Array<ice::Task<>>& out_tasks
+    ) noexcept
+    {
+        using Entry = ice::gfx::IceshardGfxGraphStages::Entry;
+
+        // ice::u32 const prev_revision = _stages._revision++;
+        ice::u32 new_stages = 0, removed_stages = 0;
+        ice::u32 const new_revision = ++_stages._revision;
+
+        ice::Array<ice::gfx::GfxStage*> temp_stages{ _allocator };
+        if (stage_registry.query_stages(_stages._stage_names, temp_stages))
+        {
+            for (ice::u32 idx = 0; idx < ice::count(_stages._stage_names); ++idx)
+            {
+                ice::u64 const stage_hash = ice::hash(_stages._stage_names[idx]);
+                GfxStage* stage_ptr = temp_stages[idx];
+
+                // TODO: Add possible optionality
+
+                // Check for the entry to be compared with
+                Entry* entry = ice::hashmap::get(_stages._stages, stage_hash, nullptr);
+                if (entry != nullptr && entry->stage != stage_ptr)
+                {
+                    removed_stages += 1;
+
+                    // Push the cleanup task
+                    if (entry->initialized)
+                    {
+                        ice::array::push_back(out_tasks, entry->stage->cleanup(_device));
+                        entry->initialized = false;
+                    }
+
+                    // Only remove if a new stage is not there to replace the current one
+                    if (stage_ptr == nullptr)
+                    {
+                        // Remove the entry from the map.
+                        ice::hashmap::remove(_stages._stages, stage_hash);
+                    }
+
+                    // Delete the entry object
+                    _allocator.destroy(entry);
+                }
+
+                // Only remove if a new stage is not there to replace the current one
+                if (stage_ptr != nullptr)
+                {
+                    // Only create a new entry if the old didn't exist
+                    if (entry == nullptr)
+                    {
+                        new_stages += 1;
+                        ice::hashmap::set(_stages._stages, stage_hash, _allocator.create<Entry>(stage_ptr, new_revision, false));
+                    }
+                    else if (entry->stage != stage_ptr)
+                    {
+                        new_stages += 1;
+                        entry->stage = stage_ptr;
+                    }
+                }
+            }
+
+            // Reset the ready flag
+            _stages._ready.fetch_add(new_stages);
+
+            // Collect init tasks
+            for (Entry* entry : _stages._stages)
+            {
+                // Find entries with old revisions
+                if (entry->initialized == false)
+                {
+                    entry->initialized = true;
+
+                    // TODO: Store the task
+                    ice::array::push_back(
+                        out_tasks,
+                        initialize_stage(
+                            entry->stage->initialize(_device, stages, _renderpass),
+                            _stages._ready
+                        )
+                    );
+                }
+            }
+        }
+
+        return (new_stages + removed_stages) > 0;
+    }
+
     bool IceshardGfxGraphRuntime::execute(
         ice::EngineFrame const& frame,
-        ice::gfx::GfxStageRegistry const& stage_registry,
         ice::render::RenderFence& fence
     ) noexcept
     {
         IPT_ZONE_SCOPED;
+
+        if (_stages._ready.load(std::memory_order_relaxed) > 0)
+        {
+            return false;
+        }
 
         ice::ucount const fb_idx = _device.next_frame();
         render::RenderDevice& device = _device.device();
@@ -196,11 +295,11 @@ namespace ice::gfx
         queue->reset();
         queue->request_command_buffers(render::CommandBufferType::Primary, { &command_buffer, 1 });
 
-        if (execute_pass(frame, stage_registry, _framebuffers[fb_idx], device.get_commands(), command_buffer))
+        if (execute_pass(frame, _framebuffers[fb_idx], device.get_commands(), command_buffer))
         {
             IPT_ZONE_SCOPED_NAMED("gfx_draw_commands");
             queue->submit_command_buffers({ &command_buffer, 1 }, &fence);
-            fence.wait(10'000'000);
+            fence.wait(100'000'000);
             _device.present(_swapchain.current_image_index());
             return true;
         }
@@ -209,7 +308,6 @@ namespace ice::gfx
 
     bool IceshardGfxGraphRuntime::execute_pass(
         ice::EngineFrame const& frame,
-        GfxStageRegistry const& stage_registry,
         ice::render::Framebuffer framebuffer,
         ice::render::RenderCommands& api,
         ice::render::CommandBuffer cmds
@@ -229,9 +327,11 @@ namespace ice::gfx
             }
             else if (GfxGraphSnapshot.event & GfxSnapshotEvent::EventNextSubPass && ice::exchange(first_skipped, true))
             {
-                for (ice::StringID_Arg stage : ice::array::slice(_stages._stages, stage_idx, _stages._counts[pass_idx]))
+                for (ice::StringID_Arg stage : ice::array::slice(_stages._stage_names, stage_idx, _stages._counts[pass_idx]))
                 {
-                    stage_registry.execute_stages(frame, stage, cmds, api);
+                    // TODO: Separate update and draw?
+                    _stages.apply_stages(stage, &GfxStage::update, _device);
+                    _stages.apply_stages(stage, &GfxStage::draw, frame, cmds, api);
                 }
 
                 api.next_subpass(cmds, render::SubPassContents::Inline);
@@ -241,9 +341,11 @@ namespace ice::gfx
             else if (GfxGraphSnapshot.event & GfxSnapshotEvent::EventEndPass)
             {
                 IPT_ZONE_SCOPED_NAMED("graph_execute_stages");
-                for (ice::StringID_Arg stage : ice::array::slice(_stages._stages, stage_idx, _stages._counts[pass_idx]))
+                for (ice::StringID_Arg stage : ice::array::slice(_stages._stage_names, stage_idx, _stages._counts[pass_idx]))
                 {
-                    stage_registry.execute_stages(frame, stage, cmds, api);
+                    // TODO: Separate update and draw?
+                    _stages.apply_stages(stage, &GfxStage::update, _device);
+                    _stages.apply_stages(stage, &GfxStage::draw, frame, cmds, api);
                 }
 
                 api.end_renderpass(cmds);

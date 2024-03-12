@@ -113,7 +113,7 @@ namespace ice
 
         static ice::AssetTypeDefinition type_definition{
             .resource_extensions = extensions,
-            .fn_asset_oven = asset_image_oven,
+            // .fn_asset_oven = asset_image_oven,
             .fn_asset_loader = asset_image_loader
         };
 

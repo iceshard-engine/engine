@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2024, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include <ice/asset_storage.hxx>
@@ -8,6 +8,7 @@
 #include <ice/resource.hxx>
 #include <ice/container/hashmap.hxx>
 #include <ice/string/static_string.hxx>
+#include <ice/task_utils.hxx>
 #include <ice/profiler.hxx>
 #include <ice/uri.hxx>
 
@@ -120,20 +121,116 @@ namespace ice
 
         auto bake_asset(
             ice::Allocator& alloc,
-            ice::AssetTypeDefinition const& definition,
+            ice::ResourceCompiler const& compiler,
             ice::ResourceTracker& resource_tracker,
             ice::AssetEntry const* asset_entry,
             ice::Memory& result
         ) noexcept -> ice::Task<bool>
         {
-            if (definition.fn_asset_oven)
-            {
-                ice::LooseResource const* loose_resource = ice::get_loose_resource(asset_entry->resource_handle);
-                ICE_ASSERT(loose_resource != nullptr, "Baking non-loose resources should never happen!");
+            ice::Array<ice::ResourceHandle*> sources{ alloc };
+            ice::Array<ice::URI> dependencies{ alloc }; // Not used currently
 
-                co_return co_await definition.fn_asset_oven(definition.ud_asset_oven, alloc, resource_tracker, *loose_resource, asset_entry->data, result);
+            // Early return if sources or dependencies couldn't be collected
+            if (compiler.fn_collect_sources(asset_entry->resource_handle, resource_tracker, sources) == false
+                || compiler.fn_collect_dependencies(asset_entry->resource_handle, resource_tracker, dependencies) == false)
+            {
+                co_return false;
             }
-            co_return false;
+
+            // If empty we add our own handle to the list
+            if (ice::array::empty(sources))
+            {
+                ice::array::push_back(sources, asset_entry->resource_handle);
+            }
+
+            ice::Array<ice::Task<>> tasks{ alloc };
+            ice::array::reserve(tasks, ice::array::count(sources));
+
+            static auto fn_validate = [](
+                ice::ResourceCompiler const& compiler,
+                ice::ResourceHandle* source,
+                ice::ResourceTracker& tracker,
+                std::atomic_bool& out_result
+            ) noexcept -> ice::Task<>
+            {
+                // If failed update the result.
+                if (co_await compiler.fn_validate_source(source, tracker) == false)
+                {
+                    out_result = false;
+                }
+            };
+
+            std::atomic_bool all_sources_valid = true;
+            for (ice::ResourceHandle* source : sources)
+            {
+                ice::array::push_back(tasks, fn_validate(compiler, source, resource_tracker, all_sources_valid));
+            }
+
+            // Wait for all tasks to finish
+            ice::wait_for_all(tasks);
+            ice::array::clear(tasks);
+
+            // Validation failed
+            if (all_sources_valid == false)
+            {
+                co_return false;
+            }
+
+            ice::Array<ice::ResourceCompilerResult> compiled_sources{ alloc };
+            ice::array::resize(compiled_sources, ice::array::count(sources));
+
+            static auto fn_compile = [](
+                ice::ResourceCompiler const& compiler,
+                ice::ResourceHandle* source,
+                ice::ResourceTracker& tracker,
+                ice::Span<ice::ResourceHandle* const> sources,
+                ice::Span<ice::URI const> dependencies,
+                ice::Allocator& result_alloc,
+                ice::ResourceCompilerResult& out_result
+            ) noexcept -> ice::Task<>
+            {
+                out_result = co_await compiler.fn_compile_source(
+                    source,
+                    tracker,
+                    sources,
+                    dependencies,
+                    result_alloc
+                );
+            };
+
+            // Create all compilation tasks...
+            ice::u32 source_idx = 0;
+            for (ice::ResourceHandle* source : sources)
+            {
+                ice::array::push_back(
+                    tasks,
+                    fn_compile(
+                        compiler,
+                        source,
+                        resource_tracker,
+                        sources,
+                        dependencies,
+                        alloc,
+                        compiled_sources[source_idx]
+                    )
+                );
+                source_idx += 1;
+            }
+
+            // ... and wait for them to finish
+            ice::wait_for_all(tasks);
+
+            // Finalize the asset
+            result = compiler.fn_finalize(asset_entry->resource_handle, compiled_sources, dependencies, alloc);
+
+            // Deallocate all compiled sources
+            for (ice::ResourceCompilerResult const& compiled : compiled_sources)
+            {
+                alloc.deallocate(compiled.result);
+            }
+
+            // We are good if we have data of positive size
+            co_return result.location != nullptr && result.size > 0_B;
         }
 
         auto load_asset(
@@ -377,16 +474,26 @@ namespace ice
                 {
                     ICE_ASSERT(result.location != nullptr, "We failed to load any data from resource handle!");
 
-                    ice::Memory result_memory;
-                    bool const bake_success = co_await ice::detail::bake_asset(
-                        shelve.asset_allocator(),
-                        shelve.definition,
-                        _info.resource_tracker,
-                        &entry,
-                        result_memory
-                    );
+                    ice::Memory result_memory{};
+                    if (shelve.compiler != nullptr)
+                    {
+                        bool const task_success = co_await ice::detail::bake_asset(
+                            shelve.asset_allocator(),
+                            *shelve.compiler,
+                            _info.resource_tracker,
+                            &entry,
+                            result_memory
+                        );
 
-                    if (bake_success)
+                        // If task was not successful release the memory if anything was allocated.
+                        if (task_success == false)
+                        {
+                            shelve.asset_allocator().deallocate(result_memory);
+                            result_memory = ice::Memory{};
+                        }
+                    }
+
+                    if (result_memory.location != nullptr)
                     {
                         // Release previous memory if existing
                         shelve.asset_allocator().deallocate(entry.data_baked);
@@ -446,19 +553,20 @@ namespace ice
 
                     entry.resource = resource.resource;
                     ice::AssetState initial_state = AssetState::Invalid;
+
+                    ice::MutableMetadata res_metadata{ _allocator };
                     if (ice::Data metadata = co_await entry.resource->load_metadata(); metadata.location != nullptr)
                     {
-                        ice::MutableMetadata res_metadata{ _allocator };
-                        if (ice::Result res = ice::meta_deserialize_from(res_metadata, metadata); ice::result_is_valid(res))
-                        {
-                            initial_state = shelve.definition.fn_asset_state(
-                                shelve.definition.ud_asset_state,
-                                shelve.definition,
-                                res_metadata,
-                                entry.resource->uri()
-                            );
-                        }
+                        ice::Result const res = ice::meta_deserialize_from(res_metadata, metadata);
+                        ICE_ASSERT_CORE(ice::result_is_valid(res));
                     }
+
+                    initial_state = shelve.definition.fn_asset_state(
+                        shelve.definition.ud_asset_state,
+                        shelve.definition,
+                        res_metadata,
+                        entry.resource->uri()
+                    );
 
                     ICE_ASSERT_CORE(initial_state != AssetState::Invalid);
 
@@ -475,6 +583,7 @@ namespace ice
                     entry.current_state = entry.resource_state;
                 }
 
+                // TODO: Resource could be in 'Baked' so processing for 'Raw' should be avoided here.
                 ice::detail::ProcessAwaitingTasks awaiting{ AssetState::Raw, entry.queue, entry.raw_awaiting };
                 awaiting.process();
             }
@@ -536,7 +645,8 @@ namespace ice
                 type.identifier,
                 _allocator.create<AssetShelve>(
                     _allocator,
-                    _asset_archive->find_definition(type)
+                    _asset_archive->find_definition(type),
+                    _asset_archive->find_compiler(type)
                 )
             );
         }
@@ -550,220 +660,6 @@ namespace ice
         }
     }
 
-    //auto DefaultAssetStorage::request(
-    //    ice::AssetType type,
-    //    ice::String name,
-    //    ice::AssetState requested_state
-    //) noexcept -> ice::Task<ice::Asset>
-    //{
-    //    ice::StringID const nameid = ice::stringid(name);
-    //    ice::Asset result{ };
-
-    //    ice::AssetShelve* shelve = ice::hashmap::get(_asset_shelves, type.identifier, nullptr);
-    //    if (shelve != nullptr)
-    //    {
-    //        ice::Allocator& asset_alloc = shelve->asset_allocator();
-    //        ice::AssetEntry* asset_entry = shelve->select(nameid);
-    //        ice::ResourceHandle* resource = nullptr;
-
-    //        if (asset_entry != nullptr)
-    //        {
-    //            resource = asset_entry->resource_handle;
-    //        }
-    //        else
-    //        {
-    //            resource = ice::detail::find_resource(
-    //                shelve->definition,
-    //                _info.resource_tracker,
-    //                name
-    //            );
-    //        }
-
-    //        // TODO: Because of this call we needed to introduce a std::mutex for now, but we will redesign this in the next free sprint.
-    //        //    We can end here on two different threads (the Resource thread or the calling thread) [gh#135]
-    //        ice::ResourceResult const load_result = co_await _info.resource_tracker.load_resource(resource);
-    //        if (load_result.resource_status == ResourceStatus::Loaded)
-    //        {
-    //            ice::AssetState const state = shelve->definition.fn_asset_state(
-    //                shelve->definition.ud_asset_state,
-    //                shelve->definition,
-    //                load_result.resource->metadata(),
-    //                load_result.resource->uri()
-    //            );
-
-    //            if (asset_entry == nullptr)
-    //            {
-    //                // TODO: We needed to introduce a lock here so we properly select + store asset entry objects here. [gh#135]
-    //                static std::mutex mtx{ };
-    //                std::lock_guard lk{ mtx };
-
-    //                asset_entry = shelve->select(nameid);
-    //                if (asset_entry == nullptr)
-    //                {
-    //                    asset_entry = shelve->store(
-    //                        nameid,
-    //                        resource,
-    //                        load_result.resource,
-    //                        state,
-    //                        load_result.data
-    //                    );
-    //                }
-
-    //                // asset_entry->state = state;
-    //            }
-    //            else if (asset_entry->state == AssetState::Unknown)
-    //            {
-    //                asset_entry->data = load_result.data;
-    //                asset_entry->state = state;
-    //            }
-    //        }
-
-    //        // Failed to acquire asset entry
-    //        if (asset_entry == nullptr)
-    //        {
-    //            co_return result;
-    //        }
-
-    //        ICE_ASSERT(
-    //            asset_entry != nullptr,
-    //            "Invalid asset storage state! Missing asset entry for:",
-    //            /*type.name, name*/
-    //        );
-
-    //        if (static_cast<ice::u32>(requested_state) <= static_cast<ice::u32>(asset_entry->state))
-    //        {
-    //            switch (requested_state)
-    //            {
-    //            case AssetState::Raw:
-    //            {
-    //                // Either it's raw or we where required to bake it.
-    //                if (asset_entry->state == AssetState::Raw || asset_entry->data_baked.location == nullptr)
-    //                {
-    //                    result.data = asset_entry->data;
-    //                }
-    //                break;
-    //            }
-    //            case AssetState::Baked:
-    //            {
-    //                result.data = ice::data_view(asset_entry->data_baked);
-
-    //                // If it was not baked, then it's pre-baked.
-    //                if (result.data.location == nullptr)
-    //                {
-    //                    result.data = asset_entry->data;
-    //                }
-    //                break;
-    //            }
-    //            case AssetState::Loaded:
-    //            {
-    //                result.data = ice::data_view(asset_entry->data_loaded);
-    //                break;
-    //            }
-    //            case AssetState::Runtime:
-    //            {
-    //                result.data = ice::data_view(asset_entry->data_runtime);
-    //                break;
-    //            }
-    //            }
-
-    //            result.handle = result.data.location != nullptr ? asset_entry : nullptr;
-    //        }
-    //        else
-    //        {
-    //            ice::Data result_data{ };
-
-    //            // TODO: The below objects where required to be introduced due to rare data races on various calling / resource threads.
-    //            static std::recursive_mutex mtx_asset_logic{ }; // [gh#135]
-
-    //            if (asset_entry->state == AssetState::Raw)
-    //            {
-    //                while (!mtx_asset_logic.try_lock()) {} // [gh#135]
-
-    //                if (asset_entry->state == AssetState::Raw)
-    //                {
-    //                    ice::Memory baked_memory;
-    //                    bool const bake_success = co_await ice::detail::bake_asset(
-    //                        asset_alloc,
-    //                        shelve->definition,
-    //                        _info.resource_tracker,
-    //                        asset_entry,
-    //                        baked_memory
-    //                    );
-
-    //                    if (bake_success == false)
-    //                    {
-    //                        baked_memory = co_await AssetRequestAwaitable{ nameid, *shelve, asset_entry, AssetState::Baked };
-    //                    }
-
-    //                    asset_alloc.deallocate(asset_entry->data_baked);
-    //                    asset_entry->data_baked = baked_memory;
-    //                    asset_entry->state = AssetState::Baked;
-
-    //                    result_data = ice::data_view(asset_entry->data_baked);
-    //                }
-
-    //                mtx_asset_logic.unlock(); // [gh#135]
-    //            }
-
-    //            if (requested_state != AssetState::Baked && asset_entry->state == AssetState::Baked)
-    //            {
-    //                while (!mtx_asset_logic.try_lock()) {} // [gh#135]
-    //                if (asset_entry->state == AssetState::Baked)
-    //                {
-    //                    ice::Memory loaded_memory;
-    //                    bool const load_success = co_await ice::detail::load_asset(
-    //                        asset_alloc,
-    //                        shelve->definition,
-    //                        *this,
-    //                        asset_entry->resource->metadata(),
-    //                        ice::data_view(asset_entry->data_baked),
-    //                        loaded_memory
-    //                    );
-
-    //                    if (load_success == false)
-    //                    {
-    //                        loaded_memory = co_await AssetRequestAwaitable{ nameid, *shelve, asset_entry, AssetState::Loaded };
-    //                    }
-
-    //                    asset_alloc.deallocate(asset_entry->data_loaded);
-    //                    asset_entry->data_loaded = loaded_memory;
-    //                    asset_entry->state = AssetState::Loaded;
-
-    //                    result_data = ice::data_view(asset_entry->data_loaded);
-    //                }
-
-    //                mtx_asset_logic.unlock(); // [gh#135]
-    //            }
-
-    //            if (requested_state == AssetState::Runtime)
-    //            {
-    //                if (asset_entry->state != AssetState::Runtime)
-    //                {
-    //                    ice::Memory runtime_data = co_await AssetRequestAwaitable{ nameid, *shelve, asset_entry, AssetState::Runtime };
-    //                    if (runtime_data.location != nullptr)
-    //                    {
-    //                        asset_entry->state = AssetState::Runtime;
-    //                        asset_entry->data_runtime = runtime_data;
-    //                        result_data = ice::data_view(runtime_data);
-    //                    }
-    //                }
-    //                else
-    //                {
-    //                    result_data = ice::data_view(asset_entry->data_runtime);
-    //                }
-    //            }
-
-    //            if (requested_state == asset_entry->state)
-    //            {
-    //                result.data = result_data;
-    //                result.handle = result_data.location != nullptr ? asset_entry : nullptr;
-    //            }
-    //        }
-    //    }
-
-    //    co_return result;
-    //}
-
     auto DefaultAssetStorage::release(
         ice::Asset const& asset
     ) noexcept -> ice::Task<>
@@ -776,6 +672,12 @@ namespace ice
         if (entry->refcount.fetch_sub(1, std::memory_order_relaxed) == 1)
         {
             entry->current_state = AssetState::Unknown;
+
+            // If part of a resolver, notify the asset gets released
+            if (entry->request_resolver != nullptr)
+            {
+                co_await entry->request_resolver->on_asset_released(asset);
+            }
 
             [[maybe_unused]]
             ice::ResourceResult const result = co_await _info.resource_tracker.unload_resource(entry->resource_handle);
@@ -802,20 +704,6 @@ namespace ice
         }
         return shelve != nullptr && entry != nullptr;
     }
-
-    //auto create_asset_storage(
-    //    ice::Allocator& alloc,
-    //    ice::ResourceTracker& resource_tracker,
-    //    ice::UniquePtr<ice::AssetTypeArchive> asset_archive
-    //) noexcept -> ice::UniquePtr<ice::AssetStorage>
-    //{
-    //    return ice::make_unique<ice::DefaultAssetStorage>(
-    //        alloc,
-    //        alloc,
-    //        resource_tracker,
-    //        ice::move(asset_archive)
-    //    );
-    //}
 
     auto create_asset_storage(
         ice::Allocator& alloc,

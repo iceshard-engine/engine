@@ -74,21 +74,10 @@
     .Defines = {
         '__ANDROID_UNAVAILABLE_SYMBOLS_ARE_WEAK__'
     }
-]
-
-.Config_Android_SharedLib =
-[
-    .Name = 'Config-Unix'
-    .Requires = { 'Android', 'CLANG-Frontend', 'SharedLib' }
-    .LinkOptions = {
-        '-static-libstdc++'
-    }
-    .Libs = {
-        'android'
-        'log'
+    .LinkLinkerOptions = {
+        '-llog'
     }
 ]
-
 
 .Config_Unix =
 [
@@ -245,9 +234,9 @@
     .Requires = { 'Profile', 'MSVC-Frontend' }
     .Defines = { }
     .BuildOptions = {
-        ' /O2'
-        ' /MD'
-        ' /WX'
+        '/O2'
+        '/MD'
+        '/WX'
     }
 ]
 
@@ -257,8 +246,8 @@
     .Requires = { 'Release', 'MSVC-Frontend' }
     .Defines = { }
     .BuildOptions = {
-        ' /O2'
-        ' /MD'
+        '/O2'
+        '/MD'
     }
 ]
 
@@ -289,6 +278,15 @@
     }
 ]
 
+.Config_Vulkan =
+[
+    .Name = 'Config-Vulkan'
+    .Requires = { 'GFX-Vulkan' }
+    .BuildOptions = {
+        '--target-env=vulkan1.3'
+    }
+]
+
 ^GlobalRules = {
     .Config_MSVC
     .Config_MSVC_BinaryDll
@@ -302,7 +300,6 @@
     .Config_Unix_BinaryApp2
     .Config_GCC_Tests
     .Config_Android
-    .Config_Android_SharedLib
     .Config_Debug
     .Config_Debug_MSVC
     .Config_Debug_GCC
@@ -312,4 +309,5 @@
     .Config_Profile_MSVC
     .Config_Release
     .Config_Release_MSVC
+    .Config_Vulkan
 }

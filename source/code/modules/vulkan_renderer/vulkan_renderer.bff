@@ -1,4 +1,4 @@
-/// Copyright 2021 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2021 - 2024, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 .Project =
@@ -12,10 +12,26 @@
 
     .Private =
     [
+        .Modules = {
+            'vulkan_memory_allocator'
+        }
         .Uses = {
             'platform'
             'render_system'
         }
     ]
+
+    .Win32_Libs =
+    [
+        .Name = 'Win32-Shader-Compiler'
+        .Requires = { 'SDK-Windows-10' }
+        .Public =
+        [
+            .Libs = {
+                'shaderc_shared'
+            }
+        ]
+    ]
+    .Rules = { .Win32_Libs }
 ]
 .Projects + .Project

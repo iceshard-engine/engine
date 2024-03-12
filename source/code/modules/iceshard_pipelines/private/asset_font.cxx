@@ -238,7 +238,7 @@ namespace ice
 
         static ice::AssetTypeDefinition type_definition{
             .resource_extensions = extensions,
-            .fn_asset_oven = asset_font_oven,
+            // .fn_asset_oven = asset_font_oven,
             .fn_asset_loader = asset_font_loader
         };
 

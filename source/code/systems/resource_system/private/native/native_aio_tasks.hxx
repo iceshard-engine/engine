@@ -1,4 +1,4 @@
-/// Copyright 2023 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2023 - 2024, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -164,7 +164,7 @@ namespace ice
             , nativeio{ nativeio }
             , file{ ice::move(file_handle) }
             , destination{ memory }
-            // , read_size{ size }
+            , read_offset{ offset }
         {
             ICE_ASSERT(
                 _params.u32_value <= memory.size.value,
@@ -197,7 +197,7 @@ namespace ice
             Result result{ .bytes_read = 0_B };
 
             // We are now resumed on the new thread, so here we can read the file blocking.
-            ice::usize const read_result = native_file::read_file(file, { _params.u32_value }, destination);
+            ice::usize const read_result = native_file::read_file(file, read_offset, { _params.u32_value }, destination);
 
             ICE_ASSERT(read_result <= destination.size, "Read more bytes that requested!");
             result.bytes_read = read_result;

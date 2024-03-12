@@ -1,4 +1,4 @@
-/// Copyright 2023 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2023 - 2024, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -16,6 +16,7 @@ namespace ice::platform::win32::sdl2
         ~RenderSurface_Win32SDL2() noexcept;
 
         auto create(ice::platform::RenderSurfaceParams surface_params) noexcept -> ice::Result override;
+        auto get_dimensions() const noexcept -> ice::vec2u override { return {}; }
         bool get_surface(ice::render::SurfaceInfo& out_surface_info) noexcept override;
         void destroy() noexcept override;
 

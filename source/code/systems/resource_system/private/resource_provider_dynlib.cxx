@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2024, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include <ice/resource_provider.hxx>
@@ -41,6 +41,14 @@ namespace ice
             return ice::Scheme_Dynlib;
         }
 
+        auto find_resource(
+            ice::URI const& uri
+        ) const noexcept -> ice::Resource const* override
+        {
+            ice::u64 const resource_hash = ice::hash(uri.path);
+            return ice::hashmap::get(_resources, resource_hash, nullptr);
+        }
+
         void on_library_file(
             ice::native_file::FilePath file_path
         ) noexcept
@@ -50,7 +58,7 @@ namespace ice
                 file_path
             );
 
-            ice::u64 const resource_hash = ice::hash(resource->name());
+            ice::u64 const resource_hash = ice::hash(resource->uri().path);
             if (ice::hashmap::has(_resources, resource_hash))
             {
                 ICE_LOG(

@@ -5,6 +5,7 @@
 #include <ice/asset.hxx>
 #include <ice/asset_types.hxx>
 #include <ice/mem_memory.hxx>
+#include <ice/mem_allocator_stack.hxx>
 #include <ice/task_queue.hxx>
 #include <ice/task_awaitable.hxx>
 #include <ice/assert.hxx>
@@ -14,19 +15,21 @@ namespace ice
 
     class Resource;
     class AssetRequestAwaitable;
+    struct AssetRequestResolver;
 
     struct ResourceHandle;
 
     struct AssetHandle { };
 
-    struct AssetEntry : AssetHandle
+    struct AssetEntryBase : AssetHandle
     {
-        inline AssetEntry() noexcept;
-        inline AssetEntry(ice::ResourceHandle* resource, ice::AssetShelve* shelve) noexcept;
-        inline AssetEntry(ice::AssetEntry const& other) noexcept;
+        inline AssetEntryBase() noexcept;
+        inline AssetEntryBase(ice::StringID_Hash id, ice::ResourceHandle* resource, ice::AssetShelve* shelve) noexcept;
+        inline AssetEntryBase(ice::AssetEntryBase const& other) noexcept;
 
         inline auto data_for_state(ice::AssetState state) noexcept -> ice::Data;
 
+        ice::StringID assetid;
         ice::Resource const* resource;
         ice::ResourceHandle* resource_handle;
         std::atomic<ice::u32> refcount;
@@ -47,17 +50,23 @@ namespace ice
         ice::Memory data_runtime;
 
         ice::AssetRequestAwaitable* request_awaitable;
+        ice::AssetRequestResolver* request_resolver;
     };
 
-    inline AssetEntry::AssetEntry() noexcept
+    inline AssetEntryBase::AssetEntryBase() noexcept
         : resource_state{ AssetState::Invalid }
         , current_state{ AssetState::Invalid }
         , request_awaitable{ nullptr }
     {
     }
 
-    inline AssetEntry::AssetEntry(ice::ResourceHandle* resource, ice::AssetShelve* shelve) noexcept
-        : resource_handle{ resource }
+    inline AssetEntryBase::AssetEntryBase(
+        ice::StringID_Hash id,
+        ice::ResourceHandle* resource,
+        ice::AssetShelve* shelve
+    ) noexcept
+        : assetid{ id }
+        , resource_handle{ resource }
         , refcount{ 0 }
         , shelve{ shelve }
         , resource_state{ AssetState::Unknown }
@@ -69,8 +78,9 @@ namespace ice
     {
     }
 
-    inline AssetEntry::AssetEntry(AssetEntry const& other) noexcept
-        : resource{ other.resource }
+    inline AssetEntryBase::AssetEntryBase(AssetEntryBase const& other) noexcept
+        : assetid{ other.assetid }
+        , resource{ other.resource }
         , resource_handle{ other.resource_handle }
         , refcount{ other.refcount.load(std::memory_order_relaxed) }
         , shelve{ other.shelve }
@@ -84,7 +94,7 @@ namespace ice
 
     }
 
-    inline auto AssetEntry::data_for_state(ice::AssetState state) noexcept -> ice::Data
+    inline auto AssetEntryBase::data_for_state(ice::AssetState state) noexcept -> ice::Data
     {
         switch (state)
         {
@@ -103,6 +113,52 @@ namespace ice
         }
         return { };
     }
+
+    template<bool IsDebug = true>
+    struct AssetEntryFinal : AssetEntryBase
+    {
+        static constexpr bool HoldsDebugData = IsDebug;
+
+        inline AssetEntryFinal() noexcept;
+        inline AssetEntryFinal(ice::HeapString<> name, ice::ResourceHandle* resource, ice::AssetShelve* shelve) noexcept;
+        inline AssetEntryFinal(AssetEntryFinal const& other) noexcept;
+
+        inline static ice::StackAllocator<8_B> _empty_alloc;
+        ice::HeapString<> debug_name;
+    };
+
+    template<>
+    struct AssetEntryFinal<false> : AssetEntryBase
+    {
+        static constexpr bool HoldsDebugData = false;
+
+        using AssetEntryBase::AssetEntryBase;
+    };
+
+    template<bool IsDebug>
+    inline AssetEntryFinal<IsDebug>::AssetEntryFinal() noexcept
+        : AssetEntryBase{ }
+        , debug_name{ _empty_alloc }
+    {
+    }
+
+    template<bool IsDebug>
+    inline AssetEntryFinal<IsDebug>::AssetEntryFinal(ice::HeapString<> name, ice::ResourceHandle* resource, ice::AssetShelve* shelve) noexcept
+        : AssetEntryBase{ ice::stringid(name), resource, shelve }
+        , debug_name{ ice::move(name) }
+    {
+    }
+
+    template<bool IsDebug>
+    inline AssetEntryFinal<IsDebug>::AssetEntryFinal(ice::AssetEntryFinal<IsDebug> const& other) noexcept
+        : AssetEntryBase{ other }
+        , debug_name{ other.debug_name } // copy? Might want to remove it
+    {
+        assetid = ice::stringid(debug_name);
+    }
+
+
+    using AssetEntry = AssetEntryFinal<ice::build::is_debug || ice::build::is_develop>;
 
     struct AssetStateRequest : ice::TaskAwaitableBase
     {

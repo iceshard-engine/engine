@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2024, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -126,5 +126,30 @@ namespace ice
             .procedure_userdata = nullptr,
         });
     }
+
+    struct Trait
+    {
+        virtual ~Trait() noexcept = default;
+
+        virtual void gather_tasks(ice::TraitTaskLauncher& task_launcher) noexcept { }
+
+        virtual auto activate(ice::EngineWorldUpdate const& world_update) noexcept -> ice::Task<> { co_return; }
+        virtual auto deactivate(ice::EngineWorldUpdate const& world_update) noexcept -> ice::Task<> { co_return; }
+    };
+
+    struct TraitArchive
+    {
+        virtual ~TraitArchive() noexcept = default;
+
+        virtual void register_trait(ice::TraitDescriptor trait_descriptor) noexcept = 0;
+        virtual auto trait(ice::StringID_Arg traitid) const noexcept -> ice::TraitDescriptor const* = 0;
+    };
+
+    auto create_default_trait_archive(
+        ice::Allocator& alloc
+    ) noexcept -> ice::UniquePtr<ice::TraitArchive>;
+
+    static constexpr ice::StringID TraitID_GfxImageStorage = "trait.gfx-image-storage"_sid;
+    static constexpr ice::StringID TraitID_GfxShaderStorage = "trait.gfx-shader-storage"_sid;
 
 } // namespace ice
