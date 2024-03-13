@@ -1,4 +1,4 @@
-/// Copyright 2023 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2023 - 2024, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -91,12 +91,12 @@ namespace ice
 template<typename Result, typename... Args>
 struct std::coroutine_traits<ice::Task<Result>, ice::TaskCancelationToken, Args...>
 {
-    using promise_type = ice::TaskInfoPromise<Result, Args...>;
+    using promise_type = ice::TaskInfoPromise<Result>;
 };
 
 // Member function traits
 template<typename Result, typename Class, typename... Args>
 struct std::coroutine_traits<ice::Task<Result>, Class, ice::TaskCancelationToken, Args...>
 {
-    using promise_type = ice::TaskInfoPromise<Result, Args...>;
+    using promise_type = ice::TaskInfoPromise<Result>;
 };

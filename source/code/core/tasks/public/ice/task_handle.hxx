@@ -1,4 +1,4 @@
-/// Copyright 2023 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2023 - 2024, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -138,43 +138,44 @@ namespace ice
         return success;
     }
 
-    template<typename Result, typename... Args>
+    template<typename Result>
     struct TaskInfoPromise : public ice::TaskPromise<Result>
     {
         ice::TaskInfo* _info;
 
         TaskInfoPromise() noexcept = default;
 
+        template<typename... Args>
         TaskInfoPromise(ice::TaskHandle& handle, Args const&...) noexcept
+            : _info{ new ice::TaskInfo{} }
         {
-            this->_info = new ice::TaskInfo{};
             if (handle._info)
             {
                 handle._info->release();
             }
-            handle._info = this->_info->aquire();
+            handle._info = _info->aquire();
         }
 
-        template<typename Class>
+        template<typename Class, typename... Args>
         TaskInfoPromise(Class const&, ice::TaskHandle& handle, Args const&...) noexcept
+            : _info{ new ice::TaskInfo{} }
         {
-            this->_info = new ice::TaskInfo{};
             if (handle._info)
             {
                 handle._info->release();
             }
-            handle._info = this->_info->aquire();
+            handle._info = _info->aquire();
         }
 
         ~TaskInfoPromise() noexcept
         {
-            if (this->_info != nullptr)
+            if (_info != nullptr)
             {
-                if (this->_info->has_any(ice::TaskState::Canceled))
+                if (_info->has_any(ice::TaskState::Canceled))
                 {
-                    this->_info->state.store(ice::TaskState::Canceled | ice::TaskState::Failed, std::memory_order_relaxed);
+                    _info->state.store(ice::TaskState::Canceled | ice::TaskState::Failed, std::memory_order_relaxed);
                 }
-                this->_info->release();
+                _info->release();
             }
         }
 
@@ -204,7 +205,7 @@ namespace ice
         {
             ice::TaskInfo* _info;
 
-            constexpr bool await_ready() const noexcept { return false; }
+            constexpr bool await_ready() const noexcept { return this->_info->has_any(ice::TaskState::Canceled); }
 
             constexpr void await_suspend(ice::coroutine_handle<>) const noexcept { }
 
@@ -246,12 +247,12 @@ namespace ice
 template<typename Result, typename... Args>
 struct std::coroutine_traits<ice::Task<Result>, ice::TaskHandle&, Args...>
 {
-    using promise_type = ice::TaskInfoPromise<Result, Args...>;
+    using promise_type = ice::TaskInfoPromise<Result>;
 };
 
 // Member function traits
 template<typename Result, typename Class, typename... Args>
 struct std::coroutine_traits<ice::Task<Result>, Class, ice::TaskHandle&, Args...>
 {
-    using promise_type = ice::TaskInfoPromise<Result, Args...>;
+    using promise_type = ice::TaskInfoPromise<Result>;
 };

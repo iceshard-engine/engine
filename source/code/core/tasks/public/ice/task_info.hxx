@@ -1,4 +1,4 @@
-/// Copyright 2023 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2023 - 2024, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -59,7 +59,7 @@ namespace ice
         auto aquire() noexcept -> ice::TaskInfo*;
         void release() noexcept;
 
-        bool has_any(ice::TaskState state) noexcept;
+        bool has_any(ice::TaskState state) const noexcept;
 
         ice::TaskProfilingInfo<false> profiling;
         std::atomic<ice::TaskState> state = TaskState::Created;
@@ -84,7 +84,7 @@ namespace ice
         }
     }
 
-    inline bool TaskInfo::has_any(ice::TaskState flags) noexcept
+    inline bool TaskInfo::has_any(ice::TaskState flags) const noexcept
     {
         return ice::has_any(state.load(std::memory_order_relaxed), flags);
     }

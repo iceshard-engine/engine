@@ -1,4 +1,4 @@
-/// Copyright 2023 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2023 - 2024, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -15,17 +15,6 @@ namespace ice
         using ValueType = Result;
         using PromiseType = ice::TaskPromise<ValueType>;
 
-    private:
-        struct AwaitableBase
-        {
-            ice::coroutine_handle<PromiseType> _coroutine;
-
-            inline bool await_ready() const noexcept;
-            inline auto await_suspend(
-                ice::coroutine_handle<> awaiting_coroutine
-            ) const noexcept -> ice::coroutine_handle<>;
-        };
-
     public:
         inline explicit Task(
             ice::coroutine_handle<PromiseType> coro = nullptr
@@ -38,14 +27,19 @@ namespace ice
         inline Task(Task&&) noexcept;
         inline auto operator=(Task&& other) noexcept -> Task&;
 
-        [[deprecated("Method not usable due to API design.")]]
-        inline auto is_ready() const noexcept;
-
-        [[deprecated("Method not usable due to API design.")]]
-        inline auto when_ready() noexcept;
-
         inline auto operator co_await() & noexcept;
         inline auto operator co_await() && noexcept;
+
+    private:
+        struct AwaitableBase
+        {
+            ice::coroutine_handle<PromiseType> _coroutine;
+
+            inline bool await_ready() const noexcept;
+            inline auto await_suspend(
+                ice::coroutine_handle<> awaiting_coroutine
+            ) const noexcept -> ice::coroutine_handle<>;
+        };
 
     private:
         ice::coroutine_handle<PromiseType> _coroutine;
@@ -99,23 +93,6 @@ namespace ice
         }
 
         return *this;
-    }
-
-    template<typename Result>
-    inline auto Task<Result>::is_ready() const noexcept
-    {
-        return !_coroutine || _coroutine.done();
-    }
-
-    template<typename Result>
-    inline auto Task<Result>::when_ready() noexcept
-    {
-        struct TaskAwaitable : AwaitableBase
-        {
-            void await_resume() const noexcept {}
-        };
-
-        return TaskAwaitable{ _coroutine };
     }
 
     template<typename Result>
