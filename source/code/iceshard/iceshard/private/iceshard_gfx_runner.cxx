@@ -77,53 +77,6 @@ namespace ice::gfx
             .to = State_GfxInactive,
         };
 
-        auto gfx_state_shards(void* userdata, ice::ShardContainer& out_shards) noexcept
-        {
-            ice::gfx::GfxStateChange const* params = reinterpret_cast<ice::gfx::GfxStateChange const*>(userdata);
-            ice::Shard const shards[]{
-                { ShardID_GfxStartup | params },
-                { ShardID_GfxShutdown | params },
-            };
-
-            ice::shards::push_back(out_shards, shards);
-        }
-
-        //auto register_gfx_activation_flow(void* userdata, ice::WorldStateTracker& world_states) noexcept -> ice::u8
-        //{
-        //    ice::u8 const world_activity_flow = world_states.flowid("world-activity"_sid);
-
-        //    ice::StackAllocator_1024 temp_alloc;
-        //    ice::Array<ice::WorldStateStage> stages{ temp_alloc };
-        //    ice::array::push_back(stages,
-        //        ice::WorldStateStage{
-        //            .trigger = ice::ShardID_WorldActivated,
-        //            .required_state = 0,
-        //            .resulting_state = 1,
-        //            .dependent_state = { .flow_value = 2, .flow_id = world_activity_flow },
-        //            .event_shard = ShardID_GfxStartup
-        //        }
-        //    );
-
-        //    ice::array::push_back(stages,
-        //        ice::WorldStateStage{
-        //            .trigger = ice::ShardID_WorldDeactivate,
-        //            .required_state = 1,
-        //            .resulting_state = 0,
-        //            .blocked_state = {.flow_value = 2, .flow_id = world_activity_flow },
-        //            .event_shard = ShardID_GfxShutdown
-        //        }
-        //    );
-
-        //    return world_states.register_flow(
-        //        {
-        //            .name = "gfx-activity"_sid,
-        //            .stages = stages,
-        //            .userdata = userdata,
-        //            .fn_shards = gfx_state_shards,
-        //        }
-        //    );
-        //}
-
     } // namespace detail
 
     IceshardGfxRunner::IceshardGfxRunner(
@@ -144,6 +97,7 @@ namespace ice::gfx
         , _stages{ ice::gfx::create_stage_registry(_alloc) }
         , _state{ IceshardGfxRunnerState::SwapchainDirty }
         , _world_states{ _alloc }
+        , _gfx_tasks{ _alloc }
     {
         ice::TaskThreadInfo const info{
             .exclusive_queue = true,
@@ -156,7 +110,6 @@ namespace ice::gfx
             { .initial = detail::State_GfxInactive, .commiter = this, .enable_subname_states = true },
             triggers
         );
-        //_flow_id = detail::register_gfx_activation_flow(_params_storage, _engine.worlds_states());
     }
 
     IceshardGfxRunner::~IceshardGfxRunner() noexcept
@@ -166,48 +119,38 @@ namespace ice::gfx
     }
 
     auto IceshardGfxRunner::draw_frame(
-        ice::gfx::GfxOperationParams const& params
+        ice::EngineFrame const& frame,
+        ice::Clock const& clock
     ) noexcept -> ice::Task<>
     {
-        //// Initialize state for new worlds
-        //ice::shards::for_each(
-        //    params.frame.shards(),
-        //    ice::ShardID_WorldCreated,
-        //    [this](ice::Shard shard) noexcept
-        //    {
-        //        ice::StringID_Hash worldname;
-        //        if (ice::shard_inspect(shard, worldname))
-        //        {
-        //            _engine.states().initialize_subname_state(detail::StateGraph_GfxRuntime, { worldname });
-        //        }
-        //    }
-        //);
-
         co_await _scheduler;
 
         IPT_ZONE_SCOPED;
         IPT_FRAME_MARK_NAMED("Graphics");
 
         GfxFrameUpdate const gfx_update{
-            .clock = params.clock,
+            .clock = clock,
             .assets = _engine.assets(),
-            .frame = params.frame,
+            .frame = frame,
             .device = *_device,
         };
 
-        update_states(frame.shards());
+        ice::Shard shards[]{ ice::gfx::ShardID_GfxFrameUpdate | &gfx_update };
+        _engine.worlds_updater().update(_gfx_tasks, { shards });
+        _gfx_tasks.execute_tasks();
+        _gfx_tasks.wait_tasks();
 
         ice::gfx::GfxStages gpu_stages{
             .frame_transfer = { _queue_transfer },
             .frame_end = { _queue_end }
         };
 
-        if (graph_runtime.prepare(gpu_stages, *_stages, new_tasks))
+        if (_rendergraph->prepare(gpu_stages, *_stages, _gfx_tasks))
         {
-            ice::resume_tasks_on(new_tasks, _scheduler);
+            _gfx_tasks.execute_tasks_detached(_scheduler);
         }
 
-        if (ice::linked_queue::any(_queue_transfer._awaitables))
+        if (ice::linked_queue::any(_queue_transfer._awaitables) || _gfx_tasks.running_tasks() > 0)
         {
             IPT_ZONE_SCOPED_NAMED("gfx_await_tasks");
 
@@ -239,7 +182,7 @@ namespace ice::gfx
         }
 
         _tasks_container.execute_tasks();
-        while(_tasks_container.running_tasks() > 0)
+        while(ice::linked_queue::any(_queue_end._awaitables) || _tasks_container.running_tasks() > 0)
         {
             _queue_end.process_all();
         }
@@ -247,32 +190,11 @@ namespace ice::gfx
         // Execute all stages (currently done simply going over the render graph)
         _present_fence->reset();
 
-        if (_rendergraph->execute(params.frame, *this, *_present_fence))
+        if (_rendergraph->execute(frame, *_present_fence))
         {
             _present_fence->wait(10'000'000);
         }
         co_return;
-    }
-
-
-    void IceshardGfxRunner::update_states(
-        ice::WorldStateTracker& state_tracker,
-        ice::gfx::GfxOperationParams const& params
-    ) noexcept
-    {
-        ice::gfx::GfxStages gpu_stages{
-            .frame_transfer = { _queue_transfer },
-            .frame_end = { _queue_end }
-        };
-        auto s = ice::gfx::create_stage_registry(_alloc);
-
-        ice::Array<ice::Task<>> new_tasks{_alloc};
-        if (graph_runtime.prepare(gpu_stages, *s, new_tasks))
-        {
-            ice::wait_for_all(new_tasks);
-        }
-
-        update_states(frame.shards());
     }
 
     auto IceshardGfxRunner::device() noexcept -> ice::gfx::GfxDevice&
@@ -283,6 +205,56 @@ namespace ice::gfx
     void IceshardGfxRunner::destroy() noexcept
     {
         _alloc.destroy(this);
+    }
+
+    bool IceshardGfxRunner::commit(
+        ice::EngineStateTrigger const& trigger,
+        ice::Shard trigger_shard,
+        ice::ShardContainer& out_shards
+    ) noexcept
+    {
+        ice::gfx::GfxStateChange const params{
+            .assets = _engine.assets(),
+            .device = *_device,
+            .stages = *_stages
+        };
+
+        ice::StringID_Hash world_name;
+        if (ice::shard_inspect(trigger_shard, world_name) == false)
+        {
+            return false;
+        }
+
+        ice::Shard shards[1];
+        if (trigger.to == detail::State_GfxActive)
+        {
+            shards[0] = ice::shard(ice::gfx::ShardID_GfxStartup, &params);
+        }
+        else if (trigger.to == detail::State_GfxInactive)
+        {
+            ice::gfx::GfxStages gpu_stages{
+                .frame_transfer = { _queue_transfer },
+                .frame_end = { _queue_end }
+            };
+
+            auto s = ice::gfx::create_stage_registry(_alloc);
+            {
+                if (_rendergraph->prepare(gpu_stages, *s, _gfx_tasks))
+                {
+                    _gfx_tasks.execute_tasks();
+                }
+            }
+
+            shards[0] = ice::shard(ice::gfx::ShardID_GfxShutdown, &params);
+        }
+
+        ice::ScopedTaskContainer tasks{ _alloc };
+        ice::WorldUpdateParams update_params{
+            .request_shards = shards
+        };
+
+        _engine.worlds_updater().update(tasks, update_params);
+        return true;
     }
 
 } // namespace ice::gfx

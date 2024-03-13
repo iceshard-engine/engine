@@ -33,7 +33,9 @@ namespace ice::gfx
         Active,
     };
 
-    struct IceshardGfxRunner : public ice::gfx::GfxRunner
+    struct IceshardGfxRunner
+        : public ice::gfx::GfxRunner
+        , public ice::EngineStateCommitter
     {
         IceshardGfxRunner(
             ice::Allocator& alloc,
@@ -47,15 +49,21 @@ namespace ice::gfx
             _rendergraph = ice::move(rendergraph);
         }
 
-        void update_states(ice::ShardContainer const& shards) noexcept;
-
         auto draw_frame(
-            ice::gfx::GfxOperationParams const& params
+            ice::EngineFrame const& frame,
+            ice::Clock const& clock
         ) noexcept -> ice::Task<> override;
 
         auto device() noexcept -> ice::gfx::GfxDevice& override;
 
         void destroy() noexcept;
+
+    public: // Implementation of: IceshardGfxRunner
+        bool commit(
+            ice::EngineStateTrigger const& trigger,
+            ice::Shard trigger_shard,
+            ice::ShardContainer& out_shards
+        ) noexcept override;
 
     private:
         ice::Allocator& _alloc;
@@ -71,15 +79,12 @@ namespace ice::gfx
 
         ice::UniquePtr<ice::gfx::GfxStageRegistry> _stages;
 
-        // TODO: Replace with proper task completion tracker.
-        std::atomic_uint32_t _gfx_tasks;
-
         // ice::HashMap<ice::gfx::GfxStage const*> _stages;
         ice::gfx::IceshardGfxRunnerState _state;
         ice::HashMap<ice::gfx::IceshardGfxWorldState> _world_states;
         ice::UniquePtr<ice::gfx::GfxGraphRuntime> _rendergraph;
 
-        alignas(alignof(ice::gfx::GfxStateChange)) char _params_storage[sizeof(ice::gfx::GfxStateChange)];
+        ice::ScopedTaskContainer _gfx_tasks;
     };
 
 } // namespace ice

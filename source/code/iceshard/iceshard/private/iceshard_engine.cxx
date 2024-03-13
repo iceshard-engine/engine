@@ -35,11 +35,6 @@ namespace ice
         return _worlds;
     }
 
-    auto IceshardEngine::worlds_states() noexcept -> ice::WorldStateTracker&
-    {
-        return _worlds;
-    }
-
     auto IceshardEngine::entities() noexcept -> ice::ecs::EntityIndex&
     {
         return _entities;

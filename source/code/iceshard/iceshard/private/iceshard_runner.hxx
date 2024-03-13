@@ -180,17 +180,12 @@ namespace ice
     };
 
     class IceshardEngineRunner
-        : public ice::EngineRunner,
-          public ice::EngineStateCommiter
+        : public ice::EngineRunner
+        , public ice::EngineStateCommitter
     {
     public:
         IceshardEngineRunner(ice::Allocator& alloc, ice::EngineRunnerCreateInfo const& create_info) noexcept;
         ~IceshardEngineRunner() noexcept override;
-
-        void update_states(
-            ice::WorldStateTracker& state_tracker,
-            ice::WorldStateParams const& update_params
-        ) noexcept override;
 
         auto aquire_frame() noexcept -> ice::Task<ice::UniquePtr<ice::EngineFrame>> override;
         auto update_frame(ice::EngineFrame& current_frame, ice::EngineFrame const& previous_frame) noexcept -> ice::Task<> override;

@@ -48,6 +48,12 @@ namespace ice
         return result;
     }
 
+    void ScopedTaskContainer::execute_tasks_detached(ice::TaskScheduler& scheduler) noexcept
+    {
+        ice::resume_tasks_on(_tasks, scheduler);
+        ice::array::clear(_tasks);
+    }
+
     auto ScopedTaskContainer::running_tasks() const noexcept -> ice::ucount
     {
         return _barrier.value();

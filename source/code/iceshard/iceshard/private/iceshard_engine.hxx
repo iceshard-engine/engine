@@ -13,9 +13,7 @@
 namespace ice
 {
 
-    class IceshardEngine final
-        : public ice::Engine
-        //, public ice::EngineStateCommitter
+    class IceshardEngine final : public ice::Engine
     {
     public:
         IceshardEngine(
@@ -26,20 +24,12 @@ namespace ice
         auto assets() noexcept -> ice::AssetStorage& override;
         auto worlds() noexcept -> ice::WorldAssembly& override;
         auto worlds_updater() noexcept -> ice::WorldUpdater& override;
-        auto worlds_states() noexcept -> ice::WorldStateTracker& override;
         auto entities() noexcept -> ice::ecs::EntityIndex& override;
         auto states() noexcept -> ice::EngineStateTracker& override { return *_states; }
 
         void destroy() noexcept;
 
         auto world_manager() noexcept -> ice::IceshardWorldManager& { return _worlds; }
-
-    //public: // Impl: ice::EngineStateCommiter
-    //    bool commit(
-    //        ice::EngineStateTrigger const& trigger,
-    //        ice::Shard trigger_shard,
-    //        ice::ShardContainer& out_shards
-    //    ) noexcept override;
 
     private:
         ice::Allocator& _allocator;

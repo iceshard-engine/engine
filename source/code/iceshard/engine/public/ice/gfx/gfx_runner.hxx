@@ -41,13 +41,9 @@ namespace ice::gfx
 
         virtual void update_rendergraph(ice::UniquePtr<ice::gfx::GfxGraphRuntime> rendergraph) noexcept = 0;
 
-        virtual void update_states(
-            ice::WorldStateTracker& state_tracker,
-            ice::gfx::GfxOperationParams const& params
-        ) noexcept = 0;
-
         virtual auto draw_frame(
-            ice::gfx::GfxOperationParams const& params
+            ice::EngineFrame const& frame,
+            ice::Clock const& clock
         ) noexcept -> ice::Task<> = 0;
 
         virtual void on_resume() noexcept { }

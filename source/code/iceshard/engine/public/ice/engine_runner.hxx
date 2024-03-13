@@ -38,7 +38,6 @@ namespace ice
         ice::EngineFrame& frame;
         ice::EngineFrame const& last_frame;
         ice::EngineSchedulers thread;
-        ice::EngineTaskContainer& long_tasks;
     };
 
     struct EngineRunnerCreateInfo
@@ -53,11 +52,6 @@ namespace ice
     struct EngineRunner
     {
         virtual ~EngineRunner() noexcept = default;
-
-        virtual void update_states(
-            ice::WorldStateTracker& state_tracker,
-            ice::WorldStateParams const& update_params
-        ) noexcept = 0;
 
         virtual auto aquire_frame() noexcept -> ice::Task<ice::UniquePtr<ice::EngineFrame>> = 0;
         virtual auto update_frame(ice::EngineFrame& current_frame, ice::EngineFrame const& last_frame) noexcept -> ice::Task<> = 0;

@@ -14,6 +14,9 @@ namespace ice
 
         virtual auto execute_tasks() noexcept -> ice::ucount = 0;
 
+        // TODO: Remove? Should be a temporary solution
+        virtual void execute_tasks_detached(ice::TaskScheduler& scheduler) noexcept { }
+
         virtual auto running_tasks() const noexcept -> ice::ucount = 0;
 
         virtual void wait_tasks() noexcept = 0;

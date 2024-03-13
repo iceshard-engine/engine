@@ -200,13 +200,7 @@ namespace ice
         , _state_tracker{ tracker }
         , _worlds{ _allocator }
         , _pending_events{ _allocator }
-        , _state_flows{ _allocator }
-        , _state_stages{ _allocator }
-        , _pending_changes{ _allocator }
-        , _flow_shards{ _allocator }
     {
-        ice::array::push_back(_state_flows, FlowState{ .name = StringID_Invalid, .stage = ice::u8_max });
-
         ice::EngineStateRegisterParams state_params{
             .initial = ice::State_WorldCreated,
             .commiter = this,
@@ -270,9 +264,7 @@ namespace ice
                 world_template.name,
                 ice::move(world_traits)
             ),
-            .states = Array<FlowState>{ _allocator }
         };
-        ice::array::resize(world_entry.states, ice::array::count(_state_flows));
 
         // Add a new pending event
         ice::shards::push_back(
@@ -291,8 +283,7 @@ namespace ice
         ice::StringID_Arg name
     ) noexcept -> World*
     {
-        static StackAllocator<1_B> emptyAlloc;
-        static Entry invalid_entry{ .states = Array<FlowState>{ emptyAlloc } };
+        static Entry invalid_entry{ };
         return ice::hashmap::get(_worlds, ice::hash(name), invalid_entry).world.get();
     }
 
@@ -300,8 +291,7 @@ namespace ice
         ice::StringID_Arg name
     ) noexcept
     {
-        static StackAllocator<1_B> emptyAlloc;
-        static Entry invalid_entry{ .states = Array<FlowState>{ emptyAlloc } };
+        static Entry invalid_entry{ };
         ICE_ASSERT(
             ice::hashmap::get(_worlds, ice::hash(name), invalid_entry).is_active == false,
             "Trying to destroy active world: {}!",
@@ -341,382 +331,11 @@ namespace ice
     {
         for (Entry& world_entry : ice::hashmap::values(_worlds))
         {
-            bool world_allowed = world_entry.is_active;
-            if (world_allowed && params.required_state.flow_id != 0)
+            if (world_entry.is_active)
             {
-                FlowState const& state = world_entry.states[params.required_state.flow_id];
-                world_allowed = state.stage == params.required_state.flow_value;
-            }
-
-            if (world_allowed)
-            {
-                update_world(out_tasks, world_entry, params);
+                world_entry.world->task_launcher().gather(out_tasks, params.request_shards);
             }
         }
-    }
-
-    void IceshardWorldManager::update_world(
-        ice::TaskContainer& out_tasks,
-        Entry& entry,
-        ice::WorldUpdateParams const& params
-    ) noexcept
-    {
-        for (ice::Shard shard : params.request_shards)
-        {
-            entry.world->task_launcher().gather(out_tasks, shard);
-        }
-    }
-
-    auto IceshardWorldManager::flowid(ice::StringID_Arg flow_name) const noexcept -> ice::u8
-    {
-        ice::ucount out_index = 0;
-        bool const found = ice::search(
-            ice::array::slice(_state_flows),
-            flow_name,
-            [](auto const& a, auto const& b) noexcept { return a.name == b; },
-            out_index
-        );
-        return found ? static_cast<ice::u8>(found) : 0;
-    }
-
-    auto IceshardWorldManager::flow_stage(ice::u8 flowid) const noexcept -> ice::u8
-    {
-        return _state_flows[flowid].stage;
-    }
-
-    bool IceshardWorldManager::has_pending_changes() const noexcept
-    {
-        return ice::queue::any(_pending_changes);
-    }
-
-    auto IceshardWorldManager::register_flow(ice::WorldStateFlow flow) noexcept -> ice::u8
-    {
-        ICE_ASSERT(
-            ice::array::count(_state_flows) < ice::u8_max,
-            "Can't register more than {} state flows!",
-            ice::u8_max
-        );
-
-        auto const comp = [](
-            FlowState const& lhs,
-            ice::WorldStateFlow const& rhs
-        ) noexcept
-        {
-            return lhs.name == rhs.name;
-        };
-
-        ice::ucount index;
-        if (ice::search(ice::array::slice(_state_flows), flow, comp, index) == false)
-        {
-            index = ice::array::count(_state_flows);
-            ice::array::push_back(_state_flows, { .name = flow.name, .stage = flow.initial_state });
-
-            ice::u8 const flow_id = static_cast<ice::u8>(index);
-            for (ice::WorldStateStage stage : flow.stages)
-            {
-                // We don't allow changing states of other flows.
-
-                ICE_ASSERT_CORE(stage.dependent_state.flow_id < ice::array::count(_state_flows));
-                ICE_ASSERT_CORE(stage.blocked_state.flow_id < ice::array::count(_state_flows));
-                //ICE_ASSERT_CORE(stage.resulting_state.flow_id < ice::array::count(_state_flows));
-
-                // Save the final stage.
-                ice::array::push_back(_state_stages, FlowStage{ .stage = stage, .flowid = flow_id });
-            }
-
-            ice::array::push_back(
-                _flow_shards,
-                FlowStateShards{
-                    .userdata = flow.userdata,
-                    .fn = flow.fn_shards,
-                    .flowid = flow_id,
-                }
-            );
-        }
-        else
-        {
-            ICE_LOG(
-                LogSeverity::Warning, LogTag::Engine,
-                "A state flow with name '{}' already exists, new flow was not registered!",
-                flow.name
-            );
-        }
-
-        return static_cast<ice::u8>(index);
-    }
-
-    void IceshardWorldManager::process_state_events(ice::ShardContainer const& shards) noexcept
-    {
-        IPT_ZONE_SCOPED;
-
-        // Remove all changes that where processed
-        while (ice::queue::any(_pending_changes) && ice::queue::front(_pending_changes).trigger == Shard_Invalid)
-        {
-            ice::queue::pop_front(_pending_changes, 1);
-        }
-
-        for (FlowStage const& stage : _state_stages)
-        {
-            ice::shards::for_each(
-                shards,
-                stage.stage.trigger,
-                [this, &stage](ice::Shard shard) noexcept
-                {
-                    ice::StringID_Hash worldid;
-                    if (ice::shard_inspect(shard, worldid))
-                    {
-                        Entry* const entry = ice::hashmap::try_get(
-                            _worlds, ice::hash(worldid)
-                        );
-
-                        if (entry == nullptr)
-                        {
-                            return;
-                        }
-
-                        // Check for the required state value
-                        ice::WorldStateStage const& fs = stage.stage;
-                        if (entry != nullptr)
-                        {
-                            bool const required_dependent_found = fs.dependent_state.flow_id == 0
-                                || (entry->states[fs.dependent_state.flow_id].stage == fs.dependent_state.flow_value);
-
-                            // Early exit
-                            if (required_dependent_found == false)
-                            {
-                                return;
-                            }
-
-                            bool const required_state_found = entry->states[stage.flowid].stage == fs.required_state;
-                            bool required_state_later = false;
-
-                            auto const fn_handle_pending = [&](PendingStateChange const& state) noexcept
-                            {
-                                // Skip invalid pending changes
-                                if (state.trigger == ice::Shard_Invalid)
-                                {
-                                    return;
-                                }
-
-                                if (state.entry->world.get() != entry->world.get())
-                                {
-                                    return;
-                                }
-
-                                // Don't apply same state twice
-                                if (state.stage->stage.resulting_state == fs.resulting_state
-                                    && state.stage->flowid == stage.flowid)
-                                {
-                                    required_state_later = false;
-                                    return;
-                                }
-
-                                // We check if any of the pending states already added result in the state we need.
-                                required_state_later =
-                                    state.stage->stage.resulting_state == fs.required_state
-                                    && state.stage->flowid == stage.flowid;
-                            };
-
-                            ice::queue::for_each_reverse(_pending_changes, fn_handle_pending);
-
-                            if (required_state_found || required_state_later)
-                            {
-                                ice::ShardID const event_shard = ice::value_or_default(
-                                    fs.event_shard, fs.trigger
-                                );
-
-                                //ICE_LOG(
-                                //    LogSeverity::Info, LogTag::Engine,
-                                //    "[{}] Pending state-change on {} ({}, {}) -> ({}, {}) => {}",
-                                //    entry->world->worldID,
-                                //    ice::hash(fs.trigger),
-                                //    _state_flows[stage.flowid].name, fs.required_state,
-                                //    _state_flows[stage.flowid].name, fs.resulting_state,
-                                //    ice::hash(event_shard)
-                                //);
-
-                                ice::queue::push_back(
-                                    _pending_changes,
-                                    PendingStateChange{
-                                        .trigger = event_shard,
-                                        .entry = entry,
-                                        .stage = &stage
-                                    }
-                                );
-                            }
-                        }
-                    }
-                }
-            );
-        }
-
-        // TODO: Check if there is anything pending
-        if constexpr (true)
-        {
-            static ice::StackAllocator_1024 event_shards_alloc{};
-            event_shards_alloc.reset();
-
-            ice::ShardContainer event_shards{ event_shards_alloc };
-            for (FlowStateShards const& flow_shards : _flow_shards)
-            {
-                // TODO: Dont ask for non-pending shards
-                flow_shards.fn(flow_shards.userdata, event_shards);
-            }
-
-            ice::ScopedTaskContainer tasks{ event_shards_alloc };
-            this->finalize_state_changes(tasks, event_shards._data);
-        }
-    }
-
-    namespace detail
-    {
-
-        void sort(ice::Queue<IceshardWorldManager::PendingStateChange>& states) noexcept
-        {
-            using PendingStateChange = IceshardWorldManager::PendingStateChange;
-
-            // We know that the queue is partially sorted, so we want to only sort one time to get everything in line with
-            //   blocking requirements.
-            ice::ucount const queue_count = ice::queue::count(states);
-            for (ice::u32 idx = 0; idx < queue_count;)
-            {
-                // ... find a state that is blocking our current state
-                bool is_blocked = false;
-                ice::u32 block_idx = idx + 1;
-                for (; block_idx < queue_count && !is_blocked; ++block_idx)
-                {
-                    PendingStateChange& blocking = states[block_idx];
-                    if (blocking.trigger != ice::Shard_Invalid
-                        && blocking.entry->world.get() == states[idx].entry->world.get()
-                        && blocking.stage->stage.blocked_state.flow_id != 0
-                        && blocking.stage->stage.blocked_state.flow_id == states[idx].stage->flowid)
-                    {
-                        is_blocked = true;
-                        break;
-                    }
-                }
-
-                // If no blocks are found we finish.
-                if (is_blocked == false)
-                {
-                    break;
-                }
-
-                // ... move the blocked state forward until we arrive after the blocking state
-                ice::u32 exchange_idx = idx;
-                ice::u32 exchange_count = 1;
-                for (; is_blocked && exchange_idx < block_idx; ++exchange_idx)
-                {
-                    PendingStateChange& exchange = states[exchange_idx];
-                    PendingStateChange& next = states[exchange_idx + exchange_count];
-
-                    auto const swap_many = [&](ice::u32 count) noexcept
-                    {
-                        while(count > 0)
-                        {
-                            ice::swap(states[exchange_idx + (count - 1)], states[exchange_idx + count]);
-                        }
-                    };
-
-                    // Swap if the next state does not affect our state
-                    if (next.trigger == ice::Shard_Invalid
-                        || next.entry->world.get() != exchange.entry->world.get()
-                        || next.stage->stage.dependent_state.flow_id == 0
-                        || next.stage->stage.dependent_state.flow_id != exchange.stage->flowid)
-                    {
-                        ice::swap(exchange, next);
-                    }
-                    else
-                    {
-                        exchange_count += 1;
-                    }
-                }
-            }
-        }
-    }
-
-    void IceshardWorldManager::finalize_state_changes(
-        ice::TaskContainer& out_tasks,
-        ice::Span<ice::Shard const> shards
-    ) noexcept
-    {
-        IPT_ZONE_SCOPED;
-
-        detail::sort(_pending_changes);
-
-        ice::queue::for_each(
-            _pending_changes,
-            [&, this](PendingStateChange& pending) noexcept
-            {
-                for (ice::Shard shard : shards)
-                {
-                    if (pending.trigger == shard.id)
-                    {
-                        pending.trigger = ice::Shard_Invalid;
-                        if (shard.id == ice::ShardID_WorldActivate) // Special case for now
-                        {
-                            ice::WorldStateParams const* update = ice::shard_shatter<ice::WorldStateParams const*>(shard, nullptr);
-                            ICE_ASSERT_CORE(update != nullptr);
-                            out_tasks.create_tasks(1, shard.id)[0] = pending.entry->world->activate(*update);
-                            pending.entry->is_active = true;
-                        }
-                        else if (shard.id == ice::ShardID_WorldDeactivate) // Special case for now
-                        {
-                            ice::WorldStateParams const* update = ice::shard_shatter<ice::WorldStateParams const*>(shard, nullptr);
-                            ICE_ASSERT_CORE(update != nullptr);
-                            out_tasks.create_tasks(1, shard.id)[0] = pending.entry->world->deactivate(*update);
-                            pending.entry->is_active = false;
-                        }
-                        else if (pending.entry->is_active)
-                        {
-                            pending.entry->world->task_launcher().gather(out_tasks, shard);
-                        }
-
-                        //ICE_LOG(
-                        //    LogSeverity::Info, LogTag::Engine,
-                        //    "[{}] Finalized state-change on {} ({}, {}) -> ({}, {})",
-                        //    pending.entry->world->worldID,
-                        //    ice::hash(pending.trigger),
-                        //    _state_flows[pending.stage->flowid].name, pending.stage->stage.required_state,
-                        //    _state_flows[pending.stage->flowid].name, pending.stage->stage.resulting_state
-                        //);
-
-                        // Apply the new state value
-                        FlowState& state = pending.entry->states[pending.stage->flowid];
-
-                        // Call stage on end
-                        //if (state.on_end) state.on_end(state.userdata);
-                        //state.on_begin = pending.stage->stage.stage_begin;
-                        //state.on_frame = pending.stage->stage.stage_frame;
-                        //state.on_end = pending.stage->stage.stage_end;
-
-                        state.stage = pending.stage->stage.resulting_state;
-                        //if (state.on_begin) state.on_begin(state.userdata);
-
-                        // If notification is valid, add it to pending events
-                        if (pending.stage->stage.notification != ice::Shard_Invalid)
-                        {
-                            ice::shards::push_back(
-                                _pending_events,
-                                pending.stage->stage.notification | ice::stringid_hash(pending.entry->world->worldID)
-                            );
-                        }
-                    }
-                }
-            }
-        );
-
-        // Additional checks in non-release builds
-        if constexpr ((ice::build::is_release || ice::build::is_profile) == false)
-        {
-            ice::queue::for_each(_pending_changes, [](auto const& pending) noexcept
-                {
-                    ICE_ASSERT_CORE(pending.trigger == ice::Shard_Invalid);
-                }
-            );
-        }
-
-        ice::queue::clear(_pending_changes);
     }
 
     bool IceshardWorldManager::commit(

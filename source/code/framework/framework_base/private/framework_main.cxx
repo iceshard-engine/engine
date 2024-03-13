@@ -532,28 +532,6 @@ auto ice_update(
 
     state.engine->states().update_states(runtime.frame->shards(), new_frame->shards());
 
-    runtime.runner->update_states(
-        state.engine->worlds_states(),
-        ice::WorldStateParams{
-            .clock = runtime.clock,
-            .assets = state.engine->assets(),
-            .engine = *state.engine,
-            .thread = *runtime.thread_schedulers,
-            //.devui = state.debug.devui.get(),
-        }
-    );
-    runtime.gfx_runner->update_states(
-        state.engine->worlds_states(),
-        ice::gfx::GfxOperationParams{
-            .clock = runtime.clock,
-            .frame = *runtime.frame,
-            //.render_graph = *runtime.gfx_rendergraph_runtime,
-        }
-    );
-
-    // Apply state events so we can already get the events for the next frame
-    state.engine->worlds_states().process_state_events(runtime.frame->shards());
-
     // Run the frame update
     // TODO: Do it on a worker thread?
     // This will block (two frames alive)
@@ -599,13 +577,7 @@ auto ice_update(
         // Create GfxFrame (blocks until previous frame is released?)
         runtime.gfx_wait.reset();
         ice::manual_wait_for(
-            runtime.gfx_runner->draw_frame(
-                ice::gfx::GfxOperationParams{
-                    .clock = runtime.clock,
-                    .frame = *runtime.frame,
-                    //.render_graph = *runtime.gfx_rendergraph_runtime,
-                }
-            ),
+            runtime.gfx_runner->draw_frame(*runtime.frame, runtime.clock),
             runtime.gfx_wait
         );
     }
@@ -639,29 +611,6 @@ auto ice_suspend(
 
         // Apply state events so we can already get the events for the next frame
         state.engine->states().update_states(runtime.frame->shards(), runtime.frame->shards());
-
-        runtime.runner->update_states(
-            state.engine->worlds_states(),
-            ice::WorldStateParams{
-                .clock = runtime.clock,
-                .assets = *state.assets,
-                .engine = *state.engine,
-                .thread = { state.thread_pool_scheduler, state.thread_pool_scheduler },
-                .long_tasks = *((ice::EngineTaskContainer*)0)
-            }
-        );
-
-        runtime.gfx_runner->update_states(
-            state.engine->worlds_states(),
-            ice::gfx::GfxOperationParams{
-                .clock = runtime.clock,
-                .frame = *runtime.frame,
-                //.render_graph = *runtime.gfx_rendergraph_runtime,
-            }
-        );
-
-        state.engine->worlds_states().process_state_events(runtime.frame->shards());
-
 
         runtime.input_tracker.reset();
         runtime.runner->release_frame(ice::move(runtime.frame));

@@ -10,15 +10,6 @@
 namespace ice::gfx
 {
 
-    // struct GfxGraphRuntimeStageList
-    // {
-    //     virtual ~GfxGraphRuntimeStageList() noexcept = default;
-    // };
-
-    // auto create_graph_runtime_stage_list(
-    //     ice::Allocator& alloc
-    // ) noexcept -> ice::UniquePtr<GfxGraphRuntimeStageList>;
-
     struct GfxGraphRuntime
     {
         virtual ~GfxGraphRuntime() noexcept = default;
@@ -28,7 +19,7 @@ namespace ice::gfx
         virtual bool prepare(
             ice::gfx::GfxStages& stages,
             ice::gfx::GfxStageRegistry const& stage_registry,
-            ice::Array<ice::Task<>>& out_tasks
+            ice::TaskContainer& out_tasks
         ) noexcept = 0;
 
         virtual bool execute(

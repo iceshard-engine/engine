@@ -137,7 +137,6 @@ namespace ice
         , _frame_data_freelist{ nullptr }
         , _next_frame_index{ 0 }
         , _barrier{ }
-        , _params_storage{ }
         , _runner_tasks{ _allocator, _schedulers.tasks }
     {
         ICE_ASSERT(
@@ -163,11 +162,6 @@ namespace ice
             { .initial = State_WorldRuntimeInactive, .commiter = this, .enable_subname_states = true },
             triggers
         );
-        // TODO: Unregistering?
-        //_flow_id = detail::register_world_activation_flow(
-        //    *reinterpret_cast<ice::WorldStateParams*>(_params_storage + 0),
-        //    _engine.worlds_states()
-        //);
     }
 
     IceshardEngineRunner::~IceshardEngineRunner() noexcept
@@ -222,26 +216,12 @@ namespace ice
             .thread = _schedulers,
         };
 
-        //// Initialize state for new worlds
-        //ice::shards::for_each(
-        //    current_frame.shards(),
-        //    ice::ShardID_WorldCreated,
-        //    [this](ice::Shard shard) noexcept
-        //    {
-        //        ice::StringID_Hash worldname;
-        //        if (ice::shard_inspect(shard, worldname))
-        //        {
-        //            _engine.states().initialize_subname_state(StateGraph_WorldRuntime, { worldname });
-        //        }
-        //    }
-        //);
-
         ice::WorldUpdater& world_updater = _engine.worlds_updater();
         {
             IPT_ZONE_SCOPED_NAMED("gather_tasks");
             ice::Shard const update_shard[]{ ice::ShardID_FrameUpdate | &frame_update };
-            world_updater.update(current_tasks, { update_shard, { 2, _flow_id } });
-            world_updater.update(current_tasks, { previous_frame.shards()._data, { 2, _flow_id } });
+            world_updater.update(current_tasks, { update_shard});
+            world_updater.update(current_tasks, { previous_frame.shards()._data });
         }
 
         {

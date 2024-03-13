@@ -26,7 +26,7 @@ namespace ice::gfx
         Trait_GfxShaderStorage(ice::Allocator& alloc) noexcept;
         ~Trait_GfxShaderStorage() noexcept override = default;
 
-        void gather_tasks(ice::TraitTaskLauncher& task_launcher) noexcept override;
+        void gather_tasks(ice::TraitTaskRegistry& task_registry) noexcept override;
 
     public: // Implementation of: ice::AssetRequestResolver
         auto on_asset_released(ice::Asset const& asset) noexcept -> ice::Task<> override;

@@ -22,7 +22,12 @@ namespace ice
         ice::AssetStorage& assets;
         ice::Engine& engine;
         ice::EngineSchedulers thread;
-        ice::EngineTaskContainer& long_tasks;
+    };
+
+    struct WorldUpdateParams
+    {
+        //! \brief Shards used to call update callbacks.
+        ice::Span<ice::Shard const> request_shards;
     };
 
     struct WorldUpdater

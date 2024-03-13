@@ -93,7 +93,6 @@ namespace ice
     class IceshardWorldManager final
         : public ice::WorldAssembly
         , public ice::WorldUpdater
-        , public ice::WorldStateTracker
         , public ice::EngineStateCommitter
     {
         struct Entry;
@@ -120,29 +119,8 @@ namespace ice
             ice::WorldUpdateParams const& params
         ) noexcept override;
 
-        void update_world(
-            ice::TaskContainer& out_tasks,
-            Entry& world,
-            ice::WorldUpdateParams const& params
-        ) noexcept;
-
         auto begin() noexcept { return ice::hashmap::begin(_worlds); }
         auto end() noexcept { return ice::hashmap::end(_worlds); }
-
-    public: // Implementation of WorldStateTracker
-        auto flowid(ice::StringID_Arg flow_name) const noexcept -> ice::u8 override;
-        auto flow_stage(ice::u8 flowid) const noexcept -> ice::u8 override;
-
-        bool has_pending_changes() const noexcept override;
-        auto register_flow(ice::WorldStateFlow flow) noexcept -> ice::u8 override;
-        void process_state_events(ice::ShardContainer const& shards) noexcept override;
-        void finalize_state_changes(ice::TaskContainer& out_tasks, ice::Span<ice::Shard const> shards) noexcept;
-
-        struct FlowState
-        {
-            ice::StringID name;
-            ice::u8 stage;
-        };
 
     public: // Implementation of: ice::EngineStateCommiter
         bool commit(
@@ -159,39 +137,12 @@ namespace ice
         struct Entry
         {
             ice::UniquePtr<ice::IceshardWorld> world;
-            ice::Array<FlowState> states;
             bool is_active;
-        };
-
-        struct FlowStage
-        {
-            ice::WorldStateStage stage;
-            ice::u8 flowid;
-        };
-
-        struct FlowStateShards
-        {
-            void* userdata;
-            ice::WorldStateFlow::FnStateShards fn;
-            ice::u8 flowid;
-        };
-
-    public:
-        struct PendingStateChange
-        {
-            ice::ShardID trigger;
-            Entry* entry;
-            FlowStage const* stage;
         };
 
     private:
         ice::HashMap<Entry> _worlds;
         ice::ShardContainer _pending_events;
-
-        ice::Array<FlowState> _state_flows;
-        ice::Array<FlowStage> _state_stages;
-        ice::Queue<PendingStateChange> _pending_changes;
-        ice::Array<FlowStateShards> _flow_shards;
     };
 
 } // namespace ice

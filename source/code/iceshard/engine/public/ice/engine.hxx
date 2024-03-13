@@ -25,7 +25,6 @@ namespace ice
         virtual auto assets() noexcept -> ice::AssetStorage& = 0;
         virtual auto worlds() noexcept -> ice::WorldAssembly& = 0;
         virtual auto worlds_updater() noexcept -> ice::WorldUpdater& = 0;
-        virtual auto worlds_states() noexcept -> ice::WorldStateTracker& = 0;
         virtual auto entities() noexcept -> ice::ecs::EntityIndex& = 0;
         virtual auto states() noexcept -> ice::EngineStateTracker& = 0;
     };
