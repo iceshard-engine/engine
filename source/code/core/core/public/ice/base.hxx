@@ -15,6 +15,9 @@
 #include <ice/concept/enum_flags.hxx>
 #include <ice/concept/strong_type_value.hxx>
 
+#include <ice/error.hxx>
+#include <ice/error_codes.hxx>
+
 #include <algorithm>
 #include <cstring>
 #include <utility>
