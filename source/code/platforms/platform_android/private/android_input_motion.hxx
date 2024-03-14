@@ -1,10 +1,10 @@
-/// Copyright 2023 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2023 - 2024, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
 #include <android/input.h>
-#include <ice/result_codes.hxx>
 #include <ice/input/device_event_queue.hxx>
+#include <ice/expected.hxx>
 
 namespace ice::platform::android
 {

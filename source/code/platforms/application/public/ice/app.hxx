@@ -4,7 +4,7 @@
 #pragma once
 #include <ice/base.hxx>
 #include <ice/mem_unique_ptr.hxx>
-#include <ice/result_codes.hxx>
+#include <ice/expected.hxx>
 #include <ice/param_list.hxx>
 #include <ice/span.hxx>
 
@@ -25,16 +25,16 @@ namespace ice::app
         FactoryFn<ice::app::Runtime> factory_runtime;
     };
 
-    static constexpr ice::ResCode S_ApplicationExit = ResCode::create(ResultSeverity::Success, "Requested 'Exit' stage");
-    static constexpr ice::ResCode S_ApplicationResume = ResCode::create(ResultSeverity::Success, "Requested 'Resume' stage");
-    static constexpr ice::ResCode S_ApplicationUpdate = ResCode::create(ResultSeverity::Success, "Requested 'Update' stage");
-    static constexpr ice::ResCode S_ApplicationSuspend = ResCode::create(ResultSeverity::Success, "Requested 'Suspend' stage");
+    static constexpr ice::ErrorCode S_ApplicationExit{ "S.0100:App:Requested 'Exit' stage" };
+    static constexpr ice::ErrorCode S_ApplicationResume{ "S.0101:App:Requested 'Resume' stage" };
+    static constexpr ice::ErrorCode S_ApplicationUpdate{ "S.0102:App:Requested 'Update' stage" };
+    static constexpr ice::ErrorCode S_ApplicationSuspend{ "S.0103:App:Requested 'Suspend' stage" };
 
-    static constexpr ice::ResCode E_FailedApplicationSetup = ResCode::create(ResultSeverity::Error, "Failed application 'Setup' stage");
-    static constexpr ice::ResCode E_FailedApplicationResume = ResCode::create(ResultSeverity::Error, "Failed application 'Resume' stage");
-    static constexpr ice::ResCode E_FailedApplicationUpdate = ResCode::create(ResultSeverity::Error, "Failed application 'Update' stage");
-    static constexpr ice::ResCode E_FailedApplicationSuspend = ResCode::create(ResultSeverity::Error, "Failed application 'Suspend' stage");
-    static constexpr ice::ResCode E_FailedApplicationShutdown = ResCode::create(ResultSeverity::Error, "Failed application 'Shutdown' stage");
+    static constexpr ice::ErrorCode E_FailedApplicationSetup{ "E.0100:App:Failed application 'Setup' stage" };
+    static constexpr ice::ErrorCode E_FailedApplicationResume{ "E.0101:App:Failed application 'Resume' stage" };
+    static constexpr ice::ErrorCode E_FailedApplicationUpdate{ "E.0102:App:Failed application 'Update' stage" };
+    static constexpr ice::ErrorCode E_FailedApplicationSuspend{ "E.0103:App:Failed application 'Suspend' stage" };
+    static constexpr ice::ErrorCode E_FailedApplicationShutdown{ "E.0104:App:Failed application 'Shutdown' stage" };
 
 } // namespace ice::app
 

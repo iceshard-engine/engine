@@ -1,4 +1,4 @@
-/// Copyright 2023 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2023 - 2024, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "resource_filesystem_loose.hxx"
@@ -144,8 +144,7 @@ namespace ice
             ice::Memory metafile_data = alloc.allocate(meta_size);
             if (ice::native_file::read_file(meta_handle, meta_size, metafile_data) > 0_B)
             {
-                ice::Result const result = ice::meta_deserialize_from(out_metadata, data_view(metafile_data));
-                if (ice::result_is_valid(result))
+                if (ice::meta_deserialize_from(out_metadata, data_view(metafile_data)))
                 {
                     // return the memory, we won't release it
                     out_memory = metafile_data;

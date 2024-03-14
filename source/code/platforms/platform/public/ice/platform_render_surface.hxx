@@ -26,8 +26,8 @@ namespace ice::platform
     };
 
 
-    static constexpr ice::ResultCode E_RenderSurfaceNotAvailable = ice::ResCode::create(ice::ResultSeverity::Error, "No Render Surface Available");
-    static constexpr ice::ResultCode E_RenderSurfaceAlreadyExisting = ice::ResCode::create(ice::ResultSeverity::Error, "Render Surface Already Existing");
+    static constexpr ice::ErrorCode E_RenderSurfaceNotAvailable{ "E.0110:App:No Render Surface Available" };
+    static constexpr ice::ErrorCode E_RenderSurfaceAlreadyExisting{ "E.0111:App:Render Surface Already Existing" };
 
     template<>
     constexpr inline ice::platform::FeatureFlags Constant_FeatureFlags<ice::platform::RenderSurface> = FeatureFlags::RenderSurface;

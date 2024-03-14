@@ -1,4 +1,4 @@
-/// Copyright 2023 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2023 - 2024, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include <ice/app.hxx>
@@ -11,8 +11,6 @@
 
 int main(int argc, char const** argv)
 {
-    using ice::ResultSeverity;
-
     ice::i32 app_result = 0;
 
     // The application lifetime scope
@@ -29,7 +27,7 @@ int main(int argc, char const** argv)
         ice::UniquePtr<ice::app::State> state = app_factories.factory_state(host_alloc);
 
         ice::Result result = ice_setup(host_alloc, params, *config, *state);
-        ICE_LOG_IF(result == false, ice::LogSeverity::Error, ice::LogTag::Core, "{}\n", ice::result_hint(result));
+        ICE_LOG_IF(result == false, ice::LogSeverity::Error, ice::LogTag::Core, "{}\n", result.error().description());
         ICE_ASSERT_CORE(result == true);
 
         // Before updating we need to resume first.
@@ -77,11 +75,11 @@ int main(int argc, char const** argv)
 
         runtime.reset();
 
-        ICE_LOG_IF(result == false, ice::LogSeverity::Error, ice::LogTag::Core, "{}\n", ice::result_hint(result));
+        ICE_LOG_IF(result == false, ice::LogSeverity::Error, ice::LogTag::Core, "{}\n", result.error().description());
         ICE_ASSERT_CORE(result == true);
 
         result = ice_shutdown(host_alloc, params, *config, *state);
-        ICE_LOG_IF(result == false, ice::LogSeverity::Error, ice::LogTag::Core, "{}\n", ice::result_hint(result));
+        ICE_LOG_IF(result == false, ice::LogSeverity::Error, ice::LogTag::Core, "{}\n", result.error().description());
         ICE_ASSERT_CORE(result == true);
     }
 

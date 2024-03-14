@@ -5,7 +5,7 @@
 #include <ice/string/string.hxx>
 #include <ice/string/heap_string.hxx>
 #include <ice/log_formatters.hxx>
-#include <ice/result_codes.hxx>
+#include <ice/expected.hxx>
 #include <ice/math.hxx>
 #include <charconv>
 #include <numeric>
@@ -24,12 +24,12 @@ namespace ice
     template<typename StrType>
     struct FromCharsResult
     {
-        ice::ResCode ec;
+        ice::ErrorCode ec;
         StrType remaining;
 
         constexpr operator bool() const noexcept
         {
-            return ec == Res::Success;
+            return ec;
         }
     };
 
@@ -37,7 +37,7 @@ namespace ice
         requires (std::is_integral_v<T> || std::is_floating_point_v<T>)
     auto from_chars(ice::String str, T& out_value) noexcept -> ice::FromCharsResult<ice::String>
     {
-        ice::ResCode res = ice::Res::Success;
+        ice::ErrorCode res = ice::S_Ok;
         std::from_chars_result const fc_res = std::from_chars(
             ice::string::begin(str),
             ice::string::end(str),
@@ -46,11 +46,11 @@ namespace ice
 
         if (fc_res.ec == std::errc::result_out_of_range)
         {
-            res = ice::Res::E_ValueOutOfRange;
+            res = ice::E_OutOfRange;
         }
         else if (fc_res.ec == std::errc::invalid_argument)
         {
-            res = ice::Res::E_InvalidArgument;
+            res = ice::E_InvalidArgument;
         }
 
         return {
@@ -63,7 +63,7 @@ namespace ice
         requires (std::is_integral_v<T> || std::is_floating_point_v<T>)
     auto from_chars(char const* str_beg, char const* str_end, T& out_value) noexcept -> ice::FromCharsResult<char const*>
     {
-        ice::ResCode res = ice::Res::Success;
+        ice::ErrorCode res = ice::S_Ok;
         std::from_chars_result const fc_res = std::from_chars(
             str_beg,
             str_end,
@@ -72,11 +72,11 @@ namespace ice
 
         if (fc_res.ec == std::errc::result_out_of_range)
         {
-            res = ice::Res::E_ValueOutOfRange;
+            res = ice::E_OutOfRange;
         }
         else if (fc_res.ec == std::errc::invalid_argument)
         {
-            res = ice::Res::E_InvalidArgument;
+            res = ice::E_InvalidArgument;
         }
 
         return {
@@ -87,7 +87,7 @@ namespace ice
 
     template<typename T>
         requires (std::is_integral_v<T> || std::is_floating_point_v<T>)
-    auto from_chars(ice::String str, ice::String& out_str, T& out_value) noexcept -> ice::ResCode
+    auto from_chars(ice::String str, ice::String& out_str, T& out_value) noexcept -> ice::ErrorCode
     {
         ice::FromCharsResult<ice::String> const result = ice::from_chars(str, out_value);
         out_str = result.remaining;
@@ -98,14 +98,14 @@ namespace ice
     {
         int temp_out = 0;
         ice::FromCharsResult<ice::String> const result = from_chars(str, temp_out);
-        if (result.ec == ice::Res::Success)
+        if (result.ec == ice::S_Ok)
         {
             out_value = bool(temp_out);
         }
         return result;
     }
 
-    inline auto from_chars(ice::String str, ice::String& out_str, bool& out_value) noexcept -> ice::ResCode
+    inline auto from_chars(ice::String str, ice::String& out_str, bool& out_value) noexcept -> ice::ErrorCode
     {
         ice::FromCharsResult<ice::String> const result = ice::from_chars(str, out_value);
         out_str = result.remaining;

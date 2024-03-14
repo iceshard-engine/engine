@@ -1,9 +1,9 @@
-/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2024, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
 #include <ice/mem_allocator.hxx>
-#include <ice/result_codes.hxx>
+#include <ice/expected.hxx>
 #include <ice/shard.hxx>
 #include <ice/span.hxx>
 
@@ -86,7 +86,7 @@ namespace ice::platform
     {
         void* feature_ptr;
         ice::Result result = query_api(Constant_FeatureFlags<Feature>, feature_ptr);
-        if (result == ice::Res::Success)
+        if (result == ice::S_Success)
         {
             out_feature = reinterpret_cast<Feature*>(feature_ptr);
         }
@@ -109,20 +109,14 @@ namespace ice::platform
 
 
     //! \brief Error returned when the platform API was already initialized.
-    static constexpr ice::ResultCode E_PlatformAlreadyInitialized = ice::ResCode::create(
-        ice::ResultSeverity::Error, "Platform Already Initialized"
-    );
+    static constexpr ice::ErrorCode E_PlatformAlreadyInitialized{ "E.0200:App:Platform Already Initialized" };
 
     //! \brief Error returned when the platform API is not available on the current device and/or platform.
-    static constexpr ice::ResultCode E_PlatformFeatureNotAvailable = ice::ResCode::create(
-        ice::ResultSeverity::Error, "Platform Feature Not Available"
-    );
+    static constexpr ice::ErrorCode E_PlatformFeatureNotAvailable{ "E.0201:App:Platform Feature Not Available" };
 
     //! \brief Error returned when accessing Android platform API's from an JNI library
     //!   that is not a NativeActivity Application.
     //! \note This error is only returned on Android systems.s
-    static constexpr ice::ResultCode E_PlatformAndroidNotANativeActivity = ice::ResCode::create(
-        ice::ResultSeverity::Error, "The current Android JNI instsance is not a NativeActivity!"
-    );
+    static constexpr ice::ErrorCode E_PlatformAndroidNotANativeActivity{ "E.0202:App:The current Android JNI instsance is not a NativeActivity!" };
 
 } // namespace ice::platform

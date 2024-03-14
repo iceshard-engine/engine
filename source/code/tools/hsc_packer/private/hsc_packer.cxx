@@ -141,7 +141,7 @@ public:
                         }
                     }
                     HSCP_ERROR_IF(
-                        res != ice::Res::Success,
+                        res != ice::S_Success,
                         "Failed to parse config file '{}'...",
                         ice::String{ config_path_utf8 }
                     );

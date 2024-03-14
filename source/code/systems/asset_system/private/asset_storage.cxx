@@ -410,7 +410,7 @@ namespace ice
                 if (ice::Data metadata = co_await entry.resource->load_metadata(); metadata.location != nullptr)
                 {
                     ice::MutableMetadata res_metadata{ _allocator };
-                    if (ice::Result res = ice::meta_deserialize_from(res_metadata, metadata); ice::result_is_valid(res))
+                    if (ice::Result const res = ice::meta_deserialize_from(res_metadata, metadata); res)
                     {
                         load_success = co_await ice::detail::load_asset(
                             shelve.asset_allocator(),
@@ -558,7 +558,7 @@ namespace ice
                     if (ice::Data metadata = co_await entry.resource->load_metadata(); metadata.location != nullptr)
                     {
                         ice::Result const res = ice::meta_deserialize_from(res_metadata, metadata);
-                        ICE_ASSERT_CORE(ice::result_is_valid(res));
+                        ICE_ASSERT_CORE(res == true);
                     }
 
                     initial_state = shelve.definition.fn_asset_state(

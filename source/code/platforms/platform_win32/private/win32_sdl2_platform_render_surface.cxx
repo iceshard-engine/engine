@@ -1,4 +1,4 @@
-/// Copyright 2023 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2023 - 2024, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "win32_sdl2_platform_render_surface.hxx"
@@ -40,7 +40,7 @@ namespace ice::platform::win32::sdl2
 
         if (surface_params.dimensions.x == 0 || surface_params.dimensions.y == 0)
         {
-            return Res::E_InvalidArgument;
+            return E_InvalidArgument;
         }
 
         using ice::render::RenderDriverAPI;
@@ -68,7 +68,7 @@ namespace ice::platform::win32::sdl2
             surface_params.dimensions.y,
             creation_flags
         );
-        return Res::Success;
+        return S_Success;
     }
 
     bool RenderSurface_Win32SDL2::get_surface(ice::render::SurfaceInfo& out_surface_info) noexcept
@@ -93,4 +93,3 @@ namespace ice::platform::win32::sdl2
     }
 
 } // namespace ice::platform::win32::sdl2
-

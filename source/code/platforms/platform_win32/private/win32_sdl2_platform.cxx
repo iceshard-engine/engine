@@ -1,4 +1,4 @@
-/// Copyright 2023 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2023 - 2024, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "win32_sdl2_platform.hxx"
@@ -118,7 +118,7 @@ namespace ice::platform::win32::sdl2
             }
         }
 
-        return Res::Success;
+        return S_Success;
     }
 
 } // namespace ice::platform::win32::sdl2
@@ -160,7 +160,7 @@ namespace ice::platform
 
         if (flags == FeatureFlags::None || !ice::has_all(available_features(), flags))
         {
-            return Res::E_InvalidArgument;
+            return E_InvalidArgument;
         }
 
         if (ice::has_any(flags, FeatureFlags::StoragePaths))
@@ -170,7 +170,7 @@ namespace ice::platform
 
         // Initialize the global platform instance. We don't use the allocator so we don't leak this pointer.
         core_feature = new (instance_buffer) win32::sdl2::Platform_Win32SDL2{ alloc };
-        return Res::Success;
+        return S_Success;
     }
 
     auto query_api(ice::platform::FeatureFlags flag, void*& out_api_ptr) noexcept -> ice::Result
@@ -195,15 +195,15 @@ namespace ice::platform
             out_api_ptr = static_cast<ice::platform::RenderSurface*>(ice::addressof(instance_ptr->_render_surface));
             break;
         default:
-            return Res::E_InvalidArgument;
+            return E_InvalidArgument;
         }
 
-        return Res::Success;
+        return S_Success;
     }
 
     auto query_apis(ice::platform::FeatureFlags flags, void** out_api_ptrs) noexcept -> ice::Result
     {
-        ice::Result result = Res::Success;
+        ice::Result result = S_Success;
         for (FeatureFlags flag : { FeatureFlags::Core, FeatureFlags::RenderSurface })
         {
             if (ice::has_all(flags, flag))
@@ -217,7 +217,7 @@ namespace ice::platform
             }
             else
             {
-                result = Res::E_InvalidArgument;
+                result = E_InvalidArgument;
                 break;
             }
         }

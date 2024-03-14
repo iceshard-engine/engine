@@ -705,7 +705,7 @@ namespace ice
         return result;
     }
 
-    auto meta_deserialize_from(ice::MutableMetadata& meta, ice::Data data) noexcept -> ice::Result
+    auto meta_deserialize_from(ice::MutableMetadata& meta, ice::Data data) noexcept -> ice::Expected<ice::ErrorCode>
     {
         char const* it = reinterpret_cast<char const*>(data.location);
         if (it != nullptr)
@@ -719,9 +719,9 @@ namespace ice
             {
                 detail::deserialize_json_meta(data, meta);
             }
-            return Res::Success;
+            return ice::S_Success;
         }
-        return Res::E_InvalidArgument;
+        return ice::E_InvalidArgument;
     }
 
     auto meta_store(ice::Metadata const& meta, ice::Memory out_data) noexcept -> ice::usize

@@ -238,7 +238,7 @@ void ice_init(
         | ice::platform::FeatureFlags::RenderSurface,
         platform_params
     );
-    ICE_ASSERT(res == ice::Res::Success, "Failed to initialize platform!");
+    ICE_ASSERT(res == true, "Failed to initialize platform!");
 
     using ice::app::Config;
     using ice::app::State;
@@ -392,7 +392,7 @@ auto ice_resume(
             };
             ice::Result result = surface.create(surface_params);
             ICE_ASSERT(
-                result == ice::Res::Success,
+                result == true,
                 "Failed to create render surface [ driver={}, dimensions={}x{} ]",
                 ice::u32(surface_params.driver), surface_params.dimensions.x, surface_params.dimensions.y
             );
@@ -627,5 +627,5 @@ auto ice_shutdown(
     state.platform.render_surface->destroy();
 
     ice::platform::shutdown();
-    return ice::Res::Success;
+    return ice::S_Success;
 }

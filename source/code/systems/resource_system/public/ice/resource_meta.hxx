@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2024, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -7,7 +7,7 @@
 #include <ice/container_types.hxx>
 #include <ice/resource_types.hxx>
 #include <ice/mem_buffer.hxx>
-#include <ice/result_codes.hxx>
+#include <ice/expected.hxx>
 
 namespace ice
 {
@@ -31,7 +31,7 @@ namespace ice
     //! \brief Deserializes and appends all values from given input data to the read-write metadata interface.
     //! \return 'Res::Success' on success, otherwise returns first encountered error or last encountered warning.
     [[nodiscard]]
-    auto meta_deserialize_from(ice::MutableMetadata& meta, ice::Data data) noexcept -> ice::Result;
+    auto meta_deserialize_from(ice::MutableMetadata& meta, ice::Data data) noexcept -> ice::Expected<ice::ErrorCode>;
 
     //! \brief Reduces the Metadata buffers to the minimum required size to hold all values.
     //! \note This function can be helpfull to reduce the Metadata size before storing it in memory / files.

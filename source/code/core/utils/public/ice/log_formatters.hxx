@@ -1,11 +1,10 @@
-/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2024, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
 #include <fmt/format.h>
 #include <ice/stringid.hxx>
 #include <ice/mem_types.hxx>
-#include <ice/result_codes.hxx>
 #include <ice/string_types.hxx>
 
 template<typename CharType>
@@ -123,8 +122,8 @@ struct fmt::formatter<ice::usize>
     }
 };
 
-template<bool DebugInfo>
-struct fmt::formatter<ice::ResultCode<DebugInfo>>
+template<>
+struct fmt::formatter<ice::ErrorCode>
 {
     template<typename ParseContext>
     constexpr auto parse(ParseContext& ctx)
@@ -132,28 +131,10 @@ struct fmt::formatter<ice::ResultCode<DebugInfo>>
         return ctx.begin();
     }
 
-    static constexpr std::string_view SeverityVal[]{
-        "OK", // Success
-        "INF",
-        "WAR",
-        "ERR"
-    };
-
     template<typename FormatContext>
-    constexpr auto format(ice::ResultCode<DebugInfo> value, FormatContext& ctx)
+    constexpr auto format(ice::ErrorCode value, FormatContext& ctx)
     {
-        if (value == ice::Res::Success)
-        {
-            return fmt::format_to(ctx.out(), "OK");
-        }
-
-        if constexpr (DebugInfo == true)
-        {
-            return fmt::format_to(ctx.out(), "{}({} '{}')", SeverityVal[value.value.severity], value.value.id, value.description);
-        }
-        else
-        {
-            return fmt::format_to(ctx.out(), "{}({})", SeverityVal[value.value.severity], value.value.id);
-        }
+        fmt::string_view const type = value.type() == 'E' ? "Error" : "Success";
+        return fmt::format_to("{}({}, '{}')", type, value.category(), value.description());
     }
 };

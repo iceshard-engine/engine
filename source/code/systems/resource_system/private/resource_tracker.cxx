@@ -68,9 +68,9 @@ namespace ice
         if (data.location != nullptr)
         {
             out_metadata = data;
-            co_return Res::Success;
+            co_return ice::S_Success;
         }
-        co_return Res::E_InvalidArgument;
+        co_return ice::E_InvalidArgument;
     }
 
     // Might need to be moved somewhere else?
