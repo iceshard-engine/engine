@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2024, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -7,19 +7,12 @@
 namespace ice
 {
 
-    void initialize_log_module(
-        ice::ModuleNegotiatorContext* ctx,
-        ice::ModuleNegotiator* api
-    ) noexcept;
+    struct LogModule
+    {
+        static void init(ice::Allocator& alloc, ice::ModuleNegotiator const& negotiator) noexcept;
 
-    void load_log_module(
-        ice::Allocator* alloc,
-        ice::ModuleNegotiatorContext* ctx,
-        ice::ModuleNegotiator* api
-    ) noexcept;
-
-    void unload_log_module(
-        ice::Allocator* alloc
-    ) noexcept;
+        static bool on_load(ice::Allocator& alloc, ice::ModuleNegotiator const& negotiator) noexcept;
+        static void on_unload(ice::Allocator& alloc) noexcept;
+    };
 
 } // namespace ice

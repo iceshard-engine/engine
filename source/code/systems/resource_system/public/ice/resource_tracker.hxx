@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2024, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -6,6 +6,7 @@
 #include <ice/mem_data.hxx>
 #include <ice/mem_unique_ptr.hxx>
 #include <ice/container_types.hxx>
+#include <ice/string/heap_string.hxx>
 #include <ice/resource_types.hxx>
 #include <ice/resource_flags.hxx>
 #include <ice/resource_status.hxx>
@@ -13,6 +14,7 @@
 #include <ice/task.hxx>
 #include <ice/task_flags.hxx>
 #include <ice/task_scheduler.hxx>
+#include <ice/expected.hxx>
 
 namespace ice
 {
@@ -58,7 +60,9 @@ namespace ice
     public:
         virtual ~ResourceTracker() noexcept = default;
 
-        virtual bool attach_provider(ice::ResourceProvider* provider) noexcept = 0;
+        virtual auto attach_provider(
+            ice::UniquePtr<ice::ResourceProvider> provider
+        ) noexcept -> ice::ResourceProvider* = 0;
 
         //! \brief Synchronize resources with changes reported by providers.
         //!
@@ -97,6 +101,7 @@ namespace ice
     auto resource_uri(ice::ResourceHandle const* handle) noexcept -> ice::URI const&;
     auto resource_origin(ice::ResourceHandle const* handle) noexcept -> ice::String;
     auto resource_path(ice::ResourceHandle const* handle) noexcept -> ice::String;
+    auto resource_meta(ice::ResourceHandle const* handle, ice::Data& out_metadata) noexcept -> ice::Task<ice::Result>;
     auto get_loose_resource(ice::ResourceHandle const* handle) noexcept -> ice::LooseResource const*;
 
     auto create_resource_tracker(
@@ -104,5 +109,11 @@ namespace ice
         ice::TaskScheduler& scheduler,
         ice::ResourceTrackerCreateInfo const& create_info
     ) noexcept -> ice::UniquePtr<ice::ResourceTracker>;
+
+    auto resolve_dynlib_path(
+        ice::ResourceTracker const& tracker,
+        ice::Allocator& alloc,
+        ice::String name
+    ) noexcept -> ice::HeapString<>;
 
 } // namespace ice

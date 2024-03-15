@@ -4,12 +4,12 @@
 #pragma once
 #include <ice/render/render_declarations.hxx>
 #include <ice/world/world_trait_archive.hxx>
-#include <ice/gfx/gfx_trait.hxx>
 #include <ice/gfx/gfx_stage.hxx>
 #include <ice/container/hashmap.hxx>
 #include <ice/ui_element_draw.hxx>
 #include <ice/shard.hxx>
 
+#if 0
 namespace ice
 {
 
@@ -78,18 +78,18 @@ namespace ice
 
         void gfx_setup(
             ice::gfx::GfxFrame& gfx_frame,
-            ice::gfx::GfxDevice& gfx_device
+            ice::gfx::GfxContext& gfx_ctx
         ) noexcept override;
 
         void gfx_cleanup(
             ice::gfx::GfxFrame& gfx_frame,
-            ice::gfx::GfxDevice& gfx_device
+            ice::gfx::GfxContext& gfx_ctx
         ) noexcept override;
 
         void gfx_update(
             ice::EngineFrame const& engine_frame,
             ice::gfx::GfxFrame& gfx_frame,
-            ice::gfx::GfxDevice& gfx_device
+            ice::gfx::GfxContext& gfx_ctx
         ) noexcept override;
 
         void on_activate(
@@ -129,3 +129,5 @@ namespace ice
 
 template<>
 constexpr ice::ShardPayloadID ice::Constant_ShardPayloadID<ice::RenderUIRequest const*> = ice::shard_payloadid("ice::RenderUIRequest const*");
+
+#endif

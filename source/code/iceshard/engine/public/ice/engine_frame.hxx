@@ -3,28 +3,30 @@
 
 #pragma once
 #include <ice/span.hxx>
+#include <ice/clock.hxx>
 #include <ice/stringid.hxx>
-#include <ice/data_storage.hxx>
 #include <ice/shard_container.hxx>
 #include <ice/input/input_types.hxx>
 
 #include <ice/task.hxx>
 #include <ice/task_scheduler.hxx>
+#include <ice/task_container.hxx>
+#include <ice/engine_types.hxx>
+#include <ice/engine_frame_data.hxx>
 #include <ice/ecs/ecs_types.hxx>
 
 namespace ice
 {
 
-    class EngineFrame
+    struct EngineFrame
     {
-    public:
         virtual ~EngineFrame() noexcept = default;
 
+        virtual auto allocator() const noexcept -> ice::Allocator& = 0;
         virtual auto index() const noexcept -> ice::u32 = 0;
 
-        virtual auto allocator() noexcept -> ice::Allocator& = 0;
-
-        virtual auto input_events() const noexcept -> ice::Span<ice::input::InputEvent const> = 0;;
+        virtual auto data() noexcept -> ice::EngineFrameData& = 0;
+        virtual auto data() const noexcept -> ice::EngineFrameData const& = 0;
 
         virtual auto shards() noexcept -> ice::ShardContainer& = 0;
         virtual auto shards() const noexcept -> ice::ShardContainer const& = 0;
@@ -32,10 +34,7 @@ namespace ice
         virtual auto entity_operations() noexcept -> ice::ecs::EntityOperations& = 0;
         virtual auto entity_operations() const noexcept -> ice::ecs::EntityOperations const& = 0;
 
-        virtual auto storage() noexcept -> ice::DataStorage& = 0;
-        virtual auto storage() const noexcept -> ice::DataStorage const& = 0;
-
-        virtual auto stage_end() noexcept -> ice::TaskStage<ice::EngineFrame> = 0;
+        virtual auto tasks_container() noexcept -> ice::TaskContainer& = 0;
     };
 
 } // namespace ice

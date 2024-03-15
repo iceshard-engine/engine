@@ -6,6 +6,7 @@ import DevenvCommand from require 'ice.commands.devenv'
 import LicenseCommand from require 'ice.commands.license'
 import ScriptCommand from require 'ice.commands.script'
 import ExecCommand from require 'ice.commands.exec'
+import AndroidCommand from require 'ice.commands.android'
 
 import RunCommand from require 'tools.run'
 import NatvisCommand from require 'tools.natvis'
@@ -15,7 +16,7 @@ LicenseCommand.settings.authors = "Dandielo <dandielo@iceshard.net>"
 LicenseCommand.settings.license = "MIT"
 
 class IceShard extends Application
-    @name: 'IceShard (v0.3.0)'
+    @name: 'IceShard'
     @description: 'IceShard engine project tool.'
     @commands: {
         'build': BuildCommand
@@ -26,6 +27,7 @@ class IceShard extends Application
         'codestyle': CodeStyleCommand
         'license': LicenseCommand
         'script': ScriptCommand
+        'android': AndroidCommand
     }
 
 { :IceShard }

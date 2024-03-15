@@ -113,6 +113,11 @@ namespace ice
     {
         ice::ShardID id;
         ice::detail::ShardPayload payload;
+
+        constexpr operator ice::ShardID() const noexcept
+        {
+            return id;
+        }
     };
 
     static constexpr ice::Shard Shard_Invalid{ .id = { }, .payload = { } };
@@ -277,6 +282,12 @@ namespace ice
         return ice::shard(shard.id, payload);
     }
 
+    template<typename T> requires ice::HasShardPayloadID<T>
+    constexpr auto operator|(ice::ShardID shardid, T payload) noexcept -> ice::Shard
+    {
+        return ice::shard(shardid, payload);
+    }
+
     constexpr auto operator==(ice::ShardID left, ice::ShardID right) noexcept -> bool
     {
         if (left.name == right.name)
@@ -324,33 +335,45 @@ namespace ice
     // COMMON PAYLOAD TYPES
 
     template<>
-    constexpr ice::ShardPayloadID Constant_ShardPayloadID<ice::i32> = ice::shard_payloadid("ice::i32");
+    constexpr inline ice::ShardPayloadID Constant_ShardPayloadID<bool> = ice::shard_payloadid("bool");
 
     template<>
-    constexpr ice::ShardPayloadID Constant_ShardPayloadID<ice::u32> = ice::shard_payloadid("ice::u32");
+    constexpr inline ice::ShardPayloadID Constant_ShardPayloadID<ice::i32> = ice::shard_payloadid("ice::i32");
 
     template<>
-    constexpr ice::ShardPayloadID Constant_ShardPayloadID<ice::f32> = ice::shard_payloadid("ice::f32");
+    constexpr inline ice::ShardPayloadID Constant_ShardPayloadID<ice::u32> = ice::shard_payloadid("ice::u32");
 
     template<>
-    constexpr ice::ShardPayloadID Constant_ShardPayloadID<ice::i64> = ice::shard_payloadid("ice::i64");
+    constexpr inline ice::ShardPayloadID Constant_ShardPayloadID<ice::f32> = ice::shard_payloadid("ice::f32");
 
     template<>
-    constexpr ice::ShardPayloadID Constant_ShardPayloadID<ice::u64> = ice::shard_payloadid("ice::u64");
+    constexpr inline ice::ShardPayloadID Constant_ShardPayloadID<ice::i64> = ice::shard_payloadid("ice::i64");
 
     template<>
-    constexpr ice::ShardPayloadID Constant_ShardPayloadID<ice::f64> = ice::shard_payloadid("ice::f64");
+    constexpr inline ice::ShardPayloadID Constant_ShardPayloadID<ice::u64> = ice::shard_payloadid("ice::u64");
 
     template<>
-    constexpr ice::ShardPayloadID Constant_ShardPayloadID<char const*> = ice::shard_payloadid("char const*");
+    constexpr inline ice::ShardPayloadID Constant_ShardPayloadID<ice::f64> = ice::shard_payloadid("ice::f64");
 
     template<>
-    constexpr ice::ShardPayloadID Constant_ShardPayloadID<std::string_view const*> = ice::shard_payloadid("std::string_view const*");
+    constexpr inline ice::ShardPayloadID Constant_ShardPayloadID<char const*> = ice::shard_payloadid("char const*");
 
     template<>
-    constexpr ice::ShardPayloadID Constant_ShardPayloadID<ice::StringID_Hash> = ice::shard_payloadid("ice::StringID_Hash");
+    constexpr inline ice::ShardPayloadID Constant_ShardPayloadID<std::string_view const*> = ice::shard_payloadid("std::string_view const*");
+
+    template<>
+    constexpr inline ice::ShardPayloadID Constant_ShardPayloadID<ice::StringID_Hash> = ice::shard_payloadid("ice::StringID_Hash");
 
 
+    constexpr auto hash(ice::ShardID shardid) noexcept -> ice::u64
+    {
+        return ice::bit_cast<ice::u64>(shardid);
+    }
+
+    constexpr auto hash32(ice::ShardID shardid) noexcept -> ice::u32
+    {
+        return shardid.name.value ^ shardid.payload.value;
+    }
 
     namespace _validate
     {
@@ -391,3 +414,12 @@ namespace ice
 
 
 } // namespace ice
+
+template<>
+constexpr auto ice::value_or_default<ice::ShardID, ice::ShardID>(
+    ice::ShardID value,
+    ice::ShardID default_value
+) noexcept -> ice::ShardID
+{
+    return value != ice::Shard_Invalid.id ? value : default_value;
+}

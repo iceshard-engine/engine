@@ -33,13 +33,6 @@ namespace ice
     } // namespace string::detail
 
     template<typename CharType>
-    constexpr BasicString<CharType>::BasicString() noexcept
-        : _data{ nullptr }
-        , _size{ 0 }
-    {
-    }
-
-    template<typename CharType>
     constexpr BasicString<CharType>::BasicString(CharType const* str_ptr) noexcept
         : BasicString{ str_ptr, ice::string::detail::strptr_size(str_ptr) }
     {
@@ -232,7 +225,7 @@ namespace ice
                 it += 1;
             }
 
-            return it >= it_end ? ice::String_NPos : start_idx + ice::ucount(beg - it);
+            return it >= it_end ? ice::String_NPos : start_idx + ice::ucount(it - beg);
         }
 
         template<typename CharType>
@@ -318,7 +311,7 @@ namespace ice
                 it += 1;
             }
 
-            return it >= it_end ? ice::String_NPos : start_idx + ice::ucount(beg - it);
+            return it >= it_end ? ice::String_NPos : start_idx + ice::ucount(it - beg);
         }
 
         template<typename CharType>

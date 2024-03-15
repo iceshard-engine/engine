@@ -2,56 +2,12 @@
 /// SPDX-License-Identifier: MIT
 
 #pragma once
-#include <ice/task_types.hxx>
 #include <ice/task_awaitable.hxx>
 #include <ice/task_queue.hxx>
+#include <ice/task_stage.hxx>
 
 namespace ice
 {
-
-    template<typename StageObject = void>
-    struct TaskStageAwaitable
-    {
-        inline explicit TaskStageAwaitable(ice::TaskQueue& queue) noexcept
-            : _awaitable{ ._params{.modifier = TaskAwaitableModifier_v3::Unused} }
-            , _queue{ queue }
-        { }
-
-        inline bool await_ready() const noexcept
-        {
-            return false;
-        }
-
-        inline auto await_suspend(ice::coroutine_handle<> coroutine) noexcept
-        {
-            _awaitable._coro = coroutine;
-            ice::linked_queue::push(_queue._awaitables, &_awaitable);
-        }
-
-        inline auto await_resume() const noexcept -> StageObject& requires(std::is_same_v<StageObject, void> == false)
-        {
-            return *reinterpret_cast<StageObject*>(_awaitable.result.ptr);
-        }
-
-        inline void await_resume() const noexcept requires(std::is_same_v<StageObject, void>)
-        {
-        }
-
-        ice::TaskAwaitableBase _awaitable;
-        ice::TaskQueue& _queue;
-    };
-
-    template<typename StageResult = void>
-    struct TaskStage
-    {
-        ice::TaskQueue& _queue;
-    };
-
-    template<typename StageResult>
-    inline auto operator co_await(ice::TaskStage<StageResult>&& task_stage) noexcept -> ice::TaskStageAwaitable<StageResult>
-    {
-        return ice::TaskStageAwaitable<StageResult>{ task_stage._queue };
-    }
 
     class TaskScheduler
     {
@@ -111,7 +67,7 @@ namespace ice
             Awaitable(ice::TaskQueue& queue) noexcept
                 : SchedulerAwaitable{
                     queue,
-                    { .modifier = TaskAwaitableModifier_v3::Unused }
+                    { .modifier = TaskAwaitableModifier::Unused }
                 }
             { }
         };
@@ -130,7 +86,7 @@ namespace ice
                 : SchedulerAwaitable{
                     queue,
                     {
-                        .modifier = TaskAwaitableModifier_v3::PriorityFlags,
+                        .modifier = TaskAwaitableModifier::PriorityFlags,
                         .task_flags = flags
                     }
                 }
@@ -151,7 +107,7 @@ namespace ice
                 : SchedulerAwaitable{
                     queue,
                     {
-                        .modifier = TaskAwaitableModifier_v3::DelayedExecution,
+                        .modifier = TaskAwaitableModifier::DelayedExecution,
                         .u32_value = delay_ms
                     }
                 }

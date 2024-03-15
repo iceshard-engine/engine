@@ -22,6 +22,9 @@ namespace ice
         //! \brief The asset data state is not known and needs another pass to the Asset Type Resolver.
         Unknown,
 
+        //! \bried The resource handle associated exists, but the data was not requested not validated.
+        Exists,
+
         //! \brief The asset data is represented in raw format of the source file.
         //! \detail This means that you might get raw jpg or png image data.
         Raw,
@@ -51,8 +54,9 @@ namespace ice
         Asset(Asset const&) noexcept = delete;
         auto operator=(Asset const&) noexcept -> ice::Asset& = delete;
 
+        auto name() const noexcept -> ice::StringID_Arg;
         bool valid() const noexcept;
-        auto metadata() const noexcept -> ice::Metadata const&;
+        auto metadata(ice::Data& out_metadata) const noexcept -> ice::Task<ice::Result>;
         bool available(ice::AssetState state) const noexcept;
         auto preload(ice::AssetState state) noexcept -> ice::Task<bool>;
         auto data(ice::AssetState state) noexcept -> ice::Task<ice::Data>;

@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2024, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -7,24 +7,63 @@
 #include <ice/container_types.hxx>
 #include <ice/resource_types.hxx>
 #include <ice/mem_buffer.hxx>
+#include <ice/expected.hxx>
 
 namespace ice
 {
 
+    //! \brief A read-only interface for accessing resource metadata values.
     struct Metadata;
 
+    //! \brief A read-write interface for accessing and updating resource metadata.
+    //!
+    //! \note Can be loaded from a JSon file, but only alows saving to the internal binary representation.
+    //! \note The object can be implicitly casted to the 'Metadata' interface.
     struct MutableMetadata;
 
 
-    void meta_deserialize(ice::Data data, ice::MutableMetadata& meta) noexcept;
+    //! \brief Deserializes given input data into a read-write metadata interface.
+    //! \note The resulting metadata can be incomplete if input was invalid or incompatible.
+    //!     If data might be invalid, please use `meta_deserialize_into` for additional error handling and checking.
+    [[nodiscard]]
+    auto meta_deserialize(ice::Allocator& alloc, ice::Data data) noexcept -> ice::MutableMetadata;
 
+    //! \brief Deserializes and appends all values from given input data to the read-write metadata interface.
+    //! \return 'Res::Success' on success, otherwise returns first encountered error or last encountered warning.
+    [[nodiscard]]
+    auto meta_deserialize_from(ice::MutableMetadata& meta, ice::Data data) noexcept -> ice::Expected<ice::ErrorCode>;
+
+    //! \brief Reduces the Metadata buffers to the minimum required size to hold all values.
+    //! \note This function can be helpfull to reduce the Metadata size before storing it in memory / files.
+    //! \return The number of bytes saved due to internal buffer optimizations.
+    //! \todo Not implemented.
+    auto meta_optimize(ice::MutableMetadata& meta) noexcept -> ice::usize = delete;
+
+    //! \brief Tries to load metadata from given input.
+    //! \warning The Metadata object is a view into the given 'Data' object.
+    //!     The 'Metadata' filetime is directly tied to the 'Data' lifetime it was loaded from.
+    //! \return Always returns a Metadata object. If data was invalid the object will be empty.
+    [[nodiscard]]
     auto meta_load(ice::Data data) noexcept -> ice::Metadata;
 
-    void meta_save(
-        ice::Metadata const& meta,
-        ice::Allocator& alloc,
-        ice::Memory& out_data
-    ) noexcept;
+    //! \brief Stores the metadata object into the given memory block.
+    //! \return Number of written bytes if successful, otherwise returns '0_B'.
+    auto meta_store(ice::Metadata const& meta, ice::Memory out_data) noexcept -> ice::usize;
+
+    //! \brief Saves the metadata object into a new memory block big enough to store all values.
+    //! \note If metadata is empty it will store an empty metadata representation.
+    //! \note If the allocator fails to provide a big enough memory block, the operation will fail.
+    //! \return The newly allocated memory block with stored metadata if successful, otherwise a 'Null' memory block.
+    [[nodiscard]]
+    auto meta_save(ice::Metadata const& meta, ice::Allocator& alloc) noexcept -> ice::Memory;
+
+    //! \return Memory requirements for the Metadata to be stored.
+    [[nodiscard]]
+    auto meta_meminfo(ice::Metadata const& meta) noexcept -> ice::meminfo;
+
+    //! \brief The word value found at the start of a binary saved Metadata object.
+    static constexpr ice::String Constant_FileHeader_MetadataFile = "ISMF";
+
 
     bool meta_has_entry(
         ice::Metadata const& meta,
@@ -82,7 +121,7 @@ namespace ice
     auto meta_read_string_array(
         ice::Metadata const& meta,
         ice::StringID_Arg key,
-        ice::Array<ice::String, ContainerLogic::Complex>& result
+        ice::Array<ice::String>& result
     ) noexcept -> bool;
 
 
@@ -202,9 +241,5 @@ namespace ice
         ice::HashMapView<detail::MetadataEntry> _meta_entries;
         ice::Data _additional_data;
     };
-
-
-    static constexpr ice::String Constant_FileHeader_MetadataFile = "ISMF";
-    static constexpr ice::String Constant_FileHeader_ResourceFile = "ISRF";
 
 } // namespace ice

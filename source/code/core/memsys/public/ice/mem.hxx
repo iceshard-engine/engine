@@ -5,6 +5,7 @@
 #include <ice/mem_info.hxx>
 #include <ice/mem_utils.hxx>
 #include <ice/mem_memory.hxx>
+#include <new>
 
 namespace ice
 {

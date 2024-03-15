@@ -10,9 +10,7 @@
 #include <ice/engine.hxx>
 #include <ice/world/world_trait_archive.hxx>
 
-#include <ice/gfx/gfx_device.hxx>
-#include <ice/gfx/gfx_frame.hxx>
-#include <ice/gfx/gfx_resource_tracker.hxx>
+#include <ice/gfx/gfx_context.hxx>
 
 #include <ice/render/render_device.hxx>
 #include <ice/render/render_pass.hxx>
@@ -27,6 +25,7 @@
 namespace ice
 {
 
+#if 0
     namespace detail
     {
 
@@ -57,19 +56,19 @@ namespace ice
 
     void IceWorldTrait_RenderDebug::gfx_setup(
         ice::gfx::GfxFrame& gfx_frame,
-        ice::gfx::GfxDevice& gfx_device
+        ice::gfx::GfxContext& gfx_ctx
     ) noexcept
     {
         using namespace ice::gfx;
         using namespace ice::render;
 
-        Renderpass renderpass = ice::gfx::find_resource<Renderpass>(gfx_device.resource_tracker(), "ice.gfx.renderpass.default"_sid);
+        Renderpass renderpass = ice::gfx::find_resource<Renderpass>(gfx_ctx.resource_tracker(), "ice.gfx.renderpass.default"_sid);
         ICE_ASSERT(
             renderpass != Renderpass::Invalid,
             "Trait cannot properly setup render objects due to a missing renderpass object!"
         );
 
-        RenderDevice& device = gfx_device.device();
+        RenderDevice& device = gfx_ctx.device();
 
         _shader_stages[0] = ShaderStageFlags::VertexStage;
         _shader_stages[1] = ShaderStageFlags::FragmentStage;
@@ -149,11 +148,11 @@ namespace ice
 
     void IceWorldTrait_RenderDebug::gfx_cleanup(
         ice::gfx::GfxFrame& gfx_frame,
-        ice::gfx::GfxDevice& gfx_device
+        ice::gfx::GfxContext& gfx_ctx
     ) noexcept
     {
         using namespace ice::render;
-        RenderDevice& device = gfx_device.device();
+        RenderDevice& device = gfx_ctx.device();
 
         device.destroy_buffer(_vertices);
         device.destroy_buffer(_colors);
@@ -168,7 +167,7 @@ namespace ice
     void IceWorldTrait_RenderDebug::gfx_update(
         ice::EngineFrame const& engine_frame,
         ice::gfx::GfxFrame& gfx_frame,
-        ice::gfx::GfxDevice& gfx_device
+        ice::gfx::GfxContext& gfx_ctx
     ) noexcept
     {
 
@@ -204,7 +203,7 @@ namespace ice
                     buffer_offset += ice::u32(vertex_data.size.value);
                     color_buffer_offset += ice::u32(color_data.size.value);
 
-                    gfx_device.device().update_buffers(updates);
+                    gfx_ctx.device().update_buffers(updates);
                 }
             }
         );
@@ -218,7 +217,7 @@ namespace ice
         if (camera_name != ice::StringID_Invalid)
         {
             ice::render::Buffer const camera_buffer = ice::gfx::find_resource<ice::render::Buffer>(
-                gfx_device.resource_tracker(),
+                gfx_ctx.resource_tracker(),
                 _render_camera
             );
 
@@ -228,7 +227,7 @@ namespace ice
 
                 _render_camera_buffer = camera_buffer;
 
-                RenderDevice& device = gfx_device.device();
+                RenderDevice& device = gfx_ctx.device();
 
                 ResourceUpdateInfo res_updates[]{
                     ResourceUpdateInfo
@@ -312,5 +311,6 @@ namespace ice
             }
         );
     }
+#endif
 
 } // namespace ice

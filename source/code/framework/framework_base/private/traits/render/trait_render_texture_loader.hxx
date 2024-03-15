@@ -5,7 +5,7 @@
 #include <ice/asset.hxx>
 #include <ice/game_render_traits.hxx>
 #include <ice/render/render_declarations.hxx>
-#include <ice/gfx/gfx_device.hxx>
+#include <ice/gfx/gfx_context.hxx>
 
 #include <ice/container/hashmap.hxx>
 
@@ -15,6 +15,7 @@ namespace ice
     class AssetRequest;
     struct AssetHandle;
 
+#if 0
     class IceWorldTrait_RenderTextureLoader : public ice::gfx::GfxTrait
     {
     public:
@@ -24,18 +25,18 @@ namespace ice
 
         void gfx_setup(
             ice::gfx::GfxFrame& gfx_frame,
-            ice::gfx::GfxDevice& gfx_device
+            ice::gfx::GfxContext& gfx_ctx
         ) noexcept override;
 
         void gfx_update(
             ice::EngineFrame const& engine_frame,
             ice::gfx::GfxFrame& gfx_frame,
-            ice::gfx::GfxDevice& gfx_device
+            ice::gfx::GfxContext& gfx_ctx
         ) noexcept override;
 
         void gfx_cleanup(
             ice::gfx::GfxFrame& gfx_frame,
-            ice::gfx::GfxDevice& gfx_device
+            ice::gfx::GfxContext& gfx_ctx
         ) noexcept override;
 
         void on_update(
@@ -75,5 +76,6 @@ namespace ice
     void register_trait_render_texture_loader(
         ice::WorldTraitArchive& archive
     ) noexcept;
+#endif
 
 } // namespace ice

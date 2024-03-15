@@ -2,10 +2,10 @@
 /// SPDX-License-Identifier: MIT
 
 #pragma once
-#include <ice/gfx/gfx_trait.hxx>
 #include <ice/gfx/gfx_stage.hxx>
 #include <ice/mem_data.hxx>
 
+#if 0
 namespace ice
 {
 
@@ -20,18 +20,18 @@ namespace ice
 
         void gfx_setup(
             ice::gfx::GfxFrame& gfx_frame,
-            ice::gfx::GfxDevice& gfx_device
+            ice::gfx::GfxContext& gfx_ctx
         ) noexcept override;
 
         void gfx_cleanup(
             ice::gfx::GfxFrame& gfx_frame,
-            ice::gfx::GfxDevice& gfx_device
+            ice::gfx::GfxContext& gfx_ctx
         ) noexcept override;
 
         void gfx_update(
             ice::EngineFrame const& engine_frame,
             ice::gfx::GfxFrame& gfx_frame,
-            ice::gfx::GfxDevice& gfx_device
+            ice::gfx::GfxContext& gfx_ctx
         ) noexcept override;
 
         void record_commands(
@@ -65,3 +65,4 @@ namespace ice
     ) noexcept;
 
 } // namespace ice
+#endif

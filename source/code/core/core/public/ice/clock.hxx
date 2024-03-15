@@ -9,7 +9,7 @@ namespace ice
 
     //! \brief Simple object representing a clock by using two timestamps.
     //!
-    //! This type should be used usualy as a const reference <em>(Clock const &)</em> pointing to a system or custom clock object.
+    //! This type should be used usualy as a const reference pointing to a system or custom clock object.
     //!
     //! \see ice::SystemClock for how to access current time values.
     //! \see ice::CustomClock for how to create custom speed clocks.
@@ -66,7 +66,7 @@ namespace ice
     namespace clock
     {
 
-        auto clock_frequency() noexcept -> ice::f32;
+        auto clock_frequency() noexcept -> ice::u64;
 
         auto create_clock() noexcept -> ice::SystemClock;
 

@@ -9,12 +9,9 @@
 #include <ice/engine.hxx>
 #include <ice/engine_frame.hxx>
 #include <ice/engine_runner.hxx>
-#include <ice/world/world_portal.hxx>
 #include <ice/task.hxx>
 
-#include <ice/gfx/gfx_device.hxx>
-#include <ice/gfx/gfx_frame.hxx>
-#include <ice/gfx/gfx_resource_tracker.hxx>
+#include <ice/gfx/gfx_context.hxx>
 
 #include <ice/render/render_device.hxx>
 #include <ice/render/render_buffer.hxx>
@@ -29,6 +26,7 @@
 #include <ice/asset_storage.hxx>
 #include <ice/asset.hxx>
 
+#if 0
 namespace ice
 {
 
@@ -102,15 +100,15 @@ namespace ice
 
     void IceWorldTrait_RenderUI::gfx_setup(
         ice::gfx::GfxFrame& gfx_frame,
-        ice::gfx::GfxDevice& gfx_device
+        ice::gfx::GfxContext& gfx_ctx
     ) noexcept
     {
         using namespace ice::gfx;
         using namespace ice::render;
 
-        RenderDevice& device = gfx_device.device();
+        RenderDevice& device = gfx_ctx.device();
         Renderpass renderpass = ice::gfx::find_resource<Renderpass>(
-            gfx_device.resource_tracker(),
+            gfx_ctx.resource_tracker(),
             "ice.gfx.renderpass.default"_sid
         );
 
@@ -207,11 +205,11 @@ namespace ice
 
     void IceWorldTrait_RenderUI::gfx_cleanup(
         ice::gfx::GfxFrame& gfx_frame,
-        ice::gfx::GfxDevice& gfx_device
+        ice::gfx::GfxContext& gfx_ctx
     ) noexcept
     {
         using namespace ice::render;
-        RenderDevice& device = gfx_device.device();
+        RenderDevice& device = gfx_ctx.device();
 
         for (ice::RenderUIData* const data : _render_data)
         {
@@ -234,12 +232,12 @@ namespace ice
     void IceWorldTrait_RenderUI::gfx_update(
         ice::EngineFrame const& engine_frame,
         ice::gfx::GfxFrame& gfx_frame,
-        ice::gfx::GfxDevice& gfx_device
+        ice::gfx::GfxContext& gfx_ctx
     ) noexcept
     {
         using namespace ice::render;
 
-        RenderDevice& render_device = gfx_device.device();
+        RenderDevice& render_device = gfx_ctx.device();
 
         for (RenderUIData* data : _render_data)
         {
@@ -406,7 +404,7 @@ namespace ice
         );
 
         ice::vec2i window_size{ };
-        if (ice::shards::inspect_last(frame.shards(), ice::platform::Shard_WindowResized, window_size))
+        if (ice::shards::inspect_last(frame.shards(), ice::platform::ShardID_WindowResized, window_size))
         {
             _display_size = ice::vec2f{ (ice::f32)window_size.x, (ice::f32)window_size.y };
         }
@@ -429,3 +427,4 @@ namespace ice
     }
 
 } // namespace ice
+#endif

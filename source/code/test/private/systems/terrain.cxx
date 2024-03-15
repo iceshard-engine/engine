@@ -10,13 +10,7 @@
 #include <ice/input/input_keyboard.hxx>
 #include <ice/asset_storage.hxx>
 
-#include <ice/gfx/gfx_device.hxx>
-#include <ice/gfx/gfx_resource_tracker.hxx>
-#include <ice/gfx/gfx_model.hxx>
-#include <ice/gfx/gfx_subpass.hxx>
-#include <ice/gfx/gfx_camera.hxx>
-//#include <ice/gfx/gfx_task.hxx>
-#include <ice/gfx/gfx_frame.hxx>
+#include <ice/gfx/gfx_context.hxx>
 
 #include <ice/render/render_buffer.hxx>
 #include <ice/render/render_pipeline.hxx>
@@ -30,6 +24,7 @@
 namespace ice::trait
 {
 
+#if 0
     struct TerrainSettings
     {
         ice::f32 level_inner;
@@ -80,7 +75,7 @@ namespace ice::trait
 
         auto update_all_resources(
             ice::EngineRunner& runner,
-            ice::gfx::GfxDevice& gfx_device
+            ice::gfx::GfxContext& gfx_ctx
         ) noexcept -> ice::Task<>
         {
             using namespace render;
@@ -228,13 +223,13 @@ namespace ice::trait
         //    _render_cache->_image_info = *reinterpret_cast<ImageInfo const*>(temp_data.location);
         //}
 
-        //GfxDevice& gfx_device = runner.graphics_device();
-        //GfxResourceTracker& gfx_resources = gfx_device.resource_tracker();
+        //GfxContext& gfx_ctx = runner.graphics_device();
+        //GfxResourceTracker& gfx_resources = gfx_ctx.resource_tracker();
 
         //Renderpass renderpass = find_resource<Renderpass>(gfx_resources, "renderpass.default"_sid);
         //ice::render::Buffer camera_buffer = find_resource<ice::render::Buffer>(gfx_resources, "uniform_buffer.camera"_sid);
 
-        //RenderDevice& render_device = gfx_device.device();
+        //RenderDevice& render_device = gfx_ctx.device();
 
         //_render_cache->_render_device = &render_device;
         //_render_cache->_terrain_shaders[0] = render_device.create_shader(ShaderInfo{ .shader_data = vert_shader_data });
@@ -417,8 +412,8 @@ namespace ice::trait
         using namespace ice::gfx;
         using namespace ice::render;
 
-        //GfxDevice& gfx_device = runner.graphics_device();
-        //RenderDevice& render_device = gfx_device.device();
+        //GfxContext& gfx_ctx = runner.graphics_device();
+        //RenderDevice& render_device = gfx_ctx.device();
 
         //render_device.destroy_resourcesets({ &_render_cache->_terrain_resources, 1 });
 
@@ -525,5 +520,6 @@ namespace ice::trait
     //    render_commands.bind_index_buffer(cmds, _render_cache->_terrain_mesh_indices);
     //    render_commands.draw_indexed(cmds, 4, 1);
     //}
+#endif
 
 } // namespace ice::trait

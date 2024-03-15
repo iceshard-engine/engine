@@ -67,10 +67,10 @@ namespace ice::detail
             std::back_inserter(final_buffer),
             fmt_string(LogFormat_AssertCondition),
             fmt::make_format_args(
-                location.file,
+                fmt_string(location.file),
                 location.line,
                 log_header,
-                condition
+                fmt_string(condition)
             )
         );
 
@@ -78,7 +78,7 @@ namespace ice::detail
             std::back_inserter(final_buffer),
             fmt_string(LogFormat_AssertMessage),
             fmt::make_format_args(
-                location.file,
+                fmt_string(location.file),
                 location.line,
                 log_header
             )

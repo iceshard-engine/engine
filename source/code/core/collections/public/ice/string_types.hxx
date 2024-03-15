@@ -21,10 +21,10 @@ namespace ice
         using ConstIterator = CharType const*;
         using ConstReverseIterator = std::reverse_iterator<CharType const*>;
 
-        ice::ucount _size;
-        CharType const* _data;
+        ice::ucount _size = 0;
+        CharType const* _data = nullptr;
 
-        constexpr BasicString() noexcept;
+        constexpr BasicString() noexcept = default;
         constexpr BasicString(BasicString&& other) noexcept = default;
         constexpr BasicString(BasicString const& other) noexcept = default;
 

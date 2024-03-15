@@ -12,7 +12,6 @@
 #include <fmt/format.h>
 #include <fmt/chrono.h>
 
-
 namespace ice::detail
 {
 
@@ -36,27 +35,9 @@ namespace ice::detail
         );
     }
 
-    ice::String severity_value[]{
-        "",
-        "CRIT",
-        "HIGH",
-
-        "ERRR",
-        "WARN",
-        "INFO",
-        "VERB",
-
-        "DEBG",
-    };
-
-    auto get_base_tag_name(ice::LogTag tag) noexcept -> ice::String
+    auto get_tag_name(ice::LogTag tag) noexcept -> ice::String
     {
-        ice::u64 constexpr base_tag_mask = ~((1llu << 32) - 1);
-        ice::LogTag const base_tag = static_cast<LogTag>(
-            static_cast<ice::u64>(tag) & base_tag_mask
-        );
-
-        switch (base_tag)
+        switch (tag)
         {
         case LogTag::Core:
             return "Core";
@@ -70,9 +51,20 @@ namespace ice::detail
             return "Asset";
         case LogTag::Game:
             return "Game";
-        default:
+        case LogTag::Tool:
+            return "Tool";
+        case LogTag::None:
             return "";
+        default:
+            return detail::internal_log_state->tag_name(tag);
         }
+    }
+
+    auto get_base_tag_name(ice::LogTag tag) noexcept -> ice::String
+    {
+        ice::u64 const tag_value = ice::bit_cast<ice::u64>(tag);
+        ice::LogTag const tag_base = LogTag(tag_value >> 32);
+        return get_tag_name(tag_base);
     }
 
     void default_log_fn(
@@ -84,9 +76,13 @@ namespace ice::detail
     ) noexcept
     {
         detail::LogState const* const log_state = detail::internal_log_state;
+        if (log_state->tag_enabled(tag) == false)
+        {
+            return;
+        }
 
         ice::String const base_tag_name = detail::get_base_tag_name(tag);
-        ice::String const tag_name = log_state->tag_name(tag);
+        ice::String const tag_name = detail::get_tag_name(tag);
 
         char header_buffer_raw[256];
         fmt::format_to_n_result format_result = fmt::format_to_n(

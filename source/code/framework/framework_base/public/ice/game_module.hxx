@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2024, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -10,7 +10,7 @@ namespace ice
 
     void load_game_module(
         ice::Allocator* alloc,
-        ice::ModuleNegotiatorContext* ctx,
+        ice::ModuleNegotiatorAPIContext* ctx,
         ice::ModuleNegotiator* api
     ) noexcept;
 

@@ -76,17 +76,14 @@ namespace ice
     };
 
     class WorldTrait_Physics2D;
+#if 0
     class WorldTrait_TileMap : public ice::WorldTrait
     {
     public:
         virtual void load_tilemap(ice::String tilemap) noexcept = 0;
     };
+#endif
 
-    class ModuleRegister;
-    void register_asset_modules(
-        ice::Allocator& alloc,
-        ice::ModuleRegister& registry
-    ) noexcept;
 
     auto make_tileset_id(
         ice::u8 tileset_idx,

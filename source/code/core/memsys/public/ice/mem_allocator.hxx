@@ -1,14 +1,9 @@
-/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2024, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
 #include <ice/mem.hxx>
-#if ISP_COMPILER_CLANG
-#include <experimental/source_location>
-namespace std { using std::experimental::source_location; }
-#else
 #include <source_location>
-#endif
 #include <atomic>
 
 namespace ice

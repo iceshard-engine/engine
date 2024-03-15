@@ -1,127 +1,223 @@
-/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2023 - 2024, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
 #include <ice/engine_runner.hxx>
-#include <ice/engine_devui.hxx>
-
+#include <ice/engine_frame.hxx>
+#include <ice/engine_state_definition.hxx>
 #include <ice/sync_manual_events.hxx>
-
-#include <ice/input/input_types.hxx>
-
-#include <ice/render/render_driver.hxx>
-#include <ice/render/render_device.hxx>
-#include <ice/render/render_swapchain.hxx>
-#include <ice/render/render_framebuffer.hxx>
-#include <ice/render/render_pass.hxx>
-
-#include <ice/mem_allocator_ring.hxx>
-#include <ice/mem_allocator_proxy.hxx>
 #include <ice/mem_allocator_forward.hxx>
-#include <ice/mem_unique_ptr.hxx>
-
-#include "world/iceshard_world_tracker.hxx"
-#include <ice/gfx/gfx_runner.hxx>
-
-#include "gfx/iceshard_gfx_device.hxx"
-#include "gfx/iceshard_gfx_frame.hxx"
+#include <ice/mem_allocator_proxy.hxx>
+#include <ice/task.hxx>
+#include <ice/task_utils.hxx>
 
 namespace ice
 {
 
+    static constexpr ice::EngineStateGraph StateGraph_WorldRuntime = "world-runtime"_state_graph;
+    static constexpr ice::EngineState State_WorldRuntimeActive = StateGraph_WorldRuntime | "active";
+    static constexpr ice::EngineState State_WorldRuntimeInactive = StateGraph_WorldRuntime | "inactive";
+
+    static constexpr ice::ShardID ShardID_WorldRuntimeActivated = "event/world-runtime/activated`ice::StringID_Hash"_shardid;
+
     class IceshardEngine;
-    class IceshardWorldManager;
-    class IceshardWorldTracker;
 
-    class IceshardMemoryFrame;
+    struct IceshardDataStorage : ice::DataStorage
+    {
+        ice::HashMap<void*> _values;
 
-    class IceshardEngineRunner final : public ice::EngineRunner
+        IceshardDataStorage(ice::Allocator& alloc) noexcept
+            : _values{ alloc }
+        {
+        }
+
+        bool set(ice::StringID name, void* value) noexcept override
+        {
+            ice::u64 const hash = ice::hash(name);
+            bool const missing = ice::hashmap::has(_values, hash) == false;
+            //if (missing)
+            {
+                ice::hashmap::set(_values, ice::hash(name), value);
+            }
+            return missing;
+        }
+
+        bool get(ice::StringID name, void*& value) noexcept override
+        {
+            value = ice::hashmap::get(_values, ice::hash(name), nullptr);
+            return value != nullptr;
+        }
+
+        bool get(ice::StringID name, void const*& value) const noexcept override
+        {
+            value = ice::hashmap::get(_values, ice::hash(name), nullptr);
+            return value != nullptr;
+        }
+    };
+
+    struct IceshardFrameData : ice::EngineFrameData
+    {
+        ice::ProxyAllocator _allocator;
+        ice::ForwardAllocator _fwd_allocator;
+
+        ice::IceshardDataStorage& _storage_frame;
+        ice::IceshardDataStorage& _storage_runtime;
+        ice::IceshardDataStorage const& _storage_persistent;
+
+        ice::u32 _index;
+
+        // Only used for internal purposes
+        ice::IceshardFrameData* _internal_next;
+
+        IceshardFrameData(
+            ice::Allocator& alloc,
+            ice::IceshardDataStorage& frame_storage,
+            ice::IceshardDataStorage& runtime_storage,
+            ice::IceshardDataStorage& persistent_storage
+        ) noexcept
+            : _allocator{ alloc, "frame" }
+            , _fwd_allocator{ _allocator, "frame-forward", ForwardAllocatorParams{.bucket_size = 16_KiB, .min_bucket_count = 2} }
+            , _storage_frame{ frame_storage }
+            , _storage_runtime{ runtime_storage }
+            , _storage_persistent{ persistent_storage }
+            , _index{ }
+            , _internal_next{ nullptr }
+        { }
+
+        virtual ~IceshardFrameData() noexcept override = default;
+
+        auto frame() noexcept -> ice::DataStorage& override
+        {
+            return _storage_frame;
+        }
+
+        auto runtime() noexcept -> ice::DataStorage& override
+        {
+            return _storage_runtime;
+        }
+
+        auto frame() const noexcept -> ice::DataStorage const& override
+        {
+            return _storage_frame;
+        }
+
+        auto runtime() const noexcept -> ice::DataStorage const& override
+        {
+            return _storage_runtime;
+        }
+
+        auto persistent() const noexcept -> ice::DataStorage const& override
+        {
+            return _storage_persistent;
+        }
+    };
+
+    class IceshardEngineTaskContainer final : public ice::EngineTaskContainer
     {
     public:
-        IceshardEngineRunner(
+        IceshardEngineTaskContainer(
             ice::Allocator& alloc,
-            ice::IceshardEngine& engine,
-            ice::IceshardWorldManager& world_manager,
-            ice::TaskScheduler& task_scheduler,
-            ice::UniquePtr<ice::input::InputTracker> input_tracker,
-            ice::UniquePtr<ice::gfx::GfxRunner> gfx_runner
-        ) noexcept;
+            ice::TaskScheduler& scheduler
+        ) noexcept
+            : _scheduler{ scheduler }
+            , _running_tasks{ 0 }
+            , _pending_tasks{ alloc }
+        {
+        }
+
+        ~IceshardEngineTaskContainer() noexcept
+        {
+            bool const has_running_tasks = _running_tasks.load(std::memory_order_relaxed) > 0;
+            // while(_running_tasks.load(std::memory_order_relaxed) > 0)
+            {
+                // TODO: Sleep for 500ms to allow tasks to finish?
+                // TODO: Add cancelation tokens
+            }
+
+            ICE_ASSERT_CORE(has_running_tasks == false);
+        }
+
+        void execute(ice::Task<> task) noexcept override
+        {
+            ice::array::push_back(_pending_tasks, ice::move(task));
+        }
+
+        auto execute_internal(ice::Task<> task) noexcept -> ice::Task<>
+        {
+            co_await task;
+            _running_tasks.fetch_sub(1, std::memory_order_relaxed);
+        }
+
+        void execute_all() noexcept
+        {
+            ice::ucount const num_tasks = ice::array::count(_pending_tasks);
+            _running_tasks.fetch_add(num_tasks, std::memory_order_relaxed);
+
+            for (ice::Task<>& pending_task : _pending_tasks)
+            {
+                // We schedule the task on the given scheduler.
+                ice::schedule_task_on(execute_internal(ice::move(pending_task)), _scheduler);
+            }
+            ice::array::clear(_pending_tasks);
+        }
+
+        void wait_all() noexcept
+        {
+            bool const has_running_tasks = _running_tasks.load(std::memory_order_relaxed) > 0;
+            // while(_running_tasks.load(std::memory_order_relaxed) > 0)
+            {
+                // TODO: Sleep for 500ms to allow tasks to finish?
+                // TODO: Add cancelation tokens
+            }
+
+            ICE_ASSERT_CORE(has_running_tasks == false);
+        }
+
+    private:
+        ice::TaskScheduler& _scheduler;
+        std::atomic_uint32_t _running_tasks;
+        ice::Array<ice::Task<>> _pending_tasks;
+    };
+
+    class IceshardEngineRunner
+        : public ice::EngineRunner
+        , public ice::EngineStateCommitter
+    {
+    public:
+        IceshardEngineRunner(ice::Allocator& alloc, ice::EngineRunnerCreateInfo const& create_info) noexcept;
         ~IceshardEngineRunner() noexcept override;
 
-        auto clock() const noexcept -> ice::Clock const& override;
+        auto aquire_frame() noexcept -> ice::Task<ice::UniquePtr<ice::EngineFrame>> override;
+        auto update_frame(ice::EngineFrame& current_frame, ice::EngineFrame const& previous_frame) noexcept -> ice::Task<> override;
+        void release_frame(ice::UniquePtr<ice::EngineFrame> frame) noexcept override;
 
-        auto entity_index() const noexcept -> ice::ecs::EntityIndex& override;
+        void destroy() noexcept;
 
-        auto input_tracker() noexcept -> ice::input::InputTracker& override;
-        void process_device_queue(
-            ice::input::DeviceEventQueue const& device_queue
+    public: // Impl: ice::EngineStateCommiter
+        bool commit(
+            ice::EngineStateTrigger const& trigger,
+            ice::Shard trigger_shard,
+            ice::ShardContainer& out_shards
         ) noexcept override;
-
-        auto task_scheduler() noexcept -> ice::TaskScheduler& override;
-
-        auto asset_storage() noexcept -> ice::AssetStorage& override;
-
-        auto graphics_device() noexcept -> ice::gfx::GfxDevice& override;
-        auto graphics_frame() noexcept -> ice::gfx::GfxFrame& override;
-
-        auto previous_frame() const noexcept -> ice::EngineFrame const& override;
-        auto current_frame() const noexcept -> ice::EngineFrame const& override;
-        auto current_frame() noexcept -> ice::EngineFrame& override;
-        void next_frame(ice::ShardContainer const& shards) noexcept override;
-
-        void set_graphics_runner(
-            ice::UniquePtr<ice::gfx::GfxRunner> gfx_runner
-        ) noexcept;
-
-        auto logic_frame_task() noexcept -> ice::Task<>;
-        auto excute_frame_task() noexcept -> ice::Task<>;
-
-        void execute_task(ice::Task<> task, ice::EngineContext context) noexcept override;
-        void remove_finished_tasks() noexcept;
-
-        auto stage_current_frame() noexcept -> ice::TaskStage<ice::EngineFrame> override;
-        auto stage_next_frame() noexcept -> ice::TaskStage<ice::EngineFrame> override;
-
-    protected:
-        void activate_worlds() noexcept;
-        void deactivate_worlds() noexcept;
 
     private:
         ice::ProxyAllocator _allocator;
-        ice::SystemClock _clock;
+        ice::Engine& _engine;
+        ice::Clock const& _clock;
+        ice::EngineSchedulers _schedulers;
+        ice::EngineFrameFactory const _frame_factory;
+        ice::EngineFrameFactoryUserdata const _frame_factory_userdata;
+        ice::u32 const _frame_count;
 
-        ice::IceshardEngine& _engine;
-        ice::devui::DevUIExecutionKey const _devui_key;
 
-        ice::IceshardWorld* _gfx_world;
-        ice::UniquePtr<ice::gfx::GfxRunner> _gfx_runner;
+        ice::u8 _flow_id;
+        ice::IceshardDataStorage _frame_storage[2];
+        ice::IceshardDataStorage _runtime_storage;
 
-        ice::TaskScheduler& _task_scheduler;
+        std::atomic<ice::IceshardFrameData*> _frame_data_freelist;
+        std::atomic<ice::u32> _next_frame_index;
 
-        ice::ProxyAllocator _frame_allocator;
-        ice::RingAllocator _frame_data_allocator[2];
-        ice::u32 _next_free_allocator;
-
-        ice::UniquePtr<ice::IceshardMemoryFrame> _previous_frame;
-        ice::UniquePtr<ice::IceshardMemoryFrame> _current_frame;
-
-        ice::IceshardWorldManager& _world_manager;
-        ice::IceshardWorldTracker _world_tracker;
-
-        ice::UniquePtr<ice::input::InputTracker> _input_tracker;
-
-        ice::ManualResetEvent _mre_frame_logic = true;
-        ice::ManualResetEvent _mre_graphics_frame = true;
-
-        struct TraitTask
-        {
-            ice::ManualResetEvent* event;
-            std::coroutine_handle<> coroutine;
-        };
-        ice::Array<TraitTask> _runner_tasks;
-
-        ice::TaskQueue _queue_current_frame;
-        ice::TaskQueue _queue_next_frame;
+        ice::IceshardEngineTaskContainer _runner_tasks;
     };
 
 } // namespace ice

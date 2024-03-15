@@ -2,7 +2,6 @@
 /// SPDX-License-Identifier: MIT
 
 #pragma once
-#include <ice/gfx/gfx_trait.hxx>
 #include <ice/gfx/gfx_stage.hxx>
 #include <ice/game_render_traits.hxx>
 #include <ice/asset.hxx>
@@ -11,6 +10,7 @@
 namespace ice
 {
 
+#if 0
     struct TextRenderInfo
     {
         ice::u32 vertice_count;
@@ -24,18 +24,18 @@ namespace ice
 
         void gfx_setup(
             ice::gfx::GfxFrame& gfx_frame,
-            ice::gfx::GfxDevice& gfx_device
+            ice::gfx::GfxContext& gfx_ctx
         ) noexcept override;
 
         void gfx_update(
             ice::EngineFrame const& engine_frame,
             ice::gfx::GfxFrame& gfx_frame,
-            ice::gfx::GfxDevice& gfx_device
+            ice::gfx::GfxContext& gfx_ctx
         ) noexcept override;
 
         void gfx_cleanup(
             ice::gfx::GfxFrame& gfx_frame,
-            ice::gfx::GfxDevice& gfx_device
+            ice::gfx::GfxContext& gfx_ctx
         ) noexcept override;
 
         void on_activate(
@@ -116,6 +116,6 @@ namespace ice
     void register_trait_render_glyphs(
         ice::WorldTraitArchive& archive
     ) noexcept;
-
+#endif
 
 } // namespace ice

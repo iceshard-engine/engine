@@ -1,198 +1,122 @@
-/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2023 - 2024, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "iceshard_engine.hxx"
-
-#include <ice/input/input_tracker.hxx>
-
-#include <ice/engine_runner.hxx>
-#include <ice/engine_frame.hxx>
-
-#include <ice/mem_allocator_proxy.hxx>
-#include <ice/mem_allocator_ring.hxx>
-
-#include <ice/module.hxx>
-#include <ice/log_module.hxx>
-#include <ice/log.hxx>
-#include <ice/assert.hxx>
-#include <ice/engine.hxx>
 #include <ice/engine_module.hxx>
-
-#include "iceshard_runner.hxx"
-#include "iceshard_noop_devui.hxx"
-
-#include "gfx/iceshard_gfx_device.hxx"
-#include "gfx/iceshard_gfx_runner.hxx"
-#include "gfx/iceshard_gfx_world.hxx"
+#include <ice/log_module.hxx>
 
 namespace ice
 {
 
-    static ice::IceshardNoopDevUI Global_NoopDevUI;
-
     IceshardEngine::IceshardEngine(
         ice::Allocator& alloc,
-        ice::EngineCreateInfo const& create_info
+        ice::EngineCreateInfo create_info
     ) noexcept
-        : ice::Engine{ }
-        , _allocator{ alloc, "engine" }
-        , _task_scheduler{ create_info.task_scheduler }
-        , _asset_storage{ create_info.asset_storage }
-        , _trait_archive{ create_info.trait_archive }
-        , _entity_index{ _allocator, 100'000, 500'000 }
-        , _world_manager{ _allocator, create_info.trait_archive }
-        , _devui{ create_info.devui == nullptr ? &Global_NoopDevUI : create_info.devui }
+        : _allocator{ alloc }
+        , _assets{ ice::move(create_info.assets) }
+        , _states{ ice::move(create_info.states) }
+        , _worlds{ _allocator, ice::move(create_info.traits), *_states }
+        , _entities{ _allocator, 10'000 }
     {
     }
 
-    IceshardEngine::~IceshardEngine() noexcept
+    auto IceshardEngine::assets() noexcept -> ice::AssetStorage&
     {
+        return *_assets;
     }
 
-    auto IceshardEngine::create_runner(
-        ice::UniquePtr<ice::input::InputTracker> input_tracker,
-        ice::UniquePtr<ice::gfx::GfxRunner> graphics_runner
-    ) noexcept -> ice::UniquePtr<ice::EngineRunner>
+    auto IceshardEngine::worlds() noexcept -> ice::WorldAssembly&
     {
-        return ice::make_unique<IceshardEngineRunner>(
-            _allocator,
-            _allocator,
-            *this,
-            _world_manager,
-            _task_scheduler,
-            ice::move(input_tracker),
-            ice::move(graphics_runner)
-        );
+        return _worlds;
     }
 
-    auto IceshardEngine::create_graphics_runner(
-        ice::render::RenderDriver& render_driver,
-        ice::render::RenderSurface& render_surface,
-        ice::WorldTemplate const& render_world_template,
-        ice::Span<ice::RenderQueueDefinition const> render_queues
-    ) noexcept -> ice::UniquePtr<ice::gfx::GfxRunner>
+    auto IceshardEngine::worlds_updater() noexcept -> ice::WorldUpdater&
     {
-        ice::IceshardWorld* world = static_cast<ice::IceshardWorld*>(
-            _world_manager.create_world(_allocator, render_world_template)
-        );
-
-        ice::UniquePtr<ice::gfx::IceGfxDevice> gfx_device = ice::gfx::create_graphics_device(
-            _allocator,
-            render_driver,
-            render_surface,
-            render_queues
-        );
-
-        if (gfx_device != nullptr)
-        {
-            return ice::make_unique<ice::gfx::IceGfxRunner>(
-                _allocator,
-                _allocator,
-                ice::move(gfx_device),
-                world
-            );
-        }
-        else
-        {
-            return {};
-        }
+        return _worlds;
     }
 
-    void IceshardEngine::update_runner_graphics(
-        ice::EngineRunner& runner,
-        ice::UniquePtr<ice::gfx::GfxRunner> graphics_runner
-    ) noexcept
+    auto IceshardEngine::entities() noexcept -> ice::ecs::EntityIndex&
     {
-        IceshardEngineRunner& iceshard_runner = static_cast<IceshardEngineRunner&>(runner);
-        iceshard_runner.set_graphics_runner(ice::move(graphics_runner));
+        return _entities;
     }
 
-    auto IceshardEngine::entity_index() noexcept -> ice::ecs::EntityIndex&
+    void IceshardEngine::destroy() noexcept
     {
-        return _entity_index;
+        _allocator.destroy(this);
     }
 
-    auto IceshardEngine::asset_storage() noexcept -> ice::AssetStorage&
-    {
-        return _asset_storage;
-    }
+    auto create_engine_runner_fn(
+        ice::Allocator& alloc,
+        ice::ModuleRegister& registry,
+        ice::EngineRunnerCreateInfo const& create_info_arg
+    ) noexcept -> ice::EngineRunner*;
 
-    auto IceshardEngine::world_manager() noexcept -> ice::WorldManager&
-    {
-        return _world_manager;
-    }
+    void destroy_engine_runner_fn(ice::EngineRunner* runner) noexcept;
 
-    auto IceshardEngine::world_trait_archive() const noexcept -> ice::WorldTraitArchive const&
-    {
-        return _trait_archive;
-    }
+    auto create_gfx_runner_fn(
+        ice::Allocator& alloc,
+        ice::ModuleRegister& registry,
+        ice::gfx::GfxRunnerCreateInfo const& create_info
+    ) noexcept -> ice::gfx::GfxRunner*;
 
-    auto IceshardEngine::developer_ui() noexcept -> ice::EngineDevUI&
-    {
-        return *_devui;
-    }
+    void destroy_gfx_runner_fn(ice::gfx::GfxRunner* runner) noexcept;
 
     auto create_engine_fn(
         ice::Allocator& alloc,
         ice::ModuleRegister& registry,
-        ice::EngineCreateInfo const& create_info
+        ice::EngineCreateInfo create_info
     ) noexcept -> ice::Engine*
     {
-        return alloc.create<IceshardEngine>(alloc, create_info);
+        return alloc.create<ice::IceshardEngine>(alloc, ice::move(create_info));
     }
 
-    auto destroy_engine_fn(ice::Engine* engine) noexcept
+    void destroy_engine_fn(ice::Engine* engine) noexcept
     {
-        ice::Allocator& alloc = static_cast<IceshardEngine*>(engine)->backing_allocator();
-        alloc.destroy(engine);
+        static_cast<ice::IceshardEngine*>(engine)->destroy();
     }
 
-    static ice::detail::engine::v1::EngineAPI engine_api_v1
+    using EngineAPI = ice::detail::engine::EngineAPI;
+
+    bool iceshard_get_api_proc(ice::StringID_Hash api_name, ice::u32 version, ice::ModuleAPI* api) noexcept
     {
-        .create_engine_fn = ice::create_engine_fn,
-        .destroy_engine_fn = ice::destroy_engine_fn
-    };
+        static EngineAPI current_api{
+            .create_engine_fn = ice::create_engine_fn,
+            .destroy_engine_fn = ice::destroy_engine_fn,
+            .create_engine_runner_fn = ice::create_engine_runner_fn,
+            .destroy_engine_runner_fn = ice::destroy_engine_runner_fn,
+            .create_gfx_runner_fn = ice::create_gfx_runner_fn,
+            .destroy_gfx_runner_fn = ice::destroy_gfx_runner_fn,
+        };
 
-} // namespace ice
-
-namespace ice
-{
-
-    bool iceshard_get_api_proc(ice::StringID_Hash name, ice::u32 version, void** api_ptr) noexcept
-    {
-        if (name == "iceshard.engine"_sid_hash && version == 1)
+        if (api_name == EngineAPI::Constant_APIName && version == EngineAPI::Constant_APIVersion)
         {
-            *api_ptr = &ice::engine_api_v1;
+            api->api_ptr = &current_api;
+            api->version = 2;
+            api->priority = 100;
             return true;
         }
         return false;
     }
 
+    void iceshard_get_api_proc(EngineAPI& api) noexcept
+    {
+        api.create_engine_fn = ice::create_engine_fn;
+        api.destroy_engine_fn = ice::destroy_engine_fn;
+        api.create_engine_runner_fn = ice::create_engine_runner_fn;
+        api.destroy_engine_runner_fn = ice::destroy_engine_runner_fn;
+        api.create_gfx_runner_fn = ice::create_gfx_runner_fn;
+        api.destroy_gfx_runner_fn = ice::destroy_gfx_runner_fn;
+    }
+
+    struct IceShardModule : ice::Module<IceShardModule>
+    {
+        static bool on_load(ice::Allocator& alloc, ice::ModuleNegotiator const& negotiator) noexcept
+        {
+            ice::LogModule::init(alloc, negotiator);
+            return negotiator.register_api(iceshard_get_api_proc);
+        }
+
+        IS_WORKAROUND_MODULE_INITIALIZATION(IceShardModule);
+    };
+
 } // namespace ice
-
-
-extern "C"
-{
-
-    // #TODO: https://github.com/iceshard-engine/engine/issues/92
-#if ISP_WINDOWS
-    __declspec(dllexport) void ice_module_load(
-        ice::Allocator* alloc,
-        ice::ModuleNegotiatorContext* ctx,
-        ice::ModuleNegotiator* negotiator
-    )
-    {
-        using ice::operator""_sid_hash;
-        ice::initialize_log_module(ctx, negotiator);
-
-        negotiator->fn_register_module(ctx, "iceshard.engine"_sid_hash, ice::iceshard_get_api_proc);
-    }
-
-    __declspec(dllexport) void ice_module_unload(
-        ice::Allocator* alloc
-    )
-    {
-    }
-#endif
-
-}

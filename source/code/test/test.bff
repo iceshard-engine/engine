@@ -6,6 +6,7 @@
     .Name = 'test'
     .Kind = .Kind_ConsoleApp
     .Group = 'Tests'
+    .Requires = { 'Windows' }
 
     .BaseDir = '$WorkspaceCodeDir$/test'
 

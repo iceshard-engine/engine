@@ -10,7 +10,7 @@
 SCENARIO("collections 'ice/container/array.hxx'", "[collection][array][complex]")
 {
     ice::HostAllocator alloc;
-    ice::Array objects = ice::Array<Test_TrackingObject, ice::ContainerLogic::Complex>{ alloc };
+    ice::Array<Test_TrackingObject, ice::ContainerLogic::Complex> objects{ alloc };
 
     GIVEN("an empty Array object")
     {
@@ -151,7 +151,7 @@ SCENARIO("collections 'ice/container/array.hxx' (POD)", "[collection][array][pod
     static constexpr ice::i32 test_value_2 = 0x23032;
 
     ice::HostAllocator alloc;
-    ice::Array objects = ice::Array<ice::i32, ice::ContainerLogic::Trivial>{ alloc };
+    ice::Array<ice::i32, ice::ContainerLogic::Trivial> objects{ alloc };
 
     GIVEN("an empty 'plain-old-data' Array")
     {

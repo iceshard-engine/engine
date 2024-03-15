@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2024, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include <ice/resource_tracker.hxx>
@@ -10,8 +10,11 @@
 #include <ice/string/string.hxx>
 #include <ice/container/hashmap.hxx>
 #include <ice/log_tag.hxx>
+#include <ice/log_formatters.hxx>
+#include <ice/task_utils.hxx>
+#include <ice/path_utils.hxx>
 
-#include "resource_native_thread_io.hxx"
+#include "native/native_aio.hxx"
 
 namespace ice
 {
@@ -58,6 +61,18 @@ namespace ice
     {
         return handle->resource->name();
     }
+
+    auto resource_meta(ice::ResourceHandle const* handle, ice::Data& out_metadata) noexcept -> ice::Task<ice::Result>
+    {
+        ice::Data const data = co_await handle->resource->load_metadata();
+        if (data.location != nullptr)
+        {
+            out_metadata = data;
+            co_return ice::S_Success;
+        }
+        co_return ice::E_InvalidArgument;
+    }
+
     // Might need to be moved somewhere else?
     auto get_loose_resource(ice::ResourceHandle const* handle) noexcept -> ice::LooseResource const*
     {
@@ -77,7 +92,9 @@ namespace ice
 
         ~ResourceTrackerImplementation() noexcept;
 
-        bool attach_provider(ice::ResourceProvider* provider) noexcept override;
+        auto attach_provider(
+            ice::UniquePtr<ice::ResourceProvider> provider
+        ) noexcept -> ice::ResourceProvider* override;
 
         void sync_resources() noexcept override;
 
@@ -132,12 +149,12 @@ namespace ice
         ice::ResourceTrackerCreateInfo _info;
 
         ice::TaskQueue _io_queue;
-        ice::UniquePtr<ice::NativeIO> _io_thread_data;
+        ice::UniquePtr<ice::NativeAIO> _io_thread_data;
         ice::UniquePtr<ice::TaskThread> _io_thread;
 
         ice::Array<ice::ResourceHandle, ContainerLogic::Complex> _handles;
         ice::HashMap<ice::ResourceHandle*> _resources;
-        ice::HashMap<ice::ResourceProvider*> _resource_providers;
+        ice::HashMap<ice::UniquePtr<ice::ResourceProvider>, ContainerLogic::Complex> _resource_providers;
     };
 
     ResourceTrackerImplementation::ResourceTrackerImplementation(
@@ -167,14 +184,18 @@ namespace ice
 
         if (_info.io_dedicated_threads > 0)
         {
-            _io_thread_data = ice::create_nativeio_thread_data(_allocator, _info.io_dedicated_threads);
+            _io_thread_data = ice::create_nativeio_thread_data(
+                _allocator,
+                _scheduler,
+                _info.io_dedicated_threads
+            );
 
             ice::TaskThreadInfo const io_thread_info{
                 //.exclusive_queue = true, // ignored
                 //.sort_by_priority = false, // ignored
                 .custom_procedure = (ice::TaskThreadProcedure*)ice::nativeio_thread_procedure,
                 .custom_procedure_userdata = _io_thread_data.get(),
-                .debug_name = "ice.resource_tracker",
+                .debug_name = "ice.res_tracker",
             };
             _io_thread = ice::create_thread(_allocator, _io_queue, io_thread_info);
         }
@@ -186,8 +207,8 @@ namespace ice
         {
             if (handle->refcount.load(std::memory_order_relaxed) > 0)
             {
+                handle->provider->unload_resource(_allocator, handle->resource, handle->data);
                 //IPT_MESSAGE_C("Encountered unreleased resource object during resource tracker destruction.", 0xEE99AA);
-                _allocator.deallocate(handle->data);
             }
         }
 
@@ -196,22 +217,25 @@ namespace ice
         _io_thread_data.reset();
     }
 
-    bool ResourceTrackerImplementation::attach_provider(ice::ResourceProvider* provider) noexcept
+    auto ResourceTrackerImplementation::attach_provider(
+        ice::UniquePtr<ice::ResourceProvider> provider
+    ) noexcept -> ice::ResourceProvider*
     {
+        ice::ResourceProvider* const result = provider.get();
         ice::multi_hashmap::insert(
             _resource_providers,
             ice::hash(provider->schemeid()),
-            provider
+            ice::move(provider)
         );
-        return true;
+        return result;
     }
 
     void ResourceTrackerImplementation::sync_resources() noexcept
     {
-        _scheduler.schedule(_info.flags_io_complete);
+        IPT_ZONE_SCOPED;
 
         ice::Array<ice::Resource const*> temp_resources{ _allocator };
-        for (ice::ResourceProvider* provider : _resource_providers)
+        for (auto const& provider : _resource_providers)
         {
             ice::array::clear(temp_resources);
 
@@ -233,14 +257,18 @@ namespace ice
                 _info.predicted_resource_count
             );
 
+            ice::hashmap::reserve(_resources, new_count);
+            ice::array::reserve(_handles, new_count);
+
             // Store all resource handles
+            IPT_ZONE_SCOPED_NAMED("create_hash_entries");
             for (ice::Resource const* resource : temp_resources)
             {
                 ice::array::push_back(
                     _handles,
                     ice::ResourceHandle {
                         resource,
-                        provider
+                        provider.get()
                     }
                 );
 
@@ -303,7 +331,6 @@ namespace ice
         {
             resource_handle->status = ResourceStatus::Loading;
 
-            // TODO: Could be const?
             ice::Memory result{ };
             if (_info.io_dedicated_threads > 0)
             {
@@ -316,13 +343,24 @@ namespace ice
             }
             else
             {
-                // TODO: Load using busy threads
+                // Load using provided scheduler. This allows us to load resources without using any multi threading at all if we wish to do so.
                 co_await _scheduler.schedule(_info.flags_io_wait);
+
+                result = co_await resource_handle->provider->load_resource(
+                    _allocator,
+                    resource_handle->resource,
+                    io_scheduler,
+                    nullptr /* If 'nullptr' it will load the resource synchronously */
+                );
             }
 
             resource_handle->data = result;
             resource_handle->status = result.location == nullptr ? ResourceStatus::Invalid : ResourceStatus::Loaded;
-            ICE_ASSERT(resource_handle->status != ResourceStatus::Invalid, "Failed loading '{}' resource", ice::resource_origin(resource_handle));
+            ICE_ASSERT(
+                resource_handle->status != ResourceStatus::Invalid,
+                "Failed loading '{}' resource",
+                ice::resource_origin(resource_handle)
+            );
         }
         else
         {
@@ -396,7 +434,9 @@ namespace ice
         if (last_count == 1)
         {
             // We can now safely release the current saved memory pointer.
-            _allocator.deallocate(data.location);
+            resource_handle->provider->unload_resource(
+                _allocator, resource_handle->resource, data
+            );
 
             // We don't update the internal state nor the data member, as these will be considered invalid since refcount == 0
         }
@@ -480,7 +520,7 @@ namespace ice
         {
             if (resource = (*it)->find_resource(resource_uri); resource != nullptr)
             {
-                provider = *it;
+                provider = (*it).get();
             }
             else
             {
@@ -498,6 +538,47 @@ namespace ice
     ) noexcept -> ice::UniquePtr<ice::ResourceTracker>
     {
         return ice::make_unique<ice::ResourceTrackerImplementation>(alloc, alloc, scheduler, create_info);
+    }
+
+    auto resolve_dynlib_path(
+        ice::ResourceTracker const& tracker,
+        ice::Allocator& alloc,
+        ice::String name
+    ) noexcept -> ice::HeapString<>
+    {
+        // Try to reslove the name of the library with a dynlib URI.
+        ice::URI const dynlib_uri{ ice::Scheme_Dynlib, name };
+        if (ice::ResourceHandle* res = tracker.find_resource(dynlib_uri); res != nullptr)
+        {
+            return { alloc, ice::resource_origin(res) };
+        }
+
+        // ... next with a URN with the expected library file name.
+        ice::HeapString<> result{ alloc, name };
+        if (ice::path::extension(name) == "") // Check that we have already a full file name.
+        {
+            if constexpr (ice::build::is_windows)
+            {
+                ice::string::push_back(result, ".dll");
+            }
+            else
+            {
+                // On unix we expect the library to be prepended with 'lib' and appended with '.so'
+                ice::string::clear(result);
+                ice::string::push_back(result, "lib");
+                ice::string::push_back(result, name);
+                ice::string::push_back(result, ".so");
+            }
+        }
+
+        ice::URI const urn_uri{ ice::Scheme_URN, name };
+        if (ice::ResourceHandle* res = tracker.find_resource(dynlib_uri); res != nullptr)
+        {
+            return { alloc, ice::resource_origin(res) };
+        }
+
+        // ... and finally return the unresolved file name.
+        return result;
     }
 
 } // namespace ice

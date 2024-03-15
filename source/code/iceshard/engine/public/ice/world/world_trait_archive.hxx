@@ -5,51 +5,22 @@
 #include <ice/stringid.hxx>
 #include <ice/mem_unique_ptr.hxx>
 #include <ice/ecs/ecs_types.hxx>
-#include <ice/world/world_trait_description.hxx>
+#include <ice/world/world_trait_descriptor.hxx>
+#include <ice/world/world_updater.hxx>
 
 namespace ice
 {
 
-    class WorldTraitArchive
+    struct TraitArchive
     {
-    public:
-        virtual ~WorldTraitArchive() noexcept = default;
+        virtual ~TraitArchive() noexcept = default;
 
-        virtual void register_trait(
-            ice::StringID_Arg name,
-            ice::WorldTraitDescription description
-        ) noexcept = 0;
-
-        virtual auto find_trait(
-            ice::StringID_Arg name
-        ) const noexcept -> ice::WorldTraitDescription const* = 0;
-
-        virtual void register_archetypes(
-            ice::ecs::ArchetypeIndex& archetype_index
-        ) const noexcept = 0;
-
-        virtual bool validate_trait_list(
-            ice::Span<ice::StringID const> traits
-        ) const noexcept = 0;
+        virtual void register_trait(ice::TraitDescriptor trait_descriptor) noexcept = 0;
+        virtual auto trait(ice::StringID_Arg traitid) const noexcept -> ice::TraitDescriptor const* = 0;
     };
 
-    auto create_world_trait_archive(
+    auto create_default_trait_archive(
         ice::Allocator& alloc
-    ) noexcept -> ice::UniquePtr<ice::WorldTraitArchive>;
-
-    template<typename TraitType>
-    auto register_trait_default(
-        ice::WorldTraitArchive& archive,
-        ice::StringID_Arg name
-    ) noexcept
-    {
-        archive.register_trait(
-            name,
-            ice::WorldTraitDescription
-            {
-                .factory = ice::detail::generic_trait_factory<TraitType>
-            }
-        );
-    }
+    ) noexcept -> ice::UniquePtr<ice::TraitArchive>;
 
 } // namespace ice

@@ -1,8 +1,9 @@
-/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2024, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
-#include <ice/base.hxx>
+#include <ice/engine_types.hxx>
+#include <ice/shard.hxx>
 
 namespace ice
 {
@@ -19,26 +20,23 @@ namespace ice
         class DevUIWidget;
         class DevUITrait;
 
-        enum class DevUIExecutionKey : ice::u32;
-
     } // namespace devui
 
-    class EngineFrame;
-
-    class EngineDevUI
+    struct EngineDevUI
     {
-    public:
         virtual ~EngineDevUI() noexcept = default;
 
         virtual void register_widget(ice::devui::DevUIWidget* widget) noexcept = 0;
         virtual void unregister_widget(ice::devui::DevUIWidget* widget) noexcept = 0;
 
-    public:
-        virtual void internal_set_key(devui::DevUIExecutionKey) noexcept = 0;
-        virtual void internal_build_widgets(
-            ice::EngineFrame& frame,
-            ice::devui::DevUIExecutionKey
-        ) noexcept = 0;
+        virtual void register_trait(ice::TraitArchive& archive) noexcept = 0;
+
+        virtual void render_builtin_widgets(ice::EngineFrame& frame) noexcept = 0;
     };
 
+    static constexpr ice::ShardID ShardID_RegisterDevUI = "action/devui/register`ice::EngineDevUI*"_shardid;
+
 } // namespace ice
+
+template<>
+constexpr ice::ShardPayloadID ice::Constant_ShardPayloadID<ice::EngineDevUI*> = ice::shard_payloadid("ice::EngineDevUI*");

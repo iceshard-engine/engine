@@ -1,17 +1,15 @@
-/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2024, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
 #include <ice/span.hxx>
 #include <ice/stringid.hxx>
-//#include <ice/unique_ptr.hxx>
 #include <ice/ecs/ecs_types.hxx>
 #include <ice/world/world_trait_archive.hxx>
+#include <ice/container/array.hxx>
 
 namespace ice
 {
-
-    class EntityStorage;
 
     struct WorldTemplate
     {
@@ -20,15 +18,29 @@ namespace ice
         ice::ecs::EntityStorage* entity_storage;
     };
 
-    class WorldAssembly
+    struct WorldAssembly
     {
-    public:
         virtual ~WorldAssembly() noexcept = default;
 
         virtual auto create_world(
-            ice::Allocator& alloc,
             ice::WorldTemplate const& world_template
-        ) const noexcept -> ice::World* = 0;
+        ) noexcept -> ice::World* = 0;
+
+        virtual auto find_world(
+            ice::StringID_Arg name
+        ) noexcept -> ice::World* = 0;
+
+        virtual void destroy_world(
+            ice::StringID_Arg name
+        ) noexcept = 0;
+
+        virtual void query_worlds(
+            ice::Array<ice::StringID>& out_worlds
+        ) const noexcept = 0;
+
+        virtual void query_pending_events(
+            ice::ShardContainer& out_events
+        ) noexcept = 0;
     };
 
 } // namespace ice

@@ -14,16 +14,14 @@
 #include <ice/render/render_shader.hxx>
 #include <ice/render/render_image.hxx>
 
-#include <ice/gfx/gfx_resource_tracker.hxx>
 #include <ice/gfx/gfx_stage.hxx>
-#include <ice/gfx/gfx_frame.hxx>
-#include <ice/gfx/gfx_pass.hxx>
 #include <ice/task.hxx>
 #include <ice/task_utils.hxx>
 
 #include <ice/asset_storage.hxx>
 #include <ice/profiler.hxx>
 
+#if 0
 namespace ice
 {
 
@@ -40,19 +38,19 @@ namespace ice
 
     void IceWorldTrait_RenderPostProcess::gfx_setup(
         ice::gfx::GfxFrame& gfx_frame,
-        ice::gfx::GfxDevice& gfx_device
+        ice::gfx::GfxContext& gfx_ctx
     ) noexcept
     {
         using namespace ice::gfx;
         using namespace ice::render;
 
-        Renderpass renderpass = ice::gfx::find_resource<Renderpass>(gfx_device.resource_tracker(), "ice.gfx.renderpass.default"_sid);
+        Renderpass renderpass = ice::gfx::find_resource<Renderpass>(gfx_ctx.resource_tracker(), "ice.gfx.renderpass.default"_sid);
         ICE_ASSERT(
             renderpass != Renderpass::Invalid,
             "Trait cannot properly setup render objects due to a missing renderpass object!"
         );
 
-        RenderDevice& device = gfx_device.device();
+        RenderDevice& device = gfx_ctx.device();
 
         _shader_stages[0] = ShaderStageFlags::VertexStage;
         _shader_stages[1] = ShaderStageFlags::FragmentStage;
@@ -156,16 +154,16 @@ namespace ice
         };
         device.update_buffers(buffer_updates);
 
-        update_resources(gfx_device);
+        update_resources(gfx_ctx);
     }
 
     void IceWorldTrait_RenderPostProcess::gfx_cleanup(
         ice::gfx::GfxFrame& gfx_frame,
-        ice::gfx::GfxDevice& gfx_device
+        ice::gfx::GfxContext& gfx_ctx
     ) noexcept
     {
         using namespace ice::render;
-        RenderDevice& device = gfx_device.device();
+        RenderDevice& device = gfx_ctx.device();
 
         device.destroy_buffer(_vertices);
         device.destroy_sampler(_sampler);
@@ -180,15 +178,15 @@ namespace ice
     void IceWorldTrait_RenderPostProcess::gfx_update(
         ice::EngineFrame const& engine_frame,
         ice::gfx::GfxFrame& gfx_frame,
-        ice::gfx::GfxDevice& gfx_device
+        ice::gfx::GfxContext& gfx_ctx
     ) noexcept
     {
         IPT_ZONE_SCOPED_NAMED("[Trait] PostProcess :: Update");
 
-        if (ice::shards::contains(engine_frame.shards(), ice::platform::Shard_WindowResized))
+        if (ice::shards::contains(engine_frame.shards(), ice::platform::ShardID_WindowResized))
         {
-            gfx_cleanup(gfx_frame, gfx_device);
-            gfx_setup(gfx_frame, gfx_device);
+            gfx_cleanup(gfx_frame, gfx_ctx);
+            gfx_setup(gfx_frame, gfx_ctx);
         }
 
         gfx_frame.set_stage_slot(ice::Constant_GfxStage_Postprocess, this);
@@ -222,16 +220,16 @@ namespace ice
         api.draw(cmds, 3, 1, 0, 0);
     }
 
-    void IceWorldTrait_RenderPostProcess::update_resources(ice::gfx::GfxDevice& gfx_device) noexcept
+    void IceWorldTrait_RenderPostProcess::update_resources(ice::gfx::GfxContext& gfx_ctx) noexcept
     {
         using namespace ice::render;
 
-        RenderDevice& device = gfx_device.device();
+        RenderDevice& device = gfx_ctx.device();
 
         ResourceUpdateInfo const resource_updates[]
         {
             ResourceUpdateInfo{.sampler = _sampler, },
-            ResourceUpdateInfo{.image = ice::gfx::find_resource<ice::render::Image>(gfx_device.resource_tracker(), "ice.gfx.attachment.image.color"_sid) }
+            ResourceUpdateInfo{.image = ice::gfx::find_resource<ice::render::Image>(gfx_ctx.resource_tracker(), "ice.gfx.attachment.image.color"_sid) }
         };
         ResourceSetUpdateInfo const set_updates[]
         {
@@ -275,3 +273,4 @@ namespace ice
     }
 
 } // namespace ice
+#endif

@@ -30,12 +30,13 @@ namespace ice
             {
                 _data[idx] = str[idx];
             }
+            _data[_size] = ValueType{ 0 };
         }
-        else
+        else if (ice::string::any(str))
         {
             ice::memcpy(ice::string::memory(*this), ice::string::data_view(str));
+            _data[_size] = ValueType{ 0 };
         }
-        _data[_size] = ValueType{ 0 };
     }
 
     template<ice::ucount Capacity, typename CharType>

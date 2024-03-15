@@ -17,13 +17,13 @@
         "source_dir": "source/code",
         "fbuild": {
             "config_file": "source/fbuild.bff"
-        },
-        "conan": {
-            "profiles_file": "source/conan_profiles.json"
         }
     },
     "license": {
         "spdx": "MIT",
         "authors": "Dandielo <dandielo@iceshard.net>"
+    },
+    "android": {
+        "projects": [ "source/code/example/android" ]
     }
 }

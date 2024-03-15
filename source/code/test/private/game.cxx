@@ -1,8 +1,273 @@
-/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2024, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "game.hxx"
 
+#include <ice/framework_module.hxx>
+
+#include <ice/engine.hxx>
+#include <ice/engine_frame.hxx>
+#include <ice/engine_runner.hxx>
+#include <ice/engine_shards.hxx>
+#include <ice/engine_devui.hxx>
+#include <ice/devui/devui_widget.hxx>
+#include <ice/world/world.hxx>
+#include <ice/world/world_updater.hxx>
+#include <ice/world/world_trait_module.hxx>
+
+#include <ice/gfx/gfx_stage.hxx>
+#include <ice/gfx/gfx_runner.hxx>
+#include <ice/gfx/gfx_context.hxx>
+#include <ice/gfx/gfx_graph.hxx>
+#include <ice/gfx/gfx_graph_runtime.hxx>
+#include <ice/gfx/gfx_shards.hxx>
+
+#include <ice/render/render_image.hxx>
+#include <ice/render/render_swapchain.hxx>
+
+#include <ice/resource_tracker.hxx>
+#include <ice/module_register.hxx>
+#include <ice/asset_types.hxx>
+#include <ice/profiler.hxx>
+#include <ice/uri.hxx>
+#include <ice/log.hxx>
+#include <thread>
+
+#include <imgui/imgui.h>
+#undef assert
+
+static constexpr LogTagDefinition LogGame = ice::create_log_tag(LogTag::Game, "TestGame");
+
+auto ice::framework::create_game(ice::Allocator& alloc) noexcept -> ice::UniquePtr<Game>
+{
+    return ice::make_unique<TestGame>(alloc, alloc);
+}
+
+struct WorldActivationTrait : ice::Trait, ice::devui::DevUIWidget
+{
+    ice::devui::WidgetState* _state;
+    bool is_active = false;
+    bool do_active = false;
+
+    auto settings() const noexcept -> ice::devui::WidgetSettings const&
+    {
+        static ice::devui::WidgetSettings settings{ .menu_text = "Test", .menu_category = "Test" };
+        return settings;
+    }
+
+    void on_prepare(void* ctx, ice::devui::WidgetState& state) noexcept override
+    {
+        ImGui::SetCurrentContext((ImGuiContext*)ctx);
+        _state = &state;
+    }
+
+    void on_draw() noexcept override
+    {
+        if (ImGui::Begin("Test", &_state->is_visible))
+        {
+            ImGui::Checkbox("World Active", &do_active);
+        }
+        ImGui::End();
+    }
+
+    auto devui_show(ice::EngineDevUI& update) noexcept -> ice::Task<>
+    {
+        static bool once = true;
+        if (ice::exchange(once, false))
+        {
+            update.register_widget(this);
+        }
+        co_return;
+    }
+
+    auto logic(ice::EngineFrameUpdate const& update) noexcept -> ice::Task<>
+    {
+        if (is_active ^ do_active)
+        {
+            if (do_active)
+            {
+                shards::push_back(update.frame.shards(), ShardID_WorldActivate | "world2"_sid_hash);
+            }
+            else
+            {
+                shards::push_back(update.frame.shards(), ShardID_WorldDeactivate | "world2"_sid_hash);
+            }
+            is_active = do_active;
+        }
+        co_return;
+    }
+
+    void gather_tasks(ice::TraitTaskRegistry& task_launcher) noexcept
+    {
+        task_launcher.bind<&WorldActivationTrait::logic>();
+        task_launcher.bind<&WorldActivationTrait::devui_show>(ice::ShardID_RegisterDevUI);
+    }
+};
+
+struct TestTrait : public ice::Trait
+{
+    ice::Timer timer;
+
+    auto activate(ice::WorldStateParams const& update) noexcept -> ice::Task<> override
+    {
+        ICE_LOG(LogSeverity::Retail, LogTag::Game, "Test Activated!");
+        timer = ice::timer::create_timer(update.clock, 0.1f);
+        co_return;
+    }
+
+    auto deactivate(ice::WorldStateParams const& update) noexcept -> ice::Task<> override
+    {
+        ICE_LOG(LogSeverity::Retail, LogTag::Game, "Test Deactivated!");
+        co_return;
+    }
+
+    void gather_tasks(ice::TraitTaskRegistry& task_launcher) noexcept
+    {
+        task_launcher.bind<&TestTrait::logic>();
+        task_launcher.bind<&TestTrait::gfx>(ice::gfx::ShardID_GfxFrameUpdate);
+    }
+
+    auto logic(ice::EngineFrameUpdate const& update) noexcept -> ice::Task<>
+    {
+        if (ice::timer::update(timer))
+        {
+            ICE_LOG(LogSeverity::Info, LogTag::Game, "TestTrait::logic");
+        }
+
+        co_return;
+    }
+
+    auto gfx(ice::gfx::GfxFrameUpdate const& update) noexcept -> ice::Task<>
+    {
+        IPT_ZONE_SCOPED;
+        co_return;
+    }
+};
+
+namespace icetm = ice::detail::world_traits;
+
+auto act_factory(ice::Allocator& alloc, void*) noexcept -> UniquePtr<ice::Trait>
+{
+    return ice::make_unique<WorldActivationTrait>(alloc);
+}
+auto test_factory(ice::Allocator& alloc, void*) noexcept -> UniquePtr<ice::Trait>
+{
+    return ice::make_unique<TestTrait>(alloc);
+}
+
+bool test_reg_traits(ice::TraitArchive& arch) noexcept
+{
+    arch.register_trait({ .name = "act"_sid, .fn_factory = act_factory });
+    arch.register_trait({ .name = "test"_sid, .fn_factory = test_factory });
+    return true;
+}
+
+struct TestModule : ice::Module<TestModule>
+{
+    static void v1_traits_api(ice::detail::world_traits::TraitsModuleAPI& api) noexcept
+    {
+        api.register_traits_fn = test_reg_traits;
+    }
+
+    static bool on_load(ice::Allocator& alloc, ice::ModuleNegotiator const& negotiator) noexcept
+    {
+        return negotiator.register_api(v1_traits_api);
+    }
+
+    IS_WORKAROUND_MODULE_INITIALIZATION(TestModule);
+};
+
+TestGame::TestGame(ice::Allocator& alloc) noexcept
+    : _allocator{ alloc }
+    , _first_time{ true }
+{
+}
+
+void TestGame::on_setup(ice::framework::State const& state) noexcept
+{
+    // ICE_LOG(LogSeverity::Info, LogGame, "Hello, World!");
+
+    ice::ModuleRegister& mod = state.modules;
+    ice::ResourceTracker& res = state.resources;
+
+    ice::HeapString<> pipelines_module = ice::resolve_dynlib_path(res, _allocator, "iceshard_pipelines");
+    ice::HeapString<> vulkan_module = ice::resolve_dynlib_path(res, _allocator, "vulkan_renderer");
+    ice::HeapString<> imgui_module = ice::resolve_dynlib_path(res, _allocator, "imgui_module");
+
+    mod.load_module(_allocator, pipelines_module);
+    mod.load_module(_allocator, vulkan_module);
+    mod.load_module(_allocator, imgui_module);
+}
+
+void TestGame::on_shutdown(ice::framework::State const& state) noexcept
+{
+    ICE_LOG(LogSeverity::Info, LogGame, "Goodbye, World!");
+}
+
+void TestGame::on_resume(ice::Engine& engine) noexcept
+{
+    if (_first_time)
+    {
+        _first_time = false;
+
+        using ice::operator""_sid;
+
+        ice::StringID traits[]{
+            "act"_sid,
+            "test2"_sid,
+            ice::Constant_TraitName_DevUI,
+            ice::TraitID_GfxShaderStorage
+        };
+        ice::StringID traits2[]{
+            "test"_sid,
+        };
+
+        engine.worlds().create_world(
+            { .name = "world"_sid, .traits = traits }
+        );
+        engine.worlds().create_world(
+            { .name = "world2"_sid, .traits = traits2 }
+        );
+    }
+}
+
+void TestGame::on_update(ice::Engine& engine, ice::EngineFrame& frame) noexcept
+{
+    using namespace ice;
+
+    shards::push_back(frame.shards(), ShardID_WorldActivate | "world"_sid_hash);
+}
+
+void TestGame::on_suspend(ice::Engine& engine) noexcept
+{
+}
+
+auto TestGame::rendergraph(ice::gfx::GfxContext& device) noexcept -> ice::UniquePtr<ice::gfx::GfxGraphRuntime>
+{
+    using ice::operator""_sid;
+    using namespace ice::gfx;
+
+    _graph = create_graph(_allocator);
+    {
+        GfxResource const c0 = _graph->get_resource("color"_sid, GfxResourceType::RenderTarget);
+        GfxResource const fb = _graph->get_framebuffer();
+
+        GfxGraphStage const stages1[]{
+            {.name = "clear"_sid, .outputs = { &c0, 1 }},
+        };
+        GfxGraphStage const stages2[]{
+            {.name = "copy"_sid, .inputs = { &c0, 1 }, .outputs = { &fb, 1 }}
+        };
+        GfxGraphPass const pass1{ .name = "test1"_sid, .stages = stages1 };
+        GfxGraphPass const pass2{ .name = "test2"_sid, .stages = stages2 };
+        _graph->add_pass(pass1);
+        _graph->add_pass(pass2);
+    }
+
+    return create_graph_runtime(_allocator, device, *_graph);
+}
+
+#if 0
 #include <ice/game_actor.hxx>
 #include <ice/game_anim.hxx>
 #include <ice/game_physics.hxx>
@@ -22,7 +287,7 @@
 #include <ice/world/world_assembly.hxx>
 
 #include <ice/gfx/gfx_pass.hxx>
-#include <ice/gfx/gfx_device.hxx>
+#include <ice/gfx/gfx_context.hxx>
 #include <ice/gfx/gfx_frame.hxx>
 #include <ice/gfx/gfx_pass.hxx>
 #include <ice/gfx/gfx_runner.hxx>
@@ -50,6 +315,7 @@
 #include <ice/ecs/ecs_entity_index.hxx>
 #include <ice/ecs/ecs_entity_storage.hxx>
 #include <ice/ecs/ecs_entity_operations.hxx>
+
 
 
 MyGame::MyGame(ice::Allocator& alloc, ice::Clock const& clock) noexcept
@@ -534,3 +800,4 @@ void MyGame::on_update(ice::EngineFrame& frame, ice::EngineRunner& runner, ice::
         );
     }
 }
+#endif

@@ -1,7 +1,6 @@
-/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2024, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
-#pragma once
 #include "vk_fence.hxx"
 #include <ice/assert.hxx>
 
@@ -36,7 +35,8 @@ namespace ice::render::vk
 
     void VulkanFence::reset() noexcept
     {
-        vkResetFences(_vk_device, 1, &_vk_fence);
+        VkResult const result = vkResetFences(_vk_device, 1, &_vk_fence);
+        ICE_ASSERT_CORE(result == VK_SUCCESS);
     }
 
 } // namespace ice::render::vk

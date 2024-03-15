@@ -16,7 +16,7 @@ namespace ice::devui
         ImGuiSystem(ice::Allocator& alloc) noexcept;
         ~ImGuiSystem() noexcept override;
 
-        void register_trait(ice::WorldTraitArchive& archive) noexcept override;
+        void register_trait(ice::TraitArchive& archive) noexcept override;
         void set_trait(ice::devui::ImGuiTrait* trait) noexcept;
 
         void register_widget(ice::devui::DevUIWidget* widget) noexcept override;
@@ -24,17 +24,12 @@ namespace ice::devui
 
         void set_alloc_tree_widget(ice::devui::ImGui_AllocatorTreeWidget* widget) noexcept;
 
-        void internal_set_key(ice::devui::DevUIExecutionKey new_execution_key) noexcept override;
-        void internal_build_widgets(
-            ice::EngineFrame& frame,
-            ice::devui::DevUIExecutionKey execution_key
-        ) noexcept override;
+        void render_builtin_widgets(ice::EngineFrame& frame) noexcept override;
 
         auto allocator() noexcept -> ice::Allocator& { return _allocator; }
 
     private:
         ice::Allocator& _allocator;
-        ice::devui::DevUIExecutionKey _execution_key;
         ice::devui::ImGuiTrait* _render_trait;
         ice::devui::ImGui_AllocatorTreeWidget* _widget_alloc_tree;
 

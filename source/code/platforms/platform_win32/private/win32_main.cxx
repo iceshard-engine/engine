@@ -1,8 +1,9 @@
-/// Copyright 2023 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2023 - 2024, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include <ice/app.hxx>
 #include <ice/mem_allocator_host.hxx>
+#include <ice/param_list.hxx>
 #include <ice/log.hxx>
 
 // Undef definition from SDL
@@ -10,8 +11,6 @@
 
 int main(int argc, char const** argv)
 {
-    using ice::ResultSeverity;
-
     ice::i32 app_result = 0;
 
     // The application lifetime scope
@@ -21,17 +20,22 @@ int main(int argc, char const** argv)
         ice::app::Factories app_factories{ };
         ice_init(host_alloc, app_factories);
 
-        ice::app::ArgumentsConfig app_arguments_config{ };
-        ice_args(host_alloc, app_arguments_config);
-
-        ice::app::Arguments const app_arguments{ app_arguments_config, ice::Span<char const*>{ argv, (ice::ucount) argc } };
+        ice::ParamList params{ host_alloc, argc, argv };
+        ice_args(host_alloc, params);
 
         ice::UniquePtr<ice::app::Config> config = app_factories.factory_config(host_alloc);
         ice::UniquePtr<ice::app::State> state = app_factories.factory_state(host_alloc);
 
-        ice::Result result = ice_setup(host_alloc, app_arguments, *config, *state);
-        ICE_LOG_IF(result == false, ice::LogSeverity::Error, ice::LogTag::Core, "{}\n", ice::result_hint(result));
+        ice::Result result = ice_setup(host_alloc, params, *config, *state);
+        ICE_LOG_IF(result == false, ice::LogSeverity::Error, ice::LogTag::Core, "{}\n", result.error().description());
         ICE_ASSERT_CORE(result == true);
+
+        // Before updating we need to resume first.
+        if (result == ice::app::S_ApplicationUpdate)
+        {
+            ICE_LOG(ice::LogSeverity::Warning, ice::LogTag::Core, "An application should always move to 'Resume' after finishing the 'Setup' stage!");
+            result = ice::app::S_ApplicationResume;
+        }
 
         // We can only call exit if we are in 'suspended' state.
         // Since initially we never resumed we start with 'true'
@@ -71,11 +75,11 @@ int main(int argc, char const** argv)
 
         runtime.reset();
 
-        ICE_LOG_IF(result == false, ice::LogSeverity::Error, ice::LogTag::Core, "{}\n", ice::result_hint(result));
+        ICE_LOG_IF(result == false, ice::LogSeverity::Error, ice::LogTag::Core, "{}\n", result.error().description());
         ICE_ASSERT_CORE(result == true);
 
-        result = ice_shutdown(host_alloc, app_arguments, *config, *state);
-        ICE_LOG_IF(result == false, ice::LogSeverity::Error, ice::LogTag::Core, "{}\n", ice::result_hint(result));
+        result = ice_shutdown(host_alloc, params, *config, *state);
+        ICE_LOG_IF(result == false, ice::LogSeverity::Error, ice::LogTag::Core, "{}\n", result.error().description());
         ICE_ASSERT_CORE(result == true);
     }
 

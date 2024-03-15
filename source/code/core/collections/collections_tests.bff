@@ -6,6 +6,7 @@
     .Name = 'collections_tests'
     .Kind = .Kind_ConsoleApp
     .Group = 'Tests'
+    .Requires = { 'Windows' }
     .Tags = { 'UnitTests' }
 
     .BaseDir = '$WorkspaceCodeDir$/core/collections'
@@ -22,6 +23,7 @@
         }
 
         .Modules = {
+            'fmt'
             'catch2'
         }
     ]

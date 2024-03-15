@@ -22,4 +22,9 @@ namespace ice::input
         ice::input::DeviceHandle device
     ) noexcept -> ice::input::InputDevice*;
 
+    auto create_touchscreen_device(
+        ice::Allocator& alloc,
+        ice::input::DeviceHandle device
+    ) noexcept -> ice::input::InputDevice*;
+
 } // namespace ice::input

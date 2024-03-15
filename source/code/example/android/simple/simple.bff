@@ -1,0 +1,55 @@
+/// Copyright 2022 - 2024, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
+.Project =
+[
+    .Name = 'simple'
+    .Kind = .Kind_SharedLib // Introduce just 'App' #implementation dependant
+    .Group = 'Tests'
+
+    .BaseDir = '$WorkspaceCodeDir$/example/android/simple'
+    .Requires = { 'SDK-Android' }
+    .Tags = { 'Android-Gradle' }
+
+    .Deploy = true
+    .CopyModules = true
+
+    .Android =
+    [
+        .Namespace = 'net.example.simple'
+        .ApplicationID = 'net.example.myapp'
+
+        .TargetSDK = '34'
+        // .MinSDK = '28' This comes from the Pipeline AndroidAPILevel value
+
+        .VersionCode = 142
+        .VersionName = '1.4.2'
+
+        .GradlePlugins = {
+            'id("com.android.application") version "8.2.0"'
+            'id("org.jetbrains.kotlin.android") version "1.8.20"'
+        }
+    ]
+
+    .Private =
+    [
+        // Disable linking the Dynamic library with objects
+        // IceShard makes use of regular linking to provide default implementations implicitly.
+        .LinkerLinkObjects = false
+
+        .DependsOn =
+        [
+            .Runtime = {
+                'vulkan_renderer'
+                'iceshard_pipelines'
+                'imgui_module'
+            }
+        ]
+
+        .Uses = {
+            'framework_base'
+            'platform_android'
+        }
+    ]
+]
+.Projects + .Project

@@ -1,51 +1,71 @@
-/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2024, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
 #include <ice/mem_unique_ptr.hxx>
 #include <ice/module_register.hxx>
-#include <ice/task_types.hxx>
+#include <ice/engine_types.hxx>
+#include <ice/gfx/gfx_types.hxx>
 
 namespace ice
 {
 
-    class AssetStorage;
-
-    class Engine;
-    class EngineDevUI;
-    class WorldTraitArchive;
-
-    struct EngineCreateInfo
-    {
-        ice::TaskScheduler& task_scheduler;
-        ice::AssetStorage& asset_storage;
-        ice::WorldTraitArchive const& trait_archive;
-        ice::EngineDevUI* devui;
-    };
-
     auto create_engine(
         ice::Allocator& alloc,
         ice::ModuleRegister& registry,
-        ice::EngineCreateInfo const& create_info
+        ice::EngineCreateInfo create_info
     ) noexcept -> ice::UniquePtr<ice::Engine>;
 
-    namespace detail::engine::v1
+    auto create_engine_runner(
+        ice::Allocator& alloc,
+        ice::ModuleRegister& registry,
+        ice::EngineRunnerCreateInfo const& create_info
+    ) noexcept -> ice::UniquePtr<ice::EngineRunner>;
+
+    auto create_gfx_runner(
+        ice::Allocator& alloc,
+        ice::ModuleRegister& registry,
+        ice::gfx::GfxRunnerCreateInfo const& create_info
+    ) noexcept -> ice::UniquePtr<ice::gfx::GfxRunner>;
+
+    namespace detail::engine
     {
 
         using CreateFn = auto (
             ice::Allocator&,
             ice::ModuleRegister&,
-            ice::EngineCreateInfo const&
+            ice::EngineCreateInfo
         ) noexcept -> ice::Engine*;
 
-        using DestroyFn = void (ice::Engine*) noexcept;
+        using CreateRunnerFn = auto (
+            ice::Allocator&,
+            ice::ModuleRegister&,
+            ice::EngineRunnerCreateInfo const&
+        ) noexcept -> ice::EngineRunner*;
+
+        using CreateGfxRunnerFn = auto (
+            ice::Allocator&,
+            ice::ModuleRegister&,
+            ice::gfx::GfxRunnerCreateInfo const&
+        ) noexcept -> ice::gfx::GfxRunner*;
+
+        using DestroyFn = void(ice::Engine*) noexcept;
+        using DestroyRunnerFn = void(ice::EngineRunner*) noexcept;
+        using DestroyGfxRunnerFn = void(ice::gfx::GfxRunner*) noexcept;
 
         struct EngineAPI
         {
+            static constexpr ice::StringID Constant_APIName = "iceshard.engine"_sid;
+            static constexpr ice::u32 Constant_APIVersion = 2;
+
             CreateFn* create_engine_fn;
             DestroyFn* destroy_engine_fn;
+            CreateRunnerFn* create_engine_runner_fn;
+            DestroyRunnerFn* destroy_engine_runner_fn;
+            CreateGfxRunnerFn* create_gfx_runner_fn;
+            DestroyGfxRunnerFn* destroy_gfx_runner_fn;
         };
 
-    } // namespace detail::engine::v1
+    }
 
 } // namespace ice

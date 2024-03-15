@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2024, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -8,7 +8,7 @@
 #include <ice/mem_unique_ptr.hxx>
 
 #include "vk_include.hxx"
-#include "vk_memory_manager.hxx"
+#include "vk_memory_allocator.hxx"
 #include "vk_queue.hxx"
 
 namespace ice::render::vk
@@ -35,7 +35,7 @@ namespace ice::render::vk
             ice::render::CommandBuffer cmds,
             ice::render::Renderpass renderpass,
             ice::render::Framebuffer framebuffer,
-            ice::Span<ice::vec4f> clear_values,
+            ice::Span<ice::vec4f const> clear_values,
             ice::vec2u extent
         ) noexcept override;
 
@@ -143,6 +143,7 @@ namespace ice::render::vk
     public:
         VulkanRenderDevice(
             ice::Allocator& alloc,
+            VmaAllocator vma_allocator,
             VkDevice vk_device,
             VkPhysicalDevice vk_physical_device,
             VkPhysicalDeviceMemoryProperties const& memory_properties
@@ -260,11 +261,11 @@ namespace ice::render::vk
             ice::render::RenderQueue* queue
         ) const noexcept override;
 
-        auto create_fence() noexcept -> ice::render::RenderFence*;
+        auto create_fence() noexcept -> ice::render::RenderFence* override;
 
         void destroy_fence(
             ice::render::RenderFence* fence
-        ) noexcept;
+        ) noexcept override;
 
         auto get_commands() noexcept -> ice::render::RenderCommands& override;
 
@@ -272,13 +273,13 @@ namespace ice::render::vk
 
     private:
         ice::Allocator& _allocator;
+        VmaAllocator _vma_allocator;
+
         ice::RingAllocator _gfx_thread_alloc;
 
         VkDevice _vk_device;
         VkPhysicalDevice _vk_physical_device;
         VkDescriptorPool _vk_descriptor_pool;
-
-        ice::UniquePtr<VulkanMemoryManager> _vk_memory_manager;
 
         ice::Array<VulkanQueue*> _vk_queues;
         VulkanRenderCommands _vk_render_commands;

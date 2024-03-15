@@ -8,7 +8,7 @@
 namespace ice
 {
 
-    enum class TaskAwaitableModifier_v3 : ice::u32
+    enum class TaskAwaitableModifier : ice::u32
     {
         Unused = 0x0,
         PriorityFlags = 0x8000'0000,
@@ -18,7 +18,7 @@ namespace ice
 
     struct TaskAwaitableParams
     {
-        ice::TaskAwaitableModifier_v3 modifier;
+        ice::TaskAwaitableModifier modifier;
         union
         {
             ice::u32 u32_value;

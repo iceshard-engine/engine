@@ -4,6 +4,7 @@
 #include "task_native_thread.hxx"
 #include <ice/task_queue.hxx>
 #include <ice/os/windows.hxx>
+#include <ice/os/unix.hxx>
 #include <ice/mem_allocator_stack.hxx>
 #include <ice/string_utils.hxx>
 #include <ice/assert.hxx>
@@ -98,7 +99,7 @@ namespace ice
                     }
                     else
                     {
-                        SwitchToThread();
+                        ice::thread_native::yield();
                     }
                     continue;
                 }
@@ -158,7 +159,7 @@ namespace ice
             // If we are not at 'tail' and encounter a nullptr, this means some thread did not write it's 'next' member yet.
             while (head->next == nullptr)
             {
-                SwitchToThread();
+                ice::thread_native::yield();
             }
 
             head = head->next;
@@ -171,11 +172,11 @@ namespace ice
             ice::TaskFlags right_flags{ };
 
             // TODO: Improve logic for this!
-            if (left._params.modifier == TaskAwaitableModifier_v3::PriorityFlags)
+            if (left._params.modifier == TaskAwaitableModifier::PriorityFlags)
             {
                 left_flags.value = left._params.task_flags.value & 0xf;
             }
-            if (right._params.modifier == TaskAwaitableModifier_v3::PriorityFlags)
+            if (right._params.modifier == TaskAwaitableModifier::PriorityFlags)
             {
                 right_flags.value = right._params.task_flags.value & 0xf;
             }
@@ -301,7 +302,115 @@ namespace ice
     } // namespace native
 
 #elif ISP_UNIX
-#   error "Not implemented!"
+
+    namespace thread_native
+    {
+
+        void* native_thread_routine(void* userdata)
+        {
+            ice::NativeTaskThread* const thread_obj = reinterpret_cast<ice::NativeTaskThread*>(userdata);
+            ice::TaskThreadInfo const& thread_info = thread_obj->info();
+            ice::ThreadRuntime& runtime = thread_obj->runtime();
+
+            ICE_ASSERT(
+                runtime._request == ThreadRequest::Create && runtime._state == ThreadState::Invalid,
+                "Entering thread routine from invalid state!"
+            );
+            runtime._state = ThreadState::Active;
+            runtime._request = ThreadRequest::None;
+
+            ice::uptr result;
+
+            // Runs the custom user procedure.
+            if (thread_info.custom_procedure)
+            {
+                result = runtime.thread_procedure<false>(&ThreadRuntime::custom_routine);
+            }
+            // Runs either of the two routines for the thread.
+            else if (thread_info.exclusive_queue)
+            {
+                if (thread_info.sort_by_priority)
+                {
+                    result = runtime.thread_procedure<true>(&ThreadRuntime::exclusive_sorted_routine);
+                }
+                else
+                {
+                    result = runtime.thread_procedure<true>(&ThreadRuntime::exclusive_fifo_routine);
+                }
+            }
+            else
+            {
+                result = runtime.thread_procedure<true>(&ThreadRuntime::shared_routine);
+            }
+
+            runtime._state = ThreadState::Destroyed;
+            return ice::bit_cast<void*>(result);
+        }
+
+        auto create_thread(
+            ice::NativeTaskThread& native_thread
+        ) noexcept -> Handle
+        {
+            ice::TaskThreadInfo const& info = native_thread.info();
+
+            pthread_attr_t thread_attribs;
+            int error = pthread_attr_init(&thread_attribs);
+            ICE_ASSERT(error == 0, "Failed to initialize thread attributes with error: {}!", error);
+
+            error = pthread_attr_setstacksize(
+                &thread_attribs,
+                ice::max(ice::usize::base_type{PTHREAD_STACK_MIN}, info.stack_size.value)
+            );
+            ICE_ASSERT(
+                error == 0,
+                "Failed to set native-thread stack size ({}) with error: {}!",
+                info.stack_size.value, error
+            );
+
+            pthread_t thread_handle{};
+            error = pthread_create(&thread_handle, &thread_attribs, &native_thread_routine, &native_thread);
+            ICE_ASSERT(error == 0, "Failed to create native thread with error: {}!", error);
+
+            error = pthread_attr_destroy(&thread_attribs);
+            ICE_ASSERT(error == 0, "Failed to destroy thread attributes with error: {}!", error);
+
+            if constexpr (ice::build::is_release == false)
+            {
+                if (ice::string::any(info.debug_name))
+                {
+                    error = pthread_setname_np(thread_handle, ice::string::begin(info.debug_name));
+                    ICE_ASSERT(error == 0, "Failed to set name for native thread with error: {}!", error);
+                }
+            }
+
+            return { ice::bit_cast<void*>(thread_handle) };
+        }
+
+        void destroy_thread(Handle native_handle) noexcept
+        {
+            void* result_ptrval = nullptr;
+            int const error_join = pthread_join(std::bit_cast<pthread_t>(native_handle.native), &result_ptrval);
+            ICE_ASSERT(error_join == 0, "Failed to join pthread with error: {}!", error_join);
+
+            ice::uptr const result = ice::bit_cast<ice::uptr>(result_ptrval);
+            ICE_ASSERT(result == 0, "Native thread exited with unexpected result: {}!", result);
+        }
+
+        void sleep(ice::u32 ms) noexcept
+        {
+            // Sleep in milliseconds
+            int const error = usleep(ms * 1000);
+            ICE_ASSERT(error == 0, "Failed to sleep thread for {}ms!", ms);
+        }
+
+        void yield() noexcept
+        {
+            int const error = sched_yield();
+            ICE_ASSERT(error == 0, "Failed to yield thread to the system scheduler!");
+        }
+
+    } // namespace native
+
 #else
 #   error "Unknown platform!"
 #endif

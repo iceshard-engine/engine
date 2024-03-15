@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2024, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -120,6 +120,8 @@ namespace ice::render::vk
         {
         case ImageFormat::I32_RGBA:
             return VK_FORMAT_R8G8B8A8_SINT;
+        case ImageFormat::UNORM_RGB:
+            return VK_FORMAT_R8G8B8_UNORM;
         case ImageFormat::UNORM_RGBA:
             return VK_FORMAT_R8G8B8A8_UNORM;
         case ImageFormat::UNORM_BGRA:
@@ -134,6 +136,8 @@ namespace ice::render::vk
             return VK_FORMAT_D32_SFLOAT_S8_UINT;
         case ImageFormat::SFLOAT_D32:
             return VK_FORMAT_D32_SFLOAT;
+            // Undefined
+        case ImageFormat::UNORM_ARGB:
         default:
             return VK_FORMAT_UNDEFINED;
         }
@@ -145,6 +149,8 @@ namespace ice::render::vk
         {
         case VK_FORMAT_R8G8B8A8_SINT:
             return ImageFormat::I32_RGBA;
+        case VK_FORMAT_R8G8B8_UNORM:
+            return ImageFormat::UNORM_RGB;
         case VK_FORMAT_R8G8B8A8_UNORM:
             return ImageFormat::UNORM_RGBA;
         case VK_FORMAT_B8G8R8A8_UNORM:
@@ -155,6 +161,10 @@ namespace ice::render::vk
             return ImageFormat::SRGB_BGRA;
         case VK_FORMAT_D24_UNORM_S8_UINT:
             return ImageFormat::UNORM_D24_UINT_S8;
+        case VK_FORMAT_D32_SFLOAT_S8_UINT:
+            return ImageFormat::SFLOAT_D32_UINT_S8;
+        case VK_FORMAT_D32_SFLOAT:
+            return ImageFormat::SFLOAT_D32;
         default:
             return ImageFormat::Invalid;
         }

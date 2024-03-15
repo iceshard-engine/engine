@@ -3,7 +3,6 @@
 
 #pragma once
 #include <ice/render/render_pass.hxx>
-#include <ice/pod/array.hxx>
 
 #include "vk_include.hxx"
 

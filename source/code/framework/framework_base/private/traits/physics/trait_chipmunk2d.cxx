@@ -13,7 +13,6 @@
 #include <ice/engine_shards.hxx>
 #include <ice/ecs/ecs_entity_storage.hxx>
 #include <ice/ecs/ecs_entity_operations.hxx>
-#include <ice/world/world_portal.hxx>
 
 #include <ice/input/input_device.hxx>
 #include <ice/input/input_event.hxx>
@@ -25,6 +24,7 @@
 namespace ice
 {
 
+#if 0
     namespace detail
     {
 
@@ -288,5 +288,6 @@ namespace ice
     {
         return ice::make_unique<ice::IceWorldTrait_PhysicsBox2D>(alloc);
     }
+#endif
 
 } // namespace ice

@@ -1,42 +1,33 @@
-/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2024, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
 #include <ice/data_storage.hxx>
 #include <ice/ecs/ecs_entity_storage.hxx>
+#include <ice/engine_types.hxx>
+#include <ice/engine_state.hxx>
+#include <ice/span.hxx>
 
 namespace ice
 {
 
-    class WorldTrait;
-    class WorldPortal;
+    static constexpr ice::EngineStateGraph StateGraph_WorldState = "world-state"_state_graph;
+    static constexpr ice::EngineState State_WorldCreated = StateGraph_WorldState | "created";
+    static constexpr ice::EngineState State_WorldActive = StateGraph_WorldState | "active";
+    static constexpr ice::EngineState State_WorldInactive = StateGraph_WorldState | "inactive";
 
-    enum class WorldState
+    struct World
     {
-        Idle,
-        Active,
-        Managed,
-    };
-
-    class World
-    {
-    public:
-        virtual auto allocator() noexcept -> ice::Allocator& = 0;
-        virtual auto entity_storage() noexcept -> ice::ecs::EntityStorage& = 0;
-
-        virtual auto state_hint() const noexcept -> ice::WorldState = 0;
-
-        virtual void add_trait(
-            ice::StringID_Arg name,
-            ice::WorldTrait* trait
-        ) noexcept = 0;
-
-        virtual void remove_trait(
-            ice::StringID_Arg name
-        ) noexcept = 0;
-
-    protected:
         virtual ~World() noexcept = default;
+
+        virtual auto activate(ice::WorldStateParams const& params) noexcept -> ice::Task<> = 0;
+        virtual auto deactivate(ice::WorldStateParams const& params) noexcept -> ice::Task<> = 0;
+
+        virtual auto trait(ice::StringID_Arg trait_identifier) noexcept -> ice::Trait* = 0;
+        virtual auto trait(ice::StringID_Arg trait_identifier) const noexcept -> ice::Trait const* = 0;
+
+        virtual auto trait_storage(ice::Trait* trait) noexcept -> ice::DataStorage* = 0;
+        virtual auto trait_storage(ice::Trait const* trait) const noexcept -> ice::DataStorage const* = 0;
     };
 
 } // namespace ice

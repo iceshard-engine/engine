@@ -1,22 +1,22 @@
-/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2024, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
 #include <ice/engine.hxx>
-#include <ice/gfx/gfx_device.hxx>
+#include <ice/engine_types.hxx>
+#include <ice/gfx/gfx_context.hxx>
+#include <ice/gfx/gfx_runner.hxx>
 #include <ice/render/render_device.hxx>
 #include <ice/render/render_driver.hxx>
 #include <ice/mem_unique_ptr.hxx>
 #include <ice/container/array.hxx>
-
-#include "iceshard_gfx_resource_tracker.hxx"
 
 namespace ice::gfx
 {
 
     class IceGfxQueueGroup;
 
-    class IceGfxDevice final : public ice::gfx::GfxDevice
+    class IceGfxDevice final : public ice::gfx::GfxContext
     {
     public:
         IceGfxDevice(
@@ -33,13 +33,12 @@ namespace ice::gfx
 
         void recreate_swapchain() noexcept override;
 
-        auto resource_tracker() noexcept -> ice::gfx::GfxResourceTracker& override;
+        auto next_frame() noexcept -> ice::u32 override;
 
-        auto next_frame() noexcept -> ice::u32;
+        auto queue_group(ice::u32 image_index) noexcept -> ice::gfx::v2::GfxQueueGroup_Temp& override;
+        auto queue_group_internal(ice::u32 image_index) noexcept -> ice::gfx::IceGfxQueueGroup&;
 
-        auto queue_group(ice::u32 image_index) noexcept -> ice::gfx::IceGfxQueueGroup&;
-
-        void present(ice::u32 image_index) noexcept;
+        void present(ice::u32 image_index) noexcept override;
 
     private:
         ice::Allocator& _allocator;
@@ -50,14 +49,13 @@ namespace ice::gfx
         ice::render::RenderSwapchain* _render_swapchain;
 
         ice::Array<ice::gfx::IceGfxQueueGroup*> _graphics_queues;
-        ice::gfx::IceGfxResourceTracker _resource_tracker;
     };
 
     auto create_graphics_device(
         ice::Allocator& alloc,
         ice::render::RenderDriver& render_driver,
         ice::render::RenderSurface& render_surface,
-        ice::Span<ice::RenderQueueDefinition const> render_queues
+        ice::Span<ice::gfx::GfxQueueDefinition const> render_queues
     ) noexcept -> ice::UniquePtr<ice::gfx::IceGfxDevice>;
 
 } // namespace ice::gfx

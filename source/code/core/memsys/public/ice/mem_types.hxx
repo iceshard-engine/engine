@@ -10,20 +10,29 @@ namespace ice
 
     enum class ualign : ice::u32;
 
+    //! \brief Represents a signed size value on the given platform.
+    //! \note The 'isize' type is used to force explicit conversions back to 'usize' after performing "unsafe" operations like 'subtraction'.
     struct isize
     {
         using TypeTag = ice::StrongNumeric;
         using base_type = std::conditional_t<ice::build::is_x64, ice::i64, ice::i32>;
 
+        constexpr auto to_usize() const noexcept;
+
         base_type value;
     };
 
+    //! \brief Represents a unsigned size value on the given platform.
+    //! \note Some operations are limited or return a different result type, for ex.: 'usize - usize => isize'
     struct usize
     {
         using TypeTag = ice::StrongNumeric;
         using base_type = std::conditional_t<ice::build::is_x64, ice::u64, ice::u32>;
 
-        constexpr operator isize() noexcept;
+        constexpr operator isize() const noexcept;
+
+        //! \brief Perform a checked subtraction, ensuring 'left' is greater or equal to 'right'.
+        static constexpr auto subtract(ice::usize left, ice::usize right) noexcept -> ice::usize;
 
         base_type value;
     };
@@ -76,10 +85,22 @@ namespace ice
 
     // EXPLICIT OPERATORS
 
-    constexpr usize::operator isize() noexcept
+    constexpr auto isize::to_usize() const noexcept
+    {
+        return ice::usize{ static_cast<ice::usize::base_type>(value) };
+    }
+
+    constexpr usize::operator isize() const noexcept
     {
         return ice::isize{ static_cast<ice::isize::base_type>(value) };
     }
+
+    constexpr auto usize::subtract(ice::usize baseval, ice::usize subval) noexcept -> ice::usize
+    {
+        ICE_ASSERT_CORE(baseval >= subval);
+        return { baseval.value - subval.value };
+    }
+
 
     constexpr auto operator-(ice::usize left, ice::usize right) noexcept -> ice::isize
     {

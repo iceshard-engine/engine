@@ -5,6 +5,8 @@
 #include <ice/mem_data.hxx>
 #include <ice/mem_memory.hxx>
 #include <assert.h>
+#include <stdlib.h>
+#include <malloc.h>
 
 namespace ice
 {
@@ -39,6 +41,22 @@ namespace ice
             .memory = _aligned_malloc(size.value, static_cast<ice::u32>(alignment)),
             .size = size,
             .alignment = alignment,
+        };
+#elif ISP_ANDROID && ISP_ANDROID <= 27
+        void* memory_location;
+
+        [[maybe_unused]]
+        int const posix_memalign_result = posix_memalign(
+            &memory_location,
+            ice::max(static_cast<ice::u32>(alignment), static_cast<ice::u32>(sizeof(void*))),
+            size.value
+        );
+        ICE_ASSERT_CORE(posix_memalign_result == 0);
+
+        return ice::AllocResult{
+            .memory = memory_location,
+            .size = size,
+            .alignment = alignment
         };
 #elif ISP_UNIX
         return ice::AllocResult{

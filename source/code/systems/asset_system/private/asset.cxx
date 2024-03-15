@@ -4,6 +4,7 @@
 #include <ice/asset.hxx>
 #include <ice/asset_storage.hxx>
 #include <ice/resource.hxx>
+#include <ice/resource_tracker.hxx>
 #include <ice/task_utils.hxx>
 
 #include "asset_entry.hxx"
@@ -32,19 +33,25 @@ namespace ice
         // ice::wait_for(detail::storage(_handle).release(*this));
     }
 
+    auto Asset::name() const noexcept -> ice::StringID_Arg
+    {
+        ice::AssetEntry const& entry = detail::entry(_handle);
+        return entry.assetid;
+    }
+
     bool Asset::valid() const noexcept
     {
         if (_handle != nullptr)
         {
             ice::AssetEntry const& entry = detail::entry(_handle);
-            return entry.current_state != AssetState::Invalid && entry.current_state != AssetState::Unknown;
+            return entry.current_state != AssetState::Invalid && entry.resource_state != AssetState::Unknown;
         }
         return false;
     }
 
-    auto Asset::metadata() const noexcept -> ice::Metadata const&
+    auto Asset::metadata(ice::Data& out_metadata) const noexcept -> ice::Task<ice::Result>
     {
-        return detail::entry(_handle).resource->metadata();
+        co_return co_await ice::resource_meta(detail::entry(_handle).resource_handle, out_metadata);
     }
 
     bool Asset::available(ice::AssetState state) const noexcept

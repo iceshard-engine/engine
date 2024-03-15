@@ -2,7 +2,6 @@
 /// SPDX-License-Identifier: MIT
 
 #pragma once
-#include <ice/gfx/gfx_trait.hxx>
 #include <ice/game_camera.hxx>
 #include <ice/render/render_declarations.hxx>
 #include <ice/container/array.hxx>
@@ -22,6 +21,7 @@ namespace ice
         ice::TraitCameraRenderData render_data;
     };
 
+#if 0
     class IceWorldTrait_RenderCamera : public ice::gfx::GfxTrait
     {
     public:
@@ -48,17 +48,17 @@ namespace ice
         void gfx_update(
             ice::EngineFrame const& engine_frame,
             ice::gfx::GfxFrame& gfx_frame,
-            ice::gfx::GfxDevice& gfx_device
+            ice::gfx::GfxContext& gfx_ctx
         ) noexcept override;
 
         void gfx_setup(
             ice::gfx::GfxFrame& gfx_frame,
-            ice::gfx::GfxDevice& gfx_device
+            ice::gfx::GfxContext& gfx_ctx
         ) noexcept override;
 
         void gfx_cleanup(
             ice::gfx::GfxFrame& gfx_frame,
-            ice::gfx::GfxDevice& gfx_device
+            ice::gfx::GfxContext& gfx_ctx
         ) noexcept override;
 
     protected:
@@ -71,5 +71,6 @@ namespace ice
     private:
         ice::Array<ice::render::Buffer> _camera_buffers;
     };
+#endif
 
 } // namespace ice

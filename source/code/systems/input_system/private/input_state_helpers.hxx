@@ -5,11 +5,18 @@
 #include <ice/mem_data.hxx>
 #include <ice/input/input_event.hxx>
 #include <ice/input/device_event.hxx>
-#include <ice/span.hxx>
+#include <ice/input/input_tracker.hxx>
 #include <ice/assert_core.hxx>
+#include <ice/span.hxx>
 
 namespace ice::input::detail
 {
+
+    struct ControlConfig
+    {
+        ice::i32 button_click_threshold;
+        ice::i32 button_hold_threshold;
+    };
 
     struct ControlState
     {
@@ -18,12 +25,24 @@ namespace ice::input::detail
         ice::input::InputValue value;
     };
 
-    void handle_value_button_down(ControlState& value) noexcept;
-    void handle_value_button_hold_and_repeat(ControlState& value) noexcept;
-    void handle_value_button_up(ControlState& value) noexcept;
+    static constexpr ControlConfig Constant_DefaultControlConfig {
+        .button_click_threshold = Constant_ButtonClickThreshold,
+        .button_hold_threshold = Constant_ButtonHoldThreshold
+    };
 
+    void handle_value_button_down(ControlState& value) noexcept;
     void handle_value_button_down_simplified(ControlState& value) noexcept;
     void handle_value_button_up_simplified(ControlState& value) noexcept;
+
+    void handle_value_button_hold_and_repeat(
+        ControlState& value,
+        ControlConfig const& config
+    ) noexcept;
+
+    void handle_value_button_up(
+        ControlState& value,
+        ControlConfig const& config
+    ) noexcept;
 
     bool prepared_input_event(
         ControlState& value,

@@ -6,7 +6,6 @@
 #include <ice/game_entity.hxx>
 
 #include <ice/engine_frame.hxx>
-#include <ice/world/world_portal.hxx>
 #include <ice/ecs/ecs_entity_storage.hxx>
 
 #include <ice/render/render_image.hxx>
@@ -25,6 +24,7 @@
 namespace ice
 {
 
+#if 0
     namespace detail
     {
 
@@ -209,5 +209,6 @@ namespace ice
     {
         return ice::make_unique<ice::WorldTrait, ice::IceWorldTrait_SpriteAnimator>(alloc, alloc);
     }
+#endif
 
 } // namespace ice

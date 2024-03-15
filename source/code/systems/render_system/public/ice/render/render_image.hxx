@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2024, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -24,8 +24,10 @@ namespace ice::render
         I32_RGBA,
         SRGB_RGBA,
         SRGB_BGRA,
+        UNORM_RGB,
         UNORM_RGBA,
         UNORM_BGRA,
+        UNORM_ARGB,
         UNORM_D24_UINT_S8,
         SFLOAT_D32,
         SFLOAT_D32_UINT_S8,

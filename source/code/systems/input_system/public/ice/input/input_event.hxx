@@ -5,6 +5,7 @@
 #include <ice/input/device_handle.hxx>
 #include <ice/shard.hxx>
 #include <ice/hash.hxx>
+#include <ice/math.hxx>
 
 namespace ice::input
 {
@@ -14,13 +15,13 @@ namespace ice::input
         Invalid = 0x0,
     };
 
-    inline constexpr auto input_identifier(
+    constexpr inline auto input_identifier(
         ice::input::DeviceType type,
         ice::u16 value
     ) noexcept -> ice::input::InputID;
 
     template<typename T>
-    inline constexpr auto input_identifier(
+    constexpr inline auto input_identifier(
         ice::input::DeviceType type,
         T value,
         ice::u16 base_value = 0
@@ -29,7 +30,7 @@ namespace ice::input
 
     enum class InputValueType : ice::u8
     {
-        None,
+        Invalid,
         Button,
         Trigger,
         AxisInt,
@@ -91,7 +92,7 @@ namespace ice::input
     static_assert(sizeof(InputEvent) == 8);
 
 
-    inline constexpr auto input_identifier(
+    constexpr inline auto input_identifier(
         ice::input::DeviceType type,
         ice::u16 value
     ) noexcept -> ice::input::InputID
@@ -100,7 +101,7 @@ namespace ice::input
     }
 
     template<typename T>
-    inline constexpr auto input_identifier(
+    constexpr inline auto input_identifier(
         ice::input::DeviceType type,
         T value,
         ice::u16 base_value
@@ -119,7 +120,7 @@ namespace ice::input
         }
     }
 
-    inline constexpr auto input_identifier_device(
+    constexpr inline auto input_identifier_device(
         ice::input::InputID input
     ) noexcept -> ice::input::DeviceType
     {
@@ -127,7 +128,7 @@ namespace ice::input
         return static_cast<DeviceType>((static_cast<ice::u16>(input) & identifier_device_mask) >> 12);
     }
 
-    inline constexpr auto input_identifier_value(
+    constexpr inline auto input_identifier_value(
         ice::input::InputID input
     ) noexcept -> ice::u16
     {
@@ -144,4 +145,4 @@ constexpr inline auto ice::hash<ice::input::InputID>(ice::input::InputID value) 
 }
 
 template<>
-constexpr ice::ShardPayloadID ice::Constant_ShardPayloadID<ice::input::InputEvent> = ice::shard_payloadid("ice::input::InputEvent");
+constexpr inline ice::ShardPayloadID ice::Constant_ShardPayloadID<ice::input::InputEvent> = ice::shard_payloadid("ice::input::InputEvent");

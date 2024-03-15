@@ -4,7 +4,6 @@
 #include "iceshard_gfx_queue.hxx"
 
 #include <ice/gfx/gfx_stage.hxx>
-#include <ice/gfx/gfx_pass.hxx>
 #include <ice/mem_allocator_stack.hxx>
 
 namespace ice::gfx
@@ -50,6 +49,11 @@ namespace ice::gfx
     bool IceGfxQueue::presenting() const noexcept
     {
         return (_flags & QueueFlags::Present) == QueueFlags::Present;
+    }
+
+    void IceGfxQueue::present(ice::render::RenderSwapchain* swapchain) const noexcept
+    {
+        _render_queue->present(swapchain);
     }
 
     auto IceGfxQueue::render_queue() noexcept -> ice::render::RenderQueue*

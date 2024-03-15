@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2024, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "vk_swapchain.hxx"
@@ -70,7 +70,6 @@ namespace ice::render::vk
 
             _vk_images[idx].vk_image = vk_images[idx];
             _vk_images[idx].vk_image_view = vk_image_view;
-            _vk_images[idx].vk_alloc_handle = AllocationHandle::Invalid;
         }
 
 

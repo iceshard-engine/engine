@@ -12,7 +12,7 @@ namespace ice
 
     //! \brief A simple contaier storing items in contignous memory.
     //!
-    //! \detail Manages a memory block big enough to hold the items that it holds.
+    //! \details Manages a memory block big enough to hold the items that it holds.
     //!
     //! \tparam Logic The logic used during memory operations for the given type.
     //!   This value is set by the user to enforce expected behavior for stored types.
@@ -60,11 +60,11 @@ namespace ice
 
     //! \brief A double ended queue build on a circular buffer.
     //!
-    //! \detail Manages a memory block big enough to hold the items that it holds.
+    //! \details Manages a memory block big enough to hold the items that it holds.
     //!
     //! \tparam Logic The logic used during memory operations for the given type.
     //!   This value is set by the user to enforce expected behavior for stored types.
-    template<typename Type, ice::ContainerLogic Logic = ContainerLogic::Trivial>
+    template<typename Type, ice::ContainerLogic Logic = ice::Constant_DefaultContainerLogic<Type>>
     struct Queue
     {
         static_assert(
@@ -97,11 +97,11 @@ namespace ice
 
     //! \brief A hash map build on a single block of memory.
     //!
-    //! \detail Manages a memory block big enough to hold the items that it holds.
+    //! \details Manages a memory block big enough to hold the items that it holds.
     //!
     //! \tparam Logic The logic used during memory operations for the given type.
     //!   This value is set by the user to enforce expected behavior for stored types.
-    template<typename Type, ice::ContainerLogic Logic = ContainerLogic::Trivial>
+    template<typename Type, ice::ContainerLogic Logic = ice::Constant_DefaultContainerLogic<Type>>
     struct HashMap
     {
         static_assert(
@@ -122,26 +122,26 @@ namespace ice
             Entry const* _entry;
             Type const* _value;
 
-            ConstIterator(std::nullptr_t) noexcept
+            constexpr ConstIterator(std::nullptr_t) noexcept
                 : _entry{ nullptr }
                 , _value{ nullptr }
             {
             }
 
-            ConstIterator(Entry const* entry, Type const* value) noexcept
+            constexpr ConstIterator(Entry const* entry, Type const* value) noexcept
                 : _entry{ entry }
                 , _value{ value }
             {
             }
 
-            auto key() const noexcept -> ice::u64& { return _entry->key; }
-            auto value() const noexcept -> Type const& { return *_value; }
+            constexpr auto key() const noexcept -> ice::u64 const& { return _entry->key; }
+            constexpr auto value() const noexcept -> Type const& { return *_value; }
 
-            auto operator==(ConstIterator const& other) const noexcept { return _entry == other._entry; }
-            auto operator!=(ConstIterator const& other) const noexcept { return !(*this == other); }
+            constexpr auto operator==(ConstIterator const& other) const noexcept { return _entry == other._entry; }
+            constexpr auto operator!=(ConstIterator const& other) const noexcept { return !(*this == other); }
 
-            void operator++() noexcept { _entry += 1; _value += 1; }
-            auto operator*() const noexcept -> Type const& { return value(); }
+            constexpr void operator++() noexcept { _entry += 1; _value += 1; }
+            constexpr auto operator*() const noexcept -> Type const& { return value(); }
         };
 
         ice::Allocator* _allocator;

@@ -55,6 +55,6 @@ namespace ice::app
         return working_dir;
     }
 
-} // namespace core
+} // namespace ice::app
 
 #endif // ISP_WINDOWS

@@ -30,7 +30,6 @@
     .Configuration_Release
 }
 
-
 .Config_MSVC =
 [
     .Name = 'Config-MSVC'
@@ -51,6 +50,32 @@
     }
     .Defines = {
         'UNICODE'
+    }
+]
+
+.Config_Android =
+[
+    .Name = 'Config-Unix'
+    .Requires = { 'Android', 'CLANG-Frontend' }
+    .BuildOptions = {
+        '-Wall'
+        '-Werror'
+        // We use [[deprecated]] to keep track of some old API usage without the need to fix them asap.
+        '-Wno-error=deprecated-declarations'
+        // Currently added to not fail on small issues
+        '-Wno-unused-private-field'
+        '-Wno-unused-const-variable'
+        // Android specific
+        '-Wunguarded-availability'
+        '-Werror=unguarded-availability'
+        '-Wno-switch'
+        '-std=c++2b'
+    }
+    .Defines = {
+        '__ANDROID_UNAVAILABLE_SYMBOLS_ARE_WEAK__'
+    }
+    .LinkLinkerOptions = {
+        '-llog'
     }
 ]
 
@@ -209,10 +234,9 @@
     .Requires = { 'Profile', 'MSVC-Frontend' }
     .Defines = { }
     .BuildOptions = {
-        ; ' /O2' ; Disabled due to issues with MSVC coroutine tall cail optimizations.
-        ' /O1'
-        ' /MD'
-        ' /WX'
+        '/O2'
+        '/MD'
+        '/WX'
     }
 ]
 
@@ -222,9 +246,8 @@
     .Requires = { 'Release', 'MSVC-Frontend' }
     .Defines = { }
     .BuildOptions = {
-        ; ' /O2' ; Disabled due to issues with MSVC coroutine tall cail optimizations.
-        ' /O1'
-        ' /MD'
+        '/O2'
+        '/MD'
     }
 ]
 
@@ -255,6 +278,15 @@
     }
 ]
 
+.Config_Vulkan =
+[
+    .Name = 'Config-Vulkan'
+    .Requires = { 'GFX-Vulkan' }
+    .BuildOptions = {
+        '--target-env=vulkan1.3'
+    }
+]
+
 ^GlobalRules = {
     .Config_MSVC
     .Config_MSVC_BinaryDll
@@ -267,6 +299,7 @@
     .Config_Unix_BinaryApp
     .Config_Unix_BinaryApp2
     .Config_GCC_Tests
+    .Config_Android
     .Config_Debug
     .Config_Debug_MSVC
     .Config_Debug_GCC
@@ -276,4 +309,5 @@
     .Config_Profile_MSVC
     .Config_Release
     .Config_Release_MSVC
+    .Config_Vulkan
 }

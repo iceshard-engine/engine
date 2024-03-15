@@ -1,0 +1,29 @@
+/// Copyright 2023 - 2024, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
+.Project =
+[
+    .Name = 'hsc_reader'
+    .Kind = .Kind_ConsoleApp
+    .BaseDir = '$WorkspaceCodeDir$/tools/hsc_reader'
+    .Group = 'Tools'
+
+    .CopyModules = true
+
+    .Requires = {
+        'Windows'
+    }
+
+    .Private =
+    [
+        .Modules = {
+            'hailstorm'
+        }
+
+        .Uses = {
+            'resource_system'
+            'tool_base'
+        }
+    ]
+]
+.Projects + .Project

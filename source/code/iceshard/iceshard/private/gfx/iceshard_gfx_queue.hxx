@@ -31,19 +31,21 @@ namespace ice::gfx
 
         bool presenting() const noexcept override;
 
+        void present(ice::render::RenderSwapchain* swapchain) const noexcept override;
+
         auto render_queue() noexcept -> ice::render::RenderQueue*;
 
-        void reset() noexcept;
+        void reset() noexcept override;
 
         void request_command_buffers(
             ice::render::CommandBufferType type,
             ice::Span<ice::render::CommandBuffer> out_buffers
-        ) noexcept;
+        ) noexcept override;
 
         void submit_command_buffers(
             ice::Span<ice::render::CommandBuffer const> buffers,
             ice::render::RenderFence const* fence
-        ) noexcept;
+        ) noexcept override;
 
     private:
         ice::StringID const _name;

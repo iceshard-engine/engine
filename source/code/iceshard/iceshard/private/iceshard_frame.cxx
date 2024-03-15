@@ -1,141 +1,93 @@
-/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2023 - 2023, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "iceshard_frame.hxx"
-#include "iceshard_task_executor.hxx"
-#include <ice/engine_shards.hxx>
-#include <ice/sync_manual_events.hxx>
-#include <ice/container/hashmap.hxx>
 #include <ice/task_utils.hxx>
-#include <ice/assert.hxx>
 
 namespace ice
 {
 
-    namespace detail
+    IceshardEngineFrame::IceshardEngineFrame(ice::IceshardFrameData& frame_data) noexcept
+        : _data{ frame_data }
+        , _shards{ _data._fwd_allocator }
+        , _operations{ frame_data._fwd_allocator, 16 }
+        , _task_groups{ _data._fwd_allocator }
     {
-
-        static constexpr ice::usize InputsAllocatorCapacity = ice::size_of<ice::input::InputEvent> * 512;
-        static constexpr ice::usize RequestAllocatorCapacity = ice::size_of<ice::Shard> * 256;
-        static constexpr ice::usize TaskAllocatorCapacity = ice::size_of<ice::Task<>> * 1024;
-        static constexpr ice::usize StorageAllocatorCapacity = 8_MiB;
-        static constexpr ice::usize DataAllocatorCapacity = 8_MiB;
-
-        static ice::u32 global_frame_counter = 0;
-
-    } // namespace detail
-
-    IceshardMemoryFrame::IceshardMemoryFrame(
-        ice::RingAllocator& alloc
-    ) noexcept
-        : ice::EngineFrame{ }
-        , _index{ detail::global_frame_counter }
-        , _allocator{ alloc }
-        , _inputs_allocator{ _allocator, "inputs", { detail::InputsAllocatorCapacity } }
-        , _shards_allocator{ _allocator, "shards", { detail::RequestAllocatorCapacity } }
-        , _tasks_allocator{ _allocator, "tasks", { detail::TaskAllocatorCapacity } }
-        , _storage_allocator{ _allocator, "storage", { detail::StorageAllocatorCapacity } }
-        , _data_allocator{ _allocator, "data", { detail::DataAllocatorCapacity } }
-        , _input_events{ _inputs_allocator }
-        , _shards{ _shards_allocator }
-        , _entity_operations{ _data_allocator } // #todo change the allocator?
-        , _data_storage{ _storage_allocator }
-        , _frame_tasks{ _tasks_allocator }
-        , _task_executor{ _allocator, IceshardTaskExecutor::TaskList{ _allocator } }
-    {
-        detail::global_frame_counter += 1;
-
-        ice::array::reserve(_input_events, ice::mem_max_capacity<ice::input::InputEvent>(detail::InputsAllocatorCapacity) - 4);
-        ice::shards::reserve(_shards, ice::mem_max_capacity<ice::Shard>(detail::RequestAllocatorCapacity) - 4);
-        ice::array::reserve(_frame_tasks, ice::mem_max_capacity<ice::Task<>>(detail::TaskAllocatorCapacity) - 4);
-
-        ice::shards::push_back(_shards, ice::Shard_FrameTick | _index);
+        ice::array::reserve(_task_groups, 32);
     }
 
-    IceshardMemoryFrame::~IceshardMemoryFrame() noexcept
+    IceshardEngineFrame::~IceshardEngineFrame() noexcept
     {
-        while (ice::linked_queue::any(_queue_frame_end._awaitables))
+        for (TaskGroup& group : _task_groups)
         {
-            for (ice::TaskAwaitableBase* awaitable : ice::linked_queue::consume(_queue_frame_end._awaitables))
+            ICE_ASSERT_CORE(group.barrier->is_set() == true);
+            _data._fwd_allocator.deallocate(group.barrier);
+        }
+        ice::array::clear(_task_groups);
+
+        _data._fwd_allocator.reset();
+    }
+
+    auto IceshardEngineFrame::create_tasks(ice::u32 count, ice::ShardID id) noexcept -> ice::Span<ice::Task<>>
+    {
+        if (count == 0) return { };
+
+        ice::array::push_back(_task_groups,
+            TaskGroup{
+                .tasks = ice::Array<ice::Task<>>{ _data._fwd_allocator },
+                .barrier = _data._fwd_allocator.create<ice::ManualResetBarrier>()
+            }
+        );
+        ice::Array<ice::Task<>>& result = ice::array::back(_task_groups).tasks;
+        ice::array::resize(result, count);
+        return result;
+    }
+
+    auto IceshardEngineFrame::execute_tasks() noexcept -> ice::ucount
+    {
+        ice::ucount total_count = 0;
+        for (TaskGroup& group : _task_groups)
+        {
+            total_count += ice::count(group.tasks);
+
+            // Only reset the barrier if we actual have tasks to execute.
+            if (total_count > 0)
             {
-                awaitable->result.ptr = this;
-                awaitable->_coro.resume();
+                ICE_ASSERT_CORE(ice::count(group.tasks) < ice::u8_max);
+
+                group.barrier->reset(ice::u8(ice::count(group.tasks)));
+                ice::manual_wait_for_all(group.tasks, *group.barrier);
+                ice::array::clear(group.tasks);
             }
         }
-
-        _task_executor.wait_ready();
+        return total_count;
     }
 
-    auto IceshardMemoryFrame::index() const noexcept -> ice::u32
+    auto IceshardEngineFrame::running_tasks() const noexcept -> ice::ucount
     {
-        return _index;
+        ice::ucount result = 0;
+        for (TaskGroup const& group : _task_groups)
+        {
+            result += ice::ucount(group.barrier->is_set() == false);
+        }
+        return result;
     }
 
-    auto IceshardMemoryFrame::allocator() noexcept -> ice::Allocator&
+    void IceshardEngineFrame::wait_tasks() noexcept
     {
-        return _data_allocator;
+        for (TaskGroup& group : _task_groups)
+        {
+            group.barrier->wait();
+        }
     }
 
-    auto IceshardMemoryFrame::input_events() noexcept -> ice::Array<ice::input::InputEvent>&
+    auto create_iceshard_frame(
+        ice::Allocator& alloc,
+        ice::EngineFrameData& frame_data,
+        ice::EngineFrameFactoryUserdata
+    ) noexcept -> ice::UniquePtr<ice::EngineFrame>
     {
-        return _input_events;
-    }
-
-    auto IceshardMemoryFrame::input_events() const noexcept -> ice::Span<ice::input::InputEvent const>
-    {
-        return _input_events;
-    }
-
-    void IceshardMemoryFrame::execute_task(ice::Task<void> task) noexcept
-    {
-        // Adds a task to be executed later during the frame update.
-        ice::array::push_back(_frame_tasks, ice::move(task));
-    }
-
-    void IceshardMemoryFrame::start_all() noexcept
-    {
-        _task_executor = IceshardTaskExecutor{ _allocator, ice::move(_frame_tasks) };
-        _task_executor.start_all();
-    }
-
-    void IceshardMemoryFrame::wait_ready() noexcept
-    {
-        _task_executor.wait_ready();
-    }
-
-    auto IceshardMemoryFrame::shards() noexcept -> ice::ShardContainer&
-    {
-        return _shards;
-    }
-
-    auto IceshardMemoryFrame::shards() const noexcept -> ice::ShardContainer const&
-    {
-        return _shards;
-    }
-
-    auto IceshardMemoryFrame::entity_operations() noexcept -> ice::ecs::EntityOperations&
-    {
-        return _entity_operations;
-    }
-
-    auto IceshardMemoryFrame::entity_operations() const noexcept -> ice::ecs::EntityOperations const&
-    {
-        return _entity_operations;
-    }
-
-    auto IceshardMemoryFrame::storage() noexcept -> ice::DataStorage&
-    {
-        return _data_storage;
-    }
-
-    auto IceshardMemoryFrame::storage() const noexcept -> ice::DataStorage const&
-    {
-        return _data_storage;
-    }
-
-    auto IceshardMemoryFrame::stage_end() noexcept -> ice::TaskStage<ice::EngineFrame>
-    {
-        return { _queue_frame_end };
+        return ice::make_unique<ice::IceshardEngineFrame>(alloc, static_cast<ice::IceshardFrameData&>(frame_data));
     }
 
 } // namespace ice

@@ -12,7 +12,6 @@
 #include <ice/profiler.hxx>
 #include <ice/engine_frame.hxx>
 #include <ice/engine_runner.hxx>
-#include <ice/world/world_portal.hxx>
 #include <ice/world/world_trait_archive.hxx>
 
 #include <ice/render/render_device.hxx>
@@ -26,15 +25,14 @@
 #include <ice/render/render_resource.hxx>
 #include <ice/render/render_pass.hxx>
 
-#include <ice/gfx/gfx_frame.hxx>
-#include <ice/gfx/gfx_device.hxx>
-#include <ice/gfx/gfx_resource_tracker.hxx>
+#include <ice/gfx/gfx_context.hxx>
 
 #include <ice/game_render_traits.hxx>
 
 namespace ice
 {
 
+#if 0
     namespace detail
     {
 
@@ -54,17 +52,17 @@ namespace ice
 
     void IceWorldTrait_RenderGlyphs::gfx_setup(
         ice::gfx::GfxFrame& gfx_frame,
-        ice::gfx::GfxDevice& gfx_device
+        ice::gfx::GfxContext& gfx_ctx
     ) noexcept
     {
-        ice::vec2u const extent = gfx_device.swapchain().extent();
+        ice::vec2u const extent = gfx_ctx.swapchain().extent();
         _framebuffer_size = { ice::f32(extent.x), ice::f32(extent.y) };
 
         using namespace ice::gfx;
         using namespace ice::render;
 
-        Renderpass renderpass = ice::gfx::find_resource<Renderpass>(gfx_device.resource_tracker(), "ice.gfx.renderpass.default"_sid);
-        RenderDevice& device = gfx_device.device();
+        Renderpass renderpass = ice::gfx::find_resource<Renderpass>(gfx_ctx.resource_tracker(), "ice.gfx.renderpass.default"_sid);
+        RenderDevice& device = gfx_ctx.device();
 
         _shader_stages[0] = ShaderStageFlags::VertexStage;
         _shader_stages[1] = ShaderStageFlags::FragmentStage;
@@ -198,7 +196,7 @@ namespace ice
     void IceWorldTrait_RenderGlyphs::gfx_update(
         ice::EngineFrame const& engine_frame,
         ice::gfx::GfxFrame& gfx_frame,
-        ice::gfx::GfxDevice& gfx_device
+        ice::gfx::GfxContext& gfx_ctx
     ) noexcept
     {
         using namespace ice::render;
@@ -215,7 +213,7 @@ namespace ice
                 }
             };
 
-            gfx_device.device().update_buffers(update_info);
+            gfx_ctx.device().update_buffers(update_info);
         }
 
         gfx_frame.set_stage_slot(ice::Constant_GfxStage_DrawGlyphs, this);
@@ -223,11 +221,11 @@ namespace ice
 
     void IceWorldTrait_RenderGlyphs::gfx_cleanup(
         ice::gfx::GfxFrame& gfx_frame,
-        ice::gfx::GfxDevice& gfx_device
+        ice::gfx::GfxContext& gfx_ctx
     ) noexcept
     {
         using namespace ice::render;
-        RenderDevice& device = gfx_device.device();
+        RenderDevice& device = gfx_ctx.device();
 
         for (FontEntry const& font : _fonts)
         {
@@ -362,7 +360,7 @@ namespace ice
         }
 
         ice::vec2i window_size{ };
-        if (ice::shards::inspect_last(frame.shards(), ice::platform::Shard_WindowResized, window_size))
+        if (ice::shards::inspect_last(frame.shards(), ice::platform::ShardID_WindowResized, window_size))
         {
             _framebuffer_size = ice::vec2f{ (ice::f32)window_size.x, (ice::f32)window_size.y };
         }
@@ -582,9 +580,9 @@ namespace ice
         };
 
         ice::gfx::GfxFrame& gfx_frame = runner.graphics_frame();
-        ice::gfx::GfxDevice& gfx_device = runner.graphics_device();
+        ice::gfx::GfxContext& gfx_ctx = runner.graphics_device();
 
-        ice::render::RenderDevice& device = gfx_device.device();
+        ice::render::RenderDevice& device = gfx_ctx.device();
 
         co_await gfx_frame.frame_begin();
 
@@ -720,5 +718,6 @@ namespace ice
             }
         );
     }
+#endif
 
 } // namespace ice

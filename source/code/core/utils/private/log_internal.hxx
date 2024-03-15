@@ -13,6 +13,12 @@
 namespace ice::detail
 {
 
+    struct LogTagInfo
+    {
+        ice::HeapString<> name;
+        bool enabled;
+    };
+
     class LogState final
     {
     public:
@@ -23,19 +29,27 @@ namespace ice::detail
 
         void register_tag(ice::LogTagDefinition tag_def) noexcept;
 
+        void enable_tag(ice::LogTag tag, bool enabled) noexcept;
+
         auto tag_name(ice::LogTag tag) const noexcept -> ice::String;
+        bool tag_enabled(ice::LogTag tag) const noexcept;
 
     private:
         ice::Allocator& _allocator;
 
-        ice::HeapString<> _empty_tag;
-        ice::HashMap<ice::HeapString<>, ice::ContainerLogic::Complex> _tags;
+        ice::detail::LogTagInfo _empty_tag;
+        ice::HashMap<ice::detail::LogTagInfo, ice::ContainerLogic::Complex> _tags;
     };
 
     extern LogState* internal_log_state;
 
     void default_register_tag_fn(
         ice::LogTagDefinition tag_def
+    ) noexcept;
+
+    void default_enable_tag_fn(
+        ice::LogTag tag_def,
+        bool enabled
     ) noexcept;
 
     void default_log_fn(
@@ -53,11 +67,16 @@ namespace ice::detail
         ice::detail::LogLocation location
     ) noexcept;
 
-    using RegisterLogTagFn = void (
+    using RegisterLogTagFn = void(
         ice::LogTagDefinition tag_definition
     ) noexcept;
 
-    extern RegisterLogTagFn* register_log_tag_fn;
+    using EnableLogTagFn = void(
+        ice::LogTag tag, bool enabled
+    ) noexcept;
+
+    extern RegisterLogTagFn* fn_register_log_tag;
+    extern EnableLogTagFn* fn_enable_log_tag;
 
     using LogFn = void (
         ice::LogSeverity severity,
@@ -78,6 +97,11 @@ namespace ice::detail
 
     extern AssertFn* assert_fn;
 
+    constexpr auto tag_hash(ice::LogTag tag) noexcept -> ice::u64
+    {
+        return ice::bit_cast<ice::u64>(tag) & 0x0000'0000'ffff'ffffllu;
+    }
+
     constexpr auto fmt_string(char const* begin, char const* end) noexcept -> fmt::string_view
     {
         return fmt::string_view{ begin, static_cast<ice::u64>(end - begin) };
@@ -87,5 +111,18 @@ namespace ice::detail
     {
         return fmt_string(str._data, str._data + str._size);
     }
+
+    static constexpr ice::String severity_value[]{
+        "",
+        "CRIT",
+        "INFO",
+
+        "ERRR",
+        "WARN",
+        "INFO",
+        "VERB",
+
+        "DEBG",
+    };
 
 } // namespace ice::detail

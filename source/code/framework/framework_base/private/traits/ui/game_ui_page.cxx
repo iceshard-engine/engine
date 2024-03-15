@@ -25,6 +25,7 @@
 namespace ice
 {
 
+#if 0
     namespace detail
     {
 
@@ -754,5 +755,6 @@ namespace ice
         }
         co_return;
     }
+#endif
 
 } // namespace ice

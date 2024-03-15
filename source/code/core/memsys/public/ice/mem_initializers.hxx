@@ -48,9 +48,19 @@ namespace ice
         T* target_mem = reinterpret_cast<T*>(memory.location);
         for (ice::ucount idx = 0; idx < count; ++idx)
         {
-            new (target_mem + idx) T{ice::move(objects[idx])};
+            new (target_mem + idx) T{ ice::move(objects[idx]) };
         }
         return target_mem;
+    }
+
+    template<typename T>
+    auto mem_move_n_to(T* target_objects, T* objects, ice::ucount count) noexcept -> T*
+    {
+        for (ice::ucount idx = 0; idx < count; ++idx)
+        {
+            target_objects[idx] = ice::move(objects[idx]);
+        }
+        return target_objects;
     }
 
     template<typename T>

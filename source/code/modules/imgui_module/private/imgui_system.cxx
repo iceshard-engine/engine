@@ -27,15 +27,11 @@ namespace ice::devui
             }
         }
 
-        auto create_imgui_trait(
-            void* userdata,
-            ice::Allocator& alloc,
-            ice::WorldTraitTracker const& tracker
-        ) noexcept -> ice::WorldTrait*
+        auto create_imgui_trait(ice::Allocator& alloc, void* userdata) noexcept -> ice::UniquePtr<ice::Trait>
         {
+            ice::UniquePtr<ice::devui::ImGuiTrait> trait = ice::make_unique<ice::devui::ImGuiTrait>(alloc, alloc);
             ice::devui::ImGuiSystem* system = reinterpret_cast<ImGuiSystem*>(userdata);
-            ice::devui::ImGuiTrait* trait = alloc.create<ice::devui::ImGuiTrait>(alloc);
-            system->set_trait(trait);
+            system->set_trait(trait.get());
             return trait;
         }
 
@@ -43,7 +39,6 @@ namespace ice::devui
 
     ImGuiSystem::ImGuiSystem(ice::Allocator& alloc) noexcept
         : _allocator{ alloc }
-        , _execution_key{ }
         , _render_trait{ nullptr }
         , _widget_alloc_tree{ nullptr }
         , _widgets{ alloc }
@@ -87,16 +82,18 @@ namespace ice::devui
         }
     }
 
-    void ImGuiSystem::register_trait(
-        ice::WorldTraitArchive& archive
-    ) noexcept
+    void ImGuiSystem::register_trait(ice::TraitArchive& archive) noexcept
     {
         archive.register_trait(
-            ice::Constant_TraitName_DevUI,
-            ice::WorldTraitDescription
+            ice::TraitDescriptor
             {
-                .factory = ice::devui::detail::create_imgui_trait,
-                .factory_userdata = this,
+                .name = ice::Constant_TraitName_DevUI,
+                .fn_factory = ice::devui::detail::create_imgui_trait,
+                .fn_register = nullptr,
+                .fn_unregister = nullptr,
+                .required_dependencies = { },
+                .optional_dependencies = { },
+                .fn_factory_userdata = this,
             }
         );
     }
@@ -153,28 +150,18 @@ namespace ice::devui
         register_widget(_widget_alloc_tree);
     }
 
-    void ImGuiSystem::internal_set_key(ice::devui::DevUIExecutionKey new_execution_key) noexcept
+    void ImGuiSystem::render_builtin_widgets(ice::EngineFrame& frame) noexcept
     {
-        _execution_key = new_execution_key;
-    }
-
-    void ImGuiSystem::internal_build_widgets(
-        ice::EngineFrame& frame,
-        ice::devui::DevUIExecutionKey execution_key
-    ) noexcept
-    {
-        ICE_ASSERT(
-            _execution_key == execution_key,
-            "Method 'internal_build_widgets' was executed from an invalid context!"
-        );
-
         if (_render_trait == nullptr)
         {
             return;
         }
 
         ice::String categories[]{
+            "File",
+            "Settings",
             "Tools",
+            "Test",
             "Uncategorized"
         };
 

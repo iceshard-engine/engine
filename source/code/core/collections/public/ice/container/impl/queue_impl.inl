@@ -346,7 +346,6 @@ namespace ice
             }
             else if constexpr (Logic == ContainerLogic::Complex)
             {
-                static_assert(Logic != ContainerLogic::Trivial);
                 ice::queue::detail::destroy_tail_items(queue, queue._count - new_count);
             }
 
@@ -362,7 +361,12 @@ namespace ice
         template<typename Type, ice::ContainerLogic Logic>
         inline void clear(ice::Queue<Type, Logic>& queue) noexcept
         {
-            ice::queue::resize(queue, 0);
+            if constexpr (Logic == ContainerLogic::Complex)
+            {
+                ice::queue::detail::destroy_head_items(queue, queue._count);
+            }
+
+            queue._count = 0;
             queue._offset = 0;
         }
 
@@ -655,7 +659,55 @@ namespace ice
         }
 
         template<typename Type, ice::ContainerLogic Logic, typename Fn>
-        inline void for_each(ice::Queue<Type, Logic> const& queue, Fn&& fn) noexcept;
+        inline void for_each(ice::Queue<Type, Logic> const& queue, Fn&& fn) noexcept
+        {
+            if (queue._count == 0)
+            {
+                return;
+            }
+
+            ice::ucount const first_part = ice::min(queue._offset + queue._count, queue._capacity);
+            ice::ucount const second_part = (queue._offset + queue._count) - first_part;
+
+            for (ice::u32 idx = queue._offset; idx < first_part; ++idx)
+            {
+                ice::forward<Fn>(fn)(queue._data[idx]);
+            }
+
+            for (ice::u32 idx = 0; idx < second_part; ++idx)
+            {
+                ice::forward<Fn>(fn)(queue._data[idx]);
+            }
+        }
+
+        template<typename Type, ice::ContainerLogic Logic, typename Fn>
+        inline void for_each_reverse(ice::Queue<Type, Logic> const& queue, Fn&& fn) noexcept
+        {
+            if (queue._count == 0)
+            {
+                return;
+            }
+
+            ice::ucount const first_part = ice::min(queue._offset + queue._count, queue._capacity);
+            ice::ucount const second_part = (queue._offset + queue._count) - first_part;
+
+            if (second_part > 0)
+            {
+                for (ice::u32 idx = second_part - 1; idx > 0; --idx)
+                {
+                    ice::forward<Fn>(fn)(queue._data[idx]);
+                }
+
+                ice::forward<Fn>(fn)(queue._data[0]);
+            }
+
+            for (ice::u32 idx = first_part - 1; idx > queue._offset; --idx)
+            {
+                ice::forward<Fn>(fn)(queue._data[idx]);
+            }
+
+            ice::forward<Fn>(fn)(queue._data[queue._offset]);
+        }
 
         template<typename Type, ice::ContainerLogic Logic>
         inline auto memory(ice::Queue<Type, Logic>& queue) noexcept -> ice::Memory

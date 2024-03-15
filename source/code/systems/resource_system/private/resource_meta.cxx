@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2024, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include <ice/resource_meta.hxx>
@@ -398,7 +398,7 @@ namespace ice
     auto meta_read_string_array(
         ice::Metadata const& meta,
         ice::StringID_Arg key,
-        ice::Array<ice::String, ContainerLogic::Complex>& results
+        ice::Array<ice::String>& results
     ) noexcept -> bool
     {
         detail::MetadataEntry entry;
@@ -481,7 +481,7 @@ namespace ice
     {
         ice::Memory const mem = ice::buffer::append_reserve(
             meta._additional_data,
-            { ice::string::size(value) + 1, ice::ualign::b_4 }
+            { ice::usize{ ice::string::size(value) + 1 }, ice::ualign::b_4 }
         );
 
         ice::memcpy(mem, ice::string::data_view(value));
@@ -616,11 +616,11 @@ namespace ice
         if (ice::span::count(values) > 0)
         {
             ice::meminfo meta_info = ice::meminfo_of<detail::MetadataEntry> * ice::span::count(values);
-            ice::usize strs_offset = meta_info += ice::meminfo{ ice::string::size(values[0]) + 1, ice::ualign::b_1};
+            ice::usize strs_offset = meta_info += ice::meminfo{ice::usize{ ice::string::size(values[0]) + 1 }, ice::ualign::b_1};
 
             for (ice::String value : ice::span::subspan(values, 1))
             {
-                meta_info += ice::meminfo{ ice::string::size(value) + 1, ice::ualign::b_1 };
+                meta_info += ice::meminfo{ ice::usize{ ice::string::size(value) + 1 }, ice::ualign::b_1 };
             }
 
             ice::Memory const mem = ice::buffer::append_reserve(meta._additional_data, meta_info);
@@ -665,30 +665,16 @@ namespace ice
         }
     }
 
-
-    void meta_deserialize(ice::Data data, ice::MutableMetadata& meta) noexcept
+    struct BinaryOffsets
     {
-        char const* it = reinterpret_cast<char const*>(data.location);
-        if (it != nullptr)
-        {
-            ice::String const loaded_header{ it, 4 };
+        ice::usize sizes;
+        ice::usize hashes;
+        ice::usize entries;
+        ice::usize values;
+        ice::usize data;
+    };
 
-            if (loaded_header == ice::Constant_FileHeader_MetadataFile)
-            {
-                detail::deserialize_binary_meta(ice::Data{ it + 4, { data.size.value - 4 }, data.alignment }, meta);
-            }
-            else
-            {
-                detail::deserialize_json_meta(data, meta);
-            }
-        }
-    }
-
-    void meta_save(
-        ice::Metadata const& meta,
-        ice::Allocator& alloc,
-        ice::Memory& out_data
-    ) noexcept
+    auto meta_meminfo_internal(ice::Metadata const& meta, BinaryOffsets& offsets) noexcept -> ice::meminfo
     {
         using HashEntry = typename decltype(Metadata::_meta_entries)::Entry;
         using HashValue = typename decltype(Metadata::_meta_entries)::ValueType;
@@ -696,38 +682,99 @@ namespace ice
         ice::ucount const hash_count = meta._meta_entries._capacity;
         ice::ucount const value_count = meta._meta_entries._count;
 
-        ice::meminfo meta_meminfo = { ice::size_of<char> * 4, ice::ualign::b_8 };
-        ice::usize const sizes_offset = meta_meminfo += ice::meminfo_of<ice::u32> * 6;
-        ice::usize const hashes_offset = meta_meminfo += ice::meminfo_of<ice::u32> * hash_count;
-        ice::usize const entries_offset = meta_meminfo += ice::meminfo_of<HashEntry> * value_count;
-        ice::usize const values_offset = meta_meminfo += ice::meminfo_of<HashValue> * value_count;
-        ice::usize const data_offset = meta_meminfo += { meta._additional_data.size, meta._additional_data.alignment };
+        ice::meminfo res = { ice::size_of<char> * 4, ice::ualign::b_8 };
+        offsets.sizes = res += ice::meminfo_of<ice::u32> *6;
+        offsets.hashes = res += ice::meminfo_of<ice::u32> *hash_count;
+        offsets.entries = res += ice::meminfo_of<HashEntry> *value_count;
+        offsets.values = res += ice::meminfo_of<HashValue> *value_count;
+        offsets.data = res += { meta._additional_data.size, ice::ualign::b_8 };
+        return res;
+    }
 
+    auto meta_meminfo(ice::Metadata const& meta) noexcept -> ice::meminfo
+    {
+        ice::BinaryOffsets offsets;
+        return meta_meminfo_internal(meta, offsets);
+    }
+
+    auto meta_deserialize(ice::Allocator& alloc, ice::Data data) noexcept -> ice::MutableMetadata
+    {
+        ice::MutableMetadata result{ alloc };
+        [[maybe_unused]]
+        ice::Result const unused = ice::meta_deserialize_from(result, data);
+        return result;
+    }
+
+    auto meta_deserialize_from(ice::MutableMetadata& meta, ice::Data data) noexcept -> ice::Expected<ice::ErrorCode>
+    {
+        char const* it = reinterpret_cast<char const*>(data.location);
+        if (it != nullptr)
         {
-            out_data = alloc.allocate(meta_meminfo);
-
-            ice::ucount const counts[]{
-                hash_count,
-                value_count,
-                ice::ucount(hashes_offset.value),
-                ice::ucount(entries_offset.value),
-                ice::ucount(values_offset.value),
-                ice::ucount(data_offset.value),
-            };
-
-            ice::Memory mem = out_data;
-            ice::memcpy(mem, detail::Constant_FileHeaderData_MetadataFile);
-            ice::memcpy(ice::ptr_add(mem, sizes_offset), ice::data_view(counts));
-            ice::memcpy(ice::ptr_add(mem, hashes_offset), { meta._meta_entries._hashes, ice::size_of<ice::u32> * hash_count, ice::align_of<ice::u32> });
-            ice::memcpy(ice::ptr_add(mem, entries_offset), { meta._meta_entries._entries, ice::size_of<HashEntry> * value_count, ice::align_of<HashEntry> });
-            ice::memcpy(ice::ptr_add(mem, values_offset), { meta._meta_entries._data, ice::size_of<HashValue> * value_count, ice::align_of<HashValue> });
-
-            // TODO: Create a ptr-add that also updates alignment?
-            ice::AlignResult<void*> res = ice::align_to(ice::ptr_add(mem.location, data_offset), meta._additional_data.alignment);
-            mem.alignment = res.alignment;
-            mem.location = res.value;
-            ice::memcpy(mem, meta._additional_data);
+            ice::String const loaded_header{ it, 4 };
+            if (loaded_header == ice::Constant_FileHeader_MetadataFile)
+            {
+                detail::deserialize_binary_meta(ice::Data{ it, { data.size.value }, data.alignment }, meta);
+            }
+            else
+            {
+                detail::deserialize_json_meta(data, meta);
+            }
+            return ice::S_Success;
         }
+        return ice::E_InvalidArgument;
+    }
+
+    auto meta_store(ice::Metadata const& meta, ice::Memory out_data) noexcept -> ice::usize
+    {
+        using HashEntry = typename decltype(Metadata::_meta_entries)::Entry;
+        using HashValue = typename decltype(Metadata::_meta_entries)::ValueType;
+
+        ice::ucount const hash_count = meta._meta_entries._capacity;
+        ice::ucount const value_count = meta._meta_entries._count;
+
+        ice::BinaryOffsets offsets;
+        ice::meminfo const meta_meminfo = meta_meminfo_internal(meta, offsets);
+        ice::usize const sizes_offset = offsets.sizes;
+        ice::usize const hashes_offset = offsets.hashes;
+        ice::usize const entries_offset = offsets.entries;
+        ice::usize const values_offset = offsets.values;
+        ice::usize const data_offset = offsets.data;
+
+        if (out_data.size < meta_meminfo.size)
+        {
+            return 0_B;
+        }
+
+        ice::ucount const counts[]{
+            hash_count,
+            value_count,
+            ice::ucount(hashes_offset.value),
+            ice::ucount(entries_offset.value),
+            ice::ucount(values_offset.value),
+            ice::ucount(data_offset.value),
+        };
+
+        ice::Memory mem = out_data;
+        ice::memcpy(mem, detail::Constant_FileHeaderData_MetadataFile);
+        ice::memcpy(ice::ptr_add(mem, sizes_offset), ice::data_view(counts));
+        ice::memcpy(ice::ptr_add(mem, hashes_offset), { meta._meta_entries._hashes, ice::size_of<ice::u32> * hash_count, ice::align_of<ice::u32> });
+        ice::memcpy(ice::ptr_add(mem, entries_offset), { meta._meta_entries._entries, ice::size_of<HashEntry> * value_count, ice::align_of<HashEntry> });
+        ice::memcpy(ice::ptr_add(mem, values_offset), { meta._meta_entries._data, ice::size_of<HashValue> * value_count, ice::align_of<HashValue> });
+
+        // TODO: Create a ptr-add that also updates alignment?
+        ice::AlignResult<void*> res = ice::align_to(ice::ptr_add(mem.location, data_offset), ice::ualign::b_8);
+        mem.alignment = res.alignment;
+        mem.location = res.value;
+        ice::memcpy(mem, { meta._additional_data.location, meta._additional_data.size, ice::ualign::b_8 });
+        return meta_meminfo.size;
+    }
+
+    auto meta_save(ice::Metadata const& meta, ice::Allocator& alloc) noexcept -> ice::Memory
+    {
+        ice::Memory result = alloc.allocate(meta_meminfo(meta));
+        ice::usize const write_size = meta_store(meta, result);
+        ICE_ASSERT(write_size == result.size, "Failed to properly allocate data for meta data memory!");
+        return result;
     }
 
     auto meta_load(ice::Data data) noexcept -> ice::Metadata
@@ -784,7 +831,7 @@ namespace ice
             {
                 void const* entries_end = ice::ptr_add(entries_it, { value_count * entry_type_size });
                 ICE_ASSERT(
-                    ice::ptr_distance(data.location, entries_end) < data.size,
+                    ice::ptr_distance(data.location, entries_end) <= data.size,
                     "Moved past the data buffer!"
                 );
             }
@@ -808,7 +855,7 @@ namespace ice
             result_meta._meta_entries._data = reinterpret_cast<HashValue const*>(value_it);
 
             void const* data_it = ice::ptr_add(data.location, { data_offset });
-            result_meta._additional_data = { data_it, data.size.value - data_offset };
+            result_meta._additional_data = { data_it, { data.size.value - data_offset } };
         }
 
         return result_meta;
@@ -849,7 +896,7 @@ namespace ice
         result_meta._meta_entries._hashes = _meta_entries._hashes;
         result_meta._meta_entries._entries = _meta_entries._entries;
         result_meta._meta_entries._data = _meta_entries._data;
-        result_meta._additional_data = ice::data_view(_additional_data.memory);
+        result_meta._additional_data = ice::buffer::data_view(_additional_data);
         return result_meta;
     }
 

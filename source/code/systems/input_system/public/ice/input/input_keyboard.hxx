@@ -14,7 +14,7 @@ namespace ice::input
     enum class KeyboardMod : ice::i16;
 
 
-    inline constexpr bool has_flag(
+    constexpr inline bool has_flag(
         ice::input::KeyboardMod value,
         ice::input::KeyboardMod flag
     ) noexcept;
@@ -188,7 +188,7 @@ namespace ice::input
     };
 
 
-    inline constexpr bool has_flag(
+    constexpr inline bool has_flag(
         ice::input::KeyboardMod value,
         ice::input::KeyboardMod flag
     ) noexcept

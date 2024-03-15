@@ -10,8 +10,8 @@
 namespace ice::input
 {
 
-    static constexpr ice::i32 default_button_event_treshold_hold = 40;
-    static constexpr ice::i32 default_button_event_treshold_repeat = 20;
+    static constexpr ice::i32 Constant_ButtonClickThreshold = 29;
+    static constexpr ice::i32 Constant_ButtonHoldThreshold = 30;
 
     using DeviceFactory = auto (
         ice::Allocator&,
@@ -28,8 +28,8 @@ namespace ice::input
             ice::input::DeviceFactory* device_factory
         ) noexcept = 0;
 
-        virtual void process_device_queue(
-            ice::input::DeviceEventQueue const& event_queue,
+        virtual void process_device_events(
+            ice::Span<ice::input::DeviceEvent const> events,
             ice::Array<ice::input::InputEvent>& input_events_out
         ) noexcept = 0;
 

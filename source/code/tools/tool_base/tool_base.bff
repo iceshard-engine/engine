@@ -1,0 +1,24 @@
+/// Copyright 2023 - 2023, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
+.Project =
+[
+    .Name = 'tool_base'
+    .Kind = .Kind_ObjectList
+    .BaseDir = '$WorkspaceCodeDir$/tools/tool_base'
+    .Group = 'Tools'
+
+    .CopyModules = true
+
+    .Requires = {
+        'Windows'
+    }
+
+    .Private =
+    [
+        .Uses = {
+            'resource_system'
+        }
+    ]
+]
+.Projects + .Project

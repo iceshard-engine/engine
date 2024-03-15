@@ -10,7 +10,7 @@ namespace ice
 
     template<typename Value = void>
     class Task;
-    class TaskQueue;
+    struct TaskQueue;
     class TaskScheduler;
 
     class TaskThread;
@@ -19,6 +19,9 @@ namespace ice
     struct TaskFlags;
     struct TaskAwaitableParams;
     struct TaskAwaitableBase;
+
+    struct TaskContainer;
+    class ScopedTaskContainer;
 
     class ManualResetEvent;
     class ManualResetBarrier;

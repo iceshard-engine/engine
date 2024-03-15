@@ -25,17 +25,17 @@ namespace ice
             requires std::copy_constructible<Type> && std::convertible_to<Value, Type>
         inline void set(ice::HashMap<Type, Logic>& map, ice::u64 key, Value const& value) noexcept;
 
-        template<typename Type, ice::ContainerLogic Logic>
-            requires std::move_constructible<Type>
-        inline void set(ice::HashMap<Type, Logic>& map, ice::u64 key, Type&& value) noexcept;
+        template<typename Type, ice::ContainerLogic Logic, typename Value = Type>
+            requires std::move_constructible<Type> && std::convertible_to<Value, Type>
+        inline void set(ice::HashMap<Type, Logic>& map, ice::u64 key, Value&& value) noexcept;
 
         template<typename Type, ice::ContainerLogic Logic>
             requires std::copy_constructible<Type>
         inline auto get_or_set(ice::HashMap<Type, Logic>& map, ice::u64 key, Type const& value_if_missing) noexcept -> Type&;
 
-        template<typename Type, ice::ContainerLogic Logic>
-            requires std::move_constructible<Type>
-        inline auto get_or_set(ice::HashMap<Type, Logic>& map, ice::u64 key, Type&& value_if_missing) noexcept -> Type&;
+        template<typename Type, ice::ContainerLogic Logic, typename Value = Type>
+            requires std::move_constructible<Type> && std::convertible_to<Value, Type>
+        inline auto get_or_set(ice::HashMap<Type, Logic>& map, ice::u64 key, Value&& value_if_missing) noexcept -> Type&;
 
         template<typename Type, ice::ContainerLogic Logic>
         inline auto try_get(ice::HashMap<Type, Logic>& map, ice::u64 key) noexcept -> Type*;
@@ -99,6 +99,10 @@ namespace ice
 
     namespace multi_hashmap
     {
+
+        template<typename Type, ice::ContainerLogic Logic>
+            requires std::move_constructible<Type> && std::convertible_to<Type, Type>
+        inline void insert(ice::HashMap<Type, Logic>& map, ice::u64 key, Type&& value) noexcept;
 
         template<typename Type, ice::ContainerLogic Logic>
         inline void insert(ice::HashMap<Type, Logic>& map, ice::u64 key, Type const& value) noexcept;

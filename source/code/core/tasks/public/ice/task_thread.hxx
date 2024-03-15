@@ -50,7 +50,6 @@ namespace ice
         virtual bool is_running() const noexcept = 0;
 
         virtual auto estimated_task_count() const noexcept -> ice::ucount = 0;
-        //virtual auto queue_pusher() const noexcept -> ice::tasks::v2::TaskQueuePusher & = 0;
 
         virtual auto queue() noexcept -> ice::TaskQueue & = 0;
     };

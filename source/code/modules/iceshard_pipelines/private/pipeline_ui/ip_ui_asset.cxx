@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2024, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include <ice/ui_asset.hxx>
@@ -569,6 +569,7 @@ namespace ice
     ) noexcept -> ice::Task<bool>
     {
         ice::Asset default_font_asset = storage.bind(ice::AssetType_Font, "local/font/calibri");
+        [[maybe_unused]]
         ice::Data asset_data = co_await default_font_asset[AssetState::Loaded];
         ice::ui::PageInfo const* ui_data = reinterpret_cast<ice::ui::PageInfo const*>(data.location);
 
@@ -621,7 +622,7 @@ namespace ice
         static ice::AssetTypeDefinition asset_definition
         {
             .resource_extensions = asset_extensions,
-            .fn_asset_oven = bake_isui_asset,
+            // .fn_asset_oven = bake_isui_asset,
             .fn_asset_loader = load_isui_asset
         };
 

@@ -1,33 +1,54 @@
-/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2024, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
-#include <ice/stringid.hxx>
-#include <ice/container/array.hxx>
-#include <ice/sync_manual_events.hxx>
-#include <ice/engine_types.hxx>
+#include <ice/gfx/gfx_shards.hxx>
+#include <ice/task_types.hxx>
 
 namespace ice::gfx
 {
 
-    class GfxTrait;
-    class GfxDevice;
-    class GfxFrame;
-
-    class GfxRunner
+    struct GfxRunnerCreateInfo
     {
-    public:
+        ice::Engine& engine;
+        ice::render::RenderDriver& driver;
+        ice::render::RenderSurface& surface;
+        ice::Span<ice::gfx::GfxQueueDefinition const> render_queues;
+    };
+
+    struct GfxFrameStages
+    {
+        ice::TaskStage<ice::render::CommandBuffer> frame_transfer;
+        ice::TaskStage<> frame_end;
+    };
+
+    //! \brief Graphics runner (runtime) object. Handles graphics work between frames and handles swapchain states.
+    struct GfxRunner
+    {
         virtual ~GfxRunner() noexcept = default;
 
-        virtual auto aquire_world() noexcept -> ice::World* = 0;
-        virtual void release_world(ice::World* world) noexcept = 0;
+        //! \brief Sets a rendergraph to used for execution each frame.
+        virtual void update_rendergraph(ice::UniquePtr<ice::gfx::GfxGraphRuntime> rendergraph) noexcept = 0;
 
-        virtual void set_event(ice::ManualResetEvent* event) noexcept = 0;
+        //! \brief Creates a new draw task for the currently associated render graph.
+        virtual auto draw_frame(
+            ice::EngineFrame const& frame,
+            ice::Clock const& clock
+        ) noexcept -> ice::Task<> = 0;
 
-        virtual auto device() noexcept -> ice::gfx::GfxDevice& = 0;
-        virtual auto frame() noexcept -> ice::gfx::GfxFrame& = 0;
+        //! \returns Graphics context associated with this runner.
+        virtual auto context() noexcept -> ice::gfx::GfxContext& = 0;
 
-        virtual void draw_frame(ice::EngineFrame const& engine_frame) noexcept = 0;
+    public:
+        virtual void on_resume() noexcept = 0;
+        virtual void on_suspend() noexcept = 0;
+    };
+
+    //! \warning Might become deprecated, since in almost all cases queues are handled by the engine anyway.
+    struct GfxQueueDefinition
+    {
+        ice::StringID name;
+        ice::render::QueueFlags flags;
     };
 
 } // namespace ice::gfx

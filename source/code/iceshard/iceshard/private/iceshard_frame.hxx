@@ -1,71 +1,60 @@
-/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2023 - 2023, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
 #include <ice/engine_frame.hxx>
 #include <ice/ecs/ecs_entity_operations.hxx>
-
-#include <ice/input/input_event.hxx>
-#include <ice/task.hxx>
-
-#include <ice/mem_allocator_ring.hxx>
-#include <ice/container_types.hxx>
-#include <ice/container/array.hxx>
-#include <atomic>
-
-#include "iceshard_task_executor.hxx"
+#include <ice/task_container.hxx>
+#include "iceshard_runner.hxx"
+#include "iceshard_world.hxx"
 
 namespace ice
 {
 
-    class IceshardMemoryFrame final : public ice::EngineFrame
+    struct IceshardEngineFrame : EngineFrame, TaskContainer
     {
-    public:
-        IceshardMemoryFrame(
-            ice::RingAllocator& alloc
+        IceshardEngineFrame(
+            ice::IceshardFrameData& frame_data
         ) noexcept;
-        ~IceshardMemoryFrame() noexcept override;
+        ~IceshardEngineFrame() noexcept override;
 
-        auto index() const noexcept -> ice::u32 override;
+        auto allocator() const noexcept -> ice::Allocator& override { return _data._allocator; }
+        auto index() const noexcept -> ice::u32 override { return _data._index; }
 
-        auto allocator() noexcept -> ice::Allocator& override;
+        auto data() noexcept -> ice::EngineFrameData& override { return _data; }
+        auto data() const noexcept -> ice::EngineFrameData const& override { return _data; }
 
-        auto input_events() noexcept -> ice::Array<ice::input::InputEvent>&;
-        auto input_events() const noexcept -> ice::Span<ice::input::InputEvent const> override;
+        auto shards() noexcept -> ice::ShardContainer& override { return _shards; }
+        auto shards() const noexcept -> ice::ShardContainer const& override { return _shards; }
 
-        void execute_task(ice::Task<void> task) noexcept;
-        void start_all() noexcept;
-        void wait_ready() noexcept;
+        auto entity_operations() noexcept -> ice::ecs::EntityOperations& override { return _operations; }
+        auto entity_operations() const noexcept -> ice::ecs::EntityOperations const& override { return _operations; }
 
-        auto shards() noexcept -> ice::ShardContainer& override;
-        auto shards() const noexcept -> ice::ShardContainer const& override;
+        auto tasks_container() noexcept -> ice::TaskContainer& override { return *this; }
 
-        auto entity_operations() noexcept -> ice::ecs::EntityOperations& override;
-        auto entity_operations() const noexcept -> ice::ecs::EntityOperations const& override;
-
-        auto storage() noexcept -> ice::DataStorage& override;
-        auto storage() const noexcept -> ice::DataStorage const& override;
-
-        auto stage_end() noexcept -> ice::TaskStage<ice::EngineFrame> override;
+        auto create_tasks(ice::u32 count, ice::ShardID id) noexcept -> ice::Span<ice::Task<>> override;
+        auto execute_tasks() noexcept -> ice::ucount override;
+        auto running_tasks() const noexcept -> ice::ucount override;
+        void wait_tasks() noexcept override;
 
     private:
-        ice::u32 const _index;
-        ice::RingAllocator& _allocator;
-        ice::RingAllocator _inputs_allocator;
-        ice::RingAllocator _shards_allocator;
-        ice::RingAllocator _tasks_allocator;
-        ice::RingAllocator _storage_allocator;
-        ice::RingAllocator _data_allocator;
-
-        ice::Array<ice::input::InputEvent> _input_events;
+        ice::IceshardFrameData& _data;
         ice::ShardContainer _shards;
-        ice::ecs::EntityOperations _entity_operations;
-        ice::HashedDataStorage _data_storage;
+        ice::ecs::EntityOperations _operations;
 
-        ice::Array<ice::Task<>, ice::ContainerLogic::Complex> _frame_tasks;
-        ice::IceshardTaskExecutor _task_executor;
+        struct TaskGroup
+        {
+            ice::Array<ice::Task<>> tasks;
+            ice::ManualResetBarrier* barrier;
+        };
 
-        ice::TaskQueue _queue_frame_end;
+        ice::Array<TaskGroup> _task_groups;
     };
+
+    auto create_iceshard_frame(
+        ice::Allocator& alloc,
+        ice::EngineFrameData& frame_data,
+        ice::EngineFrameFactoryUserdata
+    ) noexcept -> ice::UniquePtr<ice::EngineFrame>;
 
 } // namespace ice

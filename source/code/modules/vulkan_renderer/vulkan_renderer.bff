@@ -1,4 +1,4 @@
-/// Copyright 2021 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2021 - 2024, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 .Project =
@@ -8,21 +8,30 @@
     .Group = 'Modules'
 
     .BaseDir = '$WorkspaceCodeDir$/modules/vulkan_renderer'
-
-    .Requires = {
-        'SDK-Vulkan'
-    }
+    .Requires = { 'SDK-Vulkan' }
 
     .Private =
     [
+        .Modules = {
+            'vulkan_memory_allocator'
+        }
         .Uses = {
             'platform'
             'render_system'
         }
-
-        .Defines = {
-            'VK_USE_PLATFORM_WIN32_KHR'
-        }
     ]
+
+    .Win32_Libs =
+    [
+        .Name = 'Win32-Shader-Compiler'
+        .Requires = { 'SDK-Windows-10' }
+        .Public =
+        [
+            .Libs = {
+                'shaderc_shared'
+            }
+        ]
+    ]
+    .Rules = { .Win32_Libs }
 ]
 .Projects + .Project

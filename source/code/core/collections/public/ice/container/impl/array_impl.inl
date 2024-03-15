@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2024, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 namespace ice
@@ -195,6 +195,7 @@ namespace ice
             if (new_capacity > 0)
             {
                 ice::AllocResult new_buffer = arr._allocator->allocate(ice::meminfo_of<Type> * new_capacity);
+                ICE_ASSERT_CORE(new_buffer.memory != nullptr);
                 if (arr._count > 0)
                 {
                     if constexpr (Logic == ContainerLogic::Complex)
@@ -276,7 +277,12 @@ namespace ice
         template<typename Type, ice::ContainerLogic Logic>
         inline void clear(ice::Array<Type, Logic>& arr) noexcept
         {
-            ice::array::resize(arr, 0);
+            if constexpr (Logic == ContainerLogic::Complex)
+            {
+                ice::mem_destruct_n_at(arr._data, arr._count);
+            }
+
+            arr._count = 0;
         }
 
         template<typename Type, ice::ContainerLogic Logic>
@@ -373,6 +379,7 @@ namespace ice
         template<typename Type, ice::ContainerLogic Logic>
         inline void pop_back(ice::Array<Type, Logic>& arr, ice::ucount count /*= 1*/) noexcept
         {
+            count = ice::min(count, arr._count);
             if constexpr (Logic == ContainerLogic::Complex)
             {
                 ice::mem_destruct_n_at(arr._data + (arr._count - count), count);
@@ -522,6 +529,14 @@ namespace ice
                 .size = ice::size_of<Type> * arr._capacity,
                 .alignment = ice::align_of<Type>
             };
+        }
+
+        template<typename Type>
+        inline auto memset(ice::Array<Type, ice::ContainerLogic::Trivial>& arr, ice::u8 value) noexcept -> ice::Memory
+        {
+            ice::Memory const mem = ice::array::memory(arr);
+            ice::memset(mem.location, value, mem.size.value);
+            return mem;
         }
 
     } // namespace array

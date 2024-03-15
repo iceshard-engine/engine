@@ -4,6 +4,7 @@
 #pragma once
 #include <ice/types.hxx>
 #include <ice/types_extended.hxx>
+#include <limits>
 
 namespace ice
 {

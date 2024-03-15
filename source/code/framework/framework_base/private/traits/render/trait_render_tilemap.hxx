@@ -11,6 +11,7 @@
 namespace ice
 {
 
+#if 0
     class AssetStorage;
 
     static constexpr ice::String Tilemap_VtxShader = "shaders/game2d/tiled-vtx";
@@ -68,18 +69,18 @@ namespace ice
 
         void gfx_setup(
             ice::gfx::GfxFrame& gfx_frame,
-            ice::gfx::GfxDevice& gfx_device
+            ice::gfx::GfxContext& gfx_ctx
         ) noexcept override;
 
         void gfx_cleanup(
             ice::gfx::GfxFrame& gfx_frame,
-            ice::gfx::GfxDevice& gfx_device
+            ice::gfx::GfxContext& gfx_ctx
         ) noexcept override;
 
         auto task_gfx_update(
             ice::EngineFrame const& engine_frame,
             ice::gfx::GfxFrame& gfx_frame,
-            ice::gfx::GfxDevice& gfx_device
+            ice::gfx::GfxContext& gfx_ctx
         ) noexcept -> ice::Task<> override;
 
         void record_commands(
@@ -91,12 +92,12 @@ namespace ice
 
     protected:
         void update_resource_tilemap(
-            ice::gfx::GfxDevice& gfx_device,
+            ice::gfx::GfxContext& gfx_ctx,
             ice::IceTileMap_RenderInfo const& tilemap_info
         ) noexcept;
 
         void update_resource_camera(
-            ice::gfx::GfxDevice& gfx_device
+            ice::gfx::GfxContext& gfx_ctx
         ) noexcept;
 
     private:
@@ -129,5 +130,6 @@ namespace ice
     void register_trait_render_tilemap(
         ice::WorldTraitArchive& archive
     ) noexcept;
+#endif
 
 } // namespace ice

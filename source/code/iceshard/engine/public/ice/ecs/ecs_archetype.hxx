@@ -31,9 +31,9 @@ namespace ice::ecs
         std::array<ice::u32, Const_ComponentCount> component_sizes;
         std::array<ice::u32, Const_ComponentCount> component_alignments;
 
-        inline constexpr ArchetypeDefinition() noexcept;
+        constexpr inline ArchetypeDefinition() noexcept;
 
-        inline constexpr operator ice::ecs::Archetype() const noexcept;
+        constexpr inline operator ice::ecs::Archetype() const noexcept;
     };
 
 
@@ -52,7 +52,7 @@ namespace ice::ecs
         ice::Span<ice::u32 const> component_alignments;
 
         template<ice::ecs::Component... Components>
-        inline constexpr ArchetypeInfo(
+        constexpr inline ArchetypeInfo(
             ice::ecs::ArchetypeDefinition<Components...> const& archetype_info
         ) noexcept;
     };
@@ -149,7 +149,7 @@ namespace ice::ecs
 
 
     template<ice::ecs::Component... Components>
-    inline constexpr ArchetypeDefinition<Components...>::ArchetypeDefinition() noexcept
+    constexpr inline ArchetypeDefinition<Components...>::ArchetypeDefinition() noexcept
         : component_identifiers{ ice::ecs::Constant_ComponentIdentifier<ice::ecs::EntityHandle> }
         , component_sizes{ ice::ecs::Constant_ComponentSize<ice::ecs::EntityHandle> }
         , component_alignments{ ice::ecs::Constant_ComponentAlignment<ice::ecs::EntityHandle> }
@@ -167,13 +167,13 @@ namespace ice::ecs
     }
 
     template<ice::ecs::Component... Components>
-    inline constexpr ArchetypeDefinition<Components...>::operator ice::ecs::Archetype() const noexcept
+    constexpr inline ArchetypeDefinition<Components...>::operator ice::ecs::Archetype() const noexcept
     {
         return identifier;
     }
 
     template<ice::ecs::Component... Components>
-    inline constexpr ArchetypeInfo::ArchetypeInfo(
+    constexpr inline ArchetypeInfo::ArchetypeInfo(
         ice::ecs::ArchetypeDefinition<Components...> const& archetype_info
     ) noexcept
         : identifier{ archetype_info.identifier }

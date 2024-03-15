@@ -10,22 +10,14 @@
 
     .CopyModules = true
 
+    .Requires = {
+        'Windows'
+    }
+
     .Private =
     [
-        .DependsOn =
-        [
-            .Runtime = {
-                'asset_module'
-            }
-        ]
-
-        .Modules = {
-            'CLI11'
-            'Assimp'
-        }
 
         .Uses = {
-            'platform'
             'asset_system'
         }
     ]

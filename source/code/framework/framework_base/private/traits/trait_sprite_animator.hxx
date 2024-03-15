@@ -14,6 +14,7 @@
 namespace ice
 {
 
+#if 0
     class AssetStorage;
 
     struct TraitAnimatorAnimationInfo
@@ -62,5 +63,6 @@ namespace ice
         ice::AssetStorage* _assets;
         ice::HashMap<ice::TraitAnimatorAnimationInfo> _anim_infos;
     };
+#endif
 
 } // namespace ice

@@ -11,6 +11,7 @@ namespace ice
     static constexpr ice::StringID Scheme_URN = "urn"_sid;
     static constexpr ice::StringID Scheme_File = "file"_sid;
     static constexpr ice::StringID Scheme_Dynlib = "dynlib"_sid;
+    static constexpr ice::StringID Scheme_HailStorm = "hsc"_sid;
 
     static constexpr ice::StringID Scheme_Invalid = "<invalid>"_sid;
 
@@ -100,6 +101,10 @@ namespace ice
         static_assert(path_from_uri("file:/path/name.file") == "/path/name.file");
         static_assert(path_from_uri("file://path/name.file") == "path/name.file");
         static_assert(path_from_uri("file:///path/name.file") == "/path/name.file");
+        static_assert(scheme_from_uri("file:path/name.file") == ice::Scheme_File);
+        static_assert(scheme_from_uri("file:/path/name.file") == ice::Scheme_File);
+        static_assert(scheme_from_uri("file://path/name.file") == ice::Scheme_File);
+        static_assert(scheme_from_uri("file:///path/name.file") == ice::Scheme_File);
 
         //constexpr auto path_from_uri(ice::String uri) noexcept
         //{

@@ -1,48 +1,36 @@
-/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2024, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
-#include <ice/engine_frame.hxx>
-#include <ice/render/render_declarations.hxx>
+#include <ice/gfx/gfx_types.hxx>
+#include <ice/asset_storage.hxx>
+#include <ice/task.hxx>
 
 namespace ice::gfx
 {
 
-    class GfxDevice;
-    class GfxContext;
-
-    class GfxContextStage
+    struct GfxStage
     {
-    public:
-        virtual ~GfxContextStage() noexcept = default;
+        virtual ~GfxStage() noexcept = default;
 
-        virtual void prepare_context(
-            ice::gfx::GfxContext& context,
-            ice::gfx::GfxDevice& device
-        ) const noexcept { }
+        virtual auto initialize(
+            ice::gfx::GfxContext& gfx,
+            ice::gfx::GfxFrameStages& stages,
+            ice::render::Renderpass renderpass
+        ) noexcept -> ice::Task<> { co_return; }
 
-        virtual void clear_context(
-            ice::gfx::GfxContext& context,
-            ice::gfx::GfxDevice& device
-        ) const noexcept { }
+        virtual auto cleanup(
+            ice::gfx::GfxContext& gfx
+        ) noexcept -> ice::Task<> { co_return; }
 
-        virtual void record_commands(
-            ice::gfx::GfxContext const& context,
+        virtual void update(
+            ice::gfx::GfxContext& gfx
+        ) noexcept { }
+
+        virtual void draw(
             ice::EngineFrame const& frame,
-            ice::render::CommandBuffer command_buffer,
-            ice::render::RenderCommands& render_commands
-        ) const noexcept = 0;
-    };
-
-    class GfxFrameStage
-    {
-    public:
-        virtual ~GfxFrameStage() noexcept = default;
-
-        virtual void record_commands(
-            ice::EngineFrame const& frame,
-            ice::render::CommandBuffer command_buffer,
-            ice::render::RenderCommands& render_commands
+            ice::render::CommandBuffer cmds,
+            ice::render::RenderCommands& render_api
         ) const noexcept = 0;
     };
 

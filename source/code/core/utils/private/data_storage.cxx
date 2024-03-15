@@ -7,6 +7,7 @@
 namespace ice
 {
 
+#if 0
     HashedDataStorage::HashedDataStorage(ice::Allocator& alloc) noexcept
         : _allocator{ alloc }
         , _named_data{ _allocator }
@@ -89,6 +90,6 @@ namespace ice
         _allocator.deallocate(object_ptr);
         ice::hashmap::remove(_named_data, name_hash);
     }
-
+#endif
 
 } // namespace ice

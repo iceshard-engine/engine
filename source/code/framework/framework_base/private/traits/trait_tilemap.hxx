@@ -11,6 +11,7 @@
 namespace ice
 {
 
+#if 0
     struct TileMapInstance
     {
         ice::TileMap const* tilemap;
@@ -66,5 +67,6 @@ namespace ice
     void register_trait_tilemap(
         ice::WorldTraitArchive& archive
     ) noexcept;
+#endif
 
 } // namespace ice
