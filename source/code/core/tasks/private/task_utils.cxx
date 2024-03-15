@@ -53,6 +53,111 @@ namespace ice
             co_await scheduler;
         }
 
+
+        class DetachedAwaitingTask
+        {
+        public:
+            DetachedAwaitingTask() noexcept = default;
+
+            struct promise_type
+            {
+                // All tasks have the same continuation
+                std::coroutine_handle<> _continuation;
+
+                // However only the last one remaining will 'not' be ready and return the continuation in 'await_suspend'
+                std::atomic_uint32_t& _remaining;
+
+                promise_type(ice::Task<> const&, std::coroutine_handle<> continuation, std::atomic_uint32_t& remaining) noexcept
+                    : _continuation{ continuation }
+                    , _remaining{ remaining }
+                { }
+
+                struct final_awaitable
+                {
+                    promise_type* promise;
+
+                    // On the final suspend point we are checking checking if we are the last remaining task
+                    inline auto await_ready() const noexcept { return promise->_remaining.fetch_sub(1, std::memory_order_release) > 1; }
+
+                    // If so we return the continuation
+                    inline auto await_suspend(std::coroutine_handle<> coro) const noexcept -> std::coroutine_handle<>
+                    {
+                        std::atomic_thread_fence(std::memory_order_acquire);
+
+                        // Can't access promise after it's destroyed
+                        std::coroutine_handle<> continuation = promise->_continuation;
+
+                        // We delete the detached coroutine here, since this would be normaly done when 'await_ready == true' after resuming
+                        //  from the final suspension point. Since we are suspending, but we never resume again we just delete it here.
+                        coro.destroy();
+
+                        // Return the continuation
+                        return continuation;
+                    }
+
+                    constexpr void await_resume() const noexcept { }
+                };
+
+                auto initial_suspend() const noexcept { return std::suspend_never{ }; }
+                auto final_suspend() noexcept { return final_awaitable{ this }; }
+                auto return_void() noexcept { }
+
+                auto get_return_object() noexcept -> DetachedAwaitingTask
+                {
+                    return DetachedAwaitingTask{};
+                }
+
+                void unhandled_exception() noexcept
+                {
+                    ICE_ASSERT(false, "Unexpected coroutine exception!");
+                }
+            };
+        };
+
+        // We have this large signature to pass the coroutine handle and atomic counter to the promise type with the same ctor signature.
+        auto detached_awaiting_task(
+            ice::Task<void> awaited_task,
+            std::coroutine_handle<>,
+            std::atomic_uint32_t&
+        ) noexcept -> DetachedAwaitingTask
+        {
+            co_await awaited_task;
+        }
+
+        auto await_tasks(ice::Span<ice::Task<void>> tasks) noexcept
+        {
+            struct Awaitable
+            {
+                ice::Span<ice::Task<void>> tasks;
+                std::atomic_uint32_t running;
+
+                constexpr auto await_ready() const noexcept
+                {
+                    // Only suspend if we actually have tasks
+                    return ice::span::empty(tasks);
+                }
+
+                inline auto await_suspend(std::coroutine_handle<> coro) noexcept
+                {
+                    // Set the 'running' variable so we can track how many tasks arleady finished.
+                    running.store(ice::count(tasks), std::memory_order_relaxed);
+
+                    for (ice::Task<void>& task : tasks)
+                    {
+                        // Execute all tasks
+                        detail::detached_awaiting_task(ice::move(task), coro, running);
+                    }
+                }
+
+                constexpr bool await_resume() const noexcept
+                {
+                    ICE_ASSERT_CORE(running.load(std::memory_order_relaxed) == 0);
+                    return ice::span::any(tasks);
+                }
+            };
+            return Awaitable{ tasks };
+        }
+
     } // namespace detail
 
     void wait_for(ice::Task<void> task) noexcept
@@ -110,6 +215,30 @@ namespace ice
         {
             resume_task_on(ice::move(task), scheduler);
         }
+    }
+
+    auto await_all(ice::Span<ice::Task<void>> tasks) noexcept -> ice::Task<void>
+    {
+        co_await detail::await_tasks(tasks);
+    }
+
+    auto await_all_scheduled(ice::Span<ice::Task<void>> tasks, ice::TaskScheduler& scheduler) noexcept -> ice::Task<void>
+    {
+        co_await scheduler;
+        co_await detail::await_tasks(tasks);
+    }
+
+    auto await_all_on(ice::Span<ice::Task<void>> tasks, ice::TaskScheduler& resumer) noexcept -> ice::Task<void>
+    {
+        co_await detail::await_tasks(tasks);
+        co_await resumer;
+    }
+
+    auto await_all_on_scheduled(ice::Span<ice::Task<void>> tasks, ice::TaskScheduler& resumer, ice::TaskScheduler& scheduler) noexcept -> ice::Task<void>
+    {
+        co_await scheduler;
+        co_await detail::await_tasks(tasks);
+        co_await resumer;
     }
 
 } // namespace ice

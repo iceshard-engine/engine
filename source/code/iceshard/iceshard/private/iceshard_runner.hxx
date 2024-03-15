@@ -194,10 +194,6 @@ namespace ice
         std::atomic<ice::IceshardFrameData*> _frame_data_freelist;
         std::atomic<ice::u32> _next_frame_index;
 
-        ice::TaskQueue _main_queue;
-        ice::TaskScheduler _main_scheduler;
-        ice::ManualResetBarrier _barrier;
-
         ice::IceshardEngineTaskContainer _runner_tasks;
     };
 

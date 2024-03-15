@@ -177,6 +177,9 @@ struct ice::app::Runtime
     ice::ProxyAllocator runtime_alloc;
     ice::ProxyAllocator app_alloc;
 
+    ice::TaskQueue main_queue;
+    ice::TaskScheduler main_scheduler;
+
     ice::UniquePtr<ice::EngineRunner> runner;
     ice::UniquePtr<ice::EngineFrame> frame;
     ice::UniquePtr<ice::gfx::GfxRunner> gfx_runner;
@@ -205,6 +208,7 @@ struct ice::app::Runtime
         , render_alloc{ alloc, "renderer" }
         , runtime_alloc{ alloc, "runtime" }
         , app_alloc{ alloc, "application" }
+        , main_scheduler{ main_queue }
         , runner{ }
         , frame{ }
         , gfx_runner{ }
@@ -404,7 +408,7 @@ auto ice_resume(
         ice::EngineRunnerCreateInfo const runner_create_info{
             .engine = *state.engine,
             .schedulers = {
-                .main = state.thread_pool_scheduler,
+                .main = runtime.main_scheduler,
                 .tasks = state.thread_pool_scheduler,
             }
         };
@@ -524,6 +528,11 @@ auto ice_update(
     {
         using namespace std;
         std::this_thread::sleep_for(1ms);
+    }
+
+    while(runtime.logic_wait.is_set() == false)
+    {
+        runtime.main_queue.process_all();
     }
 
     runtime.logic_wait.wait();

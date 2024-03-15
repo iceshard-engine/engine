@@ -22,7 +22,7 @@ namespace ice
     ) noexcept
         : _allocator{ alloc }
         , _engine{ create_info.engine }
-        , _schedulers{ .main = _main_scheduler, .tasks = create_info.schedulers.tasks }
+        , _schedulers{ create_info.schedulers }
         , _frame_factory{ create_info.frame_factory }
         , _frame_factory_userdata{ create_info.frame_factory_userdata }
         , _frame_count{ create_info.concurrent_frame_count }
@@ -30,9 +30,6 @@ namespace ice
         , _runtime_storage{ _allocator }
         , _frame_data_freelist{ nullptr }
         , _next_frame_index{ 0 }
-        , _main_queue{ }
-        , _main_scheduler{ _main_queue }
-        , _barrier{ }
         , _runner_tasks{ _allocator, _schedulers.tasks }
     {
         ICE_ASSERT(
@@ -129,24 +126,9 @@ namespace ice
             "Gathered more tasks than it's possible to track!"
         );
 
-        _barrier.reset(ice::u8(ice::array::count(tasks)));
         {
-            IPT_ZONE_SCOPED_NAMED("await_tasks");
-            ice::manual_wait_for_all(tasks, _barrier);
-
-            while (_barrier.is_set() == false)
-            {
-                // Process all tasks waiting in the queue
-                for (ice::TaskAwaitableBase* awaitable : ice::linked_queue::consume(_main_queue._awaitables))
-                {
-                    IPT_ZONE_SCOPED_NAMED("resume_awaitable");
-                    awaitable->_coro.resume();
-                }
-
-                // TODO: Add a timed wait
-                //_barrier.wait();
-            }
-
+            IPT_ZONE_SCOPED_NAMED("world_tasks");
+            co_await await_all_on(tasks, _schedulers.main); // Do we care about being resumed on the main thread?
             ice::array::clear(tasks);
         }
 
@@ -169,30 +151,7 @@ namespace ice
         // Execute all long tasks
         _runner_tasks.execute_all();
 
-        ICE_ASSERT(
-            ice::u8_max >= ice::array::count(tasks),
-            "Gathered more tasks than it's possible to track!"
-        );
-
-        _barrier.reset(ice::u8(ice::array::count(tasks)));
-        {
-            IPT_ZONE_SCOPED_NAMED("await_tasks");
-            ice::manual_wait_for_all(tasks, _barrier);
-
-            while (_barrier.is_set() == false)
-            {
-                // Process all tasks waiting in the queue
-                for (ice::TaskAwaitableBase* awaitable : ice::linked_queue::consume(_main_queue._awaitables))
-                {
-                    IPT_ZONE_SCOPED_NAMED("resume_awaitable");
-                    awaitable->_coro.resume();
-                }
-
-                // TODO: Add a timed wait
-                //_barrier.wait();
-            }
-        }
-
+        co_await ice::await_all(tasks); // Don't care where we get resumed
         co_return;
     }
 
