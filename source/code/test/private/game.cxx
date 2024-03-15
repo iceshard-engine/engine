@@ -62,8 +62,6 @@ struct TestTrait : public ice::Trait
             ICE_LOG(LogSeverity::Info, LogTag::Game, "TestTrait::logic");
         }
 
-        co_await update.thread.tasks;
-        IPT_ZONE_SCOPED;
         co_return;
     }
 

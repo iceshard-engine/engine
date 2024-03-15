@@ -11,6 +11,9 @@ namespace ice
 
     struct TaskQueue final
     {
+        inline bool any() const noexcept { return ice::linked_queue::any(_awaitables); }
+        inline bool empty() const noexcept { return ice::linked_queue::empty(_awaitables); }
+
         template<typename Value>
         inline void process_one(Value& result_value) noexcept;
         inline void process_one(void* result_value = nullptr) noexcept;

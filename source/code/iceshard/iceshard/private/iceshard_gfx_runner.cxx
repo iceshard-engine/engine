@@ -23,6 +23,10 @@
 namespace ice
 {
 
+    static constexpr ice::u64 Constant_NanoSecondsInMicroSeconds = 1000;
+    static constexpr ice::u64 Constant_NanoSecondsInMiliSeconds = 1000 * Constant_NanoSecondsInMicroSeconds;
+    static constexpr ice::u64 Constant_NanoSecondsInSeconds = 1000 * Constant_NanoSecondsInMiliSeconds;
+
     auto create_gfx_runner_fn(
         ice::Allocator& alloc,
         ice::ModuleRegister& registry,
@@ -240,16 +244,7 @@ namespace ice::gfx
             queue->request_command_buffers(render::CommandBufferType::Primary, { &transfer_buffer , 1 });
             _device->device().get_commands().begin(transfer_buffer);
 
-            bool has_work = false;
-            //while (_barrier.is_set() == false)
-            {
-                for (ice::TaskAwaitableBase* awaitable : ice::linked_queue::consume(_queue_transfer._awaitables))
-                {
-                    awaitable->result.ptr = &transfer_buffer;
-                    awaitable->_coro.resume();
-                    has_work = true;
-                }
-            }
+            bool const has_work = _queue_transfer.process_all(&transfer_buffer) > 0;
 
             // TODO: Log how many tasks are still around
             _device->device().get_commands().end(transfer_buffer);
@@ -293,16 +288,10 @@ namespace ice::gfx
         }
 
         // Run tasks that wait for the frame end
-        while (_barrier.is_set() == false || ice::linked_queue::any(_queue_end._awaitables))
+        while (_barrier.is_set() == false || _queue_end.any())
         {
-            for (ice::TaskAwaitableBase* awaitable : ice::linked_queue::consume(_queue_end._awaitables))
-            {
-                awaitable->_coro.resume();
-            }
+            _queue_end.process_all();
         }
-
-        _barrier.wait();
-
         co_return;
     }
 

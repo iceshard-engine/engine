@@ -295,11 +295,22 @@ namespace ice::gfx
         queue->reset();
         queue->request_command_buffers(render::CommandBufferType::Primary, { &command_buffer, 1 });
 
-        if (execute_pass(frame, _framebuffers[fb_idx], device.get_commands(), command_buffer))
+        bool has_work = false;
         {
-            IPT_ZONE_SCOPED_NAMED("gfx_draw_commands");
-            queue->submit_command_buffers({ &command_buffer, 1 }, &fence);
+            IPT_ZONE_SCOPED_NAMED("gfx_execute_graph");
+            has_work = execute_pass(frame, _framebuffers[fb_idx], device.get_commands(), command_buffer);
+        }
+
+        if (has_work)
+        {
+            {
+                IPT_ZONE_SCOPED_NAMED("gfx_gpu_work");
+                queue->submit_command_buffers({ &command_buffer, 1 }, &fence);
+            }
+
             fence.wait(100'000'000);
+
+            IPT_ZONE_SCOPED_NAMED("gfx_present");
             _device.present(_swapchain.current_image_index());
             return true;
         }
@@ -313,8 +324,10 @@ namespace ice::gfx
         ice::render::CommandBuffer cmds
     ) noexcept
     {
-        IPT_ZONE_SCOPED;
-        api.begin(cmds);
+        {
+            IPT_ZONE_SCOPED_NAMED("gfx_begin");
+            api.begin(cmds);
+        }
         bool first_skipped = false;
 
         ice::u32 pass_idx = 0;
@@ -323,6 +336,7 @@ namespace ice::gfx
         {
             if ((GfxGraphSnapshot.event & GfxSnapshotEvent::EventBeginPass) == GfxSnapshotEvent::EventBeginPass)
             {
+                IPT_ZONE_SCOPED_NAMED("gfx_begin_renderpass");
                 api.begin_renderpass(cmds, _renderpass, framebuffer, _clears, _swapchain.extent());
             }
             else if (GfxGraphSnapshot.event & GfxSnapshotEvent::EventNextSubPass && ice::exchange(first_skipped, true))
@@ -340,21 +354,28 @@ namespace ice::gfx
             }
             else if (GfxGraphSnapshot.event & GfxSnapshotEvent::EventEndPass)
             {
-                IPT_ZONE_SCOPED_NAMED("graph_execute_stages");
-                for (ice::StringID_Arg stage : ice::array::slice(_stages._stage_names, stage_idx, _stages._counts[pass_idx]))
                 {
-                    // TODO: Separate update and draw?
-                    _stages.apply_stages(stage, &GfxStage::update, _device);
-                    _stages.apply_stages(stage, &GfxStage::draw, frame, cmds, api);
+                    IPT_ZONE_SCOPED_NAMED("graph_execute_stages");
+                    for (ice::StringID_Arg stage : ice::array::slice(_stages._stage_names, stage_idx, _stages._counts[pass_idx]))
+                    {
+                        // TODO: Separate update and draw?
+                        _stages.apply_stages(stage, &GfxStage::update, _device);
+                        _stages.apply_stages(stage, &GfxStage::draw, frame, cmds, api);
+                    }
                 }
 
+                IPT_ZONE_SCOPED_NAMED("gfx_end_renderpass");
                 api.end_renderpass(cmds);
             }
             else
             {
             }
         }
-        api.end(cmds);
+
+        {
+            IPT_ZONE_SCOPED_NAMED("gfx_end");
+            api.end(cmds);
+        }
         return true;
     }
 
