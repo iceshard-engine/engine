@@ -20,6 +20,7 @@ namespace ice
 {
 
     using EngineFrameFactoryUserdata = void*;
+
     using EngineFrameFactory = auto(*)(
         ice::Allocator&, ice::EngineFrameData&, EngineFrameFactoryUserdata
     ) noexcept -> ice::UniquePtr<ice::EngineFrame>;
@@ -49,6 +50,7 @@ namespace ice
         ice::EngineFrameFactoryUserdata frame_factory_userdata;
         ice::EngineSchedulers schedulers;
     };
+
     struct EngineRunner
     {
         virtual ~EngineRunner() noexcept = default;

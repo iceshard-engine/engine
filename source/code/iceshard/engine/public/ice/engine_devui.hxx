@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2024, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -22,9 +22,8 @@ namespace ice
 
     } // namespace devui
 
-    class EngineDevUI
+    struct EngineDevUI
     {
-    public:
         virtual ~EngineDevUI() noexcept = default;
 
         virtual void register_widget(ice::devui::DevUIWidget* widget) noexcept = 0;

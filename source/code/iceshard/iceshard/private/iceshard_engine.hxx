@@ -1,4 +1,4 @@
-/// Copyright 2023 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2023 - 2024, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -8,7 +8,7 @@
 #include <ice/world/world_updater.hxx>
 #include <ice/ecs/ecs_entity_index.hxx>
 
-#include "iceshard_world.hxx"
+#include "iceshard_world_manager.hxx"
 
 namespace ice
 {

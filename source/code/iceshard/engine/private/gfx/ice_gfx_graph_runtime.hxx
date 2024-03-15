@@ -71,7 +71,7 @@ namespace ice::gfx
     public:
         IceshardGfxGraphRuntime(
             ice::Allocator& alloc,
-            ice::gfx::GfxDevice& device,
+            ice::gfx::GfxContext& device,
             ice::render::RenderSwapchain const& swapchain,
             ice::render::Renderpass renderpass,
             ice::Array<ice::gfx::GfxGraphSnapshot> snapshots,
@@ -80,10 +80,8 @@ namespace ice::gfx
         ) noexcept;
         ~IceshardGfxGraphRuntime() noexcept override;
 
-        auto renderpass() const noexcept -> ice::render::Renderpass override;
-
         bool prepare(
-            ice::gfx::GfxStages& stages,
+            ice::gfx::GfxFrameStages& stages,
             ice::gfx::GfxStageRegistry const& stage_registry,
             ice::TaskContainer& out_tasks
         ) noexcept override;
@@ -103,7 +101,7 @@ namespace ice::gfx
 
     private:
         ice::ProxyAllocator _allocator;
-        GfxDevice& _device;
+        GfxContext& _context;
         ice::render::RenderSwapchain const& _swapchain;
 
         ice::Array<ice::gfx::GfxGraphSnapshot> _snapshots;

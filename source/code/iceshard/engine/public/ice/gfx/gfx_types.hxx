@@ -8,18 +8,17 @@
 namespace ice::gfx
 {
 
-    struct GfxDevice;
-    struct GfxDeviceCreateInfo;
-    struct GfxRunner;
-    struct GfxRunnerCreateInfo;
+    struct GfxContext;
+    struct GfxFrameStages;
+    struct GfxFrameUpdate;
     struct GfxGraph;
     struct GfxGraphRuntime;
+    struct GfxQueueDefinition;
+    struct GfxRunner;
+    struct GfxRunnerCreateInfo;
     struct GfxStage;
-    struct GfxStages;
     struct GfxStageRegistry;
-
     struct GfxStateChange;
-    struct GfxFrameUpdate;
 
     namespace v2
     {

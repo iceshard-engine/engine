@@ -5,7 +5,7 @@
 #include "ice_gfx_graph_runtime.hxx"
 #include "ice_gfx_graph_snapshot.hxx"
 
-#include <ice/gfx/gfx_device.hxx>
+#include <ice/gfx/gfx_context.hxx>
 #include <ice/gfx/gfx_queue.hxx>
 
 #include <ice/render/render_swapchain.hxx>
@@ -120,7 +120,7 @@ namespace ice::gfx
 
     IceshardGfxGraphRuntime::IceshardGfxGraphRuntime(
         ice::Allocator& alloc,
-        ice::gfx::GfxDevice& device,
+        ice::gfx::GfxContext& context,
         ice::render::RenderSwapchain const& swapchain,
         ice::render::Renderpass renderpass,
         ice::Array<GfxGraphSnapshot> GfxGraphSnapshots,
@@ -129,7 +129,7 @@ namespace ice::gfx
     ) noexcept
         : GfxGraphRuntime{}
         , _allocator{ alloc }
-        , _device{ device }
+        , _context{ context }
         , _swapchain{ swapchain }
         , _snapshots{ ice::move(GfxGraphSnapshots) }
         , _resources{ ice::move(resources) }
@@ -143,7 +143,7 @@ namespace ice::gfx
 
         create_framebuffers(
             _allocator,
-            _device.device(),
+            _context.device(),
             _swapchain,
             _renderpass,
             _resources,
@@ -160,7 +160,7 @@ namespace ice::gfx
 
     IceshardGfxGraphRuntime::~IceshardGfxGraphRuntime() noexcept
     {
-        render::RenderDevice& device = _device.device();
+        render::RenderDevice& device = _context.device();
 
         for (ice::render::Framebuffer framebuffer : _framebuffers)
         {
@@ -174,11 +174,6 @@ namespace ice::gfx
         device.destroy_renderpass(_renderpass);
     }
 
-    auto IceshardGfxGraphRuntime::renderpass() const noexcept -> ice::render::Renderpass
-    {
-        return _renderpass;
-    }
-
     auto initialize_stage(ice::Task<> init_task, std::atomic_uint32_t& ready_count) noexcept -> ice::Task<>
     {
         co_await init_task;
@@ -186,7 +181,7 @@ namespace ice::gfx
     }
 
     bool IceshardGfxGraphRuntime::prepare(
-        ice::gfx::GfxStages& stages,
+        ice::gfx::GfxFrameStages& stages,
         ice::gfx::GfxStageRegistry const& stage_registry,
         ice::TaskContainer& out_tasks
     ) noexcept
@@ -216,7 +211,7 @@ namespace ice::gfx
                     // Push the cleanup task
                     if (entry->initialized)
                     {
-                        out_tasks.create_tasks(1, "gfx.graph-runtime.state-cleanup"_shardid)[0] = entry->stage->cleanup(_device);
+                        out_tasks.create_tasks(1, "gfx.graph-runtime.state-cleanup"_shardid)[0] = entry->stage->cleanup(_context);
                         entry->initialized = false;
                     }
 
@@ -263,7 +258,7 @@ namespace ice::gfx
                     entry->initialized = true;
 
                     init_tasks[init_task_idx++] = initialize_stage(
-                        entry->stage->initialize(_device, stages, _renderpass),
+                        entry->stage->initialize(_context, stages, _renderpass),
                         _stages._ready
                     );
                 }
@@ -285,12 +280,12 @@ namespace ice::gfx
             return false;
         }
 
-        ice::ucount const fb_idx = _device.next_frame();
-        render::RenderDevice& device = _device.device();
+        ice::ucount const fb_idx = _context.next_frame();
+        render::RenderDevice& device = _context.device();
 
         ice::render::CommandBuffer command_buffer;
         ice::gfx::GfxQueue* queue;
-        _device.queue_group(fb_idx).get_queue(ice::render::QueueFlags::Graphics, queue);
+        _context.queue_group(fb_idx).get_queue(ice::render::QueueFlags::Graphics, queue);
 
         queue->reset();
         queue->request_command_buffers(render::CommandBufferType::Primary, { &command_buffer, 1 });
@@ -311,7 +306,7 @@ namespace ice::gfx
             fence.wait(100'000'000);
 
             IPT_ZONE_SCOPED_NAMED("gfx_present");
-            _device.present(_swapchain.current_image_index());
+            _context.present(_swapchain.current_image_index());
             return true;
         }
         return false;
@@ -344,7 +339,7 @@ namespace ice::gfx
                 for (ice::StringID_Arg stage : ice::array::slice(_stages._stage_names, stage_idx, _stages._counts[pass_idx]))
                 {
                     // TODO: Separate update and draw?
-                    _stages.apply_stages(stage, &GfxStage::update, _device);
+                    _stages.apply_stages(stage, &GfxStage::update, _context);
                     _stages.apply_stages(stage, &GfxStage::draw, frame, cmds, api);
                 }
 
@@ -359,7 +354,7 @@ namespace ice::gfx
                     for (ice::StringID_Arg stage : ice::array::slice(_stages._stage_names, stage_idx, _stages._counts[pass_idx]))
                     {
                         // TODO: Separate update and draw?
-                        _stages.apply_stages(stage, &GfxStage::update, _device);
+                        _stages.apply_stages(stage, &GfxStage::update, _context);
                         _stages.apply_stages(stage, &GfxStage::draw, frame, cmds, api);
                     }
                 }

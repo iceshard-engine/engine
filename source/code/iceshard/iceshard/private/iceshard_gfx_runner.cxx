@@ -36,16 +36,16 @@ namespace ice
         ice::gfx::GfxRunnerCreateInfo const& create_info
     ) noexcept -> ice::gfx::GfxRunner*
     {
-        ice::UniquePtr<ice::gfx::GfxDevice> gfx_device = ice::gfx::create_graphics_device(
+        ice::UniquePtr<ice::gfx::GfxContext> gfx_ctx = ice::gfx::create_graphics_device(
             alloc,
             create_info.driver,
             create_info.surface,
             create_info.render_queues
         );
 
-        if (gfx_device != nullptr)
+        if (gfx_ctx != nullptr)
         {
-            return alloc.create<ice::gfx::IceshardGfxRunner>(alloc, ice::move(gfx_device), create_info);
+            return alloc.create<ice::gfx::IceshardGfxRunner>(alloc, ice::move(gfx_ctx), create_info);
         }
         else
         {
@@ -85,19 +85,19 @@ namespace ice::gfx
 
     IceshardGfxRunner::IceshardGfxRunner(
         ice::Allocator& alloc,
-        ice::UniquePtr<ice::gfx::GfxDevice> gfx_device,
+        ice::UniquePtr<ice::gfx::GfxContext> gfx_ctx,
         ice::gfx::GfxRunnerCreateInfo const& create_info
     ) noexcept
         : _alloc{ alloc }
         , _engine{ create_info.engine }
-        , _device{ ice::move(gfx_device) }
+        , _context{ ice::move(gfx_ctx) }
         , _tasks_container{ _alloc }
         , _queue{ }
         , _queue_transfer{ }
         , _queue_end{ }
         , _scheduler{ _queue }
         , _thread{ }
-        , _present_fence{ _device->device().create_fence() }
+        , _present_fence{ _context->device().create_fence() }
         , _stages{ ice::gfx::create_stage_registry(_alloc) }
         , _state{ IceshardGfxRunnerState::SwapchainDirty }
         , _world_states{ _alloc }
@@ -119,7 +119,7 @@ namespace ice::gfx
     IceshardGfxRunner::~IceshardGfxRunner() noexcept
     {
 
-        _device->device().destroy_fence(_present_fence);
+        _context->device().destroy_fence(_present_fence);
     }
 
     auto IceshardGfxRunner::draw_frame(
@@ -136,7 +136,7 @@ namespace ice::gfx
             .clock = clock,
             .assets = _engine.assets(),
             .frame = frame,
-            .device = *_device,
+            .context = *_context,
         };
 
         ice::Shard shards[]{ ice::gfx::ShardID_GfxFrameUpdate | &gfx_update };
@@ -144,7 +144,7 @@ namespace ice::gfx
         _gfx_tasks.execute_tasks();
         _gfx_tasks.wait_tasks();
 
-        ice::gfx::GfxStages gpu_stages{
+        ice::gfx::GfxFrameStages gpu_stages{
             .frame_transfer = { _queue_transfer },
             .frame_end = { _queue_end }
         };
@@ -158,7 +158,7 @@ namespace ice::gfx
         {
             IPT_ZONE_SCOPED_NAMED("gfx_await_tasks");
 
-            v2::GfxQueueGroup_Temp& group = _device->queue_group(0);
+            v2::GfxQueueGroup_Temp& group = _context->queue_group(0);
             ice::gfx::GfxQueue* queue;
             bool const queue_exists = group.get_queue(ice::render::QueueFlags::Transfer, queue);
             ICE_ASSERT_CORE(queue_exists);
@@ -166,13 +166,13 @@ namespace ice::gfx
 
             ice::render::CommandBuffer transfer_buffer;
             queue->request_command_buffers(render::CommandBufferType::Primary, { &transfer_buffer , 1 });
-            _device->device().get_commands().begin(transfer_buffer);
+            _context->device().get_commands().begin(transfer_buffer);
 
             // We only process one for this queue.
             bool const has_work = _queue_transfer.process_all(&transfer_buffer) > 0;
 
             // TODO: Log how many tasks are still around
-            _device->device().get_commands().end(transfer_buffer);
+            _context->device().get_commands().end(transfer_buffer);
 
             if (has_work)
             {
@@ -202,9 +202,9 @@ namespace ice::gfx
         co_return;
     }
 
-    auto IceshardGfxRunner::device() noexcept -> ice::gfx::GfxDevice&
+    auto IceshardGfxRunner::context() noexcept -> ice::gfx::GfxContext&
     {
-        return *_device;
+        return *_context;
     }
 
     void IceshardGfxRunner::destroy() noexcept
@@ -220,7 +220,7 @@ namespace ice::gfx
     {
         ice::gfx::GfxStateChange const params{
             .assets = _engine.assets(),
-            .device = *_device,
+            .context = *_context,
             .stages = *_stages
         };
 
@@ -237,7 +237,7 @@ namespace ice::gfx
         }
         else if (trigger.to == detail::State_GfxInactive)
         {
-            ice::gfx::GfxStages gpu_stages{
+            ice::gfx::GfxFrameStages gpu_stages{
                 .frame_transfer = { _queue_transfer },
                 .frame_end = { _queue_end }
             };
@@ -254,11 +254,7 @@ namespace ice::gfx
         }
 
         ice::ScopedTaskContainer tasks{ _alloc };
-        ice::WorldUpdateParams update_params{
-            .request_shards = shards
-        };
-
-        _engine.worlds_updater().update(tasks, update_params);
+        _engine.worlds_updater().update(tasks, shards);
         return true;
     }
 

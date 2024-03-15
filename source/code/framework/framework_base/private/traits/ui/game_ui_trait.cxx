@@ -30,7 +30,7 @@
 #include <ice/ecs/ecs_archetype_index.hxx>
 #include <ice/ecs/ecs_entity_storage.hxx>
 
-#include <ice/gfx/gfx_device.hxx>
+#include <ice/gfx/gfx_context.hxx>
 #include <ice/render/render_swapchain.hxx>
 
 #include <ice/input/input_event.hxx>

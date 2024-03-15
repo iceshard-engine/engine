@@ -8,6 +8,7 @@
 namespace ice::gfx
 {
 
+#if 0 // DEPRECATED
     enum class GfxObjectType : ice::u8
     {
         Unknown,
@@ -130,5 +131,6 @@ namespace ice::gfx
     inline constexpr GfxObjectType Constant_GfxObjectType<ice::render::Image> = GfxObjectType::Image;
     template<>
     inline constexpr GfxObjectType Constant_GfxObjectType<ice::render::Buffer> = GfxObjectType::Buffer;
+#endif
 
 } // namespace ice::gfx

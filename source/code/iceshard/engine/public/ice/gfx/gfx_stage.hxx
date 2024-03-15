@@ -14,17 +14,17 @@ namespace ice::gfx
         virtual ~GfxStage() noexcept = default;
 
         virtual auto initialize(
-            ice::gfx::GfxDevice& gfx,
-            ice::gfx::GfxStages& stages,
+            ice::gfx::GfxContext& gfx,
+            ice::gfx::GfxFrameStages& stages,
             ice::render::Renderpass renderpass
         ) noexcept -> ice::Task<> { co_return; }
 
         virtual auto cleanup(
-            ice::gfx::GfxDevice& gfx
+            ice::gfx::GfxContext& gfx
         ) noexcept -> ice::Task<> { co_return; }
 
         virtual void update(
-            ice::gfx::GfxDevice& gfx
+            ice::gfx::GfxContext& gfx
         ) noexcept { }
 
         virtual void draw(

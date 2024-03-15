@@ -4,7 +4,7 @@
 #include "ice_gfx_graph_runtime.hxx"
 #include "ice_gfx_graph.hxx"
 
-#include <ice/gfx/gfx_device.hxx>
+#include <ice/gfx/gfx_context.hxx>
 #include <ice/render/render_swapchain.hxx>
 #include <ice/render/render_device.hxx>
 #include <ice/render/render_pass.hxx>
@@ -283,7 +283,7 @@ namespace ice::gfx
 
     auto create_graph_runtime(
         ice::Allocator& alloc,
-        GfxDevice& device,
+        GfxContext& device,
         GfxGraph const& base_definition,
         GfxGraph const* dynamic_definition
     ) noexcept -> ice::UniquePtr<GfxGraphRuntime>

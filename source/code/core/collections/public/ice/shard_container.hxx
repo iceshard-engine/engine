@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2024, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -20,6 +20,8 @@ namespace ice
 
         inline auto operator=(ice::ShardContainer&& other) noexcept -> ice::ShardContainer&;
         inline auto operator=(ice::ShardContainer const& other) noexcept -> ice::ShardContainer&;
+
+        inline operator ice::Span<ice::Shard const>() const noexcept { return ice::array::slice(_data); }
 
         ice::Array<ice::Shard> _data;
     };

@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2024, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -22,7 +22,7 @@ public:
     void on_update(ice::Engine& engine, ice::EngineFrame& frame) noexcept override;
     void on_suspend(ice::Engine& engine) noexcept override;
 
-    auto rendergraph(ice::gfx::GfxDevice& device) noexcept -> ice::UniquePtr<ice::gfx::GfxGraphRuntime> override;
+    auto rendergraph(ice::gfx::GfxContext& device) noexcept -> ice::UniquePtr<ice::gfx::GfxGraphRuntime> override;
 
 private:
     ice::Allocator& _allocator;

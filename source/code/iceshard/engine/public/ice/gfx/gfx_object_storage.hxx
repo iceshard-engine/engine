@@ -8,6 +8,7 @@
 namespace ice::gfx
 {
 
+#if 0 // DEPRECATED
     struct GfxObjectStorage
     {
         virtual ~GfxObjectStorage() noexcept = default;
@@ -65,5 +66,6 @@ namespace ice::gfx
         bool const success = try_set(name, handle);
         ICE_ASSERT(success, "Failed to store render handle in storage with name: {}", name);
     }
+#endif
 
 } // namespace ice::gfx

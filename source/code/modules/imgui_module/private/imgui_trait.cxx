@@ -64,8 +64,8 @@ namespace ice::devui
     }
 
     auto ImGuiGfxStage::initialize(
-        ice::gfx::GfxDevice& gfx,
-        ice::gfx::GfxStages& stages,
+        ice::gfx::GfxContext& gfx,
+        ice::gfx::GfxFrameStages& stages,
         ice::render::Renderpass renderpass
     ) noexcept -> ice::Task<>
     {
@@ -255,7 +255,7 @@ namespace ice::devui
         );
 
 #if 1
-        //auto update_texture_task = [](GfxDevice& gfx_device, GfxFrame& gfx_frame, Image image, ImageInfo image_info) noexcept -> ice::Task<>
+        //auto update_texture_task = [](GfxContext& gfx_ctx, GfxFrame& gfx_frame, Image image, ImageInfo image_info) noexcept -> ice::Task<>
         {
             ice::u32 const image_data_size = font_info.width * font_info.height * 4;
 
@@ -302,7 +302,7 @@ namespace ice::devui
     }
 
     auto ImGuiGfxStage::cleanup(
-        ice::gfx::GfxDevice& gfx
+        ice::gfx::GfxContext& gfx
     ) noexcept -> ice::Task<>
     {
         ice::render::RenderDevice& device = gfx.device();
@@ -326,7 +326,7 @@ namespace ice::devui
         co_return;
     }
 
-    void ImGuiGfxStage::update(ice::gfx::GfxDevice& gfx) noexcept
+    void ImGuiGfxStage::update(ice::gfx::GfxContext& gfx) noexcept
     {
         using namespace ice::render;
 
@@ -674,7 +674,7 @@ namespace ice::devui
         _imgui_gfx_stage = ice::make_unique<ImGuiGfxStage>(_allocator, _allocator, params.assets);
         params.stages.register_stage("copy"_sid, _imgui_gfx_stage.get());
 
-        ice::vec2u const size = params.device.swapchain().extent();
+        ice::vec2u const size = params.context.swapchain().extent();
         co_await on_window_resized(ice::vec2i{ size });
 
         _initialized = true;

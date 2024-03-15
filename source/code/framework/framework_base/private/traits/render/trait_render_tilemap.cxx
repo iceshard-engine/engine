@@ -13,7 +13,7 @@
 #include <ice/task_utils.hxx>
 #include <ice/world/world_trait_archive.hxx>
 
-#include <ice/gfx/gfx_device.hxx>
+#include <ice/gfx/gfx_context.hxx>
 
 #include <ice/render/render_device.hxx>
 #include <ice/render/render_pipeline.hxx>
@@ -121,8 +121,8 @@ namespace ice
             co_await runner.stage_next_frame();
             co_await runner.graphics_frame().frame_begin();
 
-            ice::gfx::GfxDevice& gfx_device = runner.graphics_device();
-            ice::render::RenderDevice& device = gfx_device.device();
+            ice::gfx::GfxContext& gfx_ctx = runner.graphics_device();
+            ice::render::RenderDevice& device = gfx_ctx.device();
 
             ice::render::ResourceSet final_resourceset;
             device.create_resourcesets({ &resourceset_layout, 1 }, { &final_resourceset, 1 });
@@ -294,15 +294,15 @@ namespace ice
 
     void IceWorldTrait_RenderTilemap::gfx_setup(
         ice::gfx::GfxFrame& gfx_frame,
-        ice::gfx::GfxDevice& gfx_device
+        ice::gfx::GfxContext& gfx_ctx
     ) noexcept
     {
 
         using namespace ice::gfx;
         using namespace ice::render;
 
-        Renderpass renderpass = ice::gfx::find_resource<Renderpass>(gfx_device.resource_tracker(), "ice.gfx.renderpass.default"_sid);
-        RenderDevice& device = gfx_device.device();
+        Renderpass renderpass = ice::gfx::find_resource<Renderpass>(gfx_ctx.resource_tracker(), "ice.gfx.renderpass.default"_sid);
+        RenderDevice& device = gfx_ctx.device();
 
         _shader_stages[0] = ShaderStageFlags::VertexStage;
         _shader_stages[1] = ShaderStageFlags::FragmentStage;
@@ -493,12 +493,12 @@ namespace ice
 
     void IceWorldTrait_RenderTilemap::gfx_cleanup(
         ice::gfx::GfxFrame& gfx_frame,
-        ice::gfx::GfxDevice& gfx_device
+        ice::gfx::GfxContext& gfx_ctx
     ) noexcept
     {
         using namespace ice::render;
 
-        RenderDevice& device = gfx_device.device();
+        RenderDevice& device = gfx_ctx.device();
         device.destroy_buffer(_instance_buffer);
         device.destroy_buffer(_vertex_buffer);
         device.destroy_buffer(_tile_flip_buffer);
@@ -524,7 +524,7 @@ namespace ice
     auto IceWorldTrait_RenderTilemap::task_gfx_update(
         ice::EngineFrame const& engine_frame,
         ice::gfx::GfxFrame& gfx_frame,
-        ice::gfx::GfxDevice& gfx_device
+        ice::gfx::GfxContext& gfx_ctx
     ) noexcept -> ice::Task<>
     {
         using namespace ice::render;
@@ -540,14 +540,14 @@ namespace ice
         if (camera_name != ice::StringID_Invalid)
         {
             ice::render::Buffer const camera_buffer = ice::gfx::find_resource<ice::render::Buffer>(
-                gfx_device.resource_tracker(),
+                gfx_ctx.resource_tracker(),
                 _render_camera
             );
 
             if (_render_camera_buffer != camera_buffer && camera_buffer != ice::render::Buffer::Invalid)
             {
                 _render_camera_buffer = camera_buffer;
-                update_resource_camera(gfx_device);
+                update_resource_camera(gfx_ctx);
             }
         }
 
@@ -560,7 +560,7 @@ namespace ice
             if (draw_operation->tilemap != _last_tilemap)
             {
                 _last_tilemap = draw_operation->tilemap;
-                update_resource_tilemap(gfx_device, *draw_operation->render_info);
+                update_resource_tilemap(gfx_ctx, *draw_operation->render_info);
             }
 
             gfx_frame.set_stage_slot(ice::Constant_GfxStage_DrawTilemap, this);
@@ -615,7 +615,7 @@ namespace ice
     }
 
     void IceWorldTrait_RenderTilemap::update_resource_tilemap(
-        ice::gfx::GfxDevice& gfx_device,
+        ice::gfx::GfxContext& gfx_ctx,
         ice::IceTileMap_RenderInfo const& tilemap_info
     ) noexcept
     {
@@ -661,15 +661,15 @@ namespace ice
             }
         }
 
-        gfx_device.device().update_buffers({ updates, update_count });
+        gfx_ctx.device().update_buffers({ updates, update_count });
     }
 
     void IceWorldTrait_RenderTilemap::update_resource_camera(
-        ice::gfx::GfxDevice& gfx_device
+        ice::gfx::GfxContext& gfx_ctx
     ) noexcept
     {
         using namespace render;
-        RenderDevice& device = gfx_device.device();
+        RenderDevice& device = gfx_ctx.device();
 
         ResourceUpdateInfo res_updates[]{
             ResourceUpdateInfo

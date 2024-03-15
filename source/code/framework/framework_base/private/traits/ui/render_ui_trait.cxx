@@ -11,7 +11,7 @@
 #include <ice/engine_runner.hxx>
 #include <ice/task.hxx>
 
-#include <ice/gfx/gfx_device.hxx>
+#include <ice/gfx/gfx_context.hxx>
 
 #include <ice/render/render_device.hxx>
 #include <ice/render/render_buffer.hxx>
@@ -100,15 +100,15 @@ namespace ice
 
     void IceWorldTrait_RenderUI::gfx_setup(
         ice::gfx::GfxFrame& gfx_frame,
-        ice::gfx::GfxDevice& gfx_device
+        ice::gfx::GfxContext& gfx_ctx
     ) noexcept
     {
         using namespace ice::gfx;
         using namespace ice::render;
 
-        RenderDevice& device = gfx_device.device();
+        RenderDevice& device = gfx_ctx.device();
         Renderpass renderpass = ice::gfx::find_resource<Renderpass>(
-            gfx_device.resource_tracker(),
+            gfx_ctx.resource_tracker(),
             "ice.gfx.renderpass.default"_sid
         );
 
@@ -205,11 +205,11 @@ namespace ice
 
     void IceWorldTrait_RenderUI::gfx_cleanup(
         ice::gfx::GfxFrame& gfx_frame,
-        ice::gfx::GfxDevice& gfx_device
+        ice::gfx::GfxContext& gfx_ctx
     ) noexcept
     {
         using namespace ice::render;
-        RenderDevice& device = gfx_device.device();
+        RenderDevice& device = gfx_ctx.device();
 
         for (ice::RenderUIData* const data : _render_data)
         {
@@ -232,12 +232,12 @@ namespace ice
     void IceWorldTrait_RenderUI::gfx_update(
         ice::EngineFrame const& engine_frame,
         ice::gfx::GfxFrame& gfx_frame,
-        ice::gfx::GfxDevice& gfx_device
+        ice::gfx::GfxContext& gfx_ctx
     ) noexcept
     {
         using namespace ice::render;
 
-        RenderDevice& render_device = gfx_device.device();
+        RenderDevice& render_device = gfx_ctx.device();
 
         for (RenderUIData* data : _render_data)
         {

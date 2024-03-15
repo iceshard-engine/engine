@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2024, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -15,19 +15,6 @@ namespace ice
     static constexpr ice::EngineState State_WorldCreated = StateGraph_WorldState | "created";
     static constexpr ice::EngineState State_WorldActive = StateGraph_WorldState | "active";
     static constexpr ice::EngineState State_WorldInactive = StateGraph_WorldState | "inactive";
-
-    enum class WorldState : ice::u8
-    {
-        Idle,
-        Active,
-        Disabled,
-    };
-
-    struct WorldStateParams;
-    struct WorldDefinition
-    {
-        ice::Span<ice::StringID> traits;
-    };
 
     struct World
     {

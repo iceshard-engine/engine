@@ -8,6 +8,7 @@
 namespace ice::gfx
 {
 
+#if 0 // DEPRECATED
     class SimpleGfxObjectStorage : public ice::gfx::GfxObjectStorage
     {
     public:
@@ -20,5 +21,6 @@ namespace ice::gfx
     private:
         ice::HashMap<ice::gfx::GfxObject> _objects;
     };
+#endif
 
 } // namespace ice::gfx

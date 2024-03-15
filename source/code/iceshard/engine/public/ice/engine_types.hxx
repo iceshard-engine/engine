@@ -7,14 +7,18 @@
 namespace ice
 {
 
+    struct DataStorage;
+
     struct Engine;
     struct EngineCreateInfo;
+    struct EngineDevUI;
     struct EngineFrame;
     struct EngineFrameData;
     struct EngineFrameSchedulers;
     struct EngineFrameUpdate;
     struct EngineRunner;
     struct EngineRunnerCreateInfo;
+    struct EngineStateTracker;
 
     struct EngineSchedulers
     {
@@ -22,21 +26,14 @@ namespace ice
         ice::TaskScheduler& tasks;
     };
 
-    struct EngineStateTracker;
-
-    struct World;
-    struct WorldAssembly;
-    struct WorldUpdater;
-    struct WorldStateTracker;
-    struct WorldStateParams;
-
     struct Trait;
     struct TraitArchive;
     struct TraitDescriptor;
     struct TraitTaskRegistry;
 
-    struct DataStorage;
-
-    class EngineDevUI;
+    struct World;
+    struct WorldAssembly;
+    struct WorldStateParams;
+    struct WorldUpdater;
 
 } // namespace ice

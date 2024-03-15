@@ -3,7 +3,7 @@
 
 #include "trait_render_gfx.hxx"
 
-#include <ice/gfx/gfx_device.hxx>
+#include <ice/gfx/gfx_context.hxx>
 #include <ice/gfx/gfx_stage.hxx>
 
 #include <ice/platform_event.hxx>
@@ -33,16 +33,16 @@ namespace ice
 
     void IceWorldTrait_RenderGfx::gfx_setup(
         ice::gfx::GfxFrame& gfx_frame,
-        ice::gfx::GfxDevice& gfx_device
+        ice::gfx::GfxContext& gfx_ctx
     ) noexcept
     {
         using namespace gfx;
         using namespace ice::render;
 
-        GfxResourceTracker& res_tracker = gfx_device.resource_tracker();
+        GfxResourceTracker& res_tracker = gfx_ctx.resource_tracker();
 
-        RenderDevice& render_device = gfx_device.device();
-        RenderSwapchain const& swapchain = gfx_device.swapchain();
+        RenderDevice& render_device = gfx_ctx.device();
+        RenderSwapchain const& swapchain = gfx_ctx.swapchain();
 
 
         RenderAttachment attachments[]{
@@ -194,13 +194,13 @@ namespace ice
 
     void IceWorldTrait_RenderGfx::gfx_cleanup(
         ice::gfx::GfxFrame& gfx_frame,
-        ice::gfx::GfxDevice& gfx_device
+        ice::gfx::GfxContext& gfx_ctx
     ) noexcept
     {
         using namespace ice::gfx;
         using namespace ice::render;
 
-        RenderDevice& render_device = gfx_device.device();
+        RenderDevice& render_device = gfx_ctx.device();
 
         render_device.destroy_framebuffer(_default_framebuffers[0]);
         render_device.destroy_framebuffer(_default_framebuffers[1]);
@@ -212,15 +212,15 @@ namespace ice
     void IceWorldTrait_RenderGfx::gfx_update(
         ice::EngineFrame const& engine_frame,
         ice::gfx::GfxFrame& gfx_frame,
-        ice::gfx::GfxDevice& gfx_device
+        ice::gfx::GfxContext& gfx_ctx
     ) noexcept
     {
         if (ice::shards::contains(engine_frame.shards(), ice::platform::ShardID_WindowResized))
         {
-            gfx_device.recreate_swapchain();
+            gfx_ctx.recreate_swapchain();
 
-            gfx_cleanup(gfx_frame, gfx_device);
-            gfx_setup(gfx_frame, gfx_device);
+            gfx_cleanup(gfx_frame, gfx_ctx);
+            gfx_setup(gfx_frame, gfx_ctx);
         }
     }
 

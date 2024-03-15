@@ -12,7 +12,7 @@
 #include <ice/ecs/ecs_query.hxx>
 #include <ice/ecs/ecs_entity_storage.hxx>
 
-#include <ice/gfx/gfx_device.hxx>
+#include <ice/gfx/gfx_context.hxx>
 
 #include <ice/render/render_device.hxx>
 #include <ice/render/render_resource.hxx>
@@ -85,13 +85,13 @@ namespace ice
     void IceWorldTrait_RenderCamera::gfx_update(
         ice::EngineFrame const& engine_frame,
         ice::gfx::GfxFrame& gfx_frame,
-        ice::gfx::GfxDevice& gfx_device
+        ice::gfx::GfxContext& gfx_ctx
     ) noexcept
     {
         ice::Span<ice::TraitCameraData const> const& cameras = *engine_frame.storage().named_object<ice::Span<ice::TraitCameraData const>>("ice.cameras.span"_sid);
         ice::u32 const camera_count = ice::count(cameras);
 
-        ice::render::RenderDevice& device = gfx_device.device();
+        ice::render::RenderDevice& device = gfx_ctx.device();
 
         for (ice::u32 idx = 0; idx < camera_count; ++idx)
         {
@@ -116,7 +116,7 @@ namespace ice
             device.update_buffers(updates);
 
             ice::gfx::track_resource(
-                gfx_device.resource_tracker(),
+                gfx_ctx.resource_tracker(),
                 cameras[idx].camera_name,
                 _camera_buffers[idx]
             );
@@ -125,7 +125,7 @@ namespace ice
 
     void IceWorldTrait_RenderCamera::gfx_setup(
         ice::gfx::GfxFrame& gfx_frame,
-        ice::gfx::GfxDevice& gfx_device
+        ice::gfx::GfxContext& gfx_ctx
     ) noexcept
     {
         for (ice::render::Buffer& buffer : _camera_buffers)
@@ -136,10 +136,10 @@ namespace ice
 
     void IceWorldTrait_RenderCamera::gfx_cleanup(
         ice::gfx::GfxFrame& gfx_frame,
-        ice::gfx::GfxDevice& gfx_device
+        ice::gfx::GfxContext& gfx_ctx
     ) noexcept
     {
-        ice::render::RenderDevice& device = gfx_device.device();
+        ice::render::RenderDevice& device = gfx_ctx.device();
         for (ice::render::Buffer const buffer : _camera_buffers)
         {
             if (buffer != ice::render::Buffer::Invalid)

@@ -8,48 +8,47 @@
 namespace ice::gfx
 {
 
-    struct QueueDefinition
-    {
-        ice::StringID name;
-        ice::render::QueueFlags flags;
-    };
-
     struct GfxRunnerCreateInfo
     {
         ice::Engine& engine;
         ice::render::RenderDriver& driver;
         ice::render::RenderSurface& surface;
-        ice::Span<ice::gfx::QueueDefinition const> render_queues;
+        ice::Span<ice::gfx::GfxQueueDefinition const> render_queues;
     };
 
-    struct GfxStages
+    struct GfxFrameStages
     {
         ice::TaskStage<ice::render::CommandBuffer> frame_transfer;
         ice::TaskStage<> frame_end;
     };
 
-    struct GfxOperationParams
-    {
-        ice::Clock const& clock;
-        ice::EngineFrame const& frame;
-        //ice::gfx::GfxGraphRuntime& render_graph;
-    };
-
+    //! \brief Graphics runner (runtime) object. Handles graphics work between frames and handles swapchain states.
     struct GfxRunner
     {
         virtual ~GfxRunner() noexcept = default;
 
+        //! \brief Sets a rendergraph to used for execution each frame.
         virtual void update_rendergraph(ice::UniquePtr<ice::gfx::GfxGraphRuntime> rendergraph) noexcept = 0;
 
+        //! \brief Creates a new draw task for the currently associated render graph.
         virtual auto draw_frame(
             ice::EngineFrame const& frame,
             ice::Clock const& clock
         ) noexcept -> ice::Task<> = 0;
 
-        virtual void on_resume() noexcept { }
-        virtual void on_suspend() noexcept { }
+        //! \returns Graphics context associated with this runner.
+        virtual auto context() noexcept -> ice::gfx::GfxContext& = 0;
 
-        virtual auto device() noexcept -> ice::gfx::GfxDevice& = 0;
+    public:
+        virtual void on_resume() noexcept = 0;
+        virtual void on_suspend() noexcept = 0;
+    };
+
+    //! \warning Might become deprecated, since in almost all cases queues are handled by the engine anyway.
+    struct GfxQueueDefinition
+    {
+        ice::StringID name;
+        ice::render::QueueFlags flags;
     };
 
 } // namespace ice::gfx

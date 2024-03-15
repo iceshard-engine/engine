@@ -1,18 +1,15 @@
-/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2024, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
 #include <ice/span.hxx>
 #include <ice/stringid.hxx>
-//#include <ice/unique_ptr.hxx>
 #include <ice/ecs/ecs_types.hxx>
 #include <ice/world/world_trait_archive.hxx>
 #include <ice/container/array.hxx>
 
 namespace ice
 {
-
-    class EntityStorage;
 
     struct WorldTemplate
     {

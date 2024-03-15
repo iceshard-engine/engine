@@ -17,7 +17,7 @@
 
 #include <ice/gfx/gfx_stage.hxx>
 #include <ice/gfx/gfx_runner.hxx>
-#include <ice/gfx/gfx_device.hxx>
+#include <ice/gfx/gfx_context.hxx>
 #include <ice/gfx/gfx_graph.hxx>
 #include <ice/gfx/gfx_graph_runtime.hxx>
 #include <ice/gfx/gfx_shards.hxx>
@@ -242,7 +242,7 @@ void TestGame::on_suspend(ice::Engine& engine) noexcept
 {
 }
 
-auto TestGame::rendergraph(ice::gfx::GfxDevice& device) noexcept -> ice::UniquePtr<ice::gfx::GfxGraphRuntime>
+auto TestGame::rendergraph(ice::gfx::GfxContext& device) noexcept -> ice::UniquePtr<ice::gfx::GfxGraphRuntime>
 {
     using ice::operator""_sid;
     using namespace ice::gfx;
@@ -287,7 +287,7 @@ auto TestGame::rendergraph(ice::gfx::GfxDevice& device) noexcept -> ice::UniqueP
 #include <ice/world/world_assembly.hxx>
 
 #include <ice/gfx/gfx_pass.hxx>
-#include <ice/gfx/gfx_device.hxx>
+#include <ice/gfx/gfx_context.hxx>
 #include <ice/gfx/gfx_frame.hxx>
 #include <ice/gfx/gfx_pass.hxx>
 #include <ice/gfx/gfx_runner.hxx>

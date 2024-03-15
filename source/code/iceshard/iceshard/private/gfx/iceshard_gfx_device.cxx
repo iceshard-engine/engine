@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2024, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "iceshard_gfx_device.hxx"
@@ -151,7 +151,7 @@ namespace ice::gfx
         ice::Allocator& alloc,
         ice::render::RenderDriver& render_driver,
         ice::render::RenderSurface& render_surface,
-        ice::Span<ice::gfx::QueueDefinition const> render_queues
+        ice::Span<ice::gfx::GfxQueueDefinition const> render_queues
     ) noexcept -> ice::UniquePtr<ice::gfx::IceGfxDevice>
     {
         ice::Array<ice::render::QueueFamilyInfo> queue_families{ alloc };
@@ -179,7 +179,7 @@ namespace ice::gfx
         };
 
         ice::HashMap<ice::u32> queue_index_tracker{ alloc };
-        for (ice::gfx::QueueDefinition const& pass_info : render_queues)
+        for (ice::gfx::GfxQueueDefinition const& pass_info : render_queues)
         {
             QueueID const pass_queue_id = detail::find_queue_id(queue_families, pass_info.flags);
             ICE_ASSERT(
@@ -243,7 +243,7 @@ namespace ice::gfx
                 );
             }
 
-            for (ice::gfx::QueueDefinition const& pass_info : render_queues)
+            for (ice::gfx::GfxQueueDefinition const& pass_info : render_queues)
             {
                 QueueID const pass_queue_id = detail::find_queue_id(queue_families, pass_info.flags);
                 ice::u32 const pass_queue_index = ice::hashmap::get(

@@ -3,7 +3,7 @@
 
 #pragma once
 #include <ice/devui/devui_render_trait.hxx>
-#include <ice/gfx/gfx_device.hxx>
+#include <ice/gfx/gfx_context.hxx>
 #include <ice/gfx/gfx_stage.hxx>
 #include <ice/gfx/gfx_runner.hxx>
 #include <ice/asset_storage.hxx>
@@ -25,17 +25,17 @@ namespace ice::devui
 
     public: // Implementation of: ice::gfx::GfxStage
         auto initialize(
-            ice::gfx::GfxDevice& gfx,
-            ice::gfx::GfxStages& stages,
+            ice::gfx::GfxContext& gfx,
+            ice::gfx::GfxFrameStages& stages,
             ice::render::Renderpass renderpass
         ) noexcept -> ice::Task<> override;
 
         auto cleanup(
-            ice::gfx::GfxDevice& gfx
+            ice::gfx::GfxContext& gfx
         ) noexcept -> ice::Task<> override;
 
         void update(
-            ice::gfx::GfxDevice& device
+            ice::gfx::GfxContext& device
         ) noexcept override;
 
         void draw(

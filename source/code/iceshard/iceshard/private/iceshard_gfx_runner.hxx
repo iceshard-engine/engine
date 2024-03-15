@@ -39,7 +39,7 @@ namespace ice::gfx
     {
         IceshardGfxRunner(
             ice::Allocator& alloc,
-            ice::UniquePtr<ice::gfx::GfxDevice> gfx_device,
+            ice::UniquePtr<ice::gfx::GfxContext> gfx_ctx,
             ice::gfx::GfxRunnerCreateInfo const& create_info
         ) noexcept;
         ~IceshardGfxRunner() noexcept override;
@@ -54,11 +54,15 @@ namespace ice::gfx
             ice::Clock const& clock
         ) noexcept -> ice::Task<> override;
 
-        auto device() noexcept -> ice::gfx::GfxDevice& override;
+        auto context() noexcept -> ice::gfx::GfxContext& override;
 
         void destroy() noexcept;
 
-    public: // Implementation of: IceshardGfxRunner
+    public: // Implementation of: ice::gfx::GfxRunner
+        void on_resume() noexcept override { }
+        void on_suspend() noexcept override { }
+
+    public: // Implementation of: ice::EngineStateCommitter
         bool commit(
             ice::EngineStateTrigger const& trigger,
             ice::Shard trigger_shard,
@@ -68,7 +72,7 @@ namespace ice::gfx
     private:
         ice::Allocator& _alloc;
         ice::Engine& _engine;
-        ice::UniquePtr<ice::gfx::GfxDevice> _device;
+        ice::UniquePtr<ice::gfx::GfxContext> _context;
 
         ice::u8 _flow_id;
         ice::ScopedTaskContainer _tasks_container;

@@ -11,7 +11,7 @@
 #include <ice/world/world_updater.hxx>
 #include <ice/world/world_trait_module.hxx>
 #include <ice/engine_runner.hxx>
-#include <ice/gfx/gfx_device.hxx>
+#include <ice/gfx/gfx_context.hxx>
 #include <ice/shard_container.hxx>
 
 namespace ice::gfx
@@ -60,7 +60,7 @@ namespace ice::gfx
             ICE_ASSERT_CORE(entry == nullptr || entry->released);
 
             using namespace ice::render;
-            RenderDevice& device = params.device.device();
+            RenderDevice& device = params.context.device();
 
             if (entry && entry->image != Image::Invalid)
             {

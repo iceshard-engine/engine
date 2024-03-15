@@ -7,6 +7,7 @@
 namespace ice::gfx
 {
 
+#if 0 // DEPRECATED
     SimpleGfxObjectStorage::SimpleGfxObjectStorage(ice::Allocator& alloc) noexcept
         : _objects{ alloc }
     {
@@ -74,5 +75,6 @@ namespace ice::gfx
         }
         ice::hashmap::clear(_objects);
     }
+#endif
 
 } // namespace ice::gfx

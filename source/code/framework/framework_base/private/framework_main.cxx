@@ -14,7 +14,7 @@
 #include <ice/platform_window_surface.hxx>
 #include <ice/platform_storage.hxx>
 
-#include <ice/gfx/gfx_device.hxx>
+#include <ice/gfx/gfx_context.hxx>
 #include <ice/gfx/gfx_runner.hxx>
 #include <ice/gfx/gfx_queue.hxx>
 #include <ice/gfx/gfx_stage.hxx>
@@ -426,12 +426,12 @@ auto ice_resume(
 
         using ice::operator|;
         using ice::operator""_sid;
-        ice::gfx::QueueDefinition queues[]{
-            ice::gfx::QueueDefinition {
+        ice::gfx::GfxQueueDefinition queues[]{
+            ice::gfx::GfxQueueDefinition {
                 .name = "default"_sid,
                 .flags = ice::render::QueueFlags::Graphics | ice::render::QueueFlags::Present
             },
-            ice::gfx::QueueDefinition {
+            ice::gfx::GfxQueueDefinition {
                 .name = "transfer"_sid,
                 .flags = ice::render::QueueFlags::Transfer
             }
@@ -450,7 +450,7 @@ auto ice_resume(
         runtime.input_tracker->register_device_type(ice::input::DeviceType::Keyboard, ice::input::get_default_device_factory());
 
         //runtime.gfx_rendergraph_runtime = state.game->rendergraph(runtime.gfx_runner->device());
-        runtime.gfx_runner->update_rendergraph(state.game->rendergraph(runtime.gfx_runner->device()));
+        runtime.gfx_runner->update_rendergraph(state.game->rendergraph(runtime.gfx_runner->context()));
         runtime.gfx_wait.set();
     }
 
@@ -501,9 +501,8 @@ auto ice_update(
         if (ice::shards::inspect_last(system_events, ice::platform::ShardID_WindowResized, window_size))
         {
             runtime.gfx_wait.wait();
-            runtime.gfx_runner->device().recreate_swapchain();
-            runtime.gfx_runner->update_rendergraph(state.game->rendergraph(runtime.gfx_runner->device()));
-            //runtime.gfx_rendergraph_runtime = state.game->rendergraph(runtime.gfx_runner->device());
+            runtime.gfx_runner->context().recreate_swapchain();
+            runtime.gfx_runner->update_rendergraph(state.game->rendergraph(runtime.gfx_runner->context()));
         }
     }
 

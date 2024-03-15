@@ -7,7 +7,7 @@
 #include <ice/shard_container.hxx>
 #include <ice/world/world_updater.hxx>
 #include <ice/world/world_trait_module.hxx>
-#include <ice/gfx/gfx_device.hxx>
+#include <ice/gfx/gfx_context.hxx>
 #include <ice/render/render_device.hxx>
 
 namespace ice::gfx
@@ -57,7 +57,7 @@ namespace ice::gfx
             ICE_ASSERT_CORE(entry == nullptr || entry->released);
 
             using namespace ice::render;
-            RenderDevice& device = update.device.device();
+            RenderDevice& device = update.context.device();
 
             if (entry && entry->shader != Shader::Invalid)
             {
@@ -98,7 +98,7 @@ namespace ice::gfx
     {
         for (ice::gfx::GfxShaderEntry const& entry : _loaded_shaders)
         {
-            params.device.device().destroy_shader(entry.shader);
+            params.context.device().destroy_shader(entry.shader);
         }
         co_return;
     }

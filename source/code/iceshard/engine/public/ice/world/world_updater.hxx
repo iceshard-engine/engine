@@ -24,19 +24,13 @@ namespace ice
         ice::EngineSchedulers thread;
     };
 
-    struct WorldUpdateParams
-    {
-        //! \brief Shards used to call update callbacks.
-        ice::Span<ice::Shard const> request_shards;
-    };
-
     struct WorldUpdater
     {
         virtual ~WorldUpdater() noexcept = default;
 
         virtual void update(
             ice::TaskContainer& out_tasks,
-            ice::WorldUpdateParams const& params
+            ice::Span<ice::Shard const> event_shards
         ) noexcept = 0;
     };
 

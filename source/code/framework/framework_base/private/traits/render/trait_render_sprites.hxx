@@ -39,18 +39,18 @@ namespace ice
 
         void gfx_setup(
             ice::gfx::GfxFrame& gfx_frame,
-            ice::gfx::GfxDevice& gfx_device
+            ice::gfx::GfxContext& gfx_ctx
         ) noexcept override;
 
         void gfx_cleanup(
             ice::gfx::GfxFrame& gfx_frame,
-            ice::gfx::GfxDevice& gfx_device
+            ice::gfx::GfxContext& gfx_ctx
         ) noexcept override;
 
         void gfx_update(
             ice::EngineFrame const& engine_frame,
             ice::gfx::GfxFrame& gfx_frame,
-            ice::gfx::GfxDevice& gfx_device
+            ice::gfx::GfxContext& gfx_ctx
         ) noexcept override;
 
         void on_activate(
@@ -80,28 +80,28 @@ namespace ice
 
     protected:
         void update_resource_camera(
-            ice::gfx::GfxDevice& gfx_device
+            ice::gfx::GfxContext& gfx_ctx
         ) noexcept;
 
         void update_resource_data(
-            ice::gfx::GfxDevice& gfx_device,
+            ice::gfx::GfxContext& gfx_ctx,
             ice::Span<detail::SpriteInstance> instances
         ) noexcept;
 
         void destroy_resource_material(
-            ice::gfx::GfxDevice& gfx_device,
+            ice::gfx::GfxContext& gfx_ctx,
             ice::detail::RenderData_Sprite const& sprite_data
         ) noexcept;
 
         auto task_load_resource_material(
             ice::String material_name,
             ice::EngineRunner& runner,
-            ice::gfx::GfxDevice& gfx_device
+            ice::gfx::GfxContext& gfx_ctx
         ) noexcept -> ice::Task<>;
 
         auto task_update_resource_material(
             ice::EngineRunner& runner,
-            ice::gfx::GfxDevice& gfx_device,
+            ice::gfx::GfxContext& gfx_ctx,
             ice::StringID material_name,
             detail::RenderData_Sprite sprite_data
         ) noexcept -> ice::Task<>;

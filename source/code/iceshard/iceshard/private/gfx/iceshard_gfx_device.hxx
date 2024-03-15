@@ -1,10 +1,10 @@
-/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2024, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
 #include <ice/engine.hxx>
 #include <ice/engine_types.hxx>
-#include <ice/gfx/gfx_device.hxx>
+#include <ice/gfx/gfx_context.hxx>
 #include <ice/gfx/gfx_runner.hxx>
 #include <ice/render/render_device.hxx>
 #include <ice/render/render_driver.hxx>
@@ -16,7 +16,7 @@ namespace ice::gfx
 
     class IceGfxQueueGroup;
 
-    class IceGfxDevice final : public ice::gfx::GfxDevice
+    class IceGfxDevice final : public ice::gfx::GfxContext
     {
     public:
         IceGfxDevice(
@@ -55,7 +55,7 @@ namespace ice::gfx
         ice::Allocator& alloc,
         ice::render::RenderDriver& render_driver,
         ice::render::RenderSurface& render_surface,
-        ice::Span<ice::gfx::QueueDefinition const> render_queues
+        ice::Span<ice::gfx::GfxQueueDefinition const> render_queues
     ) noexcept -> ice::UniquePtr<ice::gfx::IceGfxDevice>;
 
 } // namespace ice::gfx

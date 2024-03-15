@@ -1,4 +1,4 @@
-/// Copyright 2023 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2023 - 2024, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -38,7 +38,7 @@ namespace ice::framework
         virtual void on_update(ice::Engine& engine, ice::EngineFrame& frame) noexcept { }
         virtual void on_suspend(ice::Engine& engine) noexcept { }
 
-        virtual auto rendergraph(ice::gfx::GfxDevice& device) noexcept -> ice::UniquePtr<ice::gfx::GfxGraphRuntime> { return {}; }
+        virtual auto rendergraph(ice::gfx::GfxContext& device) noexcept -> ice::UniquePtr<ice::gfx::GfxGraphRuntime> { return {}; }
     };
 
     auto create_game(ice::Allocator& alloc) noexcept -> ice::UniquePtr<Game>;

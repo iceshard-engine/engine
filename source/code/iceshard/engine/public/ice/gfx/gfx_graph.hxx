@@ -10,6 +10,8 @@
 namespace ice::gfx
 {
 
+    //! \brief Represents a single stage in a render graph.
+    //! \note On the RenderAPI represents one or multiple draw commands.
     struct GfxGraphStage
     {
         ice::StringID name;
@@ -18,6 +20,8 @@ namespace ice::gfx
         ice::Span<ice::gfx::GfxResource const> depth_stencil;
     };
 
+    //! \brief Represents a single pass of multiple stages in full render graph.
+    //! \note On the RenderAPI represents a sub-pass.
     struct GfxGraphPass
     {
         ice::StringID name;
@@ -29,15 +33,22 @@ namespace ice::gfx
     public:
         virtual ~GfxGraph() noexcept = default;
 
+        //! \returns A resource-id representing the framebuffer object / image.
+        //! \note This ID represents a proper swapchain immage every frame.
         virtual auto get_framebuffer() const noexcept -> ice::gfx::GfxResource = 0;
 
+        //! \brief Creates or returns an existing resource-id of the type for the given name.
+        //! \note Resources created this way are automatically handled by the graph-runtime.
+        //! \returns Resource-id of the given resource.
         virtual auto get_resource(
             ice::StringID_Arg name,
             ice::gfx::GfxResourceType type
         ) noexcept -> ice::gfx::GfxResource = 0;
 
+        //! \brief Adds a new pass to the graph.
         virtual bool add_pass(ice::gfx::GfxGraphPass const&) noexcept = 0;
 
+        //! \returns All graph passes of the graph.
         virtual auto passes() const noexcept -> ice::Span<ice::gfx::GfxGraphPass const> = 0;
     };
 

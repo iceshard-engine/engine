@@ -6,7 +6,7 @@
 //#include <ice/engine_runner.hxx>
 //#include <ice/world/world_portal.hxx>
 //
-//#include <ice/gfx/gfx_device.hxx>
+//#include <ice/gfx/gfx_context.hxx>
 //#include <ice/gfx/gfx_resource_tracker.hxx>
 //#include <ice/gfx/gfx_frame.hxx>
 //

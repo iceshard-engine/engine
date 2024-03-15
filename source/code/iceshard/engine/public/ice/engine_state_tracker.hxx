@@ -1,3 +1,6 @@
+/// Copyright 2024 - 2024, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
 #pragma once
 #include <ice/engine_state_definition.hxx>
 #include <ice/mem_unique_ptr.hxx>
@@ -24,11 +27,6 @@ namespace ice
         virtual bool register_subname(
             ice::StringID_Arg subname
         ) noexcept = 0;
-
-        //virtual bool initialize_subname_state(
-        //    ice::EngineStateGraph graph,
-        //    ice::StringID subname
-        //) noexcept = 0;
 
         virtual auto current_state(
             ice::EngineStateGraph state_graph

@@ -12,7 +12,7 @@
 #include <ice/ecs/ecs_query.hxx>
 #include <ice/ecs/ecs_entity_storage.hxx>
 
-#include <ice/gfx/gfx_device.hxx>
+#include <ice/gfx/gfx_context.hxx>
 
 #include <ice/render/render_command_buffer.hxx>
 #include <ice/render/render_swapchain.hxx>
@@ -75,15 +75,15 @@ namespace ice
 
     void IceWorldTrait_RenderSprites::gfx_setup(
         ice::gfx::GfxFrame& gfx_frame,
-        ice::gfx::GfxDevice& gfx_device
+        ice::gfx::GfxContext& gfx_ctx
     ) noexcept
     {
 
         using namespace ice::gfx;
         using namespace ice::render;
 
-        Renderpass renderpass = ice::gfx::find_resource<Renderpass>(gfx_device.resource_tracker(), "ice.gfx.renderpass.default"_sid);
-        RenderDevice& device = gfx_device.device();
+        Renderpass renderpass = ice::gfx::find_resource<Renderpass>(gfx_ctx.resource_tracker(), "ice.gfx.renderpass.default"_sid);
+        RenderDevice& device = gfx_ctx.device();
 
         _shader_stages[0] = ShaderStageFlags::VertexStage;
         _shader_stages[1] = ShaderStageFlags::FragmentStage;
@@ -216,7 +216,7 @@ namespace ice
 
     void IceWorldTrait_RenderSprites::gfx_cleanup(
         ice::gfx::GfxFrame& gfx_frame,
-        ice::gfx::GfxDevice& gfx_device
+        ice::gfx::GfxContext& gfx_ctx
     ) noexcept
     {
         using namespace ice::gfx;
@@ -224,10 +224,10 @@ namespace ice
 
         for (ice::detail::RenderData_Sprite const& entry : _sprite_materials)
         {
-            destroy_resource_material(gfx_device, entry);
+            destroy_resource_material(gfx_ctx, entry);
         }
 
-        RenderDevice& device = gfx_device.device();
+        RenderDevice& device = gfx_ctx.device();
         device.destroy_buffer(_instance_buffer);
         device.destroy_buffer(_vertex_buffer);
         device.destroy_pipeline(_pipeline);
@@ -243,7 +243,7 @@ namespace ice
     void IceWorldTrait_RenderSprites::gfx_update(
         ice::EngineFrame const& engine_frame,
         ice::gfx::GfxFrame& gfx_frame,
-        ice::gfx::GfxDevice& gfx_device
+        ice::gfx::GfxContext& gfx_ctx
     ) noexcept
     {
         ice::StringID_Hash camera_name = ice::StringID_Invalid;
@@ -255,21 +255,21 @@ namespace ice
         if (camera_name != ice::StringID_Invalid)
         {
             ice::render::Buffer const camera_buffer = ice::gfx::find_resource<ice::render::Buffer>(
-                gfx_device.resource_tracker(),
+                gfx_ctx.resource_tracker(),
                 _render_camera
             );
 
             if (_render_camera_buffer != camera_buffer && camera_buffer != ice::render::Buffer::Invalid)
             {
                 _render_camera_buffer = camera_buffer;
-                update_resource_camera(gfx_device);
+                update_resource_camera(gfx_ctx);
             }
         }
 
         if (_render_camera_buffer != ice::render::Buffer::Invalid)
         {
             ice::Span<detail::SpriteInstance> const* instances = engine_frame.storage().named_object<ice::Span<detail::SpriteInstance>>("ice.sprite.instances_span"_sid);
-            update_resource_data(gfx_device, *instances);
+            update_resource_data(gfx_ctx, *instances);
 
             gfx_frame.set_stage_slot(ice::Constant_GfxStage_DrawSprites, this);
         }
@@ -477,11 +477,11 @@ namespace ice
     }
 
     void IceWorldTrait_RenderSprites::update_resource_camera(
-        ice::gfx::GfxDevice& gfx_device
+        ice::gfx::GfxContext& gfx_ctx
     ) noexcept
     {
         using namespace render;
-        RenderDevice& device = gfx_device.device();
+        RenderDevice& device = gfx_ctx.device();
 
         ResourceUpdateInfo res_updates[]{
             ResourceUpdateInfo
@@ -521,12 +521,12 @@ namespace ice
     }
 
     void IceWorldTrait_RenderSprites::update_resource_data(
-        ice::gfx::GfxDevice& gfx_device,
+        ice::gfx::GfxContext& gfx_ctx,
         ice::Span<detail::SpriteInstance> instances
     ) noexcept
     {
         using namespace render;
-        RenderDevice& device = gfx_device.device();
+        RenderDevice& device = gfx_ctx.device();
 
         BufferUpdateInfo buffer_updates[]{
             BufferUpdateInfo
@@ -541,12 +541,12 @@ namespace ice
     }
 
     void IceWorldTrait_RenderSprites::destroy_resource_material(
-        ice::gfx::GfxDevice& gfx_device,
+        ice::gfx::GfxContext& gfx_ctx,
         ice::detail::RenderData_Sprite const& sprite_data
     ) noexcept
     {
         using namespace ice::render;
-        RenderDevice& device = gfx_device.device();
+        RenderDevice& device = gfx_ctx.device();
 
         device.destroy_buffer(sprite_data.material_tileinfo[0]);
         device.destroy_resourcesets(sprite_data.sprite_resource);
@@ -555,7 +555,7 @@ namespace ice
     auto IceWorldTrait_RenderSprites::task_load_resource_material(
         ice::String material_name,
         ice::EngineRunner& runner,
-        ice::gfx::GfxDevice& gfx_device
+        ice::gfx::GfxContext& gfx_ctx
     ) noexcept -> ice::Task<>
     {
         using namespace ice::render;
@@ -623,7 +623,7 @@ namespace ice
 
         co_await gfx_frame.frame_begin();
 
-        RenderDevice& device = gfx_device.device();
+        RenderDevice& device = gfx_ctx.device();
 
         sprite_data.material[0] = *reinterpret_cast<ice::render::Image const*>(image_data.location);
         sprite_data.material_tileinfo[0] = device.create_buffer(BufferType::Uniform, sizeof(sprite_data.material_scale));
@@ -660,7 +660,7 @@ namespace ice
         co_await runner.stage_next_frame();
 
         runner.execute_task(
-            task_update_resource_material(runner, gfx_device, ice::stringid(material_name), sprite_data),
+            task_update_resource_material(runner, gfx_ctx, ice::stringid(material_name), sprite_data),
             EngineContext::EngineRunner
         );
         co_return;
@@ -668,7 +668,7 @@ namespace ice
 
     auto IceWorldTrait_RenderSprites::task_update_resource_material(
         ice::EngineRunner& runner,
-        ice::gfx::GfxDevice& gfx_device,
+        ice::gfx::GfxContext& gfx_ctx,
         ice::StringID material_name,
         detail::RenderData_Sprite sprite_data
     ) noexcept -> ice::Task<>
@@ -677,7 +677,7 @@ namespace ice
 
         co_await runner.graphics_frame().frame_begin();
 
-        RenderDevice& device = gfx_device.device();
+        RenderDevice& device = gfx_ctx.device();
 
         ResourceUpdateInfo res_updates[]{
             ResourceUpdateInfo

@@ -7,7 +7,7 @@
 namespace ice::gfx
 {
 
-    enum class GfxResourceType : uint8_t
+    enum class GfxResourceType : ice::u8
     {
         Invalid = 0,
         RenderTarget,
@@ -18,15 +18,15 @@ namespace ice::gfx
     {
         using TypeTag = ice::StrongValue;
 
-        ice::uptr value;
+        ice::u64 value;
     };
 
-    inline auto gfx_resource_type_val(GfxResource res) noexcept
+    constexpr auto gfx_resource_type_val(ice::gfx::GfxResource res) noexcept -> ice::u32
     {
         return ice::u32((res.value & 0x0000'00ff'0000'0000) >> 32);
     }
 
-    inline auto gfx_resource_type(GfxResource res) noexcept
+    constexpr auto gfx_resource_type(ice::gfx::GfxResource res) noexcept -> ice::gfx::GfxResourceType
     {
         return static_cast<GfxResourceType>(gfx_resource_type_val(res));
     }

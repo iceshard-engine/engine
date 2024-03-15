@@ -6,7 +6,7 @@
 #include <ice/engine_runner.hxx>
 #include <ice/world/world_trait_archive.hxx>
 
-#include <ice/gfx/gfx_device.hxx>
+#include <ice/gfx/gfx_context.hxx>
 
 #include <ice/render/render_command_buffer.hxx>
 #include <ice/render/render_swapchain.hxx>
@@ -35,7 +35,7 @@ namespace ice
 
     void IceWorldTrait_RenderTextureLoader::gfx_setup(
         ice::gfx::GfxFrame& gfx_frame,
-        ice::gfx::GfxDevice& gfx_device
+        ice::gfx::GfxContext& gfx_ctx
     ) noexcept
     {
         IPT_ZONE_SCOPED_NAMED("[Trait] Texture Loader :: Setup");
@@ -47,7 +47,7 @@ namespace ice
     void IceWorldTrait_RenderTextureLoader::gfx_update(
         ice::EngineFrame const& engine_frame,
         ice::gfx::GfxFrame& gfx_frame,
-        ice::gfx::GfxDevice& gfx_device
+        ice::gfx::GfxContext& gfx_ctx
     ) noexcept
     {
         IPT_ZONE_SCOPED_NAMED("[Trait] Texture Loader :: Update");
@@ -55,14 +55,14 @@ namespace ice
 
     void IceWorldTrait_RenderTextureLoader::gfx_cleanup(
         ice::gfx::GfxFrame& gfx_frame,
-        ice::gfx::GfxDevice& gfx_device
+        ice::gfx::GfxContext& gfx_ctx
     ) noexcept
     {
         IPT_ZONE_SCOPED_NAMED("[Trait] Texture Loader :: Cleanup");
 
         for (auto const& entry : _images)
         {
-            ice::render::RenderDevice& device = gfx_device.device();
+            ice::render::RenderDevice& device = gfx_ctx.device();
             device.destroy_image(entry);
         }
     }
@@ -125,10 +125,10 @@ namespace ice
         ice::u32 const image_data_size = image_info->width * image_info->height * 4;
 
         ice::gfx::GfxFrame& gfx_frame = runner.graphics_frame();
-        ice::gfx::GfxDevice& gfx_device = runner.graphics_device();
-        //ice::gfx::GfxResourceTracker& gfx_restracker = gfx_device.resource_tracker();
+        ice::gfx::GfxContext& gfx_ctx = runner.graphics_device();
+        //ice::gfx::GfxResourceTracker& gfx_restracker = gfx_ctx.resource_tracker();
 
-        ice::render::RenderDevice& device = gfx_device.device();
+        ice::render::RenderDevice& device = gfx_ctx.device();
 
         ice::StringID const image_name = ice::stringid(request->resource().uri().path);
         ice::u64 const image_hash = ice::hash(image_name);
@@ -229,10 +229,10 @@ namespace ice
         ice::render::Image image = _images[image_idx];
 
         ice::gfx::GfxFrame& gfx_frame = runner.graphics_frame();
-        ice::gfx::GfxDevice& gfx_device = runner.graphics_device();
-        //ice::gfx::GfxResourceTracker& gfx_restracker = gfx_device.resource_tracker();
+        ice::gfx::GfxContext& gfx_ctx = runner.graphics_device();
+        //ice::gfx::GfxResourceTracker& gfx_restracker = gfx_ctx.resource_tracker();
 
-        ice::render::RenderDevice& device = gfx_device.device();
+        ice::render::RenderDevice& device = gfx_ctx.device();
 
         co_await gfx_frame.frame_begin();
 
