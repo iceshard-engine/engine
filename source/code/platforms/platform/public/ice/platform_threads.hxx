@@ -1,0 +1,35 @@
+#pragma once
+#include <ice/platform.hxx>
+#include <ice/shard.hxx>
+#include <ice/task_scheduler.hxx>
+
+namespace ice::platform
+{
+
+    static constexpr ice::ShardID Shard_ThreadPoolSize = "platform/threads/thread-pool-size`ice::u32"_shardid;
+
+    //! \brief Provides access to specific platform thread schedulers.
+    struct Threads
+    {
+        virtual ~Threads() noexcept = default;
+
+        //! \brief Returns a scheduler for the platform preferred main thread.
+        virtual auto main() const noexcept -> ice::TaskScheduler& = 0;
+
+        //! \brief Returns a scheduler for the platform preferred graphics thread.
+        virtual auto graphics() const noexcept -> ice::TaskScheduler& = 0;
+
+        //! \brief Returns a scheduler to a platform implementation managed thread pool.
+        //! \note The number of spawned threads can be configured with the `ThreadPoolSize` shard.
+        //! \warning When zero (0) threads are requestd the threadpool is not created and any task send to the scheduler will never be executed!
+        virtual auto threadpool() const noexcept -> ice::TaskScheduler& = 0;
+
+        //! \brief Number of threads available in the threadpool.
+        //! \note By default at least one (1), but can have more depending on platform capabilities.
+        virtual auto threadpool_size() const noexcept -> ice::u32 = 0;
+
+        //! \returns Pointer to the threadpool object managed by the platform.
+        virtual auto threadpool_object() const noexcept -> ice::TaskThreadPool* = 0;
+    };
+
+} // namespace ice::platform
