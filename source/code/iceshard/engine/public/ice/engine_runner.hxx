@@ -13,6 +13,7 @@
 #include <ice/stringid.hxx>
 #include <ice/task_scheduler.hxx>
 #include <ice/task_types.hxx>
+#include <ice/task_utils.hxx>
 #include <ice/asset_types.hxx>
 
 namespace ice
@@ -37,13 +38,12 @@ namespace ice
         ice::EngineFrame& frame;
         ice::EngineFrame const& last_frame;
         ice::EngineSchedulers thread;
-        ice::EngineTaskContainer& long_tasks;
     };
 
     struct EngineRunnerCreateInfo
     {
         ice::Engine& engine;
-
+        ice::Clock const& clock;
         ice::u32 concurrent_frame_count = 2;
         ice::EngineFrameFactory frame_factory;
         ice::EngineFrameFactoryUserdata frame_factory_userdata;
@@ -54,7 +54,7 @@ namespace ice
         virtual ~EngineRunner() noexcept = default;
 
         virtual auto aquire_frame() noexcept -> ice::Task<ice::UniquePtr<ice::EngineFrame>> = 0;
-        virtual auto update_frame(ice::EngineFrame& frame, ice::EngineFrame const& prev_frame, ice::Clock const& clock) noexcept -> ice::Task<> = 0;
+        virtual auto update_frame(ice::EngineFrame& current_frame, ice::EngineFrame const& last_frame) noexcept -> ice::Task<> = 0;
         virtual void release_frame(ice::UniquePtr<ice::EngineFrame> frame) noexcept = 0;
     };
 

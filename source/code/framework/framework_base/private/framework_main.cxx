@@ -27,6 +27,7 @@
 #include <ice/engine_module.hxx>
 #include <ice/engine_shards.hxx>
 #include <ice/engine_frame.hxx>
+#include <ice/engine_state_tracker.hxx>
 #include <ice/world/world_trait_archive.hxx>
 #include <ice/world/world_trait_module.hxx>
 #include <ice/world/world_trait.hxx>
@@ -51,6 +52,7 @@
 #include <ice/mem_allocator_proxy.hxx>
 #include <ice/task_thread_pool.hxx>
 #include <ice/task_utils.hxx>
+#include <ice/task_scoped_container.hxx>
 #include <ice/sync_manual_events.hxx>
 #include <ice/path_utils.hxx>
 #include <ice/string/heap_string.hxx>
@@ -80,7 +82,7 @@ struct ice::app::Config
     { }
 
     ice::Allocator& alloc;
-    ice::String app_name = "My App";
+    ice::String app_name = "Test App";
 
     struct DeveloperDirectories
     {
@@ -109,10 +111,10 @@ struct ice::app::State
     ice::UniquePtr<ice::TaskThreadPool> thread_pool;
     ice::UniquePtr<ice::ResourceTracker> resources;
     ice::UniquePtr<ice::ModuleRegister> modules;
-    //ice::UniquePtr<ice::GameFramework> framework;
     ice::UniquePtr<ice::framework::Game> game;
 
     ice::UniquePtr<ice::AssetStorage> assets;
+    ice::UniquePtr<ice::EngineStateTracker> states;
     ice::UniquePtr<ice::Engine> engine;
     ice::UniquePtr<ice::render::RenderDriver> renderer;
 
@@ -139,9 +141,9 @@ struct ice::app::State
         , modules_alloc{ alloc, "modules" }
         , gamework_alloc{ alloc, "gamework" }
         , engine_alloc{ alloc, "engine" }
+        , thread_pool{ }
         , thread_pool_queue{ }
         , thread_pool_scheduler{ thread_pool_queue }
-        , thread_pool{ }
         , resources{ }
         , modules{ ice::create_default_module_register(modules_alloc, true) }
         , providers{ }
@@ -179,6 +181,7 @@ struct ice::app::Runtime
 
     ice::TaskQueue main_queue;
     ice::TaskScheduler main_scheduler;
+    ice::UniquePtr<ice::EngineSchedulers> thread_schedulers;
 
     ice::UniquePtr<ice::EngineRunner> runner;
     ice::UniquePtr<ice::EngineFrame> frame;
@@ -209,6 +212,7 @@ struct ice::app::Runtime
         , runtime_alloc{ alloc, "runtime" }
         , app_alloc{ alloc, "application" }
         , main_scheduler{ main_queue }
+        , thread_schedulers{ }
         , runner{ }
         , frame{ }
         , gfx_runner{ }
@@ -216,10 +220,6 @@ struct ice::app::Runtime
         , input_events{ runtime_alloc }
         , window_surface{ }
         , render_surface{ }
-    {
-    }
-
-    ~Runtime() noexcept
     {
     }
 };
@@ -231,26 +231,24 @@ void ice_init(
 {
     IPT_ZONE_SCOPED;
     using ice::operator|;
+    using ice::app::Factories;
+    using ice::platform::FeatureFlags;
 
     ice::Shard const platform_params[]{
-        ice::platform::Shard_StorageAppName | "isdpapp"
+        ice::platform::Shard_StorageAppName | "IceShard"
     };
     ice::Result const res = ice::platform::initialize_with_allocator(
         alloc,
-        ice::platform::FeatureFlags::Core
-        | ice::platform::FeatureFlags::StoragePaths
-        | ice::platform::FeatureFlags::RenderSurface,
+        FeatureFlags::Core
+        | FeatureFlags::StoragePaths
+        | FeatureFlags::RenderSurface,
         platform_params
     );
     ICE_ASSERT(res == true, "Failed to initialize platform!");
 
-    using ice::app::Config;
-    using ice::app::State;
-    using ice::app::Runtime;
-
-    factories.factory_config = [](ice::Allocator& alloc) -> ice::UniquePtr<ice::app::Config> { return ice::make_unique<Config>(&destroy_object<Config>, alloc.create<Config>(alloc)); };
-    factories.factory_state = [](ice::Allocator& alloc) -> ice::UniquePtr<ice::app::State> { return ice::make_unique<State>(&destroy_object<State>, alloc.create<State>(alloc)); };
-    factories.factory_runtime = [](ice::Allocator& alloc) -> ice::UniquePtr<ice::app::Runtime> { return ice::make_unique<Runtime>(&destroy_object<Runtime>, alloc.create<Runtime>(alloc)); };
+    factories.factory_config = Factories::create_default<ice::app::Config>();
+    factories.factory_state = Factories::create_default<ice::app::State>();
+    factories.factory_runtime = Factories::create_default<ice::app::Runtime>();
 }
 
 void ice_args(
@@ -343,7 +341,8 @@ auto ice_setup(
     ice::HeapString<> engine_module = ice::resolve_dynlib_path(*state.resources, state.alloc, "iceshard");
     state.modules->load_module(state.modules_alloc, engine_module);
 
-    ice::EngineCreateInfo engine_create_info{ };
+    state.states = ice::create_state_tracker(state.alloc);
+    ice::EngineCreateInfo engine_create_info{ .states = ice::move(state.states) };
     {
         ice::UniquePtr<ice::AssetTypeArchive> asset_types = ice::create_asset_type_archive(state.engine_alloc);
         ice::load_asset_type_definitions(state.engine_alloc, *state.modules, *asset_types);
@@ -364,8 +363,6 @@ auto ice_setup(
     {
         state.debug.devui = ice::devui::create_devui_system(state.engine_alloc, *state.modules);
         state.debug.devui->register_trait(*engine_create_info.traits);
-        //engine_create_info.devui = ice::devui::create_devui_system(state.engine_alloc, *state.modules);
-        //engine_create_info.devui->register_trait(*engine_create_info.traits);
     }
 
     state.engine = ice::create_engine(state.engine_alloc, *state.modules, ice::move(engine_create_info));
@@ -405,16 +402,25 @@ auto ice_resume(
             ICE_ASSERT(valid_surface_info, "Failed to access surface info!");
         }
 
-        ice::EngineRunnerCreateInfo const runner_create_info{
-            .engine = *state.engine,
-            .schedulers = {
+        runtime.thread_schedulers = ice::make_unique<ice::EngineSchedulers>(
+            runtime.alloc,
+            ice::EngineSchedulers{
                 .main = runtime.main_scheduler,
                 .tasks = state.thread_pool_scheduler,
             }
-        };
-        runtime.runner = ice::create_engine_runner(state.engine_alloc, *state.modules, runner_create_info);
-        runtime.frame = ice::wait_for(runtime.runner->aquire_frame());
+        );
+
         runtime.clock = ice::clock::create_clock();
+        runtime.runner = ice::create_engine_runner(
+            state.engine_alloc,
+            *state.modules,
+            ice::EngineRunnerCreateInfo{
+                .engine = *state.engine,
+                .clock = runtime.clock,
+                .schedulers = *runtime.thread_schedulers
+            }
+        );
+        runtime.frame = ice::wait_for(runtime.runner->aquire_frame());
 
         runtime.render_surface = state.renderer->create_surface(surface_info);
 
@@ -443,7 +449,8 @@ auto ice_resume(
         runtime.input_tracker->register_device_type(ice::input::DeviceType::Mouse, ice::input::get_default_device_factory());
         runtime.input_tracker->register_device_type(ice::input::DeviceType::Keyboard, ice::input::get_default_device_factory());
 
-        runtime.gfx_rendergraph_runtime = state.game->rendergraph(runtime.gfx_runner->device());
+        //runtime.gfx_rendergraph_runtime = state.game->rendergraph(runtime.gfx_runner->device());
+        runtime.gfx_runner->update_rendergraph(state.game->rendergraph(runtime.gfx_runner->device()));
         runtime.gfx_wait.set();
     }
 
@@ -495,7 +502,8 @@ auto ice_update(
         {
             runtime.gfx_wait.wait();
             runtime.gfx_runner->device().recreate_swapchain();
-            runtime.gfx_rendergraph_runtime = state.game->rendergraph(runtime.gfx_runner->device());
+            runtime.gfx_runner->update_rendergraph(state.game->rendergraph(runtime.gfx_runner->device()));
+            //runtime.gfx_rendergraph_runtime = state.game->rendergraph(runtime.gfx_runner->device());
         }
     }
 
@@ -517,12 +525,19 @@ auto ice_update(
     runtime.input_tracker->process_device_events(state.platform.core->input_events(), runtime.input_events);
     ice_process_input_events(runtime.input_events, new_frame->shards());
 
+    // Send additional events
     state.game->on_update(*state.engine, *new_frame);
+    state.engine->worlds().query_pending_events(new_frame->shards());
+
+    state.engine->states().update_states(runtime.frame->shards(), new_frame->shards());
 
     // Run the frame update
     // TODO: Do it on a worker thread?
     // This will block (two frames alive)
-    ice::manual_wait_for(runtime.runner->update_frame(*new_frame, *runtime.frame, runtime.clock), runtime.logic_wait);
+    ice::manual_wait_for(
+        runtime.runner->update_frame(*new_frame, *runtime.frame),
+        runtime.logic_wait
+    );
 
     if (runtime.render_enabled == false)
     {
@@ -541,7 +556,9 @@ auto ice_update(
     runtime.gfx_wait.wait();
 
     // Store this frame as the next frame for drawing
-    runtime.runner->release_frame(ice::exchange(runtime.frame, ice::move(new_frame)));
+    runtime.runner->release_frame(
+        ice::exchange(runtime.frame, ice::move(new_frame))
+    );
 
     if (state.debug.devui != nullptr)
     {
@@ -557,7 +574,10 @@ auto ice_update(
     {
         // Create GfxFrame (blocks until previous frame is released?)
         runtime.gfx_wait.reset();
-        ice::manual_wait_for(runtime.gfx_runner->draw_frame(*runtime.frame, *runtime.gfx_rendergraph_runtime, runtime.clock), runtime.gfx_wait);
+        ice::manual_wait_for(
+            runtime.gfx_runner->draw_frame(*runtime.frame, runtime.clock),
+            runtime.gfx_wait
+        );
     }
 
     return ice::app::S_ApplicationUpdate;
@@ -575,7 +595,10 @@ auto ice_suspend(
 
     if (runtime.is_exiting)
     {
-        ice::shards::remove_all_of(runtime.frame->shards(), ice::ShardID_WorldActivate);
+        ice::shards::remove_all_of(
+            runtime.frame->shards(),
+            ice::ShardID_WorldActivate
+        );
 
         ice::Array<ice::StringID> worlds{ state.alloc };
         state.engine->worlds().query_worlds(worlds);
@@ -584,23 +607,8 @@ auto ice_suspend(
             ice::shards::push_back(runtime.frame->shards(), ice::ShardID_WorldDeactivate | ice::stringid_hash(world));
         }
 
-
-        ice::EngineWorldUpdate const update_info {
-            .clock = runtime.clock,
-            .assets = *state.assets,
-            .engine = *state.engine,
-            .thread = { state.thread_pool_scheduler, state.thread_pool_scheduler },
-            .long_tasks = *((ice::EngineTaskContainer*)0)
-        };
-
-        ice::Array<ice::Task<>, ice::ContainerLogic::Complex> tasks{ state.alloc };
-        state.engine->worlds_updater().update(*runtime.frame, update_info, tasks);
-        if (ice::array::any(tasks))
-        {
-            ice::wait_for_all(tasks);
-        }
-
-        runtime.gfx_runner->final_update(*runtime.frame, *runtime.gfx_rendergraph_runtime, runtime.clock);
+        // Apply state events so we can already get the events for the next frame
+        state.engine->states().update_states(runtime.frame->shards(), runtime.frame->shards());
 
         runtime.input_tracker.reset();
         runtime.runner->release_frame(ice::move(runtime.frame));

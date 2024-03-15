@@ -325,6 +325,32 @@ SCENARIO("collections 'ice/container/queue.hxx' (POD)", "[collection][queue][pod
                 CHECK(test_queue[i] == test_values_2[i]);
             }
 
+            WHEN("using 'for_each' we iterate as expected in succession")
+            {
+                ice::ucount idx = 0;
+                ice::queue::for_each(
+                    test_queue,
+                    [&test_values_2, &idx](ice::i32 val) noexcept
+                    {
+                        CHECK(val == test_values_2[idx]);
+                        idx += 1;
+                    }
+                );
+            }
+
+            WHEN("using 'for_each_reverse' we iterate as expected in reverse")
+            {
+                ice::ucount idx = ice::count(test_values_2) - 1;
+                ice::queue::for_each_reverse(
+                    test_queue,
+                    [&test_values_2, &idx](ice::i32 val) noexcept
+                    {
+                        CHECK(val == test_values_2[idx]);
+                        idx -= 1;
+                    }
+                );
+            }
+
             WHEN("Resizing the queue capacity check again")
             {
                 if constexpr (ice::Allocator::HasDebugInformation)

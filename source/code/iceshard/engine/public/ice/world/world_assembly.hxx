@@ -7,6 +7,7 @@
 //#include <ice/unique_ptr.hxx>
 #include <ice/ecs/ecs_types.hxx>
 #include <ice/world/world_trait_archive.hxx>
+#include <ice/container/array.hxx>
 
 namespace ice
 {
@@ -18,7 +19,6 @@ namespace ice
         ice::StringID name;
         ice::Span<ice::StringID const> traits;
         ice::ecs::EntityStorage* entity_storage;
-        bool is_initially_active = true;
     };
 
     struct WorldAssembly
@@ -38,9 +38,12 @@ namespace ice
         ) noexcept = 0;
 
         virtual void query_worlds(
-            ice::Array<ice::StringID>& out_worlds,
-            bool only_active = true
+            ice::Array<ice::StringID>& out_worlds
         ) const noexcept = 0;
+
+        virtual void query_pending_events(
+            ice::ShardContainer& out_events
+        ) noexcept = 0;
     };
 
 } // namespace ice

@@ -18,6 +18,7 @@
 #include <ice/render/render_pass.hxx>
 #include <ice/render/render_command_buffer.hxx>
 #include <ice/render/render_fence.hxx>
+#include <ice/task_container.hxx>
 #include <ice/task_scheduler.hxx>
 #include <ice/sort.hxx>
 #include <ice/profiler.hxx>
@@ -187,7 +188,7 @@ namespace ice::gfx
     bool IceshardGfxGraphRuntime::prepare(
         ice::gfx::GfxStages& stages,
         ice::gfx::GfxStageRegistry const& stage_registry,
-        ice::Array<ice::Task<>>& out_tasks
+        ice::TaskContainer& out_tasks
     ) noexcept
     {
         using Entry = ice::gfx::IceshardGfxGraphStages::Entry;
@@ -215,7 +216,7 @@ namespace ice::gfx
                     // Push the cleanup task
                     if (entry->initialized)
                     {
-                        ice::array::push_back(out_tasks, entry->stage->cleanup(_device));
+                        out_tasks.create_tasks(1, "gfx.graph-runtime.state-cleanup"_shardid)[0] = entry->stage->cleanup(_device);
                         entry->initialized = false;
                     }
 
@@ -250,6 +251,9 @@ namespace ice::gfx
             // Reset the ready flag
             _stages._ready.fetch_add(new_stages);
 
+            ice::u32 init_task_idx = 0;
+            ice::Span<ice::Task<>> init_tasks = out_tasks.create_tasks(new_stages, "gfx.graph-runtime.state-init"_shardid);
+
             // Collect init tasks
             for (Entry* entry : _stages._stages)
             {
@@ -258,13 +262,9 @@ namespace ice::gfx
                 {
                     entry->initialized = true;
 
-                    // TODO: Store the task
-                    ice::array::push_back(
-                        out_tasks,
-                        initialize_stage(
-                            entry->stage->initialize(_device, stages, _renderpass),
-                            _stages._ready
-                        )
+                    init_tasks[init_task_idx++] = initialize_stage(
+                        entry->stage->initialize(_device, stages, _renderpass),
+                        _stages._ready
                     );
                 }
             }

@@ -2,6 +2,8 @@
 /// SPDX-License-Identifier: MIT
 
 #pragma once
+#include <ice/mem_allocator_stack.hxx>
+#include <ice/task_scoped_container.hxx>
 #include <ice/ecs/ecs_entity_storage.hxx>
 #include <ice/world/world_assembly.hxx>
 #include <ice/engine_types.hxx>
@@ -14,13 +16,18 @@ namespace ice
 
     struct EngineTaskContainer;
 
-    struct EngineWorldUpdate
+    struct WorldStateParams
     {
         ice::Clock const& clock;
         ice::AssetStorage& assets;
         ice::Engine& engine;
         ice::EngineSchedulers thread;
-        ice::EngineTaskContainer& long_tasks;
+    };
+
+    struct WorldUpdateParams
+    {
+        //! \brief Shards used to call update callbacks.
+        ice::Span<ice::Shard const> request_shards;
     };
 
     struct WorldUpdater
@@ -28,26 +35,12 @@ namespace ice
         virtual ~WorldUpdater() noexcept = default;
 
         virtual void update(
-            ice::EngineFrame& frame,
-            ice::EngineWorldUpdate const& world_update,
-            ice::Array<ice::Task<>, ContainerLogic::Complex>& out_tasks
-        ) noexcept = 0;
-
-        virtual void force_update(
-            ice::StringID_Arg world_name,
-            ice::Shard shard,
-            ice::Array<ice::Task<>, ContainerLogic::Complex>& out_tasks
-        ) noexcept = 0;
-
-        virtual void update(
-            ice::Shard shard,
-            ice::Array<ice::Task<>, ContainerLogic::Complex>& out_tasks
-        ) noexcept = 0;
-
-        virtual void update(
-            ice::ShardContainer const& shards,
-            ice::Array<ice::Task<>, ContainerLogic::Complex>& out_tasks
+            ice::TaskContainer& out_tasks,
+            ice::WorldUpdateParams const& params
         ) noexcept = 0;
     };
 
 } // namespace ice
+
+template<>
+inline constexpr ice::ShardPayloadID ice::Constant_ShardPayloadID<ice::WorldStateParams const*> = ice::shard_payloadid("ice::WorldStateParams const*");

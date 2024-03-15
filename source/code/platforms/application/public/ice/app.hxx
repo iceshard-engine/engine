@@ -18,11 +18,31 @@ namespace ice::app
     struct Factories
     {
         template<typename Type, typename... Args>
-        using FactoryFn = auto(*)(ice::Allocator&, Args...) -> ice::UniquePtr<Type>;
+        using FactoryFn = auto(*)(ice::Allocator&, Args...) noexcept -> ice::UniquePtr<Type>;
 
         FactoryFn<ice::app::Config> factory_config;
         FactoryFn<ice::app::State> factory_state;
         FactoryFn<ice::app::Runtime> factory_runtime;
+
+
+
+        template<typename T>
+        static inline void destroy_default_object(T* obj) noexcept
+        {
+            obj->alloc.destroy(obj);
+        }
+
+        template<typename T>
+        static inline auto create_default_object(ice::Allocator& alloc) noexcept -> ice::UniquePtr<T>
+        {
+            return ice::make_unique<T>(&destroy_default_object<T>, alloc.create<T>(alloc));
+        }
+
+        template<typename T>
+        static inline auto create_default() noexcept -> FactoryFn<T>
+        {
+            return create_default_object<T>;
+        }
     };
 
     static constexpr ice::ErrorCode S_ApplicationExit{ "S.0100:App:Requested 'Exit' stage" };

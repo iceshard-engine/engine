@@ -5,14 +5,32 @@
 #include <ice/engine_frame.hxx>
 #include <ice/engine_shards.hxx>
 #include <ice/profiler.hxx>
-#include <ice/assert.hxx>
 #include <ice/mem_allocator_stack.hxx>
+#include <ice/task_scoped_container.hxx>
+#include <ice/assert.hxx>
+#include <ice/sort.hxx>
 
 namespace ice
 {
 
     namespace detail
     {
+
+        static constexpr ice::EngineStateTrigger StateTrigger_Activate{
+            .when = ice::ShardID_WorldActivate,
+            .from = State_WorldCreated, .to = State_WorldActive,
+            .results = ice::ShardID_WorldActivated
+        };
+        static constexpr ice::EngineStateTrigger StateTrigger_Deactivate{
+            .when = ice::ShardID_WorldDeactivate,
+            .from = State_WorldActive, .to = State_WorldInactive,
+            .results = ice::ShardID_WorldDeactivated
+        };
+
+        static constexpr ice::EngineStateTrigger StateTriggers_WorldState[]{
+            StateTrigger_Activate,
+            StateTrigger_Deactivate,
+        };
 
         auto execute_and_notify(
             ice::ShardContainer& out_shards,
@@ -26,29 +44,75 @@ namespace ice
 
     } // namespace detail
 
-    IceshardTraitTaskLauncher::IceshardTraitTaskLauncher(ice::Trait* trait, ice::HashMap<ice::IceshardEventHandler>& handlers) noexcept
+    IceshardTraitTaskLauncher::IceshardTraitTaskLauncher(
+        ice::Trait* trait,
+        ice::HashMap<ice::IceshardEventHandler>& frame_handlers,
+        ice::HashMap<ice::IceshardEventHandler>& runner_handlers
+    ) noexcept
         : _trait{ trait }
-        , _handlers{ handlers }
+        , _frame_handlers{ frame_handlers }
+        , _runner_handlers{ runner_handlers }
     {
     }
 
-    void IceshardTraitTaskLauncher::bind(ice::TraitIndirectTaskFn func, ice::ShardID event) noexcept
+    void IceshardTraitTaskLauncher::bind(ice::TraitTaskBinding const& binding) noexcept
     {
+        ice::ShardID const trigger_event = ice::value_or_default(
+            binding.trigger_event, ice::ShardID_FrameUpdate
+        );
+
         ice::multi_hashmap::insert(
-            _handlers,
-            ice::hash(event),
+            binding.task_type == TraitTaskType::Frame ? _frame_handlers : _runner_handlers,
+            ice::hash(trigger_event),
             ice::IceshardEventHandler{
-                .event_id = event,
+                .event_id = trigger_event,
                 .trait = _trait,
-                .event_handler = func
+                .event_handler = binding.procedure,
+                .userdata = binding.procedure_userdata
             }
         );
     }
 
     IceshardTasksLauncher::IceshardTasksLauncher(ice::Allocator& alloc) noexcept
-        : _handlers{ alloc }
-        //, _barrier{ }
+        : _frame_handlers{ alloc }
+        , _runner_handlers{ alloc }
     {
+    }
+
+    void IceshardTasksLauncher::gather(
+        ice::TaskContainer& task_container,
+        ice::Shard shard
+    ) noexcept
+    {
+        ice::Span<ice::Task<>> tasks = task_container.create_tasks(
+            ice::multi_hashmap::count(_frame_handlers, ice::hash(shard.id)),
+            shard.id
+        );
+
+        auto out_it = ice::begin(tasks);
+        auto it = ice::multi_hashmap::find_first(_frame_handlers, ice::hash(shard.id));
+        while (it != nullptr)
+        {
+            ice::IceshardEventHandler const& handler = it.value();
+
+            *out_it = handler.event_handler(handler.trait, shard, handler.userdata);
+
+            out_it += 1;
+            it = ice::multi_hashmap::find_next(_frame_handlers, it);
+        }
+    }
+
+    void IceshardTasksLauncher::gather(
+        ice::TaskContainer& out_tasks,
+        ice::Span<ice::Shard const> shards
+    ) noexcept
+    {
+        IPT_ZONE_SCOPED;
+
+        for (ice::Shard shard : shards)
+        {
+            this->gather(out_tasks, shard);
+        }
     }
 
     void IceshardTasksLauncher::execute(
@@ -58,7 +122,7 @@ namespace ice
     {
         IPT_ZONE_SCOPED;
 
-        auto it = ice::multi_hashmap::find_first(_handlers, ice::hash(shard.id));
+        auto it = ice::multi_hashmap::find_first(_frame_handlers, ice::hash(shard.id));
         while (it != nullptr)
         {
             ice::IceshardEventHandler const& handler = it.value();
@@ -69,7 +133,7 @@ namespace ice
                 handler.event_handler(handler.trait, shard, handler.userdata)
             );
 
-            it = ice::multi_hashmap::find_next(_handlers, it);
+            it = ice::multi_hashmap::find_next(_frame_handlers, it);
         }
 
     }
@@ -89,14 +153,16 @@ namespace ice
 
     auto IceshardTasksLauncher::trait_launcher(ice::Trait* trait) noexcept -> ice::IceshardTraitTaskLauncher
     {
-        return { trait, _handlers };
+        return { trait, _frame_handlers, _runner_handlers };
     }
 
     IceshardWorld::IceshardWorld(
         ice::Allocator& alloc,
+        ice::StringID_Arg worldid,
         ice::Array<ice::UniquePtr<ice::Trait>, ice::ContainerLogic::Complex> traits
     ) noexcept
-        : _tasks_launcher{ alloc }
+        : worldID{ worldid }
+        , _tasks_launcher{ alloc }
         , _traits{ ice::move(traits) }
     {
         for (auto& trait : _traits)
@@ -106,7 +172,7 @@ namespace ice
         }
     }
 
-    auto IceshardWorld::activate(ice::EngineWorldUpdate const& update) noexcept -> ice::Task<>
+    auto IceshardWorld::activate(ice::WorldStateParams const& update) noexcept -> ice::Task<>
     {
         for (auto& trait : _traits)
         {
@@ -115,7 +181,7 @@ namespace ice
         co_return;
     }
 
-    auto IceshardWorld::deactivate(ice::EngineWorldUpdate const& update) noexcept -> ice::Task<>
+    auto IceshardWorld::deactivate(ice::WorldStateParams const& update) noexcept -> ice::Task<>
     {
         for (auto& trait : _traits)
         {
@@ -126,12 +192,21 @@ namespace ice
 
     IceshardWorldManager::IceshardWorldManager(
         ice::Allocator& alloc,
-        ice::UniquePtr<ice::TraitArchive> trait_archive
+        ice::UniquePtr<ice::TraitArchive> trait_archive,
+        ice::EngineStateTracker& tracker
     ) noexcept
-        : _allocator{ alloc }
+        : _allocator{ alloc, "World Manager" }
         , _trait_archive{ ice::move(trait_archive) }
-        , _worlds{ alloc }
+        , _state_tracker{ tracker }
+        , _worlds{ _allocator }
+        , _pending_events{ _allocator }
     {
+        ice::EngineStateRegisterParams state_params{
+            .initial = ice::State_WorldCreated,
+            .commiter = this,
+            .enable_subname_states = true
+        };
+        _state_tracker.register_graph(state_params, detail::StateTriggers_WorldState);
     }
 
     IceshardWorldManager::~IceshardWorldManager() noexcept
@@ -153,6 +228,7 @@ namespace ice
         ice::WorldTemplate const& world_template
     ) noexcept -> World*
     {
+
         ICE_ASSERT(
             ice::hashmap::has(_worlds, ice::hash(world_template.name)) == false,
             "A world with this name {} was already created!",
@@ -178,11 +254,23 @@ namespace ice
             }
         }
 
+        _state_tracker.register_subname(world_template.name);
+        //_state_tracker.initialize_subname_state(ice::StateGraph_WorldState, world_template.name);
+
         Entry world_entry{
-            .name = world_template.name,
-            .world = ice::make_unique<ice::IceshardWorld>(_allocator, _allocator, ice::move(world_traits)),
-            .is_active = world_template.is_initially_active
+            .world = ice::make_unique<ice::IceshardWorld>(
+                _allocator,
+                _allocator,
+                world_template.name,
+                ice::move(world_traits)
+            ),
         };
+
+        // Add a new pending event
+        ice::shards::push_back(
+            _pending_events,
+            ice::ShardID_WorldCreated | ice::stringid_hash(world_template.name)
+        );
 
         return ice::hashmap::get_or_set(
             _worlds,
@@ -203,165 +291,75 @@ namespace ice
         ice::StringID_Arg name
     ) noexcept
     {
-        static Entry invalid_entry{};
+        static Entry invalid_entry{ };
         ICE_ASSERT(
             ice::hashmap::get(_worlds, ice::hash(name), invalid_entry).is_active == false,
             "Trying to destroy active world: {}!",
             name
         );
 
+        // Add a new pending event
+        ice::shards::push_back(
+            _pending_events,
+            ice::ShardID_WorldDestroyed | ice::stringid_hash(name)
+        );
+
         ice::hashmap::remove(_worlds, ice::hash(name));
     }
 
-    void IceshardWorldManager::query_worlds(
-        ice::Array<ice::StringID>& out_worlds,
-        bool only_active
-    ) const noexcept
+    void IceshardWorldManager::query_worlds(ice::Array<ice::StringID>& out_worlds) const noexcept
     {
         for (Entry const& entry : _worlds)
         {
-            if (only_active == false || entry.is_active)
-            {
-                ice::array::push_back(out_worlds, entry.name);
-            }
-        }
-    }
-
-    void IceshardWorldManager::activate(
-        ice::StringID_Arg world_name,
-        ice::EngineFrame& frame,
-        ice::EngineWorldUpdate const& world_update,
-        ice::Array<ice::Task<>, ContainerLogic::Complex>& out_tasks
-    ) noexcept
-    {
-        Entry* const entry = ice::hashmap::try_get(_worlds, ice::hash(world_name));
-        ICE_LOG_IF(
-            entry == nullptr, LogSeverity::Warning, LogTag::Engine,
-            "Trying to activate unknown world {}",
-            world_name
-        );
-        if (entry != nullptr)
-        {
-            if (std::exchange(entry->is_active, true) == false)
-            {
-                ice::array::push_back(out_tasks,
-                    detail::execute_and_notify(
-                        frame.shards(),
-                        entry->world->activate(world_update),
-                        ice::ShardID_WorldActivated | ice::stringid_hash(world_name)
-                    )
-                );
-            }
-        }
-    }
-
-    void IceshardWorldManager::deactivate(
-        ice::StringID_Arg world_name,
-        ice::EngineFrame& frame,
-        ice::EngineWorldUpdate const& world_update,
-        ice::Array<ice::Task<>, ContainerLogic::Complex>& out_tasks
-    ) noexcept
-    {
-        Entry* const entry = ice::hashmap::try_get(_worlds, ice::hash(world_name));
-        ICE_LOG_IF(
-            entry == nullptr, LogSeverity::Warning, LogTag::Engine,
-            "Trying to deactivate unknown world {}",
-            world_name
-        );
-        if (entry != nullptr)
-        {
-            if (std::exchange(entry->is_active, false))
-            {
-                ice::array::push_back(out_tasks,
-                    detail::execute_and_notify(
-                        frame.shards(),
-                        entry->world->deactivate(world_update),
-                        ice::ShardID_WorldDeactivated | ice::stringid_hash(world_name)
-                    )
-                );
-            }
-        }
-    }
-
-    void IceshardWorldManager::update(
-        ice::EngineFrame& frame,
-        ice::EngineWorldUpdate const& world_update,
-        ice::Array<ice::Task<>, ContainerLogic::Complex>& out_tasks
-    ) noexcept
-    {
-        static ice::StackAllocator<256_B> temp_alloc;
-        temp_alloc.reset();
-
-        ice::ShardContainer new_shards{ temp_alloc };
-        ice::array::reserve(new_shards._data, ice::mem_max_capacity<ice::Shard>(temp_alloc.Constant_InternalCapacity));
-
-        for (ice::Shard const shard : frame.shards())
-        {
-            ice::StringID const worldid = { ice::shard_shatter(shard, ice::StringID_Invalid.value) };
-
-            switch (shard.id.name.value)
-            {
-            case ice::ShardID_WorldActivate.name.value:
-                activate(worldid, frame, world_update, out_tasks);
-                break;
-            case ice::ShardID_WorldDeactivate.name.value:
-                deactivate(worldid, frame, world_update, out_tasks);
-                break;
-            default:
-                break;
-            }
-        }
-
-        ice::shards::push_back(frame.shards(), new_shards._data);
-    }
-
-    void IceshardWorldManager::force_update(
-        ice::StringID_Arg world_name,
-        ice::Shard shard,
-        ice::Array<ice::Task<>, ContainerLogic::Complex>& out_tasks
-    ) noexcept
-    {
-        Entry* const entry = ice::hashmap::try_get(_worlds, ice::hash(world_name));
-        ICE_LOG_IF(
-            entry == nullptr, LogSeverity::Warning, LogTag::Engine,
-            "Trying to update unknown world {}",
-            world_name
-        );
-
-        if (entry != nullptr)// && entry->is_active)
-        {
-            entry->world->task_launcher().execute(out_tasks, shard);
-        }
-    }
-
-    void IceshardWorldManager::update(
-        ice::Shard shard,
-        ice::Array<ice::Task<>, ContainerLogic::Complex>& out_tasks
-    ) noexcept
-    {
-        IPT_ZONE_SCOPED;
-        for (auto const& entry : _worlds)
-        {
             if (entry.is_active)
             {
-                entry.world->task_launcher().execute(out_tasks, shard);
+                ice::array::push_back(out_worlds, entry.world->worldID);
             }
         }
     }
 
+    void IceshardWorldManager::query_pending_events(ice::ShardContainer& out_events) noexcept
+    {
+        ice::shards::push_back(out_events, ice::array::slice(_pending_events._data));
+        ice::shards::clear(_pending_events);
+    }
+
     void IceshardWorldManager::update(
-        ice::ShardContainer const& shards,
-        ice::Array<ice::Task<>, ContainerLogic::Complex>& out_tasks
+        ice::TaskContainer& out_tasks,
+        ice::WorldUpdateParams const& params
     ) noexcept
     {
-        IPT_ZONE_SCOPED;
-        for (auto const& entry : _worlds)
+        for (Entry& world_entry : ice::hashmap::values(_worlds))
         {
-            if (entry.is_active)
+            if (world_entry.is_active)
             {
-                entry.world->task_launcher().execute(out_tasks, shards);
+                world_entry.world->task_launcher().gather(out_tasks, params.request_shards);
             }
         }
+    }
+
+    bool IceshardWorldManager::commit(
+        ice::EngineStateTrigger const& trigger,
+        ice::Shard trigger_shard,
+        ice::ShardContainer& out_shards
+    ) noexcept
+    {
+        ice::StringID_Hash world_name;
+        if (ice::shard_inspect(trigger_shard, world_name))
+        {
+            Entry* const entry = ice::hashmap::try_get(_worlds, ice::hash(world_name));
+            ICE_ASSERT_CORE(entry != nullptr);
+
+            // Activated
+            entry->is_active = trigger.to == ice::State_WorldActive;
+
+            if (trigger.results != ice::Shard_Invalid)
+            {
+                ice::shards::push_back(out_shards, trigger.results | world_name);
+            }
+        }
+
+        return true;
     }
 
 } // namespace ice

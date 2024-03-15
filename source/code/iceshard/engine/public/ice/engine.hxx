@@ -15,6 +15,7 @@ namespace ice
     {
         ice::UniquePtr<ice::AssetStorage> assets;
         ice::UniquePtr<ice::TraitArchive> traits;
+        ice::UniquePtr<ice::EngineStateTracker> states;
     };
 
     struct Engine
@@ -25,6 +26,7 @@ namespace ice
         virtual auto worlds() noexcept -> ice::WorldAssembly& = 0;
         virtual auto worlds_updater() noexcept -> ice::WorldUpdater& = 0;
         virtual auto entities() noexcept -> ice::ecs::EntityIndex& = 0;
+        virtual auto states() noexcept -> ice::EngineStateTracker& = 0;
     };
 
 } // namespace ice

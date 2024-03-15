@@ -3,6 +3,7 @@
 
 #pragma once
 #include <ice/gfx/gfx_shards.hxx>
+#include <ice/task_types.hxx>
 
 namespace ice::gfx
 {
@@ -27,25 +28,26 @@ namespace ice::gfx
         ice::TaskStage<> frame_end;
     };
 
+    struct GfxOperationParams
+    {
+        ice::Clock const& clock;
+        ice::EngineFrame const& frame;
+        //ice::gfx::GfxGraphRuntime& render_graph;
+    };
+
     struct GfxRunner
     {
         virtual ~GfxRunner() noexcept = default;
 
-        virtual void on_resume() noexcept { }
+        virtual void update_rendergraph(ice::UniquePtr<ice::gfx::GfxGraphRuntime> rendergraph) noexcept = 0;
 
         virtual auto draw_frame(
             ice::EngineFrame const& frame,
-            ice::gfx::GfxGraphRuntime& render_graph,
             ice::Clock const& clock
         ) noexcept -> ice::Task<> = 0;
 
+        virtual void on_resume() noexcept { }
         virtual void on_suspend() noexcept { }
-
-        virtual void final_update(
-            ice::EngineFrame const& frame,
-            ice::gfx::GfxGraphRuntime& graph_runtime,
-            ice::Clock const& clock
-        ) noexcept = 0;
 
         virtual auto device() noexcept -> ice::gfx::GfxDevice& = 0;
     };

@@ -8,7 +8,7 @@ fastbuild-generator/0.4.2@iceshard/stable
 fmt/10.0.0@iceshard/stable
 tracy/0.10.0@iceshard/stable
 imgui/1.90@iceshard/docking
-hailstorm/0.1.2@iceshard/stable
+hailstorm/0.2.0@iceshard/stable
 vulkan-memory-allocator/3.0.1
 chipmunk2d/7.0.3+@iceshard/stable
 

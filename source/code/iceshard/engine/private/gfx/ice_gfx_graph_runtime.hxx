@@ -85,7 +85,7 @@ namespace ice::gfx
         bool prepare(
             ice::gfx::GfxStages& stages,
             ice::gfx::GfxStageRegistry const& stage_registry,
-            ice::Array<ice::Task<>>& out_tasks
+            ice::TaskContainer& out_tasks
         ) noexcept override;
 
         bool execute(
@@ -96,7 +96,6 @@ namespace ice::gfx
     private:
         bool execute_pass(
             ice::EngineFrame const& frame,
-            // GfxStageRegistry const& stage_registry,
             ice::render::Framebuffer framebuffer,
             ice::render::RenderCommands& api,
             ice::render::CommandBuffer cmds

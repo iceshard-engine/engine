@@ -158,7 +158,10 @@ namespace ice::devui
         }
 
         ice::String categories[]{
+            "File",
+            "Settings",
             "Tools",
+            "Test",
             "Uncategorized"
         };
 

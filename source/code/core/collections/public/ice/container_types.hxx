@@ -12,7 +12,7 @@ namespace ice
 
     //! \brief A simple contaier storing items in contignous memory.
     //!
-    //! \detail Manages a memory block big enough to hold the items that it holds.
+    //! \details Manages a memory block big enough to hold the items that it holds.
     //!
     //! \tparam Logic The logic used during memory operations for the given type.
     //!   This value is set by the user to enforce expected behavior for stored types.
@@ -60,11 +60,11 @@ namespace ice
 
     //! \brief A double ended queue build on a circular buffer.
     //!
-    //! \detail Manages a memory block big enough to hold the items that it holds.
+    //! \details Manages a memory block big enough to hold the items that it holds.
     //!
     //! \tparam Logic The logic used during memory operations for the given type.
     //!   This value is set by the user to enforce expected behavior for stored types.
-    template<typename Type, ice::ContainerLogic Logic = ContainerLogic::Trivial>
+    template<typename Type, ice::ContainerLogic Logic = ice::Constant_DefaultContainerLogic<Type>>
     struct Queue
     {
         static_assert(
@@ -97,11 +97,11 @@ namespace ice
 
     //! \brief A hash map build on a single block of memory.
     //!
-    //! \detail Manages a memory block big enough to hold the items that it holds.
+    //! \details Manages a memory block big enough to hold the items that it holds.
     //!
     //! \tparam Logic The logic used during memory operations for the given type.
     //!   This value is set by the user to enforce expected behavior for stored types.
-    template<typename Type, ice::ContainerLogic Logic = ContainerLogic::Trivial>
+    template<typename Type, ice::ContainerLogic Logic = ice::Constant_DefaultContainerLogic<Type>>
     struct HashMap
     {
         static_assert(

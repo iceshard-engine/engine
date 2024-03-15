@@ -4,12 +4,21 @@
 #pragma once
 #include <ice/engine_runner.hxx>
 #include <ice/engine_frame.hxx>
+#include <ice/engine_state_definition.hxx>
 #include <ice/sync_manual_events.hxx>
+#include <ice/mem_allocator_forward.hxx>
+#include <ice/mem_allocator_proxy.hxx>
 #include <ice/task.hxx>
 #include <ice/task_utils.hxx>
 
 namespace ice
 {
+
+    static constexpr ice::EngineStateGraph StateGraph_WorldRuntime = "world-runtime"_state_graph;
+    static constexpr ice::EngineState State_WorldRuntimeActive = StateGraph_WorldRuntime | "active";
+    static constexpr ice::EngineState State_WorldRuntimeInactive = StateGraph_WorldRuntime | "inactive";
+
+    static constexpr ice::ShardID ShardID_WorldRuntimeActivated = "event/world-runtime/activated`ice::StringID_Hash"_shardid;
 
     class IceshardEngine;
 
@@ -48,7 +57,8 @@ namespace ice
 
     struct IceshardFrameData : ice::EngineFrameData
     {
-        ice::Allocator& _allocator;
+        ice::ProxyAllocator _allocator;
+        ice::ForwardAllocator _fwd_allocator;
 
         ice::IceshardDataStorage& _storage_frame;
         ice::IceshardDataStorage& _storage_runtime;
@@ -65,7 +75,8 @@ namespace ice
             ice::IceshardDataStorage& runtime_storage,
             ice::IceshardDataStorage& persistent_storage
         ) noexcept
-            : _allocator{ alloc }
+            : _allocator{ alloc, "frame" }
+            , _fwd_allocator{ _allocator, "frame-forward", ForwardAllocatorParams{.bucket_size = 16_KiB, .min_bucket_count = 2} }
             , _storage_frame{ frame_storage }
             , _storage_runtime{ runtime_storage }
             , _storage_persistent{ persistent_storage }
@@ -168,26 +179,38 @@ namespace ice
         ice::Array<ice::Task<>> _pending_tasks;
     };
 
-    class IceshardEngineRunner : public ice::EngineRunner
+    class IceshardEngineRunner
+        : public ice::EngineRunner
+        , public ice::EngineStateCommitter
     {
     public:
         IceshardEngineRunner(ice::Allocator& alloc, ice::EngineRunnerCreateInfo const& create_info) noexcept;
         ~IceshardEngineRunner() noexcept override;
 
         auto aquire_frame() noexcept -> ice::Task<ice::UniquePtr<ice::EngineFrame>> override;
-        auto update_frame(ice::EngineFrame& frame, ice::EngineFrame const& prev_frame, ice::Clock const& clock) noexcept -> ice::Task<> override;
+        auto update_frame(ice::EngineFrame& current_frame, ice::EngineFrame const& previous_frame) noexcept -> ice::Task<> override;
         void release_frame(ice::UniquePtr<ice::EngineFrame> frame) noexcept override;
 
         void destroy() noexcept;
 
+    public: // Impl: ice::EngineStateCommiter
+        bool commit(
+            ice::EngineStateTrigger const& trigger,
+            ice::Shard trigger_shard,
+            ice::ShardContainer& out_shards
+        ) noexcept override;
+
     private:
-        ice::Allocator& _allocator;
+        ice::ProxyAllocator _allocator;
         ice::Engine& _engine;
-        ice::EngineSchedulers const _schedulers;
+        ice::Clock const& _clock;
+        ice::EngineSchedulers _schedulers;
         ice::EngineFrameFactory const _frame_factory;
         ice::EngineFrameFactoryUserdata const _frame_factory_userdata;
         ice::u32 const _frame_count;
 
+
+        ice::u8 _flow_id;
         ice::IceshardDataStorage _frame_storage[2];
         ice::IceshardDataStorage _runtime_storage;
 

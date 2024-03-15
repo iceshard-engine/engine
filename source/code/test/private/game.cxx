@@ -10,6 +10,7 @@
 #include <ice/engine_runner.hxx>
 #include <ice/engine_shards.hxx>
 #include <ice/engine_devui.hxx>
+#include <ice/devui/devui_widget.hxx>
 #include <ice/world/world.hxx>
 #include <ice/world/world_updater.hxx>
 #include <ice/world/world_trait_module.hxx>
@@ -32,6 +33,9 @@
 #include <ice/log.hxx>
 #include <thread>
 
+#include <imgui/imgui.h>
+#undef assert
+
 static constexpr LogTagDefinition LogGame = ice::create_log_tag(LogTag::Game, "TestGame");
 
 auto ice::framework::create_game(ice::Allocator& alloc) noexcept -> ice::UniquePtr<Game>
@@ -39,17 +43,85 @@ auto ice::framework::create_game(ice::Allocator& alloc) noexcept -> ice::UniqueP
     return ice::make_unique<TestGame>(alloc, alloc);
 }
 
+struct WorldActivationTrait : ice::Trait, ice::devui::DevUIWidget
+{
+    ice::devui::WidgetState* _state;
+    bool is_active = false;
+    bool do_active = false;
+
+    auto settings() const noexcept -> ice::devui::WidgetSettings const&
+    {
+        static ice::devui::WidgetSettings settings{ .menu_text = "Test", .menu_category = "Test" };
+        return settings;
+    }
+
+    void on_prepare(void* ctx, ice::devui::WidgetState& state) noexcept override
+    {
+        ImGui::SetCurrentContext((ImGuiContext*)ctx);
+        _state = &state;
+    }
+
+    void on_draw() noexcept override
+    {
+        if (ImGui::Begin("Test", &_state->is_visible))
+        {
+            ImGui::Checkbox("World Active", &do_active);
+        }
+        ImGui::End();
+    }
+
+    auto devui_show(ice::EngineDevUI& update) noexcept -> ice::Task<>
+    {
+        static bool once = true;
+        if (ice::exchange(once, false))
+        {
+            update.register_widget(this);
+        }
+        co_return;
+    }
+
+    auto logic(ice::EngineFrameUpdate const& update) noexcept -> ice::Task<>
+    {
+        if (is_active ^ do_active)
+        {
+            if (do_active)
+            {
+                shards::push_back(update.frame.shards(), ShardID_WorldActivate | "world2"_sid_hash);
+            }
+            else
+            {
+                shards::push_back(update.frame.shards(), ShardID_WorldDeactivate | "world2"_sid_hash);
+            }
+            is_active = do_active;
+        }
+        co_return;
+    }
+
+    void gather_tasks(ice::TraitTaskRegistry& task_launcher) noexcept
+    {
+        task_launcher.bind<&WorldActivationTrait::logic>();
+        task_launcher.bind<&WorldActivationTrait::devui_show>(ice::ShardID_RegisterDevUI);
+    }
+};
+
 struct TestTrait : public ice::Trait
 {
     ice::Timer timer;
 
-    auto activate(ice::EngineWorldUpdate const& update) noexcept -> ice::Task<> override
+    auto activate(ice::WorldStateParams const& update) noexcept -> ice::Task<> override
     {
-        timer = ice::timer::create_timer(update.clock, 1.0f);
+        ICE_LOG(LogSeverity::Retail, LogTag::Game, "Test Activated!");
+        timer = ice::timer::create_timer(update.clock, 0.1f);
         co_return;
     }
 
-    void gather_tasks(ice::TraitTaskLauncher& task_launcher) noexcept
+    auto deactivate(ice::WorldStateParams const& update) noexcept -> ice::Task<> override
+    {
+        ICE_LOG(LogSeverity::Retail, LogTag::Game, "Test Deactivated!");
+        co_return;
+    }
+
+    void gather_tasks(ice::TraitTaskRegistry& task_launcher) noexcept
     {
         task_launcher.bind<&TestTrait::logic>();
         task_launcher.bind<&TestTrait::gfx>(ice::gfx::ShardID_GfxFrameUpdate);
@@ -74,6 +146,10 @@ struct TestTrait : public ice::Trait
 
 namespace icetm = ice::detail::world_traits;
 
+auto act_factory(ice::Allocator& alloc, void*) noexcept -> UniquePtr<ice::Trait>
+{
+    return ice::make_unique<WorldActivationTrait>(alloc);
+}
 auto test_factory(ice::Allocator& alloc, void*) noexcept -> UniquePtr<ice::Trait>
 {
     return ice::make_unique<TestTrait>(alloc);
@@ -81,6 +157,7 @@ auto test_factory(ice::Allocator& alloc, void*) noexcept -> UniquePtr<ice::Trait
 
 bool test_reg_traits(ice::TraitArchive& arch) noexcept
 {
+    arch.register_trait({ .name = "act"_sid, .fn_factory = act_factory });
     arch.register_trait({ .name = "test"_sid, .fn_factory = test_factory });
     return true;
 }
@@ -136,14 +213,20 @@ void TestGame::on_resume(ice::Engine& engine) noexcept
         using ice::operator""_sid;
 
         ice::StringID traits[]{
-            "test"_sid,
+            "act"_sid,
             "test2"_sid,
             ice::Constant_TraitName_DevUI,
             ice::TraitID_GfxShaderStorage
         };
+        ice::StringID traits2[]{
+            "test"_sid,
+        };
 
         engine.worlds().create_world(
-            { .name = "world"_sid, .traits = traits, .is_initially_active = false }
+            { .name = "world"_sid, .traits = traits }
+        );
+        engine.worlds().create_world(
+            { .name = "world2"_sid, .traits = traits2 }
         );
     }
 }

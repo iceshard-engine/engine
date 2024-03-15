@@ -33,9 +33,9 @@ namespace ice::gfx
     {
     }
 
-    void Trait_GfxImageStorage::gather_tasks(ice::TraitTaskLauncher& task_launcher) noexcept
+    void Trait_GfxImageStorage::gather_tasks(ice::TraitTaskRegistry& task_registry) noexcept
     {
-        task_launcher.bind<&Trait_GfxImageStorage::gfx_update>(ice::gfx::ShardID_GfxFrameUpdate);
+        task_registry.bind<&Trait_GfxImageStorage::gfx_update>(ice::gfx::ShardID_GfxFrameUpdate);
     }
 
     auto Trait_GfxImageStorage::on_asset_released(ice::Asset const& asset) noexcept -> ice::Task<>

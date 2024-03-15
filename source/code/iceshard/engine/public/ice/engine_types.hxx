@@ -15,7 +15,6 @@ namespace ice
     struct EngineFrameUpdate;
     struct EngineRunner;
     struct EngineRunnerCreateInfo;
-    struct EngineWorldUpdate;
 
     struct EngineSchedulers
     {
@@ -23,12 +22,18 @@ namespace ice
         ice::TaskScheduler& tasks;
     };
 
+    struct EngineStateTracker;
+
     struct World;
     struct WorldAssembly;
     struct WorldUpdater;
+    struct WorldStateTracker;
+    struct WorldStateParams;
 
     struct Trait;
     struct TraitArchive;
+    struct TraitDescriptor;
+    struct TraitTaskRegistry;
 
     struct DataStorage;
 

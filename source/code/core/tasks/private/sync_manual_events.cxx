@@ -215,4 +215,9 @@ namespace ice
         return _internal_value.load(std::memory_order_relaxed) == 0;
     }
 
+    auto ManualResetBarrier::value() const noexcept -> ice::u8
+    {
+        return _internal_value.load(std::memory_order_relaxed);
+    }
+
 } // namespace ice

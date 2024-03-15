@@ -3,6 +3,7 @@
 
 #pragma once
 #include <ice/engine_types.hxx>
+#include <ice/shard.hxx>
 
 namespace ice
 {
@@ -34,4 +35,9 @@ namespace ice
         virtual void render_builtin_widgets(ice::EngineFrame& frame) noexcept = 0;
     };
 
+    static constexpr ice::ShardID ShardID_RegisterDevUI = "action/devui/register`ice::EngineDevUI*"_shardid;
+
 } // namespace ice
+
+template<>
+constexpr ice::ShardPayloadID ice::Constant_ShardPayloadID<ice::EngineDevUI*> = ice::shard_payloadid("ice::EngineDevUI*");

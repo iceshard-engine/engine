@@ -97,6 +97,9 @@ namespace ice::queue
     template<typename Type, ice::ContainerLogic Logic, typename Fn>
     inline void for_each(ice::Queue<Type, Logic> const& queue, Fn&& fn) noexcept;
 
+    template<typename Type, ice::ContainerLogic Logic, typename Fn>
+    inline void for_each_reverse(ice::Queue<Type, Logic> const& queue, Fn&& fn) noexcept;
+
 
     template<typename Type, ice::ContainerLogic Logic>
     inline auto memory(ice::Queue<Type, Logic>& queue) noexcept -> ice::Memory;

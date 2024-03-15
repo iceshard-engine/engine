@@ -41,7 +41,7 @@ namespace ice
     template<typename T, typename U = T> requires (std::convertible_to<T, U>)
     constexpr bool search(ice::Span<T> values, U const& value, ice::ucount& out_index) noexcept;
 
-    template<typename T, typename Comp, typename U = T> requires (std::convertible_to<T, U>)
+    template<typename T, typename Comp, typename U = T>
     constexpr bool search(ice::Span<T> values, U const& value, Comp&& comp, ice::ucount& out_index) noexcept;
 
     template<typename T>
@@ -101,7 +101,7 @@ namespace ice
         return search(values, value, [](auto const& l, auto const& r) noexcept { return l == r; }, out_index);
     }
 
-    template<typename T, typename Comp, typename U> requires (std::convertible_to<T, U>)
+    template<typename T, typename Comp, typename U>
     constexpr bool search(ice::Span<T> values, U const& value, Comp&& comp, ice::ucount& out_index) noexcept
     {
         for (ice::u32 idx = 0; idx < ice::span::count(values); ++idx)

@@ -9,6 +9,7 @@
 #include <ice/mem_allocator_stack.hxx>
 #include <ice/engine_module.hxx>
 #include <ice/engine_shards.hxx>
+#include <ice/engine_devui.hxx>
 #include <ice/task_utils.hxx>
 #include <ice/profiler.hxx>
 
@@ -16,12 +17,117 @@
 namespace ice
 {
 
+    namespace detail
+    {
+
+        static constexpr ice::EngineStateTrigger StateTrigger_ActivateRuntime{
+            .when = ShardID_WorldActivated,
+            .from = State_WorldRuntimeInactive,
+            .to = State_WorldRuntimeActive,
+            .results = ShardID_WorldRuntimeActivated
+        };
+        static constexpr ice::EngineStateTrigger StateTrigger_DeactivateRuntime{
+            .before = State_WorldInactive, // Parent state graph
+            .from = State_WorldRuntimeActive,
+            .to = State_WorldRuntimeInactive,
+        };
+
+        auto world_state_shards(void* userdata, ice::ShardContainer& out_shards) noexcept
+        {
+            ice::WorldStateParams const* params = reinterpret_cast<ice::WorldStateParams const*>(userdata);
+            ice::Shard const shards[]{
+                { ice::ShardID_WorldCreated },
+                { ice::ShardID_WorldActivate | params },
+                { ice::ShardID_WorldDeactivate | params },
+                { ice::ShardID_WorldDestroyed },
+                //{ ice::ShardID_RegisterDevUI | update_params.devui },
+            };
+
+            ice::shards::push_back(out_shards, shards);
+        }
+
+        auto devui_state_shards(void* userdata, ice::ShardContainer& out_shards) noexcept
+        {
+            //ice::WorldStateParams const* params = reinterpret_cast<ice::WorldStateParams const*>(userdata);
+            //ice::Shard const shards[]{
+            //    { ice::ShardID_RegisterDevUI | params->devui },
+            //};
+
+            //ice::shards::push_back(out_shards, shards);
+        }
+
+        //auto register_world_activation_flow(ice::WorldStateParams& params, ice::WorldStateTracker& world_states) noexcept -> ice::u8
+        //{
+        //    //ice::StackAllocator_1024 temp_alloc;
+        //    //ice::Array<ice::WorldStateStage> stages{ temp_alloc };
+        //    //ice::array::push_back(stages,
+        //    //    ice::WorldStateStage{
+        //    //        .trigger = ice::ShardID_WorldCreated,
+        //    //        .resulting_state = 1
+        //    //    }
+        //    //);
+        //    //ice::array::push_back(stages,
+        //    //    ice::WorldStateStage{
+        //    //        .trigger = ice::ShardID_WorldActivate,
+        //    //        .required_state = 1,
+        //    //        .resulting_state = 2,
+        //    //        .notification = ice::ShardID_WorldActivated
+        //    //    }
+        //    //);
+        //    //ice::array::push_back(stages,
+        //    //    ice::WorldStateStage{
+        //    //        .trigger = ice::ShardID_WorldDeactivate,
+        //    //        .required_state = 2,
+        //    //        .resulting_state = 1,
+        //    //        .notification = ice::ShardID_WorldDeactivated
+        //    //    }
+        //    //);
+        //    //ice::array::push_back(stages,
+        //    //    ice::WorldStateStage{
+        //    //        .trigger = ice::ShardID_WorldDestroyed,
+        //    //        .required_state = 1,
+        //    //        .resulting_state = 0
+        //    //    }
+        //    //);
+
+        //    //ice::u8 const flowid_main = world_states.register_flow(
+        //    //    ice::WorldStateFlow{
+        //    //        .name = "world-activity"_sid,
+        //    //        .stages = stages,
+        //    //        .userdata = &params,
+        //    //        .fn_shards = world_state_shards
+        //    //    }
+        //    //);
+
+        //    //ice::array::clear(stages);
+        //    //ice::array::push_back(stages,
+        //    //    ice::WorldStateStage{
+        //    //        .trigger = ice::ShardID_WorldCreated,
+        //    //        .resulting_state = 1,
+        //    //        .event_shard = ice::ShardID_RegisterDevUI
+        //    //    }
+        //    //);
+        //    //world_states.register_flow(
+        //    //    ice::WorldStateFlow{
+        //    //        .name = "world-devui"_sid,
+        //    //        .stages = stages,
+        //    //        .userdata = &params,
+        //    //        .fn_shards = devui_state_shards
+        //    //    }
+        //    //);
+
+        //    //return flowid_main;
+        //}
+
+    } // namespace detail
+
     IceshardEngineRunner::IceshardEngineRunner(
         ice::Allocator& alloc,
         ice::EngineRunnerCreateInfo const& create_info
     ) noexcept
-        : _allocator{ alloc }
+        : _allocator{ alloc, "Engine Runner" }
         , _engine{ create_info.engine }
+        , _clock{ create_info.clock }
         , _schedulers{ create_info.schedulers }
         , _frame_factory{ create_info.frame_factory }
         , _frame_factory_userdata{ create_info.frame_factory_userdata }
@@ -49,6 +155,12 @@ namespace ice
             new_data->_internal_next = _frame_data_freelist.load(std::memory_order_relaxed);
             _frame_data_freelist.store(new_data, std::memory_order_relaxed);
         }
+
+        ice::EngineStateTrigger triggers[]{ detail::StateTrigger_ActivateRuntime, detail::StateTrigger_DeactivateRuntime };
+        _engine.states().register_graph(
+            { .initial = State_WorldRuntimeInactive, .commiter = this, .enable_subname_states = true },
+            triggers
+        );
     }
 
     IceshardEngineRunner::~IceshardEngineRunner() noexcept
@@ -84,31 +196,26 @@ namespace ice
             {
                 frame_data->_index = _next_frame_index.fetch_add(1, std::memory_order_relaxed);
                 frame_data->_internal_next = frame_data; // Assing self (easy pointer access later and overflow check)
-                result = _frame_factory(_allocator, *frame_data, _frame_factory_userdata);
+                result = _frame_factory(frame_data->_fwd_allocator, *frame_data, _frame_factory_userdata);
             }
         }
 
         co_return result;
     }
 
-    auto IceshardEngineRunner::update_frame(
-        ice::EngineFrame& frame,
-        ice::EngineFrame const& prev_frame,
-        ice::Clock const& clock
-    ) noexcept -> ice::Task<>
+    auto IceshardEngineRunner::update_frame(ice::EngineFrame& current_frame, ice::EngineFrame const& previous_frame) noexcept -> ice::Task<>
     {
         IPT_ZONE_SCOPED;
+        ice::TaskContainer& current_tasks = current_frame.tasks_container();
+        ice::EngineFrameUpdate const frame_update{
+            .clock = _clock,
+            .assets = _engine.assets(),
+            .frame = current_frame,
+            .last_frame = previous_frame,
+            .thread = _schedulers,
+        };
 
-        // We create once and always reset the object next time
-        static ice::StackAllocator_2048 alloc{ };
-        alloc.reset();
-        ice::Array<ice::Task<>, ice::ContainerLogic::Complex> tasks{ alloc };
-
-        // TODO: Allow to set the number of tasks during world creation.
-        ice::ucount constexpr max_capcity = ice::mem_max_capacity<ice::Task<>>(ice::StackAllocator_2048::Constant_InternalCapacity);
-        ice::array::set_capacity(tasks, max_capcity);
-
-        ice::WorldUpdater& updater = _engine.worlds_updater();
+        ice::WorldUpdater& world_updater = _engine.worlds_updater();
         {
             EngineWorldUpdate const world_update{
                 .clock = clock,
@@ -144,8 +251,9 @@ namespace ice
             };
 
             IPT_ZONE_SCOPED_NAMED("gather_tasks");
-            updater.update(ice::ShardID_FrameUpdate | &frame_update, tasks);
-            updater.update(frame.shards(), tasks);
+            ice::Shard const update_shard[]{ ice::ShardID_FrameUpdate | &frame_update };
+            world_updater.update(current_tasks, { update_shard});
+            world_updater.update(current_tasks, { previous_frame.shards()._data });
         }
 
         // Execute all long tasks
@@ -177,7 +285,38 @@ namespace ice
 
     void IceshardEngineRunner::destroy() noexcept
     {
-        _allocator.destroy(this);
+        _allocator.backing_allocator().destroy(this);
+    }
+
+    bool IceshardEngineRunner::commit(
+        ice::EngineStateTrigger const& trigger,
+        ice::Shard trigger_shard,
+        ice::ShardContainer& out_shards
+    ) noexcept
+    {
+        ice::WorldStateParams const params{
+            .clock = _clock,
+            .assets = _engine.assets(),
+            .engine = _engine,
+            .thread = _schedulers
+        };
+
+        ice::StringID_Hash world_name;
+        if (ice::shard_inspect(trigger_shard, world_name) == false)
+        {
+            return false;
+        }
+
+        if (trigger.to == State_WorldRuntimeActive)
+        {
+            ice::wait_for(_engine.worlds().find_world({ world_name })->activate(params));
+            ice::shards::push_back(out_shards, trigger.results | world_name);
+        }
+        else if (trigger.to == State_WorldRuntimeInactive)
+        {
+            ice::wait_for(_engine.worlds().find_world({ world_name })->deactivate(params));
+        }
+        return true;
     }
 
 } // namespace ice

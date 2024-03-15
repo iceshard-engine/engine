@@ -40,6 +40,8 @@ namespace ice
 
         bool is_set() const noexcept;
 
+        auto value() const noexcept -> ice::u8;
+
     private:
         std::atomic<ice::u8> _internal_value;
     };
