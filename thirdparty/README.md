@@ -39,7 +39,7 @@ FreeType is a freely available software library to render fonts.
 ## hailstorm
 Custom package format for storing resources used by 'iceshard' game engine framework.
 - **upstream:** https://github.com/iceshard-engine/hailstorm
-- **version:** 0.1.2
+- **version:** 0.2.0
 - **license:** MIT
 
 ## imgui

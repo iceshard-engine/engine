@@ -46,6 +46,7 @@
         <DisplayString Condition="id.name.value == 1454439939">Shard {{ event/world/deactivated }}</DisplayString>
         <DisplayString Condition="id.name.value == 1322473106">Shard {{ event/world/destroyed }}</DisplayString>
         <DisplayString Condition="id.name.value == 2241781497">Shard {{ platform/storage/app }}</DisplayString>
+        <DisplayString Condition="id.name.value == 1196572675">Shard {{ platform/threads/thread-pool-size }}</DisplayString>
         <DisplayString Condition="id.name.value == 2816689335">Shard {{ test/shard }}</DisplayString>
         <DisplayString Condition="id.name.value == 2173328416">Shard {{ test/shard2 }}</DisplayString>
         <DisplayString>Shard {{ {id.name.value,h}, unknown_name }}</DisplayString>
