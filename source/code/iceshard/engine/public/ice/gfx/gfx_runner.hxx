@@ -14,6 +14,7 @@ namespace ice::gfx
         ice::render::RenderDriver& driver;
         ice::render::RenderSurface& surface;
         ice::Span<ice::gfx::GfxQueueDefinition const> render_queues;
+        ice::TaskScheduler& gfx_thread;
     };
 
     struct GfxFrameStages

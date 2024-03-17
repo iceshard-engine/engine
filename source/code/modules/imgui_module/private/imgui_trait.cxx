@@ -76,7 +76,6 @@ namespace ice::devui
         auto stage_end = stages.frame_end;
 
         RenderDevice& device = gfx.device();
-        ice::vec2u const extent = gfx.swapchain().extent();
 
         ImGuiIO& io = ImGui::GetIO();
 
@@ -529,8 +528,8 @@ namespace ice::devui
 
     ImGuiTrait::ImGuiTrait(ice::Allocator& alloc) noexcept
         : _allocator{ alloc }
-        , _imgui_timer{ .clock = nullptr }
         , _imgui_gfx_stage{ }
+        , _imgui_timer{ .clock = nullptr }
     {
         _imgui_context = ImGui::CreateContext();
     }

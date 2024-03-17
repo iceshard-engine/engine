@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2024, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -12,7 +12,7 @@
 namespace ice::render
 {
 
-    enum class RenderDriverAPI
+    enum class DriverAPI : ice::u8
     {
         None = 0x0,
         DirectX11,
@@ -20,6 +20,22 @@ namespace ice::render
         Vulkan,
         Metal,
         OpenGL,
+        WebGPU,
+    };
+
+    //! \brief Deprecated name for the 'DriverAPI' enum.
+    using RenderDriverAPI = DriverAPI;
+
+    enum class DriverState : ice::u8
+    {
+        //! \brief Ready for usage.
+        Ready,
+
+        //! \brief Initializing and/or waiting for platform resources.
+        Pending,
+
+        //! \brief Failed to access GPU resources.
+        Failed
     };
 
     class RenderDriver
@@ -27,7 +43,9 @@ namespace ice::render
     public:
         virtual ~RenderDriver() noexcept = default;
 
-        virtual auto render_api() const noexcept -> ice::render::RenderDriverAPI = 0;
+        virtual auto state() const noexcept -> ice::render::DriverState = 0;
+
+        virtual auto render_api() const noexcept -> ice::render::DriverAPI = 0;
 
         virtual auto create_surface(
             ice::render::SurfaceInfo const& surface_info

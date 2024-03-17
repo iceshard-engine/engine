@@ -135,6 +135,6 @@ struct fmt::formatter<ice::ErrorCode>
     constexpr auto format(ice::ErrorCode value, FormatContext& ctx)
     {
         fmt::string_view const type = value.type() == 'E' ? "Error" : "Success";
-        return fmt::format_to("{}({}, '{}')", type, value.category(), value.description());
+        return fmt::format_to(ctx.out(), "{}({}, '{}')", type, value.category(), value.description());
     }
 };

@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2024, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include <ice/ecs/ecs_entity_operations.hxx>
@@ -86,18 +86,16 @@ namespace ice::ecs
             ice::ecs::EntityOperations::EntityOperationData* previous_node
         ) noexcept -> ice::ecs::EntityOperations::EntityOperationData*
         {
-            // Allocating memory requested above
             ice::Memory const memory = alloc.allocate(
                 AllocRequest{
-                    data_block_size,
+                    ice::size_of<ice::ecs::EntityOperations::EntityOperationData> + data_block_size,
                     ice::align_of<ice::ecs::EntityOperations::EntityOperationData>
                 }
             );
 
             EntityOperations::EntityOperationData* data_node = reinterpret_cast<EntityOperations::EntityOperationData*>(memory.location);
             data_node->allocated_size = memory.size;
-            // Because we use the begining of the memory block, we reduce the available size by that amount.
-            data_node->available_size = (data_block_size - ice::size_of<ice::ecs::EntityOperations::EntityOperationData>).to_usize();
+            data_node->available_size = data_block_size;
             data_node->operation_data = data_node + 1;
             data_node->next = previous_node;
             return data_node;
@@ -112,7 +110,7 @@ namespace ice::ecs
         : _allocator{ alloc }
         , _operations{ nullptr }
         , _free_operations{ nullptr }
-        , _data_nodes{ detail::allocate_data_node(_allocator, 8_KiB, nullptr) }
+        , _data_nodes{ detail::allocate_data_node(_allocator, 16_KiB, nullptr) }
     {
         ice::ecs::EntityOperation* const new_operations = detail::allocate_operation_nodes(
             _allocator, initial_count

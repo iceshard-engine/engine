@@ -1,8 +1,9 @@
-/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2024, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
 #include <ice/render/render_declarations.hxx>
+#include <ice/render/render_image.hxx>
 
 namespace ice::render
 {
@@ -27,12 +28,28 @@ namespace ice::render
         InputAttachment,
     };
 
+    union ResourceSetLayoutBindingDetails
+    {
+        struct
+        {
+            ImageType type;
+        } image;
+        struct
+        {
+            ice::u32 min_size;
+        } buffer;
+    };
+
     struct ResourceSetLayoutBinding
     {
         ice::u32 binding_index;
         ice::u32 resource_count = 1;
         ice::render::ResourceType resource_type;
         ice::render::ShaderStageFlags shader_stage_flags;
+
+        //! \brief Additional details for a resource binding.
+        //! \note Only required for the WebGPU renderer. Ignored on other renderer APIs.
+        ice::render::ResourceSetLayoutBindingDetails const* binding_details = nullptr;
     };
 
     struct ResourceBufferInfo

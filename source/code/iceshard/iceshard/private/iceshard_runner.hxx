@@ -10,6 +10,7 @@
 #include <ice/mem_allocator_proxy.hxx>
 #include <ice/task.hxx>
 #include <ice/task_utils.hxx>
+#include <ice/container/hashmap.hxx>
 
 namespace ice
 {

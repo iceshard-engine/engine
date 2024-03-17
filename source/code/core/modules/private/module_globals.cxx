@@ -96,6 +96,9 @@ extern "C"
 
 } // extern "C"
 
+#elif ISP_WEBAPP
+// Nothing needed here. WebApps are better as Monolythic executables.
+
 #else
 #error Not implemented
 

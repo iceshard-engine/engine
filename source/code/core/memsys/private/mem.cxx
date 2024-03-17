@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2024, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include <ice/mem.hxx>
@@ -42,7 +42,7 @@ namespace ice
             .size = size,
             .alignment = alignment,
         };
-#elif ISP_ANDROID && ISP_ANDROID <= 27
+#elif ISP_WEBAPP || (ISP_ANDROID && ISP_ANDROID <= 27)
         void* memory_location;
 
         [[maybe_unused]]

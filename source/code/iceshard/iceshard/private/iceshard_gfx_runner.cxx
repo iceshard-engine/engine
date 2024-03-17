@@ -92,23 +92,15 @@ namespace ice::gfx
         , _engine{ create_info.engine }
         , _context{ ice::move(gfx_ctx) }
         , _tasks_container{ _alloc }
-        , _queue{ }
         , _queue_transfer{ }
         , _queue_end{ }
-        , _scheduler{ _queue }
-        , _thread{ }
+        , _scheduler{ create_info.gfx_thread }
         , _present_fence{ _context->device().create_fence() }
         , _stages{ ice::gfx::create_stage_registry(_alloc) }
         , _state{ IceshardGfxRunnerState::SwapchainDirty }
         , _world_states{ _alloc }
         , _gfx_tasks{ _alloc }
     {
-        ice::TaskThreadInfo const info{
-            .exclusive_queue = true,
-            .debug_name = "ice.gfx",
-        };
-        _thread = ice::create_thread(_alloc, _queue, info);
-
         ice::EngineStateTrigger triggers[]{ detail::StateTrigger_ActivateRuntime, detail::StateTrigger_DeactivateRuntime };
         _engine.states().register_graph(
             { .initial = detail::State_GfxInactive, .commiter = this, .enable_subname_states = true },

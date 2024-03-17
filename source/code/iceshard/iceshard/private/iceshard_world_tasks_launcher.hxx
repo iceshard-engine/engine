@@ -15,7 +15,7 @@ namespace ice
         void* userdata;
     };
 
-    static_assert(sizeof(IceshardEventHandler) == 32);
+    static_assert(sizeof(IceshardEventHandler) <= 32);
 
     class IceshardTraitTaskLauncher final : public ice::TraitTaskRegistry
     {

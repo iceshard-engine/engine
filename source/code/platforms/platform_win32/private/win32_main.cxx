@@ -27,6 +27,11 @@ int main(int argc, char const** argv)
         ice::UniquePtr<ice::app::State> state = app_factories.factory_state(host_alloc);
 
         ice::Result result = ice_setup(host_alloc, params, *config, *state);
+        while(result == ice::app::E_FailedApplicationSetupPending)
+        {
+            result = ice_setup(host_alloc, params, *config, *state);
+        }
+
         ICE_LOG_IF(result == false, ice::LogSeverity::Error, ice::LogTag::Core, "{}\n", result.error().description());
         ICE_ASSERT_CORE(result == true);
 

@@ -1,4 +1,4 @@
-/// Copyright 2023 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2023 - 2024, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "native_aio.hxx"
@@ -101,7 +101,7 @@ namespace ice
         return 0;
     }
 
-#elif ISP_ANDROID
+#elif ISP_ANDROID || ISP_WEBAPP
 
     struct NativeAIO
     {

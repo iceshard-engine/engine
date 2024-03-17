@@ -108,6 +108,9 @@ namespace ice::platform::android
         , _new_screen_size{ 1.f, 1.f }
         , _main_queue{ }
         , _main_thread{ }
+        , _graphics_queue{ }
+        , _graphics_scheduler{ _graphics_queue }
+        , _graphics_thread{ }
         , _app_surface{ }
     {
         ice::HeapString<> cache_path = get_cache_path(alloc, activity->clazz, activity->env);
@@ -128,18 +131,10 @@ namespace ice::platform::android
             .debug_name = "ice.main",
         };
         _main_thread = ice::create_thread(_allocator, _main_queue, tinfo);
+        _graphics_thread = ice::create_thread(_allocator, _main_queue, { .exclusive_queue = true, .debug_name = "ice.gfx" });
 
         ICE_ASSERT(global_instance == nullptr, "Only one instance of AndroidApp should ever be created!");
         global_instance = this;
-    }
-
-    auto AndroidApp::data_locations() const noexcept -> ice::Span<ice::String const>
-    {
-        static ice::String const paths[]{
-            _app_external_data,
-            _app_internal_data,
-        };
-        return paths;
     }
 
     auto AndroidApp::refresh_events() noexcept -> ice::Result
@@ -215,6 +210,15 @@ namespace ice::platform::android
         }
 
         return ice::Res::Success;
+    }
+
+    auto AndroidApp::data_locations() const noexcept -> ice::Span<ice::String const>
+    {
+        static ice::String const paths[]{
+            _app_external_data,
+            _app_internal_data,
+        };
+        return paths;
     }
 
     void AndroidApp::on_init() noexcept

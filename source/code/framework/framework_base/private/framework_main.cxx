@@ -117,6 +117,7 @@ struct ice::app::State
     ice::UniquePtr<ice::EngineStateTracker> states;
     ice::UniquePtr<ice::Engine> engine;
     ice::UniquePtr<ice::render::RenderDriver> renderer;
+    ice::render::RenderSurface* render_surface; // TODO: Make into a UniquePtr
 
     struct ResourceProviders
     {
@@ -141,11 +142,12 @@ struct ice::app::State
         , modules_alloc{ alloc, "modules" }
         , gamework_alloc{ alloc, "gamework" }
         , engine_alloc{ alloc, "engine" }
-        , thread_pool{ }
         , thread_pool_queue{ }
         , thread_pool_scheduler{ thread_pool_queue }
+        , thread_pool{ }
         , resources{ }
         , modules{ ice::create_default_module_register(modules_alloc, true) }
+        , render_surface{ }
         , providers{ }
         , platform{ .core = nullptr }
     {
@@ -181,7 +183,6 @@ struct ice::app::Runtime
 
     ice::TaskQueue main_queue;
     ice::TaskScheduler main_scheduler;
-    ice::UniquePtr<ice::EngineSchedulers> thread_schedulers;
 
     ice::UniquePtr<ice::EngineRunner> runner;
     ice::UniquePtr<ice::EngineFrame> frame;
@@ -193,7 +194,6 @@ struct ice::app::Runtime
     ice::Array<ice::input::InputEvent> input_events;
 
     ice::UniquePtr<ice::platform::WindowSurface> window_surface;
-    ice::render::RenderSurface* render_surface; // TODO: Make into a UniquePtr
     ice::render::RenderDriver* render_driver;
 
     ice::SystemClock clock;
@@ -212,14 +212,12 @@ struct ice::app::Runtime
         , runtime_alloc{ alloc, "runtime" }
         , app_alloc{ alloc, "application" }
         , main_scheduler{ main_queue }
-        , thread_schedulers{ }
         , runner{ }
         , frame{ }
         , gfx_runner{ }
         , input_tracker{ }
         , input_events{ runtime_alloc }
         , window_surface{ }
-        , render_surface{ }
     {
     }
 };
@@ -269,7 +267,24 @@ auto ice_setup(
     IPT_ZONE_SCOPED;
     using ice::operator""_uri;
 
-    ice::platform::StoragePaths* storage;
+    if (state.renderer != nullptr)
+    {
+        switch(state.renderer->state())
+        {
+            using ice::render::DriverState;
+        case DriverState::Ready:
+            ICE_LOG(ice::LogSeverity::Info, ice::LogTag::Engine, "GPU driver ready");
+            return ice::app::S_ApplicationResume;
+        case DriverState::Pending:
+            ICE_LOG(ice::LogSeverity::Info, ice::LogTag::Engine, "GPU driver pending initialization");
+            return ice::app::S_ApplicationSetupPending;
+        case DriverState::Failed:
+            ICE_LOG(ice::LogSeverity::Info, ice::LogTag::Engine, "GPU driver failed initialization");
+        }
+        return ice::app::E_FailedApplicationSetup;
+    }
+
+    ice::platform::StoragePaths* storage = nullptr;
     ice::platform::query_api(storage);
     ICE_ASSERT_CORE(storage != nullptr);
 
@@ -306,17 +321,25 @@ auto ice_setup(
     state.game->on_config(game_config);
 
     // Load resources
-    auto filesys = ice::create_resource_provider(
-        state.resources_alloc,
-        game_config.resource_dirs,
-        &state.thread_pool_scheduler
-    );
-    auto modules = ice::create_resource_provider_dlls(
-        state.resources_alloc, game_config.module_dir
+    state.resources->attach_provider(
+        ice::create_resource_provider(
+            state.resources_alloc,
+            game_config.resource_dirs,
+            ice::build::current_platform == ice::build::System::WebApp
+                ? nullptr
+                : &state.thread_pool_scheduler
+        )
     );
 
-    state.resources->attach_provider(ice::move(filesys));
-    state.resources->attach_provider(ice::move(modules));
+    // There are no modules on the webapp platform
+    if constexpr(ice::build::current_platform != ice::build::System::WebApp)
+    {
+        state.resources->attach_provider(
+            ice::create_resource_provider_dlls(
+                state.resources_alloc, game_config.module_dir
+            )
+        );
+    }
     state.resources->sync_resources();
 
     if constexpr (ice::build::current_platform == ice::build::System::Android)
@@ -372,7 +395,27 @@ auto ice_setup(
     {
         return ice::app::E_FailedApplicationSetup;
     }
-    return ice::app::S_ApplicationResume;
+
+    ice::render::SurfaceInfo surface_info{ };
+    if (ice::platform::RenderSurface& surface = *state.platform.render_surface; surface.get_surface(surface_info) == false)
+    {
+        ice::platform::RenderSurfaceParams const surface_params{
+            .driver = ice::render::RenderDriverAPI::Vulkan,
+            .dimensions = { 1600, 1080 },
+        };
+        ice::Result result = surface.create(surface_params);
+        ICE_ASSERT(
+            result == ice::S_Success,
+            "Failed to create render surface [ driver={}, dimensions={}x{} ]",
+            ice::u32(surface_params.driver), surface_params.dimensions.x, surface_params.dimensions.y
+        );
+
+        bool const valid_surface_info = surface.get_surface(surface_info);
+        ICE_ASSERT(valid_surface_info, "Failed to access surface info!");
+    }
+
+    state.render_surface = state.renderer->create_surface(surface_info);
+    return ice::app::S_ApplicationSetupPending;
 }
 
 auto ice_resume(
@@ -384,45 +427,18 @@ auto ice_resume(
     IPT_ZONE_SCOPED;
     if (runtime.is_starting)
     {
-        ice::render::SurfaceInfo surface_info{ };
-        if (ice::platform::RenderSurface& surface = *state.platform.render_surface; surface.get_surface(surface_info) == false)
-        {
-            ice::platform::RenderSurfaceParams const surface_params{
-                .driver = ice::render::RenderDriverAPI::Vulkan,
-                .dimensions = { 1600, 1080 },
-            };
-            ice::Result result = surface.create(surface_params);
-            ICE_ASSERT(
-                result == true,
-                "Failed to create render surface [ driver={}, dimensions={}x{} ]",
-                ice::u32(surface_params.driver), surface_params.dimensions.x, surface_params.dimensions.y
-            );
-
-            bool const valid_surface_info = surface.get_surface(surface_info);
-            ICE_ASSERT(valid_surface_info, "Failed to access surface info!");
-        }
-
-        runtime.thread_schedulers = ice::make_unique<ice::EngineSchedulers>(
-            runtime.alloc,
-            ice::EngineSchedulers{
+        ice::EngineRunnerCreateInfo const runner_create_info{
+            .engine = *state.engine,
+            .clock = runtime.clock,
+            .schedulers = {
                 .main = runtime.main_scheduler,
                 .tasks = state.thread_pool_scheduler,
             }
-        );
-
-        runtime.clock = ice::clock::create_clock();
-        runtime.runner = ice::create_engine_runner(
-            state.engine_alloc,
-            *state.modules,
-            ice::EngineRunnerCreateInfo{
-                .engine = *state.engine,
-                .clock = runtime.clock,
-                .schedulers = *runtime.thread_schedulers
-            }
-        );
+        };
+        runtime.runner = ice::create_engine_runner(state.engine_alloc, *state.modules, runner_create_info);
         runtime.frame = ice::wait_for(runtime.runner->aquire_frame());
+        runtime.clock = ice::clock::create_clock();
 
-        runtime.render_surface = state.renderer->create_surface(surface_info);
 
         using ice::operator|;
         using ice::operator""_sid;
@@ -437,11 +453,16 @@ auto ice_resume(
             }
         };
 
+        ice::platform::Core* core;
+        bool const query_success = ice::platform::query_api(core);
+        ICE_ASSERT_CORE(query_success);
+
         ice::gfx::GfxRunnerCreateInfo const gfx_create_info{
             .engine = *state.engine,
             .driver = *state.renderer.get(),
-            .surface = *runtime.render_surface,
+            .surface = *state.render_surface,
             .render_queues = queues,
+            .gfx_thread = core->graphics_thread()
         };
 
         runtime.gfx_runner = ice::create_gfx_runner(state.engine_alloc, *state.modules, gfx_create_info);
@@ -615,7 +636,7 @@ auto ice_suspend(
         runtime.gfx_rendergraph_runtime.reset();
         runtime.gfx_rendergraph.reset();
         runtime.gfx_runner.reset();
-        state.renderer->destroy_surface(runtime.render_surface);
+        state.renderer->destroy_surface(state.render_surface);
 
         runtime.runner.reset();
         return ice::app::S_ApplicationExit;

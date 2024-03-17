@@ -1,9 +1,15 @@
-/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2024, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "widget_imgui_allocator_tree.hxx"
 #include <ice/string/string.hxx>
 #include <imgui/imgui.h>
+
+#if ISP_WEBAPP || ISP_ANDROID
+#define IMGUI_SIZE_FMT "%lu"
+#else
+#define IMGUI_SIZE_FMT "%llu"
+#endif
 
 namespace ice::devui
 {
@@ -39,16 +45,17 @@ namespace ice::devui
                 if (shows_mibs)
                 {
                     ice::usize const mibs = current_total_allocation / 1_MiB;
-                    ice::isize const kibs = (current_total_allocation / 1_KiB) - (mibs * 1_KiB);
-                    ImGui::Text("%lu MiB %lu KiB (%lu bytes)", mibs.value, kibs.value, current_total_allocation.value);
+                    ice::usize const kibs = ((current_total_allocation / 1_KiB) - (mibs * 1_KiB)).to_usize();
+
+                    ImGui::Text(IMGUI_SIZE_FMT " MiB " IMGUI_SIZE_FMT " KiB (" IMGUI_SIZE_FMT " bytes)", mibs.value, kibs.value, current_total_allocation.value);
                 }
                 else if (shows_kibs)
                 {
-                    ImGui::Text("%lu KiB (%lu bytes)", (current_total_allocation / 1_KiB).value, current_total_allocation.value);
+                    ImGui::Text(IMGUI_SIZE_FMT " KiB (" IMGUI_SIZE_FMT " bytes)", (current_total_allocation / 1_KiB).value, current_total_allocation.value);
                 }
                 else
                 {
-                    ImGui::Text("%lu", current_total_allocation.value);
+                    ImGui::Text(IMGUI_SIZE_FMT, current_total_allocation.value);
                 }
             }
         }
@@ -148,3 +155,5 @@ namespace ice::devui
     }
 
 } // namespace ice::devui
+
+#undef IMGUI_SIZE_FMT

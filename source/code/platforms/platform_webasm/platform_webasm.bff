@@ -1,0 +1,23 @@
+/// Copyright 2023 - 2024, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
+.Project =
+[
+    .Name = 'platform_webasm'
+    .Kind = .Kind_ObjectList
+    .BaseDir = '$WorkspaceCodeDir$/platforms/platform_webasm'
+    .Group = 'Platforms'
+
+    .Requires = { 'SDK-WebAsm' }
+
+    .Public =
+    [
+        .Uses = {
+            'application'
+            'platform'
+            'utils'
+            'tasks'
+        }
+    ]
+]
+.Projects + .Project

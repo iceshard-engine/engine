@@ -24,7 +24,9 @@ namespace ice::render::vk
         ) noexcept;
         ~VulkanRenderDriver() noexcept override;
 
-        auto render_api() const noexcept -> ice::render::RenderDriverAPI override;
+        auto state() const noexcept -> ice::render::DriverState override { return DriverState::Ready; }
+
+        auto render_api() const noexcept -> ice::render::DriverAPI override;
 
         [[deprecated]]
         auto create_surface(

@@ -7,13 +7,13 @@ namespace ice
 {
 
     EngineStateTracker_Default::EngineStateTracker_Default(ice::Allocator& alloc) noexcept
-        : _available_triggers{ alloc }
+        : _subnames{ alloc }
+        , _available_triggers{ alloc }
         , _initial_states{ alloc }
         , _state_committers{ alloc }
         , _current_state_index{ alloc }
         , _current_state{ alloc }
         , _pending_states{ alloc }
-        , _subnames{ alloc }
     {
         ice::queue::reserve(_pending_states, 16);
     }
@@ -37,7 +37,7 @@ namespace ice
                 return false;
             }
 
-            EngineStateCurrent initial_state{ params.initial.graph };
+            EngineStateCurrent initial_state{ { params.initial.graph } };
             initial_state.value = params.initial.value;
             initial_state.subname = ice::StringID_Invalid;
 
@@ -59,7 +59,7 @@ namespace ice
                     continue;
                 }
 
-                EngineStateCurrent initial_state{ params.initial.graph };
+                EngineStateCurrent initial_state{ { params.initial.graph } };
                 initial_state.value = params.initial.value;
                 initial_state.subname = subname;
 
@@ -103,7 +103,7 @@ namespace ice
                 continue;
             }
 
-            EngineStateCurrent engine_state{ initial_state.graph };
+            EngineStateCurrent engine_state{ { initial_state.graph } };
             engine_state.value = initial_state.value;
             engine_state.subname = subname;
 
@@ -325,7 +325,7 @@ namespace ice
                 ICE_ASSERT_CORE(from_state.graph == trigger.from.graph);
 
                 ice::Shard trigger_shard = ice::Shard_Invalid;
-                ice::queue::for_each(_pending_states, [&, this](ice::EngineStatePending const& pending) noexcept
+                ice::queue::for_each(_pending_states, [&](ice::EngineStatePending const& pending) noexcept
                     {
                         // Not a valid 'before' trigger...
                         if (pending.trigger.to != trigger.before)

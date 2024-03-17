@@ -35,16 +35,17 @@ namespace ice::platform::android
 
         auto render_surface() noexcept -> ice::platform::RenderSurface* { return &_app_surface; }
 
+    public: // ice::platform::Core
+        auto refresh_events() noexcept -> ice::Result override;
+        auto system_events() noexcept -> ice::ShardContainer const& override { return _system_events; }
+        auto input_events() noexcept -> ice::Span<ice::input::DeviceEvent const> override { return _input_events._events; }
+        auto graphics_thread() noexcept -> ice::TaskScheduler& override;
+
     public: // ice::platform::StoragePaths
         auto data_locations() const noexcept -> ice::Span<ice::String const> override;
         auto save_location() const noexcept -> ice::String override { return _app_save_data; }
         auto cache_location() const noexcept -> ice::String override { return _app_internal_data; }
         auto dylibs_location() const noexcept -> ice::String override { return _app_modules; }
-
-    public: // ice::platform::Core
-        auto refresh_events() noexcept -> ice::Result override;
-        auto system_events() noexcept -> ice::ShardContainer const& override { return _system_events; }
-        auto input_events() noexcept -> ice::Span<ice::input::DeviceEvent const> override { return _input_events._events; }
 
     public: // ice::platform::android::AndroidAppCore
         void on_init() noexcept override;
@@ -90,6 +91,9 @@ namespace ice::platform::android
 
         ice::TaskQueue _main_queue;
         ice::UniquePtr<ice::TaskThread> _main_thread;
+        ice::TaskQueue _graphics_queue;
+        ice::TaskScheduler _graphics_scheduler;
+        ice::UniquePtr<ice::TaskThread> _graphics_thread; // TODO: Check we if we can run it on the main thread.
 
         std::atomic_uint32_t _app_state;
         std::atomic<AInputQueue*> _app_queue;

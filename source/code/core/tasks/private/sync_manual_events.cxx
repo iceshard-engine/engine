@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2024, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include <ice/sync_manual_events.hxx>
@@ -6,7 +6,10 @@
 #include <ice/os/unix.hxx>
 #include <ice/assert.hxx>
 
-#if ISP_UNIX
+#if ISP_WEBAPP
+#include <emscripten.h>
+#include <emscripten/threading.h>
+#elif ISP_UNIX
 #include <sys/syscall.h>
 #include <linux/futex.h>
 #endif
@@ -23,6 +26,9 @@ namespace ice
 
         auto futex_wait(ice::i32* user_address, ice::i32 value) noexcept -> ice::i32
         {
+#if ISP_WEBAPP
+            return emscripten_futex_wait(user_address, value, 1'000 * 1'000.0);
+#else
             return syscall(
                 SYS_futex,
                 user_address,
@@ -32,10 +38,14 @@ namespace ice
                 nullptr,
                 0
             );
+#endif
         }
 
         auto futex_wake(ice::i32* user_address, ice::i32 value) noexcept -> ice::i32
         {
+#if ISP_WEBAPP
+            return emscripten_futex_wake(user_address, value);
+#else
             return syscall(
                 SYS_futex,
                 user_address,
@@ -45,6 +55,7 @@ namespace ice
                 nullptr,
                 0
             );
+#endif
         }
     }
 #endif // #if ISP_UNIX

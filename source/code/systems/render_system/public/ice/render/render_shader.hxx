@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2024, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -17,11 +17,15 @@ namespace ice::render
     enum class ShaderStageFlags : ice::u32
     {
         None = 0x0,
+
         VertexStage = 0x0001,
         FragmentStage = 0x0002,
         GeometryStage = 0x0004,
         TesselationControlStage = 0x0008,
         TesselationEvaluationStage = 0x0010,
+
+        All = VertexStage | FragmentStage
+            | GeometryStage | TesselationControlStage | TesselationEvaluationStage
     };
 
     enum class ShaderAttribType

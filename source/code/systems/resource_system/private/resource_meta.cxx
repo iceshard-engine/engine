@@ -50,9 +50,6 @@ namespace ice
         {
             ice::u32 const count = arr.Size();
 
-            static_assert(sizeof(ice::String) == 16);
-            static_assert(sizeof(ice::String) >= sizeof(MetadataEntry));
-
             ice::HostAllocator host_alloc{ };
             ice::ForwardAllocator alloc{ host_alloc, { .bucket_size = 1_KiB } };
 

@@ -39,4 +39,4 @@ namespace ice
 } // namespace ice
 
 template<>
-constexpr ice::ShardPayloadID ice::Constant_ShardPayloadID<ice::EngineDevUI*> = ice::shard_payloadid("ice::EngineDevUI*");
+constexpr inline ice::ShardPayloadID ice::Constant_ShardPayloadID<ice::EngineDevUI*> = ice::shard_payloadid("ice::EngineDevUI*");

@@ -182,6 +182,40 @@
     .Requires = { 'MSVC-Frontend', 'ConsoleApp' }
 ]
 
+.Config_WebAsm =
+[
+    .Name = 'Config-WebAsm'
+    .Requires = { 'WebAsm' }
+    .BuildOptions = {
+        '-Wall'
+        '-Werror'
+        // We use [[deprecated]] to keep track of some old API usage without the need to fix them asap.
+        '-Wno-error=deprecated-declarations'
+        '-Wno-unused-const-variable'
+        '-Wno-unused-private-field'
+        '-Wno-switch'
+        '-std=c++20'
+        // Requires options for multithreading
+        '-pthread'
+        '-sSHARED_MEMORY=1'
+    }
+    .LinkLinkerOptions = {
+        '-pthread'
+        '-sPTHREAD_POOL_SIZE=8'
+        '-sPTHREADS_PROFILING=0'
+        '-sSHARED_MEMORY=1'
+        '-sSTACK_SIZE=65536' // 64KiB
+        // '-sSTACK_SIZE=262144' // 64KiB
+        '-sINITIAL_MEMORY=268435456' // 256MiB
+        // '-sINITIAL_MEMORY=1073741824' // 1GiB
+        '-sMALLOC=mimalloc'
+        '-sABORTING_MALLOC=1'
+        '-sUSE_WEBGPU=1'
+        '-sUSE_GLFW=3'
+        '-sEXIT_RUNTIME'
+    }
+]
+
 .Config_Debug =
 [
     .Name = 'Config-Debug'
@@ -213,6 +247,23 @@
     .BuildOptions = {
         '-Wno-deprecated-declarations'
         '-Wno-subobject-linkage'
+    }
+]
+
+.Config_Debug_WebAsm =
+[
+    .Name = 'Config-Debug-WebAsm'
+    .Requires = { 'Debug', 'SDK-WebAsm', .Kind_WindowedApp }
+    .BuildOptions = {
+        "-g"
+        "-fdebug-compilation-dir='$WorkspaceCodeDir$'"
+    }
+    .LinkLinkerOptions = {
+        "-g3"
+        // TODO: Support separate dwarf
+        // "-gseparate-dwarf=temp.debug.wasm"
+        // TODO: Decide where memory growth might be necessary
+        // "-sALLOW_MEMORY_GROWTH"
     }
 ]
 
@@ -298,11 +349,13 @@
     .Config_Unix_BinaryDll
     .Config_Unix_BinaryApp
     .Config_Unix_BinaryApp2
+    .Config_WebAsm
     .Config_GCC_Tests
     .Config_Android
     .Config_Debug
     .Config_Debug_MSVC
     .Config_Debug_GCC
+    .Config_Debug_WebAsm
     .Config_Develop
     .Config_Develop_MSVC
     .Config_Profile

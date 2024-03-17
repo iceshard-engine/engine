@@ -17,7 +17,8 @@ namespace ice::render
     {
         Win32_Window,
         UWP_Window,
-        Android_NativeWindow
+        Android_NativeWindow,
+        HTML5_DOMCanvas
     };
 
     struct SurfaceInfo
@@ -38,8 +39,9 @@ namespace ice::render
 
             struct
             {
-                void* reserved[2];
-            } wayland;
+                char const* selector;
+                void* internal;
+            } webgpu;
 
             struct
             {

@@ -13,6 +13,10 @@
 #include <stdio.h>
 #endif
 
+#if ISP_WEBAPP
+#include <emscripten.h>
+#endif
+
 namespace ice::native_file
 {
 
@@ -329,6 +333,12 @@ namespace ice::native_file
     {
         ice::native_file::File result;
         if constexpr (ice::build::current_platform == ice::build::System::Android)
+        {
+            result = ice::native_file::File{
+                open(ice::string::begin(path), translate_flags(flags))
+            };
+        }
+        else if constexpr (ice::build::current_platform == ice::build::System::WebApp)
         {
             result = ice::native_file::File{
                 open(ice::string::begin(path), translate_flags(flags))

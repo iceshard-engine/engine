@@ -1,10 +1,10 @@
-/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2024, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
 #include <ice/types.hxx>
 
-#if ICE_PROFILE
+#if ICE_PROFILE && !ISP_WEBAPP
 
     ISC_WARNING_PUSH
     ISCW_CHECK_OPERATOR_PRECEDENCE(ISCW_OP_DISABLE)

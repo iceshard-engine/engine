@@ -1,4 +1,4 @@
-/// Copyright 2023 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2023 - 2024, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "task_native_thread.hxx"
@@ -9,6 +9,10 @@
 #include <ice/string_utils.hxx>
 #include <ice/assert.hxx>
 #include <ice/sort.hxx>
+
+#if defined(__EMSCRIPTEN_PTHREADS__)
+#include <emscripten/threading.h>
+#endif
 
 namespace ice
 {
@@ -357,15 +361,19 @@ namespace ice
             int error = pthread_attr_init(&thread_attribs);
             ICE_ASSERT(error == 0, "Failed to initialize thread attributes with error: {}!", error);
 
-            error = pthread_attr_setstacksize(
-                &thread_attribs,
-                ice::max(ice::usize::base_type{PTHREAD_STACK_MIN}, info.stack_size.value)
-            );
-            ICE_ASSERT(
-                error == 0,
-                "Failed to set native-thread stack size ({}) with error: {}!",
-                info.stack_size.value, error
-            );
+            // Only change the stack size if we actually want a custom value
+            if (info.stack_size > 0_B)
+            {
+                error = pthread_attr_setstacksize(
+                    &thread_attribs,
+                    ice::max(ice::usize::base_type{PTHREAD_STACK_MIN}, info.stack_size.value)
+                );
+                ICE_ASSERT(
+                    error == 0,
+                    "Failed to set native-thread stack size ({}) with error: {}!",
+                    info.stack_size.value, error
+                );
+            }
 
             pthread_t thread_handle{};
             error = pthread_create(&thread_handle, &thread_attribs, &native_thread_routine, &native_thread);
@@ -378,7 +386,11 @@ namespace ice
             {
                 if (ice::string::any(info.debug_name))
                 {
+#if ISP_WEBAPP
+                    emscripten_set_thread_name(thread_handle, ice::string::begin(info.debug_name));
+#else
                     error = pthread_setname_np(thread_handle, ice::string::begin(info.debug_name));
+#endif
                     ICE_ASSERT(error == 0, "Failed to set name for native thread with error: {}!", error);
                 }
             }

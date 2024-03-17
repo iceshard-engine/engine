@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2024, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "vk_queue.hxx"
@@ -74,7 +74,7 @@ namespace ice::render::vk
 
     void VulkanQueue::submit(
         ice::Span<ice::render::CommandBuffer const> buffers,
-        ice::render::RenderFence const* fence
+        ice::render::RenderFence* fence
     ) noexcept
     {
         CommandBuffer const* buffers_ptr = ice::span::begin(buffers);

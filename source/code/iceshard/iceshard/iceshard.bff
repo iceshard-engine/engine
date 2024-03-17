@@ -1,4 +1,4 @@
-/// Copyright 2021 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2021 - 2024, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 .Project =
@@ -17,5 +17,15 @@
             'engine'
         }
     ]
+
+    .Rule_Monolythic =
+    [
+        .Name = 'Monolythic'
+        .Requires = { 'Monolythic' }
+        .Kind = .Kind_ObjectList
+    ]
+    .Rules = {
+        .Rule_Monolythic
+    }
 ]
 .Projects + .Project

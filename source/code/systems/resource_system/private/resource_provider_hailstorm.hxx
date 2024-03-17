@@ -178,8 +178,8 @@ namespace ice
             // We might actually have the block still allocated even though all references where removed at some point.
             if (_memory.location == nullptr)
             {
-                ice::Memory const res_memory = _allocator.allocate({ { _chunk.size_origin }, (ice::ualign) _chunk.align });
-                ice::AsyncReadFileRef request{ nativeio, _file, res_memory, { _chunk.size }, { _chunk.offset } };
+                ice::Memory const res_memory = _allocator.allocate({ { size_t(_chunk.size_origin) }, (ice::ualign) _chunk.align });
+                ice::AsyncReadFileRef request{ nativeio, _file, res_memory, { size_t(_chunk.size) }, { size_t(_chunk.offset) } };
                 ice::AsyncReadFileRef::Result result = co_await request;
 
                 // Clear memory if failed to load the file chunk
@@ -348,7 +348,7 @@ namespace ice
                     { &base_header, ice::size_of<HailstormHeaderBase>, ice::align_of<HailstormHeaderBase> }
                 );
 
-                _header_memory = _allocator.allocate({ { base_header.header_size }, ice::align_of<v1::HailstormHeader> });
+                _header_memory = _allocator.allocate({ { size_t(base_header.header_size) }, ice::align_of<v1::HailstormHeader> });
                 ice::native_file::read_file(
                     _hspack_file,
                     0_B,
@@ -372,7 +372,7 @@ namespace ice
                 _paths_memory = _allocator.allocate(ice::usize{ size_extended_paths });
                 ice::native_file::read_file(
                     _hspack_file,
-                    { _pack.header.header_size }, // Here paths data start
+                    { size_t(_pack.header.header_size) }, // Here paths data start
                     { _pack.paths.size },
                     _paths_memory
                 );
@@ -396,6 +396,7 @@ namespace ice
                 _pack.paths_data = { _paths_memory.location, _paths_memory.size.value, (size_t)_paths_memory.alignment };
 
                 // Reopen as async
+                _hspack_file.close();
                 _hspack_file = ice::native_file::open_file(
                     _hspack_path,
                     FileOpenFlags::Exclusive | FileOpenFlags::Asynchronous

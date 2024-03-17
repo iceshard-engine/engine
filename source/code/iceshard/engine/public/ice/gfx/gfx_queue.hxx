@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2024, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -25,7 +25,7 @@ namespace ice::gfx
 
         virtual void submit_command_buffers(
             ice::Span<ice::render::CommandBuffer const> buffers,
-            ice::render::RenderFence const* fence
+            ice::render::RenderFence* fence
         ) noexcept = 0;
 
         virtual bool presenting() const noexcept = 0;

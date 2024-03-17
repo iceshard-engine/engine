@@ -79,6 +79,8 @@ namespace ice::gfx
 
             ice::i32 image_format;
             ice::vec2i size;
+
+            [[maybe_unused]]
             bool valid_data = ice::meta_read_int32(meta, "texture.format"_sid, image_format);
             valid_data &= ice::meta_read_int32(meta, "texture.size.x"_sid, size.x);
             valid_data &= ice::meta_read_int32(meta, "texture.size.y"_sid, size.y);

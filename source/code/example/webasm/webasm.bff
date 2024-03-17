@@ -1,0 +1,43 @@
+/// Copyright 2022 - 2024, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
+.Project =
+[
+    .Name = 'webasm'
+    .Kind = .Kind_WindowedApp // Introduce just 'App' #implementation dependant
+    .Group = 'Tests'
+
+    .BaseDir = '$WorkspaceCodeDir$/example/webasm'
+    .Requires = { 'SDK-WebAsm', 'Monolythic' }
+
+    .Deploy = false
+    .CopyModules = false
+
+    // .Emscripten =
+    // [
+    //     .ShellTemplate = 'shell/template.html'
+    // ]
+
+    .Private =
+    [
+        // Disable linking the Dynamic library with objects
+        // IceShard makes use of regular linking to provide default implementations implicitly.
+        .LinkerLinkObjects = false
+
+        .LinkOptions = {
+            ; Allows us to customize the shell
+            ; '--shell-file=$BaseDir$/shell/template.html'
+            '--preload-file $WorkspaceRoot$/source/data@/'
+        }
+
+        .Uses = {
+            'platform_webasm'
+            'framework_base'
+            ; Direct link modules in monolythic apps
+            'iceshard'
+            'imgui_module'
+            'webgpu_renderer'
+        }
+    ]
+]
+.Projects + .Project

@@ -138,7 +138,7 @@ namespace ice
         OVERLAPPED* overlapped
     ) noexcept -> FileRequest*;
 
-#elif ISP_ANDROID
+#elif ISP_ANDROID || ISP_WEBAPP
 
     template<typename FileHandleType>
     struct AsyncReadRequestBase : ice::TaskAwaitableBase

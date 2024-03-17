@@ -49,6 +49,7 @@ namespace ice::app
     static constexpr ice::ErrorCode S_ApplicationResume{ "S.0101:App:Requested 'Resume' stage" };
     static constexpr ice::ErrorCode S_ApplicationUpdate{ "S.0102:App:Requested 'Update' stage" };
     static constexpr ice::ErrorCode S_ApplicationSuspend{ "S.0103:App:Requested 'Suspend' stage" };
+    static constexpr ice::ErrorCode S_ApplicationSetupPending{ "S.0104:App:Requested 'Setup' stage until setup finished." };
 
     static constexpr ice::ErrorCode E_FailedApplicationSetup{ "E.0100:App:Failed application 'Setup' stage" };
     static constexpr ice::ErrorCode E_FailedApplicationResume{ "E.0101:App:Failed application 'Resume' stage" };

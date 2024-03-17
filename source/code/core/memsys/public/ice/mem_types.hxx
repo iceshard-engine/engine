@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2024, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -27,7 +27,7 @@ namespace ice
     struct usize
     {
         using TypeTag = ice::StrongNumeric;
-        using base_type = std::conditional_t<ice::build::is_x64, ice::u64, ice::u32>;
+        using base_type = std::size_t;
 
         constexpr operator isize() const noexcept;
 

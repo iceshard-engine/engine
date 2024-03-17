@@ -18,11 +18,16 @@ namespace ice::platform::win32::sdl2
         , _system_events{ _alloc }
         , _input_events{ _alloc }
         , _render_surface{ }
+        , _gfx_queue{ }
+        , _gfx_scheduler{ _gfx_queue }
+        , _gfx_thread{ }
     {
         ice::shards::reserve(_system_events, 32);
         ice::array::reserve(_input_events._events, 512);
 
         SDL_InitSubSystem(SDL_INIT_EVENTS);
+
+        _gfx_thread = ice::create_thread(_alloc, _gfx_queue, { .exclusive_queue = true, .debug_name = "ice.gfx" });
 
         using namespace ice::input;
     }

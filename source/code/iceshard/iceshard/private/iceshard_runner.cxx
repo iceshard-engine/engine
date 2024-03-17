@@ -7,6 +7,7 @@
 #include "iceshard_world.hxx"
 
 #include <ice/mem_allocator_stack.hxx>
+#include <ice/engine_state_tracker.hxx>
 #include <ice/engine_module.hxx>
 #include <ice/engine_shards.hxx>
 #include <ice/engine_devui.hxx>

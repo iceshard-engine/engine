@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2024, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "log_buffer.hxx"
@@ -29,8 +29,8 @@ namespace ice::detail
 
     void LogMessageBuffer::grow(size_t min_size) noexcept
     {
-        ice::u64 const old_capacity = { this->capacity() };
-        ice::u64 const new_capacity = ice::max(old_capacity + old_capacity / 2, min_size);
+        ice::usize::base_type const old_capacity = this->capacity();
+        ice::usize::base_type const new_capacity = ice::max(old_capacity + old_capacity / 2, min_size);
 
         void* const old_data = this->data();
         char* const new_data = _allocator.allocate<char>(new_capacity);

@@ -77,8 +77,7 @@ namespace ice::gfx
         ice::u8 _flow_id;
         ice::ScopedTaskContainer _tasks_container;
         ice::TaskQueue _queue, _queue_transfer, _queue_end;
-        ice::TaskScheduler _scheduler;
-        ice::UniquePtr<ice::TaskThread> _thread;
+        ice::TaskScheduler& _scheduler;
         ice::render::RenderFence* _present_fence;
 
         ice::UniquePtr<ice::gfx::GfxStageRegistry> _stages;

@@ -19,5 +19,15 @@
             'utils'
         }
     ]
+
+    .Rule_Monolythic =
+    [
+        .Name = 'Monolythic'
+        .Requires = { 'Monolythic' }
+        .Kind = .Kind_ObjectList
+    ]
+    .Rules = {
+        .Rule_Monolythic
+    }
 ]
 .Projects + .Project

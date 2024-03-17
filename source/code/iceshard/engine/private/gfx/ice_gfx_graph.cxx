@@ -43,7 +43,7 @@ namespace ice::gfx
     {
         ICE_ASSERT_CORE(type != GfxResourceType::Invalid);
 
-        ice::uptr const typeval = ice::u8(type);
+        ice::u64 const typeval = ice::u8(type);
         ice::u32 const id = _resources_ids[0]++;
         return { (typeval << 32) + id };
     }

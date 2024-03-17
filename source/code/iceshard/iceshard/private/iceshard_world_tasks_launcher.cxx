@@ -4,6 +4,7 @@
 #include "iceshard_world.hxx"
 #include <ice/engine_frame.hxx>
 #include <ice/engine_shards.hxx>
+#include <ice/engine_runner.hxx>
 #include <ice/profiler.hxx>
 #include <ice/mem_allocator_stack.hxx>
 #include <ice/task_scoped_container.hxx>

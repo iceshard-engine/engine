@@ -1,0 +1,28 @@
+/// Copyright 2021 - 2024, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
+.Project =
+[
+    .Name = 'webgpu_renderer'
+    .Kind = .Kind_ObjectList
+    .Group = 'Modules'
+
+    .BaseDir = '$WorkspaceCodeDir$/modules/webgpu_renderer'
+    .Requires = { 'SDK-WebAsm' }
+
+    .Private =
+    [
+        .Uses = {
+            'platform'
+            'render_system'
+        }
+    ]
+
+    .Public =
+    [
+        .Libs = {
+            'webgpu'
+        }
+    ]
+]
+.Projects + .Project

@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2024, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -13,8 +13,8 @@ namespace ice
     using utf32 = char32_t;
     using wchar = wchar_t;
 
-    using f32 = std::float_t;
-    using f64 = std::double_t;
+    using f32 = float;
+    using f64 = double;
 
     using i8 = std::int8_t;
     using i16 = std::int16_t;
@@ -27,5 +27,9 @@ namespace ice
     using u64 = std::uint64_t;
 
     using uptr = std::uintptr_t;
+
+    // Note: Added these checks, because the previous definition using std::float_t resulted in f32 being a 'long double' type.
+    static_assert(sizeof(f32) == 4, "We expect 'float' types to be 4 bytes.");
+    static_assert(sizeof(f64) == 8, "We expect 'double' types to be 8 bytes.");
 
 } // namespace ice

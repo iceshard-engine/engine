@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2024, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -13,7 +13,8 @@ namespace ice::build
         UWP,
         Windows,
         Android,
-        Unix
+        Unix,
+        WebApp
     };
 
     enum class ArchFamily : ice::u8
@@ -21,13 +22,15 @@ namespace ice::build
         Unknown,
         X86,
         ARM,
+        WebAsm,
     };
 
     enum class Architecture : ice::u8
     {
         x86,
         x86_x64,
-        Arm64
+        Arm64,
+        WebAsm32
     };
 
     enum class Compiler : ice::u8
@@ -120,6 +123,13 @@ namespace ice::build
         .compiler = Compiler::GCC
     };
 
+    static constexpr Platform platform_webapp_webasm32_clang = {
+        .name = "webapp-webasm32-clang",
+        .system = System::WebApp,
+        .architecture = Architecture::WebAsm32,
+        .compiler = Compiler::Clang
+    };
+
     static constexpr Platform all_platforms[] = {
         platform_uwp_x64_msvc,
         platform_windows_x64_msvc,
@@ -128,6 +138,7 @@ namespace ice::build
         platform_android_x64_clang,
         platform_unix_x64_clang,
         platform_unix_x64_gcc,
+        platform_webapp_webasm32_clang
     };
 
 
@@ -143,6 +154,7 @@ namespace ice::build
 #   define ISP_UNIX 0
 #   define ISP_WINDOWS 1
 #   define ISP_ANDROID 0
+#   define ISP_WEBAPP 0
 #   if defined(__clang__)
 #       define ISP_COMPILER_MSVC 0
 #       define ISP_COMPILER_CLANG __clang_major__
@@ -158,10 +170,12 @@ namespace ice::build
 #   endif
 #   define ISP_ARCHFAM_X86 1
 #   define ISP_ARCHFAM_ARM 0
+#   define ISP_ARCHFAM_WEBASM 0
 #elif defined(__ANDROID__)
 #   define ISP_UNIX 1
 #   define ISP_WINDOWS 0
 #   define ISP_ANDROID __ANDROID_API__
+#   define ISP_WEBAPP 0
 #   define ISP_COMPILER_MSVC 0
 #   define ISP_COMPILER_CLANG __clang_major__
 #   define ISP_COMPILER_GCC 0
@@ -169,43 +183,65 @@ namespace ice::build
 #   if defined(__aarch64__) || defined(_M_ARM64)
 #       define ISP_ARCHFAM_X86 0
 #       define ISP_ARCHFAM_ARM 1
+#       define ISP_ARCHFAM_WEBASM 0
         static constexpr Platform current_platform = platform_android_arm64_clang;
 #   else
 #       define ISP_ARCHFAM_X86 1
 #       define ISP_ARCHFAM_ARM 0
+#       define ISP_ARCHFAM_WEBASM 0
         static constexpr Platform current_platform = platform_android_x64_clang;
 #   endif
+#elif defined(EMSCRIPTEN)
+#   define ISP_UNIX 1
+#   define ISP_WINDOWS 0
+#   define ISP_ANDROID 0
+#   define ISP_WEBAPP 1
+#   define ISP_COMPILER_MSVC 0
+#   define ISP_COMPILER_CLANG __clang_major__
+#   define ISP_COMPILER_GCC 0
+
+#   define ISP_ARCHFAM_X86 0
+#   define ISP_ARCHFAM_ARM 0
+#   define ISP_ARCHFAM_WEBASM 1
+
+    static constexpr Platform current_platform = platform_webapp_webasm32_clang;
 #elif __unix__ && !__clang__
 #   define ISP_UNIX 1
 #   define ISP_WINDOWS 0
 #   define ISP_ANDROID 0
+#   define ISP_WEBAPP 0
 #   define ISP_COMPILER_MSVC 0
 #   define ISP_COMPILER_CLANG 0
 #   define ISP_COMPILER_GCC 1
 #   define ISP_ARCHFAM_X86 1
 #   define ISP_ARCHFAM_ARM 0
+#   define ISP_ARCHFAM_WEBASM 0
 
     static constexpr Platform current_platform = platform_unix_x64_gcc;
 #elif __unix__ && __clang__
 #   define ISP_UNIX 1
 #   define ISP_WINDOWS 0
 #   define ISP_ANDROID 0
+#   define ISP_WEBAPP 0
 #   define ISP_COMPILER_MSVC 0
 #   define ISP_COMPILER_CLANG __clang_major__
 #   define ISP_COMPILER_GCC 0
 #   define ISP_ARCHFAM_X86 1
 #   define ISP_ARCHFAM_ARM 0
+#   define ISP_ARCHFAM_WEBASM 0
 
     static constexpr Platform current_platform = platform_unix_x64_clang;
 #else
 #   define ISP_UNIX 0
 #   define ISP_WINDOWS 0
 #   define ISP_ANDROID 0
+#   define ISP_WEBAPP 0
 #   define ISP_COMPILER_MSVC 0
 #   define ISP_COMPILER_CLANG 0
 #   define ISP_COMPILER_GCC 0
 #   define ISP_ARCHFAM_X86 0
 #   define ISP_ARCHFAM_ARM 0
+#   define ISP_ARCHFAM_WEBASM 0
 
     static_assert(false, "Unknow platform!");
 #endif

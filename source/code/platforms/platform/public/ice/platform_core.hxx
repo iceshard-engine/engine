@@ -1,10 +1,11 @@
-/// Copyright 2023 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2023 - 2024, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
 #include <ice/platform.hxx>
 #include <ice/input/device_event.hxx>
 #include <ice/shard_container.hxx>
+#include <ice/task_scheduler.hxx>
 
 namespace ice::platform
 {
@@ -15,6 +16,8 @@ namespace ice::platform
 
         virtual auto system_events() noexcept -> ice::ShardContainer const& = 0;
         virtual auto input_events() noexcept -> ice::Span<ice::input::DeviceEvent const> = 0;
+
+        virtual auto graphics_thread() noexcept -> ice::TaskScheduler& = 0;
     };
 
     template<>

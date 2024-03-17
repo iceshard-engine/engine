@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2024, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #once
@@ -23,6 +23,7 @@
 #include "platforms/platform/platform.bff"
 #include "platforms/platform_win32/platform_win32.bff"
 #include "platforms/platform_android/platform_android.bff"
+#include "platforms/platform_webasm/platform_webasm.bff"
 
 #include "iceshard/engine/engine.bff"
 #include "iceshard/devui/devui.bff"
@@ -31,6 +32,7 @@
 #include "modules/imgui_module/imgui_module.bff"
 #include "modules/iceshard_pipelines/iceshard_pipelines.bff"
 #include "modules/vulkan_renderer/vulkan_renderer.bff"
+#include "modules/webgpu_renderer/webgpu_renderer.bff"
 
 #include "framework/framework_base/framework_base.bff"
 
@@ -44,6 +46,7 @@
 #include "systems/resource_system/resource_system_tests.bff"
 
 #include "example/android/simple/simple.bff"
+#include "example/webasm/webasm.bff"
 
 #include "tools/tool_base/tool_base.bff"
 #include "tools/asset_compiler/asset_compiler.bff"

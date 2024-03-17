@@ -1,7 +1,6 @@
 /// Copyright 2024 - 2024, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
-#pragma once
 #include "iceshard_gfx_image_storage_trait.hxx"
 #include "iceshard_gfx_shader_storage_trait.hxx"
 #include <ice/world/world_trait_module.hxx>
@@ -35,7 +34,7 @@ namespace ice::gfx
             return negotiator.register_api(v1_api);
         }
 
-        IS_WORKAROUND_MODULE_INITIALIZATION(TraitModule_GfxShaderStorage);
+        IS_WORKAROUND_MODULE_INITIALIZATION(IceshardModule_GfxTraits);
     };
 
 } // namespace ice::gfx
