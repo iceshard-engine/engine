@@ -25,6 +25,11 @@
 #   define IPT_ZONE_TEXT( txt, size ) ZoneText( txt, size )
 #   define IPT_ZONE_TEXT_STR( str ) IPT_ZONE_TEXT( ice::string::begin(str), ice::string::size(str) )
 
+#   define IPT_ALLOC( ptr, size ) TracyAlloc( ptr, size )
+#   define IPT_DEALLOC( ptr ) TracyFree( ptr )
+#   define IPT_ALLOC_POOL( ptr, size, name ) TracyAllocN( ptr, size, ice::string::begin(name) )
+#   define IPT_DEALLOC_POOL( ptr, name ) TracyFreeN( ptr, ice::string::begin(name) )
+
 #   define IPT_MESSAGE( txt ) TracyMessage( txt, ice::count(txt) )
 
 #else // #if ICE_PROFILE
@@ -38,6 +43,11 @@
 
 #   define IPT_ZONE_TEXT( txt, size )
 #   define IPT_ZONE_TEXT_STR( str )
+
+#   define IPT_ALLOC( ptr, size )
+#   define IPT_DEALLOC( ptr )
+#   define IPT_ALLOC_POOL( ptr, size, name )
+#   define IPT_DEALLOC_POOL( ptr, name )
 
 #   define IPT_MESSAGE( txt )
 

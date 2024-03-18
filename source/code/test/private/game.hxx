@@ -26,6 +26,7 @@ public:
 
 private:
     ice::Allocator& _allocator;
+    ice::ProxyAllocator _tasks_alloc;
 
     ice::UniquePtr<ice::gfx::GfxGraph> _graph;
     ice::UniquePtr<ice::gfx::GfxGraphRuntime> _graph_runtime;
