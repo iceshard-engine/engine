@@ -162,6 +162,11 @@ namespace ice::gfx
     {
         render::RenderDevice& device = _context.device();
 
+        for (IceshardGfxGraphStages::Entry* entry : _stages._stages)
+        {
+            _allocator.destroy(entry);
+        }
+
         for (ice::render::Framebuffer framebuffer : _framebuffers)
         {
             device.destroy_framebuffer(framebuffer);
@@ -304,10 +309,6 @@ namespace ice::gfx
                 fence.wait(100'000'000);
             }
 
-
-            // Collect profiling zones
-            IPR_COLLECT_ZONES( device.get_commands(), command_buffer );
-
             IPT_ZONE_SCOPED_NAMED("gfx_present");
             _context.present(_swapchain.current_image_index());
             return true;
@@ -325,6 +326,9 @@ namespace ice::gfx
         {
             IPT_ZONE_SCOPED_NAMED("gfx_begin");
             api.begin(cmds);
+
+            // Collect profiling zones
+            IPR_COLLECT_ZONES(api, cmds);
         }
         bool first_skipped = false;
 
