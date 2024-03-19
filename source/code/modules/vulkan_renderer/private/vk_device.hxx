@@ -136,6 +136,16 @@ namespace ice::render::vk
             ice::Data data,
             ice::u32 offset
         ) noexcept override;
+
+#if IPT_ENABLED
+        auto profiling_zone(
+            ice::render::CommandBuffer cmds,
+            const tracy::SourceLocationData* srcloc,
+            ice::String name
+        ) noexcept -> ice::render::detail::ProfilingZone override;
+
+        void profiling_collect_zones(ice::render::CommandBuffer cmds) noexcept override;
+#endif
     };
 
     class VulkanRenderDevice final : public ice::render::RenderDevice
@@ -253,6 +263,7 @@ namespace ice::render::vk
 
         auto create_queue(
             ice::render::QueueID queue_id,
+            ice::render::QueueFlags flags,
             ice::u32 queue_index,
             ice::u32 command_pools
         ) const noexcept -> ice::render::RenderQueue* override;

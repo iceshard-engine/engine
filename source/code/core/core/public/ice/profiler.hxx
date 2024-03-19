@@ -6,6 +6,8 @@
 
 #if ICE_PROFILE && !ISP_WEBAPP
 
+#   define IPT_ENABLED 1
+
     ISC_WARNING_PUSH
     ISCW_CHECK_OPERATOR_PRECEDENCE(ISCW_OP_DISABLE)
 #   define TRACY_ENABLE
@@ -33,6 +35,8 @@
 #   define IPT_MESSAGE( txt ) TracyMessage( txt, ice::count(txt) )
 
 #else // #if ICE_PROFILE
+
+#   define IPT_ENABLED 0
 
 #   define IPT_FRAME_MARK
 #   define IPT_FRAME_MARK_NAMED(...)

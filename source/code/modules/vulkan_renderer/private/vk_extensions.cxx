@@ -22,6 +22,7 @@ namespace ice::render::vk
         { ExtensionTarget::DeviceExtension, Extension::VkD_DedicatedAllocation, 0, VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME },
         { ExtensionTarget::DeviceExtension, Extension::VkD_MemoryBudget, 0, VK_EXT_MEMORY_BUDGET_EXTENSION_NAME },
         { ExtensionTarget::DeviceExtension, Extension::VkD_GetMemoryRequirements2, 0, VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME },
+        { ExtensionTarget::DeviceExtension, Extension::VkD_CalibratedTimestamps, 0, VK_EXT_CALIBRATED_TIMESTAMPS_EXTENSION_NAME },
         // Dependent extensions, only returns flags if the required extensions where found.
         { ExtensionTarget::VmaExtension, Extension::Vma_DedicatedAllocation, VMA_ALLOCATOR_CREATE_KHR_DEDICATED_ALLOCATION_BIT, "" },
         { ExtensionTarget::VmaExtension, Extension::Vma_MemoryBudget, VMA_ALLOCATOR_CREATE_EXT_MEMORY_BUDGET_BIT, "" },

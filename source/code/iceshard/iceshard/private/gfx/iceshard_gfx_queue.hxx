@@ -24,7 +24,7 @@ namespace ice::gfx
             ice::render::QueueFlags const flags,
             ice::u32 pool_index
         ) noexcept;
-        ~IceGfxQueue() noexcept = default;
+        ~IceGfxQueue() noexcept;
 
         auto name() const noexcept -> ice::StringID_Arg;
         auto queue_flags() const noexcept -> ice::render::QueueFlags;

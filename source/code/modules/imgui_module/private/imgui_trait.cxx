@@ -452,6 +452,8 @@ namespace ice::devui
 
         ImGuiIO& _io = ImGui::GetIO();
 
+        IPR_ZONE( api, cmds, "ImGUI" );
+
         // Avoid rendering when minimized, scale coordinates for retina displays (screen coordinates != framebuffer coordinates)
         int fb_width = static_cast<int>(_io.DisplaySize.x * _io.DisplayFramebufferScale.x);
         int fb_height = static_cast<int>(_io.DisplaySize.y * _io.DisplayFramebufferScale.y);

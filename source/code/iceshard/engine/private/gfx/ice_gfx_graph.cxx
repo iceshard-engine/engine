@@ -301,9 +301,12 @@ namespace ice::gfx
             {
                 IPT_ZONE_SCOPED_NAMED("gfx_gpu_work");
                 queue->submit_command_buffers({ &command_buffer, 1 }, &fence);
+                fence.wait(100'000'000);
             }
 
-            fence.wait(100'000'000);
+
+            // Collect profiling zones
+            IPR_COLLECT_ZONES( device.get_commands(), command_buffer );
 
             IPT_ZONE_SCOPED_NAMED("gfx_present");
             _context.present(_swapchain.current_image_index());
