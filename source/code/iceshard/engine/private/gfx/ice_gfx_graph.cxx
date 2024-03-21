@@ -123,15 +123,15 @@ namespace ice::gfx
         ice::gfx::GfxContext& context,
         ice::render::RenderSwapchain const& swapchain,
         ice::render::Renderpass renderpass,
-        ice::Array<GfxGraphSnapshot> GfxGraphSnapshots,
+        ice::Array<GfxGraphSnapshot> graph_snapshots,
         ice::Array<GfxResource> resources,
         ice::gfx::IceshardGfxGraphStages stages
     ) noexcept
         : GfxGraphRuntime{}
-        , _allocator{ alloc }
+        , _allocator{ alloc, "gfx-graph-runtime" }
         , _context{ context }
         , _swapchain{ swapchain }
-        , _snapshots{ ice::move(GfxGraphSnapshots) }
+        , _snapshots{ ice::move(graph_snapshots) }
         , _resources{ ice::move(resources) }
         , _framebuffer_images{ _allocator }
         , _framebuffers{ _allocator }
