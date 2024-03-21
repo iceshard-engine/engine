@@ -7,7 +7,7 @@ namespace ice
 {
 
     HostAllocator::HostAllocator(std::source_location src_loc) noexcept
-        : Allocator{ src_loc }
+        : Allocator{ src_loc, "Host" }
     {
     }
 

@@ -143,6 +143,11 @@ namespace ice
     {
     }
 
+    AllocatorBase<true>::AllocatorBase(std::source_location const& src_loc, std::string_view name) noexcept
+        : AllocatorDebugInfo{ src_loc, name }
+    {
+    }
+
     AllocatorBase<true>::AllocatorBase(std::source_location const& src_loc, AllocatorBase& parent) noexcept
         : AllocatorDebugInfo{ src_loc, src_loc.function_name(), parent }
     {
