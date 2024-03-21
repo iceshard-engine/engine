@@ -28,8 +28,7 @@ namespace ice::devui
             }
 
             ImGui::TableNextRow();
-
-            ImGui::TableSetColumnIndex(0);
+            ImGui::TableNextColumn();
 
             ImGuiTreeNodeFlags node_flags = ImGuiTreeNodeFlags_SpanAllColumns;
             if (child_alloc == nullptr)
@@ -39,17 +38,19 @@ namespace ice::devui
 
             bool const open = ImGui::TreeNodeEx(&allocator, node_flags, "%s", alloc_name.data());
 
-            // Parent
-            if (ImGui::TableSetColumnIndex(1))
+            if (ImGui::TableNextColumn())
             {
-                ice::ucount const total_count = allocator.allocation_total_count();
-                char const* const format = total_count == Allocator::CountNotTracked
-                    ? "- not tracked -" : "%d";
-
-                ImGui::Text(format, total_count);
+                ice::ucount const current_count = allocator.allocation_count();
+                ImGui::Text(current_count == Allocator::CountNotTracked ? "- not tracked -" : "%d", current_count);
             }
 
-            if (ImGui::TableSetColumnIndex(2))
+            if (ImGui::TableNextColumn())
+            {
+                ice::ucount const total_count = allocator.allocation_total_count();
+                ImGui::Text(total_count == Allocator::CountNotTracked ? "- not tracked -" : "%d", total_count);
+            }
+
+            if (ImGui::TableNextColumn())
             {
                 ice::usize const size_allocated = allocator.allocation_size_inuse();
                 if (size_allocated == Allocator::SizeNotTracked)
@@ -79,12 +80,12 @@ namespace ice::devui
                 }
             }
 
-            if (ImGui::TableSetColumnIndex(3))
+            if (ImGui::TableNextColumn())
             {
                 ImGui::TextUnformatted(allocator.location().function_name());
             }
 
-            if (ImGui::TableSetColumnIndex(4))
+            if (ImGui::TableNextColumn())
             {
                 ImGui::Text("%s(%u)", allocator.location().file_name(), allocator.location().line());
             }
@@ -138,11 +139,12 @@ namespace ice::devui
             | ImGuiTableFlags_BordersV
             | ImGuiTableFlags_RowBg;
 
-        if (ImGui::BeginTable("Allocators", 5, flags))
+        if (ImGui::BeginTable("Allocators", 6, flags))
         {
             ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_NoHide);
+            ImGui::TableSetupColumn("Count (current)");
             ImGui::TableSetupColumn("Count (total)");
-            ImGui::TableSetupColumn("Size (current)");
+            ImGui::TableSetupColumn("Current Size");
             ImGui::TableSetupColumn("Function", ImGuiTableColumnFlags_DefaultHide);
             ImGui::TableSetupColumn("Location", ImGuiTableColumnFlags_DefaultHide);
             ImGui::TableHeadersRow();
