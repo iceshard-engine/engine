@@ -314,6 +314,15 @@ namespace ice
         {
             ice::NativeTaskThread* const thread_obj = reinterpret_cast<ice::NativeTaskThread*>(userdata);
             ice::TaskThreadInfo const& thread_info = thread_obj->info();
+
+#if ISP_WEBAPP
+            // For web apps we can only set thread names on their respective thread context.
+            if constexpr (ice::build::is_release == false)
+            {
+                emscripten_set_thread_name(pthread_self(), ice::string::begin(thread_info.debug_name));
+            }
+#endif
+
             ice::ThreadRuntime& runtime = thread_obj->runtime();
 
             ICE_ASSERT(
@@ -382,15 +391,11 @@ namespace ice
             error = pthread_attr_destroy(&thread_attribs);
             ICE_ASSERT(error == 0, "Failed to destroy thread attributes with error: {}!", error);
 
-            if constexpr (ice::build::is_release == false)
+            if constexpr (ice::build::is_release == false && ice::build::is_webapp == false)
             {
                 if (ice::string::any(info.debug_name))
                 {
-#if ISP_WEBAPP
-                    emscripten_set_thread_name(thread_handle, ice::string::begin(info.debug_name));
-#else
                     error = pthread_setname_np(thread_handle, ice::string::begin(info.debug_name));
-#endif
                     ICE_ASSERT(error == 0, "Failed to set name for native thread with error: {}!", error);
                 }
             }
