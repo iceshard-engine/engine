@@ -116,9 +116,19 @@ namespace ice
             ice::queue::clear(*this);
             ice::queue::reserve(*this, other._capacity);
 
-            _data = other._data;
+            if (other._count > 0)
+            {
+                if constexpr (Logic == ContainerLogic::Complex)
+                {
+                    ice::queue::detail::copy_items_to_new_location(ice::queue::memory(*this), other);
+                }
+                else
+                {
+                    ice::queue::detail::copy_memory_to_new_location(ice::queue::memory(*this), other);
+                }
+            }
+
             _count = other._count;
-            _offset = other._offset;
         }
         return *this;
     }
@@ -191,7 +201,7 @@ namespace ice
         }
 
         template<typename Type>
-        inline void move_items_to_new_location(ice::Memory dest, ice::Queue<Type, ContainerLogic::Complex> const& queue) noexcept
+        inline void move_items_to_new_location(ice::Memory dest, ice::Queue<Type, ContainerLogic::Complex>& queue) noexcept
         {
             ice::ucount const start_idx = queue._offset;
             ice::ucount const head_count = queue._capacity - start_idx;
@@ -722,4 +732,3 @@ namespace ice
     } // namespace queue
 
 } // namespace ice
-
