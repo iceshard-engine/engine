@@ -12,7 +12,7 @@ namespace ice
 {
 
     using TraitFactoryFn = auto(ice::Allocator& alloc, void* userdata) noexcept -> ice::UniquePtr<ice::Trait>;
-    using TraitTypeRegisterFn = void(ice::Allocator& alloc) noexcept;
+    using TraitTypeRegisterFn = bool(ice::Allocator& alloc, ice::EngineStateTracker& engine) noexcept;
     using TraitTypeUnregisterFn = void(ice::Allocator& alloc) noexcept;
 
     struct TraitDescriptor

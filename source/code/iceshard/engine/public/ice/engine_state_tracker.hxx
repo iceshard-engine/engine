@@ -11,7 +11,7 @@ namespace ice
     struct EngineStateRegisterParams
     {
         ice::EngineState initial;
-        ice::EngineStateCommitter* commiter = nullptr;
+        ice::EngineStateCommitter* committer = nullptr;
         bool enable_subname_states = false;
     };
 

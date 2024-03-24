@@ -89,7 +89,8 @@ namespace ice
 
                         // We delete the detached coroutine here, since this would be normaly done when 'await_ready == true' after resuming
                         //  from the final suspension point. Since we are suspending, but we never resume again we just delete it here.
-                        coro.destroy();
+                        // TODO: Run more tests that this is no longer needed
+                        // coro.destroy();
 
                         // Return the continuation
                         return continuation;
@@ -140,13 +141,16 @@ namespace ice
                 inline auto await_suspend(std::coroutine_handle<> coro) noexcept
                 {
                     // Set the 'running' variable so we can track how many tasks arleady finished.
-                    running.store(ice::count(tasks), std::memory_order_relaxed);
+                    running.store(ice::count(tasks) + 1, std::memory_order_relaxed);
 
                     for (ice::Task<void>& task : tasks)
                     {
                         // Execute all tasks
                         detail::detached_awaiting_task(ice::move(task), coro, running);
                     }
+
+                    // We now return from the coroutine if the tasks finished synchronously.
+                    return running.fetch_sub(1, std::memory_order_relaxed) != 1;
                 }
 
                 constexpr bool await_resume() const noexcept
@@ -224,8 +228,12 @@ namespace ice
 
     auto await_all_scheduled(ice::Span<ice::Task<void>> tasks, ice::TaskScheduler& scheduler) noexcept -> ice::Task<void>
     {
-        co_await scheduler;
-        co_await detail::await_tasks(tasks);
+        ice::TaskQueue queue;
+        ice::TaskScheduler queue_scheduler{ queue };
+        ice::schedule_tasks_on(ice::move(tasks), queue_scheduler);
+
+        // Awaits the tasks directly on the scheduler queue
+        co_await ice::await_queue_on(queue, scheduler);
     }
 
     auto await_all_on(ice::Span<ice::Task<void>> tasks, ice::TaskScheduler& resumer) noexcept -> ice::Task<void>
@@ -236,9 +244,54 @@ namespace ice
 
     auto await_all_on_scheduled(ice::Span<ice::Task<void>> tasks, ice::TaskScheduler& resumer, ice::TaskScheduler& scheduler) noexcept -> ice::Task<void>
     {
-        co_await scheduler;
-        co_await detail::await_tasks(tasks);
+        ice::TaskQueue queue;
+        ice::TaskScheduler queue_scheduler{ queue };
+        ice::schedule_tasks_on(ice::move(tasks), queue_scheduler);
+
+        // Awaits the tasks directly on the scheduler queue
+        co_await ice::await_queue_on(queue, scheduler);
         co_await resumer;
+    }
+
+    auto await_queue_on(ice::TaskQueue& queue, ice::TaskScheduler& resumer) noexcept -> ice::Task<bool>
+    {
+        // We make use of the fact that the awaitable has public access to the queue.
+        // This is currently a bit of cheating, but it's not directly accessible to anyone who doesn't know what's happening here ;p
+        auto awaitable = resumer.schedule();
+
+        // First we push all awaitables from the queue onto the resumers queue.
+        bool const added = ice::linked_queue::push(awaitable._queue._awaitables, ice::linked_queue::consume(queue._awaitables));
+
+        // Then we await the current coroutine which will be pushed as the last item on the scheduler, so we know all previous task will be processed first.
+        // NOTE: Processing might be out of order if the scheduler queue is assigned to multiple threads!
+        co_await awaitable;
+
+        // Return information if anything was in the queue
+        co_return added;
+    }
+
+    auto await_queue_on(ice::TaskQueue& queue, void* result, ice::TaskScheduler& resumer) noexcept -> ice::Task<bool>
+    {
+        // We make use of the fact that the awaitable has public access to the queue.
+        // This is currently a bit of cheating, but it's not directly accessible to anyone who doesn't know what's happening here ;p
+        auto awaitable = resumer.schedule();
+
+        // We set the result value for each awaitable in the queue and nothing more.
+        auto tasks_awaitables = ice::linked_queue::consume(queue._awaitables);
+        for (ice::TaskAwaitableBase* task_awaitable : tasks_awaitables)
+        {
+            task_awaitable->result.ptr = result;
+        }
+
+        // First we push all awaitables from the queue onto the resumers queue. The range is copied, so we can check later if actually any tasks where queued.
+        bool const added = ice::linked_queue::push(awaitable._queue._awaitables, ice::move(tasks_awaitables));
+
+        // Then we await the current coroutine which will be pushed as the last item on the scheduler, so we know all previous task will be processed first.
+        // NOTE: Processing might be out of order if the scheduler queue is assigned to multiple threads!
+        co_await awaitable;
+
+        // Return information if anything was in the queue
+        co_return added;
     }
 
 } // namespace ice

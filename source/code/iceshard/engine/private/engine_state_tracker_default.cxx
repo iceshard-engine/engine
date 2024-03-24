@@ -81,7 +81,7 @@ namespace ice
         ice::hashmap::get_or_set(
             _state_committers,
             ice::hash(params.initial.graph.value),
-            params.commiter
+            params.committer
         );
 
         ice::array::push_back(

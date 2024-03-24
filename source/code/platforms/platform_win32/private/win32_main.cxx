@@ -27,7 +27,7 @@ int main(int argc, char const** argv)
         ice::UniquePtr<ice::app::State> state = app_factories.factory_state(host_alloc);
 
         ice::Result result = ice_setup(host_alloc, params, *config, *state);
-        while(result == ice::app::E_FailedApplicationSetupPending)
+        while(result == ice::app::S_ApplicationSetupPending)
         {
             result = ice_setup(host_alloc, params, *config, *state);
         }

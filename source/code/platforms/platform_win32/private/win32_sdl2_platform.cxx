@@ -88,7 +88,7 @@ namespace ice::platform::win32::sdl2
                 switch (current_event.window.event)
                 {
                 case SDL_WINDOWEVENT_MINIMIZED:
-                    ice::shards::push_back(_system_events, ice::platform::Shard_WindowMinimized);
+                    ice::shards::push_back(_system_events, { ice::platform::ShardID_WindowMinimized });
                     break;
                 case SDL_WINDOWEVENT_RESTORED:
                     ice::shards::push_back(_system_events, ice::platform::ShardID_WindowRestored | window_size);
@@ -101,7 +101,6 @@ namespace ice::platform::win32::sdl2
                     ice::shards::push_back(_system_events, ice::platform::ShardID_WindowResized | window_size);
                     break;
                 }
-                break;
             }
             case SDL_MOUSEBUTTONUP:
             case SDL_MOUSEBUTTONDOWN:
@@ -118,7 +117,7 @@ namespace ice::platform::win32::sdl2
                 ice::memcpy(text_buffer, current_event.text.text, 32);
                 ice::shards::push_back(
                     _system_events,
-                    ice::platform::Shard_InputText | (char const*)text_buffer
+                    ice::platform::ShardID_InputText | (char const*)text_buffer
                 );
             }
         }

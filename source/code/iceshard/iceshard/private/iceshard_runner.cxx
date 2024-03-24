@@ -58,11 +58,11 @@ namespace ice
         );
 
         // Prepare frame data free list
-        for (ice::u32 count = 0; count < _frame_count; ++count)
+        for (ice::u32 frame_idx = 0; frame_idx < _frame_count; ++frame_idx)
         {
             ice::IceshardFrameData* new_data = _allocator.create<ice::IceshardFrameData>(
                 _allocator,
-                _frame_storage[0],
+                _frame_storage[frame_idx],
                 _runtime_storage,
                 _runtime_storage
             );
@@ -72,7 +72,7 @@ namespace ice
 
         ice::EngineStateTrigger triggers[]{ detail::StateTrigger_ActivateRuntime, detail::StateTrigger_DeactivateRuntime };
         _engine.states().register_graph(
-            { .initial = State_WorldRuntimeInactive, .commiter = this, .enable_subname_states = true },
+            { .initial = State_WorldRuntimeInactive, .committer = this, .enable_subname_states = true },
             triggers
         );
     }
@@ -110,6 +110,7 @@ namespace ice
             {
                 frame_data->_index = _next_frame_index.fetch_add(1, std::memory_order_relaxed);
                 frame_data->_internal_next = frame_data; // Assing self (easy pointer access later and overflow check)
+                ice::hashmap::clear(frame_data->_storage_frame._values);
                 result = _frame_factory(frame_data->_fwd_allocator, *frame_data, _frame_factory_userdata);
             }
         }
