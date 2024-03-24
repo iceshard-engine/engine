@@ -81,6 +81,10 @@ namespace ice
     //! \param[in] scheduler Scheduler object transfering execution to associated threads.
     auto await_all_on_scheduled(ice::Span<ice::Task<void>> tasks, ice::TaskScheduler& resumer, ice::TaskScheduler& scheduler) noexcept -> ice::Task<void>;
 
+    auto await_queue_on(ice::TaskQueue& queue, ice::TaskScheduler& resumer) noexcept -> ice::Task<bool>;
+
+    auto await_queue_on(ice::TaskQueue& queue, void* result, ice::TaskScheduler& resumer) noexcept -> ice::Task<bool>;
+
 
     [[deprecated("Currently it's unsure if this function will remain in the current form.")]]
     void schedule_task_on(ice::Task<void> task, ice::TaskScheduler& scheduler) noexcept;

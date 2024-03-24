@@ -15,8 +15,8 @@ namespace ice
         inline bool empty() const noexcept { return ice::linked_queue::empty(_awaitables); }
 
         template<typename Value>
-        inline void process_one(Value& result_value) noexcept;
-        inline void process_one(void* result_value = nullptr) noexcept;
+        inline bool process_one(Value& result_value) noexcept;
+        inline bool process_one(void* result_value = nullptr) noexcept;
 
         template<typename Value>
         inline auto process_all(Value& result_value) noexcept -> ice::ucount;
@@ -26,12 +26,12 @@ namespace ice
     };
 
     template<typename Value>
-    inline void TaskQueue::process_one(Value& result_value) noexcept
+    inline bool TaskQueue::process_one(Value& result_value) noexcept
     {
-        this->process_one(reinterpret_cast<void*>(&result_value));
+        return this->process_one(reinterpret_cast<void*>(&result_value));
     }
 
-    inline void TaskQueue::process_one(void* result_value) noexcept
+    inline bool TaskQueue::process_one(void* result_value) noexcept
     {
         ice::TaskAwaitableBase* const awaitable = ice::linked_queue::pop(_awaitables);
         if (awaitable != nullptr)
@@ -39,12 +39,13 @@ namespace ice
             awaitable->result.ptr = result_value;
             awaitable->_coro.resume();
         }
+        return awaitable != nullptr;
     }
 
     template<typename Value>
     inline auto TaskQueue::process_all(Value& result_value) noexcept -> ice::ucount
     {
-        this->process_all(reinterpret_cast<void*>(&result_value));
+        return this->process_all(reinterpret_cast<void*>(&result_value));
     }
 
     inline auto TaskQueue::process_all(void* result_value) noexcept -> ice::ucount
