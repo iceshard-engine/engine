@@ -17,93 +17,87 @@ namespace ice::devui
     namespace detail
     {
 
-        void build_info_column(ice::AllocatorDebugInfo const& allocator) noexcept
-        {
-            ice::usize const current_total_allocation = allocator.allocation_size_inuse();
-            ice::ucount const current_total_count = allocator.allocation_total_count();
-
-            if (current_total_count == Allocator::CountNotTracked)
-            {
-                ImGui::Text("<not tracked>");
-            }
-            else
-            {
-                ImGui::Text("%d", current_total_count);
-            }
-
-            ImGui::NextColumn();
-
-            if (current_total_allocation == Allocator::SizeNotTracked)
-            {
-                ImGui::Text("<not tracked>");
-            }
-            else
-            {
-                bool const shows_mibs = current_total_allocation > 1_MiB;
-                bool const shows_kibs = current_total_allocation > 1_KiB;
-
-                if (shows_mibs)
-                {
-                    ice::usize const mibs = current_total_allocation / 1_MiB;
-                    ice::usize const kibs = ((current_total_allocation / 1_KiB) - (mibs * 1_KiB)).to_usize();
-
-                    ImGui::Text(IMGUI_SIZE_FMT " MiB " IMGUI_SIZE_FMT " KiB (" IMGUI_SIZE_FMT " bytes)", mibs.value, kibs.value, current_total_allocation.value);
-                }
-                else if (shows_kibs)
-                {
-                    ImGui::Text(IMGUI_SIZE_FMT " KiB (" IMGUI_SIZE_FMT " bytes)", (current_total_allocation / 1_KiB).value, current_total_allocation.value);
-                }
-                else
-                {
-                    ImGui::Text(IMGUI_SIZE_FMT, current_total_allocation.value);
-                }
-            }
-        }
-
-        void build_tree_view(ice::AllocatorDebugInfo const& allocator) noexcept
+        void build_table_view(ice::AllocatorDebugInfo const& allocator) noexcept
         {
             ice::AllocatorDebugInfo const* child_alloc = allocator.child_allocator();
+
             std::string_view alloc_name = allocator.name();
             if (alloc_name.empty())
             {
                 alloc_name = "<unnamed_allocator>";
             }
 
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn();
+
+            ImGuiTreeNodeFlags node_flags = ImGuiTreeNodeFlags_SpanAllColumns;
             if (child_alloc == nullptr)
             {
-                ImGui::Text("%s", alloc_name.data());
-                ImGui::NextColumn();
-                build_info_column(allocator);
-
-                ImGui::NextColumn();
-                ImGui::Text("%s", allocator.location().function_name());
-                ImGui::NextColumn();
-                ImGui::Text("%s(%u)", allocator.location().file_name(), allocator.location().line());
-
-                ImGui::NextColumn(); // We start from the first column again
+                node_flags |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_Bullet | ImGuiTreeNodeFlags_NoTreePushOnOpen;
             }
-            else
+
+            bool const open = ImGui::TreeNodeEx(&allocator, node_flags, "%s", alloc_name.data());
+
+            if (ImGui::TableNextColumn())
             {
-                bool show_childs = ImGui::TreeNode(&allocator, "%s", alloc_name.data());
-                ImGui::NextColumn();
-                build_info_column(allocator);
+                ice::ucount const current_count = allocator.allocation_count();
+                ImGui::Text(current_count == Allocator::CountNotTracked ? "- not tracked -" : "%d", current_count);
+            }
 
-                ImGui::NextColumn();
-                ImGui::Text("%s", allocator.location().function_name());
-                ImGui::NextColumn();
-                ImGui::Text("%s(%u)", allocator.location().file_name(), allocator.location().line());
+            if (ImGui::TableNextColumn())
+            {
+                ice::ucount const total_count = allocator.allocation_total_count();
+                ImGui::Text(total_count == Allocator::CountNotTracked ? "- not tracked -" : "%d", total_count);
+            }
 
-                ImGui::NextColumn(); // We start from the first column again
-
-                if (show_childs)
+            if (ImGui::TableNextColumn())
+            {
+                ice::usize const size_allocated = allocator.allocation_size_inuse();
+                if (size_allocated == Allocator::SizeNotTracked)
                 {
-                    while (child_alloc != nullptr)
-                    {
-                        build_tree_view(*child_alloc);
-                        child_alloc = child_alloc->next_sibling();
-                    }
-                    ImGui::TreePop();
+                    ImGui::TextUnformatted("- not tracked -");
                 }
+                else
+                {
+                    bool const shows_mibs = size_allocated > 1_MiB;
+                    bool const shows_kibs = size_allocated > 1_KiB;
+
+                    ice::usize const mibs = size_allocated / 1_MiB;
+                    ice::usize const kibs = ((size_allocated / 1_KiB) - (mibs * 1_KiB)).to_usize();
+
+                    if (shows_mibs)
+                    {
+                        ImGui::Text(IMGUI_SIZE_FMT " MiB " IMGUI_SIZE_FMT " KiB (" IMGUI_SIZE_FMT " bytes)", mibs.value, kibs.value, size_allocated.value);
+                    }
+                    else if (shows_kibs)
+                    {
+                        ImGui::Text(IMGUI_SIZE_FMT " KiB (" IMGUI_SIZE_FMT " bytes)", (size_allocated / 1_KiB).value, size_allocated.value);
+                    }
+                    else
+                    {
+                        ImGui::Text(IMGUI_SIZE_FMT, size_allocated.value);
+                    }
+                }
+            }
+
+            if (ImGui::TableNextColumn())
+            {
+                ImGui::TextUnformatted(allocator.location().function_name());
+            }
+
+            if (ImGui::TableNextColumn())
+            {
+                ImGui::Text("%s(%u)", allocator.location().file_name(), allocator.location().line());
+            }
+
+            if (open && child_alloc != nullptr)
+            {
+                while (child_alloc != nullptr)
+                {
+                    build_table_view(*child_alloc);
+                    child_alloc = child_alloc->next_sibling();
+                }
+                ImGui::TreePop();
             }
         }
 
@@ -132,26 +126,32 @@ namespace ice::devui
 
     void ice::devui::ImGui_AllocatorTreeWidget::on_draw() noexcept
     {
-        if (ImGui::Begin("Allocator tree", &_state->is_visible))
+        ImGuiTableFlags const flags = ImGuiTableFlags_None
+            // Functional
+            | ImGuiTableFlags_ContextMenuInBody
+            | ImGuiTableFlags_Resizable
+            | ImGuiTableFlags_Hideable
+            // Visual
+            | ImGuiTableFlags_HighlightHoveredColumn
+            | ImGuiTableFlags_PadOuterX
+            | ImGuiTableFlags_NoBordersInBody
+            | ImGuiTableFlags_BordersOuterH
+            | ImGuiTableFlags_BordersV
+            | ImGuiTableFlags_RowBg;
+
+        if (ImGui::BeginTable("Allocators", 6, flags))
         {
-            ImGui::Columns(5, "allocator_tree_table", true);
+            ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_NoHide);
+            ImGui::TableSetupColumn("Count (current)");
+            ImGui::TableSetupColumn("Count (total)");
+            ImGui::TableSetupColumn("Current Size");
+            ImGui::TableSetupColumn("Function", ImGuiTableColumnFlags_DefaultHide);
+            ImGui::TableSetupColumn("Location", ImGuiTableColumnFlags_DefaultHide);
+            ImGui::TableHeadersRow();
 
-            ImGui::Text("Allocator name");
-            ImGui::NextColumn();
-            ImGui::Text("Allocation count");
-            ImGui::NextColumn();
-            ImGui::Text("Allocated bytes");
-            ImGui::NextColumn();
-            ImGui::Text("Function");
-            ImGui::NextColumn();
-            ImGui::Text("File (line)");
-            ImGui::NextColumn();
-
-            ImGui::Separator();
-
-            detail::build_tree_view(_root_tracked_allocator);
+            detail::build_table_view(_root_tracked_allocator);
+            ImGui::EndTable();
         }
-        ImGui::End();
     }
 
 } // namespace ice::devui

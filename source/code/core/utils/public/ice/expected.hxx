@@ -5,6 +5,7 @@
 #include <ice/base.hxx>
 #include <ice/build/build.hxx>
 #include <ice/error_codes.hxx>
+#include <type_traits>
 
 namespace ice
 {
@@ -103,7 +104,8 @@ namespace ice
             return _value;
         }
 
-        inline bool operator==(ice::ErrorCode error) const noexcept
+        template<typename ErrorType> requires(std::is_base_of_v<ice::ErrorCode, ErrorType>)
+        inline bool operator==(ErrorType error) const noexcept
         {
             return _value == error;
         }

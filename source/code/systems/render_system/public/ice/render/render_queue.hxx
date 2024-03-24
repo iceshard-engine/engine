@@ -47,6 +47,12 @@ namespace ice::render
             ice::Span<ice::render::CommandBuffer> buffers
         ) noexcept = 0;
 
+        virtual void release_buffers(
+            ice::u32 pool_index,
+            ice::render::CommandBufferType type,
+            ice::Span<ice::render::CommandBuffer> buffers
+        ) noexcept = 0;
+
         virtual void reset_pool(
             ice::u32 pool_index
         ) noexcept = 0;

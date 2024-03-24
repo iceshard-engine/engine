@@ -4,6 +4,8 @@
 #include "vk_device.hxx"
 #include "vk_swapchain.hxx"
 #include "vk_render_surface.hxx"
+#include "vk_command_buffer.hxx"
+#include "vk_render_profiler.hxx"
 #include "vk_image.hxx"
 #include "vk_buffer.hxx"
 #include "vk_utility.hxx"
@@ -1029,6 +1031,7 @@ namespace ice::render::vk
 
     auto VulkanRenderDevice::create_queue(
         ice::render::QueueID queue_id,
+        ice::render::QueueFlags flags,
         ice::u32 queue_index,
         ice::u32 command_pools
     ) const noexcept -> ice::render::RenderQueue*
@@ -1057,7 +1060,8 @@ namespace ice::render::vk
             ice::array::push_back(cmd_pools, vk_cmd_pool);
         }
 
-        return _allocator.create<VulkanQueue>(queue, _vk_device, ice::move(cmd_pools));
+        const bool profiled = ice::has_any(flags, QueueFlags::Compute | QueueFlags::Graphics);
+        return _allocator.create<VulkanQueue>(_allocator, queue, _vk_device, _vk_physical_device, ice::move(cmd_pools), profiled);
     }
 
     void VulkanRenderDevice::destroy_queue(ice::render::RenderQueue* queue) const noexcept
@@ -1143,7 +1147,7 @@ namespace ice::render::vk
 
     auto native_handle(CommandBuffer cmds) noexcept -> VkCommandBuffer
     {
-        return reinterpret_cast<VkCommandBuffer>(static_cast<ice::uptr>(cmds));
+        return VulkanCommandBuffer::native(cmds)->buffer;
     }
 
     auto native_handle(Buffer buffer) noexcept -> VkBuffer
@@ -1621,5 +1625,27 @@ namespace ice::render::vk
             data.location
         );
     }
+
+#if IPT_ENABLED
+    auto VulkanRenderCommands::profiling_zone(
+        ice::render::CommandBuffer cmds,
+        const tracy::SourceLocationData* srcloc,
+        ice::String name
+    ) noexcept -> ice::render::detail::ProfilingZone
+    {
+        using ProfilingZone = ice::render::detail::ProfilingZone;
+        VulkanCommandBuffer* cb = VulkanCommandBuffer::native(cmds);
+        return ProfilingZone{
+            new ProfilingZone::Internal{ cb->tracy_ctx, srcloc, cb->buffer, true },
+            ProfilingZone::Internal::on_delete_impl
+        };
+    }
+
+    void VulkanRenderCommands::profiling_collect_zones(ice::render::CommandBuffer cmds) noexcept
+    {
+        VulkanCommandBuffer* buffer = VulkanCommandBuffer::native(cmds);
+        TracyVkCollect(buffer->tracy_ctx, buffer->buffer);
+    }
+#endif
 
 } // namespace ice::render::vk

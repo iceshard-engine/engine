@@ -2,6 +2,7 @@
 /// SPDX-License-Identifier: MIT
 
 #include "webgpu_shader_asset.hxx"
+#include "webgpu_utils.hxx"
 
 #include <ice/render/render_shader.hxx>
 #include <ice/asset_type_archive.hxx>
@@ -27,6 +28,7 @@ namespace ice::render::vk
     {
         ice::ResourceResult loaded = co_await tracker.load_resource(source);
         ICE_ASSERT_CORE(loaded.resource_status == ResourceStatus::Loaded);
+        ICE_LOG_WGPU(LogSeverity::Info, "Compiled WebGPU shader resource: {}", ice::resource_path(source));
 
         ice::Memory result = alloc.allocate(loaded.data.size + 1_B);
         ice::memcpy(result, loaded.data);

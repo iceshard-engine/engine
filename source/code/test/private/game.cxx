@@ -25,6 +25,7 @@
 #include <ice/render/render_image.hxx>
 #include <ice/render/render_swapchain.hxx>
 
+#include <ice/task_debug_allocator.hxx>
 #include <ice/resource_tracker.hxx>
 #include <ice/module_register.hxx>
 #include <ice/asset_types.hxx>
@@ -37,6 +38,34 @@
 #undef assert
 
 static constexpr LogTagDefinition LogGame = ice::create_log_tag(LogTag::Game, "TestGame");
+
+struct GameTasksDebugAllocator final : public ice::Module<GameTasksDebugAllocator>
+{
+    static void set_allocator(ice::ProxyAllocator* allocator) noexcept
+    {
+        _allocator_ptr = allocator;
+    }
+
+    static void v1_api(ice::detail::DebugAllocatorAPI& api) noexcept
+    {
+        ICE_ASSERT_CORE(_allocator_ptr != nullptr);
+        api.allocator_ptr = _allocator_ptr;
+        api.allocator_pool = "tasks";
+    }
+
+    static bool on_load(ice::Allocator& alloc, ice::ModuleNegotiator const& negotiator) noexcept
+    {
+        negotiator.register_api(v1_api);
+        return true;
+    }
+
+    IS_WORKAROUND_MODULE_INITIALIZATION(GameTasksDebugAllocator);
+
+private:
+    static ice::ProxyAllocator* _allocator_ptr;
+};
+
+ice::ProxyAllocator* GameTasksDebugAllocator::_allocator_ptr = nullptr;
 
 auto ice::framework::create_game(ice::Allocator& alloc) noexcept -> ice::UniquePtr<Game>
 {
@@ -179,8 +208,10 @@ struct TestModule : ice::Module<TestModule>
 
 TestGame::TestGame(ice::Allocator& alloc) noexcept
     : _allocator{ alloc }
+    , _tasks_alloc{ _allocator, "tasks" }
     , _first_time{ true }
 {
+    GameTasksDebugAllocator::set_allocator(&_tasks_alloc);
 }
 
 void TestGame::on_setup(ice::framework::State const& state) noexcept

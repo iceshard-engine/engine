@@ -286,6 +286,7 @@ void TestGame::on_resume(ice::Engine& engine) noexcept
         ice::StringID traits[]{
             "test"_sid,
             "test2"_sid,
+            ice::TraitID_GfxShaderStorage,
             ice::Constant_TraitName_DevUI
         };
 

@@ -51,6 +51,11 @@ namespace ice
         {
             co_await scheduled_task;
             co_await scheduler;
+            // BUG?: For some reason a when scheduled here, and resumed on a thread, this coroutine is not destroyed properly
+            //  without additional actions after the scheduling.
+            //  To avoid this we await the completed task which is complex enough to resume the coroutine properly but simple to not really impose any cost.
+            // TODO: Using this function is already a hack, so we might just want refactor all locations that make use of this weird thing.
+            co_await scheduled_task;
         }
 
 

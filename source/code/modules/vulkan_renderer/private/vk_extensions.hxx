@@ -8,24 +8,25 @@
 namespace ice::render::vk
 {
 
-    enum class Extension : ice::u16
+    enum class Extension : ice::u32
     {
         None,
 
         // Core instance extensions
-        VkI_Surface = 0x00'01,
-        VkI_Win32Surface= 0x00'02,
-        VkI_AndroidSurface= 0x00'04,
-        VkI_GetPhysicalDeviceProperties2 = 0x00'08,
+        VkI_Surface = 0x0000'0001,
+        VkI_Win32Surface= 0x0000'0002,
+        VkI_AndroidSurface= 0x0000'0004,
+        VkI_GetPhysicalDeviceProperties2 = 0x0000'0008,
 
         // Core device extensions
-        VkD_Swapchain = 0x00'10,
-        VkD_MemoryBudget = 0x00'20,
-        VkD_DedicatedAllocation = 0x00'40,
-        VkD_GetMemoryRequirements2 = 0x00'80,
+        VkD_Swapchain = 0x0000'0010,
+        VkD_MemoryBudget = 0x0000'0020,
+        VkD_DedicatedAllocation = 0x0000'0040,
+        VkD_GetMemoryRequirements2 = 0x0000'0080,
+        VkD_CalibratedTimestamps = 0x0000'0100,
 
         // Debug layers
-        VkDbg_ValidationLayer = 0x80'00,
+        VkDbg_ValidationLayer = 0x8000'0000,
 
         // VMA extensions
         Vma_MemoryBudget = VkI_GetPhysicalDeviceProperties2 | VkD_MemoryBudget,

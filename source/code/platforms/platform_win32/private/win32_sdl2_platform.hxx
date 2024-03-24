@@ -4,6 +4,7 @@
 #pragma once
 #include <ice/platform.hxx>
 #include <ice/platform_core.hxx>
+#include <ice/platform_threads.hxx>
 
 #include <ice/shard_container.hxx>
 #include <ice/input/device_event_queue.hxx>

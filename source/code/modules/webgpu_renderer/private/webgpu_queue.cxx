@@ -57,6 +57,39 @@ namespace ice::render::webgpu
         }
     }
 
+    void WebGPUQueue::release_buffers(
+        ice::u32 pool_index,
+        ice::render::CommandBufferType type,
+        ice::Span<ice::render::CommandBuffer> buffers
+    ) noexcept
+    {
+        for (ice::render::CommandBuffer buffer : buffers)
+        {
+            WebGPUCommandBuffer* webgpu_cmds = WebGPUCommandBuffer::native(buffer);
+            if (webgpu_cmds->command_buffer != nullptr)
+            {
+                wgpuCommandBufferRelease(webgpu_cmds->command_buffer);
+            }
+            wgpuCommandEncoderRelease(webgpu_cmds->command_encoder);
+
+            WGPUCommandEncoderDescriptor descriptor{};
+            descriptor.label = type == CommandBufferType::Primary ? "Primary Command Encoded" : "Secondary Command Encoder";
+            webgpu_cmds->command_encoder = wgpuDeviceCreateCommandEncoder(_wgpu_device, &descriptor);
+
+            auto it = ice::multi_hashmap::find_first(_wgpu_command_buffers, pool_index);
+            while (it != nullptr)
+            {
+                auto next = ice::multi_hashmap::find_next(_wgpu_command_buffers, it);
+                if (it.value() == webgpu_cmds)
+                {
+                    ice::multi_hashmap::remove(_wgpu_command_buffers, it);
+                    _allocator.destroy(webgpu_cmds);
+                }
+                it = next;
+            }
+        }
+    }
+
     void WebGPUQueue::reset_pool(
         ice::u32 pool_index
     ) noexcept
@@ -64,19 +97,19 @@ namespace ice::render::webgpu
         auto it = ice::multi_hashmap::find_first(_wgpu_command_buffers, pool_index);
         while (it != nullptr)
         {
-            if (it.value()->type == CommandBufferType::Secondary)
-            {
-                if (it.value()->command_buffer != nullptr)
-                {
-                    wgpuCommandBufferRelease(ice::exchange(it.value()->command_buffer, nullptr));
-                }
+            // if (it.value()->type == CommandBufferType::Secondary)
+            // {
+            //     if (it.value()->command_buffer != nullptr)
+            //     {
+            //         wgpuCommandBufferRelease(ice::exchange(it.value()->command_buffer, nullptr));
+            //     }
 
-                wgpuCommandEncoderRelease(it.value()->command_encoder);
-                auto next = ice::multi_hashmap::find_next(_wgpu_command_buffers, it);
-                ice::multi_hashmap::remove(_wgpu_command_buffers, it);
-                it = next;
-            }
-            else
+            //     wgpuCommandEncoderRelease(it.value()->command_encoder);
+            //     auto next = ice::multi_hashmap::find_next(_wgpu_command_buffers, it);
+            //     ice::multi_hashmap::remove(_wgpu_command_buffers, it);
+            //     it = next;
+            // }
+            // else
             {
                 if (it.value()->command_buffer != nullptr)
                 {
@@ -85,7 +118,14 @@ namespace ice::render::webgpu
 
                 wgpuCommandEncoderRelease(it.value()->command_encoder);
                 WGPUCommandEncoderDescriptor descriptor{};
-                descriptor.label = "Primary Command Encoded";
+                if (it.value()->type == CommandBufferType::Secondary)
+                {
+                    descriptor.label = "Primary Command Encoded";
+                }
+                else
+                {
+                    descriptor.label = "Secondary Command Encoded";
+                }
                 it.value()->command_encoder = wgpuDeviceCreateCommandEncoder(_wgpu_device, &descriptor);
 
                 it = ice::multi_hashmap::find_next(_wgpu_command_buffers, it);

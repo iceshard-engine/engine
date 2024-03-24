@@ -10,13 +10,19 @@ namespace ice::render::vk
 {
 
     VulkanQueue::VulkanQueue(
+        ice::Allocator& alloc,
         VkQueue vk_queue,
         VkDevice vk_device,
-        ice::Array<VkCommandPool> vk_cmd_pools
+        VkPhysicalDevice vk_physical_device,
+        ice::Array<VkCommandPool> vk_cmd_pools,
+        bool profiled
     ) noexcept
-        : _vk_queue{ vk_queue }
+        : _allocator{ alloc }
+        , _vk_queue{ vk_queue }
         , _vk_device{ vk_device }
+        , _vk_physical_device{ vk_physical_device }
         , _vk_cmd_pools{ ice::move(vk_cmd_pools) }
+        , _profiled{ profiled }
     {
         VkFenceCreateInfo fence_info{ VK_STRUCTURE_TYPE_FENCE_CREATE_INFO };
         VkResult result = vkCreateFence(_vk_device, &fence_info, nullptr, &_vk_submit_fence);
@@ -41,24 +47,77 @@ namespace ice::render::vk
         ice::Span<ice::render::CommandBuffer> buffers
     ) noexcept
     {
-        CommandBuffer* buffers_ptr = ice::span::begin(buffers);
-        VkCommandBuffer* vk_buffers = reinterpret_cast<VkCommandBuffer*>(buffers_ptr);
-
+        VkCommandBuffer vk_temp_buffers[16];
         VkCommandBufferAllocateInfo alloc_info{ VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO };
         alloc_info.level = type == CommandBufferType::Primary ? VK_COMMAND_BUFFER_LEVEL_PRIMARY : VK_COMMAND_BUFFER_LEVEL_SECONDARY;
         alloc_info.commandPool = _vk_cmd_pools[pool_index];
         alloc_info.commandBufferCount = ice::count(buffers);
+        ICE_ASSERT_CORE(alloc_info.commandBufferCount < 16);
 
         VkResult result = vkAllocateCommandBuffers(
             _vk_device,
             &alloc_info,
-            vk_buffers
+            vk_temp_buffers
         );
+
+        ice::u32 idx = 0;
+        for (ice::render::CommandBuffer& buffer : buffers)
+        {
+            VulkanCommandBuffer* buffer_obj = _allocator.create<VulkanCommandBuffer>();
+            buffer_obj->buffer = vk_temp_buffers[idx];
+
+#if IPT_ENABLED
+            if (_profiled)
+            {
+                buffer_obj->tracy_ctx = TracyVkContextCalibrated(
+                    _vk_physical_device,
+                    _vk_device,
+                    _vk_queue,
+                    buffer_obj->buffer,
+                    vk_vkGetPhysicalDeviceCalibrateableTimeDomainsEXT,
+                    vk_vkGetCalibratedTimestampsEXT
+                );
+            }
+#endif
+            buffer = VulkanCommandBuffer::handle(buffer_obj);
+            idx += 1;
+        }
 
         ICE_ASSERT(
             result == VkResult::VK_SUCCESS,
             "Failed to allocate command buffers!"
         );
+    }
+
+    void VulkanQueue::release_buffers(
+        ice::u32 pool_index,
+        ice::render::CommandBufferType type,
+        ice::Span<ice::render::CommandBuffer> buffers
+    ) noexcept
+    {
+        if (ice::span::empty(buffers))
+        {
+            return;
+        }
+
+        ice::u32 count = 0;
+        VkCommandBuffer vk_temp_buffers[32];
+        for (ice::render::CommandBuffer buffer : buffers)
+        {
+            VulkanCommandBuffer* buffer_obj = VulkanCommandBuffer::native(buffer);
+            vk_temp_buffers[count] = buffer_obj->buffer;
+#if IPT_ENABLED
+            if (_profiled)
+            {
+                TracyVkDestroy(buffer_obj->tracy_ctx);
+            }
+#endif
+            _allocator.destroy(buffer_obj);
+            count += 1;
+        }
+
+        ICE_ASSERT_CORE(count < 32);
+        vkFreeCommandBuffers(_vk_device, _vk_cmd_pools[pool_index], count, vk_temp_buffers);
     }
 
     void VulkanQueue::reset_pool(
@@ -77,15 +136,22 @@ namespace ice::render::vk
         ice::render::RenderFence* fence
     ) noexcept
     {
-        CommandBuffer const* buffers_ptr = ice::span::begin(buffers);
-        VkCommandBuffer const* vk_buffers = reinterpret_cast<VkCommandBuffer const*>(buffers_ptr);
+        VkCommandBuffer vk_temp_buffers[16];
+        ICE_ASSERT_CORE(ice::count(buffers) < 16);
+
+        ice::ucount count = 0;
+        for (ice::render::CommandBuffer handle : buffers)
+        {
+            vk_temp_buffers[count] = VulkanCommandBuffer::native(handle)->buffer;
+            count += 1;
+        }
 
         VkSubmitInfo submit_info{ VK_STRUCTURE_TYPE_SUBMIT_INFO };
         submit_info.waitSemaphoreCount = 0;
         submit_info.pWaitSemaphores = nullptr;
         submit_info.pWaitDstStageMask = nullptr;
-        submit_info.commandBufferCount = ice::count(buffers);
-        submit_info.pCommandBuffers = vk_buffers;
+        submit_info.commandBufferCount = count;
+        submit_info.pCommandBuffers = vk_temp_buffers;
         submit_info.signalSemaphoreCount = 0;
         submit_info.pSignalSemaphores = nullptr;
 

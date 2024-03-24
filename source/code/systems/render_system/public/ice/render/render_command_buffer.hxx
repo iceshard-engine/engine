@@ -5,6 +5,7 @@
 #include <ice/span.hxx>
 #include <ice/mem_data.hxx>
 #include <ice/render/render_declarations.hxx>
+#include <ice/render/render_profiler.hxx>
 
 namespace ice::render
 {
@@ -147,6 +148,20 @@ namespace ice::render
             ice::Data data,
             ice::u32 offset
         ) noexcept = 0;
+
+#if IPT_ENABLED
+        //! \brief Creates a new profiling zone for all commands recorded after this call.
+        virtual auto profiling_zone(
+            ice::render::CommandBuffer cmds,
+            const tracy::SourceLocationData* srcloc,
+            ice::String name
+        ) noexcept -> ice::render::detail::ProfilingZone = 0;
+
+        //! \brief Collects GPU zone timings, should not be used directly by the user.
+        virtual void profiling_collect_zones(
+            ice::render::CommandBuffer cmds
+        ) noexcept = 0;
+#endif
 
     protected:
         virtual ~RenderCommands() noexcept = default;

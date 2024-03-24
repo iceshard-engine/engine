@@ -114,6 +114,27 @@ namespace ice::gfx
         _context->device().destroy_fence(_present_fence);
     }
 
+    void IceshardGfxRunner::update_rendergraph(ice::UniquePtr<ice::gfx::GfxGraphRuntime> rendergraph) noexcept
+    {
+        if (_rendergraph != nullptr)
+        {
+            ice::gfx::GfxFrameStages gpu_stages{
+                .frame_transfer = { _queue_transfer },
+                .frame_end = { _queue_end }
+            };
+
+            auto s = ice::gfx::create_stage_registry(_alloc);
+            {
+                if (_rendergraph->prepare(gpu_stages, *s, _gfx_tasks))
+                {
+                    _gfx_tasks.execute_tasks();
+                }
+            }
+        }
+
+        _rendergraph = ice::move(rendergraph);
+    }
+
     auto IceshardGfxRunner::draw_frame(
         ice::EngineFrame const& frame,
         ice::Clock const& clock
