@@ -20,7 +20,8 @@ namespace ice
     };
 
     auto create_default_trait_archive(
-        ice::Allocator& alloc
+        ice::Allocator& alloc,
+        ice::EngineStateTracker& states
     ) noexcept -> ice::UniquePtr<ice::TraitArchive>;
 
 } // namespace ice
