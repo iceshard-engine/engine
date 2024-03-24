@@ -605,7 +605,7 @@ namespace ice::devui
         }
 
         char const* input_text;
-        if (ice::shards::inspect_last(update.frame.shards(), ice::platform::Shard_InputText.id, input_text))
+        if (ice::shards::inspect_last(update.frame.shards(), ice::platform::ShardID_InputText, input_text))
         {
             io.AddInputCharactersUTF8(input_text);
         }
