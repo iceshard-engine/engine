@@ -3,6 +3,7 @@
 
 #pragma once
 #include <ice/mem_allocator.hxx>
+#include <ice/container/hashmap.hxx>
 #include <ice/devui/devui_widget.hxx>
 
 namespace ice::devui

@@ -64,7 +64,7 @@ namespace ice::platform::webasm
         else if (_initstage == 1) [[unlikely]]
         {
             ice::Result const res = ice_setup(_allocator, _params, *_config, *_state);
-            if (res == ice::S_Success)
+            if (res == ice::app::S_ApplicationResume)
             {
                 _initstage = 2;
             }

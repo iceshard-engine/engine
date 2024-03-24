@@ -123,15 +123,15 @@ namespace ice::gfx
         ice::gfx::GfxContext& context,
         ice::render::RenderSwapchain const& swapchain,
         ice::render::Renderpass renderpass,
-        ice::Array<GfxGraphSnapshot> GfxGraphSnapshots,
+        ice::Array<GfxGraphSnapshot> graph_snapshots,
         ice::Array<GfxResource> resources,
         ice::gfx::IceshardGfxGraphStages stages
     ) noexcept
         : GfxGraphRuntime{}
-        , _allocator{ alloc }
+        , _allocator{ alloc, "gfx-graph-runtime" }
         , _context{ context }
         , _swapchain{ swapchain }
-        , _snapshots{ ice::move(GfxGraphSnapshots) }
+        , _snapshots{ ice::move(graph_snapshots) }
         , _resources{ ice::move(resources) }
         , _framebuffer_images{ _allocator }
         , _framebuffers{ _allocator }
@@ -161,6 +161,11 @@ namespace ice::gfx
     IceshardGfxGraphRuntime::~IceshardGfxGraphRuntime() noexcept
     {
         render::RenderDevice& device = _context.device();
+
+        for (IceshardGfxGraphStages::Entry* entry : _stages._stages)
+        {
+            _allocator.destroy(entry);
+        }
 
         for (ice::render::Framebuffer framebuffer : _framebuffers)
         {
@@ -301,9 +306,8 @@ namespace ice::gfx
             {
                 IPT_ZONE_SCOPED_NAMED("gfx_gpu_work");
                 queue->submit_command_buffers({ &command_buffer, 1 }, &fence);
+                fence.wait(100'000'000);
             }
-
-            fence.wait(100'000'000);
 
             IPT_ZONE_SCOPED_NAMED("gfx_present");
             _context.present(_swapchain.current_image_index());
@@ -322,6 +326,9 @@ namespace ice::gfx
         {
             IPT_ZONE_SCOPED_NAMED("gfx_begin");
             api.begin(cmds);
+
+            // Collect profiling zones
+            IPR_COLLECT_ZONES(api, cmds);
         }
         bool first_skipped = false;
 

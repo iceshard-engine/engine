@@ -4,6 +4,7 @@
 #include <ice/mem.hxx>
 #include <ice/mem_data.hxx>
 #include <ice/mem_memory.hxx>
+#include <ice/profiler.hxx>
 #include <assert.h>
 #include <stdlib.h>
 #include <malloc.h>
@@ -14,19 +15,22 @@ namespace ice
     auto alloc(ice::usize request) noexcept -> ice::AllocResult
     {
 #if ISP_WINDOWS || ISP_UNIX
-        return ice::AllocResult{
+        ice::AllocResult const result{
             .memory = malloc(request.value),
             .size = request,
             .alignment = ice::build::is_x64 ? ice::ualign::b_16 : ice::ualign::b_8,
         };
 #else
+        ice::AllocResult const result{};
         ICE_ASSERT_CORE(false);
-        return nullptr;
 #endif
+        IPT_ALLOC(result.memory, request.value);
+        return result;
     }
 
     void release(void* pointer) noexcept
     {
+        IPT_DEALLOC(pointer);
 #if ISP_WINDOWS || ISP_UNIX
         free(pointer);
 #else
@@ -37,7 +41,7 @@ namespace ice
     auto alloc_aligned(ice::usize size, ice::ualign alignment) noexcept -> ice::AllocResult
     {
 #if ISP_WINDOWS
-        return ice::AllocResult{
+        ice::AllocResult const result{
             .memory = _aligned_malloc(size.value, static_cast<ice::u32>(alignment)),
             .size = size,
             .alignment = alignment,
@@ -53,25 +57,28 @@ namespace ice
         );
         ICE_ASSERT_CORE(posix_memalign_result == 0);
 
-        return ice::AllocResult{
+        ice::AllocResult const result{
             .memory = memory_location,
             .size = size,
             .alignment = alignment
         };
 #elif ISP_UNIX
-        return ice::AllocResult{
+        ice::AllocResult const result{
             .memory = aligned_alloc(static_cast<ice::u32>(alignment), size.value),
             .size = size,
             .alignment = alignment
         };
 #else
+        ice::AllocResult const result{};
         ICE_ASSERT_CORE(false);
-        return nullptr;
 #endif
+        IPT_ALLOC(result.memory, size.value);
+        return result;
     }
 
     void release_aligned(void* pointer) noexcept
     {
+        IPT_DEALLOC(pointer);
 #if ISP_WINDOWS
         _aligned_free(pointer);
 #elif ISP_UNIX

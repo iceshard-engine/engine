@@ -28,6 +28,12 @@ namespace ice::render::webgpu
             ice::Span<ice::render::CommandBuffer> buffers
         ) noexcept override;
 
+        void release_buffers(
+            ice::u32 pool_index,
+            ice::render::CommandBufferType type,
+            ice::Span<ice::render::CommandBuffer> buffers
+        ) noexcept override;
+
         void reset_pool(
             ice::u32 pool_index
         ) noexcept override;

@@ -3,6 +3,8 @@
 
 #pragma once
 #include <ice/task_types.hxx>
+#include <ice/task_debug_allocator.hxx>
+#include <ice/profiler.hxx>
 
 namespace ice
 {
@@ -33,6 +35,22 @@ namespace ice
 
     private:
         ice::coroutine_handle<> _continuation;
+
+    public: // Override to track allocations of task objects
+        using TaskDebugAllocator = ice::detail::TaskDebugAllocator;
+
+        inline auto operator new(size_t size) noexcept -> void*
+        {
+            void* const ptr = TaskDebugAllocator::allocate(size);
+            IPT_ALLOC_POOL(ptr, size, TaskDebugAllocator::pool());
+            return ptr;
+        }
+
+        inline void operator delete(void* ptr) noexcept
+        {
+            IPT_DEALLOC_POOL(ptr, TaskDebugAllocator::pool());
+            TaskDebugAllocator::deallocate(ptr);
+        }
     };
 
     template<typename Promise>

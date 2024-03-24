@@ -254,6 +254,7 @@ namespace ice::gfx
 
                 ice::render::RenderQueue* render_queue = render_device->create_queue(
                     pass_queue_id,
+                    pass_info.flags,
                     pass_queue_index,
                     pass_group_count
                 );

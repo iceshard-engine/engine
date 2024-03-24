@@ -110,8 +110,8 @@ struct ice::app::State
 
     ice::UniquePtr<ice::TaskThreadPool> thread_pool;
     ice::UniquePtr<ice::ResourceTracker> resources;
-    ice::UniquePtr<ice::ModuleRegister> modules;
     ice::UniquePtr<ice::framework::Game> game;
+    ice::UniquePtr<ice::ModuleRegister> modules;
 
     ice::UniquePtr<ice::AssetStorage> assets;
     ice::UniquePtr<ice::EngineStateTracker> states;
@@ -146,6 +146,7 @@ struct ice::app::State
         , thread_pool_scheduler{ thread_pool_queue }
         , thread_pool{ }
         , resources{ }
+        , game{ ice::framework::create_game(gamework_alloc) }
         , modules{ ice::create_default_module_register(modules_alloc, true) }
         , render_surface{ }
         , providers{ }
@@ -317,7 +318,6 @@ auto ice_setup(
         .resource_dirs = resource_paths
     };
 
-    state.game = ice::framework::create_game(state.gamework_alloc);
     state.game->on_config(game_config);
 
     // Load resources

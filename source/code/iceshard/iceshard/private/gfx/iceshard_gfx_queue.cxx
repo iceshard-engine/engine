@@ -36,6 +36,12 @@ namespace ice::gfx
         );
     }
 
+    IceGfxQueue::~IceGfxQueue() noexcept
+    {
+        _render_queue->release_buffers(_queue_pool_index, ice::render::CommandBufferType::Primary, _primary);
+        _render_queue->release_buffers(_queue_pool_index, ice::render::CommandBufferType::Secondary, _secondary);
+    }
+
     auto IceGfxQueue::name() const noexcept -> ice::StringID_Arg
     {
         return _name;

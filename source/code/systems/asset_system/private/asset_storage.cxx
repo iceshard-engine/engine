@@ -405,23 +405,27 @@ namespace ice
                 result = co_await request_asset_baked(entry, shelve);
                 ICE_ASSERT(result.location != nullptr, "We failed to access baked data!");
 
-                bool load_success = false;
                 ice::Memory load_result{};
+                ice::MutableMetadata res_metadata{ _allocator };
                 if (ice::Data metadata = co_await entry.resource->load_metadata(); metadata.location != nullptr)
                 {
-                    ice::MutableMetadata res_metadata{ _allocator };
-                    if (ice::Result const res = ice::meta_deserialize_from(res_metadata, metadata); res)
-                    {
-                        load_success = co_await ice::detail::load_asset(
-                            shelve.asset_allocator(),
-                            shelve.definition,
-                            *this,
-                            res_metadata,
-                            result,
-                            load_result
-                        );
-                    }
+                    ice::Result const res = ice::meta_deserialize_from(res_metadata, metadata);
+                    ICE_LOG_IF(
+                        res == ice::S_Success,
+                        LogSeverity::Error, LogTag::Asset,
+                        "Failed to deserialize metadata for: {}",
+                        entry.assetid
+                    );
                 }
+
+                bool const load_success = co_await ice::detail::load_asset(
+                    shelve.asset_allocator(),
+                    shelve.definition,
+                    *this,
+                    res_metadata,
+                    result,
+                    load_result
+                );
 
                 // If we have failed, we try to push a load request.
                 // TODO: Needs to be reworked!

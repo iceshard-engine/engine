@@ -99,8 +99,6 @@ namespace ice::devui
 
         co_await detail::load_imgui_shader(_assets, "shaders/debug/imgui-vert", _shaders[0]);
         co_await detail::load_imgui_shader(_assets, "shaders/debug/imgui-frag", _shaders[1]);
-        // _shaders[0] = device.create_shader(ShaderInfo{ .shader_data = _shader_data[0] });
-        // _shaders[1] = device.create_shader(ShaderInfo{ .shader_data = _shader_data[1] });
 
         SamplerInfo sampler_info
         {
@@ -117,6 +115,11 @@ namespace ice::devui
 
         _sampler = device.create_sampler(sampler_info);
 
+        ResourceSetLayoutBindingDetails const resource_details[]{
+            ResourceSetLayoutBindingDetails{},
+            ResourceSetLayoutBindingDetails{.image = {.type = ImageType::Image2D}}
+        };
+
         ResourceSetLayoutBinding const resource_bindings[]
         {
             ResourceSetLayoutBinding
@@ -124,18 +127,29 @@ namespace ice::devui
                 .binding_index = 1,
                 .resource_count = 1,
                 .resource_type = ResourceType::Sampler,
-                .shader_stage_flags = ShaderStageFlags::FragmentStage
+                .shader_stage_flags = ShaderStageFlags::FragmentStage,
+                .binding_details = resource_details + 0
             },
             ResourceSetLayoutBinding
             {
                 .binding_index = 2,
                 .resource_count = 1,
                 .resource_type = ResourceType::SampledImage,
-                .shader_stage_flags = ShaderStageFlags::FragmentStage
+                .shader_stage_flags = ShaderStageFlags::FragmentStage,
+                .binding_details = resource_details + 1
+            },
+            ResourceSetLayoutBinding
+            {
+                .binding_index = 3,
+                .resource_count = 1,
+                .resource_type = ResourceType::UniformBuffer,
+                .shader_stage_flags = ShaderStageFlags::VertexStage,
+                .binding_details = resource_details + 0
             },
         };
 
-        _resource_layout = device.create_resourceset_layout({ resource_bindings + 0, 2 });
+        _uniform_buffer = device.create_buffer(BufferType::Uniform, 64);
+        _resource_layout = device.create_resourceset_layout(resource_bindings);
 
         ResourceSetLayout resource_layouts[20]{ };
         for (auto& layout : resource_layouts)
@@ -156,6 +170,10 @@ namespace ice::devui
             {
                 .image = _font_texture,
             },
+            ResourceUpdateInfo
+            {
+                .uniform_buffer = {.buffer = _uniform_buffer, .offset = 0, .size = 64},
+            },
         };
 
         ResourceSetUpdateInfo update_infos[]
@@ -175,6 +193,14 @@ namespace ice::devui
                 .binding_index = 2,
                 .array_element = 0,
                 .resources = { resource_update + 1, 1 }
+            },
+            ResourceSetUpdateInfo
+            {
+                .resource_set = _resources[0],
+                .resource_type = ResourceType::UniformBuffer,
+                .binding_index = 3,
+                .array_element = 0,
+                .resources = { resource_update + 2, 1 }
             },
         };
 
@@ -244,6 +270,7 @@ namespace ice::devui
 
         _pipeline = device.create_pipeline(pipeline_info);
 
+        _index_buffer_host = _index_buffers._allocator->allocate<ice::u16>(1024 * 1024 * 32);
         ice::array::push_back(
             _index_buffers,
             device.create_buffer(BufferType::Index, 1024 * 1024 * 64)
@@ -306,6 +333,7 @@ namespace ice::devui
     {
         ice::render::RenderDevice& device = gfx.device();
 
+        _index_buffers._allocator->deallocate(_index_buffer_host);
         for (ice::render::Buffer buffer : _index_buffers)
         {
             device.destroy_buffer(buffer);
@@ -314,6 +342,10 @@ namespace ice::devui
         {
             device.destroy_buffer(buffer);
         }
+        ice::array::clear(_index_buffers);
+        ice::array::clear(_vertex_buffers);
+
+        device.destroy_buffer(_uniform_buffer);
         device.destroy_image(_font_texture);
         device.destroy_pipeline(_pipeline);
         device.destroy_pipeline_layout(_pipeline_layout);
@@ -336,6 +368,46 @@ namespace ice::devui
         }
 
         RenderDevice& device = gfx.device();
+
+        {
+            ImGuiIO& _io = ImGui::GetIO();
+
+            // Avoid rendering when minimized, scale coordinates for retina displays (screen coordinates != framebuffer coordinates)
+            int fb_width = static_cast<int>(_io.DisplaySize.x * _io.DisplayFramebufferScale.x);
+            int fb_height = static_cast<int>(_io.DisplaySize.y * _io.DisplayFramebufferScale.y);
+            if (fb_width == 0 || fb_height == 0)
+            {
+                return;
+            }
+
+            float L = draw_data->DisplayPos.x;
+            float R = draw_data->DisplayPos.x + draw_data->DisplaySize.x;
+            float T = draw_data->DisplayPos.y;
+            float B = draw_data->DisplayPos.y + draw_data->DisplaySize.y;
+            float mvp[4][4] =
+            {
+                { 2.0f/(R-L),   0.0f,           0.0f,       0.0f },
+                { 0.0f,         2.0f/(T-B),     0.0f,       0.0f },
+                { 0.0f,         0.0f,           0.5f,       0.0f },
+                { (R+L)/(L-R),  (T+B)/(B-T),    0.5f,       1.0f },
+            };
+
+            ice::render::BufferUpdateInfo updates[]
+            {
+                ice::render::BufferUpdateInfo
+                {
+                    .buffer = _uniform_buffer,
+                    .data =
+                    {
+                        .location = mvp,
+                        .size = {sizeof(mvp)},
+                        .alignment = ice::ualign::b_4
+                    }
+                },
+            };
+
+            device.update_buffers(updates);
+        }
 
         ice::u32 buffer_update_count = 0;
         BufferUpdateInfo buffer_updates[10]{ };
@@ -411,19 +483,31 @@ namespace ice::devui
             vtx_info.data = ice::Data{ cmd_list->VtxBuffer.Data, ice::size_of<ImDrawVert> *cmd_list->VtxBuffer.Size, ice::align_of<ImDrawVert> };
             vtx_buffer_offset += cmd_list->VtxBuffer.Size;
 
-            BufferUpdateInfo& idx_info = buffer_updates[buffer_update_count + 1];
-            idx_info.buffer = _index_buffers[0];
-            idx_info.offset = idx_buffer_offset * sizeof(ImDrawIdx);
-            idx_info.data = ice::Data{ cmd_list->IdxBuffer.Data, ice::size_of<ImDrawIdx> *cmd_list->IdxBuffer.Size, ice::align_of<ImDrawIdx> };
+            // BufferUpdateInfo& idx_info = buffer_updates[buffer_update_count + 1];
+            // idx_info.buffer = _index_buffers[0];
+            // idx_info.offset = idx_buffer_offset * sizeof(ImDrawIdx);
+            // idx_info.data = ice::Data{ cmd_list->IdxBuffer.Data, ice::size_of<ImDrawIdx> *cmd_list->IdxBuffer.Size, ice::align_of<ImDrawIdx> };
+            ice::memcpy(_index_buffer_host + idx_buffer_offset, cmd_list->IdxBuffer.Data, sizeof(ImDrawIdx) * cmd_list->IdxBuffer.Size);
             idx_buffer_offset += cmd_list->IdxBuffer.Size;
 
-            buffer_update_count += 2;
+            buffer_update_count += 1;
             if (buffer_update_count == 10)
             {
                 device.update_buffers({ buffer_updates, buffer_update_count });
                 buffer_update_count = 0;
             }
         }
+
+        if (idx_buffer_offset % 4 != 0)
+        {
+            idx_buffer_offset += (4 - (idx_buffer_offset % 4));
+        }
+
+        BufferUpdateInfo& idx_info = buffer_updates[buffer_update_count];
+        idx_info.buffer = _index_buffers[0];
+        idx_info.offset = 0;
+        idx_info.data = { _index_buffer_host, { idx_buffer_offset * ice::u32(sizeof(ice::u16)) }, ice::ualign::b_4 };
+        buffer_update_count += 1;
 
         ICE_ASSERT(
             vtx_buffer_offset * sizeof(ImDrawVert) < (1024 * 1024 * 4),
@@ -451,6 +535,8 @@ namespace ice::devui
         using namespace ice::render;
 
         ImGuiIO& _io = ImGui::GetIO();
+
+        IPR_ZONE( api, cmds, "ImGUI" );
 
         // Avoid rendering when minimized, scale coordinates for retina displays (screen coordinates != framebuffer coordinates)
         int fb_width = static_cast<int>(_io.DisplaySize.x * _io.DisplayFramebufferScale.x);

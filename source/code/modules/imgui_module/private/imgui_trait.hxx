@@ -57,8 +57,10 @@ namespace ice::devui
         ice::render::ShaderStageFlags _shader_stages[2];
         ice::render::Shader _shaders[2];
 
+        ice::u16* _index_buffer_host;
         ice::Array<ice::render::Buffer> _index_buffers;
         ice::Array<ice::render::Buffer> _vertex_buffers;
+        ice::render::Buffer _uniform_buffer;
     };
 
     class ImGuiTrait final : public ice::devui::DevUITrait

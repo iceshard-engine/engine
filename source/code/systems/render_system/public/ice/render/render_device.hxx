@@ -118,6 +118,7 @@ namespace ice::render
 
         virtual auto create_queue(
             ice::render::QueueID queue_id,
+            ice::render::QueueFlags flags,
             ice::u32 queue_index,
             ice::u32 command_pools
         ) const noexcept -> ice::render::RenderQueue* = 0;

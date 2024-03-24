@@ -34,6 +34,13 @@ namespace ice::render::vk
         , _vk_queue_family_properties{ _allocator }
         , _vk_instance_extensions{ instance_extensions }
     {
+        // Get extension methods
+        vk_get_proc_address(
+            vk_vkGetPhysicalDeviceCalibrateableTimeDomainsEXT,
+            _vk_instance,
+            "vkGetPhysicalDeviceCalibrateableTimeDomainsEXT"
+        );
+
         ice::Array<VkPhysicalDevice> physical_devices{ _allocator };
         if (enumerate_objects(physical_devices, vkEnumeratePhysicalDevices, vk_instance))
         {
@@ -311,6 +318,13 @@ namespace ice::render::vk
             &device_create_info,
             nullptr,
             &vk_device
+        );
+
+        // Collect device extension function pointers
+        vk_get_proc_address(
+            vk_vkGetCalibratedTimestampsEXT,
+            vk_device,
+            "vkGetCalibratedTimestampsEXT"
         );
 
         ICE_ASSERT(

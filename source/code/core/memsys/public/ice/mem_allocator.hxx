@@ -26,6 +26,7 @@ namespace ice
         static constexpr bool HasDebugInformation = WithDebugInfo;
 
         AllocatorBase(std::source_location const&) noexcept { }
+        AllocatorBase(std::source_location const&, std::string_view) noexcept { }
         AllocatorBase(std::source_location const&, AllocatorBase&) noexcept { }
         AllocatorBase(std::source_location const&, AllocatorBase&, std::string_view) noexcept { }
 
@@ -170,6 +171,7 @@ namespace ice
         static constexpr bool HasDebugInformation = true;
 
         AllocatorBase(std::source_location const& src_loc) noexcept;
+        AllocatorBase(std::source_location const& src_loc, std::string_view name) noexcept;
         AllocatorBase(std::source_location const& src_loc, AllocatorBase& parent) noexcept;
         AllocatorBase(std::source_location const& src_loc, AllocatorBase& parent, std::string_view name) noexcept;
 

@@ -129,6 +129,7 @@ namespace ice::render::webgpu
 
         auto create_queue(
             ice::render::QueueID queue_id,
+            ice::render::QueueFlags queue_flags,
             ice::u32 queue_index,
             ice::u32 command_pools
         ) const noexcept -> ice::render::RenderQueue* override;
