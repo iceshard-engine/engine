@@ -378,7 +378,7 @@ auto ice_setup(
     }
 
     {
-        engine_create_info.traits = ice::create_default_trait_archive(state.engine_alloc);
+        engine_create_info.traits = ice::create_default_trait_archive(state.engine_alloc, *engine_create_info.states);
         ice::load_trait_descriptions(state.engine_alloc, *state.modules, *engine_create_info.traits);
     }
 
@@ -503,7 +503,7 @@ auto ice_update(
     ice::ShardContainer const& system_events = state.platform.core->system_events();
 
     bool const was_resized = ice::shards::contains(system_events, ice::platform::ShardID_WindowResized);
-    bool const was_minimized = ice::shards::contains(system_events, ice::platform::Shard_WindowMinimized);
+    bool const was_minimized = ice::shards::contains(system_events, ice::platform::ShardID_WindowMinimized);
 
     // Query platform events into the frame and input device handler.
     if (ice::shards::contains(system_events, ice::platform::Shard_AppQuit))

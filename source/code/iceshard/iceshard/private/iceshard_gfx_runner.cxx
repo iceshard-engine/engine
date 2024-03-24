@@ -103,7 +103,7 @@ namespace ice::gfx
     {
         ice::EngineStateTrigger triggers[]{ detail::StateTrigger_ActivateRuntime, detail::StateTrigger_DeactivateRuntime };
         _engine.states().register_graph(
-            { .initial = detail::State_GfxInactive, .commiter = this, .enable_subname_states = true },
+            { .initial = detail::State_GfxInactive, .committer = this, .enable_subname_states = true },
             triggers
         );
     }

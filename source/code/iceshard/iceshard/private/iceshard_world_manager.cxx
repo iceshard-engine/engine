@@ -52,7 +52,7 @@ namespace ice
     {
         ice::EngineStateRegisterParams state_params{
             .initial = ice::State_WorldCreated,
-            .commiter = this,
+            .committer = this,
             .enable_subname_states = true
         };
         _state_tracker.register_graph(state_params, detail::StateTriggers_WorldState);

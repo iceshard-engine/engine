@@ -65,7 +65,7 @@ namespace ice
     {
         if constexpr (ice::AssetEntry::HoldsDebugData)
         {
-            ice::HeapString<> asset_name{ _allocator, ice::stringid_hint(name).data() };
+            ice::HeapString<> asset_name{ _allocator, ice::stringid_hint(name) };
 
             ice::u64 const name_hash = ice::hash(name);
             ice::hashmap::set(

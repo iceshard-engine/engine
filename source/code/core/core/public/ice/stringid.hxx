@@ -170,7 +170,10 @@ namespace ice
             }
             else
             {
-                return val.debug_info.name_hint;
+                char const* end = val.debug_info.name_hint + 23;
+                // Need to find the end of the string (capped at 24 characters)
+                while (*end == '\0' && end > val.debug_info.name_hint) --end;
+                return { val.debug_info.name_hint, end };
             }
         }
     }

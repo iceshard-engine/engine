@@ -60,6 +60,13 @@ namespace ice
     }
 
     template<typename CharType>
+    constexpr BasicString<CharType>::BasicString(std::basic_string_view<CharType> sv) noexcept
+        : _data{ sv.data() }
+        , _size{ ice::ucount(sv.size()) }
+    {
+    }
+
+    template<typename CharType>
     constexpr auto BasicString<CharType>::operator[](ice::ucount index) const noexcept -> CharType const&
     {
         return _data[index];
