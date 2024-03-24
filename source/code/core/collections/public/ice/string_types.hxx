@@ -33,6 +33,7 @@ namespace ice
         constexpr BasicString(CharType const* str_ptr, ice::ucount size) noexcept;
         template<ice::ucount Size>
         constexpr BasicString(CharType const(&str_arr)[Size]) noexcept;
+        constexpr BasicString(std::basic_string_view<CharType> other) noexcept;
 
         constexpr auto operator=(BasicString&& other) noexcept -> BasicString& = default;
         constexpr auto operator=(BasicString const& other) noexcept -> BasicString& = default;

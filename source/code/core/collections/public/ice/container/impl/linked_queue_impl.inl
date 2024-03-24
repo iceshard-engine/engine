@@ -166,6 +166,42 @@ namespace ice
             std::atomic_thread_fence(std::memory_order_release);
         }
 
+        template<typename NodeType, typename DerivedNodeType>
+        inline bool push(ice::AtomicLinkedQueue<NodeType>& queue, ice::LinkedQueueRange<DerivedNodeType> range) noexcept
+        {
+            // If not tail, then the range is empty
+            if (range._tail == nullptr)
+            {
+                return false;
+            }
+
+            // If we have a tail we need to also have a head.
+            ICE_ASSERT_CORE(range._head != nullptr);
+
+            // Appending a range is a simple as adding one node.
+            // - We take the tail of the range and push it as the new tail on the queue
+            // - We set the previous_tail->next pointer to the queue head or set is as the new head.
+            // - All other values are still intact and the operation is still atomic like it was in the single node case.
+
+            NodeType* const previous_tail = std::atomic_exchange_explicit(
+                &queue._tail, range._tail, std::memory_order_relaxed
+            );
+
+            if (previous_tail == nullptr)
+            {
+                std::atomic_store_explicit(
+                    &queue._head, range._head, std::memory_order_relaxed
+                );
+            }
+            else
+            {
+                previous_tail->next = range._head;
+            }
+
+            std::atomic_thread_fence(std::memory_order_release);
+            return true;
+        }
+
         template<typename NodeType>
         inline auto pop(ice::AtomicLinkedQueue<NodeType>& queue) noexcept -> NodeType*
         {

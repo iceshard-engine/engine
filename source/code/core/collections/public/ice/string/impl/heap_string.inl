@@ -42,7 +42,7 @@ namespace ice
     {
         if (other._size > 0)
         {
-            ice::string::set_capacity(*this, other._size);
+            ice::string::set_capacity(*this, other._size + 1);
 
             // TODO: We need actually very, VERY good tests for string manipulations...
             ice::memcpy(
