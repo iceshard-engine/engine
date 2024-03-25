@@ -55,7 +55,7 @@ namespace ice::devui
                 ImGui::TreePush(&allocator);
             }
 
-            if (open && filtered_out == false)
+            if (filtered_out == false)
             {
                 if (ImGui::TableNextColumn())
                 {
