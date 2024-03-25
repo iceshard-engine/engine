@@ -36,6 +36,7 @@ namespace ice::input
         Exclaim,
         QuoteDouble,
         Hash,
+        Dollar,
         Percent,
         Ampersand,
         Quote,
@@ -146,6 +147,7 @@ namespace ice::input
         NumPadPlus,
         NumPadEnter,
 
+        NumPad0,
         NumPad1,
         NumPad2,
         NumPad3,
@@ -155,7 +157,6 @@ namespace ice::input
         NumPad7,
         NumPad8,
         NumPad9,
-        NumPad0,
 
         Reserved,
     };

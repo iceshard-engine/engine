@@ -11,8 +11,6 @@
 namespace ice::platform::webasm
 {
 
-    WebAsmCoreApp* WebAsmCoreApp::global_instance = nullptr;
-
     WebAsmCoreApp::WebAsmCoreApp() noexcept
         : _allocator{ }
         , _factories{ }
@@ -30,7 +28,6 @@ namespace ice::platform::webasm
         , _last_windows_size{ }
         , _render_surface{ }
     {
-        global_instance = this;
         _update_thread = ice::create_thread(
             _allocator,
             _update_queue,
