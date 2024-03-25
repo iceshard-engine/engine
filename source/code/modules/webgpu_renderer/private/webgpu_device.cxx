@@ -13,6 +13,7 @@
 #include "webgpu_resources.hxx"
 #include "webgpu_sampler.hxx"
 #include "webgpu_shader.hxx"
+#include "webgpu_renderpass.hxx"
 
 #include <ice/render/render_fence.hxx>
 #include <ice/assert.hxx>
@@ -68,13 +69,14 @@ namespace ice::render::webgpu
         ice::render::RenderpassInfo const& info
     ) noexcept -> ice::render::Renderpass
     {
-        return static_cast<Renderpass>(1); // TODO: Defines renderpass type?
+        return WebGPURenderPass::handle(_allocator.create<WebGPURenderPass>(_allocator, info));
     }
 
     void WebGPUDevice::destroy_renderpass(
         ice::render::Renderpass render_pass
     ) noexcept
     {
+        _allocator.destroy(WebGPURenderPass::native(render_pass));
     }
 
     auto WebGPUDevice::create_resourceset_layout(
@@ -308,6 +310,8 @@ namespace ice::render::webgpu
         ice::render::PipelineInfo const& info
     ) noexcept -> ice::render::Pipeline
     {
+        WebGPURenderPass* webgpu_rp = WebGPURenderPass::native(info.renderpass);
+
         WGPUVertexBufferLayout bindings[6]{};
         WGPUVertexAttribute attributes[16]{};
 
@@ -348,15 +352,22 @@ namespace ice::render::webgpu
         blend.alpha.dstFactor = WGPUBlendFactor_One;
         blend.alpha.operation = WGPUBlendOperation_Add;
 
-        WGPUColorTargetState target{};
-        target.writeMask = WGPUColorWriteMask_All;
-        target.format = WGPUTextureFormat_BGRA8Unorm;
-        target.blend = &blend;
-
+        WGPUColorTargetState targets[4]{};
         WGPUFragmentState fragment{};
         fragment.entryPoint = "main";
-        fragment.targetCount = 1;
-        fragment.targets = &target;
+        fragment.targetCount = 0;
+        fragment.targets = targets;
+
+        RenderSubPass const& subpass = webgpu_rp->subpasses[info.subpass_index];
+        for (AttachmentReference const& ref : subpass.color_attachments)
+        {
+            WGPUColorTargetState& target = targets[fragment.targetCount];
+            target.writeMask = WGPUColorWriteMask_All;
+            target.format = native_format(webgpu_rp->attachments[ref.attachment_index].format);
+            target.blend = &blend;
+
+            fragment.targetCount += 1;
+        }
 
         ice::u32 idx = 0;
         for (ShaderStageFlags stage : info.shaders_stages)

@@ -8,12 +8,19 @@
 namespace ice::render::webgpu
 {
 
+    struct WebGPURenderPass;
+    struct WebGPUFrameBuffer;
+
     struct WebGPUCommandBuffer
     {
         CommandBufferType type;
         WGPUCommandEncoder command_encoder;
         WGPUCommandBuffer command_buffer;
+
         WGPURenderPassEncoder renderpass_encoder;
+        WebGPUFrameBuffer const* framebuffer;
+        WebGPURenderPass const* renderpass;
+        ice::u32 renderpass_subpass;
 
         static auto handle(WebGPUCommandBuffer* native) noexcept
         {
