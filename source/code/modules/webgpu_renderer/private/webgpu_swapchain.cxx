@@ -35,7 +35,7 @@ namespace ice::render::webgpu
 
     auto WebGPUSwapchain::image_format() const noexcept -> ice::render::ImageFormat
     {
-        return ImageFormat::UNORM_RGBA;
+        return api_format(_wgpu_format);
     }
 
     auto WebGPUSwapchain::image_count() const noexcept -> ice::u32

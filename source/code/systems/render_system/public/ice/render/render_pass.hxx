@@ -74,16 +74,16 @@ namespace ice::render
 
     struct RenderSubPass
     {
-        ice::Span<ice::render::AttachmentReference> input_attachments;
-        ice::Span<ice::render::AttachmentReference> color_attachments;
+        ice::Span<ice::render::AttachmentReference const> input_attachments;
+        ice::Span<ice::render::AttachmentReference const> color_attachments;
         ice::render::AttachmentReference depth_stencil_attachment;
     };
 
     struct RenderpassInfo
     {
-        ice::Span<ice::render::RenderAttachment> attachments;
-        ice::Span<ice::render::RenderSubPass> subpasses;
-        ice::Span<ice::render::SubpassDependency> dependencies;
+        ice::Span<ice::render::RenderAttachment const> attachments;
+        ice::Span<ice::render::RenderSubPass const> subpasses;
+        ice::Span<ice::render::SubpassDependency const> dependencies;
     };
 
 } // namespace ice::render
