@@ -3,6 +3,7 @@
 
 #pragma once
 #include <ice/devui/devui_system.hxx>
+#include <ice/mem_allocator_proxy.hxx>
 
 #include "imgui_trait.hxx"
 #include "widgets/widget_imgui_allocator_tree.hxx"
@@ -29,7 +30,7 @@ namespace ice::devui
         auto allocator() noexcept -> ice::Allocator& { return _allocator; }
 
     private:
-        ice::Allocator& _allocator;
+        ice::ProxyAllocator _allocator;
         ice::devui::ImGuiTrait* _render_trait;
         ice::devui::ImGui_AllocatorTreeWidget* _widget_alloc_tree;
 
