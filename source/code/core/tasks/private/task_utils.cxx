@@ -277,16 +277,16 @@ namespace ice
 
     auto await_queue_on(ice::TaskQueue& queue, void* result, ice::TaskScheduler& resumer) noexcept -> ice::Task<bool>
     {
-        // We make use of the fact that the awaitable has public access to the queue.
-        // This is currently a bit of cheating, but it's not directly accessible to anyone who doesn't know what's happening here ;p
-        auto awaitable = resumer.schedule();
-
         // We set the result value for each awaitable in the queue and nothing more.
         auto tasks_awaitables = ice::linked_queue::consume(queue._awaitables);
         for (ice::TaskAwaitableBase* task_awaitable : tasks_awaitables)
         {
             task_awaitable->result.ptr = result;
         }
+
+        // We make use of the fact that the awaitable has public access to the queue.
+        // This is currently a bit of cheating, but it's not directly accessible to anyone who doesn't know what's happening here ;p
+        auto awaitable = resumer.schedule();
 
         // First we push all awaitables from the queue onto the resumers queue. The range is copied, so we can check later if actually any tasks where queued.
         bool const added = ice::linked_queue::push(awaitable._queue._awaitables, ice::move(tasks_awaitables));
@@ -297,6 +297,33 @@ namespace ice
 
         // Return information if anything was in the queue
         co_return added;
+    }
+
+    bool schedule_queue_on(ice::TaskQueue& queue, ice::TaskScheduler& resumer) noexcept
+    {
+        // We make use of the fact that the awaitable has public access to the queue.
+        // This is currently a bit of cheating, but it's not directly accessible to anyone who doesn't know what's happening here ;p
+        auto awaitable = resumer.schedule();
+
+        // First we push all awaitables from the queue onto the resumers queue.
+        return ice::linked_queue::push(awaitable._queue._awaitables, ice::linked_queue::consume(queue._awaitables));
+    }
+
+    bool schedule_queue_on(ice::TaskQueue& queue, void* result, ice::TaskScheduler& resumer) noexcept
+    {
+        // We set the result value for each awaitable in the queue and nothing more.
+        auto tasks_awaitables = ice::linked_queue::consume(queue._awaitables);
+        for (ice::TaskAwaitableBase* task_awaitable : tasks_awaitables)
+        {
+            task_awaitable->result.ptr = result;
+        }
+
+        // We make use of the fact that the awaitable has public access to the queue.
+        // This is currently a bit of cheating, but it's not directly accessible to anyone who doesn't know what's happening here ;p
+        auto awaitable = resumer.schedule();
+
+        // First we push all awaitables from the queue onto the resumers queue.
+        return ice::linked_queue::push(awaitable._queue._awaitables, ice::linked_queue::consume(queue._awaitables));
     }
 
 } // namespace ice

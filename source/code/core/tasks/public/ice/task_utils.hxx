@@ -85,6 +85,10 @@ namespace ice
 
     auto await_queue_on(ice::TaskQueue& queue, void* result, ice::TaskScheduler& resumer) noexcept -> ice::Task<bool>;
 
+    bool schedule_queue_on(ice::TaskQueue& queue, ice::TaskScheduler& resumer) noexcept;
+
+    bool schedule_queue_on(ice::TaskQueue& queue, void* result, ice::TaskScheduler& resumer) noexcept;
+
 
     [[deprecated("Currently it's unsure if this function will remain in the current form.")]]
     void schedule_task_on(ice::Task<void> task, ice::TaskScheduler& scheduler) noexcept;

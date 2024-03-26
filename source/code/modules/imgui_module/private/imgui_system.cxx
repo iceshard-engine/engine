@@ -35,15 +35,26 @@ namespace ice::devui
             return trait;
         }
 
+        auto imgui_memalloc(size_t size, void* userdata) noexcept -> void*
+        {
+            return reinterpret_cast<ice::ProxyAllocator*>(userdata)->allocate(ice::usize{size}).memory;
+        }
+
+        auto imgui_memfree(void* ptr, void* userdata) noexcept -> void
+        {
+            return reinterpret_cast<ice::ProxyAllocator*>(userdata)->deallocate(ptr);
+        }
+
     } // namespace detail
 
     ImGuiSystem::ImGuiSystem(ice::Allocator& alloc) noexcept
-        : _allocator{ alloc }
+        : _allocator{ alloc, "ImGui" }
         , _render_trait{ nullptr }
         , _widget_alloc_tree{ nullptr }
         , _widgets{ alloc }
         , _inactive_widgets{ alloc }
     {
+        ImGui::SetAllocatorFunctions(detail::imgui_memalloc, detail::imgui_memfree, &_allocator);
         ice::array::reserve(_widgets, 100);
         detail::create_alloc_tree_widget(*this, _allocator);
     }

@@ -1,7 +1,7 @@
 /// Copyright 2023 - 2024, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
-#include "webasm_core_app.hxx"
+#include "webasm_app.hxx"
 
 #include <ice/platform_core.hxx>
 #include <ice/platform_storage.hxx>
@@ -14,7 +14,7 @@
 namespace ice::platform
 {
 
-    using ice::platform::webasm::WebAsmCoreApp;
+    using ice::platform::webasm::WebAsmApp;
 
     auto available_features() noexcept -> ice::platform::FeatureFlags
     {
@@ -39,7 +39,7 @@ namespace ice::platform
         IPT_ZONE_SCOPED;
 
         // Check that we have a JNI NativeActivity instance already created.
-        if (WebAsmCoreApp::global_instance == nullptr)
+        if (WebAsmApp::global_instance == nullptr)
         {
             return ice::E_NotImplemented;
         }
@@ -49,12 +49,13 @@ namespace ice::platform
             return ice::E_InvalidArgument; // TODO
         }
 
+        WebAsmApp::global_instance->initialize(params);
         return ice::S_Success;
     }
 
     auto query_api(ice::platform::FeatureFlags flag, void*& out_api_ptr) noexcept -> ice::Result
     {
-        WebAsmCoreApp* instance_ptr = WebAsmCoreApp::global_instance;
+        WebAsmApp* instance_ptr = WebAsmApp::global_instance;
         ICE_ASSERT(instance_ptr != nullptr, "Platform not initialized!");
 
         if (ice::has_all(available_features(), flag) == false)

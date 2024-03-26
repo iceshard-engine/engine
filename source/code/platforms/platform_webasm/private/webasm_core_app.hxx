@@ -22,8 +22,6 @@ namespace ice::platform::webasm
         , public ice::platform::StoragePaths
     {
     public:
-        static WebAsmCoreApp* global_instance;
-
         WebAsmCoreApp() noexcept;
         virtual ~WebAsmCoreApp() noexcept;
 
