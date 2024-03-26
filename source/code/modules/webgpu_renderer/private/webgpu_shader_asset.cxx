@@ -26,6 +26,7 @@ namespace ice::render::vk
         ice::Allocator& alloc
     ) noexcept -> ice::Task<ice::ResourceCompilerResult>
     {
+        ICE_LOG_WGPU(LogSeverity::Info, "Load WebGPU shader source: {}", ice::resource_path(source));
         ice::ResourceResult loaded = co_await tracker.load_resource(source);
         ICE_ASSERT_CORE(loaded.resource_status == ResourceStatus::Loaded);
         ICE_LOG_WGPU(LogSeverity::Info, "Compiled WebGPU shader resource: {}", ice::resource_path(source));

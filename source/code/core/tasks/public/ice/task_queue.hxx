@@ -36,7 +36,11 @@ namespace ice
         ice::TaskAwaitableBase* const awaitable = ice::linked_queue::pop(_awaitables);
         if (awaitable != nullptr)
         {
-            awaitable->result.ptr = result_value;
+            if (result_value != nullptr)
+            {
+                ICE_ASSERT_CORE(awaitable->result.ptr == nullptr);
+                awaitable->result.ptr = result_value;
+            }
             awaitable->_coro.resume();
         }
         return awaitable != nullptr;
@@ -53,7 +57,11 @@ namespace ice
         ice::ucount processed = 0;
         for (ice::TaskAwaitableBase* const awaitable : ice::linked_queue::consume(_awaitables))
         {
-            awaitable->result.ptr = result_value;
+            if (result_value != nullptr)
+            {
+                ICE_ASSERT_CORE(awaitable->result.ptr == nullptr);
+                awaitable->result.ptr = result_value;
+            }
             awaitable->_coro.resume();
             processed += 1;
         }

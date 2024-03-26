@@ -7,8 +7,10 @@
 #include "webgpu_buffer.hxx"
 #include "webgpu_image.hxx"
 #include "webgpu_pipeline.hxx"
+#include "webgpu_renderpass.hxx"
 #include "webgpu_resources.hxx"
 #include "webgpu_utils.hxx"
+#include <ice/mem_allocator_stack.hxx>
 
 namespace ice::render::webgpu
 {
@@ -37,24 +39,46 @@ namespace ice::render::webgpu
     ) noexcept
     {
         WebGPUCommandBuffer* webgpu_cmds = WebGPUCommandBuffer::native(cmds);
-        WebGPUFrameBuffer* webgpu_fb = WebGPUFrameBuffer::native(framebuffer);
+        WebGPUFrameBuffer const* webgpu_fb = WebGPUFrameBuffer::native(framebuffer);
+        WebGPURenderPass const* webgpu_rp = WebGPURenderPass::native(renderpass);
 
-        // Max 5 attachments for now
+        // Max 4 attachments for now
         ice::ucount attachment_count = 0;
-        WGPURenderPassColorAttachment attachments[5];
-        for (WebGPUImage const* image : webgpu_fb->_images)
+        WGPURenderPassColorAttachment attachments[4];
+
+        RenderSubPass const& subpass = webgpu_rp->subpasses[0];
+        for (AttachmentReference const& ref : subpass.color_attachments)
         {
+            RenderAttachment const& att = webgpu_rp->attachments[ref.attachment_index];
+
             WGPURenderPassColorAttachment& attachment = attachments[attachment_count];
             ice::vec4f clear_value =  clear_values[attachment_count];
             attachment.clearValue = { (double)clear_value.x, (double)clear_value.y, (double)clear_value.z, (double)clear_value.w };
             attachment.depthSlice = WGPU_DEPTH_SLICE_UNDEFINED;
-            attachment.loadOp = WGPULoadOp_Clear;
-            attachment.storeOp = WGPUStoreOp_Store;
-            attachment.view = image->wgpu_texture_view;
+            attachment.loadOp = att.operations[0] == AttachmentOperation::Load_Clear ? WGPULoadOp_Clear : WGPULoadOp_Undefined;
+            attachment.storeOp = att.operations[1] == AttachmentOperation::Store_Store ? WGPUStoreOp_Store : WGPUStoreOp_Discard;
+            attachment.view = webgpu_fb->_images[ref.attachment_index]->wgpu_texture_view;
             attachment.resolveTarget = nullptr;
             attachment.nextInChain = nullptr;
             attachment_count += 1;
         }
+
+        ICE_ASSERT_CORE(subpass.depth_stencil_attachment.layout != ImageLayout::DepthStencil);
+        // WGPURenderPassDepthStencilAttachment depthstencil;
+        // if (subpass.depth_stencil_attachment.layout != ImageLayout::DepthStencil)
+        // {
+        //     RenderAttachment const& att = webgpu_rp->attachments[subpass.depth_stencil_attachment.attachment_index];
+
+        //     ice::vec4f clear_value =  clear_values[attachment_count];
+        //     attachment.clearValue = { (double)clear_value.x, (double)clear_value.y, (double)clear_value.z, (double)clear_value.w };
+        //     attachment.depthSlice = WGPU_DEPTH_SLICE_UNDEFINED;
+        //     attachment.loadOp = att.operations[0] == AttachmentOperation::Load_Clear ? WGPULoadOp_Clear : WGPULoadOp_Undefined;
+        //     attachment.storeOp = att.operations[1] == AttachmentOperation::Store_Store ? WGPUStoreOp_Store : WGPUStoreOp_Discard;
+        //     attachment.view = webgpu_fb->_images[subpass.depth_stencil_attachment.attachment_index]->wgpu_texture_view;
+        //     attachment.resolveTarget = nullptr;
+        //     attachment.nextInChain = nullptr;
+        //     attachment_count += 1;
+        // }
 
         WGPURenderPassDescriptor descriptor{};
         descriptor.label = "Default Renderpass";
@@ -62,8 +86,68 @@ namespace ice::render::webgpu
         descriptor.colorAttachments = attachments;
         descriptor.depthStencilAttachment = nullptr;
         descriptor.timestampWrites = nullptr;
-
         webgpu_cmds->renderpass_encoder = wgpuCommandEncoderBeginRenderPass(webgpu_cmds->command_encoder, &descriptor);
+
+        // for (WebGPUImage const* image : webgpu_fb->_images)
+        // {
+        //     WGPURenderPassColorAttachment& attachment = attachments[attachment_count];
+        //     ice::vec4f clear_value =  clear_values[attachment_count];
+        //     attachment.clearValue = { (double)clear_value.x, (double)clear_value.y, (double)clear_value.z, (double)clear_value.w };
+        //     attachment.depthSlice = WGPU_DEPTH_SLICE_UNDEFINED;
+        //     attachment.loadOp = WGPULoadOp_Clear;
+        //     attachment.storeOp = WGPUStoreOp_Store;
+        //     attachment.view = image->wgpu_texture_view;
+        //     attachment.resolveTarget = nullptr;
+        //     attachment.nextInChain = nullptr;
+        //     attachment_count += 1;
+        // }
+
+        webgpu_cmds->framebuffer = webgpu_fb;
+        webgpu_cmds->renderpass = webgpu_rp;
+        webgpu_cmds->renderpass_subpass = 0;
+    }
+
+    void next_subpass(
+        ice::render::CommandBuffer cmds,
+        ice::render::SubPassContents contents
+    ) noexcept
+    {
+        WebGPUCommandBuffer* webgpu_cmds = WebGPUCommandBuffer::native(cmds);
+        WebGPUFrameBuffer const* webgpu_fb = webgpu_cmds->framebuffer;
+        WebGPURenderPass const* webgpu_rp = webgpu_cmds->renderpass;
+
+        wgpuRenderPassEncoderEnd(webgpu_cmds->renderpass_encoder);
+
+        // Max 4 attachments for now
+        ice::ucount attachment_count = 0;
+        WGPURenderPassColorAttachment attachments[4];
+
+        RenderSubPass const& subpass = webgpu_rp->subpasses[webgpu_cmds->renderpass_subpass];
+        for (AttachmentReference const& ref : subpass.color_attachments)
+        {
+            RenderAttachment const& att = webgpu_rp->attachments[ref.attachment_index];
+
+            WGPURenderPassColorAttachment& attachment = attachments[attachment_count];
+            attachment.clearValue = { (double)0.3, (double)0.3, (double)0.3, (double)1 };
+            attachment.depthSlice = WGPU_DEPTH_SLICE_UNDEFINED;
+            attachment.loadOp = att.operations[0] == AttachmentOperation::Load_Clear ? WGPULoadOp_Clear : WGPULoadOp_Undefined;
+            attachment.storeOp = att.operations[1] == AttachmentOperation::Store_Store ? WGPUStoreOp_Store : WGPUStoreOp_Discard;
+            attachment.view = webgpu_fb->_images[ref.attachment_index]->wgpu_texture_view;
+            attachment.resolveTarget = nullptr;
+            attachment.nextInChain = nullptr;
+            attachment_count += 1;
+        }
+
+        ICE_ASSERT_CORE(subpass.depth_stencil_attachment.layout != ImageLayout::DepthStencil);
+
+        WGPURenderPassDescriptor descriptor{};
+        descriptor.label = "Default Renderpass";
+        descriptor.colorAttachmentCount = attachment_count;
+        descriptor.colorAttachments = attachments;
+        descriptor.depthStencilAttachment = nullptr;
+        descriptor.timestampWrites = nullptr;
+        webgpu_cmds->renderpass_encoder = wgpuCommandEncoderBeginRenderPass(webgpu_cmds->command_encoder, &descriptor);
+        webgpu_cmds->renderpass_subpass += 1;
     }
 
     void WebGPUCommands::set_viewport(
