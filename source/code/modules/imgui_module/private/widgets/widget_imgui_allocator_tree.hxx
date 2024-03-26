@@ -24,6 +24,9 @@ namespace ice::devui
     private:
         ice::AllocatorDebugInfo const& _root_tracked_allocator;
         ice::devui::WidgetState* _state;
+
+        char _filter[32];
+        bool _expanded;
     };
 
 } // namespace ice::devui
