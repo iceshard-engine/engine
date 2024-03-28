@@ -1,0 +1,25 @@
+/// Copyright 2022 - 2024, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
+.Project =
+[
+    .Name = 'devui_system'
+    .Kind = .Kind_StaticLib
+    .Group = 'Systems'
+
+    .BaseDir = '$WorkspaceCodeDir$/systems/devui_system'
+
+    .Public =
+    [
+        .Uses = {
+            'memsys'
+            'collections'
+            'utils'
+        }
+
+        .Modules = {
+            'imgui'
+        }
+    ]
+]
+.Projects + .Project
