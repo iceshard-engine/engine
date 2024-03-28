@@ -13,6 +13,17 @@ namespace ice::devui
 {
 
     static ImGuiSystem* global_ImGuiContext = nullptr;
+    static ProxyAllocator* global_ImGuiAllocator = nullptr;
+
+    static auto imgui_memalloc(size_t size, void* userdata) noexcept -> void*
+    {
+        return reinterpret_cast<ice::ProxyAllocator*>(userdata)->allocate(ice::usize{size}).memory;
+    }
+
+    static auto imgui_memfree(void* ptr, void* userdata) noexcept -> void
+    {
+        return reinterpret_cast<ice::ProxyAllocator*>(userdata)->deallocate(ptr);
+    }
 
     auto imgui_create_context(ice::Allocator& alloc) noexcept -> ice::DevUIContext*
     {
@@ -33,7 +44,13 @@ namespace ice::devui
 
     void imgui_context_setup(ice::api::DevUI_API::FnContextSetupCallback cb, void* userdata) noexcept
     {
-        if (cb("devui-context/imgui"_sid, ImGui::GetCurrentContext(), userdata) == false)
+        DevUIContextSetupParams const params{
+            .native_context = ImGui::GetCurrentContext(),
+            .fn_alloc = imgui_memalloc,
+            .fn_dealloc = imgui_memfree,
+            .alloc_userdata = global_ImGuiAllocator
+        };
+        if (cb("devui-context/imgui"_sid, params, userdata) == false)
         {
             ICE_LOG(LogSeverity::Warning, LogTag::System, "Failed to initialize 'ImGui' context on module!");
         }
@@ -57,22 +74,8 @@ namespace ice::devui
         }
     }
 
-    [[maybe_unused]]
-    static auto imgui_memalloc(size_t size, void* userdata) noexcept -> void*
-    {
-        return reinterpret_cast<ice::ProxyAllocator*>(userdata)->allocate(ice::usize{size}).memory;
-    }
-
-    [[maybe_unused]]
-    static auto imgui_memfree(void* ptr, void* userdata) noexcept -> void
-    {
-        return reinterpret_cast<ice::ProxyAllocator*>(userdata)->deallocate(ptr);
-    }
-
     struct ImGuiDevUIModule : ice::Module<ImGuiDevUIModule>
     {
-        static inline ice::ProxyAllocator* imgui_alloc = nullptr;
-
         static void v1_devui_system(ice::api::DevUI_API& api) noexcept
         {
             api.fn_create_context = imgui_create_context;
@@ -84,10 +87,10 @@ namespace ice::devui
 
         static bool on_load(ice::Allocator& alloc, ice::ModuleNegotiator const& negotiator) noexcept
         {
-            ICE_ASSERT_CORE(imgui_alloc == nullptr);
-            imgui_alloc = alloc.create<ice::ProxyAllocator>(alloc, "ImGUI");
+            ICE_ASSERT_CORE(global_ImGuiAllocator == nullptr);
+            global_ImGuiAllocator = alloc.create<ice::ProxyAllocator>(alloc, "ImGUI");
 
-            ImGui::SetAllocatorFunctions(imgui_memalloc, imgui_memfree, imgui_alloc);
+            ImGui::SetAllocatorFunctions(imgui_memalloc, imgui_memfree, global_ImGuiAllocator);
             ImGui::CreateContext();
 
             ice::LogModule::init(alloc, negotiator);
@@ -98,8 +101,8 @@ namespace ice::devui
         {
             ImGui::DestroyContext();
 
-            alloc.destroy(imgui_alloc);
-            imgui_alloc = nullptr;
+            alloc.destroy(global_ImGuiAllocator);
+            global_ImGuiAllocator = nullptr;
         }
 
         IS_WORKAROUND_MODULE_INITIALIZATION(ImGuiDevUIModule);

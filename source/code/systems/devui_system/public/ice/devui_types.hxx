@@ -10,10 +10,14 @@ namespace ice
 
     struct DevUIWidgetInfo;
     struct DevUIWidgetState;
+    struct DevUIContextSetupParams;
+
+    using FnDevUIAlloc = void*(*)(size_t size, void* userdata) noexcept;
+    using FnDevUIDealloc = void(*)(void* size, void* userdata) noexcept;
 
     using FnDevUIContextSetupCallback = bool(*)(
         ice::StringID_Arg context_name,
-        void* native_context,
+        ice::DevUIContextSetupParams const& params,
         void* userdata
     ) noexcept;
 

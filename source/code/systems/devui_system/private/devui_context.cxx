@@ -32,6 +32,22 @@ namespace ice
         return true;
     }
 
+    bool devui_context_setup_default(
+        ice::StringID_Arg context_name,
+        ice::DevUIContextSetupParams const& params,
+        void* userdata
+    ) noexcept
+    {
+        if (context_name == "devui-context/imgui"_sid)
+        {
+            ICE_ASSERT_CORE(ImGui::GetCurrentContext() == nullptr);
+            ImGui::SetAllocatorFunctions(params.fn_alloc, params.fn_dealloc, params.alloc_userdata);
+            ImGui::SetCurrentContext((ImGuiContext*)params.native_context);
+            return true;
+        }
+        return false;
+    }
+
     bool devui_setup_context(
         ice::ModuleQuery const& query,
         ice::FnDevUIContextSetupCallback callback,
@@ -47,17 +63,6 @@ namespace ice
             // Store some of the API pointers
             global_context_trait_name = api.fn_context_trait_name;
             global_context_register_widget = api.fn_context_register_widget;
-            return true;
-        }
-        return false;
-    }
-
-    bool devui_oncreate_context_setup(ice::StringID_Arg name, void* context, void*) noexcept
-    {
-        if (name == "devui-context/imgui"_sid)
-        {
-            ICE_ASSERT_CORE(ImGui::GetCurrentContext() == nullptr);
-            ImGui::SetCurrentContext((ImGuiContext*) context);
             return true;
         }
         return false;
@@ -81,7 +86,7 @@ namespace ice
             {
                 result = ice::make_unique<ice::DevUIContext>(api.fn_destry_context, context);
 
-                devui_setup_context(query, devui_oncreate_context_setup);
+                ice::devui_setup_context(query, ice::devui_context_setup_default);
             }
         }
 

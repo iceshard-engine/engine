@@ -113,20 +113,9 @@ namespace ice
 
     struct IceShardModule : ice::Module<IceShardModule>
     {
-        static bool devui_context_setup(ice::StringID_Arg name, void* context, void*) noexcept
-        {
-            if (name == "devui-context/imgui"_sid)
-            {
-                ICE_ASSERT_CORE(ImGui::GetCurrentContext() == nullptr);
-                ImGui::SetCurrentContext((ImGuiContext*) context);
-                return true;
-            }
-            return false;
-        }
-
         static bool on_load(ice::Allocator& alloc, ice::ModuleNegotiator const& negotiator) noexcept
         {
-            ice::devui_setup_context(negotiator, devui_context_setup);
+            ice::devui_setup_context(negotiator);
             ice::LogModule::init(alloc, negotiator);
             return negotiator.register_api(iceshard_get_api_proc);
         }
