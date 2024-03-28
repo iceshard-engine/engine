@@ -184,20 +184,20 @@ namespace ice
             .thread = _schedulers
         };
 
-        ice::StringID_Hash world_name;
-        if (ice::shard_inspect(trigger_shard, world_name) == false)
+        ice::StringID world_name;
+        if (ice::shard_inspect(trigger_shard, world_name.value) == false)
         {
             return false;
         }
 
         if (trigger.to == State_WorldRuntimeActive)
         {
-            ice::wait_for(_engine.worlds().find_world({ world_name })->activate(params));
-            ice::shards::push_back(out_shards, trigger.results | world_name);
+            ice::wait_for(_engine.worlds().find_world(world_name)->activate(params));
+            ice::shards::push_back(out_shards, trigger.results | world_name.value);
         }
         else if (trigger.to == State_WorldRuntimeInactive)
         {
-            ice::wait_for(_engine.worlds().find_world({ world_name })->deactivate(params));
+            ice::wait_for(_engine.worlds().find_world(world_name)->deactivate(params));
         }
         return true;
     }
