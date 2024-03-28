@@ -11,7 +11,9 @@ namespace ice
     template<typename Type>
     class Module;
     class ModuleNegotiator;
+    class ModuleRegister;
 
+    struct ModuleQuery;
     struct ModuleAPI;
     struct ModuleNegotiatorAPI;
     struct ModuleNegotiatorAPIContext;

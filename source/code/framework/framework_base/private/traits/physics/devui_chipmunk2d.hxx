@@ -2,7 +2,7 @@
 /// SPDX-License-Identifier: MIT
 
 #pragma once
-#include <ice/devui/devui_widget.hxx>
+#include <ice/devui_widget.hxx>
 
 #include "trait_chipmunk2d.hxx"
 #include "chipmunk2d.hxx"
@@ -10,6 +10,7 @@
 namespace ice
 {
 
+#if 0 // TODO: Update?
     class DevUI_Chipmunk2D : public ice::devui::DevUIWidget
     {
     public:
@@ -29,5 +30,6 @@ namespace ice
         ice::devui::WidgetState* _state;
         ice::u32 _debug_draw_flags;
     };
+#endif
 
 } // namespace ice

@@ -33,8 +33,8 @@
 #include <ice/world/world_trait.hxx>
 #include <ice/world/world_updater.hxx>
 
-#include <ice/devui/devui_module.hxx>
-#include <ice/devui/devui_system.hxx>
+#include <ice/devui_module.hxx>
+#include <ice/devui_context.hxx>
 
 #include <ice/resource_tracker.hxx>
 #include <ice/resource_provider.hxx>
@@ -127,7 +127,7 @@ struct ice::app::State
 
     struct Debug
     {
-        ice::UniquePtr<ice::devui::DevUISystem> devui;
+        ice::UniquePtr<ice::DevUIContext> devui;
     } debug;
 
     struct Platform
@@ -138,10 +138,10 @@ struct ice::app::State
 
     State(ice::Allocator& alloc) noexcept
         : alloc{ alloc }
-        , resources_alloc{ alloc, "resources" }
-        , modules_alloc{ alloc, "modules" }
-        , gamework_alloc{ alloc, "gamework" }
-        , engine_alloc{ alloc, "engine" }
+        , resources_alloc{ alloc, "Resources" }
+        , modules_alloc{ alloc, "Modules" }
+        , gamework_alloc{ alloc, "Gamework" }
+        , engine_alloc{ alloc, "Engine" }
         , thread_pool_queue{ }
         , thread_pool_scheduler{ thread_pool_queue }
         , thread_pool{ }
@@ -353,6 +353,14 @@ auto ice_setup(
         state.resources->sync_resources();
     }
 
+    ice::HeapString<> imgui_module = ice::resolve_dynlib_path(*state.resources, alloc, "imgui_module");
+    state.modules->load_module(state.modules_alloc, imgui_module);
+
+    if (ice::build::is_debug || ice::build::is_develop)
+    {
+        state.debug.devui = ice::create_devui_context(state.modules_alloc, *state.modules);
+    }
+
     // Run game setup
     ice::framework::State const framework_state{
         .modules = *state.modules,
@@ -380,12 +388,6 @@ auto ice_setup(
     {
         engine_create_info.traits = ice::create_default_trait_archive(state.engine_alloc, *engine_create_info.states);
         ice::load_trait_descriptions(state.engine_alloc, *state.modules, *engine_create_info.traits);
-    }
-
-    if (ice::build::is_debug || ice::build::is_develop)
-    {
-        state.debug.devui = ice::devui::create_devui_system(state.engine_alloc, *state.modules);
-        state.debug.devui->register_trait(*engine_create_info.traits);
     }
 
     state.engine = ice::create_engine(state.engine_alloc, *state.modules, ice::move(engine_create_info));
@@ -583,7 +585,7 @@ auto ice_update(
     if (state.debug.devui != nullptr)
     {
         IPT_ZONE_SCOPED_NAMED("Runner Frame - Build Developer UI");
-        state.debug.devui->render_builtin_widgets(*runtime.frame);
+        state.debug.devui->update_widgets();
     }
 
     if (was_minimized)

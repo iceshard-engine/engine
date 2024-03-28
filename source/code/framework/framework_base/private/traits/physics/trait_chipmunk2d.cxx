@@ -5,7 +5,7 @@
 #include "devui_chipmunk2d.hxx"
 #include <ice/game_anim.hxx>
 
-#include <ice/devui/devui_system.hxx>
+#include <ice/devui_context.hxx>
 
 #include <ice/engine.hxx>
 #include <ice/engine_frame.hxx>

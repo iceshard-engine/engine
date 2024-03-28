@@ -10,10 +10,11 @@
 #include <ice/engine_runner.hxx>
 #include <ice/engine_shards.hxx>
 #include <ice/engine_devui.hxx>
-#include <ice/devui/devui_widget.hxx>
 #include <ice/world/world.hxx>
 #include <ice/world/world_updater.hxx>
 #include <ice/world/world_trait_module.hxx>
+#include <ice/devui_widget.hxx>
+#include <ice/devui_context.hxx>
 
 #include <ice/gfx/gfx_stage.hxx>
 #include <ice/gfx/gfx_runner.hxx>
@@ -72,41 +73,20 @@ auto ice::framework::create_game(ice::Allocator& alloc) noexcept -> ice::UniqueP
     return ice::make_unique<TestGame>(alloc, alloc);
 }
 
-struct WorldActivationTrait : ice::Trait, ice::devui::DevUIWidget
+struct WorldActivationTrait : ice::Trait, ice::DevUIWidget
 {
-    ice::devui::WidgetState* _state;
     bool is_active = false;
     bool do_active = false;
 
-    auto settings() const noexcept -> ice::devui::WidgetSettings const&
+    WorldActivationTrait() noexcept
+        : ice::DevUIWidget{ { .category = "Test", .name = "Test" } }
     {
-        static ice::devui::WidgetSettings settings{ .menu_text = "Test", .menu_category = "Test" };
-        return settings;
+        ice::devui_register_widget(this);
     }
 
-    void on_prepare(void* ctx, ice::devui::WidgetState& state) noexcept override
+    void build_content() noexcept override
     {
-        ImGui::SetCurrentContext((ImGuiContext*)ctx);
-        _state = &state;
-    }
-
-    void on_draw() noexcept override
-    {
-        if (ImGui::Begin("Test", &_state->is_visible))
-        {
-            ImGui::Checkbox("World Active", &do_active);
-        }
-        ImGui::End();
-    }
-
-    auto devui_show(ice::EngineDevUI& update) noexcept -> ice::Task<>
-    {
-        static bool once = true;
-        if (ice::exchange(once, false))
-        {
-            update.register_widget(this);
-        }
-        co_return;
+        ImGui::Checkbox("World Active", &do_active);
     }
 
     auto logic(ice::EngineFrameUpdate const& update) noexcept -> ice::Task<>
@@ -129,7 +109,6 @@ struct WorldActivationTrait : ice::Trait, ice::devui::DevUIWidget
     void gather_tasks(ice::TraitTaskRegistry& task_launcher) noexcept
     {
         task_launcher.bind<&WorldActivationTrait::logic>();
-        task_launcher.bind<&WorldActivationTrait::devui_show>(ice::ShardID_RegisterDevUI);
     }
 };
 
@@ -223,11 +202,9 @@ void TestGame::on_setup(ice::framework::State const& state) noexcept
 
     ice::HeapString<> pipelines_module = ice::resolve_dynlib_path(res, _allocator, "iceshard_pipelines");
     ice::HeapString<> vulkan_module = ice::resolve_dynlib_path(res, _allocator, "vulkan_renderer");
-    ice::HeapString<> imgui_module = ice::resolve_dynlib_path(res, _allocator, "imgui_module");
 
     mod.load_module(_allocator, pipelines_module);
     mod.load_module(_allocator, vulkan_module);
-    mod.load_module(_allocator, imgui_module);
 }
 
 void TestGame::on_shutdown(ice::framework::State const& state) noexcept
@@ -246,7 +223,7 @@ void TestGame::on_resume(ice::Engine& engine) noexcept
         ice::StringID traits[]{
             "act"_sid,
             "test2"_sid,
-            ice::Constant_TraitName_DevUI,
+            ice::devui_trait_name(),
             ice::TraitID_GfxShaderStorage
         };
         ice::StringID traits2[]{
