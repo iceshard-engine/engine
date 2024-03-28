@@ -16,7 +16,7 @@
         }
         .Uses = {
             'devui_system'
-            'devui'
+            'engine'
             'utils'
         }
     ]

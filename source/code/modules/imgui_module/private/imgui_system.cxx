@@ -2,6 +2,7 @@
 /// SPDX-License-Identifier: MIT
 
 #include "imgui_system.hxx"
+#include "widgets/imgui_allocator_tree.hxx"
 
 #include <ice/assert.hxx>
 #include <imgui/imgui.h>
@@ -10,132 +11,54 @@
 namespace ice::devui
 {
 
-    namespace detail
+    void ImGuiWidgetFrame::mainmenu(ice::DevUIWidgetInfo const& widget, ice::DevUIWidgetState& state) noexcept
     {
+        ImGui::MenuItem(ice::string::begin(widget.name), nullptr, &state.active);
+    }
 
-        void create_alloc_tree_widget(ice::devui::ImGuiSystem& sys, ice::Allocator& tracked_alloc) noexcept
-        {
-            if constexpr (ice::Allocator::HasDebugInformation)
-            {
-                ice::AllocatorDebugInfo const* top_alloc = &tracked_alloc.debug_info();
-                while (top_alloc->parent_allocator() != nullptr)
-                {
-                    top_alloc = top_alloc->parent_allocator();
-                }
+    bool ImGuiWidgetFrame::begin(ice::DevUIWidgetInfo const& widget, ice::DevUIWidgetState& state) noexcept
+    {
+        return ImGui::Begin(ice::string::begin(widget.name), &state.active);
+    }
 
-                sys.set_alloc_tree_widget(tracked_alloc.create<ImGui_AllocatorTreeWidget>(*top_alloc));
-            }
-        }
-
-        auto create_imgui_trait(ice::Allocator& alloc, void* userdata) noexcept -> ice::UniquePtr<ice::Trait>
-        {
-            ice::UniquePtr<ice::devui::ImGuiTrait> trait = ice::make_unique<ice::devui::ImGuiTrait>(alloc, alloc);
-            ice::devui::ImGuiSystem* system = reinterpret_cast<ImGuiSystem*>(userdata);
-            system->set_trait(trait.get());
-            return trait;
-        }
-
-        auto imgui_memalloc(size_t size, void* userdata) noexcept -> void*
-        {
-            return reinterpret_cast<ice::ProxyAllocator*>(userdata)->allocate(ice::usize{size}).memory;
-        }
-
-        auto imgui_memfree(void* ptr, void* userdata) noexcept -> void
-        {
-            return reinterpret_cast<ice::ProxyAllocator*>(userdata)->deallocate(ptr);
-        }
-
-    } // namespace detail
+    void ImGuiWidgetFrame::end() noexcept
+    {
+        ImGui::End();
+    }
 
     ImGuiSystem::ImGuiSystem(ice::Allocator& alloc) noexcept
-        : _allocator{ alloc, "ImGui" }
-        , _render_trait{ nullptr }
-        , _widget_alloc_tree{ nullptr }
+        : _allocator{ alloc, "ImGUI-System" }
+        , _builtin_widgets{ alloc }
         , _widgets{ alloc }
-        , _inactive_widgets{ alloc }
     {
-        ImGui::SetAllocatorFunctions(detail::imgui_memalloc, detail::imgui_memfree, &_allocator);
         ice::array::reserve(_widgets, 100);
-        detail::create_alloc_tree_widget(*this, _allocator);
+        ice::array::push_back(_builtin_widgets, create_allocator_tree_widget(_allocator));
+
+        // Register all built-in's
+        for (ice::UniquePtr<ice::DevUIWidget> const& widget : _builtin_widgets)
+        {
+            register_widget(widget.get());
+        }
     }
 
     ImGuiSystem::~ImGuiSystem() noexcept
     {
-        for (WidgetRuntimeInfo& info : _widgets)
-        {
-            _allocator.destroy(info.state);
-        }
-
-        _allocator.destroy(_widget_alloc_tree);
     }
 
-    void ImGuiSystem::set_trait(ice::devui::ImGuiTrait* trait) noexcept
+    void ImGuiSystem::register_widget(ice::DevUIWidget* widget) noexcept
     {
-        ICE_ASSERT(
-            _render_trait == nullptr
-            || trait == nullptr,
-            "Setting ImGui trait failed!"
-        );
-        _render_trait = trait;
-
-        if (_render_trait != nullptr)
-        {
-            for (ice::devui::DevUIWidget* widget : _inactive_widgets)
-            {
-                ice::array::push_back(_widgets, { .widget = widget, .state = _allocator.create<WidgetState>() });
-            }
-            ice::array::clear(_inactive_widgets);
-
-            for (WidgetRuntimeInfo& info : _widgets)
-            {
-                info.widget->on_prepare(_render_trait->imgui_context(), *info.state);
-            }
-        }
+        ice::array::push_back(_widgets, { .widget = widget });
     }
 
-    void ImGuiSystem::register_trait(ice::TraitArchive& archive) noexcept
+    void ImGuiSystem::unregister_widget(ice::DevUIWidget* widget) noexcept
     {
-        archive.register_trait(
-            ice::TraitDescriptor
-            {
-                .name = ice::Constant_TraitName_DevUI,
-                .fn_factory = ice::devui::detail::create_imgui_trait,
-                .fn_register = nullptr,
-                .fn_unregister = nullptr,
-                .required_dependencies = { },
-                .optional_dependencies = { },
-                .fn_factory_userdata = this,
-            }
-        );
-    }
-
-    void ImGuiSystem::register_widget(ice::devui::DevUIWidget* widget) noexcept
-    {
-        if (_render_trait != nullptr)
-        {
-            WidgetState* state = _allocator.create<WidgetState>();
-            widget->on_prepare(_render_trait->imgui_context(), *state);
-            ice::array::push_back(_widgets, { .widget = widget, .state = state });
-        }
-        else
-        {
-            ice::array::push_back(_inactive_widgets, widget);
-        }
-    }
-
-    void ImGuiSystem::unregister_widget(ice::devui::DevUIWidget* widget) noexcept
-    {
-        if (_render_trait == nullptr)
-        {
-            return;
-        }
+        // TODO: ice::array::remove_at
 
         ice::u32 const count = ice::array::count(_widgets);
         if (count == 0)
         {
             return;
         }
-
         ice::u32 idx = 0;
         for (; idx < count; ++idx)
         {
@@ -145,25 +68,16 @@ namespace ice::devui
             }
         }
 
-        WidgetState* state = _widgets[idx].state;
-        if (idx < (count - 1))
-        {
-            _widgets[idx] = _widgets[count - 1];
-        }
-        _allocator.destroy(state);
-
+        _widgets[idx] = _widgets[count - 1];
         ice::array::pop_back(_widgets);
     }
 
-    void ImGuiSystem::set_alloc_tree_widget(ice::devui::ImGui_AllocatorTreeWidget* widget) noexcept
+    void ImGuiSystem::update_widgets() noexcept
     {
-        _widget_alloc_tree = widget;
-        register_widget(_widget_alloc_tree);
-    }
+        ImGuiIO const& io = ImGui::GetIO();
 
-    void ImGuiSystem::render_builtin_widgets(ice::EngineFrame& frame) noexcept
-    {
-        if (_render_trait == nullptr)
+        // If display size is not set we return quickly
+        if (io.DisplaySize.x <= 0.f || io.DisplaySize.y <= 0.f)
         {
             return;
         }
@@ -173,12 +87,12 @@ namespace ice::devui
             "Settings",
             "Tools",
             "Test",
-            "Uncategorized"
+            "ImGui"
         };
 
         static bool show_demo = false;
 
-        if (_render_trait->start_frame())
+        ImGui::NewFrame();
         {
             if (ImGui::BeginMainMenuBar())
             {
@@ -186,19 +100,17 @@ namespace ice::devui
                 {
                     if (ImGui::BeginMenu(ice::string::begin(category)))
                     {
-                        for (WidgetRuntimeInfo& info : _widgets)
+                        for (WidgetRuntimeInfo& runtime : _widgets)
                         {
-                            WidgetState& state = *info.state;
-                            WidgetSettings const& settings = info.widget->settings();
-
-                            if (settings.menu_category == category && ice::string::any(settings.menu_text))
+                            ice::DevUIWidgetInfo const& info = runtime.widget->info;
+                            if (category == info.category && runtime.widget->build_mainmenu())
                             {
-                                ImGui::MenuItem(ice::string::begin(settings.menu_text), nullptr, &state.is_visible);
+                                _widget_frame.mainmenu(info, runtime);
                             }
                         }
 
                         // Special case for ImGui Demo
-                        if (category == "Uncategorized")
+                        if (category == "ImGui")
                         {
                             ImGui::MenuItem("ImGui Demo Window", nullptr, &show_demo);
                         }
@@ -213,15 +125,16 @@ namespace ice::devui
                 ImGui::ShowDemoWindow(&show_demo);
             }
 
-            for (WidgetRuntimeInfo& info : _widgets)
+            for (WidgetRuntimeInfo& runtime : _widgets)
             {
-                if (info.state->is_visible)
+                if (runtime.active)
                 {
-                    info.widget->on_draw();
+                    runtime.widget->build_widget(_widget_frame, runtime);
                 }
             }
         }
-        _render_trait->end_frame(frame);
+
+        ImGui::EndFrame();
     }
 
 } // namespace ice::devui

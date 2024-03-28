@@ -2,31 +2,31 @@
 /// SPDX-License-Identifier: MIT
 
 #pragma once
-#include <ice/mem_allocator.hxx>
-#include <ice/container/hashmap.hxx>
-#include <ice/devui/devui_widget.hxx>
+#include <ice/mem_unique_ptr.hxx>
+#include <ice/devui_widget.hxx>
+#include <ice/devui_frame.hxx>
 
 namespace ice::devui
 {
 
-    class ImGui_AllocatorTreeWidget : public ice::devui::DevUIWidget
+    class ImGui_AllocatorTreeWidget : public ice::DevUIWidget
     {
     public:
         ImGui_AllocatorTreeWidget(ice::AllocatorDebugInfo const& alloc) noexcept;
         ~ImGui_AllocatorTreeWidget() noexcept override = default;
 
-        auto settings() const noexcept -> ice::devui::WidgetSettings const& override;
-
-        void on_prepare(void*, ice::devui::WidgetState& state) noexcept override;
-
-        void on_draw() noexcept override;
+        void build_widget(ice::DevUIFrame& frame, ice::DevUIWidgetState& state) noexcept override;
+        void build_content() noexcept override;
 
     private:
         ice::AllocatorDebugInfo const& _root_tracked_allocator;
-        ice::devui::WidgetState* _state;
 
         char _filter[32]{};
         bool _expanded;
     };
+
+    auto create_allocator_tree_widget(
+        ice::Allocator& allocator
+    ) noexcept -> ice::UniquePtr<ice::DevUIWidget>;
 
 } // namespace ice::devui

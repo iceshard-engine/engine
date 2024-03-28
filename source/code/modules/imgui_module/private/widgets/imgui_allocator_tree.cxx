@@ -1,7 +1,7 @@
 /// Copyright 2022 - 2024, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
-#include "widget_imgui_allocator_tree.hxx"
+#include "imgui_allocator_tree.hxx"
 #include <ice/string/string.hxx>
 #include <imgui/imgui.h>
 
@@ -123,29 +123,31 @@ namespace ice::devui
 
     } // namespace detail
 
+    static constexpr DevUIWidgetInfo Constant_WidgetInfo{
+        .category = "Tools",
+        .name = "Allocator Tree",
+    };
+
     ImGui_AllocatorTreeWidget::ImGui_AllocatorTreeWidget(
         ice::AllocatorDebugInfo const& alloc
     ) noexcept
-        : _root_tracked_allocator{ alloc }
+        : DevUIWidget{ Constant_WidgetInfo }
+        , _root_tracked_allocator{ alloc }
         , _expanded{ false }
     {
     }
 
-    auto ImGui_AllocatorTreeWidget::settings() const noexcept -> ice::devui::WidgetSettings const&
+    void ImGui_AllocatorTreeWidget::build_widget(ice::DevUIFrame&, ice::DevUIWidgetState& state) noexcept
     {
-        static devui::WidgetSettings settings{
-            .menu_text = "Allocator Tree",
-            .menu_category = "Tools",
-        };
-        return settings;
+        ImGui::SetWindowSize({ 600, 300 }, ImGuiCond_FirstUseEver);
+        if (ImGui::Begin("Allocators", &state.active, 0))
+        {
+            build_content();
+        }
+        ImGui::End();
     }
 
-    void ImGui_AllocatorTreeWidget::on_prepare(void*, ice::devui::WidgetState& state) noexcept
-    {
-        _state = &state;
-    }
-
-    void ice::devui::ImGui_AllocatorTreeWidget::on_draw() noexcept
+    void ice::devui::ImGui_AllocatorTreeWidget::build_content() noexcept
     {
         ImGuiTableFlags const flags = ImGuiTableFlags_None
             // Functional
@@ -161,28 +163,41 @@ namespace ice::devui
             | ImGuiTableFlags_BordersV
             | ImGuiTableFlags_RowBg;
 
-        ImGui::SetWindowSize({ 600, 300 }, ImGuiCond_FirstUseEver);
-        if (ImGui::Begin("Allocators", &_state->is_visible, 0))
+        ImGui::InputText("Filter", _filter, sizeof(_filter), ImGuiInputTextFlags_AutoSelectAll);
+        ImGui::SameLine();
+        ImGui::Checkbox("Expand all", &_expanded);
+
+        if (ImGui::BeginTable("Allocators", 6, flags))
         {
-            ImGui::InputText("Filter", _filter, sizeof(_filter), ImGuiInputTextFlags_AutoSelectAll);
-            ImGui::SameLine();
-            ImGui::Checkbox("Expand all", &_expanded);
+            ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_NoHide | ImGuiTableColumnFlags_WidthStretch);
+            ImGui::TableSetupColumn("Count (current)");
+            ImGui::TableSetupColumn("Count (total)");
+            ImGui::TableSetupColumn("Current Size");
+            ImGui::TableSetupColumn("Function", ImGuiTableColumnFlags_DefaultHide);
+            ImGui::TableSetupColumn("Location", ImGuiTableColumnFlags_DefaultHide);
+            ImGui::TableHeadersRow();
 
-            if (ImGui::BeginTable("Allocators", 6, flags))
-            {
-                ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_NoHide | ImGuiTableColumnFlags_WidthStretch);
-                ImGui::TableSetupColumn("Count (current)");
-                ImGui::TableSetupColumn("Count (total)");
-                ImGui::TableSetupColumn("Current Size");
-                ImGui::TableSetupColumn("Function", ImGuiTableColumnFlags_DefaultHide);
-                ImGui::TableSetupColumn("Location", ImGuiTableColumnFlags_DefaultHide);
-                ImGui::TableHeadersRow();
-
-                detail::build_table_view(_root_tracked_allocator, { _filter, strlen(_filter) },  _expanded ? 64 : 2);
-                ImGui::EndTable();
-            }
+            detail::build_table_view(_root_tracked_allocator, { _filter, strlen(_filter) },  _expanded ? 64 : 2);
+            ImGui::EndTable();
         }
-        ImGui::End();
+    }
+
+    auto create_allocator_tree_widget(
+        ice::Allocator& allocator
+    ) noexcept -> ice::UniquePtr<ice::DevUIWidget>
+    {
+        ice::UniquePtr<ice::DevUIWidget> result;
+        if constexpr (ice::Allocator::HasDebugInformation)
+        {
+            ice::AllocatorDebugInfo const* top_alloc = &allocator.debug_info();
+            while (top_alloc->parent_allocator() != nullptr)
+            {
+                top_alloc = top_alloc->parent_allocator();
+            }
+
+            result = ice::make_unique<ImGui_AllocatorTreeWidget>(allocator, *top_alloc);
+        }
+        return result;
     }
 
 } // namespace ice::devui
