@@ -15,6 +15,7 @@
             'imgui'
         }
         .Uses = {
+            'devui_system'
             'devui'
             'utils'
         }

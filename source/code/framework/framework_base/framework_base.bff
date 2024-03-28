@@ -28,9 +28,9 @@
             'tasks'
             'modules'
             'engine'
-            'devui'
             'application'
             'ui_system'
+            'devui_system'
         }
     ]
 

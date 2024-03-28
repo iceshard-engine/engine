@@ -12,6 +12,7 @@
 #include "core/utils/utils.bff"
 #include "core/tasks/tasks.bff"
 
+#include "systems/devui_system/devui_system.bff"
 #include "systems/resource_system/resource_system.bff"
 #include "systems/asset_system/asset_system.bff"
 #include "systems/render_system/render_system.bff"
@@ -26,7 +27,6 @@
 #include "platforms/platform_webasm/platform_webasm.bff"
 
 #include "iceshard/engine/engine.bff"
-#include "iceshard/devui/devui.bff"
 #include "iceshard/iceshard/iceshard.bff"
 
 #include "modules/imgui_module/imgui_module.bff"
