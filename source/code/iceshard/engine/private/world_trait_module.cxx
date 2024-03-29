@@ -27,7 +27,6 @@ namespace ice
                 api.register_traits_fn(asset_type_archive);
             }
         }
-        ICE_LOG(LogSeverity::Warning, LogTag::Engine, "Found {} apis", ice::count(api_ptrs));
     }
 
 } // namespace ice
