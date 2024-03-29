@@ -51,6 +51,8 @@ namespace ice::platform::webasm
 
     void WebAsmApp::initialize(ice::Span<ice::Shard const> shards) noexcept
     {
+        WebAsmCoreApp::initialize(shards);
+
         char const* input_selector_mouse = "#canvas";
         char const* input_selector_keyboard = EMSCRIPTEN_EVENT_TARGET_WINDOW;
         for (ice::Shard shard : shards)

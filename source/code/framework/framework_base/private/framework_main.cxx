@@ -10,6 +10,7 @@
 
 #include <ice/platform.hxx>
 #include <ice/platform_core.hxx>
+#include <ice/platform_threads.hxx>
 #include <ice/platform_render_surface.hxx>
 #include <ice/platform_window_surface.hxx>
 #include <ice/platform_storage.hxx>
@@ -105,10 +106,6 @@ struct ice::app::State
     ice::ProxyAllocator gamework_alloc;
     ice::ProxyAllocator engine_alloc;
 
-    ice::TaskQueue thread_pool_queue;
-    ice::TaskScheduler thread_pool_scheduler;
-
-    ice::UniquePtr<ice::TaskThreadPool> thread_pool;
     ice::UniquePtr<ice::ResourceTracker> resources;
     ice::UniquePtr<ice::framework::Game> game;
     ice::UniquePtr<ice::ModuleRegister> modules;
@@ -133,6 +130,7 @@ struct ice::app::State
     struct Platform
     {
         ice::platform::Core* core;
+        ice::platform::Threads* threads;
         ice::platform::RenderSurface* render_surface;
     } platform;
 
@@ -142,9 +140,6 @@ struct ice::app::State
         , modules_alloc{ alloc, "Modules" }
         , gamework_alloc{ alloc, "Gamework" }
         , engine_alloc{ alloc, "Engine" }
-        , thread_pool_queue{ }
-        , thread_pool_scheduler{ thread_pool_queue }
-        , thread_pool{ }
         , resources{ }
         , game{ ice::framework::create_game(gamework_alloc) }
         , modules{ ice::create_default_module_register(modules_alloc, true) }
@@ -157,13 +152,8 @@ struct ice::app::State
         using ice::platform::FeatureFlags;
 
         ice::platform::query_api(platform.core);
+        ice::platform::query_api(platform.threads);
         ice::platform::query_api(platform.render_surface);
-
-        TaskThreadPoolCreateInfo const pool_info{
-            .thread_count = 4,
-            .debug_name_format = "ice.thread {}",
-        };
-        thread_pool = ice::create_thread_pool(alloc, thread_pool_queue, pool_info);
 
         ResourceTrackerCreateInfo const resource_info{
             .predicted_resource_count = 10000,
@@ -171,7 +161,7 @@ struct ice::app::State
             .flags_io_complete = ice::TaskFlags{ },
             .flags_io_wait = ice::TaskFlags{ }
         };
-        resources = ice::create_resource_tracker(resources_alloc, thread_pool_scheduler, resource_info);
+        resources = ice::create_resource_tracker(resources_alloc, platform.threads->threadpool(), resource_info);
     }
 };
 
@@ -240,7 +230,8 @@ void ice_init(
         alloc,
         FeatureFlags::Core
         | FeatureFlags::StoragePaths
-        | FeatureFlags::RenderSurface,
+        | FeatureFlags::RenderSurface
+        | FeatureFlags::Threads,
         platform_params
     );
     ICE_ASSERT(res == true, "Failed to initialize platform!");
@@ -327,7 +318,7 @@ auto ice_setup(
             game_config.resource_dirs,
             ice::build::current_platform == ice::build::System::WebApp
                 ? nullptr
-                : &state.thread_pool_scheduler
+                : &state.platform.threads->threadpool()
         )
     );
 
@@ -379,7 +370,7 @@ auto ice_setup(
         ice::load_asset_type_definitions(state.engine_alloc, *state.modules, *asset_types);
         ice::AssetStorageCreateInfo const asset_storage_info{
             .resource_tracker = *state.resources,
-            .task_scheduler = state.thread_pool_scheduler,
+            .task_scheduler = state.platform.threads->threadpool(),
             .task_flags = ice::TaskFlags{}
         };
         engine_create_info.assets = ice::create_asset_storage(state.resources_alloc, ice::move(asset_types), asset_storage_info);
@@ -434,7 +425,7 @@ auto ice_resume(
             .clock = runtime.clock,
             .schedulers = {
                 .main = runtime.main_scheduler,
-                .tasks = state.thread_pool_scheduler,
+                .tasks = state.platform.threads->threadpool(),
             }
         };
         runtime.runner = ice::create_engine_runner(state.engine_alloc, *state.modules, runner_create_info);
@@ -455,8 +446,8 @@ auto ice_resume(
             }
         };
 
-        ice::platform::Core* core;
-        bool const query_success = ice::platform::query_api(core);
+        ice::platform::Threads* threads;
+        bool const query_success = ice::platform::query_api(threads);
         ICE_ASSERT_CORE(query_success);
 
         ice::gfx::GfxRunnerCreateInfo const gfx_create_info{
@@ -464,7 +455,7 @@ auto ice_resume(
             .driver = *state.renderer.get(),
             .surface = *state.render_surface,
             .render_queues = queues,
-            .gfx_thread = core->graphics_thread()
+            .gfx_thread = threads->graphics()
         };
 
         runtime.gfx_runner = ice::create_gfx_runner(state.engine_alloc, *state.modules, gfx_create_info);

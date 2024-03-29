@@ -4,6 +4,7 @@
 #pragma once
 #include <ice/input/device_event_queue.hxx>
 #include <SDL.h>
+#undef main
 
 namespace ice::platform::win32::sdl2
 {

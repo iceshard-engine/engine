@@ -51,7 +51,7 @@ namespace ice
 
         virtual auto estimated_task_count() const noexcept -> ice::ucount = 0;
 
-        virtual auto queue() noexcept -> ice::TaskQueue & = 0;
+        virtual auto queue() noexcept -> ice::TaskQueue& = 0;
     };
 
     auto create_thread(

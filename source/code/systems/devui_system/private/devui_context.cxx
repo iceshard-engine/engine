@@ -40,7 +40,7 @@ namespace ice
     {
         if (context_name == "devui-context/imgui"_sid)
         {
-            ICE_ASSERT_CORE(ImGui::GetCurrentContext() == nullptr);
+            ICE_ASSERT_CORE(ImGui::GetCurrentContext() == nullptr || ImGui::GetCurrentContext() == params.native_context);
             ImGui::SetAllocatorFunctions(params.fn_alloc, params.fn_dealloc, params.alloc_userdata);
             ImGui::SetCurrentContext((ImGuiContext*)params.native_context);
             return true;

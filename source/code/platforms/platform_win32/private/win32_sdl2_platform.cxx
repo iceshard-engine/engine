@@ -18,16 +18,11 @@ namespace ice::platform::win32::sdl2
         , _system_events{ _alloc }
         , _input_events{ _alloc }
         , _render_surface{ }
-        , _gfx_queue{ }
-        , _gfx_scheduler{ _gfx_queue }
-        , _gfx_thread{ }
     {
         ice::shards::reserve(_system_events, 32);
         ice::array::reserve(_input_events._events, 512);
 
         SDL_InitSubSystem(SDL_INIT_EVENTS);
-
-        _gfx_thread = ice::create_thread(_alloc, _gfx_queue, { .exclusive_queue = true, .debug_name = "ice.gfx" });
 
         using namespace ice::input;
     }
@@ -131,11 +126,15 @@ namespace ice::platform
 {
 
     static win32::sdl2::Platform_Win32SDL2* core_feature;
-    static win32::Win32Storage* storage_feature;
+    static ice::UniquePtr<win32::Win32Storage> storage_feature;
+    static ice::UniquePtr<win32::Win32Threads> threads_feature;
 
     auto available_features() noexcept -> ice::platform::FeatureFlags
     {
-        return FeatureFlags::Core | FeatureFlags::RenderSurface | FeatureFlags::StoragePaths;
+        return FeatureFlags::Core
+            | FeatureFlags::RenderSurface
+            | FeatureFlags::StoragePaths
+            | FeatureFlags::Threads;
     }
 
     auto initialize(
@@ -169,7 +168,12 @@ namespace ice::platform
 
         if (ice::has_any(flags, FeatureFlags::StoragePaths))
         {
-            storage_feature = alloc.create<win32::Win32Storage>(alloc, params);
+            storage_feature = ice::make_unique<win32::Win32Storage>(alloc, alloc, params);
+        }
+
+        if (ice::has_any(flags, FeatureFlags::StoragePaths))
+        {
+            threads_feature = ice::make_unique<win32::Win32Threads>(alloc, alloc, params);
         }
 
         // Initialize the global platform instance. We don't use the allocator so we don't leak this pointer.
@@ -193,7 +197,10 @@ namespace ice::platform
             out_api_ptr = static_cast<ice::platform::Core*>(instance_ptr);
             break;
         case FeatureFlags::StoragePaths:
-            out_api_ptr = storage_feature;
+            out_api_ptr = storage_feature.get();
+            break;
+        case FeatureFlags::Threads:
+            out_api_ptr = threads_feature.get();
             break;
         case FeatureFlags::RenderSurface:
             out_api_ptr = static_cast<ice::platform::RenderSurface*>(ice::addressof(instance_ptr->_render_surface));
@@ -236,11 +243,8 @@ namespace ice::platform
         win32::sdl2::Platform_Win32SDL2*& instance_ptr = core_feature;
         if (instance_ptr != nullptr)
         {
-            if (storage_feature != nullptr)
-            {
-                instance_ptr->allocator().destroy(storage_feature);
-            }
-
+            storage_feature.reset();
+            threads_feature.reset();
             instance_ptr->~Platform_Win32SDL2();
             instance_ptr = nullptr;
         }
