@@ -9,6 +9,8 @@
 namespace ice
 {
 
+    using ice::concepts::ModuleNegotiator;
+
     //! \brief Negotiation API used to register and query modules for their APIs.
     //! \details Allows to register and query APIs independent if the module is dynamically or statically linked.
     struct ModuleNegotiatorAPI
@@ -38,10 +40,10 @@ namespace ice
 
     //! \brief Helper type over the ModuleNegotiatorAPI type.
     //! \details Provides a more convenient way to register and query APIs.
-    class ModuleNegotiator final : public ice::ModuleQuery
+    class ModuleNegotiatorBase : public ice::ModuleQuery
     {
     public:
-        ModuleNegotiator(
+        ModuleNegotiatorBase(
             ice::ModuleNegotiatorAPI* negotiator_api,
             ice::ModuleNegotiatorAPIContext* negotiator_context
         ) noexcept;
@@ -60,18 +62,27 @@ namespace ice
             ice::FnModuleSelectAPI* fn_api_selector
         ) const noexcept;
 
-        //! \brief Registers an API selector function.
-        //! \details The API type is inferred from the first parameter of the given function. If that function parameter
-        //!   is a valid API type, the API name, version and priority (if set) are taken from the type.
-        template <typename T> requires(ice::concepts::APIType<T>)
-        bool register_api(ice::ProcAPIQuickRegisterFunc<T> register_func) const noexcept;
-
     public:
         ice::ModuleNegotiatorAPI* negotiator_api;
         ice::ModuleNegotiatorAPIContext* negotiator_context;
     };
 
-    inline ModuleNegotiator::ModuleNegotiator(
+    template<typename Tag>
+    class ModuleNegotiatorTagged final : public ice::ModuleNegotiatorBase
+    {
+    public:
+        using ModuleNegotiatorBase::ModuleNegotiatorBase;
+        using ModuleNegotiatorBase::query_apis;
+        using ModuleNegotiatorBase::register_api;
+
+        //! \brief Registers an API selector function.
+        //! \details The API type is inferred from the first parameter of the given function. If that function parameter
+        //!   is a valid API type, the API name, version and priority (if set) are taken from the type.
+        template<typename T> requires(ice::concepts::APIType<T>)
+        bool register_api(ice::ProcAPIQuickRegisterFunc<T> register_func) const noexcept;
+    };
+
+    inline ModuleNegotiatorBase::ModuleNegotiatorBase(
         ice::ModuleNegotiatorAPI* negotiator_api,
         ice::ModuleNegotiatorAPIContext* negotiator_context
     ) noexcept
@@ -79,8 +90,9 @@ namespace ice
         , negotiator_context{ negotiator_context }
     { }
 
-    template <typename T> requires(ice::concepts::APIType<T>)
-    inline bool ModuleNegotiator::register_api(ice::ProcAPIQuickRegisterFunc<T> register_func) const noexcept
+    template<typename Tag>
+    template<typename T> requires(ice::concepts::APIType<T>)
+    inline bool ModuleNegotiatorTagged<Tag>::register_api(ice::ProcAPIQuickRegisterFunc<T> register_func) const noexcept
     {
         static T api_struct = [](ice::ProcAPIQuickRegisterFunc<T> func) noexcept
         {

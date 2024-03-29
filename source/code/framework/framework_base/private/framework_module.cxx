@@ -69,7 +69,7 @@ namespace ice::framework
 
     bool FrameworkModule::on_load(
         ice::Allocator& alloc,
-        ice::ModuleNegotiator const& negotiator
+        ice::ModuleNegotiatorBase const& negotiator
     ) noexcept
     {
         return true;

@@ -113,7 +113,7 @@ namespace ice
 
     struct IceShardModule : ice::Module<IceShardModule>
     {
-        static bool on_load(ice::Allocator& alloc, ice::ModuleNegotiator const& negotiator) noexcept
+        static bool on_load(ice::Allocator& alloc, ice::ModuleNegotiator auto const& negotiator) noexcept
         {
             ice::devui_setup_context(negotiator);
             ice::LogModule::init(alloc, negotiator);

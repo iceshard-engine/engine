@@ -85,7 +85,7 @@ namespace ice::devui
             api.fn_context_trait_name = imgui_trait_name;
         }
 
-        static bool on_load(ice::Allocator& alloc, ice::ModuleNegotiator const& negotiator) noexcept
+        static bool on_load(ice::Allocator& alloc, ice::ModuleNegotiator auto const& negotiator) noexcept
         {
             ICE_ASSERT_CORE(global_ImGuiAllocator == nullptr);
             global_ImGuiAllocator = alloc.create<ice::ProxyAllocator>(alloc, "ImGUI");
@@ -132,12 +132,12 @@ namespace ice::devui
             api.register_traits_fn = imgui_register_trait;
         }
 
-        static bool on_load(ice::Allocator& alloc, ice::ModuleNegotiator const& negotiator) noexcept
+        static bool on_load(ice::Allocator& alloc, ice::ModuleNegotiator auto const& negotiator) noexcept
         {
             return negotiator.register_api(v1_traits_api);
         }
 
-        IS_WORKAROUND_MODULE_INITIALIZATION(TestModule);
+        IS_WORKAROUND_MODULE_INITIALIZATION(ImGuiTraitModule);
     };
 
 } // namespace ice

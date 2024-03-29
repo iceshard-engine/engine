@@ -85,7 +85,7 @@ namespace ice
         alloc->destroy(detail::internal_log_state);
     }
 
-    void LogModule::init(ice::Allocator& alloc, ice::ModuleNegotiator const& negotiator) noexcept
+    void LogModule::init(ice::Allocator& alloc, ice::ModuleNegotiatorBase const& negotiator) noexcept
     {
         detail::LogAPI new_api{ };
         if (negotiator.query_api(new_api))
@@ -100,7 +100,7 @@ namespace ice
         initialize_log_module(negotiator.negotiator_context, negotiator.negotiator_api);
     }
 
-    bool LogModule::on_load(ice::Allocator& alloc, ice::ModuleNegotiator const& negotiator) noexcept
+    bool LogModule::on_load(ice::Allocator& alloc, ice::ModuleNegotiatorBase const& negotiator) noexcept
     {
         load_log_module(&alloc, negotiator.negotiator_context, negotiator.negotiator_api);
         return true;
