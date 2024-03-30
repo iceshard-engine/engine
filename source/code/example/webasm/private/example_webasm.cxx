@@ -31,6 +31,8 @@
 
 #include <ice/input/input_event.hxx>
 #include <ice/input/input_mouse.hxx>
+
+#include <ice/devui_context.hxx>
 #include <ice/resource_tracker.hxx>
 #include <ice/module_register.hxx>
 #include <ice/asset_types.hxx>
@@ -287,7 +289,7 @@ void TestGame::on_resume(ice::Engine& engine) noexcept
             "test"_sid,
             "test2"_sid,
             ice::TraitID_GfxShaderStorage,
-            ice::Constant_TraitName_DevUI
+            ice::devui_trait_name()
         };
 
         engine.worlds().create_world(

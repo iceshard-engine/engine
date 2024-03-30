@@ -14,7 +14,7 @@ namespace ice::render::vk
     {
         static void v1_resource_compiler_api(ice::api::resource_compiler::v1::ResourceCompilerAPI& api) noexcept;
 
-        static bool on_load(ice::Allocator& alloc, ice::ModuleNegotiator const& module_negotiator) noexcept
+        static bool on_load(ice::Allocator& alloc, ice::ModuleNegotiator auto const& module_negotiator) noexcept
         {
             return module_negotiator.register_api(v1_resource_compiler_api);
         }
@@ -26,7 +26,7 @@ namespace ice::render::vk
     {
         static void v1_archive_api(ice::detail::asset_system::v1::AssetTypeArchiveAPI& api) noexcept;
 
-        static bool on_load(ice::Allocator& alloc, ice::ModuleNegotiator const& negotiator) noexcept
+        static bool on_load(ice::Allocator& alloc, ice::ModuleNegotiator auto const& negotiator) noexcept
         {
             return negotiator.register_api(v1_archive_api);
         }

@@ -29,7 +29,7 @@ namespace ice::gfx
             api.register_traits_fn = v1_register_traits;
         }
 
-        static bool on_load(ice::Allocator&, ice::ModuleNegotiator const& negotiator) noexcept
+        static bool on_load(ice::Allocator&, ice::ModuleNegotiator auto const& negotiator) noexcept
         {
             return negotiator.register_api(v1_api);
         }

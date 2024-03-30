@@ -13,6 +13,7 @@
 
 #include <ice/input/device_event_queue.hxx>
 #include "webasm_render_surface.hxx"
+#include "webasm_threads.hxx"
 
 namespace ice::platform::webasm
 {
@@ -25,14 +26,16 @@ namespace ice::platform::webasm
         WebAsmCoreApp() noexcept;
         virtual ~WebAsmCoreApp() noexcept;
 
+        virtual void initialize(ice::Span<ice::Shard const> params) noexcept;
+
         void main_update() noexcept;
         void thread_update() noexcept;
+
+        auto threads() noexcept -> WebASM_Threads* { return _threads.get(); }
 
     public: // ice::platform::Core
         auto system_events() noexcept -> ice::ShardContainer const& override { return _system_events; }
         auto input_events() noexcept -> ice::Span<ice::input::DeviceEvent const> override { return _input_events._events; }
-
-        auto graphics_thread() noexcept -> ice::TaskScheduler& override { return _graphics_thread; }
 
     public:
         auto data_locations() const noexcept -> ice::Span<ice::String const> override { static ice::String paths[]{ "/" }; return paths; }
@@ -45,16 +48,13 @@ namespace ice::platform::webasm
 
     protected:
         ice::HostAllocator _allocator;
+        ice::UniquePtr<WebASM_Threads> _threads;
 
     private:
         ice::app::Factories _factories;
         ice::ParamList _params;
 
         ice::u32 _initstage;
-        ice::TaskQueue _update_queue;
-        ice::UniquePtr<ice::TaskThread> _update_thread;
-        ice::TaskQueue _graphics_queue;
-        ice::TaskScheduler _graphics_thread;
 
         ice::UniquePtr<ice::app::Config> _config;
         ice::UniquePtr<ice::app::State> _state;

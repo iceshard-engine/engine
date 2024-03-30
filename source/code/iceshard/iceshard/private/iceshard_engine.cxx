@@ -3,7 +3,10 @@
 
 #include "iceshard_engine.hxx"
 #include <ice/engine_module.hxx>
+#include <ice/devui_context.hxx>
 #include <ice/log_module.hxx>
+#include <imgui/imgui.h>
+#undef assert
 
 namespace ice
 {
@@ -110,8 +113,9 @@ namespace ice
 
     struct IceShardModule : ice::Module<IceShardModule>
     {
-        static bool on_load(ice::Allocator& alloc, ice::ModuleNegotiator const& negotiator) noexcept
+        static bool on_load(ice::Allocator& alloc, ice::ModuleNegotiator auto const& negotiator) noexcept
         {
+            ice::devui_setup_context(negotiator);
             ice::LogModule::init(alloc, negotiator);
             return negotiator.register_api(iceshard_get_api_proc);
         }

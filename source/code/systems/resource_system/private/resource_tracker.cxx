@@ -145,6 +145,8 @@ namespace ice
 
     private:
         ice::Allocator& _allocator;
+        ice::ProxyAllocator _allocator_handles;
+        ice::ProxyAllocator _allocator_data;
         ice::TaskScheduler& _scheduler;
         ice::ResourceTrackerCreateInfo _info;
 
@@ -164,12 +166,14 @@ namespace ice
     ) noexcept
         : ResourceTracker{ }
         , _allocator{ alloc }
+        , _allocator_handles{ _allocator, "Handles" }
+        , _allocator_data{ _allocator, "Data" }
         , _scheduler{ scheduler }
         , _info{ info }
         , _io_queue{ }
         , _io_thread_data{ }
         , _io_thread{ }
-        , _handles{ _allocator }
+        , _handles{ _allocator_handles }
         , _resources{ _allocator }
         , _resource_providers{ _allocator }
     {
@@ -207,7 +211,7 @@ namespace ice
         {
             if (handle->refcount.load(std::memory_order_relaxed) > 0)
             {
-                handle->provider->unload_resource(_allocator, handle->resource, handle->data);
+                handle->provider->unload_resource(_allocator_data, handle->resource, handle->data);
                 //IPT_MESSAGE_C("Encountered unreleased resource object during resource tracker destruction.", 0xEE99AA);
             }
         }
@@ -335,7 +339,7 @@ namespace ice
             if (_info.io_dedicated_threads > 0)
             {
                 result = co_await resource_handle->provider->load_resource(
-                    _allocator,
+                    _allocator_data,
                     resource_handle->resource,
                     io_scheduler,
                     _io_thread_data.get()
@@ -347,7 +351,7 @@ namespace ice
                 co_await _scheduler.schedule(_info.flags_io_wait);
 
                 result = co_await resource_handle->provider->load_resource(
-                    _allocator,
+                    _allocator_data,
                     resource_handle->resource,
                     io_scheduler,
                     nullptr /* If 'nullptr' it will load the resource synchronously */
@@ -435,7 +439,7 @@ namespace ice
         {
             // We can now safely release the current saved memory pointer.
             resource_handle->provider->unload_resource(
-                _allocator, resource_handle->resource, data
+                _allocator_data, resource_handle->resource, data
             );
 
             // We don't update the internal state nor the data member, as these will be considered invalid since refcount == 0

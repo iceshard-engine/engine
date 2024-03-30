@@ -11,7 +11,7 @@ namespace ice
     void load_game_module(
         ice::Allocator* alloc,
         ice::ModuleNegotiatorAPIContext* ctx,
-        ice::ModuleNegotiator* api
+        ice::ModuleNegotiatorAPI* api
     ) noexcept;
 
     void unload_game_module(

@@ -51,6 +51,8 @@ namespace ice::platform::webasm
 
     void WebAsmApp::initialize(ice::Span<ice::Shard const> shards) noexcept
     {
+        WebAsmCoreApp::initialize(shards);
+
         char const* input_selector_mouse = "#canvas";
         char const* input_selector_keyboard = EMSCRIPTEN_EVENT_TARGET_WINDOW;
         for (ice::Shard shard : shards)
@@ -131,7 +133,7 @@ namespace ice::platform::webasm
 
     bool WebAsmApp::on_key_event(int type, EmscriptenKeyboardEvent const& event) noexcept
     {
-        ICE_LOG(LogSeverity::Warning, LogTag::Core, "Press {} {}", event.code, event.key);
+        ICE_LOG(LogSeverity::Debug, LogTag::Core, "Press {} {}", event.code, event.key);
 
         bool send_text_event;
         KeyboardKey const key = webasm_map_keycode(event.code, event.key, send_text_event);

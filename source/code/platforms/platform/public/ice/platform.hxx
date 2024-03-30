@@ -33,6 +33,9 @@ namespace ice::platform
         //! \note For portability reasons it's suggested to always use paths availabe from this OS module.
         StoragePaths = 0x0008,
 
+        //! \brief Access to platform recommended main and graphics threads and additional task thread pool.
+        Threads = 0x0010,
+
         //! \brief Access to command line arguments / execution parameters passed to the app.
         ExecutionParams = 0x8000,
 

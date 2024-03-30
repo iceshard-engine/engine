@@ -5,6 +5,7 @@
 #include <ice/platform_render_surface.hxx>
 #include <ice/render/render_driver.hxx>
 #include <SDL.h>
+#undef main
 
 namespace ice::platform::win32::sdl2
 {

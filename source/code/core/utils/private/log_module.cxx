@@ -7,8 +7,10 @@
 #include <ice/log.hxx>
 #include <ice/assert.hxx>
 #include <ice/stringid.hxx>
+
 #include "log_internal.hxx"
 #include "log_android.hxx"
+#include "log_webasm.hxx"
 
 namespace ice
 {
@@ -60,12 +62,19 @@ namespace ice
     {
         detail::internal_log_state = alloc->create<detail::LogState>(*alloc);
         detail::LogAPI const current_api{ };
-        if constexpr(ice::build::current_platform.system == ice::build::System::Android)
+        if constexpr(ice::build::is_android)
         {
             *current_api.log_fn = ice::detail::android::logcat_message;
             *current_api.reg_log_tag_fn = ice::detail::default_register_tag_fn;
             *current_api.ena_log_tag_fn = ice::detail::default_enable_tag_fn;
             *current_api.assert_fn = ice::detail::android::logcat_assert;
+        }
+        else if constexpr (ice::build::is_webapp)
+        {
+            *current_api.log_fn = ice::detail::webasm::console_message;
+            *current_api.reg_log_tag_fn = ice::detail::default_register_tag_fn;
+            *current_api.ena_log_tag_fn = ice::detail::default_enable_tag_fn;
+            *current_api.assert_fn = ice::detail::webasm::alert_assert;
         }
         else
         {
@@ -85,7 +94,7 @@ namespace ice
         alloc->destroy(detail::internal_log_state);
     }
 
-    void LogModule::init(ice::Allocator& alloc, ice::ModuleNegotiator const& negotiator) noexcept
+    void LogModule::init(ice::Allocator& alloc, ice::ModuleNegotiatorBase const& negotiator) noexcept
     {
         detail::LogAPI new_api{ };
         if (negotiator.query_api(new_api))
@@ -100,7 +109,7 @@ namespace ice
         initialize_log_module(negotiator.negotiator_context, negotiator.negotiator_api);
     }
 
-    bool LogModule::on_load(ice::Allocator& alloc, ice::ModuleNegotiator const& negotiator) noexcept
+    bool LogModule::on_load(ice::Allocator& alloc, ice::ModuleNegotiatorBase const& negotiator) noexcept
     {
         load_log_module(&alloc, negotiator.negotiator_context, negotiator.negotiator_api);
         return true;

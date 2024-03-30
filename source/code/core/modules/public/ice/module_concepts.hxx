@@ -21,8 +21,23 @@ namespace ice::concepts
         { T::Constant_APIPriority } -> std::convertible_to<ice::u32>;
     };
 
+    //! \note Only used for validating ModuleNegotiator concept.
+    struct APIConceptStruct
+    {
+        static constexpr ice::StringID Constant_APIName = "api.concept.concept-api"_sid;
+        static constexpr ice::u32 Constant_APIVersion = ice::u32_max;
+    };
+
     template<typename T>
-    concept ModuleLoadable = requires(T t, ice::Allocator& alloc, ice::ModuleNegotiator const& negotiator)
+    concept ModuleNegotiator = requires(T const& t, ice::StringID_Arg id, ice::FnModuleSelectAPI* api) {
+        { t.query_apis(id, ice::u32{}, (ice::ModuleAPI*) nullptr, (ice::ucount*)nullptr) } -> std::convertible_to<bool>;
+        { t.register_api(id, api) } -> std::convertible_to<bool>;
+    } && requires(T const& t, ice::ProcAPIQuickRegisterFunc<APIConceptStruct> func) {
+        { t.register_api(func) } -> std::convertible_to<bool>;
+    };
+
+    template<typename T>
+    concept ModuleLoadable = requires(T t, ice::Allocator& alloc, ice::ModuleNegotiatorTagged<T> const& negotiator)
     {
         { T::on_load(alloc, negotiator) } -> std::convertible_to<bool>;
     };

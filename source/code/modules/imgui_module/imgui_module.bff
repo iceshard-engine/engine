@@ -15,7 +15,8 @@
             'imgui'
         }
         .Uses = {
-            'devui'
+            'devui_system'
+            'engine'
             'utils'
         }
     ]

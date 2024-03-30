@@ -22,8 +22,6 @@ namespace ice::platform
 
         virtual auto system_events() noexcept -> ice::ShardContainer const& = 0;
         virtual auto input_events() noexcept -> ice::Span<ice::input::DeviceEvent const> = 0;
-
-        virtual auto graphics_thread() noexcept -> ice::TaskScheduler& = 0;
     };
 
     template<>

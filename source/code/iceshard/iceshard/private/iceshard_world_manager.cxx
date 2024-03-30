@@ -11,9 +11,14 @@ namespace ice
     namespace detail
     {
 
-        static constexpr ice::EngineStateTrigger StateTrigger_Activate{
+        static constexpr ice::EngineStateTrigger StateTrigger_ActivateAfterCreate{
             .when = ice::ShardID_WorldActivate,
             .from = State_WorldCreated, .to = State_WorldActive,
+            .results = ice::ShardID_WorldActivated
+        };
+        static constexpr ice::EngineStateTrigger StateTrigger_Activate{
+            .when = ice::ShardID_WorldActivate,
+            .from = State_WorldInactive, .to = State_WorldActive,
             .results = ice::ShardID_WorldActivated
         };
         static constexpr ice::EngineStateTrigger StateTrigger_Deactivate{
@@ -23,6 +28,7 @@ namespace ice
         };
 
         static constexpr ice::EngineStateTrigger StateTriggers_WorldState[]{
+            StateTrigger_ActivateAfterCreate,
             StateTrigger_Activate,
             StateTrigger_Deactivate,
         };
@@ -184,6 +190,19 @@ namespace ice
             {
                 world_entry.world->task_launcher().gather(out_tasks, event_shards);
             }
+        }
+    }
+
+    void IceshardWorldManager::update(
+        ice::StringID_Arg world_name,
+        ice::TaskContainer& out_tasks,
+        ice::Span<ice::Shard const> event_shards
+    ) noexcept
+    {
+        Entry const* const entry = ice::hashmap::try_get(_worlds, ice::hash(world_name));
+        if (entry != nullptr && entry->is_active)
+        {
+            entry->world->task_launcher().gather(out_tasks, event_shards);
         }
     }
 

@@ -13,6 +13,7 @@
 #include <ice/string_utils.hxx>
 #include <ice/path_utils.hxx>
 #include <ice/mem_allocator_stack.hxx>
+#include <ice/mem_allocator_proxy.hxx>
 
 #include "native/native_aio_tasks.hxx"
 #include "resource_filesystem_loose.hxx"
@@ -28,7 +29,8 @@ namespace ice
             ice::Span<ice::String const> const& paths,
             ice::TaskScheduler* scheduler
         ) noexcept
-            : _allocator{ alloc }
+            : _named_allocator{ alloc, "FileSystem" }
+            , _allocator{ _named_allocator }
             , _base_paths{ _allocator }
             , _scheduler{ scheduler }
             , _resources{ _allocator }
@@ -363,7 +365,7 @@ namespace ice
         {
             ice::u32 const origin_size = ice::string::size(root_resource->origin());
 
-            ice::HeapString<> predicted_path{ _allocator, };
+            ice::HeapString<> predicted_path{ _allocator };
             ice::string::reserve(predicted_path, origin_size + ice::string::size(relative_uri.path));
 
             predicted_path = ice::string::substr(
@@ -391,6 +393,7 @@ namespace ice
         }
 
     protected:
+        ice::ProxyAllocator _named_allocator;
         ice::Allocator& _allocator;
         ice::Array<ice::native_file::HeapFilePath, ice::ContainerLogic::Complex> _base_paths;
         ice::TaskScheduler* _scheduler;
