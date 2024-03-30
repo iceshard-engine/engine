@@ -69,7 +69,7 @@ namespace ice
             *current_api.ena_log_tag_fn = ice::detail::default_enable_tag_fn;
             *current_api.assert_fn = ice::detail::android::logcat_assert;
         }
-        else if (ice::build::is_webapp)
+        else if constexpr (ice::build::is_webapp)
         {
             *current_api.log_fn = ice::detail::webasm::console_message;
             *current_api.reg_log_tag_fn = ice::detail::default_register_tag_fn;

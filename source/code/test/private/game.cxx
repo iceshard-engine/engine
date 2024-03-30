@@ -54,7 +54,7 @@ struct GameTasksDebugAllocator final : public ice::Module<GameTasksDebugAllocato
         api.allocator_pool = "tasks";
     }
 
-    static bool on_load(ice::Allocator& alloc, ice::ModuleNegotiator const& negotiator) noexcept
+    static bool on_load(ice::Allocator& alloc, ice::ModuleNegotiator auto const& negotiator) noexcept
     {
         negotiator.register_api(v1_api);
         return true;
@@ -177,7 +177,7 @@ struct TestModule : ice::Module<TestModule>
         api.register_traits_fn = test_reg_traits;
     }
 
-    static bool on_load(ice::Allocator& alloc, ice::ModuleNegotiator const& negotiator) noexcept
+    static bool on_load(ice::Allocator& alloc, ice::ModuleNegotiator auto const& negotiator) noexcept
     {
         return negotiator.register_api(v1_traits_api);
     }

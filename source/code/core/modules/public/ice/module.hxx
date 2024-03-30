@@ -23,7 +23,7 @@ namespace ice
 
     private:
         //! \brief A type tag to be used with `ModuleNegotiator` concept to make same API types register once for each module.
-        static struct ModuleTag { };
+        struct ModuleTag { };
 
         static inline void internal_load(
             ice::Allocator* alloc,
