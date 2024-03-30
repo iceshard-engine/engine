@@ -13,13 +13,10 @@ namespace ice::platform::webasm
 
     WebAsmCoreApp::WebAsmCoreApp() noexcept
         : _allocator{ }
+        , _threads{ }
         , _factories{ }
         , _params{ _allocator }
         , _initstage{ 0 }
-        , _update_queue{ }
-        , _update_thread{ }
-        , _graphics_queue{ }
-        , _graphics_thread{ _graphics_queue }
         , _config{ }
         , _state{ }
         , _runtime{ }
@@ -28,15 +25,6 @@ namespace ice::platform::webasm
         , _last_windows_size{ }
         , _render_surface{ }
     {
-        _update_thread = ice::create_thread(
-            _allocator,
-            _update_queue,
-            ice::TaskThreadInfo {
-                .custom_procedure = WebAsmCoreApp::native_webapp_thread,
-                .custom_procedure_userdata = this,
-                .debug_name = "ice.main",
-            }
-        );
     }
 
     WebAsmCoreApp::~WebAsmCoreApp() noexcept
@@ -44,6 +32,26 @@ namespace ice::platform::webasm
         _runtime.reset();
         _state.reset();
         _config.reset();
+    }
+
+    void WebAsmCoreApp::initialize(ice::Span<ice::Shard const> params) noexcept
+    {
+        _threads = ice::make_unique<WebASM_Threads>(_allocator, _allocator, params);
+
+        // On browsers it's better to use the actual main thread as the gfx thread, and introduce a new 'main' thread instead.
+        ice::UniquePtr<ice::TaskThread> logic_thread = ice::create_thread(
+            _allocator,
+            _threads->queue_main,
+            TaskThreadInfo{
+                .exclusive_queue = true,
+                .custom_procedure = WebAsmCoreApp::native_webapp_thread,
+                .custom_procedure_userdata = this,
+                .debug_name = "ice.main"
+            }
+        );
+
+        // Attach the main logic thread to the threadpool so we don't need to manage it ourselfs.
+        _threads->threadpool_object()->attach_thread("platform.main-thread"_sid, ice::move(logic_thread));
     }
 
     void WebAsmCoreApp::main_update() noexcept
@@ -94,7 +102,7 @@ namespace ice::platform::webasm
         }
         else if (_initstage == 3)
         {
-            _graphics_queue.process_all();
+            _threads->queue_gfx.process_all();
         }
         else if (_initstage == 4) // OnSuspend
         {
@@ -113,6 +121,9 @@ namespace ice::platform::webasm
 
     void WebAsmCoreApp::thread_update() noexcept
     {
+        // Process all tasks awaiting for the main thread regardless of the init stage.
+        _threads->queue_main.process_all();
+
         if (_initstage == 3) // OnUpdate
         {
             ice::Result const res = ice_update(*_config, *_state, *_runtime);

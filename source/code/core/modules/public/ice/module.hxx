@@ -22,6 +22,9 @@ namespace ice
         static inline auto module_info() noexcept -> ice::ModuleInfo const& { return _module_info; }
 
     private:
+        //! \brief A type tag to be used with `ModuleNegotiator` concept to make same API types register once for each module.
+        struct ModuleTag { };
+
         static inline void internal_load(
             ice::Allocator* alloc,
             ice::ModuleNegotiatorAPIContext* context,
@@ -33,7 +36,8 @@ namespace ice
                 "Module types need to provide a static 'on_load' function!"
             );
 
-            ice::ModuleNegotiator const negotiator_instance{ negotiator, context };
+            // We use a tagged negotiator so we can register the same API type from multiple modules in the same local execution unit.
+            ice::ModuleNegotiatorTagged<ModuleTag> const negotiator_instance{ negotiator, context };
             if (Type::on_load(*alloc, negotiator_instance) == false)
             {
                 return;

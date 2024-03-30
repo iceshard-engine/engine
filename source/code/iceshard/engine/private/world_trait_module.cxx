@@ -18,7 +18,7 @@ namespace ice
     {
         using ice::detail::world_traits::TraitsModuleAPI;
 
-        ice::StackAllocator<ice::size_of<TraitsModuleAPI> * 10> static_alloc{};
+        ice::StackAllocator<ice::size_of<TraitsModuleAPI> * 20> static_alloc{};
         ice::Array<TraitsModuleAPI> api_ptrs{ static_alloc };
         if (registry.query_apis(api_ptrs))
         {

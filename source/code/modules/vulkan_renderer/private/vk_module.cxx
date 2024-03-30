@@ -64,7 +64,7 @@ namespace ice::render::vk
             api.destroy_driver_fn = destroy_vulkan_driver;
         }
 
-        static bool on_load(ice::Allocator& alloc, ice::ModuleNegotiator const& negotiator) noexcept
+        static bool on_load(ice::Allocator& alloc, ice::ModuleNegotiator auto const& negotiator) noexcept
         {
             ice::LogModule::init(alloc, negotiator);
             ice::log_tag_register(log_tag);

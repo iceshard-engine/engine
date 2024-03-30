@@ -38,7 +38,7 @@ namespace ice::detail
             allocator().deallocate(pointer);
         }
 
-        static bool on_load(ice::Allocator& alloc, ice::ModuleNegotiator const& negotiator) noexcept
+        static bool on_load(ice::Allocator& alloc, ice::ModuleNegotiator auto const& negotiator) noexcept
         {
             DebugAllocatorAPI api;
             if (negotiator.query_api(api))

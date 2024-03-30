@@ -10,7 +10,7 @@ namespace ice::framework
 
     struct FrameworkModule
     {
-        static bool on_load(ice::Allocator& alloc, ice::ModuleNegotiator const& negotiator) noexcept;
+        static bool on_load(ice::Allocator& alloc, ice::ModuleNegotiatorBase const& negotiator) noexcept;
         static void on_unload(ice::Allocator& alloc) noexcept;
     };
 

@@ -18,7 +18,10 @@ namespace ice::platform
 
     auto available_features() noexcept -> ice::platform::FeatureFlags
     {
-        return FeatureFlags::Core | FeatureFlags::StoragePaths | FeatureFlags::RenderSurface;
+        return FeatureFlags::Core
+            | FeatureFlags::StoragePaths
+            | FeatureFlags::RenderSurface
+            | FeatureFlags::Threads;
     }
 
     auto initialize(
@@ -70,6 +73,9 @@ namespace ice::platform
             break;
         case FeatureFlags::StoragePaths:
             out_api_ptr = static_cast<ice::platform::StoragePaths*>(instance_ptr);
+            break;
+        case FeatureFlags::Threads:
+            out_api_ptr = instance_ptr->threads();
             break;
         case FeatureFlags::RenderSurface:
             out_api_ptr = &instance_ptr->_render_surface;

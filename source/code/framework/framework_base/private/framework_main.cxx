@@ -10,6 +10,7 @@
 
 #include <ice/platform.hxx>
 #include <ice/platform_core.hxx>
+#include <ice/platform_threads.hxx>
 #include <ice/platform_render_surface.hxx>
 #include <ice/platform_window_surface.hxx>
 #include <ice/platform_storage.hxx>
@@ -33,8 +34,8 @@
 #include <ice/world/world_trait.hxx>
 #include <ice/world/world_updater.hxx>
 
-#include <ice/devui/devui_module.hxx>
-#include <ice/devui/devui_system.hxx>
+#include <ice/devui_module.hxx>
+#include <ice/devui_context.hxx>
 
 #include <ice/resource_tracker.hxx>
 #include <ice/resource_provider.hxx>
@@ -105,10 +106,6 @@ struct ice::app::State
     ice::ProxyAllocator gamework_alloc;
     ice::ProxyAllocator engine_alloc;
 
-    ice::TaskQueue thread_pool_queue;
-    ice::TaskScheduler thread_pool_scheduler;
-
-    ice::UniquePtr<ice::TaskThreadPool> thread_pool;
     ice::UniquePtr<ice::ResourceTracker> resources;
     ice::UniquePtr<ice::framework::Game> game;
     ice::UniquePtr<ice::ModuleRegister> modules;
@@ -127,24 +124,22 @@ struct ice::app::State
 
     struct Debug
     {
-        ice::UniquePtr<ice::devui::DevUISystem> devui;
+        ice::UniquePtr<ice::DevUIContext> devui;
     } debug;
 
     struct Platform
     {
         ice::platform::Core* core;
+        ice::platform::Threads* threads;
         ice::platform::RenderSurface* render_surface;
     } platform;
 
     State(ice::Allocator& alloc) noexcept
         : alloc{ alloc }
-        , resources_alloc{ alloc, "resources" }
-        , modules_alloc{ alloc, "modules" }
-        , gamework_alloc{ alloc, "gamework" }
-        , engine_alloc{ alloc, "engine" }
-        , thread_pool_queue{ }
-        , thread_pool_scheduler{ thread_pool_queue }
-        , thread_pool{ }
+        , resources_alloc{ alloc, "Resources" }
+        , modules_alloc{ alloc, "Modules" }
+        , gamework_alloc{ alloc, "Gamework" }
+        , engine_alloc{ alloc, "Engine" }
         , resources{ }
         , game{ ice::framework::create_game(gamework_alloc) }
         , modules{ ice::create_default_module_register(modules_alloc, true) }
@@ -157,13 +152,8 @@ struct ice::app::State
         using ice::platform::FeatureFlags;
 
         ice::platform::query_api(platform.core);
+        ice::platform::query_api(platform.threads);
         ice::platform::query_api(platform.render_surface);
-
-        TaskThreadPoolCreateInfo const pool_info{
-            .thread_count = 4,
-            .debug_name_format = "ice.thread {}",
-        };
-        thread_pool = ice::create_thread_pool(alloc, thread_pool_queue, pool_info);
 
         ResourceTrackerCreateInfo const resource_info{
             .predicted_resource_count = 10000,
@@ -171,7 +161,7 @@ struct ice::app::State
             .flags_io_complete = ice::TaskFlags{ },
             .flags_io_wait = ice::TaskFlags{ }
         };
-        resources = ice::create_resource_tracker(resources_alloc, thread_pool_scheduler, resource_info);
+        resources = ice::create_resource_tracker(resources_alloc, platform.threads->threadpool(), resource_info);
     }
 };
 
@@ -240,7 +230,8 @@ void ice_init(
         alloc,
         FeatureFlags::Core
         | FeatureFlags::StoragePaths
-        | FeatureFlags::RenderSurface,
+        | FeatureFlags::RenderSurface
+        | FeatureFlags::Threads,
         platform_params
     );
     ICE_ASSERT(res == true, "Failed to initialize platform!");
@@ -327,7 +318,7 @@ auto ice_setup(
             game_config.resource_dirs,
             ice::build::current_platform == ice::build::System::WebApp
                 ? nullptr
-                : &state.thread_pool_scheduler
+                : &state.platform.threads->threadpool()
         )
     );
 
@@ -353,6 +344,14 @@ auto ice_setup(
         state.resources->sync_resources();
     }
 
+    ice::HeapString<> imgui_module = ice::resolve_dynlib_path(*state.resources, alloc, "imgui_module");
+    state.modules->load_module(state.modules_alloc, imgui_module);
+
+    if (ice::build::is_debug || ice::build::is_develop)
+    {
+        state.debug.devui = ice::create_devui_context(state.modules_alloc, *state.modules);
+    }
+
     // Run game setup
     ice::framework::State const framework_state{
         .modules = *state.modules,
@@ -371,7 +370,7 @@ auto ice_setup(
         ice::load_asset_type_definitions(state.engine_alloc, *state.modules, *asset_types);
         ice::AssetStorageCreateInfo const asset_storage_info{
             .resource_tracker = *state.resources,
-            .task_scheduler = state.thread_pool_scheduler,
+            .task_scheduler = state.platform.threads->threadpool(),
             .task_flags = ice::TaskFlags{}
         };
         engine_create_info.assets = ice::create_asset_storage(state.resources_alloc, ice::move(asset_types), asset_storage_info);
@@ -380,12 +379,6 @@ auto ice_setup(
     {
         engine_create_info.traits = ice::create_default_trait_archive(state.engine_alloc, *engine_create_info.states);
         ice::load_trait_descriptions(state.engine_alloc, *state.modules, *engine_create_info.traits);
-    }
-
-    if (ice::build::is_debug || ice::build::is_develop)
-    {
-        state.debug.devui = ice::devui::create_devui_system(state.engine_alloc, *state.modules);
-        state.debug.devui->register_trait(*engine_create_info.traits);
     }
 
     state.engine = ice::create_engine(state.engine_alloc, *state.modules, ice::move(engine_create_info));
@@ -432,7 +425,7 @@ auto ice_resume(
             .clock = runtime.clock,
             .schedulers = {
                 .main = runtime.main_scheduler,
-                .tasks = state.thread_pool_scheduler,
+                .tasks = state.platform.threads->threadpool(),
             }
         };
         runtime.runner = ice::create_engine_runner(state.engine_alloc, *state.modules, runner_create_info);
@@ -453,8 +446,8 @@ auto ice_resume(
             }
         };
 
-        ice::platform::Core* core;
-        bool const query_success = ice::platform::query_api(core);
+        ice::platform::Threads* threads;
+        bool const query_success = ice::platform::query_api(threads);
         ICE_ASSERT_CORE(query_success);
 
         ice::gfx::GfxRunnerCreateInfo const gfx_create_info{
@@ -462,7 +455,7 @@ auto ice_resume(
             .driver = *state.renderer.get(),
             .surface = *state.render_surface,
             .render_queues = queues,
-            .gfx_thread = core->graphics_thread()
+            .gfx_thread = threads->graphics()
         };
 
         runtime.gfx_runner = ice::create_gfx_runner(state.engine_alloc, *state.modules, gfx_create_info);
@@ -583,7 +576,7 @@ auto ice_update(
     if (state.debug.devui != nullptr)
     {
         IPT_ZONE_SCOPED_NAMED("Runner Frame - Build Developer UI");
-        state.debug.devui->render_builtin_widgets(*runtime.frame);
+        state.debug.devui->update_widgets();
     }
 
     if (was_minimized)

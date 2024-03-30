@@ -10,8 +10,12 @@ namespace ice
 
     template<typename Type>
     class Module;
-    class ModuleNegotiator;
+    class ModuleRegister;
+    class ModuleNegotiatorBase;
+    template<typename Type>
+    class ModuleNegotiatorTagged;
 
+    struct ModuleQuery;
     struct ModuleAPI;
     struct ModuleNegotiatorAPI;
     struct ModuleNegotiatorAPIContext;

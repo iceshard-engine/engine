@@ -40,9 +40,9 @@ namespace ice
         api.register_types_fn = iceshard_base_framework_register_asset_types;
     }
 
-    struct FrameworkAssetsModuke
+    struct FrameworkAssetsModule
     {
-        static bool on_load(ice::Allocator& alloc, ice::ModuleNegotiator const& negotiator) noexcept
+        static bool on_load(ice::Allocator& alloc, ice::ModuleNegotiator auto const& negotiator) noexcept
         {
             return negotiator.register_api(iceshard_base_framework_pipeline_api);
         }

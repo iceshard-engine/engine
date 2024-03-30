@@ -9,9 +9,9 @@ namespace ice
 
     struct LogModule
     {
-        static void init(ice::Allocator& alloc, ice::ModuleNegotiator const& negotiator) noexcept;
+        static void init(ice::Allocator& alloc, ice::ModuleNegotiatorBase const& negotiator) noexcept;
 
-        static bool on_load(ice::Allocator& alloc, ice::ModuleNegotiator const& negotiator) noexcept;
+        static bool on_load(ice::Allocator& alloc, ice::ModuleNegotiatorBase const& negotiator) noexcept;
         static void on_unload(ice::Allocator& alloc) noexcept;
     };
 

@@ -237,8 +237,8 @@ namespace ice::gfx
             .stages = *_stages
         };
 
-        ice::StringID_Hash world_name;
-        if (ice::shard_inspect(trigger_shard, world_name) == false)
+        ice::StringID world_name;
+        if (ice::shard_inspect(trigger_shard, world_name.value) == false)
         {
             return false;
         }
@@ -250,6 +250,8 @@ namespace ice::gfx
         }
         else if (trigger.to == detail::State_GfxInactive)
         {
+            _present_fence->wait(1'000'000'000);
+
             ice::gfx::GfxFrameStages gpu_stages{
                 .frame_transfer = { _queue_transfer },
                 .frame_end = { _queue_end }
@@ -267,7 +269,7 @@ namespace ice::gfx
         }
 
         ice::ScopedTaskContainer tasks{ _alloc };
-        _engine.worlds_updater().update(tasks, shards);
+        _engine.worlds_updater().update(world_name, tasks, shards);
         return true;
     }
 

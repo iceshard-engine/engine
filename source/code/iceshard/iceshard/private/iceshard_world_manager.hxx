@@ -40,6 +40,12 @@ namespace ice
             ice::Span<ice::Shard const> event_shards
         ) noexcept override;
 
+        void update(
+            ice::StringID_Arg world_name,
+            ice::TaskContainer& out_tasks,
+            ice::Span<ice::Shard const> event_shards
+        ) noexcept override;
+
         auto begin() noexcept { return ice::hashmap::begin(_worlds); }
         auto end() noexcept { return ice::hashmap::end(_worlds); }
 

@@ -21,7 +21,7 @@ namespace ice::platform::webasm
         WebAsmApp() noexcept;
         ~WebAsmApp() noexcept;
 
-        void initialize(ice::Span<ice::Shard const> shards) noexcept;
+        void initialize(ice::Span<ice::Shard const> shards) noexcept override;
 
     public: // Impl: ice::platform::Core
         auto refresh_events() noexcept -> ice::Result override;
