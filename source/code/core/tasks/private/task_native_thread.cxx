@@ -162,7 +162,7 @@ namespace ice
         ice::LinkedQueueRange<ice::TaskAwaitableBase> tasks = _queue.consume();
 
         ice::u32 count = 0;
-        ice::TaskAwaitableBase* head = tasks._head;
+        ice::TaskAwaitableBase volatile* head = tasks._head;
         while (head != tasks._tail)
         {
             // If we are not at 'tail' and encounter a nullptr, this means some thread did not write it's 'next' member yet.
