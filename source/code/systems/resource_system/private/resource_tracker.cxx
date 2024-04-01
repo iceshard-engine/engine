@@ -197,6 +197,7 @@ namespace ice
             ice::TaskThreadInfo const io_thread_info{
                 //.exclusive_queue = true, // ignored
                 //.sort_by_priority = false, // ignored
+                .wait_on_queue = false, // AIO is already awaiting for FS to finish work and is not spinning mindlessly.
                 .custom_procedure = (ice::TaskThreadProcedure*)ice::nativeio_thread_procedure,
                 .custom_procedure_userdata = _io_thread_data.get(),
                 .debug_name = "ice.res_tracker",

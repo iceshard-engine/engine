@@ -213,9 +213,7 @@ namespace ice
         auto await_suspend(ice::coroutine_handle<> coroutine) noexcept
         {
             _coro = coroutine;
-
-            // The thread loading the data will now handle us
-            ice::linked_queue::push(_entry.queue._awaitables, this);
+            _entry.queue.push_back(this);
         }
 
         auto await_resume() const noexcept -> ice::Data

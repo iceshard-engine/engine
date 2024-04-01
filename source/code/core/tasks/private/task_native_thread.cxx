@@ -43,8 +43,13 @@ namespace ice
 
         // Set destroy request
         _runtime._request = ThreadRequest::Destroy;
+
+        // Set a noop coroutine and push it onto the queue to be notified and do the last loop.
+        ice::TaskAwaitableBase final_awaitable{ ._coro = std::noop_coroutine() };
+
         while (_runtime._state != ThreadState::Destroyed)
         {
+            _runtime._queue.push_back(&final_awaitable);
             thread_native::sleep(1);
         }
 
@@ -91,15 +96,23 @@ namespace ice
     {
         ice::u32 result = 0;
         ice::u32 busy_loop = thread_native::Constant_BusyLoopCount;
-        while (_request != ThreadRequest::Destroy)
+
+        do
         {
+            // Run the selected routine
+            result = (this->*routine)();
+
             if constexpr (BusyWait)
             {
-                if (ice::linked_queue::empty(_queue._awaitables))
+                if (_queue.empty())
                 {
                     if (busy_loop > 0)
                     {
                         busy_loop -= 1;
+                    }
+                    else if (_info.wait_on_queue)
+                    {
+                        _queue.wait_any();
                     }
                     else
                     {
@@ -111,10 +124,17 @@ namespace ice
                 // Reset the busy loop value
                 busy_loop = thread_native::Constant_BusyLoopCount;
             }
+            else if (_info.wait_on_queue)
+            {
+                _queue.wait_any();
+            }
 
-            // Run the selected routine
-            result = (this->*routine)();
-        }
+            // Check if we shouldn't destroy the thread already.
+        } while (_request != ThreadRequest::Destroy);
+
+        // Process final tasks
+        _queue.process_all();
+
         return result;
     }
 
@@ -126,35 +146,20 @@ namespace ice
     auto ThreadRuntime::shared_routine() noexcept -> ice::u32
     {
         // Get the task nodes and ensure we are can access all of them.
-        ice::TaskAwaitableBase* const task = ice::linked_queue::pop(_queue._awaitables);
-
-        // Execute all tasks
-        if (task != nullptr)
-        {
-            // Coroutines should never be destroyed from here.
-            task->_coro.resume();
-        }
+        _queue.process_one();
         return 0;
     }
 
     auto ThreadRuntime::exclusive_fifo_routine() noexcept -> ice::u32
     {
-        // Get the task nodes and ensure we are can access all of them.
-        ice::LinkedQueueRange<ice::TaskAwaitableBase> tasks = ice::linked_queue::consume(_queue._awaitables);
-
-        // Execute all tasks
-        for (ice::TaskAwaitableBase* task_node : tasks)
-        {
-            // Coroutines should never be destroyed from here.
-            task_node->_coro.resume();
-        }
+        _queue.process_all();
         return 0;
     }
 
     auto ThreadRuntime::exclusive_sorted_routine() noexcept -> ice::u32
     {
         // Get the task nodes and ensure we are can access all of them.
-        ice::LinkedQueueRange<ice::TaskAwaitableBase> tasks = ice::linked_queue::consume(_queue._awaitables);
+        ice::LinkedQueueRange<ice::TaskAwaitableBase> tasks = _queue.consume();
 
         ice::u32 count = 0;
         ice::TaskAwaitableBase* head = tasks._head;

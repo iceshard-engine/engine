@@ -49,7 +49,7 @@ namespace ice
             inline auto await_suspend(ice::coroutine_handle<> coro) noexcept
             {
                 _coro = coro;
-                ice::linked_queue::push(queue._awaitables, this);
+                queue.push_back(this);
             }
 
             constexpr void await_resume() const noexcept
@@ -196,7 +196,7 @@ namespace ice
                 // Resume all awaiting coroutines even if we failed
                 while (_awaitcount.load(std::memory_order_relaxed) > 0)
                 {
-                    for (auto const* awaiting : ice::linked_queue::consume(_awaiting_tasks._awaitables))
+                    for (auto const* awaiting : _awaiting_tasks.consume())
                     {
                         _awaitcount.fetch_sub(1, std::memory_order_relaxed);
                         awaiting->_coro.resume();
