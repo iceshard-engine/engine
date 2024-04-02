@@ -179,7 +179,7 @@ namespace ice
         template<typename T> requires std::is_trivial_v<T>
         auto allocate(ice::u64 count = 1) noexcept -> T*
         {
-            return reinterpret_cast<T*>(allocate(AllocRequest{ ice::meminfo_of<T> *count }).memory);
+            return reinterpret_cast<T*>(allocate(AllocRequest{ ice::meminfo_of<T> * count }).memory);
         }
 
         void deallocate(void* pointer) noexcept;
