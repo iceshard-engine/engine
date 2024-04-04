@@ -13,6 +13,7 @@ namespace ice
             ice::u8 block;
             ice::u8 _unused[2];
             ice::u32 size;
+            ice::u8 _unused2[8];
 
             static auto get_at(Entry* entries, ice::usize bucket_size, ice::u32 idx) noexcept -> Entry*
             {
