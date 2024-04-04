@@ -81,6 +81,11 @@ namespace ice
             return SizeNotTracked;
         }
 
+        auto allocation_size_watermark() const noexcept -> ice::usize
+        {
+            return SizeNotTracked;
+        }
+
         virtual auto allocation_size(void* ptr) const noexcept -> ice::usize
         {
             return SizeNotTracked;
@@ -135,6 +140,8 @@ namespace ice
         }
 
         auto allocation_size_inuse() const noexcept -> ice::usize;
+
+        auto allocation_size_watermark() const noexcept -> ice::usize;
 
         void track_child(ice::AllocatorDebugInfo* child_allocator) noexcept;
         void remove_child(ice::AllocatorDebugInfo* child_allocator) noexcept;

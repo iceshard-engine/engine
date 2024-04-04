@@ -5,113 +5,109 @@
 
 namespace ice
 {
-
-    namespace detail
-    {
-
-        auto calc_required_tracking_buckets(ice::ucount bucket_count, ice::usize bucket_size) noexcept -> ice::ucount
-        {
-            // TODO: Fix
-            // ice::ucount const required_tracking_bytes = bucket_count / 8; // 8 buckets for each byte
-            ice::ucount const required_tracking_buckets = bucket_size > 64_B ? 2 : 32;
-            // ice::ucount const required_tracking_buckets = ice::ucount(required_tracking_bytes / bucket_size.value)
-            //     + ice::ucount((bucket_size.value % required_tracking_bytes) != 0); // how many buckets less.
-            return required_tracking_buckets;
-        }
-
-    } // namespace detail
-
     struct SnakeAllocator::ChainBlock
     {
-        char* tracking; // TODO: Make atomic?
-        char* memory;
+        struct alignas(16) Entry
+        {
+            ice::u8 free;
+            ice::u8 block;
+            ice::u8 _unused[2];
+            ice::u32 size;
+
+            static auto get_at(Entry* entries, ice::usize bucket_size, ice::u32 idx) noexcept -> Entry*
+            {
+                return reinterpret_cast<Entry*>(ice::ptr_add(entries, bucket_size * idx));
+            }
+
+            static auto count_entries(ice::usize block_size, ice::usize bucket_size) noexcept -> ice::ucount
+            {
+                return ice::ucount(block_size.value / bucket_size.value);
+            }
+        };
+
+        Entry* entries;
     };
 
     struct SnakeAllocator::Chain
     {
-        Chain(ice::usize block_size, ice::ucount capacity, ice::usize size) noexcept
+        using Entry = ChainBlock::Entry;
+
+        Chain(ice::usize base_block_size, ice::ucount capacity, ice::usize base_size) noexcept
             : _capacity{ capacity }
             , _count{ capacity }
-            , block_size{ block_size }
-            , block_bucket_size{ size }
-            , block_bucket_count{ ice::ucount(block_size.value / size.value) }
-            , block_tracking_bucket_count{ detail::calc_required_tracking_buckets(block_bucket_count, block_bucket_size) }
-            , block_data_bucket_count{ block_bucket_count - block_tracking_bucket_count }
+            , block_size{ base_block_size + ice::size_of<Entry> * Entry::count_entries(base_block_size, base_size) }
+            , block_bucket_size{ base_size + ice::size_of<Entry> }
+            , block_bucket_count{ Entry::count_entries(block_size, block_bucket_size) }
+            , total_bucket_count{ _count * block_bucket_count }
         {
+            ICE_ASSERT_CORE(_capacity <= 256);
+            ICE_ASSERT_CORE(block_bucket_size < 4_KiB);
         }
 
-        void prepare_block(ice::Allocator& alloc, ChainBlock& block) const noexcept
+        void prepare_block(ice::Allocator& alloc, ChainBlock& block, ice::u8 block_index) const noexcept
         {
+            ice::usize const traking_memory_size = ice::size_of<ChainBlock::Entry> * block_bucket_count;
+
             // Allocate memory
-            block.tracking = (char*) alloc.allocate(block_size).memory;
+            block.entries = reinterpret_cast<ChainBlock::Entry*>(
+                alloc.allocate({block_size, ice::ualign::b_16}).memory
+            );
 
-            // Move pointer by bucket aligned sized offset
-            block.memory = block.tracking + (block_tracking_bucket_count * block_bucket_size.value);
-
-            // Clear the tracking data part
-            ice::memset(block.tracking, 0, block_tracking_bucket_count * block_bucket_size.value);
+            // Setup the entry list
+            for (ice::u32 idx = 0; idx < block_bucket_count; ++idx)
+            {
+                Entry* const entry = Entry::get_at(block.entries, block_bucket_size, idx);
+                entry->free = 1;
+                entry->block = block_index;
+            }
         }
 
         auto allocate(ice::AllocRequest request) noexcept -> ice::AllocResult
         {
             ice::AllocResult result{ };
-            do
+            ice::u32 const bucket_idx = allocated.fetch_add(1, std::memory_order_relaxed);
+
+            ice::u32 const block_idx = bucket_idx % _count;
+            ice::u32 const block_bucket_idx = (bucket_idx / _count) % block_bucket_count;
+            ice::usize const memory_offset = block_bucket_size * block_bucket_idx;
+
+            Entry* const entry = Entry::get_at(blocks[block_idx].entries, block_bucket_size, block_bucket_idx);
+            if (entry->free == 1) // Check if the slot is empty
             {
-                ice::u32 const bucket_idx = allocated.fetch_add(1, std::memory_order_relaxed);
-                ice::u32 const block_idx = bucket_idx % _count;
-                ice::u32 const bucket_offset = (bucket_idx / _count) % block_data_bucket_count;
-                ice::usize const memory_offset = block_bucket_size * bucket_offset;
+                // NOTE: This should actually be a 'atomic' operation, however we "know" that getting to the same slot should at least take some time
+                //  for now this is acceptable. Later we might need to use atomics to handle this case properly.
+                entry->free = 0;
+                entry->size = ice::u32(request.size.value);
 
-                // Check if the bucket is empty (get the byte then the bit)
-                ice::u32 const tracking_byte_idx = bucket_offset / 8;
-                ice::u32 const tracking_bit = 0b1 << (bucket_offset % 8);
-                char& tracking_byte = blocks[block_idx].tracking[tracking_byte_idx];
-
-                // Assing the result and the tracking bit
-                if ((tracking_byte & tracking_bit) == 0)
-                {
-                    tracking_byte |= tracking_bit;
-
-                    result.size = request.size;
-                    result.alignment = request.alignment;
-                    result.memory = ice::ptr_add(blocks[block_idx].memory, memory_offset);
-                }
-                else
-                {
-                    // If not allocated this counts as a 'release'
-                    released.fetch_add(1, std::memory_order_relaxed);
-                }
-
-            } while (result.memory == nullptr);
+                result.size = request.size;
+                result.alignment = request.alignment;
+                result.memory = entry + 1;
+            }
+            else
+            {
+                // If the slot was full we just return empty and go to the fallback allocator.
+                released.fetch_add(1, std::memory_order_relaxed);
+            }
             return result;
         }
 
         bool try_deallocate(void* pointer) noexcept
         {
-            ice::isize const available_block_size = block_size - (block_bucket_size * block_tracking_bucket_count);
-
-            for (ice::u32 idx = 0; idx < _count; ++idx)
+            // Can't release a 'free' pointer (simple early exit cases)
+            Entry* const bucket = reinterpret_cast<Entry*>(ice::ptr_sub(pointer, 16_B));
+            if (bucket->free == 1 || bucket->block >= _capacity) [[unlikely]]
             {
-                void const* const begin = blocks[idx].memory;
+                return false;
+            }
 
-                ice::isize const distance = ice::ptr_offset(begin, pointer);
-                if (distance >= 0_B && distance <= available_block_size)
-                {
-                    // Check if the bucket is taken (get the byte then the bit)
-                    ice::u32 const bucket_index = ice::u32(distance.value / block_bucket_size.value);
-                    ice::u32 const tracking_byte_idx = bucket_index / 8;
-                    ice::u32 const tracking_bit = 0b1 << (bucket_index % 8);
+            ice::isize const distance = ice::ptr_offset(blocks[bucket->block].entries, pointer);
+            if (distance >= 0_B && distance <= block_size) // Double check we are in the epected memory arena
+            {
+                bucket->size = 0;
+                bucket->free = 1;
 
-                    char& tracking_byte = blocks[idx].tracking[tracking_byte_idx];
-                    ICE_ASSERT_CORE((tracking_byte & tracking_bit) != 0);
-
-                    // Update the byte
-                    tracking_byte = tracking_byte & ~tracking_bit;
-
-                    // Increment released counter and return, we finished
-                    released.fetch_add(1, std::memory_order_relaxed);
-                    return true;
-                }
+                released.fetch_add(1, std::memory_order_relaxed);
+                return true;
             }
             return false;
         }
@@ -122,10 +118,9 @@ namespace ice
         ice::usize const block_size;
         ice::usize const block_bucket_size;
         ice::ucount const block_bucket_count;
-        ice::ucount const block_tracking_bucket_count;
-        ice::ucount const block_data_bucket_count;
+        ice::ucount const total_bucket_count;
 
-
+        // NOTE: We run into false sharing here but for now it's not an issue.
         std::atomic_uint32_t allocated = 0;
         std::atomic_uint32_t released = 0;
 
@@ -170,7 +165,7 @@ namespace ice
             // Release block memory
             for (ice::u32 idx = 0; idx < chain->_count; ++idx)
             {
-                _backing_allocator.deallocate(chain->blocks[idx].tracking);
+                _backing_allocator.deallocate(chain->blocks[idx].entries);
             }
 
             // Destroy the chain object
@@ -182,17 +177,22 @@ namespace ice
 
     auto SnakeAllocator::do_allocate(ice::AllocRequest request) noexcept -> ice::AllocResult
     {
-        Chain* chain = _chains;
-        while(chain != nullptr && chain->block_bucket_size < request.size)
-        {
-            chain = chain->next;
-        }
-
-        // Try to allocate into one of the chains
         ice::AllocResult result{};
-        if (chain != nullptr)
+
+        // We only handle 8byte aligned data, everything else goes to the backing allocator
+        if (request.alignment <= ice::ualign::b_16 && request.size <= 4_KiB)
         {
-            result = chain->allocate(request);
+            Chain* chain = _chains;
+            while(chain != nullptr && chain->block_bucket_size < request.size)
+            {
+                chain = chain->next;
+            }
+
+            // Try to allocate into one of the chains
+            if (chain != nullptr)
+            {
+                result = chain->allocate(request);
+            }
         }
 
         if (result.memory == nullptr) [[unlikely]]
@@ -231,6 +231,7 @@ namespace ice
         {
             // Size is not a power of 2
             ICE_ASSERT_CORE(std::popcount(params.bucket_sizes[chain_idx].value) == 1);
+            ICE_ASSERT_CORE(params.chain_capacity <= 256);
 
             Chain* const chain = _backing_allocator.create<Chain>(
                 params.block_sizes[chain_idx],
@@ -241,9 +242,9 @@ namespace ice
             chain->blocks = _blocks + block_offset;
 
             // Prepare blocks
-            for (ice::u32 block_idx = 0; block_idx < chain->_count; ++block_idx)
+            for (ice::u8 block_idx = 0; block_idx < chain->_count; ++block_idx)
             {
-                chain->prepare_block(_backing_allocator, chain->blocks[block_idx]);
+                chain->prepare_block(_backing_allocator, chain->blocks[block_idx], block_idx);
             }
 
             // Move block array offset
