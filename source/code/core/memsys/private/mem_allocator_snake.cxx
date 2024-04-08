@@ -47,8 +47,6 @@ namespace ice
 
         void prepare_block(ice::Allocator& alloc, ChainBlock& block, ice::u8 block_index) const noexcept
         {
-            ice::usize const traking_memory_size = ice::size_of<ChainBlock::Entry> * block_bucket_count;
-
             // Allocate memory
             block.entries = reinterpret_cast<ChainBlock::Entry*>(
                 alloc.allocate({block_size, ice::ualign::b_16}).memory
@@ -70,7 +68,6 @@ namespace ice
 
             ice::u32 const block_idx = bucket_idx % _count;
             ice::u32 const block_bucket_idx = (bucket_idx / _count) % block_bucket_count;
-            ice::usize const memory_offset = block_bucket_size * block_bucket_idx;
 
             Entry* const entry = Entry::get_at(blocks[block_idx].entries, block_bucket_size, block_bucket_idx);
             if (entry->free == 1) // Check if the slot is empty

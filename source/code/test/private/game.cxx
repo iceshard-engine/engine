@@ -267,14 +267,14 @@ auto TestGame::rendergraph(ice::gfx::GfxContext& device) noexcept -> ice::Unique
 
     _graph = create_graph(_allocator);
     {
-        GfxResource const c0 = _graph->get_resource("color"_sid, GfxResourceType::RenderTarget);
+        // GfxResource const c0 = _graph->get_resource("color"_sid, GfxResourceType::RenderTarget);
         GfxResource const fb = _graph->get_framebuffer();
 
         GfxGraphStage const stages1[]{
-            {.name = "clear"_sid, .outputs = { &c0, 1 }},
+            {.name = "clear"_sid, .outputs = { &fb, 1 }},
         };
         GfxGraphStage const stages2[]{
-            {.name = "copy"_sid, .inputs = { &c0, 1 }, .outputs = { &fb, 1 }}
+            {.name = "copy"_sid, .outputs = { &fb, 1 }}
         };
         GfxGraphPass const pass1{ .name = "test1"_sid, .stages = stages1 };
         GfxGraphPass const pass2{ .name = "test2"_sid, .stages = stages2 };

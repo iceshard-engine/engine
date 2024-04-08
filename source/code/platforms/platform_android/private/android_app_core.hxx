@@ -17,7 +17,6 @@ namespace ice::platform::android
     enum class AndroidMessageType : uint8_t
     {
         OnInit,
-        OnSetup,
         OnCreateWindow,
         OnDestroyWindow,
         OnResume,
@@ -36,7 +35,7 @@ namespace ice::platform::android
     enum class AndroidState : uint8_t
     {
         Initializing,
-        Resuming,
+        PendingResume,
         Active,
         Suspended,
         Shutdown

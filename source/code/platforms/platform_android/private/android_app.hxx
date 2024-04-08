@@ -14,6 +14,7 @@
 
 #include <android/native_activity.h>
 #include "android_render_surface.hxx"
+#include "android_threads.hxx"
 #include "android_app_core.hxx"
 
 namespace ice::platform::android
@@ -33,13 +34,14 @@ namespace ice::platform::android
             ANativeActivity* activity
         ) noexcept;
 
+        void initialize(ice::Span<ice::Shard const> params) noexcept;
+        auto threads() noexcept -> ice::platform::Threads* { return _threads.get(); }
         auto render_surface() noexcept -> ice::platform::RenderSurface* { return &_app_surface; }
 
     public: // ice::platform::Core
         auto refresh_events() noexcept -> ice::Result override;
         auto system_events() noexcept -> ice::ShardContainer const& override { return _system_events; }
         auto input_events() noexcept -> ice::Span<ice::input::DeviceEvent const> override { return _input_events._events; }
-        auto graphics_thread() noexcept -> ice::TaskScheduler& override;
 
     public: // ice::platform::StoragePaths
         auto data_locations() const noexcept -> ice::Span<ice::String const> override;
@@ -89,11 +91,7 @@ namespace ice::platform::android
         ice::input::DeviceEventQueue _input_events;
         ice::vec2f _new_screen_size;
 
-        ice::TaskQueue _main_queue;
-        ice::UniquePtr<ice::TaskThread> _main_thread;
-        ice::TaskQueue _graphics_queue;
-        ice::TaskScheduler _graphics_scheduler;
-        ice::UniquePtr<ice::TaskThread> _graphics_thread; // TODO: Check we if we can run it on the main thread.
+        ice::UniquePtr<AndroidThreads> _threads;
 
         std::atomic_uint32_t _app_state;
         std::atomic<AInputQueue*> _app_queue;

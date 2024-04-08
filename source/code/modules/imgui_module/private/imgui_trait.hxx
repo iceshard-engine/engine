@@ -41,6 +41,7 @@ namespace ice::devui
     private:
         ice::Allocator& _allocator;
         ice::UniquePtr<ImGuiGfxStage> _imgui_gfx_stage;
+        bool _resized;
     };
 
 } // namespace ice::devui

@@ -26,7 +26,7 @@ namespace ice
             std::lock_guard<std::mutex> lk{ mtx };
             allocs.emplace(result.memory, AllocInfo{ result.size });
 
-            ice::u64 const prev = _allocated_inuse.fetch_add(result.size.value, std::memory_order_relaxed);
+            ice::usize::base_type const prev = _allocated_inuse.fetch_add(result.size.value, std::memory_order_relaxed);
 
             // We don't care too much about correctness on this one
             _allocated_max = ice::max(_allocated_max, prev + result.size.value);
