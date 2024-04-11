@@ -30,7 +30,7 @@
             'engine'
             'application'
             'ui_system'
-            'devui_system'
+            'devui'
         }
     ]
 
