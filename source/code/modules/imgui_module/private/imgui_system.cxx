@@ -103,7 +103,7 @@ namespace ice::devui
                         for (WidgetRuntimeInfo& runtime : _widgets)
                         {
                             ice::DevUIWidgetInfo const& info = runtime.widget->info;
-                            if (category == info.category && runtime.widget->build_mainmenu())
+                            if (ice::string::starts_with(info.category, category) && runtime.widget->build_mainmenu(runtime))
                             {
                                 _widget_frame.mainmenu(info, runtime);
                             }

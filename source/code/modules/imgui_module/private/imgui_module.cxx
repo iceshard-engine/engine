@@ -74,6 +74,19 @@ namespace ice::devui
         }
     }
 
+    void imgui_remove_widget(ice::DevUIWidget* widget) noexcept
+    {
+        ICE_LOG_IF(
+            global_ImGuiContext != nullptr,
+            LogSeverity::Error, LogTag::System,
+            "Trying to remove DevUI widget without a valid context!"
+        );
+        if (global_ImGuiContext != nullptr)
+        {
+            global_ImGuiContext->unregister_widget(widget);
+        }
+    }
+
     struct ImGuiDevUIModule : ice::Module<ImGuiDevUIModule>
     {
         static void v1_devui_system(ice::api::DevUI_API& api) noexcept
@@ -82,6 +95,7 @@ namespace ice::devui
             api.fn_destry_context = imgui_destroy_context;
             api.fn_context_setup = imgui_context_setup;
             api.fn_context_register_widget = imgui_register_widget;
+            api.fn_context_remove_widget = imgui_remove_widget;
             api.fn_context_trait_name = imgui_trait_name;
         }
 

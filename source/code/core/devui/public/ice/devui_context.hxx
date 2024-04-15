@@ -22,9 +22,15 @@ namespace ice
         void* alloc_userdata;
     };
 
+    bool devui_available() noexcept;
+
     auto devui_trait_name() noexcept -> ice::StringID;
 
     bool devui_register_widget(
+        ice::DevUIWidget* widget
+    ) noexcept;
+
+    bool devui_remove_widget(
         ice::DevUIWidget* widget
     ) noexcept;
 
