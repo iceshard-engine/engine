@@ -5,6 +5,7 @@
 #include <ice/types.hxx>
 #include <ice/build/build.hxx>
 
+// TODO: Move to a different file or remove entirely
 namespace ice::config
 {
 
