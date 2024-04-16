@@ -334,17 +334,6 @@ auto ice_setup(
 
     state.game->on_config(game_config);
 
-    // Load resources
-    state.resources->attach_provider(
-        ice::create_resource_provider(
-            state.resources_alloc,
-            game_config.resource_dirs,
-            ice::build::current_platform == ice::build::System::WebApp
-                ? nullptr
-                : &state.platform.threads->threadpool()
-        )
-    );
-
     // There are no modules on the webapp platform
     if constexpr(ice::build::is_webapp == false)
     {
@@ -356,25 +345,41 @@ auto ice_setup(
     }
     state.resources->sync_resources();
 
-    if constexpr (ice::build::is_android)
-    {
-        auto shaders_pak = state.resources->find_resource("urn://shaders.hsc"_uri);
-        ICE_ASSERT(shaders_pak != nullptr, "Failed to locate shader pack!");
-
-        auto hailstorm = ice::create_resource_provider_hailstorm(
-            state.resources_alloc, ice::resource_origin(shaders_pak)
-        );
-
-        state.resources->attach_provider(ice::move(hailstorm));
-        state.resources->sync_resources();
-    }
-
     ice::HeapString<> imgui_module = ice::resolve_dynlib_path(*state.resources, alloc, "imgui_module");
     state.modules->load_module(state.modules_alloc, imgui_module);
 
     if (ice::build::is_debug || ice::build::is_develop)
     {
         state.debug.devui = ice::create_devui_context(state.modules_alloc, *state.modules);
+    }
+
+    // Load resources
+    state.resources->attach_provider(
+        ice::create_resource_provider(
+            state.resources_alloc,
+            game_config.resource_dirs,
+            ice::build::current_platform == ice::build::System::WebApp
+                ? nullptr
+                : &state.platform.threads->threadpool()
+        )
+    );
+
+    state.resources->sync_resources();
+
+    if constexpr (ice::build::is_android || ice::build::is_windows)
+    {
+        auto shaders_pak = state.resources->find_resource("urn://shaders.hsc"_uri);
+        if (shaders_pak)
+        {
+            ICE_ASSERT(shaders_pak != nullptr, "Failed to locate shader pack!");
+
+            auto hailstorm = ice::create_resource_provider_hailstorm(
+                state.resources_alloc, ice::resource_origin(shaders_pak)
+            );
+
+            state.resources->attach_provider(ice::move(hailstorm));
+            state.resources->sync_resources();
+        }
     }
 
     // Run game setup
