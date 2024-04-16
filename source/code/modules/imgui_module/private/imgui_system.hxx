@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2024, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -7,6 +7,7 @@
 #include <ice/devui_frame.hxx>
 #include <ice/mem_allocator_proxy.hxx>
 #include <ice/container/array.hxx>
+#include "widgets/imgui_devui_manager.hxx"
 
 namespace ice::devui
 {
@@ -36,13 +37,8 @@ namespace ice::devui
         ice::ProxyAllocator _allocator;
         ice::Array<ice::UniquePtr<ice::DevUIWidget>> _builtin_widgets;
 
-        struct WidgetRuntimeInfo : ice::DevUIWidgetState
-        {
-            ice::DevUIWidget* widget;
-        };
-
+        ice::devui::ImGuiDevUIManager _widget_manager;
         ice::devui::ImGuiWidgetFrame _widget_frame;
-        ice::Array<WidgetRuntimeInfo> _widgets;
     };
 
 } // namespace ice::devui

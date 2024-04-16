@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2024, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include "imgui_system.hxx"
@@ -29,15 +29,15 @@ namespace ice::devui
     ImGuiSystem::ImGuiSystem(ice::Allocator& alloc) noexcept
         : _allocator{ alloc, "ImGUI-System" }
         , _builtin_widgets{ alloc }
-        , _widgets{ alloc }
+        , _widget_manager{ _allocator }
     {
-        ice::array::reserve(_widgets, 100);
         ice::array::push_back(_builtin_widgets, create_allocator_tree_widget(_allocator));
 
         // Register all built-in's
+        _widget_manager.add_widget(&_widget_manager); // Add self...
         for (ice::UniquePtr<ice::DevUIWidget> const& widget : _builtin_widgets)
         {
-            register_widget(widget.get());
+            _widget_manager.add_widget(widget.get());
         }
     }
 
@@ -47,29 +47,12 @@ namespace ice::devui
 
     void ImGuiSystem::register_widget(ice::DevUIWidget* widget) noexcept
     {
-        ice::array::push_back(_widgets, { .widget = widget });
+        _widget_manager.add_widget(widget);
     }
 
     void ImGuiSystem::unregister_widget(ice::DevUIWidget* widget) noexcept
     {
-        // TODO: ice::array::remove_at
-
-        ice::u32 const count = ice::array::count(_widgets);
-        if (count == 0)
-        {
-            return;
-        }
-        ice::u32 idx = 0;
-        for (; idx < count; ++idx)
-        {
-            if (_widgets[idx].widget == widget)
-            {
-                break;
-            }
-        }
-
-        _widgets[idx] = _widgets[count - 1];
-        ice::array::pop_back(_widgets);
+        _widget_manager.remove_widget(widget);
     }
 
     void ImGuiSystem::update_widgets() noexcept
@@ -86,8 +69,7 @@ namespace ice::devui
             "File",
             "Settings",
             "Tools",
-            "Test",
-            "ImGui"
+            "Help"
         };
 
         static bool show_demo = false;
@@ -100,7 +82,7 @@ namespace ice::devui
                 {
                     if (ImGui::BeginMenu(ice::string::begin(category)))
                     {
-                        for (WidgetRuntimeInfo& runtime : _widgets)
+                        for (ImGuiDevUIWidget& runtime : _widget_manager.widgets())
                         {
                             ice::DevUIWidgetInfo const& info = runtime.widget->info;
                             if (ice::string::starts_with(info.category, category) && runtime.widget->build_mainmenu(runtime))
@@ -110,7 +92,7 @@ namespace ice::devui
                         }
 
                         // Special case for ImGui Demo
-                        if (category == "ImGui")
+                        if (category == "Help")
                         {
                             ImGui::MenuItem("ImGui Demo Window", nullptr, &show_demo);
                         }
@@ -125,7 +107,7 @@ namespace ice::devui
                 ImGui::ShowDemoWindow(&show_demo);
             }
 
-            for (WidgetRuntimeInfo& runtime : _widgets)
+            for (ImGuiDevUIWidget& runtime : _widget_manager.widgets())
             {
                 if (runtime.active)
                 {
