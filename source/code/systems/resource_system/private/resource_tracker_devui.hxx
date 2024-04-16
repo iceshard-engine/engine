@@ -17,7 +17,7 @@ namespace ice
         ) noexcept;
         ~DevUI() noexcept override;
 
-        void build_content() noexcept;
+        void build_content() noexcept override;
 
     protected:
         void build_resource_view() noexcept;

@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2024, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include <ice/asset_type_archive.hxx>
@@ -75,8 +75,7 @@ namespace ice
             type_not_defined == true,
             "Identifier [{}] of asset type '{}' already has an associated definition!",
             type.identifier,
-            "<utf8_strings_not_supported_yet>"
-            //ice::asset_type_hint(type)
+            ice::asset_type_hint(type)
         );
 
         if (type_not_defined)

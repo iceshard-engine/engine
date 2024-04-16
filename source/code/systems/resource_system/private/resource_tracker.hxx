@@ -14,6 +14,7 @@
 #include <ice/log_formatters.hxx>
 #include <ice/task_utils.hxx>
 #include <ice/path_utils.hxx>
+#include <ice/devui_widget.hxx>
 
 namespace ice
 {

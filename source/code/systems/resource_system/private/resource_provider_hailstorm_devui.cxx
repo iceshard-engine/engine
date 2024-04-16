@@ -256,11 +256,6 @@ namespace ice
             ImGui::TableSetupColumn("Size");
             ImGui::TableHeadersRow();
 
-            constexpr char const* Constant_Types[]{ "AppDefined", "Metadata", "Data", "Mixed" };
-            constexpr char const* Constant_Persistance[]{ "Temporary", "Regular", "Load If Possible", "Load Always" };
-
-            // constexpr Entry Constant_FieldEntries[]{ Entry::create<&hailstorm::HailstormChunk::size>("%u", "%u") };
-
             ice::u32 idx = 0;
             for (hailstorm::HailstormResource const& res : _provider._pack.resources)
             {

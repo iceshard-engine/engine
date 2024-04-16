@@ -105,7 +105,7 @@ namespace ice
 
             if (ImGui::TableNextColumn())
             {
-                ImGui::Text("%llu", res->size().value);
+                ImGui::Text(ice::build::is_windows ? "%llu" : "%lu", res->size().value);
             }
 
             idx += 1;
