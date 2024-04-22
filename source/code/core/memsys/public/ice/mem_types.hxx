@@ -37,6 +37,9 @@ namespace ice
         base_type value;
     };
 
+    using isize_raw = typename isize::base_type;
+    using usize_raw = typename usize::base_type;
+
     enum class ualign : ice::u32
     {
         invalid = 0,
