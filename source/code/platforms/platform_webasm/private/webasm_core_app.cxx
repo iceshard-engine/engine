@@ -144,6 +144,7 @@ namespace ice::platform::webasm
     {
         WebAsmCoreApp* app = reinterpret_cast<WebAsmCoreApp*>(userdata);
         app->thread_update();
+        sched_yield();
         return 0;
     }
 
