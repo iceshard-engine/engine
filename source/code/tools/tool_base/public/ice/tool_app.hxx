@@ -1,11 +1,11 @@
-/// Copyright 2023 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2023 - 2024, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
 #include <ice/mem_allocator.hxx>
 #include <ice/module_register.hxx>
 #include <ice/native_file.hxx>
-#include <ice/param_list.hxx>
+#include <ice/params.hxx>
 #include <ice/tool.hxx>
 
 namespace ice::tool
@@ -14,15 +14,17 @@ namespace ice::tool
     class ToolAppBase
     {
     public:
-        static constexpr ice::String Constant_ToolName = "tool";
-        static constexpr ice::String Constant_ToolVersion = "0.0.1";
-        static constexpr ice::String Constant_ToolDescription = "";
-
-    public:
         virtual ~ToolAppBase() noexcept = default;
 
-        virtual void setup(ice::ParamList& params) noexcept = 0;
-        virtual auto run(ice::ParamList const& params) noexcept -> ice::i32 = 0;
+        virtual auto name() const noexcept -> ice::String = 0;
+        virtual auto version() const noexcept -> ice::String { return "0.0.1"; }
+        virtual auto description() const noexcept -> ice::String { return ""; }
+
+        [[nodiscard]]
+        virtual bool setup(ice::Params& params) noexcept { return true; }
+
+        [[nodiscard]]
+        virtual auto run() noexcept -> ice::i32 = 0;
     };
 
     struct ToolAppInstancer

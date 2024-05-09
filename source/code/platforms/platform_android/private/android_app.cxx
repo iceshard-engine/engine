@@ -10,8 +10,8 @@
 #include <ice/assert.hxx>
 #include <ice/path_utils.hxx>
 #include <ice/string/heap_string.hxx>
-#include <ice/param_list.hxx>
 #include <ice/os/android.hxx>
+#include <ice/params.hxx>
 #include <thread>
 
 
@@ -100,7 +100,7 @@ namespace ice::platform::android
     ) noexcept
         : AndroidAppCore{ alloc, activity }
         , _factories{ }
-        , _params{ _allocator }
+        , _params{ ice::create_params(_allocator, "iceshard", "0.0.1", "") }
         , _system_events{ _allocator }
         , _input_events{ _allocator }
         , _new_screen_size{ 1.f, 1.f }
@@ -233,9 +233,10 @@ namespace ice::platform::android
         ICE_LOG(ice::LogSeverity::Retail, ice::LogTag::Core, "Android::OnInit");
 
         ice_init(_allocator, _factories);
-        ice_args(_allocator, _params);
 
         _config = _factories.factory_config(_allocator);
+        ice_args(_allocator, _params, *_config);
+
         _state = _factories.factory_state(_allocator);
         _runtime = _factories.factory_runtime(_allocator);
     }
@@ -251,10 +252,10 @@ namespace ice::platform::android
         ICE_ASSERT_CORE(native_window() != nullptr);
         _app_surface.set_native_window(native_window());
 
-        ice::Result result = ice_setup(_allocator, _params, *_config, *_state);
+        ice::Result result = ice_setup(_allocator, *_config, *_state);
         if(result == ice::app::S_ApplicationSetupPending)
         {
-            result = ice_setup(_allocator, _params, *_config, *_state);
+            result = ice_setup(_allocator, *_config, *_state);
             ICE_ASSERT_CORE(result == app::S_ApplicationResume);
         }
 
@@ -292,8 +293,7 @@ namespace ice::platform::android
         IPT_MESSAGE("Android::OnShutdown");
         ICE_LOG(ice::LogSeverity::Retail, ice::LogTag::Core, "Android::OnShutdown");
 
-        ice::ParamList params{ _allocator };
-        ice_shutdown(_allocator, params, *_config, *_state);
+        ice_shutdown(_allocator, *_config, *_state);
 
         _runtime.reset();
         _state.reset();

@@ -243,7 +243,8 @@ void ice_init(
 
 void ice_args(
     ice::Allocator& alloc,
-    ice::ParamList& params
+    ice::Params& params,
+    ice::app::Config& config
 ) noexcept
 {
     IPT_ZONE_SCOPED;
@@ -274,7 +275,6 @@ auto ice_create_render_surface(
 
 auto ice_setup(
     ice::Allocator& alloc,
-    ice::ParamList const& params,
     ice::app::Config& config,
     ice::app::State& state
 ) noexcept -> ice::Result
@@ -656,7 +656,6 @@ auto ice_suspend(
 
 auto ice_shutdown(
     ice::Allocator&,
-    ice::ParamList const&,
     ice::app::Config const&,
     ice::app::State& state
 ) noexcept -> ice::Result

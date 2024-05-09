@@ -1,6 +1,7 @@
-/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2024, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
+#if 0
 #include <ice/mem.hxx>
 #include <ice/mem_allocator_host.hxx>
 #include <ice/os/windows.hxx>
@@ -61,7 +62,7 @@ int main(int argc, char** argv)
     using ice::operator""_sid;
 
     ice::HostAllocator alloc;
-    ice::ParamList params{ alloc, { argv, ice::u32(argc) } };
+    ice::Params params{ alloc, { argv, ice::u32(argc) } };
     ice::Array<ice::String> input_dirs{ alloc };
     if (ice::params::find_all(params, Param_Input, input_dirs) == false)
     {
@@ -124,3 +125,4 @@ int main(int argc, char** argv)
     );
     return 0;
 }
+#endif

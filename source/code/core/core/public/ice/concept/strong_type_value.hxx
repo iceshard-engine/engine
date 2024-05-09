@@ -1,4 +1,4 @@
-/// Copyright 2022 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2022 - 2024, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -13,7 +13,7 @@ namespace ice
     //! \brief Concept used to determine if a struct is considerd a strong type wrapper.
     template<typename T>
     concept StrongValueType = std::is_pod_v<T>
-        && ice::detail::HasAliasTypeTag<T, ice::StrongValue>
+        && ice::detail::HasAliasTypeTag<T, ice::StrongValue> // using TypeTag = ice::StrongValue;
         && ice::detail::OnlyMemberValue<T>;
 
     template<typename T> requires ice::StrongValueType<T>
