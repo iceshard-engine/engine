@@ -316,7 +316,7 @@ namespace ice
         ice::Resource const* resource
     ) const noexcept -> ice::LooseResource const*
     {
-        return static_cast<ice::FileSystemResource const*>(resource);
+        return static_cast<ice::LooseFilesResource const*>(resource);
     }
 
     void FileSystemResourceProvider::unload_resource(

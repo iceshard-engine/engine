@@ -158,6 +158,20 @@ namespace ice
                 opt->type_name("VALUE");
             }
         }
+
+        // Built-In Validators
+        if (ice::has_all(definition.flags, PF::ValidatePath))
+        {
+            opt->check(CLI::ExistingPath);
+        }
+        else if (ice::has_all(definition.flags, PF::ValidateFile))
+        {
+            opt->check(CLI::ExistingFile);
+        }
+        else if (ice::has_all(definition.flags, PF::ValidateDirectory))
+        {
+            opt->check(CLI::ExistingDirectory);
+        }
         return opt;
     }
 

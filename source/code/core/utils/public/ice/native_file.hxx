@@ -1,4 +1,4 @@
-/// Copyright 2023 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2023 - 2024, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -62,6 +62,17 @@ namespace ice::native_file
         ice::usize requested_read_offset,
         ice::usize requested_read_size,
         ice::Memory memory
+    ) noexcept -> ice::usize;
+
+    auto write_file(
+        ice::native_file::File const& native_file,
+        ice::usize write_offset,
+        ice::Data data
+    ) noexcept -> ice::usize;
+
+    auto append_file(
+        ice::native_file::File const& native_file,
+        ice::Data data
     ) noexcept -> ice::usize;
 
     enum class TraverseAction : ice::u8 { Continue, Break, SkipSubDir };

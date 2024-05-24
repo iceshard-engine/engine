@@ -21,9 +21,14 @@ namespace ice
         TakeLast = 0x02'00,
         TakeAll = 0x04'00,
 
+        ValidateFile = 0x10'00,
+        ValidateDirectory = 0x20'00,
+        ValidatePath = ValidateFile | ValidateDirectory,
+
         All = IsRequired
             | AllowExtraArgs | NoExtraArgs
-            | TakeFirst | TakeLast | TakeAll,
+            | TakeFirst | TakeLast | TakeAll
+            | ValidateFile | ValidateDirectory
     };
 
     //! \brief Basic information for each command line parameter.

@@ -33,7 +33,7 @@ public:
             params, {
                 .name = "--pack,packfile,-f,--file",
                 .description = "Pack file to be read",
-                .flags = ice::ParamFlags::IsRequired,
+                .flags = ice::ParamFlags::IsRequired | ice::ParamFlags::ValidateFile,
             },
             _param_packfile
         );
