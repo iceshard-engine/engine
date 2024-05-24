@@ -2,8 +2,10 @@
 /// SPDX-License-Identifier: MIT
 
 #include "imgui_allocator_tree.hxx"
-#include <ice/devui_imgui.hxx>
+#include <ice/log_formatters.hxx>
 #include <ice/string/string.hxx>
+#include <ice/devui_imgui.hxx>
+
 #include <imgui/imgui.h>
 
 namespace ice::devui
