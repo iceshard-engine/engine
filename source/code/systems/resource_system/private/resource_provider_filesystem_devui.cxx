@@ -79,8 +79,6 @@ namespace ice
 
     void FileSystemResourceProvider::DevUI::build_resources_table(ice::u32 idx_start, ice::u32 idx_end) noexcept
     {
-        ICE_LOG(LogSeverity::Debug, LogTag::Engine, "{}", ImGui::GetScrollY());
-
         ice::u32 idx = 1; // We start with '1' since the first entry are the headers.
         for (ice::FileSystemResource* const res : ice::hashmap::values(_resources))
         {

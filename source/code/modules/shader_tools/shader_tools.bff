@@ -3,38 +3,36 @@
 
 .Project =
 [
-    .Name = 'vulkan_renderer'
+    .Name = 'shader_tools'
     .Kind = .Kind_SharedLib
     .Group = 'Modules'
+    .Requires = { 'SDK-Windows-10' }
 
-    .BaseDir = '$WorkspaceCodeDir$/modules/vulkan_renderer'
-    .Requires = { 'SDK-Vulkan' }
+    .BaseDir = '$WorkspaceCodeDir$/modules/shader_tools'
 
     .Private =
     [
         .Modules = {
-            'vulkan_memory_allocator'
+            'arctic'
         }
         .Uses = {
-            'platform'
+            'resource_system'
             'render_system'
         }
     ]
 
-    .Win32_Libs =
+    .SDK_VulkanShaderC =
     [
-        .Name = 'Win32-Shader-Compiler'
-        .Requires = { 'SDK-Windows-10' }
+        .Name = 'Vulkan-Shader-Compiler'
+        .Requires = { 'SDK-Vulkan' }
+
         .Public =
         [
-            .Modules = {
-                'arctic'
-            }
             .Libs = {
                 'shaderc_shared'
             }
         ]
     ]
-    .Rules = { .Win32_Libs }
+    .Rules = { .SDK_VulkanShaderC }
 ]
 .Projects + .Project

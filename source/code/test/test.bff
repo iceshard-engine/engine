@@ -17,6 +17,7 @@
         .DependsOn =
         [
             .Runtime = {
+                'shader_tools'
                 'vulkan_renderer'
             }
         ]
