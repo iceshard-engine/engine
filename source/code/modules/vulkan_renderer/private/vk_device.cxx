@@ -622,9 +622,9 @@ namespace ice::render::vk
     ) noexcept -> ice::render::Pipeline
     {
         VkPipelineShaderStageCreateInfo shader_stages[10];
-        ice::u32 const stage_count = ice::count(info.shaders_stages);
+        ice::u32 const stage_count = ice::count(info.shaders);
 
-        uint32_t stage_idx = 0;
+        uint32_t stage_idx = 0, vertex_stage_index = ice::u32_max;
         for (; stage_idx < stage_count; ++stage_idx)
         {
             VkPipelineShaderStageCreateInfo& shader_stage = shader_stages[stage_idx];
@@ -632,9 +632,14 @@ namespace ice::render::vk
             shader_stage.pNext = nullptr;
             shader_stage.pSpecializationInfo = nullptr;
             shader_stage.flags = 0;
-            shader_stage.stage = native_enum_value(info.shaders_stages[stage_idx]);
-            shader_stage.module = native_handle(info.shaders[stage_idx]);
-            shader_stage.pName = "main";
+            shader_stage.stage = native_enum_value(info.shaders[stage_idx].stage);
+            shader_stage.module = native_handle(info.shaders[stage_idx].shader);
+            shader_stage.pName = ice::string::begin(info.shaders[stage_idx].entry_point);
+
+            if (ice::has_any(info.shaders[stage_idx].stage, ShaderStageFlags::VertexStage))
+            {
+                vertex_stage_index = stage_idx;
+            }
         }
 
         VkDynamicState dynamic_states[2]; // max: VK_DYNAMIC_STATE_RANGE_SIZE
@@ -648,10 +653,10 @@ namespace ice::render::vk
         ice::Array<VkVertexInputBindingDescription> vertex_input_bindings{ _allocator };
         ice::Array<VkVertexInputAttributeDescription> vertex_input_attributes{ _allocator };
 
-        ice::array::reserve(vertex_input_bindings, ice::count(info.shader_bindings));
-        ice::array::reserve(vertex_input_attributes, ice::count(info.shader_bindings) * 4);
+        ice::array::reserve(vertex_input_bindings, ice::count(info.vertex_bindings));
+        ice::array::reserve(vertex_input_attributes, ice::count(info.vertex_bindings) * 4);
 
-        for (ice::render::ShaderInputBinding const& binding : info.shader_bindings)
+        for (ice::render::ShaderInputBinding const& binding : info.vertex_bindings)
         {
             VkVertexInputBindingDescription vk_binding{ };
             vk_binding.binding = binding.binding;
@@ -687,7 +692,7 @@ namespace ice::render::vk
         case CullMode::Disabled:
             rasterization.cullMode = VK_CULL_MODE_NONE;
             // [issue #34] Needs to be properly available in the creation API.
-            if (ice::count(info.shaders_stages) == 5)
+            if (ice::count(info.shaders) == 5)
             {
                 rasterization.polygonMode = VK_POLYGON_MODE_LINE;
             }

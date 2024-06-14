@@ -45,6 +45,7 @@ namespace ice
             _allocator.deallocate(entry->data_baked);
             _allocator.deallocate(entry->data_loaded);
             _allocator.deallocate(entry->data_runtime);
+            _allocator.deallocate(entry->metadata_baked);
             _allocator.destroy(entry);
         }
     }

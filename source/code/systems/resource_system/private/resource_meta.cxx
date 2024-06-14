@@ -482,6 +482,8 @@ namespace ice
         );
 
         ice::memcpy(mem, ice::string::data_view(value));
+        *((char*)(mem.location) + ice::string::size(value)) = '\0';
+
         ice::usize const str_offset = ice::ptr_distance(
             ice::buffer::memory_pointer(meta._additional_data),
             mem.location

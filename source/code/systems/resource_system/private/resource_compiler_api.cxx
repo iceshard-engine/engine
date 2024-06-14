@@ -59,6 +59,11 @@ namespace ice::api::resource_compiler::v1
         ice::MutableMetadata& out_metadata
     ) noexcept -> ice::Task<bool>
     {
+        ice::Data data{};
+        if (co_await ice::resource_meta(resource_handle, data) == S_Ok)
+        {
+            co_return ice::meta_deserialize_from(out_metadata, data) == S_Ok;
+        }
         co_return true;
     }
 

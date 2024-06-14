@@ -75,18 +75,31 @@ namespace ice
         }
     }
 
+    struct ShaderCompilerContext
+    {
+        ice::i32 shader_type;
+        ice::String shader_main;
+    };
+
+    auto shader_context(ice::ResourceCompilerCtx& ctx) noexcept -> ShaderCompilerContext*
+    {
+        return reinterpret_cast<ShaderCompilerContext*>(ctx.userdata);
+    }
+
     bool context_prepare(ice::Allocator& alloc, ice::ResourceCompilerCtx& ctx) noexcept
     {
+        ctx.userdata = alloc.create<ShaderCompilerContext>();
         return true;
     }
 
     bool context_cleanup(ice::Allocator& alloc, ice::ResourceCompilerCtx& ctx) noexcept
     {
+        alloc.destroy(shader_context(ctx));
         return true;
     }
 
     auto compile_shader_source(
-        ice::ResourceCompilerCtx&,
+        ice::ResourceCompilerCtx& ctx,
         ice::ResourceHandle* source,
         ice::ResourceTracker& tracker,
         ice::Span<ice::ResourceHandle* const>,
@@ -94,6 +107,7 @@ namespace ice
         ice::Allocator& alloc
     ) noexcept -> ice::Task<ice::ResourceCompilerResult>
     {
+        ShaderCompilerContext& sctx = *shader_context(ctx);
         shaderc::CompileOptions compile_options{};
 
         // We don't use optimization in runtime-baked shaders
@@ -142,11 +156,30 @@ namespace ice
             co_return { };
         }
 
+        // TODO:
+        sctx.shader_main = "main";
+        sctx.shader_type = static_cast<ice::i32>(shader_stage);
+
         // Spv result is a 4byte BC table
         ice::usize const result_size = ice::size_of<ice::u32> * (spv_result.end() - spv_result.begin());
         ice::Memory const result_mem = alloc.allocate(result_size);
         ice::memcpy(result_mem.location, spv_result.begin(), result_size);
         co_return ResourceCompilerResult{ .result = result_mem };
+    }
+
+    auto build_shader_meta(
+        ice::ResourceCompilerCtx& ctx,
+        ice::ResourceHandle* source,
+        ice::ResourceTracker& tracker,
+        ice::Span<ice::ResourceCompilerResult const>,
+        ice::Span<ice::URI const>,
+        ice::MutableMetadata& out_meta
+    ) noexcept -> ice::Task<bool>
+    {
+        ShaderCompilerContext sctx = *shader_context(ctx);
+        ice::meta_set_int32(out_meta, "ice.shader.stage"_sid, sctx.shader_type);
+        ice::meta_set_string(out_meta, "ice.shader.entry_point"_sid, sctx.shader_main);
+        co_return true;
     }
 #endif
 
@@ -159,6 +192,7 @@ namespace ice
             api.fn_cleanup_context = context_cleanup;
             api.fn_supported_resources = shader_resources;
             api.fn_compile_source = compile_shader_source;
+            api.fn_build_metadata = build_shader_meta;
         }
 
         static bool on_load(ice::Allocator& alloc, ice::ModuleNegotiator auto& negotiator) noexcept

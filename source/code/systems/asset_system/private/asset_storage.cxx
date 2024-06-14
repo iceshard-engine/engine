@@ -111,7 +111,7 @@ namespace ice
             ice::Allocator& alloc,
             ice::ResourceCompiler const& compiler,
             ice::ResourceTracker& resource_tracker,
-            ice::AssetEntry const* asset_entry,
+            ice::AssetEntry* asset_entry,
             ice::Memory& result
         ) noexcept -> ice::Task<bool>
         {
@@ -210,12 +210,15 @@ namespace ice
             // ... and wait for them to finish
             ice::wait_for_all(tasks);
 
-            // TODO: Should we even build metadata here?
-            // Build the metadata?
-            // result = compiler.fn_build_metadata(ctx, asset_entry->resource, resource_tracker, compiled_sources, dependencies, )
+            // Build the metadata
+            ice::MutableMetadata meta{ alloc };
+            if (ice::wait_for(compiler.fn_build_metadata(ctx, asset_entry->resource_handle, resource_tracker, compiled_sources, dependencies, meta)))
+            {
+                asset_entry->metadata_baked = ice::meta_save(meta, alloc);
 
-            // Finalize the asset
-            result = compiler.fn_finalize(ctx, asset_entry->resource_handle, compiled_sources, dependencies, alloc);
+                // Finalize the asset
+                result = compiler.fn_finalize(ctx, asset_entry->resource_handle, compiled_sources, dependencies, alloc);
+            }
 
             // Deallocate all compiled sources
             for (ice::ResourceCompilerResult const& compiled : compiled_sources)
@@ -436,11 +439,17 @@ namespace ice
             result = co_await request_asset_baked(entry, shelve);
             ICE_ASSERT(result.location != nullptr, "We failed to access baked data!");
 
-            ice::Memory load_result{};
-            ice::MutableMetadata res_metadata{ _allocator };
-            if (ice::Data metadata = co_await entry.resource->load_metadata(); metadata.location != nullptr)
+
+            ice::Data metadata_data = ice::data_view(entry.metadata_baked);
+            if (metadata_data.location == nullptr)
             {
-                ice::Result const res = ice::meta_deserialize_from(res_metadata, metadata);
+                metadata_data = co_await entry.resource->load_metadata();
+            }
+
+            ice::MutableMetadata meta{ _allocator };
+            if (metadata_data.location != nullptr)
+            {
+                ice::Result const res = ice::meta_deserialize_from(meta, metadata_data);
                 ICE_LOG_IF(
                     res == ice::S_Success,
                     LogSeverity::Error, LogTag::Asset,
@@ -449,11 +458,12 @@ namespace ice
                 );
             }
 
+            ice::Memory load_result{};
             bool const load_success = co_await ice::detail::load_asset(
                 shelve.asset_allocator(),
                 shelve.definition,
                 *this,
-                res_metadata,
+                meta,
                 result,
                 load_result
             );
