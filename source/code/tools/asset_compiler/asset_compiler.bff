@@ -16,10 +16,16 @@
 
     .Private =
     [
+        .DependsOn =
+        [
+            .Runtime = {
+                'shader_tools'
+            }
+        ]
 
         .Uses = {
             'tool_base'
-            'asset_system'
+            'resource_system'
         }
     ]
 ]

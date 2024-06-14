@@ -4,6 +4,7 @@ namespace ice::api::resource_compiler::v1
 {
 
     bool fn_collect_sources_default(
+        ice::ResourceCompilerCtx& ctx,
         ice::ResourceHandle* resource_handle,
         ice::ResourceTracker& resource_tracker,
         ice::Array<ice::ResourceHandle*>& out_sources
@@ -13,6 +14,7 @@ namespace ice::api::resource_compiler::v1
     }
 
     bool fn_collect_dependencies_default(
+        ice::ResourceCompilerCtx& ctx,
         ice::ResourceHandle* resource_handle,
         ice::ResourceTracker& resource_tracker,
         ice::Array<ice::URI>& out_dependencies
@@ -22,6 +24,7 @@ namespace ice::api::resource_compiler::v1
     }
 
     auto fn_validate_source_default(
+        ice::ResourceCompilerCtx& ctx,
         ice::ResourceHandle* resource_handle,
         ice::ResourceTracker& resource_tracker
     ) noexcept -> ice::Task<bool>
@@ -30,6 +33,7 @@ namespace ice::api::resource_compiler::v1
     }
 
     auto fn_compile_source_default(
+        ice::ResourceCompilerCtx& ctx,
         ice::ResourceHandle* resource_handle,
         ice::ResourceTracker& resource_tracker,
         ice::Span<ice::ResourceHandle* const> sources,
@@ -46,7 +50,20 @@ namespace ice::api::resource_compiler::v1
         co_return ResourceCompilerResult{ .result = result };
     }
 
+    auto fn_build_metadata_default(
+        ice::ResourceCompilerCtx& ctx,
+        ice::ResourceHandle* resource_handle,
+        ice::ResourceTracker& resource_tracker,
+        ice::Span<ice::ResourceCompilerResult const> compiled_sources,
+        ice::Span<ice::URI const> dependencies,
+        ice::MutableMetadata& out_metadata
+    ) noexcept -> ice::Task<bool>
+    {
+        co_return true;
+    }
+
     auto fn_finalize_default(
+        ice::ResourceCompilerCtx& ctx,
         ice::ResourceHandle* resource_handle,
         ice::Span<ice::ResourceCompilerResult const> compiled_sources,
         ice::Span<ice::URI const> dependencies,

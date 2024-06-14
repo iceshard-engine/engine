@@ -46,7 +46,7 @@ namespace ice
     ) noexcept -> ice::TaskExpected<ice::String, ice::ErrorCode>
     {
         ice::ResourceResult const result = co_await tracker.load_resource(source);
-        ice::String const path = ice::resource_path(source);
+        ice::String const path = ice::resource_origin(source);
 
         if (ice::path::extension(path) == ".asl")
         {
@@ -75,7 +75,18 @@ namespace ice
         }
     }
 
+    bool context_prepare(ice::Allocator& alloc, ice::ResourceCompilerCtx& ctx) noexcept
+    {
+        return true;
+    }
+
+    bool context_cleanup(ice::Allocator& alloc, ice::ResourceCompilerCtx& ctx) noexcept
+    {
+        return true;
+    }
+
     auto compile_shader_source(
+        ice::ResourceCompilerCtx&,
         ice::ResourceHandle* source,
         ice::ResourceTracker& tracker,
         ice::Span<ice::ResourceHandle* const>,
@@ -90,7 +101,7 @@ namespace ice
         compile_options.SetTargetSpirv(shaderc_spirv_version_1_6); // TODO: take from the metadata / platform settings?
         shaderc::Compiler compiler{};
 
-        ice::String const path = ice::resource_path(source);
+        ice::String const path = ice::resource_origin(source);
         ice::String const ext = ice::path::extension(path);
         bool const is_vertex_shader = ice::string::substr(path, ice::string::size(path) - (4 + ice::size(ext)), ice::size(ext)) == "vert";
 
@@ -144,6 +155,8 @@ namespace ice
         static void v1_compiler_api(ice::api::resource_compiler::v1::ResourceCompilerAPI& api) noexcept
         {
             // api.fn_collect_sources =
+            api.fn_prepare_context = context_prepare;
+            api.fn_cleanup_context = context_cleanup;
             api.fn_supported_resources = shader_resources;
             api.fn_compile_source = compile_shader_source;
         }

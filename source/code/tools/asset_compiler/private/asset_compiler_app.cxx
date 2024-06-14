@@ -7,9 +7,10 @@
 #include <ice/resource_tracker.hxx>
 #include <ice/resource_provider.hxx>
 #include <ice/resource_format.hxx>
-#include <ice/asset_type_archive.hxx>
-#include <ice/asset_module.hxx>
-#include <ice/asset_storage.hxx>
+#include <ice/resource_compiler_api.hxx>
+#include <ice/resource_compiler.hxx>
+#include <ice/resource_meta.hxx>
+#include <ice/sync_manual_events.hxx>
 #include <ice/task_thread.hxx>
 #include <ice/task_utils.hxx>
 #include <ice/sort.hxx>
@@ -26,6 +27,7 @@ public:
         : ToolApp<AssetCompilerApp>{}
         , _output{ }
         , _asset_resource{ }
+        , _includes{ _allocator }
         , _inputs_meta{ _allocator }
         , _inputs{ _allocator }
         , _queue{ }
@@ -60,6 +62,14 @@ public:
             _compiler
         );
         ice::params_define(params, {
+                .name = "-i,--include",
+                .description = "Additional include directories to search for dependent resources",
+                // .type_name = "PATH",
+                .flags = ice::ParamFlags::ValidateDirectory,
+            },
+            _includes
+        );
+        ice::params_define(params, {
                 .name = "-m,--metadata",
                 .description = "Metadata descriptions for the asset. Can provide multiple files that will be combined in order.",
                 // .type_name = "PATH",
@@ -90,8 +100,7 @@ public:
 
         if (ice::string::empty(_asset_resource))
         {
-            // ice::String const basename = ice::path::basename(_output);
-            _asset_resource = ice::path::basename(_output);// ice::String{ ice::string::begin(_output), ice::string::end(basename) };
+            _asset_resource = ice::path::basename(_output);
         }
 
         ICE_LOG_IF(
@@ -105,45 +114,42 @@ public:
         ice::UniquePtr<ice::ResourceTracker> resource_tracker = ice::create_resource_tracker(
             _allocator,
             _scheduler,
-            { .predicted_resource_count = ice::count(_inputs), .io_dedicated_threads = 0 }
+            { .predicted_resource_count = 10'000, .io_dedicated_threads = 0 }
         );
 
-        [[maybe_unused]]
-        ice::ResourceProvider& resource_provider = *resource_tracker->attach_provider(
+        resource_tracker->attach_provider(
             ice::make_unique<AssetCompilerResourceProvider>(
-                _allocator,
-                _allocator,
-                _inputs
+                _allocator, _allocator, _inputs
             )
+        );
+        resource_tracker->attach_provider(
+            ice::create_resource_provider(_allocator, _includes, &_scheduler)
         );
 
         resource_tracker->sync_resources();
-
-        // Setup the AssetCompiler asset type archive.
-        ice::UniquePtr<ice::AssetTypeArchive> asset_types = ice::create_asset_type_archive(_allocator);
-        ice::load_asset_type_definitions(_allocator, *_modules, *asset_types);
 
         ice::ResourceHandle* res = resource_tracker->find_resource(ice::URI{ ice::Scheme_URN, _asset_resource });
         ice::String const res_ext = ice::path::extension(ice::resource_origin(res));
 
         ice::ResourceCompiler const* resource_compiler = nullptr;
-        ice::AssetTypeDefinition const* asset_definition = nullptr;
-        for (ice::AssetType_Arg asset_type : asset_types->asset_types())
-        {
-            ice::AssetTypeDefinition const& def = asset_types->find_definition(asset_type);
-            ice::ucount out_idx = 0;
-            if (ice::search(def.resource_extensions, res_ext, out_idx))
-            {
-                resource_compiler = asset_types->find_compiler(asset_type);
-                asset_definition = &def;
-                break;
-            }
-        }
 
-        if (asset_definition == nullptr)
+        ice::Array<ice::api::resource_compiler::v1::ResourceCompilerAPI> resource_compilers{ _allocator };
+        if (_modules->query_apis(resource_compilers))
         {
-            ICE_LOG(ice::LogSeverity::Critical, ice::LogTag::Tool, "Asset definition for resource '{}' is not available.", _asset_resource);
-            return 1;
+            for (ice::api::resource_compiler::v1::ResourceCompilerAPI& compiler : resource_compilers)
+            {
+                if (compiler.fn_supported_resources == nullptr)
+                {
+                    continue;
+                }
+
+                ice::ucount out_idx = 0;
+                if (ice::search(compiler.fn_supported_resources(), res_ext, out_idx))
+                {
+                    resource_compiler = &compiler;
+                    break;
+                }
+            }
         }
 
         // Create the metadata object
@@ -169,18 +175,10 @@ public:
             ICE_LOG_IF(result == ice::E_Fail, ice::LogSeverity::Warning, ice::LogTag::Tool, "{}", result.error());
         }
 
-        // Check for expected asset states.
-        ice::AssetState state = asset_definition->fn_asset_state(asset_definition->ud_asset_state, *asset_definition, meta, ice::resource_uri(res));
-        if (state != ice::AssetState::Raw && state != ice::AssetState::Baked)
-        {
-            ICE_LOG(ice::LogSeverity::Critical, ice::LogTag::Tool, "Unexpected asset state for resource {}. Expected 'Raw' or 'Baked'.", _asset_resource);
-            return 2;
-        }
-
         // If asset is in 'raw' format execute the resource compiler.
-        if (state == ice::AssetState::Raw)
+        // if (state == ice::AssetState::Raw)
         {
-            if (resource_compiler == nullptr)
+            if (resource_compiler == nullptr || resource_compiler->fn_supported_resources == nullptr)
             {
                 ICE_LOG(ice::LogSeverity::Critical, ice::LogTag::Tool, "Resource compiler for resource {} is not available.", _asset_resource);
                 return 1;
@@ -193,8 +191,16 @@ public:
                 return 1;
             }
 
+            ice::ResourceCompilerCtx ctx{ .userdata = nullptr };
+            ice::api::resource_compiler::v1::ResourceCompilerCtxCleanup ctx_cleanup{ _allocator, ctx, resource_compiler->fn_cleanup_context };
+            if (resource_compiler->fn_prepare_context && resource_compiler->fn_prepare_context(_allocator, ctx) == false)
+            {
+                ICE_LOG(ice::LogSeverity::Critical, ice::LogTag::Tool, "Falied preparing compiler context for {}.", _asset_resource);
+                return 1;
+            }
+
             ice::Array<ice::ResourceHandle*> sources{ _allocator };
-            if (resource_compiler->fn_collect_sources(res, *resource_tracker, sources) == false)
+            if (resource_compiler->fn_collect_sources(ctx, res, *resource_tracker, sources) == false)
             {
                 ICE_LOG(ice::LogSeverity::Critical, ice::LogTag::Tool, "Falied gathering sources for {}.", _asset_resource);
                 return 1;
@@ -207,13 +213,13 @@ public:
             }
 
             ice::Array<ice::URI> dependencies{ _allocator };
-            if (resource_compiler->fn_collect_dependencies(res, *resource_tracker, dependencies) == false)
+            if (resource_compiler->fn_collect_dependencies(ctx, res, *resource_tracker, dependencies) == false)
             {
                 ICE_LOG(ice::LogSeverity::Critical, ice::LogTag::Tool, "Falied gathering dependencies for {}.", _asset_resource);
                 return 1;
             }
 
-            if (ice::wait_for(resource_compiler->fn_validate_source(res, *resource_tracker)) == false)
+            if (ice::wait_for(resource_compiler->fn_validate_source(ctx, res, *resource_tracker)) == false)
             {
                 ICE_LOG(ice::LogSeverity::Critical, ice::LogTag::Tool, "Falied validation of sources for {}.", _asset_resource);
                 return 1;
@@ -222,16 +228,39 @@ public:
             ice::Array<ice::ResourceCompilerResult> results{ _allocator };
             for (ice::ResourceHandle* source : sources)
             {
-                ice::ResourceCompilerResult const result = ice::wait_for(
-                    resource_compiler->fn_compile_source(
-                        source, *resource_tracker, sources, dependencies, _allocator
-                    )
+                auto fn = [](ice::ResourceCompilerResult& out_result, ice::Task<ice::ResourceCompilerResult> task) noexcept -> ice::Task<>
+                {
+                    out_result = co_await task;
+                };
+
+                ice::ManualResetEvent waitev{};
+                ice::ResourceCompilerResult result;
+                ice::manual_wait_for(
+                    fn(
+                        result,
+                        resource_compiler->fn_compile_source(
+                            ctx, source, *resource_tracker, sources, dependencies, _allocator
+                        )
+                    ),
+                    waitev
                 );
+
+                while(waitev.is_set() == false)
+                {
+                    _queue.process_all();
+                }
+
                 ice::array::push_back(results, result);
             }
 
+            if (ice::wait_for(resource_compiler->fn_build_metadata(ctx, res, *resource_tracker, results, dependencies, meta)) == false)
+            {
+                ICE_LOG(ice::LogSeverity::Critical, ice::LogTag::Tool, "Falied building metadata for {}.", _asset_resource);
+                return 1;
+            }
+
             // Build the final asset object
-            ice::Memory const final_asset_data = resource_compiler->fn_finalize(res, results, dependencies, _allocator);
+            ice::Memory const final_asset_data = resource_compiler->fn_finalize(ctx, res, results, dependencies, _allocator);
             if (final_asset_data.location != nullptr)
             {
                 ice::Memory const final_meta_data = ice::meta_save(meta, _allocator);
@@ -304,6 +333,7 @@ private:
     ice::String _output;
     ice::String _asset_resource;
     ice::String _compiler;
+    ice::Array<ice::String> _includes;
     ice::Array<ice::String> _inputs_meta;
     ice::Array<ice::String> _inputs;
 

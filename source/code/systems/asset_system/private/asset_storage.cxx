@@ -118,9 +118,10 @@ namespace ice
             ice::Array<ice::ResourceHandle*> sources{ alloc };
             ice::Array<ice::URI> dependencies{ alloc }; // Not used currently
 
+            ice::ResourceCompilerCtx& ctx = asset_entry->shelve->compiler_context;
             // Early return if sources or dependencies couldn't be collected
-            if (compiler.fn_collect_sources(asset_entry->resource_handle, resource_tracker, sources) == false
-                || compiler.fn_collect_dependencies(asset_entry->resource_handle, resource_tracker, dependencies) == false)
+            if (compiler.fn_collect_sources(ctx, asset_entry->resource_handle, resource_tracker, sources) == false
+                || compiler.fn_collect_dependencies(ctx, asset_entry->resource_handle, resource_tracker, dependencies) == false)
             {
                 co_return false;
             }
@@ -134,7 +135,7 @@ namespace ice
             ice::Array<ice::Task<>> tasks{ alloc };
             ice::array::reserve(tasks, ice::array::count(sources));
 
-            static auto fn_validate = [](
+            static auto fn_validate = [&ctx](
                 ice::ResourceCompiler const& compiler,
                 ice::ResourceHandle* source,
                 ice::ResourceTracker& tracker,
@@ -142,7 +143,7 @@ namespace ice
             ) noexcept -> ice::Task<>
             {
                 // If failed update the result.
-                if (co_await compiler.fn_validate_source(source, tracker) == false)
+                if (co_await compiler.fn_validate_source(ctx, source, tracker) == false)
                 {
                     out_result = false;
                 }
@@ -167,7 +168,7 @@ namespace ice
             ice::Array<ice::ResourceCompilerResult> compiled_sources{ alloc };
             ice::array::resize(compiled_sources, ice::array::count(sources));
 
-            static auto fn_compile = [](
+            static auto fn_compile = [&ctx](
                 ice::ResourceCompiler const& compiler,
                 ice::ResourceHandle* source,
                 ice::ResourceTracker& tracker,
@@ -178,6 +179,7 @@ namespace ice
             ) noexcept -> ice::Task<>
             {
                 out_result = co_await compiler.fn_compile_source(
+                    ctx,
                     source,
                     tracker,
                     sources,
@@ -208,8 +210,12 @@ namespace ice
             // ... and wait for them to finish
             ice::wait_for_all(tasks);
 
+            // TODO: Should we even build metadata here?
+            // Build the metadata?
+            // result = compiler.fn_build_metadata(ctx, asset_entry->resource, resource_tracker, compiled_sources, dependencies, )
+
             // Finalize the asset
-            result = compiler.fn_finalize(asset_entry->resource_handle, compiled_sources, dependencies, alloc);
+            result = compiler.fn_finalize(ctx, asset_entry->resource_handle, compiled_sources, dependencies, alloc);
 
             // Deallocate all compiled sources
             for (ice::ResourceCompilerResult const& compiled : compiled_sources)
