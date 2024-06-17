@@ -15,6 +15,7 @@
 
 #if ISP_WEBAPP
 #include <emscripten.h>
+#include "native_file.hxx"
 #endif
 
 namespace ice::native_file
@@ -189,12 +190,73 @@ namespace ice::native_file
         return requested_read_size;
     }
 
+    auto write_file(
+        ice::native_file::File const& native_file,
+        ice::usize write_offset,
+        ice::Data data
+    ) noexcept -> ice::usize
+    {
+        ice::usize total_written = 0_B;
+
+        OVERLAPPED overlapped{};
+        {
+            // Set the initial offset at which we want to write.
+            // NOTE: If offset is set to 0xffff'ffff'ffff'ffff == Append to end of file. From MSDN docs.
+            LARGE_INTEGER const offset{ .QuadPart = (LONGLONG) write_offset.value };
+            overlapped.Offset = offset.LowPart;
+            overlapped.OffsetHigh = offset.HighPart;
+        }
+
+        while(data.size > 0_B)
+        {
+            // Calculate how much data we should write in a single call (up-to DWORD max value)
+            ice::usize::base_type const data_to_write = ice::min<ice::usize::base_type>(
+                data.size.value, std::numeric_limits<DWORD>::max()
+            );
+
+            DWORD bytes_written = 0;
+            BOOL const result = WriteFile(native_file.native(), data.location, (DWORD) data_to_write, &bytes_written, &overlapped);
+            ICE_ASSERT(result == TRUE, "Failed to write {} bytes to file.", data_to_write);
+            if (result == FALSE)
+            {
+                break;
+            }
+
+            total_written += { bytes_written };
+
+            // Update the offset where we should write. Unless we are always appending
+            if (write_offset != ice::usize{ std::numeric_limits<ice::usize::base_type>::max() })
+            {
+                LARGE_INTEGER const offset{ .QuadPart = (LONGLONG) data_to_write };
+                overlapped.Offset = offset.LowPart;
+                overlapped.OffsetHigh = offset.HighPart;
+            }
+
+            // Move the memory block to the next location to be written
+            data = {
+                .location = ice::ptr_add(data.location, { data_to_write }),
+                .size = ice::usize::subtract(data.size, { data_to_write }),
+                .alignment = data.alignment
+            };
+        }
+
+        return total_written;
+    }
+
+    auto append_file(
+        ice::native_file::File const& native_file,
+        ice::Data data
+    ) noexcept -> ice::usize
+    {
+        // Set offset to usize max == append at file end.
+        return write_file(native_file, ice::usize{ std::numeric_limits<ice::usize::base_type>::max() }, data);
+    }
+
     bool traverse_directories_internal(
         ice::native_file::FilePath basepath,
-        ice::native_file::HeapFilePath& dirpath,
+        ice::native_file::HeapFilePath &dirpath,
         ice::native_file::TraversePathCallback callback,
-        void* userdata
-    ) noexcept
+        void *userdata) noexcept
     {
         // Store for later information about the current state of dirpath
         if (ice::string::back(dirpath) != L'/')

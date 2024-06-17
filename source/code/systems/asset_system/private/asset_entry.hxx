@@ -48,6 +48,7 @@ namespace ice
         ice::Memory data_baked;
         ice::Memory data_loaded;
         ice::Memory data_runtime;
+        ice::Memory metadata_baked;
 
         ice::AssetRequestAwaitable* request_awaitable;
         ice::AssetRequestResolver* request_resolver;
@@ -74,6 +75,7 @@ namespace ice
         , data_baked{ }
         , data_loaded{ }
         , data_runtime{ }
+        , metadata_baked{ }
         , request_awaitable{ nullptr }
     {
     }
@@ -89,6 +91,7 @@ namespace ice
         , data_baked{ other.data_baked }
         , data_loaded{ other.data_loaded }
         , data_runtime{ other.data_runtime }
+        , metadata_baked{ other.metadata_baked }
         , request_awaitable{ other.request_awaitable }
     {
 

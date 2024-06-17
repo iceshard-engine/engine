@@ -110,7 +110,7 @@ namespace ice
                     .type = type,
                     .definition = ice::move(type_definition),
                     .compiler = asset_compiler,
-                    .has_compiler = compiler != nullptr
+                    .has_compiler = asset_compiler.fn_supported_resources != nullptr
                 }
             );
         }

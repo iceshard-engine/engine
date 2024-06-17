@@ -28,14 +28,14 @@ namespace ice
         Expected(Value&& value) noexcept
             : _state{ 1 }
         {
-            new (&_value[0]) Value { ice::forward<Value>(value) };
+            new (ice::addressof(_value)) Value { ice::forward<Value>(value) };
         }
 
         ~Expected() noexcept
         {
             if (_state == 1)
             {
-                reinterpret_cast<Value*>(_value)->~Value();
+                reinterpret_cast<Value*>(ice::addressof(_value))->~Value();
             }
         }
 
@@ -44,13 +44,13 @@ namespace ice
         auto value() const & noexcept -> Value const&
         {
             ICE_ASSERT_CORE(_state == 1);
-            return *reinterpret_cast<Value*>(_value);
+            return *reinterpret_cast<Value const*>(ice::addressof(_value));
         }
 
         auto value() && noexcept -> Value&&
         {
             ICE_ASSERT_CORE(_state == 1);
-            return ice::move(*reinterpret_cast<Value*>(_value));
+            return ice::move(*reinterpret_cast<Value*>(ice::addressof(_value)));
         }
 
         auto error() const noexcept -> ErrorType

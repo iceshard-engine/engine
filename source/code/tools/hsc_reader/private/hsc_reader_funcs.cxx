@@ -32,11 +32,10 @@ auto hailstorm_validate_header(hailstorm::HailstormHeaderBase const& header) noe
 }
 
 void hailstorm_print_headerinfo(
-    ice::ParamList const& params,
     hailstorm::HailstormHeader const& header
 ) noexcept
 {
-    if (header.header_version == Constant_HailstormHeaderVersion_0)
+    if (header.header_version == Constant_HailstormHeaderVersion_0 && Param_HideHeader == false)
     {
         HSCR_INFO(LogTag_InfoHeader, "Base-Header");
         HSCR_INFO(LogTag_InfoHeader, "- version: {:X}", Constant_HailstormHeaderVersion_0);
@@ -51,7 +50,8 @@ void hailstorm_print_headerinfo(
         HSCR_INFO(LogTag_InfoHeader, "  chunks: {}", header.count_chunks);
         HSCR_INFO(LogTag_InfoHeader, "  resources: {}", header.count_resources);
         HSCR_INFO(LogTag_InfoHeader, "  paths: {:p}", ice::usize{ header.offset_data - header.header_size });
-        if (ice::params::has_any(params, Param_InfoCustomValues))
+
+        if (Param_ShowCustomValues)
         {
             HSCR_INFO(LogTag_InfoHeader, "  app-custom-0: {:X}", header.app_custom_values[0]);
             HSCR_INFO(LogTag_InfoHeader, "  app-custom-1: {:X}", header.app_custom_values[1]);
@@ -62,9 +62,7 @@ void hailstorm_print_headerinfo(
 }
 
 void hailstorm_print_chunkinfo(
-    ice::ParamList const& params,
-    hailstorm::HailstormData const& data,
-    ParamRange range
+    hailstorm::HailstormData const& data
 ) noexcept
 {
     if (data.header.header_version == Constant_HailstormHeaderVersion_0)
@@ -72,10 +70,10 @@ void hailstorm_print_chunkinfo(
         static constexpr ice::String Constant_TypeName[]{ "Invalid", "MetaData", "FileData", "Mixed" };
         static constexpr ice::String Constant_Persistance[]{ "Temporary", "Regular", "KeepIfPossible", "LoadAlways" };
 
-        ice::u32 idx = range.start;
-        for (hailstorm::HailstormChunk const& chunk : data.chunks.subspan(range.start, std::min<size_t>(range.count, data.chunks.size())))
+        ParamRange range =  Param_ShowChunks.value;
+        for (hailstorm::HailstormChunk const& chunk : data.chunks.subspan(range.start, std::min<size_t>(range.count, data.chunks.size() - range.start)))
         {
-            HSCR_INFO(LogTag_InfoChunks, "Chunk ({})", idx++);
+            HSCR_INFO(LogTag_InfoChunks, "Chunk ({})", range.start++);
             HSCR_INFO(LogTag_InfoChunks, "  offset: {:i}", ice::usize{ chunk.offset });
             HSCR_INFO(LogTag_InfoChunks, "  size: {:p}", ice::usize{ chunk.size });
             HSCR_INFO(LogTag_InfoChunks, "  size-origin: {:p}", ice::usize{ chunk.size_origin });
@@ -85,7 +83,8 @@ void hailstorm_print_chunkinfo(
             HSCR_INFO(LogTag_InfoChunks, "  type: {} ({})", chunk.type, Constant_TypeName[chunk.type]);
             HSCR_INFO(LogTag_InfoChunks, "  persistance: {} ({})", chunk.persistance, Constant_Persistance[chunk.persistance]);
             HSCR_INFO(LogTag_InfoChunks, "  count-entries: {}", chunk.count_entries);
-            if (ice::params::has_any(params, Param_InfoCustomValues))
+
+            if (Param_ShowCustomValues)
             {
                 HSCR_INFO(LogTag_InfoChunks, "  app-custom: {}", chunk.app_custom_value);
             }
@@ -93,16 +92,16 @@ void hailstorm_print_chunkinfo(
     }
 }
 
-void hailstorm_print_resourceinfo(hailstorm::HailstormData const& data, ParamRange range) noexcept
+void hailstorm_print_resourceinfo(hailstorm::HailstormData const& data) noexcept
 {
     if (data.header.header_version == Constant_HailstormHeaderVersion_0)
     {
-        ice::u32 idx = range.start;
-        for (hailstorm::HailstormResource const& res : data.resources.subspan(range.start, std::min<size_t>(range.count, data.resources.size())))
+        ParamRange range =  Param_ShowResources.value;
+        for (hailstorm::HailstormResource const& res : data.resources.subspan(range.start, std::min<size_t>(range.count, data.resources.size() - range.start)))
         {
             ice::String res_path{ ((char const*)data.paths_data.location) + res.path_offset, res.path_size };
 
-            HSCR_INFO(LogTag_InfoResources, "Resource ({})", idx++);
+            HSCR_INFO(LogTag_InfoResources, "Resource ({})", range.start++);
             HSCR_INFO(LogTag_InfoPaths, "  path: {}", res_path);
             HSCR_INFO(LogTag_InfoResources, "  data-chunk: {}", res.chunk);
             HSCR_INFO(LogTag_InfoResources, "  data-offset: {}", res.offset);

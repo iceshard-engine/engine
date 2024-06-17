@@ -19,7 +19,7 @@
         ]
 
         .Modules = {
-            'chipmunk2d'
+            ; 'chipmunk2d'
             'rapidxml'
         }
 

@@ -44,6 +44,7 @@ namespace ice
 
     void DefaultAssetStorage::DevUI::build_content() noexcept
     {
+#if ICE_DEBUG || ICE_DEVELOP
         IPT_ZONE_SCOPED;
 
         ImGuiTableFlags const flags = ImGuiTableFlags_None
@@ -68,7 +69,7 @@ namespace ice
                 ImGui::TableSetupColumn("Compiler");
                 ImGui::TableHeadersRow();
 
-                for (ice::AssetType_Arg& asset_type : _storage._asset_archive->asset_types())
+                for (ice::AssetType_Arg asset_type : _storage._asset_archive->asset_types())
                 {
                     ImGui::TableNextRow();
                     ImGui::TableNextColumn();
@@ -101,6 +102,7 @@ namespace ice
         {
             shelve->build_content();
         }
+#endif // #if ICE_DEBUG || ICE_DEVELOP
     }
 
 } // namespace ice

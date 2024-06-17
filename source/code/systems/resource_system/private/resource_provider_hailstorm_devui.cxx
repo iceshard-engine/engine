@@ -5,6 +5,7 @@
 #include <ice/string/heap_string.hxx>
 #include <ice/devui_context.hxx>
 #include <ice/devui_frame.hxx>
+#include <ice/devui_imgui.hxx>
 
 #include <imgui/imgui.h>
 #undef assert
@@ -122,11 +123,7 @@ namespace ice
         {
             ImGui::Text("Version: %hu.%hu.%hu", header.version[0], header.version[0], header.version[0]);
             ImGui::SetItemTooltip("Version of the DATA in the pack.");
-            ImGui::Text("Size: %lluMiB %lluKiB %lluB",
-                header.offset_next / (1_MiB).value,
-                (header.offset_next % (1_MiB).value) / (1_KiB).value,
-                header.offset_next % (1_KiB).value
-            );
+            ImGui::TextT("Size: {:p}", ice::usize{header.offset_next});
             ImGui::SetItemTooltip("Size of the entire HailStorm pack before decompression and/or decryption.");
 
             ImGui::Text("Chunks: %hu", header.count_chunks);
@@ -213,15 +210,15 @@ namespace ice
                 }
                 if (ImGui::TableNextColumn()) // Size
                 {
-                    ImGui::Text("%llu", chunk.size);
+                    ImGui::TextT("{:p}", ice::usize{chunk.size});
                 }
                 if (ImGui::TableNextColumn()) // Original Size
                 {
-                    ImGui::Text("%llu", chunk.size_origin);
+                    ImGui::TextT("{:p}", ice::usize{chunk.size_origin});
                 }
                 if (ImGui::TableNextColumn()) // File Offset
                 {
-                    ImGui::Text("%llu", chunk.offset);
+                    ImGui::TextT("{:i}", ice::usize{chunk.offset});
                 }
             }
 

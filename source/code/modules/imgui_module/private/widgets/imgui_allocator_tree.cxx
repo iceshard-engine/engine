@@ -2,14 +2,11 @@
 /// SPDX-License-Identifier: MIT
 
 #include "imgui_allocator_tree.hxx"
+#include <ice/log_formatters.hxx>
 #include <ice/string/string.hxx>
-#include <imgui/imgui.h>
+#include <ice/devui_imgui.hxx>
 
-#if ISP_WEBAPP || ISP_ANDROID
-#define IMGUI_SIZE_FMT "%lu"
-#else
-#define IMGUI_SIZE_FMT "%llu"
-#endif
+#include <imgui/imgui.h>
 
 namespace ice::devui
 {
@@ -79,24 +76,21 @@ namespace ice::devui
                     }
                     else
                     {
-                        bool const shows_mibs = size_allocated > 1_MiB;
-                        bool const shows_kibs = size_allocated > 1_KiB;
+                        ImGui::TextT("{0:P} ({0:i} bytes)", size_allocated);
+                    }
+                }
 
-                        ice::usize const mibs = size_allocated / 1_MiB;
-                        ice::usize const kibs = ((size_allocated / 1_KiB) - (mibs * 1_KiB)).to_usize();
-
-                        if (shows_mibs)
-                        {
-                            ImGui::Text(IMGUI_SIZE_FMT " MiB " IMGUI_SIZE_FMT " KiB (" IMGUI_SIZE_FMT " bytes)", mibs.value, kibs.value, size_allocated.value);
-                        }
-                        else if (shows_kibs)
-                        {
-                            ImGui::Text(IMGUI_SIZE_FMT " KiB (" IMGUI_SIZE_FMT " bytes)", (size_allocated / 1_KiB).value, size_allocated.value);
-                        }
-                        else
-                        {
-                            ImGui::Text(IMGUI_SIZE_FMT, size_allocated.value);
-                        }
+                // Watermark
+                if (ImGui::TableNextColumn())
+                {
+                    ice::usize const size_allocated = allocator.allocation_size_watermark();
+                    if (size_allocated == Allocator::SizeNotTracked)
+                    {
+                        ImGui::TextUnformatted("- not tracked -");
+                    }
+                    else
+                    {
+                        ImGui::TextT("{0:P} ({0:i} bytes)", size_allocated);
                     }
                 }
 

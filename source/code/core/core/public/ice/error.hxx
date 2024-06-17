@@ -11,6 +11,10 @@
 namespace ice
 {
 
+    //! \note Error code ranges:
+    //! \note - [0000 - 2000) - Core engine codes
+    //! \note - [2000 - 4000) - Framework codes
+    //! \note - [4000 - 9999] - Game codes
     struct ErrorCode
     {
         constexpr explicit ErrorCode(char const* definition) noexcept;

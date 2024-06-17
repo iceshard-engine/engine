@@ -62,13 +62,19 @@ namespace ice::render
         ice::Span<ice::render::ResourceSetLayout const> resource_layouts;
     };
 
+    struct PipelineProgramInfo
+    {
+        ice::render::Shader shader;
+        ice::render::ShaderStageFlags stage;
+        ice::String entry_point;
+    };
+
     struct PipelineInfo
     {
         ice::render::PipelineLayout layout;
         ice::render::Renderpass renderpass;
-        ice::Span<ice::render::Shader const> shaders;
-        ice::Span<ice::render::ShaderStageFlags const> shaders_stages;
-        ice::Span<ice::render::ShaderInputBinding const> shader_bindings;
+        ice::Span<ice::render::PipelineProgramInfo const> shaders;
+        ice::Span<ice::render::ShaderInputBinding const> vertex_bindings;
 
         ice::render::PrimitiveTopology primitive_topology = PrimitiveTopology::TriangleList;
         ice::render::CullMode cull_mode = CullMode::Disabled;

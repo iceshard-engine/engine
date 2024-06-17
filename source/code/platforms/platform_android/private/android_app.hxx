@@ -82,7 +82,7 @@ namespace ice::platform::android
     private:
         ice::app::Factories _factories;
 
-        ice::ParamList _params;
+        ice::Params _params;
         ice::UniquePtr<ice::app::Config> _config;
         ice::UniquePtr<ice::app::State> _state;
         ice::UniquePtr<ice::app::Runtime> _runtime;

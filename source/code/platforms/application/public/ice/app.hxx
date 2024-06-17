@@ -5,7 +5,7 @@
 #include <ice/base.hxx>
 #include <ice/mem_unique_ptr.hxx>
 #include <ice/expected.hxx>
-#include <ice/param_list.hxx>
+#include <ice/params.hxx>
 #include <ice/span.hxx>
 
 namespace ice::app
@@ -23,8 +23,6 @@ namespace ice::app
         FactoryFn<ice::app::Config> factory_config;
         FactoryFn<ice::app::State> factory_state;
         FactoryFn<ice::app::Runtime> factory_runtime;
-
-
 
         template<typename T>
         static inline void destroy_default_object(T* obj) noexcept
@@ -66,12 +64,12 @@ void ice_init(
 
 void ice_args(
     ice::Allocator& alloc,
-    ice::ParamList& params
+    ice::Params& params,
+    ice::app::Config& config
 ) noexcept;
 
 auto ice_setup(
     ice::Allocator& alloc,
-    ice::ParamList const& params,
     ice::app::Config& config,
     ice::app::State& state
 ) noexcept -> ice::Result;
@@ -96,7 +94,6 @@ auto ice_suspend(
 
 auto ice_shutdown(
     ice::Allocator& alloc,
-    ice::ParamList const& params,
     ice::app::Config const& config,
     ice::app::State& state
 ) noexcept -> ice::Result;

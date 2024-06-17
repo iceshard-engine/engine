@@ -1,4 +1,4 @@
-/// Copyright 2023 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2023 - 2024, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #include <ice/tool_app.hxx>
@@ -34,10 +34,19 @@ int main(int argc, char** argv)
     );
 
     ice::Allocator& alloc = global_allocator();
-    ice::ParamList params{ alloc, argc, argv };
-
     ToolAppBase* const app = fn_app_create(alloc);
-    app->setup(params);
-    app->run(params);
+
+    ice::Params params_v2 = ice::create_params(alloc, app->name(), app->version(), app->description());
+
+    ice::i32 result = 0;
+    if (app->setup(params_v2))
+    {
+        if (result = ice::params_process(params_v2, argc, argv); result == 0)
+        {
+            result = app->run();
+        }
+    }
+
     fn_app_destroy(alloc, app);
+    return result;
 }

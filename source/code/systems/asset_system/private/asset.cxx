@@ -51,7 +51,16 @@ namespace ice
 
     auto Asset::metadata(ice::Data& out_metadata) const noexcept -> ice::Task<ice::Result>
     {
-        co_return co_await ice::resource_meta(detail::entry(_handle).resource_handle, out_metadata);
+        ice::AssetEntry& entry = detail::entry(_handle);
+        if (entry.metadata_baked.location != nullptr)
+        {
+            out_metadata = ice::data_view(entry.metadata_baked);
+            co_return ice::S_Ok;
+        }
+        else
+        {
+            co_return co_await ice::resource_meta(detail::entry(_handle).resource_handle, out_metadata);
+        }
     }
 
     bool Asset::available(ice::AssetState state) const noexcept

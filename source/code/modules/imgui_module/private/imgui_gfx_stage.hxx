@@ -1,5 +1,6 @@
 #pragma once
 #include <ice/gfx/gfx_stage.hxx>
+#include <ice/render/render_pipeline.hxx>
 #include <ice/engine_frame.hxx>
 #include <imgui/imgui.h>
 #undef assert
@@ -57,8 +58,7 @@ namespace ice::devui
 
         ice::render::Sampler _sampler;
         ice::render::Image _font_texture;
-        ice::render::ShaderStageFlags _shader_stages[2];
-        ice::render::Shader _shaders[2];
+        ice::render::PipelineProgramInfo _shaders[2];
 
         ice::u16* _index_buffer_host;
         ice::Array<ice::render::Buffer> _index_buffers;

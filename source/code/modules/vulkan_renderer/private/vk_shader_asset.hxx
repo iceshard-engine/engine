@@ -4,32 +4,23 @@
 #pragma once
 #include <ice/os.hxx>
 #include <ice/module.hxx>
+#include <ice/module_query.hxx>
 #include <ice/resource_compiler.hxx>
 #include <ice/asset_module.hxx>
 
 namespace ice::render::vk
 {
 
-#if ISP_WINDOWS
-    struct VkShaderCompilerModule : ice::Module<VkShaderCompilerModule>
-    {
-        static void v1_resource_compiler_api(ice::api::resource_compiler::v1::ResourceCompilerAPI& api) noexcept;
-
-        static bool on_load(ice::Allocator& alloc, ice::ModuleNegotiator auto const& module_negotiator) noexcept
-        {
-            return module_negotiator.register_api(v1_resource_compiler_api);
-        }
-
-        IS_WORKAROUND_MODULE_INITIALIZATION(VkShaderCompilerModule);
-    };
-#endif
-
     struct VkShaderAssetModule : ice::Module<VkShaderAssetModule>
     {
+        static ice::api::resource_compiler::v1::ResourceCompilerAPI compiler_api;
+
         static void v1_archive_api(ice::detail::asset_system::v1::AssetTypeArchiveAPI& api) noexcept;
 
         static bool on_load(ice::Allocator& alloc, ice::ModuleNegotiator auto const& negotiator) noexcept
         {
+            negotiator.query_api(compiler_api);
+
             return negotiator.register_api(v1_archive_api);
         }
 

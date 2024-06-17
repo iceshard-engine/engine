@@ -93,8 +93,10 @@ public:
         : _tqueue{ }
         , _tsched{ _tqueue }
         , _tpool{ }
-        , _includes{ _allocator }
-        , _output{ _allocator }
+        , _param_includes{ _allocator }
+        , _param_configs{ _allocator }
+        , _param_output{ _allocator }
+        , _param_verbose{ false }
         , _filter_extensions_heap{ _allocator }
         , _filter_extensions{ _allocator }
     {
@@ -103,82 +105,67 @@ public:
 
     ~HailStormPackerApp() noexcept = default;
 
-    auto run(ice::ParamList const& params) noexcept -> ice::i32 override
+    auto run() noexcept -> ice::i32 override
     {
-        ice::Array<ice::String> configs{ _allocator };
-        if (ice::params::find_all(params, Param_Config, configs))
+        for (ice::String config : _param_configs)
         {
-            for (ice::String config : configs)
-            {
-                ice::HeapString<> const config_path_utf8 = hscp_process_directory(_allocator, config);
-                ice::native_file::HeapFilePath config_path{ _allocator };
-                ice::native_file::path_from_string(config_path_utf8, config_path);
+            ice::HeapString<> const config_path_utf8 = hscp_process_directory(_allocator, config);
+            ice::native_file::HeapFilePath config_path{ _allocator };
+            ice::native_file::path_from_string(config_path_utf8, config_path);
 
+            HSCP_ERROR_IF(
+                ice::native_file::exists_file(config_path) == false,
+                "Config file '{}' does not exist, skipping...",
+                ice::String{ config_path_utf8 }
+            );
+
+            using enum ice::native_file::FileOpenFlags;
+            ice::native_file::File file = ice::native_file::open_file(config_path, Read);
+            if (file)
+            {
+                ice::usize const filesize = ice::native_file::sizeof_file(file);
+                ice::Memory const filemem = _allocator.allocate(filesize);
+                ice::native_file::read_file(file, filesize, filemem);
+
+                ice::MutableMetadata config_meta{ _allocator };
+                ice::Result const res = ice::meta_deserialize_from(config_meta, ice::data_view(filemem));
+
+                ice::Array<ice::String> extensions{ _allocator };
+                if (ice::meta_read_string_array(config_meta, "filter.extensions"_sid, extensions))
+                {
+                    for (ice::String ext : extensions)
+                    {
+                        ice::array::push_back(_filter_extensions_heap, { _allocator, ext });
+                        ice::array::push_back(_filter_extensions, ice::array::back(_filter_extensions_heap));
+                    }
+                }
                 HSCP_ERROR_IF(
-                    ice::native_file::exists_file(config_path) == false,
-                    "Config file '{}' does not exist, skipping...",
+                    res != ice::S_Success,
+                    "Failed to parse config file '{}'...",
                     ice::String{ config_path_utf8 }
                 );
 
-                using enum ice::native_file::FileOpenFlags;
-                ice::native_file::File file = ice::native_file::open_file(config_path, Read);
-                if (file)
-                {
-                    ice::usize const filesize = ice::native_file::sizeof_file(file);
-                    ice::Memory const filemem = _allocator.allocate(filesize);
-                    ice::native_file::read_file(file, filesize, filemem);
-
-                    ice::MutableMetadata config_meta{ _allocator };
-                    ice::Result const res = ice::meta_deserialize_from(config_meta, ice::data_view(filemem));
-
-                    ice::Array<ice::String> extensions{ _allocator };
-                    if (ice::meta_read_string_array(config_meta, "filter.extensions"_sid, extensions))
-                    {
-                        for (ice::String ext : extensions)
-                        {
-                            ice::array::push_back(_filter_extensions_heap, { _allocator, ext });
-                            ice::array::push_back(_filter_extensions, ice::array::back(_filter_extensions_heap));
-                        }
-                    }
-                    HSCP_ERROR_IF(
-                        res != ice::S_Success,
-                        "Failed to parse config file '{}'...",
-                        ice::String{ config_path_utf8 }
-                    );
-
-                    _allocator.deallocate(filemem);
-                }
+                _allocator.deallocate(filemem);
             }
         }
-        else
+
+        if (ice::array::empty(_filter_extensions))
         {
             HSCP_ERROR("No valid configuration files where provided.");
             return 1;
         }
 
-        ice::Array<ice::String> includes{ _allocator };
-        ice::params::find_all(params, Param_Include, includes);
-        if (ice::array::empty(includes))
-        {
-            HSCP_ERROR("No directories where provided to create the HailStorm package from.");
-            return 1;
-        }
-
-        // TODO: Only store paths that do actually exist.
-        for (ice::String& include : includes)
-        {
-            ice::array::push_back(_includes, hscp_process_directory(_allocator, include));
-            include = ice::array::back(_includes);
-        }
+        // for (ice::HeapString<>& include : _param_includes)
+        // {
+        //     include = hscp_process_directory(_allocator, include);
+        // }
 
         // Prepare the output file name.
-        ice::String output_file = "pack.hsc";
-        ice::params::find_first(params, Param_Output, output_file);
-        _output = hscp_process_directory(_allocator, output_file);
+        _param_output = hscp_process_directory(_allocator, _param_output);
 
         // The paths that will be searched for loose file resources.
         ice::UniquePtr<ice::ResourceProvider> fsprov = ice::create_resource_provider(
-            _allocator, includes, &_tsched
+            _allocator, _param_includes, &_tsched
         );
 
         // Spawning one dedicated IO thread for AIO support. Allows us to read resources MUCH faster.
@@ -271,7 +258,7 @@ public:
         };
 
         ice::native_file::HeapFilePath output{ _allocator };
-        ice::native_file::path_from_string(_output, output);
+        ice::native_file::path_from_string(_param_output, output);
         HSCPWriteParams const write_params{
             .filename = output,
             .task_scheduler = _tsched,
@@ -284,14 +271,23 @@ public:
         return success ? 0 : 1;
     }
 
-    void setup(ice::ParamList& params) noexcept override
+    bool setup(ice::Params& params) noexcept override
     {
         ice::log_tag_register(LogTag_Main);
         ice::log_tag_register(LogTag_Details);
-        ice::params::define(params, Param_Include);
-        ice::params::define(params, Param_Output);
-        ice::params::define(params, Param_Config);
-        ice::params::define(params, Param_Verbose);
+        ice::params_define(params, Param_Include, _param_includes);
+        ice::params_define(params, Param_Output, _param_output);
+        ice::params_define(params, Param_Config, _param_configs);
+        ice::params_define(params, Param_Verbose, _param_verbose);
+        return true;
+    }
+
+public: // Tool information
+    auto name() const noexcept -> ice::String override { return "hsc_packer"; }
+    auto version() const noexcept -> ice::String override { return "0.1.0"; }
+    auto description() const noexcept -> ice::String override
+    {
+        return "Create a hailstorm pack files from the given input directories and configuration file.";
     }
 
 private:
@@ -300,8 +296,10 @@ private:
     ice::UniquePtr<ice::TaskThreadPool> _tpool;
 
     // Params
-    ice::Array<ice::HeapString<>> _includes;
-    ice::HeapString<> _output;
+    ice::Array<ice::String> _param_includes;
+    ice::Array<ice::String> _param_configs;
+    ice::HeapString<> _param_output;
+    bool _param_verbose;
 
     // Filters
     ice::Array<ice::HeapString<>> _filter_extensions_heap;

@@ -29,7 +29,7 @@
     "webasm": {
         "emscripten": {
             "location": "build/webasm",
-            "version": "3.1.54"
+            "version": "3.1.59"
         }
     }
 }

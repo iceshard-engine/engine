@@ -21,6 +21,7 @@ namespace ice
 
     void AssetShelve::DevUI::build_content() noexcept
     {
+#if ICE_DEBUG || ICE_DEVELOP
         ImGuiTableFlags const flags = ImGuiTableFlags_None
             // Functional
             | ImGuiTableFlags_ContextMenuInBody
@@ -66,6 +67,7 @@ namespace ice
 
             ImGui::EndTable();
         }
+#endif // #if ICE_DEBUG || ICE_DEVELOP
     }
 
 } // namespace ice
