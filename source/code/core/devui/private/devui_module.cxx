@@ -6,7 +6,7 @@
 namespace ice
 {
 
-} // namespace ice::api
+} // namespace ice
 
 namespace ImGui
 {
