@@ -15,6 +15,7 @@
             'collections'
             'tasks'
             'utils'
+            'devui'
         }
 
         .Modules = {

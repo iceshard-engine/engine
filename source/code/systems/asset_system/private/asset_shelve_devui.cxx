@@ -1,0 +1,71 @@
+/// Copyright 2024 - 2024, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
+#include "asset_shelve_devui.hxx"
+
+#include <ice/resource.hxx>
+#include <ice/container/hashmap.hxx>
+#include <imgui/imgui.h>
+#undef assert
+
+namespace ice
+{
+
+    AssetShelve::DevUI::DevUI(ice::AssetShelve& shelve) noexcept
+        : DevUIWidget{ DevUIWidgetInfo{ .category = "Tools",  } }
+        , _shelve{ shelve }
+    {
+    }
+
+    AssetShelve::DevUI::~DevUI() noexcept = default;
+
+    void AssetShelve::DevUI::build_content() noexcept
+    {
+        ImGuiTableFlags const flags = ImGuiTableFlags_None
+            // Functional
+            | ImGuiTableFlags_ContextMenuInBody
+            | ImGuiTableFlags_Resizable
+            | ImGuiTableFlags_Hideable
+            // Visual
+            | ImGuiTableFlags_HighlightHoveredColumn
+            | ImGuiTableFlags_PadOuterX
+            | ImGuiTableFlags_NoBordersInBody
+            | ImGuiTableFlags_BordersOuterH
+            | ImGuiTableFlags_BordersV
+            | ImGuiTableFlags_RowBg;
+
+        if (ImGui::BeginTable("AssetShelve:Assets", 3, flags))
+        {
+            ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_NoHide);
+            ImGui::TableSetupColumn("Status");
+            ImGui::TableSetupColumn("Resource", ImGuiTableColumnFlags_DefaultHide);
+            ImGui::TableHeadersRow();
+
+            for (ice::AssetEntry const* entry : ice::hashmap::values(_shelve._asset_resources))
+            {
+                ImGui::TableNextRow();
+                ImGui::TableNextColumn();
+                ImGui::TextUnformatted(ice::string::begin(entry->debug_name), ice::string::end(entry->debug_name));
+
+                if (ImGui::TableNextColumn()) // Status
+                {
+                    static constexpr ice::String Constant_StateNames[]{
+                        "Invalid", "Unknown", "Exists", "Raw", "Baked", "Loaded", "Runtime"
+                    };
+
+                    ImGui::TextUnformatted(
+                        ice::string::begin(Constant_StateNames[static_cast<ice::u32>(entry->current_state)]),
+                        ice::string::end(Constant_StateNames[static_cast<ice::u32>(entry->current_state)])
+                    );
+                }
+                if (ImGui::TableNextColumn()) // Resource
+                {
+                    ImGui::TextUnformatted(ice::string::begin(entry->resource->origin()), ice::string::end(entry->resource->origin()));
+                }
+            }
+
+            ImGui::EndTable();
+        }
+    }
+
+} // namespace ice

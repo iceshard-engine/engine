@@ -23,7 +23,7 @@ namespace ice
     {
     }
 
-    bool DevUIWidget::build_mainmenu() noexcept
+    bool DevUIWidget::build_mainmenu(ice::DevUIWidgetState& state) noexcept
     {
         return true;
     }

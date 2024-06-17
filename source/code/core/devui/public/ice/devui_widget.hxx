@@ -23,7 +23,7 @@ namespace ice
 
         virtual void build_menu() noexcept;
 
-        virtual bool build_mainmenu() noexcept;
+        virtual bool build_mainmenu(ice::DevUIWidgetState& state) noexcept;
 
         ice::DevUIWidgetInfo const info;
     };

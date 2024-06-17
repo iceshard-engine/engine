@@ -8,7 +8,13 @@ namespace ice
 {
 
     static ice::api::devui::v1::DevUI_API::FnContextRegisterWidget global_context_register_widget = nullptr;
+    static ice::api::devui::v1::DevUI_API::FnContextRemoveWidget global_context_remove_widget = nullptr;
     static ice::api::devui::v1::DevUI_API::FnContextTraitName global_context_trait_name = nullptr;
+
+    bool devui_available() noexcept
+    {
+        return global_context_trait_name != nullptr && global_context_register_widget != nullptr;
+    }
 
     auto devui_trait_name() noexcept -> ice::StringID
     {
@@ -29,6 +35,23 @@ namespace ice
         }
 
         global_context_register_widget(widget);
+        return true;
+    }
+
+    bool devui_remove_widget(
+        ice::DevUIWidget* widget
+    ) noexcept
+    {
+        if (global_context_remove_widget == nullptr)
+        {
+            // ICE_LOG(
+            //     LogSeverity::Error, LogTag::System,
+            //     "Trying to remove DevUI widget without a devui context"
+            // );
+            return false;
+        }
+
+        global_context_remove_widget(widget);
         return true;
     }
 
@@ -63,6 +86,7 @@ namespace ice
             // Store some of the API pointers
             global_context_trait_name = api.fn_context_trait_name;
             global_context_register_widget = api.fn_context_register_widget;
+            global_context_remove_widget = api.fn_context_remove_widget;
             return true;
         }
         return false;
