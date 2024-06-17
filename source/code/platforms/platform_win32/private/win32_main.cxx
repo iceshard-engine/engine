@@ -3,7 +3,7 @@
 
 #include <ice/app.hxx>
 #include <ice/mem_allocator_host.hxx>
-#include <ice/param_list.hxx>
+#include <ice/params.hxx>
 #include <ice/log.hxx>
 
 // Undef definition from SDL
@@ -20,16 +20,17 @@ int main(int argc, char const** argv)
         ice::app::Factories app_factories{ };
         ice_init(host_alloc, app_factories);
 
-        ice::ParamList params{ host_alloc, argc, argv };
-        ice_args(host_alloc, params);
-
+        ice::Params params = ice::create_params(host_alloc, "iceshard", "0.0.1", "IceShard engine parameters");
         ice::UniquePtr<ice::app::Config> config = app_factories.factory_config(host_alloc);
+
+        ice_args(host_alloc, params, *config);
+
         ice::UniquePtr<ice::app::State> state = app_factories.factory_state(host_alloc);
 
-        ice::Result result = ice_setup(host_alloc, params, *config, *state);
+        ice::Result result = ice_setup(host_alloc, *config, *state);
         while(result == ice::app::S_ApplicationSetupPending)
         {
-            result = ice_setup(host_alloc, params, *config, *state);
+            result = ice_setup(host_alloc, *config, *state);
         }
 
         ICE_LOG_IF(result == false, ice::LogSeverity::Error, ice::LogTag::Core, "{}\n", result.error().description());
@@ -83,7 +84,7 @@ int main(int argc, char const** argv)
         ICE_LOG_IF(result == false, ice::LogSeverity::Error, ice::LogTag::Core, "{}\n", result.error().description());
         ICE_ASSERT_CORE(result == true);
 
-        result = ice_shutdown(host_alloc, params, *config, *state);
+        result = ice_shutdown(host_alloc, *config, *state);
         ICE_LOG_IF(result == false, ice::LogSeverity::Error, ice::LogTag::Core, "{}\n", result.error().description());
         ICE_ASSERT_CORE(result == true);
     }

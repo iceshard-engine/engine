@@ -193,7 +193,7 @@ namespace ice
         template<ice::ucount Capacity, typename CharType>
         constexpr void pop_back(ice::StaticString<Capacity, CharType>& str, ice::ucount count) noexcept
         {
-            str._size = ice::min(0u, str._size - count);
+            str._size -= ice::min(count, str._size);
             str._data[str._size] = CharType{ 0 };
         }
 

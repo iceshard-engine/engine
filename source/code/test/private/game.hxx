@@ -6,6 +6,7 @@
 #include <ice/world/world_trait.hxx>
 #include <ice/gfx/gfx_graph.hxx>
 #include <ice/gfx/gfx_graph_runtime.hxx>
+#include <ice/mem_allocator_snake.hxx>
 
 using namespace ice;
 using namespace ice::framework;
@@ -26,7 +27,7 @@ public:
 
 private:
     ice::Allocator& _allocator;
-    ice::ProxyAllocator _tasks_alloc;
+    ice::SnakeAllocator _tasks_alloc;
 
     ice::UniquePtr<ice::gfx::GfxGraph> _graph;
     ice::UniquePtr<ice::gfx::GfxGraphRuntime> _graph_runtime;

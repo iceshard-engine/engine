@@ -18,14 +18,18 @@ namespace ice
     {
         std::mutex mtx;
         std::unordered_map<void*, AllocInfo> allocs;
-        std::atomic<ice::u64> _allocated_inuse;
+        std::atomic<size_t> _allocated_inuse;
+        std::size_t _allocated_max = 0;
 
         void insert(ice::AllocResult const& result) noexcept
         {
             std::lock_guard<std::mutex> lk{ mtx };
             allocs.emplace(result.memory, AllocInfo{ result.size });
 
-            _allocated_inuse.fetch_add(result.size.value, std::memory_order_relaxed);
+            ice::usize::base_type const prev = _allocated_inuse.fetch_add(result.size.value, std::memory_order_relaxed);
+
+            // We don't care too much about correctness on this one
+            _allocated_max = ice::max(_allocated_max, prev + result.size.value);
         }
 
         void remove(void* pointer) noexcept
@@ -82,7 +86,12 @@ namespace ice
 
     auto AllocatorDebugInfo::allocation_size_inuse() const noexcept -> ice::usize
     {
-        return ice::usize(_internal->_allocated_inuse.load(std::memory_order_relaxed));
+        return ice::usize{ _internal->_allocated_inuse.load(std::memory_order_relaxed) };
+    }
+
+    auto AllocatorDebugInfo::allocation_size_watermark() const noexcept -> ice::usize
+    {
+        return ice::usize{ _internal->_allocated_max };
     }
 
     void AllocatorDebugInfo::track_child(ice::AllocatorDebugInfo* child_allocator) noexcept

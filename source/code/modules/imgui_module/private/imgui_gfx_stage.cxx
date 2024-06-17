@@ -17,12 +17,35 @@ namespace ice::devui
     namespace detail
     {
 
-        auto load_imgui_shader(ice::AssetStorage& assets, ice::String name, ice::render::Shader& out_shader) noexcept -> ice::Task<>
+        auto load_imgui_shader(
+            ice::AssetStorage& assets,
+            ice::String name,
+            ice::render::PipelineProgramInfo& out_shader
+        ) noexcept -> ice::Task<ice::Result>
         {
             ice::Asset asset = assets.bind(ice::render::AssetType_Shader, name);
             ice::Data shader_data = co_await asset[AssetState::Runtime];
-            out_shader = *reinterpret_cast<ice::render::Shader const*>(shader_data.location);
-            co_return;
+
+            ice::Data metadata;
+            if (co_await asset.metadata(metadata) == S_Ok)
+            {
+                ice::Metadata const meta = ice::meta_load(metadata);
+                ice::i32 shader_stage;
+                if (ice::meta_read_int32(meta, "ice.shader.stage"_sid, shader_stage) == false)
+                {
+                    co_return E_Error;
+                }
+
+                if (ice::meta_read_string(meta, "ice.shader.entry_point"_sid, out_shader.entry_point) == false)
+                {
+                    co_return E_Error;
+                }
+
+                out_shader.stage = static_cast<ice::render::ShaderStageFlags>(shader_stage);
+            }
+
+            out_shader.shader = *reinterpret_cast<ice::render::Shader const*>(shader_data.location);
+            co_return S_Success;
         }
 
     } // namespace detail
@@ -66,11 +89,9 @@ namespace ice::devui
 
         _font_texture = device.create_image(font_info, { });
 
-        _shader_stages[0] = ShaderStageFlags::VertexStage;
-        _shader_stages[1] = ShaderStageFlags::FragmentStage;
-
-        co_await detail::load_imgui_shader(_assets, "shaders/debug/imgui-vert", _shaders[0]);
-        co_await detail::load_imgui_shader(_assets, "shaders/debug/imgui-frag", _shaders[1]);
+        ice::Result r_vert = co_await detail::load_imgui_shader(_assets, "shaders/debug/imgui-vert", _shaders[0]);
+        ice::Result r_frag = co_await detail::load_imgui_shader(_assets, "shaders/debug/imgui-frag", _shaders[1]);
+        ICE_ASSERT_CORE(r_vert && r_frag);
 
         SamplerInfo sampler_info
         {
@@ -232,8 +253,7 @@ namespace ice::devui
             .layout = _pipeline_layout,
             .renderpass = renderpass,
             .shaders = _shaders,
-            .shaders_stages = _shader_stages,
-            .shader_bindings = bindings,
+            .vertex_bindings = bindings,
             .cull_mode = CullMode::Disabled,
             .front_face = FrontFace::CounterClockWise,
             .subpass_index = 1,

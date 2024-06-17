@@ -1,4 +1,4 @@
-/// Copyright 2020 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2020 - 2024, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 .Project =
@@ -16,9 +16,16 @@
 
     .Private =
     [
+        .DependsOn =
+        [
+            .Runtime = {
+                'shader_tools'
+            }
+        ]
 
         .Uses = {
-            'asset_system'
+            'tool_base'
+            'resource_system'
         }
     ]
 ]

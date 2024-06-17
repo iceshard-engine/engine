@@ -73,14 +73,14 @@ struct fmt::formatter<ice::BaseStringID<DebugImpl>>
 template<>
 struct fmt::formatter<ice::usize>
 {
-    char presentation = 'b'; // i - integral, b - bytes, p - pretty
+    char presentation = 'b'; // i - integral, b - bytes, p - pretty, P - pretty with spaces
 
     template<typename ParseContext>
     constexpr auto parse(ParseContext& ctx)
     {
         auto it = ctx.begin(), end = ctx.end();
         // Parse the presentation format and store it in the formatter:
-        if (it != end && (*it == 'i' || *it == 'b' || *it == 'p')) presentation = *it++;
+        if (it != end && (*it == 'i' || *it == 'b' || *it == 'p' || *it == 'P')) presentation = *it++;
 
         // Check if reached the end of the range:
         if (it != end && *it != '}') throw fmt::format_error("invalid format");
@@ -99,21 +99,48 @@ struct fmt::formatter<ice::usize>
         case 'i':
             return fmt::format_to(ctx.out(), "{}", value.value);
         case 'p':
+        case 'P':
         {
             if (value < 1_KiB)
             {
-                return fmt::format_to(ctx.out(), "{}B", value.value);
+                if (presentation == 'P')
+                {
+                    return fmt::format_to(ctx.out(), "{} B", value.value);
+                }
+                else
+                {
+                    return fmt::format_to(ctx.out(), "{}B", value.value);
+                }
             }
             else if (value < 1_MiB)
             {
-                return fmt::format_to(ctx.out(), "{}KiB {}B", (value.value / 1024), value.value % 1024);
+                if (presentation == 'P')
+                {
+                    return fmt::format_to(ctx.out(), "{} KiB {} B", (value.value / 1024), value.value % 1024);
+                }
+                else
+                {
+                    return fmt::format_to(ctx.out(), "{}KiB {}B", (value.value / 1024), value.value % 1024);
+                }
             }
             else
             {
-                return fmt::format_to(
-                    ctx.out(), "{}MiB {}KiB {}B",
-                    (value.value / (1024 * 1024)), (value.value / 1024) % 1024, value.value % 1024
-                );
+                if (presentation == 'P')
+                {
+                    return fmt::format_to(
+                        ctx.out(),
+                        "{} MiB {} KiB {} B",
+                        (value.value / (1024 * 1024)), (value.value / 1024) % 1024, value.value % 1024
+                    );
+                }
+                else
+                {
+                    return fmt::format_to(
+                        ctx.out(),
+                        "{}MiB {}KiB {}B",
+                        (value.value / (1024 * 1024)), (value.value / 1024) % 1024, value.value % 1024
+                    );
+                }
             }
         }
         default:

@@ -3,7 +3,8 @@
 os=Windows
 arch=x86_64
 compiler=msvc
-compiler.version=193
+compiler.cppstd=20
+compiler.version=194
 compiler.runtime=dynamic
 
 
@@ -11,12 +12,14 @@ compiler.runtime=dynamic
 os=Linux
 arch=x86_64
 compiler=gcc
+compiler.cppstd=20
 compiler.version=14
 
 [settings-Linux-Clang]
 os=Linux
 arch=x86_64
 compiler=clang
+compiler.cppstd=20
 compiler.version=16
 
 
@@ -25,6 +28,7 @@ os=Android
 os.api_level=$(AndroidAPILevel)
 arch=armv8
 compiler=clang
+compiler.cppstd=20
 compiler.libcxx=c++_static
 compiler.version=16
 
@@ -33,6 +37,7 @@ os=Android
 os.api_level=$(AndroidAPILevel)
 arch=x86_64
 compiler=clang
+compiler.cppstd=20
 compiler.libcxx=c++_static
 compiler.version=16
 
@@ -47,6 +52,7 @@ tools.android:ndk_path=$(NDKPath)
 os=Emscripten
 arch=wasm
 compiler=clang
+compiler.cppstd=20
 compiler.version=19
 compiler.libcxx=libc++
 

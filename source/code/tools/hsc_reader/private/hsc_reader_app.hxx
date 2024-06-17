@@ -1,4 +1,4 @@
-/// Copyright 2023 - 2023, Dandielo <dandielo@iceshard.net>
+/// Copyright 2023 - 2024, Dandielo <dandielo@iceshard.net>
 /// SPDX-License-Identifier: MIT
 
 #pragma once
@@ -6,10 +6,9 @@
 #include <ice/mem_allocator.hxx>
 #include <ice/string/string.hxx>
 #include <ice/string_utils.hxx>
-#include <ice/param_list.hxx>
+#include <ice/params.hxx>
 
-void hscr_initialize_logging(ice::ParamList const& params) noexcept;
-bool hscr_param_validate_file(ice::ParamList const&, ice::ParamInfo const&, ice::String value) noexcept;
+void hscr_initialize_logging() noexcept;
 
 static constexpr ice::LogTagDefinition LogTag_Main = ice::create_log_tag(ice::LogTag::None, "hsc-reader");
 static constexpr ice::LogTagDefinition LogTag_InfoHeader = ice::create_log_tag(LogTag_Main, "header");
@@ -19,87 +18,37 @@ static constexpr ice::LogTagDefinition LogTag_InfoPaths = ice::create_log_tag(Lo
 
 struct ParamRange
 {
+    bool set = false;
     ice::u32 start = 0;
     ice::u32 count = ice::u32_max;
 
-    static bool param_validate(
-        ice::ParamList const& list,
-        ice::ParamInfo const& info,
-        ice::String value
-    ) noexcept;
-
-    static auto param_parse(
-        ice::ParamList const& list,
-        ice::ParamInfo const& info,
-        ice::String value,
-        ParamRange& out_range
-    ) noexcept -> ice::u32;
+    static bool param_parse_results(ParamRange& out, ice::Span<ice::String const> results) noexcept;
 };
 
-static constexpr ice::ParamDefinition<ice::String> Param_File{
-    .name = "file",
-    .name_short = "f",
-    .description = "The HailStorm pack file to be inspected.",
-    .validator = hscr_param_validate_file,
-    .flags = ice::ParamFlags::IsRequired,
-};
-
-static constexpr ice::ParamDefinition<bool> Param_InfoHeader{
-    .name = "header",
-    .name_short = "h",
-    .description = "Shows header information.",
-    .flags = ice::ParamFlags::IsFlag,
-};
-
-static constexpr ice::ParamDefinition<ParamRange> Param_InfoChunks{
-    .name = "chunks",
-    .name_short = "c",
-    .description = "Shows chunk information.",
-    .validator = ParamRange::param_validate,
-    .parser = ParamRange::param_parse,
-};
-
-static constexpr ice::ParamDefinition<ParamRange> Param_InfoResources{
-    .name = "resources",
-    .name_short = "r",
-    .description = "Shows resource information.",
-    .validator = ParamRange::param_validate,
-    .parser = ParamRange::param_parse,
-};
-
-static constexpr ice::ParamDefinition<bool> Param_InfoCustomValues{
-    .name = "show-custom-values",
-    .description = "Shows app custom values (if the format supports them).",
-    .flags = ice::ParamFlags::IsFlag,
-};
-
-static constexpr ice::ParamDefinition<bool> Param_InfoResourcePaths{
-    .name = "paths",
-    .name_short = "p",
-    .description = "Shows resource path information.",
-    .flags = ice::ParamFlags::IsFlag,
-};
-
-bool ParamRange::param_validate(
-    ice::ParamList const& list,
-    ice::ParamInfo const& info,
-    ice::String value
-) noexcept
-{
-    return ice::string::find_first_not_of(value, ice::String{ "0123456789," }) == ice::String_NPos;
-}
-
-auto ParamRange::param_parse(
-    ice::ParamList const& list,
-    ice::ParamInfo const& info,
-    ice::String value,
-    ParamRange& out_range
-) noexcept -> ice::u32
-{
-    ice::from_chars(value, value, out_range.start);
-    if (ice::string::any(value))
-    {
-        ice::from_chars(ice::string::substr(value, 1), out_range.count);
+static ice::ParamInstanceCustom<ParamRange> Param_ShowChunks{
+    ice::ParamDefinition{
+        .name = "-c,--chunks",
+        .description = "Shows chunks information.",
+        .type_name = "IDX:INT [COUNT:INT]",
+        .min = 1, .max = 2,
+        .flags = ice::ParamFlags::AllowExtraArgs
     }
-    return 1;
-}
+};
+static ice::ParamInstanceCustom<ParamRange> Param_ShowResources{
+    ice::ParamDefinition{
+        .name = "-r,--resources",
+        .description = "Shows resources information.",
+        .type_name = "IDX:INT [COUNT:INT]",
+        .min = 1, .max = 2,
+        .flags = ice::ParamFlags::AllowExtraArgs
+    }
+};
+static ice::ParamInstance<bool> Param_ShowResourcePaths{
+    "", "-p,--paths", "Shows resource path information."
+};
+static ice::ParamInstance<bool> Param_ShowCustomValues{
+    "", "--custom-vals", "Shows app custom values (if the format supports them)."
+};
+static ice::ParamInstance<bool> Param_HideHeader{
+    "", "--hide,--header", "Shows header information."
+};

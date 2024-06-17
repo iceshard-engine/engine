@@ -5,7 +5,6 @@
 
 auto ice_setup(
     ice::Allocator& alloc,
-    ice::ParamList const& params,
     ice::app::Config& config,
     ice::app::State& state
 ) noexcept -> ice::Result

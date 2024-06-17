@@ -16,7 +16,7 @@
 namespace ice
 {
 
-    class LooseFilesResource final : public ice::FileSystemResource
+    class LooseFilesResource final : public ice::FileSystemResource, public ice::LooseResource
     {
     public:
         LooseFilesResource(
@@ -68,7 +68,7 @@ namespace ice
         ice::HashMap<ice::HeapString<>, ContainerLogic::Complex> _extra_resources;
     };
 
-    class LooseFilesResource::ExtraResource final : public ice::FileSystemResource
+    class LooseFilesResource::ExtraResource final : public ice::FileSystemResource, public ice::LooseResource
     {
     public:
         ExtraResource(

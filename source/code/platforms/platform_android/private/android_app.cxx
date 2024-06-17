@@ -10,8 +10,8 @@
 #include <ice/assert.hxx>
 #include <ice/path_utils.hxx>
 #include <ice/string/heap_string.hxx>
-#include <ice/param_list.hxx>
 #include <ice/os/android.hxx>
+#include <ice/params.hxx>
 #include <thread>
 
 
@@ -88,8 +88,6 @@ namespace ice::platform::android
     static auto core_procedure(void* userdata, ice::TaskQueue& queue) noexcept -> ice::u32
     {
         AndroidApp::native_callback_on_update(userdata);
-        using namespace std::chrono_literals;
-        std::this_thread::sleep_for(1us);
         return 0;
     }
 
@@ -102,15 +100,10 @@ namespace ice::platform::android
     ) noexcept
         : AndroidAppCore{ alloc, activity }
         , _factories{ }
-        , _params{ _allocator }
+        , _params{ ice::create_params(_allocator, "iceshard", "0.0.1", "") }
         , _system_events{ _allocator }
         , _input_events{ _allocator }
         , _new_screen_size{ 1.f, 1.f }
-        , _main_queue{ }
-        , _main_thread{ }
-        , _graphics_queue{ }
-        , _graphics_scheduler{ _graphics_queue }
-        , _graphics_thread{ }
         , _app_surface{ }
     {
         ice::HeapString<> cache_path = get_cache_path(alloc, activity->clazz, activity->env);
@@ -124,17 +117,28 @@ namespace ice::platform::android
         ice::string::push_back(_app_external_data, '/');
         ice::string::push_back(_app_save_data, '/');
 
-        ice::TaskThreadInfo const tinfo {
-            .exclusive_queue = true,
-            .custom_procedure = core_procedure,
-            .custom_procedure_userdata = this,
-            .debug_name = "ice.main",
-        };
-        _main_thread = ice::create_thread(_allocator, _main_queue, tinfo);
-        _graphics_thread = ice::create_thread(_allocator, _main_queue, { .exclusive_queue = true, .debug_name = "ice.gfx" });
-
         ICE_ASSERT(global_instance == nullptr, "Only one instance of AndroidApp should ever be created!");
         global_instance = this;
+    }
+
+    void AndroidApp::initialize(ice::Span<ice::Shard const> params) noexcept
+    {
+        _threads = ice::make_unique<AndroidThreads>(_allocator, _allocator, params);
+
+        // On browsers it's better to use the actual main thread as the gfx thread, and introduce a new 'main' thread instead.
+        ice::UniquePtr<ice::TaskThread> logic_thread = ice::create_thread(
+            _allocator,
+            _threads->queue_main,
+            TaskThreadInfo{
+                .exclusive_queue = true,
+                .wait_on_queue = false, // The main-thread needs to be called all the time
+                .custom_procedure = core_procedure,
+                .custom_procedure_userdata = this,
+                .debug_name = "ice.main"
+            }
+        );
+
+        _threads->threadpool_object()->attach_thread("platform.main-thread"_sid, ice::move(logic_thread));
     }
 
     auto AndroidApp::refresh_events() noexcept -> ice::Result
@@ -170,7 +174,7 @@ namespace ice::platform::android
                     continue;
                 }
 
-                ice::ResCode result = ice::ResCode::create(ice::ResultSeverity::Warning, "Unknown");
+                ice::Result result = ice::E_Error;
                 ice::i32 const event_type = AInputEvent_getType(event_ptr);
                 switch (event_type)
                 {
@@ -199,17 +203,18 @@ namespace ice::platform::android
                     break;
                 }
 
-                AInputQueue_finishEvent(queue, event_ptr, result == ice::Res::Success);
-                if (result != ice::Res::Success)
-                {
-                    ICE_LOG(LogSeverity::Retail, LogTag::Core, "Unhandled input event: {}", ice::result_hint(result));
-                }
+                AInputQueue_finishEvent(queue, event_ptr, result == ice::S_Success);
+                ICE_LOG_IF(
+                    result != ice::S_Success,
+                    LogSeverity::Retail, LogTag::Core,
+                    "Unhandled input event: {}", result.error()
+                );
             }
 
             _app_queue.store(queue, std::memory_order_relaxed);
         }
 
-        return ice::Res::Success;
+        return ice::S_Success;
     }
 
     auto AndroidApp::data_locations() const noexcept -> ice::Span<ice::String const>
@@ -228,9 +233,10 @@ namespace ice::platform::android
         ICE_LOG(ice::LogSeverity::Retail, ice::LogTag::Core, "Android::OnInit");
 
         ice_init(_allocator, _factories);
-        ice_args(_allocator, _params);
 
         _config = _factories.factory_config(_allocator);
+        ice_args(_allocator, _params, *_config);
+
         _state = _factories.factory_state(_allocator);
         _runtime = _factories.factory_runtime(_allocator);
     }
@@ -243,8 +249,17 @@ namespace ice::platform::android
 
         _new_screen_size = ice::vec2f{ _app_surface.get_dimensions() };
 
-        ice::Result result = ice_setup(_allocator, _params, *_config, *_state);
-        ICE_LOG_IF(result == false, ice::LogSeverity::Error, ice::LogTag::Core, "{}", ice::result_hint(result));
+        ICE_ASSERT_CORE(native_window() != nullptr);
+        _app_surface.set_native_window(native_window());
+
+        ice::Result result = ice_setup(_allocator, *_config, *_state);
+        if(result == ice::app::S_ApplicationSetupPending)
+        {
+            result = ice_setup(_allocator, *_config, *_state);
+            ICE_ASSERT_CORE(result == app::S_ApplicationResume);
+        }
+
+        ICE_LOG_IF(result == false, ice::LogSeverity::Error, ice::LogTag::Core, "{}", result.error());
         ICE_ASSERT_CORE(result == true);
     }
 
@@ -254,7 +269,6 @@ namespace ice::platform::android
         IPT_MESSAGE("Android::OnResume");
         ICE_LOG(ice::LogSeverity::Retail, ice::LogTag::Core, "Android::OnResume");
 
-        _app_surface.set_native_window(native_window());
         ice_resume(*_config, *_state, *_runtime);
     }
 
@@ -279,8 +293,7 @@ namespace ice::platform::android
         IPT_MESSAGE("Android::OnShutdown");
         ICE_LOG(ice::LogSeverity::Retail, ice::LogTag::Core, "Android::OnShutdown");
 
-        ice::ParamList params{ _allocator };
-        ice_shutdown(_allocator, params, *_config, *_state);
+        ice_shutdown(_allocator, *_config, *_state);
 
         _runtime.reset();
         _state.reset();
@@ -292,7 +305,6 @@ namespace ice::platform::android
         IPT_ZONE_SCOPED;
         ice::platform::android::AndroidAppCore* app = core_instance(activity);
         app->process_message(AndroidMessageType::OnInit);
-        app->process_message(AndroidMessageType::OnSetup);
     }
 
     void AndroidApp::native_callback_on_resume(ANativeActivity* activity)

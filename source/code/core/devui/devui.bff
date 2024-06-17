@@ -3,11 +3,11 @@
 
 .Project =
 [
-    .Name = 'devui_system'
+    .Name = 'devui'
     .Kind = .Kind_StaticLib
-    .Group = 'Systems'
+    .Group = 'Core'
 
-    .BaseDir = '$WorkspaceCodeDir$/systems/devui_system'
+    .BaseDir = '$WorkspaceCodeDir$/core/devui'
 
     .Public =
     [

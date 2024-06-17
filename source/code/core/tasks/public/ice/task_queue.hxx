@@ -9,19 +9,34 @@
 namespace ice
 {
 
-    struct TaskQueue final
+    class TaskQueue final
     {
-        inline bool any() const noexcept { return ice::linked_queue::any(_awaitables); }
-        inline bool empty() const noexcept { return ice::linked_queue::empty(_awaitables); }
+    public:
+        TaskQueue(ice::TaskFlags flags = {}) noexcept;
+
+        bool any() const noexcept { return ice::linked_queue::any(_awaitables); }
+        bool empty() const noexcept { return ice::linked_queue::empty(_awaitables); }
+
+        bool push_back(ice::TaskAwaitableBase* awaitable) noexcept;
+        bool push_back(ice::LinkedQueueRange<ice::TaskAwaitableBase> awaitable_range) noexcept;
+
+        [[nodiscard]]
+        auto consume() noexcept -> ice::LinkedQueueRange<ice::TaskAwaitableBase>;
+
+        bool process_one(void* result_value = nullptr) noexcept;
+        auto process_all(void* result_value = nullptr) noexcept -> ice::ucount;
+
+        void wait_any() noexcept;
 
         template<typename Value>
         inline bool process_one(Value& result_value) noexcept;
-        inline bool process_one(void* result_value = nullptr) noexcept;
-
         template<typename Value>
         inline auto process_all(Value& result_value) noexcept -> ice::ucount;
-        inline auto process_all(void* result_value = nullptr) noexcept -> ice::ucount;
 
+        //! \brief Flags of task allowed to be pushed onto this queue.
+        ice::TaskFlags const flags;
+
+    private:
         ice::AtomicLinkedQueue<ice::TaskAwaitableBase> _awaitables;
     };
 
@@ -31,41 +46,10 @@ namespace ice
         return this->process_one(reinterpret_cast<void*>(&result_value));
     }
 
-    inline bool TaskQueue::process_one(void* result_value) noexcept
-    {
-        ice::TaskAwaitableBase* const awaitable = ice::linked_queue::pop(_awaitables);
-        if (awaitable != nullptr)
-        {
-            if (result_value != nullptr)
-            {
-                ICE_ASSERT_CORE(awaitable->result.ptr == nullptr);
-                awaitable->result.ptr = result_value;
-            }
-            awaitable->_coro.resume();
-        }
-        return awaitable != nullptr;
-    }
-
     template<typename Value>
     inline auto TaskQueue::process_all(Value& result_value) noexcept -> ice::ucount
     {
         return this->process_all(reinterpret_cast<void*>(&result_value));
-    }
-
-    inline auto TaskQueue::process_all(void* result_value) noexcept -> ice::ucount
-    {
-        ice::ucount processed = 0;
-        for (ice::TaskAwaitableBase* const awaitable : ice::linked_queue::consume(_awaitables))
-        {
-            if (result_value != nullptr)
-            {
-                ICE_ASSERT_CORE(awaitable->result.ptr == nullptr);
-                awaitable->result.ptr = result_value;
-            }
-            awaitable->_coro.resume();
-            processed += 1;
-        }
-        return processed;
     }
 
 } // namespace ice

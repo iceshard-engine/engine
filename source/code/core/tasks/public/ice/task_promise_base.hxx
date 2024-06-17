@@ -36,6 +36,7 @@ namespace ice
     private:
         ice::coroutine_handle<> _continuation;
 
+#if !ICE_RELEASE
     public: // Override to track allocations of task objects
         using TaskDebugAllocator = ice::detail::TaskDebugAllocator;
 
@@ -51,6 +52,7 @@ namespace ice
             IPT_DEALLOC_POOL(ptr, TaskDebugAllocator::pool());
             TaskDebugAllocator::deallocate(ptr);
         }
+#endif
     };
 
     template<typename Promise>

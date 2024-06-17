@@ -26,6 +26,7 @@
 #include <ice/render/render_image.hxx>
 #include <ice/render/render_swapchain.hxx>
 
+#include <ice/mem_allocator_snake.hxx>
 #include <ice/task_debug_allocator.hxx>
 #include <ice/resource_tracker.hxx>
 #include <ice/module_register.hxx>
@@ -42,7 +43,7 @@ static constexpr LogTagDefinition LogGame = ice::create_log_tag(LogTag::Game, "T
 
 struct GameTasksDebugAllocator final : public ice::Module<GameTasksDebugAllocator>
 {
-    static void set_allocator(ice::ProxyAllocator* allocator) noexcept
+    static void set_allocator(ice::SnakeAllocator* allocator) noexcept
     {
         _allocator_ptr = allocator;
     }
@@ -63,10 +64,10 @@ struct GameTasksDebugAllocator final : public ice::Module<GameTasksDebugAllocato
     IS_WORKAROUND_MODULE_INITIALIZATION(GameTasksDebugAllocator);
 
 private:
-    static ice::ProxyAllocator* _allocator_ptr;
+    static ice::SnakeAllocator* _allocator_ptr;
 };
 
-ice::ProxyAllocator* GameTasksDebugAllocator::_allocator_ptr = nullptr;
+ice::SnakeAllocator* GameTasksDebugAllocator::_allocator_ptr = nullptr;
 
 auto ice::framework::create_game(ice::Allocator& alloc) noexcept -> ice::UniquePtr<Game>
 {
@@ -185,9 +186,18 @@ struct TestModule : ice::Module<TestModule>
     IS_WORKAROUND_MODULE_INITIALIZATION(TestModule);
 };
 
+static constexpr ice::usize const Constant_SnakeAllocatorBuckets[]{ 2_KiB, 256_B };
+static constexpr ice::usize const Constant_SnakeAllocatorBlocks[]{ 32_KiB, 32_KiB };
+
+static constexpr ice::SnakeAllocatorParams Constant_SnakeAllocatorParams{
+    .chain_capacity = 10,
+    .block_sizes = Constant_SnakeAllocatorBlocks,
+    .bucket_sizes = Constant_SnakeAllocatorBuckets
+};
+
 TestGame::TestGame(ice::Allocator& alloc) noexcept
     : _allocator{ alloc }
-    , _tasks_alloc{ _allocator, "tasks" }
+    , _tasks_alloc{ _allocator, "tasks", Constant_SnakeAllocatorParams }
     , _first_time{ true }
 {
     GameTasksDebugAllocator::set_allocator(&_tasks_alloc);
@@ -200,9 +210,11 @@ void TestGame::on_setup(ice::framework::State const& state) noexcept
     ice::ModuleRegister& mod = state.modules;
     ice::ResourceTracker& res = state.resources;
 
+    ice::HeapString<> shader_tools = ice::resolve_dynlib_path(res, _allocator, "shader_tools");
     ice::HeapString<> pipelines_module = ice::resolve_dynlib_path(res, _allocator, "iceshard_pipelines");
     ice::HeapString<> vulkan_module = ice::resolve_dynlib_path(res, _allocator, "vulkan_renderer");
 
+    mod.load_module(_allocator, shader_tools);
     mod.load_module(_allocator, pipelines_module);
     mod.load_module(_allocator, vulkan_module);
 }
@@ -257,14 +269,14 @@ auto TestGame::rendergraph(ice::gfx::GfxContext& device) noexcept -> ice::Unique
 
     _graph = create_graph(_allocator);
     {
-        GfxResource const c0 = _graph->get_resource("color"_sid, GfxResourceType::RenderTarget);
+        // GfxResource const c0 = _graph->get_resource("color"_sid, GfxResourceType::RenderTarget);
         GfxResource const fb = _graph->get_framebuffer();
 
         GfxGraphStage const stages1[]{
-            {.name = "clear"_sid, .outputs = { &c0, 1 }},
+            {.name = "clear"_sid, .outputs = { &fb, 1 }},
         };
         GfxGraphStage const stages2[]{
-            {.name = "copy"_sid, .inputs = { &c0, 1 }, .outputs = { &fb, 1 }}
+            {.name = "copy"_sid, .outputs = { &fb, 1 }}
         };
         GfxGraphPass const pass1{ .name = "test1"_sid, .stages = stages1 };
         GfxGraphPass const pass2{ .name = "test2"_sid, .stages = stages2 };

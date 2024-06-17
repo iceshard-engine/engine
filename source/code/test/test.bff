@@ -14,13 +14,6 @@
 
     .Private =
     [
-        .DependsOn =
-        [
-            .Runtime = {
-                'vulkan_renderer'
-            }
-        ]
-
         .Modules = {
             'imgui'
             'assimp'
@@ -33,5 +26,20 @@
             'framework_base'
         }
     ]
+
+    .ReleaseDeploy =
+    [
+        .Requires = { 'Release' }
+
+        .Deploy = true
+        .DependsOn =
+        [
+            .Runtime = {
+                'shader_tools'
+                'vulkan_renderer'
+            }
+        ]
+    ]
+    .Rules = { .ReleaseDeploy }
 ]
 .Projects + .Project

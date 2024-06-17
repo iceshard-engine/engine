@@ -31,6 +31,7 @@ namespace ice::devui
     ImGuiTrait::ImGuiTrait(ice::Allocator& alloc, ImGuiSystem& system) noexcept
         : _allocator{ alloc }
         , _imgui_gfx_stage{ }
+        , _resized{ false }
     {
     }
 
@@ -95,13 +96,6 @@ namespace ice::devui
         using ice::input::MouseInput;
 
         auto& io = ImGui::GetIO();
-
-        ice::vec2i window_size{ };
-        if (ice::shards::inspect_last(update.frame.shards(), ice::platform::ShardID_WindowResized, window_size))
-        {
-            io.DisplaySize.x = (ice::f32)window_size.x;
-            io.DisplaySize.y = (ice::f32)window_size.y;
-        }
 
         char const* input_text;
         if (ice::shards::inspect_last(update.frame.shards(), ice::platform::ShardID_InputText, input_text))
@@ -181,8 +175,9 @@ namespace ice::devui
     {
         IPT_ZONE_SCOPED;
         ImGuiIO const& io = ImGui::GetIO();
-        if (io.DisplaySize.x <= 0.f || io.DisplaySize.y <= 0.f)
+        if (io.DisplaySize.x <= 0.f || io.DisplaySize.y <= 0.f || _resized)
         {
+            _resized = false;
             co_return;
         }
 
@@ -209,6 +204,7 @@ namespace ice::devui
         auto& io = ImGui::GetIO();
         io.DisplaySize.x = (ice::f32)new_size.x;
         io.DisplaySize.y = (ice::f32)new_size.y;
+        _resized = true;
         co_return;
     }
 

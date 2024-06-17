@@ -26,9 +26,14 @@ namespace ice
         virtual auto load_metadata() const noexcept -> ice::Task<ice::Data> { co_return {}; }
     };
 
-    class LooseResource : public Resource
+    //! \todo Rethink how loose resources and their named parts can be accessed.
+    class LooseResource
     {
     public:
+        virtual ~LooseResource() noexcept = default;
+
+        virtual auto uri() const noexcept -> ice::URI const& = 0;
+
         virtual auto size() const noexcept -> ice::usize = 0;
 
         virtual auto load_named_part(

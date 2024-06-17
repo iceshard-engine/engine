@@ -52,7 +52,7 @@ namespace ice::platform::webasm
 
     private:
         ice::app::Factories _factories;
-        ice::ParamList _params;
+        ice::Params _params;
 
         ice::u32 _initstage;
 

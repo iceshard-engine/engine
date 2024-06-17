@@ -115,6 +115,7 @@ namespace ice::detail::webasm
         {
             final_buffer.push_back('\n');
         }
+        final_buffer.push_back('\0');
 
         emscripten_console_error(final_buffer.data());
         final_buffer.clear();
@@ -199,6 +200,7 @@ namespace ice::detail::webasm
         {
             final_buffer.push_back('\n');
         }
+        final_buffer.push_back('\0');
 
         switch(severity)
         {

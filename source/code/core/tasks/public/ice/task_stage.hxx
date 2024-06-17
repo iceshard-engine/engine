@@ -25,7 +25,7 @@ namespace ice
         inline auto await_suspend(ice::coroutine_handle<> coroutine) noexcept
         {
             _awaitable._coro = coroutine;
-            ice::linked_queue::push(_queue._awaitables, &_awaitable);
+            _queue.push_back(&_awaitable);
         }
 
         inline auto await_resume() const noexcept -> StageObject&
@@ -53,7 +53,7 @@ namespace ice
         inline auto await_suspend(ice::coroutine_handle<> coroutine) noexcept
         {
             _awaitable._coro = coroutine;
-            ice::linked_queue::push(_queue._awaitables, &_awaitable);
+            _queue.push_back(&_awaitable);
         }
 
         inline void await_resume() const noexcept

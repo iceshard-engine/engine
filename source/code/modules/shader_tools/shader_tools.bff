@@ -1,0 +1,38 @@
+/// Copyright 2021 - 2024, Dandielo <dandielo@iceshard.net>
+/// SPDX-License-Identifier: MIT
+
+.Project =
+[
+    .Name = 'shader_tools'
+    .Kind = .Kind_SharedLib
+    .Group = 'Modules'
+    .Requires = { 'SDK-Windows-10' }
+
+    .BaseDir = '$WorkspaceCodeDir$/modules/shader_tools'
+
+    .Private =
+    [
+        .Modules = {
+            'arctic'
+        }
+        .Uses = {
+            'resource_system'
+            'render_system'
+        }
+    ]
+
+    .SDK_VulkanShaderC =
+    [
+        .Name = 'Vulkan-Shader-Compiler'
+        .Requires = { 'SDK-Vulkan' }
+
+        .Public =
+        [
+            .Libs = {
+                'shaderc_shared'
+            }
+        ]
+    ]
+    .Rules = { .SDK_VulkanShaderC }
+]
+.Projects + .Project

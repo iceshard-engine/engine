@@ -20,47 +20,50 @@ class HailStormReaderApp final : public ice::tool::ToolApp<HailStormReaderApp>
 public:
     HailStormReaderApp() noexcept
         : ToolApp<HailStormReaderApp>{}
+        , _param_packfile{ }
         , _file_path{ _allocator }
         , _file{}
         , _data{}
     { }
 
-    void setup(ice::ParamList& params) noexcept override
+    bool setup(ice::Params& params) noexcept override
     {
-        hscr_initialize_logging(params);
+        ice::params_register_globals(params);
+        ice::params_define(
+            params, {
+                .name = "--pack,packfile,-f,--file",
+                .description = "Pack file to be read",
+                .flags = ice::ParamFlags::IsRequired | ice::ParamFlags::ValidateFile,
+            },
+            _param_packfile
+        );
+        return true;
     }
 
-    auto run(ice::ParamList const& params) noexcept -> ice::i32 override
+    auto run() noexcept -> ice::i32 override
     {
-        ice::String packfile;
-        if (ice::params::find_first(params, Param_File, packfile) == false)
-        {
-            ICE_LOG(ice::LogSeverity::Retail, LogTag_Main, "Use '-f' to provide an input file.");
-            return 1;
-        }
+        hscr_initialize_logging();
 
         // Open the pack file
-        ice::native_file::path_from_string(packfile, _file_path);
-        if (packfile_validate(params) == false)
+        if (packfile_validate() == false)
         {
             ICE_LOG(ice::LogSeverity::Retail, LogTag_Main, "Provide input file is not a valid Hailstorm pack.");
             return 1;
         }
 
-        bool const print_chunks = ice::params::has_any(params, Param_InfoChunks);
-        bool const print_resources = ice::params::has_any(params, Param_InfoResources);
-        if (print_chunks || print_resources)
+        if (Param_ShowChunks.value.set || Param_ShowResources.value.set)
         {
-            packfile_print_info(params);
+            packfile_print_info();
         }
         return 0;
     }
 
 private:
-    bool packfile_validate(ice::ParamList const& params) noexcept
+    bool packfile_validate() noexcept
     {
         using namespace hailstorm;
 
+        ice::native_file::path_from_string(_param_packfile, _file_path);
         _file_path = ice::tool::path_make_absolute(_file_path);
         if (_file = ice::native_file::open_file(_file_path); _file)
         {
@@ -72,14 +75,14 @@ private:
 
             if (hailstorm_validate_header(_data.header) == 0)
             {
-                hailstorm_print_headerinfo(params, _data.header);
+                hailstorm_print_headerinfo(_data.header);
                 return true;
             }
         }
         return false;
     }
 
-    void packfile_print_info(ice::ParamList const& params) noexcept
+    void packfile_print_info() noexcept
     {
         using ice::operator""_B;
 
@@ -95,22 +98,30 @@ private:
 
         if (hailstorm::v1::read_header({ header_mem.location, header_mem.size.value, (size_t)header_mem.alignment }, _data) == hailstorm::Result::Success)
         {
-            ParamRange range;
-            if (ice::params::find_first(params, Param_InfoChunks, range))
+            if (Param_ShowChunks.value.set)
             {
-                hailstorm_print_chunkinfo(params, _data, range);
+                hailstorm_print_chunkinfo(_data);
             }
 
-            if (ice::params::find_first(params, Param_InfoResources, range))
+            if (Param_ShowResources.value.set)
             {
-                hailstorm_print_resourceinfo(_data, range);
+                hailstorm_print_resourceinfo(_data);
             }
         }
 
         _allocator.deallocate(header_mem);
     }
 
+public: // Tool information
+    auto name() const noexcept -> ice::String override { return "hsc_reader"; }
+    auto version() const noexcept -> ice::String override { return "0.1.0"; }
+    auto description() const noexcept -> ice::String override
+    {
+        return "Prints hailstorm pack information to the standard output. The printend information can be controlled using various options.";
+    }
+
 private:
+    ice::String _param_packfile;
     ice::native_file::HeapFilePath _file_path;
     ice::native_file::File _file;
     hailstorm::HailstormData _data;

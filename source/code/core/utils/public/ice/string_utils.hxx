@@ -123,7 +123,11 @@ namespace ice
         ) noexcept
         {
             ice::u32 const size = ice::u32(fmt::formatted_size(format, ice::forward<Args>(args)...));
-            ice::string::grow(str, ice::string::size(str) + size + 1);
+            ice::u32 const new_size = ice::string::size(str) + size;
+            if (new_size + 1 >= str._capacity)
+            {
+                ice::string::grow(str, new_size + 1);
+            }
             fmt::format_to_n(ice::string::end(str), size, format, ice::forward<Args>(args)...);
             str._size += size;
             str._data[str._size] = '\0';

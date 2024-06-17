@@ -22,6 +22,12 @@ A fast and lightweight 2D game physics library.
 - **version:** 7.0.3+
 - **license:** MIT
 
+## cli11
+CLI11 is a command line parser for C++11 and beyond that provides a rich feature set with a simple and intuitive interface.
+- **upstream:** https://github.com/CLIUtils/CLI11
+- **version:** 2.4.1
+- **license:** MIT
+
 ## fmt
 {{fmt}} is an open-source formatting library providing a fast and safe alternative to C stdio and C++ iostreams.
 - **upstream:** https://fmt.dev/latest/index.html

@@ -15,7 +15,7 @@ namespace ice::platform::webasm
         : _allocator{ }
         , _threads{ }
         , _factories{ }
-        , _params{ _allocator }
+        , _params{ ice::create_params(_allocator, "iceshard", "0.0.1", "") }
         , _initstage{ 0 }
         , _config{ }
         , _state{ }
@@ -44,6 +44,7 @@ namespace ice::platform::webasm
             _threads->queue_main,
             TaskThreadInfo{
                 .exclusive_queue = true,
+                .wait_on_queue = false, // The main-thread needs to be called all the time
                 .custom_procedure = WebAsmCoreApp::native_webapp_thread,
                 .custom_procedure_userdata = this,
                 .debug_name = "ice.main"
@@ -59,16 +60,17 @@ namespace ice::platform::webasm
         if (_initstage == 0) [[unlikely]]
         {
             ice_init(_allocator, _factories);
-            ice_args(_allocator, _params);
 
             _config = _factories.factory_config(_allocator);
+            ice_args(_allocator, _params, *_config);
+
             _state = _factories.factory_state(_allocator);
             _runtime = _factories.factory_runtime(_allocator);
             _initstage = 1;
         }
         else if (_initstage == 1) [[unlikely]]
         {
-            ice::Result const res = ice_setup(_allocator, _params, *_config, *_state);
+            ice::Result const res = ice_setup(_allocator, *_config, *_state);
             if (res == ice::app::S_ApplicationResume)
             {
                 _initstage = 2;
@@ -107,13 +109,13 @@ namespace ice::platform::webasm
         else if (_initstage == 4) // OnSuspend
         {
             ice_suspend(*_config, *_state, *_runtime);
-            ice_shutdown(_allocator, _params, *_config, *_state);
+            ice_shutdown(_allocator, *_config, *_state);
             emscripten_force_exit(-1);
             _initstage = 6;
         }
         else if (_initstage == 5)
         {
-            ice_shutdown(_allocator, _params, *_config, *_state);
+            ice_shutdown(_allocator, *_config, *_state);
             emscripten_force_exit(-1);
             _initstage = 6;
         }
@@ -142,6 +144,7 @@ namespace ice::platform::webasm
     {
         WebAsmCoreApp* app = reinterpret_cast<WebAsmCoreApp*>(userdata);
         app->thread_update();
+        sched_yield();
         return 0;
     }
 

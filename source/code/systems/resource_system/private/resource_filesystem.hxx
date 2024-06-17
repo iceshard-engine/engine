@@ -10,9 +10,11 @@
 namespace ice
 {
 
-    class FileSystemResource : public ice::LooseResource
+    class FileSystemResource : public ice::Resource
     {
     public:
+        virtual auto size() const noexcept -> ice::usize = 0;
+
         virtual auto load_data(
             ice::Allocator& alloc,
             ice::TaskScheduler& scheduler,

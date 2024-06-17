@@ -11,8 +11,8 @@
 #include "core/modules/modules.bff"
 #include "core/utils/utils.bff"
 #include "core/tasks/tasks.bff"
+#include "core/devui/devui.bff"
 
-#include "systems/devui_system/devui_system.bff"
 #include "systems/resource_system/resource_system.bff"
 #include "systems/asset_system/asset_system.bff"
 #include "systems/render_system/render_system.bff"
@@ -29,6 +29,7 @@
 #include "iceshard/engine/engine.bff"
 #include "iceshard/iceshard/iceshard.bff"
 
+#include "modules/shader_tools/shader_tools.bff"
 #include "modules/imgui_module/imgui_module.bff"
 #include "modules/iceshard_pipelines/iceshard_pipelines.bff"
 #include "modules/vulkan_renderer/vulkan_renderer.bff"

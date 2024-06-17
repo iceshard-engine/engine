@@ -21,12 +21,14 @@ namespace ice::api
             using FnContextSetupCallback = ice::FnDevUIContextSetupCallback;
             using FnContextSetup = void(*)(FnContextSetupCallback callback, void* userdata) noexcept;
             using FnContextRegisterWidget = void(*)(ice::DevUIWidget* widget) noexcept;
+            using FnContextRemoveWidget = void(*)(ice::DevUIWidget* widget) noexcept;
             using FnContextTraitName = auto(*)() noexcept -> ice::StringID;
 
             FnCreateContext fn_create_context;
             FnDestroyContext fn_destry_context;
             FnContextSetup fn_context_setup;
             FnContextRegisterWidget fn_context_register_widget;
+            FnContextRemoveWidget fn_context_remove_widget;
             FnContextTraitName fn_context_trait_name;
         };
 

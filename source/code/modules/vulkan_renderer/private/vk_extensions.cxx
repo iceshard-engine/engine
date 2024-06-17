@@ -34,12 +34,16 @@ namespace ice::render::vk
 
         // Get the layer count using a null pointer as the last parameter.
         uint32_t instance_layer_count = 0;
-        vkEnumerateInstanceLayerProperties(&instance_layer_count, nullptr);
+        VkResult vk_result = vkEnumerateInstanceLayerProperties(&instance_layer_count, nullptr);
+        if ((vk_result != VK_SUCCESS && vk_result != VK_INCOMPLETE) || instance_layer_count == 0)
+        {
+            return result;
+        }
 
         ice::Allocator& alloc = *out_names._allocator;
         // Enumerate layers with a valid pointer in the last parameter.
         VkLayerProperties* layer_props = alloc.allocate<VkLayerProperties>(instance_layer_count);
-        VkResult vk_result = vkEnumerateInstanceLayerProperties(&instance_layer_count, layer_props);
+        vk_result = vkEnumerateInstanceLayerProperties(&instance_layer_count, layer_props);
         ICE_ASSERT_CORE(vk_result == VK_SUCCESS);
 
         out_count = 0;
@@ -66,12 +70,16 @@ namespace ice::render::vk
 
         // Get the layer count using a null pointer as the last parameter.
         uint32_t instance_extension_count = 0;
-        vkEnumerateInstanceExtensionProperties(nullptr, &instance_extension_count, nullptr);
+        VkResult vk_result = vkEnumerateInstanceExtensionProperties(nullptr, &instance_extension_count, nullptr);
+        if ((vk_result != VK_SUCCESS && vk_result != VK_INCOMPLETE) || instance_extension_count == 0)
+        {
+            return result;
+        }
 
         ice::Allocator& alloc = *out_names._allocator;
         // Enumerate layers with a valid pointer in the last parameter.
         VkExtensionProperties* extension_props = alloc.allocate<VkExtensionProperties>(instance_extension_count);
-        VkResult vk_result = vkEnumerateInstanceExtensionProperties(nullptr, &instance_extension_count, extension_props);
+        vk_result = vkEnumerateInstanceExtensionProperties(nullptr, &instance_extension_count, extension_props);
         ICE_ASSERT_CORE(vk_result == VK_SUCCESS);
 
         out_count = 0;
@@ -98,12 +106,16 @@ namespace ice::render::vk
 
         // Get the layer count using a null pointer as the last parameter.
         uint32_t instance_extension_count = 0;
-        vkEnumerateDeviceExtensionProperties(physical_device, nullptr, &instance_extension_count, nullptr);
+        VkResult vk_result = vkEnumerateDeviceExtensionProperties(physical_device, nullptr, &instance_extension_count, nullptr);
+        if ((vk_result != VK_SUCCESS && vk_result != VK_INCOMPLETE) || instance_extension_count == 0)
+        {
+            return result;
+        }
 
         ice::Allocator& alloc = *out_names._allocator;
         // Enumerate layers with a valid pointer in the last parameter.
         VkExtensionProperties* extension_props = alloc.allocate<VkExtensionProperties>(instance_extension_count);
-        VkResult vk_result = vkEnumerateDeviceExtensionProperties(physical_device, nullptr, &instance_extension_count, extension_props);
+        vk_result = vkEnumerateDeviceExtensionProperties(physical_device, nullptr, &instance_extension_count, extension_props);
         ICE_ASSERT_CORE(vk_result == VK_SUCCESS);
 
         out_count = 0;

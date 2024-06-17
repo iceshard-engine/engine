@@ -26,8 +26,8 @@ namespace ice::platform::android
     }
 
     void AndroidAppCore::push_message(
-            ice::platform::android::AndroidMessageType msg_type,
-            ANativeWindow* window
+        ice::platform::android::AndroidMessageType msg_type,
+        ANativeWindow* window
     ) noexcept
     {
         AndroidMessage* message = _allocator.create<AndroidMessage>(msg_type, window, nullptr);
@@ -35,8 +35,8 @@ namespace ice::platform::android
     }
 
     void AndroidAppCore::process_message(
-            ice::platform::android::AndroidMessageType msg_type,
-            ANativeWindow* window
+        ice::platform::android::AndroidMessageType msg_type,
+        ANativeWindow* window
     ) noexcept
     {
         AndroidMessage message{ msg_type, window, nullptr };
@@ -80,14 +80,9 @@ namespace ice::platform::android
             on_init();
             break;
         }
-        case OnSetup:
-        {
-            on_setup();
-            break;
-        }
         case OnCreateWindow:
         {
-            ICE_ASSERT_CORE(_current_state == AndroidState::Initializing || _current_state == AndroidState::Resuming);
+            // ICE_ASSERT_CORE(_current_state == AndroidState::Initializing);// || _current_state == AndroidState::Resuming);
             if (_current_window)
             {
                 ANativeWindow_release(_current_window);
@@ -96,11 +91,15 @@ namespace ice::platform::android
             ICE_ASSERT_CORE(_current_window != nullptr);
             ANativeWindow_acquire(_current_window);
 
-            // Special case for resuming the app
-            if (_current_state == AndroidState::Resuming)
+            on_setup();
+            if (_current_state == AndroidState::PendingResume)
             {
                 on_resume();
                 _current_state = AndroidState::Active;
+            }
+            else
+            {
+                _current_state = AndroidState::Suspended;
             }
             break;
         }
@@ -115,15 +114,16 @@ namespace ice::platform::android
         }
         case OnResume:
         {
-            ICE_ASSERT_CORE(_current_state == AndroidState::Initializing || _current_state == AndroidState::Suspended);
-            if (_current_window != nullptr)
+            //ICE_ASSERT_CORE(_current_state == AndroidState::Suspended);
+            if (_current_state == AndroidState::Suspended)
             {
+                ICE_ASSERT_CORE(_current_window != nullptr);
                 on_resume();
                 _current_state = AndroidState::Active;
             }
             else
             {
-                _current_state = AndroidState::Resuming;
+                _current_state = AndroidState::PendingResume;
             }
             break;
         }
