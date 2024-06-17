@@ -256,7 +256,8 @@ namespace ice::native_file
         ice::native_file::FilePath basepath,
         ice::native_file::HeapFilePath &dirpath,
         ice::native_file::TraversePathCallback callback,
-        void *userdata) noexcept
+        void *userdata
+    ) noexcept
     {
         // Store for later information about the current state of dirpath
         if (ice::string::back(dirpath) != L'/')

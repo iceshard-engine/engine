@@ -15,6 +15,7 @@ namespace ice::detail
         ice::String allocator_pool;
     };
 
+#if !ICE_RELEASE
     struct TaskDebugAllocator final : public ice::Module<TaskDebugAllocator>
     {
         static auto pool() noexcept -> ice::String
@@ -60,5 +61,6 @@ namespace ice::detail
         static inline ice::Allocator* _allocator_ptr{ };
         static inline ice::String _allocator_pool;
     };
+#endif
 
 } // namespace ice

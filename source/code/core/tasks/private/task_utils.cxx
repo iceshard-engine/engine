@@ -45,12 +45,17 @@ namespace ice
         {
             co_await scheduler;
             co_await scheduled_task;
+
+            // [18/06/2024] Fails to call dtor/relase the 'scheduled_task' coroutine on Release builds. Might want to find a repro case and report to MS
+            //   See comment in 'detached_task_resume' for details.
+            co_await scheduled_task;
         }
 
         auto detached_task_resume(ice::Task<void> scheduled_task, ice::TaskScheduler& scheduler) noexcept -> DetachedTask
         {
             co_await scheduled_task;
             co_await scheduler;
+
             // BUG?: For some reason a when scheduled here, and resumed on a thread, this coroutine is not destroyed properly
             //  without additional actions after the scheduling.
             //  To avoid this we await the completed task which is complex enough to resume the coroutine properly but simple to not really impose any cost.
