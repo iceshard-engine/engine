@@ -167,7 +167,7 @@ namespace ice::gfx
             _gfx_tasks.execute_tasks_detached(_scheduler);
         }
 
-        if (ice::linked_queue::any(_queue_transfer._awaitables) || _gfx_tasks.running_tasks() > 0)
+        if (_queue_transfer.any() || _gfx_tasks.running_tasks() > 0)
         {
             IPT_ZONE_SCOPED_NAMED("gfx_await_tasks");
 
@@ -208,7 +208,7 @@ namespace ice::gfx
             _present_fence->wait(10'000'000);
         }
 
-        while(ice::linked_queue::any(_queue_end._awaitables) || _tasks_container.running_tasks() > 0)
+        while(_queue_end.any() || _tasks_container.running_tasks() > 0)
         {
             _queue_end.process_all();
         }

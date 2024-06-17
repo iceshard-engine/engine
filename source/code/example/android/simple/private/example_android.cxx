@@ -10,6 +10,7 @@
 #include <ice/engine_runner.hxx>
 #include <ice/engine_shards.hxx>
 #include <ice/engine_devui.hxx>
+#include <ice/devui_context.hxx>
 #include <ice/world/world.hxx>
 #include <ice/world/world_trait.hxx>
 #include <ice/world/world_updater.hxx>
@@ -17,7 +18,7 @@
 
 #include <ice/gfx/gfx_stage.hxx>
 #include <ice/gfx/gfx_runner.hxx>
-#include <ice/gfx/gfx_device.hxx>
+#include <ice/gfx/gfx_context.hxx>
 #include <ice/gfx/gfx_graph.hxx>
 #include <ice/gfx/gfx_graph_runtime.hxx>
 #include <ice/gfx/gfx_shards.hxx>
@@ -41,13 +42,13 @@ struct TestTrait : public ice::Trait
 {
     ice::Timer timer;
 
-    auto activate(ice::EngineWorldUpdate const& update) noexcept -> ice::Task<> override
+    auto activate(ice::WorldStateParams const& update) noexcept -> ice::Task<> override
     {
         timer = ice::timer::create_timer(update.clock, 1.0f);
         co_return;
     }
 
-    void gather_tasks(ice::TraitTaskLauncher& task_launcher) noexcept override
+    void gather_tasks(ice::TraitTaskRegistry& task_launcher) noexcept override
     {
         task_launcher.bind<&TestTrait::logic>();
         task_launcher.bind<&TestTrait::gfx>(ice::gfx::ShardID_GfxFrameUpdate);
@@ -92,7 +93,7 @@ struct TestModule : ice::Module<TestModule>
         api.register_traits_fn = test_reg_traits;
     }
 
-    static bool on_load(ice::Allocator& alloc, ice::ModuleNegotiator const& negotiator) noexcept
+    static bool on_load(ice::Allocator& alloc, ice::ModuleNegotiator auto const& negotiator) noexcept
     {
         return negotiator.register_api(v1_traits_api);
     }
@@ -115,7 +116,7 @@ public:
     void on_update(ice::Engine& engine, ice::EngineFrame& frame) noexcept override;
     void on_suspend(ice::Engine& engine) noexcept override;
 
-    auto rendergraph(ice::gfx::GfxDevice& device) noexcept -> ice::UniquePtr<ice::gfx::GfxGraphRuntime> override;
+    auto rendergraph(ice::gfx::GfxContext& ctx) noexcept -> ice::UniquePtr<ice::gfx::GfxGraphRuntime> override;
 
 private:
     ice::Allocator& _allocator;
@@ -139,11 +140,9 @@ void TestGame::on_setup(ice::framework::State const& state) noexcept
 
     ice::HeapString<> pipelines_module = ice::resolve_dynlib_path(res, _allocator, "iceshard_pipelines_mobile");
     ice::HeapString<> vulkan_module = ice::resolve_dynlib_path(res, _allocator, "vulkan_renderer");
-    ice::HeapString<> imgui_module = ice::resolve_dynlib_path(res, _allocator, "imgui_module");
 
     mod.load_module(_allocator, pipelines_module);
     mod.load_module(_allocator, vulkan_module);
-    mod.load_module(_allocator, imgui_module);
 }
 
 void TestGame::on_shutdown(ice::framework::State const& state) noexcept
@@ -162,11 +161,12 @@ void TestGame::on_resume(ice::Engine& engine) noexcept
         ice::StringID traits[]{
             "test"_sid,
             "test2"_sid,
-            ice::Constant_TraitName_DevUI
+            ice::TraitID_GfxShaderStorage,
+            ice::devui_trait_name()
         };
 
         engine.worlds().create_world(
-            { .name = "world"_sid, .traits = traits, .is_initially_active = false }
+            { .name = "world"_sid, .traits = traits }
         );
     }
 }
@@ -182,7 +182,7 @@ void TestGame::on_suspend(ice::Engine& engine) noexcept
 {
 }
 
-auto TestGame::rendergraph(ice::gfx::GfxDevice& device) noexcept -> ice::UniquePtr<ice::gfx::GfxGraphRuntime>
+auto TestGame::rendergraph(ice::gfx::GfxContext& ctx) noexcept -> ice::UniquePtr<ice::gfx::GfxGraphRuntime>
 {
     using ice::operator""_sid;
     using namespace ice::gfx;
@@ -195,16 +195,16 @@ auto TestGame::rendergraph(ice::gfx::GfxDevice& device) noexcept -> ice::UniqueP
         GfxGraphStage const stages1[]{
             {.name = "clear"_sid, .outputs = { &fb, 1 }},
         };
-        // GfxGraphStage const stages2[]{
-        //     {.name = "copy"_sid, .inputs = { &c0, 1 }, .outputs = { &fb, 1 }}
-        // };
+        GfxGraphStage const stages2[]{
+            {.name = "copy"_sid, .outputs = { &fb, 1 }}
+        };
         GfxGraphPass const pass1{ .name = "test1"_sid, .stages = stages1 };
-        // GfxGraphPass const pass2{ .name = "test2"_sid, .stages = stages2 };
+        GfxGraphPass const pass2{ .name = "test2"_sid, .stages = stages2 };
         _graph->add_pass(pass1);
-        // _graph->add_pass(pass2);
+        _graph->add_pass(pass2);
     }
 
-    return create_graph_runtime(_allocator, device, *_graph);
+    return create_graph_runtime(_allocator, ctx, *_graph);
 }
 
 auto ice::framework::create_game(ice::Allocator& alloc) noexcept -> ice::UniquePtr<Game>

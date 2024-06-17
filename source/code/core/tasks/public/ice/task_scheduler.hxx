@@ -44,7 +44,7 @@ namespace ice
         auto await_suspend(ice::coroutine_handle<> coroutine) noexcept
         {
             _awaitable._coro = coroutine;
-            ice::linked_queue::push(_queue._awaitables, &_awaitable);
+            _queue.push_back(&_awaitable);
         }
 
         void await_resume() const noexcept

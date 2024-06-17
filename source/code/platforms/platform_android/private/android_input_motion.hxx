@@ -9,8 +9,8 @@
 namespace ice::platform::android
 {
 
-    static constexpr ice::ResCode I_ButtonActionIgnored = ice::ResCode::create(ResultSeverity::Info, "Motion ButtonAction ignored");
-    static constexpr ice::ResCode I_HooverActionIgnored = ice::ResCode::create(ResultSeverity::Info, "Motion HooverAction ignored");
+    static constexpr ice::ErrorCode S_ButtonActionIgnored{ "S.1100:Android:Motion ButtonAction ignored" };
+    static constexpr ice::ErrorCode S_HooverActionIgnored{ "S.1101:Android:Motion HooverAction ignored" };
 
     auto handle_android_motion_event(
         AInputEvent const* input_event,

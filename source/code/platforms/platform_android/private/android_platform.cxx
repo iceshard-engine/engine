@@ -14,7 +14,10 @@ namespace ice::platform
 
     auto available_features() noexcept -> ice::platform::FeatureFlags
     {
-        return FeatureFlags::Core | FeatureFlags::StoragePaths | FeatureFlags::RenderSurface;
+        return FeatureFlags::Core
+            | FeatureFlags::Threads
+            | FeatureFlags::StoragePaths
+            | FeatureFlags::RenderSurface;
     }
 
     auto initialize(
@@ -42,10 +45,11 @@ namespace ice::platform
 
         if (flags == FeatureFlags::None || !ice::has_all(available_features(), flags))
         {
-            return Res::E_InvalidArgument;
+            return E_InvalidArgument;
         }
 
-        return Res::Success;
+        AndroidApp::global_instance->initialize(params);
+        return S_Success;
     }
 
     auto query_api(ice::platform::FeatureFlags flag, void*& out_api_ptr) noexcept -> ice::Result
@@ -63,6 +67,9 @@ namespace ice::platform
         case FeatureFlags::Core:
             out_api_ptr = static_cast<ice::platform::Core*>(instance_ptr);
             break;
+        case FeatureFlags::Threads:
+            out_api_ptr = instance_ptr->threads();
+            break;
         case FeatureFlags::StoragePaths:
             out_api_ptr = static_cast<ice::platform::StoragePaths*>(instance_ptr);
             break;
@@ -70,15 +77,15 @@ namespace ice::platform
             out_api_ptr = instance_ptr->render_surface();
             break;
         default:
-            return Res::E_InvalidArgument;
+            return E_InvalidArgument;
         }
 
-        return Res::Success;
+        return S_Success;
     }
 
     auto query_apis(ice::platform::FeatureFlags flags, void** out_api_ptrs) noexcept -> ice::Result
     {
-        ice::Result result = Res::Success;
+        ice::Result result = S_Success;
         for (FeatureFlags flag : { FeatureFlags::Core, FeatureFlags::RenderSurface })
         {
             if (ice::has_all(flags, flag))
@@ -92,7 +99,7 @@ namespace ice::platform
             }
             else
             {
-                result = Res::E_InvalidArgument;
+                result = E_InvalidArgument;
                 break;
             }
         }

@@ -47,6 +47,6 @@
     // Relies on Release build for HSC-Packer (TODO: Simplify targed dependencies)
     .ExecExecutable = 'hsc_packer-x64-Windows-Release-msvc-x64-v143-link'
     .ExecArguments = '-o %2'
-        + ' -i $WorkspaceRoot$/build/obj/VkShaders/GFX-Vulkan-Unoptimized-vk-glslc-1-3/data/shaders'
+        + ' -i $WorkspaceRoot$/build/obj/VkShaders/GFX-Vulkan-Unoptimized-vk-glslc-1-3/data/'
         + ' -c $WorkspaceRoot$/source/configs/hscp_shaders.json'
 ]

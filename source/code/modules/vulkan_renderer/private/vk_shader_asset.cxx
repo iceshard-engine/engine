@@ -3,17 +3,19 @@
 
 #include "vk_shader_asset.hxx"
 
-#if ISP_WINDOWS
 #include <ice/render/render_shader.hxx>
 #include <ice/asset_type_archive.hxx>
 #include <ice/asset.hxx>
 #include <ice/path_utils.hxx>
 
+#if ISP_WINDOWS
 #include <shaderc/shaderc.hpp>
+#endif
 
 namespace ice::render::vk
 {
 
+#if ISP_WINDOWS
     auto shader_resources() noexcept -> ice::Span<ice::String>
     {
         static ice::String supported_extensions[]{ ".glsl" };
@@ -72,6 +74,7 @@ namespace ice::render::vk
         api.fn_supported_resources = shader_resources;
         api.fn_compile_source = compile_shader_source;
     }
+#endif
 
     auto asset_shader_state(
         void*,
@@ -115,12 +118,16 @@ namespace ice::render::vk
             .fn_asset_loader = asset_shader_loader
         };
 
+#if ISP_WINDOWS
         // Create the api object and pass it when registering the type
         ice::api::resource_compiler::v1::ResourceCompilerAPI api{};
         VkShaderCompilerModule::v1_resource_compiler_api(api);
 
         ice::ResourceCompiler const compiler{ api };
         asset_type_archive.register_type(ice::render::AssetType_Shader, type_definition, &compiler);
+#else
+        asset_type_archive.register_type(ice::render::AssetType_Shader, type_definition, nullptr);
+#endif
     }
 
     void VkShaderAssetModule::v1_archive_api(ice::detail::asset_system::v1::AssetTypeArchiveAPI& api) noexcept
@@ -129,5 +136,3 @@ namespace ice::render::vk
     }
 
 } // namespace ice::render::vk
-
-#endif

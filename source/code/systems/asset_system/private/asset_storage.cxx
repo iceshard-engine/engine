@@ -40,7 +40,7 @@ namespace ice
                 {
                     // Get all awaiting tasks
                     // TODO: maybe a pop here would be better?
-                    for (ice::TaskAwaitableBase* awaitable : ice::linked_queue::consume(awaiting_queue._awaitables))
+                    for (ice::TaskAwaitableBase* awaitable : awaiting_queue.consume())
                     {
                         ICE_ASSERT(awaitable->_params.modifier == TaskAwaitableModifier::CustomValue, "Unexpected modifier type!");
                         ice::AssetState const awaiting_state = static_cast<AssetState>(awaitable->_params.u32_value);
@@ -72,7 +72,7 @@ namespace ice
 
                     for (ice::TaskAwaitableBase* awaitable : ice::linked_queue::consume(remaining_tasks))
                     {
-                        ice::linked_queue::push(awaiting_queue._awaitables, awaitable);
+                        awaiting_queue.push_back(awaitable);
                     }
 
                     // We don't need to find any 'next' pointer here fortunately

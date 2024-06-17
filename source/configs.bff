@@ -335,6 +335,8 @@
     .Requires = { 'GFX-Vulkan' }
     .BuildOptions = {
         '--target-env=vulkan1.3'
+        // TODO: Pass this argument somewhere else
+        // '--target-env=vulkan1.0' // For Android
     }
 ]
 

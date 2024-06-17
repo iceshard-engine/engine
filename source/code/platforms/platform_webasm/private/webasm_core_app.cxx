@@ -44,6 +44,7 @@ namespace ice::platform::webasm
             _threads->queue_main,
             TaskThreadInfo{
                 .exclusive_queue = true,
+                .wait_on_queue = false, // The main-thread needs to be called all the time
                 .custom_procedure = WebAsmCoreApp::native_webapp_thread,
                 .custom_procedure_userdata = this,
                 .debug_name = "ice.main"

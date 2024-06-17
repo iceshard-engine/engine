@@ -22,6 +22,10 @@ namespace ice
         //! \brief Enable sorting tasks by priority for this thread if 'exclusive' mode is also set.
         bool sort_by_priority = false;
 
+        //! \brief When the queue is empty, waits on new tasks to be pushed.
+        //! \note This puts the thread into suspended state and it won't process any work unless notified.
+        bool wait_on_queue = true;
+
         //! \brief Custom stack size for the thread.
         //!
         //! \note If the value is '0' it will use the default size.

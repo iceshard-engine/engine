@@ -249,6 +249,29 @@ void ice_args(
     IPT_ZONE_SCOPED;
 }
 
+auto ice_create_render_surface(
+    ice::platform::RenderSurface& platform_surface,
+    ice::render::RenderDriver& render_driver
+) noexcept -> ice::render::RenderSurface*
+{
+    ice::platform::RenderSurfaceParams const surface_params{
+        .driver = ice::render::RenderDriverAPI::Vulkan,
+        .dimensions = { 1600, 1080 },
+    };
+
+    ice::Result const result = platform_surface.create(surface_params);
+    ICE_ASSERT(
+        result == ice::S_Success,
+        "Failed to create render surface [ driver={}, dimensions={}x{} ]",
+        ice::u32(surface_params.driver), surface_params.dimensions.x, surface_params.dimensions.y
+    );
+
+    ice::render::SurfaceInfo surface_info{ };
+    bool const valid_surface_info = platform_surface.get_surface(surface_info);
+    ICE_ASSERT(valid_surface_info, "Failed to access surface info!");
+    return render_driver.create_surface(surface_info);
+}
+
 auto ice_setup(
     ice::Allocator& alloc,
     ice::ParamList const& params,
@@ -323,7 +346,7 @@ auto ice_setup(
     );
 
     // There are no modules on the webapp platform
-    if constexpr(ice::build::current_platform != ice::build::System::WebApp)
+    if constexpr(ice::build::is_webapp == false)
     {
         state.resources->attach_provider(
             ice::create_resource_provider_dlls(
@@ -333,9 +356,11 @@ auto ice_setup(
     }
     state.resources->sync_resources();
 
-    if constexpr (ice::build::current_platform == ice::build::System::Android)
+    if constexpr (ice::build::is_android)
     {
         auto shaders_pak = state.resources->find_resource("urn://shaders.hsc"_uri);
+        ICE_ASSERT(shaders_pak != nullptr, "Failed to locate shader pack!");
+
         auto hailstorm = ice::create_resource_provider_hailstorm(
             state.resources_alloc, ice::resource_origin(shaders_pak)
         );
@@ -389,25 +414,11 @@ auto ice_setup(
         return ice::app::E_FailedApplicationSetup;
     }
 
-    ice::render::SurfaceInfo surface_info{ };
-    if (ice::platform::RenderSurface& surface = *state.platform.render_surface; surface.get_surface(surface_info) == false)
-    {
-        ice::platform::RenderSurfaceParams const surface_params{
-            .driver = ice::render::RenderDriverAPI::Vulkan,
-            .dimensions = { 1600, 1080 },
-        };
-        ice::Result result = surface.create(surface_params);
-        ICE_ASSERT(
-            result == ice::S_Success,
-            "Failed to create render surface [ driver={}, dimensions={}x{} ]",
-            ice::u32(surface_params.driver), surface_params.dimensions.x, surface_params.dimensions.y
-        );
+    state.render_surface = ice_create_render_surface(
+        *state.platform.render_surface,
+        *state.renderer
+    );
 
-        bool const valid_surface_info = surface.get_surface(surface_info);
-        ICE_ASSERT(valid_surface_info, "Failed to access surface info!");
-    }
-
-    state.render_surface = state.renderer->create_surface(surface_info);
     return ice::app::S_ApplicationSetupPending;
 }
 

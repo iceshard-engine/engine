@@ -8,10 +8,10 @@
 constexpr nullptr_t vk_nullptr = VK_NULL_HANDLE;
 
 // Instance Extension Functions
-PFN_vkGetPhysicalDeviceCalibrateableTimeDomainsEXT vk_vkGetPhysicalDeviceCalibrateableTimeDomainsEXT = nullptr;
+inline PFN_vkGetPhysicalDeviceCalibrateableTimeDomainsEXT vk_vkGetPhysicalDeviceCalibrateableTimeDomainsEXT = nullptr;
 
 // Device Extension Functions
-PFN_vkGetCalibratedTimestampsEXT vk_vkGetCalibratedTimestampsEXT = nullptr;
+inline PFN_vkGetCalibratedTimestampsEXT vk_vkGetCalibratedTimestampsEXT = nullptr;
 
 template<typename VkFnPtr, typename VkObj>
 inline bool vk_get_proc_address(VkFnPtr& out_ptr, VkObj obj, char const* name) noexcept

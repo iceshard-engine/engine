@@ -188,7 +188,7 @@ namespace ice
             _coro = coro;
 
             ice::TaskQueue* const ioqueue = reinterpret_cast<ice::TaskQueue*>(nativeio_handle(nativeio));
-            ice::linked_queue::push(ioqueue->_awaitables, this);
+            ioqueue->push_back(this);
         }
 
         [[nodiscard]]

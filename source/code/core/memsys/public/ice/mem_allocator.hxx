@@ -81,6 +81,11 @@ namespace ice
             return SizeNotTracked;
         }
 
+        auto allocation_size_watermark() const noexcept -> ice::usize
+        {
+            return SizeNotTracked;
+        }
+
         virtual auto allocation_size(void* ptr) const noexcept -> ice::usize
         {
             return SizeNotTracked;
@@ -136,6 +141,8 @@ namespace ice
 
         auto allocation_size_inuse() const noexcept -> ice::usize;
 
+        auto allocation_size_watermark() const noexcept -> ice::usize;
+
         void track_child(ice::AllocatorDebugInfo* child_allocator) noexcept;
         void remove_child(ice::AllocatorDebugInfo* child_allocator) noexcept;
 
@@ -179,7 +186,7 @@ namespace ice
         template<typename T> requires std::is_trivial_v<T>
         auto allocate(ice::u64 count = 1) noexcept -> T*
         {
-            return reinterpret_cast<T*>(allocate(AllocRequest{ ice::meminfo_of<T> *count }).memory);
+            return reinterpret_cast<T*>(allocate(AllocRequest{ ice::meminfo_of<T> * count }).memory);
         }
 
         void deallocate(void* pointer) noexcept;

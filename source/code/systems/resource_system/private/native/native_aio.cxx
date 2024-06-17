@@ -89,13 +89,7 @@ namespace ice
         else
         {
             ICE_ASSERT(key == 0, "Failed");
-            ice::TaskAwaitableBase* const awaitable = ice::linked_queue::pop(
-                queue._awaitables
-            );
-            if (awaitable != nullptr)
-            {
-                awaitable->_coro.resume();
-            }
+            queue.process_one();
         }
 
         return 0;
@@ -150,7 +144,7 @@ namespace ice
 
     auto nativeio_thread_procedure(NativeAIO* nativeio, ice::TaskQueue& queue) noexcept -> ice::u32
     {
-        for (auto const& item : ice::linked_queue::consume(queue._awaitables))
+        for (auto const& item : queue.consume())
         {
             item->_coro.destroy();
         }

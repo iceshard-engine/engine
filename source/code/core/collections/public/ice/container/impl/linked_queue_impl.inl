@@ -110,7 +110,7 @@ namespace ice
                 }
 
                 // NOTE: Wait for the first 'next' pointer to be set from a different thread.
-                volatile NodeType* next = queue_range._head;
+                NodeType volatile* next = queue_range._head;
                 while (next->next == nullptr)
                 {
                     std::atomic_thread_fence(std::memory_order_acquire);

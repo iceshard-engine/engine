@@ -1,31 +1,23 @@
-#include "webasm_threads.hxx"
+#include "android_threads.hxx"
 #include <ice/task_thread.hxx>
 #include <ice/log.hxx>
-#include <emscripten.h>
+#include <sys/sysinfo.h>
 
-namespace ice::platform::webasm
+namespace ice::platform::android
 {
 
-    // Allows us to access system core count
-    EM_JS(int, browser_hardware_concurrency, (), {
-        return window.navigator.hardwareConcurrency;
-    });
-
-    WebASM_Threads::WebASM_Threads(
+    AndroidThreads::AndroidThreads(
         ice::Allocator& alloc,
         ice::Span<ice::Shard const> params
     ) noexcept
-        : queue_main{ }
-        , queue_gfx{ }
-        , queue_tasks{ }
-        , _scheduler_main{ queue_main }
+        : _scheduler_main{ queue_main }
         , _scheduler_gfx{ queue_gfx }
         , _scheduler_tasks{ queue_tasks }
         , _threads{ }
     {
-        ice::ucount const hw_concurrency = browser_hardware_concurrency();
+        ice::ucount const hw_concurrency = get_nprocs();
         ICE_LOG(LogSeverity::Info, LogTag::System, "Logical Processors: {}", hw_concurrency);
-        ice::ucount tp_size = ice::max(ice::min(hw_concurrency, 4u), 2u); // min 2 task threads
+        ice::ucount tp_size = ice::max(ice::min(hw_concurrency, 8u), 2u); // min 2 task threads
 
         for (ice::Shard const option : params)
         {
@@ -43,6 +35,11 @@ namespace ice::platform::webasm
                 .debug_name_format = "ice.thread {}",
             }
         );
+
+        _threads->attach_thread(
+            "platform.graphics-thread"_sid,
+            ice::create_thread(alloc, queue_gfx, { .exclusive_queue = true, .debug_name = "ice.gfx" })
+        );
     }
 
-} // namespace ice::platform::webasm
+} // namespace ice::platform::android

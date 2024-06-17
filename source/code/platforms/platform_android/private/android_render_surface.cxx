@@ -25,7 +25,7 @@ namespace ice::platform::android
         {
             return ice::platform::E_RenderSurfaceNotAvailable;
         }
-        return ice::Res::Success;
+        return S_Success;
     }
 
     auto AndroidRenderSurface::get_dimensions() const noexcept -> ice::vec2u

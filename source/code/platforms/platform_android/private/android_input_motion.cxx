@@ -89,13 +89,13 @@ namespace ice::platform::android
             // Unhandled actions
             case AMOTION_EVENT_ACTION_SCROLL: break;
             case AMOTION_EVENT_ACTION_BUTTON_PRESS:
-            case AMOTION_EVENT_ACTION_BUTTON_RELEASE: return I_ButtonActionIgnored;
+            case AMOTION_EVENT_ACTION_BUTTON_RELEASE: return S_ButtonActionIgnored;
             case AMOTION_EVENT_ACTION_HOVER_ENTER:
             case AMOTION_EVENT_ACTION_HOVER_EXIT:
-            case AMOTION_EVENT_ACTION_HOVER_MOVE: return I_HooverActionIgnored;
+            case AMOTION_EVENT_ACTION_HOVER_MOVE: return S_HooverActionIgnored;
         }
 
-        return ice::Res::Success;
+        return ice::S_Success;
     }
 
 } // namespace ice::platform::android

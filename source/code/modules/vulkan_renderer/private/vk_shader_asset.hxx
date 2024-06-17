@@ -3,7 +3,6 @@
 
 #pragma once
 #include <ice/os.hxx>
-#if ISP_WINDOWS
 #include <ice/module.hxx>
 #include <ice/resource_compiler.hxx>
 #include <ice/asset_module.hxx>
@@ -11,6 +10,7 @@
 namespace ice::render::vk
 {
 
+#if ISP_WINDOWS
     struct VkShaderCompilerModule : ice::Module<VkShaderCompilerModule>
     {
         static void v1_resource_compiler_api(ice::api::resource_compiler::v1::ResourceCompilerAPI& api) noexcept;
@@ -22,6 +22,7 @@ namespace ice::render::vk
 
         IS_WORKAROUND_MODULE_INITIALIZATION(VkShaderCompilerModule);
     };
+#endif
 
     struct VkShaderAssetModule : ice::Module<VkShaderAssetModule>
     {
@@ -36,4 +37,3 @@ namespace ice::render::vk
     };
 
 } // namespace ice::render::vk
-#endif

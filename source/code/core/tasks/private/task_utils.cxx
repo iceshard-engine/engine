@@ -265,7 +265,7 @@ namespace ice
         auto awaitable = resumer.schedule();
 
         // First we push all awaitables from the queue onto the resumers queue.
-        bool const added = ice::linked_queue::push(awaitable._queue._awaitables, ice::linked_queue::consume(queue._awaitables));
+        bool const added = awaitable._queue.push_back(queue.consume());
 
         // Then we await the current coroutine which will be pushed as the last item on the scheduler, so we know all previous task will be processed first.
         // NOTE: Processing might be out of order if the scheduler queue is assigned to multiple threads!
@@ -278,7 +278,7 @@ namespace ice
     auto await_queue_on(ice::TaskQueue& queue, void* result, ice::TaskScheduler& resumer) noexcept -> ice::Task<bool>
     {
         // We set the result value for each awaitable in the queue and nothing more.
-        auto tasks_awaitables = ice::linked_queue::consume(queue._awaitables);
+        auto tasks_awaitables = queue.consume();
         for (ice::TaskAwaitableBase* task_awaitable : tasks_awaitables)
         {
             task_awaitable->result.ptr = result;
@@ -289,7 +289,7 @@ namespace ice
         auto awaitable = resumer.schedule();
 
         // First we push all awaitables from the queue onto the resumers queue. The range is copied, so we can check later if actually any tasks where queued.
-        bool const added = ice::linked_queue::push(awaitable._queue._awaitables, ice::move(tasks_awaitables));
+        bool const added = awaitable._queue.push_back(ice::move(tasks_awaitables));
 
         // Then we await the current coroutine which will be pushed as the last item on the scheduler, so we know all previous task will be processed first.
         // NOTE: Processing might be out of order if the scheduler queue is assigned to multiple threads!
@@ -306,13 +306,13 @@ namespace ice
         auto awaitable = resumer.schedule();
 
         // First we push all awaitables from the queue onto the resumers queue.
-        return ice::linked_queue::push(awaitable._queue._awaitables, ice::linked_queue::consume(queue._awaitables));
+        return awaitable._queue.push_back(queue.consume());
     }
 
     bool schedule_queue_on(ice::TaskQueue& queue, void* result, ice::TaskScheduler& resumer) noexcept
     {
         // We set the result value for each awaitable in the queue and nothing more.
-        auto tasks_awaitables = ice::linked_queue::consume(queue._awaitables);
+        auto tasks_awaitables = queue.consume();
         for (ice::TaskAwaitableBase* task_awaitable : tasks_awaitables)
         {
             task_awaitable->result.ptr = result;
@@ -323,7 +323,7 @@ namespace ice
         auto awaitable = resumer.schedule();
 
         // First we push all awaitables from the queue onto the resumers queue.
-        return ice::linked_queue::push(awaitable._queue._awaitables, ice::linked_queue::consume(queue._awaitables));
+        return awaitable._queue.push_back(ice::move(tasks_awaitables));
     }
 
 } // namespace ice

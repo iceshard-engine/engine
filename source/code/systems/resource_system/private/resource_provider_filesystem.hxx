@@ -251,10 +251,7 @@ namespace ice
             // Process all awaiting tasks
             while (remaining > 0)
             {
-                for (ice::TaskAwaitableBase* awaitable : ice::linked_queue::consume(local_queue._awaitables))
-                {
-                    awaitable->_coro.resume();
-                }
+                local_queue.process_all();
             }
         }
 

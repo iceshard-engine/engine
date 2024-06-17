@@ -10,7 +10,7 @@ namespace ice
 
     template<typename Value = void>
     class Task;
-    struct TaskQueue;
+    class TaskQueue;
     class TaskScheduler;
 
     class TaskThread;
