@@ -244,7 +244,7 @@ namespace ice
         generate_function(result, subs, shader._mainfunc.data(), arg.data(), ret.data(), body.child<syntax::Expression>());
         ice::string::push_back(result, "}\n");
 
-        ice::string::push_format(result, "\nvoid {}() {{\n", shader._mainfunc.data().name.value);
+        ice::string::push_format(result, "\nvoid {}() {{\n", "main"); // GLSL requires 'main' as the function name
         ice::string::push_format(result, "    {0} inputs = {0}(", shader._inputs.data().name.value);
         {
             member = shader._inputs.child<syntax::StructMember>();
@@ -297,7 +297,8 @@ namespace ice
         ice::Allocator& alloc,
         ice::ASLScriptLoader& resolver,
         ice::Data asl_source,
-        ice::ShaderConfig config
+        ice::ShaderConfig config,
+        ice::HeapString<>& out_entry_point
     ) noexcept -> ice::HeapString<>
     {
         IPT_ZONE_SCOPED;
@@ -335,6 +336,7 @@ namespace ice
         if (parser->parse(lexer, asl_alloc, visitors))
         {
             str = generate(alloc, asl_shader);
+            out_entry_point = "main";
         }
 
         arctic::shutdown_matcher(&matcher);

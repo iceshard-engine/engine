@@ -22,7 +22,8 @@ namespace ice
         ice::Allocator& allocator,
         ice::ASLScriptLoader& imports,
         ice::Data asl_source,
-        ice::ShaderConfig config
+        ice::ShaderConfig config,
+        ice::HeapString<>& out_entry_point
     ) noexcept -> ice::HeapString<>;
 
     auto compiler_supported_shader_resources() noexcept -> ice::Span<ice::String>

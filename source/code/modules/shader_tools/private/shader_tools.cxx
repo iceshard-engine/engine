@@ -35,7 +35,8 @@ namespace ice
         ice::ResourceTracker& tracker,
         ice::ResourceHandle* source,
         ice::render::ShaderStageFlags shader_stage,
-        ice::HeapString<>& out_result
+        ice::HeapString<>& out_result,
+        ice::HeapString<>& out_entry_point
     ) noexcept -> ice::TaskExpected<ice::String, ice::ErrorCode>
     {
         ice::ResourceResult const result = co_await tracker.load_resource(source);
@@ -49,7 +50,8 @@ namespace ice
                 alloc,
                 *import_loader,
                 result.data,
-                { shader_stage }
+                { shader_stage },
+                out_entry_point
             );
 
             // Failed to transpile
@@ -70,8 +72,12 @@ namespace ice
 
     struct ShaderCompilerContext
     {
+        ShaderCompilerContext(ice::Allocator& alloc) noexcept
+            : shader_main{ alloc }
+        { }
+
         ice::i32 shader_type;
-        ice::String shader_main;
+        ice::HeapString<> shader_main;
     };
 
     auto shader_context(ice::ResourceCompilerCtx& ctx) noexcept -> ShaderCompilerContext*
@@ -81,7 +87,7 @@ namespace ice
 
     bool compiler_context_prepare(ice::Allocator& alloc, ice::ResourceCompilerCtx& ctx) noexcept
     {
-        ctx.userdata = alloc.create<ShaderCompilerContext>();
+        ctx.userdata = alloc.create<ShaderCompilerContext>(alloc);
         return true;
     }
 
@@ -117,8 +123,9 @@ namespace ice
             : ice::render::ShaderStageFlags::FragmentStage;
 
         ice::HeapString<> transpiled_result{ alloc };
+        ice::HeapString<> entry_point{ alloc };
         ice::Expected<ice::String, ice::ErrorCode> result = co_await load_shader_source(
-            alloc, tracker, source, shader_stage, transpiled_result
+            alloc, tracker, source, shader_stage, transpiled_result, entry_point
         );
 
         if (result.valid() == false)
@@ -134,7 +141,7 @@ namespace ice
             ice::string::size(glsl_source),
             is_vertex_shader ? shaderc_shader_kind::shaderc_vertex_shader : shaderc_shader_kind::shaderc_fragment_shader,
             ice::string::begin(path),
-            "main",
+            ice::string::begin(entry_point),
             compile_options
         );
 
@@ -150,7 +157,7 @@ namespace ice
         }
 
         // TODO:
-        sctx.shader_main = "main";
+        sctx.shader_main = entry_point;
         sctx.shader_type = static_cast<ice::i32>(shader_stage);
 
         // Spv result is a 4byte BC table
