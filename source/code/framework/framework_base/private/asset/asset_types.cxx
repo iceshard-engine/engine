@@ -29,7 +29,8 @@ namespace ice
     }
 
     void iceshard_base_framework_register_asset_types(
-        ice::AssetTypeArchive& type_archive
+        ice::AssetTypeArchive& type_archive,
+        ice::ModuleQuery const& module_query
     ) noexcept
     {
         iceshard_register_tmx_tilemap_asset_type(type_archive);

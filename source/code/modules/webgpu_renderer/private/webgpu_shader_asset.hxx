@@ -10,20 +10,10 @@
 namespace ice::render::vk
 {
 
-    struct WebGPUShaderCompilerModule : ice::Module<WebGPUShaderCompilerModule>
-    {
-        static void v1_resource_compiler_api(ice::api::resource_compiler::v1::ResourceCompilerAPI& api) noexcept;
-
-        static bool on_load(ice::Allocator& alloc, ice::ModuleNegotiator auto const& module_negotiator) noexcept
-        {
-            return module_negotiator.register_api(v1_resource_compiler_api);
-        }
-
-        IS_WORKAROUND_MODULE_INITIALIZATION(WebGPUShaderCompilerModule);
-    };
-
     struct WebGPUShaderAssetModule : ice::Module<WebGPUShaderAssetModule>
     {
+        static ice::ResourceCompiler API_ShaderCompiler;
+
         static void v1_archive_api(ice::detail::asset_system::v1::AssetTypeArchiveAPI& api) noexcept;
 
         static bool on_load(ice::Allocator& alloc, ice::ModuleNegotiator auto const& negotiator) noexcept

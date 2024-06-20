@@ -9,6 +9,11 @@ namespace ice
         , _imports{ imports }
     { }
 
+    void ASLPatcher::visit(arctic::SyntaxNode<> node) noexcept
+    {
+        ice::ASLPatcherVisitors::visit(node);
+    }
+
     void ASLPatcher::visit(arctic::SyntaxNode<arctic::syntax::Define> node) noexcept
     {
     }

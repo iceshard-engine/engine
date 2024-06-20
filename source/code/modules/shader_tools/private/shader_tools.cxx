@@ -20,13 +20,6 @@ namespace ice
 {
 
 #if ISP_WINDOWS
-    static constexpr ice::ErrorCode E_FailedToTranspileASLShaderToGLSL{ "E.1101:ResourceCompiler:Shader compiler failed to create GLSL shader from ASL." };
-
-    auto shader_resources() noexcept -> ice::Span<ice::String>
-    {
-        static ice::String supported_extensions[]{ ".asl", ".glsl" };
-        return supported_extensions;
-    }
 
     bool collect_shader_sources(
         ice::ResourceHandle* resource_handle,
@@ -86,19 +79,19 @@ namespace ice
         return reinterpret_cast<ShaderCompilerContext*>(ctx.userdata);
     }
 
-    bool context_prepare(ice::Allocator& alloc, ice::ResourceCompilerCtx& ctx) noexcept
+    bool compiler_context_prepare(ice::Allocator& alloc, ice::ResourceCompilerCtx& ctx) noexcept
     {
         ctx.userdata = alloc.create<ShaderCompilerContext>();
         return true;
     }
 
-    bool context_cleanup(ice::Allocator& alloc, ice::ResourceCompilerCtx& ctx) noexcept
+    bool compiler_context_cleanup(ice::Allocator& alloc, ice::ResourceCompilerCtx& ctx) noexcept
     {
         alloc.destroy(shader_context(ctx));
         return true;
     }
 
-    auto compile_shader_source(
+    auto compiler_compile_shader_source(
         ice::ResourceCompilerCtx& ctx,
         ice::ResourceHandle* source,
         ice::ResourceTracker& tracker,
@@ -167,7 +160,7 @@ namespace ice
         co_return ResourceCompilerResult{ .result = result_mem };
     }
 
-    auto build_shader_meta(
+    auto compiler_build_shader_meta(
         ice::ResourceCompilerCtx& ctx,
         ice::ResourceHandle* source,
         ice::ResourceTracker& tracker,
@@ -187,12 +180,13 @@ namespace ice
     {
         static void v1_compiler_api(ice::api::resource_compiler::v1::ResourceCompilerAPI& api) noexcept
         {
-            // api.fn_collect_sources =
-            api.fn_prepare_context = context_prepare;
-            api.fn_cleanup_context = context_cleanup;
-            api.fn_supported_resources = shader_resources;
-            api.fn_compile_source = compile_shader_source;
-            api.fn_build_metadata = build_shader_meta;
+#if ISP_WINDOWS || ISP_WEBAPP
+            api.fn_prepare_context = compiler_context_prepare;
+            api.fn_cleanup_context = compiler_context_cleanup;
+            api.fn_supported_resources = compiler_supported_shader_resources;
+            api.fn_compile_source = compiler_compile_shader_source;
+            api.fn_build_metadata = compiler_build_shader_meta;
+#endif // #if ISP_WINDOWS || ISP_WEBAPP
         }
 
         static bool on_load(ice::Allocator& alloc, ice::ModuleNegotiator auto& negotiator) noexcept

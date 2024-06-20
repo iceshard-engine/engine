@@ -317,7 +317,7 @@ namespace ice::render::webgpu
 
         ice::u32 binding_count = 0;
         ice::u32 attribute_offset = 0;
-        for (ShaderInputBinding const& binding : info.shader_bindings)
+        for (ShaderInputBinding const& binding : info.vertex_bindings)
         {
             ice::u32 attribute_count = 0;
             for (ShaderInputAttribute const& attrib : binding.attributes)
@@ -369,25 +369,25 @@ namespace ice::render::webgpu
             fragment.targetCount += 1;
         }
 
-        ice::u32 idx = 0;
-        for (ShaderStageFlags stage : info.shaders_stages)
+        for (PipelineProgramInfo const& program : info.shaders)
         {
-            switch (stage)
+            switch (program.stage)
             {
             case ShaderStageFlags::VertexStage:
-                vertex.module = WebGPUShader::native(info.shaders[idx])->_wgpu_shader;
+                vertex.module = WebGPUShader::native(program.shader)->_wgpu_shader;
+                vertex.entryPoint = ice::string::begin(program.entry_point);
                 break;
             case ShaderStageFlags::FragmentStage:
-                fragment.module = WebGPUShader::native(info.shaders[idx])->_wgpu_shader;
+                fragment.module = WebGPUShader::native(program.shader)->_wgpu_shader;
+                fragment.entryPoint = ice::string::begin(program.entry_point);
                 break;
             default:
                 ICE_ASSERT_CORE(false);
                 break;
             }
-            idx += 1;
         }
 
-        vertex.module = WebGPUShader::native(info.shaders[0])->_wgpu_shader;
+        // vertex.module = WebGPUShader::native(info.shaders[0])->_wgpu_shader;
 
 
         // depthstencil.depthTestEnable = info.depth_test ? VK_TRUE : VK_FALSE;

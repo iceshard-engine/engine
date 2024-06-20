@@ -1,5 +1,6 @@
 #include "shader_tools_glsl.hxx"
 
+#if ISP_WINDOWS
 #include <ice/resource_tracker.hxx>
 #include <ice/container/array.hxx>
 #include <ice/container/hashmap.hxx>
@@ -341,3 +342,5 @@ namespace ice
     }
 
 } // namespace ice
+
+#endif // #if ISP_WINDOWS

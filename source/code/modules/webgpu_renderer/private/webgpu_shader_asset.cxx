@@ -12,37 +12,6 @@
 namespace ice::render::vk
 {
 
-    auto shader_resources() noexcept -> ice::Span<ice::String>
-    {
-        static ice::String supported_extensions[]{ ".wgsl" };
-        return supported_extensions;
-    }
-
-    auto compile_shader_source(
-        ice::ResourceHandle* source,
-        ice::ResourceTracker& tracker,
-        ice::Span<ice::ResourceHandle* const>,
-        ice::Span<ice::URI const>,
-        ice::Allocator& alloc
-    ) noexcept -> ice::Task<ice::ResourceCompilerResult>
-    {
-        ICE_LOG_WGPU(LogSeverity::Info, "Load WebGPU shader source: {}", ice::resource_path(source));
-        ice::ResourceResult loaded = co_await tracker.load_resource(source);
-        ICE_ASSERT_CORE(loaded.resource_status == ResourceStatus::Loaded);
-        ICE_LOG_WGPU(LogSeverity::Info, "Compiled WebGPU shader resource: {}", ice::resource_path(source));
-
-        ice::Memory result = alloc.allocate(loaded.data.size + 1_B);
-        ice::memcpy(result, loaded.data);
-        reinterpret_cast<char*>(result.location)[loaded.data.size.value] = '\0';
-        co_return { result };
-    }
-
-    void WebGPUShaderCompilerModule::v1_resource_compiler_api(ice::api::resource_compiler::v1::ResourceCompilerAPI& api) noexcept
-    {
-        api.fn_supported_resources = shader_resources;
-        api.fn_compile_source = compile_shader_source;
-    }
-
     auto asset_shader_state(
         void*,
         ice::AssetTypeDefinition const&,
@@ -75,7 +44,10 @@ namespace ice::render::vk
         co_return true;
     }
 
-    void asset_type_shader_definition(ice::AssetTypeArchive& asset_type_archive) noexcept
+    void asset_type_shader_definition(
+        ice::AssetTypeArchive& asset_type_archive,
+        ice::ModuleQuery const& module_query
+    ) noexcept
     {
         static ice::String extensions[]{ ".wgsl" };
 
@@ -85,11 +57,8 @@ namespace ice::render::vk
             .fn_asset_loader = asset_shader_loader
         };
 
-        // Create the api object and pass it when registering the type
-        ice::api::resource_compiler::v1::ResourceCompilerAPI api{};
-        WebGPUShaderCompilerModule::v1_resource_compiler_api(api);
-
-        ice::ResourceCompiler const compiler{ api };
+        ice::ResourceCompiler compiler{ };
+        module_query.query_api(compiler);
         asset_type_archive.register_type(ice::render::AssetType_Shader, type_definition, &compiler);
     }
 
@@ -97,5 +66,7 @@ namespace ice::render::vk
     {
         api.register_types_fn = asset_type_shader_definition;
     }
+
+    ice::ResourceCompiler WebGPUShaderAssetModule::API_ShaderCompiler{};
 
 } // namespace ice::render::vk

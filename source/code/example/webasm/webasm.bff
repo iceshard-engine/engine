@@ -36,6 +36,7 @@
             ; Direct link modules in monolythic apps
             'iceshard'
             'imgui_module'
+            'shader_tools'
             'webgpu_renderer'
         }
     ]

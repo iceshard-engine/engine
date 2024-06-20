@@ -44,7 +44,10 @@ namespace ice::render::vk
         co_return true;
     }
 
-    void asset_type_shader_definition(ice::AssetTypeArchive& asset_type_archive) noexcept
+    void asset_type_shader_definition(
+        ice::AssetTypeArchive& asset_type_archive,
+        ice::ModuleQuery const& module_query
+    ) noexcept
     {
         static ice::String extensions[]{ ".asl", ".glsl", ".spv" };
 
@@ -55,7 +58,8 @@ namespace ice::render::vk
         };
 
 #if ISP_WINDOWS
-        ice::ResourceCompiler const compiler{ VkShaderAssetModule::compiler_api };
+        ice::ResourceCompiler compiler{ };
+        module_query.query_api(compiler);
         asset_type_archive.register_type(ice::render::AssetType_Shader, type_definition, &compiler);
 #else
         asset_type_archive.register_type(ice::render::AssetType_Shader, type_definition, nullptr);
@@ -66,7 +70,5 @@ namespace ice::render::vk
     {
         api.register_types_fn = asset_type_shader_definition;
     }
-
-    ice::api::resource_compiler::v1::ResourceCompilerAPI VkShaderAssetModule::compiler_api{};
 
 } // namespace ice::render::vk

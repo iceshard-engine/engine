@@ -124,6 +124,11 @@ namespace ice
         return {};
     }
 
+    void ASLImportTracker::visit(arctic::SyntaxNode<> node) noexcept
+    {
+        arctic::SyntaxVisitorGroup<arctic::syntax::Import>::visit(node);
+    }
+
     void ASLImportTracker::visit(arctic::SyntaxNode<arctic::syntax::Import> node) noexcept
     {
         IPT_ZONE_SCOPED;

@@ -13,6 +13,7 @@ namespace ice
         ASLPatcher(ASLAllocator& alloc, ASLImportTracker& imports) noexcept;
 
     public: // implements: ice::ASLPatcherVisitors
+        void visit(arctic::SyntaxNode<> node) noexcept override;
         void visit(arctic::SyntaxNode<arctic::syntax::Define> node) noexcept override;
         void visit(arctic::SyntaxNode<arctic::syntax::Type> node) noexcept override;
         void visit(arctic::SyntaxNode<arctic::syntax::Call> node) noexcept override;

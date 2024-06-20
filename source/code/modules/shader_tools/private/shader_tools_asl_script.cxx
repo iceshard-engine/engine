@@ -61,6 +61,11 @@ namespace ice
         return result;
     }
 
+    void ASLScriptFile::visit(arctic::SyntaxNode<> node) noexcept
+    {
+        ice::ASLGlobalVisitors::visit(node);
+    }
+
     void ASLScriptFile::visit(arctic::SyntaxNode<arctic::syntax::Define> node) noexcept
     {
         IPT_ZONE_SCOPED;

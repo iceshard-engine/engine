@@ -21,6 +21,7 @@ namespace ice
         auto find(arctic::String identifier) noexcept -> arctic::SyntaxNode<> override;
 
     public: // Implements: ice::ASLGlobalVisitors
+        void visit(arctic::SyntaxNode<> node) noexcept override;
         void visit(arctic::SyntaxNode<arctic::syntax::Define> node) noexcept override;
         void visit(arctic::SyntaxNode<arctic::syntax::Struct> node) noexcept override;
         void visit(arctic::SyntaxNode<arctic::syntax::Function> node) noexcept override;

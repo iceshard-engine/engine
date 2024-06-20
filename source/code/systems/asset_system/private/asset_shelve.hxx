@@ -55,8 +55,6 @@ namespace ice
 
         class DevUI;
 
-        class DevUI;
-
     private:
         ice::Allocator& _allocator;
         ice::HashMap<ice::AssetEntry*> _asset_resources;

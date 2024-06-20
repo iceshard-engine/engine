@@ -21,7 +21,7 @@ namespace ice
 
         for (ice::detail::asset_system::v1::AssetTypeArchiveAPI const& api : api_ptrs)
         {
-            api.register_types_fn(asset_type_archive);
+            api.register_types_fn(asset_type_archive, registry);
         }
     }
 

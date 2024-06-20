@@ -1,8 +1,8 @@
 #pragma once
 #include <ice/string_types.hxx>
+#include <ice/task_generator.hxx>
 #include <arctic/arctic_syntax_node.hxx>
 #include <arctic/arctic_syntax.hxx>
-#include <experimental/generator>
 
 namespace ice
 {
@@ -11,7 +11,7 @@ namespace ice
     {
 
         template<typename U>
-        inline auto arc_foreach(arctic::SyntaxNode<> node) noexcept -> std::experimental::generator<arctic::SyntaxNode<U>>
+        inline auto arc_foreach(arctic::SyntaxNode<> node) noexcept -> ice::Generator<arctic::SyntaxNode<U>>
         {
             while (node)
             {
