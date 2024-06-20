@@ -94,20 +94,6 @@ namespace ice::devui
                     }
                 }
 
-                // Watermark
-                if (ImGui::TableNextColumn())
-                {
-                    ice::usize const size_allocated = allocator.allocation_size_watermark();
-                    if (size_allocated == Allocator::SizeNotTracked)
-                    {
-                        ImGui::TextUnformatted("- not tracked -");
-                    }
-                    else
-                    {
-                        ImGui::TextT("{:p}", size_allocated);
-                    }
-                }
-
                 if (ImGui::TableNextColumn())
                 {
                     ImGui::TextUnformatted(allocator.location().function_name());

@@ -26,6 +26,10 @@ namespace ice
     class ManualResetEvent;
     class ManualResetBarrier;
 
+    // Generator task
+    template<typename Value>
+    class Generator;
+
     // STD aliases
     template<typename Type = void>
     using coroutine_handle = std::coroutine_handle<Type>;

@@ -4,7 +4,7 @@ os=Windows
 arch=x86_64
 compiler=msvc
 compiler.cppstd=20
-compiler.version=194
+compiler.version=$(MSVCCompilerVersion)
 compiler.runtime=dynamic
 
 
@@ -57,4 +57,4 @@ compiler.version=19
 compiler.libcxx=libc++
 
 [conf-WebAsm]
-tools.cmake.cmaketoolchain:toolchain_file=$(EMSDKPath)/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake
+tools.cmake.cmaketoolchain:user_toolchain=["$(EMSDKPath)/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake"]
