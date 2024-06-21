@@ -12,6 +12,8 @@ namespace ice
     class GeneratorPromise : public ice::TaskPromiseBase
     {
     public:
+        inline auto initial_suspend() const noexcept -> std::suspend_never { return {}; }
+
         inline auto get_return_object() noexcept -> ice::Generator<Value>;
 
         template<typename Other = Value>
