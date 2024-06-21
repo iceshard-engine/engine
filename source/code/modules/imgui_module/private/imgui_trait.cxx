@@ -43,6 +43,7 @@ namespace ice::devui
     {
         task_registry.bind<&ImGuiTrait::update>();
         task_registry.bind<&ImGuiTrait::gfx_start>(ice::gfx::ShardID_GfxStartup);
+        task_registry.bind<&ImGuiTrait::gfx_shutdown>(ice::gfx::ShardID_GfxShutdown);
         task_registry.bind<&ImGuiTrait::gfx_update>(ice::gfx::ShardID_GfxFrameUpdate);
         task_registry.bind<&ImGuiTrait::on_window_resized>(ice::platform::ShardID_WindowResized);
     }
@@ -168,6 +169,12 @@ namespace ice::devui
 
         ice::vec2u const size = params.context.swapchain().extent();
         co_await on_window_resized(ice::vec2i{ size });
+        co_return;
+    }
+
+    auto ImGuiTrait::gfx_shutdown(ice::gfx::GfxStateChange const& params) noexcept -> ice::Task<>
+    {
+        params.stages.remove_stage("copy"_sid);
         co_return;
     }
 

@@ -85,6 +85,8 @@ namespace ice::gfx
         ice::UniquePtr<ice::gfx::GfxGraphRuntime> _rendergraph;
 
         ice::ScopedTaskContainer _gfx_tasks;
+
+        ice::ManualResetEvent _gfx_frame_finished;
     };
 
 } // namespace ice

@@ -191,6 +191,7 @@ namespace ice::gfx
         ice::TaskContainer& out_tasks
     ) noexcept
     {
+        IPT_ZONE_SCOPED;
         using Entry = ice::gfx::IceshardGfxGraphStages::Entry;
 
         // ice::u32 const prev_revision = _stages._revision++;
