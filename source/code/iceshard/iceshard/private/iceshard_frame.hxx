@@ -27,6 +27,7 @@ namespace ice
         auto shards() noexcept -> ice::ShardContainer& override { return _shards; }
         auto shards() const noexcept -> ice::ShardContainer const& override { return _shards; }
 
+        auto entity_index() noexcept -> ice::ecs::EntityIndex& override;
         auto entity_operations() noexcept -> ice::ecs::EntityOperations& override { return _operations; }
         auto entity_operations() const noexcept -> ice::ecs::EntityOperations const& override { return _operations; }
 

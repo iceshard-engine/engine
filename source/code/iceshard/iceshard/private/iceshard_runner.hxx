@@ -61,6 +61,8 @@ namespace ice
         ice::ProxyAllocator _allocator;
         ice::ForwardAllocator _fwd_allocator;
 
+        ice::Engine& _engine;
+
         ice::IceshardDataStorage& _storage_frame;
         ice::IceshardDataStorage& _storage_runtime;
         ice::IceshardDataStorage const& _storage_persistent;
@@ -72,12 +74,14 @@ namespace ice
 
         IceshardFrameData(
             ice::Allocator& alloc,
+            ice::Engine& engine,
             ice::IceshardDataStorage& frame_storage,
             ice::IceshardDataStorage& runtime_storage,
             ice::IceshardDataStorage& persistent_storage
         ) noexcept
             : _allocator{ alloc, "frame" }
             , _fwd_allocator{ _allocator, "frame-forward", ForwardAllocatorParams{.bucket_size = 16_KiB, .min_bucket_count = 2} }
+            , _engine{ engine }
             , _storage_frame{ frame_storage }
             , _storage_runtime{ runtime_storage }
             , _storage_persistent{ persistent_storage }
@@ -185,12 +189,14 @@ namespace ice
         , public ice::EngineStateCommitter
     {
     public:
-        IceshardEngineRunner(ice::Allocator& alloc, ice::EngineRunnerCreateInfo const& create_info) noexcept;
         ~IceshardEngineRunner() noexcept override;
+        IceshardEngineRunner(ice::Allocator& alloc, ice::EngineRunnerCreateInfo const& create_info) noexcept;
 
         auto aquire_frame() noexcept -> ice::Task<ice::UniquePtr<ice::EngineFrame>> override;
         auto update_frame(ice::EngineFrame& current_frame, ice::EngineFrame const& previous_frame) noexcept -> ice::Task<> override;
         void release_frame(ice::UniquePtr<ice::EngineFrame> frame) noexcept override;
+
+        auto apply_entity_operations(ice::ShardContainer& out_shards) noexcept -> ice::Task<> override;
 
         void destroy() noexcept;
 
@@ -210,8 +216,6 @@ namespace ice
         ice::EngineFrameFactoryUserdata const _frame_factory_userdata;
         ice::u32 const _frame_count;
 
-
-        ice::u8 _flow_id;
         ice::IceshardDataStorage _frame_storage[2];
         ice::IceshardDataStorage _runtime_storage;
 

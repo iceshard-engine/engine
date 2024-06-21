@@ -9,10 +9,13 @@ namespace ice
     IceshardWorld::IceshardWorld(
         ice::Allocator& alloc,
         ice::StringID_Arg worldid,
+        ice::ecs::EntityStorage& entity_storage,
         ice::Array<ice::UniquePtr<ice::Trait>, ice::ContainerLogic::Complex> traits
     ) noexcept
         : worldID{ worldid }
         , _tasks_launcher{ alloc }
+        , _entity_storage{ entity_storage }
+        , _entity_operations{ alloc, 16 }
         , _traits{ ice::move(traits) }
     {
         for (auto& trait : _traits)
@@ -22,7 +25,13 @@ namespace ice
         }
     }
 
-    auto IceshardWorld::activate(ice::WorldStateParams const& update) noexcept -> ice::Task<>
+    void IceshardWorld::apply_entity_operations(ice::ShardContainer& out_shards) noexcept
+    {
+        _entity_storage.execute_operations(_entity_operations, out_shards);
+        _entity_operations.clear();
+    }
+
+    auto IceshardWorld::activate(ice::WorldStateParams const &update) noexcept -> ice::Task<>
     {
         for (auto& trait : _traits)
         {

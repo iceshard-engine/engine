@@ -22,6 +22,7 @@ namespace ice
         ice::AssetStorage& assets;
         ice::Engine& engine;
         ice::EngineSchedulers thread;
+        ice::World& world;
     };
 
     struct WorldUpdater
@@ -37,6 +38,10 @@ namespace ice
             ice::StringID_Arg world_name,
             ice::TaskContainer& out_tasks,
             ice::Span<ice::Shard const> event_shards
+        ) noexcept = 0;
+
+        virtual void apply_entity_operations(
+            ice::ShardContainer& out_shards
         ) noexcept = 0;
     };
 

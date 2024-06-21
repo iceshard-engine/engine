@@ -117,6 +117,7 @@ namespace ice
                 _allocator,
                 _allocator,
                 world_template.name,
+                world_template.entity_storage,
                 ice::move(world_traits)
             ),
         };
@@ -203,6 +204,16 @@ namespace ice
         if (entry != nullptr && entry->is_active)
         {
             entry->world->task_launcher().gather(out_tasks, event_shards);
+        }
+    }
+
+    void IceshardWorldManager::apply_entity_operations(
+        ice::ShardContainer& out_shards
+    ) noexcept
+    {
+        for (Entry& world_entry : ice::hashmap::values(_worlds))
+        {
+            world_entry.world->apply_entity_operations(out_shards);
         }
     }
 

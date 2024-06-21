@@ -3,6 +3,7 @@
 
 #include "iceshard_frame.hxx"
 #include <ice/task_utils.hxx>
+#include <ice/engine.hxx>
 
 namespace ice
 {
@@ -26,6 +27,11 @@ namespace ice
         ice::array::clear(_task_groups);
 
         _data._fwd_allocator.reset();
+    }
+
+    auto IceshardEngineFrame::entity_index() noexcept -> ice::ecs::EntityIndex&
+    {
+        return _data._engine.entities();
     }
 
     auto IceshardEngineFrame::create_tasks(ice::u32 count, ice::ShardID id) noexcept -> ice::Span<ice::Task<>>

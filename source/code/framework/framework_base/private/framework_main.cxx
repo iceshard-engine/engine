@@ -574,7 +574,7 @@ auto ice_update(
         std::this_thread::sleep_for(1ms);
     }
 
-    while(runtime.logic_wait.is_set() == false)
+    while(runtime.logic_wait.is_set() == false || new_frame->tasks_container().running_tasks() > 0)
     {
         runtime.main_queue.process_all();
     }
@@ -608,6 +608,11 @@ auto ice_update(
             runtime.gfx_wait
         );
     }
+
+    // Apply changes to entities after devui widget updates and drawing started, so we can inspect the data before the changes,
+    //  and pre-produce the outcome in a devui widget if needed.
+    // We also should no longer access anything in entity storages when drawing starts
+    ice::wait_for(runtime.runner->apply_entity_operations(runtime.frame->shards()));
 
     return ice::app::S_ApplicationUpdate;
 }

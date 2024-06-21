@@ -28,6 +28,9 @@ namespace ice
 
         virtual auto trait_storage(ice::Trait* trait) noexcept -> ice::DataStorage* = 0;
         virtual auto trait_storage(ice::Trait const* trait) const noexcept -> ice::DataStorage const* = 0;
+
+        virtual auto entity_queries() noexcept -> ice::ecs::QueryProvider& = 0;
+        virtual auto entity_operations() noexcept -> ice::ecs::EntityOperations& = 0;
     };
 
 } // namespace ice

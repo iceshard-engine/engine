@@ -13,6 +13,8 @@
 #include <ice/world/world_trait.hxx>
 #include <ice/world/world_updater.hxx>
 #include <ice/world/world_trait_module.hxx>
+#include <ice/ecs/ecs_archetype_index.hxx>
+#include <ice/ecs/ecs_entity_storage.hxx>
 
 #include <ice/gfx/gfx_stage.hxx>
 #include <ice/gfx/gfx_runner.hxx>
@@ -63,6 +65,9 @@ private:
 
     ice::UniquePtr<ice::gfx::GfxGraph> _graph;
     ice::UniquePtr<ice::gfx::GfxGraphRuntime> _graph_runtime;
+
+    ice::UniquePtr<ice::ecs::ArchetypeIndex> _archetype_index;
+    ice::UniquePtr<ice::ecs::EntityStorage> _entity_storage;
 
     bool _first_time;
 };
@@ -251,6 +256,8 @@ struct TestModule : ice::Module<TestModule>
 
 TestGame::TestGame(ice::Allocator& alloc) noexcept
     : _allocator{ alloc }
+    , _archetype_index{ }
+    , _entity_storage{ }
     , _first_time{ true }
 {
 	//TestModule::module_info();
@@ -272,6 +279,9 @@ void TestGame::on_setup(ice::framework::State const& state) noexcept
     mod.load_module(_allocator, pipelines_module);
     mod.load_module(_allocator, vulkan_module);
     mod.load_module(_allocator, imgui_module);
+
+    _archetype_index = ice::make_unique<ice::ecs::ArchetypeIndex>(_allocator, _allocator);
+    _entity_storage = ice::make_unique<ice::ecs::EntityStorage>(_allocator, _allocator, *_archetype_index);
 }
 
 void TestGame::on_shutdown(ice::framework::State const& state) noexcept
@@ -295,7 +305,7 @@ void TestGame::on_resume(ice::Engine& engine) noexcept
         };
 
         engine.worlds().create_world(
-            { .name = "world"_sid, .traits = traits }
+            { .name = "world"_sid, .traits = traits, .entity_storage = *_entity_storage }
         );
     }
 }

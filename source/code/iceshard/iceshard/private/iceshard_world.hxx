@@ -3,6 +3,7 @@
 
 #pragma once
 #include <ice/world/world.hxx>
+#include <ice/ecs/ecs_entity_operations.hxx>
 #include "iceshard_world_tasks_launcher.hxx"
 
 namespace ice
@@ -11,9 +12,13 @@ namespace ice
     class IceshardWorld final : public ice::World
     {
     public:
+        ice::StringID const worldID;
+
+    public:
         IceshardWorld(
             ice::Allocator& alloc,
             ice::StringID_Arg worldid,
+            ice::ecs::EntityStorage& entity_storage,
             ice::Array<ice::UniquePtr<ice::Trait>, ice::ContainerLogic::Complex> traits
         ) noexcept;
 
@@ -22,14 +27,20 @@ namespace ice
         auto trait_storage(ice::Trait* trait) noexcept -> ice::DataStorage* override { return nullptr; }
         auto trait_storage(ice::Trait const* trait) const noexcept -> ice::DataStorage const* override { return nullptr; }
 
+        auto entity_queries() noexcept -> ice::ecs::QueryProvider& override { return _entity_storage; }
+        auto entity_operations() noexcept -> ice::ecs::EntityOperations& override { return _entity_operations; }
+
+        void apply_entity_operations(ice::ShardContainer& out_shards) noexcept;
+
         auto task_launcher() noexcept -> ice::IceshardTasksLauncher& { return _tasks_launcher; }
 
         auto activate(ice::WorldStateParams const& update) noexcept -> ice::Task<> override;
         auto deactivate(ice::WorldStateParams const& update) noexcept -> ice::Task<> override;
 
-        ice::StringID const worldID;
     private:
         ice::IceshardTasksLauncher _tasks_launcher;
+        ice::ecs::EntityStorage& _entity_storage;
+        ice::ecs::EntityOperations _entity_operations;
         ice::Array<ice::UniquePtr<ice::Trait>, ice::ContainerLogic::Complex> _traits;
     };
 

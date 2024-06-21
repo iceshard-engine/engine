@@ -25,6 +25,7 @@
 
 #include <ice/render/render_image.hxx>
 #include <ice/render/render_swapchain.hxx>
+#include <ice/ecs/ecs_entity_operations.hxx>
 
 #include <ice/mem_allocator_snake.hxx>
 #include <ice/task_debug_allocator.hxx>
@@ -217,15 +218,26 @@ void TestGame::on_setup(ice::framework::State const& state) noexcept
     mod.load_module(_allocator, shader_tools);
     mod.load_module(_allocator, pipelines_module);
     mod.load_module(_allocator, vulkan_module);
+
+    _archetype_index = ice::make_unique<ice::ecs::ArchetypeIndex>(_allocator, _allocator);
+    _archetype_index->register_archetype(TestTrait::Archetype_TestArchetype);
+
+    _entity_storage = ice::make_unique<ice::ecs::EntityStorage>(_allocator, _allocator, *_archetype_index);
 }
 
 void TestGame::on_shutdown(ice::framework::State const& state) noexcept
 {
+    _entity_storage = nullptr;
+    _archetype_index = nullptr;
+
     ICE_LOG(LogSeverity::Info, LogGame, "Goodbye, World!");
 }
 
 void TestGame::on_resume(ice::Engine& engine) noexcept
 {
+    // Create and forget about the null entity.
+    engine.entities().create();
+
     if (_first_time)
     {
         _first_time = false;
@@ -243,10 +255,10 @@ void TestGame::on_resume(ice::Engine& engine) noexcept
         };
 
         engine.worlds().create_world(
-            { .name = "world"_sid, .traits = traits }
+            { .name = "world"_sid, .traits = traits, .entity_storage = *_entity_storage }
         );
         engine.worlds().create_world(
-            { .name = "world2"_sid, .traits = traits2 }
+            { .name = "world2"_sid, .traits = traits2, .entity_storage = *_entity_storage }
         );
     }
 }

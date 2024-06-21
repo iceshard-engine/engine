@@ -62,6 +62,7 @@ namespace ice
         {
             ice::IceshardFrameData* new_data = _allocator.create<ice::IceshardFrameData>(
                 _allocator,
+                _engine,
                 _frame_storage[frame_idx],
                 _runtime_storage,
                 _runtime_storage
@@ -164,6 +165,17 @@ namespace ice
             free_data->_internal_next = expected_head;
             exchange_success = _frame_data_freelist.compare_exchange_weak(expected_head, free_data, std::memory_order_relaxed);
         } while (exchange_success == false);
+
+        // Delete the frame explicitly
+        // frame.reset();
+    }
+
+    auto IceshardEngineRunner::apply_entity_operations(
+        ice::ShardContainer& out_shards
+    ) noexcept -> ice::Task<>
+    {
+        _engine.worlds_updater().apply_entity_operations(out_shards);
+        co_return;
     }
 
     void IceshardEngineRunner::destroy() noexcept
@@ -177,27 +189,31 @@ namespace ice
         ice::ShardContainer& out_shards
     ) noexcept
     {
-        ice::WorldStateParams const params{
-            .clock = _clock,
-            .assets = _engine.assets(),
-            .engine = _engine,
-            .thread = _schedulers
-        };
-
         ice::StringID world_name;
         if (ice::shard_inspect(trigger_shard, world_name.value) == false)
         {
             return false;
         }
 
+        ice::World* world = _engine.worlds().find_world(world_name);
+        ICE_ASSERT_CORE(world != nullptr);
+
+        ice::WorldStateParams const params{
+            .clock = _clock,
+            .assets = _engine.assets(),
+            .engine = _engine,
+            .thread = _schedulers,
+            .world = *world
+        };
+
         if (trigger.to == State_WorldRuntimeActive)
         {
-            ice::wait_for(_engine.worlds().find_world(world_name)->activate(params));
+            ice::wait_for(world->activate(params));
             ice::shards::push_back(out_shards, trigger.results | world_name.value);
         }
         else if (trigger.to == State_WorldRuntimeInactive)
         {
-            ice::wait_for(_engine.worlds().find_world(world_name)->deactivate(params));
+            ice::wait_for(world->deactivate(params));
         }
         return true;
     }

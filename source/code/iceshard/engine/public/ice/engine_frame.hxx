@@ -31,6 +31,7 @@ namespace ice
         virtual auto shards() noexcept -> ice::ShardContainer& = 0;
         virtual auto shards() const noexcept -> ice::ShardContainer const& = 0;
 
+        virtual auto entity_index() noexcept -> ice::ecs::EntityIndex& = 0;
         virtual auto entity_operations() noexcept -> ice::ecs::EntityOperations& = 0;
         virtual auto entity_operations() const noexcept -> ice::ecs::EntityOperations const& = 0;
 
