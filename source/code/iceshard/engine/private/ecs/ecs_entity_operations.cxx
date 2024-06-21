@@ -426,4 +426,20 @@ namespace ice::ecs
         operation->component_data_size = 0;
     }
 
+    void queue_batch_remove_entities(
+        ice::ecs::EntityOperations& entity_operations,
+        ice::Span<ice::ecs::EntityHandle const> entities
+    ) noexcept
+    {
+        void* handle_loc;
+        EntityOperation* operation = entity_operations.new_storage_operation(ice::meminfo_of<ice::ecs::EntityHandle> * ice::count(entities), handle_loc);
+        operation->archetype = ice::ecs::Archetype::Invalid;
+        operation->entities = reinterpret_cast<ice::ecs::EntityHandle*>(handle_loc);
+        ice::memcpy(operation->entities, ice::span::data(entities), ice::span::size_bytes(entities));
+        operation->entity_count = ice::count(entities);
+        operation->notify_entity_changes = false;
+        operation->component_data = nullptr;
+        operation->component_data_size = 0;
+    }
+
 } // namespace ice::ecs

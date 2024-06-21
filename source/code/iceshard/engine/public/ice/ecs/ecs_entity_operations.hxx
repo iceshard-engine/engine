@@ -117,6 +117,11 @@ namespace ice::ecs
         ice::ecs::EntityHandle entity_handle
     ) noexcept;
 
+    void queue_batch_remove_entities(
+        ice::ecs::EntityOperations& entity_operations,
+        ice::Span<ice::ecs::EntityHandle const> entities
+    ) noexcept;
+
 
     template<ice::ecs::Component... Components>
     void queue_set_archetype_with_data(
