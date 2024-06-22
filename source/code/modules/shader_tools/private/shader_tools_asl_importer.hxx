@@ -41,6 +41,7 @@ namespace ice
         auto find(arctic::String identifier) noexcept -> arctic::SyntaxNode<> override;
 
     public: // Implements: arctic::SyntaxVisitorGroup<arctic::syntax::Import>
+        void visit(arctic::SyntaxNode<> node) noexcept override;
         void visit(arctic::SyntaxNode<arctic::syntax::Import> node) noexcept override;
 
     private:

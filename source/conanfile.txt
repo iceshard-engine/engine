@@ -11,6 +11,7 @@ tracy/0.10.0@iceshard/stable
 imgui/1.90@iceshard/docking
 hailstorm/0.2.0@iceshard/stable
 # chipmunk2d/7.0.3+@iceshard/stable
+arctic/0.2.0@iceshard/stable
 
 rapidxml/1.13
 rapidxml_ns/1.13.2@iceshard/stable
@@ -26,8 +27,6 @@ sdl2/2.0.22@iceshard/stable
 freetype/2.12.1@iceshard/stable
 msdfgen/1.9.2@iceshard/stable
 msdf_atlas_gen/1.2.2@iceshard/stable
-
-arctic/0.1.0@iceshard/stable
 
 [requires-Android-Arm64]
 vulkan-memory-allocator/3.0.1

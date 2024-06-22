@@ -4,6 +4,7 @@
 #pragma once
 #include <ice/mem_allocator.hxx>
 #include <ice/mem_unique_ptr.hxx>
+#include <ice/module_query.hxx>
 #include <ice/stringid.hxx>
 
 namespace ice
@@ -21,7 +22,7 @@ namespace ice
     namespace detail::asset_system::v1
     {
 
-        using RegisterTypesFn = void (ice::AssetTypeArchive&) noexcept;
+        using RegisterTypesFn = void (ice::AssetTypeArchive&, ice::ModuleQuery const&) noexcept;
 
         struct AssetTypeArchiveAPI
         {

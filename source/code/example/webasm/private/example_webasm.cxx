@@ -263,10 +263,12 @@ void TestGame::on_setup(ice::framework::State const& state) noexcept
     ice::ModuleRegister& mod = state.modules;
     ice::ResourceTracker& res = state.resources;
 
+    ice::HeapString<> shader_tools = ice::resolve_dynlib_path(res, _allocator, "shader_tools");
     ice::HeapString<> pipelines_module = ice::resolve_dynlib_path(res, _allocator, "iceshard_pipelines_mobile");
     ice::HeapString<> vulkan_module = ice::resolve_dynlib_path(res, _allocator, "vulkan_renderer");
     ice::HeapString<> imgui_module = ice::resolve_dynlib_path(res, _allocator, "imgui_module");
 
+    mod.load_module(_allocator, shader_tools);
     mod.load_module(_allocator, pipelines_module);
     mod.load_module(_allocator, vulkan_module);
     mod.load_module(_allocator, imgui_module);

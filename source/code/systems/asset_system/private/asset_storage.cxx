@@ -396,7 +396,7 @@ namespace ice
             {
                 ice::Result const res = ice::meta_deserialize_from(meta, metadata_data);
                 ICE_LOG_IF(
-                    res == ice::S_Success,
+                    res != ice::S_Success,
                     LogSeverity::Error, LogTag::Asset,
                     "Failed to deserialize metadata for: {}",
                     entry.assetid

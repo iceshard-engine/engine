@@ -197,7 +197,7 @@ namespace ice
                     }
                 }
 
-                return ice::TaskPromise<Result>::FinalAwaitable::await_suspend<Promise>(coro);
+                return ice::TaskPromise<Result>::FinalAwaitable::template await_suspend<Promise>(coro);
             }
         };
 

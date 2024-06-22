@@ -6,7 +6,6 @@
     .Name = 'shader_tools'
     .Kind = .Kind_SharedLib
     .Group = 'Modules'
-    .Requires = { 'SDK-Windows-10' }
 
     .BaseDir = '$WorkspaceCodeDir$/modules/shader_tools'
 
@@ -24,7 +23,7 @@
     .SDK_VulkanShaderC =
     [
         .Name = 'Vulkan-Shader-Compiler'
-        .Requires = { 'SDK-Vulkan' }
+        .Requires = { 'SDK-Vulkan', 'SDK-Windows-10' }
 
         .Public =
         [
@@ -33,6 +32,12 @@
             }
         ]
     ]
-    .Rules = { .SDK_VulkanShaderC }
+    .Rule_Monolythic =
+    [
+        .Name = 'Monolythic'
+        .Requires = { 'Monolythic' }
+        .Kind = .Kind_ObjectList
+    ]
+    .Rules = { .SDK_VulkanShaderC, .Rule_Monolythic }
 ]
 .Projects + .Project

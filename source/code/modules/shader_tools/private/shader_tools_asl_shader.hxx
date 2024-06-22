@@ -18,6 +18,7 @@ namespace ice
         void push_struct(arctic::SyntaxNode<arctic::syntax::Struct> node) noexcept;
 
     public: // Implements: ice::ASLShaderVisitors
+        void visit(arctic::SyntaxNode<> node) noexcept override;
         void visit(arctic::SyntaxNode<arctic::syntax::Struct> node) noexcept override;
         void visit(arctic::SyntaxNode<arctic::syntax::Function> node) noexcept override;
         void visit(arctic::SyntaxNode<arctic::syntax::ContextBlock> node) noexcept override;

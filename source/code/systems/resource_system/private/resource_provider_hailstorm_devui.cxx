@@ -123,7 +123,7 @@ namespace ice
         {
             ImGui::Text("Version: %hu.%hu.%hu", header.version[0], header.version[0], header.version[0]);
             ImGui::SetItemTooltip("Version of the DATA in the pack.");
-            ImGui::TextT("Size: {:p}", ice::usize{header.offset_next});
+            ImGui::TextT("Size: {:p}", ice::usize(header.offset_next));
             ImGui::SetItemTooltip("Size of the entire HailStorm pack before decompression and/or decryption.");
 
             ImGui::Text("Chunks: %hu", header.count_chunks);
@@ -210,15 +210,15 @@ namespace ice
                 }
                 if (ImGui::TableNextColumn()) // Size
                 {
-                    ImGui::TextT("{:p}", ice::usize{chunk.size});
+                    ImGui::TextT("{:p}", ice::usize(chunk.size));
                 }
                 if (ImGui::TableNextColumn()) // Original Size
                 {
-                    ImGui::TextT("{:p}", ice::usize{chunk.size_origin});
+                    ImGui::TextT("{:p}", ice::usize(chunk.size_origin));
                 }
                 if (ImGui::TableNextColumn()) // File Offset
                 {
-                    ImGui::TextT("{:i}", ice::usize{chunk.offset});
+                    ImGui::TextT("{:i}", ice::usize(chunk.offset));
                 }
             }
 

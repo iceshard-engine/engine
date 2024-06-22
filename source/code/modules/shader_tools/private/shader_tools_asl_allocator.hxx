@@ -16,7 +16,7 @@ namespace ice
             : _backing{ alloc._backing }
         { }
 
-        inline auto allocate(arctic::u64 size, arctic::u64 align) noexcept -> void*
+        inline auto allocate(arctic::usize size, arctic::usize align) noexcept -> void* override
         {
             return _backing.allocate({ ice::usize{ size }, static_cast<ice::ualign>(align) }).memory;
         }

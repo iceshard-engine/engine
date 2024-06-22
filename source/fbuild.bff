@@ -43,6 +43,10 @@ Settings
     ]
 
     .PipelineConanProfile = 'Windows-MSVC'
+
+    // Adding custom conan profile generator variables
+    .ConanProfileVariables + 'MSVCCompilerVersion'
+    .MSVCCompilerVersion = '193'
 ]
 
 .Unity_Pipeline_Linux_x64 =
@@ -129,7 +133,7 @@ Settings
     Using( .Piepline_WebAsm )
 
     // Might need to be updated whenever latest EmScripten is downloaded
-    .EMSDKVersion = '3.1.54'
+    .EMSDKVersion = '3.1.59'
 
     .PipelineName = 'WebAsm'
     .PipelineAllowUnityBuilds = false

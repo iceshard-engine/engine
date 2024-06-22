@@ -78,6 +78,11 @@ namespace ice
         }
     }
 
+    void ASLShader::visit(arctic::SyntaxNode<> node) noexcept
+    {
+        ice::ASLShaderVisitors::visit(node);
+    }
+
     void ASLShader::visit(arctic::SyntaxNode<arctic::syntax::Struct> node) noexcept
     {
         IPT_ZONE_SCOPED;

@@ -624,7 +624,7 @@ namespace ice::render::vk
         VkPipelineShaderStageCreateInfo shader_stages[10];
         ice::u32 const stage_count = ice::count(info.shaders);
 
-        uint32_t stage_idx = 0, vertex_stage_index = ice::u32_max;
+        uint32_t stage_idx = 0;
         for (; stage_idx < stage_count; ++stage_idx)
         {
             VkPipelineShaderStageCreateInfo& shader_stage = shader_stages[stage_idx];
@@ -635,11 +635,6 @@ namespace ice::render::vk
             shader_stage.stage = native_enum_value(info.shaders[stage_idx].stage);
             shader_stage.module = native_handle(info.shaders[stage_idx].shader);
             shader_stage.pName = ice::string::begin(info.shaders[stage_idx].entry_point);
-
-            if (ice::has_any(info.shaders[stage_idx].stage, ShaderStageFlags::VertexStage))
-            {
-                vertex_stage_index = stage_idx;
-            }
         }
 
         VkDynamicState dynamic_states[2]; // max: VK_DYNAMIC_STATE_RANGE_SIZE
