@@ -91,7 +91,6 @@ namespace ice::gfx
         : _alloc{ alloc }
         , _engine{ create_info.engine }
         , _context{ ice::move(gfx_ctx) }
-        , _tasks_container{ _alloc }
         , _queue_transfer{ }
         , _queue_end{ }
         , _scheduler{ create_info.gfx_thread }
@@ -135,6 +134,11 @@ namespace ice::gfx
         _rendergraph = ice::move(rendergraph);
     }
 
+    void IceshardGfxRunner::update() noexcept
+    {
+
+    }
+
     auto IceshardGfxRunner::draw_frame(
         ice::EngineFrame const& frame,
         ice::Clock const& clock
@@ -142,7 +146,7 @@ namespace ice::gfx
     {
         co_await _scheduler;
 
-        IPT_ZONE_SCOPED;
+        //IPT_ZONE_SCOPED;
         IPT_FRAME_MARK_NAMED("Graphics");
 
         GfxFrameUpdate const gfx_update{
@@ -154,8 +158,12 @@ namespace ice::gfx
 
         ice::Shard shards[]{ ice::gfx::ShardID_GfxFrameUpdate | &gfx_update };
         _engine.worlds_updater().update(_gfx_tasks, { shards });
-        _gfx_tasks.execute_tasks();
-        _gfx_tasks.wait_tasks();
+
+        //TODO: Currently the container should be "dead" after it's await scheduled on
+        {
+            ice::Array<ice::Task<>> tasks = _gfx_tasks.extract_tasks();
+            co_await ice::await_all_on(tasks, _scheduler);
+        }
 
         ice::gfx::GfxFrameStages gpu_stages{
             .frame_transfer = { _queue_transfer },
@@ -164,7 +172,10 @@ namespace ice::gfx
 
         if (_rendergraph->prepare(gpu_stages, *_stages, _gfx_tasks))
         {
-            _gfx_tasks.execute_tasks_detached(_scheduler);
+            IPT_ZONE_SCOPED_NAMED("gfx_resume_prepare_tasks");
+            // The tasks here might take more than a frame to finish. We should track them somewhere else.
+            ice::Array<ice::Task<>> tasks = _gfx_tasks.extract_tasks();
+            ice::resume_tasks_on(tasks, _scheduler);
         }
 
         if (_queue_transfer.any() || _gfx_tasks.running_tasks() > 0)
@@ -181,8 +192,8 @@ namespace ice::gfx
             queue->request_command_buffers(render::CommandBufferType::Primary, { &transfer_buffer , 1 });
             _context->device().get_commands().begin(transfer_buffer);
 
-            // We only process one for this queue.
-            bool const has_work = _queue_transfer.process_all(&transfer_buffer) > 0;
+            // Resumes all queued awaitables on the scheduler with this thread as the final awaitable.
+            bool const has_work = co_await ice::await_queue_on(_queue_transfer, &transfer_buffer, _scheduler);
 
             // TODO: Log how many tasks are still around
             _context->device().get_commands().end(transfer_buffer);
@@ -198,8 +209,6 @@ namespace ice::gfx
             }
         }
 
-        _tasks_container.execute_tasks();
-
         // Execute all stages (currently done simply going over the render graph)
         _present_fence->reset();
 
@@ -208,10 +217,7 @@ namespace ice::gfx
             _present_fence->wait(10'000'000);
         }
 
-        while(_queue_end.any() || _tasks_container.running_tasks() > 0)
-        {
-            _queue_end.process_all();
-        }
+        co_await ice::await_queue_on(_queue_end, _scheduler);
         co_return;
     }
 
@@ -231,6 +237,7 @@ namespace ice::gfx
         ice::ShardContainer& out_shards
     ) noexcept
     {
+        IPT_ZONE_SCOPED;
         ice::gfx::GfxStateChange const params{
             .assets = _engine.assets(),
             .context = *_context,

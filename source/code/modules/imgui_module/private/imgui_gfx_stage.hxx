@@ -20,7 +20,8 @@ namespace ice::devui
         auto initialize(
             ice::gfx::GfxContext& gfx,
             ice::gfx::GfxFrameStages& stages,
-            ice::render::Renderpass renderpass
+            ice::render::Renderpass renderpass,
+            ice::u32 subpass
         ) noexcept -> ice::Task<> override;
 
         auto cleanup(

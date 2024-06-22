@@ -61,7 +61,8 @@ namespace ice::devui
     auto ImGuiGfxStage::initialize(
         ice::gfx::GfxContext& gfx,
         ice::gfx::GfxFrameStages& stages,
-        ice::render::Renderpass renderpass
+        ice::render::Renderpass renderpass,
+        ice::u32 subpass
     ) noexcept -> ice::Task<>
     {
         using namespace ice::gfx;
@@ -256,7 +257,7 @@ namespace ice::devui
             .vertex_bindings = bindings,
             .cull_mode = CullMode::Disabled,
             .front_face = FrontFace::CounterClockWise,
-            .subpass_index = 1,
+            .subpass_index = subpass,
             .depth_test = true
         };
 
