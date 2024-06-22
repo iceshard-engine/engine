@@ -325,7 +325,7 @@ auto TestGame::rendergraph(ice::gfx::GfxContext& context) noexcept -> ice::Uniqu
             {.name = "clear"_sid, .outputs = { &fb, 1 }},
         };
         GfxGraphStage const stages2[]{
-            {.name = "copy"_sid, .outputs = { &fb, 1 }}
+            {.name = "iceshard.devui"_sid, .outputs = { &fb, 1 }}
         };
         GfxGraphPass const pass1{ .name = "test1"_sid, .stages = stages1 };
         GfxGraphPass const pass2{ .name = "test2"_sid, .stages = stages2 };

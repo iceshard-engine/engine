@@ -118,6 +118,7 @@ namespace ice::gfx
         if (_rendergraph != nullptr)
         {
             ice::gfx::GfxFrameStages gpu_stages{
+                .scheduler = _scheduler,
                 .frame_transfer = { _queue_transfer },
                 .frame_end = { _queue_end }
             };
@@ -166,6 +167,7 @@ namespace ice::gfx
         }
 
         ice::gfx::GfxFrameStages gpu_stages{
+            .scheduler = _scheduler,
             .frame_transfer = { _queue_transfer },
             .frame_end = { _queue_end }
         };
@@ -260,6 +262,7 @@ namespace ice::gfx
             _present_fence->wait(1'000'000'000);
 
             ice::gfx::GfxFrameStages gpu_stages{
+                .scheduler = _scheduler,
                 .frame_transfer = { _queue_transfer },
                 .frame_end = { _queue_end }
             };
