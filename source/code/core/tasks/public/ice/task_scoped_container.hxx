@@ -28,6 +28,8 @@ namespace ice
         //! \brief Wait for all tasks to complete.
         void wait_tasks() noexcept override;
 
+        auto extract_tasks() noexcept -> ice::Array<ice::Task<>> override;
+
     private:
         ice::Allocator& _allocator;
         ice::Array<ice::Task<>> _tasks;

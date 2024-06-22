@@ -48,11 +48,13 @@ namespace ice
         ice::ucount total_count = 0;
         for (TaskGroup& group : _task_groups)
         {
-            total_count += ice::count(group.tasks);
+            ice::ucount const current_count = ice::count(group.tasks);
 
             // Only reset the barrier if we actual have tasks to execute.
-            if (total_count > 0)
+            if (current_count > 0)
             {
+                total_count += current_count;
+
                 ICE_ASSERT_CORE(ice::count(group.tasks) < ice::u8_max);
 
                 group.barrier->reset(ice::u8(ice::count(group.tasks)));
@@ -79,6 +81,11 @@ namespace ice
         {
             group.barrier->wait();
         }
+    }
+
+    auto IceshardEngineFrame::extract_tasks() noexcept -> ice::Array<ice::Task<>>
+    {
+        return  ice::Array<ice::Task<>>{ *_shards._data._allocator };
     }
 
     auto create_iceshard_frame(
