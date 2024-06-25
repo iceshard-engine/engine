@@ -19,6 +19,7 @@ namespace ice::gfx
 
     struct GfxFrameStages
     {
+        ice::TaskScheduler& scheduler;
         ice::TaskStage<ice::render::CommandBuffer> frame_transfer;
         ice::TaskStage<> frame_end;
     };

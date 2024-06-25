@@ -165,7 +165,7 @@ namespace ice::devui
     auto ImGuiTrait::gfx_start(ice::gfx::GfxStateChange const& params) noexcept -> ice::Task<>
     {
         _imgui_gfx_stage = ice::make_unique<ImGuiGfxStage>(_allocator, _allocator, params.assets);
-        params.stages.register_stage("copy"_sid, _imgui_gfx_stage.get());
+        params.stages.register_stage("iceshard.devui"_sid, _imgui_gfx_stage.get());
 
         ice::vec2u const size = params.context.swapchain().extent();
         co_await on_window_resized(ice::vec2i{ size });
@@ -217,6 +217,7 @@ namespace ice::devui
 
     void ImGuiTrait::build_internal_command_list(ice::Span<ImGuiGfxStage::DrawCommand> draw_cmds) noexcept
     {
+        IPT_ZONE_SCOPED;
         ImDrawData* draw_data = ImGui::GetDrawData();
         if (draw_data == nullptr)
         {
@@ -225,8 +226,6 @@ namespace ice::devui
 
         using ice::render::Image;
         using ice::render::ResourceSet;
-
-        IPT_ZONE_SCOPED_NAMED("DevUI - Gfx - Build command list.");
 
         ImVec2 clip_off = draw_data->DisplayPos;         // (0,0) unless using multi-viewports
         ImVec2 clip_scale = draw_data->FramebufferScale; // (1,1) unless using retina display which are often (2,2)

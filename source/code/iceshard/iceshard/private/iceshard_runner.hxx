@@ -36,6 +36,7 @@ namespace ice
         {
             ice::u64 const hash = ice::hash(name);
             bool const missing = ice::hashmap::has(_values, hash) == false;
+            ICE_ASSERT_CORE(missing);
             //if (missing)
             {
                 ice::hashmap::set(_values, ice::hash(name), value);

@@ -85,6 +85,8 @@ namespace ice
 
     auto await_queue_on(ice::TaskQueue& queue, void* result, ice::TaskScheduler& resumer) noexcept -> ice::Task<bool>;
 
+    auto await_filtered_queue_on(ice::TaskQueue& queue, ice::TaskScheduler& resumer, FnTaskQueueFilter filter, void* userdata = nullptr) noexcept -> ice::Task<bool>;
+
     bool schedule_queue_on(ice::TaskQueue& queue, ice::TaskScheduler& resumer) noexcept;
 
     bool schedule_queue_on(ice::TaskQueue& queue, void* result, ice::TaskScheduler& resumer) noexcept;

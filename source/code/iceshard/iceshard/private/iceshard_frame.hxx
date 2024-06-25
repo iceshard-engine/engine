@@ -38,6 +38,8 @@ namespace ice
         auto running_tasks() const noexcept -> ice::ucount override;
         void wait_tasks() noexcept override;
 
+        auto extract_tasks() noexcept -> ice::Array<ice::Task<>> override;
+
     private:
         ice::IceshardFrameData& _data;
         ice::ShardContainer _shards;

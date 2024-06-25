@@ -46,6 +46,8 @@ namespace ice::gfx
 
         void update_rendergraph(ice::UniquePtr<ice::gfx::GfxGraphRuntime> rendergraph) noexcept override;
 
+        void update() noexcept;
+
         auto draw_frame(
             ice::EngineFrame const& frame,
             ice::Clock const& clock
@@ -72,7 +74,6 @@ namespace ice::gfx
         ice::UniquePtr<ice::gfx::GfxContext> _context;
 
         ice::u8 _flow_id;
-        ice::ScopedTaskContainer _tasks_container;
         ice::TaskQueue _queue, _queue_transfer, _queue_end;
         ice::TaskScheduler& _scheduler;
         ice::render::RenderFence* _present_fence;

@@ -64,4 +64,9 @@ namespace ice
         _barrier.wait();
     }
 
+    auto ScopedTaskContainer::extract_tasks() noexcept -> ice::Array<ice::Task<>>
+    {
+        return ice::move(_tasks);
+    }
+
 } // namespace ice

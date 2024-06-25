@@ -46,7 +46,7 @@ Settings
 
     // Adding custom conan profile generator variables
     .ConanProfileVariables + 'MSVCCompilerVersion'
-    .MSVCCompilerVersion = '193'
+    .MSVCCompilerVersion = '194'
 ]
 
 .Unity_Pipeline_Linux_x64 =

@@ -39,4 +39,7 @@ namespace ice
         ice::TaskAwaitableResult result;
     };
 
+    // Callback aliases
+    using FnTaskQueueFilter = bool(*)(ice::TaskAwaitableParams params, void* userdata) noexcept;
+
 } // namespace ice

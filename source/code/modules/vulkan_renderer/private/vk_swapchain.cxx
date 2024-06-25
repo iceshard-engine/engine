@@ -122,10 +122,17 @@ namespace ice::render::vk
             _vk_aquire_fence,
             &_current_image
         );
-        ICE_ASSERT(
-            result == VkResult::VK_SUCCESS,
-            "Failed to aquire next image for rendering!"
-        );
+
+        // TODO: Can we do this differently?
+        if (result != VK_SUCCESS)
+        {
+            return ice::ucount_max;
+        }
+
+        //ICE_ASSERT(
+        //    result == VkResult::VK_SUCCESS,
+        //    "Failed to aquire next image for rendering!"
+        //);
 
         // #todo remove this fence here!
         do
