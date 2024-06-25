@@ -16,6 +16,20 @@
 namespace ice::gfx
 {
 
+    struct IceshardGfxGraphPassObjects
+    {
+        IceshardGfxGraphPassObjects(ice::Allocator& alloc, ice::StringID_Arg name) noexcept
+            : name{ name }
+            , resources{ alloc }
+            , stages{ alloc }
+        {
+        }
+
+        ice::StringID name;
+        ice::Array<ice::gfx::GfxResource> resources;
+        ice::Array<ice::gfx::GfxGraphStage> stages;
+    };
+
     static constexpr GfxResource Const_ResourceFrameBuffer{ 0x8000'0000 };
 
     class IceshardGfxGraph : public GfxGraph
@@ -26,13 +40,15 @@ namespace ice::gfx
 
         auto get_framebuffer() const noexcept -> GfxResource override;
         auto get_resource(ice::StringID_Arg name, GfxResourceType type) noexcept -> GfxResource override;
-        bool add_pass(GfxGraphPass const& ) noexcept override;
+        bool add_pass(GfxGraphPass const& pass) noexcept override;
 
         auto passes() const noexcept -> ice::Span<GfxGraphPass const> override;
 
     private:
-        ice::HashMap<GfxGraphPass> _passes;
+        ice::Allocator& _allocator;
+        ice::HashMap<IceshardGfxGraphPassObjects> _objects;
         ice::HashMap<GfxResource> _resources;
+        ice::Array<GfxGraphPass> _passes;
         ice::u32 _resources_ids[ice::u8(ice::gfx::GfxResourceType::DepthStencil) + 1];
     };
 

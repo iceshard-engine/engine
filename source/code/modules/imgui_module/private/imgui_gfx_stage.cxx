@@ -61,12 +61,14 @@ namespace ice::devui
     auto ImGuiGfxStage::initialize(
         ice::gfx::GfxContext& gfx,
         ice::gfx::GfxFrameStages& stages,
-        ice::render::Renderpass renderpass
+        ice::render::Renderpass renderpass,
+        ice::u32 subpass
     ) noexcept -> ice::Task<>
     {
         using namespace ice::gfx;
         using namespace ice::render;
 
+        auto scheduler = stages.scheduler;
         auto stage_transfer = stages.frame_transfer;
         auto stage_end = stages.frame_end;
 
@@ -92,6 +94,8 @@ namespace ice::devui
         ice::Result r_vert = co_await detail::load_imgui_shader(_assets, "shaders/debug/imgui-vert", _shaders[0]);
         ice::Result r_frag = co_await detail::load_imgui_shader(_assets, "shaders/debug/imgui-frag", _shaders[1]);
         ICE_ASSERT_CORE(r_vert && r_frag);
+
+        co_await scheduler;
 
         SamplerInfo sampler_info
         {
@@ -256,7 +260,7 @@ namespace ice::devui
             .vertex_bindings = bindings,
             .cull_mode = CullMode::Disabled,
             .front_face = FrontFace::CounterClockWise,
-            .subpass_index = 1,
+            .subpass_index = subpass,
             .depth_test = true
         };
 

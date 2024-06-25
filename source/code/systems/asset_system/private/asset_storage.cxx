@@ -11,65 +11,13 @@ namespace ice
     namespace detail
     {
 
-        struct ProcessAwaitingTasks
+        template<ice::AssetState State>
+        inline auto filter_states(ice::TaskAwaitableParams params, void*) noexcept
         {
-            ice::AssetState const current_state;
-            ice::TaskQueue& awaiting_queue;
-            std::atomic<ice::u8>& awaiting_count;
-
-            void process() noexcept
-            {
-                ice::TaskAwaitableBase* last_remaining = nullptr;
-                ice::AtomicLinkedQueue<ice::TaskAwaitableBase> remaining_tasks;
-
-                // Process all awaiting tasks (load the raw_awaiting, every time, as it might got decreased)
-                ice::u32 processed = 1; // We start with '1' which is "ourselfs"
-                while (processed < awaiting_count.load(std::memory_order_relaxed))
-                {
-                    // Get all awaiting tasks
-                    // TODO: maybe a pop here would be better?
-                    for (ice::TaskAwaitableBase* awaitable : awaiting_queue.consume())
-                    {
-                        ICE_ASSERT(awaitable->_params.modifier == TaskAwaitableModifier::CustomValue, "Unexpected modifier type!");
-                        ice::AssetState const awaiting_state = static_cast<AssetState>(awaitable->_params.u32_value);
-                        if (awaiting_state <= current_state)
-                        {
-                            awaitable->_coro.resume();
-                            processed += 1;
-                        }
-                        else
-                        {
-                            last_remaining = awaitable;
-
-                            // Pushing awaitiable onto remaining task does not change the 'next' pointer so we don't invalidate this range.
-                            ice::linked_queue::push(remaining_tasks, awaitable);
-                        }
-                    }
-                };
-
-                ICE_ASSERT(
-                    processed == awaiting_count.load(std::memory_order_relaxed),
-                    "Processed too many tasks?!"
-                );
-
-                // Reset the 'next' ptr as it might contain old values, this also means we need to push remaining tasks back to the asset entry queue.
-                // We are safe to do so here because another task loading a "next" asset representation will wait for all awaiting tasks to be pushed.
-                if (last_remaining != nullptr)
-                {
-                    last_remaining->next = nullptr;
-
-                    for (ice::TaskAwaitableBase* awaitable : ice::linked_queue::consume(remaining_tasks))
-                    {
-                        awaiting_queue.push_back(awaitable);
-                    }
-
-                    // We don't need to find any 'next' pointer here fortunately
-                }
-
-                ice::u32 const expected_awaiting_count = awaiting_count.exchange(0, std::memory_order_relaxed);
-                ICE_ASSERT(expected_awaiting_count == processed, "Got additional awaiting tasks!");
-            }
-        };
+            ICE_ASSERT(params.modifier == TaskAwaitableModifier::CustomValue, "Unexpected modifier type!");
+            ice::AssetState const awaiting_state = static_cast<AssetState>(params.u32_value);
+            return awaiting_state <= State;
+        }
 
         constexpr bool asset_state_covered(ice::AssetState current, ice::AssetState expected) noexcept
         {
@@ -208,7 +156,7 @@ namespace ice
             }
 
             // ... and wait for them to finish
-            ice::wait_for_all(tasks);
+            co_await ice::await_all(tasks);
 
             // Build the metadata
             ice::MutableMetadata meta{ alloc };
@@ -414,9 +362,7 @@ namespace ice
             // TODO: We keep the if once we fix the 'always success' assumption
             if (entry.current_state == AssetState::Runtime)
             {
-                // And the resource is already in baked format, set the result and call awaiting tasks
-                ice::detail::ProcessAwaitingTasks awaiting{ AssetState::Runtime, entry.queue, entry.runtime_awaiting };
-                awaiting.process();
+                co_await ice::await_filtered_queue_on(entry.queue, _info.task_scheduler, detail::filter_states<AssetState::Runtime>);
             }
         }
 
@@ -438,7 +384,6 @@ namespace ice
             // We request a baked resource first
             result = co_await request_asset_baked(entry, shelve);
             ICE_ASSERT(result.location != nullptr, "We failed to access baked data!");
-
 
             ice::Data metadata_data = ice::data_view(entry.metadata_baked);
             if (metadata_data.location == nullptr)
@@ -485,9 +430,7 @@ namespace ice
             // TODO: We keep the if once we fix the 'always success' assumption
             if (entry.current_state == AssetState::Loaded)
             {
-                // And the resource is already in baked format, set the result and call awaiting tasks
-                ice::detail::ProcessAwaitingTasks awaiting{ AssetState::Loaded, entry.queue, entry.load_awaiting };
-                awaiting.process();
+                co_await ice::await_filtered_queue_on(entry.queue, _info.task_scheduler, detail::filter_states<AssetState::Loaded>);
             }
         }
 
@@ -553,9 +496,7 @@ namespace ice
             // Process all awaiting tasks
             if (entry.current_state == AssetState::Baked)
             {
-                // And the resource is already in baked format, set the result and call awaiting tasks
-                ice::detail::ProcessAwaitingTasks awaiting{ AssetState::Baked, entry.queue, entry.bake_awaiting };
-                awaiting.process();
+                co_await ice::await_filtered_queue_on(entry.queue, _info.task_scheduler, detail::filter_states<AssetState::Baked>);
             }
         }
 
@@ -629,8 +570,7 @@ namespace ice
             }
 
             // TODO: Resource could be in 'Baked' so processing for 'Raw' should be avoided here.
-            ice::detail::ProcessAwaitingTasks awaiting{ AssetState::Raw, entry.queue, entry.raw_awaiting };
-            awaiting.process();
+            co_await ice::await_filtered_queue_on(entry.queue, _info.task_scheduler, detail::filter_states<AssetState::Raw>);
         }
 
         // We call await resume manually as it will again properly select the value we want

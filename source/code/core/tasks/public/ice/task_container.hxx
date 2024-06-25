@@ -2,6 +2,7 @@
 #include <ice/task.hxx>
 #include <ice/shard.hxx>
 #include <ice/span.hxx>
+#include <ice/container/array.hxx>
 
 namespace ice
 {
@@ -20,6 +21,8 @@ namespace ice
         virtual auto running_tasks() const noexcept -> ice::ucount = 0;
 
         virtual void wait_tasks() noexcept = 0;
+
+        virtual auto extract_tasks() noexcept -> ice::Array<ice::Task<>> = 0;
     };
 
 } // namespace ice

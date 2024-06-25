@@ -30,6 +30,8 @@ namespace ice
         inline auto operator co_await() & noexcept;
         inline auto operator co_await() && noexcept;
 
+        bool valid() const noexcept { return _coroutine && _coroutine.done() == false; }
+
     private:
         struct AwaitableBase
         {

@@ -20,7 +20,7 @@ namespace ice::detail
     {
         static auto pool() noexcept -> ice::String
         {
-            return _allocator_pool;
+            return ice::string::any(_allocator_pool) ? _allocator_pool : "Tasks";
         }
 
         static auto allocator() noexcept -> ice::Allocator&

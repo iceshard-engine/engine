@@ -127,7 +127,7 @@ namespace ice
 
         // We have this large signature to pass the coroutine handle and atomic counter to the promise type with the same ctor signature.
         auto detached_awaiting_task(
-            ice::Task<void> awaited_task,
+            ice::Task<void>& awaited_task,
             std::coroutine_handle<>,
             std::atomic_uint32_t&
         ) noexcept -> DetachedAwaitingTask
@@ -156,7 +156,7 @@ namespace ice
                     for (ice::Task<void>& task : tasks)
                     {
                         // Execute all tasks
-                        detail::detached_awaiting_task(ice::move(task), coro, running);
+                        detail::detached_awaiting_task(task, coro, running);
                     }
 
                     // We now return from the coroutine if the tasks finished synchronously.
@@ -302,6 +302,52 @@ namespace ice
 
         // Return information if anything was in the queue
         co_return added;
+    }
+
+    auto await_filtered_queue_on(ice::TaskQueue& queue, ice::TaskScheduler& resumer, FnTaskQueueFilter filter, void* userdata) noexcept -> ice::Task<bool>
+    {
+        // We make use of the fact that the awaitable has public access to the queue.
+        // This is currently a bit of cheating, but it's not directly accessible to anyone who doesn't know what's happening here ;p
+        auto awaitable = resumer.schedule();
+
+        ice::TaskAwaitableBase* last_remaining = nullptr;
+        ice::AtomicLinkedQueue<ice::TaskAwaitableBase> remaining_tasks;
+
+        // Get all awaiting tasks
+        bool result = false;
+        for (ice::TaskAwaitableBase* task_awaitable : queue.consume())
+        {
+            ICE_ASSERT(task_awaitable->_params.modifier == TaskAwaitableModifier::CustomValue, "Unexpected modifier type!");
+
+            if (filter(task_awaitable->_params, userdata))
+            {
+                result = true;
+
+                // First we push all awaitables from the queue onto the resumers queue. The range is copied, so we can check later if actually any tasks where queued.
+                awaitable._queue.push_back(task_awaitable);
+            }
+            else
+            {
+                last_remaining = task_awaitable;
+
+                // Pushing awaitiable onto remaining task does not change the 'next' pointer so we don't invalidate this range.
+                ice::linked_queue::push(remaining_tasks, task_awaitable);
+            }
+        }
+
+        // Reset the 'next' ptr as it might contain old values, this also means we need to push remaining tasks back to the asset entry queue.
+        // We are safe to do so here because another task loading a "next" asset representation will wait for all awaiting tasks to be pushed.
+        if (last_remaining != nullptr)
+        {
+            last_remaining->next = nullptr;
+
+            // We don't need to find any 'next' pointer here fortunately
+            queue.push_back(ice::linked_queue::consume(remaining_tasks));
+        }
+
+        co_await awaitable;
+
+        co_return result;
     }
 
     bool schedule_queue_on(ice::TaskQueue& queue, ice::TaskScheduler& resumer) noexcept

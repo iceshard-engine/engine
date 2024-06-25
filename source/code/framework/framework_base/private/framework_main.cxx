@@ -111,7 +111,6 @@ struct ice::app::State
     ice::UniquePtr<ice::ModuleRegister> modules;
 
     ice::UniquePtr<ice::AssetStorage> assets;
-    ice::UniquePtr<ice::EngineStateTracker> states;
     ice::UniquePtr<ice::Engine> engine;
     ice::UniquePtr<ice::render::RenderDriver> renderer;
     ice::render::RenderSurface* render_surface; // TODO: Make into a UniquePtr
@@ -157,12 +156,23 @@ struct ice::app::State
 
         ResourceTrackerCreateInfo const resource_info{
             .predicted_resource_count = 10000,
-            .io_dedicated_threads = 1,
+            .io_dedicated_threads = ice::build::is_webapp ? 0 : 1,
             .flags_io_complete = ice::TaskFlags{ },
             .flags_io_wait = ice::TaskFlags{ }
         };
         resources = ice::create_resource_tracker(resources_alloc, platform.threads->threadpool(), resource_info);
     }
+};
+
+struct Frame
+{
+    Frame() noexcept
+        : next{ nullptr }
+        , wait{ true }
+    { }
+
+    Frame* next;
+    ice::ManualResetEvent wait;
 };
 
 struct ice::app::Runtime
@@ -192,10 +202,16 @@ struct ice::app::Runtime
 
     ice::ManualResetEvent logic_wait;
     ice::ManualResetEvent gfx_wait;
+    ice::Task<void> next_frame_task;
+
+    Frame frames[2];
+    Frame* previous;
+    ice::TaskQueue render_stage;
 
     bool is_starting = true;
     bool is_exiting = false;
     bool render_enabled = true;
+    bool resize_handled = true;
 
     Runtime(ice::Allocator& alloc) noexcept
         : alloc{ alloc }
@@ -209,7 +225,11 @@ struct ice::app::Runtime
         , input_tracker{ }
         , input_events{ runtime_alloc }
         , window_surface{ }
+        , frames{}
+        , previous{ frames + 1 }
     {
+        frames[0].next = &frames[1];
+        frames[1].next = &frames[0];
     }
 };
 
@@ -393,8 +413,7 @@ auto ice_setup(
     ice::HeapString<> engine_module = ice::resolve_dynlib_path(*state.resources, state.alloc, "iceshard");
     state.modules->load_module(state.modules_alloc, engine_module);
 
-    state.states = ice::create_state_tracker(state.alloc);
-    ice::EngineCreateInfo engine_create_info{ .states = ice::move(state.states) };
+    ice::EngineCreateInfo engine_create_info{ .states = ice::create_state_tracker(state.alloc) };
     {
         ice::UniquePtr<ice::AssetTypeArchive> asset_types = ice::create_asset_type_archive(state.engine_alloc);
         ice::load_asset_type_definitions(state.engine_alloc, *state.modules, *asset_types);
@@ -426,6 +445,14 @@ auto ice_setup(
 
     return ice::app::S_ApplicationSetupPending;
 }
+
+auto ice_game_frame(
+    ice::app::Runtime& runtime,
+    ice::app::State const& state,
+    ice::EngineRunner& logic,
+    ice::gfx::GfxRunner& gfx,
+    ice::TaskStage<bool> render_stage
+) noexcept -> ice::Task<void>;
 
 auto ice_resume(
     ice::app::Config const& config,
@@ -487,6 +514,8 @@ auto ice_resume(
     state.game->on_resume(*state.engine);
     runtime.gfx_runner->on_resume();
 
+    runtime.next_frame_task = ice_game_frame(runtime, state, *runtime.runner, *runtime.gfx_runner, {runtime.render_stage});
+
     runtime.is_starting = false;
     return ice::app::S_ApplicationUpdate;
 }
@@ -499,114 +528,156 @@ void ice_process_input_events(ice::Span<ice::input::InputEvent const> events, ic
     }
 }
 
+auto ice_game_frame(
+    ice::app::Runtime& runtime,
+    ice::app::State const& state,
+    ice::EngineRunner& logic,
+    ice::gfx::GfxRunner& gfx,
+    ice::TaskStage<bool> render_stage
+) noexcept -> ice::Task<void>
+{
+    IPT_FRAME_MARK;
+
+    state.platform.core->refresh_events();
+    ice::ShardContainer const& system_events = state.platform.core->system_events();
+
+    // Update the system clock
+    ice::clock::update(runtime.clock);
+
+    ice::UniquePtr<ice::EngineFrame> new_frame = co_await logic.aquire_frame();
+    ICE_ASSERT(new_frame != nullptr, "Failed to aquire next frame!");
+
+    // Push system events
+    ice::shards::push_back(new_frame->shards(), system_events._data);
+
+    // Update inputs
+    ice::array::clear(runtime.input_events);
+    runtime.input_tracker->process_device_events(state.platform.core->input_events(), runtime.input_events);
+    ice_process_input_events(runtime.input_events, new_frame->shards());
+
+    // Push pending world events
+    state.game->on_update(*state.engine, *new_frame);
+    state.engine->worlds().query_pending_events(new_frame->shards());
+
+    // Push state events
+    state.engine->states().update_states(runtime.frame->shards(), new_frame->shards());
+
+    // Await logic update
+    co_await runtime.runner->update_frame(*new_frame, *runtime.frame);
+
+    // Await render stage
+    bool const can_render = co_await render_stage;
+
+    // Replace the old frame object since the previous frame finished rendering
+    logic.release_frame(ice::exchange(runtime.frame, ice::move(new_frame)));
+
+    if (can_render && state.debug.devui != nullptr)
+    {
+        IPT_ZONE_SCOPED_NAMED("Runner Frame - Build Developer UI");
+        state.debug.devui->update_widgets();
+    }
+
+    ICE_ASSERT_CORE(runtime.next_frame_task.valid() == false);
+
+    // Create the new task object which will be picked up by the ice_update function
+    runtime.next_frame_task = ice_game_frame(runtime, state, logic, gfx, render_stage);
+
+    // Sometimes we might not want to render anything
+    if (can_render)
+    {
+        // Wait for drawing to finish
+        co_await runtime.gfx_runner->draw_frame(*runtime.frame, runtime.clock);
+    }
+    co_return;
+}
+
 auto ice_update(
     ice::app::Config const& config,
     ice::app::State const& state,
     ice::app::Runtime& runtime
 ) noexcept -> ice::Result
 {
-    IPT_FRAME_MARK;
-    IPT_ZONE_SCOPED;
+    // Process any awaiting main thread tasks.
+    runtime.main_queue.process_all();
 
-    state.platform.core->refresh_events();
+    // If we processed anything but where resized then we skipped draw stage and can resize the swapchain.
+    if (runtime.render_enabled && runtime.resize_handled == false)
+    {
+        // Wait for the previous rendering frame to finish
+        if (runtime.previous->wait.is_set() == false)
+        {
+            return ice::app::S_ApplicationUpdate;
+        }
+
+        ICE_LOG(ice::LogSeverity::Info, ice::LogTag::Game, "Recreate Swapchain Task");
+        runtime.resize_handled = true;
+
+        //runtime.gfx_wait.wait();
+        runtime.gfx_runner->context().recreate_swapchain();
+        runtime.gfx_runner->update_rendergraph(state.game->rendergraph(runtime.gfx_runner->context()));
+    }
+
+    // Since the frame updates the values we are safe to access them any time. They won't change until a new frame is awaited, and awaitng frames is happening on the same thread.
     ice::ShardContainer const& system_events = state.platform.core->system_events();
 
-    bool const was_resized = ice::shards::contains(system_events, ice::platform::ShardID_WindowResized);
-    bool const was_minimized = ice::shards::contains(system_events, ice::platform::ShardID_WindowMinimized);
-
     // Query platform events into the frame and input device handler.
-    if (ice::shards::contains(system_events, ice::platform::Shard_AppQuit))
+    if (runtime.is_exiting || ice::shards::contains(system_events, ice::platform::Shard_AppQuit))
     {
-        if (runtime.render_enabled)
-        {
-            runtime.gfx_wait.wait();
-        }
         runtime.is_exiting = true;
+
+        bool render_enabled_frame = false;
+        runtime.render_stage.process_one(&render_enabled_frame);
+
+        // Awaiting both frames to finish.
+        if (runtime.previous->wait.is_set() == false || runtime.previous->next->wait.is_set() == false)
+        {
+            return ice::app::S_ApplicationUpdate;
+        }
+
+        // Exit the app once frames finished properly
         return ice::app::S_ApplicationExit;
     }
 
-    ice::vec2i window_size;
-    if (runtime.render_enabled)
-    {
-        if (ice::shards::inspect_last(system_events, ice::platform::ShardID_WindowResized, window_size))
-        {
-            runtime.gfx_wait.wait();
-            runtime.gfx_runner->context().recreate_swapchain();
-            runtime.gfx_runner->update_rendergraph(state.game->rendergraph(runtime.gfx_runner->context()));
-        }
-    }
+    bool const was_resized = ice::shards::contains(system_events, ice::platform::ShardID_WindowResized);
+    bool const was_minimized = ice::shards::contains(system_events, ice::platform::ShardID_WindowMinimized);
+    bool const was_maximized = ice::shards::contains(system_events, ice::platform::ShardID_WindowMaximized);
+    ice::vec2i window_size; // unused?
+    bool const was_restored = ice::shards::inspect_last(system_events, ice::platform::ShardID_WindowRestored, window_size);
 
-    if (ice::shards::inspect_last(system_events, ice::platform::ShardID_WindowRestored, window_size))
+    // We should never run into a situation where minimizing and restoring happen ad the same time.
+    // TODO: Might want to turn this into a state machine.
+    ICE_ASSERT_CORE(was_minimized == false || was_restored == false);
+
+    if (was_restored)
     {
         runtime.render_enabled = true;
     }
-
-    // Update the system clock
-    ice::clock::update(runtime.clock);
-
-    // Create Frame (blocks until previous frame is released?)
-    ice::UniquePtr<ice::EngineFrame> new_frame = ice::wait_for(runtime.runner->aquire_frame());
-    ICE_ASSERT(new_frame != nullptr, "Failed to aquire next frame!");
-
-    ice::shards::push_back(new_frame->shards(), system_events._data);
-
-    ice::array::clear(runtime.input_events);
-    runtime.input_tracker->process_device_events(state.platform.core->input_events(), runtime.input_events);
-    ice_process_input_events(runtime.input_events, new_frame->shards());
-
-    // Send additional events
-    state.game->on_update(*state.engine, *new_frame);
-    state.engine->worlds().query_pending_events(new_frame->shards());
-
-    state.engine->states().update_states(runtime.frame->shards(), new_frame->shards());
-
-    // Run the frame update
-    // TODO: Do it on a worker thread?
-    // This will block (two frames alive)
-    ice::manual_wait_for(
-        runtime.runner->update_frame(*new_frame, *runtime.frame),
-        runtime.logic_wait
-    );
-
-    if (runtime.render_enabled == false)
-    {
-        using namespace std;
-        std::this_thread::sleep_for(1ms);
-    }
-
-    while(runtime.logic_wait.is_set() == false)
-    {
-        runtime.main_queue.process_all();
-    }
-
-    runtime.logic_wait.wait();
-    runtime.logic_wait.reset();
-
-    runtime.gfx_wait.wait();
-
-    // Store this frame as the next frame for drawing
-    runtime.runner->release_frame(
-        ice::exchange(runtime.frame, ice::move(new_frame))
-    );
-
-    if (state.debug.devui != nullptr)
-    {
-        IPT_ZONE_SCOPED_NAMED("Runner Frame - Build Developer UI");
-        state.debug.devui->update_widgets();
-    }
-
     if (was_minimized)
     {
         runtime.render_enabled = false;
     }
-    else if (runtime.render_enabled && !was_resized)
+    if (was_resized || was_maximized || was_minimized)
     {
-        // Create GfxFrame (blocks until previous frame is released?)
-        runtime.gfx_wait.reset();
-        ice::manual_wait_for(
-            runtime.gfx_runner->draw_frame(*runtime.frame, runtime.clock),
-            runtime.gfx_wait
-        );
+        runtime.resize_handled = false;
+    }
+
+    // Possibly enter the render stage for one of the frames
+    bool render_enabled_frame = runtime.render_enabled && runtime.resize_handled && was_restored == false;
+
+    // If nothing is running, the we start the next frame task
+    if (runtime.previous->wait.is_set())
+    {
+        runtime.render_stage.process_one(&render_enabled_frame);
+
+        if (runtime.next_frame_task.valid())
+        {
+            // system_events will have changed after a frame was awaited!
+            runtime.previous->wait.reset();
+            ice::manual_wait_for(ice::move(runtime.next_frame_task), runtime.previous->wait);
+
+            // Move to the next frame
+            runtime.previous = runtime.previous->next;
+        }
     }
 
     return ice::app::S_ApplicationUpdate;

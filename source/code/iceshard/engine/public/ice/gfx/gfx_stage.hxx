@@ -16,7 +16,8 @@ namespace ice::gfx
         virtual auto initialize(
             ice::gfx::GfxContext& gfx,
             ice::gfx::GfxFrameStages& stages,
-            ice::render::Renderpass renderpass
+            ice::render::Renderpass renderpass,
+            ice::u32 subpass
         ) noexcept -> ice::Task<> { co_return; }
 
         virtual auto cleanup(
