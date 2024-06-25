@@ -15,6 +15,7 @@
 #include <ice/world/world_trait_module.hxx>
 #include <ice/devui_widget.hxx>
 #include <ice/devui_context.hxx>
+#include <ice/devui_imgui.hxx>
 
 #include <ice/gfx/gfx_stage.hxx>
 #include <ice/gfx/gfx_runner.hxx>
@@ -36,9 +37,6 @@
 #include <ice/uri.hxx>
 #include <ice/log.hxx>
 #include <thread>
-
-#include <imgui/imgui.h>
-#undef assert
 
 static constexpr LogTagDefinition LogGame = ice::create_log_tag(LogTag::Game, "TestGame");
 
@@ -114,12 +112,50 @@ struct WorldActivationTrait : ice::Trait, ice::DevUIWidget
     }
 };
 
+struct C1
+{
+    static constexpr ice::StringID Identifier = "iceshard.test.ecs.C1"_sid;
+    int x;
+};
+
+struct C2
+{
+    static constexpr ice::StringID Identifier = "iceshard.test.ecs.C2"_sid;
+    float y;
+};
+
 struct TestTrait : public ice::Trait
 {
+    TestTrait(ice::Allocator& alloc) noexcept
+        : _alloc{ alloc }
+        , _query{ _alloc }
+        , _querye{ _alloc }
+    { }
+
+    ice::Allocator& _alloc;
     ice::Timer timer;
+
+    using TestArchetype = ice::ecs::ArchetypeDefinition<C1, C2>;
+    static constexpr ice::ecs::ArchetypeDefinition Archetype_TestArchetype = TestArchetype{};
+
+    using TestQuery = ice::ecs::QueryDefinition<C1&, C2&>;
+    using TestQueryE = ice::ecs::QueryDefinition<ice::ecs::EntityHandle, C1&, C2&>;
+    ice::ecs::Query<TestQuery> _query;
+    ice::ecs::Query<TestQueryE> _querye;
+
+    ice::ecs::EntityOperations* _ops;
+    ice::ecs::Entity _my_entity[10000];
 
     auto activate(ice::WorldStateParams const& update) noexcept -> ice::Task<> override
     {
+
+        update.engine.entities().create_many(_my_entity);
+        _ops = ice::addressof(update.world.entity_operations());
+
+        ice::ecs::queue_set_archetype(*_ops, _my_entity, Archetype_TestArchetype);
+        update.world.entity_queries().initialize_query(_query);
+        update.world.entity_queries().initialize_query(_querye);
+
         ICE_LOG(LogSeverity::Retail, LogTag::Game, "Test Activated!");
         timer = ice::timer::create_timer(update.clock, 0.1f);
         co_return;
@@ -127,6 +163,13 @@ struct TestTrait : public ice::Trait
 
     auto deactivate(ice::WorldStateParams const& update) noexcept -> ice::Task<> override
     {
+        update.engine.entities().destroy_many(_my_entity);
+
+        ice::ecs::query::for_each_block(_querye, [&](ice::ucount count, ice::ecs::EntityHandle const* entities, C1*, C2*) noexcept
+        {
+            ice::ecs::queue_batch_remove_entities(*_ops, { entities, count });
+        });
+
         ICE_LOG(LogSeverity::Retail, LogTag::Game, "Test Deactivated!");
         co_return;
     }
@@ -139,11 +182,39 @@ struct TestTrait : public ice::Trait
 
     auto logic(ice::EngineFrameUpdate const& update) noexcept -> ice::Task<>
     {
+        ice::Array<ice::Task<>> tasks{ update.frame.allocator() };
+        ice::array::reserve(tasks, ice::ecs::query::block_count(_query));
+
+        ice::ecs::query::for_each_block(_query, [&](ice::ucount count, C1* c1p, C2* c2p) noexcept
+        {
+            ice::array::push_back(tasks, [](ice::ucount count, C1* c1p, C2* c2p) noexcept -> ice::Task<>
+            {
+                IPT_ZONE_SCOPED_NAMED("block for-each");
+                for (ice::u32 idx = 0; idx < count; ++idx)
+                {
+                    IPT_ZONE_SCOPED;
+                    c1p[idx].x += 1;
+                    c2p[idx].y += 1.0f / ((ice::f32) c1p[idx].x);
+                }
+                co_return;
+            }(count, c1p, c2p));
+        });
+
+        ice::ecs::query::for_each_entity(_query, [](C1& c1, C2& c2) noexcept
+        {
+            IPT_ZONE_SCOPED;
+            c1.x += 1;
+            c2.y += 1.0f / ((ice::f32) c1.x);
+        });
+
         if (ice::timer::update(timer))
         {
             ICE_LOG(LogSeverity::Info, LogTag::Game, "TestTrait::logic");
         }
 
+        ICE_LOG(LogSeverity::Debug, LogTag::Game, "{}", std::hash<std::thread::id>{}(std::this_thread::get_id()));
+        co_await ice::await_all_on_scheduled(tasks, update.thread.main, update.thread.tasks);
+        ICE_LOG(LogSeverity::Debug, LogTag::Game, "{}", std::hash<std::thread::id>{}(std::this_thread::get_id()));
         co_return;
     }
 
@@ -162,7 +233,7 @@ auto act_factory(ice::Allocator& alloc, void*) noexcept -> UniquePtr<ice::Trait>
 }
 auto test_factory(ice::Allocator& alloc, void*) noexcept -> UniquePtr<ice::Trait>
 {
-    return ice::make_unique<TestTrait>(alloc);
+    return ice::make_unique<TestTrait>(alloc, alloc);
 }
 
 bool test_reg_traits(ice::TraitArchive& arch) noexcept

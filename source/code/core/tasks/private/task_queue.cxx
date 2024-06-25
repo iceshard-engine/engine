@@ -23,6 +23,34 @@ namespace ice
         return result;
     }
 
+    bool TaskQueue::contains(ice::TaskAwaitableBase* awaitable) const noexcept
+    {
+        auto* volatile it = _awaitables._head.load(std::memory_order_relaxed);
+        if (it != nullptr)
+        {
+            auto* const end = _awaitables._tail.load(std::memory_order_relaxed);
+
+            // Loop when multiple awaitables where pushed after setting the test.
+            while(it != end && it != awaitable)
+            {
+                // We wait for next pointer to be updated
+                while(it->next == nullptr)
+                {
+                    std::atomic_thread_fence(std::memory_order_acquire);
+                }
+
+                it = it->next;
+            }
+
+            // Found our awaitable don't suspend
+            if (it == awaitable)
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+
     auto TaskQueue::consume() noexcept -> ice::LinkedQueueRange<ice::TaskAwaitableBase>
     {
         return ice::linked_queue::consume(_awaitables);

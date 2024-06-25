@@ -3,6 +3,7 @@
 
 #pragma once
 #include <ice/stringid.hxx>
+#include <ice/ecs/ecs_types.hxx>
 #include <ice/ecs/ecs_component.hxx>
 #include <ice/ecs/ecs_detail.hxx>
 #include <ice/container_types.hxx>

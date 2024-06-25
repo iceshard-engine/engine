@@ -17,4 +17,9 @@ namespace ice::ecs
     class EntityStorage;
     class EntityOperations;
 
+    class QueryProvider;
+
+    template<typename Definition>
+    struct Query;
+
 } // namespace ice::ecs

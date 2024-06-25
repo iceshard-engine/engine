@@ -55,30 +55,7 @@ namespace ice
                     //  if it was set, we might have already missed the queue consume on the 'reached' call.
                     if (_reached_ref.test(std::memory_order_acquire))
                     {
-                        // Resume if the queue contains our awaitable.
-                        auto* volatile it = _queue._awaitables._head.load(std::memory_order_relaxed);
-                        if (it != nullptr)
-                        {
-                            auto* const end = _queue._awaitables._tail.load(std::memory_order_relaxed);
-
-                            // Loop when multiple awaitables where pushed after setting the test.
-                            while(it != end && it == &_awaitable)
-                            {
-                                // We wait for next pointer to be updated
-                                while(it->next == nullptr)
-                                {
-                                    std::atomic_thread_fence(std::memory_order_acquire);
-                                }
-
-                                it = it->next;
-                            }
-
-                            // Found our awaitable don't suspend
-                            if (it == &_awaitable)
-                            {
-                                return false;
-                            }
-                        }
+                        return _queue.contains(ice::addressof(_awaitable));
                     }
                     return true;
                 }

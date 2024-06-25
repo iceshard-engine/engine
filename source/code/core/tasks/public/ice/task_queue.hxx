@@ -20,6 +20,8 @@ namespace ice
         bool push_back(ice::TaskAwaitableBase* awaitable) noexcept;
         bool push_back(ice::LinkedQueueRange<ice::TaskAwaitableBase> awaitable_range) noexcept;
 
+        bool contains(ice::TaskAwaitableBase* awaitable) const noexcept;
+
         [[nodiscard]]
         auto consume() noexcept -> ice::LinkedQueueRange<ice::TaskAwaitableBase>;
 

@@ -2,6 +2,7 @@
 /// SPDX-License-Identifier: MIT
 
 #pragma once
+#include <ice/ecs/ecs_types.hxx>
 #include <ice/ecs/ecs_archetype.hxx>
 #include <ice/ecs/ecs_data_block.hxx>
 #include <ice/ecs/ecs_query_details.hxx>
@@ -12,9 +13,6 @@ namespace ice::ecs
 {
 
     using ice::ecs::detail::QueryType;
-
-    template<typename Definition>
-    struct Query;
 
     namespace query
     {
@@ -63,6 +61,18 @@ namespace ice::ecs
             );
         }
 
+        template<typename Fn>
+        static void invoke_for_each_entity_fn(void* fnp, ice::u32 count, void** component_pointer_array) noexcept
+        {
+            return invoke_for_each_entity((Fn)fnp, count, component_pointer_array);
+        }
+
+        template<typename Fn>
+        static void invoke_for_each_entity_op(void* obj, ice::u32 count, void** component_pointer_array) noexcept
+        {
+            return invoke_for_each_entity(*(Fn*)obj, count, component_pointer_array);
+        }
+
         ice::u32 const component_count = sizeof...(QueryComponents);
 
         ice::StaticArray<ice::ecs::detail::QueryTypeInfo, sizeof...(QueryComponents)> const requirements = ice::ecs::detail::QueryRequirements<QueryComponents...>::Constant_Requirements;
@@ -74,12 +84,64 @@ namespace ice::ecs
     {
         static constexpr Definition Constant_Definition{ };
 
-        ice::Array<ice::ecs::ArchetypeInstanceInfo const*> const archetype_instances;
-        ice::Array<ice::ecs::DataBlock const*> const archetype_data_blocks;
+        Query(ice::Allocator& alloc) noexcept;
 
-        ice::Array<ice::StaticArray<ice::u32, Constant_Definition.component_count>> const archetype_argument_idx_map;
+        Query(Query&& other) noexcept;
+        auto operator=(Query&& other) noexcept -> Query&;
+        Query(Query const& other) noexcept = delete;
+        auto operator=(Query const& other) noexcept -> Query& = delete;
+
+        using ArrayArchetypeInstances = ice::Array<ice::ecs::ArchetypeInstanceInfo const*>;
+        using ArrayDataBlock = ice::Array<ice::ecs::DataBlock const*>;
+        using ArrayArgumentIndexMap = ice::Array<ice::StaticArray<ice::u32, Constant_Definition.component_count>>;
+
+        ice::Array<ice::ecs::ArchetypeInstanceInfo const*> archetype_instances;
+        ice::Array<ice::ecs::DataBlock const*> archetype_data_blocks;
+        ice::Array<ice::u32> archetype_argument_idx_map;
     };
 
+    struct QueryView
+    {
+        template<typename Definition>
+        QueryView(ice::ecs::Query<Definition> const& query) noexcept
+            : archetype_instances{ query.archetype_instances }
+            , archetype_data_blocks{ query.archetype_data_blocks }
+            , archetype_argument_idx_map{ query.archetype_argument_idx_map }
+        {
+        }
+
+        ice::Span<ice::ecs::ArchetypeInstanceInfo const* const> archetype_instances;
+        ice::Span<ice::ecs::DataBlock const* const> archetype_data_blocks;
+        ice::Span<ice::u32 const> archetype_argument_idx_map;
+    };
+
+    template<typename Definition>
+    Query<Definition>::Query(ice::Allocator& alloc) noexcept
+        : archetype_instances{ alloc }
+        , archetype_data_blocks{ alloc }
+        , archetype_argument_idx_map{ alloc }
+    {
+    }
+
+    template<typename Definition>
+    Query<Definition>::Query(Query&& other) noexcept
+        : archetype_instances{ ice::move(other.archetype_instances) }
+        , archetype_data_blocks{ ice::move(other.archetype_data_blocks) }
+        , archetype_argument_idx_map{ ice::move(other.archetype_argument_idx_map) }
+    {
+    }
+
+    template<typename Definition>
+    auto Query<Definition>::operator=(Query&& other) noexcept -> Query&
+    {
+        if (this == ice::addressof(other))
+        {
+            archetype_instances = ice::move(other.archetype_instances);
+            archetype_data_blocks = ice::move(other.archetype_data_blocks);
+            archetype_argument_idx_map = ice::move(other.archetype_argument_idx_map);
+        }
+        return *this;
+    }
 
     namespace query
     {
@@ -129,7 +191,7 @@ namespace ice::ecs
             {
                 ice::ecs::ArchetypeInstanceInfo const* arch = query.archetype_instances[arch_idx];
                 ice::ecs::DataBlock const* block = query.archetype_data_blocks[arch_idx];
-                ice::StaticArray<ice::u32, query_definition.component_count> const& argument_idx_map = query.archetype_argument_idx_map[arch_idx];
+                ice::Span<ice::u32 const> argument_idx_map = ice::array::slice(query.archetype_argument_idx_map, arch_idx * query_definition.component_count, query_definition.component_count);
 
                 while (block != nullptr)
                 {
@@ -174,7 +236,7 @@ namespace ice::ecs
             {
                 ice::ecs::ArchetypeInstanceInfo const* arch = query.archetype_instances[arch_idx];
                 ice::ecs::DataBlock const* block = query.archetype_data_blocks[arch_idx];
-                ice::StaticArray<ice::u32, query_definition.component_count> const& argument_idx_map = query.archetype_argument_idx_map[arch_idx];
+                ice::Span<ice::u32 const> argument_idx_map = ice::array::slice(query.archetype_argument_idx_map, arch_idx * query_definition.component_count, query_definition.component_count);
 
                 while (block != nullptr)
                 {
@@ -195,11 +257,28 @@ namespace ice::ecs
                         }
                     }
 
-                    Definition::invoke_for_each_entity(
-                        ice::forward<Fn>(fn),
-                        block->block_entity_count,
-                        helper_pointer_array
-                    );
+                    if constexpr (std::is_object_v<Fn>)
+                    {
+                        Definition::invoke_for_each_entity_op<Fn>(
+                            (void*)&fn,
+                            block->block_entity_count,
+                            helper_pointer_array
+                        );
+                    }
+                    else
+                    {
+                        Definition::invoke_for_each_entity_fn<Fn>(
+                            (void*)fn,
+                            block->block_entity_count,
+                            helper_pointer_array
+                        );
+                    }
+
+                    // Definition::invoke_for_each_entity(
+                    //     ice::forward<Fn>(fn),
+                    //     block->block_entity_count,
+                    //     helper_pointer_array
+                    // );
 
                     block = block->next;
                 }
