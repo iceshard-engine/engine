@@ -42,7 +42,7 @@ namespace ice
         if (result > 0)
         {
             _barrier.reset(static_cast<ice::u8>(result));
-            ice::manual_wait_for_all(_tasks, _barrier);
+            ice::v2::manual_wait_for(_barrier, _tasks);
             ice::array::clear(_tasks);
         }
         return result;

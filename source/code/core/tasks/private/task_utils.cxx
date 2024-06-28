@@ -7,6 +7,8 @@
 #include <ice/sync_manual_events.hxx>
 #include <ice/mem_allocator_host.hxx>
 #include <ice/container/array.hxx>
+#include "internal_tasks/task_detached.hxx"
+#include "internal_tasks/task_tracked.hxx"
 
 namespace ice
 {
@@ -14,34 +16,18 @@ namespace ice
     namespace detail
     {
 
-        struct DetachedTask
-        {
-            struct promise_type
-            {
-                auto initial_suspend() const noexcept { return std::suspend_never{ }; }
-                auto final_suspend() const noexcept { return std::suspend_never{ }; }
-                auto return_void() noexcept { }
-
-                auto get_return_object() noexcept { return DetachedTask{ }; }
-                void unhandled_exception() noexcept
-                {
-                    ICE_ASSERT(false, "Unexpected coroutine exception!");
-                }
-            };
-        };
-
         template<typename T>
         concept HasSetMethod = requires(T t) {
             { t.set() } -> std::convertible_to<void>;
         };
 
-        auto detached_task(ice::Task<void> awaited_task, HasSetMethod auto& manual_reset_sem) noexcept -> DetachedTask
+        auto detached_task(ice::Task<void> awaited_task, HasSetMethod auto& manual_reset_sem) noexcept -> ice::DetachedTask
         {
             co_await awaited_task;
             manual_reset_sem.set();
         }
 
-        auto detached_task_schedule(ice::Task<void> scheduled_task, ice::TaskScheduler& scheduler) noexcept -> DetachedTask
+        auto detached_task_schedule(ice::Task<void> scheduled_task, ice::TaskScheduler& scheduler) noexcept -> ice::DetachedTask
         {
             co_await scheduler;
             co_await scheduled_task;
@@ -51,7 +37,7 @@ namespace ice
             co_await scheduled_task;
         }
 
-        auto detached_task_resume(ice::Task<void> scheduled_task, ice::TaskScheduler& scheduler) noexcept -> DetachedTask
+        auto detached_task_resume(ice::Task<void> scheduled_task, ice::TaskScheduler& scheduler) noexcept -> ice::DetachedTask
         {
             co_await scheduled_task;
             co_await scheduler;
@@ -63,75 +49,25 @@ namespace ice
             co_await scheduled_task;
         }
 
-
-        class DetachedAwaitingTask
-        {
-        public:
-            DetachedAwaitingTask() noexcept = default;
-
-            struct promise_type
-            {
-                // All tasks have the same continuation
-                std::coroutine_handle<> _continuation;
-
-                // However only the last one remaining will 'not' be ready and return the continuation in 'await_suspend'
-                std::atomic_uint32_t& _remaining;
-
-                promise_type(ice::Task<> const&, std::coroutine_handle<> continuation, std::atomic_uint32_t& remaining) noexcept
-                    : _continuation{ continuation }
-                    , _remaining{ remaining }
-                { }
-
-                struct final_awaitable
-                {
-                    promise_type* promise;
-
-                    // On the final suspend point we are checking checking if we are the last remaining task
-                    inline auto await_ready() const noexcept { return promise->_remaining.fetch_sub(1, std::memory_order_release) > 1; }
-
-                    // If so we return the continuation
-                    inline auto await_suspend(std::coroutine_handle<> coro) const noexcept -> std::coroutine_handle<>
-                    {
-                        std::atomic_thread_fence(std::memory_order_acquire);
-
-                        // Can't access promise after it's destroyed
-                        std::coroutine_handle<> continuation = promise->_continuation;
-
-                        // We delete the detached coroutine here, since this would be normaly done when 'await_ready == true' after resuming
-                        //  from the final suspension point. Since we are suspending, but we never resume again we just delete it here.
-                        // TODO: Run more tests that this is no longer needed
-                        // coro.destroy();
-
-                        // Return the continuation
-                        return continuation;
-                    }
-
-                    constexpr void await_resume() const noexcept { }
-                };
-
-                auto initial_suspend() const noexcept { return std::suspend_never{ }; }
-                auto final_suspend() noexcept { return final_awaitable{ this }; }
-                auto return_void() noexcept { }
-
-                auto get_return_object() noexcept -> DetachedAwaitingTask
-                {
-                    return DetachedAwaitingTask{};
-                }
-
-                void unhandled_exception() noexcept
-                {
-                    ICE_ASSERT(false, "Unexpected coroutine exception!");
-                }
-            };
-        };
-
         // We have this large signature to pass the coroutine handle and atomic counter to the promise type with the same ctor signature.
         auto detached_awaiting_task(
             ice::Task<void>& awaited_task,
             std::coroutine_handle<>,
             std::atomic_uint32_t&
-        ) noexcept -> DetachedAwaitingTask
+        ) noexcept -> ice::TrackedTask
         {
+            co_await awaited_task;
+        }
+
+        // We have this large signature to pass the coroutine handle and atomic counter to the promise type with the same ctor signature.
+        auto detached_awaiting_task(
+            ice::Task<void>& awaited_task,
+            std::coroutine_handle<>,
+            std::atomic_uint32_t&,
+            ice::TaskScheduler& scheduler
+        ) noexcept -> ice::TrackedTask
+        {
+            co_await scheduler;
             co_await awaited_task;
         }
 
@@ -172,38 +108,91 @@ namespace ice
             return Awaitable{ tasks };
         }
 
+        auto await_tasks_scheduled(ice::Span<ice::Task<void>> tasks, ice::TaskScheduler& scheduler) noexcept
+        {
+            struct Awaitable
+            {
+                ice::TaskScheduler& scheduler;
+                ice::Span<ice::Task<void>> tasks;
+                std::atomic_uint32_t running;
+
+                constexpr auto await_ready() const noexcept
+                {
+                    // Only suspend if we actually have tasks
+                    return ice::span::empty(tasks);
+                }
+
+                inline auto await_suspend(std::coroutine_handle<> coro) noexcept
+                {
+                    // Set the 'running' variable so we can track how many tasks arleady finished.
+                    running.store(ice::count(tasks) + 1, std::memory_order_relaxed);
+
+                    for (ice::Task<void>& task : tasks)
+                    {
+                        // Execute all tasks
+                        detail::detached_awaiting_task(task, coro, running, scheduler);
+                    }
+
+                    // Steal a task from the queue
+                    ice::u32 running_val = running.load(std::memory_order_relaxed);
+                    while(running_val > 1)
+                    {
+                        // Try to process a task, if not possible wait for tasks to finish.
+                        if (scheduler.schedule()._queue.process_one() == false)
+                        {
+                            // Wait for the given value.
+                            running.wait(running_val, std::memory_order_relaxed);
+                        }
+
+                        // Get new value, if == '1' then we are ready to finalize
+                        running_val = running.load(std::memory_order_relaxed);
+                    }
+
+                    // We now return from the coroutine if the tasks finished synchronously.
+                    return running.fetch_sub(1, std::memory_order_relaxed) != 1;
+                }
+
+                constexpr bool await_resume() const noexcept
+                {
+                    ICE_ASSERT_CORE(running.load(std::memory_order_relaxed) == 0);
+                    return ice::span::any(tasks);
+                }
+            };
+            return Awaitable{ scheduler, tasks };
+        }
+
     } // namespace detail
 
-    void wait_for(ice::Task<void> task) noexcept
-    {
-        IPT_ZONE_SCOPED;
-        ice::ManualResetEvent ev;
-        manual_wait_for(ice::move(task), ev);
-        ev.wait();
-    }
+    // void wait_for(ice::Task<void> task) noexcept
+    // {
+    //     IPT_ZONE_SCOPED;
+    //     ice::ManualResetEvent ev;
+    //     manual_wait_for(ev, ice::move(task));
+    //     ev.wait();
+    // }
 
-    void wait_for_all(ice::Span<ice::Task<void>> tasks) noexcept
-    {
-        IPT_ZONE_SCOPED;
-        ice::ManualResetBarrier manual_sem{ ice::u8(ice::span::count(tasks)) };
-        manual_wait_for_all(tasks, manual_sem);
-        manual_sem.wait();
-    }
+    // void wait_for_all(ice::Span<ice::Task<void>> tasks) noexcept
+    // {
+    //     IPT_ZONE_SCOPED;
+    //     ice::ManualResetBarrier manual_sem{ ice::u8(ice::span::count(tasks)) };
+    //     manual_wait_for_all(tasks, manual_sem);
+    //     manual_sem.wait();
+    // }
 
-    void manual_wait_for(ice::Task<void> task, ice::ManualResetEvent& manual_event) noexcept
-    {
-        IPT_ZONE_SCOPED;
-        detail::detached_task(ice::move(task), manual_event);
-    }
+    // void manual_wait_for(ice::Task<void> task, ice::ManualResetEvent& manual_event) noexcept
+    // {
+    //     IPT_ZONE_SCOPED;
+    //     detail::detached_task(ice::move(task), manual_event);
+    // }
 
-    void manual_wait_for_all(ice::Span<ice::Task<void>> tasks, ice::ManualResetBarrier& manual_barrier) noexcept
-    {
-        IPT_ZONE_SCOPED;
-        for (ice::Task<void>& task : tasks)
-        {
-            detail::detached_task(ice::move(task), manual_barrier);
-        }
-    }
+    // void manual_wait_for_all(ice::Span<ice::Task<void>> tasks, ice::ManualResetBarrier& manual_barrier) noexcept
+    // {
+    //     IPT_ZONE_SCOPED;
+    //     for (ice::Task<void>& task : tasks)
+    //     {
+    //         detail::detached_task(ice::move(task), manual_barrier);
+    //     }
+    // }
 
     void schedule_task_on(ice::Task<void> task, ice::TaskScheduler& scheduler) noexcept
     {
@@ -238,12 +227,7 @@ namespace ice
 
     auto await_all_scheduled(ice::Span<ice::Task<void>> tasks, ice::TaskScheduler& scheduler) noexcept -> ice::Task<void>
     {
-        ice::TaskQueue queue;
-        ice::TaskScheduler queue_scheduler{ queue };
-        ice::schedule_tasks_on(ice::move(tasks), queue_scheduler);
-
-        // Awaits the tasks directly on the scheduler queue
-        co_await ice::await_queue_on(queue, scheduler);
+        co_await detail::await_tasks_scheduled(tasks, scheduler);
     }
 
     auto await_all_on(ice::Span<ice::Task<void>> tasks, ice::TaskScheduler& resumer) noexcept -> ice::Task<void>
@@ -254,12 +238,7 @@ namespace ice
 
     auto await_all_on_scheduled(ice::Span<ice::Task<void>> tasks, ice::TaskScheduler& resumer, ice::TaskScheduler& scheduler) noexcept -> ice::Task<void>
     {
-        ice::TaskQueue queue;
-        ice::TaskScheduler queue_scheduler{ queue };
-        ice::schedule_tasks_on(ice::move(tasks), queue_scheduler);
-
-        // Awaits the tasks directly on the scheduler queue
-        co_await ice::await_queue_on(queue, scheduler);
+        co_await detail::await_tasks_scheduled(tasks, scheduler);
         co_await resumer;
     }
 

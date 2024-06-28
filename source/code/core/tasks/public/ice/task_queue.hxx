@@ -23,6 +23,8 @@ namespace ice
         bool contains(ice::TaskAwaitableBase* awaitable) const noexcept;
 
         [[nodiscard]]
+        auto pop() noexcept -> ice::TaskAwaitableBase*;
+        [[nodiscard]]
         auto consume() noexcept -> ice::LinkedQueueRange<ice::TaskAwaitableBase>;
 
         bool process_one(void* result_value = nullptr) noexcept;

@@ -235,14 +235,14 @@ public:
 
                 ice::ManualResetEvent waitev{};
                 ice::ResourceCompilerResult result;
-                ice::manual_wait_for(
+                ice::v2::manual_wait_for(
+                    waitev,
                     fn(
                         result,
                         resource_compiler->fn_compile_source(
                             ctx, source, *resource_tracker, sources, dependencies, _allocator
                         )
-                    ),
-                    waitev
+                    )
                 );
 
                 while(waitev.is_set() == false)

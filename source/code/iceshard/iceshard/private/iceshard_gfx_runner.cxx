@@ -147,7 +147,6 @@ namespace ice::gfx
     ) noexcept -> ice::Task<>
     {
         co_await _scheduler;
-        _gfx_frame_finished.reset();
 
         //IPT_ZONE_SCOPED;
         IPT_FRAME_MARK_NAMED("Graphics");
@@ -165,7 +164,7 @@ namespace ice::gfx
         //TODO: Currently the container should be "dead" after it's await scheduled on
         {
             ice::Array<ice::Task<>> tasks = _gfx_tasks.extract_tasks();
-            co_await ice::await_all_on(tasks, _scheduler);
+            co_await ice::v2::await_scheduled(tasks, _scheduler);
         }
 
         ice::gfx::GfxFrameStages gpu_stages{
@@ -267,7 +266,6 @@ namespace ice::gfx
         }
         else if (trigger.to == detail::State_GfxInactive)
         {
-            _gfx_frame_finished.wait();
             {
                 shards[0] = ice::shard(ice::gfx::ShardID_GfxShutdown, &params);
 
@@ -275,36 +273,29 @@ namespace ice::gfx
                 _engine.worlds_updater().update(world_name, tasks, shards);
             }
 
-            _present_fence->wait(1'000'000'000);
-
             ice::gfx::GfxFrameStages gpu_stages{
                 .scheduler = _scheduler,
                 .frame_transfer = { _queue_transfer },
                 .frame_end = { _queue_end }
             };
 
+            auto const gpu_graph_task = [](
+                ice::gfx::IceshardGfxRunner& self,
+                ice::gfx::GfxStateChange const& params,
+                ice::gfx::GfxFrameStages& frame_stages,
+                ice::gfx::GfxStageRegistry& stages
+            ) noexcept -> ice::Task<>
             {
-                if (_rendergraph->prepare(gpu_stages, *_stages, _gfx_tasks))
+                co_await frame_stages.scheduler;
+
+                if (self._rendergraph->prepare(frame_stages, stages, self._gfx_tasks))
                 {
-                    _gfx_tasks.execute_tasks();
+                    ice::Array<ice::Task<>> tasks = self._gfx_tasks.extract_tasks();
+                    co_await ice::v2::await_all(tasks);
                 }
-            }
+            };
 
-            // auto const gpu_graph_task = [](
-            //     ice::gfx::IceshardGfxRunner& self,
-            //     ice::gfx::GfxStateChange const& params,
-            //     ice::gfx::GfxFrameStages& stages
-            // ) noexcept -> ice::Task<>
-            // {
-            //     co_await stages.frame_end;
-
-            //     if (self._rendergraph->prepare(stages, *s, self._gfx_tasks))
-            //     {
-            //         self._gfx_tasks.execute_tasks();
-            //     }
-            // };
-
-            // ice::wait_for(gpu_graph_task(*this, params, gpu_stages));
+            ice::v2::wait_for(gpu_graph_task(*this, params, gpu_stages, *_stages));
         }
 
         return true;

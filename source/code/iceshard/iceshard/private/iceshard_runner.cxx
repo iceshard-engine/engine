@@ -208,12 +208,12 @@ namespace ice
 
         if (trigger.to == State_WorldRuntimeActive)
         {
-            ice::wait_for(world->activate(params));
+            ice::v2::wait_for(world->activate(params));
             ice::shards::push_back(out_shards, trigger.results | world_name.value);
         }
         else if (trigger.to == State_WorldRuntimeInactive)
         {
-            ice::wait_for(world->deactivate(params));
+            ice::v2::wait_for(world->deactivate(params));
         }
         return true;
     }

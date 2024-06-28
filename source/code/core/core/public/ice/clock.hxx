@@ -126,6 +126,8 @@ namespace ice
 
         auto create_stopwatch(ice::Clock const& clock) noexcept -> ice::Stopwatch;
 
+        auto elapsed(ice::Stopwatch const& timeline) noexcept -> ice::f32;
+
         void start(ice::Stopwatch& stopwatch) noexcept;
 
         void stop(ice::Stopwatch& stopwatch) noexcept;

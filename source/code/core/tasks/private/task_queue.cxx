@@ -56,6 +56,11 @@ namespace ice
         return ice::linked_queue::consume(_awaitables);
     }
 
+    auto TaskQueue::pop() noexcept -> ice::TaskAwaitableBase*
+    {
+        return ice::linked_queue::pop(_awaitables);
+    }
+
     bool TaskQueue::process_one(void *result_value) noexcept
     {
         ice::TaskAwaitableBase* const awaitable = ice::linked_queue::pop(_awaitables);
@@ -86,6 +91,11 @@ namespace ice
         }
         return processed;
     }
+
+    // auto TaskQueue::prepare_all(void *result_value) noexcept -> ice::ucount
+    // {
+    //     return ice::ucount();
+    // }
 
     void TaskQueue::wait_any() noexcept
     {

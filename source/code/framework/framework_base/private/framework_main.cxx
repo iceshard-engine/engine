@@ -198,6 +198,7 @@ struct ice::app::Runtime
     ice::render::RenderDriver* render_driver;
 
     ice::SystemClock clock;
+    ice::CustomClock game_clock;
     ice::u32 close_attempts = 0;
 
     ice::ManualResetEvent logic_wait;
@@ -471,10 +472,11 @@ auto ice_resume(
                 .tasks = state.platform.threads->threadpool(),
             }
         };
+
+        runtime.clock = ice::clock::create_clock();
         runtime.runner = ice::create_engine_runner(state.engine_alloc, *state.modules, runner_create_info);
         runtime.frame = ice::wait_for(runtime.runner->aquire_frame());
-        runtime.clock = ice::clock::create_clock();
-
+        runtime.game_clock = ice::clock::create_clock(runtime.game_clock, 1.0f);
 
         using ice::operator|;
         using ice::operator""_sid;
@@ -541,8 +543,7 @@ auto ice_game_frame(
     state.platform.core->refresh_events();
     ice::ShardContainer const& system_events = state.platform.core->system_events();
 
-    // Update the system clock
-    ice::clock::update(runtime.clock);
+    ice::clock::update(runtime.game_clock);
 
     ice::UniquePtr<ice::EngineFrame> new_frame = co_await logic.aquire_frame();
     ICE_ASSERT(new_frame != nullptr, "Failed to aquire next frame!");
@@ -597,6 +598,9 @@ auto ice_update(
     ice::app::Runtime& runtime
 ) noexcept -> ice::Result
 {
+    // Update the system clock
+    ice::clock::update(runtime.clock);
+
     // Process any awaiting main thread tasks.
     runtime.main_queue.process_all();
 
@@ -673,17 +677,17 @@ auto ice_update(
         {
             // system_events will have changed after a frame was awaited!
             runtime.previous->wait.reset();
-            ice::manual_wait_for(ice::move(runtime.next_frame_task), runtime.previous->wait);
+            ice::v2::manual_wait_for(runtime.previous->wait, ice::move(runtime.next_frame_task));
 
             // Move to the next frame
             runtime.previous = runtime.previous->next;
+
+            // Apply changes to entities after devui widget updates and drawing started, so we can inspect the data before the changes,
+            //  and pre-produce the outcome in a devui widget if needed.
+            // We also should no longer access anything in entity storages when drawing starts
+            ice::v2::wait_for(runtime.runner->apply_entity_operations(runtime.frame->shards()));
         }
     }
-
-    // Apply changes to entities after devui widget updates and drawing started, so we can inspect the data before the changes,
-    //  and pre-produce the outcome in a devui widget if needed.
-    // We also should no longer access anything in entity storages when drawing starts
-    ice::wait_for(runtime.runner->apply_entity_operations(runtime.frame->shards()));
 
     return ice::app::S_ApplicationUpdate;
 }

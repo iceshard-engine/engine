@@ -103,8 +103,8 @@ namespace ice
                 ice::array::push_back(tasks, fn_validate(compiler, source, resource_tracker, all_sources_valid));
             }
 
-            // Wait for all tasks to finish
-            ice::wait_for_all(tasks);
+            co_await ice::v2::await_all(tasks);
+
             ice::array::clear(tasks);
 
             // Validation failed
@@ -156,7 +156,7 @@ namespace ice
             }
 
             // ... and wait for them to finish
-            co_await ice::await_all(tasks);
+            co_await ice::v2::await_all(tasks);
 
             // Build the metadata
             ice::MutableMetadata meta{ alloc };

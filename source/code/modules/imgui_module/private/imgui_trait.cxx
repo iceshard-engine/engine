@@ -174,7 +174,7 @@ namespace ice::devui
 
     auto ImGuiTrait::gfx_shutdown(ice::gfx::GfxStateChange const& params) noexcept -> ice::Task<>
     {
-        params.stages.remove_stage("copy"_sid);
+        params.stages.remove_stage("iceshard.devui"_sid);
         co_return;
     }
 
